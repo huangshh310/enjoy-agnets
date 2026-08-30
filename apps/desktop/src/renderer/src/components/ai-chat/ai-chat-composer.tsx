@@ -9,32 +9,35 @@ import {
   DropdownPopover,
   DropdownTrigger
 } from "@/components/base/dropdown/dropdown"
-import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
-import { useChatStore } from "@renderer/stores/chat-store"
+import type { ModelOption } from "@renderer/stores/chat-store"
 
-const MODELS = [
-  { id: "deepseek-chat", label: "DeepSeek V4" },
-  { id: "deepseek-reasoner", label: "DeepSeek Reasoner" },
-  { id: "gpt-4.1", label: "GPT-4.1" },
-  { id: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" }
-]
-
-export function AiChatComposer() {
-  const composer = useChatStore((state) => state.composer)
-  const setComposer = useChatStore((state) => state.setComposer)
-  const running = useChatStore((state) => state.running)
-  const modelLabel = useChatStore((state) => state.modelLabel)
-  const setModel = useChatStore((state) => state.setModel)
-
+export function AiChatComposer({
+  composer,
+  onComposerChange,
+  running,
+  modelLabel,
+  models,
+  onModelChange,
+  onSend
+}: {
+  composer: string
+  onComposerChange: (value: string) => void
+  running: boolean
+  modelLabel: string
+  modelId: string
+  models: ModelOption[]
+  onModelChange: (id: string, label: string) => void
+  onSend: () => void
+}) {
   function onSubmit(event: FormEvent) {
     event.preventDefault()
-    void sendComposerMessage()
+    onSend()
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
-      void sendComposerMessage()
+      onSend()
     }
   }
 
@@ -52,7 +55,7 @@ export function AiChatComposer() {
           <textarea
             rows={1}
             value={composer}
-            onChange={(event) => setComposer(event.target.value)}
+            onChange={(event) => onComposerChange(event.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Ask me anything"
             className="min-h-8 max-h-32 flex-1 resize-none bg-transparent py-1.5 text-body-medium text-text-primary outline-none placeholder:text-text-tertiary"
@@ -63,8 +66,8 @@ export function AiChatComposer() {
               <RiArrowDownSLine className="size-4" aria-hidden />
             </DropdownTrigger>
             <DropdownPopover aria-label="Models" placement="top">
-              {MODELS.map((model) => (
-                <DropdownItem key={model.id} onSelect={() => setModel(model.id, model.label)}>
+              {models.map((model) => (
+                <DropdownItem key={model.id} onSelect={() => onModelChange(model.id, model.label)}>
                   {model.label}
                 </DropdownItem>
               ))}

@@ -115,6 +115,8 @@ export function DashboardUserMenu({
   suppressHover = false,
   onHoverSuppressionEnd,
   avatarClassName,
+  name = "Enjoy Agents",
+  initials = "E",
 }: {
   collapsed?: boolean;
   /** Prevents expansion from creating a hover state under a stationary pointer. */
@@ -122,6 +124,8 @@ export function DashboardUserMenu({
   /** Re-arms hover after the pointer fully leaves the trigger. */
   onHoverSuppressionEnd?: () => void;
   avatarClassName?: string;
+  name?: string;
+  initials?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   // "right" placement assumes room to the sidebar's right (true in-flow on
@@ -140,7 +144,7 @@ export function DashboardUserMenu({
   return (
     <AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       <AriaButton
-        aria-label="Mertcan Esmergul"
+        aria-label={name}
         onPointerLeave={() => {
           if (suppressHover) onHoverSuppressionEnd?.();
         }}
@@ -163,10 +167,10 @@ export function DashboardUserMenu({
           collapsed && "w-9 justify-center gap-0 before:-inset-x-[3px]",
         )}
       >
-        <Avatar size="md" color="neutral" initials="M" className={avatarClassName} />
+        <Avatar size="md" color="neutral" initials={initials} className={avatarClassName} />
         <Collapsible collapsed={collapsed}>
           <span className="flex items-center gap-0.5">
-            <span className="text-body-medium whitespace-nowrap text-text-primary">Mertcan Esmergul</span>
+            <span className="text-body-medium whitespace-nowrap text-text-primary">{name}</span>
             <ChevronUpDownSmall className="size-4 shrink-0 text-foreground-icon-tertiary" />
           </span>
         </Collapsible>

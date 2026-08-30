@@ -1,104 +1,129 @@
-import { create } from "zustand";
-import type { StreamEvent } from "@enjoy-agents/ipc-contract";
-import { createDemoThread, type ThreadMessage } from "../data/demo-thread";
-import { relativeTime } from "../lib/time";
+import { create } from "zustand"
+import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { relativeTime } from "../lib/time"
+
+export type ChatRole = "user" | "assistant"
+
+export type CodeAttachment = {
+  language: string
+  filename: string
+  additions: number
+  deletions: number
+  code: string
+}
+
+export type ThreadMessage = {
+  id: string
+  role: ChatRole
+  content: string
+  createdAt: number
+  attachment?: CodeAttachment
+  streaming?: boolean
+}
 
 export type RepositoryNode = {
-  id: string;
-  name: string;
-  kind: "workspace" | "session";
-  parentId?: string;
-  updatedAt: number;
-  workspaceId?: string;
-};
+  id: string
+  name: string
+  kind: "workspace" | "session"
+  parentId?: string
+  updatedAt: number
+  workspaceId?: string
+}
 
 export type ChangedFileRow = {
-  path: string;
-  status: "added" | "modified" | "deleted" | "untracked";
-  additions: number;
-  deletions: number;
-};
+  path: string
+  status: "added" | "modified" | "deleted" | "untracked"
+  additions: number
+  deletions: number
+}
+
+export type ModelOption = {
+  id: string
+  label: string
+  provider: string
+}
 
 export type ChatStore = {
-  userName: string;
-  workspaceId: string | null;
-  workspaceName: string;
-  workspaceRootLabel: string;
-  sessionId: string;
-  sessionTitle: string;
-  repositories: RepositoryNode[];
-  expandedIds: string[];
-  messages: ThreadMessage[];
-  composer: string;
-  modelId: string;
-  modelLabel: string;
-  mode: "agent" | "plan" | "ask" | "debug";
-  running: boolean;
-  runId: string | null;
-  thinkingLabel: string;
-  settingsOpen: string | false;
-  apiKeyDraft: string;
-  providerDraft: "deepseek" | "openai" | "anthropic" | "openrouter" | "ollama";
-  hasKey: boolean;
-  contextUsed: number;
-  selectedFilePath: string;
-  selectedFileContent: string;
-  changes: ChangedFileRow[];
-  additions: number;
-  deletions: number;
-  rightTab: "changes" | "browser";
-  pendingApproval: StreamEvent & { type: "approval.required" } | null;
-  error: string | null;
-  setComposer: (value: string) => void;
-  setModel: (id: string, label: string) => void;
-  setMode: (mode: ChatStore["mode"]) => void;
-  setRightTab: (tab: ChatStore["rightTab"]) => void;
-  setSettingsOpen: (open: ChatStore["settingsOpen"]) => void;
-  setApiKeyDraft: (value: string) => void;
-  setProviderDraft: (value: ChatStore["providerDraft"]) => void;
-  selectSession: (sessionId: string) => void;
-  toggleExpanded: (id: string) => void;
-  applyStreamEvent: (event: StreamEvent) => void;
-  appendUserMessage: (content: string) => ThreadMessage[];
-  setRunning: (running: boolean, runId?: string | null) => void;
-  setHasKey: (hasKey: boolean) => void;
-  setError: (message: string | null) => void;
-  setWorkspace: (workspace: { id: string; name: string; rootPath: string }) => void;
-  setSelectedFile: (path: string, content: string) => void;
-  setChanges: (changes: ChangedFileRow[]) => void;
-  setPendingApproval: (event: ChatStore["pendingApproval"]) => void;
-  hydrateSessions: (sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>) => void;
-  startNewSession: () => void;
-};
+  userName: string
+  workspaceId: string | null
+  workspaceName: string
+  workspaceRootLabel: string
+  sessionId: string | null
+  sessionTitle: string
+  repositories: RepositoryNode[]
+  expandedIds: string[]
+  sidebarCollapsed: boolean
+  messages: ThreadMessage[]
+  composer: string
+  modelId: string
+  modelLabel: string
+  models: ModelOption[]
+  provider: string | null
+  mode: "agent" | "plan" | "ask" | "debug"
+  running: boolean
+  runId: string | null
+  thinkingLabel: string
+  settingsOpen: string | false
+  apiKeyDraft: string
+  providerDraft: "deepseek" | "openai" | "anthropic" | "openrouter" | "ollama"
+  hasKey: boolean
+  selectedFilePath: string | null
+  selectedFileContent: string
+  changes: ChangedFileRow[]
+  additions: number
+  deletions: number
+  rightTab: "changes" | "browser"
+  pendingApproval: (StreamEvent & { type: "approval.required" }) | null
+  error: string | null
+  setComposer: (value: string) => void
+  setModel: (id: string, label: string) => void
+  setMode: (mode: ChatStore["mode"]) => void
+  setRightTab: (tab: ChatStore["rightTab"]) => void
+  setSettingsOpen: (open: ChatStore["settingsOpen"]) => void
+  setApiKeyDraft: (value: string) => void
+  setProviderDraft: (value: ChatStore["providerDraft"]) => void
+  setSidebarCollapsed: (collapsed: boolean) => void
+  toggleExpanded: (id: string) => void
+  applyStreamEvent: (event: StreamEvent) => void
+  appendUserMessage: (content: string) => ThreadMessage[]
+  setRunning: (running: boolean, runId?: string | null) => void
+  setHasKey: (hasKey: boolean) => void
+  setError: (message: string | null) => void
+  setWorkspace: (workspace: { id: string; name: string; rootPath: string } | null) => void
+  setSelectedFile: (path: string | null, content: string) => void
+  setChanges: (changes: ChangedFileRow[]) => void
+  setPendingApproval: (event: ChatStore["pendingApproval"]) => void
+  setModels: (models: ModelOption[]) => void
+  setProvider: (provider: string | null) => void
+  hydrateSessions: (
+    workspace: { id: string; name: string },
+    sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+  ) => void
+  setSession: (sessionId: string, title: string) => void
+  setMessages: (messages: ThreadMessage[]) => void
+}
 
-const DEMO_WORKSPACE_ID = "ws_vibi";
-const DEMO_SESSION_ID = "ses_coding_scenario";
-
-const demoRepositories: RepositoryNode[] = [
-  { id: "ws_boardui", name: "boardui", kind: "workspace", updatedAt: Date.now() - 86400000 },
-  { id: DEMO_WORKSPACE_ID, name: "vibi coding project", kind: "workspace", updatedAt: Date.now() },
-  { id: "ses_landing", name: "landing page design", kind: "session", parentId: DEMO_WORKSPACE_ID, updatedAt: Date.now() - 34 * 60_000, workspaceId: DEMO_WORKSPACE_ID },
-  { id: "ses_image", name: "image generation", kind: "session", parentId: DEMO_WORKSPACE_ID, updatedAt: Date.now() - 20_000, workspaceId: DEMO_WORKSPACE_ID },
-  { id: DEMO_SESSION_ID, name: "coding scenario", kind: "session", parentId: DEMO_WORKSPACE_ID, updatedAt: Date.now() - 10_000, workspaceId: DEMO_WORKSPACE_ID },
-  { id: "ses_vue", name: "mobile app for vuejs...", kind: "session", parentId: DEMO_WORKSPACE_ID, updatedAt: Date.now() - 5 * 3600_000, workspaceId: DEMO_WORKSPACE_ID },
-  { id: "ses_refactor", name: "code refactor dropd...", kind: "session", parentId: DEMO_WORKSPACE_ID, updatedAt: Date.now() - 18 * 3600_000, workspaceId: DEMO_WORKSPACE_ID },
-  { id: "ws_strider", name: "strider landing page work", kind: "workspace", updatedAt: Date.now() - 2 * 86400000 },
-  { id: "ws_pirate", name: "pirate mini game iOS", kind: "workspace", updatedAt: Date.now() - 3 * 86400000 }
-];
+function contextUsedFrom(messages: ThreadMessage[]): number {
+  const characters = messages.reduce((sum, message) => sum + message.content.length, 0)
+  return Math.min(99, Math.round((characters / 32_000) * 100))
+}
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   userName: "Enjoy Agents",
-  workspaceId: DEMO_WORKSPACE_ID,
-  workspaceName: "vibi coding project",
-  workspaceRootLabel: "project-sea",
-  sessionId: DEMO_SESSION_ID,
-  sessionTitle: "coding scenario",
-  repositories: demoRepositories,
-  expandedIds: [DEMO_WORKSPACE_ID],
-  messages: createDemoThread(),
+  workspaceId: null,
+  workspaceName: "No workspace",
+  workspaceRootLabel: "open a folder",
+  sessionId: null,
+  sessionTitle: "New agent",
+  repositories: [],
+  expandedIds: [],
+  sidebarCollapsed: false,
+  messages: [],
   composer: "",
   modelId: "deepseek-chat",
   modelLabel: "DeepSeek V4",
+  models: [],
+  provider: null,
   mode: "agent",
   running: false,
   runId: null,
@@ -107,14 +132,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   apiKeyDraft: "",
   providerDraft: "deepseek",
   hasKey: false,
-  contextUsed: 57,
-  selectedFilePath: "boardui/app/components/button.tsx",
+  selectedFilePath: null,
   selectedFileContent: "",
-  changes: [
-    { path: "boardui/app/components/button.tsx", status: "added", additions: 74, deletions: 0 }
-  ],
-  additions: 156,
-  deletions: 23,
+  changes: [],
+  additions: 0,
+  deletions: 0,
   rightTab: "changes",
   pendingApproval: null,
   error: null,
@@ -125,30 +147,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setApiKeyDraft: (apiKeyDraft) => set({ apiKeyDraft }),
   setProviderDraft: (providerDraft) => set({ providerDraft }),
-  selectSession: (sessionId) => {
-    const node = get().repositories.find((item) => item.id === sessionId);
-    if (!node) return;
-    set({
-      sessionId,
-      sessionTitle: node.name,
-      workspaceId: node.workspaceId ?? node.id,
-      workspaceName:
-        get().repositories.find((item) => item.id === (node.parentId ?? node.id))?.name ??
-        node.name
-    });
-  },
+  setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
   toggleExpanded: (id) => {
     const expandedIds = get().expandedIds.includes(id)
       ? get().expandedIds.filter((item) => item !== id)
-      : [...get().expandedIds, id];
-    set({ expandedIds });
+      : [...get().expandedIds, id]
+    set({ expandedIds })
   },
   applyStreamEvent: (event) => {
     if (event.type === "text.delta") {
-      const messages = [...get().messages];
-      const last = messages.at(-1);
+      const messages = [...get().messages]
+      const last = messages.at(-1)
       if (last?.role === "assistant" && last.streaming) {
-        last.content += event.text;
+        last.content += event.text
       } else {
         messages.push({
           id: `msg_${event.runId}`,
@@ -156,62 +167,83 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           content: event.text,
           createdAt: Date.now(),
           streaming: true
-        });
+        })
       }
-      set({ messages, thinkingLabel: "Writing" });
+      set({ messages, thinkingLabel: "Writing" })
     } else if (event.type === "reasoning.delta") {
-      set({ thinkingLabel: "Thinking" });
+      set({ thinkingLabel: "Thinking" })
     } else if (event.type === "tool.start") {
-      set({ thinkingLabel: event.name.replaceAll("_", " ") });
+      set({ thinkingLabel: event.name.replaceAll("_", " ") })
     } else if (event.type === "approval.required") {
-      set({ pendingApproval: event, thinkingLabel: "Waiting for approval" });
+      set({ pendingApproval: event, thinkingLabel: "Waiting for approval" })
+    } else if (event.type === "approval.resolved") {
+      set({ pendingApproval: null })
     } else if (event.type === "run.end") {
       set({
         running: false,
         runId: null,
         pendingApproval: null,
         messages: get().messages.map((message) => ({ ...message, streaming: false }))
-      });
+      })
     } else if (event.type === "run.error") {
       set({
         running: false,
         error: event.message,
         messages: get().messages.map((message) => ({ ...message, streaming: false }))
-      });
+      })
     }
   },
   appendUserMessage: (content) => {
     const messages = [
       ...get().messages,
       { id: `msg_user_${Date.now()}`, role: "user" as const, content, createdAt: Date.now() }
-    ];
-    set({ messages, composer: "", error: null });
-    return messages;
+    ]
+    set({ messages, composer: "", error: null })
+    return messages
   },
   setRunning: (running, runId = null) => set({ running, runId: runId ?? null }),
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
-  setWorkspace: (workspace) =>
+  setWorkspace: (workspace) => {
+    if (!workspace) {
+      set({
+        workspaceId: null,
+        workspaceName: "No workspace",
+        workspaceRootLabel: "open a folder",
+        sessionId: null,
+        sessionTitle: "New agent",
+        repositories: [],
+        expandedIds: [],
+        messages: [],
+        changes: [],
+        additions: 0,
+        deletions: 0,
+        selectedFilePath: null,
+        selectedFileContent: ""
+      })
+      return
+    }
     set({
       workspaceId: workspace.id,
       workspaceName: workspace.name,
       workspaceRootLabel: workspace.rootPath.split(/[\\/]/).filter(Boolean).at(-1) ?? workspace.name
-    }),
+    })
+  },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>
     set({ selectedFilePath, selectedFileContent }),
   setChanges: (changes) => {
-    const additions = changes.reduce((sum, file) => sum + file.additions, 0);
-    const deletions = changes.reduce((sum, file) => sum + file.deletions, 0);
-    set({ changes, additions, deletions });
+    const additions = changes.reduce((sum, file) => sum + file.additions, 0)
+    const deletions = changes.reduce((sum, file) => sum + file.deletions, 0)
+    set({ changes, additions, deletions })
   },
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),
-  hydrateSessions: (sessions) => {
-    if (sessions.length === 0) return;
-    const workspaceId = sessions[0]!.workspaceId;
+  setModels: (models) => set({ models }),
+  setProvider: (provider) => set({ provider }),
+  hydrateSessions: (workspace, sessions) => {
     const repositories: RepositoryNode[] = [
       {
-        id: workspaceId,
-        name: get().workspaceName,
+        id: workspace.id,
+        name: workspace.name,
         kind: "workspace",
         updatedAt: Date.now()
       },
@@ -219,37 +251,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         id: session.id,
         name: session.title,
         kind: "session" as const,
-        parentId: workspaceId,
+        parentId: workspace.id,
         updatedAt: session.updatedAt,
-        workspaceId
+        workspaceId: session.workspaceId
       }))
-    ];
-    set({ repositories, expandedIds: [workspaceId] });
-  }
-  ,
-  startNewSession: () => {
-    const parentId = get().workspaceId ?? DEMO_WORKSPACE_ID
-    const sessionId = `ses_${Date.now()}`
-    const session: RepositoryNode = {
-      id: sessionId,
-      name: "New agent",
-      kind: "session",
-      parentId,
-      workspaceId: parentId,
-      updatedAt: Date.now()
-    }
-    set({
-      repositories: [...get().repositories, session],
-      expandedIds: Array.from(new Set([...get().expandedIds, parentId])),
-      sessionId,
-      sessionTitle: session.name,
-      messages: [],
-      composer: "",
-      error: null
-    })
-  }
-}));
+    ]
+    set({ repositories, expandedIds: [workspace.id] })
+  },
+  setSession: (sessionId, sessionTitle) => set({ sessionId, sessionTitle }),
+  setMessages: (messages) => set({ messages })
+}))
 
 export function formatNodeTime(timestamp: number): string {
-  return relativeTime(timestamp);
+  return relativeTime(timestamp)
+}
+
+export function contextUsed(messages: ThreadMessage[]): number {
+  return contextUsedFrom(messages)
 }

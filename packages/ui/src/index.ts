@@ -1,6 +1,7 @@
 export { cx, sortCx } from "../utils/cx"
 export { Button } from "../components/base/buttons/button"
 export { IconButton } from "../components/base/buttons/icon-button"
+export { QuietIconButton } from "../components/base/buttons/quiet-icon-button"
 export { Input } from "../components/base/input/input"
 export { Avatar } from "../components/base/avatar/avatar"
 export { Kbd } from "../components/base/kbd/kbd"

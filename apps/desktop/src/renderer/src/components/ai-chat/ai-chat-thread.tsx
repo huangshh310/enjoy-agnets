@@ -2,20 +2,37 @@
 
 import { RiClipboardLine, RiThumbDownLine, RiThumbUpLine } from "@remixicon/react"
 import { AgentThinking } from "@/components/application/agent-thinking/agent-thinking"
+import { Button } from "@/components/base/buttons/button"
+import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { cx } from "@/utils/cx"
-import { useChatStore } from "@renderer/stores/chat-store"
+import type { ThreadMessage } from "@renderer/stores/chat-store"
+import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { AiChatCodeBlock } from "./ai-chat-code-block"
-import { QuietIconButton } from "./quiet-icon-button"
 
-export function AiChatThread() {
-  const messages = useChatStore((state) => state.messages)
-  const running = useChatStore((state) => state.running)
-  const thinkingLabel = useChatStore((state) => state.thinkingLabel)
-  const error = useChatStore((state) => state.error)
-  const pendingApproval = useChatStore((state) => state.pendingApproval)
-
+export function AiChatThread({
+  messages,
+  running,
+  thinkingLabel,
+  error,
+  pendingApproval,
+  onApprove,
+  onDeny,
+  onAllowSession
+}: {
+  messages: ThreadMessage[]
+  running: boolean
+  thinkingLabel: string
+  error: string | null
+  pendingApproval: (StreamEvent & { type: "approval.required" }) | null
+  onApprove: () => void
+  onDeny: () => void
+  onAllowSession: () => void
+}) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-8 py-6">
+      {messages.length === 0 && !running ? (
+        <p className="text-body-medium text-text-tertiary">Ask the agent to inspect or change this workspace.</p>
+      ) : null}
       {messages.map((message) =>
         message.role === "user" ? (
           <div key={message.id} className="flex justify-end">
@@ -40,7 +57,7 @@ export function AiChatThread() {
         )
       )}
 
-      {running ? <AgentThinking variant="infinity" label={thinkingLabel} /> : null}
+      {running && !pendingApproval ? <AgentThinking variant="infinity" label={thinkingLabel} /> : null}
 
       {pendingApproval ? (
         <div className="rounded-2xl border border-border-button-default bg-background-secondary-default p-4">
@@ -50,6 +67,17 @@ export function AiChatThread() {
           <pre className="mt-2 overflow-x-auto text-caption-1-medium text-text-secondary">
             {JSON.stringify(pendingApproval.args, null, 2)}
           </pre>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="small" variant="primary" onClick={onApprove}>
+              Allow
+            </Button>
+            <Button size="small" variant="secondary" onClick={onAllowSession}>
+              Allow for session
+            </Button>
+            <Button size="small" variant="danger" onClick={onDeny}>
+              Deny
+            </Button>
+          </div>
         </div>
       ) : null}
 

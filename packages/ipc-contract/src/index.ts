@@ -143,7 +143,8 @@ export const SettingsSnapshot = z.object({
   hasKey: z.boolean(),
   provider: z.string().nullable(),
   baseURL: z.string().nullable(),
-  defaultModelId: z.string()
+  defaultModelId: z.string(),
+  lastWorkspaceId: z.string().nullable()
 });
 export type SettingsSnapshot = z.infer<typeof SettingsSnapshot>;
 

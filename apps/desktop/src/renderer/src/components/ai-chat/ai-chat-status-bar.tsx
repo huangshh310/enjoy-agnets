@@ -1,14 +1,18 @@
 "use client"
 
 import { RiArrowDownSLine, RiFolder6Line, RiGitBranchLine, RiInfinityLine } from "@remixicon/react"
-import { useChatStore } from "@renderer/stores/chat-store"
 
-export function AiChatStatusBar() {
-  const workspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)
-  const mode = useChatStore((state) => state.mode)
-  const setMode = useChatStore((state) => state.setMode)
-  const contextUsed = useChatStore((state) => state.contextUsed)
-
+export function AiChatStatusBar({
+  workspaceRootLabel,
+  mode,
+  onToggleMode,
+  contextUsed
+}: {
+  workspaceRootLabel: string
+  mode: "agent" | "plan" | "ask" | "debug"
+  onToggleMode: () => void
+  contextUsed: number
+}) {
   return (
     <div className="flex items-center gap-3 px-8 pb-4 text-caption-1-medium text-text-tertiary">
       <span className="inline-flex items-center gap-1">
@@ -21,7 +25,7 @@ export function AiChatStatusBar() {
       </span>
       <button
         type="button"
-        onClick={() => setMode(mode === "agent" ? "ask" : "agent")}
+        onClick={onToggleMode}
         className="inline-flex items-center gap-1 rounded-full px-1 hover:bg-background-secondary-hover"
       >
         <RiInfinityLine className="size-3.5" aria-hidden />
@@ -42,15 +46,7 @@ function ContextRing({ value }: { value: number }) {
   const offset = circumference - (value / 100) * circumference
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
-      <circle
-        cx="8"
-        cy="8"
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="text-border-button-default"
-      />
+      <circle cx="8" cy="8" r={radius} fill="none" stroke="currentColor" strokeWidth="2" className="text-border-button-default" />
       <circle
         cx="8"
         cy="8"

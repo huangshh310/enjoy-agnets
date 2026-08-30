@@ -1,14 +1,11 @@
-import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
-import { basename, dirname, extname, join, relative, sep } from "node:path";
-import { promisify } from "node:util";
+import { basename, dirname, extname, join } from "node:path";
 import { dialog } from "electron";
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core";
 import { getDatabase } from "./database";
 import { createId } from "./ids";
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths";
-
-const execFileAsync = promisify(execFile);
+import { parseExecutableCommand, runExecutable, runGit } from "./command";
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"]);
 
 export type WorkspaceRecord = {
@@ -98,18 +95,25 @@ export function createWorkspaceHost(workspaceRoot: string): AgentWorkspaceHost {
     },
     glob: async (pattern) => collectFiles(workspaceRoot, pattern),
     grep: async (pattern, glob) => grepFiles(workspaceRoot, pattern, glob),
-    bash: async (command) => runWorkspaceCommand(workspaceRoot, command),
-    gitStatus: async () => (await runWorkspaceCommand(workspaceRoot, "git status --short")).stdout,
+    bash: async (command) => {
+      const parsed = parseExecutableCommand(command)
+      return runExecutable(workspaceRoot, parsed.executable, parsed.args)
+    },
+    gitStatus: async () => (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout,
     gitDiff: async (filePath) => {
-      const command = filePath ? `git diff -- ${quote(filePath)}` : "git diff";
-      return (await runWorkspaceCommand(workspaceRoot, command)).stdout;
+      const args = filePath ? ["diff", "--", filePath] : ["diff"]
+      return (await runGit(workspaceRoot, args)).stdout
     },
     gitCommit: async (message) => {
-      const result = await runWorkspaceCommand(workspaceRoot, `git commit -am ${quote(message)}`);
-      if (result.exitCode !== 0) {
-        throw new Error(result.stderr || "git commit failed");
+      const staged = await runGit(workspaceRoot, ["add", "-A"])
+      if (staged.exitCode !== 0) {
+        throw new Error(staged.stderr || "git add failed")
       }
-      return result.stdout;
+      const committed = await runGit(workspaceRoot, ["commit", "-m", message])
+      if (committed.exitCode !== 0) {
+        throw new Error(committed.stderr || "git commit failed")
+      }
+      return committed.stdout
     }
   };
 }
@@ -131,7 +135,7 @@ export async function listWorkspaceDir(workspaceId: string, relativePath: string
 }
 
 export async function changedFiles(workspaceRoot: string) {
-  const status = (await runWorkspaceCommand(workspaceRoot, "git status --porcelain")).stdout;
+  const status = (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout
   return status
     .split("\n")
     .map((line) => line.trimEnd())
@@ -152,27 +156,6 @@ export async function changedFiles(workspaceRoot: string) {
         deletions: 0
       };
     });
-}
-
-async function runWorkspaceCommand(workspaceRoot: string, command: string) {
-  const shell = process.platform === "win32" ? "cmd.exe" : "/bin/bash";
-  const args = process.platform === "win32" ? ["/d", "/s", "/c", command] : ["-lc", command];
-  try {
-    const result = await execFileAsync(shell, args, {
-      cwd: workspaceRoot,
-      timeout: 30_000,
-      maxBuffer: 2_000_000,
-      windowsHide: true
-    });
-    return { stdout: result.stdout.toString(), stderr: result.stderr.toString(), exitCode: 0 };
-  } catch (error) {
-    const failure = error as { stdout?: string; stderr?: string; code?: number };
-    return {
-      stdout: failure.stdout?.toString() ?? "",
-      stderr: failure.stderr?.toString() ?? String(error),
-      exitCode: typeof failure.code === "number" ? failure.code : 1
-    };
-  }
 }
 
 async function collectFiles(workspaceRoot: string, pattern: string): Promise<string[]> {
@@ -228,14 +211,3 @@ function globToRegExp(pattern: string): RegExp {
     .replace(/\?/g, "[^/]");
   return new RegExp(`^${escaped}$`);
 }
-
-function quote(value: string): string {
-  return `"${value.replace(/"/g, '\\"')}"`;
-}
-
-export function workspaceDisplayName(rootPath: string): string {
-  return rootPath.split(/[\\/]/).filter(Boolean).at(-1) ?? rootPath;
-}
-
-void relative;
-void sep;

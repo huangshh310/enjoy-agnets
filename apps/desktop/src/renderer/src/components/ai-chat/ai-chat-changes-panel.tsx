@@ -1,45 +1,39 @@
 "use client"
 
-import {
-  RiCodeBlock,
-  RiGlobalLine,
-  RiShareForwardLine,
-  RiSparklingFill
-} from "@remixicon/react"
+import { RiCodeBlock, RiGlobalLine, RiShareForwardLine, RiSparklingFill } from "@remixicon/react"
+import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { PillTab, PillTabList } from "@/components/base/tabs/pill-tab"
 import { cx } from "@/utils/cx"
-import { useChatStore } from "@renderer/stores/chat-store"
+import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { AiChatCodePane } from "./ai-chat-code-pane"
-import { QuietIconButton } from "./quiet-icon-button"
 
-export function AiChatChangesPanel() {
-  const rightTab = useChatStore((state) => state.rightTab)
-  const setRightTab = useChatStore((state) => state.setRightTab)
-  const changes = useChatStore((state) => state.changes)
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
-  const selectedFilePath = useChatStore((state) => state.selectedFilePath)
-  const selectedFileContent = useChatStore((state) => state.selectedFileContent)
-  const setSelectedFile = useChatStore((state) => state.setSelectedFile)
-
+export function AiChatChangesPanel({
+  rightTab,
+  onRightTabChange,
+  changes,
+  additions,
+  deletions,
+  selectedFilePath,
+  selectedFileContent,
+  onSelectFile
+}: {
+  rightTab: "changes" | "browser"
+  onRightTabChange: (tab: "changes" | "browser") => void
+  changes: ChangedFileRow[]
+  additions: number
+  deletions: number
+  selectedFilePath: string | null
+  selectedFileContent: string
+  onSelectFile: (path: string) => void
+}) {
   return (
     <section className="flex h-full min-w-0 flex-col bg-background-primary-default">
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <PillTabList>
-          <PillTab
-            variant="blue"
-            icon={RiCodeBlock}
-            isSelected={rightTab === "changes"}
-            onSelect={() => setRightTab("changes")}
-          >
+          <PillTab variant="blue" icon={RiCodeBlock} isSelected={rightTab === "changes"} onSelect={() => onRightTabChange("changes")}>
             Changes
           </PillTab>
-          <PillTab
-            variant="blue"
-            icon={RiGlobalLine}
-            isSelected={rightTab === "browser"}
-            onSelect={() => setRightTab("browser")}
-          >
+          <PillTab variant="blue" icon={RiGlobalLine} isSelected={rightTab === "browser"} onSelect={() => onRightTabChange("browser")}>
             Browser
           </PillTab>
         </PillTabList>
@@ -61,11 +55,14 @@ export function AiChatChangesPanel() {
           </div>
 
           <div className="flex flex-col gap-1 px-2 pb-2">
+            {changes.length === 0 ? (
+              <p className="px-2 py-1 text-caption-1-medium text-text-tertiary">Working tree is clean.</p>
+            ) : null}
             {changes.map((file) => (
               <button
                 key={file.path}
                 type="button"
-                onClick={() => setSelectedFile(file.path, selectedFileContent)}
+                onClick={() => onSelectFile(file.path)}
                 className={cx(
                   "flex items-center gap-2 rounded-2lg px-2 py-1.5 text-left",
                   file.path === selectedFilePath
@@ -74,20 +71,21 @@ export function AiChatChangesPanel() {
                 )}
               >
                 <RiSparklingFill className="size-4 text-accent-500" aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-secondary">
-                  {file.path}
-                </span>
-                <span className="text-caption-1-medium text-state-success-text">
-                  +{file.additions}
-                </span>
+                <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-secondary">{file.path}</span>
                 <span className="rounded-md bg-badge-new-background px-1.5 py-0.5 text-caption-1-semibold text-badge-new-text">
-                  New
+                  {file.status}
                 </span>
               </button>
             ))}
           </div>
 
-          <AiChatCodePane path={selectedFilePath} value={selectedFileContent} />
+          {selectedFilePath ? (
+            <AiChatCodePane path={selectedFilePath} value={selectedFileContent} />
+          ) : (
+            <div className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
+              Select a changed file to preview.
+            </div>
+          )}
         </>
       )}
     </section>

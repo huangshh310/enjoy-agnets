@@ -46,9 +46,6 @@ catalog:
 
   # TanStack
   "@tanstack/react-query": ^5.90.0
-  "@tanstack/react-query-devtools": ^5.90.0
-  "@tanstack/react-router": ^1.131.0
-  "@tanstack/react-virtual": ^3.13.12
 
   # Editor / workspace
   monaco-editor: ^0.56.0

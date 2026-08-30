@@ -1,9 +1,9 @@
 "use client"
 
 import { RiClipboardLine } from "@remixicon/react"
-import type { CodeAttachment } from "@renderer/data/demo-thread"
+import type { CodeAttachment } from "@renderer/stores/chat-store"
 import { highlightLine } from "./ai-chat-syntax"
-import { QuietIconButton } from "./quiet-icon-button"
+import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 
 export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) {
   const lines = attachment.code.split("\n")

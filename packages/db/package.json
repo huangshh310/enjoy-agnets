@@ -9,9 +9,6 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "drizzle-orm": "catalog:"
-  },
   "devDependencies": {
     "typescript": "catalog:",
     "@types/node": "catalog:"
