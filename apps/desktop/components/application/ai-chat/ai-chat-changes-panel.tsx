@@ -23,7 +23,7 @@ export function AiChatChangesPanel() {
   const setSelectedFile = useChatStore((state) => state.setSelectedFile)
 
   return (
-    <section className="flex h-full w-[440px] shrink-0 flex-col border-l border-separator-border bg-background-primary-default">
+    <section className="flex h-full min-w-0 flex-col bg-background-primary-default">
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <PillTabList>
           <PillTab
