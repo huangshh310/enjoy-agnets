@@ -200,8 +200,14 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   if (!hasIde()) return
   const models = (await getIde().models.list()) as ModelOption[]
   store.setModels(models)
-  const selected = models.find((model) => model.id === snapshot.defaultModelId) ?? models[0]
-  if (selected) store.setModel(selected.id, selected.label)
+  const currentModelId = store.modelId
+  const foundCurrent = models.find((m) => m.id === currentModelId)
+  if (foundCurrent) {
+    store.setModel(foundCurrent.id, foundCurrent.label, foundCurrent.provider)
+  } else {
+    const selected = models.find((model) => model.id === snapshot.defaultModelId) ?? models[0]
+    if (selected) store.setModel(selected.id, selected.label, selected.provider)
+  }
 }
 
 export async function openFolder() {

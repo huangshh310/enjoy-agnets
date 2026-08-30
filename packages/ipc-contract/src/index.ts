@@ -198,7 +198,13 @@ export type SessionSummary = z.infer<typeof SessionSummary>;
 export const ModelOption = z.object({
   id: z.string(),
   label: z.string(),
-  provider: z.string()
+  provider: z.string(),
+  providerId: z.string().optional(),
+  providerName: z.string().optional(),
+  apiStyle: z.string().optional(),
+  active: z.boolean().optional(),
+  isFast: z.boolean().optional(),
+  isReasoning: z.boolean().optional()
 });
 export type ModelOption = z.infer<typeof ModelOption>;
 

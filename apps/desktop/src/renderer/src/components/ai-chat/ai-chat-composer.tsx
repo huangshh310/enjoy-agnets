@@ -1,21 +1,17 @@
 "use client"
 
 import type { FormEvent, KeyboardEvent } from "react"
-import { RiAddLine, RiArrowDownSLine, RiArrowUpLine, RiMicLine } from "@remixicon/react"
+import { RiAddLine, RiArrowUpLine, RiMicLine } from "@remixicon/react"
 import { ComposerLoader } from "@/components/application/composer-loader/composer-loader"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
 import type { ModelOption } from "@renderer/stores/chat-store"
+import { ModelPicker } from "./model-picker"
 
 export function AiChatComposer({
   composer,
   onComposerChange,
   running,
   modelLabel,
+  modelId,
   models,
   onModelChange,
   onSend
@@ -26,7 +22,7 @@ export function AiChatComposer({
   modelLabel: string
   modelId: string
   models: ModelOption[]
-  onModelChange: (id: string, label: string) => void
+  onModelChange: (model: ModelOption) => void
   onSend: () => void
 }) {
   function onSubmit(event: FormEvent) {
@@ -60,19 +56,14 @@ export function AiChatComposer({
             placeholder="Ask me anything"
             className="min-h-8 max-h-32 flex-1 resize-none bg-transparent py-1.5 text-body-medium text-text-primary outline-none placeholder:text-text-tertiary"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex h-8 items-center gap-1 rounded-full px-2 text-body-medium text-text-secondary outline-none hover:bg-background-secondary-hover">
-              {modelLabel}
-              <RiArrowDownSLine className="size-4" aria-hidden />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-2xl border-border-button-default bg-background-primary-default shadow-dropdown">
-              {models.map((model) => (
-                <DropdownMenuItem key={model.id} onSelect={() => onModelChange(model.id, model.label)}>
-                  {model.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+          <ModelPicker
+            modelId={modelId}
+            modelLabel={modelLabel}
+            models={models}
+            onModelChange={onModelChange}
+          />
+
           <button
             type="button"
             aria-label="Voice input"

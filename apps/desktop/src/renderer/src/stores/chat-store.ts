@@ -41,6 +41,12 @@ export type ModelOption = {
   id: string
   label: string
   provider: string
+  providerId?: string
+  providerName?: string
+  apiStyle?: string
+  active?: boolean
+  isFast?: boolean
+  isReasoning?: boolean
 }
 
 export type ChatStore = {
@@ -76,7 +82,7 @@ export type ChatStore = {
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
   setComposer: (value: string) => void
-  setModel: (id: string, label: string) => void
+  setModel: (id: string, label: string, provider?: string) => void
   setMode: (mode: ChatStore["mode"]) => void
   setRightTab: (tab: ChatStore["rightTab"]) => void
   setSettingsOpen: (open: ChatStore["settingsOpen"]) => void
@@ -141,7 +147,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   pendingApproval: null,
   error: null,
   setComposer: (composer) => set({ composer }),
-  setModel: (modelId, modelLabel) => set({ modelId, modelLabel }),
+  setModel: (modelId, modelLabel, provider) =>
+    set({
+      modelId,
+      modelLabel,
+      ...(provider ? { provider } : {})
+    }),
   setMode: (mode) => set({ mode }),
   setRightTab: (rightTab) => set({ rightTab }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),

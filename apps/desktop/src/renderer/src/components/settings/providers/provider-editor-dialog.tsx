@@ -101,7 +101,7 @@ function EditorDialogForm({
       <DialogHeader className="gap-1.5">
         <div className="flex items-center gap-2.5">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border-button-default bg-background-secondary-default p-1 text-text-primary shadow-xs">
-            <ProviderIcon kind={preset.kind} apiStyle={editor.apiStyle} size={22} />
+            <ProviderIcon kind={preset.kind} name={editor.name || preset.name} apiStyle={editor.apiStyle} size={22} />
           </div>
           <DialogTitle className="text-title-3-semibold text-text-primary">
             {editor.id ? `Edit ${preset.name}` : `Add ${preset.name}`}

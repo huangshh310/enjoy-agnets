@@ -34,6 +34,8 @@ const ide = {
     upsertProvider: (input: unknown) => ipcRenderer.invoke("settings.upsertProvider", input),
     removeProvider: (id: string) => ipcRenderer.invoke("settings.removeProvider", id),
     activateProvider: (id: string) => ipcRenderer.invoke("settings.activateProvider", id),
+    setActiveModel: (input: { providerId?: string; modelId: string }) =>
+      ipcRenderer.invoke("settings.setActiveModel", input),
     probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input)
   },
   automations: {

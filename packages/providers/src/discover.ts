@@ -124,7 +124,36 @@ async function getJson<T>(url: string, headers: Record<string, string>): Promise
 async function httpCatalogError(response: Response): Promise<string> {
   const text = await response.text()
   if (looksLikeHtml(text)) return HTML_CATALOG_ERROR
-  return `Provider returned ${response.status} ${response.statusText}.`
+  const detail = extractProviderError(text)
+  if (response.status === 401 || response.status === 403) {
+    return detail
+      ? `Authentication failed (${response.status}): ${detail}`
+      : `Authentication failed (${response.status}). Check the API key — this is not a proxy/network error.`
+  }
+  if (response.status === 407) {
+    return "Proxy requires authentication (407). Check the system proxy user/password."
+  }
+  return detail
+    ? `Provider returned ${response.status}: ${detail}`
+    : `Provider returned ${response.status} ${response.statusText}.`
+}
+
+/** DeepSeek / OpenAI 等会在 JSON 里写 Authentication Fails，比裸 401 更有用。 */
+function extractProviderError(text: string): string | undefined {
+  try {
+    const body = JSON.parse(text) as Record<string, unknown>
+    if (typeof body.error === "string" && body.error.trim()) return body.error.trim()
+    if (body.error && typeof body.error === "object") {
+      const errObj = body.error as { message?: string }
+      if (typeof errObj.message === "string" && errObj.message.trim()) {
+        return errObj.message.trim()
+      }
+    }
+    if (typeof body.message === "string" && body.message.trim()) return body.message.trim()
+  } catch {
+    // 非 JSON 时只用状态码
+  }
+  return undefined
 }
 
 async function readJson<T>(response: Response): Promise<T> {

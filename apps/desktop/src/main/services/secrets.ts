@@ -252,6 +252,24 @@ export async function activateProfile(id: string): Promise<ProviderPublic> {
   return toPublic(profile, id);
 }
 
+export async function setActiveModel(input: { providerId?: string; modelId: string }): Promise<ProviderPublic | undefined> {
+  const vault = await readVault();
+  let target = input.providerId ? vault.profiles.find((p) => p.id === input.providerId) : undefined;
+  if (!target && vault.activeId) {
+    target = vault.profiles.find((p) => p.id === vault.activeId);
+  }
+  if (!target && vault.profiles.length > 0) {
+    target = vault.profiles[0];
+  }
+  if (target) {
+    target.modelId = input.modelId.trim();
+    vault.activeId = target.id;
+    await writeVault(vault);
+    return toPublic(target, vault.activeId);
+  }
+  return undefined;
+}
+
 export async function saveSecret(secret: StoredSecret): Promise<void> {
   const preset = presetFor(secret.provider);
   await upsertProfile({
@@ -291,11 +309,53 @@ export async function hasSecret(): Promise<boolean> {
   return presetFor(profile.kind).requiresKey ? Boolean(profile.apiKey) : true;
 }
 
-export function publicModelsFor(profile: ProviderProfile | undefined) {
+export function publicModelsFor(profile: ProviderProfile | undefined, isActive = true) {
   if (!profile) return [];
   return modelsForProvider(profile.kind, profile.modelId, profile.models).map((model) => ({
     id: model.id,
     label: model.label,
-    provider: profile.kind
+    provider: profile.kind,
+    providerId: profile.id,
+    providerName: profile.name,
+    apiStyle: resolvedStyle(profile),
+    active: isActive,
+    isFast: Boolean(profile.fastModelId && profile.fastModelId === model.id),
+    isReasoning: Boolean(profile.reasoningModelId && profile.reasoningModelId === model.id)
+  }));
+}
+
+export async function listAllPublicModels() {
+  const vault = await readVault();
+  const result: Array<{
+    id: string;
+    label: string;
+    provider: string;
+    providerId?: string;
+    providerName?: string;
+    apiStyle?: ApiStyle;
+    active?: boolean;
+    isFast?: boolean;
+    isReasoning?: boolean;
+  }> = [];
+
+  if (vault.profiles.length > 0) {
+    for (const profile of vault.profiles) {
+      const isActive = profile.id === vault.activeId;
+      const models = publicModelsFor(profile, isActive);
+      for (const m of models) {
+        result.push(m);
+      }
+    }
+    return result;
+  }
+
+  return modelsForProvider("deepseek").map((model) => ({
+    id: model.id,
+    label: model.label,
+    provider: "deepseek",
+    providerId: "default",
+    providerName: "DeepSeek",
+    apiStyle: "openai" as ApiStyle,
+    active: true
   }));
 }

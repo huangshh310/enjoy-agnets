@@ -191,7 +191,7 @@ The split between chat and Changes is a **gap in the canvas** (12px hit area), n
 - Outer: 28px-radius pebble trough, 6px inner padding.
 - Plus chip: 32px white circle, `shadow-xs`, sits *on* the trough (raised, not a hole).
 - Field: transparent, `text-body-medium`, placeholder `text/tertiary` (“Ask me anything”).
-- Model picker: ghost text + chevron, no field chrome.
+- Model picker: `ModelPicker` popover trigger — leading AI brand icon (from `@lobehub/icons`, e.g. Grok/DeepSeek/Claude/OpenAI), truncated label, subtle chevron. Popover shows full model catalog grouped by provider, search filter, active provider tags, role badges (Fast / Thinking), and a quick link to manage providers.
 - Mic: quiet icon.
 - Send: 32px Signal Blue disc with up-arrow. Disabled at 40% opacity when empty.
 - While the agent runs: ComposerLoader iridescent rim (teal → sky → pink → mint) orbits the pill; thinking indicator appears above. Do not use a circular spinner.
@@ -398,6 +398,18 @@ Save writes the vault via `settings.upsertProvider` and activates. Fetch / probe
 - Fetch merges remote discovery on top; user can add / remove IDs.
 - Combobox (`Command` + `Popover`) uses BoardUI tokens: `bg-background-primary-default`, `border-separator-border` on the search hairline. No raw `bg-popover` black rules, no overlapping highlight boxes.
 - Typed-but-unknown IDs stay first-class (“use this ID”).
+
+### Dual-pane Model Picker (`apps/desktop/src/renderer/src/components/ai-chat/model-picker/`)
+
+The chat composer model selector uses a **dual-pane / multi-column popover** (`w-[540px]`, `h-[380px]`):
+- **Left pane (Provider Sidebar `w-[190px]`)**:
+  - `All Models` summary item with total model count badge.
+  - List of configured providers with brand icon (`ProviderIcon` with name inference), provider title, API style subtext, model count pill, and active dot.
+  - Sticky bottom `Manage Providers` action leading directly to `#/settings/providers`.
+- **Right pane (Model Search & List)**:
+  - Sticky top search input filtering models by label, ID, or provider name in real time.
+  - Model rows with Lobe model brand icon (`ModelBrandIcon`), label, monospace model ID, role badges (`⚡ Fast`, `🧠 Thinking`), and checkmark on active selection.
+  - Clicking any model auto-activates its provider and updates the session model in one step.
 
 ### What this page is not
 

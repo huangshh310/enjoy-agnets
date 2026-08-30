@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import {
+  applySettingsSnapshot,
   decidePendingApproval,
   openChangedFile,
   openFolder,
@@ -19,7 +20,9 @@ import {
   sendComposerMessage,
   startPersistedSession,
 } from "@renderer/hooks/use-agent-session"
-import { contextUsed, formatNodeTime, useChatStore } from "@renderer/stores/chat-store"
+import { getIde, hasIde } from "@renderer/lib/ide"
+import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
+import { contextUsed, formatNodeTime, useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { AiChatChangesPanel } from "./ai-chat-changes-panel"
 import { AiChatComposer } from "./ai-chat-composer"
 import { AiChatSidebar } from "./ai-chat-sidebar"
@@ -48,7 +51,6 @@ export function AiChatShell() {
   const modelId = useChatStore((state) => state.modelId)
   const modelLabel = useChatStore((state) => state.modelLabel)
   const models = useChatStore((state) => state.models)
-  const provider = useChatStore((state) => state.provider)
   const setModel = useChatStore((state) => state.setModel)
   const mode = useChatStore((state) => state.mode)
   const setMode = useChatStore((state) => state.setMode)
@@ -64,9 +66,20 @@ export function AiChatShell() {
     storage: window.localStorage
   })
 
-  const availableModels = provider
-    ? models.filter((model) => model.provider === provider)
-    : models
+  async function handleModelChange(model: ModelOption) {
+    setModel(model.id, model.label, model.provider)
+    if (hasIde()) {
+      try {
+        const snapshot = (await getIde().settings.setActiveModel({
+          providerId: model.providerId,
+          modelId: model.id
+        })) as SettingsSnapshot
+        await applySettingsSnapshot(snapshot)
+      } catch {
+        // ignore activation error
+      }
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 gap-3 bg-background-full p-3">
@@ -127,8 +140,8 @@ export function AiChatShell() {
                   running={running}
                   modelLabel={modelLabel}
                   modelId={modelId}
-                  models={availableModels}
-                  onModelChange={setModel}
+                  models={models}
+                  onModelChange={(model) => void handleModelChange(model)}
                   onSend={() => void sendComposerMessage()}
                 />
                 <AiChatStatusBar
@@ -151,7 +164,7 @@ export function AiChatShell() {
             )}
           </main>
         </Panel>
-        <Separator className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-[active]:after:bg-accent-500" />
+        <Separator className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-active:after:bg-accent-500" />
         <Panel id="changes" minSize="280px" defaultSize="38%" className="min-h-0 bg-transparent">
           <AiChatChangesPanel
             rightTab={rightTab}

@@ -13,7 +13,6 @@ import {
 import {
   PROVIDER_PRESETS,
   isApiStyle,
-  modelsForProvider,
   presetFor,
   probeProvider,
   type ProviderKind
@@ -32,12 +31,13 @@ import {
   activateProfile,
   getActiveProfile,
   hasSecret,
+  listAllPublicModels,
   listPublicProviders,
-  publicModelsFor,
   readSecret,
   readVault,
   removeProfile,
   saveSecret,
+  setActiveModel,
   upsertProfile
 } from "./services/secrets"
 import {
@@ -131,6 +131,7 @@ const CHANNELS = [
   "settings.upsertProvider",
   "settings.removeProvider",
   "settings.activateProvider",
+  "settings.setActiveModel",
   "settings.probeProvider",
   "settings.presets",
   "automations.list",
@@ -239,6 +240,10 @@ export function registerIpc(_window: BrowserWindow) {
     await activateProfile(id)
     return settingsSnapshot()
   })
+  ipcMain.handle("settings.setActiveModel", async (_event, raw: { providerId?: string; modelId: string }) => {
+    await setActiveModel(raw)
+    return settingsSnapshot()
+  })
   ipcMain.handle("settings.probeProvider", async (_event, raw) => {
     const input = ProbeProviderInput.parse(raw)
     const vault = await readVault()
@@ -282,13 +287,7 @@ export function registerIpc(_window: BrowserWindow) {
     return { ok: true }
   })
   ipcMain.handle("models.list", async () => {
-    const active = await getActiveProfile()
-    if (active) return publicModelsFor(active)
-    return modelsForProvider("deepseek").map((model) => ({
-      id: model.id,
-      label: model.label,
-      provider: "deepseek"
-    }))
+    return listAllPublicModels()
   })
 }
 

@@ -193,7 +193,9 @@ async function pumpStream(runId: string) {
         apiKey: secret.apiKey,
         baseURL: secret.baseURL,
         modelId: input.modelId,
-        apiStyle: secret.apiStyle
+        apiStyle: secret.apiStyle,
+        customHeaders: secret.customHeaders,
+        customBody: secret.customBody
       }),
       mode: input.mode,
       messages,

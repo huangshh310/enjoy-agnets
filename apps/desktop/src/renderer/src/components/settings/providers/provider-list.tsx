@@ -75,7 +75,7 @@ function ProviderItemRow({
             : "border-border-button-default bg-background-primary-default"
         )}
       >
-        <ProviderIcon kind={profile.kind} apiStyle={profile.apiStyle} size={24} />
+        <ProviderIcon kind={profile.kind} name={profile.name} apiStyle={profile.apiStyle} size={24} />
       </div>
 
       {/* 核心信息区 */}
