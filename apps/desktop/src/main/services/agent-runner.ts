@@ -10,7 +10,7 @@ import {
 import { createLanguageModel } from "@enjoy-agents/providers"
 import { getDatabase, setSetting } from "./database"
 import { createId } from "./ids"
-import { readSecret, type StoredSecret } from "./secrets"
+import { hasSecret, readSecret, type StoredSecret } from "./secrets"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
 
 type PendingApproval = {
@@ -74,9 +74,13 @@ export async function createSession(workspaceId: string, title: string) {
 
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   const input = RunAgentInput.parse(rawInput)
+  const ready = await hasSecret()
   const secret = await readSecret()
-  if (!secret) {
+  if (!ready || !secret) {
     throw new Error("Add an API key in Settings before running an agent.")
+  }
+  if (!input.modelId) {
+    throw new Error("Choose a model in Settings → Providers before running an agent.")
   }
 
   const workspace = await getWorkspace(input.workspaceId)
@@ -188,7 +192,8 @@ async function pumpStream(runId: string) {
         provider: secret.provider,
         apiKey: secret.apiKey,
         baseURL: secret.baseURL,
-        modelId: input.modelId
+        modelId: input.modelId,
+        apiStyle: secret.apiStyle
       }),
       mode: input.mode,
       messages,

@@ -39,7 +39,7 @@ export function SecondaryPageShell({
   selectedId: string
   onSelect: (id: string) => void
   children: ReactNode
-  contentWidth?: "article" | "stage"
+  contentWidth?: "article" | "wide" | "stage"
   searchValue?: string
   onSearchChange?: (value: string) => void
   filterNav?: boolean
@@ -130,7 +130,9 @@ export function SecondaryPageShell({
           <div
             className={cx(
               "w-full",
-              contentWidth === "article" ? "mx-auto max-w-[720px] px-10 py-10" : "flex min-h-full flex-col px-8 py-6"
+              contentWidth === "article" && "mx-auto max-w-[760px] px-8 py-8",
+              contentWidth === "wide" && "mx-auto max-w-5xl px-8 py-8",
+              contentWidth === "stage" && "flex min-h-full flex-col px-8 py-6"
             )}
           >
             {children}

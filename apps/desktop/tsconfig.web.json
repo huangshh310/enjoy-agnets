@@ -14,6 +14,7 @@
       "@/*": ["../../packages/ui/*"],
       "@renderer/*": ["src/renderer/src/*"],
       "@enjoy-agents/ui": ["../../packages/ui/src/index.ts"],
+      "@enjoy-agents/providers/presets": ["../../packages/providers/src/presets.ts"],
       "next/link": ["../../packages/ui/shims/next-link.tsx"]
     }
   }

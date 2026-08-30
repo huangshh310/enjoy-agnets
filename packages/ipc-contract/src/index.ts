@@ -54,11 +54,49 @@ export const ListDirInput = z.object({
 export type ListDirInput = z.infer<typeof ListDirInput>;
 
 export const SaveSecretInput = z.object({
-  provider: z.enum(["deepseek", "openai", "anthropic", "openrouter", "ollama"]),
-  apiKey: z.string().min(1),
-  baseURL: z.string().optional()
+  provider: z.string().min(1),
+  apiKey: z.string().default(""),
+  baseURL: z.string().optional(),
+  modelId: z.string().optional(),
+  name: z.string().optional()
 });
 export type SaveSecretInput = z.infer<typeof SaveSecretInput>;
+
+export const UpsertProviderInput = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  kind: z.string().min(1),
+  apiKey: z.string().optional(),
+  baseURL: z.string().optional(),
+  modelId: z.string().optional(),
+  apiStyle: z.string().optional(),
+  activate: z.boolean().optional()
+});
+export type UpsertProviderInput = z.infer<typeof UpsertProviderInput>;
+
+export const ProbeProviderInput = z.object({
+  id: z.string().optional(),
+  kind: z.string().min(1),
+  apiKey: z.string().optional(),
+  baseURL: z.string().optional(),
+  modelId: z.string().optional(),
+  apiStyle: z.string().optional()
+});
+export type ProbeProviderInput = z.infer<typeof ProbeProviderInput>;
+
+export const ProviderPublic = z.object({
+  id: z.string(),
+  name: z.string(),
+  kind: z.string(),
+  baseURL: z.string(),
+  modelId: z.string(),
+  apiStyle: z.string().default("openai"),
+  hasKey: z.boolean(),
+  keyHint: z.string(),
+  active: z.boolean(),
+  requiresKey: z.boolean()
+});
+export type ProviderPublic = z.infer<typeof ProviderPublic>;
 
 export const StreamEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("run.start"), runId: z.string(), sessionId: z.string() }),
@@ -145,6 +183,7 @@ export const SettingsSnapshot = z.object({
   baseURL: z.string().nullable(),
   defaultModelId: z.string(),
   lastWorkspaceId: z.string().nullable(),
+  providers: z.array(ProviderPublic).default([]),
   preferences: z.object({
     requireWriteApproval: z.boolean(),
     requireBashApproval: z.boolean(),

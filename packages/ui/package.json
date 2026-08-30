@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@internationalized/date": "catalog:",
+    "@lobehub/icons": "catalog:",
     "@radix-ui/react-use-controllable-state": "catalog:",
     "@remixicon/react": "catalog:",
     "ai": "catalog:",

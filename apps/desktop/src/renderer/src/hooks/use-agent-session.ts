@@ -50,22 +50,7 @@ export function useAgentSession() {
   useEffect(() => {
     const snapshot = settingsQuery.data
     if (!snapshot) return
-    const store = useChatStore.getState()
-    store.setHasKey(snapshot.hasKey)
-    store.setProvider(snapshot.provider)
-    if (snapshot.provider) store.setProviderDraft(snapshot.provider as typeof store.providerDraft)
-    if (snapshot.preferences?.defaultMode) store.setMode(snapshot.preferences.defaultMode)
-    void getIde()
-      .models.list()
-      .then((models: ModelOption[]) => {
-        store.setModels(models)
-        const matching = snapshot.provider
-          ? models.filter((model) => model.provider === snapshot.provider)
-          : models
-        const selected =
-          matching.find((model) => model.id === snapshot.defaultModelId) ?? matching[0]
-        if (selected) store.setModel(selected.id, selected.label)
-      })
+    void applySettingsSnapshot(snapshot)
   }, [settingsQuery.data])
 
   useEffect(() => {
@@ -197,14 +182,26 @@ export async function decidePendingApproval(decision: "allow" | "deny" | "allow_
 export async function saveApiKey() {
   const store = useChatStore.getState()
   if (!store.apiKeyDraft.trim()) return
-  await getIde().settings.saveSecret({
+  const snapshot = (await getIde().settings.saveSecret({
     provider: store.providerDraft,
     apiKey: store.apiKeyDraft.trim()
-  })
-  store.setHasKey(true)
-  store.setProvider(store.providerDraft)
+  })) as SettingsSnapshot
   store.setApiKeyDraft("")
   store.setError(null)
+  await applySettingsSnapshot(snapshot)
+}
+
+export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
+  const store = useChatStore.getState()
+  store.setHasKey(snapshot.hasKey)
+  store.setProvider(snapshot.provider)
+  if (snapshot.provider) store.setProviderDraft(snapshot.provider)
+  if (snapshot.preferences?.defaultMode) store.setMode(snapshot.preferences.defaultMode)
+  if (!hasIde()) return
+  const models = (await getIde().models.list()) as ModelOption[]
+  store.setModels(models)
+  const selected = models.find((model) => model.id === snapshot.defaultModelId) ?? models[0]
+  if (selected) store.setModel(selected.id, selected.label)
 }
 
 export async function openFolder() {

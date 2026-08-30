@@ -28,7 +28,13 @@ const ide = {
     get: () => ipcRenderer.invoke("settings.get"),
     saveSecret: (input: unknown) => ipcRenderer.invoke("settings.saveSecret", input),
     setDefaultModel: (modelId: string) => ipcRenderer.invoke("settings.setDefaultModel", modelId),
-    setPreferences: (input: unknown) => ipcRenderer.invoke("settings.setPreferences", input)
+    setPreferences: (input: unknown) => ipcRenderer.invoke("settings.setPreferences", input),
+    listProviders: () => ipcRenderer.invoke("settings.listProviders"),
+    presets: () => ipcRenderer.invoke("settings.presets"),
+    upsertProvider: (input: unknown) => ipcRenderer.invoke("settings.upsertProvider", input),
+    removeProvider: (id: string) => ipcRenderer.invoke("settings.removeProvider", id),
+    activateProvider: (id: string) => ipcRenderer.invoke("settings.activateProvider", id),
+    probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input)
   },
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),

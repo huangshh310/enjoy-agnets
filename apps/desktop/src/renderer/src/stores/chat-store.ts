@@ -65,7 +65,7 @@ export type ChatStore = {
   thinkingLabel: string
   settingsOpen: string | false
   apiKeyDraft: string
-  providerDraft: "deepseek" | "openai" | "anthropic" | "openrouter" | "ollama"
+  providerDraft: string
   hasKey: boolean
   selectedFilePath: string | null
   selectedFileContent: string
@@ -81,7 +81,7 @@ export type ChatStore = {
   setRightTab: (tab: ChatStore["rightTab"]) => void
   setSettingsOpen: (open: ChatStore["settingsOpen"]) => void
   setApiKeyDraft: (value: string) => void
-  setProviderDraft: (value: ChatStore["providerDraft"]) => void
+  setProviderDraft: (value: string) => void
   setSidebarCollapsed: (collapsed: boolean) => void
   toggleExpanded: (id: string) => void
   applyStreamEvent: (event: StreamEvent) => void

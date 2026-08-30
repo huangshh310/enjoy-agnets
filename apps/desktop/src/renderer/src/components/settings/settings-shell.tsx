@@ -14,6 +14,7 @@ export function SettingsShell() {
       searchPlaceholder="Search settings..."
       groups={SETTINGS_NAV}
       selectedId={section}
+      contentWidth="wide"
       onSelect={(id) => void navigate({ to: "/settings/$section", params: { section: id } })}
     >
       <Outlet />

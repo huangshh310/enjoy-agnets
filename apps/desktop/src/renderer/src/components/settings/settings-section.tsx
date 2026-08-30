@@ -2,9 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useParams } from "@tanstack/react-router"
 import { ThemeToggle } from "@/components/application/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Kbd, KbdGroup } from "@/components/ui/kbd"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -14,9 +12,10 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
-import { openFolder, saveApiKey } from "@renderer/hooks/use-agent-session"
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { ProviderSettings } from "./providers/providers-settings"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { findSettingsItem, isSettingsSectionId, type SettingsSectionId } from "./settings-catalog"
 import { SettingsCard, SettingsComingSoon, SettingsRow } from "./settings-row"
 
@@ -180,62 +179,6 @@ function ShortcutSettings() {
           <ShortcutKeys keys={shortcut.keys} />
         </SettingsRow>
       ))}
-    </SettingsCard>
-  )
-}
-
-function ProviderSettings() {
-  const queryClient = useQueryClient()
-  const hasKey = useChatStore((state) => state.hasKey)
-  const apiKeyDraft = useChatStore((state) => state.apiKeyDraft)
-  const setApiKeyDraft = useChatStore((state) => state.setApiKeyDraft)
-  const providerDraft = useChatStore((state) => state.providerDraft)
-  const setProviderDraft = useChatStore((state) => state.setProviderDraft)
-
-  async function onSave() {
-    await saveApiKey()
-    await queryClient.invalidateQueries({ queryKey: ["settings"] })
-  }
-
-  return (
-    <SettingsCard title="API key">
-      <div className="flex flex-col gap-4 px-5 py-4">
-        <p className="text-caption-1-medium text-text-secondary">
-          Keys stay in the main process via OS encryption. The renderer never reads the raw secret after save.
-        </p>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-caption-1-medium text-text-secondary">Provider</Label>
-          <Select value={providerDraft} onValueChange={(value) => setProviderDraft(value as typeof providerDraft)}>
-            <SelectTrigger className="h-10 w-full rounded-2lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="deepseek">DeepSeek</SelectItem>
-              <SelectItem value="openai">OpenAI compatible</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="openrouter">OpenRouter</SelectItem>
-              <SelectItem value="ollama">Ollama</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-caption-1-medium text-text-secondary">API key</Label>
-          <Input
-            type="password"
-            value={apiKeyDraft}
-            onChange={(event) => setApiKeyDraft(event.target.value)}
-            placeholder={hasKey ? "Key saved — paste to replace" : "sk-..."}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <p className="text-caption-1-medium text-text-tertiary">
-            {hasKey ? "A key is saved for this provider." : "No key saved yet."}
-          </p>
-          <Button size="sm" disabled={!apiKeyDraft.trim()} onClick={() => void onSave()}>
-            Save key
-          </Button>
-        </div>
-      </div>
     </SettingsCard>
   )
 }

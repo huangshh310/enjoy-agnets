@@ -79,6 +79,7 @@ catalog:
   '@radix-ui/react-use-controllable-state': ^1.2.6
   streamdown: ^2.6.0
   nanoid: ^6.0.1
+  '@lobehub/icons': ^5.16.0
 
 allowBuilds:
   electron: true

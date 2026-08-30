@@ -47,6 +47,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/index.ts")
         },
         {
+          find: "@enjoy-agents/providers/presets",
+          replacement: resolve(repoRoot, "packages/providers/src/presets.ts")
+        },
+        {
           find: "next/link",
           replacement: resolve(uiRoot, "shims/next-link.tsx")
         },

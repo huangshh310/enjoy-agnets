@@ -5,10 +5,19 @@ import {
   ReadFileInput,
   SaveSecretInput,
   SetPreferencesInput,
+  ProbeProviderInput,
+  UpsertProviderInput,
   UpsertAutomationInput,
   type Automation
 } from "@enjoy-agents/ipc-contract"
-import { MODEL_CATALOG } from "@enjoy-agents/providers"
+import {
+  PROVIDER_PRESETS,
+  isApiStyle,
+  modelsForProvider,
+  presetFor,
+  probeProvider,
+  type ProviderKind
+} from "@enjoy-agents/providers"
 import {
   abortAgent,
   createSession,
@@ -19,7 +28,18 @@ import {
 } from "./services/agent-runner"
 import { getSetting, setSetting } from "./services/database"
 import { createId } from "./services/ids"
-import { hasSecret, readSecret, saveSecret } from "./services/secrets"
+import {
+  activateProfile,
+  getActiveProfile,
+  hasSecret,
+  listPublicProviders,
+  publicModelsFor,
+  readSecret,
+  readVault,
+  removeProfile,
+  saveSecret,
+  upsertProfile
+} from "./services/secrets"
 import {
   changedFiles,
   getWorkspace,
@@ -64,6 +84,25 @@ function writeAutomations(automations: Automation[]): void {
   setSetting("automations", JSON.stringify(automations))
 }
 
+function asKind(value: string): ProviderKind {
+  return value as ProviderKind
+}
+
+async function settingsSnapshot() {
+  const secret = await readSecret()
+  const active = await getActiveProfile()
+  const ready = await hasSecret()
+  return {
+    hasKey: ready,
+    provider: secret?.provider ?? null,
+    baseURL: secret?.baseURL ?? null,
+    defaultModelId: active?.modelId || getSetting("defaultModelId") || "deepseek-chat",
+    lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
+    providers: await listPublicProviders(),
+    preferences: readPreferences()
+  }
+}
+
 function windowFromEvent(event: IpcMainInvokeEvent): BrowserWindow {
   const fromSender = BrowserWindow.fromWebContents(event.sender)
   if (!fromSender || fromSender.isDestroyed()) {
@@ -88,6 +127,12 @@ const CHANNELS = [
   "settings.saveSecret",
   "settings.setDefaultModel",
   "settings.setPreferences",
+  "settings.listProviders",
+  "settings.upsertProvider",
+  "settings.removeProvider",
+  "settings.activateProvider",
+  "settings.probeProvider",
+  "settings.presets",
   "automations.list",
   "automations.upsert",
   "automations.remove",
@@ -129,23 +174,30 @@ export function registerIpc(_window: BrowserWindow) {
   ipcMain.handle("agent.decide", (event, raw) => decideApproval(windowFromEvent(event), raw))
 
   ipcMain.handle("settings.get", async () => {
-    const secret = await readSecret()
-    return {
-      hasKey: Boolean(secret),
-      provider: secret?.provider ?? null,
-      baseURL: secret?.baseURL ?? null,
-      defaultModelId: getSetting("defaultModelId") ?? "deepseek-chat",
-      lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
-      preferences: readPreferences()
-    }
+    return settingsSnapshot()
   })
   ipcMain.handle("settings.saveSecret", async (_event, raw) => {
     const input = SaveSecretInput.parse(raw)
-    await saveSecret(input)
-    return { ok: true, hasKey: await hasSecret() }
+    await saveSecret({
+      provider: asKind(input.provider),
+      apiKey: input.apiKey,
+      baseURL: input.baseURL,
+      modelId: input.modelId
+    })
+    return settingsSnapshot()
   })
   ipcMain.handle("settings.setDefaultModel", async (_event, modelId: string) => {
     setSetting("defaultModelId", modelId)
+    const active = await getActiveProfile()
+    if (active) {
+      await upsertProfile({
+        id: active.id,
+        name: active.name,
+        kind: active.kind,
+        modelId,
+        activate: true
+      })
+    }
     return { ok: true }
   })
   ipcMain.handle("settings.setPreferences", async (_event, raw) => {
@@ -153,6 +205,49 @@ export function registerIpc(_window: BrowserWindow) {
     const next = { ...readPreferences(), ...patch }
     setSetting("preferences", JSON.stringify(next))
     return { ok: true, preferences: next }
+  })
+  ipcMain.handle("settings.listProviders", async () => listPublicProviders())
+  ipcMain.handle("settings.presets", async () => PROVIDER_PRESETS)
+  ipcMain.handle("settings.upsertProvider", async (_event, raw) => {
+    const input = UpsertProviderInput.parse(raw)
+    await upsertProfile({
+      id: input.id,
+      name: input.name,
+      kind: asKind(input.kind),
+      apiKey: input.apiKey,
+      baseURL: input.baseURL,
+      modelId: input.modelId,
+      apiStyle: input.apiStyle,
+      activate: input.activate
+    })
+    return settingsSnapshot()
+  })
+  ipcMain.handle("settings.removeProvider", async (_event, id: string) => {
+    await removeProfile(id)
+    return settingsSnapshot()
+  })
+  ipcMain.handle("settings.activateProvider", async (_event, id: string) => {
+    await activateProfile(id)
+    return settingsSnapshot()
+  })
+  ipcMain.handle("settings.probeProvider", async (_event, raw) => {
+    const input = ProbeProviderInput.parse(raw)
+    const vault = await readVault()
+    const stored = input.id ? vault.profiles.find((profile) => profile.id === input.id) : undefined
+    const kind = asKind(input.kind)
+    const apiKey = input.apiKey?.trim() ? input.apiKey.trim() : stored?.apiKey ?? ""
+    const baseURL = input.baseURL ?? stored?.baseURL ?? presetFor(kind).defaultBaseURL
+    return probeProvider({
+      provider: kind,
+      apiKey,
+      baseURL,
+      modelId: input.modelId || stored?.modelId,
+      apiStyle: isApiStyle(input.apiStyle)
+        ? input.apiStyle
+        : isApiStyle(stored?.apiStyle)
+          ? stored.apiStyle
+          : presetFor(kind).apiStyle
+    })
   })
   ipcMain.handle("automations.list", async () => readAutomations())
   ipcMain.handle("automations.upsert", async (_event, raw) => {
@@ -177,7 +272,15 @@ export function registerIpc(_window: BrowserWindow) {
     writeAutomations(readAutomations().filter((item) => item.id !== id))
     return { ok: true }
   })
-  ipcMain.handle("models.list", async () => MODEL_CATALOG)
+  ipcMain.handle("models.list", async () => {
+    const active = await getActiveProfile()
+    if (active) return publicModelsFor(active)
+    return modelsForProvider("deepseek").map((model) => ({
+      id: model.id,
+      label: model.label,
+      provider: "deepseek"
+    }))
+  })
 }
 
 export function unregisterIpc() {
