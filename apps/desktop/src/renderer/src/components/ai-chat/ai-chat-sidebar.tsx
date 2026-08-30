@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
+import { useNavigate } from "@tanstack/react-router"
 
 type IconComponent = ComponentType<{
   className?: string
@@ -35,7 +36,6 @@ export function AiChatSidebar({
   onSelectSession,
   onNewSession,
   onOpenWorkspace,
-  onOpenSettings,
   formatTime
 }: {
   userName: string
@@ -48,11 +48,11 @@ export function AiChatSidebar({
   onSelectSession: (id: string) => void
   onNewSession: () => void
   onOpenWorkspace: () => void
-  onOpenSettings: () => void
   formatTime: (timestamp: number) => string
 }) {
   const roots = repositories.filter((node) => node.kind === "workspace")
   const initials = userName.slice(0, 1).toUpperCase()
+  const navigate = useNavigate()
 
   return (
     <aside
@@ -100,8 +100,18 @@ export function AiChatSidebar({
         <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
           <SidebarAction collapsed={collapsed} icon={RiAddLine} label="New agent" onClick={onNewSession} />
           <SidebarAction collapsed={collapsed} icon={RiFolder6Line} label="Open folder" onClick={onOpenWorkspace} />
-          <SidebarAction collapsed={collapsed} icon={RiGridLine} label="Automations" />
-          <SidebarAction collapsed={collapsed} icon={RiEqualizer3Line} label="Customize" />
+          <SidebarAction
+            collapsed={collapsed}
+            icon={RiGridLine}
+            label="Automations"
+            onClick={() => void navigate({ to: "/automations" })}
+          />
+          <SidebarAction
+            collapsed={collapsed}
+            icon={RiEqualizer3Line}
+            label="Customize"
+            onClick={() => void navigate({ to: "/customize/$section", params: { section: "instructions" } })}
+          />
         </nav>
 
         {collapsed ? null : (
@@ -164,7 +174,12 @@ export function AiChatSidebar({
         {collapsed ? <ThemeToggle collapsed /> : <ThemeToggle appearance="sidebar-segmented" />}
         <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
           <SidebarAction collapsed={collapsed} icon={RiCustomerServiceLine} label="Support" />
-          <SidebarAction collapsed={collapsed} icon={RiSettings4Line} label="Settings" onClick={onOpenSettings} />
+          <SidebarAction
+            collapsed={collapsed}
+            icon={RiSettings4Line}
+            label="Settings"
+            onClick={() => void navigate({ to: "/settings/$section", params: { section: "general" } })}
+          />
         </nav>
         <div className={cx("flex items-center rounded-xl", collapsed ? "w-9 justify-center" : "w-full gap-2 bg-background-tertiary-default py-2 pr-2 pl-2.5")}>
           <Avatar className="size-8">

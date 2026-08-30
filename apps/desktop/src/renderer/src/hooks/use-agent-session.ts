@@ -54,6 +54,7 @@ export function useAgentSession() {
     store.setHasKey(snapshot.hasKey)
     store.setProvider(snapshot.provider)
     if (snapshot.provider) store.setProviderDraft(snapshot.provider as typeof store.providerDraft)
+    if (snapshot.preferences?.defaultMode) store.setMode(snapshot.preferences.defaultMode)
     void getIde()
       .models.list()
       .then((models: ModelOption[]) => {
@@ -152,7 +153,9 @@ export async function sendComposerMessage() {
     return
   }
   if (!store.hasKey) {
-    store.setSettingsOpen("keys")
+    void import("../router").then(({ router }) => {
+      void router.navigate({ to: "/settings/$section", params: { section: "providers" } })
+    })
     store.setError("Add a provider API key in Settings before running an agent.")
     return
   }
@@ -201,7 +204,6 @@ export async function saveApiKey() {
   store.setHasKey(true)
   store.setProvider(store.providerDraft)
   store.setApiKeyDraft("")
-  store.setSettingsOpen(false)
   store.setError(null)
 }
 

@@ -15,22 +15,18 @@ import {
   decidePendingApproval,
   openChangedFile,
   openFolder,
-  saveApiKey,
   selectPersistedSession,
   sendComposerMessage,
   startPersistedSession,
-  useAgentSession
 } from "@renderer/hooks/use-agent-session"
 import { contextUsed, formatNodeTime, useChatStore } from "@renderer/stores/chat-store"
 import { AiChatChangesPanel } from "./ai-chat-changes-panel"
 import { AiChatComposer } from "./ai-chat-composer"
-import { AiChatKeysDialog } from "./ai-chat-keys-dialog"
 import { AiChatSidebar } from "./ai-chat-sidebar"
 import { AiChatStatusBar } from "./ai-chat-status-bar"
 import { AiChatThread } from "./ai-chat-thread"
 
 export function AiChatShell() {
-  useAgentSession()
   const userName = useChatStore((state) => state.userName)
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
@@ -63,13 +59,6 @@ export function AiChatShell() {
   const deletions = useChatStore((state) => state.deletions)
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const selectedFileContent = useChatStore((state) => state.selectedFileContent)
-  const setSettingsOpen = useChatStore((state) => state.setSettingsOpen)
-  const settingsOpen = useChatStore((state) => state.settingsOpen)
-  const apiKeyDraft = useChatStore((state) => state.apiKeyDraft)
-  const setApiKeyDraft = useChatStore((state) => state.setApiKeyDraft)
-  const providerDraft = useChatStore((state) => state.providerDraft)
-  const setProviderDraft = useChatStore((state) => state.setProviderDraft)
-  const hasKey = useChatStore((state) => state.hasKey)
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
     id: "enjoy-agents-chat-split",
     storage: window.localStorage
@@ -92,7 +81,6 @@ export function AiChatShell() {
         onSelectSession={(id) => void selectPersistedSession(id)}
         onNewSession={() => void startPersistedSession()}
         onOpenWorkspace={() => void openFolder()}
-        onOpenSettings={() => setSettingsOpen("keys")}
         formatTime={formatNodeTime}
       />
       <Group
@@ -177,16 +165,6 @@ export function AiChatShell() {
           />
         </Panel>
       </Group>
-      <AiChatKeysDialog
-        open={settingsOpen === "keys"}
-        apiKeyDraft={apiKeyDraft}
-        providerDraft={providerDraft}
-        hasKey={hasKey}
-        onApiKeyChange={setApiKeyDraft}
-        onProviderChange={setProviderDraft}
-        onClose={() => setSettingsOpen(false)}
-        onSave={() => void saveApiKey()}
-      />
     </div>
   )
 }

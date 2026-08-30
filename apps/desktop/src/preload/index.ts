@@ -27,7 +27,13 @@ const ide = {
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),
     saveSecret: (input: unknown) => ipcRenderer.invoke("settings.saveSecret", input),
-    setDefaultModel: (modelId: string) => ipcRenderer.invoke("settings.setDefaultModel", modelId)
+    setDefaultModel: (modelId: string) => ipcRenderer.invoke("settings.setDefaultModel", modelId),
+    setPreferences: (input: unknown) => ipcRenderer.invoke("settings.setPreferences", input)
+  },
+  automations: {
+    list: () => ipcRenderer.invoke("automations.list"),
+    upsert: (input: unknown) => ipcRenderer.invoke("automations.upsert", input),
+    remove: (id: string) => ipcRenderer.invoke("automations.remove", id)
   },
   models: {
     list: () => ipcRenderer.invoke("models.list")

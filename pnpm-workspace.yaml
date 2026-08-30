@@ -63,6 +63,7 @@ catalog:
 
   # TanStack
   "@tanstack/react-query": ^5.90.0
+  "@tanstack/react-router": ^1.132.0
 
   # Editor / workspace
   monaco-editor: ^0.56.0

@@ -30,6 +30,7 @@
     "@internationalized/date": "catalog:",
     "@remixicon/react": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "@tanstack/react-router": "catalog:",
     "ai": "catalog:",
     "motion": "catalog:",
     "react": "catalog:",

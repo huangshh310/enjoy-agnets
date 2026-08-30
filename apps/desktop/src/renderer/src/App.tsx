@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { AiChatShell } from "@renderer/components/ai-chat/ai-chat-shell"
+import { RouterProvider } from "@tanstack/react-router"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { router } from "@renderer/router"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,7 +16,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AiChatShell />
+        <RouterProvider router={router} />
       </TooltipProvider>
     </QueryClientProvider>
   )

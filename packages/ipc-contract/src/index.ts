@@ -144,9 +144,47 @@ export const SettingsSnapshot = z.object({
   provider: z.string().nullable(),
   baseURL: z.string().nullable(),
   defaultModelId: z.string(),
-  lastWorkspaceId: z.string().nullable()
+  lastWorkspaceId: z.string().nullable(),
+  preferences: z.object({
+    requireWriteApproval: z.boolean(),
+    requireBashApproval: z.boolean(),
+    language: z.enum(["auto", "en", "zh"]),
+    defaultMode: AgentMode,
+    customInstructions: z.string()
+  })
 });
 export type SettingsSnapshot = z.infer<typeof SettingsSnapshot>;
+
+export const SetPreferencesInput = z.object({
+  requireWriteApproval: z.boolean().optional(),
+  requireBashApproval: z.boolean().optional(),
+  language: z.enum(["auto", "en", "zh"]).optional(),
+  defaultMode: AgentMode.optional(),
+  customInstructions: z.string().optional()
+});
+export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>;
+
+export const AutomationTrigger = z.enum(["manual", "on_save"]);
+export type AutomationTrigger = z.infer<typeof AutomationTrigger>;
+
+export const Automation = z.object({
+  id: z.string(),
+  name: z.string(),
+  prompt: z.string(),
+  trigger: AutomationTrigger,
+  enabled: z.boolean(),
+  updatedAt: z.number()
+});
+export type Automation = z.infer<typeof Automation>;
+
+export const UpsertAutomationInput = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  prompt: z.string(),
+  trigger: AutomationTrigger,
+  enabled: z.boolean().default(true)
+});
+export type UpsertAutomationInput = z.infer<typeof UpsertAutomationInput>;
 
 export const FileEntry = z.object({
   name: z.string(),

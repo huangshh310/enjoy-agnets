@@ -146,6 +146,10 @@ Asymmetry is mandatory: rail is a separate floating object; chat is wider than C
 
 The split between chat and Changes is a **gap in the canvas** (12px hit area), not a hairline drawn on a shared white card.
 
+**Settings is a route, not a modal.** Hash URL `#/settings/general` (and `#/settings/providers`, etc.). Layout matches desktop AI IDEs (Codex / Cursor): a mist nav column with Back to app + search + grouped rows, and a white `rounded-3xl` content card. Settings rows live in bordered inner cards (title, description, control on the right). `Ctrl+,` opens General; Escape returns to the workspace.
+
+**Automations and Customize are the same kind of route.** `#/automations` is the job list (create / enable / delete). `#/customize/instructions` covers always-on notes; Skills and Rules are later loaders for `.agents/skills` and project rules. Sidebar items must navigate, never no-op buttons. Escape returns to the workspace from any of these pages.
+
 ---
 
 ## 7. Component Stylings
