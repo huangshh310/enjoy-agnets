@@ -1,13 +1,18 @@
 /**
- * 供应商高级请求覆盖：
- * 1. 自定义请求头 Headers (JSON)
- * 2. 自定义请求体 Body 覆盖 (JSON)
- * 3. 底层预设模板关联切换
+ * 供应商高级请求覆盖与参数注入：
+ * 1. 自定义请求头 Headers (JSON 代码卡片、快捷模板注入、一键格式化)
+ * 2. 自定义请求体 Body 覆盖 (JSON 代码卡片、常用参数模板、一键格式化)
+ * 3. 底层预设模板关联与基线能力继承
  */
-import { useState, type ReactNode } from "react"
-import { RiCodeSSlashLine } from "@remixicon/react"
+import { useState } from "react"
+import {
+  RiBracesLine,
+  RiCodeSSlashLine,
+  RiErrorWarningLine,
+  RiInformationLine,
+  RiServerLine
+} from "@remixicon/react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -20,6 +25,7 @@ import {
   PROVIDER_PRESETS,
   type ProviderKind
 } from "@enjoy-agents/providers/presets"
+import { ProviderIcon } from "./provider-icons"
 import type { EditorState } from "./providers.types"
 
 export function ProviderOverridesTab({
@@ -44,7 +50,7 @@ export function ProviderOverridesTab({
       if (field === "customHeaders") setHeaderError(null)
       else setBodyError(null)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Invalid JSON"
+      const msg = e instanceof Error ? e.message : "Invalid JSON format"
       if (field === "customHeaders") setHeaderError(msg)
       else setBodyError(msg)
     }
@@ -52,7 +58,9 @@ export function ProviderOverridesTab({
 
   function insertHeaderTemplate(key: string, value: string) {
     try {
-      const current = editor.customHeaders?.trim() ? JSON.parse(editor.customHeaders) : {}
+      const current = editor.customHeaders?.trim()
+        ? JSON.parse(editor.customHeaders)
+        : {}
       current[key] = value
       onChange({ customHeaders: JSON.stringify(current, null, 2) })
       setHeaderError(null)
@@ -62,25 +70,54 @@ export function ProviderOverridesTab({
     }
   }
 
+  function insertBodyTemplate(key: string, value: unknown) {
+    try {
+      const current = editor.customBody?.trim()
+        ? JSON.parse(editor.customBody)
+        : {}
+      current[key] = value
+      onChange({ customBody: JSON.stringify(current, null, 2) })
+      setBodyError(null)
+    } catch {
+      onChange({ customBody: JSON.stringify({ [key]: value }, null, 2) })
+      setBodyError(null)
+    }
+  }
+
+  const selectedPreset = PROVIDER_PRESETS.find((p) => p.kind === editor.kind)
+
   return (
     <div className="flex flex-col gap-5 py-1">
-      {/* 自定义 Headers 注入 */}
-      <Field
-        label="Custom HTTP Headers (JSON)"
-        hint="Injected into upstream API requests"
-        action={
-          <div className="flex items-center gap-1.5">
+      {/* 自定义 HTTP Headers 代码卡片 */}
+      <div className="rounded-xl border border-border-button-default bg-background-primary-default overflow-hidden shadow-xs">
+        {/* 卡片头部与工具栏 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-separator-border bg-background-secondary-default/40 px-3.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <RiBracesLine className="size-4 text-accent-600 shrink-0" />
+            <div>
+              <span className="text-caption-1-semibold text-text-primary block leading-tight">
+                Custom HTTP Headers (JSON)
+              </span>
+              <span className="text-[11px] text-text-tertiary">
+                Injected into all upstream requests
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
             <button
               type="button"
               onClick={() => insertHeaderTemplate("X-Title", "Enjoy Agents")}
-              className="text-caption-1-medium text-accent-600 hover:underline"
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
             >
               + X-Title
             </button>
             <button
               type="button"
-              onClick={() => insertHeaderTemplate("HTTP-Referer", "https://enjoy-agents.ai")}
-              className="text-caption-1-medium text-accent-600 hover:underline"
+              onClick={() =>
+                insertHeaderTemplate("HTTP-Referer", "https://enjoy-agents.ai")
+              }
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
             >
               + OpenRouter Referer
             </button>
@@ -89,109 +126,158 @@ export function ProviderOverridesTab({
               size="xs"
               variant="outline"
               onClick={() => formatJson("customHeaders")}
-              className="h-6 gap-1 px-2 text-caption-1-medium"
+              disabled={!editor.customHeaders?.trim()}
+              className="h-6 gap-1 rounded-md px-2 text-[11px] font-medium"
             >
-              <RiCodeSSlashLine className="size-3" />
+              <RiCodeSSlashLine className="size-3 text-accent-500" />
               Format
             </Button>
           </div>
-        }
-      >
-        <Textarea
-          value={editor.customHeaders ?? ""}
-          onChange={(e) => {
-            onChange({ customHeaders: e.target.value })
-            setHeaderError(null)
-          }}
-          placeholder={'{\n  "X-Custom-Provider": "custom-gateway",\n  "User-Agent": "EnjoyAgents/1.0"\n}'}
-          rows={4}
-          className="font-mono text-[12px] bg-background-primary-default"
-        />
+        </div>
+
+        {/* Textarea 编辑区 */}
+        <div className="p-2.5">
+          <Textarea
+            value={editor.customHeaders ?? ""}
+            onChange={(e) => {
+              onChange({ customHeaders: e.target.value })
+              setHeaderError(null)
+            }}
+            placeholder={'{\n  "X-Custom-Provider": "custom-gateway",\n  "User-Agent": "EnjoyAgents/1.0"\n}'}
+            rows={4}
+            className="font-mono text-[12px] leading-relaxed resize-none border-0 bg-transparent p-1 focus-visible:ring-0 shadow-none text-text-primary placeholder:text-text-placeholder"
+          />
+        </div>
+
+        {/* 错误提示栏 */}
         {headerError ? (
-          <p className="text-caption-1-medium text-text-error-primary">{headerError}</p>
+          <div className="flex items-center gap-1.5 border-t border-state-error-text/20 bg-state-error-text/5 px-3 py-1.5 text-caption-1-medium text-text-error-primary">
+            <RiErrorWarningLine className="size-3.5 shrink-0" />
+            <span className="truncate">{headerError}</span>
+          </div>
         ) : null}
-      </Field>
+      </div>
 
-      {/* 自定义 Body 参数覆盖 */}
-      <Field
-        label="Custom Body Overrides (JSON)"
-        hint="Additional request body parameters"
-        action={
-          <Button
-            type="button"
-            size="xs"
-            variant="outline"
-            onClick={() => formatJson("customBody")}
-            className="h-6 gap-1 px-2 text-caption-1-medium"
-          >
-            <RiCodeSSlashLine className="size-3" />
-            Format
-          </Button>
-        }
-      >
-        <Textarea
-          value={editor.customBody ?? ""}
-          onChange={(e) => {
-            onChange({ customBody: e.target.value })
-            setBodyError(null)
-          }}
-          placeholder={'{\n  "top_p": 0.9,\n  "frequency_penalty": 0.2\n}'}
-          rows={3}
-          className="font-mono text-[12px] bg-background-primary-default"
-        />
+      {/* 自定义 Body Overrides 代码卡片 */}
+      <div className="rounded-xl border border-border-button-default bg-background-primary-default overflow-hidden shadow-xs">
+        {/* 卡片头部与工具栏 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-separator-border bg-background-secondary-default/40 px-3.5 py-2.5">
+          <div className="flex items-center gap-2">
+            <RiCodeSSlashLine className="size-4 text-accent-600 shrink-0" />
+            <div>
+              <span className="text-caption-1-semibold text-text-primary block leading-tight">
+                Custom Body Overrides (JSON)
+              </span>
+              <span className="text-[11px] text-text-tertiary">
+                Merged into model request body payloads
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => insertBodyTemplate("top_p", 0.9)}
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
+            >
+              + top_p
+            </button>
+            <button
+              type="button"
+              onClick={() => insertBodyTemplate("frequency_penalty", 0.2)}
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
+            >
+              + penalty
+            </button>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => formatJson("customBody")}
+              disabled={!editor.customBody?.trim()}
+              className="h-6 gap-1 rounded-md px-2 text-[11px] font-medium"
+            >
+              <RiCodeSSlashLine className="size-3 text-accent-500" />
+              Format
+            </Button>
+          </div>
+        </div>
+
+        {/* Textarea 编辑区 */}
+        <div className="p-2.5">
+          <Textarea
+            value={editor.customBody ?? ""}
+            onChange={(e) => {
+              onChange({ customBody: e.target.value })
+              setBodyError(null)
+            }}
+            placeholder={'{\n  "top_p": 0.9,\n  "frequency_penalty": 0.2\n}'}
+            rows={3}
+            className="font-mono text-[12px] leading-relaxed resize-none border-0 bg-transparent p-1 focus-visible:ring-0 shadow-none text-text-primary placeholder:text-text-placeholder"
+          />
+        </div>
+
+        {/* 错误提示栏 */}
         {bodyError ? (
-          <p className="text-caption-1-medium text-text-error-primary">{bodyError}</p>
+          <div className="flex items-center gap-1.5 border-t border-state-error-text/20 bg-state-error-text/5 px-3 py-1.5 text-caption-1-medium text-text-error-primary">
+            <RiErrorWarningLine className="size-3.5 shrink-0" />
+            <span className="truncate">{bodyError}</span>
+          </div>
         ) : null}
-      </Field>
+      </div>
 
-      {/* 底层预设模板关联 */}
-      <Field
-        label="Underlying Preset Reference"
-        hint="Used for default documentation and baseline configurations"
-      >
+      {/* 底层预设参考基准 */}
+      <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3.5 flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-text-primary">
+            <RiServerLine className="size-4 text-accent-500" />
+            <span className="text-caption-1-semibold text-text-primary">
+              Underlying Preset Reference
+            </span>
+          </div>
+          <span className="text-[11px] text-text-tertiary">
+            Baseline configurations & docs
+          </span>
+        </div>
+
         <Select
           value={editor.kind}
           onValueChange={(value) => onChangeKind(value as ProviderKind)}
         >
-          <SelectTrigger className="h-9 w-full rounded-2lg bg-background-primary-default">
-            <SelectValue />
+          <SelectTrigger className="h-9 w-full rounded-xl bg-background-primary-default text-[13px]">
+            <SelectValue>
+              <div className="flex items-center gap-2">
+                <ProviderIcon
+                  kind={editor.kind}
+                  name={editor.name}
+                  apiStyle={editor.apiStyle}
+                  size={16}
+                />
+                <span className="font-medium text-text-primary">
+                  {selectedPreset?.name ?? editor.kind}
+                </span>
+              </div>
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {PROVIDER_PRESETS.map((item) => (
               <SelectItem key={item.kind} value={item.kind}>
-                {item.name}
+                <div className="flex items-center gap-2">
+                  <ProviderIcon kind={item.kind} size={16} />
+                  <span>{item.name}</span>
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </Field>
-    </div>
-  )
-}
 
-function Field({
-  label,
-  hint,
-  action,
-  children
-}: {
-  label: string
-  hint?: string
-  action?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Label className="text-caption-1-medium text-text-secondary">{label}</Label>
-          {hint ? (
-            <span className="text-caption-1-medium text-text-tertiary">({hint})</span>
-          ) : null}
-        </div>
-        {action}
+        <p className="text-[11px] text-text-tertiary flex items-center gap-1">
+          <RiInformationLine className="size-3 text-text-tertiary shrink-0" />
+          <span>
+            Used for automatic protocol fallback, token limit defaults, and contextual help documentation.
+          </span>
+        </p>
       </div>
-      {children}
     </div>
   )
 }

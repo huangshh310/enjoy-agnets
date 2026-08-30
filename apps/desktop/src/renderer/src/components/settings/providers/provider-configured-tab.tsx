@@ -6,6 +6,7 @@ import { useMemo, useState } from "react"
 import {
   RiAddLine,
   RiCompass3Line,
+  RiPulseLine,
   RiSearchLine,
   RiServerLine
 } from "@remixicon/react"
@@ -15,9 +16,13 @@ import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 import { SettingsCard } from "../settings-row"
 import { ProviderIcon } from "./provider-icons"
 import { ProviderList } from "./provider-list"
+import type { PingStateMap } from "./use-provider-settings"
 
 export function ProviderConfiguredTab({
   providers,
+  pingStates,
+  onPing,
+  onPingAll,
   onEdit,
   onActivate,
   onRemove,
@@ -25,6 +30,9 @@ export function ProviderConfiguredTab({
   onExplorePresets
 }: {
   providers: ProviderPublic[]
+  pingStates?: PingStateMap
+  onPing?: (profile: ProviderPublic) => void
+  onPingAll?: () => void
   onEdit: (profile: ProviderPublic) => void
   onActivate: (id: string) => void
   onRemove: (id: string) => void
@@ -111,6 +119,20 @@ export function ProviderConfiguredTab({
             />
           </div>
 
+          {onPingAll && providers.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onPingAll}
+              className="rounded-xl border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary shrink-0"
+              title="Test ping latency for all configured providers"
+            >
+              <RiPulseLine className="size-3.5 mr-1 text-accent-500" />
+              Test Speed
+            </Button>
+          ) : null}
+
           <Button
             type="button"
             size="sm"
@@ -127,6 +149,8 @@ export function ProviderConfiguredTab({
       <SettingsCard title={`Configured Providers (${filteredProviders.length})`}>
         <ProviderList
           providers={filteredProviders}
+          pingStates={pingStates}
+          onPing={onPing}
           onEdit={onEdit}
           onActivate={onActivate}
           onRemove={onRemove}

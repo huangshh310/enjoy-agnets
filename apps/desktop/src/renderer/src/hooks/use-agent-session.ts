@@ -154,6 +154,7 @@ export async function sendComposerMessage() {
       workspaceId: store.workspaceId,
       modelId: store.modelId,
       mode: store.mode,
+      reasoningEffort: store.reasoningEffort,
       messages: messages.map((message) => ({
         role: message.role,
         content: message.content
@@ -203,10 +204,22 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const currentModelId = store.modelId
   const foundCurrent = models.find((m) => m.id === currentModelId)
   if (foundCurrent) {
-    store.setModel(foundCurrent.id, foundCurrent.label, foundCurrent.provider)
+    store.setModel(
+      foundCurrent.id,
+      foundCurrent.label,
+      foundCurrent.provider,
+      store.reasoningEffort ?? foundCurrent.reasoningEffort
+    )
   } else {
     const selected = models.find((model) => model.id === snapshot.defaultModelId) ?? models[0]
-    if (selected) store.setModel(selected.id, selected.label, selected.provider)
+    if (selected) {
+      store.setModel(
+        selected.id,
+        selected.label,
+        selected.provider,
+        store.reasoningEffort ?? selected.reasoningEffort
+      )
+    }
   }
 }
 

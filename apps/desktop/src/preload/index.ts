@@ -36,7 +36,8 @@ const ide = {
     activateProvider: (id: string) => ipcRenderer.invoke("settings.activateProvider", id),
     setActiveModel: (input: { providerId?: string; modelId: string }) =>
       ipcRenderer.invoke("settings.setActiveModel", input),
-    probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input)
+    probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input),
+    pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input)
   },
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),

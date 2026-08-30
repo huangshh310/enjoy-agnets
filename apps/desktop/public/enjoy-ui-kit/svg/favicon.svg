@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="enjoy favicon">
+  <rect width="32" height="32" rx="8" fill="#1B3A8A"/>
+  <path d="M18.2 15.7 C18.2 10.7 14.6 7.2 10.5 7.2 C6.4 7.2 3.1 10.7 3.1 15.7 C3.1 20.3 6.4 23.6 10.3 23.6" fill="none" stroke="#F4EFE6" stroke-width="3" stroke-linecap="round"/>
+  <path d="M4.3 15.7 H15.4" fill="none" stroke="#F4EFE6" stroke-width="3" stroke-linecap="round"/>
+  <path d="M21.1 7.0 V21.2 C21.1 26.0 17.8 28.4 13.7 28.4 C11.6 28.4 10.2 27.1 10.2 25.6" fill="none" stroke="#F4EFE6" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="21.1" cy="4.0" r="1.8" fill="#C4A574"/>
+</svg>

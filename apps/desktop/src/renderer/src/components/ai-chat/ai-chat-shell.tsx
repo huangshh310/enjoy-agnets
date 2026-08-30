@@ -67,7 +67,7 @@ export function AiChatShell() {
   })
 
   async function handleModelChange(model: ModelOption) {
-    setModel(model.id, model.label, model.provider)
+    setModel(model.id, model.label, model.provider, model.reasoningEffort)
     if (hasIde()) {
       try {
         const snapshot = (await getIde().settings.setActiveModel({

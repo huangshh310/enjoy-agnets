@@ -5,6 +5,7 @@ import { RiAddLine, RiArrowUpLine, RiMicLine } from "@remixicon/react"
 import { ComposerLoader } from "@/components/application/composer-loader/composer-loader"
 import type { ModelOption } from "@renderer/stores/chat-store"
 import { ModelPicker } from "./model-picker"
+import { ReasoningEffortToggle } from "./reasoning-effort-toggle"
 
 export function AiChatComposer({
   composer,
@@ -63,6 +64,8 @@ export function AiChatComposer({
             models={models}
             onModelChange={onModelChange}
           />
+
+          <ReasoningEffortToggle />
 
           <button
             type="button"

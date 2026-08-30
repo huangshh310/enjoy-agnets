@@ -13,11 +13,28 @@ export const ChatMessage = z.object({
 });
 export type ChatMessage = z.infer<typeof ChatMessage>;
 
+export const PingProviderInput = z.object({
+  id: z.string().optional(),
+  kind: z.string().min(1),
+  apiKey: z.string().optional(),
+  baseURL: z.string().optional(),
+  apiStyle: z.string().optional()
+});
+export type PingProviderInput = z.infer<typeof PingProviderInput>;
+
+export const PingResultSchema = z.object({
+  ok: z.boolean(),
+  latencyMs: z.number(),
+  message: z.string()
+});
+export type PingResultSchema = z.infer<typeof PingResultSchema>;
+
 export const RunAgentInput = z.object({
   sessionId: z.string(),
   workspaceId: z.string(),
   modelId: z.string(),
   mode: AgentMode.default("agent"),
+  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
   messages: z.array(ChatMessage)
 });
 export type RunAgentInput = z.infer<typeof RunAgentInput>;
@@ -204,7 +221,9 @@ export const ModelOption = z.object({
   apiStyle: z.string().optional(),
   active: z.boolean().optional(),
   isFast: z.boolean().optional(),
-  isReasoning: z.boolean().optional()
+  isReasoning: z.boolean().optional(),
+  supportsReasoning: z.boolean().optional(),
+  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional()
 });
 export type ModelOption = z.infer<typeof ModelOption>;
 

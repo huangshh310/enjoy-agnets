@@ -115,6 +115,9 @@ export function ProviderSettings() {
       {activeTab === "configured" ? (
         <ProviderConfiguredTab
           providers={settings.providers}
+          pingStates={settings.pingStates}
+          onPing={settings.testProviderPing}
+          onPingAll={settings.pingAllProviders}
           onEdit={settings.openEdit}
           onActivate={(id) => void settings.activate(id)}
           onRemove={(id) => void settings.remove(id)}

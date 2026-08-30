@@ -9,8 +9,14 @@ import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
 
+export type PingStateMap = Record<
+  string,
+  { status: "idle" | "pending" | "ok" | "error"; latencyMs?: number; message?: string }
+>
+
 export function useProviderSettings() {
   const queryClient = useQueryClient()
+  const [pingStates, setPingStates] = useState<PingStateMap>({})
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     enabled: hasIde(),
@@ -27,12 +33,53 @@ export function useProviderSettings() {
 
   useAutoFetchModels(session.editor, writes.fetchModels)
 
+  const testProviderPing = async (profile: ProviderPublic) => {
+    if (!hasIde()) return
+    setPingStates((prev) => ({
+      ...prev,
+      [profile.id]: { status: "pending", message: "Testing speed..." }
+    }))
+    try {
+      const res = (await getIde().settings.pingProvider({
+        id: profile.id,
+        kind: profile.kind,
+        baseURL: profile.baseURL,
+        apiStyle: profile.apiStyle
+      })) as { ok: boolean; latencyMs: number; message: string }
+      setPingStates((prev) => ({
+        ...prev,
+        [profile.id]: {
+          status: res.ok ? "ok" : "error",
+          latencyMs: res.latencyMs,
+          message: res.message
+        }
+      }))
+    } catch (err) {
+      setPingStates((prev) => ({
+        ...prev,
+        [profile.id]: {
+          status: "error",
+          message: err instanceof Error ? err.message : String(err)
+        }
+      }))
+    }
+  }
+
+  const pingAllProviders = async () => {
+    for (const p of providers) {
+      void testProviderPing(p)
+    }
+  }
+
   return {
     providers,
     editor: session.editor,
     probe: session.probe,
     preset,
     modelChoices,
+    pingStates,
+    testProviderPing,
+    pingAllProviders,
     canSave: canSaveEditor(session.editor, preset?.requiresKey ?? true),
     openCreate: session.openCreate,
     openEdit: session.openEdit,

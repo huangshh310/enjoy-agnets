@@ -381,8 +381,8 @@ The page decouples daily management from preset browsing via **top Segmented Vie
    - Quick `+ Custom /v1` action.
 
 2. **View A: `Configured` Tab**:
-   - **Metrics & Filter Bar**: Total configured count, active provider badge, total models count across all profiles, and quick real-time filter input.
-   - **Configured Providers List**: Compact rows with 24px brand icon, active status pill, protocol badge (`OpenAI Chat Completions`, `Messages`, etc.), model count badge (`10 models`), model ID, endpoint, key hint, and `In use`/`Use`, `Edit`, `Delete` actions.
+   - **Metrics & Filter Bar**: Total configured count, active provider badge, total models count across all profiles, **Test Speed (测速)** batch trigger, and quick real-time filter input.
+   - **Configured Providers List**: Compact rows with 24px brand icon, active status pill, protocol badge (`OpenAI Chat Completions`, `Messages`, etc.), model count badge (`10 models`), **Speed Test button & multi-state latency badge** (green `<500ms`, yellow `<1500ms`, red `>1500ms`/error), model ID, endpoint, key hint, and `In use`/`Use`, `Edit`, `Delete` actions.
    - **Empty State**: Elegant onboarding guide with shortcuts to popular providers (`DeepSeek`, `OpenAI`, `Claude`) and Custom Endpoints when no providers exist.
 
 3. **View B: `Explore Presets` Tab**:
@@ -398,18 +398,28 @@ Settings uses `contentWidth="wide"` so the grid survives both the default Electr
 | Tab | Owns |
 |---|---|
 | **Connection** | Display name, protocol / wire API, API key (OS keychain; renderer never re-reads plaintext), Base URL. |
-| **Models** | Primary model (combobox + Fetch remote `/models`), optional Fast / Reasoning role IDs, editable provider catalog (fetched + preset + user-added). |
+| **Models** | Primary model (combobox + Fetch remote `/models`), reasoning model auto-detection & effort selector, optional Fast / Reasoning role IDs, editable provider catalog (fetched + preset + user-added). |
 | **Parameters** | Context window (128K / 200K / 256K / 1M / 2M chips), reasoning effort (`low`…`xhigh`), max output tokens, temperature. |
 | **Overrides** | Custom HTTP headers JSON, custom body JSON (Format + template chips), underlying preset reference. |
 
 Save writes the vault via `settings.upsertProvider` and activates. Fetch / probe errors use `state/error` copy, not success-green. HTML-instead-of-JSON catalog responses surface as a readable endpoint error, not a raw parse dump.
 
-### Model catalog
+### Model catalog & Reasoning Mode Selector
 
 - Preset `models[]` is the offline default.
 - Fetch merges remote discovery on top; user can add / remove IDs.
-- Combobox (`Command` + `Popover`) uses BoardUI tokens: `bg-background-primary-default`, `border-separator-border` on the search hairline. No raw `bg-popover` black rules, no overlapping highlight boxes.
-- Typed-but-unknown IDs stay first-class (“use this ID”).
+- **Model Catalog Chips**: Each model chip in the catalog displays its corresponding `ModelBrandIcon`, supports clicking to quickly set as Primary Model with an active badge, and provides a quick delete action.
+- Combobox (`Command` + `Popover`) uses BoardUI tokens: `bg-background-primary-default`, `border-separator-border` on the search hairline. Both the trigger button and each dropdown list item render the model brand icon (`ModelBrandIcon`). No raw `bg-popover` black rules, no overlapping highlight boxes.
+- **Inference Mode & Thinking Budget (推理模式)**:
+  - Models tab automatically detects reasoning models (`DeepSeek-R1`, `o1`, `o3`, `QwQ`, `reasoner`, `thinking`).
+  - Allows specifying default reasoning effort (`low`, `medium`, `high`, `xhigh`) via a 5-column segmented control.
+  - Chat Composer features a dedicated `ReasoningEffortToggle` next to the Model Picker when a reasoning model is active, allowing users to toggle thinking depth on-the-fly (`Default`, `Low`, `Medium`, `Deep Reasoning`, `Maximum`).
+
+### Overrides Tab Design
+
+- **Code Block Editor Cards**: Custom HTTP Headers and Body Overrides are housed in dedicated code block cards with a structured header toolbar (title, explanation, quick template injection chips like `+ X-Title` / `+ OpenRouter Referer` / `+ top_p`, and a `Format` button).
+- **Error Feedback**: Inline syntax validation displays readable error banners at the bottom of the code card.
+- **Underlying Preset Reference**: Rich select dropdown with brand icon previews and baseline configuration inheritance details.
 
 ### Dual-pane Model Picker (`apps/desktop/src/renderer/src/components/ai-chat/model-picker/`)
 

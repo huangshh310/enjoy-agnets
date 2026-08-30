@@ -31,6 +31,73 @@ export async function discoverRemoteModels(config: {
   return fetchOpenAICatalog(baseURL, bearerHeaders(config.apiKey))
 }
 
+export type PingResult = {
+  ok: boolean
+  latencyMs: number
+  message: string
+}
+
+/**
+ * 测试与指定供应商端点的连通性与网络延迟 (Ping Speed Test)。
+ */
+export async function pingProviderEndpoint(config: {
+  provider: ProviderKind
+  apiKey?: string
+  baseURL: string
+  apiStyle?: ApiStyle
+}): Promise<PingResult> {
+  const preset = presetFor(config.provider)
+  const apiStyle = config.apiStyle ?? preset.apiStyle
+  const baseURL = normalizeBaseURL(config.baseURL || preset.defaultBaseURL)
+  const apiKey = config.apiKey || (preset.requiresKey ? "" : "ollama")
+
+  if (!baseURL) {
+    return { ok: false, latencyMs: 0, message: "No Base URL configured." }
+  }
+
+  const start = performance.now()
+  try {
+    const headers: Record<string, string> = { Accept: "application/json" }
+    if (apiKey) {
+      if (apiStyle === "anthropic") {
+        headers["x-api-key"] = apiKey
+        headers["anthropic-version"] = "2023-06-01"
+      } else {
+        headers.Authorization = `Bearer ${apiKey}`
+      }
+    }
+
+    const testUrl =
+      config.provider === "ollama"
+        ? `${baseURL.replace(/\/v1$/, "")}/api/tags`
+        : `${baseURL}/models`
+
+    const response = await fetch(testUrl, {
+      method: "GET",
+      headers,
+      signal: AbortSignal.timeout(8_000)
+    })
+
+    const latencyMs = Math.round(performance.now() - start)
+
+    if (response.ok) {
+      return { ok: true, latencyMs, message: `Connected (${latencyMs}ms)` }
+    }
+    if (response.status === 401 || response.status === 403) {
+      return { ok: true, latencyMs, message: `Reachable (${latencyMs}ms, HTTP ${response.status})` }
+    }
+    return { ok: false, latencyMs, message: `HTTP ${response.status} ${response.statusText}` }
+  } catch (error) {
+    const latencyMs = Math.round(performance.now() - start)
+    const errText = error instanceof Error ? error.message : String(error)
+    const message =
+      errText.includes("timeout") || errText.includes("aborted")
+        ? "Timeout (>8s)"
+        : errText
+    return { ok: false, latencyMs, message }
+  }
+}
+
 function bearerHeaders(apiKey: string): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/json" }
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`

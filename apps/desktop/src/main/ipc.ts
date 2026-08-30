@@ -5,6 +5,7 @@ import {
   ReadFileInput,
   SaveSecretInput,
   SetPreferencesInput,
+  PingProviderInput,
   ProbeProviderInput,
   UpsertProviderInput,
   UpsertAutomationInput,
@@ -13,6 +14,7 @@ import {
 import {
   PROVIDER_PRESETS,
   isApiStyle,
+  pingProviderEndpoint,
   presetFor,
   probeProvider,
   type ProviderKind
@@ -133,6 +135,7 @@ const CHANNELS = [
   "settings.activateProvider",
   "settings.setActiveModel",
   "settings.probeProvider",
+  "settings.pingProvider",
   "settings.presets",
   "automations.list",
   "automations.upsert",
@@ -256,6 +259,24 @@ export function registerIpc(_window: BrowserWindow) {
       apiKey,
       baseURL,
       modelId: input.modelId || stored?.modelId,
+      apiStyle: isApiStyle(input.apiStyle)
+        ? input.apiStyle
+        : isApiStyle(stored?.apiStyle)
+          ? stored.apiStyle
+          : presetFor(kind).apiStyle
+    })
+  })
+  ipcMain.handle("settings.pingProvider", async (_event, raw) => {
+    const input = PingProviderInput.parse(raw)
+    const vault = await readVault()
+    const stored = input.id ? vault.profiles.find((profile) => profile.id === input.id) : undefined
+    const kind = asKind(input.kind)
+    const apiKey = input.apiKey?.trim() ? input.apiKey.trim() : stored?.apiKey ?? ""
+    const baseURL = input.baseURL ?? stored?.baseURL ?? presetFor(kind).defaultBaseURL
+    return pingProviderEndpoint({
+      provider: kind,
+      apiKey,
+      baseURL,
       apiStyle: isApiStyle(input.apiStyle)
         ? input.apiStyle
         : isApiStyle(stored?.apiStyle)

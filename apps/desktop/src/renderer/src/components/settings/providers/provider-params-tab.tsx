@@ -5,13 +5,6 @@
 import type { ReactNode } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
 import { cx } from "@/utils/cx"
 import type { EditorState, ReasoningEffort } from "./providers.types"
 
@@ -67,28 +60,41 @@ export function ProviderParamsTab({
 
       {/* 推理强度 (针对 o1 / o3 / DeepSeek-R1 等) */}
       <Field
-        label="Reasoning Effort"
-        hint="Thinking budget for reasoning models"
+        label="Reasoning Effort / Thinking Budget"
+        hint="Thinking budget for reasoning models (DeepSeek-R1, o1, o3, QwQ)"
       >
-        <Select
-          value={editor.reasoningEffort ?? "none"}
-          onValueChange={(val) =>
-            onChange({
-              reasoningEffort: val === "none" ? undefined : (val as ReasoningEffort)
-            })
-          }
-        >
-          <SelectTrigger className="h-9 w-full rounded-2lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Default / Model Native</SelectItem>
-            <SelectItem value="low">Low (Fast)</SelectItem>
-            <SelectItem value="medium">Medium (Balanced)</SelectItem>
-            <SelectItem value="high">High (Deep reasoning)</SelectItem>
-            <SelectItem value="xhigh">X-High / Max (Complex tasks)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-5 gap-1 rounded-xl border border-border-button-default bg-background-tertiary-default/60 p-1">
+          {[
+            { value: "none", label: "Default" },
+            { value: "low", label: "Low" },
+            { value: "medium", label: "Medium" },
+            { value: "high", label: "High" },
+            { value: "xhigh", label: "Max" }
+          ].map((opt) => {
+            const current = editor.reasoningEffort ?? "none"
+            const isSelected = current === opt.value
+
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  onChange({
+                    reasoningEffort: opt.value === "none" ? undefined : (opt.value as ReasoningEffort)
+                  })
+                }
+                className={cx(
+                  "flex h-7.5 items-center justify-center rounded-lg text-[12px] transition-all outline-none",
+                  isSelected
+                    ? "bg-background-primary-default text-text-primary font-semibold shadow-xs border border-border-button-default/60"
+                    : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/50"
+                )}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
       </Field>
 
       {/* 最大输出 Tokens 与 温度 */}

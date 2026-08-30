@@ -47,6 +47,8 @@ export type ModelOption = {
   active?: boolean
   isFast?: boolean
   isReasoning?: boolean
+  supportsReasoning?: boolean
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh"
 }
 
 export type ChatStore = {
@@ -65,6 +67,7 @@ export type ChatStore = {
   modelLabel: string
   models: ModelOption[]
   provider: string | null
+  reasoningEffort: "low" | "medium" | "high" | "xhigh" | undefined
   mode: "agent" | "plan" | "ask" | "debug"
   running: boolean
   runId: string | null
@@ -82,7 +85,8 @@ export type ChatStore = {
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
   setComposer: (value: string) => void
-  setModel: (id: string, label: string, provider?: string) => void
+  setModel: (id: string, label: string, provider?: string, reasoningEffort?: "low" | "medium" | "high" | "xhigh") => void
+  setReasoningEffort: (effort: "low" | "medium" | "high" | "xhigh" | undefined) => void
   setMode: (mode: ChatStore["mode"]) => void
   setRightTab: (tab: ChatStore["rightTab"]) => void
   setSettingsOpen: (open: ChatStore["settingsOpen"]) => void
@@ -130,6 +134,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   modelLabel: "DeepSeek V4",
   models: [],
   provider: null,
+  reasoningEffort: undefined,
   mode: "agent",
   running: false,
   runId: null,
@@ -147,12 +152,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   pendingApproval: null,
   error: null,
   setComposer: (composer) => set({ composer }),
-  setModel: (modelId, modelLabel, provider) =>
+  setModel: (modelId, modelLabel, provider, effort) =>
     set({
       modelId,
       modelLabel,
-      ...(provider ? { provider } : {})
+      ...(provider ? { provider } : {}),
+      reasoningEffort: effort
     }),
+  setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
   setMode: (mode) => set({ mode }),
   setRightTab: (rightTab) => set({ rightTab }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),

@@ -21,18 +21,23 @@ import {
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cx } from "@/utils/cx"
+import { ModelBrandIcon } from "./provider-icons"
 import type { ProbeState } from "./providers.types"
 
 export function ProviderModelField({
   modelId,
   choices,
   probe,
+  providerKind,
+  apiStyle,
   onChange,
   onFetch
 }: {
   modelId: string
   choices: Array<{ id: string; label: string }>
   probe: ProbeState
+  providerKind?: string
+  apiStyle?: string
   onChange: (modelId: string) => void
   onFetch: () => void
 }) {
@@ -48,7 +53,13 @@ export function ProviderModelField({
       </div>
 
       <div className="flex gap-2">
-        <ModelCombobox value={modelId} choices={choices} onChange={onChange} />
+        <ModelCombobox
+          value={modelId}
+          choices={choices}
+          providerKind={providerKind}
+          apiStyle={apiStyle}
+          onChange={onChange}
+        />
         <Button
           type="button"
           size="sm"
@@ -70,10 +81,14 @@ export function ProviderModelField({
 function ModelCombobox({
   value,
   choices,
+  providerKind,
+  apiStyle,
   onChange
 }: {
   value: string
   choices: Array<{ id: string; label: string }>
+  providerKind?: string
+  apiStyle?: string
   onChange: (modelId: string) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -90,9 +105,24 @@ function ModelCombobox({
           variant="outline"
           className="h-9 min-w-0 flex-1 justify-between px-3 font-normal"
         >
-          <span className={cx("truncate font-mono text-[13px]", value ? "text-text-primary" : "text-text-placeholder")}>
-            {selected?.label ?? (value || "Select or enter a model ID")}
-          </span>
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex size-4.5 shrink-0 items-center justify-center">
+              <ModelBrandIcon
+                modelId={value}
+                providerKind={providerKind}
+                apiStyle={apiStyle}
+                size={16}
+              />
+            </div>
+            <span
+              className={cx(
+                "truncate font-mono text-[13px]",
+                value ? "text-text-primary" : "text-text-placeholder"
+              )}
+            >
+              {selected?.label ?? (value || "Select or enter a model ID")}
+            </span>
+          </div>
           <RiArrowDownSLine className="size-4 shrink-0 text-foreground-icon-secondary" />
         </Button>
       </PopoverTrigger>
@@ -114,6 +144,8 @@ function ModelCombobox({
             <ModelOptions
               choices={choices}
               typed={showTyped ? typed : ""}
+              providerKind={providerKind}
+              apiStyle={apiStyle}
               onPick={(id) => {
                 onChange(id)
                 setOpen(false)
@@ -130,10 +162,14 @@ function ModelCombobox({
 function ModelOptions({
   choices,
   typed,
+  providerKind,
+  apiStyle,
   onPick
 }: {
   choices: Array<{ id: string; label: string }>
   typed: string
+  providerKind?: string
+  apiStyle?: string
   onPick: (id: string) => void
 }) {
   return (
@@ -142,8 +178,14 @@ function ModelOptions({
         <CommandItem
           value={typed}
           onSelect={() => onPick(typed)}
-          className="cursor-pointer font-medium text-accent-600"
+          className="cursor-pointer font-medium text-accent-600 gap-2"
         >
+          <ModelBrandIcon
+            modelId={typed}
+            providerKind={providerKind}
+            apiStyle={apiStyle}
+            size={15}
+          />
           <span>Use custom ID: &quot;{typed}&quot;</span>
         </CommandItem>
       ) : null}
@@ -152,9 +194,19 @@ function ModelOptions({
           key={model.id}
           value={`${model.id} ${model.label}`}
           onSelect={() => onPick(model.id)}
-          className="cursor-pointer justify-between"
+          className="cursor-pointer justify-between gap-2"
         >
-          <span className="min-w-0 truncate font-mono text-[13px]">{model.id}</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex size-4 shrink-0 items-center justify-center">
+              <ModelBrandIcon
+                modelId={model.id}
+                providerKind={providerKind}
+                apiStyle={apiStyle}
+                size={15}
+              />
+            </div>
+            <span className="min-w-0 truncate font-mono text-[13px]">{model.id}</span>
+          </div>
           {model.label && model.label !== model.id ? (
             <span className="shrink-0 truncate text-caption-1-medium text-text-tertiary ml-2">
               {model.label}

@@ -144,7 +144,7 @@ export function ModelListPane({
                         Fast
                       </span>
                     ) : null}
-                    {model.isReasoning ? (
+                    {model.isReasoning || model.supportsReasoning ? (
                       <span className="inline-flex items-center gap-0.5 rounded bg-state-success-text/10 px-1 py-0.2 text-[9px] font-semibold text-state-success-text">
                         <RiBrainLine className="size-2.5" />
                         Thinking

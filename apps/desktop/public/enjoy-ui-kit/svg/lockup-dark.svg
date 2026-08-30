@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 280" width="980" height="280" role="img" aria-label="enjoy lockup dark">
+  <rect width="980" height="280" fill="#101018"/>
+  <g transform="translate(40,34)">
+    <svg x="0" y="0" width="212" height="212" viewBox="0 0 512 512">
+      <rect width="512" height="512" rx="118" fill="#1B3A8A"/>
+  <path d="M286 248 C286 168 232 116 168 116 C104 116 56 168 56 248 C56 320 100 372 156 372" fill="none" stroke="#F4EFE6" stroke-width="36" stroke-linecap="round"/>
+  <path d="M72 248 H244" fill="none" stroke="#F4EFE6" stroke-width="36" stroke-linecap="round"/>
+  <path d="M332 112 V348 C332 416 284 452 224 452 C192 452 172 434 172 414" fill="none" stroke="#F4EFE6" stroke-width="36" stroke-linecap="round"/>
+  <circle cx="332" cy="66" r="20" fill="#C4A574"/>
+    </svg>
+  </g>
+  <text x="290" y="168" font-family="Poppins, Helvetica, Arial, sans-serif" font-weight="800" font-size="92" letter-spacing="-3" fill="#EDE6DA">enjoy</text>
+  <text x="294" y="208" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="16" letter-spacing="4" fill="#8A8490">AGENT IDE</text>
+</svg>

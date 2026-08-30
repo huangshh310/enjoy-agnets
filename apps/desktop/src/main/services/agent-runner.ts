@@ -187,6 +187,7 @@ async function pumpStream(runId: string) {
 
   const { window, input, workspaceRoot, secret, abort, messages } = run
   try {
+    const effort = input.reasoningEffort ?? secret.reasoningEffort;
     const result = await streamCodingAgent({
       model: createLanguageModel({
         provider: secret.provider,
@@ -194,6 +195,7 @@ async function pumpStream(runId: string) {
         baseURL: secret.baseURL,
         modelId: input.modelId,
         apiStyle: secret.apiStyle,
+        reasoningEffort: effort,
         customHeaders: secret.customHeaders,
         customBody: secret.customBody
       }),

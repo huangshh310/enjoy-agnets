@@ -26,6 +26,8 @@ export {
   type ProviderPreset
 } from "./presets";
 
+export { pingProviderEndpoint, type PingResult } from "./discover";
+
 /** @deprecated Use ProviderKind. Kept so older call sites compile. */
 export type ProviderId = ProviderKind;
 
