@@ -168,6 +168,16 @@ function useProviderWrites(queryClient: QueryClient, session: EditorSession) {
     fetchModels: async () => {
       if (!editor || !hasIde()) return
       await runProviderProbe(editor, probe.models, setProbe, updateEditor)
+      if (editor.id) {
+        const providers = (await getIde().settings.listProviders()) as ProviderPublic[]
+        queryClient.setQueryData(["settings"], (prev: SettingsSnapshot | undefined) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            providers
+          }
+        })
+      }
     }
   }
 }
@@ -221,7 +231,8 @@ function applyProbeToEditor(
   }
   if (result.models && result.models.length > 0) {
     patch.models = result.models
-    if (!editor.modelId) {
+    // 如果当前选中的模型不在已拉取的真实模型列表中，则自动切换为第一个真实模型
+    if (!editor.modelId || !result.models.some((m) => m.id === editor.modelId)) {
       patch.modelId = result.models[0].id
     }
   }
@@ -243,9 +254,14 @@ function mergeModelChoices(editor: EditorState | null, discovered: Array<{ id: s
     }
   }
 
+  // 优先使用远端拉取或用户自定义的模型目录
   for (const m of discovered) addModel(m)
   for (const m of customModels) addModel(m)
-  for (const m of presetModels) addModel(m)
+
+  // 仅在完全没有拉取到或自定义任何模型时，才使用预设备选模型
+  if (merged.length === 0) {
+    for (const m of presetModels) addModel(m)
+  }
 
   if (editor?.modelId && !merged.some((item) => item.id === editor.modelId)) {
     merged.unshift({ id: editor.modelId, label: editor.modelId })

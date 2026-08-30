@@ -156,8 +156,19 @@ function hasVersionRoot(baseURL: string): boolean {
 }
 
 async function fetchOpenAIModels(baseURL: string, headers: Record<string, string>) {
-  const body = await getJson<{ data?: Array<{ id?: string }> }>(`${baseURL}/models`, headers)
-  return toCatalog(body.data?.map((item) => item.id))
+  const body = await getJson<{ data?: Array<{ id?: string; name?: string; display_name?: string }> }>(
+    `${baseURL}/models`,
+    headers
+  )
+  return (body.data ?? [])
+    .map((item) => item.id)
+    .filter((id): id is string => Boolean(id))
+    .slice(0, 100)
+    .map((id) => {
+      const item = body.data?.find((entry) => entry.id === id)
+      const label = item?.name || item?.display_name || id
+      return { id, label }
+    })
 }
 
 async function fetchAnthropicModels(baseURL: string, headers: Record<string, string>) {
@@ -173,13 +184,6 @@ async function fetchAnthropicModels(baseURL: string, headers: Record<string, str
       const label = body.data?.find((item) => item.id === id)?.display_name
       return { id, label: label || id }
     })
-}
-
-function toCatalog(ids: Array<string | undefined> | undefined): CatalogModel[] {
-  return (ids ?? [])
-    .filter((id): id is string => Boolean(id))
-    .slice(0, 80)
-    .map((id) => ({ id, label: id }))
 }
 
 async function getJson<T>(url: string, headers: Record<string, string>): Promise<T> {

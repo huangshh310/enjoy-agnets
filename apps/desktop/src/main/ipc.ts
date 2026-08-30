@@ -40,7 +40,8 @@ import {
   removeProfile,
   saveSecret,
   setActiveModel,
-  upsertProfile
+  upsertProfile,
+  writeVault
 } from "./services/secrets"
 import {
   changedFiles,
@@ -254,7 +255,7 @@ export function registerIpc(_window: BrowserWindow) {
     const kind = asKind(input.kind)
     const apiKey = input.apiKey?.trim() ? input.apiKey.trim() : stored?.apiKey ?? ""
     const baseURL = input.baseURL ?? stored?.baseURL ?? presetFor(kind).defaultBaseURL
-    return probeProvider({
+    const result = await probeProvider({
       provider: kind,
       apiKey,
       baseURL,
@@ -265,6 +266,15 @@ export function registerIpc(_window: BrowserWindow) {
           ? stored.apiStyle
           : presetFor(kind).apiStyle
     })
+    if (result.ok && result.models.length > 0 && stored) {
+      stored.models = result.models
+      if (result.resolvedBaseURL) stored.baseURL = result.resolvedBaseURL
+      if (!result.models.some((m) => m.id === stored.modelId)) {
+        stored.modelId = result.models[0].id
+      }
+      await writeVault(vault)
+    }
+    return result
   })
   ipcMain.handle("settings.pingProvider", async (_event, raw) => {
     const input = PingProviderInput.parse(raw)
