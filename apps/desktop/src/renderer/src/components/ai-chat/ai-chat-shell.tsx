@@ -89,17 +89,17 @@ export function AiChatShell() {
         onOpenSettings={() => setSettingsOpen("keys")}
         formatTime={formatNodeTime}
       />
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
-        {workspaceId ? (
-          <Group
-            id="enjoy-agents-chat-split"
-            orientation="horizontal"
-            className="h-full min-w-0 flex-1 overflow-hidden"
-            defaultLayout={defaultLayout}
-            onLayoutChanged={onLayoutChanged}
-          >
-            <Panel id="chat" minSize="360px" defaultSize="62%">
-              <main className="flex h-full min-h-0 min-w-0 flex-col">
+      <Group
+        id="enjoy-agents-chat-split"
+        orientation="horizontal"
+        className="h-full min-h-0 min-w-0 flex-1"
+        defaultLayout={defaultLayout}
+        onLayoutChanged={onLayoutChanged}
+      >
+        <Panel id="chat" minSize="360px" defaultSize="62%" className="min-h-0 bg-transparent">
+          <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
+            {workspaceId ? (
+              <>
                 <header className="flex h-12 shrink-0 items-center gap-2 px-5">
                   <RiFolder6Line className="size-4 text-foreground-icon-secondary" aria-hidden />
                   <Breadcrumb>
@@ -136,34 +136,34 @@ export function AiChatShell() {
                   onToggleMode={() => setMode(mode === "agent" ? "ask" : "agent")}
                   contextUsed={contextUsed(messages)}
                 />
-              </main>
-            </Panel>
-            <Separator className="relative z-10 w-3 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-separator-border hover:after:bg-accent-400 data-[active]:after:bg-accent-500" />
-            <Panel id="changes" minSize="280px" defaultSize="38%">
-              <AiChatChangesPanel
-                rightTab={rightTab}
-                onRightTabChange={setRightTab}
-                changes={changes}
-                additions={additions}
-                deletions={deletions}
-                selectedFilePath={selectedFilePath}
-                selectedFileContent={selectedFileContent}
-                onSelectFile={(path) => void openChangedFile(path)}
-              />
-            </Panel>
-          </Group>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-            <p className="text-title-3-semibold text-text-primary">Open a workspace</p>
-            <p className="max-w-sm text-body-medium text-text-secondary">
-              Enjoy Agents only runs against a folder you choose. Pick a project to load sessions and git changes.
-            </p>
-            <Button variant="primary" onClick={() => void openFolder()}>
-              Open folder
-            </Button>
-          </div>
-        )}
-      </div>
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
+                <p className="text-title-3-semibold text-text-primary">Open a workspace</p>
+                <p className="max-w-sm text-body-medium text-text-secondary">
+                  Enjoy Agents only runs against a folder you choose. Pick a project to load sessions and git changes.
+                </p>
+                <Button variant="primary" onClick={() => void openFolder()}>
+                  Open folder
+                </Button>
+              </div>
+            )}
+          </main>
+        </Panel>
+        <Separator className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-[active]:after:bg-accent-500" />
+        <Panel id="changes" minSize="280px" defaultSize="38%" className="min-h-0 bg-transparent">
+          <AiChatChangesPanel
+            rightTab={rightTab}
+            onRightTabChange={setRightTab}
+            changes={changes}
+            additions={additions}
+            deletions={deletions}
+            selectedFilePath={selectedFilePath}
+            selectedFileContent={selectedFileContent}
+            onSelectFile={(path) => void openChangedFile(path)}
+          />
+        </Panel>
+      </Group>
       <AiChatKeysDialog
         open={settingsOpen === "keys"}
         apiKeyDraft={apiKeyDraft}

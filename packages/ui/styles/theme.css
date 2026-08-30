@@ -184,7 +184,10 @@
   --color-text-white:           var(--color-white);
 
   /* Background */
-  --color-background-full:              var(--color-white);
+  /* Canvas behind floating cards. Neutral-100 (#f7f7f7) so white
+   * rounded-3xl panels keep a visible 24px corner in light mode.
+   * Dark mode keeps the darker 925 canvas below. */
+  --color-background-full:              var(--color-neutral-100);
   --color-background-primary-default:   var(--color-white);
   --color-background-inner-default:     var(--color-white);
   --color-background-primary-hover:     var(--color-neutral-100);

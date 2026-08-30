@@ -27,7 +27,7 @@ export function AiChatChangesPanel({
   onSelectFile: (path: string) => void
 }) {
   return (
-    <section className="flex h-full min-w-0 flex-col bg-background-primary-default">
+    <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <PillTabList>
           <PillTab variant="blue" icon={RiCodeBlock} isSelected={rightTab === "changes"} onSelect={() => onRightTabChange("changes")}>

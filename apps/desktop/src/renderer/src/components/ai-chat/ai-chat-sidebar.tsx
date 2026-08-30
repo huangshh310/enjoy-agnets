@@ -1,5 +1,6 @@
 "use client"
 
+import { type ComponentType, type ReactNode } from "react"
 import {
   RiAddLine,
   RiCustomerServiceLine,
@@ -17,6 +18,11 @@ import { Button } from "@/components/base/buttons/button"
 import { Kbd } from "@/components/base/kbd/kbd"
 import { cx } from "@/utils/cx"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
+
+type IconComponent = ComponentType<{
+  className?: string
+  "aria-hidden"?: boolean | "true" | "false"
+}>
 
 export function AiChatSidebar({
   userName,
@@ -51,13 +57,15 @@ export function AiChatSidebar({
   return (
     <aside
       className={cx(
-        "flex h-full shrink-0 flex-col justify-between overflow-hidden rounded-3xl border border-border-button-white bg-background-secondary-default p-3 shadow-sidebar",
-        collapsed ? "w-[60px]" : "w-[260px]"
+        "flex h-full shrink-0 flex-col justify-between overflow-hidden rounded-3xl border border-border-button-white bg-background-secondary-default shadow-sidebar transition-[width] duration-300 ease-in-out",
+        collapsed ? "w-[60px] px-[11px] py-3" : "w-[260px] p-3"
       )}
     >
       <div className="-m-2 flex min-h-0 w-[calc(100%+16px)] flex-col gap-3 overflow-y-auto p-2 [scrollbar-width:none]">
-        <div className="flex w-full items-center justify-between">
-          <DashboardUserMenu collapsed={collapsed} name={userName} initials={initials} />
+        <div className={cx("flex w-full transition-[gap] duration-300 ease-in-out", collapsed ? "flex-col-reverse items-start justify-center gap-2.5" : "flex-row items-center justify-between")}>
+          <div className="-m-2 min-w-0 overflow-hidden p-2">
+            <DashboardUserMenu collapsed={collapsed} name={userName} initials={initials} />
+          </div>
           <button
             type="button"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -68,25 +76,36 @@ export function AiChatSidebar({
           </button>
         </div>
 
+        <button
+          type="button"
+          aria-label="Quick Search"
+          title={collapsed ? "Quick Search" : undefined}
+          onClick={() => {
+            if (collapsed) onToggleCollapsed()
+          }}
+          className={cx(
+            "flex cursor-pointer items-center bg-background-tertiary-default transition-[width,border-radius] duration-300 ease-in-out",
+            collapsed ? "size-9 justify-center rounded-2lg" : "w-full gap-2 rounded-full p-2"
+          )}
+        >
+          <RiSearchLine className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+          <Collapsible collapsed={collapsed} className="flex-1">
+            <span className="flex-1 text-left text-body-medium whitespace-nowrap text-text-secondary">Quick Search</span>
+          </Collapsible>
+          <Collapsible collapsed={collapsed}>
+            <Kbd>⌘L</Kbd>
+          </Collapsible>
+        </button>
+
+        <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
+          <SidebarAction collapsed={collapsed} icon={RiAddLine} label="New agent" onClick={onNewSession} />
+          <SidebarAction collapsed={collapsed} icon={RiFolder6Line} label="Open folder" onClick={onOpenWorkspace} />
+          <SidebarAction collapsed={collapsed} icon={RiGridLine} label="Automations" />
+          <SidebarAction collapsed={collapsed} icon={RiEqualizer3Line} label="Customize" />
+        </nav>
+
         {collapsed ? null : (
-          <>
-            <button
-              type="button"
-              className="flex w-full cursor-pointer items-center gap-2 rounded-full bg-background-tertiary-default p-2"
-            >
-              <RiSearchLine className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
-              <span className="flex-1 text-left text-body-medium text-text-secondary">Quick Search</span>
-              <Kbd>⌘L</Kbd>
-            </button>
-
-            <nav className="flex w-full flex-col gap-1 px-0.5">
-              <SidebarAction icon={RiAddLine} label="New agent" onClick={onNewSession} />
-              <SidebarAction icon={RiFolder6Line} label="Open folder" onClick={onOpenWorkspace} />
-              <SidebarAction icon={RiGridLine} label="Automations" />
-              <SidebarAction icon={RiEqualizer3Line} label="Customize" />
-            </nav>
-
-            <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
               <p className="px-2 pt-1 text-body-medium text-text-secondary">Repositories</p>
               {roots.length === 0 ? (
                 <p className="px-2 text-caption-1-medium text-text-tertiary">
@@ -138,20 +157,19 @@ export function AiChatSidebar({
                 )
               })}
             </div>
-          </>
         )}
       </div>
 
-      <div className="flex w-full shrink-0 flex-col gap-3 pt-3">
+      <div className={cx("flex w-full shrink-0 flex-col gap-3 pt-3", collapsed && "items-center")}>
         {collapsed ? <ThemeToggle collapsed /> : <ThemeToggle appearance="sidebar-segmented" />}
-        {collapsed ? null : (
-          <>
-            <nav className="flex w-full flex-col gap-1">
-              <SidebarAction icon={RiCustomerServiceLine} label="Support" />
-              <SidebarAction icon={RiSettings4Line} label="Settings" onClick={onOpenSettings} />
-            </nav>
-            <div className="flex w-full items-center gap-2 rounded-xl bg-background-tertiary-default py-2 pr-2 pl-2.5">
-              <Avatar size="md" color="blue" initials="E" />
+        <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
+          <SidebarAction collapsed={collapsed} icon={RiCustomerServiceLine} label="Support" />
+          <SidebarAction collapsed={collapsed} icon={RiSettings4Line} label="Settings" onClick={onOpenSettings} />
+        </nav>
+        <div className={cx("flex items-center rounded-xl", collapsed ? "w-9 justify-center" : "w-full gap-2 bg-background-tertiary-default py-2 pr-2 pl-2.5")}>
+          <Avatar size="md" color="blue" initials="E" />
+          {collapsed ? null : (
+            <>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-body-medium text-text-primary">Enjoy Agents</p>
                 <p className="truncate text-body-regular text-text-secondary">Local first</p>
@@ -159,9 +177,9 @@ export function AiChatSidebar({
               <Button size="xs" variant="primary" className="shrink-0" onClick={onOpenWorkspace}>
                 Folder
               </Button>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </aside>
   )
@@ -170,21 +188,52 @@ export function AiChatSidebar({
 function SidebarAction({
   icon: Icon,
   label,
-  onClick
+  onClick,
+  collapsed = false
 }: {
-  icon: typeof RiAddLine
+  icon: IconComponent
   label: string
   onClick?: () => void
+  collapsed?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-2lg p-2 text-left hover:bg-background-secondary-hover"
+      aria-label={label}
+      title={collapsed ? label : undefined}
+      className={cx(
+        "flex items-center overflow-hidden rounded-2lg p-2 text-left transition-[width,background-color] duration-300 ease-in-out hover:bg-background-secondary-hover",
+        collapsed ? "w-9 justify-center" : "w-full gap-2"
+      )}
     >
-      <Icon className="size-5 text-foreground-icon-secondary" aria-hidden />
-      <span className="text-body-medium text-text-secondary">{label}</span>
+      <Icon className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+      <Collapsible collapsed={collapsed}>
+        <span className="text-body-medium whitespace-nowrap text-text-secondary">{label}</span>
+      </Collapsible>
     </button>
+  )
+}
+
+function Collapsible({
+  collapsed,
+  children,
+  className
+}: {
+  collapsed: boolean
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <span
+      className={cx(
+        "flex min-w-0 items-center overflow-hidden transition-[max-width,opacity,filter] duration-300 ease-in-out",
+        collapsed ? "max-w-0 opacity-0 blur-[3px]" : "max-w-40 opacity-100 blur-0",
+        className
+      )}
+    >
+      {children}
+    </span>
   )
 }
 
