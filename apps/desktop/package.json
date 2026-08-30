@@ -33,6 +33,7 @@
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "ai": "catalog:",
+    "border-beam": "catalog:",
     "motion": "catalog:",
     "react": "catalog:",
     "react-aria-components": "catalog:",

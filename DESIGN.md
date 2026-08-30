@@ -22,7 +22,7 @@ Hierarchy is whispered: elevation over color, weight over size. Selected session
 
 Live agent work is the only place motion is allowed to persist: composer rim light, thinking indicator, tree-guide draw. Idle chrome is still.
 
-**Signature:** the **pill composer** — a 28px-radius tertiary trough with a raised white plus chip on the left and a 32px accent send disc on the right. It is the product's verb. Every agent screen must include it, never a rectangular textarea.
+**Signature:** the **BorderBeam card composer** — a 22px-radius frosted container with a colorful animated BorderBeam rim light on focus/active/running, containing an adaptive multi-line textarea, quick context chips, inline execution mode selector (Agent / Ask / Plan / Debug), multi-provider ModelPicker with Lobe brand icons, and Reasoning Energy Bar toggle.
 
 ---
 

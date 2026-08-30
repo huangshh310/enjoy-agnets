@@ -80,6 +80,7 @@ catalog:
   streamdown: ^2.6.0
   nanoid: ^6.0.1
   '@lobehub/icons': ^5.16.0
+  border-beam: ^1.3.0
 
 allowBuilds:
   electron: true

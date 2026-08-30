@@ -1,16 +1,12 @@
 "use client"
 
-import { RiArrowDownSLine, RiFolder6Line, RiGitBranchLine, RiInfinityLine } from "@remixicon/react"
+import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
 
 export function AiChatStatusBar({
   workspaceRootLabel,
-  mode,
-  onToggleMode,
   contextUsed
 }: {
   workspaceRootLabel: string
-  mode: "agent" | "plan" | "ask" | "debug"
-  onToggleMode: () => void
   contextUsed: number
 }) {
   return (
@@ -23,15 +19,6 @@ export function AiChatStatusBar({
         <RiFolder6Line className="size-3.5" aria-hidden />
         {workspaceRootLabel}
       </span>
-      <button
-        type="button"
-        onClick={onToggleMode}
-        className="inline-flex items-center gap-1 rounded-full px-1 hover:bg-background-secondary-hover"
-      >
-        <RiInfinityLine className="size-3.5" aria-hidden />
-        {mode === "agent" ? "Agent" : "Ask"}
-        <RiArrowDownSLine className="size-3.5" aria-hidden />
-      </button>
       <span className="ml-auto inline-flex items-center gap-2">
         <ContextRing value={contextUsed} />
         {contextUsed}%

@@ -52,8 +52,6 @@ export function AiChatShell() {
   const modelLabel = useChatStore((state) => state.modelLabel)
   const models = useChatStore((state) => state.models)
   const setModel = useChatStore((state) => state.setModel)
-  const mode = useChatStore((state) => state.mode)
-  const setMode = useChatStore((state) => state.setMode)
   const rightTab = useChatStore((state) => state.rightTab)
   const setRightTab = useChatStore((state) => state.setRightTab)
   const changes = useChatStore((state) => state.changes)
@@ -146,8 +144,6 @@ export function AiChatShell() {
                 />
                 <AiChatStatusBar
                   workspaceRootLabel={workspaceRootLabel}
-                  mode={mode}
-                  onToggleMode={() => setMode(mode === "agent" ? "ask" : "agent")}
                   contextUsed={contextUsed(messages)}
                 />
               </>

@@ -9,3 +9,5 @@ export { ThemeToggle } from "../components/application/theme/theme-toggle"
 export { AgentThinking } from "../components/application/agent-thinking/agent-thinking"
 export { ComposerLoader } from "../components/application/composer-loader/composer-loader"
 export { PillTab, PillTabList } from "../components/base/tabs/pill-tab"
+export { BorderBeam } from "../components/ui/border-beam"
+
