@@ -5,8 +5,6 @@
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
     "src/preload/*.d.ts",
-    "components/**/*",
-    "utils/**/*",
     "src/renderer/src/shims/**/*"
   ],
   "compilerOptions": {
@@ -14,9 +12,10 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["../../packages/ui/*"],
       "@renderer/*": ["src/renderer/src/*"],
-      "next/link": ["src/renderer/src/shims/next-link.tsx"]
+      "@enjoy-agents/ui": ["../../packages/ui/src/index.ts"],
+      "next/link": ["../../packages/ui/shims/next-link.tsx"]
     }
   }
 }

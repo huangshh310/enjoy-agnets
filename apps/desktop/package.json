@@ -25,6 +25,7 @@
     "@enjoy-agents/editor": "workspace:*",
     "@enjoy-agents/ipc-contract": "workspace:*",
     "@enjoy-agents/providers": "workspace:*",
+    "@enjoy-agents/ui": "workspace:*",
     "@fontsource-variable/inter": "catalog:",
     "@fontsource-variable/jetbrains-mono": "catalog:",
     "@internationalized/date": "catalog:",

@@ -2,6 +2,9 @@
 
 Local-first Agent IDE: Electron + React 19 + BoardUI + Vercel AI SDK 7.
 
+BoardUI lives in `packages/ui` (tokens, base components, agent primitives).
+The desktop app under `apps/desktop` owns Electron, IPC, and the AI Chat shell.
+
 ## Stack
 
 See `electron-agents-ide-tech-stack.md`.

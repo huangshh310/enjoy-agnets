@@ -2,7 +2,6 @@
 @import "./theme.css";
 @import "./typography.css";
 
-@source "../src/renderer/src/**/*.{ts,tsx}";
 @source "../components/**/*.{ts,tsx}";
 @source "../utils/**/*.{ts,tsx}";
 

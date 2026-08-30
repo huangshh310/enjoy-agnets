@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { AiChatShell } from "@/components/application/ai-chat/ai-chat-shell"
+import { AiChatShell } from "@renderer/components/ai-chat/ai-chat-shell"
 
 const queryClient = new QueryClient({
   defaultOptions: {

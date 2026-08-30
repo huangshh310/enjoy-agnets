@@ -1,7 +1,11 @@
-import { resolve } from "node:path";
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
-import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { resolve } from "node:path"
+import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
+import { defineConfig, externalizeDepsPlugin } from "electron-vite"
+
+const desktopRoot = import.meta.dirname
+const repoRoot = resolve(desktopRoot, "../..")
+const uiRoot = resolve(repoRoot, "packages/ui")
 
 export default defineConfig({
   main: {
@@ -17,10 +21,10 @@ export default defineConfig({
     ],
     resolve: {
       alias: {
-        "@enjoy-agents/ipc-contract": resolve("../../packages/ipc-contract/src/index.ts"),
-        "@enjoy-agents/db": resolve("../../packages/db/src/index.ts"),
-        "@enjoy-agents/providers": resolve("../../packages/providers/src/index.ts"),
-        "@enjoy-agents/agent-core": resolve("../../packages/agent-core/src/index.ts")
+        "@enjoy-agents/ipc-contract": resolve(repoRoot, "packages/ipc-contract/src/index.ts"),
+        "@enjoy-agents/db": resolve(repoRoot, "packages/db/src/index.ts"),
+        "@enjoy-agents/providers": resolve(repoRoot, "packages/providers/src/index.ts"),
+        "@enjoy-agents/agent-core": resolve(repoRoot, "packages/agent-core/src/index.ts")
       }
     }
   },
@@ -29,19 +33,38 @@ export default defineConfig({
   },
   renderer: {
     resolve: {
-      alias: {
-        "@": resolve("."),
-        "@renderer": resolve("src/renderer/src"),
-        "@enjoy-agents/ipc-contract": resolve("../../packages/ipc-contract/src/index.ts"),
-        "@enjoy-agents/editor": resolve("../../packages/editor/src/index.ts"),
-        "next/link": resolve("src/renderer/src/shims/next-link.tsx")
-      }
+      alias: [
+        {
+          find: "@renderer",
+          replacement: resolve(desktopRoot, "src/renderer/src")
+        },
+        {
+          find: /^@enjoy-agents\/ui$/,
+          replacement: resolve(uiRoot, "src/index.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/index.ts")
+        },
+        {
+          find: "@enjoy-agents/editor",
+          replacement: resolve(repoRoot, "packages/editor/src/index.ts")
+        },
+        {
+          find: "next/link",
+          replacement: resolve(uiRoot, "shims/next-link.tsx")
+        },
+        {
+          find: /^@\//,
+          replacement: `${uiRoot.replace(/\\/g, "/")}/`
+        }
+      ]
     },
     plugins: [react(), tailwindcss()],
     server: {
       fs: {
-        allow: [resolve("../..")]
+        allow: [repoRoot]
       }
     }
   }
-});
+})
