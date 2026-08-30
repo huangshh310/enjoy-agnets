@@ -57,6 +57,7 @@ function useEditorSession() {
     },
     openEdit: (profile: ProviderPublic) => {
       setProbe(IDLE_PROBE)
+      const preset = presetFor(profile.kind as ProviderKind)
       setEditor({
         id: profile.id,
         kind: profile.kind as ProviderKind,
@@ -66,7 +67,16 @@ function useEditorSession() {
         modelId: profile.modelId,
         apiStyle: isApiStyle(profile.apiStyle)
           ? profile.apiStyle
-          : presetFor(profile.kind as ProviderKind).apiStyle
+          : preset.apiStyle,
+        fastModelId: profile.fastModelId || "",
+        reasoningModelId: profile.reasoningModelId || "",
+        contextWindow: profile.contextWindow ?? 128000,
+        maxTokens: profile.maxTokens ?? 4096,
+        temperature: profile.temperature ?? 0.7,
+        reasoningEffort: profile.reasoningEffort,
+        customHeaders: profile.customHeaders || "",
+        customBody: profile.customBody || "",
+        models: profile.models && profile.models.length > 0 ? profile.models : [...preset.models]
       })
     },
     closeEditor: () => {
@@ -162,8 +172,11 @@ function applyProbeToEditor(
   if (result.resolvedBaseURL && result.resolvedBaseURL !== normalizeInputUrl(editor.baseURL)) {
     patch.baseURL = result.resolvedBaseURL
   }
-  if (result.models[0] && !editor.modelId) {
-    patch.modelId = result.models[0].id
+  if (result.models && result.models.length > 0) {
+    patch.models = result.models
+    if (!editor.modelId) {
+      patch.modelId = result.models[0].id
+    }
   }
   if (Object.keys(patch).length > 0) updateEditor(patch)
 }
@@ -173,11 +186,20 @@ function normalizeInputUrl(value: string) {
 }
 
 function mergeModelChoices(editor: EditorState | null, discovered: Array<{ id: string; label: string }>) {
+  const customModels = editor?.models ?? []
   const presetModels = presetFor(editor?.kind ?? "custom").models
-  const merged = [...discovered]
-  for (const model of presetModels) {
-    if (!merged.some((item) => item.id === model.id)) merged.push(model)
+  const merged: Array<{ id: string; label: string }> = []
+
+  const addModel = (model: { id: string; label: string }) => {
+    if (!merged.some((item) => item.id === model.id)) {
+      merged.push(model)
+    }
   }
+
+  for (const m of discovered) addModel(m)
+  for (const m of customModels) addModel(m)
+  for (const m of presetModels) addModel(m)
+
   if (editor?.modelId && !merged.some((item) => item.id === editor.modelId)) {
     merged.unshift({ id: editor.modelId, label: editor.modelId })
   }

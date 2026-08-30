@@ -45,7 +45,7 @@ export function ProviderEditorDialog({
   return (
     <Dialog open={Boolean(editor && preset)} onOpenChange={(open) => { if (!open) onClose() }}>
       {editor && preset ? (
-        <DialogContent className="sm:max-w-lg overflow-hidden rounded-2xl p-6" showCloseButton>
+        <DialogContent className="sm:max-w-xl overflow-hidden rounded-2xl p-6" showCloseButton>
           <EditorDialogForm
             editor={editor}
             preset={preset}

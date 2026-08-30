@@ -4,6 +4,8 @@
  */
 import { presetFor, type ApiStyle, type ProviderKind } from "@enjoy-agents/providers/presets"
 
+export type ReasoningEffort = "low" | "medium" | "high" | "xhigh"
+
 export type EditorState = {
   id?: string
   kind: ProviderKind
@@ -12,6 +14,15 @@ export type EditorState = {
   baseURL: string
   modelId: string
   apiStyle: ApiStyle
+  fastModelId?: string
+  reasoningModelId?: string
+  contextWindow?: number
+  maxTokens?: number
+  temperature?: number
+  reasoningEffort?: ReasoningEffort
+  customHeaders?: string
+  customBody?: string
+  models?: Array<{ id: string; label: string }>
 }
 
 export type ProbeState = {
@@ -31,6 +42,15 @@ export function emptyEditor(kind: ProviderKind = "deepseek", apiStyle?: ApiStyle
     apiKey: "",
     baseURL: preset.defaultBaseURL,
     modelId: preset.models[0]?.id ?? "",
-    apiStyle: apiStyle ?? preset.apiStyle
+    apiStyle: apiStyle ?? preset.apiStyle,
+    fastModelId: "",
+    reasoningModelId: "",
+    contextWindow: 128000,
+    maxTokens: 4096,
+    temperature: 0.7,
+    reasoningEffort: undefined,
+    customHeaders: "",
+    customBody: "",
+    models: [...preset.models]
   }
 }

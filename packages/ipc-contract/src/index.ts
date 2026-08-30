@@ -62,6 +62,12 @@ export const SaveSecretInput = z.object({
 });
 export type SaveSecretInput = z.infer<typeof SaveSecretInput>;
 
+export const ProviderModelItem = z.object({
+  id: z.string(),
+  label: z.string()
+});
+export type ProviderModelItem = z.infer<typeof ProviderModelItem>;
+
 export const UpsertProviderInput = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
@@ -70,6 +76,15 @@ export const UpsertProviderInput = z.object({
   baseURL: z.string().optional(),
   modelId: z.string().optional(),
   apiStyle: z.string().optional(),
+  fastModelId: z.string().optional(),
+  reasoningModelId: z.string().optional(),
+  contextWindow: z.number().optional(),
+  maxTokens: z.number().optional(),
+  temperature: z.number().optional(),
+  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
+  customHeaders: z.string().optional(),
+  customBody: z.string().optional(),
+  models: z.array(ProviderModelItem).optional(),
   activate: z.boolean().optional()
 });
 export type UpsertProviderInput = z.infer<typeof UpsertProviderInput>;
@@ -80,7 +95,8 @@ export const ProbeProviderInput = z.object({
   apiKey: z.string().optional(),
   baseURL: z.string().optional(),
   modelId: z.string().optional(),
-  apiStyle: z.string().optional()
+  apiStyle: z.string().optional(),
+  customHeaders: z.string().optional()
 });
 export type ProbeProviderInput = z.infer<typeof ProbeProviderInput>;
 
@@ -91,6 +107,15 @@ export const ProviderPublic = z.object({
   baseURL: z.string(),
   modelId: z.string(),
   apiStyle: z.string().default("openai"),
+  fastModelId: z.string().optional(),
+  reasoningModelId: z.string().optional(),
+  contextWindow: z.number().optional(),
+  maxTokens: z.number().optional(),
+  temperature: z.number().optional(),
+  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
+  customHeaders: z.string().optional(),
+  customBody: z.string().optional(),
+  models: z.array(ProviderModelItem).optional(),
   hasKey: z.boolean(),
   keyHint: z.string(),
   active: z.boolean(),

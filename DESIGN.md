@@ -42,7 +42,14 @@ shadcn CSS names (`bg-background`, `text-foreground`, `bg-primary`) are **aliase
 
 **Do not** keep installing BoardUI `components/base/*` for new UI. Existing BoardUI base files stay only until their call sites have moved to `@/components/ui/*`.
 
-Icons in product chrome: `@remixicon/react` component references. Lucide may appear inside installed shadcn/AI Elements files; swap to Remixicon when restyling a control that shows in the IDE chrome.
+Icons are two families — do not mix jobs:
+
+| Job | Source | Rule |
+|---|---|---|
+| Product chrome (nav, actions, form chrome, status) | `@remixicon/react` | Pass as component references. Lucide may remain inside installed shadcn / AI Elements files; swap to Remixicon when restyling a control that shows in the IDE chrome. |
+| AI / LLM brand marks (providers, models) | [`@lobehub/icons`](https://lobehub.com/zh/icons) | Official brand SVGs only. Prefer `.Color` when the icon exports it; otherwise the base mark. Use `ModelIcon` for a model ID string. Route product call sites through `ProviderIcon` / a model-icon helper — do not scatter raw brand imports. |
+
+Never use a Remix generic cloud / plug / robot glyph as a stand-in for OpenAI, Claude, Gemini, DeepSeek, Qwen, etc. Custom / unknown endpoints fall back to `RiServerLine` or `RiPlugLine`.
 
 Class merge: `cx()` from `@/utils/cx` or `cn()` from `@/lib/utils` (same merge, `cn` is the shadcn entry).
 
@@ -67,6 +74,7 @@ When a feature needs a control, **search these registries first**, copy the inte
 | Layout systems, editorial density | [Fluid Functionalism](https://www.fluidfunctionalism.com/) |
 | Community blocks, menus, marketing-grade motion | [21st.dev](https://21st.dev/) |
 | Motion primitives (spring, morph, ticker) | [Motion Primitives](https://motion-primitives.com/docs) |
+| AI / LLM brand logos, model marks | [Lobe Icons](https://lobehub.com/zh/icons) — `@lobehub/icons`. Browse [lobehub.com/icons](https://lobehub.com/icons); component docs at [icons.lobehub.com](https://icons.lobehub.com). |
 
 Install path:
 
@@ -147,6 +155,14 @@ Asymmetry is mandatory: rail is a separate floating object; chat is wider than C
 The split between chat and Changes is a **gap in the canvas** (12px hit area), not a hairline drawn on a shared white card.
 
 **Settings is a route, not a modal.** Hash URL `#/settings/general` (and `#/settings/providers`, etc.). Layout matches desktop AI IDEs (Codex / Cursor): a mist nav column with Back to app + search + grouped rows, and a white `rounded-3xl` content card. Settings rows live in bordered inner cards (title, description, control on the right). `Ctrl+,` opens General; Escape returns to the workspace.
+
+`SecondaryPageShell` content width is a named variant, never an ad-hoc max-width:
+
+| Variant | Width | Use |
+|---|---|---|
+| `article` | `max-w-[760px]` | Prose / single-column forms (Customize). |
+| `wide` | `max-w-5xl` | Settings, especially Providers — catalog grids must not clip at 760px. |
+| `stage` | full column | Automations list / stage surfaces. |
 
 **Automations and Customize are the same kind of route.** `#/automations` is the job list (create / enable / delete). `#/customize/instructions` covers always-on notes; Skills and Rules are later loaders for `.agents/skills` and project rules. Sidebar items must navigate, never no-op buttons. Escape returns to the workspace from any of these pages.
 
@@ -261,7 +277,7 @@ This is a **desktop-first Electron IDE**. Below 1100px window width, keep the ra
 - No neon outer glows, no purple/blue neon gradients, no oversaturated accents.
 - No custom mouse cursors (split handle excepted).
 - No overlapping content; every element owns a spatial zone.
-- No 3-column equal card rows. No centered marketing heroes.
+- No 3-column equal **marketing** feature rows. No centered marketing heroes. Settings preset catalogs may use `lg:grid-cols-3` (see §14).
 - No generic names (“John Doe”, “Acme”, “Nexus”). Session titles come from real work.
 - No fake round metrics (`99.99%`, `50%`). Context meter may show a real usage percent; if unknown, use a placeholder label, not a made-up number.
 - No `LABEL // YEAR` typography (“SYSTEM // 2024”).
@@ -271,9 +287,14 @@ This is a **desktop-first Electron IDE**. Below 1100px window width, keep the ra
 - No circular spinners. No Monaco CDN “Loading…” holes — code panes are local, line-numbered views.
 - No bordered quiet actions (thumbs/copy must be borderless).
 - No second accent color. No mixing warm stone greys with cool zinc.
-- No API keys, secrets, or model endpoints rendered in the UI chrome.
+- No API keys or secrets rendered in chrome. Configured-provider rows may show a truncated Base URL and `••••` last-4 key hint — never the raw key.
 - No shipping an OSS block in its default shadcn-gray / 21st-neon skin.
 - No installing BoardUI `base` primitives for new work. No hand-rolling a Dialog/Select/Message that shadcn or AI Elements already ships.
+- No Remix / Lucide generic glyphs as AI brand marks. No hand-drawn OpenAI / Claude / Gemini SVGs. Use [Lobe Icons](https://lobehub.com/zh/icons).
+- No brand-only provider catalog that hides protocol. Cards are presets over `openai` / `anthropic` / `openai-responses`, not exclusive vendor lock-in.
+- No burying Custom Endpoint at the bottom of a long page. Custom / OpenAI `/v1` and Anthropic Messages sit in a top banner.
+- No inline provider editor at the page footer. Add / edit opens a Dialog (`sm:max-w-xl`), tabbed, not a stacked form under the catalog.
+- No raw API keys, full secrets, or live endpoints painted into list chrome. Show `••••` + last-4 hint only.
 
 ---
 
@@ -281,6 +302,103 @@ This is a **desktop-first Electron IDE**. Below 1100px window width, keep the ra
 
 When asking Stitch or an agent for a new screen, describe it in this vocabulary:
 
-> Mist canvas. Three floating 24px-radius cards, 12px inset, 12px gaps. Left: 260px Mist Rail, sidebar elevation. Middle: white chat card — breadcrumb, thread, pebble pill composer with white plus chip and Signal Blue send disc, caption status bar. Right: white Changes card, blue PillTabs, JetBrains Mono source. Inter UI, JetBrains Mono code. Quiet icon buttons. Density 6, asymmetric split, one accent only. Implement with shadcn/ui + AI Elements restyled to these tokens.
+> Mist canvas. Three floating 24px-radius cards, 12px inset, 12px gaps. Left: 260px Mist Rail, sidebar elevation. Middle: white chat card — breadcrumb, thread, pebble pill composer with white plus chip and Signal Blue send disc, caption status bar. Right: white Changes card, blue PillTabs, JetBrains Mono source. Inter UI, JetBrains Mono code. Quiet Remixicon actions. AI brand marks from Lobe Icons. Density 6, asymmetric split, one accent only. Implement with shadcn/ui + AI Elements restyled to these tokens.
+
+For `#/settings/providers`:
+
+> Wide settings card (`max-w-5xl`). Custom Endpoint banner first. Then configured profiles. Then a 3-column preset catalog with protocol filter. Edit in a tabbed Dialog (Connection / Models / Parameters / Overrides). Provider marks via `@lobehub/icons`. No page-bottom form.
 
 Do not ask Stitch for a landing page, a 3-card feature row, or a centered hero with inline images. Those are a different product.
+
+---
+
+## 13. Icons — Remixicon vs Lobe Icons
+
+Product chrome and AI brand marks are different jobs. Mixing them makes the IDE look generic.
+
+### Remixicon — chrome only
+
+Nav rows, composer chips, dialog actions, status glyphs, empty-state icons: `@remixicon/react` component references (`RiSearchLine`, `RiAddLine`, …). 16px in quiet actions, 20px in nav rows, 24px only when the mark is the row’s primary identity.
+
+### Lobe Icons — AI / LLM brands
+
+Package: `@lobehub/icons` (`^5.16.0` in the workspace catalog).
+
+- Browse: [lobehub.com/zh/icons](https://lobehub.com/zh/icons) · [lobehub.com/icons](https://lobehub.com/icons)
+- Components: [icons.lobehub.com](https://icons.lobehub.com)
+- Source: [github.com/lobehub/lobe-icons](https://github.com/lobehub/lobe-icons)
+
+Usage in product code:
+
+```tsx
+import { DeepSeek, OpenAI, ModelIcon } from "@lobehub/icons"
+
+<DeepSeek.Color size={24} />   // hasColor — prefer this
+<OpenAI size={24} />           // no .Color export — use the base mark
+<ModelIcon model="gpt-4o" size={20} />
+```
+
+Helpers already in the app:
+
+- `ProviderIcon` in `apps/desktop/.../settings/providers/provider-icons.tsx` — maps `ProviderKind` / `ApiStyle` to a Lobe mark. New call sites import this, they do not re-import brand components.
+- `ModelIcon` from `@lobehub/icons` — when a **model ID** (not a provider kind) needs a mark in lists, comboboxes, or the composer picker.
+
+Variant law (check `toc[].param` or the [icons site](https://lobehub.com/zh/icons) before assuming `.Color` exists):
+
+| Export | When |
+|---|---|
+| `Icon.Color` | Preferred for catalog cards, configured rows, dialog headers. |
+| Base `Icon` | OpenAI, Groq, Ollama, Anthropic — these often have no `.Color`. |
+| `ModelIcon` | Model ID strings (`deepseek-chat`, `claude-sonnet-4-5`). |
+| `ProviderIcon` (Lobe helper) | Only if we need a provider-key lookup outside our wrapper. |
+| Remix `RiServerLine` / `RiPlugLine` | `kind === "custom"` or unknown protocol. |
+
+Do not wrap brand marks in a second accent wash. Sit them on Paper / Mist in a 8–32px rounded tile (`rounded-xl`, 1px `border/button/default`). Active profile: the tile gets a Signal Blue hairline (`border-accent-500/40` + `ring-2 ring-accent-500/10`), not a floating green dot.
+
+CDN / static PNG paths from Lobe are for docs and marketing only. The running app imports the React components so tree-shaking stays intact.
+
+---
+
+## 14. Providers settings (current interaction spec)
+
+`#/settings/providers` is a **protocol factory** surface. The runtime is Vercel AI SDK 7 (`createOpenAI` / `createAnthropic` / `openai.responses`). Brand cards are presets that fill `kind`, `apiStyle`, `defaultBaseURL`, and a default model catalog — they are not exclusive vendors.
+
+Wire APIs (the only protocols that matter):
+
+| `apiStyle` | Wire | Typical path |
+|---|---|---|
+| `openai` | Chat Completions | `/v1/chat/completions` |
+| `anthropic` | Messages | `/v1/messages` |
+| `openai-responses` | Responses | `/v1/responses` |
+
+### Page structure (top → bottom)
+
+1. **Custom Endpoint banner** — first, always. Two explicit actions: OpenAI `/v1` and Anthropic Messages. This is how relays / gateways / self-hosted endpoints enter. Do not hide Custom behind the last catalog card.
+2. **Configured Providers** — compact rows (icon 24px + name + model ID + base URL + key hint + `Active` badge). Edit / delete / activate. Active state lives on the icon tile and the badge, not a lone status dot.
+3. **Official Presets** — Bento grid, `lg:grid-cols-3` (never 4 columns: badges wrap). Search + protocol filter tabs (`All` / each `API_STYLE_OPTIONS` name). `Configured` and protocol badges are `whitespace-nowrap shrink-0`. Hover reveals Connect / Add Profile.
+
+Settings uses `contentWidth="wide"` so the grid survives both the default Electron window and fullscreen. `article` (760px) is banned on this page.
+
+### Editor — Dialog, not a page-bottom form
+
+`ProviderEditorDialog`: `sm:max-w-xl`, `rounded-2xl`, header = Lobe mark + preset name + one-line description + API Docs link. Four tabs (shadcn Tabs, pebble trough, selected thumb is paper + `shadow-xs` — not underline, not Changes-pane PillTab):
+
+| Tab | Owns |
+|---|---|
+| **Connection** | Display name, protocol / wire API, API key (OS keychain; renderer never re-reads plaintext), Base URL. |
+| **Models** | Primary model (combobox + Fetch remote `/models`), optional Fast / Reasoning role IDs, editable provider catalog (fetched + preset + user-added). |
+| **Parameters** | Context window (128K / 200K / 256K / 1M / 2M chips), reasoning effort (`low`…`xhigh`), max output tokens, temperature. |
+| **Overrides** | Custom HTTP headers JSON, custom body JSON (Format + template chips), underlying preset reference. |
+
+Save writes the vault via `settings.upsertProvider` and activates. Fetch / probe errors use `state/error` copy, not success-green. HTML-instead-of-JSON catalog responses surface as a readable endpoint error, not a raw parse dump.
+
+### Model catalog
+
+- Preset `models[]` is the offline default.
+- Fetch merges remote discovery on top; user can add / remove IDs.
+- Combobox (`Command` + `Popover`) uses BoardUI tokens: `bg-background-primary-default`, `border-separator-border` on the search hairline. No raw `bg-popover` black rules, no overlapping highlight boxes.
+- Typed-but-unknown IDs stay first-class (“use this ID”).
+
+### What this page is not
+
+Not a Codex `auth.json` / `config.toml` raw editor. Not a Claude-Code role matrix (Sonnet / Opus / Haiku / Subagent) unless we later add a Claude-Code export. Role fields here are **our** Primary / Fast / Reasoning slots for the agent runtime — keep them optional and short.

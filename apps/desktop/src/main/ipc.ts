@@ -218,6 +218,15 @@ export function registerIpc(_window: BrowserWindow) {
       baseURL: input.baseURL,
       modelId: input.modelId,
       apiStyle: input.apiStyle,
+      fastModelId: input.fastModelId,
+      reasoningModelId: input.reasoningModelId,
+      contextWindow: input.contextWindow,
+      maxTokens: input.maxTokens,
+      temperature: input.temperature,
+      reasoningEffort: input.reasoningEffort,
+      customHeaders: input.customHeaders,
+      customBody: input.customBody,
+      models: input.models,
       activate: input.activate
     })
     return settingsSnapshot()

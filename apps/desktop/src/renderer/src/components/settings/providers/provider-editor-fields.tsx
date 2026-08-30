@@ -1,33 +1,23 @@
 /**
  * 供应商编辑/添加表单字段组：
- * 结构清晰分为核心配置（名称、协议、密钥、端点、模型）与高级选项。
+ * 采用分栏 Tabs 组织四大模块：
+ * 1. Connection (基础连接与认证)
+ * 2. Models (默认模型、角色分工与模型目录管理)
+ * 3. Parameters (上下文大小、推理强度、Tokens 与温度)
+ * 4. Overrides (自定义 Headers 与 Body 参数覆盖)
  */
-import { useEffect, useState, type ReactNode } from "react"
-import { RiArrowDownSLine } from "@remixicon/react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from "@/components/ui/collapsible"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
-import { cx } from "@/utils/cx"
-import {
-  API_STYLE_OPTIONS,
-  PROVIDER_PRESETS,
-  type ApiStyle,
-  type ProviderKind,
-  type ProviderPreset
-} from "@enjoy-agents/providers/presets"
-import { SecretInput } from "../secret-input"
-import { ProviderModelField } from "./provider-model-field"
+  RiCodeSSlashLine,
+  RiEqualizerLine,
+  RiLinkM,
+  RiRobot2Line
+} from "@remixicon/react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { ProviderKind, ProviderPreset } from "@enjoy-agents/providers/presets"
+import { ProviderConnectionFields } from "./provider-connection-fields"
+import { ProviderModelsTab } from "./provider-models-tab"
+import { ProviderOverridesTab } from "./provider-overrides-tab"
+import { ProviderParamsTab } from "./provider-params-tab"
 import type { EditorState, ProbeState } from "./providers.types"
 
 export function ProviderEditorFields({
@@ -49,162 +39,77 @@ export function ProviderEditorFields({
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
 }) {
-  const [advancedOpen, setAdvancedOpen] = useState(editor.kind === "custom")
-
-  useEffect(() => {
-    if (editor.kind === "custom") setAdvancedOpen(true)
-  }, [editor.kind])
-
   return (
-    <div className="flex flex-col gap-4">
-      {/* 基础信息行：显示名称与协议 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Display name">
-          <Input
-            value={editor.name}
-            onChange={(event) => onChange({ name: event.target.value })}
-            placeholder="e.g. DeepSeek Official"
-            className="h-9"
-          />
-        </Field>
+    <Tabs defaultValue="connection" className="w-full">
+      {/* 顶部 Tab 导航栏 */}
+      <TabsList className="grid w-full grid-cols-4 rounded-xl bg-background-tertiary-default p-1 mb-2">
+        <TabsTrigger
+          value="connection"
+          className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
+        >
+          <RiLinkM className="size-3.5" />
+          <span>Connection</span>
+        </TabsTrigger>
 
-        <Field label="Protocol">
-          <Select
-            value={editor.apiStyle}
-            onValueChange={(value) => onChange({ apiStyle: value as ApiStyle })}
-          >
-            <SelectTrigger className="h-9 w-full rounded-2lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {API_STYLE_OPTIONS.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
+        <TabsTrigger
+          value="models"
+          className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
+        >
+          <RiRobot2Line className="size-3.5" />
+          <span>Models</span>
+        </TabsTrigger>
 
-      {/* 密钥与端点 */}
-      <Field
-        label="API key"
-        hint={preset.requiresKey ? "Required" : "Optional for local endpoints"}
-      >
-        <SecretInput
-          autoFocus={!editor.id && preset.requiresKey}
-          value={editor.apiKey}
-          onChange={(value) => onChange({ apiKey: value })}
-          placeholder={resolveKeyPlaceholder(editor, preset, keyHint)}
+        <TabsTrigger
+          value="params"
+          className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
+        >
+          <RiEqualizerLine className="size-3.5" />
+          <span>Parameters</span>
+        </TabsTrigger>
+
+        <TabsTrigger
+          value="overrides"
+          className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
+        >
+          <RiCodeSSlashLine className="size-3.5" />
+          <span>Overrides</span>
+        </TabsTrigger>
+      </TabsList>
+
+      {/* 各 Tab 对应内容面板 */}
+      <TabsContent value="connection" className="focus-visible:outline-none">
+        <ProviderConnectionFields
+          editor={editor}
+          preset={preset}
+          keyHint={keyHint}
+          onChange={onChange}
         />
-      </Field>
+      </TabsContent>
 
-      <Field label="Base URL">
-        <Input
-          value={editor.baseURL}
-          onChange={(event) => onChange({ baseURL: event.target.value })}
-          placeholder={
-            editor.apiStyle === "anthropic"
-              ? "https://api.anthropic.com"
-              : "https://api.example.com/v1"
-          }
-          className="h-9 font-mono text-[13px]"
+      <TabsContent value="models" className="focus-visible:outline-none">
+        <ProviderModelsTab
+          editor={editor}
+          modelChoices={modelChoices}
+          probe={probe}
+          onChange={onChange}
+          onFetchModels={onFetchModels}
         />
-      </Field>
+      </TabsContent>
 
-      {/* 模型选择与远端抓取 */}
-      <ProviderModelField
-        modelId={editor.modelId}
-        choices={modelChoices}
-        probe={probe}
-        onChange={(modelId) => onChange({ modelId })}
-        onFetch={onFetchModels}
-      />
-
-      {/* 高级选项（底模预设切换等） */}
-      <AdvancedFields
-        open={advancedOpen}
-        onOpenChange={setAdvancedOpen}
-        editor={editor}
-        onChangeKind={onChangeKind}
-      />
-    </div>
-  )
-}
-
-function AdvancedFields({
-  open,
-  onOpenChange,
-  editor,
-  onChangeKind
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  editor: EditorState
-  onChangeKind: (kind: ProviderKind) => void
-}) {
-  return (
-    <Collapsible open={open} onOpenChange={onOpenChange} className="pt-1">
-      <CollapsibleTrigger
-        type="button"
-        className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
-      >
-        <span>Advanced Settings</span>
-        <RiArrowDownSLine
-          className={cx("size-4 transition-transform", open && "rotate-180")}
+      <TabsContent value="params" className="focus-visible:outline-none">
+        <ProviderParamsTab
+          editor={editor}
+          onChange={onChange}
         />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-3 rounded-xl border border-border-button-default/60 bg-background-secondary-default/40 p-3.5">
-        <Field label="Underlying Preset Template">
-          <Select
-            value={editor.kind}
-            onValueChange={(value) => onChangeKind(value as ProviderKind)}
-          >
-            <SelectTrigger className="h-9 w-full rounded-2lg bg-background-primary-default">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PROVIDER_PRESETS.map((item) => (
-                <SelectItem key={item.kind} value={item.kind}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-      </CollapsibleContent>
-    </Collapsible>
-  )
-}
+      </TabsContent>
 
-function Field({
-  label,
-  hint,
-  children
-}: {
-  label: string
-  hint?: string
-  children: ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <Label className="text-caption-1-medium text-text-secondary">{label}</Label>
-        {hint ? (
-          <span className="text-caption-1-medium text-text-tertiary">{hint}</span>
-        ) : null}
-      </div>
-      {children}
-    </div>
+      <TabsContent value="overrides" className="focus-visible:outline-none">
+        <ProviderOverridesTab
+          editor={editor}
+          onChangeKind={onChangeKind}
+          onChange={onChange}
+        />
+      </TabsContent>
+    </Tabs>
   )
-}
-
-function resolveKeyPlaceholder(
-  editor: EditorState,
-  preset: ProviderPreset,
-  keyHint?: string
-) {
-  if (editor.id) return keyHint || "Keep existing key or paste new one"
-  return preset.requiresKey ? "Paste API key (sk-...)" : "Optional (e.g. for Ollama)"
 }

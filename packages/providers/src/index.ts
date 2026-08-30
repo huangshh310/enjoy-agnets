@@ -35,6 +35,15 @@ export type ProviderConfig = {
   modelId: string;
   baseURL?: string;
   apiStyle?: ApiStyle;
+  fastModelId?: string;
+  reasoningModelId?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+  temperature?: number;
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh";
+  customHeaders?: Record<string, string> | string;
+  customBody?: Record<string, unknown> | string;
+  models?: CatalogModel[];
 };
 
 export const MODEL_CATALOG = PROVIDER_PRESETS.flatMap((preset) =>
@@ -50,23 +59,39 @@ function resolvedBaseURL(config: ProviderConfig): string {
   return normalizeBaseURL(config.baseURL || fallback);
 }
 
+function parseHeaders(raw?: Record<string, string> | string): Record<string, string> | undefined {
+  if (!raw) return undefined;
+  if (typeof raw === "object") return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed as Record<string, string>;
+  } catch {
+    // ignore parse error
+  }
+  return undefined;
+}
+
 export function createLanguageModel(config: ProviderConfig): LanguageModel {
   const preset = presetFor(config.provider);
   const baseURL = resolvedBaseURL(config);
   const apiKey = config.apiKey || (preset.requiresKey ? "" : "ollama");
   const apiStyle = config.apiStyle ?? preset.apiStyle;
+  const headers = parseHeaders(config.customHeaders);
 
   if (apiStyle === "anthropic") {
     return createAnthropic({
       apiKey,
-      baseURL: baseURL || undefined
+      baseURL: baseURL || undefined,
+      headers
     })(config.modelId);
   }
 
   const openai = createOpenAI({
     apiKey,
-    baseURL: baseURL || undefined
+    baseURL: baseURL || undefined,
+    headers
   });
+
   if (apiStyle === "openai-responses") {
     return openai.responses(config.modelId);
   }
@@ -78,8 +103,13 @@ export function providerForModel(modelId: string): ProviderKind {
   return match?.provider ?? "custom";
 }
 
-export function modelsForProvider(kind: ProviderKind, extraModelId?: string): CatalogModel[] {
-  const models = [...presetFor(kind).models];
+export function modelsForProvider(
+  kind: ProviderKind,
+  extraModelId?: string,
+  savedModels?: CatalogModel[]
+): CatalogModel[] {
+  const base = savedModels && savedModels.length > 0 ? savedModels : presetFor(kind).models;
+  const models = [...base];
   if (extraModelId && !models.some((model) => model.id === extraModelId)) {
     models.unshift({ id: extraModelId, label: extraModelId });
   }
@@ -93,7 +123,9 @@ export type ProbeResult = {
   resolvedBaseURL?: string;
 };
 
-export async function probeProvider(config: Omit<ProviderConfig, "modelId"> & { modelId?: string }): Promise<ProbeResult> {
+export async function probeProvider(
+  config: Omit<ProviderConfig, "modelId"> & { modelId?: string }
+): Promise<ProbeResult> {
   const preset = presetFor(config.provider);
   const baseURL = resolvedBaseURL({ ...config, modelId: config.modelId ?? "probe" });
   const apiKey = config.apiKey || (preset.requiresKey ? "" : "ollama");

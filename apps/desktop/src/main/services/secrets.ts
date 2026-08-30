@@ -4,6 +4,7 @@ import {
   modelsForProvider,
   presetFor,
   type ApiStyle,
+  type CatalogModel,
   type ProviderKind
 } from "@enjoy-agents/providers";
 import { getSetting, setSetting } from "./database";
@@ -18,6 +19,15 @@ export type StoredSecret = {
   baseURL?: string;
   modelId?: string;
   apiStyle?: ApiStyle;
+  fastModelId?: string;
+  reasoningModelId?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+  temperature?: number;
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh";
+  customHeaders?: string;
+  customBody?: string;
+  models?: CatalogModel[];
 };
 
 export type ProviderProfile = {
@@ -28,6 +38,15 @@ export type ProviderProfile = {
   baseURL: string;
   modelId: string;
   apiStyle: ApiStyle;
+  fastModelId?: string;
+  reasoningModelId?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+  temperature?: number;
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh";
+  customHeaders?: string;
+  customBody?: string;
+  models?: CatalogModel[];
 };
 
 export type ProviderPublic = {
@@ -37,6 +56,15 @@ export type ProviderPublic = {
   baseURL: string;
   modelId: string;
   apiStyle: ApiStyle;
+  fastModelId?: string;
+  reasoningModelId?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+  temperature?: number;
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh";
+  customHeaders?: string;
+  customBody?: string;
+  models?: CatalogModel[];
   hasKey: boolean;
   keyHint: string;
   active: boolean;
@@ -72,7 +100,7 @@ function keyHint(apiKey: string): string {
 }
 
 function resolvedStyle(profile: Pick<ProviderProfile, "kind" | "apiStyle">): ApiStyle {
-  return isApiStyle(profile.apiStyle) ? profile.apiStyle : presetFor(profile.kind).apiStyle
+  return isApiStyle(profile.apiStyle) ? profile.apiStyle : presetFor(profile.kind).apiStyle;
 }
 
 function toPublic(profile: ProviderProfile, activeId: string | null): ProviderPublic {
@@ -84,6 +112,15 @@ function toPublic(profile: ProviderProfile, activeId: string | null): ProviderPu
     baseURL: profile.baseURL,
     modelId: profile.modelId,
     apiStyle: resolvedStyle(profile),
+    fastModelId: profile.fastModelId,
+    reasoningModelId: profile.reasoningModelId,
+    contextWindow: profile.contextWindow,
+    maxTokens: profile.maxTokens,
+    temperature: profile.temperature,
+    reasoningEffort: profile.reasoningEffort,
+    customHeaders: profile.customHeaders,
+    customBody: profile.customBody,
+    models: profile.models,
     hasKey: Boolean(profile.apiKey),
     keyHint: keyHint(profile.apiKey),
     active: profile.id === activeId,
@@ -148,6 +185,15 @@ export async function upsertProfile(input: {
   baseURL?: string;
   modelId?: string;
   apiStyle?: string;
+  fastModelId?: string;
+  reasoningModelId?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+  temperature?: number;
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh";
+  customHeaders?: string;
+  customBody?: string;
+  models?: CatalogModel[];
   activate?: boolean;
 }): Promise<ProviderPublic> {
   const vault = await readVault();
@@ -167,7 +213,16 @@ export async function upsertProfile(input: {
     modelId: (input.modelId ?? existing?.modelId ?? preset.models[0]?.id ?? "").trim(),
     apiStyle: isApiStyle(input.apiStyle)
       ? input.apiStyle
-      : resolvedStyle({ kind: input.kind, apiStyle: existing?.apiStyle ?? preset.apiStyle })
+      : resolvedStyle({ kind: input.kind, apiStyle: existing?.apiStyle ?? preset.apiStyle }),
+    fastModelId: input.fastModelId ?? existing?.fastModelId,
+    reasoningModelId: input.reasoningModelId ?? existing?.reasoningModelId,
+    contextWindow: input.contextWindow ?? existing?.contextWindow,
+    maxTokens: input.maxTokens ?? existing?.maxTokens,
+    temperature: input.temperature ?? existing?.temperature,
+    reasoningEffort: input.reasoningEffort ?? existing?.reasoningEffort,
+    customHeaders: input.customHeaders ?? existing?.customHeaders,
+    customBody: input.customBody ?? existing?.customBody,
+    models: input.models ?? existing?.models
   };
   vault.profiles = existing
     ? vault.profiles.map((item) => (item.id === id ? profile : item))
@@ -217,7 +272,16 @@ export async function readSecret(): Promise<StoredSecret | undefined> {
     apiKey: profile.apiKey,
     baseURL: profile.baseURL,
     modelId: profile.modelId,
-    apiStyle: resolvedStyle(profile)
+    apiStyle: resolvedStyle(profile),
+    fastModelId: profile.fastModelId,
+    reasoningModelId: profile.reasoningModelId,
+    contextWindow: profile.contextWindow,
+    maxTokens: profile.maxTokens,
+    temperature: profile.temperature,
+    reasoningEffort: profile.reasoningEffort,
+    customHeaders: profile.customHeaders,
+    customBody: profile.customBody,
+    models: profile.models
   };
 }
 
@@ -229,7 +293,7 @@ export async function hasSecret(): Promise<boolean> {
 
 export function publicModelsFor(profile: ProviderProfile | undefined) {
   if (!profile) return [];
-  return modelsForProvider(profile.kind, profile.modelId).map((model) => ({
+  return modelsForProvider(profile.kind, profile.modelId, profile.models).map((model) => ({
     id: model.id,
     label: model.label,
     provider: profile.kind

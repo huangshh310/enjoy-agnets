@@ -35,7 +35,8 @@ This project uses BoardUI **tokens** (Tailwind CSS v4, `styles/`) with shadcn/ui
 ## Mechanics
 
 - Merge classes with `cn()` from `@/lib/utils` or `cx()` from `@/utils/cx`. No string concatenation.
-- Product icons come from `@remixicon/react`, passed as component references. Lucide may remain inside installed shadcn files until restyled.
+- Product chrome icons come from `@remixicon/react`, passed as component references. Lucide may remain inside installed shadcn files until restyled.
+- AI / LLM brand marks (providers, models) come from `@lobehub/icons` ([lobehub.com/zh/icons](https://lobehub.com/zh/icons)). Prefer `.Color` when exported; use `ModelIcon` for model IDs; route app call sites through `ProviderIcon`. Never use Remix generic glyphs as brand logos. Custom / unknown → `RiServerLine` / `RiPlugLine`.
 - Forms and overlays: shadcn `Dialog` / `Select` / `DropdownMenu` / `Input`. Do not add new React Aria BoardUI fields.
 - Focus states: `outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring`.
 - Unique keepers: ThemeToggle (circular reveal), ComposerLoader (composer rim).
