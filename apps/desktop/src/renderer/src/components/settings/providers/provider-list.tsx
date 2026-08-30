@@ -1,13 +1,12 @@
 /**
- * 已配置的 Provider 列表：清晰展示激活状态、协议类型、模型、端点与 Key 提示，
+ * 已配置的 Provider 列表条目：清晰展示激活状态、协议类型、主模型、模型总数、端点与 Key 提示，
  * 提供一键切换激活、编辑与删除操作。
  */
-import { RiDeleteBinLine, RiEditLine } from "@remixicon/react"
+import { RiDeleteBinLine, RiEditLine, RiStackLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { ProviderPublic } from "@enjoy-agents/ipc-contract"
 import { apiStyleLabel, isApiStyle } from "@enjoy-agents/providers/presets"
-import { SettingsCard } from "../settings-row"
 import { ProviderIcon } from "./provider-icons"
 
 export function ProviderList({
@@ -24,9 +23,7 @@ export function ProviderList({
   if (providers.length === 0) return null
 
   return (
-    <SettingsCard
-      title={`Configured Providers (${providers.length})`}
-    >
+    <div className="divide-y divide-separator-border/60">
       {providers.map((profile) => (
         <ProviderItemRow
           key={profile.id}
@@ -36,7 +33,7 @@ export function ProviderList({
           onRemove={() => onRemove(profile.id)}
         />
       ))}
-    </SettingsCard>
+    </div>
   )
 }
 
@@ -56,6 +53,7 @@ function ProviderItemRow({
     : profile.apiStyle || "OpenAI Compatible"
 
   const hasKeyIssue = profile.requiresKey && !profile.hasKey
+  const modelCount = profile.models?.length || 1
 
   return (
     <article
@@ -95,6 +93,13 @@ function ProviderItemRow({
           <span className="rounded-md border border-border-button-default/80 bg-background-tertiary-default/80 px-2 py-0.5 text-caption-1-medium text-text-secondary">
             {protocolName}
           </span>
+
+          {modelCount > 1 ? (
+            <span className="inline-flex items-center gap-1 rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+              <RiStackLine className="size-3" />
+              {modelCount} models
+            </span>
+          ) : null}
         </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption-1-medium text-text-tertiary">
@@ -119,38 +124,54 @@ function ProviderItemRow({
             {profile.hasKey
               ? `Key ${profile.keyHint}`
               : profile.requiresKey
-                ? "Key missing"
-                : "No key required"}
+                ? "Missing API Key"
+                : "No Key Required"}
           </span>
         </div>
       </div>
 
-      {/* 右侧动作操作栏 */}
+      {/* 右侧操作按钮组 */}
       <div className="flex shrink-0 items-center gap-2">
         {profile.active ? (
-          <span className="rounded-lg bg-background-tertiary-default px-3 py-1.5 text-caption-1-medium text-text-tertiary">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled
+            className="h-8 rounded-xl px-3 text-caption-1-medium text-text-tertiary cursor-default"
+          >
             In use
-          </span>
+          </Button>
         ) : (
-          <Button size="sm" variant="outline" onClick={onActivate}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onActivate}
+            className="h-8 rounded-xl px-3 text-caption-1-medium hover:border-accent-500 hover:text-accent-600"
+          >
             Use
           </Button>
         )}
+
         <Button
+          type="button"
+          variant="outline"
           size="sm"
-          variant="ghost"
           onClick={onEdit}
-          className="text-text-secondary hover:text-text-primary"
+          className="h-8 rounded-xl px-2.5 text-caption-1-medium"
         >
-          <RiEditLine className="size-4 mr-1" />
+          <RiEditLine className="size-3.5 mr-1" />
           Edit
         </Button>
+
         <Button
-          size="icon-sm"
+          type="button"
           variant="ghost"
-          aria-label="Delete provider"
+          size="sm"
           onClick={onRemove}
-          className="text-text-tertiary hover:text-text-error-primary"
+          className="h-8 w-8 rounded-xl p-0 text-text-tertiary hover:bg-background-negative-hover/20 hover:text-state-error-text"
+          aria-label={`Delete ${profile.name}`}
         >
           <RiDeleteBinLine className="size-4" />
         </Button>

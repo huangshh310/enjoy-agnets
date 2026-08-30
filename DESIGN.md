@@ -371,11 +371,23 @@ Wire APIs (the only protocols that matter):
 | `anthropic` | Messages | `/v1/messages` |
 | `openai-responses` | Responses | `/v1/responses` |
 
-### Page structure (top → bottom)
+### Page structure (Dual-view Segmented Architecture)
 
-1. **Custom Endpoint banner** — first, always. Two explicit actions: OpenAI `/v1` and Anthropic Messages. This is how relays / gateways / self-hosted endpoints enter. Do not hide Custom behind the last catalog card.
-2. **Configured Providers** — compact rows (icon 24px + name + model ID + base URL + key hint + `Active` badge). Edit / delete / activate. Active state lives on the icon tile and the badge, not a lone status dot.
-3. **Official Presets** — Bento grid, `lg:grid-cols-3` (never 4 columns: badges wrap). Search + protocol filter tabs (`All` / each `API_STYLE_OPTIONS` name). `Configured` and protocol badges are `whitespace-nowrap shrink-0`. Hover reveals Connect / Add Profile.
+The page decouples daily management from preset browsing via **top Segmented View Tabs**:
+
+1. **Top Bar**:
+   - Title `Providers` & subtitle.
+   - **Segmented Control**: `Configured (N)` (active provider dot, model count) and `Explore Presets (M)`.
+   - Quick `+ Custom /v1` action.
+
+2. **View A: `Configured` Tab**:
+   - **Metrics & Filter Bar**: Total configured count, active provider badge, total models count across all profiles, and quick real-time filter input.
+   - **Configured Providers List**: Compact rows with 24px brand icon, active status pill, protocol badge (`OpenAI Chat Completions`, `Messages`, etc.), model count badge (`10 models`), model ID, endpoint, key hint, and `In use`/`Use`, `Edit`, `Delete` actions.
+   - **Empty State**: Elegant onboarding guide with shortcuts to popular providers (`DeepSeek`, `OpenAI`, `Claude`) and Custom Endpoints when no providers exist.
+
+3. **View B: `Explore Presets` Tab**:
+   - **Custom Endpoint Banner**: Top banner with explicit `+ OpenAI /v1` and `+ Anthropic Messages` actions.
+   - **Official Presets Bento Grid**: 3 columns (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`), protocol filter pills (`All`, `Chat Completions`, `Messages`, `Responses`), and search input. Each card features Lobe Icons, model preview, and `Configured` tag.
 
 Settings uses `contentWidth="wide"` so the grid survives both the default Electron window and fullscreen. `article` (760px) is banned on this page.
 
