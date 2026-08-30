@@ -25,7 +25,7 @@
 ```text
 Renderer（不受信）
   React 19 + Vite
-  shadcn/ui + Beautiful UI
+  shadcn/ui + AI Elements（BoardUI tokens）
   TanStack Router / Query / Table / Virtual / Form / Pacer
   Monaco + xterm.js
   Zustand（仅 UI 状态）
@@ -122,13 +122,13 @@ packages:
 | 样式 | Tailwind CSS v4 | |
 | 基础组件 | shadcn/ui + lucide-react | Button / Dialog / Tabs / Command / Sidebar |
 | 布局 | react-resizable-panels | IDE 分栏 |
-| Agent 原语 | Beautiful UI（beautifului.dev） | Thinking、Streaming、Tool Chips、Prompt Bar、Approval、Task Rows、Context Cards、Diff Table |
+| Agent 原语 | AI Elements（elements.ai-sdk.dev） | Conversation、Message、PromptInput、Reasoning、Tool、CodeBlock |
 | 编辑器 | monaco-editor | 与 VS Code 同内核 |
 | 终端 | @xterm/xterm + 附件 | 与 node-pty 对接 |
 | 客户端状态 | Zustand | 当前 session、面板开关、composer |
 | 校验 | Zod | 与主进程共用 schema |
 
-Beautiful UI 不是完整设计系统。按钮、弹层、表单控件走 shadcn；Agent 过程表面走 Beautiful UI。
+视觉走 BoardUI tokens。按钮、弹层、表单走 shadcn（装完 restyle）。Agent 过程表面走 AI Elements。Beautiful UI / BeUI 等只作参考源，不直接当运行时依赖。详见 `DESIGN.md`。
 
 ### 4.2 TanStack：逐项决定
 
@@ -435,12 +435,12 @@ tailwindcss
 class-variance-authority
 clsx
 tailwind-merge
-lucide-react
+lucide-react          # shadcn internals; product chrome uses @remixicon/react
 react-resizable-panels
 zustand
 ```
 
-另：按 shadcn 文档初始化组件；Beautiful UI 按其官方安装方式引入 Agent 原语。
+视觉语言：BoardUI tokens（`packages/ui/styles`）。组件：shadcn/ui + AI Elements，安装后改成 BoardUI 外观。ThemeToggle / ComposerLoader 保留 BoardUI 实现。新功能先在 shadcn、AI Elements、Beautiful UI、BeUI、Rare UI、21st、Motion Primitives、vgpu、ThreeUI 里找，再 restyle。详见 `DESIGN.md`。
 
 ### 9.3 TanStack
 

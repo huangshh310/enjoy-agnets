@@ -8,6 +8,7 @@
     "./styles/globals.css": "./styles/globals.css",
     "./styles/*": "./styles/*",
     "./utils/*": "./utils/*",
+    "./lib/*": "./lib/*",
     "./components/*": "./components/*"
   },
   "scripts": {
@@ -19,10 +20,22 @@
   },
   "dependencies": {
     "@internationalized/date": "catalog:",
+    "@radix-ui/react-use-controllable-state": "catalog:",
     "@remixicon/react": "catalog:",
+    "ai": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "cmdk": "catalog:",
+    "lucide-react": "catalog:",
     "motion": "catalog:",
+    "nanoid": "catalog:",
+    "radix-ui": "catalog:",
     "react-aria-components": "catalog:",
-    "tailwind-merge": "catalog:"
+    "shiki": "catalog:",
+    "streamdown": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tw-animate-css": "catalog:",
+    "use-stick-to-bottom": "catalog:"
   },
   "devDependencies": {
     "@types/react": "catalog:",

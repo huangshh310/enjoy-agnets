@@ -2,8 +2,18 @@
 
 import { RiClipboardLine, RiThumbDownLine, RiThumbUpLine } from "@remixicon/react"
 import { AgentThinking } from "@/components/application/agent-thinking/agent-thinking"
-import { Button } from "@/components/base/buttons/button"
-import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton
+} from "@/components/ai-elements/conversation"
+import {
+  Message,
+  MessageAction,
+  MessageActions,
+  MessageContent
+} from "@/components/ai-elements/message"
+import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
@@ -29,59 +39,70 @@ export function AiChatThread({
   onAllowSession: () => void
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-8 py-6">
-      {messages.length === 0 && !running ? (
-        <p className="text-body-medium text-text-tertiary">Ask the agent to inspect or change this workspace.</p>
-      ) : null}
-      {messages.map((message) =>
-        message.role === "user" ? (
-          <div key={message.id} className="flex justify-end">
-            <div className="max-w-[min(22rem,78%)] rounded-2xl bg-background-tertiary-default px-3.5 py-2.5 text-body-medium text-text-primary">
-              {message.content}
-            </div>
-          </div>
-        ) : (
-          <article key={message.id} className="flex max-w-[40rem] flex-col gap-3">
-            <p className="text-body-medium text-text-primary">{message.content}</p>
-            {message.attachment ? <AiChatCodeBlock attachment={message.attachment} /> : null}
-            <div className="-ml-1 flex items-center">
-              <QuietIconButton icon={RiThumbUpLine} aria-label="Good response" />
-              <QuietIconButton icon={RiThumbDownLine} aria-label="Bad response" />
-              <QuietIconButton
-                icon={RiClipboardLine}
-                aria-label="Copy response"
-                onClick={() => navigator.clipboard.writeText(message.content)}
-              />
-            </div>
-          </article>
-        )
-      )}
-
-      {running && !pendingApproval ? <AgentThinking variant="infinity" label={thinkingLabel} /> : null}
-
-      {pendingApproval ? (
-        <div className="rounded-2xl border border-border-button-default bg-background-secondary-default p-4">
-          <p className="text-body-medium text-text-primary">
-            Approve {pendingApproval.name} before the agent continues.
+    <Conversation className="min-h-0">
+      <ConversationContent className="gap-8 px-8 py-6">
+        {messages.length === 0 && !running ? (
+          <p className="text-body-medium text-text-tertiary">
+            Ask the agent to inspect or change this workspace.
           </p>
-          <pre className="mt-2 overflow-x-auto text-caption-1-medium text-text-secondary">
-            {JSON.stringify(pendingApproval.args, null, 2)}
-          </pre>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="small" variant="primary" onClick={onApprove}>
-              Allow
-            </Button>
-            <Button size="small" variant="secondary" onClick={onAllowSession}>
-              Allow for session
-            </Button>
-            <Button size="small" variant="danger" onClick={onDeny}>
-              Deny
-            </Button>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+        {messages.map((message) =>
+          message.role === "user" ? (
+            <Message key={message.id} from="user" className="max-w-[min(22rem,78%)]">
+              <MessageContent>{message.content}</MessageContent>
+            </Message>
+          ) : (
+            <Message key={message.id} from="assistant" className="max-w-[40rem]">
+              <MessageContent>
+                {message.content}
+                {message.attachment ? <AiChatCodeBlock attachment={message.attachment} /> : null}
+              </MessageContent>
+              <MessageActions className="-ml-1">
+                <MessageAction tooltip="Good response" label="Good response">
+                  <RiThumbUpLine className="size-4" />
+                </MessageAction>
+                <MessageAction tooltip="Bad response" label="Bad response">
+                  <RiThumbDownLine className="size-4" />
+                </MessageAction>
+                <MessageAction
+                  tooltip="Copy response"
+                  label="Copy response"
+                  onClick={() => navigator.clipboard.writeText(message.content)}
+                >
+                  <RiClipboardLine className="size-4" />
+                </MessageAction>
+              </MessageActions>
+            </Message>
+          )
+        )}
 
-      {error ? <p className={cx("text-body-medium text-text-error-primary")}>{error}</p> : null}
-    </div>
+        {running && !pendingApproval ? <AgentThinking variant="infinity" label={thinkingLabel} /> : null}
+
+        {pendingApproval ? (
+          <div className="rounded-2xl border border-border-button-default bg-background-secondary-default p-4">
+            <p className="text-body-medium text-text-primary">
+              Approve {pendingApproval.name} before the agent continues.
+            </p>
+            <pre className="mt-2 overflow-x-auto text-caption-1-medium text-text-secondary">
+              {JSON.stringify(pendingApproval.args, null, 2)}
+            </pre>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" onClick={onApprove}>
+                Allow
+              </Button>
+              <Button size="sm" variant="outline" onClick={onAllowSession}>
+                Allow for session
+              </Button>
+              <Button size="sm" variant="destructive" onClick={onDeny}>
+                Deny
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {error ? <p className={cx("text-body-medium text-text-error-primary")}>{error}</p> : null}
+      </ConversationContent>
+      <ConversationScrollButton />
+    </Conversation>
   )
 }

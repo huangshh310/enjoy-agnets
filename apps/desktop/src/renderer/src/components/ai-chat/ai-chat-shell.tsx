@@ -2,9 +2,15 @@
 
 import { RiFolder6Line, RiMoreLine } from "@remixicon/react"
 import { Group, Panel, Separator, useDefaultLayout } from "react-resizable-panels"
-import { Breadcrumb, BreadcrumbItem } from "@/components/base/breadcrumb/breadcrumb"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
-import { Button } from "@/components/base/buttons/button"
 import {
   decidePendingApproval,
   openChangedFile,
@@ -103,8 +109,15 @@ export function AiChatShell() {
                 <header className="flex h-12 shrink-0 items-center gap-2 px-5">
                   <RiFolder6Line className="size-4 text-foreground-icon-secondary" aria-hidden />
                   <Breadcrumb>
-                    <BreadcrumbItem>{workspaceName}</BreadcrumbItem>
-                    <BreadcrumbItem current>{sessionTitle}</BreadcrumbItem>
+                    <BreadcrumbList>
+                      <BreadcrumbItem>
+                        <span className="text-body-medium text-text-secondary">{workspaceName}</span>
+                      </BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage className="text-body-medium text-text-primary">{sessionTitle}</BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </BreadcrumbList>
                   </Breadcrumb>
                   <div className="ml-auto">
                     <QuietIconButton icon={RiMoreLine} aria-label="Session menu" />
@@ -143,7 +156,7 @@ export function AiChatShell() {
                 <p className="max-w-sm text-body-medium text-text-secondary">
                   Enjoy Agents only runs against a folder you choose. Pick a project to load sessions and git changes.
                 </p>
-                <Button variant="primary" onClick={() => void openFolder()}>
+                <Button onClick={() => void openFolder()}>
                   Open folder
                 </Button>
               </div>

@@ -4,11 +4,11 @@ import type { FormEvent, KeyboardEvent } from "react"
 import { RiAddLine, RiArrowDownSLine, RiArrowUpLine, RiMicLine } from "@remixicon/react"
 import { ComposerLoader } from "@/components/application/composer-loader/composer-loader"
 import {
-  Dropdown,
-  DropdownItem,
-  DropdownPopover,
-  DropdownTrigger
-} from "@/components/base/dropdown/dropdown"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 import type { ModelOption } from "@renderer/stores/chat-store"
 
 export function AiChatComposer({
@@ -60,19 +60,19 @@ export function AiChatComposer({
             placeholder="Ask me anything"
             className="min-h-8 max-h-32 flex-1 resize-none bg-transparent py-1.5 text-body-medium text-text-primary outline-none placeholder:text-text-tertiary"
           />
-          <Dropdown>
-            <DropdownTrigger className="flex h-8 items-center gap-1 rounded-full px-2 text-body-medium text-text-secondary hover:bg-background-secondary-hover">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex h-8 items-center gap-1 rounded-full px-2 text-body-medium text-text-secondary outline-none hover:bg-background-secondary-hover">
               {modelLabel}
               <RiArrowDownSLine className="size-4" aria-hidden />
-            </DropdownTrigger>
-            <DropdownPopover aria-label="Models" placement="top">
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-2xl border-border-button-default bg-background-primary-default shadow-dropdown">
               {models.map((model) => (
-                <DropdownItem key={model.id} onSelect={() => onModelChange(model.id, model.label)}>
+                <DropdownMenuItem key={model.id} onSelect={() => onModelChange(model.id, model.label)}>
                   {model.label}
-                </DropdownItem>
+                </DropdownMenuItem>
               ))}
-            </DropdownPopover>
-          </Dropdown>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             type="button"
             aria-label="Voice input"

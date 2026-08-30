@@ -1,13 +1,16 @@
 <!-- boardui:rules:start -->
 # BoardUI design rules
 
-This project uses BoardUI (React + Tailwind CSS v4, source-owned components under `components/`). These rules always apply when writing UI code. MCP tools are on demand; these rules are not optional context.
+This project uses BoardUI **tokens** (Tailwind CSS v4, `styles/`) with shadcn/ui primitives and AI Elements for agent chrome. These rules always apply when writing UI code.
 
 ## Components first
 
-- Before hand-building any UI element, check for an installed BoardUI component under `components/base/` and `components/application/`, and prefer it.
-- Missing a component? Install it (BoardUI MCP `install_components`, or `npx boardui@latest add <name>`) instead of writing a lookalike.
-- Import through the `@/` alias, e.g. `import { Button } from "@/components/base/buttons/button"`.
+- Visual language is BoardUI tokens in `styles/`. Primitives come from shadcn/ui (`components/ui/`). Agent chrome comes from AI Elements (`components/ai-elements/`).
+- Before hand-building any UI element: (1) shadcn/ui, (2) AI Elements, (3) Beautiful UI / BeUI / Rare UI / 21st / Motion Primitives / vgpu / ThreeUI / Fluid Functionalism. Copy the interaction, restyle to BoardUI tokens. Never ship a registry default skin.
+- Install with `pnpm dlx shadcn@latest add <name>` or `pnpm dlx shadcn@latest add @ai-elements/<name>` from `packages/ui` or `apps/desktop`.
+- Keep BoardUI **ThemeToggle** and **ComposerLoader**. Do not add new BoardUI `components/base/*` primitives.
+- Import primitives from `@/components/ui/button` (etc). Merge classes with `cn()` from `@/lib/utils` or `cx()` from `@/utils/cx`.
+- See `DESIGN.md` at the repo root for the full stack, sourcing table, and look rules.
 
 ## Color: semantic tokens only
 
@@ -31,10 +34,11 @@ This project uses BoardUI (React + Tailwind CSS v4, source-owned components unde
 
 ## Mechanics
 
-- Merge classes with `cx()` from `@/utils/cx` (tailwind-merge aware of BoardUI's composite text styles). No string concatenation, no plain `clsx`.
-- Icons come from `@remixicon/react`, passed as component references (`leadingIcon={RiAddLine}`), not rendered elements.
-- Form components build on `react-aria-components`; extend the installed BoardUI form components rather than raw `<input>`/`<select>`.
+- Merge classes with `cn()` from `@/lib/utils` or `cx()` from `@/utils/cx`. No string concatenation.
+- Product icons come from `@remixicon/react`, passed as component references. Lucide may remain inside installed shadcn files until restyled.
+- Forms and overlays: shadcn `Dialog` / `Select` / `DropdownMenu` / `Input`. Do not add new React Aria BoardUI fields.
 - Focus states: `outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring`.
+- Unique keepers: ThemeToggle (circular reveal), ComposerLoader (composer rim).
 
-When unsure about a token, a component's API, or working example code, ask the BoardUI MCP server: `get_theme`, `get_component`, `get_usage_examples`.
+When unsure about a token or look, read `DESIGN.md`. For a missing primitive, install shadcn or `@ai-elements/*`, then restyle.
 <!-- boardui:rules:end -->
