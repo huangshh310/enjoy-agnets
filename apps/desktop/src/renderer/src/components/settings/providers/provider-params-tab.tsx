@@ -6,7 +6,9 @@ import type { ReactNode } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
-import type { EditorState, ReasoningEffort } from "./providers.types"
+import { ReasoningEnergyBar } from "@renderer/components/ai-chat/reasoning-energy-bar"
+import { getEffortMeta } from "@renderer/components/ai-chat/reasoning-effort-config"
+import type { EditorState } from "./providers.types"
 
 const CONTEXT_PRESETS = [
   { label: "128K", value: 128000 },
@@ -60,40 +62,24 @@ export function ProviderParamsTab({
 
       {/* 推理强度 (针对 o1 / o3 / DeepSeek-R1 等) */}
       <Field
-        label="Reasoning Effort / Thinking Budget"
+        label="Reasoning Effort / Thinking Energy"
         hint="Thinking budget for reasoning models (DeepSeek-R1, o1, o3, QwQ)"
       >
-        <div className="grid grid-cols-5 gap-1 rounded-xl border border-border-button-default bg-background-tertiary-default/60 p-1">
-          {[
-            { value: "none", label: "Default" },
-            { value: "low", label: "Low" },
-            { value: "medium", label: "Medium" },
-            { value: "high", label: "High" },
-            { value: "xhigh", label: "Max" }
-          ].map((opt) => {
-            const current = editor.reasoningEffort ?? "none"
-            const isSelected = current === opt.value
-
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() =>
-                  onChange({
-                    reasoningEffort: opt.value === "none" ? undefined : (opt.value as ReasoningEffort)
-                  })
-                }
-                className={cx(
-                  "flex h-7.5 items-center justify-center rounded-lg text-[12px] transition-all outline-none",
-                  isSelected
-                    ? "bg-background-primary-default text-text-primary font-semibold shadow-xs border border-border-button-default/60"
-                    : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/50"
-                )}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
+        <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-medium text-text-primary">
+              Level {getEffortMeta(editor.reasoningEffort).index} · {getEffortMeta(editor.reasoningEffort).label}
+            </span>
+            <span className="text-text-tertiary">
+              {getEffortMeta(editor.reasoningEffort).desc}
+            </span>
+          </div>
+          <ReasoningEnergyBar
+            value={editor.reasoningEffort}
+            onChange={(effort) => onChange({ reasoningEffort: effort })}
+            size="sm"
+            showLabels={true}
+          />
         </div>
       </Field>
 

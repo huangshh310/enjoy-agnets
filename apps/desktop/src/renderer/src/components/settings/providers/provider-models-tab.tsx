@@ -17,21 +17,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
+import {
+  EFFORT_LEVELS,
+  getEffortMeta
+} from "@renderer/components/ai-chat/reasoning-effort-config"
+import { ReasoningEnergyBar } from "@renderer/components/ai-chat/reasoning-energy-bar"
 import { ModelBrandIcon } from "./provider-icons"
 import { ProviderModelField } from "./provider-model-field"
-import type { EditorState, ProbeState, ReasoningEffort } from "./providers.types"
-
-const REASONING_EFFORT_OPTIONS: Array<{
-  value: ReasoningEffort | "none"
-  label: string
-  description: string
-}> = [
-  { value: "none", label: "Default", description: "Standard / Model native budget" },
-  { value: "low", label: "Low", description: "Fast & concise reasoning" },
-  { value: "medium", label: "Medium", description: "Balanced thinking depth & speed" },
-  { value: "high", label: "High", description: "Deep multi-step reasoning" },
-  { value: "xhigh", label: "Max", description: "Exhaustive deep thinking for complex tasks" }
-]
+import type { EditorState, ProbeState } from "./providers.types"
 
 export function ProviderModelsTab({
   editor,
@@ -66,10 +59,7 @@ export function ProviderModelsTab({
     )
   }, [editor.modelId])
 
-  const currentEffort = editor.reasoningEffort ?? "none"
-  const currentEffortMeta =
-    REASONING_EFFORT_OPTIONS.find((item) => item.value === currentEffort) ??
-    REASONING_EFFORT_OPTIONS[0]
+  const currentEffortMeta = getEffortMeta(editor.reasoningEffort)
 
   function addCustomModel() {
     const id = newModelId.trim()
@@ -114,10 +104,10 @@ export function ProviderModelsTab({
         />
       </div>
 
-      {/* 推理模式与思考强度分段控制栏 (Reasoning Mode & Thinking Effort) */}
+      {/* 推理模式与思考能量条 (Reasoning Mode & Thinking Energy Gauge) */}
       <div
         className={cx(
-          "rounded-xl border p-3.5 transition-all flex flex-col gap-2.5",
+          "rounded-xl border p-3.5 transition-all flex flex-col gap-3",
           isSelectedModelReasoning
             ? "border-state-success-text/40 bg-state-success-text/5 ring-1 ring-state-success-text/10"
             : "border-border-button-default/80 bg-background-secondary-default/30"
@@ -128,32 +118,43 @@ export function ProviderModelsTab({
             <RiBrainLine
               className={cx(
                 "size-4",
-                isSelectedModelReasoning ? "text-state-success-text" : "text-accent-600"
+                currentEffortMeta.iconColorClass
               )}
             />
             <span className="text-caption-1-semibold text-text-primary">
-              Reasoning Mode / Thinking Effort
+              Reasoning Mode / Thinking Energy
             </span>
           </div>
-          <span className="text-[11px] text-text-tertiary">
-            For DeepSeek-R1, o1/o3, QwQ
+          <span
+            className={cx(
+              "rounded-full px-2 py-0.5 text-[11px] font-semibold border transition-colors",
+              currentEffortMeta.badgeClass
+            )}
+          >
+            Level {currentEffortMeta.index} · {currentEffortMeta.label} ({currentEffortMeta.shortLabel})
           </span>
         </div>
 
-        {/* 5 列等宽分段选择器 (Segmented Control) */}
+        {/* 交互式思考能量滑块条 (Interactive Energy Bar) */}
+        <div className="px-1 py-0.5">
+          <ReasoningEnergyBar
+            value={editor.reasoningEffort}
+            onChange={(effort) => onChange({ reasoningEffort: effort })}
+            size="md"
+            showLabels={false}
+          />
+        </div>
+
+        {/* 5 档分段控制胶囊 (Segmented Control Buttons) */}
         <div className="grid grid-cols-5 gap-1 rounded-xl border border-border-button-default bg-background-tertiary-default/60 p-1">
-          {REASONING_EFFORT_OPTIONS.map((opt) => {
-            const isSelected = currentEffort === opt.value
+          {EFFORT_LEVELS.map((opt) => {
+            const isSelected = currentEffortMeta.value === opt.value
 
             return (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() =>
-                  onChange({
-                    reasoningEffort: opt.value === "none" ? undefined : opt.value
-                  })
-                }
+                onClick={() => onChange({ reasoningEffort: opt.effortValue })}
                 className={cx(
                   "flex h-7.5 items-center justify-center rounded-lg text-[12px] transition-all outline-none",
                   isSelected
@@ -170,9 +171,9 @@ export function ProviderModelsTab({
         {/* 当前档位描述文字 */}
         <div className="flex items-center justify-between px-0.5 text-[11px]">
           <span className="text-text-secondary">
-            Current: <span className="font-medium text-text-primary">{currentEffortMeta.label}</span>
+            Thinking Depth: <span className="font-medium text-text-primary">{currentEffortMeta.label}</span>
           </span>
-          <span className="text-text-tertiary">{currentEffortMeta.description}</span>
+          <span className="text-text-tertiary">{currentEffortMeta.desc}</span>
         </div>
       </div>
 

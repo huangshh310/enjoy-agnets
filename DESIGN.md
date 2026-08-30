@@ -410,10 +410,15 @@ Save writes the vault via `settings.upsertProvider` and activates. Fetch / probe
 - Fetch merges remote discovery on top; user can add / remove IDs.
 - **Model Catalog Chips**: Each model chip in the catalog displays its corresponding `ModelBrandIcon`, supports clicking to quickly set as Primary Model with an active badge, and provides a quick delete action.
 - Combobox (`Command` + `Popover`) uses BoardUI tokens: `bg-background-primary-default`, `border-separator-border` on the search hairline. Both the trigger button and each dropdown list item render the model brand icon (`ModelBrandIcon`). No raw `bg-popover` black rules, no overlapping highlight boxes.
-- **Inference Mode & Thinking Budget (推理模式)**:
+- **Inference Mode & Thinking Energy Bar (推理模式与思考能量条)**:
   - Models tab automatically detects reasoning models (`DeepSeek-R1`, `o1`, `o3`, `QwQ`, `reasoner`, `thinking`).
-  - Allows specifying default reasoning effort (`low`, `medium`, `high`, `xhigh`) via a 5-column segmented control.
-  - Chat Composer features a dedicated `ReasoningEffortToggle` next to the Model Picker when a reasoning model is active, allowing users to toggle thinking depth on-the-fly (`Default`, `Low`, `Medium`, `Deep Reasoning`, `Maximum`).
+  - Features an interactive **Reasoning Energy Bar (`ReasoningEnergyBar`)** supporting drag & drop and click-to-select across 5 depth levels:
+    - `Default` (Level 0): Sky blue gradient, native provider budget.
+    - `Low` (Level 1): Emerald green gradient (`from-emerald-400 to-teal-500`), fast & concise thinking.
+    - `Medium` (Level 2): Amber gold gradient (`from-amber-400 to-yellow-500`), balanced depth & speed.
+    - `High` (Level 3): Warm orange-rose gradient (`from-orange-400 to-rose-500`), deep multi-step reasoning.
+    - `Max` (Level 4): Vivid neon purple/fuchsia gradient (`from-purple-500 via-fuchsia-500 to-indigo-500`), exhaustive deep thinking.
+  - Chat Composer features a dedicated `ReasoningEffortToggle` next to the Model Picker with a **Mini Energy Gauge (`MiniEnergyMeter`)** reflecting the active level and color aura, plus an integrated `ReasoningEnergyBar` directly in the popover dropdown for instant on-the-fly tuning.
 
 ### Overrides Tab Design
 
