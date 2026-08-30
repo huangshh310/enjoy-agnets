@@ -1,0 +1,22 @@
+{
+  "name": "enjoy-agents",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first Agent IDE — editor, terminal, multi-agent loop, approvals, MCP.",
+  "packageManager": "pnpm@11.12.0",
+  "scripts": {
+    "dev": "turbo run dev --filter=@enjoy-agents/desktop",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "turbo": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  }
+}

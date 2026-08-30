@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@source "./**/*.{ts,tsx}";
+@source "../../../src/renderer/src/**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #f7f7f7;
+  color: #171717;
+}

@@ -1,0 +1,15 @@
+node_modules
+dist
+out
+.turbo
+.eslintcache
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+coverage
+release
+*.local
+apps/desktop/out
+apps/desktop/dist

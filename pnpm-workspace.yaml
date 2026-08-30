@@ -1,0 +1,64 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+catalogMode: strict
+
+catalog:
+  # Tooling
+  typescript: ^5.9.3
+  prettier: ^3.7.4
+  turbo: ^2.5.8
+  vite: ^7.2.6
+  "@types/node": ^22.19.1
+  "@types/react": ^19.2.7
+  "@types/react-dom": ^19.2.3
+
+  # Desktop shell
+  electron: ^39.2.6
+  electron-builder: ^26.0.12
+  electron-vite: ^5.0.0
+  "@electron-toolkit/preload": ^3.0.2
+  "@electron-toolkit/utils": ^4.0.0
+  "@electron-toolkit/tsconfig": ^2.0.0
+
+  # AI
+  ai: ^7.0.84
+  "@ai-sdk/openai": ^4.0.51
+  "@ai-sdk/anthropic": ^4.0.45
+  zod: ^4.1.5
+
+  # UI
+  react: ^19.2.1
+  react-dom: ^19.2.1
+  "@remixicon/react": ^4.9.0
+  react-aria-components: ^1.17.0
+  "@internationalized/date": ^3.12.1
+  motion: ^12.42.2
+  tailwindcss: ^4.1.12
+  "@tailwindcss/vite": ^4.1.12
+  tailwind-merge: ^3.3.1
+  clsx: ^2.1.1
+  zustand: ^5.0.8
+  react-resizable-panels: ^4.0.0
+  "@fontsource-variable/inter": ^5.2.8
+  "@fontsource-variable/jetbrains-mono": ^5.2.8
+
+  # TanStack
+  "@tanstack/react-query": ^5.90.0
+  "@tanstack/react-query-devtools": ^5.90.0
+  "@tanstack/react-router": ^1.131.0
+  "@tanstack/react-virtual": ^3.13.12
+
+  # Editor / workspace
+  monaco-editor: ^0.56.0
+  "@monaco-editor/react": ^4.7.0
+  "@vitejs/plugin-react": ^5.1.1
+  chokidar: ^4.0.3
+  simple-git: ^3.28.0
+  drizzle-orm: ^0.45.2
+
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  esbuild: true
