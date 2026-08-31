@@ -60,6 +60,10 @@ export default defineConfig({
           find: "@enjoy-agents/db/hmac",
           replacement: resolve(repoRoot, "packages/db/src/hmac.ts")
         },
+        {
+          find: "@enjoy-agents/assets/media-type",
+          replacement: resolve(repoRoot, "packages/assets/src/media-type.ts")
+        },
         ...MAIN_WORKSPACE_PACKAGES.map(workspacePackageAlias)
       ]
     }
@@ -90,6 +94,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/providers/presets",
           replacement: resolve(repoRoot, "packages/providers/src/presets.ts")
+        },
+        {
+          find: "@enjoy-agents/assets/media-type",
+          replacement: resolve(repoRoot, "packages/assets/src/media-type.ts")
         },
         {
           find: "@enjoy-agents/mcp/app-host",

@@ -10,6 +10,7 @@ import {
   hashBytes,
   kindFromMediaType,
   previewExport,
+  resolveMediaType,
   resolvePickedExportPath
 } from "@enjoy-agents/assets"
 import { getDatabase } from "./database"
@@ -31,11 +32,12 @@ export async function importAsset(input: { name: string; mediaType: string; byte
   const id = createId("ast")
   await mkdir(assetsDir(), { recursive: true })
   await writeFile(filePathFor(id), bytes)
+  const mediaType = resolveMediaType(input.name, input.mediaType)
   return insertAsset(getDatabase(), {
     id,
     name: input.name,
-    kind: kindFromMediaType(input.mediaType),
-    mediaType: input.mediaType,
+    kind: kindFromMediaType(mediaType),
+    mediaType,
     size: bytes.byteLength,
     hash: hashBytes(bytes),
     source: "import",

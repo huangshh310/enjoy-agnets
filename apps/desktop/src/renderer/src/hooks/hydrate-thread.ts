@@ -20,11 +20,13 @@ export type SessionMessageRow = {
 export function threadFromRows(rows: SessionMessageRow[]): ThreadMessage[] {
   return rows.map((row) => {
     if (row.role !== "assistant") {
+      const extras = extrasFromParts(Array.isArray(row.parts) ? row.parts : [])
       return {
         id: row.id,
         role: row.role,
         content: row.content,
-        createdAt: row.createdAt
+        createdAt: row.createdAt,
+        assets: extras.assets.length > 0 ? extras.assets : undefined
       }
     }
     const payload = parseAssistantPayload(row.content)

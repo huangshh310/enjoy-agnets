@@ -35,7 +35,7 @@ export type ThreadMessage = {
     startLine?: number
     snippet?: string
   }>
-  assets?: Array<{ assetId: string; mediaType: string; name: string }>
+  assets?: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
   structured?: unknown
   components?: Array<{ componentId: string; props: Record<string, unknown> }>
 }
@@ -134,7 +134,10 @@ export type ChatStore = {
   setRightPanelCollapsed: (collapsed: boolean) => void
   toggleExpanded: (id: string) => void
   applyStreamEvent: (event: StreamEvent) => void
-  appendUserMessage: (content: string) => ThreadMessage[]
+  appendUserMessage: (
+    content: string,
+    assets?: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
+  ) => ThreadMessage[]
   setRunning: (running: boolean, runId?: string | null) => void
   setHasKey: (hasKey: boolean) => void
   setError: (message: string | null) => void
@@ -222,10 +225,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       ...(patch.error !== undefined ? { error: patch.error } : {})
     })
   },
-  appendUserMessage: (content) => {
+  appendUserMessage: (content, assets) => {
     const messages = [
       ...get().messages,
-      { id: `msg_user_${Date.now()}`, role: "user" as const, content, createdAt: Date.now() }
+      {
+        id: `msg_user_${Date.now()}`,
+        role: "user" as const,
+        content,
+        createdAt: Date.now(),
+        ...(assets?.length ? { assets } : {})
+      }
     ]
     set({ messages, composer: "", error: null })
     return messages

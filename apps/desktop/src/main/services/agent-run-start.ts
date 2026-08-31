@@ -8,9 +8,10 @@ import { getDatabase, setSetting } from "./database"
 import { createId } from "./ids"
 import { pumpStream } from "./agent-pump"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
-import { maybeRenameSession, persistMessage } from "./persist-session"
+import { maybeRenameSession } from "./persist-session"
 import { resolveRunSecret } from "./agent-run-helpers"
-import { appendRunAttachments } from "./attach-run-files"
+import { appendRunAttachments, attachmentCapsFor } from "./attach-run-files"
+import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
 import { citeKnowledge } from "./cite-knowledge"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
@@ -59,7 +60,11 @@ async function beginAgentRun(
 
   const runId = options.runId ?? createId("run")
   const modelMessages = toModelMessages(input.messages)
-  await appendRunAttachments(modelMessages, input.attachments)
+  await appendRunAttachments(
+    modelMessages,
+    input.attachments,
+    attachmentCapsFor(input.modelId, secret?.provider)
+  )
   holdAgentRun({
     runId,
     window,
@@ -73,7 +78,7 @@ async function beginAgentRun(
   const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
   if (lastUser) {
     if (options.persistUser) {
-      persistMessage(input.sessionId, "user", lastUser.content)
+      persistUserTurn(input.sessionId, lastUser.content, metasFromAssetIds(input.attachments))
       maybeRenameSession(input.sessionId, lastUser.content)
     }
     const cites = await citeKnowledge({

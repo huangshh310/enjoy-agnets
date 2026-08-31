@@ -1,9 +1,10 @@
 /**
  * Composer 发送：校验会话后把历史（含思考）交给主进程跑 Agent。
  */
+import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore } from "../stores/chat-store"
-import { takeComposerAssets } from "./composer-assets"
+import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
 import { applyOptimisticTitle, completeSessionTitle } from "./session-title"
 
 export async function sendComposerMessage() {
@@ -12,7 +13,19 @@ export async function sendComposerMessage() {
   if (!content || store.running) return
   if (!guardComposer(store)) return
 
-  const messages = store.appendUserMessage(content)
+  const queuedAssets = takeComposerAssetDetails()
+  const assetIds = queuedAssets.map((item) => item.id)
+  const messageAssets = queuedAssets.map((item) => ({
+    assetId: item.id,
+    mediaType: resolveMediaType(item.name, item.mediaType),
+    name: item.name,
+    url: item.url
+  }))
+
+  const messages = store.appendUserMessage(
+    content,
+    messageAssets.length > 0 ? messageAssets : undefined
+  )
   applyOptimisticTitle(content)
   store.setMessages([
     ...messages,
@@ -40,7 +53,7 @@ export async function sendComposerMessage() {
         content: message.content,
         reasoning: message.reasoning
       })),
-      attachments: takeComposerAssets()
+      attachments: assetIds
     })) as { runId: string }
     store.setRunning(true, result.runId)
     void completeSessionTitle(content)
@@ -80,13 +93,32 @@ export async function attachComposerFile(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer())
   let binary = ""
   for (const byte of bytes) binary += String.fromCharCode(byte)
-  const asset = (await getIde().assets.import({
-    name: file.name,
-    mediaType: file.type || "application/octet-stream",
-    bytesBase64: btoa(binary)
-  })) as { id: string }
-  const { queueComposerAsset } = await import("./composer-assets")
-  queueComposerAsset(asset.id, file.name)
+  const previewUrl = URL.createObjectURL(file)
+  try {
+    const mediaType = resolveMediaType(file.name, file.type)
+    const asset = (await getIde().assets.import({
+      name: file.name,
+      mediaType,
+      bytesBase64: btoa(binary)
+    })) as { id: string }
+    queueComposerAsset({
+      id: asset.id,
+      name: file.name,
+      mediaType,
+      size: file.size,
+      url: previewUrl
+    })
+  } catch (error) {
+    URL.revokeObjectURL(previewUrl)
+    throw error
+  }
+}
+
+export async function attachComposerFiles(files: File[] | FileList) {
+  const fileArray = Array.from(files)
+  for (const file of fileArray) {
+    await attachComposerFile(file)
+  }
 }
 
 function dropEmptyPendingAssistant() {

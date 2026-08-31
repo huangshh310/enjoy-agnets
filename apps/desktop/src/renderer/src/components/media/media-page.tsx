@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
+import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import type { AssetRecord } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { exportLibraryAsset, generateLibraryMedia } from "@renderer/hooks/media-library"
@@ -101,7 +102,7 @@ export function MediaPage() {
     const bytesBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
     await getIde().assets.import({
       name: file.name,
-      mediaType: file.type || "application/octet-stream",
+      mediaType: resolveMediaType(file.name, file.type),
       bytesBase64
     })
     await queryClient.invalidateQueries({ queryKey: ["assets"] })

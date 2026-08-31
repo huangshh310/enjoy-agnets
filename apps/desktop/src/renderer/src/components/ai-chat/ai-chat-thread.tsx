@@ -12,6 +12,7 @@ import { cx } from "@/utils/cx"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { ApprovalCard } from "./thread/approval-card"
+import { AssetPreview } from "./thread/asset-preview"
 import { AssistantTurn } from "./thread/assistant-turn"
 
 export function AiChatThread({
@@ -49,8 +50,13 @@ export function AiChatThread({
 
         {messages.map((message) =>
           message.role === "user" ? (
-            <Message key={message.id} from="user" className="max-w-[min(22rem,78%)]">
-              <MessageContent>{message.content}</MessageContent>
+            <Message key={message.id} from="user" className="max-w-[min(24rem,80%)] flex flex-col items-end gap-1.5">
+              {message.assets && message.assets.length > 0 ? (
+                <div className="w-full">
+                  <AssetPreview assets={message.assets} />
+                </div>
+              ) : null}
+              {message.content ? <MessageContent>{message.content}</MessageContent> : null}
             </Message>
           ) : (
             <AssistantTurn key={message.id} message={message} />

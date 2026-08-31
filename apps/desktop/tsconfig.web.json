@@ -19,6 +19,7 @@
       "@enjoy-agents/agent-core": ["../../packages/agent-core/src/index.ts"],
       "@enjoy-agents/agent-core/diff": ["../../packages/agent-core/src/diff.ts"],
       "@enjoy-agents/providers/presets": ["../../packages/providers/src/presets.ts"],
+      "@enjoy-agents/assets/media-type": ["../../packages/assets/src/media-type.ts"],
       "next/link": ["../../packages/ui/shims/next-link.tsx"]
     }
   }

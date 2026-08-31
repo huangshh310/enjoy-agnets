@@ -8,6 +8,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { threadFromRows } from "./hydrate-thread"
+import { mergeUserAssets } from "./merge-user-assets"
 import {
   useChatStore,
   type ChangedFileRow,
@@ -144,10 +145,11 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
 
 export async function loadSession(sessionId: string, title: string) {
   const store = useChatStore.getState()
+  const previous = store.sessionId === sessionId ? store.messages : []
   store.setSession(sessionId, title)
   const rows = (await getIde().session.messages(sessionId)) as MessageRow[]
   restoreUiMessages(rows)
-  store.setMessages(threadFromRows(rows))
+  store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
 }
 
 function restoreUiMessages(rows: MessageRow[]) {

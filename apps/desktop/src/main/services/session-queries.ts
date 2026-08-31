@@ -4,6 +4,7 @@
 import { listMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
+import { backfillUserFileParts } from "./persist-user-attachments"
 import { getWorkspace } from "./workspace"
 
 export async function listSessions(workspaceId: string) {
@@ -26,10 +27,12 @@ export async function listMessages(sessionId: string) {
     content: string
     createdAt: number
   }>
-  return rows.map((row) => ({
-    ...row,
-    parts: listMessageParts(getDatabase(), row.id).map((part) => JSON.parse(part.payload) as unknown)
-  }))
+  return backfillUserFileParts(
+    rows.map((row) => ({
+      ...row,
+      parts: listMessageParts(getDatabase(), row.id).map((part) => JSON.parse(part.payload) as unknown)
+    }))
+  )
 }
 
 export async function createSession(workspaceId: string, title: string) {
