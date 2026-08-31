@@ -28,7 +28,7 @@ export const EFFORT_LEVELS: EffortMeta[] = [
     index: 0,
     label: "Default",
     shortLabel: "Native",
-    desc: "Provider default budget (Standard)",
+    desc: "AI SDK provider-default, mapped per model",
     percentage: 12,
     themeColor: "#38bdf8",
     barGradient: "bg-linear-to-r from-sky-400 to-blue-500",

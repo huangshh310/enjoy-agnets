@@ -1,7 +1,7 @@
 /**
  * 编码 Agent：ToolLoopAgent + 写盘/shell 审批。
  * Harness 插件位用 toHarnessApprovalSettings() 拿 permissionMode / toolApproval。
- * 供应商相关的思考参数由调用方经 providerOptions / reasoning 传入。
+ * 思考档走 AI SDK 7 顶层 reasoning，由 SDK 按模型映射；DeepSeek 仍补 providerOptions。
  */
 import { ToolLoopAgent, type LanguageModel, type ModelMessage } from "ai"
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"

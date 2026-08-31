@@ -4,7 +4,7 @@
  * 2. 角色模型分工（快速模型、推理模型）与推理模式设置
  * 3. 供应商模型目录管理（查看、新增自定义模型、删除）
  */
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import {
   RiAddLine,
   RiBrainLine,
@@ -43,22 +43,6 @@ export function ProviderModelsTab({
   const [newModelLabel, setNewModelLabel] = useState("")
 
   const catalog = editor.models ?? []
-
-  // 判断当前选中的模型是否属于已知推理模型
-  const isSelectedModelReasoning = useMemo(() => {
-    const mid = (editor.modelId || "").toLowerCase()
-    return (
-      mid.includes("reasoner") ||
-      mid.includes("r1") ||
-      mid.startsWith("o1") ||
-      mid.startsWith("o3") ||
-      mid.startsWith("o4") ||
-      mid.includes("thinking") ||
-      mid.includes("deepseek-r1") ||
-      mid.includes("qwq")
-    )
-  }, [editor.modelId])
-
   const currentEffortMeta = getEffortMeta(editor.reasoningEffort)
 
   function addCustomModel() {
@@ -81,17 +65,9 @@ export function ProviderModelsTab({
     <div className="flex flex-col gap-5 py-1">
       {/* 默认主力模型 */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-text-primary">
-            <RiRobot2Line className="size-4 text-accent-500" />
-            <span className="text-body-medium font-medium">Primary / Default Model</span>
-          </div>
-          {isSelectedModelReasoning ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-state-success-text/10 px-2.5 py-0.5 text-[11px] font-semibold text-state-success-text">
-              <RiBrainLine className="size-3" />
-              Reasoning Model Detected
-            </span>
-          ) : null}
+        <div className="flex items-center gap-1.5 text-text-primary">
+          <RiRobot2Line className="size-4 text-accent-500" />
+          <span className="text-body-medium font-medium">Primary / Default Model</span>
         </div>
         <ProviderModelField
           modelId={editor.modelId}
@@ -108,9 +84,7 @@ export function ProviderModelsTab({
       <div
         className={cx(
           "rounded-xl border p-3.5 transition-all flex flex-col gap-3",
-          isSelectedModelReasoning
-            ? "border-state-success-text/40 bg-state-success-text/5 ring-1 ring-state-success-text/10"
-            : "border-border-button-default/80 bg-background-secondary-default/30"
+          "border-border-button-default/80 bg-background-secondary-default/30"
         )}
       >
         <div className="flex items-center justify-between">

@@ -23,23 +23,7 @@ import { MiniEnergyMeter, ReasoningEnergyBar } from "./reasoning-energy-bar"
 export function ReasoningEffortToggle() {
   const reasoningEffort = useChatStore((state) => state.reasoningEffort)
   const setReasoningEffort = useChatStore((state) => state.setReasoningEffort)
-  const modelId = useChatStore((state) => state.modelId)
-  const models = useChatStore((state) => state.models)
-
-  const currentModel = models.find((m) => m.id === modelId)
-  const isReasoningSupported = Boolean(
-    currentModel?.supportsReasoning ||
-      currentModel?.isReasoning ||
-      modelId.toLowerCase().includes("reasoner") ||
-      modelId.toLowerCase().includes("r1") ||
-      modelId.toLowerCase().startsWith("o1") ||
-      modelId.toLowerCase().startsWith("o3") ||
-      modelId.toLowerCase().includes("thinking") ||
-      modelId.toLowerCase().includes("qwq")
-  )
-
-  if (!isReasoningSupported) return null
-
+  // 思考档始终露出：AI SDK 7 顶层 reasoning 按模型映射，不支持则忽略
   const currentMeta = getEffortMeta(reasoningEffort)
 
   return (

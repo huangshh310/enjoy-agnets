@@ -5,7 +5,11 @@ import type { ModelMessage } from "ai"
 import { streamCodingAgent, type ApprovalPolicy } from "@enjoy-agents/agent-core"
 import { disposeHarnessTurn, resolveHarnessAdapter, streamHarnessTurn } from "@enjoy-agents/agent-harness"
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
-import { createLanguageModel, deepseekCallOptions } from "@enjoy-agents/providers"
+import {
+  createLanguageModel,
+  deepseekCallOptions,
+  usesDeepSeekReasoningApi
+} from "@enjoy-agents/providers"
 import { readHarnessSecret } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
 import { findProfileByKinds, type StoredSecret } from "./secrets"
@@ -101,7 +105,13 @@ async function openLocalStream(
     messages: input.messages,
     abortSignal: input.abortSignal,
     reasoning: input.effort,
-    providerOptions: deepseekCallOptions(input.effort),
+    providerOptions: usesDeepSeekReasoningApi({
+      provider: secret.provider,
+      modelId: input.modelId,
+      apiStyle: secret.apiStyle
+    })
+      ? deepseekCallOptions(input.effort)
+      : undefined,
     policy,
     runtimeContext: {
       workspaceRoot: input.workspaceRoot,

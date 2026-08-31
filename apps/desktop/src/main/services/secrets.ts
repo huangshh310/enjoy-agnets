@@ -321,10 +321,6 @@ export async function hasSecret(): Promise<boolean> {
 export function publicModelsFor(profile: ProviderProfile | undefined, isActive = true) {
   if (!profile) return [];
   return modelsForProvider(profile.kind, profile.modelId, profile.models).map((model) => {
-    const isModelReasoning =
-      Boolean(profile.reasoningModelId && profile.reasoningModelId === model.id) ||
-      isKnownReasoningModel(model.id);
-
     return {
       id: model.id,
       label: model.label,
@@ -334,25 +330,11 @@ export function publicModelsFor(profile: ProviderProfile | undefined, isActive =
       apiStyle: resolvedStyle(profile),
       active: isActive,
       isFast: Boolean(profile.fastModelId && profile.fastModelId === model.id),
-      isReasoning: isModelReasoning,
-      supportsReasoning: isModelReasoning || profile.kind === "deepseek" || profile.kind === "openai",
+      isReasoning: Boolean(profile.reasoningModelId && profile.reasoningModelId === model.id),
+      supportsReasoning: true,
       reasoningEffort: profile.reasoningEffort
     };
   });
-}
-
-function isKnownReasoningModel(id: string): boolean {
-  const lower = id.toLowerCase();
-  return (
-    lower.includes("reasoner") ||
-    lower.includes("r1") ||
-    lower.startsWith("o1") ||
-    lower.startsWith("o3") ||
-    lower.startsWith("o4") ||
-    lower.includes("thinking") ||
-    lower.includes("deepseek-r1") ||
-    lower.includes("qwq")
-  );
 }
 
 export async function listAllPublicModels() {
@@ -382,19 +364,16 @@ export async function listAllPublicModels() {
     return result;
   }
 
-  return modelsForProvider("deepseek").map((model) => {
-    const isReasoning = isKnownReasoningModel(model.id);
-    return {
-      id: model.id,
-      label: model.label,
-      provider: "deepseek",
-      providerId: "default",
-      providerName: "DeepSeek",
-      apiStyle: "openai" as ApiStyle,
-      active: true,
-      isFast: false,
-      isReasoning,
-      supportsReasoning: true
-    };
-  });
+  return modelsForProvider("deepseek").map((model) => ({
+    id: model.id,
+    label: model.label,
+    provider: "deepseek",
+    providerId: "default",
+    providerName: "DeepSeek",
+    apiStyle: "openai" as ApiStyle,
+    active: true,
+    isFast: false,
+    isReasoning: false,
+    supportsReasoning: true
+  }));
 }
