@@ -67,8 +67,8 @@ export function SecondaryPageShell({
   }, [filterNav, groups, query])
 
   return (
-    <div className="flex h-full min-h-0 bg-background-full">
-      <aside className="flex w-[240px] shrink-0 flex-col px-3 py-4">
+    <div className="flex h-full min-h-0 bg-background-full pb-3">
+      <aside className="flex w-[240px] shrink-0 flex-col px-3 py-2">
         <Link
           to="/"
           className="mb-3 inline-flex items-center gap-0.5 rounded-2lg px-2 py-1.5 text-body-medium text-text-secondary outline-none hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"

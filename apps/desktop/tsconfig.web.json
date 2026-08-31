@@ -8,6 +8,7 @@
   ],
   "exclude": ["src/renderer/src/**/*.test.ts"],
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "composite": true,
     "jsx": "react-jsx",
     "baseUrl": ".",

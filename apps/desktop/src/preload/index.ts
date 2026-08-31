@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 
+import type { WindowActionResult, WindowState } from "@enjoy-agents/ipc-contract";
+
 const ide = {
   workspace: {
     open: (input?: unknown) => ipcRenderer.invoke("workspace.open", input ?? {}),
@@ -59,6 +61,20 @@ const ide = {
         callback(payload)
       ipcRenderer.on("terminal.data", listener)
       return () => ipcRenderer.off("terminal.data", listener)
+    }
+  },
+  window: {
+    minimize: () => ipcRenderer.invoke("window.minimize") as Promise<WindowActionResult>,
+    toggleMaximize: () =>
+      ipcRenderer.invoke("window.toggleMaximize") as Promise<WindowState>,
+    isMaximized: () =>
+      ipcRenderer.invoke("window.isMaximized") as Promise<WindowState>,
+    close: () => ipcRenderer.invoke("window.close") as Promise<WindowActionResult>,
+    onMaximizedChange: (callback: (isMaximized: boolean) => void) => {
+      const listener = (_event: unknown, payload: WindowState) =>
+        callback(payload.isMaximized)
+      ipcRenderer.on("window.maximized-changed", listener)
+      return () => ipcRenderer.off("window.maximized-changed", listener)
     }
   }
 };

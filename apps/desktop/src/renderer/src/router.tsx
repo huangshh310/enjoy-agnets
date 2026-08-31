@@ -15,6 +15,7 @@ import { SettingsShell } from "@renderer/components/settings/settings-shell"
 import { isSettingsSectionId } from "@renderer/components/settings/settings-catalog"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
 import { CustomizePage, isCustomizeSectionId } from "@renderer/components/customize/customize-page"
+import { WindowFrame } from "@renderer/components/layout/window-frame"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
 
 function RootLayout() {
@@ -44,7 +45,11 @@ function RootLayout() {
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [navigate, pathname])
 
-  return <Outlet />
+  return (
+    <WindowFrame>
+      <Outlet />
+    </WindowFrame>
+  )
 }
 
 const rootRoute = createRootRoute({

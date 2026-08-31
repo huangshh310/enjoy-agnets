@@ -142,12 +142,32 @@ const CHANNELS = [
   "models.list",
   "terminal.open",
   "terminal.write",
-  "terminal.close"
+  "terminal.close",
+  "window.minimize",
+  "window.toggleMaximize",
+  "window.isMaximized",
+  "window.close"
 ] as const
 
-export function registerIpc(_window: BrowserWindow) {
+export function registerIpc(window: BrowserWindow) {
   if (ipcRegistered) return
   ipcRegistered = true
+
+  window.on("maximize", () => {
+    if (!window.isDestroyed()) {
+      window.webContents.send("window.maximized-changed", { isMaximized: true })
+    }
+  })
+  window.on("unmaximize", () => {
+    if (!window.isDestroyed()) {
+      window.webContents.send("window.maximized-changed", { isMaximized: false })
+    }
+  })
+  window.on("restore", () => {
+    if (!window.isDestroyed()) {
+      window.webContents.send("window.maximized-changed", { isMaximized: window.isMaximized() })
+    }
+  })
 
   ipcMain.handle("workspace.open", async (_event, raw) => {
     const input = OpenWorkspaceInput.parse(raw ?? {})
@@ -339,6 +359,29 @@ export function registerIpc(_window: BrowserWindow) {
   ipcMain.handle("terminal.close", async (_event, raw) => {
     const input = TerminalCloseInput.parse(raw)
     closeWorkspaceTerminal(input.sessionId)
+    return { ok: true }
+  })
+  ipcMain.handle("window.minimize", async (event) => {
+    const win = windowFromEvent(event)
+    win.minimize()
+    return { ok: true }
+  })
+  ipcMain.handle("window.toggleMaximize", async (event) => {
+    const win = windowFromEvent(event)
+    if (win.isMaximized()) {
+      win.unmaximize()
+    } else {
+      win.maximize()
+    }
+    return { isMaximized: win.isMaximized() }
+  })
+  ipcMain.handle("window.isMaximized", async (event) => {
+    const win = windowFromEvent(event)
+    return { isMaximized: win.isMaximized() }
+  })
+  ipcMain.handle("window.close", async (event) => {
+    const win = windowFromEvent(event)
+    win.close()
     return { ok: true }
   })
 }

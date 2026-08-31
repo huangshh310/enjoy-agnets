@@ -13,7 +13,10 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: "Enjoy Agents",
-    backgroundColor: "#f7f7f7",
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    backgroundColor: "#00000000",
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,

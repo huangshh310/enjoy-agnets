@@ -379,3 +379,8 @@ export {
   TerminalSession,
   TerminalWriteInput
 } from "./terminal";
+export {
+  WindowState,
+  WindowActionResult
+} from "./window";
+

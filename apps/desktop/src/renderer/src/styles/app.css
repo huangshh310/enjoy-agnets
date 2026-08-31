@@ -1,3 +1,14 @@
 @import "@/styles/globals.css";
 
 @source "../**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
