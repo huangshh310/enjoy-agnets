@@ -8,10 +8,12 @@
     "./presets": "./src/presets.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/reasoning.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/deepseek": "catalog:",
     "@ai-sdk/openai": "catalog:",
     "ai": "catalog:"
   },

@@ -1,6 +1,7 @@
 import { create } from "zustand"
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
+import { reduceStreamEvent } from "./apply-stream-event"
 
 export type ChatRole = "user" | "assistant"
 
@@ -19,6 +20,14 @@ export type ThreadMessage = {
   createdAt: number
   attachment?: CodeAttachment
   streaming?: boolean
+  /** 模型思考轨迹（reasoning.delta 累积） */
+  reasoning?: string
+  /** 本轮工具调用与结果 */
+  tools?: ThreadToolCall[]
+  /** 结束后保留 Thinking 头的秒数 */
+  thoughtSeconds?: number
+  /** 正在吃 text 里的 <think> 块，不持久化 */
+  thinkOpen?: boolean
 }
 
 export type RepositoryNode = {
@@ -173,43 +182,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({ expandedIds })
   },
   applyStreamEvent: (event) => {
-    if (event.type === "text.delta") {
-      const messages = [...get().messages]
-      const last = messages.at(-1)
-      if (last?.role === "assistant" && last.streaming) {
-        last.content += event.text
-      } else {
-        messages.push({
-          id: `msg_${event.runId}`,
-          role: "assistant",
-          content: event.text,
-          createdAt: Date.now(),
-          streaming: true
-        })
-      }
-      set({ messages, thinkingLabel: "Writing" })
-    } else if (event.type === "reasoning.delta") {
-      set({ thinkingLabel: "Thinking" })
-    } else if (event.type === "tool.start") {
-      set({ thinkingLabel: event.name.replaceAll("_", " ") })
-    } else if (event.type === "approval.required") {
-      set({ pendingApproval: event, thinkingLabel: "Waiting for approval" })
-    } else if (event.type === "approval.resolved") {
-      set({ pendingApproval: null })
-    } else if (event.type === "run.end") {
-      set({
-        running: false,
-        runId: null,
-        pendingApproval: null,
-        messages: get().messages.map((message) => ({ ...message, streaming: false }))
-      })
-    } else if (event.type === "run.error") {
-      set({
-        running: false,
-        error: event.message,
-        messages: get().messages.map((message) => ({ ...message, streaming: false }))
-      })
-    }
+    const patch = reduceStreamEvent(get().messages, event)
+    set({
+      messages: patch.messages,
+      ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
+      ...(patch.pendingApproval !== undefined ? { pendingApproval: patch.pendingApproval } : {}),
+      ...(patch.running !== undefined ? { running: patch.running } : {}),
+      ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
+      ...(patch.error !== undefined ? { error: patch.error } : {})
+    })
   },
   appendUserMessage: (content) => {
     const messages = [

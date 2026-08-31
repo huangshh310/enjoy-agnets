@@ -1,0 +1,106 @@
+/**
+ * Beautiful UI Thinking：火花 + 标题始终可见；结束后收起时间线但不卸掉头。
+ */
+import { useEffect, useState, type CSSProperties } from "react"
+import { RiArrowDownSLine, RiSparklingFill } from "@remixicon/react"
+import { cx } from "@/utils/cx"
+import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { buildTraceRows, isTraceExpanded, thinkingHeadline } from "./thinking-rows"
+import { ThinkingSteps } from "./thinking-steps"
+
+const SHIMMER_TONE = {
+  "--bui-agent-thinking-tone": "var(--color-text-secondary)"
+} as CSSProperties
+
+export function ThinkingTrace({
+  reasoning,
+  tools,
+  streaming,
+  startedAt,
+  thoughtSeconds
+}: {
+  reasoning: string
+  tools: ThreadToolCall[]
+  streaming: boolean
+  startedAt: number
+  thoughtSeconds?: number
+}) {
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null)
+  const seconds = useSettledSeconds(startedAt, streaming, thoughtSeconds)
+  const rows = buildTraceRows(reasoning, tools)
+  const expanded = isTraceExpanded(streaming, tools, manualOpen)
+
+  useEffect(() => {
+    if (streaming) setManualOpen(null)
+  }, [streaming])
+
+  return (
+    <div className="mb-2 flex w-full flex-col">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setManualOpen((current) => !isTraceExpanded(streaming, tools, current))}
+        className="-ml-1.5 flex w-fit cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-left outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+      >
+        <RiSparklingFill
+          className={cx("size-4 shrink-0", streaming ? "text-text-secondary" : "text-text-tertiary")}
+        />
+        <span
+          className={cx(
+            "text-caption-1-medium whitespace-nowrap",
+            streaming ? "bui-agent-thinking-label" : "text-text-secondary"
+          )}
+          style={streaming ? SHIMMER_TONE : undefined}
+        >
+          {thinkingHeadline(streaming, tools, seconds)}
+        </span>
+        <RiArrowDownSLine
+          className={cx(
+            "size-3.5 text-text-tertiary transition-transform duration-300",
+            expanded ? "rotate-180" : "rotate-0"
+          )}
+        />
+      </button>
+
+      <div
+        className="grid transition-[grid-template-rows,opacity] duration-300"
+        style={{
+          gridTemplateRows: expanded ? "auto" : "0fr",
+          opacity: expanded ? 1 : 0
+        }}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <ThinkingSteps rows={rows} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function useSettledSeconds(
+  startedAt: number,
+  streaming: boolean,
+  thoughtSeconds?: number
+): number | null {
+  const [live, setLive] = useState(1)
+  const [frozen, setFrozen] = useState<number | null>(thoughtSeconds ?? null)
+
+  useEffect(() => {
+    if (streaming) {
+      setFrozen(null)
+      const tick = () => setLive(Math.max(1, Math.ceil((Date.now() - startedAt) / 1000)))
+      tick()
+      const timer = window.setInterval(tick, 1000)
+      return () => window.clearInterval(timer)
+    }
+    setFrozen(thoughtSeconds ?? frozenFromStart(startedAt))
+    return undefined
+  }, [startedAt, streaming, thoughtSeconds])
+
+  return streaming ? live : (thoughtSeconds ?? frozen)
+}
+
+function frozenFromStart(startedAt: number): number | null {
+  const elapsed = Math.ceil((Date.now() - startedAt) / 1000)
+  return elapsed > 0 && elapsed <= 180 ? Math.max(1, elapsed) : null
+}

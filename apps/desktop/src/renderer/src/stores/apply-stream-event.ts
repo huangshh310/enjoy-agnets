@@ -1,0 +1,149 @@
+/**
+ * 将主进程流式事件折叠进当前会话消息：
+ * 累积回答文本、思考轨迹与工具调用，供对话线程按部件渲染。
+ */
+import {
+  absorbTextDelta,
+  clampThoughtSeconds,
+  foldToolEvent,
+  type StreamEvent
+} from "@enjoy-agents/ipc-contract"
+import type { ThreadMessage } from "./chat-store"
+
+export type StreamPatch = {
+  messages: ThreadMessage[]
+  thinkingLabel?: string
+  pendingApproval?: (StreamEvent & { type: "approval.required" }) | null
+  running?: boolean
+  runId?: string | null
+  error?: string | null
+}
+
+export function reduceStreamEvent(messages: ThreadMessage[], event: StreamEvent): StreamPatch {
+  if (event.type === "run.end") {
+    return {
+      messages: finalizeRun(messages),
+      pendingApproval: null,
+      running: false,
+      runId: null
+    }
+  }
+  if (event.type === "run.error") {
+    return {
+      messages: finalizeRun(messages),
+      running: false,
+      error: event.message
+    }
+  }
+  if (event.type === "approval.required") {
+    const next = cloneMessages(messages)
+    const assistant = ensureAssistant(next, event.runId)
+    assistant.tools ??= []
+    foldToolEvent(assistant.tools, event)
+    return { messages: next, thinkingLabel: "Waiting for approval", pendingApproval: event }
+  }
+  if (event.type === "approval.resolved") {
+    const next = cloneMessages(messages)
+    const assistant = lastStreamingAssistant(next)
+    if (assistant) {
+      assistant.tools ??= []
+      foldToolEvent(assistant.tools, event)
+    }
+    return { messages: next, pendingApproval: null }
+  }
+
+  if (!isLivePart(event.type) || !event.runId) {
+    return { messages }
+  }
+
+  const next = cloneMessages(messages)
+  const assistant = ensureAssistant(next, event.runId)
+  return applyLiveEvent(next, assistant, event)
+}
+
+function isLivePart(type: StreamEvent["type"]) {
+  return (
+    type === "text.delta" ||
+    type === "reasoning.delta" ||
+    type === "tool.start" ||
+    type === "tool.args.delta" ||
+    type === "tool.result"
+  )
+}
+
+function applyLiveEvent(
+  messages: ThreadMessage[],
+  assistant: ThreadMessage,
+  event: StreamEvent
+): StreamPatch {
+  if (event.type === "text.delta") {
+    const next = absorbTextDelta(
+      {
+        visible: assistant.content,
+        think: assistant.reasoning ?? "",
+        pendingThink: Boolean(assistant.thinkOpen)
+      },
+      event.text
+    )
+    assistant.content = next.visible
+    assistant.reasoning = next.think
+    assistant.thinkOpen = next.pendingThink
+    return { messages, thinkingLabel: next.pendingThink ? "Thinking" : "Writing" }
+  }
+  if (event.type === "reasoning.delta") {
+    assistant.reasoning = `${assistant.reasoning ?? ""}${event.text}`
+    return { messages, thinkingLabel: "Thinking" }
+  }
+  assistant.tools ??= []
+  foldToolEvent(assistant.tools, event)
+  const name = event.type === "tool.args.delta"
+    ? assistant.tools.find((tool) => tool.id === event.toolCallId)?.name
+    : "name" in event
+      ? event.name
+      : "tool"
+  return { messages, thinkingLabel: (name ?? "tool").replaceAll("_", " ") }
+}
+
+function cloneMessages(messages: ThreadMessage[]): ThreadMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    tools: message.tools?.map((tool) => ({ ...tool }))
+  }))
+}
+
+function lastStreamingAssistant(messages: ThreadMessage[]): ThreadMessage | undefined {
+  const last = messages.at(-1)
+  return last?.role === "assistant" && last.streaming ? last : undefined
+}
+
+function ensureAssistant(messages: ThreadMessage[], runId: string): ThreadMessage {
+  const existing = lastStreamingAssistant(messages)
+  if (existing) return existing
+  const created: ThreadMessage = {
+    id: `msg_${runId}`,
+    role: "assistant",
+    content: "",
+    createdAt: Date.now(),
+    streaming: true,
+    reasoning: "",
+    tools: []
+  }
+  messages.push(created)
+  return created
+}
+
+function finalizeRun(messages: ThreadMessage[]): ThreadMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    streaming: false,
+    thinkOpen: false,
+    thoughtSeconds: message.streaming
+      ? (clampThoughtSeconds(message.createdAt) ?? undefined)
+      : message.thoughtSeconds,
+    tools: message.tools?.map((tool) =>
+      tool.state === "input-streaming" || tool.state === "input-available"
+        ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
+        : tool
+    )
+  }))
+}

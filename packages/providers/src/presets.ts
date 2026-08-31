@@ -46,7 +46,9 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     requiresKey: true,
     docsURL: "https://api-docs.deepseek.com/",
     models: [
-      { id: "deepseek-chat", label: "DeepSeek V4" },
+      { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
+      { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+      { id: "deepseek-chat", label: "DeepSeek Chat (legacy)" },
       { id: "deepseek-reasoner", label: "DeepSeek Reasoner" }
     ]
   },

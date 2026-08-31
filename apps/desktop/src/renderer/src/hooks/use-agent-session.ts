@@ -1,6 +1,11 @@
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { StreamEvent, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
+import {
+  parseAssistantPayload,
+  sealAbandonedTools,
+  StreamEvent,
+  type SettingsSnapshot
+} from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import {
   useChatStore,
@@ -103,12 +108,26 @@ export async function loadSession(sessionId: string, title: string) {
   const store = useChatStore.getState()
   store.setSession(sessionId, title)
   const rows = (await getIde().session.messages(sessionId)) as MessageRow[]
-  const messages: ThreadMessage[] = rows.map((row) => ({
-    id: row.id,
-    role: row.role,
-    content: row.content,
-    createdAt: row.createdAt
-  }))
+  const messages: ThreadMessage[] = rows.map((row) => {
+    if (row.role !== "assistant") {
+      return {
+        id: row.id,
+        role: row.role,
+        content: row.content,
+        createdAt: row.createdAt
+      }
+    }
+    const payload = parseAssistantPayload(row.content)
+    return {
+      id: row.id,
+      role: row.role,
+      content: payload.content,
+      reasoning: payload.reasoning,
+      tools: sealAbandonedTools(payload.tools),
+      thoughtSeconds: payload.thoughtSeconds,
+      createdAt: row.createdAt
+    }
+  })
   store.setMessages(messages)
 }
 
@@ -124,48 +143,7 @@ export async function createAndOpenSession(workspaceId: string) {
   workspace.setMessages([])
 }
 
-export async function sendComposerMessage() {
-  const store = useChatStore.getState()
-  const content = store.composer.trim()
-  if (!content || store.running) return
-
-  if (!hasIde()) {
-    store.setError("The desktop IPC bridge is not available.")
-    return
-  }
-  if (!store.workspaceId || !store.sessionId) {
-    store.setError("Open a workspace folder before running an agent.")
-    return
-  }
-  if (!store.hasKey) {
-    void import("../router").then(({ router }) => {
-      void router.navigate({ to: "/settings/$section", params: { section: "providers" } })
-    })
-    store.setError("Add a provider API key in Settings before running an agent.")
-    return
-  }
-
-  const messages = store.appendUserMessage(content)
-  store.setRunning(true)
-
-  try {
-    const result = (await getIde().agent.run({
-      sessionId: store.sessionId,
-      workspaceId: store.workspaceId,
-      modelId: store.modelId,
-      mode: store.mode,
-      reasoningEffort: store.reasoningEffort,
-      messages: messages.map((message) => ({
-        role: message.role,
-        content: message.content
-      }))
-    })) as { runId: string }
-    store.setRunning(true, result.runId)
-  } catch (error) {
-    store.setRunning(false)
-    store.setError(error instanceof Error ? error.message : String(error))
-  }
-}
+export { sendComposerMessage } from "./send-composer"
 
 export async function decidePendingApproval(decision: "allow" | "deny" | "allow_session") {
   const store = useChatStore.getState()

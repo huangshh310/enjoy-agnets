@@ -148,7 +148,7 @@ There is **no marketing hero**. Do not generate a centered headline, inline-phot
 
 1. **Agent rail (left, 260px, collapsing to 60px)** — avatar + name, Quick Search pill with `⌘L`, New agent / Open folder / Automations / Customize, Repositories tree with curved connectors and relative-time chips, theme segmented control, Support / Settings, workspace card + Folder. Collapsed: icon rail, collapse control above the avatar, 36px centered items.
 2. **Chat stage (flex, own white card)** — breadcrumb (`workspace > session`), user bubble (right, pebble fill, 16px radius), assistant prose (left, ink on paper), bordered code snippet card, quiet icon actions, pill composer, status bar (`Main` · project · `∞ Agent` · context ring).
-3. **Changes pane (right, own white card, resizable, min 280px, default ~38%)** — blue PillTab `Changes | Browser`, uncommitted summary with `+N -N`, file row with sparkle + New badge, line-numbered source.
+3. **Changes pane (right, own white card, resizable, min 280px, default ~38%)** — blue PillTab `Changes | Browser`, uncommitted summary with `+N -N`, file row with sparkle + per-file `+N -N` + status badge, File Diff hunks on select.
 
 Asymmetry is mandatory: rail is a separate floating object; chat is wider than Changes; user bubbles hug the right, assistant blocks hug the left. **Centered layouts are banned.** Maximum one primary CTA on a given surface (send disc *or* Folder, not both competing in the same visual zone). No “Scroll to explore”, no bouncing chevrons.
 
@@ -221,10 +221,23 @@ The split between chat and Changes is a **gap in the canvas** (12px hit area), n
 - Skeletal shimmers matching layout boxes for file trees and message lists.
 - **Banned:** generic circular spinners, Monaco “Loading…” voids.
 
+### Conversation / agent turns
+
+Assistant turns compose AI Elements parts, restyled to BoardUI tokens. Interaction language follows [beUI Agents](https://beui.dev/components/agents) and [Beautiful UI](https://www.beautifului.dev/) (reasoning traces, tool chips, approval cards, streaming markdown) — never raw markdown source.
+
+- **User bubble:** `Message` + `MessageContent`, tertiary fill, right-aligned.
+- **Assistant body:** `MessageResponse` / Streamdown — headings, lists, bold, code, tables. Do not dump `message.content` as a plain string.
+- **Thinking:** Beautiful UI expandable trace — no card fill. Sparkle + shimmer “Thinking” / “Running tools” / “Thought for N seconds”, chevron. Trace is a vertical line of auto rows from live output (reasoning paragraphs, search hits, file/edit/bash). `Steps | Reasoning | Search | Coding` are demo variants of the same component, never a user tab bar. Open while streaming; settle collapsed. Always show while the turn is streaming or when the turn has tools / reasoning.
+- **Reasoning:** lives in the Thinking card Reasoning tab (model `reasoning.delta`). Empty tab is allowed when the model emits no trace.
+- **Tools:** appear as Thinking steps (name + one-line args + status). Search/Coding tabs host File Diff, grep rows, and bash stdout. Do not dump those as raw JSON. Never leave a Pending card with an empty Parameters block.
+- **File Diff:** unified hunks, tabular old/new line numbers, success moss for additions, error coral for deletions. Used in Changes, approval preview, and tool results.
+- **Approval:** inline `ApprovalCard`. Write/edit tools show the pending File Diff; bash shows the command. Allow / Allow for session / Deny. Never a blocking modal.
+- **Loading:** `AgentThinking` only before the assistant turn exists. After the first token, the Thinking trace card takes over.
+
 ### Empty / error
 
 - Empty thread: composed prompt into the composer, no illustration mascot, no emoji.
-- Approval: inline bordered panel with tool name + args, Allow / Deny. Never a blocking modal for routine tool approvals. AI Elements `Tool` may host this once restyled.
+- Approval: inline bordered panel with pending File Diff (or bash command), Allow / Deny. Never a blocking modal for routine tool approvals.
 - Errors: `text/error/primary` inline under the thread or field.
 
 ### Code

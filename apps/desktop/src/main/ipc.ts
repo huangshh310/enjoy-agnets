@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import {
+  FileDiffInput,
   ListDirInput,
   OpenWorkspaceInput,
   ReadFileInput,
@@ -49,6 +50,7 @@ import {
   listWorkspaces,
   listWorkspaceDir,
   openWorkspace,
+  readWorkspaceDiff,
   readWorkspaceFile
 } from "./services/workspace"
 
@@ -119,6 +121,7 @@ const CHANNELS = [
   "workspace.list",
   "workspace.files",
   "workspace.readFile",
+  "workspace.diff",
   "workspace.changes",
   "session.list",
   "session.create",
@@ -162,6 +165,10 @@ export function registerIpc(_window: BrowserWindow) {
   ipcMain.handle("workspace.readFile", async (_event, raw) => {
     const input = ReadFileInput.parse(raw)
     return readWorkspaceFile(input.workspaceId, input.path)
+  })
+  ipcMain.handle("workspace.diff", async (_event, raw) => {
+    const input = FileDiffInput.parse(raw)
+    return readWorkspaceDiff(input.workspaceId, input.path)
   })
   ipcMain.handle("workspace.changes", async (_event, workspaceId: string) => {
     const workspace = await getWorkspace(workspaceId)

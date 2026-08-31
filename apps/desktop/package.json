@@ -10,6 +10,7 @@
     "build": "electron-vite build",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "test": "node --experimental-strip-types --test src/main/services/stream-parts.test.ts src/main/services/to-model-messages.test.ts",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",

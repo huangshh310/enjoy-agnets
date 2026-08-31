@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort";
+
+export type { ReasoningEffort } from "./reasoning-effort";
 
 export const AgentMode = z.enum(["agent", "plan", "ask", "debug"]);
 export type AgentMode = z.infer<typeof AgentMode>;
@@ -9,7 +12,9 @@ export type ChatRole = z.infer<typeof ChatRole>;
 export const ChatMessage = z.object({
   id: z.string().optional(),
   role: ChatRole,
-  content: z.string()
+  content: z.string(),
+  /** DeepSeek V4 带 tools 时必须回传上一轮思考 */
+  reasoning: z.string().optional()
 });
 export type ChatMessage = z.infer<typeof ChatMessage>;
 
@@ -34,7 +39,7 @@ export const RunAgentInput = z.object({
   workspaceId: z.string(),
   modelId: z.string(),
   mode: AgentMode.default("agent"),
-  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
+  reasoningEffort: ReasoningEffortSchema.optional(),
   messages: z.array(ChatMessage)
 });
 export type RunAgentInput = z.infer<typeof RunAgentInput>;
@@ -63,6 +68,20 @@ export const ReadFileInput = z.object({
   path: z.string()
 });
 export type ReadFileInput = z.infer<typeof ReadFileInput>;
+
+export const FileDiffInput = z.object({
+  workspaceId: z.string(),
+  path: z.string()
+});
+export type FileDiffInput = z.infer<typeof FileDiffInput>;
+
+export const FileDiffResult = z.object({
+  path: z.string(),
+  diff: z.string(),
+  additions: z.number(),
+  deletions: z.number()
+});
+export type FileDiffResult = z.infer<typeof FileDiffResult>;
 
 export const ListDirInput = z.object({
   workspaceId: z.string(),
@@ -98,7 +117,7 @@ export const UpsertProviderInput = z.object({
   contextWindow: z.number().optional(),
   maxTokens: z.number().optional(),
   temperature: z.number().optional(),
-  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
+  reasoningEffort: ReasoningEffortSchema.optional(),
   customHeaders: z.string().optional(),
   customBody: z.string().optional(),
   models: z.array(ProviderModelItem).optional(),
@@ -129,7 +148,7 @@ export const ProviderPublic = z.object({
   contextWindow: z.number().optional(),
   maxTokens: z.number().optional(),
   temperature: z.number().optional(),
-  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional(),
+  reasoningEffort: ReasoningEffortSchema.optional(),
   customHeaders: z.string().optional(),
   customBody: z.string().optional(),
   models: z.array(ProviderModelItem).optional(),
@@ -156,7 +175,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("tool.start"),
     runId: z.string(),
     toolCallId: z.string(),
-    name: z.string()
+    name: z.string(),
+    args: z.unknown().optional()
   }),
   z.object({
     type: z.literal("tool.args.delta"),
@@ -169,7 +189,9 @@ export const StreamEvent = z.discriminatedUnion("type", [
     runId: z.string(),
     toolCallId: z.string(),
     name: z.string(),
-    result: z.unknown()
+    result: z.unknown().optional(),
+    args: z.unknown().optional(),
+    error: z.string().optional()
   }),
   z.object({
     type: z.literal("approval.required"),
@@ -223,7 +245,7 @@ export const ModelOption = z.object({
   isFast: z.boolean().optional(),
   isReasoning: z.boolean().optional(),
   supportsReasoning: z.boolean().optional(),
-  reasoningEffort: z.enum(["low", "medium", "high", "xhigh"]).optional()
+  reasoningEffort: ReasoningEffortSchema.optional()
 });
 export type ModelOption = z.infer<typeof ModelOption>;
 
@@ -290,3 +312,13 @@ export const ChangedFile = z.object({
   deletions: z.number().default(0)
 });
 export type ChangedFile = z.infer<typeof ChangedFile>;
+
+export {
+  parseAssistantPayload,
+  serializeAssistantPayload,
+  type AssistantPayload,
+  type ThreadToolCall,
+  type ToolCallState
+} from "./assistant-payload";
+export { foldToolEvent, sealAbandonedTools } from "./fold-tool-event";
+export { absorbTextDelta, clampThoughtSeconds, type ThinkBuffer } from "./think-text";

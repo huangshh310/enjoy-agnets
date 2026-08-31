@@ -163,6 +163,7 @@ export function AiChatShell() {
         <Separator className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-active:after:bg-accent-500" />
         <Panel id="changes" minSize="280px" defaultSize="38%" className="min-h-0 bg-transparent">
           <AiChatChangesPanel
+            workspaceId={workspaceId}
             rightTab={rightTab}
             onRightTabChange={setRightTab}
             changes={changes}

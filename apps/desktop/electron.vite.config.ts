@@ -47,6 +47,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/index.ts")
         },
         {
+          find: "@enjoy-agents/agent-core/diff",
+          replacement: resolve(repoRoot, "packages/agent-core/src/diff.ts")
+        },
+        {
           find: "@enjoy-agents/providers/presets",
           replacement: resolve(repoRoot, "packages/providers/src/presets.ts")
         },

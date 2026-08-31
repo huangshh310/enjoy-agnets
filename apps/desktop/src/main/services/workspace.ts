@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import { dialog } from "electron";
-import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core";
+import { diffTexts, parseUnifiedDiff, toUnifiedDiff, type AgentWorkspaceHost } from "@enjoy-agents/agent-core";
 import { getDatabase } from "./database";
 import { createId } from "./ids";
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths";
@@ -136,7 +136,8 @@ export async function listWorkspaceDir(workspaceId: string, relativePath: string
 
 export async function changedFiles(workspaceRoot: string) {
   const status = (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout
-  return status
+  const counts = await readNumstat(workspaceRoot)
+  const rows = status
     .split("\n")
     .map((line) => line.trimEnd())
     .filter(Boolean)
@@ -149,13 +150,82 @@ export async function changedFiles(workspaceRoot: string) {
         D: "deleted",
         "??": "untracked"
       };
+      const stat = counts.get(filePath) ?? { additions: 0, deletions: 0 }
       return {
         path: filePath,
         status: statusMap[code] ?? "modified",
-        additions: 0,
-        deletions: 0
+        additions: stat.additions,
+        deletions: stat.deletions
       };
     });
+  await fillUntrackedCounts(workspaceRoot, rows)
+  return rows
+}
+
+export async function readWorkspaceDiff(workspaceId: string, relativePath: string) {
+  const workspace = await getWorkspace(workspaceId)
+  const raw = await fileUnifiedDiff(workspace.rootPath, relativePath)
+  const model = raw.trim()
+    ? parseUnifiedDiff(raw, relativePath)
+    : await emptyFileAsDiff(workspace.rootPath, relativePath)
+  return {
+    path: relativePath,
+    diff: toUnifiedDiff(model),
+    additions: model.additions,
+    deletions: model.deletions
+  }
+}
+
+async function fileUnifiedDiff(workspaceRoot: string, relativePath: string): Promise<string> {
+  const unstaged = (await runGit(workspaceRoot, ["diff", "--", relativePath])).stdout
+  if (unstaged.trim()) return unstaged
+  const staged = (await runGit(workspaceRoot, ["diff", "--cached", "--", relativePath])).stdout
+  return staged
+}
+
+async function emptyFileAsDiff(workspaceRoot: string, relativePath: string) {
+  try {
+    const content = await fs.readFile(resolveInsideWorkspace(workspaceRoot, relativePath), "utf8")
+    return diffTexts("", content, relativePath)
+  } catch {
+    return diffTexts("", "", relativePath)
+  }
+}
+
+async function fillUntrackedCounts(
+  workspaceRoot: string,
+  rows: Array<{ path: string; status: string; additions: number; deletions: number }>
+) {
+  await Promise.all(
+    rows
+      .filter((row) => row.status === "untracked" && row.additions === 0)
+      .map(async (row) => {
+        try {
+          const content = await fs.readFile(resolveInsideWorkspace(workspaceRoot, row.path), "utf8")
+          row.additions = content.length === 0 ? 0 : content.split(/\r?\n/).length
+        } catch {
+          row.additions = 0
+        }
+      })
+  )
+}
+
+async function readNumstat(workspaceRoot: string) {
+  const counts = new Map<string, { additions: number; deletions: number }>()
+  const chunks = [
+    (await runGit(workspaceRoot, ["diff", "--numstat"])).stdout,
+    (await runGit(workspaceRoot, ["diff", "--numstat", "--cached"])).stdout
+  ]
+  for (const chunk of chunks) {
+    for (const line of chunk.split("\n")) {
+      const match = line.match(/^(\d+|-)\t(\d+|-)\t(.+)$/)
+      if (!match) continue
+      const additions = match[1] === "-" ? 0 : Number(match[1])
+      const deletions = match[2] === "-" ? 0 : Number(match[2])
+      counts.set(match[3].replace(/"/g, ""), { additions, deletions })
+    }
+  }
+  return counts
 }
 
 async function collectFiles(workspaceRoot: string, pattern: string): Promise<string[]> {

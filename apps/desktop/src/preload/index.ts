@@ -6,6 +6,7 @@ const ide = {
     list: () => ipcRenderer.invoke("workspace.list"),
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
     readFile: (input: unknown) => ipcRenderer.invoke("workspace.readFile", input),
+    diff: (input: unknown) => ipcRenderer.invoke("workspace.diff", input),
     changes: (workspaceId: string) => ipcRenderer.invoke("workspace.changes", workspaceId)
   },
   session: {

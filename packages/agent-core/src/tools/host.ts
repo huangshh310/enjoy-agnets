@@ -1,12 +1,13 @@
 import type { AgentRuntimeContext, AgentWorkspaceHost } from "../runtime-context";
 
 type ToolExecuteOptions = {
-  experimental_context?: unknown;
+  context?: unknown;
   runtimeContext?: unknown;
+  experimental_context?: unknown;
 };
 
 export function workspaceHostFrom(options: ToolExecuteOptions): AgentWorkspaceHost {
-  const context = (options.runtimeContext ?? options.experimental_context) as
+  const context = (options.context ?? options.runtimeContext ?? options.experimental_context) as
     | AgentRuntimeContext
     | undefined;
   if (!context?.host) {
