@@ -7,7 +7,7 @@ The desktop app under `apps/desktop` owns Electron, IPC, and the AI Chat shell.
 
 ## Stack
 
-See `electron-agents-ide-tech-stack.md`.
+Agent 手册：`AGENTS.md`。领域契约：`design/specs/`。选型长文：`design/references/tech-stack.md`。
 
 ## Develop
 

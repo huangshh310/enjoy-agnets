@@ -1,0 +1,49 @@
+# spec/product
+
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-08-31
+
+## 当前真相
+
+Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」。中心是 **Agent 循环**：读工作区、改文件、跑命令、在危险操作前停下来等人审批。
+
+第一期必须同时满足：
+
+- 本机工作区可见（文件树 + Git Changes + 后续 Monaco）
+- 流式推理与工具过程可见（Thinking / Tool / Diff）
+- 写文件、执行 shell 默认可审批
+- 用户自带 Key（BYOK），密钥不下发到渲染进程
+- 可以完全没有云服务
+
+当前桌面壳：`apps/desktop`。Hash 路由，主界面是三卡片工作区（Agent rail / Chat / Changes）。
+
+## 不变量
+
+- Agent 主循环必须留在本机（Electron main），不要上云。
+- 渲染进程只画界面，不调模型、不读明文 Key、不直接 `fs` / `child_process`。
+- 第一期不做：云账号、向量检索、多 Agent 编排、实时多端 CRDT。
+
+## 分期（对照实现，不是口号）
+
+| 阶段 | 状态 | 内容 |
+|---|---|---|
+| MVP | 进行中 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI |
+| V1 | 未做完 | MCP、Git 面板加深、会话搜索、自动更新、Prompt Bar `@` / `/` |
+| V1.5 | 后置 | 云账号、token 代理、子 Agent、Harness 插件（Claude Code / Codex） |
+
+## 明确不做
+
+1. 用 Next.js / TanStack Start 包桌面
+2. 在 renderer 调模型或跑 agent 循环
+3. 第一期上 Mastra / LangGraph / TanStack AI
+4. `better-sqlite3` 当默认驱动（用 `node:sqlite`）
+5. 未审批就执行 write / bash
+6. API Key 进渲染进程或进 Git
+
+## 代码入口
+
+- 产品说明：`README.md`
+- 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
+
+## 已知坑
+
+- 技术栈长文里的目录（`packages/terminal`、独立 Hono 进程）是规划，不是当前仓结构。以本 spec 与 `architecture` 为准。

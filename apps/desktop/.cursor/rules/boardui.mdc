@@ -5,7 +5,7 @@ alwaysApply: true
 
 # BoardUI design rules
 
-This project uses BoardUI **tokens** with shadcn/ui primitives and AI Elements for agent chrome. See repo-root `DESIGN.md`.
+This project uses BoardUI **tokens** with shadcn/ui primitives and AI Elements for agent chrome. See `design/specs/ui.md` and `design/references/visual-system.md`.
 
 ## Components first
 
@@ -13,7 +13,7 @@ This project uses BoardUI **tokens** with shadcn/ui primitives and AI Elements f
 - Before hand-building: search shadcn/ui, then AI Elements, then Beautiful UI / BeUI / Rare UI / 21st / Motion Primitives / vgpu / ThreeUI / Fluid Functionalism. Restyle to BoardUI tokens. Never ship a registry default skin.
 - Install: `pnpm dlx shadcn@latest add <name>` or `pnpm dlx shadcn@latest add @ai-elements/<name>`.
 - Keep BoardUI ThemeToggle and ComposerLoader. Do not add new BoardUI base primitives.
-- See repo-root `DESIGN.md`.
+- See `design/specs/ui.md` and `design/references/visual-system.md`.
 
 ## Color: semantic tokens only
 

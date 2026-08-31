@@ -1,0 +1,63 @@
+# design/ — Spec 目录
+
+本目录是 Enjoy Agents 的**设计契约**。代码可以演进，但变更必须先对照这里，再同步回去。
+
+| 层 | 路径 | 角色 |
+|---|---|---|
+| **Spec（当前真相）** | `design/specs/*.md` | 按领域拆开的短契约。实现、修 bug、改行为时先读对应 spec。 |
+| **Reference（背景）** | `design/references/*` | 长文、选型备忘、视觉全书。过时可以修，但不能单独当实现依据。 |
+| **入口** | 仓库根 `AGENTS.md` | Agent 工作手册：读哪份 spec、何时必须改文档。 |
+
+根目录 `DESIGN.md` 只是跳转页，不要往里继续堆内容。
+
+---
+
+## Spec 分类
+
+| ID | 文件 | 管什么 | 主要代码 |
+|---|---|---|---|
+| `product` | [specs/product.md](./specs/product.md) | 产品边界、分期、明确不做 | 仓库级决策 |
+| `architecture` | [specs/architecture.md](./specs/architecture.md) | 进程模型、包职责、安全基线 | `apps/desktop/src/main`、`packages/*` |
+| `ui` | [specs/ui.md](./specs/ui.md) | 三卡片布局、token、组件来源 | `apps/desktop/.../ai-chat`、`packages/ui` |
+| `agent-runtime` | [specs/agent-runtime.md](./specs/agent-runtime.md) | Agent 循环、工具、审批、模式 | `packages/agent-core`、`main/services/agent-runner.ts` |
+| `providers` | [specs/providers.md](./specs/providers.md) | 协议工厂、vault、探测 | `packages/providers`、`main/services/secrets.ts` |
+| `ipc` | [specs/ipc.md](./specs/ipc.md) | Zod 合约、频道、流事件 | `packages/ipc-contract`、`main/ipc.ts`、`preload` |
+| `workspace` | [specs/workspace.md](./specs/workspace.md) | 工作区、文件、Git、终端 | `main/services/workspace.ts`、`terminal.ts` |
+| `window` | [specs/window.md](./specs/window.md) | 无边框窗口、标题栏、窗口 IPC | `main/index.ts`、`components/layout` |
+| `settings` | [specs/settings.md](./specs/settings.md) | 设置 / Automations / Customize 路由 | `router.tsx`、`components/settings` |
+
+找不到对应 ID 时：先在本表加一行和空 spec，再写代码。不要把新领域塞进无关 spec。
+
+---
+
+## Reference
+
+| 文件 | 内容 |
+|---|---|
+| [references/visual-system.md](./references/visual-system.md) | 原 `DESIGN.md`：色彩、字体、组件皮肤、Providers 交互全书 |
+| [references/tech-stack.md](./references/tech-stack.md) | 原技术栈说明书：选型理由、禁令、分期 |
+| [references/vercel-ai-sdk-7-feature-matrix.md](./references/vercel-ai-sdk-7-feature-matrix.md) | AI SDK 7 能力对照 |
+
+---
+
+## 文档更新协议
+
+**代码与文档必须同一次改动里对齐。** 触发条件见根目录 `AGENTS.md`「何时必须更新文档」。
+
+每份 spec 保持同一骨架，方便扫：
+
+```markdown
+# spec/<id>
+
+> 一句话职责。最后更新：YYYY-MM-DD
+
+## 当前真相
+## 不变量
+## 代码入口
+## 已知坑
+```
+
+- **当前真相**：现在代码实际怎么做，不是愿景。
+- **不变量**：打破就会出安全 / 架构事故的规则。
+- **已知坑**：修 bug 或踩坑后必须补的条目（现象 → 根因 → 正确做法）。
+- 愿景、第二期能力写在 `product` 分期或 `references/tech-stack.md`，不要假装已经落地。

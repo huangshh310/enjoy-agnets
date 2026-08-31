@@ -1,5 +1,6 @@
 # Electron Agents IDE 技术栈说明书
 
+> 位置：`design/references/tech-stack.md`。当前落地以 [`../specs/`](../specs/) 为准；本文是选型与分期背景。  
 > 目标：做一个本地优先的 Agent IDE（编辑器 + 终端 + 多 Agent 循环 + 审批 + MCP）。
 > 原则：渲染进程只画界面；模型调用、文件系统、终端、密钥全部在主进程。
 > 文档版本：2026-08-30
@@ -128,7 +129,7 @@ packages:
 | 客户端状态 | Zustand | 当前 session、面板开关、composer |
 | 校验 | Zod | 与主进程共用 schema |
 
-视觉走 BoardUI tokens。按钮、弹层、表单走 shadcn（装完 restyle）。Agent 过程表面走 AI Elements。Beautiful UI / BeUI 等只作参考源，不直接当运行时依赖。详见 `DESIGN.md`。
+视觉走 BoardUI tokens。按钮、弹层、表单走 shadcn（装完 restyle）。Agent 过程表面走 AI Elements。Beautiful UI / BeUI 等只作参考源，不直接当运行时依赖。详见 `design/specs/ui.md` 与 `design/references/visual-system.md`。
 
 ### 4.2 TanStack：逐项决定
 
@@ -440,7 +441,7 @@ react-resizable-panels
 zustand
 ```
 
-视觉语言：BoardUI tokens（`packages/ui/styles`）。组件：shadcn/ui + AI Elements，安装后改成 BoardUI 外观。ThemeToggle / ComposerLoader 保留 BoardUI 实现。新功能先在 shadcn、AI Elements、Beautiful UI、BeUI、Rare UI、21st、Motion Primitives、vgpu、ThreeUI 里找，再 restyle。详见 `DESIGN.md`。
+视觉语言：BoardUI tokens（`packages/ui/styles`）。组件：shadcn/ui + AI Elements，安装后改成 BoardUI 外观。ThemeToggle / ComposerLoader 保留 BoardUI 实现。新功能先在 shadcn、AI Elements、Beautiful UI、BeUI、Rare UI、21st、Motion Primitives、vgpu、ThreeUI 里找，再 restyle。详见 `design/specs/ui.md` 与 `design/references/visual-system.md`。
 
 ### 9.3 TanStack
 

@@ -1,0 +1,14 @@
+---
+description: 改代码时同步 design/specs；遇坑必须写进对应 spec
+alwaysApply: true
+---
+
+# 文档与代码同步
+
+领域契约在 `design/specs/`。入口是仓库根 `AGENTS.md`。
+
+- 动手前按 `AGENTS.md` 的 Spec 地图打开对应 spec。
+- 修 bug、改行为、加 IPC / 路由 / 工具 / 供应商时，**同一次改动**更新该 spec 的「当前真相」或「已知坑」。
+- 代码与 spec 冲突：先确认哪边对，再改；不要只改代码留下过时文档。
+- 新领域先在 `design/README.md` 加一行并新建 spec，再写代码。
+- 长文只放 `design/references/`。根目录 `DESIGN.md` 只是跳转。

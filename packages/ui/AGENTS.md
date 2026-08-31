@@ -10,7 +10,7 @@ This project uses BoardUI **tokens** (Tailwind CSS v4, `styles/`) with shadcn/ui
 - Install with `pnpm dlx shadcn@latest add <name>` or `pnpm dlx shadcn@latest add @ai-elements/<name>` from `packages/ui` or `apps/desktop`.
 - Keep BoardUI **ThemeToggle** and **ComposerLoader**. Do not add new BoardUI `components/base/*` primitives.
 - Import primitives from `@/components/ui/button` (etc). Merge classes with `cn()` from `@/lib/utils` or `cx()` from `@/utils/cx`.
-- See `DESIGN.md` at the repo root for the full stack, sourcing table, and look rules.
+- See `design/specs/ui.md` and `design/references/visual-system.md` for the full stack, sourcing table, and look rules.
 
 ## Color: semantic tokens only
 
@@ -41,5 +41,5 @@ This project uses BoardUI **tokens** (Tailwind CSS v4, `styles/`) with shadcn/ui
 - Focus states: `outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring`.
 - Unique keepers: ThemeToggle (circular reveal), ComposerLoader (composer rim).
 
-When unsure about a token or look, read `DESIGN.md`. For a missing primitive, install shadcn or `@ai-elements/*`, then restyle.
+When unsure about a token or look, read `design/specs/ui.md` then `design/references/visual-system.md`. For a missing primitive, install shadcn or `@ai-elements/*`, then restyle.
 <!-- boardui:rules:end -->
