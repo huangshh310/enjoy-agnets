@@ -16,7 +16,7 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 
 不采用：RSC、DirectChatTransport HTTP、`@ai-sdk/tui` 作桌面 UI。renderer 用 `useMainChatTransport` / `useCompletion` / `useObject` 走 IPC。长会话先 `clipHistory` 再 `pruneMessages`。语言模型经 `wrapLanguageModel` 注入默认指令与参数。
 
-聊天主路径：Composer Stop → `agent.abort`；附件 → `assets.import` + `attachments`（文本内联，图片需 vision，PDF 需 files）；`source.added` / `asset.created` / `structured.delta` 折进当前助手消息并合成白名单 `component` parts，刷新后从 payload 或 `message_parts` 恢复，parts 经 `safeValidateUIMessages`。首轮标题：乐观截断 + `ai.generate` kind=`completion` + `session.rename`。助手 Extract 走 `structured-object`。ToolLoop `stopWhen` = `[stepCountIs(maxAgentSteps), isLoopFinished(), 可选 hasToolCall]`；`prepareStep` 先 `pruneModelMessages`。`stepTimeoutMs` 以对象 `{ stepMs, toolMs }` 传给 SDK，不要传数字（会被当成总超时）。
+聊天主路径：Composer 语言模型 → `agent.run`；`grok-imagine-*` / dall-e 等生图模型 → `ai.generate` kind=`image`（`generateImage`），带 `messages` 时把 prompt 与 `asset.created` 落库。Stop → `ai.abort`。附件 → `assets.import` + `attachments`（文本内联，图片需 vision，PDF 需 files）；`source.added` / `asset.created` / `structured.delta` 折进当前助手消息并合成白名单 `component` parts，刷新后从 payload 或 `message_parts` 恢复，parts 经 `safeValidateUIMessages`。首轮标题：乐观截断 + `ai.generate` kind=`completion` + `session.rename`。助手 Extract 走 `structured-object`。ToolLoop `stopWhen` = `[stepCountIs(maxAgentSteps), isLoopFinished(), 可选 hasToolCall]`；`prepareStep` 先 `pruneModelMessages`。`stepTimeoutMs` 以对象 `{ stepMs, toolMs }` 传给 SDK，不要传数字（会被当成总超时）。
 
 `ENJOY_E2E_STUB=1` 时不打真实 Provider：`openCodingStream` 吐固定 fullStream（含 write 审批与附件文件名），`ai.generate` 走 `e2e-generate`。启动前设置 `ENJOY_E2E_USERDATA` + `ENJOY_E2E_WORKSPACE`，`bootstrapE2eStub` 写入 Ollama 档案（无需 Key）和会话。这不是产品路径。`ai.generate.timeoutMs` 与偏好 `agentTimeoutMs` 会中止生成。
 

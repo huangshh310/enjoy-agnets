@@ -38,6 +38,8 @@ export type { ProviderConfig } from "./types"
 export {
   ALL_CAPABILITIES,
   staticCapabilitiesFor,
+  isImageOnlyModelId,
+  isVideoOnlyModelId,
   capabilityLabel,
   unsupportedReason
 } from "./capabilities/catalog"

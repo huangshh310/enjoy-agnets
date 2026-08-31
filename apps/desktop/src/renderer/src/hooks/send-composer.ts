@@ -1,10 +1,11 @@
 /**
- * Composer 发送：校验会话后把历史（含思考）交给主进程跑 Agent。
+ * Composer 发送：imagine / 生图模型走 ai.generate + generateImage，其余走 Agent。
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore } from "../stores/chat-store"
 import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import { composerRunKind } from "./composer-run-kind"
 import { applyOptimisticTitle, completeSessionTitle } from "./session-title"
 
 export async function sendComposerMessage() {
@@ -42,26 +43,54 @@ export async function sendComposerMessage() {
   store.setRunning(true)
 
   try {
-    const result = (await getIde().agent.run({
-      sessionId: store.sessionId,
-      workspaceId: store.workspaceId,
-      modelId: store.modelId,
-      mode: store.mode,
-      reasoningEffort: store.reasoningEffort,
-      messages: messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-        reasoning: message.reasoning
-      })),
-      attachments: assetIds
-    })) as { runId: string }
+    const result = (await startComposerRun(store, content, messages, assetIds)) as { runId: string }
     store.setRunning(true, result.runId)
-    void completeSessionTitle(content)
+    if (composerRunKind(store.modelId, currentCaps(store)) === "agent") {
+      void completeSessionTitle(content)
+    }
   } catch (error) {
     dropEmptyPendingAssistant()
     store.setRunning(false)
     store.setError(error instanceof Error ? error.message : String(error))
   }
+}
+
+function currentCaps(store: ReturnType<typeof useChatStore.getState>) {
+  return store.models.find((model) => model.id === store.modelId)?.capabilities
+}
+
+async function startComposerRun(
+  store: ReturnType<typeof useChatStore.getState>,
+  content: string,
+  messages: ReturnType<typeof useChatStore.getState>["messages"],
+  assetIds: string[]
+) {
+  const kind = composerRunKind(store.modelId, currentCaps(store))
+  const history = messages.map((message) => ({
+    role: message.role,
+    content: message.content,
+    reasoning: message.reasoning
+  }))
+  if (kind === "image" || kind === "video") {
+    return getIde().ai.generate({
+      kind,
+      sessionId: store.sessionId,
+      workspaceId: store.workspaceId ?? undefined,
+      modelId: store.modelId,
+      prompt: content,
+      messages: history,
+      attachments: assetIds
+    })
+  }
+  return getIde().agent.run({
+    sessionId: store.sessionId,
+    workspaceId: store.workspaceId,
+    modelId: store.modelId,
+    mode: store.mode,
+    reasoningEffort: store.reasoningEffort,
+    messages: history,
+    attachments: assetIds
+  })
 }
 
 function guardComposer(store: ReturnType<typeof useChatStore.getState>): boolean {
@@ -84,7 +113,7 @@ function guardComposer(store: ReturnType<typeof useChatStore.getState>): boolean
 export async function abortComposerRun() {
   const store = useChatStore.getState()
   if (!store.runId || !hasIde()) return
-  await getIde().agent.abort(store.runId)
+  await getIde().ai.abort(store.runId)
   store.setRunning(false)
 }
 

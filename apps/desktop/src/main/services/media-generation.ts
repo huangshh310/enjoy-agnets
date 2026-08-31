@@ -25,6 +25,7 @@ import {
 import { stampAndSend } from "./event-bus"
 import { readAssetBytes, saveGeneratedAsset } from "./asset-service"
 import { resolveMediaFallback } from "./media-alt-config"
+import { persistMediaAssistantAsset, persistMediaUserPrompt } from "./persist-media-chat"
 
 export async function runMediaKind(options: {
   window: BrowserWindow
@@ -34,8 +35,12 @@ export async function runMediaKind(options: {
   prompt?: string
   attachments: string[]
   config: ProviderConfig
+  persistChat?: boolean
 }): Promise<void> {
-  const { window, runId, sessionId, kind, prompt, config } = options
+  const { window, runId, sessionId, kind, prompt, config, persistChat } = options
+  if (persistChat && prompt?.trim()) {
+    persistMediaUserPrompt(sessionId, prompt, options.attachments)
+  }
   if (kind === "realtime-session") {
     stampAndSend(
       window,
@@ -69,6 +74,7 @@ export async function runMediaKind(options: {
     },
     sessionId
   )
+  if (persistChat) persistMediaAssistantAsset(sessionId, asset)
 }
 
 async function runAudioText(

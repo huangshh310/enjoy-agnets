@@ -40,7 +40,8 @@ export async function executeKind(
       kind: request.kind,
       prompt: request.prompt,
       attachments: request.attachments,
-      config: await requireProviderConfig(request.modelId)
+      config: await requireProviderConfig(request.modelId),
+      persistChat: Boolean(request.messages?.length)
     })
     noteFirst()
     return

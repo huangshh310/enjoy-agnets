@@ -17,7 +17,7 @@ function FormView({ value }: { value: unknown }) {
   const fields = readFields(value)
   if (fields.length === 0) return <pre className={cardClass}>{safeJson(value)}</pre>
   return (
-    <dl className="rounded-2xl border border-border-secondary-default bg-background-secondary-default/60 px-3 py-2">
+    <dl className="rounded-2xl border border-separator-border bg-background-secondary-default/60 px-3 py-2">
       {fields.map((field) => (
         <div key={field.name} className="flex justify-between gap-3 py-1">
           <dt className="text-body-medium text-text-secondary">{field.name}</dt>
@@ -33,7 +33,7 @@ function TableView({ value }: { value: unknown }) {
   if (rows.length === 0) return <pre className={cardClass}>{safeJson(value)}</pre>
   const columns = Object.keys(rows[0] ?? {})
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border-secondary-default">
+    <div className="overflow-x-auto rounded-2xl border border-separator-border">
       <table className="w-full text-left">
         <thead>
           <tr>
@@ -61,7 +61,7 @@ function TableView({ value }: { value: unknown }) {
 }
 
 const cardClass =
-  "overflow-x-auto rounded-2xl border border-border-secondary-default bg-background-secondary-default/60 p-3 text-body-medium text-text-secondary"
+  "overflow-x-auto rounded-2xl border border-separator-border bg-background-secondary-default/60 p-3 text-body-medium text-text-secondary"
 
 function readFields(value: unknown): Array<{ name: string; value: string }> {
   if (!value || typeof value !== "object") return []

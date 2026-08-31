@@ -29,12 +29,23 @@ const LANGUAGE_CORE: ProviderCapability[] = [
   "structured"
 ]
 
+/** SDK 7 `generateImage` 专用模型，不能当 ToolLoop LanguageModel。 */
+export function isImageOnlyModelId(modelId: string): boolean {
+  return /imagine-image|dall-e|gpt-image|flux|sdxl|image-edit|image-lite/.test(modelId.toLowerCase())
+}
+
+export function isVideoOnlyModelId(modelId: string): boolean {
+  return /imagine-video|sora|kling/.test(modelId.toLowerCase())
+}
+
 export function staticCapabilitiesFor(modelId: string, kind: string): ProviderCapability[] {
   if (kind === "fal" || kind === "replicate") return ["image", "video"]
   if (kind === "elevenlabs") return ["speech"]
   if (kind === "deepgram") return ["transcription"]
   if (kind === "cohere") return ["embedding", "rerank"]
   const id = modelId.toLowerCase()
+  if (isImageOnlyModelId(id)) return ["image"]
+  if (isVideoOnlyModelId(id)) return ["video"]
   const caps = new Set<ProviderCapability>(LANGUAGE_CORE)
   if (kind === "gateway") {
     caps.add("image")

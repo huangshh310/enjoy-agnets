@@ -7,29 +7,38 @@ import { SourceList } from "./source-list"
 import { StructuredCard } from "./structured-card"
 
 export function GenerativeUi({
-  components
+  components,
+  prompt
 }: {
   components: NonNullable<ThreadMessage["components"]>
+  prompt?: string
 }) {
   return (
     <div className="flex flex-col gap-2">
       {components.map((item, index) => (
-        <GenerativeBlock key={`${item.componentId}-${index}`} item={item} />
+        <GenerativeBlock key={`${item.componentId}-${index}`} item={item} prompt={prompt} />
       ))}
     </div>
   )
 }
 
 function GenerativeBlock({
-  item
+  item,
+  prompt
 }: {
   item: NonNullable<ThreadMessage["components"]>[number]
+  prompt?: string
 }) {
   if (item.componentId === "source-list") {
     return <SourceList sources={asSources(item.props.sources)} />
   }
   if (item.componentId === "asset-preview") {
-    return <AssetPreview assets={asAssets(item.props.assets)} />
+    return (
+      <AssetPreview
+        assets={asAssets(item.props.assets)}
+        prompt={typeof item.props.prompt === "string" ? item.props.prompt : prompt}
+      />
+    )
   }
   if (item.componentId === "form") {
     return <StructuredCard value={item.props.value ?? item.props} variant="form" />

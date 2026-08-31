@@ -20,6 +20,13 @@ test("不支持能力给出可读原因", () => {
   assert.match(reason, /video/i)
 })
 
+test("grok-imagine 是生图模型，不是聊天 LanguageModel", () => {
+  const caps = staticCapabilitiesFor("grok-imagine-image-2.0", "openai")
+  assert.deepEqual(caps, ["image"])
+  assert.ok(!caps.includes("tools"))
+  assert.ok(!caps.includes("vision"))
+})
+
 test("媒体官方 kind 只声明对应能力", () => {
   const fal = staticCapabilitiesFor("fal-ai/flux/schnell", "fal")
   assert.deepEqual(fal, ["image", "video"])

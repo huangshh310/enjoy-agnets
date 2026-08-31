@@ -10,7 +10,7 @@ export function SourceList({
   sources: NonNullable<ThreadMessage["sources"]>
 }) {
   return (
-    <ul className="rounded-2xl border border-border-secondary-default bg-background-secondary-default/60 px-3 py-2">
+    <ul className="rounded-2xl border border-separator-border bg-background-secondary-default/60 px-3 py-2">
       {sources.map((source) => (
         <li key={source.sourceId} className="py-1">
           <button

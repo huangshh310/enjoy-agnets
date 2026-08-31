@@ -50,11 +50,9 @@ export function AiChatThread({
 
         {messages.map((message) =>
           message.role === "user" ? (
-            <Message key={message.id} from="user" className="max-w-[min(24rem,80%)] flex flex-col items-end gap-1.5">
+            <Message key={message.id} from="user" className="max-w-[min(26rem,85%)] flex flex-col items-end gap-1.5 ml-auto">
               {message.assets && message.assets.length > 0 ? (
-                <div className="w-full">
-                  <AssetPreview assets={message.assets} />
-                </div>
+                <AssetPreview assets={message.assets} align="end" />
               ) : null}
               {message.content ? <MessageContent>{message.content}</MessageContent> : null}
             </Message>

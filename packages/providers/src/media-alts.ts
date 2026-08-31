@@ -4,6 +4,8 @@
 export function alternateImageModelId(modelId: string): string {
   if (modelId === "dall-e-3" || modelId === "dall-e-2") return "gpt-image-1"
   if (modelId === "gpt-image-1") return "dall-e-3"
+  if (modelId === "grok-imagine-image-2.0") return "grok-imagine-image"
+  if (modelId === "grok-imagine-image") return "grok-imagine-image-2.0"
   return modelId
 }
 

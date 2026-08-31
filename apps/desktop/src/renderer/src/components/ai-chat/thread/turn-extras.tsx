@@ -7,9 +7,9 @@ import { GenerativeUi } from "./generative-ui"
 import { SourceList } from "./source-list"
 import { StructuredCard } from "./structured-card"
 
-export function TurnExtras({ message }: { message: ThreadMessage }) {
+export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt?: string }) {
   const components = message.components ?? []
-  if (components.length > 0) return <GenerativeUi components={components} />
+  if (components.length > 0) return <GenerativeUi components={components} prompt={prompt} />
 
   const sources = message.sources ?? []
   const assets = message.assets ?? []
@@ -19,7 +19,7 @@ export function TurnExtras({ message }: { message: ThreadMessage }) {
   return (
     <div className="mt-2 flex flex-col gap-2">
       {sources.length > 0 ? <SourceList sources={sources} /> : null}
-      {assets.length > 0 ? <AssetPreview assets={assets} /> : null}
+      {assets.length > 0 ? <AssetPreview assets={assets} prompt={prompt} /> : null}
       {structured != null ? <StructuredCard value={structured} /> : null}
     </div>
   )
