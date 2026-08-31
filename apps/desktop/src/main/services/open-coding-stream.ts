@@ -3,12 +3,12 @@
  */
 import type { ModelMessage } from "ai"
 import { streamCodingAgent, type ApprovalPolicy } from "@enjoy-agents/agent-core"
-import { disposeHarnessTurn, streamHarnessTurn } from "@enjoy-agents/agent-harness"
+import { disposeHarnessTurn, resolveHarnessAdapter, streamHarnessTurn } from "@enjoy-agents/agent-harness"
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import { createLanguageModel, deepseekCallOptions } from "@enjoy-agents/providers"
 import { readHarnessSecret } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
-import type { StoredSecret } from "./secrets"
+import { findProfileByKinds, type StoredSecret } from "./secrets"
 import { createWorkspaceHost } from "./workspace"
 
 export type OpenedCodingStream = {
@@ -44,23 +44,30 @@ export async function openCodingStream(input: {
   return openLocalStream(input, policy)
 }
 
-/** 走 Claude Code + Vercel Sandbox；不传本机供应商 modelId。 */
+/** 按当前 Provider 选 Harness 适配器；模型 key 来自 Providers。 */
 async function openHarnessStream(
   input: Parameters<typeof openCodingStream>[0],
   policy: ApprovalPolicy
 ): Promise<OpenedCodingStream> {
-  const creds = readHarnessSecret()
-  if (!creds?.anthropicApiKey || !creds.vercelToken) {
-    throw new Error("Configure Claude Code and Vercel Sandbox credentials in Settings → Agent.")
-  }
+  const adapter = resolveHarnessAdapter(input.prefs.harnessId, input.secret?.provider)
+  const sandbox = readHarnessSecret()
+  const provider = adapter ? await findProfileByKinds(adapter.providerKinds) : undefined
+  const providerApiKey = provider?.apiKey || sandbox?.anthropicApiKey || ""
   const opened = await streamHarnessTurn({
     runId: input.runId,
     messages: input.messages,
     abortSignal: input.abortSignal,
     agentInput: {
+      adapterId: adapter?.id,
+      providerKind: input.secret?.provider,
       mode: input.mode,
       policy,
-      credentials: creds,
+      credentials: {
+        providerApiKey,
+        vercelToken: sandbox?.vercelToken,
+        vercelTeamId: sandbox?.vercelTeamId,
+        vercelProjectId: sandbox?.vercelProjectId
+      },
       customInstructions: input.prefs.customInstructions,
       workspaceRoot: input.workspaceRoot
     }

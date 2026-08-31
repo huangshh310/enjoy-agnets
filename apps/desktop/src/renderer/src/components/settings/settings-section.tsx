@@ -14,8 +14,8 @@ import { openFolder } from "@renderer/hooks/use-agent-session"
 import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { ProviderSettings } from "./providers/providers-settings"
-import { getIde, hasIde } from "@renderer/lib/ide"
 import { findSettingsItem, isSettingsSectionId, type SettingsSectionId } from "./settings-catalog"
+import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsComingSoon, SettingsRow } from "./settings-row"
@@ -158,62 +158,10 @@ function ShortcutSettings() {
 }
 
 function AgentSettings() {
-  const queryClient = useQueryClient()
-  const settingsQuery = useSettingsSnapshot()
-  const models = useChatStore((state) => state.models)
-  const modelId = useChatStore((state) => state.modelId)
-  const provider = useChatStore((state) => state.provider)
-  const setModel = useChatStore((state) => state.setModel)
-  const setMode = useChatStore((state) => state.setMode)
-  const availableModels = provider ? models.filter((model) => model.provider === provider) : models
-  const defaultMode = settingsQuery.data?.preferences.defaultMode ?? "agent"
-
-  async function onModelChange(id: string) {
-    const selected = availableModels.find((model) => model.id === id)
-    if (!selected) return
-    setModel(selected.id, selected.label)
-    if (hasIde()) await getIde().settings.setDefaultModel(selected.id)
-    await queryClient.invalidateQueries({ queryKey: ["settings"] })
-  }
-
-  async function onModeChange(mode: "agent" | "plan" | "ask" | "debug") {
-    setMode(mode)
-    await patchPreferences({ defaultMode: mode })
-    await queryClient.invalidateQueries({ queryKey: ["settings"] })
-  }
-
   return (
     <>
-    <SettingsHarness />
-    <SettingsCard title="Defaults">
-      <SettingsRow title="Default model" description="Used for new agent runs in this app.">
-        <Select value={modelId} onValueChange={(value) => void onModelChange(value)}>
-          <SelectTrigger className="min-w-[12rem] rounded-2lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {availableModels.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                {model.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingsRow>
-      <SettingsRow title="Default mode" description="Agent can edit with approval. Ask is read-only.">
-        <Select value={defaultMode} onValueChange={(value) => void onModeChange(value as typeof defaultMode)}>
-          <SelectTrigger className="min-w-[9rem] rounded-2lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="agent">Agent</SelectItem>
-            <SelectItem value="ask">Ask</SelectItem>
-            <SelectItem value="plan">Plan</SelectItem>
-            <SelectItem value="debug">Debug</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingsRow>
-    </SettingsCard>
+      <SettingsHarness />
+      <SettingsDefaults />
     </>
   )
 }

@@ -15,6 +15,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import {
   classifyApprovalPolicy,
   preferencesPatchFromFlags,
+  toneForPolicy,
   type ApprovalPrefFlags
 } from "./approval-policy"
 import { ApprovalFlagList, ApprovalPresetList, PolicyHint, PRESET_ICONS, titleCase } from "./approval-policy-menu"
@@ -69,21 +70,21 @@ function PolicyTrigger({
   kind: ReturnType<typeof classifyApprovalPolicy>
   Icon: (typeof PRESET_ICONS)[keyof typeof PRESET_ICONS]
 } & ComponentProps<"button">) {
+  const tone = toneForPolicy(kind)
   return (
     <button
       type="button"
       aria-label="Tool approval policy"
       className={cx(
-        "group flex h-8 items-center gap-1.5 rounded-full px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs cursor-pointer",
+        "group flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-        kind === "allow-all"
-          ? "text-accent-700 bg-accent-50 hover:bg-accent-100"
-          : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",
+        tone.bgClass,
+        tone.colorClass,
         className
       )}
       {...props}
     >
-      <Icon className="size-3.5 shrink-0 text-foreground-icon-secondary group-hover:text-foreground-icon-primary" />
+      <Icon className={cx("size-3.5 shrink-0", tone.iconColor)} />
       <span className="font-semibold">{kind === "custom" ? "Custom" : titleCase(kind)}</span>
     </button>
   )

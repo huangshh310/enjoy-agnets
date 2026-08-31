@@ -90,7 +90,7 @@ async function settingsSnapshot() {
     lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
     providers: await listPublicProviders(),
     preferences: readPreferences(),
-    harness: harnessPublicStatus()
+    harness: await harnessPublicStatus(readPreferences().harnessId)
   }
 }
 
@@ -205,7 +205,7 @@ export function registerIpc(_window: BrowserWindow) {
   })
   ipcMain.handle("settings.setHarness", async (_event, raw) => {
     writeHarnessSecret(SetHarnessInput.parse(raw))
-    return { ok: true, harness: harnessPublicStatus() }
+    return { ok: true, harness: await harnessPublicStatus(readPreferences().harnessId) }
   })
   ipcMain.handle("settings.listProviders", async () => listPublicProviders())
   ipcMain.handle("settings.presets", async () => PROVIDER_PRESETS)

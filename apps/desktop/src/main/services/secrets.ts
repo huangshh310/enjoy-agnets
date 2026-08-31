@@ -177,6 +177,15 @@ export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
   return vault.profiles.find((profile) => profile.id === vault.activeId) ?? vault.profiles[0];
 }
 
+/** 按供应商类型找已存档案；优先当前激活且带 key 的。 */
+export async function findProfileByKinds(kinds: readonly string[]): Promise<ProviderProfile | undefined> {
+  const vault = await readVault();
+  const matches = vault.profiles.filter((profile) => kinds.includes(profile.kind));
+  const active = matches.find((profile) => profile.id === vault.activeId && profile.apiKey.trim());
+  if (active) return active;
+  return matches.find((profile) => profile.apiKey.trim());
+}
+
 export async function upsertProfile(input: {
   id?: string;
   name: string;

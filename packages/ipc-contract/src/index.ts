@@ -264,17 +264,44 @@ export const SettingsSnapshot = z.object({
     requireCommitApproval: z.boolean().default(true),
     permissionMode: PermissionModeSchema.default("allow-reads"),
     codingRuntime: z.enum(["local", "harness"]).default("local"),
+    harnessId: z.string().optional(),
     language: z.enum(["auto", "en", "zh"]),
     defaultMode: AgentMode,
     customInstructions: z.string()
   }),
   harness: z
     .object({
+      adapterId: z.string().nullable(),
+      adapterLabel: z.string(),
+      available: z.boolean(),
+      comingSoon: z.boolean(),
+      needsSandbox: z.boolean(),
+      usesProviderKey: z.boolean(),
+      hasProviderKey: z.boolean(),
+      hasSandboxToken: z.boolean(),
       ready: z.boolean(),
+      blockedReason: z.string().nullable(),
       hasAnthropicKey: z.boolean(),
-      hasVercelToken: z.boolean()
+      hasVercelToken: z.boolean(),
+      catalog: z
+        .array(z.object({ id: z.string(), label: z.string(), comingSoon: z.boolean() }))
+        .default([])
     })
-    .default({ ready: false, hasAnthropicKey: false, hasVercelToken: false })
+    .default({
+      adapterId: null,
+      adapterLabel: "None",
+      available: false,
+      comingSoon: false,
+      needsSandbox: false,
+      usesProviderKey: false,
+      hasProviderKey: false,
+      hasSandboxToken: false,
+      ready: false,
+      blockedReason: null,
+      hasAnthropicKey: false,
+      hasVercelToken: false,
+      catalog: []
+    })
 });
 export type SettingsSnapshot = z.infer<typeof SettingsSnapshot>;
 
@@ -284,6 +311,7 @@ export const SetPreferencesInput = z.object({
   requireCommitApproval: z.boolean().optional(),
   permissionMode: PermissionModeSchema.optional(),
   codingRuntime: z.enum(["local", "harness"]).optional(),
+  harnessId: z.string().optional(),
   language: z.enum(["auto", "en", "zh"]).optional(),
   defaultMode: AgentMode.optional(),
   customInstructions: z.string().optional()

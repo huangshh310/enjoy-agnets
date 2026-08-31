@@ -8,7 +8,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts"
+    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts"
   },
   "dependencies": {
     "@ai-sdk/harness": "catalog:",

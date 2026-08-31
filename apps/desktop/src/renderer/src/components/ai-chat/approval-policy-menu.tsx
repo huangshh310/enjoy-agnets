@@ -47,12 +47,18 @@ export function ApprovalPresetList({
             className={cx(
               "flex items-center justify-between rounded-xl px-2 py-1.5 text-left cursor-pointer transition-colors",
               selected
-                ? "bg-background-secondary-default text-text-primary font-medium"
+                ? cx(item.bgClass, "text-text-primary font-medium")
                 : "hover:bg-background-secondary-hover text-text-secondary hover:text-text-primary"
             )}
           >
-            <PresetRow label={item.label} desc={item.desc} Icon={ItemIcon} />
-            {selected ? <RiCheckLine className="size-4 shrink-0 text-accent-600" /> : null}
+            <PresetRow
+              label={item.label}
+              desc={item.desc}
+              Icon={ItemIcon}
+              bgClass={item.bgClass}
+              iconColor={item.iconColor}
+            />
+            {selected ? <RiCheckLine className={cx("size-4 shrink-0", item.iconColor)} /> : null}
           </DropdownMenuItem>
         )
       })}
@@ -106,16 +112,20 @@ export function titleCase(kind: ApprovalPolicyKind): string {
 function PresetRow({
   label,
   desc,
-  Icon
+  Icon,
+  bgClass,
+  iconColor
 }: {
   label: string
   desc: string
   Icon: typeof RiShieldKeyholeLine
+  bgClass: string
+  iconColor: string
 }) {
   return (
     <div className="flex items-center gap-2.5 min-w-0">
-      <div className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-border-button-default bg-background-secondary-default">
-        <Icon className="size-3.5 text-foreground-icon-secondary" />
+      <div className={cx("flex size-6 shrink-0 items-center justify-center rounded-lg border", bgClass)}>
+        <Icon className={cx("size-3.5", iconColor)} />
       </div>
       <div className="flex flex-col min-w-0">
         <span className="text-caption-1-medium leading-tight text-text-primary">{label}</span>

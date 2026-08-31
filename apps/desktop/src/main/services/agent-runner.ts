@@ -79,10 +79,14 @@ export async function createSession(workspaceId: string, title: string) {
 }
 
 /** Harness 只查 Claude/Vercel 凭证；本机 ToolLoop 才要求供应商 API key。 */
-async function resolveRunSecret(runtime: "local" | "harness"): Promise<StoredSecret | undefined> {
+async function resolveRunSecret(
+  runtime: "local" | "harness",
+  harnessId?: string
+): Promise<StoredSecret | undefined> {
   if (runtime === "harness") {
-    if (!harnessPublicStatus().ready) {
-      throw new Error("Configure Claude Code and Vercel Sandbox credentials in Settings → Agent.")
+    const status = await harnessPublicStatus(harnessId)
+    if (!status.ready) {
+      throw new Error(status.blockedReason ?? "Harness is not ready for this provider.")
     }
     return readSecret()
   }
@@ -97,7 +101,7 @@ async function resolveRunSecret(runtime: "local" | "harness"): Promise<StoredSec
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   const input = RunAgentInput.parse(rawInput)
   const prefs = readPreferences()
-  const secret = await resolveRunSecret(prefs.codingRuntime)
+  const secret = await resolveRunSecret(prefs.codingRuntime, prefs.harnessId)
   if (prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }

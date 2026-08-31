@@ -1,7 +1,6 @@
 /**
- * Claude Code + Vercel Sandbox 的 HarnessAgent。
- * permissionMode 管 Claude Code 内置 write/edit/bash；host toolApproval 管同名静态表。
- * 不把本机 modelId（如 deepseek-chat）传给 Claude CLI，缺省走 CLI 默认模型。
+ * 按适配器目录创建 HarnessAgent。
+ * Claude Code 用 Providers 里的 Anthropic key；Vercel 只当沙箱，不是模型供应商。
  */
 import { HarnessAgent } from "@ai-sdk/harness/agent"
 import { createClaudeCode } from "@ai-sdk/harness-claude-code"
@@ -12,17 +11,20 @@ import {
   type ApprovalPolicy
 } from "@enjoy-agents/agent-core"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
+import { resolveHarnessAdapter, type HarnessAdapterId } from "./catalog"
 import { inactiveToolsForMode } from "./inactive-tools"
 import { collectWorkspaceTexts } from "./sync-workspace"
 
 export type HarnessCredentials = {
-  anthropicApiKey: string
-  vercelToken: string
+  providerApiKey: string
+  vercelToken?: string
   vercelTeamId?: string
   vercelProjectId?: string
 }
 
 export type CreateHarnessCodingAgentInput = {
+  adapterId?: HarnessAdapterId | string
+  providerKind?: string
   mode: AgentMode
   policy: ApprovalPolicy
   credentials: HarnessCredentials
@@ -33,6 +35,24 @@ export type CreateHarnessCodingAgentInput = {
 
 /** 创建可 stream / createSession 的编码 Harness。 */
 export function createHarnessCodingAgent(input: CreateHarnessCodingAgentInput) {
+  const adapter = resolveHarnessAdapter(input.adapterId, input.providerKind)
+  if (!adapter?.available) {
+    throw new Error(missingAdapterMessage(input.adapterId, input.providerKind))
+  }
+  if (adapter.id === "claude-code") return createClaudeCodeAgent(input)
+  throw new Error(`Harness adapter '${adapter.id}' is not wired yet.`)
+}
+
+function createClaudeCodeAgent(input: CreateHarnessCodingAgentInput) {
+  const key = input.credentials.providerApiKey.trim()
+  const token = input.credentials.vercelToken?.trim()
+  if (!key) {
+    throw new Error("Add an Anthropic provider in Settings → Providers.")
+  }
+  if (!token) {
+    throw new Error("Claude Code needs a Vercel Sandbox token in Settings → Agent.")
+  }
+
   const settings = toHarnessApprovalSettings(input.mode, input.policy)
   const inactiveTools = inactiveToolsForMode(input.mode)
   const instructions = [systemPromptFor(input.mode), input.customInstructions?.trim()]
@@ -41,12 +61,12 @@ export function createHarnessCodingAgent(input: CreateHarnessCodingAgentInput) {
 
   return new HarnessAgent({
     harness: createClaudeCode({
-      env: { ANTHROPIC_API_KEY: input.credentials.anthropicApiKey }
+      env: { ANTHROPIC_API_KEY: key }
     }),
     sandbox: createVercelSandbox({
       runtime: "node24",
       ports: [4000],
-      token: input.credentials.vercelToken,
+      token,
       teamId: input.credentials.vercelTeamId,
       projectId: input.credentials.vercelProjectId
     }),
@@ -58,6 +78,11 @@ export function createHarnessCodingAgent(input: CreateHarnessCodingAgentInput) {
     ...(inactiveTools ? { inactiveTools } : {}),
     ...sandboxConfigFor(input.workspaceRoot)
   })
+}
+
+function missingAdapterMessage(adapterId?: string, providerKind?: string): string {
+  const target = adapterId || providerKind || "this provider"
+  return `No Harness for ${target} yet. Use Local (ToolLoop) or pick a provider that has an adapter.`
 }
 
 const CLAUDE_MODELS = new Set(["sonnet", "opus", "haiku"])
