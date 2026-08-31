@@ -1,11 +1,12 @@
 /**
- * 文件视图：预览 + 可整栏收起的目录树。
+ * 文件视图：左侧可拖拽改宽的目录树 + 右侧预览。
  */
 import { useState } from "react"
 import { RiFolder3Line, RiFolderOpenLine } from "@remixicon/react"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { getIde } from "@renderer/lib/ide"
 import { AiChatCodePane } from "../../ai-chat-code-pane"
+import { FilesSplit } from "./files-split"
 import { FilesTree } from "./files-tree"
 
 const MAX_PREVIEW_CHARS = 200_000
@@ -29,12 +30,18 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
     }
   }
 
+  const preview = <FilesPreview path={path} error={error} content={content} />
+  const tree = workspaceId ? (
+    <FilesTree workspaceId={workspaceId} selectedPath={path} onSelectFile={(next) => void openFile(next)} />
+  ) : (
+    <p className="flex h-full items-center justify-center px-3 text-center text-caption-1-medium text-text-tertiary">
+      Open a folder first.
+    </p>
+  )
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-separator-border px-2">
-        <p className="min-w-0 flex-1 truncate font-mono text-caption-1-medium text-text-tertiary">
-          {path ?? "Open a file"}
-        </p>
         <QuietIconButton
           icon={RiFolder3Line}
           aria-label={treeOpen ? "Hide file tree" : "Expand file tree"}
@@ -43,36 +50,35 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
           onClick={() => setTreeOpen((open) => !open)}
           className={treeOpen ? "bg-background-secondary-default text-text-primary" : undefined}
         />
+        <p className="min-w-0 flex-1 truncate font-mono text-caption-1-medium text-text-tertiary">
+          {path ?? "Open a file"}
+        </p>
       </div>
+      {treeOpen ? <FilesSplit tree={tree}>{preview}</FilesSplit> : preview}
+    </div>
+  )
+}
 
-      <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">
-          {path ? (
-            error ? (
-              <p className="px-3 py-2 text-caption-1-medium text-text-error-primary">{error}</p>
-            ) : (
-              <AiChatCodePane path={path} value={content} />
-            )
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-              <RiFolderOpenLine className="size-10 text-foreground-icon-secondary" aria-hidden />
-              <p className="text-body-medium text-text-primary">Open a file</p>
-              <p className="text-caption-1-medium text-text-tertiary">
-                Select a file from the workspace tree.
-              </p>
-            </div>
-          )}
-        </div>
-        {workspaceId ? (
-          <div hidden={!treeOpen} className="flex h-full min-h-0">
-            <FilesTree workspaceId={workspaceId} selectedPath={path} onSelectFile={(next) => void openFile(next)} />
-          </div>
-        ) : (
-          <p className="flex w-[240px] items-center justify-center border-l border-separator-border px-3 text-center text-caption-1-medium text-text-tertiary">
-            Open a folder first.
-          </p>
-        )}
-      </div>
+function FilesPreview({
+  path,
+  error,
+  content
+}: {
+  path: string | null
+  error: string | null
+  content: string
+}) {
+  if (path && error) {
+    return <p className="px-3 py-2 text-caption-1-medium text-text-error-primary">{error}</p>
+  }
+  if (path) {
+    return <AiChatCodePane path={path} value={content} />
+  }
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+      <RiFolderOpenLine className="size-10 text-foreground-icon-secondary" aria-hidden />
+      <p className="text-body-medium text-text-primary">Open a file</p>
+      <p className="text-caption-1-medium text-text-tertiary">Select a file from the workspace tree.</p>
     </div>
   )
 }

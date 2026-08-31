@@ -21,7 +21,7 @@ export function FilesTree({
   const tree = useFilesTree(workspaceId)
 
   return (
-    <div className="flex h-full min-h-0 w-[240px] shrink-0 flex-col border-l border-separator-border">
+    <div className="flex h-full min-h-0 min-w-0 w-full flex-col">
       <div className="flex items-center gap-0.5 px-2 pt-2 pb-1">
         <input
           value={tree.query}

@@ -17,6 +17,13 @@ Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `comm
 
 右侧栏视图：Changes / Files / Terminal / Browser / Review。未完成的视图保持空态，不要假装接上了 Monaco CDN。
 
+Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
+
+- 默认树宽 240px，最小 160px，最大占 Files 栏 55%
+- 布局写入 `localStorage` 键 `enjoy-agents-files-tree-split`
+- 顶栏文件夹按钮在路径左侧，可整栏收起树（收起后只留预览）
+- 这是改宽，不是把文件拖进文件夹。文件移动 / 拖拽重组另开能力，未做。
+
 ## 不变量
 
 - 路径必须规范化并限制在 `rootPath` 内（`..` 逃逸视为错误）。

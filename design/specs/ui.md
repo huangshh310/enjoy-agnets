@@ -8,7 +8,7 @@
 
 1. **Agent rail** — 260px（折叠 60px），Mist，`shadow-sidebar`
 2. **Chat stage** — flex，白/石墨，`shadow-card`，含线程 + pill composer
-3. **Changes pane** — 可改宽，白/石墨，`shadow-card`，默认约 38%，最小 280px
+3. **Changes pane** — 可改宽，白/石墨，`shadow-card`，默认约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
 
