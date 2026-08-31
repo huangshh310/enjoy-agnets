@@ -27,7 +27,7 @@ Main Process（可信）
 
 | 路径 | 职责 |
 |---|---|
-| `apps/desktop` | Electron 壳：main / preload / renderer |
+| `apps/desktop` | Electron 壳：main / preload / renderer。品牌源 `public/enjoy-ui-kit`，打包图标 `build/`，运行时窗标 `resources/` |
 | `packages/agent-core` | 会话提示、工具、审批、diff（无 React / 无 Electron） |
 | `packages/agent-harness` | 外部编码 Agent 插件位（非内核） |
 | `packages/providers` | 协议工厂：`openai` / `anthropic` / `openai-responses` |

@@ -8,6 +8,8 @@ import {
   RiCheckboxMultipleBlankLine,
   RiSquareLine
 } from "@remixicon/react"
+import { AppMark } from "@renderer/components/brand/app-mark"
+import { AppWordmark } from "@renderer/components/brand/app-wordmark"
 import {
   closeWindow,
   minimizeWindow
@@ -30,13 +32,10 @@ export function WindowTitleBar({
       <div
         className="flex items-center gap-2 [app-region:no-drag]"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        aria-label="enjoy AGENT IDE"
       >
-        <div className="flex size-4 items-center justify-center rounded-full bg-accent-500 font-sans text-caption-2-bold text-text-primary-inverse shadow-2xs">
-          E
-        </div>
-        <span className="text-caption-1-semibold text-text-primary tracking-tight">
-          Enjoy Agents
-        </span>
+        <AppMark size={16} />
+        <AppWordmark />
       </div>
 
       {/* 中间：拖拽占位区 */}

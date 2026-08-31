@@ -13,10 +13,11 @@ import {
 } from "@remixicon/react"
 import { DashboardUserMenu } from "@/components/application/dashboard/dashboard-user-menu"
 import { ThemeToggle } from "@/components/application/theme/theme-toggle"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
+import { AppMark } from "@renderer/components/brand/app-mark"
+import { AppWordmark } from "@renderer/components/brand/app-wordmark"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useNavigate } from "@tanstack/react-router"
 
@@ -182,17 +183,10 @@ export function AiChatSidebar({
           />
         </nav>
         <div className={cx("flex items-center rounded-xl", collapsed ? "w-9 justify-center" : "w-full gap-2 bg-background-tertiary-default py-2 pr-2 pl-2.5")}>
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-accent-500 text-caption-1-semibold text-text-white">
-              E
-            </AvatarFallback>
-          </Avatar>
+          <AppMark size={32} />
           {collapsed ? null : (
             <>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-body-medium text-text-primary">Enjoy Agents</p>
-                <p className="truncate text-body-regular text-text-secondary">Local first</p>
-              </div>
+              <AppWordmark className="min-w-0 flex-1" />
               <Button size="xs" className="shrink-0" onClick={onOpenWorkspace}>
                 Folder
               </Button>

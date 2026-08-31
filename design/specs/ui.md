@@ -19,7 +19,7 @@ Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里
 - 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。
 - 运行时组件：shadcn/ui + AI Elements。不要再装 BoardUI `components/base/*` 做新控件。
 - 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。
-- 产品铬图标：`@remixicon/react`。AI 品牌标：`@lobehub/icons`（经 `ProviderIcon` / `ModelBrandIcon`）。禁止用 Remix 云朵/插头冒充 OpenAI / Claude。
+- 产品主标：`AppMark` + `enjoy-ui-kit`（见 `brand` spec）。产品铬图标：`@remixicon/react`。AI 品牌标：`@lobehub/icons`。禁止用 Remix 或字母「E」圆冒充 enjoy 主标。
 - 单一强调色 Signal Blue（`accent-500` / `primary`）。禁止纯黑 `#000000`、禁止 emoji、禁止居中营销 hero。
 - 新控件先搜 shadcn → AI Elements → Beautiful UI / BeUI 等，抄交互再 restyle。禁止原样上架 registry 默认皮。
 

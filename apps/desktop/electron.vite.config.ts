@@ -46,6 +46,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    publicDir: resolve(desktopRoot, "public"),
     resolve: {
       alias: [
         {

@@ -17,7 +17,9 @@
 
 - 整条 `-webkit-app-region: drag`，双击切换最大化
 - 品牌区与窗口按钮 `no-drag`
+- 品牌区：`AppMark`（16px `icon-small`）+ `AppWordmark`（enjoy / AGENT IDE），不是字母「E」圆或 lockup SVG
 - 按钮：最小化 / 最大化·还原 / 关闭（Remix 图标，关闭 hover 用 error token）
+- 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。详见 `brand` spec。
 
 IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。
 

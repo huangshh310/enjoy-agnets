@@ -3,6 +3,13 @@ import { app, BrowserWindow, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { registerIpc, unregisterIpc } from "./ipc";
+import appIconIco from "../../resources/icon.ico?asset";
+import appIconPng from "../../resources/icon.png?asset";
+
+/** 任务栏 / Alt+Tab / 最小化缩略图用的图标路径。Windows 用多帧 ICO，其它平台用 PNG。 */
+function resolveAppIconPath(): string {
+  return process.platform === "win32" ? appIconIco : appIconPng;
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -13,6 +20,7 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: "Enjoy Agents",
+    icon: resolveAppIconPath(),
     frame: false,
     transparent: true,
     hasShadow: false,
