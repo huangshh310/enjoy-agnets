@@ -6,6 +6,7 @@ import {
   ReadFileInput,
   SaveSecretInput,
   SetPreferencesInput,
+  SetHarnessInput,
   PingProviderInput,
   ProbeProviderInput,
   UpsertProviderInput,
@@ -29,6 +30,8 @@ import {
   runAgent
 } from "./services/agent-runner"
 import { getSetting, setSetting } from "./services/database"
+import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
+import { readPreferences, writePreferences } from "./services/preferences"
 import { createId } from "./services/ids"
 import {
   activateProfile,
@@ -55,24 +58,6 @@ import {
 } from "./services/workspace"
 
 let ipcRegistered = false
-
-const DEFAULT_PREFERENCES = {
-  requireWriteApproval: true,
-  requireBashApproval: true,
-  language: "auto" as const,
-  defaultMode: "agent" as const,
-  customInstructions: ""
-}
-
-function readPreferences() {
-  const raw = getSetting("preferences")
-  if (!raw) return { ...DEFAULT_PREFERENCES }
-  try {
-    return { ...DEFAULT_PREFERENCES, ...JSON.parse(raw) }
-  } catch {
-    return { ...DEFAULT_PREFERENCES }
-  }
-}
 
 function readAutomations(): Automation[] {
   const raw = getSetting("automations")
@@ -104,7 +89,8 @@ async function settingsSnapshot() {
     defaultModelId: active?.modelId || getSetting("defaultModelId") || "deepseek-chat",
     lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
     providers: await listPublicProviders(),
-    preferences: readPreferences()
+    preferences: readPreferences(),
+    harness: harnessPublicStatus()
   }
 }
 
@@ -133,6 +119,7 @@ const CHANNELS = [
   "settings.saveSecret",
   "settings.setDefaultModel",
   "settings.setPreferences",
+  "settings.setHarness",
   "settings.listProviders",
   "settings.upsertProvider",
   "settings.removeProvider",
@@ -214,9 +201,11 @@ export function registerIpc(_window: BrowserWindow) {
   })
   ipcMain.handle("settings.setPreferences", async (_event, raw) => {
     const patch = SetPreferencesInput.parse(raw)
-    const next = { ...readPreferences(), ...patch }
-    setSetting("preferences", JSON.stringify(next))
-    return { ok: true, preferences: next }
+    return { ok: true, preferences: writePreferences(patch) }
+  })
+  ipcMain.handle("settings.setHarness", async (_event, raw) => {
+    writeHarnessSecret(SetHarnessInput.parse(raw))
+    return { ok: true, harness: harnessPublicStatus() }
   })
   ipcMain.handle("settings.listProviders", async () => listPublicProviders())
   ipcMain.handle("settings.presets", async () => PROVIDER_PRESETS)

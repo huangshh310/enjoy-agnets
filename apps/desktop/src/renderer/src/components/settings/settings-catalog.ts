@@ -81,7 +81,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         id: "agent",
         label: "Agent",
         icon: RiEqualizer3Line,
-        keywords: ["mode", "model", "ask", "plan"]
+        keywords: ["mode", "model", "ask", "plan", "approval", "permissions", "harness", "claude", "sandbox"]
       }
     ]
   },

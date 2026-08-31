@@ -22,6 +22,7 @@
     "@electron-toolkit/preload": "catalog:",
     "@electron-toolkit/utils": "catalog:",
     "@enjoy-agents/agent-core": "workspace:*",
+    "@enjoy-agents/agent-harness": "workspace:*",
     "@enjoy-agents/db": "workspace:*",
     "@enjoy-agents/ipc-contract": "workspace:*",
     "@enjoy-agents/providers": "workspace:*",

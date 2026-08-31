@@ -30,6 +30,7 @@ const ide = {
     saveSecret: (input: unknown) => ipcRenderer.invoke("settings.saveSecret", input),
     setDefaultModel: (modelId: string) => ipcRenderer.invoke("settings.setDefaultModel", modelId),
     setPreferences: (input: unknown) => ipcRenderer.invoke("settings.setPreferences", input),
+    setHarness: (input: unknown) => ipcRenderer.invoke("settings.setHarness", input),
     listProviders: () => ipcRenderer.invoke("settings.listProviders"),
     presets: () => ipcRenderer.invoke("settings.presets"),
     upsertProvider: (input: unknown) => ipcRenderer.invoke("settings.upsertProvider", input),

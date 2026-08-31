@@ -1,6 +1,5 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { streamCodingAgent } from "@enjoy-agents/agent-core"
 import {
   AbortAgentInput,
   ApprovalDecision,
@@ -10,8 +9,8 @@ import {
   type StreamEvent,
   type ThreadToolCall
 } from "@enjoy-agents/ipc-contract"
-import { createLanguageModel, deepseekCallOptions } from "@enjoy-agents/providers"
 import { consumeFullStream, type PendingApproval } from "./consume-stream"
+import { disposeCodingStream, openCodingStream } from "./open-coding-stream"
 import { getDatabase, setSetting } from "./database"
 import { createId } from "./ids"
 import {
@@ -19,9 +18,11 @@ import {
   maybeRenameSession,
   persistMessage
 } from "./persist-session"
+import { harnessPublicStatus } from "./harness-secrets"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
 import { ensureAssistantReasoning, toModelMessages } from "./to-model-messages"
-import { createWorkspaceHost, getWorkspace } from "./workspace"
+import { readPreferences } from "./preferences"
+import { getWorkspace } from "./workspace"
 
 type ActiveRun = {
   abort: AbortController
@@ -29,7 +30,7 @@ type ActiveRun = {
   window: BrowserWindow
   input: RunAgentInput
   workspaceRoot: string
-  secret: StoredSecret
+  secret?: StoredSecret
   pendingApprovals: PendingApproval[]
   sessionApprovedTools: Set<string>
   pumping: boolean
@@ -77,14 +78,27 @@ export async function createSession(workspaceId: string, title: string) {
   return record
 }
 
-export async function runAgent(window: BrowserWindow, rawInput: unknown) {
-  const input = RunAgentInput.parse(rawInput)
+/** Harness 只查 Claude/Vercel 凭证；本机 ToolLoop 才要求供应商 API key。 */
+async function resolveRunSecret(runtime: "local" | "harness"): Promise<StoredSecret | undefined> {
+  if (runtime === "harness") {
+    if (!harnessPublicStatus().ready) {
+      throw new Error("Configure Claude Code and Vercel Sandbox credentials in Settings → Agent.")
+    }
+    return readSecret()
+  }
   const ready = await hasSecret()
   const secret = await readSecret()
   if (!ready || !secret) {
     throw new Error("Add an API key in Settings before running an agent.")
   }
-  if (!input.modelId) {
+  return secret
+}
+
+export async function runAgent(window: BrowserWindow, rawInput: unknown) {
+  const input = RunAgentInput.parse(rawInput)
+  const prefs = readPreferences()
+  const secret = await resolveRunSecret(prefs.codingRuntime)
+  if (prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }
 
@@ -133,6 +147,7 @@ export async function abortAgent(rawInput: unknown) {
   const run = activeRuns.get(runId)
   run?.abort.abort()
   activeRuns.delete(runId)
+  await disposeCodingStream(runId)
   return { ok: true }
 }
 
@@ -190,38 +205,26 @@ async function pumpStream(runId: string) {
 
   const { window, input, workspaceRoot, secret, abort, messages } = run
   try {
-    const effort = input.reasoningEffort ?? secret.reasoningEffort;
-    const result = await streamCodingAgent({
-      model: createLanguageModel({
-        provider: secret.provider,
-        apiKey: secret.apiKey,
-        baseURL: secret.baseURL,
-        modelId: input.modelId,
-        apiStyle: secret.apiStyle,
-        reasoningEffort: effort,
-        customHeaders: secret.customHeaders,
-        customBody: secret.customBody
-      }),
+    const effort = input.reasoningEffort ?? secret?.reasoningEffort
+    const prefs = readPreferences()
+    const opened = await openCodingStream({
+      runId,
       mode: input.mode,
       messages,
       abortSignal: abort.signal,
-      reasoning: effort,
-      providerOptions: deepseekCallOptions(effort),
-      sessionApprovedTools: run.sessionApprovedTools,
-      runtimeContext: {
-        workspaceRoot,
-        sessionId: input.sessionId,
-        runId,
-        host: createWorkspaceHost(workspaceRoot)
-      }
+      workspaceRoot,
+      sessionId: input.sessionId,
+      modelId: input.modelId,
+      secret,
+      prefs,
+      effort,
+      sessionApprovedTools: run.sessionApprovedTools
     })
 
     const transcript = emptyTranscript()
     const tools: ThreadToolCall[] = []
-    const stream = (result as { fullStream?: AsyncIterable<Record<string, unknown>> }).fullStream
-    if (!stream) {
-      throw new Error("Agent stream did not expose fullStream.")
-    }
+    const result = opened.result
+    const stream = opened.stream
 
     await consumeFullStream({
       stream,
@@ -255,12 +258,14 @@ async function pumpStream(runId: string) {
       return
     }
 
+    await opened.dispose()
     emitEvent(window, { type: "run.end", runId })
     activeRuns.delete(runId)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     emitEvent(window, { type: "run.error", runId, message })
     activeRuns.delete(runId)
+    await disposeCodingStream(runId)
   } finally {
     const current = activeRuns.get(runId)
     if (current) current.pumping = false

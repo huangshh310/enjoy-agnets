@@ -1,5 +1,6 @@
 /**
  * 编码 Agent：ToolLoopAgent + 写盘/shell 审批。
+ * Harness 插件位用 toHarnessApprovalSettings() 拿 permissionMode / toolApproval。
  * 供应商相关的思考参数由调用方经 providerOptions / reasoning 传入。
  */
 import { ToolLoopAgent, type LanguageModel, type ModelMessage } from "ai"
@@ -7,8 +8,7 @@ import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract
 import { systemPromptFor } from "./prompts"
 import { createCodingTools } from "./tools"
 import type { AgentRuntimeContext } from "./runtime-context"
-
-const MUTATING_TOOLS = ["edit_file", "write_file", "bash", "git_commit"] as const
+import { resolveToolApproval, type ApprovalPolicy } from "./tool-approval"
 
 type AgentProviderOptions = {
   deepseek?: {
@@ -22,13 +22,13 @@ export function createCodingAgent(
   model: LanguageModel,
   mode: AgentMode = "agent",
   options: {
-    sessionApprovedTools?: ReadonlySet<string>
+    policy: ApprovalPolicy
     runtimeContext: AgentRuntimeContext
     reasoning?: ReasoningEffort
     providerOptions?: AgentProviderOptions
   }
 ) {
-  const readOnly = mode === "ask" || mode === "plan"
+  const policy = options.policy
 
   return new ToolLoopAgent({
     model,
@@ -37,7 +37,8 @@ export function createCodingAgent(
     runtimeContext: options.runtimeContext,
     ...(options.providerOptions ? { providerOptions: options.providerOptions } : {}),
     ...(options.reasoning ? { reasoning: options.reasoning } : {}),
-    toolApproval: ({ toolCall }) => approveTool(toolCall.toolName, mode, readOnly, options)
+    toolApproval: ({ toolCall }) =>
+      resolveToolApproval(toolCall.toolName, mode, policy, toolCall.input)
   })
 }
 
@@ -48,12 +49,12 @@ export async function streamCodingAgent(options: {
   messages: ModelMessage[]
   runtimeContext: AgentRuntimeContext
   abortSignal?: AbortSignal
-  sessionApprovedTools?: ReadonlySet<string>
+  policy: ApprovalPolicy
   reasoning?: ReasoningEffort
   providerOptions?: AgentProviderOptions
 }) {
   const agent = createCodingAgent(options.model, options.mode, {
-    sessionApprovedTools: options.sessionApprovedTools,
+    policy: options.policy,
     runtimeContext: options.runtimeContext,
     reasoning: options.reasoning,
     providerOptions: options.providerOptions
@@ -62,16 +63,4 @@ export async function streamCodingAgent(options: {
     messages: options.messages,
     abortSignal: options.abortSignal
   })
-}
-
-function approveTool(
-  toolName: string,
-  mode: AgentMode,
-  readOnly: boolean,
-  options: { sessionApprovedTools?: ReadonlySet<string> }
-) {
-  if (options.sessionApprovedTools?.has(toolName)) return "approved"
-  if (!MUTATING_TOOLS.includes(toolName as (typeof MUTATING_TOOLS)[number])) return undefined
-  if (readOnly) return { type: "denied" as const, reason: `${mode} mode is read-only.` }
-  return "user-approval"
 }

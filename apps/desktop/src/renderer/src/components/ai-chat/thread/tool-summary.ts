@@ -14,6 +14,9 @@ export function toolKind(name: string): "search" | "coding" | "other" {
     name === "bash" ||
     name === "edit_file" ||
     name === "write_file" ||
+    name === "write" ||
+    name === "edit" ||
+    name === "read" ||
     name === "read_file" ||
     name === "git_diff" ||
     name === "git_status" ||
@@ -28,6 +31,7 @@ export function summarizeToolArgs(tool: ThreadToolCall): string {
   const record = asRecord(tool.args)
   const fromArgs =
     readString(record, "path") ||
+    readString(record, "file_path") ||
     readString(record, "pattern") ||
     readString(record, "command") ||
     readString(record, "glob")

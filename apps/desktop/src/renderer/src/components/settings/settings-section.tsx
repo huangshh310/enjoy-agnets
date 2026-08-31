@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useParams } from "@tanstack/react-router"
 import { ThemeToggle } from "@/components/application/theme/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { openFolder } from "@renderer/hooks/use-agent-session"
+import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { ProviderSettings } from "./providers/providers-settings"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { findSettingsItem, isSettingsSectionId, type SettingsSectionId } from "./settings-catalog"
+import { SettingsHarness } from "./settings-harness"
+import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsComingSoon, SettingsRow } from "./settings-row"
 
 const SHORTCUTS: Array<{ action: string; keys: string[] }> = [
@@ -89,19 +90,6 @@ function SettingsSectionBody({ section }: { section: SettingsSectionId }) {
   )
 }
 
-function useSettingsSnapshot() {
-  return useQuery({
-    queryKey: ["settings"],
-    enabled: hasIde(),
-    queryFn: () => getIde().settings.get() as Promise<SettingsSnapshot>
-  })
-}
-
-async function patchPreferences(patch: SettingsSnapshot["preferences"] extends infer T ? Partial<T> : never) {
-  if (!hasIde()) return
-  await getIde().settings.setPreferences(patch)
-}
-
 function GeneralSettings() {
   const queryClient = useQueryClient()
   const settingsQuery = useSettingsSnapshot()
@@ -114,28 +102,14 @@ function GeneralSettings() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SettingsCard title="Permissions">
-        <SettingsRow
-          title="Approve file writes"
-          description="The agent pauses before write_file and edit_file. Allow, deny, or allow for the rest of the session."
-          align="start"
-        >
-          <Switch
-            checked={preferences?.requireWriteApproval ?? true}
-            onCheckedChange={(checked) => void update({ requireWriteApproval: checked })}
-          />
-        </SettingsRow>
-        <SettingsRow
-          title="Approve shell commands"
-          description="The agent pauses before bash. This is the default for a local-first IDE and should stay on unless you trust the workspace."
-          align="start"
-        >
-          <Switch
-            checked={preferences?.requireBashApproval ?? true}
-            onCheckedChange={(checked) => void update({ requireBashApproval: checked })}
-          />
-        </SettingsRow>
-      </SettingsCard>
+      <SettingsPermissions
+        flags={{
+          requireWriteApproval: preferences?.requireWriteApproval ?? true,
+          requireBashApproval: preferences?.requireBashApproval ?? true,
+          requireCommitApproval: preferences?.requireCommitApproval ?? true
+        }}
+        onChange={(patch) => void update(patch)}
+      />
 
       <SettingsCard title="General">
         <SettingsRow title="Language" description="Application UI language. Auto follows this machine.">
@@ -209,6 +183,8 @@ function AgentSettings() {
   }
 
   return (
+    <>
+    <SettingsHarness />
     <SettingsCard title="Defaults">
       <SettingsRow title="Default model" description="Used for new agent runs in this app.">
         <Select value={modelId} onValueChange={(value) => void onModelChange(value)}>
@@ -238,6 +214,7 @@ function AgentSettings() {
         </Select>
       </SettingsRow>
     </SettingsCard>
+    </>
   )
 }
 

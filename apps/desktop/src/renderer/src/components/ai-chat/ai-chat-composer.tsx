@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { ApprovalPolicyToggle } from "./approval-policy-toggle"
 import { ModelPicker } from "./model-picker"
 import { ReasoningEffortToggle } from "./reasoning-effort-toggle"
 
@@ -236,6 +237,8 @@ export function AiChatComposer({
             <div className="flex items-center gap-1" />
 
             <div className="flex items-center gap-1.5 ml-auto">
+              <ApprovalPolicyToggle />
+
               <ModelPicker
                 modelId={modelId}
                 modelLabel={modelLabel}

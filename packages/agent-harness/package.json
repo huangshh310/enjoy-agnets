@@ -1,0 +1,27 @@
+{
+  "name": "@enjoy-agents/agent-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/harness": "catalog:",
+    "@ai-sdk/harness-claude-code": "catalog:",
+    "@ai-sdk/sandbox-vercel": "catalog:",
+    "@enjoy-agents/agent-core": "workspace:*",
+    "@enjoy-agents/ipc-contract": "workspace:*",
+    "ai": "catalog:",
+    "ws": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

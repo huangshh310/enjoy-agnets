@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort";
+import { PermissionMode as PermissionModeSchema } from "./permission-mode";
 
 export type { ReasoningEffort } from "./reasoning-effort";
+export * from "./permission-mode";
 
 export const AgentMode = z.enum(["agent", "plan", "ask", "debug"]);
 export type AgentMode = z.infer<typeof AgentMode>;
@@ -259,21 +261,42 @@ export const SettingsSnapshot = z.object({
   preferences: z.object({
     requireWriteApproval: z.boolean(),
     requireBashApproval: z.boolean(),
+    requireCommitApproval: z.boolean().default(true),
+    permissionMode: PermissionModeSchema.default("allow-reads"),
+    codingRuntime: z.enum(["local", "harness"]).default("local"),
     language: z.enum(["auto", "en", "zh"]),
     defaultMode: AgentMode,
     customInstructions: z.string()
-  })
+  }),
+  harness: z
+    .object({
+      ready: z.boolean(),
+      hasAnthropicKey: z.boolean(),
+      hasVercelToken: z.boolean()
+    })
+    .default({ ready: false, hasAnthropicKey: false, hasVercelToken: false })
 });
 export type SettingsSnapshot = z.infer<typeof SettingsSnapshot>;
 
 export const SetPreferencesInput = z.object({
   requireWriteApproval: z.boolean().optional(),
   requireBashApproval: z.boolean().optional(),
+  requireCommitApproval: z.boolean().optional(),
+  permissionMode: PermissionModeSchema.optional(),
+  codingRuntime: z.enum(["local", "harness"]).optional(),
   language: z.enum(["auto", "en", "zh"]).optional(),
   defaultMode: AgentMode.optional(),
   customInstructions: z.string().optional()
 });
 export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>;
+
+export const SetHarnessInput = z.object({
+  anthropicApiKey: z.string().optional(),
+  vercelToken: z.string().optional(),
+  vercelTeamId: z.string().optional(),
+  vercelProjectId: z.string().optional()
+});
+export type SetHarnessInput = z.infer<typeof SetHarnessInput>;
 
 export const AutomationTrigger = z.enum(["manual", "on_save"]);
 export type AutomationTrigger = z.infer<typeof AutomationTrigger>;

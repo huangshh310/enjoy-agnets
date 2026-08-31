@@ -27,6 +27,10 @@ catalog:
   "@ai-sdk/openai": ^4.0.51
   "@ai-sdk/anthropic": ^4.0.45
   "@ai-sdk/deepseek": ^2.0.61
+  "@ai-sdk/harness": ^1.0.94
+  "@ai-sdk/harness-claude-code": ^1.0.98
+  "@ai-sdk/sandbox-vercel": ^1.0.94
+  ws: ^8.21.0
   zod: ^4.1.5
 
   # UI
@@ -87,3 +91,12 @@ allowBuilds:
   electron: true
   electron-winstaller: true
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@ai-sdk/gateway@4.0.69'
+  - '@ai-sdk/harness-claude-code@1.0.98'
+  - '@ai-sdk/harness@1.0.94'
+  - '@ai-sdk/provider-utils@5.0.34'
+  - '@ai-sdk/provider@4.0.9'
+  - '@ai-sdk/sandbox-vercel@1.0.94'
+  - ai@7.0.85

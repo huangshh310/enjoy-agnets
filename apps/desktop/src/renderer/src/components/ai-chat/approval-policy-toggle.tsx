@@ -1,0 +1,98 @@
+/**
+ * 输入框工具审批：Harness allow-reads / allow-edits / allow-all，以及 Files / Shell / Git。
+ */
+import type { ComponentProps } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import { cx } from "@/utils/cx"
+import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useChatStore } from "@renderer/stores/chat-store"
+import {
+  classifyApprovalPolicy,
+  preferencesPatchFromFlags,
+  type ApprovalPrefFlags
+} from "./approval-policy"
+import { ApprovalFlagList, ApprovalPresetList, PolicyHint, PRESET_ICONS, titleCase } from "./approval-policy-menu"
+
+export function ApprovalPolicyToggle() {
+  const queryClient = useQueryClient()
+  const settingsQuery = useSettingsSnapshot()
+  const mode = useChatStore((state) => state.mode)
+  const flags = flagsFromPrefs(settingsQuery.data?.preferences)
+  const kind = classifyApprovalPolicy(flags)
+  const readOnly = mode === "ask" || mode === "plan"
+  const CurrentIcon = PRESET_ICONS[kind]
+
+  async function persist(next: ApprovalPrefFlags) {
+    await patchPreferences(preferencesPatchFromFlags(next))
+    await queryClient.invalidateQueries({ queryKey: ["settings"] })
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <PolicyTrigger kind={kind} Icon={CurrentIcon} />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="end"
+        side="top"
+        sideOffset={8}
+        className="w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-card"
+      >
+        <div className="px-2 py-1 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
+          permissionMode
+        </div>
+        <ApprovalPresetList kind={kind} onPick={(next) => void persist(next)} />
+        <DropdownMenuSeparator className="-mx-1.5 my-1.5 bg-separator-border" />
+        <ApprovalFlagList
+          flags={flags}
+          onToggle={(id, checked) => void persist({ ...flags, [id]: checked })}
+        />
+        <PolicyHint readOnly={readOnly} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function PolicyTrigger({
+  kind,
+  Icon,
+  className,
+  ...props
+}: {
+  kind: ReturnType<typeof classifyApprovalPolicy>
+  Icon: (typeof PRESET_ICONS)[keyof typeof PRESET_ICONS]
+} & ComponentProps<"button">) {
+  return (
+    <button
+      type="button"
+      aria-label="Tool approval policy"
+      className={cx(
+        "group flex h-8 items-center gap-1.5 rounded-full px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs cursor-pointer",
+        "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+        kind === "allow-all"
+          ? "text-accent-700 bg-accent-50 hover:bg-accent-100"
+          : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",
+        className
+      )}
+      {...props}
+    >
+      <Icon className="size-3.5 shrink-0 text-foreground-icon-secondary group-hover:text-foreground-icon-primary" />
+      <span className="font-semibold">{kind === "custom" ? "Custom" : titleCase(kind)}</span>
+    </button>
+  )
+}
+
+function flagsFromPrefs(prefs?: Partial<ApprovalPrefFlags> | null): ApprovalPrefFlags {
+  return {
+    requireWriteApproval: prefs?.requireWriteApproval ?? true,
+    requireBashApproval: prefs?.requireBashApproval ?? true,
+    requireCommitApproval: prefs?.requireCommitApproval ?? true
+  }
+}

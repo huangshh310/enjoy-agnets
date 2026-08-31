@@ -60,8 +60,15 @@ export function ApprovalCard({
 }
 
 function ApprovalPreview({ name, args }: { name: string; args: Record<string, unknown> }) {
-  if (name === "edit_file") return <EditFilePreview args={args} />
-  if (name === "write_file") return <WorkspaceFilePreview path={readString(args, "path")} next={readString(args, "content")} />
+  if (name === "edit_file" || name === "edit") return <EditFilePreview args={args} />
+  if (name === "write_file" || name === "write") {
+    return (
+      <WorkspaceFilePreview
+        path={filePathOf(args)}
+        next={readString(args, "content")}
+      />
+    )
+  }
   if (name === "bash") {
     return (
       <div className="flex items-start gap-2 rounded-xl border border-border-button-default bg-background-primary-default px-3 py-2">
@@ -72,6 +79,16 @@ function ApprovalPreview({ name, args }: { name: string; args: Record<string, un
       </div>
     )
   }
+  if (name === "git_commit") {
+    return (
+      <div className="rounded-xl border border-border-button-default bg-background-primary-default px-3 py-2">
+        <p className="text-caption-1-medium text-text-tertiary">Commit message</p>
+        <p className="mt-1 text-caption-1-regular text-text-primary whitespace-pre-wrap">
+          {readString(args, "message") || "(empty)"}
+        </p>
+      </div>
+    )
+  }
   return (
     <div className="overflow-hidden rounded-xl border border-border-button-default">
       <CodeBlock code={JSON.stringify(args, null, 2)} language="json" />
@@ -79,10 +96,14 @@ function ApprovalPreview({ name, args }: { name: string; args: Record<string, un
   )
 }
 
+function filePathOf(args: Record<string, unknown>): string {
+  return readString(args, "path") || readString(args, "file_path")
+}
+
 function EditFilePreview({ args }: { args: Record<string, unknown> }) {
-  const path = readString(args, "path")
-  const oldText = readString(args, "oldText")
-  const newText = readString(args, "newText")
+  const path = filePathOf(args)
+  const oldText = readString(args, "oldText") || readString(args, "old_string")
+  const newText = readString(args, "newText") || readString(args, "new_string")
   return (
     <WorkspaceFilePreview
       path={path}
