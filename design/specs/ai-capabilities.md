@@ -37,7 +37,7 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 - 结构化输出在 v7 走 `generateText` + `Output.object()`，不要用 v4 `generateObject`。
 - `useChat` HTTP 不是桌面主路径；断线重放依赖 `sequence`。
 - 生成式 UI 刷新时只恢复白名单 `componentId`；未知 id 丢弃，不要当成可执行远程组件。
-- 标题补全与 Agent 共用 `agent.event`，必须按 `runId` 过滤，否则会吃到主循环的 `text.delta`。
+- 标题补全、Extract `structured-object` 与 Agent 共用 `agent.event`，必须按当前 composer `runId` 过滤。`running && !runId` 先缓冲再回放。没有认领的 `runId` 时，旁路 `structured.delta` / `run.end` 不得写进乐观助手轮，也不得 finalize。
 - `ai.resume` 早期无条件调用 `resumeWorkflow`，会把文本/Agent run 误当成 Workflow。现在按 `runs.kind` 分流；generation 快照不含密钥。聊天刷新恢复走 `hydrate-thread`，不是这条频道。Agent 续跑是同一请求重启循环，不是 SDK 中途 session.detach。
 - kind=`agent` 必须转发 `runAgent`，不要另开无 host 的 ToolLoop；合约拒绝缺 `workspaceId`。
 - `delegate`：plan/ask 只读；agent/debug 可写，但 `createSubagentApproval` 必须走同一条 `decideApproval`。没有等待器时拒绝写盘。

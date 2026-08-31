@@ -2,6 +2,8 @@ import { create } from "zustand"
 import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
 import { reduceStreamEvent } from "./apply-stream-event"
+import type { ComposerRunKind } from "../hooks/composer-run-kind"
+import { shouldBufferComposerEvent } from "./stream-run-scope"
 
 export type ChatRole = "user" | "assistant"
 
@@ -38,6 +40,10 @@ export type ThreadMessage = {
   assets?: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
   structured?: unknown
   components?: Array<{ componentId: string; props: Record<string, unknown> }>
+  /** 本轮赞踩，仅会话内存，不落库 */
+  feedback?: "up" | "down"
+  /** 发送时 stamp，Thinking / 生图表面认这个，不认当前 picker */
+  runKind?: ComposerRunKind
 }
 
 export type RepositoryNode = {
@@ -98,6 +104,8 @@ export type ChatStore = {
   mode: "agent" | "plan" | "ask" | "debug"
   running: boolean
   runId: string | null
+  /** composer 尚未拿到 runId 时暂存事件，避免旁路 Extract 写进乐观轮 */
+  pendingStreamEvents: StreamEvent[]
   thinkingLabel: string
   settingsOpen: string | false
   apiKeyDraft: string
@@ -181,6 +189,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   mode: "agent",
   running: false,
   runId: null,
+  pendingStreamEvents: [],
   thinkingLabel: "Thinking",
   settingsOpen: false,
   apiKeyDraft: "",
@@ -215,7 +224,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({ expandedIds })
   },
   applyStreamEvent: (event) => {
-    const patch = reduceStreamEvent(get().messages, event)
+    if (shouldBufferComposerEvent(get().running, get().runId)) {
+      const queued = get().pendingStreamEvents
+      if (queued.length >= 80) return
+      set({ pendingStreamEvents: [...queued, event] })
+      return
+    }
+    const patch = reduceStreamEvent(get().messages, event, get().runId)
     set({
       messages: patch.messages,
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
@@ -239,7 +254,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({ messages, composer: "", error: null })
     return messages
   },
-  setRunning: (running, runId = null) => set({ running, runId: runId ?? null }),
+  setRunning: (running, runId = null) => {
+    set({
+      running,
+      runId: runId ?? null,
+      ...(!running ? { pendingStreamEvents: [] } : {})
+    })
+    if (!running || !runId) return
+    const queued = get().pendingStreamEvents
+    if (queued.length === 0) return
+    set({ pendingStreamEvents: [] })
+    for (const event of queued) get().applyStreamEvent(event)
+  },
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
   setWorkspace: (workspace) => {

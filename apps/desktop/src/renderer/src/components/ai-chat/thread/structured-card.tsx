@@ -1,6 +1,9 @@
 /**
- * 结构化增量：对象走卡片，带 fields 走表单，带 rows 走表。
+ * 结构化增量：Extract 对象走卡片，带 fields 走表单，带 rows 走表。
  */
+import { asExtractObject } from "@renderer/hooks/extract-object-shape"
+import { ExtractObjectCard } from "./extract-object-card"
+
 export function StructuredCard({
   value,
   variant = "card"
@@ -10,6 +13,8 @@ export function StructuredCard({
 }) {
   if (variant === "form") return <FormView value={value} />
   if (variant === "table") return <TableView value={value} />
+  const extracted = asExtractObject(value)
+  if (extracted) return <ExtractObjectCard value={extracted} />
   return <pre className={cardClass}>{safeJson(value)}</pre>
 }
 

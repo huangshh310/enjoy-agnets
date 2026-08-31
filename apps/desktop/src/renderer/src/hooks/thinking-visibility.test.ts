@@ -1,3 +1,6 @@
+/**
+ * 生图轮不画空 Thinking。
+ */
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { shouldShowThinkingTrace } from "./thinking-visibility.ts"

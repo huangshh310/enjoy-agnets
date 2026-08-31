@@ -28,6 +28,7 @@ export async function sendComposerMessage() {
     messageAssets.length > 0 ? messageAssets : undefined
   )
   applyOptimisticTitle(content)
+  const runKind = composerRunKind(store.modelId, currentCaps(store))
   store.setMessages([
     ...messages,
     {
@@ -37,7 +38,8 @@ export async function sendComposerMessage() {
       createdAt: Date.now(),
       streaming: true,
       reasoning: "",
-      tools: []
+      tools: [],
+      runKind
     }
   ])
   store.setRunning(true)

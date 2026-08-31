@@ -7,13 +7,13 @@ import {
   ConversationEmptyState,
   ConversationScrollButton
 } from "@/components/ai-elements/conversation"
-import { Message, MessageContent } from "@/components/ai-elements/message"
 import { cx } from "@/utils/cx"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { ApprovalCard } from "./thread/approval-card"
-import { AssetPreview } from "./thread/asset-preview"
 import { AssistantTurn } from "./thread/assistant-turn"
+import { UserTurn } from "./thread/user-turn"
+import { visibleThreadMessages } from "./thread/orphan-extract-turn"
 
 export function AiChatThread({
   messages,
@@ -34,7 +34,8 @@ export function AiChatThread({
   onDeny: () => void
   onAllowSession: () => void
 }) {
-  const last = messages.at(-1)
+  const visible = visibleThreadMessages(messages)
+  const last = visible.at(-1)
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
 
   return (
@@ -48,14 +49,9 @@ export function AiChatThread({
           />
         ) : null}
 
-        {messages.map((message) =>
+        {visible.map((message) =>
           message.role === "user" ? (
-            <Message key={message.id} from="user" className="max-w-[min(26rem,85%)] flex flex-col items-end gap-1.5 ml-auto">
-              {message.assets && message.assets.length > 0 ? (
-                <AssetPreview assets={message.assets} align="end" />
-              ) : null}
-              {message.content ? <MessageContent>{message.content}</MessageContent> : null}
-            </Message>
+            <UserTurn key={message.id} message={message} />
           ) : (
             <AssistantTurn key={message.id} message={message} />
           )

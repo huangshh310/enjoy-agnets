@@ -10,6 +10,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
+import { canOpenAssistantTurn, isForeignRunId, shouldFinalizeComposerRun } from "./stream-run-scope"
 
 export type StreamPatch = {
   messages: ThreadMessage[]
@@ -20,46 +21,62 @@ export type StreamPatch = {
   error?: string | null
 }
 
-export function reduceStreamEvent(messages: ThreadMessage[], event: StreamEvent): StreamPatch {
-  if (event.type === "run.end") {
-    return {
-      messages: finalizeRun(messages),
-      pendingApproval: null,
-      running: false,
-      runId: null
-    }
-  }
+export function reduceStreamEvent(
+  messages: ThreadMessage[],
+  event: StreamEvent,
+  activeRunId: string | null = null
+): StreamPatch {
+  if (isForeignRunId(eventRunId(event), activeRunId)) return { messages }
+  const terminal = applyTerminalEvent(messages, event, activeRunId)
+  if (terminal) return terminal
+  const approval = applyApprovalEvent(messages, event, activeRunId)
+  if (approval) return approval
+  if (!isLivePart(event.type) || !event.runId) return { messages }
+  const next = cloneMessages(messages)
+  const assistant = attachAssistant(next, event.runId, activeRunId)
+  if (!assistant) return { messages }
+  return applyLiveEvent(next, assistant, event)
+}
+
+function applyTerminalEvent(
+  messages: ThreadMessage[],
+  event: StreamEvent,
+  activeRunId: string | null
+): StreamPatch | null {
+  if (event.type !== "run.end" && event.type !== "run.error") return null
+  if (!shouldFinalizeComposerRun(event.runId, activeRunId)) return { messages }
   if (event.type === "run.error") {
-    return {
-      messages: finalizeRun(messages),
-      running: false,
-      error: event.message
-    }
+    return { messages: finalizeRun(messages), running: false, error: event.message }
   }
+  return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null }
+}
+
+function applyApprovalEvent(
+  messages: ThreadMessage[],
+  event: StreamEvent,
+  activeRunId: string | null
+): StreamPatch | null {
   if (event.type === "approval.required") {
     const next = cloneMessages(messages)
-    const assistant = ensureAssistant(next, event.runId)
-    assistant.tools ??= []
-    foldToolEvent(assistant.tools, event)
-    return { messages: next, thinkingLabel: "Waiting for approval", pendingApproval: event }
-  }
-  if (event.type === "approval.resolved") {
-    const next = cloneMessages(messages)
-    const assistant = lastStreamingAssistant(next)
+    const assistant = attachAssistant(next, event.runId, activeRunId)
     if (assistant) {
       assistant.tools ??= []
       foldToolEvent(assistant.tools, event)
     }
-    return { messages: next, pendingApproval: null }
+    return { messages: next, thinkingLabel: "Waiting for approval", pendingApproval: event }
   }
-
-  if (!isLivePart(event.type) || !event.runId) {
-    return { messages }
-  }
-
+  if (event.type !== "approval.resolved") return null
   const next = cloneMessages(messages)
-  const assistant = ensureAssistant(next, event.runId)
-  return applyLiveEvent(next, assistant, event)
+  const assistant = lastStreamingAssistant(next)
+  if (assistant) {
+    assistant.tools ??= []
+    foldToolEvent(assistant.tools, event)
+  }
+  return { messages: next, pendingApproval: null }
+}
+
+function eventRunId(event: StreamEvent): string | undefined {
+  return "runId" in event ? event.runId : undefined
 }
 
 function isLivePart(type: StreamEvent["type"]) {
@@ -129,9 +146,14 @@ function lastStreamingAssistant(messages: ThreadMessage[]): ThreadMessage | unde
   return last?.role === "assistant" && last.streaming ? last : undefined
 }
 
-function ensureAssistant(messages: ThreadMessage[], runId: string): ThreadMessage {
+function attachAssistant(
+  messages: ThreadMessage[],
+  runId: string,
+  activeRunId: string | null
+): ThreadMessage | undefined {
   const existing = lastStreamingAssistant(messages)
-  if (existing) return existing
+  if (existing) return activeRunId ? existing : undefined
+  if (!canOpenAssistantTurn(runId, activeRunId)) return undefined
   const created: ThreadMessage = {
     id: `msg_${runId}`,
     role: "assistant",
