@@ -11,6 +11,7 @@ import {
   AssetsUploadInput,
   KnowledgeAddSourceInput,
   KnowledgeCancelInput,
+  KnowledgeDocumentsInput,
   KnowledgeIndexInput,
   KnowledgeRemoveInput,
   KnowledgeSearchInput,
@@ -47,6 +48,7 @@ import {
   addKnowledgeSource,
   cancelKnowledgeIndex,
   indexKnowledgeSource,
+  listKnowledgeDocuments,
   listKnowledgeSources,
   removeKnowledgeSource,
   searchKnowledge
@@ -88,6 +90,7 @@ export const AI_CHANNELS = [
   "assets.delete",
   "assets.upload",
   "knowledge.sources",
+  "knowledge.documents",
   "knowledge.addSource",
   "knowledge.index",
   "knowledge.search",
@@ -148,6 +151,10 @@ export function registerAiIpc() {
   ipcMain.handle("knowledge.sources", (_event, raw) =>
     listKnowledgeSources(KnowledgeSourcesInput.parse(raw).workspaceId)
   )
+  ipcMain.handle("knowledge.documents", (_event, raw) => {
+    const input = KnowledgeDocumentsInput.parse(raw)
+    return listKnowledgeDocuments(input.workspaceId, input.sourceId)
+  })
   ipcMain.handle("knowledge.addSource", async (_event, raw) => {
     const input = KnowledgeAddSourceInput.parse(raw)
     const source = await addKnowledgeSource(input.workspaceId, input.path)

@@ -68,3 +68,22 @@ export type KnowledgeCancelInput = z.infer<typeof KnowledgeCancelInput>
 
 export const KnowledgeRemoveInput = z.object({ sourceId: z.string().min(1) }).strict()
 export type KnowledgeRemoveInput = z.infer<typeof KnowledgeRemoveInput>
+
+export const KnowledgeDocumentItem = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  sourcePath: z.string(),
+  path: z.string(),
+  chunkCount: z.number().int().nonnegative().default(0),
+  status: z.string(),
+  updatedAt: z.number().int()
+})
+export type KnowledgeDocumentItem = z.infer<typeof KnowledgeDocumentItem>
+
+export const KnowledgeDocumentsInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    sourceId: z.string().optional()
+  })
+  .strict()
+export type KnowledgeDocumentsInput = z.infer<typeof KnowledgeDocumentsInput>

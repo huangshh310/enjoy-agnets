@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-08-31
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-01
 
 ## 当前真相
 
@@ -10,7 +10,7 @@
 
 - 打开 / 列出 / 移除工作区；创建弹窗先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })` 写入 `workspaces` 表。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹。
 - 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。
-- 列目录、读文件
+- 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Changes 窗）
 - 工作区绑定的 pty 终端（`terminal.open` / `write` / `close`）
 

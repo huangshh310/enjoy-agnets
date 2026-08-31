@@ -39,5 +39,11 @@ function matchIgnore(path: string, pattern: string): boolean {
     return path.endsWith(clean.slice(1))
   }
   if (path === clean || path.startsWith(`${clean}/`)) return true
+  // 绝对路径里的 out/dist 可能是用户目录祖先，不能当构建产物忽略
+  if (isAbsoluteLike(path)) return false
   return path.split("/").includes(clean)
+}
+
+function isAbsoluteLike(path: string): boolean {
+  return /^[A-Za-z]:\//.test(path) || path.startsWith("/")
 }

@@ -86,29 +86,29 @@ export function SecondaryPageShell({
 
   return (
     <div className="flex h-full min-h-0 bg-background-full pb-3">
-      <aside className="flex w-[240px] shrink-0 flex-col px-3 py-2">
+      <aside className="flex w-[248px] shrink-0 flex-col px-3.5 py-3">
         <Link
           to="/"
-          className="mb-3 inline-flex items-center gap-1 rounded-2lg px-2 py-1.5 text-body-medium font-medium text-text-secondary outline-none hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring transition-colors"
+          className="group mb-3 inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-caption-1-medium font-medium text-text-secondary outline-none hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent-500/30 transition-all"
         >
-          <RiArrowLeftSLine className="size-4" aria-hidden />
-          <span>Back to app</span>
+          <RiArrowLeftSLine className="size-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />
+          <span>Back to App</span>
         </Link>
 
-        <label className="mb-4 relative flex h-9 items-center gap-2 rounded-full border border-border-button-default/50 bg-background-tertiary-default px-3 focus-within:border-accent-500/50 focus-within:bg-background-primary-default focus-within:ring-2 focus-within:ring-accent-500/20 transition-all shadow-2xs">
-          <RiSearchLine className="size-4 shrink-0 text-foreground-icon-secondary" aria-hidden />
+        <label className="mb-3.5 relative flex h-9 items-center gap-2 rounded-xl border border-border-button-default/60 bg-background-tertiary-default/80 px-3 focus-within:border-accent-500 focus-within:bg-background-primary-default focus-within:ring-2 focus-within:ring-accent-500/20 transition-all shadow-2xs">
+          <RiSearchLine className="size-4 shrink-0 text-text-tertiary" aria-hidden />
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-body-medium text-text-primary outline-none placeholder:text-text-tertiary"
+            className="min-w-0 flex-1 bg-transparent text-caption-1-medium text-text-primary outline-none placeholder:text-text-tertiary"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="text-text-tertiary hover:text-text-primary"
+              className="rounded p-0.5 text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
             >
               <RiCloseLine className="size-3.5" />
             </button>
@@ -119,7 +119,7 @@ export function SecondaryPageShell({
           <nav className="flex flex-col gap-4 pr-1">
             {visibleGroups.map((group) => (
               <div key={group.id} className="flex flex-col gap-1">
-                <p className="px-2 text-caption-2-medium uppercase tracking-wider text-text-tertiary">
+                <p className="px-2.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
                   {group.label}
                 </p>
                 {group.items.map((item) => {
@@ -131,26 +131,29 @@ export function SecondaryPageShell({
                       type="button"
                       onClick={() => onSelect(item.id)}
                       className={cx(
-                        "flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left transition-all",
+                        "relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all",
                         selected
-                          ? "bg-background-tertiary-default text-text-primary font-semibold shadow-2xs border border-border-button-default/60"
+                          ? "bg-background-primary-default text-text-primary font-semibold shadow-xs border border-border-button-default"
                           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
                       )}
                     >
+                      {selected ? (
+                        <div className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-accent-500" />
+                      ) : null}
                       <Icon
                         className={cx(
                           "size-4 shrink-0 transition-colors",
-                          selected ? "text-accent-500" : "text-foreground-icon-secondary"
+                          selected ? "text-accent-500" : "text-text-tertiary group-hover:text-text-secondary"
                         )}
                         aria-hidden
                       />
-                      <span className="min-w-0 flex-1 truncate text-body-medium">{item.label}</span>
+                      <span className="min-w-0 flex-1 truncate text-caption-1-medium">{item.label}</span>
                       {item.meta ? (
                         <span
                           className={cx(
                             "rounded-full px-2 py-0.5 text-[10px] font-mono font-medium",
                             selected
-                              ? "bg-background-primary-default text-text-primary shadow-2xs"
+                              ? "bg-accent-500/10 text-accent-600 dark:text-accent-400 font-semibold"
                               : "bg-background-secondary-default text-text-tertiary"
                           )}
                         >
@@ -163,7 +166,7 @@ export function SecondaryPageShell({
               </div>
             ))}
             {visibleGroups.length === 0 ? (
-              <p className="px-2 text-caption-1-medium text-text-tertiary">No matching items.</p>
+              <p className="px-2.5 text-caption-1-medium text-text-tertiary">No matching items.</p>
             ) : null}
           </nav>
         </ScrollArea>
@@ -174,21 +177,23 @@ export function SecondaryPageShell({
           <div
             className={cx(
               "w-full",
-              contentWidth === "article" && "mx-auto max-w-[760px] px-8 pt-8 pb-16",
-              contentWidth === "wide" && "mx-auto max-w-5xl px-8 pt-8 pb-16",
+              contentWidth === "article" && "mx-auto max-w-[760px] px-8 pt-7 pb-16",
+              contentWidth === "wide" && "mx-auto max-w-5xl px-8 pt-7 pb-16",
               contentWidth === "stage" && "flex min-h-full flex-col px-8 pt-6 pb-16"
             )}
           >
             {/* Top Breadcrumb Bar */}
-            <div className="mb-6 flex items-center justify-between border-b border-separator-border/60 pb-3">
+            <div className="mb-6 flex items-center justify-between border-b border-separator-border/60 pb-3.5">
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem>
                     <Link
                       to="/studio"
-                      className="flex items-center gap-1 text-caption-1-medium text-text-secondary hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
+                      className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
                     >
-                      <RiDashboardLine className="size-3.5 text-accent-500" />
+                      <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
+                        <RiDashboardLine className="size-3.5" />
+                      </div>
                       <span>Agent Studio</span>
                     </Link>
                   </BreadcrumbItem>
@@ -201,12 +206,22 @@ export function SecondaryPageShell({
                 </BreadcrumbList>
               </Breadcrumb>
 
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
-              >
-                <span>Back to chat</span>
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/studio"
+                  className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
+                >
+                  <RiDashboardLine className="size-3.5" />
+                  <span>Studio Hub</span>
+                </Link>
+                <span className="text-border-button-default">|</span>
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
+                >
+                  <span>Chat Stage</span>
+                </Link>
+              </div>
             </div>
 
             {children}

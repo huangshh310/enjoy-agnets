@@ -167,18 +167,20 @@ export function AgentStudioPage() {
         {/* Stage Top Navigation Bar */}
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-separator-border/60 px-6">
           <div className="flex items-center gap-2">
-            <RiDashboardLine className="size-4 text-accent-500" />
+            <div className="flex size-6 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
+              <RiDashboardLine className="size-3.5" />
+            </div>
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <span className="text-body-medium font-semibold text-text-primary">
+                  <span className="text-caption-1-medium font-semibold text-text-primary">
                     Agent Studio
                   </span>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="text-body-medium text-text-secondary">
-                    Overview & Capabilities
+                  <BreadcrumbPage className="text-caption-1-medium text-text-secondary">
+                    Control Center & Capabilities
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
@@ -215,44 +217,98 @@ export function AgentStudioPage() {
 
         {/* Scrollable Stage Content */}
         <ScrollArea className="flex-1 min-h-0">
-          <div className="mx-auto max-w-6xl px-7 pt-6 pb-16 flex flex-col gap-6">
-            {/* Studio Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl border border-border-button-default bg-gradient-to-br from-background-primary-default via-background-secondary-default/50 to-accent-500/[0.04] p-5 shadow-xs">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-11 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500 shadow-sm ring-1 ring-accent-500/20">
-                    <RiSparklingLine className="size-5.5" />
-                  </div>
-                  <div>
-                    <h2 className="text-title-3-semibold text-text-primary">
-                      Studio Control Center
-                    </h2>
-                    <p className="mt-0.5 text-body-medium text-text-secondary">
-                      Live capabilities, workspace resources, durable execution pipelines, and MCP plugins.
-                    </p>
+          <div className="mx-auto max-w-6xl px-8 pt-6 pb-16 flex flex-col gap-6">
+            {/* Studio Hero Header with Ambient Glow & Live Pulse Metrics */}
+            <div className="relative overflow-hidden rounded-2xl border border-border-button-default/70 bg-gradient-to-br from-background-primary-default via-background-secondary-default/50 to-accent-500/[0.04] p-6 shadow-xs">
+              <div className="relative z-10 flex flex-col gap-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-sm ring-1 ring-accent-500/20">
+                      <RiSparklingLine className="size-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h2 className="text-title-3-semibold text-text-primary">
+                          Agent Studio Control Center
+                        </h2>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Local-First Active
+                        </span>
+                      </div>
+                      <p className="mt-1 text-caption-1-medium text-text-secondary">
+                        Unified creation & orchestration hub. Manage workspace files, RAG knowledge, MCP plugins, workflows, and automated tasks.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-caption-2-medium font-semibold text-emerald-600 dark:text-emerald-400">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Local-First IDE Engine Active
-                  </span>
+                {/* 4 Live Pulse Stats Badges */}
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-border-button-default/50 bg-background-primary-default/80 p-2.5 shadow-2xs backdrop-blur-sm">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+                      <RiFolderOpenLine className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-semibold text-text-tertiary">Workspace</p>
+                      <p className="truncate text-caption-1-medium font-semibold text-text-primary">
+                        {workspaceName || "None"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 rounded-xl border border-border-button-default/50 bg-background-primary-default/80 p-2.5 shadow-2xs backdrop-blur-sm">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                      <RiBookOpenLine className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-semibold text-text-tertiary">Knowledge RAG</p>
+                      <p className="text-caption-1-medium font-semibold text-text-primary">
+                        {sources.length} Sources · {totalChunks} Chunks
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 rounded-xl border border-border-button-default/50 bg-background-primary-default/80 p-2.5 shadow-2xs backdrop-blur-sm">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+                      <RiPlugLine className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-semibold text-text-tertiary">MCP Plugins</p>
+                      <p className="text-caption-1-medium font-semibold text-text-primary">
+                        {connectedServers.length}/{mcpServers.length} Active · {totalMcpTools} Tools
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 rounded-xl border border-border-button-default/50 bg-background-primary-default/80 p-2.5 shadow-2xs backdrop-blur-sm">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+                      <RiFlashlightLine className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-semibold text-text-tertiary">Automations</p>
+                      <p className="text-caption-1-medium font-semibold text-text-primary">
+                        {automations.length} Rules · {workflowRuns.length} Runs
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Zone 1: 核心资产区 (Assets & Files) */}
+            {/* Zone 1: 项目资产与长效记忆 (Assets & Knowledge Hub) */}
             <section className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <RiFolder6Line className="size-4 text-accent-500" />
+                  <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
+                    <RiFolder6Line className="size-3.5" />
+                  </div>
                   <h3 className="text-body-medium font-semibold text-text-primary">
-                    Assets & Workspace · 核心资产区
+                    Assets & Knowledge · 项目资产与长效记忆
                   </h3>
                 </div>
                 <span className="text-caption-2-medium text-text-tertiary">
-                  Workspaces, RAG embeddings & multimodal media
+                  Workspaces, RAG vector index & multimodal media
                 </span>
               </div>
 
@@ -270,9 +326,12 @@ export function AgentStudioPage() {
                             <h4 className="text-body-medium font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
                               {workspaceName || "No Workspace Opened"}
                             </h4>
+                            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                              Active Root
+                            </span>
                           </div>
                           <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-                            Active workspace root and local file index.
+                            Active workspace root and local file index with native Electron file watchers.
                           </p>
                         </div>
                       </div>
@@ -446,13 +505,15 @@ export function AgentStudioPage() {
               </div>
             </section>
 
-            {/* Zone 2: 能力与编排区 (Orchestration & Tools) */}
+            {/* Zone 2: 能力扩展与智能编排 (Orchestration & Extensions) */}
             <section className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <RiRouteLine className="size-4 text-accent-500" />
+                  <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
+                    <RiRouteLine className="size-3.5" />
+                  </div>
                   <h3 className="text-body-medium font-semibold text-text-primary">
-                    Orchestration & Tools · 能力与编排区
+                    Orchestration & Extensions · 能力扩展与智能编排
                   </h3>
                 </div>
                 <span className="text-caption-2-medium text-text-tertiary">
@@ -475,7 +536,7 @@ export function AgentStudioPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <h4 className="text-body-medium font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
-                              MCP Plugins Hub
+                              MCP Plugins Hub & Tool Center
                             </h4>
                             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -513,7 +574,7 @@ export function AgentStudioPage() {
                             <span className="font-mono font-medium text-text-primary">
                               {server.name}
                             </span>
-                            <span className="text-[10px] text-text-tertiary uppercase">
+                            <span className="text-[10px] text-text-tertiary uppercase font-semibold">
                               {server.transport}
                             </span>
                           </div>
@@ -571,16 +632,16 @@ export function AgentStudioPage() {
                     </p>
 
                     {/* Mini Pipeline Preview */}
-                    <div className="mt-3 flex items-center gap-1 rounded-xl bg-background-secondary-default p-2 text-[11px] overflow-hidden">
-                      <span className="rounded bg-background-primary-default px-1.5 py-0.5 font-mono text-text-primary shadow-2xs">
+                    <div className="mt-3.5 flex items-center gap-1.5 rounded-xl bg-background-secondary-default p-2 text-[11px] overflow-hidden">
+                      <span className="rounded-md bg-background-primary-default px-1.5 py-0.5 font-mono text-text-primary shadow-2xs">
                         Plan
                       </span>
                       <span className="text-text-tertiary">→</span>
-                      <span className="rounded bg-background-primary-default px-1.5 py-0.5 font-mono text-text-primary shadow-2xs">
+                      <span className="rounded-md bg-background-primary-default px-1.5 py-0.5 font-mono text-text-primary shadow-2xs">
                         Act
                       </span>
                       <span className="text-text-tertiary">→</span>
-                      <span className="rounded bg-background-primary-default px-1.5 py-0.5 font-mono text-text-primary shadow-2xs">
+                      <span className="rounded-md bg-background-primary-default px-1.5 py-0.5 font-mono text-text-primary shadow-2xs">
                         Verify
                       </span>
                     </div>
@@ -643,13 +704,15 @@ export function AgentStudioPage() {
               </div>
             </section>
 
-            {/* Zone 3: 配置与分析区 (Config & Insights) */}
+            {/* Zone 3: 全局定制与运行洞察 (Config & Insights) */}
             <section className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <RiPulseLine className="size-4 text-accent-500" />
+                  <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
+                    <RiPulseLine className="size-3.5" />
+                  </div>
                   <h3 className="text-body-medium font-semibold text-text-primary">
-                    Config & Insights · 配置与分析区
+                    Config & Insights · 全局定制与运行洞察
                   </h3>
                 </div>
                 <span className="text-caption-2-medium text-text-tertiary">

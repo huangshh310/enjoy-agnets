@@ -21,18 +21,49 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cx } from "@/utils/cx"
 import type { WorkflowRun, WorkflowStatus } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { WorkflowDag } from "@renderer/components/workflows/workflow-dag"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
 
-const WORKFLOW_PRESETS = [
-  { label: "Plan → Act → Verify", chain: "plan>act>verify" },
-  { label: "Explore → Refactor → Test", chain: "explore>refactor>test" },
-  { label: "Audit → Fix → Review", chain: "audit>fix>review" },
-  { label: "Analyze → Patch → Verify", chain: "analyze>patch>verify" }
+const WORKFLOW_RECIPES = [
+  {
+    id: "plan-act-verify",
+    title: "Plan → Act → Verify",
+    subtitle: "全自动规划、实现与验证闭环",
+    category: "Full Cycle Dev",
+    description: "Multi-step autonomous workflow: first writes a structural plan, makes precise code modifications, and validates with automated test suites.",
+    chain: "plan>act>verify",
+    steps: ["Plan", "Act", "Verify"]
+  },
+  {
+    id: "explore-refactor-test",
+    title: "Explore → Refactor → Test",
+    subtitle: "代码架构探索与安全重构",
+    category: "Architecture & Refactor",
+    description: "Deep codebase research followed by systematic refactoring and automated regression verification.",
+    chain: "explore>refactor>test",
+    steps: ["Explore", "Refactor", "Test"]
+  },
+  {
+    id: "audit-fix-review",
+    title: "Audit → Fix → Review",
+    subtitle: "安全隐患巡检与缺陷修复",
+    category: "Security & BugFix",
+    description: "Scan code for potential runtime vulnerabilities, generate targeted fixes, and perform human-in-the-loop review.",
+    chain: "audit>fix>review",
+    steps: ["Audit", "Fix", "Review"]
+  },
+  {
+    id: "analyze-patch-verify",
+    title: "Analyze → Patch → Verify",
+    subtitle: "针对性诊断与热补丁交付",
+    category: "Diagnostic & Patch",
+    description: "Analyze error logs or issue descriptions, synthesize minimal diff patch, and verify against target workspace.",
+    chain: "analyze>patch>verify",
+    steps: ["Analyze", "Patch", "Verify"]
+  }
 ]
 
 export function WorkflowsPage() {
@@ -79,11 +110,12 @@ export function WorkflowsPage() {
     await queryClient.invalidateQueries({ queryKey: ["workflows"] })
   }
 
-  async function start() {
-    if (!sessionId || isStarting) return
+  async function start(customChain?: string) {
+    const targetChain = customChain ?? chain
+    if (!sessionId || isStarting || !targetChain.trim()) return
     setIsStarting(true)
     try {
-      const steps = stepsFromChain(chain)
+      const steps = stepsFromChain(targetChain)
       const created = (await getIde().workflow.start({
         sessionId,
         workspaceId: workspaceId ?? undefined,
@@ -120,25 +152,114 @@ export function WorkflowsPage() {
         {/* Header */}
         <header className="flex flex-col gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500 shadow-xs">
+            <div className="flex size-10 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs ring-1 ring-accent-500/20">
               <RiRouteLine className="size-5" />
             </div>
-            <h1 data-testid="page-workflows" className="text-title-3-semibold text-text-primary">
-              Durable Workflows
-            </h1>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 data-testid="page-workflows" className="text-title-3-semibold text-text-primary">
+                  Durable Workflows & Pipelines
+                </h1>
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  Durable Checkpoints
+                </span>
+              </div>
+              <p className="mt-0.5 text-caption-1-medium text-text-secondary">
+                Multi-step autonomous execution with durable SQLite checkpoints. Supports pause, step-by-step resume, failure retry, and recovery after application restart.
+              </p>
+            </div>
           </div>
-          <p className="text-body-medium text-text-secondary">
-            Multi-step autonomous execution with durable checkpoints. Can pause, resume, and recover after restarts.
-          </p>
         </header>
 
-        {/* Workflow Launcher Card */}
+        {/* Featured Workflow Recipes Showcase */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
+                <RiSparklingLine className="size-3.5" />
+              </div>
+              <h3 className="text-body-medium font-semibold text-text-primary">
+                Pre-built Workflow Recipes · 经典自主流程模版
+              </h3>
+            </div>
+            <span className="text-caption-2-medium text-text-tertiary">
+              1-click autonomous execution
+            </span>
+          </div>
+
+          <div className="grid gap-3.5 sm:grid-cols-2">
+            {WORKFLOW_RECIPES.map((recipe) => (
+              <div
+                key={recipe.id}
+                className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-body-medium font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
+                          {recipe.title}
+                        </h4>
+                      </div>
+                      <p className="text-[11px] font-medium text-accent-600 dark:text-accent-400 mt-0.5">
+                        {recipe.subtitle}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-border-button-default bg-background-secondary-default px-2 py-0.5 text-[10px] font-medium text-text-secondary">
+                      {recipe.category}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-[12px] text-text-secondary leading-relaxed">
+                    {recipe.description}
+                  </p>
+
+                  {/* Visual Step Pills with Connecting Arrows */}
+                  <div className="mt-3.5 flex items-center gap-1.5 rounded-xl bg-background-secondary-default/80 p-2 text-[11px]">
+                    {recipe.steps.map((step, idx) => (
+                      <div key={step} className="flex items-center gap-1.5">
+                        {idx > 0 ? <RiArrowRightLine className="size-3 text-text-tertiary" /> : null}
+                        <span className="rounded-md border border-border-button-default bg-background-primary-default px-2 py-0.5 font-mono font-medium text-text-primary shadow-2xs">
+                          {step}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
+                  <span className="font-mono text-[10px] text-text-tertiary">
+                    Syntax: {recipe.chain}
+                  </span>
+
+                  <Button
+                    size="sm"
+                    disabled={!sessionId || isStarting}
+                    onClick={() => {
+                      setChain(recipe.chain)
+                      void start(recipe.chain)
+                    }}
+                    className="gap-1.5 h-7 px-3 text-caption-2-medium shadow-xs"
+                  >
+                    <RiPlayLine className="size-3.5" />
+                    <span>Run Recipe</span>
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Custom Pipeline Launcher Card */}
         <section className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-xs">
           <div className="flex items-center justify-between border-b border-separator-border/60 pb-3">
             <div className="flex items-center gap-2">
-              <RiSparklingLine className="size-4 text-accent-500" />
+              <div className="flex size-6 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
+                <RiRouteLine className="size-3.5" />
+              </div>
               <h3 className="text-body-medium font-semibold text-text-primary">
-                Launch New Pipeline
+                Custom Workflow Pipeline Builder
               </h3>
             </div>
             <span className="text-caption-2-medium text-text-tertiary">
@@ -147,27 +268,6 @@ export function WorkflowsPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-3.5">
-            {/* Presets */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-caption-2-medium text-text-tertiary">Presets:</span>
-              {WORKFLOW_PRESETS.map((preset) => (
-                <button
-                  key={preset.chain}
-                  type="button"
-                  onClick={() => setChain(preset.chain)}
-                  className={cx(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-caption-2-medium transition-all",
-                    chain === preset.chain
-                      ? "border-accent-500 bg-accent-500/10 text-accent-600 dark:text-accent-400 font-semibold"
-                      : "border-border-button-default bg-background-secondary-default text-text-secondary hover:border-accent-500/40 hover:bg-background-secondary-hover"
-                  )}
-                >
-                  <RiRouteLine className="size-3 text-accent-500" />
-                  <span>{preset.label}</span>
-                </button>
-              ))}
-            </div>
-
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <Input
@@ -190,14 +290,14 @@ export function WorkflowsPage() {
                 ) : (
                   <RiPlayLine className="size-4" />
                 )}
-                <span>Start workflow</span>
+                <span>Start Pipeline</span>
               </Button>
             </div>
 
             {/* Live Steps Preview */}
             {previewSteps.length > 0 ? (
               <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/70 p-2.5 overflow-x-auto">
-                <span className="text-[11px] font-medium text-text-tertiary shrink-0">Pipeline preview:</span>
+                <span className="text-[11px] font-medium text-text-tertiary shrink-0">Live Pipeline Preview:</span>
                 <div className="flex items-center gap-1.5 text-[11px]">
                   {previewSteps.map((step, idx) => (
                     <div key={step.id} className="flex items-center gap-1.5">
@@ -222,13 +322,15 @@ export function WorkflowsPage() {
           </div>
 
           {runs.length === 0 ? (
-            <div className="flex min-h-[14rem] flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/50 px-6 py-8 text-center">
-              <RiRouteLine className="size-8 text-text-tertiary" />
-              <p className="mt-2 text-body-medium font-semibold text-text-primary">
-                No workflow runs recorded
-              </p>
-              <p className="mt-1 max-w-sm text-caption-1-medium text-text-secondary">
-                Launch a multi-step durable workflow pipeline above to trace step progress and state checkpoints.
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-8 text-center">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs">
+                <RiRouteLine className="size-6" />
+              </div>
+              <h4 className="mt-3 text-body-medium font-semibold text-text-primary">
+                No Workflow Runs Recorded Yet
+              </h4>
+              <p className="mt-1 max-w-md text-caption-1-medium text-text-secondary">
+                Launch one of the pre-built workflow recipes above to execute multi-step autonomous tasks with step-by-step state checkpointing.
               </p>
             </div>
           ) : (

@@ -15,3 +15,13 @@ test("尊重 .gitignore 模式", () => {
   assert.equal(shouldIgnore("dist/app.js", extra), true)
   assert.equal(shouldIgnore("debug.log", extra), true)
 })
+
+test("忽略规则只认工作区相对路径，不把盘符祖先里的 out 当构建目录", () => {
+  const extra = parseGitignore("out\ndist\n")
+  assert.equal(shouldIgnore("design/specs/ui.md", extra), false)
+  assert.equal(shouldIgnore("apps/desktop/out/main/index.js", extra), true)
+  assert.equal(
+    shouldIgnore("C:/Users/foo/AppData/Local/Programs/out/project/design/a.md", extra),
+    false
+  )
+})

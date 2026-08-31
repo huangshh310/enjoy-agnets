@@ -35,6 +35,7 @@ import {
   listWorkspaces,
   listWorkspaceDir,
   openWorkspace,
+  pickFile,
   pickFolder,
   readWorkspaceDiff,
   readWorkspaceFile,
@@ -51,6 +52,7 @@ import {
 export const SHELL_CHANNELS = [
   "workspace.open",
   "workspace.pickFolder",
+  "workspace.pickFile",
   "workspace.remove",
   "workspace.list",
   "workspace.files",
@@ -102,6 +104,7 @@ function registerWorkspaceIpc() {
     return workspace
   })
   ipcMain.handle("workspace.pickFolder", async () => pickFolder())
+  ipcMain.handle("workspace.pickFile", async () => pickFile())
   ipcMain.handle("workspace.remove", async (_event, raw) => {
     return removeWorkspace(RemoveWorkspaceInput.parse(raw).workspaceId)
   })

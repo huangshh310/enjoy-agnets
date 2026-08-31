@@ -1,4 +1,5 @@
 export { parseGitignore, shouldIgnore } from "./sources/ignore"
+export { collectKnowledgeFiles } from "./sources/collect-files"
 export { canParse, parseDocument } from "./parsers"
 export { chunkText, chunkId, type TextChunk } from "./indexer/chunk"
 export { embeddingsNeedRebuild } from "./indexer/stale"

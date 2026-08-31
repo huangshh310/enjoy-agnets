@@ -3,10 +3,10 @@
  */
 import { promises as fs } from "node:fs"
 import { dialog } from "electron"
+import { resolveKnowledgePath } from "@enjoy-agents/db"
 import { getDatabase, getSetting, setSetting } from "./database"
 import { deleteSession } from "./session-lifecycle"
 import { createId } from "./ids"
-import { resolveInsideWorkspace } from "./paths"
 import { createWorkspaceHost } from "./workspace-host"
 import { readFileDiff } from "./workspace-git"
 import { resolveWorkspaceName } from "./workspace-name"
@@ -24,6 +24,23 @@ export { changedFiles } from "./workspace-git"
 export async function pickFolder(): Promise<{ path: string; name: string }> {
   const path = await pickWorkspaceFolder()
   return { path, name: resolveWorkspaceName(path) }
+}
+
+/** 只弹出文件选择，不写 workspaces 表。 */
+export async function pickFile(): Promise<{ path: string; name: string } | undefined> {
+  const picked = await dialog.showOpenDialog({
+    properties: ["openFile"],
+    filters: [
+      {
+        name: "Supported Documents",
+        extensions: ["md", "ts", "tsx", "js", "jsx", "py", "json", "txt", "pdf", "docx"]
+      },
+      { name: "All Files", extensions: ["*"] }
+    ]
+  })
+  if (picked.canceled || !picked.filePaths[0]) return undefined
+  const p = picked.filePaths[0]
+  return { path: p, name: resolveWorkspaceName(p) }
 }
 
 export async function openWorkspace(pathHint?: string, name?: string): Promise<WorkspaceRecord> {
@@ -89,7 +106,8 @@ export async function removeWorkspace(workspaceId: string): Promise<{ id: string
 
 export async function readWorkspaceFile(workspaceId: string, relativePath: string) {
   const workspace = await getWorkspace(workspaceId)
-  return fs.readFile(resolveInsideWorkspace(workspace.rootPath, relativePath), "utf8")
+  const resolved = resolveKnowledgePath(workspace.rootPath, relativePath)
+  return fs.readFile(resolved.abs, "utf8")
 }
 
 export async function listWorkspaceDir(workspaceId: string, relativePath: string) {

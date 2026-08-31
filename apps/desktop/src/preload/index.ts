@@ -6,6 +6,7 @@ const ide = {
   workspace: {
     open: (input?: unknown) => ipcRenderer.invoke("workspace.open", input ?? {}),
     pickFolder: () => ipcRenderer.invoke("workspace.pickFolder"),
+    pickFile: () => ipcRenderer.invoke("workspace.pickFile"),
     remove: (input: unknown) => ipcRenderer.invoke("workspace.remove", input),
     list: () => ipcRenderer.invoke("workspace.list"),
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
@@ -86,6 +87,7 @@ const ide = {
   },
   knowledge: {
     sources: (workspaceId: string) => ipcRenderer.invoke("knowledge.sources", { workspaceId }),
+    documents: (input: unknown) => ipcRenderer.invoke("knowledge.documents", input),
     addSource: (input: unknown) => ipcRenderer.invoke("knowledge.addSource", input),
     index: (input: unknown) => ipcRenderer.invoke("knowledge.index", input),
     search: (input: unknown) => ipcRenderer.invoke("knowledge.search", input),

@@ -21,3 +21,17 @@ test("resolveKnowledgePath 规范化相对路径并拒绝逃逸", () => {
   assert.equal(resolved.rel, "docs/readme.md")
   assert.throws(() => resolveKnowledgePath("C:/workspace", "../.ssh/id_rsa"))
 })
+
+test("resolveKnowledgePath 盘符大小写仍视为工作区内", () => {
+  if (process.platform !== "win32") return
+  const resolved = resolveKnowledgePath("c:/workspace", "C:/workspace/design")
+  assert.equal(resolved.rel, "design")
+})
+
+test("resolveKnowledgePath 拒绝工作区外绝对路径", () => {
+  if (process.platform !== "win32") {
+    assert.throws(() => resolveKnowledgePath("/workspace", "/etc/passwd"))
+    return
+  }
+  assert.throws(() => resolveKnowledgePath("C:/workspace", "D:/other/secret.md"))
+})

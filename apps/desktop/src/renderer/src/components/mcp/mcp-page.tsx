@@ -6,8 +6,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   RiAddLine,
   RiCloseLine,
+  RiCodeSSlashLine,
   RiCpuLine,
+  RiDatabase2Line,
   RiExternalLinkLine,
+  RiFolderLine,
   RiLoader4Line,
   RiPlugLine,
   RiSparklingLine
@@ -22,24 +25,44 @@ import { McpAppFrame } from "@renderer/components/mcp/mcp-app-frame"
 import { McpServerRow } from "@renderer/components/mcp/mcp-server-row"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
-const MCP_PRESETS = [
+const FEATURED_MCP_PLUGINS = [
   {
-    name: "filesystem",
+    id: "filesystem",
+    name: "Local Filesystem",
+    category: "File & Storage",
+    icon: RiFolderLine,
+    colorClass: "bg-blue-500/10 text-blue-500",
+    description: "Provide complete filesystem read, write, directory traversal and file inspection tools to the Agent loop.",
     transport: "stdio" as const,
     command: "npx -y @modelcontextprotocol/server-filesystem ."
   },
   {
-    name: "everything",
+    id: "everything",
+    name: "Everything Suite",
+    category: "Full Toolkit & Apps",
+    icon: RiSparklingLine,
+    colorClass: "bg-purple-500/10 text-purple-500",
+    description: "Multi-purpose tools with demo resources, prompts, and sandboxed interactive UI apps.",
     transport: "stdio" as const,
     command: "npx -y @modelcontextprotocol/server-everything"
   },
   {
-    name: "github",
+    id: "github",
+    name: "GitHub Ecosystem",
+    category: "DevOps & VCS",
+    icon: RiCodeSSlashLine,
+    colorClass: "bg-emerald-500/10 text-emerald-500",
+    description: "Manage repository issues, pull requests, commits, and code searches directly via Agent commands.",
     transport: "stdio" as const,
     command: "npx -y @modelcontextprotocol/server-github"
   },
   {
-    name: "postgres",
+    id: "postgres",
+    name: "PostgreSQL Database",
+    category: "Data & Query",
+    icon: RiDatabase2Line,
+    colorClass: "bg-amber-500/10 text-amber-500",
+    description: "Inspect schema structures, tables, and execute read-only SQL queries on your PostgreSQL databases.",
     transport: "stdio" as const,
     command: "npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb"
   }
@@ -86,15 +109,18 @@ export function McpPage() {
     await queryClient.invalidateQueries({ queryKey: ["mcp"] })
   }
 
-  async function add() {
-    if (!name.trim() || isAdding) return
+  async function add(overrideName?: string, overrideCommand?: string, overrideTransport?: "stdio" | "sse" | "http") {
+    const finalName = overrideName ?? name
+    const finalCommand = overrideCommand ?? command
+    const finalTransport = overrideTransport ?? transport
+    if (!finalName.trim() || isAdding) return
     setIsAdding(true)
     try {
       await getIde().mcp.upsert({
-        name: name.trim(),
-        transport,
-        command: transport === "stdio" ? command : undefined,
-        url: transport === "stdio" ? undefined : url,
+        name: finalName.trim(),
+        transport: finalTransport,
+        command: finalTransport === "stdio" ? finalCommand : undefined,
+        url: finalTransport === "stdio" ? undefined : url,
         allowedResourceUris: [],
         modelVisibleTools: [],
         appOnlyTools: [],
@@ -142,25 +168,114 @@ export function McpPage() {
         {/* Header */}
         <header className="flex flex-col gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500 shadow-xs">
+            <div className="flex size-10 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs ring-1 ring-accent-500/20">
               <RiPlugLine className="size-5" />
             </div>
-            <h1 data-testid="page-mcp" className="text-title-3-semibold text-text-primary">
-              Model Context Protocol (MCP)
-            </h1>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 data-testid="page-mcp" className="text-title-3-semibold text-text-primary">
+                  Model Context Protocol (MCP) & Plugins
+                </h1>
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  Sandboxed Isolation
+                </span>
+              </div>
+              <p className="mt-0.5 text-caption-1-medium text-text-secondary">
+                Connect external tools and sandboxed interactive UI Apps. Tools execute securely in main; Apps render inside isolated iframe containers.
+              </p>
+            </div>
           </div>
-          <p className="text-body-medium text-text-secondary">
-            Connect external tools and sandboxed UI Apps. Tools run securely in main; Apps render in an isolated iframe.
-          </p>
         </header>
 
-        {/* Add MCP Server Card */}
+        {/* Featured Plugin Store Showcase */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
+                <RiSparklingLine className="size-3.5" />
+              </div>
+              <h3 className="text-body-medium font-semibold text-text-primary">
+                Featured Plugin Store · 常用精选插件
+              </h3>
+            </div>
+            <span className="text-caption-2-medium text-text-tertiary">
+              1-click setup & connect
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {FEATURED_MCP_PLUGINS.map((plugin) => {
+              const Icon = plugin.icon
+              const alreadyRegistered = servers.some((s) => s.name === plugin.id || s.name === plugin.name)
+              return (
+                <div
+                  key={plugin.id}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className={cx("flex size-9 shrink-0 items-center justify-center rounded-xl shadow-xs", plugin.colorClass)}>
+                          <Icon className="size-4.5" />
+                        </div>
+                        <div>
+                          <h4 className="text-caption-1-medium font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
+                            {plugin.name}
+                          </h4>
+                          <span className="text-[10px] font-mono uppercase text-text-tertiary">
+                            {plugin.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="rounded-full border border-border-button-default bg-background-secondary-default px-2 py-0.5 text-[10px] font-mono text-text-secondary">
+                        {plugin.transport}
+                      </span>
+                    </div>
+
+                    <p className="mt-2.5 text-[12px] text-text-secondary leading-relaxed">
+                      {plugin.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
+                    <span className="font-mono text-[10px] text-text-tertiary truncate max-w-[170px]">
+                      {plugin.command}
+                    </span>
+
+                    <Button
+                      size="sm"
+                      variant={alreadyRegistered ? "outline" : "default"}
+                      disabled={isAdding}
+                      onClick={() => {
+                        setName(plugin.id)
+                        setCommand(plugin.command)
+                        setTransport(plugin.transport)
+                        if (!alreadyRegistered) {
+                          void add(plugin.id, plugin.command, plugin.transport)
+                        }
+                      }}
+                      className="gap-1 h-7 px-2.5 text-caption-2-medium shrink-0 shadow-xs"
+                    >
+                      <RiAddLine className="size-3" />
+                      <span>{alreadyRegistered ? "Prefill Config" : "Connect Plugin"}</span>
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* Custom Server Configuration Card */}
         <section className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-xs">
           <div className="flex items-center justify-between border-b border-separator-border/60 pb-3">
             <div className="flex items-center gap-2">
-              <RiCpuLine className="size-4 text-accent-500" />
+              <div className="flex size-6 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
+                <RiCpuLine className="size-3.5" />
+              </div>
               <h3 className="text-body-medium font-semibold text-text-primary">
-                Add MCP Server
+                Custom MCP Server Configuration
               </h3>
             </div>
 
@@ -185,41 +300,20 @@ export function McpPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-3.5">
-            {/* Presets */}
-            {transport === "stdio" ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-caption-2-medium text-text-tertiary">Quick presets:</span>
-                {MCP_PRESETS.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => {
-                      setName(preset.name)
-                      setCommand(preset.command)
-                    }}
-                    className="inline-flex items-center gap-1 rounded-full border border-border-button-default bg-background-secondary-default px-2.5 py-0.5 text-caption-2-medium text-text-secondary hover:border-accent-500/40 hover:bg-background-secondary-hover hover:text-text-primary transition-all font-mono"
-                  >
-                    <RiSparklingLine className="size-3 text-accent-500" />
-                    <span>{preset.name}</span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
             <div className="grid gap-3 sm:grid-cols-[14rem_minmax(0,1fr)]">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-caption-1-medium text-text-secondary">Server Name</Label>
+                <Label className="text-caption-1-medium text-text-secondary">Server Identifier</Label>
                 <Input
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="e.g. local-filesystem"
-                  className="bg-background-secondary-default focus-visible:bg-background-primary-default"
+                  className="bg-background-secondary-default focus-visible:bg-background-primary-default font-mono text-[13px]"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label className="text-caption-1-medium text-text-secondary">
-                  {transport === "stdio" ? "Command & Arguments" : "Endpoint URL"}
+                  {transport === "stdio" ? "Command & Process Arguments" : "Endpoint URL"}
                 </Label>
                 {transport === "stdio" ? (
                   <Input
@@ -239,10 +333,10 @@ export function McpPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-caption-2-medium text-text-tertiary">
+            <div className="flex items-center justify-between pt-1 border-t border-separator-border/40 text-caption-2-medium text-text-tertiary">
+              <span>
                 {transport === "stdio"
-                  ? "Standard input/output binary process. Spawned and isolated in main."
+                  ? "Standard input/output binary process. Isolated and managed by Electron main."
                   : "Remote HTTP / Server-Sent Events MCP endpoint."}
               </span>
 
@@ -258,7 +352,7 @@ export function McpPage() {
                 ) : (
                   <RiAddLine className="size-4" />
                 )}
-                <span>Add server</span>
+                <span>Register Server</span>
               </Button>
             </div>
           </div>

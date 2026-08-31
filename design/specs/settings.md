@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-08-31
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-01
 
 ## 当前真相
 
@@ -13,7 +13,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/general` 等 | 设置分段 | `wide`（尤其 Providers） |
 | `#/settings/archived` | 已归档的聊天 | `wide` |
 | `#/automations` | 自动化列表 | `stage` |
-| `#/customize/instructions` | 用户说明；Skills / Rules 后续 | `article` |
+| `#/customize/instructions` | 用户说明、Skills 技能扩展中心、Rules 规则规范模版库 | `wide` |
 | `#/knowledge` | 知识库来源与检索 | `wide` |
 | `#/workflows` | Workflow 恢复 | `wide` |
 | `#/media` | 资产库 | `wide` |

@@ -1,7 +1,7 @@
 /**
  * Knowledge 索引与检索。用户显式选路径；遵守忽略规则；失败不阻塞。
  */
-import { readFile, readdir, stat } from "node:fs/promises"
+import { readFile, stat } from "node:fs/promises"
 import { join, relative } from "node:path"
 import {
   countSourceChunks,
@@ -17,18 +17,17 @@ import {
 import {
   canParse,
   chunkText,
+  collectKnowledgeFiles,
   embeddingsNeedRebuild,
   parseDocument,
-  parseGitignore,
-  shouldIgnore
+  parseGitignore
 } from "@enjoy-agents/knowledge"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
 import {
   reembedStaleSource,
   resolveEmbeddingModelId,
-  storeHashedEmbeddings,
-  tryProviderEmbeddings
+  storeHashedEmbeddings
 } from "./knowledge-embed"
 import { getWorkspace } from "./workspace"
 import { clearSourceContent, hashText, markDocumentReady, shouldSkipIndexedFile } from "./knowledge-index"
@@ -52,6 +51,11 @@ export async function listKnowledgeSources(workspaceId: string) {
 export async function addKnowledgeSource(workspaceId: string, path: string) {
   const workspace = await getWorkspace(workspaceId)
   const resolved = resolveKnowledgePath(workspace.rootPath, path)
+  try {
+    await stat(resolved.abs)
+  } catch {
+    throw new Error(`Path not found in workspace: ${resolved.rel} (under ${workspace.rootPath})`)
+  }
   const source = {
     id: createId("ks"),
     workspaceId,
@@ -74,40 +78,63 @@ export async function indexKnowledgeSource(sourceId: string, rebuild = false) {
   const workspace = await getWorkspace(source.workspaceId)
   upsertSource(getDatabase(), { ...source, status: "indexing", error: null, updatedAt: Date.now() })
   if (rebuild) clearSourceContent(source)
-  const gitignore = await readGitignore(workspace.rootPath)
-  const files = await collectFiles(workspace.rootPath, source.path, gitignore)
-  for (const file of files) {
-    if (cancelled.has(sourceId)) {
-      upsertSource(getDatabase(), {
-        ...source,
-        ...tally(sourceId),
-        status: "paused",
-        updatedAt: Date.now()
-      })
-      return getSource(getDatabase(), sourceId)
+  try {
+    const gitignore = await readGitignore(workspace.rootPath)
+    const files = await collectKnowledgeFiles(workspace.rootPath, source.path, gitignore)
+    for (const file of files) {
+      if (cancelled.has(sourceId)) {
+        upsertSource(getDatabase(), {
+          ...source,
+          ...tally(sourceId),
+          status: "paused",
+          updatedAt: Date.now()
+        })
+        return getSource(getDatabase(), sourceId)
+      }
+      if (!canParse(file)) continue
+      try {
+        const parsed = parseDocument(file, await readFile(file))
+        if (!parsed.text) continue
+        const rel = relative(workspace.rootPath, file).replace(/\\/g, "/")
+        const hash = hashText(parsed.text)
+        if (!rebuild && shouldSkipIndexedFile(sourceId, rel, hash)) continue
+        await persistFileChunks(sourceId, rel, parsed.text)
+        markDocumentReady(sourceId, rel, hash)
+        upsertSource(getDatabase(), {
+          ...source,
+          ...tally(sourceId),
+          status: "indexing",
+          updatedAt: Date.now()
+        })
+      } catch {
+        // 单个文件失败不阻塞索引
+      }
     }
-    if (!canParse(file)) continue
-    try {
-      const parsed = parseDocument(file, await readFile(file))
-      if (!parsed.text) continue
-      const rel = relative(workspace.rootPath, file).replace(/\\/g, "/")
-      const hash = hashText(parsed.text)
-      if (!rebuild && shouldSkipIndexedFile(sourceId, rel, hash)) continue
-      await persistFileChunks(sourceId, rel, parsed.text)
-      markDocumentReady(sourceId, rel, hash)
-    } catch {
-      // 单个文件失败不阻塞索引
+    if (!cancelled.has(sourceId)) {
+      try {
+        await reembedStaleSource(sourceId)
+      } catch {
+        // 外部 embed 失败保持 hashed
+      }
     }
+    upsertSource(getDatabase(), {
+      ...source,
+      ...tally(sourceId),
+      status: "ready",
+      error: null,
+      updatedAt: Date.now()
+    })
+    return getSource(getDatabase(), sourceId)
+  } catch (err) {
+    upsertSource(getDatabase(), {
+      ...source,
+      ...tally(sourceId),
+      status: "error",
+      error: String(err),
+      updatedAt: Date.now()
+    })
+    throw err
   }
-  if (!cancelled.has(sourceId)) await reembedStaleSource(sourceId)
-  upsertSource(getDatabase(), {
-    ...source,
-    ...tally(sourceId),
-    status: "ready",
-    error: null,
-    updatedAt: Date.now()
-  })
-  return getSource(getDatabase(), sourceId)
 }
 
 export function cancelKnowledgeIndex(sourceId: string) {
@@ -147,7 +174,6 @@ async function persistFileChunks(
     })
   }
   storeHashedEmbeddings(parts.map((part) => ({ id: part.id, text: part.text })))
-  await tryProviderEmbeddings(parts.map((part) => ({ id: part.id, text: part.text })))
   return parts.length
 }
 
@@ -167,19 +193,68 @@ async function readGitignore(root: string): Promise<string[]> {
   }
 }
 
-async function collectFiles(root: string, rel: string, extra: string[]): Promise<string[]> {
-  const start = resolveKnowledgePath(root, rel)
-  const info = await stat(start.abs)
-  if (info.isFile()) return shouldIgnore(start.rel, extra) ? [] : [start.abs]
-  const out: string[] = []
-  const entries = await readdir(start.abs, { withFileTypes: true })
-  for (const entry of entries) {
-    const prefix = start.rel === "." ? "" : `${start.rel.replace(/\/$/, "")}/`
-    const childRel = `${prefix}${entry.name}`
-    if (shouldIgnore(childRel, extra)) continue
-    const child = resolveKnowledgePath(root, childRel)
-    if (entry.isDirectory()) out.push(...(await collectFiles(root, child.rel, extra)))
-    else out.push(child.abs)
+export async function listKnowledgeDocuments(workspaceId: string, sourceId?: string) {
+  const db = getDatabase()
+  const workspace = await getWorkspace(workspaceId)
+  const gitignore = await readGitignore(workspace.rootPath)
+  let sources = listSources(db, workspaceId)
+  if (sourceId) {
+    sources = sources.filter((s) => s.id === sourceId)
   }
-  return out
+  const result: Array<{
+    id: string
+    sourceId: string
+    sourcePath: string
+    path: string
+    chunkCount: number
+    status: string
+    updatedAt: number
+  }> = []
+
+  const seenPaths = new Set<string>()
+
+  for (const src of sources) {
+    // 1. 已入库的文档
+    const docs = listDocuments(db, src.id)
+    for (const doc of docs) {
+      seenPaths.add(doc.path)
+      const row = db
+        .prepare("SELECT COUNT(*) as n FROM knowledge_chunks WHERE document_id = ?")
+        .get(doc.id) as { n: number } | undefined
+      result.push({
+        id: doc.id,
+        sourceId: src.id,
+        sourcePath: src.path,
+        path: doc.path,
+        chunkCount: row?.n || 0,
+        status: doc.status,
+        updatedAt: src.updatedAt
+      })
+    }
+
+    // 2. 扫描真实磁盘文件，确保未完成或正在索引时也立即可见并支持预览
+    try {
+      const diskFiles = await collectKnowledgeFiles(workspace.rootPath, src.path, gitignore)
+      for (const absFile of diskFiles) {
+        if (!canParse(absFile)) continue
+        const rel = relative(workspace.rootPath, absFile).replace(/\\/g, "/")
+        if (!seenPaths.has(rel)) {
+          seenPaths.add(rel)
+          result.push({
+            id: `doc_${src.id}_${rel}`,
+            sourceId: src.id,
+            sourcePath: src.path,
+            path: rel,
+            chunkCount: 0,
+            status: src.status === "indexing" ? "indexing" : "unindexed",
+            updatedAt: src.updatedAt
+          })
+        }
+      }
+    } catch {
+      // 忽略扫描异常
+    }
+  }
+  return result
 }
+

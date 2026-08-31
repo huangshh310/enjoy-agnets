@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-08-31
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-01
 
 ## 当前真相
 
@@ -10,7 +10,7 @@
 
 | 前缀 | 频道 | 用途 |
 |---|---|---|
-| workspace | `open` `pickFolder` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` 只选目录不落库；`open` 可带 `name`；`remove` 只删应用档案不删磁盘 |
+| workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` 只删应用档案不删磁盘 |
 | session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` | 会话；`list` 不含已归档；`archive` 进设置页；`delete` 永久删消息 |
 | agent | `run` `abort` `decide` | 跑循环、中止、审批；`run` 可带 `attachments` 资产 id |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商 |
@@ -19,7 +19,7 @@
 | ai | `generate` `abort` `resume` | 文本/结构化/媒体/embedding/translation；kind=`agent` 转发 `runAgent`，必须带 workspaceId；`resume` 按 kind 分流：workflow 续步，其它读 generation 快照再跑 |
 | agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；篡改 runId / toolCallId 或库内签名即拒 |
 | assets | `import` `list` `read` `export` `delete` `upload` | 资产库与 provider 引用 |
-| knowledge | `sources` `addSource` `index` `search` `cancel` `remove` | RAG |
+| knowledge | `sources` `documents` `addSource` `index` `search` `cancel` `remove` | RAG；`documents` 可带 `sourceId`，合并库内文档与磁盘扫描 |
 | workflow | `list` `get` `start` `recover` `resume` `cancel` `retry` | Durable run |
 | mcp | `servers` `upsert` `remove` `connect` `disconnect` `test` `tools` `call` `setPermission` `openApp` `appMessage` | MCP；`call` 入参 `McpCallInput`；`openApp` / `appMessage` 仅 trusted，消息经 `sanitizeAppMessage` |
 | realtime | `open` `sendAudio` `close` | 实验语音会话 |
