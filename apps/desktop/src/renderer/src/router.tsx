@@ -20,6 +20,8 @@ import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
 import { MediaPage } from "@renderer/components/media/media-page"
 import { McpPage } from "@renderer/components/mcp/mcp-page"
 import { ObservabilityPage } from "@renderer/components/observability/observability-page"
+import { AgentStudioPage } from "@renderer/components/studio/agent-studio-page"
+import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
 
@@ -39,6 +41,7 @@ function RootLayout() {
       if (
         event.key === "Escape" &&
         (pathname.startsWith("/settings") ||
+          pathname.startsWith("/studio") ||
           pathname.startsWith("/automations") ||
           pathname.startsWith("/customize") ||
           pathname.startsWith("/knowledge") ||
@@ -58,6 +61,7 @@ function RootLayout() {
   return (
     <WindowFrame>
       <Outlet />
+      <QuickSearchDialog />
     </WindowFrame>
   )
 }
@@ -152,9 +156,16 @@ const observabilityRoute = createRoute({
   component: ObservabilityPage
 })
 
+const studioRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/studio",
+  component: AgentStudioPage
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   settingsRoute.addChildren([settingsIndexRoute, settingsSectionRoute]),
+  studioRoute,
   automationsRoute,
   customizeIndexRoute,
   customizeSectionRoute,

@@ -9,7 +9,9 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | Hash | 页面 | `contentWidth` |
 |---|---|---|
 | `#/` | Agent 工作区 | — |
+| `#/studio` | Agent Studio 资产与编排中枢 | —（自建 Bento + 左侧 Agent rail） |
 | `#/settings/general` 等 | 设置分段 | `wide`（尤其 Providers） |
+| `#/settings/archived` | 已归档的聊天 | `wide` |
 | `#/automations` | 自动化列表 | `stage` |
 | `#/customize/instructions` | 用户说明；Skills / Rules 后续 | `article` |
 | `#/knowledge` | 知识库来源与检索 | `wide` |
@@ -18,7 +20,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/mcp` | MCP Server；trusted 可 Open App | `wide` |
 | `#/observability` | 本地指标 | `wide` |
 
-设置分段 ID：`general` `appearance` `shortcuts` `providers` `agent` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `telemetry` `sandbox`。仅 `git` 标 `soon`。Capabilities 展示 `staticCaps`，probe 成功后叠 `probedCaps`；Media / Voice 控件按有效能力禁用。Explore Presets 含 Fal / Replicate / ElevenLabs / Deepgram / Cohere / AI Gateway。MCP / Knowledge / Media / Telemetry / Workflow 已接线。`knowledgeAutoIndex` 与 `experimentalMedia` 由 main 执法，不是只改设置开关。Sandbox 可改 `maxAgentSteps`（ToolLoop `stepCountIs`）、`agentTimeoutMs`（0 不限）、`stepTimeoutMs`（0 不限，传 SDK `timeout.stepMs`）和 `toolTimeoutMs`（bash）。Agent 页 Harness 可选 Claude Code / Codex / Pi / OpenCode；Pi 不强制 Vercel。
+设置分段 ID：`general` `appearance` `shortcuts` `providers` `agent` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `telemetry` `sandbox` `archived`。仅 `git` 标 `soon`。`#/settings/archived` 按项目分组列出已归档会话，可取消归档或永久删除；全部删除会清掉所有已归档记录。Capabilities 展示 `staticCaps`，probe 成功后叠 `probedCaps`；Media / Voice 控件按有效能力禁用。Explore Presets 含 Fal / Replicate / ElevenLabs / Deepgram / Cohere / AI Gateway。MCP / Knowledge / Media / Telemetry / Workflow 已接线。`knowledgeAutoIndex` 与 `experimentalMedia` 由 main 执法，不是只改设置开关。Sandbox 可改 `maxAgentSteps`（ToolLoop `stepCountIs`）、`agentTimeoutMs`（0 不限）、`stepTimeoutMs`（0 不限，传 SDK `timeout.stepMs`）和 `toolTimeoutMs`（bash）。Agent 页 Harness 可选 Claude Code / Codex / Pi / OpenCode；Pi 不强制 Vercel。
 
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 settings / automations / customize 上按 Escape → `#/`。
 

@@ -1,0 +1,63 @@
+/**
+ * 会话归档 / 恢复 / 永久删除。只动 SQLite，不删工作区磁盘文件。
+ */
+import { getDatabase } from "./database"
+
+export function listArchivedSessions() {
+  return getDatabase()
+    .prepare(
+      `SELECT s.id, s.workspace_id as workspaceId, COALESCE(w.name, '已移除的项目') as workspaceName,
+              s.title, s.updated_at as updatedAt, s.archived_at as archivedAt
+       FROM sessions s
+       LEFT JOIN workspaces w ON w.id = s.workspace_id
+       WHERE s.archived_at IS NOT NULL
+       ORDER BY s.archived_at DESC`
+    )
+    .all()
+}
+
+export function archiveSession(sessionId: string) {
+  const now = Date.now()
+  const result = getDatabase()
+    .prepare("UPDATE sessions SET archived_at = ?, updated_at = ? WHERE id = ? AND archived_at IS NULL")
+    .run(now, now, sessionId)
+  if (result.changes === 0) throw new Error("Unknown or already archived session.")
+  return { id: sessionId, archivedAt: now }
+}
+
+export function unarchiveSession(sessionId: string) {
+  const now = Date.now()
+  const result = getDatabase()
+    .prepare("UPDATE sessions SET archived_at = NULL, updated_at = ? WHERE id = ? AND archived_at IS NOT NULL")
+    .run(now, sessionId)
+  if (result.changes === 0) throw new Error("Unknown or not archived session.")
+  return { id: sessionId }
+}
+
+/** 永久删除会话及其消息。 */
+export function deleteSession(sessionId: string) {
+  const db = getDatabase()
+  const exists = db.prepare("SELECT id FROM sessions WHERE id = ?").get(sessionId)
+  if (!exists) throw new Error("Unknown session.")
+  db.exec("BEGIN")
+  try {
+    db.prepare(
+      "DELETE FROM message_parts WHERE message_id IN (SELECT id FROM messages WHERE session_id = ?)"
+    ).run(sessionId)
+    db.prepare("DELETE FROM messages WHERE session_id = ?").run(sessionId)
+    db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId)
+    db.exec("COMMIT")
+  } catch (error) {
+    db.exec("ROLLBACK")
+    throw error
+  }
+  return { id: sessionId }
+}
+
+export function deleteAllArchivedSessions() {
+  const rows = getDatabase()
+    .prepare("SELECT id FROM sessions WHERE archived_at IS NOT NULL")
+    .all() as Array<{ id: string }>
+  for (const row of rows) deleteSession(row.id)
+  return { deleted: rows.length }
+}

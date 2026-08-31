@@ -12,6 +12,7 @@ import {
   RiSettings4Line,
   RiShieldKeyholeLine,
   RiSparkling2Line,
+  RiInboxArchiveLine,
   RiTerminalBoxLine
 } from "@remixicon/react"
 import type { ComponentType } from "react"
@@ -30,7 +31,8 @@ export const SETTINGS_SECTIONS = [
   "media",
   "workflow",
   "telemetry",
-  "sandbox"
+  "sandbox",
+  "archived"
 ] as const
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]
@@ -161,6 +163,18 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         icon: RiGitBranchLine,
         keywords: ["commit", "diff", "branch"],
         soon: true
+      }
+    ]
+  },
+  {
+    id: "archived",
+    label: "已归档",
+    items: [
+      {
+        id: "archived",
+        label: "已归档的聊天",
+        icon: RiInboxArchiveLine,
+        keywords: ["archive", "chats", "history", "归档"]
       }
     ]
   }

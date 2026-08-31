@@ -6,14 +6,7 @@
 import {
   RiAddLine,
   RiCustomerServiceLine,
-  RiBookOpenLine,
-  RiEqualizer3Line,
-  RiFolder6Line,
-  RiGridLine,
-  RiImageLine,
-  RiPlugLine,
-  RiPulseLine,
-  RiRouteLine,
+  RiDashboardLine,
   RiSearchLine,
   RiSettings4Line,
   RiSideBarFill
@@ -27,8 +20,9 @@ import { AppMark } from "@renderer/components/brand/app-mark"
 import { AppWordmark } from "@renderer/components/brand/app-wordmark"
 import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar/sidebar-action"
 import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos"
+import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
-import { useNavigate } from "@tanstack/react-router"
+import { useNavigate, useRouterState } from "@tanstack/react-router"
 
 export function AiChatSidebar({
   userName,
@@ -57,6 +51,17 @@ export function AiChatSidebar({
 }) {
   const initials = userName.slice(0, 1).toUpperCase()
   const navigate = useNavigate()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+
+  const isStudioActive =
+    pathname.startsWith("/studio") ||
+    pathname.startsWith("/automations") ||
+    pathname.startsWith("/customize") ||
+    pathname.startsWith("/knowledge") ||
+    pathname.startsWith("/workflows") ||
+    pathname.startsWith("/media") ||
+    pathname.startsWith("/mcp") ||
+    pathname.startsWith("/observability")
 
   return (
     <aside
@@ -75,48 +80,12 @@ export function AiChatSidebar({
         <QuickSearch collapsed={collapsed} onExpand={onToggleCollapsed} />
         <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
           <SidebarAction collapsed={collapsed} icon={RiAddLine} label="New agent" onClick={onNewSession} />
-          <SidebarAction collapsed={collapsed} icon={RiFolder6Line} label="Open folder" onClick={onOpenWorkspace} />
           <SidebarAction
             collapsed={collapsed}
-            icon={RiGridLine}
-            label="Automations"
-            onClick={() => void navigate({ to: "/automations" })}
-          />
-          <SidebarAction
-            collapsed={collapsed}
-            icon={RiEqualizer3Line}
-            label="Customize"
-            onClick={() => void navigate({ to: "/customize/$section", params: { section: "instructions" } })}
-          />
-          <SidebarAction
-            collapsed={collapsed}
-            icon={RiBookOpenLine}
-            label="Knowledge"
-            onClick={() => void navigate({ to: "/knowledge" })}
-          />
-          <SidebarAction
-            collapsed={collapsed}
-            icon={RiRouteLine}
-            label="Workflows"
-            onClick={() => void navigate({ to: "/workflows" })}
-          />
-          <SidebarAction
-            collapsed={collapsed}
-            icon={RiImageLine}
-            label="Media"
-            onClick={() => void navigate({ to: "/media" })}
-          />
-          <SidebarAction
-            collapsed={collapsed}
-            icon={RiPlugLine}
-            label="MCP"
-            onClick={() => void navigate({ to: "/mcp" })}
-          />
-          <SidebarAction
-            collapsed={collapsed}
-            icon={RiPulseLine}
-            label="Observability"
-            onClick={() => void navigate({ to: "/observability" })}
+            icon={RiDashboardLine}
+            label="Agent Studio"
+            active={isStudioActive}
+            onClick={() => void navigate({ to: "/studio" })}
           />
         </nav>
         {collapsed ? null : (
@@ -173,12 +142,13 @@ function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand: ()
     <button
       type="button"
       aria-label="Quick Search"
-      title={collapsed ? "Quick Search" : undefined}
+      title={collapsed ? "Quick Search (⌘L)" : undefined}
       onClick={() => {
         if (collapsed) onExpand()
+        openQuickSearch()
       }}
       className={cx(
-        "flex cursor-pointer items-center bg-background-tertiary-default transition-[width,border-radius] duration-300 ease-in-out",
+        "flex cursor-pointer items-center bg-background-tertiary-default transition-[width,border-radius] duration-300 ease-in-out hover:bg-background-secondary-hover",
         collapsed ? "size-9 justify-center rounded-2lg" : "w-full gap-2 rounded-full p-2"
       )}
     >

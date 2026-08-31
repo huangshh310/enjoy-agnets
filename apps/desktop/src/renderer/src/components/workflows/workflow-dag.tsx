@@ -2,9 +2,26 @@
  * Workflow dependsOn 分层图：从左到右画层，不是可拖拽画布。
  * 不从 agent-core 主入口导入，避免把 Node 工具打进 renderer。
  */
+import {
+  RiArrowRightLine,
+  RiCheckLine,
+  RiCloseLine,
+  RiLoader4Line,
+  RiPauseCircleLine,
+  RiShieldCheckLine,
+  RiTimeLine
+} from "@remixicon/react"
+import { cx } from "@/utils/cx"
 import type { WorkflowStep } from "@enjoy-agents/ipc-contract"
 
-type DagNode = { id: string; label: string; status: string; dependsOn?: string[] }
+type DagNode = {
+  id: string
+  index: number
+  label: string
+  status: string
+  durationMs?: number
+  dependsOn?: string[]
+}
 
 function layerSteps(steps: DagNode[]): DagNode[][] {
   const remaining = new Set(steps.map((step) => step.id))
@@ -26,31 +43,90 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
   const layers = layerSteps(
     steps.map((step) => ({
       id: step.id,
+      index: step.index,
       label: step.label,
       status: step.status,
+      durationMs: step.durationMs,
       dependsOn: step.dependsOn
     }))
   )
+
   return (
-    <div className="flex items-stretch gap-3 overflow-x-auto py-1" data-testid="workflow-dag">
+    <div
+      className="flex items-center gap-3.5 overflow-x-auto py-2 px-1"
+      data-testid="workflow-dag"
+    >
       {layers.map((layer, index) => (
-        <div key={layer.map((step) => step.id).join("-")} className="flex items-center gap-3">
+        <div key={layer.map((step) => step.id).join("-")} className="flex items-center gap-3.5">
           {index > 0 ? (
-            <span className="text-title-3-medium text-text-tertiary" aria-hidden>
-              →
-            </span>
+            <div className="flex items-center text-text-tertiary">
+              <RiArrowRightLine className="size-4 shrink-0" aria-hidden />
+            </div>
           ) : null}
-          <div className="flex flex-col gap-2">
+
+          <div className="flex flex-col gap-2.5">
             {layer.map((step) => (
               <div
                 key={step.id}
-                className="min-w-28 rounded-2xl border border-border-button-default px-3 py-2"
+                className={cx(
+                  "min-w-36 rounded-xl border p-3 transition-all shadow-xs",
+                  step.status === "completed" &&
+                    "border-emerald-500/20 bg-emerald-500/[0.04] text-text-primary",
+                  step.status === "running" &&
+                    "border-accent-500/40 bg-accent-500/[0.06] ring-2 ring-accent-500/20 shadow-sm",
+                  step.status === "paused" &&
+                    "border-amber-500/20 bg-amber-500/[0.04] text-text-primary",
+                  step.status === "waiting_approval" &&
+                    "border-amber-500/30 bg-amber-500/[0.08] text-amber-700 dark:text-amber-300",
+                  step.status === "failed" &&
+                    "border-rose-500/20 bg-rose-500/[0.04] text-rose-700 dark:text-rose-300",
+                  step.status !== "completed" &&
+                    step.status !== "running" &&
+                    step.status !== "paused" &&
+                    step.status !== "waiting_approval" &&
+                    step.status !== "failed" &&
+                    "border-border-button-default bg-background-primary-default text-text-secondary"
+                )}
               >
-                <p className="text-body-medium text-text-primary">{step.label}</p>
-                <p className="text-caption-1-medium text-text-tertiary">{step.status}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] text-text-tertiary">
+                    Step {step.index + 1}
+                  </span>
+                  <StepIcon status={step.status} />
+                </div>
+
+                <p className="mt-1 font-semibold text-body-medium truncate">{step.label}</p>
+
+                <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px]">
+                  <span
+                    className={cx(
+                      "font-medium capitalize",
+                      step.status === "completed" && "text-emerald-600 dark:text-emerald-400",
+                      step.status === "running" && "text-accent-600 dark:text-accent-400 font-semibold",
+                      step.status === "paused" && "text-amber-600 dark:text-amber-400",
+                      step.status === "failed" && "text-rose-600 dark:text-rose-400",
+                      step.status !== "completed" &&
+                        step.status !== "running" &&
+                        step.status !== "paused" &&
+                        step.status !== "failed" &&
+                        "text-text-tertiary"
+                    )}
+                  >
+                    {step.status.replace("_", " ")}
+                  </span>
+
+                  {step.durationMs ? (
+                    <span className="font-mono text-[10px] text-text-tertiary">
+                      {step.durationMs > 1000
+                        ? `${(step.durationMs / 1000).toFixed(1)}s`
+                        : `${step.durationMs}ms`}
+                    </span>
+                  ) : null}
+                </div>
+
                 {step.dependsOn?.length ? (
-                  <p className="text-caption-1-medium text-text-tertiary">
-                    after {step.dependsOn.join(", ")}
+                  <p className="mt-1 text-[10px] text-text-tertiary truncate">
+                    after: {step.dependsOn.join(", ")}
                   </p>
                 ) : null}
               </div>
@@ -61,3 +137,23 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
     </div>
   )
 }
+
+function StepIcon({ status }: { status: string }) {
+  if (status === "completed") {
+    return <RiCheckLine className="size-3.5 text-emerald-500" />
+  }
+  if (status === "running") {
+    return <RiLoader4Line className="size-3.5 text-accent-500 animate-spin" />
+  }
+  if (status === "waiting_approval") {
+    return <RiShieldCheckLine className="size-3.5 text-amber-500" />
+  }
+  if (status === "paused") {
+    return <RiPauseCircleLine className="size-3.5 text-amber-500" />
+  }
+  if (status === "failed") {
+    return <RiCloseLine className="size-3.5 text-rose-500" />
+  }
+  return <RiTimeLine className="size-3.5 text-text-tertiary" />
+}
+

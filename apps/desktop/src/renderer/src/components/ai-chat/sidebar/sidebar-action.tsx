@@ -13,12 +13,14 @@ export function SidebarAction({
   icon: Icon,
   label,
   onClick,
-  collapsed = false
+  collapsed = false,
+  active = false
 }: {
   icon: SidebarIcon
   label: string
   onClick?: () => void
   collapsed?: boolean
+  active?: boolean
 }) {
   return (
     <button
@@ -27,13 +29,29 @@ export function SidebarAction({
       aria-label={label}
       title={collapsed ? label : undefined}
       className={cx(
-        "flex items-center overflow-hidden rounded-2lg p-2 text-left transition-[width,background-color] duration-300 ease-in-out hover:bg-background-secondary-hover",
+        "flex items-center overflow-hidden rounded-2lg p-2 text-left transition-all duration-200 ease-in-out cursor-pointer",
+        active
+          ? "bg-accent-500/10 text-accent-600 dark:text-accent-400 font-semibold shadow-2xs"
+          : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",
         collapsed ? "w-9 justify-center" : "w-full gap-2"
       )}
     >
-      <Icon className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
+      <Icon
+        className={cx(
+          "size-5 shrink-0 transition-colors",
+          active ? "text-accent-500" : "text-foreground-icon-secondary"
+        )}
+        aria-hidden
+      />
       <Collapsible collapsed={collapsed}>
-        <span className="text-body-medium whitespace-nowrap text-text-secondary">{label}</span>
+        <span
+          className={cx(
+            "text-body-medium whitespace-nowrap",
+            active ? "text-text-primary font-semibold" : "text-text-secondary"
+          )}
+        >
+          {label}
+        </span>
       </Collapsible>
     </button>
   )

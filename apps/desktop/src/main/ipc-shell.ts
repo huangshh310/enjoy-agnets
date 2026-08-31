@@ -7,6 +7,8 @@ import {
   ListDirInput,
   OpenWorkspaceInput,
   ReadFileInput,
+  RemoveWorkspaceInput,
+  SessionIdInput,
   SessionRenameInput,
   TerminalCloseInput,
   TerminalOpenInput,
@@ -33,21 +35,37 @@ import {
   listWorkspaces,
   listWorkspaceDir,
   openWorkspace,
+  pickFolder,
   readWorkspaceDiff,
-  readWorkspaceFile
+  readWorkspaceFile,
+  removeWorkspace
 } from "./services/workspace"
+import {
+  archiveSession,
+  deleteAllArchivedSessions,
+  deleteSession,
+  listArchivedSessions,
+  unarchiveSession
+} from "./services/session-lifecycle"
 
 export const SHELL_CHANNELS = [
   "workspace.open",
+  "workspace.pickFolder",
+  "workspace.remove",
   "workspace.list",
   "workspace.files",
   "workspace.readFile",
   "workspace.diff",
   "workspace.changes",
   "session.list",
+  "session.listArchived",
   "session.create",
   "session.messages",
   "session.rename",
+  "session.archive",
+  "session.unarchive",
+  "session.delete",
+  "session.deleteArchived",
   "agent.run",
   "agent.abort",
   "agent.decide",
@@ -78,9 +96,14 @@ export function registerShellIpc() {
 
 function registerWorkspaceIpc() {
   ipcMain.handle("workspace.open", async (_event, raw) => {
-    const workspace = await openWorkspace(OpenWorkspaceInput.parse(raw ?? {}).path)
+    const input = OpenWorkspaceInput.parse(raw ?? {})
+    const workspace = await openWorkspace(input.path, input.name)
     setSetting("lastWorkspaceId", workspace.id)
     return workspace
+  })
+  ipcMain.handle("workspace.pickFolder", async () => pickFolder())
+  ipcMain.handle("workspace.remove", async (_event, raw) => {
+    return removeWorkspace(RemoveWorkspaceInput.parse(raw).workspaceId)
   })
   ipcMain.handle("workspace.list", async () => listWorkspaces())
   ipcMain.handle("workspace.files", async (_event, raw) => {
@@ -102,6 +125,7 @@ function registerWorkspaceIpc() {
 
 function registerSessionIpc() {
   ipcMain.handle("session.list", async (_event, workspaceId: string) => listSessions(workspaceId))
+  ipcMain.handle("session.listArchived", async () => listArchivedSessions())
   ipcMain.handle("session.create", async (_event, workspaceId: string, title?: string) =>
     createSession(workspaceId, title || "New agent")
   )
@@ -110,6 +134,16 @@ function registerSessionIpc() {
     const input = SessionRenameInput.parse(raw)
     return renameSession(input.sessionId, input.title)
   })
+  ipcMain.handle("session.archive", async (_event, raw) =>
+    archiveSession(SessionIdInput.parse(raw).sessionId)
+  )
+  ipcMain.handle("session.unarchive", async (_event, raw) =>
+    unarchiveSession(SessionIdInput.parse(raw).sessionId)
+  )
+  ipcMain.handle("session.delete", async (_event, raw) =>
+    deleteSession(SessionIdInput.parse(raw).sessionId)
+  )
+  ipcMain.handle("session.deleteArchived", async () => deleteAllArchivedSessions())
 }
 
 function registerAgentIpc() {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
-import { RiAddLine, RiArrowUpLine, RiMicLine, RiStopLine } from "@remixicon/react"
+import { RiAddLine, RiArrowUpLine, RiFolder6Line, RiMicLine, RiStopLine } from "@remixicon/react"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
 import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
@@ -41,6 +41,8 @@ export function AiChatComposer({
   const fileRef = useRef<HTMLInputElement | null>(null)
   const mode = useChatStore((state) => state.mode)
   const setMode = useChatStore((state) => state.setMode)
+  const workspaceId = useChatStore((state) => state.workspaceId)
+  const workspaceName = useChatStore((state) => state.workspaceName)
   const capabilities = models.find((model) => model.id === modelId)?.capabilities ?? []
   const canRealtime = capabilities.includes("realtime")
 
@@ -91,30 +93,44 @@ export function AiChatComposer({
               "inset 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 0 rgba(255,255,255,0.06)"
           }}
         >
-          {/* 顶栏快捷操作胶囊 (Context 引入与多色模式切换) */}
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5 px-3.5 pt-2.5 pb-0.5">
-            <input
-              ref={fileRef}
-              type="file"
-              data-testid="composer-attach"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0]
-                if (file) onAttach(file)
-                event.currentTarget.value = ""
-              }}
-            />
-            <button
-              type="button"
-              aria-label="Add context"
-              onClick={() => fileRef.current?.click()}
-              className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default/70 hover:bg-background-secondary-hover border border-border-button-default/60 px-2.5 py-1 text-[11px] font-medium text-text-secondary hover:text-text-primary transition-colors shadow-2xs"
-            >
-              <RiAddLine className="size-3.5 text-foreground-icon-secondary" />
-              <span>Context</span>
-            </button>
+          {/* 顶栏快捷操作胶囊 (Context 引入、工作区胶囊与模式切换) */}
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1.5 px-3.5 pt-2.5 pb-0.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <input
+                ref={fileRef}
+                type="file"
+                data-testid="composer-attach"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) onAttach(file)
+                  event.currentTarget.value = ""
+                }}
+              />
+              <button
+                type="button"
+                aria-label="Add context"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default/70 hover:bg-background-secondary-hover border border-border-button-default/60 px-2.5 py-1 text-[11px] font-medium text-text-secondary hover:text-text-primary transition-colors shadow-2xs"
+              >
+                <RiAddLine className="size-3.5 text-foreground-icon-secondary" />
+                <span>Context</span>
+              </button>
 
-            <ExecutionModeMenu mode={mode} onChange={setMode} />
+              <ExecutionModeMenu mode={mode} onChange={setMode} />
+            </div>
+
+            {/* Codex-style Workspace Capsule */}
+            {workspaceId ? (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default/60 bg-background-secondary-default/60 px-2.5 py-0.5 text-[11px] font-medium text-text-secondary shadow-2xs">
+                <RiFolder6Line className="size-3 text-accent-500" />
+                <span className="max-w-[120px] truncate font-semibold text-text-primary">
+                  {workspaceName}
+                </span>
+                <span className="text-text-tertiary">·</span>
+                <span className="text-caption-2-medium text-text-tertiary">本地</span>
+              </div>
+            ) : null}
           </div>
 
           {/* 文本输入区 (自适应多行输入) */}

@@ -19,3 +19,20 @@ export const SessionSummary = z.object({
   relativeTime: z.string().optional()
 })
 export type SessionSummary = z.infer<typeof SessionSummary>
+
+export const SessionIdInput = z
+  .object({
+    sessionId: z.string().min(1)
+  })
+  .strict()
+export type SessionIdInput = z.infer<typeof SessionIdInput>
+
+export const ArchivedSession = z.object({
+  id: z.string(),
+  workspaceId: z.string(),
+  workspaceName: z.string(),
+  title: z.string(),
+  updatedAt: z.number(),
+  archivedAt: z.number()
+})
+export type ArchivedSession = z.infer<typeof ArchivedSession>

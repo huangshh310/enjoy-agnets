@@ -4,9 +4,14 @@
 import type { DatabaseSync } from "node:sqlite"
 import { baselineMigration } from "./001-baseline.ts"
 import { aiRuntimeMigration } from "./002-ai-runtime.ts"
+import { sessionArchiveMigration } from "./003-session-archive.ts"
 import type { Migration } from "./types.ts"
 
-export const MIGRATIONS: Migration[] = [baselineMigration, aiRuntimeMigration]
+export const MIGRATIONS: Migration[] = [
+  baselineMigration,
+  aiRuntimeMigration,
+  sessionArchiveMigration
+]
 
 function tableExists(sqlite: DatabaseSync, name: string): boolean {
   const row = sqlite

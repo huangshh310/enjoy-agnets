@@ -1,9 +1,22 @@
 /**
- * 侧栏仓库树：工作区根 + 会话叶子。
+ * 侧栏项目与会话列表 (Sidebar Projects & Repositories):
+ * 参考 Codex 桌面端交互：支持项目分组/单列表切换、多工作区折叠树、项目信息卡片、排序及创建项目弹窗。
  */
-import { RiFolder6Line } from "@remixicon/react"
+import { useMemo, useState } from "react"
+import { RiAddLine, RiFolder6Line, RiMoreFill } from "@remixicon/react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
-import type { RepositoryNode } from "@renderer/stores/chat-store"
+import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
+import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
+import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 
 export function SidebarRepos({
   repositories,
@@ -20,110 +33,192 @@ export function SidebarRepos({
   onSelectSession: (id: string) => void
   formatTime: (timestamp: number) => string
 }) {
-  const roots = repositories.filter((node) => node.kind === "workspace")
-  return (
-    <div className="flex flex-col gap-1">
-      <p className="px-2 pt-1 text-body-medium text-text-secondary">Repositories</p>
-      {roots.length === 0 ? (
-        <p className="px-2 text-caption-1-medium text-text-tertiary">
-          Open a folder to list workspaces and sessions.
-        </p>
-      ) : null}
-      {roots.map((workspace) => {
-        const children = repositories.filter((node) => node.parentId === workspace.id)
-        const expanded = expandedIds.includes(workspace.id) && children.length > 0
-        return (
-          <WorkspaceBranch
-            key={workspace.id}
-            workspace={workspace}
-            sessions={children}
-            expanded={expanded}
-            sessionId={sessionId}
-            onToggleExpanded={onToggleExpanded}
-            onSelectSession={onSelectSession}
-            formatTime={formatTime}
-          />
-        )
-      })}
-    </div>
-  )
-}
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const currentWorkspaceId = useChatStore((state) => state.workspaceId)
+  const grouping = useChatStore((state) => state.sidebarGrouping)
+  const setGrouping = useChatStore((state) => state.setSidebarGrouping)
+  const sortOrder = useChatStore((state) => state.sessionSortOrder)
+  const setSortOrder = useChatStore((state) => state.setSessionSortOrder)
+  const pinnedIds = useChatStore((state) => state.pinnedWorkspaceIds)
 
-function WorkspaceBranch({
-  workspace,
-  sessions,
-  expanded,
-  sessionId,
-  onToggleExpanded,
-  onSelectSession,
-  formatTime
-}: {
-  workspace: RepositoryNode
-  sessions: RepositoryNode[]
-  expanded: boolean
-  sessionId: string | null
-  onToggleExpanded: (id: string) => void
-  onSelectSession: (id: string) => void
-  formatTime: (timestamp: number) => string
-}) {
+  const workspaces = useMemo(() => {
+    const wsNodes = repositories.filter((node) => node.kind === "workspace")
+    return [...wsNodes].sort((a, b) => {
+      const aPinned = pinnedIds.includes(a.id) ? 1 : 0
+      const bPinned = pinnedIds.includes(b.id) ? 1 : 0
+      if (aPinned !== bPinned) return bPinned - aPinned
+      return b.updatedAt - a.updatedAt
+    })
+  }, [pinnedIds, repositories])
+
+  const allSessions = useMemo(() => {
+    const list = repositories.filter((node) => node.kind === "session")
+    if (sortOrder === "updated") {
+      return [...list].sort((a, b) => b.updatedAt - a.updatedAt)
+    }
+    return list
+  }, [repositories, sortOrder])
+
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => (sessions.length ? onToggleExpanded(workspace.id) : undefined)}
-        className="flex w-full items-center gap-2 rounded-2lg p-2 text-left hover:bg-background-secondary-hover"
-      >
-        <RiFolder6Line className="size-5 text-foreground-icon-secondary" aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-body-medium text-text-secondary">
-          {workspace.name}
-        </span>
-      </button>
-      {expanded ? (
-        <div className="relative ml-[26px]">
-          {sessions.map((session, index) => (
-            <div key={session.id} className="relative">
-              <SessionTreeGuide first={index === 0} last={index === sessions.length - 1} />
+    <div className="flex flex-col gap-2">
+      {/* 1. Header with Projects / Repositories Title and Codex-style actions */}
+      <div className="flex items-center justify-between px-2 pt-2">
+        <span className="text-body-medium font-semibold text-text-primary">项目</span>
+
+        <div className="flex items-center gap-0.5">
+          {/* More options menu (整理侧边栏 & 聊天排序方式) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                onClick={() => onSelectSession(session.id)}
-                className={cx(
-                  "flex w-full items-center gap-2 rounded-2lg py-1.5 pr-2 pl-3.5 text-left",
-                  session.id === sessionId
-                    ? "bg-background-tertiary-default"
-                    : "hover:bg-background-secondary-hover"
-                )}
+                aria-label="整理项目侧边栏"
+                className="flex size-6 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
               >
-                <span className="min-w-0 flex-1 truncate text-body-medium text-text-secondary">
-                  {session.name}
-                </span>
-                <span className="text-caption-1-medium text-text-tertiary">
-                  {formatTime(session.updatedAt)}
-                </span>
+                <RiMoreFill className="size-4" />
               </button>
-            </div>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              className="w-48 rounded-xl bg-background-primary-default shadow-card border border-border-button-default"
+            >
+              <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
+                整理侧边栏
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={grouping}
+                onValueChange={(val) => setGrouping(val as "project" | "flat")}
+              >
+                <DropdownMenuRadioItem value="project" className="text-body-medium">
+                  按项目
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="flat" className="text-body-medium">
+                  在一个列表中
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
+                聊天排序方式
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={sortOrder}
+                onValueChange={(val) => setSortOrder(val as "priority" | "updated" | "manual")}
+              >
+                <DropdownMenuRadioItem value="priority" className="text-body-medium">
+                  优先级
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="updated" className="text-body-medium">
+                  最近更新
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="manual" className="text-body-medium">
+                  手动排序
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Create Project + Button */}
+          <button
+            type="button"
+            title="创建项目 (添加工作区)"
+            onClick={() => setCreateDialogOpen(true)}
+            className="flex size-6 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
+          >
+            <RiAddLine className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Workspaces Tree / Flat List */}
+      {workspaces.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
+          <RiFolder6Line className="size-6 text-text-tertiary" />
+          <p className="text-caption-1-medium text-text-secondary">暂无项目</p>
+          <button
+            type="button"
+            onClick={() => setCreateDialogOpen(true)}
+            className="text-caption-2-medium text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
+          >
+            + 点击添加项目
+          </button>
+        </div>
+      ) : grouping === "flat" ? (
+        <div className="flex flex-col gap-0.5">
+          {allSessions.map((session) => (
+            <button
+              key={session.id}
+              type="button"
+              onClick={() => onSelectSession(session.id)}
+              className={cx(
+                "flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors cursor-pointer",
+                session.id === sessionId
+                  ? "bg-background-tertiary-default font-medium text-text-primary shadow-2xs"
+                  : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+              )}
+            >
+              <span className="min-w-0 flex-1 truncate text-body-medium">{session.name}</span>
+              <span className="shrink-0 text-caption-2-medium text-text-tertiary">
+                {formatTime(session.updatedAt)}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {workspaces.map((workspace) => (
+            <SidebarWorkspaceRow
+              key={workspace.id}
+              workspace={workspace}
+              sessions={repositories.filter((node) => node.parentId === workspace.id)}
+              expandedIds={expandedIds}
+              currentWorkspaceId={currentWorkspaceId}
+              sessionId={sessionId}
+              isPinned={pinnedIds.includes(workspace.id)}
+              onToggleExpanded={onToggleExpanded}
+              onSelectSession={onSelectSession}
+              formatTime={formatTime}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* 3. Codex "最近" (Recent) Quick Section (if multiple sessions exist) */}
+      {allSessions.length > 2 && grouping === "project" ? (
+        <div className="mt-2 flex flex-col gap-1 border-t border-separator-border/40 pt-2">
+          <span className="px-2 text-caption-2-medium uppercase tracking-wider text-text-tertiary font-semibold">
+            最近
+          </span>
+          {allSessions.slice(0, 3).map((session) => (
+            <button
+              key={`recent-${session.id}`}
+              type="button"
+              onClick={() => onSelectSession(session.id)}
+              className={cx(
+                "flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1 text-left transition-colors cursor-pointer",
+                session.id === sessionId
+                  ? "bg-background-tertiary-default text-text-primary font-medium"
+                  : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+              )}
+            >
+              <span className="min-w-0 flex-1 truncate text-caption-1-medium">
+                {session.name}
+              </span>
+              <span className="shrink-0 text-caption-2-medium text-text-tertiary">
+                {formatTime(session.updatedAt)}
+              </span>
+            </button>
           ))}
         </div>
       ) : null}
-    </div>
-  )
-}
 
-function SessionTreeGuide({ first, last }: { first: boolean; last: boolean }) {
-  return (
-    <>
-      <span
-        aria-hidden
-        className={cx(
-          "pointer-events-none absolute left-0 w-3 rounded-bl-[6px] border-b border-l border-separator-border",
-          first ? "-top-1.5 h-[21px]" : "top-0 h-[18px]"
-        )}
+      {/* 4. Create Project Dialog */}
+      <CreateProjectDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
       />
-      {last ? null : (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute bottom-0 left-0 top-[18px] w-px bg-separator-border"
-        />
-      )}
-    </>
+    </div>
   )
 }

@@ -5,6 +5,8 @@ import type { WindowActionResult, WindowState } from "@enjoy-agents/ipc-contract
 const ide = {
   workspace: {
     open: (input?: unknown) => ipcRenderer.invoke("workspace.open", input ?? {}),
+    pickFolder: () => ipcRenderer.invoke("workspace.pickFolder"),
+    remove: (input: unknown) => ipcRenderer.invoke("workspace.remove", input),
     list: () => ipcRenderer.invoke("workspace.list"),
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
     readFile: (input: unknown) => ipcRenderer.invoke("workspace.readFile", input),
@@ -16,7 +18,12 @@ const ide = {
     create: (workspaceId: string, title?: string) =>
       ipcRenderer.invoke("session.create", workspaceId, title),
     messages: (sessionId: string) => ipcRenderer.invoke("session.messages", sessionId),
-    rename: (input: unknown) => ipcRenderer.invoke("session.rename", input)
+    rename: (input: unknown) => ipcRenderer.invoke("session.rename", input),
+    listArchived: () => ipcRenderer.invoke("session.listArchived"),
+    archive: (input: unknown) => ipcRenderer.invoke("session.archive", input),
+    unarchive: (input: unknown) => ipcRenderer.invoke("session.unarchive", input),
+    delete: (input: unknown) => ipcRenderer.invoke("session.delete", input),
+    deleteArchived: () => ipcRenderer.invoke("session.deleteArchived")
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),

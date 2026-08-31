@@ -3,11 +3,11 @@ import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, appliedVersions } from "./runner.ts"
 
-test("空库依次跑 baseline 与 ai-runtime", () => {
+test("空库依次跑 baseline、ai-runtime 与 session-archive", () => {
   const db = new DatabaseSync(":memory:")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [1, 2])
-  assert.deepEqual(appliedVersions(db), [1, 2])
+  assert.deepEqual(applied, [1, 2, 3])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3])
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .all() as Array<{ name: string }>
@@ -18,7 +18,7 @@ test("空库依次跑 baseline 与 ai-runtime", () => {
   assert.ok(names.includes("mcp_servers"))
 })
 
-test("已有 sessions 的旧库只补跑 ai-runtime", () => {
+test("已有 sessions 的旧库补跑 ai-runtime 与 session-archive", () => {
   const db = new DatabaseSync(":memory:")
   db.exec(`
     CREATE TABLE sessions (
@@ -30,8 +30,8 @@ test("已有 sessions 的旧库只补跑 ai-runtime", () => {
     );
   `)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [2])
-  assert.deepEqual(appliedVersions(db), [1, 2])
+  assert.deepEqual(applied, [2, 3])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3])
 })
 
 test("重复 apply 不再执行", () => {

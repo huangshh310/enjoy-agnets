@@ -19,6 +19,7 @@ import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsComingSoon, SettingsRow } from "./settings-row"
+import { ArchivedChatsPage } from "./archived-chats-page"
 import {
   CapabilitySettings,
   KnowledgeSettings,
@@ -71,6 +72,8 @@ export function SettingsSectionPage() {
     ? (params.section as SettingsSectionId)
     : "general"
   const item = findSettingsItem(section)
+
+  if (section === "archived") return <ArchivedChatsPage />
 
   return (
     <div className="flex flex-col gap-6">

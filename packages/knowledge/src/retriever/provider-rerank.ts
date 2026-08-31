@@ -1,8 +1,8 @@
 /**
  * 可选 Provider rerank：调用 SDK `rerank`。失败回落本地融合，不假装已重排。
  */
-import { lexicalScore } from "./cosine"
-import { rerankHits } from "./rerank"
+import { lexicalScore } from "./cosine.ts"
+import { rerankHits } from "./rerank.ts"
 
 export type RankableHit = {
   snippet: string

@@ -2,13 +2,14 @@
  * 工作区档案：打开 / 列出 / 读文件。host 与 Git 在独立模块。
  */
 import { promises as fs } from "node:fs"
-import { basename } from "node:path"
 import { dialog } from "electron"
-import { getDatabase } from "./database"
+import { getDatabase, getSetting, setSetting } from "./database"
+import { deleteSession } from "./session-lifecycle"
 import { createId } from "./ids"
 import { resolveInsideWorkspace } from "./paths"
 import { createWorkspaceHost } from "./workspace-host"
 import { readFileDiff } from "./workspace-git"
+import { resolveWorkspaceName } from "./workspace-name"
 
 export type WorkspaceRecord = {
   id: string
@@ -19,19 +20,32 @@ export type WorkspaceRecord = {
 export { createWorkspaceHost } from "./workspace-host"
 export { changedFiles } from "./workspace-git"
 
-export async function openWorkspace(pathHint?: string): Promise<WorkspaceRecord> {
+/** 只弹出目录选择，不写 workspaces 表。 */
+export async function pickFolder(): Promise<{ path: string; name: string }> {
+  const path = await pickWorkspaceFolder()
+  return { path, name: resolveWorkspaceName(path) }
+}
+
+export async function openWorkspace(pathHint?: string, name?: string): Promise<WorkspaceRecord> {
   const rootPath = pathHint ?? (await pickWorkspaceFolder())
   const now = Date.now()
+  const displayName = resolveWorkspaceName(rootPath, name)
   const existing = getDatabase()
     .prepare("SELECT id, name, root_path as rootPath FROM workspaces WHERE root_path = ?")
     .get(rootPath) as WorkspaceRecord | undefined
   if (existing) {
+    if (name?.trim() && displayName !== existing.name) {
+      getDatabase()
+        .prepare("UPDATE workspaces SET name = ?, updated_at = ? WHERE id = ?")
+        .run(displayName, now, existing.id)
+      return { ...existing, name: displayName }
+    }
     getDatabase().prepare("UPDATE workspaces SET updated_at = ? WHERE id = ?").run(now, existing.id)
     return existing
   }
   const record: WorkspaceRecord = {
     id: createId("ws"),
-    name: basename(rootPath),
+    name: displayName,
     rootPath
   }
   getDatabase()
@@ -54,6 +68,23 @@ export async function getWorkspace(workspaceId: string): Promise<WorkspaceRecord
     .get(workspaceId) as WorkspaceRecord | undefined
   if (!record) throw new Error(`Unknown workspace: ${workspaceId}`)
   return record
+}
+
+/**
+ * 从应用档案移除项目：删会话与消息，不删磁盘文件夹。
+ */
+export async function removeWorkspace(workspaceId: string): Promise<{ id: string }> {
+  await getWorkspace(workspaceId)
+  const sessions = getDatabase()
+    .prepare("SELECT id FROM sessions WHERE workspace_id = ?")
+    .all(workspaceId) as Array<{ id: string }>
+  for (const session of sessions) deleteSession(session.id)
+  getDatabase().prepare("DELETE FROM workspaces WHERE id = ?").run(workspaceId)
+  if (getSetting("lastWorkspaceId") === workspaceId) {
+    const next = (await listWorkspaces())[0]
+    setSetting("lastWorkspaceId", next?.id ?? "")
+  }
+  return { id: workspaceId }
 }
 
 export async function readWorkspaceFile(workspaceId: string, relativePath: string) {

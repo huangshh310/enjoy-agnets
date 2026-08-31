@@ -97,11 +97,43 @@ export function useAgentSession() {
   }
 }
 
+export async function refreshAllWorkspaces() {
+  if (!hasIde()) return
+  try {
+    const workspaces = (await getIde().workspace.list()) as WorkspaceRow[]
+    const activeWorkspaceId = useChatStore.getState().workspaceId
+    const items = await Promise.all(
+      workspaces.map(async (ws) => {
+        try {
+          const sessions = (await getIde().session.list(ws.id)) as SessionRow[]
+          return {
+            workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
+            sessions: sessions.map((s) => ({
+              id: s.id,
+              title: s.title,
+              updatedAt: s.updatedAt,
+              workspaceId: s.workspaceId
+            }))
+          }
+        } catch {
+          return {
+            workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
+            sessions: []
+          }
+        }
+      })
+    )
+    useChatStore.getState().hydrateWorkspacesAndSessions(items, activeWorkspaceId)
+  } catch {
+    // ignore refresh errors
+  }
+}
+
 export async function loadWorkspace(workspace: WorkspaceRow) {
   const store = useChatStore.getState()
   store.setWorkspace(workspace)
+  await refreshAllWorkspaces()
   const sessions = (await getIde().session.list(workspace.id)) as SessionRow[]
-  store.hydrateSessions(workspace, sessions)
   const current = sessions.find((session) => session.id === store.sessionId) ?? sessions[0]
   if (current) {
     await loadSession(current.id, current.title)
@@ -129,16 +161,12 @@ function restoreUiMessages(rows: MessageRow[]) {
   )
 }
 
-export async function createAndOpenSession(workspaceId: string) {
-  const session = (await getIde().session.create(workspaceId, "New agent")) as SessionRow
-  const workspace = useChatStore.getState()
-  const sessions = (await getIde().session.list(workspaceId)) as SessionRow[]
-  workspace.hydrateSessions(
-    { id: workspaceId, name: workspace.workspaceName },
-    sessions
-  )
-  workspace.setSession(session.id, session.title)
-  workspace.setMessages([])
+export async function createAndOpenSession(workspaceId: string, customTitle = "New agent") {
+  const session = (await getIde().session.create(workspaceId, customTitle)) as SessionRow
+  const store = useChatStore.getState()
+  store.setSession(session.id, session.title)
+  store.setMessages([])
+  await refreshAllWorkspaces()
 }
 
 export { abortComposerRun, attachComposerFile, sendComposerMessage } from "./send-composer"

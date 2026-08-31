@@ -47,6 +47,8 @@ export type RepositoryNode = {
   parentId?: string
   updatedAt: number
   workspaceId?: string
+  rootPath?: string
+  isPinned?: boolean
 }
 
 export type ChangedFileRow = {
@@ -108,6 +110,19 @@ export type ChatStore = {
   deletions: number
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
+  sidebarGrouping: "project" | "flat"
+  sessionSortOrder: "priority" | "updated" | "manual"
+  pinnedWorkspaceIds: string[]
+  setSidebarGrouping: (grouping: "project" | "flat") => void
+  setSessionSortOrder: (order: "priority" | "updated" | "manual") => void
+  togglePinWorkspace: (id: string) => void
+  hydrateWorkspacesAndSessions: (
+    items: Array<{
+      workspace: { id: string; name: string; rootPath?: string }
+      sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+    }>,
+    activeWorkspaceId?: string | null
+  ) => void
   setComposer: (value: string) => void
   setModel: (id: string, label: string, provider?: string, reasoningEffort?: "low" | "medium" | "high" | "xhigh") => void
   setReasoningEffort: (effort: "low" | "medium" | "high" | "xhigh" | undefined) => void
@@ -253,6 +268,57 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),
   setModels: (models) => set({ models }),
   setProvider: (provider) => set({ provider }),
+  sidebarGrouping: "project",
+  sessionSortOrder: "priority",
+  pinnedWorkspaceIds: [],
+  setSidebarGrouping: (sidebarGrouping) => set({ sidebarGrouping }),
+  setSessionSortOrder: (sessionSortOrder) => set({ sessionSortOrder }),
+  togglePinWorkspace: (id) =>
+    set((state) => ({
+      pinnedWorkspaceIds: state.pinnedWorkspaceIds.includes(id)
+        ? state.pinnedWorkspaceIds.filter((item) => item !== id)
+        : [...state.pinnedWorkspaceIds, id]
+    })),
+  hydrateWorkspacesAndSessions: (items, activeWorkspaceId) => {
+    const pinned = get().pinnedWorkspaceIds
+    const repositories: RepositoryNode[] = []
+    const liveIds = new Set(items.map((item) => item.workspace.id))
+    const expanded = get().expandedIds.filter((id) => liveIds.has(id))
+    // 仅首次灌入时默认展开当前工作区；之后尊重用户收起，避免刷新把树撑开
+    const hadRepos = get().repositories.some((node) => node.kind === "workspace")
+    if (
+      !hadRepos &&
+      activeWorkspaceId &&
+      liveIds.has(activeWorkspaceId) &&
+      !expanded.includes(activeWorkspaceId)
+    ) {
+      expanded.push(activeWorkspaceId)
+    }
+
+    for (const item of items) {
+      repositories.push({
+        id: item.workspace.id,
+        name: item.workspace.name,
+        kind: "workspace",
+        updatedAt: Date.now(),
+        rootPath: item.workspace.rootPath,
+        isPinned: pinned.includes(item.workspace.id)
+      })
+
+      for (const session of item.sessions) {
+        repositories.push({
+          id: session.id,
+          name: session.title,
+          kind: "session",
+          parentId: item.workspace.id,
+          updatedAt: session.updatedAt,
+          workspaceId: session.workspaceId
+        })
+      }
+    }
+
+    set({ repositories, expandedIds: expanded })
+  },
   hydrateSessions: (workspace, sessions) => {
     const repositories: RepositoryNode[] = [
       {

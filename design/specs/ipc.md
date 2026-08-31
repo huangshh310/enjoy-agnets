@@ -10,8 +10,8 @@
 
 | 前缀 | 频道 | 用途 |
 |---|---|---|
-| workspace | `open` `list` `files` `readFile` `diff` `changes` | 工作区与文件 |
-| session | `list` `create` `messages` `rename` | 会话；`rename` 给 useCompletion 精炼标题 |
+| workspace | `open` `pickFolder` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` 只选目录不落库；`open` 可带 `name`；`remove` 只删应用档案不删磁盘 |
+| session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` | 会话；`list` 不含已归档；`archive` 进设置页；`delete` 永久删消息 |
 | agent | `run` `abort` `decide` | 跑循环、中止、审批；`run` 可带 `attachments` 资产 id |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商 |
 | automations | `list` `upsert` `remove` | 自动化 |

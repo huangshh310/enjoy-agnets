@@ -9,7 +9,7 @@ import { getWorkspace } from "./workspace"
 export async function listSessions(workspaceId: string) {
   return getDatabase()
     .prepare(
-      "SELECT id, workspace_id as workspaceId, title, created_at as createdAt, updated_at as updatedAt FROM sessions WHERE workspace_id = ? ORDER BY updated_at DESC"
+      "SELECT id, workspace_id as workspaceId, title, created_at as createdAt, updated_at as updatedAt FROM sessions WHERE workspace_id = ? AND archived_at IS NULL ORDER BY updated_at DESC"
     )
     .all(workspaceId)
 }

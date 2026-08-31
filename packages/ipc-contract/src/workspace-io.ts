@@ -4,9 +4,25 @@
 import { z } from "zod"
 
 export const OpenWorkspaceInput = z.object({
-  path: z.string().optional()
+  path: z.string().optional(),
+  /** 创建或重开时写入 workspaces.name；缺省用路径 basename */
+  name: z.string().min(1).max(120).optional()
 })
 export type OpenWorkspaceInput = z.infer<typeof OpenWorkspaceInput>
+
+/** 只选目录，不写入 workspaces 表。 */
+export const PickFolderResult = z.object({
+  path: z.string(),
+  name: z.string()
+})
+export type PickFolderResult = z.infer<typeof PickFolderResult>
+
+export const RemoveWorkspaceInput = z
+  .object({
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type RemoveWorkspaceInput = z.infer<typeof RemoveWorkspaceInput>
 
 export const ReadFileInput = z.object({
   workspaceId: z.string(),
