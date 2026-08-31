@@ -1,4 +1,7 @@
 import { type ApiStyle } from "./api-styles"
+import { MEDIA_PROVIDER_PRESETS } from "./presets-media"
+
+export { isMediaNativeKind, isMediaOnlyKind } from "./presets-media"
 
 export { API_STYLES, API_STYLE_OPTIONS, apiStyleLabel, isApiStyle, type ApiStyle } from "./api-styles"
 
@@ -15,7 +18,13 @@ export const PROVIDER_KINDS = [
   "groq",
   "siliconflow",
   "minimax",
-  "custom"
+  "custom",
+  "fal",
+  "replicate",
+  "elevenlabs",
+  "deepgram",
+  "cohere",
+  "gateway"
 ] as const
 
 export type ProviderKind = (typeof PROVIDER_KINDS)[number]
@@ -96,8 +105,8 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
     kind: "google",
     name: "Google Gemini",
-    description: "Gemini via the OpenAI-compatible endpoint.",
-    defaultBaseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+    description: "Official Gemini API. OpenAI-compatible URLs still work if you keep /openai.",
+    defaultBaseURL: "https://generativelanguage.googleapis.com/v1beta",
     apiStyle: "openai",
     requiresKey: true,
     docsURL: "https://ai.google.dev/gemini-api/docs",
@@ -197,11 +206,15 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     apiStyle: "openai",
     requiresKey: true,
     models: []
-  }
+  },
+  ...(MEDIA_PROVIDER_PRESETS as ProviderPreset[])
 ]
 
 export function presetFor(kind: ProviderKind): ProviderPreset {
-  return PROVIDER_PRESETS.find((preset) => preset.kind === kind) ?? PROVIDER_PRESETS[PROVIDER_PRESETS.length - 1]!
+  return (
+    PROVIDER_PRESETS.find((preset) => preset.kind === kind) ??
+    PROVIDER_PRESETS.find((preset) => preset.kind === "custom")!
+  )
 }
 
 export function normalizeBaseURL(value: string): string {

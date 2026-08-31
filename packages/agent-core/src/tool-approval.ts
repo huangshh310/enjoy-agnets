@@ -5,8 +5,8 @@
 import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
-export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit"] as const
-export const BASH_TOOLS = ["bash"] as const
+export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
+export const BASH_TOOLS = ["bash", "code_mode"] as const
 export const COMMIT_TOOLS = ["git_commit"] as const
 export const MUTATING_TOOLS = [...WRITE_TOOLS, ...BASH_TOOLS, ...COMMIT_TOOLS] as const
 
@@ -51,6 +51,7 @@ export function resolveToolApproval(
   policy: ApprovalPolicy,
   input?: unknown
 ): ToolApprovalDecision {
+  if (toolName.startsWith("mcp_")) return resolveMcpApproval(toolName, mode, policy)
   if (!MUTATING_SET.has(toolName)) return "not-applicable"
   if (mode === "ask" || mode === "plan") {
     return { type: "denied", reason: `${mode} mode is read-only.` }
@@ -64,6 +65,22 @@ export function resolveToolApproval(
   if (BASH_SET.has(toolName) && !policy.requireBashApproval) return "approved"
   if (COMMIT_SET.has(toolName) && !policy.requireCommitApproval) return "approved"
   return "user-approval"
+}
+
+function resolveMcpApproval(
+  toolName: string,
+  mode: AgentMode,
+  policy: ApprovalPolicy
+): ToolApprovalDecision {
+  if (mode === "ask" || mode === "plan") {
+    return { type: "denied", reason: `${mode} mode is read-only.` }
+  }
+  if (sessionAllows(toolName, policy.sessionApprovedTools)) return "approved"
+  const leaf = toolName.includes("__") ? toolName.slice(toolName.indexOf("__") + 2) : toolName
+  if (/(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i.test(leaf)) {
+    return "user-approval"
+  }
+  return "not-applicable"
 }
 
 function sessionAllows(toolName: string, session?: ReadonlySet<string>): boolean {

@@ -1,0 +1,20 @@
+{
+  "name": "@enjoy-agents/assets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/hash.test.ts src/export-policy.test.ts src/provider-refs.test.ts src/import-limit.test.ts"
+  },
+  "dependencies": {
+    "@enjoy-agents/db": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

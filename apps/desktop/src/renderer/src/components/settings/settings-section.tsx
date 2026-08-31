@@ -19,6 +19,15 @@ import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsComingSoon, SettingsRow } from "./settings-row"
+import {
+  CapabilitySettings,
+  KnowledgeSettings,
+  McpSettings,
+  MediaSettings,
+  SandboxSettings,
+  TelemetrySettings,
+  WorkflowSettings
+} from "./settings-ai-pages"
 
 const SHORTCUTS: Array<{ action: string; keys: string[] }> = [
   { action: "Open settings", keys: ["Mod", ","] },
@@ -80,11 +89,13 @@ function SettingsSectionBody({ section }: { section: SettingsSectionId }) {
   if (section === "providers") return <ProviderSettings />
   if (section === "agent") return <AgentSettings />
   if (section === "workspace") return <WorkspaceSettings />
-  if (section === "mcp") {
-    return (
-      <SettingsComingSoon body="Model Context Protocol servers will be configured here. Tools stay in the main process and high-risk ones will still require approval." />
-    )
-  }
+  if (section === "mcp") return <McpSettings />
+  if (section === "capabilities") return <CapabilitySettings />
+  if (section === "knowledge") return <KnowledgeSettings />
+  if (section === "media") return <MediaSettings />
+  if (section === "workflow") return <WorkflowSettings />
+  if (section === "telemetry") return <TelemetrySettings />
+  if (section === "sandbox") return <SandboxSettings />
   return (
     <SettingsComingSoon body="Commit, branch, and diff preferences will live here. The Changes pane already reads the working tree for the open folder." />
   )

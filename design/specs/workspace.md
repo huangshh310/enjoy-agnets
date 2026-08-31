@@ -33,7 +33,9 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 ## 代码入口
 
-- 工作区服务：`apps/desktop/src/main/services/workspace.ts`
+- 工作区档案：`apps/desktop/src/main/services/workspace.ts`
+- host（读写 / glob / grep / bash）：`workspace-host.ts`
+- Git 变更 / diff：`workspace-git.ts`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`
@@ -41,4 +43,5 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 ## 已知坑
 
 - `packages/editor` 已在仓里，但主路径仍是 Changes / 文件 diff 卡片，不是完整 IDE 编辑器。文档不要写成「已经有完整 Monaco 工作区」。
-- 文件监视、完整 Git 面板、MCP 仍是 V1，未实现的不要在 UI 里做假入口（sidebar 必须 navigate，不能 no-op）。
+- 文件监视、完整 Git 面板仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
+- 资产导出与知识库路径同样不得逃出 `rootPath`。

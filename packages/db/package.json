@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./path-safe": "./src/path-safe.ts",
+    "./hmac": "./src/hmac.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/migrations/runner.test.ts src/hmac.test.ts src/path-safe.test.ts src/repositories/approvals.test.ts"
   },
   "devDependencies": {
     "typescript": "catalog:",

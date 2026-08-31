@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
-import { RiAddLine, RiArrowUpLine, RiMicLine } from "@remixicon/react"
+import { RiAddLine, RiArrowUpLine, RiMicLine, RiStopLine } from "@remixicon/react"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
+import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { ComposerQueue } from "./composer-queue"
 import { ApprovalPolicyToggle } from "./approval-policy-toggle"
 import { ExecutionModeMenu } from "./execution-mode-menu"
 import { ModelPicker } from "./model-picker"
@@ -18,7 +20,9 @@ export function AiChatComposer({
   modelId,
   models,
   onModelChange,
-  onSend
+  onSend,
+  onStop,
+  onAttach
 }: {
   composer: string
   onComposerChange: (value: string) => void
@@ -28,11 +32,17 @@ export function AiChatComposer({
   models: ModelOption[]
   onModelChange: (model: ModelOption) => void
   onSend: () => void
+  onStop: () => void
+  onAttach: (file: File) => void
 }) {
   const [isFocused, setIsFocused] = useState(false)
+  const [voiceOpen, setVoiceOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const fileRef = useRef<HTMLInputElement | null>(null)
   const mode = useChatStore((state) => state.mode)
   const setMode = useChatStore((state) => state.setMode)
+  const capabilities = models.find((model) => model.id === modelId)?.capabilities ?? []
+  const canRealtime = capabilities.includes("realtime")
 
   // 随输入内容自适应调整高度
   useEffect(() => {
@@ -83,9 +93,21 @@ export function AiChatComposer({
         >
           {/* 顶栏快捷操作胶囊 (Context 引入与多色模式切换) */}
           <div className="flex min-w-0 flex-wrap items-center gap-1.5 px-3.5 pt-2.5 pb-0.5">
+            <input
+              ref={fileRef}
+              type="file"
+              data-testid="composer-attach"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) onAttach(file)
+                event.currentTarget.value = ""
+              }}
+            />
             <button
               type="button"
               aria-label="Add context"
+              onClick={() => fileRef.current?.click()}
               className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default/70 hover:bg-background-secondary-hover border border-border-button-default/60 px-2.5 py-1 text-[11px] font-medium text-text-secondary hover:text-text-primary transition-colors shadow-2xs"
             >
               <RiAddLine className="size-3.5 text-foreground-icon-secondary" />
@@ -108,6 +130,7 @@ export function AiChatComposer({
               placeholder="Ask Enjoy Agents anything, @ files, / for actions..."
               className="w-full min-h-[48px] max-h-48 resize-none bg-transparent py-1 text-[13.5px] leading-relaxed text-text-primary outline-none placeholder:text-text-placeholder"
             />
+            <ComposerQueue />
           </div>
 
           {/* 底栏：窄宽度先收文字，再换行，发送键始终可见 */}
@@ -126,17 +149,34 @@ export function AiChatComposer({
               <button
                 type="button"
                 aria-label="Voice input"
-                className="flex size-8 items-center justify-center rounded-full text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
+                disabled={!canRealtime}
+                title={
+                  canRealtime
+                    ? voiceOpen
+                      ? "Stop voice (experimental)"
+                      : "Voice (experimental)"
+                    : "This model does not advertise Realtime."
+                }
+                onClick={() =>
+                  void toggleRealtimeMic().then(() => setVoiceOpen(isRealtimeOpen()))
+                }
+                className={cx(
+                  "flex size-8 items-center justify-center rounded-full transition-colors disabled:opacity-40 disabled:hover:bg-transparent",
+                  voiceOpen
+                    ? "text-accent-500 hover:bg-background-secondary-hover"
+                    : "text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+                )}
               >
                 <RiMicLine className="size-4.5" aria-hidden />
               </button>
               <button
-                type="submit"
-                aria-label="Send"
-                disabled={running || composer.trim().length === 0}
+                type={running ? "button" : "submit"}
+                aria-label={running ? "Stop" : "Send"}
+                disabled={!running && composer.trim().length === 0}
+                onClick={running ? onStop : undefined}
                 className="flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-b from-accent-500 to-accent-600 text-white shadow-nav-selected transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:hover:brightness-100 disabled:active:scale-100"
               >
-                <RiArrowUpLine className="size-5" aria-hidden />
+                {running ? <RiStopLine className="size-5" aria-hidden /> : <RiArrowUpLine className="size-5" aria-hidden />}
               </button>
             </div>
           </div>

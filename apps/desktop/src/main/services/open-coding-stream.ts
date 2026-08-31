@@ -2,7 +2,10 @@
  * 按偏好打开本机 ToolLoop 或 Claude Code Harness 流。
  */
 import type { ModelMessage } from "ai"
-import { streamCodingAgent, type ApprovalPolicy } from "@enjoy-agents/agent-core"
+import { insertRunStep } from "@enjoy-agents/db"
+import { streamCodingAgent, type ApprovalPolicy, type WaitForSubagentApproval } from "@enjoy-agents/agent-core"
+import { getDatabase } from "./database"
+import { createId } from "./ids"
 import { disposeHarnessTurn, resolveHarnessAdapter, streamHarnessTurn } from "@enjoy-agents/agent-harness"
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import {
@@ -14,6 +17,8 @@ import { readHarnessSecret } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
 import { findProfileByKinds, type StoredSecret } from "./secrets"
 import { createWorkspaceHost } from "./workspace"
+import { createMcpAgentTools } from "./mcp-agent-tools"
+import { createE2eStubStream, isE2eStub } from "./e2e-stub"
 
 export type OpenedCodingStream = {
   stream: AsyncIterable<Record<string, unknown>>
@@ -34,6 +39,7 @@ export async function openCodingStream(input: {
   prefs: AppPreferences
   effort?: ReasoningEffort
   sessionApprovedTools: ReadonlySet<string>
+  waitForSubagentApproval?: WaitForSubagentApproval
 }): Promise<OpenedCodingStream> {
   const policy: ApprovalPolicy = {
     requireWriteApproval: input.prefs.requireWriteApproval,
@@ -42,6 +48,13 @@ export async function openCodingStream(input: {
     sessionApprovedTools: input.sessionApprovedTools
   }
 
+  if (isE2eStub()) {
+    return {
+      stream: createE2eStubStream(input.messages, input.abortSignal),
+      result: {},
+      dispose: async () => undefined
+    }
+  }
   if (input.prefs.codingRuntime === "harness") {
     return openHarnessStream(input, policy)
   }
@@ -113,6 +126,20 @@ async function openLocalStream(
       ? deepseekCallOptions(input.effort)
       : undefined,
     policy,
+    extraTools: createMcpAgentTools(),
+    waitForSubagentApproval: input.waitForSubagentApproval,
+    maxSteps: input.prefs.maxAgentSteps,
+    stepTimeoutMs: input.prefs.stepTimeoutMs,
+    toolTimeoutMs: input.prefs.toolTimeoutMs,
+    onStepFinish: (step) => {
+      insertRunStep(getDatabase(), {
+        id: createId("stp"),
+        runId: input.runId,
+        idx: step.stepNumber ?? 0,
+        label: "model-step",
+        status: "completed"
+      })
+    },
     runtimeContext: {
       workspaceRoot: input.workspaceRoot,
       sessionId: input.sessionId,

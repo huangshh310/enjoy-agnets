@@ -28,6 +28,16 @@ export type ThreadMessage = {
   thoughtSeconds?: number
   /** 正在吃 text 里的 <think> 块，不持久化 */
   thinkOpen?: boolean
+  sources?: Array<{
+    sourceId: string
+    title: string
+    path: string
+    startLine?: number
+    snippet?: string
+  }>
+  assets?: Array<{ assetId: string; mediaType: string; name: string }>
+  structured?: unknown
+  components?: Array<{ componentId: string; props: Record<string, unknown> }>
 }
 
 export type RepositoryNode = {
@@ -58,6 +68,10 @@ export type ModelOption = {
   isReasoning?: boolean
   supportsReasoning?: boolean
   reasoningEffort?: "low" | "medium" | "high" | "xhigh"
+  capabilities?: string[]
+  staticCaps?: string[]
+  probedCaps?: string[]
+  probedAt?: number
 }
 
 export type ChatStore = {
@@ -258,7 +272,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     ]
     set({ repositories, expandedIds: [workspace.id] })
   },
-  setSession: (sessionId, sessionTitle) => set({ sessionId, sessionTitle }),
+  setSession: (sessionId, sessionTitle) =>
+    set((state) => ({
+      sessionId,
+      sessionTitle,
+      repositories: state.repositories.map((node) =>
+        node.id === sessionId ? { ...node, name: sessionTitle } : node
+      )
+    })),
   setMessages: (messages) => set({ messages })
 }))
 

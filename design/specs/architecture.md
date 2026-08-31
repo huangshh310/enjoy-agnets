@@ -29,10 +29,13 @@ Main Process（可信）
 |---|---|
 | `apps/desktop` | Electron 壳：main / preload / renderer。品牌源 `public/enjoy-ui-kit`，打包图标 `build/`，运行时窗标 `resources/` |
 | `packages/agent-core` | 会话提示、工具、审批、diff（无 React / 无 Electron） |
-| `packages/agent-harness` | 外部编码 Agent 插件位（非内核） |
-| `packages/providers` | 协议工厂：`openai` / `anthropic` / `openai-responses` |
+| `packages/agent-harness` | 外部编码 Agent 插件：Claude Code / Codex / Pi / OpenCode（非默认内核） |
+| `packages/providers` | 协议工厂：语言 + 官方媒体（Fal / Replicate / ElevenLabs / Deepgram / Cohere / Gateway） |
 | `packages/ipc-contract` | Zod：IPC 入参与 `StreamEvent` |
-| `packages/db` | SQLite 建表（`workspaces` / `sessions` / `messages` / `settings`） |
+| `packages/db` | SQLite 迁移框架 + runs / assets / knowledge / mcp / metrics |
+| `packages/knowledge` | 忽略规则、分块、本地检索 |
+| `packages/assets` | 资产哈希、导出路径策略 |
+| `packages/mcp` | Server 权限与 App JSON-RPC 隔离 |
 | `packages/ui` | tokens、shadcn、AI Elements、ThemeToggle / ComposerLoader |
 | `packages/editor` | Monaco 封装（接入中） |
 | `packages/config` | 共享 tsconfig |
@@ -42,8 +45,10 @@ Main Process（可信）
 ### 数据
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
-- 表：`workspaces`、`sessions`、`messages`、`settings`。向量检索第一期不做。
+- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、assets、knowledge_*、mcp_*、telemetry_metrics）。向量存在 SQLite，检索在本机。
 - 供应商密钥：主进程 vault + `safeStorage`，renderer 只见 `hasKey` / `keyHint`。
+- 资产文件：`userData/assets`。Realtime 只在 main 代理 WebSocket。
+- Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
 
 ## 不变量
 
@@ -56,7 +61,8 @@ Main Process（可信）
 ## 代码入口
 
 - 窗口与生命周期：`apps/desktop/src/main/index.ts`
-- IPC 注册：`apps/desktop/src/main/ipc.ts`
+- IPC 注册：`apps/desktop/src/main/ipc.ts`（胶水）+ `ipc-shell.ts` / `ipc-settings.ts` / `ipc-ai.ts`
+- 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`
 - preload：`apps/desktop/src/preload/index.ts`
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
 
@@ -64,3 +70,5 @@ Main Process（可信）
 
 - AI SDK 7 的 `execute()` 只注入 `toolsContext[name]`，不会把 `runtimeContext` 放进 `options.context`。工具 host 必须在建工具时闭包注入，否则审批通过后会报 `Workspace host is missing`。见 `packages/agent-core/src/tools/index.ts`。
 - 不要把 `@ai-sdk/react` 的 `useChat`（HTTP）当桌面主路径。流从 main `webContents.send("agent.event")` 来。
+- electron-vite 把 `@enjoy-agents/db` 别名到 `index.ts` 文件时，`@enjoy-agents/db/path-safe` 会变成 `index.ts/path-safe`。主进程别名必须精确匹配包名，子路径单独写。路径安全也可从 `@enjoy-agents/db` 主入口导入。
+- 主进程 workspace 包必须进 `externalizeDepsPlugin.exclude` 并别名到 `src/index.ts`。漏掉 `assets` / `knowledge` / `mcp` 时，Electron 会直接加载源码，`from "./hash"` 无后缀会报 `ERR_MODULE_NOT_FOUND`。新包先写进 `electron.vite.config.ts` 的 `MAIN_WORKSPACE_PACKAGES`。

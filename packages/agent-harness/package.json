@@ -8,11 +8,15 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts"
+    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts src/ready.test.ts"
   },
   "dependencies": {
     "@ai-sdk/harness": "catalog:",
     "@ai-sdk/harness-claude-code": "catalog:",
+    "@ai-sdk/harness-codex": "catalog:",
+    "@ai-sdk/harness-opencode": "catalog:",
+    "@ai-sdk/harness-pi": "catalog:",
+    "@ai-sdk/sandbox-just-bash": "catalog:",
     "@ai-sdk/sandbox-vercel": "catalog:",
     "@enjoy-agents/agent-core": "workspace:*",
     "@enjoy-agents/ipc-contract": "workspace:*",

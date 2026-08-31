@@ -137,6 +137,15 @@ test("Ask 模式写入 Harness host toolApproval 为 denied", () => {
   })
 })
 
+test("MCP 写工具要审批，读工具直接过", () => {
+  assert.equal(resolveToolApproval("mcp_s1__read_file", "agent", REQUIRE_ALL), "not-applicable")
+  assert.equal(resolveToolApproval("mcp_s1__write_file", "agent", REQUIRE_ALL), "user-approval")
+  assert.deepEqual(resolveToolApproval("mcp_s1__write_file", "ask", REQUIRE_ALL), {
+    type: "denied",
+    reason: "ask mode is read-only."
+  })
+})
+
 test("Harness 映射会带上会话已放行的工具", () => {
   const settings = toHarnessApprovalSettings("agent", {
     ...REQUIRE_ALL,

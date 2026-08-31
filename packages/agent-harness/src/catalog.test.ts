@@ -24,7 +24,9 @@ test("显式 harnessId 优先于当前 Provider", () => {
   assert.equal(adapter?.id, "deepseek")
 })
 
-test("未知供应商没有 Harness", () => {
+test("OpenAI 对上 Codex，Pi / OpenCode 可显式选", () => {
+  assert.equal(harnessAdapterForProvider("openai")?.id, "codex")
+  assert.equal(resolveHarnessAdapter("pi", "openai")?.id, "pi")
+  assert.equal(resolveHarnessAdapter("opencode", undefined)?.sandboxKind, "vercel")
   assert.equal(harnessAdapterForProvider("ollama"), undefined)
-  assert.equal(resolveHarnessAdapter(undefined, "openai"), undefined)
 })

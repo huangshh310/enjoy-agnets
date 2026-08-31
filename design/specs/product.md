@@ -20,15 +20,15 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 
 - Agent 主循环必须留在本机（Electron main），不要上云。
 - 渲染进程只画界面，不调模型、不读明文 Key、不直接 `fs` / `child_process`。
-- 第一期不做：云账号、向量检索、多 Agent 编排、实时多端 CRDT。
+- 第一期不做：云账号、实时多端 CRDT。向量检索与多 Agent 已按本地路径落地（Knowledge / Workflow / 子 Agent 摘要）；云 Gateway / OTEL / Vercel Sandbox 仍是可选适配器。
 
 ## 分期（对照实现，不是口号）
 
 | 阶段 | 状态 | 内容 |
 |---|---|---|
 | MVP | 进行中 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI |
-| V1 | 未做完 | MCP、Git 面板加深、会话搜索、自动更新、Prompt Bar `@` / `/` |
-| V1.5 | 后置 | 云账号、token 代理、子 Agent、Harness 插件（Claude Code / Codex） |
+| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测；Git 面板加深 / 自动更新仍未完 |
+| V1.5 | 后置 | 云账号、token 代理、外部 OTEL、Vercel Sandbox |
 
 ## 明确不做
 

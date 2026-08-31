@@ -9,17 +9,34 @@ const uiRoot = resolve(repoRoot, "packages/ui")
 
 const WS_OPTIONAL_NATIVE = ["bufferutil", "utf-8-validate"] as const
 
+/** 主进程必须打包的 workspace 包。漏掉会被 externalize，Node 无法加载无后缀 .ts。 */
+const MAIN_WORKSPACE_PACKAGES = [
+  "ipc-contract",
+  "db",
+  "providers",
+  "agent-core",
+  "agent-harness",
+  "assets",
+  "knowledge",
+  "mcp"
+] as const
+
+function workspacePackageId(name: (typeof MAIN_WORKSPACE_PACKAGES)[number]) {
+  return `@enjoy-agents/${name}`
+}
+
+function workspacePackageAlias(name: (typeof MAIN_WORKSPACE_PACKAGES)[number]) {
+  return {
+    find: new RegExp(`^${workspacePackageId(name).replace("/", "\\/")}$`),
+    replacement: resolve(repoRoot, `packages/${name}/src/index.ts`)
+  }
+}
+
 export default defineConfig({
   main: {
     plugins: [
       externalizeDepsPlugin({
-        exclude: [
-          "@enjoy-agents/ipc-contract",
-          "@enjoy-agents/db",
-          "@enjoy-agents/providers",
-          "@enjoy-agents/agent-core",
-          "@enjoy-agents/agent-harness"
-        ]
+        exclude: MAIN_WORKSPACE_PACKAGES.map(workspacePackageId)
       })
     ],
     // ws 的可选原生加速包未安装；打进 bundle 会被 Vite 写成顶层 throw，主进程直接崩。
@@ -33,13 +50,18 @@ export default defineConfig({
       }
     },
     resolve: {
-      alias: {
-        "@enjoy-agents/ipc-contract": resolve(repoRoot, "packages/ipc-contract/src/index.ts"),
-        "@enjoy-agents/db": resolve(repoRoot, "packages/db/src/index.ts"),
-        "@enjoy-agents/providers": resolve(repoRoot, "packages/providers/src/index.ts"),
-        "@enjoy-agents/agent-core": resolve(repoRoot, "packages/agent-core/src/index.ts"),
-        "@enjoy-agents/agent-harness": resolve(repoRoot, "packages/agent-harness/src/index.ts")
-      }
+      // 必须精确匹配包名。别名到 index.ts 文件时，`@pkg/sub` 会被拼成 `index.ts/sub`。
+      alias: [
+        {
+          find: "@enjoy-agents/db/path-safe",
+          replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
+        },
+        {
+          find: "@enjoy-agents/db/hmac",
+          replacement: resolve(repoRoot, "packages/db/src/hmac.ts")
+        },
+        ...MAIN_WORKSPACE_PACKAGES.map(workspacePackageAlias)
+      ]
     }
   },
   preload: {
@@ -68,6 +90,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/providers/presets",
           replacement: resolve(repoRoot, "packages/providers/src/presets.ts")
+        },
+        {
+          find: "@enjoy-agents/mcp/app-host",
+          replacement: resolve(repoRoot, "packages/mcp/src/app-host.ts")
         },
         {
           find: "next/link",

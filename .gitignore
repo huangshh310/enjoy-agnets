@@ -13,3 +13,7 @@ release
 *.local
 apps/desktop/out
 apps/desktop/dist
+apps/desktop/test-results
+apps/desktop/playwright-report
+test-results
+playwright-report

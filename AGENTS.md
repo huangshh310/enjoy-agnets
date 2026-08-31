@@ -33,6 +33,12 @@
 | 无边框窗口、标题栏、最小化 | [`design/specs/window.md`](./design/specs/window.md) |
 | 应用 logo、任务栏 / 打包图标 | [`design/specs/brand.md`](./design/specs/brand.md) |
 | 设置 / Automations / Customize | [`design/specs/settings.md`](./design/specs/settings.md) |
+| AI Runtime / StreamEvent v2 | [`design/specs/ai-capabilities.md`](./design/specs/ai-capabilities.md) |
+| Knowledge / RAG | [`design/specs/knowledge.md`](./design/specs/knowledge.md) |
+| 资产库 / 媒体 | [`design/specs/media.md`](./design/specs/media.md) |
+| Workflow / 子 Agent | [`design/specs/workflow.md`](./design/specs/workflow.md) |
+| MCP | [`design/specs/mcp.md`](./design/specs/mcp.md) |
+| Telemetry | [`design/specs/observability.md`](./design/specs/observability.md) |
 | AI SDK 7 有没有某能力 | [`design/references/vercel-ai-sdk-7-feature-matrix.md`](./design/references/vercel-ai-sdk-7-feature-matrix.md) |
 | 为什么选这套栈 | [`design/references/tech-stack.md`](./design/references/tech-stack.md) |
 

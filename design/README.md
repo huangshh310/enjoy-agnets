@@ -26,6 +26,12 @@
 | `window` | [specs/window.md](./specs/window.md) | 无边框窗口、标题栏、窗口 IPC | `main/index.ts`、`components/layout` |
 | `brand` | [specs/brand.md](./specs/brand.md) | 应用 logo、任务栏 / 打包图标 | `enjoy-ui-kit`、`AppMark`、`build/icon.*` |
 | `settings` | [specs/settings.md](./specs/settings.md) | 设置 / Automations / Customize 路由 | `router.tsx`、`components/settings` |
+| `ai-capabilities` | [specs/ai-capabilities.md](./specs/ai-capabilities.md) | AiRuntime、StreamEvent v2、UIMessage | `agent-core/runtime`、`ipc-contract` |
+| `knowledge` | [specs/knowledge.md](./specs/knowledge.md) | 来源、索引、本地检索 | `packages/knowledge` |
+| `media` | [specs/media.md](./specs/media.md) | 资产库、导出审批、Realtime | `packages/assets` |
+| `workflow` | [specs/workflow.md](./specs/workflow.md) | Durable run、checkpoint | `agent-core/agents/workflow` |
+| `mcp` | [specs/mcp.md](./specs/mcp.md) | Server、权限、隔离 App | `packages/mcp` |
+| `observability` | [specs/observability.md](./specs/observability.md) | 本地指标、脱敏、OTEL | `telemetry-service` |
 
 找不到对应 ID 时：先在本表加一行和空 spec，再写代码。不要把新领域塞进无关 spec。
 
@@ -37,7 +43,8 @@
 |---|---|
 | [references/visual-system.md](./references/visual-system.md) | 原 `DESIGN.md`：色彩、字体、组件皮肤、Providers 交互全书 |
 | [references/tech-stack.md](./references/tech-stack.md) | 原技术栈说明书：选型理由、禁令、分期 |
-| [references/vercel-ai-sdk-7-feature-matrix.md](./references/vercel-ai-sdk-7-feature-matrix.md) | AI SDK 7 能力对照 |
+| [references/vercel-ai-sdk-7-feature-matrix.md](./references/vercel-ai-sdk-7-feature-matrix.md) | AI SDK 7 能力对照 + Enjoy Agents 落地状态 |
+| [references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md](./references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md) | 全能力落地计划 |
 
 ---
 

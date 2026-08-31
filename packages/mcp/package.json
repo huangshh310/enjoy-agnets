@@ -1,0 +1,22 @@
+{
+  "name": "@enjoy-agents/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./app-host": "./src/app-host.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/permissions.test.ts src/app-host.test.ts src/stdio-rpc.test.ts src/http-rpc.test.ts src/tools.test.ts src/registry.test.ts src/stdio-command.test.ts"
+  },
+  "dependencies": {
+    "ai": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

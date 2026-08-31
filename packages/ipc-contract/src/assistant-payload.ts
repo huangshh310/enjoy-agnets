@@ -21,6 +21,22 @@ export type ThreadToolCall = {
   state: ToolCallState
 }
 
+export type CitedSource = {
+  sourceId: string
+  title: string
+  path: string
+  startLine?: number
+  snippet?: string
+}
+
+export type CitedAsset = { assetId: string; mediaType: string; name: string }
+
+export type AssistantExtras = {
+  sources?: CitedSource[]
+  assets?: CitedAsset[]
+  structured?: unknown
+}
+
 export type AssistantPayload = {
   v: 1
   content: string
@@ -28,7 +44,7 @@ export type AssistantPayload = {
   tools?: ThreadToolCall[]
   /** 本轮思考耗时（秒），结束后 Thinking 头仍显示 */
   thoughtSeconds?: number
-}
+} & AssistantExtras
 
 const PAYLOAD_VERSION = 1
 
@@ -36,13 +52,21 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
   const reasoning = payload.reasoning?.trim()
   const tools = payload.tools?.filter(Boolean) ?? []
   const thoughtSeconds = payload.thoughtSeconds
-  if (!reasoning && tools.length === 0 && thoughtSeconds == null) return payload.content
+  const sources = payload.sources?.filter(Boolean) ?? []
+  const assets = payload.assets?.filter(Boolean) ?? []
+  const hasExtras = sources.length > 0 || assets.length > 0 || payload.structured != null
+  if (!reasoning && tools.length === 0 && thoughtSeconds == null && !hasExtras) {
+    return payload.content
+  }
   return JSON.stringify({
     v: PAYLOAD_VERSION,
     content: payload.content,
     reasoning: reasoning || undefined,
     tools: tools.length > 0 ? tools : undefined,
-    thoughtSeconds: thoughtSeconds ?? undefined
+    thoughtSeconds: thoughtSeconds ?? undefined,
+    sources: sources.length > 0 ? sources : undefined,
+    assets: assets.length > 0 ? assets : undefined,
+    structured: payload.structured
   } satisfies AssistantPayload)
 }
 
@@ -58,7 +82,10 @@ export function parseAssistantPayload(raw: string): AssistantPayload {
         content: parsed.content,
         reasoning: parsed.reasoning,
         tools: parsed.tools,
-        thoughtSeconds: parsed.thoughtSeconds
+        thoughtSeconds: parsed.thoughtSeconds,
+        sources: parsed.sources,
+        assets: parsed.assets,
+        structured: parsed.structured
       }
     }
   } catch {

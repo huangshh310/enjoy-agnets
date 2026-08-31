@@ -1,8 +1,10 @@
 /**
  * 供应商对外入口：建连、探测、目录。
  */
+import { rememberProbedModels } from "./capabilities/probe"
 import { discoverRemoteModels } from "./discover"
 import { resolvedBaseURL } from "./config"
+import { usesOfficialGoogle } from "./google"
 import { presetFor, PROVIDER_PRESETS, type CatalogModel, type ProviderKind } from "./presets"
 import type { ProviderConfig } from "./types"
 
@@ -15,6 +17,8 @@ export {
   PROVIDER_PRESETS,
   normalizeBaseURL,
   presetFor,
+  isMediaNativeKind,
+  isMediaOnlyKind,
   type ApiStyle,
   type CatalogModel,
   type ProviderKind,
@@ -23,6 +27,7 @@ export {
 
 export { pingProviderEndpoint, type PingResult } from "./discover"
 export { createLanguageModel } from "./create-model"
+export { usesOfficialGoogle } from "./google"
 export {
   deepseekCallOptions,
   isDeepSeekModelId,
@@ -30,6 +35,37 @@ export {
   type ReasoningEffort
 } from "./reasoning"
 export type { ProviderConfig } from "./types"
+export {
+  ALL_CAPABILITIES,
+  staticCapabilitiesFor,
+  capabilityLabel,
+  unsupportedReason
+} from "./capabilities/catalog"
+export {
+  rememberProbedModels,
+  probedCapabilitiesFor,
+  effectiveCapabilities,
+  clearProbedCapabilities
+} from "./capabilities/probe"
+export { resolveModelAlias, createEnjoyRegistry, type ModelAlias } from "./registry"
+export { mergeModelSettings, wrapWithDefaults, type MiddlewareDefaults } from "./middleware"
+export { createFilesApi, createSkillsApi } from "./provider-api"
+export {
+  createImageModel,
+  createSpeechModel,
+  createTranscriptionModel,
+  createEmbeddingModel,
+  createVideoModel,
+  createTranslationModel,
+  createRerankModel,
+  defaultRerankModelId,
+  alternateImageModelId,
+  alternateSpeechModelId,
+  alternateTranscriptionModelId,
+  defaultEmbeddingModelId,
+  mediaFactoryKind
+} from "./media-models"
+export { pickMediaFallbackConfig, fallbackKindsFor, type MediaAltProfile } from "./media/fallback-config"
 
 /** @deprecated Use ProviderKind. Kept so older call sites compile. */
 export type ProviderId = ProviderKind
@@ -77,6 +113,20 @@ export async function probeProvider(
   if (preset.requiresKey && !apiKey) {
     return { ok: false, message: "API key is required for this provider.", models: preset.models }
   }
+  if (
+    preset.kind === "fal" ||
+    preset.kind === "replicate" ||
+    preset.kind === "elevenlabs" ||
+    preset.kind === "deepgram" ||
+    preset.kind === "cohere" ||
+    usesOfficialGoogle({ provider: config.provider, baseURL })
+  ) {
+    return {
+      ok: true,
+      message: "Key accepted. Official SDK will be used at generate time.",
+      models: preset.models
+    }
+  }
   if (!baseURL) {
     return { ok: false, message: "Base URL is required.", models: preset.models }
   }
@@ -89,6 +139,7 @@ export async function probeProvider(
       apiStyle: config.apiStyle ?? preset.apiStyle
     })
     if (discovered.models.length > 0) {
+      rememberProbedModels(config.provider, discovered.models.map((model) => model.id))
       return {
         ok: true,
         message: `Connected. Found ${discovered.models.length} models.`,

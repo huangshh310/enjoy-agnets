@@ -15,7 +15,8 @@ const ide = {
     list: (workspaceId: string) => ipcRenderer.invoke("session.list", workspaceId),
     create: (workspaceId: string, title?: string) =>
       ipcRenderer.invoke("session.create", workspaceId, title),
-    messages: (sessionId: string) => ipcRenderer.invoke("session.messages", sessionId)
+    messages: (sessionId: string) => ipcRenderer.invoke("session.messages", sessionId),
+    rename: (input: unknown) => ipcRenderer.invoke("session.rename", input)
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),
@@ -62,6 +63,60 @@ const ide = {
       ipcRenderer.on("terminal.data", listener)
       return () => ipcRenderer.off("terminal.data", listener)
     }
+  },
+  ai: {
+    generate: (input: unknown) => ipcRenderer.invoke("ai.generate", input),
+    abort: (runId: string) => ipcRenderer.invoke("ai.abort", { runId }),
+    resume: (runId: string) => ipcRenderer.invoke("ai.resume", { runId })
+  },
+  assets: {
+    import: (input: unknown) => ipcRenderer.invoke("assets.import", input),
+    list: () => ipcRenderer.invoke("assets.list"),
+    read: (id: string) => ipcRenderer.invoke("assets.read", { id }),
+    export: (input: unknown) => ipcRenderer.invoke("assets.export", input),
+    delete: (id: string) => ipcRenderer.invoke("assets.delete", { id }),
+    upload: (input: unknown) => ipcRenderer.invoke("assets.upload", input)
+  },
+  knowledge: {
+    sources: (workspaceId: string) => ipcRenderer.invoke("knowledge.sources", { workspaceId }),
+    addSource: (input: unknown) => ipcRenderer.invoke("knowledge.addSource", input),
+    index: (input: unknown) => ipcRenderer.invoke("knowledge.index", input),
+    search: (input: unknown) => ipcRenderer.invoke("knowledge.search", input),
+    cancel: (sourceId: string) => ipcRenderer.invoke("knowledge.cancel", { sourceId }),
+    remove: (sourceId: string) => ipcRenderer.invoke("knowledge.remove", { sourceId })
+  },
+  workflow: {
+    list: (input?: unknown) => ipcRenderer.invoke("workflow.list", input ?? {}),
+    get: (runId: string) => ipcRenderer.invoke("workflow.get", { runId }),
+    start: (input: unknown) => ipcRenderer.invoke("workflow.start", input),
+    recover: () => ipcRenderer.invoke("workflow.recover", {}),
+    resume: (runId: string) => ipcRenderer.invoke("workflow.resume", { runId }),
+    cancel: (runId: string) => ipcRenderer.invoke("workflow.cancel", { runId }),
+    retry: (runId: string) => ipcRenderer.invoke("workflow.retry", { runId })
+  },
+  mcp: {
+    servers: () => ipcRenderer.invoke("mcp.servers"),
+    upsert: (input: unknown) => ipcRenderer.invoke("mcp.upsert", input),
+    remove: (id: string) => ipcRenderer.invoke("mcp.remove", { id }),
+    connect: (id: string) => ipcRenderer.invoke("mcp.connect", { id }),
+    disconnect: (id: string) => ipcRenderer.invoke("mcp.disconnect", { id }),
+    test: (id: string) => ipcRenderer.invoke("mcp.test", { id }),
+    tools: (id: string) => ipcRenderer.invoke("mcp.tools", { id }),
+    call: (input: unknown) => ipcRenderer.invoke("mcp.call", input),
+    setPermission: (input: unknown) => ipcRenderer.invoke("mcp.setPermission", input),
+    openApp: (input: unknown) => ipcRenderer.invoke("mcp.openApp", input),
+    appMessage: (input: unknown) => ipcRenderer.invoke("mcp.appMessage", input)
+  },
+  realtime: {
+    open: (input: unknown) => ipcRenderer.invoke("realtime.open", input),
+    sendAudio: (input: unknown) => ipcRenderer.invoke("realtime.sendAudio", input),
+    close: (runId: string) => ipcRenderer.invoke("realtime.close", { runId })
+  },
+  observability: {
+    metrics: (input?: unknown) => ipcRenderer.invoke("observability.metrics", input ?? {}),
+    export: (format: "json" | "csv") => ipcRenderer.invoke("observability.export", { format }),
+    setPolicy: (input: unknown) => ipcRenderer.invoke("observability.setPolicy", input),
+    replay: (input?: unknown) => ipcRenderer.invoke("observability.replay", input ?? {})
   },
   window: {
     minimize: () => ipcRenderer.invoke("window.minimize") as Promise<WindowActionResult>,

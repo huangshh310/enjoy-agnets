@@ -36,7 +36,10 @@ export function WindowFrame({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-full select-none">
+    <div
+      data-testid="window-frame"
+      className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-full select-none"
+    >
       <WindowTitleBar
         isMaximized={isMaximized}
         onToggleMaximize={handleToggleMaximize}

@@ -9,12 +9,20 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/reasoning.test.ts"
+    "test": "node --experimental-strip-types --test src/reasoning.test.ts src/capabilities/catalog.test.ts src/capabilities/probe.test.ts src/middleware.test.ts src/media-models.test.ts src/google.test.ts src/embeddings/rerank-model.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "catalog:",
+    "@ai-sdk/cohere": "catalog:",
+    "@ai-sdk/deepgram": "catalog:",
     "@ai-sdk/deepseek": "catalog:",
+    "@ai-sdk/elevenlabs": "catalog:",
+    "@ai-sdk/fal": "catalog:",
+    "@ai-sdk/gateway": "catalog:",
+    "@ai-sdk/google": "catalog:",
     "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/replicate": "catalog:",
+    "@enjoy-agents/ipc-contract": "workspace:*",
     "ai": "catalog:"
   },
   "devDependencies": {

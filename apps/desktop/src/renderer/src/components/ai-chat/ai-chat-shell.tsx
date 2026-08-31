@@ -18,6 +18,8 @@ import {
   openChangedFile,
   openFolder,
   selectPersistedSession,
+  abortComposerRun,
+  attachComposerFile,
   sendComposerMessage,
   startPersistedSession,
 } from "@renderer/hooks/use-agent-session"
@@ -166,6 +168,8 @@ export function AiChatShell() {
                   models={models}
                   onModelChange={(model) => void handleModelChange(model)}
                   onSend={() => void sendComposerMessage()}
+                  onStop={() => void abortComposerRun()}
+                  onAttach={(file) => void attachComposerFile(file)}
                 />
                 <AiChatStatusBar
                   workspaceRootLabel={workspaceRootLabel}

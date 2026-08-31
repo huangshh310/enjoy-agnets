@@ -8,6 +8,7 @@ import {
   foldToolEvent,
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
+import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
 
 export type StreamPatch = {
@@ -67,7 +68,11 @@ function isLivePart(type: StreamEvent["type"]) {
     type === "reasoning.delta" ||
     type === "tool.start" ||
     type === "tool.args.delta" ||
-    type === "tool.result"
+    type === "tool.result" ||
+    type === "source.added" ||
+    type === "asset.created" ||
+    type === "structured.delta" ||
+    type === "realtime.text"
   )
 }
 
@@ -76,6 +81,10 @@ function applyLiveEvent(
   assistant: ThreadMessage,
   event: StreamEvent
 ): StreamPatch {
+  if (event.type === "realtime.text") {
+    assistant.content = `${assistant.content}${event.text}`
+    return { messages, thinkingLabel: "Voice" }
+  }
   if (event.type === "text.delta") {
     const next = absorbTextDelta(
       {
@@ -94,6 +103,8 @@ function applyLiveEvent(
     assistant.reasoning = `${assistant.reasoning ?? ""}${event.text}`
     return { messages, thinkingLabel: "Thinking" }
   }
+  const v2 = applyV2Part(messages, assistant, event)
+  if (v2) return v2
   assistant.tools ??= []
   foldToolEvent(assistant.tools, event)
   const name = event.type === "tool.args.delta"
@@ -107,7 +118,9 @@ function applyLiveEvent(
 function cloneMessages(messages: ThreadMessage[]): ThreadMessage[] {
   return messages.map((message) => ({
     ...message,
-    tools: message.tools?.map((tool) => ({ ...tool }))
+    tools: message.tools?.map((tool) => ({ ...tool })),
+    sources: message.sources?.map((source) => ({ ...source })),
+    assets: message.assets?.map((asset) => ({ ...asset }))
   }))
 }
 

@@ -14,7 +14,16 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   codingRuntime: "local",
   language: "auto",
   defaultMode: "agent",
-  customInstructions: ""
+  customInstructions: "",
+  telemetryPolicy: "local",
+  knowledgeAutoIndex: false,
+  workflowAutoResume: true,
+  sandboxNetwork: false,
+  experimentalMedia: false,
+  maxAgentSteps: 20,
+  agentTimeoutMs: 0,
+  toolTimeoutMs: 30_000,
+  stepTimeoutMs: 0
 }
 
 /** 读取持久化偏好；损坏或缺失时回落到安全默认（写盘/命令都要确认）。 */

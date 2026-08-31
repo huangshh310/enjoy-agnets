@@ -2,7 +2,7 @@
  * 把会话历史编成 AI SDK ModelMessage。
  * DeepSeek V4 在带 tools 时要求回传上一轮 reasoning。
  */
-import type { ModelMessage } from "ai"
+import { pruneMessages, type ModelMessage } from "ai"
 
 export type HistoryMessage = {
   role: string
@@ -11,7 +11,7 @@ export type HistoryMessage = {
 }
 
 export function toModelMessages(messages: HistoryMessage[]): ModelMessage[] {
-  return messages.map((message) => {
+  const converted = messages.map((message) => {
     if (message.role === "assistant" && message.reasoning?.trim()) {
       return {
         role: "assistant",
@@ -26,6 +26,18 @@ export function toModelMessages(messages: HistoryMessage[]): ModelMessage[] {
       content: message.content
     } as ModelMessage
   })
+  return pruneMessages({
+    messages: clipConverted(converted),
+    reasoning: "before-last-message",
+    emptyMessages: "remove"
+  })
+}
+
+function clipConverted(messages: ModelMessage[], max = 40): ModelMessage[] {
+  if (messages.length <= max) return messages
+  const system = messages.filter((message) => message.role === "system")
+  const rest = messages.filter((message) => message.role !== "system")
+  return [...system, ...rest.slice(-Math.max(1, max - system.length))]
 }
 
 /** 工具循环 / 审批续跑时，若 SDK 消息缺 reasoning part，用本轮累积补上。 */

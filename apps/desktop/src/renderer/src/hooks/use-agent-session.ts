@@ -1,22 +1,28 @@
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  parseAssistantPayload,
-  sealAbandonedTools,
+  migrateContentToParts,
+  safeValidateUIMessages,
   StreamEvent,
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { threadFromRows } from "./hydrate-thread"
 import {
   useChatStore,
   type ChangedFileRow,
-  type ModelOption,
-  type ThreadMessage
+  type ModelOption
 } from "../stores/chat-store"
 
 type WorkspaceRow = { id: string; name: string; rootPath: string }
 type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
-type MessageRow = { id: string; role: "user" | "assistant"; content: string; createdAt: number }
+type MessageRow = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  createdAt: number
+  parts?: unknown[]
+}
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
@@ -108,27 +114,19 @@ export async function loadSession(sessionId: string, title: string) {
   const store = useChatStore.getState()
   store.setSession(sessionId, title)
   const rows = (await getIde().session.messages(sessionId)) as MessageRow[]
-  const messages: ThreadMessage[] = rows.map((row) => {
-    if (row.role !== "assistant") {
-      return {
-        id: row.id,
-        role: row.role,
-        content: row.content,
-        createdAt: row.createdAt
-      }
-    }
-    const payload = parseAssistantPayload(row.content)
-    return {
+  restoreUiMessages(rows)
+  store.setMessages(threadFromRows(rows))
+}
+
+function restoreUiMessages(rows: MessageRow[]) {
+  safeValidateUIMessages(
+    rows.map((row) => ({
       id: row.id,
       role: row.role,
-      content: payload.content,
-      reasoning: payload.reasoning,
-      tools: sealAbandonedTools(payload.tools),
-      thoughtSeconds: payload.thoughtSeconds,
+      parts: row.parts && row.parts.length > 0 ? row.parts : migrateContentToParts(row.content),
       createdAt: row.createdAt
-    }
-  })
-  store.setMessages(messages)
+    }))
+  )
 }
 
 export async function createAndOpenSession(workspaceId: string) {
@@ -143,7 +141,7 @@ export async function createAndOpenSession(workspaceId: string) {
   workspace.setMessages([])
 }
 
-export { sendComposerMessage } from "./send-composer"
+export { abortComposerRun, attachComposerFile, sendComposerMessage } from "./send-composer"
 
 export async function decidePendingApproval(decision: "allow" | "deny" | "allow_session") {
   const store = useChatStore.getState()

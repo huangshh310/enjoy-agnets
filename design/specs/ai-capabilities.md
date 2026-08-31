@@ -1,0 +1,47 @@
+# spec/ai-capabilities
+
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-08-31
+
+## 当前真相
+
+`AiRuntime` 在 `packages/agent-core/src/runtime`：`createBufferedRuntime` + `createEventBuffer`。桌面 `createDesktopRuntime.start` 走 `startGeneration`（agent 必须用 `runAgent` 自己的 runId，不能先由缓冲层另发一个）；`stream(runId)` 读 `event-bus` 同一块 `createEventBuffer`。`createIdRuntime` 才包 `createBufferedRuntime`，并注入同一缓冲。`ai-generation` 执行文本/补全（`streamPlainText`）、结构化增量（`streamStructuredPartials`，失败再 `generateStructuredRepaired`）、媒体、embedding、rerank、workflow。kind=`agent` 必须带 `workspaceId`，转发同一条 `runAgent`（同一审批与 workspace host）。fullStream 的 text-start / finish / start-step 映射为 `message.part.*` / `usage.updated` / `step.*`。Workflow persist 发 `workflow.checkpoint`。MCP `tools/call` 发 `mcp.tool`；trusted `mcp.openApp` / `mcp.appMessage` 发 `mcp.app`。`ai.resume` 按 `runs.kind` 分流：workflow 走 checkpoint 续步；其它 kind 读 `runs.checkpoint` 里的 generation 快照再跑（Agent 用同一 `runId` 重启 ToolLoop，文本/结构化/媒体重放 `ai.generate`）。没有快照会拒。不要把文本/Agent run 当成 Workflow 恢复。
+
+`GenerationRequest.kind`：`text` `structured-object` `structured-array` `completion` `image` `speech` `transcription` `translation` `video` `embedding` `rerank` `realtime-session` `agent` `workflow`。fullStream 映射在 `packages/agent-core/src/streams/map-part.ts`。Agent / `ai.generate` 完成时写 `ttfoMs` 与 `tokensPerSecond`。
+
+StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
+
+消息 parts：`UIMessage` + `migrateContentToParts`。旧 `messages.content` 仍是兼容字段。生成式 UI 只能选 `GENERATIVE_COMPONENT_IDS` 白名单。
+
+实验能力（视频、Realtime）发 `generation.warning` 并带 `experimental`。
+
+不采用：RSC、DirectChatTransport HTTP、`@ai-sdk/tui` 作桌面 UI。renderer 用 `useMainChatTransport` / `useCompletion` / `useObject` 走 IPC。长会话先 `clipHistory` 再 `pruneMessages`。语言模型经 `wrapLanguageModel` 注入默认指令与参数。
+
+聊天主路径：Composer Stop → `agent.abort`；附件 → `assets.import` + `attachments`；`source.added` / `asset.created` / `structured.delta` 折进当前助手消息并合成白名单 `component` parts，刷新后从 payload 或 `message_parts` 恢复，parts 经 `safeValidateUIMessages`。首轮标题：乐观截断 + `ai.generate` kind=`completion` + `session.rename`。助手 Extract 走 `structured-object`。ToolLoop `stopWhen` = `[stepCountIs(maxAgentSteps), isLoopFinished(), 可选 hasToolCall]`；`prepareStep` 先 `pruneModelMessages`。`stepTimeoutMs` 以对象 `{ stepMs, toolMs }` 传给 SDK，不要传数字（会被当成总超时）。
+
+`ENJOY_E2E_STUB=1` 时不打真实 Provider：`openCodingStream` 吐固定 fullStream（含 write 审批与附件文件名），`ai.generate` 走 `e2e-generate`。启动前设置 `ENJOY_E2E_USERDATA` + `ENJOY_E2E_WORKSPACE`，`bootstrapE2eStub` 写入 Ollama 档案（无需 Key）和会话。这不是产品路径。`ai.generate.timeoutMs` 与偏好 `agentTimeoutMs` 会中止生成。
+
+## 不变量
+
+- 渲染进程不调模型、不读明文 Key。
+- 新 IPC 入参 Zod `.strict()`，未知字段即拒。
+- 旧 StreamEvent 必须仍能 `safeParse`。
+
+## 代码入口
+
+- 合约：`packages/ipc-contract/src/generation.ts`、`stream-event.ts`、`ui-message.ts`
+- Runtime：`packages/agent-core/src/runtime/`
+- Main：`apps/desktop/src/main/services/ai-generation.ts`、`desktop-runtime.ts`
+
+## 已知坑
+
+- 结构化输出在 v7 走 `generateText` + `Output.object()`，不要用 v4 `generateObject`。
+- `useChat` HTTP 不是桌面主路径；断线重放依赖 `sequence`。
+- 生成式 UI 刷新时只恢复白名单 `componentId`；未知 id 丢弃，不要当成可执行远程组件。
+- 标题补全与 Agent 共用 `agent.event`，必须按 `runId` 过滤，否则会吃到主循环的 `text.delta`。
+- `ai.resume` 早期无条件调用 `resumeWorkflow`，会把文本/Agent run 误当成 Workflow。现在按 `runs.kind` 分流；generation 快照不含密钥。聊天刷新恢复走 `hydrate-thread`，不是这条频道。Agent 续跑是同一请求重启循环，不是 SDK 中途 session.detach。
+- kind=`agent` 必须转发 `runAgent`，不要另开无 host 的 ToolLoop；合约拒绝缺 `workspaceId`。
+- `delegate`：plan/ask 只读；agent/debug 可写，但 `createSubagentApproval` 必须走同一条 `decideApproval`。没有等待器时拒绝写盘。
+- 结构化先发多次 `structured.delta`；校验失败重试一次，不要用 v4 `streamObject`。
+- `experimental_streamTranscribe` 可能无导出，没有则转写回落 `transcribe`。`experimental_streamTranslate` 在 `ai@7.0.84` 有导出；`kind=translation` 走 `createTranslationModel`（OpenAI `translation()`）。不能同时读 `fullStream` 和 `translationText`。模型不合法时 `translateAudio` 返回 null。
+- `WorkflowAgent` / `createMCPClient` 在 `ai@7.0.84` 仍无导出，不要假装已接官方类。
+- 窗口 E2E 的发聊天 / 停止 / 恢复 / 审批走 `ENJOY_E2E_STUB`，不要在 CI 里假装打过真实 Key。

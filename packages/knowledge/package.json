@@ -1,0 +1,21 @@
+{
+  "name": "@enjoy-agents/knowledge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/sources/ignore.test.ts src/indexer/chunk.test.ts src/indexer/stale.test.ts src/retriever/cosine.test.ts src/retriever/embed.test.ts src/retriever/rerank.test.ts src/retriever/provider-rerank.test.ts"
+  },
+  "dependencies": {
+    "@enjoy-agents/db": "workspace:*",
+    "ai": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

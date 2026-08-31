@@ -2,5 +2,5 @@
   "extends": "../config/tsconfig.base.json",
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"],
-  "compilerOptions": { "noEmit": true, "types": ["node"] }
+  "compilerOptions": { "noEmit": true, "types": ["node"], "allowImportingTsExtensions": true }
 }

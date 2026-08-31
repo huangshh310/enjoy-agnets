@@ -15,6 +15,11 @@ import { SettingsShell } from "@renderer/components/settings/settings-shell"
 import { isSettingsSectionId } from "@renderer/components/settings/settings-catalog"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
 import { CustomizePage, isCustomizeSectionId } from "@renderer/components/customize/customize-page"
+import { KnowledgePage } from "@renderer/components/knowledge/knowledge-page"
+import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
+import { MediaPage } from "@renderer/components/media/media-page"
+import { McpPage } from "@renderer/components/mcp/mcp-page"
+import { ObservabilityPage } from "@renderer/components/observability/observability-page"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
 
@@ -35,7 +40,12 @@ function RootLayout() {
         event.key === "Escape" &&
         (pathname.startsWith("/settings") ||
           pathname.startsWith("/automations") ||
-          pathname.startsWith("/customize"))
+          pathname.startsWith("/customize") ||
+          pathname.startsWith("/knowledge") ||
+          pathname.startsWith("/workflows") ||
+          pathname.startsWith("/media") ||
+          pathname.startsWith("/mcp") ||
+          pathname.startsWith("/observability"))
       ) {
         event.preventDefault()
         void navigate({ to: "/" })
@@ -112,12 +122,47 @@ const customizeSectionRoute = createRoute({
   component: CustomizePage
 })
 
+const knowledgeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/knowledge",
+  component: KnowledgePage
+})
+
+const workflowsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workflows",
+  component: WorkflowsPage
+})
+
+const mediaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/media",
+  component: MediaPage
+})
+
+const mcpRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/mcp",
+  component: McpPage
+})
+
+const observabilityRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/observability",
+  component: ObservabilityPage
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   settingsRoute.addChildren([settingsIndexRoute, settingsSectionRoute]),
   automationsRoute,
   customizeIndexRoute,
-  customizeSectionRoute
+  customizeSectionRoute,
+  knowledgeRoute,
+  workflowsRoute,
+  mediaRoute,
+  mcpRoute,
+  observabilityRoute
 ])
 
 export const router = createRouter({

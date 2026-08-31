@@ -494,4 +494,35 @@ useObject（需要流式预览时）
 
 ---
 
+---
+
+## 13. Enjoy Agents 落地状态（2026-08-31）
+
+标记：
+
+- **已实现**：本仓主路径可用（本地 IPC，不走 HTTP `useChat`）
+- **Provider 依赖**：SDK/本仓已接线，实际效果看所选模型与 Key
+- **实验**：已接线但带 experimental 标记与降级
+- **有意不采用**：架构决策，不是没做完
+
+| SDK 能力 | 落地状态 | 说明 |
+|---|---|---|
+| `generateText` / `streamText` | 已实现 | `agent.run` 流式；`ai.generate` kind=text/completion 走 `streamPlainText` |
+| `Output.object()` / `Output.array()` | Provider 依赖 | `streamStructuredPartials` 发多次 `structured.delta`；失败再 `generateStructuredRepaired`；JSON Schema / Valibot 形经 `toZodSchema` |
+| `reasoning` / `stopWhen` / 工具循环 | 已实现 | ToolLoopAgent；`stopWhen` = `stepCountIs` + `isLoopFinished` + 可选 `hasToolCall`；`prepareStep` 裁历史；`onStepFinish` 写 `run_steps` |
+| `toolApproval` | 已实现 | 写盘 / bash / commit / MCP 写工具；落库 HMAC，`decideApproval` 验签 |
+| `WorkflowAgent` durable | 部分 | 自研 checkpoint / resume / retry；`ai.resume` 按 kind 分流（workflow 续步，其它用 generation 快照重启）；不是 SDK `WorkflowAgent` |
+| 子 Agent 摘要 | 已实现 | `delegate` 回 `SubagentSummary`；plan/ask 只读；agent/debug 写盘走主循环同一条 `decideApproval` |
+| `embed` / `cosineSimilarity` / rerank | 已实现 | 索引 hashed + Provider 覆盖；模型漂移 Resume 重嵌；`ai.generate` embedding/rerank 已接线；有 Cohere 时走 SDK `rerank`，否则本地融合 |
+| `generateImage` / `generateSpeech` / `transcribe` | Provider 依赖 | 资产库 + `asset.created`；OpenAI 兼容 + 官方 Fal/Replicate/ElevenLabs/Deepgram/Cohere 工厂；同族备用模型 |
+| `experimental_streamTranslate` | 实验 | `kind=translation` + Media Translate；OpenAI `translation()`；模型不合法返回 null |
+| `experimental_generateVideo` / Realtime | 实验 | 警告事件 + main 代理；Realtime 先试 Provider WS，失败回落本地回环 |
+| `uploadFile` / `uploadSkill` | Provider 依赖 | `assets.upload` + hash 缓存 `provider_file_refs` |
+| `createMCPClient` / MCP Apps | 已实现 | SDK 无导出时本机会话：`tools/list` + `tools/call`；Trust 后注入 Agent；`mcp.openApp` / `mcp.appMessage` 隔离 iframe，消息在 main 消毒 |
+| `createProviderRegistry` / 能力探测 | 已实现 | `createEnjoyRegistry` + 静态目录；`probeProvider` 写入 `probedCaps`；Gateway 官方工厂；媒体 kind 探测不打 `/models` |
+| Telemetry / 超时 / fallback / 脱敏 | 已实现 | Agent/generate 写 TTFO 与 tokens/s；`agentTimeoutMs` / `stepTimeoutMs` / `timeoutMs` 到点发 timeout 警告；bash 用 `toolTimeoutMs`；OTEL 仅合法 endpoint POST 自建 OTLP JSON |
+| Harness / Code Mode / Sandbox | 已实现 | Claude Code / Codex / OpenCode 接官方适配器（桥接要 Vercel）；Pi 默认 just-bash；DeepSeek 仍占位；Code Mode 走写盘+bash 审批 |
+| `useChat` / `useCompletion` / `useObject` | 已实现 | IPC hook，不是 HTTP / `@ai-sdk/react`；`ai.generate` kind=`agent` 转发 `runAgent`；窗口 E2E 用 `ENJOY_E2E_STUB` 跑发送/停止/恢复/审批/抽取 |
+| RSC / DirectChatTransport HTTP / `@ai-sdk/tui` 桌面 UI | 有意不采用 | 见 `ai-capabilities` spec |
+
 *本文档根据 AI SDK 7 官方文档整理，用于应用选型。具体模型是否支持某能力，以对应 Provider 文档为准。*

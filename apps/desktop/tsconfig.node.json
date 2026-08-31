@@ -6,6 +6,7 @@
     "composite": true,
     "types": ["electron-vite/node"],
     "moduleResolution": "bundler",
-    "customConditions": ["node"]
+    "customConditions": ["node"],
+    "allowImportingTsExtensions": true
   }
 }

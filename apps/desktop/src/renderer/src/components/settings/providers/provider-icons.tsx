@@ -19,7 +19,7 @@ import {
   SiliconCloud,
   Zhipu
 } from "@lobehub/icons"
-import { RiPlugLine, RiServerLine } from "@remixicon/react"
+import { RiCloudLine, RiImageLine, RiMicLine, RiPlugLine, RiServerLine, RiVoiceprintLine } from "@remixicon/react"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 
 export function ProviderIcon({
@@ -64,6 +64,17 @@ export function ProviderIcon({
         return <Minimax.Color size={size} className={className} />
       case "ollama":
         return <Ollama size={size} className={className} />
+      case "fal":
+      case "replicate":
+        return <RiImageLine className={className} style={{ width: size, height: size }} />
+      case "elevenlabs":
+        return <RiVoiceprintLine className={className} style={{ width: size, height: size }} />
+      case "deepgram":
+        return <RiMicLine className={className} style={{ width: size, height: size }} />
+      case "cohere":
+        return <RiServerLine className={className} style={{ width: size, height: size }} />
+      case "gateway":
+        return <RiCloudLine className={className} style={{ width: size, height: size }} />
     }
   }
 

@@ -26,12 +26,25 @@ catalog:
   ai: ^7.0.84
   "@ai-sdk/openai": ^4.0.51
   "@ai-sdk/anthropic": ^4.0.45
+  "@ai-sdk/cohere": ^4.0.35
+  "@ai-sdk/deepgram": ^3.1.5
   "@ai-sdk/deepseek": ^2.0.61
+  "@ai-sdk/elevenlabs": ^3.0.35
+  "@ai-sdk/fal": ^3.0.35
+  "@ai-sdk/gateway": ^4.0.69
+  "@ai-sdk/google": ^4.0.58
+  "@ai-sdk/replicate": ^3.0.30
   "@ai-sdk/harness": ^1.0.94
   "@ai-sdk/harness-claude-code": ^1.0.98
+  "@ai-sdk/harness-codex": ^1.0.96
+  "@ai-sdk/harness-pi": ^1.0.96
+  "@ai-sdk/harness-opencode": 1.0.95
   "@ai-sdk/sandbox-vercel": ^1.0.94
+  "@ai-sdk/sandbox-just-bash": ^1.0.94
   ws: ^8.21.0
   zod: ^4.1.5
+  "@playwright/test": ^1.56.1
+  playwright: ^1.56.1
 
   # UI
   react: ^19.2.1
@@ -94,8 +107,18 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - '@ai-sdk/gateway@4.0.69'
+  - '@ai-sdk/google@4.0.58'
+  - '@ai-sdk/cohere@4.0.35'
+  - '@ai-sdk/deepgram@3.1.5'
+  - '@ai-sdk/elevenlabs@3.0.35'
+  - '@ai-sdk/fal@3.0.35'
+  - '@ai-sdk/replicate@3.0.30'
   - '@ai-sdk/harness-claude-code@1.0.98'
+  - '@ai-sdk/harness-codex@1.0.96'
+  - '@ai-sdk/harness-pi@1.0.96'
+  - '@ai-sdk/harness-opencode@1.0.95'
   - '@ai-sdk/harness@1.0.94'
+  - '@ai-sdk/sandbox-just-bash@1.0.94'
   - '@ai-sdk/provider-utils@5.0.34'
   - '@ai-sdk/provider@4.0.9'
   - '@ai-sdk/sandbox-vercel@1.0.94'

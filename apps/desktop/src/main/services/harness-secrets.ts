@@ -24,19 +24,23 @@ export async function harnessPublicStatus(harnessId?: string): Promise<HarnessPu
   const adapter = resolveHarnessAdapter(harnessId, active?.kind)
   const secret = readHarnessSecret()
   const provider = adapter ? await findProfileByKinds(adapter.providerKinds) : undefined
-  const hasProviderKey = Boolean(provider?.apiKey || (adapter?.id === "claude-code" && secret?.anthropicApiKey))
+  const hasProviderKey = Boolean(
+    provider?.apiKey || (adapter?.id === "claude-code" && secret?.anthropicApiKey)
+  )
   const hasSandboxToken = Boolean(secret?.vercelToken)
   const available = Boolean(adapter?.available)
   const comingSoon = Boolean(adapter?.comingSoon)
   const needsSandbox = Boolean(adapter?.needsSandbox)
-  const ready = available && hasProviderKey && (!needsSandbox || hasSandboxToken)
+  const needsProviderKey = adapter?.needsProviderKey !== false
+  const ready =
+    available && (!needsProviderKey || hasProviderKey) && (!needsSandbox || hasSandboxToken)
   return {
     adapterId: adapter?.id ?? null,
     adapterLabel: adapter?.label ?? "None",
     available,
     comingSoon,
     needsSandbox,
-    usesProviderKey: true,
+    usesProviderKey: needsProviderKey,
     hasProviderKey,
     hasSandboxToken,
     ready,
@@ -60,8 +64,9 @@ function blockedReason(input: {
   if (input.adapter.comingSoon || !input.adapter.available) {
     return `${input.adapter.label} Harness is not wired yet. Stay on Local (ToolLoop).`
   }
-  if (!input.hasProviderKey) {
-    return `Add a ${input.adapter.providerKinds[0]} provider in Settings → Providers.`
+  if (input.adapter.needsProviderKey && !input.hasProviderKey) {
+    const kind = input.adapter.providerKinds[0] ?? "matching"
+    return `Add a ${kind} provider in Settings → Providers.`
   }
   if (input.adapter.needsSandbox && !input.hasSandboxToken) {
     return "This adapter still needs a Vercel Sandbox token (jail, not the model)."

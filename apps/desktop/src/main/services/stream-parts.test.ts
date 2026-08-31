@@ -28,3 +28,21 @@ test("maps leaked reasoning_content from OpenAI-compatible payloads", () => {
 test("ignores empty reasoning-start bookends", () => {
   assert.equal(mapStreamPart({ type: "reasoning-start", id: "reasoning-0" }, "run_1"), null)
 })
+
+test("maps usage and step lifecycle to v2 events", () => {
+  assert.deepEqual(mapStreamPart({ type: "text-start", id: "t1" }, "run_1"), {
+    type: "message.part.start",
+    runId: "run_1",
+    partId: "t1",
+    partType: "text"
+  })
+  assert.deepEqual(
+    mapStreamPart({ type: "finish", usage: { inputTokens: 3, outputTokens: 5, totalTokens: 8 } }, "run_1"),
+    { type: "usage.updated", runId: "run_1", inputTokens: 3, outputTokens: 5, totalTokens: 8 }
+  )
+  assert.deepEqual(mapStreamPart({ type: "start-step", id: "s1" }, "run_1"), {
+    type: "step.start",
+    runId: "run_1",
+    stepId: "s1"
+  })
+})

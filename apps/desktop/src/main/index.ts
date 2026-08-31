@@ -2,9 +2,14 @@ import { join } from "node:path";
 import { app, BrowserWindow, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
+import { bootstrapE2eStub } from "./services/e2e-bootstrap";
 import { registerIpc, unregisterIpc } from "./ipc";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
+
+if (process.env.ENJOY_E2E_USERDATA) {
+  app.setPath("userData", process.env.ENJOY_E2E_USERDATA);
+}
 
 /** 任务栏 / Alt+Tab / 最小化缩略图用的图标路径。Windows 用多帧 ICO，其它平台用 PNG。 */
 function resolveAppIconPath(): string {
@@ -51,9 +56,13 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId("com.enjoyagents.desktop");
   getDatabase();
+  await bootstrapE2eStub();
+  void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
+    void recoverPausedWorkflows()
+  })
   app.on("browser-window-created", (_event, window) => {
     optimizer.watchWindowShortcuts(window);
   });

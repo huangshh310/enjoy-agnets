@@ -42,7 +42,7 @@ export function SettingsHarness() {
       </SettingsRow>
       <SettingsRow
         title="Adapter"
-        description="Follows the active Provider. DeepSeek stays on Local until its adapter ships."
+        description="Auto follows the Provider (Anthropic→Claude Code, OpenAI→Codex). Pi uses local just-bash; DeepSeek stays Local until its adapter ships."
       >
         <Select
           value={harnessId || "auto"}

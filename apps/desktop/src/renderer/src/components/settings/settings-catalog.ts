@@ -1,12 +1,18 @@
 import {
+  RiBookOpenLine,
   RiEqualizer3Line,
   RiFolder6Line,
   RiGitBranchLine,
+  RiImageLine,
   RiKeyboardBoxLine,
   RiPaletteLine,
   RiPlugLine,
+  RiPulseLine,
+  RiRouteLine,
   RiSettings4Line,
-  RiShieldKeyholeLine
+  RiShieldKeyholeLine,
+  RiSparkling2Line,
+  RiTerminalBoxLine
 } from "@remixicon/react"
 import type { ComponentType } from "react"
 
@@ -18,7 +24,13 @@ export const SETTINGS_SECTIONS = [
   "agent",
   "workspace",
   "mcp",
-  "git"
+  "git",
+  "capabilities",
+  "knowledge",
+  "media",
+  "workflow",
+  "telemetry",
+  "sandbox"
 ] as const
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]
@@ -81,7 +93,25 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         id: "agent",
         label: "Agent",
         icon: RiEqualizer3Line,
-        keywords: ["mode", "model", "ask", "plan", "approval", "permissions", "harness", "claude", "sandbox"]
+        keywords: ["mode", "model", "ask", "plan", "approval", "permissions", "harness", "claude", "codex", "pi", "opencode", "sandbox"]
+      },
+      {
+        id: "capabilities",
+        label: "Model capabilities",
+        icon: RiSparkling2Line,
+        keywords: ["vision", "tools", "structured", "image", "speech"]
+      },
+      {
+        id: "workflow",
+        label: "Workflow recovery",
+        icon: RiRouteLine,
+        keywords: ["checkpoint", "resume", "durable"]
+      },
+      {
+        id: "sandbox",
+        label: "Sandbox",
+        icon: RiTerminalBoxLine,
+        keywords: ["cwd", "network", "code mode"]
       }
     ]
   },
@@ -94,6 +124,18 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         label: "Workspace",
         icon: RiFolder6Line,
         keywords: ["folder", "project", "open"]
+      },
+      {
+        id: "knowledge",
+        label: "Knowledge indexing",
+        icon: RiBookOpenLine,
+        keywords: ["rag", "index", "embed"]
+      },
+      {
+        id: "media",
+        label: "Media & assets",
+        icon: RiImageLine,
+        keywords: ["image", "speech", "video", "export"]
       }
     ]
   },
@@ -105,8 +147,13 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         id: "mcp",
         label: "MCP",
         icon: RiPlugLine,
-        keywords: ["mcp", "tools", "servers"],
-        soon: true
+        keywords: ["mcp", "tools", "servers"]
+      },
+      {
+        id: "telemetry",
+        label: "Telemetry & privacy",
+        icon: RiPulseLine,
+        keywords: ["otel", "metrics", "redact"]
       },
       {
         id: "git",

@@ -1,0 +1,83 @@
+/**
+ * E2E stub：ai.generate 不调真实模型。结构化 / 文本 / 生图走固定事件。
+ */
+import type { BrowserWindow } from "electron"
+import { updateRun } from "@enjoy-agents/db"
+import { AiGenerateInput } from "@enjoy-agents/ipc-contract"
+import { getDatabase } from "./database"
+import { stampAndSend } from "./event-bus"
+import { createId } from "./ids"
+import { importAsset } from "./asset-service"
+import { rememberGenerationRun } from "./persist-run"
+import { recordMetric } from "./telemetry-service"
+
+export async function startE2eGeneration(
+  window: BrowserWindow,
+  request: ReturnType<typeof AiGenerateInput.parse>,
+  existingRunId?: string
+) {
+  const runId = existingRunId ?? createId("run")
+  rememberGenerationRun({ runId, request })
+  stampAndSend(window, { type: "run.start", runId, sessionId: request.sessionId }, request.sessionId)
+  const started = Date.now()
+  await emitStubKind(window, runId, request)
+  updateRun(getDatabase(), runId, { status: "completed" })
+  recordMetric({
+    runId,
+    kind: request.kind,
+    modelId: request.modelId,
+    status: "completed",
+    durationMs: Date.now() - started,
+    ttfoMs: 1
+  })
+  stampAndSend(window, { type: "run.end", runId }, request.sessionId)
+  return { runId, kind: request.kind }
+}
+
+async function emitStubKind(
+  window: BrowserWindow,
+  runId: string,
+  request: ReturnType<typeof AiGenerateInput.parse>
+) {
+  if (request.kind === "structured-object" || request.kind === "structured-array") {
+    stampAndSend(
+      window,
+      {
+        type: "structured.delta",
+        runId,
+        partial:
+          request.kind === "structured-array"
+            ? [{ title: "stub-card" }]
+            : { title: "stub-card", summary: "from e2e stub", items: ["one"] }
+      },
+      request.sessionId
+    )
+    return
+  }
+  if (request.kind === "image") {
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64"
+    )
+    const asset = await importAsset({
+      name: "stub.png",
+      mediaType: "image/png",
+      bytesBase64: png.toString("base64")
+    })
+    stampAndSend(
+      window,
+      {
+        type: "asset.created",
+        runId,
+        assetId: asset.id,
+        mediaType: "image/png",
+        name: "stub.png",
+        size: png.byteLength
+      },
+      request.sessionId
+    )
+    return
+  }
+  const text = request.kind === "translation" ? "stub-translated" : "stub-title"
+  stampAndSend(window, { type: "text.delta", runId, text }, request.sessionId)
+}

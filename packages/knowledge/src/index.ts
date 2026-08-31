@@ -1,0 +1,8 @@
+export { parseGitignore, shouldIgnore } from "./sources/ignore"
+export { canParse, parseDocument } from "./parsers"
+export { chunkText, chunkId, type TextChunk } from "./indexer/chunk"
+export { embeddingsNeedRebuild } from "./indexer/stale"
+export { cosineSimilarity, rankByCosine, lexicalScore } from "./retriever/cosine"
+export { blendRerankScore, rerankHits } from "./retriever/rerank"
+export { rerankWithProvider, fallbackLocalRerank } from "./retriever/provider-rerank"
+export { hashedEmbedding } from "./retriever/embed"
