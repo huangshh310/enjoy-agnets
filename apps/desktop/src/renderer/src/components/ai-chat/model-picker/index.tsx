@@ -106,7 +106,7 @@ export function ModelPicker({
         <button
           type="button"
           aria-label="Select Model"
-          className="group flex h-8 items-center gap-1.5 rounded-full px-2.5 text-body-medium text-text-secondary outline-none transition-colors hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          className="group flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full px-2 text-body-medium text-text-secondary outline-none transition-colors hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring @[26rem]:px-2.5"
         >
           <div className="flex size-4.5 shrink-0 items-center justify-center">
             <ModelBrandIcon
@@ -116,7 +116,7 @@ export function ModelPicker({
               size={15}
             />
           </div>
-          <span className="max-w-[130px] truncate font-medium text-text-primary text-[13px]">
+          <span className="min-w-0 max-w-[5.5rem] truncate text-caption-1-medium text-text-primary">
             {modelLabel || modelId}
           </span>
           <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />

@@ -76,7 +76,7 @@ function PolicyTrigger({
       type="button"
       aria-label="Tool approval policy"
       className={cx(
-        "group flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs cursor-pointer",
+        "group flex h-8 min-w-0 items-center gap-1.5 rounded-full border px-2 text-caption-1-medium outline-none transition-all shadow-2xs cursor-pointer @[26rem]:px-2.5",
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         tone.bgClass,
         tone.colorClass,
@@ -85,7 +85,9 @@ function PolicyTrigger({
       {...props}
     >
       <Icon className={cx("size-3.5 shrink-0", tone.iconColor)} />
-      <span className="font-semibold">{kind === "custom" ? "Custom" : titleCase(kind)}</span>
+      <span className="max-w-[4.5rem] truncate font-semibold">
+        {kind === "custom" ? "Custom" : titleCase(kind)}
+      </span>
     </button>
   )
 }

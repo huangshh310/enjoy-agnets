@@ -373,3 +373,9 @@ export {
 } from "./assistant-payload";
 export { foldToolEvent, sealAbandonedTools } from "./fold-tool-event";
 export { absorbTextDelta, clampThoughtSeconds, type ThinkBuffer } from "./think-text";
+export {
+  TerminalCloseInput,
+  TerminalOpenInput,
+  TerminalSession,
+  TerminalWriteInput
+} from "./terminal";

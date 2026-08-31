@@ -60,17 +60,17 @@ export function AiChatComposer({
   }
 
   return (
-    <form onSubmit={onSubmit} className="px-6 pb-2">
+    <form onSubmit={onSubmit} className="min-w-0 px-6 pb-2">
       <BorderBeam
         size="md"
         colorVariant="colorful"
         active={isFocused || running || Boolean(composer.trim())}
         borderRadius={22}
-        className="w-full"
+        className="w-full min-w-0"
       >
         <div
           className={cx(
-            "relative flex flex-col rounded-[22px] transition-all duration-200 overflow-hidden",
+            "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px] transition-all duration-200",
             "bg-background-tertiary-default/85 dark:bg-[#18181b]/95 backdrop-blur-md",
             "border border-border-button-default/70",
             "shadow-xs",
@@ -82,7 +82,7 @@ export function AiChatComposer({
           }}
         >
           {/* 顶栏快捷操作胶囊 (Context 引入与多色模式切换) */}
-          <div className="flex items-center gap-1.5 px-3.5 pt-2.5 pb-0.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5 px-3.5 pt-2.5 pb-0.5">
             <button
               type="button"
               aria-label="Add context"
@@ -110,22 +110,19 @@ export function AiChatComposer({
             />
           </div>
 
-          {/* 底栏工具条 (多供应商模型选择、思考能量条、语音与发送按钮) */}
-          <div className="flex items-center justify-between gap-2 px-3 pb-2.5 pt-1">
-            <div className="flex items-center gap-1" />
-
-            <div className="flex items-center gap-1.5 ml-auto">
+          {/* 底栏：窄宽度先收文字，再换行，发送键始终可见 */}
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-1 px-3 pb-2.5 pt-1">
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
               <ApprovalPolicyToggle />
-
               <ModelPicker
                 modelId={modelId}
                 modelLabel={modelLabel}
                 models={models}
                 onModelChange={onModelChange}
               />
-
               <ReasoningEffortToggle />
-
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
                 aria-label="Voice input"
@@ -133,7 +130,6 @@ export function AiChatComposer({
               >
                 <RiMicLine className="size-4.5" aria-hidden />
               </button>
-
               <button
                 type="submit"
                 aria-label="Send"

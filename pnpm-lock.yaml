@@ -254,6 +254,9 @@ importers:
       react-resizable-panels:
         specifier: 'catalog:'
         version: 4.12.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      shiki:
+        specifier: 'catalog:'
+        version: 4.4.3
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.6.0

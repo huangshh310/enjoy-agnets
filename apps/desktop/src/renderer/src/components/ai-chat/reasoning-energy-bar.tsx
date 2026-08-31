@@ -184,9 +184,7 @@ export function MiniEnergyMeter({
             style={{ height: `${heightPercent}%` }}
             className={cx(
               "w-1 rounded-xs transition-all duration-300",
-              isActive
-                ? cx(meta.barGradient, meta.glowClass)
-                : "bg-border-button-default/50"
+              isActive ? meta.barGradient : "bg-border-button-default/50"
             )}
           />
         )

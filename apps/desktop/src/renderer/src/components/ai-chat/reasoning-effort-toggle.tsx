@@ -33,15 +33,17 @@ export function ReasoningEffortToggle() {
           type="button"
           aria-label="Reasoning Effort"
           className={cx(
-            "group flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-medium outline-none transition-all shadow-2xs",
+            "group flex h-8 min-w-0 items-center gap-1.5 rounded-full px-2 text-caption-1-medium outline-none transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-border-focus-ring @[26rem]:px-2.5",
             currentMeta.value !== "none"
-              ? cx(currentMeta.badgeClass, currentMeta.glowClass)
+              ? currentMeta.badgeClass
               : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
           )}
         >
           <RiBrainLine className={cx("size-3.5 shrink-0 transition-colors", currentMeta.iconColorClass)} />
-          <span className="font-semibold">{currentMeta.label}</span>
-          <MiniEnergyMeter value={reasoningEffort} className="ml-0.5" />
+          <span className="max-w-[4.5rem] truncate font-semibold">{currentMeta.label}</span>
+          <span className="ml-0.5 hidden @[26rem]:inline-flex">
+            <MiniEnergyMeter value={reasoningEffort} />
+          </span>
         </button>
       </DropdownMenuTrigger>
 

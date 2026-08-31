@@ -92,14 +92,12 @@ export type ChatStore = {
   changes: ChangedFileRow[]
   additions: number
   deletions: number
-  rightTab: "changes" | "browser"
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
   setComposer: (value: string) => void
   setModel: (id: string, label: string, provider?: string, reasoningEffort?: "low" | "medium" | "high" | "xhigh") => void
   setReasoningEffort: (effort: "low" | "medium" | "high" | "xhigh" | undefined) => void
   setMode: (mode: ChatStore["mode"]) => void
-  setRightTab: (tab: ChatStore["rightTab"]) => void
   setSettingsOpen: (open: ChatStore["settingsOpen"]) => void
   setApiKeyDraft: (value: string) => void
   setProviderDraft: (value: string) => void
@@ -161,7 +159,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   changes: [],
   additions: 0,
   deletions: 0,
-  rightTab: "changes",
   pendingApproval: null,
   error: null,
   setComposer: (composer) => set({ composer }),
@@ -174,7 +171,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }),
   setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
   setMode: (mode) => set({ mode }),
-  setRightTab: (rightTab) => set({ rightTab }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setApiKeyDraft: (apiKeyDraft) => set({ apiKeyDraft }),
   setProviderDraft: (providerDraft) => set({ providerDraft }),

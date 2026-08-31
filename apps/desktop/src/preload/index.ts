@@ -48,6 +48,18 @@ const ide = {
   },
   models: {
     list: () => ipcRenderer.invoke("models.list")
+  },
+  terminal: {
+    open: (input: unknown) =>
+      ipcRenderer.invoke("terminal.open", input) as Promise<{ sessionId: string }>,
+    write: (input: unknown) => ipcRenderer.invoke("terminal.write", input),
+    close: (input: unknown) => ipcRenderer.invoke("terminal.close", input),
+    onData: (callback: (event: { sessionId: string; text: string }) => void) => {
+      const listener = (_event: unknown, payload: { sessionId: string; text: string }) =>
+        callback(payload)
+      ipcRenderer.on("terminal.data", listener)
+      return () => ipcRenderer.off("terminal.data", listener)
+    }
   }
 };
 

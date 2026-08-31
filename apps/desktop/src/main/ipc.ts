@@ -4,6 +4,9 @@ import {
   ListDirInput,
   OpenWorkspaceInput,
   ReadFileInput,
+  TerminalCloseInput,
+  TerminalOpenInput,
+  TerminalWriteInput,
   SaveSecretInput,
   SetPreferencesInput,
   SetHarnessInput,
@@ -47,6 +50,11 @@ import {
   upsertProfile,
   writeVault
 } from "./services/secrets"
+import {
+  closeWorkspaceTerminal,
+  openWorkspaceTerminal,
+  writeWorkspaceTerminal
+} from "./services/terminal"
 import {
   changedFiles,
   getWorkspace,
@@ -131,7 +139,10 @@ const CHANNELS = [
   "automations.list",
   "automations.upsert",
   "automations.remove",
-  "models.list"
+  "models.list",
+  "terminal.open",
+  "terminal.write",
+  "terminal.close"
 ] as const
 
 export function registerIpc(_window: BrowserWindow) {
@@ -315,6 +326,20 @@ export function registerIpc(_window: BrowserWindow) {
   })
   ipcMain.handle("models.list", async () => {
     return listAllPublicModels()
+  })
+  ipcMain.handle("terminal.open", async (event, raw) => {
+    const input = TerminalOpenInput.parse(raw)
+    return openWorkspaceTerminal(input.workspaceId, event.sender)
+  })
+  ipcMain.handle("terminal.write", async (_event, raw) => {
+    const input = TerminalWriteInput.parse(raw)
+    writeWorkspaceTerminal(input.sessionId, input.data)
+    return { ok: true }
+  })
+  ipcMain.handle("terminal.close", async (_event, raw) => {
+    const input = TerminalCloseInput.parse(raw)
+    closeWorkspaceTerminal(input.sessionId)
+    return { ok: true }
   })
 }
 
