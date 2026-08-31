@@ -1,6 +1,6 @@
 "use client"
 
-import { RiFolder6Line, RiMoreLine } from "@remixicon/react"
+import { RiFolder6Line, RiLayoutRight2Line, RiMoreLine } from "@remixicon/react"
 import { Group, Panel, Separator, useDefaultLayout } from "react-resizable-panels"
 import {
   Breadcrumb,
@@ -41,6 +41,8 @@ export function AiChatShell() {
   const toggleExpanded = useChatStore((state) => state.toggleExpanded)
   const sidebarCollapsed = useChatStore((state) => state.sidebarCollapsed)
   const setSidebarCollapsed = useChatStore((state) => state.setSidebarCollapsed)
+  const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
+  const setRightPanelCollapsed = useChatStore((state) => state.setRightPanelCollapsed)
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
@@ -99,7 +101,11 @@ export function AiChatShell() {
         orientation="horizontal"
         className="h-full min-h-0 min-w-0 flex-1"
         defaultLayout={defaultLayout}
-        onLayoutChanged={onLayoutChanged}
+        onLayoutChanged={(layout, meta) => {
+          // 右栏收起后只剩一栏，不要把 100% 写进持久化布局
+          if (Object.keys(layout).length < 2) return
+          onLayoutChanged(layout, meta)
+        }}
       >
         <Panel id="chat" minSize="360px" defaultSize="62%" className="min-h-0 bg-transparent">
           <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
@@ -118,7 +124,14 @@ export function AiChatShell() {
                       </BreadcrumbItem>
                     </BreadcrumbList>
                   </Breadcrumb>
-                  <div className="ml-auto">
+                  <div className="ml-auto flex items-center gap-0.5">
+                    <QuietIconButton
+                      icon={RiLayoutRight2Line}
+                      aria-label={rightPanelCollapsed ? "Expand changes pane" : "Collapse changes pane"}
+                      aria-pressed={!rightPanelCollapsed}
+                      onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+                      className={!rightPanelCollapsed ? "bg-background-secondary-default text-text-primary" : undefined}
+                    />
                     <QuietIconButton icon={RiMoreLine} aria-label="Session menu" />
                   </div>
                 </header>
@@ -160,20 +173,25 @@ export function AiChatShell() {
             )}
           </main>
         </Panel>
-        <Separator className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-active:after:bg-accent-500" />
-        <Panel id="changes" minSize="280px" defaultSize="38%" className="min-h-0 bg-transparent">
-          <AiChatChangesPanel
-            workspaceId={workspaceId}
-            rightTab={rightTab}
-            onRightTabChange={setRightTab}
-            changes={changes}
-            additions={additions}
-            deletions={deletions}
-            selectedFilePath={selectedFilePath}
-            selectedFileContent={selectedFileContent}
-            onSelectFile={(path) => void openChangedFile(path)}
-          />
-        </Panel>
+        {rightPanelCollapsed ? null : (
+          <>
+            <Separator className="relative z-10 w-3 shrink-0 cursor-col-resize bg-transparent outline-none after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-active:after:bg-accent-500" />
+            <Panel id="changes" minSize="280px" defaultSize="38%" className="min-h-0 bg-transparent">
+              <AiChatChangesPanel
+                workspaceId={workspaceId}
+                rightTab={rightTab}
+                onRightTabChange={setRightTab}
+                changes={changes}
+                additions={additions}
+                deletions={deletions}
+                selectedFilePath={selectedFilePath}
+                selectedFileContent={selectedFileContent}
+                onSelectFile={(path) => void openChangedFile(path)}
+                onCollapse={() => setRightPanelCollapsed(true)}
+              />
+            </Panel>
+          </>
+        )}
       </Group>
     </div>
   )

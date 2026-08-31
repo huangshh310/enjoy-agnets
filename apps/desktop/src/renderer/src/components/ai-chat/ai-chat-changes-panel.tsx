@@ -1,6 +1,12 @@
 "use client"
 
-import { RiCodeBlock, RiGlobalLine, RiShareForwardLine, RiSparklingFill } from "@remixicon/react"
+import {
+  RiCodeBlock,
+  RiContractRightLine,
+  RiGlobalLine,
+  RiShareForwardLine,
+  RiSparklingFill
+} from "@remixicon/react"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { PillTab, PillTabList } from "@/components/base/tabs/pill-tab"
 import { cx } from "@/utils/cx"
@@ -16,7 +22,8 @@ export function AiChatChangesPanel({
   deletions,
   selectedFilePath,
   selectedFileContent,
-  onSelectFile
+  onSelectFile,
+  onCollapse
 }: {
   workspaceId: string | null
   rightTab: "changes" | "browser"
@@ -27,6 +34,7 @@ export function AiChatChangesPanel({
   selectedFilePath: string | null
   selectedFileContent: string
   onSelectFile: (path: string) => void
+  onCollapse: () => void
 }) {
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
@@ -39,6 +47,11 @@ export function AiChatChangesPanel({
             Browser
           </PillTab>
         </PillTabList>
+        <QuietIconButton
+          icon={RiContractRightLine}
+          aria-label="Collapse changes pane"
+          onClick={onCollapse}
+        />
       </div>
 
       {rightTab === "browser" ? (

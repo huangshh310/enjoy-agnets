@@ -70,6 +70,8 @@ export type ChatStore = {
   repositories: RepositoryNode[]
   expandedIds: string[]
   sidebarCollapsed: boolean
+  /** Changes / Browser 右栏是否收起 */
+  rightPanelCollapsed: boolean
   messages: ThreadMessage[]
   composer: string
   modelId: string
@@ -102,6 +104,7 @@ export type ChatStore = {
   setApiKeyDraft: (value: string) => void
   setProviderDraft: (value: string) => void
   setSidebarCollapsed: (collapsed: boolean) => void
+  setRightPanelCollapsed: (collapsed: boolean) => void
   toggleExpanded: (id: string) => void
   applyStreamEvent: (event: StreamEvent) => void
   appendUserMessage: (content: string) => ThreadMessage[]
@@ -137,6 +140,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   repositories: [],
   expandedIds: [],
   sidebarCollapsed: false,
+  rightPanelCollapsed: false,
   messages: [],
   composer: "",
   modelId: "deepseek-chat",
@@ -175,6 +179,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setApiKeyDraft: (apiKeyDraft) => set({ apiKeyDraft }),
   setProviderDraft: (providerDraft) => set({ providerDraft }),
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+  setRightPanelCollapsed: (rightPanelCollapsed) => set({ rightPanelCollapsed }),
   toggleExpanded: (id) => {
     const expandedIds = get().expandedIds.includes(id)
       ? get().expandedIds.filter((item) => item !== id)
