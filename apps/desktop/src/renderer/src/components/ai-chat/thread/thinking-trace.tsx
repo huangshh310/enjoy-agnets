@@ -1,5 +1,5 @@
 /**
- * Beautiful UI Thinking：火花 + 标题始终可见；结束后收起时间线但不卸掉头。
+ * Beautiful UI Thinking：有推理 / 工具才挂；结束后收起时间线但不卸掉头。
  */
 import { useEffect, useState, type CSSProperties } from "react"
 import { RiArrowDownSLine, RiSparklingFill } from "@remixicon/react"
