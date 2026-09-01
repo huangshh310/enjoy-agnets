@@ -2,10 +2,10 @@
  * 白名单生成式 UI：只渲染 GENERATIVE_COMPONENT_IDS，不执行远程脚本。
  */
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { TaskList, type TaskItem } from "@/components/ai-elements/task-list"
 import { AssetPreview } from "./asset-preview"
 import { SourceList } from "./source-list"
 import { StructuredCard } from "./structured-card"
-
 export function GenerativeUi({
   components,
   prompt
@@ -37,6 +37,16 @@ function GenerativeBlock({
       <AssetPreview
         assets={asAssets(item.props.assets)}
         prompt={typeof item.props.prompt === "string" ? item.props.prompt : prompt}
+      />
+    )
+  }
+  if (item.componentId === "task-list" || item.componentId === "todo-list" || item.componentId === "tasks") {
+    const tasks = (item.props.tasks as TaskItem[]) || (item.props.items as TaskItem[]) || []
+    return (
+      <TaskList
+        title={typeof item.props.title === "string" ? item.props.title : "To-dos"}
+        tasks={tasks}
+        currentIndex={typeof item.props.currentIndex === "number" ? item.props.currentIndex : undefined}
       />
     )
   }

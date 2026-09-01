@@ -1,6 +1,7 @@
 "use client"
 
-import { AgentThinking } from "@/components/application/agent-thinking/agent-thinking"
+import { useState } from "react"
+import { LoadingState } from "@/components/ai-elements/loading-state"
 import {
   Conversation,
   ConversationContent,
@@ -57,7 +58,7 @@ export function AiChatThread({
           )
         )}
 
-        {showPlaceholder ? <AgentThinking variant="infinity" label={thinkingLabel} /> : null}
+        {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
 
         {pendingApproval ? (
           <ApprovalCard
@@ -73,4 +74,9 @@ export function AiChatThread({
       <ConversationScrollButton />
     </Conversation>
   )
+}
+
+function ThreadLoadingPlaceholder({ label }: { label: string }) {
+  const [startedAt] = useState(() => Date.now())
+  return <LoadingState variant="drive" label={label} startedAt={startedAt} />
 }

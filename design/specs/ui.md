@@ -1,6 +1,6 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-01
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -15,6 +15,8 @@ Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里
 设置 / Agent Studio / Automations / Customize / Knowledge / Workflows / Media / MCP / Observability 是 **Hash 路由**，不是 modal。Agent Studio (`#/studio`) 采用高密度非对称 Bento 网格微件（Density 6, Variance 5），左侧常驻 Agent rail，右侧承载资产与编排中枢。所有二级页用 `SecondaryPageShell`（具名变体：`article` 760px、`wide` `max-w-5xl`、`stage` 满宽）并在顶部提供 `Agent Studio > [Page]` 面包屑。全局提供 `⌘L` Quick Search 命令直达面板。Providers 页必须用 `wide`。实验能力在页面上写明 experimental。`#/mcp` 的 App 只进隔离 iframe，`postMessage` 不在 renderer 执行 RPC。
 
 Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本机文件选择器（支持多选），经 `assets.import` 排队。支持剪贴板图片粘贴（`Ctrl+V`）与文件拖拽（Drag & Drop）；待发送队列中图片展示 48px 缩略图、点击后 Dialog 放大预览、非图片展示文件胶囊，均支持单项移除（`×`）；发送时随 `attachments` 提交并在用户消息气泡中展示已发送资产，刷新后从 `message_parts` 恢复。语音键仅在当前模型 `capabilities` 含 `realtime` 时可点；打开后采 PCM 帧走 `realtime.sendAudio`，`realtime.text` 写入输入框。助手轮次优先渲染白名单生成式 UI（`card` / `form` / `table` / `source-list` / `asset-preview`）；点选知识引用打开 Files。助手生图走 BeUI Image Generation 表面（`packages/ui/components/ai-elements/image-generation/`）：稳定正方形画布、生成中 dither、完成后渐进揭示 +「Image ready」状态行，prompt 取上一轮用户正文；只抄交互，皮是 BoardUI token，不要 registry 默认 `bg-muted` / Lucide。助手视频：复用 BeUI Image Generation 的 dither 加载交互，画布 16:9；状态行「Generating video」/「Video ready」；完成后 `<video controls>`，src=`enjoy-asset://local/<assetId>`。experimentalMedia 为假时，选 video 模型或发送视频请求弹出 `ConfirmDialog`（Enable / Cancel），不要写会话 error 条。确认后写入偏好再继续。Thinking / Tool 只服务 Agent ToolLoop（`reasoning.delta` / `tool.*`）；`generateImage` 没有思考链也没有工具调用，不要画空的「Thinking / No reasoning trace」，进度只看 Image Generation 状态行。本轮 `runKind` 在发送时 stamp，不要用当前模型选择器回放历史轮。`runKind` 写入 assistant-payload 信封（Agent 落库 `runKind=agent`，媒体 `image`/`video`），`hydrate-thread` 回放；旧会话无 stamp 时仍按资产推断。Media 页删除资产走 `ConfirmDialog`。用户气泡附件仍是缩略图 / 文件胶囊，点图 Dialog 放大；气泡下右对齐复制，成功切成勾。助手操作条：赞踩只记本轮内存高亮；复制优先剪贴板图片，否则抄正文或上一轮 prompt；Extract 走 `useObject`：有正文抽回复，生图轮抽「用户要画什么」并填 tags；模型必须是聊天模型。结果用标题 / 摘要 / 标签卡片，不要 `<pre>` 倒 JSON。失败用会话 error 条，成功复制切成勾。不把引用整篇塞进正文。
+
+助手轮 Thinking：流式占位与思考头用 Beautiful UI Loading State（`packages/ui/components/ai-elements/loading-state.tsx`）——默认 Drive 3×3 点阵 + 流光文案 + `1.4s` / `3m 16.1s` 耗时。工具步骤展开后底部挂 Tool Chips 文件变更胶囊（路径名 + 增减行，点选打开 Files；bash 命令不当文件）。只抄交互，皮是 BoardUI token。
 
 ## 不变量
 
@@ -31,7 +33,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 |---|---|---|
 | Tokens | `packages/ui/styles/` | 色、字、圆角、阴影、`.dark` |
 | 基础控件 | `packages/ui/components/ui/` | Button、Dialog、Tabs… |
-| Agent 铬 | `packages/ui/components/ai-elements/` | Conversation、Message、PromptInput、Reasoning、Tool、Image Generation |
+| Agent 铬 | `packages/ui/components/ai-elements/` | Conversation、Message、PromptInput、Reasoning、Tool、Image Generation、Loading State、Tool Chips |
 | 产品屏 | `apps/desktop/.../ai-chat/` | Shell、sidebar、workspace 接线 |
 
 类名合并：`cn()` 或 `cx()`。全屏高度用 `min-h-[100dvh]` / `h-full`，不用 `h-screen`。
@@ -60,3 +62,5 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 - Extract 灰块像 JSON：`StructuredCard` 的 `card` 变体以前一律 `JSON.stringify`。`title/summary/items` 必须走 Extract 卡片。生图轮不要把 prompt 写成 “assistant reply”，否则模型会输出「这是一句很短的中文」这种元描述。
 - Extract 出现两份一样的卡片：`ai.generate` 的 `structured.delta` 进了全局 `applyStreamEvent`。原图轮已不 streaming，`ensureAssistant` 又开一条 `msg_${runId}`，Extract 自己再把卡片写回原消息。旁路 run 只给 `waitForRunOutput` 收，不要另开助手轮；线程里藏掉「上一轮已有 Extract、本轮只有空卡片」的孤儿。
 - Composer 先 `setRunning(true)`（`runId` 仍是 null）再等 IPC：这段窗口旁路 Extract / 标题补全会写进乐观 `msg_pending_*`。`running && !runId` 时把事件推进 `pendingStreamEvents`，拿到 composer `runId` 再按 id 过滤回放。`run.end` 必须 `event.runId === store.runId` 才 finalize。
+
+- 线程占位不要再用 `AgentThinking` infinity，也不要和 Thinking 头上的 `DotMatrixLoader` 叠两套动效。流式走 `LoadingState` / `LoadingStateGlyph`；`AgentThinking` 仍导出但聊天主路径不用。

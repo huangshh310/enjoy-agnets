@@ -13,8 +13,8 @@ import {
   createAndOpenSession,
   loadWorkspace
 } from "@renderer/hooks/use-agent-session"
-import type { RepositoryNode } from "@renderer/stores/chat-store"
-
+import { DotMatrixLoader } from "@/components/ui/dot-matrix-loader"
+import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 export function SidebarWorkspaceRow({
   workspace,
   sessions,
@@ -140,6 +140,8 @@ function SessionList({
   onSelectSession: (id: string) => void
   formatTime: (timestamp: number) => string
 }) {
+  const running = useChatStore((state) => state.running)
+
   return (
     <div className="relative my-0.5 ml-4 flex flex-col gap-0.5 border-l border-separator-border/60 pl-2">
       {sessions.length === 0 ? (
@@ -180,9 +182,13 @@ function SessionList({
               className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2 py-1 text-left"
             >
               <span className="min-w-0 flex-1 truncate text-caption-1-medium">{session.name}</span>
-              <span className="shrink-0 text-caption-2-medium text-text-tertiary group-hover/session:hidden">
-                {formatTime(session.updatedAt)}
-              </span>
+              {session.id === sessionId && running ? (
+                <DotMatrixLoader variant="wave" className="shrink-0 group-hover/session:hidden" />
+              ) : (
+                <span className="shrink-0 text-caption-2-medium text-text-tertiary group-hover/session:hidden">
+                  {formatTime(session.updatedAt)}
+                </span>
+              )}
             </button>
             <button
               type="button"

@@ -3,6 +3,7 @@
  */
 import { useEffect, useState, type CSSProperties } from "react"
 import { RiArrowDownSLine, RiSparklingFill } from "@remixicon/react"
+import { LoadingElapsed, LoadingStateGlyph } from "@/components/ai-elements/loading-state"
 import { cx } from "@/utils/cx"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { buildTraceRows, isTraceExpanded, thinkingHeadline } from "./thinking-rows"
@@ -42,9 +43,11 @@ export function ThinkingTrace({
         onClick={() => setManualOpen((current) => !isTraceExpanded(streaming, tools, current))}
         className="-ml-1.5 flex w-fit cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-left outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
       >
-        <RiSparklingFill
-          className={cx("size-4 shrink-0", streaming ? "text-text-secondary" : "text-text-tertiary")}
-        />
+        {streaming ? (
+          <LoadingStateGlyph variant="drive" />
+        ) : (
+          <RiSparklingFill className="size-4 shrink-0 text-text-tertiary" />
+        )}
         <span
           className={cx(
             "text-caption-1-medium whitespace-nowrap",
@@ -54,6 +57,7 @@ export function ThinkingTrace({
         >
           {thinkingHeadline(streaming, tools, seconds)}
         </span>
+        {streaming ? <LoadingElapsed startedAt={startedAt} /> : null}
         <RiArrowDownSLine
           className={cx(
             "size-3.5 text-text-tertiary transition-transform duration-300",

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
+import { DotMatrixLoader } from "@/components/ui/dot-matrix-loader"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
@@ -34,13 +35,13 @@ export function SidebarRepos({
   formatTime: (timestamp: number) => string
 }) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const running = useChatStore((state) => state.running)
   const currentWorkspaceId = useChatStore((state) => state.workspaceId)
   const grouping = useChatStore((state) => state.sidebarGrouping)
   const setGrouping = useChatStore((state) => state.setSidebarGrouping)
   const sortOrder = useChatStore((state) => state.sessionSortOrder)
   const setSortOrder = useChatStore((state) => state.setSessionSortOrder)
   const pinnedIds = useChatStore((state) => state.pinnedWorkspaceIds)
-
   const workspaces = useMemo(() => {
     const wsNodes = repositories.filter((node) => node.kind === "workspace")
     return [...wsNodes].sort((a, b) => {
@@ -160,9 +161,13 @@ export function SidebarRepos({
               )}
             >
               <span className="min-w-0 flex-1 truncate text-body-medium">{session.name}</span>
-              <span className="shrink-0 text-caption-2-medium text-text-tertiary">
-                {formatTime(session.updatedAt)}
-              </span>
+              {session.id === sessionId && running ? (
+                <DotMatrixLoader variant="wave" className="shrink-0" />
+              ) : (
+                <span className="shrink-0 text-caption-2-medium text-text-tertiary">
+                  {formatTime(session.updatedAt)}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -206,9 +211,13 @@ export function SidebarRepos({
               <span className="min-w-0 flex-1 truncate text-caption-1-medium">
                 {session.name}
               </span>
-              <span className="shrink-0 text-caption-2-medium text-text-tertiary">
-                {formatTime(session.updatedAt)}
-              </span>
+              {session.id === sessionId && running ? (
+                <DotMatrixLoader variant="wave" className="shrink-0" />
+              ) : (
+                <span className="shrink-0 text-caption-2-medium text-text-tertiary">
+                  {formatTime(session.updatedAt)}
+                </span>
+              )}
             </button>
           ))}
         </div>

@@ -84,9 +84,10 @@ function toolRow(tool: ThreadToolCall): TraceRow {
 }
 
 function codingVerb(name: string): string | undefined {
-  if (name === "read_file") return "Read"
-  if (name === "edit_file" || name === "write_file") return "Edit"
+  if (name === "read_file" || name === "read") return "Read"
+  if (name === "write_file" || name === "write") return "Write"
+  if (name === "edit_file" || name === "edit") return "Edit"
   if (name === "bash") return "Run"
-  if (name === "git_diff" || name === "git_status") return "Git"
+  if (name === "git_diff" || name === "git_status" || name === "git_commit") return "Git"
   return undefined
 }
