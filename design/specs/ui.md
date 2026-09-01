@@ -48,6 +48,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
  - 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树：`ai-chat/sidebar/`
  - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
  - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`
+ - 状态栏与 Agent Limits 卡片（Token 分桶与速率限制）：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`
 ## 已知坑
 
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
