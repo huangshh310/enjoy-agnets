@@ -1,85 +1,51 @@
 /**
- * MCP Server 与已批准 App。新 Server 默认不信任；iframe 消息只交给 main。
+ * MCP Server 与插件生态页面：
+ * 采用专业桌面 IDE 风格，左侧承载核心视图路由（已配置服务 / 插件市场 / JSON 规格编辑器），
+ * 支持多协议连接、细粒度工具权限控制 (Allow/Ask/Deny) 与受限沙箱 App。
  */
 import { useCallback, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   RiAddLine,
-  RiCloseLine,
-  RiCodeSSlashLine,
-  RiCpuLine,
-  RiDatabase2Line,
-  RiExternalLinkLine,
-  RiFolderLine,
-  RiLoader4Line,
+  RiFileCodeLine,
   RiPlugLine,
+  RiSearchLine,
+  RiShoppingBag3Line,
   RiSparklingLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
-import { McpAppFrame } from "@renderer/components/mcp/mcp-app-frame"
-import { McpServerRow } from "@renderer/components/mcp/mcp-server-row"
 import { getIde, hasIde } from "@renderer/lib/ide"
-
-const FEATURED_MCP_PLUGINS = [
-  {
-    id: "filesystem",
-    name: "Local Filesystem",
-    category: "File & Storage",
-    icon: RiFolderLine,
-    colorClass: "bg-blue-500/10 text-blue-500",
-    description: "Provide complete filesystem read, write, directory traversal and file inspection tools to the Agent loop.",
-    transport: "stdio" as const,
-    command: "npx -y @modelcontextprotocol/server-filesystem ."
-  },
-  {
-    id: "everything",
-    name: "Everything Suite",
-    category: "Full Toolkit & Apps",
-    icon: RiSparklingLine,
-    colorClass: "bg-purple-500/10 text-purple-500",
-    description: "Multi-purpose tools with demo resources, prompts, and sandboxed interactive UI apps.",
-    transport: "stdio" as const,
-    command: "npx -y @modelcontextprotocol/server-everything"
-  },
-  {
-    id: "github",
-    name: "GitHub Ecosystem",
-    category: "DevOps & VCS",
-    icon: RiCodeSSlashLine,
-    colorClass: "bg-emerald-500/10 text-emerald-500",
-    description: "Manage repository issues, pull requests, commits, and code searches directly via Agent commands.",
-    transport: "stdio" as const,
-    command: "npx -y @modelcontextprotocol/server-github"
-  },
-  {
-    id: "postgres",
-    name: "PostgreSQL Database",
-    category: "Data & Query",
-    icon: RiDatabase2Line,
-    colorClass: "bg-amber-500/10 text-amber-500",
-    description: "Inspect schema structures, tables, and execute read-only SQL queries on your PostgreSQL databases.",
-    transport: "stdio" as const,
-    command: "npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb"
-  }
-]
+import { McpAppModal } from "./components/mcp-app-modal"
+import { McpCreateModal } from "./components/mcp-create-modal"
+import { McpHeader } from "./components/mcp-header"
+import { McpJsonEditorView } from "./components/mcp-json-editor-view"
+import { McpServerCard } from "./components/mcp-server-card"
+import { McpServerToolsModal } from "./components/mcp-server-tools-modal"
+import { McpStoreSection } from "./components/mcp-store-section"
+import type { McpActiveTab, McpOverviewStats, McpPluginPreset } from "./types/mcp-ui.types"
 
 export function McpPage() {
   const queryClient = useQueryClient()
-  const [name, setName] = useState("local-server")
-  const [command, setCommand] = useState("npx -y @modelcontextprotocol/server-everything")
-  const [url, setUrl] = useState("")
-  const [transport, setTransport] = useState<"stdio" | "sse" | "http">("stdio")
-  const [isAdding, setIsAdding] = useState(false)
+  const [activeTab, setActiveTab] = useState<McpActiveTab>("servers")
+  const [serverSearch, setServerSearch] = useState("")
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // 弹窗状态管理
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [editingServer, setEditingServer] = useState<McpServer | null>(null)
+  const [toolsModalServer, setToolsModalServer] = useState<McpServer | null>(null)
+
+  // MCP App 弹窗状态
+  const [appModalOpen, setAppModalOpen] = useState(false)
   const [openServerId, setOpenServerId] = useState<string | null>(null)
   const [appSrcDoc, setAppSrcDoc] = useState<string | null>(null)
   const [appTitle, setAppTitle] = useState("MCP App")
   const [lastLog, setLastLog] = useState<string | null>(null)
 
+  // 查询当前注册的所有 Servers
   const serversQuery = useQuery({
     queryKey: ["mcp"],
     enabled: hasIde(),
@@ -87,6 +53,15 @@ export function McpPage() {
   })
   const servers = serversQuery.data ?? []
 
+  // 汇总统计数据
+  const stats: McpOverviewStats = useMemo(() => {
+    const connected = servers.filter((s) => s.connected).length
+    const trusted = servers.filter((s) => s.trusted).length
+    const totalTools = servers.reduce((sum, s) => sum + (s.tools?.length ?? 0), 0)
+    return { total: servers.length, connected, trusted, totalTools }
+  }, [servers])
+
+  // 左侧侧边栏导航分组
   const groups = useMemo(
     () => [
       {
@@ -94,10 +69,20 @@ export function McpPage() {
         label: "MCP Protocol",
         items: [
           {
-            id: "all",
-            label: "Configured servers",
+            id: "servers",
+            label: "已配置服务",
             icon: RiPlugLine,
             meta: String(servers.length)
+          },
+          {
+            id: "marketplace",
+            label: "精选插件市场",
+            icon: RiShoppingBag3Line
+          },
+          {
+            id: "json",
+            label: "JSON 规格配置",
+            icon: RiFileCodeLine
           }
         ]
       }
@@ -106,32 +91,15 @@ export function McpPage() {
   )
 
   async function refresh() {
-    await queryClient.invalidateQueries({ queryKey: ["mcp"] })
-  }
-
-  async function add(overrideName?: string, overrideCommand?: string, overrideTransport?: "stdio" | "sse" | "http") {
-    const finalName = overrideName ?? name
-    const finalCommand = overrideCommand ?? command
-    const finalTransport = overrideTransport ?? transport
-    if (!finalName.trim() || isAdding) return
-    setIsAdding(true)
+    setIsRefreshing(true)
     try {
-      await getIde().mcp.upsert({
-        name: finalName.trim(),
-        transport: finalTransport,
-        command: finalTransport === "stdio" ? finalCommand : undefined,
-        url: finalTransport === "stdio" ? undefined : url,
-        allowedResourceUris: [],
-        modelVisibleTools: [],
-        appOnlyTools: [],
-        trusted: false
-      })
-      await refresh()
+      await queryClient.invalidateQueries({ queryKey: ["mcp"] })
     } finally {
-      setIsAdding(false)
+      setIsRefreshing(false)
     }
   }
 
+  // 打开 MCP App
   async function openApp(serverId: string) {
     const opened = (await getIde().mcp.openApp({ id: serverId })) as {
       srcDoc: string
@@ -141,6 +109,7 @@ export function McpPage() {
     setAppSrcDoc(opened.srcDoc)
     setAppTitle(opened.title ?? "MCP App")
     setLastLog(null)
+    setAppModalOpen(true)
   }
 
   const onAppMessage = useCallback(
@@ -156,293 +125,198 @@ export function McpPage() {
     [openServerId]
   )
 
+  // 精选市场一键接入
+  async function handleQuickConnectPreset(preset: McpPluginPreset) {
+    await getIde().mcp.upsert({
+      name: preset.id,
+      transport: preset.transport,
+      command: preset.command,
+      url: preset.url,
+      allowedResourceUris: [],
+      modelVisibleTools: [],
+      appOnlyTools: [],
+      trusted: false
+    })
+    await refresh()
+    setActiveTab("servers")
+  }
+
+  // 从精选市场预填配置
+  function handlePrefillPreset(preset: McpPluginPreset) {
+    const existing = servers.find((s) => s.name === preset.id)
+    if (existing) {
+      setEditingServer(existing)
+    } else {
+      setEditingServer({
+        id: "",
+        name: preset.id,
+        transport: preset.transport,
+        command: preset.command,
+        url: preset.url,
+        allowedResourceUris: [],
+        modelVisibleTools: [],
+        appOnlyTools: [],
+        trusted: false,
+        connected: false
+      })
+    }
+    setCreateModalOpen(true)
+  }
+
+  const filteredServers = servers.filter((s) =>
+    s.name.toLowerCase().includes(serverSearch.toLowerCase())
+  )
+
   return (
     <SecondaryPageShell
-      searchPlaceholder="Filter servers..."
+      searchPlaceholder="Filter MCP servers..."
       groups={groups}
-      selectedId="all"
-      onSelect={() => undefined}
+      selectedId={activeTab}
+      onSelect={(id) => setActiveTab(id as McpActiveTab)}
       contentWidth="wide"
     >
-      <div className="flex flex-col gap-7">
-        {/* Header */}
-        <header className="flex flex-col gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-10 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs ring-1 ring-accent-500/20">
-              <RiPlugLine className="size-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 data-testid="page-mcp" className="text-title-3-semibold text-text-primary">
-                  Model Context Protocol (MCP) & Plugins
-                </h1>
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                  Sandboxed Isolation
-                </span>
-              </div>
-              <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-                Connect external tools and sandboxed interactive UI Apps. Tools execute securely in main; Apps render inside isolated iframe containers.
-              </p>
-            </div>
-          </div>
-        </header>
+      <div className="flex flex-col gap-5 pb-8">
+        {/* 顶部标题与操作栏 */}
+        <McpHeader
+          stats={stats}
+          onAddClick={() => {
+            setEditingServer(null)
+            setCreateModalOpen(true)
+          }}
+          onRefresh={refresh}
+          isRefreshing={isRefreshing}
+        />
 
-        {/* Featured Plugin Store Showcase */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
-                <RiSparklingLine className="size-3.5" />
-              </div>
-              <h3 className="text-body-medium font-semibold text-text-primary">
-                Featured Plugin Store · 常用精选插件
-              </h3>
-            </div>
-            <span className="text-caption-2-medium text-text-tertiary">
-              1-click setup & connect
-            </span>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            {FEATURED_MCP_PLUGINS.map((plugin) => {
-              const Icon = plugin.icon
-              const alreadyRegistered = servers.some((s) => s.name === plugin.id || s.name === plugin.name)
-              return (
-                <div
-                  key={plugin.id}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className={cx("flex size-9 shrink-0 items-center justify-center rounded-xl shadow-xs", plugin.colorClass)}>
-                          <Icon className="size-4.5" />
-                        </div>
-                        <div>
-                          <h4 className="text-caption-1-medium font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
-                            {plugin.name}
-                          </h4>
-                          <span className="text-[10px] font-mono uppercase text-text-tertiary">
-                            {plugin.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className="rounded-full border border-border-button-default bg-background-secondary-default px-2 py-0.5 text-[10px] font-mono text-text-secondary">
-                        {plugin.transport}
-                      </span>
-                    </div>
-
-                    <p className="mt-2.5 text-[12px] text-text-secondary leading-relaxed">
-                      {plugin.description}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
-                    <span className="font-mono text-[10px] text-text-tertiary truncate max-w-[170px]">
-                      {plugin.command}
-                    </span>
-
-                    <Button
-                      size="sm"
-                      variant={alreadyRegistered ? "outline" : "default"}
-                      disabled={isAdding}
-                      onClick={() => {
-                        setName(plugin.id)
-                        setCommand(plugin.command)
-                        setTransport(plugin.transport)
-                        if (!alreadyRegistered) {
-                          void add(plugin.id, plugin.command, plugin.transport)
-                        }
-                      }}
-                      className="gap-1 h-7 px-2.5 text-caption-2-medium shrink-0 shadow-xs"
-                    >
-                      <RiAddLine className="size-3" />
-                      <span>{alreadyRegistered ? "Prefill Config" : "Connect Plugin"}</span>
-                    </Button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-        {/* Custom Server Configuration Card */}
-        <section className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-separator-border/60 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex size-6 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
-                <RiCpuLine className="size-3.5" />
-              </div>
-              <h3 className="text-body-medium font-semibold text-text-primary">
-                Custom MCP Server Configuration
-              </h3>
-            </div>
-
-            {/* Transport selector */}
-            <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default p-1">
-              {(["stdio", "sse", "http"] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setTransport(item)}
-                  className={cx(
-                    "rounded-lg px-2.5 py-1 text-caption-2-medium font-mono uppercase transition-all",
-                    transport === item
-                      ? "bg-background-primary-default text-text-primary shadow-xs font-semibold"
-                      : "text-text-secondary hover:text-text-primary"
-                  )}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3.5">
-            <div className="grid gap-3 sm:grid-cols-[14rem_minmax(0,1fr)]">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-caption-1-medium text-text-secondary">Server Identifier</Label>
-                <Input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="e.g. local-filesystem"
-                  className="bg-background-secondary-default focus-visible:bg-background-primary-default font-mono text-[13px]"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-caption-1-medium text-text-secondary">
-                  {transport === "stdio" ? "Command & Process Arguments" : "Endpoint URL"}
-                </Label>
-                {transport === "stdio" ? (
-                  <Input
-                    value={command}
-                    onChange={(event) => setCommand(event.target.value)}
-                    placeholder="npx -y @modelcontextprotocol/server-everything"
-                    className="font-mono text-body-medium bg-background-secondary-default focus-visible:bg-background-primary-default"
-                  />
-                ) : (
-                  <Input
-                    value={url}
-                    onChange={(event) => setUrl(event.target.value)}
-                    placeholder="https://mcp.example.com/sse"
-                    className="font-mono text-body-medium bg-background-secondary-default focus-visible:bg-background-primary-default"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-1 border-t border-separator-border/40 text-caption-2-medium text-text-tertiary">
-              <span>
-                {transport === "stdio"
-                  ? "Standard input/output binary process. Isolated and managed by Electron main."
-                  : "Remote HTTP / Server-Sent Events MCP endpoint."}
+        {/* 视图 1: 已配置服务列表 */}
+        {activeTab === "servers" && (
+          <section className="flex flex-col gap-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-caption-1-medium font-semibold text-text-primary">
+                已注册服务 ({filteredServers.length})
               </span>
 
-              <Button
-                size="sm"
-                data-testid="mcp-add-server"
-                disabled={!name.trim() || isAdding}
-                onClick={() => void add()}
-                className="gap-1.5 shadow-xs shrink-0"
-              >
-                {isAdding ? (
-                  <RiLoader4Line className="size-4 animate-spin" />
-                ) : (
-                  <RiAddLine className="size-4" />
-                )}
-                <span>Register Server</span>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Sandboxed App Window (if opened) */}
-        {appSrcDoc ? (
-          <section className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default shadow-md">
-            <div className="flex items-center justify-between border-b border-separator-border/60 bg-background-secondary-default px-4 py-2.5">
-              <div className="flex items-center gap-2">
-                <RiExternalLinkLine className="size-4 text-accent-500" />
-                <h4 className="text-body-medium font-semibold text-text-primary">{appTitle}</h4>
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                  Sandboxed (connect-src: none)
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  title="Close App"
-                  onClick={() => {
-                    setAppSrcDoc(null)
-                    setOpenServerId(null)
-                  }}
-                >
-                  <RiCloseLine className="size-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-3">
-              <McpAppFrame srcDoc={appSrcDoc} title={appTitle} onAppMessage={onAppMessage} />
-
-              {lastLog ? (
-                <div className="mt-2.5 rounded-xl border border-separator-border/60 bg-background-secondary-default p-2.5">
-                  <p
-                    data-testid="mcp-app-log-text"
-                    className="font-mono text-caption-2-medium text-text-secondary"
-                  >
-                    Live IPC Echo: {lastLog}
-                  </p>
+              {servers.length > 0 ? (
+                <div className="relative w-56">
+                  <RiSearchLine className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-tertiary" />
+                  <Input
+                    value={serverSearch}
+                    onChange={(e) => setServerSearch(e.target.value)}
+                    placeholder="搜索服务名称..."
+                    className="pl-8 h-7.5 text-caption-2-medium bg-background-primary-default"
+                  />
                 </div>
               ) : null}
             </div>
+
+            {servers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-background-secondary-default text-text-tertiary mb-3">
+                  <RiPlugLine className="size-5" />
+                </div>
+                <h3 className="text-body-medium font-semibold text-text-primary">
+                  暂未配置任何 MCP Server
+                </h3>
+                <p className="mt-1 max-w-sm text-caption-2-medium text-text-tertiary leading-relaxed">
+                  通过 Model Context Protocol 连接文件系统、数据库或外部 API，让 Agent 在对话中自由调度。
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingServer(null)
+                      setCreateModalOpen(true)
+                    }}
+                    className="gap-1.5 h-7.5 text-caption-2-medium shadow-xs"
+                  >
+                    <RiAddLine className="size-3.5" />
+                    <span>注册 Server</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab("marketplace")}
+                    className="gap-1.5 h-7.5 text-caption-2-medium"
+                  >
+                    <RiSparklingLine className="size-3.5 text-accent-500" />
+                    <span>浏览精选市场</span>
+                  </Button>
+                </div>
+              </div>
+            ) : filteredServers.length === 0 ? (
+              <div className="py-10 text-center text-caption-2-medium text-text-tertiary">
+                未搜索到匹配的服务
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filteredServers.map((server) => (
+                  <McpServerCard
+                    key={server.id}
+                    server={server}
+                    onChanged={refresh}
+                    onOpenApp={openApp}
+                    onExploreTools={(s) => setToolsModalServer(s)}
+                    onEdit={(s) => {
+                      setEditingServer(s)
+                      setCreateModalOpen(true)
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </section>
-        ) : null}
+        )}
 
-        {/* Configured Servers Section */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-body-medium font-semibold text-text-primary">
-              Configured Servers ({servers.length})
-            </h3>
-          </div>
+        {/* 视图 2: 精选插件市场 */}
+        {activeTab === "marketplace" && (
+          <McpStoreSection
+            servers={servers}
+            onQuickConnect={handleQuickConnectPreset}
+            onPrefill={handlePrefillPreset}
+            isAdding={false}
+          />
+        )}
 
-          {servers.length === 0 ? (
-            <div className="flex min-h-[14rem] flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/50 px-6 py-8 text-center">
-              <RiPlugLine className="size-8 text-text-tertiary" />
-              <p className="mt-2 text-body-medium font-semibold text-text-primary">
-                No MCP servers registered
-              </p>
-              <p className="mt-1 max-w-sm text-caption-1-medium text-text-secondary">
-                Add an MCP server above to equip the Agent loop with custom external tools and sandboxed interactive Apps.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-3.5">
-              {servers.map((server) => (
-                <McpServerRow
-                  key={server.id}
-                  server={server}
-                  onChanged={refresh}
-                  onOpenApp={openApp}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+        {/* 视图 3: 原生内嵌 JSON 规格配置 */}
+        {activeTab === "json" && (
+          <McpJsonEditorView servers={servers} onChanged={refresh} />
+        )}
       </div>
+
+      {/* 弹窗集合 */}
+      <McpCreateModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        initialServer={editingServer}
+        onChanged={refresh}
+      />
+
+      <McpServerToolsModal
+        server={toolsModalServer}
+        open={Boolean(toolsModalServer)}
+        onOpenChange={(open) => {
+          if (!open) setToolsModalServer(null)
+        }}
+        onChanged={refresh}
+      />
+
+      <McpAppModal
+        open={appModalOpen}
+        onOpenChange={setAppModalOpen}
+        appTitle={appTitle}
+        appSrcDoc={appSrcDoc}
+        lastLog={lastLog}
+        onAppMessage={onAppMessage}
+        onRefreshApp={() => {
+          if (openServerId) void openApp(openServerId)
+        }}
+      />
     </SecondaryPageShell>
   )
 }
 
-function textFrom(result: unknown): string | undefined {
-  if (result && typeof result === "object" && "text" in result) {
-    const text = (result as { text?: unknown }).text
-    return typeof text === "string" ? text : undefined
-  }
-  return undefined
+function textFrom(result: unknown): string | null {
+  if (!result || typeof result !== "object") return null
+  const res = result as { text?: unknown; method?: unknown }
+  if (typeof res.text === "string") return res.text
+  return null
 }
-
