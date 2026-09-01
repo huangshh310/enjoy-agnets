@@ -1,37 +1,63 @@
 /**
- * 本地指标与导出。外部 OTEL 默认关闭。
+ * Observability & Telemetry 可观测性与遥测大盘页面：
+ * 采用专业 APM 仪表盘架构，全屏响应式自适应布局 (contentWidth="stage")，
+ * 提供时序耗时趋势、Token 吞吐波动、工作负载占比、延迟分位数直方图、
+ * 模型性能分布、状态健康 Donut 环形图、带分页的链路明细与事件回放。
  */
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  RiCheckLine,
-  RiClipboardLine,
-  RiCloseLine,
-  RiDownload2Line,
-  RiLoader4Line,
+  RiDashboardLine,
+  RiFileHistoryLine,
+  RiFileList3Line,
   RiPulseLine,
-  RiShieldCheckLine,
-  RiSpeedUpLine,
-  RiTimeLine
+  RiRefreshLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { ObservabilityHistogramChart } from "./components/observability-charts-histogram"
+import { ObservabilityKindChart } from "./components/observability-charts-kind"
+import { ObservabilityModelsChart } from "./components/observability-charts-models"
+import { ObservabilityStatusChart } from "./components/observability-charts-status"
+import { ObservabilityThroughputChart } from "./components/observability-charts-throughput"
+import { ObservabilityTimelineChart } from "./components/observability-charts-timeline"
+import { ObservabilityFilters } from "./components/observability-filters"
+import { ObservabilityKpiBar } from "./components/observability-kpi-bar"
+import { ObservabilityMetricsList } from "./components/observability-metrics-list"
+import { ObservabilityPagination } from "./components/observability-pagination"
+import { ObservabilityPolicyBar } from "./components/observability-policy-bar"
+import { ObservabilityTraceModal } from "./components/observability-trace-modal"
 import { ObservabilityReplay } from "./observability-replay"
+import type { MetricKindFilter, MetricStatusFilter } from "./types/observability-ui.types"
+
+type ActiveObservabilityView = "dashboard" | "traces" | "replay"
 
 export function ObservabilityPage() {
-  const [exported, setExported] = useState("")
-  const [exportFormat, setExportFormat] = useState<"json" | "csv" | null>(null)
-  const [copied, setCopied] = useState(false)
+  const queryClient = useQueryClient()
+  const [activeView, setActiveView] = useState<ActiveObservabilityView>("dashboard")
+  const [statusFilter, setStatusFilter] = useState<MetricStatusFilter>("all")
+  const [kindFilter, setKindFilter] = useState<MetricKindFilter>("all")
+  const [search, setSearch] = useState("")
+  const [inspectMetric, setInspectMetric] = useState<TelemetryMetric | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const metricsQuery = useQuery({
     queryKey: ["metrics"],
     enabled: hasIde(),
-    queryFn: () => getIde().observability.metrics({ limit: 100 }) as Promise<TelemetryMetric[]>
+    queryFn: () => getIde().observability.metrics({ limit: 200 }) as Promise<TelemetryMetric[]>
   })
   const metrics = metricsQuery.data ?? []
+  const isRefreshing = metricsQuery.isFetching
 
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ["metrics"] })
+  }
+
+  // 侧边栏导航分组
   const groups = useMemo(
     () => [
       {
@@ -40,7 +66,7 @@ export function ObservabilityPage() {
         items: [
           {
             id: "all",
-            label: "Local executions",
+            label: "Local Executions",
             icon: RiPulseLine,
             meta: String(metrics.length)
           }
@@ -50,18 +76,50 @@ export function ObservabilityPage() {
     [metrics.length]
   )
 
-  async function handleExport(format: "json" | "csv") {
-    setExportFormat(format)
-    const result = (await getIde().observability.export(format)) as { body: string }
-    setExported(result.body)
-  }
+  // 客户端过滤
+  const filteredMetrics = useMemo(() => {
+    return metrics.filter((m) => {
+      // 状态筛选
+      if (statusFilter === "success") {
+        if (!(m.status === "success" || m.status === "completed" || m.status === "ok")) return false
+      } else if (statusFilter === "failed") {
+        if (
+          m.status === "success" ||
+          m.status === "completed" ||
+          m.status === "ok" ||
+          m.status === "running"
+        ) {
+          return false
+        }
+      } else if (statusFilter === "timeout") {
+        if (m.errorClass !== "timeout") return false
+      } else if (statusFilter === "running") {
+        if (m.status !== "running") return false
+      }
 
-  function handleCopyExport() {
-    if (!exported) return
-    void navigator.clipboard.writeText(exported)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+      // Kind 筛选
+      if (kindFilter !== "all") {
+        if (!m.kind.toLowerCase().includes(kindFilter.toLowerCase())) return false
+      }
+
+      // 关键词筛选
+      if (search.trim()) {
+        const query = search.toLowerCase()
+        const matchModel = m.modelId?.toLowerCase().includes(query)
+        const matchRun = m.runId.toLowerCase().includes(query) || m.id.toLowerCase().includes(query)
+        const matchKind = m.kind.toLowerCase().includes(query)
+        if (!matchModel && !matchRun && !matchKind) return false
+      }
+
+      return true
+    })
+  }, [metrics, statusFilter, kindFilter, search])
+
+  // 分页切片
+  const paginatedMetrics = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return filteredMetrics.slice(start, start + pageSize)
+  }, [filteredMetrics, page, pageSize])
 
   return (
     <SecondaryPageShell
@@ -69,220 +127,173 @@ export function ObservabilityPage() {
       groups={groups}
       selectedId="all"
       onSelect={() => undefined}
-      contentWidth="wide"
+      contentWidth="stage"
     >
-      <div className="flex flex-col gap-7">
-        {/* Header */}
-        <header className="flex flex-col gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500 shadow-xs">
-              <RiPulseLine className="size-5" />
+      <div className="flex flex-col gap-4 pb-8 w-full">
+        {/* 顶部标题与工具栏 */}
+        <header className="flex flex-col gap-2.5 pb-2 border-b border-separator-border/70">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1
+                  data-testid="page-observability"
+                  className="text-title-3-semibold text-text-primary tracking-tight"
+                >
+                  Observability & Telemetry
+                </h1>
+                <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400">
+                  <span className="size-1.5 rounded-full bg-accent-500" />
+                  Local APM Dashboard
+                </span>
+              </div>
+              <p className="text-caption-2-medium text-text-tertiary">
+                实时脱敏监控本地调用耗时、TTFO、Token 吞吐量、模型负载与异常分布。
+              </p>
             </div>
-            <h1 data-testid="page-observability" className="text-title-3-semibold text-text-primary">
-              Observability & Telemetry
-            </h1>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => void refresh()}
+                disabled={isRefreshing}
+                className="gap-1.5 h-7.5 text-caption-2-medium"
+              >
+                <RiRefreshLine className={cx("size-3.5", isRefreshing && "animate-spin")} />
+                <span>刷新指标</span>
+              </Button>
+            </div>
           </div>
-          <p className="text-body-medium text-text-secondary">
-            Prompts, keys, and tool arguments are automatically redacted. Local runs record duration,
-            time-to-first-output (TTFO), and throughput. OTEL stays strictly disabled unless opted in.
-          </p>
+
+          {/* 视图 Tab 切换 */}
+          <div className="flex items-center gap-1 pt-1">
+            <button
+              type="button"
+              onClick={() => setActiveView("dashboard")}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
+                activeView === "dashboard"
+                  ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <RiDashboardLine className="size-3.5" />
+              <span>监控与图表大盘 (Dashboard)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveView("traces")}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
+                activeView === "traces"
+                  ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <RiFileList3Line className="size-3.5" />
+              <span>链路明细日志 (Traces Log)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveView("replay")}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
+                activeView === "replay"
+                  ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <RiFileHistoryLine className="size-3.5" />
+              <span>事件流回放 (Stream Replay)</span>
+            </button>
+          </div>
         </header>
 
-        {/* Export and Policy Info Card */}
-        <section className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-xs">
-          <div className="flex items-center justify-between border-b border-separator-border/60 pb-3">
-            <div className="flex items-center gap-2">
-              <RiShieldCheckLine className="size-4 text-emerald-500" />
-              <h3 className="text-body-medium font-semibold text-text-primary">
-                Local Telemetry Policy
-              </h3>
+        {/* 1. 核心 KPI 看板 (全视图常驻) */}
+        <ObservabilityKpiBar metrics={metrics} />
+
+        {/* 2. 导出与脱敏策略条 */}
+        <ObservabilityPolicyBar />
+
+        {/* 视图分支 1: 监控与图表大盘 (全景多维图表矩阵) */}
+        {activeView === "dashboard" && (
+          <div className="flex flex-col gap-3.5">
+            {/* 第二行：双时序大图并排 (响应耗时 + Token 吞吐) */}
+            <div className="grid gap-3.5 lg:grid-cols-2">
+              <ObservabilityTimelineChart metrics={metrics} />
+              <ObservabilityThroughputChart metrics={metrics} />
             </div>
-            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-              Redacted & Local Only
-            </span>
+
+            {/* 第三行：多维结构与性能分布网格 */}
+            <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+              <ObservabilityModelsChart metrics={metrics} />
+              <ObservabilityKindChart metrics={metrics} />
+              <ObservabilityHistogramChart metrics={metrics} />
+              <ObservabilityStatusChart metrics={metrics} />
+            </div>
           </div>
+        )}
 
-          <div className="mt-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <p className="text-caption-1-medium text-text-secondary max-w-xl">
-                Export execution logs for debugging and local latency auditing. Keys and prompts are
-                never included in the export payload.
-              </p>
+        {/* 视图分支 2: 链路明细日志 (Traces Table View 带分页) */}
+        {activeView === "traces" && (
+          <section className="flex flex-col gap-3">
+            <ObservabilityFilters
+              statusFilter={statusFilter}
+              onStatusFilterChange={(s) => {
+                setStatusFilter(s)
+                setPage(1)
+              }}
+              kindFilter={kindFilter}
+              onKindFilterChange={(k) => {
+                setKindFilter(k)
+                setPage(1)
+              }}
+              search={search}
+              onSearchChange={(q) => {
+                setSearch(q)
+                setPage(1)
+              }}
+            />
 
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 shadow-xs"
-                  onClick={() => void handleExport("json")}
-                >
-                  <RiDownload2Line className="size-3.5" />
-                  <span>Export JSON</span>
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 shadow-xs"
-                  onClick={() => void handleExport("csv")}
-                >
-                  <RiDownload2Line className="size-3.5" />
-                  <span>Export CSV</span>
-                </Button>
-              </div>
+            <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary px-1">
+              <span>
+                当前页显示 {paginatedMetrics.length} 条（筛选后共 {filteredMetrics.length} 条）
+              </span>
+              <span>点击任意记录查看详细 Trace 诊断</span>
             </div>
 
-            {exported ? (
-              <div className="mt-3 relative rounded-xl border border-separator-border/60 bg-background-secondary-default p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-mono font-semibold uppercase text-text-tertiary">
-                    {exportFormat} Export Payload:
-                  </span>
-                  <button
-                    type="button"
-                    title="Copy payload"
-                    onClick={handleCopyExport}
-                    className="inline-flex items-center gap-1 rounded-md border border-border-button-default bg-background-primary-default px-2 py-0.5 text-[11px] text-text-secondary hover:text-text-primary shadow-xs transition-colors"
-                  >
-                    {copied ? (
-                      <>
-                        <RiCheckLine className="size-3 text-emerald-500" />
-                        <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <RiClipboardLine className="size-3" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <pre className="max-h-56 overflow-auto font-mono text-[11px] leading-relaxed text-text-secondary">
-                  {exported}
-                </pre>
-              </div>
-            ) : null}
-          </div>
-        </section>
+            <ObservabilityMetricsList
+              metrics={paginatedMetrics}
+              onInspect={(m) => setInspectMetric(m)}
+            />
 
-        {/* Execution Metrics Bento List */}
-        <section className="flex flex-col gap-3.5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-body-medium font-semibold text-text-primary">
-              Recent Executions ({metrics.length})
-            </h3>
-          </div>
+            <ObservabilityPagination
+              currentPage={page}
+              pageSize={pageSize}
+              totalItems={filteredMetrics.length}
+              onPageChange={setPage}
+              onPageSizeChange={(s) => {
+                setPageSize(s)
+                setPage(1)
+              }}
+            />
+          </section>
+        )}
 
-          {metrics.length === 0 ? (
-            <div className="flex min-h-[14rem] flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/50 px-6 py-8 text-center">
-              <RiPulseLine className="size-8 text-text-tertiary" />
-              <p className="mt-2 text-body-medium font-semibold text-text-primary">
-                No telemetry metrics logged yet
-              </p>
-              <p className="mt-1 max-w-sm text-caption-1-medium text-text-secondary">
-                Run agent tasks, structured completions, or tool actions to populate latency and token logs.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-3">
-              {metrics.map((metric) => (
-                <article
-                  key={metric.id}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border-button-default bg-background-secondary-default shadow-xs text-text-secondary">
-                        <RiSpeedUpLine className="size-4.5" />
-                      </div>
-
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-body-medium font-semibold text-text-primary uppercase">
-                            {metric.kind}
-                          </span>
-                          <MetricStatusBadge status={metric.status} />
-                          {metric.errorClass && metric.errorClass !== "ok" ? (
-                            <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] text-rose-600 dark:text-rose-400">
-                              {metric.errorClass}
-                            </span>
-                          ) : null}
-                        </div>
-
-                        <div className="mt-1 flex items-center gap-3 text-caption-2-medium text-text-tertiary flex-wrap">
-                          <span className="font-mono font-medium text-text-secondary">
-                            {metric.modelId ?? "default"}
-                          </span>
-                          <span>·</span>
-                          <span>{metric.durationMs ?? 0}ms total</span>
-                          {metric.ttfoMs ? (
-                            <>
-                              <span>·</span>
-                              <span className="text-accent-600 dark:text-accent-400 font-medium">
-                                TTFO: {metric.ttfoMs}ms
-                              </span>
-                            </>
-                          ) : null}
-                          {metric.tokensPerSecond ? (
-                            <>
-                              <span>·</span>
-                              <span>{metric.tokensPerSecond.toFixed(1)} tok/s</span>
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-
-                    <span className="font-mono text-[11px] text-text-tertiary shrink-0">
-                      ID: {metric.id.slice(0, 12)}...
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Live Replay Inspector */}
-        <ObservabilityReplay />
+        {/* 视图分支 3: 事件流回放 */}
+        {activeView === "replay" && <ObservabilityReplay />}
       </div>
+
+      {/* Trace 详情弹窗 */}
+      <ObservabilityTraceModal
+        metric={inspectMetric}
+        open={Boolean(inspectMetric)}
+        onOpenChange={(open) => {
+          if (!open) setInspectMetric(null)
+        }}
+      />
     </SecondaryPageShell>
   )
 }
-
-function MetricStatusBadge({ status }: { status: string }) {
-  if (status === "success" || status === "completed") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-        <RiCheckLine className="size-3" />
-        Success
-      </span>
-    )
-  }
-
-  if (status === "running") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-accent-500/20 bg-accent-500/10 px-2 py-0.5 text-[11px] font-semibold text-accent-600 dark:text-accent-400">
-        <RiLoader4Line className="size-3 animate-spin" />
-        Running
-      </span>
-    )
-  }
-
-  if (status === "error" || status === "failed") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-        <RiCloseLine className="size-3" />
-        Failed
-      </span>
-    )
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-background-tertiary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary capitalize">
-      <RiTimeLine className="size-3" />
-      {status}
-    </span>
-  )
-}
-

@@ -1,13 +1,16 @@
 # spec/observability
 
-> 本地指标、脱敏、可选 OTEL。最后更新：2026-08-31
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-01
 
 ## 当前真相
 
 默认 `telemetryPolicy=local`。记录 kind / status / token / 耗时 / TTFO / tokens/s / 错误分类。prompt、文件内容、工具完整参数、API Key、`runtimeContext` 经 `redactMetric` 脱敏。外部 OTEL 默认关，需用户显式 `observability.setPolicy` 并配置合法 `http(s)` endpoint 才会 POST OTLP JSON。CSV 导出含 `ttfoMs` / `tokensPerSecond`。诊断页展示 TTFO。
 
-路由：`#/observability`。可导出 JSON / CSV。`observability.replay` 读 main 进程内存缓冲（最多 400 条），经 `summarizeReplayEvents` 只回 `type` / `runId` / `sequence` / `timestamp`，不回传 prompt、delta 或工具参数。
-
+路由：`#/observability`。提供三大视图模式：
+1. **监控与图表大盘 (Dashboard)**：4 大核心 KPI 指标卡、耗时与 TTFO 时序趋势渐变面积图、模型负载分布柱状图、状态健康 Donut 环形图与异常根因分析；
+2. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉（含 OTEL 原始脱敏 JSON）；
+3. **事件流回放 (Stream Replay)**：主进程内存缓冲事件流回放。
+可一键导出 JSON / CSV 报表。
 ## 不变量
 
 - 日志与导出不得含明文 Key 或完整 prompt。

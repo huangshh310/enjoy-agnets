@@ -1,0 +1,190 @@
+/**
+ * 可观测性链路明细日志数据表格 (APM Traces Data Grid)：
+ * 宽屏自适应高密度表格架构，平衡展示状态、工作负载、模型、耗时进度条、TTFO、Token 细分与操作。
+ */
+import {
+  RiCheckLine,
+  RiCloseLine,
+  RiEyeLine,
+  RiFlashlightLine,
+  RiLoader4Line,
+  RiPulseLine
+} from "@remixicon/react"
+import { cx } from "@/utils/cx"
+import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+
+export function ObservabilityMetricsList(props: {
+  metrics: TelemetryMetric[]
+  onInspect: (metric: TelemetryMetric) => void
+}) {
+  const { metrics, onInspect } = props
+
+  if (metrics.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
+        <RiPulseLine className="size-8 text-text-tertiary mb-2" />
+        <h4 className="text-caption-1-medium font-semibold text-text-primary">
+          未检索到符合条件的执行记录
+        </h4>
+        <p className="mt-1 max-w-sm text-caption-2-medium text-text-tertiary">
+          运行 Agent 任务、文本生成或多媒体生图后，系统将自动记录脱敏的耗时与 Token 性能指标。
+        </p>
+      </div>
+    )
+  }
+
+  const maxDuration = Math.max(...metrics.map((m) => m.durationMs ?? 0), 1000)
+
+  return (
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px]">
+      {/* 表头 */}
+      <div className="hidden md:grid grid-cols-12 gap-2 bg-background-secondary-default/60 px-3.5 py-2 text-text-tertiary font-semibold border-b border-separator-border/60">
+        <div className="col-span-3">工作负载 & 状态</div>
+        <div className="col-span-3">模型 & 标识</div>
+        <div className="col-span-2">响应耗时 (Duration)</div>
+        <div className="col-span-1">首字 (TTFO)</div>
+        <div className="col-span-1">Token (In/Out)</div>
+        <div className="col-span-1">速率 (tok/s)</div>
+        <div className="col-span-1 text-right">时间 & 操作</div>
+      </div>
+
+      {/* 行记录列表 */}
+      <div className="divide-y divide-separator-border/40">
+        {metrics.map((metric) => {
+          const isSuccess =
+            metric.status === "success" || metric.status === "completed" || metric.status === "ok"
+          const isRunning = metric.status === "running"
+
+          const duration = metric.durationMs ?? 0
+          const durationFormatted =
+            duration >= 1000 ? `${(duration / 1000).toFixed(2)}s` : `${duration}ms`
+          const durationRatio = Math.min((duration / maxDuration) * 100, 100)
+
+          const inTok = metric.inputTokens ?? 0
+          const outTok = metric.outputTokens ?? 0
+
+          const timeFormatted = new Date(metric.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          })
+
+          return (
+            <div
+              key={metric.id}
+              onClick={() => onInspect(metric)}
+              className="group grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center px-3.5 py-2.5 hover:bg-background-secondary-hover/40 transition-colors cursor-pointer"
+            >
+              {/* 1. 工作负载 & 状态 */}
+              <div className="md:col-span-3 flex items-center gap-2 min-w-0">
+                <div
+                  className={cx(
+                    "flex size-5 shrink-0 items-center justify-center rounded border",
+                    isSuccess
+                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : isRunning
+                        ? "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                        : "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  )}
+                >
+                  {isSuccess ? (
+                    <RiCheckLine className="size-3" />
+                  ) : isRunning ? (
+                    <RiLoader4Line className="size-3 animate-spin" />
+                  ) : (
+                    <RiCloseLine className="size-3" />
+                  )}
+                </div>
+
+                <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-[9px] font-bold uppercase text-text-secondary">
+                  {metric.kind}
+                </span>
+
+                <span
+                  className={cx(
+                    "rounded px-1.5 py-0.2 text-[9px] uppercase font-semibold",
+                    isSuccess
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : isRunning
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  )}
+                >
+                  {metric.status}
+                </span>
+
+                {metric.errorClass && metric.errorClass !== "ok" ? (
+                  <span className="rounded bg-rose-500/10 px-1 py-0.2 text-[8.5px] font-semibold text-rose-600 dark:text-rose-400 truncate">
+                    {metric.errorClass}
+                  </span>
+                ) : null}
+              </div>
+
+              {/* 2. 模型 & Run ID */}
+              <div className="md:col-span-3 flex flex-col min-w-0">
+                <span className="font-semibold text-text-primary truncate">
+                  {metric.modelId ?? "default-model"}
+                </span>
+                <span className="text-[9.5px] text-text-tertiary truncate">
+                  run: {metric.runId.slice(0, 14)}
+                </span>
+              </div>
+
+              {/* 3. 响应耗时与 Sparkline 进度 */}
+              <div className="md:col-span-2 flex flex-col gap-0.5">
+                <span className="font-semibold text-text-primary">{durationFormatted}</span>
+                <div className="h-1 w-24 rounded-full bg-background-secondary-default overflow-hidden">
+                  <div
+                    style={{ width: `${Math.max(durationRatio, 4)}%` }}
+                    className={cx(
+                      "h-full rounded-full transition-all",
+                      isSuccess ? "bg-blue-500" : "bg-rose-500"
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* 4. 首字延迟 TTFO */}
+              <div className="md:col-span-1">
+                {metric.ttfoMs ? (
+                  <span className="inline-flex items-center gap-0.5 text-accent-600 dark:text-accent-400 font-medium">
+                    <RiFlashlightLine className="size-2.5" />
+                    <span>{metric.ttfoMs}ms</span>
+                  </span>
+                ) : (
+                  <span className="text-text-tertiary">—</span>
+                )}
+              </div>
+
+              {/* 5. Token 消耗 */}
+              <div className="md:col-span-1 text-text-secondary">
+                {inTok + outTok > 0 ? (
+                  <span>{inTok + outTok}</span>
+                ) : (
+                  <span className="text-text-tertiary">—</span>
+                )}
+              </div>
+
+              {/* 6. 速率 */}
+              <div className="md:col-span-1">
+                {metric.tokensPerSecond ? (
+                  <span className="text-purple-600 dark:text-purple-400 font-medium">
+                    {metric.tokensPerSecond.toFixed(1)}
+                  </span>
+                ) : (
+                  <span className="text-text-tertiary">—</span>
+                )}
+              </div>
+
+              {/* 7. 时间与查看操作 */}
+              <div className="md:col-span-1 flex items-center justify-between md:justify-end gap-2 text-text-tertiary">
+                <span className="text-[10px]">{timeFormatted}</span>
+                <RiEyeLine className="size-3.5 group-hover:text-accent-500 transition-colors" />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
