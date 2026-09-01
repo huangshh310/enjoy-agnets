@@ -50,6 +50,20 @@ export function removeComposerAsset(id: string) {
   pending = pending.filter((item) => item.id !== id)
   notify()
 }
+export function clearComposerAssets() {
+  for (const item of pending) {
+    if (item.url && item.url.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(item.url)
+      } catch {
+        // ignore
+      }
+    }
+  }
+  pending = []
+  notify()
+}
+
 
 export function takeComposerAssets(): string[] {
   const ids = pending.map((item) => item.id)

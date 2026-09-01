@@ -18,7 +18,7 @@ export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
           type="button"
           aria-label="Add context"
           onClick={onPickFiles}
-          className="inline-flex items-center gap-1 rounded-full border border-border-button-default/60 bg-background-secondary-default/70 px-2.5 py-1 text-caption-2-medium text-text-secondary shadow-2xs transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
+          className="inline-flex items-center gap-1 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-primary shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-border-button-hover cursor-pointer"
         >
           <RiAddLine className="size-3.5 text-foreground-icon-secondary" />
           <span>Context</span>
@@ -27,7 +27,7 @@ export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
       </div>
 
       {workspaceId ? (
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default/60 bg-background-secondary-default/60 px-2.5 py-0.5 text-caption-2-medium text-text-secondary shadow-2xs">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-0.5 text-caption-2-medium text-text-primary shadow-2xs">
           <RiFolder6Line className="size-3 text-accent-500" />
           <span className="max-w-[120px] truncate text-caption-2-medium text-text-primary">
             {workspaceName}
