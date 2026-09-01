@@ -5,8 +5,9 @@ import { BrowserWindow, ipcMain } from "electron"
 import { AI_CHANNELS, registerAiIpc, unregisterAiIpc } from "./ipc-ai"
 import { SETTINGS_CHANNELS, registerSettingsIpc } from "./ipc-settings"
 import { SHELL_CHANNELS, registerShellIpc } from "./ipc-shell"
+import { SKILLS_CHANNELS, registerSkillsIpc } from "./ipc-skills"
 
-const CHANNELS = [...SHELL_CHANNELS, ...SETTINGS_CHANNELS, ...AI_CHANNELS] as const
+const CHANNELS = [...SHELL_CHANNELS, ...SETTINGS_CHANNELS, ...AI_CHANNELS, ...SKILLS_CHANNELS] as const
 
 let ipcRegistered = false
 
@@ -16,6 +17,7 @@ export function registerIpc(window: BrowserWindow) {
   bindMaximizeEvents(window)
   registerShellIpc()
   registerSettingsIpc()
+  registerSkillsIpc()
   registerAiIpc()
 }
 

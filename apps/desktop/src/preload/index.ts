@@ -116,6 +116,13 @@ const ide = {
     openApp: (input: unknown) => ipcRenderer.invoke("mcp.openApp", input),
     appMessage: (input: unknown) => ipcRenderer.invoke("mcp.appMessage", input)
   },
+  skills: {
+    list: (input?: unknown) => ipcRenderer.invoke("skills.list", input ?? {}),
+    read: (skillFilePath: string) => ipcRenderer.invoke("skills.read", { skillFilePath }),
+    create: (input: unknown) => ipcRenderer.invoke("skills.create", input),
+    delete: (directoryPath: string) => ipcRenderer.invoke("skills.delete", { directoryPath }),
+    reveal: (directoryPath: string) => ipcRenderer.invoke("skills.reveal", { directoryPath })
+  },
   realtime: {
     open: (input: unknown) => ipcRenderer.invoke("realtime.open", input),
     sendAudio: (input: unknown) => ipcRenderer.invoke("realtime.sendAudio", input),

@@ -45,5 +45,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 
 ## 已知坑
 
-- Customize 的 Skills / Rules 还是后续加载器（`.agents/skills`、项目规则）。页面可以先占位，文案不要写成已经扫描技能包。
+- Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。
 - `git` 仍是 soon。`mcp` 已落地，不要再写成占位。
