@@ -123,6 +123,13 @@ const ide = {
     delete: (directoryPath: string) => ipcRenderer.invoke("skills.delete", { directoryPath }),
     reveal: (directoryPath: string) => ipcRenderer.invoke("skills.reveal", { directoryPath })
   },
+  rules: {
+    list: (input?: unknown) => ipcRenderer.invoke("rules.list", input ?? {}),
+    read: (filePath: string) => ipcRenderer.invoke("rules.read", { filePath }),
+    create: (input: unknown) => ipcRenderer.invoke("rules.create", input),
+    delete: (filePath: string) => ipcRenderer.invoke("rules.delete", { filePath }),
+    reveal: (filePath: string) => ipcRenderer.invoke("rules.reveal", { filePath })
+  },
   realtime: {
     open: (input: unknown) => ipcRenderer.invoke("realtime.open", input),
     sendAudio: (input: unknown) => ipcRenderer.invoke("realtime.sendAudio", input),
