@@ -186,23 +186,10 @@ export async function decidePendingApproval(decision: "allow" | "deny" | "allow_
   })
 }
 
-export async function saveApiKey() {
-  const store = useChatStore.getState()
-  if (!store.apiKeyDraft.trim()) return
-  const snapshot = (await getIde().settings.saveSecret({
-    provider: store.providerDraft,
-    apiKey: store.apiKeyDraft.trim()
-  })) as SettingsSnapshot
-  store.setApiKeyDraft("")
-  store.setError(null)
-  await applySettingsSnapshot(snapshot)
-}
-
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()
   store.setHasKey(snapshot.hasKey)
   store.setProvider(snapshot.provider)
-  if (snapshot.provider) store.setProviderDraft(snapshot.provider)
   if (snapshot.preferences?.defaultMode) store.setMode(snapshot.preferences.defaultMode)
   if (!hasIde()) return
   const models = (await getIde().models.list()) as ModelOption[]

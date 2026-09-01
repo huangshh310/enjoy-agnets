@@ -8,10 +8,10 @@ import { resolveTurnKind } from "@renderer/hooks/resolve-turn-kind"
 import { shouldShowThinkingTrace } from "@renderer/hooks/thinking-visibility"
 import { usePrecedingUserPrompt } from "@renderer/hooks/preceding-user-prompt"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
-import { AiChatCodeBlock } from "../ai-chat-code-block"
+import { AiChatCodeBlock } from "../../ai-chat-code-block"
 import { AssistantActions } from "./assistant-actions"
-import { MarkdownResponse } from "./markdown-response"
-import { ThinkingTrace } from "./thinking-trace"
+import { MarkdownResponse } from "../markdown-response"
+import { ThinkingTrace } from "../thinking/thinking-trace"
 import { TurnExtras } from "./turn-extras"
 
 export function AssistantTurn({ message }: { message: ThreadMessage }) {

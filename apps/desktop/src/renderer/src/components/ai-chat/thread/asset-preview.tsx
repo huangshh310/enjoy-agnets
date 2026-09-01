@@ -14,7 +14,7 @@ import { ImageGeneration } from "@/components/ai-elements/image-generation"
 import { isImageMediaType, isVideoMediaType, resolveMediaType } from "@enjoy-agents/assets/media-type"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useAssetSrc } from "@renderer/hooks/use-asset-src"
-import { VideoGeneration } from "./video-generating"
+import { VideoGeneration } from "./turns/video-generating"
 
 function getFileTypeLabel(name: string, mediaType?: string): string {
   const ext = name.split(".").pop()?.toUpperCase()

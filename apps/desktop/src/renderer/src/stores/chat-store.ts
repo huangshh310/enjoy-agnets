@@ -1,167 +1,26 @@
+/**
+ * 聊天会话 Zustand store。类型在 chat-store.types.ts，树灌入在 chat-store-hydrate.ts。
+ */
 import { create } from "zustand"
-import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
 import { reduceStreamEvent } from "./apply-stream-event"
-import type { ComposerRunKind } from "../hooks/composer-run-kind"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
+import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
+import type { ChatStore, ChangedFileRow, RepositoryNode, ThreadMessage } from "./chat-store.types"
 
-export type ChatRole = "user" | "assistant"
-
-export type CodeAttachment = {
-  language: string
-  filename: string
-  additions: number
-  deletions: number
-  code: string
-}
-
-export type ThreadMessage = {
-  id: string
-  role: ChatRole
-  content: string
-  createdAt: number
-  attachment?: CodeAttachment
-  streaming?: boolean
-  /** 模型思考轨迹（reasoning.delta 累积） */
-  reasoning?: string
-  /** 本轮工具调用与结果 */
-  tools?: ThreadToolCall[]
-  /** 结束后保留 Thinking 头的秒数 */
-  thoughtSeconds?: number
-  /** 正在吃 text 里的 <think> 块，不持久化 */
-  thinkOpen?: boolean
-  sources?: Array<{
-    sourceId: string
-    title: string
-    path: string
-    startLine?: number
-    snippet?: string
-  }>
-  assets?: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
-  structured?: unknown
-  components?: Array<{ componentId: string; props: Record<string, unknown> }>
-  /** 本轮赞踩，仅会话内存，不落库 */
-  feedback?: "up" | "down"
-  /** 发送时 stamp，Thinking / 生图表面认这个，不认当前 picker */
-  runKind?: ComposerRunKind
-}
-
-export type RepositoryNode = {
-  id: string
-  name: string
-  kind: "workspace" | "session"
-  parentId?: string
-  updatedAt: number
-  workspaceId?: string
-  rootPath?: string
-  isPinned?: boolean
-}
-
-export type ChangedFileRow = {
-  path: string
-  status: "added" | "modified" | "deleted" | "untracked"
-  additions: number
-  deletions: number
-}
-
-export type ModelOption = {
-  id: string
-  label: string
-  provider: string
-  providerId?: string
-  providerName?: string
-  apiStyle?: string
-  active?: boolean
-  isFast?: boolean
-  isReasoning?: boolean
-  supportsReasoning?: boolean
-  reasoningEffort?: "low" | "medium" | "high" | "xhigh"
-  capabilities?: string[]
-  staticCaps?: string[]
-  probedCaps?: string[]
-  probedAt?: number
-}
-
-export type ChatStore = {
-  userName: string
-  workspaceId: string | null
-  workspaceName: string
-  workspaceRootLabel: string
-  sessionId: string | null
-  sessionTitle: string
-  repositories: RepositoryNode[]
-  expandedIds: string[]
-  sidebarCollapsed: boolean
-  /** Changes / Browser 右栏是否收起 */
-  rightPanelCollapsed: boolean
-  messages: ThreadMessage[]
-  composer: string
-  modelId: string
-  modelLabel: string
-  models: ModelOption[]
-  provider: string | null
-  reasoningEffort: "low" | "medium" | "high" | "xhigh" | undefined
-  mode: "agent" | "plan" | "ask" | "debug"
-  running: boolean
-  runId: string | null
-  /** composer 尚未拿到 runId 时暂存事件，避免旁路 Extract 写进乐观轮 */
-  pendingStreamEvents: StreamEvent[]
-  thinkingLabel: string
-  settingsOpen: string | false
-  apiKeyDraft: string
-  providerDraft: string
-  hasKey: boolean
-  selectedFilePath: string | null
-  selectedFileContent: string
-  changes: ChangedFileRow[]
-  additions: number
-  deletions: number
-  pendingApproval: (StreamEvent & { type: "approval.required" }) | null
-  error: string | null
-  sidebarGrouping: "project" | "flat"
-  sessionSortOrder: "priority" | "updated" | "manual"
-  pinnedWorkspaceIds: string[]
-  setSidebarGrouping: (grouping: "project" | "flat") => void
-  setSessionSortOrder: (order: "priority" | "updated" | "manual") => void
-  togglePinWorkspace: (id: string) => void
-  hydrateWorkspacesAndSessions: (
-    items: Array<{
-      workspace: { id: string; name: string; rootPath?: string }
-      sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
-    }>,
-    activeWorkspaceId?: string | null
-  ) => void
-  setComposer: (value: string) => void
-  setModel: (id: string, label: string, provider?: string, reasoningEffort?: "low" | "medium" | "high" | "xhigh") => void
-  setReasoningEffort: (effort: "low" | "medium" | "high" | "xhigh" | undefined) => void
-  setMode: (mode: ChatStore["mode"]) => void
-  setSettingsOpen: (open: ChatStore["settingsOpen"]) => void
-  setApiKeyDraft: (value: string) => void
-  setProviderDraft: (value: string) => void
-  setSidebarCollapsed: (collapsed: boolean) => void
-  setRightPanelCollapsed: (collapsed: boolean) => void
-  toggleExpanded: (id: string) => void
-  applyStreamEvent: (event: StreamEvent) => void
-  appendUserMessage: (
-    content: string,
-    assets?: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
-  ) => ThreadMessage[]
-  setRunning: (running: boolean, runId?: string | null) => void
-  setHasKey: (hasKey: boolean) => void
-  setError: (message: string | null) => void
-  setWorkspace: (workspace: { id: string; name: string; rootPath: string } | null) => void
-  setSelectedFile: (path: string | null, content: string) => void
-  setChanges: (changes: ChangedFileRow[]) => void
-  setPendingApproval: (event: ChatStore["pendingApproval"]) => void
-  setModels: (models: ModelOption[]) => void
-  setProvider: (provider: string | null) => void
-  hydrateSessions: (
-    workspace: { id: string; name: string },
-    sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
-  ) => void
-  setSession: (sessionId: string, title: string) => void
-  setMessages: (messages: ThreadMessage[]) => void
-}
+export type {
+  ChangedFileRow,
+  ChatRole,
+  ChatStore,
+  CodeAttachment,
+  ModelOption,
+  ReasoningEffort,
+  RepositoryNode,
+  ThreadAsset,
+  ThreadMessage,
+  ThreadSource
+} from "./chat-store.types"
 
 function contextUsedFrom(messages: ThreadMessage[]): number {
   const characters = messages.reduce((sum, message) => sum + message.content.length, 0)
@@ -191,9 +50,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   runId: null,
   pendingStreamEvents: [],
   thinkingLabel: "Thinking",
-  settingsOpen: false,
-  apiKeyDraft: "",
-  providerDraft: "deepseek",
   hasKey: false,
   selectedFilePath: null,
   selectedFileContent: "",
@@ -202,6 +58,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   deletions: 0,
   pendingApproval: null,
   error: null,
+  sidebarGrouping: "project",
+  sessionSortOrder: "priority",
+  pinnedWorkspaceIds: [],
   setComposer: (composer) => set({ composer }),
   setModel: (modelId, modelLabel, provider, effort) =>
     set({
@@ -212,9 +71,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }),
   setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
   setMode: (mode) => set({ mode }),
-  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
-  setApiKeyDraft: (apiKeyDraft) => set({ apiKeyDraft }),
-  setProviderDraft: (providerDraft) => set({ providerDraft }),
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
   setRightPanelCollapsed: (rightPanelCollapsed) => set({ rightPanelCollapsed }),
   toggleExpanded: (id) => {
@@ -223,7 +79,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       : [...get().expandedIds, id]
     set({ expandedIds })
   },
-  applyStreamEvent: (event) => {
+  applyStreamEvent: (event: StreamEvent) => {
     if (shouldBufferComposerEvent(get().running, get().runId)) {
       const queued = get().pendingStreamEvents
       if (queued.length >= 80) return
@@ -241,11 +97,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     })
   },
   appendUserMessage: (content, assets) => {
-    const messages = [
+    const messages: ThreadMessage[] = [
       ...get().messages,
       {
         id: `msg_user_${Date.now()}`,
-        role: "user" as const,
+        role: "user",
         content,
         createdAt: Date.now(),
         ...(assets?.length ? { assets } : {})
@@ -295,7 +151,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>
     set({ selectedFilePath, selectedFileContent }),
-  setChanges: (changes) => {
+  setChanges: (changes: ChangedFileRow[]) => {
     const additions = changes.reduce((sum, file) => sum + file.additions, 0)
     const deletions = changes.reduce((sum, file) => sum + file.deletions, 0)
     set({ changes, additions, deletions })
@@ -303,9 +159,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),
   setModels: (models) => set({ models }),
   setProvider: (provider) => set({ provider }),
-  sidebarGrouping: "project",
-  sessionSortOrder: "priority",
-  pinnedWorkspaceIds: [],
   setSidebarGrouping: (sidebarGrouping) => set({ sidebarGrouping }),
   setSessionSortOrder: (sessionSortOrder) => set({ sessionSortOrder }),
   togglePinWorkspace: (id) =>
@@ -315,69 +168,26 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         : [...state.pinnedWorkspaceIds, id]
     })),
   hydrateWorkspacesAndSessions: (items, activeWorkspaceId) => {
-    const pinned = get().pinnedWorkspaceIds
-    const repositories: RepositoryNode[] = []
-    const liveIds = new Set(items.map((item) => item.workspace.id))
-    const expanded = get().expandedIds.filter((id) => liveIds.has(id))
-    // 仅首次灌入时默认展开当前工作区；之后尊重用户收起，避免刷新把树撑开
-    const hadRepos = get().repositories.some((node) => node.kind === "workspace")
-    if (
-      !hadRepos &&
-      activeWorkspaceId &&
-      liveIds.has(activeWorkspaceId) &&
-      !expanded.includes(activeWorkspaceId)
-    ) {
-      expanded.push(activeWorkspaceId)
-    }
-
-    for (const item of items) {
-      repositories.push({
-        id: item.workspace.id,
-        name: item.workspace.name,
-        kind: "workspace",
-        updatedAt: Date.now(),
-        rootPath: item.workspace.rootPath,
-        isPinned: pinned.includes(item.workspace.id)
-      })
-
-      for (const session of item.sessions) {
-        repositories.push({
-          id: session.id,
-          name: session.title,
-          kind: "session",
-          parentId: item.workspace.id,
-          updatedAt: session.updatedAt,
-          workspaceId: session.workspaceId
-        })
-      }
-    }
-
-    set({ repositories, expandedIds: expanded })
+    const tree = buildWorkspaceTree(
+      items,
+      get().pinnedWorkspaceIds,
+      get().expandedIds,
+      get().repositories.some((node) => node.kind === "workspace"),
+      activeWorkspaceId
+    )
+    set(tree)
   },
   hydrateSessions: (workspace, sessions) => {
-    const repositories: RepositoryNode[] = [
-      {
-        id: workspace.id,
-        name: workspace.name,
-        kind: "workspace",
-        updatedAt: Date.now()
-      },
-      ...sessions.map((session) => ({
-        id: session.id,
-        name: session.title,
-        kind: "session" as const,
-        parentId: workspace.id,
-        updatedAt: session.updatedAt,
-        workspaceId: session.workspaceId
-      }))
-    ]
-    set({ repositories, expandedIds: [workspace.id] })
+    set({
+      repositories: buildSessionTree(workspace, sessions),
+      expandedIds: [workspace.id]
+    })
   },
   setSession: (sessionId, sessionTitle) =>
     set((state) => ({
       sessionId,
       sessionTitle,
-      repositories: state.repositories.map((node) =>
+      repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )
     })),

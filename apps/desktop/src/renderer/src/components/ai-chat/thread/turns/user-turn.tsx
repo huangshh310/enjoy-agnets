@@ -12,8 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Message, MessageAction, MessageActions, MessageContent } from "@/components/ai-elements/message"
 import { editAndResendUserTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
-import { AssetPreview } from "./asset-preview"
-import { CopyMessageButton } from "./copy-message-button"
+import { AssetPreview } from "../asset-preview"
+import { CopyMessageButton } from "../copy-message-button"
 
 export function UserTurn({ message }: { message: ThreadMessage }) {
   const [isEditing, setIsEditing] = useState(false)

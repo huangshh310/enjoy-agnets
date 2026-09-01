@@ -63,4 +63,4 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 - Extract 出现两份一样的卡片：`ai.generate` 的 `structured.delta` 进了全局 `applyStreamEvent`。原图轮已不 streaming，`ensureAssistant` 又开一条 `msg_${runId}`，Extract 自己再把卡片写回原消息。旁路 run 只给 `waitForRunOutput` 收，不要另开助手轮；线程里藏掉「上一轮已有 Extract、本轮只有空卡片」的孤儿。
 - Composer 先 `setRunning(true)`（`runId` 仍是 null）再等 IPC：这段窗口旁路 Extract / 标题补全会写进乐观 `msg_pending_*`。`running && !runId` 时把事件推进 `pendingStreamEvents`，拿到 composer `runId` 再按 id 过滤回放。`run.end` 必须 `event.runId === store.runId` 才 finalize。
 
-- 线程占位不要再用 `AgentThinking` infinity，也不要和 Thinking 头上的 `DotMatrixLoader` 叠两套动效。流式走 `LoadingState` / `LoadingStateGlyph`；`AgentThinking` 仍导出但聊天主路径不用。
+- 线程占位不要再用 `AgentThinking` infinity，也不要和 Thinking 头上的 `DotMatrixLoader` 叠两套动效。流式走 `LoadingState` / `LoadingStateGlyph`。未接线的 registry 默认皮（`prompt-input` / `reasoning` / `tool` / `shimmer` / `AgentLog`）已删，不要再装回来。`AgentThinking` 仍导出但聊天主路径不用。

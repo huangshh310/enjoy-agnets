@@ -12,7 +12,7 @@ import { extractObjectFromMessage } from "@renderer/hooks/extract-object"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { MessageAction, MessageActions } from "@/components/ai-elements/message"
-import { CopyMessageButton } from "./copy-message-button"
+import { CopyMessageButton } from "../copy-message-button"
 export function AssistantActions({
   message,
   prompt

@@ -2,10 +2,10 @@
  * 助手消息附加区：优先白名单生成式 UI，否则回落来源 / 资产 / 结构化。
  */
 import type { ThreadMessage } from "@renderer/stores/chat-store"
-import { AssetPreview } from "./asset-preview"
-import { GenerativeUi } from "./generative-ui"
-import { SourceList } from "./source-list"
-import { StructuredCard } from "./structured-card"
+import { AssetPreview } from "../asset-preview"
+import { GenerativeUi } from "../generative-ui"
+import { SourceList } from "../source-list"
+import { StructuredCard } from "../structured-card"
 
 export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt?: string }) {
   const components = message.components ?? []

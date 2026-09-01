@@ -12,8 +12,8 @@ import { cx } from "@/utils/cx"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { ApprovalCard } from "./thread/approval-card"
-import { AssistantTurn } from "./thread/assistant-turn"
-import { UserTurn } from "./thread/user-turn"
+import { AssistantTurn } from "./thread/turns/assistant-turn"
+import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"
 
 export function AiChatThread({

@@ -3,7 +3,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
-import { formatToolName, summarizeToolArgs, toolKind } from "./tool-summary"
+import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary"
 
 export type TraceRow = {
   id: string
