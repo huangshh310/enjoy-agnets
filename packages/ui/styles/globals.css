@@ -24,6 +24,14 @@ body {
   color: var(--color-text-primary);
   overflow: hidden;
 }
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 
 
 /* ---------------------------------------------------------------------------

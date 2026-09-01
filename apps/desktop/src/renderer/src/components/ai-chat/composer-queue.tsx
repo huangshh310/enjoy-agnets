@@ -1,9 +1,12 @@
 /**
- * Composer 附件浮动托盘 (Floating Attachment Shelf)
- * 采用输入框顶部层叠卡片设计（参考图 2 优雅探出式布局），支持多图缩略图、文件类型胶囊、Lightbox 放大与一键清空。
+ * Composer 附件智能浮动托盘 (Smart Adaptive Attachment Shelf & Drawer)
+ * 1. 紧凑态：图片与文件分区呈现、超出阈值折叠 (+N 徽标)、彻底消除原生滚动条。
+ * 2. 展开态：就地变形为轻量紧凑资产抽屉（无重复渲染、紧凑流式自适应排布、大图 Lightbox 与一键清空）。
  */
 import { useEffect, useState } from "react"
 import {
+  RiArrowDownSLine,
+  RiArrowUpSLine,
   RiAttachmentLine,
   RiCloseLine,
   RiDeleteBin7Line,
@@ -40,7 +43,7 @@ function formatFileSize(bytes?: number): string {
 
 function getFileIcon(name: string) {
   const ext = name.split(".").pop()?.toLowerCase() ?? ""
-  if (["ts", "tsx", "js", "jsx", "json", "py", "rs", "go", "html", "css"].includes(ext)) {
+  if (["ts", "tsx", "js", "jsx", "json", "py", "rs", "go", "html", "css", "sql", "sh"].includes(ext)) {
     return RiFileCodeLine
   }
   if (["md", "txt", "log", "doc", "docx", "pdf"].includes(ext)) {
@@ -51,6 +54,7 @@ function getFileIcon(name: string) {
 
 export function ComposerQueue({ className }: { className?: string }) {
   const [items, setItems] = useState<QueuedComposerAsset[]>(() => listComposerAssets())
+  const [isExpanded, setIsExpanded] = useState(false)
   const [activePreview, setActivePreview] = useState<{
     src: string
     name: string
@@ -62,55 +66,190 @@ export function ComposerQueue({ className }: { className?: string }) {
 
   if (items.length === 0) return null
 
+  const images = items.filter((item) =>
+    isImageMediaType(resolveMediaType(item.name, item.mediaType))
+  )
+  const files = items.filter(
+    (item) => !isImageMediaType(resolveMediaType(item.name, item.mediaType))
+  )
+
+  const summaryLabel =
+    images.length > 0 && files.length > 0
+      ? `${images.length} 图 · ${files.length} 文件`
+      : images.length > 0
+        ? `${images.length} 张图片`
+        : `${files.length} 个文件`
+
+  // 紧凑模式下超过 3 项自动折叠
+  const visibleImages = images.slice(0, 2)
+  const hiddenImagesCount = images.length - visibleImages.length
+
+  const visibleFiles = files.slice(0, 2)
+  const hiddenFilesCount = files.length - visibleFiles.length
+
   return (
     <>
       {/* 顶部探出式层叠附件托盘 (Layered Shelf) */}
       <div
         className={cx(
-          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] items-center justify-between gap-3",
+          "relative z-0 mx-auto flex w-[93%] sm:w-[95%] flex-col gap-2",
           "-mb-3.5 rounded-t-2xl border-x border-t border-border-button-default/80",
-          "bg-background-secondary-default/90 px-3.5 pt-2 pb-4 shadow-2xs backdrop-blur-md",
+          "bg-background-secondary-default/95 px-3.5 pt-2 pb-4 shadow-2xs backdrop-blur-md",
           "animate-in fade-in-50 slide-in-from-bottom-2 duration-200 select-none",
           className
         )}
       >
-        {/* 左侧：附件横向滚动列表 */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-          {items.map((item) =>
-            isImageMediaType(resolveMediaType(item.name, item.mediaType)) ? (
-              <ImageAttachmentItem
-                key={item.id}
-                item={item}
-                onOpenPreview={(src) =>
-                  setActivePreview({
-                    src,
-                    name: item.name,
-                    size: item.size,
-                    mediaType: item.mediaType
-                  })
-                }
-              />
-            ) : (
-              <FileAttachmentItem key={item.id} item={item} />
-            )
-          )}
-        </div>
+        {isExpanded ? (
+          /* 展开态：一体化紧凑检视抽屉（无重复渲染，紧凑流式布局） */
+          <div className="flex flex-col gap-2.5 w-full">
+            {/* 顶栏：标题 + 收起 + 清空 */}
+            <div className="flex items-center justify-between border-b border-border-button-default/60 pb-1.5 text-caption-2-medium">
+              <div className="inline-flex items-center gap-1 font-semibold text-text-primary">
+                <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
+                <span>已附加资产 ({items.length})</span>
+                <span className="font-normal text-text-tertiary">· {summaryLabel}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-text-secondary hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer transition-colors"
+                >
+                  <span>收起</span>
+                  <RiArrowUpSLine className="size-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={clearComposerAssets}
+                  title="清空全部附件"
+                  className="flex size-5.5 items-center justify-center rounded-md text-text-tertiary hover:bg-background-tertiary-default hover:text-text-error-primary cursor-pointer transition-colors"
+                >
+                  <RiDeleteBin7Line className="size-3.5" />
+                </button>
+              </div>
+            </div>
 
-        {/* 右侧：汇总指示与一键清空 */}
-        <div className="flex shrink-0 items-center gap-2 border-l border-border-button-default/60 pl-2.5 text-caption-2-medium text-text-tertiary">
-          <div className="inline-flex items-center gap-1 font-medium text-text-secondary">
-            <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
-            <span>{items.length} 个附件</span>
+            {/* 展开内容区：图片紧凑画廊 + 文件紧凑流 */}
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto no-scrollbar [scrollbar-width:none] pr-0.5">
+              {images.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {images.map((item) => (
+                    <ImageAttachmentItem
+                      key={item.id}
+                      item={item}
+                      onOpenPreview={(src) =>
+                        setActivePreview({
+                          src,
+                          name: item.name,
+                          size: item.size,
+                          mediaType: item.mediaType
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {images.length > 0 && files.length > 0 ? (
+                <div className="w-full h-px bg-border-button-default/60 my-0.5" />
+              ) : null}
+
+              {files.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {files.map((item) => (
+                    <FileAttachmentItem key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={clearComposerAssets}
-            title="清空全部附件"
-            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-tertiary-default hover:text-text-error-primary"
-          >
-            <RiDeleteBin7Line className="size-3.5" aria-hidden />
-          </button>
-        </div>
+        ) : (
+          /* 紧凑态：单行紧凑自适应横排 */
+          <div className="flex items-center justify-between gap-2.5 w-full">
+            {/* 左侧：紧凑平铺区 */}
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5">
+              {/* 1. 图片分组 */}
+              {images.length > 0 ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  {(images.length <= 3 ? images : visibleImages).map((item) => (
+                    <ImageAttachmentItem
+                      key={item.id}
+                      item={item}
+                      onOpenPreview={(src) =>
+                        setActivePreview({
+                          src,
+                          name: item.name,
+                          size: item.size,
+                          mediaType: item.mediaType
+                        })
+                      }
+                    />
+                  ))}
+
+                  {/* 折叠徽标 */}
+                  {images.length > 3 ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsExpanded(true)}
+                      title={`查看全部 ${images.length} 张图片`}
+                      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border-button-default/80 bg-background-primary-default text-caption-2-medium font-semibold text-accent-500 shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-accent-500/50"
+                    >
+                      +{hiddenImagesCount}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* 2. 垂直分割线 */}
+              {images.length > 0 && files.length > 0 ? (
+                <div className="h-6 w-px shrink-0 bg-border-button-default/80" aria-hidden />
+              ) : null}
+
+              {/* 3. 文件分组 */}
+              {files.length > 0 ? (
+                <div className="flex min-w-0 items-center gap-2 overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {(files.length <= 3 ? files : visibleFiles).map((item) => (
+                    <FileAttachmentItem key={item.id} item={item} />
+                  ))}
+
+                  {/* 折叠徽标 */}
+                  {files.length > 3 ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsExpanded(true)}
+                      title={`查看全部 ${files.length} 个文件`}
+                      className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border-button-default/80 bg-background-primary-default px-2.5 text-caption-2-medium font-semibold text-accent-500 shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-accent-500/50"
+                    >
+                      +{hiddenFilesCount} 更多
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            {/* 右侧：汇总与展开 */}
+            <div className="flex shrink-0 items-center gap-1.5 border-l border-border-button-default/70 pl-2 text-caption-2-medium text-text-tertiary">
+              <button
+                type="button"
+                onClick={() => setIsExpanded(true)}
+                title="展开附件检视面板"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-text-secondary transition-colors hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer"
+              >
+                <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
+                <span>{summaryLabel}</span>
+                <RiArrowDownSLine className="size-3.5 text-text-tertiary" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={clearComposerAssets}
+                title="清空全部附件"
+                className="flex size-5.5 cursor-pointer items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-tertiary-default hover:text-text-error-primary"
+              >
+                <RiDeleteBin7Line className="size-3.5" aria-hidden />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lightbox 模态大图预览 */}
@@ -182,7 +321,7 @@ function ImageAttachmentItem({
   return (
     <div
       data-testid="composer-asset-chip"
-      className="group relative flex size-12 shrink-0 items-center justify-center rounded-xl border border-border-button-default/70 bg-background-primary-default shadow-2xs transition-all hover:border-accent-500/50"
+      className="group relative flex size-11 shrink-0 items-center justify-center rounded-xl border border-border-button-default/80 bg-background-primary-default shadow-2xs transition-all hover:border-accent-500/50"
     >
       <button
         type="button"
@@ -198,7 +337,7 @@ function ImageAttachmentItem({
           />
         ) : (
           <div className="flex size-full items-center justify-center">
-            <RiImageLine className="size-5 text-foreground-icon-secondary" />
+            <RiImageLine className="size-4.5 text-foreground-icon-secondary" />
           </div>
         )}
       </button>
@@ -237,28 +376,32 @@ function FileAttachmentItem({ item }: { item: QueuedComposerAsset }) {
     <div
       data-testid="composer-asset-chip"
       className={cx(
-        "group inline-flex items-center gap-1.5 rounded-xl border border-border-button-default/70",
-        "bg-background-primary-default px-2.5 py-1.5 text-caption-1-medium text-text-secondary",
-        "shadow-2xs transition-all hover:border-border-button-hover hover:text-text-primary"
+        "group inline-flex h-10 items-center justify-between gap-1.5 rounded-xl border border-border-button-default/80",
+        "bg-background-primary-default px-2.5 text-caption-2-medium text-text-secondary",
+        "shadow-2xs transition-all hover:border-border-button-hover hover:text-text-primary shrink-0"
       )}
     >
-      <FileIcon className="size-3.5 text-accent-500 shrink-0" />
-      <span className="max-w-[120px] truncate font-medium text-text-primary" title={item.name}>
-        {item.name}
-      </span>
-      {sizeLabel ? (
-        <span className="text-caption-2-medium text-text-tertiary shrink-0">
-          ({sizeLabel})
+      <div className="flex min-w-0 items-center gap-1.5">
+        <FileIcon className="size-3.5 text-accent-500 shrink-0" />
+        <span className="max-w-[130px] truncate font-medium text-text-primary" title={item.name}>
+          {item.name}
         </span>
-      ) : null}
-      <button
-        type="button"
-        aria-label={`移除 ${item.name}`}
-        onClick={() => removeComposerAsset(item.id)}
-        className="ml-0.5 flex size-3.5 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-background-secondary-default hover:text-text-primary cursor-pointer"
-      >
-        <RiCloseLine className="size-3" />
-      </button>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        {sizeLabel ? (
+          <span className="text-[10px] text-text-tertiary font-mono">
+            ({sizeLabel})
+          </span>
+        ) : null}
+        <button
+          type="button"
+          aria-label={`移除 ${item.name}`}
+          onClick={() => removeComposerAsset(item.id)}
+          className="flex size-3.5 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-background-secondary-default hover:text-text-primary cursor-pointer"
+        >
+          <RiCloseLine className="size-3" />
+        </button>
+      </div>
     </div>
   )
 }
