@@ -1,7 +1,7 @@
 /**
  * 用户附件缩略图 / 助手生图 BeUI 表面；点图 Dialog 放大。
  */
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { RiFileLine, RiFileTextLine } from "@remixicon/react"
 import {
   Dialog,
@@ -12,8 +12,8 @@ import {
 import { cx } from "@/utils/cx"
 import { ImageGeneration } from "@/components/ai-elements/image-generation"
 import { isImageMediaType, resolveMediaType } from "@enjoy-agents/assets/media-type"
-import { getIde, hasIde } from "@renderer/lib/ide"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { useAssetSrc } from "@renderer/hooks/use-asset-src"
 
 function getFileTypeLabel(name: string, mediaType?: string): string {
   const ext = name.split(".").pop()?.toUpperCase()
@@ -117,21 +117,6 @@ export function AssetPreview({
 
 type PreviewAsset = NonNullable<ThreadMessage["assets"]>[number]
 
-function useAssetSrc(asset: PreviewAsset) {
-  const [src, setSrc] = useState<string | null>(asset.url ?? null)
-  useEffect(() => {
-    if (src || !hasIde()) return
-    void getIde()
-      .assets.read(asset.assetId)
-      .then((row) => {
-        const rec = row as { bytesBase64?: string; mediaType?: string }
-        if (!rec.bytesBase64) return
-        setSrc(`data:${rec.mediaType ?? asset.mediaType};base64,${rec.bytesBase64}`)
-      })
-  }, [asset.assetId, asset.mediaType, src])
-  return src
-}
-
 function InlineImage({
   asset,
   prompt,
@@ -143,7 +128,7 @@ function InlineImage({
   generated?: boolean
   onOpenPreview?: (src: string) => void
 }) {
-  const src = useAssetSrc(asset)
+  const src = useAssetSrc(asset.assetId, asset.mediaType, asset.url)
   if (!generated) return <AttachedImage name={asset.name} src={src} onOpen={onOpenPreview} />
   return <GeneratedImage name={asset.name} src={src} prompt={prompt} onOpen={onOpenPreview} />
 }

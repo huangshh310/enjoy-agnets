@@ -74,7 +74,7 @@ export async function runMediaKind(options: {
     },
     sessionId
   )
-  if (persistChat) persistMediaAssistantAsset(sessionId, asset)
+  if (persistChat) persistMediaAssistantAsset(sessionId, asset, mediaRunKind(kind))
 }
 
 async function runAudioText(
@@ -159,4 +159,9 @@ async function generateMediaBytes(kind: GenerationKind, prompt: string, config: 
     () => generateImageBytes(createImageModel(videoFallback), prompt)
   )
   return { ...result.value, experimental: true as const }
+}
+
+function mediaRunKind(kind: GenerationKind) {
+  if (kind === "image" || kind === "video") return kind
+  return undefined
 }

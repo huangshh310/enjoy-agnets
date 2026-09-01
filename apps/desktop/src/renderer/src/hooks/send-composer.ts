@@ -3,6 +3,7 @@
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
+import { fileToBase64 } from "../lib/file-bytes"
 import { useChatStore } from "../stores/chat-store"
 import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
 import { composerRunKind } from "./composer-run-kind"
@@ -121,16 +122,13 @@ export async function abortComposerRun() {
 
 export async function attachComposerFile(file: File) {
   if (!hasIde()) return
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  let binary = ""
-  for (const byte of bytes) binary += String.fromCharCode(byte)
   const previewUrl = URL.createObjectURL(file)
   try {
     const mediaType = resolveMediaType(file.name, file.type)
     const asset = (await getIde().assets.import({
       name: file.name,
       mediaType,
-      bytesBase64: btoa(binary)
+      bytesBase64: await fileToBase64(file)
     })) as { id: string }
     queueComposerAsset({
       id: asset.id,

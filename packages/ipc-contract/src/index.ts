@@ -14,6 +14,7 @@ export {
   serializeAssistantPayload,
   type AssistantExtras,
   type AssistantPayload,
+  type AssistantRunKind,
   type CitedAsset,
   type CitedSource,
   type ThreadToolCall,

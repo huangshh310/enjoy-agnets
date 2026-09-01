@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./presets": "./src/presets.ts"
+    "./presets": "./src/presets.ts",
+    "./capabilities": "./src/capabilities/catalog.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

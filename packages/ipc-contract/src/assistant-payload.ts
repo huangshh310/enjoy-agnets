@@ -1,6 +1,6 @@
 /**
  * 助手消息持久化载荷：
- * 纯文本消息保持原样；带思考/工具调用的消息用 JSON 信封存储，加载时再拆开。
+ * 纯文本消息保持原样；带思考 / 工具 / runKind 的消息用 JSON 信封存储，加载时再拆开。
  */
 
 export type ToolCallState =
@@ -37,6 +37,9 @@ export type AssistantExtras = {
   structured?: unknown
 }
 
+/** 发送时 stamp：hydrate 回放认这个，不认当前模型选择器。 */
+export type AssistantRunKind = "agent" | "image" | "video"
+
 export type AssistantPayload = {
   v: 1
   content: string
@@ -44,6 +47,7 @@ export type AssistantPayload = {
   tools?: ThreadToolCall[]
   /** 本轮思考耗时（秒），结束后 Thinking 头仍显示 */
   thoughtSeconds?: number
+  runKind?: AssistantRunKind
 } & AssistantExtras
 
 const PAYLOAD_VERSION = 1
@@ -55,7 +59,9 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
   const sources = payload.sources?.filter(Boolean) ?? []
   const assets = payload.assets?.filter(Boolean) ?? []
   const hasExtras = sources.length > 0 || assets.length > 0 || payload.structured != null
-  if (!reasoning && tools.length === 0 && thoughtSeconds == null && !hasExtras) {
+  const runKind = parseRunKind(payload.runKind)
+  // 有 runKind 必须走信封，否则 hydrate 只能靠资产/正文推断。
+  if (!reasoning && tools.length === 0 && thoughtSeconds == null && !hasExtras && !runKind) {
     return payload.content
   }
   return JSON.stringify({
@@ -66,7 +72,8 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
     thoughtSeconds: thoughtSeconds ?? undefined,
     sources: sources.length > 0 ? sources : undefined,
     assets: assets.length > 0 ? assets : undefined,
-    structured: payload.structured
+    structured: payload.structured,
+    runKind
   } satisfies AssistantPayload)
 }
 
@@ -85,11 +92,17 @@ export function parseAssistantPayload(raw: string): AssistantPayload {
         thoughtSeconds: parsed.thoughtSeconds,
         sources: parsed.sources,
         assets: parsed.assets,
-        structured: parsed.structured
+        structured: parsed.structured,
+        runKind: parseRunKind(parsed.runKind)
       }
     }
   } catch {
     // 旧会话是纯 Markdown 文本
   }
   return { v: 1, content: raw }
+}
+
+function parseRunKind(value: unknown): AssistantRunKind | undefined {
+  if (value === "agent" || value === "image" || value === "video") return value
+  return undefined
 }

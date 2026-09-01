@@ -6,8 +6,8 @@ import {
   safeValidateUIMessages,
   sealAbandonedTools
 } from "@enjoy-agents/ipc-contract"
-import type { ThreadMessage } from "../stores/chat-store"
 import { extrasFromParts } from "./extras-from-parts.ts"
+import { mapAssistantThreadMessage, mapUserThreadMessage } from "./hydrate-thread-map.ts"
 
 export type SessionMessageRow = {
   id: string
@@ -17,35 +17,20 @@ export type SessionMessageRow = {
   parts?: unknown[]
 }
 
-export function threadFromRows(rows: SessionMessageRow[]): ThreadMessage[] {
+export function threadFromRows(rows: SessionMessageRow[]) {
   return rows.map((row) => {
     if (row.role !== "assistant") {
-      const extras = extrasFromParts(Array.isArray(row.parts) ? row.parts : [])
-      return {
-        id: row.id,
-        role: row.role,
-        content: row.content,
-        createdAt: row.createdAt,
-        assets: extras.assets.length > 0 ? extras.assets : undefined
-      }
+      return mapUserThreadMessage(row, extrasFromParts(Array.isArray(row.parts) ? row.parts : []))
     }
     const payload = parseAssistantPayload(row.content)
     const validated = safeValidateUIMessages([
       { id: row.id, role: "assistant", parts: Array.isArray(row.parts) ? row.parts : [] }
     ])
-    const extras = extrasFromParts(validated[0]?.parts)
-    return {
-      id: row.id,
-      role: row.role,
-      content: payload.content,
-      reasoning: payload.reasoning,
-      tools: sealAbandonedTools(payload.tools),
-      thoughtSeconds: payload.thoughtSeconds,
-      createdAt: row.createdAt,
-      sources: payload.sources?.length ? payload.sources : extras.sources,
-      assets: payload.assets?.length ? payload.assets : extras.assets,
-      structured: payload.structured ?? extras.structured,
-      components: extras.components
-    }
+    return mapAssistantThreadMessage(
+      row,
+      payload,
+      extrasFromParts(validated[0]?.parts),
+      sealAbandonedTools(payload.tools)
+    )
   })
 }

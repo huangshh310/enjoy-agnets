@@ -5,6 +5,7 @@ import {
   clampThoughtSeconds,
   serializeAssistantPayload,
   type AssistantExtras,
+  type AssistantRunKind,
   type ThreadToolCall,
   type UIMessagePart
 } from "@enjoy-agents/ipc-contract"
@@ -82,6 +83,7 @@ export function persistFinishedAssistant(input: {
   tools: ThreadToolCall[]
   startedAt: number
   extras: AssistantExtras
+  runKind?: AssistantRunKind
 }) {
   const extras = input.extras
   const hasBody =
@@ -102,7 +104,8 @@ export function persistFinishedAssistant(input: {
       thoughtSeconds: clampThoughtSeconds(input.startedAt) ?? undefined,
       sources: extras.sources,
       assets: extras.assets,
-      structured: extras.structured
+      structured: extras.structured,
+      runKind: input.runKind
     }),
     partsFromExtras(input.content, extras)
   )

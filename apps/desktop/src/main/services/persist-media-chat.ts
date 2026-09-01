@@ -1,6 +1,7 @@
 /**
  * 聊天里生图：用户 prompt 与生成资产落库，刷新后气泡能回放。
  */
+import type { AssistantRunKind } from "@enjoy-agents/ipc-contract"
 import { persistFinishedAssistant } from "./persist-parts"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
 
@@ -14,7 +15,8 @@ export function persistMediaUserPrompt(
 
 export function persistMediaAssistantAsset(
   sessionId: string,
-  asset: { id: string; mediaType: string; name: string }
+  asset: { id: string; mediaType: string; name: string },
+  runKind?: AssistantRunKind
 ) {
   persistFinishedAssistant({
     sessionId,
@@ -24,6 +26,7 @@ export function persistMediaAssistantAsset(
     startedAt: Date.now(),
     extras: {
       assets: [{ assetId: asset.id, mediaType: asset.mediaType, name: asset.name }]
-    }
+    },
+    runKind
   })
 }

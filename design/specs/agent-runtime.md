@@ -38,7 +38,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 会话消息存在 SQLite。助手侧复杂载荷用 `assistant-payload` 序列化（reasoning + tool + sources / assets / structured），不要把 tool JSON 当纯文本渲染。刷新会话时 `hydrate-thread` 优先读信封，缺失则从 `message_parts` 补回。
 
-用户消息可带 `attachments`（资产 id）。main 按 MIME 分流后编进最后一条用户消息：`text/*` / markdown / json 等编成 `text` part；`image/*` 需模型有 `vision` 才编 `file` part；PDF 与其它二进制需 `files`。空 `File.type` 或 `application/octet-stream` 按文件名推断，不要默认当二进制。用户附件以 `message_parts` 的 `file` part 落库（按 `attachments` id 写，不依赖编模型 parts 的返回值），刷新后从 parts 恢复气泡。列出消息时若旧用户轮只有 text，按「上一轮之后、本轮发送之前」导入的资产补回 file part。跑循环前 `citeKnowledge` 检索知识库：UI 收 `source.added`，prompt 只塞片段。Composer 选 `grok-imagine-*` / dall-e 等生图模型时走 `ai.generate` kind=`image`（SDK `generateImage`），不要塞进 ToolLoop。运行中点 Stop 走 `ai.abort`（内部也会中止 Agent）。
+用户消息可带 `attachments`（资产 id）。main 按 MIME 分流后编进最后一条用户消息：`text/*` / markdown / json 等编成 `text` part；`image/*` 需模型有 `vision` 才编 `file` part；PDF 与其它二进制需 `files`。空 `File.type` 或 `application/octet-stream` 按文件名推断，不要默认当二进制。用户附件以 `message_parts` 的 `file` part 落库（按 `attachments` id 写，不依赖编模型 parts 的返回值），刷新后从 parts 恢复气泡。列出消息时若旧用户轮只有 text，按「上一轮之后、本轮发送之前」导入的资产补回 file part。跑循环前 `citeKnowledge` 检索知识库：UI 收 `source.added`，prompt 只塞片段。Composer 选 `grok-imagine-*` / dall-e 等生图模型时走 `ai.generate` kind=`image`（SDK `generateImage`），不要塞进 ToolLoop。助手落库把 `runKind` 写进 assistant-payload（`completeAgentRun` 写 `agent`，媒体生成写 `image`/`video`），刷新后 Thinking / 生图表面仍认 stamp。纯文本无 stamp 仍不包信封；有 `runKind` 必须走 JSON 信封。运行中点 Stop 走 `ai.abort`（内部也会中止 Agent）。
 
 ## 不变量
 

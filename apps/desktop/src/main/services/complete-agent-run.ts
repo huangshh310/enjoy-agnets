@@ -27,7 +27,8 @@ export function completeAgentRun(input: {
     reasoning: input.reasoning,
     tools: input.tools,
     startedAt: input.startedAt,
-    extras: { sources: input.citedSources }
+    extras: { sources: input.citedSources },
+    runKind: "agent"
   })
   const durationMs = Date.now() - input.startedAt
   recordMetric({
