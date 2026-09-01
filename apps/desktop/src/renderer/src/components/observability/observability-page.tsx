@@ -30,6 +30,7 @@ import { ObservabilityMetricsList } from "./components/observability-metrics-lis
 import { ObservabilityPagination } from "./components/observability-pagination"
 import { ObservabilityPolicyBar } from "./components/observability-policy-bar"
 import { ObservabilityTraceModal } from "./components/observability-trace-modal"
+import { FullTraceWorkbench } from "./components/trace-view/full-trace-workbench"
 import { ObservabilityReplay } from "./observability-replay"
 import type { MetricKindFilter, MetricStatusFilter } from "./types/observability-ui.types"
 
@@ -237,50 +238,57 @@ export function ObservabilityPage() {
         )}
 
         {/* 视图分支 2: 链路明细日志 (Traces Table View 带分页) */}
-        {activeView === "traces" && (
-          <section className="flex flex-col gap-3">
-            <ObservabilityFilters
-              statusFilter={statusFilter}
-              onStatusFilterChange={(s) => {
-                setStatusFilter(s)
-                setPage(1)
-              }}
-              kindFilter={kindFilter}
-              onKindFilterChange={(k) => {
-                setKindFilter(k)
-                setPage(1)
-              }}
-              search={search}
-              onSearchChange={(q) => {
-                setSearch(q)
-                setPage(1)
-              }}
+        {/* 视图分支 2: 链路明细日志 (Traces Table View 带分页 或 全景 Workbench) */}
+        {activeView === "traces" &&
+          (inspectMetric ? (
+            <FullTraceWorkbench
+              metric={inspectMetric}
+              onBack={() => setInspectMetric(null)}
             />
+          ) : (
+            <section className="flex flex-col gap-3">
+              <ObservabilityFilters
+                statusFilter={statusFilter}
+                onStatusFilterChange={(s) => {
+                  setStatusFilter(s)
+                  setPage(1)
+                }}
+                kindFilter={kindFilter}
+                onKindFilterChange={(k) => {
+                  setKindFilter(k)
+                  setPage(1)
+                }}
+                search={search}
+                onSearchChange={(q) => {
+                  setSearch(q)
+                  setPage(1)
+                }}
+              />
 
-            <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary px-1">
-              <span>
-                当前页显示 {paginatedMetrics.length} 条（筛选后共 {filteredMetrics.length} 条）
-              </span>
-              <span>点击任意记录查看详细 Trace 诊断</span>
-            </div>
+              <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary px-1">
+                <span>
+                  当前页显示 {paginatedMetrics.length} 条（筛选后共 {filteredMetrics.length} 条）
+                </span>
+                <span>点击任意记录查看全景 Trace 瀑布流</span>
+              </div>
 
-            <ObservabilityMetricsList
-              metrics={paginatedMetrics}
-              onInspect={(m) => setInspectMetric(m)}
-            />
+              <ObservabilityMetricsList
+                metrics={paginatedMetrics}
+                onInspect={(m) => setInspectMetric(m)}
+              />
 
-            <ObservabilityPagination
-              currentPage={page}
-              pageSize={pageSize}
-              totalItems={filteredMetrics.length}
-              onPageChange={setPage}
-              onPageSizeChange={(s) => {
-                setPageSize(s)
-                setPage(1)
-              }}
-            />
-          </section>
-        )}
+              <ObservabilityPagination
+                currentPage={page}
+                pageSize={pageSize}
+                totalItems={filteredMetrics.length}
+                onPageChange={setPage}
+                onPageSizeChange={(s) => {
+                  setPageSize(s)
+                  setPage(1)
+                }}
+              />
+            </section>
+          ))}
 
         {/* 视图分支 3: 事件流回放 */}
         {activeView === "replay" && <ObservabilityReplay />}
