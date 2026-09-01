@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/dialog"
 import { cx } from "@/utils/cx"
 import { ImageGeneration } from "@/components/ai-elements/image-generation"
-import { isImageMediaType, resolveMediaType } from "@enjoy-agents/assets/media-type"
+import { isImageMediaType, isVideoMediaType, resolveMediaType } from "@enjoy-agents/assets/media-type"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useAssetSrc } from "@renderer/hooks/use-asset-src"
+import { VideoGeneration } from "./video-generating"
 
 function getFileTypeLabel(name: string, mediaType?: string): string {
   const ext = name.split(".").pop()?.toUpperCase()
@@ -51,6 +52,8 @@ export function AssetPreview({
                 generated={align === "start"}
                 onOpenPreview={(src) => setActivePreview({ src, name: asset.name, mediaType: asset.mediaType })}
               />
+            ) : isVideoMediaType(resolveMediaType(asset.name, asset.mediaType)) ? (
+              <InlineVideo asset={asset} prompt={prompt} generated={align === "start"} />
             ) : (
               <div
                 className={cx(
@@ -116,6 +119,23 @@ export function AssetPreview({
 }
 
 type PreviewAsset = NonNullable<ThreadMessage["assets"]>[number]
+
+function InlineVideo({
+  asset,
+  prompt,
+  generated
+}: {
+  asset: PreviewAsset
+  prompt?: string
+  generated?: boolean
+}) {
+  const src = useAssetSrc(asset.assetId, asset.mediaType, asset.url)
+  return (
+    <VideoGeneration status={src ? "complete" : "generating"} prompt={generated ? prompt : undefined}>
+      {src ? <video src={src} controls className="size-full object-cover" /> : null}
+    </VideoGeneration>
+  )
+}
 
 function InlineImage({
   asset,

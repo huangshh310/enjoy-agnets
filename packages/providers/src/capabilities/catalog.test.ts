@@ -27,6 +27,10 @@ test("grok-imagine 是生图模型，不是聊天 LanguageModel", () => {
   assert.ok(!caps.includes("vision"))
 })
 
+test("grok-imagine-video 只声明 video", () => {
+  assert.deepEqual(staticCapabilitiesFor("grok-imagine-video", "openai"), ["video"])
+})
+
 test("媒体官方 kind 只声明对应能力", () => {
   const fal = staticCapabilitiesFor("fal-ai/flux/schnell", "fal")
   assert.deepEqual(fal, ["image", "video"])

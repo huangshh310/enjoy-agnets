@@ -82,6 +82,10 @@ export function isImageMediaType(mediaType: string): boolean {
   return mediaType.toLowerCase().startsWith("image/")
 }
 
+export function isVideoMediaType(mediaType: string): boolean {
+  return mediaType.toLowerCase().startsWith("video/")
+}
+
 export function isPdfMediaType(mediaType: string): boolean {
   return mediaType.toLowerCase() === "application/pdf"
 }

@@ -1,14 +1,9 @@
 /**
  * 媒体生成：generateImage / generateSpeech / transcribe。
- * 视频走 experimental_generateVideo，失败隔离并标实验。
+ * 视频见 generate-video.ts。
  */
 import { Buffer } from "node:buffer"
-import {
-  experimental_generateVideo,
-  generateImage,
-  generateSpeech,
-  transcribe
-} from "ai"
+import { generateImage, generateSpeech, transcribe } from "ai"
 
 export type MediaBytes = {
   bytes: Uint8Array
@@ -127,10 +122,4 @@ async function readTranslateStream(
   return text || null
 }
 
-export async function generateVideoBytes(model: unknown, prompt: string): Promise<MediaBytes> {
-  const result = await experimental_generateVideo({ model: model as never, prompt })
-  const video = (result as { video?: unknown }).video
-  const bytes = asBytes(video)
-  if (!bytes) throw new Error("Video provider returned no bytes.")
-  return { bytes, mediaType: "video/mp4", name: "generated.mp4", experimental: true }
-}
+export { generateVideoBytes, videoTimeoutMs } from "./generate-video.ts"

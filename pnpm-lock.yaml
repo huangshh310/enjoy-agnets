@@ -57,6 +57,9 @@ catalogs:
     '@ai-sdk/sandbox-vercel':
       specifier: ^1.0.94
       version: 1.0.94
+    '@ai-sdk/xai':
+      specifier: ^4.0.50
+      version: 4.0.50
     '@electron-toolkit/preload':
       specifier: ^3.0.2
       version: 3.0.2
@@ -543,6 +546,9 @@ importers:
       '@ai-sdk/replicate':
         specifier: 'catalog:'
         version: 3.0.35(zod@4.5.2)
+      '@ai-sdk/xai':
+        specifier: 'catalog:'
+        version: 4.0.50(zod@4.5.2)
       '@enjoy-agents/ipc-contract':
         specifier: workspace:*
         version: link:../ipc-contract
@@ -782,6 +788,12 @@ packages:
   '@ai-sdk/sandbox-vercel@1.0.94':
     resolution: {integrity: sha512-u+D2vB0xuqO7HaJ1gyaCOX3e8J/VVMxuh+8ZBZACHR/wkiUnjcg4sz9Io7wGWpmQ0rVHggnbaj2V3vy0plX8rg==}
     engines: {node: '>=22'}
+
+  '@ai-sdk/xai@4.0.50':
+    resolution: {integrity: sha512-S9fR3r3mxFzAW9vAUF9v3YDMgyNsIii9lmcD/aCBpHdkNDubGu/gkD9kjv4f1QntbsqjKCkoCwzujTFjyxcG7Q==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   '@ant-design/colors@8.0.1':
     resolution: {integrity: sha512-foPVl0+SWIslGUtD/xBr1p9U4AKzPhNYEseXYRRo5QSzGACYZrQbe11AYJbYfAWnWSpGBx6JjBmSeugUsD9vqQ==}
@@ -7080,6 +7092,12 @@ snapshots:
       - react-native-b4a
       - ws
       - zod
+
+  '@ai-sdk/xai@4.0.50(zod@4.5.2)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.9
+      '@ai-sdk/provider-utils': 5.0.34(zod@4.5.2)
+      zod: 4.5.2
 
   '@ant-design/colors@8.0.1':
     dependencies:

@@ -58,6 +58,7 @@ export {
   createTranscriptionModel,
   createEmbeddingModel,
   createVideoModel,
+  videoFactoryKind,
   createTranslationModel,
   createRerankModel,
   defaultRerankModelId,

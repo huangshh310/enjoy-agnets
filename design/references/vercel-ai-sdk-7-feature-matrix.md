@@ -516,7 +516,7 @@ useObject（需要流式预览时）
 | `embed` / `cosineSimilarity` / rerank | 已实现 | 索引 hashed + Provider 覆盖；模型漂移 Resume 重嵌；`ai.generate` embedding/rerank 已接线；有 Cohere 时走 SDK `rerank`，否则本地融合 |
 | `generateImage` / `generateSpeech` / `transcribe` | Provider 依赖 | 资产库 + `asset.created`；OpenAI 兼容 + 官方 Fal/Replicate/ElevenLabs/Deepgram/Cohere 工厂；同族备用模型 |
 | `experimental_streamTranslate` | 实验 | `kind=translation` + Media Translate；OpenAI `translation()`；模型不合法返回 null |
-| `experimental_generateVideo` / Realtime | 实验 | 警告事件 + main 代理；Realtime 先试 Provider WS，失败回落本地回环 |
+| `experimental_generateVideo` / Realtime | 实验 | 视频：`@ai-sdk/xai` `.video()` / Fal / Replicate；失败不回落静图；Realtime 先试 Provider WS，失败回落本地回环 |
 | `uploadFile` / `uploadSkill` | Provider 依赖 | `assets.upload` + hash 缓存 `provider_file_refs` |
 | `createMCPClient` / MCP Apps | 已实现 | SDK 无导出时本机会话：`tools/list` + `tools/call`；Trust 后注入 Agent；`mcp.openApp` / `mcp.appMessage` 隔离 iframe，消息在 main 消毒 |
 | `createProviderRegistry` / 能力探测 | 已实现 | `createEnjoyRegistry` + 静态目录；`probeProvider` 写入 `probedCaps`；Gateway 官方工厂；媒体 kind 探测不打 `/models` |

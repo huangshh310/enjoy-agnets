@@ -3,6 +3,7 @@ import { app, BrowserWindow, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
+import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
@@ -10,6 +11,8 @@ import appIconPng from "../../resources/icon.png?asset";
 if (process.env.ENJOY_E2E_USERDATA) {
   app.setPath("userData", process.env.ENJOY_E2E_USERDATA);
 }
+
+registerAssetScheme();
 
 /** 任务栏 / Alt+Tab / 最小化缩略图用的图标路径。Windows 用多帧 ICO，其它平台用 PNG。 */
 function resolveAppIconPath(): string {
@@ -58,6 +61,7 @@ function createWindow(): void {
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId("com.enjoyagents.desktop");
+  handleAssetProtocol();
   getDatabase();
   await bootstrapE2eStub();
   void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/reasoning.test.ts src/capabilities/catalog.test.ts src/capabilities/probe.test.ts src/middleware.test.ts src/media-models.test.ts src/google.test.ts src/embeddings/rerank-model.test.ts"
+    "test": "node --experimental-strip-types --test src/reasoning.test.ts src/capabilities/catalog.test.ts src/capabilities/probe.test.ts src/middleware.test.ts src/media-models.test.ts src/media/video-factory.test.ts src/google.test.ts src/embeddings/rerank-model.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "catalog:",
@@ -22,6 +22,7 @@
     "@ai-sdk/gateway": "catalog:",
     "@ai-sdk/google": "catalog:",
     "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/xai": "catalog:",
     "@ai-sdk/replicate": "catalog:",
     "@enjoy-agents/ipc-contract": "workspace:*",
     "ai": "catalog:"

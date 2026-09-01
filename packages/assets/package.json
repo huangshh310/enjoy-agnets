@@ -5,11 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./media-type": "./src/media-type.ts"
+    "./media-type": "./src/media-type.ts",
+    "./playback-url": "./src/playback-url.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/hash.test.ts src/export-policy.test.ts src/provider-refs.test.ts src/import-limit.test.ts src/media-type.test.ts"
+    "test": "node --experimental-strip-types --test src/hash.test.ts src/export-policy.test.ts src/provider-refs.test.ts src/import-limit.test.ts src/media-type.test.ts src/playback-url.test.ts"
   },
   "dependencies": {
     "@enjoy-agents/db": "workspace:*"

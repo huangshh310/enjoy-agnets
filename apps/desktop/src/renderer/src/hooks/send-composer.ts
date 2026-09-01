@@ -1,5 +1,5 @@
 /**
- * Composer 发送：imagine / 生图模型走 ai.generate + generateImage，其余走 Agent。
+ * Composer 发送：imagine 走 generateImage，imagine-video 走 generateVideo，其余走 Agent。
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
@@ -13,7 +13,7 @@ export async function sendComposerMessage() {
   const store = useChatStore.getState()
   const content = store.composer.trim()
   if (!content || store.running) return
-  if (!guardComposer(store)) return
+  if (!(await guardComposer(store))) return
 
   const queuedAssets = takeComposerAssetDetails()
   const assetIds = queuedAssets.map((item) => item.id)
@@ -96,7 +96,7 @@ async function startComposerRun(
   })
 }
 
-function guardComposer(store: ReturnType<typeof useChatStore.getState>): boolean {
+async function guardComposer(store: ReturnType<typeof useChatStore.getState>): Promise<boolean> {
   if (!hasIde()) {
     store.setError("The desktop IPC bridge is not available.")
     return false

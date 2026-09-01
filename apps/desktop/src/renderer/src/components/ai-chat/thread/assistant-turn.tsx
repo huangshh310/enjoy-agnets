@@ -1,7 +1,8 @@
 /**
- * 助手一轮回复：有推理 / 工具才画 Thinking；生图轮只走 Image Generation。
+ * 助手一轮回复：有推理 / 工具才画 Thinking；生图 / 生视频都走 Image Generation 交互（视频 16:9）。
  */
 import { ImageGeneration } from "@/components/ai-elements/image-generation"
+import { VideoGeneration } from "./video-generating"
 import { Message, MessageContent } from "@/components/ai-elements/message"
 import { resolveTurnKind } from "@renderer/hooks/resolve-turn-kind"
 import { shouldShowThinkingTrace } from "@renderer/hooks/thinking-visibility"
@@ -31,7 +32,11 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
 
       {surface.showGenerating ? (
         <MessageContent>
-          <ImageGeneration status="generating" prompt={prompt} className="w-80 max-w-full" />
+          {surface.turnKind === "video" ? (
+            <VideoGeneration prompt={prompt} />
+          ) : (
+            <ImageGeneration status="generating" prompt={prompt} className="w-80 max-w-full" />
+          )}
         </MessageContent>
       ) : null}
 
@@ -67,6 +72,11 @@ function assistantSurface(message: ThreadMessage) {
       mediaSurface: turnKind !== "agent"
     }),
     hasBody: Boolean(message.content.trim()) || Boolean(message.attachment) || hasExtras,
-    showGenerating: Boolean(message.streaming) && !hasExtras && !message.content.trim() && turnKind === "image"
+    turnKind,
+    showGenerating:
+      Boolean(message.streaming) &&
+      !hasExtras &&
+      !message.content.trim() &&
+      (turnKind === "image" || turnKind === "video")
   }
 }

@@ -13,6 +13,7 @@ import {
   type ProviderGroup,
   formatProviderTitle
 } from "./model-picker-types"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ModelListPane } from "./model-list-pane"
 import { ProviderSidebar } from "./provider-sidebar"
 
@@ -31,6 +32,7 @@ export function ModelPicker({
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedKey, setSelectedKey] = useState<string>("all")
   const navigate = useNavigate()
+  const experimentalMedia = useSettingsSnapshot().data?.preferences.experimentalMedia ?? false
 
   // 打开弹层时静默刷新最新供应商与模型列表，确保多供应商状态实时同步
   useEffect(() => {
@@ -146,6 +148,7 @@ export function ModelPicker({
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onSelectModel={handleSelectModel}
+          experimentalMedia={experimentalMedia}
         />
       </PopoverContent>
     </Popover>

@@ -29,10 +29,12 @@ import { contextUsed, formatNodeTime, useChatStore, type ModelOption } from "@re
 import { RightPane } from "./right-pane/right-pane"
 import { useRightPaneShortcuts } from "./right-pane/use-right-pane-shortcuts"
 import { useRightPaneWidth } from "./right-pane/use-right-pane-width"
+import { useExperimentalMediaGate } from "@renderer/hooks/experimental-media-gate"
 import { AiChatComposer } from "./ai-chat-composer"
 import { AiChatSidebar } from "./ai-chat-sidebar"
 import { AiChatStatusBar } from "./ai-chat-status-bar"
 import { AiChatThread } from "./ai-chat-thread"
+import { ExperimentalMediaDialog } from "./experimental-media-dialog"
 
 export function AiChatShell() {
   const userName = useChatStore((state) => state.userName)
@@ -70,6 +72,12 @@ export function AiChatShell() {
   })
   useRightPaneShortcuts()
   const { groupRef, chatPanelRef, maximized, toggleWidth, resetWidth } = useRightPaneWidth()
+  const experimentalGate = useExperimentalMediaGate({
+    modelId,
+    models,
+    onSend: () => void sendComposerMessage(),
+    onModelChange: (model) => void handleModelChange(model)
+  })
 
   async function handleModelChange(model: ModelOption) {
     setModel(model.id, model.label, model.provider, model.reasoningEffort)
@@ -166,8 +174,8 @@ export function AiChatShell() {
                   modelLabel={modelLabel}
                   modelId={modelId}
                   models={models}
-                  onModelChange={(model) => void handleModelChange(model)}
-                  onSend={() => void sendComposerMessage()}
+                  onModelChange={experimentalGate.requestModel}
+                  onSend={experimentalGate.requestSend}
                   onStop={() => void abortComposerRun()}
                   onAttach={(file) => void attachComposerFile(file)}
                 />
@@ -220,6 +228,13 @@ export function AiChatShell() {
           </>
         )}
       </Group>
+      <ExperimentalMediaDialog
+        open={experimentalGate.promptOpen}
+        onOpenChange={(open) => {
+          if (!open) experimentalGate.cancel()
+        }}
+        onConfirm={() => void experimentalGate.confirm()}
+      />
     </div>
   )
 }

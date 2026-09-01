@@ -41,7 +41,8 @@ export async function executeKind(
       prompt: request.prompt,
       attachments: request.attachments,
       config: await requireProviderConfig(request.modelId),
-      persistChat: Boolean(request.messages?.length)
+      persistChat: Boolean(request.messages?.length),
+      abortSignal: signal
     })
     noteFirst()
     return

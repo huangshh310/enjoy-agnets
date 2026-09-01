@@ -1,7 +1,9 @@
 /**
- * 资产预览 data URL：有 url 用现成的，否则走 assets.read。
+ * 资产预览 src：视频走 enjoy-asset://，图片走现成 url 或 assets.read data URL。
  */
 import { useEffect, useState } from "react"
+import { isVideoMediaType } from "@enjoy-agents/assets/media-type"
+import { assetPlaybackUrl } from "@enjoy-agents/assets/playback-url"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
 export function useAssetSrc(assetId: string, mediaType?: string, fallbackUrl?: string) {
@@ -9,6 +11,10 @@ export function useAssetSrc(assetId: string, mediaType?: string, fallbackUrl?: s
 
   useEffect(() => {
     let active = true
+    if (mediaType && isVideoMediaType(mediaType)) {
+      setSrc(assetPlaybackUrl(assetId))
+      return undefined
+    }
     setSrc(fallbackUrl ?? null)
     if (fallbackUrl || !hasIde()) return undefined
     void getIde()

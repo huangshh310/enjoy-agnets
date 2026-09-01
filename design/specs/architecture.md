@@ -47,7 +47,7 @@ Main Process（可信）
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
 - 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、assets、knowledge_*、mcp_*、telemetry_metrics）。向量存在 SQLite，检索在本机。
 - 供应商密钥：主进程 vault + `safeStorage`，renderer 只见 `hasKey` / `keyHint`。
-- 资产文件：`userData/assets`。Realtime 只在 main 代理 WebSocket。
+- 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
 
 ## 不变量

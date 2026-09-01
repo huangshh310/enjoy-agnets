@@ -100,6 +100,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/providers/src/capabilities/catalog.ts")
         },
         {
+          find: "@enjoy-agents/assets/playback-url",
+          replacement: resolve(repoRoot, "packages/assets/src/playback-url.ts")
+        },
+        {
           find: "@enjoy-agents/assets/media-type",
           replacement: resolve(repoRoot, "packages/assets/src/media-type.ts")
         },

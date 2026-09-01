@@ -11,6 +11,7 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
+import { isVideoOnlyModelId } from "@enjoy-agents/providers/capabilities"
 import type { ModelOption } from "@renderer/stores/chat-store"
 import type { ProviderGroup } from "./model-picker-types"
 
@@ -21,7 +22,8 @@ export function ModelListPane({
   currentProviderId,
   searchQuery,
   onSearchChange,
-  onSelectModel
+  onSelectModel,
+  experimentalMedia
 }: {
   selectedKey: string
   groups: ProviderGroup[]
@@ -30,6 +32,7 @@ export function ModelListPane({
   searchQuery: string
   onSearchChange: (query: string) => void
   onSelectModel: (model: ModelOption) => void
+  experimentalMedia: boolean
 }) {
   // 当前供应商分组
   const currentGroup = useMemo(() => {
@@ -109,11 +112,17 @@ export function ModelListPane({
               (model.providerId && currentProviderId
                 ? model.providerId === currentProviderId
                 : true)
+            const videoLocked = isVideoOnlyModelId(model.id) && !experimentalMedia
 
             return (
               <button
                 key={`${model.providerId || model.provider}-${model.id}`}
                 type="button"
+                title={
+                  videoLocked
+                    ? "Experimental. Selecting this model will ask to enable experimental media."
+                    : undefined
+                }
                 onClick={() => onSelectModel(model)}
                 className={cx(
                   "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors",
@@ -148,6 +157,11 @@ export function ModelListPane({
                       <span className="inline-flex items-center gap-0.5 rounded bg-state-success-text/10 px-1 py-0.2 text-[9px] font-semibold text-state-success-text">
                         <RiBrainLine className="size-2.5" />
                         Thinking
+                      </span>
+                    ) : null}
+                    {videoLocked ? (
+                      <span className="rounded bg-background-secondary-default px-1 py-0.2 text-[9px] font-semibold text-text-tertiary">
+                        Exp
                       </span>
                     ) : null}
                   </div>

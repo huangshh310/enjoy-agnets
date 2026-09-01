@@ -8,6 +8,7 @@ import {
   resolveTimeoutMs,
   tokensPerSecond,
   ttfoMs,
+  videoTimeoutMs,
   withTimeout
 } from "@enjoy-agents/agent-core"
 import { AiAbortInput, AiGenerateInput, AiResumeInput } from "@enjoy-agents/ipc-contract"
@@ -118,7 +119,10 @@ async function runKind(
     firstTokenAt = firstTokenAt ?? Date.now()
   }
   try {
-    const budget = resolveTimeoutMs(request.timeoutMs, readPreferences().agentTimeoutMs)
+    const budget =
+      request.kind === "video"
+        ? videoTimeoutMs(resolveTimeoutMs(request.timeoutMs, readPreferences().agentTimeoutMs) ?? 0)
+        : resolveTimeoutMs(request.timeoutMs, readPreferences().agentTimeoutMs)
     await withTimeout(
       (nested) =>
         executeKind(window, runId, request, nested, noteFirst),

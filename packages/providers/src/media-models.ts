@@ -9,7 +9,6 @@ import {
   createOfficialImageModel,
   createOfficialSpeechModel,
   createOfficialTranscriptionModel,
-  createOfficialVideoModel
 } from "./media/official"
 import { presetFor } from "./presets"
 import type { ProviderConfig } from "./types"
@@ -45,9 +44,7 @@ export function createEmbeddingModel(config: ProviderConfig): unknown {
   return createOfficialEmbeddingModel(config) ?? openaiConnection(config).embedding(config.modelId)
 }
 
-export function createVideoModel(config: ProviderConfig): unknown {
-  return createOfficialVideoModel(config) ?? openaiConnection(config).image(config.modelId)
-}
+export { createVideoModel, videoFactoryKind } from "./media/video-factory"
 
 export function createTranslationModel(config: ProviderConfig): unknown {
   return openaiConnection(config).translation(config.modelId)

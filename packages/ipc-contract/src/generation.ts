@@ -11,6 +11,10 @@ const GenerationMessage = z.object({
   reasoning: z.string().optional()
 })
 
+/** 视频 / Realtime 必须先开 Settings 实验开关。main 与 composer 共用文案。 */
+export const EXPERIMENTAL_MEDIA_HINT =
+  "Enable experimental media in Settings to use video or realtime."
+
 export const GenerationKind = z.enum([
   "text",
   "structured-object",

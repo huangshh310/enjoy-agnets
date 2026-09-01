@@ -10,6 +10,7 @@ import {
   translateAudio,
   withMediaFallback
 } from "@enjoy-agents/agent-core"
+import { isImageMediaType } from "@enjoy-agents/assets"
 import type { GenerationKind } from "@enjoy-agents/ipc-contract"
 import {
   alternateImageModelId,
@@ -20,6 +21,7 @@ import {
   createTranscriptionModel,
   createTranslationModel,
   createVideoModel,
+  videoFactoryKind,
   type ProviderConfig
 } from "@enjoy-agents/providers"
 import { stampAndSend } from "./event-bus"
@@ -36,6 +38,7 @@ export async function runMediaKind(options: {
   attachments: string[]
   config: ProviderConfig
   persistChat?: boolean
+  abortSignal?: AbortSignal
 }): Promise<void> {
   const { window, runId, sessionId, kind, prompt, config, persistChat } = options
   if (persistChat && prompt?.trim()) {
@@ -59,7 +62,7 @@ export async function runMediaKind(options: {
     await runAudioText(options, kind)
     return
   }
-  const media = await generateMediaBytes(kind, prompt ?? "", config)
+  const media = await generateMediaBytes(kind, prompt ?? "", config, options.attachments, options.abortSignal)
   const asset = await saveGeneratedAsset(media)
   stampAndSend(
     window,
@@ -136,7 +139,13 @@ function audioTextRunner(
   }
 }
 
-async function generateMediaBytes(kind: GenerationKind, prompt: string, config: ProviderConfig) {
+async function generateMediaBytes(
+  kind: GenerationKind,
+  prompt: string,
+  config: ProviderConfig,
+  attachments: string[],
+  abortSignal?: AbortSignal
+) {
   if (kind === "image") {
     const fallback = await resolveMediaFallback(config, "image", alternateImageModelId(config.modelId))
     const result = await withMediaFallback(
@@ -153,12 +162,45 @@ async function generateMediaBytes(kind: GenerationKind, prompt: string, config: 
     )
     return result.value
   }
-  const videoFallback = await resolveMediaFallback(config, "video", config.modelId)
+  if (kind !== "video") throw new Error(`Unsupported media kind: ${kind}`)
+  return generateVideoMedia(config, prompt, attachments, abortSignal)
+}
+
+async function generateVideoMedia(
+  config: ProviderConfig,
+  prompt: string,
+  attachments: string[],
+  abortSignal?: AbortSignal
+) {
+  const image = await firstImageAttachment(attachments)
+  const run = (modelConfig: ProviderConfig) =>
+    generateVideoBytes({
+      model: createVideoModel(modelConfig),
+      prompt,
+      image,
+      abortSignal
+    })
+  const fallback = await resolveMediaFallback(config, "video", config.modelId)
+  const canFallback =
+    videoFactoryKind(fallback) !== "none" &&
+    (fallback.provider !== config.provider || fallback.modelId !== config.modelId)
+  if (!canFallback) {
+    return { ...(await run(config)), experimental: true as const }
+  }
   const result = await withMediaFallback(
-    () => generateVideoBytes(createVideoModel(config), prompt),
-    () => generateImageBytes(createImageModel(videoFallback), prompt)
+    () => run(config),
+    () => run(fallback)
   )
   return { ...result.value, experimental: true as const }
+}
+
+async function firstImageAttachment(ids: string[]): Promise<Uint8Array | undefined> {
+  for (const id of ids) {
+    const asset = await readAssetBytes(id)
+    if (!isImageMediaType(asset.mediaType)) continue
+    return Buffer.from(asset.bytesBase64, "base64")
+  }
+  return undefined
 }
 
 function mediaRunKind(kind: GenerationKind) {
