@@ -1,6 +1,6 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与插件市场。最后更新：2026-09-01
+> MCP Server、分级审批、隔离 App 与插件市场。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -19,7 +19,9 @@
 - `packages/mcp`
 - `apps/desktop/src/main/services/mcp-service.ts`
 - `apps/desktop/src/main/services/mcp-app.ts`
-- `apps/desktop/src/renderer/src/components/mcp/mcp-page.tsx`
+- `apps/desktop/src/renderer/src/components/mcp/mcp-page.tsx`（组装层）
+- `apps/desktop/src/renderer/src/components/mcp/hooks/use-mcp-page.ts`
+- `apps/desktop/src/renderer/src/components/mcp/lib/mcp-json-config.ts`
 - `apps/desktop/src/renderer/src/components/mcp/mcp-app-frame.tsx`
 
 ## 已知坑
