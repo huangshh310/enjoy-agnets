@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { assertInsideRoot, resolveKnowledgePath } from "./path-safe.ts"
+import { assertAbsInsideRoots, assertInsideRoot, resolveKnowledgePath } from "./path-safe.ts"
 
 test("工作区内相对路径通过", () => {
   const root = "C:/workspace"
@@ -34,4 +34,12 @@ test("resolveKnowledgePath 拒绝工作区外绝对路径", () => {
     return
   }
   assert.throws(() => resolveKnowledgePath("C:/workspace", "D:/other/secret.md"))
+})
+
+test("assertAbsInsideRoots 允许多根，拒绝逃逸", () => {
+  const allowed = ["C:/ws/.cursor/rules", "C:/home/.enjoy-agents/rules"]
+  const ok = assertAbsInsideRoots("C:/ws/.cursor/rules/clean.mdc", allowed)
+  assert.ok(ok.toLowerCase().includes("clean.mdc"))
+  assert.throws(() => assertAbsInsideRoots("C:/Windows/system.ini", allowed))
+  assert.throws(() => assertAbsInsideRoots("C:/ws/.cursor/rules/../../secret.txt", allowed))
 })

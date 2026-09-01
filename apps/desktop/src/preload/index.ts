@@ -12,13 +12,12 @@ const ide = {
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
     readFile: (input: unknown) => ipcRenderer.invoke("workspace.readFile", input),
     diff: (input: unknown) => ipcRenderer.invoke("workspace.diff", input),
-    changes: (workspaceId: string) => ipcRenderer.invoke("workspace.changes", workspaceId)
+    changes: (input: unknown) => ipcRenderer.invoke("workspace.changes", input)
   },
   session: {
-    list: (workspaceId: string) => ipcRenderer.invoke("session.list", workspaceId),
-    create: (workspaceId: string, title?: string) =>
-      ipcRenderer.invoke("session.create", workspaceId, title),
-    messages: (sessionId: string) => ipcRenderer.invoke("session.messages", sessionId),
+    list: (input: unknown) => ipcRenderer.invoke("session.list", input),
+    create: (input: unknown) => ipcRenderer.invoke("session.create", input),
+    messages: (input: unknown) => ipcRenderer.invoke("session.messages", input),
     rename: (input: unknown) => ipcRenderer.invoke("session.rename", input),
     listArchived: () => ipcRenderer.invoke("session.listArchived"),
     archive: (input: unknown) => ipcRenderer.invoke("session.archive", input),
@@ -39,14 +38,14 @@ const ide = {
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),
     saveSecret: (input: unknown) => ipcRenderer.invoke("settings.saveSecret", input),
-    setDefaultModel: (modelId: string) => ipcRenderer.invoke("settings.setDefaultModel", modelId),
+    setDefaultModel: (input: unknown) => ipcRenderer.invoke("settings.setDefaultModel", input),
     setPreferences: (input: unknown) => ipcRenderer.invoke("settings.setPreferences", input),
     setHarness: (input: unknown) => ipcRenderer.invoke("settings.setHarness", input),
     listProviders: () => ipcRenderer.invoke("settings.listProviders"),
     presets: () => ipcRenderer.invoke("settings.presets"),
     upsertProvider: (input: unknown) => ipcRenderer.invoke("settings.upsertProvider", input),
-    removeProvider: (id: string) => ipcRenderer.invoke("settings.removeProvider", id),
-    activateProvider: (id: string) => ipcRenderer.invoke("settings.activateProvider", id),
+    removeProvider: (input: unknown) => ipcRenderer.invoke("settings.removeProvider", input),
+    activateProvider: (input: unknown) => ipcRenderer.invoke("settings.activateProvider", input),
     setActiveModel: (input: { providerId?: string; modelId: string }) =>
       ipcRenderer.invoke("settings.setActiveModel", input),
     probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input),
@@ -55,7 +54,7 @@ const ide = {
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),
     upsert: (input: unknown) => ipcRenderer.invoke("automations.upsert", input),
-    remove: (id: string) => ipcRenderer.invoke("automations.remove", id)
+    remove: (input: unknown) => ipcRenderer.invoke("automations.remove", input)
   },
   models: {
     list: () => ipcRenderer.invoke("models.list")

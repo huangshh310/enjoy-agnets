@@ -158,11 +158,11 @@ function useProviderWrites(queryClient: QueryClient, session: EditorSession) {
     },
     activate: async (id: string) => {
       if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.activateProvider(id)) as SettingsSnapshot)
+      await persistSnapshot(queryClient, (await getIde().settings.activateProvider({ id })) as SettingsSnapshot)
     },
     remove: async (id: string) => {
       if (!hasIde()) return
-      await persistSnapshot(queryClient, (await getIde().settings.removeProvider(id)) as SettingsSnapshot)
+      await persistSnapshot(queryClient, (await getIde().settings.removeProvider({ id })) as SettingsSnapshot)
       if (editor?.id === id) closeEditor()
     },
     fetchModels: async () => {

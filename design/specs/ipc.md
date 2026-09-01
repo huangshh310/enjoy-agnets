@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-01
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -10,11 +10,11 @@
 
 | 前缀 | 频道 | 用途 |
 |---|---|---|
-| workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` 只删应用档案不删磁盘 |
-| session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` | 会话；`list` 不含已归档；`archive` 进设置页；`delete` 永久删消息 |
+| workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
+| session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` | 会话；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`list` 不含已归档 |
 | agent | `run` `abort` `decide` | 跑循环、中止、审批；`run` 可带 `attachments` 资产 id |
-| settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商 |
-| automations | `list` `upsert` `remove` | 自动化 |
+| settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`kind` 必须是 `PROVIDER_KINDS` |
+| automations | `list` `upsert` `remove` | 自动化；`remove` 入参 `{ id }` |
 | models | `list` | 已配置模型目录 |
 | ai | `generate` `abort` `resume` | 文本/结构化/媒体/embedding/translation；kind=`agent` 转发 `runAgent`，必须带 workspaceId；`resume` 按 kind 分流：workflow 续步，其它读 generation 快照再跑 |
 | agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；篡改 runId / toolCallId 或库内签名即拒 |
@@ -26,6 +26,8 @@
 | observability | `metrics` `export` `setPolicy` `replay` | 本地指标与内存 stream 回放 |
 | terminal | `open` `write` `close` | pty |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
+| rules | `list` `read` `create` `delete` `reveal` | 项目规则；读删定位走允许根；工作区路径必须已登记 |
+| skills | `list` `read` `create` `delete` `reveal` | 技能包；删除只允许 skill root 的直接子目录 |
 
 ### 推送事件
 
@@ -58,3 +60,4 @@
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`session.rename` 必须进 `CHANNELS`，否则卸载会留下 handler。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
+- `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。

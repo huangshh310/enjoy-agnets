@@ -38,11 +38,10 @@ test("Rules 服务能够扫描并写入 AGENTS.md 与 Cursor MDC 规则", () => 
     assert.equal(createdMdc.name, "clean-diffs")
     assert.ok(existsSync(createdMdc.filePath))
 
-    const content = readRuleContent(createdMdc.filePath)
+    const content = readRuleContent(createdMdc.filePath, [tempWorkspace])
     assert.ok(content.includes("globs: *.ts,*.tsx"))
     assert.ok(content.includes("minimal surgical diffs"))
 
-    // 3. 扫描该工作区规则
     const scanned = listDiscoveredRules({ workspacePath: tempWorkspace })
     assert.ok(scanned.length >= 2)
 
@@ -51,10 +50,18 @@ test("Rules 服务能够扫描并写入 AGENTS.md 与 Cursor MDC 规则", () => 
     assert.equal(foundMdc.agentKind, "cursor_mdc")
     assert.equal(foundMdc.globs, "*.ts,*.tsx")
 
-    // 4. 删除
-    const deleted = deleteRuleFile(createdMdc.filePath)
+    const deleted = deleteRuleFile(createdMdc.filePath, [tempWorkspace])
     assert.ok(deleted)
     assert.ok(!existsSync(createdMdc.filePath))
+  } finally {
+    rmSync(tempWorkspace, { recursive: true, force: true })
+  }
+})
+
+test("Rules 拒绝读取工作区外路径", () => {
+  const tempWorkspace = mkdtempSync(join(tmpdir(), "enjoy-rules-deny-"))
+  try {
+    assert.throws(() => readRuleContent(join(tempWorkspace, "src", "secret.ts"), [tempWorkspace]))
   } finally {
     rmSync(tempWorkspace, { recursive: true, force: true })
   }

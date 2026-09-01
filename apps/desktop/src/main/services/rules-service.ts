@@ -4,10 +4,11 @@
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs"
 import { homedir } from "node:os"
-import { join, basename } from "node:path"
+import { join, basename, dirname } from "node:path"
 import { createRequire } from "node:module"
 import type { Shell } from "electron"
 import type { AgentRuleKind, ProjectRuleItem, RuleScope } from "@enjoy-agents/ipc-contract"
+import { assertAllowedRuleFile } from "./customize-roots.ts"
 
 const req = createRequire(import.meta.url)
 
@@ -143,13 +144,14 @@ export function listDiscoveredRules(input?: { workspacePath?: string }): Project
   return rules
 }
 
-/** 读取指定规则的完整内容 */
-export function readRuleContent(filePath: string): string {
-  if (!existsSync(filePath)) throw new Error("Rule file not found.")
-  return readFileSync(filePath, "utf-8")
+/** 读取指定规则的完整内容。workspaceRoots 由 IPC 注入已登记工作区。 */
+export function readRuleContent(filePath: string, workspaceRoots: string[] = []): string {
+  const allowed = assertAllowedRuleFile(filePath, workspaceRoots)
+  if (!existsSync(allowed)) throw new Error("Rule file not found.")
+  return readFileSync(allowed, "utf-8")
 }
 
-/** 创建新规则并写入对应 Agent 规范文件 */
+/** 创建新规则并写入对应 Agent 规范文件。工作区类目标必须带 workspacePath。 */
 export function createRuleFile(input: {
   targetKind: AgentRuleKind
   name: string
@@ -158,54 +160,12 @@ export function createRuleFile(input: {
   content: string
   workspacePath?: string
 }): ProjectRuleItem {
-  const ws = input.workspacePath || process.cwd()
-  let targetPath = ""
-  let kindLabel = "Project Rule"
-
-  const safeName = input.name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")
-
-  switch (input.targetKind) {
-    case "cursor_mdc": {
-      const dir = join(ws, ".cursor", "rules")
-      mkdirSync(dir, { recursive: true })
-      targetPath = join(dir, `${safeName}.mdc`)
-      kindLabel = "Cursor MDC"
-      break
-    }
-    case "agents_md": {
-      targetPath = join(ws, "AGENTS.md")
-      kindLabel = "AGENTS.md"
-      break
-    }
-    case "claude_md": {
-      targetPath = join(ws, "CLAUDE.md")
-      kindLabel = "Claude Code"
-      break
-    }
-    case "copilot": {
-      const dir = join(ws, ".github")
-      mkdirSync(dir, { recursive: true })
-      targetPath = join(dir, "copilot-instructions.md")
-      kindLabel = "GitHub Copilot"
-      break
-    }
-    case "windsurf": {
-      targetPath = join(ws, ".windsurfrules")
-      kindLabel = "Windsurf"
-      break
-    }
-    case "global":
-    default: {
-      const dir = join(homedir(), ".enjoy-agents", "rules")
-      mkdirSync(dir, { recursive: true })
-      targetPath = join(dir, `${safeName}.md`)
-      kindLabel = "Global Rule"
-      break
-    }
-  }
+  const { targetPath, kindLabel } = resolveRuleWritePath(input)
+  const roots = input.targetKind === "global" ? [] : [needWorkspace(input.workspacePath)]
+  const allowed = assertAllowedRuleFile(targetPath, roots)
+  mkdirSync(dirname(allowed), { recursive: true })
 
   let finalContent = input.content
-  // 如果是 Cursor MDC，且带有 globs/description，自动补充 Frontmatter
   if (input.targetKind === "cursor_mdc" && !input.content.startsWith("---")) {
     finalContent = `---
 description: ${input.description || input.name}
@@ -216,36 +176,70 @@ alwaysApply: ${input.globs ? "false" : "true"}
 ${input.content}`
   }
 
-  writeFileSync(targetPath, finalContent, "utf-8")
-
+  writeFileSync(allowed, finalContent, "utf-8")
   return {
-    id: `${input.targetKind}:${targetPath.toLowerCase()}`,
+    id: `${input.targetKind}:${allowed.toLowerCase()}`,
     name: input.name,
     agentKind: input.targetKind,
     agentKindLabel: kindLabel,
     scope: input.globs ? "contextual" : "workspace",
-    filePath: targetPath,
+    filePath: allowed,
     globs: input.globs,
     description: input.description,
     content: finalContent
   }
 }
 
-/** 删除指定规则文件 */
-export function deleteRuleFile(filePath: string): boolean {
-  if (!existsSync(filePath)) return false
-  rmSync(filePath, { force: true })
+function needWorkspace(workspacePath?: string): string {
+  if (!workspacePath) throw new Error("Open a workspace first.")
+  return workspacePath
+}
+
+function resolveRuleWritePath(input: {
+  targetKind: AgentRuleKind
+  name: string
+  workspacePath?: string
+}): { targetPath: string; kindLabel: string } {
+  const safeName = input.name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")
+  if (input.targetKind === "global") {
+    return {
+      targetPath: join(homedir(), ".enjoy-agents", "rules", `${safeName}.md`),
+      kindLabel: "Global Rule"
+    }
+  }
+  const ws = needWorkspace(input.workspacePath)
+  if (input.targetKind === "cursor_mdc") {
+    return { targetPath: join(ws, ".cursor", "rules", `${safeName}.mdc`), kindLabel: "Cursor MDC" }
+  }
+  if (input.targetKind === "agents_md") {
+    return { targetPath: join(ws, "AGENTS.md"), kindLabel: "AGENTS.md" }
+  }
+  if (input.targetKind === "claude_md") {
+    return { targetPath: join(ws, "CLAUDE.md"), kindLabel: "Claude Code" }
+  }
+  if (input.targetKind === "copilot") {
+    return { targetPath: join(ws, ".github", "copilot-instructions.md"), kindLabel: "GitHub Copilot" }
+  }
+  if (input.targetKind === "windsurf") {
+    return { targetPath: join(ws, ".windsurfrules"), kindLabel: "Windsurf" }
+  }
+  return { targetPath: join(ws, "CODEX.md"), kindLabel: "Codex" }
+}
+
+export function deleteRuleFile(filePath: string, workspaceRoots: string[] = []): boolean {
+  const allowed = assertAllowedRuleFile(filePath, workspaceRoots)
+  if (!existsSync(allowed)) return false
+  rmSync(allowed, { force: true })
   return true
 }
 
-/** 在文件资源管理器中定位 */
-export function revealRuleFile(filePath: string): void {
-  if (existsSync(filePath)) {
-    try {
-      const electron = req("electron") as { shell: Shell }
-      void electron.shell.showItemInFolder(filePath)
-    } catch {
-      // ignore in test
-    }
+export function revealRuleFile(filePath: string, workspaceRoots: string[] = []): void {
+  const allowed = assertAllowedRuleFile(filePath, workspaceRoots)
+  if (!existsSync(allowed)) return
+  try {
+    const electron = req("electron") as { shell: Shell }
+    void electron.shell.showItemInFolder(allowed)
+  } catch {
+    // ignore in test
   }
 }

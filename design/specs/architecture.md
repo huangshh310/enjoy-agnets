@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 渲染进程不受信；主进程是本机后端。最后更新：2026-08-31
+> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -55,6 +55,7 @@ Main Process（可信）
 - `contextIsolation: true`，`nodeIntegration: false`，禁用 remote。
 - preload 只暴露白名单 `window.ide`。
 - 所有 IPC 入参 Zod parse，失败即拒。
+- Customize 的 Rules / Skills 只读写白名单根（全局 `~/.enjoy-agents/{rules,skills}` 等 + 已登记工作区的规范子目录 / 已知文件名）。禁止 `process.cwd()`，禁止 renderer 绝对路径直接 `fs`。
 - 审批决定可以来自 UI，执行只在 main。
 - 路由必须是 **Hash History**（`file://` / 自定义协议下 Browser History 会断）。
 
@@ -72,3 +73,4 @@ Main Process（可信）
 - 不要把 `@ai-sdk/react` 的 `useChat`（HTTP）当桌面主路径。流从 main `webContents.send("agent.event")` 来。
 - electron-vite 把 `@enjoy-agents/db` 别名到 `index.ts` 文件时，`@enjoy-agents/db/path-safe` 会变成 `index.ts/path-safe`。主进程别名必须精确匹配包名，子路径单独写。路径安全也可从 `@enjoy-agents/db` 主入口导入。
 - 主进程 workspace 包必须进 `externalizeDepsPlugin.exclude` 并别名到 `src/index.ts`。漏掉 `assets` / `knowledge` / `mcp` 时，Electron 会直接加载源码，`from "./hash"` 无后缀会报 `ERR_MODULE_NOT_FOUND`。新包先写进 `electron.vite.config.ts` 的 `MAIN_WORKSPACE_PACKAGES`。
+- Rules/Skills 的 `read`/`delete`/`reveal` 若只信 `filePath` 字符串，renderer 可指到任意盘符。必须 `assertAllowedRuleFile` / `assertAllowedSkillPackage`，工作区路径还要能对上 `workspaces.root_path`。

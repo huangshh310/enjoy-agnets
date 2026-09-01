@@ -189,7 +189,7 @@ export function AutomationsPage() {
 
   async function removeAutomation(id: string) {
     if (!hasIde()) return
-    await getIde().automations.remove(id)
+    await getIde().automations.remove({ id })
     await refresh()
   }
 

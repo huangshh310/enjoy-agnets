@@ -9,33 +9,14 @@ import { join, resolve, basename } from "node:path"
 import { createRequire } from "node:module"
 import type { Shell } from "electron"
 import type { SkillItem, SkillScope } from "@enjoy-agents/ipc-contract"
+import {
+  assertAllowedSkillFile,
+  assertAllowedSkillPackage,
+  globalSkillRoots,
+  workspaceSkillRoots
+} from "./customize-roots.ts"
 
 const req = createRequire(import.meta.url)
-/** 常见的全局技能搜索根路径 */
-function getGlobalSkillRoots(): string[] {
-  const home = homedir()
-  return [
-    join(home, ".enjoy-agents", "skills"),
-    join(home, ".agents", "skills"),
-    join(home, ".claude", "skills"),
-    join(home, ".codex", "skills"),
-    join(home, ".cursor", "skills"),
-    join(home, ".omp", "skills"),
-    join(home, ".pi", "agent", "skills")
-  ]
-}
-
-/** 常见的工作区技能搜索相对路径 */
-function getWorkspaceSkillRoots(workspacePath?: string): string[] {
-  if (!workspacePath || !existsSync(workspacePath)) return []
-  return [
-    join(workspacePath, ".agents", "skills"),
-    join(workspacePath, ".claude", "skills"),
-    join(workspacePath, ".cursor", "skills"),
-    join(workspacePath, "skills"),
-    join(workspacePath, ".skills")
-  ]
-}
 
 /** 解析 SKILL.md 顶部的 YAML Frontmatter */
 function parseSkillFile(filePath: string): {
@@ -125,8 +106,7 @@ export function listInstalledSkills(input?: { workspacePath?: string }): SkillIt
   const allSkills: SkillItem[] = []
   const seenPaths = new Set<string>()
 
-  // 1. 扫描全局技能目录
-  for (const root of getGlobalSkillRoots()) {
+  for (const root of globalSkillRoots()) {
     for (const skill of scanRoot(root, "global")) {
       if (!seenPaths.has(skill.directoryPath.toLowerCase())) {
         seenPaths.add(skill.directoryPath.toLowerCase())
@@ -135,9 +115,8 @@ export function listInstalledSkills(input?: { workspacePath?: string }): SkillIt
     }
   }
 
-  // 2. 扫描工作区项目技能目录
   if (input?.workspacePath) {
-    for (const root of getWorkspaceSkillRoots(input.workspacePath)) {
+    for (const root of workspaceSkillRoots(input.workspacePath)) {
       for (const skill of scanRoot(root, "workspace")) {
         if (!seenPaths.has(skill.directoryPath.toLowerCase())) {
           seenPaths.add(skill.directoryPath.toLowerCase())
@@ -150,13 +129,14 @@ export function listInstalledSkills(input?: { workspacePath?: string }): SkillIt
   return allSkills
 }
 
-/** 读取单个技能的完整内容 */
-export function readSkillContent(skillFilePath: string): string {
-  if (!existsSync(skillFilePath)) throw new Error("Skill file not found.")
-  return readFileSync(skillFilePath, "utf-8")
+/** 读取单个技能的完整内容。 */
+export function readSkillContent(skillFilePath: string, workspaceRoots: string[] = []): string {
+  const allowed = assertAllowedSkillFile(skillFilePath, workspaceRoots)
+  if (!existsSync(allowed)) throw new Error("Skill file not found.")
+  return readFileSync(allowed, "utf-8")
 }
 
-/** 创建或安装新技能 */
+/** 创建或安装新技能。workspace scope 必须带已信任的 workspacePath。 */
 export function createSkillPackage(input: {
   name: string
   description?: string
@@ -164,18 +144,17 @@ export function createSkillPackage(input: {
   workspacePath?: string
   content?: string
 }): SkillItem {
-  let targetRoot: string
-  if (input.scope === "workspace" && input.workspacePath) {
-    targetRoot = join(input.workspacePath, ".agents", "skills")
-  } else {
-    targetRoot = join(homedir(), ".enjoy-agents", "skills")
-  }
-
+  const targetRoot =
+    input.scope === "workspace"
+      ? join(needWorkspace(input.workspacePath), ".agents", "skills")
+      : join(homedir(), ".enjoy-agents", "skills")
   const safeName = input.name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")
   const skillDir = join(targetRoot, safeName)
+  const skillFilePath = join(skillDir, "SKILL.md")
+  const roots = input.scope === "workspace" ? [needWorkspace(input.workspacePath)] : []
+  assertAllowedSkillFile(skillFilePath, roots)
   mkdirSync(skillDir, { recursive: true })
 
-  const skillFilePath = join(skillDir, "SKILL.md")
   const defaultContent = input.content ?? `---
 name: ${safeName}
 description: ${input.description ?? "Custom agent skill"}
@@ -185,9 +164,7 @@ description: ${input.description ?? "Custom agent skill"}
 
 Describe domain workflows, CLI toolchains, and context guidelines for the Agent here.
 `
-
   writeFileSync(skillFilePath, defaultContent, "utf-8")
-
   return {
     id: `${input.scope}:${safeName}`,
     name: input.name,
@@ -199,21 +176,25 @@ Describe domain workflows, CLI toolchains, and context guidelines for the Agent 
   }
 }
 
-/** 删除指定技能 */
-export function deleteSkillPackage(directoryPath: string): boolean {
-  if (!existsSync(directoryPath)) return false
-  rmSync(directoryPath, { recursive: true, force: true })
+function needWorkspace(workspacePath?: string): string {
+  if (!workspacePath) throw new Error("Open a workspace first.")
+  return workspacePath
+}
+
+export function deleteSkillPackage(directoryPath: string, workspaceRoots: string[] = []): boolean {
+  const allowed = assertAllowedSkillPackage(directoryPath, workspaceRoots)
+  if (!existsSync(allowed)) return false
+  rmSync(allowed, { recursive: true, force: true })
   return true
 }
 
-/** 在文件资源管理器中定位 */
-export function revealSkillFolder(directoryPath: string): void {
-  if (existsSync(directoryPath)) {
-    try {
-      const electron = req("electron") as { shell: Shell }
-      void electron.shell.openPath(directoryPath)
-    } catch {
-      // ignore in test
-    }
+export function revealSkillFolder(directoryPath: string, workspaceRoots: string[] = []): void {
+  const allowed = assertAllowedSkillPackage(directoryPath, workspaceRoots)
+  if (!existsSync(allowed)) return
+  try {
+    const electron = req("electron") as { shell: Shell }
+    void electron.shell.openPath(allowed)
+  } catch {
+    // ignore in test
   }
 }

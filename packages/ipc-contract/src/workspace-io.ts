@@ -24,6 +24,13 @@ export const RemoveWorkspaceInput = z
   .strict()
 export type RemoveWorkspaceInput = z.infer<typeof RemoveWorkspaceInput>
 
+export const WorkspaceIdInput = z
+  .object({
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type WorkspaceIdInput = z.infer<typeof WorkspaceIdInput>
+
 export const ReadFileInput = z.object({
   workspaceId: z.string(),
   path: z.string()

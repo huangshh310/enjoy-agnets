@@ -31,7 +31,7 @@ export function SettingsDefaults() {
         })) as SettingsSnapshot
         await applySettingsSnapshot(snapshot)
       } catch {
-        await getIde().settings.setDefaultModel(model.id)
+        await getIde().settings.setDefaultModel({ modelId: model.id })
       }
     }
     await queryClient.invalidateQueries({ queryKey: ["settings"] })

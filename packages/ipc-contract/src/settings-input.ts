@@ -206,6 +206,20 @@ export const SetActiveModelInput = z
   .strict()
 export type SetActiveModelInput = z.infer<typeof SetActiveModelInput>
 
+export const SetDefaultModelInput = z
+  .object({
+    modelId: z.string().min(1)
+  })
+  .strict()
+export type SetDefaultModelInput = z.infer<typeof SetDefaultModelInput>
+
+export const ProviderIdInput = z
+  .object({
+    id: z.string().min(1)
+  })
+  .strict()
+export type ProviderIdInput = z.infer<typeof ProviderIdInput>
+
 export const SetHarnessInput = z.object({
   anthropicApiKey: z.string().optional(),
   vercelToken: z.string().optional(),

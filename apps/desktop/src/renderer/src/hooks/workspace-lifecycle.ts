@@ -67,7 +67,7 @@ export async function removeProject(workspaceId: string) {
 
 async function openFallbackSession(workspaceId: string | null) {
   if (!workspaceId) return
-  const sessions = (await getIde().session.list(workspaceId)) as Array<{
+  const sessions = (await getIde().session.list({ workspaceId })) as Array<{
     id: string
     title: string
   }>

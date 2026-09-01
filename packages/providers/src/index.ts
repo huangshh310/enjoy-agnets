@@ -14,6 +14,7 @@ export {
   apiStyleLabel,
   isApiStyle,
   PROVIDER_KINDS,
+  parseProviderKind,
   PROVIDER_PRESETS,
   normalizeBaseURL,
   presetFor,

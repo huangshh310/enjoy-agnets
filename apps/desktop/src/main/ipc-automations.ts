@@ -2,7 +2,7 @@
  * Automations IPC：列表 / 写入 / 删除，存在 settings 键。
  */
 import { ipcMain } from "electron"
-import { UpsertAutomationInput, type Automation } from "@enjoy-agents/ipc-contract"
+import { AutomationIdInput, UpsertAutomationInput, type Automation } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "./services/database"
 import { createId } from "./services/ids"
 
@@ -26,7 +26,8 @@ export function registerAutomationIpc() {
     setSetting("automations", JSON.stringify(next))
     return nextItem
   })
-  ipcMain.handle("automations.remove", async (_event, id: string) => {
+  ipcMain.handle("automations.remove", async (_event, raw) => {
+    const id = AutomationIdInput.parse(raw).id
     setSetting("automations", JSON.stringify(readAutomations().filter((item) => item.id !== id)))
     return { ok: true }
   })

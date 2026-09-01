@@ -18,6 +18,24 @@ export function assertInsideRoot(rootPath: string, relativePath: string): string
   return normalize(target)
 }
 
+/** 已解析的绝对路径必须落在任一允许根内（含根自身）。 */
+export function assertAbsInsideRoots(absPath: string, roots: string[]): string {
+  if (!absPath || absPath.includes("\0")) {
+    throw new Error("Invalid path.")
+  }
+  const target = normalize(resolve(absPath))
+  for (const root of roots) {
+    if (!root) continue
+    if (isInsideRoot(resolve(root), target)) return target
+  }
+  throw new Error("Path is outside allowed roots.")
+}
+
+export function pathIsInsideRoot(rootPath: string, absPath: string): boolean {
+  if (!rootPath || !absPath || absPath.includes("\0")) return false
+  return isInsideRoot(resolve(rootPath), normalize(resolve(absPath)))
+}
+
 /** Knowledge 来源：校验后返回绝对路径与工作区内相对路径。根外绝对路径即拒。 */
 export function resolveKnowledgePath(root: string, rel: string): { abs: string; rel: string } {
   if (!rel || rel.includes("\0")) {

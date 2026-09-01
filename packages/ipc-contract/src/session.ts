@@ -27,6 +27,14 @@ export const SessionIdInput = z
   .strict()
 export type SessionIdInput = z.infer<typeof SessionIdInput>
 
+export const SessionCreateInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    title: z.string().min(1).max(80).optional()
+  })
+  .strict()
+export type SessionCreateInput = z.infer<typeof SessionCreateInput>
+
 export const ArchivedSession = z.object({
   id: z.string(),
   workspaceId: z.string(),

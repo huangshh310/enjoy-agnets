@@ -24,3 +24,10 @@ export const UpsertAutomationInput = z.object({
   enabled: z.boolean().default(true)
 })
 export type UpsertAutomationInput = z.infer<typeof UpsertAutomationInput>
+
+export const AutomationIdInput = z
+  .object({
+    id: z.string().min(1)
+  })
+  .strict()
+export type AutomationIdInput = z.infer<typeof AutomationIdInput>

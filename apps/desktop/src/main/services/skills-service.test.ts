@@ -33,10 +33,9 @@ trigger: /test-cmd
     assert.equal(created.name, "my-test-skill")
     assert.ok(existsSync(created.skillFilePath))
 
-    const content = readSkillContent(created.skillFilePath)
+    const content = readSkillContent(created.skillFilePath, [tempWorkspace])
     assert.ok(content.includes("/test-cmd"))
 
-    // 扫描该工作区
     const scanned = listInstalledSkills({ workspacePath: tempWorkspace })
     const found = scanned.find((s) => s.name === "my-test-skill")
     assert.ok(found)
@@ -44,10 +43,18 @@ trigger: /test-cmd
     assert.equal(found.trigger, "/test-cmd")
     assert.equal(found.scope, "workspace")
 
-    // 删除
-    const deleted = deleteSkillPackage(created.directoryPath)
+    const deleted = deleteSkillPackage(created.directoryPath, [tempWorkspace])
     assert.ok(deleted)
     assert.ok(!existsSync(created.directoryPath))
+  } finally {
+    rmSync(tempWorkspace, { recursive: true, force: true })
+  }
+})
+
+test("Skills 拒绝删除工作区根", () => {
+  const tempWorkspace = mkdtempSync(join(tmpdir(), "enjoy-skills-deny-"))
+  try {
+    assert.throws(() => deleteSkillPackage(tempWorkspace, [tempWorkspace]))
   } finally {
     rmSync(tempWorkspace, { recursive: true, force: true })
   }

@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-01
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -45,5 +45,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 
 ## 已知坑
 
-- Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。
+- Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
 - `git` 仍是 soon。`mcp` 已落地，不要再写成占位。

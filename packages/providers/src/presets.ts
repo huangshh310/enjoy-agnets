@@ -29,6 +29,11 @@ export const PROVIDER_KINDS = [
 
 export type ProviderKind = (typeof PROVIDER_KINDS)[number]
 
+export function parseProviderKind(value: string): ProviderKind {
+  if ((PROVIDER_KINDS as readonly string[]).includes(value)) return value as ProviderKind
+  throw new Error("Unknown provider kind.")
+}
+
 export type CatalogModel = {
   id: string
   label: string

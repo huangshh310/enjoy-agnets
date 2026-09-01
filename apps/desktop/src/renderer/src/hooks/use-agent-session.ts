@@ -86,7 +86,7 @@ export function useAgentSession() {
     queryKey: ["changes", workspaceId],
     enabled: hasIde() && Boolean(workspaceId),
     queryFn: async () => {
-      const rows = (await getIde().workspace.changes(workspaceId as string)) as ChangedFileRow[]
+      const rows = (await getIde().workspace.changes({ workspaceId: workspaceId as string })) as ChangedFileRow[]
       useChatStore.getState().setChanges(rows)
       return rows
     }
@@ -106,7 +106,7 @@ export async function refreshAllWorkspaces() {
     const items = await Promise.all(
       workspaces.map(async (ws) => {
         try {
-          const sessions = (await getIde().session.list(ws.id)) as SessionRow[]
+          const sessions = (await getIde().session.list({ workspaceId: ws.id })) as SessionRow[]
           return {
             workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
             sessions: sessions.map((s) => ({
@@ -134,7 +134,7 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
   const store = useChatStore.getState()
   store.setWorkspace(workspace)
   await refreshAllWorkspaces()
-  const sessions = (await getIde().session.list(workspace.id)) as SessionRow[]
+  const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as SessionRow[]
   const current = sessions.find((session) => session.id === store.sessionId) ?? sessions[0]
   if (current) {
     await loadSession(current.id, current.title)
@@ -147,7 +147,7 @@ export async function loadSession(sessionId: string, title: string) {
   const store = useChatStore.getState()
   const previous = store.sessionId === sessionId ? store.messages : []
   store.setSession(sessionId, title)
-  const rows = (await getIde().session.messages(sessionId)) as MessageRow[]
+  const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   restoreUiMessages(rows)
   store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
 }
@@ -164,7 +164,10 @@ function restoreUiMessages(rows: MessageRow[]) {
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "New agent") {
-  const session = (await getIde().session.create(workspaceId, customTitle)) as SessionRow
+  const session = (await getIde().session.create({
+    workspaceId,
+    title: customTitle
+  })) as SessionRow
   const store = useChatStore.getState()
   store.setSession(session.id, session.title)
   store.setMessages([])

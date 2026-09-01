@@ -3,8 +3,10 @@
  */
 import { ipcMain } from "electron"
 import {
+  ProviderIdInput,
   SaveSecretInput,
   SetActiveModelInput,
+  SetDefaultModelInput,
   SetHarnessInput,
   SetPreferencesInput,
   UpsertProviderInput
@@ -83,7 +85,8 @@ function registerCoreSettingsIpc() {
     })
     return settingsSnapshot()
   })
-  ipcMain.handle("settings.setDefaultModel", async (_event, modelId: string) => {
+  ipcMain.handle("settings.setDefaultModel", async (_event, raw) => {
+    const modelId = SetDefaultModelInput.parse(raw).modelId
     setSetting("defaultModelId", modelId)
     const active = await getActiveProfile()
     if (active) {
@@ -132,12 +135,12 @@ function registerProviderIpc() {
     })
     return settingsSnapshot()
   })
-  ipcMain.handle("settings.removeProvider", async (_event, id: string) => {
-    await removeProfile(id)
+  ipcMain.handle("settings.removeProvider", async (_event, raw) => {
+    await removeProfile(ProviderIdInput.parse(raw).id)
     return settingsSnapshot()
   })
-  ipcMain.handle("settings.activateProvider", async (_event, id: string) => {
-    await activateProfile(id)
+  ipcMain.handle("settings.activateProvider", async (_event, raw) => {
+    await activateProfile(ProviderIdInput.parse(raw).id)
     return settingsSnapshot()
   })
   ipcMain.handle("settings.setActiveModel", async (_event, raw) => {

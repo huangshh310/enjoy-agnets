@@ -2,11 +2,11 @@
  * 已存供应商探测 / ping：缺字段时从 vault 补。
  */
 import { PingProviderInput, ProbeProviderInput } from "@enjoy-agents/ipc-contract"
-import { isApiStyle, pingProviderEndpoint, presetFor, probeProvider, type ProviderKind } from "@enjoy-agents/providers"
+import { isApiStyle, parseProviderKind, pingProviderEndpoint, presetFor, probeProvider, type ProviderKind } from "@enjoy-agents/providers"
 import { readVault, writeVault } from "./services/secrets"
 
 export function asKind(value: string): ProviderKind {
-  return value as ProviderKind
+  return parseProviderKind(value)
 }
 
 export async function probeStoredProvider(raw: unknown) {

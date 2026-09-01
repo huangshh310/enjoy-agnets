@@ -8,11 +8,13 @@ import {
   OpenWorkspaceInput,
   ReadFileInput,
   RemoveWorkspaceInput,
+  SessionCreateInput,
   SessionIdInput,
   SessionRenameInput,
   TerminalCloseInput,
   TerminalOpenInput,
-  TerminalWriteInput
+  TerminalWriteInput,
+  WorkspaceIdInput
 } from "@enjoy-agents/ipc-contract"
 import {
   abortAgent,
@@ -121,18 +123,24 @@ function registerWorkspaceIpc() {
     const input = FileDiffInput.parse(raw)
     return readWorkspaceDiff(input.workspaceId, input.path)
   })
-  ipcMain.handle("workspace.changes", async (_event, workspaceId: string) => {
+  ipcMain.handle("workspace.changes", async (_event, raw) => {
+    const workspaceId = WorkspaceIdInput.parse(raw).workspaceId
     return changedFiles((await getWorkspace(workspaceId)).rootPath)
   })
 }
 
 function registerSessionIpc() {
-  ipcMain.handle("session.list", async (_event, workspaceId: string) => listSessions(workspaceId))
-  ipcMain.handle("session.listArchived", async () => listArchivedSessions())
-  ipcMain.handle("session.create", async (_event, workspaceId: string, title?: string) =>
-    createSession(workspaceId, title || "New agent")
+  ipcMain.handle("session.list", async (_event, raw) =>
+    listSessions(WorkspaceIdInput.parse(raw).workspaceId)
   )
-  ipcMain.handle("session.messages", async (_event, sessionId: string) => listMessages(sessionId))
+  ipcMain.handle("session.listArchived", async () => listArchivedSessions())
+  ipcMain.handle("session.create", async (_event, raw) => {
+    const input = SessionCreateInput.parse(raw)
+    return createSession(input.workspaceId, input.title || "New agent")
+  })
+  ipcMain.handle("session.messages", async (_event, raw) =>
+    listMessages(SessionIdInput.parse(raw).sessionId)
+  )
   ipcMain.handle("session.rename", async (_event, raw: unknown) => {
     const input = SessionRenameInput.parse(raw)
     return renameSession(input.sessionId, input.title)
