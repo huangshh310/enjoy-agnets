@@ -20,7 +20,8 @@ export function AiChatComposer({
   onModelChange,
   onSend,
   onStop,
-  onAttach
+  onAttach,
+  className
 }: ComposerProps) {
   const [isFocused, setIsFocused] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -34,7 +35,7 @@ export function AiChatComposer({
     const textarea = textareaRef.current
     if (!textarea) return
     textarea.style.height = "auto"
-    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 48), 180)}px`
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 180)}px`
   }, [composer])
 
   function pickFiles() {
@@ -90,11 +91,13 @@ export function AiChatComposer({
   }
 
   return (
-    <form onSubmit={onSubmit} className="min-w-0 px-6 pb-2">
+    <form onSubmit={onSubmit} className={cx("min-w-0 px-6 pb-2", className)}>
       <BorderBeam
         size="md"
-        colorVariant="colorful"
+        colorVariant="ocean"
+        theme="auto"
         active={isFocused || running || Boolean(composer.trim())}
+        strength={isFocused || running || Boolean(composer.trim()) ? 0.75 : 0}
         borderRadius={22}
         className="w-full min-w-0"
       >
@@ -104,8 +107,8 @@ export function AiChatComposer({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cx(
-            "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border-button-default/70 bg-background-tertiary-default/85 shadow-xs backdrop-blur-md transition-all duration-200",
-            isFocused && "border-border-focus-ring/60 shadow-card",
+            "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border-button-default/80 bg-background-primary-default dark:bg-background-tertiary-default shadow-xs backdrop-blur-md transition-all duration-200",
+            isFocused && "border-accent-500/60 ring-2 ring-accent-500/15 shadow-card",
             isDragging && "border-accent-500/80 ring-2 ring-accent-500/20"
           )}
         >
@@ -141,7 +144,7 @@ export function AiChatComposer({
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               placeholder="Ask Enjoy Agents anything, @ files, / for actions..."
-              className="max-h-48 min-h-12 w-full resize-none bg-transparent py-1 text-body-medium text-text-primary outline-none placeholder:text-text-placeholder"
+              className="max-h-48 min-h-[52px] w-full resize-none bg-transparent py-1.5 text-body-medium leading-relaxed text-text-primary outline-none placeholder:text-text-placeholder"
             />
           </div>
 

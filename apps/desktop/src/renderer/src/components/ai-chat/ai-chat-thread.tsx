@@ -5,7 +5,6 @@ import { LoadingState } from "@/components/ai-elements/loading-state"
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton
 } from "@/components/ai-elements/conversation"
 import { cx } from "@/utils/cx"
@@ -42,13 +41,6 @@ export function AiChatThread({
   return (
     <Conversation className="min-h-0">
       <ConversationContent className="gap-8 px-8 py-6">
-        {messages.length === 0 && !running ? (
-          <ConversationEmptyState
-            title="Ask the agent"
-            description="Inspect files, edit the workspace, or run a plan against this folder."
-            className="min-h-48 text-text-tertiary"
-          />
-        ) : null}
 
         {visible.map((message) =>
           message.role === "user" ? (

@@ -35,6 +35,7 @@ import { AiChatSidebar } from "./ai-chat-sidebar"
 import { AiChatStatusBar } from "./ai-chat-status-bar"
 import { AiChatThread } from "./ai-chat-thread"
 import { ExperimentalMediaDialog } from "./experimental-media-dialog"
+import { AiChatEmptyState } from "./empty-state/ai-chat-empty-state"
 
 export function AiChatShell() {
   const userName = useChatStore((state) => state.userName)
@@ -157,28 +158,52 @@ export function AiChatShell() {
                     <QuietIconButton icon={RiMoreLine} aria-label="Session menu" />
                   </div>
                 </header>
-                <AiChatThread
-                  messages={messages}
-                  running={running}
-                  thinkingLabel={thinkingLabel}
-                  error={error}
-                  pendingApproval={pendingApproval}
-                  onApprove={() => void decidePendingApproval("allow")}
-                  onDeny={() => void decidePendingApproval("deny")}
-                  onAllowSession={() => void decidePendingApproval("allow_session")}
-                />
-                <AiChatComposer
-                  composer={composer}
-                  onComposerChange={setComposer}
-                  running={running}
-                  modelLabel={modelLabel}
-                  modelId={modelId}
-                  models={models}
-                  onModelChange={experimentalGate.requestModel}
-                  onSend={experimentalGate.requestSend}
-                  onStop={() => void abortComposerRun()}
-                  onAttach={(file) => void attachComposerFile(file)}
-                />
+                {messages.length === 0 && !running ? (
+                  <AiChatEmptyState
+                    workspaceName={workspaceName}
+                    workspaceRootLabel={workspaceRootLabel}
+                    changesCount={changes.length}
+                  >
+                    <AiChatComposer
+                      composer={composer}
+                      onComposerChange={setComposer}
+                      running={running}
+                      modelLabel={modelLabel}
+                      modelId={modelId}
+                      models={models}
+                      onModelChange={experimentalGate.requestModel}
+                      onSend={experimentalGate.requestSend}
+                      onStop={() => void abortComposerRun()}
+                      onAttach={(file) => void attachComposerFile(file)}
+                      className="px-0 pb-0"
+                    />
+                  </AiChatEmptyState>
+                ) : (
+                  <>
+                    <AiChatThread
+                      messages={messages}
+                      running={running}
+                      thinkingLabel={thinkingLabel}
+                      error={error}
+                      pendingApproval={pendingApproval}
+                      onApprove={() => void decidePendingApproval("allow")}
+                      onDeny={() => void decidePendingApproval("deny")}
+                      onAllowSession={() => void decidePendingApproval("allow_session")}
+                    />
+                    <AiChatComposer
+                      composer={composer}
+                      onComposerChange={setComposer}
+                      running={running}
+                      modelLabel={modelLabel}
+                      modelId={modelId}
+                      models={models}
+                      onModelChange={experimentalGate.requestModel}
+                      onSend={experimentalGate.requestSend}
+                      onStop={() => void abortComposerRun()}
+                      onAttach={(file) => void attachComposerFile(file)}
+                    />
+                  </>
+                )}
                 <AiChatStatusBar
                   workspaceRootLabel={workspaceRootLabel}
                   contextUsed={contextUsed(messages)}

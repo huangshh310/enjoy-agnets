@@ -7,7 +7,7 @@
 窗口画布是 `background/full`（Mist `#F7F7F7` / 暗色 Off-Black `#121212`）。主工作区三张 24px 圆角卡片、12px 窗内边距、卡片间隙 `gap-3`：
 
 1. **Agent rail** — 260px（折叠 60px），Mist，`shadow-sidebar`
-2. **Chat stage** — flex，白/石墨，`shadow-card`，含线程 + pill composer
+2. **Chat stage** — flex，白/石墨，`shadow-card`，含会话空状态（Centered Hero Zero State，包含环境微光晕 Ambient Glow、工程问候大标题、居中 Composer 输入卡片与快捷 Action Chips 胶囊）、历史消息线程与底部 pill composer
 3. **Changes pane** — 可改宽，白/石墨，`shadow-card`，默认约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
@@ -47,6 +47,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
  - 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
  - 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树：`ai-chat/sidebar/`
  - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
+ - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`
 ## 已知坑
 
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
@@ -66,3 +67,4 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 - Stop 以前在 `!runId` 时直接 return，点了没反应；新会话也不清 `running`，空线程会一直画 Thinking 占位，发送被 `store.running` 挡住，草稿留在输入框。Stop 必须先松 UI（不要求 runId、不等 abort IPC）；新建 / 切换会话先 `abortComposerRun`。IPC 返回后若用户已停或已切会话，不得再 `setRunning(true, runId)`，改为 abort 那一轮。
 
 - 线程占位不要再用 `AgentThinking` infinity，也不要和 Thinking 头上的 `DotMatrixLoader` 叠两套动效。流式走 `LoadingState` / `LoadingStateGlyph`。未接线的 registry 默认皮（`prompt-input` / `reasoning` / `tool` / `shimmer` / `AgentLog`）已删，不要再装回来。`AgentThinking` 仍导出但聊天主路径不用。
+- Composer 边框流光（`BorderBeam`）溢色渗底：`BorderBeam` 若配 `colorVariant="colorful"` 会产生粉红/黄色的失真大光斑，且包裹的卡片容器若为半透明（如 `bg-background-tertiary-default/85`），底层的流光伪元素会直接透过卡片正文渗出污色。必须使用 Signal Blue/靛蓝调的 `colorVariant="ocean"`、`theme="auto"`，内层卡片容器保持实体底色（`bg-background-primary-default dark:bg-background-tertiary-default`），且未聚焦/空闲态时 `strength` 设为 0。

@@ -14,4 +14,5 @@ export type ComposerProps = {
   onSend: () => void
   onStop: () => void
   onAttach: (file: File) => void
+  className?: string
 }
