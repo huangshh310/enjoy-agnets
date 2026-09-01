@@ -18,15 +18,15 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 
 助手轮 Thinking：流式占位与思考头用 Beautiful UI Loading State（`packages/ui/components/ai-elements/loading-state.tsx`）——默认 Drive 3×3 点阵 + 流光文案 + `1.4s` / `3m 16.1s` 耗时。工具步骤展开后底部挂 Tool Chips 文件变更胶囊（路径名 + 增减行，点选打开 Files；bash 命令不当文件）。只抄交互，皮是 BoardUI token。
 
-## 不变量
+ ## 不变量
 
-- 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。
-- 运行时组件：shadcn/ui + AI Elements。不要再装 BoardUI `components/base/*` 做新控件。
-- 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。
-- 产品主标：`AppMark` + `enjoy-ui-kit`（见 `brand` spec）。产品铬图标：`@remixicon/react`。AI 品牌标：`@lobehub/icons`。禁止用 Remix 或字母「E」圆冒充 enjoy 主标。
-- 单一强调色 Signal Blue（`accent-500` / `primary`）。禁止纯黑 `#000000`、禁止 emoji、禁止居中营销 hero。
-- 新控件先搜 shadcn → AI Elements → Beautiful UI / BeUI 等，抄交互再 restyle。禁止原样上架 registry 默认皮。
-
+ - 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。
+- 严格遵守根目录 `DESIGN.md` 定义的 **8 大命名 Anti-Patterns 禁令**（`Centered-Marketing-Hero`、`Generic-SaaS-Card`、`Invented-Raw-Styles`、`Cramped-Evidence-Table`、`Deconstructed-Typography`、`Viewport-Trapped-Layout`、`Fake-Status-Chrome`、`Unsafe-Native-Dialog`）。
+ - 运行时组件：shadcn/ui + AI Elements。不要再装 BoardUI `components/base/*` 做新控件。
+ - 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。
+ - 产品主标：`AppMark` + `enjoy-ui-kit`（见 `brand` spec）。产品铬图标：`@remixicon/react`。AI 品牌标：`@lobehub/icons`。禁止用 Remix 或字母「E」圆冒充 enjoy 主标。
+ - 单一强调色 Signal Blue（`accent-500` / `primary`）。禁止纯黑 `#000000`、禁止 emoji、禁止居中营销 hero。
+ - 新控件先搜 shadcn → AI Elements → Beautiful UI / BeUI 等，抄交互再 restyle。禁止原样上架 registry 默认皮。
 ## 实现分层
 
 | 层 | 来源 | 管什么 |
@@ -40,12 +40,13 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 
 ## 代码入口
 
-- 视觉全书：[../references/visual-system.md](../references/visual-system.md)
-- BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
-- 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
-- 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树：`ai-chat/sidebar/`
-- 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
-
+ - 视觉全书：[../references/visual-system.md](../references/visual-system.md)
+- 权威设计规约与 Anti-Patterns：[../../DESIGN.md](../../DESIGN.md)
+ - BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
+- 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
+ - 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
+ - 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树：`ai-chat/sidebar/`
+ - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
 ## 已知坑
 
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。

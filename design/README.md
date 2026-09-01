@@ -7,8 +7,7 @@
 | **Spec（当前真相）** | `design/specs/*.md` | 按领域拆开的短契约。实现、修 bug、改行为时先读对应 spec。 |
 | **Reference（背景）** | `design/references/*` | 长文、选型备忘、视觉全书。过时可以修，但不能单独当实现依据。 |
 | **入口** | 仓库根 `AGENTS.md` | Agent 工作手册：读哪份 spec、何时必须改文档。 |
-
-根目录 `DESIGN.md` 只是跳转页，不要往里继续堆内容。
+| **设计规约** | 仓库根 `DESIGN.md` | Agent 权威设计系统规约（Token 词表、Bento 布局、8 大命名 Anti-patterns）。 |
 
 ---
 
