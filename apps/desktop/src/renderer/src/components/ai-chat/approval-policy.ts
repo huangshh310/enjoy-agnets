@@ -1,5 +1,5 @@
 /**
- * 输入框盾牌：Harness permissionMode 三档 + git 开关。
+ * 输入框盾牌：Harness permissionMode 三档 + 自定义开关。
  */
 import {
   classifyPermissionMode,
@@ -12,7 +12,7 @@ import {
 export type ApprovalPolicyKind = PermissionMode | "custom"
 export type { ApprovalPrefFlags }
 
-/** 风险档配色：Reads 冷静、Edits 提醒、All 高风险，和运行模式胶囊同一套分色。 */
+/** 风险档配色：Reads 冷静、Edits 提醒、All 放行 */
 export const APPROVAL_PRESETS = [
   {
     id: "allow-reads" as const,
@@ -25,7 +25,7 @@ export const APPROVAL_PRESETS = [
   {
     id: "allow-edits" as const,
     label: "Edits",
-    desc: "Auto-apply file edits; still ask shell and git",
+    desc: "Auto-apply file edits; pause before shell & git",
     colorClass: "text-amber-600 dark:text-amber-300",
     bgClass: "bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:border-amber-500/30",
     iconColor: "text-amber-500 dark:text-amber-400"
@@ -33,7 +33,7 @@ export const APPROVAL_PRESETS = [
   {
     id: "allow-all" as const,
     label: "All",
-    desc: "Auto-apply files; Harness still pauses all sandbox shell",
+    desc: "Auto-apply files, shell commands, and commits",
     colorClass: "text-rose-600 dark:text-rose-300",
     bgClass: "bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
     iconColor: "text-rose-500 dark:text-rose-400"
@@ -52,9 +52,9 @@ export function toneForPolicy(kind: ApprovalPolicyKind) {
 }
 
 export const APPROVAL_FLAGS = [
-  { id: "requireWriteApproval" as const, label: "Files", desc: "write, edit, write_file, edit_file" },
-  { id: "requireBashApproval" as const, label: "Shell", desc: "bash" },
-  { id: "requireCommitApproval" as const, label: "Git", desc: "git_commit (host tool)" }
+  { id: "requireWriteApproval" as const, label: "Files", desc: "Auto-apply file writes & edits (write_file, edit_file)" },
+  { id: "requireBashApproval" as const, label: "Shell", desc: "Auto-run terminal commands (bash)" },
+  { id: "requireCommitApproval" as const, label: "Git", desc: "Auto-commit repository changes (git_commit)" }
 ]
 
 export function classifyApprovalPolicy(prefs: ApprovalPrefFlags): ApprovalPolicyKind {

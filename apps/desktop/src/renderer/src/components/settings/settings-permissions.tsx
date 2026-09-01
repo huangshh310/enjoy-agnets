@@ -1,5 +1,5 @@
 /**
- * Settings → General 的权限：permissionMode + Files / Shell / Git。
+ * Settings → General 的权限：permissionMode + Files / Shell / Git 自动放行控制。
  */
 import {
   classifyPermissionMode,
@@ -40,22 +40,22 @@ export function SettingsPermissions({
     <SettingsCard title="Permissions">
       <PermissionModeRow kind={kind} onPick={(mode) => persist(flagsForPermissionMode(mode), mode)} />
       <FlagRow
-        title="Approve file writes"
-        description="Pause before write / edit (and host write_file). allow-edits turns this off."
-        checked={flags.requireWriteApproval}
-        onCheckedChange={(checked) => persist({ ...flags, requireWriteApproval: checked })}
+        title="Auto-apply file writes"
+        description="Allow write and edit operations (write_file, edit_file) without prompting for approval."
+        checked={!flags.requireWriteApproval}
+        onCheckedChange={(auto) => persist({ ...flags, requireWriteApproval: !auto })}
       />
       <FlagRow
-        title="Approve shell commands"
-        description="Pause before bash. Harness All still pauses sandbox shell (cannot inspect the command)."
-        checked={flags.requireBashApproval}
-        onCheckedChange={(checked) => persist({ ...flags, requireBashApproval: checked })}
+        title="Auto-run shell commands"
+        description="Allow terminal bash commands to execute automatically without prompting."
+        checked={!flags.requireBashApproval}
+        onCheckedChange={(auto) => persist({ ...flags, requireBashApproval: !auto })}
       />
       <FlagRow
-        title="Approve git commits"
-        description="Pause before git_commit. Host-tool extra, not part of Harness permissionMode."
-        checked={flags.requireCommitApproval}
-        onCheckedChange={(checked) => persist({ ...flags, requireCommitApproval: checked })}
+        title="Auto-commit git changes"
+        description="Allow repository git commits without prompting for approval."
+        checked={!flags.requireCommitApproval}
+        onCheckedChange={(auto) => persist({ ...flags, requireCommitApproval: !auto })}
       />
     </SettingsCard>
   )
@@ -70,24 +70,32 @@ function PermissionModeRow({
 }) {
   return (
     <SettingsRow
-      title="permissionMode"
-      description="Harness allow-reads / allow-edits. All is capped to allow-edits in the sandbox so bash still pauses."
+      title="Permission mode"
+      description="Presets for tool approval. allow-all runs commands without approval; custom lets you mix."
     >
-      <Select
-        value={kind}
-        onValueChange={(value) => {
-          if (value === "custom") return
-          onPick(value as PermissionMode)
-        }}
-      >
-        <SelectTrigger className="min-w-[11rem] rounded-2lg">
-          <SelectValue />
+      <Select value={kind} onValueChange={(val) => onPick(val as PermissionMode)}>
+        <SelectTrigger className="w-44">
+          <SelectValue placeholder="Select mode" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="allow-reads">allow-reads</SelectItem>
-          <SelectItem value="allow-edits">allow-edits</SelectItem>
-          <SelectItem value="allow-all">allow-all</SelectItem>
-          {kind === "custom" ? <SelectItem value="custom">custom</SelectItem> : null}
+        <SelectContent align="end">
+          <SelectItem value="allow-reads">
+            <div className="flex flex-col">
+              <span>Reads (Safe)</span>
+              <span className="text-[10px] text-text-tertiary">Approve writes, shell, git</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="allow-edits">
+            <div className="flex flex-col">
+              <span>Edits</span>
+              <span className="text-[10px] text-text-tertiary">Auto writes; approve shell</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="allow-all">
+            <div className="flex flex-col">
+              <span>All (Autonomous)</span>
+              <span className="text-[10px] text-text-tertiary">Auto writes, shell, commits</span>
+            </div>
+          </SelectItem>
         </SelectContent>
       </Select>
     </SettingsRow>
@@ -106,7 +114,7 @@ function FlagRow({
   onCheckedChange: (checked: boolean) => void
 }) {
   return (
-    <SettingsRow title={title} description={description} align="start">
+    <SettingsRow title={title} description={description}>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </SettingsRow>
   )

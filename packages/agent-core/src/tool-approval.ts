@@ -39,7 +39,7 @@ const DANGEROUS_BASH = [
   /\bgit\s+push\b[\s\S]*\s(-f|--force)\b/i,
   /\bgit\s+reset\s+--hard\b/i,
   /\bsudo\b/i,
-  /\b(curl|wget)\b[\s\S]*\|\s*(ba)?sh\b/i,
+  /\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(bash|sh|zsh)\s*($|[;&|\s])/i,
   /\bmkfs\b/i,
   /\bdd\s+if=/i
 ]

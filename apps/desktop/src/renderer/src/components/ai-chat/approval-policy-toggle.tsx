@@ -44,7 +44,7 @@ export function ApprovalPolicyToggle() {
         align="end"
         side="top"
         sideOffset={8}
-        className="w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-card"
+        className="w-[330px] rounded-2xl border border-border-button-default bg-background-primary-default p-2 shadow-dropdown"
       >
         <div className="px-2 py-1 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
           permissionMode

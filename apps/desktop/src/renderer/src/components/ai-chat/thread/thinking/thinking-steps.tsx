@@ -1,51 +1,46 @@
 /**
- * Thinking 时间线：竖线 + Tool Chips 步骤 / 文件变更胶囊。
+ * Thinking 时间线与 Agent 步骤树：
+ * 统一在单一树形导轨中呈现模型思考节点、工具执行链路与文件变更胶囊。
  */
-import { ToolChips, type ToolStepItem } from "@/components/ai-elements/tool-chips"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
+import { AgentStepTree } from "./agent-step-tree"
+import type { AgentStepNode } from "./agent-step-tree.types"
 import { fileChangesFromRows } from "./thinking-chips"
 import type { TraceRow } from "./thinking-rows"
+import { FileChangeChips } from "@/components/ai-elements/tool-chips"
 
-export function ThinkingSteps({ rows }: { rows: TraceRow[] }) {
-  if (rows.length === 0) {
+export function ThinkingSteps({
+  nodes = [],
+  rows = []
+}: {
+  nodes?: AgentStepNode[]
+  rows?: TraceRow[]
+}) {
+  const hasNodes = nodes.length > 0
+  const fileChanges = fileChangesFromRows(rows)
+
+  if (!hasNodes && fileChanges.length === 0) {
     return (
-      <p className="py-1 text-caption-1-medium text-text-tertiary">No reasoning trace for this turn.</p>
+      <p className="py-1 text-caption-1-medium text-text-tertiary">
+        No reasoning trace for this turn.
+      </p>
     )
   }
 
   return (
-    <div className="relative mt-1 ml-1.5 pl-4">
-      <span className="absolute top-0 bottom-1 left-px w-px bg-separator-border" aria-hidden />
-      <ToolChips
-        embedded
-        defaultExpanded
-        steps={rows.map(toToolStep)}
-        fileChanges={fileChangesFromRows(rows)}
-        onOpenFile={(path) => void openChangedFile(path)}
-      />
+    <div className="relative mt-1 ml-1 pl-2 flex flex-col gap-2">
+      {/* 1. 一体化 Agent 步骤与思考时间线树 */}
+      {hasNodes ? <AgentStepTree nodes={nodes} /> : null}
+
+      {/* 2. 关联文件变更胶囊 (File Changes) */}
+      {fileChanges.length > 0 ? (
+        <div className="mt-1 pt-1.5 border-t border-border-button-default/50">
+          <FileChangeChips
+            files={fileChanges}
+            onOpenFile={(path) => void openChangedFile(path)}
+          />
+        </div>
+      ) : null}
     </div>
   )
-}
-
-function toToolStep(row: TraceRow): ToolStepItem {
-  return {
-    id: row.id,
-    kind: stepKind(row),
-    title: row.primary,
-    detail: row.secondary,
-    additions: row.add,
-    deletions: row.del,
-    status: row.failed ? "error" : row.working ? "running" : row.done ? "completed" : "pending"
-  }
-}
-
-function stepKind(row: TraceRow): ToolStepItem["kind"] {
-  if (row.kind === "reasoning") return "thinking"
-  if (row.kind === "search") return "search"
-  if (row.kind !== "coding") return "other"
-  const verb = row.primary.toLowerCase()
-  if (verb === "read") return "read"
-  if (verb === "run" || verb === "git") return "command"
-  if (verb === "edit") return "edit"
-  return "write"
 }

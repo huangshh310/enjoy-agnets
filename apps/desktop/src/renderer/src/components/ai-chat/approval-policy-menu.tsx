@@ -75,22 +75,25 @@ export function ApprovalFlagList({
 }) {
   return (
     <div className="flex flex-col gap-0.5 px-1">
-      {APPROVAL_FLAGS.map((flag) => (
-        <label
-          key={flag.id}
-          className="flex items-center justify-between gap-3 rounded-xl px-2 py-1.5"
-        >
-          <span className="flex min-w-0 flex-col">
-            <span className="text-caption-1-medium text-text-primary">{flag.label}</span>
-            <span className="text-caption-2-regular text-text-tertiary">{flag.desc}</span>
-          </span>
-          <Switch
-            size="sm"
-            checked={flags[flag.id]}
-            onCheckedChange={(checked) => onToggle(flag.id, checked)}
-          />
-        </label>
-      ))}
+      {APPROVAL_FLAGS.map((flag) => {
+        const isAutoAllowed = !flags[flag.id]
+        return (
+          <label
+            key={flag.id}
+            className="flex items-center justify-between gap-3 rounded-xl px-2 py-1.5 hover:bg-background-secondary-hover/60 transition-colors cursor-pointer select-none"
+          >
+            <span className="flex min-w-0 flex-col">
+              <span className="text-caption-1-medium text-text-primary">{flag.label}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{flag.desc}</span>
+            </span>
+            <Switch
+              size="sm"
+              checked={isAutoAllowed}
+              onCheckedChange={(autoAllowed) => onToggle(flag.id, !autoAllowed)}
+            />
+          </label>
+        )
+      })}
     </div>
   )
 }
@@ -98,7 +101,7 @@ export function ApprovalFlagList({
 export function PolicyHint({ readOnly }: { readOnly: boolean }) {
   const text = readOnly
     ? "Ask and Plan always deny writes, commits, and shell — independent of this preset."
-    : "All auto-applies files. Harness still pauses sandbox shell because it cannot inspect the command."
+    : "All mode auto-approves files, commands, and commits. High-risk actions (sudo, rm -rf) still require explicit confirmation."
 
   return <p className="px-2 pt-1.5 pb-1 text-caption-2-regular leading-snug text-text-tertiary">{text}</p>
 }
@@ -127,9 +130,9 @@ function PresetRow({
       <div className={cx("flex size-6 shrink-0 items-center justify-center rounded-lg border", bgClass)}>
         <Icon className={cx("size-3.5", iconColor)} />
       </div>
-      <div className="flex flex-col min-w-0">
+      <div className="flex flex-col min-w-0 flex-1">
         <span className="text-caption-1-medium leading-tight text-text-primary">{label}</span>
-        <span className="text-caption-2-regular text-text-tertiary leading-tight truncate">{desc}</span>
+        <span className="text-caption-2-regular text-text-tertiary leading-snug mt-0.5">{desc}</span>
       </div>
     </div>
   )

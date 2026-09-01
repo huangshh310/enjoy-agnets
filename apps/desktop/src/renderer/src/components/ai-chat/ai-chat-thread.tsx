@@ -7,13 +7,13 @@ import {
   ConversationContent,
   ConversationScrollButton
 } from "@/components/ai-elements/conversation"
-import { cx } from "@/utils/cx"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { ApprovalCard } from "./thread/approval-card"
 import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"
+import { ThreadErrorBanner } from "./thread/thread-error-banner"
 
 export function AiChatThread({
   messages,
@@ -61,7 +61,7 @@ export function AiChatThread({
           />
         ) : null}
 
-        {error ? <p className={cx("text-body-medium text-text-error-primary")}>{error}</p> : null}
+        {error ? <ThreadErrorBanner error={error} /> : null}
       </ConversationContent>
       <ConversationScrollButton />
     </Conversation>

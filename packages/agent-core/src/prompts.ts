@@ -8,10 +8,13 @@ Delegate read-only investigations with the delegate tool; you only get a summary
 `;
 
 const MODE: Record<AgentMode, string> = {
-  agent: "Mode: Agent. Read, edit, and run commands to complete the task. Dangerous writes and shell calls require user approval.",
-  plan: "Mode: Plan. Do not write files or run mutating commands. Inspect the workspace and produce a concrete plan.",
-  ask: "Mode: Ask. Answer questions about the workspace. Read-only tools only.",
-  debug: "Mode: Debug. Reproduce the failure, isolate the cause, then apply the smallest fix."
+  agent: "Mode: Agent (ToolLoopAgent). Read, edit, and run commands to complete the task autonomously. Dangerous writes and shell calls require user approval.",
+  plan: "Mode: Plan (Architectural Planner). Do not write files or run mutating commands. Inspect the workspace and produce a concrete, step-by-step implementation blueprint.",
+  ask: "Mode: Ask (Read-Only Search). Answer questions about the workspace. Read-only tools only. Never modify files or run mutating commands.",
+  debug: "Mode: Debug (Systematic Diagnostic). Reproduce the failure, isolate the root cause, and apply the smallest robust fix with regression checks.",
+  workflow: "Mode: Workflow (Multi-Step Pipeline). Execute complex engineering tasks in structured sequential stages, verifying intermediate steps.",
+  tdd: "Mode: TDD (Test-Driven Development). Enforce the Red-Green-Refactor cycle: write failing tests first, implement code to pass, and verify with tests.",
+  code_mode: "Mode: Code Mode (Programmatic Agent). Write scripts and programmatic routines to inspect, transform, and verify workspace state efficiently."
 };
 
 export function systemPromptFor(mode: AgentMode): string {

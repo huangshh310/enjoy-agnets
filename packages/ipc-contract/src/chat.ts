@@ -4,7 +4,7 @@
 import { z } from "zod"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 
-export const AgentMode = z.enum(["agent", "plan", "ask", "debug"])
+export const AgentMode = z.enum(["agent", "plan", "ask", "debug", "workflow", "tdd", "code_mode"])
 export type AgentMode = z.infer<typeof AgentMode>
 
 export const ChatRole = z.enum(["user", "assistant", "system"])

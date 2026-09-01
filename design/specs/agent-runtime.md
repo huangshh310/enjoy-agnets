@@ -5,9 +5,10 @@
 ## 当前真相
 
 内核在 `packages/agent-core`（纯 TS）。Electron main 的 `agent-runner` 建模型、注入 workspace host、消费 `fullStream`，映射成 `StreamEvent` 再 `webContents.send("agent.event")`。
-
-模式（`AgentMode`）：`agent` / `plan` / `ask` / `debug`。系统提示由 `systemPromptFor(mode)` 拼出。`plan` / `ask` 只读；`agent` / `debug` 可写，危险工具走审批。
-
+模式（`AgentMode`）：对标 Vercel AI SDK 7 架构，支持两大类 7 种模式：
+1. **AI SDK 7 核心智能体循环 (Core Loops)**：`agent` (ToolLoopAgent 全功能自主编码)、`plan` (架构规划蓝图，只读)、`ask` (只读问答与检索，只读)、`debug` (系统性根因诊断与修复)。
+2. **高阶专业工程工作流 (Specialized Engineering)**：`workflow` (WorkflowAgent 多阶段流水平水线)、`tdd` (测试驱动开发红-绿-重构循环)、`code_mode` (代码模式批量脚本执行)。
+系统提示由 `systemPromptFor(mode)` 针对各模式注入；`plan` / `ask` 强制只读，其余模式写盘与终端执行按审批策略放行。
 可选第二运行时：`codingRuntime: "harness"` 走 `packages/agent-harness`。已接线：Claude Code、Codex（要 Vercel 端口沙箱）、Pi（默认本机 just-bash）、OpenCode。DeepSeek 仍是占位。这是插件位，不是默认内核。
 
 ### 内置工具

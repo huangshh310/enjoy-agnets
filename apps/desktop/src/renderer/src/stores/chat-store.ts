@@ -10,6 +10,7 @@ import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
 import type { ChatStore, ChangedFileRow, RepositoryNode, ThreadMessage } from "./chat-store.types"
 
 export type {
+  AgentMode,
   ChangedFileRow,
   ChatRole,
   ChatStore,

@@ -8,6 +8,7 @@ import { cx } from "@/utils/cx"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { buildTraceRows, isTraceExpanded, thinkingHeadline } from "./thinking-rows"
 import { ThinkingSteps } from "./thinking-steps"
+import { parseAgentStepNodes } from "./agent-step-tree-parser"
 
 const SHIMMER_TONE = {
   "--bui-agent-thinking-tone": "var(--color-text-secondary)"
@@ -29,6 +30,7 @@ export function ThinkingTrace({
   const [manualOpen, setManualOpen] = useState<boolean | null>(null)
   const seconds = useSettledSeconds(startedAt, streaming, thoughtSeconds)
   const rows = buildTraceRows(reasoning, tools)
+  const nodes = parseAgentStepNodes(reasoning, tools)
   const expanded = isTraceExpanded(streaming, tools, manualOpen)
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export function ThinkingTrace({
         }}
       >
         <div className="min-h-0 overflow-hidden">
-          <ThinkingSteps rows={rows} />
+          <ThinkingSteps nodes={nodes} rows={rows} />
         </div>
       </div>
     </div>

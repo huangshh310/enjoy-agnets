@@ -1,7 +1,7 @@
 /**
  * 聊天会话 store 的数据形状。实现仍在 chat-store.ts。
  */
-import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { AgentMode, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -15,6 +15,7 @@ export type CodeAttachment = {
   deletions: number
   code: string
 }
+export type { AgentMode }
 
 export type ThreadSource = {
   sourceId: string
@@ -116,7 +117,7 @@ export type ChatStore = {
   models: ModelOption[]
   provider: string | null
   reasoningEffort: ReasoningEffort | undefined
-  mode: "agent" | "plan" | "ask" | "debug"
+  mode: AgentMode
   running: boolean
   runId: string | null
   /** composer 尚未拿到 runId 时暂存事件，避免旁路 Extract 写进乐观轮 */
