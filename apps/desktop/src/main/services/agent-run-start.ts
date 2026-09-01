@@ -6,13 +6,11 @@ import type { GenerationRequest } from "@enjoy-agents/agent-core"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase, setSetting } from "./database"
 import { createId } from "./ids"
-import { pumpStream } from "./agent-pump"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
+import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveRunSecret } from "./agent-run-helpers"
-import { appendRunAttachments, attachmentCapsFor } from "./attach-run-files"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
-import { citeKnowledge } from "./cite-knowledge"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
@@ -60,11 +58,6 @@ async function beginAgentRun(
 
   const runId = options.runId ?? createId("run")
   const modelMessages = toModelMessages(input.messages)
-  await appendRunAttachments(
-    modelMessages,
-    input.attachments,
-    attachmentCapsFor(input.modelId, secret?.provider)
-  )
   holdAgentRun({
     runId,
     window,
@@ -76,23 +69,12 @@ async function beginAgentRun(
   rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
 
   const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
-  if (lastUser) {
-    if (options.persistUser) {
-      persistUserTurn(input.sessionId, lastUser.content, metasFromAssetIds(input.attachments))
-      maybeRenameSession(input.sessionId, lastUser.content)
-    }
-    const cites = await citeKnowledge({
-      window,
-      runId,
-      sessionId: input.sessionId,
-      workspaceId: input.workspaceId,
-      query: lastUser.content
-    })
-    modelMessages.push(...cites.messages)
-    holdAgentRun({ citedSources: cites.sources, runId })
+  if (lastUser && options.persistUser) {
+    persistUserTurn(input.sessionId, lastUser.content, metasFromAssetIds(input.attachments))
+    maybeRenameSession(input.sessionId, lastUser.content)
   }
 
   emitEvent(window, { type: "run.start", runId, sessionId: input.sessionId })
-  void pumpStream(runId)
+  void prepareAndPump(runId)
   return { runId }
 }

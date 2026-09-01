@@ -46,7 +46,9 @@ export async function queryVector(text: string, modelId: string): Promise<number
   if (modelId === "hashed") return hashedEmbedding(text)
   const model = await embeddingModel()
   if (!model) return hashedEmbedding(text)
-  return (await embedQuery(model.model, text)) ?? hashedEmbedding(text)
+  // 索引 embed 已有 8s 上限；查询同样封顶，避免 citeKnowledge 卡死 Agent 开泵
+  const vector = await withTimeout(() => embedQuery(model.model, text), 8_000).catch(() => null)
+  return vector ?? null
 }
 
 export async function resolveRerankModel(): Promise<unknown | undefined> {

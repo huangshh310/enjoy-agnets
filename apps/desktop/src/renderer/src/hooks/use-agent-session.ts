@@ -7,6 +7,7 @@ import {
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { abortComposerRun } from "./composer-run-control"
 import { threadFromRows } from "./hydrate-thread"
 import { mergeUserAssets } from "./merge-user-assets"
 import {
@@ -146,6 +147,10 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
 export async function loadSession(sessionId: string, title: string) {
   const store = useChatStore.getState()
   const previous = store.sessionId === sessionId ? store.messages : []
+  if (store.sessionId !== sessionId) {
+    await abortComposerRun()
+    store.setError(null)
+  }
   store.setSession(sessionId, title)
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   restoreUiMessages(rows)
@@ -164,17 +169,20 @@ function restoreUiMessages(rows: MessageRow[]) {
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "New agent") {
+  await abortComposerRun()
   const session = (await getIde().session.create({
     workspaceId,
     title: customTitle
   })) as SessionRow
   const store = useChatStore.getState()
+  store.setError(null)
   store.setSession(session.id, session.title)
   store.setMessages([])
   await refreshAllWorkspaces()
 }
 
-export { abortComposerRun, attachComposerFile, sendComposerMessage } from "./send-composer"
+export { abortComposerRun }
+export { attachComposerFile, sendComposerMessage } from "./send-composer"
 
 export async function decidePendingApproval(decision: "allow" | "deny" | "allow_session") {
   const store = useChatStore.getState()

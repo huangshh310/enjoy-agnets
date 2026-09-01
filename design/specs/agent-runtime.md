@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-01
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -56,7 +56,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
 - 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 审批）
-- 内存态：`agent-run-state.ts`；泵循环：`agent-pump.ts`；启动：`agent-run-start.ts`
+- 内存态：`agent-run-state.ts`；泵循环：`agent-pump.ts`；启动：`agent-run-start.ts`；附件 / 知识 / 开泵：`agent-run-prepare.ts`
 - 知识引用：`apps/desktop/src/main/services/cite-knowledge.ts`
 - 附件：`apps/desktop/src/main/services/attach-run-files.ts`
 - 用户附件落库 / 旧消息回挂：`persist-user-attachments.ts`、`user-attachment-parts.ts`
@@ -74,3 +74,4 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - `ai.resume` 对 Agent 是同一请求重启 ToolLoop，不是 SDK `session.detach` 中途续跑。
 - Windows 上 `.md` 的 `File.type` 常为空。必须 `resolveMediaType`，否则会把文档当 `application/octet-stream` file part 发给只有 vision 的 grok，思考后报 `No output generated`。文本附件不要走多模态 file，编进 `text` part。
 - 用户气泡附件消失：模型仍能读图，是因为 `attachments` 当时交给了 main，但旧 persist 只写 `messages.content` / text part。点会话或刷新走 `loadSession` → `threadFromRows`，没有 file part 就画不出缩略图。补救：发送按资产 id 写 file part；列出时按导入时间窗（上一轮之后、本轮前 2 分钟内、`source=import`）回挂孤儿资产。
+- `agent.run` 以前在返回 `{ runId }` 之前 await `citeKnowledge` / 附件。Provider embed 一超时，renderer 一直 `running && !runId`：空 Thinking、Stop 点了没反应。现在 IPC 先 `run.start` + `{ runId }`，附件和检索放到 `prepareAndPump`；embed 查询 8s 封顶，失败回落词袋。

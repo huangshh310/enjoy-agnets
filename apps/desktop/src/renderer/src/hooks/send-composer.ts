@@ -7,7 +7,14 @@ import { fileToBase64 } from "../lib/file-bytes"
 import { useChatStore } from "../stores/chat-store"
 import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
 import { composerRunKind } from "./composer-run-kind"
+import {
+  abortOrphanedRun,
+  claimComposerRun,
+  dropEmptyPendingAssistant
+} from "./composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "./session-title"
+
+export { abortComposerRun } from "./composer-run-control"
 
 export async function sendComposerMessage() {
   const store = useChatStore.getState()
@@ -44,10 +51,14 @@ export async function sendComposerMessage() {
     }
   ])
   store.setRunning(true)
+  const sessionId = store.sessionId
 
   try {
     const result = (await startComposerRun(store, content, messages, assetIds)) as { runId: string }
-    store.setRunning(true, result.runId)
+    if (!claimComposerRun(sessionId, result.runId)) {
+      abortOrphanedRun(result.runId)
+      return
+    }
     if (composerRunKind(store.modelId, currentCaps(store)) === "agent") {
       void completeSessionTitle(content)
     }
@@ -113,13 +124,6 @@ async function guardComposer(store: ReturnType<typeof useChatStore.getState>): P
   return false
 }
 
-export async function abortComposerRun() {
-  const store = useChatStore.getState()
-  if (!store.runId || !hasIde()) return
-  await getIde().ai.abort(store.runId)
-  store.setRunning(false)
-}
-
 export async function attachComposerFile(file: File) {
   if (!hasIde()) return
   const previewUrl = URL.createObjectURL(file)
@@ -150,10 +154,3 @@ export async function attachComposerFiles(files: File[] | FileList) {
   }
 }
 
-function dropEmptyPendingAssistant() {
-  const store = useChatStore.getState()
-  const last = store.messages.at(-1)
-  if (last?.role === "assistant" && last.streaming && !last.content && !last.tools?.length) {
-    store.setMessages(store.messages.slice(0, -1))
-  }
-}

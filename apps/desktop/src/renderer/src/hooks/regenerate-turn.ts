@@ -4,6 +4,7 @@
  */
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
+import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
 
 function currentCaps(store: ChatStore) {
@@ -57,6 +58,7 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
   store.setMessages(nextMessages)
   store.setRunning(true)
   store.setError(null)
+  const sessionId = store.sessionId
 
   const assetIds = (userMessage.assets ?? []).map((a) => a.assetId)
   const history = truncatedMessages.map((m) => ({
@@ -66,27 +68,10 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
   }))
 
   try {
-    if (runKind === "image" || runKind === "video") {
-      await getIde().ai.generate({
-        kind: runKind,
-        sessionId: store.sessionId,
-        workspaceId: store.workspaceId ?? undefined,
-        modelId: store.modelId,
-        prompt: userMessage.content,
-        messages: history,
-        attachments: assetIds
-      })
-    } else {
-      await getIde().agent.run({
-        sessionId: store.sessionId,
-        workspaceId: store.workspaceId,
-        modelId: store.modelId,
-        mode: store.mode,
-        reasoningEffort: store.reasoningEffort,
-        messages: history,
-        attachments: assetIds
-      })
-    }
+    await claimStartedRun(
+      sessionId,
+      startTurnIpc(store, runKind, userMessage.content, history, assetIds)
+    )
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
     store.setRunning(false)
@@ -140,6 +125,7 @@ export async function editAndResendUserTurn(
   store.setMessages(nextMessages)
   store.setRunning(true)
   store.setError(null)
+  const sessionId = store.sessionId
 
   const assetIds = (oldUserMsg.assets ?? []).map((a) => a.assetId)
   const history = truncatedMessages.map((m) => ({
@@ -149,29 +135,46 @@ export async function editAndResendUserTurn(
   }))
 
   try {
-    if (runKind === "image" || runKind === "video") {
-      await getIde().ai.generate({
-        kind: runKind,
-        sessionId: store.sessionId,
-        workspaceId: store.workspaceId ?? undefined,
-        modelId: store.modelId,
-        prompt: newContent.trim(),
-        messages: history,
-        attachments: assetIds
-      })
-    } else {
-      await getIde().agent.run({
-        sessionId: store.sessionId,
-        workspaceId: store.workspaceId,
-        modelId: store.modelId,
-        mode: store.mode,
-        reasoningEffort: store.reasoningEffort,
-        messages: history,
-        attachments: assetIds
-      })
-    }
+    await claimStartedRun(
+      sessionId,
+      startTurnIpc(store, runKind, newContent.trim(), history, assetIds)
+    )
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Execution failed.")
     store.setRunning(false)
   }
+}
+
+function startTurnIpc(
+  store: ChatStore,
+  runKind: ReturnType<typeof composerRunKind>,
+  prompt: string,
+  history: Array<{ role: ChatStore["messages"][number]["role"]; content: string; reasoning?: string }>,
+  assetIds: string[]
+) {
+  if (runKind === "image" || runKind === "video") {
+    return getIde().ai.generate({
+      kind: runKind,
+      sessionId: store.sessionId,
+      workspaceId: store.workspaceId ?? undefined,
+      modelId: store.modelId,
+      prompt,
+      messages: history,
+      attachments: assetIds
+    })
+  }
+  return getIde().agent.run({
+    sessionId: store.sessionId,
+    workspaceId: store.workspaceId,
+    modelId: store.modelId,
+    mode: store.mode,
+    reasoningEffort: store.reasoningEffort,
+    messages: history,
+    attachments: assetIds
+  })
+}
+
+async function claimStartedRun(sessionId: string | null, started: Promise<unknown>) {
+  const result = (await started) as { runId: string }
+  if (!claimComposerRun(sessionId, result.runId)) abortOrphanedRun(result.runId)
 }

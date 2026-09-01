@@ -29,6 +29,7 @@
 - 索引先写 `hashedEmbedding`（32 维），有 Key 再 `embedMany` 覆盖。检索按 `model_id` 选同一套 query 向量，维度不一致时回落词袋。
 - Provider / embedding 模型变了不会自动清文档；Resume 或再次 Index 会 `reembedStaleSource`。Rebuild 才清空 chunk。
 - Provider embed 失败或超过 8s 回落 hashed，不要让索引一直转。`ENJOY_E2E_STUB` 跳过 Provider embed。解析阶段禁止 per-file `embedMany`；添加来源后立刻刷新，Indexing 中按 1.5s 刷 `knowledge.documents`，完成再刷一次。
+- `queryVector` 走 Provider 时同样 8s 封顶；超时返回 `null` 让检索回落词袋，不要用 hashed 去对 Provider 向量（维度不一致）。Agent 开跑不得被这条检索堵住 IPC 返回。
 - Windows 选择器常给 `C:/...`，工作区根可能是 `c:/...`。`startsWith` 大小写敏感会把库内目录存成绝对路径，随后 `shouldIgnore` 或 `relative()` 把文件扫成 0。比较根前缀必须忽略盘符大小写。
 - `knowledge.documents` 失败时 UI 必须显示错误，不能把 `data ?? []` 画成「还没有文件」。View Files 若只切 tab 不设 `selectedPath`，看起来像点了没打开该目录。
 - 编辑来源弹窗不要用「路径没变」禁用保存。同一路径点 Rebuild 走 `knowledge.index rebuild`；改路径才删旧建新。卡住 Indexing 时也要能点。
