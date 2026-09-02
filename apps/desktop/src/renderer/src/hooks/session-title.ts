@@ -1,8 +1,8 @@
 /**
  * 依据会话内容自动精炼生成会话标题。
  */
-import { getIde, hasIde } from "@renderer/lib/ide"
-import { useChatStore } from "@renderer/stores/chat-store"
+import { getIde, hasIde } from "../lib/ide"
+import { useChatStore } from "../stores/chat-store"
 import { completePrompt } from "./use-completion"
 import { waitForRunOutput } from "./wait-run-events"
 

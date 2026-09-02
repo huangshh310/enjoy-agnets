@@ -46,9 +46,9 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 - 权威设计规约与 Anti-Patterns：[../../DESIGN.md](../../DESIGN.md)
  - BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
- - 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
- - 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树：`ai-chat/sidebar/`
- - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
+- 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
+- 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`
+- 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
  - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`
  - 状态栏与 Agent Limits 卡片（Token 分桶与速率限制）：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`
 - UI 包语言：`packages/ui/i18n/ui-locale.ts`

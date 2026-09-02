@@ -13,14 +13,12 @@ import {
 } from "@remixicon/react"
 import { DashboardUserMenu } from "@/components/application/dashboard/dashboard-user-menu"
 import { ThemeToggle } from "@/components/application/theme/theme-toggle"
-import { Button } from "@/components/ui/button"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
-import { AppMark } from "@renderer/components/brand/app-mark"
-import { AppWordmark } from "@renderer/components/brand/app-wordmark"
 import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar/sidebar-action"
 import { SidebarLocaleToggle } from "@renderer/components/ai-chat/sidebar/sidebar-locale-toggle"
 import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos"
+import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
@@ -103,7 +101,12 @@ export function AiChatSidebar({
           />
         )}
       </div>
-      <SidebarFooter collapsed={collapsed} onOpenWorkspace={onOpenWorkspace} />
+      <SidebarFooter
+        collapsed={collapsed}
+        userName={userName}
+        sessionCount={repositories.filter((node) => node.kind === "session").length}
+        onOpenWorkspace={onOpenWorkspace}
+      />
     </aside>
   )
 }
@@ -171,9 +174,13 @@ function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand: ()
 
 function SidebarFooter({
   collapsed,
+  userName,
+  sessionCount,
   onOpenWorkspace
 }: {
   collapsed: boolean
+  userName: string
+  sessionCount: number
   onOpenWorkspace: () => void
 }) {
   const t = useT()
@@ -198,22 +205,12 @@ function SidebarFooter({
           onClick={() => void navigate({ to: "/settings/$section", params: { section: "general" } })}
         />
       </nav>
-      <div
-        className={cx(
-          "flex items-center rounded-xl",
-          collapsed ? "w-9 justify-center" : "w-full gap-2 bg-background-tertiary-default py-2 pr-2 pl-2.5"
-        )}
-      >
-        <AppMark size={32} />
-        {collapsed ? null : (
-          <>
-            <AppWordmark className="min-w-0 flex-1" />
-            <Button size="xs" className="shrink-0" onClick={onOpenWorkspace}>
-              {t("chat.folder")}
-            </Button>
-          </>
-        )}
-      </div>
+      <SidebarUserCard
+        collapsed={collapsed}
+        userName={userName}
+        sessionCount={sessionCount}
+        onOpenWorkspace={onOpenWorkspace}
+      />
     </div>
   )
 }

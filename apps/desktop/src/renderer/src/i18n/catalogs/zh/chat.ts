@@ -310,5 +310,18 @@ export const zhChat = {
 
   enableMedia: "开启实验媒体？",
   enableMediaHint: "视频生成仍是实验功能。开启后即可继续。之后可在设置 → 媒体与资产中关闭。",
-  enable: "开启"
+  enable: "开启",
+
+  teamProfile: "查看团队资料",
+  folders: "文件夹",
+  messages: "消息",
+  people: "成员",
+  company: "Company",
+  billing: "Billing",
+  companyDetails: "公司详情",
+  integrations: "集成",
+  personal: "Personal",
+  notifications: "通知",
+  accountDetails: "账户详情",
+  signOut: "退出登录"
 }

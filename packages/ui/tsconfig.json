@@ -3,6 +3,8 @@
   "include": ["src", "components", "utils", "lib", "hooks", "shims", "i18n"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "baseUrl": ".",
     "noUncheckedIndexedAccess": false,
     "paths": {

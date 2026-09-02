@@ -3,8 +3,9 @@
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import type { AssetRecord } from "@enjoy-agents/ipc-contract"
-import { interpolate, type TranslateFn } from "@renderer/i18n"
-import type { StudioGenerateKind } from "./media-page.types"
+import { interpolate } from "../../i18n/lookup.ts"
+import type { TranslateFn } from "../../i18n/use-i18n.ts"
+import type { StudioGenerateKind } from "./media-page.types.ts"
 
 const IMPORT_MAX_BYTES = 8 * 1024 * 1024
 

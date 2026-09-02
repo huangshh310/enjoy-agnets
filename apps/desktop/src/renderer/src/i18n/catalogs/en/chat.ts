@@ -318,5 +318,18 @@ export const enChat = {
   enableMedia: "Enable experimental media?",
   enableMediaHint:
     "Video generation is experimental. Enable it to continue. You can turn this off later in Settings → Media & assets.",
-  enable: "Enable"
+  enable: "Enable",
+
+  teamProfile: "View team profile",
+  folders: "Folders",
+  messages: "Messages",
+  people: "People",
+  company: "Company",
+  billing: "Billing",
+  companyDetails: "Company Details",
+  integrations: "Integrations",
+  personal: "Personal",
+  notifications: "Notifications",
+  accountDetails: "Account Details",
+  signOut: "Sign out"
 }
