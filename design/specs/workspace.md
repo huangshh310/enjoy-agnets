@@ -16,7 +16,7 @@
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。
 
-右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（消息字符、工作区规则正文、已连 MCP 的 name+description、skills description、启用芯片的 snippet，按 3.8 字/token 折算）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。原始载荷按 main `toModelMessages` 同构转译线程（assistant reasoning part），待发送芯片单独预览，不伪造 system 指令。CitedSource 无相似度字段则不画分数。遥测无 cache 字段则不画 Prompt Cache %。发送只取走启用芯片，排除项留在队列。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
+右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（消息字符、工作区规则正文、已连 MCP 的 name+description、skills description、启用芯片的 snippet，按 3.8 字/token 折算）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。原始载荷走 `agent.inspectPrompt`：有本会话泵时快照则标「本轮实发」（`systemPromptFor` + 当时 `run.messages` + 注册工具名，附件 bytes 已剥）；否则 preview（库内消息 `toModelMessages` + 当前模式指令）。本机 ToolLoop **不**把 `customInstructions` 拼进 instructions，只有 harness 才拼。待发送芯片仍是下一轮预览。CitedSource 无相似度字段则不画分数。遥测无 cache 字段则不画 Prompt Cache %。发送只取走启用芯片，排除项留在队列。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 
@@ -51,3 +51,4 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 移除项目不是删文件夹。归档不是删除；永久删除走 `session.delete` / `session.deleteArchived`。
 - Context 检查器禁止 Fake-Status-Chrome：不要写死 RAG 相似度、Prompt Cache %、HMAC 空闲守卫或 3200 系统 token 地板。`CitedSource` 没有 score；`TelemetryMetric` 没有 cache 字段。
 - 会话芯片 `takeSessionContextChips` 只取走 `enabled !== false` 的项。排除芯片必须留在队列，否则发送后无法再点亮。
+- `agent.inspectPrompt` 的 last-run 快照只在 main 进程内存，按 sessionId 覆盖。重启后回落 preview，不要写成已落库。本机 ToolLoop 的 instructions 不含 `customInstructions`。

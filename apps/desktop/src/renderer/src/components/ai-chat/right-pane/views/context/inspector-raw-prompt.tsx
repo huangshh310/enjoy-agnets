@@ -1,114 +1,92 @@
 /**
- * 原始载荷：按 toModelMessages 同构转译线程，待发送芯片单独预览。
+ * 原始载荷：展示 main 泵时快照或 preview，待发送芯片单独预览。
  */
-import { useMemo, useState } from "react"
 import {
   RiCheckLine,
   RiClipboardLine,
+  RiCompass3Line,
   RiSearchLine,
   RiTerminalBoxLine,
   RiUser3Line
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
-import type { ThreadMessage } from "@renderer/stores/chat-store"
-import { formatContextChipsForSend, type SessionContextChip } from "@renderer/hooks/session-context-chips"
+import type { SessionContextChip } from "@renderer/hooks/session-context-chips"
 import { useT } from "@renderer/i18n"
-import { threadToRawMessages, type RawThreadMessage } from "./raw-thread-messages.ts"
+import { useRawPromptView } from "./use-raw-prompt-view.ts"
+import type { RawThreadMessage, RawThreadRole } from "./raw-thread-messages.ts"
 
 export function InspectorRawPrompt({
-  messages,
+  sessionId,
   mode,
   modelId,
   chips = []
 }: {
-  messages: ThreadMessage[]
+  sessionId: string | null
   mode: AgentMode
   modelId: string
   chips?: SessionContextChip[]
 }) {
   const t = useT()
-  const [copiedFull, setCopiedFull] = useState(false)
-  const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [expandedIndices, setExpandedIndices] = useState<Set<number>>(() => new Set([0, 1]))
-  const rawMessages = useMemo(() => threadToRawMessages(messages), [messages])
-  const queuedContext = formatContextChipsForSend(chips)
-  const filteredMessages = useMemo(() => {
-    if (!searchQuery.trim()) return rawMessages
-    const query = searchQuery.toLowerCase()
-    return rawMessages.filter((message) => message.rawText.toLowerCase().includes(query))
-  }, [rawMessages, searchQuery])
-  const totalTokens = rawMessages.reduce((sum, message) => sum + message.tokens, 0)
-  const fullJsonString = useMemo(
-    () =>
-      JSON.stringify(
-        {
-          model: modelId,
-          mode,
-          queuedContext: queuedContext || undefined,
-          messages: rawMessages.map(({ role, content }) => ({ role, content }))
-        },
-        null,
-        2
-      ),
-    [modelId, mode, queuedContext, rawMessages]
-  )
+  const view = useRawPromptView({ sessionId, mode, modelId, chips })
+  const sourceLabel =
+    view.payload?.source === "last-run" ? t("chat.inspectorPromptLastRun") : t("chat.inspectorPromptPreview")
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2.5 font-mono">
       <RawToolbar
-        countLabel={t("chat.inspectorRawCount", { n: rawMessages.length, tokens: totalTokens.toLocaleString() })}
-        copied={copiedFull}
-        copyLabel={copiedFull ? t("common.copied") : t("chat.inspectorRawCopy")}
+        countLabel={`${sourceLabel} · ${t("chat.inspectorRawCount", { n: view.messageCount, tokens: view.totalTokens.toLocaleString() })}`}
+        copied={view.copiedFull}
+        copyLabel={view.copiedFull ? t("common.copied") : t("chat.inspectorRawCopy")}
         onCopy={() => {
-          void navigator.clipboard.writeText(fullJsonString).then(() => {
-            setCopiedFull(true)
-            setTimeout(() => setCopiedFull(false), 2000)
+          void navigator.clipboard.writeText(view.fullJsonString).then(() => {
+            view.setCopiedFull(true)
+            setTimeout(() => view.setCopiedFull(false), 2000)
           })
         }}
       />
+      {view.payload?.toolNames.length ? (
+        <p className="text-caption-2-regular text-text-tertiary">
+          {t("chat.inspectorPromptTools")}: {view.payload.toolNames.join(", ")}
+        </p>
+      ) : null}
       <RawSearch
-        value={searchQuery}
+        value={view.searchQuery}
         placeholder={t("chat.inspectorRawSearch")}
         clearLabel={t("chat.inspectorRawClear")}
-        onChange={setSearchQuery}
+        onChange={view.setSearchQuery}
       />
-      {queuedContext ? (
+      {view.queuedContext ? (
         <pre className="whitespace-pre-wrap break-all rounded-lg border border-dashed border-separator-border bg-background-secondary-default/40 p-2.5 text-caption-2-regular text-text-secondary">
           {t("chat.inspectorQueuedContext")}
           {"\n"}
-          {queuedContext}
+          {view.queuedContext}
         </pre>
       ) : null}
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-0.5">
-        {filteredMessages.map((message) => (
-          <RawMessageCard
-            key={message.index}
-            message={message}
-            expanded={expandedIndices.has(message.index)}
-            copied={copiedIdx === message.index}
-            onToggle={() =>
-              setExpandedIndices((prev) => {
-                const next = new Set(prev)
-                if (next.has(message.index)) next.delete(message.index)
-                else next.add(message.index)
-                return next
-              })
-            }
-            onCopy={() => {
-              const text =
-                typeof message.content === "string"
-                  ? message.content
-                  : JSON.stringify(message.content, null, 2)
-              void navigator.clipboard.writeText(text).then(() => {
-                setCopiedIdx(message.index)
-                setTimeout(() => setCopiedIdx(null), 2000)
-              })
-            }}
-          />
-        ))}
-      </div>
+      <RawMessageList view={view} />
+    </div>
+  )
+}
+
+function RawMessageList({ view }: { view: ReturnType<typeof useRawPromptView> }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-0.5">
+      {view.filteredMessages.map((message) => (
+        <RawMessageCard
+          key={message.index}
+          message={message}
+          expanded={view.expandedIndices.has(message.index)}
+          copied={view.copiedIdx === message.index}
+          onToggle={() => view.toggleExpand(message.index)}
+          onCopy={() => {
+            const text = typeof message.content === "string" ? message.content : message.rawText
+            void navigator.clipboard.writeText(text).then(() => {
+              view.setCopiedIdx(message.index)
+              setTimeout(() => view.setCopiedIdx(null), 2000)
+            })
+          }}
+        />
+      ))}
     </div>
   )
 }
@@ -205,16 +183,22 @@ function RawMessageCard({
       </div>
       {expanded ? (
         <div className="overflow-x-auto bg-background-primary-default p-3 leading-relaxed text-text-primary">
-          <pre className="whitespace-pre-wrap break-all font-mono">
-            {typeof message.content === "string" ? message.content : JSON.stringify(message.content, null, 2)}
-          </pre>
+          <pre className="whitespace-pre-wrap break-all font-mono">{message.rawText}</pre>
         </div>
       ) : null}
     </div>
   )
 }
 
-function RoleBadge({ role }: { role: "user" | "assistant" }) {
+function RoleBadge({ role }: { role: RawThreadRole }) {
+  if (role === "system") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 font-semibold text-accent-500">
+        <RiCompass3Line className="size-2.5" />
+        <span>SYSTEM</span>
+      </span>
+    )
+  }
   if (role === "user") {
     return (
       <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 font-semibold text-accent-500">

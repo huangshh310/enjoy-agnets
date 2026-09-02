@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { threadToRawMessages } from "./raw-thread-messages.ts"
+import { inspectToRawMessages, threadToRawMessages } from "./raw-thread-messages.ts"
 
 test("threadToRawMessages does not invent a system prompt", () => {
   const rows = threadToRawMessages([
@@ -22,4 +22,13 @@ test("threadToRawMessages puts reasoning before text like toModelMessages", () =
     { type: "reasoning", text: "先打招呼" },
     { type: "text", text: "你好！" }
   ])
+})
+
+test("inspectToRawMessages prefixes real instructions as system", () => {
+  const rows = inspectToRawMessages("You are Enjoy Agents", [{ role: "user", content: "hi" }])
+  assert.deepEqual(
+    rows.map((row) => row.role),
+    ["system", "user"]
+  )
+  assert.equal(rows[0]?.content, "You are Enjoy Agents")
 })

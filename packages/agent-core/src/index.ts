@@ -76,6 +76,7 @@ export { createDelegateTool, runReadOnlySubagent, runDelegatedSubagent } from ".
 export { runApprovedSubagent } from "./agents/subagent-loop";
 export { createSubagentApproval, type WaitForSubagentApproval } from "./agents/subagent-approval";
 export { createReadTools, READ_TOOL_NAMES } from "./tools/read-tools";
+export { CODING_TOOL_NAMES } from "./tools/coding-tool-names";
 export { isExperimentalMedia, EXPERIMENTAL_MEDIA } from "./media/capabilities";
 export {
   generateImageBytes,

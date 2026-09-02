@@ -19,6 +19,7 @@ import { findProfileByKinds, type StoredSecret } from "./secrets"
 import { createWorkspaceHost } from "./workspace"
 import { createMcpAgentTools } from "./mcp-agent-tools"
 import { createE2eStubStream, isE2eStub } from "./e2e-stub"
+import { captureOpenStreamPrompt } from "./inspect-prompt-service"
 
 export type OpenedCodingStream = {
   stream: AsyncIterable<Record<string, unknown>>
@@ -47,6 +48,7 @@ export async function openCodingStream(input: {
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools: input.sessionApprovedTools
   }
+  captureOpenStreamPrompt(input)
 
   if (isE2eStub()) {
     return {

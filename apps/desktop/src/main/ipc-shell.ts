@@ -24,6 +24,7 @@ import {
   listSessions,
   runAgent
 } from "./services/agent-runner"
+import { inspectPrompt } from "./services/inspect-prompt-service"
 import { setSetting } from "./services/database"
 import { renameSession } from "./services/persist-session"
 import {
@@ -74,6 +75,7 @@ export const SHELL_CHANNELS = [
   "agent.run",
   "agent.abort",
   "agent.decide",
+  "agent.inspectPrompt",
   "terminal.open",
   "terminal.write",
   "terminal.close",
@@ -162,6 +164,7 @@ function registerAgentIpc() {
   ipcMain.handle("agent.run", (event, raw) => runAgent(windowFromEvent(event), raw))
   ipcMain.handle("agent.abort", (_event, raw) => abortAgent(raw))
   ipcMain.handle("agent.decide", (event, raw) => decideApproval(windowFromEvent(event), raw))
+  ipcMain.handle("agent.inspectPrompt", (_event, raw) => inspectPrompt(raw))
 }
 
 function registerTerminalIpc() {

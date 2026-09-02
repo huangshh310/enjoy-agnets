@@ -1,13 +1,14 @@
 /**
- * 将会话线程转成与 main `toModelMessages` 同构的载荷预览。
- * 不伪造 system 指令，不把待发送芯片写进历史 user 行。
+ * 检查器消息行：线程转译，或 main inspectPrompt 的 instructions + messages。
  */
 import { estimateCharTokens } from "./context-token-estimator.ts"
 
+export type RawThreadRole = "system" | "user" | "assistant"
+
 export type RawThreadMessage = {
   index: number
-  role: "user" | "assistant"
-  content: string | Array<{ type: "reasoning" | "text"; text: string }>
+  role: RawThreadRole
+  content: unknown
   rawText: string
   tokens: number
 }
@@ -19,15 +20,34 @@ export function threadToRawMessages(
     if (message.role === "assistant" && message.reasoning?.trim()) {
       return assistantWithReasoning(index, message.content, message.reasoning.trim())
     }
-    const role = message.role === "assistant" ? "assistant" : "user"
     return {
       index,
-      role,
+      role: message.role === "assistant" ? "assistant" : "user",
       content: message.content,
       rawText: message.content,
       tokens: estimateCharTokens(message.content.length)
     }
   })
+}
+
+export function inspectToRawMessages(
+  instructions: string,
+  messages: Array<{ role: string; content: unknown }>
+): RawThreadMessage[] {
+  const rows: RawThreadMessage[] = []
+  if (instructions.trim()) {
+    rows.push(textRow(0, "system", instructions))
+  }
+  for (const message of messages) {
+    rows.push({
+      index: rows.length,
+      role: roleOf(message.role),
+      content: message.content,
+      rawText: rawTextOf(message.content),
+      tokens: estimateCharTokens(rawTextOf(message.content).length)
+    })
+  }
+  return rows
 }
 
 function assistantWithReasoning(index: number, content: string, think: string): RawThreadMessage {
@@ -41,5 +61,23 @@ function assistantWithReasoning(index: number, content: string, think: string): 
     ],
     rawText,
     tokens: estimateCharTokens(rawText.length)
+  }
+}
+
+function textRow(index: number, role: RawThreadRole, text: string): RawThreadMessage {
+  return { index, role, content: text, rawText: text, tokens: estimateCharTokens(text.length) }
+}
+
+function roleOf(role: string): RawThreadRole {
+  if (role === "system" || role === "assistant") return role
+  return "user"
+}
+
+function rawTextOf(content: unknown): string {
+  if (typeof content === "string") return content
+  try {
+    return JSON.stringify(content, null, 2)
+  } catch {
+    return ""
   }
 }

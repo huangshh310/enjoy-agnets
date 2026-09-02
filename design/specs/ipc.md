@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-02
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-03
 
 ## 当前真相
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
 | session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` | 会话；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`list` 不含已归档 |
-| agent | `run` `abort` `decide` | 跑循环、中止、审批；`run` 可带 `attachments` 资产 id |
+| agent | `run` `abort` `decide` `inspectPrompt` | 跑循环、中止、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 资产 id；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`kind` 必须是 `PROVIDER_KINDS` |
 | automations | `list` `upsert` `remove` | 自动化；`remove` 入参 `{ id }` |
 | models | `list` | 已配置模型目录 |

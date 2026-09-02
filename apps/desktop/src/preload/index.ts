@@ -29,6 +29,7 @@ const ide = {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),
     abort: (runId: string) => ipcRenderer.invoke("agent.abort", runId),
     decide: (decision: unknown) => ipcRenderer.invoke("agent.decide", decision),
+    inspectPrompt: (input: unknown) => ipcRenderer.invoke("agent.inspectPrompt", input),
     onEvent: (callback: (event: unknown) => void) => {
       const listener = (_event: unknown, payload: unknown) => callback(payload);
       ipcRenderer.on("agent.event", listener);
