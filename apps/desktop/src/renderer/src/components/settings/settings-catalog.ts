@@ -161,8 +161,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
         id: "git",
         label: "Git",
         icon: RiGitBranchLine,
-        keywords: ["commit", "diff", "branch"],
-        soon: true
+        keywords: ["commit", "diff", "branch", "staging"]
       }
     ]
   },

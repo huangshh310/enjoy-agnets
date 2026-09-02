@@ -20,7 +20,9 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/mcp` | MCP Server；trusted 可 Open App | `wide` |
 | `#/observability` | 本地指标 | `wide` |
 
-设置分段 ID：`general` `appearance` `shortcuts` `providers` `agent` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `telemetry` `sandbox` `archived`。仅 `git` 标 `soon`。`#/settings/archived` 按项目分组列出已归档会话，可取消归档或永久删除；全部删除会清掉所有已归档记录。Capabilities 展示 `staticCaps`，probe 成功后叠 `probedCaps`；Media / Voice 控件按有效能力禁用。Explore Presets 含 Fal / Replicate / ElevenLabs / Deepgram / Cohere / AI Gateway。MCP / Knowledge / Media / Telemetry / Workflow 已接线。`knowledgeAutoIndex` 与 `experimentalMedia` 由 main 执法，不是只改设置开关。Sandbox 可改 `maxAgentSteps`（ToolLoop `stepCountIs`）、`agentTimeoutMs`（0 不限）、`stepTimeoutMs`（0 不限，传 SDK `timeout.stepMs`）和 `toolTimeoutMs`（bash）。Agent 页 Harness 可选 Claude Code / Codex / Pi / OpenCode；Pi 不强制 Vercel。
+设置分段 ID：`general` `appearance` `shortcuts` `providers` `agent` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `telemetry` `sandbox` `archived`。
+
+偏好分段（`general` / `appearance` / `agent` / `media`）与 Workspace / MCP / Git 同构：顶部 `SettingsHub` 状态看板（图标井 + 徽标 + 脉冲指标）+ 内层 `SettingsCard` 行。高密度页：`settings-workspace`、`settings-knowledge`、`settings-media`、`settings-capabilities`、`settings-mcp`、`settings-telemetry`、`settings-git`、`settings-workflow`、`sandbox-settings`。`#/settings/archived` 按项目分组列出已归档会话；`git` 支持 Conventional Commit 规范、提交审批与 Working Tree 实时统计；`capabilities` 提供全量模型能力多维矩阵与实时探测；`knowledge` 支持 RAG 向量模型与索引策略；`telemetry` 支持 Local 私有与 OTEL 导出。
 
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 settings / automations / customize 上按 Escape → `#/`。
 
@@ -32,7 +34,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 
 - 侧栏条目必须 `navigate`，禁止 no-op。
 - Providers 禁用 `article`（760px），目录三列会被裁。
-- 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。
+- 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。
 - 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。
 
 ## 代码入口
@@ -40,10 +42,13 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 路由：`apps/desktop/src/renderer/src/router.tsx`
 - 分段目录：`apps/desktop/src/renderer/src/components/settings/settings-catalog.ts`
 - 壳：`settings-shell.tsx`、`secondary-page-shell.tsx`
+- 看板原语：`settings-hub.tsx`
+- 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 
 ## 已知坑
 
 - Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
-- `git` 仍是 soon。`mcp` 已落地，不要再写成占位。
+- Appearance 只有手动亮/暗主题，不跟随 OS。看板只陈述该事实与 Signal Blue 强调色，不要伪造字号或密度控件。
+- `mcp` 已落地，不要再写成占位。
