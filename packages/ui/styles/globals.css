@@ -2,6 +2,10 @@
 @import "tw-animate-css";
 @import "./theme.css";
 @import "./typography.css";
+/* 皮肤覆盖：每种皮肤一份 CSS。新皮肤加 skins/<name>.css 并在此 import。 */
+@import "./skins/classic.css";
+@import "./skins/glass.css";
+
 
 @source "../components/**/*.{ts,tsx}";
 @source "../utils/**/*.{ts,tsx}";
@@ -16,13 +20,13 @@
 html, body, #root {
   height: 100%;
   margin: 0;
+  overflow: hidden;
+  background: transparent;
 }
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-background-full);
   color: var(--color-text-primary);
-  overflow: hidden;
 }
 @utility no-scrollbar {
   -ms-overflow-style: none;
@@ -121,13 +125,13 @@ body {
 
 html {
   color-scheme: light;
-  background-color: var(--color-background-full);
+  background-color: transparent;
 }
 html.dark {
   color-scheme: dark;
 }
 body {
-  background-color: var(--color-background-full);
+  background-color: transparent;
   color: var(--color-text-primary);
 }
 
@@ -946,3 +950,5 @@ input[type="search"]::-webkit-search-cancel-button {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
+
+

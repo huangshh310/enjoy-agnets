@@ -4,11 +4,11 @@
 
 ## 当前真相
 
-窗口画布是 `background/full`（Mist `#F7F7F7` / 暗色 Off-Black `#121212`）。主工作区三张 24px 圆角卡片、12px 窗内边距、卡片间隙 `gap-3`：
+窗口画布支持全应用皮肤切换（`classic` 经典极简实体 vs `glass` 苹果液态磨砂玻璃）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`skins/glass.css`，由 `globals.css` `@import`，禁止把皮肤覆盖堆回 globals。经典实体下窗口画布是 `background/full`（Mist `#F7F7F7` / 暗色 Off-Black `#121212`）。浅色 `glass` 画布透明、ink 冷石板深色字；暗色 `glass` 必须覆盖浅色 ink 为浅字，frost 约 58% + `blur(44px)`：壁纸是光晕不是照片，也不是 80% 实心底。`WindowFrame` 光斑层 `z-0`；侧栏 / `main` / 右侧栏半透明 + `backdrop-filter`。主工作区三张 24px 圆角卡片、12px 窗内边距、卡片间隙 `gap-3`：
 
-1. **Agent rail** — 260px（折叠 60px），Mist，`shadow-sidebar`
-2. **Chat stage** — flex，白/石墨，`shadow-card`，含会话空状态（Centered Hero Zero State，包含环境微光晕 Ambient Glow、工程问候大标题、居中 Composer 输入卡片与快捷 Action Chips 胶囊）、历史消息线程与底部 pill composer。消息 ≥ 2 条时右侧挂 BeUI Preview Rail（Codex 刻度条）：悬停金字塔 + 浮动预览，点击滚到该轮；皮走 BoardUI token，不要 registry 默认 `bg-card`。
-3. **Changes pane** — 可改宽，白/石墨，`shadow-card`，**默认收起**。展开后约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。顶栏右侧按钮或快捷键（审查 / 终端 / 浏览器 / 文件）展开。
+1. **Agent rail** — 260px（折叠 60px），`shadow-sidebar`。经典皮 Mist；玻璃皮 `aside.rounded-3xl` 磨砂，不再铺实心 Mist。
+2. **Chat stage** — flex，`shadow-card`。经典皮白/石墨；玻璃皮 `main` 半透明磨砂。含会话空状态、历史线程与底部 pill composer。消息 ≥ 2 条时右侧挂 BeUI Preview Rail。皮走 BoardUI token，不要 registry 默认 `bg-card`。
+3. **Changes pane** — 可改宽，`shadow-card`，**默认收起**。经典皮白/石墨；玻璃皮下同样走大卡片磨砂。展开后约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。顶栏右侧按钮或快捷键（审查 / 终端 / 浏览器 / 文件）展开。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
 
@@ -32,6 +32,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 | 层 | 来源 | 管什么 |
 |---|---|---|
 | Tokens | `packages/ui/styles/` | 色、字、圆角、阴影、`.dark` |
+| Skins | `packages/ui/styles/skins/` | `classic.css` / `glass.css`，只通过 `html[data-skin]` 覆盖 |
 | 基础控件 | `packages/ui/components/ui/` | Button、Dialog、Tabs… |
 | Agent 铬 | `packages/ui/components/ai-elements/` | Conversation、Message、PromptInput、Reasoning、Tool、Image Generation、Loading State、Tool Chips |
 | 产品屏 | `apps/desktop/.../ai-chat/` | Shell、sidebar、workspace 接线 |
@@ -45,6 +46,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
  - 视觉全书：[../references/visual-system.md](../references/visual-system.md)
 - 权威设计规约与 Anti-Patterns：[../../DESIGN.md](../../DESIGN.md)
  - BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
+- 皮肤 CSS：`packages/ui/styles/skins/`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
 - 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
 - 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`
@@ -56,7 +58,9 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 ## 已知坑
 
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
-- 主题存在 `localStorage` 的 `boardui:theme`，不跟随系统。切换时冻住颜色过渡，走圆形揭示。
+- 玻璃皮肤看起来仍是实体：画布 `bg-background-full` 不透明时，`backdrop-filter` 卷积纯色 Mist，肉眼无磨砂。光斑层禁止负 z-index（会画到窗口底板后面）。皮肤覆盖必须进 `styles/skins/<name>.css`，不要写回 `globals.css`。`SettingsCard` 必须带 `settings-card` 类，设置页内层卡片才能吃到半透。
+- 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`。frost 约 58% + 更强 blur，禁止 50% 把桌面当照片，也禁止 80% 把磨砂盖成实心黑。
+- 主题存在 `localStorage` 的 `boardui:theme`，不跟随系统。切换时冻住颜色过渡，走圆形揭示。皮肤存在 `boardui:skin`。
 - Playwright Electron 窗口流依赖桌面 `out/main/index.js` 与 `playwright` 包。CI 合约测只验收 Stop/Attach 源码与 Hash 路由；没有 launcher 时窗口用例 skip，不要当成已跑通真实聊天。
 - 侧栏项目行展开只认 `expandedIds`。不要用「当前工作区」强制展开，也不要在 `hydrateWorkspacesAndSessions` 把 current id 写回 `expandedIds`，否则二次点击无法收缩。
 - 确认框用应用内 `ConfirmDialog`（shadcn Dialog）。不要 `window.confirm` / Electron 原生框，标题会变成包名 `@enjoy-agents/desktop`。
@@ -72,7 +76,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 - Stop 以前在 `!runId` 时直接 return，点了没反应；新会话也不清 `running`，空线程会一直画 Thinking 占位，发送被 `store.running` 挡住，草稿留在输入框。Stop 必须先松 UI（不要求 runId、不等 abort IPC）；新建 / 切换会话先 `abortComposerRun`。IPC 返回后若用户已停或已切会话，不得再 `setRunning(true, runId)`，改为 abort 那一轮。
 
 - 线程占位不要再用 `AgentThinking` infinity，也不要和 Thinking 头上的 `DotMatrixLoader` 叠两套动效。流式走 `LoadingState` / `LoadingStateGlyph`。未接线的 registry 默认皮（`prompt-input` / `reasoning` / `tool` / `shimmer` / `AgentLog`）已删，不要再装回来。`AgentThinking` 仍导出但聊天主路径不用。
-- Composer 边框流光（`BorderBeam`）溢色渗底：`BorderBeam` 若配 `colorVariant="colorful"` 会产生粉红/黄色的失真大光斑，且包裹的卡片容器若为半透明（如 `bg-background-tertiary-default/85`），底层的流光伪元素会直接透过卡片正文渗出污色。必须使用 Signal Blue/靛蓝调的 `colorVariant="ocean"`、`theme="auto"`，内层卡片容器保持实体底色（`bg-background-primary-default dark:bg-background-tertiary-default`），且未聚焦/空闲态时 `strength` 设为 0。
+- Composer 边框流光（`BorderBeam`）溢色渗底：禁止 `colorVariant="colorful"`（粉/黄污斑）。只用 `ocean` + `theme="auto"`，空闲 `strength=0`。经典皮内层保持实体底；玻璃皮走 `[data-frost=chip]` 半透磨砂，不要再叠一层实心 `bg-background-primary-default`，否则 Composer 会变回白块。
 - 错误信息展示必须使用结构化卡片（`ThreadErrorBanner`）：禁止在会话流底部裸露单行无修饰红字。错误卡片必须配备警示图标、明确错误摘要、换行错误原文，并提供「重新生成 (Retry)」、「切换模型」与「关闭」操作。
 - 权限模式 (Permission Mode) 开关倒置与高危正则误判：底层 `require*Approval` 为 `false` 时代表自动放行。UI 菜单中的 Switch 必须以 `!require*Approval` 绑定 `checked`，确保选择 `All` 预设时开关处于开启高亮态；`tool-approval` 的 `DANGEROUS_BASH` 正则必须严格匹配管道后紧跟 shell 二进制（`bash|sh|zsh`），严禁泛匹配带 `sh` 的普通单词（如 `wttr.in/Shanghai`），避免合法命令在 All 模式下被误判触发二次审批。
 - 执行模式 (Execution Mode) 对标 Vercel AI SDK 7 架构：按「AI SDK 7 核心循环」与「专业工程工作流」两组分组呈现，完整支持 `Agent` (ToolLoopAgent)、`Plan` (只读架构蓝图)、`Ask` (只读语义问答)、`Debug` (根因排查修复)、`Workflow` (多阶段流水线)、`TDD` (测试先行循环) 与 `Code Mode` (批量代码脚本)。

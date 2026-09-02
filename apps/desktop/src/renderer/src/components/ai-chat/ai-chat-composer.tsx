@@ -111,9 +111,10 @@ export function AiChatComposer({
           onDragEnter={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          data-frost="chip"
           className={cx(
             "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border-button-default bg-background-secondary-default/95 dark:bg-background-tertiary-default shadow-card hover:border-border-button-hover hover:shadow-dropdown backdrop-blur-md transition-all duration-200",
-            isFocused && "border-accent-500 ring-2 ring-accent-500/15 shadow-dropdown bg-background-primary-default dark:bg-background-tertiary-default",
+            isFocused && "border-accent-500 ring-2 ring-accent-500/15 shadow-dropdown",
             isDragging && "border-accent-500 ring-2 ring-accent-500/20"
           )}
         >

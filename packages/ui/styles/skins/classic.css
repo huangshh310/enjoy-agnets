@@ -1,0 +1,7 @@
+/**
+ * Skin: classic
+ * 接口：html[data-skin="classic"]
+ *
+ * 经典极简实体。色板、阴影、圆角全部沿用 theme.css，本文件保持恒等。
+ * 以后 classic 专属覆盖只写这里，不要堆进 globals.css。
+ */

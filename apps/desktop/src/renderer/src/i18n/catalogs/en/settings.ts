@@ -33,7 +33,14 @@ export const enSettings = {
     activeTheme: "Active theme",
     osSync: "OS sync",
     accent: "Accent",
-    cardTitle: "Theme"
+    cardTitle: "Theme",
+    skinTitle: "Interface Skin & Style",
+    skinDesc: "Seamlessly switch between classic solid surfaces and Apple-style frosted liquid glass.",
+    activeSkin: "Interface Skin",
+    skinClassic: "Classic Solid",
+    skinClassicDesc: "Crisp industrial flat surface, high-contrast and focused",
+    skinGlass: "Apple Liquid Glass",
+    skinGlassDesc: "Translucent frosted material with fine Gaussian blur and luminous specular bevels"
   },
 
   shortcuts: {

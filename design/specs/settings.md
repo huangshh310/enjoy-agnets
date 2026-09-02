@@ -50,5 +50,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 ## 已知坑
 
 - Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
-- Appearance 只有手动亮/暗主题，不跟随 OS。看板只陈述该事实与 Signal Blue 强调色，不要伪造字号或密度控件。
+- Appearance 支持手动亮/暗颜色切换以及全应用界面皮肤切换（经典实体 `classic` vs 苹果液态磨砂玻璃 `glass`），不跟随 OS。看板陈述主题状态、当前皮肤与 Signal Blue 强调色。
 - `mcp` 已落地，不要再写成占位。

@@ -76,3 +76,20 @@ test("detectRawHexInClasses 正确识别硬编码 Hex 颜色类名", () => {
   const goodViolations = detectRawHexInClasses(goodCode)
   assert.equal(goodViolations.length, 0)
 })
+
+test("皮肤 CSS 按文件拆分，globals 只负责 import", () => {
+  const roots = [process.cwd(), join(process.cwd(), "../..")]
+  const stylesDir = roots
+    .map((root) => join(root, "packages/ui/styles"))
+    .find((dir) => existsSync(join(dir, "globals.css")))
+  assert.ok(stylesDir, "必须存在 packages/ui/styles")
+
+  const globals = readFileSync(join(stylesDir, "globals.css"), "utf-8")
+  assert.ok(globals.includes('@import "./skins/classic.css"'))
+  assert.ok(globals.includes('@import "./skins/glass.css"'))
+  assert.equal(globals.includes("--skin-frost-fill"), false, "玻璃变量不得写进 globals.css")
+
+  const glass = readFileSync(join(stylesDir, "skins/glass.css"), "utf-8")
+  assert.ok(glass.includes('html[data-skin="glass"]'))
+  assert.ok(existsSync(join(stylesDir, "skins/classic.css")))
+})

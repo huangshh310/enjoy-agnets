@@ -3,6 +3,7 @@
  * 负责无边框模式下的整体圆角、外边框以及拖拽顶部标题栏
  */
 import { useEffect, useState, type ReactNode } from "react"
+import { cx } from "@/utils/cx"
 import {
   checkIsMaximized,
   onMaximizedChange,
@@ -38,15 +39,31 @@ export function WindowFrame({ children }: { children: ReactNode }) {
   return (
     <div
       data-testid="window-frame"
-      className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-full select-none"
+      className={cx(
+        "relative flex h-full w-full flex-col overflow-hidden bg-background-full select-none",
+        isMaximized
+          ? "rounded-none border-0"
+          : "rounded-2xl border border-border-button-default"
+      )}
     >
+      {/* 玻璃皮肤光斑：必须 z-0，负 z-index 会画到窗口底板后面 */}
+      <div
+        aria-hidden="true"
+        className="skin-glass-orbs pointer-events-none absolute inset-0 z-0 overflow-hidden select-none"
+      >
+        <span className="skin-glass-orb-nw" />
+        <span className="skin-glass-orb-ne" />
+        <span className="skin-glass-orb-s" />
+      </div>
+
       <WindowTitleBar
         isMaximized={isMaximized}
         onToggleMaximize={handleToggleMaximize}
       />
-      <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden select-text">
+      <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-hidden select-text">
         {children}
       </div>
     </div>
   )
+
 }

@@ -9,7 +9,7 @@ export function SettingsCard({
   children: ReactNode
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default">
+    <section className="settings-card overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default">
       {title ? (
         <h3 className="px-5 pt-4 pb-1 text-body-medium text-text-primary">{title}</h3>
       ) : null}

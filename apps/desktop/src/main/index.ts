@@ -34,6 +34,8 @@ function createWindow(): void {
     transparent: true,
     hasShadow: false,
     backgroundColor: "#00000000",
+    // Windows acrylic 铺满矩形 HWND，CSS 圆角切不掉四角。磨砂走渲染层。
+    ...(process.platform === "darwin" ? { vibrancy: "fullscreen-ui" as const } : {}),
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,

@@ -88,8 +88,8 @@ export function SecondaryPageShell({
   }, [filterNav, groups, query])
 
   return (
-    <div className="flex h-full min-h-0 bg-background-full pb-3">
-      <aside className="flex w-[248px] shrink-0 flex-col px-3.5 py-3">
+    <div className="flex h-full min-h-0 gap-3 bg-background-full px-3 pb-3">
+      <aside className="flex w-[248px] shrink-0 flex-col rounded-3xl px-3.5 py-3">
         <Link
           to="/"
           className="group mb-3 inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-caption-1-medium font-medium text-text-secondary outline-none hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent-500/30 transition-all"
@@ -175,7 +175,7 @@ export function SecondaryPageShell({
         </ScrollArea>
       </aside>
 
-      <main className="my-3 mr-3 min-h-0 min-w-0 flex-1 overflow-hidden rounded-3xl bg-background-primary-default shadow-card border border-border-button-default/40">
+      <main className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-3xl bg-background-primary-default shadow-card border border-border-button-default/40">
         <ScrollArea className="h-full">
           <div
             className={cx(
