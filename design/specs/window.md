@@ -16,9 +16,9 @@
 标题栏：
 
 - 整条 `-webkit-app-region: drag`，双击切换最大化
-- 品牌区与窗口按钮 `no-drag`
+- 品牌区、辅助开关、窗口按钮 `no-drag`
 - 品牌区：`AppMark`（16px `icon-small`）+ `AppWordmark`（enjoy / AGENT IDE），不是字母「E」圆或 lockup SVG
-- 按钮：最小化 / 最大化·还原 / 关闭（Remix 图标，关闭 hover 用 error token）
+- 右侧：小号昼/夜与语言手绘胶囊（`--toggle-size: 10px`）再接最小化 / 最大化·还原 / 关闭
 - 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。详见 `brand` spec。
 
 IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。
@@ -35,7 +35,7 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化
 - 创建窗口：`apps/desktop/src/main/index.ts`
 - IPC：`apps/desktop/src/main/ipc.ts`、`packages/ipc-contract/src/window.ts`
 - 放大/还原：`apps/desktop/src/main/services/window-maximize.ts`
-- UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`
+- UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`、`title-bar-toggles.tsx`
 - 调用：`apps/desktop/src/renderer/src/lib/window-control.ts`
 
 ## 已知坑

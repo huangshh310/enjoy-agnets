@@ -209,6 +209,8 @@ export function useThemeMode(): ThemeMode {
 export interface ThemeToggleProps {
   /** Compact icon-only treatment for a collapsed sidebar rail. */
   collapsed?: boolean;
+  /** 标题栏小号手绘胶囊。 */
+  compact?: boolean;
   /**
    * Visual treatment for the control. `glass-segmented` is the landing nav's
    * skin: literal black/white rather than theme tokens, because it sits on the
@@ -224,6 +226,7 @@ export interface ThemeToggleProps {
 /** Manual light/dark control. It never reads the operating-system theme. */
 export function ThemeToggle({
   collapsed = false,
+  compact = false,
   appearance = "sidebar",
   className,
   transitionDuration = THEME_TRANSITION_DURATION,
@@ -248,7 +251,7 @@ export function ThemeToggle({
     return (
       <DayNightToggle
         dark={dark}
-        className={className}
+        className={cx(compact && "theme-switch--compact", className)}
         onToggle={(event) => {
           const pointerOrigin =
             event.clientX === 0 && event.clientY === 0

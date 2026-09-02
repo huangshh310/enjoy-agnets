@@ -12,11 +12,9 @@ import {
   RiSideBarFill
 } from "@remixicon/react"
 import { DashboardUserMenu } from "@/components/application/dashboard/dashboard-user-menu"
-import { ThemeToggle } from "@/components/application/theme/theme-toggle"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
 import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar/sidebar-action"
-import { SidebarLocaleToggle } from "@renderer/components/ai-chat/sidebar/sidebar-locale-toggle"
 import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos"
 import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
@@ -187,15 +185,6 @@ function SidebarFooter({
   const navigate = useNavigate()
   return (
     <div className={cx("flex w-full shrink-0 flex-col gap-3 pt-3", collapsed && "items-center")}>
-      <div
-        className={cx(
-          "flex w-full",
-          collapsed ? "flex-col items-center gap-2" : "items-center justify-between gap-2"
-        )}
-      >
-        {collapsed ? <ThemeToggle collapsed /> : <ThemeToggle appearance="sidebar-segmented" />}
-        <SidebarLocaleToggle collapsed={collapsed} />
-      </div>
       <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
         <SidebarAction collapsed={collapsed} icon={RiCustomerServiceLine} label={t("chat.support")} />
         <SidebarAction

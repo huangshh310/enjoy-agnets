@@ -23,7 +23,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
  - 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。
 - 严格遵守根目录 `DESIGN.md` 定义的 **8 大命名 Anti-Patterns 禁令**（`Centered-Marketing-Hero`、`Generic-SaaS-Card`、`Invented-Raw-Styles`、`Cramped-Evidence-Table`、`Deconstructed-Typography`、`Viewport-Trapped-Layout`、`Fake-Status-Chrome`、`Unsafe-Native-Dialog`）。
  - 运行时组件：shadcn/ui + AI Elements。不要再装 BoardUI `components/base/*` 做新控件。
- - 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。
+- 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。昼/夜与语言手绘胶囊放在标题栏右上 compact，不占侧栏。
  - 产品主标：`AppMark` + `enjoy-ui-kit`（见 `brand` spec）。产品铬图标：`@remixicon/react`。AI 品牌标：`@lobehub/icons`。禁止用 Remix 或字母「E」圆冒充 enjoy 主标。
  - 单一强调色 Signal Blue（`accent-500` / `primary`）。禁止纯黑 `#000000`、禁止 emoji、禁止居中营销 hero。
  - 新控件先搜 shadcn → AI Elements → Beautiful UI / BeUI 等，抄交互再 restyle。禁止原样上架 registry 默认皮。

@@ -10,6 +10,7 @@ import {
 } from "@remixicon/react"
 import { AppMark } from "@renderer/components/brand/app-mark"
 import { AppWordmark } from "@renderer/components/brand/app-wordmark"
+import { TitleBarToggles } from "./title-bar-toggles"
 import {
   closeWindow,
   minimizeWindow
@@ -44,11 +45,12 @@ export function WindowTitleBar({
       {/* 中间：拖拽占位区 */}
       <div className="flex-1" />
 
-      {/* 右侧：窗口控制按钮组 (最小化、最大化/还原、关闭) */}
+      {/* 右侧：昼/夜、语言、窗口按钮 */}
       <div
         className="relative z-50 flex items-center gap-1 [app-region:no-drag]"
         style={{ WebkitAppRegion: "no-drag", pointerEvents: "auto" } as React.CSSProperties}
       >
+        <TitleBarToggles />
         <button
           type="button"
           aria-label={t("studio.window.minimizeWindow")}

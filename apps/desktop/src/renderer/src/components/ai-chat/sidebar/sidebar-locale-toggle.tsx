@@ -6,7 +6,13 @@ import { useI18n, type AppLocale } from "@renderer/i18n"
 import { EnGlyph, ZhGlyph } from "./locale-glyphs"
 import "./locale-switch.css"
 
-export function SidebarLocaleToggle({ collapsed }: { collapsed: boolean }) {
+export function SidebarLocaleToggle({
+  collapsed = false,
+  compact = false
+}: {
+  collapsed?: boolean
+  compact?: boolean
+}) {
   const { locale, t } = useI18n()
   const { update } = usePrefUpdate()
   const english = locale === "en"
@@ -16,7 +22,7 @@ export function SidebarLocaleToggle({ collapsed }: { collapsed: boolean }) {
     void update({ language: next })
   }
 
-  if (collapsed) {
+  if (collapsed && !compact) {
     return (
       <button
         type="button"
@@ -32,7 +38,7 @@ export function SidebarLocaleToggle({ collapsed }: { collapsed: boolean }) {
 
   return (
     <label
-      className="locale-switch"
+      className={compact ? "locale-switch locale-switch--compact" : "locale-switch"}
       onClick={(event) => {
         event.preventDefault()
         select(english ? "zh" : "en")
