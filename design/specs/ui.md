@@ -8,7 +8,7 @@
 
 1. **Agent rail** — 260px（折叠 60px），Mist，`shadow-sidebar`
 2. **Chat stage** — flex，白/石墨，`shadow-card`，含会话空状态（Centered Hero Zero State，包含环境微光晕 Ambient Glow、工程问候大标题、居中 Composer 输入卡片与快捷 Action Chips 胶囊）、历史消息线程与底部 pill composer
-3. **Changes pane** — 可改宽，白/石墨，`shadow-card`，默认约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。
+3. **Changes pane** — 可改宽，白/石墨，`shadow-card`，**默认收起**。展开后约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。顶栏右侧按钮或快捷键（审查 / 终端 / 浏览器 / 文件）展开。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
 

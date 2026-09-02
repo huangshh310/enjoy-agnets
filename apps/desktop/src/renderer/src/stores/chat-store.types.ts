@@ -108,7 +108,7 @@ export type ChatStore = {
   repositories: RepositoryNode[]
   expandedIds: string[]
   sidebarCollapsed: boolean
-  /** Changes / Browser 右栏是否收起 */
+  /** Changes / Browser 右栏是否收起。默认 true。 */
   rightPanelCollapsed: boolean
   messages: ThreadMessage[]
   composer: string

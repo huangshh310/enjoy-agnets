@@ -38,7 +38,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   repositories: [],
   expandedIds: [],
   sidebarCollapsed: false,
-  rightPanelCollapsed: false,
+  rightPanelCollapsed: true,
   messages: [],
   composer: "",
   modelId: "deepseek-chat",
