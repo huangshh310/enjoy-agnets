@@ -105,16 +105,16 @@ export function ObservabilityKindChart(props: { metrics: TelemetryMetric[] }) {
           const meta = kindMeta(t, stat.kind)
 
           return (
-            <div key={stat.kind} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-text-primary uppercase">
+            <div key={stat.kind} className="flex flex-col gap-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-semibold text-text-primary uppercase truncate" title={stat.kind}>
                     {stat.kind}
                   </span>
-                  <span className="text-[10px] text-text-tertiary">({meta.label})</span>
+                  <span className="text-[10px] text-text-tertiary shrink-0">({meta.label})</span>
                 </div>
 
-                <div className="flex items-center gap-2 text-text-tertiary">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap">
                   <span className="text-text-secondary font-medium">
                     {t("pages.observability.timesPercentSpaced", {
                       n: stat.calls,

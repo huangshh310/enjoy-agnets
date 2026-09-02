@@ -229,8 +229,8 @@ export function ObservabilityPage() {
               <ObservabilityThroughputChart metrics={metrics} />
             </div>
 
-            {/* 第三行：多维结构与性能分布网格 */}
-            <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+            {/* 第三行：多维结构与性能分布网格 (超宽屏 2xl 才启用 4 列，避免笔记本与缩放屏挤压变形) */}
+            <div className="grid gap-3.5 md:grid-cols-2 2xl:grid-cols-4">
               <ObservabilityModelsChart metrics={metrics} />
               <ObservabilityKindChart metrics={metrics} />
               <ObservabilityHistogramChart metrics={metrics} />

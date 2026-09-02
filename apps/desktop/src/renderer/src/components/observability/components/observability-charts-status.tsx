@@ -65,9 +65,9 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
   if (metrics.length === 0) return null
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
+    <div className="grid gap-3 sm:grid-cols-2 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs min-w-0">
       {/* 左侧：SVG Donut 状态健康度 */}
-      <div className="flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-separator-border/50 pb-3 sm:pb-0 sm:pr-4">
+      <div className="flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-separator-border/50 pb-3 sm:pb-0 sm:pr-3 min-w-0">
         <div className="flex items-center gap-2">
           <RiShieldCheckLine className="size-4 text-emerald-500" />
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
@@ -75,7 +75,7 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
           </h4>
         </div>
 
-        <div className="my-2 flex items-center justify-center gap-6">
+        <div className="my-2 flex flex-wrap items-center justify-around gap-3 sm:gap-4 min-w-0">
           {/* SVG 环 */}
           <div className="relative size-24 shrink-0 flex items-center justify-center">
             <svg className="size-full -rotate-90" viewBox="0 0 88 88">
@@ -139,23 +139,23 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
             </div>
           </div>
 
-          {/* 图例列表 */}
-          <div className="flex flex-col gap-1 text-[11px] font-mono">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-emerald-500" />
-              <span className="text-text-secondary">
+          {/* 图例列表 (强制 whitespace-nowrap 绝不折行成竖排文字) */}
+          <div className="flex flex-col gap-1.5 text-[11px] font-mono shrink-0">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-text-secondary whitespace-nowrap">
                 {t("pages.observability.successN", { n: stats.success })}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-amber-500" />
-              <span className="text-text-secondary">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="size-2 rounded-full bg-amber-500 shrink-0" />
+              <span className="text-text-secondary whitespace-nowrap">
                 {t("pages.observability.timeoutN", { n: stats.timeout })}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-rose-500" />
-              <span className="text-text-secondary">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className="size-2 rounded-full bg-rose-500 shrink-0" />
+              <span className="text-text-secondary whitespace-nowrap">
                 {t("pages.observability.errorN", { n: stats.providerErr + stats.otherErr })}
               </span>
             </div>
@@ -164,7 +164,7 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
       </div>
 
       {/* 右侧：异常根因细分 */}
-      <div className="flex flex-col justify-between sm:pl-2">
+      <div className="flex flex-col justify-between sm:pl-2 min-w-0">
         <div className="flex items-center gap-2">
           <RiAlertLine className="size-4 text-rose-500" />
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
@@ -179,10 +179,12 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
         ) : (
           <div className="mt-2 flex flex-col gap-2 font-mono text-[11px]">
             {stats.errorsList.map((err) => (
-              <div key={err.type} className="flex flex-col gap-0.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">{err.type}</span>
-                  <span className="text-text-tertiary">
+              <div key={err.type} className="flex flex-col gap-0.5 min-w-0">
+                <div className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="font-semibold text-rose-600 dark:text-rose-400 truncate text-[11px]" title={err.type}>
+                    {err.type}
+                  </span>
+                  <span className="text-text-tertiary shrink-0 text-[10px] font-mono whitespace-nowrap">
                     {t("pages.observability.timesPercentSpaced", {
                       n: err.count,
                       percent: err.percent.toFixed(0)

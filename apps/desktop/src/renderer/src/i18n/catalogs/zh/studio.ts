@@ -15,20 +15,32 @@ export const zhStudio = {
     closeWindow: "关闭窗口"
   },
   header: {
-    controlCenter: "控制中心与能力"
+    controlCenter: "控制中心与能力",
+    tabs: {
+      overview: "全景大盘",
+      grounding: "数据与上下文",
+      extensions: "工具与扩展",
+      ops: "编排与监控"
+    }
   },
   hero: {
     title: "Agent Studio 控制中心",
     localFirst: "本地优先已启用",
+    localFirstActive: "本地优先已就绪",
+    tagline: "统一的创作与编排中枢。管理工作区文件、RAG 知识库、MCP 插件、工作流和自动化任务。",
     description: "统一的创作与编排中枢。管理工作区文件、RAG 知识库、MCP 插件、工作流和自动化任务。",
     workspace: "工作区",
+    unnamedWorkspace: "未打开工作区",
     none: "无",
     knowledgeRag: "知识库 RAG",
+    ragSources: "知识库 RAG",
     sourcesChunks: "{sources} 个来源 · {chunks} 个分块",
     mcpPlugins: "MCP 插件",
+    mcpStatus: "MCP 插件",
     mcpActive: "{connected}/{total} 已连接 · {tools} 个工具",
     automations: "自动化",
-    rulesRuns: "{rules} 条规则 · {runs} 次运行"
+    rulesRuns: "{rules} 条规则 · {runs} 次运行",
+    latestPerf: "最近耗时"
   },
   assets: {
     title: "资产与知识",

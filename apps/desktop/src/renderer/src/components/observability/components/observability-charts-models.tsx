@@ -125,19 +125,19 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
 
           return (
             <div key={stat.modelId} className="flex flex-col gap-1.5 font-mono text-[11px]">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-semibold text-text-primary truncate max-w-[170px]">
+                  <span className="font-semibold text-text-primary truncate max-w-[140px] sm:max-w-[240px]" title={stat.modelId}>
                     {stat.modelId}
                   </span>
                   {stat.estimatedCost > 0 ? (
-                    <span className="text-[10px] text-text-tertiary">
+                    <span className="text-[10px] text-text-tertiary shrink-0">
                       (~${stat.estimatedCost.toFixed(4)})
                     </span>
                   ) : null}
                 </div>
 
-                <div className="flex items-center gap-2 text-text-tertiary">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap">
                   <span className="text-text-secondary font-medium">
                     {t("pages.observability.timesPercent", {
                       n: stat.calls,

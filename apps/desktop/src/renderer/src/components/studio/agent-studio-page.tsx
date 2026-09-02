@@ -1,18 +1,26 @@
 /**
- * Agent Studio 统一大厅：左侧 Agent Rail + 右侧 Bento 控制台。
+ * Agent Studio 统一大厅：左侧 Agent Rail + 右侧分领域工坊工作台。
+ * 采用选项卡架构与紧凑全景条，彻底消除无限平铺长滚动。
  */
 import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { AiChatSidebar } from "@renderer/components/ai-chat/ai-chat-sidebar"
-import { openFolder, selectPersistedSession, startPersistedSession } from "@renderer/hooks/use-agent-session"
+import {
+  openFolder,
+  selectPersistedSession,
+  startPersistedSession
+} from "@renderer/hooks/use-agent-session"
 import { formatNodeTime, useChatStore } from "@renderer/stores/chat-store"
+import { StudioCompactHero } from "./studio-compact-hero"
 import { StudioHeader } from "./studio-header"
-import { StudioHero } from "./studio-hero"
+import { StudioNavTabs } from "./studio-nav-tabs"
+import type { StudioTab } from "./studio.types"
 import { useStudioDashboard } from "./use-studio-dashboard"
-import { StudioAssetsKnowledgeZone } from "./zones/assets-knowledge"
-import { StudioConfigInsightsZone } from "./zones/config-insights"
-import { StudioOrchestrationZone } from "./zones/orchestration"
+import { StudioExtensionsView } from "./views/extensions-view"
+import { StudioGroundingView } from "./views/grounding-view"
+import { StudioOpsView } from "./views/ops-view"
+import { StudioOverviewView } from "./views/overview-view"
 
 export function AgentStudioPage() {
   const navigate = useNavigate()
@@ -27,6 +35,7 @@ export function AgentStudioPage() {
   const sidebarCollapsed = useChatStore((state) => state.sidebarCollapsed)
   const setSidebarCollapsed = useChatStore((state) => state.setSidebarCollapsed)
   const [copiedPath, setCopiedPath] = useState(false)
+  const [activeTab, setActiveTab] = useState<StudioTab>("overview")
   const dash = useStudioDashboard(workspaceId)
 
   function goChat() {
@@ -38,6 +47,20 @@ export function AgentStudioPage() {
     void navigator.clipboard.writeText(workspaceRootLabel)
     setCopiedPath(true)
     setTimeout(() => setCopiedPath(false), 2000)
+  }
+
+  function handleNavigateTo(path: string) {
+    void navigate({ to: path as unknown as "/" })
+  }
+
+  const commonProps = {
+    workspaceName,
+    workspaceRootLabel,
+    copiedPath,
+    onCopyPath: handleCopyPath,
+    onOpenChat: goChat,
+    dash,
+    onNavigateTo: handleNavigateTo
   }
 
   return (
@@ -68,52 +91,32 @@ export function AgentStudioPage() {
             goChat()
           }}
         />
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="mx-auto flex max-w-6xl flex-col gap-6 px-8 pt-6 pb-16">
-            <StudioHero
-              workspaceName={workspaceName}
-              sources={dash.sources}
-              totalChunks={dash.totalChunks}
-              mcpServers={dash.mcpServers}
-              connectedCount={dash.connectedServers.length}
-              totalMcpTools={dash.totalMcpTools}
-              automations={dash.automations}
-              workflowRuns={dash.workflowRuns}
-            />
-            <StudioAssetsKnowledgeZone
-              workspaceName={workspaceName}
-              workspaceRootLabel={workspaceRootLabel}
-              copiedPath={copiedPath}
-              onCopyPath={handleCopyPath}
-              onOpenChat={goChat}
-              onOpenKnowledge={() => void navigate({ to: "/knowledge" })}
-              onOpenMedia={() => void navigate({ to: "/media" })}
-              sources={dash.sources}
-              totalChunks={dash.totalChunks}
-              isIndexing={dash.isIndexing}
-              assets={dash.assets}
-            />
-            <StudioOrchestrationZone
-              mcpServers={dash.mcpServers}
-              connectedServers={dash.connectedServers}
-              totalMcpTools={dash.totalMcpTools}
-              workflowRuns={dash.workflowRuns}
-              runningWorkflows={dash.runningWorkflows}
-              automations={dash.automations}
-              onOpenMcp={() => void navigate({ to: "/mcp" })}
-              onOpenWorkflows={() => void navigate({ to: "/workflows" })}
-              onOpenAutomations={() => void navigate({ to: "/automations" })}
-            />
-            <StudioConfigInsightsZone
-              metrics={dash.metrics}
-              latestMetric={dash.latestMetric}
-              onOpenCustomize={() =>
-                void navigate({ to: "/customize/$section", params: { section: "instructions" } })
-              }
-              onOpenObservability={() => void navigate({ to: "/observability" })}
-            />
-          </div>
-        </ScrollArea>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="mx-auto flex max-w-6xl flex-col gap-4 px-8 pt-5 pb-16">
+              {/* 1. 紧凑全景条 */}
+              <StudioCompactHero workspaceName={workspaceName} dash={dash} />
+
+              {/* 2. 四大领域分段控制器 */}
+              <div className="flex items-center justify-between">
+                <StudioNavTabs
+                  activeTab={activeTab}
+                  onSelectTab={setActiveTab}
+                  dash={dash}
+                />
+              </div>
+
+              {/* 3. 当前工坊主视图切片 */}
+              <section className="mt-1 min-h-0 flex-1">
+                {activeTab === "overview" && <StudioOverviewView {...commonProps} />}
+                {activeTab === "grounding" && <StudioGroundingView {...commonProps} />}
+                {activeTab === "extensions" && <StudioExtensionsView {...commonProps} />}
+                {activeTab === "ops" && <StudioOpsView {...commonProps} />}
+              </section>
+            </div>
+          </ScrollArea>
+        </div>
       </main>
     </div>
   )

@@ -15,21 +15,34 @@ export const enStudio = {
     closeWindow: "Close window"
   },
   header: {
-    controlCenter: "Control Center & Capabilities"
+    controlCenter: "Control Center & Capabilities",
+    tabs: {
+      overview: "Overview",
+      grounding: "Data & Context",
+      extensions: "Tools & Extensions",
+      ops: "Workflows & Ops"
+    }
   },
   hero: {
     title: "Agent Studio Control Center",
     localFirst: "Local-First Active",
+    localFirstActive: "Local-First Ready",
+    tagline:
+      "Unified creation & orchestration hub. Manage workspace files, RAG knowledge, MCP plugins, workflows, and automated tasks.",
     description:
       "Unified creation & orchestration hub. Manage workspace files, RAG knowledge, MCP plugins, workflows, and automated tasks.",
     workspace: "Workspace",
+    unnamedWorkspace: "No Workspace Opened",
     none: "None",
     knowledgeRag: "Knowledge RAG",
+    ragSources: "Knowledge RAG",
     sourcesChunks: "{sources} Sources · {chunks} Chunks",
     mcpPlugins: "MCP Plugins",
+    mcpStatus: "MCP Plugins",
     mcpActive: "{connected}/{total} Active · {tools} Tools",
     automations: "Automations",
-    rulesRuns: "{rules} Rules · {runs} Runs"
+    rulesRuns: "{rules} Rules · {runs} Runs",
+    latestPerf: "Latest Duration"
   },
   assets: {
     title: "Assets & Knowledge",
