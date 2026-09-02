@@ -4,11 +4,11 @@
 
 ## 当前真相
 
-窗口画布支持全应用皮肤切换（`classic` 经典极简实体 vs `glass` 苹果液态磨砂玻璃）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`skins/glass.css`，由 `globals.css` `@import`，禁止把皮肤覆盖堆回 globals。经典实体下窗口画布是 `background/full`（Mist `#F7F7F7` / 暗色 Off-Black `#121212`）。浅色 `glass` 画布透明、ink 冷石板深色字；暗色 `glass` 必须覆盖浅色 ink 为浅字，frost 约 58% + `blur(44px)`：壁纸是光晕不是照片，也不是 80% 实心底。`WindowFrame` 光斑层 `z-0`；侧栏 / `main` / 右侧栏半透明 + `backdrop-filter`。主工作区三张 24px 圆角卡片、12px 窗内边距、卡片间隙 `gap-3`：
+窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`，不用中性灰。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`：
 
-1. **Agent rail** — 260px（折叠 60px），`shadow-sidebar`。经典皮 Mist；玻璃皮 `aside.rounded-3xl` 磨砂，不再铺实心 Mist。
-2. **Chat stage** — flex，`shadow-card`。经典皮白/石墨；玻璃皮 `main` 半透明磨砂。含会话空状态、历史线程与底部 pill composer。消息 ≥ 2 条时右侧挂 BeUI Preview Rail。皮走 BoardUI token，不要 registry 默认 `bg-card`。
-3. **Changes pane** — 可改宽，`shadow-card`，**默认收起**。经典皮白/石墨；玻璃皮下同样走大卡片磨砂。展开后约 38%，最小 280px。Files 子视图左树右预览，中间可拖拽改树宽并持久化。顶栏右侧按钮或快捷键（审查 / 终端 / 浏览器 / 文件）展开。
+1. **Agent rail** — 260px（折叠 60px）。经典 Mist；玻璃磨砂；手绘墨边排线。
+2. **Chat stage** — flex。经典白/石墨；玻璃半透明磨砂；手绘墨边排线。含空状态、线程与 composer。
+3. **Changes pane** — 可改宽，**默认收起**。三种皮肤同样套在大卡片上。展开后约 38%，最小 280px。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
 

@@ -10,6 +10,8 @@ import {
   toggleMaximizeWindow
 } from "@renderer/lib/window-control"
 import { WindowTitleBar } from "./window-title-bar"
+import { InkSketchFilters } from "./ink-sketch-filters"
+
 
 export function WindowFrame({ children }: { children: ReactNode }) {
   const [isMaximized, setIsMaximized] = useState(false)
@@ -46,6 +48,8 @@ export function WindowFrame({ children }: { children: ReactNode }) {
           : "rounded-2xl border border-border-button-default"
       )}
     >
+      <InkSketchFilters />
+
       {/* 玻璃皮肤光斑：必须 z-0，负 z-index 会画到窗口底板后面 */}
       <div
         aria-hidden="true"

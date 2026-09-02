@@ -5,6 +5,7 @@
 /* 皮肤覆盖：每种皮肤一份 CSS。新皮肤加 skins/<name>.css 并在此 import。 */
 @import "./skins/classic.css";
 @import "./skins/glass.css";
+@import "./skins/ink.css";
 @import "../components/application/theme/day-night-toggle.css";
 @import "../components/application/theme/day-night-toggle-fx.css";
 

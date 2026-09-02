@@ -6,6 +6,7 @@ import { ThemeToggle, useThemeMode } from "@/components/application/theme/theme-
 import { useThemeSkin } from "@renderer/hooks/use-theme-skin"
 import { useT } from "@renderer/i18n"
 import { AppearanceSkinPicker } from "./appearance/appearance-skin-picker"
+import { appearanceSkinLabel } from "./appearance/appearance-skin-options"
 import { SettingsHub } from "./settings-hub"
 import { SettingsCard, SettingsRow } from "./settings-row"
 
@@ -14,8 +15,7 @@ export function AppearanceSettings() {
   const theme = useThemeMode()
   const skin = useThemeSkin()
   const themeLabel = theme === "dark" ? t("common.dark") : t("common.light")
-  const skinLabel =
-    skin === "glass" ? t("settings.appearance.skinGlass") : t("settings.appearance.skinClassic")
+  const skinLabel = appearanceSkinLabel(skin, t)
 
   return (
     <div className="flex flex-col gap-6">

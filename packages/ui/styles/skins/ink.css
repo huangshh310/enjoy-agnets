@@ -1,0 +1,151 @@
+/**
+ * Skin: ink
+ * 彩绘底 + 抖动墨边。几何 border 会露出黑直线，描边只走 ::after。
+ */
+
+html[data-skin="ink"] {
+  --skin-ink-line: #1a1a1a;
+  --skin-ink-shift: 3px 4px 0 2px rgb(26 26 26 / 0.22);
+  --skin-ink-radius: 12px;
+  --skin-ink-sky: #5caad4;
+  --skin-ink-sky-bot: #4a92bd;
+  --skin-ink-cloud: #f4f4f4;
+  --skin-ink-cloud-back: #bacfe0;
+  --skin-ink-paper: #f6f3ec;
+  --color-background-full: #5caad4;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: color-mix(in srgb, #1a1a1a 78%, transparent);
+  --color-text-tertiary: color-mix(in srgb, #1a1a1a 58%, transparent);
+  --color-text-placeholder: color-mix(in srgb, #1a1a1a 48%, transparent);
+  --color-foreground-icon-primary: #1a1a1a;
+  --color-foreground-icon-hover: #1a1a1a;
+  --color-foreground-icon-secondary: color-mix(in srgb, #1a1a1a 80%, transparent);
+  --color-foreground-icon-tertiary: color-mix(in srgb, #1a1a1a 62%, transparent);
+  --color-foreground-icon-quaternary: color-mix(in srgb, #1a1a1a 48%, transparent);
+}
+
+html.dark[data-skin="ink"] {
+  --skin-ink-line: #e8e0d4;
+  --skin-ink-shift: 3px 4px 0 2px rgb(232 224 212 / 0.2);
+  --skin-ink-sky: #1b1e36;
+  --skin-ink-sky-bot: #252a4a;
+  --skin-ink-cloud: #3a4060;
+  --skin-ink-cloud-back: #2a3050;
+  --skin-ink-paper: #2a2a28;
+  --color-background-full: #1b1e36;
+  --color-text-primary: #e8e0d4;
+  --color-text-secondary: color-mix(in srgb, #e8e0d4 80%, transparent);
+  --color-text-tertiary: color-mix(in srgb, #e8e0d4 60%, transparent);
+  --color-text-placeholder: color-mix(in srgb, #e8e0d4 48%, transparent);
+  --color-foreground-icon-primary: #e8e0d4;
+  --color-foreground-icon-hover: #e8e0d4;
+  --color-foreground-icon-secondary: color-mix(in srgb, #e8e0d4 80%, transparent);
+  --color-foreground-icon-tertiary: color-mix(in srgb, #e8e0d4 62%, transparent);
+  --color-foreground-icon-quaternary: color-mix(in srgb, #e8e0d4 48%, transparent);
+}
+
+
+
+html[data-skin="ink"] aside.rounded-3xl,
+html[data-skin="ink"] main,
+html[data-skin="ink"] .rounded-3xl.shadow-card,
+html[data-skin="ink"] [data-testid="window-frame"]:not(.rounded-none) {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: var(--skin-ink-radius);
+  box-shadow: var(--skin-ink-shift);
+  background-color: var(--skin-ink-sky);
+  background-image:
+    radial-gradient(ellipse 42% 32% at 12% 16%, rgb(255 255 255 / 0.2) 0%, transparent 72%),
+    radial-gradient(ellipse 36% 28% at 86% 12%, rgb(255 255 255 / 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 48% 34% at 78% 88%, rgb(186 207 224 / 0.16) 0%, transparent 74%),
+    radial-gradient(ellipse 30% 24% at 22% 84%, rgb(255 255 255 / 0.12) 0%, transparent 70%),
+    linear-gradient(to bottom, var(--skin-ink-sky) 0%, var(--skin-ink-sky-bot) 100%);
+}
+
+
+html[data-skin="ink"] [data-frost="chip"] {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  border-radius: var(--skin-ink-radius);
+  box-shadow: var(--skin-ink-shift);
+  background-color: var(--skin-ink-paper);
+  background-image: repeating-linear-gradient(
+    -50deg,
+    transparent,
+    transparent 7px,
+    rgb(255 255 255 / 0.08) 7px,
+    rgb(255 255 255 / 0.08) 8px
+  );
+}
+
+html[data-skin="ink"] .settings-card,
+html[data-skin="ink"] main div.rounded-xl.border,
+html[data-skin="ink"] main div.rounded-2xl.border,
+html[data-skin="ink"] main section.rounded-2xl,
+html[data-skin="ink"] main div.rounded-3xl.border,
+html[data-skin="ink"] main div.border-dashed {
+  position: relative;
+  isolation: isolate;
+  border-color: transparent;
+  border-radius: 10px;
+  box-shadow: var(--skin-ink-shift);
+  background-color: var(--skin-ink-paper);
+  background-image:
+    radial-gradient(80% 60% at 100% 0%, rgb(92 170 212 / 0.22) 0%, transparent 55%),
+    repeating-linear-gradient(
+      -50deg,
+      transparent,
+      transparent 7px,
+      rgb(255 255 255 / 0.08) 7px,
+      rgb(255 255 255 / 0.08) 8px
+    );
+}
+
+html[data-skin="ink"] aside.rounded-3xl::after,
+html[data-skin="ink"] main::after,
+html[data-skin="ink"] [data-frost="chip"]::after,
+html[data-skin="ink"] .settings-card::after,
+html[data-skin="ink"] main div.rounded-xl.border::after,
+html[data-skin="ink"] main div.rounded-2xl.border::after,
+html[data-skin="ink"] main section.rounded-2xl::after,
+html[data-skin="ink"] main div.rounded-3xl.border::after,
+html[data-skin="ink"] main div.border-dashed::after,
+html[data-skin="ink"] [data-testid="window-frame"]:not(.rounded-none)::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: 8;
+  border: 2.5px solid var(--skin-ink-line);
+  border-radius: inherit;
+  pointer-events: none;
+  filter: url(#skin-ink-sketchy-sm);
+}
+
+html[data-skin="ink"] aside.rounded-3xl::after,
+html[data-skin="ink"] [data-testid="window-frame"]:not(.rounded-none)::after {
+  filter: url(#skin-ink-sketchy);
+}
+
+html[data-skin="ink"] .shadow-card {
+  box-shadow: var(--skin-ink-shift);
+}
+
+[data-preview-skin="ink"] {
+  border: 0;
+  border-radius: 0.35rem;
+  box-shadow: 3px 4px 0 2px rgb(26 26 26 / 0.22);
+  background-color: #5caad4;
+  background-image:
+    radial-gradient(ellipse 2.4rem 1rem at 30% 92%, #f4f4f4 0 60%, transparent 72%),
+    radial-gradient(ellipse 2.8rem 1.1rem at 70% 100%, #bacfe0 0 55%, transparent 72%),
+    linear-gradient(to bottom, #5caad4, #4a92bd);
+}
+
+[data-preview-skin="ink"] > div > div {
+  border: 2px solid #1a1a1a;
+  border-radius: 0.25rem;
+  background-color: #f6f3ec;
+}

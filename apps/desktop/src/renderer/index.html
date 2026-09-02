@@ -14,7 +14,8 @@
         try {
           var dark = localStorage.getItem("boardui:theme") === "dark";
           document.documentElement.classList.toggle("dark", dark);
-          var skin = localStorage.getItem("boardui:skin") === "glass" ? "glass" : "classic";
+          var storedSkin = localStorage.getItem("boardui:skin");
+          var skin = storedSkin === "glass" || storedSkin === "ink" ? storedSkin : "classic";
           document.documentElement.setAttribute("data-skin", skin);
         } catch (error) {
           document.documentElement.classList.remove("dark");

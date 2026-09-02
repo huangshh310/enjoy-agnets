@@ -40,7 +40,9 @@ export const enSettings = {
     skinClassic: "Solid",
     skinClassicDesc: "Opaque",
     skinGlass: "Glass",
-    skinGlassDesc: "Frosted"
+    skinGlassDesc: "Frosted",
+    skinInk: "Ink",
+    skinInkDesc: "Sketch"
   },
 
   shortcuts: {

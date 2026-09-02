@@ -1,5 +1,5 @@
 /**
- * 皮肤迷你窗：用真实 token 示意实体 vs 磨砂，不是图标卡。
+ * 皮肤迷你窗：经典实心 / 玻璃光斑 / 手绘墨线。
  */
 import { cx } from "@/utils/cx"
 import type { ThemeSkin } from "@renderer/hooks/use-theme-skin"
@@ -7,7 +7,10 @@ import type { ThemeSkin } from "@renderer/hooks/use-theme-skin"
 export function AppearanceSkinPreview({ id }: { id: ThemeSkin }) {
   const glass = id === "glass"
   return (
-    <div className="relative aspect-[5/3] w-full overflow-hidden rounded-lg bg-background-full">
+    <div
+      data-preview-skin={id}
+      className="relative aspect-[5/3] w-full overflow-hidden rounded-lg bg-background-full"
+    >
       {glass ? (
         <span
           aria-hidden="true"
