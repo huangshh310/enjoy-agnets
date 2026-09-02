@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-02
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-03
 
 ## 当前真相
 
@@ -16,7 +16,7 @@
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。
 
-右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 只画真实挂载的知识芯片、最近助手轮 `sources` / `tools`（按 `ToolCallState` 显示进行中/完成/失败/拒绝）以及当前模型与模式；没有挂载时给空态，不要写死 AGENTS.md / RAG / MCP。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
+右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（消息字符、工作区规则正文、已连 MCP 的 name+description、skills description、启用芯片的 snippet，按 3.8 字/token 折算）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。原始载荷按 main `toModelMessages` 同构转译线程（assistant reasoning part），待发送芯片单独预览，不伪造 system 指令。CitedSource 无相似度字段则不画分数。遥测无 cache 字段则不画 Prompt Cache %。发送只取走启用芯片，排除项留在队列。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 
@@ -49,3 +49,5 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 分支未接线。侧栏项目卡片、Composer、Studio 不要写死 `main`。
 - 移除项目不是删文件夹。归档不是删除；永久删除走 `session.delete` / `session.deleteArchived`。
+- Context 检查器禁止 Fake-Status-Chrome：不要写死 RAG 相似度、Prompt Cache %、HMAC 空闲守卫或 3200 系统 token 地板。`CitedSource` 没有 score；`TelemetryMetric` 没有 cache 字段。
+- 会话芯片 `takeSessionContextChips` 只取走 `enabled !== false` 的项。排除芯片必须留在队列，否则发送后无法再点亮。

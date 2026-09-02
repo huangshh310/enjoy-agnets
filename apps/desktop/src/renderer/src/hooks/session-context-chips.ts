@@ -1,5 +1,6 @@
 /**
- * 会话上下文芯片：知识钉入等。发送时取出拼进用户消息，不进输入框。
+ * 会话上下文芯片：知识钉入等。支持一键激活/排除（enabled 开关）。
+ * 发送只取走启用芯片拼进用户消息；排除项留在队列，可再点亮。
  */
 export type SessionContextChip = {
   id: string
@@ -7,6 +8,7 @@ export type SessionContextChip = {
   label: string
   path?: string
   snippet?: string
+  enabled?: boolean
 }
 
 let pending: SessionContextChip[] = []
@@ -22,7 +24,14 @@ export function listSessionContextChips(): SessionContextChip[] {
 
 export function addSessionContextChip(chip: SessionContextChip) {
   pending = pending.filter((item) => item.id !== chip.id)
-  pending.push(chip)
+  pending.push({ ...chip, enabled: chip.enabled ?? true })
+  notify()
+}
+
+export function toggleSessionContextChip(id: string) {
+  pending = pending.map((item) =>
+    item.id === id ? { ...item, enabled: item.enabled === false } : item
+  )
   notify()
 }
 
@@ -32,15 +41,15 @@ export function removeSessionContextChip(id: string) {
 }
 
 export function takeSessionContextChips(): SessionContextChip[] {
-  const chips = pending
-  pending = []
+  const taken = pending.filter((item) => item.enabled !== false)
+  pending = pending.filter((item) => item.enabled === false)
   notify()
-  return chips
+  return taken
 }
 
 export function formatContextChipsForSend(chips: SessionContextChip[]): string {
   return chips
-    .filter((chip) => chip.snippet?.trim())
+    .filter((chip) => chip.enabled !== false && chip.snippet?.trim())
     .map((chip) => `> ${chip.path ?? chip.label}\n${chip.snippet!.trim()}`)
     .join("\n\n")
 }
