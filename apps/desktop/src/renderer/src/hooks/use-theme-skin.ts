@@ -1,16 +1,16 @@
 /**
- * 界面皮肤：classic | glass | ink。
+ * 界面皮肤：classic | glass | ink | sketch。
  * 唯一接口是 document.documentElement 的 data-skin，CSS 按皮肤文件消费。
  */
 import { useSyncExternalStore } from "react"
 
-export type ThemeSkin = "classic" | "glass" | "ink"
+export type ThemeSkin = "classic" | "glass" | "ink" | "sketch"
 
 export const THEME_SKIN_STORAGE_KEY = "boardui:skin"
 export const THEME_SKIN_CHANGE_EVENT = "boardui:skin-change"
 
 export function parseThemeSkin(value: string | null): ThemeSkin {
-  if (value === "glass" || value === "ink") return value
+  if (value === "glass" || value === "ink" || value === "sketch") return value
   return "classic"
 }
 

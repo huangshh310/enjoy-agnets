@@ -6,6 +6,7 @@
 @import "./skins/classic.css";
 @import "./skins/glass.css";
 @import "./skins/ink.css";
+@import "./skins/sketch.css";
 @import "../components/application/theme/day-night-toggle.css";
 @import "../components/application/theme/day-night-toggle-fx.css";
 

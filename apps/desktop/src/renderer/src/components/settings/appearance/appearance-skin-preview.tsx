@@ -1,5 +1,5 @@
 /**
- * 皮肤迷你窗：经典实心 / 玻璃光斑 / 手绘墨线。
+ * 皮肤迷你窗：经典 / 玻璃 / 手绘墨线 / 素描铅笔纸。
  */
 import { cx } from "@/utils/cx"
 import type { ThemeSkin } from "@renderer/hooks/use-theme-skin"

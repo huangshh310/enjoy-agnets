@@ -42,7 +42,9 @@ export const enSettings = {
     skinGlass: "Glass",
     skinGlassDesc: "Frosted",
     skinInk: "Ink",
-    skinInkDesc: "Sketch"
+    skinInkDesc: "Sketch",
+    skinSketch: "Paper",
+    skinSketchDesc: "Pencil on paper",
   },
 
   shortcuts: {

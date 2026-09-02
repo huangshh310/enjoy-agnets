@@ -42,7 +42,9 @@ export const zhSettings = {
     skinGlass: "玻璃",
     skinGlassDesc: "磨砂",
     skinInk: "手绘",
-    skinInkDesc: "墨线"
+    skinInkDesc: "墨线",
+    skinSketch: "素描",
+    skinSketchDesc: "铅笔纸",
   },
 
   shortcuts: {

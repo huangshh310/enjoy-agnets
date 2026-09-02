@@ -88,6 +88,7 @@ test("皮肤 CSS 按文件拆分，globals 只负责 import", () => {
   assert.ok(globals.includes('@import "./skins/classic.css"'))
   assert.ok(globals.includes('@import "./skins/glass.css"'))
   assert.ok(globals.includes('@import "./skins/ink.css"'))
+  assert.ok(globals.includes('@import "./skins/sketch.css"'))
   assert.equal(globals.includes("--skin-frost-fill"), false, "玻璃变量不得写进 globals.css")
 
   const glass = readFileSync(join(stylesDir, "skins/glass.css"), "utf-8")
@@ -95,4 +96,6 @@ test("皮肤 CSS 按文件拆分，globals 只负责 import", () => {
   assert.ok(existsSync(join(stylesDir, "skins/classic.css")))
   const ink = readFileSync(join(stylesDir, "skins/ink.css"), "utf-8")
   assert.ok(ink.includes('html[data-skin="ink"]'))
+  const sketch = readFileSync(join(stylesDir, "skins/sketch.css"), "utf-8")
+  assert.ok(sketch.includes('html[data-skin="sketch"]'))
 })

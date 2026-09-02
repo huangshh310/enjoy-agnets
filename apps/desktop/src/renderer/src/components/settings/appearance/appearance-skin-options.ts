@@ -21,6 +21,11 @@ export function appearanceSkinOptions(t: TranslateFn): AppearanceSkinOption[] {
       id: "ink",
       name: t("settings.appearance.skinInk"),
       hint: t("settings.appearance.skinInkDesc")
+    },
+    {
+      id: "sketch",
+      name: t("settings.appearance.skinSketch"),
+      hint: t("settings.appearance.skinSketchDesc")
     }
   ]
 }
@@ -28,5 +33,6 @@ export function appearanceSkinOptions(t: TranslateFn): AppearanceSkinOption[] {
 export function appearanceSkinLabel(skin: ThemeSkin, t: TranslateFn): string {
   if (skin === "glass") return t("settings.appearance.skinGlass")
   if (skin === "ink") return t("settings.appearance.skinInk")
+  if (skin === "sketch") return t("settings.appearance.skinSketch")
   return t("settings.appearance.skinClassic")
 }

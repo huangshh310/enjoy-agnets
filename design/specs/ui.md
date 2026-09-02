@@ -4,11 +4,11 @@
 
 ## 当前真相
 
-窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`，不用中性灰。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`：
+窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`：
 
 1. **Agent rail** — 260px（折叠 60px）。经典 Mist；玻璃磨砂；手绘墨边排线。上部为当前工作区会话树；下部常驻 Module Rails 模块轨道（Chat、Knowledge、Workflows、Media、MCP、Observability、Settings），模块是轨道而不是孤立产品。
 2. **Chat stage** — flex。经典白/石墨；玻璃半透明磨砂；手绘墨边排线。含空状态、线程与 composer。
-3. **Changes & Inspector pane** — 可改宽，**默认收起**。三种皮肤同样套在大卡片上。展开后约 38%，最小 280px。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（代码审查与 diff）、Files、Terminal 与 Browser。
+3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（代码审查与 diff）、Files、Terminal 与 Browser。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
 

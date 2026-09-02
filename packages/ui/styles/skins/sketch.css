@@ -1,0 +1,101 @@
+/**
+ * Skin: sketch
+ * 素描纸。和 ink 的墨边不是一套。不要黑框、不要错位硬影。
+ */
+
+html[data-skin="sketch"] {
+  --skin-sketch-line: #2a2622;
+  --skin-sketch-paper: #f3eee4;
+  --skin-sketch-sheet: #faf6ee;
+  --skin-sketch-hatch: rgb(42 38 34 / 0.05);
+  --color-background-full: #f3eee4;
+  --color-text-primary: #2a2622;
+  --color-text-secondary: color-mix(in srgb, #2a2622 78%, transparent);
+  --color-text-tertiary: color-mix(in srgb, #2a2622 58%, transparent);
+  --color-text-placeholder: color-mix(in srgb, #2a2622 48%, transparent);
+  --color-foreground-icon-primary: #2a2622;
+  --color-foreground-icon-hover: #2a2622;
+  --color-foreground-icon-secondary: color-mix(in srgb, #2a2622 80%, transparent);
+  --color-foreground-icon-tertiary: color-mix(in srgb, #2a2622 62%, transparent);
+  --color-foreground-icon-quaternary: color-mix(in srgb, #2a2622 48%, transparent);
+  --color-border-button-default: transparent;
+  --color-border-button-hover: color-mix(in srgb, #2a2622 14%, transparent);
+  --color-border-button-active: color-mix(in srgb, #2a2622 18%, transparent);
+  --color-separator-border: color-mix(in srgb, #2a2622 10%, transparent);
+  --color-separator-border-strong: color-mix(in srgb, #2a2622 14%, transparent);
+  --shadow-card: 0 0 #0000;
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+}
+
+html.dark[data-skin="sketch"] {
+  --skin-sketch-line: #e8e0d2;
+  --skin-sketch-paper: #1c1a16;
+  --skin-sketch-sheet: #26231e;
+  --skin-sketch-hatch: rgb(232 224 210 / 0.05);
+  --color-background-full: #1c1a16;
+  --color-text-primary: #e8e0d2;
+  --color-text-secondary: color-mix(in srgb, #e8e0d2 80%, transparent);
+  --color-text-tertiary: color-mix(in srgb, #e8e0d2 60%, transparent);
+  --color-text-placeholder: color-mix(in srgb, #e8e0d2 48%, transparent);
+  --color-foreground-icon-primary: #e8e0d2;
+  --color-foreground-icon-hover: #e8e0d2;
+  --color-foreground-icon-secondary: color-mix(in srgb, #e8e0d2 80%, transparent);
+  --color-foreground-icon-tertiary: color-mix(in srgb, #e8e0d2 62%, transparent);
+  --color-foreground-icon-quaternary: color-mix(in srgb, #e8e0d2 48%, transparent);
+  --color-border-button-default: transparent;
+  --color-border-button-hover: color-mix(in srgb, #e8e0d2 16%, transparent);
+  --color-border-button-active: color-mix(in srgb, #e8e0d2 22%, transparent);
+  --color-separator-border: color-mix(in srgb, #e8e0d2 12%, transparent);
+  --color-separator-border-strong: color-mix(in srgb, #e8e0d2 16%, transparent);
+}
+
+html[data-skin="sketch"] [data-testid="window-frame"]:not(.rounded-none) {
+  border: 0;
+  background-color: var(--skin-sketch-paper);
+  box-shadow: none;
+}
+
+html[data-skin="sketch"] aside.rounded-3xl,
+html[data-skin="sketch"] main,
+html[data-skin="sketch"] .rounded-3xl.shadow-card {
+  border: 0;
+  box-shadow: none;
+  background-color: var(--skin-sketch-sheet);
+  background-image: repeating-linear-gradient(
+    -48deg,
+    transparent,
+    transparent 7px,
+    var(--skin-sketch-hatch) 7px,
+    var(--skin-sketch-hatch) 8px
+  );
+}
+
+html[data-skin="sketch"] [data-frost="chip"],
+html[data-skin="sketch"] .settings-card,
+html[data-skin="sketch"] main div.rounded-xl.border,
+html[data-skin="sketch"] main div.rounded-2xl.border,
+html[data-skin="sketch"] main section.rounded-2xl,
+html[data-skin="sketch"] main div.rounded-3xl.border,
+html[data-skin="sketch"] main div.border-dashed {
+  border-color: transparent;
+  box-shadow: none;
+  background-color: var(--skin-sketch-sheet);
+}
+
+html[data-skin="sketch"] .shadow-card,
+html[data-skin="sketch"] .shadow-2xs,
+html[data-skin="sketch"] .shadow-xs {
+  box-shadow: none;
+}
+
+[data-preview-skin="sketch"] {
+  border: 0;
+  background-color: #f3eee4;
+}
+
+[data-preview-skin="sketch"] > div > div {
+  border: 0;
+  background-color: #faf6ee;
+  box-shadow: none;
+}

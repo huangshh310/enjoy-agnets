@@ -50,5 +50,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 ## 已知坑
 
 - Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
-- Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（手绘墨线，跟昼/夜开关同一套墨边模具），不跟随 OS。
+- Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - `mcp` 已落地，不要再写成占位。
