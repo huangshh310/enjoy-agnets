@@ -3,6 +3,7 @@
  */
 import {
   RiCodeBlock,
+  RiDashboardLine,
   RiFileList2Line,
   RiGlobalLine,
   RiTerminalBoxLine
@@ -20,6 +21,7 @@ export type RightPaneToolDef = {
 }
 
 const PANE_TOOL_DEFS = [
+  { kind: "context" as const, shortcut: "Ctrl+Shift+C", icon: RiDashboardLine, label: "chat.paneContext", hint: "chat.paneContextHint" },
   { kind: "review" as const, shortcut: "Ctrl+Shift+G", icon: RiCodeBlock, label: "chat.paneReview", hint: "chat.paneReviewHint" },
   { kind: "terminal" as const, shortcut: "Ctrl+`", icon: RiTerminalBoxLine, label: "chat.paneTerminal", hint: "chat.paneTerminalHint" },
   { kind: "browser" as const, shortcut: "Ctrl+T", icon: RiGlobalLine, label: "chat.paneBrowser", hint: "chat.paneBrowserHint" },

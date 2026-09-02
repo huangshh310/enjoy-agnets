@@ -8,7 +8,7 @@
 
 路由：`#/observability`。提供三大视图模式：
 1. **监控与图表大盘 (Dashboard)**：4 大核心 KPI 指标卡、耗时与 TTFO 时序趋势渐变面积图、模型负载分布柱状图、状态健康 Donut 环形图与异常根因分析；
-2. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉（含 OTEL 原始脱敏 JSON）；
+2. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉。对齐原型 Slide 11「Run Timeline not metric wall」，时间尺只用指标里有的 send → TTFO → done（没有逐步 tool/approval 数据就不要画）。指标没有 `sessionId` 时只提供「回到对话」，不要假装能打开源会话；
 3. **事件流回放 (Stream Replay)**：主进程内存缓冲事件流回放。
 可一键导出 JSON / CSV 报表。
 ## 不变量

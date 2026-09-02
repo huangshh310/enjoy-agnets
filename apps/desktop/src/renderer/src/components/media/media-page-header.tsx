@@ -33,11 +33,15 @@ export function MediaPageHeader({
           </p>
         </div>
       </div>
-
-      <Button size="sm" variant="outline" onClick={onUploadClick} className="gap-1.5 shadow-xs">
-        <RiUpload2Line className="size-4 text-text-tertiary" />
-        <span>{t("pages.media.upload")}</span>
-      </Button>
+      <div className="flex items-center gap-2.5 shrink-0">
+        <span className="hidden text-caption-2-regular text-text-tertiary sm:inline-block">
+          {t("pages.media.uploadLimitHint")}
+        </span>
+        <Button size="sm" variant="outline" onClick={onUploadClick} className="gap-1.5 shadow-xs">
+          <RiUpload2Line className="size-4 text-text-tertiary" />
+          <span>{t("pages.media.upload")}</span>
+        </Button>
+      </div>
     </header>
   )
 }

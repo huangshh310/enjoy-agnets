@@ -25,7 +25,7 @@ export function useKnowledgePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingSource, setEditingSource] = useState<KnowledgeSource | null>(null)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
-  const [isRetrieverOpen, setIsRetrieverOpen] = useState(false)
+  const [isRetrieverOpen, setIsRetrieverOpen] = useState(true)
   const [indexingSourceId, setIndexingSourceId] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)

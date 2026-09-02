@@ -6,17 +6,17 @@
 
 窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`，不用中性灰。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`：
 
-1. **Agent rail** — 260px（折叠 60px）。经典 Mist；玻璃磨砂；手绘墨边排线。
+1. **Agent rail** — 260px（折叠 60px）。经典 Mist；玻璃磨砂；手绘墨边排线。上部为当前工作区会话树；下部常驻 Module Rails 模块轨道（Chat、Knowledge、Workflows、Media、MCP、Observability、Settings），模块是轨道而不是孤立产品。
 2. **Chat stage** — flex。经典白/石墨；玻璃半透明磨砂；手绘墨边排线。含空状态、线程与 composer。
-3. **Changes pane** — 可改宽，**默认收起**。三种皮肤同样套在大卡片上。展开后约 38%，最小 280px。
+3. **Changes & Inspector pane** — 可改宽，**默认收起**。三种皮肤同样套在大卡片上。展开后约 38%，最小 280px。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（代码审查与 diff）、Files、Terminal 与 Browser。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
 
 设置 / Agent Studio / Automations / Customize / Knowledge / Workflows / Media / MCP / Observability 是 **Hash 路由**，不是 modal。Agent Studio (`#/studio`) 采用高密度 Bento 选项卡工坊架构（`Overview` 全景鸟瞰 / `Grounding` 数据与记忆 / `Extensions` 工具与扩展 / `Ops` 编排与监控），左侧常驻 Agent rail，顶部使用单行紧凑全景条（`StudioCompactHero`）替代长大横幅，彻底消灭全页无限平铺长滚动。所有二级页用 `SecondaryPageShell`（具名变体：`article` 760px、`wide` `max-w-5xl`、`stage` 满宽）并在顶部提供 `Agent Studio > [Page]` 面包屑。全局提供 `⌘L` Quick Search 命令直达面板。Providers 页必须用 `wide`。实验能力在页面上写明 experimental。`#/mcp` 的 App 只进隔离 iframe，`postMessage` 不在 renderer 执行 RPC。
 
-Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本机文件选择器（支持多选），经 `assets.import` 排队。支持剪贴板图片粘贴（`Ctrl+V`）与文件拖拽（Drag & Drop）；待发送附件采用输入框上方智能层叠托盘（Smart Adaptive Attachment Shelf & Inspector Drawer），将图片（Visual Previews 44px 缩略图、Lightbox 放大、单项 `×`）与文件（Context Files 胶囊、类型图标、文件大小）分区呈现，多附件时自动启用智能折叠（+N 徽标）并提供全景检视抽屉（图片画廊网格 + 双列代码文件矩阵），彻底根除原生滚动条；发送时随 `attachments` 提交并在用户消息气泡中展示已发送资产，刷新后从 `message_parts` 恢复。语音键仅在当前模型 `capabilities` 含 `realtime` 时可点；打开后采 PCM 帧走 `realtime.sendAudio`，`realtime.text` 写入输入框。助手轮次优先渲染白名单生成式 UI（`card` / `form` / `table` / `source-list` / `asset-preview`）；点选知识引用打开审查。助手生图走 BeUI Image Generation 表面（`packages/ui/components/ai-elements/image-generation/`）：稳定正方形画布、生成中 dither、完成后渐进揭示 +「Image ready」状态行，prompt 取上一轮用户正文；只抄交互，皮是 BoardUI token，不要 registry 默认 `bg-muted` / Lucide。助手视频：复用 BeUI Image Generation 的 dither 加载交互，画布 16:9；状态行「Generating video」/「Video ready」；完成后 `<video controls>`，src=`enjoy-asset://…
+Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在按钮左边（模式或流式 thinkingLabel）；Context 打开本机文件选择器（支持多选），经 `assets.import` 排队。支持剪贴板图片粘贴（`Ctrl+V`）与文件拖拽（Drag & Drop）；待发送附件采用输入框上方智能层叠托盘（Smart Adaptive Attachment Shelf & Inspector Drawer），将图片（Visual Previews 44px 缩略图、Lightbox 放大、单项 `×`）与文件（Context Files 胶囊、类型图标、文件大小）分区呈现，多附件时自动启用智能折叠（+N 徽标）并提供全景检视抽屉（图片画廊网格 + 双列代码文件矩阵），彻底根除原生滚动条；发送时随 `attachments` 提交并在用户消息气泡中展示已发送资产，刷新后从 `message_parts` 恢复。语音键仅在当前模型 `capabilities` 含 `realtime` 时可点；打开后采 PCM 帧走 `realtime.sendAudio`，`realtime.text` 写入输入框。助手轮次优先渲染白名单生成式 UI（`card` / `form` / `table` / `source-list` / `asset-preview`）；点选知识引用打开审查。助手生图走 BeUI Image Generation 表面（`packages/ui/components/ai-elements/image-generation/`）：稳定正方形画布、生成中 dither、完成后渐进揭示 +「Image ready」状态行，prompt 取上一轮用户正文；只抄交互，皮是 BoardUI token，不要 registry 默认 `bg-muted` / Lucide。助手视频：复用 BeUI Image Generation 的 dither 加载交互，画布 16:9；状态行「Generating video」/「Video ready」；完成后 `<video controls>`，src=`enjoy-asset://…
 
-助手轮 Thinking：流式占位与思考头用 Beautiful UI Loading State（`packages/ui/components/ai-elements/loading-state.tsx`）——默认 Drive 3×3 点阵 + 流光文案 + `1.4s` / `3m 16.1s` 耗时。工具执行与思考过程统一合并在单一树形导轨（AgentStepTree）中，思考正文作为树上节点支持就地折叠展开（`Reasoning process ▾`），工具步骤支持搜索与可点击域名胶囊（`[🌐 wttr.in]`，点开右栏浏览器）、深度阅读（含 `Explored N pages` 折叠子清单）、命令行与代码编辑（支持展开查看完整无截断命令、一键复制、终端执行输出/报错回显与状态码），底部挂 Tool Chips 文件变更胶囊（路径名 + 增减行，点选展开右栏审查并选中该文件）。Markdown http(s) 链接同样打开浏览器标签；Ctrl/⌘ 点击仍走系统浏览器。皮走 BoardUI token。
+助手轮 Thinking：流式占位与思考头用 Beautiful UI Loading State（`packages/ui/components/ai-elements/loading-state.tsx`）——默认 Drive 3×3 点阵 + 流光文案 + `1.4s` / `3m 16.1s` 耗时。工具执行与思考过程统一合并在单一树形导轨（AgentStepTree）中，思考正文作为树上节点支持就地折叠展开（`Reasoning process ▾`），工具步骤支持搜索与可点击域名胶囊（`[🌐 wttr.in]`，点开右栏浏览器）、深度阅读（含 `Explored N pages` 折叠子清单）、命令行与代码编辑（支持展开查看完整无截断命令、一键复制、终端执行输出/报错回显与状态码，成功完成后显式呈现绿色勾选徽标 `[✓]`），底部挂 Tool Chips 文件变更胶囊（路径名 + 增减行，点选展开右栏审查并选中该文件）。Markdown http(s) 链接同样打开浏览器标签；Ctrl/⌘ 点击仍走系统浏览器。皮走 BoardUI token。
 
  ## 不变量
 
@@ -80,3 +80,4 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 - 错误信息展示必须使用结构化卡片（`ThreadErrorBanner`）：禁止在会话流底部裸露单行无修饰红字。错误卡片必须配备警示图标、明确错误摘要、换行错误原文，并提供「重新生成 (Retry)」、「切换模型」与「关闭」操作。
 - 权限模式 (Permission Mode) 开关倒置与高危正则误判：底层 `require*Approval` 为 `false` 时代表自动放行。UI 菜单中的 Switch 必须以 `!require*Approval` 绑定 `checked`，确保选择 `All` 预设时开关处于开启高亮态；`tool-approval` 的 `DANGEROUS_BASH` 正则必须严格匹配管道后紧跟 shell 二进制（`bash|sh|zsh`），严禁泛匹配带 `sh` 的普通单词（如 `wttr.in/Shanghai`），避免合法命令在 All 模式下被误判触发二次审批。
 - 执行模式 (Execution Mode) 对标 Vercel AI SDK 7 架构：按「AI SDK 7 核心循环」与「专业工程工作流」两组分组呈现，完整支持 `Agent` (ToolLoopAgent)、`Plan` (只读架构蓝图)、`Ask` (只读语义问答)、`Debug` (根因排查修复)、`Workflow` (多阶段流水线)、`TDD` (测试先行循环) 与 `Code Mode` (批量代码脚本)。
+- Context 检查器禁止 Fake-Status-Chrome：不要写死 AGENTS.md / RAG / MCP 芯片，也不要把每条工具标成完成。芯片来自会话挂载；工具状态跟 `ToolCallState`。

@@ -34,13 +34,22 @@ export function McpServersView(props: {
   } = props
   const t = useT()
 
+  const trustedCount = servers.filter((s) => s.trusted).length
+  const untrustedCount = servers.length - trustedCount
+
   return (
     <section className="flex flex-col gap-3.5">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-caption-1-medium font-semibold text-text-primary">
-          {t("pages.mcp.registeredCount", { n: filteredServers.length })}
-        </span>
-
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-caption-1-medium font-semibold text-text-primary">
+            {t("pages.mcp.registeredCount", { n: filteredServers.length })}
+          </span>
+          {servers.length > 0 ? (
+            <span className="rounded-md border border-border-button-default/80 bg-background-secondary-default/50 px-2 py-0.5 font-mono text-[10.5px] text-text-tertiary">
+              {t("pages.mcp.trustStats", { total: servers.length, trusted: trustedCount, untrusted: untrustedCount })}
+            </span>
+          ) : null}
+        </div>
         {servers.length > 0 ? (
           <div className="relative w-56">
             <RiSearchLine className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-tertiary" />

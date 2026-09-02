@@ -16,7 +16,7 @@
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。
 
-右侧栏视图：Changes / Files / Terminal / Browser / Review。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
+右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 只画真实挂载的知识芯片、最近助手轮 `sources` / `tools`（按 `ToolCallState` 显示进行中/完成/失败/拒绝）以及当前模型与模式；没有挂载时给空态，不要写死 AGENTS.md / RAG / MCP。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 

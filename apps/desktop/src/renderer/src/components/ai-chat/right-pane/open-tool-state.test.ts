@@ -24,3 +24,10 @@ test("forceNew always appends", () => {
   assert.equal(next.tabs.length, 2)
   assert.equal(next.tabs[1]?.url, "https://react.dev/")
 })
+
+test("opens context inspector tab", () => {
+  const tabs: RightPaneTab[] = []
+  const next = openToolState(tabs, "context", undefined, "context-1")
+  assert.equal(next.activeId, "context-1")
+  assert.equal(next.tabs[0]?.kind, "context")
+})

@@ -6,6 +6,10 @@ import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
 import { useChatStore } from "../stores/chat-store"
 import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
+import {
+  formatContextChipsForSend,
+  takeSessionContextChips
+} from "./session-context-chips"
 import { composerRunKind } from "./composer-run-kind"
 import {
   abortOrphanedRun,
@@ -18,9 +22,13 @@ export { abortComposerRun } from "./composer-run-control"
 
 export async function sendComposerMessage() {
   const store = useChatStore.getState()
-  const content = store.composer.trim()
-  if (!content || store.running) return
+  if (store.running) return
   if (!(await guardComposer(store))) return
+
+  const draft = store.composer.trim()
+  const chipBlock = formatContextChipsForSend(takeSessionContextChips())
+  const content = [chipBlock, draft].filter(Boolean).join("\n\n")
+  if (!content) return
 
   const queuedAssets = takeComposerAssetDetails()
   const assetIds = queuedAssets.map((item) => item.id)

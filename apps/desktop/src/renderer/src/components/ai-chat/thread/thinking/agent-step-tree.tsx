@@ -117,9 +117,14 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
           {node.title}
         </span>
 
-        {/* 状态徽标 */}
+        {/* 状态徽标：运行中/完成/错误 */}
         {node.status === "running" ? (
           <RiLoader4Line className="size-3 animate-spin text-accent-500" />
+        ) : null}
+        {node.status === "completed" ? (
+          <span className="flex size-3.5 items-center justify-center rounded-full bg-state-success-text/15 text-state-success-text" title="Completed">
+            <RiCheckLine className="size-2.5" />
+          </span>
         ) : null}
         {node.status === "error" ? (
           <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-error-primary font-medium">
@@ -127,7 +132,6 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
             <span>{t("chat.failed")}</span>
           </span>
         ) : null}
-
         {/* 代码行增减指示 */}
         {node.additions != null || node.deletions != null ? (
           <span className="font-mono text-caption-2-regular tabular-nums">

@@ -6,6 +6,8 @@ export const enKnowledgePages = {
   stats: "Deterministic vector memory: {fileCount} files, {chunkCount} chunks indexed locally.",
   hideTester: "Hide Tester",
   testRetrieval: "Test Retrieval",
+  pinToChat: "Pin to chat",
+  pinnedToChat: "Pinned to chat",
   addImport: "Add / Import",
   navAll: "All Knowledge",
   navCollections: "Knowledge Collections",

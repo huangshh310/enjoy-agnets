@@ -5,16 +5,15 @@
  */
 import {
   RiAddLine,
-  RiCustomerServiceLine,
   RiDashboardLine,
   RiSearchLine,
-  RiSettings4Line,
   RiSideBarFill
 } from "@remixicon/react"
 import { DashboardUserMenu } from "@/components/application/dashboard/dashboard-user-menu"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
 import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar/sidebar-action"
+import { SidebarModuleRails } from "@renderer/components/ai-chat/sidebar/sidebar-module-rails"
 import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos"
 import { SidebarUserCard } from "@renderer/components/ai-chat/sidebar/sidebar-user-card"
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
@@ -181,19 +180,9 @@ function SidebarFooter({
   sessionCount: number
   onOpenWorkspace: () => void
 }) {
-  const t = useT()
-  const navigate = useNavigate()
   return (
     <div className={cx("flex w-full shrink-0 flex-col gap-3 pt-3", collapsed && "items-center")}>
-      <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
-        <SidebarAction collapsed={collapsed} icon={RiCustomerServiceLine} label={t("chat.support")} />
-        <SidebarAction
-          collapsed={collapsed}
-          icon={RiSettings4Line}
-          label={t("common.settings")}
-          onClick={() => void navigate({ to: "/settings/$section", params: { section: "general" } })}
-        />
-      </nav>
+      <SidebarModuleRails collapsed={collapsed} />
       <SidebarUserCard
         collapsed={collapsed}
         userName={userName}

@@ -5,15 +5,16 @@ import {
   RiCloseLine,
   RiFileTextLine,
   RiLoader4Line,
+  RiPushpinLine,
   RiSearchLine,
   RiSparklingLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { KnowledgeHit } from "@enjoy-agents/ipc-contract"
+import { addSessionContextChip } from "@renderer/hooks/session-context-chips"
 import { useT } from "@renderer/i18n"
 import { getSampleQueries } from "./knowledge-constants"
-
 interface KnowledgeRetrieverDrawerProps {
   isOpen: boolean
   onClose: () => void
@@ -41,13 +42,27 @@ export function KnowledgeRetrieverDrawer({
 }: KnowledgeRetrieverDrawerProps) {
   const t = useT()
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
+  const [pinnedSnippetId, setPinnedSnippetId] = useState<string | null>(null)
 
   if (!isOpen) return null
 
   function handleCopySnippet(hit: KnowledgeHit) {
     void navigator.clipboard.writeText(hit.snippet)
     setCopiedSnippetId(hit.chunkId)
-    setTimeout(() => setCopiedSnippetId(null), 2000)
+    setTimeout(() => setCopiedSnippetId(null), 1500)
+  }
+
+  function handlePinToChat(hit: KnowledgeHit) {
+    const parts = hit.path.replaceAll("\\", "/").split("/")
+    addSessionContextChip({
+      id: hit.chunkId,
+      kind: "knowledge",
+      label: parts.at(-1) || hit.path,
+      path: hit.path,
+      snippet: hit.snippet
+    })
+    setPinnedSnippetId(hit.chunkId)
+    setTimeout(() => setPinnedSnippetId(null), 2000)
   }
 
   return (
@@ -188,16 +203,25 @@ export function KnowledgeRetrieverDrawer({
                                 style={{ width: `${Math.max(10, scorePercent)}%` }}
                               />
                             </div>
-                            <span className="font-mono text-[10px] font-semibold text-accent-600 dark:text-accent-400">
+                            <span className="font-mono text-caption-2-medium font-semibold text-accent-500">
                               {t("pages.knowledge.matchPercent", { n: scorePercent })}
                             </span>
                           </div>
+                          <button
+                            type="button"
+                            title={pinnedSnippetId === hit.chunkId ? t("pages.knowledge.pinnedToChat") : t("pages.knowledge.pinToChat")}
+                            onClick={() => handlePinToChat(hit)}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-accent-500/10 px-2 py-0.5 text-caption-2-medium text-accent-500 hover:bg-accent-500/20"
+                          >
+                            <RiPushpinLine className="size-3" />
+                            <span>{pinnedSnippetId === hit.chunkId ? t("pages.knowledge.pinnedToChat") : t("pages.knowledge.pinToChat")}</span>
+                          </button>
 
                           <button
                             type="button"
                             title={t("pages.knowledge.copySnippet")}
                             onClick={() => handleCopySnippet(hit)}
-                            className="rounded-lg p-1 text-text-tertiary hover:text-text-primary hover:bg-background-secondary-hover transition-colors"
+                            className="rounded-lg p-1 text-text-tertiary hover:text-text-primary hover:bg-background-secondary-hover transition-colors cursor-pointer"
                           >
                             {copiedSnippetId === hit.chunkId ? (
                               <RiCheckLine className="size-3.5 text-emerald-500" />

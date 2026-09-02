@@ -6,6 +6,8 @@ export const zhKnowledgePages = {
   stats: "确定性向量记忆：本地已索引 {fileCount} 个文件、{chunkCount} 个分块。",
   hideTester: "收起测试",
   testRetrieval: "测试检索",
+  pinToChat: "钉入会话",
+  pinnedToChat: "已钉入会话",
   addImport: "添加 / 导入",
   navAll: "全部知识",
   navCollections: "知识集合",

@@ -2,14 +2,19 @@
  * Composer 底栏：附件菜单、策略/模型/推理、语音与发送。
  */
 import { RiArrowUpLine, RiMicLine, RiStopLine } from "@remixicon/react"
+import { useSyncExternalStore } from "react"
 import { cx } from "@/utils/cx"
+import { useChatStore } from "@renderer/stores/chat-store"
+import {
+  listSessionContextChips,
+  subscribeSessionContextChips
+} from "@renderer/hooks/session-context-chips"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { ModelPicker } from "../model-picker"
 import { ReasoningEffortToggle } from "../reasoning-effort-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
 import type { ComposerProps } from "./composer.types"
 import { useT } from "@renderer/i18n"
-
 
 export function ComposerFooter({
   composer,
@@ -41,6 +46,12 @@ export function ComposerFooter({
   onPickFiles: () => void
 }) {
   const t = useT()
+  const thinkingLabel = useChatStore((state) => state.thinkingLabel)
+  const chipCount = useSyncExternalStore(
+    subscribeSessionContextChips,
+    () => listSessionContextChips().length,
+    () => 0
+  )
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 px-3 pt-1 pb-2.5">
       <ComposerAttachMenu
@@ -78,10 +89,16 @@ export function ComposerFooter({
         >
           <RiMicLine className="size-4.5" aria-hidden />
         </button>
+        {running ? (
+          <span className="flex max-w-[140px] items-center gap-1.5 truncate px-2 font-mono text-caption-2-medium text-accent-500 select-none">
+            <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
+            <span className="truncate">{thinkingLabel || t("chat.modeAgent")}</span>
+          </span>
+        ) : null}
         <button
           type={running ? "button" : "submit"}
           aria-label={running ? t("chat.stop") : t("chat.send")}
-          disabled={!running && composer.trim().length === 0}
+          disabled={!running && composer.trim().length === 0 && chipCount === 0}
           onClick={running ? onStop : undefined}
           className="flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-b from-accent-500 to-accent-600 text-white shadow-nav-selected transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:hover:brightness-100 disabled:active:scale-100"
         >

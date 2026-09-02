@@ -19,6 +19,7 @@ export function useRightPaneShortcuts() {
 }
 
 function kindFromEvent(event: KeyboardEvent): RightPaneKind | null {
+  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "c") return "context"
   if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "g") return "review"
   if (event.ctrlKey && !event.shiftKey && event.key === "`") return "terminal"
   if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === "t") return "browser"

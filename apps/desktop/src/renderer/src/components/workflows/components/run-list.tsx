@@ -1,5 +1,5 @@
 /**
- * Workflow 执行列表：空态、Resume/Retry/Cancel、步骤 DAG。
+ * Workflow 执行列表：空态、Resume/Retry/Cancel、步骤 DAG、在会话中打开。
  */
 import {
   RiCheckLine,
@@ -11,10 +11,11 @@ import {
   RiPlayCircleLine,
   RiRestartLine,
   RiRouteLine,
-  RiStopCircleLine,
-  RiTimeLine
+  RiStopCircleLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { useNavigate } from "@tanstack/react-router"
+import { selectPersistedSession } from "@renderer/hooks/use-agent-session"
 import type { WorkflowRun, WorkflowStatus } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { WorkflowDag } from "../workflow-dag"
@@ -73,6 +74,7 @@ function RunCard({
   onAct: (kind: "resume" | "cancel" | "retry", runId: string) => void
 }) {
   const t = useT()
+  const navigate = useNavigate()
   return (
     <article className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md">
       <div className="flex flex-col gap-3 border-b border-separator-border/60 pb-3 sm:flex-row sm:items-center sm:justify-between">
@@ -84,6 +86,18 @@ function RunCard({
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="truncate text-body-medium font-semibold text-text-primary">{run.title}</h4>
               <WorkflowStatusBadge status={run.status} />
+              {run.sessionId ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigate({ to: "/" })
+                    void selectPersistedSession(run.sessionId!)
+                  }}
+                  className="ml-1 inline-flex cursor-pointer items-center gap-1 text-caption-2-medium text-accent-500 hover:underline"
+                >
+                  <span>{t("pages.workflows.openInChat")}</span>
+                </button>
+              ) : null}
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-caption-2-medium text-text-tertiary">
               <span className="font-mono">{run.id.slice(0, 16)}...</span>
@@ -91,7 +105,7 @@ function RunCard({
                 type="button"
                 title={t("pages.workflows.copyRunId")}
                 onClick={() => onCopyId(run.id)}
-                className="inline-flex items-center rounded p-0.5 hover:text-text-primary"
+                className="inline-flex items-center rounded p-0.5 hover:text-text-primary cursor-pointer"
               >
                 {copiedId === run.id ? (
                   <RiCheckLine className="size-3 text-emerald-500" />
@@ -148,40 +162,32 @@ function WorkflowStatusBadge({ status }: { status: WorkflowStatus }) {
   const t = useT()
   if (status === "running") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-accent-500/20 bg-accent-500/10 px-2 py-0.5 text-[11px] font-semibold text-accent-600 dark:text-accent-400">
+      <span className="inline-flex items-center gap-1 rounded-full border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-accent-600 dark:text-accent-400">
         <RiLoader4Line className="size-3 animate-spin" />
-        {t("pages.workflows.statusRunning")}
+        <span>{t("pages.workflows.statusRunning")}</span>
       </span>
     )
   }
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-emerald-600 dark:text-emerald-400">
         <RiCheckLine className="size-3" />
-        {t("pages.workflows.statusCompleted")}
+        <span>{t("pages.workflows.statusCompleted")}</span>
       </span>
     )
   }
   if (status === "paused") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-amber-600 dark:text-amber-400">
         <RiPauseCircleLine className="size-3" />
-        {t("pages.workflows.statusPaused")}
-      </span>
-    )
-  }
-  if (status === "failed") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-        <RiCloseLine className="size-3" />
-        {t("pages.workflows.statusFailed")}
+        <span>{t("pages.workflows.statusPaused")}</span>
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-background-tertiary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-      <RiTimeLine className="size-3" />
-      {status}
+    <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-rose-600 dark:text-rose-400">
+      <RiCloseLine className="size-3" />
+      <span>{t("pages.workflows.statusFailed")}</span>
     </span>
   )
 }

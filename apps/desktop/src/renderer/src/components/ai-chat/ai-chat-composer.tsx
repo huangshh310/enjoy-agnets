@@ -1,11 +1,16 @@
 /**
  * Composer 外壳：拖拽/粘贴附件、自适应输入、顶栏与底栏。
  */
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type KeyboardEvent } from "react"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
 import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
+import {
+  listSessionContextChips,
+  subscribeSessionContextChips
+} from "@renderer/hooks/session-context-chips"
 import { ComposerQueue } from "./composer-queue"
+import { ComposerContextChips } from "./composer/composer-context-chips"
 import { ComposerFooter } from "./composer/composer-footer"
 import { ComposerToolbar } from "./composer/composer-toolbar"
 import type { ComposerProps } from "./composer/composer.types"
@@ -31,6 +36,12 @@ export function AiChatComposer({
   const [voiceOpen, setVoiceOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const chipCount = useSyncExternalStore(
+    subscribeSessionContextChips,
+    () => listSessionContextChips().length,
+    () => 0
+  )
+  const hasDraft = Boolean(composer.trim()) || chipCount > 0
   const capabilities = models.find((model) => model.id === modelId)?.capabilities ?? []
   const canRealtime = capabilities.includes("realtime")
 
@@ -101,8 +112,8 @@ export function AiChatComposer({
           size="md"
           colorVariant="ocean"
           theme="auto"
-          active={isFocused || running || Boolean(composer.trim())}
-          strength={isFocused || running || Boolean(composer.trim()) ? 0.75 : 0}
+          active={isFocused || running || hasDraft}
+          strength={isFocused || running || hasDraft ? 0.75 : 0}
           borderRadius={22}
           className="w-full min-w-0"
         >
@@ -137,6 +148,7 @@ export function AiChatComposer({
           />
 
           <ComposerToolbar onPickFiles={pickFiles} />
+          <ComposerContextChips />
           <div className="px-3.5 py-1">
             <textarea
               ref={textareaRef}

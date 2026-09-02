@@ -2,6 +2,7 @@
  * 资产卡片：16:10 缩略图、来源胶囊、悬浮导出/上传/删除。
  */
 import {
+  RiChat1Line,
   RiDeleteBinLine,
   RiFileLine,
   RiFileMusicLine,
@@ -11,6 +12,8 @@ import {
   RiImageLine,
   RiUpload2Line
 } from "@remixicon/react"
+import { useNavigate } from "@tanstack/react-router"
+import { queueComposerAsset } from "@renderer/hooks/composer-assets"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { isImageMediaType } from "@enjoy-agents/assets/media-type"
@@ -53,6 +56,7 @@ export function AssetCard({
         <AssetCardMeta asset={asset} />
       </button>
       <AssetCardActions
+        asset={asset}
         visible={isSelected}
         onExport={() => onExport(asset)}
         onUpload={() => onUpload(asset.id)}
@@ -140,17 +144,20 @@ function AssetSourceBadge({ source }: { source: AssetRecord["source"] }) {
 }
 
 function AssetCardActions({
+  asset,
   visible,
   onExport,
   onUpload,
   onDelete
 }: {
+  asset: AssetRecord
   visible: boolean
   onExport: () => void
   onUpload: () => void
   onDelete: () => void
 }) {
   const t = useT()
+  const navigate = useNavigate()
   return (
     <div
       className={cx(
@@ -159,6 +166,23 @@ function AssetCardActions({
       )}
     >
       <div className="pointer-events-auto flex items-center gap-1 rounded-lg bg-background-full/80 p-1">
+        <Button
+          size="icon-sm"
+          variant="ghost"
+          title={t("pages.media.attachToChat")}
+          className="size-7 rounded-lg bg-background-primary-default/90 text-accent-500 shadow-xs hover:bg-background-primary-default"
+          onClick={() => {
+            queueComposerAsset({
+              id: asset.id,
+              name: asset.name,
+              mediaType: asset.mediaType,
+              size: asset.size
+            })
+            void navigate({ to: "/" })
+          }}
+        >
+          <RiChat1Line className="size-3.5" />
+        </Button>
         <Button
           size="icon-sm"
           variant="ghost"
