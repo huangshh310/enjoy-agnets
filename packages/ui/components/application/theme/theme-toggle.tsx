@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import { RiMoonLine, RiSunLine } from "@remixicon/react";
+import { RiMoonLine } from "@remixicon/react";
 import { Switch as AriaSwitch } from "react-aria-components";
 import { SwitchTrack } from "@/components/base/switch/switch";
 import { cx } from "@/utils/cx";
 import { uiT, useUiLocale } from "@/i18n/ui-locale";
+import { DayNightToggle } from "./day-night-toggle";
+import { MoonGlyph, SunGlyph } from "./theme-glyphs";
 
 export type ThemeMode = "light" | "dark";
 
@@ -243,95 +245,28 @@ export function ThemeToggle({
     appearance === "sidebar-segmented" ||
     appearance === "glass-segmented"
   ) {
-    const glass = appearance === "glass-segmented";
-    const sidebarSurface = appearance === "sidebar-segmented";
-    const options = [
-      { mode: "light" as const, label: uiT("使用浅色模式", "Use light mode"), Icon: RiSunLine },
-      { mode: "dark" as const, label: uiT("使用深色模式", "Use dark mode"), Icon: RiMoonLine },
-    ];
-
     return (
-      <div
-        role="group"
-        aria-label={uiT("主题", "Theme")}
-        className={cx(
-          "relative inline-flex w-fit items-center gap-1 rounded-full p-1",
-          // Mobile: 2px padding + 28px segments = 32px tall, matching the
-          // small icon buttons beside it. Desktop keeps the roomier 40px.
-          glass && "p-0.5 sm:p-1",
-          glass
-            ? // No track of its own: the host supplies the surface. A fill
-              // here would paint over it. Kept registry-safe — this component
-              // never imports the landing page's glass.
-              "z-10 bg-transparent"
-            : sidebarSurface
-              ? "bg-theme-toggle-sidebar-background"
-              : "bg-background-secondary-default",
-          className,
-        )}
-      >
-        <span
-          aria-hidden
-          className={cx(
-            "pointer-events-none absolute top-1 left-1 size-8 rounded-full",
-            "shadow-xs transition-transform duration-200 ease",
-            glass && "top-0.5 left-0.5 size-7 sm:top-1 sm:left-1 sm:size-8",
-            glass
-              ? "bg-white dark:bg-[#2e2e33]"
-              : sidebarSurface
-                ? "bg-theme-toggle-sidebar-selected-background"
-                : "bg-background-primary-default",
-            // Segment width + the 4px gap: 28+4 on mobile, 32+4 above it.
-            dark && (glass ? "translate-x-8 sm:translate-x-9" : "translate-x-9"),
-          )}
-        />
-        {options.map(({ mode, label, Icon }) => {
-          const selected = theme === mode;
-          return (
-            <button
-              key={mode}
-              type="button"
-              aria-label={label}
-              aria-pressed={selected}
-              title={mode === "light" ? uiT("浅色模式", "Light mode") : uiT("深色模式", "Dark mode")}
-              onClick={(event) => {
-                if (selected) return;
-                const pointerOrigin =
-                  event.clientX === 0 && event.clientY === 0
-                    ? null
-                    : { x: event.clientX, y: event.clientY };
-                void applyThemeWithTransition(mode, {
-                  origin: pointerOrigin,
-                  element: event.currentTarget,
-                  duration: transitionDuration,
-                });
-              }}
-              className={cx(
-                "relative z-10 grid size-8 cursor-pointer place-items-center rounded-full outline-none",
-                glass && "size-7 sm:size-8",
-                "transition-colors duration-150 ease",
-                "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-                glass
-                  ? selected
-                    ? // Reads against the selected pill, which is white in
-                      // light and dark grey in dark — so it flips with it.
-                      "text-black dark:text-white"
-                    : "text-black/45 hover:text-black/70 dark:text-white/45 dark:hover:text-white/70"
-                  : selected
-                    ? "text-foreground-icon-primary"
-                    : "text-foreground-icon-secondary hover:text-foreground-icon-primary",
-              )}
-            >
-              <Icon className="size-4" aria-hidden />
-            </button>
-          );
-        })}
-      </div>
+      <DayNightToggle
+        dark={dark}
+        className={className}
+        onToggle={(event) => {
+          const pointerOrigin =
+            event.clientX === 0 && event.clientY === 0
+              ? null
+              : { x: event.clientX, y: event.clientY };
+          void applyThemeWithTransition(dark ? "light" : "dark", {
+            origin: pointerOrigin,
+            element: event.currentTarget,
+            duration: transitionDuration,
+          });
+        }}
+      />
     );
   }
 
+
+
   if (collapsed) {
-    const Icon = dark ? RiSunLine : RiMoonLine;
     return (
       <button
         type="button"
@@ -357,10 +292,11 @@ export function ThemeToggle({
           className,
         )}
       >
-        <Icon className="size-5" aria-hidden />
+        {dark ? <SunGlyph /> : <MoonGlyph />}
       </button>
     );
   }
+
 
   return (
     <AriaSwitch

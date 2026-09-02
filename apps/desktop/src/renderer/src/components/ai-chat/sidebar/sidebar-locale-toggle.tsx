@@ -1,12 +1,10 @@
 /**
- * 侧栏底栏语言切换：中 / EN 分段，与主题开关同排。
- * 写入 zh | en，不走 auto，保证点一下就定语言。
+ * 侧栏语言切换：中 / A 细环分段，与明暗开关同形。
  */
-import { cx } from "@/utils/cx"
-import { useI18n, type AppLocale } from "@renderer/i18n"
+import { GlyphSegmented } from "@/components/application/theme/glyph-segmented"
 import { usePrefUpdate } from "@renderer/components/settings/settings-pref"
-
-const OPTIONS: AppLocale[] = ["zh", "en"]
+import { useI18n, type AppLocale } from "@renderer/i18n"
+import { EnGlyph, ZhGlyph } from "./locale-glyphs"
 
 export function SidebarLocaleToggle({ collapsed }: { collapsed: boolean }) {
   const { locale, t } = useI18n()
@@ -24,39 +22,22 @@ export function SidebarLocaleToggle({ collapsed }: { collapsed: boolean }) {
         aria-label={t("common.localeSwitch")}
         title={t("common.localeSwitch")}
         onClick={() => select(locale === "zh" ? "en" : "zh")}
-        className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-theme-toggle-sidebar-background text-caption-2-semibold text-text-secondary hover:text-text-primary"
+        className="flex size-9 cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-foreground-icon-primary outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
       >
-        {locale === "zh" ? t("common.localeZhShort") : t("common.localeEnShort")}
+        {locale === "zh" ? <ZhGlyph /> : <EnGlyph />}
       </button>
     )
   }
 
   return (
-    <div
-      role="group"
-      aria-label={t("common.localeSwitch")}
-      className="inline-flex items-center gap-0.5 rounded-full bg-theme-toggle-sidebar-background p-1"
-    >
-      {OPTIONS.map((id) => {
-        const selected = locale === id
-        return (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={selected}
-            aria-label={id === "zh" ? t("common.chinese") : t("common.english")}
-            onClick={() => select(id)}
-            className={cx(
-              "h-8 min-w-8 cursor-pointer rounded-full px-2 text-caption-2-semibold transition-colors",
-              selected
-                ? "bg-theme-toggle-sidebar-selected-background text-text-primary shadow-xs"
-                : "text-text-tertiary hover:text-text-secondary"
-            )}
-          >
-            {id === "zh" ? t("common.localeZhShort") : t("common.localeEnShort")}
-          </button>
-        )
-      })}
-    </div>
+    <GlyphSegmented
+      value={locale}
+      ariaLabel={t("common.localeSwitch")}
+      options={[
+        { id: "zh", label: t("common.chinese"), glyph: <ZhGlyph /> },
+        { id: "en", label: t("common.english"), glyph: <EnGlyph /> }
+      ]}
+      onSelect={(id) => select(id as AppLocale)}
+    />
   )
 }

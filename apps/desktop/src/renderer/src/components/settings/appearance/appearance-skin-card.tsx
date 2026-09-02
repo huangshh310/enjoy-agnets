@@ -1,10 +1,10 @@
 /**
- * 外观页单个皮肤选项卡。
+ * 皮肤选项：迷你窗预览 + 短名。选中靠细环，不要对勾和大段文案。
  */
-import { RiCheckLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { applyThemeSkin } from "@renderer/hooks/use-theme-skin"
 import type { AppearanceSkinOption } from "./appearance-skin.types"
+import { AppearanceSkinPreview } from "./appearance-skin-preview"
 
 export function AppearanceSkinCard({
   option,
@@ -13,40 +13,32 @@ export function AppearanceSkinCard({
   option: AppearanceSkinOption
   selected: boolean
 }) {
-  const Icon = option.icon
   return (
     <button
       type="button"
+      aria-pressed={selected}
+      aria-label={option.name}
+      title={option.hint}
       onClick={() => applyThemeSkin(option.id)}
-      className={cx(
-        "flex flex-col items-start gap-2.5 rounded-2xl border p-4 text-left transition-all cursor-pointer outline-none",
-        "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-        selected
-          ? "border-accent-500/80 bg-accent-500/5 shadow-2xs"
-          : "border-border-button-default bg-background-secondary-default/40 hover:bg-background-secondary-default/80"
-      )}
+      className="group flex w-40 cursor-pointer flex-col gap-2 text-left outline-none"
     >
-      <div className="flex w-full items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div
-            className={cx(
-              "flex size-8 items-center justify-center rounded-xl transition-colors",
-              selected
-                ? "bg-accent-500 text-text-white"
-                : "bg-background-secondary-default text-text-tertiary"
-            )}
-          >
-            <Icon className="size-4" aria-hidden="true" />
-          </div>
-          <span className="text-title-3-semibold text-text-primary">{option.name}</span>
-        </div>
-        {selected ? (
-          <span className="flex size-5 items-center justify-center rounded-full bg-accent-500 text-text-white">
-            <RiCheckLine className="size-3.5 stroke-[2.5]" />
-          </span>
-        ) : null}
-      </div>
-      <p className="text-caption-1-regular text-text-tertiary">{option.desc}</p>
+      <span
+        className={cx(
+          "block overflow-hidden rounded-xl p-px ring-1 transition-shadow",
+          selected ? "ring-accent-500" : "ring-border-button-default group-hover:ring-border-button-hover",
+          "group-focus-visible:ring-2 group-focus-visible:ring-border-focus-ring"
+        )}
+      >
+        <AppearanceSkinPreview id={option.id} />
+      </span>
+      <span
+        className={cx(
+          "text-caption-1-medium",
+          selected ? "text-text-primary" : "text-text-tertiary"
+        )}
+      >
+        {option.name}
+      </span>
     </button>
   )
 }

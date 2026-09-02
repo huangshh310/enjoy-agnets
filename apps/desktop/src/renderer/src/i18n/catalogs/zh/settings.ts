@@ -34,13 +34,13 @@ export const zhSettings = {
     osSync: "系统同步",
     accent: "强调色",
     cardTitle: "主题",
-    skinTitle: "界面皮肤风格",
-    skinDesc: "在经典工业实体底色与苹果式通透磨砂玻璃之间无缝切换。",
+    skinTitle: "界面皮肤",
+    skinDesc: "窗口材质。",
     activeSkin: "界面皮肤",
-    skinClassic: "经典极简实体",
-    skinClassicDesc: "扎实纯平工业底座，清晰锐利，专注沉浸",
-    skinGlass: "苹果液态磨砂玻璃",
-    skinGlassDesc: "通透半透明材质，细腻高斯模糊与晶莹反光内倒角"
+    skinClassic: "经典",
+    skinClassicDesc: "实心底",
+    skinGlass: "玻璃",
+    skinGlassDesc: "磨砂"
   },
 
   shortcuts: {
