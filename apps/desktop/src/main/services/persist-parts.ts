@@ -10,6 +10,7 @@ import {
   type UIMessagePart
 } from "@enjoy-agents/ipc-contract"
 import { persistMessage } from "./persist-session"
+import { hasAssistantPersistableBody } from "./agent-run-flush"
 
 export function partsFromExtras(content: string, extras: AssistantExtras): UIMessagePart[] {
   const parts: UIMessagePart[] = []
@@ -86,14 +87,15 @@ export function persistFinishedAssistant(input: {
   runKind?: AssistantRunKind
 }) {
   const extras = input.extras
-  const hasBody =
-    input.content.trim() ||
-    input.reasoning.trim() ||
-    input.tools.length > 0 ||
-    Boolean(extras.sources?.length) ||
-    Boolean(extras.assets?.length) ||
-    extras.structured != null
-  if (!hasBody) return
+  if (
+    !hasAssistantPersistableBody({
+      transcript: { visible: input.content, think: input.reasoning },
+      tools: input.tools,
+      extras
+    })
+  ) {
+    return
+  }
   persistMessage(
     input.sessionId,
     "assistant",

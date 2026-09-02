@@ -3,6 +3,7 @@ import { app, BrowserWindow, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
+import { flushActiveRuns } from "./services/flush-agent-run";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import appIconIco from "../../resources/icon.ico?asset";
@@ -76,7 +77,12 @@ app.whenReady().then(async () => {
   });
 });
 
+app.on("before-quit", () => {
+  flushActiveRuns();
+});
+
 app.on("window-all-closed", () => {
+  flushActiveRuns();
   unregisterIpc();
   if (process.platform !== "darwin") app.quit();
 });

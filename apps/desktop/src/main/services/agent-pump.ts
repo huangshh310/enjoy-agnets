@@ -2,13 +2,13 @@
  * Agent 泵：开流、消费、审批续跑。内存态在 agent-run-state。
  */
 import { armTimeout, classifyError, resolveTimeoutMs, RuntimeError } from "@enjoy-agents/agent-core"
-import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { rememberApproval } from "./approval-hmac"
 import { consumeFullStream } from "./consume-stream"
 import { completeAgentRun } from "./complete-agent-run"
+import { persistActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { disposeCodingStream, openCodingStream } from "./open-coding-stream"
-import { emptyTranscript } from "./persist-session"
+import { decideAfterConsume } from "./park-for-approval"
 import { readResponseMessages } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { recordMetric } from "./telemetry-service"
@@ -49,25 +49,16 @@ async function runOnePump(
   timedOut: () => boolean
 ) {
   const opened = await openRunStream(runId, run, prefs)
-  const { tools, transcript, sawApproval } = await consumeRun(runId, run, opened.stream)
+  await consumeRun(runId, run, opened.stream)
   const extraMessages = await readResponseMessages(opened.result)
   if (extraMessages.length > 0) {
-    run.messages.push(...ensureAssistantReasoning(extraMessages, transcript.think))
+    run.messages.push(...ensureAssistantReasoning(extraMessages, run.transcript.think))
   }
-  if (parkForApproval(run, sawApproval)) return
+  if (parkForApproval(run)) return
   if (timedOut()) throw new RuntimeError("timeout", "Agent total timeout.", true)
   completeAgentRun({
     runId,
-    sessionId: run.input.sessionId,
-    modelId: run.input.modelId,
-    content: transcript.visible,
-    reasoning: transcript.think,
-    tools,
-    startedAt: run.startedAt,
-    firstTokenAt: run.firstTokenAt,
-    inputTokens: run.inputTokens,
-    outputTokens: run.outputTokens,
-    citedSources: run.citedSources,
+    run,
     emit: (event) => emitEvent(run.window, event)
   })
   await opened.dispose()
@@ -114,17 +105,14 @@ async function consumeRun(
   run: ActiveRun,
   stream: Awaited<ReturnType<typeof openCodingStream>>["stream"]
 ) {
-  const transcript = emptyTranscript()
-  const tools: ThreadToolCall[] = []
-  let sawApproval = false
+  // 不要重置 transcript/tools：审批后再泵一轮要叠在同一份上，失败才能整段落库。
   await consumeFullStream({
     stream,
     runId,
     window: run.window,
-    tools,
-    transcript,
+    tools: run.tools,
+    transcript: run.transcript,
     onApproval: (pending) => {
-      sawApproval = true
       run.pendingApprovals.push(pending)
     },
     onFirstToken: () => {
@@ -136,12 +124,16 @@ async function consumeRun(
     },
     emit: (event) => emitEvent(run.window, event)
   })
-  return { tools, transcript, sawApproval }
 }
 
-function parkForApproval(run: ActiveRun, sawApproval: boolean): boolean {
-  if (run.pendingApprovals.length > 0 && !run.resumeAfterPump) return true
-  if (sawApproval || run.resumeAfterPump) {
+function parkForApproval(run: ActiveRun): boolean {
+  const decision = decideAfterConsume({
+    pendingCount: run.pendingApprovals.length,
+    resumeAfterPump: run.resumeAfterPump,
+    lastToolState: run.tools.at(-1)?.state
+  })
+  if (decision === "park") return true
+  if (decision === "continue") {
     run.resumeAfterPump = false
     run.continuePump = true
     return true
@@ -151,6 +143,7 @@ function parkForApproval(run: ActiveRun, sawApproval: boolean): boolean {
 
 async function failPump(runId: string, run: ActiveRun, error: unknown) {
   const classified = classifyError(error)
+  persistActiveRun(run, runId, "failed", classified.message)
   recordMetric({
     runId,
     kind: "agent",
@@ -175,7 +168,8 @@ async function failPump(runId: string, run: ActiveRun, error: unknown) {
 function resumeIfNeeded(runId: string) {
   const current = getActiveRun(runId)
   if (current) current.pumping = false
-  if (current && (current.continuePump || current.resumeAfterPump)) {
+  if (!current || current.pendingApprovals.length > 0) return
+  if (current.continuePump || current.resumeAfterPump) {
     current.continuePump = false
     current.resumeAfterPump = false
     void pumpStream(runId)

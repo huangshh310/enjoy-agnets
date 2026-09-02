@@ -79,14 +79,14 @@ export function parseAgentStepNodes(
 ): AgentStepNode[] {
   const nodes: AgentStepNode[] = []
 
-  // 1. 思考过程作为树的首个节点（支持在树上独立折叠/展开）
+  // 1. 思考过程作为树的首个节点。模型常把整份 HTML 塞进 reasoning，截断以免盖住工具链。
   if (reasoning.trim()) {
     nodes.push({
       id: "step_reasoning_main",
       kind: "thinking",
       title: t("chat.reasoningProcess"),
       status: "completed",
-      rawText: reasoning.trim()
+      rawText: clampThinkingText(reasoning.trim())
     })
   }
 
@@ -177,4 +177,14 @@ export function parseAgentStepNodes(
   }
 
   return nodes
+}
+
+const MAX_THINKING_CHARS = 1200
+
+function clampThinkingText(text: string): string {
+  if (text.length <= MAX_THINKING_CHARS) return text
+  const cut = text.slice(0, MAX_THINKING_CHARS)
+  const breakAt = cut.lastIndexOf("\n")
+  const head = breakAt > 400 ? cut.slice(0, breakAt) : cut
+  return `${head.trimEnd()}\n…`
 }

@@ -19,3 +19,57 @@ test("maps usage and step lifecycle to v2 events", () => {
     { type: "usage.updated", runId: "run_1", inputTokens: 3, outputTokens: 5, totalTokens: 8 }
   )
 })
+
+test("人工审批 request 才映射为 approval.required", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "tool-approval-request",
+        approvalId: "apr_1",
+        toolCallId: "tool_1",
+        toolName: "write_file",
+        args: { path: "index.html" }
+      },
+      "run_1"
+    ),
+    {
+      type: "approval.required",
+      runId: "run_1",
+      toolCallId: "tool_1",
+      approvalId: "apr_1",
+      name: "write_file",
+      args: { path: "index.html" }
+    }
+  )
+})
+
+test("SDK 自动放行的 approval request 不弹卡", () => {
+  assert.equal(
+    mapStreamPart(
+      {
+        type: "tool-approval-request",
+        approvalId: "apr_auto",
+        toolCallId: "tool_2",
+        toolName: "write_file",
+        isAutomatic: true
+      },
+      "run_1"
+    ),
+    null
+  )
+})
+
+test("SDK 嵌套 toolCall + isAutomatic 也不弹卡", () => {
+  assert.equal(
+    mapStreamPart(
+      {
+        type: "tool-approval-request",
+        approvalId: "apr_auto",
+        isAutomatic: true,
+        toolCall: { toolCallId: "tool_2", toolName: "write_file", input: { path: "a.html" } }
+      },
+      "run_1"
+    ),
+    null
+  )
+})

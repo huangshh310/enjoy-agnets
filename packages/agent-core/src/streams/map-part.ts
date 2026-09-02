@@ -81,6 +81,8 @@ function mapToolPart(part: Record<string, unknown>, runId: string): StreamEvent 
     return { type: "tool.result", runId, toolCallId, name, args, error: "Denied" }
   }
   if (type === "tool-approval-request") {
+    // allow-all / 自动放行：SDK 仍会发 request，带 isAutomatic。再当 user-approval 会弹卡并在收工后再泵，grok 报 No output generated。
+    if (part.isAutomatic === true) return null
     return {
       type: "approval.required",
       runId,

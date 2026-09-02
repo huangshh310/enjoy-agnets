@@ -46,3 +46,19 @@ test("maps usage and step lifecycle to v2 events", () => {
     stepId: "s1"
   })
 })
+
+test("allow-all 自动放行的 tool-approval-request 不映射成审批卡", () => {
+  assert.equal(
+    mapStreamPart(
+      {
+        type: "tool-approval-request",
+        approvalId: "apr_auto",
+        toolCallId: "tool_1",
+        toolName: "write_file",
+        isAutomatic: true
+      },
+      "run_1"
+    ),
+    null
+  )
+})

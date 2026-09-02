@@ -5,6 +5,7 @@ import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
+import { persistActiveRun } from "./flush-agent-run"
 import { disposeCodingStream } from "./open-coding-stream"
 import { pumpStream } from "./agent-pump"
 import {
@@ -23,6 +24,7 @@ export async function abortAgent(rawInput: unknown) {
     typeof rawInput === "string" ? { runId: rawInput } : rawInput
   )
   const run = getActiveRun(runId)
+  if (run) persistActiveRun(run, runId, "cancelled")
   run?.abort.abort()
   deleteActiveRun(runId)
   await disposeCodingStream(runId)

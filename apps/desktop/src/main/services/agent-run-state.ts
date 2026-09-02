@@ -3,10 +3,11 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import type { RunAgentInput, StreamEvent } from "@enjoy-agents/ipc-contract"
+import type { RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
 import type { CitedSource } from "./cite-knowledge"
+import { emptyTranscript, type RunTranscript } from "./persist-session"
 import type { StoredSecret } from "./secrets"
 
 export type ActiveRun = {
@@ -27,6 +28,10 @@ export type ActiveRun = {
   inputTokens?: number
   outputTokens?: number
   citedSources: CitedSource[]
+  /** 跨审批泵累积，失败/中止也靠这份落库。 */
+  transcript: RunTranscript
+  tools: ThreadToolCall[]
+  assistantPersisted: boolean
 }
 
 const activeRuns = new Map<string, ActiveRun>()
@@ -42,6 +47,10 @@ export function getActiveRun(runId: string): ActiveRun | undefined {
 
 export function deleteActiveRun(runId: string): void {
   activeRuns.delete(runId)
+}
+
+export function listActiveRuns(): Array<{ runId: string; run: ActiveRun }> {
+  return [...activeRuns.entries()].map(([runId, run]) => ({ runId, run }))
 }
 
 /** 给 agent-run-start 挂内存态；citedSources 补丁复用同一 runId。 */
@@ -71,6 +80,9 @@ export function holdAgentRun(
     resumeAfterPump: false,
     continuePump: false,
     startedAt: Date.now(),
-    citedSources: patch.citedSources ?? []
+    citedSources: patch.citedSources ?? [],
+    transcript: emptyTranscript(),
+    tools: [],
+    assistantPersisted: false
   })
 }
