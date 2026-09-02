@@ -14,6 +14,7 @@ import { ModelBrandIcon } from "@renderer/components/settings/providers/provider
 import { isVideoOnlyModelId } from "@enjoy-agents/providers/capabilities"
 import type { ModelOption } from "@renderer/stores/chat-store"
 import type { ProviderGroup } from "./model-picker-types"
+import { useT } from "@renderer/i18n"
 
 export function ModelListPane({
   selectedKey,
@@ -34,6 +35,7 @@ export function ModelListPane({
   onSelectModel: (model: ModelOption) => void
   experimentalMedia: boolean
 }) {
+  const t = useT()
   // 当前供应商分组
   const currentGroup = useMemo(() => {
     if (selectedKey === "all") return null
@@ -80,14 +82,14 @@ export function ModelListPane({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={
             currentGroup
-              ? `Search in ${currentGroup.providerName}...`
-              : "Search models or ID..."
+              ? t("chat.searchInProvider", { name: currentGroup.providerName })
+              : t("chat.searchModels")
           }
           className="flex-1 bg-transparent text-[12px] text-text-primary outline-none placeholder:text-text-placeholder"
         />
         {searchQuery ? (
           <span className="text-[10px] text-text-tertiary">
-            {filteredModels.length} found
+            {t("chat.modelsFound", { count: filteredModels.length })}
           </span>
         ) : null}
       </div>
@@ -97,12 +99,12 @@ export function ModelListPane({
         {filteredModels.length === 0 ? (
           <div className="flex h-48 flex-col items-center justify-center text-center p-4">
             <span className="text-[12px] font-medium text-text-secondary">
-              No models found
+              {t("chat.noModelsFound")}
             </span>
             <span className="text-[11px] text-text-tertiary mt-0.5">
               {searchQuery
-                ? `No models matching "${searchQuery}"`
-                : "No models configured for this provider"}
+                ? t("chat.noModelsMatching", { query: searchQuery })
+                : t("chat.noModelsConfigured")}
             </span>
           </div>
         ) : (
@@ -120,7 +122,7 @@ export function ModelListPane({
                 type="button"
                 title={
                   videoLocked
-                    ? "Experimental. Selecting this model will ask to enable experimental media."
+                    ? t("chat.videoLockedHint")
                     : undefined
                 }
                 onClick={() => onSelectModel(model)}
@@ -150,18 +152,18 @@ export function ModelListPane({
                     {model.isFast ? (
                       <span className="inline-flex items-center gap-0.5 rounded bg-accent-50 px-1 py-0.2 text-[9px] font-semibold text-accent-600 dark:bg-accent-950/60 dark:text-accent-300">
                         <RiFlashlightLine className="size-2.5" />
-                        Fast
+                        {t("chat.badgeFast")}
                       </span>
                     ) : null}
                     {model.isReasoning ? (
                       <span className="inline-flex items-center gap-0.5 rounded bg-state-success-text/10 px-1 py-0.2 text-[9px] font-semibold text-state-success-text">
                         <RiBrainLine className="size-2.5" />
-                        Thinking
+                        {t("chat.badgeThinking")}
                       </span>
                     ) : null}
                     {videoLocked ? (
                       <span className="rounded bg-background-secondary-default px-1 py-0.2 text-[9px] font-semibold text-text-tertiary">
-                        Exp
+                        {t("chat.badgeExp")}
                       </span>
                     ) : null}
                   </div>

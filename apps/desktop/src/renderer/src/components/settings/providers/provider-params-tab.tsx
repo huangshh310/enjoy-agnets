@@ -9,6 +9,7 @@ import { cx } from "@/utils/cx"
 import { ReasoningEnergyBar } from "@renderer/components/ai-chat/reasoning-energy-bar"
 import { getEffortMeta } from "@renderer/components/ai-chat/reasoning-effort-config"
 import type { EditorState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 const CONTEXT_PRESETS = [
   { label: "128K", value: 128000 },
@@ -25,13 +26,11 @@ export function ProviderParamsTab({
   editor: EditorState
   onChange: (patch: Partial<EditorState>) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-4 py-1">
       {/* 上下文窗口限制 */}
-      <Field
-        label="Context Window Size (Tokens)"
-        hint="Max input context length"
-      >
+      <Field label={t("settings.providers.context")} hint={t("settings.providers.contextHint")}>
         <div className="flex flex-col gap-2">
           <Input
             type="number"
@@ -61,10 +60,7 @@ export function ProviderParamsTab({
       </Field>
 
       {/* 推理强度 (针对 o1 / o3 / DeepSeek-R1 等) */}
-      <Field
-        label="Reasoning Effort / Thinking Energy"
-        hint="Thinking budget for reasoning models (DeepSeek-R1, o1, o3, QwQ)"
-      >
+      <Field label={t("settings.providers.effort")} hint={t("settings.providers.effortHint")}>
         <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3 flex flex-col gap-2.5">
           <div className="flex items-center justify-between text-[11px]">
             <span className="font-medium text-text-primary">
@@ -83,9 +79,8 @@ export function ProviderParamsTab({
         </div>
       </Field>
 
-      {/* 最大输出 Tokens 与 温度 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <Field label="Max Output Tokens" hint="Default: 4096">
+        <Field label={t("settings.providers.maxTokens")} hint={t("settings.providers.maxTokensHint")}>
           <Input
             type="number"
             value={editor.maxTokens ?? 4096}
@@ -94,8 +89,7 @@ export function ProviderParamsTab({
             className="h-9 font-mono text-[13px]"
           />
         </Field>
-
-        <Field label="Temperature" hint="0.0 ~ 2.0 (Default: 0.7)">
+        <Field label={t("settings.providers.temperature")} hint={t("settings.providers.temperatureHint")}>
           <Input
             type="number"
             step="0.1"

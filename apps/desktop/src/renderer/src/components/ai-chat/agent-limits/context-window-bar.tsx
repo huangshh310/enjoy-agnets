@@ -5,6 +5,7 @@ import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { ContextWindowData, TokenBucketItem } from "./agent-limits.types"
 import { formatTokens } from "./agent-limits-calculator"
+import { useT } from "@renderer/i18n"
 
 interface ContextWindowBarProps {
   data: ContextWindowData
@@ -19,6 +20,7 @@ export function ContextWindowBar({
   onToggleExpand,
   className
 }: ContextWindowBarProps) {
+  const t = useT()
   const activeBuckets = data.buckets.filter(
     (b) => b.category !== "free_space" && b.percentage > 0
   )
@@ -32,7 +34,7 @@ export function ContextWindowBar({
         className="group flex items-center justify-between w-full text-left cursor-pointer outline-none select-none"
       >
         <span className="text-body-medium font-semibold text-text-primary transition-colors group-hover:text-accent-500">
-          Context window
+          {t("chat.contextWindow")}
         </span>
         <div className="flex items-center gap-1.5 text-caption-1-medium font-medium text-text-secondary">
           <span>
@@ -65,7 +67,11 @@ export function ContextWindowBar({
                 width: `${Math.max(bucket.percentage, 1.5)}%`,
                 backgroundColor: bucket.barColor
               }}
-              title={`${bucket.label}: ${formatTokens(bucket.tokens)} (${bucket.percentage}%)`}
+              title={t("chat.bucketTooltip", {
+                label: bucket.label,
+                tokens: formatTokens(bucket.tokens),
+                percent: bucket.percentage
+              })}
               className="h-full transition-all duration-300"
             />
           ))}

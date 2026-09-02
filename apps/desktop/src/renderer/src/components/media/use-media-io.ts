@@ -6,6 +6,8 @@ import type { AssetRecord } from "@enjoy-agents/ipc-contract"
 import { exportLibraryAsset } from "@renderer/hooks/media-library"
 import { fileToBase64 } from "@renderer/lib/file-bytes"
 import { getIde } from "@renderer/lib/ide"
+import { useT } from "@renderer/i18n"
+import type { TranslateFn } from "@renderer/i18n"
 import { exportLibraryAssetFlow, importLibraryFiles } from "./library-actions"
 
 type IoContext = {
@@ -19,6 +21,7 @@ type IoContext = {
 }
 
 export function useMediaIo(input: IoContext) {
+  const t = useT()
   const [exportPath, setExportPath] = useState("assets/export.bin")
   const [overwriteArmed, setOverwriteArmed] = useState(false)
 
@@ -26,21 +29,22 @@ export function useMediaIo(input: IoContext) {
     exportPath,
     setExportPath,
     overwriteArmed,
-    importFiles: (files: File[]) => runImport(files, input),
+    importFiles: (files: File[]) => runImport(files, input, t),
     handleExport: (asset: AssetRecord) =>
-      runExport(asset, input, exportPath, overwriteArmed, setOverwriteArmed),
-    handleUpload: (assetId: string) => runUpload(assetId, input.setNote),
-    confirmDelete: () => deleteLibraryAsset(input, setOverwriteArmed)
+      runExport(asset, input, exportPath, overwriteArmed, setOverwriteArmed, t),
+    handleUpload: (assetId: string) => runUpload(assetId, input.setNote, t),
+    confirmDelete: () => deleteLibraryAsset(input, setOverwriteArmed, t)
   }
 }
 
-async function runImport(files: File[], input: IoContext) {
+async function runImport(files: File[], input: IoContext, t: TranslateFn) {
   const note = await importLibraryFiles({
     files,
     encode: fileToBase64,
     importAsset: async (payload) => {
       await getIde().assets.import(payload)
-    }
+    },
+    t
   })
   input.setNote(note)
   await input.refresh()
@@ -51,31 +55,34 @@ async function runExport(
   input: IoContext,
   exportPath: string,
   overwriteArmed: boolean,
-  setOverwriteArmed: (armed: boolean) => void
+  setOverwriteArmed: (armed: boolean) => void,
+  t: TranslateFn
 ) {
   const result = await exportLibraryAssetFlow({
     workspaceId: input.workspaceId,
     asset,
     relativePath: exportPath,
     overwriteArmed,
-    exportAsset: exportLibraryAsset
+    exportAsset: exportLibraryAsset,
+    t
   })
   setOverwriteArmed(result.overwriteArmed)
   input.setNote(result.note)
 }
 
-async function runUpload(assetId: string, setNote: (note: string | null) => void) {
+async function runUpload(assetId: string, setNote: (note: string | null) => void, t: TranslateFn) {
   try {
     await getIde().assets.upload({ id: assetId, purpose: "file" })
-    setNote("Uploaded as Provider file reference.")
+    setNote(t("pages.media.uploadedProvider"))
   } catch (error: unknown) {
-    setNote(error instanceof Error ? error.message : "Upload failed.")
+    setNote(error instanceof Error ? error.message : t("pages.media.uploadFailed"))
   }
 }
 
 async function deleteLibraryAsset(
   input: IoContext,
-  setOverwriteArmed: (armed: boolean) => void
+  setOverwriteArmed: (armed: boolean) => void,
+  t: TranslateFn
 ) {
   const assetId = input.pendingDeleteId
   if (!assetId) return
@@ -85,8 +92,8 @@ async function deleteLibraryAsset(
     await input.refresh()
     if (input.selectedAssetId === assetId) input.setSelectedAssetId(null)
     setOverwriteArmed(false)
-    input.setNote("Asset deleted.")
+    input.setNote(t("pages.media.assetDeleted"))
   } catch (error: unknown) {
-    input.setNote(error instanceof Error ? error.message : "Delete failed.")
+    input.setNote(error instanceof Error ? error.message : t("pages.media.deleteFailed"))
   }
 }

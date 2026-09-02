@@ -5,7 +5,8 @@ import { RiAddLine, RiCursorLine, RiSaveLine, RiSparklingLine } from "@remixicon
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { Automation } from "@enjoy-agents/ipc-contract"
-import { AUTOMATION_TEMPLATES, type AutomationTemplate } from "../constants"
+import { useT } from "@renderer/i18n"
+import { getAutomationTemplates, type AutomationTemplate } from "../constants"
 
 export function AutomationTemplatesGrid({
   automations,
@@ -14,6 +15,9 @@ export function AutomationTemplatesGrid({
   automations: Automation[]
   onEnable: (tpl: AutomationTemplate) => void
 }) {
+  const t = useT()
+  const templates = getAutomationTemplates(t)
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -22,13 +26,13 @@ export function AutomationTemplatesGrid({
             <RiSparklingLine className="size-3.5" />
           </div>
           <h3 className="text-body-medium font-semibold text-text-primary">
-            Popular Automation Templates · 开箱即用自动化模版
+            {t("studio.automations.templatesTitle")}
           </h3>
         </div>
-        <span className="text-caption-2-medium text-text-tertiary">1-click toggle & customize</span>
+        <span className="text-caption-2-medium text-text-tertiary">{t("studio.automations.templatesSubtitle")}</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {AUTOMATION_TEMPLATES.map((tpl) => {
+        {templates.map((tpl) => {
           const alreadyActive = automations.some((item) => item.name === tpl.name)
           return (
             <div
@@ -55,7 +59,10 @@ export function AutomationTemplatesGrid({
                         {tpl.name}
                       </h4>
                       <span className="font-mono text-[10px] text-text-tertiary uppercase">
-                        {tpl.category} · {tpl.trigger === "on_save" ? "File Save Hook" : "Manual Trigger"}
+                        {tpl.category} ·{" "}
+                        {tpl.trigger === "on_save"
+                          ? t("studio.automations.fileSaveHook")
+                          : t("studio.automations.manualTrigger")}
                       </span>
                     </div>
                   </div>
@@ -67,7 +74,9 @@ export function AutomationTemplatesGrid({
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
                 <span className="text-[11px] text-text-tertiary">
-                  {alreadyActive ? "Rule is configured in active list" : "Ready to enable"}
+                  {alreadyActive
+                    ? t("studio.automations.alreadyConfigured")
+                    : t("studio.automations.readyToEnable")}
                 </span>
                 <Button
                   size="sm"
@@ -76,7 +85,9 @@ export function AutomationTemplatesGrid({
                   className="h-7 shrink-0 gap-1 px-2.5 text-caption-2-medium shadow-xs"
                 >
                   <RiAddLine className="size-3" />
-                  <span>{alreadyActive ? "Add Another" : "Enable Rule"}</span>
+                  <span>
+                    {alreadyActive ? t("studio.automations.addAnother") : t("studio.automations.enableRule")}
+                  </span>
                 </Button>
               </div>
             </div>

@@ -3,9 +3,11 @@ import { ChevronRight, MoreHorizontal } from "lucide-react"
 import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
+  useUiLocale()
+  return <nav aria-label={uiT("面包屑", "breadcrumb")} data-slot="breadcrumb" {...props} />
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
@@ -84,6 +86,7 @@ function BreadcrumbEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  useUiLocale()
   return (
     <span
       data-slot="breadcrumb-ellipsis"
@@ -93,7 +96,7 @@ function BreadcrumbEllipsis({
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{uiT("更多", "More")}</span>
     </span>
   )
 }

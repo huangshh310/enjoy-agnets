@@ -19,6 +19,7 @@ import { ProviderModelsTab } from "./provider-models-tab"
 import { ProviderOverridesTab } from "./provider-overrides-tab"
 import { ProviderParamsTab } from "./provider-params-tab"
 import type { EditorState, ProbeState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderEditorFields({
   editor,
@@ -39,6 +40,7 @@ export function ProviderEditorFields({
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
 }) {
+  const t = useT()
   return (
     <Tabs defaultValue="connection" className="w-full">
       {/* 顶部 Tab 导航栏 */}
@@ -48,7 +50,7 @@ export function ProviderEditorFields({
           className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
         >
           <RiLinkM className="size-3.5" />
-          <span>Connection</span>
+          <span>{t("settings.providers.tabConnection")}</span>
         </TabsTrigger>
 
         <TabsTrigger
@@ -56,7 +58,7 @@ export function ProviderEditorFields({
           className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
         >
           <RiRobot2Line className="size-3.5" />
-          <span>Models</span>
+          <span>{t("settings.providers.tabModels")}</span>
         </TabsTrigger>
 
         <TabsTrigger
@@ -64,7 +66,7 @@ export function ProviderEditorFields({
           className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
         >
           <RiEqualizerLine className="size-3.5" />
-          <span>Parameters</span>
+          <span>{t("settings.providers.tabParams")}</span>
         </TabsTrigger>
 
         <TabsTrigger
@@ -72,7 +74,7 @@ export function ProviderEditorFields({
           className="gap-1.5 text-caption-1-medium py-1.5 rounded-lg data-[state=active]:bg-background-primary-default data-[state=active]:text-text-primary data-[state=active]:shadow-xs"
         >
           <RiCodeSSlashLine className="size-3.5" />
-          <span>Overrides</span>
+          <span>{t("settings.providers.tabOverrides")}</span>
         </TabsTrigger>
       </TabsList>
 

@@ -12,6 +12,7 @@ import { Avatar } from "@/components/base/avatar/avatar";
 import { Button } from "@/components/base/buttons/button";
 import { ChevronUpDownSmall } from "@/components/foundations/icons/chevrons";
 import { cx } from "@/utils/cx";
+import { uiT, useUiLocale } from "@/i18n/ui-locale";
 
 /**
  * Figma source: Board UI → sidebar account menu (node 3828:3895).
@@ -75,11 +76,14 @@ function UserMenuItem({ initials, color, name, isSelected, onSelect }: UserRow &
  *  actions — split out so other triggers (e.g. the calendar template's
  *  inbox icon) can open the same panel without duplicating it. */
 export function AccountMenuContent({ onSelect }: { onSelect: () => void }) {
+  useUiLocale();
   return (
     <>
-      {/* Users with access */}
+      {/* 有权访问的用户 */}
       <div className="flex w-full flex-col gap-1.5 pt-[5px]">
-        <span className="px-2 text-body-medium text-text-secondary">Users with access</span>
+        <span className="px-2 text-body-medium text-text-secondary">
+          {uiT("有权访问的用户", "Users with access")}
+        </span>
         <div className="flex w-full flex-col gap-1">
           {USERS.map((user) => (
             <UserMenuItem key={user.name} {...user} onSelect={onSelect} />
@@ -94,7 +98,7 @@ export function AccountMenuContent({ onSelect }: { onSelect: () => void }) {
           left/right inset (panel p-2.5 + row px-2 = 18px on every side). */}
       <div className="flex w-full items-center gap-3 px-2 pb-2">
         <Button variant="secondary" size="small" leadingIcon={RiAddFill} className="flex-1" onClick={onSelect}>
-          Add user
+          {uiT("添加用户", "Add user")}
         </Button>
         <Button
           variant="secondary"
@@ -103,7 +107,7 @@ export function AccountMenuContent({ onSelect }: { onSelect: () => void }) {
           className="flex-1"
           onClick={onSelect}
         >
-          Manage
+          {uiT("管理", "Manage")}
         </Button>
       </div>
     </>
@@ -128,6 +132,7 @@ export function DashboardUserMenu({
   initials?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  useUiLocale();
   // "right" placement assumes room to the sidebar's right (true in-flow on
   // desktop) — on mobile the sidebar can span the full viewport, so the
   // 265px panel would render off-screen. Below sm, drop into a plain
@@ -187,7 +192,7 @@ export function DashboardUserMenu({
           "data-[exiting]:opacity-0 data-[exiting]:scale-95 data-[exiting]:blur-[2px]",
         )}
       >
-        <AriaDialog aria-label="Account menu" className="flex flex-col outline-none">
+        <AriaDialog aria-label={uiT("账户菜单", "Account menu")} className="flex flex-col outline-none">
           <AccountMenuContent onSelect={() => setIsOpen(false)} />
         </AriaDialog>
       </AriaPopover>

@@ -17,7 +17,7 @@ import { SettingsCard } from "../settings-row"
 import { ProviderIcon } from "./provider-icons"
 import { ProviderList } from "./provider-list"
 import type { PingStateMap } from "./use-provider-settings"
-
+import { useT } from "@renderer/i18n"
 export function ProviderConfiguredTab({
   providers,
   pingStates,
@@ -39,6 +39,7 @@ export function ProviderConfiguredTab({
   onAddCustom: (kind: ProviderKind, apiStyle: ApiStyle) => void
   onExplorePresets: () => void
 }) {
+  const t = useT()
   const [searchQuery, setSearchQuery] = useState("")
 
   const activeProvider = useMemo(
@@ -83,7 +84,7 @@ export function ProviderConfiguredTab({
             <span className="font-semibold text-text-primary text-[13px]">
               {providers.length}
             </span>
-            <span>Configured</span>
+            <span>{t("settings.providers.configured")}</span>
           </div>
 
           <div className="h-3 w-px bg-separator-border" />
@@ -91,7 +92,7 @@ export function ProviderConfiguredTab({
           {activeProvider ? (
             <div className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-state-success-text" />
-              <span>Active:</span>
+              <span>{t("settings.providers.activePrefix")}</span>
               <span className="font-medium text-text-primary">
                 {activeProvider.name}
               </span>
@@ -102,7 +103,7 @@ export function ProviderConfiguredTab({
 
           <div>
             <span className="font-medium text-text-primary">{totalModels}</span>{" "}
-            <span>Total Models</span>
+            <span>{t("settings.providers.totalModels")}</span>
           </div>
         </div>
 
@@ -114,7 +115,7 @@ export function ProviderConfiguredTab({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter configured..."
+              placeholder={t("settings.providers.filterPlaceholder")}
               className="w-full rounded-xl border border-border-button-default bg-background-secondary-default/50 pl-8 pr-3 py-1.5 text-caption-1-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:bg-background-primary-default focus:ring-2 focus:ring-border-focus-ring/20 transition-all"
             />
           </div>
@@ -126,10 +127,10 @@ export function ProviderConfiguredTab({
               size="sm"
               onClick={onPingAll}
               className="rounded-xl border-border-button-default bg-background-primary-default text-text-secondary hover:text-text-primary shrink-0"
-              title="Test ping latency for all configured providers"
+              title={t("settings.providers.pingAllTitle")}
             >
               <RiPulseLine className="size-3.5 mr-1 text-accent-500" />
-              Test Speed
+              {t("settings.providers.testSpeed")}
             </Button>
           ) : null}
 
@@ -140,13 +141,13 @@ export function ProviderConfiguredTab({
             className="rounded-xl shrink-0"
           >
             <RiAddLine className="size-3.5 mr-1" />
-            Add Provider
+            {t("settings.providers.addProvider")}
           </Button>
         </div>
       </div>
 
       {/* 已配置 Provider 列表 */}
-      <SettingsCard title={`Configured Providers (${filteredProviders.length})`}>
+      <SettingsCard title={t("settings.providers.configuredCount", { count: filteredProviders.length })}>
         <ProviderList
           providers={filteredProviders}
           pingStates={pingStates}
@@ -167,6 +168,7 @@ function EmptyConfiguredState({
   onAddCustom: (kind: ProviderKind, apiStyle: ApiStyle) => void
   onExplorePresets: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border-button-default bg-background-primary-default p-12 text-center shadow-xs">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 shadow-xs dark:bg-accent-950/50 dark:text-accent-300">
@@ -174,10 +176,10 @@ function EmptyConfiguredState({
       </div>
 
       <h3 className="mt-4 text-title-3-semibold text-text-primary">
-        No Providers Configured Yet
+        {t("settings.providers.emptyTitle")}
       </h3>
       <p className="mt-1.5 max-w-md text-body-medium text-text-secondary leading-relaxed">
-        Connect your OpenAI, Anthropic, DeepSeek, or any custom API gateway to start chatting and coding with AI agents.
+        {t("settings.providers.emptyDesc")}
       </p>
 
       {/* 快捷接入操作 */}
@@ -188,7 +190,7 @@ function EmptyConfiguredState({
           className="rounded-xl px-5 py-2.5 font-medium shadow-xs"
         >
           <RiAddLine className="size-4 mr-1.5" />
-          Browse Official Presets
+          {t("settings.providers.browsePresets")}
         </Button>
 
         <Button
@@ -198,13 +200,13 @@ function EmptyConfiguredState({
           className="rounded-xl px-4 py-2.5"
         >
           <RiServerLine className="size-4 mr-1.5 text-accent-500" />
-          Add Custom /v1 Endpoint
+          {t("settings.providers.addCustom")}
         </Button>
       </div>
 
       {/* 常见推荐卡片推荐 */}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-caption-1-medium text-text-tertiary">
-        <span>Popular shortcuts:</span>
+        <span>{t("settings.providers.popular")}</span>
         <button
           type="button"
           onClick={() => onAddCustom("deepseek", "openai")}

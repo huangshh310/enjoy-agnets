@@ -6,17 +6,47 @@ import { useMemo } from "react"
 import { RiBarChartHorizontalLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT, type TranslateFn } from "@renderer/i18n"
 
-const BUCKETS = [
-  { id: "fast", label: "< 200ms", color: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400" },
-  { id: "smooth", label: "200ms - 1s", color: "bg-blue-500", textColor: "text-blue-600 dark:text-blue-400" },
-  { id: "normal", label: "1s - 3s", color: "bg-cyan-500", textColor: "text-cyan-600 dark:text-cyan-400" },
-  { id: "slow", label: "3s - 10s", color: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400" },
-  { id: "long", label: "> 10s", color: "bg-rose-500", textColor: "text-rose-600 dark:text-rose-400" }
-] as const
+function getLatencyBuckets(t: TranslateFn) {
+  return [
+    {
+      id: "fast",
+      label: t("pages.observability.bucketLt200"),
+      color: "bg-emerald-500",
+      textColor: "text-emerald-600 dark:text-emerald-400"
+    },
+    {
+      id: "smooth",
+      label: t("pages.observability.bucket200to1s"),
+      color: "bg-blue-500",
+      textColor: "text-blue-600 dark:text-blue-400"
+    },
+    {
+      id: "normal",
+      label: t("pages.observability.bucket1to3s"),
+      color: "bg-cyan-500",
+      textColor: "text-cyan-600 dark:text-cyan-400"
+    },
+    {
+      id: "slow",
+      label: t("pages.observability.bucket3to10s"),
+      color: "bg-amber-500",
+      textColor: "text-amber-600 dark:text-amber-400"
+    },
+    {
+      id: "long",
+      label: t("pages.observability.bucketGt10s"),
+      color: "bg-rose-500",
+      textColor: "text-rose-600 dark:text-rose-400"
+    }
+  ]
+}
 
 export function ObservabilityHistogramChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
+  const buckets = getLatencyBuckets(t)
 
   const bucketStats = useMemo(() => {
     const counts: Record<string, number> = {
@@ -39,7 +69,7 @@ export function ObservabilityHistogramChart(props: { metrics: TelemetryMetric[] 
     const total = metrics.length || 1
     const maxCount = Math.max(...Object.values(counts), 1)
 
-    return BUCKETS.map((b) => {
+    return buckets.map((b) => {
       const count = counts[b.id] ?? 0
       const percent = (count / total) * 100
       const barRatio = (count / maxCount) * 100
@@ -50,7 +80,7 @@ export function ObservabilityHistogramChart(props: { metrics: TelemetryMetric[] 
         barRatio
       }
     })
-  }, [metrics])
+  }, [metrics, buckets])
 
   if (metrics.length === 0) return null
 
@@ -60,21 +90,24 @@ export function ObservabilityHistogramChart(props: { metrics: TelemetryMetric[] 
         <div className="flex items-center gap-2">
           <RiBarChartHorizontalLine className="size-4 text-cyan-500" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
-            延迟区间分布 (Latency Distribution)
+            {t("pages.observability.histogramTitle")}
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-text-tertiary">5 个耗时分桶</span>
+        <span className="text-[11px] font-mono text-text-tertiary">
+          {t("pages.observability.fiveBuckets")}
+        </span>
       </div>
 
       <div className="flex flex-col gap-2 font-mono text-[11px]">
         {bucketStats.map((bucket) => (
           <div key={bucket.id} className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <span className={cx("font-semibold", bucket.textColor)}>
-                {bucket.label}
-              </span>
+              <span className={cx("font-semibold", bucket.textColor)}>{bucket.label}</span>
               <span className="text-text-tertiary">
-                {bucket.count} 次 ({bucket.percent.toFixed(0)}%)
+                {t("pages.observability.timesPercentSpaced", {
+                  n: bucket.count,
+                  percent: bucket.percent.toFixed(0)
+                })}
               </span>
             </div>
 

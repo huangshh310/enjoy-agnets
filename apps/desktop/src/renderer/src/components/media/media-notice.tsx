@@ -4,6 +4,7 @@
 import { RiInformationLine, RiUploadCloud2Line } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 
 export function MediaNotice({
   note,
@@ -14,6 +15,7 @@ export function MediaNotice({
   warning: boolean
   onDismiss: () => void
 }) {
+  const t = useT()
   return (
     <div
       className={cx(
@@ -32,21 +34,22 @@ export function MediaNotice({
         onClick={onDismiss}
         className="text-caption-2-semibold text-text-tertiary hover:text-text-primary"
       >
-        Dismiss
+        {t("pages.media.dismiss")}
       </Button>
     </div>
   )
 }
 
 export function MediaDropOverlay() {
+  const t = useT()
   return (
     <div className="absolute inset-0 z-30 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-accent-500 bg-accent-500/[0.08]">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-accent-500/15 text-accent-500 shadow-sm">
         <RiUploadCloud2Line className="size-7" />
       </div>
-      <p className="mt-3 text-body-semibold text-text-primary">Drop files here to import</p>
+      <p className="mt-3 text-body-semibold text-text-primary">{t("pages.media.dropToImport")}</p>
       <p className="mt-1 text-caption-1-medium text-text-secondary">
-        PNG, JPG, SVG, MP3, WAV, MP4, PDF up to 8 MB each
+        {t("pages.media.dropHint")}
       </p>
     </div>
   )

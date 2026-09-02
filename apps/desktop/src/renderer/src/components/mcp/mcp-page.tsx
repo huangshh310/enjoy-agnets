@@ -2,6 +2,7 @@
  * MCP Server 与插件生态页面：已配置服务 / 精选市场 / JSON 规格。
  */
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
+import { useT } from "@renderer/i18n"
 import { McpAppModal } from "./components/mcp-app-modal"
 import { McpCreateModal } from "./components/mcp-create-modal"
 import { McpHeader } from "./components/mcp-header"
@@ -13,11 +14,12 @@ import { useMcpPage } from "./hooks/use-mcp-page"
 import type { McpActiveTab } from "./types/mcp-ui.types"
 
 export function McpPage() {
+  const t = useT()
   const page = useMcpPage()
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Filter MCP servers..."
+      searchPlaceholder={t("pages.mcp.filterPlaceholder")}
       groups={page.groups}
       selectedId={page.activeTab}
       onSelect={(id) => page.setActiveTab(id as McpActiveTab)}

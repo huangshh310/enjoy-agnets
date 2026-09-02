@@ -5,6 +5,7 @@ import { RiAddLine, RiCheckLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { ProviderIcon } from "./provider-icons"
+import { useT } from "@renderer/i18n"
 
 export function ProviderPresetCard({
   preset,
@@ -15,15 +16,16 @@ export function ProviderPresetCard({
   isConfigured: boolean
   onClick: () => void
 }) {
+  const t = useT()
   const isAnthropic = preset.apiStyle === "anthropic"
   const isResponses = preset.apiStyle === "openai-responses"
   const protocolBadge = isAnthropic
-    ? "Messages"
+    ? t("settings.providers.protocolMessages")
     : isResponses
-      ? "Responses"
+      ? t("settings.providers.protocolResponses")
       : preset.kind === "ollama"
-        ? "Local"
-        : "OpenAI /v1"
+        ? t("settings.providers.protocolLocal")
+        : t("settings.providers.protocolOpenai")
 
   return (
     <div
@@ -54,7 +56,7 @@ export function ProviderPresetCard({
             {isConfigured ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-state-success-text/10 px-2 py-0.5 text-caption-1-semibold text-state-success-text whitespace-nowrap shrink-0">
                 <RiCheckLine className="size-3" />
-                Configured
+                {t("settings.providers.configured")}
               </span>
             ) : null}
 
@@ -78,12 +80,12 @@ export function ProviderPresetCard({
       {/* 底部：内置模型与快捷添加按钮 */}
       <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
         <span className="truncate font-mono text-[11px] text-text-tertiary max-w-[160px]">
-          {preset.models[0]?.label || preset.models[0]?.id || "Custom"}
+          {preset.models[0]?.label || preset.models[0]?.id || t("settings.providers.customFallback")}
         </span>
 
         <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-caption-1-medium font-medium text-text-secondary group-hover:bg-accent-500 group-hover:text-white transition-colors">
           <RiAddLine className="size-3.5" />
-          <span>{isConfigured ? "Add profile" : "Connect"}</span>
+          <span>{isConfigured ? t("settings.providers.addProfile") : t("settings.providers.connect")}</span>
         </span>
       </div>
     </div>

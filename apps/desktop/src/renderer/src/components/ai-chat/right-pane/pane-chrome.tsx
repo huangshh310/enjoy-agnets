@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
-import { PANE_FOCUS, RIGHT_PANE_TOOLS, toolDef } from "./constants"
+import { useT } from "@renderer/i18n"
+import { PANE_FOCUS, getRightPaneTools, toolDef } from "./constants"
 import { PaneWidthToggle } from "./pane-width-toggle"
 import type { RightPaneKind, RightPaneTab } from "./right-pane.types"
 
@@ -33,11 +34,12 @@ export function RightPaneChrome({
   maximized: boolean
   onToggleWidth: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex h-11 shrink-0 items-center gap-1 border-b border-separator-border px-3">
       <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none]">
         {tabs.map((tab) => {
-          const def = toolDef(tab.kind)
+          const def = toolDef(tab.kind, t)
           const Icon = def.icon
           const selected = tab.id === activeId
           return (
@@ -60,7 +62,7 @@ export function RightPaneChrome({
               </button>
               <button
                 type="button"
-                aria-label={`Close ${def.label}`}
+                aria-label={t("chat.closePane", { name: def.label })}
                 onClick={() => onClose(tab.id)}
                 className={cx(
                   "rounded-md p-0.5 text-foreground-icon-secondary opacity-0 hover:bg-background-secondary-hover group-hover:opacity-100",
@@ -74,10 +76,10 @@ export function RightPaneChrome({
         })}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <QuietIconButton icon={RiAddLine} aria-label="Open a pane" />
+            <QuietIconButton icon={RiAddLine} aria-label={t("chat.openPane")} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            {RIGHT_PANE_TOOLS.map((tool) => {
+            {getRightPaneTools(t).map((tool) => {
               const Icon = tool.icon
               return (
                 <DropdownMenuItem key={tool.kind} onClick={() => onAdd(tool.kind)}>
@@ -91,7 +93,7 @@ export function RightPaneChrome({
         </DropdownMenu>
       </div>
       <PaneWidthToggle maximized={maximized} onToggle={onToggleWidth} />
-      <QuietIconButton icon={RiContractRightLine} aria-label="Collapse changes pane" onClick={onCollapse} />
+      <QuietIconButton icon={RiContractRightLine} aria-label={t("chat.collapsePane")} onClick={onCollapse} />
     </div>
   )
 }

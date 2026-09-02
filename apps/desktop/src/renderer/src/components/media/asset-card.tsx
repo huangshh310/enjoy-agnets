@@ -16,6 +16,7 @@ import { cx } from "@/utils/cx"
 import { isImageMediaType } from "@enjoy-agents/assets/media-type"
 import type { AssetKind, AssetRecord } from "@enjoy-agents/ipc-contract"
 import { useAssetSrc } from "@renderer/hooks/use-asset-src"
+import { useT } from "@renderer/i18n"
 import { fileExtensionLabel, formatBytes } from "./asset-format"
 
 export function AssetCard({
@@ -76,14 +77,15 @@ function AssetCardPreview({ asset }: { asset: AssetRecord }) {
 }
 
 function AssetCardMeta({ asset }: { asset: AssetRecord }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-0.5 p-2.5">
       <h4 title={asset.name} className="truncate text-caption-1-semibold text-text-primary">
         {asset.name}
       </h4>
       <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary">
-        <span className="font-mono">{formatBytes(asset.size)}</span>
-        <span className="uppercase">{fileExtensionLabel(asset.name, asset.mediaType)}</span>
+        <span className="font-mono">{formatBytes(asset.size, t)}</span>
+        <span className="uppercase">{fileExtensionLabel(asset.name, asset.mediaType, t)}</span>
       </div>
     </div>
   )
@@ -107,19 +109,21 @@ function AssetImageThumb({ assetId, mediaType }: { assetId: string; mediaType: s
 }
 
 function AssetKindFallback({ kind, mediaType, name }: { kind: AssetKind; mediaType: string; name: string }) {
+  const t = useT()
   return (
     <div className="flex flex-col items-center justify-center gap-1.5 p-3 text-center">
       <div className="flex size-10 items-center justify-center rounded-xl bg-background-tertiary-default shadow-2xs">
         <AssetTypeIcon kind={kind} mediaType={mediaType} />
       </div>
       <span className="font-mono text-caption-2-semibold uppercase text-text-tertiary">
-        {fileExtensionLabel(name, mediaType)}
+        {fileExtensionLabel(name, mediaType, t)}
       </span>
     </div>
   )
 }
 
 function AssetSourceBadge({ source }: { source: AssetRecord["source"] }) {
+  const t = useT()
   const generated = source === "generated"
   return (
     <span
@@ -130,7 +134,7 @@ function AssetSourceBadge({ source }: { source: AssetRecord["source"] }) {
           : "border-border-button-default/50 bg-background-primary-default/85 text-text-tertiary"
       )}
     >
-      {generated ? "AI" : source}
+      {generated ? t("pages.media.aiBadge") : source}
     </span>
   )
 }
@@ -146,6 +150,7 @@ function AssetCardActions({
   onUpload: () => void
   onDelete: () => void
 }) {
+  const t = useT()
   return (
     <div
       className={cx(
@@ -157,7 +162,7 @@ function AssetCardActions({
         <Button
           size="icon-sm"
           variant="ghost"
-          title="Export to workspace"
+          title={t("pages.media.exportToWorkspace")}
           className="size-7 rounded-lg bg-background-primary-default/90 text-text-primary shadow-xs hover:bg-background-primary-default"
           onClick={onExport}
         >
@@ -166,7 +171,7 @@ function AssetCardActions({
         <Button
           size="icon-sm"
           variant="ghost"
-          title="Upload as Provider file reference"
+          title={t("pages.media.uploadAsProvider")}
           className="size-7 rounded-lg bg-background-primary-default/90 text-text-primary shadow-xs hover:bg-background-primary-default"
           onClick={onUpload}
         >
@@ -175,7 +180,7 @@ function AssetCardActions({
         <Button
           size="icon-sm"
           variant="ghost"
-          title="Delete asset"
+          title={t("pages.media.deleteAsset")}
           className="size-7 rounded-lg bg-background-primary-default/90 text-text-tertiary shadow-xs hover:bg-background-secondary-hover hover:text-text-error-primary"
           onClick={onDelete}
         >

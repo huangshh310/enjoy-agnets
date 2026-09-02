@@ -47,8 +47,8 @@ export function groupArchivedByWorkspace(rows: ArchivedChatRow[]): ArchivedChatG
   return Array.from(groups.values())
 }
 
-export function formatArchivedAt(timestamp: number): string {
-  return new Intl.DateTimeFormat("zh-CN", {
+export function formatArchivedAt(timestamp: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",

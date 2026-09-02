@@ -14,7 +14,8 @@ import type {
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { cx } from "@/utils/cx"
-import type { AgentLimitsCardProps } from "./agent-limits.types"
+import { useT, type TranslateFn } from "@renderer/i18n"
+import type { AgentLimitsCardProps, TokenBucketItem } from "./agent-limits.types"
 import {
   calculateContextWindowUsage,
   calculateRealPlanLimits
@@ -34,6 +35,7 @@ export function AgentLimitsCard({
   defaultExpanded = true,
   className
 }: AgentLimitsCardProps) {
+  const t = useT()
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const storeMessages = useChatStore((state) => state.messages)
   const storeModelId = useChatStore((state) => state.modelId)
@@ -41,7 +43,9 @@ export function AgentLimitsCard({
 
   const activeModelId = modelId ?? storeModelId
   const activeModelLabel = modelLabel ?? storeModelLabel
-  const defaultPlanTitle = activeModelLabel ? `${activeModelLabel} · Rate limits` : "Plan usage limits · Max (5x)"
+  const defaultPlanTitle = activeModelLabel
+    ? t("chat.rateLimits", { name: activeModelLabel })
+    : t("chat.planLimits")
 
   // 1. 真实 MCP Server 与工具列表
   const mcpQuery = useQuery({
@@ -79,6 +83,7 @@ export function AgentLimitsCard({
     skillsQuery.data ?? [],
     rulesQuery.data ?? []
   )
+  data.buckets = withLocalizedBucketLabels(data.buckets, t)
 
   // 6. 计算真实的速率与周期限制
   const realLimits = calculateRealPlanLimits(metricsQuery.data ?? [])
@@ -118,4 +123,25 @@ export function AgentLimitsCard({
       />
     </div>
   )
+}
+
+/** 分桶展示名走 chat.limits*；子项名保持标识符。 */
+const BUCKET_LABEL_KEYS: Record<string, string> = {
+  messages: "chat.limitsMessages",
+  system_tools: "chat.limitsSystemTools",
+  mcp_tools: "chat.limitsMcpTools",
+  skills: "chat.limitsSkills",
+  system_prompt: "chat.limitsSystemPrompt",
+  memory_files: "chat.limitsMemoryFiles",
+  custom_agents: "chat.limitsCustomAgents",
+  mcp_deferred: "chat.limitsMcpDeferred",
+  system_deferred: "chat.limitsSystemDeferred",
+  free_space: "chat.limitsFreeSpace"
+}
+
+function withLocalizedBucketLabels(buckets: TokenBucketItem[], t: TranslateFn): TokenBucketItem[] {
+  return buckets.map((bucket) => {
+    const key = BUCKET_LABEL_KEYS[bucket.id]
+    return key ? { ...bucket, label: t(key) } : bucket
+  })
 }

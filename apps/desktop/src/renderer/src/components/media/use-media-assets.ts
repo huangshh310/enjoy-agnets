@@ -5,11 +5,13 @@ import { useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AssetRecord } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useT } from "@renderer/i18n"
 import { filterLibraryAssets, isAudioLibraryAsset } from "./media-filters"
 import { buildLibraryNav } from "./library-nav"
 import type { AssetCategory } from "./media-page.types"
 
 export function useMediaAssets() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [selectedCategory, setSelectedCategory] = useState<AssetCategory>("all")
   const [filterQuery, setFilterQuery] = useState("")
@@ -33,7 +35,7 @@ export function useMediaAssets() {
   const selectedAudioAsset =
     selectedAsset && isAudioLibraryAsset(selectedAsset) ? selectedAsset : undefined
   const pendingDeleteAsset = assets.find((row) => row.id === pendingDeleteId)
-  const groups = useMemo(() => buildLibraryNav(assets), [assets])
+  const groups = useMemo(() => buildLibraryNav(assets, t), [assets, t])
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["assets"] })

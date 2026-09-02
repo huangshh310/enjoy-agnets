@@ -7,6 +7,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { CodeBlock } from "@/components/ai-elements/code-block"
 import { asRecord, readString } from "@renderer/lib/record"
 import { FileDiff } from "./file-diff"
+import { useT } from "@renderer/i18n"
 
 export function ToolResultView({ tool }: { tool: ThreadToolCall }) {
   if (tool.errorText) {
@@ -46,6 +47,7 @@ export function ToolResultView({ tool }: { tool: ThreadToolCall }) {
 }
 
 function BashResult({ result }: { result: Record<string, unknown> }) {
+  const t = useT()
   const command = readString(result, "command")
   const stdout = readString(result, "stdout")
   const stderr = readString(result, "stderr")
@@ -57,7 +59,7 @@ function BashResult({ result }: { result: Record<string, unknown> }) {
         <RiTerminalBoxLine className="size-3.5" />
         <span className="truncate font-mono">{command || "bash"}</span>
         {exitCode !== undefined ? (
-          <span className="ml-auto text-text-tertiary">exit {String(exitCode)}</span>
+          <span className="ml-auto text-text-tertiary">{t("chat.exitCode", { code: String(exitCode) })}</span>
         ) : null}
       </div>
       {stdout ? (

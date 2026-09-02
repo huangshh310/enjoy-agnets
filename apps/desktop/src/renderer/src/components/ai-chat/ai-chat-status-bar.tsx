@@ -4,6 +4,8 @@ import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { AgentLimitsCard } from "./agent-limits/agent-limits-card"
+import { useT } from "@renderer/i18n"
+
 
 export function AiChatStatusBar({
   workspaceRootLabel,
@@ -13,7 +15,7 @@ export function AiChatStatusBar({
   contextUsed: number
 }) {
   const navigate = useNavigate()
-
+  const t = useT()
   return (
     <div className="flex items-center gap-3 px-8 pb-4 text-caption-1-medium text-text-tertiary">
       <span className="inline-flex items-center gap-1">
@@ -28,7 +30,7 @@ export function AiChatStatusBar({
         <PopoverTrigger asChild>
           <button
             type="button"
-            title="点击查看上下文 Token 分桶与限额明细"
+            title={t("chat.contextTokensHint")}
             className="ml-auto inline-flex items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent-500/20"
           >
             <ContextRing value={contextUsed} />

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
 import type { Automation, AutomationTrigger } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 export function AutomationList({
   automations,
@@ -36,11 +37,13 @@ export function AutomationList({
   onRemove: (id: string) => void
   onCopyPrompt: (id: string, text: string) => void
 }) {
+  const t = useT()
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-body-medium font-semibold text-text-primary">
-          Configured Automations ({automations.length})
+          {t("studio.automations.configured", { count: automations.length })}
         </h3>
       </div>
       {automations.length === 0 && !draftOpen ? (
@@ -49,12 +52,12 @@ export function AutomationList({
             <RiRobot2Line className="size-6" />
           </div>
           <h4 className="mt-3 text-body-medium font-semibold text-text-primary">
-            {totalCount === 0 ? "No Custom Automations Configured" : "No Matching Automations Found"}
+            {totalCount === 0 ? t("studio.automations.emptyTitle") : t("studio.automations.noMatchTitle")}
           </h4>
           <p className="mt-1 max-w-md text-caption-1-medium text-text-secondary">
             {totalCount === 0
-              ? "Enable one of the popular automation templates above or click 'New Automation' to create your own custom prompt hooks."
-              : "Try adjusting your search query or switching filters in the sidebar."}
+              ? t("studio.automations.emptyHint", { action: t("studio.automations.newAutomation") })
+              : t("studio.automations.noMatchHint")}
           </p>
         </div>
       ) : null}
@@ -92,6 +95,8 @@ function AutomationCard({
   onRemove: (id: string) => void
   onCopyPrompt: (id: string, text: string) => void
 }) {
+  const t = useT()
+
   return (
     <article
       className={cx(
@@ -123,31 +128,33 @@ function AutomationCard({
               <TriggerBadge trigger={automation.trigger} />
               {!automation.enabled ? (
                 <span className="rounded-md bg-background-tertiary-default px-1.5 py-0.5 text-[11px] font-medium text-text-tertiary">
-                  Disabled
+                  {t("common.disabled")}
                 </span>
               ) : null}
             </div>
-            <span className="font-mono text-[11px] text-text-tertiary">ID: {automation.id.slice(0, 12)}...</span>
+            <span className="font-mono text-[11px] text-text-tertiary">
+              {t("studio.automations.idPrefix", { id: automation.id.slice(0, 12) })}
+            </span>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <div className="mr-2 flex items-center gap-1.5">
             <span className="text-caption-2-medium text-text-secondary">
-              {automation.enabled ? "Active" : "Off"}
+              {automation.enabled ? t("studio.automations.active") : t("common.off")}
             </span>
             <Switch
               checked={automation.enabled}
               onCheckedChange={(checked) => onToggle(automation, checked)}
-              aria-label={automation.enabled ? "Disable automation" : "Enable automation"}
+              aria-label={automation.enabled ? t("studio.automations.disableAria") : t("studio.automations.enableAria")}
             />
           </div>
-          <Button size="icon-sm" variant="ghost" title="Edit automation" onClick={() => onEdit(automation)}>
+          <Button size="icon-sm" variant="ghost" title={t("studio.automations.editAria")} onClick={() => onEdit(automation)}>
             <RiEditLine className="size-4" />
           </Button>
           <Button
             size="icon-sm"
             variant="ghost"
-            title="Delete automation"
+            title={t("studio.automations.deleteAria")}
             className="text-text-tertiary hover:text-rose-500"
             onClick={() => onRemove(automation.id)}
           >
@@ -157,24 +164,24 @@ function AutomationCard({
       </div>
       <div className="relative mt-3 rounded-xl border border-separator-border/70 bg-background-secondary-default p-3">
         <p className="line-clamp-3 font-mono text-caption-1-medium leading-relaxed text-text-secondary">
-          {automation.prompt || "No prompt instruction specified."}
+          {automation.prompt || t("studio.automations.noPrompt")}
         </p>
         {automation.prompt ? (
           <button
             type="button"
-            title="Copy prompt"
+            title={t("studio.automations.copyPrompt")}
             onClick={() => onCopyPrompt(automation.id, automation.prompt)}
             className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md border border-border-button-default bg-background-primary-default px-2 py-1 text-[11px] text-text-secondary shadow-xs transition-colors hover:text-text-primary"
           >
             {copiedId === automation.id ? (
               <>
                 <RiCheckLine className="size-3 text-emerald-500" />
-                <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+                <span className="text-emerald-600 dark:text-emerald-400">{t("common.copied")}</span>
               </>
             ) : (
               <>
                 <RiClipboardLine className="size-3" />
-                <span>Copy</span>
+                <span>{t("common.copy")}</span>
               </>
             )}
           </button>
@@ -185,18 +192,19 @@ function AutomationCard({
 }
 
 function TriggerBadge({ trigger }: { trigger: AutomationTrigger }) {
+  const t = useT()
   if (trigger === "on_save") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
         <RiFlashlightLine className="size-3" />
-        On Save
+        {t("studio.automations.onSave")}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-accent-500/20 bg-accent-500/10 px-2 py-0.5 text-[11px] font-medium text-accent-600 dark:text-accent-400">
       <RiCursorLine className="size-3" />
-      Manual
+      {t("studio.automations.manual")}
     </span>
   )
 }

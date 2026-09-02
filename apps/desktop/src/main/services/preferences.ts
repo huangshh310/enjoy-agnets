@@ -12,7 +12,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   requireCommitApproval: true,
   permissionMode: "allow-reads",
   codingRuntime: "local",
-  language: "auto",
+  language: "zh",
   defaultMode: "agent",
   customInstructions: "",
   telemetryPolicy: "local",

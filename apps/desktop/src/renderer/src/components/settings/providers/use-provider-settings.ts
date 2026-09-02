@@ -8,13 +8,14 @@ import { isApiStyle, presetFor, type ApiStyle, type ProviderKind } from "@enjoy-
 import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export type PingStateMap = Record<
   string,
   { status: "idle" | "pending" | "ok" | "error"; latencyMs?: number; message?: string }
 >
-
 export function useProviderSettings() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [pingStates, setPingStates] = useState<PingStateMap>({})
   const settingsQuery = useQuery({
@@ -37,7 +38,7 @@ export function useProviderSettings() {
     if (!hasIde()) return
     setPingStates((prev) => ({
       ...prev,
-      [profile.id]: { status: "pending", message: "Testing speed..." }
+      [profile.id]: { status: "pending", message: t("settings.providers.testingSpeed") }
     }))
     try {
       const res = (await getIde().settings.pingProvider({

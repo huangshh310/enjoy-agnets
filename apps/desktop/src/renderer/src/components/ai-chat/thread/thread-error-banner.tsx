@@ -13,6 +13,8 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
 import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
+
 
 interface ThreadErrorBannerProps {
   error: string
@@ -20,6 +22,7 @@ interface ThreadErrorBannerProps {
 }
 
 export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) {
+  const t = useT()
   const navigate = useNavigate()
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
@@ -69,12 +72,12 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className="text-body-medium font-semibold text-text-primary">
-              执行异常 / 模型响应中断
+              {t("chat.errorTitle")}
             </span>
             <button
               type="button"
               onClick={handleDismiss}
-              title="忽略并关闭错误提示"
+              title={t("chat.dismissError")}
               className="text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
             >
               <RiCloseLine className="size-4" />
@@ -94,7 +97,7 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-accent-500/40 cursor-pointer"
               >
                 <RiRefreshLine className="size-3 text-accent-500" />
-                <span>重新生成 (Retry)</span>
+                <span>{t("common.retry")}</span>
               </button>
             ) : null}
 
@@ -104,7 +107,7 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
               className="inline-flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-secondary shadow-2xs transition-all hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer"
             >
               <RiSettings3Line className="size-3" />
-              <span>切换模型 / 检查 Key</span>
+              <span>{t("chat.switchModelKey")}</span>
             </button>
           </div>
         </div>

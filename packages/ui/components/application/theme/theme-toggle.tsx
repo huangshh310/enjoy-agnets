@@ -6,6 +6,7 @@ import { RiMoonLine, RiSunLine } from "@remixicon/react";
 import { Switch as AriaSwitch } from "react-aria-components";
 import { SwitchTrack } from "@/components/base/switch/switch";
 import { cx } from "@/utils/cx";
+import { uiT, useUiLocale } from "@/i18n/ui-locale";
 
 export type ThemeMode = "light" | "dark";
 
@@ -225,6 +226,7 @@ export function ThemeToggle({
   className,
   transitionDuration = THEME_TRANSITION_DURATION,
 }: ThemeToggleProps) {
+  useUiLocale();
   const theme = useThemeMode();
   const dark = theme === "dark";
   const switchRef = useRef<HTMLLabelElement | null>(null);
@@ -244,14 +246,14 @@ export function ThemeToggle({
     const glass = appearance === "glass-segmented";
     const sidebarSurface = appearance === "sidebar-segmented";
     const options = [
-      { mode: "light" as const, label: "Use light mode", Icon: RiSunLine },
-      { mode: "dark" as const, label: "Use dark mode", Icon: RiMoonLine },
+      { mode: "light" as const, label: uiT("使用浅色模式", "Use light mode"), Icon: RiSunLine },
+      { mode: "dark" as const, label: uiT("使用深色模式", "Use dark mode"), Icon: RiMoonLine },
     ];
 
     return (
       <div
         role="group"
-        aria-label="Theme"
+        aria-label={uiT("主题", "Theme")}
         className={cx(
           "relative inline-flex w-fit items-center gap-1 rounded-full p-1",
           // Mobile: 2px padding + 28px segments = 32px tall, matching the
@@ -291,7 +293,7 @@ export function ThemeToggle({
               type="button"
               aria-label={label}
               aria-pressed={selected}
-              title={mode === "light" ? "Light mode" : "Dark mode"}
+              title={mode === "light" ? uiT("浅色模式", "Light mode") : uiT("深色模式", "Dark mode")}
               onClick={(event) => {
                 if (selected) return;
                 const pointerOrigin =
@@ -333,9 +335,9 @@ export function ThemeToggle({
     return (
       <button
         type="button"
-        aria-label={dark ? "Use light mode" : "Use dark mode"}
+        aria-label={dark ? uiT("使用浅色模式", "Use light mode") : uiT("使用深色模式", "Use dark mode")}
         aria-pressed={dark}
-        title={dark ? "Light mode" : "Dark mode"}
+        title={dark ? uiT("浅色模式", "Light mode") : uiT("深色模式", "Dark mode")}
         onClick={(event) => {
           const pointerOrigin =
             event.clientX === 0 && event.clientY === 0
@@ -376,7 +378,7 @@ export function ThemeToggle({
           duration: transitionDuration,
         });
       }}
-      aria-label="Dark mode"
+      aria-label={uiT("深色模式", "Dark mode")}
       className={({ isFocusVisible }) =>
         cx(
           "flex w-full cursor-pointer items-center justify-between rounded-2lg p-2",
@@ -390,7 +392,7 @@ export function ThemeToggle({
         <>
           <span className="flex min-w-0 items-center gap-2">
             <RiMoonLine className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
-            <span className="text-body-medium text-text-secondary">Dark mode</span>
+            <span className="text-body-medium text-text-secondary">{uiT("深色模式", "Dark mode")}</span>
           </span>
           <SwitchTrack state={state} size="sm" shape="pill" />
         </>

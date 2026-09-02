@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
 import type { McpServer, McpTransport } from "@enjoy-agents/ipc-contract"
-import { FEATURED_MCP_PRESETS } from "../constants/mcp-presets"
+import { useT } from "@renderer/i18n"
+import { getFeaturedMcpPresets } from "../constants/mcp-presets"
 
 export type McpEnvPair = { key: string; value: string }
 
@@ -58,6 +59,8 @@ export function McpCreateFormBody(props: {
     onEnvChange,
     errorMsg
   } = props
+  const t = useT()
+  const presets = getFeaturedMcpPresets(t)
 
   return (
     <div className="flex flex-col gap-4 p-5 max-h-[70vh] overflow-y-auto">
@@ -65,10 +68,10 @@ export function McpCreateFormBody(props: {
         <div className="flex flex-col gap-1.5 rounded-lg border border-separator-border/50 bg-background-secondary-default/30 p-2.5">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-text-secondary">
             <RiSparklingLine className="size-3.5 text-accent-500" />
-            <span>从常用模版填入：</span>
+            <span>{t("pages.mcp.fillFromPreset")}</span>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {FEATURED_MCP_PRESETS.slice(0, 6).map((preset) => (
+            {presets.slice(0, 6).map((preset) => (
               <button
                 key={preset.id}
                 type="button"
@@ -85,32 +88,32 @@ export function McpCreateFormBody(props: {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <Label className="text-[11.5px] font-medium text-text-secondary">
-            Server Identifier (唯一标识)
+            {t("pages.mcp.identifierLabel")}
           </Label>
           <Input
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="例如: filesystem, github"
+            placeholder={t("pages.mcp.identifierPlaceholder")}
             className="font-mono text-caption-2-medium h-8 bg-background-secondary-default/40"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-[11.5px] font-medium text-text-secondary">Transport 协议</Label>
+          <Label className="text-[11.5px] font-medium text-text-secondary">{t("pages.mcp.transportLabel")}</Label>
           <div className="grid grid-cols-3 gap-1 rounded-lg bg-background-secondary-default/60 p-0.5 h-8">
-            {(["stdio", "sse", "http"] as const).map((t) => (
+            {(["stdio", "sse", "http"] as const).map((kind) => (
               <button
-                key={t}
+                key={kind}
                 type="button"
-                onClick={() => onTransportChange(t)}
+                onClick={() => onTransportChange(kind)}
                 className={cx(
                   "rounded text-[11px] font-mono uppercase transition-all flex items-center justify-center",
-                  transport === t
+                  transport === kind
                     ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
                     : "text-text-secondary hover:text-text-primary"
                 )}
               >
-                {t}
+                {kind}
               </button>
             ))}
           </div>
@@ -120,7 +123,7 @@ export function McpCreateFormBody(props: {
       {transport === "stdio" ? (
         <div className="flex flex-col gap-1">
           <Label className="text-[11.5px] font-medium text-text-secondary">
-            Command & Arguments (启动命令)
+            {t("pages.mcp.commandLabel")}
           </Label>
           <Input
             value={command}
@@ -129,13 +132,13 @@ export function McpCreateFormBody(props: {
             className="font-mono text-caption-2-medium h-8 bg-background-secondary-default/40"
           />
           <span className="text-[10.5px] text-text-tertiary">
-            支持 npx, uvx, node, python 等裸二进制命令。
+            {t("pages.mcp.commandHint")}
           </span>
         </div>
       ) : (
         <div className="flex flex-col gap-1">
           <Label className="text-[11.5px] font-medium text-text-secondary">
-            Endpoint URL (服务地址)
+            {t("pages.mcp.endpointLabel")}
           </Label>
           <Input
             value={url}
@@ -151,7 +154,7 @@ export function McpCreateFormBody(props: {
           <div className="flex items-center gap-1.5">
             <RiKey2Line className="size-3 text-amber-500" />
             <Label className="text-[11.5px] font-medium text-text-secondary">
-              环境变量 (Env Variables)
+              {t("pages.mcp.envLabel")}
             </Label>
           </div>
           <button
@@ -160,13 +163,13 @@ export function McpCreateFormBody(props: {
             className="inline-flex items-center gap-0.5 text-[11px] text-text-secondary hover:text-text-primary"
           >
             <RiAddLine className="size-3" />
-            <span>添加变量</span>
+            <span>{t("pages.mcp.addVariable")}</span>
           </button>
         </div>
 
         {envPairs.length === 0 ? (
           <div className="rounded-lg border border-dashed border-separator-border/70 p-2.5 text-center text-[11px] text-text-tertiary">
-            未配置自定义环境变量（如需配置 API Token 或路径请点击添加）。
+            {t("pages.mcp.noEnv")}
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
@@ -175,14 +178,14 @@ export function McpCreateFormBody(props: {
                 <Input
                   value={pair.key}
                   onChange={(e) => onEnvChange(idx, "key", e.target.value)}
-                  placeholder="KEY"
+                  placeholder={t("pages.mcp.envKey")}
                   className="font-mono text-caption-2-medium flex-1 h-7.5 bg-background-secondary-default/40"
                 />
                 <Input
                   value={pair.value}
                   type="password"
                   onChange={(e) => onEnvChange(idx, "value", e.target.value)}
-                  placeholder="VALUE"
+                  placeholder={t("pages.mcp.envValue")}
                   className="font-mono text-caption-2-medium flex-1 h-7.5 bg-background-secondary-default/40"
                 />
                 <button
@@ -203,10 +206,10 @@ export function McpCreateFormBody(props: {
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1 text-[11.5px] font-medium text-text-primary">
               <RiShieldCheckLine className="size-3.5 text-emerald-500" />
-              <span>信任此 MCP Server (Trusted)</span>
+              <span>{t("pages.mcp.trustThis")}</span>
             </div>
             <span className="text-[10.5px] text-text-tertiary">
-              信任后允许将 Tools 自动挂载至 Agent 对话，并支持启动沙箱 App。
+              {t("pages.mcp.trustHint")}
             </span>
           </div>
           <input
@@ -219,7 +222,7 @@ export function McpCreateFormBody(props: {
 
         <div className="flex flex-col gap-1 border-t border-separator-border/40 pt-2">
           <Label className="text-[10.5px] font-medium text-text-tertiary">
-            允许的资源 URI 白名单 (逗号分隔，可选)
+            {t("pages.mcp.uriWhitelist")}
           </Label>
           <Input
             value={allowedResourceUrisText}

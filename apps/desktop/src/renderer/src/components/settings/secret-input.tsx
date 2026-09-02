@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { RiEyeLine, RiEyeOffLine } from "@remixicon/react"
+import { useT } from "@renderer/i18n"
 import {
   InputGroup,
   InputGroupAddon,
@@ -21,6 +22,7 @@ export function SecretInput({
   autoFocus?: boolean
 }) {
   const [visible, setVisible] = useState(false)
+  const t = useT()
 
   return (
     <InputGroup className="h-9 rounded-2lg border-border-button-default bg-background-primary-default shadow-xs dark:bg-transparent">
@@ -38,7 +40,7 @@ export function SecretInput({
       <InputGroupAddon align="inline-end">
         <InputGroupButton
           size="icon-xs"
-          aria-label={visible ? "Hide API key" : "Show API key"}
+          aria-label={visible ? t("settings.secret.hide") : t("settings.secret.show")}
           onClick={() => setVisible((current) => !current)}
         >
           {visible ? <RiEyeOffLine className="size-4" /> : <RiEyeLine className="size-4" />}

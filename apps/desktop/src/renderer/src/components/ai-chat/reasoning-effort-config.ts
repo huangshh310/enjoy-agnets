@@ -2,6 +2,8 @@
  * 思考强度 / 推理模式 (Reasoning Effort) 的配置与能量色彩体系。
  */
 import type { ReasoningEffort } from "@renderer/components/settings/providers/providers.types"
+import type { TranslateFn } from "@renderer/i18n"
+
 
 export type EffortLevel = "none" | "low" | "medium" | "high" | "xhigh"
 
@@ -99,7 +101,23 @@ export const EFFORT_LEVELS: EffortMeta[] = [
   }
 ]
 
-export function getEffortMeta(value: ReasoningEffort | "none" | undefined): EffortMeta {
+const EFFORT_COPY: Record<EffortLevel, { label: string; short: string; desc: string }> = {
+  none: { label: "chat.effortNone", short: "chat.effortNoneShort", desc: "chat.effortNoneDesc" },
+  low: { label: "chat.effortLow", short: "chat.effortLowShort", desc: "chat.effortLowDesc" },
+  medium: { label: "chat.effortMedium", short: "chat.effortMediumShort", desc: "chat.effortMediumDesc" },
+  high: { label: "chat.effortHigh", short: "chat.effortHighShort", desc: "chat.effortHighDesc" },
+  xhigh: { label: "chat.effortMax", short: "chat.effortMaxShort", desc: "chat.effortMaxDesc" }
+}
+
+export function getEffortLevels(t: TranslateFn): EffortMeta[] {
+  return EFFORT_LEVELS.map((level) => {
+    const copy = EFFORT_COPY[level.value]
+    return { ...level, label: t(copy.label), shortLabel: t(copy.short), desc: t(copy.desc) }
+  })
+}
+
+export function getEffortMeta(value: ReasoningEffort | "none" | undefined, t?: TranslateFn): EffortMeta {
+  const levels = t ? getEffortLevels(t) : EFFORT_LEVELS
   const norm = value || "none"
-  return EFFORT_LEVELS.find((item) => item.value === norm) ?? EFFORT_LEVELS[0]
+  return levels.find((item) => item.value === norm) ?? levels[0]
 }

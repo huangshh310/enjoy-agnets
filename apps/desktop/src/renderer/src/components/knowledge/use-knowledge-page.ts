@@ -10,11 +10,13 @@ import type {
   KnowledgeSource
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { KNOWLEDGE_PRESET_FOLDERS } from "./knowledge-constants"
+import { getKnowledgePresetFolders } from "./knowledge-constants"
 import { isSameKnowledgeSourcePath } from "./knowledge-edit-path"
 
 export function useKnowledgePage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const workspaceId = useChatStore((state) => state.workspaceId)
 
@@ -78,14 +80,15 @@ export function useKnowledgePage() {
   const workspaceDirPaths = workspaceDirsQuery.data ?? []
 
   const groups = useMemo(() => {
+    const presets = getKnowledgePresetFolders(t)
     const folderItems = [
       {
         id: "all",
-        label: "All Knowledge",
+        label: t("pages.knowledge.navAll"),
         icon: RiStackLine,
         meta: String(documents.length || sources.length)
       },
-      ...KNOWLEDGE_PRESET_FOLDERS.map((preset) => {
+      ...presets.map((preset) => {
         const docCount = documents.filter(
           (d) =>
             d.sourcePath === preset.path ||
@@ -107,11 +110,11 @@ export function useKnowledgePage() {
     return [
       {
         id: "collections",
-        label: "Knowledge Collections",
+        label: t("pages.knowledge.navCollections"),
         items: folderItems
       }
     ]
-  }, [sources, documents])
+  }, [sources, documents, t])
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["knowledge", workspaceId] })

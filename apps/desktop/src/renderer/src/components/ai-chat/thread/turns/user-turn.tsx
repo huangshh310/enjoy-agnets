@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/button"
 import { Message, MessageAction, MessageActions, MessageContent } from "@/components/ai-elements/message"
 import { editAndResendUserTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
 import { AssetPreview } from "../asset-preview"
 import { CopyMessageButton } from "../copy-message-button"
 
 export function UserTurn({ message }: { message: ThreadMessage }) {
+  const t = useT()
   const [isEditing, setIsEditing] = useState(false)
   const [draftContent, setDraftContent] = useState(message.content)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -71,12 +73,12 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
             onKeyDown={handleKeyDown}
             rows={Math.min(Math.max(draftContent.split("\n").length, 2), 8)}
             className="w-full resize-none bg-transparent font-sans text-caption-1-medium text-text-primary focus-visible:outline-none leading-relaxed"
-            placeholder="编辑您的消息..."
+            placeholder={t("chat.editPlaceholder")}
           />
 
           <div className="flex items-center justify-between border-t border-separator-border/40 pt-2 text-[11px]">
             <span className="text-text-tertiary font-mono text-[10px]">
-              Ctrl/Cmd+Enter 发送 · Esc 取消
+              {t("chat.editHint")}
             </span>
 
             <div className="flex items-center gap-1.5">
@@ -90,7 +92,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 }}
                 className="h-6.5 px-2 text-caption-2-medium"
               >
-                取消
+                {t("common.cancel")}
               </Button>
 
               <Button
@@ -104,7 +106,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 ) : (
                   <RiCheckLine className="size-3" />
                 )}
-                <span>保存并重新发送</span>
+                <span>{t("chat.saveResend")}</span>
               </Button>
             </div>
           </div>
@@ -116,8 +118,8 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
           <MessageActions className="-mr-1 justify-end">
             {!running ? (
               <MessageAction
-                tooltip="Edit message"
-                label="Edit message"
+                tooltip={t("chat.editMessage")}
+                label={t("chat.editMessage")}
                 onClick={() => setIsEditing(true)}
               >
                 <RiEditLine className="size-3.5" />

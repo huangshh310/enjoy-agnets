@@ -3,6 +3,7 @@
  */
 import { RiCollapseDiagonalLine, RiExpandDiagonalLine } from "@remixicon/react"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
+import { useT } from "@renderer/i18n"
 
 export function PaneWidthToggle({
   maximized,
@@ -11,11 +12,12 @@ export function PaneWidthToggle({
   maximized: boolean
   onToggle: () => void
 }) {
+  const t = useT()
   return (
     <QuietIconButton
       icon={maximized ? RiCollapseDiagonalLine : RiExpandDiagonalLine}
-      aria-label={maximized ? "Restore panel width" : "Expand panel width"}
-      title={maximized ? "恢复面板宽度" : "展开面板宽度"}
+      aria-label={maximized ? t("chat.restoreWidth") : t("chat.expandWidth")}
+      title={maximized ? t("chat.restoreWidth") : t("chat.expandWidth")}
       aria-pressed={maximized}
       onClick={onToggle}
       className={maximized ? "bg-background-secondary-default text-text-primary" : undefined}

@@ -3,12 +3,14 @@
  */
 import { useEffect, useRef } from "react"
 import { MCP_APP_CSP } from "@enjoy-agents/mcp/app-host"
+import { useT } from "@renderer/i18n"
 
 export function McpAppFrame(props: {
   srcDoc: string
   title?: string
   onAppMessage?: (raw: unknown) => void
 }) {
+  const t = useT()
   const frameRef = useRef<HTMLIFrameElement>(null)
   const onAppMessage = props.onAppMessage
 
@@ -24,7 +26,7 @@ export function McpAppFrame(props: {
   return (
     <iframe
       ref={frameRef}
-      title={props.title ?? "MCP App"}
+      title={props.title ?? t("pages.mcp.appTitle")}
       data-testid="mcp-app-frame"
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"

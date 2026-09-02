@@ -26,6 +26,7 @@ import { asRecord, readString } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { FileDiff } from "../diff/file-diff"
 import { formatToolName } from "./tool-summary"
+import { useT } from "@renderer/i18n"
 
 export function ApprovalCard({
   pending,
@@ -38,6 +39,7 @@ export function ApprovalCard({
   onDeny: () => void
   onAllowSession: () => void
 }) {
+  const t = useT()
   const args = asRecord(pending.args)
   const isBash = pending.name === "bash"
   const isFile =
@@ -65,17 +67,17 @@ export function ApprovalCard({
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-caption-1-medium font-bold text-text-primary tracking-tight">
                 {isBash
-                  ? "执行 Shell 命令审批"
+                  ? t("chat.approveShell")
                   : isFile
-                    ? `修改文件审批 · ${formatToolName(pending.name)}`
-                    : `工具调用审批 · ${formatToolName(pending.name)}`}
+                    ? t("chat.approveFile", { name: formatToolName(pending.name) })
+                    : t("chat.approveTool", { name: formatToolName(pending.name) })}
               </h3>
               <span className="rounded bg-amber-500/10 px-1.5 py-0.2 font-mono text-[9.5px] font-semibold text-amber-600 dark:text-amber-400">
-                Action Required
+                {t("chat.actionRequired")}
               </span>
             </div>
             <p className="text-[11.5px] text-text-secondary mt-0.5">
-              在 Agent 继续执行前审查即将发生的系统或文件变更。
+              {t("chat.approveHint")}
             </p>
           </div>
         </div>
@@ -93,10 +95,10 @@ export function ApprovalCard({
           variant="outline"
           onClick={onAllowSession}
           className="gap-1.5 h-7.5 text-[11.5px] text-text-secondary hover:text-text-primary"
-          title="在此会话后续所有操作中自动放行同类调用"
+          title={t("chat.alwaysAllowHint")}
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
-          <span>本会话总是允许 (Always Allow)</span>
+          <span>{t("chat.alwaysAllow")}</span>
         </Button>
 
         <div className="flex items-center gap-2 ml-auto">
@@ -107,7 +109,7 @@ export function ApprovalCard({
             className="gap-1 h-7.5 px-3 text-[11.5px] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10"
           >
             <RiCloseLine className="size-3.5" />
-            <span>拒绝 (Deny)</span>
+            <span>{t("chat.deny")}</span>
           </Button>
 
           <Button
@@ -116,7 +118,7 @@ export function ApprovalCard({
             className="gap-1.5 h-7.5 px-4 text-[11.5px] shadow-xs"
           >
             <RiCheckLine className="size-3.5" />
-            <span>允许执行 (Approve)</span>
+            <span>{t("chat.approve")}</span>
           </Button>
         </div>
       </div>
@@ -126,6 +128,7 @@ export function ApprovalCard({
 
 function ApprovalPreview({ name, args }: { name: string; args: Record<string, unknown> }) {
   const [copied, setCopied] = useState(false)
+  const t = useT()
 
   if (name === "edit_file" || name === "edit") return <EditFilePreview args={args} />
 
@@ -159,7 +162,7 @@ function ApprovalPreview({ name, args }: { name: string; args: Record<string, un
             <span className="size-2.5 rounded-full bg-emerald-500/60" />
             <span className="ml-2 flex items-center gap-1 text-text-secondary font-medium">
               <RiCommandLine className="size-3" />
-              <span>Shell Command</span>
+              <span>{t("chat.shellCommand")}</span>
             </span>
           </div>
 
@@ -171,12 +174,12 @@ function ApprovalPreview({ name, args }: { name: string; args: Record<string, un
             {copied ? (
               <>
                 <RiCheckLine className="size-3 text-emerald-500" />
-                <span>已复制</span>
+                <span>{t("common.copied")}</span>
               </>
             ) : (
               <>
                 <RiClipboardLine className="size-3" />
-                <span>复制命令</span>
+                <span>{t("chat.copyCommand")}</span>
               </>
             )}
           </button>
@@ -195,10 +198,10 @@ function ApprovalPreview({ name, args }: { name: string; args: Record<string, un
       <div className="flex flex-col gap-1.5 rounded-xl border border-separator-border/80 bg-background-secondary-default/50 p-3">
         <div className="flex items-center gap-1.5 text-[11px] font-semibold text-text-secondary">
           <RiGitCommitLine className="size-3.5 text-accent-500" />
-          <span>Git Commit Message:</span>
+          <span>{t("chat.gitCommitMessage")}</span>
         </div>
         <p className="font-mono text-caption-1-medium text-text-primary whitespace-pre-wrap leading-relaxed bg-background-primary-default p-2.5 rounded-lg border border-separator-border/50">
-          {readString(args, "message") || "(empty)"}
+          {readString(args, "message") || t("chat.emptyValue")}
         </p>
       </div>
     )

@@ -9,6 +9,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { buildTraceRows, isTraceExpanded, thinkingHeadline } from "./thinking-rows"
 import { ThinkingSteps } from "./thinking-steps"
 import { parseAgentStepNodes } from "./agent-step-tree-parser"
+import { useT } from "@renderer/i18n"
 
 const SHIMMER_TONE = {
   "--bui-agent-thinking-tone": "var(--color-text-secondary)"
@@ -27,10 +28,11 @@ export function ThinkingTrace({
   startedAt: number
   thoughtSeconds?: number
 }) {
+  const t = useT()
   const [manualOpen, setManualOpen] = useState<boolean | null>(null)
   const seconds = useSettledSeconds(startedAt, streaming, thoughtSeconds)
-  const rows = buildTraceRows(reasoning, tools)
-  const nodes = parseAgentStepNodes(reasoning, tools)
+  const rows = buildTraceRows(reasoning, tools, t)
+  const nodes = parseAgentStepNodes(reasoning, tools, t)
   const expanded = isTraceExpanded(streaming, tools, manualOpen)
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export function ThinkingTrace({
           )}
           style={streaming ? SHIMMER_TONE : undefined}
         >
-          {thinkingHeadline(streaming, tools, seconds)}
+          {thinkingHeadline(streaming, tools, seconds, t)}
         </span>
         {streaming ? <LoadingElapsed startedAt={startedAt} /> : null}
         <RiArrowDownSLine

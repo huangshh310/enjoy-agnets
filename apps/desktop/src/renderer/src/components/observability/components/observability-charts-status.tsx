@@ -4,9 +4,11 @@
 import { useMemo } from "react"
 import { RiAlertLine, RiShieldCheckLine } from "@remixicon/react"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
 
   const stats = useMemo(() => {
     let success = 0
@@ -69,7 +71,7 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
         <div className="flex items-center gap-2">
           <RiShieldCheckLine className="size-4 text-emerald-500" />
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
-            执行健康状态 (Status Health)
+            {t("pages.observability.healthTitle")}
           </h4>
         </div>
 
@@ -131,7 +133,9 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
               <span className="text-body-medium font-bold text-text-primary">
                 {((stats.success / stats.total) * 100).toFixed(0)}%
               </span>
-              <span className="text-[9px] text-text-tertiary">成功率</span>
+              <span className="text-[9px] text-text-tertiary">
+                {t("pages.observability.successRate")}
+              </span>
             </div>
           </div>
 
@@ -139,15 +143,21 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
           <div className="flex flex-col gap-1 text-[11px] font-mono">
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-emerald-500" />
-              <span className="text-text-secondary">成功: {stats.success}</span>
+              <span className="text-text-secondary">
+                {t("pages.observability.successN", { n: stats.success })}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-amber-500" />
-              <span className="text-text-secondary">超时: {stats.timeout}</span>
+              <span className="text-text-secondary">
+                {t("pages.observability.timeoutN", { n: stats.timeout })}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-rose-500" />
-              <span className="text-text-secondary">异常: {stats.providerErr + stats.otherErr}</span>
+              <span className="text-text-secondary">
+                {t("pages.observability.errorN", { n: stats.providerErr + stats.otherErr })}
+              </span>
             </div>
           </div>
         </div>
@@ -158,24 +168,25 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
         <div className="flex items-center gap-2">
           <RiAlertLine className="size-4 text-rose-500" />
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
-            异常分类排行 (Error Distribution)
+            {t("pages.observability.errorDistTitle")}
           </h4>
         </div>
 
         {stats.errorsList.length === 0 ? (
           <div className="my-auto text-center text-[11px] text-emerald-600 dark:text-emerald-400 font-medium py-3">
-            ✨ 当前所有调用 100% 正常，无异常记录
+            {t("pages.observability.allHealthy")}
           </div>
         ) : (
           <div className="mt-2 flex flex-col gap-2 font-mono text-[11px]">
             {stats.errorsList.map((err) => (
               <div key={err.type} className="flex flex-col gap-0.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">
-                    {err.type}
-                  </span>
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">{err.type}</span>
                   <span className="text-text-tertiary">
-                    {err.count} 次 ({err.percent.toFixed(0)}%)
+                    {t("pages.observability.timesPercentSpaced", {
+                      n: err.count,
+                      percent: err.percent.toFixed(0)
+                    })}
                   </span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-background-secondary-default overflow-hidden">

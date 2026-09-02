@@ -7,8 +7,10 @@
 import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from "react"
 import { cx } from "@/utils/cx"
 import type { ReasoningEffort } from "@renderer/components/settings/providers/providers.types"
+import { useT } from "@renderer/i18n"
 import {
   EFFORT_LEVELS,
+  getEffortLevels,
   getEffortMeta
 } from "./reasoning-effort-config"
 
@@ -25,7 +27,9 @@ export function ReasoningEnergyBar({
   showLabels?: boolean
   className?: string
 }) {
-  const currentMeta = getEffortMeta(value)
+  const t = useT()
+  const currentMeta = getEffortMeta(value, t)
+  const labelLevels = getEffortLevels(t)
   const trackRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -134,7 +138,7 @@ export function ReasoningEnergyBar({
       {/* 底部 5 档刻度标签 */}
       {showLabels ? (
         <div className="flex items-center justify-between px-0.5">
-          {EFFORT_LEVELS.map((level) => {
+          {labelLevels.map((level) => {
             const isSelected = level.value === currentMeta.value
 
             return (

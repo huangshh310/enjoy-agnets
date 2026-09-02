@@ -6,13 +6,10 @@
  */
 import { useState } from "react"
 import {
-  RiAddLine,
   RiBrainLine,
   RiCheckLine,
   RiCloseLine,
-  RiDatabase2Line,
-  RiFlashlightLine,
-  RiRobot2Line
+  RiDatabase2Line
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +22,7 @@ import { ReasoningEnergyBar } from "@renderer/components/ai-chat/reasoning-energ
 import { ModelBrandIcon } from "./provider-icons"
 import { ProviderModelField } from "./provider-model-field"
 import type { EditorState, ProbeState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderModelsTab({
   editor,
@@ -39,6 +37,7 @@ export function ProviderModelsTab({
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
 }) {
+  const t = useT()
   const [newModelId, setNewModelId] = useState("")
   const [newModelLabel, setNewModelLabel] = useState("")
 
@@ -66,8 +65,7 @@ export function ProviderModelsTab({
       {/* 默认主力模型 */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1.5 text-text-primary">
-          <RiRobot2Line className="size-4 text-accent-500" />
-          <span className="text-body-medium font-medium">Primary / Default Model</span>
+          <span className="text-body-medium font-medium">{t("settings.providers.primary")}</span>
         </div>
         <ProviderModelField
           modelId={editor.modelId}
@@ -96,7 +94,7 @@ export function ProviderModelsTab({
               )}
             />
             <span className="text-caption-1-semibold text-text-primary">
-              Reasoning Mode / Thinking Energy
+              {t("settings.providers.reasoningMode")}
             </span>
           </div>
           <span
@@ -154,14 +152,13 @@ export function ProviderModelsTab({
       {/* 辅助角色分工模型 */}
       <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3.5 flex flex-col gap-3">
         <span className="text-caption-1-semibold text-text-secondary">
-          Role-Based Model Mapping (Optional)
+          {t("settings.providers.roleMapping")}
         </span>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1 text-caption-1-medium text-text-secondary">
-              <RiFlashlightLine className="size-3.5 text-accent-600" />
-              <span>Fast / Lightweight Model</span>
+              <span>{t("settings.providers.fastModel")}</span>
             </div>
             <Input
               value={editor.fastModelId ?? ""}
@@ -173,8 +170,7 @@ export function ProviderModelsTab({
 
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1 text-caption-1-medium text-text-secondary">
-              <RiBrainLine className="size-3.5 text-accent-600" />
-              <span>Reasoning / Heavy Model</span>
+              <span>{t("settings.providers.reasoningModel")}</span>
             </div>
             <Input
               value={editor.reasoningModelId ?? ""}
@@ -192,11 +188,11 @@ export function ProviderModelsTab({
           <div className="flex items-center gap-1.5 text-text-primary">
             <RiDatabase2Line className="size-4 text-accent-500" />
             <span className="text-body-medium font-medium">
-              Provider Model Catalog ({catalog.length})
+              {t("settings.providers.catalog", { count: catalog.length })}
             </span>
           </div>
           <span className="text-caption-1-medium text-text-tertiary">
-            Fetched or predefined models
+            {t("settings.providers.catalogHint")}
           </span>
         </div>
 
@@ -222,8 +218,7 @@ export function ProviderModelsTab({
             disabled={!newModelId.trim()}
             className="shrink-0"
           >
-            <RiAddLine className="size-3.5 mr-1" />
-            Add
+            {t("settings.providers.add")}
           </Button>
         </div>
 

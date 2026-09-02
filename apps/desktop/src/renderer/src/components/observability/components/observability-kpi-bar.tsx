@@ -11,10 +11,12 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import type { ObservabilityAggregatedStats } from "../types/observability-ui.types"
 
 export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
 
   const stats: ObservabilityAggregatedStats = useMemo(() => {
     if (metrics.length === 0) {
@@ -81,7 +83,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       {/* 1. 总调用与成功率 */}
       <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs">
         <div className="flex items-center justify-between text-text-tertiary">
-          <span className="text-[11px] font-medium">执行总量 & 成功率</span>
+          <span className="text-[11px] font-medium">{t("pages.observability.kpiVolume")}</span>
           <RiPulseLine className="size-3.5 text-accent-500" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
@@ -98,14 +100,18 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
                   : "text-rose-600 dark:text-rose-400"
             )}
           >
-            {stats.successRatePercent.toFixed(1)}% 成功
+            {t("pages.observability.kpiSuccessPercent", {
+              n: stats.successRatePercent.toFixed(1)
+            })}
           </span>
         </div>
         <div className="mt-1 flex items-center gap-1.5 text-[10px] text-text-tertiary font-mono">
-          <span className="text-emerald-500">{stats.successCount} 成功</span>
+          <span className="text-emerald-500">
+            {t("pages.observability.kpiSuccessCount", { n: stats.successCount })}
+          </span>
           <span>·</span>
           <span className={stats.failedCount > 0 ? "text-rose-500" : ""}>
-            {stats.failedCount} 异常
+            {t("pages.observability.kpiErrorCount", { n: stats.failedCount })}
           </span>
         </div>
       </div>
@@ -113,7 +119,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       {/* 2. 平均耗时与 P95 */}
       <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs">
         <div className="flex items-center justify-between text-text-tertiary">
-          <span className="text-[11px] font-medium">响应耗时 (Avg / P95)</span>
+          <span className="text-[11px] font-medium">{t("pages.observability.kpiDuration")}</span>
           <RiTimeLine className="size-3.5 text-blue-500" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
@@ -122,10 +128,12 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
               ? `${(stats.avgDurationMs / 1000).toFixed(2)}s`
               : `${stats.avgDurationMs}ms`}
           </span>
-          <span className="font-mono text-[11px] text-text-tertiary">均值</span>
+          <span className="font-mono text-[11px] text-text-tertiary">
+            {t("pages.observability.kpiAvg")}
+          </span>
         </div>
         <div className="mt-1 flex items-center gap-1.5 text-[10px] text-text-tertiary font-mono">
-          <span>P95 峰值:</span>
+          <span>{t("pages.observability.kpiP95")}</span>
           <span className="text-text-secondary font-medium">
             {stats.p95DurationMs >= 1000
               ? `${(stats.p95DurationMs / 1000).toFixed(2)}s`
@@ -137,34 +145,38 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       {/* 3. 首字时间 (TTFO) */}
       <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs">
         <div className="flex items-center justify-between text-text-tertiary">
-          <span className="text-[11px] font-medium">首字延迟 (Avg TTFO)</span>
+          <span className="text-[11px] font-medium">{t("pages.observability.kpiTtfo")}</span>
           <RiFlashlightLine className="size-3.5 text-amber-500" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="font-mono text-title-3-semibold text-text-primary">
             {stats.avgTtfoMs > 0 ? `${stats.avgTtfoMs}ms` : "—"}
           </span>
-          <span className="font-mono text-[11px] text-text-tertiary">Time to 1st tok</span>
+          <span className="font-mono text-[11px] text-text-tertiary">
+            {t("pages.observability.kpiTtfoShort")}
+          </span>
         </div>
         <div className="mt-1 text-[10px] text-text-tertiary font-mono">
-          流式首个 chunk 吐字延迟
+          {t("pages.observability.kpiTtfoHint")}
         </div>
       </div>
 
       {/* 4. Token 吞吐率 */}
       <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs">
         <div className="flex items-center justify-between text-text-tertiary">
-          <span className="text-[11px] font-medium">吞吐速率 (Throughput)</span>
+          <span className="text-[11px] font-medium">{t("pages.observability.kpiThroughput")}</span>
           <RiSpeedUpLine className="size-3.5 text-purple-500" />
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="font-mono text-title-3-semibold text-text-primary">
             {stats.avgTokensPerSec > 0 ? `${stats.avgTokensPerSec}` : "—"}
           </span>
-          <span className="font-mono text-[11px] text-text-tertiary">tok/s</span>
+          <span className="font-mono text-[11px] text-text-tertiary">
+            {t("pages.observability.kpiToks")}
+          </span>
         </div>
         <div className="mt-1 text-[10px] text-text-tertiary font-mono">
-          总消耗: {stats.totalTokens.toLocaleString()} tokens
+          {t("pages.observability.kpiTotalTokens", { n: stats.totalTokens.toLocaleString() })}
         </div>
       </div>
     </div>

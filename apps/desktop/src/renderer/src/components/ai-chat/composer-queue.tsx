@@ -32,6 +32,7 @@ import {
 } from "@renderer/hooks/composer-assets"
 import { isImageMediaType, resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useT } from "@renderer/i18n"
 
 function formatFileSize(bytes?: number): string {
   if (bytes == null || bytes === 0) return ""
@@ -53,6 +54,7 @@ function getFileIcon(name: string) {
 }
 
 export function ComposerQueue({ className }: { className?: string }) {
+  const t = useT()
   const [items, setItems] = useState<QueuedComposerAsset[]>(() => listComposerAssets())
   const [isExpanded, setIsExpanded] = useState(false)
   const [activePreview, setActivePreview] = useState<{
@@ -75,10 +77,10 @@ export function ComposerQueue({ className }: { className?: string }) {
 
   const summaryLabel =
     images.length > 0 && files.length > 0
-      ? `${images.length} 图 · ${files.length} 文件`
+      ? t("chat.imagesAndFiles", { images: images.length, files: files.length })
       : images.length > 0
-        ? `${images.length} 张图片`
-        : `${files.length} 个文件`
+        ? t("chat.imagesCount", { count: images.length })
+        : t("chat.filesCount", { count: files.length })
 
   // 紧凑模式下超过 3 项自动折叠
   const visibleImages = images.slice(0, 2)
@@ -106,7 +108,7 @@ export function ComposerQueue({ className }: { className?: string }) {
             <div className="flex items-center justify-between border-b border-border-button-default/60 pb-1.5 text-caption-2-medium">
               <div className="inline-flex items-center gap-1 font-semibold text-text-primary">
                 <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
-                <span>已附加资产 ({items.length})</span>
+                <span>{t("chat.attachedAssets", { count: items.length })}</span>
                 <span className="font-normal text-text-tertiary">· {summaryLabel}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -115,13 +117,13 @@ export function ComposerQueue({ className }: { className?: string }) {
                   onClick={() => setIsExpanded(false)}
                   className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-text-secondary hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer transition-colors"
                 >
-                  <span>收起</span>
+                  <span>{t("chat.collapseQueue")}</span>
                   <RiArrowUpSLine className="size-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={clearComposerAssets}
-                  title="清空全部附件"
+                  title={t("chat.clearAttachments")}
                   className="flex size-5.5 items-center justify-center rounded-md text-text-tertiary hover:bg-background-tertiary-default hover:text-text-error-primary cursor-pointer transition-colors"
                 >
                   <RiDeleteBin7Line className="size-3.5" />
@@ -191,7 +193,7 @@ export function ComposerQueue({ className }: { className?: string }) {
                     <button
                       type="button"
                       onClick={() => setIsExpanded(true)}
-                      title={`查看全部 ${images.length} 张图片`}
+                      title={t("chat.viewAllImages", { count: images.length })}
                       className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border-button-default/80 bg-background-primary-default text-caption-2-medium font-semibold text-accent-500 shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-accent-500/50"
                     >
                       +{hiddenImagesCount}
@@ -217,10 +219,10 @@ export function ComposerQueue({ className }: { className?: string }) {
                     <button
                       type="button"
                       onClick={() => setIsExpanded(true)}
-                      title={`查看全部 ${files.length} 个文件`}
+                      title={t("chat.viewAllFiles", { count: files.length })}
                       className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border-button-default/80 bg-background-primary-default px-2.5 text-caption-2-medium font-semibold text-accent-500 shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-accent-500/50"
                     >
-                      +{hiddenFilesCount} 更多
+                      {t("chat.moreCount", { count: hiddenFilesCount })}
                     </button>
                   ) : null}
                 </div>
@@ -232,7 +234,7 @@ export function ComposerQueue({ className }: { className?: string }) {
               <button
                 type="button"
                 onClick={() => setIsExpanded(true)}
-                title="展开附件检视面板"
+                title={t("chat.expandAttachments")}
                 className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-text-secondary transition-colors hover:bg-background-tertiary-default hover:text-text-primary cursor-pointer"
               >
                 <RiAttachmentLine className="size-3 text-accent-500" aria-hidden />
@@ -242,7 +244,7 @@ export function ComposerQueue({ className }: { className?: string }) {
               <button
                 type="button"
                 onClick={clearComposerAssets}
-                title="清空全部附件"
+                title={t("chat.clearAttachments")}
                 className="flex size-5.5 cursor-pointer items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-tertiary-default hover:text-text-error-primary"
               >
                 <RiDeleteBin7Line className="size-3.5" aria-hidden />
@@ -300,6 +302,7 @@ function ImageAttachmentItem({
   item: QueuedComposerAsset
   onOpenPreview: (src: string) => void
 }) {
+  const t = useT()
   const [src, setSrc] = useState<string | null>(item.url ?? null)
 
   useEffect(() => {
@@ -325,7 +328,7 @@ function ImageAttachmentItem({
     >
       <button
         type="button"
-        title={`点击查看大图：${item.name}`}
+        title={t("chat.previewImage", { name: item.name })}
         onClick={() => src && onOpenPreview(src)}
         className="size-full overflow-hidden rounded-[10px] focus:outline-none cursor-pointer"
       >
@@ -355,7 +358,7 @@ function ImageAttachmentItem({
       {/* 移除按钮 */}
       <button
         type="button"
-        aria-label={`移除 ${item.name}`}
+        aria-label={t("chat.removeItem", { name: item.name })}
         onClick={(event) => {
           event.stopPropagation()
           removeComposerAsset(item.id)
@@ -369,6 +372,7 @@ function ImageAttachmentItem({
 }
 
 function FileAttachmentItem({ item }: { item: QueuedComposerAsset }) {
+  const t = useT()
   const sizeLabel = formatFileSize(item.size)
   const FileIcon = getFileIcon(item.name)
 
@@ -395,7 +399,7 @@ function FileAttachmentItem({ item }: { item: QueuedComposerAsset }) {
         ) : null}
         <button
           type="button"
-          aria-label={`移除 ${item.name}`}
+          aria-label={t("chat.removeItem", { name: item.name })}
           onClick={() => removeComposerAsset(item.id)}
           className="flex size-3.5 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-background-secondary-default hover:text-text-primary cursor-pointer"
         >

@@ -7,6 +7,7 @@ import { RiCheckLine, RiClipboardLine } from "@remixicon/react"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { cx } from "@/utils/cx"
 import { highlightLine } from "../ai-chat-syntax"
+import { useT } from "@renderer/i18n"
 
 const SHELL_LANGS = new Set([
   "bash",
@@ -65,9 +66,10 @@ export function MarkdownInlineCode({
 
 /** 单行命令：Beautiful UI Coding 形态，无灰底卡片、无下载。 */
 function CommandFence({ code }: { code: string }) {
+  const t = useT()
   return (
     <div className="my-2 flex min-w-0 items-center gap-2">
-      <span className="shrink-0 text-caption-1-semibold text-text-tertiary">Run</span>
+      <span className="shrink-0 text-caption-1-semibold text-text-tertiary">{t("chat.run")}</span>
       <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-[13px] leading-6 text-text-primary">
         <code className="whitespace-pre">{highlightLine(code)}</code>
       </pre>
@@ -124,12 +126,13 @@ function SnippetFence({
 
 function FenceCopyButton({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
+  const t = useT()
   const Icon = copied ? RiCheckLine : RiClipboardLine
 
   return (
     <QuietIconButton
       icon={Icon}
-      aria-label={copied ? "Copied" : "Copy snippet"}
+      aria-label={copied ? t("common.copied") : t("chat.copySnippet")}
       onClick={() => {
         void navigator.clipboard.writeText(code).then(() => {
           setCopied(true)

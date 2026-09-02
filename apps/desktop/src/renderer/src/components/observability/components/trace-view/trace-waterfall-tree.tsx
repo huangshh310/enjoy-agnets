@@ -8,7 +8,8 @@ import {
   RiArrowRightSLine
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import { SPAN_KIND_CONFIG } from "../../services/trace-tree-builder"
+import { useT } from "@renderer/i18n"
+import { getSpanKindConfig } from "../../services/span-kind-config"
 import type { SpanNode } from "../../types/trace-span.types"
 
 export function TraceWaterfallTree(props: {
@@ -18,6 +19,8 @@ export function TraceWaterfallTree(props: {
   onSelectSpan: (span: SpanNode) => void
 }) {
   const { rootSpan, totalDurationMs, selectedSpanId, onSelectSpan } = props
+  const t = useT()
+  const kinds = getSpanKindConfig(t)
   const [collapsedIds, setCollapsedIds] = useState<Record<string, boolean>>({})
 
   function toggleCollapse(id: string) {
@@ -52,7 +55,7 @@ export function TraceWaterfallTree(props: {
     <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px]">
       {/* 1. 图例标签栏 (Legend) */}
       <div className="flex items-center gap-3 bg-background-secondary-default/40 px-4 py-2 border-b border-separator-border/60 overflow-x-auto whitespace-nowrap text-[10.5px]">
-        {Object.entries(SPAN_KIND_CONFIG).map(([k, cfg]) => (
+        {Object.entries(kinds).map(([k, cfg]) => (
           <div key={k} className="flex items-center gap-1.5 shrink-0">
             <span style={{ backgroundColor: cfg.color }} className="size-2 rounded-full" />
             <span className="text-text-secondary font-medium">{cfg.label}</span>
@@ -84,7 +87,7 @@ export function TraceWaterfallTree(props: {
           const isSelected = selectedSpanId === node.id
           const hasChildren = Boolean(node.children && node.children.length > 0)
           const isCollapsed = Boolean(collapsedIds[node.id])
-          const cfg = SPAN_KIND_CONFIG[node.kind] ?? SPAN_KIND_CONFIG.agent
+          const cfg = kinds[node.kind] ?? kinds.agent
 
           // 计算 Gantt 条的水平起点与宽度比例
           const leftPercent = Math.min((node.startOffsetMs / maxTime) * 100, 95)

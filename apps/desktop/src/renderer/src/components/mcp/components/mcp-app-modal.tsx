@@ -5,6 +5,7 @@
 import { RiCommandLine, RiCpuLine, RiRefreshLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { useT } from "@renderer/i18n"
 import { McpAppFrame } from "../mcp-app-frame"
 
 export function McpAppModal(props: {
@@ -17,6 +18,7 @@ export function McpAppModal(props: {
   onRefreshApp: () => void
 }) {
   const { open, onOpenChange, appTitle, appSrcDoc, lastLog, onAppMessage, onRefreshApp } = props
+  const t = useT()
 
   if (!appSrcDoc) return null
 
@@ -31,10 +33,10 @@ export function McpAppModal(props: {
             </div>
             <div>
               <DialogTitle className="text-body-medium font-semibold text-text-primary">
-                {appTitle} · Sandboxed App
+                {t("pages.mcp.sandboxedApp", { title: appTitle })}
               </DialogTitle>
               <p className="text-[12px] text-text-secondary">
-                受限沙箱（无 Node、connect-src none），所有外部通信经主进程严格消毒。
+                {t("pages.mcp.sandboxHint")}
               </p>
             </div>
           </div>
@@ -47,7 +49,7 @@ export function McpAppModal(props: {
               className="gap-1 h-7.5 text-caption-2-medium"
             >
               <RiRefreshLine className="size-3.5" />
-              <span>重新加载</span>
+              <span>{t("pages.mcp.reload")}</span>
             </Button>
           </div>
         </div>
@@ -64,7 +66,7 @@ export function McpAppModal(props: {
                 data-testid="mcp-app-log-text"
                 className="font-mono text-caption-2-medium text-text-secondary truncate"
               >
-                Live IPC Echo: {lastLog ?? "等待 App 事件中..."}
+                {t("pages.mcp.liveIpc", { log: lastLog ?? t("pages.mcp.waitingApp") })}
               </p>
             </div>
           </div>

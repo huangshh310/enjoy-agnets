@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
-import { SUPPORTED_FILE_FORMATS } from "./knowledge-constants"
+import { useT } from "@renderer/i18n"
+import { getSupportedFileFormats } from "./knowledge-constants"
 import { filterKnowledgeDocuments, filterKnowledgeSources } from "./knowledge-document-filters"
 import { KnowledgeDocumentList, KnowledgeDocumentsEmpty } from "./knowledge-document-list"
 import { KnowledgeSourcesTable } from "./knowledge-sources-table"
@@ -45,6 +46,7 @@ export function KnowledgeDocumentsTable({
   onQuickSearchSource,
   onViewSource
 }: KnowledgeDocumentsTableProps) {
+  const t = useT()
   const [tabMode, setTabMode] = useState<KnowledgeTabMode>("documents")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null)
@@ -86,7 +88,7 @@ export function KnowledgeDocumentsTable({
           <TabButton
             active={tabMode === "documents"}
             icon={RiFileTextLine}
-            label="All Indexed Files"
+            label={t("pages.knowledge.allIndexedFiles")}
             count={filteredDocuments.length}
             onClick={() => {
               setTabMode("documents")
@@ -96,7 +98,7 @@ export function KnowledgeDocumentsTable({
           <TabButton
             active={tabMode === "sources"}
             icon={RiFolder6Line}
-            label="Collections"
+            label={t("pages.knowledge.collections")}
             count={filteredSources.length}
             onClick={() => {
               setTabMode("sources")
@@ -113,7 +115,7 @@ export function KnowledgeDocumentsTable({
                 setSearchQuery(event.target.value)
                 setPage(1)
               }}
-              placeholder="Search file name or path..."
+              placeholder={t("pages.knowledge.searchFilePath")}
               className="h-8 bg-background-secondary-default pl-8 text-caption-1-medium"
             />
           </div>
@@ -121,19 +123,27 @@ export function KnowledgeDocumentsTable({
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline" className="h-8 gap-1.5">
                 <RiArrowUpDownLine className="size-3.5 text-text-tertiary" />
-                {sortField === "updated" ? "Last updated" : sortField === "name" ? "File name" : "Chunk count"}
+                {sortField === "updated"
+                  ? t("pages.knowledge.sortUpdated")
+                  : sortField === "name"
+                    ? t("pages.knowledge.sortName")
+                    : t("pages.knowledge.sortChunks")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setSortField("updated")}>Last updated</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortField("name")}>File name</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortField("chunks")}>Chunk count</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortField("updated")}>
+                {t("pages.knowledge.sortUpdated")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortField("name")}>{t("pages.knowledge.sortName")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortField("chunks")}>
+                {t("pages.knowledge.sortChunks")}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex items-center rounded-xl border border-border-button-default bg-background-secondary-default p-0.5">
             <button
               type="button"
-              title="Table view"
+              title={t("pages.knowledge.tableView")}
               onClick={() => setViewMode("table")}
               className={cx(
                 "rounded-lg p-1.5",
@@ -144,7 +154,7 @@ export function KnowledgeDocumentsTable({
             </button>
             <button
               type="button"
-              title="Grid view"
+              title={t("pages.knowledge.gridView")}
               onClick={() => setViewMode("grid")}
               className={cx(
                 "rounded-lg p-1.5",
@@ -160,14 +170,14 @@ export function KnowledgeDocumentsTable({
       {tabMode === "documents" ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <FormatChip
-            label={`All Formats (${documents.length})`}
+            label={t("pages.knowledge.allFormats", { n: documents.length })}
             active={selectedFormat === null}
             onClick={() => {
               setSelectedFormat(null)
               setPage(1)
             }}
           />
-          {SUPPORTED_FILE_FORMATS.map((format) => {
+          {getSupportedFileFormats(t).map((format) => {
             const count = documents.filter((doc) => doc.path.endsWith(format.ext)).length
             if (count === 0 && documents.length > 0) return null
             return (

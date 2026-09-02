@@ -4,32 +4,31 @@
  */
 import { RiPaletteLine } from "@remixicon/react"
 import { ThemeToggle, useThemeMode } from "@/components/application/theme/theme-toggle"
+import { useT } from "@renderer/i18n"
 import { SettingsHub } from "./settings-hub"
 import { SettingsCard, SettingsRow } from "./settings-row"
 
 export function AppearanceSettings() {
+  const t = useT()
   const theme = useThemeMode()
-  const label = theme === "dark" ? "Dark" : "Light"
+  const label = theme === "dark" ? t("common.dark") : t("common.light")
 
   return (
     <div className="flex flex-col gap-6">
       <SettingsHub
         icon={RiPaletteLine}
-        title="Color mode"
+        title={t("settings.appearance.hubTitle")}
         badge={label}
-        description="Manual light or dark. Enjoy Agents does not follow the operating system theme."
+        description={t("settings.appearance.hubDesc")}
         pulses={[
-          { label: "Active theme", value: label },
-          { label: "OS sync", value: "Never" },
-          { label: "Accent", value: "Signal Blue" }
+          { label: t("settings.appearance.activeTheme"), value: label },
+          { label: t("settings.appearance.osSync"), value: t("common.never") },
+          { label: t("settings.appearance.accent"), value: t("common.signalBlue") }
         ]}
       />
 
-      <SettingsCard title="Theme">
-        <SettingsRow
-          title="Color mode"
-          description="Manual light or dark. Enjoy Agents does not follow the operating system theme."
-        >
+      <SettingsCard title={t("settings.appearance.cardTitle")}>
+        <SettingsRow title={t("settings.appearance.hubTitle")} description={t("settings.appearance.hubDesc")}>
           <ThemeToggle appearance="sidebar-segmented" />
         </SettingsRow>
       </SettingsCard>

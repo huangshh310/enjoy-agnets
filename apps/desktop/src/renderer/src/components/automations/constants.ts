@@ -1,7 +1,8 @@
 /**
- * Automations 模版与筛选类型。
+ * Automations 模版与筛选类型。文案走 i18n。
  */
 import type { AutomationTrigger } from "@enjoy-agents/ipc-contract"
+import type { TranslateFn } from "@renderer/i18n"
 
 export type AutomationFilter = "all" | "manual" | "on_save"
 
@@ -14,41 +15,28 @@ export type AutomationTemplate = {
   badge: string
 }
 
-export const AUTOMATION_TEMPLATES: AutomationTemplate[] = [
-  {
-    id: "tpl-diffs",
-    name: "Review Git Diffs on Save",
-    trigger: "on_save",
-    category: "Code Quality",
-    prompt:
-      "Inspect the latest uncommitted changes in the workspace whenever files are saved and summarize risk, security concerns, and potential regressions.",
-    badge: "Continuous Review"
-  },
-  {
-    id: "tpl-todos",
-    name: "Scan TODOs & Security Smells",
-    trigger: "on_save",
-    category: "Debt Tracker",
-    prompt:
-      "Scan recently edited files for TODO, FIXME, or HACK comments and security anti-patterns, generating an actionable summary.",
-    badge: "Auto Audit"
-  },
-  {
-    id: "tpl-typecheck",
-    name: "Typecheck & Linter Fixer",
-    trigger: "manual",
-    category: "Diagnostics",
-    prompt:
-      "Run project typecheck, identify all type mismatches or syntax anomalies, and provide ready-to-apply patch diffs.",
-    badge: "One-Click Diagnostic"
-  },
-  {
-    id: "tpl-commit-notes",
-    name: "Conventional Commit Notes",
-    trigger: "manual",
-    category: "VCS & Release",
-    prompt:
-      "Summarize recent uncommitted changes into structured Conventional Commits notes formatted for changelogs.",
-    badge: "Smart Changelog"
+export function getAutomationTemplates(t: TranslateFn): AutomationTemplate[] {
+  return [
+    automationTemplate(t, "tpl-diffs", "diffs", "on_save"),
+    automationTemplate(t, "tpl-todos", "todos", "on_save"),
+    automationTemplate(t, "tpl-typecheck", "typecheck", "manual"),
+    automationTemplate(t, "tpl-commit-notes", "commitNotes", "manual")
+  ]
+}
+
+function automationTemplate(
+  t: TranslateFn,
+  id: string,
+  key: string,
+  trigger: AutomationTrigger
+): AutomationTemplate {
+  const base = `studio.automationTemplates.${key}`
+  return {
+    id,
+    name: t(`${base}.name`),
+    trigger,
+    category: t(`${base}.category`),
+    prompt: t(`${base}.prompt`),
+    badge: t(`${base}.badge`)
   }
-]
+}

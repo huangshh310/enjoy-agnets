@@ -14,13 +14,14 @@ import { ImageGeneration } from "@/components/ai-elements/image-generation"
 import { isImageMediaType, isVideoMediaType, resolveMediaType } from "@enjoy-agents/assets/media-type"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { useAssetSrc } from "@renderer/hooks/use-asset-src"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import { VideoGeneration } from "./turns/video-generating"
 
-function getFileTypeLabel(name: string, mediaType?: string): string {
+function getFileTypeLabel(name: string, mediaType: string | undefined, t: TranslateFn): string {
   const ext = name.split(".").pop()?.toUpperCase()
-  if (ext && ext.length <= 4) return `${ext} 文件`
+  if (ext && ext.length <= 4) return t("chat.fileType", { ext })
   if (mediaType) return mediaType
-  return "文件"
+  return t("chat.file")
 }
 
 export function AssetPreview({
@@ -32,6 +33,7 @@ export function AssetPreview({
   align?: "start" | "end"
   prompt?: string
 }) {
+  const t = useT()
   const [activePreview, setActivePreview] = useState<{ src: string; name: string; mediaType?: string } | null>(null)
 
   return (
@@ -73,7 +75,7 @@ export function AssetPreview({
                     {asset.name}
                   </span>
                   <span className="text-caption-2-medium text-text-tertiary">
-                    {getFileTypeLabel(asset.name, asset.mediaType)}
+                    {getFileTypeLabel(asset.name, asset.mediaType, t)}
                   </span>
                 </div>
               </div>
@@ -162,6 +164,7 @@ function AttachedImage({
   src: string | null
   onOpen?: (src: string) => void
 }) {
+  const t = useT()
   if (!src) {
     return (
       <span className="inline-flex rounded-full border border-separator-border bg-background-secondary-default px-2.5 py-1 text-body-medium text-text-secondary">
@@ -174,7 +177,7 @@ function AttachedImage({
       type="button"
       onClick={() => onOpen?.(src)}
       className="group cursor-pointer rounded-2xl border-0 bg-transparent p-0 focus:outline-none"
-      title={`Click to preview ${name}`}
+      title={t("chat.previewName", { name })}
     >
       <img
         src={src}
@@ -196,6 +199,7 @@ function GeneratedImage({
   prompt?: string
   onOpen?: (src: string) => void
 }) {
+  const t = useT()
   return (
     <ImageGeneration
       status={src ? "complete" : "generating"}
@@ -210,7 +214,7 @@ function GeneratedImage({
           type="button"
           onClick={() => onOpen?.(src)}
           className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
-          title={`Click to preview ${name}`}
+          title={t("chat.previewName", { name })}
         >
           <img src={src} alt={name} />
         </button>

@@ -6,6 +6,7 @@ import { useMemo } from "react"
 import { RiCpuLine, RiMoneyDollarCircleLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 /** 常见模型的标准参考单价 (美元 / 百万 Token) */
 const MODEL_PRICING: Record<string, { inPer1M: number; outPer1M: number }> = {
@@ -33,6 +34,7 @@ function estimateCost(modelId: string, inputTokens: number, outputTokens: number
 
 export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
 
   const modelStats = useMemo(() => {
     const map = new Map<
@@ -108,12 +110,12 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
         <div className="flex items-center gap-2">
           <RiCpuLine className="size-4 text-purple-500" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
-            模型负载与成本估算 (Model Usage & Cost)
+            {t("pages.observability.modelsTitle")}
           </h3>
         </div>
         <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
           <RiMoneyDollarCircleLine className="size-3.5" />
-          <span>预估总额: ${totalCost.toFixed(4)}</span>
+          <span>{t("pages.observability.estimatedTotal", { cost: totalCost.toFixed(4) })}</span>
         </div>
       </div>
 
@@ -136,7 +138,12 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
                 </div>
 
                 <div className="flex items-center gap-2 text-text-tertiary">
-                  <span className="text-text-secondary font-medium">{stat.calls}次 ({percent.toFixed(0)}%)</span>
+                  <span className="text-text-secondary font-medium">
+                    {t("pages.observability.timesPercent", {
+                      n: stat.calls,
+                      percent: percent.toFixed(0)
+                    })}
+                  </span>
                   <span>·</span>
                   <span
                     className={cx(
@@ -148,7 +155,7 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
                           : "text-rose-600 dark:text-rose-400"
                     )}
                   >
-                    {stat.successRate.toFixed(0)}% OK
+                    {t("pages.observability.okPercent", { n: stat.successRate.toFixed(0) })}
                   </span>
                   <span>·</span>
                   <span>{stat.avgDurationMs >= 1000 ? `${(stat.avgDurationMs / 1000).toFixed(1)}s` : `${stat.avgDurationMs}ms`}</span>
@@ -160,13 +167,13 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
                 <div
                   style={{ width: `${(stat.successCalls / maxCalls) * 100}%` }}
                   className="h-full bg-blue-500 rounded-l-full transition-all"
-                  title={`成功: ${stat.successCalls}`}
+                  title={t("pages.observability.successN", { n: stat.successCalls })}
                 />
                 {stat.failedCalls > 0 ? (
                   <div
                     style={{ width: `${(stat.failedCalls / maxCalls) * 100}%` }}
                     className="h-full bg-rose-500 rounded-r-full transition-all"
-                    title={`失败: ${stat.failedCalls}`}
+                    title={t("pages.observability.failN", { n: stat.failedCalls })}
                   />
                 ) : null}
               </div>

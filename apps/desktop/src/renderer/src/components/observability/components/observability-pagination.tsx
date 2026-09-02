@@ -5,6 +5,7 @@
 import { useMemo } from "react"
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { useT } from "@renderer/i18n"
 
 export interface ObservabilityPaginationProps {
   currentPage: number
@@ -24,6 +25,7 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
     onPageSizeChange,
     pageSizeOptions = [10, 20, 50]
   } = props
+  const t = useT()
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
@@ -54,12 +56,16 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
       {/* 左侧：条数信息与每页条数切换 */}
       <div className="flex items-center gap-3">
         <span>
-          显示 <strong className="text-text-primary font-semibold">{startIndex}-{endIndex}</strong> 条 · 共 <strong className="text-text-primary font-semibold">{totalItems}</strong> 条
+          {t("pages.observability.showingRange", {
+            start: startIndex,
+            end: endIndex,
+            total: totalItems
+          })}
         </span>
 
         {onPageSizeChange ? (
           <div className="flex items-center gap-1">
-            <span className="text-text-tertiary">每页:</span>
+            <span className="text-text-tertiary">{t("pages.observability.perPage")}</span>
             <div className="flex items-center rounded-md border border-separator-border/60 bg-background-secondary-default/50 p-0.5">
               {pageSizeOptions.map((opt) => (
                 <button
@@ -88,7 +94,7 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
           disabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
           className="size-7 text-caption-2-medium"
-          title="上一页"
+          title={t("pages.observability.prevPage")}
         >
           <RiArrowLeftSLine className="size-3.5" />
         </Button>
@@ -120,7 +126,7 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(currentPage + 1)}
           className="size-7 text-caption-2-medium"
-          title="下一页"
+          title={t("pages.observability.nextPage")}
         >
           <RiArrowRightSLine className="size-3.5" />
         </Button>

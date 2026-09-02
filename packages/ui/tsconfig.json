@@ -1,6 +1,6 @@
 {
   "extends": "../config/tsconfig.react.json",
-  "include": ["src", "components", "utils", "lib", "hooks", "shims"],
+  "include": ["src", "components", "utils", "lib", "hooks", "shims", "i18n"],
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "compilerOptions": {
     "baseUrl": ".",

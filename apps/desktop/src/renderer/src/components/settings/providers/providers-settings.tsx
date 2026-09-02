@@ -13,8 +13,10 @@ import { ProviderConfiguredTab } from "./provider-configured-tab"
 import { ProviderEditorDialog } from "./provider-editor-dialog"
 import { ProviderPresetsTab } from "./provider-presets-tab"
 import { useProviderSettings } from "./use-provider-settings"
+import { useT } from "@renderer/i18n"
 
 export function ProviderSettings() {
+  const t = useT()
   const settings = useProviderSettings()
   const [activeTab, setActiveTab] = useState<"configured" | "presets">("configured")
 
@@ -38,9 +40,9 @@ export function ProviderSettings() {
       {/* 顶部标题与多视图 Segmented 控制栏 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-title-2-semibold text-text-primary">Providers</h2>
+          <h2 className="text-title-2-semibold text-text-primary">{t("nav.providers")}</h2>
           <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-            Configure AI model providers, custom gateways, and protocol endpoints.
+            {t("settings.providers.subtitle")}
           </p>
         </div>
 
@@ -59,7 +61,7 @@ export function ProviderSettings() {
               )}
             >
               <RiStackLine className="size-3.5" />
-              <span>Configured</span>
+              <span>{t("settings.providers.configured")}</span>
               <span
                 className={cx(
                   "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
@@ -83,7 +85,7 @@ export function ProviderSettings() {
               )}
             >
               <RiCompass3Line className="size-3.5" />
-              <span>Explore Presets</span>
+              <span>{t("settings.providers.explore")}</span>
               <span
                 className={cx(
                   "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
@@ -106,7 +108,7 @@ export function ProviderSettings() {
             className="rounded-xl border-border-button-default bg-background-primary-default hidden md:inline-flex"
           >
             <RiServerLine className="size-3.5 mr-1 text-accent-500" />
-            + Custom /v1
+            {t("settings.providers.customV1")}
           </Button>
         </div>
       </div>

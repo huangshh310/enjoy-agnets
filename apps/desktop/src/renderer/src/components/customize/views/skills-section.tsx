@@ -25,24 +25,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
 import type { SkillItem, SkillScope } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { CURATED_SKILLS } from "../constants/customize-presets"
+import { getCuratedSkills, type CuratedSkill } from "../constants/customize-presets"
 
 export function SkillsSection() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [inspectSkill, setInspectSkill] = useState<SkillItem | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [isInstalling, setIsInstalling] = useState<string | null>(null)
+  const curated = getCuratedSkills(t)
 
-  // 新建技能表单状态
   const [newSkillName, setNewSkillName] = useState("")
   const [newSkillDesc, setNewSkillDesc] = useState("")
   const [newSkillScope, setNewSkillScope] = useState<SkillScope>("global")
   const [isCreating, setIsCreating] = useState(false)
 
-  // 自动扫描并查询当前电脑已安装技能
   const skillsQuery = useQuery({
     queryKey: ["skills"],
     enabled: hasIde(),
@@ -55,7 +56,6 @@ export function SkillsSection() {
     await queryClient.invalidateQueries({ queryKey: ["skills"] })
   }
 
-  // 过滤已安装技能
   const filteredInstalled = useMemo(() => {
     return installedSkills.filter(
       (s) =>
@@ -68,8 +68,7 @@ export function SkillsSection() {
   const globalCount = installedSkills.filter((s) => s.scope === "global").length
   const workspaceCount = installedSkills.filter((s) => s.scope === "workspace").length
 
-  // 一键安装精选技能模版
-  async function handleInstallPreset(preset: (typeof CURATED_SKILLS)[number], scope: SkillScope) {
+  async function handleInstallPreset(preset: CuratedSkill, scope: SkillScope) {
     if (!hasIde()) return
     setIsInstalling(`${preset.id}:${scope}`)
     try {
@@ -85,7 +84,6 @@ export function SkillsSection() {
     }
   }
 
-  // 创建自定义技能
   async function handleCreateCustomSkill() {
     if (!newSkillName.trim() || isCreating) return
     setIsCreating(true)
@@ -104,7 +102,6 @@ export function SkillsSection() {
     }
   }
 
-  // 删除技能
   async function handleDeleteSkill(skill: SkillItem) {
     if (!hasIde()) return
     await getIde().skills.delete(skill.directoryPath)
@@ -114,7 +111,6 @@ export function SkillsSection() {
     }
   }
 
-  // 在系统文件管理器中打开
   function handleRevealSkill(directoryPath: string) {
     if (hasIde()) {
       void getIde().skills.reveal(directoryPath)
@@ -129,29 +125,26 @@ export function SkillsSection() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* 顶部标题与操作栏 */}
       <div className="flex flex-col gap-3 pb-2 border-b border-separator-border/70">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-title-3-semibold text-text-primary tracking-tight">
-                Agent Skills Hub & Capability Packs
-              </h2>
+              <h2 className="text-title-3-semibold text-text-primary tracking-tight">{t("studio.skills.title")}</h2>
               <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-emerald-600 dark:text-emerald-400">
                 <span className="size-1.5 rounded-full bg-emerald-500" />
-                Auto-Discovered
+                {t("studio.skills.badge")}
               </span>
             </div>
-            <p className="text-caption-2-medium text-text-tertiary">
-              自动扫描本机全局 (~/.enjoy-agents/skills) 与工作区目录下的 <code className="font-mono text-[11px]">SKILL.md</code> 技能包。
-            </p>
+            <p className="text-caption-2-medium text-text-tertiary">{t("studio.skills.desc")}</p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <div className="hidden lg:flex items-center gap-2.5 rounded-lg border border-separator-border/60 bg-background-secondary-default/40 px-2.5 py-1 text-[11px] text-text-secondary font-mono mr-1">
-              <span>{installedSkills.length} 已安装</span>
+              <span>{t("studio.skills.installedCount", { count: installedSkills.length })}</span>
               <span className="h-3 w-px bg-separator-border" />
-              <span className="text-text-tertiary">{globalCount} 全局 · {workspaceCount} 项目</span>
+              <span className="text-text-tertiary">
+                {t("studio.skills.scopeCounts", { global: globalCount, workspace: workspaceCount })}
+              </span>
             </div>
 
             <Button
@@ -162,7 +155,7 @@ export function SkillsSection() {
               className="gap-1.5 h-8 text-caption-2-medium"
             >
               <RiRefreshLine className={cx("size-3.5", isRefreshing && "animate-spin")} />
-              <span>扫描刷新</span>
+              <span>{t("studio.scanRefresh")}</span>
             </Button>
 
             <Button
@@ -171,18 +164,17 @@ export function SkillsSection() {
               className="gap-1.5 h-8 text-caption-2-medium shadow-xs"
             >
               <RiAddLine className="size-3.5" />
-              <span>新建技能</span>
+              <span>{t("studio.skills.newSkill")}</span>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 模块 1: 已安装技能列表 (自动扫描发现) */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-caption-1-medium font-semibold text-text-primary">
-              当前电脑已安装技能 ({filteredInstalled.length})
+              {t("studio.skills.installedHeading", { count: filteredInstalled.length })}
             </span>
           </div>
 
@@ -192,7 +184,7 @@ export function SkillsSection() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="搜索技能名称或路径..."
+                placeholder={t("studio.skills.searchPlaceholder")}
                 className="pl-8 h-7.5 text-caption-2-medium bg-background-primary-default"
               />
             </div>
@@ -204,17 +196,13 @@ export function SkillsSection() {
             <div className="flex size-9 items-center justify-center rounded-lg bg-background-secondary-default text-text-tertiary mb-2.5">
               <RiFolderOpenLine className="size-4.5" />
             </div>
-            <h3 className="text-caption-1-medium font-semibold text-text-primary">
-              未扫描到已安装的技能包
-            </h3>
+            <h3 className="text-caption-1-medium font-semibold text-text-primary">{t("studio.skills.emptyTitle")}</h3>
             <p className="mt-1 max-w-sm text-caption-2-medium text-text-tertiary leading-relaxed">
-              全局目录 <code>~/.enjoy-agents/skills/</code> 或当前工作区中暂无 <code>SKILL.md</code>。可从下方精选模版中一键安装。
+              {t("studio.skills.emptyHint")}
             </p>
           </div>
         ) : filteredInstalled.length === 0 ? (
-          <div className="py-8 text-center text-caption-2-medium text-text-tertiary">
-            未搜索到匹配的技能
-          </div>
+          <div className="py-8 text-center text-caption-2-medium text-text-tertiary">{t("studio.skills.noMatch")}</div>
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-2">
             {filteredInstalled.map((skill) => (
@@ -233,9 +221,7 @@ export function SkillsSection() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-caption-1-medium font-semibold text-text-primary truncate">
-                          {skill.name}
-                        </h4>
+                        <h4 className="text-caption-1-medium font-semibold text-text-primary truncate">{skill.name}</h4>
                         <span className="text-[10px] font-mono text-text-tertiary truncate block">
                           {skill.directoryPath}
                         </span>
@@ -250,12 +236,12 @@ export function SkillsSection() {
                           : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
                       )}
                     >
-                      {skill.scope}
+                      {skill.scope === "global" ? t("studio.skills.scopeGlobal") : t("studio.skills.scopeWorkspace")}
                     </span>
                   </div>
 
                   <p className="mt-2 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2">
-                    {skill.description || "包含自动化流程与技能说明"}
+                    {skill.description || t("studio.skills.fallbackDesc")}
                   </p>
                 </div>
 
@@ -265,20 +251,20 @@ export function SkillsSection() {
                       type="button"
                       onClick={() => handleRevealSkill(skill.directoryPath)}
                       className="inline-flex items-center gap-1 text-text-tertiary hover:text-text-primary transition-colors"
-                      title="在文件资源管理器中打开"
+                      title={t("studio.skills.revealTitle")}
                     >
                       <RiFolderOpenLine className="size-3.5" />
-                      <span>打开目录</span>
+                      <span>{t("studio.skills.reveal")}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setInspectSkill(skill)}
                       className="inline-flex items-center gap-1 text-text-tertiary hover:text-accent-500 transition-colors ml-2"
-                      title="查看 SKILL.md 详情"
+                      title={t("studio.skills.inspectTitle")}
                     >
                       <RiEyeLine className="size-3.5" />
-                      <span>查看 Spec</span>
+                      <span>{t("studio.skills.inspect")}</span>
                     </button>
                   </div>
 
@@ -286,7 +272,7 @@ export function SkillsSection() {
                     type="button"
                     onClick={() => void handleDeleteSkill(skill)}
                     className="p-1 text-text-tertiary hover:text-rose-500 transition-colors"
-                    title="删除技能"
+                    title={t("studio.skills.deleteTitle")}
                   >
                     <RiDeleteBinLine className="size-3.5" />
                   </button>
@@ -297,20 +283,17 @@ export function SkillsSection() {
         )}
       </section>
 
-      {/* 模块 2: 精选技能模版库 (支持一键安装落地) */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-caption-1-medium font-semibold text-text-primary">
             <RiSparklingLine className="size-3.5 text-accent-500" />
-            <span>精选技能模版库 · 一键安装接入 (Featured Templates)</span>
+            <span>{t("studio.skills.templatesTitle")}</span>
           </div>
-          <span className="text-[10.5px] text-text-tertiary">
-            点击直接写入本机全局或工作区
-          </span>
+          <span className="text-[10.5px] text-text-tertiary">{t("studio.skills.templatesHint")}</span>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          {CURATED_SKILLS.map((preset) => {
+          {curated.map((preset) => {
             const isInstalled = installedSkills.some((s) => s.name === preset.id)
             const installingGlobal = isInstalling === `${preset.id}:global`
             const installingWorkspace = isInstalling === `${preset.id}:workspace`
@@ -323,18 +306,14 @@ export function SkillsSection() {
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h4 className="text-caption-1-medium font-semibold text-text-primary">
-                        {preset.name}
-                      </h4>
-                      <span className="text-[10px] font-mono text-text-tertiary">
-                        {preset.category}
-                      </span>
+                      <h4 className="text-caption-1-medium font-semibold text-text-primary">{preset.name}</h4>
+                      <span className="text-[10px] font-mono text-text-tertiary">{preset.category}</span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       {isInstalled ? (
                         <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9.5px] font-medium text-emerald-600 dark:text-emerald-400">
-                          已安装
+                          {t("studio.skills.installed")}
                         </span>
                       ) : null}
                       <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-[9.5px] font-mono text-text-secondary">
@@ -343,12 +322,10 @@ export function SkillsSection() {
                     </div>
                   </div>
 
-                  <p className="mt-2 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2">
-                    {preset.description}
-                  </p>
+                  <p className="mt-2 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2">{preset.description}</p>
 
                   <div className="mt-2 flex items-center gap-1.5">
-                    <span className="text-[10.5px] text-text-tertiary">指令:</span>
+                    <span className="text-[10.5px] text-text-tertiary">{t("studio.skills.command")}</span>
                     <code className="rounded bg-background-secondary-default px-1.5 py-0.5 font-mono text-[10px] text-text-primary">
                       {preset.slashCommand}
                     </code>
@@ -371,7 +348,7 @@ export function SkillsSection() {
                     }
                     className="text-[11px] text-text-tertiary hover:text-text-primary transition-colors"
                   >
-                    查看模版 Spec
+                    {t("studio.skills.viewTemplate")}
                   </button>
 
                   <div className="flex items-center gap-1.5">
@@ -382,12 +359,8 @@ export function SkillsSection() {
                       onClick={() => void handleInstallPreset(preset, "global")}
                       className="gap-1 h-6.5 px-2 text-[10.5px]"
                     >
-                      {installingGlobal ? (
-                        <RiLoader4Line className="size-3 animate-spin" />
-                      ) : (
-                        <RiAddLine className="size-3" />
-                      )}
-                      <span>安装至全局</span>
+                      {installingGlobal ? <RiLoader4Line className="size-3 animate-spin" /> : <RiAddLine className="size-3" />}
+                      <span>{t("studio.skills.installGlobal")}</span>
                     </Button>
 
                     <Button
@@ -401,7 +374,7 @@ export function SkillsSection() {
                       ) : (
                         <RiCheckLine className="size-3" />
                       )}
-                      <span>安装至项目</span>
+                      <span>{t("studio.skills.installWorkspace")}</span>
                     </Button>
                   </div>
                 </div>
@@ -411,17 +384,16 @@ export function SkillsSection() {
         </div>
       </section>
 
-      {/* 技能查看/编辑抽屉弹窗 */}
       {inspectSkill ? (
         <Dialog open={Boolean(inspectSkill)} onOpenChange={(open) => !open && setInspectSkill(null)}>
           <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default shadow-xl">
             <div className="border-b border-separator-border/70 px-5 py-3.5 flex items-center justify-between">
               <div>
                 <DialogTitle className="text-body-medium font-semibold text-text-primary">
-                  {inspectSkill.name} · SKILL.md
+                  {t("studio.skills.inspectName", { name: inspectSkill.name })}
                 </DialogTitle>
                 <p className="text-[11.5px] text-text-tertiary font-mono">
-                  {inspectSkill.skillFilePath || inspectSkill.directoryPath || "模版规范"}
+                  {inspectSkill.skillFilePath || inspectSkill.directoryPath || t("studio.skills.templateSpec")}
                 </p>
               </div>
 
@@ -435,12 +407,12 @@ export function SkillsSection() {
                   {copiedId === inspectSkill.id ? (
                     <>
                       <RiCheckLine className="size-3 text-emerald-500" />
-                      <span>已复制</span>
+                      <span>{t("common.copied")}</span>
                     </>
                   ) : (
                     <>
                       <RiClipboardLine className="size-3" />
-                      <span>复制代码</span>
+                      <span>{t("studio.copyCode")}</span>
                     </>
                   )}
                 </Button>
@@ -456,41 +428,36 @@ export function SkillsSection() {
         </Dialog>
       ) : null}
 
-      {/* 新建技能弹窗 */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent className="max-w-md p-0 gap-0 overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default shadow-xl">
           <div className="border-b border-separator-border/70 px-5 py-3.5 flex flex-col gap-0.5">
-            <DialogTitle className="text-body-medium font-semibold text-text-primary">
-              新建 Agent 技能包
-            </DialogTitle>
-            <p className="text-[11.5px] text-text-tertiary">
-              在本地生成标准 SKILL.md 脚手架，Agent 将自动读取生效。
-            </p>
+            <DialogTitle className="text-body-medium font-semibold text-text-primary">{t("studio.skills.createTitle")}</DialogTitle>
+            <p className="text-[11.5px] text-text-tertiary">{t("studio.skills.createDesc")}</p>
           </div>
 
           <div className="flex flex-col gap-3.5 p-5">
             <div className="flex flex-col gap-1">
-              <Label className="text-[11.5px] font-medium text-text-secondary">技能标识 (Name)</Label>
+              <Label className="text-[11.5px] font-medium text-text-secondary">{t("studio.skills.nameLabel")}</Label>
               <Input
                 value={newSkillName}
                 onChange={(e) => setNewSkillName(e.target.value)}
-                placeholder="例如: api-doc-writer, git-rebase-flow"
+                placeholder={t("studio.skills.namePlaceholder")}
                 className="font-mono text-caption-2-medium h-8 bg-background-secondary-default/40"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <Label className="text-[11.5px] font-medium text-text-secondary">简要说明 (Description)</Label>
+              <Label className="text-[11.5px] font-medium text-text-secondary">{t("studio.skills.descLabel")}</Label>
               <Input
                 value={newSkillDesc}
                 onChange={(e) => setNewSkillDesc(e.target.value)}
-                placeholder="例如: 自动化撰写 API 规范并生成样例"
+                placeholder={t("studio.skills.descPlaceholder")}
                 className="text-caption-2-medium h-8 bg-background-secondary-default/40"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <Label className="text-[11.5px] font-medium text-text-secondary">作用域 (Scope)</Label>
+              <Label className="text-[11.5px] font-medium text-text-secondary">{t("studio.skills.scopeLabel")}</Label>
               <div className="grid grid-cols-2 gap-1 rounded-lg bg-background-secondary-default/60 p-0.5 h-8">
                 <button
                   type="button"
@@ -502,7 +469,7 @@ export function SkillsSection() {
                       : "text-text-secondary hover:text-text-primary"
                   )}
                 >
-                  Global 全局
+                  {t("studio.skills.scopeGlobal")}
                 </button>
                 <button
                   type="button"
@@ -514,7 +481,7 @@ export function SkillsSection() {
                       : "text-text-secondary hover:text-text-primary"
                   )}
                 >
-                  Workspace 项目
+                  {t("studio.skills.scopeWorkspace")}
                 </button>
               </div>
             </div>
@@ -528,7 +495,7 @@ export function SkillsSection() {
               disabled={isCreating}
               className="h-8 text-caption-2-medium"
             >
-              取消
+              {t("common.cancel")}
             </Button>
 
             <Button
@@ -537,12 +504,8 @@ export function SkillsSection() {
               onClick={() => void handleCreateCustomSkill()}
               className="gap-1.5 h-8 text-caption-2-medium shadow-xs"
             >
-              {isCreating ? (
-                <RiLoader4Line className="size-3 animate-spin" />
-              ) : (
-                <RiCheckLine className="size-3" />
-              )}
-              <span>创建技能包</span>
+              {isCreating ? <RiLoader4Line className="size-3 animate-spin" /> : <RiCheckLine className="size-3" />}
+              <span>{t("studio.skills.create")}</span>
             </Button>
           </div>
         </DialogContent>

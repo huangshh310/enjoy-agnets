@@ -10,13 +10,14 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog"
+import { useT } from "@renderer/i18n"
 
 export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "确定",
-  cancelLabel = "取消",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   onOpenChange,
   onConfirm
@@ -30,6 +31,10 @@ export function ConfirmDialog({
   onOpenChange: (open: boolean) => void
   onConfirm: () => void
 }) {
+  const t = useT()
+  const confirmText = confirmLabel ?? t("studio.confirm")
+  const cancelText = cancelLabel ?? t("common.cancel")
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card">
@@ -41,7 +46,7 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter className="mt-2">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            {cancelLabel}
+            {cancelText}
           </Button>
           <Button
             variant={destructive ? "destructive" : "default"}
@@ -51,7 +56,7 @@ export function ConfirmDialog({
               onConfirm()
             }}
           >
-            {confirmLabel}
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

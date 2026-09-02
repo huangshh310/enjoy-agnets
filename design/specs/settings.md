@@ -28,7 +28,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 
 Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。
 
-Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。
+Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。界面语言默认 `zh`，见 [i18n](./i18n.md)。
 
 ## 不变量
 

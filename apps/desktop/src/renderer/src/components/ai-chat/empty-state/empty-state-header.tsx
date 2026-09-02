@@ -3,6 +3,8 @@
  */
 import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
+
 
 interface EmptyStateHeaderProps {
   workspaceName?: string
@@ -17,8 +19,8 @@ export function EmptyStateHeader({
   changesCount = 0,
   className
 }: EmptyStateHeaderProps) {
-  const activeLabel = workspaceName || workspaceRootLabel || "Workspace"
-
+  const t = useT()
+  const activeLabel = workspaceName || workspaceRootLabel || t("chat.emptyWorkspace")
   return (
     <div className={cx("relative flex flex-col items-center text-center select-none", className)}>
       {/* 1. 顶部工作区上下文脉冲胶囊 */}
@@ -36,29 +38,30 @@ export function EmptyStateHeader({
             <span className="text-text-tertiary/70">•</span>
             <div className="flex items-center gap-1 font-medium text-accent-600 dark:text-accent-400">
               <RiGitBranchLine className="size-3" aria-hidden />
-              <span>{changesCount} 项改动待审查</span>
+              <span>{t("chat.emptyChanges", { count: changesCount })}</span>
             </div>
           </>
         ) : (
           <>
             <span className="text-text-tertiary/70">•</span>
-            <span className="text-text-tertiary">工作区就绪</span>
+            <span className="text-text-tertiary">{t("chat.emptyReady")}</span>
           </>
         )}
       </div>
 
       {/* 2. 核心大标题（参考 Bolt.new / Claude 人文质感排版） */}
       <h1 className="mt-4 text-3xl font-semibold tracking-tight text-text-primary sm:text-4xl">
-        What will you <span className="font-serif italic font-normal text-accent-500 pr-0.5">build</span> today?
+        {t("chat.emptyHeadlineBefore")}
+        <span className="font-serif italic font-normal text-accent-500 pr-0.5">{t("chat.emptyHeadlineEm")}</span>
+        {t("chat.emptyHeadlineAfter")}
       </h1>
 
-      {/* 3. 次级辅助描述（带代码高亮胶囊） */}
       <p className="mt-2.5 max-w-lg text-body-medium text-text-secondary leading-relaxed">
-        针对{" "}
+        {t("chat.emptyHintBefore")}{" "}
         <code className="inline-flex items-center rounded-md border border-border-button-default/60 bg-background-secondary-default/80 px-1.5 py-0.5 font-mono text-[13px] font-medium text-text-primary">
           {activeLabel}
         </code>{" "}
-        输入开发任务，或点选下方快捷指令直接执行。
+        {t("chat.emptyHintAfter")}
       </p>
     </div>
   )

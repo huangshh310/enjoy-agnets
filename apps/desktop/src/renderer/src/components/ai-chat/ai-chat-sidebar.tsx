@@ -23,6 +23,8 @@ import { SidebarRepos } from "@renderer/components/ai-chat/sidebar/sidebar-repos
 import { openQuickSearch } from "@renderer/components/search/quick-search-dialog"
 import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { useT } from "@renderer/i18n"
+
 
 export function AiChatSidebar({
   userName,
@@ -49,6 +51,7 @@ export function AiChatSidebar({
   onOpenWorkspace: () => void
   formatTime: (timestamp: number) => string
 }) {
+  const t = useT()
   const initials = userName.slice(0, 1).toUpperCase()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
@@ -79,11 +82,11 @@ export function AiChatSidebar({
         />
         <QuickSearch collapsed={collapsed} onExpand={onToggleCollapsed} />
         <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
-          <SidebarAction collapsed={collapsed} icon={RiAddLine} label="New agent" onClick={onNewSession} />
+          <SidebarAction collapsed={collapsed} icon={RiAddLine} label={t("chat.newAgent")} onClick={onNewSession} />
           <SidebarAction
             collapsed={collapsed}
             icon={RiDashboardLine}
-            label="Agent Studio"
+            label={t("common.agentStudio")}
             active={isStudioActive}
             onClick={() => void navigate({ to: "/studio" })}
           />
@@ -115,6 +118,7 @@ function SidebarHeader({
   initials: string
   onToggleCollapsed: () => void
 }) {
+  const t = useT()
   return (
     <div
       className={cx(
@@ -127,7 +131,7 @@ function SidebarHeader({
       </div>
       <button
         type="button"
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={collapsed ? t("chat.expandSidebar") : t("chat.collapseSidebar")}
         onClick={onToggleCollapsed}
         className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
       >
@@ -138,11 +142,12 @@ function SidebarHeader({
 }
 
 function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand: () => void }) {
+  const t = useT()
   return (
     <button
       type="button"
-      aria-label="Quick Search"
-      title={collapsed ? "Quick Search (⌘L)" : undefined}
+      aria-label={t("common.quickSearch")}
+      title={collapsed ? t("common.quickSearchKbd", { key: "⌘L" }) : undefined}
       onClick={() => {
         if (collapsed) onExpand()
         openQuickSearch()
@@ -154,7 +159,7 @@ function QuickSearch({ collapsed, onExpand }: { collapsed: boolean; onExpand: ()
     >
       <RiSearchLine className="size-5 shrink-0 text-foreground-icon-secondary" aria-hidden />
       <Collapsible collapsed={collapsed} className="flex-1">
-        <span className="flex-1 text-left text-body-medium whitespace-nowrap text-text-secondary">Quick Search</span>
+        <span className="flex-1 text-left text-body-medium whitespace-nowrap text-text-secondary">{t("common.quickSearch")}</span>
       </Collapsible>
       <Collapsible collapsed={collapsed}>
         <Kbd>⌘L</Kbd>
@@ -170,16 +175,17 @@ function SidebarFooter({
   collapsed: boolean
   onOpenWorkspace: () => void
 }) {
+  const t = useT()
   const navigate = useNavigate()
   return (
     <div className={cx("flex w-full shrink-0 flex-col gap-3 pt-3", collapsed && "items-center")}>
       {collapsed ? <ThemeToggle collapsed /> : <ThemeToggle appearance="sidebar-segmented" />}
       <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
-        <SidebarAction collapsed={collapsed} icon={RiCustomerServiceLine} label="Support" />
+        <SidebarAction collapsed={collapsed} icon={RiCustomerServiceLine} label={t("chat.support")} />
         <SidebarAction
           collapsed={collapsed}
           icon={RiSettings4Line}
-          label="Settings"
+          label={t("common.settings")}
           onClick={() => void navigate({ to: "/settings/$section", params: { section: "general" } })}
         />
       </nav>
@@ -194,7 +200,7 @@ function SidebarFooter({
           <>
             <AppWordmark className="min-w-0 flex-1" />
             <Button size="xs" className="shrink-0" onClick={onOpenWorkspace}>
-              Folder
+              {t("chat.folder")}
             </Button>
           </>
         )}

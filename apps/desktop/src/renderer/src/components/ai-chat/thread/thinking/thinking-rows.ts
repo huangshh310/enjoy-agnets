@@ -4,6 +4,7 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
 import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary"
+import type { TranslateFn } from "@renderer/i18n"
 
 export type TraceRow = {
   id: string
@@ -18,8 +19,8 @@ export type TraceRow = {
   failed?: boolean
 }
 
-export function buildTraceRows(reasoning: string, tools: ThreadToolCall[]): TraceRow[] {
-  return [...reasoningRows(reasoning), ...tools.map(toolRow)]
+export function buildTraceRows(reasoning: string, tools: ThreadToolCall[], t: TranslateFn): TraceRow[] {
+  return [...reasoningRows(reasoning), ...tools.map((tool) => toolRow(tool, t))]
 }
 
 /** 流式或等待审批时默认展开；1fr 折叠在自适应高度下会把内容压成 0。 */
@@ -36,18 +37,19 @@ export function isTraceExpanded(
 export function thinkingHeadline(
   streaming: boolean,
   tools: ThreadToolCall[],
-  seconds: number | null
+  seconds: number | null,
+  t: TranslateFn
 ): string {
   const searchOnly =
     tools.length > 0 && tools.every((tool) => toolKind(tool.name) === "search")
   if (streaming) {
-    if (searchOnly) return "Searching"
-    if (tools.length > 0) return "Running tools"
-    return "Thinking"
+    if (searchOnly) return t("chat.searching")
+    if (tools.length > 0) return t("chat.runningTools")
+    return t("chat.thinking")
   }
-  if (tools.length > 0) return `Ran ${tools.length} ${tools.length === 1 ? "tool" : "tools"}`
-  if (seconds) return `Thought for ${seconds} seconds`
-  return "Thought for a few seconds"
+  if (tools.length > 0) return t("chat.ranTools", { count: tools.length })
+  if (seconds) return t("chat.thoughtSeconds", { seconds })
+  return t("chat.thoughtFew")
 }
 
 function reasoningRows(reasoning: string): TraceRow[] {
@@ -64,7 +66,7 @@ function reasoningRows(reasoning: string): TraceRow[] {
   }))
 }
 
-function toolRow(tool: ThreadToolCall): TraceRow {
+function toolRow(tool: ThreadToolCall, t: TranslateFn): TraceRow {
   const kind = toolKind(tool.name)
   const result = asRecord(tool.result)
   const add = typeof result.additions === "number" ? result.additions : undefined
@@ -72,7 +74,7 @@ function toolRow(tool: ThreadToolCall): TraceRow {
   return {
     id: tool.id,
     kind: kind === "other" ? "step" : kind,
-    primary: codingVerb(tool.name) ?? formatToolName(tool.name),
+    primary: codingVerb(tool.name, t) ?? formatToolName(tool.name),
     secondary: summarizeToolArgs(tool) || undefined,
     mono: kind === "coding",
     add,
@@ -83,11 +85,11 @@ function toolRow(tool: ThreadToolCall): TraceRow {
   }
 }
 
-function codingVerb(name: string): string | undefined {
-  if (name === "read_file" || name === "read") return "Read"
-  if (name === "write_file" || name === "write") return "Write"
-  if (name === "edit_file" || name === "edit") return "Edit"
-  if (name === "bash") return "Run"
-  if (name === "git_diff" || name === "git_status" || name === "git_commit") return "Git"
+function codingVerb(name: string, t: TranslateFn): string | undefined {
+  if (name === "read_file" || name === "read") return t("chat.verbRead")
+  if (name === "write_file" || name === "write") return t("chat.verbWrite")
+  if (name === "edit_file" || name === "edit") return t("chat.verbEdit")
+  if (name === "bash") return t("chat.verbRun")
+  if (name === "git_diff" || name === "git_status" || name === "git_commit") return t("chat.verbGit")
   return undefined
 }

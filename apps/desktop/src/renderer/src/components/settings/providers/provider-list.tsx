@@ -15,7 +15,7 @@ import type { ProviderPublic } from "@enjoy-agents/ipc-contract"
 import { apiStyleLabel, isApiStyle } from "@enjoy-agents/providers/presets"
 import { ProviderIcon } from "./provider-icons"
 import type { PingStateMap } from "./use-provider-settings"
-
+import { useT } from "@renderer/i18n"
 export function ProviderList({
   providers,
   pingStates,
@@ -65,9 +65,10 @@ function ProviderItemRow({
   onActivate: () => void
   onRemove: () => void
 }) {
+  const t = useT()
   const protocolName = isApiStyle(profile.apiStyle)
     ? apiStyleLabel(profile.apiStyle)
-    : profile.apiStyle || "OpenAI Compatible"
+    : profile.apiStyle || t("settings.providers.openaiCompat")
 
   const hasKeyIssue = profile.requiresKey && !profile.hasKey
   const modelCount = profile.models?.length || 1
@@ -103,7 +104,7 @@ function ProviderItemRow({
           {profile.active ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-state-success-text/10 px-2.5 py-0.5 text-caption-1-semibold text-state-success-text">
               <span className="size-1.5 rounded-full bg-state-success-text" />
-              Active
+              {t("settings.providers.active")}
             </span>
           ) : null}
 
@@ -114,7 +115,7 @@ function ProviderItemRow({
           {modelCount > 1 ? (
             <span className="inline-flex items-center gap-1 rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
               <RiStackLine className="size-3" />
-              {modelCount} models
+              {t("settings.providers.modelCount", { count: modelCount })}
             </span>
           ) : null}
 
@@ -145,21 +146,21 @@ function ProviderItemRow({
           ) : pingState?.status === "error" ? (
             <span className="inline-flex items-center gap-1 rounded-md bg-state-error-text/10 px-2 py-0.5 text-[11px] font-medium text-state-error-text">
               <span className="size-1.5 rounded-full bg-state-error-text" />
-              {pingState.message || "Failed"}
+              {pingState.message || t("settings.providers.failed")}
             </span>
           ) : null}
         </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption-1-medium text-text-tertiary">
           <span className="font-mono text-text-secondary font-medium">
-            {profile.modelId || "No model configured"}
+            {profile.modelId || t("settings.providers.noModel")}
           </span>
           <span>·</span>
           <span
             className="truncate max-w-[320px] font-mono text-text-tertiary"
-            title={profile.baseURL || "Default endpoint"}
+            title={profile.baseURL || t("settings.providers.defaultEndpoint")}
           >
-            {profile.baseURL || "Default endpoint"}
+            {profile.baseURL || t("settings.providers.defaultEndpoint")}
           </span>
           <span>·</span>
           <span
@@ -170,10 +171,10 @@ function ProviderItemRow({
             )}
           >
             {profile.hasKey
-              ? `Key ${profile.keyHint}`
+              ? t("settings.providers.keyHint", { hint: profile.keyHint })
               : profile.requiresKey
-                ? "Missing API Key"
-                : "No Key Required"}
+                ? t("settings.providers.missingKey")
+                : t("settings.providers.noKeyRequired")}
           </span>
         </div>
       </div>
@@ -189,14 +190,14 @@ function ProviderItemRow({
             onClick={onPing}
             disabled={pingState?.status === "pending"}
             className="h-8 rounded-xl px-2.5 text-caption-1-medium text-text-secondary hover:text-text-primary"
-            title="Test network latency to this endpoint"
+            title={t("settings.providers.pingTitle")}
           >
             {pingState?.status === "pending" ? (
               <RiLoader4Line className="size-3.5 animate-spin mr-1 text-accent-500" />
             ) : (
               <RiPulseLine className="size-3.5 mr-1 text-accent-500" />
             )}
-            <span>Speed test</span>
+            <span>{t("settings.providers.speedTest")}</span>
           </Button>
         ) : null}
 
@@ -208,7 +209,7 @@ function ProviderItemRow({
             disabled
             className="h-8 rounded-xl px-3 text-caption-1-medium text-text-tertiary cursor-default"
           >
-            In use
+            {t("settings.providers.inUse")}
           </Button>
         ) : (
           <Button
@@ -218,7 +219,7 @@ function ProviderItemRow({
             onClick={onActivate}
             className="h-8 rounded-xl px-3 text-caption-1-medium hover:border-accent-500 hover:text-accent-600"
           >
-            Use
+            {t("settings.providers.use")}
           </Button>
         )}
 
@@ -230,7 +231,7 @@ function ProviderItemRow({
           className="h-8 rounded-xl px-2.5 text-caption-1-medium"
         >
           <RiEditLine className="size-3.5 mr-1" />
-          Edit
+          {t("settings.providers.edit")}
         </Button>
 
         <Button
@@ -239,7 +240,7 @@ function ProviderItemRow({
           size="sm"
           onClick={onRemove}
           className="h-8 w-8 rounded-xl p-0 text-text-tertiary hover:bg-background-negative-hover/20 hover:text-state-error-text"
-          aria-label={`Delete ${profile.name}`}
+          aria-label={t("settings.providers.deleteAria", { name: profile.name })}
         >
           <RiDeleteBinLine className="size-4" />
         </Button>

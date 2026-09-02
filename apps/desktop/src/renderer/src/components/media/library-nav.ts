@@ -3,8 +3,9 @@
  */
 import { RiFileLine, RiFileMusicLine, RiFileVideoLine, RiImageLine } from "@remixicon/react"
 import type { AssetRecord } from "@enjoy-agents/ipc-contract"
+import type { TranslateFn } from "@renderer/i18n"
 import { countLibraryAssets } from "./media-filters"
-import { LIBRARY_NAV_ITEMS, type AssetCategory } from "./media-page.types"
+import { getLibraryNavItems, type AssetCategory } from "./media-page.types"
 
 const NAV_ICONS: Record<AssetCategory, typeof RiImageLine> = {
   all: RiImageLine,
@@ -14,13 +15,13 @@ const NAV_ICONS: Record<AssetCategory, typeof RiImageLine> = {
   file: RiFileLine
 }
 
-export function buildLibraryNav(assets: AssetRecord[]) {
+export function buildLibraryNav(assets: AssetRecord[], t: TranslateFn) {
   const counts = countLibraryAssets(assets)
   return [
     {
       id: "library",
-      label: "Asset Studio",
-      items: LIBRARY_NAV_ITEMS.map((item) => ({
+      label: t("pages.media.navGroup"),
+      items: getLibraryNavItems(t).map((item) => ({
         id: item.id,
         label: item.label,
         icon: NAV_ICONS[item.id],

@@ -18,6 +18,8 @@ import { DotMatrixLoader } from "@/components/ui/dot-matrix-loader"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
+
 
 export function SidebarRepos({
   repositories,
@@ -35,6 +37,7 @@ export function SidebarRepos({
   formatTime: (timestamp: number) => string
 }) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const t = useT()
   const running = useChatStore((state) => state.running)
   const currentWorkspaceId = useChatStore((state) => state.workspaceId)
   const grouping = useChatStore((state) => state.sidebarGrouping)
@@ -64,7 +67,7 @@ export function SidebarRepos({
     <div className="flex flex-col gap-2">
       {/* 1. Header with Projects / Repositories Title and Codex-style actions */}
       <div className="flex items-center justify-between px-2 pt-2">
-        <span className="text-body-medium font-semibold text-text-primary">项目</span>
+        <span className="text-body-medium font-semibold text-text-primary">{t("chat.projects")}</span>
 
         <div className="flex items-center gap-0.5">
           {/* More options menu (整理侧边栏 & 聊天排序方式) */}
@@ -72,7 +75,7 @@ export function SidebarRepos({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="整理项目侧边栏"
+                aria-label={t("chat.organizeProjects")}
                 className="flex size-6 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
               >
                 <RiMoreFill className="size-4" />
@@ -85,37 +88,37 @@ export function SidebarRepos({
               className="w-48 rounded-xl bg-background-primary-default shadow-card border border-border-button-default"
             >
               <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
-                整理侧边栏
+                {t("chat.organizeSidebar")}
               </DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={grouping}
                 onValueChange={(val) => setGrouping(val as "project" | "flat")}
               >
                 <DropdownMenuRadioItem value="project" className="text-body-medium">
-                  按项目
+                  {t("chat.groupByProject")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="flat" className="text-body-medium">
-                  在一个列表中
+                  {t("chat.groupFlat")}
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
 
               <DropdownMenuSeparator />
 
               <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
-                聊天排序方式
+                {t("chat.sessionSort")}
               </DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={sortOrder}
                 onValueChange={(val) => setSortOrder(val as "priority" | "updated" | "manual")}
               >
                 <DropdownMenuRadioItem value="priority" className="text-body-medium">
-                  优先级
+                  {t("chat.sortPriority")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="updated" className="text-body-medium">
-                  最近更新
+                  {t("chat.sortUpdated")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="manual" className="text-body-medium">
-                  手动排序
+                  {t("chat.sortManual")}
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
@@ -124,7 +127,7 @@ export function SidebarRepos({
           {/* Create Project + Button */}
           <button
             type="button"
-            title="创建项目 (添加工作区)"
+            title={t("chat.createProject")}
             onClick={() => setCreateDialogOpen(true)}
             className="flex size-6 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
           >
@@ -137,13 +140,13 @@ export function SidebarRepos({
       {workspaces.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
           <RiFolder6Line className="size-6 text-text-tertiary" />
-          <p className="text-caption-1-medium text-text-secondary">暂无项目</p>
+          <p className="text-caption-1-medium text-text-secondary">{t("chat.noProjects")}</p>
           <button
             type="button"
             onClick={() => setCreateDialogOpen(true)}
             className="text-caption-2-medium text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
           >
-            + 点击添加项目
+            {t("chat.addProject")}
           </button>
         </div>
       ) : grouping === "flat" ? (
@@ -194,7 +197,7 @@ export function SidebarRepos({
       {allSessions.length > 2 && grouping === "project" ? (
         <div className="mt-2 flex flex-col gap-1 border-t border-separator-border/40 pt-2">
           <span className="px-2 text-caption-2-medium uppercase tracking-wider text-text-tertiary font-semibold">
-            最近
+            {t("chat.recent")}
           </span>
           {allSessions.slice(0, 3).map((session) => (
             <button

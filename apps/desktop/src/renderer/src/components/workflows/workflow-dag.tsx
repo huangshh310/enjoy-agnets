@@ -13,6 +13,7 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { WorkflowStep } from "@enjoy-agents/ipc-contract"
+import { useT, type TranslateFn } from "@renderer/i18n"
 
 type DagNode = {
   id: string
@@ -39,6 +40,7 @@ function layerSteps(steps: DagNode[]): DagNode[][] {
 }
 
 export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
+  const t = useT()
   if (steps.length === 0) return null
   const layers = layerSteps(
     steps.map((step) => ({
@@ -90,7 +92,7 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[10px] text-text-tertiary">
-                    Step {step.index + 1}
+                    {t("pages.workflows.stepN", { n: step.index + 1 })}
                   </span>
                   <StepIcon status={step.status} />
                 </div>
@@ -112,7 +114,7 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
                         "text-text-tertiary"
                     )}
                   >
-                    {step.status.replace("_", " ")}
+                    {stepStatusLabel(step.status, t)}
                   </span>
 
                   {step.durationMs ? (
@@ -126,7 +128,7 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
 
                 {step.dependsOn?.length ? (
                   <p className="mt-1 text-[10px] text-text-tertiary truncate">
-                    after: {step.dependsOn.join(", ")}
+                    {t("pages.workflows.afterDeps", { deps: step.dependsOn.join(", ") })}
                   </p>
                 ) : null}
               </div>
@@ -136,6 +138,14 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
       ))}
     </div>
   )
+}
+
+function stepStatusLabel(status: string, t: TranslateFn): string {
+  if (status === "running") return t("pages.workflows.statusRunning")
+  if (status === "completed") return t("pages.workflows.statusCompleted")
+  if (status === "paused") return t("pages.workflows.statusPaused")
+  if (status === "failed") return t("pages.workflows.statusFailed")
+  return status.replace("_", " ")
 }
 
 function StepIcon({ status }: { status: string }) {

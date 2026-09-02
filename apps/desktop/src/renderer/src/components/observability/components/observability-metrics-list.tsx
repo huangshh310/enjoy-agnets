@@ -12,22 +12,24 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 export function ObservabilityMetricsList(props: {
   metrics: TelemetryMetric[]
   onInspect: (metric: TelemetryMetric) => void
 }) {
   const { metrics, onInspect } = props
+  const t = useT()
 
   if (metrics.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
         <RiPulseLine className="size-8 text-text-tertiary mb-2" />
         <h4 className="text-caption-1-medium font-semibold text-text-primary">
-          未检索到符合条件的执行记录
+          {t("pages.observability.emptyTraces")}
         </h4>
         <p className="mt-1 max-w-sm text-caption-2-medium text-text-tertiary">
-          运行 Agent 任务、文本生成或多媒体生图后，系统将自动记录脱敏的耗时与 Token 性能指标。
+          {t("pages.observability.emptyTracesHint")}
         </p>
       </div>
     )
@@ -39,13 +41,13 @@ export function ObservabilityMetricsList(props: {
     <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px]">
       {/* 表头 */}
       <div className="hidden md:grid grid-cols-12 gap-2 bg-background-secondary-default/60 px-3.5 py-2 text-text-tertiary font-semibold border-b border-separator-border/60">
-        <div className="col-span-3">工作负载 & 状态</div>
-        <div className="col-span-3">模型 & 标识</div>
-        <div className="col-span-2">响应耗时 (Duration)</div>
-        <div className="col-span-1">首字 (TTFO)</div>
-        <div className="col-span-1">Token (In/Out)</div>
-        <div className="col-span-1">速率 (tok/s)</div>
-        <div className="col-span-1 text-right">时间 & 操作</div>
+        <div className="col-span-3">{t("pages.observability.colWorkload")}</div>
+        <div className="col-span-3">{t("pages.observability.colModel")}</div>
+        <div className="col-span-2">{t("pages.observability.colDuration")}</div>
+        <div className="col-span-1">{t("pages.observability.colTtfo")}</div>
+        <div className="col-span-1">{t("pages.observability.colTokens")}</div>
+        <div className="col-span-1">{t("pages.observability.colRate")}</div>
+        <div className="col-span-1 text-right">{t("pages.observability.colTime")}</div>
       </div>
 
       {/* 行记录列表 */}
@@ -126,7 +128,7 @@ export function ObservabilityMetricsList(props: {
                   {metric.modelId ?? "default-model"}
                 </span>
                 <span className="text-[9.5px] text-text-tertiary truncate">
-                  run: {metric.runId.slice(0, 14)}
+                  {t("pages.observability.runId", { id: metric.runId.slice(0, 14) })}
                 </span>
               </div>
 

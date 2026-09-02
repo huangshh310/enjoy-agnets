@@ -11,7 +11,6 @@ import {
   RiImageLine,
   RiInformationLine,
   RiMentalHealthLine,
-  RiRefreshLine,
   RiSearchLine,
   RiToolsLine
 } from "@remixicon/react"
@@ -23,11 +22,13 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { ModelBrandIcon } from "./providers/provider-icons"
+import { useT } from "@renderer/i18n"
 import { SettingsCard } from "./settings-row"
 
 export type CapabilityFilter = "all" | "vision" | "tools" | "reasoning" | "media" | "embeddings"
 
 export function CapabilitySettings() {
+  const t = useT()
   const queryClient = useQueryClient()
   const settingsQuery = useSettingsSnapshot()
   const configuredModels = useChatStore((state) => state.models)
@@ -44,7 +45,7 @@ export function CapabilitySettings() {
       configuredModels.find((m) => m.id === defaultModelId) ??
       configuredModels[0] ?? {
         id: defaultModelId || "unknown",
-        label: defaultModelId || "Default Model",
+        label: defaultModelId || t("settings.capabilities.defaultModelFallback"),
         provider: "custom",
         capabilities: ["text", "streaming", "tools", "structured"]
       }
@@ -125,7 +126,7 @@ export function CapabilitySettings() {
                   {activeModel.label || activeModel.id}
                 </span>
                 <span className="rounded-md border border-accent-500/20 bg-accent-500/10 px-2 py-0.5 text-[11px] font-semibold text-accent-600 dark:text-accent-400">
-                  Active Main Model
+                  {t("settings.capabilities.activeMain")}
                 </span>
                 {activeModel.providerName ? (
                   <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
@@ -147,8 +148,7 @@ export function CapabilitySettings() {
               disabled={probing}
               className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium"
             >
-              <RiRefreshLine className={cx("size-3.5", probing && "animate-spin")} />
-              <span>{probing ? "Probing..." : "Probe Capabilities"}</span>
+              <span>{probing ? t("settings.capabilities.probing") : t("settings.capabilities.probe")}</span>
             </Button>
           </div>
         </div>
@@ -161,50 +161,49 @@ export function CapabilitySettings() {
             ))
           ) : (
             <span className="text-caption-2-regular text-text-tertiary">
-              Static catalog capabilities active. Probing live provider verifies exact token windows.
+              {t("settings.capabilities.staticHint")}
             </span>
           )}
         </div>
       </div>
 
-      {/* ─── 全量模型能力矩阵 (Capabilities Matrix) ─────────── */}
-      <SettingsCard title="Configured models matrix">
+      <SettingsCard title={t("settings.capabilities.matrixTitle")}>
         {/* 筛选与搜索工具栏 */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-1 pt-1 pb-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <FilterPill
               active={activeFilter === "all"}
-              label={`All Models (${configuredModels.length})`}
+              label={t("settings.capabilities.allModels", { count: configuredModels.length })}
               onClick={() => setActiveFilter("all")}
             />
             <FilterPill
               active={activeFilter === "tools"}
               icon={RiToolsLine}
-              label="Tools / Agent"
+              label={t("settings.capabilities.filterTools")}
               onClick={() => setActiveFilter("tools")}
             />
             <FilterPill
               active={activeFilter === "vision"}
               icon={RiEyeLine}
-              label="Vision"
+              label={t("settings.capabilities.filterVision")}
               onClick={() => setActiveFilter("vision")}
             />
             <FilterPill
               active={activeFilter === "reasoning"}
               icon={RiMentalHealthLine}
-              label="Reasoning"
+              label={t("settings.capabilities.filterReasoning")}
               onClick={() => setActiveFilter("reasoning")}
             />
             <FilterPill
               active={activeFilter === "media"}
               icon={RiImageLine}
-              label="Image / Video"
+              label={t("settings.capabilities.filterMedia")}
               onClick={() => setActiveFilter("media")}
             />
             <FilterPill
               active={activeFilter === "embeddings"}
               icon={RiGitBranchLine}
-              label="RAG / Embeddings"
+              label={t("settings.capabilities.filterEmbeddings")}
               onClick={() => setActiveFilter("embeddings")}
             />
           </div>
@@ -215,7 +214,7 @@ export function CapabilitySettings() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search model or ID..."
+              placeholder={t("settings.capabilities.searchPlaceholder")}
               className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pl-8 pr-2.5 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring"
             />
           </div>
@@ -269,7 +268,7 @@ export function CapabilitySettings() {
                     {isDefault ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
                         <RiCheckLine className="size-3.5" />
-                        <span>Active Default</span>
+                        <span>{t("settings.capabilities.activeDefault")}</span>
                       </span>
                     ) : (
                       <Button
@@ -278,7 +277,7 @@ export function CapabilitySettings() {
                         onClick={() => void handleSetDefaultModel(model)}
                         className="h-7 px-2.5 text-caption-2-medium cursor-pointer"
                       >
-                        Set as Default
+                        {t("settings.capabilities.setDefault")}
                       </Button>
                     )}
                   </div>
@@ -290,9 +289,9 @@ export function CapabilitySettings() {
               <div className="flex size-10 items-center justify-center rounded-full bg-background-secondary-default text-text-tertiary mb-2">
                 <RiInformationLine className="size-5" />
               </div>
-              <p className="text-caption-1-medium text-text-primary">No models matching filter</p>
+              <p className="text-caption-1-medium text-text-primary">{t("settings.capabilities.empty")}</p>
               <p className="text-caption-2-regular text-text-tertiary mt-0.5">
-                Try switching the capability filter or search term.
+                {t("settings.capabilities.emptyHint")}
               </p>
             </div>
           )}
@@ -300,27 +299,27 @@ export function CapabilitySettings() {
       </SettingsCard>
 
       {/* ─── Vercel AI SDK 7 能力速查指南 ───────────────────── */}
-      <SettingsCard title="Vercel AI SDK 7 Capability Specs">
+      <SettingsCard title={t("settings.capabilities.specsTitle")}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-1">
           <CapabilityGuideItem
-            title="Tool Calling & Agent Loop"
+            title={t("settings.capabilities.guideTools")}
             badge="tools"
-            desc="Drives autonomous ToolLoopAgent. Enables reading, writing, searching workspace files, executing terminal commands, and invoking MCP tools."
+            desc={t("settings.capabilities.guideToolsDesc")}
           />
           <CapabilityGuideItem
-            title="Vision & Multi-modal Input"
+            title={t("settings.capabilities.guideVision")}
             badge="vision"
-            desc="Analyzes uploaded screenshots, diagrams, and mockups via multi-modal image parts, extracting layout tokens and visual requirements."
+            desc={t("settings.capabilities.guideVisionDesc")}
           />
           <CapabilityGuideItem
-            title="Structured JSON Outputs"
+            title={t("settings.capabilities.guideStructured")}
             badge="structured"
-            desc="Emits strictly validated typed schemas via Output.object() & Zod, guaranteeing error-free data extraction and Generative UI state."
+            desc={t("settings.capabilities.guideStructuredDesc")}
           />
           <CapabilityGuideItem
-            title="Extended Reasoning Tokens"
+            title={t("settings.capabilities.guideReasoning")}
             badge="reasoning"
-            desc="Supports deep step-by-step thinking for complex architectural planning and thorny multi-file bug diagnosis."
+            desc={t("settings.capabilities.guideReasoningDesc")}
           />
         </div>
       </SettingsCard>
@@ -356,39 +355,56 @@ function FilterPill({
   )
 }
 
-function CapabilityBadge({ capability, compact = false }: { capability: string; compact?: boolean }) {
-  const configMap: Record<string, { label: string; color: string }> = {
-    text: { label: "Text", color: "border-border-button-default bg-background-secondary-default text-text-secondary" },
-    streaming: { label: "Streaming", color: "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300" },
-    reasoning: { label: "Reasoning", color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" },
-    tools: { label: "Tools / Agent", color: "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-300" },
-    structured: { label: "Structured", color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300" },
-    vision: { label: "Vision", color: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300" },
-    files: { label: "Files / PDF", color: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300" },
-    skills: { label: "Skills", color: "border-teal-500/20 bg-teal-500/10 text-teal-600 dark:text-teal-300" },
-    image: { label: "Image Gen", color: "border-pink-500/20 bg-pink-500/10 text-pink-600 dark:text-pink-300" },
-    video: { label: "Video Gen", color: "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-300" },
-    speech: { label: "TTS", color: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300" },
-    transcription: { label: "STT", color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300" },
-    embedding: { label: "Embedding", color: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300" },
-    rerank: { label: "Rerank", color: "border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300" },
-    realtime: { label: "Realtime", color: "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300" }
-  }
+const CAP_LABEL_KEYS: Record<string, string> = {
+  text: "settings.capabilities.capText",
+  streaming: "settings.capabilities.capStreaming",
+  reasoning: "settings.capabilities.capReasoning",
+  tools: "settings.capabilities.capTools",
+  structured: "settings.capabilities.capStructured",
+  vision: "settings.capabilities.capVision",
+  files: "settings.capabilities.capFiles",
+  skills: "settings.capabilities.capSkills",
+  image: "settings.capabilities.capImage",
+  video: "settings.capabilities.capVideo",
+  speech: "settings.capabilities.capSpeech",
+  transcription: "settings.capabilities.capTranscription",
+  embedding: "settings.capabilities.capEmbedding",
+  rerank: "settings.capabilities.capRerank",
+  realtime: "settings.capabilities.capRealtime"
+}
 
-  const conf = configMap[capability] ?? {
-    label: capability,
-    color: "border-border-button-default bg-background-secondary-default text-text-secondary"
+function CapabilityBadge({ capability, compact = false }: { capability: string; compact?: boolean }) {
+  const t = useT()
+  const colorMap: Record<string, string> = {
+    text: "border-border-button-default bg-background-secondary-default text-text-secondary",
+    streaming: "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300",
+    reasoning: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    tools: "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-300",
+    structured: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300",
+    vision: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300",
+    files: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    skills: "border-teal-500/20 bg-teal-500/10 text-teal-600 dark:text-teal-300",
+    image: "border-pink-500/20 bg-pink-500/10 text-pink-600 dark:text-pink-300",
+    video: "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-300",
+    speech: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300",
+    transcription: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300",
+    embedding: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300",
+    rerank: "border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300",
+    realtime: "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300"
   }
+  const labelKey = CAP_LABEL_KEYS[capability]
+  const label = labelKey ? t(labelKey) : capability
+  const color = colorMap[capability] ?? "border-border-button-default bg-background-secondary-default text-text-secondary"
 
   return (
     <span
       className={cx(
         "inline-flex items-center rounded-md border font-medium",
         compact ? "px-1.5 py-0.2 text-[10px]" : "px-2 py-0.5 text-caption-2-medium",
-        conf.color
+        color
       )}
     >
-      {conf.label}
+      {label}
     </span>
   )
 }

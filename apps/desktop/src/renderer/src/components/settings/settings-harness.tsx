@@ -10,10 +10,12 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { SettingsCard, SettingsRow } from "./settings-row"
+import { useT } from "@renderer/i18n"
 import { SettingsHarnessCredentials } from "./settings-harness-credentials"
 import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 
 export function SettingsHarness() {
+  const t = useT()
   const queryClient = useQueryClient()
   const snapshot = useSettingsSnapshot().data
   const runtime = snapshot?.preferences.codingRuntime ?? "local"
@@ -25,25 +27,19 @@ export function SettingsHarness() {
   }
 
   return (
-    <SettingsCard title="Coding runtime">
-      <SettingsRow
-        title="Runtime"
-        description="Local uses your current Provider and Enjoy tools. Harness is a plugin slot picked from that Provider."
-      >
+    <SettingsCard title={t("settings.harness.cardTitle")}>
+      <SettingsRow title={t("settings.agent.runtime")} description={t("settings.harness.runtimeDesc")}>
         <Select value={runtime} onValueChange={(value) => void persist({ codingRuntime: value as typeof runtime })}>
           <SelectTrigger className="min-w-[12rem] rounded-2lg">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="local">Local (ToolLoop)</SelectItem>
-            <SelectItem value="harness">Harness (adapter)</SelectItem>
+            <SelectItem value="local">{t("common.runtimeLocal")}</SelectItem>
+            <SelectItem value="harness">{t("common.runtimeHarness")}</SelectItem>
           </SelectContent>
         </Select>
       </SettingsRow>
-      <SettingsRow
-        title="Adapter"
-        description="Auto follows the Provider (Anthropic→Claude Code, OpenAI→Codex). Pi uses local just-bash; DeepSeek stays Local until its adapter ships."
-      >
+      <SettingsRow title={t("settings.agent.adapter")} description={t("settings.harness.adapterDesc")}>
         <Select
           value={harnessId || "auto"}
           onValueChange={(value) => void persist({ harnessId: value === "auto" ? "" : value })}
@@ -52,11 +48,11 @@ export function SettingsHarness() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="auto">Auto from Provider</SelectItem>
+            <SelectItem value="auto">{t("common.adapterAuto")}</SelectItem>
             {(snapshot?.harness.catalog ?? []).map((item) => (
               <SelectItem key={item.id} value={item.id}>
                 {item.label}
-                {item.comingSoon ? " · soon" : ""}
+                {item.comingSoon ? t("settings.harness.soon") : ""}
               </SelectItem>
             ))}
           </SelectContent>

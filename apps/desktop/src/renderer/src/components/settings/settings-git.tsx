@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
+import { useT } from "@renderer/i18n"
 
 export function GitSettings() {
+  const t = useT()
   const { preferences, update } = usePrefUpdate()
   const changes = useChatStore((state) => state.changes)
   const additions = useChatStore((state) => state.additions)
@@ -29,14 +31,14 @@ export function GitSettings() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-body-large-semibold text-text-primary">
-                  Git Version Control
+                  {t("settings.git.hubTitle")}
                 </span>
                 <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-                  Working Tree
+                  {t("settings.git.hubBadge")}
                 </span>
               </div>
               <span className="text-caption-2-regular text-text-tertiary mt-0.5">
-                Tracks repository branch diffs, uncommitted modifications, and automated commit approvals.
+                {t("settings.git.hubDesc")}
               </span>
             </div>
           </div>
@@ -45,17 +47,17 @@ export function GitSettings() {
         {/* 变更汇总统计 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-separator-border">
           <div className="flex flex-col rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-            <span className="text-[11px] font-medium text-text-tertiary">Modified Files</span>
+            <span className="text-[11px] font-medium text-text-tertiary">{t("settings.git.modified")}</span>
             <span className="text-title-3-semibold text-text-primary mt-0.5">{changes.length}</span>
           </div>
           <div className="flex flex-col rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-            <span className="text-[11px] font-medium text-text-tertiary">Line Additions</span>
+            <span className="text-[11px] font-medium text-text-tertiary">{t("settings.git.additions")}</span>
             <span className="text-title-3-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
               +{additions}
             </span>
           </div>
           <div className="flex flex-col rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-            <span className="text-[11px] font-medium text-text-tertiary">Line Deletions</span>
+            <span className="text-[11px] font-medium text-text-tertiary">{t("settings.git.deletions")}</span>
             <span className="text-title-3-semibold text-rose-600 dark:text-rose-400 mt-0.5">
               -{deletions}
             </span>
@@ -64,10 +66,10 @@ export function GitSettings() {
       </div>
 
       {/* ─── 提交与安全审批偏好 ───────────────────────────── */}
-      <SettingsCard title="Commit & Safety Preferences">
+      <SettingsCard title={t("settings.git.prefs")}>
         <SettingsRow
-          title="Require commit approval"
-          description="Pause and prompt for confirmation before executing git_commit in the workspace."
+          title={t("settings.git.requireApproval")}
+          description={t("settings.git.requireApprovalDesc")}
         >
           <Switch
             checked={preferences?.requireCommitApproval ?? true}
@@ -76,12 +78,12 @@ export function GitSettings() {
         </SettingsRow>
 
         <SettingsRow
-          title="Conventional Commit format"
-          description="Instructs coding agents to format commit messages with feat:, fix:, refactor:, chore: prefixes."
+          title={t("settings.git.conventional")}
+          description={t("settings.git.conventionalDesc")}
         >
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
             <RiCheckLine className="size-3.5" />
-            <span>Active Standard</span>
+            <span>{t("settings.git.activeStandard")}</span>
           </span>
         </SettingsRow>
       </SettingsCard>

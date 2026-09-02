@@ -4,22 +4,24 @@
 import { useRef } from "react"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
+import { useT } from "@renderer/i18n"
 import { AssetGrid } from "./asset-grid"
 import { MediaDropOverlay, MediaNotice } from "./media-notice"
 import { MediaPageHeader } from "./media-page-header"
-import { CATEGORY_LABELS, isAssetCategory } from "./media-page.types"
+import { getCategoryLabel, isAssetCategory } from "./media-page.types"
 import { StudioGeneratorPanel } from "./studio-console"
 import { useFileDrop } from "./use-file-drop"
 import { useMediaLibrary } from "./use-media-library"
 
 export function MediaPage() {
+  const t = useT()
   const library = useMediaLibrary()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const drop = useFileDrop((files) => void library.io.importFiles(files))
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Filter assets..."
+      searchPlaceholder={t("pages.media.filterPlaceholder")}
       groups={library.assets.groups}
       selectedId={library.assets.selectedCategory}
       onSelect={(id) => {
@@ -58,6 +60,7 @@ function MediaLibraryBody({
   onUploadClick: () => void
 }) {
   const { assets, studio, io, notice, sessionId, modelId, capabilities, experimentalMedia } = library
+  const t = useT()
   return (
     <>
       <MediaPageHeader totalAssets={assets.assets.length} onUploadClick={onUploadClick} />
@@ -80,7 +83,7 @@ function MediaLibraryBody({
       ) : null}
       <AssetGrid
         visibleAssets={assets.visibleAssets}
-        categoryLabel={CATEGORY_LABELS[assets.selectedCategory]}
+        categoryLabel={getCategoryLabel(t, assets.selectedCategory)}
         selectedAssetId={assets.selectedAssetId}
         exportPath={io.exportPath}
         onExportPathChange={io.setExportPath}
@@ -94,13 +97,14 @@ function MediaLibraryBody({
 }
 
 function MediaDeleteDialog({ library }: { library: ReturnType<typeof useMediaLibrary> }) {
+  const t = useT()
   const pending = library.assets.pendingDeleteAsset
   return (
     <ConfirmDialog
       open={Boolean(pending)}
-      title="Delete asset"
-      description={pending ? `Delete "${pending.name}" from the library? This cannot be undone.` : ""}
-      confirmLabel="Delete"
+      title={t("pages.media.deleteTitle")}
+      description={pending ? t("pages.media.deleteConfirm", { name: pending.name }) : ""}
+      confirmLabel={t("common.delete")}
       destructive
       onOpenChange={(open) => {
         if (!open) library.assets.setPendingDeleteId(null)

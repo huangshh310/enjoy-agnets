@@ -11,25 +11,31 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import { SettingsHub } from "./settings-hub"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
 
-const PERMISSION_MODE_LABEL: Record<PermissionMode | "custom", string> = {
-  "allow-reads": "Reads (Safe)",
-  "allow-edits": "Edits",
-  "allow-all": "All (Autonomous)",
-  custom: "Custom"
+function permissionModeLabel(t: TranslateFn): Record<PermissionMode | "custom", string> {
+  return {
+    "allow-reads": t("common.permissionReads"),
+    "allow-edits": t("common.permissionEdits"),
+    "allow-all": t("common.permissionAll"),
+    custom: t("common.permissionCustom")
+  }
 }
 
-const LANGUAGE_LABEL: Record<"auto" | "en" | "zh", string> = {
-  auto: "Auto",
-  en: "English",
-  zh: "中文"
+function languageLabel(t: TranslateFn): Record<"auto" | "en" | "zh", string> {
+  return {
+    auto: t("common.auto"),
+    en: t("common.english"),
+    zh: t("common.chinese")
+  }
 }
 
 export function GeneralSettings() {
+  const t = useT()
   const { preferences, update } = usePrefUpdate()
   const flags = {
     requireWriteApproval: preferences?.requireWriteApproval ?? true,
@@ -37,7 +43,9 @@ export function GeneralSettings() {
     requireCommitApproval: preferences?.requireCommitApproval ?? true
   }
   const kind = classifyPermissionMode(flags)
-  const language = preferences?.language ?? "auto"
+  const language = preferences?.language ?? "zh"
+  const modes = permissionModeLabel(t)
+  const languages = languageLabel(t)
   const autoCount = [
     !flags.requireWriteApproval,
     !flags.requireBashApproval,
@@ -48,17 +56,17 @@ export function GeneralSettings() {
     <div className="flex flex-col gap-6">
       <SettingsHub
         icon={RiSettings4Line}
-        title="Application defaults"
-        badge={PERMISSION_MODE_LABEL[kind]}
-        description="Tool approval presets, auto-run flags, and the language used by the application chrome."
+        title={t("settings.general.hubTitle")}
+        badge={modes[kind]}
+        description={t("settings.general.hubDesc")}
         pulses={[
-          { label: "Permission mode", value: PERMISSION_MODE_LABEL[kind] },
+          { label: t("settings.general.permissionMode"), value: modes[kind] },
           {
-            label: "Auto-run flags",
-            value: `${autoCount} / 3`,
+            label: t("settings.general.autoRunFlags"),
+            value: t("settings.general.autoRunValue", { count: autoCount }),
             tone: autoCount === 3 ? "warning" : autoCount === 0 ? "success" : "default"
           },
-          { label: "Language", value: LANGUAGE_LABEL[language] }
+          { label: t("settings.language"), value: languages[language] }
         ]}
       />
 
@@ -75,17 +83,18 @@ function LanguageCard({
   language: "auto" | "en" | "zh"
   onChange: (value: "auto" | "en" | "zh") => void
 }) {
+  const t = useT()
   return (
-    <SettingsCard title="General">
-      <SettingsRow title="Language" description="Application UI language. Auto follows this machine.">
+    <SettingsCard title={t("nav.general")}>
+      <SettingsRow title={t("settings.language")} description={t("settings.languageDesc")}>
         <Select value={language} onValueChange={(value) => onChange(value as "auto" | "en" | "zh")}>
           <SelectTrigger className="min-w-[9rem] rounded-2lg">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="auto">Detect automatically</SelectItem>
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="zh">中文</SelectItem>
+            <SelectItem value="auto">{t("settings.detectAuto")}</SelectItem>
+            <SelectItem value="en">{t("common.english")}</SelectItem>
+            <SelectItem value="zh">{t("common.chinese")}</SelectItem>
           </SelectContent>
         </Select>
       </SettingsRow>

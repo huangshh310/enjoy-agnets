@@ -1,0 +1,25 @@
+/** 全局快速搜索 / 命令面板。 */
+export const zhCommand = {
+  title: "快速搜索与导航",
+  description: "跳转到 Agent Studio、工具、设置或最近会话…",
+  placeholder: "输入命令、页面或搜索会话（例如 mcp、workflows）…",
+  empty: "没有结果。",
+  groupStudio: "Agent Studio 与能力",
+  groupActions: "操作",
+  groupSettings: "设置",
+  groupRecent: "最近会话",
+  studioHub: "Agent Studio 中枢（仪表盘）",
+  workflows: "持久化工作流与 DAG",
+  mcp: "模型上下文协议（MCP）",
+  knowledge: "知识库与语义检索",
+  media: "媒体工作室（图像 / 语音 / 视频）",
+  automations: "自动化与触发器",
+  customize: "自定义系统提示与说明",
+  observability: "可观测性与遥测追踪",
+  newChat: "新建 Agent 会话",
+  openWorkspace: "打开 / 切换工作区文件夹…",
+  generalSettings: "通用设置",
+  archivedChats: "已归档的聊天",
+  providers: "模型供应商与 API 密钥",
+  rules: "规则与工具权限"
+}

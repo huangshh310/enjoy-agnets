@@ -3,7 +3,8 @@
  */
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { DEFAULT_INTENT_CARDS } from "./empty-state-constants"
+import { useT } from "@renderer/i18n"
+import { getIntentCards, getShortcutPills } from "./empty-state-constants"
 import type { EmptyStateIntentItem } from "./empty-state.types"
 
 interface EmptyStatePillsProps {
@@ -12,7 +13,10 @@ interface EmptyStatePillsProps {
 }
 
 export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsProps) {
+  const t = useT()
   const setComposer = useChatStore((state) => state.setComposer)
+  const intentCards = getIntentCards(t)
+  const shortcutPills = getShortcutPills(t)
 
   function handleTriggerShortcut(key: string) {
     if (key === "@" || key === "/") {
@@ -32,12 +36,10 @@ export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsPr
 
   return (
     <div className={cx("flex flex-col items-center gap-3.5 w-full select-none", className)}>
-      {/* 1. 快捷意图推荐胶囊栏 */}
       <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl">
-        {DEFAULT_INTENT_CARDS.map((item: EmptyStateIntentItem) => {
+        {intentCards.map((item: EmptyStateIntentItem) => {
           const Icon = item.icon
           const displayLabel = item.shortTitle || item.title
-
           return (
             <button
               key={item.id}
@@ -66,34 +68,24 @@ export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsPr
         })}
       </div>
 
-      {/* 2. 底部按键与指令引导（支持点击直达） */}
       <div className="flex items-center gap-2 text-caption-2-medium text-text-tertiary">
-        <button
-          type="button"
-          onClick={() => handleTriggerShortcut("@")}
-          className="inline-flex items-center gap-1 hover:text-text-secondary transition-colors cursor-pointer"
-        >
-          <kbd className="rounded bg-background-secondary-default/80 border border-border-button-default/50 px-1.5 py-0.2 font-mono text-[10px] text-text-secondary font-medium">@</kbd>
-          <span>引用文件</span>
-        </button>
-        <span className="text-text-tertiary/40">•</span>
-        <button
-          type="button"
-          onClick={() => handleTriggerShortcut("/")}
-          className="inline-flex items-center gap-1 hover:text-text-secondary transition-colors cursor-pointer"
-        >
-          <kbd className="rounded bg-background-secondary-default/80 border border-border-button-default/50 px-1.5 py-0.2 font-mono text-[10px] text-text-secondary font-medium">/</kbd>
-          <span>动作命令</span>
-        </button>
-        <span className="text-text-tertiary/40">•</span>
-        <button
-          type="button"
-          onClick={() => handleTriggerShortcut("cmd-l")}
-          className="inline-flex items-center gap-1 hover:text-text-secondary transition-colors cursor-pointer"
-        >
-          <kbd className="rounded bg-background-secondary-default/80 border border-border-button-default/50 px-1.5 py-0.2 font-mono text-[10px] text-text-secondary font-medium">⌘L</kbd>
-          <span>全局检索</span>
-        </button>
+        {shortcutPills.map((pill, index) => (
+          <span key={pill.id} className="inline-flex items-center gap-2">
+            {index > 0 ? <span className="text-text-tertiary/40">•</span> : null}
+            <button
+              type="button"
+              onClick={() =>
+                handleTriggerShortcut(pill.keyHint === "⌘L" ? "cmd-l" : (pill.keyHint ?? "@"))
+              }
+              className="inline-flex items-center gap-1 hover:text-text-secondary transition-colors cursor-pointer"
+            >
+              <kbd className="rounded bg-background-secondary-default/80 border border-border-button-default/50 px-1.5 py-0.2 font-mono text-[10px] text-text-secondary font-medium">
+                {pill.keyHint}
+              </kbd>
+              <span>{pill.label}</span>
+            </button>
+          </span>
+        ))}
       </div>
     </div>
   )

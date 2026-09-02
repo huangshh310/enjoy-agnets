@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 import { buildMcpConfigJson, parseMcpServersJson } from "../lib/mcp-json-config"
 
@@ -24,6 +25,7 @@ export function McpJsonEditorView(props: {
   onChanged: () => Promise<void>
 }) {
   const { servers, onChanged } = props
+  const t = useT()
   const [jsonContent, setJsonContent] = useState("")
   const [copied, setCopied] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
@@ -43,16 +45,16 @@ export function McpJsonEditorView(props: {
 
   function handleResetFromLive() {
     setJsonContent(buildMcpConfigJson(servers))
-    flash("info", "已重置为当前系统最新配置")
+    flash("info", t("pages.mcp.resetToLive"))
   }
 
   function handleFormatJson() {
     try {
       const parsed = JSON.parse(jsonContent)
       setJsonContent(JSON.stringify(parsed, null, 2))
-      flash("success", "JSON 格式化成功")
+      flash("success", t("pages.mcp.formatOk"))
     } catch {
-      flash("error", "无法格式化：JSON 语法存在错误")
+      flash("error", t("pages.mcp.formatFail"))
     }
   }
 
@@ -72,9 +74,9 @@ export function McpJsonEditorView(props: {
       a.download = "mcp-servers-config.json"
       a.click()
       URL.revokeObjectURL(url)
-      flash("success", "已导出 mcp-servers-config.json")
+      flash("success", t("pages.mcp.exportedFile"))
     } catch {
-      flash("error", "导出文件失败")
+      flash("error", t("pages.mcp.exportFail"))
     }
   }
 
@@ -98,9 +100,9 @@ export function McpJsonEditorView(props: {
         })
       }
       await onChanged()
-      flash("success", `配置应用成功！已解析并同步注册 ${entries.length} 台 MCP Server。`)
+      flash("success", t("pages.mcp.applyOk", { n: entries.length }))
     } catch (err: unknown) {
-      flash("error", `解析失败: ${err instanceof Error ? err.message : "JSON 格式有误"}`)
+      flash("error", t("pages.mcp.parseFail", { message: err instanceof Error ? err.message : t("pages.mcp.jsonInvalid") }))
     } finally {
       setIsApplying(false)
     }
@@ -117,10 +119,10 @@ export function McpJsonEditorView(props: {
           </div>
           <div>
             <div className="text-caption-1-medium font-semibold text-text-primary">
-              mcpServers 配置编辑器
+              {t("pages.mcp.jsonEditorTitle")}
             </div>
             <div className="text-[11px] text-text-tertiary">
-              兼容 Claude Desktop (`claude_desktop_config.json`)、Cursor 与 Cline 规范
+              {t("pages.mcp.jsonEditorHint")}
             </div>
           </div>
         </div>
@@ -131,20 +133,20 @@ export function McpJsonEditorView(props: {
             variant="ghost"
             onClick={handleResetFromLive}
             className="gap-1 h-7 text-caption-2-medium text-text-secondary"
-            title="从当前已安装服务重新生成"
+            title={t("pages.mcp.reloadFromInstalled")}
           >
             <RiRefreshLine className="size-3" />
-            <span>重新加载</span>
+            <span>{t("pages.mcp.reload")}</span>
           </Button>
           <Button
             size="sm"
             variant="ghost"
             onClick={handleFormatJson}
             className="gap-1 h-7 text-caption-2-medium text-text-secondary"
-            title="美化格式化 JSON"
+            title={t("pages.mcp.formatJsonTitle")}
           >
             <RiMagicLine className="size-3" />
-            <span>格式化</span>
+            <span>{t("pages.mcp.format")}</span>
           </Button>
           <Button
             size="sm"
@@ -157,7 +159,7 @@ export function McpJsonEditorView(props: {
             ) : (
               <RiClipboardLine className="size-3" />
             )}
-            <span>{copied ? "已复制" : "复制"}</span>
+            <span>{copied ? t("common.copied") : t("common.copy")}</span>
           </Button>
           <Button
             size="sm"
@@ -166,7 +168,7 @@ export function McpJsonEditorView(props: {
             className="gap-1 h-7 text-caption-2-medium"
           >
             <RiDownload2Line className="size-3" />
-            <span>导出文件</span>
+            <span>{t("pages.mcp.exportFile")}</span>
           </Button>
           <Button
             size="sm"
@@ -179,7 +181,7 @@ export function McpJsonEditorView(props: {
             ) : (
               <RiUpload2Line className="size-3" />
             )}
-            <span>解析并应用配置</span>
+            <span>{t("pages.mcp.applyConfig")}</span>
           </Button>
         </div>
       </div>

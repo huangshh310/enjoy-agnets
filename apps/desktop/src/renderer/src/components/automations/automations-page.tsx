@@ -7,6 +7,7 @@ import { RiAddLine, RiCursorLine, RiFlashlightLine, RiSaveLine, RiStackLine } fr
 import { Button } from "@/components/ui/button"
 import type { Automation, AutomationTrigger } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { AutomationList } from "./components/automation-list"
 import { AutomationDraftForm } from "./components/draft-form"
@@ -14,6 +15,7 @@ import { AutomationTemplatesGrid } from "./components/templates-grid"
 import { type AutomationFilter, type AutomationTemplate } from "./constants"
 
 export function AutomationsPage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<AutomationFilter>("all")
   const [query, setQuery] = useState("")
@@ -46,25 +48,25 @@ export function AutomationsPage() {
     () => [
       {
         id: "library",
-        label: "Library",
+        label: t("studio.automations.library"),
         items: [
           {
             id: "all",
-            label: "All jobs",
+            label: t("studio.automations.allJobs"),
             icon: RiStackLine,
             keywords: ["job", "library", "all"],
             meta: String(automations.length)
           },
           {
             id: "manual",
-            label: "Manual trigger",
+            label: t("studio.automations.manualTrigger"),
             icon: RiCursorLine,
             keywords: ["run", "prompt", "manual"],
             meta: String(manualCount)
           },
           {
             id: "on_save",
-            label: "On save hook",
+            label: t("studio.automations.onSaveHook"),
             icon: RiSaveLine,
             keywords: ["file", "watch", "hook", "save"],
             meta: String(onSaveCount)
@@ -72,7 +74,7 @@ export function AutomationsPage() {
         ]
       }
     ],
-    [automations.length, manualCount, onSaveCount]
+    [automations.length, manualCount, onSaveCount, t]
   )
 
   async function refresh() {
@@ -137,7 +139,7 @@ export function AutomationsPage() {
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Search automations..."
+      searchPlaceholder={t("studio.automations.searchPlaceholder")}
       groups={groups}
       selectedId={filter}
       onSelect={(id) => setFilter(id as AutomationFilter)}
@@ -155,14 +157,12 @@ export function AutomationsPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-title-3-semibold text-text-primary">Automations & Smart Triggers</h1>
+                  <h1 className="text-title-3-semibold text-text-primary">{t("studio.automations.title")}</h1>
                   <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Background Hooks
+                    {t("studio.automations.badge")}
                   </span>
                 </div>
-                <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-                  Repeatable AI tasks triggered automatically on file save or manually with quick commands.
-                </p>
+                <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("studio.automations.desc")}</p>
               </div>
             </div>
           </div>
@@ -170,7 +170,7 @@ export function AutomationsPage() {
             {!draftOpen ? (
               <Button size="sm" onClick={() => setDraftOpen(true)} className="gap-1.5 shadow-xs">
                 <RiAddLine className="size-4" />
-                <span>New Automation</span>
+                <span>{t("studio.automations.newAutomation")}</span>
               </Button>
             ) : null}
           </div>

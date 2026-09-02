@@ -8,12 +8,14 @@ import type { WorkflowRun } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
 import { WorkflowPipelineBuilder } from "./components/pipeline-builder"
 import { WorkflowRecipesGrid } from "./components/recipes-grid"
 import { WorkflowRunList } from "./components/run-list"
 import { stepsFromChain } from "./lib/steps-from-chain"
 
 export function WorkflowsPage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const sessionId = useChatStore((state) => state.sessionId)
@@ -37,13 +39,13 @@ export function WorkflowsPage() {
     () => [
       {
         id: "runs",
-        label: "Durable Runs",
+        label: t("pages.workflows.navGroup"),
         items: [
-          { id: "all", label: "All workflows", icon: RiRouteLine, meta: String(runs.length) }
+          { id: "all", label: t("pages.workflows.navAll"), icon: RiRouteLine, meta: String(runs.length) }
         ]
       }
     ],
-    [runs.length]
+    [runs.length, t]
   )
 
   async function refresh() {
@@ -59,7 +61,7 @@ export function WorkflowsPage() {
       const created = (await getIde().workflow.start({
         sessionId,
         workspaceId: workspaceId ?? undefined,
-        title: steps.map((step) => step.label).join(" → ") || "Plan → Act → Verify",
+        title: steps.map((step) => step.label).join(" → ") || t("pages.workflows.defaultTitle"),
         steps
       })) as WorkflowRun
       await getIde().workflow.resume(created.id)
@@ -82,7 +84,7 @@ export function WorkflowsPage() {
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Filter workflows..."
+      searchPlaceholder={t("pages.workflows.filterPlaceholder")}
       groups={groups}
       selectedId="all"
       onSelect={() => undefined}
@@ -97,15 +99,14 @@ export function WorkflowsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 data-testid="page-workflows" className="text-title-3-semibold text-text-primary">
-                  Durable Workflows & Pipelines
+                  {t("pages.workflows.title")}
                 </h1>
                 <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                  Durable Checkpoints
+                  {t("pages.workflows.checkpoints")}
                 </span>
               </div>
               <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-                Multi-step autonomous execution with durable SQLite checkpoints. Supports pause, step-by-step
-                resume, failure retry, and recovery after application restart.
+                {t("pages.workflows.subtitle")}
               </p>
             </div>
           </div>

@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 
 export function McpServerCard(props: {
@@ -36,6 +37,7 @@ export function McpServerCard(props: {
   onEdit: (server: McpServer) => void
 }) {
   const { server, onChanged, onOpenApp, onExploreTools, onEdit } = props
+  const t = useT()
   const [copied, setCopied] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
@@ -70,9 +72,9 @@ export function McpServerCard(props: {
     setTestResult(null)
     try {
       const res = (await getIde().mcp.test(server.id)) as { ok: boolean; message?: string }
-      setTestResult(res.ok ? "Ping OK" : (res.message ?? "Failed"))
+      setTestResult(res.ok ? t("pages.mcp.pingOk") : (res.message ?? t("pages.mcp.pingFailed")))
     } catch (err: unknown) {
-      setTestResult(err instanceof Error ? err.message : "Test failed")
+      setTestResult(err instanceof Error ? err.message : t("pages.mcp.testFailed"))
     } finally {
       setIsTesting(false)
       setTimeout(() => setTestResult(null), 3500)
@@ -144,7 +146,7 @@ export function McpServerCard(props: {
               {server.envRef ? (
                 <span className="inline-flex items-center gap-1 text-text-secondary">
                   <RiKey2Line className="size-3 text-amber-500" />
-                  <span>Env</span>
+                  <span>{t("pages.mcp.envBadge")}</span>
                 </span>
               ) : null}
             </div>
@@ -166,12 +168,12 @@ export function McpServerCard(props: {
             {server.trusted ? (
               <>
                 <RiShieldLine className="size-3 text-text-tertiary" />
-                <span>Untrust</span>
+                <span>{t("pages.mcp.untrust")}</span>
               </>
             ) : (
               <>
                 <RiShieldCheckLine className="size-3 text-emerald-500" />
-                <span>Trust</span>
+                <span>{t("pages.mcp.trust")}</span>
               </>
             )}
           </Button>
@@ -186,7 +188,7 @@ export function McpServerCard(props: {
               onClick={() => void onOpenApp(server.id)}
             >
               <RiExternalLinkLine className="size-3" />
-              <span>Open App</span>
+              <span>{t("pages.mcp.openApp")}</span>
             </Button>
           ) : null}
 
@@ -203,7 +205,7 @@ export function McpServerCard(props: {
             ) : (
               <RiPlugLine className="size-3" />
             )}
-            <span>{server.connected ? "Disconnect" : "Connect"}</span>
+            <span>{server.connected ? t("pages.mcp.disconnect") : t("pages.mcp.connectAction")}</span>
           </Button>
 
           {/* Ping 测试 */}
@@ -219,14 +221,14 @@ export function McpServerCard(props: {
             ) : (
               <RiPulseLine className="size-3" />
             )}
-            <span>{testResult || "Ping"}</span>
+            <span>{testResult || t("pages.mcp.ping")}</span>
           </Button>
 
           {/* 编辑 */}
           <Button
             size="icon-sm"
             variant="ghost"
-            title="编辑配置"
+            title={t("pages.mcp.editConfig")}
             className="size-7 text-text-tertiary hover:text-text-primary"
             onClick={() => onEdit(server)}
           >
@@ -237,7 +239,7 @@ export function McpServerCard(props: {
           <Button
             size="icon-sm"
             variant="ghost"
-            title="删除 MCP Server"
+            title={t("pages.mcp.deleteServer")}
             className="size-7 text-text-tertiary hover:text-rose-500"
             onClick={() => void handleDelete()}
           >
@@ -256,7 +258,7 @@ export function McpServerCard(props: {
 
           <button
             type="button"
-            title="复制端点"
+            title={t("pages.mcp.copyEndpoint")}
             onClick={() => handleCopy(endpointText)}
             className="inline-flex items-center rounded p-1 text-text-tertiary hover:text-text-primary transition-colors shrink-0"
           >
@@ -286,7 +288,7 @@ export function McpServerCard(props: {
             className="flex items-center gap-1 text-text-secondary hover:text-text-primary transition-colors font-medium text-[11.5px]"
           >
             <RiToolsLine className="size-3 text-accent-500" />
-            <span>{tools.length} 个 Tools</span>
+            <span>{t("pages.mcp.toolsCount", { n: tools.length })}</span>
             {tools.length > 0 ? (
               isExpandingTools ? (
                 <RiArrowDownSLine className="size-3" />
@@ -298,7 +300,7 @@ export function McpServerCard(props: {
 
           {server.allowedResourceUris.length > 0 ? (
             <span className="text-[11px] font-mono">
-              {server.allowedResourceUris.length} URIs
+              {t("pages.mcp.urisCount", { n: server.allowedResourceUris.length })}
             </span>
           ) : null}
         </div>
@@ -309,7 +311,7 @@ export function McpServerCard(props: {
           onClick={() => onExploreTools(server)}
           className="gap-1 h-6 px-2 text-[11px] text-text-secondary hover:text-text-primary"
         >
-          <span>Tools 权限详情</span>
+          <span>{t("pages.mcp.toolsPermission")}</span>
           <RiArrowRightSLine className="size-3" />
         </Button>
       </div>
@@ -318,16 +320,16 @@ export function McpServerCard(props: {
       {isExpandingTools && tools.length > 0 ? (
         <div className="mt-2.5 flex flex-col gap-1 rounded-lg border border-separator-border/60 bg-background-secondary-default/30 p-2.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-            {tools.map((t) => (
+            {tools.map((tool) => (
               <div
-                key={t.name}
+                key={tool.name}
                 className="flex items-center justify-between gap-2 rounded border border-separator-border/30 bg-background-primary-default px-2 py-1 text-[11px]"
               >
                 <span className="font-mono font-medium text-text-primary truncate">
-                  {t.name}
+                  {tool.name}
                 </span>
                 <span className="text-text-tertiary text-[10px] truncate max-w-[150px]">
-                  {t.description || "无描述"}
+                  {tool.description || t("pages.mcp.noDescription")}
                 </span>
               </div>
             ))}
@@ -362,11 +364,12 @@ function ConnectionBadge({
   connected: boolean
   isConnecting?: boolean
 }) {
+  const t = useT()
   if (isConnecting) {
     return (
       <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9.5px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400">
         <RiLoader4Line className="size-2.5 animate-spin" />
-        Connecting
+        {t("pages.mcp.connecting")}
       </span>
     )
   }
@@ -386,12 +389,13 @@ function ConnectionBadge({
           connected ? "bg-emerald-500" : "bg-text-tertiary"
         )}
       />
-      {connected ? "Connected" : "Disconnected"}
+      {connected ? t("pages.mcp.connected") : t("pages.mcp.disconnected")}
     </span>
   )
 }
 
 function TrustBadge({ trusted }: { trusted: boolean }) {
+  const t = useT()
   return (
     <span
       className={cx(
@@ -402,7 +406,7 @@ function TrustBadge({ trusted }: { trusted: boolean }) {
       )}
     >
       <RiShieldCheckLine className="size-2.5" />
-      {trusted ? "Trusted" : "Untrusted"}
+      {trusted ? t("pages.mcp.trusted") : t("pages.mcp.untrusted")}
     </span>
   )
 }

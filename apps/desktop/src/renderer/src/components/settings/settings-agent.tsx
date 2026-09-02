@@ -4,6 +4,7 @@
  */
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { RiEqualizer3Line } from "@remixicon/react"
+import { useT } from "@renderer/i18n"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { SettingsDefaults } from "./settings-defaults"
@@ -11,26 +12,30 @@ import { SettingsHarness } from "./settings-harness"
 import { SettingsHub } from "./settings-hub"
 
 export function AgentSettings() {
+  const t = useT()
   const snapshot = useSettingsSnapshot().data
   const modelId = useChatStore((state) => state.modelId)
   const modelLabel = useChatStore((state) => state.modelLabel)
   const runtime = snapshot?.preferences.codingRuntime ?? "local"
   const harnessId = snapshot?.preferences.harnessId ?? snapshot?.harness.adapterId ?? "auto"
-  const adapterLabel = resolveAdapterLabel(harnessId, snapshot)
-  const runtimeLabel = runtime === "harness" ? "Harness (adapter)" : "Local (ToolLoop)"
+  const adapterLabel = resolveAdapterLabel(harnessId, snapshot, t("common.adapterAuto"))
+  const runtimeLabel = runtime === "harness" ? t("common.runtimeHarness") : t("common.runtimeLocal")
   const hasKey = snapshot?.harness.hasProviderKey ?? false
 
   return (
     <div className="flex flex-col gap-6">
       <SettingsHub
         icon={RiEqualizer3Line}
-        title={runtime === "harness" ? "Harness runtime" : "Local ToolLoop"}
-        badge={hasKey ? "Providers key" : "No provider key"}
-        description="Coding runtime, provider adapter, and the same model/mode defaults as the composer."
+        title={runtime === "harness" ? t("settings.agent.hubHarness") : t("settings.agent.hubLocal")}
+        badge={hasKey ? t("common.providersKey") : t("common.noProviderKey")}
+        description={t("settings.agent.hubDesc")}
         pulses={[
-          { label: "Runtime", value: runtimeLabel },
-          { label: "Adapter", value: adapterLabel },
-          { label: "Default model", value: modelLabel || modelId || "Unset" }
+          { label: t("settings.agent.runtime"), value: runtimeLabel },
+          { label: t("settings.agent.adapter"), value: adapterLabel },
+          {
+            label: t("settings.agent.defaultModel"),
+            value: modelLabel || modelId || t("common.unset")
+          }
         ]}
       />
       <SettingsHarness />
@@ -39,8 +44,12 @@ export function AgentSettings() {
   )
 }
 
-function resolveAdapterLabel(harnessId: string, snapshot: SettingsSnapshot | undefined) {
-  if (!harnessId || harnessId === "auto") return "Auto from Provider"
+function resolveAdapterLabel(
+  harnessId: string,
+  snapshot: SettingsSnapshot | undefined,
+  autoLabel: string
+) {
+  if (!harnessId || harnessId === "auto") return autoLabel
   const catalogLabel = snapshot?.harness.catalog.find((item) => item.id === harnessId)?.label
   return catalogLabel ?? snapshot?.harness.adapterLabel ?? harnessId
 }

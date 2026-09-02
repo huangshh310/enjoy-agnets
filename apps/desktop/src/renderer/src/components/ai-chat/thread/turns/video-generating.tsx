@@ -3,6 +3,8 @@
  */
 import type { ReactNode } from "react"
 import { ImageGeneration } from "@/components/ai-elements/image-generation"
+import { useT } from "@renderer/i18n"
+
 
 export function VideoGeneration({
   status = "generating",
@@ -13,13 +15,14 @@ export function VideoGeneration({
   prompt?: string
   children?: ReactNode
 }) {
+  const t = useT()
   return (
     <ImageGeneration
       status={status}
       prompt={prompt}
       aspectRatio="16 / 9"
-      label={status === "complete" ? "Generated video" : "Generating video"}
-      statusText={status === "complete" ? "Video ready" : "Generating video"}
+      label={status === "complete" ? t("chat.generatedVideo") : t("chat.generatingVideo")}
+      statusText={status === "complete" ? t("chat.videoReady") : t("chat.generatingVideo")}
       showStatus
       size="fluid"
       className="w-80 max-w-full"

@@ -4,6 +4,7 @@
  * 专为侧边栏会话状态、Thinking 思考与流式传输打造的高性能微型动效。
  */
 import { cx } from "@/utils/cx"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 
 export type DotMatrixVariant = "wave" | "matrix" | "pulse" | "drift"
 
@@ -16,6 +17,9 @@ export function DotMatrixLoader({
   className?: string
   colorClass?: string
 }) {
+  useUiLocale()
+  const thinkingTitle = uiT("思考 / 生成中...", "Thinking / Generating...")
+  const generatingTitle = uiT("正在生成对话中...", "Generating conversation...")
   if (variant === "matrix") {
     // 2x2 矩阵旋转呼吸
     return (
@@ -24,7 +28,7 @@ export function DotMatrixLoader({
           "inline-grid grid-cols-2 gap-0.5 size-3.5 items-center justify-center select-none",
           className
         )}
-        title="Thinking / Generating..."
+        title={thinkingTitle}
       >
         {[0, 1, 2, 3].map((i) => (
           <span
@@ -48,7 +52,7 @@ export function DotMatrixLoader({
           "inline-flex items-center gap-0.5 h-3.5 px-0.5 select-none",
           className
         )}
-        title="Thinking / Generating..."
+        title={thinkingTitle}
       >
         {[0, 1, 2].map((i) => (
           <span
@@ -71,7 +75,7 @@ export function DotMatrixLoader({
         "inline-flex items-center gap-0.5 h-3.5 px-0.5 select-none",
         className
       )}
-      title="正在生成对话中..."
+      title={generatingTitle}
     >
       {[0, 1, 2, 3].map((i) => (
         <span

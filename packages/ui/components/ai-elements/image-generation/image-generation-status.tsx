@@ -5,6 +5,7 @@ import { RiRefreshLine } from "@remixicon/react"
 import { AnimatePresence, motion, type Transition } from "motion/react"
 import { EASE_OUT, SPRING_PRESS } from "@/lib/ease"
 import { cn } from "@/lib/utils"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 import { DitherMark } from "./dither-mark"
 import { STATUS_TEXT, type ImageGenerationStatus } from "./image-generation.types"
 
@@ -23,7 +24,8 @@ export function ImageGenerationStatusRow({
   className?: string
   onRetry?: () => void
 }) {
-  const resolved = statusText ?? STATUS_TEXT[status]
+  useUiLocale()
+  const resolved = statusText ?? STATUS_TEXT(status)
   return (
     <div className="mt-3 text-left">
       <div
@@ -59,7 +61,7 @@ export function ImageGenerationStatusRow({
           className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-body-medium text-text-primary outline-none transition-colors hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         >
           <RiRefreshLine aria-hidden="true" className="size-4" />
-          Try again
+          {uiT("重试", "Try again")}
         </motion.button>
       ) : null}
     </div>

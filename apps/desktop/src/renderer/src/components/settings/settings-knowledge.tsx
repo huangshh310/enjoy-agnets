@@ -18,15 +18,19 @@ import { cx } from "@/utils/cx"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
+import { useT, type TranslateFn } from "@renderer/i18n"
 
-const EMBEDDING_PRESETS = [
-  { id: "text-embedding-3-small", label: "text-embedding-3-small (1536d)", provider: "OpenAI" },
-  { id: "text-embedding-3-large", label: "text-embedding-3-large (3072d)", provider: "OpenAI" },
-  { id: "BAAI/bge-m3", label: "bge-m3 (Multi-lingual)", provider: "SiliconFlow" },
-  { id: "embed-english-v3.0", label: "Cohere Embed English v3.0", provider: "Cohere" }
-]
+function embeddingPresets(t: TranslateFn) {
+  return [
+    { id: "text-embedding-3-small", label: t("settings.knowledge.embedSmall"), provider: "OpenAI" },
+    { id: "text-embedding-3-large", label: t("settings.knowledge.embedLarge"), provider: "OpenAI" },
+    { id: "BAAI/bge-m3", label: t("settings.knowledge.embedBge"), provider: "SiliconFlow" },
+    { id: "embed-english-v3.0", label: t("settings.knowledge.embedCohere"), provider: "Cohere" }
+  ]
+}
 
 export function KnowledgeSettings() {
+  const t = useT()
   const navigate = useNavigate()
   const { preferences, update } = usePrefUpdate()
   const configuredModels = useChatStore((state) => state.models)
@@ -50,14 +54,14 @@ export function KnowledgeSettings() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-body-large-semibold text-text-primary">
-                  Local Knowledge RAG Engine
+                  {t("settings.knowledge.hubTitle")}
                 </span>
                 <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-                  SQLite Vector Store
+                  {t("settings.knowledge.hubBadge")}
                 </span>
               </div>
               <span className="text-caption-2-regular text-text-tertiary mt-0.5">
-                Deterministic chunking, cosine similarity, lexical BM25 fallback, and citation grounding.
+                {t("settings.knowledge.hubDesc")}
               </span>
             </div>
           </div>
@@ -69,28 +73,22 @@ export function KnowledgeSettings() {
             className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium shrink-0"
           >
             <RiFolder6Line className="size-3.5 text-teal-500" />
-            <span>Open Knowledge Studio</span>
+            <span>{t("settings.knowledge.openStudio")}</span>
             <RiArrowRightLine className="size-3.5 opacity-60 ml-0.5" />
           </Button>
         </div>
       </div>
 
       {/* ─── 检索与向量化策略 ─────────────────────────────── */}
-      <SettingsCard title="Indexing & Retrieval Policies">
-        <SettingsRow
-          title="Auto-index new sources"
-          description="Automatically trigger background indexing when new folder collections or docs are attached."
-        >
+      <SettingsCard title={t("settings.knowledge.policies")}>
+        <SettingsRow title={t("settings.knowledge.autoIndex")} description={t("settings.knowledge.autoIndexDesc")}>
           <Switch
             checked={preferences?.knowledgeAutoIndex ?? false}
             onCheckedChange={(value) => void update({ knowledgeAutoIndex: value })}
           />
         </SettingsRow>
 
-        <SettingsRow
-          title="Vector embedding model"
-          description="Dense vector model used for embedding workspace documents and query similarity search."
-        >
+        <SettingsRow title={t("settings.knowledge.embedding")} description={t("settings.knowledge.embeddingDesc")}>
           <EmbeddingModelSelector
             availableModels={embeddingModels}
             onSelect={() => {
@@ -99,12 +97,9 @@ export function KnowledgeSettings() {
           />
         </SettingsRow>
 
-        <SettingsRow
-          title="Lexical & Cosine hybrid search"
-          description="Combines 1536d vector cosine similarity with lexical bag-of-words scoring when network is offline."
-        >
+        <SettingsRow title={t("settings.knowledge.hybrid")} description={t("settings.knowledge.hybridDesc")}>
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
-            <span>Enabled (Local First)</span>
+            <span>{t("settings.knowledge.hybridOn")}</span>
           </span>
         </SettingsRow>
       </SettingsCard>
@@ -119,12 +114,13 @@ function EmbeddingModelSelector({
   availableModels: ModelOption[]
   onSelect: (modelId: string) => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [selectedId, setSelectedId] = useState("text-embedding-3-small")
 
   const allChoices = [
     ...availableModels.map((m) => ({ id: m.id, label: m.label || m.id, provider: m.providerName || m.provider })),
-    ...EMBEDDING_PRESETS.filter((p) => !availableModels.some((m) => m.id === p.id))
+    ...embeddingPresets(t).filter((p) => !availableModels.some((m) => m.id === p.id))
   ]
 
   const active = allChoices.find((c) => c.id === selectedId) ?? allChoices[0]

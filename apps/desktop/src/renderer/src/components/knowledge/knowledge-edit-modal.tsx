@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
 import type { KnowledgeSource } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { canSaveKnowledgeSourcePath, isSameKnowledgeSourcePath } from "./knowledge-edit-path"
@@ -38,6 +39,7 @@ export function KnowledgeEditModal({
   onSaveAndReindex,
   isSaving
 }: KnowledgeEditModalProps) {
+  const t = useT()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const [path, setPath] = useState("")
 
@@ -73,10 +75,10 @@ export function KnowledgeEditModal({
             </div>
             <div>
               <DialogTitle className="text-body-medium font-semibold text-text-primary">
-                Edit Knowledge Source Path
+                {t("pages.knowledge.editTitle")}
               </DialogTitle>
               <DialogDescription className="text-caption-1-medium text-text-secondary">
-                Update the target path and rebuild vector index for this source
+                {t("pages.knowledge.editDesc")}
               </DialogDescription>
             </div>
           </div>
@@ -85,7 +87,7 @@ export function KnowledgeEditModal({
         <div className="flex flex-col gap-4 py-2">
           <div className="flex flex-col gap-1.5">
             <Label className="text-caption-1-medium text-text-secondary">
-              Current Source Path
+              {t("pages.knowledge.currentSourcePath")}
             </Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -93,7 +95,7 @@ export function KnowledgeEditModal({
                 <Input
                   value={path}
                   onChange={(e) => setPath(e.target.value)}
-                  placeholder="e.g. src or docs/specs"
+                  placeholder={t("pages.knowledge.placeholderEditPath")}
                   className="pl-9 bg-background-secondary-default font-mono text-body-medium focus-visible:bg-background-primary-default"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") void handleSave()
@@ -106,21 +108,21 @@ export function KnowledgeEditModal({
                 variant="outline"
                 onClick={() => void handlePickNativeFolder()}
                 className="gap-1 shrink-0 h-9"
-                title="Browse system directory..."
+                title={t("pages.knowledge.browseSystemDir")}
               >
                 <RiFolderOpenLine className="size-4 text-text-secondary" />
-                <span className="text-caption-1-medium">Browse...</span>
+                <span className="text-caption-1-medium">{t("pages.knowledge.browse")}</span>
               </Button>
             </div>
             <span className="text-caption-2-medium text-text-tertiary">
-              Same path rebuilds the index. A new path replaces this source and re-indexes.
+              {t("pages.knowledge.editHint")}
             </span>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
@@ -131,7 +133,9 @@ export function KnowledgeEditModal({
             className={cx("gap-1.5 shadow-xs", isSaving && "opacity-60")}
           >
             {isSaving ? null : <RiCheckLine className="size-4" />}
-            <span>{samePath ? "Rebuild Index" : "Update & Rebuild"}</span>
+            <span>
+              {samePath ? t("pages.knowledge.rebuildIndex") : t("pages.knowledge.updateRebuild")}
+            </span>
           </Button>
         </DialogFooter>
       </DialogContent>

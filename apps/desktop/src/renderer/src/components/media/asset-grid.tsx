@@ -6,6 +6,7 @@ import { RiArrowLeftSLine, RiArrowRightSLine, RiFolderUploadLine, RiImageLine } 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { AssetRecord } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { AssetCard } from "./asset-card"
 import { AssetGridPager } from "./asset-grid-pager"
 import { PAGE_SIZE } from "./media-page.types"
@@ -85,6 +86,7 @@ function AssetGridHeader({
   exportPath: string
   onExportPathChange: (path: string) => void
 }) {
+  const t = useT()
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
       <div className="flex items-center gap-2">
@@ -95,7 +97,7 @@ function AssetGridHeader({
       </div>
       <div className="flex items-center gap-1.5 text-caption-2-medium text-text-tertiary">
         <RiFolderUploadLine className="size-3.5" />
-        <span>Export path:</span>
+        <span>{t("pages.media.exportPath")}</span>
         <Input
           value={exportPath}
           onChange={(event) => onExportPathChange(event.target.value)}
@@ -108,14 +110,15 @@ function AssetGridHeader({
 }
 
 function AssetGridEmpty() {
+  const t = useT()
   return (
     <div className="flex min-h-[16rem] flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 px-6 py-12 text-center">
       <div className="flex size-12 items-center justify-center rounded-2xl bg-background-tertiary-default text-text-tertiary">
         <RiImageLine className="size-6" />
       </div>
-      <p className="mt-3 text-body-semibold text-text-primary">No assets found</p>
+      <p className="mt-3 text-body-semibold text-text-primary">{t("pages.media.noAssets")}</p>
       <p className="mt-1 max-w-xs text-caption-1-medium text-text-secondary">
-        Generate media using the studio toolbar above, or drag and drop files anywhere here.
+        {t("pages.media.emptyHint")}
       </p>
     </div>
   )
@@ -180,11 +183,12 @@ function AssetGridFooter({
   total: number
   onPageChange: (page: number) => void
 }) {
+  const t = useT()
   if (totalPages <= 1) {
     return (
       <div className="pt-2">
         <span className="text-caption-2-medium text-text-tertiary">
-          {total} {total === 1 ? "asset" : "assets"} total
+          {t(total === 1 ? "pages.media.assetTotalOne" : "pages.media.assetTotalMany", { n: total })}
         </span>
       </div>
     )
@@ -192,7 +196,11 @@ function AssetGridFooter({
   return (
     <div className="flex items-center justify-between pt-2 border-t border-separator-border/40">
       <span className="text-caption-2-medium text-text-tertiary">
-        Showing {(safeCurrentPage - 1) * PAGE_SIZE + 1}–{Math.min(safeCurrentPage * PAGE_SIZE, total)} of {total}
+        {t("pages.media.showingRange", {
+          start: (safeCurrentPage - 1) * PAGE_SIZE + 1,
+          end: Math.min(safeCurrentPage * PAGE_SIZE, total),
+          total
+        })}
       </span>
       <div className="flex items-center gap-1">
         <Button
@@ -201,7 +209,7 @@ function AssetGridFooter({
           disabled={safeCurrentPage <= 1}
           onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
           className="size-7"
-          aria-label="Previous page"
+          aria-label={t("pages.media.prevPage")}
         >
           <RiArrowLeftSLine className="size-3.5" />
         </Button>
@@ -212,7 +220,7 @@ function AssetGridFooter({
           disabled={safeCurrentPage >= totalPages}
           onClick={() => onPageChange(Math.min(totalPages, safeCurrentPage + 1))}
           className="size-7"
-          aria-label="Next page"
+          aria-label={t("pages.media.nextPage")}
         >
           <RiArrowRightSLine className="size-3.5" />
         </Button>

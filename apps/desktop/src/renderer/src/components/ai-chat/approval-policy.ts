@@ -8,6 +8,8 @@ import {
   type ApprovalPrefFlags,
   type PermissionMode
 } from "@enjoy-agents/ipc-contract"
+import type { TranslateFn } from "@renderer/i18n"
+
 
 export type ApprovalPolicyKind = PermissionMode | "custom"
 export type { ApprovalPrefFlags }
@@ -16,29 +18,38 @@ export type { ApprovalPrefFlags }
 export const APPROVAL_PRESETS = [
   {
     id: "allow-reads" as const,
-    label: "Reads",
-    desc: "Pause before edits, commits, and shell",
     colorClass: "text-sky-600 dark:text-sky-300",
     bgClass: "bg-sky-500/10 border-sky-500/25 hover:bg-sky-500/15 dark:bg-sky-500/15 dark:border-sky-500/30",
     iconColor: "text-sky-500 dark:text-sky-400"
   },
   {
     id: "allow-edits" as const,
-    label: "Edits",
-    desc: "Auto-apply file edits; pause before shell & git",
     colorClass: "text-amber-600 dark:text-amber-300",
     bgClass: "bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:border-amber-500/30",
     iconColor: "text-amber-500 dark:text-amber-400"
   },
   {
     id: "allow-all" as const,
-    label: "All",
-    desc: "Auto-apply files, shell commands, and commits",
     colorClass: "text-rose-600 dark:text-rose-300",
     bgClass: "bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
     iconColor: "text-rose-500 dark:text-rose-400"
   }
 ]
+
+const PRESET_COPY = {
+  "allow-reads": { label: "chat.approvalReads", desc: "chat.approvalReadsDesc" },
+  "allow-edits": { label: "chat.approvalEdits", desc: "chat.approvalEditsDesc" },
+  "allow-all": { label: "chat.approvalAll", desc: "chat.approvalAllDesc" }
+} as const
+
+/** 三档文案随 locale 生成，配色仍走 APPROVAL_PRESETS。 */
+export function getApprovalPresets(t: TranslateFn) {
+  return APPROVAL_PRESETS.map((item) => ({
+    ...item,
+    label: t(PRESET_COPY[item.id].label),
+    desc: t(PRESET_COPY[item.id].desc)
+  }))
+}
 
 export const CUSTOM_PRESET_TONE = {
   colorClass: "text-text-secondary",
@@ -51,11 +62,19 @@ export function toneForPolicy(kind: ApprovalPolicyKind) {
   return APPROVAL_PRESETS.find((item) => item.id === kind) ?? CUSTOM_PRESET_TONE
 }
 
-export const APPROVAL_FLAGS = [
-  { id: "requireWriteApproval" as const, label: "Files", desc: "Auto-apply file writes & edits (write_file, edit_file)" },
-  { id: "requireBashApproval" as const, label: "Shell", desc: "Auto-run terminal commands (bash)" },
-  { id: "requireCommitApproval" as const, label: "Git", desc: "Auto-commit repository changes (git_commit)" }
+const FLAG_DEFS = [
+  { id: "requireWriteApproval" as const, label: "chat.approvalFiles", desc: "chat.approvalFilesDesc" },
+  { id: "requireBashApproval" as const, label: "chat.approvalShell", desc: "chat.approvalShellDesc" },
+  { id: "requireCommitApproval" as const, label: "chat.approvalGit", desc: "chat.approvalGitDesc" }
 ]
+
+export function getApprovalFlags(t: TranslateFn) {
+  return FLAG_DEFS.map((flag) => ({
+    id: flag.id,
+    label: t(flag.label),
+    desc: t(flag.desc)
+  }))
+}
 
 export function classifyApprovalPolicy(prefs: ApprovalPrefFlags): ApprovalPolicyKind {
   return classifyPermissionMode(prefs)

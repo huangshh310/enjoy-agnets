@@ -1,6 +1,7 @@
 /**
  * 资产与媒体工作室：类型定义与常量。
  */
+import type { TranslateFn } from "@renderer/i18n"
 
 export type StudioMode = "image" | "speech" | "video" | "transcribe"
 
@@ -14,20 +15,28 @@ export type AssetCategory = (typeof ASSET_CATEGORIES)[number]
 /** 每页 4 列 × 4 行 */
 export const PAGE_SIZE = 16
 
-export const LIBRARY_NAV_ITEMS: { id: AssetCategory; label: string }[] = [
-  { id: "all", label: "All Assets" },
-  { id: "image", label: "Images" },
-  { id: "audio", label: "Audio & Speech" },
-  { id: "video", label: "Videos" },
-  { id: "file", label: "Documents" }
-]
+const LIBRARY_NAV_KEYS: Record<AssetCategory, string> = {
+  all: "pages.media.allAssets",
+  image: "pages.media.images",
+  audio: "pages.media.audioSpeech",
+  video: "pages.media.videos",
+  file: "pages.media.documents"
+}
 
-export const CATEGORY_LABELS: Record<AssetCategory, string> = {
-  all: "All Assets",
-  image: "Images",
-  audio: "Audio & Speech",
-  video: "Videos",
-  file: "Documents & Files"
+const CATEGORY_KEYS: Record<AssetCategory, string> = {
+  all: "pages.media.allAssets",
+  image: "pages.media.images",
+  audio: "pages.media.audioSpeech",
+  video: "pages.media.videos",
+  file: "pages.media.documentsFiles"
+}
+
+export function getLibraryNavItems(t: TranslateFn): { id: AssetCategory; label: string }[] {
+  return ASSET_CATEGORIES.map((id) => ({ id, label: t(LIBRARY_NAV_KEYS[id]) }))
+}
+
+export function getCategoryLabel(t: TranslateFn, id: AssetCategory): string {
+  return t(CATEGORY_KEYS[id])
 }
 
 export function isAssetCategory(id: string): id is AssetCategory {

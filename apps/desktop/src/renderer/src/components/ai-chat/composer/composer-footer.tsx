@@ -8,6 +8,8 @@ import { ModelPicker } from "../model-picker"
 import { ReasoningEffortToggle } from "../reasoning-effort-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
 import type { ComposerProps } from "./composer.types"
+import { useT } from "@renderer/i18n"
+
 
 export function ComposerFooter({
   composer,
@@ -38,6 +40,7 @@ export function ComposerFooter({
   onVoiceToggle: () => void
   onPickFiles: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 px-3 pt-1 pb-2.5">
       <ComposerAttachMenu
@@ -56,14 +59,14 @@ export function ComposerFooter({
         <ReasoningEffortToggle />
         <button
           type="button"
-          aria-label="Voice input"
+          aria-label={t("chat.voiceInput")}
           disabled={!canRealtime}
           title={
             canRealtime
               ? voiceOpen
-                ? "Stop voice (experimental)"
-                : "Voice (experimental)"
-              : "This model does not advertise Realtime."
+                ? t("chat.stopVoice")
+                : t("chat.voice")
+              : t("chat.noRealtime")
           }
           onClick={onVoiceToggle}
           className={cx(
@@ -77,7 +80,7 @@ export function ComposerFooter({
         </button>
         <button
           type={running ? "button" : "submit"}
-          aria-label={running ? "Stop" : "Send"}
+          aria-label={running ? t("chat.stop") : t("chat.send")}
           disabled={!running && composer.trim().length === 0}
           onClick={running ? onStop : undefined}
           className="flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-b from-accent-500 to-accent-600 text-white shadow-nav-selected transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:hover:brightness-100 disabled:active:scale-100"

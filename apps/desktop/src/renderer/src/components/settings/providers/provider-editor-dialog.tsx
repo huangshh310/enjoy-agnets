@@ -16,6 +16,7 @@ import type { ProviderKind, ProviderPreset } from "@enjoy-agents/providers/prese
 import { ProviderEditorFields } from "./provider-editor-fields"
 import { ProviderIcon } from "./provider-icons"
 import type { EditorState, ProbeState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderEditorDialog({
   editor,
@@ -90,6 +91,7 @@ function EditorDialogForm({
   onFetchModels: () => void
   onSave: () => void
 }) {
+  const t = useT()
   return (
     <form
       onSubmit={(event) => {
@@ -104,7 +106,9 @@ function EditorDialogForm({
             <ProviderIcon kind={preset.kind} name={editor.name || preset.name} apiStyle={editor.apiStyle} size={22} />
           </div>
           <DialogTitle className="text-title-3-semibold text-text-primary">
-            {editor.id ? `Edit ${preset.name}` : `Add ${preset.name}`}
+            {editor.id
+              ? t("settings.providers.editTitle", { name: preset.name })
+              : t("settings.providers.addTitle", { name: preset.name })}
           </DialogTitle>
         </div>
         <DialogDescription className="text-caption-1-medium text-text-secondary">
@@ -134,7 +138,7 @@ function EditorDialogForm({
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-caption-1-medium text-text-tertiary hover:text-text-primary transition-colors"
             >
-              API Docs
+              {t("settings.providers.apiDocs")}
               <RiExternalLinkLine className="size-3" />
             </a>
           ) : null}
@@ -142,10 +146,10 @@ function EditorDialogForm({
 
         <div className="flex items-center gap-2">
           <Button type="button" size="sm" variant="ghost" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" size="sm" disabled={!canSave}>
-            Save and activate
+            {t("settings.providers.saveActivate")}
           </Button>
         </div>
       </DialogFooter>

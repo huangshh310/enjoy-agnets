@@ -5,8 +5,10 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { cx } from "@/utils/cx"
 import { PANE_FOCUS } from "../constants"
 import { useTerminalSession } from "./use-terminal-session"
+import { useT } from "@renderer/i18n"
 
 export function TerminalView({ workspaceId }: { workspaceId: string | null }) {
+  const t = useT()
   const { sessionId, log, writeLine } = useTerminalSession(workspaceId)
   const [draft, setDraft] = useState("")
   const scroller = useRef<HTMLDivElement | null>(null)
@@ -30,7 +32,7 @@ export function TerminalView({ workspaceId }: { workspaceId: string | null }) {
   if (!workspaceId) {
     return (
       <p className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
-        Open a folder to start a terminal.
+        {t("chat.openFolderTerminal")}
       </p>
     )
   }
@@ -53,7 +55,7 @@ export function TerminalView({ workspaceId }: { workspaceId: string | null }) {
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
-            aria-label="Terminal input"
+            aria-label={t("chat.terminalInput")}
             className={cx(
               "inline border-0 bg-transparent p-0 font-mono text-body-2-regular text-text-primary caret-accent-500 disabled:caret-transparent",
               PANE_FOCUS

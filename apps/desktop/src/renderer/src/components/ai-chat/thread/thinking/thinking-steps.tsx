@@ -8,6 +8,7 @@ import type { AgentStepNode } from "./agent-step-tree.types"
 import { fileChangesFromRows } from "./thinking-chips"
 import type { TraceRow } from "./thinking-rows"
 import { FileChangeChips } from "@/components/ai-elements/tool-chips"
+import { useT } from "@renderer/i18n"
 
 export function ThinkingSteps({
   nodes = [],
@@ -16,13 +17,14 @@ export function ThinkingSteps({
   nodes?: AgentStepNode[]
   rows?: TraceRow[]
 }) {
+  const t = useT()
   const hasNodes = nodes.length > 0
   const fileChanges = fileChangesFromRows(rows)
 
   if (!hasNodes && fileChanges.length === 0) {
     return (
       <p className="py-1 text-caption-1-medium text-text-tertiary">
-        No reasoning trace for this turn.
+        {t("chat.noTrace")}
       </p>
     )
   }

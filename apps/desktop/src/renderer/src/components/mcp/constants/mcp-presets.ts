@@ -1,5 +1,5 @@
 /**
- * MCP 精选插件库与生态预设
+ * MCP 精选插件库与生态预设。文案走 i18n，结构字段供测试使用。
  */
 import {
   RiCodeSSlashLine,
@@ -10,59 +10,95 @@ import {
   RiMindMap,
   RiSparklingLine
 } from "@remixicon/react"
+import type { TranslateFn } from "@renderer/i18n"
 import type { McpPluginPreset } from "../types/mcp-ui.types"
 
 export const MCP_PLUGIN_CATEGORIES = [
-  { id: "all", label: "全部插件", icon: RiSparklingLine },
-  { id: "storage", label: "文件与存储", icon: RiFolderLine },
-  { id: "dev", label: "开发与代码", icon: RiCodeSSlashLine },
-  { id: "database", label: "数据库与 SQL", icon: RiDatabase2Line },
-  { id: "web", label: "网络与搜索", icon: RiGlobalLine },
-  { id: "apps", label: "多功能与 UI App", icon: RiCpuLine }
+  { id: "all", icon: RiSparklingLine },
+  { id: "storage", icon: RiFolderLine },
+  { id: "dev", icon: RiCodeSSlashLine },
+  { id: "database", icon: RiDatabase2Line },
+  { id: "web", icon: RiGlobalLine },
+  { id: "apps", icon: RiCpuLine }
 ] as const
 
-export const FEATURED_MCP_PRESETS: McpPluginPreset[] = [
+const CATEGORY_LABEL_KEYS: Record<(typeof MCP_PLUGIN_CATEGORIES)[number]["id"], string> = {
+  all: "pages.mcp.catAll",
+  storage: "pages.mcp.catStorage",
+  dev: "pages.mcp.catDev",
+  database: "pages.mcp.catDatabase",
+  web: "pages.mcp.catWeb",
+  apps: "pages.mcp.catApps"
+}
+
+export function getMcpPluginCategories(t: TranslateFn) {
+  return MCP_PLUGIN_CATEGORIES.map((cat) => ({
+    ...cat,
+    label: t(CATEGORY_LABEL_KEYS[cat.id])
+  }))
+}
+
+type PresetDef = Omit<McpPluginPreset, "name" | "categoryLabel" | "description" | "features"> & {
+  nameKey: string
+  categoryLabelKey: string
+  descKey: string
+  featKeys: string[]
+  envDescKey?: string
+}
+
+const PRESET_DEFS: PresetDef[] = [
   {
     id: "filesystem",
-    name: "Local Filesystem",
+    nameKey: "pages.mcp.presetFilesystemName",
     category: "storage",
-    categoryLabel: "File & Storage",
+    categoryLabelKey: "pages.mcp.presetFilesystemCategory",
     icon: RiFolderLine,
     colorClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
     badgeColorClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    description: "为 Agent 循环提供完整的本地文件系统读取、写入、目录遍历和文件树分析能力。",
+    descKey: "pages.mcp.presetFilesystemDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-filesystem .",
-    features: ["文件读写", "目录遍历", "路径搜索", "安全沙箱约束"],
+    featKeys: [
+      "pages.mcp.presetFilesystemFeat0",
+      "pages.mcp.presetFilesystemFeat1",
+      "pages.mcp.presetFilesystemFeat2",
+      "pages.mcp.presetFilesystemFeat3"
+    ],
     sampleTools: ["read_file", "write_file", "list_directory", "search_files"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem"
   },
   {
     id: "everything",
-    name: "Everything Suite",
+    nameKey: "pages.mcp.presetEverythingName",
     category: "apps",
-    categoryLabel: "Full Toolkit & Apps",
+    categoryLabelKey: "pages.mcp.presetEverythingCategory",
     icon: RiSparklingLine,
     colorClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
     badgeColorClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-    description: "多功能演示工具箱，包含资源模板、Prompt 模板以及可在独立沙箱 iframe 容器内渲染的交互 UI App。",
+    descKey: "pages.mcp.presetEverythingDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-everything",
-    features: ["沙箱交互 App", "Prompt 模板", "自定义资源", "测试工具集"],
+    featKeys: [
+      "pages.mcp.presetEverythingFeat0",
+      "pages.mcp.presetEverythingFeat1",
+      "pages.mcp.presetEverythingFeat2",
+      "pages.mcp.presetEverythingFeat3"
+    ],
     sampleTools: ["echo", "add", "longRunningOperation", "sampleLLM"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/everything"
   },
   {
     id: "github",
-    name: "GitHub Ecosystem",
+    nameKey: "pages.mcp.presetGithubName",
     category: "dev",
-    categoryLabel: "DevOps & VCS",
+    categoryLabelKey: "pages.mcp.presetGithubCategory",
     icon: RiCodeSSlashLine,
     colorClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
     badgeColorClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    description: "通过 Agent 命令直接管理 GitHub 代码库、检索 Pull Requests、查询 Issue、审查代码并触发 Actions。",
+    descKey: "pages.mcp.presetGithubDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-github",
+    envDescKey: "pages.mcp.presetGithubEnv",
     envTemplates: [
       {
         key: "GITHUB_PERSONAL_ACCESS_TOKEN",
@@ -71,66 +107,87 @@ export const FEATURED_MCP_PRESETS: McpPluginPreset[] = [
         placeholder: "ghp_xxxxxxxxxxxxxxxxxxxx"
       }
     ],
-    features: ["PR 管理", "Issue 查询", "代码检索", "分支与 Commit 操作"],
+    featKeys: [
+      "pages.mcp.presetGithubFeat0",
+      "pages.mcp.presetGithubFeat1",
+      "pages.mcp.presetGithubFeat2",
+      "pages.mcp.presetGithubFeat3"
+    ],
     sampleTools: ["search_repositories", "create_issue", "get_file_contents", "list_commits"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/github"
   },
   {
     id: "postgres",
-    name: "PostgreSQL Database",
+    nameKey: "pages.mcp.presetPostgresName",
     category: "database",
-    categoryLabel: "Data & Query",
+    categoryLabelKey: "pages.mcp.presetPostgresCategory",
     icon: RiDatabase2Line,
     colorClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
     badgeColorClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    description: "连接 PostgreSQL 数据库，检查数据表 Schema 架构定义，并安全执行只读 SQL 查询与分析。",
+    descKey: "pages.mcp.presetPostgresDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb",
-    features: ["表结构自省", "只读 SQL 执行", "数据字典分析", "连接池自适应"],
+    featKeys: [
+      "pages.mcp.presetPostgresFeat0",
+      "pages.mcp.presetPostgresFeat1",
+      "pages.mcp.presetPostgresFeat2",
+      "pages.mcp.presetPostgresFeat3"
+    ],
     sampleTools: ["query", "describe_table", "list_tables", "get_schema"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres"
   },
   {
     id: "sqlite",
-    name: "SQLite Database",
+    nameKey: "pages.mcp.presetSqliteName",
     category: "database",
-    categoryLabel: "Local DB & SQL",
+    categoryLabelKey: "pages.mcp.presetSqliteCategory",
     icon: RiDatabase2Line,
     colorClass: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
     badgeColorClass: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-    description: "快速连接并分析本地 SQLite 数据库文件，支持只读 SQL 查询、索引分析与表关联解析。",
+    descKey: "pages.mcp.presetSqliteDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-sqlite --file ./app.db",
-    features: ["本地 DB 直连", "轻量零配置", "Schema 探查", "安全只读隔离"],
+    featKeys: [
+      "pages.mcp.presetSqliteFeat0",
+      "pages.mcp.presetSqliteFeat1",
+      "pages.mcp.presetSqliteFeat2",
+      "pages.mcp.presetSqliteFeat3"
+    ],
     sampleTools: ["read_query", "list_tables", "describe_table"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite"
   },
   {
     id: "puppeteer",
-    name: "Puppeteer Browser Automation",
+    nameKey: "pages.mcp.presetPuppeteerName",
     category: "web",
-    categoryLabel: "Web & Scraping",
+    categoryLabelKey: "pages.mcp.presetPuppeteerCategory",
     icon: RiGlobalLine,
     colorClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
     badgeColorClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
-    description: "赋予 Agent 驱动无头浏览器访问动态网页、抓取渲染内容、执行交互以及截取屏幕画面的能力。",
+    descKey: "pages.mcp.presetPuppeteerDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-puppeteer",
-    features: ["无头 Chromium", "页面截图", "DOM 内容提取", "表单交互与点击"],
+    featKeys: [
+      "pages.mcp.presetPuppeteerFeat0",
+      "pages.mcp.presetPuppeteerFeat1",
+      "pages.mcp.presetPuppeteerFeat2",
+      "pages.mcp.presetPuppeteerFeat3"
+    ],
     sampleTools: ["puppeteer_navigate", "puppeteer_screenshot", "puppeteer_click", "puppeteer_evaluate"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer"
   },
   {
     id: "brave-search",
-    name: "Brave Search",
+    nameKey: "pages.mcp.presetBraveName",
     category: "web",
-    categoryLabel: "Web & Search",
+    categoryLabelKey: "pages.mcp.presetBraveCategory",
     icon: RiGlobalLine,
     colorClass: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
     badgeColorClass: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-    description: "使用 Brave 搜索引擎 API 进行全球互联网搜索与本地商户搜索，为 Agent 补充实时资讯。",
+    descKey: "pages.mcp.presetBraveDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-brave-search",
+    envDescKey: "pages.mcp.presetBraveEnv",
     envTemplates: [
       {
         key: "BRAVE_API_KEY",
@@ -139,23 +196,63 @@ export const FEATURED_MCP_PRESETS: McpPluginPreset[] = [
         placeholder: "BSAxxxxxxxxxxxxxxxxxxxx"
       }
     ],
-    features: ["网页搜索", "本地商家检索", "实时新闻获取", "零追踪隐私保护"],
+    featKeys: [
+      "pages.mcp.presetBraveFeat0",
+      "pages.mcp.presetBraveFeat1",
+      "pages.mcp.presetBraveFeat2",
+      "pages.mcp.presetBraveFeat3"
+    ],
     sampleTools: ["brave_web_search", "brave_local_search"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/brave-search"
   },
   {
     id: "memory",
-    name: "Knowledge Graph Memory",
+    nameKey: "pages.mcp.presetMemoryName",
     category: "storage",
-    categoryLabel: "Memory & Graph",
+    categoryLabelKey: "pages.mcp.presetMemoryCategory",
     icon: RiMindMap,
     colorClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
     badgeColorClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-    description: "基于实体和关系的开源知识图谱内存服务器，让 Agent 跨会话持续积累上下文与长效记忆。",
+    descKey: "pages.mcp.presetMemoryDesc",
     transport: "stdio",
     command: "npx -y @modelcontextprotocol/server-memory",
-    features: ["实体抽取与存储", "关系网络建立", "语义图谱查询", "长周期记忆"],
+    featKeys: [
+      "pages.mcp.presetMemoryFeat0",
+      "pages.mcp.presetMemoryFeat1",
+      "pages.mcp.presetMemoryFeat2",
+      "pages.mcp.presetMemoryFeat3"
+    ],
     sampleTools: ["create_entities", "create_relations", "read_graph", "search_nodes"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/memory"
   }
 ]
+
+function localizePreset(def: PresetDef, t: TranslateFn): McpPluginPreset {
+  return {
+    id: def.id,
+    name: t(def.nameKey),
+    category: def.category,
+    categoryLabel: t(def.categoryLabelKey),
+    icon: def.icon,
+    colorClass: def.colorClass,
+    badgeColorClass: def.badgeColorClass,
+    description: t(def.descKey),
+    transport: def.transport,
+    command: def.command,
+    url: def.url,
+    envTemplates: def.envTemplates?.map((env) => ({
+      ...env,
+      description: def.envDescKey ? t(def.envDescKey) : env.description
+    })),
+    docsUrl: def.docsUrl,
+    features: def.featKeys.map((key) => t(key)),
+    sampleTools: def.sampleTools
+  }
+}
+
+export function getFeaturedMcpPresets(t: TranslateFn): McpPluginPreset[] {
+  return PRESET_DEFS.map((def) => localizePreset(def, t))
+}
+
+/** 测试用结构数据：名称回落为键路径，协议与命令仍可用。 */
+export const FEATURED_MCP_PRESETS = getFeaturedMcpPresets((path) => path)

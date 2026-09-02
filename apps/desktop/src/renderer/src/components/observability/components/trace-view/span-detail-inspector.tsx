@@ -4,18 +4,20 @@
  */
 import { useState } from "react"
 import { cx } from "@/utils/cx"
-import { SPAN_KIND_CONFIG } from "../../services/trace-tree-builder"
+import { useT } from "@renderer/i18n"
+import { getSpanKindConfig } from "../../services/span-kind-config"
 import type { SpanNode } from "../../types/trace-span.types"
 
 type InspectorTab = "io" | "attributes" | "metadata"
 
 export function SpanDetailInspector(props: { span: SpanNode }) {
   const { span } = props
+  const t = useT()
   const [activeTab, setActiveTab] = useState<InspectorTab>("io")
   const [ioViewMode, setIoViewMode] = useState<"pretty" | "json">("pretty")
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
-
-  const cfg = SPAN_KIND_CONFIG[span.kind] ?? SPAN_KIND_CONFIG.agent
+  const kinds = getSpanKindConfig(t)
+  const cfg = kinds[span.kind] ?? kinds.agent
 
   function handleCopy(key: string, text: string) {
     void navigator.clipboard.writeText(text).then(() => {

@@ -6,27 +6,30 @@ import { RiCheckLine, RiClipboardLine } from "@remixicon/react"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { MessageAction } from "@/components/ai-elements/message"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import { firstImageAsset, textToCopy } from "./copy-turn"
 
 export function CopyMessageButton({
   message,
   prompt,
-  label = "Copy message"
+  label
 }: {
   message: ThreadMessage
   prompt?: string
   label?: string
 }) {
   const [copied, setCopied] = useState(false)
+  const t = useT()
+  const actionLabel = label ?? t("chat.copyMessage")
   const timer = useRef<number>(0)
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   return (
     <MessageAction
-      tooltip={copied ? "Copied" : label}
-      label={label}
+      tooltip={copied ? t("common.copied") : actionLabel}
+      label={actionLabel}
       onClick={() => {
-        void copyTurn(message, prompt).then((ok) => {
+        void copyTurn(message, prompt, t).then((ok) => {
           if (!ok) return
           setCopied(true)
           window.clearTimeout(timer.current)
@@ -39,7 +42,7 @@ export function CopyMessageButton({
   )
 }
 
-async function copyTurn(message: ThreadMessage, prompt?: string) {
+async function copyTurn(message: ThreadMessage, prompt: string | undefined, t: TranslateFn) {
   const store = useChatStore.getState()
   try {
     const text = textToCopy(message, prompt)
@@ -49,7 +52,7 @@ async function copyTurn(message: ThreadMessage, prompt?: string) {
       return true
     }
     if (await copyImageAsset(message)) return true
-    store.setError("Nothing to copy from this message.")
+    store.setError(t("chat.nothingToCopy"))
     return false
   } catch (error) {
     store.setError(error instanceof Error ? error.message : String(error))

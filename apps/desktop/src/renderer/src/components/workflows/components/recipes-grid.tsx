@@ -3,7 +3,8 @@
  */
 import { RiArrowRightLine, RiPlayLine, RiSparklingLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
-import { WORKFLOW_RECIPES } from "../lib/constants"
+import { useT } from "@renderer/i18n"
+import { getWorkflowRecipes } from "../lib/constants"
 
 export function WorkflowRecipesGrid({
   sessionId,
@@ -14,6 +15,8 @@ export function WorkflowRecipesGrid({
   isStarting: boolean
   onRun: (chain: string) => void
 }) {
+  const t = useT()
+  const recipes = getWorkflowRecipes(t)
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -22,14 +25,14 @@ export function WorkflowRecipesGrid({
             <RiSparklingLine className="size-3.5" />
           </div>
           <h3 className="text-body-medium font-semibold text-text-primary">
-            Pre-built Workflow Recipes · 经典自主流程模版
+            {t("pages.workflows.recipesTitle")}
           </h3>
         </div>
-        <span className="text-caption-2-medium text-text-tertiary">1-click autonomous execution</span>
+        <span className="text-caption-2-medium text-text-tertiary">{t("pages.workflows.recipesHint")}</span>
       </div>
 
       <div className="grid gap-3.5 sm:grid-cols-2">
-        {WORKFLOW_RECIPES.map((recipe) => (
+        {recipes.map((recipe) => (
           <div
             key={recipe.id}
             className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md"
@@ -61,7 +64,9 @@ export function WorkflowRecipesGrid({
               </div>
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
-              <span className="font-mono text-[10px] text-text-tertiary">Syntax: {recipe.chain}</span>
+              <span className="font-mono text-[10px] text-text-tertiary">
+                {t("pages.workflows.syntax", { chain: recipe.chain })}
+              </span>
               <Button
                 size="sm"
                 disabled={!sessionId || isStarting}
@@ -69,7 +74,7 @@ export function WorkflowRecipesGrid({
                 className="h-7 gap-1.5 px-3 text-caption-2-medium shadow-xs"
               >
                 <RiPlayLine className="size-3.5" />
-                <span>Run Recipe</span>
+                <span>{t("pages.workflows.runRecipe")}</span>
               </Button>
             </div>
           </div>

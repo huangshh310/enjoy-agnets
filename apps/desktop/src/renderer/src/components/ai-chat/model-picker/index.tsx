@@ -16,6 +16,7 @@ import {
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ModelListPane } from "./model-list-pane"
 import { ProviderSidebar } from "./provider-sidebar"
+import { useT } from "@renderer/i18n"
 
 export function ModelPicker({
   modelId,
@@ -28,6 +29,7 @@ export function ModelPicker({
   models: ModelOption[]
   onModelChange: (model: ModelOption) => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedKey, setSelectedKey] = useState<string>("all")
@@ -107,7 +109,7 @@ export function ModelPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="Select Model"
+          aria-label={t("chat.selectModel")}
           className="group flex h-8 min-w-0 max-w-full items-center gap-1.5 rounded-full px-2 text-body-medium text-text-secondary outline-none transition-colors hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring @[26rem]:px-2.5"
         >
           <div className="flex size-4.5 shrink-0 items-center justify-center">

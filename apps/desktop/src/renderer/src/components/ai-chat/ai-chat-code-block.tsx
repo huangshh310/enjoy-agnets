@@ -4,8 +4,10 @@ import { RiClipboardLine } from "@remixicon/react"
 import type { CodeAttachment } from "@renderer/stores/chat-store"
 import { highlightLine } from "./ai-chat-syntax"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
+import { useT } from "@renderer/i18n"
 
 export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) {
+  const t = useT()
   const lines = attachment.code.split("\n")
 
   return (
@@ -25,7 +27,7 @@ export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) 
         </span>
         <QuietIconButton
           icon={RiClipboardLine}
-          aria-label="Copy snippet"
+          aria-label={t("chat.copySnippet")}
           onClick={() => navigator.clipboard.writeText(attachment.code)}
         />
       </div>

@@ -125,7 +125,7 @@ export const SettingsSnapshot = z.object({
     permissionMode: PermissionModeSchema.default("allow-reads"),
     codingRuntime: z.enum(["local", "harness"]).default("local"),
     harnessId: z.string().optional(),
-    language: z.enum(["auto", "en", "zh"]),
+    language: z.enum(["auto", "en", "zh"]).default("zh"),
     defaultMode: AgentMode,
     customInstructions: z.string(),
     telemetryPolicy: z.enum(["local", "otel", "off"]).default("local"),

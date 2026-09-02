@@ -5,6 +5,7 @@ import { RiAddLine, RiPlugLine, RiSearchLine, RiSparklingLine } from "@remixicon
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { McpServerCard } from "./mcp-server-card"
 
 export function McpServersView(props: {
@@ -31,12 +32,13 @@ export function McpServersView(props: {
     onAdd,
     onBrowseMarketplace
   } = props
+  const t = useT()
 
   return (
     <section className="flex flex-col gap-3.5">
       <div className="flex items-center justify-between gap-3">
         <span className="text-caption-1-medium font-semibold text-text-primary">
-          已注册服务 ({filteredServers.length})
+          {t("pages.mcp.registeredCount", { n: filteredServers.length })}
         </span>
 
         {servers.length > 0 ? (
@@ -45,7 +47,7 @@ export function McpServersView(props: {
             <Input
               value={serverSearch}
               onChange={(e) => onServerSearchChange(e.target.value)}
-              placeholder="搜索服务名称..."
+              placeholder={t("pages.mcp.searchServers")}
               className="pl-8 h-7.5 text-caption-2-medium bg-background-primary-default"
             />
           </div>
@@ -58,10 +60,10 @@ export function McpServersView(props: {
             <RiPlugLine className="size-5" />
           </div>
           <h3 className="text-body-medium font-semibold text-text-primary">
-            暂未配置任何 MCP Server
+            {t("pages.mcp.emptyTitle")}
           </h3>
           <p className="mt-1 max-w-sm text-caption-2-medium text-text-tertiary leading-relaxed">
-            通过 Model Context Protocol 连接文件系统、数据库或外部 API，让 Agent 在对话中自由调度。
+            {t("pages.mcp.emptyHint")}
           </p>
           <div className="mt-4 flex items-center gap-2">
             <Button
@@ -70,7 +72,7 @@ export function McpServersView(props: {
               className="gap-1.5 h-7.5 text-caption-2-medium shadow-xs"
             >
               <RiAddLine className="size-3.5" />
-              <span>注册 Server</span>
+              <span>{t("pages.mcp.registerServer")}</span>
             </Button>
             <Button
               size="sm"
@@ -79,13 +81,13 @@ export function McpServersView(props: {
               className="gap-1.5 h-7.5 text-caption-2-medium"
             >
               <RiSparklingLine className="size-3.5 text-accent-500" />
-              <span>浏览精选市场</span>
+              <span>{t("pages.mcp.browseMarketplace")}</span>
             </Button>
           </div>
         </div>
       ) : filteredServers.length === 0 ? (
         <div className="py-10 text-center text-caption-2-medium text-text-tertiary">
-          未搜索到匹配的服务
+          {t("pages.mcp.noMatchingServers")}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

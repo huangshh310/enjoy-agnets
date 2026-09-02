@@ -12,6 +12,7 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
 type ReplayRow = {
@@ -22,6 +23,7 @@ type ReplayRow = {
 }
 
 export function ObservabilityReplay() {
+  const t = useT()
   const [rows, setRows] = useState<ReplayRow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [search, setSearch] = useState("")
@@ -56,7 +58,7 @@ export function ObservabilityReplay() {
         <div className="flex items-center gap-2">
           <RiHistoryLine className="size-4 text-accent-500" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
-            Stream Event Replay Buffer · 内存事件流回放 ({filteredRows.length} 条)
+            {t("pages.observability.replayTitle", { n: filteredRows.length })}
           </h3>
         </div>
 
@@ -66,7 +68,7 @@ export function ObservabilityReplay() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="过滤事件类型..."
+              placeholder={t("pages.observability.filterEventType")}
               className="pl-6.5 h-6.5 text-[10.5px] bg-background-secondary-default/50 font-mono"
             />
           </div>
@@ -83,7 +85,7 @@ export function ObservabilityReplay() {
             ) : (
               <RiRefreshLine className="size-3" />
             )}
-            <span>刷新事件流</span>
+            <span>{t("pages.observability.refreshEvents")}</span>
           </Button>
         </div>
       </div>
@@ -94,8 +96,8 @@ export function ObservabilityReplay() {
             <RiTerminalBoxLine className="size-5 text-text-tertiary mb-1" />
             <p className="text-[11px] text-text-tertiary">
               {rows.length === 0
-                ? "暂无内存缓冲事件流。"
-                : "未搜索到匹配的事件。"}
+                ? t("pages.observability.noBufferedEvents")
+                : t("pages.observability.noMatchingEvents")}
             </p>
           </div>
         ) : (
@@ -112,7 +114,9 @@ export function ObservabilityReplay() {
                   <span className="font-semibold text-text-primary">{row.type}</span>
                 </div>
                 <span className="text-[10px] text-text-tertiary">
-                  {row.runId ? `run: ${row.runId.slice(0, 14)}` : "no run"}
+                  {row.runId
+                    ? t("pages.observability.runId", { id: row.runId.slice(0, 14) })
+                    : t("pages.observability.noRun")}
                 </span>
               </li>
             ))}

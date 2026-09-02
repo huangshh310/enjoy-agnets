@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { cx } from "@/utils/cx"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 
 export interface TaskItem {
   id?: string
@@ -122,12 +123,14 @@ function RollDigit({ char }: { char: string }) {
 }
 
 export function TaskList({
-  title = "To-dos",
+  title,
   tasks,
   currentIndex,
   defaultCollapsed = false,
   className
 }: TaskListProps) {
+  useUiLocale()
+  const heading = title ?? uiT("待办", "To-dos")
   const [collapsed, setCollapsed] = useState(defaultCollapsed)
 
   const normalizedTasks: Array<{ title: string; status: "pending" | "in_progress" | "completed" }> =
@@ -217,7 +220,7 @@ export function TaskList({
           )}
         </div>
 
-        <span className="font-semibold text-text-primary text-[13px]">{title}</span>
+        <span className="font-semibold text-text-primary text-[13px]">{heading}</span>
 
         {/* 翻滚计数器 */}
         <div className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">

@@ -1,0 +1,25 @@
+/** Global quick search / command palette. */
+export const enCommand = {
+  title: "Quick Search & Navigation",
+  description: "Jump to Agent Studio, tools, settings, or recent sessions...",
+  placeholder: "Type a command, page, or search sessions (e.g. mcp, workflows)...",
+  empty: "No results found.",
+  groupStudio: "Agent Studio & Capabilities",
+  groupActions: "Actions",
+  groupSettings: "Settings",
+  groupRecent: "Recent Chat Sessions",
+  studioHub: "Agent Studio Hub (Dashboard)",
+  workflows: "Durable Workflows & DAG",
+  mcp: "Model Context Protocol (MCP)",
+  knowledge: "Knowledge Base & Semantic RAG",
+  media: "Media Studio (Image / Speech / Video)",
+  automations: "Automations & Triggers",
+  customize: "Customize System Prompts & Instructions",
+  observability: "Observability & Telemetry Trace",
+  newChat: "New Agent Chat Session",
+  openWorkspace: "Open / Switch Workspace Folder...",
+  generalSettings: "General Settings",
+  archivedChats: "Archived chats",
+  providers: "Model Providers & API Keys",
+  rules: "Rules & Tool Permissions"
+}

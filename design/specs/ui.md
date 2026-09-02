@@ -38,6 +38,8 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
 
 类名合并：`cn()` 或 `cx()`。全屏高度用 `min-h-[100dvh]` / `h-full`，不用 `h-screen`。
 
+`packages/ui` 控件默认文案走 `uiT("中文", "English")`（`packages/ui/i18n/ui-locale.ts`），默认中文；桌面 `I18nProvider` 调 `setUiLocale` 同步。UI 包不引用 `@renderer/i18n`。
+
 ## 代码入口
 
  - 视觉全书：[../references/visual-system.md](../references/visual-system.md)
@@ -49,6 +51,8 @@ Composer：运行中发送键变成 Stop（`agent.abort`）；Context 打开本�
  - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
  - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`
  - 状态栏与 Agent Limits 卡片（Token 分桶与速率限制）：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`
+- UI 包语言：`packages/ui/i18n/ui-locale.ts`
+
 ## 已知坑
 
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。

@@ -9,6 +9,7 @@ import {
   type ProviderGroup,
   formatApiStyle
 } from "./model-picker-types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderSidebar({
   groups,
@@ -23,12 +24,13 @@ export function ProviderSidebar({
   onSelectKey: (key: string) => void
   onManageProviders: () => void
 }) {
+  const t = useT()
   return (
     <aside className="flex w-[190px] shrink-0 flex-col border-r border-separator-border bg-background-secondary-default/30">
       {/* 顶部供应商标题栏 */}
       <div className="flex h-10 items-center justify-between border-b border-separator-border px-3">
         <span className="text-[11px] font-semibold tracking-wider text-text-tertiary uppercase">
-          Providers ({groups.length})
+          {t("chat.providersCount", { count: groups.length })}
         </span>
       </div>
 
@@ -48,7 +50,7 @@ export function ProviderSidebar({
           <div className="flex size-5 shrink-0 items-center justify-center rounded-md bg-background-secondary-default text-text-secondary">
             <RiApps2Line className="size-3.5" />
           </div>
-          <span className="flex-1 truncate text-[12px]">All Models</span>
+          <span className="flex-1 truncate text-[12px]">{t("chat.allModels")}</span>
           <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] font-medium text-text-tertiary">
             {totalModelsCount}
           </span>
@@ -85,7 +87,7 @@ export function ProviderSidebar({
                   </span>
                   {group.active ? (
                     <span
-                      title="Currently Active Provider"
+                      title={t("chat.activeProvider")}
                       className="size-1.5 shrink-0 rounded-full bg-state-success-text"
                     />
                   ) : null}
@@ -113,7 +115,7 @@ export function ProviderSidebar({
           className="flex w-full items-center gap-1.5 rounded-xl px-2 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
         >
           <RiSettings3Line className="size-3.5 text-accent-500" />
-          <span className="truncate">Manage Providers</span>
+          <span className="truncate">{t("chat.manageProviders")}</span>
         </button>
       </div>
     </aside>

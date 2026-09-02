@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { KnowledgeDocumentItem } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getPathExtension } from "./knowledge-table-format"
 
 type KnowledgeDocumentListProps = {
@@ -36,6 +37,7 @@ export function KnowledgeDocumentList({
   onPreviewDocument,
   onQuickSearchSource
 }: KnowledgeDocumentListProps) {
+  const t = useT()
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   if (viewMode === "grid") {
@@ -52,7 +54,7 @@ export function KnowledgeDocumentList({
             >
               <div className="flex items-center gap-2.5">
                 <span className="flex size-8 items-center justify-center rounded-xl bg-accent-500/10 font-mono text-caption-2-medium text-accent-500">
-                  {ext?.toUpperCase() ?? "FILE"}
+                  {ext?.toUpperCase() ?? t("pages.knowledge.fileFallback")}
                 </span>
                 <div className="min-w-0">
                   <h5 className="truncate text-caption-1-medium text-text-primary group-hover:text-accent-500">
@@ -64,9 +66,9 @@ export function KnowledgeDocumentList({
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between font-mono text-caption-2-medium text-text-secondary">
-                <span>{doc.chunkCount} Chunks</span>
+                <span>{t("pages.knowledge.chunksCount", { n: doc.chunkCount })}</span>
                 <span className="flex items-center gap-1 text-accent-500">
-                  <RiEyeLine className="size-3" /> Preview
+                  <RiEyeLine className="size-3" /> {t("pages.knowledge.preview")}
                 </span>
               </div>
             </button>
@@ -81,11 +83,11 @@ export function KnowledgeDocumentList({
       <table className="w-full text-left text-caption-1-medium">
         <thead className="border-b border-separator-border/60 bg-background-secondary-default/60 text-text-tertiary">
           <tr>
-            <th className="px-4 py-3">Document & Path</th>
-            <th className="px-4 py-3">Parent Collection</th>
-            <th className="px-4 py-3">Vector Chunks</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colDocumentPath")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colParentCollection")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colVectorChunks")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colStatus")}</th>
+            <th className="px-4 py-3 text-right">{t("pages.knowledge.colActions")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-separator-border/40">
@@ -100,7 +102,7 @@ export function KnowledgeDocumentList({
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-3">
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 font-mono text-caption-2-medium text-accent-500">
-                      {ext?.toUpperCase() ?? "FILE"}
+                      {ext?.toUpperCase() ?? t("pages.knowledge.fileFallback")}
                     </span>
                     <div className="min-w-0">
                       <div className="truncate text-caption-1-medium text-text-primary">
@@ -111,11 +113,11 @@ export function KnowledgeDocumentList({
                 </td>
                 <td className="px-4 py-2.5">
                   <span className="rounded-full border border-border-button-default bg-background-secondary-default px-2 py-0.5 text-caption-2-medium text-text-secondary">
-                    {doc.sourcePath === "." ? "Workspace Root" : doc.sourcePath}
+                    {doc.sourcePath === "." ? t("pages.knowledge.workspaceRoot") : doc.sourcePath}
                   </span>
                 </td>
                 <td className="px-4 py-2.5 font-mono text-caption-2-medium text-text-primary">
-                  {doc.chunkCount} Chunks
+                  {t("pages.knowledge.chunksCount", { n: doc.chunkCount })}
                 </td>
                 <td className="px-4 py-2.5 capitalize text-caption-2-medium text-text-secondary">
                   {doc.status}
@@ -125,7 +127,7 @@ export function KnowledgeDocumentList({
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      title="Preview file content"
+                      title={t("pages.knowledge.previewFile")}
                       onClick={() => onPreviewDocument?.(doc)}
                     >
                       <RiEyeLine className="size-3.5" />
@@ -134,7 +136,7 @@ export function KnowledgeDocumentList({
                       <Button
                         size="icon-sm"
                         variant="ghost"
-                        title="Search matching chunks in this file"
+                        title={t("pages.knowledge.searchChunksInFile")}
                         onClick={() => onQuickSearchSource(doc.path)}
                       >
                         <RiSearchLine className="size-3.5" />
@@ -151,7 +153,11 @@ export function KnowledgeDocumentList({
         <div className="flex items-center justify-between border-t border-separator-border/60 bg-background-secondary-default/40 px-4 py-2.5 text-caption-2-medium text-text-secondary">
           <div className="flex items-center gap-3">
             <span>
-              Showing {(page - 1) * pageSize + 1} - {Math.min(total, page * pageSize)} of {total}
+              {t("pages.knowledge.showingRange", {
+                start: (page - 1) * pageSize + 1,
+                end: Math.min(total, page * pageSize),
+                total
+              })}
             </span>
             <div className="flex items-center gap-1">
               {[15, 30, 50].map((size) => (
@@ -166,7 +172,7 @@ export function KnowledgeDocumentList({
                       : "text-text-tertiary hover:text-text-primary"
                   )}
                 >
-                  {size}/page
+                  {t("pages.knowledge.perPage", { size })}
                 </button>
               ))}
             </div>
@@ -205,17 +211,21 @@ export function KnowledgeDocumentsEmpty({
   loading?: boolean
   error?: string | null
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-10 text-center">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500">
         <RiFileTextLine className="size-7" />
       </div>
       <h4 className="mt-3.5 text-body-medium text-text-primary">
-        {loading ? "Scanning collection files…" : error ? "Could not list files" : "No files in this collection"}
+        {loading
+          ? t("pages.knowledge.scanningFiles")
+          : error
+            ? t("pages.knowledge.couldNotList")
+            : t("pages.knowledge.noFilesInCollection")}
       </h4>
       <p className="mt-1 max-w-md text-caption-1-medium text-text-secondary">
-        {error ??
-          "Add a folder and wait for the file matrix. Counts update while indexing, not only at the end."}
+        {error ?? t("pages.knowledge.emptyHint")}
       </p>
     </div>
   )

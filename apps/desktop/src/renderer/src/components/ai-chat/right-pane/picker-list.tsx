@@ -2,14 +2,16 @@
  * 右栏空态：列出可打开的工具，点一项再挂内容。
  */
 import { cx } from "@/utils/cx"
-import { PANE_FOCUS, RIGHT_PANE_TOOLS } from "./constants"
+import { useT } from "@renderer/i18n"
+import { PANE_FOCUS, getRightPaneTools } from "./constants"
 import type { RightPaneKind } from "./right-pane.types"
 
 export function RightPanePicker({ onPick }: { onPick: (kind: RightPaneKind) => void }) {
+  const t = useT()
   return (
     <div className="flex flex-1 flex-col justify-center px-8">
       <ul className="mx-auto flex w-full max-w-[280px] flex-col gap-0.5">
-        {RIGHT_PANE_TOOLS.map((tool) => {
+        {getRightPaneTools(t).map((tool) => {
           const Icon = tool.icon
           return (
             <li key={tool.kind}>

@@ -36,8 +36,11 @@ import { AiChatStatusBar } from "./ai-chat-status-bar"
 import { AiChatThread } from "./ai-chat-thread"
 import { ExperimentalMediaDialog } from "./experimental-media-dialog"
 import { AiChatEmptyState } from "./empty-state/ai-chat-empty-state"
+import { useT } from "@renderer/i18n"
+
 
 export function AiChatShell() {
+  const t = useT()
   const userName = useChatStore((state) => state.userName)
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
@@ -150,12 +153,12 @@ export function AiChatShell() {
                   <div className="ml-auto flex items-center gap-0.5">
                     <QuietIconButton
                       icon={RiLayoutRight2Line}
-                      aria-label={rightPanelCollapsed ? "Expand changes pane" : "Collapse changes pane"}
+                      aria-label={rightPanelCollapsed ? t("chat.expandPane") : t("chat.collapsePane")}
                       aria-pressed={!rightPanelCollapsed}
                       onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
                       className={!rightPanelCollapsed ? "bg-background-secondary-default text-text-primary" : undefined}
                     />
-                    <QuietIconButton icon={RiMoreLine} aria-label="Session menu" />
+                    <QuietIconButton icon={RiMoreLine} aria-label={t("chat.sessionMenu")} />
                   </div>
                 </header>
                 {messages.length === 0 && !running ? (
@@ -211,12 +214,12 @@ export function AiChatShell() {
               </>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-                <p className="text-title-3-semibold text-text-primary">Open a workspace</p>
+                <p className="text-title-3-semibold text-text-primary">{t("chat.openWorkspace")}</p>
                 <p className="max-w-sm text-body-medium text-text-secondary">
-                  Enjoy Agents only runs against a folder you choose. Pick a project to load sessions and git changes.
+                  {t("chat.openWorkspaceHint")}
                 </p>
                 <Button onClick={() => void openFolder()}>
-                  Open folder
+                  {t("chat.openFolder")}
                 </Button>
               </div>
             )}

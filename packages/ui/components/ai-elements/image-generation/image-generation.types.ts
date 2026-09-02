@@ -2,6 +2,7 @@
  * BeUI Image Generation 状态面：抄交互，皮走 BoardUI token。
  */
 import type { CSSProperties, ReactNode } from "react"
+import { uiT } from "@/i18n/ui-locale"
 
 export type ImageGenerationStatus =
   | "queued"
@@ -27,12 +28,20 @@ export type ImageGenerationProps = {
   statusClassName?: string
 }
 
-export const STATUS_TEXT: Record<ImageGenerationStatus, string> = {
-  queued: "Waiting to generate",
-  generating: "Generating image",
-  refining: "Refining details",
-  complete: "Image ready",
-  error: "Generation failed"
+/** 生图状态默认文案，随 setUiLocale 切换。 */
+export function STATUS_TEXT(status: ImageGenerationStatus): string {
+  switch (status) {
+    case "queued":
+      return uiT("等待生成", "Waiting to generate")
+    case "generating":
+      return uiT("正在生成图片", "Generating image")
+    case "refining":
+      return uiT("正在细化细节", "Refining details")
+    case "complete":
+      return uiT("图片已就绪", "Image ready")
+    case "error":
+      return uiT("生成失败", "Generation failed")
+  }
 }
 
 export const MEDIA_STATE: Record<

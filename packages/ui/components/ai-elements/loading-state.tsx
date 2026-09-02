@@ -6,6 +6,7 @@
 
 import { useEffect, useState, type CSSProperties } from "react"
 import { cx } from "@/utils/cx"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 import { formatElapsedMs } from "./loading-state-format"
 
 export type LoadingStateVariant = "drive" | "dots" | "orbit" | "surfer"
@@ -138,6 +139,7 @@ export function LoadingElapsed({
   startedAt?: number
   className?: string
 }) {
+  useUiLocale()
   const [fallback] = useState(() => Date.now())
   const [now, setNow] = useState(() => Date.now())
 
@@ -156,20 +158,22 @@ export function LoadingElapsed({
 
 export function LoadingState({
   variant = "drive",
-  label = "Thinking",
+  label,
   startedAt,
   showTimer = true,
   className
 }: LoadingStateProps) {
+  useUiLocale()
+  const resolvedLabel = label ?? uiT("思考中", "Thinking")
   return (
     <div role="status" className={cx("inline-flex items-center gap-2.5", className)}>
       <LoadingStateGlyph variant={variant} />
       <span
-        aria-label={label}
+        aria-label={resolvedLabel}
         className="bui-agent-thinking-label text-body-medium"
         style={SHIMMER_TONE}
       >
-        {label}
+        {resolvedLabel}
       </span>
       {showTimer ? <LoadingElapsed startedAt={startedAt} /> : null}
     </div>

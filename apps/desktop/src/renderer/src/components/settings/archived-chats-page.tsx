@@ -14,6 +14,7 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { cx } from "@/utils/cx"
+import { dateLocale, useI18n, useT } from "@renderer/i18n"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import {
   deleteAllArchivedSessions,
@@ -29,6 +30,7 @@ import {
 } from "./archived-chats"
 
 export function ArchivedChatsPage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [query, setQuery] = useState("")
   const [workspaceFilter, setWorkspaceFilter] = useState<string>("all")
@@ -59,7 +61,7 @@ export function ArchivedChatsPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
-        <h1 className="text-title-3-semibold text-text-primary">已归档的聊天</h1>
+        <h1 className="text-title-3-semibold text-text-primary">{t("nav.archived")}</h1>
         {rows.length > 0 ? (
           <Button
             variant="destructive"
@@ -68,14 +70,14 @@ export function ArchivedChatsPage() {
             onClick={() => setConfirmAll(true)}
           >
             <RiDeleteBinLine className="size-3.5" />
-            全部删除
+            {t("settings.archived.deleteAll")}
           </Button>
         ) : null}
       </div>
 
       {rows.length === 0 ? (
         <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-border-button-default bg-background-secondary-default/50">
-          <p className="text-body-medium text-text-tertiary">暂无已归档的聊天</p>
+          <p className="text-body-medium text-text-tertiary">{t("settings.archived.empty")}</p>
         </div>
       ) : (
         <>
@@ -85,16 +87,16 @@ export function ArchivedChatsPage() {
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜索已归档聊天"
+                placeholder={t("settings.archived.search")}
                 className="rounded-xl pl-8"
               />
             </div>
             <Select value={workspaceFilter} onValueChange={setWorkspaceFilter}>
               <SelectTrigger className="w-[180px] rounded-xl">
-                <SelectValue placeholder="所有项目" />
+                <SelectValue placeholder={t("settings.archived.allProjects")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">所有项目</SelectItem>
+                <SelectItem value="all">{t("settings.archived.allProjects")}</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
@@ -120,18 +122,18 @@ export function ArchivedChatsPage() {
 
       <ConfirmDialog
         open={confirmAll}
-        title="全部删除"
-        description="确定永久删除全部已归档会话？此操作不可恢复。"
-        confirmLabel="全部删除"
+        title={t("settings.archived.deleteAll")}
+        description={t("settings.archived.deleteAllConfirm")}
+        confirmLabel={t("settings.archived.deleteAll")}
         destructive
         onOpenChange={setConfirmAll}
         onConfirm={() => void deleteAllArchivedSessions().then(() => refresh())}
       />
       <ConfirmDialog
         open={pendingDeleteId !== null}
-        title="删除会话"
-        description="确定永久删除这条会话？此操作不可恢复。"
-        confirmLabel="删除"
+        title={t("settings.archived.deleteSession")}
+        description={t("settings.archived.deleteConfirm")}
+        confirmLabel={t("common.delete")}
         destructive
         onOpenChange={(open) => {
           if (!open) setPendingDeleteId(null)
@@ -156,6 +158,8 @@ function ArchivedGroup({
   onRefresh: () => void
   onAskDelete: (id: string) => void
 }) {
+  const t = useT()
+  const { locale } = useI18n()
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between px-1">
@@ -163,7 +167,9 @@ function ArchivedGroup({
           <RiFolder6Line className="size-4 text-accent-500" />
           <span>{name}</span>
         </div>
-        <span className="text-caption-2-medium text-text-tertiary">{chats.length} chat</span>
+        <span className="text-caption-2-medium text-text-tertiary">
+          {t("settings.archived.chatCount", { count: chats.length })}
+        </span>
       </div>
       <div className="overflow-hidden rounded-2xl border border-border-button-default">
         {chats.map((chat, index) => (
@@ -177,13 +183,13 @@ function ArchivedGroup({
             <div className="min-w-0">
               <p className="truncate text-body-medium text-text-primary">{chat.title}</p>
               <p className="text-caption-2-medium text-text-tertiary">
-                {formatArchivedAt(chat.archivedAt)}
+                {formatArchivedAt(chat.archivedAt, dateLocale(locale))}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
-                title="删除"
+                title={t("common.delete")}
                 className="flex size-7 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-error-primary"
                 onClick={() => onAskDelete(chat.id)}
               >
@@ -196,7 +202,7 @@ function ArchivedGroup({
                 onClick={() => void unarchiveSession(chat.id).then(onRefresh)}
               >
                 <RiInboxUnarchiveLine className="size-3.5" />
-                取消归档
+                {t("settings.archived.unarchive")}
               </Button>
             </div>
           </div>

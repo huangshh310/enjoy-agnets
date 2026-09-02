@@ -16,6 +16,7 @@ import {
   RiTerminalBoxLine
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 import type { FileChangeChip, ToolChipsProps, ToolStepItem } from "./tool-chips.types"
 
 export type { FileChangeChip, ToolChipsProps, ToolStepItem } from "./tool-chips.types"
@@ -35,6 +36,7 @@ export function FileChangeChips({
   onOpenFile?: (path: string) => void
   visibleLimit?: number
 }) {
+  useUiLocale()
   const [showAll, setShowAll] = useState(false)
   if (files.length === 0) return null
 
@@ -63,7 +65,7 @@ export function FileChangeChips({
           onClick={() => setShowAll(true)}
           className="rounded-md px-1.5 py-0.5 text-caption-2-medium text-text-tertiary hover:text-text-primary"
         >
-          +{hidden} more
+          {uiT(`+${hidden} 项`, `+${hidden} more`)}
         </button>
       ) : null}
     </div>
@@ -127,16 +129,23 @@ export function ToolChips({
   className,
   visibleLimit = 3
 }: ToolChipsProps) {
+  useUiLocale()
   const [expanded, setExpanded] = useState(defaultExpanded)
   const open = embedded || expanded
   const toolCount = steps.filter((step) => step.kind !== "thinking").length
   const fileCount = fileChanges.length
-  const label =
-    summaryLabel ||
-    `${toolCount} tool ${toolCount === 1 ? "call" : "calls"}${
-      fileCount > 0 ? `, ${fileCount} file ${fileCount === 1 ? "change" : "changes"}` : ""
-    }`
-
+  const toolPart = uiT(
+    `${toolCount} 次工具调用`,
+    `${toolCount} tool ${toolCount === 1 ? "call" : "calls"}`
+  )
+  const filePart =
+    fileCount > 0
+      ? uiT(
+          `，${fileCount} 个文件变更`,
+          `, ${fileCount} file ${fileCount === 1 ? "change" : "changes"}`
+        )
+      : ""
+  const label = summaryLabel || `${toolPart}${filePart}`
   return (
     <div
       className={cx(

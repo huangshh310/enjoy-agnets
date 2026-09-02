@@ -11,6 +11,7 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import type { McpOverviewStats } from "../types/mcp-ui.types"
 
 export function McpHeader(props: {
@@ -20,6 +21,7 @@ export function McpHeader(props: {
   isRefreshing: boolean
 }) {
   const { stats, onAddClick, onRefresh, isRefreshing } = props
+  const t = useT()
 
   return (
     <header className="flex flex-col gap-3 pb-2 border-b border-separator-border/70">
@@ -28,15 +30,15 @@ export function McpHeader(props: {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2.5 flex-wrap">
             <h1 data-testid="page-mcp" className="text-title-3-semibold text-text-primary tracking-tight">
-              Model Context Protocol (MCP) & Plugins
+              {t("pages.mcp.title")}
             </h1>
             <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
               <span className="size-1.5 rounded-full bg-emerald-500" />
-              Sandboxed
+              {t("pages.mcp.sandboxed")}
             </span>
           </div>
           <p className="text-caption-2-medium text-text-tertiary">
-            统一管理本地 STDIO 进程与远程 SSE / HTTP 协议服务，为 Agent 赋予外部工具与沙箱应用。
+            {t("pages.mcp.subtitle")}
           </p>
         </div>
 
@@ -47,19 +49,19 @@ export function McpHeader(props: {
             <span className="flex items-center gap-1.5">
               <RiPlugLine className="size-3 text-emerald-500" />
               <span className="text-text-primary font-semibold">{stats.connected}</span>
-              <span className="text-text-tertiary">/ {stats.total} 运行</span>
+              <span className="text-text-tertiary">{t("pages.mcp.runningOf", { total: stats.total })}</span>
             </span>
             <span className="h-3 w-px bg-separator-border" />
             <span className="flex items-center gap-1.5">
               <RiToolsLine className="size-3 text-accent-500" />
               <span className="text-text-primary font-semibold">{stats.totalTools}</span>
-              <span className="text-text-tertiary">Tools</span>
+              <span className="text-text-tertiary">{t("pages.mcp.toolsLabel")}</span>
             </span>
             <span className="h-3 w-px bg-separator-border" />
             <span className="flex items-center gap-1.5">
               <RiShieldCheckLine className="size-3 text-purple-500" />
               <span className="text-text-primary font-semibold">{stats.trusted}</span>
-              <span className="text-text-tertiary">信任</span>
+              <span className="text-text-tertiary">{t("pages.mcp.trustedCount")}</span>
             </span>
           </div>
 
@@ -69,10 +71,10 @@ export function McpHeader(props: {
             onClick={() => void onRefresh()}
             disabled={isRefreshing}
             className="gap-1.5 h-8 text-caption-2-medium"
-            title="刷新服务与连接状态"
+            title={t("pages.mcp.refreshTitle")}
           >
             <RiRefreshLine className={cx("size-3.5", isRefreshing && "animate-spin")} />
-            <span>刷新</span>
+            <span>{t("pages.mcp.refresh")}</span>
           </Button>
 
           <Button
@@ -81,7 +83,7 @@ export function McpHeader(props: {
             className="gap-1.5 h-8 text-caption-2-medium shadow-xs"
           >
             <RiAddLine className="size-3.5" />
-            <span>注册 Server</span>
+            <span>{t("pages.mcp.registerServer")}</span>
           </Button>
         </div>
       </div>

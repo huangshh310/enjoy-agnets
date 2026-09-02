@@ -6,17 +6,35 @@ import { useMemo } from "react"
 import { RiPieChartLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT, type TranslateFn } from "@renderer/i18n"
 
-const KIND_META: Record<string, { label: string; color: string }> = {
-  agent: { label: "Agent 循环", color: "bg-blue-500 text-blue-600 dark:text-blue-400" },
-  stream: { label: "文本流式", color: "bg-emerald-500 text-emerald-600 dark:text-emerald-400" },
-  image: { label: "生图 (Image)", color: "bg-purple-500 text-purple-600 dark:text-purple-400" },
-  video: { label: "视频 (Video)", color: "bg-rose-500 text-rose-600 dark:text-rose-400" },
-  embed: { label: "向量 (Embedding)", color: "bg-amber-500 text-amber-600 dark:text-amber-400" }
+const KIND_COLORS: Record<string, string> = {
+  agent: "bg-blue-500 text-blue-600 dark:text-blue-400",
+  stream: "bg-emerald-500 text-emerald-600 dark:text-emerald-400",
+  image: "bg-purple-500 text-purple-600 dark:text-purple-400",
+  video: "bg-rose-500 text-rose-600 dark:text-rose-400",
+  embed: "bg-amber-500 text-amber-600 dark:text-amber-400"
+}
+
+const KIND_LABEL_KEYS: Record<string, string> = {
+  agent: "pages.observability.kindAgent",
+  stream: "pages.observability.kindStream",
+  image: "pages.observability.kindImage",
+  video: "pages.observability.kindVideo",
+  embed: "pages.observability.kindEmbed"
+}
+
+function kindMeta(t: TranslateFn, kind: string) {
+  const key = KIND_LABEL_KEYS[kind]
+  return {
+    label: key ? t(key) : kind.toUpperCase(),
+    color: KIND_COLORS[kind] ?? "bg-blue-500 text-blue-600 dark:text-blue-400"
+  }
 }
 
 export function ObservabilityKindChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
 
   const kindStats = useMemo(() => {
     const map = new Map<
@@ -74,20 +92,17 @@ export function ObservabilityKindChart(props: { metrics: TelemetryMetric[] }) {
         <div className="flex items-center gap-2">
           <RiPieChartLine className="size-4 text-emerald-500" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
-            工作负载类型占比 (Workload Kind Breakdown)
+            {t("pages.observability.kindTitle")}
           </h3>
         </div>
         <span className="text-[11px] font-mono text-text-tertiary">
-          {kindStats.length} 个执行种类
+          {t("pages.observability.kindCount", { n: kindStats.length })}
         </span>
       </div>
 
       <div className="flex flex-col gap-2 font-mono text-[11px]">
         {kindStats.map((stat) => {
-          const meta = KIND_META[stat.kind] ?? {
-            label: stat.kind.toUpperCase(),
-            color: "bg-blue-500 text-blue-600 dark:text-blue-400"
-          }
+          const meta = kindMeta(t, stat.kind)
 
           return (
             <div key={stat.kind} className="flex flex-col gap-1">
@@ -101,10 +116,17 @@ export function ObservabilityKindChart(props: { metrics: TelemetryMetric[] }) {
 
                 <div className="flex items-center gap-2 text-text-tertiary">
                   <span className="text-text-secondary font-medium">
-                    {stat.calls} 次 ({stat.percent.toFixed(0)}%)
+                    {t("pages.observability.timesPercentSpaced", {
+                      n: stat.calls,
+                      percent: stat.percent.toFixed(0)
+                    })}
                   </span>
                   <span>·</span>
-                  <span>{stat.avgDurationMs >= 1000 ? `${(stat.avgDurationMs / 1000).toFixed(1)}s` : `${stat.avgDurationMs}ms`}</span>
+                  <span>
+                    {stat.avgDurationMs >= 1000
+                      ? `${(stat.avgDurationMs / 1000).toFixed(1)}s`
+                      : `${stat.avgDurationMs}ms`}
+                  </span>
                 </div>
               </div>
 

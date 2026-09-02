@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { uiT, useUiLocale } from "@/i18n/ui-locale";
 import type { FileUIPart, UIMessage } from "ai";
 import {
   ChevronLeftIcon,
@@ -242,11 +243,12 @@ export const MessageBranchPrevious = ({
   children,
   ...props
 }: MessageBranchPreviousProps) => {
+  useUiLocale();
   const { goToPrevious, totalBranches } = useMessageBranch();
 
   return (
     <Button
-      aria-label="Previous branch"
+      aria-label={uiT("上一分支", "Previous branch")}
       disabled={totalBranches <= 1}
       onClick={goToPrevious}
       size="icon-sm"
@@ -266,11 +268,12 @@ export const MessageBranchNext = ({
   className,
   ...props
 }: MessageBranchNextProps) => {
+  useUiLocale();
   const { goToNext, totalBranches } = useMessageBranch();
 
   return (
     <Button
-      aria-label="Next branch"
+      aria-label={uiT("下一分支", "Next branch")}
       disabled={totalBranches <= 1}
       onClick={goToNext}
       size="icon-sm"
@@ -289,7 +292,9 @@ export const MessageBranchPage = ({
   className,
   ...props
 }: MessageBranchPageProps) => {
+  useUiLocale();
   const { currentBranch, totalBranches } = useMessageBranch();
+  const current = currentBranch + 1;
 
   return (
     <ButtonGroupText
@@ -299,7 +304,7 @@ export const MessageBranchPage = ({
       )}
       {...props}
     >
-      {currentBranch + 1} of {totalBranches}
+      {uiT(`${current} / ${totalBranches}`, `${current} of ${totalBranches}`)}
     </ButtonGroupText>
   );
 };
@@ -333,11 +338,13 @@ export function MessageAttachment({
   onRemove,
   ...props
 }: MessageAttachmentProps) {
+  useUiLocale();
   const filename = data.filename || "";
   const mediaType =
     data.mediaType?.startsWith("image/") && data.url ? "image" : "file";
   const isImage = mediaType === "image";
-  const attachmentLabel = filename || (isImage ? "Image" : "Attachment");
+  const attachmentLabel = filename || (isImage ? uiT("图片", "Image") : uiT("附件", "Attachment"));
+  const removeLabel = uiT("移除附件", "Remove attachment");
 
   return (
     <div
@@ -350,7 +357,7 @@ export function MessageAttachment({
       {isImage ? (
         <>
           <img
-            alt={filename || "attachment"}
+            alt={filename || uiT("附件", "attachment")}
             className="size-full object-cover"
             height={100}
             src={data.url}
@@ -358,7 +365,7 @@ export function MessageAttachment({
           />
           {onRemove && (
             <Button
-              aria-label="Remove attachment"
+              aria-label={removeLabel}
               className="absolute top-2 right-2 size-6 rounded-full bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity hover:bg-background group-hover:opacity-100 [&>svg]:size-3"
               onClick={(e) => {
                 e.stopPropagation();
@@ -368,7 +375,7 @@ export function MessageAttachment({
               variant="ghost"
             >
               <XIcon />
-              <span className="sr-only">Remove</span>
+              <span className="sr-only">{uiT("移除", "Remove")}</span>
             </Button>
           )}
         </>
@@ -386,7 +393,7 @@ export function MessageAttachment({
           </Tooltip>
           {onRemove && (
             <Button
-              aria-label="Remove attachment"
+              aria-label={removeLabel}
               className="size-6 shrink-0 rounded-full p-0 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 [&>svg]:size-3"
               onClick={(e) => {
                 e.stopPropagation();
@@ -396,7 +403,7 @@ export function MessageAttachment({
               variant="ghost"
             >
               <XIcon />
-              <span className="sr-only">Remove</span>
+              <span className="sr-only">{uiT("移除", "Remove")}</span>
             </Button>
           )}
         </>

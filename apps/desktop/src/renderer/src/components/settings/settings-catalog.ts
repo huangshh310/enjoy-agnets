@@ -1,3 +1,6 @@
+/**
+ * 设置分段目录：id / 图标固定，标签走 i18n。
+ */
 import {
   RiBookOpenLine,
   RiEqualizer3Line,
@@ -16,6 +19,7 @@ import {
   RiTerminalBoxLine
 } from "@remixicon/react"
 import type { ComponentType } from "react"
+import type { TranslateFn } from "@renderer/i18n"
 
 export const SETTINGS_SECTIONS = [
   "general",
@@ -56,110 +60,123 @@ export type SettingsNavGroup = {
   items: SettingsNavItem[]
 }
 
-export const SETTINGS_NAV: SettingsNavGroup[] = [
+type NavItemDef = {
+  id: SettingsSectionId
+  labelKey: string
+  icon: IconComponent
+  keywords: string[]
+}
+
+type NavGroupDef = {
+  id: string
+  labelKey: string
+  items: NavItemDef[]
+}
+
+const SETTINGS_NAV_DEF: NavGroupDef[] = [
   {
     id: "app",
-    label: "App",
+    labelKey: "nav.groupApp",
     items: [
       {
         id: "general",
-        label: "General",
+        labelKey: "nav.general",
         icon: RiSettings4Line,
-        keywords: ["permissions", "approval", "language", "defaults"]
+        keywords: ["permissions", "approval", "language", "defaults", "权限", "语言", "通用"]
       },
       {
         id: "appearance",
-        label: "Appearance",
+        labelKey: "nav.appearance",
         icon: RiPaletteLine,
-        keywords: ["theme", "dark", "light", "mode"]
+        keywords: ["theme", "dark", "light", "mode", "主题", "外观"]
       },
       {
         id: "shortcuts",
-        label: "Keyboard shortcuts",
+        labelKey: "nav.shortcuts",
         icon: RiKeyboardBoxLine,
-        keywords: ["hotkey", "keymap", "command"]
+        keywords: ["hotkey", "keymap", "command", "快捷键"]
       }
     ]
   },
   {
     id: "agent",
-    label: "Agent",
+    labelKey: "nav.groupAgent",
     items: [
       {
         id: "providers",
-        label: "Providers",
+        labelKey: "nav.providers",
         icon: RiShieldKeyholeLine,
-        keywords: ["api", "key", "deepseek", "openai", "model"]
+        keywords: ["api", "key", "deepseek", "openai", "model", "供应商"]
       },
       {
         id: "agent",
-        label: "Agent",
+        labelKey: "nav.agent",
         icon: RiEqualizer3Line,
-        keywords: ["mode", "model", "ask", "plan", "approval", "permissions", "harness", "claude", "codex", "pi", "opencode", "sandbox"]
+        keywords: ["mode", "model", "ask", "plan", "approval", "harness", "sandbox"]
       },
       {
         id: "capabilities",
-        label: "Model capabilities",
+        labelKey: "nav.capabilities",
         icon: RiSparkling2Line,
-        keywords: ["vision", "tools", "structured", "image", "speech"]
+        keywords: ["vision", "tools", "structured", "image", "speech", "能力"]
       },
       {
         id: "workflow",
-        label: "Workflow recovery",
+        labelKey: "nav.workflow",
         icon: RiRouteLine,
-        keywords: ["checkpoint", "resume", "durable"]
+        keywords: ["checkpoint", "resume", "durable", "工作流"]
       },
       {
         id: "sandbox",
-        label: "Sandbox",
+        labelKey: "nav.sandbox",
         icon: RiTerminalBoxLine,
-        keywords: ["cwd", "network", "code mode"]
+        keywords: ["cwd", "network", "code mode", "沙箱"]
       }
     ]
   },
   {
     id: "workspace",
-    label: "Workspace",
+    labelKey: "nav.groupWorkspace",
     items: [
       {
         id: "workspace",
-        label: "Workspace",
+        labelKey: "nav.workspace",
         icon: RiFolder6Line,
-        keywords: ["folder", "project", "open"]
+        keywords: ["folder", "project", "open", "工作区"]
       },
       {
         id: "knowledge",
-        label: "Knowledge indexing",
+        labelKey: "nav.knowledge",
         icon: RiBookOpenLine,
-        keywords: ["rag", "index", "embed"]
+        keywords: ["rag", "index", "embed", "知识库"]
       },
       {
         id: "media",
-        label: "Media & assets",
+        labelKey: "nav.media",
         icon: RiImageLine,
-        keywords: ["image", "speech", "video", "export"]
+        keywords: ["image", "speech", "video", "export", "媒体"]
       }
     ]
   },
   {
     id: "integrations",
-    label: "Integrations",
+    labelKey: "nav.groupIntegrations",
     items: [
       {
         id: "mcp",
-        label: "MCP",
+        labelKey: "nav.mcp",
         icon: RiPlugLine,
         keywords: ["mcp", "tools", "servers"]
       },
       {
         id: "telemetry",
-        label: "Telemetry & privacy",
+        labelKey: "nav.telemetry",
         icon: RiPulseLine,
-        keywords: ["otel", "metrics", "redact"]
+        keywords: ["otel", "metrics", "redact", "遥测", "隐私"]
       },
       {
         id: "git",
-        label: "Git",
+        labelKey: "nav.git",
         icon: RiGitBranchLine,
         keywords: ["commit", "diff", "branch", "staging"]
       }
@@ -167,11 +184,11 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
   },
   {
     id: "archived",
-    label: "已归档",
+    labelKey: "nav.groupArchived",
     items: [
       {
         id: "archived",
-        label: "已归档的聊天",
+        labelKey: "nav.archived",
         icon: RiInboxArchiveLine,
         keywords: ["archive", "chats", "history", "归档"]
       }
@@ -179,10 +196,26 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
   }
 ]
 
+export function getSettingsNav(t: TranslateFn): SettingsNavGroup[] {
+  return SETTINGS_NAV_DEF.map((group) => ({
+    id: group.id,
+    label: t(group.labelKey),
+    items: group.items.map((item) => ({
+      id: item.id,
+      label: t(item.labelKey),
+      icon: item.icon,
+      keywords: item.keywords
+    }))
+  }))
+}
+
 export function isSettingsSectionId(value: string): value is SettingsSectionId {
   return (SETTINGS_SECTIONS as readonly string[]).includes(value)
 }
 
-export function findSettingsItem(id: SettingsSectionId): SettingsNavItem | undefined {
-  return SETTINGS_NAV.flatMap((group) => group.items).find((item) => item.id === id)
+export function findSettingsItem(
+  id: SettingsSectionId,
+  nav: SettingsNavGroup[]
+): SettingsNavItem | undefined {
+  return nav.flatMap((group) => group.items).find((item) => item.id === id)
 }

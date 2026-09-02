@@ -10,6 +10,7 @@ import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { RightPaneChrome } from "./pane-chrome"
 import { RightPanePicker } from "./picker-list"
 import { RightPaneTabBody } from "./right-pane-body"
+import { useT } from "@renderer/i18n"
 
 export function RightPane({
   workspaceId,
@@ -34,6 +35,7 @@ export function RightPane({
   maximized: boolean
   onToggleWidth: () => void
 }) {
+  const t = useT()
   const tabs = useRightPaneStore((state) => state.tabs)
   const activeId = useRightPaneStore((state) => state.activeId)
   const openTool = useRightPaneStore((state) => state.openTool)
@@ -60,7 +62,7 @@ export function RightPane({
       {empty ? (
         <div className="flex h-11 shrink-0 items-center justify-end gap-0.5 px-3">
           <PaneWidthToggle maximized={maximized} onToggle={onToggleWidth} />
-          <QuietIconButton icon={RiContractRightLine} aria-label="Collapse changes pane" onClick={onCollapse} />
+          <QuietIconButton icon={RiContractRightLine} aria-label={t("chat.collapsePane")} onClick={onCollapse} />
         </div>
       ) : (
         <RightPaneChrome

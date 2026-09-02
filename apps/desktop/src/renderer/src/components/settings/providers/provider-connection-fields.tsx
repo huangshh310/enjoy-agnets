@@ -18,6 +18,7 @@ import {
 } from "@enjoy-agents/providers/presets"
 import { SecretInput } from "../secret-input"
 import type { EditorState } from "./providers.types"
+import { useT, type TranslateFn } from "@renderer/i18n"
 
 export function ProviderConnectionFields({
   editor,
@@ -30,20 +31,21 @@ export function ProviderConnectionFields({
   keyHint?: string
   onChange: (patch: Partial<EditorState>) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-4 py-1">
       {/* 基础信息行：显示名称与协议 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <Field label="Display Name" hint="Friendly profile name">
+        <Field label={t("settings.providers.displayName")} hint={t("settings.providers.displayHint")}>
           <Input
             value={editor.name}
             onChange={(event) => onChange({ name: event.target.value })}
-            placeholder="e.g. DeepSeek Official"
+            placeholder={t("settings.providers.namePlaceholder")}
             className="h-9"
           />
         </Field>
 
-        <Field label="Protocol / Wire API" hint="API format">
+        <Field label={t("settings.providers.protocol")} hint={t("settings.providers.protocolHint")}>
           <Select
             value={editor.apiStyle}
             onValueChange={(value) => onChange({ apiStyle: value as ApiStyle })}
@@ -64,21 +66,18 @@ export function ProviderConnectionFields({
 
       {/* 密钥与端点 */}
       <Field
-        label="API Key"
-        hint={preset.requiresKey ? "Stored in OS Keychain" : "Optional for local endpoints"}
+        label={t("settings.providers.apiKey")}
+        hint={preset.requiresKey ? t("settings.providers.keychain") : t("settings.providers.optionalLocal")}
       >
         <SecretInput
           autoFocus={!editor.id && preset.requiresKey}
           value={editor.apiKey}
           onChange={(value) => onChange({ apiKey: value })}
-          placeholder={resolveKeyPlaceholder(editor, preset, keyHint)}
+          placeholder={resolveKeyPlaceholder(editor, preset, keyHint, t)}
         />
       </Field>
 
-      <Field
-        label="Base URL / Endpoint"
-        hint="Server address"
-      >
+      <Field label={t("settings.providers.baseUrl")} hint={t("settings.providers.serverAddress")}>
         <Input
           value={editor.baseURL}
           onChange={(event) => onChange({ baseURL: event.target.value })}
@@ -119,8 +118,9 @@ function Field({
 function resolveKeyPlaceholder(
   editor: EditorState,
   preset: ProviderPreset,
-  keyHint?: string
+  keyHint: string | undefined,
+  t: TranslateFn
 ) {
-  if (editor.id) return keyHint || "Keep existing key or paste new one"
-  return preset.requiresKey ? "sk-..." : "Optional (e.g. for Ollama)"
+  if (editor.id) return keyHint || t("settings.providers.keepKey")
+  return preset.requiresKey ? "sk-..." : t("settings.providers.optionalOllama")
 }

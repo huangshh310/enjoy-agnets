@@ -6,6 +6,8 @@ import { TaskList, type TaskItem } from "@/components/ai-elements/task-list"
 import { AssetPreview } from "./asset-preview"
 import { SourceList } from "./source-list"
 import { StructuredCard } from "./structured-card"
+import { useT } from "@renderer/i18n"
+
 export function GenerativeUi({
   components,
   prompt
@@ -29,6 +31,7 @@ function GenerativeBlock({
   item: NonNullable<ThreadMessage["components"]>[number]
   prompt?: string
 }) {
+  const t = useT()
   if (item.componentId === "source-list") {
     return <SourceList sources={asSources(item.props.sources)} />
   }
@@ -44,7 +47,7 @@ function GenerativeBlock({
     const tasks = (item.props.tasks as TaskItem[]) || (item.props.items as TaskItem[]) || []
     return (
       <TaskList
-        title={typeof item.props.title === "string" ? item.props.title : "To-dos"}
+        title={typeof item.props.title === "string" ? item.props.title : t("chat.todos")}
         tasks={tasks}
         currentIndex={typeof item.props.currentIndex === "number" ? item.props.currentIndex : undefined}
       />
@@ -59,7 +62,7 @@ function GenerativeBlock({
   if (item.componentId === "approval") {
     return (
       <p className="text-body-medium text-text-secondary">
-        Approval stays in the confirmation card above. {safeText(item.props.summary)}
+        {t("chat.approvalStays")} {safeText(item.props.summary)}
       </p>
     )
   }

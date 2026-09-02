@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
 import {
-  EFFORT_LEVELS,
+  getEffortLevels,
   getEffortMeta
 } from "./reasoning-effort-config"
 import { MiniEnergyMeter, ReasoningEnergyBar } from "./reasoning-energy-bar"
@@ -23,15 +24,17 @@ import { MiniEnergyMeter, ReasoningEnergyBar } from "./reasoning-energy-bar"
 export function ReasoningEffortToggle() {
   const reasoningEffort = useChatStore((state) => state.reasoningEffort)
   const setReasoningEffort = useChatStore((state) => state.setReasoningEffort)
+  const t = useT()
   // 思考档始终露出：AI SDK 7 顶层 reasoning 按模型映射，不支持则忽略
-  const currentMeta = getEffortMeta(reasoningEffort)
+  const currentMeta = getEffortMeta(reasoningEffort, t)
+  const levels = getEffortLevels(t)
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Reasoning Effort"
+          aria-label={t("chat.effortAria")}
           className={cx(
             "group flex h-8 min-w-0 items-center gap-1.5 rounded-full px-2 text-caption-1-medium outline-none transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-border-focus-ring @[26rem]:px-2.5",
             currentMeta.value !== "none"
@@ -57,7 +60,7 @@ export function ReasoningEffortToggle() {
           <div className="flex items-center gap-1.5">
             <RiBrainLine className={cx("size-4", currentMeta.iconColorClass)} />
             <span className="text-[12px] font-semibold text-text-primary">
-              Thinking Energy
+              {t("chat.effortEnergy")}
             </span>
           </div>
           <span
@@ -66,7 +69,7 @@ export function ReasoningEffortToggle() {
               currentMeta.badgeClass
             )}
           >
-            Level {currentMeta.index} · {currentMeta.label}
+            {t("chat.effortLevel", { index: currentMeta.index, label: currentMeta.label })}
           </span>
         </div>
 
@@ -79,9 +82,9 @@ export function ReasoningEffortToggle() {
             showLabels={false}
           />
           <div className="flex items-center justify-between px-0.5 text-[10px] text-text-tertiary">
-            <span>Fast</span>
-            <span>Balanced</span>
-            <span>Deep Reasoning</span>
+            <span>{t("chat.effortFast")}</span>
+            <span>{t("chat.effortBalanced")}</span>
+            <span>{t("chat.effortDeep")}</span>
           </div>
         </div>
 
@@ -89,7 +92,7 @@ export function ReasoningEffortToggle() {
 
         {/* 档位列表 */}
         <div className="space-y-0.5">
-          {EFFORT_LEVELS.map((opt) => {
+          {levels.map((opt) => {
             const isSelected = currentMeta.value === opt.value
 
             return (

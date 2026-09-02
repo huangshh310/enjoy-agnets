@@ -4,8 +4,11 @@
 import { RiAddLine, RiFolder6Line } from "@remixicon/react"
 import { ExecutionModeMenu } from "../execution-mode-menu"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
+
 
 export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
+  const t = useT()
   const mode = useChatStore((state) => state.mode)
   const setMode = useChatStore((state) => state.setMode)
   const workspaceId = useChatStore((state) => state.workspaceId)
@@ -16,12 +19,12 @@ export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
       <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
-          aria-label="Add context"
+          aria-label={t("chat.addContext")}
           onClick={onPickFiles}
           className="inline-flex items-center gap-1 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-primary shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-border-button-hover cursor-pointer"
         >
           <RiAddLine className="size-3.5 text-foreground-icon-secondary" />
-          <span>Context</span>
+          <span>{t("chat.context")}</span>
         </button>
         <ExecutionModeMenu mode={mode} onChange={setMode} />
       </div>
@@ -33,7 +36,7 @@ export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
             {workspaceName}
           </span>
           <span className="text-text-tertiary">·</span>
-          <span className="text-caption-2-medium text-text-tertiary">本地</span>
+          <span className="text-caption-2-medium text-text-tertiary">{t("chat.local")}</span>
         </div>
       ) : null}
     </div>

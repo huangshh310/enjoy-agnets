@@ -2,6 +2,7 @@
  * 知识页：来源、文件矩阵、检索。View Files 必须写入 selectedPath。
  */
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
+import { useT } from "@renderer/i18n"
 import { KnowledgeAddModal } from "./knowledge-add-modal"
 import { KnowledgeDocumentsTable } from "./knowledge-documents-table"
 import { KnowledgeEditModal } from "./knowledge-edit-modal"
@@ -12,11 +13,12 @@ import { KnowledgeRetrieverDrawer } from "./knowledge-retriever-drawer"
 import { useKnowledgePage } from "./use-knowledge-page"
 
 export function KnowledgePage() {
+  const t = useT()
   const page = useKnowledgePage()
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Search knowledge collections..."
+      searchPlaceholder={t("pages.knowledge.searchPlaceholder")}
       groups={page.groups}
       selectedId={page.selectedFolder ?? "all"}
       onSelect={(id) => page.setSelectedFolder(id === "all" ? null : id)}

@@ -16,6 +16,7 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { SettingsCard, SettingsRow } from "./settings-row"
+import { useT } from "@renderer/i18n"
 
 type ApprovalFlags = {
   requireWriteApproval: boolean
@@ -30,6 +31,7 @@ export function SettingsPermissions({
   flags: ApprovalFlags
   onChange: (patch: ApprovalFlags & { permissionMode: PermissionMode }) => void
 }) {
+  const t = useT()
   const kind = classifyPermissionMode(flags)
 
   function persist(next: ApprovalFlags, mode?: PermissionMode) {
@@ -37,23 +39,23 @@ export function SettingsPermissions({
   }
 
   return (
-    <SettingsCard title="Permissions">
+    <SettingsCard title={t("settings.permissions.title")}>
       <PermissionModeRow kind={kind} onPick={(mode) => persist(flagsForPermissionMode(mode), mode)} />
       <FlagRow
-        title="Auto-apply file writes"
-        description="Allow write and edit operations (write_file, edit_file) without prompting for approval."
+        title={t("settings.permissions.autoWrites")}
+        description={t("settings.permissions.autoWritesDesc")}
         checked={!flags.requireWriteApproval}
         onCheckedChange={(auto) => persist({ ...flags, requireWriteApproval: !auto })}
       />
       <FlagRow
-        title="Auto-run shell commands"
-        description="Allow terminal bash commands to execute automatically without prompting."
+        title={t("settings.permissions.autoBash")}
+        description={t("settings.permissions.autoBashDesc")}
         checked={!flags.requireBashApproval}
         onCheckedChange={(auto) => persist({ ...flags, requireBashApproval: !auto })}
       />
       <FlagRow
-        title="Auto-commit git changes"
-        description="Allow repository git commits without prompting for approval."
+        title={t("settings.permissions.autoCommit")}
+        description={t("settings.permissions.autoCommitDesc")}
         checked={!flags.requireCommitApproval}
         onCheckedChange={(auto) => persist({ ...flags, requireCommitApproval: !auto })}
       />
@@ -68,32 +70,30 @@ function PermissionModeRow({
   kind: PermissionMode | "custom"
   onPick: (mode: PermissionMode) => void
 }) {
+  const t = useT()
   return (
-    <SettingsRow
-      title="Permission mode"
-      description="Presets for tool approval. allow-all runs commands without approval; custom lets you mix."
-    >
+    <SettingsRow title={t("settings.general.permissionMode")} description={t("settings.permissions.modeDesc")}>
       <Select value={kind} onValueChange={(val) => onPick(val as PermissionMode)}>
         <SelectTrigger className="w-44">
-          <SelectValue placeholder="Select mode" />
+          <SelectValue placeholder={t("settings.permissions.selectMode")} />
         </SelectTrigger>
         <SelectContent align="end">
           <SelectItem value="allow-reads">
             <div className="flex flex-col">
-              <span>Reads (Safe)</span>
-              <span className="text-[10px] text-text-tertiary">Approve writes, shell, git</span>
+              <span>{t("common.permissionReads")}</span>
+              <span className="text-[10px] text-text-tertiary">{t("settings.permissions.readsHint")}</span>
             </div>
           </SelectItem>
           <SelectItem value="allow-edits">
             <div className="flex flex-col">
-              <span>Edits</span>
-              <span className="text-[10px] text-text-tertiary">Auto writes; approve shell</span>
+              <span>{t("common.permissionEdits")}</span>
+              <span className="text-[10px] text-text-tertiary">{t("settings.permissions.editsHint")}</span>
             </div>
           </SelectItem>
           <SelectItem value="allow-all">
             <div className="flex flex-col">
-              <span>All (Autonomous)</span>
-              <span className="text-[10px] text-text-tertiary">Auto writes, shell, commits</span>
+              <span>{t("common.permissionAll")}</span>
+              <span className="text-[10px] text-text-tertiary">{t("settings.permissions.allHint")}</span>
             </div>
           </SelectItem>
         </SelectContent>

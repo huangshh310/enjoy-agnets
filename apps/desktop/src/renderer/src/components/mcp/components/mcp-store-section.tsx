@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
-import { FEATURED_MCP_PRESETS, MCP_PLUGIN_CATEGORIES } from "../constants/mcp-presets"
+import { useT } from "@renderer/i18n"
+import { getFeaturedMcpPresets, getMcpPluginCategories } from "../constants/mcp-presets"
 import type { McpPluginCategory, McpPluginPreset } from "../types/mcp-ui.types"
 
 export function McpStoreSection(props: {
@@ -24,10 +25,13 @@ export function McpStoreSection(props: {
   isAdding: boolean
 }) {
   const { servers, onQuickConnect, onPrefill, isAdding } = props
+  const t = useT()
+  const categories = getMcpPluginCategories(t)
+  const featuredPresets = getFeaturedMcpPresets(t)
   const [selectedCategory, setSelectedCategory] = useState<McpPluginCategory>("all")
   const [search, setSearch] = useState("")
 
-  const filteredPresets = FEATURED_MCP_PRESETS.filter((item) => {
+  const filteredPresets = featuredPresets.filter((item) => {
     const matchCategory = selectedCategory === "all" || item.category === selectedCategory
     const matchSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -42,7 +46,7 @@ export function McpStoreSection(props: {
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         {/* 紧凑分类胶囊 */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          {MCP_PLUGIN_CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isSelected = selectedCategory === cat.id
             return (
               <button
@@ -68,7 +72,7 @@ export function McpStoreSection(props: {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索插件..."
+            placeholder={t("pages.mcp.searchPlugins")}
             className="pl-8 h-7.5 text-caption-2-medium bg-background-primary-default"
           />
         </div>
@@ -131,7 +135,7 @@ export function McpStoreSection(props: {
                   <div className="mt-2.5 flex items-center gap-1 rounded bg-amber-500/5 px-2 py-1 text-[10.5px] text-amber-600 dark:text-amber-400">
                     <RiKey2Line className="size-3 shrink-0" />
                     <span className="truncate">
-                      配置: {plugin.envTemplates.map((t) => t.key).join(", ")}
+                      {t("pages.mcp.needsConfig", { keys: plugin.envTemplates.map((item) => item.key).join(", ") })}
                     </span>
                   </div>
                 ) : null}
@@ -148,7 +152,7 @@ export function McpStoreSection(props: {
                       href={plugin.docsUrl}
                       target="_blank"
                       rel="noreferrer"
-                      title="官方文档"
+                      title={t("pages.mcp.officialDocs")}
                       className="text-text-tertiary hover:text-text-primary transition-colors p-0.5"
                     >
                       <RiExternalLinkLine className="size-3" />
@@ -172,12 +176,12 @@ export function McpStoreSection(props: {
                   {isConfigured ? (
                     <>
                       <RiCheckLine className="size-3 text-emerald-500" />
-                      <span>已配置</span>
+                      <span>{t("pages.mcp.configured")}</span>
                     </>
                   ) : (
                     <>
                       <RiAddLine className="size-3" />
-                      <span>{plugin.envTemplates ? "配置" : "接入"}</span>
+                      <span>{plugin.envTemplates ? t("pages.mcp.configure") : t("pages.mcp.connect")}</span>
                     </>
                   )}
                 </Button>

@@ -8,6 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { useT } from "@renderer/i18n"
+
 
 export function ComposerAttachMenu({
   composer,
@@ -18,13 +20,14 @@ export function ComposerAttachMenu({
   onComposerChange: (value: string) => void
   onPickFiles: () => void
 }) {
+  const t = useT()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Add photos, files & sources"
-          title="Add photos, files & sources"
+          aria-label={t("chat.addSources")}
+          title={t("chat.addSources")}
           className="flex size-7.5 items-center justify-center rounded-full border border-border-button-default/50 text-foreground-icon-secondary shadow-2xs transition-all hover:scale-105 hover:border-border-button-default hover:bg-background-secondary-hover hover:text-text-primary active:scale-95"
         >
           <RiAddLine className="size-4.5" />
@@ -38,24 +41,24 @@ export function ComposerAttachMenu({
       >
         <AttachMenuRow
           icon={RiAttachmentLine}
-          title="Add photos & files"
-          hint="Upload from your computer"
+          title={t("chat.addPhotos")}
+          hint={t("chat.uploadComputer")}
           onClick={onPickFiles}
         />
         <AttachMenuRow
           icon={RiFolder6Line}
-          title="Workspace files"
-          hint="Reference files & docs (@)"
+          title={t("chat.workspaceFiles")}
+          hint={t("chat.referenceFiles")}
           onClick={() => onComposerChange(composer ? `${composer} @` : "@")}
         />
         <AttachMenuRow
           icon={RiGlobalLine}
-          title="Web search"
-          hint="Real-time web & documentation"
+          title={t("chat.webSearch")}
+          hint={t("chat.webSearchHint")}
           onClick={() => onComposerChange(composer ? `${composer} /web ` : "/web ")}
         />
         <div className="mt-1 border-t border-separator-border px-3 pt-2 pb-1 text-caption-2-medium text-text-tertiary">
-          Type @ for files, / for actions
+          {t("chat.typeHint")}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

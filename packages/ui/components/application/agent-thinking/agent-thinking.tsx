@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { cx } from "@/utils/cx";
+import { uiT, useUiLocale } from "@/i18n/ui-locale";
 
 /**
  * Agent Thinking — the agent "thinking" state that sits above a chat composer
@@ -219,6 +220,7 @@ function InfinityIndicator() {
 /* ------------------------------------------------------------------ timer */
 
 function ElapsedTimer() {
+  useUiLocale();
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -230,23 +232,24 @@ function ElapsedTimer() {
     return () => window.clearInterval(id);
   }, []);
 
+  const value = elapsed.toFixed(1);
   return (
     <span className="font-mono text-caption-1-regular text-text-tertiary tabular-nums">
-      {elapsed.toFixed(1)}s
+      {uiT(`${value}秒`, `${value}s`)}
     </span>
   );
 }
 
-/* ----------------------------------------------------------------- loader */
-
 export function AgentThinking({
   variant = "wave",
-  label = "Thinking",
+  label,
   tone,
   shimmer = true,
   showTimer = true,
   className,
 }: AgentThinkingProps) {
+  useUiLocale();
+  const resolvedLabel = label ?? uiT("思考中", "Thinking");
   const color = TONE_COLORS[tone ?? VARIANT_TONE[variant]];
 
   return (
@@ -259,10 +262,10 @@ export function AgentThinking({
       {variant === "stars" && <StarsIndicator />}
       {variant === "infinity" && <InfinityIndicator />}
       <span
-        aria-label={label}
+        aria-label={resolvedLabel}
         className={cx("text-body-medium", shimmer && "bui-agent-thinking-label")}
       >
-        {label}
+        {resolvedLabel}
       </span>
       {showTimer && <ElapsedTimer />}
     </div>

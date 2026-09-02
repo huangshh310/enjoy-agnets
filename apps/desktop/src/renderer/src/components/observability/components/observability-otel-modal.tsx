@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
 export function ObservabilityOtelModal(props: {
@@ -21,6 +22,7 @@ export function ObservabilityOtelModal(props: {
   onSaved: () => void
 }) {
   const { open, onOpenChange, onSaved } = props
+  const t = useT()
   const [policy, setPolicy] = useState<"local" | "otel" | "off">("local")
   const [endpoint, setEndpoint] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -53,15 +55,21 @@ export function ObservabilityOtelModal(props: {
     }
   }
 
+  const policyItems = [
+    { id: "local" as const, label: t("pages.observability.policyLocal") },
+    { id: "otel" as const, label: t("pages.observability.policyOtel") },
+    { id: "off" as const, label: t("pages.observability.policyOff") }
+  ]
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl p-0 gap-0 overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default shadow-xl">
         <div className="border-b border-separator-border/70 px-5 py-3.5 flex flex-col gap-0.5">
           <DialogTitle className="text-body-medium font-semibold text-text-primary">
-            OpenTelemetry (OTEL) & 遥测上报配置
+            {t("pages.observability.otelModalTitle")}
           </DialogTitle>
           <p className="text-[11.5px] text-text-tertiary">
-            遵循 Vercel AI SDK 7 Telemetry 规范，将模型耗时、Token 消耗与跨度追踪上报至 APM 平台。
+            {t("pages.observability.otelModalHint")}
           </p>
         </div>
 
@@ -69,18 +77,14 @@ export function ObservabilityOtelModal(props: {
           {/* 遥测策略模式单选 */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-[11.5px] font-medium text-text-secondary">
-              遥测模式 (Telemetry Policy)
+              {t("pages.observability.telemetryPolicy")}
             </Label>
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-background-secondary-default/60 p-0.5">
-              {[
-                { id: "local", label: "Local 本地模式" },
-                { id: "otel", label: "OTEL 远程上报" },
-                { id: "off", label: "Off 完全关闭" }
-              ].map((item) => (
+              {policyItems.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setPolicy(item.id as "local" | "otel" | "off")}
+                  onClick={() => setPolicy(item.id)}
                   className={cx(
                     "rounded py-1 text-[11px] font-medium transition-all flex items-center justify-center",
                     policy === item.id
@@ -98,16 +102,16 @@ export function ObservabilityOtelModal(props: {
           {policy === "otel" ? (
             <div className="flex flex-col gap-1.5">
               <Label className="text-[11.5px] font-medium text-text-secondary">
-                OTLP HTTP Collector Endpoint (端点 URL)
+                {t("pages.observability.otlpEndpoint")}
               </Label>
               <Input
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="https://api.langfuse.com/api/public/otel 或 自建 OTLP 地址"
+                placeholder={t("pages.observability.otlpPlaceholder")}
                 className="font-mono text-caption-2-medium h-8 bg-background-secondary-default/40"
               />
               <div className="flex items-center gap-1.5 text-[10.5px] text-text-tertiary">
-                <span>兼容 Langfuse, Helicone, Arize AX, Braintrust, Datadog 等平台。</span>
+                <span>{t("pages.observability.otlpHint")}</span>
               </div>
             </div>
           ) : null}
@@ -116,9 +120,10 @@ export function ObservabilityOtelModal(props: {
           <div className="flex items-start gap-2.5 rounded-lg border border-separator-border/60 bg-background-secondary-default/30 p-3 text-[11px] text-text-secondary">
             <RiShieldCheckLine className="size-4 text-emerald-500 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
-              <strong>隐私与安全不变量：</strong>所有上报数据均严格执行
-              <code>redactMetric</code> 脱敏，严禁输出明文 API Key 与私有 Prompt
-              正文，仅传输模型标识、Token 量与耗时指标。
+              <strong>{t("pages.observability.privacyTitle")}</strong>
+              {t("pages.observability.privacyBefore")}
+              <code>redactMetric</code>
+              {t("pages.observability.privacyAfter")}
             </p>
           </div>
         </div>
@@ -131,7 +136,7 @@ export function ObservabilityOtelModal(props: {
             disabled={isSaving}
             className="h-8 text-caption-2-medium"
           >
-            取消
+            {t("common.cancel")}
           </Button>
 
           <Button
@@ -147,7 +152,11 @@ export function ObservabilityOtelModal(props: {
             ) : (
               <RiCheckLine className="size-3" />
             )}
-            <span>{saveSuccess ? "已保存" : "保存设置"}</span>
+            <span>
+              {saveSuccess
+                ? t("pages.observability.saved")
+                : t("pages.observability.saveSettings")}
+            </span>
           </Button>
         </div>
       </DialogContent>

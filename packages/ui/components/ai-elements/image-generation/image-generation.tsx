@@ -5,6 +5,7 @@ import { AnimatePresence, motion, type Transition } from "motion/react"
 import { useReducedMotion } from "motion/react"
 import { EASE_OUT } from "@/lib/ease"
 import { cn } from "@/lib/utils"
+import { useUiLocale } from "@/i18n/ui-locale"
 import { DitherField } from "./dither-field"
 import { ImageGenerationStatusRow } from "./image-generation-status"
 import { MEDIA_STATE, STATUS_TEXT, type ImageGenerationFrameProps, type ImageGenerationProps } from "./image-generation.types"
@@ -25,10 +26,11 @@ export function ImageGeneration({
   mediaClassName,
   statusClassName
 }: ImageGenerationProps) {
+  useUiLocale()
   const reduce = useReducedMotion() ?? false
   const active = status === "queued" || status === "generating" || status === "refining"
   const mediaState = MEDIA_STATE[status]
-  const resolvedStatus = statusText ?? STATUS_TEXT[status]
+  const resolvedStatus = statusText ?? STATUS_TEXT(status)
   const resolvedLabel = label ?? (prompt ? `${resolvedStatus}: ${prompt}` : resolvedStatus)
 
   return (

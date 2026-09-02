@@ -15,6 +15,8 @@ import {
 } from "@renderer/hooks/use-agent-session"
 import { DotMatrixLoader } from "@/components/ui/dot-matrix-loader"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
+
 export function SidebarWorkspaceRow({
   workspace,
   sessions,
@@ -85,6 +87,7 @@ function FolderHeader({
   sessionCount: number
   onFolderClick: () => void
 }) {
+  const t = useT()
   return (
     <div
       className={cx(
@@ -108,11 +111,11 @@ function FolderHeader({
       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
-          title="新建对话"
+          title={t("chat.newChat")}
           onClick={(event) => {
             event.stopPropagation()
             void switchWorkspace(workspace).then(() =>
-              createAndOpenSession(workspace.id, "新对话")
+              createAndOpenSession(workspace.id, t("chat.newAgent"))
             )
           }}
           className="flex size-5.5 items-center justify-center rounded-md text-text-tertiary shadow-2xs hover:bg-background-primary-default hover:text-text-primary"
@@ -141,22 +144,23 @@ function SessionList({
   formatTime: (timestamp: number) => string
 }) {
   const running = useChatStore((state) => state.running)
+  const t = useT()
 
   return (
     <div className="relative my-0.5 ml-4 flex flex-col gap-0.5 border-l border-separator-border/60 pl-2">
       {sessions.length === 0 ? (
         <div className="flex items-center justify-between px-2 py-1 text-caption-2-medium text-text-tertiary">
-          <span>暂无聊天</span>
+          <span>{t("chat.noChats")}</span>
           <button
             type="button"
             onClick={() => {
               void switchWorkspace(workspace).then(() =>
-                createAndOpenSession(workspace.id, "新对话")
+                createAndOpenSession(workspace.id, t("chat.newAgent"))
               )
             }}
             className="cursor-pointer text-accent-600 hover:underline"
           >
-            + 新建
+            {t("chat.newChatPlus")}
           </button>
         </div>
       ) : (
@@ -192,7 +196,7 @@ function SessionList({
             </button>
             <button
               type="button"
-              title="归档会话"
+              title={t("chat.archiveSession")}
               onClick={() => void archiveCurrentSession(session.id)}
               className="hidden size-5.5 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-background-primary-default hover:text-text-primary group-hover/session:flex"
             >

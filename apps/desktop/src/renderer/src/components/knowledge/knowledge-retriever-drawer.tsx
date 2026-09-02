@@ -11,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { KnowledgeHit } from "@enjoy-agents/ipc-contract"
-import { SAMPLE_QUERIES } from "./knowledge-constants"
+import { useT } from "@renderer/i18n"
+import { getSampleQueries } from "./knowledge-constants"
 
 interface KnowledgeRetrieverDrawerProps {
   isOpen: boolean
@@ -38,6 +39,7 @@ export function KnowledgeRetrieverDrawer({
   hasSearched,
   onSearch
 }: KnowledgeRetrieverDrawerProps) {
+  const t = useT()
   const [copiedSnippetId, setCopiedSnippetId] = useState<string | null>(null)
 
   if (!isOpen) return null
@@ -58,10 +60,10 @@ export function KnowledgeRetrieverDrawer({
           </div>
           <div>
             <h4 className="text-body-medium font-semibold text-text-primary">
-              RAG Semantic Retriever & Chunks Tester
+              {t("pages.knowledge.retrieverTitle")}
             </h4>
             <p className="text-[11px] text-text-secondary">
-              Test vector similarity matches against indexed knowledge collections
+              {t("pages.knowledge.retrieverDesc")}
             </p>
           </div>
         </div>
@@ -69,7 +71,7 @@ export function KnowledgeRetrieverDrawer({
         <Button
           size="icon-sm"
           variant="ghost"
-          title="Close tester"
+          title={t("pages.knowledge.closeTester")}
           onClick={onClose}
           className="size-7"
         >
@@ -88,7 +90,7 @@ export function KnowledgeRetrieverDrawer({
               onKeyDown={(e) => {
                 if (e.key === "Enter") void onSearch()
               }}
-              placeholder="Enter search query or keywords to test vector recall..."
+              placeholder={t("pages.knowledge.retrieverPlaceholder")}
               className="pl-9 bg-background-secondary-default focus-visible:bg-background-primary-default text-body-medium"
             />
           </div>
@@ -101,7 +103,7 @@ export function KnowledgeRetrieverDrawer({
               className="gap-1 shadow-xs h-9"
             >
               <RiSparklingLine className="size-3.5" />
-              <span>{rerank ? "Rerank: ON" : "Rerank: OFF"}</span>
+              <span>{rerank ? t("pages.knowledge.rerankOn") : t("pages.knowledge.rerankOff")}</span>
             </Button>
 
             <Button
@@ -115,15 +117,15 @@ export function KnowledgeRetrieverDrawer({
               ) : (
                 <RiSearchLine className="size-4" />
               )}
-              <span>Search Memory</span>
+              <span>{t("pages.knowledge.searchMemory")}</span>
             </Button>
           </div>
         </div>
 
         {/* Sample Queries Chips */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] text-text-tertiary mr-1">Sample Queries:</span>
-          {SAMPLE_QUERIES.map((sample) => (
+          <span className="text-[11px] text-text-tertiary mr-1">{t("pages.knowledge.sampleQueries")}</span>
+          {getSampleQueries(t).map((sample) => (
             <button
               key={sample}
               type="button"
@@ -144,17 +146,17 @@ export function KnowledgeRetrieverDrawer({
             <div className="flex items-center justify-between">
               <span className="text-caption-1-medium font-semibold text-text-secondary">
                 {hits.length > 0
-                  ? `Found ${hits.length} matching knowledge chunks`
-                  : "No matching chunks found in active sources"}
+                  ? t("pages.knowledge.foundChunks", { n: hits.length })
+                  : t("pages.knowledge.noMatchingChunks")}
               </span>
               <span className="text-[10px] text-text-tertiary">
-                Cosine Distance Score
+                {t("pages.knowledge.cosineScore")}
               </span>
             </div>
 
             {hits.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border-button-default bg-background-secondary-default/50 p-6 text-center text-caption-1-medium text-text-secondary">
-                Try indexing more sources or refining query keywords.
+                {t("pages.knowledge.emptyHitsHint")}
               </div>
             ) : (
               <div className="grid gap-2.5 max-h-96 overflow-y-auto pr-1">
@@ -187,13 +189,13 @@ export function KnowledgeRetrieverDrawer({
                               />
                             </div>
                             <span className="font-mono text-[10px] font-semibold text-accent-600 dark:text-accent-400">
-                              {scorePercent}% match
+                              {t("pages.knowledge.matchPercent", { n: scorePercent })}
                             </span>
                           </div>
 
                           <button
                             type="button"
-                            title="Copy snippet"
+                            title={t("pages.knowledge.copySnippet")}
                             onClick={() => handleCopySnippet(hit)}
                             className="rounded-lg p-1 text-text-tertiary hover:text-text-primary hover:bg-background-secondary-hover transition-colors"
                           >

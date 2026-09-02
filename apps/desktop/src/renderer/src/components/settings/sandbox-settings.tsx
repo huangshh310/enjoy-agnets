@@ -8,8 +8,10 @@ import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
+import { useT } from "@renderer/i18n"
 
 export function SandboxSettings() {
+  const t = useT()
   const { preferences, update } = usePrefUpdate()
 
   return (
@@ -23,25 +25,22 @@ export function SandboxSettings() {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="text-body-large-semibold text-text-primary">
-                Execution Sandbox & Guardrails
+                {t("settings.sandbox.hubTitle")}
               </span>
               <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-                AI SDK 7 Loop Enforcement
+                {t("settings.sandbox.hubBadge")}
               </span>
             </div>
             <span className="text-caption-2-regular text-text-tertiary mt-0.5">
-              Strict step limits (stopWhen: stepCountIs), per-tool bash timeouts, and network boundary controls.
+              {t("settings.sandbox.hubDesc")}
             </span>
           </div>
         </div>
       </div>
 
       {/* ─── 核心循环与超时约束 ─────────────────────────── */}
-      <SettingsCard title="Execution Limits & Timeouts">
-        <SettingsRow
-          title="Max agent steps"
-          description="ToolLoop stopWhen uses AI SDK stepCountIs. Default 20 steps, ceiling 64."
-        >
+      <SettingsCard title={t("settings.sandbox.limits")}>
+        <SettingsRow title={t("settings.sandbox.maxSteps")} description={t("settings.sandbox.maxStepsDesc")}>
           <div className="flex items-center gap-2">
             <TimeoutInput
               value={preferences?.maxAgentSteps ?? 20}
@@ -50,14 +49,11 @@ export function SandboxSettings() {
               widthClass="w-20"
               onCommit={(next) => void update({ maxAgentSteps: next })}
             />
-            <span className="text-caption-2-medium text-text-tertiary">steps</span>
+            <span className="text-caption-2-medium text-text-tertiary">{t("settings.sandbox.steps")}</span>
           </div>
         </SettingsRow>
 
-        <SettingsRow
-          title="Tool timeout (bash)"
-          description="Applies to terminal commands executed via bash. Default 30s."
-        >
+        <SettingsRow title={t("settings.sandbox.toolTimeout")} description={t("settings.sandbox.toolTimeoutDesc")}>
           <div className="flex items-center gap-2">
             <TimeoutInput
               testId="tool-timeout-ms"
@@ -68,15 +64,14 @@ export function SandboxSettings() {
               onCommit={(next) => void update({ toolTimeoutMs: next })}
             />
             <span className="text-caption-2-medium text-text-tertiary">
-              ms ({((preferences?.toolTimeoutMs ?? 30_000) / 1000).toFixed(0)}s)
+              {t("settings.sandbox.msSeconds", {
+                seconds: ((preferences?.toolTimeoutMs ?? 30_000) / 1000).toFixed(0)
+              })}
             </span>
           </div>
         </SettingsRow>
 
-        <SettingsRow
-          title="Step timeout"
-          description="Per-step timeout passed to ToolLoop as timeout.stepMs. 0 means unlimited."
-        >
+        <SettingsRow title={t("settings.sandbox.stepTimeout")} description={t("settings.sandbox.stepTimeoutDesc")}>
           <div className="flex items-center gap-2">
             <TimeoutInput
               testId="step-timeout-ms"
@@ -86,14 +81,11 @@ export function SandboxSettings() {
               widthClass="w-24"
               onCommit={(next) => void update({ stepTimeoutMs: next })}
             />
-            <span className="text-caption-2-medium text-text-tertiary">ms</span>
+            <span className="text-caption-2-medium text-text-tertiary">{t("settings.sandbox.ms")}</span>
           </div>
         </SettingsRow>
 
-        <SettingsRow
-          title="Total agent run timeout"
-          description="Global timeout for the entire generation run. 0 means unlimited."
-        >
+        <SettingsRow title={t("settings.sandbox.runTimeout")} description={t("settings.sandbox.runTimeoutDesc")}>
           <div className="flex items-center gap-2">
             <TimeoutInput
               testId="agent-timeout-ms"
@@ -103,14 +95,11 @@ export function SandboxSettings() {
               widthClass="w-24"
               onCommit={(next) => void update({ agentTimeoutMs: next })}
             />
-            <span className="text-caption-2-medium text-text-tertiary">ms</span>
+            <span className="text-caption-2-medium text-text-tertiary">{t("settings.sandbox.ms")}</span>
           </div>
         </SettingsRow>
 
-        <SettingsRow
-          title="Allow external network"
-          description="Default off. Writes, commits, and external network calls still require approval."
-        >
+        <SettingsRow title={t("settings.sandbox.network")} description={t("settings.sandbox.networkDesc")}>
           <Switch
             checked={preferences?.sandboxNetwork ?? false}
             onCheckedChange={(value) => void update({ sandboxNetwork: value })}

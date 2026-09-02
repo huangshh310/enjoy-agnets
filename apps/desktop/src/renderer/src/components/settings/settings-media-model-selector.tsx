@@ -16,14 +16,15 @@ import { cx } from "@/utils/cx"
 import type { ModelOption } from "@renderer/stores/chat-store"
 import { ModelBrandIcon, ProviderIcon } from "./providers/provider-icons"
 import { filterModelGroups, groupModelsByProvider, type ProviderModelGroup } from "./settings-media-model-groups"
+import { useT } from "@renderer/i18n"
 
 export type MediaModelCategory = "image" | "video" | "speech" | "transcription"
 
-const CATEGORY_TITLE: Record<MediaModelCategory, string> = {
-  image: "Image Generation",
-  video: "Video Generation",
-  speech: "Speech (TTS)",
-  transcription: "Transcription (STT)"
+const CATEGORY_KEYS: Record<MediaModelCategory, string> = {
+  image: "settings.media.catImage",
+  video: "settings.media.catVideo",
+  speech: "settings.media.catSpeech",
+  transcription: "settings.media.catTranscribe"
 }
 
 export function ConfiguredMediaModelSelector({
@@ -157,6 +158,7 @@ function SelectorTriggerLabel({
 }
 
 function SelectorSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const t = useT()
   return (
     <div className="relative mb-1.5 px-1">
       <RiSearchLine className="pointer-events-none absolute top-1/2 left-3.5 size-3.5 -translate-y-1/2 text-text-tertiary" />
@@ -164,7 +166,7 @@ function SelectorSearch({ value, onChange }: { value: string; onChange: (value: 
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search configured models..."
+        placeholder={t("settings.media.searchModels")}
         className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pr-3 pl-8 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring"
       />
     </div>
@@ -184,15 +186,18 @@ function SelectorModelList({
   onSelect: (id: string) => void
   onNavigateProviders: () => void
 }) {
+  const t = useT()
   if (groups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center">
         <div className="mb-2 flex size-8 items-center justify-center rounded-full bg-background-secondary-default text-text-tertiary">
           <RiInformationLine className="size-4" />
         </div>
-        <p className="text-caption-2-medium text-text-primary">No {CATEGORY_TITLE[category]} models found</p>
+        <p className="text-caption-2-medium text-text-primary">
+          {t("settings.media.noneFound", { category: t(CATEGORY_KEYS[category]) })}
+        </p>
         <p className="mt-0.5 text-caption-2-regular leading-snug text-text-tertiary">
-          Add or detect models in your configured Providers.
+          {t("settings.media.noneHint")}
         </p>
         <Button
           size="sm"
@@ -200,7 +205,7 @@ function SelectorModelList({
           onClick={onNavigateProviders}
           className="mt-3 inline-flex h-7 cursor-pointer items-center gap-1 px-2.5 text-caption-2-medium"
         >
-          <span>Go to Providers</span>
+          <span>{t("settings.media.goProviders")}</span>
           <RiExternalLinkLine className="size-3" />
         </Button>
       </div>
@@ -213,7 +218,9 @@ function SelectorModelList({
         <div key={group.providerName} className="flex flex-col gap-0.5">
           <div className="flex items-center gap-1.5 px-2 py-1 text-caption-2-semibold tracking-wider text-text-tertiary uppercase">
             <ProviderIcon kind={group.providerKind} size={12} />
-            <span>{group.providerName}</span>
+            <span>
+              {group.providerName === "Custom Provider" ? t("settings.media.customProvider") : group.providerName}
+            </span>
           </div>
           {group.items.map((model) => {
             const isSelected = model.id === selectedModelId
@@ -261,6 +268,7 @@ function SelectorCustomId({
   onStartCustom: () => void
   onApply: () => void
 }) {
+  const t = useT()
   return (
     <div className="mt-2 border-t border-separator-border px-1 pt-2">
       {!isCustomMode ? (
@@ -269,14 +277,14 @@ function SelectorCustomId({
           onClick={onStartCustom}
           className="w-full cursor-pointer px-2 py-1 text-left text-caption-2-regular text-text-tertiary transition-colors hover:text-accent-500"
         >
-          + Enter custom Model ID manually...
+          {t("settings.media.customId")}
         </button>
       ) : (
         <div className="flex items-center gap-1.5">
           <Input
             value={customInput}
             onChange={(event) => onCustomInput(event.target.value)}
-            placeholder="Custom model id (e.g. dall-e-3)"
+            placeholder={t("settings.media.customPlaceholder")}
             className="h-7 flex-1 px-2 text-caption-2-regular"
           />
           <Button
@@ -286,7 +294,7 @@ function SelectorCustomId({
             disabled={!customInput.trim()}
             className="h-7 cursor-pointer px-2 text-caption-2-medium"
           >
-            Apply
+            {t("settings.media.apply")}
           </Button>
         </div>
       )}

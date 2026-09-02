@@ -11,8 +11,10 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { SettingsCard, SettingsRow } from "./settings-row"
+import { useT } from "@renderer/i18n"
 
 export function SettingsDefaults() {
+  const t = useT()
   const queryClient = useQueryClient()
   const models = useChatStore((state) => state.models)
   const modelId = useChatStore((state) => state.modelId)
@@ -44,8 +46,8 @@ export function SettingsDefaults() {
   }
 
   return (
-    <SettingsCard title="Defaults">
-      <SettingsRow title="Default model" description="Same picker as the composer. Used for new runs.">
+    <SettingsCard title={t("settings.defaults.title")}>
+      <SettingsRow title={t("settings.defaults.model")} description={t("settings.defaults.modelDesc")}>
         <ModelPicker
           modelId={modelId}
           modelLabel={modelLabel || modelId}
@@ -53,7 +55,7 @@ export function SettingsDefaults() {
           onModelChange={onModelChange}
         />
       </SettingsRow>
-      <SettingsRow title="Default mode" description="Same mode chip as the composer. Ask is read-only.">
+      <SettingsRow title={t("settings.defaults.mode")} description={t("settings.defaults.modeDesc")}>
         <ExecutionModeMenu mode={defaultMode} onChange={(mode) => void onModeChange(mode)} align="end" />
       </SettingsRow>
     </SettingsCard>

@@ -27,6 +27,7 @@ import {
 } from "@enjoy-agents/providers/presets"
 import { ProviderIcon } from "./provider-icons"
 import type { EditorState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderOverridesTab({
   editor,
@@ -37,6 +38,7 @@ export function ProviderOverridesTab({
   onChangeKind: (kind: ProviderKind) => void
   onChange: (patch: Partial<EditorState>) => void
 }) {
+  const t = useT()
   const [headerError, setHeaderError] = useState<string | null>(null)
   const [bodyError, setBodyError] = useState<string | null>(null)
 
@@ -50,7 +52,7 @@ export function ProviderOverridesTab({
       if (field === "customHeaders") setHeaderError(null)
       else setBodyError(null)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Invalid JSON format"
+      const msg = e instanceof Error ? e.message : t("settings.providers.invalidJson")
       if (field === "customHeaders") setHeaderError(msg)
       else setBodyError(msg)
     }
@@ -96,10 +98,10 @@ export function ProviderOverridesTab({
             <RiBracesLine className="size-4 text-accent-600 shrink-0" />
             <div>
               <span className="text-caption-1-semibold text-text-primary block leading-tight">
-                Custom HTTP Headers (JSON)
+                {t("settings.providers.headers")}
               </span>
               <span className="text-[11px] text-text-tertiary">
-                Injected into all upstream requests
+                {t("settings.providers.headersHint")}
               </span>
             </div>
           </div>
@@ -129,8 +131,7 @@ export function ProviderOverridesTab({
               disabled={!editor.customHeaders?.trim()}
               className="h-6 gap-1 rounded-md px-2 text-[11px] font-medium"
             >
-              <RiCodeSSlashLine className="size-3 text-accent-500" />
-              Format
+              {t("settings.providers.format")}
             </Button>
           </div>
         </div>
@@ -166,10 +167,10 @@ export function ProviderOverridesTab({
             <RiCodeSSlashLine className="size-4 text-accent-600 shrink-0" />
             <div>
               <span className="text-caption-1-semibold text-text-primary block leading-tight">
-                Custom Body Overrides (JSON)
+                {t("settings.providers.body")}
               </span>
               <span className="text-[11px] text-text-tertiary">
-                Merged into model request body payloads
+                {t("settings.providers.bodyHint")}
               </span>
             </div>
           </div>
@@ -197,8 +198,7 @@ export function ProviderOverridesTab({
               disabled={!editor.customBody?.trim()}
               className="h-6 gap-1 rounded-md px-2 text-[11px] font-medium"
             >
-              <RiCodeSSlashLine className="size-3 text-accent-500" />
-              Format
+              {t("settings.providers.format")}
             </Button>
           </div>
         </div>
@@ -232,11 +232,11 @@ export function ProviderOverridesTab({
           <div className="flex items-center gap-1.5 text-text-primary">
             <RiServerLine className="size-4 text-accent-500" />
             <span className="text-caption-1-semibold text-text-primary">
-              Underlying Preset Reference
+              {t("settings.providers.presetRef")}
             </span>
           </div>
           <span className="text-[11px] text-text-tertiary">
-            Baseline configurations & docs
+            {t("settings.providers.presetHint")}
           </span>
         </div>
 
@@ -273,9 +273,7 @@ export function ProviderOverridesTab({
 
         <p className="text-[11px] text-text-tertiary flex items-center gap-1">
           <RiInformationLine className="size-3 text-text-tertiary shrink-0" />
-          <span>
-            Used for automatic protocol fallback, token limit defaults, and contextual help documentation.
-          </span>
+          <span>{t("settings.providers.presetDesc")}</span>
         </p>
       </div>
     </div>

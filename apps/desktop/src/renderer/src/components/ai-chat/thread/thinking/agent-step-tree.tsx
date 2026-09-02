@@ -23,6 +23,7 @@ import {
 import { cx } from "@/utils/cx"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import type { AgentStepKind, AgentStepNode } from "./agent-step-tree.types"
+import { useT } from "@renderer/i18n"
 
 interface AgentStepTreeProps {
   nodes: AgentStepNode[]
@@ -86,6 +87,7 @@ export function AgentStepTree({ nodes, className }: AgentStepTreeProps) {
 
 /** 单个工具步骤节点组件（支持展开完整命令与输出回显） */
 function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
+  const t = useT()
   const [expanded, setExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -121,7 +123,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
         {node.status === "error" ? (
           <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-error-primary font-medium">
             <RiCloseLine className="size-3.5" />
-            <span>failed</span>
+            <span>{t("chat.failed")}</span>
           </span>
         ) : null}
 
@@ -155,7 +157,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
           {node.command ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary">
-                <span className="font-semibold text-text-secondary">完整执行命令</span>
+                <span className="font-semibold text-text-secondary">{t("chat.fullCommand")}</span>
                 <button
                   type="button"
                   onClick={handleCopyCommand}
@@ -164,12 +166,12 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
                   {copied ? (
                     <>
                       <RiCheckLine className="size-3 text-emerald-500" />
-                      <span className="text-emerald-500">已复制</span>
+                      <span className="text-emerald-500">{t("common.copied")}</span>
                     </>
                   ) : (
                     <>
                       <RiClipboardLine className="size-3" />
-                      <span>复制命令</span>
+                      <span>{t("chat.copyCommand")}</span>
                     </>
                   )}
                 </button>
@@ -184,7 +186,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
           {node.output || node.errorText ? (
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-caption-2-medium">
-                <span className="font-semibold text-text-secondary">终端输出 / 回显</span>
+                <span className="font-semibold text-text-secondary">{t("chat.terminalOutput")}</span>
                 {node.exitCode !== undefined ? (
                   <span
                     className={cx(
@@ -194,7 +196,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
                         : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                     )}
                   >
-                    exit {node.exitCode}
+                    {t("chat.exitCode", { code: node.exitCode })}
                   </span>
                 ) : null}
               </div>
@@ -218,7 +220,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
                 const targetUrl = pill.url || `https://${pill.label}`
                 window.open(targetUrl, "_blank")
               }}
-              title={`访问网站: ${pill.url || pill.label}`}
+              title={t("chat.visitSite", { url: pill.url || pill.label })}
               className="inline-flex items-center gap-1 rounded-md border border-border-button-default/80 bg-background-secondary-default/90 px-2 py-0.5 font-mono text-[11px] font-medium text-text-secondary hover:text-accent-500 hover:border-accent-500/40 transition-colors shadow-2xs cursor-pointer"
             >
               <RiGlobalLine className="size-3 text-text-tertiary" />
@@ -231,7 +233,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
       {/* 可折叠子页面/文件清单 (Explored Pages Branch) */}
       {node.exploredPages && node.exploredPages.length > 0 ? (
         <ExploredPagesBranch
-          title={node.exploredTitle ?? `Explored ${node.exploredPages.length} pages`}
+          title={node.exploredTitle ?? t("chat.exploredPages", { count: node.exploredPages.length })}
           pages={node.exploredPages}
         />
       ) : null}
@@ -249,6 +251,7 @@ function ThinkingNodeBranch({
   rawText: string
   defaultOpen?: boolean
 }) {
+  const t = useT()
   const [open, setOpen] = useState(defaultOpen)
   const [copied, setCopied] = useState(false)
 
@@ -279,7 +282,7 @@ function ThinkingNodeBranch({
       {open ? (
         <div className="flex flex-col gap-1.5 rounded-xl border border-border-button-default/70 bg-background-secondary-default/50 p-3.5 shadow-2xs animate-in fade-in-50 duration-150">
           <div className="flex items-center justify-between border-b border-border-button-default/50 pb-1.5 text-caption-2-medium text-text-tertiary">
-            <span className="font-medium text-text-secondary">深度思考过程 (CoT)</span>
+            <span className="font-medium text-text-secondary">{t("chat.cotTitle")}</span>
             <button
               type="button"
               onClick={handleCopy}
@@ -288,12 +291,12 @@ function ThinkingNodeBranch({
               {copied ? (
                 <>
                   <RiCheckLine className="size-3 text-emerald-500" />
-                  <span className="text-emerald-500">已复制</span>
+                  <span className="text-emerald-500">{t("common.copied")}</span>
                 </>
               ) : (
                 <>
                   <RiClipboardLine className="size-3" />
-                  <span>复制思考</span>
+                  <span>{t("chat.copyThinking")}</span>
                 </>
               )}
             </button>

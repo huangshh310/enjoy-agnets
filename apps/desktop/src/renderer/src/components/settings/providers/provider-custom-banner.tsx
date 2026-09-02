@@ -2,15 +2,17 @@
  * 自定义 API 端点 / 网关快速接入横幅：
  * 提供 OpenAI /v1 与 Anthropic Messages 协议的一键快速创建入口。
  */
-import { RiAddLine, RiFlashlightLine, RiServerLine } from "@remixicon/react"
+import { RiFlashlightLine, RiServerLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
+import { useT } from "@renderer/i18n"
 
 export function ProviderCustomBanner({
   onSelect
 }: {
   onSelect: (kind: ProviderKind, apiStyle: ApiStyle) => void
 }) {
+  const t = useT()
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border-button-default bg-linear-to-br from-background-secondary-default/80 via-background-primary-default to-background-secondary-default/50 p-5 shadow-xs transition-all hover:border-border-button-hover">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -22,15 +24,15 @@ export function ProviderCustomBanner({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-body-medium font-semibold text-text-primary">
-                Custom API Endpoint / Gateway
+                {t("settings.providers.bannerTitle")}
               </h3>
               <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2 py-0.5 text-caption-1-semibold text-accent-600 dark:bg-accent-950/60 dark:text-accent-300">
                 <RiFlashlightLine className="size-3" />
-                Recommended for Proxies
+                {t("settings.providers.recommended")}
               </span>
             </div>
             <p className="mt-1 max-w-2xl text-caption-1-medium text-text-secondary leading-relaxed">
-              Connect any OneAPI, NewAPI, enterprise gateway, vLLM, or self-hosted endpoint compatible with OpenAI or Anthropic protocols.
+              {t("settings.providers.bannerDesc")}
             </p>
           </div>
         </div>
@@ -44,8 +46,7 @@ export function ProviderCustomBanner({
             onClick={() => onSelect("custom", "anthropic")}
             className="rounded-xl border-border-button-default bg-background-primary-default text-text-primary hover:bg-background-secondary-hover"
           >
-            <RiAddLine className="size-3.5 mr-1" />
-            Anthropic Messages
+            {t("settings.providers.anthropicMessages")}
           </Button>
 
           <Button
@@ -54,8 +55,7 @@ export function ProviderCustomBanner({
             onClick={() => onSelect("custom", "openai")}
             className="rounded-xl"
           >
-            <RiAddLine className="size-3.5 mr-1" />
-            OpenAI /v1 Endpoint
+            {t("settings.providers.openaiEndpoint")}
           </Button>
         </div>
       </div>

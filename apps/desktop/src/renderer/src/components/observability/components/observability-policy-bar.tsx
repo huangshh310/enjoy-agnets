@@ -10,10 +10,12 @@ import {
   RiShieldCheckLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 import { ObservabilityOtelModal } from "./observability-otel-modal"
 
 export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void }) {
+  const t = useT()
   const [exported, setExported] = useState("")
   const [exportFormat, setExportFormat] = useState<"json" | "csv" | null>(null)
   const [copied, setCopied] = useState(false)
@@ -43,9 +45,7 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-[11.5px] text-text-secondary">
           <RiShieldCheckLine className="size-4 text-emerald-500 shrink-0" />
-          <span>
-            本地脱敏保护：所有 Prompt 正文与 API Key 均已自动过滤脱敏，仅记录性能耗时与吞吐指标。
-          </span>
+          <span>{t("pages.observability.policyNotice")}</span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
@@ -54,10 +54,10 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
             variant="outline"
             onClick={() => setOtelModalOpen(true)}
             className="gap-1.5 h-7 text-caption-2-medium"
-            title="配置 OpenTelemetry 远程收集器"
+            title={t("pages.observability.otelTitle")}
           >
             <RiGlobalLine className="size-3" />
-            <span>配置 OTEL 上报</span>
+            <span>{t("pages.observability.otelButton")}</span>
           </Button>
 
           <Button
@@ -68,7 +68,7 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
             className="gap-1.5 h-7 text-caption-2-medium"
           >
             <RiDownload2Line className="size-3" />
-            <span>Export JSON</span>
+            <span>{t("pages.observability.exportJson")}</span>
           </Button>
 
           <Button
@@ -79,7 +79,7 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
             className="gap-1.5 h-7 text-caption-2-medium"
           >
             <RiDownload2Line className="size-3" />
-            <span>Export CSV</span>
+            <span>{t("pages.observability.exportCsv")}</span>
           </Button>
         </div>
       </div>
@@ -89,7 +89,10 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
         <div className="mt-1 rounded-lg border border-separator-border/70 bg-background-primary-default p-2.5 flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[10.5px] font-mono uppercase text-text-tertiary">
-              {exportFormat} Export Payload ({exported.length} bytes):
+              {t("pages.observability.exportPayload", {
+                format: exportFormat ?? "json",
+                n: exported.length
+              })}
             </span>
             <button
               type="button"
@@ -99,12 +102,12 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
               {copied ? (
                 <>
                   <RiCheckLine className="size-3 text-emerald-500" />
-                  <span>已复制</span>
+                  <span>{t("common.copied")}</span>
                 </>
               ) : (
                 <>
                   <RiClipboardLine className="size-3" />
-                  <span>复制内容</span>
+                  <span>{t("pages.observability.copyContent")}</span>
                 </>
               )}
             </button>

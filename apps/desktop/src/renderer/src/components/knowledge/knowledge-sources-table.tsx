@@ -5,7 +5,12 @@ import { RiDeleteBinLine, RiEditLine, RiFileTextLine, RiRestartLine } from "@rem
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { KnowledgeSource } from "@enjoy-agents/ipc-contract"
-import { formatRelativeTime, getPathExtension } from "./knowledge-table-format"
+import { useT } from "@renderer/i18n"
+import {
+  formatRelativeTime,
+  getPathExtension,
+  knowledgeSourceStatusLabel
+} from "./knowledge-table-format"
 
 type KnowledgeSourcesTableProps = {
   sources: KnowledgeSource[]
@@ -24,21 +29,21 @@ export function KnowledgeSourcesTable({
   onRemoveSource,
   onEditSource
 }: KnowledgeSourcesTableProps) {
+  const t = useT()
   return (
     <div className="overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default shadow-xs">
       <table className="w-full text-left text-caption-1-medium">
         <thead className="border-b border-separator-border/60 bg-background-secondary-default/60 text-text-tertiary">
           <tr>
-            <th className="px-4 py-3">Collection & Path</th>
-            <th className="px-4 py-3">Chunks & Files</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Actions</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colCollectionPath")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colChunksFiles")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colStatus")}</th>
+            <th className="px-4 py-3 text-right">{t("pages.knowledge.colActions")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-separator-border/40">
           {sources.map((source) => {
-            const isIndexing =
-              indexingSourceId === source.id || source.status === "indexing"
+            const isIndexing = indexingSourceId === source.id || source.status === "indexing"
             const ext = getPathExtension(source.path)
             return (
               <tr
@@ -49,20 +54,25 @@ export function KnowledgeSourcesTable({
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <span className="flex size-8 items-center justify-center rounded-xl bg-accent-500/10 font-mono text-caption-2-medium text-accent-500">
-                      {ext?.toUpperCase() ?? "DIR"}
+                      {ext?.toUpperCase() ?? t("pages.knowledge.dirFallback")}
                     </span>
                     <div className="min-w-0">
                       <div className="truncate text-caption-1-medium text-text-primary">
-                        {source.path === "." ? "Workspace Root (.)" : source.path}
+                        {source.path === "." ? t("pages.knowledge.workspaceRootDot") : source.path}
                       </div>
                       <span className="font-mono text-caption-2-medium text-text-tertiary">
-                        {source.kind === "directory" ? "Directory tree" : "Single file"}
+                        {source.kind === "directory"
+                          ? t("pages.knowledge.directoryTree")
+                          : t("pages.knowledge.singleFile")}
                       </span>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3 font-mono text-caption-2-medium text-text-primary">
-                  {source.chunkCount} Chunks ({source.documentCount} files)
+                  {t("pages.knowledge.chunksFilesCount", {
+                    chunks: source.chunkCount,
+                    files: source.documentCount
+                  })}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -77,11 +87,11 @@ export function KnowledgeSourcesTable({
                       )}
                     />
                     <div>
-                      <div className="capitalize text-caption-1-medium text-text-primary">
-                        {isIndexing ? "Indexing" : source.status}
+                      <div className="text-caption-1-medium text-text-primary">
+                        {knowledgeSourceStatusLabel(t, source.status, isIndexing)}
                       </div>
                       <div className="max-w-[220px] truncate text-caption-2-medium text-text-tertiary">
-                        {source.error || formatRelativeTime(source.updatedAt)}
+                        {source.error || formatRelativeTime(source.updatedAt, t)}
                       </div>
                     </div>
                   </div>
@@ -95,13 +105,13 @@ export function KnowledgeSourcesTable({
                       className="h-7 gap-1"
                     >
                       <RiFileTextLine className="size-3 text-accent-500" />
-                      View Files
+                      {t("pages.knowledge.viewFiles")}
                     </Button>
                     <Button
                       size="icon-sm"
                       variant="ghost"
                       disabled={isIndexing}
-                      title="Re-index this source"
+                      title={t("pages.knowledge.reindexSource")}
                       onClick={() => void onRebuildIndex(source.id)}
                     >
                       <RiRestartLine className="size-3.5" />
@@ -110,7 +120,7 @@ export function KnowledgeSourcesTable({
                       <Button
                         size="icon-sm"
                         variant="ghost"
-                        title="Edit source path"
+                        title={t("pages.knowledge.editSourcePath")}
                         onClick={() => onEditSource(source)}
                       >
                         <RiEditLine className="size-3.5" />
@@ -120,7 +130,7 @@ export function KnowledgeSourcesTable({
                       size="icon-sm"
                       variant="ghost"
                       disabled={isIndexing}
-                      title="Remove source"
+                      title={t("pages.knowledge.removeSource")}
                       onClick={() => void onRemoveSource(source.id)}
                     >
                       <RiDeleteBinLine className="size-3.5" />

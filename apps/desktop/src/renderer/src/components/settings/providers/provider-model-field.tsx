@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cx } from "@/utils/cx"
 import { ModelBrandIcon } from "./provider-icons"
 import type { ProbeState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderModelField({
   modelId,
@@ -41,14 +42,15 @@ export function ProviderModelField({
   onChange: (modelId: string) => void
   onFetch: () => void
 }) {
+  const t = useT()
   const fetching = probe.status === "pending"
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <Label className="text-caption-1-medium text-text-secondary">Model ID</Label>
+        <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.modelId")}</Label>
         <span className="text-caption-1-medium text-text-tertiary">
-          {choices.length > 0 ? `${choices.length} available` : "Select or enter"}
+          {choices.length > 0 ? t("settings.providers.available", { count: choices.length }) : t("settings.providers.selectOrEnter")}
         </span>
       </div>
 
@@ -68,8 +70,7 @@ export function ProviderModelField({
           onClick={onFetch}
           className="shrink-0 gap-1.5"
         >
-          <RiRefreshLine className={cx("size-3.5", fetching && "animate-spin")} />
-          <span>{fetching ? "Fetching..." : "Fetch"}</span>
+          <span>{fetching ? t("settings.providers.fetching") : t("settings.providers.fetch")}</span>
         </Button>
       </div>
 

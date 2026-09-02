@@ -17,6 +17,7 @@ import {
 import type { KnowledgeDocumentItem } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
 
 interface KnowledgeFilePreviewModalProps {
   isOpen: boolean
@@ -31,9 +32,9 @@ export function KnowledgeFilePreviewModal({
   document,
   onSearchInFile
 }: KnowledgeFilePreviewModalProps) {
+  const t = useT()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const [copied, setCopied] = useState(false)
-
   // Query file text content
   const fileContentQuery = useQuery({
     queryKey: ["workspace-file-content", workspaceId, document?.path],
@@ -46,7 +47,7 @@ export function KnowledgeFilePreviewModal({
           path: document.path
         })) as string
       } catch (err) {
-        return `// Error reading file: ${String(err)}`
+        return t("pages.knowledge.readFileError", { err: String(err) })
       }
     }
   })
@@ -55,7 +56,7 @@ export function KnowledgeFilePreviewModal({
 
   const content = fileContentQuery.data ?? ""
   const lines = content.split("\n")
-  const ext = document.path.split(".").pop()?.toUpperCase() ?? "FILE"
+  const ext = document.path.split(".").pop()?.toUpperCase() ?? t("pages.knowledge.fileFallback")
 
   function handleCopy() {
     void navigator.clipboard.writeText(content)
@@ -78,11 +79,11 @@ export function KnowledgeFilePreviewModal({
                   {document.path}
                 </DialogTitle>
                 <DialogDescription className="text-[11px] text-text-secondary flex items-center gap-2 mt-0.5 font-mono">
-                  <span>{document.chunkCount} vector chunks</span>
+                  <span>{t("pages.knowledge.vectorChunks", { n: document.chunkCount })}</span>
                   <span>·</span>
-                  <span>{lines.length} lines</span>
+                  <span>{t("pages.knowledge.linesCount", { n: lines.length })}</span>
                   <span>·</span>
-                  <span>Status: {document.status}</span>
+                  <span>{t("pages.knowledge.statusLabel", { status: document.status })}</span>
                 </DialogDescription>
               </div>
             </div>
@@ -97,10 +98,10 @@ export function KnowledgeFilePreviewModal({
                     onClose()
                   }}
                   className="gap-1.5 h-8 text-[11px] shadow-xs"
-                  title="Search queries matching this file"
+                  title={t("pages.knowledge.searchMatchingFile")}
                 >
                   <RiSearchLine className="size-3.5 text-accent-500" />
-                  <span>Search In File</span>
+                  <span>{t("pages.knowledge.searchInFile")}</span>
                 </Button>
               ) : null}
 
@@ -109,7 +110,7 @@ export function KnowledgeFilePreviewModal({
                 variant="ghost"
                 onClick={handleCopy}
                 className="size-8"
-                title="Copy file text"
+                title={t("pages.knowledge.copyFileText")}
               >
                 {copied ? (
                   <RiCheckLine className="size-4 text-emerald-500" />
@@ -126,7 +127,7 @@ export function KnowledgeFilePreviewModal({
           {fileContentQuery.isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 text-text-tertiary">
               <RiLoader4Line className="size-6 animate-spin text-accent-500" />
-              <span className="mt-2 text-[12px]">Loading document text...</span>
+              <span className="mt-2 text-[12px]">{t("pages.knowledge.loadingDocument")}</span>
             </div>
           ) : (
             <div className="rounded-xl border border-separator-border/60 bg-background-primary-default p-4 shadow-2xs overflow-x-auto">

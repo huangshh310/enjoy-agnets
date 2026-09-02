@@ -6,6 +6,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
 import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary"
 import type { AgentStepNode, DomainPill, SubPageItem } from "./agent-step-tree.types"
+import type { TranslateFn } from "@renderer/i18n"
 
 /** 提取文本或 JSON 中的所有网址与顶级域名 */
 function extractDomains(text: string): DomainPill[] {
@@ -33,7 +34,7 @@ function extractDomains(text: string): DomainPill[] {
 }
 
 /** 提取文件名或路径列表 */
-function extractFilePaths(args: Record<string, unknown>, result: Record<string, unknown>): SubPageItem[] {
+function extractFilePaths(args: Record<string, unknown>, result: Record<string, unknown>, t: TranslateFn): SubPageItem[] {
   const pages: SubPageItem[] = []
   const candidates: string[] = []
 
@@ -57,7 +58,7 @@ function extractFilePaths(args: Record<string, unknown>, result: Record<string, 
     const name = raw.split(/[\\/]/).pop() || raw
     pages.push({
       id: `subpage_${i}_${name}`,
-      title: raw.startsWith("http") ? `Visited ${raw}` : `Read ${name}`,
+      title: raw.startsWith("http") ? t("chat.visited", { url: raw }) : t("chat.readName", { name }),
       path: raw.startsWith("http") ? undefined : raw
     })
   }
@@ -72,8 +73,9 @@ function mapToolStatus(state: ThreadToolCall["state"]): AgentStepNode["status"] 
 }
 
 export function parseAgentStepNodes(
-  reasoning: string = "",
-  tools: ThreadToolCall[] = []
+  reasoning: string,
+  tools: ThreadToolCall[],
+  t: TranslateFn
 ): AgentStepNode[] {
   const nodes: AgentStepNode[] = []
 
@@ -82,7 +84,7 @@ export function parseAgentStepNodes(
     nodes.push({
       id: "step_reasoning_main",
       kind: "thinking",
-      title: "Reasoning process",
+      title: t("chat.reasoningProcess"),
       status: "completed",
       rawText: reasoning.trim()
     })
@@ -105,7 +107,7 @@ export function parseAgentStepNodes(
 
     if (kind === "search" || tool.name.toLowerCase().includes("search")) {
       const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
-      const displayTitle = query.length > 50 ? `Searching ${query.slice(0, 50)}...` : `Searching ${query}`
+      const displayTitle = query.length > 50 ? t("chat.searchingQueryMore", { query: query.slice(0, 50) }) : t("chat.searchingQuery", { query })
       nodes.push({
         id: tool.id,
         kind: "search",
@@ -120,7 +122,7 @@ export function parseAgentStepNodes(
     } else if (kind === "coding" || tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")) {
       const verb = tool.name.toLowerCase()
       const isRead = verb.includes("read") || verb.includes("list") || verb.includes("fetch") || verb.includes("browse")
-      const exploredPages = extractFilePaths(args, result)
+      const exploredPages = extractFilePaths(args, result, t)
       const additions = typeof result.additions === "number" ? result.additions : undefined
       const deletions = typeof result.deletions === "number" ? result.deletions : undefined
 
@@ -130,12 +132,12 @@ export function parseAgentStepNodes(
         nodes.push({
           id: tool.id,
           kind: "reading",
-          title: path ? `Reading ${leafName}` : "Reading resources",
+          title: path ? t("chat.readingName", { name: leafName }) : t("chat.readingResources"),
           command: fullCommand,
           output,
           exitCode,
           errorText,
-          exploredTitle: exploredPages.length > 1 ? `Explored ${exploredPages.length} pages` : undefined,
+          exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
           exploredPages: exploredPages.length > 0 ? exploredPages : undefined,
           domainPills: domains.length > 0 ? domains : undefined,
           status

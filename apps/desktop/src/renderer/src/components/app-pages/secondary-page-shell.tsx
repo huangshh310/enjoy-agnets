@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 
 type IconComponent = ComponentType<{
   className?: string
@@ -31,7 +32,7 @@ export type SecondaryNavGroup = {
 }
 
 export function SecondaryPageShell({
-  searchPlaceholder = "Search...",
+  searchPlaceholder,
   groups,
   selectedId,
   onSelect,
@@ -53,8 +54,10 @@ export function SecondaryPageShell({
   filterNav?: boolean
   breadcrumbTitle?: string
 }) {
+  const t = useT()
   const [uncontrolledQuery, setUncontrolledQuery] = useState("")
   const query = searchValue ?? uncontrolledQuery
+  const placeholder = searchPlaceholder ?? t("common.searchSettings")
 
   function setQuery(value: string) {
     if (onSearchChange) onSearchChange(value)
@@ -92,7 +95,7 @@ export function SecondaryPageShell({
           className="group mb-3 inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-caption-1-medium font-medium text-text-secondary outline-none hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent-500/30 transition-all"
         >
           <RiArrowLeftSLine className="size-4 transition-transform group-hover:-translate-x-0.5" aria-hidden />
-          <span>Back to App</span>
+          <span>{t("common.backToApp")}</span>
         </Link>
 
         <label className="mb-3.5 relative flex h-9 items-center gap-2 rounded-xl border border-border-button-default/60 bg-background-tertiary-default/80 px-3 focus-within:border-accent-500 focus-within:bg-background-primary-default focus-within:ring-2 focus-within:ring-accent-500/20 transition-all shadow-2xs">
@@ -101,7 +104,7 @@ export function SecondaryPageShell({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={searchPlaceholder}
+            placeholder={placeholder}
             className="min-w-0 flex-1 bg-transparent text-caption-1-medium text-text-primary outline-none placeholder:text-text-tertiary"
           />
           {query ? (
@@ -166,7 +169,7 @@ export function SecondaryPageShell({
               </div>
             ))}
             {visibleGroups.length === 0 ? (
-              <p className="px-2.5 text-caption-1-medium text-text-tertiary">No matching items.</p>
+              <p className="px-2.5 text-caption-1-medium text-text-tertiary">{t("common.noMatchingItems")}</p>
             ) : null}
           </nav>
         </ScrollArea>
@@ -194,7 +197,7 @@ export function SecondaryPageShell({
                       <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
                         <RiDashboardLine className="size-3.5" />
                       </div>
-                      <span>Agent Studio</span>
+                      <span>{t("common.agentStudio")}</span>
                     </Link>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator />
@@ -212,14 +215,14 @@ export function SecondaryPageShell({
                   className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
                 >
                   <RiDashboardLine className="size-3.5" />
-                  <span>Studio Hub</span>
+                  <span>{t("common.studioHub")}</span>
                 </Link>
                 <span className="text-border-button-default">|</span>
                 <Link
                   to="/"
                   className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
                 >
-                  <span>Chat Stage</span>
+                  <span>{t("common.chatStage")}</span>
                 </Link>
               </div>
             </div>

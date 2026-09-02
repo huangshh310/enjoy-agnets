@@ -8,13 +8,14 @@ import {
   RiFlashlightLine,
   RiShieldKeyholeLine
 } from "@remixicon/react"
-import { Switch } from "@/components/ui/switch"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import {
-  APPROVAL_FLAGS,
-  APPROVAL_PRESETS,
   flagsForPolicy,
+  getApprovalFlags,
+  getApprovalPresets,
   type ApprovalPolicyKind,
   type ApprovalPrefFlags
 } from "./approval-policy"
@@ -35,9 +36,10 @@ export function ApprovalPresetList({
   kind: ApprovalPolicyKind
   onPick: (flags: ApprovalPrefFlags) => void
 }) {
+  const t = useT()
   return (
     <>
-      {APPROVAL_PRESETS.map((item) => {
+      {getApprovalPresets(t).map((item) => {
         const ItemIcon = PRESET_ICONS[item.id]
         const selected = item.id === kind
         return (
@@ -73,9 +75,10 @@ export function ApprovalFlagList({
   flags: ApprovalPrefFlags
   onToggle: (id: keyof ApprovalPrefFlags, checked: boolean) => void
 }) {
+  const t = useT()
   return (
     <div className="flex flex-col gap-0.5 px-1">
-      {APPROVAL_FLAGS.map((flag) => {
+      {getApprovalFlags(t).map((flag) => {
         const isAutoAllowed = !flags[flag.id]
         return (
           <label
@@ -99,17 +102,16 @@ export function ApprovalFlagList({
 }
 
 export function PolicyHint({ readOnly }: { readOnly: boolean }) {
-  const text = readOnly
-    ? "Ask and Plan always deny writes, commits, and shell — independent of this preset."
-    : "All mode auto-approves files, commands, and commits. High-risk actions (sudo, rm -rf) still require explicit confirmation."
-
+  const t = useT()
+  const text = readOnly ? t("chat.approvalHintReadOnly") : t("chat.approvalHintAll")
   return <p className="px-2 pt-1.5 pb-1 text-caption-2-regular leading-snug text-text-tertiary">{text}</p>
 }
 
-export function titleCase(kind: ApprovalPolicyKind): string {
-  if (kind === "allow-reads") return "Reads"
-  if (kind === "allow-edits") return "Edits"
-  return "All"
+export function titleCase(kind: ApprovalPolicyKind, t: TranslateFn): string {
+  if (kind === "allow-reads") return t("chat.approvalReads")
+  if (kind === "allow-edits") return t("chat.approvalEdits")
+  if (kind === "custom") return t("common.permissionCustom")
+  return t("chat.approvalAll")
 }
 
 function PresetRow({

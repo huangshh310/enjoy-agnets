@@ -8,6 +8,7 @@ import { PANE_FOCUS } from "../constants"
 import { FileKindIcon } from "../file-kind-icon"
 import type { DirEntry } from "./files-entries"
 import { useFilesTree } from "./use-files-tree"
+import { useT } from "@renderer/i18n"
 
 export function FilesTree({
   workspaceId,
@@ -19,6 +20,7 @@ export function FilesTree({
   onSelectFile: (path: string) => void
 }) {
   const tree = useFilesTree(workspaceId)
+  const t = useT()
 
   return (
     <div className="flex h-full min-h-0 min-w-0 w-full flex-col">
@@ -26,19 +28,19 @@ export function FilesTree({
         <input
           value={tree.query}
           onChange={(event) => tree.setQuery(event.target.value)}
-          placeholder="Filter files..."
+          placeholder={t("chat.filterFiles")}
           className="h-8 min-w-0 flex-1 rounded-2lg border border-border-button-default bg-background-secondary-default px-2 text-caption-1-medium text-text-primary outline-none placeholder:text-text-placeholder focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         />
         <QuietIconButton
           icon={RiAddLine}
-          aria-label="Expand all folders"
-          title="全部展开"
+          aria-label={t("chat.expandFolders")}
+          title={t("chat.expandFolders")}
           onClick={() => void tree.expandAll()}
         />
         <QuietIconButton
           icon={RiSubtractLine}
-          aria-label="Collapse all folders"
-          title="全部折叠"
+          aria-label={t("chat.collapseFolders")}
+          title={t("chat.collapseFolders")}
           onClick={tree.collapseAll}
         />
       </div>

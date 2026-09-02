@@ -14,6 +14,7 @@ import {
 import { SettingsCard } from "../settings-row"
 import { ProviderCustomBanner } from "./provider-custom-banner"
 import { ProviderPresetCard } from "./provider-preset-card"
+import { useT } from "@renderer/i18n"
 
 export function ProviderPresetsTab({
   configuredKinds,
@@ -22,6 +23,7 @@ export function ProviderPresetsTab({
   configuredKinds: Set<string>
   onSelect: (kind: ProviderKind, apiStyle: ApiStyle) => void
 }) {
+  const t = useT()
   const [selectedProtocol, setSelectedProtocol] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -52,14 +54,14 @@ export function ProviderPresetsTab({
       <ProviderCustomBanner onSelect={onSelect} />
 
       {/* 主流大模型官方预设卡片库 */}
-      <SettingsCard title="Official Presets & Gateways">
+      <SettingsCard title={t("settings.providers.official")}>
         <div className="p-5 flex flex-col gap-4">
           {/* 工具栏：协议过滤与搜索框 */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* 协议筛选药丸 */}
             <div className="flex items-center gap-1 rounded-xl bg-background-tertiary-default p-1 self-start sm:self-auto">
               <FilterPill
-                label={`All (${PROVIDER_PRESETS.filter((p) => p.kind !== "custom").length})`}
+                label={t("settings.providers.allCount", { count: PROVIDER_PRESETS.filter((p) => p.kind !== "custom").length })}
                 active={selectedProtocol === "all"}
                 onClick={() => setSelectedProtocol("all")}
               />
@@ -85,7 +87,7 @@ export function ProviderPresetsTab({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search presets or models..."
+                placeholder={t("settings.providers.searchPresets")}
                 className="w-full rounded-xl border border-border-button-default bg-background-primary-default pl-9 pr-3 py-1.5 text-caption-1-medium text-text-primary placeholder:text-text-placeholder outline-none focus:border-border-focus-ring focus:ring-2 focus:ring-border-focus-ring/20 transition-all"
               />
             </div>
@@ -105,9 +107,9 @@ export function ProviderPresetsTab({
             </div>
           ) : (
             <div className="py-12 text-center">
-              <p className="text-body-medium text-text-secondary">No presets match your search.</p>
+              <p className="text-body-medium text-text-secondary">{t("settings.providers.noPresets")}</p>
               <p className="mt-1 text-caption-1-medium text-text-tertiary">
-                Try a different keyword or connect via Custom Endpoint above.
+                {t("settings.providers.noPresetsHint")}
               </p>
             </div>
           )}

@@ -14,6 +14,7 @@ import {
   closeWindow,
   minimizeWindow
 } from "@renderer/lib/window-control"
+import { useT } from "@renderer/i18n"
 
 export function WindowTitleBar({
   isMaximized,
@@ -22,6 +23,8 @@ export function WindowTitleBar({
   isMaximized: boolean
   onToggleMaximize: () => void
 }) {
+  const t = useT()
+
   return (
     <header
       className="flex h-9 w-full shrink-0 select-none items-center justify-between px-3 text-text-secondary [app-region:drag]"
@@ -32,7 +35,7 @@ export function WindowTitleBar({
       <div
         className="flex items-center gap-2 [app-region:no-drag]"
         style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-        aria-label="enjoy AGENT IDE"
+        aria-label={t("studio.window.brand")}
       >
         <AppMark size={16} />
         <AppWordmark />
@@ -48,8 +51,8 @@ export function WindowTitleBar({
       >
         <button
           type="button"
-          aria-label="最小化窗口"
-          title="最小化"
+          aria-label={t("studio.window.minimizeWindow")}
+          title={t("studio.window.minimize")}
           onClick={(e) => {
             e.stopPropagation()
             void minimizeWindow()
@@ -60,8 +63,8 @@ export function WindowTitleBar({
         </button>
         <button
           type="button"
-          aria-label={isMaximized ? "还原窗口" : "最大化窗口"}
-          title={isMaximized ? "向下还原" : "最大化"}
+          aria-label={isMaximized ? t("studio.window.restoreWindow") : t("studio.window.maximizeWindow")}
+          title={isMaximized ? t("studio.window.restoreDown") : t("studio.window.maximize")}
           onClick={(e) => {
             e.stopPropagation()
             onToggleMaximize()
@@ -76,8 +79,8 @@ export function WindowTitleBar({
         </button>
         <button
           type="button"
-          aria-label="关闭窗口"
-          title="关闭"
+          aria-label={t("studio.window.closeWindow")}
+          title={t("common.close")}
           onClick={(e) => {
             e.stopPropagation()
             void closeWindow()

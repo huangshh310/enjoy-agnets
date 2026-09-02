@@ -8,6 +8,7 @@ import { RiArrowRightLine, RiFolder6Line, RiImageLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import { SettingsHub } from "./settings-hub"
 import {
   ConfiguredMediaModelSelector,
@@ -24,47 +25,49 @@ type MediaModelPref =
 
 type MediaModelPool = "image" | "video" | "speech" | "transcription"
 
-const MEDIA_MODEL_ROWS: Array<{
+function mediaModelRows(t: TranslateFn): Array<{
   title: string
   description: string
   category: MediaModelCategory
   pref: MediaModelPref
   pool: MediaModelPool
   placeholder: string
-}> = [
-  {
-    title: "Image generation model",
-    description: "Used by generateImage when creating illustrations, mockups, or assets in chat.",
-    category: "image",
-    pref: "defaultImageModelId",
-    pool: "image",
-    placeholder: "Select a configured image model..."
-  },
-  {
-    title: "Video generation model",
-    description: "Used by experimental_generateVideo for text-to-video and image-to-video workflows.",
-    category: "video",
-    pref: "defaultVideoModelId",
-    pool: "video",
-    placeholder: "Select a configured video model..."
-  },
-  {
-    title: "Speech synthesis (TTS) model",
-    description: "Used by generateSpeech for voice rendering and conversational audio responses.",
-    category: "speech",
-    pref: "defaultSpeechModelId",
-    pool: "speech",
-    placeholder: "Select a configured TTS model..."
-  },
-  {
-    title: "Audio transcription (STT) model",
-    description: "Used by transcribe for speech-to-text conversion and audio indexing.",
-    category: "transcription",
-    pref: "defaultTranscriptionModelId",
-    pool: "transcription",
-    placeholder: "Select a configured STT model..."
-  }
-]
+}> {
+  return [
+    {
+      title: t("settings.media.imageModel"),
+      description: t("settings.media.imageDesc"),
+      category: "image",
+      pref: "defaultImageModelId",
+      pool: "image",
+      placeholder: t("settings.media.imagePlaceholder")
+    },
+    {
+      title: t("settings.media.videoModel"),
+      description: t("settings.media.videoDesc"),
+      category: "video",
+      pref: "defaultVideoModelId",
+      pool: "video",
+      placeholder: t("settings.media.videoPlaceholder")
+    },
+    {
+      title: t("settings.media.speechModel"),
+      description: t("settings.media.speechDesc"),
+      category: "speech",
+      pref: "defaultSpeechModelId",
+      pool: "speech",
+      placeholder: t("settings.media.speechPlaceholder")
+    },
+    {
+      title: t("settings.media.transcribeModel"),
+      description: t("settings.media.transcribeDesc"),
+      category: "transcription",
+      pref: "defaultTranscriptionModelId",
+      pool: "transcription",
+      placeholder: t("settings.media.transcribePlaceholder")
+    }
+  ]
+}
 
 const IMAGE_ID = /dall-e|imagine-image|flux|sdxl|image/i
 const VIDEO_ID = /video|sora|kling|cogvideo|luma|hunyuan/i
@@ -72,12 +75,14 @@ const SPEECH_ID = /tts|speech|eleven/i
 const TRANSCRIBE_ID = /whisper|transcri|nova/i
 
 export function MediaSettings() {
+  const t = useT()
   const navigate = useNavigate()
   const { preferences, update } = usePrefUpdate()
   const configuredModels = useChatStore((state) => state.models)
   const pools = useMediaModelPools(configuredModels)
   const experimental = preferences?.experimentalMedia ?? false
-  const boundCount = MEDIA_MODEL_ROWS.filter((row) => preferences?.[row.pref]).length
+  const rows = mediaModelRows(t)
+  const boundCount = rows.filter((row) => preferences?.[row.pref]).length
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,8 +91,8 @@ export function MediaSettings() {
         experimental={experimental}
         onOpenStudio={() => void navigate({ to: "/media" })}
       />
-      <SettingsCard title="Multi-modal generation models">
-        {MEDIA_MODEL_ROWS.map((row) => (
+      <SettingsCard title={t("settings.media.modelsCard")}>
+        {rows.map((row) => (
           <SettingsRow key={row.pref} title={row.title} description={row.description}>
             <ConfiguredMediaModelSelector
               selectedModelId={preferences?.[row.pref]}
@@ -121,12 +126,13 @@ function MediaOverview({
   experimental: boolean
   onOpenStudio: () => void
 }) {
+  const t = useT()
   return (
     <SettingsHub
       icon={RiImageLine}
-      title="Multi-modal generation"
-      badge={experimental ? "Experimental" : "Stable defaults"}
-      description="Bind image, video, speech, and transcription models from configured Providers."
+      title={t("settings.media.hubTitle")}
+      badge={experimental ? t("common.experimental") : t("settings.media.stable")}
+      description={t("settings.media.hubDesc")}
       action={
         <Button
           size="sm"
@@ -135,18 +141,18 @@ function MediaOverview({
           className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 text-caption-2-medium"
         >
           <RiFolder6Line className="size-3.5 text-accent-500" />
-          <span>Open Asset Studio</span>
+          <span>{t("settings.media.openStudio")}</span>
           <RiArrowRightLine className="ml-0.5 size-3.5 opacity-60" />
         </Button>
       }
       pulses={[
-        { label: "Bound models", value: `${boundCount} / 4` },
+        { label: t("settings.media.bound"), value: t("settings.media.boundValue", { count: boundCount }) },
         {
-          label: "Experimental media",
-          value: experimental ? "On" : "Off",
+          label: t("settings.media.experimentalMedia"),
+          value: experimental ? t("common.on") : t("common.off"),
           tone: experimental ? "warning" : "default"
         },
-        { label: "Unset slots", value: String(4 - boundCount) }
+        { label: t("settings.media.unsetSlots"), value: String(4 - boundCount) }
       ]}
     />
   )
@@ -161,18 +167,13 @@ function MediaSafetyCard({
   onExperimentalChange: (value: boolean) => void
   onOpenStudio: () => void
 }) {
+  const t = useT()
   return (
-    <SettingsCard title="Safety & asset hub">
-      <SettingsRow
-        title="Experimental media"
-        description="Enable Video generation and WebRTC Realtime audio sessions. Failures isolate and degrade gracefully."
-      >
+    <SettingsCard title={t("settings.media.safetyTitle")}>
+      <SettingsRow title={t("settings.media.experimentalMedia")} description={t("settings.media.experimentalDesc")}>
         <Switch checked={experimental} onCheckedChange={onExperimentalChange} />
       </SettingsRow>
-      <SettingsRow
-        title="Asset library"
-        description="Inspect generated artifacts, import external media, or export assets with path approval."
-      >
+      <SettingsRow title={t("settings.media.assetLibrary")} description={t("settings.media.assetDesc")}>
         <Button
           size="sm"
           variant="outline"
@@ -180,7 +181,7 @@ function MediaSafetyCard({
           className="inline-flex cursor-pointer items-center gap-1.5"
         >
           <RiFolder6Line className="size-3.5 text-accent-500" />
-          <span>Open Asset Studio</span>
+          <span>{t("settings.media.openStudio")}</span>
           <RiArrowRightLine className="ml-0.5 size-3.5 opacity-60" />
         </Button>
       </SettingsRow>

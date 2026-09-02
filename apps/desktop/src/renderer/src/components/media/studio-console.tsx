@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { AssetRecord } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import type { StudioGenerateKind, StudioMode } from "./media-page.types"
-import { STUDIO_MODES } from "./studio-modes"
+import { getStudioModes, type StudioModeEntry } from "./studio-modes"
 
 const FOCUS_RING = "outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
 
@@ -47,7 +48,8 @@ export function StudioGeneratorPanel({
   experimentalMedia,
   onGenerate
 }: StudioGeneratorPanelProps) {
-  const currentMode = STUDIO_MODES.find((entry) => entry.id === mode) ?? STUDIO_MODES[0]
+  const studioModes = getStudioModes(useT())
+  const currentMode = studioModes.find((entry) => entry.id === mode) ?? studioModes[0]
   const videoLocked = mode === "video" && !experimentalMedia
   const isCapable =
     !videoLocked && (currentMode.capability ? capabilities.includes(currentMode.capability) : true)
@@ -102,10 +104,12 @@ function StudioModeTabs({
   modelId: string | null
   onModeChange: (mode: StudioMode) => void
 }) {
+  const t = useT()
+  const studioModes = getStudioModes(t)
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap">
       <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default p-1">
-        {STUDIO_MODES.map((entry) => (
+        {studioModes.map((entry) => (
           <ModeTab
             key={entry.id}
             label={entry.label}
@@ -117,8 +121,10 @@ function StudioModeTabs({
         ))}
       </div>
       <div className="flex items-center gap-1.5 rounded-lg bg-background-secondary-default px-2.5 py-1 text-caption-2-medium text-text-tertiary">
-        <span>Model:</span>
-        <span className="font-mono text-caption-2-semibold text-text-primary">{modelId || "None"}</span>
+        <span>{t("pages.media.modelLabel")}</span>
+        <span className="font-mono text-caption-2-semibold text-text-primary">
+          {modelId || t("pages.media.modelNone")}
+        </span>
       </div>
     </div>
   )
@@ -132,16 +138,17 @@ function ModeTab({
   onSelect
 }: {
   label: string
-  icon: (typeof STUDIO_MODES)[number]["icon"]
+  icon: StudioModeEntry["icon"]
   active: boolean
   locked: boolean
   onSelect: () => void
 }) {
+  const t = useT()
   return (
     <button
       type="button"
       disabled={locked}
-      title={locked ? "Enable experimental media in Settings to generate video." : undefined}
+      title={locked ? t("pages.media.enableExperimentalVideo") : undefined}
       onClick={onSelect}
       className={cx(
         "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-caption-1-medium transition-colors",
@@ -171,17 +178,21 @@ function StudioHints({
   modelId: string | null
   modeLabel: string
 }) {
+  const t = useT()
   const capabilityHint = !isCapable
     ? videoLocked
-      ? "Enable experimental media in Settings to generate video."
-      : `Active model ${modelId || "None"} does not support ${modeLabel}. Switch model in Chat or configure in Settings.`
+      ? t("pages.media.enableExperimentalVideo")
+      : t("pages.media.modelNoCapability", {
+          modelId: modelId || t("pages.media.modelNone"),
+          modeLabel
+        })
     : null
   if (experimentalMedia && !capabilityHint) return null
   return (
     <div className="flex flex-col gap-1">
       {!experimentalMedia ? (
         <p className="text-caption-2-medium text-text-tertiary">
-          Video is disabled until experimental media is enabled in Settings.
+          {t("pages.media.videoDisabled")}
         </p>
       ) : null}
       {capabilityHint ? (
@@ -207,6 +218,7 @@ function TranscribeActions({
   isGenerating: boolean
   onGenerate: (kind: StudioGenerateKind) => void
 }) {
+  const t = useT()
   const ready = canSubmit && Boolean(selectedAudioAsset)
   return (
     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -219,16 +231,14 @@ function TranscribeActions({
           </div>
         ) : (
           <span className="text-text-tertiary">
-            {selectedAsset
-              ? "Select an audio asset to transcribe or translate"
-              : "Please click on an audio asset in the library below"}
+            {t(selectedAsset ? "pages.media.selectAudio" : "pages.media.clickAudio")}
           </span>
         )}
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         <Button size="sm" disabled={!ready} onClick={() => onGenerate("transcription")} className="h-9 gap-1.5 shadow-xs">
           {isGenerating ? <RiLoader4Line className="size-3.5 animate-spin" /> : <RiMicLine className="size-3.5" />}
-          <span>Transcribe</span>
+          <span>{t("pages.media.transcribe")}</span>
         </Button>
         <Button
           size="sm"
@@ -238,7 +248,7 @@ function TranscribeActions({
           className="h-9 gap-1.5 shadow-xs"
         >
           {isGenerating ? <RiLoader4Line className="size-3.5 animate-spin" /> : <RiTranslate2 className="size-3.5" />}
-          <span>Translate</span>
+          <span>{t("pages.media.translate")}</span>
         </Button>
       </div>
     </div>
@@ -262,6 +272,7 @@ function PromptActions({
   onPromptChange: (prompt: string) => void
   onGenerate: (kind: StudioGenerateKind) => void
 }) {
+  const t = useT()
   const ready = canSubmit && Boolean(prompt.trim())
   return (
     <div className="flex items-center gap-2">
@@ -276,7 +287,7 @@ function PromptActions({
       />
       <Button size="sm" disabled={!ready} onClick={() => onGenerate(mode)} className="h-9 gap-1.5 shadow-xs shrink-0">
         {isGenerating ? <RiLoader4Line className="size-3.5 animate-spin" /> : <RiSparklingLine className="size-3.5" />}
-        <span>Generate</span>
+        <span>{t("pages.media.generate")}</span>
       </Button>
     </div>
   )

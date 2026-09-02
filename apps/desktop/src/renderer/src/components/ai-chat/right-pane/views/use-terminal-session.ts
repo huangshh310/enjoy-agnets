@@ -3,8 +3,10 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useT } from "@renderer/i18n"
 
 export function useTerminalSession(workspaceId: string | null) {
+  const t = useT()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [log, setLog] = useState("")
   const sessionRef = useRef<string | null>(null)
@@ -27,7 +29,7 @@ export function useTerminalSession(workspaceId: string | null) {
         setSessionId(result.sessionId)
       })
       .catch((error: unknown) => {
-        setLog(error instanceof Error ? error.message : "Failed to open terminal.")
+        setLog(error instanceof Error ? error.message : t("chat.terminalFailed"))
       })
 
     const offData = getIde().terminal.onData((event) => {
@@ -41,7 +43,7 @@ export function useTerminalSession(workspaceId: string | null) {
       offData()
       if (sessionRef.current) void getIde().terminal.close({ sessionId: sessionRef.current })
     }
-  }, [workspaceId])
+  }, [workspaceId, t])
 
   function writeLine(line: string) {
     if (!sessionId) return

@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
+import { useT, type TranslateFn } from "@renderer/i18n"
+
 
 export type ModeCategory = "core" | "engineering"
 
@@ -37,13 +39,9 @@ export interface ModeItemConfig {
   iconColor: string
 }
 
-export const MODE_ITEMS: ModeItemConfig[] = [
-  // ─── 核心智能体循环 (AI SDK 7 Core Loops) ──────────────────────────
+const MODE_ITEM_DEFS: Array<Omit<ModeItemConfig, "label" | "desc" | "badge">> = [
   {
     id: "agent",
-    label: "Agent",
-    desc: "Autonomous coding & tools loop",
-    badge: "ToolLoop",
     category: "core",
     icon: RiTerminalBoxLine,
     colorClass: "text-purple-600 dark:text-purple-300",
@@ -52,9 +50,6 @@ export const MODE_ITEMS: ModeItemConfig[] = [
   },
   {
     id: "plan",
-    label: "Plan",
-    desc: "Architecture & blueprint planning",
-    badge: "Read-Only",
     category: "core",
     icon: RiCompass3Line,
     colorClass: "text-amber-600 dark:text-amber-300",
@@ -63,9 +58,6 @@ export const MODE_ITEMS: ModeItemConfig[] = [
   },
   {
     id: "ask",
-    label: "Ask",
-    desc: "Pure conversational Q&A & search",
-    badge: "Read-Only",
     category: "core",
     icon: RiQuestionLine,
     colorClass: "text-sky-600 dark:text-sky-300",
@@ -74,22 +66,14 @@ export const MODE_ITEMS: ModeItemConfig[] = [
   },
   {
     id: "debug",
-    label: "Debug",
-    desc: "Root-cause diagnostics & repair",
-    badge: "Diagnostic",
     category: "core",
     icon: RiBugLine,
     colorClass: "text-rose-600 dark:text-rose-300",
     bgClass: "bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
     iconColor: "text-rose-500 dark:text-rose-400"
   },
-
-  // ─── 专业工程工作流 (Specialized Engineering Workflows) ───────────
   {
     id: "workflow",
-    label: "Workflow",
-    desc: "Multi-step pipeline orchestration",
-    badge: "Pipeline",
     category: "engineering",
     icon: RiRouteLine,
     colorClass: "text-emerald-600 dark:text-emerald-300",
@@ -98,9 +82,6 @@ export const MODE_ITEMS: ModeItemConfig[] = [
   },
   {
     id: "tdd",
-    label: "TDD",
-    desc: "Red-Green-Refactor test-first loop",
-    badge: "Test-First",
     category: "engineering",
     icon: RiTestTubeLine,
     colorClass: "text-indigo-600 dark:text-indigo-300",
@@ -109,9 +90,6 @@ export const MODE_ITEMS: ModeItemConfig[] = [
   },
   {
     id: "code_mode",
-    label: "Code Mode",
-    desc: "Programmatic batch tool scripting",
-    badge: "Scripting",
     category: "engineering",
     icon: RiCommandLine,
     colorClass: "text-cyan-600 dark:text-cyan-300",
@@ -119,6 +97,25 @@ export const MODE_ITEMS: ModeItemConfig[] = [
     iconColor: "text-cyan-500 dark:text-cyan-400"
   }
 ]
+
+const MODE_COPY: Record<AgentMode, { label: string; desc: string; badge: string }> = {
+  agent: { label: "chat.modeAgent", desc: "chat.modeAgentDesc", badge: "chat.modeAgentBadge" },
+  plan: { label: "chat.modePlan", desc: "chat.modePlanDesc", badge: "chat.modeReadOnlyBadge" },
+  ask: { label: "chat.modeAsk", desc: "chat.modeAskDesc", badge: "chat.modeReadOnlyBadge" },
+  debug: { label: "chat.modeDebug", desc: "chat.modeDebugDesc", badge: "chat.modeDebugBadge" },
+  workflow: { label: "chat.modeWorkflow", desc: "chat.modeWorkflowDesc", badge: "chat.modeWorkflowBadge" },
+  tdd: { label: "chat.modeTdd", desc: "chat.modeTddDesc", badge: "chat.modeTddBadge" },
+  code_mode: { label: "chat.modeCode", desc: "chat.modeCodeDesc", badge: "chat.modeCodeBadge" }
+}
+
+export function getModeItems(t: TranslateFn): ModeItemConfig[] {
+  return MODE_ITEM_DEFS.map((item) => ({
+    ...item,
+    label: t(MODE_COPY[item.id].label),
+    desc: t(MODE_COPY[item.id].desc),
+    badge: t(MODE_COPY[item.id].badge)
+  }))
+}
 
 export function ExecutionModeMenu({
   mode,
@@ -129,18 +126,20 @@ export function ExecutionModeMenu({
   onChange: (mode: AgentMode) => void
   align?: "start" | "end"
 }) {
-  const active = MODE_ITEMS.find((item) => item.id === mode) ?? MODE_ITEMS[0]
+  const t = useT()
+  const items = getModeItems(t)
+  const active = items.find((item) => item.id === mode) ?? items[0]
   const ActiveIcon = active.icon
 
-  const coreItems = MODE_ITEMS.filter((item) => item.category === "core")
-  const engineeringItems = MODE_ITEMS.filter((item) => item.category === "engineering")
+  const coreItems = items.filter((item) => item.category === "core")
+  const engineeringItems = items.filter((item) => item.category === "engineering")
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Select execution mode"
+          aria-label={t("chat.selectMode")}
           className={cx(
             "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption-1-semibold transition-all shadow-2xs outline-none cursor-pointer",
             "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
@@ -159,7 +158,7 @@ export function ExecutionModeMenu({
         className="w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-2 shadow-dropdown"
       >
         <div className="px-2 pt-1 pb-1.5 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
-          AI SDK 7 Core Modes
+          {t("chat.modeCoreGroup")}
         </div>
         {coreItems.map((item) => (
           <ModeMenuItem key={item.id} item={item} selected={mode === item.id} onPick={() => onChange(item.id)} />
@@ -168,7 +167,7 @@ export function ExecutionModeMenu({
         <DropdownMenuSeparator className="-mx-1 my-1.5 bg-separator-border" />
 
         <div className="px-2 pt-1 pb-1.5 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
-          Specialized Workflows
+          {t("chat.modeWorkflowGroup")}
         </div>
         {engineeringItems.map((item) => (
           <ModeMenuItem key={item.id} item={item} selected={mode === item.id} onPick={() => onChange(item.id)} />

@@ -5,12 +5,14 @@ import { useCallback, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { RiFileCodeLine, RiPlugLine, RiShoppingBag3Line } from "@remixicon/react"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { textFromAppMessage } from "../lib/app-message-text"
 import type { McpActiveTab, McpOverviewStats, McpPluginPreset } from "../types/mcp-ui.types"
 
 export function useMcpPage() {
   const queryClient = useQueryClient()
+  const t = useT()
   const [activeTab, setActiveTab] = useState<McpActiveTab>("servers")
   const [serverSearch, setServerSearch] = useState("")
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -22,7 +24,7 @@ export function useMcpPage() {
   const [appModalOpen, setAppModalOpen] = useState(false)
   const [openServerId, setOpenServerId] = useState<string | null>(null)
   const [appSrcDoc, setAppSrcDoc] = useState<string | null>(null)
-  const [appTitle, setAppTitle] = useState("MCP App")
+  const [appTitle, setAppTitle] = useState(t("pages.mcp.appTitle"))
   const [lastLog, setLastLog] = useState<string | null>(null)
 
   const serversQuery = useQuery({
@@ -43,28 +45,28 @@ export function useMcpPage() {
     () => [
       {
         id: "servers",
-        label: "MCP Protocol",
+        label: t("pages.mcp.navGroup"),
         items: [
           {
             id: "servers",
-            label: "已配置服务",
+            label: t("pages.mcp.navServers"),
             icon: RiPlugLine,
             meta: String(servers.length)
           },
           {
             id: "marketplace",
-            label: "精选插件市场",
+            label: t("pages.mcp.navMarketplace"),
             icon: RiShoppingBag3Line
           },
           {
             id: "json",
-            label: "JSON 规格配置",
+            label: t("pages.mcp.navJson"),
             icon: RiFileCodeLine
           }
         ]
       }
     ],
-    [servers.length]
+    [servers.length, t]
   )
 
   async function refresh() {
@@ -83,7 +85,7 @@ export function useMcpPage() {
     }
     setOpenServerId(serverId)
     setAppSrcDoc(opened.srcDoc)
-    setAppTitle(opened.title ?? "MCP App")
+    setAppTitle(opened.title ?? t("pages.mcp.appTitle"))
     setLastLog(null)
     setAppModalOpen(true)
   }

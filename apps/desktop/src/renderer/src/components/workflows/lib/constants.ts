@@ -1,6 +1,7 @@
 /**
  * 预置 Workflow 配方。页面只展示，不改语义。
  */
+import type { TranslateFn } from "@renderer/i18n"
 
 export type WorkflowRecipe = {
   id: string
@@ -12,45 +13,69 @@ export type WorkflowRecipe = {
   steps: string[]
 }
 
-export const WORKFLOW_RECIPES: WorkflowRecipe[] = [
+const RECIPE_DEFS = [
   {
     id: "plan-act-verify",
-    title: "Plan → Act → Verify",
-    subtitle: "全自动规划、实现与验证闭环",
-    category: "Full Cycle Dev",
-    description:
-      "Multi-step autonomous workflow: first writes a structural plan, makes precise code modifications, and validates with automated test suites.",
     chain: "plan>act>verify",
-    steps: ["Plan", "Act", "Verify"]
+    titleKey: "pages.workflows.recipePlanTitle",
+    subtitleKey: "pages.workflows.recipePlanSubtitle",
+    categoryKey: "pages.workflows.recipePlanCategory",
+    descKey: "pages.workflows.recipePlanDesc",
+    stepKeys: [
+      "pages.workflows.recipePlanStep1",
+      "pages.workflows.recipePlanStep2",
+      "pages.workflows.recipePlanStep3"
+    ]
   },
   {
     id: "explore-refactor-test",
-    title: "Explore → Refactor → Test",
-    subtitle: "代码架构探索与安全重构",
-    category: "Architecture & Refactor",
-    description:
-      "Deep codebase research followed by systematic refactoring and automated regression verification.",
     chain: "explore>refactor>test",
-    steps: ["Explore", "Refactor", "Test"]
+    titleKey: "pages.workflows.recipeExploreTitle",
+    subtitleKey: "pages.workflows.recipeExploreSubtitle",
+    categoryKey: "pages.workflows.recipeExploreCategory",
+    descKey: "pages.workflows.recipeExploreDesc",
+    stepKeys: [
+      "pages.workflows.recipeExploreStep1",
+      "pages.workflows.recipeExploreStep2",
+      "pages.workflows.recipeExploreStep3"
+    ]
   },
   {
     id: "audit-fix-review",
-    title: "Audit → Fix → Review",
-    subtitle: "安全隐患巡检与缺陷修复",
-    category: "Security & BugFix",
-    description:
-      "Scan code for potential runtime vulnerabilities, generate targeted fixes, and perform human-in-the-loop review.",
     chain: "audit>fix>review",
-    steps: ["Audit", "Fix", "Review"]
+    titleKey: "pages.workflows.recipeAuditTitle",
+    subtitleKey: "pages.workflows.recipeAuditSubtitle",
+    categoryKey: "pages.workflows.recipeAuditCategory",
+    descKey: "pages.workflows.recipeAuditDesc",
+    stepKeys: [
+      "pages.workflows.recipeAuditStep1",
+      "pages.workflows.recipeAuditStep2",
+      "pages.workflows.recipeAuditStep3"
+    ]
   },
   {
     id: "analyze-patch-verify",
-    title: "Analyze → Patch → Verify",
-    subtitle: "针对性诊断与热补丁交付",
-    category: "Diagnostic & Patch",
-    description:
-      "Analyze error logs or issue descriptions, synthesize minimal diff patch, and verify against target workspace.",
     chain: "analyze>patch>verify",
-    steps: ["Analyze", "Patch", "Verify"]
+    titleKey: "pages.workflows.recipeAnalyzeTitle",
+    subtitleKey: "pages.workflows.recipeAnalyzeSubtitle",
+    categoryKey: "pages.workflows.recipeAnalyzeCategory",
+    descKey: "pages.workflows.recipeAnalyzeDesc",
+    stepKeys: [
+      "pages.workflows.recipeAnalyzeStep1",
+      "pages.workflows.recipeAnalyzeStep2",
+      "pages.workflows.recipeAnalyzeStep3"
+    ]
   }
-]
+] as const
+
+export function getWorkflowRecipes(t: TranslateFn): WorkflowRecipe[] {
+  return RECIPE_DEFS.map((recipe) => ({
+    id: recipe.id,
+    title: t(recipe.titleKey),
+    subtitle: t(recipe.subtitleKey),
+    category: t(recipe.categoryKey),
+    description: t(recipe.descKey),
+    chain: recipe.chain,
+    steps: recipe.stepKeys.map((key) => t(key))
+  }))
+}

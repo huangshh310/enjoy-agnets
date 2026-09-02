@@ -7,6 +7,7 @@ import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
 import { AiChatCodePane } from "../ai-chat-code-pane"
 import { FileDiff } from "./file-diff"
+import { useT } from "@renderer/i18n"
 
 export function ChangesFileDiff({
   workspaceId,
@@ -17,6 +18,7 @@ export function ChangesFileDiff({
   path: string
   fallbackContent: string
 }) {
+  const t = useT()
   const query = useQuery({
     queryKey: ["workspace-diff", workspaceId, path],
     queryFn: () =>
@@ -26,7 +28,7 @@ export function ChangesFileDiff({
   if (query.isPending) {
     return (
       <p className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
-        Loading diff…
+        {t("chat.loadingDiff")}
       </p>
     )
   }

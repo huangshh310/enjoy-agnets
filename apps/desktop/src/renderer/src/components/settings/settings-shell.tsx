@@ -1,9 +1,11 @@
 import { Outlet, useNavigate, useParams } from "@tanstack/react-router"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
-import { SETTINGS_NAV, isSettingsSectionId, type SettingsSectionId } from "./settings-catalog"
+import { useT } from "@renderer/i18n"
+import { getSettingsNav, isSettingsSectionId, type SettingsSectionId } from "./settings-catalog"
 
 export function SettingsShell() {
   const navigate = useNavigate()
+  const t = useT()
   const params = useParams({ strict: false }) as { section?: string }
   const section = isSettingsSectionId(params.section ?? "")
     ? (params.section as SettingsSectionId)
@@ -11,8 +13,8 @@ export function SettingsShell() {
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Search settings..."
-      groups={SETTINGS_NAV}
+      searchPlaceholder={t("common.searchSettings")}
+      groups={getSettingsNav(t)}
       selectedId={section}
       contentWidth="wide"
       onSelect={(id) => void navigate({ to: "/settings/$section", params: { section: id } })}

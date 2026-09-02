@@ -3,6 +3,7 @@ import { Command as CommandPrimitive } from "cmdk"
 import { RiSearchLine } from "@remixicon/react"
 
 import { cn } from "@/lib/utils"
+import { uiT, useUiLocale } from "@/i18n/ui-locale"
 import {
   Dialog,
   DialogContent,
@@ -28,8 +29,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title,
+  description,
   children,
   className,
   showCloseButton = true,
@@ -40,11 +41,15 @@ function CommandDialog({
   className?: string
   showCloseButton?: boolean
 }) {
+  useUiLocale()
+  const resolvedTitle = title ?? uiT("命令面板", "Command Palette")
+  const resolvedDescription =
+    description ?? uiT("搜索要执行的命令...", "Search for a command to run...")
   return (
     <Dialog {...props}>
       <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
+        <DialogTitle>{resolvedTitle}</DialogTitle>
+        <DialogDescription>{resolvedDescription}</DialogDescription>
       </DialogHeader>
       <DialogContent
         className={cn("overflow-hidden p-0", className)}

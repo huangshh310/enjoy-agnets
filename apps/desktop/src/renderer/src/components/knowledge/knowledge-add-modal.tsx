@@ -23,8 +23,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { KNOWLEDGE_PRESET_FOLDERS } from "./knowledge-constants"
+import { getKnowledgePresetFolders } from "./knowledge-constants"
 import { pickWorkspaceRelativePath } from "./knowledge-pick-source"
 
 interface KnowledgeAddModalProps {
@@ -46,10 +47,10 @@ export function KnowledgeAddModal({
   onAddAndIndex,
   isAdding
 }: KnowledgeAddModalProps) {
+  const t = useT()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const [activeTab, setActiveTab] = useState<"folder" | "file">("folder")
   const [path, setPath] = useState("")
-
   // Query workspace real directory entries to show live folder/file browser
   const workspaceFilesQuery = useQuery({
     queryKey: ["workspace-files-root", workspaceId],
@@ -97,10 +98,10 @@ export function KnowledgeAddModal({
             </div>
             <div>
               <DialogTitle className="text-body-medium font-semibold text-text-primary">
-                Add / Import Knowledge Source
+                {t("pages.knowledge.addTitle")}
               </DialogTitle>
               <DialogDescription className="text-[12px] text-text-secondary">
-                Index folders, documents, or code files into local vector memory
+                {t("pages.knowledge.addDesc")}
               </DialogDescription>
             </div>
           </div>
@@ -119,7 +120,7 @@ export function KnowledgeAddModal({
             )}
           >
             <RiFolderLine className="size-4" />
-            <span>Folder / Directory</span>
+            <span>{t("pages.knowledge.tabFolder")}</span>
           </button>
           <button
             type="button"
@@ -132,7 +133,7 @@ export function KnowledgeAddModal({
             )}
           >
             <RiFileTextLine className="size-4" />
-            <span>Single / Specific File</span>
+            <span>{t("pages.knowledge.tabFile")}</span>
           </button>
         </div>
 
@@ -140,7 +141,7 @@ export function KnowledgeAddModal({
           {/* Target Relative Path with Browse & Clear buttons */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-caption-1-medium text-text-secondary">
-              {activeTab === "folder" ? "Target Folder Path" : "Target File Path"}
+              {activeTab === "folder" ? t("pages.knowledge.targetFolderPath") : t("pages.knowledge.targetFilePath")}
             </Label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -154,8 +155,8 @@ export function KnowledgeAddModal({
                   onChange={(e) => setPath(e.target.value)}
                   placeholder={
                     activeTab === "folder"
-                      ? "e.g. . or src or docs/specs"
-                      : "e.g. README.md or design/specs/ui.md"
+                      ? t("pages.knowledge.placeholderFolder")
+                      : t("pages.knowledge.placeholderFile")
                   }
                   className="pl-9 pr-8 bg-background-secondary-default font-mono text-body-medium focus-visible:bg-background-primary-default"
                   onKeyDown={(e) => {
@@ -167,7 +168,7 @@ export function KnowledgeAddModal({
                   <button
                     type="button"
                     onClick={() => setPath("")}
-                    title="Clear input"
+                    title={t("pages.knowledge.clearInput")}
                     className="absolute right-2.5 top-2.5 text-text-tertiary hover:text-text-primary"
                   >
                     <RiCloseCircleLine className="size-4" />
@@ -185,8 +186,8 @@ export function KnowledgeAddModal({
                 className="gap-1.5 shrink-0 h-9"
                 title={
                   activeTab === "folder"
-                    ? "Browse local directory..."
-                    : "Select document file..."
+                    ? t("pages.knowledge.browseDirectory")
+                    : t("pages.knowledge.selectDocument")
                 }
               >
                 {activeTab === "folder" ? (
@@ -194,13 +195,13 @@ export function KnowledgeAddModal({
                 ) : (
                   <RiFileAddLine className="size-4 text-accent-500" />
                 )}
-                <span>{activeTab === "folder" ? "Browse Folder..." : "Choose File..."}</span>
+                <span>{activeTab === "folder" ? t("pages.knowledge.browseFolder") : t("pages.knowledge.chooseFile")}</span>
               </Button>
             </div>
             <span className="text-[11px] text-text-tertiary">
               {activeTab === "folder"
-                ? "Directories are recursively scanned and chunked into SQLite vector memory."
-                : "Single file will be parsed and embedded directly for semantic recall."}
+                ? t("pages.knowledge.folderHint")
+                : t("pages.knowledge.fileHint")}
             </span>
           </div>
 
@@ -208,7 +209,7 @@ export function KnowledgeAddModal({
           {activeTab === "folder" && workspaceDirs.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label className="text-caption-2-medium text-text-tertiary uppercase tracking-wider">
-                Workspace Folders Found
+                {t("pages.knowledge.workspaceFoldersFound")}
               </Label>
               <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto">
                 <button
@@ -217,7 +218,7 @@ export function KnowledgeAddModal({
                   className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 text-[11px] font-mono font-medium text-text-primary hover:border-accent-500/50 hover:bg-background-secondary-hover hover:text-accent-500 transition-all"
                 >
                   <RiFolderLine className="size-3 text-accent-500" />
-                  <span>. (Entire Project)</span>
+                  <span>{t("pages.knowledge.entireProject")}</span>
                 </button>
                 {workspaceDirs.map((dir) => (
                   <button
@@ -235,7 +236,7 @@ export function KnowledgeAddModal({
           ) : activeTab === "file" && workspaceFiles.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label className="text-caption-2-medium text-text-tertiary uppercase tracking-wider">
-                Workspace Root Files
+                {t("pages.knowledge.workspaceRootFiles")}
               </Label>
               <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto">
                 {workspaceFiles.map((file) => (
@@ -257,10 +258,10 @@ export function KnowledgeAddModal({
           {activeTab === "folder" ? (
             <div className="flex flex-col gap-2">
               <Label className="text-caption-2-medium text-text-tertiary uppercase tracking-wider">
-                Quick Preset Suggestions
+                {t("pages.knowledge.quickPresets")}
               </Label>
               <div className="grid grid-cols-2 gap-2">
-                {KNOWLEDGE_PRESET_FOLDERS.map((preset) => (
+                {getKnowledgePresetFolders(t).map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
@@ -283,7 +284,7 @@ export function KnowledgeAddModal({
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             type="button"
@@ -294,7 +295,7 @@ export function KnowledgeAddModal({
             className={cx("gap-1.5 shadow-xs", isAdding && "opacity-60")}
           >
             {isAdding ? null : <RiAddLine className="size-4" />}
-            <span>{activeTab === "folder" ? "Index Folder" : "Index File"}</span>
+            <span>{activeTab === "folder" ? t("pages.knowledge.indexFolder") : t("pages.knowledge.indexFile")}</span>
           </Button>
         </DialogFooter>
       </DialogContent>

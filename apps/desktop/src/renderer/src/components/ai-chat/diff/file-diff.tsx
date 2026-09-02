@@ -6,6 +6,7 @@
 import { RiCodeSSlashLine } from "@remixicon/react"
 import type { DiffLine, FileDiffModel } from "@enjoy-agents/agent-core/diff"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 
 export function FileDiff({
   model,
@@ -14,10 +15,11 @@ export function FileDiff({
   model: FileDiffModel
   compact?: boolean
 }) {
+  const t = useT()
   if (model.hunks.length === 0) {
     return (
       <div className="rounded-xl border border-separator-border/70 bg-background-primary-default p-4 text-center text-caption-1-medium text-text-tertiary font-mono">
-        No line changes in this file.
+        {t("chat.noLineChanges")}
       </div>
     )
   }

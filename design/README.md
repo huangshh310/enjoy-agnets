@@ -31,7 +31,7 @@
 | `workflow` | [specs/workflow.md](./specs/workflow.md) | Durable run、checkpoint | `agent-core/agents/workflow` |
 | `mcp` | [specs/mcp.md](./specs/mcp.md) | Server、权限、隔离 App | `packages/mcp` |
 | `observability` | [specs/observability.md](./specs/observability.md) | 本地指标、脱敏、OTEL | `telemetry-service` |
-
+| `i18n` | [specs/i18n.md](./specs/i18n.md) | 中英界面语言，默认中文 | `renderer/src/i18n`、`packages/ui/i18n` |
 找不到对应 ID 时：先在本表加一行和空 spec，再写代码。不要把新领域塞进无关 spec。
 
 ---

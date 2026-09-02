@@ -8,6 +8,7 @@ import {
   RiKeyboardBoxLine,
   RiSearchLine
 } from "@remixicon/react"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import { SettingsCard, SettingsRow } from "./settings-row"
 
 export interface ShortcutItem {
@@ -18,90 +19,103 @@ export interface ShortcutItem {
   category: "global" | "views" | "chat" | "studio"
 }
 
-const SHORTCUT_REGISTRY: ShortcutItem[] = [
-  // ─── 全局导航与指令 ────────────────────────────────
+type ShortcutDef = {
+  id: string
+  actionKey: string
+  descKey: string
+  keys: string[]
+  category: ShortcutItem["category"]
+}
+
+const SHORTCUT_DEFS: ShortcutDef[] = [
   {
     id: "quick-search",
-    action: "Quick Search & Command Palette",
-    desc: "Open the unified command palette to jump to tools, settings, or recent sessions.",
+    actionKey: "settings.shortcuts.quickSearch",
+    descKey: "settings.shortcuts.quickSearchDesc",
     keys: ["Mod", "L"],
     category: "global"
   },
   {
     id: "quick-search-alt",
-    action: "Quick Search (Alternative)",
-    desc: "Secondary standard hotkey for the quick command dialog.",
+    actionKey: "settings.shortcuts.quickSearchAlt",
+    descKey: "settings.shortcuts.quickSearchAltDesc",
     keys: ["Mod", "K"],
     category: "global"
   },
   {
     id: "open-settings",
-    action: "Open Settings",
-    desc: "Navigate to the General settings page from anywhere in the app.",
+    actionKey: "settings.shortcuts.openSettings",
+    descKey: "settings.shortcuts.openSettingsDesc",
     keys: ["Mod", ","],
     category: "global"
   },
   {
     id: "back-workspace",
-    action: "Back to Workspace / Close",
-    desc: "Return to the main agent workspace or dismiss active secondary modals.",
+    actionKey: "settings.shortcuts.backWorkspace",
+    descKey: "settings.shortcuts.backWorkspaceDesc",
     keys: ["Esc"],
     category: "global"
   },
-
-  // ─── 右侧栏开发视图 ────────────────────────────────
   {
     id: "files-tree",
-    action: "Files & Code Preview",
-    desc: "Open the workspace file tree and code inspector in the right pane.",
+    actionKey: "settings.shortcuts.filesTree",
+    descKey: "settings.shortcuts.filesTreeDesc",
     keys: ["Mod", "P"],
     category: "views"
   },
   {
     id: "review-diff",
-    action: "Review & Git Diff",
-    desc: "Open the Changes pane to inspect file modifications and review diffs.",
+    actionKey: "settings.shortcuts.reviewDiff",
+    descKey: "settings.shortcuts.reviewDiffDesc",
     keys: ["Mod", "Shift", "G"],
     category: "views"
   },
   {
     id: "integrated-terminal",
-    action: "Integrated Terminal",
-    desc: "Toggle the workspace-jailed PTY terminal shell.",
+    actionKey: "settings.shortcuts.terminal",
+    descKey: "settings.shortcuts.terminalDesc",
     keys: ["Mod", "`"],
     category: "views"
   },
   {
     id: "in-app-browser",
-    action: "In-App Browser Preview",
-    desc: "Open the live web application preview surface.",
+    actionKey: "settings.shortcuts.browser",
+    descKey: "settings.shortcuts.browserDesc",
     keys: ["Mod", "T"],
     category: "views"
   },
-
-  // ─── 聊天与输入框交互 ──────────────────────────────
   {
     id: "send-message",
-    action: "Send Message / Run Agent",
-    desc: "Submit the prompt and start the agent execution loop.",
+    actionKey: "settings.shortcuts.send",
+    descKey: "settings.shortcuts.sendDesc",
     keys: ["Enter"],
     category: "chat"
   },
   {
     id: "new-line",
-    action: "New Line in Composer",
-    desc: "Insert a line break inside the chat input textarea without sending.",
+    actionKey: "settings.shortcuts.newLine",
+    descKey: "settings.shortcuts.newLineDesc",
     keys: ["Shift", "Enter"],
     category: "chat"
   },
   {
     id: "paste-attachment",
-    action: "Paste Image or Files",
-    desc: "Paste clipboard screenshots or files directly into the attachment queue.",
+    actionKey: "settings.shortcuts.paste",
+    descKey: "settings.shortcuts.pasteDesc",
     keys: ["Mod", "V"],
     category: "chat"
   }
 ]
+
+function shortcutRegistry(t: TranslateFn): ShortcutItem[] {
+  return SHORTCUT_DEFS.map((item) => ({
+    id: item.id,
+    action: t(item.actionKey),
+    desc: t(item.descKey),
+    keys: item.keys,
+    category: item.category
+  }))
+}
 
 function isApplePlatform(): boolean {
   if (typeof navigator === "undefined") return false
@@ -137,19 +151,21 @@ function ShortcutKeys({ keys }: { keys: string[] }) {
 }
 
 export function ShortcutSettings() {
+  const t = useT()
   const [search, setSearch] = useState("")
   const isMac = isApplePlatform()
+  const registry = useMemo(() => shortcutRegistry(t), [t])
 
   const filteredShortcuts = useMemo(() => {
-    if (!search.trim()) return SHORTCUT_REGISTRY
+    if (!search.trim()) return registry
     const q = search.toLowerCase().trim()
-    return SHORTCUT_REGISTRY.filter(
+    return registry.filter(
       (item) =>
         item.action.toLowerCase().includes(q) ||
         item.desc.toLowerCase().includes(q) ||
         item.keys.some((k) => k.toLowerCase().includes(q))
     )
-  }, [search])
+  }, [registry, search])
 
   const globalItems = filteredShortcuts.filter((item) => item.category === "global")
   const viewItems = filteredShortcuts.filter((item) => item.category === "views")
@@ -167,14 +183,14 @@ export function ShortcutSettings() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-body-large-semibold text-text-primary">
-                  Keyboard Shortcuts Directory
+                  {t("settings.shortcuts.hubTitle")}
                 </span>
                 <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-                  {isMac ? "macOS Layout (⌘)" : "Windows / Linux (Ctrl)"}
+                  {isMac ? t("settings.shortcuts.layoutMac") : t("settings.shortcuts.layoutWin")}
                 </span>
               </div>
               <span className="text-caption-2-regular text-text-tertiary mt-0.5">
-                Speed up your workflow with global command palette, pane toggles, and chat shortcuts.
+                {t("settings.shortcuts.hubDesc")}
               </span>
             </div>
           </div>
@@ -185,7 +201,7 @@ export function ShortcutSettings() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search shortcuts..."
+              placeholder={t("settings.shortcuts.searchPlaceholder")}
               className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default pl-8 pr-2.5 text-caption-2-regular text-text-primary outline-none focus:border-border-focus-ring"
             />
           </div>
@@ -194,7 +210,7 @@ export function ShortcutSettings() {
 
       {/* ─── 分组快捷键列表 ─────────────────────────────── */}
       {globalItems.length > 0 && (
-        <SettingsCard title="Global & Navigation">
+        <SettingsCard title={t("settings.shortcuts.groupGlobal")}>
           {globalItems.map((item) => (
             <SettingsRow key={item.id} title={item.action} description={item.desc}>
               <ShortcutKeys keys={item.keys} />
@@ -204,7 +220,7 @@ export function ShortcutSettings() {
       )}
 
       {viewItems.length > 0 && (
-        <SettingsCard title="Right Stage & Development Panes">
+        <SettingsCard title={t("settings.shortcuts.groupViews")}>
           {viewItems.map((item) => (
             <SettingsRow key={item.id} title={item.action} description={item.desc}>
               <ShortcutKeys keys={item.keys} />
@@ -214,7 +230,7 @@ export function ShortcutSettings() {
       )}
 
       {chatItems.length > 0 && (
-        <SettingsCard title="Chat & Composer Operations">
+        <SettingsCard title={t("settings.shortcuts.groupChat")}>
           {chatItems.map((item) => (
             <SettingsRow key={item.id} title={item.action} description={item.desc}>
               <ShortcutKeys keys={item.keys} />
@@ -228,9 +244,9 @@ export function ShortcutSettings() {
           <div className="flex size-10 items-center justify-center rounded-full bg-background-secondary-default text-text-tertiary mb-2">
             <RiInformationLine className="size-5" />
           </div>
-          <p className="text-caption-1-medium text-text-primary">No shortcuts found</p>
+          <p className="text-caption-1-medium text-text-primary">{t("settings.shortcuts.empty")}</p>
           <p className="text-caption-2-regular text-text-tertiary mt-0.5">
-            Try a different search keyword (e.g. terminal, files, git, search).
+            {t("settings.shortcuts.emptyHint")}
           </p>
         </div>
       )}

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { AssetRecord, KnowledgeSource } from "@enjoy-agents/ipc-contract"
 import { openFolder } from "@renderer/hooks/use-agent-session"
+import { useT } from "@renderer/i18n"
 
 export function StudioAssetsKnowledgeZone({
   workspaceName,
@@ -43,6 +44,8 @@ export function StudioAssetsKnowledgeZone({
   isIndexing: boolean
   assets: AssetRecord[]
 }) {
+  const t = useT()
+
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -50,13 +53,9 @@ export function StudioAssetsKnowledgeZone({
           <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
             <RiFolder6Line className="size-3.5" />
           </div>
-          <h3 className="text-body-medium font-semibold text-text-primary">
-            Assets & Knowledge · 项目资产与长效记忆
-          </h3>
+          <h3 className="text-body-medium font-semibold text-text-primary">{t("studio.assets.title")}</h3>
         </div>
-        <span className="text-caption-2-medium text-text-tertiary">
-          Workspaces, RAG vector index & multimodal media
-        </span>
+        <span className="text-caption-2-medium text-text-tertiary">{t("studio.assets.subtitle")}</span>
       </div>
       <div className="grid gap-3.5 md:grid-cols-3">
         <article className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md md:col-span-2">
@@ -69,15 +68,13 @@ export function StudioAssetsKnowledgeZone({
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-body-medium font-semibold text-text-primary transition-colors group-hover:text-accent-500">
-                      {workspaceName || "No Workspace Opened"}
+                      {workspaceName || t("studio.assets.noWorkspace")}
                     </h4>
                     <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                      Active Root
+                      {t("studio.assets.activeRoot")}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-                    Active workspace root and local file index with native Electron file watchers.
-                  </p>
+                  <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("studio.assets.workspaceDesc")}</p>
                 </div>
               </div>
               <Button
@@ -87,7 +84,7 @@ export function StudioAssetsKnowledgeZone({
                 className="h-8 shrink-0 gap-1 text-caption-2-medium shadow-xs"
               >
                 <RiFolderOpenLine className="size-3.5" />
-                <span>Switch folder</span>
+                <span>{t("studio.assets.switchFolder")}</span>
               </Button>
             </div>
             {workspaceRootLabel ? (
@@ -97,7 +94,7 @@ export function StudioAssetsKnowledgeZone({
                 </div>
                 <button
                   type="button"
-                  title="Copy workspace path"
+                  title={t("studio.assets.copyPath")}
                   onClick={onCopyPath}
                   className="inline-flex shrink-0 items-center rounded-md border border-border-button-default bg-background-primary-default p-1 text-text-tertiary shadow-xs transition-colors hover:text-text-primary"
                 >
@@ -111,13 +108,13 @@ export function StudioAssetsKnowledgeZone({
             ) : null}
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
-            <span className="text-caption-2-medium text-text-tertiary">Native filesystem integration via Electron main</span>
+            <span className="text-caption-2-medium text-text-tertiary">{t("studio.assets.nativeFs")}</span>
             <button
               type="button"
               onClick={onOpenChat}
               className="inline-flex items-center gap-1 text-caption-2-medium font-medium text-accent-600 hover:underline dark:text-accent-400"
             >
-              <span>Open in Chat & Files</span>
+              <span>{t("studio.assets.openInChat")}</span>
               <RiArrowRightLine className="size-3.5" />
             </button>
           </div>
@@ -145,33 +142,33 @@ export function StudioAssetsKnowledgeZone({
                 {isIndexing ? (
                   <span className="inline-flex items-center gap-1">
                     <RiLoader4Line className="size-3 animate-spin" />
-                    Indexing
+                    {t("studio.assets.indexing")}
                   </span>
                 ) : sources.length > 0 ? (
-                  "Ready"
+                  t("studio.assets.ready")
                 ) : (
-                  "Empty"
+                  t("studio.assets.empty")
                 )}
               </span>
             </div>
             <h4 className="mt-3.5 text-body-medium font-semibold text-text-primary transition-colors group-hover:text-accent-500">
-              Knowledge Base (RAG)
+              {t("studio.assets.knowledgeTitle")}
             </h4>
-            <p className="mt-0.5 text-caption-1-medium text-text-secondary">Semantic retriever & vector embeddings.</p>
+            <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("studio.assets.knowledgeDesc")}</p>
             <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-background-secondary-default p-2.5 text-center">
               <div>
                 <p className="font-mono text-body-medium font-semibold text-text-primary">{sources.length}</p>
-                <p className="text-[11px] text-text-tertiary">Sources</p>
+                <p className="text-[11px] text-text-tertiary">{t("studio.assets.sources")}</p>
               </div>
               <div>
                 <p className="font-mono text-body-medium font-semibold text-text-primary">{totalChunks}</p>
-                <p className="text-[11px] text-text-tertiary">Chunks</p>
+                <p className="text-[11px] text-text-tertiary">{t("studio.assets.chunks")}</p>
               </div>
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
             <span className="inline-flex items-center gap-1 text-caption-2-medium font-medium text-accent-600 group-hover:underline dark:text-accent-400">
-              <span>Manage knowledge</span>
+              <span>{t("studio.assets.manageKnowledge")}</span>
               <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </div>
@@ -189,36 +186,34 @@ export function StudioAssetsKnowledgeZone({
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-body-medium font-semibold text-text-primary transition-colors group-hover:text-accent-500">
-                    Media Studio & Multimodal Assets
+                    {t("studio.assets.mediaTitle")}
                   </h4>
                   <span className="rounded-full border border-border-button-default bg-background-secondary-default px-2 py-0.5 font-mono text-[11px] text-text-secondary">
-                    {assets.length} assets
+                    {t("studio.assets.assetCount", { count: assets.length })}
                   </span>
                 </div>
-                <p className="mt-0.5 text-caption-1-medium text-text-secondary">
-                  Generate images, synthesize spoken audio, transcribe voice, and manage project media.
-                </p>
+                <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("studio.assets.mediaDesc")}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2.5 py-1 text-caption-2-medium text-text-secondary">
                 <RiImageLine className="size-3.5 text-accent-500" />
-                <span>Images</span>
+                <span>{t("studio.assets.images")}</span>
               </span>
               <span className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2.5 py-1 text-caption-2-medium text-text-secondary">
                 <RiFileMusicLine className="size-3.5 text-amber-500" />
-                <span>Speech (TTS)</span>
+                <span>{t("studio.assets.speech")}</span>
               </span>
               <span className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2.5 py-1 text-caption-2-medium text-text-secondary">
                 <RiFileVideoLine className="size-3.5 text-purple-500" />
-                <span>Video</span>
+                <span>{t("studio.assets.video")}</span>
               </span>
             </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between border-t border-separator-border/60 pt-3">
-            <span className="text-caption-2-medium text-text-tertiary">Direct export to workspace with overwrite protection</span>
+            <span className="text-caption-2-medium text-text-tertiary">{t("studio.assets.exportHint")}</span>
             <span className="inline-flex items-center gap-1 text-caption-2-medium font-medium text-accent-600 group-hover:underline dark:text-accent-400">
-              <span>Open Media Studio</span>
+              <span>{t("studio.assets.openMedia")}</span>
               <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </div>

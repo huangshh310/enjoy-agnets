@@ -9,6 +9,8 @@ import { ComposerQueue } from "./composer-queue"
 import { ComposerFooter } from "./composer/composer-footer"
 import { ComposerToolbar } from "./composer/composer-toolbar"
 import type { ComposerProps } from "./composer/composer.types"
+import { useT } from "@renderer/i18n"
+
 
 export function AiChatComposer({
   composer,
@@ -23,6 +25,7 @@ export function AiChatComposer({
   onAttach,
   className
 }: ComposerProps) {
+  const t = useT()
   const [isFocused, setIsFocused] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [voiceOpen, setVoiceOpen] = useState(false)
@@ -116,7 +119,7 @@ export function AiChatComposer({
         >
           {isDragging ? (
             <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[22px] border-2 border-dashed border-accent-500 bg-background-primary-default/90 backdrop-blur-xs">
-              <p className="text-body-medium text-accent-500">Drop files or images here to attach</p>
+              <p className="text-body-medium text-accent-500">{t("chat.dropAttach")}</p>
             </div>
           ) : null}
 
@@ -143,7 +146,7 @@ export function AiChatComposer({
               onPaste={handlePaste}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder="Ask Enjoy Agents anything, @ files, / for actions..."
+              placeholder={t("chat.placeholder")}
               className="max-h-48 min-h-[52px] w-full resize-none bg-transparent py-1.5 text-body-medium leading-relaxed text-text-primary outline-none placeholder:text-text-secondary/70"
             />
           </div>

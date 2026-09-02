@@ -39,6 +39,7 @@
 | Workflow / 子 Agent | [`design/specs/workflow.md`](./design/specs/workflow.md) |
 | MCP | [`design/specs/mcp.md`](./design/specs/mcp.md) |
 | Telemetry | [`design/specs/observability.md`](./design/specs/observability.md) |
+| 界面中英文、默认中文 | [`design/specs/i18n.md`](./design/specs/i18n.md) |
 | AI SDK 7 有没有某能力 | [`design/references/vercel-ai-sdk-7-feature-matrix.md`](./design/references/vercel-ai-sdk-7-feature-matrix.md) |
 | 为什么选这套栈 | [`design/references/tech-stack.md`](./design/references/tech-stack.md) |
 

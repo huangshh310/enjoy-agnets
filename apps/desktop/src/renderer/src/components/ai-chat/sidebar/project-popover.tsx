@@ -25,6 +25,8 @@ import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { createAndOpenSession, loadWorkspace } from "@renderer/hooks/use-agent-session"
 import { removeProject } from "@renderer/hooks/workspace-lifecycle"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
+
 
 export function ProjectPopover({
   workspace,
@@ -38,6 +40,7 @@ export function ProjectPopover({
   children?: React.ReactNode
 }) {
   const [open, setOpen] = useState(false)
+  const t = useT()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const isPinned = useChatStore((state) => state.pinnedWorkspaceIds.includes(workspace.id))
@@ -55,7 +58,7 @@ export function ProjectPopover({
     e.stopPropagation()
     setOpen(false)
     await loadWorkspace({ id: workspace.id, name: workspace.name, rootPath: workspace.rootPath || "" })
-    await createAndOpenSession(workspace.id, "新对话")
+    await createAndOpenSession(workspace.id, t("chat.newAgent"))
   }
 
   async function handleSwitchWorkspace(e: React.MouseEvent) {
@@ -71,7 +74,7 @@ export function ProjectPopover({
         {children || (
           <button
             type="button"
-            aria-label="项目操作"
+            aria-label={t("chat.projectActions")}
             onClick={(e) => {
               e.stopPropagation()
               setOpen(true)
@@ -101,7 +104,7 @@ export function ProjectPopover({
 
             <button
               type="button"
-              title={isPinned ? "取消固定" : "固定项目"}
+              title={isPinned ? t("chat.unpin") : t("chat.pinProject")}
               onClick={(e) => {
                 e.stopPropagation()
                 togglePin(workspace.id)
@@ -126,7 +129,7 @@ export function ProjectPopover({
             {/* Task count */}
             <div className="flex items-center gap-2">
               <RiChat3Line className="size-3.5 text-text-tertiary" />
-              <span>{sessionCount > 0 ? `${sessionCount} 个任务` : "暂无任务"}</span>
+              <span>{sessionCount > 0 ? t("chat.taskCount", { count: sessionCount }) : t("chat.noTasks")}</span>
             </div>
 
             {/* Path */}
@@ -135,7 +138,7 @@ export function ProjectPopover({
                 <span className="truncate">{workspace.rootPath}</span>
                 <button
                   type="button"
-                  title="复制路径"
+                  title={t("chat.copyPath")}
                   onClick={handleCopyPath}
                   className="shrink-0 text-text-tertiary hover:text-text-primary"
                 >
@@ -157,7 +160,7 @@ export function ProjectPopover({
               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-body-medium text-text-primary hover:bg-background-secondary-hover transition-colors cursor-pointer"
             >
               <RiAddLine className="size-4 text-emerald-500" />
-              <span>新建对话</span>
+              <span>{t("chat.newChat")}</span>
             </button>
 
             {!isActive ? (
@@ -167,7 +170,7 @@ export function ProjectPopover({
                 className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-body-medium text-text-primary hover:bg-background-secondary-hover transition-colors cursor-pointer"
               >
                 <RiFolderOpenLine className="size-4 text-accent-500" />
-                <span>设为当前工作区</span>
+                <span>{t("chat.setCurrentWorkspace")}</span>
               </button>
             ) : null}
 
@@ -181,7 +184,7 @@ export function ProjectPopover({
               className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-body-medium text-text-error-primary hover:bg-background-secondary-hover"
             >
               <RiDeleteBinLine className="size-4" />
-              <span>移除项目</span>
+              <span>{t("chat.removeProject")}</span>
             </button>
           </div>
         </div>
@@ -189,10 +192,11 @@ export function ProjectPopover({
     </Popover>
     <ConfirmDialog
       open={confirmOpen}
-      title="移除项目"
-      description={`移除「${workspace.name}」不会删除磁盘文件夹，该项目下的会话会一并删除。`}
-      confirmLabel="移除"
+      title={t("chat.removeProject")}
+      description={t("chat.removeProjectHint", { name: workspace.name })}
+      confirmLabel={t("chat.remove")}
       destructive
+      cancelLabel={t("common.cancel")}
       onOpenChange={setConfirmOpen}
       onConfirm={() => void removeProject(workspace.id)}
     />

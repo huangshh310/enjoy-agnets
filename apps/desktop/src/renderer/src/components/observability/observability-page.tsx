@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { ObservabilityHistogramChart } from "./components/observability-charts-histogram"
 import { ObservabilityKindChart } from "./components/observability-charts-kind"
@@ -37,6 +38,7 @@ import type { MetricKindFilter, MetricStatusFilter } from "./types/observability
 type ActiveObservabilityView = "dashboard" | "traces" | "replay"
 
 export function ObservabilityPage() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [activeView, setActiveView] = useState<ActiveObservabilityView>("dashboard")
   const [statusFilter, setStatusFilter] = useState<MetricStatusFilter>("all")
@@ -63,18 +65,18 @@ export function ObservabilityPage() {
     () => [
       {
         id: "metrics",
-        label: "Telemetry & Logs",
+        label: t("pages.observability.navGroup"),
         items: [
           {
             id: "all",
-            label: "Local Executions",
+            label: t("pages.observability.navLocal"),
             icon: RiPulseLine,
             meta: String(metrics.length)
           }
         ]
       }
     ],
-    [metrics.length]
+    [metrics.length, t]
   )
 
   // 客户端过滤
@@ -124,7 +126,7 @@ export function ObservabilityPage() {
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="Filter metrics..."
+      searchPlaceholder={t("pages.observability.filterPlaceholder")}
       groups={groups}
       selectedId="all"
       onSelect={() => undefined}
@@ -140,15 +142,15 @@ export function ObservabilityPage() {
                   data-testid="page-observability"
                   className="text-title-3-semibold text-text-primary tracking-tight"
                 >
-                  Observability & Telemetry
+                  {t("pages.observability.title")}
                 </h1>
                 <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400">
                   <span className="size-1.5 rounded-full bg-accent-500" />
-                  Local APM Dashboard
+                  {t("pages.observability.localApm")}
                 </span>
               </div>
               <p className="text-caption-2-medium text-text-tertiary">
-                实时脱敏监控本地调用耗时、TTFO、Token 吞吐量、模型负载与异常分布。
+                {t("pages.observability.subtitle")}
               </p>
             </div>
 
@@ -161,7 +163,7 @@ export function ObservabilityPage() {
                 className="gap-1.5 h-7.5 text-caption-2-medium"
               >
                 <RiRefreshLine className={cx("size-3.5", isRefreshing && "animate-spin")} />
-                <span>刷新指标</span>
+                <span>{t("pages.observability.refreshMetrics")}</span>
               </Button>
             </div>
           </div>
@@ -179,7 +181,7 @@ export function ObservabilityPage() {
               )}
             >
               <RiDashboardLine className="size-3.5" />
-              <span>监控与图表大盘 (Dashboard)</span>
+              <span>{t("pages.observability.viewDashboard")}</span>
             </button>
 
             <button
@@ -193,7 +195,7 @@ export function ObservabilityPage() {
               )}
             >
               <RiFileList3Line className="size-3.5" />
-              <span>链路明细日志 (Traces Log)</span>
+              <span>{t("pages.observability.viewTraces")}</span>
             </button>
 
             <button
@@ -207,7 +209,7 @@ export function ObservabilityPage() {
               )}
             >
               <RiFileHistoryLine className="size-3.5" />
-              <span>事件流回放 (Stream Replay)</span>
+              <span>{t("pages.observability.viewReplay")}</span>
             </button>
           </div>
         </header>
@@ -267,9 +269,12 @@ export function ObservabilityPage() {
 
               <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary px-1">
                 <span>
-                  当前页显示 {paginatedMetrics.length} 条（筛选后共 {filteredMetrics.length} 条）
+                  {t("pages.observability.pageShowing", {
+                    n: paginatedMetrics.length,
+                    total: filteredMetrics.length
+                  })}
                 </span>
-                <span>点击任意记录查看全景 Trace 瀑布流</span>
+                <span>{t("pages.observability.clickTrace")}</span>
               </div>
 
               <ObservabilityMetricsList

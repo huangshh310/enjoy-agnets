@@ -4,24 +4,29 @@
 import { RiSearchLine } from "@remixicon/react"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import type { MetricKindFilter, MetricStatusFilter } from "../types/observability-ui.types"
 
-const STATUS_OPTIONS: Array<{ id: MetricStatusFilter; label: string }> = [
-  { id: "all", label: "全部状态" },
-  { id: "success", label: "成功 (OK)" },
-  { id: "failed", label: "失败 (Failed)" },
-  { id: "timeout", label: "超时 (Timeout)" },
-  { id: "running", label: "运行中" }
-]
+function getStatusOptions(t: TranslateFn): Array<{ id: MetricStatusFilter; label: string }> {
+  return [
+    { id: "all", label: t("pages.observability.statusAll") },
+    { id: "success", label: t("pages.observability.statusOk") },
+    { id: "failed", label: t("pages.observability.statusFailed") },
+    { id: "timeout", label: t("pages.observability.statusTimeout") },
+    { id: "running", label: t("pages.observability.statusRunning") }
+  ]
+}
 
-const KIND_OPTIONS: Array<{ id: MetricKindFilter; label: string }> = [
-  { id: "all", label: "全部类型" },
-  { id: "agent", label: "Agent 循环" },
-  { id: "stream", label: "文本流式" },
-  { id: "image", label: "生图 (Image)" },
-  { id: "video", label: "视频 (Video)" },
-  { id: "embed", label: "向量 (Embedding)" }
-]
+function getKindOptions(t: TranslateFn): Array<{ id: MetricKindFilter; label: string }> {
+  return [
+    { id: "all", label: t("pages.observability.kindAll") },
+    { id: "agent", label: t("pages.observability.kindAgent") },
+    { id: "stream", label: t("pages.observability.kindStream") },
+    { id: "image", label: t("pages.observability.kindImage") },
+    { id: "video", label: t("pages.observability.kindVideo") },
+    { id: "embed", label: t("pages.observability.kindEmbed") }
+  ]
+}
 
 export function ObservabilityFilters(props: {
   statusFilter: MetricStatusFilter
@@ -39,13 +44,14 @@ export function ObservabilityFilters(props: {
     search,
     onSearchChange
   } = props
+  const t = useT()
 
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         {/* 状态过滤胶囊 */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          {STATUS_OPTIONS.map((opt) => {
+          {getStatusOptions(t).map((opt) => {
             const isSelected = statusFilter === opt.id
             return (
               <button
@@ -71,7 +77,7 @@ export function ObservabilityFilters(props: {
           <Input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="搜索 Model 或 Run ID..."
+            placeholder={t("pages.observability.searchModelRun")}
             className="pl-8 h-7.5 text-caption-2-medium bg-background-primary-default font-mono"
           />
         </div>
@@ -79,8 +85,10 @@ export function ObservabilityFilters(props: {
 
       {/* 第二行：Kind 细分类型过滤 */}
       <div className="flex items-center gap-1 overflow-x-auto text-[11px] text-text-tertiary">
-        <span className="font-medium mr-1 text-text-secondary">类型细分:</span>
-        {KIND_OPTIONS.map((opt) => {
+        <span className="font-medium mr-1 text-text-secondary">
+          {t("pages.observability.kindBreakdown")}
+        </span>
+        {getKindOptions(t).map((opt) => {
           const isSelected = kindFilter === opt.id
           return (
             <button

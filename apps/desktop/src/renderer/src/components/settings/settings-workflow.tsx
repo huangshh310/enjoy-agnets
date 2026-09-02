@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
+import { useT } from "@renderer/i18n"
 
 export function WorkflowSettings() {
+  const t = useT()
   const navigate = useNavigate()
   const { preferences, update } = usePrefUpdate()
 
@@ -29,14 +31,14 @@ export function WorkflowSettings() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-body-large-semibold text-text-primary">
-                  Durable Workflow Engine
+                  {t("settings.workflow.hubTitle")}
                 </span>
                 <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-                  SQLite Checkpoints
+                  {t("settings.workflow.hubBadge")}
                 </span>
               </div>
               <span className="text-caption-2-regular text-text-tertiary mt-0.5">
-                Executes multi-step Plan → Act → Verify DAG pipelines with step-level rollback and checkpoint recovery.
+                {t("settings.workflow.hubDesc")}
               </span>
             </div>
           </div>
@@ -48,31 +50,25 @@ export function WorkflowSettings() {
             className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium shrink-0"
           >
             <RiRouteLine className="size-3.5 text-emerald-500" />
-            <span>Open Workflow Studio</span>
+            <span>{t("settings.workflow.openStudio")}</span>
             <RiArrowRightLine className="size-3.5 opacity-60 ml-0.5" />
           </Button>
         </div>
       </div>
 
       {/* ─── 检查点与崩溃恢复策略 ─────────────────────────── */}
-      <SettingsCard title="Checkpoint & Recovery Policies">
-        <SettingsRow
-          title="Resume on launch"
-          description="Automatically resume paused workflows from their last step checkpoint when restarting the IDE."
-        >
+      <SettingsCard title={t("settings.workflow.policies")}>
+        <SettingsRow title={t("settings.workflow.resume")} description={t("settings.workflow.resumeDesc")}>
           <Switch
             checked={preferences?.workflowAutoResume ?? true}
             onCheckedChange={(value) => void update({ workflowAutoResume: value })}
           />
         </SettingsRow>
 
-        <SettingsRow
-          title="Step-level durability"
-          description="Every step writes its artifact summary and status to SQLite runs/run_steps before advancing to descendants."
-        >
+        <SettingsRow title={t("settings.workflow.durability")} description={t("settings.workflow.durabilityDesc")}>
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
             <RiShieldCheckLine className="size-3.5" />
-            <span>Active & Persistent</span>
+            <span>{t("settings.workflow.activePersistent")}</span>
           </span>
         </SettingsRow>
       </SettingsCard>

@@ -7,9 +7,11 @@ import { useMemo, useState } from "react"
 import { RiTimeLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
   // 按时间升序排序
@@ -115,18 +117,18 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
         <div className="flex items-center gap-2">
           <RiTimeLine className="size-4 text-blue-500" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
-            响应耗时与首字延迟趋势 (Latency & TTFO Timeline)
+            {t("pages.observability.timelineTitle")}
           </h3>
         </div>
 
         <div className="flex items-center gap-3 text-[11px] font-mono text-text-tertiary">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-blue-500" />
-            <span className="text-text-secondary">总耗时 Duration</span>
+            <span className="text-text-secondary">{t("pages.observability.legendDuration")}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-amber-500" />
-            <span className="text-text-secondary">首字 TTFO</span>
+            <span className="text-text-secondary">{t("pages.observability.legendTtfo")}</span>
           </span>
         </div>
       </div>
@@ -282,17 +284,17 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
               </span>
             </div>
             <div className="text-text-secondary truncate max-w-[140px]">
-              {activePoint.metric.modelId ?? "default"}
+              {activePoint.metric.modelId ?? t("pages.observability.default")}
             </div>
             <div className="flex items-center justify-between gap-2 text-text-primary mt-0.5">
-              <span className="text-text-tertiary">耗时:</span>
+              <span className="text-text-tertiary">{t("pages.observability.tooltipDuration")}</span>
               <span className="font-bold text-blue-600 dark:text-blue-400">
                 {activePoint.duration}ms
               </span>
             </div>
             {activePoint.ttfo > 0 ? (
               <div className="flex items-center justify-between gap-2 text-text-primary">
-                <span className="text-text-tertiary">TTFO:</span>
+                <span className="text-text-tertiary">{t("pages.observability.tooltipTtfo")}</span>
                 <span className="font-bold text-amber-600 dark:text-amber-400">
                   {activePoint.ttfo}ms
                 </span>

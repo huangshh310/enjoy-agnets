@@ -13,8 +13,10 @@ import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
+import { useT } from "@renderer/i18n"
 
 export function TelemetrySettings() {
+  const t = useT()
   const navigate = useNavigate()
   const { preferences, update } = usePrefUpdate()
   const policy = preferences?.telemetryPolicy ?? "local"
@@ -31,14 +33,14 @@ export function TelemetrySettings() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-body-large-semibold text-text-primary">
-                  Local-first Telemetry & Observability
+                  {t("settings.telemetry.hubTitle")}
                 </span>
                 <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
-                  Zero External Leaks
+                  {t("settings.telemetry.hubBadge")}
                 </span>
               </div>
               <span className="text-caption-2-regular text-text-tertiary mt-0.5">
-                Tracks token throughput, latency (TTFO), success rates, and tool traces with strict local redaction.
+                {t("settings.telemetry.hubDesc")}
               </span>
             </div>
           </div>
@@ -50,18 +52,15 @@ export function TelemetrySettings() {
             className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium shrink-0"
           >
             <RiPulseLine className="size-3.5 text-sky-500" />
-            <span>Open Observability</span>
+            <span>{t("settings.telemetry.open")}</span>
             <RiArrowRightLine className="size-3.5 opacity-60 ml-0.5" />
           </Button>
         </div>
       </div>
 
       {/* ─── 遥测模式与隐私策略 ───────────────────────────── */}
-      <SettingsCard title="Telemetry & Export Mode">
-        <SettingsRow
-          title="Metrics storage policy"
-          description="Local keeps data strictly in SQLite. OTEL exports OTLP JSON to your collector."
-        >
+      <SettingsCard title={t("settings.telemetry.exportMode")}>
+        <SettingsRow title={t("settings.telemetry.storage")} description={t("settings.telemetry.storageDesc")}>
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -73,7 +72,7 @@ export function TelemetrySettings() {
                   : "border-border-button-default bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover"
               )}
             >
-              Local Only (Private)
+              {t("settings.telemetry.localOnly")}
             </button>
             <button
               type="button"
@@ -85,7 +84,7 @@ export function TelemetrySettings() {
                   : "border-border-button-default bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover"
               )}
             >
-              OpenTelemetry (OTEL)
+              {t("settings.telemetry.otel")}
             </button>
             <button
               type="button"
@@ -97,32 +96,26 @@ export function TelemetrySettings() {
                   : "border-border-button-default bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover"
               )}
             >
-              Disabled
+              {t("common.disabled")}
             </button>
           </div>
         </SettingsRow>
 
         {policy === "otel" && (
-          <SettingsRow
-            title="OTLP endpoint"
-            description="HTTP/HTTPS collector URL (e.g. Langfuse, Helicone, or OpenTelemetry Collector)."
-          >
+          <SettingsRow title={t("settings.telemetry.endpoint")} description={t("settings.telemetry.endpointDesc")}>
             <Input
               value={preferences?.otelEndpoint ?? ""}
               onChange={(e) => void update({ otelEndpoint: e.target.value })}
-              placeholder="https://collector:4318/v1/traces"
+              placeholder={t("settings.telemetry.endpointPlaceholder")}
               className="h-8 w-64 text-caption-2-regular"
             />
           </SettingsRow>
         )}
 
-        <SettingsRow
-          title="Automatic redaction"
-          description="Prompts, API keys, and workspace paths are scrubbed from telemetry logs and exports."
-        >
+        <SettingsRow title={t("settings.telemetry.redaction")} description={t("settings.telemetry.redactionDesc")}>
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
             <RiLockLine className="size-3" />
-            <span>Redaction Active</span>
+            <span>{t("settings.telemetry.redactionActive")}</span>
           </span>
         </SettingsRow>
       </SettingsCard>

@@ -7,6 +7,7 @@ import { cx } from "@/utils/cx"
 import { PANE_FOCUS } from "../constants"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { ChangesFileDiff } from "../../diff/changes-file-diff"
+import { useT } from "@renderer/i18n"
 
 export function ReviewView({
   workspaceId,
@@ -25,11 +26,12 @@ export function ReviewView({
   selectedFileContent: string
   onSelectFile: (path: string) => void
 }) {
+  const t = useT()
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center gap-2 px-4 py-2">
         <p className="min-w-0 flex-1 text-body-medium text-text-primary">
-          {changes.length} Uncommitted changes
+          {t("chat.uncommitted", { count: changes.length })}
         </p>
         <span className="font-mono text-caption-1-medium tabular-nums text-state-success-text">
           +{additions}
@@ -37,12 +39,12 @@ export function ReviewView({
         <span className="font-mono text-caption-1-medium tabular-nums text-text-error-primary">
           -{deletions}
         </span>
-        <QuietIconButton icon={RiShareForwardLine} aria-label="Share changes" />
+        <QuietIconButton icon={RiShareForwardLine} aria-label={t("chat.shareChanges")} />
       </div>
 
       <div className="flex max-h-40 flex-col gap-1 overflow-y-auto px-2 pb-2">
         {changes.length === 0 ? (
-          <p className="px-2 py-1 text-caption-1-medium text-text-tertiary">Working tree is clean.</p>
+          <p className="px-2 py-1 text-caption-1-medium text-text-tertiary">{t("chat.treeClean")}</p>
         ) : null}
         {changes.map((file) => (
           <button
@@ -79,7 +81,7 @@ export function ReviewView({
         />
       ) : (
         <div className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
-          Select a changed file to preview.
+          {t("chat.selectChanged")}
         </div>
       )}
     </div>

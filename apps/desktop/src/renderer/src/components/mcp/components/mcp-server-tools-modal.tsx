@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 
 export function McpServerToolsModal(props: {
@@ -22,6 +23,7 @@ export function McpServerToolsModal(props: {
   onChanged: () => Promise<void>
 }) {
   const { server, open, onOpenChange, onChanged } = props
+  const t = useT()
   const [search, setSearch] = useState("")
   const [selectedTool, setSelectedTool] = useState<string | null>(null)
   const [testArgsJson, setTestArgsJson] = useState("{}")
@@ -41,12 +43,12 @@ export function McpServerToolsModal(props: {
   if (!server) return null
 
   const filteredTools = tools.filter(
-    (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      (t.description && t.description.toLowerCase().includes(search.toLowerCase()))
+    (tool) =>
+      tool.name.toLowerCase().includes(search.toLowerCase()) ||
+      (tool.description && tool.description.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const activeToolObj = tools.find((t) => t.name === selectedTool)
+  const activeToolObj = tools.find((tool) => tool.name === selectedTool)
 
   async function handleSetPermission(toolName: string, level: "allow" | "ask" | "deny") {
     if (!server) return
@@ -81,7 +83,7 @@ export function McpServerToolsModal(props: {
       })
       setTestOutput(JSON.stringify(result, null, 2))
     } catch (err: unknown) {
-      setCallError(err instanceof Error ? err.message : "Tool call failed")
+      setCallError(err instanceof Error ? err.message : t("pages.mcp.toolCallFailed"))
     } finally {
       setIsCalling(false)
     }
@@ -98,10 +100,10 @@ export function McpServerToolsModal(props: {
             </div>
             <div>
               <DialogTitle className="text-body-medium font-semibold text-text-primary">
-                {server.name} · Tools 探索与权限配置
+                {t("pages.mcp.toolsModalTitle", { name: server.name })}
               </DialogTitle>
               <p className="text-[12px] text-text-secondary">
-                共发现 {tools.length} 个工具。配置模型可见性与按工具执行审批策略。
+                {t("pages.mcp.toolsModalHint", { n: tools.length })}
               </p>
             </div>
           </div>
@@ -116,7 +118,7 @@ export function McpServerToolsModal(props: {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="搜索工具名称或描述..."
+                placeholder={t("pages.mcp.searchTools")}
                 className="pl-8 h-8 text-caption-2-medium bg-background-primary-default"
               />
             </div>
@@ -124,7 +126,7 @@ export function McpServerToolsModal(props: {
             <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
               {filteredTools.length === 0 ? (
                 <div className="py-12 text-center text-caption-2-medium text-text-tertiary">
-                  未找到匹配的 Tools
+                  {t("pages.mcp.noMatchingTools")}
                 </div>
               ) : (
                 filteredTools.map((tool) => {
@@ -160,7 +162,7 @@ export function McpServerToolsModal(props: {
                         </span>
                       </div>
                       <p className="line-clamp-2 text-[11px] text-text-secondary">
-                        {tool.description || "无详细描述"}
+                        {tool.description || t("pages.mcp.noDetailDesc")}
                       </p>
                     </button>
                   )
@@ -180,14 +182,14 @@ export function McpServerToolsModal(props: {
                     </h3>
                   </div>
                   <p className="mt-1 text-caption-1-medium text-text-secondary leading-relaxed">
-                    {activeToolObj.description || "暂无工具描述文档。"}
+                    {activeToolObj.description || t("pages.mcp.noToolDocs")}
                   </p>
                 </div>
 
                 {/* 权限级别控制 */}
                 <div className="flex flex-col gap-2 rounded-2xl border border-separator-border/80 bg-background-secondary-default/50 p-3.5">
                   <div className="text-caption-2-medium font-semibold text-text-primary">
-                    执行权限审批策略 (Permission Policy)
+                    {t("pages.mcp.permissionPolicy")}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {(["allow", "ask", "deny"] as const).map((level) => {
@@ -212,10 +214,10 @@ export function McpServerToolsModal(props: {
                           <span className="capitalize">{level}</span>
                           <span className="text-[9px] text-text-tertiary mt-0.5">
                             {level === "allow"
-                              ? "总是允许"
+                              ? t("pages.mcp.alwaysAllow")
                               : level === "ask"
-                                ? "询问审批"
-                                : "禁止调用"}
+                                ? t("pages.mcp.askApproval")
+                                : t("pages.mcp.denyCall")}
                           </span>
                         </button>
                       )
@@ -227,7 +229,7 @@ export function McpServerToolsModal(props: {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <span className="text-caption-2-medium font-semibold text-text-primary">
-                      测试入参 (JSON Arguments)
+                      {t("pages.mcp.testArgs")}
                     </span>
                     <Button
                       size="sm"
@@ -240,7 +242,7 @@ export function McpServerToolsModal(props: {
                       ) : (
                         <RiPlayLine className="size-3" />
                       )}
-                      <span>{server.connected ? "执行测试" : "未连接无法测试"}</span>
+                      <span>{server.connected ? t("pages.mcp.runTest") : t("pages.mcp.cannotTest")}</span>
                     </Button>
                   </div>
 
@@ -256,7 +258,7 @@ export function McpServerToolsModal(props: {
                 {/* 执行结果或错误回显 */}
                 {callError ? (
                   <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3 text-[11px] text-rose-600 dark:text-rose-400">
-                    <div className="font-semibold mb-0.5">执行错误:</div>
+                    <div className="font-semibold mb-0.5">{t("pages.mcp.callError")}</div>
                     <div className="font-mono">{callError}</div>
                   </div>
                 ) : null}
@@ -264,7 +266,7 @@ export function McpServerToolsModal(props: {
                 {testOutput ? (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-[11px] text-text-primary">
                     <div className="font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
-                      返回结果:
+                      {t("pages.mcp.callResult")}
                     </div>
                     <pre className="font-mono text-[11px] max-h-36 overflow-auto whitespace-pre-wrap">
                       {testOutput}
@@ -274,7 +276,7 @@ export function McpServerToolsModal(props: {
               </div>
             ) : (
               <div className="flex h-full items-center justify-center text-caption-2-medium text-text-tertiary">
-                请在左侧选择一个工具查看详情与测试
+                {t("pages.mcp.pickToolHint")}
               </div>
             )}
           </div>

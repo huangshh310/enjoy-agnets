@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
+import { useT } from "@renderer/i18n"
 import {
   RiAddLine,
   RiBookOpenLine,
@@ -41,6 +42,7 @@ export function openQuickSearch() {
 }
 
 export function QuickSearchDialog() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const repositories = useChatStore((state) => state.repositories)
@@ -76,15 +78,14 @@ export function QuickSearchDialog() {
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      title="Quick Search & Navigation"
-      description="Jump to Agent Studio, tools, settings, or recent sessions..."
+      title={t("command.title")}
+      description={t("command.description")}
     >
-      <CommandInput placeholder="Type a command, page, or search sessions (e.g. mcp, workflows)..." />
+      <CommandInput placeholder={t("command.placeholder")} />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>{t("command.empty")}</CommandEmpty>
 
-        {/* Studio & Capabilities */}
-        <CommandGroup heading="Agent Studio & Capabilities">
+        <CommandGroup heading={t("command.groupStudio")}>
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -93,9 +94,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiDashboardLine className="size-4 text-accent-500" />
-            <span>Agent Studio Hub (Dashboard)</span>
+            <span>{t("command.studioHub")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -104,9 +104,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiRouteLine className="size-4 text-accent-500" />
-            <span>Durable Workflows & DAG</span>
+            <span>{t("command.workflows")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -115,9 +114,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiPlugLine className="size-4 text-accent-500" />
-            <span>Model Context Protocol (MCP)</span>
+            <span>{t("command.mcp")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -126,9 +124,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiBookOpenLine className="size-4 text-accent-500" />
-            <span>Knowledge Base & Semantic RAG</span>
+            <span>{t("command.knowledge")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -137,9 +134,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiImageLine className="size-4 text-accent-500" />
-            <span>Media Studio (Image / Speech / Video)</span>
+            <span>{t("command.media")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -148,9 +144,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiFlashlightLine className="size-4 text-accent-500" />
-            <span>Automations & Triggers</span>
+            <span>{t("command.automations")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -162,9 +157,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiEqualizer3Line className="size-4 text-accent-500" />
-            <span>Customize System Prompts & Instructions</span>
+            <span>{t("command.customize")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -173,14 +167,13 @@ export function QuickSearchDialog() {
             }
           >
             <RiPulseLine className="size-4 text-accent-500" />
-            <span>Observability & Telemetry Trace</span>
+            <span>{t("command.observability")}</span>
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
-        {/* Quick Actions */}
-        <CommandGroup heading="Actions">
+        <CommandGroup heading={t("command.groupActions")}>
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -190,9 +183,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiAddLine className="size-4 text-emerald-500" />
-            <span>New Agent Chat Session</span>
+            <span>{t("command.newChat")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -202,14 +194,13 @@ export function QuickSearchDialog() {
             }
           >
             <RiFolder6Line className="size-4 text-text-secondary" />
-            <span>Open / Switch Workspace Folder...</span>
+            <span>{t("command.openWorkspace")}</span>
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
-        {/* Settings & Configuration */}
-        <CommandGroup heading="Settings">
+        <CommandGroup heading={t("command.groupSettings")}>
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -221,9 +212,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiSettings4Line className="size-4 text-text-secondary" />
-            <span>General Settings</span>
+            <span>{t("command.generalSettings")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -235,9 +225,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiInboxArchiveLine className="size-4 text-text-secondary" />
-            <span>已归档的聊天</span>
+            <span>{t("command.archivedChats")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -249,9 +238,8 @@ export function QuickSearchDialog() {
             }
           >
             <RiPlugLine className="size-4 text-text-secondary" />
-            <span>Model Providers & API Keys</span>
+            <span>{t("command.providers")}</span>
           </CommandItem>
-
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
@@ -263,27 +251,26 @@ export function QuickSearchDialog() {
             }
           >
             <RiShieldLine className="size-4 text-text-secondary" />
-            <span>Rules & Tool Permissions</span>
+            <span>{t("command.rules")}</span>
           </CommandItem>
         </CommandGroup>
 
-        {/* Recent Chat Sessions if available */}
         {sessionNodes.length > 0 ? (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Recent Chat Sessions">
-              {sessionNodes.slice(0, 8).map((s) => (
+            <CommandGroup heading={t("command.groupRecent")}>
+              {sessionNodes.slice(0, 8).map((session) => (
                 <CommandItem
-                  key={s.id}
+                  key={session.id}
                   onSelect={() =>
                     handleSelect(() => {
-                      void selectPersistedSession(s.id)
+                      void selectPersistedSession(session.id)
                       void navigate({ to: "/" })
                     })
                   }
                 >
                   <RiChat3Line className="size-4 text-text-tertiary" />
-                  <span className="truncate">{s.name || "Untitled Session"}</span>
+                  <span className="truncate">{session.name || t("common.untitledSession")}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -293,4 +280,3 @@ export function QuickSearchDialog() {
     </CommandDialog>
   )
 }
-

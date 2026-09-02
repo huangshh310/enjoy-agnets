@@ -6,9 +6,11 @@
 import { useMemo, useState } from "react"
 import { RiSpeedUpLine } from "@remixicon/react"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
+  const t = useT()
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
   const sorted = useMemo(() => {
@@ -109,22 +111,22 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
         <div className="flex items-center gap-2">
           <RiSpeedUpLine className="size-4 text-purple-500" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
-            Token 消耗与吞吐速率 (AI SDK 7 Usage & Throughput)
+            {t("pages.observability.throughputTitle")}
           </h3>
         </div>
 
         <div className="flex items-center gap-3 text-[10.5px] font-mono text-text-tertiary">
           <span className="flex items-center gap-1">
             <span className="size-2 rounded bg-blue-500" />
-            <span className="text-text-secondary">Prompt In</span>
+            <span className="text-text-secondary">{t("pages.observability.promptIn")}</span>
           </span>
           <span className="flex items-center gap-1">
             <span className="size-2 rounded bg-purple-500" />
-            <span className="text-text-secondary">Completion Out</span>
+            <span className="text-text-secondary">{t("pages.observability.completionOut")}</span>
           </span>
           <span className="flex items-center gap-1">
             <span className="size-2 rounded-full bg-emerald-500" />
-            <span className="text-text-secondary">速率 (tok/s)</span>
+            <span className="text-text-secondary">{t("pages.observability.rateToks")}</span>
           </span>
         </div>
       </div>
@@ -162,7 +164,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
                   textAnchor="end"
                   className="text-[9px] fill-text-tertiary font-mono select-none"
                 >
-                  {val} t/s
+                  {t("pages.observability.tPerS", { n: val })}
                 </text>
               </g>
             )
@@ -267,26 +269,26 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
             className="pointer-events-none absolute z-10 flex flex-col gap-0.5 rounded-lg border border-separator-border bg-background-primary-default p-2 text-[10.5px] font-mono shadow-md"
           >
             <div className="font-semibold text-text-primary border-b border-separator-border/40 pb-1 truncate max-w-[140px]">
-              {activePoint.metric.modelId ?? "default"}
+              {activePoint.metric.modelId ?? t("pages.observability.default")}
             </div>
             <div className="flex items-center justify-between gap-2 text-text-primary mt-0.5">
-              <span className="text-text-tertiary">速率:</span>
+              <span className="text-text-tertiary">{t("pages.observability.tooltipRate")}</span>
               <span className="font-bold text-emerald-600 dark:text-emerald-400">
                 {activePoint.throughput > 0
-                  ? `${activePoint.throughput.toFixed(1)} tok/s`
-                  : "N/A"}
+                  ? t("pages.observability.tokPerS", { n: activePoint.throughput.toFixed(1) })
+                  : t("pages.observability.na")}
               </span>
             </div>
             <div className="flex items-center justify-between gap-2 text-text-primary">
-              <span className="text-text-tertiary">Prompt In:</span>
+              <span className="text-text-tertiary">{t("pages.observability.tooltipPromptIn")}</span>
               <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {activePoint.inputTokens} tok
+                {t("pages.observability.tokUnit", { n: activePoint.inputTokens })}
               </span>
             </div>
             <div className="flex items-center justify-between gap-2 text-text-primary">
-              <span className="text-text-tertiary">Completion Out:</span>
+              <span className="text-text-tertiary">{t("pages.observability.tooltipCompletionOut")}</span>
               <span className="text-purple-600 dark:text-purple-400 font-medium">
-                {activePoint.outputTokens} tok
+                {t("pages.observability.tokUnit", { n: activePoint.outputTokens })}
               </span>
             </div>
           </div>

@@ -2,43 +2,59 @@
  * 媒体生成器分段：生图 / TTS / 实验视频 / STT。
  */
 import { RiImageLine, RiMicLine, RiMovieLine, RiVolumeUpLine } from "@remixicon/react"
+import type { TranslateFn } from "@renderer/i18n"
 import type { StudioMode } from "./media-page.types"
 
-export const STUDIO_MODES: {
+export type StudioModeEntry = {
   id: StudioMode
   label: string
   icon: typeof RiImageLine
   capability?: string
   placeholder: string
   experimental?: boolean
-}[] = [
+}
+
+const MODE_DEFS: Array<
+  Omit<StudioModeEntry, "label" | "placeholder"> & { labelKey: string; placeholderKey: string }
+> = [
   {
     id: "image",
-    label: "Image",
+    labelKey: "pages.media.modeImage",
     icon: RiImageLine,
     capability: "image",
-    placeholder: "Describe the image you want to generate..."
+    placeholderKey: "pages.media.modeImagePlaceholder"
   },
   {
     id: "speech",
-    label: "Speech (TTS)",
+    labelKey: "pages.media.modeSpeech",
     icon: RiVolumeUpLine,
     capability: "speech",
-    placeholder: "Enter text to synthesize into spoken audio..."
+    placeholderKey: "pages.media.modeSpeechPlaceholder"
   },
   {
     id: "video",
-    label: "Video (Exp)",
+    labelKey: "pages.media.modeVideo",
     icon: RiMovieLine,
     capability: "video",
-    placeholder: "Describe video scene to generate (Experimental)...",
+    placeholderKey: "pages.media.modeVideoPlaceholder",
     experimental: true
   },
   {
     id: "transcribe",
-    label: "STT & Audio",
+    labelKey: "pages.media.modeTranscribe",
     icon: RiMicLine,
     capability: "transcription",
-    placeholder: "Select an audio asset from library below to transcribe or translate..."
+    placeholderKey: "pages.media.modeTranscribePlaceholder"
   }
 ]
+
+export function getStudioModes(t: TranslateFn): StudioModeEntry[] {
+  return MODE_DEFS.map((entry) => ({
+    id: entry.id,
+    label: t(entry.labelKey),
+    icon: entry.icon,
+    capability: entry.capability,
+    placeholder: t(entry.placeholderKey),
+    experimental: entry.experimental
+  }))
+}

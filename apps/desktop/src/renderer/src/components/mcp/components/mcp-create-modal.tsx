@@ -6,8 +6,9 @@ import { RiCheckLine, RiLoader4Line } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import type { McpServer, McpTransport } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
-import { FEATURED_MCP_PRESETS } from "../constants/mcp-presets"
+import { getFeaturedMcpPresets } from "../constants/mcp-presets"
 import { McpCreateFormBody, type McpEnvPair } from "./mcp-create-form-body"
 
 export function McpCreateModal(props: {
@@ -17,6 +18,7 @@ export function McpCreateModal(props: {
   onChanged: () => Promise<void>
 }) {
   const { open, onOpenChange, initialServer, onChanged } = props
+  const t = useT()
 
   const [name, setName] = useState("local-server")
   const [transport, setTransport] = useState<McpTransport>("stdio")
@@ -59,14 +61,14 @@ export function McpCreateModal(props: {
   }, [initialServer, open])
 
   function handleSelectPreset(presetId: string) {
-    const p = FEATURED_MCP_PRESETS.find((item) => item.id === presetId)
+    const p = getFeaturedMcpPresets(t).find((item) => item.id === presetId)
     if (!p) return
     setName(p.id)
     setTransport(p.transport)
     if (p.command) setCommand(p.command)
     if (p.url) setUrl(p.url)
     if (p.envTemplates) {
-      setEnvPairs(p.envTemplates.map((t) => ({ key: t.key, value: "" })))
+      setEnvPairs(p.envTemplates.map((item) => ({ key: item.key, value: "" })))
     } else {
       setEnvPairs([])
     }
@@ -90,15 +92,15 @@ export function McpCreateModal(props: {
 
   async function handleSave() {
     if (!name.trim()) {
-      setErrorMsg("请输入 Server Identifier")
+      setErrorMsg(t("pages.mcp.needIdentifier"))
       return
     }
     if (transport === "stdio" && !command.trim()) {
-      setErrorMsg("请输入执行 Command 命令")
+      setErrorMsg(t("pages.mcp.needCommand"))
       return
     }
     if ((transport === "sse" || transport === "http") && !url.trim()) {
-      setErrorMsg("请输入服务端 URL 端点")
+      setErrorMsg(t("pages.mcp.needUrl"))
       return
     }
 
@@ -136,7 +138,7 @@ export function McpCreateModal(props: {
       await onChanged()
       onOpenChange(false)
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : "保存 MCP Server 失败")
+      setErrorMsg(err instanceof Error ? err.message : t("pages.mcp.saveFailed"))
     } finally {
       setIsSaving(false)
     }
@@ -147,10 +149,10 @@ export function McpCreateModal(props: {
       <DialogContent className="max-w-xl p-0 gap-0 overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default shadow-xl">
         <div className="border-b border-separator-border/70 px-5 py-3.5 flex flex-col gap-0.5">
           <DialogTitle className="text-body-medium font-semibold text-text-primary">
-            {initialServer ? "编辑 MCP Server 配置" : "注册新 MCP Server"}
+            {initialServer ? t("pages.mcp.editTitle") : t("pages.mcp.createTitle")}
           </DialogTitle>
           <p className="text-[11.5px] text-text-tertiary">
-            配置 stdio 进程或 SSE/HTTP 远程端点，主进程将以安全沙箱方式调度。
+            {t("pages.mcp.createHint")}
           </p>
         </div>
 
@@ -184,7 +186,7 @@ export function McpCreateModal(props: {
             disabled={isSaving}
             className="h-8 text-caption-2-medium"
           >
-            取消
+            {t("common.cancel")}
           </Button>
           <Button
             size="sm"
@@ -198,7 +200,7 @@ export function McpCreateModal(props: {
             ) : (
               <RiCheckLine className="size-3" />
             )}
-            <span>{initialServer ? "保存更新" : "注册 Server"}</span>
+            <span>{initialServer ? t("pages.mcp.saveUpdate") : t("pages.mcp.registerServer")}</span>
           </Button>
         </div>
       </DialogContent>
