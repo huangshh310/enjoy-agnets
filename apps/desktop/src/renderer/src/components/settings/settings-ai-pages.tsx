@@ -2,11 +2,8 @@
  * AI 能力相关设置段：能力、知识库、媒体、Workflow、Telemetry、Sandbox、MCP。
  */
 import { useNavigate } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { getIde, hasIde } from "@renderer/lib/ide"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
 
@@ -23,43 +20,7 @@ export function McpSettings() {
   )
 }
 
-export function CapabilitySettings() {
-  const settingsQuery = useSettingsSnapshot()
-  const modelsQuery = useQuery({
-    queryKey: ["models"],
-    enabled: hasIde(),
-    queryFn: () =>
-      getIde().models.list() as Promise<
-        Array<{
-          id: string
-          label: string
-          capabilities?: string[]
-          probedCaps?: string[]
-          probedAt?: number
-        }>
-      >
-  })
-  const activeId = settingsQuery.data?.defaultModelId
-  const active = modelsQuery.data?.find((model) => model.id === activeId) ?? modelsQuery.data?.[0]
-  const caps = active?.capabilities ?? []
-  const probed = active?.probedCaps ?? []
-  return (
-    <SettingsCard title="Model capabilities">
-      <SettingsRow
-        title={active ? active.label : "No model"}
-        description={
-          probed.length > 0
-            ? `Probed ${active?.probedAt ? new Date(active.probedAt).toLocaleString() : "live catalog"}. UI disables unsupported controls.`
-            : "Static catalog until you probe the provider. Video and Realtime stay experimental."
-        }
-      >
-        <span className="text-body-medium text-text-tertiary">
-          {caps.length > 0 ? caps.join(" · ") : "Static catalog + probe"}
-        </span>
-      </SettingsRow>
-    </SettingsCard>
-  )
-}
+export { CapabilitySettings } from "./settings-capabilities"
 
 export function KnowledgeSettings() {
   const navigate = useNavigate()
@@ -81,28 +42,7 @@ export function KnowledgeSettings() {
   )
 }
 
-export function MediaSettings() {
-  const navigate = useNavigate()
-  const { preferences, update } = usePrefUpdate()
-  return (
-    <SettingsCard title="Media & assets">
-      <SettingsRow
-        title="Experimental media"
-        description="Video generation and Realtime sessions. Failures isolate and degrade."
-      >
-        <Switch
-          checked={preferences?.experimentalMedia ?? false}
-          onCheckedChange={(value) => void update({ experimentalMedia: value })}
-        />
-      </SettingsRow>
-      <SettingsRow title="Asset library" description="Import, preview, and export with path approval.">
-        <Button size="sm" variant="outline" onClick={() => void navigate({ to: "/media" })}>
-          Open Media
-        </Button>
-      </SettingsRow>
-    </SettingsCard>
-  )
-}
+export { MediaSettings } from "./settings-media"
 
 export function WorkflowSettings() {
   const navigate = useNavigate()
