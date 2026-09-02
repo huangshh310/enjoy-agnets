@@ -15,6 +15,7 @@ import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
+import { getActiveCompactedHistory } from "./session-compaction-service"
 
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   return beginAgentRun(window, RunAgentInput.parse(rawInput), { persistUser: true })
@@ -57,7 +58,8 @@ async function beginAgentRun(
   if (!session) throw new Error("Unknown session for this workspace.")
 
   const runId = options.runId ?? createId("run")
-  const modelMessages = toModelMessages(input.messages)
+  const effectiveMessages = await getActiveCompactedHistory(input.sessionId, input.messages)
+  const modelMessages = toModelMessages(effectiveMessages)
   holdAgentRun({
     runId,
     window,

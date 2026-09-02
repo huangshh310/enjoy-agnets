@@ -3,19 +3,28 @@
 import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentLimitsCard } from "./agent-limits/agent-limits-card"
+import { CompactSessionButton } from "./right-pane/views/context/compact-session"
+import { useContextInspectorData } from "./right-pane/views/context/use-context-inspector-data"
 import { useT } from "@renderer/i18n"
 
 
 export function AiChatStatusBar({
-  workspaceRootLabel,
-  contextUsed
+  workspaceRootLabel
 }: {
   workspaceRootLabel: string
-  contextUsed: number
 }) {
   const navigate = useNavigate()
   const t = useT()
+  const sessionId = useChatStore((state) => state.sessionId)
+  const workspaceId = useChatStore((state) => state.workspaceId)
+  const messageCount = useChatStore((state) => state.messages.length)
+  const inspector = useContextInspectorData(workspaceId)
+  const compaction = inspector.compaction
+  const capKnown = inspector.tokenStats.maxTokens > 0
+  const usagePercent = Math.min(100, Math.max(0, Math.round(inspector.tokenStats.usagePercent)))
+
   return (
     <div className="flex items-center gap-3 px-8 pb-4 text-caption-1-medium text-text-tertiary">
       <span className="inline-flex items-center gap-1">
@@ -26,33 +35,42 @@ export function AiChatStatusBar({
         <RiFolder6Line className="size-3.5" aria-hidden />
         {workspaceRootLabel}
       </span>
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            title={t("chat.contextTokensHint")}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent-500/20"
+      <div className="ml-auto inline-flex items-center gap-2">
+        <CompactSessionButton sessionId={sessionId} messageCount={messageCount} />
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title={
+                compaction
+                  ? t("chat.contextTokensHintCompacted", { percent: compaction.savedPercent })
+                  : t("chat.contextTokensHint")
+              }
+              className="inline-flex items-center gap-1.5 rounded-full py-0.5 px-2 text-caption-1-medium text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent-500/20"
+            >
+              <ContextRing value={capKnown ? usagePercent : 0} />
+              <span className="font-medium font-mono">
+                {capKnown ? `${usagePercent}%` : t("chat.inspectorCapUnknown")}
+              </span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            side="top"
+            sideOffset={12}
+            className="p-0 border-none bg-transparent shadow-none w-auto"
           >
-            <ContextRing value={contextUsed} />
-            <span className="font-medium font-mono">{contextUsed}%</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="end"
-          side="top"
-          sideOffset={12}
-          className="p-0 border-none bg-transparent shadow-none w-auto"
-        >
-          <AgentLimitsCard
-            onManagePlan={() =>
-              void navigate({
-                to: "/settings/$section",
-                params: { section: "providers" }
-              })
-            }
-          />
-        </PopoverContent>
-      </Popover>
+            <AgentLimitsCard
+              onManagePlan={() =>
+                void navigate({
+                  to: "/settings/$section",
+                  params: { section: "providers" }
+                })
+              }
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   )
 }

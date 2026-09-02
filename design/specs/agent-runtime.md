@@ -62,7 +62,8 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 知识引用：`apps/desktop/src/main/services/cite-knowledge.ts`
 - 附件：`apps/desktop/src/main/services/attach-run-files.ts`
 - 用户附件落库 / 旧消息回挂：`persist-user-attachments.ts`、`user-attachment-parts.ts`
-- 本轮 ModelMessage 快照：`inspect-prompt-snapshot.ts`、`inspect-prompt-service.ts`；`openCodingStream` 开流时 `captureOpenStreamPrompt`。`agent.inspectPrompt` 优先快照，否则 preview。
+- 会话上下文压缩与状态：`packages/agent-core/src/compaction/session-compactor.ts`、`apps/desktop/src/main/services/session-compaction-service.ts`（编排）、`session-compaction-store.ts`、`session-compaction-summary.ts`。压缩只改发给模型的 `ModelMessage[]`，UI 历史不删。注入一条 `[CONVERSATION SUMMARY]`，不再插虚构助手句。摘要优先 `generateText`（当前档案 `fastModelId || modelId`），失败回落规则抽取。错误码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，renderer 翻词表。
+- 本轮 ModelMessage 快照：`inspect-prompt-snapshot.ts`、`inspect-prompt-service.ts`；`openCodingStream` 开流时 `captureOpenStreamPrompt`。`agent.inspectPrompt` 优先未过期快照，否则 preview（已压缩则带 SUMMARY）。
 - SDK 能力表：[../references/vercel-ai-sdk-7-feature-matrix.md](../references/vercel-ai-sdk-7-feature-matrix.md)
 
 ## 已知坑

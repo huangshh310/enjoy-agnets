@@ -1,5 +1,5 @@
 /**
- * Context 检查器数据：会话 store、芯片、MCP/规则/技能/遥测。
+ * Context 检查器数据：会话 store、芯片、MCP/规则/技能/遥测、压缩态。
  */
 import { useSyncExternalStore } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -10,23 +10,69 @@ import {
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type { McpServer, ProjectRuleItem, SkillItem, TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { applySessionCompaction } from "@enjoy-agents/agent-core/compaction"
 import { citedSourcesFromMessages, toolsFromMessages } from "./thread-run-slice"
+import { contextWindowForModel } from "@renderer/lib/model-context-window"
 import { estimateContextWindowStats, estimateTurnPerformance } from "./context-token-estimator"
+import { useSessionCompaction } from "./compact-session/use-session-compaction"
 
 export function useContextInspectorData(workspaceId: string | null) {
-  const modelId = useChatStore((state) => state.modelId)
-  const modelLabel = useChatStore((state) => state.modelLabel)
-  const mode = useChatStore((state) => state.mode)
-  const messages = useChatStore((state) => state.messages)
-  const running = useChatStore((state) => state.running)
-  const workspaceName = useChatStore((state) => state.workspaceName)
-  const changes = useChatStore((state) => state.changes)
-  const sessionId = useChatStore((state) => state.sessionId)
+  const slice = useInspectorChatSlice()
   const chips = useSyncExternalStore(
     subscribeSessionContextChips,
     listSessionContextChips,
     listSessionContextChips
   )
+  const catalogs = useInspectorCatalogs(workspaceId)
+  const { compaction } = useSessionCompaction(slice.sessionId)
+  const contextWindow = contextWindowForModel(slice.models, slice.modelId)
+  const effectiveMessages = compaction
+    ? (applySessionCompaction(slice.messages, compaction) as typeof slice.messages)
+    : slice.messages
+  const tokenStats = estimateContextWindowStats(
+    effectiveMessages,
+    contextWindow ?? 0,
+    catalogs.mcp,
+    catalogs.rules,
+    catalogs.skills,
+    chips
+  )
+
+  return {
+    sessionId: slice.sessionId,
+    compaction,
+    contextWindow,
+    modelId: slice.modelId,
+    modelLabel: slice.modelLabel,
+    mode: slice.mode,
+    messages: slice.messages,
+    running: slice.running,
+    workspaceName: slice.workspaceName,
+    changesCount: slice.changes.length,
+    chips,
+    tokenStats,
+    turnPerf: estimateTurnPerformance(catalogs.metric, slice.messages, slice.running),
+    sources: citedSourcesFromMessages(slice.messages),
+    turnTools: toolsFromMessages(slice.messages),
+    mcpServers: catalogs.mcp
+  }
+}
+
+function useInspectorChatSlice() {
+  return {
+    modelId: useChatStore((state) => state.modelId),
+    modelLabel: useChatStore((state) => state.modelLabel),
+    models: useChatStore((state) => state.models),
+    mode: useChatStore((state) => state.mode),
+    messages: useChatStore((state) => state.messages),
+    running: useChatStore((state) => state.running),
+    workspaceName: useChatStore((state) => state.workspaceName),
+    changes: useChatStore((state) => state.changes),
+    sessionId: useChatStore((state) => state.sessionId)
+  }
+}
+
+function useInspectorCatalogs(workspaceId: string | null) {
   const mcpQuery = useIdeQuery(["mcp-servers-context"], () => getIde().mcp.servers() as Promise<McpServer[]>)
   const rulesQuery = useIdeQuery(
     ["workspace-rules-context", workspaceId],
@@ -42,29 +88,11 @@ export function useContextInspectorData(workspaceId: string | null) {
     ["latest-turn-metric"],
     () => getIde().observability.metrics({ limit: 1 }) as Promise<TelemetryMetric[]>
   )
-  const tokenStats = estimateContextWindowStats(
-    messages,
-    modelId,
-    mcpQuery.data ?? [],
-    rulesQuery.data ?? [],
-    skillsQuery.data ?? [],
-    chips
-  )
   return {
-    sessionId,
-    modelId,
-    modelLabel,
-    mode,
-    messages,
-    running,
-    workspaceName,
-    changesCount: changes.length,
-    chips,
-    tokenStats,
-    turnPerf: estimateTurnPerformance(metricsQuery.data?.[0] ?? null, messages, running),
-    sources: citedSourcesFromMessages(messages),
-    turnTools: toolsFromMessages(messages),
-    mcpServers: mcpQuery.data ?? []
+    mcp: mcpQuery.data ?? [],
+    rules: rulesQuery.data ?? [],
+    skills: skillsQuery.data ?? [],
+    metric: metricsQuery.data?.[0] ?? null
   }
 }
 

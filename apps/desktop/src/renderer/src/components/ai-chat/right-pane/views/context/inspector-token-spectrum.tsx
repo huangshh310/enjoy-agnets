@@ -1,9 +1,10 @@
 /**
  * 上下文 Token 视窗：真实折算用量，不展示编造的 Cache 命中率。
  */
-import { RiPieChartLine } from "@remixicon/react"
+import { RiPieChartLine, RiSparklingLine } from "@remixicon/react"
 import { formatTokens } from "../../../agent-limits/agent-limits-calculator"
 import { useT } from "@renderer/i18n"
+import type { SessionCompaction } from "@enjoy-agents/ipc-contract"
 import type { ContextWindowStats, TokenSpectrumBucketId } from "./context-inspector.types"
 
 const BUCKET_KEYS: Record<TokenSpectrumBucketId, string> = {
@@ -14,7 +15,13 @@ const BUCKET_KEYS: Record<TokenSpectrumBucketId, string> = {
   memory: "chat.inspectorBucketMemory"
 }
 
-export function InspectorTokenSpectrum({ stats }: { stats: ContextWindowStats }) {
+export function InspectorTokenSpectrum({
+  stats,
+  compaction
+}: {
+  stats: ContextWindowStats
+  compaction?: SessionCompaction | null
+}) {
   const t = useT()
   const { usedTokens, maxTokens, usagePercent, buckets } = stats
   const radius = 28
@@ -27,9 +34,15 @@ export function InspectorTokenSpectrum({ stats }: { stats: ContextWindowStats })
         <div className="flex items-center gap-1.5 text-caption-1-medium font-semibold text-text-primary">
           <RiPieChartLine className="size-4 text-accent-500" />
           <span>{t("chat.inspectorTokenWindow")}</span>
+          {compaction ? (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-accent-500/10 px-1.5 py-0.2 text-caption-2-medium text-accent-600 font-mono">
+              <RiSparklingLine className="size-2.5" />
+              <span>-{formatTokens(compaction.savedTokens)}</span>
+            </span>
+          ) : null}
         </div>
         <span className="font-mono text-caption-2-regular text-text-tertiary">
-          {formatTokens(usedTokens)} / {formatTokens(maxTokens)}
+          {formatTokens(usedTokens)} / {maxTokens > 0 ? formatTokens(maxTokens) : "—"}
         </span>
       </div>
 
@@ -39,6 +52,7 @@ export function InspectorTokenSpectrum({ stats }: { stats: ContextWindowStats })
           circumference={circumference}
           strokeDashoffset={strokeDashoffset}
           usagePercent={usagePercent}
+          windowKnown={maxTokens > 0}
           usedLabel={t("chat.inspectorUsed")}
         />
         <BucketLegend usedTokens={usedTokens} maxTokens={maxTokens} buckets={buckets} />
@@ -52,12 +66,14 @@ function UsageRing({
   circumference,
   strokeDashoffset,
   usagePercent,
+  windowKnown,
   usedLabel
 }: {
   radius: number
   circumference: number
   strokeDashoffset: number
   usagePercent: number
+  windowKnown: boolean
   usedLabel: string
 }) {
   return (
@@ -85,7 +101,7 @@ function UsageRing({
       </svg>
       <div className="absolute inset-0 flex select-none flex-col items-center justify-center text-center">
         <span className="font-mono text-caption-1-medium tracking-tight text-text-primary">
-          {usagePercent}%
+          {windowKnown ? `${usagePercent}%` : "—"}
         </span>
         <span className="text-caption-2-regular uppercase tracking-wider text-text-tertiary">
           {usedLabel}
@@ -112,7 +128,9 @@ function BucketLegend({
           {usedTokens.toLocaleString()}{" "}
           <span className="font-normal text-text-tertiary">Tokens</span>
         </span>
-        <span className="text-text-tertiary">{t("chat.inspectorCap", { n: formatTokens(maxTokens) })}</span>
+        <span className="text-text-tertiary">
+          {maxTokens > 0 ? t("chat.inspectorCap", { n: formatTokens(maxTokens) }) : t("chat.inspectorCapUnknown")}
+        </span>
       </div>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-background-secondary-default">
         {buckets.map((bucket) => {

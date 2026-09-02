@@ -25,7 +25,7 @@ import {
 } from "@renderer/hooks/use-agent-session"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
-import { contextUsed, formatNodeTime, useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { formatNodeTime, useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { RightPane } from "./right-pane/right-pane"
 import { useRightPaneShortcuts } from "./right-pane/use-right-pane-shortcuts"
 import { useRightPaneWidth } from "./right-pane/use-right-pane-width"
@@ -207,10 +207,7 @@ export function AiChatShell() {
                     />
                   </>
                 )}
-                <AiChatStatusBar
-                  workspaceRootLabel={workspaceRootLabel}
-                  contextUsed={contextUsed(messages)}
-                />
+                <AiChatStatusBar workspaceRootLabel={workspaceRootLabel} />
               </>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">

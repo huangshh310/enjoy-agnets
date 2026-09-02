@@ -17,7 +17,7 @@ test("estimateContextWindowStats calculates tokens and percentage", () => {
         createdAt: Date.now()
       }
     ],
-    "claude-3-7-sonnet"
+    200_000
   )
 
   assert.equal(stats.maxTokens, 200_000)
@@ -27,17 +27,27 @@ test("estimateContextWindowStats calculates tokens and percentage", () => {
 })
 
 test("estimateContextWindowStats is zero without messages rules or tools", () => {
-  const stats = estimateContextWindowStats([], "claude-3-7-sonnet")
+  const stats = estimateContextWindowStats([], 200_000)
   assert.equal(stats.usedTokens, 0)
   assert.equal(stats.usagePercent, 0)
 })
 
+test("estimateContextWindowStats does not invent a window when maxTokens is unknown", () => {
+  const stats = estimateContextWindowStats(
+    [{ id: "1", role: "user", content: "hello world", createdAt: Date.now() }],
+    0
+  )
+  assert.equal(stats.maxTokens, 0)
+  assert.equal(stats.usagePercent, 0)
+  assert.ok(stats.usedTokens > 0)
+})
+
 test("estimateContextWindowStats ignores excluded chips", () => {
-  const statsActive = estimateContextWindowStats([], "claude-3-7-sonnet", [], [], [], [
+  const statsActive = estimateContextWindowStats([], 200_000, [], [], [], [
     { snippet: "a".repeat(380), enabled: true }
   ])
 
-  const statsExcluded = estimateContextWindowStats([], "claude-3-7-sonnet", [], [], [], [
+  const statsExcluded = estimateContextWindowStats([], 200_000, [], [], [], [
     { snippet: "a".repeat(380), enabled: false }
   ])
 

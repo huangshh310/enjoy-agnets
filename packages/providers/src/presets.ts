@@ -37,6 +37,10 @@ export function parseProviderKind(value: string): ProviderKind {
 export type CatalogModel = {
   id: string
   label: string
+  /** 该模型自称的上下文窗口（token）；探测 / Gateway 写入，不要按 id 猜 */
+  contextWindow?: number
+  /** 最大输出 token，目录有则带上 */
+  maxOutputTokens?: number
 }
 
 export type ProviderPreset = {

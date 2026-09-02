@@ -91,6 +91,10 @@ export type ModelOption = {
   staticCaps?: string[]
   probedCaps?: string[]
   probedAt?: number
+  /** 该模型支持的上下文窗口；来自探测 / Gateway / 档案，没有则为空 */
+  contextWindow?: number
+  /** 最大输出 token，不是上下文窗口 */
+  maxTokens?: number
 }
 
 export type WorkspaceSessionHydrate = {

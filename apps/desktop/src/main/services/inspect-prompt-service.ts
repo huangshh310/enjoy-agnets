@@ -19,6 +19,7 @@ import {
 } from "./inspect-prompt-snapshot"
 import { codingInstructions } from "./inspect-prompt-instructions"
 import { toModelMessages } from "./to-model-messages"
+import { getActiveCompactedHistory, getSessionCompaction } from "./session-compaction-service"
 
 export function captureOpenStreamPrompt(input: {
   runId: string
@@ -46,8 +47,16 @@ export function captureOpenStreamPrompt(input: {
 export async function inspectPrompt(raw: unknown): Promise<InspectPromptResult> {
   const input = InspectPromptInput.parse(raw)
   const snapshot = getInspectPromptSnapshot(input.sessionId)
-  if (snapshot) return snapshot
+  if (snapshot && (await isSnapshotCurrent(input.sessionId, snapshot.capturedAt))) {
+    return snapshot
+  }
   return previewPrompt(input)
+}
+
+/** 压缩时间晚于快照时，快照已过期，走 preview 注入 SUMMARY。 */
+async function isSnapshotCurrent(sessionId: string, capturedAt: number): Promise<boolean> {
+  const compaction = await getSessionCompaction(sessionId)
+  return !compaction || capturedAt >= compaction.compactedAt
 }
 
 async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptResult> {
@@ -55,7 +64,8 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
   const mode = input.mode ?? prefs.defaultMode
   const runtime = prefs.codingRuntime === "harness" ? "harness" : "local"
   const rows = await listMessages(input.sessionId)
-  const history = rows.map((row) => historyFromRow(row.role, row.content))
+  const rawHistory = rows.map((row) => historyFromRow(row.role, row.content))
+  const history = await getActiveCompactedHistory(input.sessionId, rawHistory)
   const mcpNames = Object.keys(createMcpAgentTools())
   return {
     source: "preview",

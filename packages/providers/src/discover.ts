@@ -2,6 +2,7 @@
  * 按协议拉模型目录。站点根路径常返回 HTML，会自动补 /v1；Anthropic 走 x-api-key。
  */
 import type { ApiStyle } from "./api-styles"
+import { parseCatalogContextWindow, parseCatalogMaxOutput } from "./context-window.ts"
 import { normalizeBaseURL, presetFor, type CatalogModel, type ProviderKind } from "./presets"
 
 export type DiscoverResult = {
@@ -167,7 +168,7 @@ async function fetchOpenAIModels(baseURL: string, headers: Record<string, string
     .map((id) => {
       const item = body.data?.find((entry) => entry.id === id)
       const label = item?.name || item?.display_name || id
-      return { id, label }
+      return withCatalogWindow({ id, label }, item)
     })
 }
 
@@ -181,9 +182,22 @@ async function fetchAnthropicModels(baseURL: string, headers: Record<string, str
     .filter((id): id is string => Boolean(id))
     .slice(0, 80)
     .map((id) => {
-      const label = body.data?.find((item) => item.id === id)?.display_name
-      return { id, label: label || id }
+      const item = body.data?.find((entry) => entry.id === id)
+      return withCatalogWindow({ id, label: item?.display_name || id }, item)
     })
+}
+
+function withCatalogWindow(
+  model: CatalogModel,
+  raw: unknown
+): CatalogModel {
+  const contextWindow = parseCatalogContextWindow(raw)
+  const maxOutputTokens = parseCatalogMaxOutput(raw)
+  return {
+    ...model,
+    ...(contextWindow ? { contextWindow } : {}),
+    ...(maxOutputTokens ? { maxOutputTokens } : {})
+  }
 }
 
 async function getJson<T>(url: string, headers: Record<string, string>): Promise<T> {

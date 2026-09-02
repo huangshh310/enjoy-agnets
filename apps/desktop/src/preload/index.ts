@@ -23,7 +23,10 @@ const ide = {
     archive: (input: unknown) => ipcRenderer.invoke("session.archive", input),
     unarchive: (input: unknown) => ipcRenderer.invoke("session.unarchive", input),
     delete: (input: unknown) => ipcRenderer.invoke("session.delete", input),
-    deleteArchived: () => ipcRenderer.invoke("session.deleteArchived")
+    deleteArchived: () => ipcRenderer.invoke("session.deleteArchived"),
+    compact: (input: unknown) => ipcRenderer.invoke("session.compact", input),
+    getCompaction: (input: unknown) => ipcRenderer.invoke("session.getCompaction", input),
+    clearCompaction: (input: unknown) => ipcRenderer.invoke("session.clearCompaction", input)
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),

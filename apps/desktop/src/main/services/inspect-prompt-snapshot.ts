@@ -17,6 +17,11 @@ export function clearInspectPromptSnapshots() {
   lastBySession.clear()
 }
 
+/** 压缩后丢掉该会话泵时快照，避免 inspect 仍显示未压缩实发。 */
+export function clearInspectPromptSnapshot(sessionId: string) {
+  lastBySession.delete(sessionId)
+}
+
 /** 去掉 file data / Uint8Array，避免把附件字节打进 IPC。 */
 export function sanitizeModelMessages(messages: unknown[]): InspectPromptMessage[] {
   return messages.map((message) => sanitizeOne(message))

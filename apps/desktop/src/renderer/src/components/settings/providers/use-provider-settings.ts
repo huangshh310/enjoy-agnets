@@ -118,7 +118,7 @@ function useEditorSession() {
           : preset.apiStyle,
         fastModelId: profile.fastModelId || "",
         reasoningModelId: profile.reasoningModelId || "",
-        contextWindow: profile.contextWindow ?? 128000,
+        contextWindow: profile.contextWindow,
         maxTokens: profile.maxTokens ?? 4096,
         temperature: profile.temperature ?? 0.7,
         reasoningEffort: profile.reasoningEffort,
@@ -153,6 +153,7 @@ function useProviderWrites(queryClient: QueryClient, session: EditorSession) {
       if (!editor || !hasIde()) return
       await persistSnapshot(queryClient, await getIde().settings.upsertProvider({
         ...editor,
+        contextWindow: editor.contextWindow ?? null,
         activate
       }) as SettingsSnapshot)
       closeEditor()

@@ -5,6 +5,7 @@ import { useState } from "react"
 import type { CitedSource } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { InspectorTokenSpectrum } from "./context/inspector-token-spectrum"
+import { InspectorCompactionCard } from "./context/compact-session"
 import { InspectorTurnWatermark } from "./context/inspector-turn-watermark"
 import { InspectorGroundingCard } from "./context/inspector-grounding-card"
 import { InspectorToolsMatrix } from "./context/inspector-tools-matrix"
@@ -56,7 +57,8 @@ function DashboardBody({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-0.5">
-      <InspectorTokenSpectrum stats={data.tokenStats} />
+      <InspectorTokenSpectrum stats={data.tokenStats} compaction={data.compaction} />
+      <InspectorCompactionCard sessionId={data.sessionId} messageCount={data.messages.length} />
       <InspectorTurnWatermark perf={data.turnPerf} />
       <InspectorGroundingCard
         workspaceName={data.workspaceName}
@@ -66,7 +68,12 @@ function DashboardBody({
         onSelectSource={onSelectSource}
       />
       <InspectorToolsMatrix turnTools={data.turnTools} mcpServers={data.mcpServers} running={data.running} />
-      <InspectorRuntimeBar modelId={data.modelId} modelLabel={data.modelLabel} mode={data.mode} />
+      <InspectorRuntimeBar
+        modelId={data.modelId}
+        modelLabel={data.modelLabel}
+        mode={data.mode}
+        contextWindow={data.contextWindow}
+      />
     </div>
   )
 }

@@ -11,11 +11,11 @@
 | 前缀 | 频道 | 用途 |
 |---|---|---|
 | workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
-| session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` | 会话；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`list` 不含已归档 |
+| session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` `compact` `getCompaction` `clearCompaction` | 会话与上下文压缩；`compact` 失败抛英文码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，UI 翻词表；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`compact` 入参 `{ sessionId, keepRecent? }`；`getCompaction`/`clearCompaction` 入参 `{ sessionId }`；`list` 不含已归档 |
 | agent | `run` `abort` `decide` `inspectPrompt` | 跑循环、中止、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 资产 id；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`kind` 必须是 `PROVIDER_KINDS` |
 | automations | `list` `upsert` `remove` | 自动化；`remove` 入参 `{ id }` |
-| models | `list` | 已配置模型目录 |
+| models | `list` | 已配置模型目录；每条可带 `contextWindow`（探测 / Gateway / 手填，没有则省略）与 `maxTokens`（最大**输出**，不是窗口） |
 | ai | `generate` `abort` `resume` | 文本/结构化/媒体/embedding/translation；kind=`agent` 转发 `runAgent`，必须带 workspaceId；`resume` 按 kind 分流：workflow 续步，其它读 generation 快照再跑 |
 | agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；篡改 runId / toolCallId 或库内签名即拒 |
 | assets | `import` `list` `read` `export` `delete` `upload` | 资产库与 provider 引用 |

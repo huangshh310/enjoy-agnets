@@ -3,15 +3,13 @@
  */
 import type { McpServer, ProjectRuleItem, SkillItem, TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
-import { MODEL_CONTEXT_LIMITS } from "../../../agent-limits/agent-limits-calculator.ts"
+import { CHARS_PER_TOKEN } from "@enjoy-agents/agent-core/compaction"
 import type {
   ContextChipEstimate,
   ContextWindowStats,
   TokenSpectrumBucket,
   TurnPerformanceStats
 } from "./context-inspector.types.ts"
-
-const CHARS_PER_TOKEN = 3.8
 
 const BUCKET_BARS: Record<TokenSpectrumBucket["id"], string> = {
   messages: "bg-accent-500",
@@ -36,13 +34,12 @@ export function estimateMcpSchemaTokens(server: McpServer): number {
 
 export function estimateContextWindowStats(
   messages: ThreadMessage[] = [],
-  modelId: string = "claude-3-7-sonnet",
+  maxTokens = 0,
   mcpServers: McpServer[] = [],
   rules: ProjectRuleItem[] = [],
   skills: SkillItem[] = [],
   chips: ContextChipEstimate[] = []
 ): ContextWindowStats {
-  const maxTokens = MODEL_CONTEXT_LIMITS[modelId] ?? 200_000
   const messageTokens = estimateCharTokens(sumMessageChars(messages))
   const systemTokens = estimateCharTokens(rules.reduce((sum, rule) => sum + (rule.content ?? "").length, 0))
   const mcpTokens = mcpServers

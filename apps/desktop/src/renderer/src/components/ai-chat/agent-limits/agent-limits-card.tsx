@@ -12,6 +12,7 @@ import type {
   TelemetryMetric
 } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { contextWindowForModel } from "@renderer/lib/model-context-window"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { cx } from "@/utils/cx"
 import { useT, type TranslateFn } from "@renderer/i18n"
@@ -40,6 +41,7 @@ export function AgentLimitsCard({
   const storeMessages = useChatStore((state) => state.messages)
   const storeModelId = useChatStore((state) => state.modelId)
   const storeModelLabel = useChatStore((state) => state.modelLabel)
+  const storeModels = useChatStore((state) => state.models)
 
   const activeModelId = modelId ?? storeModelId
   const activeModelLabel = modelLabel ?? storeModelLabel
@@ -78,7 +80,7 @@ export function AgentLimitsCard({
   // 5. 计算真实的上下文窗口用量与分桶
   const data = calculateContextWindowUsage(
     storeMessages,
-    activeModelId,
+    maxTokens ?? contextWindowForModel(storeModels, activeModelId) ?? 0,
     mcpQuery.data ?? [],
     skillsQuery.data ?? [],
     rulesQuery.data ?? []

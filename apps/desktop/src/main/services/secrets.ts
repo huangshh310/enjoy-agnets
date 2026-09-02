@@ -2,9 +2,11 @@
  * 供应商档案：增删改、激活模型、对外模型目录。密钥只在 main。
  */
 import {
+  gatewayContextWindowFor,
   isApiStyle,
   modelsForProvider,
   presetFor,
+  resolveModelContextWindow,
   type ApiStyle,
   type CatalogModel,
   type ProviderKind
@@ -51,7 +53,7 @@ export async function upsertProfile(input: {
   apiStyle?: string
   fastModelId?: string
   reasoningModelId?: string
-  contextWindow?: number
+  contextWindow?: number | null
   maxTokens?: number
   temperature?: number
   reasoningEffort?: "low" | "medium" | "high" | "xhigh"
@@ -80,7 +82,7 @@ export async function upsertProfile(input: {
       : resolvedStyle({ kind: input.kind, apiStyle: existing?.apiStyle ?? preset.apiStyle }),
     fastModelId: input.fastModelId ?? existing?.fastModelId,
     reasoningModelId: input.reasoningModelId ?? existing?.reasoningModelId,
-    contextWindow: input.contextWindow ?? existing?.contextWindow,
+    contextWindow: normalizeOptionalWindow(input.contextWindow, existing?.contextWindow),
     maxTokens: input.maxTokens ?? existing?.maxTokens,
     temperature: input.temperature ?? existing?.temperature,
     reasoningEffort: input.reasoningEffort ?? existing?.reasoningEffort,
@@ -179,25 +181,69 @@ export function publicModelsFor(profile: ProviderProfile | undefined, isActive =
     isFast: Boolean(profile.fastModelId && profile.fastModelId === model.id),
     isReasoning: Boolean(profile.reasoningModelId && profile.reasoningModelId === model.id),
     supportsReasoning: true,
-    reasoningEffort: profile.reasoningEffort
+    reasoningEffort: profile.reasoningEffort,
+    contextWindow: model.contextWindow,
+    maxTokens: model.maxOutputTokens ?? profile.maxTokens
   }))
 }
 
 export async function listAllPublicModels() {
   const vault = await readVault()
   if (vault.profiles.length === 0) {
-    return modelsForProvider("deepseek").map((model) => ({
-      id: model.id,
-      label: model.label,
-      provider: "deepseek",
-      providerId: "default",
-      providerName: "DeepSeek",
-      apiStyle: "openai" as ApiStyle,
-      active: true,
-      isFast: false,
-      isReasoning: false,
-      supportsReasoning: true
-    }))
+    return Promise.all(
+      modelsForProvider("deepseek").map(async (model) => ({
+        id: model.id,
+        label: model.label,
+        provider: "deepseek",
+        providerId: "default",
+        providerName: "DeepSeek",
+        apiStyle: "openai" as ApiStyle,
+        active: true,
+        isFast: false,
+        isReasoning: false,
+        supportsReasoning: true,
+        contextWindow: await resolveListedWindow(model.id, "deepseek", model.contextWindow)
+      }))
+    )
   }
-  return vault.profiles.flatMap((profile) => publicModelsFor(profile, profile.id === vault.activeId))
+  const listed = vault.profiles.flatMap((profile) => publicModelsFor(profile, profile.id === vault.activeId))
+  return Promise.all(
+    listed.map(async (model) => {
+      const profile = vault.profiles.find((item) => item.id === model.providerId)
+      return {
+        ...model,
+        contextWindow: await resolveListedWindow(
+          model.id,
+          model.provider,
+          model.contextWindow,
+          profile?.contextWindow
+        )
+      }
+    })
+  )
+}
+
+/** null / 0 表示用户清空手填窗口；undefined 表示沿用旧值。 */
+function normalizeOptionalWindow(
+  incoming: number | null | undefined,
+  existing?: number
+): number | undefined {
+  if (incoming === null || incoming === 0) return undefined
+  return incoming ?? existing
+}
+
+/** 探测目录 > Gateway 公开目录 > 档案手填。都不知道就留空，不按 id 猜。 */
+async function resolveListedWindow(
+  modelId: string,
+  provider?: string,
+  catalogWindow?: number,
+  profileWindow?: number
+) {
+  return resolveModelContextWindow({
+    modelId,
+    provider,
+    catalogWindow,
+    profileWindow,
+    gatewayWindow: await gatewayContextWindowFor(modelId, provider)
+  })
 }

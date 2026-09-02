@@ -27,6 +27,19 @@ export {
 } from "./presets"
 
 export { pingProviderEndpoint, type PingResult } from "./discover"
+export {
+  lookupGatewayContextWindow,
+  parseCatalogContextWindow,
+  parseCatalogMaxOutput,
+  resolveModelContextWindow,
+  type ContextWindowHints
+} from "./context-window"
+export {
+  GATEWAY_MODELS_URL,
+  gatewayContextWindowFor,
+  loadGatewayCatalog,
+  type GatewayCatalogEntry
+} from "./gateway-catalog"
 export { createLanguageModel } from "./create-model"
 export { usesOfficialGoogle } from "./google"
 export {

@@ -16,7 +16,7 @@
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。
 
-右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（消息字符、工作区规则正文、已连 MCP 的 name+description、skills description、启用芯片的 snippet，按 3.8 字/token 折算）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。原始载荷走 `agent.inspectPrompt`：有本会话泵时快照则标「本轮实发」（`systemPromptFor` + 当时 `run.messages` + 注册工具名，附件 bytes 已剥）；否则 preview（库内消息 `toModelMessages` + 当前模式指令）。本机 ToolLoop **不**把 `customInstructions` 拼进 instructions，只有 harness 才拼。待发送芯片仍是下一轮预览。CitedSource 无相似度字段则不画分数。遥测无 cache 字段则不画 Prompt Cache %。发送只取走启用芯片，排除项留在队列。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
+右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（用量：消息字符、工作区规则正文、已连 MCP 的 name+description、skills description、启用芯片的 snippet，按 3.8 字/token 折算；**上限**取当前模型 `contextWindow`：探测目录 > Gateway `/v1/models` > 档案手填，禁止按 modelId 静态表猜，未知则「— / 窗口未知」）、会话压缩卡片（展示压缩状态、**压缩前/后 Tokens**、节省量、事实摘要与再次压缩/清除；未压缩态不编造预计节省）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。输入框底栏状态栏配备手动压缩按钮，支持一键触发当前会话上下文压缩并即时联动看板。原始载荷走 `agent.inspectPrompt`：已压缩会话将较早历史替换为一条 `[CONVERSATION SUMMARY]`（不插虚构助手句）；有本会话泵时快照且 `capturedAt >= compactedAt` 则标「本轮实发」；压缩后快照过期则回落 preview。preview 为库内消息 `toModelMessages` + 当前模式指令。本机 ToolLoop **不**把 `customInstructions` 拼进 instructions，只有 harness 才拼。待发送芯片仍是下一轮预览。CitedSource 无相似度字段则不画分数。遥测无 cache 字段则不画 Prompt Cache %。发送只取走启用芯片，排除项留在队列。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 
@@ -49,6 +49,6 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 分支未接线。侧栏项目卡片、Composer、Studio 不要写死 `main`。
 - 移除项目不是删文件夹。归档不是删除；永久删除走 `session.delete` / `session.deleteArchived`。
-- Context 检查器禁止 Fake-Status-Chrome：不要写死 RAG 相似度、Prompt Cache %、HMAC 空闲守卫或 3200 系统 token 地板。`CitedSource` 没有 score；`TelemetryMetric` 没有 cache 字段。
+- Context 检查器禁止 Fake-Status-Chrome：不要写死 RAG 相似度、Prompt Cache %、HMAC 空闲守卫、3200 系统 token 地板，或未压缩卡 `usedTokens * 0.6` 的预计节省。`CitedSource` 没有 score；`TelemetryMetric` 没有 cache 字段。
 - 会话芯片 `takeSessionContextChips` 只取走 `enabled !== false` 的项。排除芯片必须留在队列，否则发送后无法再点亮。
-- `agent.inspectPrompt` 的 last-run 快照只在 main 进程内存，按 sessionId 覆盖。重启后回落 preview，不要写成已落库。本机 ToolLoop 的 instructions 不含 `customInstructions`。
+- `agent.inspectPrompt` 的 last-run 快照只在 main 进程内存，按 sessionId 覆盖。重启后回落 preview，不要写成已落库。压缩会 `clearInspectPromptSnapshot`；若快照仍在但早于 `compactedAt`，也走 preview。本机 ToolLoop 的 instructions 不含 `customInstructions`。

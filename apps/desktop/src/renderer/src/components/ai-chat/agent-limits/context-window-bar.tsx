@@ -38,7 +38,7 @@ export function ContextWindowBar({
         </span>
         <div className="flex items-center gap-1.5 text-caption-1-medium font-medium text-text-secondary">
           <span>
-            {formatTokens(data.usedTokens)} / {formatTokens(data.maxTokens)}
+            {formatTokens(data.usedTokens)} / {data.maxTokens > 0 ? formatTokens(data.maxTokens) : "—"}
           </span>
           <span className="font-semibold text-text-primary">
             ({data.usedPercentage}%)

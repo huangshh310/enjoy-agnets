@@ -64,6 +64,10 @@ export default defineConfig({
           find: "@enjoy-agents/assets/media-type",
           replacement: resolve(repoRoot, "packages/assets/src/media-type.ts")
         },
+        {
+          find: "@enjoy-agents/agent-core/compaction",
+          replacement: resolve(repoRoot, "packages/agent-core/src/compaction/index.ts")
+        },
         ...MAIN_WORKSPACE_PACKAGES.map(workspacePackageAlias)
       ]
     }
@@ -90,6 +94,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/agent-core/diff",
           replacement: resolve(repoRoot, "packages/agent-core/src/diff.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/compaction",
+          replacement: resolve(repoRoot, "packages/agent-core/src/compaction/index.ts")
         },
         {
           find: "@enjoy-agents/providers/presets",

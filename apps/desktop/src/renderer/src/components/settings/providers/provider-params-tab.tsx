@@ -34,12 +34,27 @@ export function ProviderParamsTab({
         <div className="flex flex-col gap-2">
           <Input
             type="number"
-            value={editor.contextWindow ?? 128000}
-            onChange={(e) => onChange({ contextWindow: Number(e.target.value) || 0 })}
-            placeholder="128000"
+            value={editor.contextWindow ?? ""}
+            onChange={(e) => {
+              const next = e.target.value.trim()
+              onChange({ contextWindow: next ? Number(next) || undefined : undefined })
+            }}
+            placeholder={t("settings.providers.contextAuto")}
             className="h-9 font-mono text-[13px]"
           />
           <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => onChange({ contextWindow: undefined })}
+              className={cx(
+                "rounded-md border px-2 py-0.5 text-caption-1-medium transition-colors",
+                editor.contextWindow == null
+                  ? "border-accent-500/50 bg-accent-50 text-accent-600 font-medium"
+                  : "border-border-button-default bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+              )}
+            >
+              {t("settings.providers.contextAuto")}
+            </button>
             {CONTEXT_PRESETS.map((item) => (
               <button
                 key={item.value}

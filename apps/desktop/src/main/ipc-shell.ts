@@ -8,6 +8,7 @@ import {
   OpenWorkspaceInput,
   ReadFileInput,
   RemoveWorkspaceInput,
+  SessionCompactInput,
   SessionCreateInput,
   SessionIdInput,
   SessionRenameInput,
@@ -52,6 +53,11 @@ import {
   listArchivedSessions,
   unarchiveSession
 } from "./services/session-lifecycle"
+import {
+  clearSessionCompaction,
+  compactSession,
+  getSessionCompaction
+} from "./services/session-compaction-service"
 
 export const SHELL_CHANNELS = [
   "workspace.open",
@@ -72,6 +78,9 @@ export const SHELL_CHANNELS = [
   "session.unarchive",
   "session.delete",
   "session.deleteArchived",
+  "session.compact",
+  "session.getCompaction",
+  "session.clearCompaction",
   "agent.run",
   "agent.abort",
   "agent.decide",
@@ -158,6 +167,18 @@ function registerSessionIpc() {
     deleteSession(SessionIdInput.parse(raw).sessionId)
   )
   ipcMain.handle("session.deleteArchived", async () => deleteAllArchivedSessions())
+  ipcMain.handle("session.compact", async (_event, raw) => {
+    const input = SessionCompactInput.parse(raw)
+    return compactSession(input.sessionId, input.keepRecent)
+  })
+  ipcMain.handle("session.getCompaction", async (_event, raw) => {
+    const input = SessionIdInput.parse(raw)
+    return getSessionCompaction(input.sessionId)
+  })
+  ipcMain.handle("session.clearCompaction", async (_event, raw) => {
+    const input = SessionIdInput.parse(raw)
+    return clearSessionCompaction(input.sessionId)
+  })
 }
 
 function registerAgentIpc() {

@@ -45,7 +45,7 @@ export function emptyEditor(kind: ProviderKind = "deepseek", apiStyle?: ApiStyle
     apiStyle: apiStyle ?? preset.apiStyle,
     fastModelId: "",
     reasoningModelId: "",
-    contextWindow: 128000,
+    contextWindow: undefined,
     maxTokens: 4096,
     temperature: 0.7,
     reasoningEffort: undefined,

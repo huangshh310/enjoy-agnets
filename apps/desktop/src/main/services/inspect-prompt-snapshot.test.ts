@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  clearInspectPromptSnapshot,
   clearInspectPromptSnapshots,
   getInspectPromptSnapshot,
   rememberInspectPrompt,
@@ -37,4 +38,33 @@ test("rememberInspectPrompt is keyed by session", () => {
   })
   assert.equal(getInspectPromptSnapshot("ses_a")?.instructions, "sys")
   assert.equal(getInspectPromptSnapshot("ses_b"), undefined)
+})
+
+test("clearInspectPromptSnapshot only drops one session", () => {
+  clearInspectPromptSnapshots()
+  rememberInspectPrompt({
+    source: "last-run",
+    capturedAt: 1,
+    sessionId: "ses_a",
+    modelId: "m",
+    mode: "agent",
+    runtime: "local",
+    instructions: "sys",
+    messages: [{ role: "user", content: "hi" }],
+    toolNames: ["read_file"]
+  })
+  rememberInspectPrompt({
+    source: "last-run",
+    capturedAt: 1,
+    sessionId: "ses_b",
+    modelId: "m",
+    mode: "agent",
+    runtime: "local",
+    instructions: "other",
+    messages: [{ role: "user", content: "yo" }],
+    toolNames: ["read_file"]
+  })
+  clearInspectPromptSnapshot("ses_a")
+  assert.equal(getInspectPromptSnapshot("ses_a"), undefined)
+  assert.equal(getInspectPromptSnapshot("ses_b")?.instructions, "other")
 })

@@ -88,3 +88,4 @@ export {
 } from "./media/generate";
 export { videoTimeoutMs, VIDEO_POLL_TIMEOUT_MS } from "./media/generate-video";
 export { embedTexts, embedQuery } from "./knowledge/embed-many";
+export * from "./compaction";

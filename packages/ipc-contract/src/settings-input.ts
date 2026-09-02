@@ -33,7 +33,9 @@ export type SaveSecretInput = z.infer<typeof SaveSecretInput>
 
 export const ProviderModelItem = z.object({
   id: z.string(),
-  label: z.string()
+  label: z.string(),
+  contextWindow: z.number().int().positive().optional(),
+  maxOutputTokens: z.number().int().positive().optional()
 })
 export type ProviderModelItem = z.infer<typeof ProviderModelItem>
 
@@ -47,7 +49,7 @@ export const UpsertProviderInput = z.object({
   apiStyle: z.string().optional(),
   fastModelId: z.string().optional(),
   reasoningModelId: z.string().optional(),
-  contextWindow: z.number().optional(),
+  contextWindow: z.number().int().positive().nullable().optional(),
   maxTokens: z.number().optional(),
   temperature: z.number().optional(),
   reasoningEffort: ReasoningEffortSchema.optional(),
@@ -107,7 +109,9 @@ export const ModelOption = z.object({
   capabilities: z.array(z.string()).optional(),
   staticCaps: z.array(z.string()).optional(),
   probedCaps: z.array(z.string()).optional(),
-  probedAt: z.number().int().optional()
+  probedAt: z.number().int().optional(),
+  contextWindow: z.number().int().positive().optional(),
+  maxTokens: z.number().int().positive().optional()
 })
 export type ModelOption = z.infer<typeof ModelOption>
 
