@@ -19,7 +19,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
   const surface = assistantSurface(message)
 
   return (
-    <Message from="assistant" className="max-w-[40rem]">
+    <Message from="assistant" id={message.id} data-thread-message={message.id} className="max-w-[40rem]">
       {surface.showThinking ? (
         <ThinkingTrace
           reasoning={surface.reasoning}

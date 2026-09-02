@@ -10,3 +10,11 @@ export const SPRING_PRESS = {
   damping: 30,
   mass: 0.6
 }
+
+/** 共享布局位移：刻度金字塔、预览卡片跟手。 */
+export const SPRING_LAYOUT = {
+  type: "spring" as const,
+  stiffness: 360,
+  damping: 32,
+  mass: 0.6
+}

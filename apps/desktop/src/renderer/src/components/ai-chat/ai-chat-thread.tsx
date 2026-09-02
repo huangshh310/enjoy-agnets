@@ -14,6 +14,7 @@ import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"
 import { ThreadErrorBanner } from "./thread/thread-error-banner"
+import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 
 export function AiChatThread({
   messages,
@@ -39,32 +40,34 @@ export function AiChatThread({
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
 
   return (
-    <Conversation className="min-h-0">
-      <ConversationContent className="gap-8 px-8 py-6">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">
+        <ConversationContent className="gap-8 px-8 py-6 pr-16">
+          {visible.map((message) =>
+            message.role === "user" ? (
+              <UserTurn key={message.id} message={message} />
+            ) : (
+              <AssistantTurn key={message.id} message={message} />
+            )
+          )}
 
-        {visible.map((message) =>
-          message.role === "user" ? (
-            <UserTurn key={message.id} message={message} />
-          ) : (
-            <AssistantTurn key={message.id} message={message} />
-          )
-        )}
+          {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
 
-        {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
+          {pendingApproval ? (
+            <ApprovalCard
+              pending={pendingApproval}
+              onApprove={onApprove}
+              onDeny={onDeny}
+              onAllowSession={onAllowSession}
+            />
+          ) : null}
 
-        {pendingApproval ? (
-          <ApprovalCard
-            pending={pendingApproval}
-            onApprove={onApprove}
-            onDeny={onDeny}
-            onAllowSession={onAllowSession}
-          />
-        ) : null}
-
-        {error ? <ThreadErrorBanner error={error} /> : null}
-      </ConversationContent>
-      <ConversationScrollButton />
-    </Conversation>
+          {error ? <ThreadErrorBanner error={error} /> : null}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+      <ThreadPreviewRail messages={visible} />
+    </div>
   )
 }
 
