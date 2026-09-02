@@ -45,3 +45,4 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 - `experimental_streamTranscribe` 可能无导出，没有则转写回落 `transcribe`。`experimental_streamTranslate` 在 `ai@7.0.84` 有导出；`kind=translation` 走 `createTranslationModel`（OpenAI `translation()`）。不能同时读 `fullStream` 和 `translationText`。模型不合法时 `translateAudio` 返回 null。
 - `WorkflowAgent` / `createMCPClient` 在 `ai@7.0.84` 仍无导出，不要假装已接官方类。
 - 窗口 E2E 的发聊天 / 停止 / 恢复 / 审批走 `ENJOY_E2E_STUB`，不要在 CI 里假装打过真实 Key。
+- 会话标题自动更新机制：默认标题集合包含 `新对话`、`新会话`、`New agent`、`Untitled`。`isDefaultSessionTitle` 只要当前标题处于默认集合（无论第几轮），首轮发送即触发乐观截断命名与 `useCompletion` 后台精炼，完成生成后调用 `session.rename` 持久化，支持中英文同语言自然精炼；用户已显式重命名的标题不覆盖。
