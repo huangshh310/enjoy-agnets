@@ -41,6 +41,6 @@ export function RightPaneTabBody({
     )
   }
   if (tab.kind === "terminal") return <TerminalView workspaceId={workspaceId} />
-  if (tab.kind === "browser") return <BrowserView />
+  if (tab.kind === "browser") return <BrowserView url={tab.url} />
   return <FilesView workspaceId={workspaceId} />
 }

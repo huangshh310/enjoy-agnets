@@ -22,6 +22,7 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
+import { openBrowserUrl } from "@renderer/components/ai-chat/right-pane/open-pane"
 import type { AgentStepKind, AgentStepNode } from "./agent-step-tree.types"
 import { useT } from "@renderer/i18n"
 
@@ -217,8 +218,7 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
-                const targetUrl = pill.url || `https://${pill.label}`
-                window.open(targetUrl, "_blank")
+                openBrowserUrl(pill.url || `https://${pill.label}`)
               }}
               title={t("chat.visitSite", { url: pill.url || pill.label })}
               className="inline-flex items-center gap-1 rounded-md border border-border-button-default/80 bg-background-secondary-default/90 px-2 py-0.5 font-mono text-[11px] font-medium text-text-secondary hover:text-accent-500 hover:border-accent-500/40 transition-colors shadow-2xs cursor-pointer"

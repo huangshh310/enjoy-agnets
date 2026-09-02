@@ -6,4 +6,6 @@ export type RightPaneKind = "review" | "terminal" | "browser" | "files"
 export type RightPaneTab = {
   id: string
   kind: RightPaneKind
+  /** 浏览器标签当前预览的 http(s) 地址。 */
+  url?: string
 }

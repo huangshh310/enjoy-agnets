@@ -1,5 +1,5 @@
 /**
- * 知识引用来源：点选打开 Files，不把整篇塞进正文。
+ * 知识引用来源：点选打开审查，不把整篇塞进正文。
  */
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import type { ThreadMessage } from "@renderer/stores/chat-store"

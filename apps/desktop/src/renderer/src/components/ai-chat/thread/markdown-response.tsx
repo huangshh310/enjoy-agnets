@@ -1,9 +1,12 @@
 /**
  * 助手 Markdown 回答：MessageResponse / Streamdown + BoardUI 围栏。
- * 围栏走 components.code；默认 CodeBlock 的下载按钮用 controls 关掉。
+ * 围栏走 components.code；http(s) 链接点进右栏浏览器，不整窗跳走。
  */
+import type { AnchorHTMLAttributes, MouseEvent } from "react"
 import { MessageResponse } from "@/components/ai-elements/message"
 import { cx } from "@/utils/cx"
+import { openBrowserUrl } from "@renderer/components/ai-chat/right-pane/open-pane"
+import { parseHttpUrl } from "@renderer/lib/http-url"
 import { MarkdownFence, MarkdownInlineCode } from "./markdown-fence"
 
 const MARKDOWN_CLASS = cx(
@@ -26,9 +29,43 @@ const MARKDOWN_CLASS = cx(
   "[&_td]:border-b [&_td]:border-separator-border [&_td]:px-2 [&_td]:py-1.5"
 )
 
+function MarkdownLink({
+  href,
+  children,
+  onClick,
+  node: _node,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown }) {
+  return (
+    <a
+      {...props}
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(event) => onMarkdownLinkClick(event, href, onClick)}
+    >
+      {children}
+    </a>
+  )
+}
+
+function onMarkdownLinkClick(
+  event: MouseEvent<HTMLAnchorElement>,
+  href: string | undefined,
+  onClick: AnchorHTMLAttributes<HTMLAnchorElement>["onClick"]
+) {
+  onClick?.(event)
+  if (event.defaultPrevented || !href) return
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+  if (!parseHttpUrl(href)) return
+  event.preventDefault()
+  openBrowserUrl(href)
+}
+
 const FENCE_COMPONENTS = {
   code: MarkdownFence,
-  inlineCode: MarkdownInlineCode
+  inlineCode: MarkdownInlineCode,
+  a: MarkdownLink
 }
 
 const STREAMDOWN_CONTROLS = {

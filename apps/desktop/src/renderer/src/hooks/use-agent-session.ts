@@ -15,6 +15,7 @@ import {
   type ChangedFileRow,
   type ModelOption
 } from "../stores/chat-store"
+import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 
 type WorkspaceRow = { id: string; name: string; rootPath: string }
 type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
@@ -256,6 +257,7 @@ export async function selectPersistedSession(sessionId: string) {
 export async function openChangedFile(path: string) {
   const store = useChatStore.getState()
   if (!store.workspaceId) return
+  revealRightPane("review")
   const content = (await getIde().workspace.readFile({
     workspaceId: store.workspaceId,
     path

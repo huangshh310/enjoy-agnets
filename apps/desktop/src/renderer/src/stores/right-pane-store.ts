@@ -3,11 +3,12 @@
  */
 import { create } from "zustand"
 import type { RightPaneKind, RightPaneTab } from "@renderer/components/ai-chat/right-pane/right-pane.types"
+import { openToolState } from "@renderer/components/ai-chat/right-pane/open-tool-state"
 
 type RightPaneStore = {
   tabs: RightPaneTab[]
   activeId: string | null
-  openTool: (kind: RightPaneKind, options?: { forceNew?: boolean }) => void
+  openTool: (kind: RightPaneKind, options?: { forceNew?: boolean; url?: string }) => void
   closeTab: (id: string) => void
   setActiveId: (id: string) => void
   reset: () => void
@@ -21,14 +22,7 @@ export const useRightPaneStore = create<RightPaneStore>((set, get) => ({
   tabs: [],
   activeId: null,
   openTool: (kind, options) => {
-    const { tabs } = get()
-    const existing = options?.forceNew ? undefined : tabs.find((tab) => tab.kind === kind)
-    if (existing) {
-      set({ activeId: existing.id })
-      return
-    }
-    const tab: RightPaneTab = { id: nextTabId(kind), kind }
-    set({ tabs: [...tabs, tab], activeId: tab.id })
+    set(openToolState(get().tabs, kind, options, nextTabId(kind)))
   },
   closeTab: (id) => {
     const tabs = get().tabs.filter((tab) => tab.id !== id)

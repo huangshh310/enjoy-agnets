@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-01
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-02
 
 ## 当前真相
 
@@ -16,7 +16,7 @@
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。
 
-右侧栏视图：Changes / Files / Terminal / Browser / Review。未完成的视图保持空态，不要假装接上了 Monaco CDN。
+右侧栏视图：Changes / Files / Terminal / Browser / Review。Browser 用 Electron `<webview>`（`partition persist:enjoy-preview`）预览 http(s)；对话链接与域名胶囊写入该标签。文件变更胶囊打开审查并选中文件。编辑器仍非完整 Monaco，不要假装接上了 CDN。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 
