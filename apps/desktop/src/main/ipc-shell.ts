@@ -31,6 +31,7 @@ import {
   openWorkspaceTerminal,
   writeWorkspaceTerminal
 } from "./services/terminal"
+import { queryIsMaximized, toggleMaximize } from "./services/window-maximize"
 import {
   changedFiles,
   getWorkspace,
@@ -186,12 +187,14 @@ function registerWindowIpc() {
   })
   ipcMain.handle("window.toggleMaximize", async (event) => {
     const win = windowFromEvent(event)
-    if (win.isMaximized()) win.unmaximize()
-    else win.maximize()
-    return { isMaximized: win.isMaximized() }
+    const isMaximized = toggleMaximize(win)
+    if (!win.isDestroyed()) {
+      win.webContents.send("window.maximized-changed", { isMaximized })
+    }
+    return { isMaximized }
   })
   ipcMain.handle("window.isMaximized", async (event) => ({
-    isMaximized: windowFromEvent(event).isMaximized()
+    isMaximized: queryIsMaximized(windowFromEvent(event))
   }))
   ipcMain.handle("window.close", async (event) => {
     windowFromEvent(event).close()

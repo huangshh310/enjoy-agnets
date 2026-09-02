@@ -7,6 +7,7 @@ import { SETTINGS_CHANNELS, registerSettingsIpc } from "./ipc-settings"
 import { SHELL_CHANNELS, registerShellIpc } from "./ipc-shell"
 import { SKILLS_CHANNELS, registerSkillsIpc } from "./ipc-skills"
 import { RULES_CHANNELS, registerRulesIpc } from "./ipc-rules"
+import { handleCaptionDoubleClick, queryIsMaximized, WM_NCLBUTTONDBLCLK } from "./services/window-maximize"
 
 const CHANNELS = [...SHELL_CHANNELS, ...SETTINGS_CHANNELS, ...AI_CHANNELS, ...SKILLS_CHANNELS, ...RULES_CHANNELS] as const
 
@@ -31,12 +32,19 @@ export function unregisterIpc() {
 }
 
 function bindMaximizeEvents(window: BrowserWindow) {
-  const send = (isMaximized: boolean) => {
+  const send = () => {
     if (!window.isDestroyed()) {
-      window.webContents.send("window.maximized-changed", { isMaximized })
+      window.webContents.send("window.maximized-changed", {
+        isMaximized: queryIsMaximized(window)
+      })
     }
   }
-  window.on("maximize", () => send(true))
-  window.on("unmaximize", () => send(false))
-  window.on("restore", () => send(window.isMaximized()))
+  window.on("maximize", send)
+  window.on("unmaximize", send)
+  window.on("restore", send)
+  if (process.platform === "win32") {
+    window.hookWindowMessage(WM_NCLBUTTONDBLCLK, () => {
+      handleCaptionDoubleClick(window, send)
+    })
+  }
 }

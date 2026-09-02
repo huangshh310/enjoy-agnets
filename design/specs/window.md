@@ -21,7 +21,7 @@
 - 按钮：最小化 / 最大化·还原 / 关闭（Remix 图标，关闭 hover 用 error token）
 - 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。详见 `brand` spec。
 
-IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。
+IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。
 
 ## 不变量
 
@@ -34,11 +34,13 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化
 
 - 创建窗口：`apps/desktop/src/main/index.ts`
 - IPC：`apps/desktop/src/main/ipc.ts`、`packages/ipc-contract/src/window.ts`
+- 放大/还原：`apps/desktop/src/main/services/window-maximize.ts`
 - UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`
 - 调用：`apps/desktop/src/renderer/src/lib/window-control.ts`
 
 ## 已知坑
 
 - `transparent: true` + 无阴影时，圆角靠 `WindowFrame` 的 `overflow-hidden` + `rounded-2xl` 裁切。`html`/`body` 若再铺 `background-full`，四角会露出方块。Windows 不要开 acrylic 抢 HWND。
+- Windows 透明无边框上 `isMaximized()` 常为 false，`unmaximize()` 空操作，标题栏 drag 双击也不会还原。按钮仍显示 □。切换必须按 workArea 记忆 bounds，不要只调用 `maximize()`/`unmaximize()`。
 - 在 drag 区域里放输入框 / 下拉必须单独标 `no-drag`，否则无法聚焦。
 - macOS `activate` 会在无窗时重建窗口；IPC 必须能重新 `registerIpc`（先 `unregister` 或靠守卫）。

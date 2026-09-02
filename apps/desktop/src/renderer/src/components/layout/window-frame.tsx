@@ -35,7 +35,7 @@ export function WindowFrame({ children }: { children: ReactNode }) {
   }, [])
 
   const handleToggleMaximize = () => {
-    void toggleMaximizeWindow()
+    void toggleMaximizeWindow().then(setIsMaximized)
   }
 
   return (
