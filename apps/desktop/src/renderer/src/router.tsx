@@ -24,7 +24,11 @@ import { AgentStudioPage } from "@renderer/components/studio/agent-studio-page"
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
-
+import { TeamPage } from "@renderer/components/team/team-page"
+import { WorkspacesPage } from "@renderer/components/workspaces/workspaces-page"
+import { InboxPage } from "@renderer/components/inbox/inbox-page"
+import { CompanyPage } from "@renderer/components/company/company-page"
+import { AccountPage } from "@renderer/components/account/account-page"
 function RootLayout() {
   useAgentSession()
   const navigate = useNavigate()
@@ -161,6 +165,77 @@ const studioRoute = createRoute({
   path: "/studio",
   component: AgentStudioPage
 })
+const teamRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/team",
+  component: TeamPage
+})
+
+const teamIndexRoute = createRoute({
+  getParentRoute: () => teamRoute,
+  path: "/",
+  beforeLoad: () => {
+    throw redirect({ to: "/team/$section", params: { section: "profile" } })
+  }
+})
+
+const teamSectionRoute = createRoute({
+  getParentRoute: () => teamRoute,
+  path: "$section",
+  component: TeamPage
+})
+
+const workspacesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/workspaces",
+  component: WorkspacesPage
+})
+
+const inboxRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/inbox",
+  component: InboxPage
+})
+
+const companyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/company",
+  component: CompanyPage
+})
+
+const companyIndexRoute = createRoute({
+  getParentRoute: () => companyRoute,
+  path: "/",
+  beforeLoad: () => {
+    throw redirect({ to: "/company/$section", params: { section: "billing" } })
+  }
+})
+
+const companySectionRoute = createRoute({
+  getParentRoute: () => companyRoute,
+  path: "$section",
+  component: CompanyPage
+})
+
+const accountRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/account",
+  component: AccountPage
+})
+
+const accountIndexRoute = createRoute({
+  getParentRoute: () => accountRoute,
+  path: "/",
+  beforeLoad: () => {
+    throw redirect({ to: "/account/$section", params: { section: "profile" } })
+  }
+})
+
+const accountSectionRoute = createRoute({
+  getParentRoute: () => accountRoute,
+  path: "$section",
+  component: AccountPage
+})
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -173,9 +248,13 @@ const routeTree = rootRoute.addChildren([
   workflowsRoute,
   mediaRoute,
   mcpRoute,
-  observabilityRoute
+  observabilityRoute,
+  teamRoute.addChildren([teamIndexRoute, teamSectionRoute]),
+  workspacesRoute,
+  inboxRoute,
+  companyRoute.addChildren([companyIndexRoute, companySectionRoute]),
+  accountRoute.addChildren([accountIndexRoute, accountSectionRoute])
 ])
-
 export const router = createRouter({
   routeTree,
   history: createHashHistory(),

@@ -17,7 +17,7 @@ import {
 } from "../stores/chat-store"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 
-type WorkspaceRow = { id: string; name: string; rootPath: string }
+export type WorkspaceRow = { id: string; name: string; rootPath: string }
 type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
 type MessageRow = {
   id: string

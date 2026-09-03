@@ -19,10 +19,14 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/media` | 资产库 | `wide` |
 | `#/mcp` | MCP Server；trusted 可 Open App | `wide` |
 | `#/observability` | 本地指标 | `wide` |
+| `#/team/profile` 等 | 团队中心（资料、算力配额、成员管理与权限分配） | `wide` |
+| `#/workspaces` | 文件夹与工作区管理（已挂载项目、路径、分支、快速切换） | `wide` |
+| `#/inbox` | 收件箱消息中心（预置 8 项通知流、未读徽标、清理与跳转） | `wide` |
+| `#/company/billing` 等 | 企业中心（账单套餐、发票、合规协议、外部协同工具集成） | `wide` |
+| `#/account/profile` 等 | 个人中心（账号安全状态、在线工作站节点、通知推送偏好） | `wide` |
 
 设置分段 ID：`general` `appearance` `shortcuts` `providers` `agent` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `telemetry` `sandbox` `archived`。
-
-偏好分段（`general` / `appearance` / `agent` / `media`）与 Workspace / MCP / Git 同构：顶部 `SettingsHub` 状态看板（图标井 + 徽标 + 脉冲指标）+ 内层 `SettingsCard` 行。高密度页：`settings-workspace`、`settings-knowledge`、`settings-media`、`settings-capabilities`、`settings-mcp`、`settings-telemetry`、`settings-git`、`settings-workflow`、`sandbox-settings`。`#/settings/archived` 按项目分组列出已归档会话；`git` 支持 Conventional Commit 规范、提交审批与 Working Tree 实时统计；`capabilities` 提供全量模型能力多维矩阵与实时探测；`knowledge` 支持 RAG 向量模型与索引策略；`telemetry` 支持 Local 私有与 OTEL 导出。
+底栏用户卡片展开菜单完整映射至：`#/team` (profile/members)、`#/workspaces`、`#/inbox`、`#/company` (billing/details/integrations)、`#/account` (profile/notifications) 及应用内 `ConfirmDialog` 退出登录安全确认，杜绝任何 no-op 或偷懒重定向。
 
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 settings / automations / customize 上按 Escape → `#/`。
 

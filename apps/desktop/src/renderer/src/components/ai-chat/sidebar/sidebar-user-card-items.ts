@@ -23,6 +23,7 @@ export interface CreateMenuItemsOptions {
   t: (key: string, values?: Record<string, string | number>) => string
   onOpenWorkspace?: () => void
   onNavigate: (to: string) => void
+  onSignOut?: () => void
   sessionCount?: number
 }
 
@@ -31,9 +32,8 @@ export interface CreateMenuItemsOptions {
  */
 export function buildUserCardMenuGroups({
   t,
-  onOpenWorkspace,
   onNavigate,
-  sessionCount
+  onSignOut
 }: CreateMenuItemsOptions): UserCardMenuGroup[] {
   return [
     {
@@ -43,25 +43,26 @@ export function buildUserCardMenuGroups({
           id: "team-profile",
           icon: RiBankLine,
           label: t("chat.teamProfile") || "View team profile",
-          onClick: () => onNavigate("/settings/general")
+          onClick: () => onNavigate("/team/profile")
         },
         {
           id: "folders",
           icon: RiFolder6Line,
           label: t("chat.folders") || "Folders",
-          onClick: () => onOpenWorkspace?.()
+          onClick: () => onNavigate("/workspaces")
         },
         {
           id: "messages",
           icon: RiMessage2Line,
           label: t("chat.messages") || "Messages",
-          badge: sessionCount && sessionCount > 0 ? String(sessionCount) : undefined
+          badge: "8",
+          onClick: () => onNavigate("/inbox")
         },
         {
           id: "people",
           icon: RiGroupLine,
           label: t("chat.people") || "People",
-          onClick: () => onNavigate("/settings/general")
+          onClick: () => onNavigate("/team/members")
         }
       ]
     },
@@ -73,19 +74,19 @@ export function buildUserCardMenuGroups({
           id: "billing",
           icon: RiBankCardLine,
           label: t("chat.billing") || "Billing",
-          onClick: () => onNavigate("/settings/providers")
+          onClick: () => onNavigate("/company/billing")
         },
         {
           id: "company-details",
           icon: RiSchoolLine,
           label: t("chat.companyDetails") || "Company Details",
-          onClick: () => onNavigate("/settings/general")
+          onClick: () => onNavigate("/company/details")
         },
         {
           id: "integrations",
           icon: RiBox3Line,
           label: t("chat.integrations") || "Integrations",
-          onClick: () => onNavigate("/mcp")
+          onClick: () => onNavigate("/company/integrations")
         }
       ]
     },
@@ -97,19 +98,19 @@ export function buildUserCardMenuGroups({
           id: "notifications",
           icon: RiNotification3Line,
           label: t("chat.notifications") || "Notifications",
-          onClick: () => onNavigate("/settings/general")
+          onClick: () => onNavigate("/account/notifications")
         },
         {
           id: "account-details",
           icon: RiShieldUserLine,
           label: t("chat.accountDetails") || "Account Details",
-          onClick: () => onNavigate("/settings/customize")
+          onClick: () => onNavigate("/account/profile")
         },
         {
           id: "sign-out",
           icon: RiLogoutBoxRLine,
           label: t("chat.signOut") || "Sign out",
-          onClick: () => onNavigate("/")
+          onClick: () => (onSignOut ? onSignOut() : onNavigate("/"))
         }
       ]
     }

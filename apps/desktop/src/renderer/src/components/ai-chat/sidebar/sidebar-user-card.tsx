@@ -17,8 +17,8 @@ import { AppMark } from "@renderer/components/brand/app-mark"
 import { Collapsible } from "./sidebar-action"
 import { DEFAULT_USER_EMAIL, buildUserCardMenuGroups } from "./sidebar-user-card-items"
 import { SidebarUserCardMenuContent } from "./sidebar-user-card-menu"
+import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import type { SidebarUserCardProps } from "./sidebar-user-card.types"
-
 export function SidebarUserCard({
   collapsed = false,
   userName = "Enjoy Agents",
@@ -31,7 +31,7 @@ export function SidebarUserCard({
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-
+  const [signOutConfirm, setSignOutConfirm] = useState(false)
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)")
     setIsMobile(mq.matches)
@@ -43,12 +43,16 @@ export function SidebarUserCard({
   const menuGroups = buildUserCardMenuGroups({
     t,
     onOpenWorkspace,
-    onNavigate: (to) => void navigate({ to }),
+    onNavigate: (to) => void navigate({ to: to as "/" }),
+    onSignOut: () => {
+      setIsOpen(false)
+      setSignOutConfirm(true)
+    },
     sessionCount
   })
-
   return (
-    <AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
+    <>
+      <AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
       <AriaButton
         aria-label={userName}
         className={cx(
@@ -105,5 +109,20 @@ export function SidebarUserCard({
         </AriaDialog>
       </AriaPopover>
     </AriaDialogTrigger>
+
+    <ConfirmDialog
+      open={signOutConfirm}
+      onOpenChange={setSignOutConfirm}
+      title="确认退出登录"
+      description="退出登录后将安全清除当前本地工作区会话凭据，您随时可以重新登录。"
+      confirmLabel="退出登录"
+      cancelLabel="取消"
+      destructive
+      onConfirm={() => {
+        setSignOutConfirm(false)
+        void navigate({ to: "/" })
+      }}
+    />
+    </>
   )
 }
