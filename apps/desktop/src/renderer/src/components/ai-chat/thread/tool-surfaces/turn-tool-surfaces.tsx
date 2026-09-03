@@ -12,25 +12,13 @@ import { hasTurnToolSurfaces, toolResultSurfaces } from "./select-turn-tool-surf
 
 export function TurnToolSurfaces({ tools }: { tools: ThreadToolCall[] }) {
   if (!hasTurnToolSurfaces(tools)) return null
-
-  const allSurfaces = toolResultSurfaces(tools)
-
-  // 分离带 diff 的文件修改工具与其他工具 (如 bash 执行回显)
-  const diffTools = allSurfaces.filter((t) => {
-    const res = asRecord(t.result)
-    return Boolean(readString(res, "diff").trim())
-  })
-  const otherTools = allSurfaces.filter((t) => !diffTools.includes(t))
+  const diffTools = toolResultSurfaces(tools)
+  if (diffTools.length === 0) return null
 
   return (
     <div className="mt-2 flex w-full flex-col gap-2">
-      {/* 文件差异视图 (单文件直接渲染，多文件带标签切换) */}
-      {diffTools.length > 0 ? <MultiFileDiffTabs tools={diffTools} /> : null}
-
-      {/* 终端等其他工具执行输出 */}
-      {otherTools.map((tool) => (
-        <ToolResultView key={tool.id} tool={tool} />
-      ))}
+      {/* 仅呈现带有文件代码变更的多文件差异标签切换视图 */}
+      <MultiFileDiffTabs tools={diffTools} />
     </div>
   )
 }

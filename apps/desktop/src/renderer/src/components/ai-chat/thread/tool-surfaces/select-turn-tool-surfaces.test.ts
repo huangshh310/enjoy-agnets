@@ -43,7 +43,7 @@ test("latestTodoList 用最后一次 todo_write，流式 args 也能画", () => 
   assert.equal(list?.tasks[1]?.status, "in_progress")
 })
 
-test("toolResultSurfaces 只收有 diff 或终端输出的完成工具", () => {
+test("toolResultSurfaces 只收有 diff 的文件变更工具，终端 bash 回显保留在思考链内部", () => {
   const surfaces = toolResultSurfaces([
     tool({ id: "read", name: "read_file", result: { path: "a.ts", content: "export {}" } }),
     tool({
@@ -69,7 +69,7 @@ test("toolResultSurfaces 只收有 diff 或终端输出的完成工具", () => {
   ])
   assert.deepEqual(
     surfaces.map((item) => item.id),
-    ["edit", "run"]
+    ["edit"]
   )
 })
 

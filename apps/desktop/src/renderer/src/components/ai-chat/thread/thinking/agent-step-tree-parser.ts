@@ -107,7 +107,27 @@ export function parseAgentStepNodes(
     const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
     const errorText = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
 
-    if (kind === "search" || tool.name.toLowerCase().includes("search")) {
+    const isBashTool = tool.name === "bash" || tool.name === "command" || tool.name === "terminal"
+    const isSearchTool = kind === "search" || tool.name.toLowerCase().includes("search")
+    const isReadTool = tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")
+    const isEditTool = tool.name.includes("write") || tool.name.includes("edit") || tool.name.includes("patch")
+
+    if (isBashTool) {
+      // 终端/Shell 命令执行：原位嵌入思考链
+      const cmd = fullCommand || summarizeToolArgs(tool) || ""
+      const displayTitle = cmd ? (cmd.length > 70 ? `$ ${cmd.slice(0, 68)}...` : `$ ${cmd}`) : "bash"
+      nodes.push({
+        id: tool.id,
+        kind: "command",
+        title: displayTitle,
+        command: fullCommand || cmd,
+        output,
+        exitCode,
+        errorText,
+        domainPills: domains.length > 0 ? domains : undefined,
+        status: exitCode !== undefined && exitCode !== 0 ? "error" : status
+      })
+    } else if (isSearchTool) {
       const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
       const displayTitle = query.length > 50 ? t("chat.searchingQueryMore", { query: query.slice(0, 50) }) : t("chat.searchingQuery", { query })
       nodes.push({
@@ -121,57 +141,52 @@ export function parseAgentStepNodes(
         domainPills: domains.length > 0 ? domains : undefined,
         status
       })
-    } else if (kind === "coding" || tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")) {
-      const verb = tool.name.toLowerCase()
-      const isRead = verb.includes("read") || verb.includes("list") || verb.includes("fetch") || verb.includes("browse")
+    } else if (isReadTool) {
       const exploredPages = extractFilePaths(args, result, t)
+      const path = String(args.path || args.file || args.url || "")
+      const leafName = path.split(/[\\/]/).pop() || path
+      nodes.push({
+        id: tool.id,
+        kind: "reading",
+        title: path ? t("chat.readingName", { name: leafName }) : t("chat.readingResources"),
+        command: fullCommand,
+        output,
+        exitCode,
+        errorText,
+        exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
+        exploredPages: exploredPages.length > 0 ? exploredPages : undefined,
+        domainPills: domains.length > 0 ? domains : undefined,
+        status
+      })
+    } else if (isEditTool) {
+      const path = String(args.path || args.file || "")
+      const parts = path.split(/[\\/]/)
+      const fileName = parts.pop() || path
+      const fileDir = parts.length > 0 ? parts.join("/") + "/" : ""
+      const isWrite = tool.name.includes("write")
+      const actionVerb = isWrite ? t("chat.verbWrite") : t("chat.verbEdit")
       const additions = typeof result.additions === "number" ? result.additions : undefined
       const deletions = typeof result.deletions === "number" ? result.deletions : undefined
 
-      if (isRead) {
-        const path = String(args.path || args.file || args.url || "")
-        const leafName = path.split(/[\\/]/).pop() || path
-        nodes.push({
-          id: tool.id,
-          kind: "reading",
-          title: path ? t("chat.readingName", { name: leafName }) : t("chat.readingResources"),
-          command: fullCommand,
-          output,
-          exitCode,
-          errorText,
-          exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
-          exploredPages: exploredPages.length > 0 ? exploredPages : undefined,
-          domainPills: domains.length > 0 ? domains : undefined,
-          status
-        })
-      } else {
-        const path = String(args.path || args.file || "")
-        const parts = path.split(/[\\/]/)
-        const fileName = parts.pop() || path
-        const fileDir = parts.length > 0 ? parts.join("/") + "/" : ""
-        const isWrite = tool.name.includes("write")
-        const actionVerb = isWrite ? t("chat.verbWrite") : t("chat.verbEdit")
-
-        nodes.push({
-          id: tool.id,
-          kind: "editing",
-          title: `${actionVerb} ${fileName}`,
-          filePath: path,
-          fileName,
-          fileDir,
-          actionVerb,
-          detail: undefined,
-          command: fullCommand,
-          output,
-          exitCode,
-          errorText,
-          additions,
-          deletions,
-          status
-        })
-      }
+      nodes.push({
+        id: tool.id,
+        kind: "editing",
+        title: `${actionVerb} ${fileName}`,
+        filePath: path,
+        fileName,
+        fileDir,
+        actionVerb,
+        detail: undefined,
+        command: fullCommand,
+        output,
+        exitCode,
+        errorText,
+        additions,
+        deletions,
+        status
+      })
     } else {
-      // 终端/命令/其它工具（自动从命令中提取域名，如 curl wttr.in）
+      // 其余工具调用
       const cmd = fullCommand || summarizeToolArgs(tool) || ""
       nodes.push({
         id: tool.id,

@@ -70,3 +70,26 @@ test("少于 3 个连续编辑保持独立节点不合并", () => {
   assert.equal(nodes[0].isBatch, undefined)
   assert.equal(nodes[1].isBatch, undefined)
 })
+
+test("bash 终端命令精准归位为 command 节点且不被批量编辑合并", () => {
+  const tools: ThreadToolCall[] = [
+    createTool("t1", "bash", { command: "curl -fsSL https://wttr.in/Shanghai" }, { exitCode: 2, stderr: "curl: option unknown" }),
+    createTool("t2", "write_file", { path: "weather.json" }, { additions: 10 }),
+    createTool("t3", "bash", { command: "python3 --version" }, { exitCode: 0, stdout: "Python 3.11" })
+  ]
+
+  const nodes = parseAgentStepNodes("", tools, mockT)
+  assert.equal(nodes.length, 3)
+  assert.equal(nodes[0].kind, "command")
+  assert.equal(nodes[0].title, "$ curl -fsSL https://wttr.in/Shanghai")
+  assert.equal(nodes[0].exitCode, 2)
+  assert.equal(nodes[0].status, "error")
+
+  assert.equal(nodes[1].kind, "editing")
+  assert.equal(nodes[1].fileName, "weather.json")
+
+  assert.equal(nodes[2].kind, "command")
+  assert.equal(nodes[2].title, "$ python3 --version")
+  assert.equal(nodes[2].exitCode, 0)
+  assert.equal(nodes[2].status, "completed")
+})

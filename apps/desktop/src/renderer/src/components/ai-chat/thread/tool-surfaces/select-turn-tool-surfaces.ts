@@ -26,8 +26,7 @@ export function latestTodoList(tools: ThreadToolCall[]): TurnTodoList | null {
   }
   return null
 }
-
-/** edit/write/git_diff 的 unified diff，以及 bash 的 stdout/stderr。 */
+/** edit/write/git_diff 的 unified diff。终端命令回显保留在思考链原位展示。 */
 export function toolResultSurfaces(tools: ThreadToolCall[]): ThreadToolCall[] {
   return tools.filter(isRichToolResult)
 }
@@ -51,8 +50,7 @@ function isRichToolResult(tool: ThreadToolCall): boolean {
   if (isTodoWriteName(tool.name)) return false
   if (tool.state !== "output-available") return false
   const result = asRecord(tool.result)
-  if (readString(result, "diff").trim()) return true
-  return Boolean(readString(result, "stdout").trim() || readString(result, "stderr").trim())
+  return Boolean(readString(result, "diff").trim())
 }
 
 function isTodoWriteName(name: string): boolean {
