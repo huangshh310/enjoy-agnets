@@ -10,7 +10,13 @@ import { asRecord, readString } from "@renderer/lib/record"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
 
-export function ToolResultView({ tool }: { tool: ThreadToolCall }) {
+export function ToolResultView({
+  tool,
+  embedded = false
+}: {
+  tool: ThreadToolCall
+  embedded?: boolean
+}) {
   if (tool.errorText) {
     return (
       <p className="px-1 py-2 text-caption-1-medium text-text-error-primary">{tool.errorText}</p>
@@ -20,7 +26,13 @@ export function ToolResultView({ tool }: { tool: ThreadToolCall }) {
   const result = asRecord(tool.result)
   const diffText = readString(result, "diff")
   if (diffText.trim()) {
-    return <FileDiff model={parseUnifiedDiff(diffText, readString(result, "path") || tool.name)} compact />
+    return (
+      <FileDiff
+        model={parseUnifiedDiff(diffText, readString(result, "path") || tool.name)}
+        compact
+        embedded={embedded}
+      />
+    )
   }
 
   if (typeof result.stdout === "string" || typeof result.stderr === "string") {

@@ -10,15 +10,25 @@ import { useT } from "@renderer/i18n"
 
 export function FileDiff({
   model,
-  compact = false
+  compact = false,
+  embedded = false,
+  className
 }: {
   model: FileDiffModel
   compact?: boolean
+  embedded?: boolean
+  className?: string
 }) {
   const t = useT()
   if (model.hunks.length === 0) {
     return (
-      <div className="rounded-xl border border-separator-border/70 bg-background-primary-default p-4 text-center text-caption-1-medium text-text-tertiary font-mono">
+      <div
+        className={cx(
+          "p-4 text-center text-caption-1-medium text-text-tertiary font-mono",
+          !embedded && "rounded-xl border border-separator-border/70 bg-background-primary-default",
+          className
+        )}
+      >
         {t("chat.noLineChanges")}
       </div>
     )
@@ -27,8 +37,10 @@ export function FileDiff({
   return (
     <div
       className={cx(
-        "overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default font-mono shadow-2xs",
-        compact ? "max-h-72" : "min-h-0 flex-1"
+        "overflow-hidden font-mono",
+        compact ? "max-h-72" : "min-h-0 flex-1",
+        !embedded && "rounded-xl border border-separator-border/80 bg-background-primary-default shadow-2xs",
+        className
       )}
     >
       {/* 头部：代码图标 + 文件路径 + 增减行统计 */}

@@ -107,7 +107,7 @@ export function parseAgentStepNodes(
     const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
     const errorText = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
 
-    const isBashTool = tool.name === "bash" || tool.name === "command" || tool.name === "terminal"
+    const isBashTool = tool.name === "bash" || tool.name === "command" || tool.name === "terminal" || tool.name === "code_mode"
     const isSearchTool = kind === "search" || tool.name.toLowerCase().includes("search")
     const isReadTool = tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")
     const isEditTool = tool.name.includes("write") || tool.name.includes("edit") || tool.name.includes("patch")

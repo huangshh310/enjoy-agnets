@@ -91,7 +91,7 @@ export function AgentStepTree({ nodes, className }: AgentStepTreeProps) {
 }
 /** 批量文件修改聚合行：支持一键展开折叠多文件树形分支 */
 function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(() => node.status === "running")
   const items = node.batchItems ?? []
 
   return (

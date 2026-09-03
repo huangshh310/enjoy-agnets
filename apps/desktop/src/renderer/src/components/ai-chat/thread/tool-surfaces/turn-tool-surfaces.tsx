@@ -136,9 +136,7 @@ function MultiFileDiffTabs({ tools }: { tools: ThreadToolCall[] }) {
 
       {/* 当前选中文件的 Diff 详情 */}
       {activeTool ? (
-        <div className="p-2.5">
-          <ToolResultView tool={activeTool} />
-        </div>
+        <ToolResultView tool={activeTool} embedded={tools.length > 1} />
       ) : null}
     </div>
   )

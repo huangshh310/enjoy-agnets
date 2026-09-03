@@ -4,7 +4,7 @@
  */
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   RiArrowDownSLine,
   RiArrowUpSLine,
@@ -56,7 +56,19 @@ export function TaskList({
     defaultCollapsed !== undefined ? defaultCollapsed : allDone
   )
 
-  // 当前活跃项（折叠单行展示时使用）
+  const previousDone = useRef(allDone)
+  useEffect(() => {
+    // 当任务从未全部完成变为全完成时，自动平滑收缩
+    if (!previousDone.current && allDone) {
+      setCollapsed(true)
+    }
+    // 当有新未决任务进入时，自动展开
+    if (previousDone.current && !allDone) {
+      setCollapsed(false)
+    }
+    previousDone.current = allDone
+  }, [allDone])
+
   const activeTask =
     rows.find((task) => task.status === "in_progress") ??
     (allDone ? rows[rows.length - 1] : rows.find((task) => task.status === "pending") ?? rows[0])
