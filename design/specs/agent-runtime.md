@@ -19,11 +19,11 @@
 | `list_dir` | 否 | |
 | `glob` | 否 | 最多 400 条 |
 | `grep` | 否 | 最多 200 条 |
+| `todo_write` | 否 | 整表替换对话内 Todo List，不写盘 |
 | `edit_file` | 是 | 工作区写 + diff |
 | `write_file` | 是 | |
 | `bash` | 是 | cwd 锁工作区；默认禁网；超时；输出截断 |
 | `code_mode` | 是 | 写脚本再执行，走写盘 + bash 审批 |
-| `delegate` | 写盘时是 | plan/ask 只读；agent/debug 可写，审批与主循环同一条 `decideApproval` |
 
 工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。
 
@@ -52,7 +52,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 - 建 agent / 流：`packages/agent-core/src/agent.ts`
 - 子 Agent 审批：`packages/agent-core/src/agents/subagent-approval.ts`、`subagent-loop.ts`
-- 工具：`packages/agent-core/src/tools/index.ts`
+- 工具：`packages/agent-core/src/tools/index.ts`、`todo-write.ts`
 - 审批：`packages/agent-core/src/tool-approval.ts`
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`

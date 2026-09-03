@@ -92,6 +92,8 @@ export function parseAgentStepNodes(
 
   // 2. 将 tools 依次解析为步骤节点
   for (const tool of tools) {
+    if (tool.name === "todo_write" || tool.name === "todo" || tool.name === "update_todos") continue
+
     const kind = toolKind(tool.name)
     const args = asRecord(tool.args)
     const result = asRecord(tool.result)

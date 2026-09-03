@@ -65,7 +65,8 @@ export const GENERATIVE_COMPONENT_IDS = [
   "table",
   "source-list",
   "approval",
-  "asset-preview"
+  "asset-preview",
+  "todo-list"
 ] as const
 export type GenerativeComponentId = (typeof GENERATIVE_COMPONENT_IDS)[number]
 

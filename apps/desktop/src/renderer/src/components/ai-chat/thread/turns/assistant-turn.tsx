@@ -1,5 +1,5 @@
 /**
- * 助手一轮回复：有推理 / 工具才画 Thinking；生图 / 生视频都走 Image Generation 交互（视频 16:9）。
+ * 助手一轮回复：Thinking 树；折叠外的 Todo / File Diff / Tool Result；生图走 Image Generation。
  */
 import { ImageGeneration } from "@/components/ai-elements/image-generation"
 import { VideoGeneration } from "./video-generating"
@@ -13,6 +13,8 @@ import { AssistantActions } from "./assistant-actions"
 import { MarkdownResponse } from "../markdown-response"
 import { ThinkingTrace } from "../thinking/thinking-trace"
 import { TurnExtras } from "./turn-extras"
+import { TurnToolSurfaces } from "../tool-surfaces/turn-tool-surfaces"
+import { hasTurnToolSurfaces } from "../tool-surfaces/select-turn-tool-surfaces"
 
 export function AssistantTurn({ message }: { message: ThreadMessage }) {
   const prompt = usePrecedingUserPrompt(message.id)
@@ -29,7 +31,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
           thoughtSeconds={message.thoughtSeconds}
         />
       ) : null}
-
+      {surface.hasToolSurfaces ? <TurnToolSurfaces tools={surface.tools} /> : null}
       {surface.showGenerating ? (
         <MessageContent>
           {surface.turnKind === "video" ? (
@@ -71,6 +73,7 @@ function assistantSurface(message: ThreadMessage) {
       streaming: Boolean(message.streaming),
       mediaSurface: turnKind !== "agent"
     }),
+    hasToolSurfaces: hasTurnToolSurfaces(tools),
     hasBody: Boolean(message.content.trim()) || Boolean(message.attachment) || hasExtras,
     turnKind,
     showGenerating:

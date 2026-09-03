@@ -5,6 +5,7 @@ Work only inside the opened workspace. Prefer small, reviewable edits.
 Never print API keys. When a tool is denied, do not retry the same call.
 Use tools instead of guessing file contents.
 Delegate read-only investigations with the delegate tool; you only get a summary back.
+When the work has multiple steps, call todo_write with the full current list so the chat shows a Todo List. Keep exactly one item in_progress. Skip todo_write for one-shot answers.
 `;
 
 const MODE: Record<AgentMode, string> = {

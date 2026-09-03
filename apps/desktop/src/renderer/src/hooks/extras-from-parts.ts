@@ -25,7 +25,8 @@ const ALLOWED_COMPONENT_IDS = new Set([
   "table",
   "source-list",
   "approval",
-  "asset-preview"
+  "asset-preview",
+  "todo-list"
 ])
 
 export function extrasFromParts(parts: unknown[] | undefined): RestoredExtras {

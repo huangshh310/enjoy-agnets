@@ -1,0 +1,101 @@
+/**
+ * 助手轮工具表面：从本轮 tools 抽出 Todo List 与可画的 File Diff / Tool Result。
+ * 不把 read_file 整文件 JSON 倒进对话框。
+ */
+import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { asRecord, readString } from "../../../../lib/record.ts"
+
+export type TurnTodoItem = {
+  id?: string
+  title: string
+  status: "pending" | "in_progress" | "completed"
+}
+
+export type TurnTodoList = {
+  title?: string
+  tasks: TurnTodoItem[]
+}
+
+/** 最后一次 todo_write 的完整任务表；流式入参也可画。 */
+export function latestTodoList(tools: ThreadToolCall[]): TurnTodoList | null {
+  for (let index = tools.length - 1; index >= 0; index--) {
+    const tool = tools[index]
+    if (!tool || !isTodoWriteName(tool.name)) continue
+    const parsed = todosFromTool(tool)
+    if (parsed.tasks.length > 0) return parsed
+  }
+  return null
+}
+
+/** edit/write/git_diff 的 unified diff，以及 bash 的 stdout/stderr。 */
+export function toolResultSurfaces(tools: ThreadToolCall[]): ThreadToolCall[] {
+  return tools.filter(isRichToolResult)
+}
+
+export function hasTurnToolSurfaces(tools: ThreadToolCall[]): boolean {
+  return toolResultSurfaces(tools).length > 0
+}
+
+/** 从后往前找会话里最后一份非空 Todo List。 */
+export function latestSessionTodoList(
+  messages: Array<{ tools?: ThreadToolCall[] }>
+): TurnTodoList | null {
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const list = latestTodoList(messages[index]?.tools ?? [])
+    if (list) return list
+  }
+  return null
+}
+
+function isRichToolResult(tool: ThreadToolCall): boolean {
+  if (isTodoWriteName(tool.name)) return false
+  if (tool.state !== "output-available") return false
+  const result = asRecord(tool.result)
+  if (readString(result, "diff").trim()) return true
+  return Boolean(readString(result, "stdout").trim() || readString(result, "stderr").trim())
+}
+
+function isTodoWriteName(name: string): boolean {
+  const normalized = name.toLowerCase()
+  return normalized === "todo_write" || normalized === "todo" || normalized === "update_todos"
+}
+
+function todosFromTool(tool: ThreadToolCall): TurnTodoList {
+  const result = asRecord(tool.result)
+  const args = asRecord(tool.args)
+  const raw = Array.isArray(result.todos)
+    ? result.todos
+    : Array.isArray(args.todos)
+      ? args.todos
+      : []
+  const title = readString(result, "title") || readString(args, "title")
+  const tasks: TurnTodoItem[] = []
+  for (const item of raw) {
+    const task = asTodoItem(item)
+    if (task) tasks.push(task)
+  }
+  return title ? { title, tasks } : { tasks }
+}
+
+function asTodoItem(value: unknown): TurnTodoItem | null {
+  if (typeof value === "string") {
+    const title = value.trim()
+    return title ? { title, status: "pending" } : null
+  }
+  const record = asRecord(value)
+  const title = readString(record, "title") || readString(record, "content")
+  if (!title.trim()) return null
+  return {
+    id: readString(record, "id") || undefined,
+    title: title.trim(),
+    status: todoStatusOf(readString(record, "status"))
+  }
+}
+
+function todoStatusOf(value: string): TurnTodoItem["status"] {
+  if (value === "completed" || value === "done") return "completed"
+  if (value === "in_progress" || value === "in-progress" || value === "running") {
+    return "in_progress"
+  }
+  return "pending"
+}

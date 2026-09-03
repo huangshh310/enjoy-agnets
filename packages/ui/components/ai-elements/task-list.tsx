@@ -1,9 +1,17 @@
 /**
- * AI Task List / To-do List 组件：
- * 采用 Cursor 风格的 Agent 任务状态跟踪器 (参考 https://www.aicss.dev/components/task-list)。
- * 具备进度饼图头部、数字翻滚动画、正在进行项的动态发光扫光 (todo-shine) 与已完成划线。
+ * Agent Todo List：Manus 风格的输入框一体化层叠任务舱 (Stacked Task Dock)。
+ * 严丝合缝依附在输入框顶部，支持折叠态单行活跃步骤摘要与展开态高密度步骤清单。
  */
-import { useEffect, useRef, useState } from "react"
+"use client"
+
+import { useState } from "react"
+import {
+  RiArrowDownSLine,
+  RiArrowUpSLine,
+  RiCheckboxCircleFill,
+  RiLoader4Line,
+  RiTimeLine
+} from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { uiT, useUiLocale } from "@/i18n/ui-locale"
 
@@ -19,277 +27,230 @@ export interface TaskListProps {
   currentIndex?: number
   defaultCollapsed?: boolean
   className?: string
+  variant?: "card" | "dock"
 }
 
-// 勾选完成图标
-function CheckIcon({ active }: { active?: boolean }) {
-  return (
-    <svg
-      className={cx(
-        "size-4 shrink-0 transition-opacity duration-300",
-        active ? "opacity-100 text-emerald-500" : "opacity-0"
-      )}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-  )
-}
+type TaskStatus = NonNullable<TaskItem["status"]>
 
-// 进行中箭头指示
-function ArrowIcon({ active }: { active?: boolean }) {
-  return (
-    <svg
-      className={cx(
-        "size-4 shrink-0 transition-opacity duration-300",
-        active ? "opacity-100 text-accent-500" : "opacity-0"
-      )}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m12.75 15 3-3m0 0-3-3m3 3h-7.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-  )
-}
-
-// 待处理虚线圆圈
-function DashedIcon({ active }: { active?: boolean }) {
-  return (
-    <svg
-      className={cx(
-        "size-4 shrink-0 transition-opacity duration-300 text-text-tertiary",
-        active ? "opacity-100" : "opacity-0"
-      )}
-      viewBox="0 0 24 24"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeDasharray="2.5 3.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-// 数字翻滚动画插槽
-function RollDigit({ char }: { char: string }) {
-  const prev = useRef(char)
-  const [roll, setRoll] = useState<{ from: string; to: string } | null>(null)
-  const [up, setUp] = useState(false)
-
-  useEffect(() => {
-    if (char === prev.current) return
-    const from = prev.current
-    prev.current = char
-    setRoll({ from, to: char })
-    setUp(false)
-    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setUp(true)))
-    const done = setTimeout(() => setRoll(null), 380)
-    return () => {
-      cancelAnimationFrame(raf)
-      clearTimeout(done)
-    }
-  }, [char])
-
-  if (!roll) return <span className="inline-block h-[1em] leading-[1em]">{char}</span>
-
-  return (
-    <span className="inline-block overflow-hidden h-[1em] leading-[1em]">
-      <span
-        className={cx(
-          "flex flex-col transition-transform duration-350 ease-out",
-          up && "-translate-y-[1em]"
-        )}
-      >
-        <span className="h-[1em] leading-[1em]">{roll.from}</span>
-        <span className="h-[1em] leading-[1em]">{roll.to}</span>
-      </span>
-    </span>
-  )
+type NormalizedTask = {
+  title: string
+  status: TaskStatus
 }
 
 export function TaskList({
   title,
   tasks,
   currentIndex,
-  defaultCollapsed = false,
-  className
+  defaultCollapsed,
+  className,
+  variant = "dock"
 }: TaskListProps) {
   useUiLocale()
-  const heading = title ?? uiT("待办", "To-dos")
-  const [collapsed, setCollapsed] = useState(defaultCollapsed)
-
-  const normalizedTasks: Array<{ title: string; status: "pending" | "in_progress" | "completed" }> =
-    tasks.map((t, i) => {
-      if (typeof t === "string") {
-        if (currentIndex !== undefined) {
-          if (i < currentIndex) return { title: t, status: "completed" }
-          if (i === currentIndex) return { title: t, status: "in_progress" }
-          return { title: t, status: "pending" }
-        }
-        return { title: t, status: "pending" }
-      }
-      return {
-        title: t.title,
-        status: t.status ?? (currentIndex !== undefined ? (i < currentIndex ? "completed" : i === currentIndex ? "in_progress" : "pending") : "pending")
-      }
-    })
-
-  const total = normalizedTasks.length
-  const completedCount = normalizedTasks.filter((t) => t.status === "completed").length
+  const rows = normalizeTasks(tasks, currentIndex)
+  const total = rows.length
+  const completedCount = rows.filter((task) => task.status === "completed").length
   const allDone = total > 0 && completedCount === total
-  const hasInProgress = normalizedTasks.some((t) => t.status === "in_progress")
-  const pct = total > 0 ? Math.round((completedCount / total) * 100) : 0
 
+  // 默认折叠策略：若已全完成则默认优雅紧凑折叠；若有进行中任务则展开
+  const [collapsed, setCollapsed] = useState(() =>
+    defaultCollapsed !== undefined ? defaultCollapsed : allDone
+  )
+
+  // 当前活跃项（折叠单行展示时使用）
+  const activeTask =
+    rows.find((task) => task.status === "in_progress") ??
+    (allDone ? rows[rows.length - 1] : rows.find((task) => task.status === "pending") ?? rows[0])
+
+  const activeStatusLabel = allDone
+    ? uiT("全部完成", "Completed")
+    : activeTask?.status === "in_progress"
+      ? uiT("正在执行...", "Running...")
+      : uiT("等待执行", "Pending")
+
+  // --------------------------------------------------------------------------
+  // Variant A: Manus 一体化层叠控制舱模式 (Dock Variant - Attached to Composer)
+  // --------------------------------------------------------------------------
+  if (variant === "dock") {
+    return (
+      <div
+        className={cx(
+          "w-full overflow-hidden rounded-t-[22px] rounded-b-none border-t border-x border-border-button-default/80 bg-background-secondary-default/95 dark:bg-background-tertiary-default/95 shadow-2xs backdrop-blur-md transition-all duration-300 ease-out",
+          collapsed ? "pb-3.5" : "pb-4",
+          className
+        )}
+      >
+        {collapsed ? (
+          /* Manus 折叠态：单行活跃任务预览栏 (Image #2) */
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            aria-expanded={false}
+            className="group flex h-10 w-full cursor-pointer select-none items-center justify-between px-4 text-left transition-colors hover:bg-background-secondary-hover/40"
+          >
+            {/* 左侧：当前步骤图标 + 当前任务名称 + 辅助状态文字 */}
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <DockStatusIcon status={allDone ? "completed" : activeTask?.status ?? "pending"} />
+              <span className="truncate text-[12.5px] font-medium text-text-primary">
+                {activeTask?.title || title || uiT("任务进行中", "Task in progress")}
+              </span>
+              <span className="shrink-0 text-[11.5px] text-text-tertiary">
+                | {activeStatusLabel}
+              </span>
+            </div>
+
+            {/* 右侧：进度计数 (如 1/4) + 下展开箭头 */}
+            <div className="flex shrink-0 items-center gap-1.5 pl-2 font-mono text-[11.5px] text-text-tertiary">
+              <span className="tabular-nums">
+                {completedCount}/{total}
+              </span>
+              <RiArrowDownSLine className="size-4 text-foreground-icon-secondary transition-transform group-hover:text-text-primary" />
+            </div>
+          </button>
+        ) : (
+          /* Manus 展开态：完整的任务进度明细面板 (Image #3) */
+          <div className="flex flex-col px-4 pt-3 text-left">
+            {/* 顶栏：任务进度标题 + 进度分数 + 收起箭头 */}
+            <div
+              onClick={() => setCollapsed(true)}
+              className="flex cursor-pointer select-none items-center justify-between py-1 transition-colors hover:opacity-80"
+            >
+              <span className="text-[12px] font-semibold text-text-tertiary">
+                {title ?? uiT("任务进度", "Task progress")}
+              </span>
+              <div className="flex items-center gap-1 font-mono text-[11.5px] text-text-tertiary">
+                <span className="tabular-nums">
+                  {completedCount}/{total}
+                </span>
+                <RiArrowUpSLine className="size-4 text-foreground-icon-secondary" />
+              </div>
+            </div>
+
+            {/* 任务列表体：高密度优雅罗列 */}
+            <ul className="mt-2 flex max-h-52 flex-col gap-2 overflow-y-auto pr-1">
+              {rows.map((task, index) => {
+                const isActive = task.status === "in_progress"
+                const isCompleted = task.status === "completed"
+
+                return (
+                  <li
+                    key={`${task.title}-${index}`}
+                    className="flex items-center gap-2.5 text-[12.5px] leading-snug"
+                  >
+                    <DockStatusIcon status={task.status} />
+                    <span
+                      className={cx(
+                        "min-w-0 flex-1 truncate",
+                        isCompleted && "text-text-tertiary line-through select-text",
+                        isActive && "font-medium text-text-primary",
+                        !isCompleted && !isActive && "text-text-secondary"
+                      )}
+                    >
+                      {task.title}
+                    </span>
+                    {isActive ? (
+                      <span className="shrink-0 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                        | {uiT("运行中...", "Running...")}
+                      </span>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // --------------------------------------------------------------------------
+  // Variant B: 常规卡片模式 (Card Variant - In Message Thread)
+  // --------------------------------------------------------------------------
   return (
     <div
       className={cx(
-        "w-full rounded-2xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs font-sans text-[13px] text-text-primary",
+        "w-full max-w-[440px] overflow-hidden rounded-2xl border border-separator-border/80 bg-background-secondary-default/95 dark:bg-background-tertiary-default/95 shadow-dropdown backdrop-blur-md",
         className
       )}
     >
-      {/* 头部标题与进度饼图 */}
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="flex w-full items-center gap-2 text-left cursor-pointer select-none group"
+        className="flex w-full items-center justify-between border-b border-separator-border/50 px-3.5 py-2.5 text-left select-none hover:bg-background-secondary-hover/40 transition-colors"
       >
-        {/* 左侧动态图标 / 饼图 */}
-        <div className="relative size-4 shrink-0 flex items-center justify-center text-text-tertiary">
-          {allDone ? (
-            <svg
-              className="size-4 text-emerald-500 fill-emerald-500"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
-              />
-            </svg>
-          ) : hasInProgress ? (
-            <svg className="size-4 -rotate-90" viewBox="0 0 24 24">
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className="text-separator-border/60"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-                fill="none"
-                stroke="#3b82f6"
-                strokeWidth="2.5"
-                strokeDasharray={`${(pct / 100) * 56.5} 56.5`}
-                strokeLinecap="round"
-                className="transition-all duration-300"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="size-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M13 5h8M13 12h8M13 19h8M3 17l2 2 4-4M3 7l2 2 4-4" />
-            </svg>
-          )}
-        </div>
-
-        <span className="font-semibold text-text-primary text-[13px]">{heading}</span>
-
-        {/* 翻滚计数器 */}
-        <div className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">
-          <span className="inline-flex items-baseline">
-            {`${completedCount}/${total}`.split("").map((c, i) => (
-              <RollDigit key={i} char={c} />
-            ))}
+        <span className="truncate text-caption-1-semibold text-text-primary">
+          {title ?? uiT("任务清单", "Tasks")}
+        </span>
+        <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">
+          <span>
+            {completedCount}/{total}
           </span>
-
-          <svg
-            className={cx(
-              "size-3.5 text-text-tertiary transition-transform duration-200",
-              collapsed ? "-rotate-90" : "rotate-0"
-            )}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-          </svg>
+          <RiArrowDownSLine className={cx("size-4 transition-transform", !collapsed && "rotate-180")} />
         </div>
       </button>
 
-      {/* 可折叠任务列表 */}
-      <div
-        className={cx(
-          "grid transition-[grid-template-rows,opacity] duration-250",
-          collapsed ? "grid-rows-[0fr] opacity-0 pointer-events-none" : "grid-rows-[1fr] opacity-100"
-        )}
-      >
-        <div className="overflow-hidden">
-          <ul className="flex flex-col gap-2 pt-3">
-            {normalizedTasks.map((task, i) => {
-              const isDone = task.status === "completed"
-              const isActive = task.status === "in_progress"
-
-              return (
-                <li
-                  key={i}
-                  className="flex items-start gap-2.5 leading-snug"
-                >
-                  {/* 图标状态栈 */}
-                  <div className="relative size-4 shrink-0 mt-0.5">
-                    <DashedIcon active={!isDone && !isActive} />
-                    <ArrowIcon active={isActive} />
-                    <CheckIcon active={isDone} />
-                  </div>
-
-                  {/* 任务文字 (带动态发光扫光动画) */}
-                  <div className="relative flex-1 text-[12.5px] leading-relaxed">
-                    {isActive ? (
-                      <span className="font-medium text-text-primary animate-pulse bg-gradient-to-r from-text-primary via-accent-500 to-text-primary bg-clip-text text-transparent bg-[length:200%_auto]">
-                        {task.title}
-                      </span>
-                    ) : isDone ? (
-                      <span className="text-text-tertiary line-through">{task.title}</span>
-                    ) : (
-                      <span className="text-text-secondary">{task.title}</span>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      </div>
+      {collapsed ? null : (
+        <ul className="flex max-h-48 flex-col gap-1.5 p-2 overflow-y-auto">
+          {rows.map((task, index) => (
+            <li key={`${task.title}-${index}`} className="flex items-center gap-2 text-[12.5px]">
+              <DockStatusIcon status={task.status} />
+              <span
+                className={cx(
+                  "min-w-0 flex-1 truncate",
+                  task.status === "completed" && "text-text-tertiary line-through",
+                  task.status === "in_progress" && "font-medium text-text-primary",
+                  task.status === "pending" && "text-text-secondary"
+                )}
+              >
+                {task.title}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
+}
+
+/**
+ * 状态图标：与 Manus 视觉完全对齐：
+ * - 进行中：黄色/琥珀色旋转环 (Manus 虚线圈质感)
+ * - 待处理：灰色时钟图标 (Manus 待办时钟)
+ * - 已完成：翠绿圆底勾勾
+ */
+function DockStatusIcon({ status }: { status: TaskStatus }) {
+  if (status === "in_progress") {
+    return (
+      <RiLoader4Line className="size-4 shrink-0 animate-spin text-amber-500 dark:text-amber-400" />
+    )
+  }
+  if (status === "completed") {
+    return (
+      <RiCheckboxCircleFill className="size-4 shrink-0 text-emerald-500" />
+    )
+  }
+  return (
+    <RiTimeLine className="size-4 shrink-0 text-text-tertiary/80" />
+  )
+}
+
+function normalizeTasks(
+  tasks: Array<TaskItem | string>,
+  currentIndex?: number
+): NormalizedTask[] {
+  return tasks.map((task, index) => {
+    if (typeof task === "string") {
+      return { title: task, status: statusFromIndex(index, currentIndex) }
+    }
+    return {
+      title: task.title,
+      status: task.status ?? statusFromIndex(index, currentIndex)
+    }
+  })
+}
+
+function statusFromIndex(index: number, currentIndex?: number): TaskStatus {
+  if (currentIndex === undefined) return "pending"
+  if (index < currentIndex) return "completed"
+  if (index === currentIndex) return "in_progress"
+  return "pending"
 }

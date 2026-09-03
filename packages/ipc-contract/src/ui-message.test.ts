@@ -30,5 +30,6 @@ test("safeValidateUIMessages 非法输入返回空", () => {
 
 test("生成式 UI 只允许白名单 componentId", () => {
   assert.equal(isGenerativeComponentId("card"), true)
+  assert.equal(isGenerativeComponentId("todo-list"), true)
   assert.equal(isGenerativeComponentId("DangerousRemote"), false)
 })

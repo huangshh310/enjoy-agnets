@@ -8,11 +8,13 @@ test("从 parts 恢复来源与结构化", () => {
     { type: "file", assetId: "ast_1", mediaType: "image/png", name: "shot.png" },
     { type: "structured", value: { ok: true } },
     { type: "component", componentId: "card", props: { value: { ok: true } } },
+    { type: "component", componentId: "todo-list", props: { tasks: [{ title: "Plan" }] } },
     { type: "component", componentId: "evil-script", props: {} }
   ])
   assert.equal(extras.sources[0]?.path, "a.ts")
   assert.equal(extras.assets[0]?.name, "shot.png")
   assert.deepEqual(extras.structured, { ok: true })
-  assert.equal(extras.components.length, 1)
+  assert.equal(extras.components.length, 2)
   assert.equal(extras.components[0]?.componentId, "card")
+  assert.equal(extras.components[1]?.componentId, "todo-list")
 })

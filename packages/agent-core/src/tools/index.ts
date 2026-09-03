@@ -6,6 +6,7 @@ import { diffTexts, toUnifiedDiff } from "../diff.ts"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
 import { createCodeModeTool } from "./code-mode.ts"
 import { createReadTools } from "./read-tools.ts"
+import { createTodoWriteTool } from "./todo-write.ts"
 
 const MAX_TOOL_CHARS = 80_000;
 
@@ -21,6 +22,7 @@ function truncate(value: string): string {
 export function createCodingTools(host: AgentWorkspaceHost) {
   return {
   ...createReadTools(host),
+  ...createTodoWriteTool(),
   edit_file: tool({
     description: "Replace an exact string in a workspace file. Requires user approval.",
     inputSchema: z.object({
