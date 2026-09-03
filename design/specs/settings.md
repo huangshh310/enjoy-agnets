@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-02
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-03
 
 ## 当前真相
 
@@ -21,7 +21,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/observability` | 本地指标 | `wide` |
 | `#/team/profile` 等 | 团队中心（资料、算力配额、成员管理与权限分配） | `wide` |
 | `#/workspaces` | 文件夹与工作区管理（已挂载项目、路径、分支、快速切换） | `wide` |
-| `#/inbox` | 收件箱消息中心（预置 8 项通知流、未读徽标、清理与跳转） | `wide` |
+| `#/inbox` | 收件箱：`fill` 左右分栏（时间线 + 阅读器），预置 8 项通知流、未读徽标、清理与跳转。禁止营销 Hero、堆叠描边卡片、嵌套圆角列表 | `fill` |
 | `#/company/billing` 等 | 企业中心（账单套餐、发票、合规协议、外部协同工具集成） | `wide` |
 | `#/account/profile` 等 | 个人中心（账号安全状态、在线工作站节点、通知推送偏好） | `wide` |
 
@@ -43,6 +43,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 
 ## 代码入口
 
+- 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（`inbox-page.tsx` 壳，`feed/` 时间线，`lib/` 过滤与分组）
 - 路由：`apps/desktop/src/renderer/src/router.tsx`
 - 分段目录：`apps/desktop/src/renderer/src/components/settings/settings-catalog.ts`
 - 壳：`settings-shell.tsx`、`secondary-page-shell.tsx`
@@ -53,6 +54,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 
 ## 已知坑
 
+- 收件箱不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
 - Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - `mcp` 已落地，不要再写成占位。

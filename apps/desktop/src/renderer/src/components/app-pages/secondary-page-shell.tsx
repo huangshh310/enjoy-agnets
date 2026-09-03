@@ -1,16 +1,10 @@
 import { useMemo, useState, type ComponentType, type ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
-import { RiArrowLeftSLine, RiCloseLine, RiDashboardLine, RiSearchLine } from "@remixicon/react"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from "@/components/ui/breadcrumb"
+import { RiArrowLeftSLine, RiCloseLine, RiSearchLine } from "@remixicon/react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { SecondaryPageMain, type SecondaryContentWidth } from "./secondary-page-main"
 
 type IconComponent = ComponentType<{
   className?: string
@@ -48,7 +42,7 @@ export function SecondaryPageShell({
   selectedId: string
   onSelect: (id: string) => void
   children: ReactNode
-  contentWidth?: "article" | "wide" | "stage"
+  contentWidth?: SecondaryContentWidth
   searchValue?: string
   onSearchChange?: (value: string) => void
   filterNav?: boolean
@@ -175,62 +169,9 @@ export function SecondaryPageShell({
         </ScrollArea>
       </aside>
 
-      <main className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-3xl bg-background-primary-default shadow-card border border-border-button-default/40">
-        <ScrollArea className="h-full">
-          <div
-            className={cx(
-              "w-full",
-              contentWidth === "article" && "mx-auto max-w-[760px] px-8 pt-7 pb-16",
-              contentWidth === "wide" && "mx-auto max-w-5xl px-8 pt-7 pb-16",
-              contentWidth === "stage" && "flex min-h-full flex-col px-8 pt-6 pb-16"
-            )}
-          >
-            {/* Top Breadcrumb Bar */}
-            <div className="mb-6 flex items-center justify-between border-b border-separator-border/60 pb-3.5">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <Link
-                      to="/studio"
-                      className="flex items-center gap-1.5 text-caption-1-medium text-text-secondary hover:text-accent-600 dark:hover:text-accent-400 transition-colors"
-                    >
-                      <div className="flex size-5 items-center justify-center rounded-md bg-accent-500/10 text-accent-500">
-                        <RiDashboardLine className="size-3.5" />
-                      </div>
-                      <span>{t("common.agentStudio")}</span>
-                    </Link>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="text-caption-1-medium font-semibold text-text-primary">
-                      {selectedItemLabel}
-                    </BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-
-              <div className="flex items-center gap-3">
-                <Link
-                  to="/studio"
-                  className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  <RiDashboardLine className="size-3.5" />
-                  <span>{t("common.studioHub")}</span>
-                </Link>
-                <span className="text-border-button-default">|</span>
-                <Link
-                  to="/"
-                  className="inline-flex items-center gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  <span>{t("common.chatStage")}</span>
-                </Link>
-              </div>
-            </div>
-
-            {children}
-          </div>
-        </ScrollArea>
-      </main>
+      <SecondaryPageMain contentWidth={contentWidth} selectedItemLabel={selectedItemLabel}>
+        {children}
+      </SecondaryPageMain>
     </div>
   )
 }

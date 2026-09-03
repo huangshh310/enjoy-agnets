@@ -2,6 +2,7 @@
  * Studio, knowledge, media, MCP, workflows, observability.
  * Customize / automations live in the studio domain.
  */
+import { enInboxPages } from "./pages-inbox.ts"
 import { enKnowledgePages } from "./pages-knowledge.ts"
 import { enMediaPages } from "./pages-media.ts"
 import { enMcpPages } from "./pages-mcp.ts"
@@ -14,5 +15,6 @@ export const enPages = {
   media: enMediaPages,
   mcp: enMcpPages,
   workflows: enWorkflowPages,
-  observability: enObservabilityPages
+  observability: enObservabilityPages,
+  inbox: enInboxPages
 }
