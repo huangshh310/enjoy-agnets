@@ -74,8 +74,8 @@ export function TaskList({
     return (
       <div
         className={cx(
-          "w-full overflow-hidden rounded-t-[22px] rounded-b-none border-t border-x border-border-button-default/80 bg-background-secondary-default/95 dark:bg-background-tertiary-default/95 shadow-2xs backdrop-blur-md transition-all duration-300 ease-out",
-          collapsed ? "pb-3.5" : "pb-4",
+          "w-full overflow-hidden rounded-t-2xl rounded-b-none border-t border-x border-border-button-default/90 bg-background-tertiary-default/80 dark:bg-background-tertiary-default/90 shadow-2xs backdrop-blur-md transition-all duration-300 ease-out",
+          collapsed ? "pb-3" : "pb-4",
           className
         )}
       >
@@ -85,7 +85,7 @@ export function TaskList({
             type="button"
             onClick={() => setCollapsed(false)}
             aria-expanded={false}
-            className="group flex h-10 w-full cursor-pointer select-none items-center justify-between px-4 text-left transition-colors hover:bg-background-secondary-hover/40"
+            className="group flex h-10 w-full cursor-pointer select-none items-center justify-between px-4 text-left transition-colors hover:bg-background-secondary-hover/50 dark:hover:bg-background-secondary-hover/40"
           >
             {/* 左侧：当前步骤图标 + 当前任务名称 + 辅助状态文字 */}
             <div className="flex min-w-0 flex-1 items-center gap-2.5">

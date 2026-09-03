@@ -24,6 +24,17 @@ export interface SubPageItem {
   snippet?: string
 }
 
+export interface BatchFileItem {
+  id: string
+  path: string
+  fileName: string
+  fileDir: string
+  actionVerb?: string
+  additions?: number
+  deletions?: number
+  status: "pending" | "running" | "completed" | "error"
+}
+
 export interface AgentStepNode {
   id: string
   kind: AgentStepKind
@@ -40,4 +51,10 @@ export interface AgentStepNode {
   additions?: number
   deletions?: number
   rawText?: string
+  filePath?: string
+  fileName?: string
+  fileDir?: string
+  actionVerb?: string
+  isBatch?: boolean
+  batchItems?: BatchFileItem[]
 }

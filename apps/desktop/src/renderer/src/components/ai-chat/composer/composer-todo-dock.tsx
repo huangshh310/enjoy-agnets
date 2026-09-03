@@ -17,7 +17,7 @@ export function ComposerTodoDock() {
   )
 
   return (
-    <div className="relative z-0 -mb-2.5 w-full min-w-0 animate-in fade-in-50 duration-200">
+    <div className="relative z-0 -mb-2.5 flex w-full justify-center px-4 animate-in fade-in-50 duration-200">
       <TaskList
         title={todos.title ?? t("chat.todos")}
         tasks={todos.tasks}

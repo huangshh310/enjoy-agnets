@@ -3,10 +3,10 @@
  * 将真实 tools 调用与 reasoning 解析为带域名微标 (Domain Pills) 与子页面清单 (Explored Pages) 的结构化步骤树。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
-import { asRecord } from "@renderer/lib/record"
-import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary"
-import type { AgentStepNode, DomainPill, SubPageItem } from "./agent-step-tree.types"
-import type { TranslateFn } from "@renderer/i18n"
+import { asRecord } from "../../../../lib/record.ts"
+import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary.ts"
+import type { AgentStepNode, DomainPill, SubPageItem } from "./agent-step-tree.types.ts"
+import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 
 /** 提取文本或 JSON 中的所有网址与顶级域名 */
 function extractDomains(text: string): DomainPill[] {
@@ -146,11 +146,21 @@ export function parseAgentStepNodes(
         })
       } else {
         const path = String(args.path || args.file || "")
+        const parts = path.split(/[\\/]/)
+        const fileName = parts.pop() || path
+        const fileDir = parts.length > 0 ? parts.join("/") + "/" : ""
+        const isWrite = tool.name.includes("write")
+        const actionVerb = isWrite ? t("chat.verbWrite") : t("chat.verbEdit")
+
         nodes.push({
           id: tool.id,
           kind: "editing",
-          title: `${formatToolName(tool.name)} ${path}`.trim(),
-          detail: summarizeToolArgs(tool),
+          title: `${actionVerb} ${fileName}`,
+          filePath: path,
+          fileName,
+          fileDir,
+          actionVerb,
+          detail: undefined,
           command: fullCommand,
           output,
           exitCode,
@@ -178,7 +188,64 @@ export function parseAgentStepNodes(
     }
   }
 
-  return nodes
+  return groupConsecutiveEdits(nodes, t)
+}
+
+/** 连续 3 个或以上的文件编辑合并为单个高阶树节点，避免流水账刷屏 */
+function groupConsecutiveEdits(nodes: AgentStepNode[], t: TranslateFn): AgentStepNode[] {
+  const result: AgentStepNode[] = []
+  let i = 0
+
+  while (i < nodes.length) {
+    const node = nodes[i]
+    if (node.kind !== "editing") {
+      result.push(node)
+      i++
+      continue
+    }
+
+    let j = i
+    while (j < nodes.length && nodes[j].kind === "editing") {
+      j++
+    }
+
+    const editRun = nodes.slice(i, j)
+    if (editRun.length >= 3) {
+      const sumAdditions = editRun.reduce((sum, n) => sum + (n.additions ?? 0), 0)
+      const sumDeletions = editRun.reduce((sum, n) => sum + (n.deletions ?? 0), 0)
+      const anyRunning = editRun.some((n) => n.status === "running")
+      const anyError = editRun.some((n) => n.status === "error")
+      const batchStatus = anyError ? "error" : anyRunning ? "running" : "completed"
+
+      result.push({
+        id: `batch_edit_${editRun[0].id}`,
+        kind: "editing",
+        isBatch: true,
+        title: t("chat.batchFilesModified", { count: editRun.length }),
+        additions: sumAdditions > 0 ? sumAdditions : undefined,
+        deletions: sumDeletions > 0 ? sumDeletions : undefined,
+        status: batchStatus,
+        batchItems: editRun.map((n) => ({
+          id: n.id,
+          path: n.filePath || n.title,
+          fileName: n.fileName || n.title,
+          fileDir: n.fileDir || "",
+          actionVerb: n.actionVerb,
+          additions: n.additions,
+          deletions: n.deletions,
+          status: n.status
+        }))
+      })
+    } else {
+      for (const single of editRun) {
+        result.push(single)
+      }
+    }
+
+    i = j
+  }
+
+  return result
 }
 
 const MAX_THINKING_CHARS = 1200

@@ -14,6 +14,7 @@ import {
   RiCloseLine,
   RiCpuLine,
   RiEditLine,
+  RiFileLine,
   RiGlobalLine,
   RiLoader4Line,
   RiSearchLine,
@@ -74,6 +75,9 @@ export function AgentStepTree({ nodes, className }: AgentStepTreeProps) {
                   rawText={node.rawText}
                   defaultOpen={!hasTools}
                 />
+              ) : node.isBatch && node.batchItems ? (
+                /* 批量文件修改聚合节点 */
+                <BatchEditingGroupRow node={node} />
               ) : (
                 /* 工具或普通执行节点（支持展开完整命令与输出） */
                 <ToolStepNodeRow node={node} />
@@ -85,6 +89,79 @@ export function AgentStepTree({ nodes, className }: AgentStepTreeProps) {
     </div>
   )
 }
+/** 批量文件修改聚合行：支持一键展开折叠多文件树形分支 */
+function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
+  const [open, setOpen] = useState(false)
+  const items = node.batchItems ?? []
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      <div
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 text-caption-1-medium group w-fit cursor-pointer select-none"
+      >
+        <span className="font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
+          {node.title}
+        </span>
+
+        {/* 增减行总计 */}
+        {node.additions != null || node.deletions != null ? (
+          <span className="font-mono text-caption-2-regular tabular-nums">
+            {node.additions != null ? <span className="text-state-success-text">+{node.additions}</span> : null}
+            {node.deletions != null ? <span className="text-text-error-primary">-{node.deletions}</span> : null}
+          </span>
+        ) : null}
+
+        {/* 状态徽标 */}
+        {node.status === "completed" ? (
+          <span className="flex size-3.5 items-center justify-center rounded-full bg-state-success-text/15 text-state-success-text" title="Completed">
+            <RiCheckLine className="size-2.5" />
+          </span>
+        ) : node.status === "running" ? (
+          <RiLoader4Line className="size-3 animate-spin text-accent-500" />
+        ) : null}
+
+        {/* 展开/收起箭头 */}
+        <span className="text-text-tertiary group-hover:text-text-primary transition-colors">
+          {open ? <RiArrowDownSLine className="size-3.5" /> : <RiArrowRightSLine className="size-3.5" />}
+        </span>
+      </div>
+
+      {/* 展开的批量文件树状列表 */}
+      {open ? (
+        <div className="mt-0.5 ml-1 pl-2.5 border-l border-border-button-default/70 flex flex-col gap-1.5 animate-in fade-in-50 duration-150 py-0.5">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => void openChangedFile(item.path)}
+              className="flex items-center gap-2 py-0.5 text-caption-2-medium group/file cursor-pointer font-mono"
+            >
+              <RiFileLine className="size-3 text-text-tertiary group-hover/file:text-accent-500 transition-colors shrink-0" />
+              {item.fileDir ? (
+                <span className="text-text-tertiary truncate max-w-[160px]">
+                  {item.fileDir}
+                </span>
+              ) : null}
+              <span className="font-semibold text-text-primary group-hover/file:text-accent-500 transition-colors">
+                {item.fileName}
+              </span>
+              {item.additions != null || item.deletions != null ? (
+                <span className="tabular-nums ml-auto text-[11px] pr-1">
+                  {item.additions != null ? <span className="text-state-success-text">+{item.additions}</span> : null}
+                  {item.deletions != null ? <span className="text-text-error-primary ml-1">-{item.deletions}</span> : null}
+                </span>
+              ) : null}
+              {item.status === "completed" ? (
+                <RiCheckLine className="size-3 text-state-success-text shrink-0" />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 
 /** 单个工具步骤节点组件（支持展开完整命令与输出回显） */
 function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
@@ -113,9 +190,25 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
           hasDetailContent && "cursor-pointer"
         )}
       >
-        <span className="font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
-          {node.title}
-        </span>
+        {node.kind === "editing" && node.fileName ? (
+          <div className="flex items-center gap-1.5 font-mono text-[12px]">
+            {node.actionVerb ? (
+              <span className="rounded px-1 py-0.2 text-[10.5px] font-semibold bg-background-secondary-default border border-border-button-default/50 text-text-tertiary shrink-0">
+                {node.actionVerb}
+              </span>
+            ) : null}
+            {node.fileDir ? (
+              <span className="text-text-tertiary truncate max-w-[160px]">{node.fileDir}</span>
+            ) : null}
+            <span className="font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
+              {node.fileName}
+            </span>
+          </div>
+        ) : (
+          <span className="font-semibold text-text-primary group-hover:text-accent-500 transition-colors">
+            {node.title}
+          </span>
+        )}
 
         {/* 状态徽标：运行中/完成/错误 */}
         {node.status === "running" ? (
@@ -148,8 +241,8 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
         ) : null}
       </div>
 
-      {/* 未展开时的单行命令概要 (简短) */}
-      {!expanded && node.detail ? (
+      {/* 未展开时的单行命令概要 (简短，非编辑类才展示) */}
+      {!expanded && node.detail && node.kind !== "editing" ? (
         <p className="font-mono text-caption-2-regular text-text-tertiary truncate max-w-xl pl-0.5">
           {node.detail}
         </p>
@@ -267,45 +360,50 @@ function ThinkingNodeBranch({
   }
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
-      {/* 标题栏与展开触发器 */}
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1 text-caption-1-medium text-text-primary hover:text-accent-500 font-semibold cursor-pointer w-fit select-none"
-      >
-        <span>{title}</span>
-        {open ? (
-          <RiArrowDownSLine className="size-3.5 text-text-tertiary" />
-        ) : (
-          <RiArrowRightSLine className="size-3.5 text-text-tertiary" />
-        )}
-      </button>
+    <div className="flex flex-col gap-1 w-full">
+      {/* 标题触发栏：标题 + 字数 + 右侧静默复制按钮 */}
+      <div className="flex items-center justify-between w-full">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className="inline-flex items-center gap-1.5 text-caption-1-medium text-text-primary hover:text-accent-500 font-semibold cursor-pointer select-none group"
+        >
+          <span>{title}</span>
+          <span className="font-mono text-[11px] font-normal text-text-tertiary">
+            ({t("chat.cotChars", { count: rawText.length })})
+          </span>
+          {open ? (
+            <RiArrowDownSLine className="size-3.5 text-text-tertiary group-hover:text-accent-500 transition-colors" />
+          ) : (
+            <RiArrowRightSLine className="size-3.5 text-text-tertiary group-hover:text-accent-500 transition-colors" />
+          )}
+        </button>
 
-      {/* 展开的思考正文卡片 */}
+        {open ? (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-1 text-[11px] text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+          >
+            {copied ? (
+              <>
+                <RiCheckLine className="size-3 text-emerald-500" />
+                <span className="text-emerald-500">{t("common.copied")}</span>
+              </>
+            ) : (
+              <>
+                <RiClipboardLine className="size-3" />
+                <span>{t("chat.copyThinking")}</span>
+              </>
+            )}
+          </button>
+        ) : null}
+      </div>
+
+      {/* 展开的思考正文：对标 DeepSeek / Cursor 的去卡片化左侧导轨流体排版 */}
       {open ? (
-        <div className="flex flex-col gap-1.5 rounded-xl border border-border-button-default/70 bg-background-secondary-default/50 p-3.5 shadow-2xs animate-in fade-in-50 duration-150">
-          <div className="flex items-center justify-between border-b border-border-button-default/50 pb-1.5 text-caption-2-medium text-text-tertiary">
-            <span className="font-medium text-text-secondary">{t("chat.cotTitle")}</span>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex items-center gap-1 hover:text-text-primary transition-colors cursor-pointer"
-            >
-              {copied ? (
-                <>
-                  <RiCheckLine className="size-3 text-emerald-500" />
-                  <span className="text-emerald-500">{t("common.copied")}</span>
-                </>
-              ) : (
-                <>
-                  <RiClipboardLine className="size-3" />
-                  <span>{t("chat.copyThinking")}</span>
-                </>
-              )}
-            </button>
-          </div>
-          <div className="whitespace-pre-wrap font-sans text-caption-1-regular text-text-secondary leading-relaxed select-text pt-0.5">
+        <div className="my-1 ml-0.5 pl-3 border-l-2 border-border-button-default/80 animate-in fade-in-50 duration-150">
+          <div className="max-h-80 overflow-y-auto whitespace-pre-wrap font-sans text-caption-1-regular text-text-secondary/85 leading-relaxed select-text pr-2 scrollbar-thin">
             {rawText}
           </div>
         </div>

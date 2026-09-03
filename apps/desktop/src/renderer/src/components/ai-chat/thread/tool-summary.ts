@@ -2,7 +2,7 @@
  * 工具调用展示用的名称、参数摘要与分类。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
-import { asRecord, readString } from "@renderer/lib/record"
+import { asRecord, readString } from "../../../lib/record.ts"
 
 export function formatToolName(name: string) {
   return name.replaceAll("_", " ")
