@@ -20,7 +20,8 @@ test("parseCatalogMaxOutput reads max_tokens", () => {
   assert.equal(parseCatalogMaxOutput({ maxOutputTokens: 4096 }), 4096)
 })
 
-test("resolveModelContextWindow prefers catalog then gateway then profile", () => {
+test("resolveModelContextWindow prefers profile then catalog then gateway", () => {
+  // 用户手填 profileWindow 拥有最高优先级，覆盖 gateway 与 catalog
   assert.equal(
     resolveModelContextWindow({
       modelId: "grok-4.6",
@@ -28,7 +29,7 @@ test("resolveModelContextWindow prefers catalog then gateway then profile", () =
       gatewayWindow: 1_000_000,
       profileWindow: 128_000
     }),
-    256_000
+    128_000
   )
   assert.equal(
     resolveModelContextWindow({
@@ -36,14 +37,24 @@ test("resolveModelContextWindow prefers catalog then gateway then profile", () =
       gatewayWindow: 1_000_000,
       profileWindow: 256_000
     }),
-    1_000_000
+    256_000
   )
+  // 未手填时，优先使用目录探测值
   assert.equal(
     resolveModelContextWindow({
-      modelId: "custom-7b",
-      profileWindow: 256_000
+      modelId: "grok-4.6",
+      catalogWindow: 512_000,
+      gatewayWindow: 1_000_000
     }),
-    256_000
+    512_000
+  )
+  // 仅有网关预设时回落网关
+  assert.equal(
+    resolveModelContextWindow({
+      modelId: "grok-4.6",
+      gatewayWindow: 1_000_000
+    }),
+    1_000_000
   )
   assert.equal(resolveModelContextWindow({ modelId: "unknown" }), undefined)
 })

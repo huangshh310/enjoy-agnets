@@ -49,11 +49,11 @@ export function parseCatalogMaxOutput(raw: unknown): number | undefined {
 }
 
 /**
- * 解析当前模型窗口：探测目录 > Gateway 目录 > 档案手填。
+ * 解析当前模型窗口：用户档案手填优先 > 探测目录 > Gateway 目录兜底。
  * 三者都没有则返回 undefined，UI 不得再猜 1M / 200k。
  */
 export function resolveModelContextWindow(hints: ContextWindowHints): number | undefined {
-  return firstWindow(hints.catalogWindow, hints.gatewayWindow, hints.profileWindow)
+  return firstWindow(hints.profileWindow, hints.catalogWindow, hints.gatewayWindow)
 }
 
 /** 在 Gateway 条目里按精确 id、provider/id、后缀 id 查找。 */

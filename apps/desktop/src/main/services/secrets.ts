@@ -182,7 +182,7 @@ export function publicModelsFor(profile: ProviderProfile | undefined, isActive =
     isReasoning: Boolean(profile.reasoningModelId && profile.reasoningModelId === model.id),
     supportsReasoning: true,
     reasoningEffort: profile.reasoningEffort,
-    contextWindow: model.contextWindow,
+    contextWindow: profile.contextWindow ?? model.contextWindow,
     maxTokens: model.maxOutputTokens ?? profile.maxTokens
   }))
 }
@@ -232,7 +232,7 @@ function normalizeOptionalWindow(
   return incoming ?? existing
 }
 
-/** 探测目录 > Gateway 公开目录 > 档案手填。都不知道就留空，不按 id 猜。 */
+/** 用户档案手填优先 > 探测目录 > Gateway 公开目录兜底。都不知道就留空，不按 id 猜。 */
 async function resolveListedWindow(
   modelId: string,
   provider?: string,
