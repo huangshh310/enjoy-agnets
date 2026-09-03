@@ -30,8 +30,11 @@ export function InspectorRawPrompt({
   const t = useT()
   const view = useRawPromptView({ sessionId, mode, modelId, chips })
   const sourceLabel =
-    view.payload?.source === "last-run" ? t("chat.inspectorPromptLastRun") : t("chat.inspectorPromptPreview")
-
+    view.payload?.source === "last-run"
+      ? t("chat.inspectorPromptLastRun")
+      : view.messageCount > 0
+        ? t("chat.inspectorPromptContextPreview")
+        : t("chat.inspectorPromptPreview")
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col gap-2.5 font-mono">
       <RawToolbar

@@ -32,10 +32,14 @@ export function useSessionCompaction(sessionId: string | null) {
       setIsCompacting(true)
       setError(null)
       try {
-        const result = (await getIde().session.compact({
+        const compactPromise = getIde().session.compact({
           sessionId,
           keepRecent
-        })) as SessionCompaction
+        }) as Promise<SessionCompaction>
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Compaction request timed out")), 12_000)
+        )
+        const result = await Promise.race([compactPromise, timeoutPromise])
         queryClient.setQueryData(queryKey, result)
         void queryClient.invalidateQueries({ queryKey: [SESSION_COMPACTION_QUERY] })
         return result

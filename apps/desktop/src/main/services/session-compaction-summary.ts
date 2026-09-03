@@ -26,6 +26,7 @@ export async function generateAiSummary(olderMessages: MessageLike[]): Promise<s
 
     const res = await generateText({
       model,
+      abortSignal: AbortSignal.timeout(8000),
       instructions: [
         "You compact prior chat history into a factual summary for the next model turn.",
         "Keep: user goals, constraints, technical decisions, file paths, fixed/open bugs, remaining todos.",
