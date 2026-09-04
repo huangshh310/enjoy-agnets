@@ -60,6 +60,9 @@ catalogs:
     '@ai-sdk/xai':
       specifier: ^4.0.50
       version: 4.0.50
+    '@blobatar/react':
+      specifier: ^2.7.0
+      version: 2.7.0
     '@electron-toolkit/preload':
       specifier: ^3.0.2
       version: 3.0.2
@@ -117,6 +120,9 @@ catalogs:
     ai:
       specifier: ^7.0.84
       version: 7.0.84
+    blobatar:
+      specifier: ^2.7.0
+      version: 2.7.0
     border-beam:
       specifier: ^1.3.0
       version: 1.3.0
@@ -230,6 +236,9 @@ importers:
       '@ai-sdk/openai':
         specifier: 'catalog:'
         version: 4.0.51(zod@4.5.2)
+      '@blobatar/react':
+        specifier: 'catalog:'
+        version: 2.7.0(blobatar@2.7.0(react@19.2.8))(react@19.2.8)
       '@electron-toolkit/preload':
         specifier: 'catalog:'
         version: 3.0.2(electron@39.8.10)
@@ -287,6 +296,9 @@ importers:
       ai:
         specifier: 'catalog:'
         version: 7.0.84(zod@4.5.2)
+      blobatar:
+        specifier: 'catalog:'
+        version: 2.7.0(react@19.2.8)
       border-beam:
         specifier: 'catalog:'
         version: 1.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1066,6 +1078,12 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@blobatar/react@2.7.0':
+    resolution: {integrity: sha512-rysDM1+2qoeIwIezVw/em+ZxOMyqqjqJOGNEvtOOU1nFp0jmzyEjlXtJTDM6xPKamq59pq6wcG9+mHIUZV572A==}
+    peerDependencies:
+      blobatar: 2.x
+      react: '>=18'
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
@@ -3701,6 +3719,17 @@ packages:
 
   bl@4.0.3:
     resolution: {integrity: sha512-fs4G6/Hu4/EE+F75J8DuN/0IpQqNjAdC7aEQv7Qt8MHGUH7Ckv2MwTEEeN9QehD0pfIDkMI1bkHYkKy7xHyKIg==}
+
+  blobatar@2.7.0:
+    resolution: {integrity: sha512-tL1p2J3dXE/Z9U/ITwHqU7HBHmTH+Am+hif1J1hWAhvFT1VYC2HG+eXtN7081yuY+L2lrp9bs/VaF7dVH3S2jw==}
+    peerDependencies:
+      react: '>=18'
+      vue: '>=3'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      vue:
+        optional: true
 
   bluebird@3.7.2:
     resolution: {integrity: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==}
@@ -7533,6 +7562,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.18
 
+  '@blobatar/react@2.7.0(blobatar@2.7.0(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      blobatar: 2.7.0(react@19.2.8)
+      react: 19.2.8
+
   '@borewit/text-codec@0.2.2': {}
 
   '@dnd-kit/accessibility@3.1.1(react@19.2.8)':
@@ -10442,6 +10476,10 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
     optional: true
+
+  blobatar@2.7.0(react@19.2.8):
+    optionalDependencies:
+      react: 19.2.8
 
   bluebird@3.7.2: {}
 

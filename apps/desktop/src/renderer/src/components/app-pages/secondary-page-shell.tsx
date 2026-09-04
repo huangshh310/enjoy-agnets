@@ -20,8 +20,8 @@ export type SecondaryPageShellProps = {
   onSearchChange?: (value: string) => void
   filterNav?: boolean
   breadcrumbTitle?: string
+  hideChrome?: boolean
 }
-
 export function SecondaryPageShell({
   searchPlaceholder,
   groups,
@@ -32,7 +32,8 @@ export function SecondaryPageShell({
   searchValue,
   onSearchChange,
   filterNav = true,
-  breadcrumbTitle
+  breadcrumbTitle,
+  hideChrome
 }: SecondaryPageShellProps) {
   const [uncontrolledQuery, setUncontrolledQuery] = useState("")
   const query = searchValue ?? uncontrolledQuery
@@ -59,6 +60,7 @@ export function SecondaryPageShell({
       <SecondaryPageMain
         contentWidth={contentWidth}
         selectedItemLabel={resolveNavLabel(groups, selectedId, breadcrumbTitle)}
+        hideChrome={hideChrome}
       >
         {children}
       </SecondaryPageMain>

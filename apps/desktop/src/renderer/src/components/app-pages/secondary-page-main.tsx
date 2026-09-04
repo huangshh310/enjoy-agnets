@@ -10,18 +10,21 @@ export type SecondaryContentWidth = "article" | "wide" | "stage" | "fill"
 export function SecondaryPageMain(props: {
   contentWidth: SecondaryContentWidth
   selectedItemLabel: string
+  hideChrome?: boolean
   children: ReactNode
 }) {
-  const { contentWidth, selectedItemLabel, children } = props
+  const { contentWidth, selectedItemLabel, hideChrome, children } = props
   const fill = contentWidth === "fill"
 
   return (
     <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl border border-border-button-default/40 bg-background-primary-default shadow-card">
       {fill ? (
         <>
-          <div className="shrink-0 px-5 pt-4">
-            <SecondaryPageChrome label={selectedItemLabel} compact />
-          </div>
+          {!hideChrome ? (
+            <div className="shrink-0 px-5 pt-4">
+              <SecondaryPageChrome label={selectedItemLabel} compact />
+            </div>
+          ) : null}
           <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
         </>
       ) : (
@@ -34,7 +37,7 @@ export function SecondaryPageMain(props: {
               contentWidth === "stage" && "flex min-h-full flex-1 flex-col px-8 pt-5 pb-6"
             )}
           >
-            <SecondaryPageChrome label={selectedItemLabel} />
+            {!hideChrome ? <SecondaryPageChrome label={selectedItemLabel} /> : null}
             {children}
           </div>
         </ScrollArea>

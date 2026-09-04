@@ -27,8 +27,15 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
 
 Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。
-
 Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。界面语言默认 `zh`，见 [i18n](./i18n.md)。
+
+个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式：
+- 顶部 Hero 卡片集成 [Canvas UI](https://canvasui.dev/) 官方 WebGL 着色器动态封面，仅四套：代码雨（`GlyphRain`）、悬浮六角棱镜（`HexFloat`）、复古点阵（`RetroDither`）、冰晶融冻（`Frost`），右上角切换；叠层 [blobatar.dev](https://blobatar.dev/) 的 `BlobatarAvatar`（确定性哈希五官、表情、0~360° 色相、呼吸微动）；Share 复制姓名+handle，Edit 打开资料弹窗。
+- 关键指标阵列来自 `observability.metrics`（最多 500 条）：年度贡献按 BoardUI 货币字面 `$` + 千分位（如 `$51`），旁挂环比胶囊（上年为 0 且今年 > 0 显示 `+100%`，双 0 显示 `0%`）；Lifetime tokens、Peak tokens、Longest task、Top streak。禁止正弦波或占位 9B。
+- 活跃矩阵热力图：7 行微单元格，Weekly / Monthly / Yearly；空日为 0 阶可见底，不补伪随机活跃。
+- Agents 柱状图按**选中月份**聚合真实 run 数，月份选择器可前后翻（不超过当前月）。
+- Tokens 面积图：该月每日 token 合计，平滑贝塞尔 + `accent-500` 渐变；标题旁始终挂环比胶囊（相对上月，规则同上）。
+- 资料修改（昵称/邮箱/头衔/时区/形象）收纳于 Edit Dialog 与 `BlobatarPicker` / `BlobatarPickerDialog`。底栏安全卡片只反映 renderer 可见的 `hasKey` 与本机节点，不宣称 DPAPI/Keychain、不编造 IP。
 
 ## 不变量
 
@@ -46,6 +53,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 看板原语：`settings-hub.tsx`
 - 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
+- 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 
 ## 已知坑
@@ -56,3 +64,6 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - 设置侧栏严禁无脑平铺全部 24 个分段：必须维持 4 大板块 9 项的核心高频架构，子分段（如 `skills` / `rules` / `billing` 等）保留路由与页面实现，侧栏通过 `resolveActiveNavSectionId` 统一映射高亮所属父级，保障单屏全览不溢出。
 - `mcp` 已落地，不要再写成占位。
+- 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
+- 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。
+- `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
