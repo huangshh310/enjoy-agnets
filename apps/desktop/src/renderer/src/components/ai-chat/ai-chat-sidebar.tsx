@@ -129,7 +129,7 @@ function SidebarFooter({
   onOpenWorkspace: () => void
 }) {
   return (
-    <div className={cx("flex w-full shrink-0 flex-col gap-3 pt-3", collapsed && "items-center")}>
+    <div className={cx("flex w-full shrink-0 flex-col pt-2 border-t border-separator-border/40", collapsed && "items-center")}>
       <SidebarUserCard
         collapsed={collapsed}
         userName={userName}

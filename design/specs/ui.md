@@ -24,7 +24,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
  - 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。
 - 严格遵守根目录 `DESIGN.md` 定义的 **8 大命名 Anti-Patterns 禁令**（`Centered-Marketing-Hero`、`Generic-SaaS-Card`、`Invented-Raw-Styles`、`Cramped-Evidence-Table`、`Deconstructed-Typography`、`Viewport-Trapped-Layout`、`Fake-Status-Chrome`、`Unsafe-Native-Dialog`）。
  - 运行时组件：shadcn/ui + AI Elements。不要再装 BoardUI `components/base/*` 做新控件。
-- 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。昼/夜与语言手绘胶囊放在标题栏右上 compact，不占侧栏。
+- 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。昼/夜与多语言采用标题栏 24px 原生微控件（`h-6`），严格水平对齐窗口控制按钮，禁止在现代标题栏上使用粗糙错位的手绘卡通开关破坏质感。侧栏底栏用户卡片保持轻量 Ghost / 次级态，长邮箱收进弹出面板，严禁在侧栏狭窄区域产生破相硬截断。
  - 产品主标：`AppMark` + `enjoy-ui-kit`（见 `brand` spec）。产品铬图标：`@remixicon/react`。AI 品牌标：`@lobehub/icons`。禁止用 Remix 或字母「E」圆冒充 enjoy 主标。
  - 单一强调色 Signal Blue（`accent-500` / `primary`）。禁止纯黑 `#000000`、禁止 emoji、禁止居中营销 hero。
  - 新控件先搜 shadcn → AI Elements → Beautiful UI / BeUI 等，抄交互再 restyle。禁止原样上架 registry 默认皮。
@@ -93,3 +93,5 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
 - 同目录不要同时放 `foo.ts` 和 `foo.tsx`。TS/Vite 解析 `from "./foo"` 会打到 `.ts`，`.tsx` 的组件导出丢失，窗口白屏或起不来。选择器和组件要不同文件名（如 `select-turn-tool-surfaces.ts` + `turn-tool-surfaces.tsx`）。
 - 卡片光学投影必须采用多层漫射配置：浅色与暗色模式分别通过 `--shadow-card` 与 `--shadow-sidebar` 控制，暗色依靠 1px 外围与内边缘反射营造微高光切边（Specular Rim），禁止手写野生裸 hex 边框。
 - 轨道按钮与次级卡片必须提供物理级触觉回弹（`active:scale-[0.98]` 或 `active:scale-90`）与流畅的时间过渡（`transition-all duration-200`），避免状态突变造成视觉卡顿。
+- 标题栏辅助开关高度必须严格锁定为 24px（`size-6` / `h-6`）：与系统窗口控制按钮保持垂直居中和基线对齐，严禁使用超出 24px 的拟物卡通开关。
+- 侧栏情境栏底栏用户卡片严禁硬编码过长字符串：212px 容器内文本空间极小，长邮箱（超过 15 字符）必须在侧栏卡片上优雅收敛或展示工作区标签，完整邮箱与账号操作统一在 265px 悬浮弹层（AriaPopover）中展示。

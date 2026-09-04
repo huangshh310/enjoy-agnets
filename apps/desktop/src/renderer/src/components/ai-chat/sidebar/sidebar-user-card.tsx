@@ -56,31 +56,34 @@ export function SidebarUserCard({
       <AriaButton
         aria-label={userName}
         className={cx(
-          "flex cursor-pointer items-center overflow-hidden outline-none",
-          "border-2 border-transparent transition-all duration-300 ease-in-out",
-          "focus-visible:ring-2 focus-visible:ring-border-focus-ring focus-visible:ring-offset-2",
+          "group flex cursor-pointer items-center overflow-hidden outline-none",
+          "transition-all duration-200 ease-out",
+          "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
           collapsed
             ? "size-9 justify-center rounded-full bg-transparent p-0 hover:bg-background-secondary-hover"
-            : "w-full justify-between rounded-xl bg-background-tertiary-default py-2 pr-2.5 pl-2 hover:border-border-button-hover hover:bg-background-secondary-hover",
+            : "w-full justify-between rounded-xl px-2.5 py-1.5 border border-transparent hover:bg-background-secondary-hover hover:border-border-button-default/40 active:scale-[0.98]",
+          isOpen && !collapsed && "bg-background-secondary-hover border-border-button-default/60 shadow-2xs",
           className
         )}
       >
         <span className="flex min-w-0 items-center gap-2">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-500/10 dark:bg-accent-500/20">
-            <AppMark size={24} />
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent-500/10 dark:bg-accent-500/20 text-accent-500">
+            <AppMark size={18} />
           </div>
           <Collapsible collapsed={collapsed}>
             <span className="flex min-w-0 flex-col items-start justify-center text-left">
-              <span className="truncate text-body-medium font-medium text-text-primary">{userName}</span>
-              <span className="truncate text-caption-1-regular text-text-secondary">{userEmail}</span>
+              <span className="truncate text-caption-1-semibold text-text-primary leading-tight">{userName}</span>
+              <span className="truncate text-[10.5px] font-mono text-text-tertiary leading-tight">
+                {userEmail.length > 20 ? userEmail.split("@")[0] : userEmail}
+              </span>
             </span>
           </Collapsible>
         </span>
         <Collapsible collapsed={collapsed}>
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-background-tertiary-hover">
+          <span className="flex size-4 shrink-0 items-center justify-center">
             <ChevronDownSmall
               className={cx(
-                "size-4 text-text-secondary transition-transform duration-200 ease",
+                "size-3.5 text-text-tertiary transition-transform duration-200 ease group-hover:text-text-secondary",
                 isOpen && "rotate-180"
               )}
             />
