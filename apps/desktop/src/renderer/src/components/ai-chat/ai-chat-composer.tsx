@@ -126,14 +126,17 @@ export function AiChatComposer({
           onDrop={handleDrop}
           data-frost="chip"
           className={cx(
-            "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border-button-default bg-background-secondary-default/95 dark:bg-background-tertiary-default shadow-card hover:border-border-button-hover hover:shadow-dropdown backdrop-blur-md transition-all duration-200",
-            isFocused && "border-accent-500 ring-2 ring-accent-500/15 shadow-dropdown",
-            isDragging && "border-accent-500 ring-2 ring-accent-500/20"
+            "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px]",
+            "border border-border-button-default bg-background-secondary-default/95 dark:bg-background-tertiary-default",
+            "shadow-card backdrop-blur-md transition-all duration-300 ease-out",
+            "hover:border-border-button-hover hover:shadow-dropdown",
+            isFocused && "border-accent-500 ring-2 ring-accent-500/20 shadow-[0_4px_24px_-2px_rgba(59,130,246,0.16)] dark:shadow-[0_4px_28px_-2px_rgba(59,130,246,0.22)]",
+            isDragging && "scale-[1.008] border-accent-500 ring-2 ring-accent-500/25"
           )}
         >
           {isDragging ? (
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[22px] border-2 border-dashed border-accent-500 bg-background-primary-default/90 backdrop-blur-xs">
-              <p className="text-body-medium text-accent-500">{t("chat.dropAttach")}</p>
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[22px] border-2 border-dashed border-accent-500 bg-background-primary-default/90 backdrop-blur-xs animate-in fade-in-50 zoom-in-95 duration-200">
+              <p className="text-body-medium font-medium text-accent-500">{t("chat.dropAttach")}</p>
             </div>
           ) : null}
 

@@ -89,7 +89,7 @@ export function McpStoreSection(props: {
           return (
             <div
               key={plugin.id}
-              className="group relative flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-separator-border hover:shadow-xs"
+              className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-2xs transition-all duration-200 ease-out hover:-translate-y-1 hover:border-accent-500/40 hover:shadow-md active:scale-[0.99]"
             >
               <div>
                 {/* 头部图标、标题与协议 */}

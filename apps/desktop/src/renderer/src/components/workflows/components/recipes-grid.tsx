@@ -35,7 +35,7 @@ export function WorkflowRecipesGrid({
         {recipes.map((recipe) => (
           <div
             key={recipe.id}
-            className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-xs transition-all hover:border-accent-500/40 hover:shadow-md"
+            className="group relative flex flex-col justify-between rounded-2xl border border-border-button-default bg-background-primary-default p-4.5 shadow-2xs transition-all duration-300 ease-out hover:-translate-y-1 hover:border-accent-500/40 hover:shadow-md active:scale-[0.99]"
           >
             <div>
               <div className="flex items-start justify-between gap-2">

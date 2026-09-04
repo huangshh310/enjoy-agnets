@@ -82,9 +82,9 @@
    *   DROP_SHADOW #00000052 offset(0,0) radius 1  spread 0  → 0 0   1px  0 / 0.3216
    * (alpha = hex byte / 255: 05→0.0196, 0F→0.0588, 52→0.3216). */
   --shadow-sidebar:
-    0 1px 0 0 rgb(0 0 0 / 0.0196),
-    0 1px 12px 0 rgb(0 0 0 / 0.0588),
-    0 0 1px 0 rgb(0 0 0 / 0.3216);
+    0 1px 2px 0 rgb(0 0 0 / 0.02),
+    0 4px 18px 0 rgb(0 0 0 / 0.04),
+    0 0 0 1px rgb(0 0 0 / 0.03);
 
   /* Figma effect style "Sidebar selected" — copied 1:1:
    *   DROP_SHADOW  color/blue/500 offset(0,0) radius 0 spread 1 → 0 0 0 1px blue-500
@@ -102,7 +102,10 @@
 
   /* 1px contact shadow used on white cards/dropdown triggers sitting on the
    * secondary background (Figma drop shadow 0 1 1 5%). */
-  --shadow-card: 0 1px 1px 0 rgb(0 0 0 / 0.05);
+  --shadow-card:
+    0 1px 2px 0 rgb(0 0 0 / 0.03),
+    0 6px 20px -2px rgb(0 0 0 / 0.045),
+    0 0 0 1px rgb(0 0 0 / 0.02);
 
   /* Floating menu/dropdown panel (Figma → sidebar profile menu node 3823:3699):
    *   DROP_SHADOW #0000000A offset(0,1) radius 1 → 0 1px 1px 0 / 0.04
@@ -453,14 +456,17 @@
   --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.12), 0 4px 6px -1px rgb(0 0 0 / 0.18);
   --shadow-lg: 0 4px 6px -2px rgb(0 0 0 / 0.10), 0 10px 15px -3px rgb(0 0 0 / 0.18);
   --shadow-xl: 0 10px 10px -5px rgb(0 0 0 / 0.08), 0 20px 25px -5px rgb(0 0 0 / 0.20);
-  --shadow-card: 0 1px 1px 0 rgb(0 0 0 / 0.14);
+  --shadow-card:
+    0 1px 2px 0 rgb(0 0 0 / 0.24),
+    0 8px 24px -4px rgb(0 0 0 / 0.32),
+    0 0 0 1px rgb(255 255 255 / 0.05);
   --shadow-dropdown:
     0 1px 1px 0 rgb(0 0 0 / 0.14),
     0 4px 4px 0 rgb(0 0 0 / 0.10);
   --shadow-sidebar:
-    0 1px 0 0 rgb(0 0 0 / 0.10),
-    0 1px 12px 0 rgb(0 0 0 / 0.16),
-    0 0 1px 0 rgb(0 0 0 / 0.42);
+    0 1px 2px 0 rgb(0 0 0 / 0.20),
+    0 8px 28px -4px rgb(0 0 0 / 0.38),
+    0 0 0 1px rgb(255 255 255 / 0.05);
   --shadow-waitlist:
     0 0 6px 0 rgb(0 0 0 / 0.12),
     0 0 64px 0 rgb(0 0 0 / 0.22),

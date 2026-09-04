@@ -96,11 +96,19 @@ export function TaskList({
     return (
       <div
         className={cx(
-          "w-full overflow-hidden rounded-t-2xl rounded-b-none border-t border-x border-border-button-default/90 bg-background-tertiary-default/80 shadow-2xs backdrop-blur-md transition-all duration-300 ease-out",
+          "relative w-full overflow-hidden rounded-t-2xl rounded-b-none border-t border-x border-border-button-default/90 bg-background-tertiary-default/85 shadow-2xs backdrop-blur-md transition-all duration-300 ease-out",
+          allDone && "border-emerald-500/30 bg-emerald-500/5",
           collapsed ? "pb-3" : "pb-4",
           className
         )}
       >
+        {/* 达成瞬间极光扫掠微动效 (Completion Shimmer) */}
+        {allDone ? (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-80 animate-in fade-in duration-500"
+          />
+        ) : null}
         {collapsed ? (
           <div className="flex h-10 w-full items-center gap-1 px-4">
             <button
@@ -132,8 +140,7 @@ export function TaskList({
           </div>
         ) : (
           /* Manus 展开态：完整的任务进度明细面板 (Image #3) */
-          <div className="flex flex-col px-4 pt-3 text-left">
-            {/* 顶栏：任务进度标题 + 进度分数 + 收起箭头 */}
+          <div className="flex flex-col px-4 pt-3 text-left animate-in fade-in-50 duration-200">
             <div
               onClick={() => setCollapsed(true)}
               className="flex cursor-pointer select-none items-center justify-between py-1 transition-colors hover:opacity-80"
@@ -261,7 +268,7 @@ function DockStatusIcon({ status, live = true }: { status: TaskStatus; live?: bo
   }
   if (status === "completed") {
     return (
-      <RiCheckboxCircleFill className="size-4 shrink-0 text-emerald-500" />
+      <RiCheckboxCircleFill className="size-4 shrink-0 text-emerald-500 animate-in zoom-in-75 duration-200" />
     )
   }
   return (

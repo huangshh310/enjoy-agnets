@@ -50,14 +50,14 @@ export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsPr
                 "group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5",
                 "border border-border-button-default/70 bg-background-secondary-default/50",
                 "text-caption-1-medium text-text-secondary shadow-2xs backdrop-blur-xs",
-                "hover:border-accent-500/40 hover:bg-background-secondary-default hover:text-text-primary hover:shadow-xs",
-                "active:scale-[0.98] transition-all duration-150 cursor-pointer outline-none",
+                "hover:-translate-y-0.5 hover:border-accent-500/40 hover:bg-background-secondary-default hover:text-text-primary hover:shadow-xs",
+                "active:translate-y-0 active:scale-95 transition-all duration-200 ease-out cursor-pointer outline-none",
                 "focus-visible:ring-2 focus-visible:ring-accent-500/20"
               )}
             >
               <Icon
                 className={cx(
-                  "size-3.5 transition-colors",
+                  "size-3.5 transition-all duration-200 group-hover:scale-110",
                   item.iconColor ? item.iconColor : "text-text-tertiary group-hover:text-accent-500"
                 )}
                 aria-hidden

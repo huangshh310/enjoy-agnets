@@ -40,10 +40,10 @@ export function AssetCard({
   return (
     <article
       className={cx(
-        "group relative flex flex-col overflow-hidden rounded-2xl border shadow-2xs",
+        "group relative flex flex-col overflow-hidden rounded-2xl border shadow-2xs transition-all duration-250 ease-out hover:-translate-y-1 hover:shadow-md",
         isSelected
           ? "border-accent-500 bg-accent-500/[0.03] ring-2 ring-accent-500/25"
-          : "border-border-button-default bg-background-primary-default hover:border-accent-500/40"
+          : "border-border-button-default bg-background-primary-default hover:border-accent-500/50"
       )}
     >
       <button

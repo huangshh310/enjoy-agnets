@@ -4,7 +4,7 @@
 
 ## 当前真相
 
-窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
+窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。底板注入物理微环境漫射光斑（Ambient Canvas Glow），赋予三卡片自然进深感与悬浮质感。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
 
 1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。
 2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。
@@ -91,3 +91,5 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
 - 会话「没做完任务就停」通常不是崩溃：ToolLoop 在模型不再调工具时就会 `run.end`。Grok 常 glob/read 之后写一段计划文字收工，Todo 停在 `in_progress`。main 对未完成 Todo 同 run 最多再泵 2 次；用尽后 Dock 出「继续」。
 - File Diff / Tool Result / Todo List 必须挂在 Thinking 折叠外面。跑完后 `isTraceExpanded` 为 false，埋进步骤树会随思考一起消失。`ToolResultView` 只给助手轮工具表面用，不要再当死代码。
 - 同目录不要同时放 `foo.ts` 和 `foo.tsx`。TS/Vite 解析 `from "./foo"` 会打到 `.ts`，`.tsx` 的组件导出丢失，窗口白屏或起不来。选择器和组件要不同文件名（如 `select-turn-tool-surfaces.ts` + `turn-tool-surfaces.tsx`）。
+- 卡片光学投影必须采用多层漫射配置：浅色与暗色模式分别通过 `--shadow-card` 与 `--shadow-sidebar` 控制，暗色依靠 1px 外围与内边缘反射营造微高光切边（Specular Rim），禁止手写野生裸 hex 边框。
+- 轨道按钮与次级卡片必须提供物理级触觉回弹（`active:scale-[0.98]` 或 `active:scale-90`）与流畅的时间过渡（`transition-all duration-200`），避免状态突变造成视觉卡顿。
