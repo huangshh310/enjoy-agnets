@@ -1,9 +1,36 @@
 /**
  * 设置分段 ID 与目录装配。分组定义见 settings-catalog-nav.ts。
  */
+import {
+  RiBankCardLine,
+  RiBankLine,
+  RiBookOpenLine,
+  RiBox3Line,
+  RiEqualizer3Line,
+  RiFileTextLine,
+  RiFlashlightLine,
+  RiFolder6Line,
+  RiGitBranchLine,
+  RiGroupLine,
+  RiImageLine,
+  RiInboxArchiveLine,
+  RiKeyboardBoxLine,
+  RiNotification3Line,
+  RiPaletteLine,
+  RiPlugLine,
+  RiPulseLine,
+  RiRouteLine,
+  RiSchoolLine,
+  RiSettings4Line,
+  RiShieldKeyholeLine,
+  RiShieldUserLine,
+  RiSparkling2Line,
+  RiSparklingLine,
+  RiTerminalBoxLine
+} from "@remixicon/react"
 import type { TranslateFn } from "@renderer/i18n"
 import { SETTINGS_NAV_DEF } from "./settings-catalog-nav"
-import type { SettingsNavGroup, SettingsNavItem, SettingsSectionId } from "./settings-catalog.types"
+import type { SettingsNavGroup, SettingsNavItem, SettingsSectionId, SettingsNavIcon } from "./settings-catalog.types"
 import { SETTINGS_SECTIONS } from "./settings-sections"
 
 export { SETTINGS_SECTIONS }
@@ -26,9 +53,79 @@ export function isSettingsSectionId(value: string): value is SettingsSectionId {
   return (SETTINGS_SECTIONS as readonly string[]).includes(value)
 }
 
+/**
+ * 将所有 24 个子分段智能映射至侧栏对应的 9 个一级核心导航项，确保不丢焦
+ */
+export function resolveActiveNavSectionId(section: SettingsSectionId): SettingsSectionId {
+  switch (section) {
+    case "skills":
+    case "rules":
+      return "instructions"
+    case "capabilities":
+    case "workflow":
+    case "sandbox":
+      return "agent"
+    case "knowledge":
+    case "media":
+      return "workspace"
+    case "automations":
+    case "telemetry":
+    case "git":
+      return "mcp"
+    case "members":
+    case "billing":
+    case "organization":
+    case "integrations":
+    case "account":
+    case "notifications":
+    case "archived":
+      return "team"
+    default:
+      return section
+  }
+}
+
+const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: SettingsNavIcon }> = {
+  general: { labelKey: "nav.general", icon: RiSettings4Line },
+  appearance: { labelKey: "nav.appearance", icon: RiPaletteLine },
+  shortcuts: { labelKey: "nav.shortcuts", icon: RiKeyboardBoxLine },
+  providers: { labelKey: "nav.providers", icon: RiShieldKeyholeLine },
+  agent: { labelKey: "nav.agent", icon: RiEqualizer3Line },
+  instructions: { labelKey: "nav.instructions", icon: RiFileTextLine },
+  skills: { labelKey: "nav.skills", icon: RiSparklingLine },
+  rules: { labelKey: "nav.rules", icon: RiBookOpenLine },
+  capabilities: { labelKey: "nav.capabilities", icon: RiSparkling2Line },
+  workflow: { labelKey: "nav.workflow", icon: RiRouteLine },
+  sandbox: { labelKey: "nav.sandbox", icon: RiTerminalBoxLine },
+  workspace: { labelKey: "nav.workspace", icon: RiFolder6Line },
+  knowledge: { labelKey: "nav.knowledge", icon: RiBookOpenLine },
+  media: { labelKey: "nav.media", icon: RiImageLine },
+  mcp: { labelKey: "nav.mcp", icon: RiPlugLine },
+  automations: { labelKey: "nav.automations", icon: RiFlashlightLine },
+  telemetry: { labelKey: "nav.telemetry", icon: RiPulseLine },
+  git: { labelKey: "nav.git", icon: RiGitBranchLine },
+  team: { labelKey: "nav.team", icon: RiBankLine },
+  members: { labelKey: "nav.members", icon: RiGroupLine },
+  billing: { labelKey: "nav.billing", icon: RiBankCardLine },
+  organization: { labelKey: "nav.organization", icon: RiSchoolLine },
+  integrations: { labelKey: "nav.companyIntegrations", icon: RiBox3Line },
+  account: { labelKey: "nav.account", icon: RiShieldUserLine },
+  notifications: { labelKey: "nav.notifications", icon: RiNotification3Line },
+  archived: { labelKey: "nav.archived", icon: RiInboxArchiveLine }
+}
+
 export function findSettingsItem(
   id: SettingsSectionId,
   nav: SettingsNavGroup[]
 ): SettingsNavItem | undefined {
-  return nav.flatMap((group) => group.items).find((item) => item.id === id)
+  const found = nav.flatMap((group) => group.items).find((item) => item.id === id)
+  if (found) return found
+  const meta = ALL_SECTION_META[id]
+  if (!meta) return undefined
+  return {
+    id,
+    label: meta.labelKey, // 在未国际化包装时由消费者翻译，或直接传递
+    icon: meta.icon,
+    keywords: []
+  }
 }

@@ -21,9 +21,9 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/workspace` | 工作区管理（含已挂载目录列表） | 旧 `#/workspaces` redirect |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
-设置分段 ID：`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`。
+设置分段 ID 完整保留 24 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
+侧栏情境栏精炼为 4 大板块 9 个核心高频项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/定制规则；工作区与扩展：工作区/MCP；团队与账户：团队），杜绝 24 项长滚动与底部截断。子页面与关键词均通过 `resolveActiveNavSectionId` 智能高亮所属一级条目。
 底栏用户卡片展开菜单完整映射至上述 Settings / Inbox Hash，及应用内 `ConfirmDialog` 退出登录，杜绝任何 no-op。
-
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
 
 Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。
@@ -54,4 +54,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Studio / Team / Company / Account 旧 Hash 必须 redirect 进 AppShell，不要再挂 `SecondaryPageShell` 侧栏。
 - Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
+- 设置侧栏严禁无脑平铺全部 24 个分段：必须维持 4 大板块 9 项的核心高频架构，子分段（如 `skills` / `rules` / `billing` 等）保留路由与页面实现，侧栏通过 `resolveActiveNavSectionId` 统一映射高亮所属父级，保障单屏全览不溢出。
 - `mcp` 已落地，不要再写成占位。

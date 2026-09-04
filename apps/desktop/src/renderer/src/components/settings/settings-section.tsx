@@ -19,9 +19,15 @@ export function SettingsSectionPage() {
   if (section === "archived") return <ArchivedChatsPage />
   if (section === "automations") return <SettingsSectionBody section={section} />
 
+  const title = item
+    ? item.label.startsWith("nav.")
+      ? t(item.label)
+      : item.label
+    : t("common.settings")
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-3-semibold text-text-primary">{item?.label ?? t("common.settings")}</h1>
+      <h1 className="text-title-3-semibold text-text-primary">{title}</h1>
       <SettingsSectionBody section={section} />
     </div>
   )
