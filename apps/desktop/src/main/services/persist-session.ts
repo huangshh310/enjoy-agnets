@@ -34,9 +34,17 @@ export function persistFromEvent(
   }
   if (event.type === "reasoning.delta") {
     transcript.think += event.text
-  } else {
-    foldToolEvent(tools, event)
+    return
   }
+  foldToolEvent(tools, event)
+  if (event.type === "tool.start") {
+    stampToolReasoningChars(tools, event.toolCallId, transcript.think.length)
+  }
+}
+
+function stampToolReasoningChars(tools: ThreadToolCall[], toolCallId: string, reasoningChars: number) {
+  const tool = tools.find((item) => item.id === toolCallId)
+  if (tool && tool.reasoningChars == null) tool.reasoningChars = reasoningChars
 }
 
 export function persistMessage(

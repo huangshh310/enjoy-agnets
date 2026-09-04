@@ -12,6 +12,12 @@ export {
   type HarnessToolApprovalMap
 } from "./tool-approval";
 export { createCodingTools } from "./tools";
+export {
+  hasOpenTodosFromTools,
+  lastTodoStatuses,
+  shouldContinueOpenTodos,
+  MAX_TODO_CONTINUES
+} from "./tools/todo-open";
 export { systemPromptFor } from "./prompts";
 export {
   diffTexts,

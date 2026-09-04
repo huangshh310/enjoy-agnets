@@ -124,6 +124,12 @@ function applyLiveEvent(
   if (v2) return v2
   assistant.tools ??= []
   foldToolEvent(assistant.tools, event)
+  if (event.type === "tool.start") {
+    const tool = assistant.tools.find((item) => item.id === event.toolCallId)
+    if (tool && tool.reasoningChars == null) {
+      tool.reasoningChars = (assistant.reasoning ?? "").length
+    }
+  }
   const name = event.type === "tool.args.delta"
     ? assistant.tools.find((tool) => tool.id === event.toolCallId)?.name
     : "name" in event

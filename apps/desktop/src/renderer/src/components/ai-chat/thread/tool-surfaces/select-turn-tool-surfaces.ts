@@ -4,6 +4,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord, readString } from "../../../../lib/record.ts"
+import { isTodoContinueUserMessage } from "../../composer/todo-continue-message.ts"
 
 export type TurnTodoItem = {
   id?: string
@@ -35,15 +36,28 @@ export function hasTurnToolSurfaces(tools: ThreadToolCall[]): boolean {
   return toolResultSurfaces(tools).length > 0
 }
 
-/** 从后往前找会话里最后一份非空 Todo List。 */
+/** 只取「最后一条非续跑用户消息之后」的 Todo List，避免新任务还挂旧表、续跑却把表藏掉。 */
 export function latestSessionTodoList(
-  messages: Array<{ tools?: ThreadToolCall[] }>
+  messages: Array<{ role?: string; tools?: ThreadToolCall[] }>
 ): TurnTodoList | null {
-  for (let index = messages.length - 1; index >= 0; index--) {
+  const afterUser = lastUserMessageIndex(messages)
+  for (let index = messages.length - 1; index > afterUser; index--) {
     const list = latestTodoList(messages[index]?.tools ?? [])
     if (list) return list
   }
   return null
+}
+
+function lastUserMessageIndex(
+  messages: Array<{ role?: string; content?: string }>
+): number {
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const message = messages[index]
+    if (message?.role !== "user") continue
+    if (isTodoContinueUserMessage(message.content)) continue
+    return index
+  }
+  return -1
 }
 
 function isRichToolResult(tool: ThreadToolCall): boolean {

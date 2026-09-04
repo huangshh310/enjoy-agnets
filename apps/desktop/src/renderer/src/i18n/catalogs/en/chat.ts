@@ -244,6 +244,9 @@ export const enChat = {
   noLineChanges: "No line changes in this file.",
   loadingDiff: "Loading diff…",
   todos: "To-dos",
+  continueTodos: "Continue",
+  continueTodosPrompt:
+    "Continue the unfinished Todo List items. Use write_file / edit_file now; do not stop at a written plan.",
   approvalStays: "Approval stays in the confirmation card above.",
   fileType: "{ext} file",
   file: "File",

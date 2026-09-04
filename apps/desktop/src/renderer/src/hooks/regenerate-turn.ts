@@ -2,10 +2,15 @@
  * 助手消息重新生成 (Regenerate) 与用户消息编辑重发 (Edit & Resend) 核心调度模块。
  * 遵循 Vercel AI SDK 7 的消息上下文裁剪与多轮调度规范。
  */
+import {
+  isEmptyAssistantTurn,
+  isTodoContinueUserMessage
+} from "../components/ai-chat/composer/todo-continue-message"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
+import { continueTodoTurn } from "./continue-todo-turn"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -33,6 +38,12 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 
   const userMessage = messages[userIndex]
   if (!userMessage) return
+  const target = messages[targetIndex]
+
+  if (isTodoContinueUserMessage(userMessage.content) || (target && isEmptyAssistantTurn(target))) {
+    await continueTodoTurn()
+    return
+  }
 
   // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）
   const truncatedMessages = messages.slice(0, userIndex + 1)

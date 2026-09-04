@@ -26,7 +26,9 @@ export const RunAgentInput = z.object({
   mode: AgentMode.default("agent"),
   reasoningEffort: ReasoningEffortSchema.optional(),
   messages: z.array(ChatMessage),
-  attachments: z.array(z.string()).default([])
+  attachments: z.array(z.string()).default([]),
+  /** false 时不把最后一条用户句落库。续跑 Todo 用，避免刷新后多出气泡。 */
+  persistUser: z.boolean().optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 

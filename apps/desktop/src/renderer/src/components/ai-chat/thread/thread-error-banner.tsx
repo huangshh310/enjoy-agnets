@@ -10,8 +10,10 @@ import {
 } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
 import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
+import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 
@@ -33,6 +35,10 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
 
   function handleRetry() {
     setError(null)
+    if (lastUser && isTodoContinueUserMessage(lastUser.content)) {
+      void continueTodoTurn()
+      return
+    }
     if (lastAssistant) {
       void regenerateAssistantTurn(lastAssistant.id)
     } else if (lastUser) {

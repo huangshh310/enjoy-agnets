@@ -7,6 +7,7 @@ import { asRecord } from "../../../../lib/record.ts"
 import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary.ts"
 import type { AgentStepNode, DomainPill, SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
+import { splitReasoningAroundTools } from "./split-reasoning-around-tools.ts"
 
 /** 提取文本或 JSON 中的所有网址与顶级域名 */
 function extractDomains(text: string): DomainPill[] {
@@ -78,132 +79,126 @@ export function parseAgentStepNodes(
   t: TranslateFn
 ): AgentStepNode[] {
   const nodes: AgentStepNode[] = []
+  let thinkIndex = 0
 
-  // 1. 思考过程作为树的首个节点。模型常把整份 HTML 塞进 reasoning，截断以免盖住工具链。
-  if (reasoning.trim()) {
-    nodes.push({
-      id: "step_reasoning_main",
-      kind: "thinking",
-      title: t("chat.reasoningProcess"),
-      status: "completed",
-      rawText: clampThinkingText(reasoning.trim())
-    })
-  }
-
-  // 2. 将 tools 依次解析为步骤节点
-  for (const tool of tools) {
-    if (tool.name === "todo_write" || tool.name === "todo" || tool.name === "update_todos") continue
-
-    const kind = toolKind(tool.name)
-    const args = asRecord(tool.args)
-    const result = asRecord(tool.result)
-    const status = mapToolStatus(tool.state)
-    const allText = `${JSON.stringify(args)} ${JSON.stringify(result)} ${tool.name}`
-    const domains = extractDomains(allText)
-
-    // 提取完整命令与输出
-    const fullCommand = typeof args.command === "string" ? args.command : typeof args.cmd === "string" ? args.cmd : undefined
-    const output = typeof result.output === "string" ? result.output : typeof result.stdout === "string" ? result.stdout : typeof result.stderr === "string" ? result.stderr : undefined
-    const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
-    const errorText = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
-
-    const isBashTool = tool.name === "bash" || tool.name === "command" || tool.name === "terminal" || tool.name === "code_mode"
-    const isSearchTool = kind === "search" || tool.name.toLowerCase().includes("search")
-    const isReadTool = tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")
-    const isEditTool = tool.name.includes("write") || tool.name.includes("edit") || tool.name.includes("patch")
-
-    if (isBashTool) {
-      // 终端/Shell 命令执行：原位嵌入思考链
-      const cmd = fullCommand || summarizeToolArgs(tool) || ""
-      const displayTitle = cmd ? (cmd.length > 70 ? `$ ${cmd.slice(0, 68)}...` : `$ ${cmd}`) : "bash"
+  for (const item of splitReasoningAroundTools(reasoning, tools)) {
+    if (item.kind === "think") {
       nodes.push({
-        id: tool.id,
-        kind: "command",
-        title: displayTitle,
-        command: fullCommand || cmd,
-        output,
-        exitCode,
-        errorText,
-        domainPills: domains.length > 0 ? domains : undefined,
-        status: exitCode !== undefined && exitCode !== 0 ? "error" : status
+        id: `step_reasoning_${thinkIndex}`,
+        kind: "thinking",
+        title: t("chat.reasoningProcess"),
+        status: "completed",
+        rawText: clampThinkingText(item.text)
       })
-    } else if (isSearchTool) {
-      const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
-      const displayTitle = query.length > 50 ? t("chat.searchingQueryMore", { query: query.slice(0, 50) }) : t("chat.searchingQuery", { query })
-      nodes.push({
-        id: tool.id,
-        kind: "search",
-        title: displayTitle,
-        command: fullCommand,
-        output,
-        exitCode,
-        errorText,
-        domainPills: domains.length > 0 ? domains : undefined,
-        status
-      })
-    } else if (isReadTool) {
-      const exploredPages = extractFilePaths(args, result, t)
-      const path = String(args.path || args.file || args.url || "")
-      const leafName = path.split(/[\\/]/).pop() || path
-      nodes.push({
-        id: tool.id,
-        kind: "reading",
-        title: path ? t("chat.readingName", { name: leafName }) : t("chat.readingResources"),
-        command: fullCommand,
-        output,
-        exitCode,
-        errorText,
-        exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
-        exploredPages: exploredPages.length > 0 ? exploredPages : undefined,
-        domainPills: domains.length > 0 ? domains : undefined,
-        status
-      })
-    } else if (isEditTool) {
-      const path = String(args.path || args.file || "")
-      const parts = path.split(/[\\/]/)
-      const fileName = parts.pop() || path
-      const fileDir = parts.length > 0 ? parts.join("/") + "/" : ""
-      const isWrite = tool.name.includes("write")
-      const actionVerb = isWrite ? t("chat.verbWrite") : t("chat.verbEdit")
-      const additions = typeof result.additions === "number" ? result.additions : undefined
-      const deletions = typeof result.deletions === "number" ? result.deletions : undefined
-
-      nodes.push({
-        id: tool.id,
-        kind: "editing",
-        title: `${actionVerb} ${fileName}`,
-        filePath: path,
-        fileName,
-        fileDir,
-        actionVerb,
-        detail: undefined,
-        command: fullCommand,
-        output,
-        exitCode,
-        errorText,
-        additions,
-        deletions,
-        status
-      })
-    } else {
-      // 其余工具调用
-      const cmd = fullCommand || summarizeToolArgs(tool) || ""
-      nodes.push({
-        id: tool.id,
-        kind: "command",
-        title: formatToolName(tool.name),
-        detail: cmd ? (cmd.length > 80 ? `${cmd.slice(0, 80)}...` : cmd) : undefined,
-        command: cmd,
-        output,
-        exitCode,
-        errorText,
-        domainPills: domains.length > 0 ? domains : undefined,
-        status
-      })
+      thinkIndex += 1
+      continue
     }
+    const node = mapToolToStepNode(item.tool, t)
+    if (node) nodes.push(node)
   }
 
   return groupConsecutiveEdits(nodes, t)
+}
+
+function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
+  const kind = toolKind(tool.name)
+  const args = asRecord(tool.args)
+  const result = asRecord(tool.result)
+  const status = mapToolStatus(tool.state)
+  const allText = `${JSON.stringify(args)} ${JSON.stringify(result)} ${tool.name}`
+  const domains = extractDomains(allText)
+  const fullCommand =
+    typeof args.command === "string" ? args.command : typeof args.cmd === "string" ? args.cmd : undefined
+  const output =
+    typeof result.output === "string"
+      ? result.output
+      : typeof result.stdout === "string"
+        ? result.stdout
+        : typeof result.stderr === "string"
+          ? result.stderr
+          : undefined
+  const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
+  const errorText = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
+  const isBashTool =
+    tool.name === "bash" || tool.name === "command" || tool.name === "terminal" || tool.name === "code_mode"
+  const isSearchTool = kind === "search" || tool.name.toLowerCase().includes("search")
+  const isReadTool = tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")
+  const isEditTool = tool.name.includes("write") || tool.name.includes("edit") || tool.name.includes("patch")
+  const base = { command: fullCommand, output, exitCode, errorText }
+
+  if (isBashTool) {
+    const cmd = fullCommand || summarizeToolArgs(tool) || ""
+    const displayTitle = cmd ? (cmd.length > 70 ? `$ ${cmd.slice(0, 68)}...` : `$ ${cmd}`) : "bash"
+    return {
+      id: tool.id,
+      kind: "command",
+      title: displayTitle,
+      ...base,
+      command: fullCommand || cmd,
+      domainPills: domains.length > 0 ? domains : undefined,
+      status: exitCode !== undefined && exitCode !== 0 ? "error" : status
+    }
+  }
+  if (isSearchTool) {
+    const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
+    const displayTitle =
+      query.length > 50
+        ? t("chat.searchingQueryMore", { query: query.slice(0, 50) })
+        : t("chat.searchingQuery", { query })
+    return {
+      id: tool.id,
+      kind: "search",
+      title: displayTitle,
+      ...base,
+      domainPills: domains.length > 0 ? domains : undefined,
+      status
+    }
+  }
+  if (isReadTool) {
+    const exploredPages = extractFilePaths(args, result, t)
+    const path = String(args.path || args.file || args.url || "")
+    const leafName = path.split(/[\\/]/).pop() || path
+    return {
+      id: tool.id,
+      kind: "reading",
+      title: path ? t("chat.readingName", { name: leafName }) : t("chat.readingResources"),
+      ...base,
+      exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
+      exploredPages: exploredPages.length > 0 ? exploredPages : undefined,
+      domainPills: domains.length > 0 ? domains : undefined,
+      status
+    }
+  }
+  if (isEditTool) {
+    const path = String(args.path || args.file || "")
+    const parts = path.split(/[\\/]/)
+    const fileName = parts.pop() || path
+    const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
+    return {
+      id: tool.id,
+      kind: "editing",
+      title: `${tool.name.includes("write") ? t("chat.verbWrite") : t("chat.verbEdit")} ${fileName}`,
+      filePath: path,
+      fileName,
+      fileDir,
+      actionVerb: tool.name.includes("write") ? t("chat.verbWrite") : t("chat.verbEdit"),
+      ...base,
+      additions: typeof result.additions === "number" ? result.additions : undefined,
+      deletions: typeof result.deletions === "number" ? result.deletions : undefined,
+      status
+    }
+  }
+  const cmd = fullCommand || summarizeToolArgs(tool) || ""
+  return {
+    id: tool.id,
+    kind: "command",
+    title: formatToolName(tool.name),
+    detail: cmd ? (cmd.length > 80 ? `${cmd.slice(0, 80)}...` : cmd) : undefined,
+    ...base,
+    command: cmd,
+    domainPills: domains.length > 0 ? domains : undefined,
+    status
+  }
 }
 
 /** 连续 3 个或以上的文件编辑合并为单个高阶树节点，避免流水账刷屏 */

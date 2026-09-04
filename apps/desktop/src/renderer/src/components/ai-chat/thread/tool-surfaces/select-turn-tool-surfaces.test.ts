@@ -124,3 +124,85 @@ test("latestSessionTodoList 取会话最后一份非空任务表", () => {
   assert.equal(list?.title, "Rust login logic")
   assert.equal(list?.tasks[0]?.title, "Implement")
 })
+
+test("新用户轮开始后不再展示上一轮已完成的 Todo List", () => {
+  const list = latestSessionTodoList([
+    { role: "user" },
+    {
+      role: "assistant",
+      tools: [
+        tool({
+          id: "old",
+          name: "todo_write",
+          result: {
+            title: "Rust login logic",
+            todos: [
+              { title: "Inspect existing login page and project layout", status: "completed" },
+              { title: "Implement Rust login logic matching the demo", status: "completed" }
+            ]
+          }
+        })
+      ]
+    },
+    { role: "user" },
+    { role: "assistant", tools: [] }
+  ])
+  assert.equal(list, null)
+})
+
+test("续跑用户句不把上一轮 Todo List 藏掉", () => {
+  const list = latestSessionTodoList([
+    { role: "user", content: "做落地页" },
+    {
+      role: "assistant",
+      tools: [
+        tool({
+          id: "plan",
+          name: "todo_write",
+          result: {
+            title: "Stripe landing page",
+            todos: [
+              { title: "Inspect workspace", status: "completed" },
+              { title: "Build HTML", status: "in_progress" }
+            ]
+          }
+        })
+      ]
+    },
+    { role: "user", content: "继续完成未完成的内容" },
+    { role: "assistant", tools: [] }
+  ])
+  assert.equal(list?.title, "Stripe landing page")
+  assert.equal(list?.tasks[1]?.status, "in_progress")
+})
+
+test("本轮 assistant 写出新表后才替换 Dock", () => {
+  const list = latestSessionTodoList([
+    {
+      role: "assistant",
+      tools: [
+        tool({
+          id: "old",
+          name: "todo_write",
+          result: { title: "Rust login logic", todos: [{ title: "Old", status: "completed" }] }
+        })
+      ]
+    },
+    { role: "user" },
+    {
+      role: "assistant",
+      tools: [
+        tool({
+          id: "next",
+          name: "todo_write",
+          result: {
+            title: "Stripe-style landing page",
+            todos: [{ title: "Create Stripe-system landing page HTML", status: "in_progress" }]
+          }
+        })
+      ]
+    }
+  ])
+  assert.equal(list?.title, "Stripe-style landing page")
+  assert.equal(list?.tasks[0]?.status, "in_progress")
+})

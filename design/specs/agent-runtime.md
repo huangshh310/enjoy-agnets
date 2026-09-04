@@ -75,6 +75,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 结构化输出在 v7 已并入 `generateText` / `streamText` 的 `output`，不要再用旧的 `generateObject` 主路径。
 - 渲染线程：Thinking 用 Beautiful UI 风格 trace，不要把 `message.content` 当纯字符串倒出来。
 - Harness：Claude / Codex / OpenCode 是桥接，just-bash 没有端口，不能拿来替 Vercel。Pi 才走 just-bash。OpenCode 1.0.95 的 provider-utils 品牌和 harness 1.0.94 不一致，工厂处 `as never`，不要当成运行时协议不同。
+- ToolLoop 在模型不再调工具时就会 `run.end`，哪怕 Todo List 还停在 `in_progress`。Grok 常搜完工作区后写一段计划文字就收工。同 run 最多自动再泵 2 次，且必须已有 `in_progress` 项（`shouldContinueOpenTodos`）；用尽后 Dock 出「继续」。续跑 `persistUser: false`。不要把「已停止」当成崩溃。
 - `ai.resume` 对 Agent 是同一请求重启 ToolLoop，不是 SDK `session.detach` 中途续跑。
 - Windows 上 `.md` 的 `File.type` 常为空。必须 `resolveMediaType`，否则会把文档当 `application/octet-stream` file part 发给只有 vision 的 grok，思考后报 `No output generated`。文本附件不要走多模态 file，编进 `text` part。
 - 用户气泡附件消失：模型仍能读图，是因为 `attachments` 当时交给了 main，但旧 persist 只写 `messages.content` / text part。点会话或刷新走 `loadSession` → `threadFromRows`，没有 file part 就画不出缩略图。补救：发送按资产 id 写 file part；列出时按导入时间窗（上一轮之后、本轮前 2 分钟内、`source=import`）回挂孤儿资产。

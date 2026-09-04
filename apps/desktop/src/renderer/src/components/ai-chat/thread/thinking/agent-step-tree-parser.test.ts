@@ -4,6 +4,7 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { TranslateFn } from "@renderer/i18n"
 import { parseAgentStepNodes } from "./agent-step-tree-parser.ts"
 
@@ -92,4 +93,16 @@ test("bash 终端命令精准归位为 command 节点且不被批量编辑合并
   assert.equal(nodes[2].title, "$ python3 --version")
   assert.equal(nodes[2].exitCode, 0)
   assert.equal(nodes[2].status, "completed")
+})
+
+test("思考按工具切口拆开，当前段落在工具后面", () => {
+  const tools: ThreadToolCall[] = [
+    { ...createTool("t1", "read_file", { path: "README.md" }), reasoningChars: 4 },
+    { ...createTool("t2", "bash", { command: "ls" }, { exitCode: 0 }), reasoningChars: 8 }
+  ]
+  const nodes = parseAgentStepNodes("AAAABBBBCCCC", tools, mockT)
+  assert.equal(nodes.map((node) => node.kind).join(","), "thinking,reading,thinking,command,thinking")
+  assert.equal(nodes[0]?.rawText, "AAAA")
+  assert.equal(nodes[2]?.rawText, "BBBB")
+  assert.equal(nodes[4]?.rawText, "CCCC")
 })

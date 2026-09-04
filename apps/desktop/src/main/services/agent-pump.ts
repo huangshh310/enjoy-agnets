@@ -9,6 +9,7 @@ import { persistActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { disposeCodingStream, openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
+import { shouldContinueOpenTodos, TODO_CONTINUE_PROMPT } from "./todo-continue"
 import { readResponseMessages } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { recordMetric } from "./telemetry-service"
@@ -56,6 +57,10 @@ async function runOnePump(
   }
   if (parkForApproval(run)) return
   if (timedOut()) throw new RuntimeError("timeout", "Agent total timeout.", true)
+  if (queueOpenTodoContinue(run)) {
+    await opened.dispose()
+    return
+  }
   completeAgentRun({
     runId,
     run,
@@ -63,6 +68,23 @@ async function runOnePump(
   })
   await opened.dispose()
   deleteActiveRun(runId)
+}
+
+/** 模型用计划文字收工但 Todo 未完成时，同 run 再开一轮 ToolLoop。 */
+function queueOpenTodoContinue(run: ActiveRun): boolean {
+  if (
+    !shouldContinueOpenTodos({
+      aborted: run.abort.signal.aborted,
+      todoContinues: run.todoContinues,
+      tools: run.tools
+    })
+  ) {
+    return false
+  }
+  run.todoContinues += 1
+  run.messages.push({ role: "user", content: TODO_CONTINUE_PROMPT })
+  run.continuePump = true
+  return true
 }
 
 async function openRunStream(

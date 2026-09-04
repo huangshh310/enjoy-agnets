@@ -19,6 +19,8 @@ export type ThreadToolCall = {
   result?: unknown
   errorText?: string
   state: ToolCallState
+  /** 该工具开始时 assistant.reasoning 的字数，用来把思考链按步骤切开。 */
+  reasoningChars?: number
 }
 
 export type CitedSource = {

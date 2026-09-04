@@ -23,6 +23,8 @@ export type ActiveRun = {
   pumping: boolean
   resumeAfterPump: boolean
   continuePump: boolean
+  /** 因 Todo 未完成而同 run 再泵的次数，上限见 MAX_TODO_CONTINUES。 */
+  todoContinues: number
   startedAt: number
   firstTokenAt?: number
   inputTokens?: number
@@ -79,6 +81,7 @@ export function holdAgentRun(
     pumping: false,
     resumeAfterPump: false,
     continuePump: false,
+    todoContinues: 0,
     startedAt: Date.now(),
     citedSources: patch.citedSources ?? [],
     transcript: emptyTranscript(),

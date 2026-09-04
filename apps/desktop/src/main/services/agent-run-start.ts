@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { GenerationRequest } from "@enjoy-agents/agent-core"
-import { RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase, setSetting } from "./database"
 import { createId } from "./ids"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
@@ -18,7 +18,8 @@ import { getWorkspace } from "./workspace"
 import { getActiveCompactedHistory } from "./session-compaction-service"
 
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
-  return beginAgentRun(window, RunAgentInput.parse(rawInput), { persistUser: true })
+  const input = RunAgentInput.parse(rawInput)
+  return beginAgentRun(window, input, { persistUser: input.persistUser !== false })
 }
 
 export async function resumeAgentRun(window: BrowserWindow, runId: string, request: GenerationRequest) {
@@ -71,7 +72,11 @@ async function beginAgentRun(
   rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
 
   const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
-  if (lastUser && options.persistUser) {
+  if (
+    lastUser &&
+    options.persistUser &&
+    !isTodoContinueUserMessage(lastUser.content)
+  ) {
     persistUserTurn(input.sessionId, lastUser.content, metasFromAssetIds(input.attachments))
     maybeRenameSession(input.sessionId, lastUser.content)
   }

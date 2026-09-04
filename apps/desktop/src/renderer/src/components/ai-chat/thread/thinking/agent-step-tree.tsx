@@ -4,7 +4,7 @@
  * 1. 思考节点：工具存在时默认折叠为单行，展开呈现实体微卡片与复制操作；
  * 2. 工具节点：支持完整命令查看（不截断）、一键复制、终端执行输出/报错回显与状态码。
  */
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   RiArrowDownSLine,
   RiArrowRightSLine,
@@ -46,6 +46,7 @@ function StepGlyph({ kind }: { kind: AgentStepKind }) {
 export function AgentStepTree({ nodes, className }: AgentStepTreeProps) {
   if (nodes.length === 0) return null
   const hasTools = nodes.some((n) => n.kind !== "thinking")
+  const liveThinkingId = lastThinkingNodeId(nodes)
 
   return (
     <div className={cx("relative flex flex-col gap-2.5 py-1 pl-1 select-none", className)}>
@@ -73,7 +74,7 @@ export function AgentStepTree({ nodes, className }: AgentStepTreeProps) {
                 <ThinkingNodeBranch
                   title={node.title}
                   rawText={node.rawText}
-                  defaultOpen={!hasTools}
+                  defaultOpen={!hasTools || node.id === liveThinkingId}
                 />
               ) : node.isBatch && node.batchItems ? (
                 /* 批量文件修改聚合节点 */
@@ -339,6 +340,14 @@ function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
 }
 
 /** 思考过程折叠分支组件（支持卡片化排版与一键复制） */
+function lastThinkingNodeId(nodes: AgentStepNode[]): string | null {
+  for (let index = nodes.length - 1; index >= 0; index--) {
+    const node = nodes[index]
+    if (node?.kind === "thinking") return node.id
+  }
+  return null
+}
+
 function ThinkingNodeBranch({
   title,
   rawText,
@@ -351,6 +360,10 @@ function ThinkingNodeBranch({
   const t = useT()
   const [open, setOpen] = useState(defaultOpen)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    setOpen(defaultOpen)
+  }, [defaultOpen])
 
   function handleCopy(e: React.MouseEvent) {
     e.stopPropagation()

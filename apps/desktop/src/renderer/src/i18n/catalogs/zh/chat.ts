@@ -237,6 +237,9 @@ export const zhChat = {
   noLineChanges: "此文件没有行级改动。",
   loadingDiff: "正在加载差异…",
   todos: "待办",
+  continueTodos: "继续",
+  continueTodosPrompt:
+    "继续完成 Todo List 里未完成的项。直接用 write_file / edit_file，不要再只写计划。",
   approvalStays: "审批仍在上方的确认卡片中。",
   fileType: "{ext} 文件",
   file: "文件",
