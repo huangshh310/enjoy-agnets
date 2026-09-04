@@ -1,9 +1,10 @@
 /**
- * 设置情境栏精炼分组：应用偏好 / 智能体与模型 / 工作区与扩展 / 团队与账户 (4大组9个核心项)。
- * 告别24项长列表截断，所有子路由与关键词均保持100%全覆盖映射。
+ * 设置情境栏：应用偏好 / 智能体与模型 / 工作区与扩展 / 团队与账户。
+ * 技能是一级入口。其余子路由仍映射到可见项，避免 24 项长列表。
  */
 import {
   RiEqualizer3Line,
+  RiFileTextLine,
   RiFolder6Line,
   RiGroupLine,
   RiKeyboardBoxLine,
@@ -59,8 +60,14 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
       {
         id: "instructions",
         labelKey: "nav.instructions",
+        icon: RiFileTextLine,
+        keywords: ["prompt", "system", "persona", "customize", "conventions", "agents.md", "说明", "提示词"]
+      },
+      {
+        id: "skills",
+        labelKey: "nav.skills",
         icon: RiSparklingLine,
-        keywords: ["prompt", "system", "persona", "customize", "skill", "skills", "rules", "conventions", "agents.md", "说明", "技能", "规则", "提示词"]
+        keywords: ["skill", "skills", "能力包", "技能", "来源组"]
       }
     ]
   },

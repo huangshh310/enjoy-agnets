@@ -34,6 +34,7 @@ import type { SettingsNavGroup, SettingsNavItem, SettingsSectionId, SettingsNavI
 import { SETTINGS_SECTIONS } from "./settings-sections"
 
 export { SETTINGS_SECTIONS }
+export { resolveActiveNavSectionId } from "./settings-nav-resolve"
 export type { SettingsNavGroup, SettingsNavItem, SettingsSectionId }
 
 export function getSettingsNav(t: TranslateFn): SettingsNavGroup[] {
@@ -53,37 +54,6 @@ export function isSettingsSectionId(value: string): value is SettingsSectionId {
   return (SETTINGS_SECTIONS as readonly string[]).includes(value)
 }
 
-/**
- * 将所有 24 个子分段智能映射至侧栏对应的 9 个一级核心导航项，确保不丢焦
- */
-export function resolveActiveNavSectionId(section: SettingsSectionId): SettingsSectionId {
-  switch (section) {
-    case "skills":
-    case "rules":
-      return "instructions"
-    case "capabilities":
-    case "workflow":
-    case "sandbox":
-      return "agent"
-    case "knowledge":
-    case "media":
-      return "workspace"
-    case "automations":
-    case "telemetry":
-    case "git":
-      return "mcp"
-    case "members":
-    case "billing":
-    case "organization":
-    case "integrations":
-    case "account":
-    case "notifications":
-    case "archived":
-      return "team"
-    default:
-      return section
-  }
-}
 
 const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: SettingsNavIcon }> = {
   general: { labelKey: "nav.general", icon: RiSettings4Line },

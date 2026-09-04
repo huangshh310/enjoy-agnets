@@ -87,7 +87,11 @@ export function assertAllowedRuleFile(absPath: string, workspaceRoots: string[],
 }
 
 export function assertAllowedSkillFile(absPath: string, workspaceRoots: string[], home = homedir()): string {
-  const roots = [...globalSkillRoots(home), ...workspaceRoots.flatMap(workspaceSkillRoots)]
+  const roots = [
+    ...globalSkillRoots(home),
+    join(home, ".enjoy-agents", "skill-sources", "source"),
+    ...workspaceRoots.flatMap(workspaceSkillRoots)
+  ]
   return assertAbsInsideRoots(absPath, roots)
 }
 

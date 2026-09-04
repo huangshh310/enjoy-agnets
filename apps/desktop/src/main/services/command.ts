@@ -86,7 +86,8 @@ export async function runExecutable(
   cwd: string,
   executable: string,
   args: string[],
-  timeoutMs = 30_000
+  timeoutMs = 30_000,
+  extraEnv?: NodeJS.ProcessEnv
 ): Promise<CommandResult> {
   try {
     const result = await execFileAsync(executable, args, {
@@ -94,7 +95,8 @@ export async function runExecutable(
       timeout: timeoutMs,
       maxBuffer: 2_000_000,
       windowsHide: true,
-      shell: false
+      shell: false,
+      env: extraEnv ? { ...process.env, ...extraEnv } : undefined
     })
     return {
       stdout: result.stdout.toString(),
@@ -111,6 +113,6 @@ export async function runExecutable(
   }
 }
 
-export async function runGit(cwd: string, args: string[]): Promise<CommandResult> {
-  return runExecutable(cwd, "git", args)
+export async function runGit(cwd: string, args: string[], timeoutMs = 30_000): Promise<CommandResult> {
+  return runExecutable(cwd, "git", args, timeoutMs)
 }

@@ -11,7 +11,7 @@ export const zhCommand = {
   studioHub: "可观测性大盘",
   workflows: "持久化工作流与 DAG",
   mcp: "模型上下文协议（MCP）",
-  knowledge: "知识库与语义检索",
+  skills: "Skills 技能管理与目标投影",
   media: "媒体工作室（图像 / 语音 / 视频）",
   automations: "自动化与触发器",
   customize: "自定义系统提示与说明",

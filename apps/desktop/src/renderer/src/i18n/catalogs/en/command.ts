@@ -11,7 +11,7 @@ export const enCommand = {
   studioHub: "Observability dashboard",
   workflows: "Durable Workflows & DAG",
   mcp: "Model Context Protocol (MCP)",
-  knowledge: "Knowledge Base & Semantic RAG",
+  skills: "Skills management and projection",
   media: "Media Studio (Image / Speech / Video)",
   automations: "Automations & Triggers",
   customize: "Customize System Prompts & Instructions",

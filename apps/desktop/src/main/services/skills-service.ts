@@ -19,7 +19,7 @@ import {
 const req = createRequire(import.meta.url)
 
 /** 解析 SKILL.md 顶部的 YAML Frontmatter */
-function parseSkillFile(filePath: string): {
+export function parseSkillFile(filePath: string): {
   name: string
   description?: string
   trigger?: string
@@ -59,7 +59,7 @@ function parseSkillFile(filePath: string): {
 }
 
 /** 扫描指定根目录下的所有技能包 */
-function scanRoot(rootPath: string, scope: SkillScope): SkillItem[] {
+export function scanSkillRoot(rootPath: string, scope: SkillScope): SkillItem[] {
   if (!existsSync(rootPath)) return []
   const items: SkillItem[] = []
 
@@ -107,7 +107,7 @@ export function listInstalledSkills(input?: { workspacePath?: string }): SkillIt
   const seenPaths = new Set<string>()
 
   for (const root of globalSkillRoots()) {
-    for (const skill of scanRoot(root, "global")) {
+    for (const skill of scanSkillRoot(root, "global")) {
       if (!seenPaths.has(skill.directoryPath.toLowerCase())) {
         seenPaths.add(skill.directoryPath.toLowerCase())
         allSkills.push(skill)
@@ -117,7 +117,7 @@ export function listInstalledSkills(input?: { workspacePath?: string }): SkillIt
 
   if (input?.workspacePath) {
     for (const root of workspaceSkillRoots(input.workspacePath)) {
-      for (const skill of scanRoot(root, "workspace")) {
+      for (const skill of scanSkillRoot(root, "workspace")) {
         if (!seenPaths.has(skill.directoryPath.toLowerCase())) {
           seenPaths.add(skill.directoryPath.toLowerCase())
           allSkills.push(skill)
@@ -181,8 +181,12 @@ function needWorkspace(workspacePath?: string): string {
   return workspacePath
 }
 
-export function deleteSkillPackage(directoryPath: string, workspaceRoots: string[] = []): boolean {
-  const allowed = assertAllowedSkillPackage(directoryPath, workspaceRoots)
+export function deleteSkillPackage(
+  directoryPath: string,
+  workspaceRoots: string[] = [],
+  home = homedir()
+): boolean {
+  const allowed = assertAllowedSkillPackage(directoryPath, workspaceRoots, home)
   if (!existsSync(allowed)) return false
   rmSync(allowed, { recursive: true, force: true })
   return true

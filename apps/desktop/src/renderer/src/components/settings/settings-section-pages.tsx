@@ -10,7 +10,6 @@ import { CompanyDetailsSection } from "@renderer/components/company/company-deta
 import { CompanyIntegrationsSection } from "@renderer/components/company/company-integrations-section"
 import { InstructionsSection } from "@renderer/components/customize/views/instructions-section"
 import { RulesSection } from "@renderer/components/customize/views/rules-section"
-import { SkillsSection } from "@renderer/components/customize/views/skills-section"
 import { TeamMembersSection } from "@renderer/components/team/team-members-section"
 import { TeamProfileSection } from "@renderer/components/team/team-profile-section"
 import { WorkspacesPage } from "@renderer/components/workspaces/workspaces-page"
@@ -57,7 +56,6 @@ const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
   providers: ProviderSettings,
   agent: AgentSettings,
   instructions: InstructionsSection,
-  skills: SkillsSection,
   rules: RulesSection,
   workspace: WorkspaceSection,
   mcp: McpSettings,

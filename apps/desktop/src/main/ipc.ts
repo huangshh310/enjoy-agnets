@@ -6,10 +6,18 @@ import { AI_CHANNELS, registerAiIpc, unregisterAiIpc } from "./ipc-ai"
 import { SETTINGS_CHANNELS, registerSettingsIpc } from "./ipc-settings"
 import { SHELL_CHANNELS, registerShellIpc } from "./ipc-shell"
 import { SKILLS_CHANNELS, registerSkillsIpc } from "./ipc-skills"
+import { SKILL_SOURCE_CHANNELS, registerSkillSourceIpc } from "./ipc-skill-sources"
 import { RULES_CHANNELS, registerRulesIpc } from "./ipc-rules"
 import { handleCaptionDoubleClick, queryIsMaximized, WM_NCLBUTTONDBLCLK } from "./services/window-maximize"
 
-const CHANNELS = [...SHELL_CHANNELS, ...SETTINGS_CHANNELS, ...AI_CHANNELS, ...SKILLS_CHANNELS, ...RULES_CHANNELS] as const
+const CHANNELS = [
+  ...SHELL_CHANNELS,
+  ...SETTINGS_CHANNELS,
+  ...AI_CHANNELS,
+  ...SKILLS_CHANNELS,
+  ...SKILL_SOURCE_CHANNELS,
+  ...RULES_CHANNELS
+] as const
 
 let ipcRegistered = false
 
@@ -20,6 +28,7 @@ export function registerIpc(window: BrowserWindow) {
   registerShellIpc()
   registerSettingsIpc()
   registerSkillsIpc()
+  registerSkillSourceIpc()
   registerRulesIpc()
   registerAiIpc()
 }

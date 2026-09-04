@@ -18,7 +18,8 @@ import {
   RiPulseLine,
   RiRouteLine,
   RiSettings4Line,
-  RiShieldLine
+  RiShieldLine,
+  RiSparklingLine
 } from "@remixicon/react"
 import {
   CommandDialog,
@@ -104,6 +105,16 @@ export function QuickSearchDialog() {
           >
             <RiPlugLine className="size-4 text-accent-500" />
             <span>{t("command.mcp")}</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              handleSelect(() => {
+                void navigate({ to: "/skills" })
+              })
+            }
+          >
+            <RiSparklingLine className="size-4 text-accent-500" />
+            <span>{t("command.skills")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() =>

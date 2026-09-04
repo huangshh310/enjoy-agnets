@@ -128,7 +128,21 @@ const ide = {
     read: (skillFilePath: string) => ipcRenderer.invoke("skills.read", { skillFilePath }),
     create: (input: unknown) => ipcRenderer.invoke("skills.create", input),
     delete: (directoryPath: string) => ipcRenderer.invoke("skills.delete", { directoryPath }),
-    reveal: (directoryPath: string) => ipcRenderer.invoke("skills.reveal", { directoryPath })
+    reveal: (directoryPath: string) => ipcRenderer.invoke("skills.reveal", { directoryPath }),
+    sources: {
+      overview: (input?: unknown) => ipcRenderer.invoke("skills.sources.overview", input ?? {}),
+      detail: (input: unknown) => ipcRenderer.invoke("skills.sources.detail", input),
+      add: (input: unknown) => ipcRenderer.invoke("skills.sources.add", input),
+      update: (input: unknown) => ipcRenderer.invoke("skills.sources.update", input),
+      remove: (input: unknown) => ipcRenderer.invoke("skills.sources.remove", input),
+      deleteSkill: (input: unknown) => ipcRenderer.invoke("skills.sources.deleteSkill", input),
+      configure: (input: unknown) => ipcRenderer.invoke("skills.sources.configure", input),
+      deploy: (input: unknown) => ipcRenderer.invoke("skills.sources.deploy", input),
+      doctor: (input?: unknown) => ipcRenderer.invoke("skills.sources.doctor", input ?? {}),
+      curated: () => ipcRenderer.invoke("skills.sources.curated"),
+      updateAll: () => ipcRenderer.invoke("skills.sources.updateAll"),
+      repair: (input?: unknown) => ipcRenderer.invoke("skills.sources.repair", input ?? {})
+    }
   },
   rules: {
     list: (input?: unknown) => ipcRenderer.invoke("rules.list", input ?? {}),

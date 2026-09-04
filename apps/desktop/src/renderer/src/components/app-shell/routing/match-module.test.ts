@@ -6,6 +6,7 @@ test("工作模块按前缀命中", () => {
   assert.equal(matchAppModule("/"), "chat")
   assert.equal(matchAppModule("/knowledge"), "knowledge")
   assert.equal(matchAppModule("/mcp"), "mcp")
+  assert.equal(matchAppModule("/skills"), "skills")
   assert.equal(matchAppModule("/observability"), "observability")
 })
 
@@ -22,4 +23,5 @@ test("Inbox / Settings 是叠加模块", () => {
 test("工作模块路径表完整", () => {
   assert.equal(pathForWorkModule("chat"), "/")
   assert.equal(pathForWorkModule("mcp"), "/mcp")
+  assert.equal(pathForWorkModule("skills"), "/skills")
 })

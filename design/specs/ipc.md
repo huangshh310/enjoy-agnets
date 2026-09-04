@@ -27,7 +27,7 @@
 | terminal | `open` `write` `close` | pty |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
 | rules | `list` `read` `create` `delete` `reveal` | 项目规则；读删定位走允许根；工作区路径必须已登记 |
-| skills | `list` `read` `create` `delete` `reveal` | 技能包；删除只允许 skill root 的直接子目录 |
+| skills | `list` `read` `create` `delete` `reveal` `sources.overview` `sources.detail` `sources.add` `sources.update` `sources.remove` `sources.deleteSkill` `sources.configure` `sources.deploy` `sources.doctor` `sources.curated` `sources.updateAll` `sources.repair` | 技能包；删除只允许 skill root 的直接子目录。`sources.deleteSkill` 删来源内单个包；`sources.remove` 卸载来源组（Git 清投影，本机发现组只隐藏） |
 
 ### 推送事件
 
@@ -47,11 +47,12 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts` 各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 壳频道：`ipc-shell.ts`（workspace / session / agent / terminal / window）
 - 设置频道：`ipc-settings.ts`；探测 `ipc-provider-probe.ts`；Automations `ipc-automations.ts`
 - AI 频道：`ipc-ai.ts`
+- 技能来源：`ipc-skill-sources.ts`；Skills 扫描：`ipc-skills.ts`
 - 桥：`apps/desktop/src/preload/index.ts`
 - 渲染封装：`apps/desktop/src/renderer/src/lib/ide.ts`、`lib/window-control.ts`
 
@@ -62,3 +63,4 @@
 - Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。
 - `workspace.gitCommit` 是用户主动提交，没有 runId / HMAC。UI 在 `requireCommitApproval` 时弹 `ConfirmDialog` 再 invoke；Agent 工具 `git_commit` 仍走 `approval.required` + `agent.decide`。不要把 UI 提交硬接进 HMAC 管道。
+- `skills.sources.configure` / `deploy` / `remove` 只认 `manifest.json`。本机 Agent 技能根（`~/.agents/skills` 等）由 `persistDiscoveredSources` 在 overview / configure / deploy / doctor / repair 写入 manifest；漏写就会对自动发现来源抛 `SOURCE_NOT_FOUND`。投影到自身目录必须跳过 `cpSync`，否则 Windows 会在原地复制时报错。

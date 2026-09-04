@@ -9,7 +9,8 @@ import {
   RiInboxLine,
   RiLineChartLine,
   RiPlugLine,
-  RiSettings4Line
+  RiSettings4Line,
+  RiSparklingLine
 } from "@remixicon/react"
 import type { ActivityRailItem, AppModuleId } from "../app-shell.types"
 
@@ -21,6 +22,7 @@ export const WORK_RAIL_ITEMS: ActivityRailItem[] = [
   { id: "workflows", labelKey: "nav.workflows", to: "/workflows" },
   { id: "media", labelKey: "nav.media", to: "/media" },
   { id: "mcp", labelKey: "nav.mcp", to: "/mcp" },
+  { id: "skills", labelKey: "nav.skills", to: "/skills" },
   { id: "observability", labelKey: "nav.observability", to: "/observability" }
 ]
 
@@ -35,6 +37,7 @@ export const ACTIVITY_ICONS: Record<AppModuleId, ActivityIcon> = {
   workflows: RiFlowChart,
   media: RiImageLine,
   mcp: RiPlugLine,
+  skills: RiSparklingLine,
   observability: RiLineChartLine,
   inbox: RiInboxLine,
   settings: RiSettings4Line

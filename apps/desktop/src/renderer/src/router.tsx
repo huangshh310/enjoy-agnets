@@ -17,6 +17,7 @@ import { KnowledgePage } from "@renderer/components/knowledge/knowledge-page"
 import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
 import { MediaPage } from "@renderer/components/media/media-page"
 import { McpPage } from "@renderer/components/mcp/mcp-page"
+import { SkillsPage } from "@renderer/components/skills/skills-page"
 import { ObservabilityPage } from "@renderer/components/observability/observability-page"
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
@@ -91,6 +92,9 @@ const settingsSectionRoute = createRoute({
     if (!isSettingsSectionId(params.section)) {
       throw redirect({ to: "/settings/$section", params: { section: "general" } })
     }
+    if (params.section === "skills") {
+      throw redirect({ to: "/skills" })
+    }
   },
   component: SettingsSectionPage
 })
@@ -117,6 +121,12 @@ const mcpRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/mcp",
   component: McpPage
+})
+
+const skillsRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/skills",
+  component: SkillsPage
 })
 
 const observabilityRoute = createRoute({
@@ -157,9 +167,15 @@ const customizeIndexRoute = createRoute({
 const customizeSectionRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/customize/$section",
-  beforeLoad: mappedSettingsBeforeLoad((section) =>
-    isCustomizeSectionId(section) ? section : "instructions"
-  ),
+  beforeLoad: ({ params }) => {
+    if (params.section === "skills") {
+      throw redirect({ to: "/skills" })
+    }
+    throw redirect({
+      to: "/settings/$section",
+      params: { section: isCustomizeSectionId(params.section) ? params.section : "instructions" }
+    })
+  },
   component: RedirectPlaceholder
 })
 
@@ -226,6 +242,7 @@ const routeTree = rootRoute.addChildren([
     workflowsRoute,
     mediaRoute,
     mcpRoute,
+    skillsRoute,
     observabilityRoute,
     inboxRoute,
     studioRoute,

@@ -7,6 +7,7 @@ export const WORK_MODULE_IDS = [
   "workflows",
   "media",
   "mcp",
+  "skills",
   "observability"
 ] as const
 

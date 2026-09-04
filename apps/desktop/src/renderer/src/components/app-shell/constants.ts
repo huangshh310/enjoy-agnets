@@ -11,6 +11,7 @@ export const WORK_MODULE_PATHS = {
   workflows: "/workflows",
   media: "/media",
   mcp: "/mcp",
+  skills: "/skills",
   observability: "/observability"
 } as const
 

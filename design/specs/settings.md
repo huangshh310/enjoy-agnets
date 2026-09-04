@@ -14,7 +14,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/general` 等 | 设置分段 | AppShell Settings 模块；Providers 必须 `wide` |
 | `#/settings/archived` | 已归档的聊天 | Settings |
 | `#/settings/automations` | 自动化 | Settings；旧 `#/automations` redirect |
-| `#/settings/instructions` `#/settings/skills` `#/settings/rules` | 说明 / 技能 / 规则 | Settings；旧 `#/customize/*` redirect |
+| `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/skills` |
 | `#/settings/team` `#/settings/members` | 团队资料 / 成员 | 旧 `#/team/*` redirect |
 | `#/settings/billing` `#/settings/organization` `#/settings/integrations` | 账单 / 组织 / 企业集成 | 旧 `#/company/*` redirect |
 | `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect |
@@ -22,11 +22,13 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/studio` | （已废止） | 重定向 `#/` |
 
 设置分段 ID 完整保留 24 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
-侧栏情境栏精炼为 4 大板块 9 个核心高频项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/定制规则；工作区与扩展：工作区/MCP；团队与账户：团队），杜绝 24 项长滚动与底部截断。子页面与关键词均通过 `resolveActiveNavSectionId` 智能高亮所属一级条目。
+侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；团队与账户：团队），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目；`skills` 自己就是一级入口，不再并进「说明」。
 底栏用户卡片展开菜单完整映射至上述 Settings / Inbox Hash，及应用内 `ConfirmDialog` 退出登录，杜绝任何 no-op。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
 
 Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。
+
+`#/skills` 是唯一 Skills UI（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。
 Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。界面语言默认 `zh`，见 [i18n](./i18n.md)。
 
 个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式：
@@ -62,14 +64,15 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
 - 企业账单：`apps/desktop/src/renderer/src/components/company/billing/`（`cards/` Hero/支付/指标/发票，`modals/` 对比与升级，`lib/apply-upgrade.ts` / `lib/billing-export.ts`）
+- Skills：`apps/desktop/src/renderer/src/components/skills/`（`skills-page.tsx`）。主进程：`main/services/skill-sources/`、`main/ipc-skill-sources.ts`
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
 - 收件箱是 AppShell 模块，不是独立壳。不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
 - Studio / Team / Company / Account 旧 Hash 必须 redirect 进 AppShell，不要再挂 `SecondaryPageShell` 侧栏。
-- Customize 的 Skills 现已落地本机全局与工作区目录的自动扫描、创建、一键安装模版与文件定位。工作区写入必须已打开并登记的 workspace；`global` 才写 `~/.enjoy-agents`。读删不能用任意绝对路径。
+- Skills 只有工作模块 `#/skills` 一套 UI。单个技能走 `skills.sources.deleteSkill`（本机目录删包，Git 只拆投影）。来源组 `skills.sources.remove`：Git 清 checkout 与投影；本机自动发现组写入 `ignoredOrigins` 隐藏，不删 `~/.agents/skills` 根。模版安装仍走 `skills.create`。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
-- 设置侧栏严禁无脑平铺全部 24 个分段：必须维持 4 大板块 9 项的核心高频架构，子分段（如 `skills` / `rules` / `billing` 等）保留路由与页面实现，侧栏通过 `resolveActiveNavSectionId` 统一映射高亮所属父级，保障单屏全览不溢出。
+- 设置侧栏严禁无脑平铺全部 24 个分段。`skills` 是一级入口（智能体分组），不要再并进「说明」。其余子分段（`rules` / `billing` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。

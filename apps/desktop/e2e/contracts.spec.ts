@@ -21,10 +21,16 @@ import { join } from "node:path"
 
 const routerSource = readFileSync(join(process.cwd(), "src/renderer/src/router.tsx"), "utf8")
 
-test("Hash 路由包含 Knowledge / Workflows / Media / MCP / Observability", () => {
-  for (const path of ["/knowledge", "/workflows", "/media", "/mcp", "/observability"]) {
+test("Hash 路由包含 Knowledge / Workflows / Media / MCP / Skills / Observability", () => {
+  for (const path of ["/knowledge", "/workflows", "/media", "/mcp", "/skills", "/observability"]) {
     expect(routerSource.includes(`path: "${path}"`)).toBeTruthy()
   }
+})
+
+test("settings/skills 重定向到工作模块，没有第二套技能页", () => {
+  expect(routerSource.includes('params.section === "skills"')).toBeTruthy()
+  expect(routerSource.includes('redirect({ to: "/skills" })')).toBeTruthy()
+  expect(routerSource.includes("SkillFlowPage")).toBeFalsy()
 })
 
 test("AppShell 单壳：Studio 重定向，二级壳不再「返回应用」", () => {
