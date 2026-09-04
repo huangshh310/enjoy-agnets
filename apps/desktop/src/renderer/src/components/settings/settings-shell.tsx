@@ -22,7 +22,7 @@ export function SettingsShell() {
       groups={getSettingsNav(t)}
       selectedId={resolveActiveNavSectionId(section)}
       contentWidth="wide"
-      hideChrome={section === "account"}
+      hideChrome
       onSelect={(id) => void navigate({ to: "/settings/$section", params: { section: id } })}
     >
       <Outlet />

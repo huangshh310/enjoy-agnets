@@ -19,6 +19,7 @@ export function SettingsSectionPage() {
   if (section === "archived") return <ArchivedChatsPage />
   if (section === "automations") return <SettingsSectionBody section={section} />
   if (section === "account") return <SettingsSectionBody section={section} />
+  if (section === "billing") return <SettingsSectionBody section={section} />
   const title = item
     ? item.label.startsWith("nav.")
       ? t(item.label)

@@ -37,6 +37,13 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Tokens 面积图：该月每日 token 合计，平滑贝塞尔 + `accent-500` 渐变；标题旁始终挂环比胶囊（相对上月，规则同上）。
 - 资料修改（昵称/邮箱/头衔/时区/形象）收纳于 Edit Dialog 与 `BlobatarPicker` / `BlobatarPickerDialog`。底栏安全卡片只反映 renderer 可见的 `hasKey` 与本机节点，不宣称 DPAPI/Keychain、不编造 IP。
 
+企业账单 (`#/settings/billing`)：对齐 [devl.dev Billing](https://www.devl.dev/c/settings/billing) 现代极简流式卡片架构。数据为**本地演示草稿**，页眉标明「本地演示」，未接计费后端。
+- 顶部 Plan Hero：套餐名称、Annual、权益摘要、续费状态微标（`active` 绿勾 / `canceled` 灰叉）、月付单价、Compare / Cancel / Upgrade。Cancel 必须改 `plan.status`，禁止取消后仍画 Active。
+- Payment Method：Visa、脱敏卡号、有效期、账单邮箱、Default。Update 打开本页草稿 Dialog，保存只改本地 state。
+- Stat Cards：Credits、Tax ID（专票 / 统一代码）、Currency。
+- Invoices：本机下载 CSV（Export all 与单行），不假装远端成功。
+- Compare plans → `pricing-comparison-dialog`；Custom 只关窗。其它档位带 `planId` 打开升级弹窗。Upgrade → 月/年切换 + 三档 + 席位滑块；Starter 确认时席位钉死 5。
+
 ## 不变量
 
 - 侧栏条目必须 `navigate`，禁止 no-op。
@@ -54,8 +61,8 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
+- 企业账单：`apps/desktop/src/renderer/src/components/company/billing/`（`cards/` Hero/支付/指标/发票，`modals/` 对比与升级，`lib/apply-upgrade.ts` / `lib/billing-export.ts`）
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
-
 ## 已知坑
 
 - 收件箱是 AppShell 模块，不是独立壳。不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
@@ -67,3 +74,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
+- 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。
+- 账单页没有计费 IPC。禁止 setTimeout 假装核验/导出成功；CSV 用 `Blob` 本机下载。
