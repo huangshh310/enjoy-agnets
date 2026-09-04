@@ -66,10 +66,12 @@ function UserCardMenuGroupView({
 }) {
   return (
     <>
-      {showDivider ? <div className="-mx-2.5 my-2 h-px bg-border-button-default" /> : null}
-      <div className={cx("flex w-full flex-col gap-1", group.label && "gap-1.5 pt-1")}>
+      {showDivider ? <div className="my-1.5 h-px w-full bg-separator-border/60" /> : null}
+      <div className={cx("flex w-full flex-col gap-0.5", group.label && "gap-1 pt-0.5")}>
         {group.label ? (
-          <span className="px-2 text-caption-1-semibold text-text-tertiary">{group.label}</span>
+          <span className="px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary/90 select-none">
+            {group.label}
+          </span>
         ) : null}
         <div className="flex w-full flex-col gap-0.5">
           {group.items.map((item) => (
@@ -89,6 +91,8 @@ function UserCardMenuItemRow({
   onSelect: () => void
 }) {
   const Icon = item.icon
+  const isSignOut = item.id === "sign-out"
+
   return (
     <button
       type="button"
@@ -97,20 +101,30 @@ function UserCardMenuItemRow({
         onSelect()
       }}
       className={cx(
-        "flex w-full cursor-pointer items-center justify-between rounded-2lg px-2 py-1.5 text-left outline-none transition-colors",
-        item.isSelected
-          ? "bg-background-primary-hover"
-          : "hover:bg-background-primary-hover focus-visible:bg-background-primary-hover"
+        "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left outline-none transition-all duration-150 active:scale-[0.98]",
+        isSignOut
+          ? "text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+          : item.isSelected
+            ? "bg-background-secondary-hover text-text-primary"
+            : "text-text-primary hover:bg-background-secondary-hover/90"
       )}
     >
       <span className="flex min-w-0 flex-1 items-center gap-2.5">
-        <Icon className="size-4.5 shrink-0 text-foreground-icon-secondary" aria-hidden />
-        <span className="truncate text-body-medium text-text-primary">{item.label}</span>
+        <Icon
+          className={cx(
+            "size-4 shrink-0 transition-colors",
+            isSignOut
+              ? "text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400"
+              : "text-foreground-icon-secondary group-hover:text-accent-500"
+          )}
+          aria-hidden
+        />
+        <span className="truncate text-caption-1-medium">{item.label}</span>
       </span>
       {item.badge ? (
         <Badge
           color="neutral"
-          className="ml-2 h-5 rounded-full bg-background-tertiary-hover px-1.5 text-caption-2-semibold text-text-secondary"
+          className="ml-2 h-4.5 rounded-full bg-background-tertiary-hover px-1.5 text-caption-2-semibold text-text-secondary"
         >
           {item.badge}
         </Badge>

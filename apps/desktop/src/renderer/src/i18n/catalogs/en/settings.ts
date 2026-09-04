@@ -5,6 +5,7 @@ export const enSettings = {
   detectAuto: "Detect automatically",
 
   general: {
+    title: "General details",
     hubTitle: "Application defaults",
     hubDesc: "Tool approval presets, auto-run flags, and the language used by the application chrome.",
     permissionMode: "Permission mode",

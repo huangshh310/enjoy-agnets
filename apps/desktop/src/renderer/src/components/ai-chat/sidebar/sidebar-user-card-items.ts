@@ -4,14 +4,11 @@
  */
 import {
   RiBankCardLine,
-  RiBankLine,
-  RiBox3Line,
   RiFolder6Line,
   RiGroupLine,
   RiLogoutBoxRLine,
   RiMessage2Line,
-  RiNotification3Line,
-  RiSchoolLine,
+  RiSettings4Line,
   RiShieldUserLine
 } from "@remixicon/react"
 import type { UserCardMenuGroup } from "./sidebar-user-card.types"
@@ -32,84 +29,67 @@ export interface CreateMenuItemsOptions {
  */
 export function buildUserCardMenuGroups({
   t,
+  onOpenWorkspace,
   onNavigate,
   onSignOut
 }: CreateMenuItemsOptions): UserCardMenuGroup[] {
   return [
     {
       id: "workspace",
+      label: t("chat.workspaceSection") || "工作空间",
       items: [
         {
           id: "team-profile",
-          icon: RiBankLine,
-          label: t("chat.teamProfile") || "View team profile",
+          icon: RiGroupLine,
+          label: t("chat.teamAndMembers") || "团队与成员",
           onClick: () => onNavigate("/settings/team")
         },
         {
           id: "folders",
           icon: RiFolder6Line,
-          label: t("chat.folders") || "Folders",
-          onClick: () => onNavigate("/settings/workspace")
+          label: t("chat.openWorkspaceFolder") || "打开工作区文件夹",
+          onClick: () => (onOpenWorkspace ? onOpenWorkspace() : onNavigate("/settings/workspace"))
         },
         {
           id: "messages",
           icon: RiMessage2Line,
-          label: t("chat.messages") || "Messages",
-          badge: "8",
+          label: t("chat.inboxNotifications") || "消息中心",
           onClick: () => onNavigate("/inbox")
-        },
-        {
-          id: "people",
-          icon: RiGroupLine,
-          label: t("chat.people") || "People",
-          onClick: () => onNavigate("/settings/members")
         }
       ]
     },
     {
-      id: "company",
-      label: t("chat.company") || "Company",
+      id: "preferences",
+      label: t("chat.preferencesSection") || "设置与订阅",
       items: [
+        {
+          id: "general-settings",
+          icon: RiSettings4Line,
+          label: t("common.settings") || "偏好设置",
+          onClick: () => onNavigate("/settings/general")
+        },
         {
           id: "billing",
           icon: RiBankCardLine,
-          label: t("chat.billing") || "Billing",
+          label: t("chat.billing") || "订阅与账单",
           onClick: () => onNavigate("/settings/billing")
-        },
-        {
-          id: "company-details",
-          icon: RiSchoolLine,
-          label: t("chat.companyDetails") || "Company Details",
-          onClick: () => onNavigate("/settings/organization")
-        },
-        {
-          id: "integrations",
-          icon: RiBox3Line,
-          label: t("chat.integrations") || "Integrations",
-          onClick: () => onNavigate("/settings/integrations")
         }
       ]
     },
     {
-      id: "personal",
-      label: t("chat.personal") || "Personal",
+      id: "account",
+      label: t("chat.accountSection") || "账户",
       items: [
-        {
-          id: "notifications",
-          icon: RiNotification3Line,
-          label: t("chat.notifications") || "Notifications",
-          onClick: () => onNavigate("/settings/notifications")
-        },
         {
           id: "account-details",
           icon: RiShieldUserLine,
-          label: t("chat.accountDetails") || "Account Details",
+          label: t("chat.accountDetails") || "个人资料",
           onClick: () => onNavigate("/settings/account")
         },
         {
           id: "sign-out",
           icon: RiLogoutBoxRLine,
-          label: t("chat.signOut") || "Sign out",
+          label: t("chat.signOut") || "退出登录",
           onClick: () => (onSignOut ? onSignOut() : onNavigate("/"))
         }
       ]

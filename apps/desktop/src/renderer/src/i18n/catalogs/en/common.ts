@@ -47,5 +47,8 @@ export const enCommon = {
   runtimeHarness: "Harness (adapter)",
   adapterAuto: "Auto from Provider",
   providersKey: "Providers key",
-  noProviderKey: "No provider key"
+  noProviderKey: "No provider key",
+  saveChanges: "Save changes",
+  saved: "Saved",
+  created: "Created at"
 }

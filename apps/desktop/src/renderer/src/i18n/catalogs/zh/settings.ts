@@ -5,6 +5,7 @@ export const zhSettings = {
   detectAuto: "自动检测",
 
   general: {
+    title: "基本信息",
     hubTitle: "应用默认设置",
     hubDesc: "工具审批预设、自动放行开关，以及应用界面使用的语言。",
     permissionMode: "权限模式",

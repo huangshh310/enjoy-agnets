@@ -47,5 +47,8 @@ export const zhCommon = {
   runtimeHarness: "Harness（适配器）",
   adapterAuto: "跟随供应商",
   providersKey: "已配置密钥",
-  noProviderKey: "无供应商密钥"
+  noProviderKey: "无供应商密钥",
+  saveChanges: "保存更改",
+  saved: "已保存",
+  created: "创建于"
 }

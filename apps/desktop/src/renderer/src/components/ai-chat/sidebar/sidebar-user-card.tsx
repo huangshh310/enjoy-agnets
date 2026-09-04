@@ -95,8 +95,9 @@ export function SidebarUserCard({
         placement={isMobile ? "bottom start" : "right bottom"}
         offset={8}
         className={cx(
-          "w-[265px] max-w-[calc(100vw-32px)] origin-bottom-left overflow-y-auto",
-          "rounded-2xl border border-border-button-default bg-background-primary-default p-2.5 shadow-dropdown",
+          "w-[275px] max-w-[calc(100vw-32px)] origin-bottom-left",
+          "overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          "rounded-2xl border border-border-button-default bg-background-primary-default/95 p-2 shadow-dropdown backdrop-blur-xl",
           "transition duration-150 ease-out",
           "data-entering:opacity-0 data-entering:scale-95 data-entering:blur-[2px]",
           "data-exiting:opacity-0 data-exiting:scale-95 data-exiting:blur-[2px]"
