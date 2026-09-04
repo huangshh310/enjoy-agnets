@@ -39,7 +39,8 @@ export type ReadFileInput = z.infer<typeof ReadFileInput>
 
 export const FileDiffInput = z.object({
   workspaceId: z.string(),
-  path: z.string()
+  path: z.string(),
+  ignoreWhitespace: z.boolean().optional()
 })
 export type FileDiffInput = z.infer<typeof FileDiffInput>
 
@@ -76,6 +77,69 @@ export const ChangedFile = z.object({
   path: z.string(),
   status: z.enum(["added", "modified", "deleted", "untracked"]),
   additions: z.number().default(0),
-  deletions: z.number().default(0)
+  deletions: z.number().default(0),
+  staged: z.boolean().default(false),
+  worktree: z.boolean().default(false)
 })
 export type ChangedFile = z.infer<typeof ChangedFile>
+
+export const GitCommitItem = z.object({
+  hash: z.string(),
+  shortHash: z.string(),
+  message: z.string(),
+  authorName: z.string(),
+  authorEmail: z.string().default(""),
+  relativeTime: z.string().default(""),
+  date: z.string().default(""),
+  filesChanged: z.number().default(0),
+  additions: z.number().default(0),
+  deletions: z.number().default(0)
+})
+export type GitCommitItem = z.infer<typeof GitCommitItem>
+
+export const GitLogInput = z.object({
+  workspaceId: z.string().min(1),
+  limit: z.number().default(30).optional()
+})
+export type GitLogInput = z.infer<typeof GitLogInput>
+
+export const GitLogResult = z.object({
+  branch: z.string().default(""),
+  upstream: z.string().default(""),
+  branchFiles: z.array(ChangedFile).default([]),
+  commits: z.array(GitCommitItem)
+})
+export type GitLogResult = z.infer<typeof GitLogResult>
+
+export const GitCommitInput = z.object({
+  workspaceId: z.string().min(1),
+  message: z.string().trim().min(1).max(4000),
+  stageAll: z.boolean().default(true)
+})
+export type GitCommitInput = z.infer<typeof GitCommitInput>
+
+export const GitCommitResult = z.object({
+  ok: z.boolean(),
+  output: z.string().default("")
+})
+export type GitCommitResult = z.infer<typeof GitCommitResult>
+
+export const GitPushInput = z
+  .object({
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type GitPushInput = z.infer<typeof GitPushInput>
+
+export const GitPatchInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    paths: z.array(z.string()).optional()
+  })
+  .strict()
+export type GitPatchInput = z.infer<typeof GitPatchInput>
+
+export const GitPatchResult = z.object({
+  patch: z.string().default("")
+})
+export type GitPatchResult = z.infer<typeof GitPatchResult>

@@ -7,6 +7,7 @@ import { assertSandboxCommand, type AgentWorkspaceHost } from "@enjoy-agents/age
 import { parseExecutableCommand, runExecutable, runGit } from "./command"
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths"
 import { readPreferences } from "./preferences"
+import { commitWorkspaceAll } from "./workspace-git"
 
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
 
@@ -58,20 +59,11 @@ export function createWorkspaceHost(workspaceRoot: string): AgentWorkspaceHost {
       const args = filePath ? ["diff", "--", filePath] : ["diff"]
       return (await runGit(workspaceRoot, args)).stdout
     },
-    gitCommit: async (message) => commitAll(workspaceRoot, message)
+    gitCommit: async (message) => {
+      const result = await commitWorkspaceAll(workspaceRoot, message)
+      return result.output
+    }
   }
-}
-
-async function commitAll(workspaceRoot: string, message: string): Promise<string> {
-  const staged = await runGit(workspaceRoot, ["add", "-A"])
-  if (staged.exitCode !== 0) {
-    throw new Error(staged.stderr || "git add failed")
-  }
-  const committed = await runGit(workspaceRoot, ["commit", "-m", message])
-  if (committed.exitCode !== 0) {
-    throw new Error(committed.stderr || "git commit failed")
-  }
-  return committed.stdout
 }
 
 async function collectFiles(workspaceRoot: string, pattern: string): Promise<string[]> {

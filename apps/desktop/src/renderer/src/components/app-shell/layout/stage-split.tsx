@@ -33,6 +33,8 @@ export function StageSplit({ isChat }: { isChat: boolean }) {
       defaultLayout={defaultLayout}
       onLayoutChanged={(layout, meta) => {
         if (maximized || rightPanelCollapsed || Object.keys(layout).length < 2) return
+        const inspectorPercent = layout.changes
+        if (typeof inspectorPercent === "number" && inspectorPercent < 10) return
         onLayoutChanged(layout, meta)
       }}
     >

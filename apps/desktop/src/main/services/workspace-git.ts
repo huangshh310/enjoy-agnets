@@ -1,17 +1,18 @@
 /**
- * 工作区 Git 变更列表与单文件 unified diff。只收 rootPath，避免回指档案层。
+ * 工作区 Git 变更列表、单文件 unified diff、线性提交日志与用户提交。
+ * 只收 rootPath，避免回指档案层。提交执行在 main；UI 路径靠 ConfirmDialog 审批。
  */
 import { promises as fs } from "node:fs"
 import { diffTexts, parseUnifiedDiff, toUnifiedDiff } from "@enjoy-agents/agent-core"
+import type { GitCommitResult, GitLogResult } from "@enjoy-agents/ipc-contract"
 import { runGit } from "./command"
 import { resolveInsideWorkspace } from "./paths"
+import { parseGitLogStdout } from "./workspace-git-log"
+import { parsePorcelainLine, type ChangeRow } from "./workspace-git-status"
+import { readBranchFiles, readUpstream } from "./workspace-git-remote"
 
-type ChangeRow = {
-  path: string
-  status: "added" | "modified" | "deleted" | "untracked"
-  additions: number
-  deletions: number
-}
+export type { ChangeRow }
+export { parsePorcelainLine }
 
 export async function changedFiles(workspaceRoot: string): Promise<ChangeRow[]> {
   const status = (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout
@@ -21,12 +22,17 @@ export async function changedFiles(workspaceRoot: string): Promise<ChangeRow[]> 
     .map((line) => line.trimEnd())
     .filter(Boolean)
     .map((line) => parsePorcelainLine(line, counts))
+    .filter((row): row is ChangeRow => row !== null)
   await fillUntrackedCounts(workspaceRoot, rows)
   return rows
 }
 
-export async function readFileDiff(workspaceRoot: string, relativePath: string) {
-  const raw = await fileUnifiedDiff(workspaceRoot, relativePath)
+export async function readFileDiff(
+  workspaceRoot: string,
+  relativePath: string,
+  ignoreWhitespace = false
+) {
+  const raw = await fileUnifiedDiff(workspaceRoot, relativePath, ignoreWhitespace)
   const model = raw.trim()
     ? parseUnifiedDiff(raw, relativePath)
     : await emptyFileAsDiff(workspaceRoot, relativePath)
@@ -38,31 +44,15 @@ export async function readFileDiff(workspaceRoot: string, relativePath: string) 
   }
 }
 
-function parsePorcelainLine(
-  line: string,
-  counts: Map<string, { additions: number; deletions: number }>
-): ChangeRow {
-  const code = line.slice(0, 2).trim()
-  const filePath = line.slice(3).replace(/"/g, "")
-  const statusMap: Record<string, ChangeRow["status"]> = {
-    A: "added",
-    M: "modified",
-    D: "deleted",
-    "??": "untracked"
-  }
-  const stat = counts.get(filePath) ?? { additions: 0, deletions: 0 }
-  return {
-    path: filePath,
-    status: statusMap[code] ?? "modified",
-    additions: stat.additions,
-    deletions: stat.deletions
-  }
-}
-
-async function fileUnifiedDiff(workspaceRoot: string, relativePath: string): Promise<string> {
-  const unstaged = (await runGit(workspaceRoot, ["diff", "--", relativePath])).stdout
+async function fileUnifiedDiff(
+  workspaceRoot: string,
+  relativePath: string,
+  ignoreWhitespace = false
+): Promise<string> {
+  const extra = ignoreWhitespace ? ["-w"] : []
+  const unstaged = (await runGit(workspaceRoot, ["diff", ...extra, "--", relativePath])).stdout
   if (unstaged.trim()) return unstaged
-  return (await runGit(workspaceRoot, ["diff", "--cached", "--", relativePath])).stdout
+  return (await runGit(workspaceRoot, ["diff", ...extra, "--cached", "--", relativePath])).stdout
 }
 
 async function emptyFileAsDiff(workspaceRoot: string, relativePath: string) {
@@ -108,4 +98,68 @@ async function readNumstat(workspaceRoot: string) {
     }
   }
   return counts
+}
+
+/** 当前分支名；detached HEAD 或非仓库返回空串，禁止回落 main。 */
+async function readCurrentBranch(workspaceRoot: string): Promise<string> {
+  try {
+    const res = await runGit(workspaceRoot, ["branch", "--show-current"])
+    return res.exitCode === 0 ? res.stdout.trim() : ""
+  } catch {
+    return ""
+  }
+}
+
+/**
+ * 读取工作区 Git 线性日志与当前分支。
+ * 不是提交树：不解析 parent / graph，UI 不得用 index 伪装车道。
+ */
+export async function readGitLog(workspaceRoot: string, limit = 30): Promise<GitLogResult> {
+  const branch = await readCurrentBranch(workspaceRoot)
+  const upstream = await readUpstream(workspaceRoot)
+  const branchFiles = await readBranchFiles(workspaceRoot, upstream)
+  const capped = Math.min(Math.max(limit, 1), 100)
+  try {
+    const format = "%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%cr%x1f%cd"
+    const logRes = await runGit(workspaceRoot, [
+      "log",
+      `-n${capped}`,
+      `--pretty=format:${format}`,
+      "--shortstat"
+    ])
+    if (logRes.exitCode !== 0 || !logRes.stdout.trim()) {
+      return { branch, upstream, branchFiles, commits: [] }
+    }
+    return { branch, upstream, branchFiles, commits: parseGitLogStdout(logRes.stdout) }
+  } catch {
+    return { branch, upstream, branchFiles, commits: [] }
+  }
+}
+
+/**
+ * 提交。stageAll 时先 git add -A；否则只提交已暂存。空工作树拒绝。
+ */
+export async function commitWorkspaceAll(
+  workspaceRoot: string,
+  message: string,
+  stageAll = true
+): Promise<GitCommitResult> {
+  const status = (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout.trim()
+  if (!status) {
+    throw new Error("nothing to commit")
+  }
+  if (stageAll) {
+    const addRes = await runGit(workspaceRoot, ["add", "-A"])
+    if (addRes.exitCode !== 0) {
+      throw new Error(addRes.stderr || "git add failed")
+    }
+  }
+  const commitRes = await runGit(workspaceRoot, ["commit", "-m", message])
+  if (commitRes.exitCode !== 0) {
+    throw new Error(commitRes.stderr || "git commit failed")
+  }
+  return {
+    ok: true,
+    output: commitRes.stdout.trim()
+  }
 }

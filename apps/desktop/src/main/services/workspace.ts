@@ -18,7 +18,8 @@ export type WorkspaceRecord = {
 }
 
 export { createWorkspaceHost } from "./workspace-host"
-export { changedFiles } from "./workspace-git"
+export { changedFiles, readGitLog, commitWorkspaceAll } from "./workspace-git"
+export { pushWorkspace, readWorkspacePatch } from "./workspace-git-remote"
 
 /** 只弹出目录选择，不写 workspaces 表。 */
 export async function pickFolder(): Promise<{ path: string; name: string }> {
@@ -119,9 +120,13 @@ export async function listWorkspaceDir(workspaceId: string, relativePath: string
   }))
 }
 
-export async function readWorkspaceDiff(workspaceId: string, relativePath: string) {
+export async function readWorkspaceDiff(
+  workspaceId: string,
+  relativePath: string,
+  ignoreWhitespace = false
+) {
   const workspace = await getWorkspace(workspaceId)
-  return readFileDiff(workspace.rootPath, relativePath)
+  return readFileDiff(workspace.rootPath, relativePath, ignoreWhitespace)
 }
 
 async function pickWorkspaceFolder(): Promise<string> {

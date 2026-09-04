@@ -7,6 +7,29 @@ import { cx } from "@/utils/cx"
 import { RightPane } from "@renderer/components/ai-chat/right-pane/right-pane"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
+import {
+  INSPECTOR_DEFAULT_SIZE,
+  INSPECTOR_MIN_PX,
+  needsInspectorDefaultSize
+} from "./inspector-panel-size"
+
+type InspectorPanelHandle = {
+  collapse: () => void
+  expand: () => void
+  resize: (size: string) => void
+  getSize: () => { inPixels: number }
+}
+
+function applyInspectorCollapsed(panel: InspectorPanelHandle, collapsed: boolean) {
+  if (collapsed) {
+    panel.collapse()
+    return
+  }
+  panel.expand()
+  if (needsInspectorDefaultSize(panel.getSize().inPixels)) {
+    panel.resize(INSPECTOR_DEFAULT_SIZE)
+  }
+}
 
 export function InspectorPane({
   maximized,
@@ -21,9 +44,26 @@ export function InspectorPane({
   const setCollapsed = useChatStore((state) => state.setRightPanelCollapsed)
   const panelRef = usePanelRef()
 
+  // 必须用 useEffect：useLayoutEffect 会在 Group 注册前调用 expand/collapse，
+  // 抛出 Group enjoy-agents-chat-split not found。
   useEffect(() => {
-    if (collapsed) panelRef.current?.collapse()
-    else panelRef.current?.expand()
+    const panel = panelRef.current
+    if (!panel) return
+    try {
+      applyInspectorCollapsed(panel, collapsed)
+      return
+    } catch {
+      const frame = requestAnimationFrame(() => {
+        const next = panelRef.current
+        if (!next) return
+        try {
+          applyInspectorCollapsed(next, collapsed)
+        } catch {
+          // Group 仍未就绪；下次 collapsed 变化再试
+        }
+      })
+      return () => cancelAnimationFrame(frame)
+    }
   }, [collapsed, panelRef])
 
   return (
@@ -42,8 +82,8 @@ export function InspectorPane({
         panelRef={panelRef}
         collapsible
         collapsedSize="0px"
-        minSize={collapsed ? "0px" : "280px"}
-        defaultSize={collapsed ? "0%" : "38%"}
+        minSize={`${INSPECTOR_MIN_PX}px`}
+        defaultSize={INSPECTOR_DEFAULT_SIZE}
         className="min-h-0 bg-transparent"
       >
         <InspectorBody

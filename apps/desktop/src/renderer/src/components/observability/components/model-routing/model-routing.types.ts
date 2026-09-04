@@ -1,11 +1,14 @@
 /**
- * 模型路由大盘类型契约定义。
+ * 模型路由大盘类型契约。
  */
+
 export interface ModelRoutingRowData {
   id: string
   label: string
   provider: string
+  providerId?: string
   providerName: string
+  /** 协议风格 + 模型 id，不是 vault 里的 baseURL */
   upstreamName: string
   capabilities: string[]
   isReasoning: boolean
@@ -16,6 +19,18 @@ export interface ModelRoutingRowData {
   p95DurationMs: number
   totalTokens: number
   lastActiveTime?: number
+}
+
+export type RoutingModelOption = {
+  id: string
+  label: string
+  provider: string
+  providerId?: string
+  providerName?: string
+  apiStyle?: string
+  capabilities?: string[]
+  isReasoning?: boolean
+  probedAt?: number
 }
 
 export type RoutingCapabilityFilter =

@@ -35,11 +35,8 @@ import { ObservabilityTraceModal } from "./components/observability-trace-modal"
 import { FullTraceWorkbench } from "./components/trace-view/full-trace-workbench"
 import { ObservabilityModelRouting } from "./components/observability-model-routing"
 import { ObservabilityReplay } from "./observability-replay"
-import {
-  getAdaptivePageSize,
-  type MetricKindFilter,
-  type MetricStatusFilter
-} from "./types/observability-ui.types"
+import { type MetricKindFilter, type MetricStatusFilter } from "./types/observability-ui.types"
+import { useAdaptivePageSize } from "./use-adaptive-page-size"
 import { useChatStore } from "@renderer/stores/chat-store"
 
 type ActiveObservabilityView = "dashboard" | "routing" | "traces" | "replay"
@@ -51,9 +48,10 @@ export function ObservabilityPage() {
   const [statusFilter, setStatusFilter] = useState<MetricStatusFilter>("all")
   const [kindFilter, setKindFilter] = useState<MetricKindFilter>("all")
   const [search, setSearch] = useState("")
+  const [traceExactModelId, setTraceExactModelId] = useState<string | null>(null)
   const [inspectMetric, setInspectMetric] = useState<TelemetryMetric | null>(null)
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<number>(() => getAdaptivePageSize())
+  const { pageSize, setPageSize } = useAdaptivePageSize()
 
   const metricsQuery = useQuery({
     queryKey: ["metrics"],
@@ -67,34 +65,33 @@ export function ObservabilityPage() {
     await queryClient.invalidateQueries({ queryKey: ["metrics"] })
   }
 
-  // 侧边栏导航分组：全面涵盖本地执行指标、模型路由大盘、链路明细与事件回放
-  const routedModelCount = storeModels.length || 10
+  const routedModelCount = storeModels.length
   const groups = useMemo(
     () => [
       {
         id: "metrics",
-        label: t("pages.observability.navGroup") || "遥测与日志",
+        label: t("pages.observability.navGroup"),
         items: [
           {
             id: "dashboard",
-            label: t("pages.observability.navLocal") || "本地执行监控",
+            label: t("pages.observability.navLocal"),
             icon: RiPulseLine,
             meta: String(metrics.length)
           },
           {
             id: "routing",
-            label: t("pages.observability.navRouting") || "模型路由",
+            label: t("pages.observability.navRouting"),
             icon: RiRouteLine,
             meta: String(routedModelCount)
           },
           {
             id: "traces",
-            label: t("pages.observability.viewTraces") || "链路明细日志",
+            label: t("pages.observability.viewTraces"),
             icon: RiFileList3Line
           },
           {
             id: "replay",
-            label: t("pages.observability.viewReplay") || "事件流回放",
+            label: t("pages.observability.viewReplay"),
             icon: RiFileHistoryLine
           }
         ]
@@ -104,6 +101,7 @@ export function ObservabilityPage() {
   )
 
   function handleSelectModelTrace(modelId: string) {
+    setTraceExactModelId(modelId)
     setSearch(modelId)
     setActiveView("traces")
     setPage(1)
@@ -135,8 +133,9 @@ export function ObservabilityPage() {
         if (!m.kind.toLowerCase().includes(kindFilter.toLowerCase())) return false
       }
 
-      // 关键词筛选
-      if (search.trim()) {
+      if (traceExactModelId) {
+        if (m.modelId !== traceExactModelId) return false
+      } else if (search.trim()) {
         const query = search.toLowerCase()
         const matchModel = m.modelId?.toLowerCase().includes(query)
         const matchRun = m.runId.toLowerCase().includes(query) || m.id.toLowerCase().includes(query)
@@ -146,7 +145,7 @@ export function ObservabilityPage() {
 
       return true
     })
-  }, [metrics, statusFilter, kindFilter, search])
+  }, [metrics, statusFilter, kindFilter, search, traceExactModelId])
 
   // 分页切片
   const paginatedMetrics = useMemo(() => {
@@ -174,7 +173,7 @@ export function ObservabilityPage() {
                 >
                   {t("pages.observability.title")}
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400">
+                <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 font-mono text-caption-2-medium text-accent-500">
                   <span className="size-1.5 rounded-full bg-accent-500" />
                   {t("pages.observability.localApm")}
                 </span>
@@ -204,7 +203,7 @@ export function ObservabilityPage() {
               type="button"
               onClick={() => setActiveView("dashboard")}
               className={cx(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-caption-2-medium transition-all",
                 activeView === "dashboard"
                   ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-secondary hover:text-text-primary"
@@ -218,20 +217,20 @@ export function ObservabilityPage() {
               type="button"
               onClick={() => setActiveView("routing")}
               className={cx(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all cursor-pointer",
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-caption-2-medium transition-all cursor-pointer",
                 activeView === "routing"
-                  ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
+                  ? "bg-background-secondary-default text-text-primary shadow-2xs"
                   : "text-text-secondary hover:text-text-primary"
               )}
             >
               <RiRouteLine className="size-3.5" />
-              <span>{t("pages.observability.navRouting") || "模型路由"}</span>
+              <span>{t("pages.observability.navRouting")}</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveView("traces")}
               className={cx(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-caption-2-medium transition-all",
                 activeView === "traces"
                   ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-secondary hover:text-text-primary"
@@ -245,7 +244,7 @@ export function ObservabilityPage() {
               type="button"
               onClick={() => setActiveView("replay")}
               className={cx(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-caption-2-medium transition-all",
                 activeView === "replay"
                   ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-secondary hover:text-text-primary"
@@ -309,6 +308,7 @@ export function ObservabilityPage() {
                   }}
                   search={search}
                   onSearchChange={(q) => {
+                    setTraceExactModelId(null)
                     setSearch(q)
                     setPage(1)
                   }}

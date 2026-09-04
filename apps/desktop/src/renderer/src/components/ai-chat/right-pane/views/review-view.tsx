@@ -1,13 +1,21 @@
 /**
- * 审查视图：未提交变更列表 + diff 预览。
+ * 审查栏：作用域过滤、Ctrl+P 跳文件、复制 patch、推送、提交框聚焦。
  */
-import { RiShareForwardLine, RiSparklingFill } from "@remixicon/react"
-import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
-import { cx } from "@/utils/cx"
-import { PANE_FOCUS } from "../constants"
+import { useMemo, useRef } from "react"
+import { useChatStore } from "@renderer/stores/chat-store"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
-import { ChangesFileDiff } from "../../diff/changes-file-diff"
-import { useT } from "@renderer/i18n"
+import { ReviewHeader } from "./review/header/review-header"
+import { ReviewJumpPalette } from "./review/header/review-jump-palette"
+import { ReviewDiffStream } from "./review/diff-stream/review-diff-stream"
+import { ReviewFileTree } from "./review/file-tree/review-file-tree"
+import { ReviewCommitDock, type ReviewCommitDockHandle } from "./review/pr-hero/review-commit-dock"
+import { CommitsTimeline } from "./review/commits/commits-timeline"
+import { ReviewSplit } from "./review/review-split"
+import { useWorkspaceGit } from "./review/use-workspace-git"
+import { useReviewHotkeys } from "./review/use-review-hotkeys"
+import { useReviewOptions } from "./review/hooks/use-review-options"
+import { filterChangesByScope } from "./review/filter-review-changes"
+import { pathsFromLastTurn } from "./review/last-turn-paths"
 
 export function ReviewView({
   workspaceId,
@@ -26,64 +34,128 @@ export function ReviewView({
   selectedFileContent: string
   onSelectFile: (path: string) => void
 }) {
-  const t = useT()
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 px-4 py-2">
-        <p className="min-w-0 flex-1 text-body-medium text-text-primary">
-          {t("chat.uncommitted", { count: changes.length })}
-        </p>
-        <span className="font-mono text-caption-1-medium tabular-nums text-state-success-text">
-          +{additions}
-        </span>
-        <span className="font-mono text-caption-1-medium tabular-nums text-text-error-primary">
-          -{deletions}
-        </span>
-        <QuietIconButton icon={RiShareForwardLine} aria-label={t("chat.shareChanges")} />
-      </div>
+  const workspaceName = useChatStore((state) => state.workspaceName)
+  const messages = useChatStore((state) => state.messages)
+  const git = useWorkspaceGit(workspaceId)
+  const {
+    scope,
+    setScope,
+    options,
+    toggleOption,
+    allExpanded,
+    toggleAllExpanded,
+    jumpOpen,
+    setJumpOpen
+  } = useReviewOptions("last-turn")
+  const commitDockRef = useRef<ReviewCommitDockHandle>(null)
 
-      <div className="flex max-h-40 flex-col gap-1 overflow-y-auto px-2 pb-2">
-        {changes.length === 0 ? (
-          <p className="px-2 py-1 text-caption-1-medium text-text-tertiary">{t("chat.treeClean")}</p>
-        ) : null}
-        {changes.map((file) => (
-          <button
-            key={file.path}
-            type="button"
-            onClick={() => onSelectFile(file.path)}
-            className={cx(
-              "flex items-center gap-2 rounded-2lg px-2 py-1.5 text-left",
-              PANE_FOCUS,
-              file.path === selectedFilePath
-                ? "bg-background-secondary-default"
-                : "hover:bg-background-secondary-hover"
-            )}
-          >
-            <RiSparklingFill className="size-4 text-accent-500" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-secondary">
-              {file.path}
-            </span>
-            <span className="shrink-0 font-mono text-caption-1-medium tabular-nums text-state-success-text">
-              +{file.additions}
-            </span>
-            <span className="shrink-0 font-mono text-caption-1-medium tabular-nums text-text-error-primary">
-              -{file.deletions}
-            </span>
-          </button>
-        ))}
-      </div>
+  const lastTurnPaths = useMemo(() => pathsFromLastTurn(messages), [messages])
+  const scoped = useMemo(
+    () => filterChangesByScope(changes, scope, lastTurnPaths, git.branchFiles),
+    [changes, scope, lastTurnPaths, git.branchFiles]
+  )
+  const scopedAdds = scoped.reduce((sum, file) => sum + file.additions, 0)
+  const scopedDels = scoped.reduce((sum, file) => sum + file.deletions, 0)
 
-      {selectedFilePath && workspaceId ? (
-        <ChangesFileDiff
-          workspaceId={workspaceId}
-          path={selectedFilePath}
-          fallbackContent={selectedFileContent}
+  useReviewHotkeys({
+    changes: scoped,
+    selectedFilePath,
+    onSelectFile,
+    onOpenJump: () => setJumpOpen(true),
+    onPrimaryAction: () => commitDockRef.current?.focus()
+  })
+
+  async function copyPatch() {
+    const paths = scoped.map((file) => file.path)
+    const patch = await git.readPatch(paths)
+    await navigator.clipboard.writeText(patch)
+  }
+
+  const header = (
+    <ReviewHeader
+      scope={scope}
+      onSelectScope={setScope}
+      currentBranch={git.branch}
+      baseBranch={git.upstream}
+      additions={scope === "uncommitted" ? additions : scopedAdds}
+      deletions={scope === "uncommitted" ? deletions : scopedDels}
+      options={options}
+      onToggleOption={toggleOption}
+      allExpanded={allExpanded}
+      onToggleAllExpanded={toggleAllExpanded}
+      onOpenJumpPalette={() => setJumpOpen(true)}
+      onRefresh={() => void git.refresh()}
+      isRefreshing={git.isRefreshing}
+      onCopyApplyCmd={() => void copyPatch()}
+      onCopyUnifiedDiff={() => void copyPatch()}
+      onPrimaryCommit={() => commitDockRef.current?.focus()}
+      onPrimaryPush={() => void git.pushChanges()}
+    />
+  )
+
+  if (scope === "commits") {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        {header}
+        <CommitsTimeline
+          commits={git.commits}
+          currentBranch={git.branch}
+          workspaceName={workspaceName}
+          isRefreshing={git.isRefreshing}
+          onRefresh={git.refresh}
         />
+      </div>
+    )
+  }
+
+  const stream = (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <ReviewDiffStream
+          workspaceId={workspaceId}
+          changes={scoped}
+          selectedFilePath={selectedFilePath}
+          selectedFileContent={selectedFileContent}
+          onSelectFile={onSelectFile}
+          options={options}
+          allExpanded={allExpanded}
+        />
+      </div>
+      <div className="shrink-0 border-t border-separator-border bg-background-secondary-default/40 px-3 py-2">
+        <ReviewCommitDock
+          ref={commitDockRef}
+          changesCount={scoped.length}
+          onCommit={git.commitChanges}
+          onPush={() => git.pushChanges()}
+        />
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      {header}
+      {options.fileTreeVisible ? (
+        <ReviewSplit
+          tree={
+            <ReviewFileTree
+              changes={scoped}
+              selectedFilePath={selectedFilePath}
+              onSelectFile={onSelectFile}
+            />
+          }
+        >
+          {stream}
+        </ReviewSplit>
       ) : (
-        <div className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
-          {t("chat.selectChanged")}
-        </div>
+        stream
       )}
+      <ReviewJumpPalette
+        open={jumpOpen}
+        onOpenChange={setJumpOpen}
+        changes={scoped}
+        onSelectFile={onSelectFile}
+      />
     </div>
   )
 }

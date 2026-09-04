@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-03
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-04
 
 ## 当前真相
 
@@ -10,7 +10,7 @@
 
 | 前缀 | 频道 | 用途 |
 |---|---|---|
-| workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` | 工作区与文件；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
+| workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` `gitLog` `gitCommit` `gitPush` `gitPatch` | 工作区与文件、真实 Git 记录与提交；`gitLog` 入参 `{ workspaceId, limit? }` 返回当前分支名（detached / 非仓库为空串）、上游（失败为空串，禁止回落 main）、`branchFiles`（`upstream...HEAD`）与**线性** `commits[]`，不是提交树；`gitCommit` 入参 `{ workspaceId, message, stageAll? }` 默认 `git add -A` + commit，`stageAll: false` 只提交已暂存，空工作树拒绝；`gitPush` `{ workspaceId }` 推当前上游，无上游即拒；`gitPatch` `{ workspaceId, paths? }` 返回 `git diff HEAD`；`diff` 可带 `ignoreWhitespace`；`changes` 每行含 `staged`/`worktree`（porcelain 保留 XY，禁止 trim 前两列）；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
 | session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` `compact` `getCompaction` `clearCompaction` | 会话与上下文压缩；`compact` 失败抛英文码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，UI 翻词表；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`compact` 入参 `{ sessionId, keepRecent? }`；`getCompaction`/`clearCompaction` 入参 `{ sessionId }`；`list` 不含已归档 |
 | agent | `run` `abort` `decide` `inspectPrompt` | 跑循环、中止、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 资产 id；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`kind` 必须是 `PROVIDER_KINDS` |
@@ -61,3 +61,4 @@
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。
+- `workspace.gitCommit` 是用户主动提交，没有 runId / HMAC。UI 在 `requireCommitApproval` 时弹 `ConfirmDialog` 再 invoke；Agent 工具 `git_commit` 仍走 `approval.required` + `agent.decide`。不要把 UI 提交硬接进 HMAC 管道。

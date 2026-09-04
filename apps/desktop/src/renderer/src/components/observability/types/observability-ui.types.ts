@@ -25,7 +25,14 @@ export interface ObservabilityAggregatedStats {
 export function getAdaptivePageSize(): number {
   if (typeof window === "undefined") return 10
   const h = window.innerHeight
-  if (h >= 1150) return 20
+  if (h > 1150) return 20
   if (h >= 920) return 15
   return 10
+}
+
+/** 最近秩百分位。空数组返回 0。 */
+export function percentileNearestRank(sortedAsc: number[], p: number): number {
+  if (sortedAsc.length === 0) return 0
+  const idx = Math.min(sortedAsc.length - 1, Math.max(0, Math.ceil(sortedAsc.length * p) - 1))
+  return sortedAsc[idx] ?? 0
 }

@@ -4,6 +4,10 @@
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import {
   FileDiffInput,
+  GitCommitInput,
+  GitLogInput,
+  GitPatchInput,
+  GitPushInput,
   ListDirInput,
   OpenWorkspaceInput,
   ReadFileInput,
@@ -36,14 +40,18 @@ import {
 import { queryIsMaximized, toggleMaximize } from "./services/window-maximize"
 import {
   changedFiles,
+  commitWorkspaceAll,
   getWorkspace,
-  listWorkspaces,
   listWorkspaceDir,
+  listWorkspaces,
   openWorkspace,
   pickFile,
   pickFolder,
+  pushWorkspace,
+  readGitLog,
   readWorkspaceDiff,
   readWorkspaceFile,
+  readWorkspacePatch,
   removeWorkspace
 } from "./services/workspace"
 import {
@@ -68,6 +76,10 @@ export const SHELL_CHANNELS = [
   "workspace.files",
   "workspace.readFile",
   "workspace.diff",
+  "workspace.gitLog",
+  "workspace.gitCommit",
+  "workspace.gitPush",
+  "workspace.gitPatch",
   "workspace.changes",
   "session.list",
   "session.listArchived",
@@ -133,11 +145,31 @@ function registerWorkspaceIpc() {
   })
   ipcMain.handle("workspace.diff", async (_event, raw) => {
     const input = FileDiffInput.parse(raw)
-    return readWorkspaceDiff(input.workspaceId, input.path)
+    return readWorkspaceDiff(input.workspaceId, input.path, input.ignoreWhitespace)
   })
   ipcMain.handle("workspace.changes", async (_event, raw) => {
     const workspaceId = WorkspaceIdInput.parse(raw).workspaceId
     return changedFiles((await getWorkspace(workspaceId)).rootPath)
+  })
+  ipcMain.handle("workspace.gitLog", async (_event, raw) => {
+    const input = GitLogInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return readGitLog(ws.rootPath, input.limit ?? 30)
+  })
+  ipcMain.handle("workspace.gitCommit", async (_event, raw) => {
+    const input = GitCommitInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return commitWorkspaceAll(ws.rootPath, input.message, input.stageAll)
+  })
+  ipcMain.handle("workspace.gitPush", async (_event, raw) => {
+    const input = GitPushInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return pushWorkspace(ws.rootPath)
+  })
+  ipcMain.handle("workspace.gitPatch", async (_event, raw) => {
+    const input = GitPatchInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return { patch: await readWorkspacePatch(ws.rootPath, input.paths) }
   })
 }
 

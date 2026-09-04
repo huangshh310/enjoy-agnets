@@ -8,21 +8,29 @@ import { getIde } from "@renderer/lib/ide"
 import { AiChatCodePane } from "../ai-chat-code-pane"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
+import type { ReviewOptions } from "../right-pane/views/review/types/review.types"
 
 export function ChangesFileDiff({
   workspaceId,
   path,
-  fallbackContent
+  fallbackContent,
+  options
 }: {
   workspaceId: string
   path: string
   fallbackContent: string
+  options?: ReviewOptions
 }) {
   const t = useT()
+  const hideWhitespace = options?.hideWhitespace ?? false
   const query = useQuery({
-    queryKey: ["workspace-diff", workspaceId, path],
+    queryKey: ["workspace-diff", workspaceId, path, hideWhitespace],
     queryFn: () =>
-      getIde().workspace.diff({ workspaceId, path }) as Promise<FileDiffResult>
+      getIde().workspace.diff({
+        workspaceId,
+        path,
+        ignoreWhitespace: hideWhitespace
+      }) as Promise<FileDiffResult>
   })
 
   if (query.isPending) {
@@ -35,8 +43,15 @@ export function ChangesFileDiff({
 
   if (query.data?.diff?.trim()) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-        <FileDiff model={parseUnifiedDiff(query.data.diff, path)} />
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <FileDiff
+          model={parseUnifiedDiff(query.data.diff, path)}
+          fill
+          wordWrap={options?.wordWrap}
+          wordDiff={options?.wordDiff}
+          hideWhitespace={hideWhitespace}
+          foldLargeFiles={options?.foldLargeFiles}
+        />
       </div>
     )
   }

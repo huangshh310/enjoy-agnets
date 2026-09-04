@@ -1,25 +1,45 @@
 /**
- * 模型路由与上游调度大盘组件 (Model Routing & Dispatch Gateway)：
- * 参考 Grok2API 路由架构，实时可视化对外模型映射、多模态接口能力、
- * 上游 Provider 协议端点、路由健康度与调用性能指标，支持分页与快速探测。
+ * 模型路由大盘：遥测聚合 + 真实 Ping + 跳转 traces / Provider 设置。
  */
 import { useNavigate } from "@tanstack/react-router"
-import {
-  RiSearchLine,
-  RiShieldKeyholeLine
-} from "@remixicon/react"
+import { RiSearchLine, RiShieldKeyholeLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { ObservabilityPagination } from "./observability-pagination"
-import { useModelRoutingData } from "./model-routing/use-model-routing-data"
 import { ModelRoutingTableRow } from "./model-routing/model-routing-table-row"
-import type {
-  RoutingCapabilityFilter,
-  RoutingStatusFilter
-} from "./model-routing/model-routing.types"
+import { useModelRoutingData } from "./model-routing/use-model-routing-data"
+import type { RoutingCapabilityFilter, RoutingStatusFilter } from "./model-routing/model-routing.types"
+
+const CAP_FILTERS: RoutingCapabilityFilter[] = [
+  "all",
+  "text",
+  "tools",
+  "vision",
+  "image",
+  "video",
+  "realtime"
+]
+const STATUS_FILTERS: RoutingStatusFilter[] = ["all", "healthy", "degraded", "unconfigured"]
+
+const CHIP =
+  "rounded-lg px-2 py-1 cursor-pointer text-caption-2-medium"
+const CHIP_ON = "bg-background-primary-default text-text-primary shadow-2xs"
+const CHIP_OFF = "text-text-secondary hover:text-text-primary"
+
+function capLabel(cap: RoutingCapabilityFilter, t: (path: string) => string): string {
+  if (cap === "all") return t("pages.observability.capAll")
+  return t(`pages.observability.cap${cap[0]?.toUpperCase()}${cap.slice(1)}`)
+}
+
+function statusFilterLabel(status: RoutingStatusFilter, t: (path: string) => string): string {
+  if (status === "all") return t("pages.observability.statusAll")
+  if (status === "healthy") return t("pages.observability.statusHealthy")
+  if (status === "degraded") return t("pages.observability.statusDegraded")
+  return t("pages.observability.statusUnconfigured")
+}
 
 export function ObservabilityModelRouting(props: {
   metrics: TelemetryMetric[]
@@ -28,80 +48,46 @@ export function ObservabilityModelRouting(props: {
   const { metrics, onSelectModelTrace } = props
   const t = useT()
   const navigate = useNavigate()
-
-  const {
-    search,
-    capabilityFilter,
-    statusFilter,
-    page,
-    pageSize,
-    totalItems,
-    paginatedRows,
-    probingId,
-    probeResult,
-    setPage,
-    handlePageSizeChange,
-    handleSearchChange,
-    handleCapabilityChange,
-    handleStatusChange,
-    handleProbe
-  } = useModelRoutingData(metrics)
+  const data = useModelRoutingData(metrics)
 
   return (
     <div className="flex min-h-full flex-1 flex-col justify-between gap-3 animate-in fade-in-50 duration-200">
-      {/* 顶部工具栏与分类筛选 */}
       <div className="flex flex-col gap-2.5 rounded-2xl border border-border-button-default/80 bg-background-primary-default px-3.5 py-2.5 shadow-2xs">
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative min-w-[240px] flex-1">
             <RiSearchLine className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
             <Input
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={t("pages.observability.searchRouting") || "搜索对外模型名称、上游标识或 Provider…"}
-              className="pl-9 h-8.5 text-caption-1-medium bg-background-secondary-default/50"
+              value={data.search}
+              onChange={(event) => data.handleSearchChange(event.target.value)}
+              placeholder={t("pages.observability.searchRouting")}
+              className="h-8.5 bg-background-secondary-default/50 pl-9 text-caption-1-medium"
             />
           </div>
-
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            {/* 能力多模态微筛选 */}
-            <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default p-1 text-caption-2-medium">
-              <span className="px-1.5 text-text-tertiary">能力:</span>
-              {(["all", "text", "tools", "vision", "image", "video", "realtime"] as const).map((cap) => (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default p-1">
+              {CAP_FILTERS.map((cap) => (
                 <button
                   key={cap}
                   type="button"
-                  onClick={() => handleCapabilityChange(cap as RoutingCapabilityFilter)}
-                  className={cx(
-                    "rounded-lg px-2 py-1 transition-all cursor-pointer",
-                    capabilityFilter === cap
-                      ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
-                      : "text-text-secondary hover:text-text-primary"
-                  )}
+                  onClick={() => data.handleCapabilityChange(cap)}
+                  className={cx(CHIP, data.capabilityFilter === cap ? CHIP_ON : CHIP_OFF)}
                 >
-                  {cap === "all" ? "全部能力" : cap}
+                  {capLabel(cap, t)}
                 </button>
               ))}
             </div>
-
-            {/* 状态健康微筛选 */}
-            <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default p-1 text-caption-2-medium">
-              {(["all", "healthy", "degraded"] as const).map((st) => (
+            <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default p-1">
+              {STATUS_FILTERS.map((status) => (
                 <button
-                  key={st}
+                  key={status}
                   type="button"
-                  onClick={() => handleStatusChange(st as RoutingStatusFilter)}
-                  className={cx(
-                    "rounded-lg px-2 py-1 transition-all cursor-pointer",
-                    statusFilter === st
-                      ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
-                      : "text-text-secondary hover:text-text-primary"
-                  )}
+                  onClick={() => data.handleStatusChange(status)}
+                  className={cx(CHIP, data.statusFilter === status ? CHIP_ON : CHIP_OFF)}
                 >
-                  {st === "all" ? "全部状态" : st === "healthy" ? "已就绪" : "有异常"}
+                  {statusFilterLabel(status, t)}
                 </button>
               ))}
             </div>
-
             <Button
               size="sm"
               variant="outline"
@@ -109,52 +95,49 @@ export function ObservabilityModelRouting(props: {
               className="h-8.5 gap-1.5 px-3 text-caption-2-medium shadow-2xs"
             >
               <RiShieldKeyholeLine className="size-3.5 text-accent-500" />
-              <span>{t("pages.observability.configProvider") || "配置 Provider"}</span>
+              <span>{t("pages.observability.configProvider")}</span>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 模型路由与调度矩阵表格 (附带专业分页器) */}
-      <div className="flex flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-border-button-default/80 bg-background-primary-default shadow-card min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col justify-between overflow-hidden rounded-2xl border border-border-button-default/80 bg-background-primary-default shadow-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-caption-1-medium border-collapse">
+          <table className="w-full border-collapse text-left text-caption-1-medium">
             <thead>
-              <tr className="border-b border-separator-border/60 bg-background-secondary-default/40 text-text-tertiary select-none">
-                <th className="px-4 py-3 font-medium">对外模型名称</th>
-                <th className="px-4 py-3 font-medium">上游模型 / 协议</th>
-                <th className="px-4 py-3 font-medium">接口能力</th>
-                <th className="px-4 py-3 font-medium">路由状态</th>
-                <th className="px-4 py-3 font-medium">来源</th>
-                <th className="px-4 py-3 font-medium text-right">调用量</th>
-                <th className="px-4 py-3 font-medium text-right">成功率</th>
-                <th className="px-4 py-3 font-medium text-right">P95 延迟</th>
-                <th className="px-4 py-3 font-medium text-right">操作</th>
+              <tr className="select-none border-b border-separator-border/60 bg-background-secondary-default/40 text-text-tertiary">
+                <th className="px-4 py-3 font-medium">{t("pages.observability.colOutbound")}</th>
+                <th className="px-4 py-3 font-medium">{t("pages.observability.colUpstream")}</th>
+                <th className="px-4 py-3 font-medium">{t("pages.observability.colCaps")}</th>
+                <th className="px-4 py-3 font-medium">{t("pages.observability.colRouteStatus")}</th>
+                <th className="px-4 py-3 font-medium">{t("pages.observability.colSource")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("pages.observability.colCalls")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("pages.observability.colSuccess")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("pages.observability.colP95")}</th>
+                <th className="px-4 py-3 text-right font-medium">{t("pages.observability.colActions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-separator-border/40">
-              {paginatedRows.map((row) => (
+              {data.paginatedRows.map((row) => (
                 <ModelRoutingTableRow
                   key={row.id}
                   row={row}
-                  probing={probingId === row.id}
-                  probe={probeResult[row.id]}
-                  onProbe={handleProbe}
+                  probing={data.probingId === row.id}
+                  probe={data.probeResult[row.id]}
+                  onProbe={data.handleProbe}
                   onSelectModelTrace={onSelectModelTrace}
                 />
               ))}
             </tbody>
           </table>
         </div>
-
-        {/* 底部专业分页栏 (自动贴合卡片底边) */}
         <div className="mt-auto px-4 pb-3">
           <ObservabilityPagination
-            currentPage={page}
-            pageSize={pageSize}
-            totalItems={totalItems}
-            onPageChange={setPage}
-            onPageSizeChange={handlePageSizeChange}
+            currentPage={data.page}
+            pageSize={data.pageSize}
+            totalItems={data.totalItems}
+            onPageChange={data.setPage}
+            onPageSizeChange={data.handlePageSizeChange}
             pageSizeOptions={[10, 15, 20, 50]}
           />
         </div>

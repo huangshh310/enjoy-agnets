@@ -73,6 +73,8 @@ export type ChangedFileRow = {
   status: "added" | "modified" | "deleted" | "untracked"
   additions: number
   deletions: number
+  staged?: boolean
+  worktree?: boolean
 }
 
 export type ModelOption = {

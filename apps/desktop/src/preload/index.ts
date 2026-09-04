@@ -12,7 +12,11 @@ const ide = {
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
     readFile: (input: unknown) => ipcRenderer.invoke("workspace.readFile", input),
     diff: (input: unknown) => ipcRenderer.invoke("workspace.diff", input),
-    changes: (input: unknown) => ipcRenderer.invoke("workspace.changes", input)
+    changes: (input: unknown) => ipcRenderer.invoke("workspace.changes", input),
+    gitLog: (input: unknown) => ipcRenderer.invoke("workspace.gitLog", input),
+    gitCommit: (input: unknown) => ipcRenderer.invoke("workspace.gitCommit", input),
+    gitPush: (input: unknown) => ipcRenderer.invoke("workspace.gitPush", input),
+    gitPatch: (input: unknown) => ipcRenderer.invoke("workspace.gitPatch", input)
   },
   session: {
     list: (input: unknown) => ipcRenderer.invoke("session.list", input),
