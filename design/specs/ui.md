@@ -1,18 +1,18 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-03
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-04
 
 ## 当前真相
 
-窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`：
+窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
 
-1. **Agent rail** — 260px（折叠 60px）。经典 Mist；玻璃磨砂；手绘墨边排线。上部为当前工作区会话树；下部常驻 Module Rails 模块轨道（Chat、Knowledge、Workflows、Media、MCP、Observability、Settings），模块是轨道而不是孤立产品。
-2. **Chat stage** — flex。经典白/石墨；玻璃半透明磨砂；手绘墨边排线。含空状态、线程与 composer。
-3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（代码审查与 diff）、Files、Terminal 与 Browser。
+1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。
+2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。
+3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。始终挂载，切模块不卸掉。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（代码审查与 diff）、Files、Terminal 与 Browser。
 
-Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。
+Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。禁止第四张大卡片。
 
-设置 / Agent Studio / Automations / Customize / Knowledge / Workflows / Media / MCP / Observability 是 **Hash 路由**，不是 modal。Agent Studio (`#/studio`) 采用高密度 Bento 选项卡工坊架构（`Overview` 全景鸟瞰 / `Grounding` 数据与记忆 / `Extensions` 工具与扩展 / `Ops` 编排与监控），左侧常驻 Agent rail，顶部使用单行紧凑全景条（`StudioCompactHero`）替代长大横幅，彻底消灭全页无限平铺长滚动。所有二级页用 `SecondaryPageShell`（具名变体：`article` 760px、`wide` `max-w-5xl`、`stage` 满宽、`fill` 铺满主卡片高度由子页自己滚动）并在顶部提供 `Agent Studio > [Page]` 面包屑。`#/inbox` 必须用 `fill`：左右分栏时间线 + 阅读器，禁止再在主卡片里套一层圆角列表。全局提供 `⌘L` Quick Search 命令直达面板。Providers 页必须用 `wide`。实验能力在页面上写明 experimental。`#/mcp` 的 App 只进隔离 iframe，`postMessage` 不在 renderer 执行 RPC。
+Knowledge / Workflows / Media / MCP / Observability / Inbox / Settings 仍是 **Hash 路由**，全部渲染在 `AppShell` 内换轨。`#/studio` 重定向 `#/`（Studio 不是第二首页）。Automations / Customize / Team / Company / Account / Workspaces 并入 `#/settings/$section`，旧 Hash 保留 redirect。`SecondaryPageShell` 只向情境栏登记导航并画 Stage 主卡片（`article` 760px、`wide` `max-w-5xl`、`stage` 满宽、`fill` 铺满高度），不再自带侧栏或 Studio 面包屑。`#/inbox` 必须用 `fill`：左右分栏时间线 + 阅读器，禁止再在主卡片里套一层圆角列表。Escape 从 Settings / Inbox 回到进入前的工作模块。全局提供 `⌘L` Quick Search。Providers 页必须用 `wide`。实验能力在页面上写明 experimental。`#/mcp` 的 App 只进隔离 iframe，`postMessage` 不在 renderer 执行 RPC。
 
 Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在按钮左边（模式或流式 thinkingLabel）；Context 打开本机文件选择器（支持多选），经 `assets.import` 排队。支持剪贴板图片粘贴（`Ctrl+V`）与文件拖拽（Drag & Drop）；待发送附件采用输入框上方智能层叠托盘（Smart Adaptive Attachment Shelf & Inspector Drawer），将图片（Visual Previews 44px 缩略图、Lightbox 放大、单项 `×`）与文件（Context Files 胶囊、类型图标、文件大小）分区呈现，多附件时自动启用智能折叠（+N 徽标）并提供全景检视抽屉（图片画廊网格 + 双列代码文件矩阵），彻底根除原生滚动条；发送时随 `attachments` 提交并在用户消息气泡中展示已发送资产，刷新后从 `message_parts` 恢复。语音键仅在当前模型 `capabilities` 含 `realtime` 时可点；打开后采 PCM 帧走 `realtime.sendAudio`，`realtime.text` 写入输入框。助手轮次优先渲染白名单生成式 UI（`card` / `form` / `table` / `source-list` / `asset-preview`）；点选知识引用打开审查。助手生图走 BeUI Image Generation 表面（`packages/ui/components/ai-elements/image-generation/`）：稳定正方形画布、生成中 dither、完成后渐进揭示 +「Image ready」状态行，prompt 取上一轮用户正文；只抄交互，皮是 BoardUI token，不要 registry 默认 `bg-muted` / Lucide。助手视频：复用 BeUI Image Generation 的 dither 加载交互，画布 16:9；状态行「Generating video」/「Video ready」；完成后 `<video controls>`，src=`enjoy-asset://…
 
@@ -49,8 +49,8 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
  - BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
 - 皮肤 CSS：`packages/ui/styles/skins/`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
-- 工作区壳：`apps/desktop/src/renderer/src/components/ai-chat/ai-chat-shell.tsx`
-- 侧栏：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`
+- 工作区壳：`apps/desktop/src/renderer/src/components/app-shell/app-shell.tsx`（轨道、情境、Chat 工作台、Inspector）
+- Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`
 - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
 - 对话工具表面：`apps/desktop/.../ai-chat/thread/tool-surfaces/`
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（单表面时间线，不是堆叠描边卡片）
@@ -65,6 +65,8 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
 - 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`。frost 约 58% + 更强 blur，禁止 50% 把桌面当照片，也禁止 80% 把磨砂盖成实心黑。
 - 主题存在 `localStorage` 的 `boardui:theme`，不跟随系统。切换时冻住颜色过渡，走圆形揭示。皮肤存在 `boardui:skin`。
 - Playwright Electron 窗口流依赖桌面 `out/main/index.js` 与 `playwright` 包。CI 合约测只验收 Stop/Attach 源码与 Hash 路由；没有 launcher 时窗口用例 skip，不要当成已跑通真实聊天。
+- 切模块不得卸载 `chat-store` / Inspector：Chat 工作台用 `hidden` 藏起；Inspector 收起走 `Panel.collapse`，不要 `null` 卸掉 `RightPane`。不要把账单、团队、账号放进 48px 轨道。不要把 Agent Studio 当第二首页。`SecondaryPageShell` 禁止再画「返回应用」。Escape 从 Settings/Inbox 回工位时必须尊重 `defaultPrevented` 和 Dialog。
+- Stage 卡片高度塌成内容高、底下露出 Mist：Outlet 外层是 `absolute inset-0`（不是 flex），子级写 `flex-1` 无效。必须 `h-full` 传到 `SecondaryPageMain`，Inbox / MCP / Settings 与 Chat 同一底边。
 - 侧栏项目行展开只认 `expandedIds`。不要用「当前工作区」强制展开，也不要在 `hydrateWorkspacesAndSessions` 把 current id 写回 `expandedIds`，否则二次点击无法收缩。
 - 确认框用应用内 `ConfirmDialog`（shadcn Dialog）。不要 `window.confirm` / Electron 原生框，标题会变成包名 `@enjoy-agents/desktop`。
 - Remixicon 4.9 没有 `RiAttachment2Line`（只有 `RiAttachment2` / `RiAttachmentLine`）。命名导出不存在时 Vite ESM 直接抛 SyntaxError，React 还没挂上，窗口标题在、`#root` 空。新图标先对 `@remixicon/react` 的 `index.d.ts`。

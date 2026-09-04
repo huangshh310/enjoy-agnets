@@ -1,6 +1,6 @@
 # spec/product
 
-> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-08-31
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-04
 
 ## 当前真相
 
@@ -14,7 +14,7 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 - 用户自带 Key（BYOK），密钥不下发到渲染进程
 - 可以完全没有云服务
 
-当前桌面壳：`apps/desktop`。Hash 路由，主界面是三卡片工作区（Agent rail / Chat / Changes）。
+当前桌面壳：`apps/desktop`。Hash 路由，主界面是三卡片工作区（轨道+情境 / Stage / Inspector），模块在壳内换轨，不是独立产品页。
 
 ## 不变量
 

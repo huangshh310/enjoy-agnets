@@ -1,14 +1,14 @@
 /** 全局快速搜索 / 命令面板。 */
 export const zhCommand = {
   title: "快速搜索与导航",
-  description: "跳转到 Agent Studio、工具、设置或最近会话…",
+  description: "跳转到工作模块、设置或最近会话…",
   placeholder: "输入命令、页面或搜索会话（例如 mcp、workflows）…",
   empty: "没有结果。",
-  groupStudio: "Agent Studio 与能力",
+  groupStudio: "工作模块",
   groupActions: "操作",
   groupSettings: "设置",
   groupRecent: "最近会话",
-  studioHub: "Agent Studio 中枢（仪表盘）",
+  studioHub: "可观测性大盘",
   workflows: "持久化工作流与 DAG",
   mcp: "模型上下文协议（MCP）",
   knowledge: "知识库与语义检索",

@@ -27,6 +27,18 @@ test("Hash 路由包含 Knowledge / Workflows / Media / MCP / Observability", ()
   }
 })
 
+test("AppShell 单壳：Studio 重定向，二级壳不再「返回应用」", () => {
+  expect(routerSource.includes("AppShell")).toBeTruthy()
+  expect(routerSource.includes('path: "/studio"')).toBeTruthy()
+  expect(routerSource.includes('redirect({ to: "/" })')).toBeTruthy()
+  const secondary = readFileSync(
+    join(process.cwd(), "src/renderer/src/components/app-pages/secondary-page-shell.tsx"),
+    "utf8"
+  )
+  expect(secondary.includes("backToApp")).toBeFalsy()
+  expect(secondary.includes("useRegisterModuleNav")).toBeTruthy()
+})
+
 test("Composer 运行中可 Stop，并可附加 Context", () => {
   const composer = readFileSync(
     join(process.cwd(), "src/renderer/src/components/ai-chat/ai-chat-composer.tsx"),

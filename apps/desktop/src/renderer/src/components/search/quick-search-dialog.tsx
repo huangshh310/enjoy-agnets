@@ -1,6 +1,6 @@
 /**
  * 全局快捷命令面板 (Quick Search / ⌘L):
- * 快速跳转 Agent Studio、各大能力模块、设置与历史会话。
+ * 快速跳转工作模块、设置与历史会话。
  */
 import { useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
@@ -9,7 +9,6 @@ import {
   RiAddLine,
   RiBookOpenLine,
   RiChat3Line,
-  RiDashboardLine,
   RiEqualizer3Line,
   RiFlashlightLine,
   RiFolder6Line,
@@ -89,16 +88,6 @@ export function QuickSearchDialog() {
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
-                void navigate({ to: "/studio" })
-              })
-            }
-          >
-            <RiDashboardLine className="size-4 text-accent-500" />
-            <span>{t("command.studioHub")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
                 void navigate({ to: "/workflows" })
               })
             }
@@ -139,7 +128,10 @@ export function QuickSearchDialog() {
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
-                void navigate({ to: "/automations" })
+                void navigate({
+                  to: "/settings/$section",
+                  params: { section: "automations" }
+                })
               })
             }
           >
@@ -150,7 +142,7 @@ export function QuickSearchDialog() {
             onSelect={() =>
               handleSelect(() => {
                 void navigate({
-                  to: "/customize/$section",
+                  to: "/settings/$section",
                   params: { section: "instructions" }
                 })
               })
@@ -244,7 +236,7 @@ export function QuickSearchDialog() {
             onSelect={() =>
               handleSelect(() => {
                 void navigate({
-                  to: "/customize/$section",
+                  to: "/settings/$section",
                   params: { section: "rules" }
                 })
               })

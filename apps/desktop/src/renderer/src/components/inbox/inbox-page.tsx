@@ -31,7 +31,7 @@ export function InboxPage() {
       searchValue={inbox.search}
       onSearchChange={inbox.setSearch}
       filterNav={false}
-      breadcrumbTitle={t("pages.inbox.breadcrumb", { section: navLabel(inbox.filter, t) })}
+      breadcrumbTitle={navLabel(inbox.filter, t)}
     >
       <InboxLayout
         groups={inbox.groups}

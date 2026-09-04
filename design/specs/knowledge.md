@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-09-02
+> 用户显式选择的本地 RAG。最后更新：2026-09-04
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 只索引用户添加的文件或目录。`addKnowledgeSource` / `collectKnowledgeFiles` 都走 `resolveKnowledgePath`：工作区内绝对路径（含 Windows 盘符大小写）收成相对路径，根外与 `..` 逃逸即拒。扫盘子路径再 jail，失败抛错，不要 `catch` 成 `[]`。自动排除 `.git`、构建目录、密钥文件和 `.gitignore`；忽略规则只认相对路径，不把盘符祖先里的 `out`/`dist` 当构建目录。单个文件失败不阻塞。`knowledge_documents` 记文件 hash：未变文件 Resume 跳过，Pause 把来源标 `paused`，Rebuild 清空 chunk 后全量重建。解析阶段只写 `hashedEmbedding`；整源结束后再 `reembedStaleSource`（8s 回落），不要每个文件等网络。每写入一篇文档就 `tally()`，Collections 行在 Indexing 中也能看到文件数。`knowledge.documents` 合并库内文档与磁盘扫描，未入库文件以 `unindexed`/`indexing` 出现。来源列表带 `embeddingsStale`。Agent 开跑时 `citeKnowledge` 按用户最后一句检索，结果作为 `source.added`；知识页 View Files 必须设置 `selectedPath` 再切到文件 tab。检索可开 rerank：先试 SDK `rerank`，失败回落本地词袋+向量融合。`ai.generate` kind=`embedding`/`rerank` 走同一套向量。
 
-路由：`#/knowledge`。交互对齐原型 Slide 7「检索先行，索引退后」：页面默认展现试检索（Retrieval Preview）面板，检索结果支持 `Pin to chat`：写入会话上下文芯片（不进输入框），发送时把 snippet 拼进用户消息。UI 组装层 `knowledge-page.tsx` + `use-knowledge-page.ts`；区域组件 `knowledge-folder-cards.tsx`、`knowledge-documents-table.tsx`、`knowledge-document-list.tsx`、`knowledge-sources-table.tsx`、`knowledge-retriever-drawer.tsx`、`knowledge-file-preview-modal.tsx`、`knowledge-add-modal.tsx`。预设卡未索引时写「Not indexed yet」，不要写死 estimated files。IPC：`knowledge.sources` `knowledge.documents` `knowledge.addSource` `knowledge.index` `knowledge.search`。设置：Knowledge Indexing。`knowledgeAutoIndex` 为真时 `addSource` 立刻 `indexKnowledgeSource`。
+路由：`#/knowledge`，在 `AppShell` 内换轨（情境栏=来源/文件夹）。交互对齐原型 Slide 7「检索先行，索引退后」：页面默认展现试检索（Retrieval Preview）面板，检索结果支持 `Pin to chat`：写入会话上下文芯片（不进输入框），发送时把 snippet 拼进用户消息。UI 组装层 `knowledge-page.tsx` + `use-knowledge-page.ts`；区域组件 `knowledge-folder-cards.tsx`、`knowledge-documents-table.tsx`、`knowledge-document-list.tsx`、`knowledge-sources-table.tsx`、`knowledge-retriever-drawer.tsx`、`knowledge-file-preview-modal.tsx`、`knowledge-add-modal.tsx`。预设卡未索引时写「Not indexed yet」，不要写死 estimated files。IPC：`knowledge.sources` `knowledge.documents` `knowledge.addSource` `knowledge.index` `knowledge.search`。设置：Knowledge Indexing。`knowledgeAutoIndex` 为真时 `addSource` 立刻 `indexKnowledgeSource`。
 
 ## 不变量
 

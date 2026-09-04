@@ -6,33 +6,31 @@ import {
   createRoute,
   createRouter,
   redirect,
-  useNavigate,
-  useRouterState
+  useNavigate
 } from "@tanstack/react-router"
-import { AiChatShell } from "@renderer/components/ai-chat/ai-chat-shell"
+import { AppShell } from "@renderer/components/app-shell/app-shell"
 import { SettingsSectionPage } from "@renderer/components/settings/settings-section"
 import { SettingsShell } from "@renderer/components/settings/settings-shell"
 import { isSettingsSectionId } from "@renderer/components/settings/settings-catalog"
-import { AutomationsPage } from "@renderer/components/automations/automations-page"
-import { CustomizePage, isCustomizeSectionId } from "@renderer/components/customize/customize-page"
+import { isCustomizeSectionId } from "@renderer/components/customize/customize-page"
 import { KnowledgePage } from "@renderer/components/knowledge/knowledge-page"
 import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
 import { MediaPage } from "@renderer/components/media/media-page"
 import { McpPage } from "@renderer/components/mcp/mcp-page"
 import { ObservabilityPage } from "@renderer/components/observability/observability-page"
-import { AgentStudioPage } from "@renderer/components/studio/agent-studio-page"
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
-import { TeamPage } from "@renderer/components/team/team-page"
-import { WorkspacesPage } from "@renderer/components/workspaces/workspaces-page"
 import { InboxPage } from "@renderer/components/inbox/inbox-page"
-import { CompanyPage } from "@renderer/components/company/company-page"
-import { AccountPage } from "@renderer/components/account/account-page"
+import {
+  RedirectPlaceholder,
+  mappedSettingsBeforeLoad,
+  settingsBeforeLoad
+} from "@renderer/components/app-shell/routing/redirect-settings"
+
 function RootLayout() {
   useAgentSession()
   const navigate = useNavigate()
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -40,27 +38,11 @@ function RootLayout() {
       if (modifier && event.key === ",") {
         event.preventDefault()
         void navigate({ to: "/settings/$section", params: { section: "general" } })
-        return
-      }
-      if (
-        event.key === "Escape" &&
-        (pathname.startsWith("/settings") ||
-          pathname.startsWith("/studio") ||
-          pathname.startsWith("/automations") ||
-          pathname.startsWith("/customize") ||
-          pathname.startsWith("/knowledge") ||
-          pathname.startsWith("/workflows") ||
-          pathname.startsWith("/media") ||
-          pathname.startsWith("/mcp") ||
-          pathname.startsWith("/observability"))
-      ) {
-        event.preventDefault()
-        void navigate({ to: "/" })
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [navigate, pathname])
+  }, [navigate])
 
   return (
     <WindowFrame>
@@ -74,14 +56,22 @@ const rootRoute = createRootRoute({
   component: RootLayout
 })
 
-const indexRoute = createRoute({
+const shellRoute = createRoute({
   getParentRoute: () => rootRoute,
+  id: "app-shell",
+  component: AppShell
+})
+
+const indexRoute = createRoute({
+  getParentRoute: () => shellRoute,
   path: "/",
-  component: AiChatShell
+  component: function ChatIndex() {
+    return null
+  }
 })
 
 const settingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/settings",
   component: SettingsShell
 })
@@ -105,156 +95,153 @@ const settingsSectionRoute = createRoute({
   component: SettingsSectionPage
 })
 
-const automationsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/automations",
-  component: AutomationsPage
-})
-
-const customizeIndexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/customize",
-  beforeLoad: () => {
-    throw redirect({ to: "/customize/$section", params: { section: "instructions" } })
-  }
-})
-
-const customizeSectionRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/customize/$section",
-  beforeLoad: ({ params }) => {
-    if (!isCustomizeSectionId(params.section)) {
-      throw redirect({ to: "/customize/$section", params: { section: "instructions" } })
-    }
-  },
-  component: CustomizePage
-})
-
 const knowledgeRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/knowledge",
   component: KnowledgePage
 })
 
 const workflowsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/workflows",
   component: WorkflowsPage
 })
 
 const mediaRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/media",
   component: MediaPage
 })
 
 const mcpRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/mcp",
   component: McpPage
 })
 
 const observabilityRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/observability",
   component: ObservabilityPage
 })
 
-const studioRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/studio",
-  component: AgentStudioPage
-})
-const teamRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/team",
-  component: TeamPage
-})
-
-const teamIndexRoute = createRoute({
-  getParentRoute: () => teamRoute,
-  path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/team/$section", params: { section: "profile" } })
-  }
-})
-
-const teamSectionRoute = createRoute({
-  getParentRoute: () => teamRoute,
-  path: "$section",
-  component: TeamPage
-})
-
-const workspacesRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/workspaces",
-  component: WorkspacesPage
-})
-
 const inboxRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/inbox",
   component: InboxPage
 })
 
-const companyRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/company",
-  component: CompanyPage
+const studioRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/studio",
+  beforeLoad: () => {
+    throw redirect({ to: "/" })
+  },
+  component: RedirectPlaceholder
+})
+
+const automationsRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/automations",
+  beforeLoad: settingsBeforeLoad("automations"),
+  component: RedirectPlaceholder
+})
+
+const customizeIndexRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/customize",
+  beforeLoad: settingsBeforeLoad("instructions"),
+  component: RedirectPlaceholder
+})
+
+const customizeSectionRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/customize/$section",
+  beforeLoad: mappedSettingsBeforeLoad((section) =>
+    isCustomizeSectionId(section) ? section : "instructions"
+  ),
+  component: RedirectPlaceholder
+})
+
+const teamIndexRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/team",
+  beforeLoad: settingsBeforeLoad("team"),
+  component: RedirectPlaceholder
+})
+
+const teamSectionRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/team/$section",
+  beforeLoad: mappedSettingsBeforeLoad((section) => (section === "members" ? "members" : "team")),
+  component: RedirectPlaceholder
+})
+
+const workspacesRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/workspaces",
+  beforeLoad: settingsBeforeLoad("workspace"),
+  component: RedirectPlaceholder
 })
 
 const companyIndexRoute = createRoute({
-  getParentRoute: () => companyRoute,
-  path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/company/$section", params: { section: "billing" } })
-  }
+  getParentRoute: () => shellRoute,
+  path: "/company",
+  beforeLoad: settingsBeforeLoad("billing"),
+  component: RedirectPlaceholder
 })
 
 const companySectionRoute = createRoute({
-  getParentRoute: () => companyRoute,
-  path: "$section",
-  component: CompanyPage
-})
-
-const accountRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/account",
-  component: AccountPage
+  getParentRoute: () => shellRoute,
+  path: "/company/$section",
+  beforeLoad: mappedSettingsBeforeLoad((section) => {
+    if (section === "details") return "organization"
+    if (section === "integrations") return "integrations"
+    return "billing"
+  }),
+  component: RedirectPlaceholder
 })
 
 const accountIndexRoute = createRoute({
-  getParentRoute: () => accountRoute,
-  path: "/",
-  beforeLoad: () => {
-    throw redirect({ to: "/account/$section", params: { section: "profile" } })
-  }
+  getParentRoute: () => shellRoute,
+  path: "/account",
+  beforeLoad: settingsBeforeLoad("account"),
+  component: RedirectPlaceholder
 })
 
 const accountSectionRoute = createRoute({
-  getParentRoute: () => accountRoute,
-  path: "$section",
-  component: AccountPage
+  getParentRoute: () => shellRoute,
+  path: "/account/$section",
+  beforeLoad: mappedSettingsBeforeLoad((section) =>
+    section === "notifications" ? "notifications" : "account"
+  ),
+  component: RedirectPlaceholder
 })
 
 const routeTree = rootRoute.addChildren([
-  indexRoute,
-  settingsRoute.addChildren([settingsIndexRoute, settingsSectionRoute]),
-  studioRoute,
-  automationsRoute,
-  customizeIndexRoute,
-  customizeSectionRoute,
-  knowledgeRoute,
-  workflowsRoute,
-  mediaRoute,
-  mcpRoute,
-  observabilityRoute,
-  teamRoute.addChildren([teamIndexRoute, teamSectionRoute]),
-  workspacesRoute,
-  inboxRoute,
-  companyRoute.addChildren([companyIndexRoute, companySectionRoute]),
-  accountRoute.addChildren([accountIndexRoute, accountSectionRoute])
+  shellRoute.addChildren([
+    indexRoute,
+    settingsRoute.addChildren([settingsIndexRoute, settingsSectionRoute]),
+    knowledgeRoute,
+    workflowsRoute,
+    mediaRoute,
+    mcpRoute,
+    observabilityRoute,
+    inboxRoute,
+    studioRoute,
+    automationsRoute,
+    customizeIndexRoute,
+    customizeSectionRoute,
+    teamIndexRoute,
+    teamSectionRoute,
+    workspacesRoute,
+    companyIndexRoute,
+    companySectionRoute,
+    accountIndexRoute,
+    accountSectionRoute
+  ])
 ])
+
 export const router = createRouter({
   routeTree,
   history: createHashHistory(),

@@ -1,14 +1,14 @@
 /** Global quick search / command palette. */
 export const enCommand = {
   title: "Quick Search & Navigation",
-  description: "Jump to Agent Studio, tools, settings, or recent sessions...",
+  description: "Jump to workspace modules, settings, or recent sessions...",
   placeholder: "Type a command, page, or search sessions (e.g. mcp, workflows)...",
   empty: "No results found.",
-  groupStudio: "Agent Studio & Capabilities",
+  groupStudio: "Workspace modules",
   groupActions: "Actions",
   groupSettings: "Settings",
   groupRecent: "Recent Chat Sessions",
-  studioHub: "Agent Studio Hub (Dashboard)",
+  studioHub: "Observability dashboard",
   workflows: "Durable Workflows & DAG",
   mcp: "Model Context Protocol (MCP)",
   knowledge: "Knowledge Base & Semantic RAG",

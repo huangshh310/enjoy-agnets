@@ -21,6 +21,6 @@ export function openInboxAction(navigate: InboxNavigate, actionKey: InboxActionK
       void navigate({ to: "/settings/$section", params: { section: "providers" } })
       return
     case "openTeam":
-      void navigate({ to: "/team/$section", params: { section: "profile" } })
+      void navigate({ to: "/settings/$section", params: { section: "team" } })
   }
 }

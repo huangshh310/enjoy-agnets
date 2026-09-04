@@ -14,7 +14,7 @@ import { AutomationDraftForm } from "./components/draft-form"
 import { AutomationTemplatesGrid } from "./components/templates-grid"
 import { type AutomationFilter, type AutomationTemplate } from "./constants"
 
-export function AutomationsPage() {
+export function AutomationsPage({ embed = false }: { embed?: boolean }) {
   const t = useT()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<AutomationFilter>("all")
@@ -137,17 +137,7 @@ export function AutomationsPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  return (
-    <SecondaryPageShell
-      searchPlaceholder={t("studio.automations.searchPlaceholder")}
-      groups={groups}
-      selectedId={filter}
-      onSelect={(id) => setFilter(id as AutomationFilter)}
-      contentWidth="stage"
-      filterNav={false}
-      searchValue={query}
-      onSearchChange={setQuery}
-    >
+  const body = (
       <div className="flex flex-col gap-7">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -206,6 +196,22 @@ export function AutomationsPage() {
           onCopyPrompt={handleCopyPrompt}
         />
       </div>
+  )
+
+  if (embed) return body
+
+  return (
+    <SecondaryPageShell
+      searchPlaceholder={t("studio.automations.searchPlaceholder")}
+      groups={groups}
+      selectedId={filter}
+      onSelect={(id) => setFilter(id as AutomationFilter)}
+      contentWidth="stage"
+      filterNav={false}
+      searchValue={query}
+      onSearchChange={setQuery}
+    >
+      {body}
     </SecondaryPageShell>
   )
 }

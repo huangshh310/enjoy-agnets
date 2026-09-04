@@ -43,13 +43,13 @@ export function buildUserCardMenuGroups({
           id: "team-profile",
           icon: RiBankLine,
           label: t("chat.teamProfile") || "View team profile",
-          onClick: () => onNavigate("/team/profile")
+          onClick: () => onNavigate("/settings/team")
         },
         {
           id: "folders",
           icon: RiFolder6Line,
           label: t("chat.folders") || "Folders",
-          onClick: () => onNavigate("/workspaces")
+          onClick: () => onNavigate("/settings/workspace")
         },
         {
           id: "messages",
@@ -62,7 +62,7 @@ export function buildUserCardMenuGroups({
           id: "people",
           icon: RiGroupLine,
           label: t("chat.people") || "People",
-          onClick: () => onNavigate("/team/members")
+          onClick: () => onNavigate("/settings/members")
         }
       ]
     },
@@ -74,19 +74,19 @@ export function buildUserCardMenuGroups({
           id: "billing",
           icon: RiBankCardLine,
           label: t("chat.billing") || "Billing",
-          onClick: () => onNavigate("/company/billing")
+          onClick: () => onNavigate("/settings/billing")
         },
         {
           id: "company-details",
           icon: RiSchoolLine,
           label: t("chat.companyDetails") || "Company Details",
-          onClick: () => onNavigate("/company/details")
+          onClick: () => onNavigate("/settings/organization")
         },
         {
           id: "integrations",
           icon: RiBox3Line,
           label: t("chat.integrations") || "Integrations",
-          onClick: () => onNavigate("/company/integrations")
+          onClick: () => onNavigate("/settings/integrations")
         }
       ]
     },
@@ -98,13 +98,13 @@ export function buildUserCardMenuGroups({
           id: "notifications",
           icon: RiNotification3Line,
           label: t("chat.notifications") || "Notifications",
-          onClick: () => onNavigate("/account/notifications")
+          onClick: () => onNavigate("/settings/notifications")
         },
         {
           id: "account-details",
           icon: RiShieldUserLine,
           label: t("chat.accountDetails") || "Account Details",
-          onClick: () => onNavigate("/account/profile")
+          onClick: () => onNavigate("/settings/account")
         },
         {
           id: "sign-out",

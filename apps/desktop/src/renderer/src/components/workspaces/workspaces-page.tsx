@@ -19,7 +19,7 @@ import { useT } from "@renderer/i18n"
 import type { WorkspaceRow } from "@renderer/hooks/use-agent-session"
 import type { WorkspaceItemData } from "./workspaces.types"
 
-export function WorkspacesPage() {
+export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
   const t = useT()
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("all")
@@ -46,27 +46,28 @@ export function WorkspacesPage() {
   )
 
   const workspaceList = useMemo(() => {
-    // 聚合当前工作区与侧栏已知仓库
+    const sessionCountFor = (workspaceId: string | null) =>
+      repositories.filter((row) => row.kind === "session" && row.workspaceId === workspaceId).length
     const list = [
       {
         id: currentWorkspaceId || "ws_current",
-        name: currentWorkspaceName || "当前工作区",
-        path: currentRootLabel || "C:/myfile/workspaces/proj/enjoy-agents",
-        branch: "main",
-        sessionCount: 27,
+        name: currentWorkspaceName || t("common.noWorkspace"),
+        path: currentRootLabel || "—",
+        branch: "—",
+        sessionCount: sessionCountFor(currentWorkspaceId),
         isCurrent: true,
-        lastActiveAt: "刚刚"
+        lastActiveAt: ""
       },
       ...repositories
-        .filter((r) => r.id !== currentWorkspaceId)
-        .map((r) => ({
-          id: r.id,
-          name: r.name,
-          path: r.name,
-          branch: "main",
-          sessionCount: 1,
+        .filter((row) => row.kind === "workspace" && row.id !== currentWorkspaceId)
+        .map((row) => ({
+          id: row.id,
+          name: row.name,
+          path: row.rootPath || row.name,
+          branch: "—",
+          sessionCount: sessionCountFor(row.id),
           isCurrent: false,
-          lastActiveAt: "1 天前"
+          lastActiveAt: ""
         }))
     ] as WorkspaceItemData[]
 
@@ -75,7 +76,7 @@ export function WorkspacesPage() {
         ws.name.toLowerCase().includes(search.toLowerCase()) ||
         ws.path.toLowerCase().includes(search.toLowerCase())
     )
-  }, [currentWorkspaceId, currentWorkspaceName, currentRootLabel, repositories, search])
+  }, [currentRootLabel, currentWorkspaceId, currentWorkspaceName, repositories, search, t])
 
   async function handleSwitch(item: WorkspaceItemData) {
     if (item.isCurrent || !hasIde()) return
@@ -87,15 +88,7 @@ export function WorkspacesPage() {
     }
   }
 
-  return (
-    <SecondaryPageShell
-      searchPlaceholder="搜索工作区与文件夹路径..."
-      groups={navGroups}
-      selectedId={filter}
-      onSelect={setFilter}
-      contentWidth="wide"
-      breadcrumbTitle="工作区管理 > 文件夹与项目"
-    >
+  const body = (
       <div className="flex flex-col gap-6 max-w-5xl">
         {/* 顶部操作与快速打开 */}
         <div className="flex items-center justify-between gap-4 p-5 rounded-2xl border border-separator-border/80 bg-background-secondary-default/60 backdrop-blur-md shadow-2xs">
@@ -195,6 +188,20 @@ export function WorkspacesPage() {
           </div>
         </div>
       </div>
+  )
+
+  if (embed) return body
+
+  return (
+    <SecondaryPageShell
+      searchPlaceholder="搜索工作区与文件夹路径..."
+      groups={navGroups}
+      selectedId={filter}
+      onSelect={setFilter}
+      contentWidth="wide"
+      breadcrumbTitle="工作区管理 > 文件夹与项目"
+    >
+      {body}
     </SecondaryPageShell>
   )
 }
