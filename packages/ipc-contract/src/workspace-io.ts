@@ -99,7 +99,8 @@ export type GitCommitItem = z.infer<typeof GitCommitItem>
 
 export const GitLogInput = z.object({
   workspaceId: z.string().min(1),
-  limit: z.number().default(30).optional()
+  limit: z.number().default(30).optional(),
+  includeBranchFiles: z.boolean().optional()
 })
 export type GitLogInput = z.infer<typeof GitLogInput>
 

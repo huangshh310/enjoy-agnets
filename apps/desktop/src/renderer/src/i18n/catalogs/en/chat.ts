@@ -407,6 +407,8 @@ export const enChat = {
   reviewRefreshHistory: "Refresh commit history",
   reviewQuickCommit: "Commit {n} changes",
   reviewCommitPlaceholder: "Commit message…",
+  reviewGenerateCommit: "Generate commit message",
+  reviewGenerateCommitFailed: "Could not generate a commit message",
   reviewCommitting: "Committing…",
   reviewCommitAction: "Commit",
   reviewCommitFailed: "Commit failed",

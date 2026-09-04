@@ -114,7 +114,7 @@ export function ReviewHeader(props: {
           <button
             type="button"
             onClick={onOpenJumpPalette}
-            title={`${t("chat.reviewJumpToFile")} (Ctrl+P / ⌘P)`}
+            title={t("chat.reviewJumpToFile")}
             className="cursor-pointer rounded-md p-1.5 hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
           >
             <RiSearchLine className="size-4" />

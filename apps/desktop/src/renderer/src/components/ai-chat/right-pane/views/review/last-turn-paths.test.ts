@@ -44,3 +44,16 @@ test("续跑用户句不切断上一轮", () => {
   ]
   assert.deepEqual(pathsFromLastTurn(messages), ["a.ts"])
 })
+
+test("助手正文变长不改变上一轮 path", () => {
+  const tools = [{ id: "1", name: "write_file", args: { path: "a.ts" }, state: "output-available" as const }]
+  const before = [
+    msg({ role: "user", content: "改" }),
+    msg({ role: "assistant", content: "a", tools })
+  ]
+  const after = [
+    msg({ role: "user", content: "改" }),
+    msg({ role: "assistant", content: "a".repeat(4000), tools })
+  ]
+  assert.deepEqual(pathsFromLastTurn(before), pathsFromLastTurn(after))
+})

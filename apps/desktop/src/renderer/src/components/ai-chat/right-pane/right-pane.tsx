@@ -88,6 +88,7 @@ export function RightPane({
           >
             <RightPaneTabBody
               tab={tab}
+              active={tab.id === activeId}
               workspaceId={workspaceId}
               changes={changes}
               additions={additions}

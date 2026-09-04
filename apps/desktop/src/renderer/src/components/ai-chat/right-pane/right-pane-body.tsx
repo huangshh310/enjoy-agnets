@@ -10,6 +10,7 @@ import { ReviewView } from "./views/review-view"
 import { TerminalView } from "./views/terminal-view"
 export function RightPaneTabBody({
   tab,
+  active = true,
   workspaceId,
   changes,
   additions,
@@ -19,6 +20,7 @@ export function RightPaneTabBody({
   onSelectFile
 }: {
   tab: RightPaneTab
+  active?: boolean
   workspaceId: string | null
   changes: ChangedFileRow[]
   additions: number
@@ -37,6 +39,7 @@ export function RightPaneTabBody({
         selectedFilePath={selectedFilePath}
         selectedFileContent={selectedFileContent}
         onSelectFile={onSelectFile}
+        active={active}
       />
     )
   }

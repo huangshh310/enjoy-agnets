@@ -154,7 +154,7 @@ function registerWorkspaceIpc() {
   ipcMain.handle("workspace.gitLog", async (_event, raw) => {
     const input = GitLogInput.parse(raw)
     const ws = await getWorkspace(input.workspaceId)
-    return readGitLog(ws.rootPath, input.limit ?? 30)
+    return readGitLog(ws.rootPath, input.limit ?? 30, input.includeBranchFiles ?? false)
   })
   ipcMain.handle("workspace.gitCommit", async (_event, raw) => {
     const input = GitCommitInput.parse(raw)

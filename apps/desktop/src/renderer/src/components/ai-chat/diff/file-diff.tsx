@@ -3,12 +3,12 @@
  * 参考 https://www.aicss.dev/components/file-diff 顶级交互与设计规范。
  * 具备 4 列行号/符号对齐网格、左侧 3px 新增/删除状态指示条、全高 Gutter 分界线与增减统计徽标。
  */
+import { useMemo } from "react"
 import { RiCodeSSlashLine } from "@remixicon/react"
 import type { DiffLine, FileDiffModel } from "@enjoy-agents/agent-core/diff"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { applyDiffViewOptions, splitWordDiff } from "./file-diff-options"
-
 export function FileDiff({
   model,
   compact = false,
@@ -33,7 +33,10 @@ export function FileDiff({
   className?: string
 }) {
   const t = useT()
-  const view = applyDiffViewOptions(model, { hideWhitespace, foldLargeFiles })
+  const view = useMemo(
+    () => applyDiffViewOptions(model, { hideWhitespace, foldLargeFiles }),
+    [model, hideWhitespace, foldLargeFiles]
+  )
   if (view.hunks.length === 0) {
     return (
       <div

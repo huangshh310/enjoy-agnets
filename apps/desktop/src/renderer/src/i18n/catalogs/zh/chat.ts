@@ -400,6 +400,8 @@ export const zhChat = {
   reviewRefreshHistory: "刷新提交记录",
   reviewQuickCommit: "提交 {n} 项改动",
   reviewCommitPlaceholder: "输入提交说明…",
+  reviewGenerateCommit: "生成提交说明",
+  reviewGenerateCommitFailed: "无法生成提交说明",
   reviewCommitting: "提交中…",
   reviewCommitAction: "提交",
   reviewCommitFailed: "提交失败",

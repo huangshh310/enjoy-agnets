@@ -1,6 +1,7 @@
 /**
  * Changes 栏选中文件的 git diff 预览。
  */
+import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
 import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
@@ -32,6 +33,11 @@ export function ChangesFileDiff({
         ignoreWhitespace: hideWhitespace
       }) as Promise<FileDiffResult>
   })
+  const diffText = query.data?.diff
+  const model = useMemo(() => {
+    if (!diffText?.trim()) return null
+    return parseUnifiedDiff(diffText, path)
+  }, [diffText, path])
 
   if (query.isPending) {
     return (
@@ -41,11 +47,11 @@ export function ChangesFileDiff({
     )
   }
 
-  if (query.data?.diff?.trim()) {
+  if (model) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <FileDiff
-          model={parseUnifiedDiff(query.data.diff, path)}
+          model={model}
           fill
           wordWrap={options?.wordWrap}
           wordDiff={options?.wordDiff}

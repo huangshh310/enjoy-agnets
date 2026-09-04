@@ -114,10 +114,14 @@ async function readCurrentBranch(workspaceRoot: string): Promise<string> {
  * 读取工作区 Git 线性日志与当前分支。
  * 不是提交树：不解析 parent / graph，UI 不得用 index 伪装车道。
  */
-export async function readGitLog(workspaceRoot: string, limit = 30): Promise<GitLogResult> {
+export async function readGitLog(
+  workspaceRoot: string,
+  limit = 30,
+  includeBranchFiles = false
+): Promise<GitLogResult> {
   const branch = await readCurrentBranch(workspaceRoot)
   const upstream = await readUpstream(workspaceRoot)
-  const branchFiles = await readBranchFiles(workspaceRoot, upstream)
+  const branchFiles = includeBranchFiles ? await readBranchFiles(workspaceRoot, upstream) : []
   const capped = Math.min(Math.max(limit, 1), 100)
   try {
     const format = "%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%cr%x1f%cd"

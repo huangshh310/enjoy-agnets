@@ -24,7 +24,8 @@ export function ReviewView({
   deletions,
   selectedFilePath,
   selectedFileContent,
-  onSelectFile
+  onSelectFile,
+  active = true
 }: {
   workspaceId: string | null
   changes: ChangedFileRow[]
@@ -33,10 +34,12 @@ export function ReviewView({
   selectedFilePath: string | null
   selectedFileContent: string
   onSelectFile: (path: string) => void
+  active?: boolean
 }) {
   const workspaceName = useChatStore((state) => state.workspaceName)
-  const messages = useChatStore((state) => state.messages)
-  const git = useWorkspaceGit(workspaceId)
+  const lastTurnKey = useChatStore((state) =>
+    active ? pathsFromLastTurn(state.messages).join("\n") : ""
+  )
   const {
     scope,
     setScope,
@@ -47,9 +50,16 @@ export function ReviewView({
     jumpOpen,
     setJumpOpen
   } = useReviewOptions("last-turn")
+  const git = useWorkspaceGit(workspaceId, {
+    enabled: active,
+    includeBranchFiles: active && scope === "branch"
+  })
   const commitDockRef = useRef<ReviewCommitDockHandle>(null)
 
-  const lastTurnPaths = useMemo(() => pathsFromLastTurn(messages), [messages])
+  const lastTurnPaths = useMemo(
+    () => (lastTurnKey ? lastTurnKey.split("\n") : []),
+    [lastTurnKey]
+  )
   const scoped = useMemo(
     () => filterChangesByScope(changes, scope, lastTurnPaths, git.branchFiles),
     [changes, scope, lastTurnPaths, git.branchFiles]
@@ -58,11 +68,10 @@ export function ReviewView({
   const scopedDels = scoped.reduce((sum, file) => sum + file.deletions, 0)
 
   useReviewHotkeys({
+    enabled: active,
     changes: scoped,
     selectedFilePath,
-    onSelectFile,
-    onOpenJump: () => setJumpOpen(true),
-    onPrimaryAction: () => commitDockRef.current?.focus()
+    onSelectFile
   })
 
   async function copyPatch() {
@@ -127,6 +136,7 @@ export function ReviewView({
           changesCount={scoped.length}
           onCommit={git.commitChanges}
           onPush={() => git.pushChanges()}
+          onReadPatch={() => git.readPatch(scoped.map((file) => file.path))}
         />
       </div>
     </div>

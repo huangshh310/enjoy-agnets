@@ -1,11 +1,15 @@
 /**
  * 工作区真实 Git 日志、提交、推送与 patch。空日志不回落 mock，上游失败不写死 main。
+ * 审查栏隐藏时不要发 gitLog，避免主进程被 git 堵住整窗。
  */
+import { useMemo } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type { GitLogResult } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type { CommitListItem } from "./review.types"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
+
+const EMPTY_LOG: GitLogResult = { branch: "", upstream: "", branchFiles: [], commits: [] }
 
 function initialsFromAuthor(name: string): string {
   if (!name.trim()) return "?"
@@ -32,22 +36,32 @@ function toCommitListItem(item: GitLogResult["commits"][number]): CommitListItem
   }
 }
 
-export function useWorkspaceGit(workspaceId: string | null) {
+export function useWorkspaceGit(
+  workspaceId: string | null,
+  opts: { enabled?: boolean; includeBranchFiles?: boolean } = {}
+) {
   const queryClient = useQueryClient()
+  const enabled = (opts.enabled ?? true) && hasIde() && Boolean(workspaceId)
+  const includeBranchFiles = opts.includeBranchFiles ?? false
 
   const gitQuery = useQuery({
-    queryKey: ["workspace-git-log", workspaceId],
-    enabled: hasIde() && Boolean(workspaceId),
+    queryKey: ["workspace-git-log", workspaceId, includeBranchFiles],
+    enabled,
     queryFn: async (): Promise<GitLogResult> => {
-      if (!workspaceId) return { branch: "", upstream: "", branchFiles: [], commits: [] }
+      if (!workspaceId) return EMPTY_LOG
       return (await getIde().workspace.gitLog({
         workspaceId,
-        limit: 30
+        limit: 30,
+        includeBranchFiles
       })) as GitLogResult
     }
   })
 
-  const rawData = gitQuery.data ?? { branch: "", upstream: "", branchFiles: [], commits: [] }
+  const rawData = gitQuery.data ?? EMPTY_LOG
+  const commits = useMemo(
+    () => (rawData.commits ?? []).map(toCommitListItem),
+    [rawData.commits]
+  )
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["workspace-git-log", workspaceId] })
@@ -96,8 +110,8 @@ export function useWorkspaceGit(workspaceId: string | null) {
   return {
     branch: rawData.branch,
     upstream: rawData.upstream ?? "",
-    branchFiles: (rawData.branchFiles ?? []) as ChangedFileRow[],
-    commits: (rawData.commits ?? []).map(toCommitListItem),
+    branchFiles: (rawData.branchFiles ?? EMPTY_LOG.branchFiles) as ChangedFileRow[],
+    commits,
     isRefreshing: gitQuery.isFetching,
     refresh,
     commitChanges,

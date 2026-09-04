@@ -1,15 +1,17 @@
 /**
- * 审查栏快捷提交底栏：说明输入、Conventional 前缀、审批提交、推送。
+ * 审查栏提交底栏：输入框内 sparkle 生成说明，提交/推送收到芯片行。
  */
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react"
-import { RiGitCommitLine, RiUploadCloudLine } from "@remixicon/react"
+import { RiGitCommitLine, RiLoader4Line, RiSparklingLine, RiUploadCloudLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { Textarea } from "@/components/ui/textarea"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { CONVENTIONAL_PREFIXES } from "../constants/review-constants"
+import { generateCommitMessage } from "./generate-commit-message"
 
 export type ReviewCommitDockHandle = {
   focus: () => void
@@ -21,9 +23,10 @@ export const ReviewCommitDock = forwardRef<
     changesCount: number
     onCommit?: (message: string) => Promise<{ ok: boolean; output?: string }>
     onPush?: () => Promise<{ ok: boolean; output?: string }>
+    onReadPatch?: () => Promise<string>
   }
 >(function ReviewCommitDock(props, ref) {
-  const { changesCount, onCommit, onPush } = props
+  const { changesCount, onCommit, onPush, onReadPatch } = props
   const t = useT()
   const { data: settings } = useSettingsSnapshot()
   const requireApproval = settings?.preferences.requireCommitApproval ?? true
@@ -31,6 +34,7 @@ export const ReviewCommitDock = forwardRef<
 
   const [message, setMessage] = useState("")
   const [busy, setBusy] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
@@ -62,6 +66,20 @@ export const ReviewCommitDock = forwardRef<
     if (!res.ok) setError(res.output || t("chat.reviewPushFailed"))
   }
 
+  async function runGenerate() {
+    if (!onReadPatch || generating || busy) return
+    setGenerating(true)
+    setError(null)
+    try {
+      const patch = await onReadPatch()
+      setMessage(await generateCommitMessage(patch))
+      inputRef.current?.focus()
+    } catch {
+      setError(t("chat.reviewGenerateCommitFailed"))
+    }
+    setGenerating(false)
+  }
+
   function tryCommit() {
     if (!message.trim() || busy) return
     if (requireApproval) {
@@ -82,55 +100,67 @@ export const ReviewCommitDock = forwardRef<
     tryCommit()
   }
 
+  const locked = busy || generating
+
   return (
-    <div className="flex flex-col gap-1.5 pt-0.5 select-none">
-      <form onSubmit={handleSubmit} className="flex items-start gap-1.5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-1.5 pt-0.5 select-none">
+      <div className="relative">
         <Textarea
           ref={inputRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("chat.reviewCommitPlaceholder")}
-          disabled={busy}
+          disabled={locked}
           rows={2}
-          className="min-h-[52px] max-h-28 resize-none overflow-y-auto rounded-lg border-separator-border bg-background-primary-default px-2.5 py-1.5 text-caption-1-medium text-text-primary shadow-none placeholder:text-text-tertiary focus-visible:border-accent-500 focus-visible:ring-1 focus-visible:ring-accent-500"
+          className="min-h-[44px] max-h-24 resize-none overflow-y-auto rounded-lg border-separator-border bg-background-primary-default py-1.5 pl-2.5 pr-8 text-caption-1-medium text-text-primary shadow-none placeholder:text-text-tertiary focus-visible:border-accent-500 focus-visible:ring-1 focus-visible:ring-accent-500"
         />
-        <div className="flex shrink-0 flex-col gap-1">
-          <Button type="submit" size="sm" disabled={busy || !message.trim()} className="h-7 gap-1 px-2.5">
-            <RiGitCommitLine className="size-3" />
-            <span>{busy ? t("chat.reviewCommitting") : t("chat.reviewCommitAction")}</span>
-          </Button>
-          {onPush ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              className="h-7 gap-1 px-2.5"
-              onClick={() => void runPush()}
-            >
-              <RiUploadCloudLine className="size-3" />
-              <span>{t("chat.reviewPushAction")}</span>
-            </Button>
-          ) : null}
-        </div>
-      </form>
+        {onReadPatch ? (
+          <QuietIconButton
+            icon={generating ? RiLoader4Line : RiSparklingLine}
+            aria-label={t("chat.reviewGenerateCommit")}
+            title={t("chat.reviewGenerateCommit")}
+            disabled={locked}
+            onClick={() => void runGenerate()}
+            className={`absolute right-0.5 top-0.5 size-7 text-text-tertiary hover:text-accent-500 ${generating ? "animate-spin" : ""}`}
+          />
+        ) : null}
+      </div>
 
-      <div className="flex flex-wrap items-center gap-1">
-        {CONVENTIONAL_PREFIXES.map((item) => (
-          <button
-            key={item.prefix}
+      <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+          {CONVENTIONAL_PREFIXES.map((item) => (
+            <button
+              key={item.prefix}
+              type="button"
+              onClick={() =>
+                setMessage((prev) =>
+                  prev ? `${item.prefix}${prev.replace(/^[a-z]+:\s*/i, "")}` : item.prefix
+                )
+              }
+              className="cursor-pointer rounded border border-separator-border/60 bg-background-secondary-default/50 px-1.5 py-0.5 font-mono text-[10.5px] text-text-tertiary hover:border-accent-500/40 hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        {onPush ? (
+          <Button
             type="button"
-            onClick={() =>
-              setMessage((prev) =>
-                prev ? `${item.prefix}${prev.replace(/^[a-z]+:\s*/i, "")}` : item.prefix
-              )
-            }
-            className="cursor-pointer rounded border border-separator-border/60 bg-background-secondary-default/50 px-1.5 py-0.5 font-mono text-[10.5px] text-text-tertiary hover:border-accent-500/40 hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
+            variant="ghost"
+            size="xs"
+            disabled={locked}
+            className="h-6 shrink-0 gap-1 px-1.5 text-text-tertiary"
+            onClick={() => void runPush()}
           >
-            {item.label}
-          </button>
-        ))}
+            <RiUploadCloudLine className="size-3" />
+            <span>{t("chat.reviewPushAction")}</span>
+          </Button>
+        ) : null}
+        <Button type="submit" size="xs" disabled={locked || !message.trim()} className="h-6 shrink-0 gap-1 px-2">
+          <RiGitCommitLine className="size-3" />
+          <span>{busy ? t("chat.reviewCommitting") : t("chat.reviewCommitAction")}</span>
+        </Button>
       </div>
 
       {error ? <p className="text-[11px] text-text-error-primary">{error}</p> : null}
@@ -146,6 +176,6 @@ export const ReviewCommitDock = forwardRef<
         confirmLabel={t("chat.reviewCommitAction")}
         onConfirm={() => void runCommit()}
       />
-    </div>
+    </form>
   )
 })

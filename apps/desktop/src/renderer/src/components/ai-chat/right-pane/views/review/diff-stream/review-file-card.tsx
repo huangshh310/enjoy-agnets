@@ -6,7 +6,7 @@
  * - 主体内容：惰性加载并渲染高精度的 FileDiff 行网格
  */
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   RiArrowDownSLine,
@@ -66,9 +66,11 @@ export function ReviewFileCard(props: {
     setTimeout(() => setCopiedPath(false), 1500)
   }
 
-  const diffModel = diffQuery.data?.diff
-    ? parseUnifiedDiff(diffQuery.data.diff, file.path)
-    : null
+  const diffModel = useMemo(
+    () =>
+      diffQuery.data?.diff ? parseUnifiedDiff(diffQuery.data.diff, file.path) : null,
+    [diffQuery.data?.diff, file.path]
+  )
 
   return (
     <article
