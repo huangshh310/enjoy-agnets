@@ -15,33 +15,14 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { uiT, useUiLocale } from "@/i18n/ui-locale"
+import type {
+  NormalizedTask,
+  TaskItem,
+  TaskListProps,
+  TaskStatus
+} from "./task-list.types"
 
-export interface TaskItem {
-  id?: string
-  title: string
-  status?: "pending" | "in_progress" | "completed"
-}
-
-export interface TaskListProps {
-  title?: string
-  tasks: Array<TaskItem | string>
-  currentIndex?: number
-  defaultCollapsed?: boolean
-  className?: string
-  variant?: "card" | "dock"
-  /** 当前 Agent 是否在跑。false 时 in_progress 显示为已停止，不要空转「运行中」。 */
-  live?: boolean
-  /** 停跑且任务未完成时，点「继续」再开一轮。 */
-  onContinue?: () => void
-}
-
-type TaskStatus = NonNullable<TaskItem["status"]>
-
-type NormalizedTask = {
-  title: string
-  status: TaskStatus
-}
-
+export type { TaskItem, TaskListProps, TaskStatus, NormalizedTask }
 export function TaskList({
   title,
   tasks,

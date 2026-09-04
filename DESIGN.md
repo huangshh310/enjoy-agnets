@@ -10,9 +10,9 @@
 
 * **产品定位**：本地优先的专业 Agent IDE（桌面级高密度工具），**不是**营销落地页或通用 SaaS 控制台。
 * **物理画布结构**：
-  * 画布底色为 `background/full`（Mist 浅色 `#F7F7F7` / 炭黑暗色 `#121212`）。
+  * 画布底色为 `background/full`（Mist 浅色 `#F7F7F7` / 炭黑暗色 `#121212`），底层注入柔和漫射环境微光（Ambient Canvas Glow）。
   * 主工作区由三张 24px 圆角浮动卡片组成（Agent Rail 侧栏、Chat 舞台、Changes 变更面板），卡片间保持 12px 物理间隙，禁止融成单块白矩形。
-* **二级页与 Studio**：
+  * 卡片搭载分层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻环境扩散，暗色具备 1px 微倒角高光切边（Specular Rim）。
   * 采用 **非对称 Bento 网格**（Density 6, Variance 5），优先以高密度数据与微件呈现。
   * 顶部采用紧凑型面包屑与操作工具栏，首屏直入工作数据与状态流，禁止居中大 Hero。
 
@@ -29,7 +29,10 @@
    * 多个统计微件并列时，根据信息权重使用不同跨度（`col-span-1` vs `col-span-2`），打破单调平铺。
 4. **视口与自适应布局 (Viewport Adaptation)**：
    * 根容器高度使用 `min-h-[100dvh]` 或 `h-full`，**严禁**使用 `h-screen`（防止移动端/桌面缩放时视口溢出截断）。
-
+5. **无多余横向溢出与原生滚动条收敛 (No Spurious Overflow)**：
+   * 弹层、Popover、侧边栏严禁使用超出父级内边距的负 margin 导致水平溢出；弹出浮层必须声明 `overflow-x-hidden` 并隐蔽原生滚动条（`[scrollbar-width:none] [&::-webkit-scrollbar]:hidden`）。
+6. **信息架构单屏全览 (Single-Screen Scannability)**：
+   * 设置侧栏等情境导航严格采用 4 大板块 9 个核心高频项架构，子路由智能映射至对应父级，严禁 20+ 项无脑平铺造成长滚动溢出。
 ---
 
 ## 3. 严格受限的 Token 词表 (Bounded Vocabulary)
