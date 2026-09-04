@@ -31,7 +31,7 @@ export function SecondaryPageMain(props: {
               "w-full",
               contentWidth === "article" && "mx-auto max-w-[760px] px-8 pt-7 pb-16",
               contentWidth === "wide" && "mx-auto max-w-5xl px-8 pt-7 pb-16",
-              contentWidth === "stage" && "flex min-h-full flex-col px-8 pt-6 pb-16"
+              contentWidth === "stage" && "flex min-h-full flex-1 flex-col px-8 pt-5 pb-6"
             )}
           >
             <SecondaryPageChrome label={selectedItemLabel} />

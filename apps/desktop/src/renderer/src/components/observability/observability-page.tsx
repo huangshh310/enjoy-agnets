@@ -11,7 +11,8 @@ import {
   RiFileHistoryLine,
   RiFileList3Line,
   RiPulseLine,
-  RiRefreshLine
+  RiRefreshLine,
+  RiRouteLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
@@ -32,21 +33,27 @@ import { ObservabilityPagination } from "./components/observability-pagination"
 import { ObservabilityPolicyBar } from "./components/observability-policy-bar"
 import { ObservabilityTraceModal } from "./components/observability-trace-modal"
 import { FullTraceWorkbench } from "./components/trace-view/full-trace-workbench"
+import { ObservabilityModelRouting } from "./components/observability-model-routing"
 import { ObservabilityReplay } from "./observability-replay"
-import type { MetricKindFilter, MetricStatusFilter } from "./types/observability-ui.types"
+import {
+  getAdaptivePageSize,
+  type MetricKindFilter,
+  type MetricStatusFilter
+} from "./types/observability-ui.types"
+import { useChatStore } from "@renderer/stores/chat-store"
 
-type ActiveObservabilityView = "dashboard" | "traces" | "replay"
-
+type ActiveObservabilityView = "dashboard" | "routing" | "traces" | "replay"
 export function ObservabilityPage() {
   const t = useT()
   const queryClient = useQueryClient()
   const [activeView, setActiveView] = useState<ActiveObservabilityView>("dashboard")
+  const storeModels = useChatStore((state) => state.models)
   const [statusFilter, setStatusFilter] = useState<MetricStatusFilter>("all")
   const [kindFilter, setKindFilter] = useState<MetricKindFilter>("all")
   const [search, setSearch] = useState("")
   const [inspectMetric, setInspectMetric] = useState<TelemetryMetric | null>(null)
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState<number>(() => getAdaptivePageSize())
 
   const metricsQuery = useQuery({
     queryKey: ["metrics"],
@@ -60,24 +67,47 @@ export function ObservabilityPage() {
     await queryClient.invalidateQueries({ queryKey: ["metrics"] })
   }
 
-  // 侧边栏导航分组
+  // 侧边栏导航分组：全面涵盖本地执行指标、模型路由大盘、链路明细与事件回放
+  const routedModelCount = storeModels.length || 10
   const groups = useMemo(
     () => [
       {
         id: "metrics",
-        label: t("pages.observability.navGroup"),
+        label: t("pages.observability.navGroup") || "遥测与日志",
         items: [
           {
-            id: "all",
-            label: t("pages.observability.navLocal"),
+            id: "dashboard",
+            label: t("pages.observability.navLocal") || "本地执行监控",
             icon: RiPulseLine,
             meta: String(metrics.length)
+          },
+          {
+            id: "routing",
+            label: t("pages.observability.navRouting") || "模型路由",
+            icon: RiRouteLine,
+            meta: String(routedModelCount)
+          },
+          {
+            id: "traces",
+            label: t("pages.observability.viewTraces") || "链路明细日志",
+            icon: RiFileList3Line
+          },
+          {
+            id: "replay",
+            label: t("pages.observability.viewReplay") || "事件流回放",
+            icon: RiFileHistoryLine
           }
         ]
       }
     ],
-    [metrics.length, t]
+    [metrics.length, routedModelCount, t]
   )
+
+  function handleSelectModelTrace(modelId: string) {
+    setSearch(modelId)
+    setActiveView("traces")
+    setPage(1)
+  }
 
   // 客户端过滤
   const filteredMetrics = useMemo(() => {
@@ -128,11 +158,11 @@ export function ObservabilityPage() {
     <SecondaryPageShell
       searchPlaceholder={t("pages.observability.filterPlaceholder")}
       groups={groups}
-      selectedId="all"
-      onSelect={() => undefined}
+      selectedId={activeView}
+      onSelect={(id) => setActiveView(id as ActiveObservabilityView)}
       contentWidth="stage"
     >
-      <div className="flex flex-col gap-4 pb-8 w-full">
+      <div className="flex min-h-full flex-1 flex-col justify-between gap-3.5 pb-2 w-full">
         {/* 顶部标题与工具栏 */}
         <header className="flex flex-col gap-2.5 pb-2 border-b border-separator-border/70">
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -186,6 +216,19 @@ export function ObservabilityPage() {
 
             <button
               type="button"
+              onClick={() => setActiveView("routing")}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all cursor-pointer",
+                activeView === "routing"
+                  ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              <RiRouteLine className="size-3.5" />
+              <span>{t("pages.observability.navRouting") || "模型路由"}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveView("traces")}
               className={cx(
                 "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[11.5px] font-medium transition-all",
@@ -213,16 +256,11 @@ export function ObservabilityPage() {
             </button>
           </div>
         </header>
-
-        {/* 1. 核心 KPI 看板 (全视图常驻) */}
-        <ObservabilityKpiBar metrics={metrics} />
-
-        {/* 2. 导出与脱敏策略条 */}
-        <ObservabilityPolicyBar />
-
-        {/* 视图分支 1: 监控与图表大盘 (全景多维图表矩阵) */}
+        {/* 视图分支 1: 监控与图表大盘 (含核心KPI指标看板与脱敏策略条) */}
         {activeView === "dashboard" && (
           <div className="flex flex-col gap-3.5">
+            <ObservabilityKpiBar metrics={metrics} />
+            <ObservabilityPolicyBar />
             {/* 第二行：双时序大图并排 (响应耗时 + Token 吞吐) */}
             <div className="grid gap-3.5 lg:grid-cols-2">
               <ObservabilityTimelineChart metrics={metrics} />
@@ -239,6 +277,14 @@ export function ObservabilityPage() {
           </div>
         )}
 
+        {/* 视图分支：模型路由与上游调度大盘 (对齐 Grok2API 路由大盘架构) */}
+        {activeView === "routing" && (
+          <ObservabilityModelRouting
+            metrics={metrics}
+            onSelectModelTrace={handleSelectModelTrace}
+          />
+        )}
+
         {/* 视图分支 2: 链路明细日志 (Traces Table View 带分页) */}
         {/* 视图分支 2: 链路明细日志 (Traces Table View 带分页 或 全景 Workbench) */}
         {activeView === "traces" &&
@@ -248,50 +294,56 @@ export function ObservabilityPage() {
               onBack={() => setInspectMetric(null)}
             />
           ) : (
-            <section className="flex flex-col gap-3">
-              <ObservabilityFilters
-                statusFilter={statusFilter}
-                onStatusFilterChange={(s) => {
-                  setStatusFilter(s)
-                  setPage(1)
-                }}
-                kindFilter={kindFilter}
-                onKindFilterChange={(k) => {
-                  setKindFilter(k)
-                  setPage(1)
-                }}
-                search={search}
-                onSearchChange={(q) => {
-                  setSearch(q)
-                  setPage(1)
-                }}
-              />
+            <section className="flex flex-1 flex-col justify-between gap-3 min-h-0">
+              <div className="flex flex-col gap-3">
+                <ObservabilityFilters
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={(s) => {
+                    setStatusFilter(s)
+                    setPage(1)
+                  }}
+                  kindFilter={kindFilter}
+                  onKindFilterChange={(k) => {
+                    setKindFilter(k)
+                    setPage(1)
+                  }}
+                  search={search}
+                  onSearchChange={(q) => {
+                    setSearch(q)
+                    setPage(1)
+                  }}
+                />
 
-              <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary px-1">
-                <span>
-                  {t("pages.observability.pageShowing", {
-                    n: paginatedMetrics.length,
-                    total: filteredMetrics.length
-                  })}
-                </span>
-                <span>{t("pages.observability.clickTrace")}</span>
+                <div className="flex items-center justify-between text-caption-2-medium text-text-tertiary px-1">
+                  <span>
+                    {t("pages.observability.pageShowing", {
+                      n: paginatedMetrics.length,
+                      total: filteredMetrics.length
+                    })}
+                  </span>
+                  <span>{t("pages.observability.clickTrace")}</span>
+                </div>
+
+                <ObservabilityMetricsList
+                  metrics={paginatedMetrics}
+                  onInspect={(m) => setInspectMetric(m)}
+                />
               </div>
 
-              <ObservabilityMetricsList
-                metrics={paginatedMetrics}
-                onInspect={(m) => setInspectMetric(m)}
-              />
-
-              <ObservabilityPagination
-                currentPage={page}
-                pageSize={pageSize}
-                totalItems={filteredMetrics.length}
-                onPageChange={setPage}
-                onPageSizeChange={(s) => {
-                  setPageSize(s)
-                  setPage(1)
-                }}
-              />
+              {/* 底部吸附分页器：始终贴合视口底边，支持10/15/20/50条自适应 */}
+              <div className="mt-auto pt-2">
+                <ObservabilityPagination
+                  currentPage={page}
+                  pageSize={pageSize}
+                  totalItems={filteredMetrics.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={(s) => {
+                    setPageSize(s)
+                    setPage(1)
+                  }}
+                  pageSizeOptions={[10, 15, 20, 50]}
+                />
+              </div>
             </section>
           ))}
 
