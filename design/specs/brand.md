@@ -1,6 +1,6 @@
 # spec/brand
 
-> 产品主标来自 `apps/desktop/public/enjoy-ui-kit`。最后更新：2026-08-31
+> 产品主标来自 `apps/desktop/public/enjoy-ui-kit`。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -11,8 +11,10 @@
 | 标题栏 / 侧栏 ≤32px 标 | `svg/icon-small.svg` | `AppMark` |
 | 界面标 >32px | 浅色 `icon-light` / 暗色 `icon-dark` | `AppMark` + `useThemeMode` |
 | 组合字锁 | 铬上拼 `enjoy` + `AGENT IDE`，不用 lockup SVG | `AppWordmark` |
-| 任务栏 / Alt+Tab / 最小化 | Windows `resources/icon.ico`，其它 `resources/icon.png` | `BrowserWindow.icon` |
+| 任务栏 / Alt+Tab / 最小化 | Windows `resources/icon.ico`，其它 `resources/icon.png`（512） | `BrowserWindow.icon` |
+| macOS Dock / Cmd+Tab（含 `pnpm dev`） | 同上 PNG | `app.dock.setIcon`（`applyMacDockIcon`） |
 | 打包 exe / NSIS / 桌面快捷方式 | `build/icon.ico` | electron-builder `win` + `nsis` |
+| 打包 macOS `.app` / 桌面别名 / Finder | `build/icon.icns` | electron-builder `mac.icon` |
 | Linux 打包 | `build/icon.png`（512） | `linux.icon` |
 | 渲染进程 favicon | `svg/favicon.svg` + `png/favicon-32.png` | `index.html` |
 
@@ -38,13 +40,15 @@ node apps/desktop/scripts/write-app-icon.mjs
 - Kit：`apps/desktop/public/enjoy-ui-kit/`
 - 常量：`apps/desktop/src/renderer/src/components/brand/constants.ts`
 - 界面标：`app-mark.tsx`、`app-wordmark.tsx`
-- 窗口 icon：`apps/desktop/src/main/index.ts`（`resolveAppIconPath`）
+- 窗口 icon / Dock：`apps/desktop/src/main/index.ts`（`resolveAppIconPath`、`applyMacDockIcon`）
 - 派生脚本：`apps/desktop/scripts/write-app-icon.mjs`
 - 打包：`apps/desktop/electron-builder.yml`、`apps/desktop/build/`
 
 ## 已知坑
 
-- 改 `BrowserWindow.icon` 或 `resources/icon.ico` 后必须重启 Electron。
+- 改 `BrowserWindow.icon`、`app.dock.setIcon` 或 `resources/icon.*` 后必须重启 Electron。
 - Windows 小尺寸任务栏靠 ICO 的 16/32 帧；只塞一张 1024 PNG 会发糊。
+- macOS **忽略** `BrowserWindow.icon`。开发态可执行文件是 `Electron.app`，只设窗标 Dock 仍是原子标。必须 `app.whenReady` 后 `app.dock.setIcon`。
+- 打包后的桌面 / Finder / Dock 读 `.app` 里的 `CFBundleIconFile`（`build/icon.icns`），不是 `BrowserWindow.icon`。没有 `mac.icon` / `.icns` 时会回落到 Electron 默认标。`iconutil` 只在 darwin 上有，改 kit PNG 后要在 Mac 上重跑派生脚本。
 - electron-builder 的 `icon` 相对 `directories.buildResources`（`build/`），不是仓库根。
 - lockup SVG 带满底色块，铬里必须用 `AppMark` + `AppWordmark` 组合，不要 `<img src="lockup-*.svg">`。

@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, nativeImage, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
@@ -18,6 +18,17 @@ registerAssetScheme();
 /** 任务栏 / Alt+Tab / 最小化缩略图用的图标路径。Windows 用多帧 ICO，其它平台用 PNG。 */
 function resolveAppIconPath(): string {
   return process.platform === "win32" ? appIconIco : appIconPng;
+}
+
+/**
+ * macOS 会忽略 BrowserWindow.icon，开发态进程又是 Electron.app。
+ * Dock / Cmd+Tab 必须在 ready 之后单独设，否则一直显示 Electron 默认标。
+ */
+function applyMacDockIcon(): void {
+  if (process.platform !== "darwin" || app.dock == null) return;
+  const image = nativeImage.createFromPath(appIconPng);
+  if (image.isEmpty()) return;
+  app.dock.setIcon(image);
 }
 
 function createWindow(): void {
@@ -75,6 +86,7 @@ app.whenReady().then(async () => {
   app.on("browser-window-created", (_event, window) => {
     optimizer.watchWindowShortcuts(window);
   });
+  applyMacDockIcon();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -22,6 +22,9 @@ nsis:
   installerIcon: icon.ico
   uninstallerIcon: icon.ico
   installerHeaderIcon: icon.ico
+mac:
+  icon: icon.icns
+  category: public.app-category.developer-tools
 linux:
   icon: icon.png
 npmRebuild: false
