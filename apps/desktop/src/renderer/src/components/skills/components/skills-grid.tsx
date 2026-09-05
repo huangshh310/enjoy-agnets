@@ -1,13 +1,12 @@
 /**
- * 来源组网格：展示来源卡片或筛选空态。
+ * 来源组 / 已安装技能网格：展示 Bento 技能卡片或友好空态。
  */
-import type { CuratedSkillSource, SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import type { SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
 import { SkillsCard } from "./skills-card"
 import { SkillsEmptyState } from "./skills-empty-state"
 
 export function SkillsGrid({
   sources,
-  curated,
   busy,
   activeTargetId,
   onClearTargetFilter,
@@ -15,12 +14,10 @@ export function SkillsGrid({
   onUpdate,
   onDeploy,
   onRemove,
-  onAddGit,
   onPickFolder,
-  onInstallCurated
+  onGoToStore
 }: {
   sources: SkillSource[]
-  curated: CuratedSkillSource[]
   busy: boolean
   activeTargetId?: SkillTargetId | null
   onClearTargetFilter?: () => void
@@ -28,26 +25,22 @@ export function SkillsGrid({
   onUpdate: (id: string) => void
   onDeploy: (id: string) => void
   onRemove: (id: string) => void
-  onAddGit: (origin: string) => void
   onPickFolder: () => void
-  onInstallCurated: (source: CuratedSkillSource) => void
+  onGoToStore: () => void
 }) {
   if (sources.length === 0) {
     return (
       <SkillsEmptyState
-        curated={curated}
-        busy={busy}
         activeTargetId={activeTargetId}
         onClearTargetFilter={onClearTargetFilter}
-        onAddGit={onAddGit}
+        onGoToStore={onGoToStore}
         onPickFolder={onPickFolder}
-        onInstallCurated={onInstallCurated}
       />
     )
   }
 
   return (
-    <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {sources.map((source) => (
         <SkillsCard
           key={source.id}

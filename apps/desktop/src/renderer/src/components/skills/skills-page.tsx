@@ -1,20 +1,29 @@
 /**
- * 技能工作流主页面：左栏情境栏多维筛选与导航，主区自适应切换总览、精选市场与详情工作台。
+ * 技能工作流主页面：对标 Raycast / Figma Community / App Store 的现代化 C 端交互体验。
+ * 彻底告别底层“来源文件夹”心智，直观呈现 189+ 独立能力卡片、精选集市 Spotlight、即插即用抽屉与多 Agent 一键启用。
  */
-import { useMemo } from "react"
-import type { SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { useMemo, useState } from "react"
+import type { InstalledSkillItem, SkillTargetId } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { ImportDialog } from "./components/skills-import-dialog"
+import { CreateSkillDialog } from "./components/create-skill-dialog"
 import { SkillsToolbar } from "./components/skills-toolbar"
 import { SkillsGrid } from "./components/skills-grid"
+import { SkillItemCard } from "./components/skill-item-card"
+import { SkillDrawer } from "./components/skill-drawer"
 import { SkillsDetailView } from "./components/skills-detail-view"
 import { SkillsCuratedView } from "./components/skills-curated-view"
 import { SkillsDoctorModal } from "./components/skills-doctor-modal"
+import { SkillsEmptyState } from "./components/skills-empty-state"
+import { AgentArmoryView } from "./components/armory/agent-armory-view"
 import { useSkillsPage } from "./hooks/use-skills-page"
 
 export function SkillsPage() {
   const page = useSkillsPage()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedDrawerSkill, setSelectedDrawerSkill] = useState<InstalledSkillItem | null>(null)
 
+  // 解析当前选中的目标 Agent 筛选
   const activeTargetId = useMemo<SkillTargetId | null>(() => {
     if (page.selectedNavId.startsWith("target:")) {
       return page.selectedNavId.replace("target:", "") as SkillTargetId
@@ -22,13 +31,71 @@ export function SkillsPage() {
     return null
   }, [page.selectedNavId])
 
-  const displayedSources = useMemo(() => {
-    if (!activeTargetId) return page.sources
-    return page.sources.filter((s) => s.enabledTargetIds.includes(activeTargetId))
-  }, [page.sources, activeTargetId])
-
+  // 当前三栏视图模式
   const isDetailView = Boolean(page.selectedSourceId && page.detail)
   const isCuratedView = page.selectedNavId === "curated"
+  const isPacksView = page.selectedNavId === "packs"
+
+  const activeTab: "curated" | "skills" | "packs" = isCuratedView
+    ? "curated"
+    : isPacksView
+      ? "packs"
+      : "skills"
+
+  function handleTabChange(tab: "curated" | "skills" | "packs") {
+    if (tab === "curated") {
+      page.setSelectedNavId("curated")
+    } else if (tab === "packs") {
+      page.setSelectedNavId("packs")
+    } else {
+      page.setSelectedNavId("all")
+    }
+    page.setActiveSkillId(null)
+    page.setActionError(null)
+  }
+
+  // 1. 全部具体技能列表过滤（能力卡片视图）
+  const filteredSkills = useMemo(() => {
+    let list = page.allSkills
+    if (activeTargetId) {
+      list = list.filter((s) => s.enabledTargetIds.includes(activeTargetId))
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          (s.description && s.description.toLowerCase().includes(q)) ||
+          (s.trigger && s.trigger.toLowerCase().includes(q)) ||
+          s.sourceName.toLowerCase().includes(q)
+      )
+    }
+    return list
+  }, [page.allSkills, activeTargetId, searchQuery])
+
+  // 2. 来源合集列表过滤（合集视图）
+  const displayedSources = useMemo(() => {
+    let list = page.sources
+    if (activeTargetId) {
+      list = list.filter((s) => s.enabledTargetIds.includes(activeTargetId))
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.origin.toLowerCase().includes(q) ||
+          s.selectedSkillIds.some((id) => id.toLowerCase().includes(q))
+      )
+    }
+    return list
+  }, [page.sources, activeTargetId, searchQuery])
+
+  // 抽屉中当前技能对应的所属 source
+  const drawerSource = useMemo(() => {
+    if (!selectedDrawerSkill) return undefined
+    return page.sources.find((s) => s.id === selectedDrawerSkill.sourceId)
+  }, [selectedDrawerSkill, page.sources])
 
   return (
     <SecondaryPageShell
@@ -70,42 +137,95 @@ export function SkillsPage() {
             onRemove={() => void page.removeSource(page.detail!.source.id)}
             onDeleteSkill={(skillId) => void page.deleteSkill(page.detail!.source.id, skillId)}
           />
-        ) : isCuratedView ? (
-          <SkillsCuratedView
-            curated={page.curated}
-            sources={page.sources}
-            busy={Boolean(page.busyMessage)}
-            onInstall={(curatedSource) => void page.installCurated(curatedSource)}
-          />
         ) : (
           <div className="flex flex-col gap-6">
             <SkillsToolbar
               sourceCount={page.sources.length}
-              deployedCount={page.overview?.installedCount ?? 0}
+              deployedCount={page.allSkills.length || page.overview?.installedCount || 0}
               driftCount={page.overview?.driftCount ?? 0}
               warningCount={page.warnings.length}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
               busy={Boolean(page.busyMessage)}
               onDoctor={() => page.setDoctorOpen(true)}
               onUpdateAll={() => void page.updateAllSources()}
               onImport={() => page.setImportOpen(true)}
+              onCreateSkill={() => page.setCreateSkillOpen(true)}
             />
 
-            <SkillsGrid
-              sources={displayedSources}
-              curated={page.curated}
-              busy={Boolean(page.busyMessage)}
-              activeTargetId={activeTargetId}
-              onClearTargetFilter={() => page.setSelectedNavId("all")}
-              onSelect={(id) => page.setSelectedNavId(id)}
-              onUpdate={(id) => void page.updateSource(id)}
-              onDeploy={(id) => void page.deploySource(id)}
-              onRemove={(id) => void page.removeSource(id)}
-              onAddGit={(origin) => void page.addGitSource(origin)}
-              onPickFolder={() => void page.addLocalSource()}
-              onInstallCurated={(item) => void page.installCurated(item)}
-            />
+            {activeTargetId ? (
+              /* 专属 Agent 能力整备工作台 (Pi, Claude, Cursor, Codex, Enjoy, OMP) */
+              <AgentArmoryView
+                targetId={activeTargetId}
+                allSkills={page.allSkills}
+                sources={page.sources}
+                curated={page.curated}
+                busy={Boolean(page.busyMessage)}
+                onGoToStore={() => page.setSelectedNavId("curated")}
+                onClearFilter={() => page.setSelectedNavId("all")}
+                onInstallCurated={(source) => void page.installCurated(source)}
+                onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+                onSelectSkill={(skill) => setSelectedDrawerSkill(skill)}
+              />
+            ) : activeTab === "curated" ? (
+              <SkillsCuratedView
+                curated={page.curated}
+                sources={page.sources}
+                busy={Boolean(page.busyMessage)}
+                onInstall={(curatedSource) => void page.installCurated(curatedSource)}
+              />
+            ) : activeTab === "packs" ? (
+              <SkillsGrid
+                sources={displayedSources}
+                busy={Boolean(page.busyMessage)}
+                activeTargetId={activeTargetId}
+                onClearTargetFilter={() => page.setSelectedNavId("all")}
+                onSelect={(id) => page.setSelectedNavId(id)}
+                onUpdate={(id) => void page.updateSource(id)}
+                onDeploy={(id) => void page.deploySource(id)}
+                onRemove={(id) => void page.removeSource(id)}
+                onPickFolder={() => void page.addLocalSource()}
+                onGoToStore={() => page.setSelectedNavId("curated")}
+              />
+            ) : (
+              /* 全部能力库 (All 189 Skills 网格) */
+              filteredSkills.length === 0 ? (
+                <SkillsEmptyState
+                  activeTargetId={activeTargetId}
+                  onClearTargetFilter={() => page.setSelectedNavId("all")}
+                  onGoToStore={() => page.setSelectedNavId("curated")}
+                  onPickFolder={() => void page.addLocalSource()}
+                />
+              ) : (
+                <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredSkills.map((skill) => (
+                    <SkillItemCard
+                      key={`${skill.sourceId}:${skill.id}`}
+                      skill={skill}
+                      onSelect={() => setSelectedDrawerSkill(skill)}
+                    />
+                  ))}
+                </div>
+              )
+            )}
           </div>
         )}
+
+        {/* 技能详情抽屉 */}
+        <SkillDrawer
+          skill={selectedDrawerSkill}
+          source={drawerSource}
+          hasWorkspace={page.hasWorkspace}
+          busy={Boolean(page.busyMessage)}
+          onClose={() => setSelectedDrawerSkill(null)}
+          onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+          onDeleteSkill={(sourceId, skillId) => {
+            void page.deleteSkill(sourceId, skillId)
+            setSelectedDrawerSkill(null)
+          }}
+        />
 
         <SkillsDoctorModal
           open={page.doctorOpen}
@@ -120,6 +240,15 @@ export function SkillsPage() {
           open={page.importOpen}
           onOpenChange={page.setImportOpen}
           onImported={page.refreshAll}
+          workspacePath={page.workspacePath}
+        />
+
+        <CreateSkillDialog
+          open={page.createSkillOpen}
+          hasWorkspace={page.hasWorkspace}
+          workspacePath={page.workspacePath}
+          onOpenChange={page.setCreateSkillOpen}
+          onCreated={page.refreshAll}
         />
       </div>
     </SecondaryPageShell>

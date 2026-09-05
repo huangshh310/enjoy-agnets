@@ -142,3 +142,20 @@ export const SkillSourceRepairInput = z
   })
   .strict()
 export type SkillSourceRepairInput = z.infer<typeof SkillSourceRepairInput>
+
+export const InstalledSkillItem = z
+  .object({
+    sourceId: z.string(),
+    sourceName: z.string(),
+    sourceKind: SkillSourceKind,
+    enabledTargetIds: z.array(SkillTargetId),
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    relativeDir: z.string(),
+    skillFilePath: z.string().optional(),
+    trigger: z.string().optional(),
+    content: z.string().optional()
+  })
+  .strict()
+export type InstalledSkillItem = z.infer<typeof InstalledSkillItem>

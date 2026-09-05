@@ -1,28 +1,14 @@
 /**
- * 社区精选技能工作流库探索页。
+ * 精选技能集市 (Skill Store) 探索页：对标 Raycast Store / Figma Community。
+ * 顶部非对称 Bento Spotlight 焦点台、高密度分类胶囊与即插即用获取体验。
  */
 import { useMemo, useState } from "react"
-import {
-  RiCheckLine,
-  RiCompass3Line,
-  RiDownloadLine,
-  RiLoader4Line,
-  RiSearchLine,
-  RiStarLine
-} from "@remixicon/react"
+import { RiCompass3Line } from "@remixicon/react"
 import type { CuratedSkillSource, SkillSource } from "@enjoy-agents/ipc-contract"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
-import { SKILLS_UI_COPY } from "../constants/skills-ui.constants"
-
-const CATEGORIES = [
-  { id: "all", label: "全部精选" },
-  { id: "engineering", label: "工程与开发" },
-  { id: "design", label: "UI / 交互设计" },
-  { id: "content", label: "内容与写作" },
-  { id: "utility", label: "基础工具" }
-] as const
+import { STORE_CATEGORIES } from "../constants/skills-badge-theme"
+import { CuratedBentoHero } from "./curated/curated-bento-hero"
+import { CuratedGridCard } from "./curated/curated-grid-card"
 
 export function SkillsCuratedView({
   curated,
@@ -36,162 +22,94 @@ export function SkillsCuratedView({
   onInstall: (source: CuratedSkillSource) => void
 }) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [search, setSearch] = useState("")
 
+  // 已安装的仓库来源集合
   const installedOrigins = useMemo(() => {
-    const keys = new Set<string>()
-    for (const source of sources) {
-      keys.add(source.origin.toLowerCase())
-      keys.add(source.id.toLowerCase())
-      keys.add(source.name.toLowerCase())
+    const set = new Set<string>()
+    for (const s of sources) {
+      set.add(s.origin.toLowerCase())
+      set.add(s.name.toLowerCase())
+      set.add(s.id.toLowerCase())
     }
-    return keys
+    return set
   }, [sources])
 
+  // 按分类筛选
   const filtered = useMemo(() => {
-    return curated.filter((item) => {
-      if (selectedCategory !== "all" && item.category !== selectedCategory) return false
-      if (!search.trim()) return true
-      const q = search.toLowerCase()
-      return (
-        item.name.toLowerCase().includes(q) ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q) ||
-        item.featuredSkills.some((s) => s.toLowerCase().includes(q))
-      )
-    })
-  }, [curated, selectedCategory, search])
+    if (selectedCategory === "all") return curated
+    return curated.filter((item) => item.category === selectedCategory)
+  }, [curated, selectedCategory])
+
+  // 聚光灯首选与榜单候选
+  const spotlightItem = curated[0]
+  const trendingItems = useMemo(() => curated.slice(1, 5), [curated])
+
+  const isSpotlightInstalled = spotlightItem
+    ? installedOrigins.has(spotlightItem.locator.toLowerCase()) ||
+      installedOrigins.has(spotlightItem.name.toLowerCase())
+    : false
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-3 pb-3 border-b border-separator-border/60">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500">
-            <RiCompass3Line className="size-4" />
-          </div>
-          <div>
-            <h2 className="text-title-3-semibold text-text-primary">
-              {SKILLS_UI_COPY.exploreCurated}
-            </h2>
-            <p className="text-caption-2-regular text-text-tertiary">
-              按需导入高质量社区 Agent 技能组，统一管理并投影到 Claude、Cursor、Codex 等。
-            </p>
-          </div>
-        </div>
+    <div className="flex flex-col gap-6 animate-in fade-in duration-200">
+      {/* 1. 顶部非对称 Bento 聚光灯展台 (Spotlight + Trending Pulse) */}
+      {spotlightItem && selectedCategory === "all" ? (
+        <CuratedBentoHero
+          spotlightItem={spotlightItem}
+          trendingItems={trendingItems}
+          isSpotlightInstalled={isSpotlightInstalled}
+          installedOrigins={installedOrigins}
+          busy={busy}
+          onInstall={onInstall}
+        />
+      ) : null}
 
-        {/* 分类过滤与搜索 */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cx(
-                  "rounded-lg px-2.5 py-1 text-caption-2-medium transition-colors cursor-pointer",
-                  selectedCategory === cat.id
-                    ? "bg-accent-500/10 text-accent-600 dark:text-accent-400 font-semibold"
-                    : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-                )}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+      {/* 2. 分类筛选标签胶囊 */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-separator-border/40">
+        {STORE_CATEGORIES.map((cat) => {
+          const isActive = selectedCategory === cat.id
+          const CatIcon = cat.icon
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setSelectedCategory(cat.id)}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-caption-2-medium transition-all cursor-pointer border shrink-0",
+                isActive
+                  ? "border-accent-500/50 bg-accent-500/10 text-accent-700 dark:text-accent-300 font-semibold shadow-2xs"
+                  : "border-separator-border/60 bg-background-primary-default text-text-secondary hover:border-separator-border hover:text-text-primary"
+              )}
+            >
+              <CatIcon className="size-3.5" />
+              <span>{cat.label}</span>
+            </button>
+          )
+        })}
+      </div>
 
-          <div className="relative w-64">
-            <RiSearchLine className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-tertiary" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="搜索技能库与工具…"
-              className="pl-8 h-8 text-caption-2-medium bg-background-primary-default"
-            />
-          </div>
-        </div>
-      </header>
-
+      {/* 3. 技能套件卡片网格 */}
       {filtered.length === 0 ? (
-        <div className="py-12 text-center text-caption-2-medium text-text-tertiary">
-          未找到匹配的精选工作流库
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <RiCompass3Line className="size-8 text-text-tertiary mb-2" />
+          <p className="text-caption-1-medium text-text-secondary">该分类下暂无精选技能包</p>
         </div>
       ) : (
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => {
             const locator = item.locator.toLowerCase()
             const isInstalled =
               installedOrigins.has(locator) ||
               installedOrigins.has(item.id.toLowerCase()) ||
-              installedOrigins.has(item.name.toLowerCase()) ||
-              installedOrigins.has(`https://github.com/${locator}.git`)
+              installedOrigins.has(item.name.toLowerCase())
 
             return (
-              <div
+              <CuratedGridCard
                 key={item.id}
-                className="flex flex-col justify-between rounded-2xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-separator-border hover:shadow-card"
-              >
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-caption-1-medium font-semibold text-text-primary">
-                        {item.title}
-                      </h3>
-                      <span className="text-[11px] font-mono text-text-tertiary">
-                        {item.name}
-                      </span>
-                    </div>
-                    {item.stars ? (
-                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-amber-600 dark:text-amber-400 shrink-0">
-                        <RiStarLine className="size-3" />
-                        {item.stars.toLocaleString()}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <p className="text-[11.5px] text-text-secondary leading-relaxed line-clamp-3">
-                    {item.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {item.featuredSkills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-md bg-background-secondary-default px-1.5 py-0.5 text-[10px] font-mono text-text-secondary"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-separator-border/40 flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-mono text-text-tertiary">
-                    {item.skillCount} 个技能
-                  </span>
-
-                  {isInstalled ? (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                      <RiCheckLine className="size-3.5" />
-                      <span>{SKILLS_UI_COPY.installedTag}</span>
-                    </span>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => onInstall(item)}
-                      className="gap-1 h-7 text-[11px] font-medium"
-                    >
-                      {busy ? (
-                        <RiLoader4Line className="size-3 animate-spin" />
-                      ) : (
-                        <RiDownloadLine className="size-3" />
-                      )}
-                      <span>{busy ? "导入中…" : SKILLS_UI_COPY.oneClickInstall}</span>
-                    </Button>
-                  )}
-                </div>
-              </div>
+                item={item}
+                isInstalled={isInstalled}
+                busy={busy}
+                onInstall={onInstall}
+              />
             )
           })}
         </div>

@@ -4,6 +4,7 @@
 import { basename, resolve } from "node:path"
 import { existsSync } from "node:fs"
 import type {
+  InstalledSkillItem,
   SkillSourceAddInput,
   SkillSourceConfigureInput,
   SkillSourceDetail,
@@ -57,6 +58,25 @@ export function detailSkillSource(ctx: SkillSourceContext, sourceId: string): Sk
     source: presentSource(source, ctx, warnings),
     skills: discoverSourceSkills(source, ctx.stateRoot, ctx.workspaceRoots)
   }
+}
+
+/** 全量列出所有来源包下的具体技能，供 C 端直接按技能浏览与检索 */
+export function listAllInstalledSkills(ctx: SkillSourceContext): InstalledSkillItem[] {
+  const allSources = persistDiscoveredSources(ctx)
+  const items: InstalledSkillItem[] = []
+  for (const source of allSources) {
+    const skills = discoverSourceSkills(source, ctx.stateRoot, ctx.workspaceRoots)
+    for (const skill of skills) {
+      items.push({
+        sourceId: source.id,
+        sourceName: source.name,
+        sourceKind: source.kind,
+        enabledTargetIds: source.enabledTargetIds,
+        ...skill
+      })
+    }
+  }
+  return items
 }
 
 export async function addSkillSource(

@@ -3,15 +3,9 @@
  */
 import { useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  RiCompass3Line,
-  RiFolderLine,
-  RiGitRepositoryLine,
-  RiPlugLine,
-  RiSparklingLine
-} from "@remixicon/react"
 import type {
   CuratedSkillSource,
+  InstalledSkillItem,
   SkillSourceDetail,
   SkillSourceOverview,
   SkillSource,
@@ -20,20 +14,18 @@ import type {
 } from "@enjoy-agents/ipc-contract"
 import type { SecondaryNavGroup } from "@renderer/components/app-pages/secondary-nav.types"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import {
-  GLOBAL_TARGET_IDS,
-  SKILLS_UI_COPY,
-  TARGET_SHORT_LABELS
-} from "../constants/skills-ui.constants"
 import { CURATED_SKILL_SOURCES } from "../constants/skills-curated.constants"
 import { ipcErrorMessage } from "../lib/ipc-error-message"
+import { buildSkillsNavGroups } from "../lib/build-skills-nav"
 
 export type SkillsPageState = {
   sources: SkillSource[]
+  allSkills: InstalledSkillItem[]
   curated: CuratedSkillSource[]
   overview: SkillSourceOverview | undefined
   warnings: SkillSourceWarning[]
   hasWorkspace: boolean
+  workspacePath: string | undefined
   selectedNavId: string
   setSelectedNavId: (id: string) => void
   selectedSourceId: string | null
@@ -44,6 +36,8 @@ export type SkillsPageState = {
   setDoctorOpen: (open: boolean) => void
   importOpen: boolean
   setImportOpen: (open: boolean) => void
+  createSkillOpen: boolean
+  setCreateSkillOpen: (open: boolean) => void
   busyMessage: string | null
   actionError: string | null
   setActionError: (error: string | null) => void
@@ -63,16 +57,17 @@ export type SkillsPageState = {
 }
 
 const OVERVIEW_QUERY_KEY = ["skills-sources-overview"] as const
+const ALL_SKILLS_QUERY_KEY = ["skills-sources-all"] as const
 const DOCTOR_QUERY_KEY = ["skills-sources-doctor"] as const
 const CURATED_QUERY_KEY = ["skills-sources-curated"] as const
 const DETAIL_QUERY_KEY = "skills-sources-detail"
-
 export function useSkillsPage(): SkillsPageState {
   const queryClient = useQueryClient()
   const [selectedNavId, setSelectedNavId] = useState<string>("all")
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null)
   const [doctorOpen, setDoctorOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [createSkillOpen, setCreateSkillOpen] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [busyMessage, setBusyMessage] = useState<string | null>(null)
 
@@ -81,6 +76,12 @@ export function useSkillsPage(): SkillsPageState {
     enabled: hasIde(),
     queryFn: () => getIde().skills.sources.overview() as Promise<SkillSourceOverview>
   })
+  const allSkillsQuery = useQuery({
+    queryKey: ALL_SKILLS_QUERY_KEY,
+    enabled: hasIde(),
+    queryFn: () => getIde().skills.sources.all() as Promise<InstalledSkillItem[]>
+  })
+  const allSkills = allSkillsQuery.data ?? []
 
   const doctorQuery = useQuery({
     queryKey: DOCTOR_QUERY_KEY,
@@ -105,7 +106,7 @@ export function useSkillsPage(): SkillsPageState {
   const curated = (curatedQuery.data && curatedQuery.data.length > 0) ? curatedQuery.data : CURATED_SKILL_SOURCES
   const warnings = doctorQuery.data ?? []
   const hasWorkspace = (workspaceQuery.data?.length ?? 0) > 0
-
+  const workspacePath = workspaceQuery.data?.[0]?.rootPath
   // 当前如果是选中的具体来源组
   const isSourceDetail = sources.some((s) => s.id === selectedNavId)
   const selectedSourceId = isSourceDetail ? selectedNavId : null
@@ -122,6 +123,7 @@ export function useSkillsPage(): SkillsPageState {
   async function refreshAll() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: OVERVIEW_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: ALL_SKILLS_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: DOCTOR_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: [DETAIL_QUERY_KEY] }),
       queryClient.invalidateQueries({ queryKey: ["skills"] })
@@ -256,64 +258,20 @@ export function useSkillsPage(): SkillsPageState {
     })
   }
 
-  // 构造情境栏导航列表
-  const navGroups: SecondaryNavGroup[] = [
-    {
-      id: "overview",
-      label: "工作流编排",
-      items: [
-        {
-          id: "all",
-          label: SKILLS_UI_COPY.allSources,
-          icon: RiSparklingLine,
-          meta: String(sources.length),
-          keywords: ["all", "全部", "来源"]
-        },
-        {
-          id: "curated",
-          label: SKILLS_UI_COPY.exploreCurated,
-          icon: RiCompass3Line,
-          meta: String(curated.length),
-          keywords: ["curated", "market", "精选", "推荐", "发现"]
-        }
-      ]
-    },
-    {
-      id: "targets",
-      label: SKILLS_UI_COPY.targetFilter,
-      items: GLOBAL_TARGET_IDS.map((targetId) => {
-        const count = sources.filter((s) => s.enabledTargetIds.includes(targetId)).length
-        return {
-          id: `target:${targetId}`,
-          label: TARGET_SHORT_LABELS[targetId],
-          icon: RiPlugLine,
-          meta: count > 0 ? String(count) : undefined,
-          keywords: [targetId, TARGET_SHORT_LABELS[targetId]]
-        }
-      })
-    }
-  ]
-
-  if (sources.length > 0) {
-    navGroups.push({
-      id: "sources",
-      label: SKILLS_UI_COPY.mySources,
-      items: sources.map((source) => ({
-        id: source.id,
-        label: source.name,
-        icon: source.kind === "git" ? RiGitRepositoryLine : RiFolderLine,
-        meta: `${source.skillCount} 项`,
-        keywords: [source.name, source.kind, source.origin]
-      }))
-    })
-  }
+  const navGroups = buildSkillsNavGroups({
+    allSkills,
+    sources,
+    installedCount: overview?.installedCount ?? 0
+  })
 
   return {
     sources,
+    allSkills,
     curated,
     overview,
     warnings,
     hasWorkspace,
+    workspacePath,
     selectedNavId,
     setSelectedNavId,
     selectedSourceId,
@@ -324,6 +282,8 @@ export function useSkillsPage(): SkillsPageState {
     setDoctorOpen,
     importOpen,
     setImportOpen,
+    createSkillOpen,
+    setCreateSkillOpen,
     busyMessage,
     actionError,
     setActionError,

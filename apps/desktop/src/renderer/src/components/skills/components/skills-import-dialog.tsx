@@ -1,81 +1,45 @@
 /**
- * 导入来源：Git HTTPS、本地文件夹、精选模版与新建技能。
+ * 导入技能来源弹窗 (Import Skills Dialog)。
+ * 专注于导入已有技能资源：Git 仓库拉取、本地文件夹挂载与官方预置模版一键安装。
  */
 import { useState } from "react"
-import { RiCheckLine, RiFolderLine, RiLoader4Line } from "@remixicon/react"
+import {
+  RiDownloadLine,
+  RiFolderLine,
+  RiGitRepositoryLine,
+  RiLoader4Line
+} from "@remixicon/react"
 import type { SkillScope } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cx } from "@/utils/cx"
+import { getCuratedSkills, type CuratedSkill } from "@renderer/components/customize/constants/customize-presets"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { getCuratedSkills, type CuratedSkill } from "@renderer/components/customize/constants/customize-presets"
-import { SKILLS_UI_COPY } from "../constants/skills-ui.constants"
 import { ipcErrorMessage } from "../lib/ipc-error-message"
-
 export function ImportDialog({
   open,
   onOpenChange,
-  onImported
+  onImported,
+  workspacePath
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onImported: () => Promise<void>
+  workspacePath?: string
 }) {
   const t = useT()
   const curated = getCuratedSkills(t)
   const [gitOrigin, setGitOrigin] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
-  const [newName, setNewName] = useState("")
-  const [newDesc, setNewDesc] = useState("")
-  const [newScope, setNewScope] = useState<SkillScope>("global")
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-xl p-0">
-        <div className="border-b border-separator-border/70 px-5 py-3.5">
-          <DialogTitle className="text-body-medium text-text-primary">{SKILLS_UI_COPY.importDialogTitle}</DialogTitle>
-        </div>
-        <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-5">
-          {error ? <p className="text-caption-2-medium text-rose-600 dark:text-rose-400">{error}</p> : null}
-          <GitImport
-            gitOrigin={gitOrigin}
-            busy={Boolean(busy)}
-            onChange={setGitOrigin}
-            onAdd={() => void addGit()}
-          />
-          <Button size="sm" variant="outline" disabled={Boolean(busy)} onClick={() => void addLocal()} className="w-fit gap-1">
-            <RiFolderLine className="size-3.5" />
-            {SKILLS_UI_COPY.pickFolderBtn}
-          </Button>
-          <TemplateList
-            curated={curated}
-            busyKey={busy}
-            onInstall={(preset, scope) => void installPreset(preset, scope)}
-          />
-          <CreateSkillForm
-            name={newName}
-            desc={newDesc}
-            scope={newScope}
-            busy={busy === "create"}
-            onName={setNewName}
-            onDesc={setNewDesc}
-            onScope={setNewScope}
-            onCreate={() => void createCustom()}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
 
   async function addGit() {
     if (!hasIde() || !gitOrigin.trim()) return
     await run("git", async () => {
       await getIde().skills.sources.add({ kind: "git", origin: gitOrigin.trim() })
       setGitOrigin("")
+      onOpenChange(false)
     })
   }
 
@@ -85,31 +49,24 @@ export function ImportDialog({
       const picked = await getIde().workspace.pickFolder()
       if (!isPickedFolder(picked)) return
       await getIde().skills.sources.add({ kind: "local", origin: picked.path, name: picked.name })
+      onOpenChange(false)
     })
   }
 
   async function installPreset(preset: CuratedSkill, scope: SkillScope) {
     if (!hasIde()) return
+    if (scope === "workspace" && !workspacePath) {
+      setError("请先打开一个项目工作区后再安装到工作区")
+      return
+    }
     await run(`${preset.id}:${scope}`, async () => {
       await getIde().skills.create({
         name: preset.id,
         description: preset.description,
         scope,
+        workspacePath: scope === "workspace" ? workspacePath : undefined,
         content: preset.templateMarkdown
       })
-    })
-  }
-
-  async function createCustom() {
-    if (!hasIde() || !newName.trim()) return
-    await run("create", async () => {
-      await getIde().skills.create({
-        name: newName.trim(),
-        description: newDesc.trim() || undefined,
-        scope: newScope
-      })
-      setNewName("")
-      setNewDesc("")
     })
   }
 
@@ -125,122 +82,128 @@ export function ImportDialog({
       setBusy(null)
     }
   }
-}
 
-function GitImport({
-  gitOrigin,
-  busy,
-  onChange,
-  onAdd
-}: {
-  gitOrigin: string
-  busy: boolean
-  onChange: (value: string) => void
-  onAdd: () => void
-}) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label className="text-caption-2-medium text-text-secondary">{SKILLS_UI_COPY.gitLabel}</Label>
-      <div className="flex gap-2">
-        <Input
-          value={gitOrigin}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={SKILLS_UI_COPY.gitPlaceholder}
-          className="h-8 font-mono text-caption-2-medium"
-        />
-        <Button size="sm" disabled={busy || !gitOrigin.trim()} onClick={onAdd} className="shrink-0">
-          {SKILLS_UI_COPY.gitAdd}
-        </Button>
-      </div>
-    </div>
-  )
-}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-3xl p-0 border border-separator-border/80 bg-background-primary-default shadow-card">
+        {/* 头部标题 */}
+        <div className="flex items-center justify-between border-b border-separator-border/70 px-6 py-4 bg-background-secondary-default/30">
+          <div className="flex items-center gap-2">
+            <RiDownloadLine className="size-5 text-accent-600 dark:text-accent-400" />
+            <DialogTitle className="text-title-3-semibold text-text-primary tracking-tight">
+              导入技能来源 (Import Skill Sources)
+            </DialogTitle>
+          </div>
+        </div>
 
-function TemplateList({
-  curated,
-  busyKey,
-  onInstall
-}: {
-  curated: CuratedSkill[]
-  busyKey: string | null
-  onInstall: (preset: CuratedSkill, scope: SkillScope) => void
-}) {
-  const t = useT()
-  return (
-    <div className="flex flex-col gap-2">
-      <h4 className="text-caption-1-medium text-text-primary">{SKILLS_UI_COPY.templates}</h4>
-      <div className="flex flex-col gap-2">
-        {curated.map((preset) => (
-          <div key={preset.id} className="flex items-center justify-between gap-2 rounded-lg border border-separator-border/70 px-3 py-2">
-            <div className="min-w-0">
-              <p className="truncate text-caption-1-medium text-text-primary">{preset.name}</p>
-              <p className="truncate text-caption-2-regular text-text-tertiary">{preset.description}</p>
+        <div className="flex max-h-[75vh] flex-col gap-5 overflow-y-auto p-6">
+          {error ? (
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-caption-2-medium text-rose-600 dark:text-rose-400">
+              {error}
             </div>
-            <div className="flex shrink-0 gap-1">
+          ) : null}
+
+          {/* 1. Git 仓库导入 */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-caption-2-medium font-semibold text-text-primary">
+              <RiGitRepositoryLine className="size-4 text-text-tertiary" />
+              <span>从开源 Git 仓库导入</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={gitOrigin}
+                onChange={(e) => setGitOrigin(e.target.value)}
+                placeholder="例如: obra/superpowers 或 https://github.com/..."
+                className="h-8.5 text-caption-2-medium"
+              />
               <Button
                 size="sm"
-                variant="outline"
-                disabled={Boolean(busyKey)}
-                onClick={() => onInstall(preset, "global")}
+                disabled={!gitOrigin.trim() || Boolean(busy)}
+                onClick={() => void addGit()}
+                className="h-8.5 px-3 text-caption-2-medium shrink-0 shadow-2xs"
               >
-                {busyKey === `${preset.id}:global` ? <RiLoader4Line className="size-3 animate-spin" /> : t("studio.skills.installGlobal")}
-              </Button>
-              <Button size="sm" disabled={Boolean(busyKey)} onClick={() => onInstall(preset, "workspace")}>
-                {busyKey === `${preset.id}:workspace` ? <RiLoader4Line className="size-3 animate-spin" /> : t("studio.skills.installWorkspace")}
+                {busy === "git" ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
+                <span>拉取并挂载</span>
               </Button>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
-function CreateSkillForm({
-  name,
-  desc,
-  scope,
-  busy,
-  onName,
-  onDesc,
-  onScope,
-  onCreate
-}: {
-  name: string
-  desc: string
-  scope: SkillScope
-  busy: boolean
-  onName: (value: string) => void
-  onDesc: (value: string) => void
-  onScope: (value: SkillScope) => void
-  onCreate: () => void
-}) {
-  const t = useT()
-  return (
-    <div className="flex flex-col gap-2">
-      <h4 className="text-caption-1-medium text-text-primary">{SKILLS_UI_COPY.createCustom}</h4>
-      <Input value={name} onChange={(event) => onName(event.target.value)} placeholder={t("studio.skills.namePlaceholder")} className="h-8 text-caption-2-medium" />
-      <Input value={desc} onChange={(event) => onDesc(event.target.value)} placeholder={t("studio.skills.descPlaceholder")} className="h-8 text-caption-2-medium" />
-      <div className="grid h-8 grid-cols-2 gap-1 rounded-lg bg-background-secondary-default/60 p-0.5">
-        {(["global", "workspace"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onScope(value)}
-            className={cx(
-              "rounded text-caption-2-medium",
-              scope === value ? "bg-background-primary-default text-text-primary shadow-2xs" : "text-text-secondary"
-            )}
-          >
-            {value === "global" ? t("studio.skills.scopeGlobal") : t("studio.skills.scopeWorkspace")}
-          </button>
-        ))}
-      </div>
-      <Button size="sm" disabled={!name.trim() || busy} onClick={onCreate} className="w-fit gap-1">
-        {busy ? <RiLoader4Line className="size-3.5 animate-spin" /> : <RiCheckLine className="size-3.5" />}
-        {t("studio.skills.create")}
-      </Button>
-    </div>
+          {/* 2. 本地文件夹选择 */}
+          <div className="flex items-center justify-between p-3.5 rounded-2xl border border-separator-border/70 bg-background-secondary-default/30">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-background-primary-default border border-separator-border/60 text-text-tertiary shadow-2xs">
+                <RiFolderLine className="size-4.5" />
+              </div>
+              <div>
+                <h4 className="text-caption-1-medium font-semibold text-text-primary">
+                  选择本地已有技能目录
+                </h4>
+                <p className="text-[11px] text-text-tertiary">
+                  接入本机已有 Agent 技能或本地开发工作区
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={Boolean(busy)}
+              onClick={() => void addLocal()}
+              className="h-8 text-caption-2-medium"
+            >
+              {busy === "local" ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
+              <span>选择文件夹</span>
+            </Button>
+          </div>
+
+          {/* 3. 官方精选模版快速安装 */}
+          <div className="flex flex-col gap-2.5 pt-2 border-t border-separator-border/40">
+            <h4 className="text-caption-2-medium font-semibold text-text-primary">
+              官方快速安装模版 (Quick Presets)
+            </h4>
+            <div className="flex flex-col gap-2">
+              {curated.map((preset) => {
+                const isCurrentBusy = busy?.startsWith(`${preset.id}:`)
+                return (
+                  <div
+                    key={preset.id}
+                    className="flex items-center justify-between p-3 rounded-2xl border border-separator-border/60 bg-background-primary-default hover:border-separator-border transition-colors shadow-2xs"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <span className="text-caption-2-medium font-semibold text-text-primary block truncate">
+                        {preset.name}
+                      </span>
+                      <p className="text-[11px] text-text-tertiary truncate">
+                        {preset.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={Boolean(busy)}
+                        onClick={() => void installPreset(preset, "global")}
+                        className="h-7 px-2 text-[11px]"
+                      >
+                        {isCurrentBusy ? <RiLoader4Line className="size-3 animate-spin" /> : null}
+                        <span>装至全局</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={Boolean(busy)}
+                        onClick={() => void installPreset(preset, "workspace")}
+                        className="h-7 px-2 text-[11px] shadow-2xs"
+                      >
+                        <span>装至工作区</span>
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -248,4 +211,3 @@ function isPickedFolder(value: unknown): value is { path: string; name?: string 
   if (!value || typeof value !== "object" || !("path" in value)) return false
   return typeof value.path === "string" && value.path.length > 0
 }
-

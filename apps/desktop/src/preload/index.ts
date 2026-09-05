@@ -131,6 +131,7 @@ const ide = {
     reveal: (directoryPath: string) => ipcRenderer.invoke("skills.reveal", { directoryPath }),
     sources: {
       overview: (input?: unknown) => ipcRenderer.invoke("skills.sources.overview", input ?? {}),
+      all: () => ipcRenderer.invoke("skills.sources.all"),
       detail: (input: unknown) => ipcRenderer.invoke("skills.sources.detail", input),
       add: (input: unknown) => ipcRenderer.invoke("skills.sources.add", input),
       update: (input: unknown) => ipcRenderer.invoke("skills.sources.update", input),

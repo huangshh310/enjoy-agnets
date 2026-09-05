@@ -1,0 +1,202 @@
+/**
+ * Agent 快速能力插槽装配矩阵 (Quick Slot Matrix)。
+ * 解决新 Agent 初始无技能时需反复在来源组穿梭的繁琐痛点，直接在整备舱内一键激活已有来源与核心能力。
+ */
+import { useMemo, useState } from "react"
+import {
+  RiCheckLine,
+  RiFolderLine,
+  RiGitRepositoryLine,
+  RiSearchLine
+} from "@remixicon/react"
+import type { InstalledSkillItem, SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { Input } from "@/components/ui/input"
+import { cx } from "@/utils/cx"
+import type { AgentArmoryProfile } from "../../constants/agent-armory.constants"
+
+export function AgentQuickSlotMatrix({
+  profile,
+  sources,
+  allSkills,
+  busy,
+  onToggleTarget,
+  onSelectSkill
+}: {
+  profile: AgentArmoryProfile
+  sources: SkillSource[]
+  allSkills: InstalledSkillItem[]
+  busy: boolean
+  onToggleTarget: (source: SkillSource, targetId: SkillTargetId) => void
+  onSelectSkill: (skill: InstalledSkillItem) => void
+}) {
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // 1. 过滤技能项
+  const filteredSkills = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return allSkills
+    return allSkills.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.description?.toLowerCase().includes(q) ||
+        s.trigger?.toLowerCase().includes(q)
+    )
+  }, [allSkills, searchQuery])
+
+  // 2. 统计当前已启用的技能组数量
+  const enabledSourcesCount = sources.filter((s) =>
+    s.enabledTargetIds.includes(profile.targetId)
+  ).length
+
+  return (
+    <div className="flex flex-col gap-4 rounded-3xl border border-separator-border/80 bg-background-primary-default p-6 shadow-2xs">
+      {/* 标题与统计栏：全宽独占，绝不挤压文字 */}
+      <div className="flex flex-col gap-1 pb-3 border-b border-separator-border/50">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-title-3-semibold text-text-primary tracking-tight">
+            从已有技能库快速装配至 {profile.shortName} (Armory Quick Matrix)
+          </h3>
+          <span className="text-caption-2-medium font-mono text-text-tertiary">
+            已激活 {enabledSourcesCount} / {sources.length} 个来源组
+          </span>
+        </div>
+        <p className="text-caption-1-regular text-text-secondary leading-relaxed">
+          当前已接入 {sources.length} 个来源组共 {allSkills.length} 项能力。点击下方来源组胶囊可快速一键为 {profile.shortName} 挂载或卸载整个来源包。
+        </p>
+      </div>
+
+      {/* 来源组快速挂载条：独立换行排布，杜绝并排推挤 */}
+      <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-background-secondary-default/40 border border-separator-border/40">
+        <span className="text-[11px] font-semibold text-text-tertiary shrink-0 mr-1">
+          快速挂载来源组:
+        </span>
+        {sources.map((source) => {
+          const isEnabled = source.enabledTargetIds.includes(profile.targetId)
+          return (
+            <button
+              key={source.id}
+              type="button"
+              disabled={busy}
+              onClick={() => onToggleTarget(source, profile.targetId)}
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-caption-2-medium transition-all cursor-pointer border",
+                "active:scale-[0.98]",
+                isEnabled
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold shadow-2xs"
+                  : "border-separator-border/60 bg-background-primary-default text-text-secondary hover:border-separator-border hover:text-text-primary"
+              )}
+              title={`点击为 ${profile.shortName} ${isEnabled ? "取消挂载" : "一键挂载"} 该组全部 ${source.skillCount} 项能力`}
+            >
+              {source.kind === "git" ? (
+                <RiGitRepositoryLine className="size-3.5" />
+              ) : (
+                <RiFolderLine className="size-3.5" />
+              )}
+              <span className="max-w-[160px] truncate">{source.name}</span>
+              {isEnabled ? (
+                <RiCheckLine className="size-3 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <span className="text-[10px] text-text-tertiary">+{source.skillCount}</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* 技能搜索与预设高频能力快速点选 */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80 shrink-0">
+          <RiSearchLine className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={`在已有 ${allSkills.length} 项技能库中过滤检索…`}
+            className="pl-9 h-8.5 text-caption-2-medium bg-background-secondary-default/50"
+          />
+        </div>
+
+        {/* 预设推荐高频词点击直接过滤 */}
+        <div className="flex flex-wrap items-center gap-1.5 text-caption-2-regular text-text-tertiary min-w-0">
+          <span className="shrink-0">推荐探索:</span>
+          {profile.suggestedSkillNames.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setSearchQuery(name)}
+              className="rounded-md border border-separator-border/60 bg-background-secondary-default/40 px-2 py-0.5 font-mono text-[10.5px] hover:border-separator-border hover:text-text-primary transition-colors cursor-pointer"
+            >
+              {name}
+            </button>
+          ))}
+          {searchQuery ? (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="text-[11px] text-accent-600 hover:underline"
+            >
+              清除
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* 高密度能力插槽卡片网格 */}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredSkills.map((skill) => {
+          const isEnabled = skill.enabledTargetIds.includes(profile.targetId)
+          return (
+            <div
+              key={`${skill.sourceId}:${skill.id}`}
+              onClick={() => onSelectSkill(skill)}
+              className={cx(
+                "group flex items-center justify-between gap-2.5 rounded-xl border p-3 transition-all cursor-pointer",
+                isEnabled
+                  ? "border-accent-500/30 bg-accent-500/5 shadow-2xs hover:border-accent-500/50"
+                  : "border-separator-border/60 bg-background-secondary-default/30 hover:border-separator-border hover:bg-background-secondary-default/70"
+              )}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div
+                  className={cx(
+                    "flex size-8 shrink-0 items-center justify-center rounded-lg border text-caption-2-medium font-mono transition-transform group-hover:scale-105",
+                    isEnabled
+                      ? "border-accent-500/40 bg-accent-500/15 text-accent-700 dark:text-accent-300"
+                      : "border-separator-border/60 bg-background-primary-default text-text-tertiary"
+                  )}
+                >
+                  {skill.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate text-caption-2-medium font-semibold text-text-primary">
+                      {skill.name}
+                    </span>
+                    {skill.trigger ? (
+                      <span className="rounded bg-background-primary-default px-1 font-mono text-caption-2-regular text-text-tertiary border border-separator-border/50">
+                        {skill.trigger}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="truncate text-caption-2-regular text-text-tertiary">
+                    {skill.description || "提供专业任务指令与上下文"}
+                  </p>
+                </div>
+              </div>
+              <span
+                className={cx(
+                  "text-caption-2-regular font-mono px-2 py-0.5 rounded-md border",
+                  isEnabled
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                    : "border-separator-border/50 bg-background-primary-default text-text-tertiary"
+                )}
+                title="投影粒度是来源组：请用上方来源组胶囊挂载或卸载，避免误操作整组"
+              >
+                {isEnabled ? "已装备" : "未挂载"}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

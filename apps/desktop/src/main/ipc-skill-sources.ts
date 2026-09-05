@@ -20,6 +20,7 @@ import {
   deploySkillSource,
   detailSkillSource,
   getCuratedSkillSources,
+  listAllInstalledSkills,
   listSkillSourceWarnings,
   overviewSkillSources,
   removeSkillSource,
@@ -31,6 +32,7 @@ import {
 
 export const SKILL_SOURCE_CHANNELS = [
   "skills.sources.overview",
+  "skills.sources.all",
   "skills.sources.detail",
   "skills.sources.add",
   "skills.sources.update",
@@ -43,10 +45,10 @@ export const SKILL_SOURCE_CHANNELS = [
   "skills.sources.updateAll",
   "skills.sources.repair"
 ] as const
-
 export function registerSkillSourceIpc() {
   ipcMain.handle("skills.sources.overview", async () => overviewSkillSources(await skillSourceContext()))
 
+  ipcMain.handle("skills.sources.all", async () => listAllInstalledSkills(await skillSourceContext()))
   ipcMain.handle("skills.sources.detail", async (_event, raw) => {
     const parsed = SkillSourceIdInput.parse(raw)
     return detailSkillSource(await skillSourceContext(), parsed.sourceId)
