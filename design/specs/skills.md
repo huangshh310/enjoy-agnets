@@ -18,6 +18,7 @@
    - 右侧 IDE 级规范检视器（Frontmatter + 正文），提供定位文件夹与复制定义。
 4. **精选集市 (Curated Store)**：
    - 非对称 Bento（Spotlight + 热门榜），严禁 `[Centered-Marketing-Hero]` 与 `[Generic-SaaS-Card]`，分类胶囊用 Remixicon 不用 emoji。
+   - 数据集成 `https://www.skills.sh/`（The Open Agent Skills Ecosystem）：主进程 `skills-market-fetcher.ts` 异步拉取并解析全网 180+ 开源技能榜单（涵盖 All Time / Trending / Hot），提供 12 小时本地落盘缓存（`skills-sh-market-cache.json`）与离线内置预置平滑合并，保证 100% 离线可用且不阻塞首屏加载。
 5. **新建技能工坊 (Create Skill Studio) 与导入解耦**：
    - 顶栏【新建技能】与【导入来源】两个独立入口。
    - `CreateSkillDialog` 宽体工坊（覆盖 Dialog 默认 `sm:max-w-lg`），模版预设、Markdown 编辑、SKILL.md 实时预览。Slug 仅在 trigger 仍等于自动值时同步呼号。工作区 scope 必须带 `workspacePath`。

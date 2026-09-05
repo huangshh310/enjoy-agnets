@@ -14,7 +14,8 @@ import type {
 } from "@enjoy-agents/ipc-contract"
 
 import { cloneGitSource, parseGitOrigin, pullGitSource, removeGitCheckout } from "./source-git.ts"
-import { CURATED_SKILL_SOURCES } from "./source-curated.ts"
+
+import { fetchSkillsMarket } from "./skills-market-fetcher.ts"
 import { persistDiscoveredSources } from "./source-discover.ts"
 import { deleteSourceSkill as deleteSkillPack, removeSourceProjections } from "./source-delete.ts"
 import { doctorSkillSources } from "./source-doctor.ts"
@@ -152,8 +153,8 @@ export function listSkillSourceWarnings(ctx: SkillSourceContext) {
   return doctorSkillSources(ctx)
 }
 
-export function getCuratedSkillSources() {
-  return CURATED_SKILL_SOURCES
+export async function getCuratedSkillSources(ctx?: SkillSourceContext) {
+  return fetchSkillsMarket(ctx?.stateRoot)
 }
 
 export async function updateAllSkillSources(ctx: SkillSourceContext): Promise<{ updatedCount: number; errors: string[] }> {

@@ -91,7 +91,7 @@ export function registerSkillSourceIpc() {
 
   ipcMain.handle("skills.sources.doctor", async () => listSkillSourceWarnings(await skillSourceContext()))
 
-  ipcMain.handle("skills.sources.curated", async () => getCuratedSkillSources())
+  ipcMain.handle("skills.sources.curated", async () => getCuratedSkillSources(await skillSourceContext()))
 
   ipcMain.handle("skills.sources.updateAll", async () => updateAllSkillSources(await skillSourceContext()))
 
