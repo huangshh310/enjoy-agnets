@@ -15,7 +15,6 @@ import { useKnowledgePage } from "./use-knowledge-page"
 export function KnowledgePage() {
   const t = useT()
   const page = useKnowledgePage()
-  const selectedUnavailable = page.stats.unavailable.some((item) => item.path === page.selectedFolder)
   const hitSourceIds = page.hasSearched ? [...new Set(page.hits.map((hit) => hit.sourceId))] : []
 
   function openIndex() {
@@ -29,6 +28,7 @@ export function KnowledgePage() {
       selectedId={page.selectedFolder ?? "all"}
       onSelect={(id) => page.setSelectedFolder(id === "all" ? null : id)}
       contentWidth="wide"
+      hideChrome
     >
       <div className="flex flex-col gap-6 pb-12">
         <KnowledgePageHeader
@@ -57,9 +57,12 @@ export function KnowledgePage() {
           hasSearched={page.hasSearched}
           totalChunks={page.totalChunks}
           activeLensName={page.selectedFolder}
+          workspaceDirs={page.workspaceDirPaths}
+          indexing={Boolean(page.indexingSourceId)}
           onSearch={page.handleSearch}
           onOpenDrawer={openIndex}
-          onIndexCurrentLens={() => void page.handleIndexCurrentLens()}
+          onOpenAddModal={() => page.setIsAddModalOpen(true)}
+          onIndexFolder={(path) => void page.handleIndexFolder(path)}
           onPreviewDoc={(path) => {
             const found = page.documents.find((doc) => doc.path === path)
             if (found) page.openPreview(found)
@@ -77,15 +80,12 @@ export function KnowledgePage() {
           lenses={page.lenses}
           sources={page.sources}
           selectedFolder={page.selectedFolder}
-          indexing={Boolean(page.indexingSourceId)}
-          indexDisabled={selectedUnavailable}
           hitSourceIds={hitSourceIds}
           hasSearched={page.hasSearched}
           onSelectFolder={page.setSelectedFolder}
           onToggleLens={page.toggleLens}
           onSetDefault={page.setDefaultLens}
           onOpenDrawer={openIndex}
-          onIndexCurrentLens={() => void page.handleIndexCurrentLens()}
           onEditSource={(source) => {
             page.setEditingSource(source)
             page.setIsEditModalOpen(true)
@@ -137,6 +137,7 @@ export function KnowledgePage() {
             page.setPreviewingDoc(null)
           }}
           document={page.previewingDoc}
+          onSearchInFile={page.handleQuickSearchSource}
         />
       </div>
     </SecondaryPageShell>

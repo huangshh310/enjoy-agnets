@@ -70,9 +70,6 @@ export function KnowledgeLensCard({
           ))}
         </div>
       </div>
-      <p className="border-t border-separator-border/40 pt-2.5 text-caption-2-regular text-text-tertiary">
-        {t("pages.knowledge.lensHint")}
-      </p>
     </div>
   )
 }

@@ -18,9 +18,12 @@ export function KnowledgeRetrievalStage({
   hasSearched,
   totalChunks,
   activeLensName,
+  workspaceDirs = [],
+  indexing = false,
   onSearch,
   onOpenDrawer,
-  onIndexCurrentLens,
+  onOpenAddModal,
+  onIndexFolder,
   onPreviewDoc,
   onClearLensFilter,
   onPin,
@@ -36,9 +39,12 @@ export function KnowledgeRetrievalStage({
   hasSearched: boolean
   totalChunks: number
   activeLensName?: string | null
+  workspaceDirs?: string[]
+  indexing?: boolean
   onSearch: () => Promise<void>
   onOpenDrawer: () => void
-  onIndexCurrentLens?: () => void
+  onOpenAddModal?: () => void
+  onIndexFolder?: (path: string) => void
   onPreviewDoc: (path: string) => void
   onClearLensFilter: () => void
   onPin: (hit: KnowledgeHit) => void
@@ -82,8 +88,11 @@ export function KnowledgeRetrievalStage({
           hits={hits}
           recent={recent}
           totalChunks={totalChunks}
+          workspaceDirs={workspaceDirs}
+          indexing={indexing}
           onOpenDrawer={onOpenDrawer}
-          onIndexCurrentLens={onIndexCurrentLens}
+          onOpenAddModal={onOpenAddModal}
+          onIndexFolder={onIndexFolder}
           onPreviewDoc={onPreviewDoc}
           onPin={onPin}
           onFilterSource={onFilterSource}

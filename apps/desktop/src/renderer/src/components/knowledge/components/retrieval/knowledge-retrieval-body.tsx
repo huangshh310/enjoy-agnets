@@ -6,6 +6,7 @@ import type { KnowledgeHit } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { KnowledgeSnippetCard } from "./knowledge-snippet-card"
+import { KnowledgeWorkspaceDiscovery } from "./knowledge-workspace-discovery"
 
 export function KnowledgeRetrievalBody({
   isSearching,
@@ -13,8 +14,11 @@ export function KnowledgeRetrievalBody({
   hits,
   recent,
   totalChunks,
+  workspaceDirs = [],
+  indexing = false,
   onOpenDrawer,
-  onIndexCurrentLens,
+  onOpenAddModal,
+  onIndexFolder,
   onPreviewDoc,
   onPin,
   onFilterSource
@@ -24,8 +28,11 @@ export function KnowledgeRetrievalBody({
   hits: KnowledgeHit[]
   recent: KnowledgeHit[]
   totalChunks: number
+  workspaceDirs?: string[]
+  indexing?: boolean
   onOpenDrawer: () => void
-  onIndexCurrentLens?: () => void
+  onOpenAddModal?: () => void
+  onIndexFolder?: (path: string) => void
   onPreviewDoc: (path: string) => void
   onPin: (hit: KnowledgeHit) => void
   onFilterSource: (sourceId: string) => void
@@ -63,18 +70,12 @@ export function KnowledgeRetrievalBody({
   }
   if (totalChunks === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
-        <h4 className="text-caption-1-medium text-text-primary">{t("pages.knowledge.stillUnaskable")}</h4>
-        <p className="max-w-md text-caption-2-regular text-text-tertiary">{t("pages.knowledge.indexToActivate")}</p>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onIndexCurrentLens ?? onOpenDrawer}
-          className="mt-2 h-7.5 text-caption-2-medium"
-        >
-          {t("pages.knowledge.indexThisLens")}
-        </Button>
-      </div>
+      <KnowledgeWorkspaceDiscovery
+        workspaceDirs={workspaceDirs}
+        indexing={indexing}
+        onIndexFolder={(path) => onIndexFolder ? onIndexFolder(path) : onOpenDrawer()}
+        onOpenAddModal={onOpenAddModal ?? onOpenDrawer}
+      />
     )
   }
   if (recent.length === 0) {

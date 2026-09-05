@@ -12,15 +12,12 @@ export function KnowledgeMemoryBento({
   lenses,
   sources,
   selectedFolder,
-  indexing,
-  indexDisabled,
   hitSourceIds,
   hasSearched,
   onSelectFolder,
   onToggleLens,
   onSetDefault,
   onOpenDrawer,
-  onIndexCurrentLens,
   onEditSource,
   onRemoveSource
 }: {
@@ -28,15 +25,12 @@ export function KnowledgeMemoryBento({
   lenses: KnowledgeLens[]
   sources: KnowledgeSource[]
   selectedFolder: string | null
-  indexing: boolean
-  indexDisabled: boolean
   hitSourceIds: string[]
   hasSearched: boolean
   onSelectFolder: (path: string | null) => void
   onToggleLens: (id: string) => void
   onSetDefault: (id: string) => void
   onOpenDrawer: () => void
-  onIndexCurrentLens?: () => void
   onEditSource?: (source: KnowledgeSource) => void
   onRemoveSource?: (sourceId: string) => void
 }) {
@@ -44,10 +38,7 @@ export function KnowledgeMemoryBento({
     <div className="grid items-stretch gap-4 lg:grid-cols-12">
       <KnowledgePulseCard
         stats={stats}
-        indexing={indexing}
-        indexDisabled={indexDisabled}
         onOpenDrawer={onOpenDrawer}
-        onIndexCurrentLens={onIndexCurrentLens}
       />
       <KnowledgeLensCard
         lenses={lenses}

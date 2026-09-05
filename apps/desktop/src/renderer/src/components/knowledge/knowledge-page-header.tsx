@@ -69,7 +69,7 @@ export function KnowledgePageHeader({
       <div className="flex shrink-0 items-center gap-2.5">
         <Button
           size="sm"
-          variant="ghost"
+          variant="outline"
           onClick={onOpenIndexDrawer}
           className="h-8 gap-1.5 px-3 text-caption-2-medium"
         >
@@ -78,9 +78,8 @@ export function KnowledgePageHeader({
         </Button>
         <Button
           size="sm"
-          variant="outline"
           onClick={onAdd}
-          className="h-8 gap-1.5 px-3.5 text-caption-2-medium shadow-2xs"
+          className="h-8 gap-1.5 px-3.5 text-caption-2-medium shadow-xs"
         >
           <RiAddLine className="size-3.5" />
           <span>{t("pages.knowledge.addSource")}</span>

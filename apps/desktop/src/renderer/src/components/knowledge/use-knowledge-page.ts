@@ -82,6 +82,19 @@ export function useKnowledgePage() {
   const stats = useMemo(() => deriveKnowledgeStats(sources, documents), [sources, documents])
   const totalChunks = stats.askableChunks
 
+  const workspaceDirsQuery = useQuery({
+    queryKey: ["workspace-root-dirs", workspaceId],
+    enabled: hasIde() && Boolean(workspaceId),
+    queryFn: async () => {
+      if (!workspaceId) return []
+      const entries = (await getIde().workspace.files({
+        workspaceId,
+        path: "."
+      })) as Array<{ kind: string; path: string }>
+      return entries.filter((e) => e.kind === "directory").map((e) => e.path)
+    }
+  })
+  const workspaceDirPaths = workspaceDirsQuery.data ?? []
   useEffect(() => {
     if (!workspaceId) return
     const stored = localStorage.getItem(defaultLensKey(workspaceId))
@@ -334,6 +347,7 @@ export function useKnowledgePage() {
     documentsError,
     documentsQuery,
     totalChunks,
+    workspaceDirPaths,
     groups,
     stats,
     lenses,

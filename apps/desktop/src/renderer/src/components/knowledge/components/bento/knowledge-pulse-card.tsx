@@ -2,7 +2,7 @@
  * 记忆脉冲卡。0 块主文案为「还不能问」，禁止全量重建与离线营销句。
  */
 import type { ReactNode } from "react"
-import { RiDatabase2Line, RiFileList3Line, RiFolderWarningLine, RiPlayListAddLine, RiToolsLine } from "@remixicon/react"
+import { RiDatabase2Line, RiFileList3Line, RiFolderWarningLine, RiToolsLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
@@ -10,16 +10,10 @@ import type { KnowledgeStats } from "../../types/knowledge-ui.types"
 
 export function KnowledgePulseCard({
   stats,
-  indexing,
-  indexDisabled,
-  onOpenDrawer,
-  onIndexCurrentLens
+  onOpenDrawer
 }: {
   stats: KnowledgeStats
-  indexing: boolean
-  indexDisabled: boolean
   onOpenDrawer: () => void
-  onIndexCurrentLens?: () => void
 }) {
   const t = useT()
   const isReady = stats.askableChunks > 0
@@ -43,24 +37,26 @@ export function KnowledgePulseCard({
                 : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
             )}
           >
-            {isReady ? t("pages.knowledge.readyToAsk") : t("pages.knowledge.stillUnaskable")}
+            <span
+              className={cx(
+                "size-1.5 rounded-full",
+                isReady ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+              )}
+            />
+            <span>{isReady ? t("pages.knowledge.readyToAsk") : t("pages.knowledge.memoryPending")}</span>
           </span>
         </div>
         <div>
-          {isReady ? (
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-title-1-bold text-text-primary">
-                {stats.askableChunks.toLocaleString()}
-              </span>
-              <span className="text-caption-1-medium text-text-tertiary">{t("pages.knowledge.askableChunks")}</span>
-            </div>
-          ) : (
-            <p className="text-title-3-semibold text-text-primary">{t("pages.knowledge.stillUnaskable")}</p>
-          )}
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-title-1-bold text-text-primary">
+              {stats.askableChunks.toLocaleString()}
+            </span>
+            <span className="text-caption-1-medium text-text-tertiary">{t("pages.knowledge.askableChunks")}</span>
+          </div>
           <p className="mt-1 text-caption-2-regular text-text-secondary">
             {isReady
               ? t("pages.knowledge.coverage", { ready: stats.readySourceCount, total: stats.sourceCount })
-              : t("pages.knowledge.indexToActivate")}
+              : t("pages.knowledge.pulsePendingHint")}
           </p>
         </div>
         <div className="grid grid-cols-3 gap-2.5 border-t border-separator-border/40 pt-2 text-caption-2-regular">
@@ -90,21 +86,9 @@ export function KnowledgePulseCard({
         </div>
       </div>
       <div className="mt-5 flex items-center justify-end border-t border-separator-border/50 pt-3.5">
-        {!isReady ? (
-          <Button
-            size="sm"
-            disabled={indexDisabled}
-            onClick={onIndexCurrentLens || onOpenDrawer}
-            className="h-7.5 gap-1.5 px-3 text-caption-2-medium shadow-xs"
-          >
-            <RiPlayListAddLine className={cx("size-3.5", indexing && "animate-spin")} />
-            <span>{t("pages.knowledge.indexThisLens")}</span>
-          </Button>
-        ) : (
-          <Button size="sm" variant="outline" onClick={onOpenDrawer} className="h-7.5 px-3 text-caption-2-medium">
-            {t("pages.knowledge.manageIndex")}
-          </Button>
-        )}
+        <Button size="sm" variant="outline" onClick={onOpenDrawer} className="h-7.5 px-3 text-caption-2-medium">
+          {t("pages.knowledge.manageIndex")}
+        </Button>
       </div>
     </div>
   )
