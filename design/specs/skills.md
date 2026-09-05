@@ -21,6 +21,9 @@
 5. **新建技能工坊 (Create Skill Studio) 与导入解耦**：
    - 顶栏【新建技能】与【导入来源】两个独立入口。
    - `CreateSkillDialog` 宽体工坊（覆盖 Dialog 默认 `sm:max-w-lg`），模版预设、Markdown 编辑、SKILL.md 实时预览。Slug 仅在 trigger 仍等于自动值时同步呼号。工作区 scope 必须带 `workspacePath`。
+6. **技能详情抽屉**：
+   - 对标 shadcn Drawer：遮罩 + **内缩悬浮面板**（`inset-y-3 right-3`，四边 `rounded-3xl` + `shadow-card`），禁止贴死视口右缘的全高 `border-l` 切片。
+   - 顶栏（图标/标题/关闭）+ 中部滚动 + 底栏全宽主按钮（复制触发指令）。点遮罩或 Escape 关闭。
 
 ## 不变量
 
