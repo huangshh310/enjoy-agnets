@@ -104,9 +104,13 @@ catalog:
   '@blobatar/react': ^2.7.0
 
 allowBuilds:
+  '@google/genai': true
+  '@mongodb-js/zstd': true
   electron: true
   electron-winstaller: true
   esbuild: true
+  node-liblzma: true
+  protobufjs: true
 
 minimumReleaseAgeExclude:
   - '@ai-sdk/gateway@4.0.69'

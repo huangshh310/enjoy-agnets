@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Local-first Agent IDE — editor, terminal, multi-agent loop, approvals, MCP.",
-  "packageManager": "pnpm@11.12.0",
+  "packageManager": "pnpm@12.3.4",
   "scripts": {
     "dev": "turbo run dev --filter=@enjoy-agents/desktop",
     "build": "turbo run build",
@@ -15,8 +15,8 @@
     "node": ">=22.12.0"
   },
   "devDependencies": {
-    "turbo": "catalog:",
     "prettier": "catalog:",
+    "turbo": "catalog:",
     "typescript": "catalog:"
   }
 }
