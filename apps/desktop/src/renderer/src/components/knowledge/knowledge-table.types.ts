@@ -14,6 +14,7 @@ export type KnowledgeDocumentsTableProps = {
   selectedPath: string | null
   documentsLoading?: boolean
   documentsError?: string | null
+  citedPaths?: readonly string[]
   onRebuildIndex: (sourceId: string) => Promise<void>
   onRemoveSource: (sourceId: string) => Promise<void>
   onEditSource?: (source: KnowledgeSource) => void

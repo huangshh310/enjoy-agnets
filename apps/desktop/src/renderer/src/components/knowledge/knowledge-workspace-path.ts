@@ -11,3 +11,15 @@ export function toWorkspaceRelativePath(root: string, picked: string): string | 
   if (!pickedNorm.toLowerCase().startsWith(prefix)) return null
   return pickedNorm.slice(rootNorm.length + 1)
 }
+
+export type PickedRelative =
+  | { status: "ok"; path: string }
+  | { status: "cancel" }
+  | { status: "outside" }
+
+export function pickedPathToRelative(rootPath: string, pickedPath?: string | null): PickedRelative {
+  if (!pickedPath?.trim()) return { status: "cancel" }
+  const relative = toWorkspaceRelativePath(rootPath, pickedPath)
+  if (!relative) return { status: "outside" }
+  return { status: "ok", path: relative }
+}

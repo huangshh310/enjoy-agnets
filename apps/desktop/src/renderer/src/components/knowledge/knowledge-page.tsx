@@ -1,20 +1,26 @@
 /**
- * 知识页：来源、文件矩阵、检索。View Files 必须写入 selectedPath。
+ * 知识库主工作台：检索舞台 → 记忆 Bento → 页内索引面板。
  */
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { useT } from "@renderer/i18n"
+import { KnowledgeIndexDrawer } from "./components/drawer/knowledge-index-drawer"
+import { KnowledgeMemoryBento } from "./components/bento/knowledge-memory-bento"
+import { KnowledgeRetrievalStage } from "./components/retrieval/knowledge-retrieval-stage"
 import { KnowledgeAddModal } from "./knowledge-add-modal"
-import { KnowledgeDocumentsTable } from "./knowledge-documents-table"
 import { KnowledgeEditModal } from "./knowledge-edit-modal"
 import { KnowledgeFilePreviewModal } from "./knowledge-file-preview-modal"
-import { KnowledgeFolderCards } from "./knowledge-folder-cards"
 import { KnowledgePageHeader } from "./knowledge-page-header"
-import { KnowledgeRetrieverDrawer } from "./knowledge-retriever-drawer"
 import { useKnowledgePage } from "./use-knowledge-page"
 
 export function KnowledgePage() {
   const t = useT()
   const page = useKnowledgePage()
+  const selectedUnavailable = page.stats.unavailable.some((item) => item.path === page.selectedFolder)
+  const hitSourceIds = page.hasSearched ? [...new Set(page.hits.map((hit) => hit.sourceId))] : []
+
+  function openIndex() {
+    page.setIsIndexDrawerOpen(true)
+  }
 
   return (
     <SecondaryPageShell
@@ -24,71 +30,96 @@ export function KnowledgePage() {
       onSelect={(id) => page.setSelectedFolder(id === "all" ? null : id)}
       contentWidth="wide"
     >
-      <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-6 pb-12">
         <KnowledgePageHeader
-          fileCount={page.documents.length}
-          chunkCount={page.totalChunks}
-          isRetrieverOpen={page.isRetrieverOpen}
-          onToggleRetriever={() => page.setIsRetrieverOpen((open) => !open)}
+          stats={page.stats}
+          onOpenIndexDrawer={openIndex}
           onAdd={() => page.setIsAddModalOpen(true)}
+          onUnavailableClick={() => {
+            document.getElementById("knowledge-health")?.scrollIntoView({ behavior: "smooth" })
+          }}
         />
+
         {page.actionError ? (
-          <p className="rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-medium text-text-secondary">
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
             {page.actionError}
-          </p>
+          </div>
         ) : null}
 
-        <KnowledgeFolderCards
-          sources={page.sources}
-          documents={page.documents}
-          workspaceDirPaths={page.workspaceDirPaths}
-          indexingSourceId={page.indexingSourceId}
-          onIndexFolder={page.handleIndexFolder}
-          onSelectFolder={(p) => page.setSelectedFolder((cur) => (cur === p ? null : p))}
-          selectedPath={page.selectedFolder}
-        />
-
-        <KnowledgeRetrieverDrawer
-          isOpen={page.isRetrieverOpen}
-          onClose={() => page.setIsRetrieverOpen(false)}
+        <KnowledgeRetrievalStage
           query={page.query}
           setQuery={page.setQuery}
           rerank={page.rerank}
           setRerank={page.setRerank}
           hits={page.hits}
+          recent={page.recentCitations}
           isSearching={page.isSearching}
           hasSearched={page.hasSearched}
+          totalChunks={page.totalChunks}
+          activeLensName={page.selectedFolder}
           onSearch={page.handleSearch}
+          onOpenDrawer={openIndex}
+          onIndexCurrentLens={() => void page.handleIndexCurrentLens()}
+          onPreviewDoc={(path) => {
+            const found = page.documents.find((doc) => doc.path === path)
+            if (found) page.openPreview(found)
+          }}
+          onClearLensFilter={() => page.setSelectedFolder(null)}
+          onPin={page.handlePinToChat}
+          onFilterSource={(sourceId) => {
+            const lens = page.lenses.find((item) => item.id === sourceId)
+            if (lens) page.setSelectedFolder(lens.path)
+          }}
         />
 
-        <KnowledgeDocumentsTable
+        <KnowledgeMemoryBento
+          stats={page.stats}
+          lenses={page.lenses}
+          sources={page.sources}
+          selectedFolder={page.selectedFolder}
+          indexing={Boolean(page.indexingSourceId)}
+          indexDisabled={selectedUnavailable}
+          hitSourceIds={hitSourceIds}
+          hasSearched={page.hasSearched}
+          onSelectFolder={page.setSelectedFolder}
+          onToggleLens={page.toggleLens}
+          onSetDefault={page.setDefaultLens}
+          onOpenDrawer={openIndex}
+          onIndexCurrentLens={() => void page.handleIndexCurrentLens()}
+          onEditSource={(source) => {
+            page.setEditingSource(source)
+            page.setIsEditModalOpen(true)
+          }}
+          onRemoveSource={page.handleRemoveSource}
+        />
+
+        <KnowledgeIndexDrawer
+          open={page.isIndexDrawerOpen}
+          onClose={() => page.setIsIndexDrawerOpen(false)}
+          onOpenAddModal={() => page.setIsAddModalOpen(true)}
           sources={page.sources}
           documents={page.documents}
           indexingSourceId={page.indexingSourceId}
           selectedPath={page.selectedFolder}
-          documentsLoading={page.documentsQuery.isLoading || page.documentsQuery.isFetching}
+          documentsLoading={page.documentsQuery.isLoading}
           documentsError={page.documentsError}
-          onViewSource={(path) => page.setSelectedFolder(path)}
+          citedPaths={page.citedPaths}
           onRebuildIndex={page.handleRebuildIndex}
           onRemoveSource={page.handleRemoveSource}
-          onEditSource={(src) => {
-            page.setEditingSource(src)
+          onEditSource={(source) => {
+            page.setEditingSource(source)
             page.setIsEditModalOpen(true)
           }}
-          onPreviewDocument={(doc) => {
-            page.setPreviewingDoc(doc)
-            page.setIsPreviewOpen(true)
-          }}
+          onPreviewDocument={page.openPreview}
           onQuickSearchSource={page.handleQuickSearchSource}
+          onViewSource={page.setSelectedFolder}
         />
-
         <KnowledgeAddModal
           isOpen={page.isAddModalOpen}
           onClose={() => page.setIsAddModalOpen(false)}
-          onAddAndIndex={page.handleIndexFolder}
           isAdding={page.isAdding}
+          onAddAndIndex={page.handleIndexFolder}
         />
-
         <KnowledgeEditModal
           isOpen={page.isEditModalOpen}
           onClose={() => {
@@ -96,10 +127,9 @@ export function KnowledgePage() {
             page.setEditingSource(null)
           }}
           source={page.editingSource}
-          onSaveAndReindex={page.handleSaveAndReindexSource}
           isSaving={page.isSavingEdit}
+          onSaveAndReindex={page.handleSaveAndReindexSource}
         />
-
         <KnowledgeFilePreviewModal
           isOpen={page.isPreviewOpen}
           onClose={() => {
@@ -107,7 +137,6 @@ export function KnowledgePage() {
             page.setPreviewingDoc(null)
           }}
           document={page.previewingDoc}
-          onSearchInFile={page.handleQuickSearchSource}
         />
       </div>
     </SecondaryPageShell>

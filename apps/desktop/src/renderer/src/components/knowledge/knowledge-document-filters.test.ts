@@ -44,3 +44,21 @@ test("来源过滤同样按 selectedPath", () => {
   assert.equal(list.length, 1)
   assert.equal(list[0]?.path, "design")
 })
+
+test("可问 chip 不含未分块文档", () => {
+  const mixed = [
+    ...docs,
+    {
+      id: "3",
+      sourceId: "ks1",
+      sourcePath: "design",
+      path: "design/notes.txt",
+      chunkCount: 0,
+      status: "unindexed",
+      updatedAt: 0
+    }
+  ]
+  const list = filterKnowledgeDocuments(mixed, { statusFilter: "askable" })
+  assert.equal(list.length, 2)
+  assert.ok(list.every((d) => d.chunkCount > 0))
+})

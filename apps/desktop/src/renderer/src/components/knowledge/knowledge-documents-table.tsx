@@ -39,6 +39,7 @@ export function KnowledgeDocumentsTable({
   selectedPath,
   documentsLoading,
   documentsError,
+  citedPaths,
   onRebuildIndex,
   onRemoveSource,
   onEditSource,
@@ -48,12 +49,18 @@ export function KnowledgeDocumentsTable({
 }: KnowledgeDocumentsTableProps) {
   const t = useT()
   const [tabMode, setTabMode] = useState<KnowledgeTabMode>("documents")
+  const [statusFilter, setStatusFilter] = useState<"all" | "askable" | "unindexed">("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null)
   const [sortField, setSortField] = useState<KnowledgeSortField>("updated")
   const [viewMode, setViewMode] = useState<KnowledgeViewMode>("table")
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(15)
+
+  const askableDocsCount = useMemo(
+    () => documents.filter((d) => (d.chunkCount ?? 0) > 0).length,
+    [documents]
+  )
 
   const filteredSources = useMemo(
     () =>
@@ -64,14 +71,17 @@ export function KnowledgeDocumentsTable({
     [sources, selectedPath, searchQuery, sortField]
   )
 
-  const filteredDocuments = useMemo(
-    () =>
-      sortByKnowledgeField(
-        filterKnowledgeDocuments(documents, { selectedPath, selectedFormat, searchQuery }),
-        sortField
-      ),
-    [documents, selectedPath, selectedFormat, searchQuery, sortField]
-  )
+  const filteredDocuments = useMemo(() => {
+    return sortByKnowledgeField(
+      filterKnowledgeDocuments(documents, {
+        selectedPath,
+        selectedFormat,
+        searchQuery,
+        statusFilter
+      }),
+      sortField
+    )
+  }, [documents, selectedPath, selectedFormat, searchQuery, statusFilter, sortField])
 
   const paginatedDocs = filteredDocuments.slice((page - 1) * pageSize, page * pageSize)
 
@@ -89,7 +99,7 @@ export function KnowledgeDocumentsTable({
             active={tabMode === "documents"}
             icon={RiFileTextLine}
             label={t("pages.knowledge.allIndexedFiles")}
-            count={filteredDocuments.length}
+            count={askableDocsCount}
             onClick={() => {
               setTabMode("documents")
               setPage(1)
@@ -168,7 +178,56 @@ export function KnowledgeDocumentsTable({
       </div>
 
       {tabMode === "documents" ? (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
+          <div className="flex items-center gap-1 rounded-xl border border-separator-border/40 bg-background-secondary-default/70 p-0.5 text-caption-2-medium">
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("all")
+                setPage(1)
+              }}
+              className={cx(
+                "cursor-pointer rounded-lg px-2.5 py-1 transition-colors",
+                statusFilter === "all"
+                  ? "bg-background-primary-default text-text-primary shadow-2xs"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              {t("pages.knowledge.filterAllCount", { n: documents.length })}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("askable")
+                setPage(1)
+              }}
+              className={cx(
+                "cursor-pointer rounded-lg px-2.5 py-1 transition-colors",
+                statusFilter === "askable"
+                  ? "bg-background-primary-default text-text-primary shadow-2xs"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              {t("pages.knowledge.statusAskable")} ({askableDocsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("unindexed")
+                setPage(1)
+              }}
+              className={cx(
+                "cursor-pointer rounded-lg px-2.5 py-1 transition-colors",
+                statusFilter === "unindexed"
+                  ? "bg-background-primary-default text-text-primary shadow-2xs"
+                  : "text-text-tertiary hover:text-text-secondary"
+              )}
+            >
+              {t("pages.knowledge.statusScannedOnly")} ({Math.max(0, documents.length - askableDocsCount)})
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
           <FormatChip
             label={t("pages.knowledge.allFormats", { n: documents.length })}
             active={selectedFormat === null}
@@ -192,6 +251,7 @@ export function KnowledgeDocumentsTable({
               />
             )
           })}
+          </div>
         </div>
       ) : null}
 
@@ -205,6 +265,7 @@ export function KnowledgeDocumentsTable({
             page={page}
             pageSize={pageSize}
             total={filteredDocuments.length}
+            citedPaths={citedPaths}
             onPageChange={setPage}
             onPageSizeChange={(size) => {
               setPageSize(size)

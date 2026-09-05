@@ -6,8 +6,8 @@ export type KnowledgeFilterInput = {
   selectedPath?: string | null
   selectedFormat?: string | null
   searchQuery?: string
+  statusFilter?: "all" | "askable" | "unindexed"
 }
-
 export type KnowledgeDocumentFilterItem = {
   sourcePath: string
   path: string
@@ -28,12 +28,15 @@ export function filterKnowledgeDocuments<T extends KnowledgeDocumentFilterItem>(
   const selectedPath = input.selectedPath?.trim() || null
   const selectedFormat = input.selectedFormat ?? null
   const query = input.searchQuery?.trim().toLowerCase() ?? ""
+  const statusFilter = input.statusFilter ?? "all"
   return documents.filter((doc) => {
     if (selectedPath && !matchesSelectedPath(doc.sourcePath, doc.path, selectedPath)) {
       return false
     }
     if (selectedFormat && !doc.path.endsWith(selectedFormat)) return false
     if (query && !doc.path.toLowerCase().includes(query)) return false
+    if (statusFilter === "askable" && (doc.chunkCount ?? 0) <= 0) return false
+    if (statusFilter === "unindexed" && (doc.chunkCount ?? 0) > 0) return false
     return true
   })
 }

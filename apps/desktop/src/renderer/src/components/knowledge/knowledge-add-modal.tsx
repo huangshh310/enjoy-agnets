@@ -26,6 +26,8 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getKnowledgePresetFolders } from "./knowledge-constants"
+import { knowledgeActionErrorKey } from "./lib/derive-knowledge-stats"
+import { isIndexableKnowledgeFile, presetExistsInWorkspace } from "./lib/knowledge-source-resolve"
 import { pickWorkspaceRelativePath } from "./knowledge-pick-source"
 
 interface KnowledgeAddModalProps {
@@ -51,6 +53,7 @@ export function KnowledgeAddModal({
   const workspaceId = useChatStore((state) => state.workspaceId)
   const [activeTab, setActiveTab] = useState<"folder" | "file">("folder")
   const [path, setPath] = useState("")
+  const [formError, setFormError] = useState<string | null>(null)
   // Query workspace real directory entries to show live folder/file browser
   const workspaceFilesQuery = useQuery({
     queryKey: ["workspace-files-root", workspaceId],
@@ -73,19 +76,40 @@ export function KnowledgeAddModal({
 
   const workspaceEntries = workspaceFilesQuery.data ?? []
   const workspaceDirs = workspaceEntries.filter((e) => e.kind === "directory")
-  const workspaceFiles = workspaceEntries.filter((e) => e.kind === "file")
+  const workspaceFiles = workspaceEntries.filter(
+    (e) => e.kind === "file" && isIndexableKnowledgeFile(e.path)
+  )
+  const workspaceDirPaths = workspaceDirs.map((dir) => dir.path)
 
   async function handlePickNative(kind: "folder" | "file") {
     if (!hasIde() || !workspaceId) return
-    const relative = await pickWorkspaceRelativePath(workspaceId, kind)
-    if (relative) setPath(relative)
+    setFormError(null)
+    const result = await pickWorkspaceRelativePath(workspaceId, kind)
+    if (result.status === "ok") {
+      if (kind === "file" && !isIndexableKnowledgeFile(result.path)) {
+        setFormError(t("pages.knowledge.unsupportedFile"))
+        return
+      }
+      setPath(result.path)
+      return
+    }
+    if (result.status === "outside") setFormError(t("pages.knowledge.pickOutsideWorkspace"))
   }
 
   async function handleAdd() {
     if (!path.trim() || isAdding) return
-    await onAddAndIndex(path.trim())
-    setPath("")
-    onClose()
+    if (activeTab === "file" && !isIndexableKnowledgeFile(path.trim())) {
+      setFormError(t("pages.knowledge.unsupportedFile"))
+      return
+    }
+    setFormError(null)
+    try {
+      await onAddAndIndex(path.trim())
+      setPath("")
+      onClose()
+    } catch (error) {
+      setFormError(t(`pages.knowledge.${knowledgeActionErrorKey(error)}`))
+    }
   }
 
   return (
@@ -198,24 +222,26 @@ export function KnowledgeAddModal({
                 <span>{activeTab === "folder" ? t("pages.knowledge.browseFolder") : t("pages.knowledge.chooseFile")}</span>
               </Button>
             </div>
-            <span className="text-[11px] text-text-tertiary">
+            <span className="text-caption-2-regular text-text-tertiary">
               {activeTab === "folder"
                 ? t("pages.knowledge.folderHint")
                 : t("pages.knowledge.fileHint")}
             </span>
+            {formError ? (
+              <span className="text-caption-2-medium text-rose-600 dark:text-rose-400">{formError}</span>
+            ) : null}
           </div>
 
-          {/* Real Workspace Project Items */}
           {activeTab === "folder" && workspaceDirs.length > 0 ? (
             <div className="flex flex-col gap-1.5">
-              <Label className="text-caption-2-medium text-text-tertiary uppercase tracking-wider">
+              <Label className="text-caption-2-medium text-text-tertiary">
                 {t("pages.knowledge.workspaceFoldersFound")}
               </Label>
-              <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto">
+              <div className="flex max-h-24 flex-wrap items-center gap-1.5 overflow-y-auto">
                 <button
                   type="button"
                   onClick={() => setPath(".")}
-                  className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 text-[11px] font-mono font-medium text-text-primary hover:border-accent-500/50 hover:bg-background-secondary-hover hover:text-accent-500 transition-all"
+                  className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 font-mono text-caption-2-medium text-text-primary"
                 >
                   <RiFolderLine className="size-3 text-accent-500" />
                   <span>{t("pages.knowledge.entireProject")}</span>
@@ -225,7 +251,7 @@ export function KnowledgeAddModal({
                     key={dir.path}
                     type="button"
                     onClick={() => setPath(dir.path)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 text-[11px] font-mono font-medium text-text-primary hover:border-accent-500/50 hover:bg-background-secondary-hover hover:text-accent-500 transition-all"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 font-mono text-caption-2-medium text-text-primary"
                   >
                     <RiFolderLine className="size-3 text-accent-500" />
                     <span>{dir.name}/</span>
@@ -233,18 +259,20 @@ export function KnowledgeAddModal({
                 ))}
               </div>
             </div>
-          ) : activeTab === "file" && workspaceFiles.length > 0 ? (
+          ) : null}
+
+          {activeTab === "file" && workspaceFiles.length > 0 ? (
             <div className="flex flex-col gap-1.5">
-              <Label className="text-caption-2-medium text-text-tertiary uppercase tracking-wider">
+              <Label className="text-caption-2-medium text-text-tertiary">
                 {t("pages.knowledge.workspaceRootFiles")}
               </Label>
-              <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto">
+              <div className="flex max-h-24 flex-wrap items-center gap-1.5 overflow-y-auto">
                 {workspaceFiles.map((file) => (
                   <button
                     key={file.path}
                     type="button"
                     onClick={() => setPath(file.path)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 text-[11px] font-mono font-medium text-text-primary hover:border-accent-500/50 hover:bg-background-secondary-hover hover:text-accent-500 transition-all"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 font-mono text-caption-2-medium text-text-primary"
                   >
                     <RiFileLine className="size-3 text-accent-500" />
                     <span>{file.name}</span>
@@ -254,29 +282,42 @@ export function KnowledgeAddModal({
             </div>
           ) : null}
 
-          {/* Quick Preset Selector Cards (for folder mode) */}
           {activeTab === "folder" ? (
             <div className="flex flex-col gap-2">
-              <Label className="text-caption-2-medium text-text-tertiary uppercase tracking-wider">
+              <Label className="text-caption-2-medium text-text-tertiary">
                 {t("pages.knowledge.quickPresets")}
               </Label>
               <div className="grid grid-cols-2 gap-2">
-                {getKnowledgePresetFolders(t).map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => setPath(preset.path)}
-                    className="flex items-center gap-2.5 rounded-xl border border-border-button-default bg-background-secondary-default p-2.5 text-left text-[11px] text-text-primary hover:border-accent-500/40 hover:bg-background-secondary-hover transition-all"
-                  >
-                    <preset.icon className="size-4 text-accent-500 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="font-semibold truncate">{preset.name}</div>
-                      <div className="text-[10px] font-mono text-text-tertiary truncate">
-                        {preset.path}
+                {getKnowledgePresetFolders(t).map((preset) => {
+                  const exists = presetExistsInWorkspace(preset.path, workspaceDirPaths)
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      disabled={!exists}
+                      title={exists ? preset.path : t("pages.knowledge.presetMissing")}
+                      onClick={() => {
+                        if (!exists) return
+                        setFormError(null)
+                        setPath(preset.path)
+                      }}
+                      className={cx(
+                        "flex items-center gap-2.5 rounded-xl border p-2.5 text-left text-caption-2-medium",
+                        exists
+                          ? "border-border-button-default bg-background-secondary-default text-text-primary"
+                          : "cursor-not-allowed border-separator-border/50 bg-background-secondary-default/40 text-text-tertiary opacity-50"
+                      )}
+                    >
+                      <preset.icon className="size-4 shrink-0 text-accent-500" />
+                      <div className="min-w-0">
+                        <div className="truncate text-caption-1-medium">{preset.name}</div>
+                        <div className="truncate font-mono text-caption-2-regular text-text-tertiary">
+                          {exists ? preset.path : t("pages.knowledge.presetMissing")}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           ) : null}

@@ -51,8 +51,8 @@ export function KnowledgeEditModal({
 
   async function handlePickNativeFolder() {
     if (!hasIde() || !workspaceId) return
-    const relative = await pickWorkspaceRelativePath(workspaceId, "folder")
-    if (relative) setPath(relative)
+    const result = await pickWorkspaceRelativePath(workspaceId, "folder")
+    if (result.status === "ok") setPath(result.path)
   }
 
   async function handleSave() {

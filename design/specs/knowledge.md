@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-09-04
+> 用户显式选择的本地 RAG。最后更新：2026-09-05
 
 ## 当前真相
 
@@ -8,8 +8,11 @@
 
 只索引用户添加的文件或目录。`addKnowledgeSource` / `collectKnowledgeFiles` 都走 `resolveKnowledgePath`：工作区内绝对路径（含 Windows 盘符大小写）收成相对路径，根外与 `..` 逃逸即拒。扫盘子路径再 jail，失败抛错，不要 `catch` 成 `[]`。自动排除 `.git`、构建目录、密钥文件和 `.gitignore`；忽略规则只认相对路径，不把盘符祖先里的 `out`/`dist` 当构建目录。单个文件失败不阻塞。`knowledge_documents` 记文件 hash：未变文件 Resume 跳过，Pause 把来源标 `paused`，Rebuild 清空 chunk 后全量重建。解析阶段只写 `hashedEmbedding`；整源结束后再 `reembedStaleSource`（8s 回落），不要每个文件等网络。每写入一篇文档就 `tally()`，Collections 行在 Indexing 中也能看到文件数。`knowledge.documents` 合并库内文档与磁盘扫描，未入库文件以 `unindexed`/`indexing` 出现。来源列表带 `embeddingsStale`。Agent 开跑时 `citeKnowledge` 按用户最后一句检索，结果作为 `source.added`；知识页 View Files 必须设置 `selectedPath` 再切到文件 tab。检索可开 rerank：先试 SDK `rerank`，失败回落本地词袋+向量融合。`ai.generate` kind=`embedding`/`rerank` 走同一套向量。
 
-路由：`#/knowledge`，在 `AppShell` 内换轨（情境栏=来源/文件夹）。交互对齐原型 Slide 7「检索先行，索引退后」：页面默认展现试检索（Retrieval Preview）面板，检索结果支持 `Pin to chat`：写入会话上下文芯片（不进输入框），发送时把 snippet 拼进用户消息。UI 组装层 `knowledge-page.tsx` + `use-knowledge-page.ts`；区域组件 `knowledge-folder-cards.tsx`、`knowledge-documents-table.tsx`、`knowledge-document-list.tsx`、`knowledge-sources-table.tsx`、`knowledge-retriever-drawer.tsx`、`knowledge-file-preview-modal.tsx`、`knowledge-add-modal.tsx`。预设卡未索引时写「Not indexed yet」，不要写死 estimated files。IPC：`knowledge.sources` `knowledge.documents` `knowledge.addSource` `knowledge.index` `knowledge.search`。设置：Knowledge Indexing。`knowledgeAutoIndex` 为真时 `addSource` 立刻 `indexKnowledgeSource`。
-
+路由：`#/knowledge`，在 `AppShell` 内换轨（情境栏=来源透镜切换）。首页数字以可问块为准（`askableChunks`），扫描文件数不得冒充已索引；动作失败与健康卡只显示 `pathNotFound` / `statusError` 短句，ENOENT 原文只进 tooltip。核心交互遵循「检索是首页，索引是面板」：
+1. **检索舞台 (Retrieval Stage)**：页面主视觉。自然语言输入默认焦点、回车即搜。透镜开关与当前选中路径在前端按 `sourceId` 过滤命中（IPC 暂无 `sourceIds`）。【钉到当前对话】走页面 `handlePinToChat` → 会话上下文芯片，发送时随消息带入。空态展示最近命中或「还不能问」，不用样例提问冒充引用。
+2. **记忆层 Bento (Memory Layer Bento)**：非对称 2:1:1。脉冲 0 块主文案「还不能问」；透镜开关决定本次检索范围，星标写入工作区 `localStorage` 默认范围；健康卡折叠不可用源，缺失源禁用 Index Now。
+3. **索引管理面板**：默认收起，在舞台与 Bento **下方页内**展开（`rounded-3xl shadow-card`），不是遮罩 overlay。来源 Rebuild 在 Indexing 卡住时仍可点。预览 / View Files 先写 `selectedPath`。
+4. 区域组件：`components/retrieval/`、`components/bento/`、`components/drawer/`、`knowledge-add-modal.tsx`、`knowledge-file-preview-modal.tsx`。
 ## 不变量
 
 - 路径不得逃出工作区根。
@@ -37,3 +40,5 @@
 - 分块 / 余弦排序有吞吐单测（约 8000 行 / 500 向量）。Agent / generate 会写 `ttfoMs`；用真实 Key 才能解释成模型 TTFO，stub 只证明字段被写入。
 - Cohere 以外没有官方 rerank 工厂时 `createRerankModel` 返回 undefined，必须走本地融合，不要空排。
 - 来源路径必须 `assertInsideRoot`；不要 `join(root, rel)` 后直接 `stat`，POSIX 上绝对 `rel` 会丢掉 root。
+- 透镜范围目前只在 renderer 过滤 `knowledge.search` 命中，IPC 无 `sourceIds`。全部透镜关闭会得到空结果，不是检索失败。Chat 引用点击回知识页定位 snippet 尚未接线。
+- 添加来源的预设路径相对**当前工作区**。工作区没有 `design/` 时禁用该预设，不要提交后用横幅报「路径不存在」。浏览文件夹若在根外，必须提示，禁止静默不填路径。`workspace.pickFolder` 取消会抛错，浏览入口必须当成 cancel。图片等不可解析文件不要建成来源。

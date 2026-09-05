@@ -90,8 +90,14 @@ export function KnowledgeSourcesTable({
                       <div className="text-caption-1-medium text-text-primary">
                         {knowledgeSourceStatusLabel(t, source.status, isIndexing)}
                       </div>
-                      <div className="max-w-[220px] truncate text-caption-2-medium text-text-tertiary">
-                        {source.error || formatRelativeTime(source.updatedAt, t)}
+                      <div
+                        className={cx(
+                          "max-w-[220px] truncate text-caption-2-medium",
+                          source.error ? "text-amber-600 dark:text-amber-400 font-medium" : "text-text-tertiary"
+                        )}
+                        title={source.error || undefined}
+                      >
+                        {source.error ? t("pages.knowledge.statusError") : formatRelativeTime(source.updatedAt, t)}
                       </div>
                     </div>
                   </div>
@@ -110,11 +116,10 @@ export function KnowledgeSourcesTable({
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      disabled={isIndexing}
                       title={t("pages.knowledge.reindexSource")}
                       onClick={() => void onRebuildIndex(source.id)}
                     >
-                      <RiRestartLine className="size-3.5" />
+                      <RiRestartLine className={cx("size-3.5", isIndexing && "animate-spin")} />
                     </Button>
                     {onEditSource ? (
                       <Button

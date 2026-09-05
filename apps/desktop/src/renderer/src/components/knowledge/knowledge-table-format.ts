@@ -39,3 +39,16 @@ export function knowledgeSourceStatusLabel(
   if (status === "paused") return t("pages.knowledge.statusPaused")
   return status
 }
+
+export function knowledgeDocumentStatusLabel(
+  t: TranslateFn,
+  status: string,
+  chunkCount: number
+): string {
+  if (chunkCount > 0) return t("pages.knowledge.statusAskable")
+  if (status === "unindexed") return t("pages.knowledge.statusScannedOnly")
+  if (status === "indexing") return t("pages.knowledge.statusIndexing")
+  if (status === "error") return t("pages.knowledge.statusError")
+  if (status === "ready") return t("pages.knowledge.statusReady")
+  return status
+}

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { KnowledgeDocumentItem } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
-import { getPathExtension } from "./knowledge-table-format"
+import { getPathExtension, knowledgeDocumentStatusLabel } from "./knowledge-table-format"
 
 type KnowledgeDocumentListProps = {
   documents: KnowledgeDocumentItem[]
@@ -20,6 +20,7 @@ type KnowledgeDocumentListProps = {
   page: number
   pageSize: number
   total: number
+  citedPaths?: readonly string[]
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
   onPreviewDocument?: (doc: KnowledgeDocumentItem) => void
@@ -32,6 +33,7 @@ export function KnowledgeDocumentList({
   page,
   pageSize,
   total,
+  citedPaths,
   onPageChange,
   onPageSizeChange,
   onPreviewDocument,
@@ -84,9 +86,12 @@ export function KnowledgeDocumentList({
         <thead className="border-b border-separator-border/60 bg-background-secondary-default/60 text-text-tertiary">
           <tr>
             <th className="px-4 py-3">{t("pages.knowledge.colDocumentPath")}</th>
-            <th className="px-4 py-3">{t("pages.knowledge.colParentCollection")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colLens")}</th>
             <th className="px-4 py-3">{t("pages.knowledge.colVectorChunks")}</th>
-            <th className="px-4 py-3">{t("pages.knowledge.colStatus")}</th>
+            <th className="px-4 py-3">{t("pages.knowledge.colAskable")}</th>
+            {citedPaths && citedPaths.length > 0 ? (
+              <th className="px-4 py-3">{t("pages.knowledge.colCited")}</th>
+            ) : null}
             <th className="px-4 py-3 text-right">{t("pages.knowledge.colActions")}</th>
           </tr>
         </thead>
@@ -119,9 +124,25 @@ export function KnowledgeDocumentList({
                 <td className="px-4 py-2.5 font-mono text-caption-2-medium text-text-primary">
                   {t("pages.knowledge.chunksCount", { n: doc.chunkCount })}
                 </td>
-                <td className="px-4 py-2.5 capitalize text-caption-2-medium text-text-secondary">
-                  {doc.status}
+                <td className="px-4 py-2.5 text-caption-2-medium">
+                  <span
+                    className={cx(
+                      "inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-caption-2-medium",
+                      doc.chunkCount > 0
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : doc.status === "indexing"
+                          ? "border-accent-500/30 bg-accent-500/10 text-accent-700 dark:text-accent-300"
+                          : "border-separator-border/60 bg-background-secondary-default text-text-tertiary"
+                    )}
+                  >
+                    {knowledgeDocumentStatusLabel(t, doc.status, doc.chunkCount)}
+                  </span>
                 </td>
+                {citedPaths && citedPaths.length > 0 ? (
+                  <td className="px-4 py-2.5 text-caption-2-medium text-text-tertiary">
+                    {citedPaths.includes(doc.path) ? t("pages.knowledge.citedThisSession") : ""}
+                  </td>
+                ) : null}
                 <td className="px-4 py-2.5 text-right" onClick={(event) => event.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     <Button
@@ -225,7 +246,7 @@ export function KnowledgeDocumentsEmpty({
             : t("pages.knowledge.noFilesInCollection")}
       </h4>
       <p className="mt-1 max-w-md text-caption-1-medium text-text-secondary">
-        {error ?? t("pages.knowledge.emptyHint")}
+        {t("pages.knowledge.emptyHint")}
       </p>
     </div>
   )
