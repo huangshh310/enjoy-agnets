@@ -28,8 +28,6 @@ export function useAgentToolActions(tool: AgentToolPublic) {
   const activeRuntimeId = snapshot?.preferences.runtimeId ?? DEFAULT_RUNTIME_ID
   const providers = snapshot?.providers ?? []
   const [path, setPath] = useState(tool.binaryPath ?? "")
-  const [args, setArgs] = useState((tool.extraArgs ?? []).join(" "))
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [copiedPath, setCopiedPath] = useState(false)
   const [copiedCommand, setCopiedCommand] = useState(false)
   const [syncingConfig, setSyncingConfig] = useState(false)
@@ -64,10 +62,6 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     compatibleProviders: filterCompatibleProviders(tool.id, providers),
     path,
     setPath,
-    args,
-    setArgs,
-    showAdvanced,
-    setShowAdvanced,
     copiedPath,
     copiedCommand,
     syncingConfig,
