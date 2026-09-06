@@ -54,7 +54,7 @@ export function SkillsToolbar({
   const hasIssues = driftCount > 0 || warningCount > 0
 
   return (
-    <header className="flex flex-col gap-4 border-b border-separator-border/60 pb-4">
+    <header className="flex shrink-0 flex-col gap-4 border-b border-separator-border/60 pb-4">
       {/* 顶栏：标题 + 状态微标 + 右侧控制操作 */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">

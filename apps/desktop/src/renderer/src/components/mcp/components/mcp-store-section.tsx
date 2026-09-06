@@ -41,9 +41,9 @@ export function McpStoreSection(props: {
   })
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex min-h-0 flex-1 flex-col gap-4">
       {/* 紧凑分类筛选栏与搜索 */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         {/* 紧凑分类胶囊 */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
           {categories.map((cat) => {
@@ -79,6 +79,7 @@ export function McpStoreSection(props: {
       </div>
 
       {/* 插件卡片网格 */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filteredPresets.map((plugin) => {
           const Icon = plugin.icon
@@ -189,6 +190,7 @@ export function McpStoreSection(props: {
             </div>
           )
         })}
+      </div>
       </div>
     </section>
   )

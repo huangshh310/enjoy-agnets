@@ -234,7 +234,7 @@ export function KnowledgeDocumentsEmpty({
 }) {
   const t = useT()
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-10 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-10 text-center">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500">
         <RiFileTextLine className="size-7" />
       </div>

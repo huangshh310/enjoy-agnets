@@ -89,8 +89,9 @@ export function WorkflowsPage() {
       selectedId="all"
       onSelect={() => undefined}
       contentWidth="wide"
+      hideChrome
     >
-      <div className="flex flex-col gap-7">
+      <div className="flex min-h-0 flex-1 flex-col gap-7">
         <header className="flex flex-col gap-2">
           <div className="flex items-center gap-2.5">
             <div className="flex size-10 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs ring-1 ring-accent-500/20">

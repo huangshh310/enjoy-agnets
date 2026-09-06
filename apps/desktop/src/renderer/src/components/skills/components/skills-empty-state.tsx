@@ -26,7 +26,7 @@ export function SkillsEmptyState({
   const agentLabel = activeTargetId ? TARGET_SHORT_LABELS[activeTargetId] : null
 
   return (
-    <div className="relative overflow-hidden flex flex-col items-center justify-center rounded-3xl border border-separator-border/80 bg-background-primary-default p-12 text-center shadow-card">
+    <div className="relative flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default p-12 text-center shadow-card">
       <div className="pointer-events-none absolute -top-12 size-48 rounded-full bg-accent-500/10 blur-3xl" />
 
       <div className="relative z-10 flex size-14 items-center justify-center rounded-2xl bg-accent-500/15 text-accent-700 dark:text-accent-300 border border-accent-500/30 mb-4 shadow-xs">

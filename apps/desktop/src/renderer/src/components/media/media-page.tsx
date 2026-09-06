@@ -27,12 +27,13 @@ export function MediaPage() {
       onSelect={(id) => {
         if (isAssetCategory(id)) library.assets.setSelectedCategory(id)
       }}
-      contentWidth="wide"
+      contentWidth="fill"
+      hideChrome
       searchValue={library.assets.filterQuery}
       onSearchChange={library.assets.setFilterQuery}
       filterNav={false}
     >
-      <div className="relative flex flex-col gap-4" {...drop.dropHandlers}>
+      <div className="relative flex h-full min-h-0 flex-col gap-4 px-8 pt-5 pb-6" {...drop.dropHandlers}>
         {drop.isDragOver ? <MediaDropOverlay /> : null}
         <MediaLibraryBody library={library} onUploadClick={() => fileInputRef.current?.click()} />
         <input
@@ -46,8 +47,8 @@ export function MediaPage() {
             event.target.value = ""
           }}
         />
+        <MediaDeleteDialog library={library} />
       </div>
-      <MediaDeleteDialog library={library} />
     </SecondaryPageShell>
   )
 }

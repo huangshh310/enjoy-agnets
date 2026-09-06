@@ -14,7 +14,7 @@ export function MediaPageHeader({
 }) {
   const t = useT()
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <header className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="flex size-9 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500">
           <RiImageLine className="size-5" />

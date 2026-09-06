@@ -24,7 +24,7 @@ export function McpHeader(props: {
   const t = useT()
 
   return (
-    <header className="flex flex-col gap-3 pb-2 border-b border-separator-border/70">
+    <header className="flex shrink-0 flex-col gap-3 pb-2 border-b border-separator-border/70">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* 左侧标题与内联状态 */}
         <div className="flex flex-col gap-1">

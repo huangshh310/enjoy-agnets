@@ -40,14 +40,14 @@ export function AutomationList({
   const t = useT()
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-body-medium font-semibold text-text-primary">
           {t("studio.automations.configured", { count: automations.length })}
         </h3>
       </div>
       {automations.length === 0 && !draftOpen ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-8 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-8 text-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs">
             <RiRobot2Line className="size-6" />
           </div>

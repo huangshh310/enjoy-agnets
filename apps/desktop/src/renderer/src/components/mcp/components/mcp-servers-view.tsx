@@ -38,8 +38,8 @@ export function McpServersView(props: {
   const untrustedCount = servers.length - trustedCount
 
   return (
-    <section className="flex flex-col gap-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="flex min-h-0 flex-1 flex-col gap-3.5">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.mcp.registeredCount", { n: filteredServers.length })}
@@ -64,7 +64,7 @@ export function McpServersView(props: {
       </div>
 
       {servers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
           <div className="flex size-10 items-center justify-center rounded-lg bg-background-secondary-default text-text-tertiary mb-3">
             <RiPlugLine className="size-5" />
           </div>
@@ -94,22 +94,26 @@ export function McpServersView(props: {
             </Button>
           </div>
         </div>
-      ) : filteredServers.length === 0 ? (
-        <div className="py-10 text-center text-caption-2-medium text-text-tertiary">
-          {t("pages.mcp.noMatchingServers")}
-        </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {filteredServers.map((server) => (
-            <McpServerCard
-              key={server.id}
-              server={server}
-              onChanged={onChanged}
-              onOpenApp={onOpenApp}
-              onExploreTools={onExploreTools}
-              onEdit={onEdit}
-            />
-          ))}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {filteredServers.length === 0 ? (
+            <div className="py-10 text-center text-caption-2-medium text-text-tertiary">
+              {t("pages.mcp.noMatchingServers")}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {filteredServers.map((server) => (
+                <McpServerCard
+                  key={server.id}
+                  server={server}
+                  onChanged={onChanged}
+                  onOpenApp={onOpenApp}
+                  onExploreTools={onExploreTools}
+                  onEdit={onEdit}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </section>

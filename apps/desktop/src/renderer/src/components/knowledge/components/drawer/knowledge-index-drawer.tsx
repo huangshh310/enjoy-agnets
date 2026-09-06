@@ -53,9 +53,9 @@ export function KnowledgeIndexDrawer({
     <section
       ref={panelRef}
       id="knowledge-index-panel"
-      className="flex flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card"
+      className="flex max-h-[min(40rem,75vh)] min-h-[28rem] flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card"
     >
-      <header className="flex items-center justify-between border-b border-separator-border/60 bg-background-secondary-default/30 px-6 py-4">
+      <header className="flex shrink-0 items-center justify-between border-b border-separator-border/60 bg-background-secondary-default/30 px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-2xl border border-accent-500/20 bg-accent-500/10 text-accent-600 shadow-2xs dark:text-accent-400">
             <RiDatabase2Line className="size-5" />
@@ -74,7 +74,7 @@ export function KnowledgeIndexDrawer({
           <RiCloseLine className="size-5" />
         </button>
       </header>
-      <div className="flex flex-col gap-4 p-6">
+      <div className="flex min-h-0 flex-1 flex-col p-6">
         <KnowledgeDocumentsTable
           sources={sources}
           documents={documents}
@@ -91,7 +91,7 @@ export function KnowledgeIndexDrawer({
           onViewSource={onViewSource}
         />
       </div>
-      <footer className="flex items-center justify-between border-t border-separator-border/60 px-6 py-4">
+      <footer className="flex shrink-0 items-center justify-between border-t border-separator-border/60 px-6 py-4">
         <span className="text-caption-2-regular text-text-tertiary">
           {t("pages.knowledge.indexPanelCount", { sources: sources.length, docs: documents.length })}
         </span>

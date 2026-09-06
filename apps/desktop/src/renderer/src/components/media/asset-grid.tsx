@@ -48,7 +48,7 @@ export function AssetGrid({
   }, [visibleAssets, safeCurrentPage])
 
   return (
-    <section className="relative flex flex-1 flex-col gap-3">
+    <section className="relative flex min-h-0 flex-1 flex-col gap-3">
       <AssetGridHeader
         categoryLabel={categoryLabel}
         total={visibleAssets.length}
@@ -58,18 +58,20 @@ export function AssetGrid({
       {visibleAssets.length === 0 ? (
         <AssetGridEmpty />
       ) : (
-        <AssetGridBody
-          assets={pagedAssets}
-          selectedAssetId={selectedAssetId}
-          safeCurrentPage={safeCurrentPage}
-          totalPages={totalPages}
-          total={visibleAssets.length}
-          onSelectAsset={onSelectAsset}
-          onExport={onExport}
-          onUpload={onUpload}
-          onDelete={onDelete}
-          onPageChange={setCurrentPage}
-        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <AssetGridBody
+            assets={pagedAssets}
+            selectedAssetId={selectedAssetId}
+            safeCurrentPage={safeCurrentPage}
+            totalPages={totalPages}
+            total={visibleAssets.length}
+            onSelectAsset={onSelectAsset}
+            onExport={onExport}
+            onUpload={onUpload}
+            onDelete={onDelete}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       )}
     </section>
   )
@@ -88,7 +90,7 @@ function AssetGridHeader({
 }) {
   const t = useT()
   return (
-    <div className="flex items-center justify-between gap-2 flex-wrap pb-1">
+    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 pb-1">
       <div className="flex items-center gap-2">
         <h3 className="text-body-semibold text-text-primary">{categoryLabel}</h3>
         <span className="rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-medium text-text-tertiary">
@@ -112,7 +114,7 @@ function AssetGridHeader({
 function AssetGridEmpty() {
   const t = useT()
   return (
-    <div className="flex min-h-[16rem] flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 px-6 py-12 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 px-6 py-12 text-center">
       <div className="flex size-12 items-center justify-center rounded-2xl bg-background-tertiary-default text-text-tertiary">
         <RiImageLine className="size-6" />
       </div>

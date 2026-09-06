@@ -56,7 +56,7 @@ export function StudioGeneratorPanel({
   const canSubmit = Boolean(sessionId && modelId && isCapable && !isGenerating)
 
   return (
-    <section className="relative flex flex-col gap-2.5 rounded-2xl border border-border-button-default bg-background-primary-default p-3 shadow-xs">
+    <section className="relative flex shrink-0 flex-col gap-2.5 rounded-2xl border border-border-button-default bg-background-primary-default p-3 shadow-xs">
       <StudioModeTabs
         mode={mode}
         experimentalMedia={experimentalMedia}

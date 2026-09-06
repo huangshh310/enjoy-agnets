@@ -138,7 +138,7 @@ export function AutomationsPage({ embed = false }: { embed?: boolean }) {
   }
 
   const body = (
-      <div className="flex flex-col gap-7">
+      <div className="flex min-h-0 flex-1 flex-col gap-7">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5">
@@ -207,6 +207,7 @@ export function AutomationsPage({ embed = false }: { embed?: boolean }) {
       selectedId={filter}
       onSelect={(id) => setFilter(id as AutomationFilter)}
       contentWidth="stage"
+      hideChrome
       filterNav={false}
       searchValue={query}
       onSearchChange={setQuery}

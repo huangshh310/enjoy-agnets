@@ -1,8 +1,8 @@
 /**
- * 二级页主卡片：article / wide / stage 走文档滚动；fill 把高度交给子页面（收件箱分栏）。
+ * 二级页主卡片：article / wide / stage 可滚动；fill 把高度交给子页面。
+ * 不用 Radix ScrollArea：viewport 内层 inline `display:table` 会盖掉 flex，空态 flex-1 无效。
  */
 import type { ReactNode } from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
 
 export type SecondaryContentWidth = "article" | "wide" | "stage" | "fill"
@@ -28,19 +28,19 @@ export function SecondaryPageMain(props: {
           <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
         </>
       ) : (
-        <ScrollArea className="h-full min-h-0">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <div
             className={cx(
-              "w-full",
+              "flex min-h-full w-full flex-col",
               contentWidth === "article" && "mx-auto max-w-[760px] px-8 pt-7 pb-16",
               contentWidth === "wide" && "mx-auto max-w-5xl px-8 pt-7 pb-16",
-              contentWidth === "stage" && "flex min-h-full flex-1 flex-col px-8 pt-5 pb-6"
+              contentWidth === "stage" && "px-8 pt-5 pb-6"
             )}
           >
             {!hideChrome ? <SecondaryPageChrome label={selectedItemLabel} /> : null}
             {children}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </main>
   )

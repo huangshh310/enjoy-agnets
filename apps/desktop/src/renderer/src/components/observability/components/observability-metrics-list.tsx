@@ -23,7 +23,7 @@ export function ObservabilityMetricsList(props: {
 
   if (metrics.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
         <RiPulseLine className="size-8 text-text-tertiary mb-2" />
         <h4 className="text-caption-1-medium font-semibold text-text-primary">
           {t("pages.observability.emptyTraces")}

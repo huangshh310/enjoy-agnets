@@ -30,7 +30,7 @@ export function KnowledgePage() {
       contentWidth="wide"
       hideChrome
     >
-      <div className="flex flex-col gap-6 pb-12">
+      <div className="flex min-h-0 flex-1 flex-col gap-6">
         <KnowledgePageHeader
           stats={page.stats}
           onOpenIndexDrawer={openIndex}

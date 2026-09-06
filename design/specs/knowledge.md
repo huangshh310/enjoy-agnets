@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-09-05
+> 用户显式选择的本地 RAG。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -11,8 +11,8 @@
 路由：`#/knowledge`，在 `AppShell` 内换轨（情境栏=来源透镜切换）。首页数字以可问块为准（`askableChunks`），扫描文件数不得冒充已索引；动作失败与健康卡只显示 `pathNotFound` / `statusError` 短句，ENOENT 原文只进 tooltip。核心交互遵循「检索是首页，索引是面板」：
 1. **检索舞台 (Retrieval Stage)**：页面主视觉。自然语言输入默认焦点、回车即搜。透镜开关与当前选中路径在前端按 `sourceId` 过滤命中（IPC 暂无 `sourceIds`）。【钉到当前对话】走页面 `handlePinToChat` → 会话上下文芯片，发送时随消息带入。空态展示最近命中或「还不能问」，不用样例提问冒充引用。
 2. **记忆层 Bento (Memory Layer Bento)**：非对称 2:1:1。脉冲 0 块主文案「还不能问」；透镜开关决定本次检索范围，星标写入工作区 `localStorage` 默认范围；健康卡折叠不可用源，缺失源禁用 Index Now。
-3. **索引管理面板**：默认收起，在舞台与 Bento **下方页内**展开（`rounded-3xl shadow-card`），不是遮罩 overlay。来源 Rebuild 在 Indexing 卡住时仍可点。预览 / View Files 先写 `selectedPath`。
-4. 区域组件：`components/retrieval/`、`components/bento/`、`components/drawer/`、`knowledge-add-modal.tsx`、`knowledge-file-preview-modal.tsx`。
+3. **索引管理面板**：默认收起，在舞台与 Bento **下方页内**展开（`rounded-3xl shadow-card`），不是遮罩 overlay。面板 `min-h-[28rem]` / `max-h-[min(40rem,75vh)]`，工具栏固定，文件空态与列表吃剩余高度并内部滚动。来源 Rebuild 在 Indexing 卡住时仍可点。预览 / View Files 先写 `selectedPath`。
+4. 区域组件：`components/retrieval/`、`components/bento/`、`components/drawer/`、`components/table/`、`knowledge-add-modal.tsx`、`knowledge-file-preview-modal.tsx`。
 ## 不变量
 
 - 路径不得逃出工作区根。

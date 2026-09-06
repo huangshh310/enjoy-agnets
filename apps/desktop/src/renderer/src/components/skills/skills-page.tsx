@@ -107,38 +107,40 @@ export function SkillsPage() {
         page.setActiveSkillId(null)
         page.setActionError(null)
       }}
-      contentWidth="wide"
+      contentWidth="fill"
       hideChrome
     >
-      <div className="flex flex-col gap-6 pb-12">
+      <div className="flex h-full min-h-0 flex-col gap-6 px-8 pt-5 pb-6">
         {page.actionError ? (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
+          <div className="shrink-0 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
             {page.actionError}
           </div>
         ) : null}
         {page.busyMessage ? (
-          <div className="rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-2.5 text-caption-2-medium text-accent-700 dark:text-accent-300">
+          <div className="shrink-0 rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-2.5 text-caption-2-medium text-accent-700 dark:text-accent-300">
             正在{page.busyMessage}…
           </div>
         ) : null}
 
         {isDetailView && page.detail ? (
-          <SkillsDetailView
-            detail={page.detail}
-            activeSkillId={page.activeSkillId}
-            hasWorkspace={page.hasWorkspace}
-            busy={Boolean(page.busyMessage)}
-            onBack={() => page.setSelectedNavId("all")}
-            onSelectSkill={(id) => page.setActiveSkillId(id)}
-            onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
-            onToggleSkill={(source, skillId) => void page.toggleSkill(source, skillId)}
-            onUpdate={() => void page.updateSource(page.detail!.source.id)}
-            onDeploy={() => void page.deploySource(page.detail!.source.id)}
-            onRemove={() => void page.removeSource(page.detail!.source.id)}
-            onDeleteSkill={(skillId) => void page.deleteSkill(page.detail!.source.id, skillId)}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <SkillsDetailView
+              detail={page.detail}
+              activeSkillId={page.activeSkillId}
+              hasWorkspace={page.hasWorkspace}
+              busy={Boolean(page.busyMessage)}
+              onBack={() => page.setSelectedNavId("all")}
+              onSelectSkill={(id) => page.setActiveSkillId(id)}
+              onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+              onToggleSkill={(source, skillId) => void page.toggleSkill(source, skillId)}
+              onUpdate={() => void page.updateSource(page.detail!.source.id)}
+              onDeploy={() => void page.deploySource(page.detail!.source.id)}
+              onRemove={() => void page.removeSource(page.detail!.source.id)}
+              onDeleteSkill={(skillId) => void page.deleteSkill(page.detail!.source.id, skillId)}
+            />
+          </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex min-h-0 flex-1 flex-col gap-6">
             <SkillsToolbar
               sourceCount={page.sources.length}
               deployedCount={page.allSkills.length || page.overview?.installedCount || 0}
@@ -155,43 +157,41 @@ export function SkillsPage() {
               onCreateSkill={() => page.setCreateSkillOpen(true)}
             />
 
-            {activeTargetId ? (
-              /* 专属 Agent 能力整备工作台 (Pi, Claude, Cursor, Codex, Enjoy, OMP) */
-              <AgentArmoryView
-                targetId={activeTargetId}
-                allSkills={page.allSkills}
-                sources={page.sources}
-                curated={page.curated}
-                busy={Boolean(page.busyMessage)}
-                onGoToStore={() => page.setSelectedNavId("curated")}
-                onClearFilter={() => page.setSelectedNavId("all")}
-                onInstallCurated={(source) => void page.installCurated(source)}
-                onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
-                onSelectSkill={(skill) => setSelectedDrawerSkill(skill)}
-              />
-            ) : activeTab === "curated" ? (
-              <SkillsCuratedView
-                curated={page.curated}
-                sources={page.sources}
-                busy={Boolean(page.busyMessage)}
-                onInstall={(curatedSource) => void page.installCurated(curatedSource)}
-              />
-            ) : activeTab === "packs" ? (
-              <SkillsGrid
-                sources={displayedSources}
-                busy={Boolean(page.busyMessage)}
-                activeTargetId={activeTargetId}
-                onClearTargetFilter={() => page.setSelectedNavId("all")}
-                onSelect={(id) => page.setSelectedNavId(id)}
-                onUpdate={(id) => void page.updateSource(id)}
-                onDeploy={(id) => void page.deploySource(id)}
-                onRemove={(id) => void page.removeSource(id)}
-                onPickFolder={() => void page.addLocalSource()}
-                onGoToStore={() => page.setSelectedNavId("curated")}
-              />
-            ) : (
-              /* 全部能力库 (All 189 Skills 网格) */
-              filteredSkills.length === 0 ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+              {activeTargetId ? (
+                <AgentArmoryView
+                  targetId={activeTargetId}
+                  allSkills={page.allSkills}
+                  sources={page.sources}
+                  curated={page.curated}
+                  busy={Boolean(page.busyMessage)}
+                  onGoToStore={() => page.setSelectedNavId("curated")}
+                  onClearFilter={() => page.setSelectedNavId("all")}
+                  onInstallCurated={(source) => void page.installCurated(source)}
+                  onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+                  onSelectSkill={(skill) => setSelectedDrawerSkill(skill)}
+                />
+              ) : activeTab === "curated" ? (
+                <SkillsCuratedView
+                  curated={page.curated}
+                  sources={page.sources}
+                  busy={Boolean(page.busyMessage)}
+                  onInstall={(curatedSource) => void page.installCurated(curatedSource)}
+                />
+              ) : activeTab === "packs" ? (
+                <SkillsGrid
+                  sources={displayedSources}
+                  busy={Boolean(page.busyMessage)}
+                  activeTargetId={activeTargetId}
+                  onClearTargetFilter={() => page.setSelectedNavId("all")}
+                  onSelect={(id) => page.setSelectedNavId(id)}
+                  onUpdate={(id) => void page.updateSource(id)}
+                  onDeploy={(id) => void page.deploySource(id)}
+                  onRemove={(id) => void page.removeSource(id)}
+                  onPickFolder={() => void page.addLocalSource()}
+                  onGoToStore={() => page.setSelectedNavId("curated")}
+                />
+              ) : filteredSkills.length === 0 ? (
                 <SkillsEmptyState
                   activeTargetId={activeTargetId}
                   onClearTargetFilter={() => page.setSelectedNavId("all")}
@@ -208,8 +208,8 @@ export function SkillsPage() {
                     />
                   ))}
                 </div>
-              )
-            )}
+              )}
+            </div>
           </div>
         )}
 

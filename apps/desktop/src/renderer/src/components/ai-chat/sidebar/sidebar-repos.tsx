@@ -64,7 +64,7 @@ export function SidebarRepos({
   }, [repositories, sortOrder])
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
       {/* 1. Header with Projects / Repositories Title and Codex-style actions */}
       <div className="flex items-center justify-between px-2 pt-2">
         <span className="text-body-medium font-semibold text-text-primary">{t("chat.projects")}</span>
@@ -138,7 +138,7 @@ export function SidebarRepos({
 
       {/* 2. Workspaces Tree / Flat List */}
       {workspaces.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
           <RiFolder6Line className="size-6 text-text-tertiary" />
           <p className="text-caption-1-medium text-text-secondary">{t("chat.noProjects")}</p>
           <button

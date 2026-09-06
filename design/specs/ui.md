@@ -1,13 +1,13 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-04
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-06
 
 ## 当前真相
 
 窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。底板注入物理微环境漫射光斑（Ambient Canvas Glow），赋予三卡片自然进深感与悬浮质感。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
 
 1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。
-2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。
+2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。`wide` / `stage` 用原生 `overflow-y-auto` + 内层 `min-h-full flex flex-col`，**不要** Radix ScrollArea（viewport 内层 inline `display:table` 会盖掉 flex）。列表空态用 `flex-1 min-h-0` 铺满剩余高度。Skills / Media / MCP / Inbox / Observability 用 `fill` + `hideChrome`：页内自带顶栏，不要再叠 `SecondaryPageChrome`。工具栏固定，空态与列表吃剩余高度。侧栏项目区在底栏用户卡之上 `flex-1`，无项目虚线框铺满该区。
 3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。始终挂载，切模块不卸掉。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（Codex 控制台：6 大作用域、统计徽标、分支对比、⌘P 跳转文件；**左文件树可拖拽改宽、右单文件满高 diff**；「展开全部差异」才叠 compact 卡片；提交底栏贴底，主按钮走 `text-text-white`；「已提交」作用域才走 devl.dev 多色 SVG 提交时间线；只用真实 Git，不编造 CI/审批/第二车道）、Files、Terminal 与 Browser。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。禁止第四张大卡片。
@@ -69,6 +69,7 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
 - 点右上角布局钮「没打开」：`react-resizable-panels` 的 `expand()` 回到 collapse 前的百分比。默认收起时 `defaultSize`/`minSize` 写成 `0`，collapse 是 no-op、`expandToSize` 没记下，expand 会落到 `1%` 一条缝。minSize 始终 `280px`，defaultSize 始终 `38%`；展开后若像素仍 `< 280` 再 `resize("38%")`。
 - 禁止在 Inspector 里用 `useLayoutEffect` 调 `panel.expand` / `collapse`：子组件 layout effect 早于 Group 注册，会抛 `Group enjoy-agents-chat-split not found`，整页进错误边界。必须 `useEffect`（paint 之后 Group 已在）。
 - Stage 卡片高度塌成内容高、底下露出 Mist：Outlet 外层是 `absolute inset-0`（不是 flex），子级写 `flex-1` 无效。必须 `h-full` 传到 `SecondaryPageMain`，Inbox / MCP / Settings 与 Chat 同一底边。
+- 二级页空态不拉高：Radix ScrollArea viewport 内层带 inline `display:table`，Tailwind `flex` 盖不掉，`flex-1` 无效。`wide`/`stage` 必须走原生滚动；工作台（Skills / Media / MCP / Inbox）用 `fill`。侧栏项目空态拆「顶栏 shrink-0 / 列表 flex-1 / 底栏 shrink-0」。
 - 侧栏项目行展开只认 `expandedIds`。不要用「当前工作区」强制展开，也不要在 `hydrateWorkspacesAndSessions` 把 current id 写回 `expandedIds`，否则二次点击无法收缩。
 - 确认框用应用内 `ConfirmDialog`（shadcn Dialog）。不要 `window.confirm` / Electron 原生框，标题会变成包名 `@enjoy-agents/desktop`。
 - Remixicon 4.9 没有 `RiAttachment2Line`（只有 `RiAttachment2` / `RiAttachmentLine`）。命名导出不存在时 Vite ESM 直接抛 SyntaxError，React 还没挂上，窗口标题在、`#root` 空。新图标先对 `@remixicon/react` 的 `index.d.ts`。

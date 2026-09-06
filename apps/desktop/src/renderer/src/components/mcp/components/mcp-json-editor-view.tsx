@@ -111,8 +111,8 @@ export function McpJsonEditorView(props: {
   const lineCount = jsonContent.split("\n").length
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-separator-border/70 bg-background-secondary-default/40 p-2.5">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex shrink-0 flex-col gap-2 rounded-xl border border-separator-border/70 bg-background-secondary-default/40 p-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <div className="flex size-7 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
             <RiCodeSSlashLine className="size-4" />
@@ -189,7 +189,7 @@ export function McpJsonEditorView(props: {
       {statusMessage ? (
         <div
           className={cx(
-            "rounded-lg border px-3 py-2 text-[12px] flex items-center gap-2",
+            "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-caption-2-medium",
             statusMessage.type === "success"
               ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
               : statusMessage.type === "error"
@@ -202,8 +202,8 @@ export function McpJsonEditorView(props: {
         </div>
       ) : null}
 
-      <div className="relative flex rounded-xl border border-separator-border/80 bg-background-secondary-default/50 overflow-hidden font-mono text-[12.5px] leading-relaxed shadow-xs">
-        <div className="select-none border-r border-separator-border/60 bg-background-secondary-default/80 px-2.5 py-3 text-right text-[11px] text-text-tertiary font-mono">
+      <div className="relative flex min-h-0 flex-1 overflow-y-auto rounded-xl border border-separator-border/80 bg-background-secondary-default/50 font-mono text-caption-1-regular leading-relaxed shadow-xs">
+        <div className="shrink-0 select-none border-r border-separator-border/60 bg-background-secondary-default/80 px-2.5 py-3 text-right font-mono text-caption-2-medium text-text-tertiary">
           {Array.from({ length: Math.max(lineCount, 12) }).map((_, i) => (
             <div key={i} className="leading-relaxed">
               {i + 1}
@@ -214,7 +214,8 @@ export function McpJsonEditorView(props: {
           value={jsonContent}
           onChange={(e) => setJsonContent(e.target.value)}
           spellCheck={false}
-          className="flex-1 resize-none bg-transparent p-3 text-text-primary focus-visible:outline-none min-h-[460px] leading-relaxed"
+          rows={Math.max(lineCount, 12)}
+          className="min-h-full flex-1 resize-none overflow-hidden bg-transparent p-3 leading-relaxed text-text-primary focus-visible:outline-none"
           placeholder='{\n  "mcpServers": {\n    ...\n  }\n}'
         />
       </div>
