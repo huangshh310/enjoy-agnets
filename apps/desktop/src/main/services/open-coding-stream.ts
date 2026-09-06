@@ -10,8 +10,7 @@ import { disposeHarnessTurn, resolveHarnessAdapter, streamHarnessTurn } from "@e
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import {
   createLanguageModel,
-  deepseekCallOptions,
-  usesDeepSeekReasoningApi
+  reasoningCallOptions
 } from "@enjoy-agents/providers"
 import { readHarnessSecret } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
@@ -105,6 +104,13 @@ async function openLocalStream(
 ): Promise<OpenedCodingStream> {
   const secret = input.secret
   if (!secret) throw new Error("Add an API key in Settings before running an agent.")
+  const thinking = reasoningCallOptions({
+    provider: secret.provider,
+    modelId: input.modelId,
+    apiStyle: secret.apiStyle,
+    effort: input.effort,
+    baseURL: secret.baseURL
+  })
   const result = await streamCodingAgent({
     model: createLanguageModel({
       provider: secret.provider,
@@ -119,14 +125,8 @@ async function openLocalStream(
     mode: input.mode,
     messages: input.messages,
     abortSignal: input.abortSignal,
-    reasoning: input.effort,
-    providerOptions: usesDeepSeekReasoningApi({
-      provider: secret.provider,
-      modelId: input.modelId,
-      apiStyle: secret.apiStyle
-    })
-      ? deepseekCallOptions(input.effort)
-      : undefined,
+    reasoning: thinking.reasoning,
+    providerOptions: thinking.providerOptions,
     policy,
     extraTools: createMcpAgentTools(),
     waitForSubagentApproval: input.waitForSubagentApproval,

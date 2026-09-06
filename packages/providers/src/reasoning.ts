@@ -1,11 +1,23 @@
 /**
- * DeepSeek 思考走 reasoning_content，必须用官方 DeepSeek provider。
- * 通用 @ai-sdk/openai 会丢掉该字段，UI 就只剩耗时没有正文。
+ * 思考档接线：对照 AI SDK 7 + 各厂官方字段。
+ * 中转必须 createOpenAICompatible，才能解析 reasoning_content。
+ * MiniMax：thinking.adaptive；reasoning_split 只给官方 MiniMax 域名。
+ * 中转发 reasoning_split 会 Validation 拒掉，思考栏空转后报错。
+ * GLM：thinking.enabled + reasoningEffort。Kimi K3：顶层 reasoning。
+ * DeepSeek 思考走 @ai-sdk/deepseek。
  */
 import type { ApiStyle } from "./api-styles"
 import type { ProviderKind } from "./presets"
 
+const MINIMAX_PRESET_URL = "https://api.minimax.chat/v1"
+
 export type ReasoningEffort = "low" | "medium" | "high" | "xhigh"
+
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+type ProviderOptions = Record<string, { [key: string]: JsonValue }>
+
+/** createOpenAICompatible 的 name，必须与 providerOptions 键一致。 */
+export const OPENAI_COMPAT_NAME = "openaiCompatible"
 
 export function isDeepSeekModelId(modelId: string): boolean {
   const id = modelId.toLowerCase()
@@ -17,10 +29,26 @@ export function isDeepSeekModelId(modelId: string): boolean {
   )
 }
 
-/**
- * OpenAI 官方协议自己处理 reasoning；Anthropic / Responses 不走 DeepSeek SDK。
- * OpenRouter / 硅基流动上的 DeepSeek 模型仍返回 reasoning_content，要换 provider。
- */
+export function isMiniMaxModelId(modelId: string): boolean {
+  return modelId.toLowerCase().includes("minimax")
+}
+
+/** 只有官方 MiniMax 认 reasoning_split；中转 /v1 会直接 Validation 拒绝。 */
+export function isOfficialMiniMaxHost(baseURL?: string): boolean {
+  if (!baseURL?.trim()) return false
+  return /(?:^|[./])minimax(?:i)?\.(?:io|chat|com)(?:[/:]|$)/i.test(baseURL)
+}
+
+export function isGlmModelId(modelId: string): boolean {
+  const id = modelId.toLowerCase()
+  return id.includes("glm") || id.includes("chatglm")
+}
+
+export function isKimiModelId(modelId: string): boolean {
+  const id = modelId.toLowerCase()
+  return id.includes("kimi") || id.includes("moonshot")
+}
+
 export function usesDeepSeekReasoningApi(config: {
   provider: ProviderKind | string
   modelId: string
@@ -42,4 +70,64 @@ export function deepseekCallOptions(effort?: ReasoningEffort) {
       ...(effort ? { reasoningEffort: effort } : {})
     }
   }
+}
+
+/**
+ * MiniMax：思考用 thinking.adaptive。
+ * reasoning_split 只在官方域名发，用来把思考拆到 reasoning_content。
+ * 中转不认这个字段；不拆时思考会进 content 的 <think>，UI 再切开。
+ */
+export function miniMaxThinkingOptions(effort?: ReasoningEffort, baseURL?: string) {
+  const split = isOfficialMiniMaxHost(baseURL)
+  if (!effort && !split) return undefined
+  return {
+    [OPENAI_COMPAT_NAME]: {
+      ...(split ? { reasoning_split: true } : {}),
+      ...(effort ? { thinking: { type: "adaptive" as const } } : {})
+    }
+  }
+}
+
+/**
+ * GLM：官方要 thinking.type，5.2+ 另认 reasoning_effort。
+ * 两者都放兼容层键上，避免只发顶层 reasoning 被网关忽略。
+ * 未选档不强制 disabled。
+ */
+export function glmThinkingOptions(effort?: ReasoningEffort) {
+  if (!effort) return undefined
+  return {
+    [OPENAI_COMPAT_NAME]: {
+      thinking: { type: "enabled" as const },
+      reasoningEffort: effort
+    }
+  }
+}
+
+export function reasoningCallOptions(config: {
+  provider: ProviderKind | string
+  modelId: string
+  apiStyle?: ApiStyle | string
+  effort?: ReasoningEffort
+  baseURL?: string
+}): {
+  reasoning?: ReasoningEffort
+  providerOptions?: ProviderOptions
+} {
+  if (usesDeepSeekReasoningApi(config)) {
+    return { reasoning: config.effort, providerOptions: deepseekCallOptions(config.effort) }
+  }
+  if (isMiniMaxModelId(config.modelId) || config.provider === "minimax") {
+    const providerOptions = miniMaxThinkingOptions(config.effort, hostFor(config))
+    return providerOptions ? { providerOptions } : {}
+  }
+  if (isGlmModelId(config.modelId) || config.provider === "zhipu") {
+    const providerOptions = glmThinkingOptions(config.effort)
+    return providerOptions ? { providerOptions } : {}
+  }
+  return { reasoning: config.effort }
+}
+
+function hostFor(config: { provider: string; baseURL?: string }): string {
+  if (config.baseURL?.trim()) return config.baseURL
+  return config.provider === "minimax" ? MINIMAX_PRESET_URL : ""
 }

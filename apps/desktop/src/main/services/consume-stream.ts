@@ -6,6 +6,7 @@ import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { createId } from "./ids"
 import { persistFromEvent, type RunTranscript } from "./persist-session"
 import { rememberApproval } from "./approval-hmac"
+import { classifyError } from "@enjoy-agents/agent-core"
 import { mapStreamPart, withToolId } from "./stream-parts"
 
 export type PendingApproval = {
@@ -26,6 +27,9 @@ export async function consumeFullStream(input: {
   emit: (event: StreamEvent) => void
 }) {
   for await (const part of input.stream) {
+    if (String(part.type ?? "") === "error") {
+      throw classifyError(part.error ?? part)
+    }
     const mapped = mapStreamPart(part, input.runId)
     if (!mapped) continue
     const event = withToolId(mapped, createId("tool"))

@@ -1,7 +1,7 @@
 /**
  * 编码 Agent：ToolLoopAgent + 写盘/shell 审批。
  * Harness 插件位用 toHarnessApprovalSettings() 拿 permissionMode / toolApproval。
- * 思考档走 AI SDK 7 顶层 reasoning，由 SDK 按模型映射；DeepSeek 仍补 providerOptions。
+ * 思考档：官方族 / Kimi K3 走顶层 reasoning；DeepSeek / MiniMax / GLM 走 providerOptions。
  */
 import { ToolLoopAgent, type LanguageModel, type ModelMessage } from "ai"
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
@@ -14,12 +14,8 @@ import { agentStopWhen } from "./policies/stop.ts"
 import { agentLoopTimeout, prepareAgentStep } from "./policies/prepare-step.ts"
 import { resolveToolApproval, type ApprovalPolicy } from "./tool-approval"
 
-type AgentProviderOptions = {
-  deepseek?: {
-    thinking?: { type: "enabled" | "disabled" }
-    reasoningEffort?: ReasoningEffort
-  }
-}
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+type AgentProviderOptions = Record<string, { [key: string]: JsonValue }>
 
 /** 创建带工具审批的编码 Agent。 */
 export function createCodingAgent(

@@ -1,6 +1,8 @@
 /**
  * 统一运行时错误分类，供 UI 区分重试与配置问题。
  */
+import { unwrapErrorMessage } from "./unwrap-error.ts"
+
 export type RuntimeErrorClass =
   | "config"
   | "capability"
@@ -28,7 +30,7 @@ export class RuntimeError extends Error {
 
 export function classifyError(error: unknown): RuntimeError {
   if (error instanceof RuntimeError) return error
-  const message = error instanceof Error ? error.message : String(error)
+  const message = unwrapErrorMessage(error)
   const lower = message.toLowerCase()
   if (lower.includes("timeout") || lower.includes("aborted")) {
     return new RuntimeError("timeout", message, true)

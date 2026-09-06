@@ -41,10 +41,19 @@ export {
   type GatewayCatalogEntry
 } from "./gateway-catalog"
 export { createLanguageModel } from "./create-model"
+export { languageModelFactoryKind, type LanguageModelFactoryKind } from "./model-factory"
 export { usesOfficialGoogle } from "./google"
 export {
+  OPENAI_COMPAT_NAME,
   deepseekCallOptions,
+  glmThinkingOptions,
   isDeepSeekModelId,
+  isGlmModelId,
+  isKimiModelId,
+  isMiniMaxModelId,
+  isOfficialMiniMaxHost,
+  miniMaxThinkingOptions,
+  reasoningCallOptions,
   usesDeepSeekReasoningApi,
   type ReasoningEffort
 } from "./reasoning"

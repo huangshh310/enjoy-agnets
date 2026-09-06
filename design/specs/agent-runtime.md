@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-03
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -10,6 +10,7 @@
 2. **高阶专业工程工作流 (Specialized Engineering)**：`workflow` (WorkflowAgent 多阶段流水平水线)、`tdd` (测试驱动开发红-绿-重构循环)、`code_mode` (代码模式批量脚本执行)。
 系统提示由 `systemPromptFor(mode)` 针对各模式注入；`plan` / `ask` 强制只读，其余模式写盘与终端执行按审批策略放行。
 可选第二运行时：`codingRuntime: "harness"` 走 `packages/agent-harness`。已接线：Claude Code、Codex（要 Vercel 端口沙箱）、Pi（默认本机 just-bash）、OpenCode。DeepSeek 仍是占位。这是插件位，不是默认内核。
+思考档按模型族发：官方族与 Kimi K3 走顶层 `reasoning`；DeepSeek 用 `providerOptions.deepseek`；MiniMax-M3 用兼容层 `thinking`，`reasoning_split` 只给官方 MiniMax 域名；GLM 用 `thinking.enabled` + `reasoningEffort`。流里的 `error` 部件要抛出并解开 cause。
 
 ### 内置工具
 
@@ -82,4 +83,5 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - `agent.run` 以前在返回 `{ runId }` 之前 await `citeKnowledge` / 附件。Provider embed 一超时，renderer 一直 `running && !runId`：空 Thinking、Stop 点了没反应。现在 IPC 先 `run.start` + `{ runId }`，附件和检索放到 `prepareAndPump`；embed 查询 8s 封顶，失败回落词袋。
 - 助手回复关应用后消失：用户轮发送时已写 SQLite，助手旧逻辑只在 `completeAgentRun` 落库。`write_file` 审批后 `sawApproval` 会立刻再泵 2～3 圈，grok 429，`failPump` 不写库，UI 里已有的流式正文重启即丢。现：`ActiveRun` 累积 transcript，失败 / 中止 / 退出都 `persistActiveRun`；工具已 `output-available` 不再自动再泵。
 - 「全部」仍弹 write_file 审批：偏好已是 `requireWriteApproval: false`，SDK 对 `approved` 仍发 `tool-approval-request`（`isAutomatic: true`）再自己回 response。旧映射一律变成 `approval.required`，pending 卡住、点允许后再泵一轮，grok 报 `No output generated`。`isAutomatic` 必须丢掉，不要进 pending。
+- 自定义 `/v1` 选 `minimax-m3` 报 `No output generated`：模型带思考。错在用了 `createOpenAI`（丢掉 `reasoning_content`）还把 `reasoning: xhigh` 发给只要 `thinking.adaptive` 的 MiniMax。改走 `createOpenAICompatible` + MiniMax thinking 选项。`classifyError` 必须解开 cause / responseBody。
 - 思考链：glob / read / write 会进 Thinking 树；模型常把整份 HTML 塞进 `reasoning`。推理节点截断到约 1200 字，避免盖住工具步骤。

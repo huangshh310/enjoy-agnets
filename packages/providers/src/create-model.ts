@@ -1,18 +1,19 @@
 /**
  * 按协议与模型族创建 LanguageModel。
- * DeepSeek 思考必须走 @ai-sdk/deepseek，否则 reasoning_content 进不了 fullStream。
+ * 中转必须 createOpenAICompatible，官方 createOpenAI 会丢掉 reasoning_content。
  */
 import { createOpenAI } from "@ai-sdk/openai"
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createDeepSeek } from "@ai-sdk/deepseek"
 import { createGateway } from "@ai-sdk/gateway"
 import { createGoogle } from "@ai-sdk/google"
 import type { LanguageModel } from "ai"
 import { parseHeaders, resolvedBaseURL } from "./config"
-import { usesOfficialGoogle } from "./google"
+import { languageModelFactoryKind } from "./model-factory"
 import { wrapWithDefaults } from "./middleware"
 import { isMediaOnlyKind, presetFor } from "./presets"
-import { usesDeepSeekReasoningApi } from "./reasoning"
+import { OPENAI_COMPAT_NAME } from "./reasoning"
 import type { ProviderConfig } from "./types"
 
 export function createLanguageModel(config: ProviderConfig): LanguageModel {
@@ -29,25 +30,39 @@ function createRawLanguageModel(config: ProviderConfig): LanguageModel {
   const preset = presetFor(config.provider)
   const baseURL = resolvedBaseURL(config)
   const apiKey = config.apiKey || (preset.requiresKey ? "" : "ollama")
-  const apiStyle = config.apiStyle ?? preset.apiStyle
   const headers = parseHeaders(config.customHeaders)
   const connection = { apiKey, baseURL: baseURL || undefined, headers }
+  const kind = languageModelFactoryKind({
+    provider: config.provider,
+    modelId: config.modelId,
+    baseURL: config.baseURL,
+    apiStyle: config.apiStyle ?? preset.apiStyle
+  })
 
-  if (config.provider === "gateway") {
+  if (kind === "gateway") {
     return createGateway({ apiKey, baseURL: baseURL || undefined, headers }).languageModel(config.modelId) as LanguageModel
   }
-  if (usesOfficialGoogle({ provider: config.provider, baseURL })) {
+  if (kind === "google") {
     return createGoogle({ apiKey, baseURL: baseURL || undefined, headers })(config.modelId)
   }
-  if (apiStyle === "anthropic") {
+  if (kind === "anthropic") {
     return createAnthropic(connection)(config.modelId)
   }
-  if (usesDeepSeekReasoningApi({ ...config, apiStyle })) {
+  if (kind === "deepseek") {
     return createDeepSeek(connection)(config.modelId)
+  }
+  if (kind === "openai-compatible") {
+    return createOpenAICompatible({
+      name: OPENAI_COMPAT_NAME,
+      apiKey,
+      baseURL: baseURL || "https://api.openai.com/v1",
+      headers,
+      includeUsage: true
+    }).chatModel(config.modelId)
   }
 
   const openai = createOpenAI(connection)
-  if (apiStyle === "openai-responses") {
+  if (kind === "openai-responses") {
     return openai.responses(config.modelId)
   }
   return openai(config.modelId)
