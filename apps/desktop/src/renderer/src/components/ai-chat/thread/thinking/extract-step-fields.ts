@@ -5,6 +5,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord, readString } from "../../../../lib/record.ts"
 import type { SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
+import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
 
 const COMMAND_KEYS = ["command", "cmd", "script", "code"] as const
 
@@ -13,6 +14,45 @@ export function extractCommandString(tool: ThreadToolCall): string | undefined {
   const fromRecord = commandFromRecord(record)
   if (fromRecord) return fromRecord
   return commandFromJsonish(tool.args) ?? commandFromJsonish(tool.argsText)
+}
+
+const PATH_KEYS = [
+  "path",
+  "file",
+  "file_path",
+  "filePath",
+  "target_file",
+  "targetFile",
+  "filename",
+  "relative_workspace_path",
+  "uri",
+  "absolutePath"
+] as const
+
+export function extractToolPath(args: Record<string, unknown>, toolName?: string): string {
+  for (const key of PATH_KEYS) {
+    const taken = takePath(args[key])
+    if (taken) return taken
+  }
+  const nested = asRecord(args.args ?? args.arguments ?? args.params ?? args.input)
+  for (const key of PATH_KEYS) {
+    const taken = takePath(nested[key])
+    if (taken) return taken
+  }
+  return pathFromTitle(toolName)
+}
+
+function takePath(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return ""
+  const path = normalizeToolPath(value)
+  return looksLikeToolPath(path) ? path : ""
+}
+
+function pathFromTitle(toolName?: string): string {
+  const match = String(toolName ?? "")
+    .trim()
+    .match(/^(?:read|write|edit|create|update|delete)(?:\s+file)?\s+(\S+)/i)
+  return takePath(match?.[1] ?? "")
 }
 
 export function extractFilePaths(
@@ -47,7 +87,14 @@ function commandFromRecord(record: Record<string, unknown>): string | undefined 
     if (value) return value
   }
   if (Array.isArray(record.argv) && record.argv.length > 0) return record.argv.map(String).join(" ")
-  if (Array.isArray(record.args) && record.args.length > 0) return record.args.map(String).join(" ")
+  if (Array.isArray(record.args) && record.args.length > 0 && typeof record.args[0] === "string") {
+    return record.args.map(String).join(" ")
+  }
+  const nested = asRecord(record.args ?? record.arguments ?? record.params)
+  for (const key of COMMAND_KEYS) {
+    const value = readString(nested, key)
+    if (value) return value
+  }
   return undefined
 }
 
@@ -64,8 +111,8 @@ function commandFromJsonish(value: unknown): string | undefined {
 
 function collectPathCandidates(args: Record<string, unknown>, result: Record<string, unknown>): string[] {
   const candidates: string[] = []
-  if (typeof args.path === "string") candidates.push(args.path)
-  if (typeof args.file === "string") candidates.push(args.file)
+  const primary = extractToolPath(args)
+  if (primary) candidates.push(primary)
   if (typeof args.url === "string") candidates.push(args.url)
   pushStringArray(candidates, args.files)
   pushStringArray(candidates, result.files)

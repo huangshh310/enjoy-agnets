@@ -62,6 +62,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   changes: [],
   additions: 0,
   deletions: 0,
+  sessionReviewDismissedKey: null,
   pendingApproval: null,
   error: null,
   sidebarGrouping: "project",
@@ -128,6 +129,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       running,
       runId: runId ?? null,
       runStartedAt: running ? (get().runStartedAt ?? Date.now()) : null,
+      ...(running ? { sessionReviewDismissedKey: null } : {}),
       ...(!running ? { pendingStreamEvents: [] } : {})
     })
     if (!running || !runId) return
@@ -152,6 +154,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         changes: [],
         additions: 0,
         deletions: 0,
+        sessionReviewDismissedKey: null,
         selectedFilePath: null,
         selectedFileContent: ""
       })
@@ -170,6 +173,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const deletions = changes.reduce((sum, file) => sum + file.deletions, 0)
     set({ changes, additions, deletions })
   },
+  setSessionReviewDismissedKey: (sessionReviewDismissedKey) => set({ sessionReviewDismissedKey }),
   setPendingApproval: (pendingApproval) => set({ pendingApproval }),
   setModels: (models) => set({ models }),
   setProvider: (provider) => set({ provider }),

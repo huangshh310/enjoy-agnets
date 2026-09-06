@@ -1,7 +1,19 @@
 /**
- * 改动条出现条件：有写盘 path，或本轮正在跑。不要常驻空卡片。
+ * 改动条出现条件：有写盘 path 或正在跑；Keep/Undo 后按文件集合隐藏。
  */
 
-export function sessionReviewVisible(fileCount: number, running: boolean): boolean {
-  return running || fileCount > 0
+export function reviewFilesKey(paths: string[]): string {
+  return [...new Set(paths.filter(Boolean))].sort().join("\n")
+}
+
+export function sessionReviewVisible(
+  fileCount: number,
+  running: boolean,
+  dismissedKey?: string | null,
+  filesKey?: string
+): boolean {
+  if (running) return true
+  if (fileCount <= 0) return false
+  if (dismissedKey && filesKey && dismissedKey === filesKey) return false
+  return true
 }

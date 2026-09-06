@@ -144,3 +144,18 @@ export const GitPatchResult = z.object({
   patch: z.string().default("")
 })
 export type GitPatchResult = z.infer<typeof GitPatchResult>
+
+/** 改动条「全部撤销」：按路径 restore 已跟踪文件、删除未跟踪文件。 */
+export const GitRestoreInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    paths: z.array(z.string().trim().min(1).max(500)).min(1).max(200)
+  })
+  .strict()
+export type GitRestoreInput = z.infer<typeof GitRestoreInput>
+
+export const GitRestoreResult = z.object({
+  ok: z.boolean(),
+  restored: z.number().int().nonnegative()
+})
+export type GitRestoreResult = z.infer<typeof GitRestoreResult>

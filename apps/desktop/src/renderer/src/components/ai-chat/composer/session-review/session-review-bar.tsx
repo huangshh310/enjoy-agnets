@@ -15,7 +15,10 @@ export function SessionReviewBar({
   runStartedAt,
   modelLabel,
   onOpenReview,
-  onOpenFile
+  onOpenFile,
+  onUndo,
+  onKeep,
+  busy
 }: {
   files: SessionReviewFile[]
   running?: boolean
@@ -23,6 +26,9 @@ export function SessionReviewBar({
   modelLabel?: string
   onOpenReview: () => void
   onOpenFile: (path: string) => void
+  onUndo: () => void
+  onKeep: () => void
+  busy?: boolean
 }) {
   const t = useT()
   const many = files.length > 1
@@ -69,7 +75,12 @@ export function SessionReviewBar({
           ) : null}
         </div>
 
-        <SessionReviewActions onOpenReview={onOpenReview} />
+        <SessionReviewActions
+          busy={busy}
+          onUndo={onUndo}
+          onKeep={onKeep}
+          onOpenReview={onOpenReview}
+        />
       </div>
 
       {many ? (

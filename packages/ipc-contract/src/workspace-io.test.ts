@@ -1,6 +1,14 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { ChangedFile, GitCommitInput, GitPatchInput, GitPushInput, OpenWorkspaceInput, PickFolderResult } from "./workspace-io.ts"
+import {
+  ChangedFile,
+  GitCommitInput,
+  GitPatchInput,
+  GitPushInput,
+  GitRestoreInput,
+  OpenWorkspaceInput,
+  PickFolderResult
+} from "./workspace-io.ts"
 
 test("OpenWorkspaceInput 允许只带 path 或只带 name", () => {
   assert.equal(OpenWorkspaceInput.parse({}).path, undefined)
@@ -32,4 +40,11 @@ test("GitPushInput 拒绝未知字段", () => {
 test("GitPatchInput 允许可选 paths", () => {
   const parsed = GitPatchInput.parse({ workspaceId: "ws_1", paths: ["a.ts"] })
   assert.deepEqual(parsed.paths, ["a.ts"])
+})
+
+test("GitRestoreInput 拒绝空 paths 与逃逸字段", () => {
+  const parsed = GitRestoreInput.parse({ workspaceId: "ws_1", paths: ["a.ts"] })
+  assert.deepEqual(parsed.paths, ["a.ts"])
+  assert.throws(() => GitRestoreInput.parse({ workspaceId: "ws_1", paths: [] }))
+  assert.throws(() => GitRestoreInput.parse({ workspaceId: "ws_1", paths: ["a.ts"], extra: 1 }))
 })

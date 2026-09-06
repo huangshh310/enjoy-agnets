@@ -27,8 +27,11 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   if (kind === "tool_call_update") {
     const toolCallId = String(rec.toolCallId ?? rec.id ?? "tool")
     const name = inferToolName(rec)
+    const args = extractToolArgs(rec)
     const status = String(rec.status ?? "")
-    const events: StreamEvent[] = []
+    const events: StreamEvent[] = [
+      { type: "tool.start", runId, toolCallId, name, args }
+    ]
     events.push(...fileEvents(rec, runId))
     if (status === "completed" || status === "failed") {
       events.push({
@@ -36,6 +39,7 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
         runId,
         toolCallId,
         name,
+        args,
         result: rec.rawOutput ?? rec.content ?? rec.output,
         error: status === "failed" ? stringify(rec.rawOutput ?? rec.content) : undefined
       })
@@ -45,48 +49,122 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   return []
 }
 
+const WEAK_TOOL_NAME = /^(tool|function|call|command|cmd|execute|exec)$/i
+
 function inferToolName(rec: Record<string, unknown>): string {
-  const raw = String(rec.title ?? rec.name ?? rec.kind ?? "").trim()
-  if (raw && raw !== "tool" && raw !== "function" && raw !== "call") {
-    return raw
-  }
+  const kind = String(rec.kind ?? rec.toolKind ?? "").toLowerCase()
+  if (kind === "read") return "read_file"
+  if (kind === "edit" || kind === "write" || kind === "delete") return "edit_file"
+  if (kind === "execute" || kind === "shell" || kind === "terminal" || kind === "bash") return "bash"
+  if (kind === "search" || kind === "grep" || kind === "glob") return "grep"
+
+  const title = String(rec.title ?? rec.name ?? "").trim()
+  const fromTitle = classifyTitle(title)
+  if (fromTitle) return fromTitle
+
   const input = asRecord(rec.rawInput ?? rec.input)
   if (input.command || input.cmd) return "bash"
   if (input.content || input.diff || input.patch || input.replacement || input.edits) return "edit_file"
-  if (Array.isArray(rec.locations) && rec.locations.length > 0) return "edit_file"
   if (input.query || input.pattern || input.glob) return "grep"
-  if (input.path || input.file_path || input.file) return "read_file"
-  return raw || "command"
+  if (input.path || input.file_path || input.file || hasLocations(rec)) return "read_file"
+  if (title && !WEAK_TOOL_NAME.test(title)) return title
+  return "command"
+}
+
+function classifyTitle(title: string): string | null {
+  if (!title || WEAK_TOOL_NAME.test(title)) return null
+  if (/^read\b/i.test(title)) return "read_file"
+  if (/^(edit|write|create|delete|update|patch|strreplace)\b/i.test(title)) return "edit_file"
+  if (/^(run|bash|shell|exec)\b/i.test(title)) return "bash"
+  return null
+}
+
+function hasLocations(rec: Record<string, unknown>): boolean {
+  return Array.isArray(rec.locations) && rec.locations.length > 0
 }
 
 function extractToolArgs(rec: Record<string, unknown>): unknown {
   const input = rec.rawInput ?? rec.input
-  if (input && typeof input === "object" && !Array.isArray(input)) {
-    const recInput = { ...(input as Record<string, unknown>) }
-    if (!recInput.path && !recInput.file && Array.isArray(rec.locations) && rec.locations[0]) {
-      const locPath = asRecord(rec.locations[0]).path
-      if (typeof locPath === "string" && locPath) {
-        recInput.path = locPath
-      }
-    }
-    return recInput
+  const recInput =
+    input && typeof input === "object" && !Array.isArray(input)
+      ? { ...(input as Record<string, unknown>) }
+      : {}
+  const nested = asRecord(recInput.args ?? recInput.arguments ?? recInput.params)
+  const path =
+    pickPath(recInput) ??
+    pickPath(nested) ??
+    locationPath(rec.locations ?? rec.location) ??
+    pathFromTitle(String(rec.title ?? rec.name ?? ""))
+  if (path) recInput.path = path
+  if (!recInput.command && !recInput.cmd) {
+    const title = String(rec.title ?? "").trim()
+    if (title && !WEAK_TOOL_NAME.test(title) && looksLikeShell(title)) recInput.command = title
+    const nestedCmd = typeof nested.command === "string" ? nested.command : typeof nested.cmd === "string" ? nested.cmd : ""
+    if (nestedCmd) recInput.command = nestedCmd
   }
-  if (Array.isArray(rec.locations) && rec.locations[0]) {
-    const locPath = asRecord(rec.locations[0]).path
-    if (typeof locPath === "string" && locPath) {
-      return { path: locPath }
-    }
+  return Object.keys(recInput).length > 0 ? recInput : input
+}
+
+const PATH_KEYS = [
+  "path",
+  "file",
+  "file_path",
+  "filePath",
+  "target_file",
+  "targetFile",
+  "relative_workspace_path",
+  "uri",
+  "absolutePath"
+] as const
+
+function pickPath(rec: Record<string, unknown>): string | null {
+  for (const key of PATH_KEYS) {
+    const value = rec[key]
+    if (typeof value === "string" && looksLikeToolPath(value)) return normalizeAcpPath(value)
   }
-  return input
+  return null
+}
+
+function locationPath(locations: unknown): string | null {
+  const items = Array.isArray(locations) ? locations : locations ? [locations] : []
+  for (const item of items) {
+    if (typeof item === "string" && looksLikeToolPath(item)) return normalizeAcpPath(item)
+    const found = pickPath(asRecord(item))
+    if (found) return found
+  }
+  return null
+}
+
+function pathFromTitle(title: string): string | null {
+  const match = title.trim().match(/^(?:read|write|edit|create|update|delete)(?:\s+file)?\s+(\S+)/i)
+  const path = match?.[1]?.trim() ?? ""
+  return looksLikeToolPath(path) ? normalizeAcpPath(path) : null
+}
+
+function looksLikeToolPath(value: string): boolean {
+  const text = value.trim()
+  if (!text || text.length > 400 || /[\n\r]/.test(text)) return false
+  if (/^(file|folder|directory|dir|path|command|cmd|tool|read|edit|write|bash|shell)$/i.test(text)) {
+    return false
+  }
+  return text.includes("/") || text.includes("\\") || /\.[a-z0-9]{1,12}$/i.test(text)
+}
+
+function normalizeAcpPath(value: string): string {
+  return value.trim().replace(/^file:\/\//, "").replace(/\\/g, "/")
+}
+
+function looksLikeShell(title: string): boolean {
+  return /^(ls|cat|git|npm|pnpm|yarn|curl|cd|rm|cp|mv|python|node|cargo|make)\b/i.test(title)
 }
 
 function fileEvents(rec: Record<string, unknown>, runId: string): StreamEvent[] {
   const locations = Array.isArray(rec.locations) ? rec.locations : []
   const events: StreamEvent[] = []
   for (const item of locations) {
-    const path = String(asRecord(item).path ?? "")
-    if (!path) continue
-    events.push({ type: "file.changed", runId, path, kind: "modified" })
+    const path = locationPath(item) ?? (typeof item === "string" ? item : "")
+    if (!looksLikeToolPath(path)) continue
+    events.push({ type: "file.changed", runId, path: normalizeAcpPath(path), kind: "modified" })
   }
   return events
 }

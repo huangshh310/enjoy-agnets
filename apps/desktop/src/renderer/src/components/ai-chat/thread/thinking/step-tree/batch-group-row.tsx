@@ -11,7 +11,7 @@ import { DomainPills } from "./domain-pills"
 import { StepGlyph } from "./step-glyph"
 
 export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const items = node.batchItems ?? []
   const isCmd = node.kind === "command"
   return (

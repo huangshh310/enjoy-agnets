@@ -11,7 +11,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
     upsertTool(tools, {
       id: event.toolCallId,
       name: event.name,
-      ...(event.args !== undefined ? { args: event.args } : {}),
+      ...(event.args !== undefined ? { args: mergeToolArgs(current?.args, event.args) } : {}),
       state: hasArgs ? "input-available" : "input-streaming"
     })
     return
@@ -61,6 +61,23 @@ export function sealAbandonedTools(tools: ThreadToolCall[] | undefined): ThreadT
       ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
       : tool
   )
+}
+
+function mergeToolArgs(prev: unknown, next: unknown): unknown {
+  if (!isArgsRecord(prev) || !isArgsRecord(next)) return next
+  const merged = { ...prev, ...next }
+  const prevPath = typeof prev.path === "string" ? prev.path : ""
+  const nextPath = typeof next.path === "string" ? next.path : ""
+  if (isGenericPath(nextPath) && !isGenericPath(prevPath)) merged.path = prevPath
+  return merged
+}
+
+function isArgsRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+function isGenericPath(value: string): boolean {
+  return !value.trim() || /^(file|folder|directory|command|path)$/i.test(value.trim())
 }
 
 function upsertTool(tools: ThreadToolCall[], patch: Partial<ThreadToolCall> & { id: string }) {

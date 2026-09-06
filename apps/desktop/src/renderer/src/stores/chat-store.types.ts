@@ -142,6 +142,8 @@ export type ChatStore = {
   changes: ChangedFileRow[]
   additions: number
   deletions: number
+  /** 改动条 Keep/Undo 后隐藏；新 run 或文件集合变化再出现。 */
+  sessionReviewDismissedKey: string | null
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
   sidebarGrouping: "project" | "flat"
@@ -179,6 +181,7 @@ export type ChatStore = {
   setWorkspace: (workspace: { id: string; name: string; rootPath: string } | null) => void
   setSelectedFile: (path: string | null, content: string) => void
   setChanges: (changes: ChangedFileRow[]) => void
+  setSessionReviewDismissedKey: (key: string | null) => void
   setPendingApproval: (event: ChatStore["pendingApproval"]) => void
   setModels: (models: ModelOption[]) => void
   setProvider: (provider: string | null) => void

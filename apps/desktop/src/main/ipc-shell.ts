@@ -8,6 +8,7 @@ import {
   GitLogInput,
   GitPatchInput,
   GitPushInput,
+  GitRestoreInput,
   ListDirInput,
   OpenWorkspaceInput,
   ReadFileInput,
@@ -52,7 +53,8 @@ import {
   readWorkspaceDiff,
   readWorkspaceFile,
   readWorkspacePatch,
-  removeWorkspace
+  removeWorkspace,
+  restoreWorkspacePaths
 } from "./services/workspace"
 import {
   archiveSession,
@@ -80,6 +82,7 @@ export const SHELL_CHANNELS = [
   "workspace.gitCommit",
   "workspace.gitPush",
   "workspace.gitPatch",
+  "workspace.gitRestore",
   "workspace.changes",
   "session.list",
   "session.listArchived",
@@ -170,6 +173,11 @@ function registerWorkspaceIpc() {
     const input = GitPatchInput.parse(raw)
     const ws = await getWorkspace(input.workspaceId)
     return { patch: await readWorkspacePatch(ws.rootPath, input.paths) }
+  })
+  ipcMain.handle("workspace.gitRestore", async (_event, raw) => {
+    const input = GitRestoreInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return restoreWorkspacePaths(ws.rootPath, input.paths)
   })
 }
 

@@ -16,7 +16,8 @@ const ide = {
     gitLog: (input: unknown) => ipcRenderer.invoke("workspace.gitLog", input),
     gitCommit: (input: unknown) => ipcRenderer.invoke("workspace.gitCommit", input),
     gitPush: (input: unknown) => ipcRenderer.invoke("workspace.gitPush", input),
-    gitPatch: (input: unknown) => ipcRenderer.invoke("workspace.gitPatch", input)
+    gitPatch: (input: unknown) => ipcRenderer.invoke("workspace.gitPatch", input),
+    gitRestore: (input: unknown) => ipcRenderer.invoke("workspace.gitRestore", input)
   },
   session: {
     list: (input: unknown) => ipcRenderer.invoke("session.list", input),

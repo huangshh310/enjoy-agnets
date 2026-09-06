@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-04
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -12,7 +12,7 @@
 - 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
-- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch`）
+- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore`）
 - 工作区绑定的 pty 终端（`terminal.open` / `write` / `close`）
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。
@@ -41,7 +41,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 - 工作区档案：`apps/desktop/src/main/services/workspace.ts`
 - host（读写 / glob / grep / bash）：`workspace-host.ts`
-- Git 变更 / diff / 线性 log / 提交 / 上游 / patch：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`
+- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`

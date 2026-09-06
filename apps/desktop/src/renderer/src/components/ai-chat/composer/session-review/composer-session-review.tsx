@@ -1,27 +1,38 @@
 /**
  * Composer 上方本轮改动条：文件列表 + 顶边跳动宠物。
+ * Keep 收下改动并隐藏；Undo 确认后 git restore 再隐藏。
  */
-import { useMemo, useRef } from "react"
+import { useMemo, useRef, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
+import { useT } from "@renderer/i18n"
+import { getIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { collectSessionFiles } from "./collect-session-files"
 import { openSessionReview } from "./open-session-review"
 import { SessionMascotRunner } from "./session-mascot-runner"
 import { SessionReviewBar } from "./session-review-bar"
-import { sessionReviewVisible } from "./session-review-visible"
+import { reviewFilesKey, sessionReviewVisible } from "./session-review-visible"
 import type { SessionReviewFile } from "./session-review.types"
 
 export function ComposerSessionReview() {
+  const t = useT()
+  const queryClient = useQueryClient()
   const messages = useChatStore((state) => state.messages)
   const changes = useChatStore((state) => state.changes)
   const running = useChatStore((state) => state.running)
   const runStartedAt = useChatStore((state) => state.runStartedAt)
   const modelLabel = useChatStore((state) => state.modelLabel)
+  const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
   const boxRef = useRef<HTMLDivElement>(null)
+  const [undoOpen, setUndoOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   const files = useMemo(() => collectReviewFiles(messages, changes), [messages, changes])
+  const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])
 
-  if (!sessionReviewVisible(files.length, running)) return null
+  if (!sessionReviewVisible(files.length, running, dismissedKey, filesKey)) return null
 
   return (
     <div className="relative z-20 mb-1.5 w-full animate-in fade-in-50 duration-200">
@@ -40,12 +51,51 @@ export function ComposerSessionReview() {
           running={running}
           runStartedAt={runStartedAt ?? undefined}
           modelLabel={modelLabel}
+          busy={busy}
           onOpenReview={() => openSessionReview()}
           onOpenFile={(path) => openSessionReview(path)}
+          onKeep={() => keepSessionReview(filesKey)}
+          onUndo={() => setUndoOpen(true)}
         />
       </div>
+      <ConfirmDialog
+        open={undoOpen}
+        destructive
+        title={t("chat.sessionReviewUndoConfirmTitle")}
+        description={t("chat.sessionReviewUndoConfirmDesc", { n: files.length })}
+        confirmLabel={t("chat.sessionReviewUndoAll")}
+        onOpenChange={setUndoOpen}
+        onConfirm={() => void undoSessionReview(files, filesKey, queryClient, setBusy)}
+      />
     </div>
   )
+}
+
+function keepSessionReview(filesKey: string) {
+  useChatStore.getState().setSessionReviewDismissedKey(filesKey)
+}
+
+async function undoSessionReview(
+  files: SessionReviewFile[],
+  filesKey: string,
+  queryClient: ReturnType<typeof useQueryClient>,
+  setBusy: (busy: boolean) => void
+) {
+  const workspaceId = useChatStore.getState().workspaceId
+  if (!workspaceId || files.length === 0) return
+  setBusy(true)
+  try {
+    await getIde().workspace.gitRestore({
+      workspaceId,
+      paths: files.map((file) => file.path)
+    })
+    useChatStore.getState().setSessionReviewDismissedKey(filesKey)
+    await queryClient.invalidateQueries({ queryKey: ["changes", workspaceId] })
+  } catch (error) {
+    useChatStore.getState().setError(error instanceof Error ? error.message : String(error))
+  } finally {
+    setBusy(false)
+  }
 }
 
 function collectReviewFiles(

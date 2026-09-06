@@ -4,7 +4,7 @@
 import type { AgentStepNode, BatchFileItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 
-const BATCH_MIN = 3
+const BATCH_MIN = 2
 
 export function groupConsecutiveSteps(nodes: AgentStepNode[], t: TranslateFn): AgentStepNode[] {
   const result: AgentStepNode[] = []
@@ -100,10 +100,7 @@ function batchExplore(
       id: `batch_explore_${run[0]!.id}`,
       kind: "reading",
       isBatch: true,
-      title:
-        run.length > 3
-          ? t("chat.exploringProject")
-          : t("chat.batchFilesRead", { count: readCount || run.length }),
+      title: t("chat.batchFilesRead", { count: readCount || run.length }),
       status: batchStatus(run),
       exploredPages: pages.length > 1 ? pages : undefined,
       exploredTitle: pages.length > 1 ? t("chat.exploredPages", { count: pages.length }) : undefined,

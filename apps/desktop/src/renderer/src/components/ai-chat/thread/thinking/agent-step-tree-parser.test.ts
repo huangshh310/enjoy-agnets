@@ -9,9 +9,10 @@ import type { TranslateFn } from "@renderer/i18n"
 import { parseAgentStepNodes } from "./agent-step-tree-parser.ts"
 
 const mockT: TranslateFn = (key: string, params?: Record<string, string | number>) => {
-  if (key === "chat.batchFilesModified") return `已修改 ${String(params?.count ?? 0)} 个文件`
-  if (key === "chat.batchFilesRead") return `已读取 ${String(params?.count ?? 0)} 个文件`
-  if (key === "chat.batchCommandsRun") return `已执行 ${String(params?.count ?? 0)} 条命令`
+  if (key === "chat.batchFilesModified") return `编辑 ${String(params?.count ?? 0)} 个文件`
+  if (key === "chat.batchFilesRead") return `读取 ${String(params?.count ?? 0)} 个文件`
+  if (key === "chat.batchCommandsRun") return `运行 ${String(params?.count ?? 0)} 条命令`
+  if (key === "chat.ranACommand") return "运行命令"
   if (key === "chat.exploringProject") return "正在探索项目"
   if (key === "chat.exploredPages") return `已浏览 ${String(params?.count ?? 0)} 个页面`
   if (key === "chat.readName") return `已读取 ${String(params?.name ?? "")}`
@@ -62,23 +63,35 @@ test("连续 3 个及以上文件写入自动聚合成单一批量节点", () =>
   assert.equal(nodes.length, 1)
   const batchNode = nodes[0]
   assert.equal(batchNode.isBatch, true)
-  assert.equal(batchNode.title, "已修改 4 个文件")
+  assert.equal(batchNode.title, "编辑 4 个文件")
   assert.equal(batchNode.additions, 15 + 41 + 128 + 113)
   assert.equal(batchNode.batchItems?.length, 4)
   assert.equal(batchNode.batchItems?.[0]?.fileName, "Cargo.toml")
   assert.equal(batchNode.batchItems?.[1]?.fileName, "error.rs")
 })
 
-test("少于 3 个连续编辑保持独立节点不合并", () => {
+test("连续 2 个读取聚合成 Read N files", () => {
   const tools: ThreadToolCall[] = [
-    createTool("t1", "write_file", { path: "login-rs/Cargo.toml" }, { additions: 15 }),
-    createTool("t2", "write_file", { path: "login-rs/src/main.rs" }, { additions: 20 })
+    createTool("t1", "read_file", { path: "README.md" }),
+    createTool("t2", "command", { path: "src/app/page.tsx" })
   ]
-
   const nodes = parseAgentStepNodes("", tools, mockT)
-  assert.equal(nodes.length, 2)
-  assert.equal(nodes[0].isBatch, undefined)
-  assert.equal(nodes[1].isBatch, undefined)
+  assert.equal(nodes.length, 1)
+  assert.equal(nodes[0]?.isBatch, true)
+  assert.equal(nodes[0]?.kind, "reading")
+  assert.equal(nodes[0]?.title, "读取 2 个文件")
+  assert.equal(nodes[0]?.batchItems?.[0]?.fileName, "README.md")
+  assert.equal(nodes[0]?.batchItems?.[1]?.fileName, "page.tsx")
+})
+
+test("单个编辑保持独立节点", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [createTool("t1", "write_file", { path: "login-rs/Cargo.toml" }, { additions: 15 })],
+    mockT
+  )
+  assert.equal(nodes.length, 1)
+  assert.equal(nodes[0]?.isBatch, undefined)
 })
 
 test("bash 终端命令精准归位为 command 节点且不被批量编辑合并", () => {
@@ -128,6 +141,34 @@ test("一次读取多个文件写入 exploredPages", () => {
   assert.equal(nodes[0]?.kind, "reading")
   assert.equal(nodes[0]?.exploredPages?.length, 3)
   assert.equal(nodes[0]?.exploredTitle, "已浏览 3 个页面")
+})
+
+test("Edit File 标题残词不能当文件名", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [createTool("t1", "edit_file", { path: "File" })],
+    mockT
+  )
+  assert.equal(nodes[0]?.kind, "editing")
+  assert.notEqual(nodes[0]?.fileName, "File")
+  assert.equal(nodes[0]?.fileName, "")
+})
+
+test("嵌套 args 里的真实路径要显示文件名", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [createTool("t1", "edit_file", { args: { path: "src/app/layout.tsx" } })],
+    mockT
+  )
+  assert.equal(nodes[0]?.fileName, "layout.tsx")
+  assert.match(nodes[0]?.title ?? "", /layout\.tsx/)
+})
+
+test("ACP 弱名 command 带 path 当成读取，不要显示 $ command", () => {
+  const nodes = parseAgentStepNodes("", [createTool("t1", "command", { path: "README.md" })], mockT)
+  assert.equal(nodes[0]?.kind, "reading")
+  assert.equal(nodes[0]?.fileName, "README.md")
+  assert.notEqual(nodes[0]?.title, "$ command")
 })
 
 test("思考按工具切口拆开，当前段落在工具后面", () => {

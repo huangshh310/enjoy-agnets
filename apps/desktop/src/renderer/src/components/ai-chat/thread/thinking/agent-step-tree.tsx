@@ -4,14 +4,13 @@
 import { cx } from "@/utils/cx"
 import type { AgentStepNode } from "./agent-step-tree.types"
 import { BatchEditingGroupRow } from "./step-tree/batch-group-row"
-import { lastThinkingNodeId, ThinkingNodeBranch } from "./step-tree/thinking-branch"
+import { ThinkingNodeBranch } from "./step-tree/thinking-branch"
 import { StepGlyph } from "./step-tree/step-glyph"
 import { ToolStepNodeRow } from "./step-tree/tool-step-row"
 
 export function AgentStepTree({ nodes, className }: { nodes: AgentStepNode[]; className?: string }) {
   if (nodes.length === 0) return null
   const hasTools = nodes.some((n) => n.kind !== "thinking")
-  const liveThinkingId = lastThinkingNodeId(nodes)
 
   return (
     <div className={cx("relative flex flex-col gap-2.5 py-1 pl-1 select-none", className)}>
@@ -30,7 +29,7 @@ export function AgentStepTree({ nodes, className }: { nodes: AgentStepNode[]; cl
                 <ThinkingNodeBranch
                   title={node.title}
                   rawText={node.rawText}
-                  defaultOpen={!hasTools || node.id === liveThinkingId}
+                  defaultOpen={!hasTools}
                 />
               ) : node.isBatch && node.batchItems ? (
                 <BatchEditingGroupRow node={node} />

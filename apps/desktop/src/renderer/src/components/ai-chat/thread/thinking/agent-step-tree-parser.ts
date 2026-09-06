@@ -12,6 +12,7 @@ import { extractDomainPills } from "./extract-domain-pills.ts"
 import {
   extractCommandString,
   extractFilePaths,
+  extractToolPath,
   mapToolStatus
 } from "./extract-step-fields.ts"
 
@@ -30,7 +31,7 @@ export function parseAgentStepNodes(
       nodes.push({
         id: `step_reasoning_${thinkIndex}`,
         kind: "thinking",
-        title: t("chat.reasoningProcess"),
+        title: thinkingTitle(item.text, t),
         status: "completed",
         rawText: clampThinkingText(item.text)
       })
@@ -49,17 +50,16 @@ function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode 
   const result = asRecord(tool.result)
   const command = extractCommandString(tool)
   const name = tool.name.toLowerCase()
-  if (isBashTool(name, command)) return commandNode(tool, command, args, result)
   if (isSearchTool(tool, name)) return searchNode(tool, args, result, command, t)
   if (isEditTool(name, args, result)) return editNode(tool, args, result, command, t)
-  if (isReadTool(name, args)) return readNode(tool, args, result, command, t)
-  return fallbackNode(tool, command, args)
+  if (isReadTool(name, args, tool.name)) return readNode(tool, args, result, command, t)
+  if (isBashTool(name, command)) return commandNode(tool, command, args, result, t)
+  return fallbackNode(tool, command, args, t)
 }
 
 function isBashTool(name: string, command: string | undefined): boolean {
-  if (name === "bash" || name === "command" || name === "terminal" || name === "code_mode" || name === "sh") {
-    return true
-  }
+  if (name === "bash" || name === "sh" || name === "terminal" || name === "code_mode") return true
+  if (name === "command" || name === "cmd" || name === "execute") return Boolean(command)
   return Boolean(command) && (name.includes("bash") || name.includes("shell") || name.includes("terminal"))
 }
 
@@ -83,26 +83,33 @@ function isEditTool(name: string, args: Record<string, unknown>, result: Record<
   return Boolean(path) && hasEdit
 }
 
-function isReadTool(name: string, args: Record<string, unknown>): boolean {
-  if (name.includes("read") || name.includes("fetch") || name.includes("list")) return true
-  return Boolean(args.path || args.file || args.url || args.file_path)
+function isReadTool(name: string, args: Record<string, unknown>, toolName: string): boolean {
+  if (name.includes("read") || name.includes("fetch") || name.includes("list") || /^read\b/i.test(toolName)) {
+    return true
+  }
+  return Boolean(extractToolPath(args, toolName))
 }
 
 function commandNode(
   tool: ThreadToolCall,
   command: string | undefined,
   args: Record<string, unknown>,
-  result: Record<string, unknown>
+  result: Record<string, unknown>,
+  t: TranslateFn
 ): AgentStepNode {
-  const cmd = command || summarizeToolArgs(tool) || ""
-  const display = cmd ? (cmd.length > 70 ? `$ ${cmd.slice(0, 68)}...` : `$ ${cmd}`) : `$ ${tool.name}`
+  const cmd = command || (isWeakCommandName(tool.name) ? "" : tool.name)
+  const display = cmd
+    ? cmd.length > 70
+      ? `$ ${cmd.slice(0, 68)}...`
+      : `$ ${cmd}`
+    : t("chat.ranACommand")
   const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
   const pills = extractDomainPills(args, result, cmd)
   return {
     id: tool.id,
     kind: "command",
     title: display,
-    ...ioFields(tool, command, result),
+    ...ioFields(tool, cmd || command, result),
     domainPills: pills.length > 0 ? pills : undefined,
     status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state)
   }
@@ -130,6 +137,10 @@ function searchNode(
   }
 }
 
+function isWeakCommandName(name: string): boolean {
+  return /^(command|cmd|tool|function|call|execute|exec|bash|sh)$/i.test(name)
+}
+
 function editNode(
   tool: ThreadToolCall,
   args: Record<string, unknown>,
@@ -137,15 +148,16 @@ function editNode(
   command: string | undefined,
   t: TranslateFn
 ): AgentStepNode {
-  const path = String(args.path || args.file || "")
+  const path = extractToolPath(args, tool.name) || extractToolPath(asRecord(tool.result), tool.name)
   const parts = path.split(/[\\/]/)
   const fileName = parts.pop() || path
   const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
   const writing = tool.name.toLowerCase().includes("write")
+  const verb = writing ? t("chat.verbWrite") : t("chat.verbEdit")
   return {
     id: tool.id,
     kind: "editing",
-    title: `${writing ? t("chat.verbWrite") : t("chat.verbEdit")} ${fileName}`,
+    title: fileName ? `${verb} ${fileName}` : verb,
     filePath: path,
     fileName,
     fileDir,
@@ -165,7 +177,10 @@ function readNode(
   t: TranslateFn
 ): AgentStepNode {
   const exploredPages = extractFilePaths(args, result, t)
-  const path = String(args.path || args.file || args.file_path || args.url || "")
+  const path =
+    extractToolPath(args, tool.name) ||
+    extractToolPath(asRecord(tool.result), tool.name) ||
+    String(args.url || "")
   const parts = path.split(/[\\/]/)
   const leafName = parts.pop() || path
   const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
@@ -189,12 +204,13 @@ function readNode(
 function fallbackNode(
   tool: ThreadToolCall,
   command: string | undefined,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  t: TranslateFn
 ): AgentStepNode {
-  const rawPath = String(args.path || args.file || args.url || "")
+  const rawPath = extractToolPath(args, tool.name) || String(args.url || "")
   let title = formatToolName(tool.name)
-  if (!title || title.toLowerCase() === "tool" || title.toLowerCase() === "function") {
-    title = command ? `$ ${command.slice(0, 60)}` : rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : tool.name
+  if (isWeakCommandName(title) || !title) {
+    title = command ? `$ ${command.slice(0, 60)}` : rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : t("chat.ranACommand")
   }
   return {
     id: tool.id,
@@ -220,6 +236,12 @@ function ioFields(tool: ThreadToolCall, command: string | undefined, result: Rec
     exitCode: typeof result.exitCode === "number" ? result.exitCode : undefined,
     errorText: tool.errorText || (typeof result.error === "string" ? result.error : undefined)
   }
+}
+
+function thinkingTitle(text: string, t: TranslateFn): string {
+  const line = text.trim().split(/\n/)[0]?.replace(/\s+/g, " ").trim() ?? ""
+  if (!line) return t("chat.reasoningProcess")
+  return line.length > 72 ? `${line.slice(0, 70)}…` : line
 }
 
 function clampThinkingText(text: string): string {
