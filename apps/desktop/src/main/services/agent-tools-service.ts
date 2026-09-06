@@ -1,6 +1,6 @@
 /**
  * 合并目录、覆盖与探测，给设置 / Composer 用。
- * 列表只做 PATH 查找，不跑 --version；version 留给 doctor。
+ * 列表只做 PATH 查找，不跑 --version / auth status；账号留给 inspect。
  */
 import {
   AGENT_TOOL_PRESETS,
@@ -10,9 +10,11 @@ import {
   probeBinaries,
   type AgentToolPreset
 } from "@enjoy-agents/agent-harness"
-import type { AgentToolId, AgentToolDoctorResult, AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import type { AgentCliModel, AgentToolId, AgentToolDoctorResult, AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { safeCustomBinaryPath } from "./agent-tools-guard"
 import { readAgentToolOverrides, writeAgentToolOverride } from "./agent-tools-vault"
+import { readVault } from "./secrets-vault"
 
 export async function listAgentTools(): Promise<AgentToolPublic[]> {
   const overrides = readAgentToolOverrides()
@@ -20,6 +22,7 @@ export async function listAgentTools(): Promise<AgentToolPublic[]> {
 }
 
 export async function detectAgentTools(): Promise<AgentToolPublic[]> {
+  invalidateAccountCache()
   return listAgentTools()
 }
 
@@ -44,6 +47,7 @@ export async function upsertAgentTool(input: {
 }
 
 export async function doctorAgentTool(id: AgentToolId): Promise<AgentToolDoctorResult> {
+  invalidateAccountCache(id)
   const preset = AGENT_TOOL_PRESETS.find((item) => item.id === id)
   if (!preset) return { id, ok: false, message: "Unknown agent tool.", version: null, path: null }
   if (preset.skillOnly) {
@@ -100,11 +104,11 @@ async function toPublic(
       ? await probeBinaries(names, [])
       : { found: preset.id === "enjoy-local", path: null, version: null }
   const catalog = catalogFor(preset.id)
-  const models = catalog?.models ?? []
+  const models = await catalogModels(preset.id, override?.providerId)
   const selected =
     override?.modelId && models.some((item) => item.id === override.modelId)
       ? override.modelId
-      : catalog?.defaultModel
+      : (models[0]?.id ?? catalog?.defaultModel)
   return {
     id: preset.id,
     label: preset.label,
@@ -130,4 +134,22 @@ async function toPublic(
     useCustomProvider: override?.useCustomProvider ?? false,
     supportedApiStyles: supportedStylesForTool(preset.id)
   }
+}
+
+/** 列表只用静态目录 + 已绑定供应商模型；账号侧模型走 inspect。 */
+async function catalogModels(presetId: string, providerId?: string): Promise<AgentCliModel[]> {
+  const baseModels = catalogFor(presetId)?.models ? [...catalogFor(presetId)!.models] : []
+  if (!providerId) return baseModels
+  try {
+    const vault = await readVault()
+    const profile = vault.profiles.find((item) => item.id === providerId)
+    for (const model of profile?.models ?? []) {
+      if (!baseModels.some((item) => item.id === model.id)) {
+        baseModels.push({ id: model.id, label: model.label || model.id })
+      }
+    }
+  } catch {
+    // vault 读失败时仍返回目录表
+  }
+  return baseModels
 }

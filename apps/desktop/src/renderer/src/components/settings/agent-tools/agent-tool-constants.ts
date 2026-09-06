@@ -58,6 +58,19 @@ export const AGENT_BRAND_METAS: Record<string, AgentBrandMeta> = {
     tagline: "Cursor 官方终端 CLI，结合其强大的代码库索引与快速变更能力。",
     isTerminalCli: true
   },
+  grok: {
+    accentColor: "text-text-primary",
+    borderColor: "border-border-button-default hover:border-border-button-hover",
+    haloBg: "bg-background-secondary-default/40",
+    badgeText: "xAI",
+    capabilities: [
+      { label: "ACP 协议通道", code: "ACP Stdio" },
+      { label: "并行子智能体", code: "Subagents" },
+      { label: "本机 TUI / 无头", code: "Grok Build" }
+    ],
+    tagline: "xAI Grok Build 终端智能体，官方 ACP stdio，登录 SuperGrok / X Premium+。",
+    isTerminalCli: true
+  },
   codex: {
     accentColor: "text-emerald-500",
     borderColor: "border-emerald-500/30 hover:border-emerald-500/60",

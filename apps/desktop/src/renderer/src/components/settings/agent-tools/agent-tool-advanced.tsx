@@ -9,13 +9,15 @@ import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolAdvanced({
   tool,
-  actions
+  actions,
+  always = false
 }: {
   tool: AgentToolPublic
   actions: AgentToolActions
+  always?: boolean
 }) {
   const t = useT()
-  if (!actions.showAdvanced || !actions.configurable) return null
+  if ((!always && !actions.showAdvanced) || !actions.configurable) return null
   return (
     <div className="mt-2 grid gap-3 rounded-xl border border-border-button-default bg-background-secondary-default/40 p-3.5 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5 sm:col-span-2">

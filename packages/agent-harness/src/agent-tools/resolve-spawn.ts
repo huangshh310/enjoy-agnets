@@ -29,17 +29,26 @@ export function resolveSpawnCommand(id: string, override: SpawnOverride = {}): R
   if (custom) {
     if (!isAbsolute(custom)) throw new Error("Custom CLI path must be absolute.")
     assertAllowedCommand(preset, custom)
-    return {
-      command: custom,
-      args: [...acpArgsForCommand(preset, custom), ...modelArgsFor(id, override.modelId), ...extra]
-    }
+    return { command: custom, args: spawnArgsFor(preset, custom, override.modelId, extra) }
   }
   const command = preset.binaries[0]
   if (!command) throw new Error(`${preset.label} has no binary.`)
-  return {
-    command,
-    args: [...acpArgsForCommand(preset, command), ...modelArgsFor(id, override.modelId), ...extra]
+  return { command, args: spawnArgsFor(preset, command, override.modelId, extra) }
+}
+
+/** Grok 的 --model 必须在 stdio 之前：`grok agent --model X stdio`。 */
+function spawnArgsFor(
+  preset: AgentToolPreset,
+  command: string,
+  modelId: string | undefined,
+  extra: string[]
+): string[] {
+  if (preset.id === "grok") {
+    const model = modelId?.trim()
+    const mid = model ? ["--model", model] : []
+    return ["agent", ...mid, "stdio", ...extra]
   }
+  return [...acpArgsForCommand(preset, command), ...modelArgsFor(preset.id, modelId), ...extra]
 }
 
 /** Antigravity：agy-acp 自己就是 ACP 桥，agy 走 --acp。 */

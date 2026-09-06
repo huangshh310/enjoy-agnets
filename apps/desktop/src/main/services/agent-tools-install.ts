@@ -6,9 +6,12 @@ import { basename } from "node:path"
 import type {
   AgentToolId,
   InstallAgentToolResult,
-  LoginAgentToolResult
+  LoginAgentToolResult,
+  UninstallAgentToolResult
 } from "@enjoy-agents/ipc-contract"
 import { catalogFor, lookupOnPath } from "@enjoy-agents/agent-harness"
+import { agentToolsCwd } from "./agent-tools-account/cwd"
+import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { assertSafeAgentCommand, safeCustomBinaryPath } from "./agent-tools-guard"
 import { listAgentTools } from "./agent-tools-service"
 
@@ -61,6 +64,24 @@ export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToo
     path: null
   }
 }
+export async function uninstallAgentTool(id: AgentToolId): Promise<UninstallAgentToolResult> {
+  const catalog = catalogFor(id)
+  const step = catalog?.steps.find((item) => item.uninstallArgs?.length)
+  if (!step?.uninstallArgs?.length) {
+    return { id, ok: false, message: "This tool has no uninstall recipe. Remove the binary yourself." }
+  }
+  const manager = await lookupOnPath(step.manager)
+  if (!manager || !isInstallManager(manager)) {
+    return { id, ok: false, message: `Need ${step.manager} on PATH to uninstall.` }
+  }
+  const ran = await runCommand(manager, [...step.uninstallArgs], INSTALL_MS)
+  return {
+    id,
+    ok: ran.ok,
+    message: ran.ok ? `Uninstalled ${step.uninstallArgs.at(-1) ?? id}.` : ran.message
+  }
+}
+
 
 /** 后台拉起官方 login，立即返回；不假装打开了终端。 */
 export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolResult> {
@@ -81,6 +102,7 @@ export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolRes
   }
   try {
     const child = spawn(command, [...catalog.loginArgs], {
+      cwd: await agentToolsCwd(),
       detached: true,
       stdio: "ignore",
       shell: false,
@@ -90,6 +112,7 @@ export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolRes
   } catch (error) {
     return { id, ok: false, message: error instanceof Error ? error.message : String(error) }
   }
+  invalidateAccountCache(id)
   return {
     id,
     ok: true,

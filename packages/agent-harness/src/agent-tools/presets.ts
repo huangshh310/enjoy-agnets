@@ -1,5 +1,5 @@
 /**
- * 本机 Agent CLI 目录。P0 可 spawn：claude / cursor / codex / antigravity。
+ * 本机 Agent CLI 目录。P0 可 spawn：claude / cursor / grok / codex / antigravity。
  */
 import type { AgentToolId, AgentToolTransport } from "@enjoy-agents/ipc-contract"
 
@@ -49,6 +49,18 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     acpArgs: ["acp"],
     detectArgs: ["--version"],
     needsLoginHint: "agent login",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "grok",
+    label: "Grok Build",
+    transport: "acp-host",
+    binaries: ["grok"],
+    acpArgs: ["agent", "stdio"],
+    detectArgs: ["--version"],
+    needsLoginHint: "grok login",
     available: true,
     comingSoon: false,
     skillOnly: false

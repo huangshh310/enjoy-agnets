@@ -3,7 +3,7 @@
  * 未知 id 用首字母，不要回退成 Enjoy 标，免得目录里出现两个 e。
  */
 import { AgentToolId } from "@enjoy-agents/ipc-contract"
-import { Amp, Antigravity, Claude, Codex, Cursor, DeepSeek, Gemini, OpenCode, Pi } from "@lobehub/icons"
+import { Amp, Antigravity, Claude, Codex, Cursor, DeepSeek, Gemini, Grok, OpenCode, Pi } from "@lobehub/icons"
 import { AppMark } from "@renderer/components/brand/app-mark"
 
 export function AgentBrandIcon({
@@ -16,6 +16,7 @@ export function AgentBrandIcon({
   if (id === "enjoy-local") return <AppMark size={size} />
   if (id === "claude") return <Claude.Color size={size} />
   if (id === "cursor") return <Cursor size={size} />
+  if (id === "grok") return <Grok size={size} />
   if (id === "codex") return <Codex.Color size={size} />
   if (id === "antigravity") return <Antigravity.Color size={size} />
   if (id === "gemini") return <Gemini.Color size={size} />

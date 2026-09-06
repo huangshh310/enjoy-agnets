@@ -10,10 +10,15 @@ test("OMP 是技能位，不能 spawn", () => {
   assert.throws(() => resolveSpawnCommand("omp"), /skill target/)
 })
 
-test("P0 Cursor / Claude / Codex 走 ACP 白名单", () => {
+test("P0 Cursor / Claude / Codex / Grok 走 ACP 白名单", () => {
   assert.deepEqual(resolveSpawnCommand("cursor"), { command: "agent", args: ["acp"] })
   assert.deepEqual(resolveSpawnCommand("claude"), { command: "claude", args: ["acp"] })
   assert.deepEqual(resolveSpawnCommand("codex"), { command: "codex", args: ["acp"] })
+  assert.deepEqual(resolveSpawnCommand("grok"), { command: "grok", args: ["agent", "stdio"] })
+  assert.deepEqual(resolveSpawnCommand("grok", { modelId: "grok-4.6" }), {
+    command: "grok",
+    args: ["agent", "--model", "grok-4.6", "stdio"]
+  })
 })
 
 test("自定义路径必须是白名单文件名且为绝对路径", () => {

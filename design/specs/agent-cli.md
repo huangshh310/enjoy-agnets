@@ -4,12 +4,12 @@
 
 ## 当前真相
 
-P0 已接线。聊天默认 Enjoy Local（ToolLoop + Providers）。Composer 用单个 AgentPicker 切本机 Claude / Cursor / Codex / Antigravity，走 **ACP stdio**。旧 Vercel Harness 只在 Enjoy 本地时可用。renderer 不探测 PATH、不 spawn。
+P0 已接线。聊天默认 Enjoy Local（ToolLoop + Providers）。Composer 用单个 AgentPicker 切本机 Claude / Cursor / **Grok Build** / Codex / Antigravity，走 **ACP stdio**。旧 Vercel Harness 只在 Enjoy 本地时可用。renderer 不探测 PATH、不 spawn。
 
 | `runtimeId` / 传输 | 谁在跑 | 密钥 |
 |---|---|---|
 | `enjoy-local` / `local` | ToolLoop | Providers vault |
-| `claude` `cursor` `codex` `antigravity` / `acp-host` | 本机 CLI + ACP | 各家 `login`；可选进程 env 注入 |
+| `claude` `cursor` `grok` `codex` `antigravity` / `acp-host` | 本机 CLI + ACP | 各家 `login`；可选进程 env 注入 |
 | 旧 `codingRuntime=harness` / `sdk-sandbox` | `HarnessAgent` + 沙箱 | Providers + Vercel token |
 
 目录里还有 Gemini / OpenCode / Pi / Hermes / Amp / DeepSeek / OMP：能探测或投影技能，**不**在 P0 spawn。OMP 只是 Oh My Pi 技能根。
@@ -18,11 +18,14 @@ Antigravity 探测 `agy-acp` 再 `agy`。桥接 spawn `agy-acp`（无额外参�
 
 Composer：顶栏引擎导轨 + 下层面板。Enjoy 本地是供应商 + 模型；CLI 是该 CLI 模型表。未找到：白名单 `npm` / `brew` 安装，或复制官方命令；`curl \| bash` 只展示不执行。已安装可「打开登录」：`detached` spawn 官方 login argv，立即返回，不打开 pty。`agent.run` 带 `runtimeId`。触发器就绪灯按 `status === ready` 着色，不是永远绿灯。
 
-设置 → 智能体：探测 / 安装 / 登录 / 模型 / 路径 / doctor。Claude / Codex 可绑定供应商：开流时注入 `ANTHROPIC_*` / `OPENAI_*`。用户点击「同步到本机」才写 `~/.claude/settings.json` 或 `~/.codex/config.toml`（先备份 `*.enjoy.bak`，文件 `0o600`，Codex 按标记块 merge）。恢复只还原备份。Composer **没有** Resume 控件。
+设置 → 智能体：顶部分段（本机 CLI / 进阶沙箱 / 默认项）。CLI 是紧凑卡 + 配置弹窗：探测 / 安装 / 卸载 / 登录 / 模型 / 路径 / doctor / **账号详情**。卸载只跑配方里写死的 `uninstallArgs`，UI 先 `ConfirmDialog`。Claude / Codex 可绑定供应商：开流时注入 `ANTHROPIC_*` / `OPENAI_*`。用户点击「同步到本机」才写 `~/.claude/settings.json` 或 `~/.codex/config.toml`（先备份 `*.enjoy.bak`，文件 `0o600`，Codex 按标记块 merge）。恢复只还原备份。`list` / `settings.get` 只做 PATH 查找，**不**读各家 `auth.json`。账号 / 额度 / 账号侧模型表走独立 `agentTools.inspect`，**只覆盖已就绪的登录型 CLI**（Claude / Cursor / Grok / Codex / Antigravity），**不含** Enjoy Local。只 spawn 官方公开子命令（`agent status|about|models`、`claude auth status`、`codex login status` / `codex doctor --json`、`grok models|inspect`、`agy models`），`cwd` = 已登记工作区。Claude / Codex 账号来自这些命令 + Codex 配置里的 model/base_url（不读 api_key），官方不打印用量则空条 + `—`。已登录卡片始终保留进度条：有官方数字才填已用百分比，没有就空条 + `—`。Cursor 用量**只**走官方 Dashboard `GetCurrentPeriodUsage`（`includedSpend/limit`，与 Spending 文案一致，不用 `totalPercentUsed`，失败不回落 `about`/`status`）。Grok 用量**只**走官方 `cli-chat-proxy .../billing?format=credits`（`creditUsagePercent` = `/usage` 周额度），邮箱来自 `~/.grok/auth.json` 公开字段。会话 token 只在 main 用一次，不进 renderer、不写回文件。Antigravity 只用 `quota_groups.remaining_fraction` 换算已用；没有 groups 就空条，禁止对 `quota.models` 做 `100 - percentage`。卡片按当前模型族匹配额度组，未匹配不混族。禁止 90/95/100 套餐占位。Composer **没有** Resume 控件。
+
+Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `grok agent [--model] stdio`（`--model` 必须在 `stdio` 前），登录 `grok login`。安装是官方 `curl | bash`，只展示不执行。不要把 `~/.grok/bin/agent` 当成 Cursor。
 
 ## 不变量
 
-- 只 spawn 该 CLI 目录白名单 basename（含自定义绝对路径）；`login` / `doctor` / ACP 同一套 `assertAllowedCommand`；`shell: false`；`cwd` = 工作区。
+- 只 spawn 该 CLI 目录白名单 basename（含自定义绝对路径）；`login` / `doctor` / `inspect` / ACP 同一套 `assertAllowedCommand`；`shell: false`；`cwd` = 工作区。
+- `inspect` 只返回公开账号字段与官方打印的额度；禁止把 token / `hasAccessToken` 传给 renderer。
 - 安装只跑配方里的 `npm` / `brew` argv，禁止用户自定义安装命令，禁止 `curl | bash`。
 - 外部 CLI 不是默认内核。空配置 = Enjoy Local。
 - 不编辑 `~/.codex/auth.json` / Claude credentials / Antigravity OAuth。模型选择只存在 Enjoy vault，靠 CLI `--model`。
@@ -62,3 +65,11 @@ Composer：顶栏引擎导轨 + 下层面板。Enjoy 本地是供应商 + 模型
 - 登录是 detached 后台进程，文案不要写成「打开终端」。
 - Composer 没有 Resume。不要写进当前真相。
 - `openDocs` 只允许 catalog 里的 https + host 白名单，不要只检查 `https://` 前缀。
+- `list` / `settings.get` 若同步 spawn `auth status` / `agent models`，设置页会卡数秒。账号必须走 `agentTools.inspect`，UI 异步合并。`detect` / `doctor` / 登录会清空 main 缓存；设置页挂载与扫描会 `invalidate` inspect，且 refetch 带 `refresh: true`。
+- 已登录 CLI 卡片必须保留进度条，百分比钉在右侧且不截断。数字必须是官方已用进度。Cursor CLI / `about` 不打印用量，要读 IDE `state.vscdb` 会话后打 Dashboard；用 `includedSpend/limit` 或 `displayMessage`，不要 `totalPercentUsed`，Dashboard 失败不要回落 `about`/`status` 猜数。Grok CLI 没有 `usage` 子命令，`/usage` 对应 billing API；可读 `auth.json` 的 email，`key` 只在 main 调官方接口。Antigravity 的 `remaining_fraction` 是剩余；没有 `quota_groups` 就空条，不要把 `quota.models` 当剩余再 `100 - n`。禁止写死 90 / 95 / 100。Enjoy Local 不走 `inspect`，不要把 vault 名 / `baseURL` 当账号详情。模型族必须严格匹配（Claude 不吃 GPT-only 组），未匹配不回落全部组。
+- 禁止写死「Cursor Pro User / 月度 Fast 额度」。
+- 禁止把 token / `key` / `refresh_token` 传给 renderer，也不要写回 `auth.json` / `state.vscdb`。不读 `~/.codex/auth.json` / `~/.claude.json`。
+- Grok spawn 不能把 `--model` 接到 `stdio` 后面。
+- `~/.grok/bin` 必须补进探测 PATH，且排在系统 PATH 后面。不要探测名为 `agent` 的 Grok 别名，避免抢 Cursor。
+- 卸载 argv 必须写在 catalog `uninstallArgs`，不要从 install 的最后一个参数拼。Cursor 没有配方，只给复制官方命令。
+- OMP 是技能根，不是第三运行时。不要把它标成 `available` 再「设为主引擎」。

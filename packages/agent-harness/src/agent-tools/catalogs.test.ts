@@ -11,16 +11,32 @@ test("P0 CLI 有模型表和安装说明", () => {
   assert.ok((catalogFor("cursor")?.models.length ?? 0) >= 3)
 })
 
-test("模型参数只接受目录里的 id", () => {
+test("模型参数只要有 id 就传，Grok 留给 spawn 插到 stdio 前", () => {
   assert.deepEqual(modelArgsFor("claude", "claude-sonnet-4-6"), ["--model", "claude-sonnet-4-6"])
-  assert.deepEqual(modelArgsFor("claude", "not-a-model"), [])
+  assert.deepEqual(modelArgsFor("claude", "not-a-model"), ["--model", "not-a-model"])
   assert.deepEqual(modelArgsFor("claude", undefined), [])
+  assert.deepEqual(modelArgsFor("grok", "grok-4.6"), [])
+})
+
+test("卸载 argv 写死在配方里，不从 install 推断", () => {
+  const claude = catalogFor("claude")?.steps[0]
+  assert.deepEqual(claude?.uninstallArgs, ["uninstall", "-g", "@anthropic-ai/claude-code"])
+  const brew = catalogFor("antigravity")?.steps[0]
+  assert.deepEqual(brew?.uninstallArgs, ["uninstall", "antigravity-cli"])
+  assert.equal(catalogFor("cursor")?.steps.length, 0)
 })
 
 test("文档 URL 只允许 https 与目录 host", () => {
   assert.equal(isAllowedDocsUrl("https://docs.anthropic.com/en/docs/claude-code"), true)
   assert.equal(isAllowedDocsUrl("https://cursor.com/docs/cli/overview"), true)
+  assert.equal(isAllowedDocsUrl("https://docs.x.ai/build/overview"), true)
   assert.equal(isAllowedDocsUrl("https://evil.example/docs"), false)
   assert.equal(isAllowedDocsUrl("http://cursor.com/docs"), false)
   assert.equal(isAllowedDocsUrl("not-a-url"), false)
+})
+
+test("Grok Build 是 copy 安装，有模型表", () => {
+  assert.equal(installKindFor("grok"), "copy")
+  assert.equal(catalogFor("grok")?.defaultModel, "grok-4.6")
+  assert.equal(catalogFor("grok")?.loginArgs[0], "login")
 })

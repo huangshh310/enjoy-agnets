@@ -8,6 +8,7 @@ const TAB_ORDER = [
   "enjoy-local",
   "claude",
   "cursor",
+  "grok",
   "codex",
   "antigravity",
   "gemini",

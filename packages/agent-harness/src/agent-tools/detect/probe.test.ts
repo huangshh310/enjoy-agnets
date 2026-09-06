@@ -40,3 +40,12 @@ test("系统 PATH 排在用户可写目录前面", () => {
   assert.ok(pathIndex >= 0)
   if (userIndex >= 0) assert.ok(pathIndex < userIndex)
 })
+
+test("补上 Grok 官方安装目录，且排在系统 PATH 后面", () => {
+  const dirs = pathDirs()
+  const grokBin = join(homedir(), ".grok", "bin")
+  assert.ok(dirs.includes(grokBin))
+  const pathFirst = (process.env.PATH ?? "").split(delimiter).find(Boolean)
+  if (!pathFirst || process.platform === "win32") return
+  assert.ok(dirs.indexOf(pathFirst) < dirs.indexOf(grokBin))
+})

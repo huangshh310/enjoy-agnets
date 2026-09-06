@@ -2,21 +2,25 @@
  * 智能体卡片的安装 / 登录 / 同步 / 持久化动作。
  */
 import { useState } from "react"
-import type {
-  AgentToolDoctorResult,
-  AgentToolId,
-  AgentToolPublic,
-  InstallAgentToolResult,
-  SyncCliConfigResult
-} from "@enjoy-agents/ipc-contract"
+import type { AgentToolId, AgentToolDoctorResult, AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
-import { persistRuntimeId } from "@renderer/hooks/persist-runtime"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import {
+  copyOnce,
+  handleInstall,
+  handleLogin,
+  handleMakeActive,
+  handleRestoreCli,
+  handleRunDoctor,
+  handleSyncToCli,
+  handleUninstall,
+  type AgentToolBusy
+} from "./agent-tool-actions-run"
 import { getAgentBrandMeta } from "./agent-tool-constants"
 
-export type AgentToolBusy = "install" | "login" | "doctor" | "activate" | null
+export type { AgentToolBusy }
 
 export function useAgentToolActions(tool: AgentToolPublic) {
   const queryClient = useQueryClient()
@@ -74,9 +78,10 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     feedbackMessage,
     persist,
     persistRuntime: () => handleMakeActive(tool, setBusyAction, queryClient),
-    runDoctor: () => handleRunDoctor(tool, setBusyAction, setDoctorResult),
-    runLogin: () => handleLogin(tool, setBusyAction, setFeedbackMessage),
+    runDoctor: () => handleRunDoctor(tool, setBusyAction, setDoctorResult, queryClient),
+    runLogin: () => handleLogin(tool, setBusyAction, setFeedbackMessage, queryClient),
     runInstall: () => handleInstall(tool, setBusyAction, setFeedbackMessage, queryClient),
+    runUninstall: () => handleUninstall(tool, setBusyAction, setFeedbackMessage, queryClient),
     syncToCli: () => handleSyncToCli(tool, setSyncingConfig, setFeedbackMessage),
     restoreCli: () => handleRestoreCli(tool, setRestoringConfig, setFeedbackMessage),
     copyPath: (text: string) => copyOnce(text, setCopiedPath),
@@ -103,126 +108,5 @@ function filterCompatibleProviders(
       )
     }
     return true
-  })
-}
-
-async function handleMakeActive(
-  tool: AgentToolPublic,
-  setBusy: (value: AgentToolBusy) => void,
-  queryClient: ReturnType<typeof useQueryClient>
-) {
-  setBusy("activate")
-  try {
-    await persistRuntimeId(tool.id, tool.selectedModel)
-    await queryClient.invalidateQueries({ queryKey: ["settings"] })
-  } finally {
-    setBusy(null)
-  }
-}
-
-async function handleRunDoctor(
-  tool: AgentToolPublic,
-  setBusy: (value: AgentToolBusy) => void,
-  setDoctor: (value: AgentToolDoctorResult | null) => void
-) {
-  if (!hasIde()) return
-  setBusy("doctor")
-  setDoctor(null)
-  try {
-    const res = (await getIde().agentTools.doctor({ id: tool.id as AgentToolId })) as AgentToolDoctorResult
-    setDoctor(res)
-  } catch (err) {
-    setDoctor({
-      id: tool.id as AgentToolId,
-      ok: false,
-      message: err instanceof Error ? err.message : "Doctor failed",
-      version: null,
-      path: null
-    })
-  } finally {
-    setBusy(null)
-  }
-}
-
-async function handleLogin(
-  tool: AgentToolPublic,
-  setBusy: (value: AgentToolBusy) => void,
-  setFeedback: (value: string | null) => void
-) {
-  if (!hasIde()) return
-  setBusy("login")
-  try {
-    const res = (await getIde().agentTools.login({ id: tool.id as AgentToolId })) as {
-      ok: boolean
-      message: string
-    }
-    setFeedback(res.message)
-  } finally {
-    setBusy(null)
-  }
-}
-
-async function handleInstall(
-  tool: AgentToolPublic,
-  setBusy: (value: AgentToolBusy) => void,
-  setFeedback: (value: string | null) => void,
-  queryClient: ReturnType<typeof useQueryClient>
-) {
-  if (!hasIde() || tool.installKind === "copy") return
-  setBusy("install")
-  setFeedback(null)
-  try {
-    const res = (await getIde().agentTools.install({
-      id: tool.id as AgentToolId
-    })) as InstallAgentToolResult
-    setFeedback(res.message)
-    if (res.ok) await queryClient.invalidateQueries({ queryKey: ["settings"] })
-  } finally {
-    setBusy(null)
-  }
-}
-
-async function handleSyncToCli(
-  tool: AgentToolPublic,
-  setSyncing: (value: boolean) => void,
-  setFeedback: (value: string | null) => void
-) {
-  if (!hasIde()) return
-  setSyncing(true)
-  try {
-    const res = (await getIde().agentTools.syncConfig({
-      id: tool.id as AgentToolId
-    })) as SyncCliConfigResult
-    setFeedback(res.message)
-  } catch (err) {
-    setFeedback(err instanceof Error ? err.message : String(err))
-  } finally {
-    setSyncing(false)
-  }
-}
-
-async function handleRestoreCli(
-  tool: AgentToolPublic,
-  setRestoring: (value: boolean) => void,
-  setFeedback: (value: string | null) => void
-) {
-  if (!hasIde()) return
-  setRestoring(true)
-  try {
-    const res = (await getIde().agentTools.restoreConfig({
-      id: tool.id as AgentToolId
-    })) as SyncCliConfigResult
-    setFeedback(res.message)
-  } catch (err) {
-    setFeedback(err instanceof Error ? err.message : String(err))
-  } finally {
-    setRestoring(false)
-  }
-}
-
-function copyOnce(text: string, setCopied: (value: boolean) => void) {
-  void navigator.clipboard.writeText(text).then(() => {
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1500)
   })
 }

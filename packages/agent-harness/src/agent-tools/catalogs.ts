@@ -12,6 +12,8 @@ export type AgentCliModelDef = {
 export type InstallStep = {
   manager: "npm" | "brew"
   args: readonly string[]
+  /** 写死的卸载 argv，禁止从 install 参数推断。 */
+  uninstallArgs?: readonly string[]
 }
 
 export type AgentToolCatalog = {
@@ -32,10 +34,17 @@ const CLAUDE_MODELS: AgentCliModelDef[] = [
 ]
 
 const CURSOR_MODELS: AgentCliModelDef[] = [
+  { id: "auto", label: "Auto" },
   { id: "composer-2.5", label: "Composer 2.5" },
-  { id: "gpt-5.4", label: "GPT-5.4" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
-  { id: "grok-4.6", label: "Grok 4.6" }
+  { id: "composer-2.5-fast", label: "Composer 2.5 Fast" },
+  { id: "cursor-grok-4.6-xhigh-fast", label: "Cursor Grok 4.6 Extra High Fast" },
+  { id: "gpt-5.6-sol-medium", label: "GPT-5.6 Sol" },
+  { id: "claude-sonnet-5-thinking-high", label: "Claude Sonnet 5 Thinking" }
+]
+
+const GROK_MODELS: AgentCliModelDef[] = [
+  { id: "grok-4.6", label: "Grok 4.6" },
+  { id: "grok-4.5", label: "Grok 4.5" }
 ]
 
 const CODEX_MODELS: AgentCliModelDef[] = [
@@ -46,9 +55,13 @@ const CODEX_MODELS: AgentCliModelDef[] = [
 ]
 
 const ANTIGRAVITY_MODELS: AgentCliModelDef[] = [
-  { id: "gemini-3-flash", label: "Gemini 3 Flash" },
-  { id: "gemini-3-pro", label: "Gemini 3 Pro" },
-  { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" }
+  { id: "gemini-3.8-flash-high", label: "Gemini 3.8 Flash (High)" },
+  { id: "gemini-3.7-flash-high", label: "Gemini 3.7 Flash (High)" },
+  { id: "gemini-3.6-flash-high", label: "Gemini 3.6 Flash (High)" },
+  { id: "gemini-3.1-pro-high", label: "Gemini 3.1 Pro (High)" },
+  { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6 (Thinking)" },
+  { id: "claude-opus-4-6-thinking", label: "Claude Opus 4.6 (Thinking)" },
+  { id: "gpt-oss-120b-medium", label: "GPT-OSS 120B (Medium)" }
 ]
 
 const GEMINI_MODELS: AgentCliModelDef[] = [
@@ -60,7 +73,13 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
   claude: {
     models: CLAUDE_MODELS,
     defaultModel: "claude-sonnet-4-6",
-    steps: [{ manager: "npm", args: ["install", "-g", "@anthropic-ai/claude-code"] }],
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "@anthropic-ai/claude-code"],
+        uninstallArgs: ["uninstall", "-g", "@anthropic-ai/claude-code"]
+      }
+    ],
     installCommand: "npm i -g @anthropic-ai/claude-code",
     docsUrl: "https://docs.anthropic.com/en/docs/claude-code",
     loginArgs: ["auth", "login"]
@@ -73,18 +92,38 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     docsUrl: "https://cursor.com/docs/cli/overview",
     loginArgs: ["login"]
   },
+  grok: {
+    models: GROK_MODELS,
+    defaultModel: "grok-4.6",
+    steps: [],
+    installCommand: "curl -fsSL https://x.ai/cli/install.sh | bash",
+    docsUrl: "https://docs.x.ai/build/overview",
+    loginArgs: ["login"]
+  },
   codex: {
     models: CODEX_MODELS,
     defaultModel: "gpt-5.4",
-    steps: [{ manager: "npm", args: ["install", "-g", "@openai/codex"] }],
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "@openai/codex"],
+        uninstallArgs: ["uninstall", "-g", "@openai/codex"]
+      }
+    ],
     installCommand: "npm i -g @openai/codex",
     docsUrl: "https://github.com/openai/codex",
     loginArgs: ["login"]
   },
   antigravity: {
     models: ANTIGRAVITY_MODELS,
-    defaultModel: "gemini-3-flash",
-    steps: [{ manager: "brew", args: ["install", "antigravity-cli"] }],
+    defaultModel: "gemini-3.8-flash-high",
+    steps: [
+      {
+        manager: "brew",
+        args: ["install", "antigravity-cli"],
+        uninstallArgs: ["uninstall", "antigravity-cli"]
+      }
+    ],
     installCommand: "brew install antigravity-cli",
     docsUrl: "https://antigravity.google/product/antigravity-cli",
     loginArgs: ["login"]
@@ -123,7 +162,6 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     loginArgs: []
   }
 }
-
 /** 文档链接只允许这些 host，避免 openExternal 被 vault 劫持。 */
 const ALLOWED_DOCS_HOSTS = new Set([
   "docs.anthropic.com",
@@ -131,6 +169,8 @@ const ALLOWED_DOCS_HOSTS = new Set([
   "developers.openai.com",
   "github.com",
   "antigravity.google",
+  "docs.x.ai",
+  "x.ai",
   "opencode.ai",
   "pi.dev",
   "nousresearch.com",
@@ -157,8 +197,9 @@ export function installKindFor(id: string | undefined): "npm" | "brew" | "copy" 
   return first?.manager ?? "copy"
 }
 
+/** 动态模型不在静态目录里，只要有 id 就传 --model。Grok 的位置由 resolve-spawn 处理。 */
 export function modelArgsFor(id: string | undefined, modelId: string | undefined): string[] {
   const model = modelId?.trim()
-  if (!model || !catalogFor(id)?.models.some((item) => item.id === model)) return []
+  if (!model || id === "grok") return []
   return ["--model", model]
 }

@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react"
 import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiCheckLine, RiSearchLine, RiSparkling2Line } from "@remixicon/react"
-
+import { AgentBrandIcon } from "./agent-brand-icon"
 export function AgentCliModels({
   agent,
   onPick
@@ -62,6 +62,9 @@ export function AgentCliModels({
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-2">
+                  <span className="flex size-4 shrink-0 items-center justify-center">
+                    <AgentBrandIcon id={agent.id} size={15} />
+                  </span>
                   <span className="truncate text-[12px]">{model.label}</span>
                   {isThinking ? (
                     <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/15 px-1.5 py-0.2 text-[10px] font-medium text-amber-700 dark:text-amber-300">

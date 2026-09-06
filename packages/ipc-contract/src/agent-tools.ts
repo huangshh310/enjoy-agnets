@@ -8,6 +8,7 @@ export const AgentToolId = z.enum([
   "enjoy-local",
   "claude",
   "cursor",
+  "grok",
   "codex",
   "antigravity",
   "gemini",
@@ -31,11 +32,40 @@ export const AgentCliModel = z.object({
   label: z.string().min(1).max(80)
 })
 export type AgentCliModel = z.infer<typeof AgentCliModel>
+export const AgentToolAuthAccount = z.object({
+  loggedIn: z.boolean(),
+  email: z.string().optional(),
+  tier: z.string().optional(),
+  authMethod: z.string().optional(),
+  accountName: z.string().optional(),
+  organization: z.string().optional(),
+  cliVersion: z.string().max(80).optional(),
+  currentModel: z.string().max(160).optional(),
+  rawStatus: z.string().max(400).optional()
+})
+export type AgentToolAuthAccount = z.infer<typeof AgentToolAuthAccount>
+export const ModelQuotaItem = z.object({
+  name: z.string(),
+  displayName: z.string(),
+  percentage: z.number(),
+  resetsIn: z.string().nullable(),
+  resetTime: z.string().nullable()
+})
+export type ModelQuotaItem = z.infer<typeof ModelQuotaItem>
+
+export const AgentToolQuotaInfo = z.object({
+  hasQuota: z.boolean(),
+  usedPercent: z.number().optional(),
+  resetsIn: z.string().optional(),
+  windowType: z.string().optional(),
+  details: z.string().optional(),
+  modelQuotas: z.array(ModelQuotaItem).optional()
+})
+export type AgentToolQuotaInfo = z.infer<typeof AgentToolQuotaInfo>
 
 /** npm/brew 可静默执行；copy 只给用户复制，不跑 curl|bash。 */
 export const AgentToolInstallKind = z.enum(["npm", "brew", "copy"])
 export type AgentToolInstallKind = z.infer<typeof AgentToolInstallKind>
-
 export const AgentToolPublic = z.object({
   id: AgentToolId,
   label: z.string(),
@@ -59,7 +89,9 @@ export const AgentToolPublic = z.object({
   docsUrl: z.string().default(""),
   providerId: z.string().optional(),
   useCustomProvider: z.boolean().default(false),
-  supportedApiStyles: z.array(z.string()).default([])
+  supportedApiStyles: z.array(z.string()).default([]),
+  authAccount: AgentToolAuthAccount.optional(),
+  quotaInfo: AgentToolQuotaInfo.optional()
 })
 export type AgentToolPublic = z.infer<typeof AgentToolPublic>
 
@@ -91,6 +123,30 @@ export const InstallAgentToolResult = z.object({
   path: z.string().nullable()
 })
 export type InstallAgentToolResult = z.infer<typeof InstallAgentToolResult>
+export const UninstallAgentToolResult = z.object({
+  id: AgentToolId,
+  ok: z.boolean(),
+  message: z.string()
+})
+export type UninstallAgentToolResult = z.infer<typeof UninstallAgentToolResult>
+
+export const InspectAgentToolInput = z
+  .object({
+    id: AgentToolId,
+    refresh: z.boolean().optional()
+  })
+  .strict()
+export type InspectAgentToolInput = z.infer<typeof InspectAgentToolInput>
+
+/** 官方 CLI 公开状态，不含 token。 */
+export const InspectAgentToolResult = z.object({
+  id: AgentToolId,
+  authAccount: AgentToolAuthAccount.optional(),
+  quotaInfo: AgentToolQuotaInfo.optional(),
+  models: z.array(AgentCliModel).default([])
+})
+export type InspectAgentToolResult = z.infer<typeof InspectAgentToolResult>
+
 
 export const LoginAgentToolResult = z.object({
   id: AgentToolId,
@@ -132,7 +188,7 @@ export const SetSessionRuntimeInput = z
 export type SetSessionRuntimeInput = z.infer<typeof SetSessionRuntimeInput>
 
 /** P0 可 spawn 的本机 CLI。渲染进程用这个判断，不要 import agent-harness。 */
-export const ACP_HOST_P0_IDS = ["claude", "cursor", "codex", "antigravity"] as const
+export const ACP_HOST_P0_IDS = ["claude", "cursor", "grok", "codex", "antigravity"] as const
 
 export function isAcpHostRuntimeId(id: string | undefined): boolean {
   return (ACP_HOST_P0_IDS as readonly string[]).includes(id ?? "")

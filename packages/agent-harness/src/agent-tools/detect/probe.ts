@@ -63,8 +63,8 @@ export function pathDirs(): string[] {
     process.platform === "win32" ? [] : ["/opt/homebrew/bin", "/usr/local/bin"]
   const user =
     process.platform === "win32"
-      ? [join(home, "AppData", "Roaming", "npm")]
-      : [join(home, ".local", "bin"), join(home, ".npm-global", "bin")]
+      ? [join(home, "AppData", "Roaming", "npm"), join(home, ".grok", "bin")]
+      : [join(home, ".local", "bin"), join(home, ".npm-global", "bin"), join(home, ".grok", "bin")]
   return uniqueDirs([...system, ...brew, ...user])
 }
 

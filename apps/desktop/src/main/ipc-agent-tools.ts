@@ -5,11 +5,13 @@ import { catalogFor, isAllowedDocsUrl } from "@enjoy-agents/agent-harness"
 import {
   AgentToolIdInput,
   DoctorAgentToolInput,
+  InspectAgentToolInput,
   SetSessionRuntimeInput,
   UpsertAgentToolInput
 } from "@enjoy-agents/ipc-contract"
 import { ipcMain, shell } from "electron"
-import { installAgentTool, loginAgentTool } from "./services/agent-tools-install"
+import { inspectAgentTool } from "./services/agent-tools-account/inspect"
+import { installAgentTool, loginAgentTool, uninstallAgentTool } from "./services/agent-tools-install"
 import {
   detectAgentTools,
   doctorAgentTool,
@@ -28,7 +30,9 @@ export const AGENT_TOOLS_CHANNELS = [
   "agentTools.openDocs",
   "agentTools.setSessionRuntime",
   "agentTools.syncConfig",
-  "agentTools.restoreConfig"
+  "agentTools.restoreConfig",
+  "agentTools.uninstall",
+  "agentTools.inspect"
 ] as const
 
 export function registerAgentToolsIpc() {
@@ -45,6 +49,10 @@ export function registerAgentToolsIpc() {
   ipcMain.handle("agentTools.install", async (_event, raw: unknown) => {
     const input = AgentToolIdInput.parse(raw)
     return installAgentTool(input.id)
+  })
+  ipcMain.handle("agentTools.uninstall", async (_event, raw: unknown) => {
+    const input = AgentToolIdInput.parse(raw)
+    return uninstallAgentTool(input.id)
   })
   ipcMain.handle("agentTools.login", async (_event, raw: unknown) => {
     const input = AgentToolIdInput.parse(raw)
@@ -69,5 +77,9 @@ export function registerAgentToolsIpc() {
   ipcMain.handle("agentTools.restoreConfig", async (_event, raw: unknown) => {
     const input = AgentToolIdInput.parse(raw)
     return restoreCliConfig(input.id)
+  })
+  ipcMain.handle("agentTools.inspect", async (_event, raw: unknown) => {
+    const input = InspectAgentToolInput.parse(raw)
+    return inspectAgentTool(input.id, input.refresh)
   })
 }
