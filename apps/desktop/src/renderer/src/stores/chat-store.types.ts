@@ -122,7 +122,12 @@ export type ChatStore = {
   modelLabel: string
   models: ModelOption[]
   provider: string | null
+  /** Composer 当前运行时：enjoy-local 或本机 CLI id。 */
+  runtimeId: string
+  preferredRuntimeId: string
+  sessionRuntimes: Record<string, string>
   reasoningEffort: ReasoningEffort | undefined
+  isFastMode: boolean
   mode: AgentMode
   running: boolean
   runId: string | null
@@ -148,6 +153,9 @@ export type ChatStore = {
     activeWorkspaceId?: string | null
   ) => void
   setComposer: (value: string) => void
+  setRuntimeId: (runtimeId: string) => void
+  setPreferredRuntimeId: (runtimeId: string) => void
+  setSessionRuntimes: (sessionRuntimes: Record<string, string>) => void
   setModel: (
     id: string,
     label: string,
@@ -155,6 +163,8 @@ export type ChatStore = {
     reasoningEffort?: ReasoningEffort
   ) => void
   setReasoningEffort: (effort: ReasoningEffort | undefined) => void
+  setFastMode: (isFast: boolean) => void
+  toggleFastMode: () => void
   setMode: (mode: ChatStore["mode"]) => void
   setSidebarCollapsed: (collapsed: boolean) => void
   setRightPanelCollapsed: (collapsed: boolean) => void

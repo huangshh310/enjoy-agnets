@@ -7,15 +7,19 @@ import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore, type ThreadMessage } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
+import { codingAgentRunInput } from "./agent-run-payload"
+import { isAcpComposerRuntime } from "../lib/agent-runtime"
 
 export async function continueTodoTurn(): Promise<void> {
   const store = useChatStore.getState()
   if (store.running || !hasIde()) return
   if (!store.workspaceId || !store.sessionId) return
-  const runKind = composerRunKind(
-    store.modelId,
-    store.models.find((model) => model.id === store.modelId)?.capabilities
-  )
+  const runKind = isAcpComposerRuntime(store.runtimeId)
+    ? "agent"
+    : composerRunKind(
+        store.modelId,
+        store.models.find((model) => model.id === store.modelId)?.capabilities
+      )
   if (runKind === "image" || runKind === "video") {
     store.setError("Switch to a coding model before continuing the Todo List.")
     return
@@ -42,11 +46,7 @@ async function startContinueRun(
   ]
   try {
     const result = (await getIde().agent.run({
-      sessionId: store.sessionId,
-      workspaceId: store.workspaceId,
-      modelId: store.modelId,
-      mode: store.mode,
-      reasoningEffort: store.reasoningEffort,
+      ...codingAgentRunInput(store),
       messages: history,
       attachments: [],
       persistUser: false

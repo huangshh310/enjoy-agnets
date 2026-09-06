@@ -43,6 +43,18 @@ const ide = {
       return () => ipcRenderer.off("agent.event", listener);
     }
   },
+  agentTools: {
+    list: () => ipcRenderer.invoke("agentTools.list"),
+    detect: () => ipcRenderer.invoke("agentTools.detect"),
+    upsert: (input: unknown) => ipcRenderer.invoke("agentTools.upsert", input),
+    doctor: (input: unknown) => ipcRenderer.invoke("agentTools.doctor", input),
+    install: (input: unknown) => ipcRenderer.invoke("agentTools.install", input),
+    login: (input: unknown) => ipcRenderer.invoke("agentTools.login", input),
+    openDocs: (input: unknown) => ipcRenderer.invoke("agentTools.openDocs", input),
+    setSessionRuntime: (input: unknown) => ipcRenderer.invoke("agentTools.setSessionRuntime", input),
+    syncConfig: (input: unknown) => ipcRenderer.invoke("agentTools.syncConfig", input),
+    restoreConfig: (input: unknown) => ipcRenderer.invoke("agentTools.restoreConfig", input)
+  },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),
     saveSecret: (input: unknown) => ipcRenderer.invoke("settings.saveSecret", input),

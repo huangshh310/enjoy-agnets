@@ -4,8 +4,19 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 
+const ENJOY_TYPES = new Set([
+  "text.delta",
+  "reasoning.delta",
+  "tool.start",
+  "tool.args.delta",
+  "tool.result",
+  "file.changed",
+  "approval.required"
+])
+
 export function mapStreamPart(part: Record<string, unknown>, runId: string): StreamEvent | null {
   const type = String(part.type ?? "")
+  if (ENJOY_TYPES.has(type)) return part as StreamEvent
   const text = readPartText(part)
 
   if (type === "text-delta") {

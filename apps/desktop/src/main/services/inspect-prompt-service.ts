@@ -9,6 +9,7 @@ import {
   parseAssistantPayload
 } from "@enjoy-agents/ipc-contract"
 import { createMcpAgentTools } from "./mcp-agent-tools"
+import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { isE2eStub } from "./e2e-stub"
 import { readPreferences } from "./preferences"
 import { listMessages } from "./session-queries"
@@ -28,8 +29,9 @@ export function captureOpenStreamPrompt(input: {
   mode: AgentMode
   messages: unknown[]
   prefs: { codingRuntime: string; customInstructions: string }
+  runtimeId?: string
 }) {
-  const runtime = isE2eStub() ? "e2e" : input.prefs.codingRuntime === "harness" ? "harness" : "local"
+  const runtime = inspectRuntime(input.prefs.codingRuntime, input.runtimeId)
   rememberInspectPrompt({
     source: "last-run",
     capturedAt: Date.now(),
@@ -62,7 +64,7 @@ async function isSnapshotCurrent(sessionId: string, capturedAt: number): Promise
 async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptResult> {
   const prefs = readPreferences()
   const mode = input.mode ?? prefs.defaultMode
-  const runtime = prefs.codingRuntime === "harness" ? "harness" : "local"
+  const runtime = inspectRuntime(prefs.codingRuntime, prefs.runtimeId)
   const rows = await listMessages(input.sessionId)
   const rawHistory = rows.map((row) => historyFromRow(row.role, row.content))
   const history = await getActiveCompactedHistory(input.sessionId, rawHistory)
@@ -78,6 +80,16 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
     messages: sanitizeModelMessages(toModelMessages(history)),
     toolNames: [...CODING_TOOL_NAMES, ...mcpNames]
   }
+}
+
+function inspectRuntime(
+  codingRuntime: string,
+  runtimeId?: string
+): "e2e" | "acp-host" | "harness" | "local" {
+  if (isE2eStub()) return "e2e"
+  if (isAcpHostRuntime(runtimeId)) return "acp-host"
+  if (codingRuntime === "harness") return "harness"
+  return "local"
 }
 
 function historyFromRow(role: string, content: string) {

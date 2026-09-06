@@ -104,7 +104,9 @@ async function openRunStream(
     secret: run.secret,
     prefs,
     effort,
+    fast: run.input.fast,
     sessionApprovedTools: run.sessionApprovedTools,
+    runtimeId: run.input.runtimeId,
     waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
       const approvalId = createId("apr")
       run.pendingApprovals.push({ approvalId, toolCallId, name: toolName })

@@ -2,6 +2,7 @@
  * 设置 / 供应商 / 偏好 IPC 合约。
  */
 import { z } from "zod"
+import { AgentToolPublic } from "./agent-tools"
 import { AgentMode } from "./chat"
 import { PermissionMode as PermissionModeSchema } from "./permission-mode"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
@@ -129,6 +130,7 @@ export const SettingsSnapshot = z.object({
     permissionMode: PermissionModeSchema.default("allow-reads"),
     codingRuntime: z.enum(["local", "harness"]).default("local"),
     harnessId: z.string().optional(),
+    runtimeId: z.string().optional(),
     language: z.enum(["auto", "en", "zh"]).default("zh"),
     defaultMode: AgentMode,
     customInstructions: z.string(),
@@ -179,7 +181,9 @@ export const SettingsSnapshot = z.object({
       hasAnthropicKey: false,
       hasVercelToken: false,
       catalog: []
-    })
+    }),
+  agentTools: z.array(AgentToolPublic).default([]),
+  sessionRuntimes: z.record(z.string(), z.string()).default({})
 })
 export type SettingsSnapshot = z.infer<typeof SettingsSnapshot>
 
@@ -190,6 +194,7 @@ export const SetPreferencesInput = z.object({
   permissionMode: PermissionModeSchema.optional(),
   codingRuntime: z.enum(["local", "harness"]).optional(),
   harnessId: z.string().optional(),
+  runtimeId: z.string().optional(),
   language: z.enum(["auto", "en", "zh"]).optional(),
   defaultMode: AgentMode.optional(),
   customInstructions: z.string().optional(),

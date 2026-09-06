@@ -26,7 +26,7 @@ export const InspectPromptResult = z.object({
   sessionId: z.string(),
   modelId: z.string(),
   mode: AgentMode,
-  runtime: z.enum(["local", "harness", "e2e"]),
+  runtime: z.enum(["local", "harness", "e2e", "acp-host"]),
   instructions: z.string(),
   messages: z.array(InspectPromptMessage),
   toolNames: z.array(z.string())

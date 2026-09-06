@@ -12,6 +12,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   requireCommitApproval: true,
   permissionMode: "allow-reads",
   codingRuntime: "local",
+  runtimeId: "enjoy-local",
   language: "zh",
   defaultMode: "agent",
   customInstructions: "",

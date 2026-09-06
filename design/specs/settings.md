@@ -51,7 +51,8 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 侧栏条目必须 `navigate`，禁止 no-op。
 - Providers 禁用 `article`（760px），目录三列会被裁。
 - 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。
-- 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。
+- 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。Claude / Codex 可把已有供应商 Key **同步**到本机配置（用户点击、先备份 `*.enjoy.bak`、可恢复），不是给用户手改 toml。
+- Agent 段是 CLI 工具箱（探测 / 一键安装 / 登录 / 模型 / 路径 / doctor / 可选同步）+ 底部分段 SDK 沙箱。不在设置里填各家 CLI token，不新开第 25 个侧栏项。
 
 ## 代码入口
 
@@ -60,7 +61,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 分段目录：`apps/desktop/src/renderer/src/components/settings/settings-catalog.ts`
 - 壳：`settings-shell.tsx`（登记情境栏）；应用铬 `app-shell/`
 - 看板原语：`settings-hub.tsx`
-- 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings-media.tsx`
+- 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings/agent-tools/`、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
 - 企业账单：`apps/desktop/src/renderer/src/components/company/billing/`（`cards/` Hero/支付/指标/发票，`modals/` 对比与升级，`lib/apply-upgrade.ts` / `lib/billing-export.ts`）

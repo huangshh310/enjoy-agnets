@@ -55,7 +55,7 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         id: "agent",
         labelKey: "nav.agent",
         icon: RiEqualizer3Line,
-        keywords: ["mode", "model", "ask", "plan", "approval", "harness", "sandbox", "capabilities", "沙箱", "智能体", "内核", "能力"]
+        keywords: ["mode", "model", "ask", "plan", "approval", "harness", "sandbox", "capabilities", "cli", "cursor", "claude", "codex", "antigravity", "agy", "acp", "沙箱", "智能体", "内核", "能力", "命令行"]
       },
       {
         id: "instructions",

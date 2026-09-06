@@ -7,6 +7,7 @@ import {
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
 import { pickActiveModel } from "./pick-active-model"
 import { threadFromRows } from "./hydrate-thread"
@@ -154,6 +155,7 @@ export async function loadSession(sessionId: string, title: string) {
     store.setError(null)
   }
   store.setSession(sessionId, title)
+  store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   restoreUiMessages(rows)
   store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
@@ -179,6 +181,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "N
   const store = useChatStore.getState()
   store.setError(null)
   store.setSession(session.id, session.title)
+  store.setRuntimeId(store.preferredRuntimeId)
   store.setMessages([])
   await refreshAllWorkspaces()
 }
@@ -203,6 +206,10 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()
   store.setHasKey(snapshot.hasKey)
   store.setProvider(snapshot.provider)
+  const preferred = snapshot.preferences?.runtimeId ?? "enjoy-local"
+  store.setPreferredRuntimeId(preferred)
+  store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
+  store.setRuntimeId(pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, preferred))
   if (snapshot.preferences?.defaultMode) store.setMode(snapshot.preferences.defaultMode)
   if (!hasIde()) return
   const models = (await getIde().models.list()) as ModelOption[]

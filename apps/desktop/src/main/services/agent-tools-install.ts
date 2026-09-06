@@ -1,0 +1,141 @@
+/**
+ * 白名单安装 / 登录：只 spawn npm、brew 或已探测到的 CLI，不跑 curl|bash。
+ */
+import { spawn } from "node:child_process"
+import { basename } from "node:path"
+import type {
+  AgentToolId,
+  InstallAgentToolResult,
+  LoginAgentToolResult
+} from "@enjoy-agents/ipc-contract"
+import { catalogFor, lookupOnPath } from "@enjoy-agents/agent-harness"
+import { assertSafeAgentCommand, safeCustomBinaryPath } from "./agent-tools-guard"
+import { listAgentTools } from "./agent-tools-service"
+
+const INSTALL_MS = 240_000
+const OUT_CAP = 64 * 1024
+const INSTALL_MANAGERS = new Set(["npm", "brew"])
+
+export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToolResult> {
+  const catalog = catalogFor(id)
+  if (!catalog) {
+    return { id, ok: false, message: "This tool has no installer.", command: "", path: null }
+  }
+  if (catalog.steps.length === 0) {
+    return {
+      id,
+      ok: false,
+      message: "Copy the official install command. Enjoy will not pipe curl to bash.",
+      command: catalog.installCommand,
+      path: null
+    }
+  }
+  for (const step of catalog.steps) {
+    const manager = await lookupOnPath(step.manager)
+    if (!manager || !isInstallManager(manager)) continue
+    const ran = await runCommand(manager, [...step.args], INSTALL_MS)
+    const listed = await listAgentTools()
+    const found = listed.find((item) => item.id === id)
+    if (ran.ok || found?.status === "ready") {
+      return {
+        id,
+        ok: true,
+        message: ran.ok ? ran.message || "Installed." : found?.detectedPath || "Found after install.",
+        command: displayCommand(step.manager, step.args),
+        path: found?.detectedPath ?? null
+      }
+    }
+    return {
+      id,
+      ok: false,
+      message: ran.message,
+      command: displayCommand(step.manager, step.args),
+      path: found?.detectedPath ?? null
+    }
+  }
+  return {
+    id,
+    ok: false,
+    message: `Need ${catalog.steps.map((item) => item.manager).join(" or ")} on PATH, or run: ${catalog.installCommand}`,
+    command: catalog.installCommand,
+    path: null
+  }
+}
+
+/** 后台拉起官方 login，立即返回；不假装打开了终端。 */
+export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolResult> {
+  const catalog = catalogFor(id)
+  const listed = await listAgentTools()
+  const tool = listed.find((item) => item.id === id)
+  const command = safeCustomBinaryPath(id, tool?.binaryPath) || tool?.detectedPath
+  if (!catalog?.loginArgs.length) {
+    return { id, ok: false, message: tool?.needsLoginHint || "This CLI has no login command." }
+  }
+  if (!command) {
+    return { id, ok: false, message: "Install the CLI first." }
+  }
+  try {
+    assertSafeAgentCommand(id, command)
+  } catch (error) {
+    return { id, ok: false, message: error instanceof Error ? error.message : String(error) }
+  }
+  try {
+    const child = spawn(command, [...catalog.loginArgs], {
+      detached: true,
+      stdio: "ignore",
+      shell: false,
+      windowsHide: false
+    })
+    child.unref()
+  } catch (error) {
+    return { id, ok: false, message: error instanceof Error ? error.message : String(error) }
+  }
+  return {
+    id,
+    ok: true,
+    message: "Login started. Finish authorization in the browser or CLI window."
+  }
+}
+
+function isInstallManager(command: string): boolean {
+  const name = basename(command).replace(/\.(exe|cmd|bat)$/i, "")
+  return INSTALL_MANAGERS.has(name)
+}
+
+function displayCommand(manager: string, args: readonly string[]): string {
+  return [manager, ...args].join(" ")
+}
+
+function runCommand(
+  command: string,
+  args: string[],
+  timeoutMs: number
+): Promise<{ ok: boolean; message: string }> {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, { shell: false, windowsHide: true })
+    let out = ""
+    let settled = false
+    const take = (chunk: Buffer | string) => {
+      if (out.length >= OUT_CAP) return
+      out += String(chunk)
+      if (out.length > OUT_CAP) out = out.slice(0, OUT_CAP)
+    }
+    const finish = (ok: boolean, fallback: string) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      const line = out.split(/\r?\n/).map((item) => item.trim()).filter(Boolean).at(-1)
+      resolve({ ok, message: line || fallback })
+    }
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM")
+      const force = setTimeout(() => child.kill("SIGKILL"), 2000)
+      force.unref?.()
+      finish(false, "Timed out.")
+    }, timeoutMs)
+    child.stdout?.on("data", take)
+    child.stderr?.on("data", take)
+    child.on("error", (error) => finish(false, error.message))
+    child.on("close", (code) => finish(code === 0, code === 0 ? "Done." : `Exit ${code ?? "null"}.`))
+  })
+}

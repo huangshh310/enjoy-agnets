@@ -9,7 +9,9 @@ import { createId } from "./ids"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
-import { resolveRunSecret } from "./agent-run-helpers"
+import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import { writeSessionRuntime } from "./agent-tools-vault"
+import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
@@ -46,8 +48,14 @@ async function beginAgentRun(
   options: { runId?: string; persistUser: boolean }
 ) {
   const prefs = readPreferences()
-  const secret = await resolveRunSecret(prefs.codingRuntime, prefs.harnessId)
-  if (prefs.codingRuntime !== "harness" && !input.modelId) {
+  const runtimeId = resolveRuntimeId(input, prefs)
+  writeSessionRuntime(input.sessionId, runtimeId)
+  input.runtimeId = runtimeId
+  if (isAcpHostRuntime(runtimeId) && !input.modelId) {
+    input.modelId = `cli:${runtimeId}`
+  }
+  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  if (!isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }
 

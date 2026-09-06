@@ -25,8 +25,11 @@ export const RunAgentInput = z.object({
   modelId: z.string(),
   mode: AgentMode.default("agent"),
   reasoningEffort: ReasoningEffortSchema.optional(),
+  fast: z.boolean().optional(),
   messages: z.array(ChatMessage),
   attachments: z.array(z.string()).default([]),
+  /** 本机 CLI / Enjoy Local。缺省走偏好 runtimeId 或旧 codingRuntime。 */
+  runtimeId: z.string().optional(),
   /** false 时不把最后一条用户句落库。续跑 Todo 用，避免刷新后多出气泡。 */
   persistUser: z.boolean().optional()
 })

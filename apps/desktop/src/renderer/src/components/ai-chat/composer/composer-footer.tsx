@@ -9,9 +9,11 @@ import {
   listSessionContextChips,
   subscribeSessionContextChips
 } from "@renderer/hooks/session-context-chips"
+import { ExecutionModeMenu } from "../execution-mode-menu"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
-import { ModelPicker } from "../model-picker"
+import { AgentPicker } from "../agent-picker"
 import { ReasoningEffortToggle } from "../reasoning-effort-toggle"
+import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
 import type { ComposerProps } from "./composer.types"
 import { useT } from "@renderer/i18n"
@@ -46,12 +48,16 @@ export function ComposerFooter({
   onPickFiles: () => void
 }) {
   const t = useT()
+  const mode = useChatStore((state) => state.mode)
+  const setMode = useChatStore((state) => state.setMode)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
+  void thinkingLabel
   const chipCount = useSyncExternalStore(
     subscribeSessionContextChips,
     () => listSessionContextChips().length,
     () => 0
   )
+  void chipCount
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 px-3 pt-1 pb-2.5">
       <ComposerAttachMenu
@@ -60,13 +66,15 @@ export function ComposerFooter({
         onPickFiles={onPickFiles}
       />
       <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
+        <ExecutionModeMenu mode={mode} onChange={setMode} />
         <ApprovalPolicyToggle />
-        <ModelPicker
+        <AgentPicker
           modelId={modelId}
           modelLabel={modelLabel}
           models={models}
           onModelChange={onModelChange}
         />
+        <FastModeToggle />
         <ReasoningEffortToggle />
         <button
           type="button"

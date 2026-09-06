@@ -11,3 +11,26 @@ export {
   type HarnessAdapter,
   type HarnessAdapterId
 } from "./catalog"
+export {
+  AGENT_TOOL_PRESETS,
+  agentToolPreset,
+  isAcpHostRuntime,
+  type AgentToolPreset
+} from "./agent-tools/presets"
+export {
+  AGENT_TOOL_CATALOGS,
+  catalogFor,
+  installKindFor,
+  isAllowedDocsUrl,
+  modelArgsFor
+} from "./agent-tools/catalogs"
+export { resolveSpawnCommand, assertAllowedCommand, type SpawnOverride } from "./agent-tools/resolve-spawn"
+export { probeBinaries, lookupOnPath, pathDirs, type ProbeResult } from "./agent-tools/detect/probe"
+export { detectStatusFor } from "./agent-tools/detect/status"
+export {
+  streamAcpTurn,
+  disposeAcpTurn,
+  disposeAcpSession,
+  disposeAllAcpSessions,
+  type StreamAcpTurnInput
+} from "./acp/stream-acp"

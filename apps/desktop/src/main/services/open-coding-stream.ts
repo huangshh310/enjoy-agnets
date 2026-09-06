@@ -1,12 +1,18 @@
 /**
- * 按偏好打开本机 ToolLoop 或 Claude Code Harness 流。
+ * 按 runtimeId / 偏好打开 Enjoy Local、本机 ACP 或 SDK 沙箱流。
  */
 import type { ModelMessage } from "ai"
 import { insertRunStep } from "@enjoy-agents/db"
 import { streamCodingAgent, type ApprovalPolicy, type WaitForSubagentApproval } from "@enjoy-agents/agent-core"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
-import { disposeHarnessTurn, resolveHarnessAdapter, streamHarnessTurn } from "@enjoy-agents/agent-harness"
+import {
+  disposeAcpTurn,
+  disposeHarnessTurn,
+  isAcpHostRuntime,
+  resolveHarnessAdapter,
+  streamHarnessTurn
+} from "@enjoy-agents/agent-harness"
 import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import {
   createLanguageModel,
@@ -19,6 +25,7 @@ import { createWorkspaceHost } from "./workspace"
 import { createMcpAgentTools } from "./mcp-agent-tools"
 import { createE2eStubStream, isE2eStub } from "./e2e-stub"
 import { captureOpenStreamPrompt } from "./inspect-prompt-service"
+import { openAcpStream } from "./open-acp-stream"
 
 export type OpenedCodingStream = {
   stream: AsyncIterable<Record<string, unknown>>
@@ -38,9 +45,11 @@ export async function openCodingStream(input: {
   secret?: StoredSecret
   prefs: AppPreferences
   effort?: ReasoningEffort
+  fast?: boolean
   sessionApprovedTools: ReadonlySet<string>
   waitForSubagentApproval?: WaitForSubagentApproval
-}): Promise<OpenedCodingStream> {
+  runtimeId?: string
+}) {
   const policy: ApprovalPolicy = {
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
@@ -55,6 +64,19 @@ export async function openCodingStream(input: {
       result: {},
       dispose: async () => undefined
     }
+  }
+  if (isAcpHostRuntime(input.runtimeId)) {
+    return openAcpStream({
+      runId: input.runId,
+      sessionId: input.sessionId,
+      runtimeId: input.runtimeId ?? "",
+      workspaceRoot: input.workspaceRoot,
+      messages: input.messages,
+      abortSignal: input.abortSignal,
+      waitForSubagentApproval: input.waitForSubagentApproval,
+      effort: input.effort,
+      fast: input.fast
+    })
   }
   if (input.prefs.codingRuntime === "harness") {
     return openHarnessStream(input, policy)
@@ -154,7 +176,8 @@ async function openLocalStream(
   return { stream, result, dispose: async () => undefined }
 }
 
-/** 结束本轮 Harness session（本机流无资源可释）。 */
+/** 结束本轮 Harness / ACP 子进程。 */
 export async function disposeCodingStream(runId: string): Promise<void> {
   await disposeHarnessTurn(runId)
+  await disposeAcpTurn(runId)
 }

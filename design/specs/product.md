@@ -1,6 +1,6 @@
 # spec/product
 
-> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-04
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -27,7 +27,7 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 | 阶段 | 状态 | 内容 |
 |---|---|---|
 | MVP | 进行中 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI |
-| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测；Git 面板加深 / 自动更新仍未完 |
+| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；Git 面板加深 / 自动更新仍未完 |
 | V1.5 | 后置 | 云账号、token 代理、外部 OTEL、Vercel Sandbox |
 
 ## 明确不做

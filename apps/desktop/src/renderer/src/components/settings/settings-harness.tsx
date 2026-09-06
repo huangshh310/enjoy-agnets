@@ -1,5 +1,5 @@
 /**
- * Settings → Agent：本机 ToolLoop 与按 Provider 选择的 Harness 插件。
+ * Settings → Agent 底部分段：进阶 SDK 沙箱（旧 Harness 路径）。
  */
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -27,7 +27,7 @@ export function SettingsHarness() {
   }
 
   return (
-    <SettingsCard title={t("settings.harness.cardTitle")}>
+    <SettingsCard title={t("settings.harness.advancedTitle")}>
       <SettingsRow title={t("settings.agent.runtime")} description={t("settings.harness.runtimeDesc")}>
         <Select value={runtime} onValueChange={(value) => void persist({ codingRuntime: value as typeof runtime })}>
           <SelectTrigger className="min-w-[12rem] rounded-2lg">

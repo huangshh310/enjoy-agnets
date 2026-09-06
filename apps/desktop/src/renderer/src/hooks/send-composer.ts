@@ -17,6 +17,8 @@ import {
   dropEmptyPendingAssistant
 } from "./composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "./session-title"
+import { codingAgentRunInput } from "./agent-run-payload"
+import { isAcpComposerRuntime } from "../lib/agent-runtime"
 
 export { abortComposerRun } from "./composer-run-control"
 
@@ -44,7 +46,9 @@ export async function sendComposerMessage() {
     messageAssets.length > 0 ? messageAssets : undefined
   )
   applyOptimisticTitle(content)
-  const runKind = composerRunKind(store.modelId, currentCaps(store))
+  const runKind = isAcpComposerRuntime(store.runtimeId)
+    ? "agent"
+    : composerRunKind(store.modelId, currentCaps(store))
   store.setMessages([
     ...messages,
     {
@@ -87,7 +91,9 @@ async function startComposerRun(
   messages: ReturnType<typeof useChatStore.getState>["messages"],
   assetIds: string[]
 ) {
-  const kind = composerRunKind(store.modelId, currentCaps(store))
+  const kind = isAcpComposerRuntime(store.runtimeId)
+    ? "agent"
+    : composerRunKind(store.modelId, currentCaps(store))
   const history = messages.map((message) => ({
     role: message.role,
     content: message.content,
@@ -105,11 +111,7 @@ async function startComposerRun(
     })
   }
   return getIde().agent.run({
-    sessionId: store.sessionId,
-    workspaceId: store.workspaceId,
-    modelId: store.modelId,
-    mode: store.mode,
-    reasoningEffort: store.reasoningEffort,
+    ...codingAgentRunInput(store),
     messages: history,
     attachments: assetIds
   })
@@ -124,7 +126,7 @@ async function guardComposer(store: ReturnType<typeof useChatStore.getState>): P
     store.setError("Open a workspace folder before running an agent.")
     return false
   }
-  if (store.hasKey) return true
+  if (isAcpComposerRuntime(store.runtimeId) || store.hasKey) return true
   void import("../router").then(({ router }) => {
     void router.navigate({ to: "/settings/$section", params: { section: "providers" } })
   })

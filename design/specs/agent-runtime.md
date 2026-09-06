@@ -9,7 +9,7 @@
 1. **AI SDK 7 核心智能体循环 (Core Loops)**：`agent` (ToolLoopAgent 全功能自主编码)、`plan` (架构规划蓝图，只读)、`ask` (只读问答与检索，只读)、`debug` (系统性根因诊断与修复)。
 2. **高阶专业工程工作流 (Specialized Engineering)**：`workflow` (WorkflowAgent 多阶段流水平水线)、`tdd` (测试驱动开发红-绿-重构循环)、`code_mode` (代码模式批量脚本执行)。
 系统提示由 `systemPromptFor(mode)` 针对各模式注入；`plan` / `ask` 强制只读，其余模式写盘与终端执行按审批策略放行。
-可选第二运行时：`codingRuntime: "harness"` 走 `packages/agent-harness`。已接线：Claude Code、Codex（要 Vercel 端口沙箱）、Pi（默认本机 just-bash）、OpenCode。DeepSeek 仍是占位。这是插件位，不是默认内核。
+开流三分：`isAcpHostRuntime(runtimeId)` → `streamAcpTurn`；否则 `codingRuntime: "harness"` → 现有沙箱桥；否则 Enjoy Local ToolLoop。本机 CLI 契约见 [agent-cli](./agent-cli.md)。DeepSeek Harness 仍占位。外部 CLI **不是**默认内核。
 思考档按模型族发：官方族与 Kimi K3 走顶层 `reasoning`；DeepSeek 用 `providerOptions.deepseek`；MiniMax-M3 用兼容层 `thinking`，`reasoning_split` 只给官方 MiniMax 域名；GLM 用 `thinking.enabled` + `reasoningEffort`。流里的 `error` 部件要抛出并解开 cause。
 
 ### 内置工具

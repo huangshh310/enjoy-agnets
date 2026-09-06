@@ -11,6 +11,8 @@ import { useChatStore, type ChatStore } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
 import { continueTodoTurn } from "./continue-todo-turn"
+import { codingAgentRunInput } from "./agent-run-payload"
+import { isAcpComposerRuntime } from "../lib/agent-runtime"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -47,7 +49,9 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
 
   // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）
   const truncatedMessages = messages.slice(0, userIndex + 1)
-  const runKind = composerRunKind(store.modelId, currentCaps(store))
+  const runKind = isAcpComposerRuntime(store.runtimeId)
+    ? "agent"
+    : composerRunKind(store.modelId, currentCaps(store))
 
   const pendingId = `msg_pending_${Date.now()}`
   const nextMessages = [
@@ -114,7 +118,9 @@ export async function editAndResendUserTurn(
 
   // 截断到当前用户消息位置并替换内容
   const truncatedMessages = [...messages.slice(0, userIndex), updatedUserMsg]
-  const runKind = composerRunKind(store.modelId, currentCaps(store))
+  const runKind = isAcpComposerRuntime(store.runtimeId)
+    ? "agent"
+    : composerRunKind(store.modelId, currentCaps(store))
 
   const pendingId = `msg_pending_${Date.now()}`
   const nextMessages = [
@@ -175,11 +181,7 @@ function startTurnIpc(
     })
   }
   return getIde().agent.run({
-    sessionId: store.sessionId,
-    workspaceId: store.workspaceId,
-    modelId: store.modelId,
-    mode: store.mode,
-    reasoningEffort: store.reasoningEffort,
+    ...codingAgentRunInput(store),
     messages: history,
     attachments: assetIds
   })

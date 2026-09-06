@@ -73,3 +73,11 @@ test("SDK 嵌套 toolCall + isAutomatic 也不弹卡", () => {
     null
   )
 })
+
+test("passes through Enjoy StreamEvent from ACP", () => {
+  assert.deepEqual(mapStreamPart({ type: "text.delta", runId: "run_1", text: "hi" }, "run_1"), {
+    type: "text.delta",
+    runId: "run_1",
+    text: "hi"
+  })
+})

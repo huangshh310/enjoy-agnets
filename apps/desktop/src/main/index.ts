@@ -3,6 +3,7 @@ import { app, BrowserWindow, nativeImage, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
+import { disposeAllAcpSessions } from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
@@ -95,10 +96,12 @@ app.whenReady().then(async () => {
 
 app.on("before-quit", () => {
   flushActiveRuns();
+  disposeAllAcpSessions();
 });
 
 app.on("window-all-closed", () => {
   flushActiveRuns();
+  disposeAllAcpSessions();
   unregisterIpc();
   if (process.platform !== "darwin") app.quit();
 });

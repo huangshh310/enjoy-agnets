@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-04
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -12,7 +12,8 @@
 |---|---|---|
 | workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` `gitLog` `gitCommit` `gitPush` `gitPatch` | 工作区与文件、真实 Git 记录与提交；`gitLog` 入参 `{ workspaceId, limit? }` 返回当前分支名（detached / 非仓库为空串）、上游（失败为空串，禁止回落 main）、`branchFiles`（`upstream...HEAD`）与**线性** `commits[]`，不是提交树；`gitCommit` 入参 `{ workspaceId, message, stageAll? }` 默认 `git add -A` + commit，`stageAll: false` 只提交已暂存，空工作树拒绝；`gitPush` `{ workspaceId }` 推当前上游，无上游即拒；`gitPatch` `{ workspaceId, paths? }` 返回 `git diff HEAD`；`diff` 可带 `ignoreWhitespace`；`changes` 每行含 `staged`/`worktree`（porcelain 保留 XY，禁止 trim 前两列）；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
 | session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` `compact` `getCompaction` `clearCompaction` | 会话与上下文压缩；`compact` 失败抛英文码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，UI 翻词表；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`compact` 入参 `{ sessionId, keepRecent? }`；`getCompaction`/`clearCompaction` 入参 `{ sessionId }`；`list` 不含已归档 |
-| agent | `run` `abort` `decide` `inspectPrompt` | 跑循环、中止、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 资产 id；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
+| agent | `run` `abort` `decide` `inspectPrompt` | 跑循环、中止、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 与 `runtimeId`；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
+| agentTools | `list` `detect` `upsert` `doctor` `install` `login` `openDocs` `setSessionRuntime` `syncConfig` `restoreConfig` | 本机 CLI 目录与探测；覆盖含 path/args/modelId，无 token；`install`/`login`/`openDocs`/`syncConfig`/`restoreConfig` 入参 `{ id }`；安装只跑白名单 npm/brew；`openDocs` 仅 https + host 白名单；`syncConfig` 写 Claude `settings.json` / Codex `config.toml`（先备份 `*.enjoy.bak`，不写 auth.json）；`setSessionRuntime` `{ sessionId, runtimeId }` |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`kind` 必须是 `PROVIDER_KINDS` |
 | automations | `list` `upsert` `remove` | 自动化；`remove` 入参 `{ id }` |
 | models | `list` | 已配置模型目录；每条可带 `contextWindow`（探测 / Gateway / 手填，没有则省略）与 `maxTokens`（最大**输出**，不是窗口） |
@@ -53,6 +54,7 @@
 - 设置频道：`ipc-settings.ts`；探测 `ipc-provider-probe.ts`；Automations `ipc-automations.ts`
 - AI 频道：`ipc-ai.ts`
 - 技能来源：`ipc-skill-sources.ts`；Skills 扫描：`ipc-skills.ts`
+- 本机 CLI：`ipc-agent-tools.ts`；`settings.get` 带 `agentTools[]` 与 `sessionRuntimes`
 - 桥：`apps/desktop/src/preload/index.ts`
 - 渲染封装：`apps/desktop/src/renderer/src/lib/ide.ts`、`lib/window-control.ts`
 
@@ -64,3 +66,4 @@
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。
 - `workspace.gitCommit` 是用户主动提交，没有 runId / HMAC。UI 在 `requireCommitApproval` 时弹 `ConfirmDialog` 再 invoke；Agent 工具 `git_commit` 仍走 `approval.required` + `agent.decide`。不要把 UI 提交硬接进 HMAC 管道。
 - `skills.sources.configure` / `deploy` / `remove` 只认 `manifest.json`。本机 Agent 技能根（`~/.agents/skills` 等）由 `persistDiscoveredSources` 在 overview / configure / deploy / doctor / repair 写入 manifest；漏写就会对自动发现来源抛 `SOURCE_NOT_FOUND`。投影到自身目录必须跳过 `cpSync`，否则 Windows 会在原地复制时报错。
+- `agentTools.syncConfig` / `restoreConfig` 已落地。漏写进本表会让 preload 与 spec 对不上。`openDocs` 必须走 `isAllowedDocsUrl`，不要只看 `https://`。

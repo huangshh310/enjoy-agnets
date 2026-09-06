@@ -45,7 +45,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   modelLabel: "",
   models: [],
   provider: null,
+  runtimeId: "enjoy-local",
+  preferredRuntimeId: "enjoy-local",
+  sessionRuntimes: {},
   reasoningEffort: undefined,
+  isFastMode: false,
   mode: "agent",
   running: false,
   runId: null,
@@ -63,6 +67,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sessionSortOrder: "priority",
   pinnedWorkspaceIds: [],
   setComposer: (composer) => set({ composer }),
+  setRuntimeId: (runtimeId) => set({ runtimeId }),
+  setPreferredRuntimeId: (preferredRuntimeId) => set({ preferredRuntimeId }),
+  setSessionRuntimes: (sessionRuntimes) => set({ sessionRuntimes }),
   setModel: (modelId, modelLabel, provider, effort) =>
     set({
       modelId,
@@ -71,6 +78,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       reasoningEffort: effort
     }),
   setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
+  setFastMode: (isFastMode) => set({ isFastMode }),
+  toggleFastMode: () => set((state) => ({ isFastMode: !state.isFastMode })),
   setMode: (mode) => set({ mode }),
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
   setRightPanelCollapsed: (rightPanelCollapsed) => set({ rightPanelCollapsed }),

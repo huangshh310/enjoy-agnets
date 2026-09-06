@@ -27,6 +27,7 @@
 | 进程边界、包职责、SQLite、安全 | [`design/specs/architecture.md`](./design/specs/architecture.md) |
 | 布局、token、组件从哪装 | [`design/specs/ui.md`](./design/specs/ui.md) → 细节 [`design/references/visual-system.md`](./design/references/visual-system.md) |
 | Agent 循环、工具、审批、流式 | [`design/specs/agent-runtime.md`](./design/specs/agent-runtime.md) |
+| 本机 CLI（Cursor / Claude / Codex / Antigravity ACP） | [`design/specs/agent-cli.md`](./design/specs/agent-cli.md) |
 | 供应商、协议、Key、探测 | [`design/specs/providers.md`](./design/specs/providers.md) |
 | 加 / 改 IPC 频道或事件 | [`design/specs/ipc.md`](./design/specs/ipc.md) |
 | 工作区、文件、Git、终端 | [`design/specs/workspace.md`](./design/specs/workspace.md) |

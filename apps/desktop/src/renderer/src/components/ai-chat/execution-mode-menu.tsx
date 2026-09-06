@@ -126,6 +126,7 @@ export function ExecutionModeMenu({
   onChange: (mode: AgentMode) => void
   align?: "start" | "end"
 }) {
+  align = align ?? "end"
   const t = useT()
   const items = getModeItems(t)
   const active = items.find((item) => item.id === mode) ?? items[0]
@@ -141,14 +142,14 @@ export function ExecutionModeMenu({
           type="button"
           aria-label={t("chat.selectMode")}
           className={cx(
-            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption-1-semibold transition-all shadow-2xs outline-none cursor-pointer",
+            "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-caption-1-semibold transition-all shadow-2xs outline-none cursor-pointer active:scale-[0.97]",
             "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
             active.bgClass,
             active.colorClass
           )}
         >
           <ActiveIcon className={cx("size-3.5 shrink-0", active.iconColor)} />
-          <span>{active.label}</span>
+          <span>模式: {active.label}</span>
           <RiArrowDownSLine className="size-3 opacity-60 ml-0.5" />
         </button>
       </DropdownMenuTrigger>

@@ -2,15 +2,11 @@
  * Composer 顶栏：Context 按钮、执行模式、工作区胶囊。
  */
 import { RiAddLine, RiFolder6Line } from "@remixicon/react"
-import { ExecutionModeMenu } from "../execution-mode-menu"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
-
 export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
   const t = useT()
-  const mode = useChatStore((state) => state.mode)
-  const setMode = useChatStore((state) => state.setMode)
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
 
@@ -26,7 +22,6 @@ export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
           <RiAddLine className="size-3.5 text-foreground-icon-secondary" />
           <span>{t("chat.context")}</span>
         </button>
-        <ExecutionModeMenu mode={mode} onChange={setMode} />
       </div>
 
       {workspaceId ? (

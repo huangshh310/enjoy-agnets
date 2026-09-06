@@ -19,6 +19,7 @@
 | `architecture` | [specs/architecture.md](./specs/architecture.md) | 进程模型、包职责、安全基线 | `apps/desktop/src/main`、`packages/*` |
 | `ui` | [specs/ui.md](./specs/ui.md) | 三卡片布局、token、组件来源 | `apps/desktop/.../ai-chat`、`packages/ui` |
 | `agent-runtime` | [specs/agent-runtime.md](./specs/agent-runtime.md) | Agent 循环、工具、审批、模式 | `packages/agent-core`、`main/services/agent-runner.ts` |
+| `agent-cli` | [specs/agent-cli.md](./specs/agent-cli.md) | 本机 CLI 工具箱、ACP、探测 | `packages/agent-harness/src/agent-tools`、`acp/` |
 | `providers` | [specs/providers.md](./specs/providers.md) | 协议工厂、vault、探测 | `packages/providers`、`main/services/secrets.ts` |
 | `ipc` | [specs/ipc.md](./specs/ipc.md) | Zod 合约、频道、流事件 | `packages/ipc-contract`、`main/ipc.ts`、`preload` |
 | `workspace` | [specs/workspace.md](./specs/workspace.md) | 工作区、文件、Git、终端 | `main/services/workspace.ts`、`terminal.ts` |

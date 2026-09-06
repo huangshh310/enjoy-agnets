@@ -1,0 +1,139 @@
+/**
+ * 本机 Agent CLI 工具箱合约：目录、探测、覆盖、doctor。
+ * 不包含各家 login token。
+ */
+import { z } from "zod"
+
+export const AgentToolId = z.enum([
+  "enjoy-local",
+  "claude",
+  "cursor",
+  "codex",
+  "antigravity",
+  "gemini",
+  "opencode",
+  "pi",
+  "omp",
+  "hermes",
+  "amp",
+  "deepseek"
+])
+export type AgentToolId = z.infer<typeof AgentToolId>
+
+export const AgentToolTransport = z.enum(["local", "sdk-sandbox", "acp-host"])
+export type AgentToolTransport = z.infer<typeof AgentToolTransport>
+
+export const AgentToolDetectStatus = z.enum(["ready", "missing", "comingSoon", "skillOnly"])
+export type AgentToolDetectStatus = z.infer<typeof AgentToolDetectStatus>
+
+export const AgentCliModel = z.object({
+  id: z.string().min(1).max(120),
+  label: z.string().min(1).max(80)
+})
+export type AgentCliModel = z.infer<typeof AgentCliModel>
+
+/** npm/brew 可静默执行；copy 只给用户复制，不跑 curl|bash。 */
+export const AgentToolInstallKind = z.enum(["npm", "brew", "copy"])
+export type AgentToolInstallKind = z.infer<typeof AgentToolInstallKind>
+
+export const AgentToolPublic = z.object({
+  id: AgentToolId,
+  label: z.string(),
+  transport: AgentToolTransport,
+  binaries: z.array(z.string()),
+  acpArgs: z.array(z.string()),
+  needsLoginHint: z.string(),
+  available: z.boolean(),
+  comingSoon: z.boolean(),
+  skillOnly: z.boolean(),
+  enabled: z.boolean(),
+  binaryPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
+  detectedPath: z.string().nullable(),
+  version: z.string().nullable(),
+  status: AgentToolDetectStatus,
+  models: z.array(AgentCliModel).default([]),
+  selectedModel: z.string().optional(),
+  installKind: AgentToolInstallKind.default("copy"),
+  installCommand: z.string().default(""),
+  docsUrl: z.string().default(""),
+  providerId: z.string().optional(),
+  useCustomProvider: z.boolean().default(false),
+  supportedApiStyles: z.array(z.string()).default([])
+})
+export type AgentToolPublic = z.infer<typeof AgentToolPublic>
+
+export const AgentToolIdInput = z
+  .object({
+    id: AgentToolId
+  })
+  .strict()
+export type AgentToolIdInput = z.infer<typeof AgentToolIdInput>
+
+export const UpsertAgentToolInput = z
+  .object({
+    id: AgentToolId,
+    enabled: z.boolean().optional(),
+    binaryPath: z.string().max(1024).optional(),
+    extraArgs: z.array(z.string().max(200)).max(16).optional(),
+    modelId: z.string().max(120).optional(),
+    providerId: z.string().max(120).optional(),
+    useCustomProvider: z.boolean().optional()
+  })
+  .strict()
+export type UpsertAgentToolInput = z.infer<typeof UpsertAgentToolInput>
+
+export const InstallAgentToolResult = z.object({
+  id: AgentToolId,
+  ok: z.boolean(),
+  message: z.string(),
+  command: z.string(),
+  path: z.string().nullable()
+})
+export type InstallAgentToolResult = z.infer<typeof InstallAgentToolResult>
+
+export const LoginAgentToolResult = z.object({
+  id: AgentToolId,
+  ok: z.boolean(),
+  message: z.string()
+})
+export type LoginAgentToolResult = z.infer<typeof LoginAgentToolResult>
+
+export const DoctorAgentToolInput = z
+  .object({
+    id: AgentToolId
+  })
+  .strict()
+export type DoctorAgentToolInput = z.infer<typeof DoctorAgentToolInput>
+
+export const AgentToolDoctorResult = z.object({
+  id: AgentToolId,
+  ok: z.boolean(),
+  message: z.string(),
+  version: z.string().nullable(),
+  path: z.string().nullable()
+})
+export type AgentToolDoctorResult = z.infer<typeof AgentToolDoctorResult>
+export const SyncCliConfigResult = z.object({
+  id: AgentToolId,
+  ok: z.boolean(),
+  message: z.string(),
+  configPath: z.string().nullable()
+})
+export type SyncCliConfigResult = z.infer<typeof SyncCliConfigResult>
+
+
+export const SetSessionRuntimeInput = z
+  .object({
+    sessionId: z.string().min(1),
+    runtimeId: AgentToolId
+  })
+  .strict()
+export type SetSessionRuntimeInput = z.infer<typeof SetSessionRuntimeInput>
+
+/** P0 可 spawn 的本机 CLI。渲染进程用这个判断，不要 import agent-harness。 */
+export const ACP_HOST_P0_IDS = ["claude", "cursor", "codex", "antigravity"] as const
+
+export function isAcpHostRuntimeId(id: string | undefined): boolean {
+  return (ACP_HOST_P0_IDS as readonly string[]).includes(id ?? "")
+}

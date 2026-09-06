@@ -2,15 +2,33 @@
  * Agent 开跑辅助：凭证解析与 SDK response messages。
  */
 import type { ModelMessage } from "ai"
+import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { readSessionRuntimes } from "./agent-tools-vault"
 import { harnessPublicStatus } from "./harness-secrets"
+import type { AppPreferences } from "./preferences"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
 
-/** Harness 只查 Claude/Vercel 凭证；本机 ToolLoop 才要求供应商 API key。 */
+/** 会话覆盖 > 入参 > 偏好 > Enjoy Local。 */
+export function resolveRuntimeId(
+  input: { runtimeId?: string; sessionId: string },
+  prefs: AppPreferences
+): string {
+  return (
+    input.runtimeId ||
+    readSessionRuntimes()[input.sessionId] ||
+    prefs.runtimeId ||
+    "enjoy-local"
+  )
+}
+
+/** ACP 不读 Providers Key；Harness 查沙箱就绪；本机 ToolLoop 必须有 API key。 */
 export async function resolveRunSecret(
-  runtime: "local" | "harness",
+  runtimeId: string,
+  codingRuntime: "local" | "harness",
   harnessId?: string
 ): Promise<StoredSecret | undefined> {
-  if (runtime === "harness") {
+  if (isAcpHostRuntime(runtimeId)) return undefined
+  if (codingRuntime === "harness") {
     const status = await harnessPublicStatus(harnessId)
     if (!status.ready) {
       throw new Error(status.blockedReason ?? "Harness is not ready for this provider.")
