@@ -15,6 +15,7 @@ import {
 } from "@remixicon/react"
 import type { FileTreeNode } from "../types/review.types"
 import { STATUS_CONFIG } from "../constants/review-constants"
+import { sameReviewPath } from "../same-review-path"
 
 export function FileTreeItem(props: {
   node: FileTreeNode
@@ -32,7 +33,8 @@ export function FileTreeItem(props: {
   } = props
   const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded)
 
-  const isSelected = !node.isDir && node.path === selectedFilePath
+  const isSelected =
+    !node.isDir && selectedFilePath != null && sameReviewPath(node.path, selectedFilePath)
   const statusConfig = node.status ? STATUS_CONFIG[node.status] : null
 
   if (node.isDir) {

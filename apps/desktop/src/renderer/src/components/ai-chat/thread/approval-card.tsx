@@ -33,19 +33,29 @@ export function ApprovalCard({
   const t = useT()
   const workspaceName = useChatStore((state) => state.workspaceName)
   const args = asRecord(pending.args)
-  const isBash = pending.name === "bash"
+  const isBash =
+    pending.name === "bash" ||
+    pending.name === "sh" ||
+    pending.name === "execute_command" ||
+    pending.name === "run_command" ||
+    Boolean(readString(args, "command")) ||
+    pending.name.includes(" ") ||
+    pending.name.includes("&&") ||
+    pending.name.includes(";")
   const isFile =
     pending.name === "write_file" ||
     pending.name === "write" ||
     pending.name === "edit_file" ||
     pending.name === "edit"
+  const displayToolName = isBash
+    ? (pending.name.includes(" ") || pending.name.includes("&&") ? "bash" : pending.name)
+    : formatToolName(pending.name)
   const targetPath = isFile ? filePathOf(args) : isBash ? readString(args, "command") : undefined
   const riskLabel = isBash
     ? t("chat.riskExecutesShell")
     : isFile
       ? t("chat.riskModifiesDisk")
       : t("chat.riskToolCall")
-
   return (
     <div className="overflow-hidden rounded-2xl border border-separator-border/80 bg-background-primary-default font-sans shadow-md">
       <div className="flex items-start justify-between gap-3 border-b border-separator-border/60 bg-background-secondary-default/40 px-4.5 py-3">
@@ -65,8 +75,8 @@ export function ApprovalCard({
                 {isBash
                   ? t("chat.approveShell")
                   : isFile
-                    ? t("chat.approveFile", { name: formatToolName(pending.name) })
-                    : t("chat.approveTool", { name: formatToolName(pending.name) })}
+                    ? t("chat.approveFile", { name: displayToolName })
+                    : t("chat.approveTool", { name: displayToolName })}
               </h3>
               <span className="rounded bg-amber-500/10 px-1.5 py-0.2 font-mono text-caption-2-medium text-amber-500">
                 {t("chat.actionRequired")}
@@ -79,7 +89,7 @@ export function ApprovalCard({
       <ApprovalMeta
         workspaceName={workspaceName || t("chat.untitledWorkspace")}
         targetPath={targetPath}
-        toolName={pending.name}
+        toolName={displayToolName}
         riskLabel={riskLabel}
       />
       <div className="bg-background-primary-default p-4">
@@ -95,23 +105,28 @@ export function ApprovalCard({
             size="sm"
             variant="ghost"
             onClick={onDeny}
-            className="h-7.5 gap-1 px-3 text-caption-2-medium text-text-error-primary hover:bg-background-secondary-hover"
+            className="h-8 gap-1 px-3 text-caption-1-medium text-text-error-primary hover:bg-text-error-primary/10 transition-colors"
           >
-            <RiCloseLine className="size-3.5" />
+            <RiCloseLine className="size-4" />
             <span>{t("chat.deny")}</span>
           </Button>
           <Button
             size="sm"
             variant="outline"
             onClick={onAllowSession}
-            className="h-7.5 gap-1.5 text-caption-2-medium text-text-secondary hover:text-text-primary"
+            className="h-8 gap-1.5 px-3 text-caption-1-medium text-text-secondary hover:text-text-primary"
             title={t("chat.alwaysAllowHint")}
           >
-            <RiShieldCheckLine className="size-3.5 text-accent-500" />
+            <RiShieldCheckLine className="size-4 text-accent-500" />
             <span>{t("chat.alwaysAllow")}</span>
           </Button>
-          <Button size="sm" onClick={onApprove} className="h-7.5 gap-1.5 px-4 text-caption-2-medium shadow-xs">
-            <RiCheckLine className="size-3.5" />
+          <Button
+            size="sm"
+            variant="default"
+            onClick={onApprove}
+            className="h-8 gap-1.5 px-4 text-caption-1-medium font-semibold shadow-xs"
+          >
+            <RiCheckLine className="size-4" />
             <span>{t("chat.allowOnce")}</span>
           </Button>
         </div>

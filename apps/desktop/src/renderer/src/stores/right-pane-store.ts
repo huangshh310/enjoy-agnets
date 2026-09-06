@@ -3,14 +3,18 @@
  */
 import { create } from "zustand"
 import type { RightPaneKind, RightPaneTab } from "@renderer/components/ai-chat/right-pane/right-pane.types"
+import type { ReviewScope } from "@renderer/components/ai-chat/right-pane/views/review/types/review.types"
 import { openToolState } from "@renderer/components/ai-chat/right-pane/open-tool-state"
 
 type RightPaneStore = {
   tabs: RightPaneTab[]
   activeId: string | null
+  /** 审查作用域：改动条打开时写入，避免锁死空的「上一轮」。 */
+  reviewScope: ReviewScope
   openTool: (kind: RightPaneKind, options?: { forceNew?: boolean; url?: string }) => void
   closeTab: (id: string) => void
   setActiveId: (id: string) => void
+  setReviewScope: (reviewScope: ReviewScope) => void
   reset: () => void
 }
 
@@ -21,6 +25,7 @@ function nextTabId(kind: RightPaneKind): string {
 export const useRightPaneStore = create<RightPaneStore>((set, get) => ({
   tabs: [],
   activeId: null,
+  reviewScope: "uncommitted",
   openTool: (kind, options) => {
     set(openToolState(get().tabs, kind, options, nextTabId(kind)))
   },
@@ -31,5 +36,6 @@ export const useRightPaneStore = create<RightPaneStore>((set, get) => ({
     set({ tabs, activeId: nextActive })
   },
   setActiveId: (activeId) => set({ activeId }),
-  reset: () => set({ tabs: [], activeId: null })
+  setReviewScope: (reviewScope) => set({ reviewScope }),
+  reset: () => set({ tabs: [], activeId: null, reviewScope: "uncommitted" })
 }))

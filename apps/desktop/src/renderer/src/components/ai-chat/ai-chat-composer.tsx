@@ -12,6 +12,7 @@ import {
 import { ComposerQueue } from "./composer-queue"
 import { ComposerContextChips } from "./composer/composer-context-chips"
 import { ComposerFooter } from "./composer/composer-footer"
+import { ComposerSessionReview } from "./composer/session-review/composer-session-review"
 import { ComposerTodoDock } from "./composer/composer-todo-dock"
 import { ComposerToolbar } from "./composer/composer-toolbar"
 import type { ComposerProps } from "./composer/composer.types"
@@ -108,6 +109,7 @@ export function AiChatComposer({
   return (
     <div className={cx("relative flex flex-col w-full min-w-0 px-6 pb-2", className)}>
       <ComposerTodoDock />
+      <ComposerSessionReview />
       <ComposerQueue />
       <form onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
         <BorderBeam

@@ -1,8 +1,9 @@
 /**
  * 审查栏：作用域过滤、Ctrl+P 跳文件、复制 patch、推送、提交框聚焦。
  */
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useRightPaneStore } from "@renderer/stores/right-pane-store"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { ReviewHeader } from "./review/header/review-header"
 import { ReviewJumpPalette } from "./review/header/review-jump-palette"
@@ -40,16 +41,16 @@ export function ReviewView({
   const lastTurnKey = useChatStore((state) =>
     active ? pathsFromLastTurn(state.messages).join("\n") : ""
   )
+  const scope = useRightPaneStore((state) => state.reviewScope)
+  const setScope = useRightPaneStore((state) => state.setReviewScope)
   const {
-    scope,
-    setScope,
     options,
     toggleOption,
     allExpanded,
     toggleAllExpanded,
     jumpOpen,
     setJumpOpen
-  } = useReviewOptions("last-turn")
+  } = useReviewOptions()
   const git = useWorkspaceGit(workspaceId, {
     enabled: active,
     includeBranchFiles: active && scope === "branch"
@@ -60,6 +61,13 @@ export function ReviewView({
     () => (lastTurnKey ? lastTurnKey.split("\n") : []),
     [lastTurnKey]
   )
+
+  useEffect(() => {
+    if (scope === "last-turn" && lastTurnPaths.length === 0 && changes.length > 0) {
+      setScope("uncommitted")
+    }
+  }, [scope, lastTurnPaths.length, changes.length, setScope])
+
   const scoped = useMemo(
     () => filterChangesByScope(changes, scope, lastTurnPaths, git.branchFiles),
     [changes, scope, lastTurnPaths, git.branchFiles]

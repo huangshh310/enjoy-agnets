@@ -8,10 +8,19 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { TranslateFn } from "@renderer/i18n"
 import { parseAgentStepNodes } from "./agent-step-tree-parser.ts"
 
-const mockT: TranslateFn = (key: string, params?: Record<string, unknown>) => {
+const mockT: TranslateFn = (key: string, params?: Record<string, string | number>) => {
   if (key === "chat.batchFilesModified") return `已修改 ${String(params?.count ?? 0)} 个文件`
+  if (key === "chat.batchFilesRead") return `已读取 ${String(params?.count ?? 0)} 个文件`
+  if (key === "chat.batchCommandsRun") return `已执行 ${String(params?.count ?? 0)} 条命令`
+  if (key === "chat.exploringProject") return "正在探索项目"
+  if (key === "chat.exploredPages") return `已浏览 ${String(params?.count ?? 0)} 个页面`
+  if (key === "chat.readName") return `已读取 ${String(params?.name ?? "")}`
   if (key === "chat.verbWrite") return "写入"
   if (key === "chat.verbEdit") return "编辑"
+  if (key === "chat.verbRead") return "读取"
+  if (key === "chat.verbFind") return "查找"
+  if (key === "chat.verbRun") return "运行"
+  if (key === "chat.searchingQuery") return `正在搜索 ${String(params?.query ?? "")}`
   return key
 }
 
@@ -93,6 +102,32 @@ test("bash 终端命令精准归位为 command 节点且不被批量编辑合并
   assert.equal(nodes[2].title, "$ python3 --version")
   assert.equal(nodes[2].exitCode, 0)
   assert.equal(nodes[2].status, "completed")
+})
+
+test("grep 的 pattern 不会被当成 bash 命令", () => {
+  const nodes = parseAgentStepNodes("", [createTool("t1", "grep", { pattern: "foo" })], mockT)
+  assert.equal(nodes[0]?.kind, "search")
+})
+
+test("bash 命令抽出可点域名胶囊", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [createTool("t1", "bash", { command: "curl -fsSL https://wttr.in/Shanghai" }, { exitCode: 0 })],
+    mockT
+  )
+  assert.equal(nodes[0]?.kind, "command")
+  assert.equal(nodes[0]?.domainPills?.[0]?.label, "wttr.in")
+})
+
+test("一次读取多个文件写入 exploredPages", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [createTool("t1", "read_file", { files: ["a.ts", "b.ts", "c.ts"] })],
+    mockT
+  )
+  assert.equal(nodes[0]?.kind, "reading")
+  assert.equal(nodes[0]?.exploredPages?.length, 3)
+  assert.equal(nodes[0]?.exploredTitle, "已浏览 3 个页面")
 })
 
 test("思考按工具切口拆开，当前段落在工具后面", () => {

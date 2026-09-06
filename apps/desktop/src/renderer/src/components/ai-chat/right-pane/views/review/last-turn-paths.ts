@@ -19,7 +19,11 @@ const WRITE_TOOLS: Record<string, true> = {
   edit_file: true,
   write: true,
   edit: true,
-  delete_file: true
+  delete_file: true,
+  delete: true,
+  apply_patch: true,
+  str_replace: true,
+  strreplace: true
 }
 
 export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
@@ -49,10 +53,21 @@ export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
 }
 
 function pathFromTool(tool: ThreadToolCall): string | null {
-  if (!WRITE_TOOLS[tool.name]) return null
-  const args = tool.args
-  if (!args || typeof args !== "object") return null
-  const rec = args as Record<string, unknown>
+  if (!isWriteTool(tool.name)) return null
+  return readToolPath(tool.args) ?? readToolPath(tool.result)
+}
+
+/** Enjoy 本地工具 + CLI/ACP 常见写盘名（Write / StrReplace / apply_patch）。 */
+function isWriteTool(name: string): boolean {
+  const n = name.toLowerCase().replace(/[\s-]/g, "_")
+  if (WRITE_TOOLS[n] || WRITE_TOOLS[name]) return true
+  if (/(^|_)(read|search|glob|grep|list|fetch)(_|$)/.test(n) || n.includes("read")) return false
+  return n.includes("write") || n.includes("edit") || n.includes("patch") || n.includes("strreplace")
+}
+
+function readToolPath(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null
+  const rec = value as Record<string, unknown>
   if (typeof rec.path === "string" && rec.path.trim()) return rec.path.replace(/\\/g, "/")
   if (typeof rec.file === "string" && rec.file.trim()) return rec.file.replace(/\\/g, "/")
   return null

@@ -5,7 +5,6 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { RiCheckLine, RiClipboardLine, RiCommandLine, RiFileLine, RiGitCommitLine } from "@remixicon/react"
 import { diffTexts, parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
-import { CodeBlock } from "@/components/ai-elements/code-block"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { readString } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -17,11 +16,25 @@ export function ApprovalPreview({ name, args }: { name: string; args: Record<str
   if (name === "write_file" || name === "write") {
     return <WorkspaceFilePreview path={filePathOf(args)} next={readString(args, "content")} />
   }
-  if (name === "bash") return <BashPreview args={args} />
+  const isCommand =
+    name === "bash" ||
+    name === "sh" ||
+    name === "execute_command" ||
+    name === "run_command" ||
+    Boolean(readString(args, "command")) ||
+    name.includes(" ") ||
+    name.includes("&&") ||
+    name.includes(";")
+  if (isCommand) {
+    const cmd = readString(args, "command") || (name !== "bash" ? name : "") || JSON.stringify(args, null, 2)
+    return <BashPreview commandText={cmd} />
+  }
   if (name === "git_commit") return <CommitPreview args={args} />
   return (
-    <div className="overflow-hidden rounded-xl border border-separator-border/80">
-      <CodeBlock code={JSON.stringify(args, null, 2)} language="json" />
+    <div className="overflow-hidden rounded-xl border border-separator-border/80 bg-background-secondary-default/40 p-3">
+      <pre className="font-mono text-caption-2-medium text-text-primary whitespace-pre-wrap select-text">
+        {JSON.stringify(args, null, 2)}
+      </pre>
     </div>
   )
 }
@@ -30,21 +43,15 @@ export function filePathOf(args: Record<string, unknown>): string {
   return readString(args, "path") || readString(args, "file_path")
 }
 
-function BashPreview({ args }: { args: Record<string, unknown> }) {
+function BashPreview({ commandText }: { commandText: string }) {
   const t = useT()
   const [copied, setCopied] = useState(false)
-  const commandText = readString(args, "command") || JSON.stringify(args, null, 2)
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-separator-border/80 bg-background-secondary-default/70 font-mono text-caption-1-medium shadow-2xs">
-      <div className="flex items-center justify-between border-b border-separator-border/60 bg-background-secondary-default/90 px-3 py-1.5 text-caption-2-regular text-text-tertiary">
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full bg-rose-500/60" />
-          <span className="size-2.5 rounded-full bg-amber-500/60" />
-          <span className="size-2.5 rounded-full bg-emerald-500/60" />
-          <span className="ml-2 flex items-center gap-1 text-text-secondary">
-            <RiCommandLine className="size-3" />
-            <span>{t("chat.shellCommand")}</span>
-          </span>
+    <div className="flex flex-col overflow-hidden rounded-xl border border-border-button-default bg-background-secondary-default font-mono text-caption-1-regular shadow-2xs">
+      <div className="flex items-center justify-between border-b border-separator-border bg-background-tertiary-default px-3 py-1.5 text-caption-2-medium text-text-secondary">
+        <div className="flex items-center gap-1.5 font-sans text-text-primary">
+          <RiCommandLine className="size-3 text-state-success-text" />
+          <span>{t("chat.terminalShell")}</span>
         </div>
         <button
           type="button"
@@ -54,13 +61,14 @@ function BashPreview({ args }: { args: Record<string, unknown> }) {
               setTimeout(() => setCopied(false), 2000)
             })
           }}
-          className="inline-flex items-center gap-1 text-text-tertiary hover:text-text-primary"
+          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
         >
-          {copied ? <RiCheckLine className="size-3 text-emerald-500" /> : <RiClipboardLine className="size-3" />}
+          {copied ? <RiCheckLine className="size-3 text-state-success-text" /> : <RiClipboardLine className="size-3" />}
           <span>{copied ? t("common.copied") : t("chat.copyCommand")}</span>
         </button>
       </div>
-      <div className="overflow-x-auto whitespace-pre-wrap bg-background-secondary-default/40 p-3 leading-relaxed text-text-primary">
+      <div className="overflow-x-auto whitespace-pre-wrap p-3.5 leading-relaxed text-text-primary select-text">
+        <span className="mr-2 select-none text-state-success-text">$</span>
         <code>{commandText}</code>
       </div>
     </div>

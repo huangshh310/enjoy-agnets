@@ -1,0 +1,71 @@
+/* 两帧硬切 + 1px 跳，街机节奏。降动效时停在 rest。 */
+.session-mascot-active {
+  animation: session-mascot-hop var(--session-mascot-beat, 460ms) infinite;
+}
+
+.session-mascot-rest {
+  animation: session-mascot-rest var(--session-mascot-beat, 460ms) infinite;
+}
+
+.session-mascot-talk {
+  animation: session-mascot-talk var(--session-mascot-beat, 460ms) infinite;
+}
+
+.composer-coin-face {
+  animation: session-mascot-rest 320ms infinite;
+}
+
+.composer-coin-edge {
+  animation: session-mascot-talk 320ms infinite;
+}
+
+@keyframes session-mascot-hop {
+  0%,
+  49.99% {
+    transform: translateY(0);
+  }
+  50%,
+  100% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes session-mascot-rest {
+  0%,
+  49.99% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes session-mascot-talk {
+  0%,
+  49.99% {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-mascot-active,
+  .session-mascot-rest,
+  .session-mascot-talk,
+  .composer-coin-face,
+  .composer-coin-edge {
+    animation: none;
+  }
+
+  .session-mascot-talk {
+    opacity: 0;
+  }
+
+  .session-mascot-rest {
+    opacity: 1;
+  }
+}

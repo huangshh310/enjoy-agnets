@@ -33,8 +33,8 @@ export function ThinkingTrace({
   const seconds = useSettledSeconds(startedAt, streaming, thoughtSeconds)
   const rows = buildTraceRows(reasoning, tools, t)
   const nodes = parseAgentStepNodes(reasoning, tools, t)
-  const expanded = isTraceExpanded(streaming, tools, manualOpen)
-
+  const hasContent = Boolean(reasoning.trim()) || tools.length > 0
+  const expanded = manualOpen ?? (streaming ? hasContent : isTraceExpanded(streaming, tools, null))
   useEffect(() => {
     if (streaming) setManualOpen(null)
   }, [streaming])

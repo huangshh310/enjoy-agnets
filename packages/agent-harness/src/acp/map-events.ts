@@ -16,16 +16,17 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   }
   if (kind === "tool_call") {
     const toolCallId = String(rec.toolCallId ?? rec.id ?? "tool")
-    const name = String(rec.title ?? rec.kind ?? rec.name ?? "tool")
+    const name = inferToolName(rec)
+    const args = extractToolArgs(rec)
     const events: StreamEvent[] = [
-      { type: "tool.start", runId, toolCallId, name, args: rec.rawInput ?? rec.input }
+      { type: "tool.start", runId, toolCallId, name, args }
     ]
     events.push(...fileEvents(rec, runId))
     return events
   }
   if (kind === "tool_call_update") {
     const toolCallId = String(rec.toolCallId ?? rec.id ?? "tool")
-    const name = String(rec.title ?? rec.kind ?? rec.name ?? "tool")
+    const name = inferToolName(rec)
     const status = String(rec.status ?? "")
     const events: StreamEvent[] = []
     events.push(...fileEvents(rec, runId))
@@ -42,6 +43,41 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     return events
   }
   return []
+}
+
+function inferToolName(rec: Record<string, unknown>): string {
+  const raw = String(rec.title ?? rec.name ?? rec.kind ?? "").trim()
+  if (raw && raw !== "tool" && raw !== "function" && raw !== "call") {
+    return raw
+  }
+  const input = asRecord(rec.rawInput ?? rec.input)
+  if (input.command || input.cmd) return "bash"
+  if (input.content || input.diff || input.patch || input.replacement || input.edits) return "edit_file"
+  if (Array.isArray(rec.locations) && rec.locations.length > 0) return "edit_file"
+  if (input.query || input.pattern || input.glob) return "grep"
+  if (input.path || input.file_path || input.file) return "read_file"
+  return raw || "command"
+}
+
+function extractToolArgs(rec: Record<string, unknown>): unknown {
+  const input = rec.rawInput ?? rec.input
+  if (input && typeof input === "object" && !Array.isArray(input)) {
+    const recInput = { ...(input as Record<string, unknown>) }
+    if (!recInput.path && !recInput.file && Array.isArray(rec.locations) && rec.locations[0]) {
+      const locPath = asRecord(rec.locations[0]).path
+      if (typeof locPath === "string" && locPath) {
+        recInput.path = locPath
+      }
+    }
+    return recInput
+  }
+  if (Array.isArray(rec.locations) && rec.locations[0]) {
+    const locPath = asRecord(rec.locations[0]).path
+    if (typeof locPath === "string" && locPath) {
+      return { path: locPath }
+    }
+  }
+  return input
 }
 
 function fileEvents(rec: Record<string, unknown>, runId: string): StreamEvent[] {

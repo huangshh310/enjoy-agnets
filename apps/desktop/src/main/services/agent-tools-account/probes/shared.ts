@@ -1,5 +1,5 @@
 /**
- * 已登录但没有官方数字时给空额度，让卡片画空条 + —。
+ * 已登录但没有官方数字时给空额度，让卡片画空条 + —。不要编造百分比。
  */
 import type { AgentToolQuotaInfo } from "@enjoy-agents/ipc-contract"
 

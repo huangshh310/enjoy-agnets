@@ -2,6 +2,7 @@
  * 审批四项元数据：工作区 / 路径 / 工具 / 风险。
  */
 import { RiAlertLine, RiCommandLine, RiFileLine, RiFolderLine } from "@remixicon/react"
+import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 
 export function ApprovalMeta({
@@ -41,10 +42,14 @@ function Meta({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-1.5">
-      <Icon className={`size-3.5 shrink-0 ${warn ? "text-amber-500" : "text-text-tertiary"}`} />
-      <span className="text-text-tertiary">{label}</span>
+      <Icon className={cx("size-3.5 shrink-0", warn ? "text-amber-500" : "text-text-tertiary")} />
+      <span className="shrink-0 whitespace-nowrap text-text-tertiary">{label}</span>
       <span
-        className={`truncate ${warn ? "font-medium text-amber-500" : "text-text-secondary"} ${mono ? "font-mono" : ""}`}
+        className={cx(
+          "min-w-0 flex-1 truncate",
+          warn ? "font-medium text-amber-500" : "text-text-secondary",
+          mono && "font-mono"
+        )}
         title={value}
       >
         {value}

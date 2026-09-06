@@ -53,6 +53,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   mode: "agent",
   running: false,
   runId: null,
+  runStartedAt: null,
   pendingStreamEvents: [],
   thinkingLabel: "Thinking",
   hasKey: false,
@@ -102,6 +103,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),
       ...(patch.pendingApproval !== undefined ? { pendingApproval: patch.pendingApproval } : {}),
       ...(patch.running !== undefined ? { running: patch.running } : {}),
+      ...(patch.running === true ? { runStartedAt: get().runStartedAt ?? Date.now() } : {}),
+      ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
       ...(patch.error !== undefined ? { error: patch.error } : {})
     })
@@ -124,6 +127,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({
       running,
       runId: runId ?? null,
+      runStartedAt: running ? (get().runStartedAt ?? Date.now()) : null,
       ...(!running ? { pendingStreamEvents: [] } : {})
     })
     if (!running || !runId) return

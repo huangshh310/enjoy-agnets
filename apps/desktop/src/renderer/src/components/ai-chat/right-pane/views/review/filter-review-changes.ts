@@ -3,6 +3,7 @@
  */
 
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
+import { normalizeReviewPath, sameReviewPath } from "./same-review-path.ts"
 import type { ReviewScope } from "./types/review.types"
 
 export function filterChangesByScope(
@@ -19,13 +20,29 @@ export function filterChangesByScope(
     return changes.filter((file) => file.staged)
   }
   if (scope === "last-turn") {
-    const set = new Set(lastTurnPaths)
-    return changes.filter((file) => set.has(file.path))
+    return rowsForLastTurn(changes, lastTurnPaths)
   }
   if (scope === "branch") {
     return mergeByPath(branchFiles, changes)
   }
   return changes
+}
+
+/** 上一轮写盘 path 即使不在 git status 里也要列出，避免条上 10 个文件、审查栏空白。 */
+function rowsForLastTurn(changes: ChangedFileRow[], lastTurnPaths: string[]): ChangedFileRow[] {
+  if (lastTurnPaths.length === 0) return []
+  const used: Record<string, true> = {}
+  const rows: ChangedFileRow[] = []
+  for (const raw of lastTurnPaths) {
+    const path = normalizeReviewPath(raw)
+    if (!path) continue
+    const hit = changes.find((row) => sameReviewPath(row.path, path))
+    const row = hit ?? { path, status: "modified" as const, additions: 0, deletions: 0 }
+    if (used[row.path]) continue
+    used[row.path] = true
+    rows.push(row)
+  }
+  return rows
 }
 
 function mergeByPath(branchFiles: ChangedFileRow[], working: ChangedFileRow[]): ChangedFileRow[] {

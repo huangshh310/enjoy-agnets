@@ -1,77 +1,21 @@
 /**
- * Agent Step Tree 数据解析器：
- * 将真实 tools 调用与 reasoning 解析为带域名微标 (Domain Pills) 与子页面清单 (Explored Pages) 的结构化步骤树。
+ * Agent Step Tree 解析器：思考按工具切开，搜索带域名胶囊，阅读带 Explored pages。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "../../../../lib/record.ts"
 import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary.ts"
-import type { AgentStepNode, DomainPill, SubPageItem } from "./agent-step-tree.types.ts"
+import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { splitReasoningAroundTools } from "./split-reasoning-around-tools.ts"
+import { groupConsecutiveSteps } from "./agent-step-group.ts"
+import { extractDomainPills } from "./extract-domain-pills.ts"
+import {
+  extractCommandString,
+  extractFilePaths,
+  mapToolStatus
+} from "./extract-step-fields.ts"
 
-/** 提取文本或 JSON 中的所有网址与顶级域名 */
-function extractDomains(text: string): DomainPill[] {
-  const urlRegex = /(?:https?:\/\/)?([a-zA-Z0-9.-]+\.(?:com|org|net|io|dev|ai|app|cn|me|so|in|cc|edu|gov)(?:\/[^\s"'\\]*)?)/gi
-  const matches = Array.from(text.matchAll(urlRegex))
-  const pills: DomainPill[] = []
-  const seen = new Set<string>()
-
-  for (const m of matches) {
-    const raw = m[1] ?? ""
-    if (!raw) continue
-    const domain = raw.split(/[/?#]/)[0]?.toLowerCase() ?? ""
-    if (!domain || domain.length < 3 || seen.has(domain)) continue
-    seen.add(domain)
-
-    const fullUrl = raw.startsWith("http") ? raw : `https://${raw}`
-    pills.push({
-      id: `domain_${pills.length}_${domain}`,
-      label: domain,
-      url: fullUrl
-    })
-  }
-
-  return pills
-}
-
-/** 提取文件名或路径列表 */
-function extractFilePaths(args: Record<string, unknown>, result: Record<string, unknown>, t: TranslateFn): SubPageItem[] {
-  const pages: SubPageItem[] = []
-  const candidates: string[] = []
-
-  if (typeof args.path === "string") candidates.push(args.path)
-  if (typeof args.file === "string") candidates.push(args.file)
-  if (typeof args.url === "string") candidates.push(args.url)
-  if (Array.isArray(args.files)) candidates.push(...args.files.filter((f): f is string => typeof f === "string"))
-  if (Array.isArray(result.files)) candidates.push(...result.files.filter((f): f is string => typeof f === "string"))
-  if (Array.isArray(result.entries)) {
-    for (const e of result.entries) {
-      if (typeof e === "string") candidates.push(e)
-      else if (e && typeof e === "object" && "path" in e && typeof e.path === "string") {
-        candidates.push(e.path)
-      }
-    }
-  }
-
-  const unique = Array.from(new Set(candidates))
-  for (let i = 0; i < unique.length; i++) {
-    const raw = unique[i]!
-    const name = raw.split(/[\\/]/).pop() || raw
-    pages.push({
-      id: `subpage_${i}_${name}`,
-      title: raw.startsWith("http") ? t("chat.visited", { url: raw }) : t("chat.readName", { name }),
-      path: raw.startsWith("http") ? undefined : raw
-    })
-  }
-
-  return pages
-}
-
-function mapToolStatus(state: ThreadToolCall["state"]): AgentStepNode["status"] {
-  if (state === "output-error" || state === "output-denied") return "error"
-  if (state === "input-streaming" || state === "input-available" || state === "approval-requested") return "running"
-  return "completed"
-}
+const MAX_THINKING_CHARS = 1200
 
 export function parseAgentStepNodes(
   reasoning: string,
@@ -97,18 +41,171 @@ export function parseAgentStepNodes(
     if (node) nodes.push(node)
   }
 
-  return groupConsecutiveEdits(nodes, t)
+  return groupConsecutiveSteps(nodes, t)
 }
 
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
-  const kind = toolKind(tool.name)
   const args = asRecord(tool.args)
   const result = asRecord(tool.result)
-  const status = mapToolStatus(tool.state)
-  const allText = `${JSON.stringify(args)} ${JSON.stringify(result)} ${tool.name}`
-  const domains = extractDomains(allText)
-  const fullCommand =
-    typeof args.command === "string" ? args.command : typeof args.cmd === "string" ? args.cmd : undefined
+  const command = extractCommandString(tool)
+  const name = tool.name.toLowerCase()
+  if (isBashTool(name, command)) return commandNode(tool, command, args, result)
+  if (isSearchTool(tool, name)) return searchNode(tool, args, result, command, t)
+  if (isEditTool(name, args, result)) return editNode(tool, args, result, command, t)
+  if (isReadTool(name, args)) return readNode(tool, args, result, command, t)
+  return fallbackNode(tool, command, args)
+}
+
+function isBashTool(name: string, command: string | undefined): boolean {
+  if (name === "bash" || name === "command" || name === "terminal" || name === "code_mode" || name === "sh") {
+    return true
+  }
+  return Boolean(command) && (name.includes("bash") || name.includes("shell") || name.includes("terminal"))
+}
+
+function isSearchTool(tool: ThreadToolCall, name: string): boolean {
+  return (
+    toolKind(tool.name) === "search" ||
+    name.includes("search") ||
+    name === "grep" ||
+    name === "glob"
+  )
+}
+
+function isEditTool(name: string, args: Record<string, unknown>, result: Record<string, unknown>): boolean {
+  if (name.includes("write") || name.includes("edit") || name.includes("patch") || name.includes("strreplace")) {
+    return true
+  }
+  const path = String(args.path || args.file || "")
+  const hasEdit = Boolean(
+    args.content || args.diff || args.patch || args.replacement || args.edits || result.diff || result.content
+  )
+  return Boolean(path) && hasEdit
+}
+
+function isReadTool(name: string, args: Record<string, unknown>): boolean {
+  if (name.includes("read") || name.includes("fetch") || name.includes("list")) return true
+  return Boolean(args.path || args.file || args.url || args.file_path)
+}
+
+function commandNode(
+  tool: ThreadToolCall,
+  command: string | undefined,
+  args: Record<string, unknown>,
+  result: Record<string, unknown>
+): AgentStepNode {
+  const cmd = command || summarizeToolArgs(tool) || ""
+  const display = cmd ? (cmd.length > 70 ? `$ ${cmd.slice(0, 68)}...` : `$ ${cmd}`) : `$ ${tool.name}`
+  const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
+  const pills = extractDomainPills(args, result, cmd)
+  return {
+    id: tool.id,
+    kind: "command",
+    title: display,
+    ...ioFields(tool, command, result),
+    domainPills: pills.length > 0 ? pills : undefined,
+    status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state)
+  }
+}
+
+function searchNode(
+  tool: ThreadToolCall,
+  args: Record<string, unknown>,
+  result: Record<string, unknown>,
+  command: string | undefined,
+  t: TranslateFn
+): AgentStepNode {
+  const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
+  const title =
+    query.length > 50
+      ? t("chat.searchingQueryMore", { query: query.slice(0, 50) })
+      : t("chat.searchingQuery", { query })
+  const pills = extractDomainPills(args, result, command)
+  return {
+    id: tool.id,
+    kind: "search",
+    title,
+    status: mapToolStatus(tool.state),
+    domainPills: pills.length > 0 ? pills : undefined
+  }
+}
+
+function editNode(
+  tool: ThreadToolCall,
+  args: Record<string, unknown>,
+  result: Record<string, unknown>,
+  command: string | undefined,
+  t: TranslateFn
+): AgentStepNode {
+  const path = String(args.path || args.file || "")
+  const parts = path.split(/[\\/]/)
+  const fileName = parts.pop() || path
+  const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
+  const writing = tool.name.toLowerCase().includes("write")
+  return {
+    id: tool.id,
+    kind: "editing",
+    title: `${writing ? t("chat.verbWrite") : t("chat.verbEdit")} ${fileName}`,
+    filePath: path,
+    fileName,
+    fileDir,
+    actionVerb: writing ? t("chat.verbWrite") : t("chat.verbEdit"),
+    ...ioFields(tool, command, result),
+    additions: typeof result.additions === "number" ? result.additions : undefined,
+    deletions: typeof result.deletions === "number" ? result.deletions : undefined,
+    status: mapToolStatus(tool.state)
+  }
+}
+
+function readNode(
+  tool: ThreadToolCall,
+  args: Record<string, unknown>,
+  result: Record<string, unknown>,
+  command: string | undefined,
+  t: TranslateFn
+): AgentStepNode {
+  const exploredPages = extractFilePaths(args, result, t)
+  const path = String(args.path || args.file || args.file_path || args.url || "")
+  const parts = path.split(/[\\/]/)
+  const leafName = parts.pop() || path
+  const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
+  const pills = extractDomainPills(args, result, command)
+  return {
+    id: tool.id,
+    kind: "reading",
+    title: path ? t("chat.readName", { name: leafName }) : t("chat.readingResources"),
+    filePath: path || undefined,
+    fileName: leafName || undefined,
+    fileDir: fileDir || undefined,
+    actionVerb: t("chat.verbRead"),
+    ...ioFields(tool, command, result),
+    exploredPages: exploredPages.length > 1 ? exploredPages : undefined,
+    exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
+    domainPills: pills.length > 0 ? pills : undefined,
+    status: mapToolStatus(tool.state)
+  }
+}
+
+function fallbackNode(
+  tool: ThreadToolCall,
+  command: string | undefined,
+  args: Record<string, unknown>
+): AgentStepNode {
+  const rawPath = String(args.path || args.file || args.url || "")
+  let title = formatToolName(tool.name)
+  if (!title || title.toLowerCase() === "tool" || title.toLowerCase() === "function") {
+    title = command ? `$ ${command.slice(0, 60)}` : rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : tool.name
+  }
+  return {
+    id: tool.id,
+    kind: "command",
+    title,
+    detail: command && command.length > 80 ? `${command.slice(0, 80)}...` : command,
+    status: mapToolStatus(tool.state)
+  }
+}
+
+function ioFields(tool: ThreadToolCall, command: string | undefined, result: Record<string, unknown>) {
   const output =
     typeof result.output === "string"
       ? result.output
@@ -117,148 +214,13 @@ function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode 
         : typeof result.stderr === "string"
           ? result.stderr
           : undefined
-  const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
-  const errorText = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
-  const isBashTool =
-    tool.name === "bash" || tool.name === "command" || tool.name === "terminal" || tool.name === "code_mode"
-  const isSearchTool = kind === "search" || tool.name.toLowerCase().includes("search")
-  const isReadTool = tool.name.includes("read") || tool.name.includes("fetch") || tool.name.includes("list")
-  const isEditTool = tool.name.includes("write") || tool.name.includes("edit") || tool.name.includes("patch")
-  const base = { command: fullCommand, output, exitCode, errorText }
-
-  if (isBashTool) {
-    const cmd = fullCommand || summarizeToolArgs(tool) || ""
-    const displayTitle = cmd ? (cmd.length > 70 ? `$ ${cmd.slice(0, 68)}...` : `$ ${cmd}`) : "bash"
-    return {
-      id: tool.id,
-      kind: "command",
-      title: displayTitle,
-      ...base,
-      command: fullCommand || cmd,
-      domainPills: domains.length > 0 ? domains : undefined,
-      status: exitCode !== undefined && exitCode !== 0 ? "error" : status
-    }
-  }
-  if (isSearchTool) {
-    const query = String(args.query || args.pattern || summarizeToolArgs(tool) || "context")
-    const displayTitle =
-      query.length > 50
-        ? t("chat.searchingQueryMore", { query: query.slice(0, 50) })
-        : t("chat.searchingQuery", { query })
-    return {
-      id: tool.id,
-      kind: "search",
-      title: displayTitle,
-      ...base,
-      domainPills: domains.length > 0 ? domains : undefined,
-      status
-    }
-  }
-  if (isReadTool) {
-    const exploredPages = extractFilePaths(args, result, t)
-    const path = String(args.path || args.file || args.url || "")
-    const leafName = path.split(/[\\/]/).pop() || path
-    return {
-      id: tool.id,
-      kind: "reading",
-      title: path ? t("chat.readingName", { name: leafName }) : t("chat.readingResources"),
-      ...base,
-      exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
-      exploredPages: exploredPages.length > 0 ? exploredPages : undefined,
-      domainPills: domains.length > 0 ? domains : undefined,
-      status
-    }
-  }
-  if (isEditTool) {
-    const path = String(args.path || args.file || "")
-    const parts = path.split(/[\\/]/)
-    const fileName = parts.pop() || path
-    const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
-    return {
-      id: tool.id,
-      kind: "editing",
-      title: `${tool.name.includes("write") ? t("chat.verbWrite") : t("chat.verbEdit")} ${fileName}`,
-      filePath: path,
-      fileName,
-      fileDir,
-      actionVerb: tool.name.includes("write") ? t("chat.verbWrite") : t("chat.verbEdit"),
-      ...base,
-      additions: typeof result.additions === "number" ? result.additions : undefined,
-      deletions: typeof result.deletions === "number" ? result.deletions : undefined,
-      status
-    }
-  }
-  const cmd = fullCommand || summarizeToolArgs(tool) || ""
   return {
-    id: tool.id,
-    kind: "command",
-    title: formatToolName(tool.name),
-    detail: cmd ? (cmd.length > 80 ? `${cmd.slice(0, 80)}...` : cmd) : undefined,
-    ...base,
-    command: cmd,
-    domainPills: domains.length > 0 ? domains : undefined,
-    status
+    command,
+    output,
+    exitCode: typeof result.exitCode === "number" ? result.exitCode : undefined,
+    errorText: tool.errorText || (typeof result.error === "string" ? result.error : undefined)
   }
 }
-
-/** 连续 3 个或以上的文件编辑合并为单个高阶树节点，避免流水账刷屏 */
-function groupConsecutiveEdits(nodes: AgentStepNode[], t: TranslateFn): AgentStepNode[] {
-  const result: AgentStepNode[] = []
-  let i = 0
-
-  while (i < nodes.length) {
-    const node = nodes[i]
-    if (node.kind !== "editing") {
-      result.push(node)
-      i++
-      continue
-    }
-
-    let j = i
-    while (j < nodes.length && nodes[j].kind === "editing") {
-      j++
-    }
-
-    const editRun = nodes.slice(i, j)
-    if (editRun.length >= 3) {
-      const sumAdditions = editRun.reduce((sum, n) => sum + (n.additions ?? 0), 0)
-      const sumDeletions = editRun.reduce((sum, n) => sum + (n.deletions ?? 0), 0)
-      const anyRunning = editRun.some((n) => n.status === "running")
-      const anyError = editRun.some((n) => n.status === "error")
-      const batchStatus = anyError ? "error" : anyRunning ? "running" : "completed"
-
-      result.push({
-        id: `batch_edit_${editRun[0].id}`,
-        kind: "editing",
-        isBatch: true,
-        title: t("chat.batchFilesModified", { count: editRun.length }),
-        additions: sumAdditions > 0 ? sumAdditions : undefined,
-        deletions: sumDeletions > 0 ? sumDeletions : undefined,
-        status: batchStatus,
-        batchItems: editRun.map((n) => ({
-          id: n.id,
-          path: n.filePath || n.title,
-          fileName: n.fileName || n.title,
-          fileDir: n.fileDir || "",
-          actionVerb: n.actionVerb,
-          additions: n.additions,
-          deletions: n.deletions,
-          status: n.status
-        }))
-      })
-    } else {
-      for (const single of editRun) {
-        result.push(single)
-      }
-    }
-
-    i = j
-  }
-
-  return result
-}
-
-const MAX_THINKING_CHARS = 1200
 
 function clampThinkingText(text: string): string {
   if (text.length <= MAX_THINKING_CHARS) return text

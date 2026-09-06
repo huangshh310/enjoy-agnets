@@ -29,6 +29,21 @@ test("maps tool call and path locations", () => {
   assert.equal(events[1]?.type, "file.changed")
 })
 
+test("无 title 但有 locations 时推断为 edit_file，不要当成 read_file", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "t2",
+      rawInput: { path: "b.ts" },
+      locations: [{ path: "b.ts" }]
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") assert.equal(start.name, "edit_file")
+})
+
 test("permission options map allow / deny / session", () => {
   const options = [
     { optionId: "allow-once", kind: "allow_once" },

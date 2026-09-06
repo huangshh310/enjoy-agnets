@@ -3,6 +3,7 @@
  */
 import { RiUser3Line } from "@remixicon/react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { barWidth, formatQuotaPercent, pickQuotaPercent, pickQuotaWindow } from "./agent-tool-quota"
 
@@ -44,13 +45,21 @@ export function AgentToolAccountRow({
 }
 
 function QuotaBar({ percent }: { percent: number | null }) {
-  const tone = percent != null && percent > 75 ? "bg-text-error-primary" : percent != null && percent > 40 ? "bg-text-secondary" : "bg-accent-500"
+  const tone =
+    percent == null || percent <= 0
+      ? "bg-text-tertiary/40"
+      : percent >= 85
+        ? "bg-rose-500"
+        : percent >= 50
+          ? "bg-amber-500"
+          : "bg-emerald-500"
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 pt-0.5">
       <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-background-secondary-hover/70">
-        <div className={`h-full rounded-full ${tone}`} style={{ width: `${barWidth(percent)}%` }} />
+        <div className={cx("h-full rounded-full transition-all duration-300", tone)} style={{ width: `${barWidth(percent)}%` }} />
       </div>
-      <span className="w-10 shrink-0 text-right font-mono text-caption-2-medium tabular-nums text-text-secondary">
+      <span className="w-11 shrink-0 text-right font-mono text-caption-2-medium tabular-nums text-text-primary">
         {formatQuotaPercent(percent)}
       </span>
     </div>

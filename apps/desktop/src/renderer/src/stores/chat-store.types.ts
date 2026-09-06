@@ -131,6 +131,8 @@ export type ChatStore = {
   mode: AgentMode
   running: boolean
   runId: string | null
+  /** 本轮 setRunning(true) 的真实起点；停跑清空。禁止编造。 */
+  runStartedAt: number | null
   /** composer 尚未拿到 runId 时暂存事件，避免旁路 Extract 写进乐观轮 */
   pendingStreamEvents: StreamEvent[]
   thinkingLabel: string

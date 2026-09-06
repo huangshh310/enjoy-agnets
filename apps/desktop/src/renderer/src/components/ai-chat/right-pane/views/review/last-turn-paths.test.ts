@@ -45,6 +45,37 @@ test("续跑用户句不切断上一轮", () => {
   assert.deepEqual(pathsFromLastTurn(messages), ["a.ts"])
 })
 
+test("apply_patch 算写盘，web_search 不算", () => {
+  const messages = [
+    msg({ role: "user", content: "改" }),
+    msg({
+      role: "assistant",
+      content: "",
+      tools: [
+        { id: "1", name: "apply_patch", args: { path: "a.ts" }, state: "output-available" },
+        { id: "2", name: "web_search", args: { path: "https://example.com" }, state: "output-available" }
+      ]
+    })
+  ]
+  assert.deepEqual(pathsFromLastTurn(messages), ["a.ts"])
+})
+
+test("CLI 写盘工具名也能抽出 path", () => {
+  const messages = [
+    msg({ role: "user", content: "改" }),
+    msg({
+      role: "assistant",
+      content: "",
+      tools: [
+        { id: "1", name: "Write", args: { path: "a.ts" }, state: "output-available" },
+        { id: "2", name: "StrReplace", args: { path: "b.ts" }, state: "output-available" },
+        { id: "3", name: "Read", args: { path: "skip.ts" }, state: "output-available" }
+      ]
+    })
+  ]
+  assert.deepEqual(pathsFromLastTurn(messages), ["a.ts", "b.ts"])
+})
+
 test("助手正文变长不改变上一轮 path", () => {
   const tools = [{ id: "1", name: "write_file", args: { path: "a.ts" }, state: "output-available" as const }]
   const before = [

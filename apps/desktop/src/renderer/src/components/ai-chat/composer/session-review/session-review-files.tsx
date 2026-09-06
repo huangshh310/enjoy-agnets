@@ -1,0 +1,89 @@
+/**
+ * 改动条文件行：彩色类型标 + 文件名 + 目录 + 增减。
+ */
+import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
+import { useT } from "@renderer/i18n"
+import { cx } from "@/utils/cx"
+import type { SessionReviewFile } from "./session-review.types"
+
+export function SessionFileTrigger({
+  file,
+  title,
+  onOpen
+}: {
+  file: SessionReviewFile
+  title: string
+  onOpen: (path: string) => void
+}) {
+  const fileName = file.name || file.path.split(/[\\/]/).pop() || file.path
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={() => onOpen(file.path)}
+      className="group flex min-w-0 flex-1 items-center gap-1.5 py-0.5 text-left text-text-secondary transition-colors hover:text-text-primary"
+    >
+      <FileTypeIcon name={fileName} size={15} />
+      <span className="truncate font-mono text-[12px] font-medium tracking-tight text-text-primary/90 group-hover:text-accent-500">
+        {fileName}
+      </span>
+      <DiffCounts additions={file.additions} deletions={file.deletions} />
+    </button>
+  )
+}
+
+export function SessionFileRow({
+  file,
+  onOpen
+}: {
+  file: SessionReviewFile
+  title?: string
+  onOpen: (path: string) => void
+}) {
+  const parts = file.path.split(/[\\/]/)
+  const fileName = file.name || parts.pop() || file.path
+  const dir = parts.length > 0 ? parts.join("/") : ""
+
+  return (
+    <button
+      type="button"
+      title={file.path}
+      onClick={() => onOpen(file.path)}
+      className="group flex h-7.5 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-text-primary/80 transition-all hover:bg-background-primary-default/90 hover:text-text-primary"
+    >
+      <FileTypeIcon name={fileName} size={15} />
+      <span className="min-w-0 truncate font-mono text-[12px] font-medium text-text-primary group-hover:text-accent-500">
+        {fileName}
+      </span>
+      {dir ? (
+        <span className="max-w-[200px] truncate font-mono text-[11px] text-text-tertiary/70">{dir}</span>
+      ) : null}
+      <span className="ml-auto shrink-0">
+        <DiffCounts additions={file.additions} deletions={file.deletions} />
+      </span>
+    </button>
+  )
+}
+
+function DiffCounts({ additions, deletions }: { additions: number; deletions: number }) {
+  const t = useT()
+  if (additions <= 0 && deletions <= 0) {
+    return (
+      <span className="shrink-0 text-[11px] font-medium text-amber-500/90">{t("chat.sessionReviewNoDiff")}</span>
+    )
+  }
+  return (
+    <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums">
+      {additions > 0 ? <span className="text-emerald-500">+{additions}</span> : null}
+      {additions > 0 && deletions > 0 ? " " : null}
+      {deletions > 0 ? <span className="text-rose-500">-{deletions}</span> : null}
+    </span>
+  )
+}
+
+export function sessionFileListClassName(expanded: boolean): string {
+  return cx(
+    "mt-1.5 max-h-48 space-y-0.5 overflow-y-auto border-t border-border-button-default/40 pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+    !expanded && "hidden"
+  )
+}

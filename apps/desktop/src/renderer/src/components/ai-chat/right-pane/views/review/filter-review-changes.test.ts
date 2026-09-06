@@ -44,6 +44,15 @@ test("last-turn 按路径交集", () => {
   )
 })
 
+test("last-turn 没有 git 命中仍列出 path，避免审查栏空白", () => {
+  const next = filterChangesByScope([], "last-turn", ["a.ts", "src/b.ts"], [])
+  assert.deepEqual(
+    next.map((f) => f.path),
+    ["a.ts", "src/b.ts"]
+  )
+  assert.equal(next[0]?.additions, 0)
+})
+
 test("branch 合并上游文件与工作区", () => {
   const working = [row("a.ts", { additions: 3 })]
   const branch = [row("a.ts", { additions: 1 }), row("c.ts")]
