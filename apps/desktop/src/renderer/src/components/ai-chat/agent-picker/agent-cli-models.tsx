@@ -1,5 +1,5 @@
 /**
- * CLI 智能体模型列表与检索。右侧 id 必须有列宽，避免被浮层边框切掉。
+ * CLI 智能体模型列表与检索。只显示名称，id 放悬停，避免左右重复。
  */
 import { useMemo, useState } from "react"
 import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
@@ -74,11 +74,10 @@ function CliModelRow({
 }) {
   const thinking =
     model.label.toLowerCase().includes("thinking") || model.id.toLowerCase().includes("thinking")
-  const showId = model.id !== model.label
   return (
     <button
       type="button"
-      title={showId ? `${model.label} · ${model.id}` : model.label}
+      title={model.id === model.label ? model.label : `${model.label} · ${model.id}`}
       onClick={() => onPick(model)}
       className={`flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors ${
         selected
@@ -98,11 +97,6 @@ function CliModelRow({
           </span>
         ) : null}
       </span>
-      {showId ? (
-        <span className="w-36 shrink-0 truncate text-right font-mono text-caption-2-medium text-text-tertiary">
-          {model.id}
-        </span>
-      ) : null}
       <span className="flex w-3.5 shrink-0 justify-end">
         {selected ? <RiCheckLine className="size-3.5 text-accent-500" /> : null}
       </span>
