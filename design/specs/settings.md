@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-04
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -26,7 +26,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 底栏用户卡片展开菜单完整映射至上述 Settings / Inbox Hash，及应用内 `ConfirmDialog` 退出登录，杜绝任何 no-op。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
 
-Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。
+Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。
 
 `#/skills` 是唯一 Skills UI（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。
 Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。界面语言默认 `zh`，见 [i18n](./i18n.md)。
@@ -78,4 +78,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
 - 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。
+- Providers 自带标题与分段控件。`SettingsSectionPage` 不要再叠一层 `h1`，否则出现两个「模型供应商」。空态虚线框必须 `flex-1`，不要按内容收在卡片上半截。
 - 账单页没有计费 IPC。禁止 setTimeout 假装核验/导出成功；CSV 用 `Blob` 本机下载。

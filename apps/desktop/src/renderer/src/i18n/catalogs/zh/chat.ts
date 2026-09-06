@@ -124,6 +124,8 @@ export const zhChat = {
   noModelsFound: "未找到模型",
   noModelsMatching: "没有匹配「{query}」的模型",
   noModelsConfigured: "该供应商尚未配置模型",
+  noProvidersYet: "尚未配置供应商",
+  noProvidersHint: "先添加供应商和 API 密钥，模型才会出现在这里。",
   videoLockedHint: "实验性。选择此模型将提示开启实验媒体。",
   badgeFast: "快速",
   badgeThinking: "思考",

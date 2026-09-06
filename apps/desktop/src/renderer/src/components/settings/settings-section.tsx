@@ -1,6 +1,6 @@
 /**
  * 设置分段路由：按 hash section 挂载对应页。
- * 页面标题由壳层 h1 提供；各分段自己负责看板与卡片。
+ * 多数分段由壳层提供 h1；Providers / Account / Billing 等自带标题，不要再叠一层。
  */
 import { useParams } from "@tanstack/react-router"
 import { useT } from "@renderer/i18n"
@@ -20,6 +20,13 @@ export function SettingsSectionPage() {
   if (section === "automations") return <SettingsSectionBody section={section} />
   if (section === "account") return <SettingsSectionBody section={section} />
   if (section === "billing") return <SettingsSectionBody section={section} />
+  if (section === "providers") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <SettingsSectionBody section={section} />
+      </div>
+    )
+  }
   const title = item
     ? item.label.startsWith("nav.")
       ? t(item.label)

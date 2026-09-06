@@ -65,7 +65,7 @@ async function settingsSnapshot() {
     hasKey: ready,
     provider: secret?.provider ?? null,
     baseURL: secret?.baseURL ?? null,
-    defaultModelId: active?.modelId || getSetting("defaultModelId") || "deepseek-chat",
+    defaultModelId: active?.modelId || getSetting("defaultModelId") || "",
     lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
     providers: await listPublicProviders(),
     preferences: readPreferences(),

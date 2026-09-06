@@ -170,7 +170,7 @@ function EmptyConfiguredState({
 }) {
   const t = useT()
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border-button-default bg-background-primary-default p-12 text-center shadow-xs">
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-border-button-default bg-background-primary-default px-8 py-12 text-center shadow-xs">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 shadow-xs dark:bg-accent-950/50 dark:text-accent-300">
         <RiCompass3Line className="size-8" />
       </div>

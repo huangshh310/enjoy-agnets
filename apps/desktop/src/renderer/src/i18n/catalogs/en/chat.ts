@@ -126,6 +126,8 @@ export const enChat = {
   noModelsFound: "No models found",
   noModelsMatching: "No models matching \"{query}\"",
   noModelsConfigured: "No models configured for this provider",
+  noProvidersYet: "No providers configured",
+  noProvidersHint: "Add a provider and API key in Settings before models appear here.",
   videoLockedHint: "Experimental. Selecting this model will ask to enable experimental media.",
   badgeFast: "Fast",
   badgeThinking: "Thinking",

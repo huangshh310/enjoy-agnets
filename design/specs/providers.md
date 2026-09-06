@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-09-03
+> 协议工厂，不是品牌锁定。最后更新：2026-09-06
 
 ## 当前真相
 
@@ -12,7 +12,7 @@
 | `anthropic` | Messages | `/v1/messages` |
 | `openai-responses` | Responses | `/v1/responses` |
 
-密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic` 给 UI：`hasKey`、`keyHint`（`••••` + 后四位）、Base URL，**从不回说明文 Key**。
+密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic` 给 UI：`hasKey`、`keyHint`（`••••` + 后四位）、Base URL，**从不回说明文 Key**。`models.list` 只返回 vault 里**已配置档案**的目录；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器空态引导去设置页，composer 默认不预填 `deepseek-chat`。
 
 探测：`probeProvider` / `pingProvider` / `discoverRemoteModels`。Fetch `/models` 合并进用户目录后 `rememberProbedModels`；`models.list` 带 `staticCaps` / `probedCaps` / `probedAt`，以及按模型解析的 `contextWindow`。窗口优先级：探测目录字段（`context_window` / `max_model_len` 等）> AI Gateway 公开目录 `GET https://ai-gateway.vercel.sh/v1/models`（启动缓存）> 档案**手填** `contextWindow`。设置页 128k 等只是快捷芯片，默认「自动 / 未知」，未手填不写入档案、不进解析链。SDK 7 的 `LanguageModel` **没有** `contextWindow`，禁止按 modelId 写死 1M/200k 映射表。未探测时 UI 用静态目录（id/label），窗口仍走 Gateway / 手填。都没有则省略 `contextWindow`，UI 显示「窗口未知」。HTML 当 JSON 要报成可读端点错误。
 
@@ -33,12 +33,14 @@
 
 - 工厂与探测：`packages/providers`
 - 上下文窗口解析：`packages/providers/src/context-window.ts`、`gateway-catalog.ts`；`models.list` 在 `secrets.ts` 的 `listAllPublicModels` 注入
+- 空 vault 目录：`apps/desktop/src/main/services/listed-models.ts`
 - vault：`apps/desktop/src/main/services/secrets-vault.ts`（加解密 / 迁移）；档案 CRUD：`secrets.ts`
 - 设置 UI：`apps/desktop/src/renderer/src/components/settings/providers/`
 - 合约：`packages/ipc-contract` 的 `UpsertProviderInput` / `ProviderPublic`
 
 ## 已知坑
 
+- 空 vault 曾在 `listAllPublicModels` 硬塞 DeepSeek 静态目录（`providerId: "default"`）。设置页「已配置 0」但选择器仍显示 4 个模型。目录必须跟档案走，空档案返回 `[]`。
 - DeepSeek 走 OpenAI 兼容端点（`https://api.deepseek.com/v1`），不是独立 SDK。
 - 国内中转只改 `baseURL` + 透传模型 ID。preset 不是唯一合法供应商。
 - 上下文窗口：不要写 `MODEL_CONTEXT_LIMITS["grok-4.6"]=1M`。官方 `/models` 常不带 `context_window`，此时靠 Gateway 目录或用户明确手填的档案窗口；都没有就显示「窗口未知」，不要猜 128k / 200k / 1M。旧档案若曾被表单默认写成 128000，用户需在参数页点「自动 / 未知」并保存才能清掉。

@@ -40,9 +40,11 @@ export function ModelPicker({
   useEffect(() => {
     if (open && hasIde()) {
       void getIde().models.list().then((res) => {
-        if (Array.isArray(res) && res.length > 0) {
-          useChatStore.getState().setModels(res as ModelOption[])
-        }
+        if (!Array.isArray(res)) return
+        const listed = res as ModelOption[]
+        const store = useChatStore.getState()
+        store.setModels(listed)
+        if (listed.length === 0) store.setModel("", "")
       })
     }
   }, [open])
@@ -121,7 +123,7 @@ export function ModelPicker({
             />
           </div>
           <span className="min-w-0 max-w-[5.5rem] truncate text-caption-1-medium text-text-primary">
-            {modelLabel || modelId}
+            {models.length > 0 ? modelLabel || modelId : t("chat.selectModel")}
           </span>
           <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </button>
@@ -150,6 +152,7 @@ export function ModelPicker({
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onSelectModel={handleSelectModel}
+          onManageProviders={handleManageProviders}
           experimentalMedia={experimentalMedia}
         />
       </PopoverContent>

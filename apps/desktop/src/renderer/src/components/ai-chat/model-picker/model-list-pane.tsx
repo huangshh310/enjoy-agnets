@@ -24,6 +24,7 @@ export function ModelListPane({
   searchQuery,
   onSearchChange,
   onSelectModel,
+  onManageProviders,
   experimentalMedia
 }: {
   selectedKey: string
@@ -33,6 +34,7 @@ export function ModelListPane({
   searchQuery: string
   onSearchChange: (query: string) => void
   onSelectModel: (model: ModelOption) => void
+  onManageProviders: () => void
   experimentalMedia: boolean
 }) {
   const t = useT()
@@ -95,17 +97,28 @@ export function ModelListPane({
       </div>
 
       {/* 模型列表 */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
         {filteredModels.length === 0 ? (
-          <div className="flex h-48 flex-col items-center justify-center text-center p-4">
-            <span className="text-[12px] font-medium text-text-secondary">
-              {t("chat.noModelsFound")}
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center">
+            <span className="text-caption-1-semibold text-text-secondary">
+              {groups.length === 0 ? t("chat.noProvidersYet") : t("chat.noModelsFound")}
             </span>
-            <span className="text-[11px] text-text-tertiary mt-0.5">
+            <span className="mt-1 max-w-[16rem] text-caption-2-medium text-text-tertiary">
               {searchQuery
                 ? t("chat.noModelsMatching", { query: searchQuery })
-                : t("chat.noModelsConfigured")}
+                : groups.length === 0
+                  ? t("chat.noProvidersHint")
+                  : t("chat.noModelsConfigured")}
             </span>
+            {groups.length === 0 && !searchQuery ? (
+              <button
+                type="button"
+                onClick={onManageProviders}
+                className="mt-4 rounded-xl bg-accent-500 px-3 py-1.5 text-caption-1-medium text-text-white transition-colors hover:bg-accent-600"
+              >
+                {t("chat.manageProviders")}
+              </button>
+            ) : null}
           </div>
         ) : (
           filteredModels.map((model) => {

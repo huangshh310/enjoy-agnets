@@ -36,11 +36,11 @@ export function ProviderSettings() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-6">
       {/* 顶部标题与多视图 Segmented 控制栏 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex shrink-0 flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-title-2-semibold text-text-primary">{t("nav.providers")}</h2>
+          <h1 className="text-title-2-semibold text-text-primary">{t("nav.providers")}</h1>
           <p className="mt-0.5 text-caption-1-medium text-text-secondary">
             {t("settings.providers.subtitle")}
           </p>
@@ -113,25 +113,27 @@ export function ProviderSettings() {
         </div>
       </div>
 
-      {/* 视图内容区 */}
-      {activeTab === "configured" ? (
-        <ProviderConfiguredTab
-          providers={settings.providers}
-          pingStates={settings.pingStates}
-          onPing={settings.testProviderPing}
-          onPingAll={settings.pingAllProviders}
-          onEdit={settings.openEdit}
-          onActivate={(id) => void settings.activate(id)}
-          onRemove={(id) => void settings.remove(id)}
-          onAddCustom={handleSelectPreset}
-          onExplorePresets={() => setActiveTab("presets")}
-        />
-      ) : (
-        <ProviderPresetsTab
-          configuredKinds={configuredKinds}
-          onSelect={handleSelectPreset}
-        />
-      )}
+      {/* 视图内容区：空态铺满剩余高度，预设市场仍随内容滚动 */}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {activeTab === "configured" ? (
+          <ProviderConfiguredTab
+            providers={settings.providers}
+            pingStates={settings.pingStates}
+            onPing={settings.testProviderPing}
+            onPingAll={settings.pingAllProviders}
+            onEdit={settings.openEdit}
+            onActivate={(id) => void settings.activate(id)}
+            onRemove={(id) => void settings.remove(id)}
+            onAddCustom={handleSelectPreset}
+            onExplorePresets={() => setActiveTab("presets")}
+          />
+        ) : (
+          <ProviderPresetsTab
+            configuredKinds={configuredKinds}
+            onSelect={handleSelectPreset}
+          />
+        )}
+      </div>
 
       {/* 添加 / 编辑弹层 */}
       <ProviderEditorDialog

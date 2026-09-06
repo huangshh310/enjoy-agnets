@@ -8,6 +8,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { abortComposerRun } from "./composer-run-control"
+import { pickActiveModel } from "./pick-active-model"
 import { threadFromRows } from "./hydrate-thread"
 import { mergeUserAssets } from "./merge-user-assets"
 import {
@@ -206,26 +207,17 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   if (!hasIde()) return
   const models = (await getIde().models.list()) as ModelOption[]
   store.setModels(models)
-  const currentModelId = store.modelId
-  const foundCurrent = models.find((m) => m.id === currentModelId)
-  if (foundCurrent) {
+  const selected = pickActiveModel(models, store.modelId, snapshot.defaultModelId)
+  if (selected) {
     store.setModel(
-      foundCurrent.id,
-      foundCurrent.label,
-      foundCurrent.provider,
-      store.reasoningEffort ?? foundCurrent.reasoningEffort
+      selected.id,
+      selected.label,
+      selected.provider,
+      store.reasoningEffort ?? selected.reasoningEffort
     )
-  } else {
-    const selected = models.find((model) => model.id === snapshot.defaultModelId) ?? models[0]
-    if (selected) {
-      store.setModel(
-        selected.id,
-        selected.label,
-        selected.provider,
-        store.reasoningEffort ?? selected.reasoningEffort
-      )
-    }
+    return
   }
+  store.setModel("", "")
 }
 
 export async function openFolder() {

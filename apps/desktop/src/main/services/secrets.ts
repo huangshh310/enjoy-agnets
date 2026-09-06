@@ -7,10 +7,10 @@ import {
   modelsForProvider,
   presetFor,
   resolveModelContextWindow,
-  type ApiStyle,
   type CatalogModel,
   type ProviderKind
 } from "@enjoy-agents/providers"
+import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import {
   readVault,
@@ -24,6 +24,7 @@ import {
 
 export type { ProviderProfile, ProviderPublic, StoredSecret } from "./secrets-vault"
 export { readVault, writeVault } from "./secrets-vault"
+export { listedModelsFromProfiles } from "./listed-models"
 
 export async function listPublicProviders(): Promise<ProviderPublic[]> {
   const vault = await readVault()
@@ -189,24 +190,8 @@ export function publicModelsFor(profile: ProviderProfile | undefined, isActive =
 
 export async function listAllPublicModels() {
   const vault = await readVault()
-  if (vault.profiles.length === 0) {
-    return Promise.all(
-      modelsForProvider("deepseek").map(async (model) => ({
-        id: model.id,
-        label: model.label,
-        provider: "deepseek",
-        providerId: "default",
-        providerName: "DeepSeek",
-        apiStyle: "openai" as ApiStyle,
-        active: true,
-        isFast: false,
-        isReasoning: false,
-        supportsReasoning: true,
-        contextWindow: await resolveListedWindow(model.id, "deepseek", model.contextWindow)
-      }))
-    )
-  }
-  const listed = vault.profiles.flatMap((profile) => publicModelsFor(profile, profile.id === vault.activeId))
+  const listed = listedModelsFromProfiles(vault.profiles, vault.activeId, publicModelsFor)
+  if (listed.length === 0) return []
   return Promise.all(
     listed.map(async (model) => {
       const profile = vault.profiles.find((item) => item.id === model.providerId)
