@@ -2,7 +2,6 @@
  * 本机 CLI ACP 开流：不读 Providers Key，覆盖只含 path/args。
  */
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
-import type { ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import { listAgentTools } from "./agent-tools-service"
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import { readVault } from "./secrets-vault"
@@ -15,7 +14,8 @@ export async function openAcpStream(input: {
   messages: Parameters<typeof streamAcpTurn>[0]["messages"]
   abortSignal: AbortSignal
   waitForSubagentApproval?: Parameters<typeof streamAcpTurn>[0]["waitForApproval"]
-  effort?: ReasoningEffort
+  /** ACP 子命令不认 --fast / --thinking，这里只占位兼容开流入参。 */
+  effort?: string
   fast?: boolean
 }): Promise<OpenedCodingStream> {
   if (!isAcpHostRuntime(input.runtimeId)) {
@@ -56,7 +56,7 @@ export async function openAcpStream(input: {
     abortSignal: input.abortSignal,
     override: {
       binaryPath: override?.binaryPath || detected || undefined,
-      extraArgs: buildCliArgsWithEffort(override?.extraArgs ?? [], input.effort, input.fast),
+      extraArgs: override?.extraArgs ?? [],
       modelId: override?.modelId || publicTool?.selectedModel
     },
     env: injectedEnv,
@@ -67,21 +67,4 @@ export async function openAcpStream(input: {
     result: opened.result,
     dispose: opened.dispose
   }
-}
-
-function buildCliArgsWithEffort(baseArgs: string[], effort?: ReasoningEffort, fast?: boolean): string[] {
-  const args = [...baseArgs]
-  if (fast && !args.includes("--fast")) {
-    args.push("--fast")
-  }
-  if (effort === "high" || effort === "xhigh") {
-    if (!args.includes("--thinking=max") && !args.includes("--thinking")) {
-      args.push("--thinking=max")
-    }
-  } else if (effort === "medium" || effort === "low") {
-    if (!args.includes("--thinking") && !args.includes("--thinking=max")) {
-      args.push("--thinking")
-    }
-  }
-  return args
 }

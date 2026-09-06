@@ -20,7 +20,7 @@ export function FastModeToggle() {
       aria-label="切换极速模式 (Fast Mode)"
       title={
         isFastMode
-          ? "极速模式已开启：优先低延迟生成与快速代码响应，CLI 将注入 --fast"
+          ? "极速模式已开启：优先低延迟。本机 CLI 的 ACP 子命令不接受 --fast，不会往命令行里塞。"
           : "开启极速模式 (Fast Mode)：优先极速推断与低延迟代码生成"
       }
       className={cx(

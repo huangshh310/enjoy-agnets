@@ -24,7 +24,7 @@ export function resolveSpawnCommand(id: string, override: SpawnOverride = {}): R
   if (!preset.available || preset.transport !== "acp-host") {
     throw new Error(`${preset.label} is not wired for ACP yet.`)
   }
-  const extra = override.extraArgs ?? []
+  const extra = sanitizeAcpExtraArgs(override.extraArgs ?? [])
   const custom = override.binaryPath?.trim()
   if (custom) {
     if (!isAbsolute(custom)) throw new Error("Custom CLI path must be absolute.")
@@ -34,6 +34,18 @@ export function resolveSpawnCommand(id: string, override: SpawnOverride = {}): R
   const command = preset.binaries[0]
   if (!command) throw new Error(`${preset.label} has no binary.`)
   return { command, args: spawnArgsFor(preset, command, override.modelId, extra) }
+}
+
+/**
+ * Composer 极速 / 思考不要原样塞进 ACP argv。
+ * Cursor `agent acp` 只认 --help，`--fast` / `--thinking` 会 unknown option 并 exit 1。
+ */
+export function sanitizeAcpExtraArgs(extra: string[]): string[] {
+  return extra.filter((flag) => !isRejectedAcpFlag(flag))
+}
+
+function isRejectedAcpFlag(flag: string): boolean {
+  return flag === "--fast" || flag === "--thinking" || flag.startsWith("--thinking=")
 }
 
 /** Grok 的 --model 必须在 stdio 之前：`grok agent --model X stdio`。 */

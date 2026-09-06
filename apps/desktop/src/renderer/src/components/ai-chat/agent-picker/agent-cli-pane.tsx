@@ -39,7 +39,7 @@ export function AgentCliPane({
 
             <div className="flex items-center gap-1.5 font-mono text-[10px] text-text-tertiary">
               <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
-              <span className="font-semibold text-accent-600">ACP Stdio</span>
+              <span className="text-caption-2-medium text-accent-600">ACP Stdio</span>
             </div>
           </div>
         </>

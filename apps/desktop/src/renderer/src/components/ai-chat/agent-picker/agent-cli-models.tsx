@@ -1,11 +1,11 @@
 /**
- * CLI 智能体模型列表与检索
- * 参考 monocode 紧凑设计，单选行高对比度、无多余灰色背景。
+ * CLI 智能体模型列表与检索。右侧 id 必须有列宽，避免被浮层边框切掉。
  */
 import { useMemo, useState } from "react"
 import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiCheckLine, RiSearchLine, RiSparkling2Line } from "@remixicon/react"
 import { AgentBrandIcon } from "./agent-brand-icon"
+
 export function AgentCliModels({
   agent,
   onPick
@@ -14,12 +14,11 @@ export function AgentCliModels({
   onPick: (model: AgentCliModel) => void
 }) {
   const [query, setQuery] = useState("")
-
   const filteredModels = useMemo(() => {
     if (!query.trim()) return agent.models
     const q = query.toLowerCase()
     return agent.models.filter(
-      (m) => m.label.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)
+      (item) => item.label.toLowerCase().includes(q) || item.id.toLowerCase().includes(q)
     )
   }, [agent.models, query])
 
@@ -33,66 +32,80 @@ export function AgentCliModels({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* 搜索行：内联极简无边框设计 */}
       <div className="flex items-center gap-2 border-b border-separator-border bg-background-secondary-default/20 px-3.5 py-2 text-text-tertiary">
-        <RiSearchLine className="size-3.5 shrink-0 text-text-tertiary" />
+        <RiSearchLine className="size-3.5 shrink-0" />
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(event) => setQuery(event.target.value)}
           placeholder={`搜索 ${agent.label} 模型...`}
-          className="min-w-0 flex-1 bg-transparent text-[12px] text-text-primary outline-none placeholder:text-text-tertiary"
+          className="min-w-0 flex-1 bg-transparent text-caption-1-regular text-text-primary outline-none placeholder:text-text-tertiary"
         />
       </div>
-
-      {/* 模型列表 */}
-      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto p-1.5">
-        {filteredModels.map((model) => {
-          const selected = model.id === agent.selectedModel
-          const isThinking = model.label.toLowerCase().includes("thinking") || model.id.includes("thinking")
-          return (
-            <li key={model.id}>
-              <button
-                type="button"
-                onClick={() => onPick(model)}
-                className={`group flex min-h-[34px] w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-colors ${
-                  selected
-                    ? "bg-accent-500/10 font-semibold text-accent-700 dark:text-accent-300 ring-1 ring-accent-500/25"
-                    : "text-text-primary hover:bg-background-secondary-hover/70"
-                }`}
-              >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="flex size-4 shrink-0 items-center justify-center">
-                    <AgentBrandIcon id={agent.id} size={15} />
-                  </span>
-                  <span className="truncate text-[12px]">{model.label}</span>
-                  {isThinking ? (
-                    <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/15 px-1.5 py-0.2 text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                      <RiSparkling2Line className="size-2.5" />
-                      思考
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-mono text-[10px] text-text-tertiary">
-                    {model.id}
-                  </span>
-                  {selected ? (
-                    <RiCheckLine className="size-3.5 text-accent-500 shrink-0" />
-                  ) : null}
-                </div>
-              </button>
-            </li>
-          )
-        })}
-
-        {filteredModels.length === 0 ? (
-          <li className="py-6 text-center text-caption-2-medium text-text-tertiary">
-            未找到匹配模型
+      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden p-1.5">
+        {filteredModels.map((model) => (
+          <li key={model.id} className="min-w-0">
+            <CliModelRow
+              agentId={agent.id}
+              model={model}
+              selected={model.id === agent.selectedModel}
+              onPick={onPick}
+            />
           </li>
+        ))}
+        {filteredModels.length === 0 ? (
+          <li className="py-6 text-center text-caption-2-medium text-text-tertiary">未找到匹配模型</li>
         ) : null}
       </ul>
     </div>
+  )
+}
+
+function CliModelRow({
+  agentId,
+  model,
+  selected,
+  onPick
+}: {
+  agentId: string
+  model: AgentCliModel
+  selected: boolean
+  onPick: (model: AgentCliModel) => void
+}) {
+  const thinking =
+    model.label.toLowerCase().includes("thinking") || model.id.toLowerCase().includes("thinking")
+  const showId = model.id !== model.label
+  return (
+    <button
+      type="button"
+      title={showId ? `${model.label} · ${model.id}` : model.label}
+      onClick={() => onPick(model)}
+      className={`flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors ${
+        selected
+          ? "bg-accent-500/10 text-accent-700 ring-1 ring-accent-500/25 dark:text-accent-300"
+          : "text-text-primary hover:bg-background-secondary-hover/70"
+      }`}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="flex size-4 shrink-0 items-center justify-center">
+          <AgentBrandIcon id={agentId} size={15} />
+        </span>
+        <span className="min-w-0 truncate text-caption-1-medium">{model.label}</span>
+        {thinking ? (
+          <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-amber-500/15 px-1.5 text-caption-2-medium text-amber-700 dark:text-amber-300">
+            <RiSparkling2Line className="size-2.5" />
+            思考
+          </span>
+        ) : null}
+      </span>
+      {showId ? (
+        <span className="w-36 shrink-0 truncate text-right font-mono text-caption-2-medium text-text-tertiary">
+          {model.id}
+        </span>
+      ) : null}
+      <span className="flex w-3.5 shrink-0 justify-end">
+        {selected ? <RiCheckLine className="size-3.5 text-accent-500" /> : null}
+      </span>
+    </button>
   )
 }

@@ -1,5 +1,5 @@
 /**
- * extraArgs ↔ 运行偏好。认识的旗标给人话开关，其余原样留在自定义。
+ * extraArgs ↔ 运行偏好。ACP 子命令目前没有可安全暴露的人话开关。
  */
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
 
@@ -12,15 +12,11 @@ export type LaunchPrefDef = {
 }
 export type LaunchPrefValues = Partial<Record<LaunchPrefId, boolean>>
 
-const FAST: LaunchPrefDef = { id: "fast", flag: "--fast", kind: "opt-in" }
-
-const LAUNCH_PREFS: Partial<Record<AgentToolId, LaunchPrefDef[]>> = {
-  claude: [FAST],
-  cursor: [FAST],
-  grok: [FAST, { id: "web-search", flag: "--disable-web-search", kind: "opt-out" }],
-  codex: [FAST, { id: "web-search", flag: "--search", kind: "opt-in" }],
-  antigravity: [FAST]
-}
+/**
+ * Cursor `agent acp` / Grok `agent stdio` / Codex `acp` 都不认 --fast。
+ * 联网旗标也必须在子命令前，不能当 extraArgs 追加。先空着，避免再写出崩溃 argv。
+ */
+const LAUNCH_PREFS: Partial<Record<AgentToolId, LaunchPrefDef[]>> = {}
 
 export function launchPrefsFor(id: string): LaunchPrefDef[] {
   return LAUNCH_PREFS[id as AgentToolId] ?? []

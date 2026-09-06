@@ -26,6 +26,7 @@ export class AcpClient {
   private nextId = 1
   private pending = new Map<number, Pending>()
   private buffer = ""
+  private stderr = ""
   private contentLength: number | null = null
   private hooks: AcpClientHooks
   private closed = false
@@ -39,10 +40,14 @@ export class AcpClient {
     child.stdout?.setEncoding("utf8")
     child.stdout?.on("data", (chunk: string) => this.push(chunk))
     child.stderr?.setEncoding("utf8")
+    child.stderr?.on("data", (chunk: string) => {
+      this.stderr += chunk
+      if (this.stderr.length > 4_000) this.stderr = this.stderr.slice(-4_000)
+    })
     child.on("error", (error) => this.failAll(error))
     child.on("exit", (code) => {
       if (this.killTimer) clearTimeout(this.killTimer)
-      if (!this.closed) this.failAll(new Error(`ACP process exited with ${code ?? "null"}`))
+      if (!this.closed) this.failAll(new Error(exitMessage(code, this.stderr)))
     })
   }
 
@@ -208,4 +213,16 @@ function asOption(value: unknown): AcpPermissionOption {
 function jsonError(error: unknown): string {
   const rec = asRecord(error)
   return String(rec.message ?? JSON.stringify(error))
+}
+
+function exitMessage(code: number | null, stderr: string): string {
+  const detail = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-3)
+    .join(" ")
+  return detail
+    ? `ACP process exited with ${code ?? "null"}: ${detail}`
+    : `ACP process exited with ${code ?? "null"}`
 }

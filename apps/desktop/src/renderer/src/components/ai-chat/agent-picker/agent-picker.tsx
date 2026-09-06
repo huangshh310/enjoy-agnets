@@ -115,7 +115,7 @@ export function AgentPicker({
         side="top"
         align="end"
         sideOffset={8}
-        className="flex h-[370px] w-[480px] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
+        className="flex h-[370px] w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
       >
         {/* 上层：等高横向引擎导轨 */}
         <AgentEngineRail

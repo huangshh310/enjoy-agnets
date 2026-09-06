@@ -31,6 +31,17 @@ test("自定义路径必须是白名单文件名且为绝对路径", () => {
   })
 })
 
+test("ACP 丢掉 --fast / --thinking，避免 Cursor 立刻 exit 1", () => {
+  assert.deepEqual(
+    resolveSpawnCommand("cursor", { modelId: "auto", extraArgs: ["--fast", "--thinking=max", "--foo"] }),
+    { command: "agent", args: ["acp", "--model", "auto", "--foo"] }
+  )
+  assert.deepEqual(resolveSpawnCommand("grok", { modelId: "grok-4.6", extraArgs: ["--fast"] }), {
+    command: "grok",
+    args: ["agent", "--model", "grok-4.6", "stdio"]
+  })
+})
+
 test("选定模型会追加 --model", () => {
   assert.deepEqual(resolveSpawnCommand("claude", { modelId: "claude-sonnet-4-6" }), {
     command: "claude",
