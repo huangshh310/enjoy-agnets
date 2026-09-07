@@ -1,5 +1,6 @@
 /**
- * 思考过程折叠：去卡片化左侧引线 + 字数 + 复制。
+ * 思考过程折叠：折叠头只留单行摘要。
+ * 字数不进标题行，避免和引用按钮抢宽把「(N 字符)」挤成两行。
  */
 import { useEffect, useState } from "react"
 import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react"
@@ -33,22 +34,24 @@ export function ThinkingNodeBranch({
     setOpen(defaultOpen)
   }, [defaultOpen])
 
+  const charsLabel = t("chat.cotChars", { count: rawText.length })
+
   return (
-    <div className="flex w-full flex-col gap-1">
-      <div className="group flex w-full items-center justify-between">
+    <div className="flex w-full min-w-0 flex-col gap-1">
+      <div className="group flex w-full min-w-0 items-center gap-1">
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="group inline-flex cursor-pointer items-center gap-1.5 text-caption-1-medium font-semibold text-text-primary hover:text-accent-500"
+          title={`${title} · ${charsLabel}`}
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left"
         >
-          <span>{title}</span>
-          <span className="font-mono text-caption-2-regular font-normal text-text-tertiary">
-            ({t("chat.cotChars", { count: rawText.length })})
+          <span className="min-w-0 flex-1 truncate text-caption-1-medium font-semibold text-text-primary group-hover:text-accent-500">
+            {title}
           </span>
           {open ? (
-            <RiArrowDownSLine className="size-3.5 text-text-tertiary group-hover:text-accent-500" />
+            <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary group-hover:text-accent-500" />
           ) : (
-            <RiArrowRightSLine className="size-3.5 text-text-tertiary group-hover:text-accent-500" />
+            <RiArrowRightSLine className="size-3.5 shrink-0 text-text-tertiary group-hover:text-accent-500" />
           )}
         </button>
         <ThinkingBranchActions node={node} rawText={rawText} open={open} />
