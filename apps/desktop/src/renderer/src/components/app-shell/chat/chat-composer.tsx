@@ -2,7 +2,7 @@
  * Chat 输入框接线：空态与线程底部共用一份，避免两份 props 拷贝。
  */
 import { AiChatComposer } from "@renderer/components/ai-chat/ai-chat-composer"
-import { abortComposerRun, attachComposerFile } from "@renderer/hooks/use-agent-session"
+import { abortComposerRun, attachComposerFile, submitComposer } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 
 export function ChatComposer({
@@ -31,6 +31,7 @@ export function ChatComposer({
       models={models}
       onModelChange={onModelChange}
       onSend={onSend}
+      onSteer={() => void submitComposer("steer")}
       onStop={() => void abortComposerRun()}
       onAttach={(file) => void attachComposerFile(file)}
       className={className}

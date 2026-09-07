@@ -33,6 +33,8 @@ export function createCodingAgent(
     stepTimeoutMs?: number
     toolTimeoutMs?: number
     onStepFinish?: (step: { stepNumber?: number }) => void
+    /** 每步 LLM 推理前拉取纠偏句，经 prepareStep 返回 messages（SDK 跨步保留）；工具 execute 期间不要调用。 */
+    pullSteeringMessages?: () => ModelMessage[]
   }
 ) {
   const policy = options.policy
@@ -65,7 +67,15 @@ export function createCodingAgent(
       maxSteps: options.maxSteps,
       stopAfterTools: options.stopAfterTools
     }),
-    prepareStep: prepareAgentStep,
+    prepareStep: async (step) => {
+      const stepNumber = step.stepNumber ?? 0
+      return prepareAgentStep({
+        messages: step.messages,
+        stepNumber,
+        // step 0 不 drain，避免首跳 LLM 前就把纠偏吃掉。
+        injectUserMessages: stepNumber > 0 ? options.pullSteeringMessages?.() : undefined
+      })
+    },
     ...(loopTimeout ? { timeout: loopTimeout } : {}),
     ...(options.onStepFinish ? { onStepFinish: options.onStepFinish } : {}),
     toolApproval: ({ toolCall }) =>
@@ -90,6 +100,7 @@ export async function streamCodingAgent(options: {
   stepTimeoutMs?: number
   toolTimeoutMs?: number
   onStepFinish?: (step: { stepNumber?: number }) => void
+  pullSteeringMessages?: () => ModelMessage[]
 }) {
   const agent = createCodingAgent(options.model, options.mode, {
     policy: options.policy,
@@ -102,7 +113,8 @@ export async function streamCodingAgent(options: {
     stopAfterTools: options.stopAfterTools,
     stepTimeoutMs: options.stepTimeoutMs,
     toolTimeoutMs: options.toolTimeoutMs,
-    onStepFinish: options.onStepFinish
+    onStepFinish: options.onStepFinish,
+    pullSteeringMessages: options.pullSteeringMessages
   })
   return agent.stream({
     messages: options.messages,

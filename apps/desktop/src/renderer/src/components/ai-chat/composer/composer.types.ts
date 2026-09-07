@@ -12,6 +12,7 @@ export type ComposerProps = {
   models: ModelOption[]
   onModelChange: (model: ModelOption) => void
   onSend: () => void
+  onSteer: () => void
   onStop: () => void
   onAttach: (file: File) => void
   className?: string

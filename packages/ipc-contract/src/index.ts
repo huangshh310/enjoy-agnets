@@ -4,6 +4,8 @@
 export type { ReasoningEffort } from "./reasoning-effort"
 export * from "./permission-mode"
 export * from "./chat"
+export * from "./quoted-context"
+export * from "./action-chip"
 export * from "./todo-continue"
 export * from "./approval"
 export * from "./workspace-io"

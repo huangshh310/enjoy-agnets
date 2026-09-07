@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-06
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-07
 
 ## 当前真相
 
@@ -31,6 +31,8 @@
 审批策略来自用户偏好：`requireWriteApproval`、`requireBashApproval`、`requireCommitApproval`、`permissionMode`。UI 决定：`allow`（Allow once 仅本次）/ `deny`（拒绝）/ `allow_session`（Always allow this session 本会话总是允许，只白名单本会话工具名，不是工作区级）。界面对齐原型 Slide 6：卡片展示 Workspace、Path、Tool、Risk 四项元信息，底部标明 HMAC 令牌绑定；执行只在 main。`approval.required` 落库时用进程内密钥签 HMAC；`agent.decide` 再验库内行 + HMAC。`ApprovalDecision` `.strict()`，多传的 `args` 被拒而不是丢掉；签名校验的是落库 args，不是 renderer 再传一份。
 
 ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false）+ 可选 `hasToolCall`。步数来自偏好 `maxAgentSteps`（默认 20，上限 64）。`prepareStep` 每步裁历史。每步 `onStepFinish` 写 `run_steps`。总超时 `agentTimeoutMs`（0 不限）经 `withTimeout` / `armTimeout` 接到 Agent 泵和 `ai.generate`；步进超时 `stepTimeoutMs` 以 `{ stepMs }` 传给 ToolLoop。超时发 `run.error` + `generation.warning`（`code=timeout`），指标 `errorClass=timeout`。bash 用 `toolTimeoutMs`。`ai.resume` 对 cancelled/failed Agent run 用 checkpoint 快照重启同一 `runId`。
+运行时交互：会话任务态是派生值 `idle | running | paused | waiting_review`（审批 park = `waiting_review`，Stop 后回 `idle`，不另做可恢复 pause）。**安全检查点**在每次工具 `execute` 结束、下一跳 LLM 之前：仅 `stepNumber > 0` 才 `pullSteeringMessages` + 注入，`prepareStep` 返回的 `messages`（SDK 7.x 跨步保留）接上纠偏句；step 0 不 drain，避免首跳 LLM 前把纠偏吃掉却不注入。泵收工前再 absorb 一次；有剩余则 `continuePump` **续同一 run**，不是 idle 后再发。禁止在单次工具执行中途截断，也不要用 `abort` 当引导。`steeringQueue` 挂 main（`agent.steer`），有消息就拼成 `role: user`。ACP/CLI 没有 `prepareStep`，引导要等当前流走完再由泵 absorb。`followupQueue` 在 renderer：`run.end` / idle 后自动 `agent.run`；已 idle 再入队也必须立刻自启（订阅队列，不能只听 `running` 边沿）。`waiting_review`（`pendingApproval`）时不要 `takeNextFollowup`。没有 ActiveRun 且已 idle 的引导立刻新开 `agent.run`；UI 仍 `running` 才改排队。引用块用 `QuotedContext`（规范类型 `file|diff|terminal_output|task_step`，兼容旧 `tool_call|file_diff|text_selection|thought_step`；正文优先 `content`，否则 `snippet`）格式化后拼在用户句前。排队项规范字段是 `prompt`，`text` 为同值别名；编辑走 `editQueuedMessage`，升纠偏走 `elevateToSteer`（标 `elevated_to_steer`）。Stop / fail / 正常收工后 `clearSteer`，未消费纠偏丢弃且不注入下一轮（已落库的用户气泡保留）。
+助手轮末尾可带静态 **ActionChip**（正文围栏 `:::enjoy-actions`，落库进 assistant-payload）。这是建议词，不是纠偏。未点击必须保持 idle，禁止倒计时或回合结束自动发送建议。空闲点击 = 新开 `agent.run`；运行中 `queue` 入 followupQueue（提示「已加入执行队列」），`fill_input` 只回填输入框。排队条上的「立即纠偏」才是 Elevate to Steer。
 
 ### 流事件（实现已有）
 
@@ -57,7 +59,10 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 审批：`packages/agent-core/src/tool-approval.ts`
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
-- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 审批）
+- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）
+- 纠偏队列：`runtime-interact/steering-queue.ts`、`steer-agent.ts`、`absorb-steering.ts`；检查点：`prepare-step.ts`（`mergeSteeringMessages`，仅 step≥1 注入）+ `agent-pump` 收工前 `absorbSteering`
+- 引导词：`packages/ipc-contract/src/action-chip.ts`；点击分流 `action-chip-intent.ts` / `apply-action-chip.ts`；气泡 `message-action-chips.tsx`
+- 排队 / 草稿：`hooks/followup-queue.ts`、`followup-autostart.ts`；发送拆到 `hooks/runtime-interact/`（`composer-draft` / `steer-composer` / `send-composer-run`）
 - 内存态：`agent-run-state.ts`；泵循环：`agent-pump.ts`；启动：`agent-run-start.ts`；附件 / 知识 / 开泵：`agent-run-prepare.ts`
 - 助手落库：`agent-run-flush.ts`、`flush-agent-run.ts`、`persist-parts.ts`、`complete-agent-run.ts`；审批后是否再泵：`park-for-approval.ts`
 - 知识引用：`apps/desktop/src/main/services/cite-knowledge.ts`
@@ -69,6 +74,8 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 ## 已知坑
 
+- 纠偏不能 `abort` 当前工具。`agent.steer` 只入队；`prepareStep` 仅 `stepNumber > 0` 才 drain+注入（SDK 跨步保留）/ 泵结束才 absorb。step 0 若仍 `pullSteeringMessages()` 会把队列抽空却不注入。`prepareStep` 与 `run.messages` 可能同引用，必须 `mergeSteeringMessages` 去重，禁止再拼一套。没有 ActiveRun：已 idle 立刻 `agent.run`；UI 仍 running 才进 followup 等自启。fail / 收工 / Stop 都 `clearSteer`，避免下一轮把已落库的纠偏再注一次。
+- 消息底 ActionChip 与排队条「立即纠偏」不是同一件事。Chip 未点击不得自动跑；idle 后自动消费的只是用户主动入队的 followupQueue。`waiting_review` 不要自启下一轮。围栏必须从可见 Markdown 剥离，不要把 `:::enjoy-actions` 渲染进气泡。idle 点 Chip 必须 `takeQuotedContexts` 并进本轮 Prompt，否则引用会漏到下一轮。
 - 用户在 stream 还没结束时点 Allow：必须 `resumeAfterPump`。pending 未清空时不能提前 return 丢掉该标志。consume 结束后用 `decideAfterConsume`：还有 pending 就 park；`resumeAfterPump` 且最后工具已是 `output-available` 则收工，不要只因为点过 Allow / 见过 `approval.required` 再开一轮 ToolLoop。`finally` 里若仍有 pending 不得 `pumpStream`（会把 pending 清空）。
 - 总超时在进入审批等待时会清 timer，避免用户思考时被当成 timeout；恢复泵后重新计时。
 - HMAC 密钥只在 main 进程内存；重启后未决审批作废，不要从 renderer 回传 hmac。

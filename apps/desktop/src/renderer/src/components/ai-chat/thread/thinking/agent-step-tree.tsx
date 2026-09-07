@@ -30,6 +30,7 @@ export function AgentStepTree({ nodes, className }: { nodes: AgentStepNode[]; cl
                   title={node.title}
                   rawText={node.rawText}
                   defaultOpen={!hasTools}
+                  node={node}
                 />
               ) : node.isBatch && node.batchItems ? (
                 <BatchEditingGroupRow node={node} />

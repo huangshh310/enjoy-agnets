@@ -4,12 +4,14 @@
 import { ImageGeneration } from "@/components/ai-elements/image-generation"
 import { VideoGeneration } from "./video-generating"
 import { Message, MessageContent } from "@/components/ai-elements/message"
+import { stripEnjoyActionsBlock } from "@enjoy-agents/ipc-contract"
 import { resolveTurnKind } from "@renderer/hooks/resolve-turn-kind"
 import { shouldShowThinkingTrace } from "@renderer/hooks/thinking-visibility"
 import { usePrecedingUserPrompt } from "@renderer/hooks/preceding-user-prompt"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { AiChatCodeBlock } from "../../ai-chat-code-block"
 import { AssistantActions } from "./assistant-actions"
+import { MessageActionChips } from "./message-action-chips"
 import { MarkdownResponse } from "../markdown-response"
 import { ThinkingTrace } from "../thinking/thinking-trace"
 import { TurnExtras } from "./turn-extras"
@@ -44,12 +46,15 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
 
       {surface.hasBody ? (
         <MessageContent>
-          <MarkdownResponse>{message.content}</MarkdownResponse>
+          <MarkdownResponse>{stripEnjoyActionsBlock(message.content)}</MarkdownResponse>
           {message.attachment ? <AiChatCodeBlock attachment={message.attachment} /> : null}
           <TurnExtras message={message} prompt={prompt} />
         </MessageContent>
       ) : null}
 
+      {!message.streaming && message.actionChips?.length ? (
+        <MessageActionChips chips={message.actionChips} />
+      ) : null}
       {!message.streaming && surface.hasBody ? <AssistantActions message={message} prompt={prompt} /> : null}
     </Message>
   )

@@ -37,6 +37,7 @@ export function mapAssistantThreadMessage(
     assets: payload.assets?.length ? payload.assets : extras.assets,
     structured: payload.structured ?? extras.structured,
     components: extras.components,
-    runKind: payload.runKind
+    runKind: payload.runKind,
+    actionChips: payload.actionChips
   }
 }

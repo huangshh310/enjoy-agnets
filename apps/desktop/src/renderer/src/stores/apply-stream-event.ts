@@ -6,6 +6,7 @@ import {
   absorbTextDelta,
   clampThoughtSeconds,
   foldToolEvent,
+  takeActionChips,
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
 import { applyV2Part } from "./apply-v2-parts"
@@ -143,7 +144,8 @@ function cloneMessages(messages: ThreadMessage[]): ThreadMessage[] {
     ...message,
     tools: message.tools?.map((tool) => ({ ...tool })),
     sources: message.sources?.map((source) => ({ ...source })),
-    assets: message.assets?.map((asset) => ({ ...asset }))
+    assets: message.assets?.map((asset) => ({ ...asset })),
+    actionChips: message.actionChips?.map((chip) => ({ ...chip }))
   }))
 }
 
@@ -174,17 +176,23 @@ function attachAssistant(
 }
 
 function finalizeRun(messages: ThreadMessage[]): ThreadMessage[] {
-  return messages.map((message) => ({
-    ...message,
-    streaming: false,
-    thinkOpen: false,
-    thoughtSeconds: message.streaming
-      ? (clampThoughtSeconds(message.createdAt) ?? undefined)
-      : message.thoughtSeconds,
-    tools: message.tools?.map((tool) =>
-      tool.state === "input-streaming" || tool.state === "input-available"
-        ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
-        : tool
-    )
-  }))
+  return messages.map((message) => {
+    const chips =
+      message.role === "assistant" ? takeActionChips(message.content, message.actionChips) : null
+    return {
+      ...message,
+      content: chips ? chips.content : message.content,
+      actionChips: chips && chips.chips.length > 0 ? chips.chips : message.actionChips,
+      streaming: false,
+      thinkOpen: false,
+      thoughtSeconds: message.streaming
+        ? (clampThoughtSeconds(message.createdAt) ?? undefined)
+        : message.thoughtSeconds,
+      tools: message.tools?.map((tool) =>
+        tool.state === "input-streaming" || tool.state === "input-available"
+          ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
+          : tool
+      )
+    }
+  })
 }

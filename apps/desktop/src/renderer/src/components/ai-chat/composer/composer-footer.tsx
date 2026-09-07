@@ -1,14 +1,10 @@
 /**
  * Composer 底栏：附件菜单、策略/模型/推理、语音与发送。
  */
-import { RiArrowUpLine, RiMicLine, RiStopLine } from "@remixicon/react"
-import { useSyncExternalStore } from "react"
+import { RiMicLine } from "@remixicon/react"
+import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
-import {
-  listSessionContextChips,
-  subscribeSessionContextChips
-} from "@renderer/hooks/session-context-chips"
 import { ExecutionModeMenu } from "../execution-mode-menu"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { AgentPicker } from "../agent-picker"
@@ -20,6 +16,7 @@ import { useT } from "@renderer/i18n"
 
 export function ComposerFooter({
   composer,
+  hasDraft,
   onComposerChange,
   running,
   modelLabel,
@@ -27,6 +24,7 @@ export function ComposerFooter({
   models,
   onModelChange,
   onStop,
+  onSend,
   canRealtime,
   voiceOpen,
   onVoiceToggle,
@@ -41,7 +39,9 @@ export function ComposerFooter({
   | "models"
   | "onModelChange"
   | "onStop"
+  | "onSend"
 > & {
+  hasDraft: boolean
   canRealtime: boolean
   voiceOpen: boolean
   onVoiceToggle: () => void
@@ -51,13 +51,6 @@ export function ComposerFooter({
   const mode = useChatStore((state) => state.mode)
   const setMode = useChatStore((state) => state.setMode)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
-  void thinkingLabel
-  const chipCount = useSyncExternalStore(
-    subscribeSessionContextChips,
-    () => listSessionContextChips().length,
-    () => 0
-  )
-  void chipCount
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 px-3 pt-1 pb-2.5">
       <ComposerAttachMenu
@@ -103,15 +96,12 @@ export function ComposerFooter({
             <span className="truncate">{thinkingLabel || t("chat.modeAgent")}</span>
           </span>
         ) : null}
-        <button
-          type={running ? "button" : "submit"}
-          aria-label={running ? t("chat.stop") : t("chat.send")}
-          disabled={!running && composer.trim().length === 0 && chipCount === 0}
-          onClick={running ? onStop : undefined}
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-b from-accent-500 to-accent-600 text-white shadow-nav-selected transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:hover:brightness-100 disabled:active:scale-100"
-        >
-          {running ? <RiStopLine className="size-5" aria-hidden /> : <RiArrowUpLine className="size-5" aria-hidden />}
-        </button>
+        <ComposerSendSplit
+          running={running}
+          hasDraft={hasDraft}
+          onSend={onSend}
+          onStop={onStop}
+        />
       </div>
     </div>
   )

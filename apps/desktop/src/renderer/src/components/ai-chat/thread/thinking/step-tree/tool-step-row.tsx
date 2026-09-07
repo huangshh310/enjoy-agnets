@@ -19,6 +19,7 @@ import { useT } from "@renderer/i18n"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { DomainPills } from "./domain-pills"
 import { ExploredPagesBranch } from "./explored-pages-branch"
+import { QuoteStepButton } from "@renderer/components/ai-chat/composer/runtime-interact/quote-step-button"
 
 export function ToolStepNodeRow({ node }: { node: AgentStepNode }) {
   const t = useT()
@@ -97,6 +98,7 @@ function StepTitleRow({
           <RiArrowRightSLine className="size-3.5 text-text-tertiary" />
         )
       ) : null}
+      <QuoteStepButton node={node} />
     </div>
   )
 }

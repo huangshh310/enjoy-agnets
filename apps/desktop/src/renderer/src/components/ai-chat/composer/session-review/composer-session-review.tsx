@@ -2,7 +2,7 @@
  * Composer 上方本轮改动条：文件列表 + 顶边跳动宠物。
  * Keep 收下改动并隐藏；Undo 确认后 git restore 再隐藏。
  */
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
@@ -25,7 +25,6 @@ export function ComposerSessionReview() {
   const runStartedAt = useChatStore((state) => state.runStartedAt)
   const modelLabel = useChatStore((state) => state.modelLabel)
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
-  const boxRef = useRef<HTMLDivElement>(null)
   const [undoOpen, setUndoOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -40,15 +39,10 @@ export function ComposerSessionReview() {
   return (
     <div className="relative z-20 mb-1.5 w-full animate-in fade-in-50 duration-200">
       <div
-        ref={boxRef}
         data-session-review
-        className="relative flex w-full flex-col rounded-xl border border-border-button-default bg-background-secondary-default/95 px-3 py-1.5 shadow-2xs backdrop-blur-md"
+        className="relative flex w-full flex-col overflow-visible rounded-xl border border-border-button-default bg-background-secondary-default/95 px-3 py-1.5 shadow-2xs backdrop-blur-md"
       >
-        {running ? (
-          <div className="pointer-events-none absolute -top-[18px] left-0 right-0 z-30 h-0 overflow-visible">
-            <SessionMascotRunner boxRef={boxRef} active={running} />
-          </div>
-        ) : null}
+        {running ? <SessionMascotRunner active={running} /> : null}
         <SessionReviewBar
           files={files}
           running={running}

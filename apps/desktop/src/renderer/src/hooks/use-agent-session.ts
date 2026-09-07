@@ -187,7 +187,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "N
 }
 
 export { abortComposerRun }
-export { attachComposerFile, sendComposerMessage } from "./send-composer"
+export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
 
 export async function decidePendingApproval(decision: "allow" | "deny" | "allow_session") {
   const store = useChatStore.getState()

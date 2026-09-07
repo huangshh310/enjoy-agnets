@@ -18,6 +18,20 @@ test("hydrate 映射恢复生图 runKind，不看当前 picker", () => {
   assert.equal(message.assets?.[0]?.assetId, "ast_1")
 })
 
+test("hydrate 恢复轮末引导词", () => {
+  const message = mapAssistantThreadMessage(
+    { id: "msg_chip", content: "好了", createdAt: 1 },
+    {
+      v: 1,
+      content: "好了",
+      actionChips: [{ id: "chip_0", label: "补测试", prompt: "请补单测", actionType: "queue" }]
+    },
+    { sources: [], assets: [], components: [] },
+    []
+  )
+  assert.equal(message.actionChips?.[0]?.label, "补测试")
+})
+
 test("无 stamp 的旧信封 runKind 为空", () => {
   const message = mapAssistantThreadMessage(
     { id: "msg_2", content: "ok", createdAt: 1 },

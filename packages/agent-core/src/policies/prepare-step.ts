@@ -1,5 +1,6 @@
 /**
- * ToolLoop prepareStep：每步先裁历史，再把 step 超时预算交给 SDK timeout.stepMs。
+ * ToolLoop prepareStep：每步先接纠偏、再裁历史。
+ * SDK 7.x 会把这里返回的 messages 当作后续步的底本跨步保留。
  */
 import { pruneModelMessages } from "../generation/prune.ts"
 import type { ModelMessage } from "ai"
@@ -7,11 +8,41 @@ import type { ModelMessage } from "ai"
 export type PrepareStepInput = {
   messages: ModelMessage[]
   stepNumber?: number
+  /** 安全检查点注入的纠偏用户句；工具 execute 中途不会走到这里。 */
+  injectUserMessages?: ModelMessage[]
 }
 
-/** 返回下一跳要用的 messages；过长会话先 clip + prune。 */
+/** 把纠偏句接到尾部；尾部已是同一批则不再接，避免与 run.messages 同引用时双写。 */
+export function mergeSteeringMessages(
+  messages: ModelMessage[],
+  injected: ModelMessage[]
+): ModelMessage[] {
+  if (injected.length === 0) return messages
+  if (tailMatchesInjected(messages, injected)) return messages
+  return [...messages, ...injected]
+}
+
+/** 返回下一跳要用的 messages；SDK 会跨步保留这份数组。step 0 不接纠偏（须等工具结束）。 */
 export async function prepareAgentStep(input: PrepareStepInput): Promise<{ messages: ModelMessage[] }> {
-  return { messages: pruneModelMessages(input.messages) }
+  const inject =
+    (input.stepNumber ?? 0) > 0 ? (input.injectUserMessages ?? []) : []
+  const merged = mergeSteeringMessages(input.messages, inject)
+  return { messages: pruneModelMessages(merged) }
+}
+
+function tailMatchesInjected(messages: ModelMessage[], injected: ModelMessage[]): boolean {
+  if (messages.length < injected.length) return false
+  const tail = messages.slice(-injected.length)
+  return tail.every((message, index) => {
+    const left = userTextKey(message)
+    const right = userTextKey(injected[index])
+    return left !== undefined && left === right
+  })
+}
+
+function userTextKey(message: ModelMessage | undefined): string | undefined {
+  if (!message || message.role !== "user" || typeof message.content !== "string") return undefined
+  return message.content
 }
 
 /** 传给 ToolLoop / streamText 的对象超时；数字会被 SDK 当成总超时而丢掉 stepMs。 */

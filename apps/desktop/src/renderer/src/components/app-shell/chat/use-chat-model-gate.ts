@@ -3,7 +3,7 @@
  */
 import {
   applySettingsSnapshot,
-  sendComposerMessage
+  submitComposer
 } from "@renderer/hooks/use-agent-session"
 import { useExperimentalMediaGate } from "@renderer/hooks/experimental-media-gate"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -32,7 +32,7 @@ export function useChatModelGate() {
   return useExperimentalMediaGate({
     modelId,
     models,
-    onSend: () => void sendComposerMessage(),
+    onSend: () => void submitComposer("send"),
     onModelChange: (model) => void handleModelChange(model)
   })
 }

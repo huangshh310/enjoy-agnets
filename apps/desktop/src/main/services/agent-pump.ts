@@ -20,6 +20,8 @@ import {
   getActiveRun,
   type ActiveRun
 } from "./agent-run-state"
+import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
+import { clearSteer } from "./runtime-interact/steering-queue"
 
 export async function pumpStream(runId: string) {
   const run = getActiveRun(runId)
@@ -61,6 +63,13 @@ async function runOnePump(
     await opened.dispose()
     return
   }
+  if (absorbSteering(run)) {
+    run.continuePump = true
+    await opened.dispose()
+    return
+  }
+  // 收工窗口迟到的引导已落库/进气泡，清掉以免下一轮 prepareStep 再注一次。
+  clearSteer(run.input.sessionId)
   completeAgentRun({
     runId,
     run,
@@ -107,6 +116,7 @@ async function openRunStream(
     fast: run.input.fast,
     sessionApprovedTools: run.sessionApprovedTools,
     runtimeId: run.input.runtimeId,
+    pullSteeringMessages: () => absorbSteeringMessages(run),
     waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
       const approvalId = createId("apr")
       run.pendingApprovals.push({ approvalId, toolCallId, name: toolName })
@@ -177,6 +187,7 @@ async function failPump(runId: string, run: ActiveRun, error: unknown) {
     errorClass: classified.errorClass
   })
   emitEvent(run.window, { type: "run.error", runId, message: classified.message })
+  clearSteer(run.input.sessionId)
   if (classified.errorClass === "timeout") {
     emitEvent(run.window, {
       type: "generation.warning",

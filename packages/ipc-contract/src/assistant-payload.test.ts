@@ -28,6 +28,16 @@ test("生图 runKind 写入信封并回读", () => {
   assert.equal(parseAssistantPayload("plain").runKind, undefined)
 })
 
+test("正文里的引导词块写入信封并剥离围栏", () => {
+  const raw = serializeAssistantPayload({
+    content: "好了。\n\n:::enjoy-actions\n- [queue] 补测试: 请补单测\n:::\n"
+  })
+  assert.notEqual(raw, "好了。")
+  const parsed = parseAssistantPayload(raw)
+  assert.equal(parsed.content.includes(":::"), false)
+  assert.equal(parsed.actionChips?.[0]?.label, "补测试")
+})
+
 test("agent runKind 即使纯文本也走信封", () => {
   const raw = serializeAssistantPayload({ content: "hello", runKind: "agent" })
   assert.notEqual(raw, "hello")

@@ -42,7 +42,11 @@ export {
   type TimeoutBudget
 } from "./policies/timeout";
 export { clampAgentSteps, agentStopWhen, type AgentStopOptions } from "./policies/stop";
-export { prepareAgentStep, agentLoopTimeout } from "./policies/prepare-step";
+export {
+  prepareAgentStep,
+  agentLoopTimeout,
+  mergeSteeringMessages
+} from "./policies/prepare-step";
 export {
   snapshotGeneration,
   parseGenerationCheckpoint,

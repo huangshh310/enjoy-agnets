@@ -1,7 +1,8 @@
 /**
  * 助手消息持久化载荷：
- * 纯文本消息保持原样；带思考 / 工具 / runKind 的消息用 JSON 信封存储，加载时再拆开。
+ * 纯文本消息保持原样；带思考 / 工具 / runKind / 引导词的消息用 JSON 信封存储，加载时再拆开。
  */
+import { takeActionChips, type ActionChip } from "./action-chip.ts"
 
 export type ToolCallState =
   | "input-streaming"
@@ -50,43 +51,55 @@ export type AssistantPayload = {
   /** 本轮思考耗时（秒），结束后 Thinking 头仍显示 */
   thoughtSeconds?: number
   runKind?: AssistantRunKind
+  /** 轮末静态引导词；未点击不得自动发送。 */
+  actionChips?: ActionChip[]
 } & AssistantExtras
 
 const PAYLOAD_VERSION = 1
 
 export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">): string {
+  const taken = takeActionChips(payload.content, payload.actionChips)
   const reasoning = payload.reasoning?.trim()
   const tools = payload.tools?.filter(Boolean) ?? []
   const thoughtSeconds = payload.thoughtSeconds
   const sources = payload.sources?.filter(Boolean) ?? []
   const assets = payload.assets?.filter(Boolean) ?? []
+  const actionChips = taken.chips
   const hasExtras = sources.length > 0 || assets.length > 0 || payload.structured != null
   const runKind = parseRunKind(payload.runKind)
-  // 有 runKind 必须走信封，否则 hydrate 只能靠资产/正文推断。
-  if (!reasoning && tools.length === 0 && thoughtSeconds == null && !hasExtras && !runKind) {
-    return payload.content
+  // 有 runKind / 引导词必须走信封，否则 hydrate 只能靠资产/正文推断。
+  if (
+    !reasoning &&
+    tools.length === 0 &&
+    thoughtSeconds == null &&
+    !hasExtras &&
+    !runKind &&
+    actionChips.length === 0
+  ) {
+    return taken.content
   }
   return JSON.stringify({
     v: PAYLOAD_VERSION,
-    content: payload.content,
+    content: taken.content,
     reasoning: reasoning || undefined,
     tools: tools.length > 0 ? tools : undefined,
     thoughtSeconds: thoughtSeconds ?? undefined,
     sources: sources.length > 0 ? sources : undefined,
     assets: assets.length > 0 ? assets : undefined,
     structured: payload.structured,
-    runKind
+    runKind,
+    actionChips: actionChips.length > 0 ? actionChips : undefined
   } satisfies AssistantPayload)
 }
 
 export function parseAssistantPayload(raw: string): AssistantPayload {
   if (!raw.startsWith("{")) {
-    return { v: 1, content: raw }
+    return sealActionChips({ v: 1, content: raw })
   }
   try {
     const parsed = JSON.parse(raw) as Partial<AssistantPayload>
     if (parsed?.v === 1 && typeof parsed.content === "string") {
-      return {
+      return sealActionChips({
         v: 1,
         content: parsed.content,
         reasoning: parsed.reasoning,
@@ -95,13 +108,23 @@ export function parseAssistantPayload(raw: string): AssistantPayload {
         sources: parsed.sources,
         assets: parsed.assets,
         structured: parsed.structured,
-        runKind: parseRunKind(parsed.runKind)
-      }
+        runKind: parseRunKind(parsed.runKind),
+        actionChips: parsed.actionChips
+      })
     }
   } catch {
     // 旧会话是纯 Markdown 文本
   }
-  return { v: 1, content: raw }
+  return sealActionChips({ v: 1, content: raw })
+}
+
+function sealActionChips(payload: AssistantPayload): AssistantPayload {
+  const taken = takeActionChips(payload.content, payload.actionChips)
+  return {
+    ...payload,
+    content: taken.content,
+    actionChips: taken.chips.length > 0 ? taken.chips : undefined
+  }
 }
 
 function parseRunKind(value: unknown): AssistantRunKind | undefined {

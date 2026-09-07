@@ -1,137 +1,45 @@
 /**
- * Composer 发送：imagine 走 generateImage，imagine-video 走 generateVideo，其余走 Agent。
+ * Composer 提交入口：发送 / 排队 / 纠偏，以及附件导入。
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
 import { getIde, hasIde } from "../lib/ide"
 import { fileToBase64 } from "../lib/file-bytes"
-import { useChatStore } from "../stores/chat-store"
 import { queueComposerAsset, takeComposerAssetDetails } from "./composer-assets"
-import {
-  formatContextChipsForSend,
-  takeSessionContextChips
-} from "./session-context-chips"
-import { composerRunKind } from "./composer-run-kind"
-import {
-  abortOrphanedRun,
-  claimComposerRun,
-  dropEmptyPendingAssistant
-} from "./composer-run-control"
-import { applyOptimisticTitle, completeSessionTitle } from "./session-title"
-import { codingAgentRunInput } from "./agent-run-payload"
-import { isAcpComposerRuntime } from "../lib/agent-runtime"
+import { resolveComposerIntent, type ComposerSubmitIntent } from "./composer-submit-intent"
+import { enqueueFollowup, setRuntimeHint } from "./followup-queue"
+import { useChatStore } from "../stores/chat-store"
+import { clearComposerDraft, snapshotComposerDraft, takeComposerText } from "./runtime-interact/composer-draft"
+import { sendComposerMessage } from "./runtime-interact/send-composer-run"
+import { steerPreparedText } from "./runtime-interact/steer-composer"
 
 export { abortComposerRun } from "./composer-run-control"
+export { takeComposerText } from "./runtime-interact/composer-draft"
+export { sendComposerMessage } from "./runtime-interact/send-composer-run"
+export { steerPreparedText } from "./runtime-interact/steer-composer"
 
-export async function sendComposerMessage() {
+/** 按运行态把 Enter / ⌘Enter 收成发送、排队或纠偏。 */
+export async function submitComposer(requested: ComposerSubmitIntent = "send") {
   const store = useChatStore.getState()
-  if (store.running) return
-  if (!(await guardComposer(store))) return
+  const intent = resolveComposerIntent(store.running, requested)
+  if (intent === "send") return sendComposerMessage()
 
-  const draft = store.composer.trim()
-  const chipBlock = formatContextChipsForSend(takeSessionContextChips())
-  const content = [chipBlock, draft].filter(Boolean).join("\n\n")
+  const { quotes, draft } = snapshotComposerDraft()
+  const content = takeComposerText()
   if (!content) return
-
-  const queuedAssets = takeComposerAssetDetails()
-  const assetIds = queuedAssets.map((item) => item.id)
-  const messageAssets = queuedAssets.map((item) => ({
-    assetId: item.id,
-    mediaType: resolveMediaType(item.name, item.mediaType),
-    name: item.name,
-    url: item.url
-  }))
-
-  const messages = store.appendUserMessage(
-    content,
-    messageAssets.length > 0 ? messageAssets : undefined
-  )
-  applyOptimisticTitle(content)
-  const runKind = isAcpComposerRuntime(store.runtimeId)
-    ? "agent"
-    : composerRunKind(store.modelId, currentCaps(store))
-  store.setMessages([
-    ...messages,
-    {
-      id: `msg_pending_${Date.now()}`,
-      role: "assistant",
-      content: "",
-      createdAt: Date.now(),
-      streaming: true,
-      reasoning: "",
-      tools: [],
-      runKind
-    }
-  ])
-  store.setRunning(true)
-  const sessionId = store.sessionId
-
-  try {
-    const result = (await startComposerRun(store, content, messages, assetIds)) as { runId: string }
-    if (!claimComposerRun(sessionId, result.runId)) {
-      abortOrphanedRun(result.runId)
-      return
-    }
-    if (composerRunKind(store.modelId, currentCaps(store)) === "agent") {
-      void completeSessionTitle(content)
-    }
-  } catch (error) {
-    dropEmptyPendingAssistant()
-    store.setRunning(false)
-    store.setError(error instanceof Error ? error.message : String(error))
-  }
-}
-
-function currentCaps(store: ReturnType<typeof useChatStore.getState>) {
-  return store.models.find((model) => model.id === store.modelId)?.capabilities
-}
-
-async function startComposerRun(
-  store: ReturnType<typeof useChatStore.getState>,
-  content: string,
-  messages: ReturnType<typeof useChatStore.getState>["messages"],
-  assetIds: string[]
-) {
-  const kind = isAcpComposerRuntime(store.runtimeId)
-    ? "agent"
-    : composerRunKind(store.modelId, currentCaps(store))
-  const history = messages.map((message) => ({
-    role: message.role,
-    content: message.content,
-    reasoning: message.reasoning
-  }))
-  if (kind === "image" || kind === "video") {
-    return getIde().ai.generate({
-      kind,
+  if (intent === "queue") {
+    if (!store.sessionId) return
+    enqueueFollowup({
       sessionId: store.sessionId,
-      workspaceId: store.workspaceId ?? undefined,
-      modelId: store.modelId,
       prompt: content,
-      messages: history,
-      attachments: assetIds
+      draft,
+      quotedContexts: quotes,
+      assets: takeComposerAssetDetails()
     })
+    clearComposerDraft()
+    setRuntimeHint("queued")
+    return
   }
-  return getIde().agent.run({
-    ...codingAgentRunInput(store),
-    messages: history,
-    attachments: assetIds
-  })
-}
-
-async function guardComposer(store: ReturnType<typeof useChatStore.getState>): Promise<boolean> {
-  if (!hasIde()) {
-    store.setError("The desktop IPC bridge is not available.")
-    return false
-  }
-  if (!store.workspaceId || !store.sessionId) {
-    store.setError("Open a workspace folder before running an agent.")
-    return false
-  }
-  if (isAcpComposerRuntime(store.runtimeId) || store.hasKey) return true
-  void import("../router").then(({ router }) => {
-    void router.navigate({ to: "/settings/$section", params: { section: "providers" } })
-  })
-  store.setError("Add a provider API key in Settings before running an agent.")
-  return false
+  await steerPreparedText(content)
 }
 
 export async function attachComposerFile(file: File) {
@@ -158,9 +66,7 @@ export async function attachComposerFile(file: File) {
 }
 
 export async function attachComposerFiles(files: File[] | FileList) {
-  const fileArray = Array.from(files)
-  for (const file of fileArray) {
+  for (const file of Array.from(files)) {
     await attachComposerFile(file)
   }
 }
-

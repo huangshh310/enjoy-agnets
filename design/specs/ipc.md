@@ -12,7 +12,7 @@
 |---|---|---|
 | workspace | `open` `pickFolder` `pickFile` `remove` `list` `files` `readFile` `diff` `changes` `gitLog` `gitCommit` `gitPush` `gitPatch` `gitRestore` | 工作区与文件、真实 Git 记录与提交；`gitLog` 入参 `{ workspaceId, limit? }` 返回当前分支名（detached / 非仓库为空串）、上游（失败为空串，禁止回落 main）、`branchFiles`（`upstream...HEAD`）与**线性** `commits[]`，不是提交树；`gitCommit` 入参 `{ workspaceId, message, stageAll? }` 默认 `git add -A` + commit，`stageAll: false` 只提交已暂存，空工作树拒绝；`gitPush` `{ workspaceId }` 推当前上游，无上游即拒；`gitPatch` `{ workspaceId, paths? }` 返回 `git diff HEAD`；`gitRestore` `{ workspaceId, paths }` 还原改动条文件（已跟踪 `git restore --source=HEAD --staged --worktree`，未跟踪删除，路径 jail；对不上 porcelain 抛 `RESTORE_NOTHING_MATCHED`，禁止空转 `{ok:true}`）；`diff` 可带 `ignoreWhitespace`；`changes` 每行含 `staged`/`worktree`（porcelain 保留 XY，禁止 trim 前两列）；`pickFolder` / `pickFile` 只选路径不落库；`readFile` 走 `resolveKnowledgePath`，根外绝对路径即拒；`open` 可带 `name`；`remove` / `changes` 入参 `{ workspaceId }` |
 | session | `list` `listArchived` `create` `messages` `rename` `archive` `unarchive` `delete` `deleteArchived` `compact` `getCompaction` `clearCompaction` | 会话与上下文压缩；`compact` 失败抛英文码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，UI 翻词表；`list`/`create` 入参 `{ workspaceId, title? }`；`messages` 入参 `{ sessionId }`；`compact` 入参 `{ sessionId, keepRecent? }`；`getCompaction`/`clearCompaction` 入参 `{ sessionId }`；`list` 不含已归档 |
-| agent | `run` `abort` `decide` `inspectPrompt` | 跑循环、中止、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 与 `runtimeId`；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
+| agent | `run` `abort` `steer` `decide` `inspectPrompt` | 跑循环、中止、运行中纠偏、审批、本轮 ModelMessage 快照；`run` 可带 `attachments` 与 `runtimeId`；`steer` 入参 `{ sessionId, runId?, text }`，无 ActiveRun 抛 `STEER_NO_ACTIVE_RUN`（renderer：已 idle 立刻 `agent.run`，仍 running 才进 followup）；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
 | agentTools | `list` `detect` `upsert` `doctor` `install` `uninstall` `login` `openDocs` `setSessionRuntime` `syncConfig` `restoreConfig` `inspect` | 本机 CLI 目录与探测；覆盖含 path/args/modelId，无 token；`install`/`uninstall`/`login`/`openDocs`/`syncConfig`/`restoreConfig` 入参 `{ id }`；`inspect` 入参 `{ id, refresh? }`，返回公开账号 / 额度 / 动态模型，不含 token；安装/卸载只跑配方里写死的 npm/brew argv；`openDocs` 仅 https + host 白名单；`syncConfig` 写 Claude `settings.json` / Codex `config.toml`（先备份 `*.enjoy.bak`，不写 auth.json）；`list` 只 PATH 查找；`setSessionRuntime` `{ sessionId, runtimeId }` |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`kind` 必须是 `PROVIDER_KINDS` |
 | automations | `list` `upsert` `remove` | 自动化；`remove` 入参 `{ id }` |
@@ -50,7 +50,7 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts` 各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts` 各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 壳频道：`ipc-shell.ts`（workspace / session / agent / terminal / window）
 - 自动更新：`ipc-app-update.ts`

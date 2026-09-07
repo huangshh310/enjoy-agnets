@@ -28,7 +28,8 @@ import {
   decideApproval,
   listMessages,
   listSessions,
-  runAgent
+  runAgent,
+  steerAgent
 } from "./services/agent-runner"
 import { inspectPrompt } from "./services/inspect-prompt-service"
 import { setSetting } from "./services/database"
@@ -98,6 +99,7 @@ export const SHELL_CHANNELS = [
   "session.clearCompaction",
   "agent.run",
   "agent.abort",
+  "agent.steer",
   "agent.decide",
   "agent.inspectPrompt",
   "terminal.open",
@@ -224,6 +226,7 @@ function registerSessionIpc() {
 function registerAgentIpc() {
   ipcMain.handle("agent.run", (event, raw) => runAgent(windowFromEvent(event), raw))
   ipcMain.handle("agent.abort", (_event, raw) => abortAgent(raw))
+  ipcMain.handle("agent.steer", (event, raw) => steerAgent(windowFromEvent(event), raw))
   ipcMain.handle("agent.decide", (event, raw) => decideApproval(windowFromEvent(event), raw))
   ipcMain.handle("agent.inspectPrompt", (_event, raw) => inspectPrompt(raw))
 }

@@ -1,14 +1,52 @@
-/* 两帧硬切 + 1px 跳，街机节奏。降动效时停在 rest。 */
+/* 走动的 left 由 WAAPI 写；这里只定盒子。起跳用内层 translateY，换腿用 SVG。 */
+.session-mascot-walk {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 22px;
+  height: 20px;
+}
+
+.session-mascot-leap {
+  animation: session-mascot-leap 480ms ease-out;
+}
+
 .session-mascot-active {
-  animation: session-mascot-hop var(--session-mascot-beat, 460ms) infinite;
+  animation: session-mascot-hop 260ms infinite;
 }
 
 .session-mascot-rest {
-  animation: session-mascot-rest var(--session-mascot-beat, 460ms) infinite;
+  animation: session-mascot-rest 260ms infinite;
 }
 
 .session-mascot-talk {
-  animation: session-mascot-talk var(--session-mascot-beat, 460ms) infinite;
+  animation: session-mascot-talk 260ms infinite;
+}
+
+.session-mascot-coin {
+  position: absolute;
+  bottom: 28px;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%);
+}
+
+.session-mascot-coin-pop {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-18px) scale(1.35);
+  transition: all 280ms ease-out;
+}
+
+.session-mascot-star {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  transition: all 400ms ease-out;
+}
+
+.session-mascot-star-out {
+  opacity: 0;
+  transform: translateY(-20px) scale(1.4);
 }
 
 .composer-coin-fill {
@@ -27,6 +65,20 @@
   animation: session-mascot-talk 320ms infinite;
 }
 
+.composer-coin-bob {
+  animation: composer-coin-bob 700ms ease-in-out infinite;
+}
+
+@keyframes session-mascot-leap {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-34px);
+  }
+}
+
 @keyframes session-mascot-hop {
   0%,
   49.99% {
@@ -34,7 +86,7 @@
   }
   50%,
   100% {
-    transform: translateY(-1px);
+    transform: translateY(-3px);
   }
 }
 
@@ -60,20 +112,20 @@
   }
 }
 
+@keyframes composer-coin-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .session-mascot-active,
   .session-mascot-rest,
-  .session-mascot-talk,
-  .composer-coin-face,
-  .composer-coin-edge {
-    animation: none;
-  }
-
   .session-mascot-talk {
-    opacity: 0;
-  }
-
-  .session-mascot-rest {
-    opacity: 1;
+    animation-duration: 400ms;
   }
 }

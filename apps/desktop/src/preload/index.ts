@@ -36,6 +36,7 @@ const ide = {
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),
     abort: (runId: string) => ipcRenderer.invoke("agent.abort", runId),
+    steer: (input: unknown) => ipcRenderer.invoke("agent.steer", input),
     decide: (decision: unknown) => ipcRenderer.invoke("agent.decide", decision),
     inspectPrompt: (input: unknown) => ipcRenderer.invoke("agent.inspectPrompt", input),
     onEvent: (callback: (event: unknown) => void) => {

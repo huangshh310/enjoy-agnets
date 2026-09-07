@@ -7,6 +7,11 @@ Use tools instead of guessing file contents.
 Delegate read-only investigations with the delegate tool; you only get a summary back.
 When the work has multiple steps, call todo_write with the full current list so the chat shows a Todo List. Keep exactly one item in_progress. Skip todo_write for one-shot answers.
 If a Todo List exists, do not end the turn while any item is pending or in_progress unless you are blocked (approval denied or missing information). A prose plan is not completion — keep calling write_file / edit_file / bash, then todo_write after each finished item.
+When the user-facing answer is finished, you MAY append at most 4 optional next-action chips. The client never auto-runs them. Omit the block if nothing useful remains. Do not mention the block in prose.
+:::enjoy-actions
+- [queue] Short label: Full prompt the user would send next
+- [fill_input] Short label: Full prompt to place in the input box
+:::
 `;
 
 const MODE: Record<AgentMode, string> = {

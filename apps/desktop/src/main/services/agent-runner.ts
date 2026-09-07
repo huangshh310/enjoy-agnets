@@ -8,6 +8,7 @@ import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { persistActiveRun } from "./flush-agent-run"
 import { disposeCodingStream } from "./open-coding-stream"
 import { pumpStream } from "./agent-pump"
+import { clearSteer } from "./runtime-interact/steering-queue"
 import {
   deleteActiveRun,
   emitEvent,
@@ -16,6 +17,7 @@ import {
 
 export { createSession, listMessages, listSessions } from "./session-queries"
 export { runAgent, resumeAgentRun } from "./agent-run-start"
+export { steerAgent } from "./runtime-interact/steer-agent"
 export { emitEvent, holdAgentRun } from "./agent-run-state"
 export { pumpStream } from "./agent-pump"
 
@@ -24,7 +26,10 @@ export async function abortAgent(rawInput: unknown) {
     typeof rawInput === "string" ? { runId: rawInput } : rawInput
   )
   const run = getActiveRun(runId)
-  if (run) persistActiveRun(run, runId, "cancelled")
+  if (run) {
+    persistActiveRun(run, runId, "cancelled")
+    clearSteer(run.input.sessionId)
+  }
   run?.abort.abort()
   deleteActiveRun(runId)
   await disposeCodingStream(runId)

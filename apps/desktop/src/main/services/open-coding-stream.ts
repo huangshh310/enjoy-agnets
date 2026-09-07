@@ -49,6 +49,7 @@ export async function openCodingStream(input: {
   sessionApprovedTools: ReadonlySet<string>
   waitForSubagentApproval?: WaitForSubagentApproval
   runtimeId?: string
+  pullSteeringMessages?: () => ModelMessage[]
 }) {
   const policy: ApprovalPolicy = {
     requireWriteApproval: input.prefs.requireWriteApproval,
@@ -164,6 +165,7 @@ async function openLocalStream(
         status: "completed"
       })
     },
+    pullSteeringMessages: input.pullSteeringMessages,
     runtimeContext: {
       workspaceRoot: input.workspaceRoot,
       sessionId: input.sessionId,

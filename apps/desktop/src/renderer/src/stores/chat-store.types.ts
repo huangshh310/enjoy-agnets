@@ -1,7 +1,7 @@
 /**
  * 聊天会话 store 的数据形状。实现仍在 chat-store.ts。
  */
-import type { AgentMode, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { ActionChip, AgentMode, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -55,6 +55,8 @@ export type ThreadMessage = {
   feedback?: "up" | "down"
   /** 发送时 stamp，Thinking / 生图表面认这个，不认当前 picker */
   runKind?: ComposerRunKind
+  /** 轮末静态引导词；未点击不得自动发送 */
+  actionChips?: ActionChip[]
 }
 
 export type RepositoryNode = {
