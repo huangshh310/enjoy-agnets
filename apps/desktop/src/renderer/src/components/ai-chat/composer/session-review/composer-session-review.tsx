@@ -9,7 +9,7 @@ import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { collectSessionFiles } from "./collect-session-files"
+import { pickReviewFiles } from "./collect-session-files"
 import { openSessionReview } from "./open-session-review"
 import { SessionMascotRunner } from "./session-mascot-runner"
 import { SessionReviewBar } from "./session-review-bar"
@@ -29,7 +29,10 @@ export function ComposerSessionReview() {
   const [undoOpen, setUndoOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  const files = useMemo(() => collectReviewFiles(messages, changes), [messages, changes])
+  const files = useMemo(
+    () => pickReviewFiles(pathsFromLastTurn(messages), changes, running),
+    [messages, changes, running]
+  )
   const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])
 
   if (!sessionReviewVisible(files.length, running, dismissedKey, filesKey)) return null
@@ -104,14 +107,3 @@ async function undoSessionReview(
   }
 }
 
-function collectReviewFiles(
-  messages: Parameters<typeof pathsFromLastTurn>[0],
-  changes: Parameters<typeof collectSessionFiles>[1]
-): SessionReviewFile[] {
-  const lastTurnPaths = pathsFromLastTurn(messages)
-  if (lastTurnPaths.length > 0) return collectSessionFiles(lastTurnPaths, changes)
-  return collectSessionFiles(
-    changes.map((row) => row.path),
-    changes
-  )
-}

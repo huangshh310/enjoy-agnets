@@ -80,7 +80,7 @@ export function useWorkspaceGit(
       })) as { ok: boolean; output: string }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["workspace-git-log", workspaceId] }),
-        queryClient.invalidateQueries({ queryKey: ["workspace-changes", workspaceId] })
+        queryClient.invalidateQueries({ queryKey: ["changes", workspaceId] })
       ])
       return { ok: true, output: res.output }
     } catch (err) {
