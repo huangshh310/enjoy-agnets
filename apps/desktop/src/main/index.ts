@@ -7,6 +7,7 @@ import { disposeAllAcpSessions } from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
+import { startAppUpdate } from "./services/app-update";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
 
@@ -89,6 +90,7 @@ app.whenReady().then(async () => {
   });
   applyMacDockIcon();
   createWindow();
+  startAppUpdate();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

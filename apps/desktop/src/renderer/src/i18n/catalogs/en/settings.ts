@@ -13,6 +13,31 @@ export const enSettings = {
     autoRunValue: "{count} / 3"
   },
 
+  update: {
+    title: "App updates",
+    current: "Current version",
+    currentDesc: "Enjoy Agents {version}",
+    check: "Check for updates",
+    checking: "Checking…",
+    status: "Update status",
+    idle: "Not checked yet",
+    available: "Version {version} is available",
+    availableChip: "Update",
+    upToDate: "You're up to date",
+    notesTitle: "What's new",
+    notesEmpty: "No release notes were attached.",
+    later: "Later",
+    download: "Update now",
+    downloading: "Downloading {percent}%",
+    downloadingShort: "Downloading",
+    install: "Install and restart",
+    error: "Couldn't check or download the update",
+    devSkip: "Dev builds skip GitHub releases.",
+    promptTitle: "Enjoy Agents {version} is available",
+    promptDesc: "You are on {current}. Review the notes, then download and restart.",
+    unknownVersion: "—"
+  },
+
   permissions: {
     title: "Permissions",
     autoWrites: "Auto-apply file writes",

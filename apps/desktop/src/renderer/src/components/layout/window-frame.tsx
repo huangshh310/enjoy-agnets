@@ -9,6 +9,7 @@ import {
   onMaximizedChange,
   toggleMaximizeWindow
 } from "@renderer/lib/window-control"
+import { AppUpdateHost } from "@renderer/components/app-update/app-update-host"
 import { WindowTitleBar } from "./window-title-bar"
 import { InkSketchFilters } from "./ink-sketch-filters"
 
@@ -60,6 +61,7 @@ export function WindowFrame({ children }: { children: ReactNode }) {
         <span className="skin-glass-orb-s" />
       </div>
 
+      <AppUpdateHost />
       <WindowTitleBar
         isMaximized={isMaximized}
         onToggleMaximize={handleToggleMaximize}

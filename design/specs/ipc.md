@@ -27,6 +27,7 @@
 | observability | `metrics` `export` `setPolicy` `replay` | 本地指标与内存 stream 回放 |
 | terminal | `open` `write` `close` | pty |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
+| app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |
 | rules | `list` `read` `create` `delete` `reveal` | 项目规则；读删定位走允许根；工作区路径必须已登记 |
 | skills | `list` `read` `create` `delete` `reveal` `sources.overview` `sources.detail` `sources.add` `sources.update` `sources.remove` `sources.deleteSkill` `sources.configure` `sources.deploy` `sources.doctor` `sources.curated` `sources.updateAll` `sources.repair` | 技能包；删除只允许 skill root 的直接子目录。`sources.deleteSkill` 删来源内单个包；`sources.remove` 卸载来源组（Git 清投影，本机发现组只隐藏） |
 
@@ -36,6 +37,7 @@
 |---|---|
 | `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；按 `sequence` 重放 |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
+| `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |
 
 新增频道的顺序：**先改 `ipc-contract` → main handle → preload → renderer 调用**。禁止 renderer 直接 `ipcRenderer`。
 
@@ -48,9 +50,10 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts` 各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts` 各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 壳频道：`ipc-shell.ts`（workspace / session / agent / terminal / window）
+- 自动更新：`ipc-app-update.ts`
 - 设置频道：`ipc-settings.ts`；探测 `ipc-provider-probe.ts`；Automations `ipc-automations.ts`
 - AI 频道：`ipc-ai.ts`
 - 技能来源：`ipc-skill-sources.ts`；Skills 扫描：`ipc-skills.ts`

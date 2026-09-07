@@ -30,6 +30,7 @@ export {
   TerminalWriteInput
 } from "./terminal"
 export { WindowState, WindowActionResult } from "./window"
+export * from "./app-update"
 export * from "./generation"
 export * from "./ui-message"
 export * from "./assets"

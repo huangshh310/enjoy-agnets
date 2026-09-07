@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-09-06
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-09-07
 
 ## 当前真相
 
@@ -18,7 +18,7 @@
 - 整条 `-webkit-app-region: drag`，双击切换最大化
 - 品牌区、辅助开关、窗口按钮 `no-drag`
 - 品牌区：`AppMark`（16px `icon-small`）+ `AppWordmark`（enjoy / AGENT IDE），不是字母「E」圆或 lockup SVG
-- 右侧：小号昼/夜与语言手绘胶囊（`--toggle-size: 10px`）再接最小化 / 最大化·还原 / 关闭
+- 右侧：有更新时先画「有更新」芯片（`no-drag`，点开发行说明），再接小号昼/夜与语言胶囊（`--toggle-size: 10px`），最后最小化 / 最大化·还原 / 关闭
 - 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。macOS Dock / Cmd+Tab 另走 `app.dock.setIcon`，窗标选项在 Darwin 上无效。详见 `brand` spec。
 
 IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。

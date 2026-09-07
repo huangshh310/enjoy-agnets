@@ -11,11 +11,17 @@ files:
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
 asarUnpack:
   - resources/**
+publish:
+  provider: github
+  owner: huangshh310
+  repo: enjoy-agnets
+  releaseType: release
 win:
   executableName: enjoy-agents
   icon: icon.ico
+  artifactName: enjoy-agents-${version}-win.${ext}
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: enjoy-agents-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -25,6 +31,14 @@ nsis:
 mac:
   icon: icon.icns
   category: public.app-category.developer-tools
+  artifactName: enjoy-agents-${version}-mac.${ext}
+  target:
+    - dmg
+    - zip
 linux:
   icon: icon.png
+  category: Development
+  artifactName: enjoy-agents-${version}-linux.${ext}
+  target:
+    - AppImage
 npmRebuild: false

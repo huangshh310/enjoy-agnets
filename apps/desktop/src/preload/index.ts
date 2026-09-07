@@ -191,6 +191,17 @@ const ide = {
       ipcRenderer.on("window.maximized-changed", listener)
       return () => ipcRenderer.off("window.maximized-changed", listener)
     }
+  },
+  app: {
+    updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),
+    checkUpdate: (input?: unknown) => ipcRenderer.invoke("app.update.check", input ?? {}),
+    downloadUpdate: (input?: unknown) => ipcRenderer.invoke("app.update.download", input ?? {}),
+    installUpdate: (input?: unknown) => ipcRenderer.invoke("app.update.install", input ?? {}),
+    onUpdate: (callback: (event: unknown) => void) => {
+      const listener = (_event: unknown, payload: unknown) => callback(payload)
+      ipcRenderer.on("app.update", listener)
+      return () => ipcRenderer.off("app.update", listener)
+    }
   }
 };
 

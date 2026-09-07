@@ -9,6 +9,7 @@ import { SKILLS_CHANNELS, registerSkillsIpc } from "./ipc-skills"
 import { SKILL_SOURCE_CHANNELS, registerSkillSourceIpc } from "./ipc-skill-sources"
 import { RULES_CHANNELS, registerRulesIpc } from "./ipc-rules"
 import { AGENT_TOOLS_CHANNELS, registerAgentToolsIpc } from "./ipc-agent-tools"
+import { APP_UPDATE_CHANNELS, registerAppUpdateIpc } from "./ipc-app-update"
 import { handleCaptionDoubleClick, queryIsMaximized, WM_NCLBUTTONDBLCLK } from "./services/window-maximize"
 
 const CHANNELS = [
@@ -18,7 +19,8 @@ const CHANNELS = [
   ...SKILLS_CHANNELS,
   ...SKILL_SOURCE_CHANNELS,
   ...RULES_CHANNELS,
-  ...AGENT_TOOLS_CHANNELS
+  ...AGENT_TOOLS_CHANNELS,
+  ...APP_UPDATE_CHANNELS
 ] as const
 
 let ipcRegistered = false
@@ -34,6 +36,7 @@ export function registerIpc(window: BrowserWindow) {
   registerRulesIpc()
   registerAgentToolsIpc()
   registerAiIpc()
+  registerAppUpdateIpc()
 }
 
 export function unregisterIpc() {

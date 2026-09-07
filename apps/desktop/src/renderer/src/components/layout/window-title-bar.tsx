@@ -10,6 +10,7 @@ import {
 } from "@remixicon/react"
 import { AppMark } from "@renderer/components/brand/app-mark"
 import { AppWordmark } from "@renderer/components/brand/app-wordmark"
+import { AppUpdateChip } from "@renderer/components/app-update/app-update-chip"
 import { TitleBarToggles } from "./title-bar-toggles"
 import {
   closeWindow,
@@ -50,6 +51,7 @@ export function WindowTitleBar({
         className="relative z-50 flex items-center gap-1 [app-region:no-drag]"
         style={{ WebkitAppRegion: "no-drag", pointerEvents: "auto" } as React.CSSProperties}
       >
+        <AppUpdateChip />
         <TitleBarToggles />
         <button
           type="button"

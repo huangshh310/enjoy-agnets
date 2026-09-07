@@ -13,6 +13,31 @@ export const zhSettings = {
     autoRunValue: "{count} / 3"
   },
 
+  update: {
+    title: "应用更新",
+    current: "当前版本",
+    currentDesc: "Enjoy Agents {version}",
+    check: "检查更新",
+    checking: "正在检查…",
+    status: "更新状态",
+    idle: "尚未检查",
+    available: "发现新版本 {version}",
+    availableChip: "有更新",
+    upToDate: "已是最新版本",
+    notesTitle: "更新内容",
+    notesEmpty: "此版本没有附加说明。",
+    later: "稍后",
+    download: "立即更新",
+    downloading: "正在下载 {percent}%",
+    downloadingShort: "下载中",
+    install: "安装并重启",
+    error: "检查或下载更新失败",
+    devSkip: "开发态不检查 GitHub 发布包。",
+    promptTitle: "Enjoy Agents {version} 已发布",
+    promptDesc: "当前版本 {current}。查看更新内容后可下载并重启安装。",
+    unknownVersion: "—"
+  },
+
   permissions: {
     title: "权限",
     autoWrites: "自动放行文件写入",

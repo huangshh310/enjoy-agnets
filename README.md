@@ -16,6 +16,15 @@ pnpm install
 pnpm dev
 ```
 
+## Release
+
+Tag must match `apps/desktop/package.json` `version` (example `v0.1.1`). Pushing the tag runs `.github/workflows/release.yml`, which publishes macOS / Windows / Linux installers to GitHub Releases. Packaged apps then check that feed and offer in-app update + restart. See `design/specs/updates.md`.
+
+```bash
+git tag v0.1.1
+git push origin v0.1.1
+```
+
 Add a provider key in Settings (stored with Electron `safeStorage`, never in the renderer).
 
 ## BoardUI AI Chat

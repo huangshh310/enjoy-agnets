@@ -34,6 +34,7 @@
 | 无边框窗口、标题栏、最小化 | [`design/specs/window.md`](./design/specs/window.md) |
 | 应用 logo、任务栏 / 打包图标 | [`design/specs/brand.md`](./design/specs/brand.md) |
 | 设置 / Automations / Customize | [`design/specs/settings.md`](./design/specs/settings.md) |
+| 自动更新、GitHub Release | [`design/specs/updates.md`](./design/specs/updates.md) |
 | AI Runtime / StreamEvent v2 | [`design/specs/ai-capabilities.md`](./design/specs/ai-capabilities.md) |
 | Knowledge / RAG | [`design/specs/knowledge.md`](./design/specs/knowledge.md) |
 | 资产库 / 媒体 | [`design/specs/media.md`](./design/specs/media.md) |

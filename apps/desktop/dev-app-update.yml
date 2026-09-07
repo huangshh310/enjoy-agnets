@@ -1,0 +1,4 @@
+provider: github
+owner: huangshh310
+repo: enjoy-agnets
+updaterCacheDirName: enjoy-agents-updater

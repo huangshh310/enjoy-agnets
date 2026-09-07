@@ -1,5 +1,5 @@
 /**
- * Settings → General：权限预设、自动放行开关与界面语言。
+ * Settings → General：权限预设、界面语言、当前版本与检查更新。
  * 顶部看板与 Workspace / MCP 同构，下方仍是 SettingsCard 行。
  */
 import { classifyPermissionMode, type PermissionMode } from "@enjoy-agents/ipc-contract"
@@ -15,6 +15,7 @@ import { useT, type TranslateFn } from "@renderer/i18n"
 import { SettingsHub } from "./settings-hub"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsRow } from "./settings-row"
+import { SettingsUpdateCard } from "./settings-update-card"
 import { usePrefUpdate } from "./settings-pref"
 
 function permissionModeLabel(t: TranslateFn): Record<PermissionMode | "custom", string> {
@@ -72,6 +73,7 @@ export function GeneralSettings() {
 
       <SettingsPermissions flags={flags} onChange={(patch) => void update(patch)} />
       <LanguageCard language={language} onChange={(value) => void update({ language: value })} />
+      <SettingsUpdateCard />
     </div>
   )
 }

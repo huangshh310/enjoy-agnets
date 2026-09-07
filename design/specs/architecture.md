@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-06
+> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-07
 
 ## 当前真相
 
@@ -15,6 +15,7 @@ Main Process（可信）
   agent-runtime     packages/agent-core + AI SDK 7
   providers         packages/providers
   workspace         fs / git / 审批执行
+  app-update        electron-updater → GitHub Releases
   terminal          node-pty
   db                Drizzle 形态的 schema + node:sqlite
   secrets           safeStorage / OS keychain

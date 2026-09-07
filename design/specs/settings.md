@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-06
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-07
 
 ## 当前真相
 
@@ -50,7 +50,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 
 - 侧栏条目必须 `navigate`，禁止 no-op。
 - Providers 禁用 `article`（760px），目录三列会被裁。
-- 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。
+- 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。通用页一行：当前版本（说明里带状态）+「检查更新」；有新版本同一行变成打开说明（见 `updates` spec）。
 - 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。Claude / Codex 可把已有供应商 Key **同步**到本机配置（用户点击、先备份 `*.enjoy.bak`、可恢复），不是给用户手改 toml。
 - Agent 段用顶部分段：本机 CLI / 进阶沙箱 / 默认项。CLI 是紧凑卡 + 配置弹窗（探测 / 安装 / 卸载 / 登录 / 模型 / **运行偏好** / 路径 / doctor / 账号详情 / 可选同步）。运行偏好只暴露 ACP 真正认的旗标（目前为空，避免再写出 `--fast`）；未收录项才出现在高级「自定义参数」。开流会丢掉 `--fast` / `--thinking`。账号与额度来自 `agentTools.inspect`（只覆盖已就绪的登录型 CLI，不含 Enjoy Local），不在设置里填各家 CLI token，不读 `auth.json`，不新开第 25 个侧栏项。目录含 Grok Build。已登录卡片始终画进度条（百分比钉右侧）；数字只认官方已用进度（Cursor Dashboard、Grok `/usage` billing、Antigravity `quota_groups`），没有就 `—`。按当前模型族匹配额度组。环境扫描、设置页挂载与 doctor / 登录会清 inspect 缓存并 `refresh: true`。
 
