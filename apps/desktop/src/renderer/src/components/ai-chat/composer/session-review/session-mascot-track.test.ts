@@ -12,8 +12,8 @@ test("静止位在右侧约七成处", () => {
   assert.ok(sitX(200) > 100)
 })
 
-test("双参数变换落在轨道内部，不写 -100%", () => {
-  const css = spriteTransform(48, 1)
+test("三参数变换落在轨道内部，不写 -100%", () => {
+  const css = spriteTransform(48, 0, 1)
   assert.match(css, /translate3d\(48px, \d+px, 0\)/)
   assert.doesNotMatch(css, /-100%/)
 })

@@ -12,6 +12,7 @@ const mockT: TranslateFn = (key: string, params?: Record<string, string | number
   if (key === "chat.batchFilesModified") return `编辑 ${String(params?.count ?? 0)} 个文件`
   if (key === "chat.batchFilesRead") return `读取 ${String(params?.count ?? 0)} 个文件`
   if (key === "chat.batchCommandsRun") return `运行 ${String(params?.count ?? 0)} 条命令`
+  if (key === "chat.batchSearches") return `搜索 ${String(params?.count ?? 0)} 次`
   if (key === "chat.ranACommand") return "运行命令"
   if (key === "chat.exploringProject") return "正在探索项目"
   if (key === "chat.exploredPages") return `已浏览 ${String(params?.count ?? 0)} 个页面`
@@ -169,6 +170,36 @@ test("ACP 弱名 command 带 path 当成读取，不要显示 $ command", () => 
   assert.equal(nodes[0]?.kind, "reading")
   assert.equal(nodes[0]?.fileName, "README.md")
   assert.notEqual(nodes[0]?.title, "$ command")
+})
+
+test("ACP 弱名 command 带 argv 当成 bash，标题带 $", () => {
+  const nodes = parseAgentStepNodes("", [createTool("t1", "command", { argv: ["ls", "-la"] })], mockT)
+  assert.equal(nodes[0]?.kind, "command")
+  assert.equal(nodes[0]?.title, "$ ls -la")
+})
+
+test("stdout 正文不能猜成 package.json", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [createTool("t1", "command", {}, { content: '{"name":"x","version":"1","dependencies":{}}' })],
+    mockT
+  )
+  assert.notEqual(nodes[0]?.fileName, "package.json")
+  assert.notEqual(nodes[0]?.kind, "reading")
+})
+
+test("连续读取不和搜索混批", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [
+      createTool("t1", "read_file", { path: "a.ts" }),
+      createTool("t2", "grep", { pattern: "foo" }),
+      createTool("t3", "read_file", { path: "b.ts" })
+    ],
+    mockT
+  )
+  assert.equal(nodes.map((node) => node.kind).join(","), "reading,search,reading")
+  assert.equal(nodes.every((node) => !node.isBatch), true)
 })
 
 test("思考按工具切口拆开，当前段落在工具后面", () => {

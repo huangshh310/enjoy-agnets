@@ -11,6 +11,14 @@
   animation: session-mascot-talk var(--session-mascot-beat, 460ms) infinite;
 }
 
+.composer-coin-fill {
+  fill: #e8b923;
+}
+
+.composer-star-fill {
+  fill: #f4e27a;
+}
+
 .composer-coin-face {
   animation: session-mascot-rest 320ms infinite;
 }

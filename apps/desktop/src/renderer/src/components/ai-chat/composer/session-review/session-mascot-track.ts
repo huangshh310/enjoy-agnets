@@ -15,17 +15,8 @@ export const COLLECT_X = 10
 export const COIN_GAP_MIN_MS = 4000
 export const COIN_GAP_MAX_MS = 8500
 
-export function spriteTransform(x: number, yOrFacing: number, maybeFacing?: 1 | -1): string {
-  let y = 0
-  let facing: 1 | -1 = 1
-  if (maybeFacing !== undefined) {
-    y = -yOrFacing
-    facing = maybeFacing
-  } else {
-    facing = yOrFacing === -1 ? -1 : 1
-    y = RUNNER_Y_PX
-  }
-  return `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0) scaleX(${facing})`
+export function spriteTransform(x: number, y: number, facing: 1 | -1): string {
+  return `translate3d(${Math.round(x)}px, ${Math.round(-y)}px, 0) scaleX(${facing})`
 }
 
 export type RunnerPose = {

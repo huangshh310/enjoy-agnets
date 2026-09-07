@@ -63,7 +63,10 @@ function inferToolName(rec: Record<string, unknown>): string {
   if (fromTitle) return fromTitle
 
   const input = asRecord(rec.rawInput ?? rec.input)
-  if (input.command || input.cmd) return "bash"
+  const nested = asRecord(input.args ?? input.arguments ?? input.params)
+  if (input.command || input.cmd || nested.command || nested.cmd || hasArgv(input) || hasArgv(nested)) {
+    return "bash"
+  }
   if (input.content || input.diff || input.patch || input.replacement || input.edits) return "edit_file"
   if (input.query || input.pattern || input.glob) return "grep"
   if (input.path || input.file_path || input.file || hasLocations(rec)) return "read_file"
@@ -83,6 +86,10 @@ function hasLocations(rec: Record<string, unknown>): boolean {
   return Array.isArray(rec.locations) && rec.locations.length > 0
 }
 
+function hasArgv(rec: Record<string, unknown>): boolean {
+  return Array.isArray(rec.argv) && rec.argv.length > 0 && rec.argv.every((item) => typeof item === "string")
+}
+
 function extractToolArgs(rec: Record<string, unknown>): unknown {
   const input = rec.rawInput ?? rec.input
   const parsedInput = parseRecord(input) ?? {}
@@ -94,6 +101,7 @@ function extractToolArgs(rec: Record<string, unknown>): unknown {
     locationPath(rec.locations ?? rec.location) ??
     pathFromTitle(String(rec.title ?? rec.name ?? ""))
   if (path) recInput.path = path
+  if (!hasArgv(recInput) && hasArgv(nested)) recInput.argv = nested.argv
   if (!recInput.command && !recInput.cmd) {
     const title = String(rec.title ?? "").trim()
     if (title && !WEAK_TOOL_NAME.test(title) && looksLikeShell(title)) recInput.command = title

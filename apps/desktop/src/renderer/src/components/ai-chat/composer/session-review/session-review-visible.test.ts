@@ -18,6 +18,13 @@ test("Keep/Undo 后同一批文件隐藏，新 run 再出现", () => {
   const key = reviewFilesKey(["b.ts", "a.ts"])
   assert.equal(key, reviewFilesKey(["a.ts", "b.ts"]))
   assert.equal(sessionReviewVisible(2, false, key, key), false)
-  assert.equal(sessionReviewVisible(2, true, key, key), true)
+  assert.equal(sessionReviewVisible(2, true, key, key), false)
   assert.equal(sessionReviewVisible(2, false, key, "c.ts"), true)
+})
+
+test("运行中 Keep 也按 dismissedKey 藏条；无文件时只靠 running", () => {
+  const key = reviewFilesKey(["a.ts"])
+  assert.equal(sessionReviewVisible(1, true, key, key), false)
+  assert.equal(sessionReviewVisible(0, true), true)
+  assert.equal(sessionReviewVisible(0, false), false)
 })

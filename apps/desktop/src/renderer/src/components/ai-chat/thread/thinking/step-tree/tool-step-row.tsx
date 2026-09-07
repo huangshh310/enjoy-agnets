@@ -118,14 +118,14 @@ function FileTitle({ node }: { node: AgentStepNode }) {
       }}
       title={node.filePath ? t("chat.sessionReviewOpenFile", { name: node.filePath }) : undefined}
       className={cx(
-        "flex cursor-pointer items-center gap-1.5 font-mono text-[12px] transition-all px-1.5 py-0.5 rounded",
+        "flex cursor-pointer items-center gap-1.5 font-mono text-caption-1-regular transition-all px-1.5 py-0.5 rounded",
         isSelected
           ? "bg-accent-500/15 text-accent-500 font-medium shadow-2xs"
           : "text-text-secondary hover:text-text-primary group/file"
       )}
     >
       {node.actionVerb ? (
-        <span className="shrink-0 font-sans text-[11px] font-medium text-text-tertiary">
+        <span className="shrink-0 font-sans text-caption-2-medium text-text-tertiary">
           {node.actionVerb}
         </span>
       ) : null}
@@ -198,7 +198,7 @@ function TerminalTrace({ node }: { node: AgentStepNode }) {
           <span
             className={cx(
               "rounded px-1.5 font-mono text-caption-2-medium",
-              ok ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+              ok ? "bg-state-success-text/10 text-state-success-text" : "bg-text-error-primary/10 text-text-error-primary"
             )}
           >
             {t("chat.exitCode", { code: node.exitCode })}

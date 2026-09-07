@@ -1,6 +1,6 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-06
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-07
 
 ## 当前真相
 
@@ -92,9 +92,9 @@ Composer：运行中发送键变成 Stop（`agent.abort`），状态必须写在
 - 执行模式 (Execution Mode) 对标 Vercel AI SDK 7 架构：按「AI SDK 7 核心循环」与「专业工程工作流」两组分组呈现，完整支持 `Agent` (ToolLoopAgent)、`Plan` (只读架构蓝图)、`Ask` (只读语义问答)、`Debug` (根因排查修复)、`Workflow` (多阶段流水线)、`TDD` (测试先行循环) 与 `Code Mode` (批量代码脚本)。
 - Context 检查器禁止 Fake-Status-Chrome：不要写死 AGENTS.md / RAG / MCP 芯片，也不要把每条工具标成完成。芯片来自会话挂载；工具状态跟 `ToolCallState`。
 - Composer Todo Dock 不要扫整段会话最后一次 `todo_write`：新用户轮发出后上一轮「Rust login logic 2/2」会一直挂着，直到本轮再写出表。必须只看最后一条**非续跑**用户消息之后的 tools。「继续完成未完成的内容」这类续跑句不能当新任务边界，否则切模型 / 报 `No output generated` 后 Dock 会消失。续跑走 `continueTodoTurn`，`persistUser: false`，不要 `setComposer` 插气泡，也不要落库用户句。折叠 Dock 也要能点「继续」。`in_progress` 只在 `store.running` 时转圈；跑完没再 `todo_write` 要显示「已停止」，否则像会话卡死。
-- Composer 本轮改动条不要常驻空边框。有写盘 path 时优先列本轮文件；没有则用真实 `workspace.changes`。右侧 Undo All / Keep All / Review 药丸组对标 Cursor：Review 实心底、无眼睛图标。审查打开右栏 Review；文件行才点选具体 path。全部保留只收起改动条；全部撤销必须走 ConfirmDialog + `workspace.gitRestore`，成功后收起。禁止 `window.confirm`。词表 `sessionReview*` 必须走 `t()`。点「审查」或文件行必须打开右栏并列出**同一批文件**。CLI 抽不出上一轮 path 时条会退回 `workspace.changes`，审查作用域要切到「未提交」，禁止锁死空的「上一轮」。选中 path 用后缀对齐 Git 行。像素猫街机跑道在运行中 `absolute -top-[18px] h-0 overflow-visible` 贴顶边巡逻、跳金币；不要改成条内侧空档走动。
-- 思考树 `exploredPages` 必须写进 node，域名胶囊点 `openBrowserUrl`。步骤图标用 Remix，禁止 emoji。ACP 工具 title=`command` 是弱名：有 path/locations 当 read，有 content/diff 当 edit，有 argv 当 bash。禁止把读写全部画成 `$ command`。批量标题对标 monocode：`读取 N 个文件` / `编辑 N 个文件` / `运行 N 条命令`，默认折叠，展开才列路径。
-- 改动条文件行的彩色类型微标走 `FileTypeIcon`，不要换成 `FileKindIcon` 字母标。
+- Composer 本轮改动条不要常驻空边框。有写盘 path 时优先列本轮文件；没有则用真实 `workspace.changes`。右侧 Undo All / Keep All / Review 药丸组对标 Cursor：Review 实心底（`bg-accent-500 text-text-white`）、无眼睛图标。审查打开右栏 Review；文件行才点选具体 path。全部保留只收起改动条；全部撤销必须走 ConfirmDialog + `workspace.gitRestore`，成功后收起。禁止 `window.confirm`。词表 `sessionReview*` 必须走 `t()`。点「审查」或文件行必须打开右栏并列出**同一批文件**。CLI 抽不出上一轮 path 时条会退回 `workspace.changes`，审查作用域要切到「未提交」，禁止锁死空的「上一轮」。选中 path 用后缀对齐 Git 行。像素猫街机跑道在运行中 `absolute -top-[18px] h-0 overflow-visible` 贴顶边巡逻、跳金币；不要改成条内侧空档走动。Keep/Undo 后即使仍在跑也按 `sessionReviewDismissedKey` 藏条；新 run `setRunning(true)` 才清 key。无文件时禁用 Keep/Undo，避免 `n: 0` 空确认。`gitRestore` 对不上 porcelain 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true}` 空转后藏条。
+- 思考树 `exploredPages` 必须写进 node，域名胶囊点 `openBrowserUrl`。步骤图标用 Remix，禁止 emoji。ACP 工具 title=`command` 是弱名，判定顺序：`argv` / `command` / `cmd` 当 bash，有 content/diff 当 edit，有 path/locations 当 read。禁止把读写全部画成 `$ command`，也禁止用 stdout 正文猜 `package.json` / `layout.tsx`。批量只聚合同质 kind（读取不和搜索混批）。批量标题对标 monocode：`读取 N 个文件` / `编辑 N 个文件` / `运行 N 条命令`，默认折叠，展开才列路径。终端有真实 `command`/`cmd`/`argv` 才展示 `$ cmd`。
+- 改动条文件行的彩色类型微标走 `FileTypeIcon`，不要换成 `FileKindIcon` 字母标。`FileTypeIcon` 扩展名色板与金币 SVG 是像素资产色（写在组件色表 / `session-mascot.css`），不是语义 token，不要改成 `accent-500`。单文件行也要带目录。
 - 会话「没做完任务就停」通常不是崩溃：ToolLoop 在模型不再调工具时就会 `run.end`。Grok 常 glob/read 之后写一段计划文字收工，Todo 停在 `in_progress`。main 对未完成 Todo 同 run 最多再泵 2 次；用尽后 Dock 出「继续」。
 - File Diff / Tool Result / Todo List 必须挂在 Thinking 折叠外面。跑完后 `isTraceExpanded` 为 false，埋进步骤树会随思考一起消失。`ToolResultView` 只给助手轮工具表面用，不要再当死代码。
 - 同目录不要同时放 `foo.ts` 和 `foo.tsx`。TS/Vite 解析 `from "./foo"` 会打到 `.ts`，`.tsx` 的组件导出丢失，窗口白屏或起不来。选择器和组件要不同文件名（如 `select-turn-tool-surfaces.ts` + `turn-tool-surfaces.tsx`）。

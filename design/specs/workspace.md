@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-06
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-07
 
 ## 当前真相
 
@@ -53,6 +53,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。
+- `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。
 - 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出改动数量与说明，再调 `workspace.gitCommit`。Agent `git_commit` 仍走 HMAC。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。
 - Review 主区出现横向空条纹：把全部 changed files 展开成 `FileDiff` 卡片流，且组件用 `flex-1` + `max-h-full`。滚动列给不出确定高度，diff 行塌成发丝。默认只渲染当前文件并 `fill`；叠放时必须 `compact`，禁止 `fill`。
 - 右栏 tab 用 `hidden` 保活，不卸载。审查栏若订整份 `messages`、绑全局 `Ctrl+P`/`Ctrl+Enter`、或每次渲染 `parseUnifiedDiff`，流式输出会拖死整窗。隐藏时 `active=false`：不订 messages、不听快捷键、不发 `gitLog`。`Ctrl+P` 仍是打开 Files，不要截走。分支对比才拉 `upstream...HEAD`。

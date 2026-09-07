@@ -1,8 +1,9 @@
 /**
- * 连续编辑 / 阅读 / 命令聚合成批量节点，避免刷屏。
+ * 连续同质工具聚合成批量节点，避免刷屏。
  */
-import type { AgentStepNode, BatchFileItem } from "./agent-step-tree.types.ts"
+import type { AgentStepKind, AgentStepNode, BatchFileItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
+import { isGenericVerb } from "./is-generic-verb.ts"
 
 const BATCH_MIN = 2
 
@@ -30,11 +31,9 @@ function tryBatch(
 ): { node: AgentStepNode; next: number } | null {
   const head = nodes[start]
   if (!head) return null
-  if (head.kind === "editing") return batchRun(nodes, start, "editing", t)
-  if (head.kind === "reading" || head.kind === "search") {
-    return batchExplore(nodes, start, t)
+  if (head.kind === "editing" || head.kind === "reading" || head.kind === "command" || head.kind === "search") {
+    return batchRun(nodes, start, head.kind, t)
   }
-  if (head.kind === "command") return batchRun(nodes, start, "command", t)
   return null
 }
 
@@ -57,13 +56,14 @@ function batchStatus(run: AgentStepNode[]): AgentStepNode["status"] {
 function batchRun(
   nodes: AgentStepNode[],
   start: number,
-  kind: "editing" | "command",
+  kind: AgentStepKind,
   t: TranslateFn
 ): { node: AgentStepNode; next: number } | null {
   const run = takeRun(nodes, start, (n) => n.kind === kind)
   if (run.length < BATCH_MIN) return null
   const additions = run.reduce((sum, n) => sum + (n.additions ?? 0), 0)
   const deletions = run.reduce((sum, n) => sum + (n.deletions ?? 0), 0)
+  const pages = run.flatMap((n) => n.exploredPages ?? [])
   const pills = run.flatMap((n) => n.domainPills ?? [])
   return {
     next: start + run.length,
@@ -71,45 +71,30 @@ function batchRun(
       id: `batch_${kind}_${run[0]!.id}`,
       kind,
       isBatch: true,
-      title:
-        kind === "editing"
-          ? t("chat.batchFilesModified", { count: run.length })
-          : t("chat.batchCommandsRun", { count: run.length }),
+      title: batchTitle(kind, run.length, t),
       additions: kind === "editing" && additions > 0 ? additions : undefined,
       deletions: kind === "editing" && deletions > 0 ? deletions : undefined,
+      exploredPages: pages.length > 1 ? pages : undefined,
+      exploredTitle: pages.length > 1 ? t("chat.exploredPages", { count: pages.length }) : undefined,
       domainPills: pills.length > 0 ? pills : undefined,
       status: batchStatus(run),
-      batchItems: run.map((n) => toBatchItem(n, t, kind === "command" ? "verbRun" : "verbEdit"))
+      batchItems: run.map((n) => toBatchItem(n, t, batchVerb(kind)))
     }
   }
 }
 
-function batchExplore(
-  nodes: AgentStepNode[],
-  start: number,
-  t: TranslateFn
-): { node: AgentStepNode; next: number } | null {
-  const run = takeRun(nodes, start, (n) => n.kind === "reading" || n.kind === "search")
-  if (run.length < BATCH_MIN) return null
-  const readCount = run.filter((n) => n.kind === "reading").length
-  const pages = run.flatMap((n) => n.exploredPages ?? [])
-  const pills = run.flatMap((n) => n.domainPills ?? [])
-  return {
-    next: start + run.length,
-    node: {
-      id: `batch_explore_${run[0]!.id}`,
-      kind: "reading",
-      isBatch: true,
-      title: t("chat.batchFilesRead", { count: readCount || run.length }),
-      status: batchStatus(run),
-      exploredPages: pages.length > 1 ? pages : undefined,
-      exploredTitle: pages.length > 1 ? t("chat.exploredPages", { count: pages.length }) : undefined,
-      domainPills: pills.length > 0 ? pills : undefined,
-      batchItems: run.map((n) =>
-        toBatchItem(n, t, n.kind === "search" ? "verbFind" : "verbRead")
-      )
-    }
-  }
+function batchTitle(kind: AgentStepKind, count: number, t: TranslateFn): string {
+  if (kind === "editing") return t("chat.batchFilesModified", { count })
+  if (kind === "command") return t("chat.batchCommandsRun", { count })
+  if (kind === "search") return t("chat.batchSearches", { count })
+  return t("chat.batchFilesRead", { count })
+}
+
+function batchVerb(kind: AgentStepKind): "verbRun" | "verbEdit" | "verbRead" | "verbFind" {
+  if (kind === "command") return "verbRun"
+  if (kind === "editing") return "verbEdit"
+  if (kind === "search") return "verbFind"
+  return "verbRead"
 }
 
 function toBatchItem(
@@ -134,8 +119,4 @@ function toBatchItem(
     deletions: node.deletions,
     status: node.status
   }
-}
-
-function isGenericVerb(text: string): boolean {
-  return /^(编辑|写入|读取|创建|修改|删除|运行|edit|write|read|create|modify|delete|run|file|folder|command)$/i.test(text.trim())
 }

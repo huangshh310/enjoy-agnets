@@ -52,6 +52,7 @@ export function ComposerSessionReview() {
           runStartedAt={runStartedAt ?? undefined}
           modelLabel={modelLabel}
           busy={busy}
+          hasFiles={files.length > 0}
           onOpenReview={() => openSessionReview()}
           onOpenFile={(path) => openSessionReview(path)}
           onKeep={() => keepSessionReview(filesKey)}
@@ -65,7 +66,7 @@ export function ComposerSessionReview() {
         description={t("chat.sessionReviewUndoConfirmDesc", { n: files.length })}
         confirmLabel={t("chat.sessionReviewUndoAll")}
         onOpenChange={setUndoOpen}
-        onConfirm={() => void undoSessionReview(files, filesKey, queryClient, setBusy)}
+        onConfirm={() => void undoSessionReview(files, filesKey, queryClient, setBusy, t)}
       />
     </div>
   )
@@ -79,7 +80,8 @@ async function undoSessionReview(
   files: SessionReviewFile[],
   filesKey: string,
   queryClient: ReturnType<typeof useQueryClient>,
-  setBusy: (busy: boolean) => void
+  setBusy: (busy: boolean) => void,
+  t: ReturnType<typeof useT>
 ) {
   const workspaceId = useChatStore.getState().workspaceId
   if (!workspaceId || files.length === 0) return
@@ -92,7 +94,11 @@ async function undoSessionReview(
     useChatStore.getState().setSessionReviewDismissedKey(filesKey)
     await queryClient.invalidateQueries({ queryKey: ["changes", workspaceId] })
   } catch (error) {
-    useChatStore.getState().setError(error instanceof Error ? error.message : String(error))
+    const raw = error instanceof Error ? error.message : String(error)
+    const message = raw.includes("RESTORE_NOTHING_MATCHED")
+      ? t("chat.sessionReviewRestoreEmpty")
+      : raw
+    useChatStore.getState().setError(message)
   } finally {
     setBusy(false)
   }
@@ -104,10 +110,8 @@ function collectReviewFiles(
 ): SessionReviewFile[] {
   const lastTurnPaths = pathsFromLastTurn(messages)
   if (lastTurnPaths.length > 0) return collectSessionFiles(lastTurnPaths, changes)
-  return changes.map((row) => ({
-    path: row.path,
-    name: row.path.split(/[\\/]/).pop() || row.path,
-    additions: row.additions ?? 0,
-    deletions: row.deletions ?? 0
-  }))
+  return collectSessionFiles(
+    changes.map((row) => row.path),
+    changes
+  )
 }

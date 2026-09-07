@@ -15,7 +15,6 @@ export function SessionFileTrigger({
   title: string
   onOpen: (path: string) => void
 }) {
-  const fileName = file.name || file.path.split(/[\\/]/).pop() || file.path
   return (
     <button
       type="button"
@@ -23,10 +22,13 @@ export function SessionFileTrigger({
       onClick={() => onOpen(file.path)}
       className="group flex min-w-0 flex-1 items-center gap-1.5 py-0.5 text-left text-text-secondary transition-colors hover:text-text-primary"
     >
-      <FileTypeIcon name={fileName} size={15} />
-      <span className="truncate font-mono text-[12px] font-medium tracking-tight text-text-primary/90 group-hover:text-accent-500">
-        {fileName}
+      <FileTypeIcon name={file.name} size={15} />
+      <span className="truncate font-mono text-caption-1-medium tracking-tight text-text-primary/90 group-hover:text-accent-500">
+        {file.name}
       </span>
+      {file.dir ? (
+        <span className="max-w-[160px] truncate font-mono text-caption-2-regular text-text-tertiary/70">{file.dir}</span>
+      ) : null}
       <DiffCounts additions={file.additions} deletions={file.deletions} />
     </button>
   )
@@ -37,13 +39,8 @@ export function SessionFileRow({
   onOpen
 }: {
   file: SessionReviewFile
-  title?: string
   onOpen: (path: string) => void
 }) {
-  const parts = file.path.split(/[\\/]/)
-  const fileName = file.name || parts.pop() || file.path
-  const dir = parts.length > 0 ? parts.join("/") : ""
-
   return (
     <button
       type="button"
@@ -51,12 +48,12 @@ export function SessionFileRow({
       onClick={() => onOpen(file.path)}
       className="group flex h-7.5 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-text-primary/80 transition-all hover:bg-background-primary-default/90 hover:text-text-primary"
     >
-      <FileTypeIcon name={fileName} size={15} />
-      <span className="min-w-0 truncate font-mono text-[12px] font-medium text-text-primary group-hover:text-accent-500">
-        {fileName}
+      <FileTypeIcon name={file.name} size={15} />
+      <span className="min-w-0 truncate font-mono text-caption-1-medium text-text-primary group-hover:text-accent-500">
+        {file.name}
       </span>
-      {dir ? (
-        <span className="max-w-[200px] truncate font-mono text-[11px] text-text-tertiary/70">{dir}</span>
+      {file.dir ? (
+        <span className="max-w-[200px] truncate font-mono text-caption-2-regular text-text-tertiary/70">{file.dir}</span>
       ) : null}
       <span className="ml-auto shrink-0">
         <DiffCounts additions={file.additions} deletions={file.deletions} />
@@ -69,14 +66,14 @@ function DiffCounts({ additions, deletions }: { additions: number; deletions: nu
   const t = useT()
   if (additions <= 0 && deletions <= 0) {
     return (
-      <span className="shrink-0 text-[11px] font-medium text-amber-500/90">{t("chat.sessionReviewNoDiff")}</span>
+      <span className="shrink-0 text-caption-2-medium text-state-warning-text">{t("chat.sessionReviewNoDiff")}</span>
     )
   }
   return (
-    <span className="shrink-0 font-mono text-[11px] font-semibold tabular-nums">
-      {additions > 0 ? <span className="text-emerald-500">+{additions}</span> : null}
+    <span className="shrink-0 font-mono text-caption-2-semibold tabular-nums">
+      {additions > 0 ? <span className="text-state-success-text">+{additions}</span> : null}
       {additions > 0 && deletions > 0 ? " " : null}
-      {deletions > 0 ? <span className="text-rose-500">-{deletions}</span> : null}
+      {deletions > 0 ? <span className="text-text-error-primary">-{deletions}</span> : null}
     </span>
   )
 }

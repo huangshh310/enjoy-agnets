@@ -12,8 +12,7 @@ export function sessionReviewVisible(
   dismissedKey?: string | null,
   filesKey?: string
 ): boolean {
-  if (running) return true
-  if (fileCount <= 0) return false
-  if (dismissedKey && filesKey && dismissedKey === filesKey) return false
-  return true
+  if (dismissedKey != null && filesKey != null && dismissedKey === filesKey) return false
+  if (fileCount > 0) return true
+  return running
 }

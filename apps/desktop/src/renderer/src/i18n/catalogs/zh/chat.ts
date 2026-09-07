@@ -274,6 +274,10 @@ export const zhChat = {
   sessionReviewCollapse: "收起本轮改动",
   sessionReviewOpenFile: "在审查栏打开 {name}",
   sessionReviewNoDiff: "无行级改动",
+  sessionReviewDefaultModel: "Enjoy Agents",
+  sessionReviewRestoreEmpty: "这些文件在工作区里没有可还原的改动",
+  elapsedSeconds: "{n}秒",
+  elapsedMinutes: "{m}分 {s}秒",
   continueTodos: "继续",
   continueTodosPrompt:
     "继续完成 Todo List 里未完成的项。直接用 write_file / edit_file，不要再只写计划。",
@@ -316,6 +320,7 @@ export const zhChat = {
   exploringProject: "正在探索项目",
   batchFilesRead: "读取 {count} 个文件",
   batchCommandsRun: "运行 {count} 条命令",
+  batchSearches: "搜索 {count} 次",
   terminalShell: "终端命令",
   approveShell: "执行 Shell 命令审批",
   approveFile: "修改文件审批 · {name}",

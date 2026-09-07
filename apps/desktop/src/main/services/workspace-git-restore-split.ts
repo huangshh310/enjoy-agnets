@@ -21,7 +21,17 @@ export function partitionRestorePaths(
   return { tracked, untracked }
 }
 
-function normalizeRel(path: string): string {
+/** porcelain 对不上任何 path 时禁止 ok:true 空转。 */
+export function assertHasRestoreTargets(split: {
+  tracked: string[]
+  untracked: string[]
+}): void {
+  if (split.tracked.length === 0 && split.untracked.length === 0) {
+    throw new Error("RESTORE_NOTHING_MATCHED")
+  }
+}
+
+export function normalizeRel(path: string): string {
   return path.replace(/\\/g, "/").replace(/^\.\//, "").trim()
 }
 

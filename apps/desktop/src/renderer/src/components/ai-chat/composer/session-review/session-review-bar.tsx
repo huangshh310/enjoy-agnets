@@ -7,7 +7,7 @@ import { useT } from "@renderer/i18n"
 import { SessionReviewActions } from "./session-review-actions"
 import { SessionFileRow, SessionFileTrigger, sessionFileListClassName } from "./session-review-files"
 import { SessionReviewRuntime } from "./session-review-runtime"
-import type { SessionReviewFile } from "./session-review.types"
+import type { SessionReviewBarProps } from "./session-review.types"
 
 export function SessionReviewBar({
   files,
@@ -18,18 +18,9 @@ export function SessionReviewBar({
   onOpenFile,
   onUndo,
   onKeep,
-  busy
-}: {
-  files: SessionReviewFile[]
-  running?: boolean
-  runStartedAt?: number
-  modelLabel?: string
-  onOpenReview: () => void
-  onOpenFile: (path: string) => void
-  onUndo: () => void
-  onKeep: () => void
-  busy?: boolean
-}) {
+  busy,
+  hasFiles
+}: SessionReviewBarProps) {
   const t = useT()
   const many = files.length > 1
   const [expanded, setExpanded] = useState(many)
@@ -56,7 +47,7 @@ export function SessionReviewBar({
               ) : (
                 <RiArrowRightSLine className="size-3.5 shrink-0 text-text-tertiary group-hover:text-text-primary" />
               )}
-              <span className="truncate font-mono text-[12px] font-medium tracking-tight text-text-primary/90">
+              <span className="truncate font-mono text-caption-1-medium tracking-tight text-text-primary/90">
                 {t("chat.sessionReviewFiles", { n: files.length })}
               </span>
             </button>
@@ -70,13 +61,17 @@ export function SessionReviewBar({
 
           {running && runStartedAt ? (
             <div className="ml-1 border-l border-border-button-default/50 pl-2.5">
-              <SessionReviewRuntime modelLabel={modelLabel || "Enjoy Agents"} startedAt={runStartedAt} />
+              <SessionReviewRuntime
+                modelLabel={modelLabel || t("chat.sessionReviewDefaultModel")}
+                startedAt={runStartedAt}
+              />
             </div>
           ) : null}
         </div>
 
         <SessionReviewActions
           busy={busy}
+          hasFiles={hasFiles}
           onUndo={onUndo}
           onKeep={onKeep}
           onOpenReview={onOpenReview}

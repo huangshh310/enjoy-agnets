@@ -12,7 +12,7 @@ export function SessionReviewRuntime({
   modelLabel: string
   startedAt: number
 }) {
-  const { locale, t } = useI18n()
+  const { t } = useI18n()
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function SessionReviewRuntime({
       <span className="truncate tabular-nums">
         {t("chat.sessionReviewWorking", {
           model: modelLabel,
-          elapsed: formatRunElapsed(now - startedAt, locale)
+          elapsed: formatRunElapsed(now - startedAt, t)
         })}
       </span>
     </p>

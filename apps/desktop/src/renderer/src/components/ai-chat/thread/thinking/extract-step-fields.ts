@@ -8,6 +8,7 @@ import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
 
 const COMMAND_KEYS = ["command", "cmd", "script", "code", "input"] as const
+const SHELL_KEYS = ["command", "cmd"] as const
 
 const PATH_KEYS = [
   "path",
@@ -72,91 +73,42 @@ export function extractCommandString(tool: ThreadToolCall): string | undefined {
       const val = rec[key]
       if (typeof val === "string" && val.trim()) return val.trim()
     }
-    if (Array.isArray(rec.argv) && rec.argv.length > 0 && rec.argv.every((x) => typeof x === "string")) {
-      return rec.argv.join(" ")
-    }
-    if (Array.isArray(rec.args) && rec.args.length > 0 && rec.args.every((x) => typeof x === "string")) {
-      return rec.args.join(" ")
-    }
+    const argv = joinStringArray(rec.argv) ?? joinStringArray(rec.args)
+    if (argv) return argv
   }
-
-  // 纯文本命令降级
   if (typeof tool.args === "string" && tool.args.trim() && !tool.args.trim().startsWith("{")) {
     return tool.args.trim()
   }
   return undefined
 }
 
-export function extractToolPath(args: Record<string, unknown>, toolName?: string, result?: Record<string, unknown>): string {
-  const records = inputRecords(args)
+/** 只认 command / cmd / argv，不用 input/code 冒充终端。 */
+export function extractShellCommand(tool: ThreadToolCall): string | undefined {
+  const records = inputRecords(tool.args, tool.argsText, tool.result)
+  for (const rec of records) {
+    for (const key of SHELL_KEYS) {
+      const val = rec[key]
+      if (typeof val === "string" && val.trim()) return val.trim()
+    }
+    const argv = joinStringArray(rec.argv)
+    if (argv) return argv
+  }
+  return undefined
+}
+
+export function extractToolPath(
+  args: Record<string, unknown>,
+  toolName?: string,
+  result?: Record<string, unknown>
+): string {
+  const records = inputRecords(args, result)
   for (const rec of records) {
     for (const key of PATH_KEYS) {
       const taken = takePath(rec[key])
       if (taken) return taken
     }
   }
-  const fromTitle = pathFromTitle(toolName)
-  if (fromTitle) return fromTitle
-  if (result) {
-    const fromResultContent = inferPathFromContent(result.content)
-    if (fromResultContent) return fromResultContent
-  }
-  return ""
-}
-
-export function inferPathFromContent(content: unknown): string | undefined {
-  if (typeof content !== "string" || !content.trim()) return undefined
-  const text = content.trim()
-
-  // 1. JSON 格式优先
-  if (text.startsWith("{")) {
-    if (text.includes('"scripts"') || text.includes('"dependencies"') || text.includes('"version"')) {
-      return "package.json"
-    }
-    if (text.includes('"compilerOptions"')) {
-      return "tsconfig.json"
-    }
-    return "config.json"
-  }
-
-  // 2. Markdown / Skill Frontmatter
-  if (text.startsWith("---") && (text.includes("name:") || text.includes("description:"))) {
-    const nameMatch = text.match(/name:\s*([a-zA-Z0-9_\-]+)/)
-    return nameMatch?.[1] ? `${nameMatch[1]}.md` : "SKILL.md"
-  }
-  if (text.startsWith("# ")) {
-    return "README.md"
-  }
-
-  // 3. 注释中的明确路径 (// src/... 或 /* ... path: ... */)
-  const commentPath = text.match(/(?:\/\/|\/\*|\*)\s*([a-zA-Z0-9_\-./\\]+\.[a-z0-9]{1,10})/i)
-  if (commentPath?.[1] && looksLikeToolPath(commentPath[1])) {
-    return normalizeToolPath(commentPath[1])
-  }
-
-  // 4. CSS
-  if (text.includes('@import "tailwindcss"') || text.includes("@tailwind")) {
-    return "globals.css"
-  }
-
-  // 5. React 组件
-  const compMatch = text.match(/export\s+(?:default\s+)?(?:function|const|class)\s+([A-Z][a-zA-Z0-9]+)/)
-  if (compMatch?.[1]) {
-    return `${compMatch[1]}.tsx`
-  }
-
-  // 6. Next.js 约定路由
-  if (text.includes('from "next"') || text.includes("Metadata")) {
-    if (/layout/i.test(text)) return "layout.tsx"
-    if (/page/i.test(text)) return "page.tsx"
-  }
-
-  // 7. 类型文件
-  if (text.match(/export\s+(?:type|interface)\s+([A-Z][a-zA-Z0-9]+)/)) {
-    return "types.ts"
-  }
-
-  return undefined
+  return pathFromTitle(toolName)
 }
 
 function takePath(value: unknown): string {
@@ -226,4 +178,10 @@ function pushStringArray(into: string[], value: unknown): void {
   for (const item of value) {
     if (typeof item === "string" && looksLikeToolPath(item)) into.push(normalizeToolPath(item))
   }
+}
+
+function joinStringArray(value: unknown): string | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined
+  if (!value.every((item) => typeof item === "string")) return undefined
+  return value.join(" ")
 }

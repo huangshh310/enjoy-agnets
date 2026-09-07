@@ -5,9 +5,13 @@ import { promises as fs } from "node:fs"
 import { runGit } from "./command"
 import { resolveInsideWorkspace } from "./paths"
 import { parsePorcelainLine } from "./workspace-git-status"
-import { partitionRestorePaths } from "./workspace-git-restore-split"
+import {
+  assertHasRestoreTargets,
+  normalizeRel,
+  partitionRestorePaths
+} from "./workspace-git-restore-split"
 
-export { partitionRestorePaths } from "./workspace-git-restore-split.ts"
+export { partitionRestorePaths } from "./workspace-git-restore-split"
 
 export async function restoreWorkspacePaths(
   workspaceRoot: string,
@@ -22,7 +26,9 @@ export async function restoreWorkspacePaths(
     .split("\n")
     .map((line) => parsePorcelainLine(line.trimEnd(), new Map()))
     .filter((row): row is NonNullable<typeof row> => row !== null)
-  const { tracked, untracked } = partitionRestorePaths(jailed, rows)
+  const split = partitionRestorePaths(jailed, rows)
+  assertHasRestoreTargets(split)
+  const { tracked, untracked } = split
   if (tracked.length > 0) {
     const restored = await runGit(workspaceRoot, [
       "restore",
@@ -40,8 +46,4 @@ export async function restoreWorkspacePaths(
     await fs.rm(resolveInsideWorkspace(workspaceRoot, path), { force: true, recursive: true })
   }
   return { ok: true, restored: tracked.length + untracked.length }
-}
-
-function normalizeRel(path: string): string {
-  return path.replace(/\\/g, "/").replace(/^\.\//, "").trim()
 }

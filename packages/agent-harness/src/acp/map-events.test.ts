@@ -120,6 +120,25 @@ function asPath(args: unknown): string {
   return args && typeof args === "object" && "path" in args ? String((args as { path: unknown }).path) : ""
 }
 
+test("弱 title command + argv 推断为 bash", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "t7",
+      title: "command",
+      rawInput: { argv: ["git", "status"] }
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") {
+    assert.equal(start.name, "bash")
+    const args = start.args as { argv?: string[] }
+    assert.deepEqual(args.argv, ["git", "status"])
+  }
+})
+
 test("permission options map allow / deny / session", () => {
   const options = [
     { optionId: "allow-once", kind: "allow_once" },

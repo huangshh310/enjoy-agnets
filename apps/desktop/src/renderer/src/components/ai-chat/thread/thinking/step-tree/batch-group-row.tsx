@@ -24,7 +24,7 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
         onClick={() => setOpen(!open)}
         className="group flex w-fit cursor-pointer items-center gap-1.5 py-0.5 text-left text-caption-1-medium text-text-secondary hover:text-text-primary transition-colors select-none"
       >
-        <span className="font-sans text-[13px] font-medium text-text-primary/90 group-hover:text-text-primary">
+        <span className="font-sans text-body-2-medium text-text-primary/90 group-hover:text-text-primary">
           {node.title}
         </span>
         <BatchDiff additions={node.additions} deletions={node.deletions} />
@@ -53,7 +53,7 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
                   if (!isCmd) void openChangedFile(item.path)
                 }}
                 className={cx(
-                  "flex w-full items-center gap-2 rounded px-1.5 py-0.5 text-left font-mono text-[12px] leading-5 transition-all",
+                  "flex w-full items-center gap-2 rounded px-1.5 py-0.5 text-left font-mono text-caption-1-regular leading-5 transition-all",
                   isCmd
                     ? "text-text-secondary select-text cursor-default"
                     : !isCmd && selectedFilePath && sameReviewPath(item.path, selectedFilePath)
@@ -62,7 +62,7 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
                 )}
               >
                 {/* 动词：Read / Write / Edit / Find / Run */}
-                <span className="w-8 shrink-0 font-sans text-[11px] font-medium text-text-tertiary/80">
+                <span className="w-8 shrink-0 font-sans text-caption-2-medium text-text-tertiary/80">
                   {item.actionVerb}
                 </span>
 
@@ -76,7 +76,7 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
                 {/* 路径文本：等宽字体，支持点击 */}
                 <span
                   className={cx(
-                    "truncate font-mono text-[12px] text-text-secondary transition-colors",
+                    "truncate font-mono text-caption-1-regular text-text-secondary transition-colors",
                     !isCmd && "group-hover/item:text-accent-500"
                   )}
                   title={item.path}
@@ -86,7 +86,7 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
 
                 {/* 右侧：增减行号或执行状态 */}
                 {item.additions != null || item.deletions != null ? (
-                  <span className="ml-auto shrink-0 font-mono text-[11px] tabular-nums font-semibold">
+                  <span className="ml-auto shrink-0 font-mono text-caption-2-semibold tabular-nums">
                     {item.additions != null ? <span className="text-state-success-text">+{item.additions}</span> : null}
                     {item.deletions != null ? <span className="ml-1 text-text-error-primary">-{item.deletions}</span> : null}
                   </span>
@@ -114,7 +114,7 @@ function formatFilePath(path: string, fileName: string): string {
 function BatchDiff({ additions, deletions }: { additions?: number; deletions?: number }) {
   if (additions == null && deletions == null) return null
   return (
-    <span className="font-mono text-[11px] font-semibold tabular-nums">
+    <span className="font-mono text-caption-2-semibold tabular-nums">
       {additions != null ? <span className="text-state-success-text">+{additions}</span> : null}
       {deletions != null ? <span className="ml-1 text-text-error-primary">-{deletions}</span> : null}
     </span>

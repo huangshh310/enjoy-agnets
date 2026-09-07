@@ -17,9 +17,11 @@ export function collectSessionFiles(
     seen[path] = true
     const change = matchChange(path, changes)
     const resolved = change?.path ?? path
+    const parts = sessionFileParts(resolved)
     files.push({
       path: resolved,
-      name: fileName(resolved),
+      name: parts.name,
+      dir: parts.dir,
       additions: change?.additions ?? 0,
       deletions: change?.deletions ?? 0
     })
@@ -31,8 +33,10 @@ function normalizePath(path: string): string {
   return path.replace(/\\/g, "/").replace(/^\.\//, "").trim()
 }
 
-function fileName(path: string): string {
-  return path.split("/").filter(Boolean).at(-1) ?? path
+function sessionFileParts(path: string): { name: string; dir: string } {
+  const parts = path.split("/").filter(Boolean)
+  const name = parts.pop() ?? path
+  return { name, dir: parts.join("/") }
 }
 
 function matchChange(path: string, changes: ChangedFileRow[]): ChangedFileRow | undefined {

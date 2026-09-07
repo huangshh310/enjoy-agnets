@@ -3,15 +3,18 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "../../../../lib/record.ts"
-import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary.ts"
+import { formatToolName, summarizeToolArgs } from "../tool-summary.ts"
 import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { splitReasoningAroundTools } from "./split-reasoning-around-tools.ts"
 import { groupConsecutiveSteps } from "./agent-step-group.ts"
 import { extractDomainPills } from "./extract-domain-pills.ts"
+import { isBashTool, isEditTool, isReadTool, isSearchTool, isWeakCommandName } from "./agent-step-kind.ts"
+import { isGenericVerb } from "./is-generic-verb.ts"
 import {
   extractCommandString,
   extractFilePaths,
+  extractShellCommand,
   extractToolPath,
   inputRecords,
   mapToolStatus
@@ -58,74 +61,39 @@ function parseToolArguments(tool: ThreadToolCall): Record<string, unknown> {
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
   const args = parseToolArguments(tool)
   const result = asRecord(tool.result)
-  const command = extractCommandString(tool)
+  const shell = extractShellCommand(tool)
+  const command = shell ?? extractCommandString(tool)
   const name = tool.name.toLowerCase()
   if (isSearchTool(tool, name)) return searchNode(tool, args, result, command, t)
+  if (isBashTool(name, shell)) return commandNode(tool, shell, args, result, t)
   if (isEditTool(name, args, result)) return editNode(tool, args, result, command, t)
-  if (isReadTool(name, args, tool.name, result)) return readNode(tool, args, result, command, t)
-  if (isBashTool(name, command)) return commandNode(tool, command, args, result, t)
-  return fallbackNode(tool, command, args, t)
-}
-
-function isBashTool(name: string, command: string | undefined): boolean {
-  if (name === "bash" || name === "sh" || name === "terminal" || name === "code_mode") return true
-  if (name === "command" || name === "cmd" || name === "execute") return Boolean(command)
-  return Boolean(command) && (name.includes("bash") || name.includes("shell") || name.includes("terminal"))
-}
-
-function isSearchTool(tool: ThreadToolCall, name: string): boolean {
-  return (
-    toolKind(tool.name) === "search" ||
-    name.includes("search") ||
-    name === "grep" ||
-    name === "glob"
-  )
-}
-
-function isEditTool(name: string, args: Record<string, unknown>, result: Record<string, unknown>): boolean {
-  if (name.includes("write") || name.includes("edit") || name.includes("patch") || name.includes("strreplace")) {
-    return true
-  }
-  const path = String(args.path || args.file || "")
-  const hasEdit = Boolean(
-    args.content || args.diff || args.patch || args.replacement || args.edits || result.diff || result.patch
-  )
-  return Boolean(path) && hasEdit
-}
-
-function isReadTool(name: string, args: Record<string, unknown>, toolName: string, result: Record<string, unknown>): boolean {
-  if (name.includes("read") || name.includes("fetch") || name.includes("list") || /^read\b/i.test(toolName)) {
-    return true
-  }
-  if (typeof result.content === "string" && !result.diff && !result.patch) {
-    return true
-  }
-  return Boolean(extractToolPath(args, toolName, result))
+  if (isReadTool(name, args, tool.name)) return readNode(tool, args, result, command, t)
+  return fallbackNode(tool, shell, args, t)
 }
 
 function commandNode(
   tool: ThreadToolCall,
-  command: string | undefined,
+  shell: string | undefined,
   args: Record<string, unknown>,
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
-  const cmd = command || (isWeakCommandName(tool.name) ? "" : tool.name)
-  const display = cmd
-    ? cmd.length > 70
-      ? `$ ${cmd.slice(0, 68)}...`
-      : `$ ${cmd}`
-    : t("chat.ranACommand")
+  const display = shellTitle(shell, t)
   const exitCode = typeof result.exitCode === "number" ? result.exitCode : undefined
-  const pills = extractDomainPills(args, result, cmd)
+  const pills = extractDomainPills(args, result, shell)
   return {
     id: tool.id,
     kind: "command",
     title: display,
-    ...ioFields(tool, cmd || command, result),
+    ...ioFields(tool, shell, result),
     domainPills: pills.length > 0 ? pills : undefined,
     status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state)
   }
+}
+
+function shellTitle(shell: string | undefined, t: TranslateFn): string {
+  if (!shell) return t("chat.ranACommand")
+  return shell.length > 70 ? `$ ${shell.slice(0, 68)}...` : `$ ${shell}`
 }
 
 function searchNode(
@@ -148,10 +116,6 @@ function searchNode(
     status: mapToolStatus(tool.state),
     domainPills: pills.length > 0 ? pills : undefined
   }
-}
-
-function isWeakCommandName(name: string): boolean {
-  return /^(command|cmd|tool|function|call|execute|exec|bash|sh)$/i.test(name)
 }
 
 function editNode(
@@ -216,20 +180,20 @@ function readNode(
 
 function fallbackNode(
   tool: ThreadToolCall,
-  command: string | undefined,
+  shell: string | undefined,
   args: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
   const rawPath = extractToolPath(args, tool.name) || String(args.url || "")
   let title = formatToolName(tool.name)
   if (isWeakCommandName(title) || !title) {
-    title = command ? `$ ${command.slice(0, 60)}` : rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : t("chat.ranACommand")
+    title = shell ? shellTitle(shell, t) : rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : t("chat.ranACommand")
   }
   return {
     id: tool.id,
     kind: "command",
     title,
-    detail: command && command.length > 80 ? `${command.slice(0, 80)}...` : command,
+    detail: shell && shell.length > 80 ? `${shell.slice(0, 80)}...` : shell,
     status: mapToolStatus(tool.state)
   }
 }
@@ -263,8 +227,4 @@ function clampThinkingText(text: string): string {
   const breakAt = cut.lastIndexOf("\n")
   const head = breakAt > 400 ? cut.slice(0, breakAt) : cut
   return `${head.trimEnd()}\n…`
-}
-
-function isGenericVerb(text: string): boolean {
-  return /^(编辑|写入|读取|创建|修改|删除|运行|edit|write|read|create|modify|delete|run|file|folder|command)$/i.test(text.trim())
 }

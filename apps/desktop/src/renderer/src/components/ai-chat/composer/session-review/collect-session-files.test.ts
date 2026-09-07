@@ -11,8 +11,8 @@ test("按上一轮 path 列文件，并贴上 Git 增减", () => {
     ]
   )
   assert.deepEqual(files, [
-    { path: "src/a.ts", name: "a.ts", additions: 4, deletions: 1 },
-    { path: "src/b.ts", name: "b.ts", additions: 0, deletions: 0 }
+    { path: "src/a.ts", name: "a.ts", dir: "src", additions: 4, deletions: 1 },
+    { path: "src/b.ts", name: "b.ts", dir: "src", additions: 0, deletions: 0 }
   ])
 })
 

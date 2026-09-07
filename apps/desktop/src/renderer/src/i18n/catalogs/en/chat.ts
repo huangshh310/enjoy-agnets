@@ -282,6 +282,10 @@ export const enChat = {
   sessionReviewCollapse: "Collapse files",
   sessionReviewOpenFile: "Review {name}",
   sessionReviewNoDiff: "No line changes",
+  sessionReviewDefaultModel: "Enjoy Agents",
+  sessionReviewRestoreEmpty: "None of these files have workspace changes to restore",
+  elapsedSeconds: "{n}s",
+  elapsedMinutes: "{m}m {s}s",
   continueTodos: "Continue",
   continueTodosPrompt:
     "Continue the unfinished Todo List items. Use write_file / edit_file now; do not stop at a written plan.",
@@ -324,6 +328,7 @@ export const enChat = {
   exploringProject: "Exploring the project",
   batchFilesRead: "Read {count} files",
   batchCommandsRun: "Ran {count} commands",
+  batchSearches: "Searched {count} times",
   terminalShell: "Terminal command",
   approveShell: "Approve shell command",
   approveFile: "Approve file change · {name}",
