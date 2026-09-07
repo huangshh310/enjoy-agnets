@@ -8,11 +8,13 @@ import {
   RiCheckLine,
   RiClipboardLine,
   RiCloseLine,
-  RiFileLine,
   RiLoader4Line
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
+import { sameReviewPath } from "@renderer/components/ai-chat/right-pane/views/review/same-review-path"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { DomainPills } from "./domain-pills"
@@ -101,7 +103,10 @@ function StepTitleRow({
 
 function FileTitle({ node }: { node: AgentStepNode }) {
   const t = useT()
-  const editing = node.kind === "editing"
+  const target = node.filePath || node.fileName || ""
+  const selectedFilePath = useChatStore((state) => state.selectedFilePath)
+  const isSelected = Boolean(selectedFilePath && node.filePath && sameReviewPath(node.filePath, selectedFilePath))
+
   return (
     <button
       type="button"
@@ -112,23 +117,22 @@ function FileTitle({ node }: { node: AgentStepNode }) {
         }
       }}
       title={node.filePath ? t("chat.sessionReviewOpenFile", { name: node.filePath }) : undefined}
-      className="flex cursor-pointer items-center gap-1.5 font-mono text-caption-1-regular"
+      className={cx(
+        "flex cursor-pointer items-center gap-1.5 font-mono text-[12px] transition-all px-1.5 py-0.5 rounded",
+        isSelected
+          ? "bg-accent-500/15 text-accent-500 font-medium shadow-2xs"
+          : "text-text-secondary hover:text-text-primary group/file"
+      )}
     >
       {node.actionVerb ? (
-        <span
-          className={cx(
-            "shrink-0 rounded border px-1.5 text-caption-2-medium",
-            editing
-              ? "border-amber-500/25 bg-amber-500/10 text-amber-500"
-              : "border-border-button-default/50 bg-background-secondary-default text-text-tertiary"
-          )}
-        >
+        <span className="shrink-0 font-sans text-[11px] font-medium text-text-tertiary">
           {node.actionVerb}
         </span>
       ) : null}
-      <RiFileLine className="size-3.5 shrink-0 text-text-tertiary" />
-      {node.fileDir ? <span className="max-w-[180px] truncate text-text-tertiary">{node.fileDir}</span> : null}
-      <span className="font-semibold text-text-primary hover:underline">{node.fileName}</span>
+      <FileTypeIcon name={node.fileName || target} size={14} />
+      <span className={cx("transition-colors font-mono", !isSelected && "group-hover/file:text-accent-500")}>
+        {target}
+      </span>
     </button>
   )
 }

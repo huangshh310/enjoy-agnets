@@ -4,6 +4,7 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
+import { RiCodeSSlashLine } from "@remixicon/react"
 import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
 import { AiChatCodePane } from "../ai-chat-code-pane"
@@ -33,12 +34,20 @@ export function ChangesFileDiff({
         ignoreWhitespace: hideWhitespace
       }) as Promise<FileDiffResult>
   })
+  const fileContentQuery = useQuery({
+    queryKey: ["workspace-file-content", workspaceId, path],
+    queryFn: () =>
+      getIde().workspace.readFile({
+        workspaceId,
+        path
+      }) as Promise<string>,
+    enabled: Boolean(workspaceId && path && !fallbackContent)
+  })
   const diffText = query.data?.diff
   const model = useMemo(() => {
     if (!diffText?.trim()) return null
     return parseUnifiedDiff(diffText, path)
   }, [diffText, path])
-
   if (query.isPending) {
     return (
       <p className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
@@ -47,7 +56,7 @@ export function ChangesFileDiff({
     )
   }
 
-  if (model) {
+  if (model && model.hunks.length > 0) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <FileDiff
@@ -62,5 +71,23 @@ export function ChangesFileDiff({
     )
   }
 
-  return <AiChatCodePane path={path} value={fallbackContent} />
+  const effectiveContent = fallbackContent || fileContentQuery.data || ""
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background-primary-default">
+      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 text-[12px] select-none">
+        <div className="flex items-center gap-2 min-w-0">
+          <RiCodeSSlashLine className="size-4 shrink-0 text-text-tertiary" />
+          <span className="min-w-0 truncate font-mono font-semibold text-text-primary">
+            {path}
+          </span>
+        </div>
+        <span className="shrink-0 rounded border border-border-button-default bg-background-primary-default px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-text-tertiary">
+          Read-only
+        </span>
+      </header>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <AiChatCodePane path={path} value={effectiveContent} />
+      </div>
+    </div>
+  )
 }

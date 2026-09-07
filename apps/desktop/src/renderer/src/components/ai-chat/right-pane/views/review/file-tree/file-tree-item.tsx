@@ -5,7 +5,7 @@
  * - 文件：文件类型徽标 + 纯净文件名 + Git 状态标记字母 (U/M/A/D) 与指示点
  */
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   RiArrowDownSLine,
   RiArrowRightSLine,
@@ -31,12 +31,24 @@ export function FileTreeItem(props: {
     onSelectFile,
     defaultExpanded = true
   } = props
-  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded)
+  const hasSelectedChild = useMemo(() => {
+    if (!node.isDir || !selectedFilePath) return false
+    const check = (n: FileTreeNode): boolean => {
+      if (!n.isDir) return sameReviewPath(n.path, selectedFilePath)
+      return (n.children ?? []).some(check)
+    }
+    return (node.children ?? []).some(check)
+  }, [node, selectedFilePath])
+
+  const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded || hasSelectedChild)
+
+  useEffect(() => {
+    if (hasSelectedChild) setIsExpanded(true)
+  }, [hasSelectedChild])
 
   const isSelected =
     !node.isDir && selectedFilePath != null && sameReviewPath(node.path, selectedFilePath)
   const statusConfig = node.status ? STATUS_CONFIG[node.status] : null
-
   if (node.isDir) {
     return (
       <div className="flex flex-col select-none">

@@ -85,11 +85,9 @@ function hasLocations(rec: Record<string, unknown>): boolean {
 
 function extractToolArgs(rec: Record<string, unknown>): unknown {
   const input = rec.rawInput ?? rec.input
-  const recInput =
-    input && typeof input === "object" && !Array.isArray(input)
-      ? { ...(input as Record<string, unknown>) }
-      : {}
-  const nested = asRecord(recInput.args ?? recInput.arguments ?? recInput.params)
+  const parsedInput = parseRecord(input) ?? {}
+  const recInput = { ...parsedInput }
+  const nested = parseRecord(recInput.args ?? recInput.arguments ?? recInput.params) ?? {}
   const path =
     pickPath(recInput) ??
     pickPath(nested) ??
@@ -103,6 +101,21 @@ function extractToolArgs(rec: Record<string, unknown>): unknown {
     if (nestedCmd) recInput.command = nestedCmd
   }
   return Object.keys(recInput).length > 0 ? recInput : input
+}
+
+function parseRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+  if (typeof value === "string" && value.trim().startsWith("{") && value.trim().endsWith("}")) {
+    try {
+      const parsed = JSON.parse(value.trim())
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>
+      }
+    } catch {}
+  }
+  return null
 }
 
 const PATH_KEYS = [

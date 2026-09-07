@@ -13,6 +13,7 @@ import {
   extractCommandString,
   extractFilePaths,
   extractToolPath,
+  inputRecords,
   mapToolStatus
 } from "./extract-step-fields.ts"
 
@@ -45,14 +46,23 @@ export function parseAgentStepNodes(
   return groupConsecutiveSteps(nodes, t)
 }
 
+function parseToolArguments(tool: ThreadToolCall): Record<string, unknown> {
+  const records = inputRecords(tool.args, tool.argsText)
+  const merged: Record<string, unknown> = {}
+  for (let i = records.length - 1; i >= 0; i--) {
+    Object.assign(merged, records[i])
+  }
+  return merged
+}
+
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
-  const args = asRecord(tool.args)
+  const args = parseToolArguments(tool)
   const result = asRecord(tool.result)
   const command = extractCommandString(tool)
   const name = tool.name.toLowerCase()
   if (isSearchTool(tool, name)) return searchNode(tool, args, result, command, t)
   if (isEditTool(name, args, result)) return editNode(tool, args, result, command, t)
-  if (isReadTool(name, args, tool.name)) return readNode(tool, args, result, command, t)
+  if (isReadTool(name, args, tool.name, result)) return readNode(tool, args, result, command, t)
   if (isBashTool(name, command)) return commandNode(tool, command, args, result, t)
   return fallbackNode(tool, command, args, t)
 }
@@ -78,16 +88,19 @@ function isEditTool(name: string, args: Record<string, unknown>, result: Record<
   }
   const path = String(args.path || args.file || "")
   const hasEdit = Boolean(
-    args.content || args.diff || args.patch || args.replacement || args.edits || result.diff || result.content
+    args.content || args.diff || args.patch || args.replacement || args.edits || result.diff || result.patch
   )
   return Boolean(path) && hasEdit
 }
 
-function isReadTool(name: string, args: Record<string, unknown>, toolName: string): boolean {
+function isReadTool(name: string, args: Record<string, unknown>, toolName: string, result: Record<string, unknown>): boolean {
   if (name.includes("read") || name.includes("fetch") || name.includes("list") || /^read\b/i.test(toolName)) {
     return true
   }
-  return Boolean(extractToolPath(args, toolName))
+  if (typeof result.content === "string" && !result.diff && !result.patch) {
+    return true
+  }
+  return Boolean(extractToolPath(args, toolName, result))
 }
 
 function commandNode(
@@ -148,19 +161,20 @@ function editNode(
   command: string | undefined,
   t: TranslateFn
 ): AgentStepNode {
-  const path = extractToolPath(args, tool.name) || extractToolPath(asRecord(tool.result), tool.name)
+  const path = extractToolPath(args, tool.name, result)
   const parts = path.split(/[\\/]/)
-  const fileName = parts.pop() || path
+  const leaf = parts.pop() || ""
+  const fileName = leaf && !isGenericVerb(leaf) ? leaf : ""
   const fileDir = parts.length > 0 ? `${parts.join("/")}/` : ""
   const writing = tool.name.toLowerCase().includes("write")
   const verb = writing ? t("chat.verbWrite") : t("chat.verbEdit")
   return {
     id: tool.id,
     kind: "editing",
-    title: fileName ? `${verb} ${fileName}` : verb,
-    filePath: path,
-    fileName,
-    fileDir,
+    title: fileName ? `${verb} ${fileName}` : path ? `${verb} ${path}` : verb,
+    filePath: path || undefined,
+    fileName: fileName || "",
+    fileDir: fileDir || undefined,
     actionVerb: writing ? t("chat.verbWrite") : t("chat.verbEdit"),
     ...ioFields(tool, command, result),
     additions: typeof result.additions === "number" ? result.additions : undefined,
@@ -178,8 +192,7 @@ function readNode(
 ): AgentStepNode {
   const exploredPages = extractFilePaths(args, result, t)
   const path =
-    extractToolPath(args, tool.name) ||
-    extractToolPath(asRecord(tool.result), tool.name) ||
+    extractToolPath(args, tool.name, result) ||
     String(args.url || "")
   const parts = path.split(/[\\/]/)
   const leafName = parts.pop() || path
@@ -250,4 +263,8 @@ function clampThinkingText(text: string): string {
   const breakAt = cut.lastIndexOf("\n")
   const head = breakAt > 400 ? cut.slice(0, breakAt) : cut
   return `${head.trimEnd()}\n…`
+}
+
+function isGenericVerb(text: string): boolean {
+  return /^(编辑|写入|读取|创建|修改|删除|运行|edit|write|read|create|modify|delete|run|file|folder|command)$/i.test(text.trim())
 }

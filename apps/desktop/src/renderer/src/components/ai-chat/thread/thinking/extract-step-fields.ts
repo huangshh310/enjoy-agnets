@@ -1,20 +1,13 @@
 /**
- * 步骤树字段：命令串、浏览子页。不含 query，避免 grep 被当成 bash。
+ * 步骤树字段：命令串、工具路径、浏览子页。
+ * 对标 monocode extractToolPreview & inputRecords 算法，彻底解决嵌套 args 提取不到真实路径的问题。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
-import { asRecord, readString } from "../../../../lib/record.ts"
 import type { SubPageItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { looksLikeToolPath, normalizeToolPath } from "./looks-like-tool-path.ts"
 
-const COMMAND_KEYS = ["command", "cmd", "script", "code"] as const
-
-export function extractCommandString(tool: ThreadToolCall): string | undefined {
-  const record = asRecord(tool.args)
-  const fromRecord = commandFromRecord(record)
-  if (fromRecord) return fromRecord
-  return commandFromJsonish(tool.args) ?? commandFromJsonish(tool.argsText)
-}
+const COMMAND_KEYS = ["command", "cmd", "script", "code", "input"] as const
 
 const PATH_KEYS = [
   "path",
@@ -29,17 +22,141 @@ const PATH_KEYS = [
   "absolutePath"
 ] as const
 
-export function extractToolPath(args: Record<string, unknown>, toolName?: string): string {
-  for (const key of PATH_KEYS) {
-    const taken = takePath(args[key])
-    if (taken) return taken
+/** 扁平化展开所有嵌套的参数袋（对标 monocode inputRecords） */
+export function inputRecords(...values: unknown[]): Record<string, unknown>[] {
+  const out: Record<string, unknown>[] = []
+  const seen = new Set<object>()
+  const add = (value: unknown) => {
+    if (!value) return
+    if (Array.isArray(value)) {
+      for (const item of value) add(item)
+      return
+    }
+    const rec = parseRecord(value)
+    if (!rec || Object.keys(rec).length === 0 || seen.has(rec)) return
+    seen.add(rec)
+    out.push(rec)
+    add(rec.arguments)
+    add(rec.args)
+    add(rec.params)
+    add(rec.input)
+    add(rec.rawInput)
+    add(rec.raw_input)
+    add(rec.content)
+    add(rec.locations)
+    add(rec.location)
   }
-  const nested = asRecord(args.args ?? args.arguments ?? args.params ?? args.input)
-  for (const key of PATH_KEYS) {
-    const taken = takePath(nested[key])
-    if (taken) return taken
+  for (const value of values) add(value)
+  return out
+}
+
+function parseRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>
   }
-  return pathFromTitle(toolName)
+  if (typeof value === "string" && value.trim().startsWith("{") && value.trim().endsWith("}")) {
+    try {
+      const parsed = JSON.parse(value.trim())
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>
+      }
+    } catch {}
+  }
+  return null
+}
+
+export function extractCommandString(tool: ThreadToolCall): string | undefined {
+  const records = inputRecords(tool.args, tool.argsText, tool.result)
+  for (const rec of records) {
+    for (const key of COMMAND_KEYS) {
+      const val = rec[key]
+      if (typeof val === "string" && val.trim()) return val.trim()
+    }
+    if (Array.isArray(rec.argv) && rec.argv.length > 0 && rec.argv.every((x) => typeof x === "string")) {
+      return rec.argv.join(" ")
+    }
+    if (Array.isArray(rec.args) && rec.args.length > 0 && rec.args.every((x) => typeof x === "string")) {
+      return rec.args.join(" ")
+    }
+  }
+
+  // 纯文本命令降级
+  if (typeof tool.args === "string" && tool.args.trim() && !tool.args.trim().startsWith("{")) {
+    return tool.args.trim()
+  }
+  return undefined
+}
+
+export function extractToolPath(args: Record<string, unknown>, toolName?: string, result?: Record<string, unknown>): string {
+  const records = inputRecords(args)
+  for (const rec of records) {
+    for (const key of PATH_KEYS) {
+      const taken = takePath(rec[key])
+      if (taken) return taken
+    }
+  }
+  const fromTitle = pathFromTitle(toolName)
+  if (fromTitle) return fromTitle
+  if (result) {
+    const fromResultContent = inferPathFromContent(result.content)
+    if (fromResultContent) return fromResultContent
+  }
+  return ""
+}
+
+export function inferPathFromContent(content: unknown): string | undefined {
+  if (typeof content !== "string" || !content.trim()) return undefined
+  const text = content.trim()
+
+  // 1. JSON 格式优先
+  if (text.startsWith("{")) {
+    if (text.includes('"scripts"') || text.includes('"dependencies"') || text.includes('"version"')) {
+      return "package.json"
+    }
+    if (text.includes('"compilerOptions"')) {
+      return "tsconfig.json"
+    }
+    return "config.json"
+  }
+
+  // 2. Markdown / Skill Frontmatter
+  if (text.startsWith("---") && (text.includes("name:") || text.includes("description:"))) {
+    const nameMatch = text.match(/name:\s*([a-zA-Z0-9_\-]+)/)
+    return nameMatch?.[1] ? `${nameMatch[1]}.md` : "SKILL.md"
+  }
+  if (text.startsWith("# ")) {
+    return "README.md"
+  }
+
+  // 3. 注释中的明确路径 (// src/... 或 /* ... path: ... */)
+  const commentPath = text.match(/(?:\/\/|\/\*|\*)\s*([a-zA-Z0-9_\-./\\]+\.[a-z0-9]{1,10})/i)
+  if (commentPath?.[1] && looksLikeToolPath(commentPath[1])) {
+    return normalizeToolPath(commentPath[1])
+  }
+
+  // 4. CSS
+  if (text.includes('@import "tailwindcss"') || text.includes("@tailwind")) {
+    return "globals.css"
+  }
+
+  // 5. React 组件
+  const compMatch = text.match(/export\s+(?:default\s+)?(?:function|const|class)\s+([A-Z][a-zA-Z0-9]+)/)
+  if (compMatch?.[1]) {
+    return `${compMatch[1]}.tsx`
+  }
+
+  // 6. Next.js 约定路由
+  if (text.includes('from "next"') || text.includes("Metadata")) {
+    if (/layout/i.test(text)) return "layout.tsx"
+    if (/page/i.test(text)) return "page.tsx"
+  }
+
+  // 7. 类型文件
+  if (text.match(/export\s+(?:type|interface)\s+([A-Z][a-zA-Z0-9]+)/)) {
+    return "types.ts"
+  }
+
+  return undefined
 }
 
 function takePath(value: unknown): string {
@@ -81,46 +198,24 @@ export function mapToolStatus(state: ThreadToolCall["state"]): "pending" | "runn
   return "completed"
 }
 
-function commandFromRecord(record: Record<string, unknown>): string | undefined {
-  for (const key of COMMAND_KEYS) {
-    const value = readString(record, key)
-    if (value) return value
-  }
-  if (Array.isArray(record.argv) && record.argv.length > 0) return record.argv.map(String).join(" ")
-  if (Array.isArray(record.args) && record.args.length > 0 && typeof record.args[0] === "string") {
-    return record.args.map(String).join(" ")
-  }
-  const nested = asRecord(record.args ?? record.arguments ?? record.params)
-  for (const key of COMMAND_KEYS) {
-    const value = readString(nested, key)
-    if (value) return value
-  }
-  return undefined
-}
-
-function commandFromJsonish(value: unknown): string | undefined {
-  if (typeof value !== "string" || !value.trim()) return undefined
-  const s = value.trim()
-  if (!s.startsWith("{") || !s.endsWith("}")) return s
-  try {
-    return commandFromRecord(JSON.parse(s) as Record<string, unknown>)
-  } catch {
-    return s
-  }
-}
-
 function collectPathCandidates(args: Record<string, unknown>, result: Record<string, unknown>): string[] {
   const candidates: string[] = []
-  const primary = extractToolPath(args)
-  if (primary) candidates.push(primary)
-  if (typeof args.url === "string") candidates.push(args.url)
-  pushStringArray(candidates, args.files)
-  pushStringArray(candidates, result.files)
-  if (!Array.isArray(result.entries)) return candidates
-  for (const entry of result.entries) {
-    if (typeof entry === "string") candidates.push(entry)
-    else if (entry && typeof entry === "object" && "path" in entry && typeof entry.path === "string") {
-      candidates.push(entry.path)
+  const records = inputRecords(args, result)
+  for (const rec of records) {
+    for (const key of PATH_KEYS) {
+      const p = takePath(rec[key])
+      if (p) candidates.push(p)
+    }
+    if (typeof rec.url === "string") candidates.push(rec.url)
+    pushStringArray(candidates, rec.files)
+    if (Array.isArray(rec.entries)) {
+      for (const entry of rec.entries) {
+        if (typeof entry === "string" && looksLikeToolPath(entry)) candidates.push(normalizeToolPath(entry))
+        else if (entry && typeof entry === "object" && "path" in entry && typeof entry.path === "string") {
+          const p = takePath(entry.path)
+          if (p) candidates.push(p)
+        }
+      }
     }
   }
   return candidates
@@ -129,6 +224,6 @@ function collectPathCandidates(args: Record<string, unknown>, result: Record<str
 function pushStringArray(into: string[], value: unknown): void {
   if (!Array.isArray(value)) return
   for (const item of value) {
-    if (typeof item === "string") into.push(item)
+    if (typeof item === "string" && looksLikeToolPath(item)) into.push(normalizeToolPath(item))
   }
 }

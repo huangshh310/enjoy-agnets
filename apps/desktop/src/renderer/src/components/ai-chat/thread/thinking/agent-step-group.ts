@@ -117,14 +117,25 @@ function toBatchItem(
   t: TranslateFn,
   verbKey: "verbRun" | "verbEdit" | "verbRead" | "verbFind"
 ): BatchFileItem {
+  const verb = node.actionVerb || t(`chat.${verbKey}`)
+  const rawPath = node.filePath || (node.kind === "command" ? node.command : undefined) || ""
+  const rawName = node.fileName || (rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : "")
+  const isVerb = isGenericVerb(rawName)
+  const safeName = !isVerb && rawName ? rawName : rawPath || node.title
+  const fallbackLabel = node.kind === "reading" ? t("chat.readingResources") : node.kind === "command" ? t("chat.ranACommand") : verb
+  const cleanDisplay = isGenericVerb(safeName) ? (rawPath || fallbackLabel) : safeName
   return {
     id: node.id,
-    path: node.filePath || node.command || node.title,
-    fileName: node.fileName || node.title,
+    path: rawPath || cleanDisplay,
+    fileName: cleanDisplay,
     fileDir: node.fileDir || "",
-    actionVerb: node.actionVerb || t(`chat.${verbKey}`),
+    actionVerb: verb,
     additions: node.additions,
     deletions: node.deletions,
     status: node.status
   }
+}
+
+function isGenericVerb(text: string): boolean {
+  return /^(编辑|写入|读取|创建|修改|删除|运行|edit|write|read|create|modify|delete|run|file|folder|command)$/i.test(text.trim())
 }

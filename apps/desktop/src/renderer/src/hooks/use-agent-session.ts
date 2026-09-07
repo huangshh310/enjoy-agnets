@@ -18,7 +18,7 @@ import {
   type ModelOption
 } from "../stores/chat-store"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
-
+import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
 export type WorkspaceRow = { id: string; name: string; rootPath: string }
 type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
 type MessageRow = {
@@ -255,11 +255,58 @@ export async function selectPersistedSession(sessionId: string) {
 
 export async function openChangedFile(path: string) {
   const store = useChatStore.getState()
-  if (!store.workspaceId) return
+  if (!store.workspaceId || !path) return
+
+  // 1. 优先从当前改动列表 changes 中匹配完整工程相对路径
+  const matched = store.changes.find((c) => sameReviewPath(c.path, path))
+  let resolvedPath = matched?.path ?? path
+
+  // 2. 无论是否能读到内容，先立即展开右栏并设置选中文件（触发 UI 瞬时高亮与切换）
   revealRightPane("review")
-  const content = (await getIde().workspace.readFile({
-    workspaceId: store.workspaceId,
-    path
-  })) as string
-  store.setSelectedFile(path, content)
+  store.setSelectedFile(resolvedPath, store.selectedFileContent || "")
+
+  // 3. 异步探测并读取该文件的磁盘内容
+  try {
+    const direct = await tryReadFile(store.workspaceId, resolvedPath)
+    if (direct != null) {
+      if (useChatStore.getState().selectedFilePath === resolvedPath) {
+        store.setSelectedFile(resolvedPath, direct)
+      }
+      return
+    }
+
+    // 若为纯文件名（无路径分隔符），尝试工程常见子目录前缀
+    if (!path.includes("/") && !path.includes("\\")) {
+      const candidates = [
+        `src/components/chrome/${path}`,
+        `src/components/${path}`,
+        `src/app/${path}`,
+        `src/${path}`,
+        `components/${path}`,
+        `lib/${path}`,
+        `public/${path}`
+      ]
+      for (const candidate of candidates) {
+        const found = await tryReadFile(store.workspaceId, candidate)
+        if (found != null) {
+          resolvedPath = candidate
+          if (useChatStore.getState().selectedFilePath === path || useChatStore.getState().selectedFilePath === resolvedPath) {
+            store.setSelectedFile(resolvedPath, found)
+          }
+          return
+        }
+      }
+    }
+  } catch {
+    // 若读取失败，保留选中的文件路径使 Diff/视图依然能响应
+  }
+}
+
+async function tryReadFile(workspaceId: string, path: string): Promise<string | null> {
+  try {
+    const res = (await getIde().workspace.readFile({ workspaceId, path })) as string
+    return typeof res === "string" ? res : null
+  } catch {
+    return null
+  }
 }

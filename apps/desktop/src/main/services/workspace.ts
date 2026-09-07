@@ -2,6 +2,7 @@
  * 工作区档案：打开 / 列出 / 读文件。host 与 Git 在独立模块。
  */
 import { promises as fs } from "node:fs"
+import { join } from "node:path"
 import { dialog } from "electron"
 import { resolveKnowledgePath } from "@enjoy-agents/db"
 import { getDatabase, getSetting, setSetting } from "./database"
@@ -108,8 +109,22 @@ export async function removeWorkspace(workspaceId: string): Promise<{ id: string
 
 export async function readWorkspaceFile(workspaceId: string, relativePath: string) {
   const workspace = await getWorkspace(workspaceId)
-  const resolved = resolveKnowledgePath(workspace.rootPath, relativePath)
-  return fs.readFile(resolved.abs, "utf8")
+  try {
+    const resolved = resolveKnowledgePath(workspace.rootPath, relativePath)
+    return await fs.readFile(resolved.abs, "utf8")
+  } catch (err: unknown) {
+    if (isEnoentError(err)) {
+      const fileName = relativePath.split(/[\\/]/).pop()
+      if (fileName) {
+        const foundRel = await findRelativeFile(workspace.rootPath, fileName)
+        if (foundRel) {
+          const resolved = resolveKnowledgePath(workspace.rootPath, foundRel)
+          return await fs.readFile(resolved.abs, "utf8")
+        }
+      }
+    }
+    throw err
+  }
 }
 
 export async function listWorkspaceDir(workspaceId: string, relativePath: string) {
@@ -127,7 +142,50 @@ export async function readWorkspaceDiff(
   ignoreWhitespace = false
 ) {
   const workspace = await getWorkspace(workspaceId)
-  return readFileDiff(workspace.rootPath, relativePath, ignoreWhitespace)
+  try {
+    return await readFileDiff(workspace.rootPath, relativePath, ignoreWhitespace)
+  } catch (err: unknown) {
+    const fileName = relativePath.split(/[\\/]/).pop()
+    if (fileName) {
+      const foundRel = await findRelativeFile(workspace.rootPath, fileName)
+      if (foundRel) {
+        return await readFileDiff(workspace.rootPath, foundRel, ignoreWhitespace)
+      }
+    }
+    throw err
+  }
+}
+
+function isEnoentError(err: unknown): boolean {
+  if (err && typeof err === "object" && "code" in err) {
+    return err.code === "ENOENT"
+  }
+  return false
+}
+
+const IGNORED_SEARCH_DIRS = new Set(["node_modules", ".git", "dist", "out", ".next", ".turbo", "coverage", "build"])
+
+async function findRelativeFile(rootPath: string, fileName: string): Promise<string | null> {
+  const target = fileName.toLowerCase()
+  async function walk(dir: string, relPrefix: string): Promise<string | null> {
+    let entries
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true })
+    } catch {
+      return null
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (IGNORED_SEARCH_DIRS.has(entry.name)) continue
+        const sub = await walk(join(dir, entry.name), relPrefix ? `${relPrefix}/${entry.name}` : entry.name)
+        if (sub) return sub
+      } else if (entry.name.toLowerCase() === target) {
+        return relPrefix ? `${relPrefix}/${entry.name}` : entry.name
+      }
+    }
+    return null
+  }
+  return walk(rootPath, "")
 }
 
 async function pickWorkspaceFolder(): Promise<string> {

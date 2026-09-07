@@ -25,14 +25,14 @@ export function ReviewDiffPane(props: {
   const matched = selectedFilePath
     ? changes.find((file) => sameReviewPath(file.path, selectedFilePath))
     : undefined
-  const activePath = matched?.path ?? changes[0]?.path ?? null
+  const activePath = matched?.path ?? selectedFilePath ?? changes[0]?.path ?? null
 
   useEffect(() => {
-    if (!activePath || activePath === selectedFilePath) return
-    onSelectFile(activePath)
+    if (selectedFilePath) return
+    if (activePath) onSelectFile(activePath)
   }, [activePath, selectedFilePath, onSelectFile])
 
-  if (changes.length === 0) {
+  if (changes.length === 0 && !activePath) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-text-tertiary">
         <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
