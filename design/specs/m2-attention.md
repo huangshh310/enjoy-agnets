@@ -85,15 +85,17 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 | CTA | 仅「回到会话」→ `openSession({ sessionId })` |
 | action | `openSession` **必须**带 `sessionId`；禁止只 `navigate("/")` |
 | 阅读器 | 摘要 + 元数据；不渲染 `ApprovalCard` |
+| 轨徽标 | Inbox 轨图标只标**可行动**计数（pending_approval / ask_user / error）；complete 不计 |
 
 ### 4. `AutoApproveBar`
 
 | 项 | 合同 |
 |---|---|
-| 位置 | Composer 能力条旁或审批策略入口旁；复用 `approval-policy-*`，不另做第二条栏 |
-| 文案 | 当前模式一瞥（如「写入需确认 · Shell 需确认」） |
+| 位置 | Composer 上沿、PermissionDock 之下；常驻一瞥，复用 `approval-policy-*` |
+| 文案 | 当前模式一瞥（如「写入需确认 · Shell 需确认 · Git 需确认」） |
 | YOLO/All | `text-text-error-primary` + `bg-background-tertiary-error` 高警示 |
 | token | BoardUI only；禁 `amber-500` / `rose-500` |
+| 不是 | 第二套 Allow/Deny；决策仍只在 Dock / 策略菜单 |
 
 ### 5. 侧栏会话灯（后置 M5）
 

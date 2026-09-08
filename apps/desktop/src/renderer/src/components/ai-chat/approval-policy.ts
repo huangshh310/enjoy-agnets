@@ -88,3 +88,12 @@ export function flagsForPolicy(kind: PermissionMode): ApprovalPrefFlags {
 export function preferencesPatchFromFlags(flags: ApprovalPrefFlags) {
   return { ...flags, permissionMode: toHarnessPermissionMode(flags) }
 }
+
+/** 缺省全开确认：与 Composer 盾牌同一默认。 */
+export function flagsFromPrefs(prefs?: Partial<ApprovalPrefFlags> | null): ApprovalPrefFlags {
+  return {
+    requireWriteApproval: prefs?.requireWriteApproval ?? true,
+    requireBashApproval: prefs?.requireBashApproval ?? true,
+    requireCommitApproval: prefs?.requireCommitApproval ?? true
+  }
+}

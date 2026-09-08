@@ -1,5 +1,5 @@
 /**
- * 轨道图标按钮。运行中的 Chat 用 pulse 点，不用静态圆。
+ * 轨道图标按钮。Inbox 可行动计数用数字徽标，不用脉冲假活。
  */
 import { cx } from "@/utils/cx"
 import type { ActivityIcon } from "./module-registry"
@@ -9,19 +9,22 @@ export function RailButton({
   label,
   icon: Icon,
   pulse,
+  count,
   onClick
 }: {
   active: boolean
   label: string
   icon: ActivityIcon
   pulse?: boolean
+  count?: number
   onClick: () => void
 }) {
+  const badge = count && count > 0 ? (count > 99 ? "99+" : String(count)) : null
   return (
     <button
       type="button"
       title={label}
-      aria-label={label}
+      aria-label={badge ? `${label} ${badge}` : label}
       aria-current={active ? "page" : undefined}
       onClick={onClick}
       className={cx(
@@ -31,7 +34,6 @@ export function RailButton({
           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
       )}
     >
-      {/* 激活状态左侧灵动指示条 (Active Indicator) */}
       {active ? (
         <span
           aria-hidden
@@ -45,7 +47,12 @@ export function RailButton({
         )}
         aria-hidden
       />
-      {pulse ? (
+      {badge ? (
+        <span className="absolute -right-0.5 -top-0.5 min-w-3.5 rounded-full bg-background-tertiary-error px-1 text-center font-mono text-[10px] leading-4 text-text-error-primary">
+          {badge}
+        </span>
+      ) : null}
+      {!badge && pulse ? (
         <span className="absolute right-1.5 top-1.5 flex size-2" aria-hidden>
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent-400 opacity-75" />
           <span className="relative inline-flex size-2 rounded-full bg-accent-500" />

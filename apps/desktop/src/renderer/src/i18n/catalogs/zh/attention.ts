@@ -6,6 +6,14 @@ export const zhAttention = {
   dismiss: "忽略",
   dockLabel: "等待你的决定",
   currentSession: "本会话·处理中",
+  glance: {
+    writeNeed: "写入需确认",
+    writeAuto: "写入自动",
+    shellNeed: "Shell 需确认",
+    shellAuto: "Shell 自动",
+    gitNeed: "Git 需确认",
+    gitAuto: "Git 自动"
+  },
   kind: {
     pending_approval: "待审批",
     ask_user: "待回答",

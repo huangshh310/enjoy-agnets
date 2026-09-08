@@ -16,6 +16,7 @@ import { useT } from "@renderer/i18n"
 
 import {
   classifyApprovalPolicy,
+  flagsFromPrefs,
   preferencesPatchFromFlags,
   toneForPolicy,
   type ApprovalPrefFlags
@@ -96,10 +97,3 @@ function PolicyTrigger({
   )
 }
 
-function flagsFromPrefs(prefs?: Partial<ApprovalPrefFlags> | null): ApprovalPrefFlags {
-  return {
-    requireWriteApproval: prefs?.requireWriteApproval ?? true,
-    requireBashApproval: prefs?.requireBashApproval ?? true,
-    requireCommitApproval: prefs?.requireCommitApproval ?? true
-  }
-}
