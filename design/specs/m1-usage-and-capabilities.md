@@ -57,3 +57,4 @@
 - Claude / Codex `inspect` 仍拉账号，但 `quota=false`，UI 不得回落空条 + `—`。
 - `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。
 - `composerChromeFor` 的 Fast / 思考 / 模式显隐与本 spec 的 path 微标是同一张表，不要再写第二套 capability 形状。
+- 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。

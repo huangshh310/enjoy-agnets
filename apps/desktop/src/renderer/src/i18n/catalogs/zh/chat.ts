@@ -262,11 +262,6 @@ export const zhChat = {
   limitsMcpDeferred: "MCP 工具（延迟）",
   limitsSystemDeferred: "系统工具（延迟）",
   limitsFreeSpace: "剩余空间",
-  limitFiveHour: "5 小时额度",
-  limitResetSoon: "约 2 小时 46 分后重置",
-  limitWeeklyAll: "每周 · 全部模型",
-  limitResetTue: "周二 15:00 重置",
-  limitWeeklyPro: "每周 · Pro",
 
   errorTitle: "执行异常 / 模型响应中断",
   dismissError: "忽略并关闭错误提示",

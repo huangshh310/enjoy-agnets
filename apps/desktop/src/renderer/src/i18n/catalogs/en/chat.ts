@@ -269,11 +269,6 @@ export const enChat = {
   limitsMcpDeferred: "MCP tools (deferred)",
   limitsSystemDeferred: "System tools (deferred)",
   limitsFreeSpace: "Free space",
-  limitFiveHour: "5-hour limit",
-  limitResetSoon: "Resets in 2 hr 46 min",
-  limitWeeklyAll: "Weekly · all models",
-  limitResetTue: "Resets Tue 3:00 PM",
-  limitWeeklyPro: "Weekly · Pro",
 
   errorTitle: "Run failed / model response interrupted",
   dismissError: "Dismiss error",
