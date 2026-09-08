@@ -239,14 +239,15 @@ export const zhSettings = {
 
   registry: {
     title: "ACP Registry",
-    desc: "浏览内置本机 CLI。安装或复制官方命令。自定义 stdio ACP 走白名单 basename，不上进阶沙箱。",
+    desc: "浏览内置本机 CLI。安装或复制官方命令。自定义 stdio ACP 只能用已知 ACP basename（安全白名单），不能添加任意二进制。",
     sourceOfficial: "官方目录",
     emptyDetail: "从左侧选一个智能体。",
     addCustom: "添加自定义 ACP",
-    addCustomDesc: "command / args / env / cwd。spawn 只允许已知 ACP basename，审批不豁免。",
+    addCustomDesc: "command / args / env / cwd。出于安全，command 只允许已知 ACP basename，不能添加任意程序名。审批不豁免。",
+    customBasenamePolicy: "安全：只能使用已知 ACP 二进制名（目录内 CLI，或 acp / acp-agent / agent-acp）。不能添加任意程序名。",
     customLabel: "名称",
     customCommand: "命令",
-    customCommandHint: "白名单 basename，或该文件名的绝对路径。禁止 bash / node / npx。",
+    customCommandHint: "已知 ACP basename，或该文件名的绝对路径。禁止 bash / node / npx，也不能填任意二进制。",
     customArgs: "参数",
     customEnv: "环境变量",
     customEnvHint: "密钥值在表单里掩码，不会画「已连接」绿灯。",

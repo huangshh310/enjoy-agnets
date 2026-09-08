@@ -239,14 +239,15 @@ export const enSettings = {
 
   registry: {
     title: "ACP Registry",
-    desc: "Browse built-in local CLIs. Install or copy the official command. Custom stdio ACP uses a basename allowlist and is never the sandbox path.",
+    desc: "Browse built-in local CLIs. Install or copy the official command. Custom stdio ACP may only use known ACP basenames (security allowlist); arbitrary binaries cannot be added.",
     sourceOfficial: "Official catalog",
     emptyDetail: "Select an agent on the left.",
     addCustom: "Add a custom ACP agent",
-    addCustomDesc: "command / args / env / cwd. Spawn only allows known ACP basenames. Approvals still apply.",
+    addCustomDesc: "command / args / env / cwd. For security, command must be a known ACP basename — arbitrary binary names cannot be added. Approvals still apply.",
+    customBasenamePolicy: "Security: only known ACP basenames are allowed (catalog CLIs, or acp / acp-agent / agent-acp). Arbitrary binary names cannot be added.",
     customLabel: "Name",
     customCommand: "Command",
-    customCommandHint: "Allowlisted basename, or an absolute path with that name. No bash / node / npx.",
+    customCommandHint: "Known ACP basename, or an absolute path with that name. No bash / node / npx, and no arbitrary binaries.",
     customArgs: "Arguments",
     customEnv: "Environment",
     customEnvHint: "Secret-looking values are masked. There is no fake connected light.",
