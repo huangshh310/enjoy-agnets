@@ -94,7 +94,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 | 检测行 | 已检测到的 CLI（ready 列表，品牌标+名，单行；标题用 i18n `已检测`，禁止写成「已连接」） |
 | 缺口行 | missing：品牌+名+**一个**紧凑 CTA（npm/brew→「安装」，其余→「复制」）。点行展开命令，或深链 `#/settings/agent?tab=registry`。**禁止**嵌 `AgentCliInstall`（提示+安装+复制+文档整卡） |
 | 示例任务 | 3 条短 pill，点击填入 Composer；禁「开启奇妙旅程」类文案 |
-| 版式 | `max-w-xl` 左/中偏左；内容长时 `justify-start` 顶对齐，清单与 Composer 之间不要大块空白；`bg-background-*` BoardUI；无大 Hero 插画抢焦点 |
+| 版式 | `max-w-xl` 左/中偏左；`justify-start` + `pt-4` 贴 Stage 顶，禁止 `justify-center` 漂在半页；清单贴 Composer + pill；`bg-background-*` BoardUI；无大 Hero |
 
 ---
 
