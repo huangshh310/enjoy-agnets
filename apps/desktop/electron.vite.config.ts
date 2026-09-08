@@ -57,6 +57,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/runtime-capabilities.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/custom-agent",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/custom-agent.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -94,6 +98,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/runtime-capabilities",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/runtime-capabilities.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/custom-agent",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/custom-agent.ts")
         },
         {
           find: /^@enjoy-agents\/ipc-contract$/,

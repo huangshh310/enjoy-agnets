@@ -3,8 +3,11 @@
  * Pi / Amp 的 companion 二进制只给登录与 inspect，不能当 ACP 入口。
  */
 import { basename, isAbsolute } from "node:path"
+import { isCustomAgentId } from "@enjoy-agents/ipc-contract/custom-agent"
 import { capabilitiesFor, type RuntimeCapabilities } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { modelArgsFor } from "./catalogs.ts"
+import { canPromoteComingSoon, M4_PROMOTION_ORDER } from "./coming-soon-promotion.ts"
+import { resolveCustomSpawn } from "./custom-spawn.ts"
 import { agentToolPreset, type AgentToolPreset } from "./presets.ts"
 
 export type SpawnOverride = {
@@ -20,10 +23,18 @@ export type ResolvedSpawn = {
 
 /** 未知 id、技能位、未接线或非 ACP 入口一律拒绝。 */
 export function resolveSpawnCommand(id: string, override: SpawnOverride = {}): ResolvedSpawn {
+  if (isCustomAgentId(id)) {
+    const command = override.binaryPath?.trim()
+    if (!command) throw new Error("Custom ACP agent has no command.")
+    return resolveCustomSpawn(command, override.extraArgs ?? [])
+  }
   const preset = agentToolPreset(id)
   if (!preset) throw new Error(`Unknown agent tool '${id}'.`)
   if (preset.skillOnly) throw new Error(`${preset.label} is a skill target, not a runnable CLI.`)
   if (!preset.available || preset.transport !== "acp-host") {
+    throw new Error(`${preset.label} is not wired for ACP yet.`)
+  }
+  if ((M4_PROMOTION_ORDER as readonly string[]).includes(preset.id) && !canPromoteComingSoon(preset.id)) {
     throw new Error(`${preset.label} is not wired for ACP yet.`)
   }
   const extra = sanitizeAcpExtraArgs(id, override.extraArgs ?? [])

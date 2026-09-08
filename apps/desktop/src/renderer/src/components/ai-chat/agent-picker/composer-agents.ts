@@ -1,7 +1,7 @@
 /**
  * Composer 左栏要展示的 Agent。技能位不出现；即将推出沉到底。
  */
-import { composerChromeFor, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { composerChromeFor, isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 
 const TAB_ORDER = [
@@ -21,10 +21,18 @@ const TAB_ORDER = [
 ] as const
 
 export function composerAgentTabs(tools: AgentToolPublic[]): AgentToolPublic[] {
-  const byId = new Map(tools.filter((item) => !item.skillOnly).map((item) => [item.id, item]))
-  return TAB_ORDER.map((id) => byId.get(id)).filter((item): item is AgentToolPublic =>
+  const usable = tools.filter((item) => !item.skillOnly)
+  const byId = new Map(usable.map((item) => [item.id, item]))
+  const ordered = TAB_ORDER.map((id) => byId.get(id)).filter((item): item is AgentToolPublic =>
     Boolean(item && composerChromeFor(item.id).showOnEngineRail)
   )
+  const extras = usable.filter(
+    (item) =>
+      isCustomAgentId(item.id) &&
+      composerChromeFor(item.id).showOnEngineRail &&
+      !ordered.some((row) => row.id === item.id)
+  )
+  return [...ordered, ...extras]
 }
 
 export function composerAgentGroups(tools: AgentToolPublic[]): {

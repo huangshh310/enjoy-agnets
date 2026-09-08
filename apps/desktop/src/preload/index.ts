@@ -57,7 +57,10 @@ const ide = {
     setSessionRuntime: (input: unknown) => ipcRenderer.invoke("agentTools.setSessionRuntime", input),
     syncConfig: (input: unknown) => ipcRenderer.invoke("agentTools.syncConfig", input),
     restoreConfig: (input: unknown) => ipcRenderer.invoke("agentTools.restoreConfig", input),
-    inspect: (input: unknown) => ipcRenderer.invoke("agentTools.inspect", input)
+    inspect: (input: unknown) => ipcRenderer.invoke("agentTools.inspect", input),
+    upsertCustom: (input: unknown) => ipcRenderer.invoke("agentTools.upsertCustom", input),
+    removeCustom: (input: unknown) => ipcRenderer.invoke("agentTools.removeCustom", input),
+    getCustom: (input: unknown) => ipcRenderer.invoke("agentTools.getCustom", input)
   },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),

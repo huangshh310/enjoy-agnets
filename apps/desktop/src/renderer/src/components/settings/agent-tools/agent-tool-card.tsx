@@ -3,19 +3,24 @@
  */
 import { useState } from "react"
 import { RiTerminalBoxLine } from "@remixicon/react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { useQueryClient } from "@tanstack/react-query"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useT } from "@renderer/i18n"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { AgentToolAccountRow } from "./agent-tool-account-row"
 import { AgentToolCardFoot, AgentToolCardHead } from "./agent-tool-card-parts"
 import { AgentToolConfigDialog } from "./agent-tool-config-dialog"
+import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
 import { useAgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolCard({ tool }: { tool: AgentToolPublic }) {
   const t = useT()
+  const queryClient = useQueryClient()
   const actions = useAgentToolActions(tool)
   const inspecting = useSettingsSnapshot().isInspectingAccounts
+  const custom = isCustomAgentId(tool.id)
   const [configOpen, setConfigOpen] = useState(false)
   const [confirmUninstall, setConfirmUninstall] = useState(false)
   const ready = tool.status === "ready" || actions.isDefaultLocal
@@ -61,16 +66,40 @@ export function AgentToolCard({ tool }: { tool: AgentToolPublic }) {
           onUninstall={() => setConfirmUninstall(true)}
         />
       </article>
-      <AgentToolConfigDialog tool={tool} open={configOpen} onOpenChange={setConfigOpen} />
+      {custom ? (
+        <CustomAcpAgentDialog
+          id={tool.id}
+          open={configOpen}
+          onOpenChange={setConfigOpen}
+          onChanged={() => void queryClient.invalidateQueries({ queryKey: ["settings"] })}
+        />
+      ) : (
+        <AgentToolConfigDialog tool={tool} open={configOpen} onOpenChange={setConfigOpen} />
+      )}
       <ConfirmDialog
         open={confirmUninstall}
-        title={t("settings.agentTools.uninstallTitle", { label: tool.label })}
-        description={t("settings.agentTools.uninstallDesc")}
-        confirmLabel={t("settings.agentTools.uninstall")}
+        title={
+          custom
+            ? t("settings.registry.deleteTitle")
+            : t("settings.agentTools.uninstallTitle", { label: tool.label })
+        }
+        description={custom ? t("settings.registry.deleteDesc") : t("settings.agentTools.uninstallDesc")}
+        confirmLabel={custom ? t("settings.registry.deleteCustom") : t("settings.agentTools.uninstall")}
         destructive
         onOpenChange={setConfirmUninstall}
-        onConfirm={() => void actions.runUninstall()}
+        onConfirm={() =>
+          void (custom ? removeCustomCard(tool.id, queryClient) : actions.runUninstall())
+        }
       />
     </>
   )
+}
+
+async function removeCustomCard(
+  id: string,
+  queryClient: ReturnType<typeof useQueryClient>
+) {
+  if (!hasIde()) return
+  await getIde().agentTools.removeCustom({ id })
+  await queryClient.invalidateQueries({ queryKey: ["settings"] })
 }

@@ -5,11 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./runtime-capabilities": "./src/runtime-capabilities.ts"
+    "./runtime-capabilities": "./src/runtime-capabilities.ts",
+    "./custom-agent": "./src/custom-agent.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts"
+    "test": "node --experimental-strip-types --test src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts src/custom-agent.test.ts"
   },
   "dependencies": { "zod": "catalog:" },
   "devDependencies": { "typescript": "catalog:" }

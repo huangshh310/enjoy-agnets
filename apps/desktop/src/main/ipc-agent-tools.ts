@@ -6,12 +6,15 @@ import {
   AgentToolIdInput,
   DoctorAgentToolInput,
   InspectAgentToolInput,
+  RemoveCustomAgentInput,
   SetSessionRuntimeInput,
-  UpsertAgentToolInput
+  UpsertAgentToolInput,
+  UpsertCustomAgentInput
 } from "@enjoy-agents/ipc-contract"
 import { ipcMain, shell } from "electron"
 import { inspectAgentTool } from "./services/agent-tools-account/inspect"
 import { installAgentTool, loginAgentTool, uninstallAgentTool } from "./services/agent-tools-install"
+import { getCustomAgent, removeCustomAgent, upsertCustomAgent } from "./services/agent-tools-custom"
 import {
   detectAgentTools,
   doctorAgentTool,
@@ -32,7 +35,10 @@ export const AGENT_TOOLS_CHANNELS = [
   "agentTools.syncConfig",
   "agentTools.restoreConfig",
   "agentTools.uninstall",
-  "agentTools.inspect"
+  "agentTools.inspect",
+  "agentTools.upsertCustom",
+  "agentTools.removeCustom",
+  "agentTools.getCustom"
 ] as const
 
 export function registerAgentToolsIpc() {
@@ -81,5 +87,21 @@ export function registerAgentToolsIpc() {
   ipcMain.handle("agentTools.inspect", async (_event, raw: unknown) => {
     const input = InspectAgentToolInput.parse(raw)
     return inspectAgentTool(input.id, input.refresh)
+  })
+  ipcMain.handle("agentTools.upsertCustom", async (_event, raw: unknown) => {
+    const input = UpsertCustomAgentInput.parse(raw)
+    upsertCustomAgent(input)
+    return listAgentTools()
+  })
+  ipcMain.handle("agentTools.removeCustom", async (_event, raw: unknown) => {
+    const input = RemoveCustomAgentInput.parse(raw)
+    removeCustomAgent(input.id)
+    return listAgentTools()
+  })
+  ipcMain.handle("agentTools.getCustom", async (_event, raw: unknown) => {
+    const input = RemoveCustomAgentInput.parse(raw)
+    const record = getCustomAgent(input.id)
+    if (!record) throw new Error(`Unknown custom agent '${input.id}'.`)
+    return record
   })
 }

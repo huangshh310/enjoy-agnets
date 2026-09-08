@@ -163,6 +163,17 @@ export const AGENT_BRAND_METAS: Record<string, AgentBrandMeta> = {
 }
 
 export function getAgentBrandMeta(id: string): AgentBrandMeta {
+  if (id.startsWith("custom:")) {
+    return {
+      accentColor: "text-text-secondary",
+      borderColor: "border-border-button-default hover:border-border-button-hover",
+      haloBg: "bg-background-secondary-default/40",
+      badgeText: "Custom ACP",
+      capabilities: [{ label: "ACP Stdio", code: "custom" }],
+      tagline: "用户添加的 stdio ACP agent。审批不豁免。",
+      isTerminalCli: true
+    }
+  }
   return (
     AGENT_BRAND_METAS[id] ?? {
       accentColor: "text-text-secondary",

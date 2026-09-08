@@ -9,7 +9,7 @@ import {
   RiFlashlightLine,
   RiSettings4Line
 } from "@remixicon/react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useT } from "@renderer/i18n"
@@ -83,7 +83,7 @@ export function AgentToolCardFoot({
     <div className="flex items-center justify-between gap-2 border-t border-separator-border/60 pt-2.5">
       <AgentToolCardPrimary tool={tool} actions={actions} ready={ready} />
       <div className="flex items-center gap-1">
-        {ready && actions.configurable && tool.installKind !== "copy" ? (
+        {actions.configurable && (isCustomAgentId(tool.id) || (ready && tool.installKind !== "copy")) ? (
           <Button
             type="button"
             size="sm"
@@ -95,7 +95,9 @@ export function AgentToolCardFoot({
             <RiDeleteBinLine className="size-3" />
             {actions.busyAction === "uninstall"
               ? t("settings.agentTools.uninstalling")
-              : t("settings.agentTools.uninstall")}
+              : isCustomAgentId(tool.id)
+                ? t("settings.registry.deleteCustom")
+                : t("settings.agentTools.uninstall")}
           </Button>
         ) : null}
         <Button

@@ -1,6 +1,7 @@
 /**
  * 本机 Agent CLI 目录。ACP 宿主可 spawn；companionBinaries 只给登录 / inspect。
  */
+import { isCustomAgentId } from "@enjoy-agents/ipc-contract/custom-agent"
 import type { AgentToolId, AgentToolTransport } from "@enjoy-agents/ipc-contract"
 
 export type AgentToolPreset = {
@@ -185,6 +186,7 @@ export function agentToolPreset(id: string | undefined): AgentToolPreset | undef
 }
 
 export function isAcpHostRuntime(id: string | undefined): boolean {
+  if (isCustomAgentId(id)) return true
   const preset = agentToolPreset(id)
   return Boolean(preset?.transport === "acp-host" && preset.available && !preset.skillOnly)
 }

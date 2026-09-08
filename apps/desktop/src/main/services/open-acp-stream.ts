@@ -3,7 +3,8 @@
  * fast / effort 入参只占位兼容，不进 argv；env 注入跟 providerBind。
  */
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
-import { capabilitiesFor } from "@enjoy-agents/ipc-contract"
+import { capabilitiesFor, isCustomAgentId } from "@enjoy-agents/ipc-contract"
+import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { listAgentTools } from "./agent-tools-service"
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import { readVault } from "./secrets-vault"
@@ -22,6 +23,9 @@ export async function openAcpStream(input: {
 }): Promise<OpenedCodingStream> {
   if (!isAcpHostRuntime(input.runtimeId)) {
     throw new Error(`${input.runtimeId} is not a wired ACP host runtime.`)
+  }
+  if (isCustomAgentId(input.runtimeId)) {
+    return openCustomAcpStream(input)
   }
   const override = readAgentToolOverrides()[input.runtimeId]
   const listed = await listAgentTools()
@@ -51,6 +55,36 @@ export async function openAcpStream(input: {
       modelId: override?.modelId || publicTool?.selectedModel
     },
     env: injectedEnv,
+    waitForApproval: input.waitForSubagentApproval
+  })
+  return {
+    stream: opened.stream,
+    result: opened.result,
+    dispose: opened.dispose
+  }
+}
+
+/** 自定义 ACP：command/args/env/cwd 入库值，审批不豁免。 */
+async function openCustomAcpStream(
+  input: Parameters<typeof openAcpStream>[0]
+): Promise<OpenedCodingStream> {
+  const record = getCustomAgent(input.runtimeId)
+  if (!record || !record.enabled) {
+    throw new Error(`${input.runtimeId} is not a registered custom ACP agent.`)
+  }
+  const opened = await streamAcpTurn({
+    runId: input.runId,
+    sessionId: input.sessionId,
+    toolId: input.runtimeId,
+    workspaceRoot: resolveCustomCwd(record, input.workspaceRoot),
+    messages: input.messages,
+    abortSignal: input.abortSignal,
+    override: {
+      binaryPath: record.command,
+      extraArgs: record.args,
+      modelId: record.modelId
+    },
+    env: record.env,
     waitForApproval: input.waitForSubagentApproval
   })
   return {

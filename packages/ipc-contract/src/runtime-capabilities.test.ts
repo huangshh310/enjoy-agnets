@@ -138,6 +138,14 @@ test("ACP 宿主都不露 Fast / 思考 / 模式 / 语音", () => {
   }
 })
 
+test("自定义 ACP 走 ACP 本机 CLI 路径，可上导轨、无额度", () => {
+  const chrome = composerChromeFor("custom:lab")
+  assert.equal(chrome.pathKind, "acp-host")
+  assert.equal(chrome.showOnEngineRail, true)
+  assert.equal(chrome.quota, false)
+  assert.equal(capabilitiesFor("custom:lab").permissionUi, "enjoy-hmac")
+})
+
 test("三路路径：Enjoy 本地 / ACP / 沙箱；沙箱不上导轨", () => {
   assert.equal(runtimePathKind("enjoy-local"), "enjoy-local")
   assert.equal(runtimePathKind("cursor"), "acp-host")

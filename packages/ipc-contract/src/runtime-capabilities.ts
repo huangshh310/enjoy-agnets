@@ -3,6 +3,7 @@
  * renderer 与 harness 只读这份表；未声明 = 隐藏或禁用，禁止伪造控件。
  */
 import { z } from "zod"
+import { isCustomAgentId } from "./custom-agent.ts"
 import { HIDDEN_RUNTIME_CAPABILITIES, RUNTIME_CAPABILITIES } from "./runtime-capabilities-table.ts"
 
 export const RuntimeCapabilities = z.object({
@@ -45,9 +46,10 @@ export type ComposerChrome = {
 
 export { HIDDEN_RUNTIME_CAPABILITIES, RUNTIME_CAPABILITIES }
 
-/** 按 runtimeId 取静态能力；未知 id 回落隐藏表。 */
+/** 按 runtimeId 取静态能力；未知 id 回落隐藏表。自定义 ACP 走保守表。 */
 export function capabilitiesFor(id: string | undefined): RuntimeCapabilities {
   if (!id) return HIDDEN_RUNTIME_CAPABILITIES
+  if (isCustomAgentId(id)) return RUNTIME_CAPABILITIES["custom-acp"] ?? HIDDEN_RUNTIME_CAPABILITIES
   return RUNTIME_CAPABILITIES[id] ?? HIDDEN_RUNTIME_CAPABILITIES
 }
 

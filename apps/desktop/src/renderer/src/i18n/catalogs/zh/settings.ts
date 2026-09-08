@@ -189,6 +189,7 @@ export const zhSettings = {
     uninstallDesc: "将用白名单 npm/brew 卸载此 CLI。Enjoy 里的供应商密钥不会删除。",
     done: "完成",
     tabEngines: "本机 CLI",
+    tabRegistry: "Registry",
     tabSandbox: "进阶沙箱",
     tabDefaults: "默认项",
     hubTitle: "本机 CLI",
@@ -234,6 +235,44 @@ export const zhSettings = {
     viewReady: "查看已安装",
     viewAll: "浏览全部",
     pathHintFooter: "探测会补 brew 与用户 bin，但排在系统 PATH 后面。"
+  },
+
+  registry: {
+    title: "ACP Registry",
+    desc: "浏览内置本机 CLI。安装或复制官方命令。自定义 stdio ACP 走白名单 basename，不上进阶沙箱。",
+    sourceOfficial: "官方目录",
+    emptyDetail: "从左侧选一个智能体。",
+    addCustom: "添加自定义 ACP",
+    addCustomDesc: "command / args / env / cwd。spawn 只允许已知 ACP basename，审批不豁免。",
+    customLabel: "名称",
+    customCommand: "命令",
+    customCommandHint: "白名单 basename，或该文件名的绝对路径。禁止 bash / node / npx。",
+    customArgs: "参数",
+    customEnv: "环境变量",
+    customEnvHint: "密钥值在表单里掩码，不会画「已连接」绿灯。",
+    customCwd: "工作目录",
+    cwdWorkspace: "工作区根目录",
+    cwdCustom: "自定义路径",
+    saveCustom: "保存并添加",
+    saving: "正在保存…",
+    editCustom: "编辑自定义 ACP",
+    deleteCustom: "删除",
+    deleteTitle: "删除这个自定义 ACP？",
+    deleteDesc: "会从本机列表移除，并解绑仍指向它的会话。Enjoy 密钥不受影响。",
+    summary: {
+      claude: "Anthropic Claude Code。ACP 子命令 claude acp。",
+      cursor: "Cursor 官方 CLI。二进制 agent / cursor-agent，ACP 为 agent acp。",
+      grok: "xAI Grok Build。ACP 为 grok agent stdio。",
+      codex: "OpenAI Codex CLI。ACP 子命令 codex acp。",
+      antigravity: "Google Antigravity。优先 agy-acp，否则 agy --acp。",
+      gemini: "Gemini CLI。必须 gemini --acp，禁止 --experimental-acp。",
+      opencode: "OpenCode 官方 ACP。opencode acp。",
+      pi: "Pi 官方是 RPC。Enjoy 只 spawn 已安装的 pi-acp。",
+      hermes: "Hermes Agent。hermes acp 或 hermes-acp。",
+      amp: "Amp 没有 amp acp。只 spawn amp-acp，登录走 amp login。",
+      deepseek: "DeepSeek Harness。dsh --profile acp。",
+      omp: "Oh My Pi 编码智能体。omp acp。"
+    }
   },
 
   runtimeCaps: {

@@ -1,7 +1,7 @@
 /**
  * 账号 / 额度 / 动态模型：只对已找到的登录型 CLI 跑官方命令，结果缓存 10s。
  */
-import type { AgentToolId, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
+import { isCustomAgentId, type AgentToolId, type InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { AGENT_TOOL_PRESETS, catalogFor, probeBinaries } from "@enjoy-agents/agent-harness"
 import { safeCustomBinaryPath } from "../agent-tools-guard"
 import { readAgentToolOverrides } from "../agent-tools-vault"
@@ -41,6 +41,7 @@ export async function inspectReadyTools(ids: AgentToolId[]): Promise<InspectAgen
 }
 
 async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
+  if (isCustomAgentId(id)) return emptyInspect(id)
   const command = await resolveInspectCommand(id)
   if (!command) return emptyInspect(id)
   const cwd = await agentToolsCwd()

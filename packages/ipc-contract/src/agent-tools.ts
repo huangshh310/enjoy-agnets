@@ -1,11 +1,12 @@
 /**
  * 本机 Agent CLI 工具箱合约：目录、探测、覆盖、doctor。
- * 不包含各家 login token。
+ * 不包含各家 login token。自定义 ACP 见 custom-agent.ts。
  */
 import { z } from "zod"
+import { CustomAgentToolId, isCustomAgentId } from "./custom-agent.ts"
 import { RuntimeCapabilities } from "./runtime-capabilities.ts"
 
-export const AgentToolId = z.enum([
+export const BuiltinAgentToolId = z.enum([
   "enjoy-local",
   "claude",
   "cursor",
@@ -20,7 +21,21 @@ export const AgentToolId = z.enum([
   "amp",
   "deepseek"
 ])
+export type BuiltinAgentToolId = z.infer<typeof BuiltinAgentToolId>
+
+export const AgentToolId = z.union([BuiltinAgentToolId, CustomAgentToolId])
 export type AgentToolId = z.infer<typeof AgentToolId>
+
+export {
+  CustomAgentToolId,
+  CustomAgentCwdMode,
+  CustomAgentEnv,
+  CustomAgentRecord,
+  UpsertCustomAgentInput,
+  RemoveCustomAgentInput,
+  isCustomAgentId,
+  CUSTOM_AGENT_ID_RE
+} from "./custom-agent.ts"
 
 export const AgentToolTransport = z.enum(["local", "sdk-sandbox", "acp-host"])
 export type AgentToolTransport = z.infer<typeof AgentToolTransport>
@@ -94,16 +109,30 @@ export const AgentToolPublic = z.object({
   authAccount: AgentToolAuthAccount.optional(),
   quotaInfo: AgentToolQuotaInfo.optional(),
   /** 静态保真清单投影；缺省时 renderer 用 capabilitiesFor(id)。 */
-  capabilities: RuntimeCapabilities.optional()
+  capabilities: RuntimeCapabilities.optional(),
+  /** builtin=目录项；custom=用户添加的 stdio ACP。缺省当 builtin。 */
+  origin: z.enum(["builtin", "custom"]).optional(),
+  cwdMode: z.enum(["workspace", "custom"]).optional(),
+  customCwd: z.string().optional(),
+  /** 只回显 env 键名，不把密钥值摊在列表里。 */
+  envKeys: z.array(z.string()).optional()
 })
 export type AgentToolPublic = z.infer<typeof AgentToolPublic>
 
+/** 目录安装 / 登录 / 同步只认内置 id。 */
 export const AgentToolIdInput = z
+  .object({
+    id: BuiltinAgentToolId
+  })
+  .strict()
+export type AgentToolIdInput = z.infer<typeof AgentToolIdInput>
+
+export const AnyAgentToolIdInput = z
   .object({
     id: AgentToolId
   })
   .strict()
-export type AgentToolIdInput = z.infer<typeof AgentToolIdInput>
+export type AnyAgentToolIdInput = z.infer<typeof AnyAgentToolIdInput>
 
 export const UpsertAgentToolInput = z
   .object({
@@ -158,11 +187,7 @@ export const LoginAgentToolResult = z.object({
 })
 export type LoginAgentToolResult = z.infer<typeof LoginAgentToolResult>
 
-export const DoctorAgentToolInput = z
-  .object({
-    id: AgentToolId
-  })
-  .strict()
+export const DoctorAgentToolInput = AnyAgentToolIdInput
 export type DoctorAgentToolInput = z.infer<typeof DoctorAgentToolInput>
 
 export const AgentToolDoctorResult = z.object({
@@ -207,5 +232,6 @@ export const ACP_HOST_IDS = [
 ] as const
 
 export function isAcpHostRuntimeId(id: string | undefined): boolean {
+  if (isCustomAgentId(id)) return true
   return (ACP_HOST_IDS as readonly string[]).includes(id ?? "")
 }
