@@ -4,7 +4,7 @@
 import type { ReactNode } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
-import { EmptyStateChecklist } from "./empty-state-checklist"
+import { EmptyStateChecklist } from "./checklist/empty-state-checklist"
 import { EmptyStateHeader } from "./empty-state-header"
 import { EmptyStatePills } from "./empty-state-pills"
 import { focusComposerEnd } from "./focus-composer"
@@ -36,7 +36,7 @@ export function AiChatEmptyState({
   return (
     <div
       className={cx(
-        "relative flex size-full min-h-0 flex-1 flex-col items-start justify-center overflow-y-auto px-6 py-8",
+        "relative flex size-full min-h-0 flex-1 flex-col items-start justify-start overflow-y-auto px-6 py-6",
         className
       )}
     >
