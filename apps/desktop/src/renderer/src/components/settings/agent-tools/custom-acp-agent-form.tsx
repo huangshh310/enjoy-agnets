@@ -9,6 +9,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import type { CustomAgentRecord, UpsertCustomAgentInput } from "@enjoy-agents/ipc-contract"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
+import { mapCustomAgentFormError } from "./map-custom-agent-error"
 
 export type CustomAgentDraft = {
   id?: string
@@ -51,7 +52,7 @@ export function CustomAcpAgentForm({
       className="flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault()
-        void submitCustomAgent(draft, setBusy, setError, onSaved)
+        void submitCustomAgent(draft, setBusy, setError, onSaved, t)
       }}
     >
       <p className="text-caption-2-medium text-text-tertiary">{t("settings.registry.customBasenamePolicy")}</p>
@@ -224,7 +225,8 @@ async function submitCustomAgent(
   draft: CustomAgentDraft,
   setBusy: (value: boolean) => void,
   setError: (value: string | null) => void,
-  onSaved: () => void
+  onSaved: () => void,
+  t: (path: string, vars?: Record<string, string | number>) => string
 ) {
   if (!hasIde()) return
   setBusy(true)
@@ -233,7 +235,8 @@ async function submitCustomAgent(
     await getIde().agentTools.upsertCustom(toInput(draft))
     onSaved()
   } catch (error) {
-    setError(error instanceof Error ? error.message : String(error))
+    const raw = error instanceof Error ? error.message : String(error)
+    setError(mapCustomAgentFormError(raw, t, draft.command))
   } finally {
     setBusy(false)
   }
