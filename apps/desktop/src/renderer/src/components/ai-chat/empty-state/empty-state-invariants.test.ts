@@ -1,6 +1,6 @@
 /**
  * 空态不变量：必须保留 checklist 两段 + pills。
- * 禁止挂 Registry / AgentCliInstall / SkillSourcePullStrip / 空会话技能源同步条。
+ * 禁止挂 Registry / AgentCliInstall / 空会话技能源同步条。
  */
 import assert from "node:assert/strict"
 import { readdirSync, readFileSync } from "node:fs"

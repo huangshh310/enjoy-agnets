@@ -1,7 +1,7 @@
 /**
  * 空会话引导：标题 + 已检测/未安装 + pills。Composer 不在本文件。
  * 高度跟内容走；根节点不得再吃剩余列高或垂直居中。
- * 禁止同步/运维条（SkillSourcePullStrip、SessionReviewBar），也禁止 Registry / AgentCliInstall。
+ * 禁止同步/运维条（技能源拉取、SessionReviewBar），也禁止 Registry / AgentCliInstall。
  */
 import { useChatStore } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
