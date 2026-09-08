@@ -99,7 +99,7 @@ function ChatWorkspaceBody(props: {
             thinkingLabel={thinkingLabel}
             error={error}
             pendingApproval={pendingApproval}
-            onApprove={() => void decidePendingApproval("allow")}
+            onApprove={(answers) => void decidePendingApproval("allow", answers)}
             onDeny={() => void decidePendingApproval("deny")}
             onAllowSession={() => void decidePendingApproval("allow_session")}
           />

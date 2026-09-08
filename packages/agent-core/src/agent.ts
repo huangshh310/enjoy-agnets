@@ -79,7 +79,9 @@ export function createCodingAgent(
     ...(loopTimeout ? { timeout: loopTimeout } : {}),
     ...(options.onStepFinish ? { onStepFinish: options.onStepFinish } : {}),
     toolApproval: ({ toolCall }) =>
-      resolveToolApproval(toolCall.toolName, mode, policy, toolCall.input)
+      toolCall
+        ? resolveToolApproval(toolCall.toolName, mode, policy, toolCall.input)
+        : "not-applicable"
   })
 }
 

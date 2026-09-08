@@ -5,6 +5,7 @@ import {
   migrateContentToParts,
   safeValidateUIMessages,
   StreamEvent,
+  type AskUserAnswers,
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
@@ -203,7 +204,10 @@ function resolveCreateRuntime(current: string, preferred: string) {
 export { abortComposerRun }
 export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
 
-export async function decidePendingApproval(decision: "allow" | "deny" | "allow_session") {
+export async function decidePendingApproval(
+  decision: "allow" | "deny" | "allow_session",
+  answers?: AskUserAnswers
+) {
   const store = useChatStore.getState()
   const pending = store.pendingApproval
   const runId = store.runId
@@ -212,7 +216,8 @@ export async function decidePendingApproval(decision: "allow" | "deny" | "allow_
     runId,
     toolCallId: pending.toolCallId,
     approvalId: pending.approvalId,
-    decision
+    decision,
+    ...(answers ? { answers } : {})
   })
 }
 

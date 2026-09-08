@@ -117,6 +117,11 @@ async function openRunStream(
     sessionApprovedTools: run.sessionApprovedTools,
     runtimeId: run.input.runtimeId,
     pullSteeringMessages: () => absorbSteeringMessages(run),
+    takeQuestionAnswers: () => {
+      const answers = run.questionAnswers
+      run.questionAnswers = undefined
+      return answers
+    },
     waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
       const approvalId = createId("apr")
       run.pendingApprovals.push({ approvalId, toolCallId, name: toolName })

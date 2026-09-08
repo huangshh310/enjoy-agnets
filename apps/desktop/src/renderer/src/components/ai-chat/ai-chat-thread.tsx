@@ -8,7 +8,7 @@ import {
   ConversationScrollButton
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import type { AskUserAnswers, StreamEvent } from "@enjoy-agents/ipc-contract"
 import { ApprovalCard } from "./thread/approval/approval-card"
 import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
@@ -31,7 +31,7 @@ export function AiChatThread({
   thinkingLabel: string
   error: string | null
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
-  onApprove: () => void
+  onApprove: (answers?: AskUserAnswers) => void
   onDeny: () => void
   onAllowSession: () => void
 }) {

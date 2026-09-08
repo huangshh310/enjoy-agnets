@@ -16,7 +16,7 @@ When the user-facing answer is finished, you MAY append at most 4 optional next-
 
 const MODE: Record<AgentMode, string> = {
   agent: "Mode: Agent (ToolLoopAgent). Read, edit, and run commands to complete the task autonomously. Dangerous writes and shell calls require user approval.",
-  plan: "Mode: Plan (Architectural Planner). Do not write files or run mutating commands. Inspect the workspace and produce a concrete, step-by-step implementation blueprint.",
+  plan: "Mode: Plan (Architectural Planner). Do not write files or run mutating commands. Inspect the workspace and produce a concrete, step-by-step implementation blueprint. When a product or architecture choice is blocking, call ask_user_questions with 2–5 options instead of guessing.",
   ask: "Mode: Ask (Read-Only Search). Answer questions about the workspace. Read-only tools only. Never modify files or run mutating commands.",
   debug: "Mode: Debug (Systematic Diagnostic). Reproduce the failure, isolate the root cause, and apply the smallest robust fix with regression checks.",
   workflow: "Mode: Workflow (Multi-Step Pipeline). Execute complex engineering tasks in structured sequential stages, verifying intermediate steps.",

@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
+import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { persistActiveRun } from "./flush-agent-run"
 import { disposeCodingStream } from "./open-coding-stream"
@@ -46,6 +46,10 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   if (!pending) {
     throw new Error("No matching tool approval is waiting.")
   }
+  // 提问工具没有 Always allow：必须在 HMAC 落库前拒，否则库内行写死、卡片还停着。
+  if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision === "allow_session") {
+    throw new Error("ask_user_questions cannot be allow_session")
+  }
   assertApprovalHmac({
     runId: decision.runId,
     approvalId: decision.approvalId,
@@ -53,11 +57,14 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   })
   recordApprovalDecision(decision.approvalId, decision.decision)
   applyApprovalDecision(run, decision.decision, pending.name)
+  if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision !== "deny") {
+    run.questionAnswers = decision.answers ?? {}
+  }
   run.pendingApprovals = run.pendingApprovals.filter(
     (item) => item.approvalId !== decision.approvalId
   )
   run.approvalGate.resolve(decision.approvalId, decision.decision)
-  run.messages.push(approvalResponseMessage(decision))
+  run.messages.push(approvalResponseMessage(decision, pending.name))
   emitEvent(window, {
     type: "approval.resolved",
     runId: decision.runId,
@@ -76,10 +83,12 @@ function applyApprovalDecision(
   decision: "allow" | "deny" | "allow_session",
   toolName: string
 ) {
+  if (toolName === ASK_USER_QUESTIONS_TOOL) return
   if (decision === "allow_session") run.sessionApprovedTools.add(toolName)
 }
 
-function approvalResponseMessage(decision: ApprovalDecision): ModelMessage {
+function approvalResponseMessage(decision: ApprovalDecision, toolName: string): ModelMessage {
+  const skipped = toolName === ASK_USER_QUESTIONS_TOOL && decision.decision === "deny"
   return {
     role: "tool",
     content: [
@@ -87,7 +96,7 @@ function approvalResponseMessage(decision: ApprovalDecision): ModelMessage {
         type: "tool-approval-response",
         approvalId: decision.approvalId,
         approved: decision.decision !== "deny",
-        reason: decision.reason
+        reason: skipped ? "User skipped questions." : decision.reason
       }
     ]
   } as ModelMessage

@@ -46,13 +46,15 @@ async function generateWithSharedApproval(options: {
     model: options.model,
     instructions:
       "You are a specialist subagent. Return a concise report. Writes and shell use the same approval policy as the parent agent. Do not claim you bypassed approval.",
-    tools: createCodingTools(options.host),
-    toolApproval: ({ toolCall }) =>
-      decide({
+    tools: createCodingTools(options.host, { includeAskUser: false }),
+    toolApproval: ({ toolCall }) => {
+      if (!toolCall) return { type: "denied", reason: "Missing tool call." }
+      return decide({
         toolName: toolCall.toolName,
         toolCallId: toolCall.toolCallId,
         input: toolCall.input
       })
+    }
   })
   const generated = agent as { generate?: (input: { prompt: string; abortSignal?: AbortSignal }) => Promise<{ text?: string }> }
   if (!generated.generate) {

@@ -3,6 +3,7 @@
  * 本机路径用函数看 bash 命令；Harness 的 toolApproval 是静态表，内置 write/edit/bash 走 permissionMode。
  */
 import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
+import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
@@ -51,6 +52,7 @@ export function resolveToolApproval(
   policy: ApprovalPolicy,
   input?: unknown
 ): ToolApprovalDecision {
+  if (toolName === ASK_USER_QUESTIONS_TOOL) return "user-approval"
   if (toolName.startsWith("mcp_")) return resolveMcpApproval(toolName, mode, policy)
   if (!MUTATING_SET.has(toolName)) return "not-applicable"
   if (mode === "ask" || mode === "plan") {
@@ -138,6 +140,7 @@ export function toHarnessApprovalSettings(
   for (const name of BASH_TOOLS) toolApproval[name] = bash
   for (const name of COMMIT_TOOLS) toolApproval[name] = commit
   applySessionApprovals(toolApproval, policy.sessionApprovedTools, readOnly)
+  // ACP / Harness 没有 createCodingTools，不要登记 ask_user_questions。
   return { permissionMode: harnessPermissionMode(policy), toolApproval }
 }
 

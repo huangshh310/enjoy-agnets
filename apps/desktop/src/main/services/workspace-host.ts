@@ -4,6 +4,7 @@
 import { promises as fs } from "node:fs"
 import { dirname, extname, join } from "node:path"
 import { assertSandboxCommand, type AgentWorkspaceHost } from "@enjoy-agents/agent-core"
+import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
 import { parseExecutableCommand, runExecutable, runGit } from "./command"
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths"
 import { readPreferences } from "./preferences"
@@ -11,7 +12,10 @@ import { commitWorkspaceAll } from "./workspace-git"
 
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
 
-export function createWorkspaceHost(workspaceRoot: string): AgentWorkspaceHost {
+export function createWorkspaceHost(
+  workspaceRoot: string,
+  extras?: { takeQuestionAnswers?: () => AskUserAnswers | undefined }
+): AgentWorkspaceHost {
   return {
     readFile: async (relativePath) => {
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
@@ -62,7 +66,8 @@ export function createWorkspaceHost(workspaceRoot: string): AgentWorkspaceHost {
     gitCommit: async (message) => {
       const result = await commitWorkspaceAll(workspaceRoot, message)
       return result.output
-    }
+    },
+    takeQuestionAnswers: extras?.takeQuestionAnswers
   }
 }
 

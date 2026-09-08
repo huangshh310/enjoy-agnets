@@ -3,7 +3,7 @@
  * 禁止 plan 倒计时自动放行。
  */
 import { useState } from "react"
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { ASK_USER_QUESTIONS_TOOL, type AskUserAnswers, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { formatToolName } from "../tool-summary"
@@ -12,6 +12,7 @@ import { ApprovalChrome } from "./approval-chrome"
 import { ApprovalCommandBody } from "./approval-command-body"
 import { ApprovalPlanBody } from "./approval-plan-body"
 import { ApprovalQuestionsBody } from "./approval-questions-body"
+import { AskUserCard } from "../ask-user/ask-user-card"
 import { classifyApproval, commandCwdOf, commandTextOf, payloadPreview } from "./classify-approval"
 import { planFromPending } from "./plan-from-pending"
 import type { ApprovalDecide } from "./approval.types"
@@ -26,7 +27,7 @@ export function ApprovalCard({
   onAllowSession
 }: {
   pending: StreamEvent & { type: "approval.required" }
-  onApprove: () => void
+  onApprove: (answers?: AskUserAnswers) => void
   onDeny: () => void
   onAllowSession: () => void
 }) {
@@ -35,8 +36,11 @@ export function ApprovalCard({
   const workspaceRoot = useWorkspaceRootPath()
   const args = asRecord(pending.args)
   const variant = classifyApproval(pending.name, args)
-  const decide: ApprovalDecide = { onApprove, onDeny, onAllowSession }
+  const decide: ApprovalDecide = { onApprove: () => onApprove(), onDeny, onAllowSession }
   const untitled = t("chat.untitledWorkspace")
+  if (pending.name === ASK_USER_QUESTIONS_TOOL) {
+    return <AskUserCard args={args} onComplete={(answers) => onApprove(answers)} onSkipAll={onDeny} />
+  }
   if (variant === "command") {
     return (
       <CommandApproval

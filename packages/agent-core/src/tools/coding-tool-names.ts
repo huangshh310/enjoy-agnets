@@ -6,6 +6,7 @@ import { READ_TOOL_NAMES } from "./read-tools.ts"
 export const CODING_TOOL_NAMES = [
   ...READ_TOOL_NAMES,
   "todo_write",
+  "ask_user_questions",
   "edit_file",
   "write_file",
   "bash",

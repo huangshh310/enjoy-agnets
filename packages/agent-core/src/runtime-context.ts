@@ -1,3 +1,5 @@
+import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
+
 export type AgentWorkspaceHost = {
   readFile: (relativePath: string) => Promise<string>;
   writeFile: (relativePath: string, content: string) => Promise<void>;
@@ -9,6 +11,8 @@ export type AgentWorkspaceHost = {
   gitStatus: () => Promise<string>;
   gitDiff: (path?: string) => Promise<string>;
   gitCommit: (message: string) => Promise<string>;
+  /** 审批放行后取出 ask_user_questions 的答案。 */
+  takeQuestionAnswers?: () => AskUserAnswers | undefined;
 };
 
 export type AgentRuntimeContext = {

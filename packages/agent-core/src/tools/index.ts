@@ -4,6 +4,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import { diffTexts, toUnifiedDiff } from "../diff.ts"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
+import { createAskUserQuestionsTool } from "./ask-user-questions.ts"
 import { createCodeModeTool } from "./code-mode.ts"
 import { createReadTools } from "./read-tools.ts"
 import { createTodoWriteTool } from "./todo-write.ts"
@@ -19,10 +20,14 @@ function truncate(value: string): string {
  * AI SDK 7 的 execute() 只注入 toolsContext[name]，不会把 runtimeContext 放进 options.context。
  * 因此 host 必须在建工具时闭包注入，否则 Allow 后续跑会报 Workspace host is missing。
  */
-export function createCodingTools(host: AgentWorkspaceHost) {
+export function createCodingTools(
+  host: AgentWorkspaceHost,
+  options?: { includeAskUser?: boolean }
+) {
   return {
   ...createReadTools(host),
   ...createTodoWriteTool(),
+  ...(options?.includeAskUser === false ? {} : createAskUserQuestionsTool(host)),
   edit_file: tool({
     description: "Replace an exact string in a workspace file. Requires user approval.",
     inputSchema: z.object({

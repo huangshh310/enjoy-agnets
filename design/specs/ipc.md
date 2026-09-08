@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-07
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-08
 
 ## 当前真相
 
@@ -18,7 +18,7 @@
 | automations | `list` `upsert` `remove` | 自动化；`remove` 入参 `{ id }` |
 | models | `list` | 已配置模型目录；每条可带 `contextWindow`（探测 / Gateway / 手填，没有则省略）与 `maxTokens`（最大**输出**，不是窗口） |
 | ai | `generate` `abort` `resume` | 文本/结构化/媒体/embedding/translation；kind=`agent` 转发 `runAgent`，必须带 workspaceId；`resume` 按 kind 分流：workflow 续步，其它读 generation 快照再跑 |
-| agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；篡改 runId / toolCallId 或库内签名即拒 |
+| agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；`ask_user_questions` 可带可选 `answers`，但 `answers` 不能配 `allow_session`；对该工具 `allow_session` 由 main 在 HMAC 落库前拒；篡改 runId / toolCallId 或库内签名即拒 |
 | assets | `import` `list` `read` `export` `delete` `upload` | 资产库与 provider 引用 |
 | knowledge | `sources` `documents` `addSource` `index` `search` `cancel` `remove` | RAG；`documents` 可带 `sourceId`，合并库内文档与磁盘扫描 |
 | workflow | `list` `get` `start` `recover` `resume` `cancel` `retry` | Durable run |
@@ -50,7 +50,7 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts` 各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts` 各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 壳频道：`ipc-shell.ts`（workspace / session / agent / terminal / window）
 - 自动更新：`ipc-app-update.ts`
@@ -65,6 +65,7 @@
 
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`session.rename` 必须进 `CHANNELS`，否则卸载会留下 handler。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
+- `ApprovalDecision.answers` 不能配 `allow_session`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止 `allow_session`：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。
 - Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。
 - `workspace.gitCommit` 是用户主动提交，没有 runId / HMAC。UI 在 `requireCommitApproval` 时弹 `ConfirmDialog` 再 invoke；Agent 工具 `git_commit` 仍走 `approval.required` + `agent.decide`。不要把 UI 提交硬接进 HMAC 管道。

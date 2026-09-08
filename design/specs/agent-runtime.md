@@ -21,6 +21,7 @@
 | `glob` | 否 | 最多 400 条 |
 | `grep` | 否 | 最多 200 条 |
 | `todo_write` | 否 | 整表替换对话内 Todo List，不写盘 |
+| `ask_user_questions` | 是（停车取答案，不是写盘） | 向用户提问；plan/ask 也放行。抄 Fluid AskUserQuestions 交互、BoardUI 皮 |
 | `edit_file` | 是 | 工作区写 + diff |
 | `write_file` | 是 | |
 | `bash` | 是 | cwd 锁工作区；默认禁网；超时；输出截断 |
@@ -28,7 +29,7 @@
 
 工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。
 
-审批策略来自用户偏好：`requireWriteApproval`、`requireBashApproval`、`requireCommitApproval`、`permissionMode`。UI 决定：`allow`（Allow once 仅本次）/ `deny`（拒绝）/ `allow_session`（Always allow this session 本会话总是允许，只白名单本会话工具名，不是工作区级）。卡片按工具换三种表面（抄 AICSS 交互、BoardUI 皮）：`bash` / `code_mode` / 管道与 ACP 弱名（`command` / `cmd` + `argv`）→ command（cwd 用 `args.cwd` 否则工作区 `rootPath`）；`write_file` / `edit_file` / `git_commit` → plan（待办来自本次入参，不是 Todo Dock）；其余 → questions（选项 id=`allow_once`/`allow_session`）。MCP 只带 `args.command` 不算 shell。底部标明 HMAC 令牌绑定；**禁止** plan 倒计时自动放行。执行只在 main。`approval.required` 落库时用进程内密钥签 HMAC；`agent.decide` 再验库内行 + HMAC。`ApprovalDecision` `.strict()`，多传的 `args` 被拒而不是丢掉；签名校验的是落库 args，不是 renderer 再传一份。
+审批策略来自用户偏好：`requireWriteApproval`、`requireBashApproval`、`requireCommitApproval`、`permissionMode`。UI 决定：`allow`（Allow once 仅本次）/ `deny`（拒绝）/ `allow_session`（Always allow this session 本会话总是允许，只白名单本会话工具名，不是工作区级）。卡片按工具换三种表面（抄 AICSS 交互、BoardUI 皮）：`bash` / `code_mode` / 管道与 ACP 弱名（`command` / `cmd` + `argv`）→ command（cwd 用 `args.cwd` 否则工作区 `rootPath`）；`write_file` / `edit_file` / `git_commit` → plan（待办来自本次入参，不是 Todo Dock）；`ask_user_questions` → Fluid 步进问答（数字键 1–9、可跳过、可其它）；其余 → questions（选项 id=`allow_once`/`allow_session`）。MCP 只带 `args.command` 不算 shell。底部标明 HMAC 令牌绑定；**禁止** plan 倒计时自动放行。`ask_user_questions` 的答案走 `ApprovalDecision.answers`，execute 从 `host.takeQuestionAnswers` 取出。对本工具禁止 `allow_session`（`decideApproval` 在 HMAC 落库前抛）。空问卷 execute 抛 `ASK_USER_QUESTIONS_EMPTY`。子 Agent `createCodingTools(host, { includeAskUser: false })`。Harness 静态表不登记该工具。执行只在 main。`approval.required` 落库时用进程内密钥签 HMAC；`agent.decide` 再验库内行 + HMAC。`ApprovalDecision` `.strict()`，多传的 `args` 被拒而不是丢掉；签名校验的是落库 args，不是 renderer 再传一份。
 
 ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false）+ 可选 `hasToolCall`。步数来自偏好 `maxAgentSteps`（默认 20，上限 64）。`prepareStep` 每步裁历史。每步 `onStepFinish` 写 `run_steps`。总超时 `agentTimeoutMs`（0 不限）经 `withTimeout` / `armTimeout` 接到 Agent 泵和 `ai.generate`；步进超时 `stepTimeoutMs` 以 `{ stepMs }` 传给 ToolLoop。超时发 `run.error` + `generation.warning`（`code=timeout`），指标 `errorClass=timeout`。bash 用 `toolTimeoutMs`。`ai.resume` 对 cancelled/failed Agent run 用 checkpoint 快照重启同一 `runId`。
 运行时交互：会话任务态是派生值 `idle | running | paused | waiting_review`（审批 park = `waiting_review`，Stop 后回 `idle`，不另做可恢复 pause）。**安全检查点**在每次工具 `execute` 结束、下一跳 LLM 之前：仅 `stepNumber > 0` 才 `pullSteeringMessages` + 注入，`prepareStep` 返回的 `messages`（SDK 7.x 跨步保留）接上纠偏句；step 0 不 drain，避免首跳 LLM 前把纠偏吃掉却不注入。泵收工前再 absorb 一次；有剩余则 `continuePump` **续同一 run**，不是 idle 后再发。禁止在单次工具执行中途截断，也不要用 `abort` 当引导。`steeringQueue` 挂 main（`agent.steer`），有消息就拼成 `role: user`。ACP/CLI 没有 `prepareStep`，引导要等当前流走完再由泵 absorb。`followupQueue` 在 renderer：`run.end` / idle 后自动 `agent.run`；已 idle 再入队也必须立刻自启（订阅队列，不能只听 `running` 边沿）。`waiting_review`（`pendingApproval`）时不要 `takeNextFollowup`。没有 ActiveRun 且已 idle 的引导立刻新开 `agent.run`；UI 仍 `running` 才改排队。引用块用 `QuotedContext`（规范类型 `file|diff|terminal_output|task_step`，兼容旧 `tool_call|file_diff|text_selection|thought_step`；正文优先 `content`，否则 `snippet`）格式化后拼在用户句前。排队项规范字段是 `prompt`，`text` 为同值别名；编辑走 `editQueuedMessage`，升纠偏走 `elevateToSteer`（标 `elevated_to_steer`）。Stop / fail / 正常收工后 `clearSteer`，未消费纠偏丢弃且不注入下一轮（已落库的用户气泡保留）。
@@ -55,7 +56,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 - 建 agent / 流：`packages/agent-core/src/agent.ts`
 - 子 Agent 审批：`packages/agent-core/src/agents/subagent-approval.ts`、`subagent-loop.ts`
-- 工具：`packages/agent-core/src/tools/index.ts`、`todo-write.ts`
+- 工具：`packages/agent-core/src/tools/index.ts`、`todo-write.ts`、`ask-user-questions.ts`
 - 审批：`packages/agent-core/src/tool-approval.ts`
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
@@ -82,6 +83,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - HMAC 密钥只在 main 进程内存；重启后未决审批作废，不要从 renderer 回传 hmac。
 - AICSS Approval Card 的 plan 变体会 30s 倒计时后自动 `onApprove`。本产品不允许：没有倒计时 UI，也没有静默放行。写盘 / bash / commit 必须等人点允许、拒绝或本会话允许。
 - 审批分类：ACP 弱名 `command` + `argv` 走 command；不要用「有 args.command」把 MCP 收成 shell。questions 的 Continue 按选项 id 分流，禁止和 `t("chat.alwaysAllow")` 比字符串。
+- `ask_user_questions` 不是写盘，plan/ask 不得当只读拒绝。不要原样上架 Fluid registry（Base UI、framer-motion、Lucide、`bg-card`）。答案不能塞进 HMAC 校验的落库 args；放行后放 `ActiveRun.questionAnswers`，execute 再 take。禁止对本工具 `allow_session`：必须在 `recordApprovalDecision` 之前抛，否则库内行写死、卡片还停着。`toHarnessApprovalSettings` 不要登记该工具（ACP/CLI 没有 `createCodingTools`）。tool-approval 的 node:test 不能 value-import ipc-contract 入口（缺 `permission-mode`），工具名常量放 `ask-user-questions-name.ts`。
 - 建工具时必须闭包注入 `AgentWorkspaceHost`。AI SDK 7 不会把 runtimeContext 传进 `execute` 的 `options.context`。
 - 结构化输出在 v7 已并入 `generateText` / `streamText` 的 `output`，不要再用旧的 `generateObject` 主路径。
 - 渲染线程：Thinking 用 Beautiful UI 风格 trace，不要把 `message.content` 当纯字符串倒出来。

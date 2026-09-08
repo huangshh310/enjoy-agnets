@@ -13,7 +13,7 @@ import {
   resolveHarnessAdapter,
   streamHarnessTurn
 } from "@enjoy-agents/agent-harness"
-import { type AgentMode, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
+import { type AgentMode, type AskUserAnswers, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import {
   createLanguageModel,
   reasoningCallOptions
@@ -50,6 +50,7 @@ export async function openCodingStream(input: {
   waitForSubagentApproval?: WaitForSubagentApproval
   runtimeId?: string
   pullSteeringMessages?: () => ModelMessage[]
+  takeQuestionAnswers?: () => AskUserAnswers | undefined
 }) {
   const policy: ApprovalPolicy = {
     requireWriteApproval: input.prefs.requireWriteApproval,
@@ -170,7 +171,9 @@ async function openLocalStream(
       workspaceRoot: input.workspaceRoot,
       sessionId: input.sessionId,
       runId: input.runId,
-      host: createWorkspaceHost(input.workspaceRoot)
+      host: createWorkspaceHost(input.workspaceRoot, {
+        takeQuestionAnswers: input.takeQuestionAnswers
+      })
     }
   })
   const stream = (result as { fullStream?: AsyncIterable<Record<string, unknown>> }).fullStream

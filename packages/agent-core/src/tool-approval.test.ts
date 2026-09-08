@@ -24,6 +24,12 @@ test("只读工具不走审批", () => {
   assert.equal(resolveToolApproval("git_status", "agent", REQUIRE_ALL), "not-applicable")
 })
 
+test("ask_user_questions 在 plan/ask 也要停车，不因只读被拒", () => {
+  assert.equal(resolveToolApproval("ask_user_questions", "plan", AUTO_ALL), "user-approval")
+  assert.equal(resolveToolApproval("ask_user_questions", "ask", REQUIRE_ALL), "user-approval")
+  assert.equal(resolveToolApproval("ask_user_questions", "agent", AUTO_ALL), "user-approval")
+})
+
 test("Ask 模式下写盘、命令、提交一律拒绝", () => {
   assert.deepEqual(resolveToolApproval("write_file", "ask", AUTO_ALL), {
     type: "denied",
@@ -144,6 +150,11 @@ test("MCP 写工具要审批，读工具直接过", () => {
     type: "denied",
     reason: "ask mode is read-only."
   })
+})
+
+test("Harness 静态表不登记 ask_user_questions", () => {
+  const settings = toHarnessApprovalSettings("agent", REQUIRE_ALL)
+  assert.equal(settings.toolApproval.ask_user_questions, undefined)
 })
 
 test("Harness 映射会带上会话已放行的工具", () => {

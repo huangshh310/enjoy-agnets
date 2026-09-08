@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import type { RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
 import type { CitedSource } from "./cite-knowledge"
@@ -34,6 +34,8 @@ export type ActiveRun = {
   transcript: RunTranscript
   tools: ThreadToolCall[]
   assistantPersisted: boolean
+  /** ask_user_questions 放行后 execute 读取。 */
+  questionAnswers?: AskUserAnswers
 }
 
 const activeRuns = new Map<string, ActiveRun>()
