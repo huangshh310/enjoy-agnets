@@ -1,7 +1,7 @@
 /**
  * 能力矩阵行名：内置走固定表；自定义优先用户 label，不露出 raw id/slug。
  */
-import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
+import { isCustomAgentId } from "@enjoy-agents/ipc-contract/custom-agent"
 
 const BUILTIN_LABELS: Record<string, string> = {
   "enjoy-local": "Enjoy 本地",
