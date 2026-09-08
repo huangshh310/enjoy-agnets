@@ -25,6 +25,10 @@ export const RuntimeCapabilities = z.object({
 })
 export type RuntimeCapabilities = z.infer<typeof RuntimeCapabilities>
 
+export type RuntimePathKind = "enjoy-local" | "acp-host" | "sandbox-harness"
+
+export const SANDBOX_HARNESS_ID = "sandbox-harness"
+
 export type ComposerChrome = {
   attach: boolean
   permission: boolean
@@ -34,6 +38,9 @@ export type ComposerChrome = {
   fast: boolean
   thinking: boolean
   voice: boolean
+  pathKind: RuntimePathKind
+  showOnEngineRail: boolean
+  quota: boolean
 }
 
 export { HIDDEN_RUNTIME_CAPABILITIES, RUNTIME_CAPABILITIES }
@@ -49,12 +56,21 @@ export function capabilitiesOf(tool: { id: string; capabilities?: RuntimeCapabil
   return tool.capabilities ?? capabilitiesFor(tool.id)
 }
 
+/** 三路路径：Enjoy 本地 / ACP 本机 CLI / 进阶沙箱。未知 id 不当沙箱，避免误上导轨。 */
+export function runtimePathKind(runtimeId: string | undefined): RuntimePathKind {
+  if (runtimeId === "enjoy-local") return "enjoy-local"
+  if (runtimeId === SANDBOX_HARNESS_ID) return "sandbox-harness"
+  return "acp-host"
+}
+
 /**
  * Composer 底栏显隐。ACP 只留 + / 审批 / 引擎胶囊 / 发送。
  * Fast 仅 local|flag 显示；thinking 仅 effort 显示五档条。
+ * 进阶沙箱不得出现在引擎导轨。
  */
 export function composerChromeFor(runtimeId: string | undefined): ComposerChrome {
   const cap = capabilitiesFor(runtimeId)
+  const pathKind = runtimePathKind(runtimeId)
   return {
     attach: true,
     permission: cap.permissionUi === "enjoy-hmac",
@@ -63,6 +79,27 @@ export function composerChromeFor(runtimeId: string | undefined): ComposerChrome
     executionModes: cap.executionModes === "enjoy-local",
     fast: cap.fast === "local" || cap.fast === "flag",
     thinking: cap.thinking === "effort",
-    voice: cap.realtime
+    voice: cap.realtime,
+    pathKind,
+    showOnEngineRail: pathKind !== "sandbox-harness" && Boolean(runtimeId) && cap.spawn,
+    quota: cap.quota
   }
 }
+
+/** 设置能力矩阵行序：Enjoy 本地 → ACP → 进阶沙箱（末行，不上导轨）。 */
+export const MATRIX_RUNTIME_IDS = [
+  "enjoy-local",
+  "claude",
+  "cursor",
+  "grok",
+  "codex",
+  "antigravity",
+  "gemini",
+  "opencode",
+  "pi",
+  "hermes",
+  "amp",
+  "deepseek",
+  "omp",
+  SANDBOX_HARNESS_ID
+] as const

@@ -15,7 +15,11 @@ export async function withModelFallback<T>(
     } catch (error) {
       const classified = classifyError(error)
       lastError = classified
-      if (classified.errorClass === "auth" || classified.errorClass === "capability") {
+      if (
+        classified.errorClass === "auth" ||
+        classified.errorClass === "capability" ||
+        classified.errorClass === "credit_limit"
+      ) {
         throw classified
       }
     }

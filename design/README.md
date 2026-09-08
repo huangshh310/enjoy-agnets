@@ -35,6 +35,7 @@
 | `i18n` | [specs/i18n.md](./specs/i18n.md) | 中英界面语言，默认中文 | `renderer/src/i18n`、`packages/ui/i18n` |
 | `skills` | [specs/skills.md](./specs/skills.md) | 技能生态、Agent 专属整备舱、Bento 集市与同步投影 | `components/skills`、`main/services/skills-service.ts` |
 | `updates` | [specs/updates.md](./specs/updates.md) | 自动更新、发行说明、GitHub Releases | `main/services/app-update.ts`、`components/app-update/` |
+| `m1-usage` | [specs/m1-usage-and-capabilities.md](./specs/m1-usage-and-capabilities.md) | 三路命名、Usage L1–L4、能力矩阵、配置边界 | `runtime-capabilities.ts`、`ai-chat/usage/`、`settings/agent-tools/` |
 找不到对应 ID 时：先在本表加一行和空 spec，再写代码。不要把新领域塞进无关 spec。
 
 ---
@@ -47,7 +48,7 @@
 | [references/tech-stack.md](./references/tech-stack.md) | 原技术栈说明书：选型理由、禁令、分期 |
 | [references/vercel-ai-sdk-7-feature-matrix.md](./references/vercel-ai-sdk-7-feature-matrix.md) | AI SDK 7 能力对照 + Enjoy Agents 落地状态 |
 | [references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md](./references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md) | 全能力落地计划 |
-| [references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md](./references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md) | ACP 多引擎宿主：Usage / Attention / handoff 分期计划 |
+| [references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md](./references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md) | ACP 多引擎宿主分期；落地以 specs 为准 |
 
 ---
 

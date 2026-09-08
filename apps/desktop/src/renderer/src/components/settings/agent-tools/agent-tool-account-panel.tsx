@@ -2,9 +2,11 @@
  * 配置弹窗里的账号详情与模型额度。数字只来自官方 CLI / 公开配额文件。
  */
 import { useState } from "react"
-import { RiTimeLine, RiUser3Line } from "@remixicon/react"
+import { RiUser3Line } from "@remixicon/react"
 import { capabilitiesOf, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { HonestQuotaEmpty } from "./honest-quota-empty"
+import { pickQuotaPercent } from "./agent-tool-quota"
 import { AgentToolQuotaGrid } from "./agent-tool-account-quota"
 
 export function AgentToolAccountPanel({ tool }: { tool: AgentToolPublic }) {
@@ -44,27 +46,30 @@ export function AgentToolAccountPanel({ tool }: { tool: AgentToolPublic }) {
         <Meta label={t("settings.agentTools.accountCliVersion")} value={account.cliVersion} />
         <Meta label={t("settings.agentTools.accountCurrentModel")} value={account.currentModel} />
       </div>
-      {capabilitiesOf(tool).quota && tool.quotaInfo && quotas.length === 0 ? (
-        <div className="flex items-center justify-between gap-2 rounded-lg border border-border-button-default/40 bg-background-primary-default/60 px-2.5 py-1.5 text-caption-2-medium">
-          <span className="flex items-center gap-1.5 text-text-secondary">
-            <RiTimeLine className="size-3.5 text-text-tertiary" />
-            {tool.quotaInfo.windowType || t("settings.agentTools.quotaNone")}
-          </span>
-          <span className="truncate font-mono text-text-tertiary" title={tool.quotaInfo.details}>
-            {tool.quotaInfo.details}
-          </span>
-        </div>
-      ) : null}
-      {capabilitiesOf(tool).quota && quotas.length > 0 ? (
-        <AgentToolQuotaGrid
-          pinned={quotas.slice(0, 4)}
-          rest={quotas.slice(4)}
-          showAll={showAll}
-          onToggle={() => setShowAll((v) => !v)}
-        />
-      ) : null}
+      {renderQuotaBlock(tool, quotas, showAll, () => setShowAll((v) => !v))}
     </div>
   )
+}
+
+function renderQuotaBlock(
+  tool: AgentToolPublic,
+  quotas: Array<{ name: string; displayName: string; percentage: number; resetsIn: string | null; resetTime: string | null }>,
+  showAll: boolean,
+  onToggle: () => void
+) {
+  if (!capabilitiesOf(tool).quota) return <HonestQuotaEmpty reason="no-api" />
+  if (quotas.length > 0) {
+    return (
+      <AgentToolQuotaGrid
+        pinned={quotas.slice(0, 4)}
+        rest={quotas.slice(4)}
+        showAll={showAll}
+        onToggle={onToggle}
+      />
+    )
+  }
+  if (pickQuotaPercent(tool.quotaInfo, tool.selectedModel) != null) return null
+  return <HonestQuotaEmpty reason="no-data" />
 }
 
 function Meta({ label, value }: { label: string; value?: string }) {

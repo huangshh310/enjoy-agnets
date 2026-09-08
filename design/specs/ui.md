@@ -60,7 +60,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 对话工具表面：`apps/desktop/.../ai-chat/thread/tool-surfaces/`
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（单表面时间线，不是堆叠描边卡片）
 - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`
- - 状态栏与 Agent Limits 卡片（Token 分桶与速率限制）：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`
+ - 状态栏与 L3 上下文分桶：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`（无计划额度条）
+- Usage L1/L3/L4：`apps/desktop/src/renderer/src/components/ai-chat/usage/`（`UsagePill` / `SessionMeter` / `QuotaExhaustedCard`）
 - UI 包语言：`packages/ui/i18n/ui-locale.ts`
 
 ## 已知坑
@@ -118,5 +119,6 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 轨道按钮与次级卡片必须提供物理级触觉回弹（`active:scale-[0.98]` 或 `active:scale-90`）与流畅的时间过渡（`transition-all duration-200`），避免状态突变造成视觉卡顿。
 - 标题栏辅助开关高度必须严格锁定为 24px（`size-6` / `h-6`）：与系统窗口控制按钮保持垂直居中和基线对齐，严禁使用超出 24px 的拟物卡通开关。
 - 侧栏情境栏底栏用户卡片严禁硬编码过长字符串：212px 容器内文本空间极小，长邮箱（超过 15 字符）必须在侧栏卡片上优雅收敛或展示工作区标签，完整邮箱与账号操作统一在 265px 悬浮弹层（AriaPopover）中展示。
-- Composer 智能体动力选择器采用双层流式 HUD（`AgentPicker`）：触发胶囊整合品牌微标、引擎名称、模型名称与就绪状态微灯；浮层内部严禁将 Agent 列表与双栏模型列表并排为三栏，必须使用「顶部横向引擎导轨 (`AgentEngineRail`) + 下层自适应动力面板」。CLI 模型行只显示名称，不在右侧重复 id；完整 id 只放 `title` 悬停。底栏按 `composerChromeFor` 隐藏 ACP 不支持的 Fast / 思考 / 模式 / 语音，不要灰着还能点。
-- 设置页「智能体工坊」机架卡片采用高对比度品牌微光边框与暗调微环境光斑。配置弹窗「运行偏好」只暴露 `LAUNCH_PREFS` 里该 CLI 真正认的旗标（目前为空，禁止为对称加 Fast）；不默认露出空格分隔 argv 输入框。CLI 路径与未收录自定义参数收进「高级」折叠，保留卡片呼吸感。
+- Composer 智能体动力选择器采用双层流式 HUD（`AgentPicker`）：触发胶囊整合品牌微标、引擎名称、模型名称、路径微标（`本地 ToolLoop` / `ACP · 订阅登录`）与就绪状态微灯；`quota=true` 时旁挂 `UsagePill`。浮层必须「顶部横向引擎导轨 (`AgentEngineRail`) + 下层自适应动力面板」。导轨每项带路径微标；进阶沙箱禁止上轨。底栏按 `composerChromeFor` 隐藏 ACP 不支持的 Fast / 思考 / 模式 / 语音，并挂 L3 `SessionMeter`（无用量隐藏）。
+- 设置智能体页禁止 Fake-Status-Chrome：已删 `AgentToolsHubMetrics`。能力矩阵与配置边界是证据表，不是营销 Hero。配置弹窗「运行偏好」只暴露 `LAUNCH_PREFS` 里该 CLI 真正认的旗标。
+- L4 额度耗尽走 `QuotaExhaustedCard`，不要并进泛化 `rate limit` 红条。禁止 `Math.max(%,2)` 假填充与遥测伪造 5 小时/周度条。

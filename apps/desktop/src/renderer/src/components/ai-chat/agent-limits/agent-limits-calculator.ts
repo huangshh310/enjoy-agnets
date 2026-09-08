@@ -7,7 +7,6 @@ import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { ContextWindowData, TokenBucketItem } from "./agent-limits.types"
 
 export { formatTokens } from "./format-tokens"
-export { calculateRealPlanLimits, DEFAULT_PLAN_LIMITS } from "./plan-limits"
 
 /** 实时计算当前会话的上下文 Token 分桶真实明细 */
 export function calculateContextWindowUsage(
@@ -87,8 +86,8 @@ export function calculateContextWindowUsage(
       label: "Messages",
       tokens: messageTokens,
       percentage: pctOf(messageTokens),
-      colorClass: "bg-blue-500 text-blue-500",
-      barColor: "#3b82f6"
+      colorClass: "bg-accent-500 text-accent-500",
+      barColor: ""
     },
     {
       id: "system_tools",
@@ -96,8 +95,8 @@ export function calculateContextWindowUsage(
       label: "System tools",
       tokens: systemToolsTokens,
       percentage: pctOf(systemToolsTokens),
-      colorClass: "bg-purple-500 text-purple-500",
-      barColor: "#a855f7"
+      colorClass: "bg-chart-2 text-chart-2",
+      barColor: ""
     },
     {
       id: "mcp_tools",
@@ -105,8 +104,8 @@ export function calculateContextWindowUsage(
       label: "MCP tools",
       tokens: mcpToolsTokens,
       percentage: pctOf(mcpToolsTokens),
-      colorClass: "bg-pink-500 text-pink-500",
-      barColor: "#ec4899",
+      colorClass: "bg-chart-3 text-chart-3",
+      barColor: "",
       childrenCount: mcpChildren.length,
       children: mcpChildren
     },
@@ -117,7 +116,7 @@ export function calculateContextWindowUsage(
       tokens: skillsTokens,
       percentage: pctOf(skillsTokens),
       colorClass: "bg-amber-500 text-amber-500",
-      barColor: "#f59e0b"
+      barColor: ""
     },
     {
       id: "system_prompt",
@@ -126,7 +125,7 @@ export function calculateContextWindowUsage(
       tokens: systemPromptTokens,
       percentage: pctOf(systemPromptTokens),
       colorClass: "bg-emerald-500 text-emerald-500",
-      barColor: "#10b981"
+      barColor: ""
     },
     {
       id: "memory_files",
@@ -134,8 +133,8 @@ export function calculateContextWindowUsage(
       label: "Memory files",
       tokens: memoryTokens,
       percentage: pctOf(memoryTokens),
-      colorClass: "bg-sky-500 text-sky-500",
-      barColor: "#0ea5e9",
+      colorClass: "bg-chart-4 text-chart-4",
+      barColor: "",
       childrenCount: memoryChildren.length,
       children: memoryChildren
     }
@@ -149,8 +148,8 @@ export function calculateContextWindowUsage(
       tokens: mcpDeferredTokens,
       percentage: 0,
       deferred: true,
-      colorClass: "bg-neutral-300 dark:bg-neutral-700 text-text-tertiary",
-      barColor: "transparent"
+      colorClass: "bg-background-secondary-hover text-text-tertiary",
+      barColor: ""
     })
   }
 
@@ -160,8 +159,8 @@ export function calculateContextWindowUsage(
     label: "Free space",
     tokens: freeTokens,
     percentage: freePercentage,
-    colorClass: "bg-neutral-300 dark:bg-neutral-700 text-text-tertiary",
-    barColor: "transparent"
+      colorClass: "bg-background-secondary-hover text-text-tertiary",
+      barColor: ""
   })
 
   return {

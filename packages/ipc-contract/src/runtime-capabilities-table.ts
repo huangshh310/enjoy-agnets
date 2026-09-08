@@ -160,5 +160,24 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     thinking: "none",
     fast: "none",
     providerBind: "none"
-  })
+  }),
+  /** 设置-only；Composer 导轨用 composerChromeFor.showOnEngineRail 挡住。 */
+  "sandbox-harness": {
+    spawn: true,
+    models: "catalog",
+    login: false,
+    quota: false,
+    thinking: "effort",
+    fast: "local",
+    permissionUi: "enjoy-hmac",
+    executionModes: "enjoy-local",
+    slash: "hidden",
+    resumeFork: false,
+    compact: "hidden",
+    askUser: "enjoy-hmac",
+    steer: true,
+    realtime: false,
+    delegate: false,
+    providerBind: "none"
+  }
 }

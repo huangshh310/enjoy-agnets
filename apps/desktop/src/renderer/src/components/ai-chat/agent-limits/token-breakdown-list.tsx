@@ -46,11 +46,7 @@ export function TokenBreakdownList({ buckets, className }: TokenBreakdownListPro
             >
               {/* 左侧：圆点指示灯 + 分类名称 */}
               <div className="flex items-center gap-2">
-                <span
-                  style={{ backgroundColor: bucket.barColor }}
-                  className="size-2 rounded-full shrink-0"
-                  aria-hidden
-                />
+                <span className={cx("size-2 shrink-0 rounded-full", bucket.colorClass.split(" ")[0])} aria-hidden />
                 <span className="text-text-primary">{bucket.label}</span>
               </div>
 
@@ -72,7 +68,7 @@ export function TokenBreakdownList({ buckets, className }: TokenBreakdownListPro
             className="flex items-center justify-between py-0.5 text-text-tertiary select-none"
           >
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-700" aria-hidden />
+              <span className="size-2 rounded-full shrink-0 bg-background-secondary-hover" aria-hidden />
               <span>{bucket.label}</span>
             </div>
             <div className="flex items-center gap-4 text-right font-mono text-caption-1-regular">
@@ -86,7 +82,7 @@ export function TokenBreakdownList({ buckets, className }: TokenBreakdownListPro
         {freeBucket ? (
           <div className="flex items-center justify-between py-0.5 text-text-tertiary select-none">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full shrink-0 bg-neutral-300 dark:bg-neutral-700" aria-hidden />
+              <span className="size-2 rounded-full shrink-0 bg-background-secondary-hover" aria-hidden />
               <span>{freeBucket.label}</span>
             </div>
             <div className="flex items-center gap-4 text-right font-mono text-caption-1-regular">

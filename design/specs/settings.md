@@ -52,7 +52,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Providers 禁用 `article`（760px），目录三列会被裁。
 - 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。通用页一行：当前版本（说明里带状态）+「检查更新」；有新版本同一行变成打开说明（见 `updates` spec）。
 - 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。Claude / Codex 可把已有供应商 Key **同步**到本机配置（用户点击、先备份 `*.enjoy.bak`、可恢复），不是给用户手改 toml。
-- Agent 段用顶部分段：本机 CLI / 进阶沙箱 / 默认项。CLI 是紧凑卡 + 配置弹窗（探测 / 安装 / 卸载 / 登录 / 模型 / **运行偏好** / 路径 / doctor / 账号详情 / 可选同步）。运行偏好只暴露 ACP 真正认的旗标（`LAUNCH_PREFS` 目前为空，避免再写出 `--fast`）；未收录项才出现在高级「自定义参数」。开流按 `RuntimeCapabilities` 丢掉 `--fast` / `--thinking`。账号与额度来自 `agentTools.inspect`（`login || quota || models==inspect` 且已就绪，不含 Enjoy Local），不在设置里填各家 CLI token，不读 `auth.json`，不新开第 25 个侧栏项。目录含 Grok Build、Gemini、OpenCode、Pi、Hermes、Amp、DeepSeek dsh、Oh My Pi。进度条仅 `quota=true`（Cursor Dashboard、Grok `/usage` billing、Antigravity `quota_groups`）；Claude / Codex / 七家新 CLI 不画空条。数字只认官方已用进度，没有就 `—`。按当前模型族匹配额度组。环境扫描、设置页挂载与 doctor / 登录会清 inspect 缓存并 `refresh: true`。
+- Agent 段用顶部分段：本机 CLI / 进阶沙箱 / 默认项。本机 CLI 页顶先提示「切到 Cursor 后 Enjoy 密钥不会传给它」，再画只读 **能力矩阵** 与 **配置边界** 表，然后才是 CLI 卡。禁止 `AgentToolsHubMetrics` 装载率条 / 常绿灯 /「沙箱隔离·实时 Token 流」。进阶沙箱文案是「实验 · 沙箱 Harness」，不上 Composer 导轨。CLI 是紧凑卡 + 配置弹窗（探测 / 安装 / 卸载 / 登录 / 模型 / **运行偏好** / 路径 / doctor / 账号详情 / 可选同步）。运行偏好只暴露 ACP 真正认的旗标（`LAUNCH_PREFS` 目前为空，避免再写出 `--fast`）；未收录项才出现在高级「自定义参数」。开流按 `RuntimeCapabilities` 丢掉 `--fast` / `--thinking`。账号与额度来自 `agentTools.inspect`（`login || quota || models==inspect` 且已就绪，不含 Enjoy Local）。进度条仅 `quota=true` **且** 有官方数字；否则诚实空态「该 CLI 无公开额度 API」，不画空条。企业账单未接后端，页眉保持「本地演示」（L2 不做假积分）。环境扫描、设置页挂载与 doctor / 登录会清 inspect 缓存并 `refresh: true`。详见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
 
 ## 代码入口
 
@@ -61,7 +61,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 分段目录：`apps/desktop/src/renderer/src/components/settings/settings-catalog.ts`
 - 壳：`settings-shell.tsx`（登记情境栏）；应用铬 `app-shell/`
 - 看板原语：`settings-hub.tsx`
-- 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings/agent-tools/`、`settings-media.tsx`
+- 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings/agent-tools/`（`capability-matrix.tsx` / `config-boundary-table.tsx`）、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
 - 企业账单：`apps/desktop/src/renderer/src/components/company/billing/`（`cards/` Hero/支付/指标/发票，`modals/` 对比与升级，`lib/apply-upgrade.ts` / `lib/billing-export.ts`）
@@ -80,4 +80,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
 - 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。
 - Providers 自带标题与分段控件。`SettingsSectionPage` 不要再叠一层 `h1`，否则出现两个「模型供应商」。空态虚线框必须 `flex-1`，不要按内容收在卡片上半截。
-- 账单页没有计费 IPC。禁止 setTimeout 假装核验/导出成功；CSV 用 `Blob` 本机下载。
+- 账单页没有计费 IPC。禁止 setTimeout 假装核验/导出成功；CSV 用 `Blob` 本机下载。页眉必须保留「本地演示」，不要接假积分条（Usage L2）。
+- 不要把 `AgentToolsHubMetrics` 装回来：装载率百分比、永远绿灯、「沙箱隔离 · 实时 Token 流」是 Fake-Status-Chrome，且把沙箱和 ACP 混成一条。

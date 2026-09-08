@@ -13,7 +13,7 @@ export const enChat = {
     "Enjoy Agents only runs against a folder you choose. Pick a project to load sessions and git changes.",
   expandSidebar: "Expand sidebar",
   collapseSidebar: "Collapse sidebar",
-  contextTokensHint: "View context token buckets and plan limits",
+  contextTokensHint: "View this turn’s context token buckets",
 
   dropAttach: "Drop files or images here to attach",
   placeholder: "Ask Enjoy Agents anything, @ files, / for actions...",
@@ -240,8 +240,22 @@ export const enChat = {
     "Removing “{name}” does not delete the folder on disk. Sessions in this project will be deleted.",
   remove: "Remove",
 
+  usage: {
+    enjoyLocal: "Enjoy Local",
+    localToolLoop: "Local ToolLoop",
+    acpSubscribe: "ACP · subscription login",
+    sandboxHarness: "Experimental · sandbox Harness",
+    source: "Source",
+    sessionMeterHint: "Turn tokens · context used",
+    creditTitle: "Quota exhausted",
+    creditDesc: "This engine hit a subscription or spend limit. Open billing (local demo) or switch paths.",
+    openBilling: "Open billing",
+    switchEngine: "Switch engine",
+    rateLimitTitle: "Too many requests"
+  },
+
   rateLimits: "{name} · Rate limits",
-  planLimits: "Plan usage limits · Max (5x)",
+  planLimits: "Context usage",
   contextWindow: "Context window",
   bucketTooltip: "{label}: {tokens} ({percent}%)",
   manage: "Manage",
@@ -591,5 +605,5 @@ export const enChat = {
   inspectorCompactionAfter: "After",
   compactSessionSaved: "Saved {tokens}",
   compactSessionActiveHint: "Compacted: saved {tokens} tokens ({percent}%). Click to compact again",
-  contextTokensHintCompacted: "View context token buckets and plan limits · compacted -{percent}%"
+  contextTokensHintCompacted: "View this turn’s context token buckets · compacted -{percent}%"
 }

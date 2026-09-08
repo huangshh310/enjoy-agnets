@@ -6,8 +6,9 @@
  * 4. 左右两端自适应渐变边缘指示
  */
 import { useEffect, useRef, useState } from "react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { composerChromeFor, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
+import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "./agent-brand-icon"
 
 export function AgentEngineRail({
@@ -76,15 +77,17 @@ export function AgentEngineRail({
         aria-label="选择智能体引擎"
         className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth px-1"
       >
-        {primary.map((agent) => (
-          <EngineTabItem
-            key={agent.id}
-            agent={agent}
-            isSelected={agent.id === selectedId}
-            isCurrent={agent.id === currentId}
-            onSelect={() => onSelect(agent.id)}
-          />
-        ))}
+        {primary
+          .filter((agent) => composerChromeFor(agent.id).showOnEngineRail)
+          .map((agent) => (
+            <EngineTabItem
+              key={agent.id}
+              agent={agent}
+              isSelected={agent.id === selectedId}
+              isCurrent={agent.id === currentId}
+              onSelect={() => onSelect(agent.id)}
+            />
+          ))}
       </nav>
 
       {/* 右侧溢出渐变遮罩 */}
@@ -106,8 +109,11 @@ function EngineTabItem({
   isCurrent: boolean
   onSelect: () => void
 }) {
+  const t = useT()
   const itemRef = useRef<HTMLButtonElement>(null)
   const isReady = agent.status === "ready" || agent.id === DEFAULT_RUNTIME_ID
+  const pathKind = composerChromeFor(agent.id).pathKind
+  const pathLabel = pathKind === "enjoy-local" ? t("chat.usage.localToolLoop") : t("chat.usage.acpSubscribe")
 
   // 选中项平滑滚动至视野内
   useEffect(() => {
@@ -124,19 +130,19 @@ function EngineTabItem({
       aria-selected={isSelected}
       title={`${agent.label} (${isReady ? "已就绪" : "待装载"})`}
       onClick={onSelect}
-      className={`group relative flex h-7.5 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition-all duration-150 outline-none select-none ${
+      className={`group relative flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-caption-1-medium transition-all duration-150 outline-none select-none ${
         isSelected
           ? "bg-background-primary-default font-semibold text-text-primary shadow-xs ring-1 ring-border-button-default"
           : "text-text-secondary hover:bg-background-primary-default/60 hover:text-text-primary"
       }`}
     >
-      {/* 品牌微标 */}
       <span className="flex size-3.5 shrink-0 items-center justify-center">
         <AgentBrandIcon id={agent.id} size={14} />
       </span>
-
-      {/* 引擎名称：清晰呈现 */}
-      <span className="whitespace-nowrap">{agent.label}</span>
+      <span className="flex flex-col items-start leading-tight">
+        <span className="whitespace-nowrap">{agent.label}</span>
+        <span className="whitespace-nowrap text-caption-2-medium text-text-tertiary">{pathLabel}</span>
+      </span>
 
       {/* 仅在当前活跃主引擎时显示一个微光小徽标 */}
       {isCurrent ? (

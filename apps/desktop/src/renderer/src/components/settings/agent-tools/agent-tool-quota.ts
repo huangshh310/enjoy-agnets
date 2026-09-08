@@ -26,7 +26,7 @@ export function formatQuotaPercent(percent: number | null): string {
 
 export function barWidth(percent: number | null): number {
   if (percent == null || percent <= 0) return 0
-  return Math.min(100, Math.max(percent, 4))
+  return Math.min(100, percent)
 }
 
 function pickQuotaItems(models: ModelQuotaItem[] | undefined, selectedModel?: string): ModelQuotaItem[] {

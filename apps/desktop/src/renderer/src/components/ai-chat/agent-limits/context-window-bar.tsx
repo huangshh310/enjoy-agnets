@@ -53,7 +53,7 @@ export function ContextWindowBar({
 
       {/* 分段彩条 (Segmented Progress Bar) */}
       <div
-        className="relative flex h-2.5 w-full overflow-hidden rounded-full bg-neutral-200/80 dark:bg-neutral-800/80 p-0.5 shadow-inner-xs"
+        className="relative flex h-2.5 w-full overflow-hidden rounded-full bg-background-secondary-hover p-0.5"
         role="progressbar"
         aria-valuenow={data.usedPercentage}
         aria-valuemin={0}
@@ -63,16 +63,13 @@ export function ContextWindowBar({
           {activeBuckets.map((bucket: TokenBucketItem) => (
             <div
               key={bucket.id}
-              style={{
-                width: `${Math.max(bucket.percentage, 1.5)}%`,
-                backgroundColor: bucket.barColor
-              }}
+              style={{ width: `${bucket.percentage}%` }}
               title={t("chat.bucketTooltip", {
                 label: bucket.label,
                 tokens: formatTokens(bucket.tokens),
                 percent: bucket.percentage
               })}
-              className="h-full transition-all duration-300"
+              className={cx("h-full transition-all duration-300", bucket.colorClass.split(" ")[0])}
             />
           ))}
         </div>

@@ -109,10 +109,11 @@ export const zhSettings = {
   },
 
   agent: {
-    hubHarness: "Harness 运行时",
-    hubLocal: "本地 ToolLoop",
+    hubHarness: "实验 · 沙箱 Harness",
+    hubLocal: "Enjoy 本地",
+    hubAcp: "ACP 本机 CLI",
     hubTools: "Agent 工具箱",
-    hubDesc: "探测本机已登录的 CLI，或继续用 Enjoy 本地 + 供应商。",
+    hubDesc: "三条路径分开：Enjoy 本地、ACP 本机 CLI、进阶沙箱（仅设置）。",
     runtime: "运行时",
     adapter: "适配器",
     defaultModel: "默认模型",
@@ -187,9 +188,18 @@ export const zhSettings = {
     uninstallTitle: "卸载 {label}？",
     uninstallDesc: "将用白名单 npm/brew 卸载此 CLI。Enjoy 里的供应商密钥不会删除。",
     done: "完成",
-    tabEngines: "智能体",
+    tabEngines: "本机 CLI",
     tabSandbox: "进阶沙箱",
     tabDefaults: "默认项",
+    hubTitle: "本机 CLI",
+    hubDesc: "探测、安装、登录。Enjoy 不读取各家 token，也不把密钥传给 ACP。",
+    keyNotSharedTip: "切到 Cursor 等 ACP 引擎后，Enjoy 密钥不会传给它。登录走各家 CLI。",
+    scanEnv: "扫描本机环境",
+    scanning: "正在扫描…",
+    runDoctor: "运行体检",
+    diagnosing: "体检中…",
+    diagSummary: "已检查 {total} 个：{ok} 正常，{failed} 未通过",
+    quotaNoApi: "该 CLI 无公开额度 API",
     configTitle: "{label} 配置",
     localKernel: "Enjoy 本地用内置 ToolLoop，不需要再装 CLI。模型来自「模型供应商」。",
     manageProviders: "管理模型供应商",
@@ -226,6 +236,49 @@ export const zhSettings = {
     pathHintFooter: "探测会补 brew 与用户 bin，但排在系统 PATH 后面。"
   },
 
+  runtimeCaps: {
+    title: "能力矩阵",
+    desc: "只读静态表。未声明的能力不会出现在 Composer。",
+    colRuntime: "运行时",
+    colPath: "路径",
+    sandboxLabel: "实验 · 沙箱 Harness",
+    yes: "是",
+    no: "否",
+    col: {
+      spawn: "spawn",
+      login: "登录",
+      quota: "额度",
+      thinking: "思考",
+      fast: "Fast",
+      executionModes: "执行模式"
+    },
+    path: {
+      "enjoy-local": "Enjoy 本地",
+      "acp-host": "ACP 本机 CLI",
+      "sandbox-harness": "进阶沙箱"
+    }
+  },
+
+  boundary: {
+    title: "配置边界",
+    desc: "密钥、登录、MCP 与 Skills 各归谁。切引擎不会把 Enjoy 密钥带过去。",
+    colItem: "配置项",
+    colOwner: "归属",
+    colGo: "打开",
+    key: "API Key",
+    keyOwner: "Enjoy vault（仅 Enjoy 本地 / 绑定供应商）",
+    keyGo: "模型供应商",
+    login: "CLI 登录",
+    loginOwner: "各家官方 login，Enjoy 不代管 OAuth 文件",
+    loginGo: "本机 CLI",
+    mcp: "MCP",
+    mcpOwner: "本机 #/mcp；是否转发随 runtime",
+    mcpGo: "MCP",
+    skills: "Skills",
+    skillsOwner: "#/skills + 各家 ~/.xxx/skills",
+    skillsGo: "Skills"
+  },
+
   defaults: {
     title: "默认项",
     model: "默认模型",
@@ -236,8 +289,9 @@ export const zhSettings = {
 
   harness: {
     cardTitle: "编码运行时",
-    advancedTitle: "进阶：SDK 沙箱",
-    runtimeDesc: "仅当 Composer 选 Enjoy 本地时生效。Harness 要 Vercel 沙箱与供应商 Key。",
+    advancedTitle: "进阶沙箱 · 实验 · 沙箱 Harness",
+    runtimeDesc: "仅 Enjoy 本地可选用。进阶沙箱不出现在 Composer 引擎导轨。需要 Vercel 沙箱与供应商 Key。",
+    sandboxBadge: "实验 · 沙箱 Harness",
     adapterDesc:
       "自动跟随供应商（Anthropic→Claude Code，OpenAI→Codex）。Pi 使用本地 just-bash。DeepSeek 本机 CLI 走 dsh ACP；旧 SDK 沙箱适配器仍占位。",
     soon: " · 即将推出",

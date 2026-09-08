@@ -17,6 +17,8 @@ import { ModelPickerBody } from "../model-picker/model-picker-body"
 import { AgentBrandIcon, isAgentToolId } from "./agent-brand-icon"
 import { AgentCliPane } from "./agent-cli-pane"
 import { AgentEngineRail } from "./agent-engine-rail"
+import { composerChromeFor } from "@enjoy-agents/ipc-contract"
+import { UsagePill } from "../usage/usage-pill"
 import { cliModelLabel, composerAgentGroups } from "./composer-agents"
 
 export function AgentPicker({
@@ -57,8 +59,11 @@ export function AgentPicker({
   }, [open, queryClient])
 
   // 显示的引擎与模型名称
-  const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? "Enjoy 本地" : runtimeId)
+  const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
   const activeModelDisplay = runtimeId === DEFAULT_RUNTIME_ID ? (modelLabel || modelId) : cliModelLabel(current)
+  const pathKind = composerChromeFor(runtimeId).pathKind
+  const pathLabel =
+    pathKind === "enjoy-local" ? t("chat.usage.localToolLoop") : t("chat.usage.acpSubscribe")
 
   async function applyAgent(id: string, modelId?: string) {
     if (!isAgentToolId(id)) return
@@ -87,7 +92,7 @@ export function AgentPicker({
           </span>
 
           {/* 引擎名称与模型标签组合 */}
-          <span className="min-w-0 truncate font-medium text-[12px]">
+          <span className="min-w-0 truncate text-caption-1-medium">
             <span className="text-text-secondary">{currentAgentName}</span>
             {activeModelDisplay ? (
               <>
@@ -96,6 +101,10 @@ export function AgentPicker({
               </>
             ) : null}
           </span>
+          <span className="hidden max-w-[6.5rem] truncate text-caption-2-medium text-text-tertiary sm:inline">
+            {pathLabel}
+          </span>
+          <UsagePill runtimeId={runtimeId} />
 
           {/* 就绪状态微灯：未安装用次级色，避免永远绿灯 */}
           <span

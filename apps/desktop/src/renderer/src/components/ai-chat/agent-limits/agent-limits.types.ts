@@ -1,5 +1,5 @@
 /**
- * Agent Limits Card 类型定义：包含 Token 分桶、上下文窗口容量计算与速率限制模型。
+ * L3 上下文分桶类型。不含伪造计划额度。
  */
 
 /** Token 分桶类别 */
@@ -34,17 +34,6 @@ export interface TokenBucketItem {
   }>
 }
 
-/** 速率限制/计划限额条目 */
-export interface PlanLimitItem {
-  id: string
-  label: string
-  resetText: string
-  percentage: number
-  activeTokens?: number
-  maxTokens?: number
-  barColorClass?: string
-}
-
 /** 上下文计算综合结果 */
 export interface ContextWindowData {
   usedTokens: number
@@ -59,10 +48,6 @@ export interface AgentLimitsCardProps {
   usedTokens?: number
   maxTokens?: number
   modelId?: string
-  modelLabel?: string
-  planTitle?: string
-  planHref?: string
-  onManagePlan?: () => void
   defaultExpanded?: boolean
   className?: string
 }

@@ -33,20 +33,17 @@ export function AgentCliPane({
           />
 
           {/* 底部状态注脚：ACP 传输 + 一句说明 Fast/思考不进 argv */}
-          <div className="border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-[11px] text-text-tertiary">
+          <div className="border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-caption-2-medium text-text-tertiary">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] truncate">
-                <span className="text-text-tertiary">源:</span>
-                <span className="truncate text-text-secondary" title={agent.detectedPath ?? "系统全局 PATH"}>
-                  {agent.detectedPath ? agent.detectedPath.split("/").slice(-2).join("/") : "系统全局 PATH"}
+              <div className="flex min-w-0 items-center gap-1.5 truncate font-mono">
+                <span>{t("chat.usage.source")}</span>
+                <span className="truncate text-text-secondary" title={agent.detectedPath ?? t("settings.agentTools.globalPath")}>
+                  {agent.detectedPath ? agent.detectedPath.split("/").slice(-2).join("/") : t("settings.agentTools.globalPath")}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] text-text-tertiary">
-                <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
-                <span className="text-caption-2-medium text-accent-600">ACP Stdio</span>
-              </div>
+              <span className="shrink-0 text-caption-2-medium text-text-secondary">{t("chat.usage.acpSubscribe")}</span>
             </div>
-            <p className="mt-1 truncate text-[10px] text-text-tertiary" title={t("chat.cliFastViaModel")}>
+            <p className="mt-1 truncate text-caption-2-medium text-text-tertiary" title={t("chat.cliFastViaModel")}>
               {t("chat.cliFastViaModel")}
             </p>
           </div>

@@ -12,7 +12,7 @@ export const zhChat = {
   openWorkspaceHint: "Enjoy Agents 只会在你选择的文件夹中运行。选择一个项目即可加载会话和 Git 改动。",
   expandSidebar: "展开侧栏",
   collapseSidebar: "收起侧栏",
-  contextTokensHint: "查看上下文 Token 分桶与限额明细",
+  contextTokensHint: "查看本轮上下文 Token 分桶",
 
   dropAttach: "将文件或图片拖放到这里即可附加",
   placeholder: "向 Enjoy Agents 提问，用 @ 引用文件，用 / 执行动作…",
@@ -233,8 +233,22 @@ export const zhChat = {
   removeProjectHint: "移除「{name}」不会删除磁盘文件夹，该项目下的会话会一并删除。",
   remove: "移除",
 
+  usage: {
+    enjoyLocal: "Enjoy 本地",
+    localToolLoop: "本地 ToolLoop",
+    acpSubscribe: "ACP · 订阅登录",
+    sandboxHarness: "实验 · 沙箱 Harness",
+    source: "源",
+    sessionMeterHint: "本轮 token · 上下文占用",
+    creditTitle: "额度已用尽",
+    creditDesc: "当前引擎的订阅或花费上限已到。可打开账单（本地演示）或换一条路径。",
+    openBilling: "打开账单",
+    switchEngine: "切换引擎",
+    rateLimitTitle: "请求过于频繁"
+  },
+
   rateLimits: "{name} · 速率限制",
-  planLimits: "计划用量限制 · Max (5x)",
+  planLimits: "上下文用量",
   contextWindow: "上下文窗口",
   bucketTooltip: "{label}：{tokens} ({percent}%)",
   manage: "管理",
@@ -582,5 +596,5 @@ export const zhChat = {
   inspectorCompactionAfter: "压缩后",
   compactSessionSaved: "已省 {tokens}",
   compactSessionActiveHint: "已压缩：已节省 {tokens} Tokens ({percent}%)，点击可再次优化",
-  contextTokensHintCompacted: "查看上下文 Token 分桶与限额明细 · 已压缩 -{percent}%"
+  contextTokensHintCompacted: "查看本轮上下文 Token 分桶 · 已压缩 -{percent}%"
 }

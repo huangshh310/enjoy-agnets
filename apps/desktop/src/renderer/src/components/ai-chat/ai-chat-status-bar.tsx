@@ -1,7 +1,6 @@
 "use client"
 
 import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
-import { useNavigate } from "@tanstack/react-router"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentLimitsCard } from "./agent-limits/agent-limits-card"
@@ -15,7 +14,6 @@ export function AiChatStatusBar({
 }: {
   workspaceRootLabel: string
 }) {
-  const navigate = useNavigate()
   const t = useT()
   const sessionId = useChatStore((state) => state.sessionId)
   const workspaceId = useChatStore((state) => state.workspaceId)
@@ -60,14 +58,7 @@ export function AiChatStatusBar({
             sideOffset={12}
             className="p-0 border-none bg-transparent shadow-none w-auto"
           >
-            <AgentLimitsCard
-              onManagePlan={() =>
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "providers" }
-                })
-              }
-            />
+            <AgentLimitsCard />
           </PopoverContent>
         </Popover>
       </div>

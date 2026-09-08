@@ -109,10 +109,11 @@ export const enSettings = {
   },
 
   agent: {
-    hubHarness: "Harness runtime",
-    hubLocal: "Local ToolLoop",
+    hubHarness: "Experimental · sandbox Harness",
+    hubLocal: "Enjoy Local",
+    hubAcp: "ACP local CLI",
     hubTools: "Agent toolbox",
-    hubDesc: "Detect signed-in local CLIs, or keep Enjoy Local with Providers.",
+    hubDesc: "Three separate paths: Enjoy Local, ACP local CLI, and sandbox (settings only).",
     runtime: "Runtime",
     adapter: "Adapter",
     defaultModel: "Default model",
@@ -187,9 +188,18 @@ export const enSettings = {
     uninstallTitle: "Uninstall {label}?",
     uninstallDesc: "Runs the catalog npm/brew uninstall argv. Provider keys in Enjoy stay put.",
     done: "Done",
-    tabEngines: "Agents",
+    tabEngines: "Local CLIs",
     tabSandbox: "Sandbox",
     tabDefaults: "Defaults",
+    hubTitle: "Local CLIs",
+    hubDesc: "Detect, install, and sign in. Enjoy never reads vendor tokens or forwards vault keys to ACP.",
+    keyNotSharedTip: "After switching to Cursor or another ACP engine, Enjoy keys are not sent to it. Sign in with that CLI.",
+    scanEnv: "Scan this machine",
+    scanning: "Scanning…",
+    runDoctor: "Run doctor",
+    diagnosing: "Checking…",
+    diagSummary: "Checked {total}: {ok} ok, {failed} failed",
+    quotaNoApi: "This CLI has no public quota API",
     configTitle: "{label} settings",
     localKernel: "Enjoy Local uses the built-in ToolLoop. Models come from Providers.",
     manageProviders: "Manage providers",
@@ -226,6 +236,49 @@ export const enSettings = {
     pathHintFooter: "Probe also checks brew and user bins, after the system PATH."
   },
 
+  runtimeCaps: {
+    title: "Capability matrix",
+    desc: "Read-only static table. Undeclared capabilities never appear in Composer.",
+    colRuntime: "Runtime",
+    colPath: "Path",
+    sandboxLabel: "Experimental · sandbox Harness",
+    yes: "Yes",
+    no: "No",
+    col: {
+      spawn: "spawn",
+      login: "login",
+      quota: "quota",
+      thinking: "thinking",
+      fast: "fast",
+      executionModes: "modes"
+    },
+    path: {
+      "enjoy-local": "Enjoy Local",
+      "acp-host": "ACP local CLI",
+      "sandbox-harness": "Sandbox"
+    }
+  },
+
+  boundary: {
+    title: "Ownership boundary",
+    desc: "Keys, CLI login, MCP, and Skills stay in their own stores. Switching engines does not forward Enjoy keys.",
+    colItem: "Item",
+    colOwner: "Owner",
+    colGo: "Open",
+    key: "API Key",
+    keyOwner: "Enjoy vault (Enjoy Local / bound providers only)",
+    keyGo: "Providers",
+    login: "CLI login",
+    loginOwner: "Each vendor login. Enjoy does not manage OAuth files.",
+    loginGo: "Local CLIs",
+    mcp: "MCP",
+    mcpOwner: "Local #/mcp; forwarding depends on the runtime",
+    mcpGo: "MCP",
+    skills: "Skills",
+    skillsOwner: "#/skills plus each vendor ~/.xxx/skills",
+    skillsGo: "Skills"
+  },
+
   defaults: {
     title: "Defaults",
     model: "Default model",
@@ -236,8 +289,9 @@ export const enSettings = {
 
   harness: {
     cardTitle: "Coding runtime",
-    advancedTitle: "Advanced: SDK sandbox",
-    runtimeDesc: "Applies only when Composer is on Enjoy Local. Harness still needs a Vercel sandbox and a Provider key.",
+    advancedTitle: "Sandbox · experimental Harness",
+    runtimeDesc: "Only when Composer is on Enjoy Local. Sandbox Harness never appears on the engine rail. Needs a Vercel sandbox and a Provider key.",
+    sandboxBadge: "Experimental · sandbox Harness",
     adapterDesc:
       "Auto follows the Provider (Anthropic→Claude Code, OpenAI→Codex). Pi uses local just-bash. DeepSeek CLI uses dsh ACP; the old SDK sandbox adapter is still a placeholder.",
     soon: " · soon",

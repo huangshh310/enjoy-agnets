@@ -58,4 +58,5 @@ test("百分比文案右侧固定宽度可读", () => {
   assert.equal(formatQuotaPercent(null), "—")
   assert.equal(barWidth(null), 0)
   assert.equal(barWidth(0), 0)
+  assert.equal(barWidth(1), 1)
 })

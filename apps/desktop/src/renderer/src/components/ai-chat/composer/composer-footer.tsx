@@ -13,6 +13,7 @@ import { AgentPicker } from "../agent-picker"
 import { ReasoningEffortToggle } from "../reasoning-effort-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
+import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
 import { useT } from "@renderer/i18n"
 
@@ -58,11 +59,14 @@ export function ComposerFooter({
   const showVoice = chrome.voice && canRealtime
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
-      <ComposerAttachMenu
-        composer={composer}
-        onComposerChange={onComposerChange}
-        onPickFiles={onPickFiles}
-      />
+      <div className="flex min-w-0 items-center gap-2">
+        <ComposerAttachMenu
+          composer={composer}
+          onComposerChange={onComposerChange}
+          onPickFiles={onPickFiles}
+        />
+        <SessionMeter />
+      </div>
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
         {chrome.executionModes ? <ExecutionModeMenu mode={mode} onChange={setMode} /> : null}
         {chrome.permission ? <ApprovalPolicyToggle /> : null}

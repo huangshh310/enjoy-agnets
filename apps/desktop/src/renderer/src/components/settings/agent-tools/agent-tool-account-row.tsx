@@ -1,10 +1,11 @@
 /**
- * 卡片账号摘要：左侧身份；额度条仅 quota=true 的引擎才画。
+ * 卡片账号摘要：L1 条仅 quota=true 且有官方数字；否则诚实空态，不画空条。
  */
 import { RiUser3Line } from "@remixicon/react"
 import { capabilitiesOf, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { HonestQuotaEmpty } from "./honest-quota-empty"
 import { barWidth, formatQuotaPercent, pickQuotaPercent, pickQuotaWindow } from "./agent-tool-quota"
 
 export function AgentToolAccountRow({
@@ -16,10 +17,9 @@ export function AgentToolAccountRow({
 }) {
   const t = useT()
   if (!tool.authAccount && !loading) return null
+  const canQuota = capabilitiesOf(tool).quota
   const percent = pickQuotaPercent(tool.quotaInfo, tool.selectedModel)
   const windowLabel = pickQuotaWindow(tool.quotaInfo, tool.selectedModel)
-  const showBar =
-    capabilitiesOf(tool).quota && (percent != null || Boolean(tool.authAccount?.loggedIn))
   return (
     <div className="flex flex-col gap-1.5 border-t border-separator-border/40 pt-1.5">
       <div className="flex items-center justify-between gap-2">
@@ -36,25 +36,22 @@ export function AgentToolAccountRow({
             </span>
           ) : null}
         </div>
-        <span className="min-w-0 truncate font-mono text-caption-2-medium text-text-tertiary" title={windowLabel}>
-          {windowLabel || (loading ? t("settings.agentTools.accountLoading") : t("settings.agentTools.quotaNone"))}
-        </span>
+        {canQuota && windowLabel ? (
+          <span className="min-w-0 truncate font-mono text-caption-2-medium text-text-tertiary" title={windowLabel}>
+            {windowLabel}
+          </span>
+        ) : null}
       </div>
-      {showBar ? <QuotaBar percent={percent} /> : null}
+      {loading && canQuota ? <QuotaSkeleton /> : null}
+      {!loading && canQuota && percent != null ? <QuotaBar percent={percent} /> : null}
+      {!loading && canQuota && percent == null ? <HonestQuotaEmpty reason="no-data" /> : null}
+      {!loading && !canQuota ? <HonestQuotaEmpty reason="no-api" /> : null}
     </div>
   )
 }
 
-function QuotaBar({ percent }: { percent: number | null }) {
-  const tone =
-    percent == null || percent <= 0
-      ? "bg-text-tertiary/40"
-      : percent >= 85
-        ? "bg-rose-500"
-        : percent >= 50
-          ? "bg-amber-500"
-          : "bg-emerald-500"
-
+function QuotaBar({ percent }: { percent: number }) {
+  const tone = percent >= 85 ? "bg-rose-500" : percent >= 50 ? "bg-amber-500" : "bg-accent-500"
   return (
     <div className="flex items-center gap-2 pt-0.5">
       <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-background-secondary-hover/70">
@@ -65,4 +62,8 @@ function QuotaBar({ percent }: { percent: number | null }) {
       </span>
     </div>
   )
+}
+
+function QuotaSkeleton() {
+  return <div className="h-1.5 w-full animate-pulse rounded-full bg-background-secondary-hover" aria-hidden />
 }

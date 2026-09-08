@@ -6,6 +6,8 @@ import { RiCpuLine, RiEqualizer3Line, RiTerminalBoxLine } from "@remixicon/react
 import { useT } from "@renderer/i18n"
 import { AgentToolsCommandHub } from "./agent-tools/agent-tools-command-hub"
 import { AgentToolsPage } from "./agent-tools/agent-tools-page"
+import { CapabilityMatrix } from "./agent-tools/capability-matrix"
+import { ConfigBoundaryTable } from "./agent-tools/config-boundary-table"
 import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 
@@ -45,6 +47,8 @@ export function AgentSettings() {
       {activeTab === "racks" ? (
         <div className="flex flex-col gap-6">
           <AgentToolsCommandHub />
+          <CapabilityMatrix />
+          <ConfigBoundaryTable />
           <AgentToolsPage />
         </div>
       ) : null}

@@ -16,6 +16,8 @@ import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
 
 
 interface ThreadErrorBannerProps {
@@ -26,6 +28,9 @@ interface ThreadErrorBannerProps {
 export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) {
   const t = useT()
   const navigate = useNavigate()
+  if (classifyThreadError(error) === "credit") {
+    return <QuotaExhaustedCard error={error} />
+  }
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
@@ -78,7 +83,7 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <span className="text-body-medium font-semibold text-text-primary">
-              {t("chat.errorTitle")}
+              {classifyThreadError(error) === "rate_limit" ? t("chat.usage.rateLimitTitle") : t("chat.errorTitle")}
             </span>
             <button
               type="button"

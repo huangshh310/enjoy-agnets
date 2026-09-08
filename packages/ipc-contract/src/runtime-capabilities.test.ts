@@ -3,7 +3,10 @@ import { test } from "node:test"
 import {
   capabilitiesFor,
   composerChromeFor,
-  HIDDEN_RUNTIME_CAPABILITIES
+  HIDDEN_RUNTIME_CAPABILITIES,
+  MATRIX_RUNTIME_IDS,
+  runtimePathKind,
+  SANDBOX_HARNESS_ID
 } from "./runtime-capabilities.ts"
 
 const WIRED = [
@@ -94,7 +97,10 @@ test("composerChromeFor：Cursor 只剩 + / 审批 / 胶囊 / 发送", () => {
     executionModes: false,
     fast: false,
     thinking: false,
-    voice: false
+    voice: false,
+    pathKind: "acp-host",
+    showOnEngineRail: true,
+    quota: true
   })
 })
 
@@ -127,5 +133,22 @@ test("ACP 宿主都不露 Fast / 思考 / 模式 / 语音", () => {
     assert.equal(chrome.thinking, false, id)
     assert.equal(chrome.executionModes, false, id)
     assert.equal(chrome.voice, false, id)
+    assert.equal(chrome.pathKind, "acp-host", id)
+    assert.equal(chrome.showOnEngineRail, true, id)
   }
+})
+
+test("三路路径：Enjoy 本地 / ACP / 沙箱；沙箱不上导轨", () => {
+  assert.equal(runtimePathKind("enjoy-local"), "enjoy-local")
+  assert.equal(runtimePathKind("cursor"), "acp-host")
+  assert.equal(runtimePathKind(SANDBOX_HARNESS_ID), "sandbox-harness")
+  const sandbox = composerChromeFor(SANDBOX_HARNESS_ID)
+  assert.equal(sandbox.pathKind, "sandbox-harness")
+  assert.equal(sandbox.showOnEngineRail, false)
+  assert.equal(sandbox.quota, false)
+  assert.equal(capabilitiesFor(SANDBOX_HARNESS_ID).login, false)
+  assert.ok(MATRIX_RUNTIME_IDS.includes(SANDBOX_HARNESS_ID))
+  assert.equal(composerChromeFor("enjoy-local").pathKind, "enjoy-local")
+  assert.equal(composerChromeFor("enjoy-local").showOnEngineRail, true)
+  assert.equal(composerChromeFor("enjoy-local").quota, false)
 })

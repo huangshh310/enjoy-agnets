@@ -8,6 +8,7 @@ export type RuntimeErrorClass =
   | "capability"
   | "auth"
   | "rate_limit"
+  | "credit_limit"
   | "timeout"
   | "provider"
   | "tool"
@@ -38,7 +39,16 @@ export function classifyError(error: unknown): RuntimeError {
   if (lower.includes("401") || lower.includes("unauthorized") || lower.includes("api key")) {
     return new RuntimeError("auth", message, false)
   }
-  if (lower.includes("429") || lower.includes("rate")) {
+  if (
+    lower.includes("402") ||
+    lower.includes("credit") ||
+    lower.includes("spend limit") ||
+    lower.includes("quota exceeded") ||
+    lower.includes("insufficient credits")
+  ) {
+    return new RuntimeError("credit_limit", message, false)
+  }
+  if (lower.includes("429") || lower.includes("rate limit") || lower.includes("too many requests")) {
     return new RuntimeError("rate_limit", message, true)
   }
   if (lower.includes("not supported") || lower.includes("capability")) {
