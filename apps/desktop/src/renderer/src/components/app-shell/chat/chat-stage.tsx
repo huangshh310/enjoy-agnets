@@ -1,5 +1,7 @@
 /**
  * Chat 工作台：线程、composer、空态。始终挂载，切走模块时用 hidden 藏起。
+ * 空会话与有消息同一拓扑：Header → flex-1 滚动内容 → shrink-0 Composer。
+ * 禁止把 Composer 塞进 AiChatEmptyState children，禁止线程列 justify-center。
  */
 import { Button } from "@/components/ui/button"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
@@ -79,7 +81,7 @@ function ChatWorkspaceBody(props: {
   const error = useChatStore((state) => state.error)
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <ChatStageHeader
         workspaceName={props.workspaceName}
         sessionTitle={props.sessionTitle}
@@ -87,13 +89,14 @@ function ChatWorkspaceBody(props: {
         onToggleRightPane={props.onToggleRightPane}
       />
       {props.empty ? (
-        <AiChatEmptyState
+        <EmptySessionColumn
           workspaceName={props.workspaceName}
+          sessionTitle={props.sessionTitle}
           workspaceRootLabel={props.workspaceRootLabel}
           changesCount={props.changesCount}
-        >
-          <ChatComposerCluster className="px-0 pb-0" onModelChange={props.onModelChange} onSend={props.onSend} />
-        </AiChatEmptyState>
+          onModelChange={props.onModelChange}
+          onSend={props.onSend}
+        />
       ) : (
         <>
           <AiChatThread
@@ -102,10 +105,34 @@ function ChatWorkspaceBody(props: {
             thinkingLabel={thinkingLabel}
             error={error}
           />
-          <ChatComposerCluster onModelChange={props.onModelChange} onSend={props.onSend} />
+          <ChatComposerCluster className="shrink-0" onModelChange={props.onModelChange} onSend={props.onSend} />
         </>
       )}
       <AiChatStatusBar workspaceRootLabel={props.workspaceRootLabel} />
-    </>
+    </div>
+  )
+}
+
+/** Header 以下：guidance 单独滚动，Composer 钉底。禁止 justify-center / items-center。 */
+function EmptySessionColumn(props: {
+  workspaceName: string
+  sessionTitle: string
+  workspaceRootLabel: string
+  changesCount: number
+  onModelChange: (model: ModelOption) => void
+  onSend: () => void
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <AiChatEmptyState
+          workspaceName={props.workspaceName}
+          sessionTitle={props.sessionTitle}
+          workspaceRootLabel={props.workspaceRootLabel}
+          changesCount={props.changesCount}
+        />
+      </div>
+      <ChatComposerCluster className="shrink-0" onModelChange={props.onModelChange} onSend={props.onSend} />
+    </div>
   )
 }

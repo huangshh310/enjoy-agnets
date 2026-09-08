@@ -33,6 +33,11 @@ test("运行中 Keep 也按 dismissedKey 藏条；无文件时只靠 running", (
   assert.equal(sessionReviewVisible(0, false), false)
 })
 
+test("空会话即使有脏文件也不出审查条", () => {
+  assert.equal(sessionReviewVisible(22, false, undefined, undefined, 0), false)
+  assert.equal(sessionReviewVisible(0, true, undefined, undefined, 0), false)
+})
+
 test("工作区脏文件默认折叠；本轮 2–6 个文件才展开", () => {
   assert.equal(shouldExpandReviewFiles(false, 22), false)
   assert.equal(shouldExpandReviewFiles(true, 1), false)

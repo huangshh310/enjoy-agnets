@@ -16,6 +16,7 @@ export interface EmptyStateIntentItem {
 
 export interface AiChatEmptyStateProps {
   workspaceName?: string
+  sessionTitle?: string
   workspaceRootLabel?: string
   changesCount?: number
   onSelectPrompt?: (prompt: string) => void

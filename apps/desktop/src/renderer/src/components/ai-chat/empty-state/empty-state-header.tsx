@@ -1,11 +1,13 @@
 /**
- * 空态工作区胶囊：左对齐，不要居中营销标题。
+ * 空态标题 + 改动芯片。标题用 text-title-3；芯片点开 Inspector。
  */
-import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
+import { RiGitBranchLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
 import { useT } from "@renderer/i18n"
 
 interface EmptyStateHeaderProps {
+  sessionTitle?: string
   workspaceName?: string
   workspaceRootLabel?: string
   changesCount?: number
@@ -13,28 +15,28 @@ interface EmptyStateHeaderProps {
 }
 
 export function EmptyStateHeader({
+  sessionTitle,
   workspaceName,
   workspaceRootLabel,
   changesCount = 0,
   className
 }: EmptyStateHeaderProps) {
   const t = useT()
-  const activeLabel = workspaceName || workspaceRootLabel || t("chat.emptyWorkspace")
+  const title = sessionTitle || workspaceName || workspaceRootLabel || t("chat.emptyWorkspace")
+
   return (
-    <div className={cx("flex flex-col items-start text-left select-none", className)}>
-      <div className="inline-flex items-center gap-2 rounded-full border border-border-button-default bg-background-secondary-default px-3 py-1 text-caption-1-medium text-text-secondary">
-        <RiFolder6Line className="size-3.5 text-accent-500" aria-hidden />
-        <span className="max-w-[180px] truncate text-text-primary">{activeLabel}</span>
-        <span className="text-text-tertiary">·</span>
-        {changesCount > 0 ? (
-          <span className="inline-flex items-center gap-1 text-text-secondary">
-            <RiGitBranchLine className="size-3" aria-hidden />
-            {t("chat.emptyChanges", { count: changesCount })}
-          </span>
-        ) : (
-          <span className="text-text-tertiary">{t("chat.emptyReady")}</span>
-        )}
-      </div>
+    <div className={cx("flex flex-col items-start gap-2 text-left select-none", className)}>
+      <h1 className="text-title-3-semibold text-text-primary">{title}</h1>
+      {changesCount > 0 ? (
+        <button
+          type="button"
+          onClick={() => expandInspector()}
+          className="inline-flex items-center gap-1 rounded-full border border-border-button-default bg-background-secondary-default px-2.5 py-0.5 text-caption-1-medium text-text-secondary outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+        >
+          <RiGitBranchLine className="size-3 text-accent-500" aria-hidden />
+          {t("chat.emptyChangesChip", { count: changesCount })}
+        </button>
+      ) : null}
     </div>
   )
 }

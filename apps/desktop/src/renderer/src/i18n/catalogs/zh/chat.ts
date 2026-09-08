@@ -173,6 +173,7 @@ export const zhChat = {
 
   emptyWorkspace: "工作区",
   emptyChanges: "{count} 项改动待审查",
+  emptyChangesChip: "{count} 项",
   emptyReady: "工作区就绪",
   emptyDetected: "已检测",
   emptyDetectedNone: "还没有探测到本机 CLI。",

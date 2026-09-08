@@ -46,7 +46,7 @@ export function EmptyStateChecklist() {
 
 function ChecklistBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border-button-default bg-background-secondary-default px-3 py-2">
+    <section className="h-auto rounded-2xl border border-border-button-default bg-background-secondary-default px-3 py-2">
       <h2 className="text-caption-2-medium text-text-tertiary">{title}</h2>
       <div className="mt-1.5">{children}</div>
     </section>

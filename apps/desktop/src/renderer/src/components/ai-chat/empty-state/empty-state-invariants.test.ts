@@ -35,3 +35,23 @@ test("空态源码必须挂 checklist 与 pills，且不挂 Registry / AgentCliI
   assert.doesNotMatch(sources, /\bAcpRegistryPage\b|\bAcpRegistryList\b|\bAcpRegistryDetail\b|\bCustomAcpAgentForm\b/)
   assert.doesNotMatch(sources, /from ["'].*agent-cli-install["']/)
 })
+
+test("Composer 必须从空态拆出；引导栈贴顶且无 flex-1 居中", () => {
+  const empty = readFileSync(join(ROOT, "ai-chat-empty-state.tsx"), "utf8")
+  const header = readFileSync(join(ROOT, "empty-state-header.tsx"), "utf8")
+  const checklist = readFileSync(join(ROOT, "checklist/empty-state-checklist.tsx"), "utf8")
+  const stage = readFileSync(join(ROOT, "../../app-shell/chat/chat-stage.tsx"), "utf8")
+  const emptyClasses = [...empty.matchAll(/className=\{?cx\(([^)]+)\)|className="([^"]+)"/g)]
+    .map((match) => match[1] ?? match[2] ?? "")
+    .join("\n")
+  assert.doesNotMatch(empty, /ChatComposerCluster|ChatComposer/)
+  assert.doesNotMatch(empty, /children\??/)
+  assert.doesNotMatch(emptyClasses, /\bflex-1\b|\bjustify-center\b|\bmy-auto\b|\bsize-full\b/)
+  assert.match(empty, /w-full max-w-xl shrink-0 flex-col gap-3 pt-3/)
+  assert.match(header, /text-title-3/)
+  assert.match(checklist, /\bh-auto\b/)
+  assert.doesNotMatch(checklist, /\bflex-1\b|\bjustify-center\b|\bmin-h-\[/)
+  assert.match(stage, /min-h-0 flex-1 overflow-y-auto/)
+  assert.match(stage, /ChatComposerCluster className="shrink-0"/)
+  assert.doesNotMatch(stage, /<\/AiChatEmptyState>/)
+})

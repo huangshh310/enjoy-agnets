@@ -1,5 +1,5 @@
 /**
- * Composer 上沿策略一瞥。常驻可见，不是第二套 Allow/Deny。
+ * Composer 上沿策略一瞥。有消息才画；空会话藏起来，避免跟引导抢位。
  */
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
@@ -12,7 +12,9 @@ import { approvalGlanceLabel } from "../approval-policy-glance"
 export function AutoApproveBar() {
   const t = useT()
   const runtimeId = useChatStore((state) => state.runtimeId)
+  const messageCount = useChatStore((state) => state.messages.length)
   const flags = flagsFromPrefs(useSettingsSnapshot().data?.preferences)
+  if (messageCount === 0) return null
   if (!composerChromeFor(runtimeId).permission) return null
 
   const yolo = classifyApprovalPolicy(flags) === "allow-all"

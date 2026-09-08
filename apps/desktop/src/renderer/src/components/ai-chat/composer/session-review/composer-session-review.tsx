@@ -39,7 +39,7 @@ export function ComposerSessionReview() {
   const files = pick.files
   const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])
 
-  if (!sessionReviewVisible(files.length, running, dismissedKey, filesKey)) return null
+  if (!sessionReviewVisible(files.length, running, dismissedKey, filesKey, messages.length)) return null
 
   return (
     <div className="relative z-20 mb-1.5 w-full animate-in fade-in-50 duration-200">

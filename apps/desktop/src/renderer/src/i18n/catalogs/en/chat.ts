@@ -175,6 +175,7 @@ export const enChat = {
 
   emptyWorkspace: "Workspace",
   emptyChanges: "{count} changes to review",
+  emptyChangesChip: "{count}",
   emptyReady: "Workspace ready",
   emptyDetected: "Detected",
   emptyDetectedNone: "No local CLIs detected yet.",
