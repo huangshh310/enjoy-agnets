@@ -189,6 +189,7 @@ export const enSettings = {
     uninstallDesc: "Runs the catalog npm/brew uninstall argv. Provider keys in Enjoy stay put.",
     done: "Done",
     tabEngines: "Local CLIs",
+    tabRegistry: "Registry",
     tabSandbox: "Sandbox",
     tabDefaults: "Defaults",
     hubTitle: "Local CLIs",
@@ -234,6 +235,44 @@ export const enSettings = {
     viewReady: "View installed",
     viewAll: "Browse all",
     pathHintFooter: "Probe also checks brew and user bins, after the system PATH."
+  },
+
+  registry: {
+    title: "ACP Registry",
+    desc: "Browse built-in local CLIs. Install or copy the official command. Custom stdio ACP uses a basename allowlist and is never the sandbox path.",
+    sourceOfficial: "Official catalog",
+    emptyDetail: "Select an agent on the left.",
+    addCustom: "Add a custom ACP agent",
+    addCustomDesc: "command / args / env / cwd. Spawn only allows known ACP basenames. Approvals still apply.",
+    customLabel: "Name",
+    customCommand: "Command",
+    customCommandHint: "Allowlisted basename, or an absolute path with that name. No bash / node / npx.",
+    customArgs: "Arguments",
+    customEnv: "Environment",
+    customEnvHint: "Secret-looking values are masked. There is no fake connected light.",
+    customCwd: "Working directory",
+    cwdWorkspace: "Workspace root",
+    cwdCustom: "Custom path",
+    saveCustom: "Save",
+    saving: "Saving…",
+    editCustom: "Edit custom ACP",
+    deleteCustom: "Delete",
+    deleteTitle: "Delete this custom ACP agent?",
+    deleteDesc: "Removes it from the local list and unbinds sessions that still point at it. Enjoy keys stay put.",
+    summary: {
+      claude: "Anthropic Claude Code. ACP command: claude acp.",
+      cursor: "Cursor official CLI. Binaries agent / cursor-agent; ACP is agent acp.",
+      grok: "xAI Grok Build. ACP is grok agent stdio.",
+      codex: "OpenAI Codex CLI. ACP command: codex acp.",
+      antigravity: "Google Antigravity. Prefer agy-acp, otherwise agy --acp.",
+      gemini: "Gemini CLI. Must be gemini --acp; never --experimental-acp.",
+      opencode: "OpenCode official ACP: opencode acp.",
+      pi: "Pi’s official protocol is RPC. Enjoy only spawns installed pi-acp.",
+      hermes: "Hermes Agent. hermes acp or hermes-acp.",
+      amp: "Amp has no amp acp. Spawn amp-acp; sign in with amp login.",
+      deepseek: "DeepSeek Harness. dsh --profile acp.",
+      omp: "Oh My Pi coding agent. omp acp."
+    }
   },
 
   runtimeCaps: {

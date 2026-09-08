@@ -2,8 +2,9 @@
  * Settings → Agent：本机 CLI、进阶沙箱、作曲器默认值，用分段切换。
  */
 import { useState } from "react"
-import { RiCpuLine, RiEqualizer3Line, RiTerminalBoxLine } from "@remixicon/react"
+import { RiApps2Line, RiCpuLine, RiEqualizer3Line, RiTerminalBoxLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
+import { AcpRegistryPage } from "./agent-tools/acp-registry-page"
 import { AgentToolsCommandHub } from "./agent-tools/agent-tools-command-hub"
 import { AgentToolsPage } from "./agent-tools/agent-tools-page"
 import { CapabilityMatrix } from "./agent-tools/capability-matrix"
@@ -11,13 +12,14 @@ import { ConfigBoundaryTable } from "./agent-tools/config-boundary-table"
 import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 
-type AgentSettingsTab = "racks" | "harness" | "defaults"
+type AgentSettingsTab = "racks" | "registry" | "harness" | "defaults"
 
 export function AgentSettings() {
   const t = useT()
   const [activeTab, setActiveTab] = useState<AgentSettingsTab>("racks")
   const tabs: Array<{ id: AgentSettingsTab; label: string; icon: typeof RiCpuLine }> = [
     { id: "racks", label: t("settings.agentTools.tabEngines"), icon: RiCpuLine },
+    { id: "registry", label: t("settings.agentTools.tabRegistry"), icon: RiApps2Line },
     { id: "harness", label: t("settings.agentTools.tabSandbox"), icon: RiTerminalBoxLine },
     { id: "defaults", label: t("settings.agentTools.tabDefaults"), icon: RiEqualizer3Line }
   ]
@@ -52,6 +54,7 @@ export function AgentSettings() {
           <AgentToolsPage />
         </div>
       ) : null}
+      {activeTab === "registry" ? <AcpRegistryPage /> : null}
       {activeTab === "harness" ? <SettingsHarness /> : null}
       {activeTab === "defaults" ? <SettingsDefaults /> : null}
     </div>

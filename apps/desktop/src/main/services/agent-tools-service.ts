@@ -4,27 +4,33 @@
  */
 import {
   AGENT_TOOL_PRESETS,
+  canPromoteComingSoon,
   catalogFor,
   detectStatusFor,
   installKindFor,
+  M4_PROMOTION_ORDER,
   probeBinaries,
   type AgentToolPreset
 } from "@enjoy-agents/agent-harness"
 import {
   capabilitiesFor,
+  isCustomAgentId,
   type AgentCliModel,
   type AgentToolId,
   type AgentToolDoctorResult,
   type AgentToolPublic
 } from "@enjoy-agents/ipc-contract"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
+import { getCustomAgent, readCustomAgents, toPublicCustom, upsertCustomAgent } from "./agent-tools-custom"
 import { safeCustomBinaryPath } from "./agent-tools-guard"
 import { readAgentToolOverrides, writeAgentToolOverride } from "./agent-tools-vault"
 import { readVault } from "./secrets-vault"
 
 export async function listAgentTools(): Promise<AgentToolPublic[]> {
   const overrides = readAgentToolOverrides()
-  return Promise.all(AGENT_TOOL_PRESETS.map((preset) => toPublic(preset, overrides[preset.id])))
+  const builtin = await Promise.all(AGENT_TOOL_PRESETS.map((preset) => toPublic(preset, overrides[preset.id])))
+  const custom = await Promise.all(readCustomAgents().map((record) => toPublicCustom(record)))
+  return [...builtin, ...custom]
 }
 
 export async function detectAgentTools(): Promise<AgentToolPublic[]> {
@@ -41,6 +47,22 @@ export async function upsertAgentTool(input: {
   providerId?: string
   useCustomProvider?: boolean
 }): Promise<AgentToolPublic[]> {
+  if (isCustomAgentId(input.id)) {
+    const existing = getCustomAgent(input.id)
+    if (!existing) throw new Error(`Unknown custom agent '${input.id}'.`)
+    upsertCustomAgent({
+      id: existing.id,
+      label: existing.label,
+      command: input.binaryPath?.trim() || existing.command,
+      args: input.extraArgs ?? existing.args,
+      env: existing.env,
+      cwdMode: existing.cwdMode,
+      cwd: existing.cwd,
+      enabled: input.enabled ?? existing.enabled,
+      modelId: input.modelId ?? existing.modelId
+    })
+    return listAgentTools()
+  }
   writeAgentToolOverride(input.id, {
     enabled: input.enabled,
     binaryPath: input.binaryPath,
@@ -54,6 +76,7 @@ export async function upsertAgentTool(input: {
 
 export async function doctorAgentTool(id: AgentToolId): Promise<AgentToolDoctorResult> {
   invalidateAccountCache(id)
+  if (isCustomAgentId(id)) return doctorCustom(id)
   const preset = AGENT_TOOL_PRESETS.find((item) => item.id === id)
   if (!preset) return { id, ok: false, message: "Unknown agent tool.", version: null, path: null }
   if (preset.skillOnly) {
@@ -123,6 +146,7 @@ async function toPublic(
       ? await probeBinaries(names, [])
       : { found: preset.id === "enjoy-local", path: null, version: null }
   let status = detectStatusFor(preset, probe)
+  if (comingSoonFlag(preset)) status = "comingSoon"
   if (status === "ready" && preset.companionBinaries?.length) {
     const companion = await probeBinaries([...preset.companionBinaries], [])
     if (!companion.found) status = "missing"
@@ -140,10 +164,10 @@ async function toPublic(
     binaries: [...preset.binaries],
     acpArgs: [...preset.acpArgs],
     needsLoginHint: preset.needsLoginHint,
-    available: preset.available,
-    comingSoon: preset.comingSoon,
+    available: availableFlag(preset),
+    comingSoon: comingSoonFlag(preset),
     skillOnly: preset.skillOnly,
-    enabled: override?.enabled ?? (preset.available && !preset.skillOnly),
+    enabled: override?.enabled ?? (availableFlag(preset) && !preset.skillOnly),
     binaryPath: override?.binaryPath,
     extraArgs: override?.extraArgs,
     detectedPath: probe.path,
@@ -177,4 +201,24 @@ async function catalogModels(presetId: string, providerId?: string): Promise<Age
     // vault 读失败时仍返回目录表
   }
   return baseModels
+}
+
+function availableFlag(preset: AgentToolPreset): boolean {
+  if ((M4_PROMOTION_ORDER as readonly string[]).includes(preset.id)) return canPromoteComingSoon(preset.id)
+  return preset.available
+}
+
+function comingSoonFlag(preset: AgentToolPreset): boolean {
+  if ((M4_PROMOTION_ORDER as readonly string[]).includes(preset.id)) return !canPromoteComingSoon(preset.id)
+  return preset.comingSoon
+}
+
+async function doctorCustom(id: AgentToolId): Promise<AgentToolDoctorResult> {
+  const record = getCustomAgent(id)
+  if (!record) return { id, ok: false, message: "Unknown custom agent.", version: null, path: null }
+  const probe = await probeBinaries([record.command], [])
+  if (!probe.found) {
+    return { id, ok: false, message: "Custom ACP command not found.", version: null, path: null }
+  }
+  return { id, ok: true, message: probe.version ?? "Found.", version: probe.version, path: probe.path }
 }

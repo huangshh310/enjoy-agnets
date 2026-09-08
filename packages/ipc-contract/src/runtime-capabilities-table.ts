@@ -161,6 +161,15 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     fast: "none",
     providerBind: "none"
   }),
+  /** 用户添加的 stdio ACP：可 spawn + HMAC，无额度 / 登录 / Fast。 */
+  "custom-acp": acpHost({
+    models: "none",
+    login: false,
+    quota: false,
+    thinking: "none",
+    fast: "none",
+    providerBind: "none"
+  }),
   /** 设置-only；Composer 导轨用 composerChromeFor.showOnEngineRail 挡住。 */
   "sandbox-harness": {
     spawn: true,

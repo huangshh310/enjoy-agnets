@@ -59,7 +59,10 @@ const ide = {
     restoreConfig: (input: unknown) => ipcRenderer.invoke("agentTools.restoreConfig", input),
     inspect: (input: unknown) => ipcRenderer.invoke("agentTools.inspect", input),
     disposeSession: (input: unknown) => ipcRenderer.invoke("agentTools.disposeSession", input),
-    setHandoff: (input: unknown) => ipcRenderer.invoke("agentTools.setHandoff", input)
+    setHandoff: (input: unknown) => ipcRenderer.invoke("agentTools.setHandoff", input),
+    upsertCustom: (input: unknown) => ipcRenderer.invoke("agentTools.upsertCustom", input),
+    removeCustom: (input: unknown) => ipcRenderer.invoke("agentTools.removeCustom", input),
+    getCustom: (input: unknown) => ipcRenderer.invoke("agentTools.getCustom", input)
   },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),

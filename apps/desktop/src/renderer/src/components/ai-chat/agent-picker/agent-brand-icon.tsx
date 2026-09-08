@@ -34,11 +34,16 @@ function AgentFallbackMark({ id, size }: { id: string; size: number }) {
       className="inline-flex items-center justify-center rounded-md bg-background-secondary-default text-text-tertiary"
       style={{ width: size, height: size, fontSize: Math.max(9, size * 0.55) }}
     >
-      {(id[0] ?? "?").toUpperCase()}
+      {fallbackLetter(id)}
     </span>
   )
 }
 
 export function isAgentToolId(id: string): id is AgentToolId {
   return AgentToolId.safeParse(id).success
+}
+
+function fallbackLetter(id: string): string {
+  const slug = id.startsWith("custom:") ? id.slice("custom:".length) : id
+  return (slug[0] ?? "?").toUpperCase()
 }

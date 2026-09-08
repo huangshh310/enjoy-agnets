@@ -4,16 +4,21 @@
 import {
   MATRIX_RUNTIME_IDS,
   capabilitiesFor,
+  isCustomAgentId,
   runtimePathKind,
   SANDBOX_HARNESS_ID,
   type RuntimeCapabilities
 } from "@enjoy-agents/ipc-contract"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT, type TranslateFn } from "@renderer/i18n"
 
 const COLS = ["spawn", "login", "quota", "thinking", "fast", "executionModes"] as const
 
 export function CapabilityMatrix() {
   const t = useT()
+  const customIds =
+    useSettingsSnapshot().data?.agentTools.filter((item) => isCustomAgentId(item.id)).map((item) => item.id) ?? []
+  const ids = [...MATRIX_RUNTIME_IDS, ...customIds]
   return (
     <section className="flex flex-col gap-2.5">
       <div>
@@ -34,7 +39,7 @@ export function CapabilityMatrix() {
             </tr>
           </thead>
           <tbody>
-            {MATRIX_RUNTIME_IDS.map((id) => (
+            {ids.map((id) => (
               <MatrixRow key={id} id={id} cap={capabilitiesFor(id)} />
             ))}
           </tbody>
@@ -64,6 +69,7 @@ function MatrixRow({ id, cap }: { id: string; cap: RuntimeCapabilities }) {
 }
 
 function runtimeLabel(id: string): string {
+  if (isCustomAgentId(id)) return id.slice("custom:".length)
   const names: Record<string, string> = {
     "enjoy-local": "Enjoy 本地",
     claude: "Claude Code",
