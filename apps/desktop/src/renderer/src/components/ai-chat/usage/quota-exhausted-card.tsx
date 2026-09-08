@@ -7,7 +7,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
-export function QuotaExhaustedCard({ error }: { error: string }) {
+export function QuotaExhaustedCard({ error, id }: { error: string; id?: string }) {
   const t = useT()
   const navigate = useNavigate()
   const setError = useChatStore((state) => state.setError)
@@ -15,6 +15,7 @@ export function QuotaExhaustedCard({ error }: { error: string }) {
 
   return (
     <div
+      id={id}
       data-testid="quota-exhausted-card"
       className="relative my-2 flex w-full max-w-[40rem] flex-col gap-2.5 rounded-2xl border border-border-error-default/30 bg-background-tertiary-error p-4 text-text-primary shadow-card"
     >

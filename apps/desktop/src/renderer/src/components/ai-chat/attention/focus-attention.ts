@@ -1,9 +1,10 @@
 /**
- * 打开 Chat 并切到目标会话；槽位标 focused。决策面滚到 PermissionDock。
+ * 打开 Chat 并切到目标会话；槽位标 focused。再滚到 Dock / 错误 / 本轮 turn。
  */
 import { selectPersistedSession } from "@renderer/hooks/session-lifecycle"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 import type { AttentionKind } from "@renderer/stores/attention/attention.types"
+import { revealAttentionAnchor } from "./attention-anchor"
 
 type NavigateHome = (opts: { to: "/" }) => unknown
 
@@ -17,12 +18,5 @@ export async function focusAttention(input: {
   input.navigate({ to: "/" })
   useAttentionStore.getState().focusSlot(input.sessionId, input.kind)
   await selectPersistedSession(input.sessionId, input.workspaceId)
-  revealDock(input.kind)
-}
-
-function revealDock(kind?: AttentionKind) {
-  if (kind !== "pending_approval" && kind !== "ask_user") return
-  window.setTimeout(() => {
-    document.getElementById("permission-dock")?.scrollIntoView({ block: "nearest" })
-  }, 0)
+  revealAttentionAnchor(input.kind)
 }

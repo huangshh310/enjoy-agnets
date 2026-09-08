@@ -29,7 +29,7 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
   const t = useT()
   const navigate = useNavigate()
   if (classifyThreadError(error) === "credit") {
-    return <QuotaExhaustedCard error={error} />
+    return <QuotaExhaustedCard error={error} id="thread-error-banner" />
   }
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
@@ -65,6 +65,7 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
 
   return (
     <div
+      id="thread-error-banner"
       data-testid="thread-error-banner"
       className={cx(
         "relative my-2 flex w-full max-w-[40rem] flex-col gap-2.5 rounded-2xl border",

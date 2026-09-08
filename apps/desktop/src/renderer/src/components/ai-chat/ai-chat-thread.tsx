@@ -46,6 +46,7 @@ export function AiChatThread({
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
 
           {error ? <ThreadErrorBanner error={error} /> : null}
+          <div id="thread-turn-end" />
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>

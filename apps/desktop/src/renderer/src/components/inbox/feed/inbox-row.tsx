@@ -44,10 +44,7 @@ export function InboxRow(props: {
           <span className="flex items-baseline justify-between gap-2">
             <span className="flex items-center gap-1.5 min-w-0">
               {!item.read ? (
-                <span className="relative flex size-1.5 shrink-0 self-center">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent-400 opacity-60" />
-                  <span className="relative inline-flex size-1.5 rounded-full bg-accent-500" />
-                </span>
+                <span className="size-1.5 shrink-0 self-center rounded-full bg-accent-500" />
               ) : null}
               <span
                 className={cx(

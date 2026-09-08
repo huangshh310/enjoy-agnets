@@ -14,7 +14,7 @@
 | L1 AttentionStrip | `ai-chat/attention/attention-strip.tsx` 挂在 Stage 列顶（`stage-split.tsx`）。无 active/focused 则整条 `null`。胶囊按优先级排序；当前会话 Dock 已开时收成微点。`complete` 约 10s 自消，不计入「需处理 N」。 |
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。无 pending 则 `null`。 |
 | L2 Inbox `#/inbox` | live Attention 档案；无假种子。`openSession` 必须带 `sessionId`（可带 `workspaceId`）。阅读器只有摘要 + 跳回。`complete` 默认已读、不占红点。 |
-| 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。 |
+| 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
 | 策略一瞥 | 复用 `approval-policy-*`；`allow-all` 用 `text-text-error-primary` + `bg-background-tertiary-error`。不另做第二条栏。 |
 | plan diff | 写盘默认展开真实 diff；无 30s 自动放行。 |
 
@@ -131,8 +131,8 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 1. 模块 ≠ Chat → 进 Chat（不卸 `chat-store`）
 2. `selectPersistedSession(sessionId)`（跨工作区先切 `workspaceId`）
 3. pending/ask → 确保 PermissionDock 挂载 + `#permission-dock` `scrollIntoView`
-4. error → 现有 `ThreadErrorBanner` / `QuotaExhaustedCard`
-5. complete → 槽位标 resolved
+4. error → 现有 `ThreadErrorBanner` / `QuotaExhaustedCard`（`#thread-error-banner`）
+5. complete → 滚到 `#thread-turn-end`；槽位标 resolved
 
 ---
 
