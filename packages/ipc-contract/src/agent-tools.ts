@@ -190,6 +190,32 @@ export const SetSessionRuntimeInput = z
   .strict()
 export type SetSessionRuntimeInput = z.infer<typeof SetSessionRuntimeInput>
 
+export const DisposeSessionInput = z
+  .object({
+    sessionId: z.string().min(1)
+  })
+  .strict()
+export type DisposeSessionInput = z.infer<typeof DisposeSessionInput>
+
+/** 有历史切引擎后写入；下一轮开流消费一次，不进用户气泡。 */
+export const SetHandoffInput = z
+  .object({
+    sessionId: z.string().min(1),
+    fromRuntimeId: AgentToolId,
+    toRuntimeId: AgentToolId,
+    summary: z.string().min(1).max(8000)
+  })
+  .strict()
+export type SetHandoffInput = z.infer<typeof SetHandoffInput>
+
+export const SessionHandoff = z.object({
+  sessionId: z.string().min(1),
+  fromRuntimeId: AgentToolId,
+  toRuntimeId: AgentToolId,
+  summary: z.string().min(1).max(8000)
+})
+export type SessionHandoff = z.infer<typeof SessionHandoff>
+
 /** 可 spawn 的本机 ACP CLI。渲染进程用这个判断，不要 import agent-harness。 */
 export const ACP_HOST_IDS = [
   "claude",

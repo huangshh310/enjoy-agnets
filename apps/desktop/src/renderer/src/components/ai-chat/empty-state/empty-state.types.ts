@@ -1,9 +1,8 @@
 /**
- * 会话空状态（Zero State）类型定义
+ * 会话空状态（工作清单）类型。
  */
 import type { RemixiconComponentType } from "@remixicon/react"
 
-/** 快捷意图卡片项 */
 export interface EmptyStateIntentItem {
   id: string
   title: string
@@ -15,15 +14,6 @@ export interface EmptyStateIntentItem {
   prompt: string
 }
 
-/** 快捷指令/按键提示胶囊 */
-export interface EmptyStateShortcutPill {
-  id: string
-  label: string
-  keyHint?: string
-  description?: string
-}
-
-/** 空状态聚合组件 Props */
 export interface AiChatEmptyStateProps {
   workspaceName?: string
   workspaceRootLabel?: string

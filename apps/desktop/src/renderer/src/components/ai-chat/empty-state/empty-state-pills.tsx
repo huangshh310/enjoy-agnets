@@ -1,11 +1,9 @@
 /**
- * 会话空状态下方快捷行动胶囊组件（Action Pills / Prompt Chips）
+ * 空态 3 条示例任务 pill，点击填入 Composer。
  */
 import { cx } from "@/utils/cx"
-import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
-import { getIntentCards, getShortcutPills } from "./empty-state-constants"
-import { focusComposerEnd } from "./focus-composer"
+import { getIntentCards } from "./empty-state-constants"
 import type { EmptyStateIntentItem } from "./empty-state.types"
 
 interface EmptyStatePillsProps {
@@ -15,27 +13,14 @@ interface EmptyStatePillsProps {
 
 export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsProps) {
   const t = useT()
-  const setComposer = useChatStore((state) => state.setComposer)
   const intentCards = getIntentCards(t)
-  const shortcutPills = getShortcutPills(t)
-
-  function handleTriggerShortcut(key: string) {
-    if (key === "@" || key === "/") {
-      const current = useChatStore.getState().composer
-      const next = current ? `${current} ${key}` : key
-      setComposer(next)
-      focusComposerEnd(next)
-    } else if (key === "cmd-l") {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "l", metaKey: true, bubbles: true }))
-    }
-  }
 
   return (
-    <div className={cx("flex w-full flex-col items-center gap-3.5 select-none", className)}>
-      <div className="flex max-w-xl flex-wrap items-center justify-center gap-2">
+    <div className={cx("flex w-full flex-col items-start gap-2", className)}>
+      <p className="text-caption-2-medium text-text-tertiary">{t("chat.emptySamples")}</p>
+      <div className="flex max-w-xl flex-wrap items-center justify-start gap-2">
         {intentCards.map((item: EmptyStateIntentItem) => {
           const Icon = item.icon
-          const displayLabel = item.shortTitle || item.title
           return (
             <button
               key={item.id}
@@ -43,45 +28,18 @@ export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsPr
               onClick={() => onSelectPrompt(item.prompt)}
               title={item.description}
               className={cx(
-                "group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5",
-                "border border-border-button-default/70 bg-background-secondary-default/50",
-                "text-caption-1-medium text-text-secondary shadow-2xs backdrop-blur-xs",
-                "hover:-translate-y-0.5 hover:border-accent-500/40 hover:bg-background-secondary-default hover:text-text-primary hover:shadow-xs",
-                "active:translate-y-0 active:scale-95 transition-all duration-200 ease-out cursor-pointer outline-none",
-                "focus-visible:ring-2 focus-visible:ring-accent-500/20"
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5",
+                "border border-border-button-default bg-background-secondary-default",
+                "text-caption-1-medium text-text-secondary",
+                "hover:border-accent-500/40 hover:text-text-primary",
+                "outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
               )}
             >
-              <Icon
-                className={cx(
-                  "size-3.5 transition-all duration-200 group-hover:scale-110",
-                  item.iconColor ? item.iconColor : "text-text-tertiary group-hover:text-accent-500"
-                )}
-                aria-hidden
-              />
-              <span className="font-medium tracking-tight">{displayLabel}</span>
+              <Icon className="size-3.5 text-text-tertiary" aria-hidden />
+              <span>{item.shortTitle || item.title}</span>
             </button>
           )
         })}
-      </div>
-
-      <div className="flex items-center gap-2 text-caption-2-medium text-text-tertiary">
-        {shortcutPills.map((pill, index) => (
-          <span key={pill.id} className="inline-flex items-center gap-2">
-            {index > 0 ? <span className="text-text-tertiary/40">•</span> : null}
-            <button
-              type="button"
-              onClick={() =>
-                handleTriggerShortcut(pill.keyHint === "⌘L" ? "cmd-l" : (pill.keyHint ?? "@"))
-              }
-              className="inline-flex items-center gap-1 hover:text-text-secondary transition-colors cursor-pointer"
-            >
-              <kbd className="rounded bg-background-secondary-default/80 border border-border-button-default/50 px-1.5 py-0.2 font-mono text-[10px] text-text-secondary font-medium">
-                {pill.keyHint}
-              </kbd>
-              <span>{pill.label}</span>
-            </button>
-          </span>
-        ))}
       </div>
     </div>
   )

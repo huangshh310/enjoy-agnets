@@ -11,13 +11,14 @@ import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { writeSessionRuntime } from "./agent-tools-vault"
-import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
 import { getActiveCompactedHistory } from "./session-compaction-service"
+import { prependHandoffHistory, takeSessionHandoff } from "./session-handoff"
 
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   const input = RunAgentInput.parse(rawInput)
@@ -68,7 +69,10 @@ async function beginAgentRun(
 
   const runId = options.runId ?? createId("run")
   const effectiveMessages = await getActiveCompactedHistory(input.sessionId, input.messages)
-  const modelMessages = toModelMessages(effectiveMessages)
+  const taken = takeSessionHandoff(input.sessionId)
+  const handoffText = taken ? formatHandoffContext(taken).trim() : null
+  const history = prependHandoffHistory(effectiveMessages, handoffText)
+  const modelMessages = toModelMessages(history)
   holdAgentRun({
     runId,
     window,

@@ -15,6 +15,7 @@ import { useChatStore } from "../stores/chat-store"
 import { threadFromRows } from "./hydrate-thread"
 import { mergeUserAssets } from "./merge-user-assets"
 import { bindSessionRuntime } from "./persist-runtime"
+import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 
 export type WorkspaceRow = { id: string; name: string; rootPath: string }
 type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
@@ -34,6 +35,7 @@ export async function loadSession(sessionId: string, title: string) {
     if (store.sessionId) parkForegroundRun()
     store.setSession(sessionId, title)
     store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
+    useEngineHandoffStore.getState().resetPending()
     restoreComposerForSession(sessionId)
   } else {
     store.setSession(sessionId, title)
@@ -52,6 +54,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "N
   const store = useChatStore.getState()
   const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
   useChatStore.setState(idleComposerPatch())
+  useEngineHandoffStore.getState().resetPending()
   store.setSession(session.id, session.title)
   store.setRuntimeId(runtimeId)
   store.setMessages([])

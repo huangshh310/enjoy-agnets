@@ -6,6 +6,7 @@ import { decidePendingApproval } from "@renderer/hooks/use-agent-session"
 import { ApprovalCard } from "@renderer/components/ai-chat/thread/approval/approval-card"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { PERMISSION_DOCK_ID } from "./attention-anchor"
 
 export function PermissionDock() {
   const t = useT()
@@ -14,8 +15,9 @@ export function PermissionDock() {
 
   return (
     <div
-      id="permission-dock"
-      className="shrink-0 border-t border-separator-border bg-background-primary-default/95 px-8 py-3 backdrop-blur-sm"
+      id={PERMISSION_DOCK_ID}
+      tabIndex={-1}
+      className="shrink-0 scroll-mt-4 border-t border-separator-border bg-background-primary-default/95 px-8 py-3 outline-none backdrop-blur-sm"
     >
       <p className="mb-1.5 text-caption-2-medium text-text-tertiary">{t("attention.dockLabel")}</p>
       <ApprovalCard

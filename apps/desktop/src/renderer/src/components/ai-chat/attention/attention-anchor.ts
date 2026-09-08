@@ -9,6 +9,8 @@ export const ATTENTION_ANCHOR = {
   complete: "thread-turn-end"
 } as const
 
+export const PERMISSION_DOCK_ID = ATTENTION_ANCHOR.dock
+
 export function attentionAnchorId(kind?: AttentionKind): string | null {
   if (kind === "pending_approval" || kind === "ask_user") return ATTENTION_ANCHOR.dock
   if (kind === "error") return ATTENTION_ANCHOR.error

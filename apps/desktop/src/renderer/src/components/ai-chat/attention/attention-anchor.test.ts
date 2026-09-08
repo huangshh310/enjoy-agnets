@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { ATTENTION_ANCHOR, attentionAnchorId } from "./attention-anchor.ts"
+import { ATTENTION_ANCHOR, PERMISSION_DOCK_ID, attentionAnchorId } from "./attention-anchor.ts"
 
 test("点胶囊按 kind 落到 Dock / 错误 / 本轮 turn，不另造壳", () => {
   assert.equal(attentionAnchorId("pending_approval"), ATTENTION_ANCHOR.dock)
@@ -8,4 +8,5 @@ test("点胶囊按 kind 落到 Dock / 错误 / 本轮 turn，不另造壳", () =
   assert.equal(attentionAnchorId("error"), ATTENTION_ANCHOR.error)
   assert.equal(attentionAnchorId("complete"), ATTENTION_ANCHOR.complete)
   assert.equal(attentionAnchorId(), null)
+  assert.equal(PERMISSION_DOCK_ID, "permission-dock")
 })

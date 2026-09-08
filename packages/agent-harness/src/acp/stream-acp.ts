@@ -4,6 +4,7 @@
 import type { ModelMessage } from "ai"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { AcpClient } from "./client.ts"
+import { acpProcessKey, composeAcpPrompt } from "./acp-prompt.ts"
 import { mapAcpUpdate } from "./map-events.ts"
 import { spawnAcpProcess } from "./spawn.ts"
 import type { SpawnOverride } from "../agent-tools/resolve-spawn.ts"
@@ -49,7 +50,7 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   live.runId = input.runId
   live.waitForApproval = input.waitForApproval
   sessionByRun.set(input.runId, input.sessionId)
-  const text = lastUserText(input.messages)
+  const text = composeAcpPrompt(input.messages)
   const queue: StreamEvent[] = []
   let wake: (() => void) | undefined
   let finished = false
@@ -177,25 +178,5 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
 }
 
 function modelKeyFor(input: StreamAcpTurnInput): string {
-  return `${input.override?.modelId?.trim() || ""}:${JSON.stringify(input.env || {})}`
-}
-
-function lastUserText(messages: ModelMessage[]): string {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index]
-    if (!message || message.role !== "user") continue
-    if (typeof message.content === "string") return message.content
-    if (!Array.isArray(message.content)) continue
-    const text = message.content
-      .filter((part) => part.type === "text")
-      .map((part) => ("text" in part ? String(part.text) : ""))
-      .join("\n")
-    const hasFile = message.content.some((part) => part.type === "file" || part.type === "image")
-    if (text.trim() && hasFile) {
-      return `${text}\n[User also attached files. They are not forwarded over the ACP text prompt.]`
-    }
-    if (text.trim()) return text
-    if (hasFile) return "[User attached files. They are not forwarded over the ACP text prompt.]"
-  }
-  return ""
+  return acpProcessKey(input.toolId, input.override?.modelId, input.env)
 }

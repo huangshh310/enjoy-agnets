@@ -147,7 +147,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 
 ## 代码入口
 
-- 新：`apps/desktop/src/renderer/src/components/ai-chat/attention/`
+- 新：`apps/desktop/src/renderer/src/components/ai-chat/attention/`（`focusAttention` 带 session 切会话；无参只滚 PermissionDock，供 M3 阻切）
 - 状态：`apps/desktop/src/renderer/src/stores/attention/`
 - 挂载：`app-shell/layout/stage-split.tsx`（Strip）、`app-shell/chat/chat-composer-cluster.tsx`（Dock）
 - Inbox：`inbox/lib/open-inbox-action.ts`、`inbox/lib/filter-inbox.ts`

@@ -17,6 +17,7 @@ import { ComposerSessionReview } from "./composer/session-review/composer-sessio
 import { ComposerTodoDock } from "./composer/composer-todo-dock"
 import { ComposerToolbar } from "./composer/composer-toolbar"
 import type { ComposerProps } from "./composer/composer.types"
+import { EngineHandoffDock } from "./agent-picker/handoff/engine-handoff-dock"
 import { useT } from "@renderer/i18n"
 
 
@@ -117,6 +118,7 @@ export function AiChatComposer({
 
   return (
     <div className={cx("relative flex flex-col w-full min-w-0 px-6 pb-2", className)}>
+      <EngineHandoffDock />
       <ComposerTodoDock />
       <ComposerSessionReview />
       <ComposerQueue />

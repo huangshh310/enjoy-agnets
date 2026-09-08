@@ -7,10 +7,10 @@ import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { RiArrowDownSLine } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { persistRuntimeId } from "@renderer/hooks/persist-runtime"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { canSwitchAgent, DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
+import { canSwitchAgent, DEFAULT_RUNTIME_ID, isEngineReady } from "@renderer/lib/agent-runtime"
+import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ModelPickerBody } from "../model-picker/model-picker-body"
@@ -37,6 +37,7 @@ export function AgentPicker({
   const open = useChatStore((state) => state.agentPickerOpen)
   const setOpen = useChatStore((state) => state.setAgentPickerOpen)
   const runtimeId = useChatStore((state) => state.runtimeId)
+  const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const tools = useSettingsSnapshot().data?.agentTools ?? []
   const { primary, soon } = composerAgentGroups(tools)
   const agents = [...primary, ...soon]
@@ -47,6 +48,11 @@ export function AgentPicker({
   useEffect(() => {
     if (open) setTabId(runtimeId)
   }, [open, runtimeId])
+
+  // 取消交接时 runtimeId 往往仍是 from，必须靠 phase 把 Rail tab 拉回去。
+  useEffect(() => {
+    if (handoffPhase === "idle") setTabId(runtimeId)
+  }, [handoffPhase, runtimeId])
 
   useEffect(() => {
     if (!open || !hasIde()) return
@@ -68,8 +74,12 @@ export function AgentPicker({
 
   async function applyAgent(id: string, modelId?: string) {
     if (!isAgentToolId(id)) return
-    await persistRuntimeId(id, modelId)
-    await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    const result = await requestEngineSwitch(id, modelId)
+    if (result === "pending" || result === "blocked") {
+      setOpen(false)
+      return
+    }
+    if (result === "applied") await queryClient.invalidateQueries({ queryKey: ["settings"] })
   }
 
   async function onTab(id: string) {
@@ -107,12 +117,10 @@ export function AgentPicker({
           </span>
           <UsagePill runtimeId={runtimeId} />
 
-          {/* 就绪状态微灯：未安装用次级色，避免永远绿灯 */}
+          {/* 就绪灯只信 status===ready */}
           <span
             className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
-              runtimeId === DEFAULT_RUNTIME_ID || current?.status === "ready"
-                ? "bg-accent-500"
-                : "bg-text-tertiary"
+              current ? (isEngineReady(current) ? "bg-accent-500" : "bg-text-tertiary") : "bg-text-tertiary"
             }`}
           />
 
@@ -130,6 +138,7 @@ export function AgentPicker({
         {/* 上层：等高横向引擎导轨 */}
         <AgentEngineRail
           primary={primary}
+          soon={soon}
           selectedId={tab?.id ?? DEFAULT_RUNTIME_ID}
           currentId={runtimeId}
           onSelect={(id) => void onTab(id)}

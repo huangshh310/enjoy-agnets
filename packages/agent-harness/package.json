@@ -8,7 +8,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts src/ready.test.ts src/agent-tools/resolve-spawn.test.ts src/agent-tools/catalogs.test.ts src/agent-tools/detect/probe.test.ts src/acp/map-events.test.ts src/acp/auth.test.ts"
+    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts src/ready.test.ts src/agent-tools/resolve-spawn.test.ts src/agent-tools/catalogs.test.ts src/agent-tools/detect/probe.test.ts src/acp/map-events.test.ts src/acp/auth.test.ts src/acp/acp-prompt.test.ts"
   },
   "dependencies": {
     "@ai-sdk/harness": "catalog:",
