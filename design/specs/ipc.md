@@ -29,7 +29,7 @@
 | window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
 | app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |
 | rules | `list` `read` `create` `delete` `reveal` | 项目规则；读删定位走允许根；工作区路径必须已登记 |
-| skills | `list` `read` `create` `delete` `reveal` `sources.overview` `sources.detail` `sources.add` `sources.update` `sources.remove` `sources.deleteSkill` `sources.configure` `sources.deploy` `sources.doctor` `sources.curated` `sources.updateAll` `sources.repair` | 技能包；删除只允许 skill root 的直接子目录。`sources.deleteSkill` 删来源内单个包；`sources.remove` 卸载来源组（Git 清投影，本机发现组只隐藏） |
+| skills | `list` `read` `create` `delete` `reveal` `sources.overview` `sources.detail` `sources.add` `sources.update` `sources.remove` `sources.deleteSkill` `sources.configure` `sources.deploy` `sources.doctor` `sources.curated` `sources.updateAll` `sources.repair` | 技能包；删除只允许 skill root 的直接子目录。`sources.deleteSkill` 删来源内单个包；`sources.remove` 卸载来源组（Git 清投影，本机发现组只隐藏）。`sources.updateAll` 返回 `SkillSourceUpdateAllResult`（`updatedCount` / `skippedCount` / `errors`），只快进 Git 源 |
 
 ### 推送事件
 

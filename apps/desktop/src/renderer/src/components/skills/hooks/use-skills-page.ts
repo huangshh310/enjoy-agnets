@@ -17,6 +17,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { CURATED_SKILL_SOURCES } from "../constants/skills-curated.constants"
 import { ipcErrorMessage } from "../lib/ipc-error-message"
 import { buildSkillsNavGroups } from "../lib/build-skills-nav"
+import { SKILL_SOURCES_OVERVIEW_QUERY_KEY } from "../lib/git-skill-sources"
 
 export type SkillsPageState = {
   sources: SkillSource[]
@@ -47,7 +48,6 @@ export type SkillsPageState = {
   addLocalSource: () => Promise<void>
   installCurated: (curatedSource: CuratedSkillSource) => Promise<void>
   updateSource: (sourceId: string) => Promise<void>
-  updateAllSources: () => Promise<void>
   deploySource: (sourceId: string) => Promise<void>
   repairTargets: (sourceId?: string) => Promise<void>
   removeSource: (sourceId: string) => Promise<void>
@@ -56,7 +56,7 @@ export type SkillsPageState = {
   toggleSkill: (source: SkillSource, skillId: string) => Promise<void>
 }
 
-const OVERVIEW_QUERY_KEY = ["skills-sources-overview"] as const
+const OVERVIEW_QUERY_KEY = SKILL_SOURCES_OVERVIEW_QUERY_KEY
 const ALL_SKILLS_QUERY_KEY = ["skills-sources-all"] as const
 const DOCTOR_QUERY_KEY = ["skills-sources-doctor"] as const
 const CURATED_QUERY_KEY = ["skills-sources-curated"] as const
@@ -190,14 +190,7 @@ export function useSkillsPage(): SkillsPageState {
     })
   }
 
-  // 5. 更新所有来源
-  async function updateAllSources() {
-    await runAction("全量拉取更新", async () => {
-      await getIde().skills.sources.updateAll()
-    })
-  }
-
-  // 6. 重新部署来源
+  // 5. 重新部署来源
   async function deploySource(sourceId: string) {
     await runAction("重新部署", async () => {
       await getIde().skills.sources.deploy({ sourceId })
@@ -293,7 +286,6 @@ export function useSkillsPage(): SkillsPageState {
     addLocalSource,
     installCurated,
     updateSource,
-    updateAllSources,
     deploySource,
     repairTargets,
     removeSource,

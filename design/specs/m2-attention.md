@@ -4,7 +4,7 @@
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：**本 PR 只收 M2**。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
-> 可选后置（不在本 PR）：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
+> 可选后置（不在本 PR）：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已另 PR 薄层落地。
 > 侧栏 `waiting_review` 灯后置 M5，本 PR 不做。
 
 ## 当前真相

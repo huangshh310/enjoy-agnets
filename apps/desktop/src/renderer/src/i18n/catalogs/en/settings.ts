@@ -326,6 +326,18 @@ export const enSettings = {
     modeDesc: "Same mode chip as the composer. Ask is read-only."
   },
 
+  skillSources: {
+    title: "Skill sources",
+    pull: "Optional skill update",
+    desc: "{count} Git sources configured. Nothing syncs until you tap Update skills.",
+    gated: "No Git skill sources yet. Import a repo on Skills. Local discovery groups are not updated.",
+    update: "Update skills",
+    updating: "Updating…",
+    openSkills: "Open Skills",
+    toastUpdated: "Updated {count}",
+    toastMissed: "Some sources were not updated"
+  },
+
   harness: {
     cardTitle: "Coding runtime",
     advancedTitle: "Sandbox · experimental Harness",

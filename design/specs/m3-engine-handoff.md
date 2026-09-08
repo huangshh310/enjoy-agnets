@@ -2,7 +2,7 @@
 
 > M3 引擎切换与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-08
 > 产品锁：M2 收完后做本文，再做 M4。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
-> 可选后置：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
+> 可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > handoff 摘要注入 system/hidden + 可关「已交接」微条，**禁止**当第一条可见用户消息。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
@@ -16,7 +16,7 @@
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
 | 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
-| 空态 | 引导：`text-title-3` + 「已就绪 N 个」可折叠 + 未安装单 CTA + pills；Composer **钉 Stage 底**；空会话只留「N 项」芯片，藏审查条 / 策略一瞥 / UsagePill 警报 |
+| 空态 | 引导：`text-title-3` + 「已就绪 N 个」可折叠 + 未安装单 CTA + pills；Composer **钉 Stage 底**；空会话只留「N 项」芯片，藏审查条 / 策略一瞥 / UsagePill 警报 / 技能源同步条 |
 | 三路 | Enjoy 本地 / ACP 本机 CLI 上轨；沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。
@@ -130,6 +130,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - `justify-center` / `flex-1` / `my-auto` 写在 empty-state 或清单卡上，会把 已检测 顶出 Header 下。引导栈只准 `shrink-0 gap-3 pt-3`。
 - 空会话不要挂 SessionReviewBar（22 文件三钮）和「写入自动 · Shell…」策略行；改动只留标题旁「N 项」芯片进 Inspector。芯片和审查条不能同时出现。
 - 空会话 `UsagePill` 若先判 ≥85% 再判 quiet，额度高时仍会警报。必须先 `quiet`。
+- 合 M6 时不要把 `SkillSourcePullStrip` 加回空会话。技能源更新只在 Skills 顶栏与 Agent 默认项；空态不变量必须继续禁止该条。
 
 ## 验收
 
@@ -137,7 +138,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 2. 有两轮对话：切 Claude→Cursor 出 HandoffCard；取消后仍停在 Claude。
 3. 确认后旧 ACP 已 dispose，新引擎首答能看到摘要语境。
 4. 有 pendingApproval 时切换被阻；卡上可取消或去处理审批。
-5. 空态展示 ready 单行 / missing 单 CTA + 示例 pill；Composer 钉底不进 empty-state；无居中营销 Hero、无五张高安装卡。
+5. 空态展示 ready 单行 / missing 单 CTA + 示例 pill；Composer 钉底不进 empty-state；无居中营销 Hero、无五张高安装卡、无技能源同步条。
 
 ## 非目标
 

@@ -2,6 +2,7 @@
  * Chat 工作台：线程、composer、空态。始终挂载，切走模块时用 hidden 藏起。
  * 空会话与有消息同一拓扑：Header → flex-1 滚动内容 → shrink-0 Composer。
  * 禁止把 Composer 塞进 AiChatEmptyState children，禁止线程列 justify-center。
+ * 禁止 SkillSourcePullStrip / 空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
 import { Button } from "@/components/ui/button"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
@@ -113,7 +114,7 @@ function ChatWorkspaceBody(props: {
   )
 }
 
-/** Header 以下：guidance 单独滚动，Composer 钉底。禁止 justify-center / items-center。 */
+/** Header 以下：guidance 单独滚动，Composer 钉底。禁止 justify-center / items-center / SkillSourcePullStrip。 */
 function EmptySessionColumn(props: {
   workspaceName: string
   sessionTitle: string

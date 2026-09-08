@@ -326,6 +326,18 @@ export const zhSettings = {
     modeDesc: "与输入框同一模式胶囊。Ask 为只读。"
   },
 
+  skillSources: {
+    title: "技能源",
+    pull: "可选更新技能",
+    desc: "已配置 {count} 个 Git 源。不会自动同步，点「更新技能」才拉取。",
+    gated: "还没有 Git 技能源。先到 Skills 导入仓库。本机发现组不会被更新。",
+    update: "更新技能",
+    updating: "正在更新…",
+    openSkills: "打开 Skills",
+    toastUpdated: "更新了 {count} 个",
+    toastMissed: "有源未更新"
+  },
+
   harness: {
     cardTitle: "编码运行时",
     advancedTitle: "进阶沙箱 · 实验 · 沙箱 Harness",

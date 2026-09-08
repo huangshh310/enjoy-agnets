@@ -12,6 +12,7 @@ import { parseAgentSettingsTab, type AgentSettingsTab } from "./settings-agent-t
 import { AgentSettingsTabs } from "./settings-agent-tabs"
 import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
+import { SettingsSkillSources } from "./settings-skill-sources"
 
 export function AgentSettings() {
   const navigate = useNavigate()
@@ -46,7 +47,12 @@ export function AgentSettings() {
       ) : null}
       {activeTab === "registry" ? <AcpRegistryPage /> : null}
       {activeTab === "harness" ? <SettingsHarness /> : null}
-      {activeTab === "defaults" ? <SettingsDefaults /> : null}
+      {activeTab === "defaults" ? (
+        <div className="flex flex-col gap-6">
+          <SettingsDefaults />
+          <SettingsSkillSources />
+        </div>
+      ) : null}
     </div>
   )
 }

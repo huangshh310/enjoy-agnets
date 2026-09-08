@@ -39,7 +39,7 @@ ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：
 | M3 handoff | 后续 | 换引擎摘要注入 system/hidden，禁止当第一条可见用户消息 |
 | M4 Registry | M3 之后 | ACP Registry + 自定义 agent；**不做** PTY 兜底 |
 
-整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP。可选后置：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
+整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP。可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources **可选更新** 已薄层落地（仅 Skills 顶栏 + Agent 默认项；无 Git 源不渲染按钮；空会话禁止同步条；不自动同步）。
 
 ## 明确不做
 

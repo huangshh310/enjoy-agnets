@@ -143,6 +143,16 @@ export const SkillSourceRepairInput = z
   .strict()
 export type SkillSourceRepairInput = z.infer<typeof SkillSourceRepairInput>
 
+/** `skills.sources.updateAll`：只快进 Git 源；本机目录计入 skippedCount。 */
+export const SkillSourceUpdateAllResult = z
+  .object({
+    updatedCount: z.number().int(),
+    skippedCount: z.number().int(),
+    errors: z.array(z.string())
+  })
+  .strict()
+export type SkillSourceUpdateAllResult = z.infer<typeof SkillSourceUpdateAllResult>
+
 export const InstalledSkillItem = z
   .object({
     sourceId: z.string(),

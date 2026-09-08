@@ -1,6 +1,6 @@
 # spec/skills
 
-> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-05
+> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-08
 
 ## 当前真相
 
@@ -25,6 +25,12 @@
 6. **技能详情抽屉**：
    - 对标 shadcn Drawer：遮罩 + **内缩悬浮面板**（`inset-y-3 right-3`，四边 `rounded-3xl` + `shadow-card`），禁止贴死视口右缘的全高 `border-l` 切片。
    - 顶栏（图标/标题/关闭）+ 中部滚动 + 底栏全宽主按钮（复制触发指令）。点遮罩或 Escape 关闭。
+7. **M6 可选更新（薄层）**：用户点了才 `skills.sources.updateAll`。只快进 manifest 里的 **Git** 源，本机发现组计入 `skippedCount`。成功后尽量 `deploy`（未勾选则只完成 checkout）。入口只有两处，共用 `useSkillSourcePull`：
+   - `#/skills` 顶栏「更新技能」：`gitSourceCount > 0` 才渲染；否则**不画按钮**（禁止灰色禁用钮）。
+   - `#/settings/agent?tab=defaults` 技能源卡片：无 Git 源时只留「打开 Skills」，不画更新按钮。
+   - 进行中文案「正在更新…」；结果 toast「更新了 N 个」/「有源未更新」，禁止堆栈或 IPC 码。
+   - **禁止**把更新条挂进空会话 / `AiChatEmptyState`（空态只允许标题 + checklist + pills，Composer 钉 Stage 底）。
+   - **不做**：自动 pull、摩擦信号、周报 digest、团队 MCP 分发。
 
 ## 不变量
 
@@ -33,6 +39,7 @@
 - 技能的启用、禁用与删除必须通过 IPC 规范处理，保证状态与文件系统同步一致。
 - 来源组名称与技能名称严格防注入与路径穿越验证。
 - `CreateSkillDialog` 必须用带 `sm:` 前缀的 max-width 覆盖 `DialogContent` 默认 `sm:max-w-lg`。
+- M6 可选更新不得自动 `git pull`。无 Git 源时不渲染更新按钮。空会话禁止任何技能源同步条。
 
 ## 代码入口
 
@@ -40,12 +47,17 @@
 - 专属整备舱：`apps/desktop/src/renderer/src/components/skills/components/armory/`
 - 详情与控制台：`apps/desktop/src/renderer/src/components/skills/components/detail/`
 - 精选集市：`apps/desktop/src/renderer/src/components/skills/components/curated/`
-- 状态与查询 Hook：`apps/desktop/src/renderer/src/components/skills/hooks/use-skills-page.ts`
+- 状态与查询 Hook：`apps/desktop/src/renderer/src/components/skills/hooks/use-skills-page.ts`、`use-skill-source-pull.ts`
 - 领域常量与主题：`apps/desktop/src/renderer/src/components/skills/constants/`
-- 后端服务：`apps/desktop/src/main/services/skills-service.ts`
+- 后端服务：`apps/desktop/src/main/services/skills-service.ts`、`main/services/skill-sources/`
+- 设置入口：`components/settings/settings-skill-sources.tsx`
+- 更新 toast：`components/skills/components/skill-source-toast-host.tsx`
 
 ## 已知坑
 
 - 目标切换状态不更新：`toggleTarget` 执行后必须通过 QueryClient 刷新 `OVERVIEW_QUERY_KEY` 与 `ALL_SKILLS_QUERY_KEY`，否则情境栏数字与卡片徽标不会即时更新。
 - 触发词与指令前缀冲突：技能名称包含空格时不能生成合法命令前缀，必须降级为 `@` 标签或隐藏触发胶囊。
 - 整备舱技能行不能调用 `toggleTarget`：会把整组 selected 技能从目标卸掉。挂载只走来源组胶囊。
+- `updateAll` 只拉 Git：本机 `~/.agents/skills` 等发现组不会被 pull。没有 Git 源时入口必须不渲染，不要灰按钮空转。
+- 空态禁运维条：技能源更新与 SessionReviewBar 同类，不能进 `AiChatEmptyState` / 空会话引导。
+- 拉取后投影是尽力而为：`EMPTY_SELECTION` / `MISSING_CHECKOUT` 不算进 `errors`，只完成 checkout。需要覆盖目标目录时仍走 Skills 详情的「重新部署」。

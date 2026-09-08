@@ -13,6 +13,7 @@ import {
   deploySkillSource,
   deleteSourceSkill,
   removeSkillSource,
+  updateAllSkillSources,
   type SkillSourceContext
 } from "./source-service.ts"
 import { readManifest } from "./source-state.ts"
@@ -138,6 +139,19 @@ test("deleteSourceSkill 删除本机技能包，来源组仍在", () => {
     const after = overviewSkillSources(ctx)
     const leftover = after.sources.find((s) => s.id === agentsSource!.id)
     assert.ok(!leftover || leftover.skillCount === 0)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("updateAllSkillSources 跳过本机来源，updatedCount 为 0", async () => {
+  const { root, ctx } = makeAgentsFixture()
+  try {
+    overviewSkillSources(ctx)
+    const result = await updateAllSkillSources(ctx)
+    assert.equal(result.updatedCount, 0)
+    assert.ok(result.skippedCount >= 1)
+    assert.deepEqual(result.errors, [])
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
