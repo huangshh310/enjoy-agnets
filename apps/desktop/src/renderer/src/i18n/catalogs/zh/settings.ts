@@ -503,7 +503,7 @@ export const zhSettings = {
     failed: "失败",
     noModel: "未配置模型",
     defaultEndpoint: "默认端点",
-    keyHint: "密钥 {hint}",
+    keyHint: "密钥已保存",
     missingKey: "缺少 API 密钥",
     noKeyRequired: "无需密钥",
     pingTitle: "测试此端点网络延迟",

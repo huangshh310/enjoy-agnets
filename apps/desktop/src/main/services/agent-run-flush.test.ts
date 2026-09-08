@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { flushPayloadFromRun, type FlushableRun } from "./agent-run-flush.ts"
+import {
+  CHECKPOINT_INTERVAL_MS,
+  flushPayloadFromRun,
+  shouldCheckpointPersist,
+  type FlushableRun
+} from "./agent-run-flush.ts"
 
 function failedHtmlRun(overrides: Partial<FlushableRun> = {}): FlushableRun {
   return {
@@ -61,4 +66,19 @@ test("空 transcript 且无工具不落库", () => {
     ),
     null
   )
+})
+
+test("tool.result / 审批立刻 checkpoint，text.delta 隔 1.5s", () => {
+  assert.equal(shouldCheckpointPersist("tool.result", Date.now(), Date.now()), true)
+  assert.equal(shouldCheckpointPersist("approval.required", 1, 1), true)
+  assert.equal(shouldCheckpointPersist("text.delta", 1000, 2000), false)
+  assert.equal(shouldCheckpointPersist("text.delta", 1000, 1000 + CHECKPOINT_INTERVAL_MS), true)
+  assert.equal(shouldCheckpointPersist("reasoning.delta", 0, 2000), true)
+  assert.equal(shouldCheckpointPersist("tool.start", 0, 9000), false)
+})
+
+test("checkpoint 未封口时 payload 仍在，硬杀才能靠同一行 hydrate", () => {
+  const payload = flushPayloadFromRun(failedHtmlRun({ assistantPersisted: false }))
+  assert.ok(payload)
+  assert.equal(flushPayloadFromRun(failedHtmlRun({ assistantPersisted: true })), null)
 })

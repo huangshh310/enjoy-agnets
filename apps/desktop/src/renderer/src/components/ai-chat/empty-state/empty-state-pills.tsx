@@ -5,6 +5,7 @@ import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { getIntentCards, getShortcutPills } from "./empty-state-constants"
+import { focusComposerEnd } from "./focus-composer"
 import type { EmptyStateIntentItem } from "./empty-state.types"
 
 interface EmptyStatePillsProps {
@@ -23,20 +24,15 @@ export function EmptyStatePills({ onSelectPrompt, className }: EmptyStatePillsPr
       const current = useChatStore.getState().composer
       const next = current ? `${current} ${key}` : key
       setComposer(next)
-      requestAnimationFrame(() => {
-        const textarea = document.querySelector<HTMLTextAreaElement>("form textarea")
-        if (!textarea) return
-        textarea.focus()
-        textarea.setSelectionRange(next.length, next.length)
-      })
+      focusComposerEnd(next)
     } else if (key === "cmd-l") {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "l", metaKey: true, bubbles: true }))
     }
   }
 
   return (
-    <div className={cx("flex flex-col items-center gap-3.5 w-full select-none", className)}>
-      <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl">
+    <div className={cx("flex w-full flex-col items-center gap-3.5 select-none", className)}>
+      <div className="flex max-w-xl flex-wrap items-center justify-center gap-2">
         {intentCards.map((item: EmptyStateIntentItem) => {
           const Icon = item.icon
           const displayLabel = item.shortTitle || item.title

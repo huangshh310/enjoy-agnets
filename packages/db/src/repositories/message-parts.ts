@@ -22,6 +22,11 @@ export function insertMessageParts(db: AppDatabase, rows: MessagePartRow[]): voi
   }
 }
 
+/** 同一条助手消息 checkpoint 时先清旧 parts，再插入新快照。 */
+export function deleteMessageParts(db: AppDatabase, messageId: string): void {
+  db.prepare("DELETE FROM message_parts WHERE message_id = ?").run(messageId)
+}
+
 export function listMessageParts(db: AppDatabase, messageId: string): MessagePartRow[] {
   return db
     .prepare(

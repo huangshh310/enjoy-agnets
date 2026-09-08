@@ -21,6 +21,7 @@ export const SKILLS_UI_COPY = {
   doctorTitle: "Doctor 状态诊断与自愈",
   doctorDesc: "对比权威状态 (manifest/lock) 与磁盘目标，检测文件丢失、修改漂移与配置冲突。",
   noIssues: "所有技能包投影完整一致，未发现状态漂移或损坏。",
+  emptySkillDesc: "提供专业提示词与执行指引能力",
   emptyTitle: "尚未添加任何技能工作流",
   emptyDesc: "粘贴开源技能仓库地址快速导入，或从下方精选推荐中一键安装常用 Agent 技能包。",
   quickGitPlaceholder: "输入 GitHub 简写 (如 obra/superpowers, garrytan/gstack) 或 HTTPS 链接",

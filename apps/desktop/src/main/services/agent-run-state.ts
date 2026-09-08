@@ -34,6 +34,8 @@ export type ActiveRun = {
   transcript: RunTranscript
   tools: ThreadToolCall[]
   assistantPersisted: boolean
+  /** 本轮已 INSERT 的助手消息 id；后续 checkpoint / 终态都 UPDATE 这一行。 */
+  assistantMessageId?: string
   /** ask_user_questions 放行后 execute 读取。 */
   questionAnswers?: AskUserAnswers
 }

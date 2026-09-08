@@ -69,10 +69,10 @@ export function InspectorPane({
   return (
     <>
       <Separator
-        disabled={maximized || collapsed}
+        disabled={collapsed}
         className={cx(
           "relative z-10 shrink-0 bg-transparent outline-none",
-          collapsed || maximized
+          collapsed
             ? "hidden w-0"
             : "w-3 cursor-col-resize after:absolute after:inset-y-8 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-border-button-default data-active:after:bg-accent-500"
         )}

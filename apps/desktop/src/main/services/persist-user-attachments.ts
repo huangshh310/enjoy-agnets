@@ -13,6 +13,7 @@ import {
   userTurnParts,
   type UserFileAsset
 } from "./user-attachment-parts"
+import { shouldSkipDuplicateUserTurn } from "./persist-user-turn-dedupe"
 
 export type MessageRowWithParts = {
   id: string
@@ -22,8 +23,20 @@ export type MessageRowWithParts = {
 }
 
 export function persistUserTurn(sessionId: string, content: string, attached: UserFileAsset[]) {
+  const last = lastUserTurn(sessionId)
+  if (shouldSkipDuplicateUserTurn(last, content, Date.now())) return
   const parts = userTurnParts(content, attached) as UIMessagePart[]
   persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined)
+}
+
+function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {
+  return getDatabase()
+    .prepare(
+      `SELECT content, created_at as createdAt
+       FROM messages WHERE session_id = ? AND role = 'user'
+       ORDER BY created_at DESC LIMIT 1`
+    )
+    .get(sessionId) as { content: string; createdAt: number } | undefined
 }
 
 export function metasFromAssetIds(ids: string[]): UserFileAsset[] {

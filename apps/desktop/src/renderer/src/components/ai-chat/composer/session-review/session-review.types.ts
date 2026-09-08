@@ -28,4 +28,6 @@ export type SessionReviewBarProps = {
   onKeep: () => void
   busy?: boolean
   hasFiles?: boolean
+  /** 本轮写盘才默认展开；工作区脏文件保持折叠。 */
+  defaultExpanded?: boolean
 }

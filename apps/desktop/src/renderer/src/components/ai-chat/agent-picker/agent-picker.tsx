@@ -79,7 +79,7 @@ export function AgentPicker({
         <button
           type="button"
           aria-label={t("chat.selectAgent")}
-          className="group inline-flex h-8 max-w-[17rem] min-w-0 items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-medium text-text-primary shadow-2xs outline-none transition-all duration-150 hover:border-border-button-hover hover:bg-background-secondary-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          className="group inline-flex h-8 max-w-[16rem] shrink-0 items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-medium text-text-primary shadow-2xs outline-none transition-all duration-150 hover:border-border-button-hover hover:bg-background-secondary-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         >
           {/* 品牌微标 */}
           <span className="flex size-4 shrink-0 items-center justify-center">

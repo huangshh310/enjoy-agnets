@@ -35,15 +35,15 @@ export function ReasoningEffortToggle() {
           type="button"
           aria-label={t("chat.effortAria")}
           className={cx(
-            "group flex h-8 min-w-0 items-center gap-1.5 rounded-full px-2 text-caption-1-medium outline-none transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-border-focus-ring @[26rem]:px-2.5",
+            "group flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-border-focus-ring",
             currentMeta.value !== "none"
               ? currentMeta.badgeClass
               : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
           )}
         >
           <RiBrainLine className={cx("size-3.5 shrink-0 transition-colors", currentMeta.iconColorClass)} />
-          <span className="max-w-[4.5rem] truncate font-semibold">{currentMeta.label}</span>
-          <span className="ml-0.5 hidden @[26rem]:inline-flex">
+          <span className="whitespace-nowrap font-semibold">{currentMeta.label}</span>
+          <span className="ml-0.5 inline-flex">
             <MiniEnergyMeter value={reasoningEffort} />
           </span>
         </button>

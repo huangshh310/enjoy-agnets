@@ -14,6 +14,21 @@ export function revealRightPane(
   useRightPaneStore.getState().openTool(kind, options)
 }
 
+/** 展开审查栏：有 dirty 文件且还没开标签时直接进 Review。 */
+export function expandInspector(kind?: RightPaneKind) {
+  if (kind) {
+    revealRightPane(kind)
+    return
+  }
+  const tabs = useRightPaneStore.getState().tabs
+  const dirty = useChatStore.getState().changes.length > 0
+  if (tabs.length === 0 && dirty) {
+    revealRightPane("review")
+    return
+  }
+  useChatStore.getState().setRightPanelCollapsed(false)
+}
+
 export function openBrowserUrl(raw: string) {
   const url = parseHttpUrl(raw)
   if (!url) return

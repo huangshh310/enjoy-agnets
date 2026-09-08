@@ -52,13 +52,13 @@ export function ComposerFooter({
   const setMode = useChatStore((state) => state.setMode)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 px-3 pt-1 pb-2.5">
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
       <ComposerAttachMenu
         composer={composer}
         onComposerChange={onComposerChange}
         onPickFiles={onPickFiles}
       />
-      <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
         <ExecutionModeMenu mode={mode} onChange={setMode} />
         <ApprovalPolicyToggle />
         <AgentPicker
@@ -82,7 +82,7 @@ export function ComposerFooter({
           }
           onClick={onVoiceToggle}
           className={cx(
-            "flex size-8 items-center justify-center rounded-full transition-colors disabled:opacity-40 disabled:hover:bg-transparent",
+            "flex size-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40 disabled:hover:bg-transparent",
             voiceOpen
               ? "text-accent-500 hover:bg-background-secondary-hover"
               : "text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-text-primary"

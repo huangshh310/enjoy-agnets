@@ -8,6 +8,7 @@ import { useT } from "@renderer/i18n"
 import {
   RiAddLine,
   RiBookOpenLine,
+  RiChat1Line,
   RiEqualizer3Line,
   RiFlashlightLine,
   RiFolder6Line,
@@ -86,6 +87,16 @@ export function QuickSearchDialog() {
         <CommandEmpty>{t("command.empty")}</CommandEmpty>
 
         <CommandGroup heading={t("command.groupStudio")}>
+          <CommandItem
+            onSelect={() =>
+              handleSelect(() => {
+                void navigate({ to: "/" })
+              })
+            }
+          >
+            <RiChat1Line className="size-4 text-accent-500" />
+            <span>{t("command.chat")}</span>
+          </CommandItem>
           <CommandItem
             onSelect={() =>
               handleSelect(() => {

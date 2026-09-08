@@ -507,7 +507,7 @@ export const enSettings = {
     failed: "Failed",
     noModel: "No model configured",
     defaultEndpoint: "Default endpoint",
-    keyHint: "Key {hint}",
+    keyHint: "Key saved",
     missingKey: "Missing API Key",
     noKeyRequired: "No Key Required",
     pingTitle: "Test network latency to this endpoint",

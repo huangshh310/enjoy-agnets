@@ -11,8 +11,8 @@ export function ComposerToolbar({ onPickFiles }: { onPickFiles: () => void }) {
   const workspaceName = useChatStore((state) => state.workspaceName)
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-1.5 px-3.5 pt-2.5 pb-0.5">
-      <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex min-w-0 flex-nowrap items-center justify-between gap-1.5 overflow-x-auto px-3.5 pt-2.5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex min-w-0 flex-nowrap items-center gap-1.5">
         <button
           type="button"
           aria-label={t("chat.addContext")}

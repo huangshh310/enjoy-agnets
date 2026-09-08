@@ -1,6 +1,6 @@
 /**
  * 把 ActiveRun 上累积的助手 transcript 写入 SQLite，并回写 runs.status。
- * complete / fail / abort / before-quit 都走这里，只落一次。
+ * 流式过程 checkpoint 同一行；complete / fail / abort / before-quit 再封口。
  */
 import { updateRun } from "@enjoy-agents/db"
 import { persistFinishedAssistant } from "./persist-parts"
@@ -16,6 +16,22 @@ export function persistActiveRun(
   status: RunFlushStatus,
   error?: string
 ): boolean {
+  const wrote = writeAssistantRow(run)
+  if (wrote) run.assistantPersisted = true
+  updateRun(getDatabase(), runId, { status, error: error ?? null })
+  return wrote
+}
+
+/**
+ * 流式过程中覆盖同一条助手消息，不改 runs.status。
+ * 进程被杀、electron-vite 重载没有 before-quit 时，hydrate 还能读到最后一次快照。
+ */
+export function checkpointActiveRun(run: ActiveRun): boolean {
+  if (run.assistantPersisted) return false
+  return writeAssistantRow(run)
+}
+
+function writeAssistantRow(run: ActiveRun): boolean {
   const payload = flushPayloadFromRun({
     assistantPersisted: run.assistantPersisted,
     sessionId: run.input.sessionId,
@@ -25,17 +41,26 @@ export function persistActiveRun(
     extras: { sources: run.citedSources },
     runKind: "agent"
   })
-  if (payload) {
-    persistFinishedAssistant(payload)
-    run.assistantPersisted = true
+  if (!payload) return false
+  try {
+    const id = persistFinishedAssistant({
+      ...payload,
+      messageId: run.assistantMessageId
+    })
+    if (id) run.assistantMessageId = id
+    return Boolean(id)
+  } catch {
+    return false
   }
-  updateRun(getDatabase(), runId, { status, error: error ?? null })
-  return Boolean(payload)
 }
 
 /** 关窗口 / 退出时把还在跑或卡在审批的回复刷进库。 */
 export function flushActiveRuns(): void {
   for (const { runId, run } of listActiveRuns()) {
-    persistActiveRun(run, runId, "cancelled")
+    try {
+      persistActiveRun(run, runId, "cancelled")
+    } catch {
+      // 一条坏 JSON 不能挡住其它 run 落库。
+    }
   }
 }

@@ -6,6 +6,7 @@ import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar
 import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
 import { ExperimentalMediaDialog } from "@renderer/components/ai-chat/experimental-media-dialog"
 import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-chat-empty-state"
+import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
 import { decidePendingApproval, openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -36,7 +37,10 @@ export function ChatStage() {
           changesCount={changes.length}
           empty={messages.length === 0 && !running}
           rightPanelCollapsed={rightPanelCollapsed}
-          onToggleRightPane={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          onToggleRightPane={() => {
+            if (rightPanelCollapsed) expandInspector()
+            else setRightPanelCollapsed(true)
+          }}
           onModelChange={gate.requestModel}
           onSend={gate.requestSend}
         />

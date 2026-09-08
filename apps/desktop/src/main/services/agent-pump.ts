@@ -5,7 +5,7 @@ import { armTimeout, classifyError, resolveTimeoutMs, RuntimeError } from "@enjo
 import { rememberApproval } from "./approval-hmac"
 import { consumeFullStream } from "./consume-stream"
 import { completeAgentRun } from "./complete-agent-run"
-import { persistActiveRun } from "./flush-agent-run"
+import { checkpointActiveRun, persistActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { disposeCodingStream, openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
@@ -57,7 +57,10 @@ async function runOnePump(
   if (extraMessages.length > 0) {
     run.messages.push(...ensureAssistantReasoning(extraMessages, run.transcript.think))
   }
-  if (parkForApproval(run)) return
+  if (parkForApproval(run)) {
+    checkpointActiveRun(run)
+    return
+  }
   if (timedOut()) throw new RuntimeError("timeout", "Agent total timeout.", true)
   if (queueOpenTodoContinue(run)) {
     await opened.dispose()
@@ -126,6 +129,7 @@ async function openRunStream(
       const approvalId = createId("apr")
       run.pendingApprovals.push({ approvalId, toolCallId, name: toolName })
       rememberApproval({ runId, approvalId, toolCallId, name: toolName, args })
+      checkpointActiveRun(run)
       emitEvent(run.window, {
         type: "approval.required",
         runId,
@@ -161,8 +165,12 @@ async function consumeRun(
       run.inputTokens = usage.inputTokens ?? run.inputTokens
       run.outputTokens = usage.outputTokens ?? run.outputTokens
     },
+    onCheckpoint: () => {
+      checkpointActiveRun(run)
+    },
     emit: (event) => emitEvent(run.window, event)
   })
+  checkpointActiveRun(run)
 }
 
 function parkForApproval(run: ActiveRun): boolean {

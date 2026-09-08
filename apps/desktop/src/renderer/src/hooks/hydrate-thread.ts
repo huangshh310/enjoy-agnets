@@ -8,6 +8,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { extrasFromParts } from "./extras-from-parts.ts"
 import { mapAssistantThreadMessage, mapUserThreadMessage } from "./hydrate-thread-map.ts"
+import { dedupeConsecutiveUserTurns } from "./dedupe-user-turns.ts"
 
 export type SessionMessageRow = {
   id: string
@@ -18,7 +19,7 @@ export type SessionMessageRow = {
 }
 
 export function threadFromRows(rows: SessionMessageRow[]) {
-  return rows.map((row) => {
+  return dedupeConsecutiveUserTurns(rows).map((row) => {
     if (row.role !== "assistant") {
       return mapUserThreadMessage(row, extrasFromParts(Array.isArray(row.parts) ? row.parts : []))
     }

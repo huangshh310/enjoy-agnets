@@ -1,5 +1,5 @@
 /**
- * 会话落库：消息写入、首轮自动改名、流式文本/思考累积。
+ * 会话落库：消息写入（checkpoint 同 id 覆盖）、首轮自动改名、流式文本/思考累积。
  */
 import {
   absorbTextDelta,
@@ -10,7 +10,7 @@ import {
   type ThreadToolCall,
   type UIMessagePart
 } from "@enjoy-agents/ipc-contract"
-import { insertMessageParts } from "@enjoy-agents/db"
+import { deleteMessageParts, insertMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
 
@@ -47,32 +47,46 @@ function stampToolReasoningChars(tools: ThreadToolCall[], toolCallId: string, re
   if (tool && tool.reasoningChars == null) tool.reasoningChars = reasoningChars
 }
 
+/**
+ * 写入或覆盖一条消息。checkpoint 传已有 messageId，只更新 content/parts，不改 created_at。
+ * @returns 落库后的消息 id，供同一轮后续 UPDATE。
+ */
 export function persistMessage(
   sessionId: string,
   role: string,
   content: string,
-  parts?: UIMessagePart[]
-) {
+  parts?: UIMessagePart[],
+  messageId?: string
+): string {
   const now = Date.now()
-  const messageId = createId("msg")
-  getDatabase()
-    .prepare(
+  const db = getDatabase()
+  const id = messageId ?? createId("msg")
+  if (messageId && messageExists(id)) {
+    db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(content, id)
+    deleteMessageParts(db, id)
+  } else {
+    db.prepare(
       "INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)"
-    )
-    .run(messageId, sessionId, role, content, now)
+    ).run(id, sessionId, role, content, now)
+  }
   const stored = parts && parts.length > 0 ? parts : migrateContentToParts(content)
   insertMessageParts(
-    getDatabase(),
+    db,
     stored.map((part, idx) => ({
       id: createId("prt"),
-      messageId,
+      messageId: id,
       idx,
       type: part.type,
       payload: JSON.stringify(part),
       createdAt: now
     }))
   )
-  getDatabase().prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
+  db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
+  return id
+}
+
+function messageExists(id: string): boolean {
+  return Boolean(getDatabase().prepare("SELECT 1 FROM messages WHERE id = ?").get(id))
 }
 
 export function maybeRenameSession(sessionId: string, userText: string) {

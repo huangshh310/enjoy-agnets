@@ -8,6 +8,8 @@ export const enCommand = {
   groupActions: "Actions",
   groupSettings: "Settings",
   groupRecent: "Recent Chat Sessions",
+  chat: "Chat",
+  knowledge: "Knowledge & retrieval",
   studioHub: "Observability dashboard",
   workflows: "Durable Workflows & DAG",
   mcp: "Model Context Protocol (MCP)",

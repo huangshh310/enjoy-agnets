@@ -8,8 +8,9 @@ import {
 } from "@remixicon/react"
 import type { InstalledSkillItem } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
-import { TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
+import { SKILLS_UI_COPY, TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
+import { displaySkillDescription } from "../lib/skill-description"
 
 export function SkillItemCard({
   skill,
@@ -66,7 +67,7 @@ export function SkillItemCard({
 
         {/* 技能描述 */}
         <p className="text-[11.5px] text-text-secondary leading-relaxed line-clamp-2 min-h-[32px]">
-          {skill.description || "提供专业提示词与执行指引能力"}
+          {displaySkillDescription(skill.description, SKILLS_UI_COPY.emptySkillDesc)}
         </p>
       </div>
 

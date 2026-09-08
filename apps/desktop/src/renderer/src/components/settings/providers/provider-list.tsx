@@ -171,7 +171,7 @@ function ProviderItemRow({
             )}
           >
             {profile.hasKey
-              ? t("settings.providers.keyHint", { hint: profile.keyHint })
+              ? t("settings.providers.keyHint")
               : profile.requiresKey
                 ? t("settings.providers.missingKey")
                 : t("settings.providers.noKeyRequired")}

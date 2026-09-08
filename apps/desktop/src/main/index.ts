@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { app, BrowserWindow, nativeImage, shell } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
+import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
 import { disposeAllAcpSessions } from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
@@ -81,6 +82,7 @@ app.whenReady().then(async () => {
   electronApp.setAppUserModelId("com.enjoyagents.desktop");
   handleAssetProtocol();
   getDatabase();
+  abandonOrphanRuns();
   await bootstrapE2eStub();
   void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
     void recoverPausedWorkflows()

@@ -20,7 +20,7 @@ export function AppShell() {
       </div>
 
       <NavCard activeModule={activeModule} isChat={isChat} onSelect={selectModule} />
-      <StageSplit isChat={isChat} />
+      <StageSplit isChat={isChat} activeModule={activeModule} />
     </div>
   )
 }

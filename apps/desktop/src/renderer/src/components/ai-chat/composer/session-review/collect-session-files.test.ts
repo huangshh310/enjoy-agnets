@@ -3,6 +3,7 @@ import { test } from "node:test"
 import {
   collectDirtySessionFiles,
   collectSessionFiles,
+  describeReviewFiles,
   pickReviewFiles
 } from "./collect-session-files.ts"
 
@@ -47,6 +48,25 @@ test("本轮都已提交时回落其余未提交改动", () => {
     false
   )
   assert.equal(files[0]?.path, "notes.md")
+})
+
+test("没有本轮写盘时回落工作区改动，并标记非本轮", () => {
+  const pick = describeReviewFiles(
+    [],
+    [{ path: "notes.md", status: "untracked", additions: 1, deletions: 0 }],
+    false
+  )
+  assert.equal(pick.fromLastTurn, false)
+  assert.equal(pick.files[0]?.path, "notes.md")
+})
+
+test("本轮仍 dirty 时 fromLastTurn 为 true", () => {
+  const pick = describeReviewFiles(
+    ["src/a.ts"],
+    [{ path: "src/a.ts", status: "modified", additions: 2, deletions: 0 }],
+    false
+  )
+  assert.equal(pick.fromLastTurn, true)
 })
 
 test("相对路径后缀也能对上 Git 行", () => {

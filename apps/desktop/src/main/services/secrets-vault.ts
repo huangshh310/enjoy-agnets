@@ -139,10 +139,7 @@ function decryptJson<T>(stored: string): T | undefined {
 }
 
 function keyHint(apiKey: string): string {
-  const trimmed = apiKey.trim()
-  if (!trimmed) return ""
-  if (trimmed.length <= 4) return "••••"
-  return `••••${trimmed.slice(-4)}`
+  return apiKey.trim() ? "••••" : ""
 }
 
 function emptyVault(): Vault {

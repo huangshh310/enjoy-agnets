@@ -7,6 +7,7 @@ import { createId } from "./ids"
 import { persistFromEvent, type RunTranscript } from "./persist-session"
 import { rememberApproval } from "./approval-hmac"
 import { classifyError } from "@enjoy-agents/agent-core"
+import { shouldCheckpointPersist } from "./agent-run-flush"
 import { mapStreamPart, withToolId } from "./stream-parts"
 
 export type PendingApproval = {
@@ -24,8 +25,11 @@ export async function consumeFullStream(input: {
   onApproval: (pending: PendingApproval) => void
   onFirstToken?: () => void
   onUsage?: (usage: { inputTokens?: number; outputTokens?: number }) => void
+  /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
+  onCheckpoint?: () => void
   emit: (event: StreamEvent) => void
 }) {
+  let lastCheckpointAt = 0
   for await (const part of input.stream) {
     if (String(part.type ?? "") === "error") {
       throw classifyError(part.error ?? part)
@@ -34,6 +38,7 @@ export async function consumeFullStream(input: {
     if (!mapped) continue
     const event = withToolId(mapped, createId("tool"))
     persistFromEvent(input.tools, event, input.transcript)
+    lastCheckpointAt = emitCheckpoint(event.type, lastCheckpointAt, input.onCheckpoint)
     if (event.type === "text.delta") input.onFirstToken?.()
     if (event.type === "usage.updated") {
       input.onUsage?.({ inputTokens: event.inputTokens, outputTokens: event.outputTokens })
@@ -57,4 +62,14 @@ export async function consumeFullStream(input: {
     }
     input.emit(event)
   }
+}
+
+function emitCheckpoint(
+  eventType: string,
+  lastCheckpointAt: number,
+  onCheckpoint?: () => void
+): number {
+  if (!shouldCheckpointPersist(eventType, lastCheckpointAt, Date.now())) return lastCheckpointAt
+  onCheckpoint?.()
+  return Date.now()
 }

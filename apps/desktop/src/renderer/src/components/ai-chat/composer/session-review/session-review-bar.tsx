@@ -19,16 +19,17 @@ export function SessionReviewBar({
   onUndo,
   onKeep,
   busy,
-  hasFiles
+  hasFiles,
+  defaultExpanded = false
 }: SessionReviewBarProps) {
   const t = useT()
   const many = files.length > 1
-  const [expanded, setExpanded] = useState(many)
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const first = files[0]
 
   useEffect(() => {
-    setExpanded(many)
-  }, [many])
+    setExpanded(defaultExpanded)
+  }, [defaultExpanded, files.length])
 
   return (
     <div className="flex min-w-0 flex-col">

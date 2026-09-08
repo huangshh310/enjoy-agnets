@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { reviewFilesKey, sessionReviewVisible } from "./session-review-visible.ts"
+import {
+  reviewFilesKey,
+  sessionReviewVisible,
+  shouldExpandReviewFiles
+} from "./session-review-visible.ts"
 
 test("没写盘且没在跑就不出现", () => {
   assert.equal(sessionReviewVisible(0, false), false)
@@ -27,4 +31,11 @@ test("运行中 Keep 也按 dismissedKey 藏条；无文件时只靠 running", (
   assert.equal(sessionReviewVisible(1, true, key, key), false)
   assert.equal(sessionReviewVisible(0, true), true)
   assert.equal(sessionReviewVisible(0, false), false)
+})
+
+test("工作区脏文件默认折叠；本轮 2–6 个文件才展开", () => {
+  assert.equal(shouldExpandReviewFiles(false, 22), false)
+  assert.equal(shouldExpandReviewFiles(true, 1), false)
+  assert.equal(shouldExpandReviewFiles(true, 3), true)
+  assert.equal(shouldExpandReviewFiles(true, 7), false)
 })

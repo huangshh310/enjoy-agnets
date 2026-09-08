@@ -64,6 +64,17 @@ export function updateRun(
   )
 }
 
+/** 进程重启后内存 ActiveRun 已不在，库里还停在 running 的行无法续，标 cancelled。 */
+export function abandonRunningRuns(
+  db: AppDatabase,
+  error = "Abandoned after process restart."
+): number {
+  const result = db
+    .prepare("UPDATE runs SET status = ?, error = ?, updated_at = ? WHERE status = ?")
+    .run("cancelled", error, Date.now(), "running")
+  return Number(result.changes)
+}
+
 export function getRun(db: AppDatabase, id: string): RunRow | undefined {
   const row = db
     .prepare(

@@ -13,6 +13,7 @@ import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import type { ObservabilityAggregatedStats } from "../types/observability-ui.types"
+import { formatLatency } from "./model-routing/model-routing-row-cells"
 
 export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
@@ -150,7 +151,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
         </div>
         <div className="mt-2 flex items-baseline gap-2">
           <span className="font-mono text-title-3-semibold text-text-primary">
-            {stats.avgTtfoMs > 0 ? `${stats.avgTtfoMs}ms` : "—"}
+            {stats.avgTtfoMs > 0 ? formatLatency(stats.avgTtfoMs) : "—"}
           </span>
           <span className="font-mono text-[11px] text-text-tertiary">
             {t("pages.observability.kpiTtfoShort")}

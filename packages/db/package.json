@@ -10,7 +10,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/migrations/runner.test.ts src/hmac.test.ts src/path-safe.test.ts src/repositories/approvals.test.ts"
+    "test": "node --experimental-strip-types --test src/migrations/runner.test.ts src/hmac.test.ts src/path-safe.test.ts src/repositories/approvals.test.ts src/repositories/message-parts.test.ts src/repositories/runs.test.ts"
   },
   "devDependencies": {
     "typescript": "catalog:",

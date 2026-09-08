@@ -20,12 +20,14 @@ export type RightPaneToolDef = {
   icon: typeof RiCodeBlock
 }
 
+const MOD = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl"
+
 const PANE_TOOL_DEFS = [
-  { kind: "context" as const, shortcut: "Ctrl+Shift+C", icon: RiDashboardLine, label: "chat.paneContext", hint: "chat.paneContextHint" },
-  { kind: "review" as const, shortcut: "Ctrl+Shift+G", icon: RiCodeBlock, label: "chat.paneReview", hint: "chat.paneReviewHint" },
-  { kind: "terminal" as const, shortcut: "Ctrl+`", icon: RiTerminalBoxLine, label: "chat.paneTerminal", hint: "chat.paneTerminalHint" },
-  { kind: "browser" as const, shortcut: "Ctrl+T", icon: RiGlobalLine, label: "chat.paneBrowser", hint: "chat.paneBrowserHint" },
-  { kind: "files" as const, shortcut: "Ctrl+P", icon: RiFileList2Line, label: "chat.paneFiles", hint: "chat.paneFilesHint" }
+  { kind: "context" as const, shortcut: `${MOD}+Shift+C`, icon: RiDashboardLine, label: "chat.paneContext", hint: "chat.paneContextHint" },
+  { kind: "review" as const, shortcut: `${MOD}+Shift+G`, icon: RiCodeBlock, label: "chat.paneReview", hint: "chat.paneReviewHint" },
+  { kind: "terminal" as const, shortcut: `${MOD}+\``, icon: RiTerminalBoxLine, label: "chat.paneTerminal", hint: "chat.paneTerminalHint" },
+  { kind: "browser" as const, shortcut: `${MOD}+T`, icon: RiGlobalLine, label: "chat.paneBrowser", hint: "chat.paneBrowserHint" },
+  { kind: "files" as const, shortcut: `${MOD}+P`, icon: RiFileList2Line, label: "chat.paneFiles", hint: "chat.paneFilesHint" }
 ]
 
 export function getRightPaneTools(t: TranslateFn): RightPaneToolDef[] {

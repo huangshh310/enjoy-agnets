@@ -8,6 +8,8 @@ export const zhCommand = {
   groupActions: "操作",
   groupSettings: "设置",
   groupRecent: "最近会话",
+  chat: "对话",
+  knowledge: "知识库与语义检索",
   studioHub: "可观测性大盘",
   workflows: "持久化工作流与 DAG",
   mcp: "模型上下文协议（MCP）",

@@ -37,23 +37,42 @@ export function collectDirtySessionFiles(
   return collectSessionFiles(paths, changes).filter((file) => Boolean(matchChange(file.path, changes)))
 }
 
+export type ReviewFilePick = {
+  files: SessionReviewFile[]
+  /** 来自本轮写盘时才默认展开；工作区脏文件只出一行 pill。 */
+  fromLastTurn: boolean
+}
+
 /**
  * 运行中先列本轮写盘；停跑后只留仍 dirty 的。本轮都已提交则回落其余未提交。
  */
+export function describeReviewFiles(
+  lastTurnPaths: string[],
+  changes: ChangedFileRow[],
+  running: boolean
+): ReviewFilePick {
+  if (lastTurnPaths.length > 0) {
+    if (running) {
+      return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
+    }
+    const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
+    if (dirty.length > 0) return { files: dirty, fromLastTurn: true }
+  }
+  return {
+    files: collectSessionFiles(
+      changes.map((row) => row.path),
+      changes
+    ),
+    fromLastTurn: false
+  }
+}
+
 export function pickReviewFiles(
   lastTurnPaths: string[],
   changes: ChangedFileRow[],
   running: boolean
 ): SessionReviewFile[] {
-  if (lastTurnPaths.length > 0) {
-    if (running) return collectSessionFiles(lastTurnPaths, changes)
-    const dirty = collectDirtySessionFiles(lastTurnPaths, changes)
-    if (dirty.length > 0) return dirty
-  }
-  return collectSessionFiles(
-    changes.map((row) => row.path),
-    changes
-  )
+  return describeReviewFiles(lastTurnPaths, changes, running).files
 }
 
 function normalizePath(path: string): string {

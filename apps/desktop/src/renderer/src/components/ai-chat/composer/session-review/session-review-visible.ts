@@ -16,3 +16,8 @@ export function sessionReviewVisible(
   if (fileCount > 0) return true
   return running
 }
+
+/** 只有本轮写盘、且 2–6 个文件时默认展开；否则一行 pill。 */
+export function shouldExpandReviewFiles(fromLastTurn: boolean, fileCount: number): boolean {
+  return fromLastTurn && fileCount > 1 && fileCount <= 6
+}

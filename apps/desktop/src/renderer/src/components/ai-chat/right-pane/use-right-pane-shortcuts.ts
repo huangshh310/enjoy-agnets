@@ -19,10 +19,12 @@ export function useRightPaneShortcuts() {
 }
 
 function kindFromEvent(event: KeyboardEvent): RightPaneKind | null {
-  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "c") return "context"
-  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "g") return "review"
-  if (event.ctrlKey && !event.shiftKey && event.key === "`") return "terminal"
-  if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === "t") return "browser"
-  if (event.ctrlKey && !event.shiftKey && event.key.toLowerCase() === "p") return "files"
+  const mod = event.metaKey || event.ctrlKey
+  if (!mod) return null
+  if (event.shiftKey && event.key.toLowerCase() === "c") return "context"
+  if (event.shiftKey && event.key.toLowerCase() === "g") return "review"
+  if (!event.shiftKey && event.key === "`") return "terminal"
+  if (!event.shiftKey && event.key.toLowerCase() === "t") return "browser"
+  if (!event.shiftKey && event.key.toLowerCase() === "p") return "files"
   return null
 }

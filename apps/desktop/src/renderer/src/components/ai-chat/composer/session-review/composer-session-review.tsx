@@ -9,11 +9,15 @@ import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { pickReviewFiles } from "./collect-session-files"
+import { describeReviewFiles } from "./collect-session-files"
 import { openSessionReview } from "./open-session-review"
 import { SessionMascotRunner } from "./session-mascot-runner"
 import { SessionReviewBar } from "./session-review-bar"
-import { reviewFilesKey, sessionReviewVisible } from "./session-review-visible"
+import {
+  reviewFilesKey,
+  sessionReviewVisible,
+  shouldExpandReviewFiles
+} from "./session-review-visible"
 import type { SessionReviewFile } from "./session-review.types"
 
 export function ComposerSessionReview() {
@@ -28,10 +32,11 @@ export function ComposerSessionReview() {
   const [undoOpen, setUndoOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  const files = useMemo(
-    () => pickReviewFiles(pathsFromLastTurn(messages), changes, running),
+  const pick = useMemo(
+    () => describeReviewFiles(pathsFromLastTurn(messages), changes, running),
     [messages, changes, running]
   )
+  const files = pick.files
   const filesKey = useMemo(() => reviewFilesKey(files.map((file) => file.path)), [files])
 
   if (!sessionReviewVisible(files.length, running, dismissedKey, filesKey)) return null
@@ -50,6 +55,7 @@ export function ComposerSessionReview() {
           modelLabel={modelLabel}
           busy={busy}
           hasFiles={files.length > 0}
+          defaultExpanded={shouldExpandReviewFiles(pick.fromLastTurn, files.length)}
           onOpenReview={() => openSessionReview()}
           onOpenFile={(path) => openSessionReview(path)}
           onKeep={() => keepSessionReview(filesKey)}

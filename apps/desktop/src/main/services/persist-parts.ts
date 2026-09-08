@@ -85,7 +85,9 @@ export function persistFinishedAssistant(input: {
   startedAt: number
   extras: AssistantExtras
   runKind?: AssistantRunKind
-}) {
+  /** 已有行则覆盖，保证一轮只占一条助手消息。 */
+  messageId?: string
+}): string | undefined {
   const extras = input.extras
   if (
     !hasAssistantPersistableBody({
@@ -96,19 +98,46 @@ export function persistFinishedAssistant(input: {
   ) {
     return
   }
-  persistMessage(
+  return persistMessage(
     input.sessionId,
     "assistant",
-    serializeAssistantPayload({
-      content: input.content,
-      reasoning: input.reasoning,
-      tools: input.tools,
-      thoughtSeconds: clampThoughtSeconds(input.startedAt) ?? undefined,
-      sources: extras.sources,
-      assets: extras.assets,
-      structured: extras.structured,
-      runKind: input.runKind
-    }),
-    partsFromExtras(input.content, extras)
+    serializeAssistantEnvelope(input),
+    partsFromExtras(input.content, extras),
+    input.messageId
   )
+}
+
+/** ACP 工具 result 可能不可 JSON 化；失败则剥掉 args/result 再写，避免整轮丢库。 */
+function serializeAssistantEnvelope(input: {
+  content: string
+  reasoning: string
+  tools: ThreadToolCall[]
+  startedAt: number
+  extras: AssistantExtras
+  runKind?: AssistantRunKind
+}): string {
+  const extras = input.extras
+  const envelope = {
+    content: input.content,
+    reasoning: input.reasoning,
+    tools: input.tools,
+    thoughtSeconds: clampThoughtSeconds(input.startedAt) ?? undefined,
+    sources: extras.sources,
+    assets: extras.assets,
+    structured: extras.structured,
+    runKind: input.runKind
+  }
+  try {
+    return serializeAssistantPayload(envelope)
+  } catch {
+    return serializeAssistantPayload({
+      ...envelope,
+      tools: input.tools.map((tool) => ({
+        ...tool,
+        args: undefined,
+        argsText: undefined,
+        result: undefined
+      }))
+    })
+  }
 }
