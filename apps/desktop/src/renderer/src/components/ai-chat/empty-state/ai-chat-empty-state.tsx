@@ -36,7 +36,7 @@ export function AiChatEmptyState({
   return (
     <div
       className={cx(
-        "relative flex size-full min-h-0 flex-1 flex-col items-start justify-start overflow-y-auto px-6 py-6",
+        "relative flex size-full min-h-0 flex-1 flex-col items-start justify-start overflow-y-auto px-6 pt-4 pb-4",
         className
       )}
     >
@@ -46,11 +46,11 @@ export function AiChatEmptyState({
           workspaceRootLabel={workspaceRootLabel ?? storeWorkspaceRootLabel}
           changesCount={changesCount ?? storeChanges.length}
         />
-        <div className="mt-4 w-full">
+        <div className="mt-3 w-full">
           <EmptyStateChecklist />
         </div>
-        {children ? <div className="mt-5 w-full">{children}</div> : null}
-        <EmptyStatePills onSelectPrompt={handleSelect} className="mt-4" />
+        {children ? <div className="mt-4 w-full">{children}</div> : null}
+        <EmptyStatePills onSelectPrompt={handleSelect} className="mt-3" />
       </div>
     </div>
   )
