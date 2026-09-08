@@ -2,6 +2,7 @@
  * ACP JSON-RPC 薄客户端：NDJSON，兼容 Content-Length。
  */
 import type { ChildProcess } from "node:child_process"
+import { completeAcpHandshake, toAcpRpcError } from "./auth.ts"
 import { pickAcpPermissionOption, type AcpPermissionOption } from "./permissions.ts"
 
 export type AcpPermissionRequest = {
@@ -51,13 +52,27 @@ export class AcpClient {
     })
   }
 
-  async initialize(): Promise<void> {
-    await this.request("initialize", {
+  async initialize(): Promise<unknown> {
+    const result = await this.request("initialize", {
       protocolVersion: 1,
       clientInfo: { name: "enjoy-agents", version: "0.1.0" },
       clientCapabilities: { fs: { readTextFile: false, writeTextFile: false } }
     })
     await this.notify("initialized", {})
+    return result
+  }
+
+  async authenticate(methodId: string): Promise<void> {
+    await this.request("authenticate", { methodId })
+  }
+
+  /** initialize → session/new；遇到 auth_required 再走 agent 型 authenticate。 */
+  async handshake(cwd: string): Promise<string> {
+    return completeAcpHandshake({
+      initialize: () => this.initialize(),
+      authenticate: (methodId) => this.authenticate(methodId),
+      newSession: () => this.newSession(cwd)
+    })
   }
 
   async newSession(cwd: string): Promise<string> {
@@ -160,7 +175,7 @@ export class AcpClient {
     if (typeof rec.id === "number" && this.pending.has(rec.id)) {
       const pending = this.pending.get(rec.id)
       this.pending.delete(rec.id)
-      if (rec.error) pending?.reject(new Error(jsonError(rec.error)))
+      if (rec.error) pending?.reject(toAcpRpcError(rec.error))
       else pending?.resolve(rec.result)
       return
     }
@@ -208,11 +223,6 @@ function asOption(value: unknown): AcpPermissionOption {
     name: typeof rec.name === "string" ? rec.name : undefined,
     kind: typeof rec.kind === "string" ? rec.kind : undefined
   }
-}
-
-function jsonError(error: unknown): string {
-  const rec = asRecord(error)
-  return String(rec.message ?? JSON.stringify(error))
 }
 
 function exitMessage(code: number | null, stderr: string): string {

@@ -4,15 +4,19 @@
 import { useMemo, useState } from "react"
 import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiCheckLine, RiSearchLine, RiSparkling2Line } from "@remixicon/react"
+import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "./agent-brand-icon"
 
 export function AgentCliModels({
   agent,
-  onPick
+  onPick,
+  onUseDefault
 }: {
   agent: AgentToolPublic
   onPick: (model: AgentCliModel) => void
+  onUseDefault?: () => void
 }) {
+  const t = useT()
   const [query, setQuery] = useState("")
   const filteredModels = useMemo(() => {
     if (!query.trim()) return agent.models
@@ -24,8 +28,15 @@ export function AgentCliModels({
 
   if (agent.models.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center p-6 text-caption-1-medium text-text-tertiary">
-        未找到该 CLI 汇报的可用模型
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="text-caption-1-medium text-text-tertiary">{t("chat.agentCliModel")}</p>
+        <button
+          type="button"
+          className="rounded-full border border-border-button-default px-3 py-1 text-caption-1-medium text-text-primary hover:border-border-button-hover"
+          onClick={() => onUseDefault?.()}
+        >
+          {t("chat.agentUse", { name: agent.label })}
+        </button>
       </div>
     )
   }

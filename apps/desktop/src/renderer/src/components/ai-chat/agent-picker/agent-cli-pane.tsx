@@ -26,21 +26,29 @@ export function AgentCliPane({
       {/* 主体：模型列表或安装引导 */}
       {switchable ? (
         <>
-          <AgentCliModels agent={agent} onPick={(model) => onUse(model)} />
+          <AgentCliModels
+            agent={agent}
+            onPick={(model) => onUse(model)}
+            onUseDefault={() => onUse()}
+          />
 
-          {/* 底部状态注脚 (与 Enjoy 本地保持一致的简洁质感) */}
-          <div className="flex items-center justify-between border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-[11px] text-text-tertiary">
-            <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] truncate">
-              <span className="text-text-tertiary">源:</span>
-              <span className="truncate text-text-secondary" title={agent.detectedPath ?? "系统全局 PATH"}>
-                {agent.detectedPath ? agent.detectedPath.split("/").slice(-2).join("/") : "系统全局 PATH"}
-              </span>
+          {/* 底部状态注脚：ACP 传输 + 一句说明 Fast/思考不进 argv */}
+          <div className="border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-[11px] text-text-tertiary">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] truncate">
+                <span className="text-text-tertiary">源:</span>
+                <span className="truncate text-text-secondary" title={agent.detectedPath ?? "系统全局 PATH"}>
+                  {agent.detectedPath ? agent.detectedPath.split("/").slice(-2).join("/") : "系统全局 PATH"}
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 font-mono text-[10px] text-text-tertiary">
+                <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
+                <span className="text-caption-2-medium text-accent-600">ACP Stdio</span>
+              </div>
             </div>
-
-            <div className="flex items-center gap-1.5 font-mono text-[10px] text-text-tertiary">
-              <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
-              <span className="text-caption-2-medium text-accent-600">ACP Stdio</span>
-            </div>
+            <p className="mt-1 truncate text-[10px] text-text-tertiary" title={t("chat.cliFastViaModel")}>
+              {t("chat.cliFastViaModel")}
+            </p>
           </div>
         </>
       ) : agent.comingSoon ? (

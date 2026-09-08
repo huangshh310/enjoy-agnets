@@ -143,6 +143,8 @@ export const zhChat = {
   agentCliPickModel: "该 CLI 的模型",
   agentMissingHint: "本机未找到。可一键安装，或在终端执行 {cmd}。",
   agentSoonHint: "这一期还不能从输入框拉起，先用已安装的 Agent。",
+  cliFastViaModel: "Fast / 思考由模型选择，不传 argv",
+  acpAuthRequired: "这个 CLI 需要先登录才能开会话。",
   agentOpenSettings: "去设置看路径",
   agentInstall: "一键安装",
   agentInstalling: "正在安装…",

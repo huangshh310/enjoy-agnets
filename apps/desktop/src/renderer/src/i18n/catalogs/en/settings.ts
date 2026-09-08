@@ -239,7 +239,7 @@ export const enSettings = {
     advancedTitle: "Advanced: SDK sandbox",
     runtimeDesc: "Applies only when Composer is on Enjoy Local. Harness still needs a Vercel sandbox and a Provider key.",
     adapterDesc:
-      "Auto follows the Provider (Anthropic→Claude Code, OpenAI→Codex). Pi uses local just-bash; DeepSeek stays Local until its adapter ships.",
+      "Auto follows the Provider (Anthropic→Claude Code, OpenAI→Codex). Pi uses local just-bash. DeepSeek CLI uses dsh ACP; the old SDK sandbox adapter is still a placeholder.",
     soon: " · soon",
     status: "Status",
     ready: "Ready to run this adapter.",

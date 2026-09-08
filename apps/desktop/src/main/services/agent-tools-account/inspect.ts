@@ -11,7 +11,10 @@ import {
   probeClaude,
   probeCodex,
   probeCursor,
-  probeGrok
+  probeGrok,
+  probeOmp,
+  probeOpenCode,
+  probePi
 } from "./probes"
 
 const CACHE_MS = 10_000
@@ -46,6 +49,9 @@ async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
   if (id === "codex") return { id, ...(await probeCodex(command, cwd)) }
   if (id === "grok") return { id, ...(await probeGrok(command, cwd)) }
   if (id === "antigravity") return { id, ...(await probeAntigravity(command, cwd)) }
+  if (id === "opencode") return { id, ...(await probeOpenCode(command, cwd)) }
+  if (id === "pi") return { id, ...(await probePi(command, cwd)) }
+  if (id === "omp") return { id, ...(await probeOmp(command, cwd)) }
   return emptyInspect(id)
 }
 

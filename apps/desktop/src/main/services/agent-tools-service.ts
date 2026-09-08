@@ -10,7 +10,13 @@ import {
   probeBinaries,
   type AgentToolPreset
 } from "@enjoy-agents/agent-harness"
-import type { AgentCliModel, AgentToolId, AgentToolDoctorResult, AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import {
+  capabilitiesFor,
+  type AgentCliModel,
+  type AgentToolId,
+  type AgentToolDoctorResult,
+  type AgentToolPublic
+} from "@enjoy-agents/ipc-contract"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { safeCustomBinaryPath } from "./agent-tools-guard"
 import { readAgentToolOverrides, writeAgentToolOverride } from "./agent-tools-vault"
@@ -69,6 +75,18 @@ export async function doctorAgentTool(id: AgentToolId): Promise<AgentToolDoctorR
       path: null
     }
   }
+  if (preset.companionBinaries?.length) {
+    const companion = await probeBinaries([...preset.companionBinaries], [])
+    if (!companion.found) {
+      return {
+        id,
+        ok: false,
+        message: `Found ${probe.path}, but missing ${preset.companionBinaries.join(" / ")}. ${preset.needsLoginHint}`,
+        version: probe.version,
+        path: probe.path
+      }
+    }
+  }
   return {
     id,
     ok: true,
@@ -83,6 +101,7 @@ function supportedStylesForTool(id: string): string[] {
   if (id === "codex") return ["openai", "openai-responses"]
   if (id === "cursor") return ["openai", "anthropic"]
   if (id === "antigravity") return ["google", "openai"]
+  if (id === "deepseek") return ["deepseek", "openai"]
   return []
 }
 
@@ -103,6 +122,11 @@ async function toPublic(
     names.length > 0
       ? await probeBinaries(names, [])
       : { found: preset.id === "enjoy-local", path: null, version: null }
+  let status = detectStatusFor(preset, probe)
+  if (status === "ready" && preset.companionBinaries?.length) {
+    const companion = await probeBinaries([...preset.companionBinaries], [])
+    if (!companion.found) status = "missing"
+  }
   const catalog = catalogFor(preset.id)
   const models = await catalogModels(preset.id, override?.providerId)
   const selected =
@@ -124,7 +148,7 @@ async function toPublic(
     extraArgs: override?.extraArgs,
     detectedPath: probe.path,
     version: probe.version,
-    status: detectStatusFor(preset, probe),
+    status,
     models,
     selectedModel: selected,
     installKind: installKindFor(preset.id),
@@ -132,7 +156,8 @@ async function toPublic(
     docsUrl: catalog?.docsUrl ?? "",
     providerId: override?.providerId,
     useCustomProvider: override?.useCustomProvider ?? false,
-    supportedApiStyles: supportedStylesForTool(preset.id)
+    supportedApiStyles: supportedStylesForTool(preset.id),
+    capabilities: capabilitiesFor(preset.id)
   }
 }
 

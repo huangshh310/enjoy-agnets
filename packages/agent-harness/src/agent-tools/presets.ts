@@ -1,5 +1,5 @@
 /**
- * 本机 Agent CLI 目录。P0 可 spawn：claude / cursor / grok / codex / antigravity。
+ * 本机 Agent CLI 目录。ACP 宿主可 spawn；companionBinaries 只给登录 / inspect。
  */
 import type { AgentToolId, AgentToolTransport } from "@enjoy-agents/ipc-contract"
 
@@ -8,6 +8,8 @@ export type AgentToolPreset = {
   label: string
   transport: AgentToolTransport
   binaries: string[]
+  /** 登录 / 模型探测可用，不能当 ACP 入口（pi、amp）。 */
+  companionBinaries?: string[]
   acpArgs: string[]
   detectArgs: string[]
   needsLoginHint: string
@@ -81,7 +83,6 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     id: "antigravity",
     label: "Antigravity",
     transport: "acp-host",
-    // 有桥接优先 agy-acp；只有官方 CLI 时退回 agy --acp。
     binaries: ["agy-acp", "agy"],
     acpArgs: ["--acp"],
     detectArgs: ["--version"],
@@ -95,11 +96,11 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     label: "Gemini CLI",
     transport: "acp-host",
     binaries: ["gemini"],
-    acpArgs: ["--experimental-acp"],
+    acpArgs: ["--acp"],
     detectArgs: ["--version"],
-    needsLoginHint: "gemini 先完成登录",
-    available: false,
-    comingSoon: true,
+    needsLoginHint: "Run gemini and choose Login with Google, or set GEMINI_API_KEY. Free Google One users should use Antigravity.",
+    available: true,
+    comingSoon: false,
     skillOnly: false
   },
   {
@@ -110,68 +111,70 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     acpArgs: ["acp"],
     detectArgs: ["--version"],
     needsLoginHint: "opencode auth login",
-    available: false,
-    comingSoon: true,
+    available: true,
+    comingSoon: false,
     skillOnly: false
   },
   {
     id: "pi",
     label: "Pi",
     transport: "acp-host",
-    binaries: ["pi"],
+    binaries: ["pi-acp"],
+    companionBinaries: ["pi"],
     acpArgs: [],
     detectArgs: ["--version"],
-    needsLoginHint: "Pi 用本机配置，不读 Enjoy vault",
-    available: false,
-    comingSoon: true,
+    needsLoginHint: "Install Pi and pi-acp. Official protocol is RPC; Enjoy speaks ACP via pi-acp.",
+    available: true,
+    comingSoon: false,
     skillOnly: false
   },
   {
     id: "omp",
     label: "Oh My Pi",
-    transport: "local",
-    binaries: [],
-    acpArgs: [],
-    detectArgs: [],
-    needsLoginHint: "只投影 ~/.omp/skills，不单独启动进程",
-    available: false,
+    transport: "acp-host",
+    binaries: ["omp"],
+    acpArgs: ["acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "ACP authenticate or TUI /login. Oh My Pi is a coding agent, not a skill root.",
+    available: true,
     comingSoon: false,
-    skillOnly: true
+    skillOnly: false
   },
   {
     id: "hermes",
     label: "Hermes",
     transport: "acp-host",
-    binaries: ["hermes"],
+    binaries: ["hermes", "hermes-acp"],
     acpArgs: ["acp"],
-    detectArgs: ["acp", "--check"],
-    needsLoginHint: "模型在终端执行 hermes model，不读 ~/.hermes/.env",
-    available: false,
-    comingSoon: true,
+    detectArgs: ["--version"],
+    needsLoginHint: "hermes acp --setup (do not read ~/.hermes/.env)",
+    available: true,
+    comingSoon: false,
     skillOnly: false
   },
   {
     id: "amp",
     label: "Amp",
     transport: "acp-host",
-    binaries: ["amp"],
-    acpArgs: ["acp"],
+    binaries: ["amp-acp"],
+    companionBinaries: ["amp"],
+    acpArgs: [],
     detectArgs: ["--version"],
-    needsLoginHint: "amp 先完成登录",
-    available: false,
-    comingSoon: true,
+    needsLoginHint: "Install amp and amp-acp, then amp login. There is no official amp acp subcommand.",
+    available: true,
+    comingSoon: false,
     skillOnly: false
   },
   {
     id: "deepseek",
     label: "DeepSeek",
-    transport: "local",
-    binaries: [],
-    acpArgs: [],
-    detectArgs: [],
-    needsLoginHint: "DeepSeek 仍走 Enjoy 本地模型，Harness 未接线",
-    available: false,
-    comingSoon: true,
+    transport: "acp-host",
+    binaries: ["dsh"],
+    acpArgs: ["--profile", "acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "Set DEEPSEEK_API_KEY, then dsh --profile acp",
+    available: true,
+    comingSoon: false,
     skillOnly: false
   }
 ]

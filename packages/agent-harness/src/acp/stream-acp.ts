@@ -167,8 +167,7 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
     modelKey
   }
   try {
-    await live.client.initialize()
-    live.acpSessionId = await live.client.newSession(input.workspaceRoot)
+    live.acpSessionId = await live.client.handshake(input.workspaceRoot)
     liveBySession.set(input.sessionId, live)
     return live
   } catch (error) {

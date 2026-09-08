@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./runtime-capabilities": "./src/runtime-capabilities.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts"
+    "test": "node --experimental-strip-types --test src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts"
   },
   "dependencies": { "zod": "catalog:" },
   "devDependencies": { "typescript": "catalog:" }

@@ -22,8 +22,10 @@ export {
   catalogFor,
   installKindFor,
   isAllowedDocsUrl,
+  loginBinaryFor,
   modelArgsFor
 } from "./agent-tools/catalogs"
+export { ACP_AUTH_REQUIRED, AcpAuthRequiredError } from "./acp/auth"
 export { resolveSpawnCommand, assertAllowedCommand, type SpawnOverride } from "./agent-tools/resolve-spawn"
 export { probeBinaries, lookupOnPath, pathDirs, type ProbeResult } from "./agent-tools/detect/probe"
 export { detectStatusFor } from "./agent-tools/detect/status"

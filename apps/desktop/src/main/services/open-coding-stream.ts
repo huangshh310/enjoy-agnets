@@ -121,16 +121,17 @@ async function openHarnessStream(
   }
 }
 
-/** 本机 ToolLoop：需要供应商密钥。 */
+/** 本机 ToolLoop：需要供应商密钥。Fast 开且配了 fastModelId 才换模型，不改 Composer 当前选项。 */
 async function openLocalStream(
   input: Parameters<typeof openCodingStream>[0],
   policy: ApprovalPolicy
 ): Promise<OpenedCodingStream> {
   const secret = input.secret
   if (!secret) throw new Error("Add an API key in Settings before running an agent.")
+  const modelId = localFastModelId(input.fast, secret.fastModelId, input.modelId)
   const thinking = reasoningCallOptions({
     provider: secret.provider,
-    modelId: input.modelId,
+    modelId,
     apiStyle: secret.apiStyle,
     effort: input.effort,
     baseURL: secret.baseURL
@@ -140,7 +141,7 @@ async function openLocalStream(
       provider: secret.provider,
       apiKey: secret.apiKey,
       baseURL: secret.baseURL,
-      modelId: input.modelId,
+      modelId,
       apiStyle: secret.apiStyle,
       reasoningEffort: input.effort,
       customHeaders: secret.customHeaders,
@@ -179,6 +180,12 @@ async function openLocalStream(
   const stream = (result as { fullStream?: AsyncIterable<Record<string, unknown>> }).fullStream
   if (!stream) throw new Error("Agent stream did not expose fullStream.")
   return { stream, result, dispose: async () => undefined }
+}
+
+/** Fast 开且 profile 配了极速模型才切换；没配则保持当前模型。 */
+function localFastModelId(fast: boolean | undefined, fastModelId: string | undefined, modelId: string): string {
+  const id = fastModelId?.trim()
+  return fast && id ? id : modelId
 }
 
 /** 结束本轮 Harness / ACP 子进程。 */

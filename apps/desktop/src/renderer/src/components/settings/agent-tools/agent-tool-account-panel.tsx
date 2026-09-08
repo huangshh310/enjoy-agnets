@@ -3,7 +3,7 @@
  */
 import { useState } from "react"
 import { RiTimeLine, RiUser3Line } from "@remixicon/react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesOf, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { AgentToolQuotaGrid } from "./agent-tool-account-quota"
 
@@ -44,7 +44,7 @@ export function AgentToolAccountPanel({ tool }: { tool: AgentToolPublic }) {
         <Meta label={t("settings.agentTools.accountCliVersion")} value={account.cliVersion} />
         <Meta label={t("settings.agentTools.accountCurrentModel")} value={account.currentModel} />
       </div>
-      {tool.quotaInfo && quotas.length === 0 ? (
+      {capabilitiesOf(tool).quota && tool.quotaInfo && quotas.length === 0 ? (
         <div className="flex items-center justify-between gap-2 rounded-lg border border-border-button-default/40 bg-background-primary-default/60 px-2.5 py-1.5 text-caption-2-medium">
           <span className="flex items-center gap-1.5 text-text-secondary">
             <RiTimeLine className="size-3.5 text-text-tertiary" />
@@ -55,7 +55,7 @@ export function AgentToolAccountPanel({ tool }: { tool: AgentToolPublic }) {
           </span>
         </div>
       ) : null}
-      {quotas.length > 0 ? (
+      {capabilitiesOf(tool).quota && quotas.length > 0 ? (
         <AgentToolQuotaGrid
           pinned={quotas.slice(0, 4)}
           rest={quotas.slice(4)}

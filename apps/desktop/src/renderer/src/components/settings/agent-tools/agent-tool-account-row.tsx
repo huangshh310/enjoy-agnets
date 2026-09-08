@@ -1,8 +1,8 @@
 /**
- * 卡片账号摘要：左侧身份，进度条右侧钉死百分比；没有官方数字就画空条 + —。
+ * 卡片账号摘要：左侧身份；额度条仅 quota=true 的引擎才画。
  */
 import { RiUser3Line } from "@remixicon/react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesOf, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { barWidth, formatQuotaPercent, pickQuotaPercent, pickQuotaWindow } from "./agent-tool-quota"
@@ -18,7 +18,8 @@ export function AgentToolAccountRow({
   if (!tool.authAccount && !loading) return null
   const percent = pickQuotaPercent(tool.quotaInfo, tool.selectedModel)
   const windowLabel = pickQuotaWindow(tool.quotaInfo, tool.selectedModel)
-  const showBar = percent != null || Boolean(tool.authAccount?.loggedIn)
+  const showBar =
+    capabilitiesOf(tool).quota && (percent != null || Boolean(tool.authAccount?.loggedIn))
   return (
     <div className="flex flex-col gap-1.5 border-t border-separator-border/40 pt-1.5">
       <div className="flex items-center justify-between gap-2">

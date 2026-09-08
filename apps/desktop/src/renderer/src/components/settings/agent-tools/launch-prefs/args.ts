@@ -13,8 +13,8 @@ export type LaunchPrefDef = {
 export type LaunchPrefValues = Partial<Record<LaunchPrefId, boolean>>
 
 /**
- * Cursor `agent acp` / Grok `agent stdio` / Codex `acp` 都不认 --fast。
- * 联网旗标也必须在子命令前，不能当 extraArgs 追加。先空着，避免再写出崩溃 argv。
+ * 必须先写进 RuntimeCapabilities，再进这张表。禁止为对称给 Cursor 加 Fast 开关。
+ * Cursor `agent acp` / Grok `agent stdio` 都不认 --fast；联网旗标也不能当 extraArgs。
  */
 const LAUNCH_PREFS: Partial<Record<AgentToolId, LaunchPrefDef[]>> = {}
 

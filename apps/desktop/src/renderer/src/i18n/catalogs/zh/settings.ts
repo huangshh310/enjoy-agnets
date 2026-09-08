@@ -239,7 +239,7 @@ export const zhSettings = {
     advancedTitle: "进阶：SDK 沙箱",
     runtimeDesc: "仅当 Composer 选 Enjoy 本地时生效。Harness 要 Vercel 沙箱与供应商 Key。",
     adapterDesc:
-      "自动跟随供应商（Anthropic→Claude Code，OpenAI→Codex）。Pi 使用本地 just-bash；DeepSeek 在适配器发布前保持本地。",
+      "自动跟随供应商（Anthropic→Claude Code，OpenAI→Codex）。Pi 使用本地 just-bash。DeepSeek 本机 CLI 走 dsh ACP；旧 SDK 沙箱适配器仍占位。",
     soon: " · 即将推出",
     status: "状态",
     ready: "已可运行此适配器。",

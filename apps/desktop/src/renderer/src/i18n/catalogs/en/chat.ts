@@ -145,6 +145,8 @@ export const enChat = {
   agentCliPickModel: "Models for this CLI",
   agentMissingHint: "Not found. Install in one click, or run {cmd} in a terminal.",
   agentSoonHint: "Not wired in this release. Use an installed agent.",
+  cliFastViaModel: "Fast and thinking come from the model, not argv",
+  acpAuthRequired: "This CLI needs login before a session can start.",
   agentOpenSettings: "Open path settings",
   agentInstall: "Install",
   agentInstalling: "Installing…",

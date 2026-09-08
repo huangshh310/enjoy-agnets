@@ -1,7 +1,9 @@
 /**
  * Composer 底栏：附件菜单、策略/模型/推理、语音与发送。
+ * 控件显隐跟 runtime 静态能力表走，ACP 不露 Enjoy Local 的皮。
  */
 import { RiMicLine } from "@remixicon/react"
+import { composerChromeFor } from "@enjoy-agents/ipc-contract"
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -51,6 +53,9 @@ export function ComposerFooter({
   const mode = useChatStore((state) => state.mode)
   const setMode = useChatStore((state) => state.setMode)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
+  const runtimeId = useChatStore((state) => state.runtimeId)
+  const chrome = composerChromeFor(runtimeId)
+  const showVoice = chrome.voice && canRealtime
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
       <ComposerAttachMenu
@@ -59,37 +64,32 @@ export function ComposerFooter({
         onPickFiles={onPickFiles}
       />
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
-        <ExecutionModeMenu mode={mode} onChange={setMode} />
-        <ApprovalPolicyToggle />
+        {chrome.executionModes ? <ExecutionModeMenu mode={mode} onChange={setMode} /> : null}
+        {chrome.permission ? <ApprovalPolicyToggle /> : null}
         <AgentPicker
           modelId={modelId}
           modelLabel={modelLabel}
           models={models}
           onModelChange={onModelChange}
         />
-        <FastModeToggle />
-        <ReasoningEffortToggle />
-        <button
-          type="button"
-          aria-label={t("chat.voiceInput")}
-          disabled={!canRealtime}
-          title={
-            canRealtime
-              ? voiceOpen
-                ? t("chat.stopVoice")
-                : t("chat.voice")
-              : t("chat.noRealtime")
-          }
-          onClick={onVoiceToggle}
-          className={cx(
-            "flex size-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40 disabled:hover:bg-transparent",
-            voiceOpen
-              ? "text-accent-500 hover:bg-background-secondary-hover"
-              : "text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-          )}
-        >
-          <RiMicLine className="size-4.5" aria-hidden />
-        </button>
+        {chrome.fast ? <FastModeToggle /> : null}
+        {chrome.thinking ? <ReasoningEffortToggle /> : null}
+        {showVoice ? (
+          <button
+            type="button"
+            aria-label={t("chat.voiceInput")}
+            title={voiceOpen ? t("chat.stopVoice") : t("chat.voice")}
+            onClick={onVoiceToggle}
+            className={cx(
+              "flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+              voiceOpen
+                ? "text-accent-500 hover:bg-background-secondary-hover"
+                : "text-foreground-icon-secondary hover:bg-background-secondary-hover hover:text-text-primary"
+            )}
+          >
+            <RiMicLine className="size-4.5" aria-hidden />
+          </button>
+        ) : null}
         {running ? (
           <span className="flex max-w-[140px] items-center gap-1.5 truncate px-2 font-mono text-caption-2-medium text-accent-500 select-none">
             <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />

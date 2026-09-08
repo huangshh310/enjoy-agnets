@@ -3,6 +3,7 @@
  * 不包含各家 login token。
  */
 import { z } from "zod"
+import { RuntimeCapabilities } from "./runtime-capabilities.ts"
 
 export const AgentToolId = z.enum([
   "enjoy-local",
@@ -91,7 +92,9 @@ export const AgentToolPublic = z.object({
   useCustomProvider: z.boolean().default(false),
   supportedApiStyles: z.array(z.string()).default([]),
   authAccount: AgentToolAuthAccount.optional(),
-  quotaInfo: AgentToolQuotaInfo.optional()
+  quotaInfo: AgentToolQuotaInfo.optional(),
+  /** 静态保真清单投影；缺省时 renderer 用 capabilitiesFor(id)。 */
+  capabilities: RuntimeCapabilities.optional()
 })
 export type AgentToolPublic = z.infer<typeof AgentToolPublic>
 
@@ -187,9 +190,22 @@ export const SetSessionRuntimeInput = z
   .strict()
 export type SetSessionRuntimeInput = z.infer<typeof SetSessionRuntimeInput>
 
-/** P0 可 spawn 的本机 CLI。渲染进程用这个判断，不要 import agent-harness。 */
-export const ACP_HOST_P0_IDS = ["claude", "cursor", "grok", "codex", "antigravity"] as const
+/** 可 spawn 的本机 ACP CLI。渲染进程用这个判断，不要 import agent-harness。 */
+export const ACP_HOST_IDS = [
+  "claude",
+  "cursor",
+  "grok",
+  "codex",
+  "antigravity",
+  "gemini",
+  "opencode",
+  "pi",
+  "hermes",
+  "amp",
+  "deepseek",
+  "omp"
+] as const
 
 export function isAcpHostRuntimeId(id: string | undefined): boolean {
-  return (ACP_HOST_P0_IDS as readonly string[]).includes(id ?? "")
+  return (ACP_HOST_IDS as readonly string[]).includes(id ?? "")
 }

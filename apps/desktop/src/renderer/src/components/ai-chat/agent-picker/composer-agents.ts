@@ -15,7 +15,9 @@ const TAB_ORDER = [
   "opencode",
   "pi",
   "hermes",
-  "amp"
+  "amp",
+  "deepseek",
+  "omp"
 ] as const
 
 export function composerAgentTabs(tools: AgentToolPublic[]): AgentToolPublic[] {

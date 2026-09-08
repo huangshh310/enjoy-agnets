@@ -13,6 +13,7 @@ import {
   parseJsonObject,
   parseUsagePercent
 } from "./parse.ts"
+import { parseOpenCodeAuth, parseProviderModelLines } from "./parse-cli-lines.ts"
 
 test("Cursor status 只取邮箱与登录态，丢掉 token 布尔", () => {
   const account = parseCursorStatus(`{
@@ -116,4 +117,22 @@ gemini-3.8-flash-high	Gemini 3.8 Flash (High)
 
 test("非 JSON 不抛", () => {
   assert.equal(parseJsonObject("not json"), null)
+})
+
+test("OpenCode auth list 不把 token 当账号", () => {
+  const account = parseOpenCodeAuth("anthropic\nopenai")
+  assert.equal(account.loggedIn, true)
+  assert.equal(account.accountName, "anthropic")
+  assert.equal(JSON.stringify(account).includes("token"), false)
+})
+
+test("provider/model 行解析丢掉 secret", () => {
+  const models = parseProviderModelLines(`anthropic/claude-sonnet-4
+openai/gpt-5
+api_key_token_secret
+`)
+  assert.deepEqual(
+    models.map((item) => item.id),
+    ["anthropic/claude-sonnet-4", "openai/gpt-5"]
+  )
 })

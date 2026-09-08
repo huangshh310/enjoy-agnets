@@ -1,7 +1,9 @@
 /**
  * 本机 CLI ACP 开流：不读 Providers Key，覆盖只含 path/args。
+ * fast / effort 入参只占位兼容，不进 argv；env 注入跟 providerBind。
  */
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
+import { capabilitiesFor } from "@enjoy-agents/ipc-contract"
 import { listAgentTools } from "./agent-tools-service"
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import { readVault } from "./secrets-vault"
@@ -14,7 +16,7 @@ export async function openAcpStream(input: {
   messages: Parameters<typeof streamAcpTurn>[0]["messages"]
   abortSignal: AbortSignal
   waitForSubagentApproval?: Parameters<typeof streamAcpTurn>[0]["waitForApproval"]
-  /** ACP 子命令不认 --fast / --thinking，这里只占位兼容开流入参。 */
+  /** ACP 忽略 Fast / 思考档；切回 Local 时 store 里的值仍保留。 */
   effort?: string
   fast?: boolean
 }): Promise<OpenedCodingStream> {
@@ -32,18 +34,7 @@ export async function openAcpStream(input: {
     const vault = await readVault()
     const profile = vault.profiles.find((p) => p.id === override.providerId)
     if (profile && profile.apiKey.trim()) {
-      if (input.runtimeId === "claude") {
-        injectedEnv = {
-          ANTHROPIC_BASE_URL: profile.baseURL || "https://api.anthropic.com",
-          ANTHROPIC_API_KEY: profile.apiKey,
-          ANTHROPIC_AUTH_TOKEN: profile.apiKey
-        }
-      } else if (input.runtimeId === "codex") {
-        injectedEnv = {
-          OPENAI_BASE_URL: profile.baseURL || "https://api.openai.com/v1",
-          OPENAI_API_KEY: profile.apiKey
-        }
-      }
+      injectedEnv = providerEnvFor(input.runtimeId, profile)
     }
   }
 
@@ -67,4 +58,31 @@ export async function openAcpStream(input: {
     result: opened.result,
     dispose: opened.dispose
   }
+}
+
+/** Claude → ANTHROPIC_*，Codex → OPENAI_*。未声明 providerBind 不注入。 */
+function providerEnvFor(
+  runtimeId: string,
+  profile: { baseURL?: string; apiKey: string }
+): Record<string, string> | undefined {
+  const bind = capabilitiesFor(runtimeId).providerBind
+  if (bind === "anthropic") {
+    return {
+      ANTHROPIC_BASE_URL: profile.baseURL || "https://api.anthropic.com",
+      ANTHROPIC_API_KEY: profile.apiKey,
+      ANTHROPIC_AUTH_TOKEN: profile.apiKey
+    }
+  }
+  if (bind === "openai") {
+    return {
+      OPENAI_BASE_URL: profile.baseURL || "https://api.openai.com/v1",
+      OPENAI_API_KEY: profile.apiKey
+    }
+  }
+  if (bind === "deepseek") {
+    const env: Record<string, string> = { DEEPSEEK_API_KEY: profile.apiKey }
+    if (profile.baseURL?.trim()) env.DEEPSEEK_BASE_URL = profile.baseURL.trim()
+    return env
+  }
+  return undefined
 }

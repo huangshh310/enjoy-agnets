@@ -53,6 +53,10 @@ export default defineConfig({
       // 必须精确匹配包名。别名到 index.ts 文件时，`@pkg/sub` 会被拼成 `index.ts/sub`。
       alias: [
         {
+          find: "@enjoy-agents/ipc-contract/runtime-capabilities",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/runtime-capabilities.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -88,7 +92,11 @@ export default defineConfig({
           replacement: resolve(uiRoot, "src/index.ts")
         },
         {
-          find: "@enjoy-agents/ipc-contract",
+          find: "@enjoy-agents/ipc-contract/runtime-capabilities",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/runtime-capabilities.ts")
+        },
+        {
+          find: /^@enjoy-agents\/ipc-contract$/,
           replacement: resolve(repoRoot, "packages/ipc-contract/src/index.ts")
         },
         {

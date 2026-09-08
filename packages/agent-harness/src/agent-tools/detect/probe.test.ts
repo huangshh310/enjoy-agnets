@@ -18,12 +18,13 @@ test("找不到候选即为 missing", async () => {
   assert.equal(result.found, false)
 })
 
-test("状态：Enjoy 本地恒 ready，OMP 是 skillOnly，未找到为 missing", () => {
+test("状态：Enjoy 本地恒 ready，OMP 可 spawn，未找到为 missing", () => {
   assert.equal(detectStatusFor(agentToolPreset("enjoy-local")!, { found: true, path: null, version: null }), "ready")
-  assert.equal(detectStatusFor(agentToolPreset("omp")!, { found: false, path: null, version: null }), "skillOnly")
+  assert.equal(detectStatusFor(agentToolPreset("omp")!, { found: false, path: null, version: null }), "missing")
+  assert.equal(detectStatusFor(agentToolPreset("omp")!, { found: true, path: "/bin/omp", version: "1" }), "ready")
   assert.equal(detectStatusFor(agentToolPreset("cursor")!, { found: false, path: null, version: null }), "missing")
   assert.equal(detectStatusFor(agentToolPreset("cursor")!, { found: true, path: "/bin/agent", version: "1" }), "ready")
-  assert.equal(detectStatusFor(agentToolPreset("gemini")!, { found: true, path: "/bin/gemini", version: "1" }), "comingSoon")
+  assert.equal(detectStatusFor(agentToolPreset("gemini")!, { found: true, path: "/bin/gemini", version: "1" }), "ready")
   assert.equal(
     detectStatusFor(agentToolPreset("antigravity")!, { found: true, path: "/opt/agy", version: "1" }),
     "ready"

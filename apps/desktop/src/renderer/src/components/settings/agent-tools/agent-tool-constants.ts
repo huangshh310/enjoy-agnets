@@ -101,64 +101,64 @@ export const AGENT_BRAND_METAS: Record<string, AgentBrandMeta> = {
     accentColor: "text-sky-500",
     borderColor: "border-sky-500/20 hover:border-sky-500/40",
     haloBg: "bg-sky-500/5",
-    badgeText: "即将推出",
-    capabilities: [{ label: "规划中", code: "P1" }],
-    tagline: "Google Gemini 官方终端支持，即将发布。",
+    badgeText: "Google",
+    capabilities: [{ label: "官方 ACP", code: "gemini --acp" }],
+    tagline: "Google Gemini CLI 官方 ACP。免费档请用 Antigravity。",
     isTerminalCli: true
   },
   opencode: {
     accentColor: "text-orange-500",
     borderColor: "border-orange-500/20 hover:border-orange-500/40",
     haloBg: "bg-orange-500/5",
-    badgeText: "开源社区",
-    capabilities: [{ label: "开源协议", code: "Open Source" }],
-    tagline: "开源社区自托管模型编码智能体支持。",
+    badgeText: "SST",
+    capabilities: [{ label: "官方 ACP", code: "opencode acp" }],
+    tagline: "OpenCode 官方 ACP stdio。登录用 opencode auth login。",
     isTerminalCli: true
   },
   pi: {
     accentColor: "text-rose-500",
     borderColor: "border-rose-500/20 hover:border-rose-500/40",
     haloBg: "bg-rose-500/5",
-    badgeText: "个人助理",
-    capabilities: [{ label: "自然语言对话", code: "Conversational" }],
-    tagline: "Inflection Pi 拟人化自然语言智能体。",
-    isTerminalCli: false
+    badgeText: "Pi",
+    capabilities: [{ label: "ACP 适配器", code: "pi-acp" }],
+    tagline: "Pi 官方协议是 RPC；Enjoy 经社区 pi-acp 说话。",
+    isTerminalCli: true
   },
   omp: {
     accentColor: "text-purple-500",
     borderColor: "border-purple-500/20 hover:border-purple-500/40",
     haloBg: "bg-purple-500/5",
     badgeText: "Oh My Pi",
-    capabilities: [{ label: "技能根目录", code: "Skills Root" }],
-    tagline: "Oh My Pi 核心技能集合体，非独立执行进程。",
-    isTerminalCli: false
+    capabilities: [{ label: "官方 ACP", code: "omp acp" }],
+    tagline: "Oh My Pi 是完整编码智能体，官方 ACP 子命令 omp acp。",
+    isTerminalCli: true
   },
   hermes: {
     accentColor: "text-teal-500",
     borderColor: "border-teal-500/20 hover:border-teal-500/40",
     haloBg: "bg-teal-500/5",
-    badgeText: "即将推出",
-    capabilities: [{ label: "轻量自研架构", code: "Hermes Core" }],
-    tagline: "轻量化智能体工作流引擎。",
-    isTerminalCli: false
+    badgeText: "Nous",
+    capabilities: [{ label: "官方 ACP", code: "hermes acp" }],
+    tagline: "Hermes Agent 官方 ACP。首次使用跑 hermes acp --setup。",
+    isTerminalCli: true
   },
   amp: {
     accentColor: "text-yellow-500",
     borderColor: "border-yellow-500/20 hover:border-yellow-500/40",
     haloBg: "bg-yellow-500/5",
-    badgeText: "实验特性",
-    capabilities: [{ label: "协议加速", code: "Accelerator" }],
-    tagline: "分布式 Agent 执行与协作加速网关。",
-    isTerminalCli: false
+    badgeText: "Sourcegraph",
+    capabilities: [{ label: "ACP 适配器", code: "amp-acp" }],
+    tagline: "Amp 官方 CLI 没有 amp acp；Enjoy 走 Registry 适配器 amp-acp。",
+    isTerminalCli: true
   },
   deepseek: {
     accentColor: "text-blue-600",
     borderColor: "border-blue-600/20 hover:border-blue-600/40",
     haloBg: "bg-blue-600/5",
-    badgeText: "深度求索",
-    capabilities: [{ label: "深度思考模型", code: "R1 Reasoning" }],
-    tagline: "DeepSeek 官方开源模型原生推理体系。",
-    isTerminalCli: false
+    badgeText: "DeepSeek",
+    capabilities: [{ label: "官方 ACP", code: "dsh --profile acp" }],
+    tagline: "DeepSeek Harness 官方 ACP profile。需要 DEEPSEEK_API_KEY。",
+    isTerminalCli: true
   }
 }
 

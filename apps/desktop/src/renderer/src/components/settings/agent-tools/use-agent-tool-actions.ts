@@ -2,7 +2,12 @@
  * 智能体卡片的安装 / 登录 / 同步 / 持久化动作。
  */
 import { useState } from "react"
-import type { AgentToolId, AgentToolDoctorResult, AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import {
+  capabilitiesOf,
+  type AgentToolId,
+  type AgentToolDoctorResult,
+  type AgentToolPublic
+} from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
@@ -58,7 +63,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     isActive: tool.id === activeRuntimeId,
     isDefaultLocal: tool.id === DEFAULT_RUNTIME_ID,
     configurable: tool.available && !tool.skillOnly && tool.id !== DEFAULT_RUNTIME_ID,
-    supportsCustomInjection: tool.id === "claude" || tool.id === "codex",
+    supportsCustomInjection: capabilitiesOf(tool).providerBind !== "none",
     compatibleProviders: filterCompatibleProviders(tool.id, providers),
     path,
     setPath,

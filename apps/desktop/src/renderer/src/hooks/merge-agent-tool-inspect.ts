@@ -2,11 +2,12 @@
  * 把 inspect 结果并进 PATH 列表：账号、额度、账号侧模型。
  */
 import type { AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
-
-const INSPECTABLE = new Set(["claude", "cursor", "grok", "codex", "antigravity"])
+import { capabilitiesOf } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 
 export function shouldInspect(tool: AgentToolPublic): boolean {
-  return INSPECTABLE.has(tool.id) && tool.status === "ready"
+  if (tool.status !== "ready") return false
+  const cap = capabilitiesOf(tool)
+  return cap.login || cap.quota || cap.models === "inspect"
 }
 
 export function applyInspect(

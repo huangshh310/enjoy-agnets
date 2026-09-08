@@ -9,7 +9,7 @@ import type {
   LoginAgentToolResult,
   UninstallAgentToolResult
 } from "@enjoy-agents/ipc-contract"
-import { catalogFor, lookupOnPath } from "@enjoy-agents/agent-harness"
+import { catalogFor, loginBinaryFor, lookupOnPath } from "@enjoy-agents/agent-harness"
 import { agentToolsCwd } from "./agent-tools-account/cwd"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { assertSafeAgentCommand, safeCustomBinaryPath } from "./agent-tools-guard"
@@ -33,26 +33,34 @@ export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToo
       path: null
     }
   }
+  let lastCommand = catalog.installCommand
+  let lastMessage = ""
+  let ranAny = false
   for (const step of catalog.steps) {
     const manager = await lookupOnPath(step.manager)
     if (!manager || !isInstallManager(manager)) continue
+    ranAny = true
+    lastCommand = displayCommand(step.manager, step.args)
     const ran = await runCommand(manager, [...step.args], INSTALL_MS)
-    const listed = await listAgentTools()
-    const found = listed.find((item) => item.id === id)
-    if (ran.ok || found?.status === "ready") {
+    lastMessage = ran.message
+    if (!ran.ok) {
       return {
         id,
-        ok: true,
-        message: ran.ok ? ran.message || "Installed." : found?.detectedPath || "Found after install.",
-        command: displayCommand(step.manager, step.args),
-        path: found?.detectedPath ?? null
+        ok: false,
+        message: ran.message,
+        command: lastCommand,
+        path: null
       }
     }
+  }
+  const listed = await listAgentTools()
+  const found = listed.find((item) => item.id === id)
+  if (ranAny || found?.status === "ready") {
     return {
       id,
-      ok: false,
-      message: ran.message,
-      command: displayCommand(step.manager, step.args),
+      ok: true,
+      message: lastMessage || found?.detectedPath || "Installed.",
+      command: lastCommand,
       path: found?.detectedPath ?? null
     }
   }
@@ -88,12 +96,16 @@ export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolRes
   const catalog = catalogFor(id)
   const listed = await listAgentTools()
   const tool = listed.find((item) => item.id === id)
-  const command = safeCustomBinaryPath(id, tool?.binaryPath) || tool?.detectedPath
+  const loginName = loginBinaryFor(id)
+  const loginPath = loginName ? await lookupOnPath(loginName) : undefined
+  const command = loginName
+    ? (loginPath && safeCustomBinaryPath(id, loginPath)) || undefined
+    : safeCustomBinaryPath(id, tool?.binaryPath) || tool?.detectedPath
   if (!catalog?.loginArgs.length) {
     return { id, ok: false, message: tool?.needsLoginHint || "This CLI has no login command." }
   }
   if (!command) {
-    return { id, ok: false, message: "Install the CLI first." }
+    return { id, ok: false, message: loginName ? `Install ${loginName} first.` : "Install the CLI first." }
   }
   try {
     assertSafeAgentCommand(id, command)

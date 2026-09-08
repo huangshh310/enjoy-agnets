@@ -28,12 +28,17 @@ function tool(partial: Partial<AgentToolPublic> & Pick<AgentToolPublic, "id">): 
   }
 }
 
-test("只给已就绪的登录型 CLI 做 inspect", () => {
+test("只给已就绪且 login/quota/inspect 模型的 CLI 做 inspect", () => {
   assert.equal(shouldInspect(tool({ id: "cursor" })), true)
   assert.equal(shouldInspect(tool({ id: "grok" })), true)
+  assert.equal(shouldInspect(tool({ id: "claude" })), true)
   assert.equal(shouldInspect(tool({ id: "cursor", status: "missing" })), false)
   assert.equal(shouldInspect(tool({ id: "enjoy-local", status: "ready" })), false)
   assert.equal(shouldInspect(tool({ id: "omp", skillOnly: true, status: "skillOnly" })), false)
+  assert.equal(shouldInspect(tool({ id: "opencode", status: "ready" })), true)
+  assert.equal(shouldInspect(tool({ id: "omp", status: "ready" })), true)
+  assert.equal(shouldInspect(tool({ id: "amp", status: "ready" })), true)
+  assert.equal(shouldInspect(tool({ id: "deepseek", status: "ready" })), false)
 })
 
 test("inspect 合并账号与全量模型，保留已选模型", () => {
