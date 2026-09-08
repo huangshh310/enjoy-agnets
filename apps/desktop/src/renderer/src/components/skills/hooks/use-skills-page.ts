@@ -48,7 +48,6 @@ export type SkillsPageState = {
   addLocalSource: () => Promise<void>
   installCurated: (curatedSource: CuratedSkillSource) => Promise<void>
   updateSource: (sourceId: string) => Promise<void>
-  updateAllSources: () => Promise<void>
   deploySource: (sourceId: string) => Promise<void>
   repairTargets: (sourceId?: string) => Promise<void>
   removeSource: (sourceId: string) => Promise<void>
@@ -191,14 +190,7 @@ export function useSkillsPage(): SkillsPageState {
     })
   }
 
-  // 5. 更新所有来源
-  async function updateAllSources() {
-    await runAction("全量拉取更新", async () => {
-      await getIde().skills.sources.updateAll()
-    })
-  }
-
-  // 6. 重新部署来源
+  // 5. 重新部署来源
   async function deploySource(sourceId: string) {
     await runAction("重新部署", async () => {
       await getIde().skills.sources.deploy({ sourceId })
@@ -294,7 +286,6 @@ export function useSkillsPage(): SkillsPageState {
     addLocalSource,
     installCurated,
     updateSource,
-    updateAllSources,
     deploySource,
     repairTargets,
     removeSource,

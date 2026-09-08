@@ -73,7 +73,7 @@ Enjoy Agents 是 **本地优先的 Electron ACP Client / 多引擎宿主**（与
 6. Git Review / Monaco 仍加深中（不挡宿主里程碑，但 Review pane 要跟审批 diff 对齐）
 
 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
-可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已薄层落地（Skills 顶栏 / 空会话条 / Agent 默认项；无 Git 源则门闩）。摩擦/digest/团队 MCP 仍不做。
+可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选更新已薄层落地（仅 Skills 顶栏 + Agent 默认项；空会话禁止同步条）。摩擦/digest/团队 MCP 仍不做。
 
 ---
 
@@ -224,7 +224,7 @@ TeamAI 是 **分发层**，Enjoy 是 **宿主**。集成姿态：共存，不替
 
 | 任务 | 说明 |
 |------|------|
-| 会话前同步 skill 源 | **已薄层落地**：空会话条 + Skills 顶栏 + Agent 默认项；只拉 Git 源，点了才跑 |
+| 会话前同步 skill 源 | **已薄层落地**：Skills 顶栏「更新技能」+ Agent 默认项卡片；空会话禁止同步条；只拉 Git 源，点了才跑 |
 | 摩擦信号提示 | 打断/拒绝/重试达阈值 → Inbox 或 toast「值得记一条」；默认关 |
 | 本地 digest | 本机 token / 干预率周报（Observability）；禁止假云看板 |
 | MCP 团队声明 | 后置；先写清 host MCP vs 各家注入 MCP |

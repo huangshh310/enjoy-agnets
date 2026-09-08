@@ -1,8 +1,7 @@
 /**
- * 空会话工作清单：必须保留 已检测 / 未安装 checklist + 示例 pill。
- * 只压 MissingRow 密度并顶对齐；禁止卸掉两段，也禁止挂设置 Registry。
+ * 空会话工作清单：只允许标题 + checklist + pills。Composer 钉在 Stage 底，不进本组件。
+ * 禁止同步/运维条（技能源拉取、SessionReviewBar 同类噪音），也禁止 Registry / AgentCliInstall。
  */
-import type { ReactNode } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
 import { EmptyStateChecklist } from "./checklist/empty-state-checklist"
@@ -11,18 +10,13 @@ import { EmptyStatePills } from "./empty-state-pills"
 import { focusComposerEnd } from "./focus-composer"
 import type { AiChatEmptyStateProps } from "./empty-state.types"
 
-interface EmptyZeroStateProps extends AiChatEmptyStateProps {
-  children?: ReactNode
-}
-
 export function AiChatEmptyState({
   workspaceName,
   workspaceRootLabel,
   changesCount,
   onSelectPrompt,
-  children,
   className
-}: EmptyZeroStateProps) {
+}: AiChatEmptyStateProps) {
   const storeWorkspaceName = useChatStore((state) => state.workspaceName)
   const storeWorkspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)
   const storeChanges = useChatStore((state) => state.changes)
@@ -50,7 +44,6 @@ export function AiChatEmptyState({
         <div className="mt-3 w-full">
           <EmptyStateChecklist />
         </div>
-        {children ? <div className="mt-4 w-full">{children}</div> : null}
         <EmptyStatePills onSelectPrompt={handleSelect} className="mt-3" />
       </div>
     </div>

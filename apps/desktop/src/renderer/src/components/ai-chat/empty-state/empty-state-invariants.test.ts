@@ -25,7 +25,7 @@ test("空态词表保留已检测 / 未安装 / 示例任务，禁止改成已�
   assert.equal(zhChat.emptySamples, "示例任务")
 })
 
-test("空态源码必须挂 checklist 与 pills，且不挂 Registry / AgentCliInstall", () => {
+test("空态源码必须挂 checklist 与 pills，且不挂 Registry / AgentCliInstall / 技能源条", () => {
   const files = walkProd(ROOT)
   const sources = files.map((path) => readFileSync(path, "utf8")).join("\n")
   assert.match(sources, /EmptyStateChecklist/)
@@ -34,4 +34,13 @@ test("空态源码必须挂 checklist 与 pills，且不挂 Registry / AgentCliI
   assert.match(sources, /chat\.emptyMissing/)
   assert.doesNotMatch(sources, /\bAcpRegistryPage\b|\bAcpRegistryList\b|\bAcpRegistryDetail\b|\bCustomAcpAgentForm\b/)
   assert.doesNotMatch(sources, /from ["'].*agent-cli-install["']/)
+  assert.doesNotMatch(sources, /SkillSourcePullStrip|skill-source-pull|useSkillSourcePull/)
+})
+
+test("Chat Stage 空态不得挂技能源同步条，Composer 必须钉在空态外", () => {
+  const stagePath = join(ROOT, "../../app-shell/chat/chat-stage.tsx")
+  const stage = readFileSync(stagePath, "utf8")
+  assert.doesNotMatch(stage, /SkillSourcePullStrip|skill-source-pull/)
+  assert.match(stage, /<AiChatEmptyState[\s\S]*?\/>/)
+  assert.match(stage, /ChatComposerCluster/)
 })

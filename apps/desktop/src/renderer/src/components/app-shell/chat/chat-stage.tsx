@@ -6,7 +6,6 @@ import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar
 import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
 import { ExperimentalMediaDialog } from "@renderer/components/ai-chat/experimental-media-dialog"
 import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-chat-empty-state"
-import { SkillSourcePullStrip } from "@renderer/components/ai-chat/skill-sources/skill-source-pull-strip"
 import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
 import { openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
@@ -92,21 +91,16 @@ function ChatWorkspaceBody(props: {
           workspaceName={props.workspaceName}
           workspaceRootLabel={props.workspaceRootLabel}
           changesCount={props.changesCount}
-        >
-          <SkillSourcePullStrip />
-          <ChatComposerCluster className="px-0 pb-0" onModelChange={props.onModelChange} onSend={props.onSend} />
-        </AiChatEmptyState>
+        />
       ) : (
-        <>
-          <AiChatThread
-            messages={messages}
-            running={running}
-            thinkingLabel={thinkingLabel}
-            error={error}
-          />
-          <ChatComposerCluster onModelChange={props.onModelChange} onSend={props.onSend} />
-        </>
+        <AiChatThread
+          messages={messages}
+          running={running}
+          thinkingLabel={thinkingLabel}
+          error={error}
+        />
       )}
+      <ChatComposerCluster onModelChange={props.onModelChange} onSend={props.onSend} />
       <AiChatStatusBar workspaceRootLabel={props.workspaceRootLabel} />
     </>
   )

@@ -17,10 +17,12 @@ import { SkillsDoctorModal } from "./components/skills-doctor-modal"
 import { SkillsEmptyState } from "./components/skills-empty-state"
 import { AgentArmoryView } from "./components/armory/agent-armory-view"
 import { useSkillsPage } from "./hooks/use-skills-page"
+import { useSkillSourcePull } from "./hooks/use-skill-source-pull"
 import { countGitSkillSources } from "./lib/git-skill-sources"
 
 export function SkillsPage() {
   const page = useSkillsPage()
+  const pullState = useSkillSourcePull()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedDrawerSkill, setSelectedDrawerSkill] = useState<InstalledSkillItem | null>(null)
 
@@ -153,8 +155,9 @@ export function SkillsPage() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               busy={Boolean(page.busyMessage)}
+              updating={pullState.busy}
               onDoctor={() => page.setDoctorOpen(true)}
-              onUpdateAll={() => void page.updateAllSources()}
+              onUpdateAll={() => void pullState.pull()}
               onImport={() => page.setImportOpen(true)}
               onCreateSkill={() => page.setCreateSkillOpen(true)}
             />

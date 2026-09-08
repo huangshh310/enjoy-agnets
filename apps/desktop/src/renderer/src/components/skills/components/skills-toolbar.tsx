@@ -33,6 +33,7 @@ export function SkillsToolbar({
   searchQuery,
   onSearchChange,
   busy,
+  updating,
   onDoctor,
   onUpdateAll,
   onImport,
@@ -48,6 +49,7 @@ export function SkillsToolbar({
   searchQuery: string
   onSearchChange: (query: string) => void
   busy: boolean
+  updating: boolean
   onDoctor: () => void
   onUpdateAll: () => void
   onImport: () => void
@@ -124,11 +126,11 @@ export function SkillsToolbar({
               size="sm"
               variant="outline"
               onClick={onUpdateAll}
-              disabled={busy}
+              disabled={busy || updating}
               className="gap-1.5 h-8 px-3 text-caption-2-medium"
             >
-              <RiRefreshLine className={cx("size-3.5", busy && "animate-spin")} />
-              <span>{SKILLS_UI_COPY.updateAll}</span>
+              <RiRefreshLine className={cx("size-3.5", updating && "animate-spin")} />
+              <span>{updating ? SKILLS_UI_COPY.updating : SKILLS_UI_COPY.updateAll}</span>
             </Button>
           ) : null}
 
@@ -147,12 +149,6 @@ export function SkillsToolbar({
                 <RiStethoscopeLine className="size-3.5 text-accent-500" />
                 <span>Doctor 状态诊断</span>
               </DropdownMenuItem>
-              {gitSourceCount > 0 ? (
-                <DropdownMenuItem onClick={onUpdateAll} disabled={busy} className="gap-2">
-                  <RiRefreshLine className={cx("size-3.5", busy && "animate-spin")} />
-                  <span>{SKILLS_UI_COPY.updateAll}</span>
-                </DropdownMenuItem>
-              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -215,20 +215,6 @@ export const enChat = {
     banner: "Handed off {from} → {to}",
     dismiss: "Dismiss handoff"
   },
-  skillSourcePull: {
-    title: "Sync {count} Git skill sources",
-    hint: "Optional. Nothing is pulled until you click.",
-    pull: "Pull",
-    pulling: "Pulling…",
-    skip: "Skip",
-    openSkills: "Open Skills",
-    done: "Pulled {count} sources",
-    doneHint: "Local folders were not changed. Deploy from Skills if you need projections.",
-    partial: "Some sources failed to pull",
-    partialHint: "Successful checkouts were updated.",
-    empty: "No Git sources to fast-forward",
-    failed: "Pull did not finish"
-  },
 
   projects: "Projects",
   organizeProjects: "Organize project sidebar",

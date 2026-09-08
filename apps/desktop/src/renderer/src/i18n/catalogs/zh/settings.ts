@@ -328,15 +328,14 @@ export const zhSettings = {
 
   skillSources: {
     title: "技能源",
-    pull: "可选拉取 Git 技能源",
-    desc: "已配置 {count} 个 Git 源。不会自动同步，点一下才快进并尽量投影。",
-    gated: "还没有 Git 技能源。先到 Skills 导入 HTTPS 仓库，本机发现组不会被拉取。",
-    pullNow: "立即拉取",
-    pulling: "拉取中…",
+    pull: "可选更新技能",
+    desc: "已配置 {count} 个 Git 源。不会自动同步，点「更新技能」才拉取。",
+    gated: "还没有 Git 技能源。先到 Skills 导入仓库。本机发现组不会被更新。",
+    update: "更新技能",
+    updating: "正在更新…",
     openSkills: "打开 Skills",
-    done: "已拉取 {count} 个 Git 源",
-    partial: "部分源拉取失败，详见错误。",
-    empty: "没有可快进的 Git 源。"
+    toastUpdated: "更新了 {count} 个",
+    toastMissed: "有源未更新"
   },
 
   harness: {

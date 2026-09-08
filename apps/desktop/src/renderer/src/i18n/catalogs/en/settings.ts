@@ -328,15 +328,14 @@ export const enSettings = {
 
   skillSources: {
     title: "Skill sources",
-    pull: "Optional Git skill-source pull",
-    desc: "{count} Git sources configured. Nothing syncs until you click; pull then try to deploy.",
-    gated: "No Git skill sources yet. Import an HTTPS repo on Skills. Local discovery groups are not pulled.",
-    pullNow: "Pull now",
-    pulling: "Pulling…",
+    pull: "Optional skill update",
+    desc: "{count} Git sources configured. Nothing syncs until you tap Update skills.",
+    gated: "No Git skill sources yet. Import a repo on Skills. Local discovery groups are not updated.",
+    update: "Update skills",
+    updating: "Updating…",
     openSkills: "Open Skills",
-    done: "Pulled {count} Git sources",
-    partial: "Some sources failed to pull.",
-    empty: "No Git sources to fast-forward."
+    toastUpdated: "Updated {count}",
+    toastMissed: "Some sources were not updated"
   },
 
   harness: {
