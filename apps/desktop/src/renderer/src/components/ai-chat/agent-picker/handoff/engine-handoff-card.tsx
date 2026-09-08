@@ -2,6 +2,7 @@
  * 有历史切引擎确认卡。摘要可编辑，确认后只进隐藏上下文。
  */
 import { Button } from "@/components/ui/button"
+import { focusAttention } from "@renderer/components/ai-chat/attention/focus-attention"
 import { useT } from "@renderer/i18n"
 import {
   cancelEngineHandoff,
@@ -24,6 +25,15 @@ export function EngineHandoffCard({
   const setDraftSummary = useEngineHandoffStore((state) => state.setDraftSummary)
   const blocked = phase === "blocked_by_approval"
   const busy = phase === "disposing"
+
+  function restoreFrom() {
+    onCancelRestore(cancelEngineHandoff())
+  }
+
+  function reviewApproval() {
+    restoreFrom()
+    focusAttention()
+  }
 
   if (phase === "idle") return null
 
@@ -51,23 +61,16 @@ export function EngineHandoffCard({
         </label>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        {blocked ? null : (
-          <Button
-            type="button"
-            size="sm"
-            disabled={busy}
-            onClick={() => void confirmEngineHandoff()}
-          >
+        {blocked ? (
+          <Button type="button" size="sm" disabled={busy} onClick={reviewApproval}>
+            {t("chat.handoff.reviewApproval")}
+          </Button>
+        ) : (
+          <Button type="button" size="sm" disabled={busy} onClick={() => void confirmEngineHandoff()}>
             {t("chat.handoff.confirm")}
           </Button>
         )}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={busy}
-          onClick={() => onCancelRestore(cancelEngineHandoff())}
-        >
+        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={restoreFrom}>
           {t("chat.handoff.cancel")}
         </Button>
       </div>

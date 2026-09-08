@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { canSwitchAgent, DEFAULT_RUNTIME_ID, isEngineReady } from "@renderer/lib/agent-runtime"
-import { requestEngineSwitch } from "./handoff/engine-handoff-store"
+import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ModelPickerBody } from "../model-picker/model-picker-body"
@@ -37,6 +37,7 @@ export function AgentPicker({
   const open = useChatStore((state) => state.agentPickerOpen)
   const setOpen = useChatStore((state) => state.setAgentPickerOpen)
   const runtimeId = useChatStore((state) => state.runtimeId)
+  const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const tools = useSettingsSnapshot().data?.agentTools ?? []
   const { primary, soon } = composerAgentGroups(tools)
   const agents = [...primary, ...soon]
@@ -47,6 +48,11 @@ export function AgentPicker({
   useEffect(() => {
     if (open) setTabId(runtimeId)
   }, [open, runtimeId])
+
+  // 取消交接时 runtimeId 往往仍是 from，必须靠 phase 把 Rail tab 拉回去。
+  useEffect(() => {
+    if (handoffPhase === "idle") setTabId(runtimeId)
+  }, [handoffPhase, runtimeId])
 
   useEffect(() => {
     if (!open || !hasIde()) return

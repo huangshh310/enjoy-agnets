@@ -10,6 +10,8 @@
 |---|---|
 | 切引擎 | 空会话：`planComposerSwitch` → `setRuntimeId` + `bindSessionRuntime`，无卡 |
 | 有历史切换 | `EngineHandoffCard` 确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文 |
+| 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
+| 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention` 到 `#permission-dock`（Thread 内现有审批卡；M2 Dock 未改位） |
 | 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
 | 空态 | `empty-state` 工作清单：ready / missing / 3 条示例 pill；`max-w-xl` 左对齐 |
@@ -49,7 +51,7 @@ Rail / Picker 选中即生效；未 `ready` 见 §4。
 | 主钮 | 确认切换（`accent`） |
 | 次钮 | 取消（恢复 from 选中态） |
 | 确认后 | `disposeAcpSession(from)`（若 ACP）→ `bindSessionRuntime(to)` → 摘要注入 **系统/隐藏上下文**（不进用户气泡）；线程或 Composer 上沿出「已交接」微条（from→to，可dismiss）。**禁止**伪装成用户首条附注 |
-| 未决审批 | 若 `pendingApproval`：先提示「请先处理审批」或「切换将拒绝未决」——默认 **阻切**，必须先 resolved |
+| 未决审批 | 若 `pendingApproval`：默认 **阻切**。卡上只有取消（恢复 from）或「去处理审批」（`focusAttention` → `#permission-dock`） |
 
 禁静默切换。禁假「已在新引擎续跑」而无 dispose。
 
@@ -98,16 +100,18 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 
 | 组件 | 路径建议 | 职责 |
 |---|---|---|
-| `EngineHandoffCard` | `agent-picker/engine-handoff-card.tsx` | 有历史切换确认 |
-| `planComposerSwitch` | store 或 `agent-picker/plan-composer-switch.ts` | 状态机 |
-| Rail/Picker | 现有 | 空会话直切；有历史走 plan |
+| `EngineHandoffCard` | `agent-picker/handoff/engine-handoff-card.tsx` | 有历史切换确认；阻切含去处理审批 |
+| `planComposerSwitch` | `agent-picker/handoff/plan-composer-switch.ts` | 状态机 |
+| `focusAttention` | `ai-chat/attention/focus-attention.ts` | 滚到 `#permission-dock`（现有审批卡） |
+| Rail/Picker | 现有 | 空会话直切；有历史走 plan；取消后 tab 回 from |
 | empty-state checklist | `empty-state/*` | 检测/缺口/示例 |
 | path 微标 | `agent-engine-rail` / 胶囊 | 两路文案 |
 
 ## 不变量
 
 - 有用户轮切换必经 HandoffCard。
-- 切换不绕过未决审批（默认阻切）。
+- 切换不绕过未决审批（默认阻切）。阻切出口只有取消或去处理 Attention。
+- 取消交接必须恢复 from 选中，禁止停在 to。
 - 沙箱不上 EngineRail。
 - 无 Fake-Status 就绪灯；comingSoon 不装成 available。
 - BoardUI token only。
@@ -123,7 +127,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 1. 空会话：Picker 切 Cursor 立即 bind，无卡。
 2. 有两轮对话：切 Claude→Cursor 出 HandoffCard；取消后仍停在 Claude。
 3. 确认后旧 ACP 已 dispose，新引擎首答能看到摘要语境。
-4. 有 pendingApproval 时切换被阻或明确要求先处理。
+4. 有 pendingApproval 时切换被阻；卡上可取消或去处理审批。
 5. 空态展示 ready/missing 列表 + 示例 pill；无居中营销 Hero。
 
 ## 非目标

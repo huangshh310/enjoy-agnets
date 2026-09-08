@@ -11,6 +11,7 @@ import { draftHandoffSummary } from "./draft-handoff-summary"
 import { planComposerSwitch, sessionHasUserTurns } from "./plan-composer-switch"
 import type { EngineHandoffState } from "./plan-composer-switch.types"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { restoreComposerEngineSelection } from "./restore-composer-engine"
 
 const idle: EngineHandoffState = {
   phase: "idle",
@@ -112,8 +113,10 @@ export async function confirmEngineHandoff(): Promise<boolean> {
   return true
 }
 
+/** 取消交接：清 pending，并把 chat.runtimeId 拉回 from。 */
 export function cancelEngineHandoff(): string | null {
   const from = useEngineHandoffStore.getState().fromRuntimeId
   useEngineHandoffStore.getState().resetPending()
+  restoreComposerEngineSelection(from, useChatStore.getState().setRuntimeId)
   return from
 }

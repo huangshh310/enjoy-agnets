@@ -9,6 +9,7 @@ import {
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { AskUserAnswers, StreamEvent } from "@enjoy-agents/ipc-contract"
+import { PERMISSION_DOCK_ID } from "./attention/focus-attention"
 import { ApprovalCard } from "./thread/approval/approval-card"
 import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
@@ -54,12 +55,14 @@ export function AiChatThread({
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
 
           {pendingApproval ? (
-            <ApprovalCard
-              pending={pendingApproval}
-              onApprove={onApprove}
-              onDeny={onDeny}
-              onAllowSession={onAllowSession}
-            />
+            <div id={PERMISSION_DOCK_ID} tabIndex={-1} className="scroll-mt-4 outline-none">
+              <ApprovalCard
+                pending={pendingApproval}
+                onApprove={onApprove}
+                onDeny={onDeny}
+                onAllowSession={onAllowSession}
+              />
+            </div>
           ) : null}
 
           {error ? <ThreadErrorBanner error={error} /> : null}

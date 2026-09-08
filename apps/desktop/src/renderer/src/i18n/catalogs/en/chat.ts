@@ -206,6 +206,7 @@ export const enChat = {
     blocked: "Resolve the pending approval before switching engines.",
     summaryLabel: "Handoff brief",
     confirm: "Confirm switch",
+    reviewApproval: "Review approval",
     cancel: "Cancel",
     banner: "Handed off {from} → {to}",
     dismiss: "Dismiss handoff"

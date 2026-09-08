@@ -201,6 +201,7 @@ export const zhChat = {
     blocked: "请先处理未决审批，再切换引擎。",
     summaryLabel: "交接摘要",
     confirm: "确认切换",
+    reviewApproval: "去处理审批",
     cancel: "取消",
     banner: "已交接 {from} → {to}",
     dismiss: "关闭交接提示"
