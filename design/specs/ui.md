@@ -68,7 +68,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 ## 已知坑
 
-- 审批卡只挂 PermissionDock（Composer 上沿），禁止写回 `ConversationContent`。M3 阻切「去处理审批」滚 `#permission-dock`，不要再在线程里复制一张卡。
+- 审批卡只挂 PermissionDock（Composer 上沿），禁止写回 `ConversationContent`。M3 阻切「去处理审批」必须走 M2 `focusAttention({ sessionId, kind, navigate })`，不要无参滚 Dock stub，也不要在线程里复制一张卡。
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
 - 玻璃皮肤看起来仍是实体：画布 `bg-background-full` 不透明时，`backdrop-filter` 卷积纯色 Mist，肉眼无磨砂。光斑层禁止负 z-index（会画到窗口底板后面）。皮肤覆盖必须进 `styles/skins/<name>.css`，不要写回 `globals.css`。`SettingsCard` 必须带 `settings-card` 类，设置页内层卡片才能吃到半透。
 - 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`。frost 约 58% + 更强 blur，禁止 50% 把桌面当照片，也禁止 80% 把磨砂盖成实心黑。
