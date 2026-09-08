@@ -9,9 +9,9 @@
 
 设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。一键安装走配方 npm/brew；否则复制官方命令；文档 `openDocs`。无营销 Hero、无假「已连接」。
 
-自定义 stdio ACP：`custom:<slug>`，字段 command / args / env / cwd（工作区根或已存在的绝对目录）。保存进 `agentTools.customAgents`；出现在本机 CLI 列表与 Composer 导轨（`showOnEngineRail`）。spawn 经 `assertCustomAllowedCommand`（目录 binaries + `acp`/`acp-agent`/`agent-acp`，禁止 bash/node/npx 等）；`shell:false`；审批不豁免。能力走 `RUNTIME_CAPABILITIES["custom-acp"]`（quota=false、login=false、HMAC）。删除确认后解绑会话 runtime，并把仍指向它的偏好 `runtimeId` 拉回 Enjoy 本地。
+自定义 stdio ACP：`custom:<slug>`，字段 command / args / env / cwd（工作区根或已存在的绝对目录）。保存进 `agentTools.customAgents`；出现在本机 CLI 列表与 Composer 导轨（`showOnEngineRail`）。spawn 经 `assertCustomAllowedCommand`（目录 binaries ∪ `acp`/`acp-agent`/`agent-acp`，禁止 bash/node/npx 等）；`shell:false`；审批不豁免。表单写明：只能填已知 ACP basename，不能添加任意二进制。能力走 `RUNTIME_CAPABILITIES["custom-acp"]`（quota=false、login=false、HMAC）。能力矩阵自定义行画用户 **label**，不画 `custom:<slug>`。删除确认后解绑会话 runtime，并把仍指向它的偏好 `runtimeId` 拉回 Enjoy 本地。
 
-comingSoon → available 只按 **OpenCode → Gemini → Pi**，且必须 `canPromoteComingSoon`：catalog + `RUNTIME_CAPABILITIES.spawn` + HMAC + ACP 宿主 handshake。三家当前硬条件已过，故 available。未过的 soon 不能 `canSwitchAgent`。
+comingSoon → available 只按 **OpenCode → Gemini → Pi**，且必须 `canPromoteComingSoon`：**静态门闩**（catalog + `RUNTIME_CAPABILITIES.spawn` + HMAC + preset `transport===acp-host`）。**不是**现场 ACP `initialize` / handshake 探测。三家当前硬接线已过，故 available。未过的 soon 不能 `canSwitchAgent`。
 
 IPC：`agentTools.upsertCustom` / `removeCustom` / `getCustom`。无 PTY 入口。
 
@@ -63,6 +63,8 @@ IPC：`agentTools.upsertCustom` / `removeCustom` / `getCustom`。无 PTY 入口�
 
 UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 
+当前实现：`canPromoteComingSoon` 只做静态硬接线（catalog / caps / preset），不现场跑 initialize。上表是产品硬条件愿景；升 available 以静态门闩为准。
+
 ### 4. ACP 事件保真（增强大纲）
 
 | 事件 | UI 期望 |
@@ -100,10 +102,11 @@ UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 
 ## 已知坑
 
-- 自定义 command 若不走 basename 白名单，用户能把 `bash`/`npx` 写进 vault。保存与 spawn 都必须 `assertCustomAllowedCommand`。
+- 自定义 command 若不走 basename 白名单，用户能把 `bash`/`npx` 写进 vault。保存与 spawn 都必须 `assertCustomAllowedCommand`。UI 必须写明：只能填已知 ACP basename，不能添加任意二进制。
 - `custom:<slug>` 必须进 `AgentToolId` union，否则 `setSessionRuntime` / Composer persist 会拒。
 - 列表不要回显 env 值；编辑走 `agentTools.getCustom`。密钥型 key 用 password 掩码。
-- comingSoon 假升：只信 `canPromoteComingSoon`，不要手改 preset.available 绕过 OpenCode→Gemini→Pi。
+- comingSoon 假升：只信 `canPromoteComingSoon`，不要手改 preset.available 绕过 OpenCode→Gemini→Pi。该函数是 catalog/caps/preset 硬接线检查，不要写成「已实测 initialize」。现场 handshake 只发生在开流，不决定 comingSoon 升级。
+- 能力矩阵自定义行必须画用户 label（显示名），不要露出 `custom:<slug>`。
 - 空态不得嵌 Registry 列表或 `AgentCliInstall` 整卡。新会话 checklist 只给单行安装/复制；深链 `?tab=registry` 才打开本页。
 - 自定义 agent 无 inspect / 额度条；不要画空条或假绿灯。
 - Composer 切引擎用 `can-switch-agent.ts`（自定义必须 ready）；轨徽标就绪灯用 `engine-ready.ts` 的 `isEngineReady`。M2/M3 合入后不要把两者并成一份再丢掉自定义规则。

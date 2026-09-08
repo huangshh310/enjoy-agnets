@@ -54,6 +54,7 @@ export function CustomAcpAgentForm({
         void submitCustomAgent(draft, setBusy, setError, onSaved)
       }}
     >
+      <p className="text-caption-2-medium text-text-tertiary">{t("settings.registry.customBasenamePolicy")}</p>
       <Field label={t("settings.registry.customLabel")}>
         <Input
           value={draft.label}
