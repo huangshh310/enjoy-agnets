@@ -88,6 +88,9 @@ const settingsIndexRoute = createRoute({
 const settingsSectionRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: "$section",
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined
+  }),
   beforeLoad: ({ params }) => {
     if (!isSettingsSectionId(params.section)) {
       throw redirect({ to: "/settings/$section", params: { section: "general" } })

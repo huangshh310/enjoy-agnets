@@ -7,7 +7,7 @@
 
 ## 当前真相
 
-设置 → 智能体 第四分段 **Registry**（不上 EngineRail）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。一键安装走配方 npm/brew；否则复制官方命令；文档 `openDocs`。无营销 Hero、无假「已连接」。
+设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。一键安装走配方 npm/brew；否则复制官方命令；文档 `openDocs`。无营销 Hero、无假「已连接」。
 
 自定义 stdio ACP：`custom:<slug>`，字段 command / args / env / cwd（工作区根或已存在的绝对目录）。保存进 `agentTools.customAgents`；出现在本机 CLI 列表与 Composer 导轨（`showOnEngineRail`）。spawn 经 `assertCustomAllowedCommand`（目录 binaries + `acp`/`acp-agent`/`agent-acp`，禁止 bash/node/npx 等）；`shell:false`；审批不豁免。能力走 `RUNTIME_CAPABILITIES["custom-acp"]`（quota=false、login=false、HMAC）。删除确认后解绑会话 runtime，并把仍指向它的偏好 `runtimeId` 拉回 Enjoy 本地。
 
@@ -33,7 +33,7 @@ IPC：`agentTools.upsertCustom` / `removeCustom` / `getCustom`。无 PTY 入口�
 
 ### 1. Registry 视图（设置 · 智能体）
 
-- 入口：设置 → 智能体 → 分段增加 **「Registry」**（或本机 CLI 页内二级 Tab），**不上** EngineRail。
+- 入口：设置 → 智能体 → 分段 **「Registry」**（`#/settings/agent?tab=registry`），**不上** EngineRail，**不**进空态主区。空态缺口只给单行 CTA，完整安装卡只在本页。
 - 布局：列表 + 详情；禁营销 Hero 大图墙。
 - 行：名称 · 来源（官方/目录）· 状态（未装 / ready / 已添加）· 一键「安装或复制命令」。
 - 详情：简短说明、默认 `command`/`args` 预览、文档链（外开）。
@@ -104,6 +104,7 @@ UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 - `custom:<slug>` 必须进 `AgentToolId` union，否则 `setSessionRuntime` / Composer persist 会拒。
 - 列表不要回显 env 值；编辑走 `agentTools.getCustom`。密钥型 key 用 password 掩码。
 - comingSoon 假升：只信 `canPromoteComingSoon`，不要手改 preset.available 绕过 OpenCode→Gemini→Pi。
+- 空态不得嵌 Registry 列表或 `AgentCliInstall` 整卡。新会话 checklist 只给单行安装/复制；深链 `?tab=registry` 才打开本页。
 - 自定义 agent 无 inspect / 额度条；不要画空条或假绿灯。
 - Composer 切引擎用 `can-switch-agent.ts`（自定义必须 ready）；轨徽标就绪灯用 `engine-ready.ts` 的 `isEngineReady`。M2/M3 合入后不要把两者并成一份再丢掉自定义规则。
 

@@ -16,7 +16,7 @@
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
 | 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
-| 空态 | `empty-state` 工作清单：ready / missing / 3 条示例 pill；`max-w-xl` 左对齐 |
+| 空态 | `empty-state` 工作清单：ready 单行 / missing 单 CTA / 3 条示例 pill；`max-w-xl` 顶对齐；**禁止**嵌 `AgentCliInstall` 整卡 |
 | 三路 | Enjoy 本地 / ACP 本机 CLI 上轨；沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。
@@ -91,10 +91,10 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 
 | 块 | 内容 |
 |---|---|
-| 检测行 | 已检测到的 CLI（ready 列表，品牌标+名） |
-| 缺口行 | missing：缺什么 + 安装/复制 |
+| 检测行 | 已检测到的 CLI（ready 列表，品牌标+名，单行；标题用 i18n `已检测`，禁止写成「已连接」） |
+| 缺口行 | missing：品牌+名+**一个**紧凑 CTA（npm/brew→「安装」，其余→「复制」）。点行展开命令，或深链 `#/settings/agent?tab=registry`。**禁止**嵌 `AgentCliInstall`（提示+安装+复制+文档整卡） |
 | 示例任务 | 3 条短 pill，点击填入 Composer；禁「开启奇妙旅程」类文案 |
-| 版式 | `max-w-xl` 靠线程栏习惯左/中偏左；`bg-background-*` BoardUI；无大 Hero 插画抢焦点 |
+| 版式 | `max-w-xl` 左/中偏左；`justify-start` + `pt-4` 贴 Stage 顶，禁止 `justify-center` 漂在半页；清单贴 Composer + pill；`bg-background-*` BoardUI；无大 Hero |
 
 ---
 
@@ -106,7 +106,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 | `planComposerSwitch` | `agent-picker/handoff/plan-composer-switch.ts` | 状态机 |
 | `focusAttention` | `ai-chat/attention/focus-attention.ts` | **只用 M2 完整 API**（`sessionId` + `navigate`）；阻切传当前会话，落到 Dock |
 | Rail/Picker | 现有 | 空会话直切；有历史走 plan；取消后 tab 回 from |
-| empty-state checklist | `empty-state/*` | 检测/缺口/示例 |
+| empty-state checklist | `empty-state/checklist/*` | 检测/缺口单 CTA/示例；完整安装走设置 Registry |
 | path 微标 | `agent-engine-rail` / 胶囊 | 两路文案 |
 
 ## 不变量
@@ -125,6 +125,8 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
 - 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内，并写过只滚 Dock 的无参 `focusAttention` stub；现挂点是 Composer 上沿 `PermissionDock`，阻切必须走 M2 `focusAttention({ sessionId, kind, navigate })`。
 - 切会话 / 新建会话必须 `resetPending()`，否则 HandoffCard 会跟着旧会话飘到新线程。会话生命周期在 `session-lifecycle.ts`，不要在 `use-agent-session` 再复制一份 `loadSession`。
+- 空态 `MissingRow` 曾嵌整张 `AgentCliInstall`（提示 + 安装 + 复制 + 文档），未装 CLI 一多就把 Composer / pill 顶出视口，**看起来像**设置 Registry，但路由仍是 Chat。修法只压密度 + 顶对齐。**禁止**把「像 Registry」修成删掉「已检测 / 未安装」两段，也禁止把 `AcpRegistryPage` 挂进空态。
+- `justify-center` 在长清单时制造中间大空白。空态内容顶对齐 `justify-start`。
 
 ## 验收
 
@@ -132,7 +134,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 2. 有两轮对话：切 Claude→Cursor 出 HandoffCard；取消后仍停在 Claude。
 3. 确认后旧 ACP 已 dispose，新引擎首答能看到摘要语境。
 4. 有 pendingApproval 时切换被阻；卡上可取消或去处理审批。
-5. 空态展示 ready/missing 列表 + 示例 pill；无居中营销 Hero。
+5. 空态展示 ready 单行 / missing 单 CTA + 示例 pill；无居中营销 Hero、无五张高安装卡。
 
 ## 非目标
 

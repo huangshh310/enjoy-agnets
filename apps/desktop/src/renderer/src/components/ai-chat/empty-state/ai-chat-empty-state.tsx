@@ -1,10 +1,11 @@
 /**
- * 空会话工作清单：检测 / 缺口 / 示例任务。左对齐，不是营销 Hero。
+ * 空会话工作清单：必须保留 已检测 / 未安装 checklist + 示例 pill。
+ * 只压 MissingRow 密度并顶对齐；禁止卸掉两段，也禁止挂设置 Registry。
  */
 import type { ReactNode } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
-import { EmptyStateChecklist } from "./empty-state-checklist"
+import { EmptyStateChecklist } from "./checklist/empty-state-checklist"
 import { EmptyStateHeader } from "./empty-state-header"
 import { EmptyStatePills } from "./empty-state-pills"
 import { focusComposerEnd } from "./focus-composer"
@@ -36,7 +37,7 @@ export function AiChatEmptyState({
   return (
     <div
       className={cx(
-        "relative flex size-full min-h-0 flex-1 flex-col items-start justify-center overflow-y-auto px-6 py-8",
+        "relative flex size-full min-h-0 flex-1 flex-col items-start justify-start overflow-y-auto px-6 pt-4 pb-4",
         className
       )}
     >
@@ -46,11 +47,11 @@ export function AiChatEmptyState({
           workspaceRootLabel={workspaceRootLabel ?? storeWorkspaceRootLabel}
           changesCount={changesCount ?? storeChanges.length}
         />
-        <div className="mt-4 w-full">
+        <div className="mt-3 w-full">
           <EmptyStateChecklist />
         </div>
-        {children ? <div className="mt-5 w-full">{children}</div> : null}
-        <EmptyStatePills onSelectPrompt={handleSelect} className="mt-4" />
+        {children ? <div className="mt-4 w-full">{children}</div> : null}
+        <EmptyStatePills onSelectPrompt={handleSelect} className="mt-3" />
       </div>
     </div>
   )

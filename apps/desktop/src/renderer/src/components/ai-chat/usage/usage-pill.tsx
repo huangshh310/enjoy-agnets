@@ -3,12 +3,22 @@
  */
 import { capabilitiesFor } from "@enjoy-agents/ipc-contract"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
 import { barWidth, formatQuotaPercent, pickQuotaPercent, pickQuotaWindow } from "../../settings/agent-tools/agent-tool-quota"
+import { usagePillTone } from "./usage-pill-tone"
+
+const BAR_TONE = {
+  alert: "bg-text-error-primary",
+  mid: "bg-text-secondary",
+  low: "bg-accent-500",
+  quiet: "bg-text-tertiary"
+} as const
 
 export function UsagePill({ runtimeId }: { runtimeId: string }) {
   const caps = capabilitiesFor(runtimeId)
   const snapshot = useSettingsSnapshot()
+  const emptyThread = useChatStore((state) => state.messages.length === 0)
   const tool = snapshot.data?.agentTools.find((item) => item.id === runtimeId)
   if (!caps.quota) return null
 
@@ -19,18 +29,22 @@ export function UsagePill({ runtimeId }: { runtimeId: string }) {
   if (percent == null) return null
 
   const reset = tool?.quotaInfo?.resetsIn || pickQuotaWindow(tool?.quotaInfo, tool?.selectedModel)
-  const tone =
-    percent >= 85 ? "bg-text-error-primary" : percent >= 50 ? "bg-text-secondary" : "bg-accent-500"
+  const tone = usagePillTone(percent, emptyThread)
 
   return (
     <span
-      className="inline-flex max-w-[7.5rem] shrink-0 items-center gap-1.5"
+      className={cx("inline-flex max-w-[7.5rem] shrink-0 items-center gap-1.5", tone === "quiet" && "opacity-70")}
       title={reset}
     >
       <span className="h-1 w-8 overflow-hidden rounded-full bg-background-secondary-hover">
-        <span className={cx("block h-full rounded-full", tone)} style={{ width: `${barWidth(percent)}%` }} />
+        <span className={cx("block h-full rounded-full", BAR_TONE[tone])} style={{ width: `${barWidth(percent)}%` }} />
       </span>
-      <span className="font-mono text-caption-2-medium tabular-nums text-text-secondary">
+      <span
+        className={cx(
+          "font-mono text-caption-2-medium tabular-nums",
+          tone === "alert" ? "text-text-error-primary" : tone === "quiet" ? "text-text-tertiary" : "text-text-secondary"
+        )}
+      >
         {formatQuotaPercent(percent)}
       </span>
     </span>
