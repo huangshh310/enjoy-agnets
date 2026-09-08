@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-09-06
+> 用户显式选择的本地 RAG。最后更新：2026-09-08
 
 ## 当前真相
 
@@ -39,6 +39,6 @@
 - 相对路径相对**当前打开的工作区根**，不是仓库自己的 `design/`。工作区是 `Desktop/img` 时，`design` 会变成 `Desktop/img/design`，不存在就 ENOENT。索引失败要把 `status=error` 和可读 `error` 写回来源，UI 必须显示；预设卡若磁盘上没有该目录，禁用 Index Now。
 - 分块 / 余弦排序有吞吐单测（约 8000 行 / 500 向量）。Agent / generate 会写 `ttfoMs`；用真实 Key 才能解释成模型 TTFO，stub 只证明字段被写入。
 - Cohere 以外没有官方 rerank 工厂时 `createRerankModel` 返回 undefined，必须走本地融合，不要空排。
-- 来源路径必须 `assertInsideRoot`；不要 `join(root, rel)` 后直接 `stat`，POSIX 上绝对 `rel` 会丢掉 root。
+- 来源路径必须 `assertInsideRoot`；不要 `join(root, rel)` 后直接 `stat`，POSIX 上绝对 `rel` 会丢掉 root。`assertInsideRoot` 用 `path.isAbsolute`：Linux CI 上 `C:/Windows/...` 不是绝对路径，测「绝对路径被拒绝」必须按平台取样（POSIX 用 `/etc/passwd`）。
 - 透镜范围目前只在 renderer 过滤 `knowledge.search` 命中，IPC 无 `sourceIds`。全部透镜关闭会得到空结果，不是检索失败。Chat 引用点击回知识页定位 snippet 尚未接线。
 - 添加来源的预设路径相对**当前工作区**。工作区没有 `design/` 时禁用该预设，不要提交后用横幅报「路径不存在」。浏览文件夹若在根外，必须提示，禁止静默不填路径。`workspace.pickFolder` 取消会抛错，浏览入口必须当成 cancel。图片等不可解析文件不要建成来源。

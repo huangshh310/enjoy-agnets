@@ -13,7 +13,12 @@ test(".. 逃逸被拒绝", () => {
 })
 
 test("绝对路径被拒绝", () => {
-  assert.throws(() => assertInsideRoot("C:/workspace", "C:/Windows/system.ini"))
+  // POSIX 上 `C:/...` 不是 isAbsolute，会被当成相对路径拼进 root。
+  if (process.platform === "win32") {
+    assert.throws(() => assertInsideRoot("C:/workspace", "C:/Windows/system.ini"))
+    return
+  }
+  assert.throws(() => assertInsideRoot("/workspace", "/etc/passwd"))
 })
 
 test("resolveKnowledgePath 规范化相对路径并拒绝逃逸", () => {
