@@ -14,7 +14,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   const runId = eventRunId(event)
   if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId)
   if (sessionId) {
-    useAttentionStore.getState().ingest(event, sessionId, sessionTitleOf(sessionId))
+    const meta = sessionMetaOf(sessionId)
+    useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId)
   }
 
   const store = useChatStore.getState()
@@ -35,7 +36,12 @@ export function resolveEventSessionId(event: StreamEvent): string | undefined {
   return undefined
 }
 
-function sessionTitleOf(sessionId: string): string {
-  const node = useChatStore.getState().repositories.find((item) => item.id === sessionId)
-  return node?.name ?? sessionId
+function sessionMetaOf(sessionId: string): { title: string; workspaceId?: string } {
+  const store = useChatStore.getState()
+  const node = store.repositories.find((item) => item.id === sessionId)
+  const current = store.sessionId === sessionId
+  return {
+    title: node?.name ?? (current ? store.sessionTitle : sessionId),
+    workspaceId: node?.workspaceId ?? node?.parentId ?? (current ? store.workspaceId ?? undefined : undefined)
+  }
 }

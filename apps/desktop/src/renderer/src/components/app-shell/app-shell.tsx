@@ -1,7 +1,6 @@
 /**
  * 全应用唯一铬：轨道+情境 | 工作台 | Inspector。切模块不卸载会话与右栏。
  */
-import { AttentionStrip } from "@renderer/components/attention/attention-strip"
 import { NavCard } from "./chrome/nav-card"
 import { StageSplit } from "./layout/stage-split"
 import { useShellNavigation } from "./routing/use-shell-navigation"
@@ -21,10 +20,7 @@ export function AppShell() {
       </div>
 
       <NavCard activeModule={activeModule} isChat={isChat} onSelect={selectModule} />
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-        <AttentionStrip />
-        <StageSplit isChat={isChat} activeModule={activeModule} />
-      </div>
+      <StageSplit isChat={isChat} activeModule={activeModule} />
     </div>
   )
 }

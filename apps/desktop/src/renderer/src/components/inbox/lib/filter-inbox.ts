@@ -2,7 +2,7 @@
  * 收件箱纯函数：Attention → 档案行、分类搜索、未读计数。
  */
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
-import type { InboxCategory, InboxNavCounts, InboxNotification } from "../inbox.types"
+import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
 
@@ -21,10 +21,11 @@ export function inboxFromAttention(
       copyKey: item.kind,
       title: input.t(`attention.kind.${item.kind}`),
       summary: item.summary,
-      category: item.kind === "error" ? "system" : "agent",
-      read: input.readIds.has(item.id),
+      category: (item.kind === "error" ? "system" : "agent") as InboxKind,
+      read: item.kind === "complete" || input.readIds.has(item.id),
       occurredAt: item.occurredAt,
       sessionId: item.sessionId,
+      workspaceId: item.workspaceId,
       actionKey: "openSession" as const,
       actionLabel: input.t("pages.inbox.actions.openSession"),
       status: item.status

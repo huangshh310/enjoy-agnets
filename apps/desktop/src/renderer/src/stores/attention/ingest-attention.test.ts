@@ -8,6 +8,8 @@ import {
   dismissAttentionSlot,
   focusAttentionSlot,
   ingestAttentionEvent,
+  isStripCompact,
+  stripNeedsCount,
   stripVisibleItems
 } from "./ingest-attention.ts"
 import type { AttentionItem } from "./attention.types.ts"
@@ -23,16 +25,28 @@ function approval(name = "bash"): StreamEvent & { type: "approval.required" } {
   }
 }
 
+function slot(partial: Partial<AttentionItem> & Pick<AttentionItem, "id" | "sessionId" | "kind">): AttentionItem {
+  return {
+    sessionTitle: partial.sessionTitle ?? partial.sessionId,
+    status: "active",
+    runId: "run",
+    occurredAt: 1,
+    summary: partial.summary ?? partial.id,
+    ...partial
+  }
+}
+
 test("approval.required 按工具分成 pending_approval / ask_user", () => {
   assert.equal(attentionKindFromEvent(approval()), "pending_approval")
   assert.equal(attentionKindFromEvent(approval("ask_user_questions")), "ask_user")
 })
 
-test("同会话同 kind 只占一槽，后到覆盖", () => {
+test("同会话同 kind 只占一槽，后到覆盖并保留 workspaceId", () => {
   const first = ingestAttentionEvent([], {
     event: approval("bash"),
     sessionId: "ses_b",
     sessionTitle: "B",
+    workspaceId: "ws_1",
     now: 1
   })
   const second = ingestAttentionEvent(first, {
@@ -44,6 +58,7 @@ test("同会话同 kind 只占一槽，后到覆盖", () => {
   assert.equal(second.length, 1)
   assert.equal(second[0]?.id, attentionSlotId("ses_b", "pending_approval"))
   assert.equal(second[0]?.summary.includes("write_file"), true)
+  assert.equal(second[0]?.workspaceId, "ws_1")
 })
 
 test("approval.resolved 收束该会话未决审批槽", () => {
@@ -79,38 +94,34 @@ test("run.end 收束审批并 upsert complete", () => {
   assert.equal(done.find((item) => item.kind === "complete")?.status, "active")
 })
 
-test("Strip 隐藏当前 Chat 会话的 active，空则无项", () => {
+test("Strip 按优先级排序，当前会话仍可见", () => {
   const items: AttentionItem[] = [
-    {
-      id: "ses_a:pending_approval",
-      sessionId: "ses_a",
-      sessionTitle: "A",
-      kind: "pending_approval",
-      status: "active",
-      runId: "run_a",
-      occurredAt: 1,
-      summary: "A"
-    },
-    {
-      id: "ses_b:pending_approval",
-      sessionId: "ses_b",
-      sessionTitle: "B",
-      kind: "pending_approval",
-      status: "active",
-      runId: "run_b",
-      occurredAt: 2,
-      summary: "B"
-    }
+    slot({ id: "ses_a:complete", sessionId: "ses_a", kind: "complete", occurredAt: 4 }),
+    slot({ id: "ses_b:pending_approval", sessionId: "ses_b", kind: "pending_approval", occurredAt: 2 }),
+    slot({ id: "ses_c:error", sessionId: "ses_c", kind: "error", occurredAt: 3 }),
+    slot({ id: "ses_d:ask_user", sessionId: "ses_d", kind: "ask_user", occurredAt: 1 })
   ]
   assert.deepEqual(
-    stripVisibleItems(items, "ses_a", true).map((item) => item.sessionId),
-    ["ses_b"]
+    stripVisibleItems(items).map((item) => item.kind),
+    ["pending_approval", "ask_user", "error", "complete"]
   )
-  assert.equal(stripVisibleItems(items, "ses_a", false).length, 2)
-  assert.equal(stripVisibleItems([], "ses_a", true).length, 0)
+  assert.equal(stripNeedsCount(items), 3)
+  assert.equal(stripVisibleItems([]).length, 0)
 })
 
-test("点 complete 直接 resolved；dismiss 写 dismissed；过期 complete", () => {
+test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", () => {
+  const item = slot({
+    id: "ses_a:pending_approval",
+    sessionId: "ses_a",
+    kind: "pending_approval"
+  })
+  assert.equal(isStripCompact(item, "ses_a", true, true), true)
+  assert.equal(isStripCompact(item, "ses_a", true, false), false)
+  assert.equal(isStripCompact(item, "ses_a", false, true), false)
+  assert.equal(isStripCompact(item, "ses_b", true, true), false)
+})
+
+test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () => {
   const done = ingestAttentionEvent([], {
     event: { type: "run.end", runId: "run_b" },
     sessionId: "ses_b",

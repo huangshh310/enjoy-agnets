@@ -21,6 +21,7 @@ export interface InboxNotification {
   read: boolean
   occurredAt: number
   sessionId: string
+  workspaceId?: string
   actionKey: InboxActionKey
   actionLabel?: string
   status: AttentionStatus

@@ -6,6 +6,7 @@ import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import type { AttentionItem, AttentionKind, ParkedRun } from "./attention.types"
 import {
   dismissAttentionSlot,
+  expireStaleCompletes,
   focusAttentionSlot,
   ingestAttentionEvent,
   resolveDecisionSlots
@@ -18,9 +19,15 @@ type AttentionStore = {
   runSessions: Record<string, string>
   rememberRun: (runId: string, sessionId: string) => void
   sessionOfRun: (runId: string | undefined) => string | undefined
-  ingest: (event: StreamEvent, sessionId: string, sessionTitle: string) => void
+  ingest: (
+    event: StreamEvent,
+    sessionId: string,
+    sessionTitle: string,
+    workspaceId?: string
+  ) => void
   focusSlot: (sessionId: string, kind?: AttentionKind) => void
   dismiss: (id: string) => void
+  expireStale: (now?: number) => void
   resolveSessionDecisions: (sessionId: string, runId?: string) => void
   putPark: (park: ParkedRun) => void
   takePark: (sessionId: string) => ParkedRun | undefined
@@ -35,13 +42,15 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
   rememberRun: (runId, sessionId) =>
     set((state) => ({ runSessions: { ...state.runSessions, [runId]: sessionId } })),
   sessionOfRun: (runId) => (runId ? get().runSessions[runId] : undefined),
-  ingest: (event, sessionId, sessionTitle) =>
+  ingest: (event, sessionId, sessionTitle, workspaceId) =>
     set((state) => ({
-      items: ingestAttentionEvent(state.items, { event, sessionId, sessionTitle })
+      items: ingestAttentionEvent(state.items, { event, sessionId, sessionTitle, workspaceId })
     })),
   focusSlot: (sessionId, kind) =>
     set((state) => ({ items: focusAttentionSlot(state.items, sessionId, kind) })),
   dismiss: (id) => set((state) => ({ items: dismissAttentionSlot(state.items, id) })),
+  expireStale: (now) =>
+    set((state) => ({ items: expireStaleCompletes(state.items, now ?? Date.now()) })),
   resolveSessionDecisions: (sessionId, runId) =>
     set((state) => ({ items: resolveDecisionSlots(state.items, sessionId, runId) })),
   putPark: (park) => set((state) => ({ parks: { ...state.parks, [park.sessionId]: park } })),

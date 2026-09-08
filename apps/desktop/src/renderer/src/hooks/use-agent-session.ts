@@ -112,6 +112,7 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
 export { abortComposerRun }
 export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
 export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersistedSession }
+export type { WorkspaceRow } from "./session-lifecycle"
 
 export async function decidePendingApproval(
   decision: "allow" | "deny" | "allow_session",

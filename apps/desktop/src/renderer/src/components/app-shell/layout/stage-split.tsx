@@ -14,6 +14,7 @@ import { useRightPaneWidth } from "@renderer/components/ai-chat/right-pane/use-r
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import type { AppModuleId } from "../app-shell.types"
+import { AttentionStrip } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStage } from "../chat/chat-stage"
 import { InspectorPane } from "./inspector-pane"
 import { sanitizeSplitLayout, STAGE_DEFAULT_SIZE, STAGE_MIN_PERCENT } from "./inspector-panel-size"
@@ -67,21 +68,24 @@ export function StageSplit({
         defaultSize={STAGE_DEFAULT_SIZE}
         className="h-full min-h-0 overflow-hidden bg-transparent"
       >
-        <div className="relative h-full min-h-0">
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
-            <ChatStage />
+        <div className="flex h-full min-h-0 flex-col">
+          <AttentionStrip />
+          <div className="relative min-h-0 flex-1">
+            <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
+              <ChatStage />
+            </div>
+            <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
+              <Outlet />
+            </div>
+            {rightPanelCollapsed && !isChat ? (
+              <QuietIconButton
+                icon={RiLayoutRight2Line}
+                aria-label={t("chat.expandPane")}
+                className="absolute right-3 top-3 z-10"
+                onClick={() => expandInspector()}
+              />
+            ) : null}
           </div>
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
-            <Outlet />
-          </div>
-          {rightPanelCollapsed && !isChat ? (
-            <QuietIconButton
-              icon={RiLayoutRight2Line}
-              aria-label={t("chat.expandPane")}
-              className="absolute right-3 top-3 z-10"
-              onClick={() => expandInspector()}
-            />
-          ) : null}
         </div>
       </Panel>
       <InspectorPane maximized={maximized} toggleWidth={toggleWidth} resetWidth={resetWidth} />

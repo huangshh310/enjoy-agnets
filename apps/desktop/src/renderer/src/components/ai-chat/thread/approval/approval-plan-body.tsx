@@ -76,7 +76,7 @@ function PlanStepList({ steps }: { steps: ApprovalPlanStep[] }) {
 
 function PlanDiffToggle({ name, args }: { name: string; args: Record<string, unknown> }) {
   const t = useT()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   return (
     <div className="flex flex-col gap-2">
       <button

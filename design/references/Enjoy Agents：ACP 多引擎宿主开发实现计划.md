@@ -60,16 +60,20 @@ Enjoy Agents 是 **本地优先的 Electron ACP Client / 多引擎宿主**（与
 - Skills / MCP / Knowledge / Observability 工作模块；skill-sources 本机同步雏形
 - AI SDK 7 全能力落地另见同目录 SDK 计划文
 
-已知缺口（本计划主攻）：
+已收（对照 specs，勿重复造）：
 
-1. Usage 可见性偏设置卡，缺 Composer / statusline 级 L1–L4 分层
-2. 跨会话 Attention（审批 / 提问 / 错误）未上浮
+1. Usage L1–L4 + 能力矩阵 + 配置边界（M1）
+2. 跨会话 Attention：Strip / PermissionDock / Inbox 合流（M2，本 PR）
+
+已知缺口（本计划主攻，顺序 M3 → M4）：
+
 3. 中途换 ACP 引擎缺 handoff 手势（参考 monocode `planComposerSwitch`）
 4. ACP Registry / 自定义 `command+args` 未产品化
-5. 配置边界表（auth 归谁）未在 UI 明示
-6. comingSoon CLI（OpenCode / Gemini / Pi）未升 available
-7. 团队层（TeamAI 式 pull / 摩擦分享 / digest）未做；Skills 可演进对接
-8. Git Review / Monaco 仍加深中（不挡宿主里程碑，但 Review pane 要跟审批 diff 对齐）
+5. comingSoon CLI（OpenCode / Gemini / Pi）未升 available
+6. Git Review / Monaco 仍加深中（不挡宿主里程碑，但 Review pane 要跟审批 diff 对齐）
+
+整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
+可选后置：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
 
 ---
 
@@ -160,7 +164,7 @@ M6  团队层可选：skill 源同步增强 + 摩擦提示 + 本地 digest（学
 
 代码锚点：`thread/approval/`、`inbox/`、`approval-policy-*`。
 
-完成标准：后台会话要审批时，前台 3 秒内可见入口。
+完成标准：后台会话要审批时，前台 3 秒内可见入口。落地以 `design/specs/m2-attention.md` 当前真相为准。
 
 ---
 

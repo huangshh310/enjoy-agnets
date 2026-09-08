@@ -7,8 +7,15 @@ import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./atten
 /** 与 ipc-contract 同值；node:test 不要 value-import 合约入口。 */
 const ASK_USER_QUESTIONS_TOOL = "ask_user_questions"
 
-/** complete 超过此时长标 expired，不再占 Strip。 */
-export const COMPLETE_TTL_MS = 30 * 60 * 1000
+/** complete 短时展示后自消，不计入红点。 */
+export const COMPLETE_TTL_MS = 10_000
+
+export const KIND_PRIORITY: Record<AttentionKind, number> = {
+  pending_approval: 0,
+  ask_user: 1,
+  error: 2,
+  complete: 3
+}
 
 export function attentionSlotId(sessionId: string, kind: AttentionKind): string {
   return `${sessionId}:${kind}`
@@ -33,7 +40,7 @@ export function ingestAttentionEvent(
   input: IngestAttentionInput
 ): AttentionItem[] {
   const now = input.now ?? Date.now()
-  const aged = expireStaleComplete(items, now)
+  const aged = expireStaleCompletes(items, now)
   if (input.event.type === "approval.resolved") {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }
@@ -45,6 +52,7 @@ export function ingestAttentionEvent(
       : aged
   const next = upsertSlot(cleared, {
     sessionId: input.sessionId,
+    workspaceId: input.workspaceId,
     sessionTitle: input.sessionTitle,
     kind,
     runId: eventRunId(input.event) ?? "",
@@ -90,24 +98,44 @@ export function resolveDecisionSlots(
   })
 }
 
-/** Strip 只画需要跳走的 active；当前 Chat 会话由 Dock 接，不重复占条。 */
-export function stripVisibleItems(
-  items: AttentionItem[],
-  currentSessionId: string | null,
-  isChat: boolean
-): AttentionItem[] {
-  return items.filter((item) => {
-    if (item.status !== "active") return false
-    if (isChat && item.sessionId === currentSessionId) return false
-    return true
-  })
+/** Strip 画 active/focused；当前会话决策面在 Dock，胶囊收成微点。 */
+export function stripVisibleItems(items: AttentionItem[]): AttentionItem[] {
+  return sortByPriority(
+    items.filter((item) => item.status === "active" || item.status === "focused")
+  )
 }
 
-function expireStaleComplete(items: AttentionItem[], now: number): AttentionItem[] {
+export function stripNeedsCount(items: AttentionItem[]): number {
+  return stripVisibleItems(items).filter((item) => item.kind !== "complete").length
+}
+
+export function isStripCompact(
+  item: AttentionItem,
+  currentSessionId: string | null,
+  isChat: boolean,
+  dockOpen: boolean
+): boolean {
+  if (!isChat || !dockOpen || item.sessionId !== currentSessionId) return false
+  return item.kind === "pending_approval" || item.kind === "ask_user"
+}
+
+export function expireStaleCompletes(items: AttentionItem[], now: number): AttentionItem[] {
   return items.map((item) => {
     if (item.kind !== "complete" || item.status !== "active") return item
     if (now - item.occurredAt < COMPLETE_TTL_MS) return item
     return { ...item, status: "expired" }
+  })
+}
+
+export function hasLiveComplete(items: AttentionItem[]): boolean {
+  return items.some((item) => item.kind === "complete" && item.status === "active")
+}
+
+function sortByPriority(items: AttentionItem[]): AttentionItem[] {
+  return [...items].sort((left, right) => {
+    const rank = KIND_PRIORITY[left.kind] - KIND_PRIORITY[right.kind]
+    if (rank !== 0) return rank
+    return right.occurredAt - left.occurredAt
   })
 }
 
@@ -119,7 +147,7 @@ function upsertSlot(
   const next: AttentionItem = { ...slot, id, status: "active" }
   const index = items.findIndex((item) => item.id === id)
   if (index < 0) return [...items, next]
-  return items.map((item, i) => (i === index ? next : item))
+  return items.map((item, i) => (i === index ? { ...next, workspaceId: next.workspaceId ?? item.workspaceId } : item))
 }
 
 function summaryFor(kind: AttentionKind, input: IngestAttentionInput): string {

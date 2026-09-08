@@ -27,6 +27,8 @@ export type AttentionApproval = StreamEvent & { type: "approval.required" }
 export type AttentionItem = {
   id: string
   sessionId: string
+  /** 跳回会话时切工作区；没有则从侧栏树补。 */
+  workspaceId?: string
   sessionTitle: string
   kind: AttentionKind
   status: AttentionStatus
@@ -52,5 +54,6 @@ export type IngestAttentionInput = {
   event: StreamEvent
   sessionId: string
   sessionTitle: string
+  workspaceId?: string
   now?: number
 }

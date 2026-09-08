@@ -1,6 +1,6 @@
 # spec/product
 
-> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-06
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-08
 
 ## 当前真相
 
@@ -29,6 +29,17 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 | MVP | 进行中 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI |
 | V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；自动更新走 GitHub Releases（见 `updates` spec）；Git 面板加深仍未完 |
 | V1.5 | 后置 | 云账号、token 代理、外部 OTEL、Vercel Sandbox |
+
+ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：
+
+| 阶段 | 状态 | 内容 |
+|---|---|---|
+| M1 Usage | 已落地 | L1–L4 Usage、能力矩阵、配置边界 |
+| M2 Attention | 本 PR | Strip / Dock / Inbox 三层；后台审批 ≤3s 可见 |
+| M3 handoff | 后续 | 换引擎摘要注入 system/hidden，禁止当第一条可见用户消息 |
+| M4 Registry | M3 之后 | ACP Registry + 自定义 agent；**不做** PTY 兜底 |
+
+整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP。可选后置：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
 
 ## 明确不做
 

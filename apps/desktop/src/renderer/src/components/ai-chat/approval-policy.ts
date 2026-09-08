@@ -24,15 +24,15 @@ export const APPROVAL_PRESETS = [
   },
   {
     id: "allow-edits" as const,
-    colorClass: "text-amber-600 dark:text-amber-300",
-    bgClass: "bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:border-amber-500/30",
-    iconColor: "text-amber-500 dark:text-amber-400"
+    colorClass: "text-text-primary",
+    bgClass: "bg-background-secondary-default border-border-button-default hover:bg-background-secondary-hover",
+    iconColor: "text-foreground-icon-secondary"
   },
   {
     id: "allow-all" as const,
-    colorClass: "text-rose-600 dark:text-rose-300",
-    bgClass: "bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
-    iconColor: "text-rose-500 dark:text-rose-400"
+    colorClass: "text-text-error-primary",
+    bgClass: "bg-background-tertiary-error border-border-error-default hover:bg-background-tertiary-error",
+    iconColor: "text-text-error-primary"
   }
 ]
 

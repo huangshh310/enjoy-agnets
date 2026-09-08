@@ -91,9 +91,23 @@ export async function refreshAllWorkspaces() {
   }
 }
 
-export async function selectPersistedSession(sessionId: string) {
-  const node = useChatStore.getState().repositories.find((item) => item.id === sessionId)
+export async function selectPersistedSession(sessionId: string, workspaceId?: string) {
+  const store = useChatStore.getState()
+  const node = store.repositories.find((item) => item.id === sessionId)
   if (!node || node.kind !== "session") return
+  const targetWorkspaceId = workspaceId ?? node.workspaceId ?? node.parentId
+  if (targetWorkspaceId && store.workspaceId !== targetWorkspaceId) {
+    const workspace = store.repositories.find(
+      (item) => item.id === targetWorkspaceId && item.kind === "workspace"
+    )
+    if (workspace) {
+      store.setWorkspace({
+        id: workspace.id,
+        name: workspace.name,
+        rootPath: workspace.rootPath || ""
+      })
+    }
+  }
   await loadSession(node.id, node.name)
 }
 

@@ -1,6 +1,6 @@
 /**
- * L0：唯一决策面。贴在 Composer 顶边，位于会话内容之下、输入簇之上。
- * 禁止钉在 Conversation 顶部，禁止写进 ConversationContent。
+ * L0：唯一决策面。钉在 Conversation 与 Composer 之间，贴 Composer 上沿。
+ * 禁止写进 ConversationContent，禁止第二套 Allow/Deny。
  */
 import { decidePendingApproval } from "@renderer/hooks/use-agent-session"
 import { ApprovalCard } from "@renderer/components/ai-chat/thread/approval/approval-card"
@@ -13,8 +13,11 @@ export function PermissionDock() {
   if (!pending) return null
 
   return (
-    <div className="relative z-20 w-full min-w-0 shrink-0 px-6 pt-1">
-      <p className="mb-1.5 px-1 text-caption-2-medium text-text-tertiary">{t("attention.dockLabel")}</p>
+    <div
+      id="permission-dock"
+      className="shrink-0 border-t border-separator-border bg-background-primary-default/95 px-8 py-3 backdrop-blur-sm"
+    >
+      <p className="mb-1.5 text-caption-2-medium text-text-tertiary">{t("attention.dockLabel")}</p>
       <ApprovalCard
         pending={pending}
         onApprove={(answers) => void decidePendingApproval("allow", answers)}

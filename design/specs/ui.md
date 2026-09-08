@@ -55,8 +55,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - Composer 底栏显隐：`composer/composer-footer.tsx` 读 `composerChromeFor`（`packages/ipc-contract/src/runtime-capabilities.ts`）
 - Composer 本轮改动条与跳动宠物：`ai-chat/composer/session-review/`
 - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
-- 审批卡片三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`；停靠：`attention/permission-dock.tsx` + `chat-composer-cluster.tsx`
-- Attention 条：`components/attention/attention-strip.tsx`（画布，空则不渲染）
+- 审批卡片三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`；停靠：`ai-chat/attention/permission-dock.tsx` + `chat-composer-cluster.tsx`（Composer 上沿）
+- Attention 条：`ai-chat/attention/attention-strip.tsx` 挂在 `stage-split.tsx` Stage 顶（空则不渲染）
 - 向用户提问：`apps/desktop/src/renderer/src/components/ai-chat/thread/ask-user/`
 - 对话工具表面：`apps/desktop/.../ai-chat/thread/tool-surfaces/`
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（Attention 档案时间线；`openSession` 必须带 `sessionId`）

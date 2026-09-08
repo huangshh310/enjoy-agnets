@@ -32,6 +32,15 @@ function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id"
   }
 }
 
+test("complete 默认已读，不占红点", () => {
+  const items = inboxFromAttention(
+    [attention({ id: "c", sessionId: "ses_c", kind: "complete", summary: "done" })],
+    { t, readIds: new Set(), hiddenIds: new Set() }
+  )
+  assert.equal(items[0]?.read, true)
+  assert.equal(inboxNavCounts(items).unread, 0)
+})
+
 test("Attention 物化：隐藏项丢弃，必须带 sessionId", () => {
   const items = inboxFromAttention(
     [

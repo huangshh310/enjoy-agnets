@@ -1,7 +1,8 @@
 # spec/m4-acp-registry
 
 > M4 ACP 扩展与 Registry 大纲。最后更新：2026-09-08
-> 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
+> 产品锁：顺序 M2 → M3 → 本文。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、**M4 PTY 兜底**。
+> 可选后置：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 目标
