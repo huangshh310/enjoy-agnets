@@ -36,6 +36,9 @@
 | `skills` | [specs/skills.md](./specs/skills.md) | 技能生态、Agent 专属整备舱、Bento 集市与同步投影 | `components/skills`、`main/services/skills-service.ts` |
 | `updates` | [specs/updates.md](./specs/updates.md) | 自动更新、发行说明、GitHub Releases | `main/services/app-update.ts`、`components/app-update/` |
 | `m1-usage` | [specs/m1-usage-and-capabilities.md](./specs/m1-usage-and-capabilities.md) | 三路命名、Usage L1–L4、能力矩阵、配置边界 | `runtime-capabilities.ts`、`ai-chat/usage/`、`settings/agent-tools/` |
+| `m2-attention` | [specs/m2-attention.md](./specs/m2-attention.md) | AttentionStrip、PermissionDock、Inbox 跳转 | `ai-chat` 审批/Inbox |
+| `m3-handoff` | [specs/m3-engine-handoff.md](./specs/m3-engine-handoff.md) | 换引擎 handoff、空态 checklist | `agent-picker`、`empty-state` |
+| `m4-registry` | [specs/m4-acp-registry.md](./specs/m4-acp-registry.md) | ACP Registry、自定义 agent、comingSoon 升级 | `agent-tools`、ACP spawn |
 找不到对应 ID 时：先在本表加一行和空 spec，再写代码。不要把新领域塞进无关 spec。
 
 ---
