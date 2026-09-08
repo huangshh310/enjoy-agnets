@@ -21,7 +21,7 @@
 | L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 胶囊旁 `UsagePill`；设置账号区 |
 | L2 | 自营积分 | 无真实 API | Billing 保持「本地演示」；不画假条 |
 | L3 | 本轮 token / 上下文 % | 会话折算（agent-limits / inspector） | Composer 底 `SessionMeter`；无用量则隐藏 |
-| L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / 切引擎 |
+| L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |
 
 额度条只给 Cursor / Grok / Antigravity。Claude / Codex / Enjoy 本地：**不画空条**，诚实文案「该 CLI 无公开额度 API」。禁止 `Math.max(%, 2)` 假填充、90/95/100 占位、遥测伪造「5 小时 / 周度」计划条。
 
@@ -58,3 +58,5 @@
 - `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。
 - `composerChromeFor` 的 Fast / 思考 / 模式显隐与本 spec 的 path 微标是同一张表，不要再写第二套 capability 形状。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。
+- L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。
+- UsagePill / QuotaExhaustedCard 只用审批铬语义 token（`text-error-primary` / `background-tertiary-error` / `border-error-default`），禁止 `bg-rose-500` / `bg-amber-500`。

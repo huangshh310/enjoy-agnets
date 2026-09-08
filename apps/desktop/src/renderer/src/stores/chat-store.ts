@@ -65,6 +65,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sessionReviewDismissedKey: null,
   pendingApproval: null,
   error: null,
+  agentPickerOpen: false,
   sidebarGrouping: "project",
   sessionSortOrder: "priority",
   pinnedWorkspaceIds: [],
@@ -140,6 +141,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
+  setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
   setWorkspace: (workspace) => {
     if (!workspace) {
       set({

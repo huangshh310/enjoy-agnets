@@ -34,7 +34,8 @@ export function AgentPicker({
 }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const open = useChatStore((state) => state.agentPickerOpen)
+  const setOpen = useChatStore((state) => state.setAgentPickerOpen)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const tools = useSettingsSnapshot().data?.agentTools ?? []
   const { primary, soon } = composerAgentGroups(tools)

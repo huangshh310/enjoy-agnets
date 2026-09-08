@@ -1,5 +1,6 @@
 /**
  * L4 额度耗尽卡：402 / credit / spend，不是泛化限流。
+ * 「切换引擎」打开 Composer AgentPicker，禁止跳设置页。
  */
 import { RiAlertLine, RiCloseLine, RiCpuLine, RiWallet3Line } from "@remixicon/react"
 import { useNavigate } from "@tanstack/react-router"
@@ -10,14 +11,15 @@ export function QuotaExhaustedCard({ error }: { error: string }) {
   const t = useT()
   const navigate = useNavigate()
   const setError = useChatStore((state) => state.setError)
+  const setAgentPickerOpen = useChatStore((state) => state.setAgentPickerOpen)
 
   return (
     <div
       data-testid="quota-exhausted-card"
-      className="relative my-2 flex w-full max-w-[40rem] flex-col gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-text-primary shadow-card"
+      className="relative my-2 flex w-full max-w-[40rem] flex-col gap-2.5 rounded-2xl border border-border-error-default/30 bg-background-tertiary-error p-4 text-text-primary shadow-card"
     >
       <div className="flex items-start gap-3">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-600">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border-error-default/30 bg-background-tertiary-error text-text-error-primary">
           <RiAlertLine className="size-4.5" aria-hidden />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -45,7 +47,7 @@ export function QuotaExhaustedCard({ error }: { error: string }) {
             </button>
             <button
               type="button"
-              onClick={() => void navigate({ to: "/settings/$section", params: { section: "agent" } })}
+              onClick={() => setAgentPickerOpen(true)}
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-secondary shadow-2xs hover:text-text-primary"
             >
               <RiCpuLine className="size-3" />

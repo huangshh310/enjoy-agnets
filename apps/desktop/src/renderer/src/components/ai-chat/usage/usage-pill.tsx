@@ -20,7 +20,7 @@ export function UsagePill({ runtimeId }: { runtimeId: string }) {
 
   const reset = tool?.quotaInfo?.resetsIn || pickQuotaWindow(tool?.quotaInfo, tool?.selectedModel)
   const tone =
-    percent >= 85 ? "bg-rose-500" : percent >= 50 ? "bg-amber-500" : "bg-accent-500"
+    percent >= 85 ? "bg-text-error-primary" : percent >= 50 ? "bg-text-secondary" : "bg-accent-500"
 
   return (
     <span

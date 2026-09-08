@@ -148,6 +148,8 @@ export type ChatStore = {
   sessionReviewDismissedKey: string | null
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
+  /** L4「切换引擎」打开 Composer AgentPicker，不跳设置。 */
+  agentPickerOpen: boolean
   sidebarGrouping: "project" | "flat"
   sessionSortOrder: "priority" | "updated" | "manual"
   pinnedWorkspaceIds: string[]
@@ -180,6 +182,7 @@ export type ChatStore = {
   setRunning: (running: boolean, runId?: string | null) => void
   setHasKey: (hasKey: boolean) => void
   setError: (message: string | null) => void
+  setAgentPickerOpen: (open: boolean) => void
   setWorkspace: (workspace: { id: string; name: string; rootPath: string } | null) => void
   setSelectedFile: (path: string | null, content: string) => void
   setChanges: (changes: ChangedFileRow[]) => void
