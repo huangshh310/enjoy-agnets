@@ -21,16 +21,20 @@ function walkProd(dir: string): string[] {
 
 test("空态词表保留已检测 / 未安装 / 示例任务，禁止改成已连接", () => {
   assert.equal(zhChat.emptyDetected, "已检测")
+  assert.equal(zhChat.emptyReadyCount, "已就绪 {count} 个")
   assert.equal(zhChat.emptyMissing, "未安装")
   assert.equal(zhChat.emptySamples, "示例任务")
+  assert.equal(zhChat.emptyChangesChip, "{count} 项")
 })
 
 test("空态源码必须挂 checklist 与 pills，且不挂 Registry / AgentCliInstall", () => {
   const files = walkProd(ROOT)
   const sources = files.map((path) => readFileSync(path, "utf8")).join("\n")
   assert.match(sources, /EmptyStateChecklist/)
+  assert.match(sources, /EmptyStateReadyBlock/)
   assert.match(sources, /EmptyStatePills/)
   assert.match(sources, /chat\.emptyDetected/)
+  assert.match(sources, /chat\.emptyReadyCount/)
   assert.match(sources, /chat\.emptyMissing/)
   assert.doesNotMatch(sources, /\bAcpRegistryPage\b|\bAcpRegistryList\b|\bAcpRegistryDetail\b|\bCustomAcpAgentForm\b/)
   assert.doesNotMatch(sources, /from ["'].*agent-cli-install["']/)
@@ -40,6 +44,11 @@ test("Composer 必须从空态拆出；引导栈贴顶且无 flex-1 居中", () 
   const empty = readFileSync(join(ROOT, "ai-chat-empty-state.tsx"), "utf8")
   const header = readFileSync(join(ROOT, "empty-state-header.tsx"), "utf8")
   const checklist = readFileSync(join(ROOT, "checklist/empty-state-checklist.tsx"), "utf8")
+  const ready = readFileSync(join(ROOT, "checklist/empty-state-ready-block.tsx"), "utf8")
+  const review = readFileSync(
+    join(ROOT, "../composer/session-review/session-review-visible.ts"),
+    "utf8"
+  )
   const stage = readFileSync(join(ROOT, "../../app-shell/chat/chat-stage.tsx"), "utf8")
   const emptyClasses = [...empty.matchAll(/className=\{?cx\(([^)]+)\)|className="([^"]+)"/g)]
     .map((match) => match[1] ?? match[2] ?? "")
@@ -50,7 +59,11 @@ test("Composer 必须从空态拆出；引导栈贴顶且无 flex-1 居中", () 
   assert.match(empty, /w-full max-w-xl shrink-0 flex-col gap-3 pt-3/)
   assert.match(header, /text-title-3/)
   assert.match(checklist, /\bh-auto\b/)
+  assert.match(ready, /emptyReadyCount/)
   assert.doesNotMatch(checklist, /\bflex-1\b|\bjustify-center\b|\bmin-h-\[/)
+  assert.doesNotMatch(ready, /\bjustify-center\b|\bmin-h-\[/)
+  assert.match(header, /emptyChangesChip/)
+  assert.match(review, /messageCount === 0/)
   assert.match(stage, /min-h-0 flex-1 overflow-y-auto/)
   assert.match(stage, /ChatComposerCluster className="shrink-0"/)
   assert.doesNotMatch(stage, /<\/AiChatEmptyState>/)

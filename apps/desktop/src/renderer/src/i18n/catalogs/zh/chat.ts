@@ -176,6 +176,7 @@ export const zhChat = {
   emptyChangesChip: "{count} 项",
   emptyReady: "工作区就绪",
   emptyDetected: "已检测",
+  emptyReadyCount: "已就绪 {count} 个",
   emptyDetectedNone: "还没有探测到本机 CLI。",
   emptyMissing: "未安装",
   emptyMissingNone: "白名单 CLI 都已找到。",

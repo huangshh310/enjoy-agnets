@@ -1,5 +1,6 @@
 /**
  * L1 账户额度微条：仅 capabilities.quota===true 且 inspect 有官方数字时出现。
+ * 空会话强制 quiet，有消息才走 usagePillTone 警报阶。
  */
 import { capabilitiesFor } from "@enjoy-agents/ipc-contract"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"

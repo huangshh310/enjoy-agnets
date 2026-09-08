@@ -18,7 +18,7 @@
 
 | 层 | 含义 | 数据源 | UI |
 |---|---|---|---|
-| L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 胶囊旁 `UsagePill`（空会话降强调，≥85% 才警报；100% 必须是 inspect 数字）；设置账号区 |
+| L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 胶囊旁 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）；设置账号区 |
 | L2 | 自营积分 | 无真实 API | Billing 保持「本地演示」；不画假条 |
 | L3 | 本轮 token / 上下文 % | 会话折算（agent-limits / inspector） | Composer 底 `SessionMeter`；无用量则隐藏 |
 | L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |
@@ -55,7 +55,7 @@
 ## 已知坑
 
 - Claude / Codex `inspect` 仍拉账号，但 `quota=false`，UI 不得回落空条 + `—`。
-- `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。空会话 `UsagePill` 走 `quiet`，不要把低用量画成强调色。
+- `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。空会话 `UsagePill` 必须 `quiet`（含 ≥85%），有消息才用 alert/mid/low。
 - `composerChromeFor` 的 Fast / 思考 / 模式显隐与本 spec 的 path 微标是同一张表，不要再写第二套 capability 形状。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。

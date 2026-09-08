@@ -178,6 +178,7 @@ export const enChat = {
   emptyChangesChip: "{count}",
   emptyReady: "Workspace ready",
   emptyDetected: "Detected",
+  emptyReadyCount: "{count} ready",
   emptyDetectedNone: "No local CLIs detected yet.",
   emptyMissing: "Not installed",
   emptyMissingNone: "All allowlisted CLIs were found.",
