@@ -1,9 +1,9 @@
 /**
- * 工作区显示名：显式名称优先，否则用路径最后一段。
+ * 工作区显示名：显式名称优先，否则用路径最后一段（兼容 / 与 \）。
  */
-import { basename } from "node:path"
-
 export function resolveWorkspaceName(rootPath: string, name?: string): string {
   const trimmed = name?.trim()
-  return trimmed || basename(rootPath)
+  if (trimmed) return trimmed
+  const normalized = rootPath.replace(/[\\/]+$/, "")
+  return normalized.split(/[\\/]/).at(-1) || rootPath
 }
