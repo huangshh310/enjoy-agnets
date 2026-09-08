@@ -1,19 +1,19 @@
 /**
  * 侧栏单个项目行：点击切换展开/收缩，展开其他项目时才切换当前工作区。
  */
-import { RiAddLine, RiFolder6Line, RiInboxArchiveLine, RiPushpin2Fill } from "@remixicon/react"
+import { RiAddLine, RiFolder6Line, RiPushpin2Fill } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { ProjectPopover } from "@renderer/components/ai-chat/sidebar/project-popover"
 import {
   isWorkspaceRowExpanded,
   shouldSwitchWorkspaceOnFolderClick
 } from "@renderer/components/ai-chat/sidebar/sidebar-expand"
+import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
 import { archiveCurrentSession } from "@renderer/hooks/workspace-lifecycle"
 import {
   createAndOpenSession,
   loadWorkspace
 } from "@renderer/hooks/use-agent-session"
-import { DotMatrixLoader } from "@/components/ui/dot-matrix-loader"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
@@ -165,44 +165,24 @@ function SessionList({
         </div>
       ) : (
         sessions.map((session) => (
-          <div
+          <SidebarSessionRow
             key={session.id}
-            className={cx(
-              "group/session flex w-full items-center gap-1 rounded-lg pr-1",
-              session.id === sessionId
-                ? "bg-background-tertiary-default font-medium text-text-primary shadow-2xs"
-                : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-            )}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                if (workspace.id !== currentWorkspaceId) {
-                  void switchWorkspace(workspace).then(() => onSelectSession(session.id))
-                  return
-                }
-                onSelectSession(session.id)
-              }}
-              className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2 py-1 text-left"
-            >
-              <span className="min-w-0 flex-1 truncate text-caption-1-medium">{session.name}</span>
-              {session.id === sessionId && running ? (
-                <DotMatrixLoader variant="wave" className="shrink-0 group-hover/session:hidden" />
-              ) : (
-                <span className="shrink-0 text-caption-2-medium text-text-tertiary group-hover/session:hidden">
-                  {formatTime(session.updatedAt)}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              title={t("chat.archiveSession")}
-              onClick={() => void archiveCurrentSession(session.id)}
-              className="hidden size-5.5 shrink-0 items-center justify-center rounded-md text-text-tertiary hover:bg-background-primary-default hover:text-text-primary group-hover/session:flex"
-            >
-              <RiInboxArchiveLine className="size-3.5" />
-            </button>
-          </div>
+            sessionId={session.id}
+            name={session.name}
+            active={session.id === sessionId}
+            running={session.id === sessionId && running}
+            updatedAt={session.updatedAt}
+            formatTime={formatTime}
+            className="rounded-lg"
+            onSelect={() => {
+              if (workspace.id !== currentWorkspaceId) {
+                void switchWorkspace(workspace).then(() => onSelectSession(session.id))
+                return
+              }
+              onSelectSession(session.id)
+            }}
+            onArchive={() => void archiveCurrentSession(session.id)}
+          />
         ))
       )}
     </div>

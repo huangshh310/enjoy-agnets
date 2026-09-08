@@ -10,24 +10,15 @@ import { readString } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { FileDiff } from "../diff/file-diff"
 import { useT } from "@renderer/i18n"
+import { classifyApproval, commandTextOf, filePathOfArgs } from "./approval/classify-approval"
 
 export function ApprovalPreview({ name, args }: { name: string; args: Record<string, unknown> }) {
   if (name === "edit_file" || name === "edit") return <EditFilePreview args={args} />
   if (name === "write_file" || name === "write") {
     return <WorkspaceFilePreview path={filePathOf(args)} next={readString(args, "content")} />
   }
-  const isCommand =
-    name === "bash" ||
-    name === "sh" ||
-    name === "execute_command" ||
-    name === "run_command" ||
-    Boolean(readString(args, "command")) ||
-    name.includes(" ") ||
-    name.includes("&&") ||
-    name.includes(";")
-  if (isCommand) {
-    const cmd = readString(args, "command") || (name !== "bash" ? name : "") || JSON.stringify(args, null, 2)
-    return <BashPreview commandText={cmd} />
+  if (classifyApproval(name, args) === "command") {
+    return <BashPreview commandText={commandTextOf(name, args) || JSON.stringify(args, null, 2)} />
   }
   if (name === "git_commit") return <CommitPreview args={args} />
   return (
@@ -40,7 +31,7 @@ export function ApprovalPreview({ name, args }: { name: string; args: Record<str
 }
 
 export function filePathOf(args: Record<string, unknown>): string {
-  return readString(args, "path") || readString(args, "file_path")
+  return filePathOfArgs(args)
 }
 
 function BashPreview({ commandText }: { commandText: string }) {

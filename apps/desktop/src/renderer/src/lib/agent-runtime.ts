@@ -3,17 +3,9 @@
  */
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { isAcpHostRuntimeId } from "@enjoy-agents/ipc-contract"
+import { DEFAULT_RUNTIME_ID } from "./session-runtime"
 
-export const DEFAULT_RUNTIME_ID = "enjoy-local"
-
-export function pickSessionRuntime(
-  sessionId: string | null,
-  sessionRuntimes: Record<string, string> | undefined,
-  preferred?: string
-): string {
-  if (sessionId && sessionRuntimes?.[sessionId]) return sessionRuntimes[sessionId]
-  return preferred || DEFAULT_RUNTIME_ID
-}
+export { DEFAULT_RUNTIME_ID, pickSessionRuntime } from "./session-runtime"
 
 export function isAcpComposerRuntime(runtimeId: string | undefined): boolean {
   return isAcpHostRuntimeId(runtimeId)

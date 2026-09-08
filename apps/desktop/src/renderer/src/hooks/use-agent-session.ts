@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  AgentToolId,
   migrateContentToParts,
   safeValidateUIMessages,
   StreamEvent,
@@ -8,7 +9,9 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { pickSessionRuntime } from "../lib/agent-runtime"
+import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
 import { abortComposerRun } from "./composer-run-control"
+import { bindSessionRuntime } from "./persist-runtime"
 import { pickActiveModel } from "./pick-active-model"
 import { threadFromRows } from "./hydrate-thread"
 import { mergeUserAssets } from "./merge-user-assets"
@@ -179,11 +182,22 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "N
     title: customTitle
   })) as SessionRow
   const store = useChatStore.getState()
+  const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
   store.setError(null)
   store.setSession(session.id, session.title)
-  store.setRuntimeId(store.preferredRuntimeId)
+  store.setRuntimeId(runtimeId)
   store.setMessages([])
+  await bindSessionRuntime(session.id, runtimeId)
   await refreshAllWorkspaces()
+}
+
+/** 新建会话跟 Composer 当前引擎；非法 id 再回落偏好。 */
+function resolveCreateRuntime(current: string, preferred: string) {
+  for (const id of [current, preferred, DEFAULT_RUNTIME_ID]) {
+    const parsed = AgentToolId.safeParse(id)
+    if (parsed.success) return parsed.data
+  }
+  return DEFAULT_RUNTIME_ID
 }
 
 export { abortComposerRun }

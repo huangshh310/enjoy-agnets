@@ -8,7 +8,6 @@ import { useT } from "@renderer/i18n"
 import {
   RiAddLine,
   RiBookOpenLine,
-  RiChat3Line,
   RiEqualizer3Line,
   RiFlashlightLine,
   RiFolder6Line,
@@ -35,6 +34,7 @@ import {
   selectPersistedSession,
   startPersistedSession
 } from "@renderer/hooks/use-agent-session"
+import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
 import { useChatStore } from "@renderer/stores/chat-store"
 
 export function openQuickSearch() {
@@ -272,7 +272,7 @@ export function QuickSearchDialog() {
                     })
                   }
                 >
-                  <RiChat3Line className="size-4 text-text-tertiary" />
+                  <SessionAgentMark sessionId={session.id} size={16} />
                   <span className="truncate">{session.name || t("common.untitledSession")}</span>
                 </CommandItem>
               ))}

@@ -13,8 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { cx } from "@/utils/cx"
-import { DotMatrixLoader } from "@/components/ui/dot-matrix-loader"
+import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
@@ -152,26 +151,18 @@ export function SidebarRepos({
       ) : grouping === "flat" ? (
         <div className="flex flex-col gap-0.5">
           {allSessions.map((session) => (
-            <button
+            <SidebarSessionRow
               key={session.id}
-              type="button"
-              onClick={() => onSelectSession(session.id)}
-              className={cx(
-                "flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors cursor-pointer",
-                session.id === sessionId
-                  ? "bg-background-tertiary-default font-medium text-text-primary shadow-2xs"
-                  : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-              )}
-            >
-              <span className="min-w-0 flex-1 truncate text-body-medium">{session.name}</span>
-              {session.id === sessionId && running ? (
-                <DotMatrixLoader variant="wave" className="shrink-0" />
-              ) : (
-                <span className="shrink-0 text-caption-2-medium text-text-tertiary">
-                  {formatTime(session.updatedAt)}
-                </span>
-              )}
-            </button>
+              sessionId={session.id}
+              name={session.name}
+              active={session.id === sessionId}
+              running={session.id === sessionId && running}
+              updatedAt={session.updatedAt}
+              formatTime={formatTime}
+              className="rounded-xl"
+              nameClassName="text-body-medium"
+              onSelect={() => onSelectSession(session.id)}
+            />
           ))}
         </div>
       ) : (
@@ -200,28 +191,17 @@ export function SidebarRepos({
             {t("chat.recent")}
           </span>
           {allSessions.slice(0, 3).map((session) => (
-            <button
+            <SidebarSessionRow
               key={`recent-${session.id}`}
-              type="button"
-              onClick={() => onSelectSession(session.id)}
-              className={cx(
-                "flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1 text-left transition-colors cursor-pointer",
-                session.id === sessionId
-                  ? "bg-background-tertiary-default text-text-primary font-medium"
-                  : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-              )}
-            >
-              <span className="min-w-0 flex-1 truncate text-caption-1-medium">
-                {session.name}
-              </span>
-              {session.id === sessionId && running ? (
-                <DotMatrixLoader variant="wave" className="shrink-0" />
-              ) : (
-                <span className="shrink-0 text-caption-2-medium text-text-tertiary">
-                  {formatTime(session.updatedAt)}
-                </span>
-              )}
-            </button>
+              sessionId={session.id}
+              name={session.name}
+              active={session.id === sessionId}
+              running={session.id === sessionId && running}
+              updatedAt={session.updatedAt}
+              formatTime={formatTime}
+              className="rounded-xl"
+              onSelect={() => onSelectSession(session.id)}
+            />
           ))}
         </div>
       ) : null}

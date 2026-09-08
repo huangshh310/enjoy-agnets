@@ -9,7 +9,7 @@ import {
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
-import { ApprovalCard } from "./thread/approval-card"
+import { ApprovalCard } from "./thread/approval/approval-card"
 import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"

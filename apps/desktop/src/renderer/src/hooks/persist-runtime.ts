@@ -6,16 +6,20 @@ import { getIde, hasIde } from "../lib/ide"
 import { useChatStore } from "../stores/chat-store"
 import { patchPreferences } from "./use-settings-snapshot"
 
+/** 只绑这一条会话，不改全局偏好。新建会话也走这里。 */
+export async function bindSessionRuntime(sessionId: string, runtimeId: AgentToolId) {
+  const store = useChatStore.getState()
+  store.setSessionRuntimes({ ...store.sessionRuntimes, [sessionId]: runtimeId })
+  if (!hasIde()) return
+  await getIde().agentTools.setSessionRuntime({ sessionId, runtimeId })
+}
+
 export async function persistRuntimeId(runtimeId: AgentToolId, modelId?: string) {
   const store = useChatStore.getState()
   store.setRuntimeId(runtimeId)
   store.setPreferredRuntimeId(runtimeId)
-  const sessionId = store.sessionId
-  if (sessionId) {
-    store.setSessionRuntimes({ ...store.sessionRuntimes, [sessionId]: runtimeId })
-  }
+  if (store.sessionId) await bindSessionRuntime(store.sessionId, runtimeId)
   await patchPreferences({ runtimeId })
   if (!hasIde()) return
   if (modelId) await getIde().agentTools.upsert({ id: runtimeId, modelId })
-  if (sessionId) await getIde().agentTools.setSessionRuntime({ sessionId, runtimeId })
 }

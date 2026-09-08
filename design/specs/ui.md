@@ -1,12 +1,12 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-07
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-08
 
 ## 当前真相
 
 窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。底板注入物理微环境漫射光斑（Ambient Canvas Glow），赋予三卡片自然进深感与悬浮质感。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
 
-1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。
+1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。会话行左侧画**该会话绑定**的 Lobe 品牌标（`sessionRuntimes[sessionId]`，缺省 `preferredRuntimeId`），不要一律跟 Composer 当前 runtime，否则切一次 Cursor 所有历史会话都会变 Cursor。运行中右侧用 `LoadingStateGlyph` `drive`（与 Thinking 头同一套 3×3 点阵），不要再走 `DotMatrixLoader` wave。新建会话立刻 `bindSessionRuntime`，绑的是 **Composer 当前 `runtimeId`**，不是全局偏好。⌘L 最近会话同样画品牌标。
 2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。`wide` / `stage` 用原生 `overflow-y-auto` + 内层 `min-h-full flex flex-col`，**不要** Radix ScrollArea（viewport 内层 inline `display:table` 会盖掉 flex）。列表空态用 `flex-1 min-h-0` 铺满剩余高度。Skills / Media / MCP / Inbox / Observability 用 `fill` + `hideChrome`：页内自带顶栏，不要再叠 `SecondaryPageChrome`。工具栏固定，空态与列表吃剩余高度。侧栏项目区在底栏用户卡之上 `flex-1`，无项目虚线框铺满该区。设置 Providers 仍用 `wide`，但空态虚线框同样 `flex-1`，不要按内容收高度。
 3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。始终挂载，切模块不卸掉。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（Codex 控制台：6 大作用域、统计徽标、分支对比、⌘P 跳转文件；**左文件树可拖拽改宽、右单文件满高 diff**；「展开全部差异」才叠 compact 卡片；提交底栏贴底，主按钮走 `text-text-white`；「已提交」作用域才走 devl.dev 多色 SVG 提交时间线；只用真实 Git，不编造 CI/审批/第二车道）、Files、Terminal 与 Browser。
 
@@ -18,6 +18,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 助手轮 Thinking：流式占位与思考头用 Beautiful UI Loading State（`packages/ui/components/ai-elements/loading-state.tsx`）——默认 Drive 3×3 点阵 + 流光文案 + `1.4s` / `3m 16.1s` 耗时。工具执行与思考过程统一合并在单一树形导轨（AgentStepTree）中，**按步骤切开**：工具开始时记下 `reasoningChars`，时间线是「思考 → 工具 → 思考」。有工具时思考段默认折叠，标题用首句摘要**单行截断**，禁止把「(N 字符)」和摘要并排；字数只作悬停 `title`，展开后复制原文。ACP/CLI 弱名 `command` 必须按 kind/args 分成 read / edit / bash，禁止五行都显示 `$ command`。连续 2 个及以上同质工具聚合成 monocode 式摘要（`读取 N 个文件` / `编辑 N 个文件` / `运行 N 条命令`），默认折叠，展开后是 Read/Write + 路径 + 类型微标。单项去除重复路径副标题；终端有真实 argv 才展示 `$ cmd`。禁止把 bash 从思考链剥离到外部平铺；工具步骤支持搜索与可点击域名胶囊（`[🌐 wttr.in]`，点开右栏浏览器）、深度阅读（含 `Explored N pages` 折叠子清单），底部挂 Tool Chips 文件变更胶囊（路径名 + 增减行，点选展开右栏审查并选中该文件）。Markdown http(s) 链接同样打开浏览器标签；Ctrl/⌘ 点击仍走系统浏览器。皮走 BoardUI token。
 助手轮在 Thinking **折叠外面**挂 File Diff（`thread/tool-surfaces/`）：仅对产生文件差异 (diff) 的代码修改工具进行展示，多文件修改时自动聚合为横向可切换的 `MultiFileDiffTabs`（每个 Tab 展示文件名与增减行，点击实时切换对应文件的 Diff，彻底杜绝平铺刷屏或只能看第一个文件）。终端命令输出保留在思考链内部原位展开，不作为孤儿卡片置于外部。Todo List 不进气泡：只取**最后一条用户消息之后**的 `todo_write`（`latestSessionTodoList`），不要把上一轮已完成的 Rust 任务挂到新 Stripe 轮上。采用对标 Manus 的**输入框层叠控制舱 (Stacked Task Dock)** 结构（`composer/composer-todo-dock.tsx`），左右各内缩 16px 呈现阶梯进深感（Stepped Inset），并采用 Pebble/次级微深底色与纯白输入框拉开明度反差；折叠态展示单行活跃步骤与进度徽标（如 `[✓] 步骤名 | 全部完成  1/4 ⌄`），展开态向上延伸出高密度步骤清单（时钟待办、旋转运行态、绿勾完成态），点击整行顺畅折叠收放。`store.running === false` 时 `in_progress` 显示「已停止」，禁止继续转圈「运行中」；未完成时 Dock 提供「继续」，发送续跑提示。Composer 上方另挂本轮改动条（`composer/session-review/`）：有仍 dirty 的写盘 path、真实 `workspace.changes`、或正在跑时出现。已提交进 HEAD 的 path 必须拿掉。运行中用 `runStartedAt` 画「{模型} 已运行 3分 14秒」，禁止编造起点。文件行用彩色类型微标 + 文件名 + 目录 + 增减；多文件默认展开列表。像素宠物只画一只 8×8 小猫 SVG；运行中绝对浮动在审查条**顶边**。走动用 WAAPI 写 `left: calc(100% - 22px)` 满宽来回（16s 一圈），跑道是卡片上 `inset-x-0 w-full`，不读 `offsetWidth`（绝对定位空盒子经常量到 0，猫会钉死在左边）。随机金币，走近起跳从下往上顶。`prefers-reduced-motion` 只放慢，不冻住。任务结束后隐去。右侧并列 Undo All / Keep All / Review（对标 Cursor 单行药丸组）。审查打开右栏 Review。**全部保留**收下磁盘改动并隐藏改动条；**全部撤销**先 ConfirmDialog，再 `workspace.gitRestore`（已跟踪 `git restore --staged --worktree`，未跟踪删除），成功后隐藏改动条。新 run 再出现。`read_file` 整文件不进对话框。右栏 Review 默认仍是完整工作区 diff，提交分段只画真实 `git log`。生成式白名单含 `todo-list`。
+审批入口（`thread/approval/`）按工具分成 AICSS 三种表面，抄交互、皮走 BoardUI：`bash` / `code_mode` / 管道与 ACP 弱名（`command` / `cmd` / `argv`）→ **command**（`args.cwd` 否则工作区 `rootPath` + `$` 命令，主按钮「运行」）；`write_file` / `edit_file` / `git_commit` → **plan**（标题 + 本次入参合成的待办，写盘可展开真实 diff，**禁止** 30s 倒计时自动放行）；其余工具 → **questions**（字母选项 + 参数预览，选完才能「继续」，Skip=拒绝，Always allow 是选项 id 不是底栏第三钮、也不拿译文做相等判断）。MCP 只带 `args.command` 不算 shell。决策仍是 `allow` / `deny` / `allow_session`；底栏保留 HMAC。禁止上架 AICSS CSS module / Lucide / 自动批准倒计时。command 图标走 `text-error` / `background-tertiary-error`，不要 `amber-500`。
 
  ## 不变量
 
@@ -50,9 +51,10 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 皮肤 CSS：`packages/ui/styles/skins/`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
 - 工作区壳：`apps/desktop/src/renderer/src/components/app-shell/app-shell.tsx`（轨道、情境、Chat 工作台、Inspector）
-- Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`
+- Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`（会话行 `sidebar-session-row.tsx` + `session-agent-mark.tsx`）
 - Composer 本轮改动条与跳动宠物：`ai-chat/composer/session-review/`
 - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
+- 审批卡片三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`
 - 对话工具表面：`apps/desktop/.../ai-chat/thread/tool-surfaces/`
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（单表面时间线，不是堆叠描边卡片）
 - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`
@@ -73,7 +75,10 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 二级页空态不拉高：Radix ScrollArea viewport 内层带 inline `display:table`，Tailwind `flex` 盖不掉，`flex-1` 无效。`wide`/`stage` 必须走原生滚动；工作台（Skills / Media / MCP / Inbox）用 `fill`。侧栏项目空态拆「顶栏 shrink-0 / 列表 flex-1 / 底栏 shrink-0」。
 - 侧栏项目行展开只认 `expandedIds`。不要用「当前工作区」强制展开，也不要在 `hydrateWorkspacesAndSessions` 把 current id 写回 `expandedIds`，否则二次点击无法收缩。
 - 确认框用应用内 `ConfirmDialog`（shadcn Dialog）。不要 `window.confirm` / Electron 原生框，标题会变成包名 `@enjoy-agents/desktop`。
-- Remixicon 4.9 没有 `RiAttachment2Line`（只有 `RiAttachment2` / `RiAttachmentLine`）。命名导出不存在时 Vite ESM 直接抛 SyntaxError，React 还没挂上，窗口标题在、`#root` 空。新图标先对 `@remixicon/react` 的 `index.d.ts`。
+- Remixicon 4.9 没有 `RiAttachment2Line`（只有 `RiAttachment2` / `RiAttachmentLine`）。命名导出不存在时 Vite ESM 直接抛 SyntaxError，React 还没挂上，窗口标题在、`#root` 空。新图标先对 `@remixicon/react` 的 `index.d.ts`。审批卡片 plan 用已有的 `RiListCheck3`，不要再引入 Lucide `ListTodo`。
+- 会话行 Agent 标必须读 `pickSessionRuntime(sessionId, sessionRuntimes, preferred)`。若订阅 `store.runtimeId`，切一次 Composer 引擎，侧栏里每条历史会话都会变成同一个标。未绑定的旧会话才回落偏好。运行中指示器与 Thinking 头共用 `LoadingStateGlyph` `drive`，不要侧栏 wave、内容区 3×3 两套皮。新建会话绑 `store.runtimeId`（当前 Composer），不要绑 `preferredRuntimeId`：打开一条 override 会话后再点新对话，否则会写成旧偏好。
+- 审批 command 的 cwd 用 `args.cwd` / `workdir`，否则当前工作区 `rootPath`，不要 `workspaceRootLabel`（那是最后一段文件夹名）。ACP 弱名 `command` + `argv` 必须走 command 表面；禁止「任意工具带 args.command 就当 shell」。questions 选项用稳定 id（`allow_once` / `allow_session`），禁止 `picked === t("chat.alwaysAllow")`。
+- 审批卡片不要原样上架 AICSS registry：禁止 CSS module hex 皮、Lucide、plan 30s Auto Approve。三种表面只抄交互；HMAC 与 `allow_session` 是本产品契约，registry 里没有也要留。
 - 用户气泡附件「发过又没了」：模型能描述图片，说明 `attachments` 到了 main；气泡只看 `message.assets`。旧 persist 只写 text，点会话 / 刷新走 `loadSession` 后缩略图消失。列出消息时按导入时间窗补 file part；同会话重灌用内存附件兜底。
 - 附件黑框：写了 `border` 却配不存在的 token（如 `border-border-card`）。宽度生效、颜色回落 `currentColor`（正文近黑）。边框只用 `border-border-button-default` / `border-separator-border`。图片外包 `button` 必须 `border-0`，否则 Electron 原生按钮描边也会是黑圈。
 - 助手生图预览不要再包一层描边卡片。BeUI 表面本身是 `rounded-2xl` + `bg-background-secondary-default`，再加 `border` 会回到黑框坑。`MessageContent` 是 `w-fit`，生图画布必须给明确宽度（如 `w-80`），否则 `w-full` + `aspect-ratio` 会塌成一条缝。
