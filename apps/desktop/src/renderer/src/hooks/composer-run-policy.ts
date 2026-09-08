@@ -3,7 +3,7 @@
  */
 import type { ThreadMessage } from "../stores/chat-store.types"
 
-/** 用户已 Stop 或切了会话时，禁止把后到的 runId 重新写成 running。 */
+/** 只有仍在前台 running 且还是同一会话，才把 runId 写进当前 Composer。切走的认领走停车。 */
 export function canClaimComposerRun(input: {
   running: boolean
   sessionId: string | null

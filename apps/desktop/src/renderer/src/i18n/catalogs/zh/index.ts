@@ -1,6 +1,7 @@
 /**
  * 中文文案总表。新增域在此合并，en 侧必须同构。
  */
+import { zhAttention } from "./attention.ts"
 import { zhChat } from "./chat.ts"
 import { zhCommand } from "./command.ts"
 import { zhCommon } from "./common.ts"
@@ -15,6 +16,7 @@ export const zh = {
   command: zhCommand,
   settings: zhSettings,
   chat: zhChat,
+  attention: zhAttention,
   studio: zhStudio,
   pages: zhPages
 }

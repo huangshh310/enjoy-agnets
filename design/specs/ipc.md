@@ -35,7 +35,7 @@
 
 | 频道 | 载荷 |
 |---|---|
-| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；按 `sequence` 重放 |
+| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
 | `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |
 

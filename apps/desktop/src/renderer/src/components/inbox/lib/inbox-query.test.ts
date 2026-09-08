@@ -1,41 +1,50 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import type { InboxNotification, InboxSeed } from "../inbox.types.ts"
-import { filterInbox, inboxNavCounts, materializeInbox, resolveSelected } from "./filter-inbox.ts"
+import type { AttentionItem } from "@renderer/stores/attention/attention.types.ts"
+import type { InboxNotification } from "../inbox.types.ts"
+import { filterInbox, inboxFromAttention, inboxNavCounts, resolveSelected } from "./filter-inbox.ts"
 import { groupInbox, inboxGroupId, inboxTimeParts, startOfLocalDay } from "./inbox-time.ts"
 
 const t = (path: string) => path
 
-const seeds: InboxSeed[] = [
-  { id: "a", copyKey: "rustRefactor", category: "agent", offsetMs: 10_000, actionKey: "openSession" },
-  { id: "b", copyKey: "hmacBound", category: "system", offsetMs: 20_000 }
-]
+function attention(partial: Partial<AttentionItem> & Pick<AttentionItem, "id" | "sessionId" | "kind">): AttentionItem {
+  return {
+    sessionTitle: "B",
+    status: "active",
+    runId: "run_1",
+    occurredAt: 1,
+    summary: partial.summary ?? partial.id,
+    ...partial
+  }
+}
 
 function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id">): InboxNotification {
   return {
-    copyKey: "rustRefactor",
+    copyKey: "complete",
     title: partial.title ?? partial.id,
     summary: partial.summary ?? "",
     category: partial.category ?? "agent",
     read: partial.read ?? false,
     occurredAt: partial.occurredAt ?? 0,
+    sessionId: partial.sessionId ?? "ses_1",
+    actionKey: "openSession",
     ...partial
   }
 }
 
-test("物化种子：隐藏项丢弃，已读与相对时间写入", () => {
-  const items = materializeInbox(seeds, {
-    t,
-    now: 100_000,
-    readIds: new Set(["a"]),
-    hiddenIds: new Set(["b"])
-  })
+test("Attention 物化：隐藏项丢弃，必须带 sessionId", () => {
+  const items = inboxFromAttention(
+    [
+      attention({ id: "a", sessionId: "ses_a", kind: "pending_approval", summary: "bash" }),
+      attention({ id: "b", sessionId: "ses_b", kind: "error", summary: "boom" })
+    ],
+    { t, readIds: new Set(["a"]), hiddenIds: new Set(["b"]) }
+  )
   assert.equal(items.length, 1)
-  assert.equal(items[0]?.id, "a")
+  assert.equal(items[0]?.sessionId, "ses_a")
   assert.equal(items[0]?.read, true)
-  assert.equal(items[0]?.occurredAt, 90_000)
-  assert.equal(items[0]?.actionLabel, "pages.inbox.actions.openSession")
-  assert.equal(items[0]?.copyKey, "rustRefactor")
+  assert.equal(items[0]?.actionKey, "openSession")
+  assert.equal(items[0]?.category, "agent")
 })
 
 test("选中项：命中 id，否则回落第一封，空列表为 null", () => {
@@ -47,9 +56,9 @@ test("选中项：命中 id，否则回落第一封，空列表为 null", () => 
 
 test("过滤：未读 / 分类 / 搜索同时生效", () => {
   const items = [
-    note({ id: "1", title: "Rust 重构", category: "agent", read: false }),
-    note({ id: "2", title: "HMAC 绑定", category: "system", read: false }),
-    note({ id: "3", title: "旧运行", category: "agent", read: true })
+    note({ id: "1", title: "待审批", category: "agent", read: false }),
+    note({ id: "2", title: "运行出错 HMAC", category: "system", read: false }),
+    note({ id: "3", title: "已完成", category: "agent", read: true })
   ]
   assert.equal(filterInbox(items, "unread", "").length, 2)
   assert.equal(filterInbox(items, "agent", "").length, 2)

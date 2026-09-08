@@ -1,21 +1,18 @@
 import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  AgentToolId,
-  migrateContentToParts,
-  safeValidateUIMessages,
-  StreamEvent,
-  type AskUserAnswers,
-  type SettingsSnapshot
-} from "@enjoy-agents/ipc-contract"
+import { StreamEvent, type AskUserAnswers, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { pickSessionRuntime } from "../lib/agent-runtime"
-import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
 import { abortComposerRun } from "./composer-run-control"
-import { bindSessionRuntime } from "./persist-runtime"
 import { pickActiveModel } from "./pick-active-model"
-import { threadFromRows } from "./hydrate-thread"
-import { mergeUserAssets } from "./merge-user-assets"
+import {
+  createAndOpenSession,
+  loadSession,
+  refreshAllWorkspaces,
+  selectPersistedSession,
+  type WorkspaceRow
+} from "./session-lifecycle"
+import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
 import {
   useChatStore,
   type ChangedFileRow,
@@ -23,19 +20,9 @@ import {
 } from "../stores/chat-store"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
-export type WorkspaceRow = { id: string; name: string; rootPath: string }
-type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
-type MessageRow = {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  createdAt: number
-  parts?: unknown[]
-}
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
-  const applyStreamEvent = useChatStore((state) => state.applyStreamEvent)
 
   const settingsQuery = useQuery({
     queryKey: ["settings"],
@@ -54,7 +41,7 @@ export function useAgentSession() {
     const unsubscribe = getIde().agent.onEvent((raw) => {
       const parsed = StreamEvent.safeParse(raw)
       if (!parsed.success) return
-      applyStreamEvent(parsed.data)
+      dispatchAgentEvent(parsed.data)
       if (parsed.data.type === "run.end" || parsed.data.type === "tool.result") {
         const workspaceId = useChatStore.getState().workspaceId
         if (workspaceId) {
@@ -65,7 +52,7 @@ export function useAgentSession() {
     return () => {
       unsubscribe()
     }
-  }, [applyStreamEvent, queryClient])
+  }, [queryClient])
 
   useEffect(() => {
     const snapshot = settingsQuery.data
@@ -106,43 +93,14 @@ export function useAgentSession() {
   }
 }
 
-export async function refreshAllWorkspaces() {
-  if (!hasIde()) return
-  try {
-    const workspaces = (await getIde().workspace.list()) as WorkspaceRow[]
-    const activeWorkspaceId = useChatStore.getState().workspaceId
-    const items = await Promise.all(
-      workspaces.map(async (ws) => {
-        try {
-          const sessions = (await getIde().session.list({ workspaceId: ws.id })) as SessionRow[]
-          return {
-            workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
-            sessions: sessions.map((s) => ({
-              id: s.id,
-              title: s.title,
-              updatedAt: s.updatedAt,
-              workspaceId: s.workspaceId
-            }))
-          }
-        } catch {
-          return {
-            workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
-            sessions: []
-          }
-        }
-      })
-    )
-    useChatStore.getState().hydrateWorkspacesAndSessions(items, activeWorkspaceId)
-  } catch {
-    // ignore refresh errors
-  }
-}
-
 export async function loadWorkspace(workspace: WorkspaceRow) {
   const store = useChatStore.getState()
   store.setWorkspace(workspace)
   await refreshAllWorkspaces()
-  const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as SessionRow[]
+  const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as Array<{
+    id: string
+    title: string
+  }>
   const current = sessions.find((session) => session.id === store.sessionId) ?? sessions[0]
   if (current) {
     await loadSession(current.id, current.title)
@@ -151,58 +109,9 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
   await createAndOpenSession(workspace.id)
 }
 
-export async function loadSession(sessionId: string, title: string) {
-  const store = useChatStore.getState()
-  const previous = store.sessionId === sessionId ? store.messages : []
-  if (store.sessionId !== sessionId) {
-    await abortComposerRun()
-    store.setError(null)
-  }
-  store.setSession(sessionId, title)
-  store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
-  const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
-  restoreUiMessages(rows)
-  store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
-}
-
-function restoreUiMessages(rows: MessageRow[]) {
-  safeValidateUIMessages(
-    rows.map((row) => ({
-      id: row.id,
-      role: row.role,
-      parts: row.parts && row.parts.length > 0 ? row.parts : migrateContentToParts(row.content),
-      createdAt: row.createdAt
-    }))
-  )
-}
-
-export async function createAndOpenSession(workspaceId: string, customTitle = "New agent") {
-  await abortComposerRun()
-  const session = (await getIde().session.create({
-    workspaceId,
-    title: customTitle
-  })) as SessionRow
-  const store = useChatStore.getState()
-  const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
-  store.setError(null)
-  store.setSession(session.id, session.title)
-  store.setRuntimeId(runtimeId)
-  store.setMessages([])
-  await bindSessionRuntime(session.id, runtimeId)
-  await refreshAllWorkspaces()
-}
-
-/** 新建会话跟 Composer 当前引擎；非法 id 再回落偏好。 */
-function resolveCreateRuntime(current: string, preferred: string) {
-  for (const id of [current, preferred, DEFAULT_RUNTIME_ID]) {
-    const parsed = AgentToolId.safeParse(id)
-    if (parsed.success) return parsed.data
-  }
-  return DEFAULT_RUNTIME_ID
-}
-
 export { abortComposerRun }
 export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
+export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersistedSession }
 
 export async function decidePendingApproval(
   decision: "allow" | "deny" | "allow_session",
@@ -266,25 +175,16 @@ export async function startPersistedSession() {
   await createAndOpenSession(workspaceId)
 }
 
-export async function selectPersistedSession(sessionId: string) {
-  const node = useChatStore.getState().repositories.find((item) => item.id === sessionId)
-  if (!node || node.kind !== "session") return
-  await loadSession(node.id, node.name)
-}
-
 export async function openChangedFile(path: string) {
   const store = useChatStore.getState()
   if (!store.workspaceId || !path) return
 
-  // 1. 优先从当前改动列表 changes 中匹配完整工程相对路径
   const matched = store.changes.find((c) => sameReviewPath(c.path, path))
   let resolvedPath = matched?.path ?? path
 
-  // 2. 无论是否能读到内容，先立即展开右栏并设置选中文件（触发 UI 瞬时高亮与切换）
   revealRightPane("review")
   store.setSelectedFile(resolvedPath, store.selectedFileContent || "")
 
-  // 3. 异步探测并读取该文件的磁盘内容
   try {
     const direct = await tryReadFile(store.workspaceId, resolvedPath)
     if (direct != null) {
@@ -294,7 +194,6 @@ export async function openChangedFile(path: string) {
       return
     }
 
-    // 若为纯文件名（无路径分隔符），尝试工程常见子目录前缀
     if (!path.includes("/") && !path.includes("\\")) {
       const candidates = [
         `src/components/chrome/${path}`,
@@ -309,7 +208,10 @@ export async function openChangedFile(path: string) {
         const found = await tryReadFile(store.workspaceId, candidate)
         if (found != null) {
           resolvedPath = candidate
-          if (useChatStore.getState().selectedFilePath === path || useChatStore.getState().selectedFilePath === resolvedPath) {
+          if (
+            useChatStore.getState().selectedFilePath === path ||
+            useChatStore.getState().selectedFilePath === resolvedPath
+          ) {
             store.setSelectedFile(resolvedPath, found)
           }
           return

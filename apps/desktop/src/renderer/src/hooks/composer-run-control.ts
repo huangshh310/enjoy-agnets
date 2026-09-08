@@ -1,23 +1,28 @@
 /**
- * Composer 运行控制：Stop、认领 runId、切会话时清 running。
+ * Composer 运行控制：Stop、认领 runId。切会话只停车，不 abort。
  * agent.run 返回前 runId 为空，Stop 也必须先松 UI，不能空 return。
  */
 import { getIde, hasIde } from "../lib/ide"
+import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
 import { canClaimComposerRun, isEmptyStreamingAssistant } from "./composer-run-policy"
 
-/** IPC 返回后认领本轮；用户已 Stop 或切了会话则拒绝。 */
+/** IPC 返回后认领本轮；切走则写入停车快照，只有用户 Stop 才当孤儿 abort。 */
 export function claimComposerRun(startedSessionId: string | null, runId: string): boolean {
   const store = useChatStore.getState()
-  if (!canClaimComposerRun({
+  if (canClaimComposerRun({
     running: store.running,
     sessionId: store.sessionId,
     startedSessionId
   })) {
-    return false
+    store.setRunning(true, runId)
+    if (startedSessionId) useAttentionStore.getState().rememberRun(runId, startedSessionId)
+    return true
   }
-  store.setRunning(true, runId)
-  return true
+  if (startedSessionId && useAttentionStore.getState().claimParkedRun(startedSessionId, runId)) {
+    return true
+  }
+  return false
 }
 
 /** 主进程已经开工但 UI 已停 / 已切会话时，把那一轮 abort 掉。 */
@@ -33,10 +38,12 @@ export function abortOrphanedRun(runId: string) {
 export async function abortComposerRun() {
   const store = useChatStore.getState()
   const runId = store.runId
+  const sessionId = store.sessionId
   dropEmptyPendingAssistant()
   finalizeStreamingAssistant()
   store.setPendingApproval(null)
   store.setRunning(false)
+  if (sessionId) useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
   if (runId) abortOrphanedRun(runId)
 }
 

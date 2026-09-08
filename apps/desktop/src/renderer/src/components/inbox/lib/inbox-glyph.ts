@@ -1,33 +1,25 @@
 /**
- * 通知类型图标：安静的 Remix 线标，不用彩色圆砖。
+ * 档案类型图标：按 Attention kind，不用假种子插画。
  */
 import type { ComponentType } from "react"
 import {
-  RiBookOpenLine,
-  RiCodeSSlashLine,
-  RiCpuLine,
-  RiGroupLine,
-  RiPulseLine,
+  RiCheckboxCircleLine,
+  RiErrorWarningLine,
+  RiQuestionLine,
   RiRobotLine,
-  RiShieldCheckLine,
-  RiStackLine,
-  RiTerminalBoxLine
+  RiShieldKeyholeLine
 } from "@remixicon/react"
-import type { InboxCopyKey } from "../inbox.types"
+import type { AttentionKind } from "@renderer/stores/attention/attention.types"
 
 type Glyph = ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
 
-const GLYPHS: Record<InboxCopyKey, Glyph> = {
-  rustRefactor: RiCodeSSlashLine,
-  shellApproved: RiTerminalBoxLine,
-  hmacBound: RiShieldCheckLine,
-  knowledgeIndexed: RiBookOpenLine,
-  contextCompacted: RiStackLine,
-  engineReady: RiCpuLine,
-  providerHealthy: RiPulseLine,
-  teamWelcome: RiGroupLine
+const GLYPHS: Record<AttentionKind, Glyph> = {
+  pending_approval: RiShieldKeyholeLine,
+  ask_user: RiQuestionLine,
+  error: RiErrorWarningLine,
+  complete: RiCheckboxCircleLine
 }
 
-export function inboxGlyph(copyKey: InboxCopyKey): Glyph {
-  return GLYPHS[copyKey] ?? RiRobotLine
+export function inboxGlyph(kind: AttentionKind): Glyph {
+  return GLYPHS[kind] ?? RiRobotLine
 }

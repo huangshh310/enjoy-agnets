@@ -1,42 +1,42 @@
 /**
- * 收件箱页面状态：已读 / 清理、分类过滤、当前选中消息。
- * 种子时间相对挂载时刻冻结，避免每次渲染把「10 分钟前」往后推。
+ * 收件箱档案：Attention 实况，本地已读 / 清理。
  */
 import { useMemo, useState } from "react"
 import { useT } from "@renderer/i18n"
-import { INBOX_SEEDS } from "./constants"
+import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 import type { InboxCategory, InboxNotification } from "./inbox.types"
 import {
   filterInbox,
+  inboxFromAttention,
   inboxNavCounts,
-  materializeInbox,
   resolveSelected
 } from "./lib/filter-inbox"
 import { groupInbox } from "./lib/inbox-time"
 
 export function useInbox() {
   const t = useT()
-  const [mountedAt] = useState(() => Date.now())
+  const [now] = useState(() => Date.now())
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set())
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set())
   const [filter, setFilter] = useState<InboxCategory>("all")
   const [search, setSearch] = useState("")
-  const [selectedId, setSelectedId] = useState<string | null>(INBOX_SEEDS[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const attentionItems = useAttentionStore((state) => state.items)
 
   const items = useMemo(
-    () => materializeInbox(INBOX_SEEDS, { t, now: mountedAt, readIds, hiddenIds }),
-    [hiddenIds, mountedAt, readIds, t]
+    () => inboxFromAttention(attentionItems, { t, readIds, hiddenIds }),
+    [attentionItems, hiddenIds, readIds, t]
   )
   const filteredItems = useMemo(
     () => filterInbox(items, filter, search),
     [filter, items, search]
   )
-  const groups = useMemo(() => groupInbox(filteredItems, mountedAt), [filteredItems, mountedAt])
+  const groups = useMemo(() => groupInbox(filteredItems, now), [filteredItems, now])
   const counts = useMemo(() => inboxNavCounts(items), [items])
   const selected = resolveSelected(filteredItems, selectedId)
 
   return {
-    now: mountedAt,
+    now,
     filter,
     setFilter,
     search,
@@ -50,7 +50,7 @@ export function useInbox() {
       setSelectedId(item.id)
       if (!item.read) setReadIds((prev) => new Set(prev).add(item.id))
     },
-    markAllRead: () => setReadIds(new Set(INBOX_SEEDS.map((seed) => seed.id))),
+    markAllRead: () => setReadIds(new Set(items.map((item) => item.id))),
     toggleRead: (id: string) => setReadIds((prev) => toggleSetMember(prev, id)),
     clearRead: () => setHiddenIds((prev) => mergeSets(prev, readIds))
   }

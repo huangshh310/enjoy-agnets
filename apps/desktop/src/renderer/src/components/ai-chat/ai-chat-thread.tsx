@@ -8,8 +8,7 @@ import {
   ConversationScrollButton
 } from "@/components/ai-elements/conversation"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
-import type { AskUserAnswers, StreamEvent } from "@enjoy-agents/ipc-contract"
-import { ApprovalCard } from "./thread/approval/approval-card"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"
@@ -20,21 +19,14 @@ export function AiChatThread({
   messages,
   running,
   thinkingLabel,
-  error,
-  pendingApproval,
-  onApprove,
-  onDeny,
-  onAllowSession
+  error
 }: {
   messages: ThreadMessage[]
   running: boolean
   thinkingLabel: string
   error: string | null
-  pendingApproval: (StreamEvent & { type: "approval.required" }) | null
-  onApprove: (answers?: AskUserAnswers) => void
-  onDeny: () => void
-  onAllowSession: () => void
 }) {
+  const pendingApproval = useChatStore((state) => state.pendingApproval)
   const visible = visibleThreadMessages(messages)
   const last = visible.at(-1)
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
@@ -52,15 +44,6 @@ export function AiChatThread({
           )}
 
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
-
-          {pendingApproval ? (
-            <ApprovalCard
-              pending={pendingApproval}
-              onApprove={onApprove}
-              onDeny={onDeny}
-              onAllowSession={onAllowSession}
-            />
-          ) : null}
 
           {error ? <ThreadErrorBanner error={error} /> : null}
         </ConversationContent>

@@ -2,6 +2,7 @@
  * 英文文案总表，结构必须与中文 Messages 对齐。
  */
 import type { Messages } from "../zh/index.ts"
+import { enAttention } from "./attention.ts"
 import { enChat } from "./chat.ts"
 import { enCommand } from "./command.ts"
 import { enCommon } from "./common.ts"
@@ -16,6 +17,7 @@ export const en: Messages = {
   command: enCommand,
   settings: enSettings,
   chat: enChat,
+  attention: enAttention,
   studio: enStudio,
   pages: enPages
 }

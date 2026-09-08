@@ -7,10 +7,10 @@ import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
 import { ExperimentalMediaDialog } from "@renderer/components/ai-chat/experimental-media-dialog"
 import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-chat-empty-state"
 import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
-import { decidePendingApproval, openFolder } from "@renderer/hooks/use-agent-session"
+import { openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
-import { ChatComposer } from "./chat-composer"
+import { ChatComposerCluster } from "./chat-composer-cluster"
 import { ChatStageHeader } from "./chat-stage-header"
 import { useChatModelGate } from "./use-chat-model-gate"
 
@@ -77,7 +77,6 @@ function ChatWorkspaceBody(props: {
   const running = useChatStore((state) => state.running)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   const error = useChatStore((state) => state.error)
-  const pendingApproval = useChatStore((state) => state.pendingApproval)
 
   return (
     <>
@@ -93,7 +92,7 @@ function ChatWorkspaceBody(props: {
           workspaceRootLabel={props.workspaceRootLabel}
           changesCount={props.changesCount}
         >
-          <ChatComposer className="px-0 pb-0" onModelChange={props.onModelChange} onSend={props.onSend} />
+          <ChatComposerCluster className="px-0 pb-0" onModelChange={props.onModelChange} onSend={props.onSend} />
         </AiChatEmptyState>
       ) : (
         <>
@@ -102,12 +101,8 @@ function ChatWorkspaceBody(props: {
             running={running}
             thinkingLabel={thinkingLabel}
             error={error}
-            pendingApproval={pendingApproval}
-            onApprove={(answers) => void decidePendingApproval("allow", answers)}
-            onDeny={() => void decidePendingApproval("deny")}
-            onAllowSession={() => void decidePendingApproval("allow_session")}
           />
-          <ChatComposer onModelChange={props.onModelChange} onSend={props.onSend} />
+          <ChatComposerCluster onModelChange={props.onModelChange} onSend={props.onSend} />
         </>
       )}
       <AiChatStatusBar workspaceRootLabel={props.workspaceRootLabel} />

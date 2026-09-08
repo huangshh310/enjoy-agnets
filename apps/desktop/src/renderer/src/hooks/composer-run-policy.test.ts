@@ -1,5 +1,5 @@
 /**
- * Stop 在 runId 为空时也必须能停；切会话后不得再认领旧 run。
+ * Stop 在 runId 为空时也必须能停；切走后不得把旧 runId 写进当前会话 UI。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
@@ -24,7 +24,7 @@ test("空 Thinking 壳判定为空 pending，有正文则不是", () => {
   assert.equal(isEmptyStreamingAssistant(undefined), false)
 })
 
-test("只有仍在 running 且还是同一会话才能认领 runId", () => {
+test("只有仍在前台 running 且还是同一会话才能把 runId 写进 Composer", () => {
   assert.equal(
     canClaimComposerRun({ running: true, sessionId: "sess_old", startedSessionId: "sess_old" }),
     true

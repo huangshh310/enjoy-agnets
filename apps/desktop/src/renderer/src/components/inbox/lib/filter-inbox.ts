@@ -1,39 +1,35 @@
 /**
- * 收件箱纯函数：物化种子、分类搜索、未读计数。
+ * 收件箱纯函数：Attention → 档案行、分类搜索、未读计数。
  */
-import type {
-  InboxCategory,
-  InboxNavCounts,
-  InboxNotification,
-  InboxSeed
-} from "../inbox.types"
+import type { AttentionItem } from "@renderer/stores/attention/attention.types"
+import type { InboxCategory, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
 
-export function materializeInbox(
-  seeds: InboxSeed[],
+export function inboxFromAttention(
+  items: AttentionItem[],
   input: {
     t: Translate
-    now: number
     readIds: ReadonlySet<string>
     hiddenIds: ReadonlySet<string>
   }
 ): InboxNotification[] {
-  return seeds
-    .filter((seed) => !input.hiddenIds.has(seed.id))
-    .map((seed) => ({
-      id: seed.id,
-      copyKey: seed.copyKey,
-      title: input.t(`pages.inbox.seed.${seed.copyKey}Title`),
-      summary: input.t(`pages.inbox.seed.${seed.copyKey}Summary`),
-      category: seed.category,
-      read: input.readIds.has(seed.id),
-      occurredAt: input.now - seed.offsetMs,
-      actionKey: seed.actionKey,
-      actionLabel: seed.actionKey
-        ? input.t(`pages.inbox.actions.${seed.actionKey}`)
-        : undefined
+  return items
+    .filter((item) => !input.hiddenIds.has(item.id))
+    .map((item) => ({
+      id: item.id,
+      copyKey: item.kind,
+      title: input.t(`attention.kind.${item.kind}`),
+      summary: item.summary,
+      category: item.kind === "error" ? "system" : "agent",
+      read: input.readIds.has(item.id),
+      occurredAt: item.occurredAt,
+      sessionId: item.sessionId,
+      actionKey: "openSession" as const,
+      actionLabel: input.t("pages.inbox.actions.openSession"),
+      status: item.status
     }))
+    .sort((left, right) => right.occurredAt - left.occurredAt)
 }
 
 export function filterInbox(

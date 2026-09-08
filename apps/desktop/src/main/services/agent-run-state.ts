@@ -9,6 +9,7 @@ import { createApprovalGate, type ApprovalGate } from "./approval-gate"
 import type { CitedSource } from "./cite-knowledge"
 import { emptyTranscript, type RunTranscript } from "./persist-session"
 import type { StoredSecret } from "./secrets"
+import { stampAndSend } from "./event-bus"
 
 export type ActiveRun = {
   abort: AbortController
@@ -43,8 +44,19 @@ export type ActiveRun = {
 const activeRuns = new Map<string, ActiveRun>()
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
+  const sessionId = event.sessionId ?? sessionIdOfRun(event)
+  if (sessionId) {
+    stampAndSend(window, event, sessionId)
+    return
+  }
   if (window.isDestroyed()) return
   window.webContents.send("agent.event", event)
+}
+
+function sessionIdOfRun(event: StreamEvent): string | undefined {
+  const runId = "runId" in event ? event.runId : undefined
+  if (!runId) return undefined
+  return getActiveRun(runId)?.input.sessionId
 }
 
 export function getActiveRun(runId: string): ActiveRun | undefined {

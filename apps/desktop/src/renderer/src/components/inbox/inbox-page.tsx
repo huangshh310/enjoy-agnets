@@ -18,7 +18,7 @@ export function InboxPage() {
   const navGroups = useMemo(() => buildInboxNav(t, inbox.counts), [inbox.counts, t])
 
   function handleOpenAction(item: InboxNotification) {
-    if (item.actionKey) openInboxAction(navigate, item.actionKey)
+    if (item.actionKey) openInboxAction(navigate, item.actionKey, item.sessionId)
   }
 
   return (

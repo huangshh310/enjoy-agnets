@@ -35,6 +35,7 @@
 | 应用 logo、任务栏 / 打包图标 | [`design/specs/brand.md`](./design/specs/brand.md) |
 | 设置 / Automations / Customize | [`design/specs/settings.md`](./design/specs/settings.md) |
 | Usage L1–L4 / 能力矩阵 / 三路命名 | [`design/specs/m1-usage-and-capabilities.md`](./design/specs/m1-usage-and-capabilities.md) |
+| 跨会话 Attention / 审批停靠 / Inbox 档案 | [`design/specs/m2-attention.md`](./design/specs/m2-attention.md) |
 | 自动更新、GitHub Release | [`design/specs/updates.md`](./design/specs/updates.md) |
 | AI Runtime / StreamEvent v2 | [`design/specs/ai-capabilities.md`](./design/specs/ai-capabilities.md) |
 | Knowledge / RAG | [`design/specs/knowledge.md`](./design/specs/knowledge.md) |
