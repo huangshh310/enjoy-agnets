@@ -17,6 +17,7 @@ import { SkillsDoctorModal } from "./components/skills-doctor-modal"
 import { SkillsEmptyState } from "./components/skills-empty-state"
 import { AgentArmoryView } from "./components/armory/agent-armory-view"
 import { useSkillsPage } from "./hooks/use-skills-page"
+import { countGitSkillSources } from "./lib/git-skill-sources"
 
 export function SkillsPage() {
   const page = useSkillsPage()
@@ -143,6 +144,7 @@ export function SkillsPage() {
           <div className="flex min-h-0 flex-1 flex-col gap-6">
             <SkillsToolbar
               sourceCount={page.sources.length}
+              gitSourceCount={countGitSkillSources(page.sources)}
               deployedCount={page.allSkills.length || page.overview?.installedCount || 0}
               driftCount={page.overview?.driftCount ?? 0}
               warningCount={page.warnings.length}

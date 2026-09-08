@@ -24,6 +24,7 @@ import { SKILLS_UI_COPY } from "../constants/skills-ui.constants"
 
 export function SkillsToolbar({
   sourceCount,
+  gitSourceCount,
   deployedCount,
   driftCount,
   warningCount,
@@ -38,6 +39,7 @@ export function SkillsToolbar({
   onCreateSkill
 }: {
   sourceCount: number
+  gitSourceCount: number
   deployedCount: number
   driftCount: number
   warningCount: number
@@ -117,6 +119,19 @@ export function SkillsToolbar({
             <span>导入来源</span>
           </Button>
 
+          {gitSourceCount > 0 ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onUpdateAll}
+              disabled={busy}
+              className="gap-1.5 h-8 px-3 text-caption-2-medium"
+            >
+              <RiRefreshLine className={cx("size-3.5", busy && "animate-spin")} />
+              <span>{SKILLS_UI_COPY.updateAll}</span>
+            </Button>
+          ) : null}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -132,10 +147,10 @@ export function SkillsToolbar({
                 <RiStethoscopeLine className="size-3.5 text-accent-500" />
                 <span>Doctor 状态诊断</span>
               </DropdownMenuItem>
-              {sourceCount > 0 ? (
+              {gitSourceCount > 0 ? (
                 <DropdownMenuItem onClick={onUpdateAll} disabled={busy} className="gap-2">
                   <RiRefreshLine className={cx("size-3.5", busy && "animate-spin")} />
-                  <span>拉取全量更新</span>
+                  <span>{SKILLS_UI_COPY.updateAll}</span>
                 </DropdownMenuItem>
               ) : null}
             </DropdownMenuContent>

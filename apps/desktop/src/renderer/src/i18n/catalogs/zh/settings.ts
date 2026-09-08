@@ -326,6 +326,19 @@ export const zhSettings = {
     modeDesc: "与输入框同一模式胶囊。Ask 为只读。"
   },
 
+  skillSources: {
+    title: "技能源",
+    pull: "可选拉取 Git 技能源",
+    desc: "已配置 {count} 个 Git 源。不会自动同步，点一下才快进并尽量投影。",
+    gated: "还没有 Git 技能源。先到 Skills 导入 HTTPS 仓库，本机发现组不会被拉取。",
+    pullNow: "立即拉取",
+    pulling: "拉取中…",
+    openSkills: "打开 Skills",
+    done: "已拉取 {count} 个 Git 源",
+    partial: "部分源拉取失败，详见错误。",
+    empty: "没有可快进的 Git 源。"
+  },
+
   harness: {
     cardTitle: "编码运行时",
     advancedTitle: "进阶沙箱 · 实验 · 沙箱 Harness",

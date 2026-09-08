@@ -210,6 +210,20 @@ export const zhChat = {
     banner: "已交接 {from} → {to}",
     dismiss: "关闭交接提示"
   },
+  skillSourcePull: {
+    title: "同步 {count} 个 Git 技能源",
+    hint: "可选。不会自动拉取，点一下才快进已配置的仓库。",
+    pull: "拉取",
+    pulling: "拉取中…",
+    skip: "跳过",
+    openSkills: "去 Skills",
+    done: "已拉取 {count} 个源",
+    doneHint: "本机目录未改。需要投影请到 Skills 页部署。",
+    partial: "部分源拉取失败",
+    partialHint: "已成功的源已写入本机 checkout。",
+    empty: "没有需要快进的 Git 源",
+    failed: "拉取未完成"
+  },
 
   projects: "项目",
   organizeProjects: "整理项目侧边栏",

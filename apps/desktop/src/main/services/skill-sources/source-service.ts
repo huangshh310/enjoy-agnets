@@ -10,10 +10,12 @@ import type {
   SkillSourceDetail,
   SkillSourceHealth,
   SkillSourceOverview,
-  SkillSource
+  SkillSource,
+  SkillSourceUpdateAllResult
 } from "@enjoy-agents/ipc-contract"
+import { pullAllGitSkillSources, pullGitSkillSource } from "./source-update.ts"
 
-import { cloneGitSource, parseGitOrigin, pullGitSource, removeGitCheckout } from "./source-git.ts"
+import { cloneGitSource, parseGitOrigin, removeGitCheckout } from "./source-git.ts"
 
 import { fetchSkillsMarket } from "./skills-market-fetcher.ts"
 import { persistDiscoveredSources } from "./source-discover.ts"
@@ -89,8 +91,7 @@ export async function addSkillSource(
 }
 
 export async function updateSkillSource(ctx: SkillSourceContext, sourceId: string): Promise<void> {
-  const source = requireSource(ctx, sourceId)
-  if (source.kind === "git") await pullGitSource(ctx.stateRoot, source.id)
+  await pullGitSkillSource(ctx, sourceId, (id) => deploySkillSource(ctx, id))
 }
 
 export function removeSkillSource(ctx: SkillSourceContext, sourceId: string): void {
@@ -157,21 +158,9 @@ export async function getCuratedSkillSources(ctx?: SkillSourceContext) {
   return fetchSkillsMarket(ctx?.stateRoot)
 }
 
-export async function updateAllSkillSources(ctx: SkillSourceContext): Promise<{ updatedCount: number; errors: string[] }> {
-  const manifest = readManifest(ctx.stateRoot)
-  let updatedCount = 0
-  const errors: string[] = []
-  for (const source of manifest.sources) {
-    if (source.kind === "git") {
-      try {
-        await pullGitSource(ctx.stateRoot, source.id)
-        updatedCount++
-      } catch (err) {
-        errors.push(`${source.name}: ${err instanceof Error ? err.message : String(err)}`)
-      }
-    }
-  }
-  return { updatedCount, errors }
+/** 可选拉取：只处理 manifest 里的 Git 源，本机发现组跳过。成功后尽量再投影。 */
+export async function updateAllSkillSources(ctx: SkillSourceContext): Promise<SkillSourceUpdateAllResult> {
+  return pullAllGitSkillSources(ctx, (sourceId) => deploySkillSource(ctx, sourceId))
 }
 
 export function repairSkillTargets(ctx: SkillSourceContext, sourceId?: string): { repairedCount: number } {

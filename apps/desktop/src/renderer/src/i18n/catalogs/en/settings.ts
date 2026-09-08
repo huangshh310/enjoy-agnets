@@ -326,6 +326,19 @@ export const enSettings = {
     modeDesc: "Same mode chip as the composer. Ask is read-only."
   },
 
+  skillSources: {
+    title: "Skill sources",
+    pull: "Optional Git skill-source pull",
+    desc: "{count} Git sources configured. Nothing syncs until you click; pull then try to deploy.",
+    gated: "No Git skill sources yet. Import an HTTPS repo on Skills. Local discovery groups are not pulled.",
+    pullNow: "Pull now",
+    pulling: "Pulling…",
+    openSkills: "Open Skills",
+    done: "Pulled {count} Git sources",
+    partial: "Some sources failed to pull.",
+    empty: "No Git sources to fast-forward."
+  },
+
   harness: {
     cardTitle: "Coding runtime",
     advancedTitle: "Sandbox · experimental Harness",

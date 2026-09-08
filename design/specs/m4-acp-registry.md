@@ -2,7 +2,7 @@
 
 > M4 ACP 扩展与 Registry。最后更新：2026-09-08
 > 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
-> 可选后置：M5 会话状态灯 + 进程收尸；M6 skill-sources 可选 pull。
+> 可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 当前真相
