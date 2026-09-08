@@ -1,5 +1,6 @@
 /**
- * 空会话工作清单：检测 / 缺口 / 示例任务。左对齐，不是营销 Hero。
+ * 空会话工作清单：必须保留 已检测 / 未安装 checklist + 示例 pill。
+ * 只压 MissingRow 密度并顶对齐；禁止卸掉两段，也禁止挂设置 Registry。
  */
 import type { ReactNode } from "react"
 import { useChatStore } from "@renderer/stores/chat-store"

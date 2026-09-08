@@ -125,7 +125,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
 - 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内，并写过只滚 Dock 的无参 `focusAttention` stub；现挂点是 Composer 上沿 `PermissionDock`，阻切必须走 M2 `focusAttention({ sessionId, kind, navigate })`。
 - 切会话 / 新建会话必须 `resetPending()`，否则 HandoffCard 会跟着旧会话飘到新线程。会话生命周期在 `session-lifecycle.ts`，不要在 `use-agent-session` 再复制一份 `loadSession`。
-- 空态 `MissingRow` 曾嵌整张 `AgentCliInstall`（提示 + 安装 + 复制 + 文档），未装 CLI 一多就把 Composer / pill 顶出视口，看起来像设置 Registry。缺口行只留品牌+名+一个 CTA；完整安装走 `#/settings/agent?tab=registry`。
+- 空态 `MissingRow` 曾嵌整张 `AgentCliInstall`（提示 + 安装 + 复制 + 文档），未装 CLI 一多就把 Composer / pill 顶出视口，**看起来像**设置 Registry，但路由仍是 Chat。修法只压密度 + 顶对齐。**禁止**把「像 Registry」修成删掉「已检测 / 未安装」两段，也禁止把 `AcpRegistryPage` 挂进空态。
 - `justify-center` 在长清单时制造中间大空白。空态内容顶对齐 `justify-start`。
 
 ## 验收
