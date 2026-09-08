@@ -8,11 +8,12 @@
 
 | 点 | 现状 |
 |---|---|
-| 切引擎 | Composer `AgentPicker` / `AgentEngineRail`；`bindSessionRuntime` 已有 |
-| 有历史切换 | 易静默丢 ACP 桥或假续跑 |
-| 未装 | `agent-cli-install`；`comingSoon` 沉底 |
-| 空态 | `ai-chat/empty-state/*` |
-| 三路 | Enjoy 本地 / ACP 本机 CLI / 沙箱仅设置（见 m1） |
+| 切引擎 | 空会话：`planComposerSwitch` → `setRuntimeId` + `bindSessionRuntime`，无卡 |
+| 有历史切换 | `EngineHandoffCard` 确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文 |
+| 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
+| 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
+| 空态 | `empty-state` 工作清单：ready / missing / 3 条示例 pill；`max-w-xl` 左对齐 |
+| 三路 | Enjoy 本地 / ACP 本机 CLI 上轨；沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。
 
@@ -110,6 +111,12 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - 沙箱不上 EngineRail。
 - 无 Fake-Status 就绪灯；comingSoon 不装成 available。
 - BoardUI token only。
+- Handoff brief **禁止**写成可见用户首条或 annotated user turn。
+
+## 已知坑
+
+- ACP 进程身份必须含 `toolId`（`acpProcessKey`）。旧实现只用 modelId+env，Claude→Cursor 会复用旧 stdio，看起来像假续跑。
+- `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
 
 ## 验收
 
@@ -125,7 +132,8 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - worktree 并行（砍）
 - PTY 兜底（砍）
 
-## 设计锁（与前端钉死）
+## 设计锁（luna / mike · 与前端钉死）
 
-1. PermissionDock：挂在 **Composer 上沿 sticky**（Conversation 与 Composer 之间），不是 Conversation viewport 顶 pinned。
-2. Handoff 摘要：系统/隐藏上下文 + UI「已交接」微条；不做可见用户附注。
+1. PermissionDock：挂在 **Composer 上沿 sticky**（Conversation 与 Composer 之间），不是 Conversation viewport 顶 pinned。（M2；本里程碑不改位）
+2. **Handoff 摘要只进新引擎的系统/隐藏上下文**（ACP 首轮 prompt 前缀，或 ToolLoop `system` 消息）。新 session 首答能读到 brief，**禁止**写成可见用户首条、用户气泡附注、或 annotated user turn。
+3. 确认后 UI **只**出可 dismiss 的「已交接」微条，文案仅 `{from} → {to}`；微条不展示摘要正文。

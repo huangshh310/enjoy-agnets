@@ -13,6 +13,7 @@ import { pickSessionRuntime } from "../lib/agent-runtime"
 import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
 import { abortComposerRun } from "./composer-run-control"
 import { bindSessionRuntime } from "./persist-runtime"
+import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { pickActiveModel } from "./pick-active-model"
 import { threadFromRows } from "./hydrate-thread"
 import { mergeUserAssets } from "./merge-user-assets"
@@ -160,6 +161,7 @@ export async function loadSession(sessionId: string, title: string) {
   }
   store.setSession(sessionId, title)
   store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
+  useEngineHandoffStore.getState().resetPending()
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   restoreUiMessages(rows)
   store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
@@ -185,6 +187,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "N
   const store = useChatStore.getState()
   const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
   store.setError(null)
+  useEngineHandoffStore.getState().resetPending()
   store.setSession(session.id, session.title)
   store.setRuntimeId(runtimeId)
   store.setMessages([])

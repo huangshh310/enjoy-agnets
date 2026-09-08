@@ -2,16 +2,20 @@
  * 本机 CLI 工具箱 IPC：目录、探测、覆盖、doctor、安装、登录。
  */
 import { catalogFor, isAllowedDocsUrl } from "@enjoy-agents/agent-harness"
+import { disposeAcpSession } from "@enjoy-agents/agent-harness"
 import {
   AgentToolIdInput,
+  DisposeSessionInput,
   DoctorAgentToolInput,
   InspectAgentToolInput,
+  SetHandoffInput,
   SetSessionRuntimeInput,
   UpsertAgentToolInput
 } from "@enjoy-agents/ipc-contract"
 import { ipcMain, shell } from "electron"
 import { inspectAgentTool } from "./services/agent-tools-account/inspect"
 import { installAgentTool, loginAgentTool, uninstallAgentTool } from "./services/agent-tools-install"
+import { writeSessionHandoff } from "./services/session-handoff"
 import {
   detectAgentTools,
   doctorAgentTool,
@@ -32,7 +36,9 @@ export const AGENT_TOOLS_CHANNELS = [
   "agentTools.syncConfig",
   "agentTools.restoreConfig",
   "agentTools.uninstall",
-  "agentTools.inspect"
+  "agentTools.inspect",
+  "agentTools.disposeSession",
+  "agentTools.setHandoff"
 ] as const
 
 export function registerAgentToolsIpc() {
@@ -81,5 +87,15 @@ export function registerAgentToolsIpc() {
   ipcMain.handle("agentTools.inspect", async (_event, raw: unknown) => {
     const input = InspectAgentToolInput.parse(raw)
     return inspectAgentTool(input.id, input.refresh)
+  })
+  ipcMain.handle("agentTools.disposeSession", async (_event, raw: unknown) => {
+    const input = DisposeSessionInput.parse(raw)
+    await disposeAcpSession(input.sessionId)
+    return { ok: true as const }
+  })
+  ipcMain.handle("agentTools.setHandoff", async (_event, raw: unknown) => {
+    const input = SetHandoffInput.parse(raw)
+    writeSessionHandoff(input)
+    return { ok: true as const }
   })
 }

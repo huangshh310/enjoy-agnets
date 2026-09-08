@@ -57,7 +57,9 @@ const ide = {
     setSessionRuntime: (input: unknown) => ipcRenderer.invoke("agentTools.setSessionRuntime", input),
     syncConfig: (input: unknown) => ipcRenderer.invoke("agentTools.syncConfig", input),
     restoreConfig: (input: unknown) => ipcRenderer.invoke("agentTools.restoreConfig", input),
-    inspect: (input: unknown) => ipcRenderer.invoke("agentTools.inspect", input)
+    inspect: (input: unknown) => ipcRenderer.invoke("agentTools.inspect", input),
+    disposeSession: (input: unknown) => ipcRenderer.invoke("agentTools.disposeSession", input),
+    setHandoff: (input: unknown) => ipcRenderer.invoke("agentTools.setHandoff", input)
   },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),

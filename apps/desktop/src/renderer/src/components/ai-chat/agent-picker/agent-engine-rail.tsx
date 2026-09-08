@@ -7,21 +7,24 @@
  */
 import { useEffect, useRef, useState } from "react"
 import { composerChromeFor, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
-import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
+import { isEngineReady } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "./agent-brand-icon"
 
 export function AgentEngineRail({
   primary,
+  soon = [],
   selectedId,
   currentId,
   onSelect
 }: {
   primary: AgentToolPublic[]
+  soon?: AgentToolPublic[]
   selectedId: string
   currentId: string
   onSelect: (id: string) => void
 }) {
+  const t = useT()
   const navRef = useRef<HTMLElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
@@ -88,6 +91,24 @@ export function AgentEngineRail({
               onSelect={() => onSelect(agent.id)}
             />
           ))}
+        {soon.length > 0 ? (
+          <>
+            <span className="shrink-0 px-1.5 text-caption-2-medium text-text-tertiary">
+              {t("chat.agentSoon")}
+            </span>
+            {soon
+              .filter((agent) => composerChromeFor(agent.id).showOnEngineRail)
+              .map((agent) => (
+                <EngineTabItem
+                  key={agent.id}
+                  agent={agent}
+                  isSelected={agent.id === selectedId}
+                  isCurrent={false}
+                  onSelect={() => onSelect(agent.id)}
+                />
+              ))}
+          </>
+        ) : null}
       </nav>
 
       {/* 右侧溢出渐变遮罩 */}
@@ -111,7 +132,8 @@ function EngineTabItem({
 }) {
   const t = useT()
   const itemRef = useRef<HTMLButtonElement>(null)
-  const isReady = agent.status === "ready" || agent.id === DEFAULT_RUNTIME_ID
+  const ready = isEngineReady(agent)
+  const dimmed = agent.status === "missing" || agent.comingSoon
   const pathKind = composerChromeFor(agent.id).pathKind
   const pathLabel = pathKind === "enjoy-local" ? t("chat.usage.localToolLoop") : t("chat.usage.acpSubscribe")
 
@@ -128,13 +150,13 @@ function EngineTabItem({
       type="button"
       role="tab"
       aria-selected={isSelected}
-      title={`${agent.label} (${isReady ? "已就绪" : "待装载"})`}
+      title={`${agent.label} (${ready ? t("chat.agentReady") : dimmed ? t("chat.agentMissing") : t("chat.agentSoon")})`}
       onClick={onSelect}
       className={`group relative flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-caption-1-medium transition-all duration-150 outline-none select-none ${
         isSelected
           ? "bg-background-primary-default font-semibold text-text-primary shadow-xs ring-1 ring-border-button-default"
           : "text-text-secondary hover:bg-background-primary-default/60 hover:text-text-primary"
-      }`}
+      } ${dimmed ? "opacity-50" : ""}`}
     >
       <span className="flex size-3.5 shrink-0 items-center justify-center">
         <AgentBrandIcon id={agent.id} size={14} />
@@ -144,12 +166,8 @@ function EngineTabItem({
         <span className="whitespace-nowrap text-caption-2-medium text-text-tertiary">{pathLabel}</span>
       </span>
 
-      {/* 仅在当前活跃主引擎时显示一个微光小徽标 */}
-      {isCurrent ? (
-        <span
-          className="size-1.5 shrink-0 rounded-full bg-accent-500 shadow-2xs"
-          title="当前主引擎"
-        />
+      {isCurrent && ready ? (
+        <span className="size-1.5 shrink-0 rounded-full bg-accent-500 shadow-2xs" title={t("chat.agentReady")} />
       ) : null}
     </button>
   )
