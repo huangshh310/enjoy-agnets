@@ -13,6 +13,10 @@ test(".. 逃逸被拒绝", () => {
 })
 
 test("绝对路径被拒绝", () => {
+  if (process.platform !== "win32") {
+    assert.throws(() => assertInsideRoot("/workspace", "/etc/passwd"))
+    return
+  }
   assert.throws(() => assertInsideRoot("C:/workspace", "C:/Windows/system.ini"))
 })
 
