@@ -13,7 +13,7 @@
 | 切引擎 | 空会话：`planComposerSwitch` → `setRuntimeId` + `bindSessionRuntime`，无卡 |
 | 有历史切换 | `EngineHandoffCard` 确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文 |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
-| 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention` 到 `#permission-dock`（PermissionDock，Composer 上沿 sticky） |
+| 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
 | 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
 | 空态 | `empty-state` 工作清单：ready / missing / 3 条示例 pill；`max-w-xl` 左对齐 |
@@ -104,7 +104,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 |---|---|---|
 | `EngineHandoffCard` | `agent-picker/handoff/engine-handoff-card.tsx` | 有历史切换确认；阻切含去处理审批 |
 | `planComposerSwitch` | `agent-picker/handoff/plan-composer-switch.ts` | 状态机 |
-| `focusAttention` | `ai-chat/attention/focus-attention.ts` | 无参滚到 PermissionDock；带 session 则切会话再落到 Dock / 错误 / 本轮 |
+| `focusAttention` | `ai-chat/attention/focus-attention.ts` | **只用 M2 完整 API**（`sessionId` + `navigate`）；阻切传当前会话，落到 Dock |
 | Rail/Picker | 现有 | 空会话直切；有历史走 plan；取消后 tab 回 from |
 | empty-state checklist | `empty-state/*` | 检测/缺口/示例 |
 | path 微标 | `agent-engine-rail` / 胶囊 | 两路文案 |
@@ -123,7 +123,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 
 - ACP 进程身份必须含 `toolId`（`acpProcessKey`）。旧实现只用 modelId+env，Claude→Cursor 会复用旧 stdio，看起来像假续跑。
 - `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
-- 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内；现挂点是 Composer 上沿 `PermissionDock`。`focusAttention()` 无参只滚 Dock，带 `sessionId` 才切会话。
+- 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内，并写过只滚 Dock 的无参 `focusAttention` stub；现挂点是 Composer 上沿 `PermissionDock`，阻切必须走 M2 `focusAttention({ sessionId, kind, navigate })`。
 - 切会话 / 新建会话必须 `resetPending()`，否则 HandoffCard 会跟着旧会话飘到新线程。会话生命周期在 `session-lifecycle.ts`，不要在 `use-agent-session` 再复制一份 `loadSession`。
 
 ## 验收

@@ -1,9 +1,12 @@
 /**
  * 有历史切引擎确认卡。摘要可编辑，确认后只进隐藏上下文。
  */
+import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { focusAttention } from "@renderer/components/ai-chat/attention/focus-attention"
 import { useT } from "@renderer/i18n"
+import { attentionKindFromEvent } from "@renderer/stores/attention/ingest-attention"
+import { useChatStore } from "@renderer/stores/chat-store"
 import {
   cancelEngineHandoff,
   confirmEngineHandoff,
@@ -20,6 +23,7 @@ export function EngineHandoffCard({
   onCancelRestore: (fromRuntimeId: string | null) => void
 }) {
   const t = useT()
+  const navigate = useNavigate()
   const phase = useEngineHandoffStore((state) => state.phase)
   const draftSummary = useEngineHandoffStore((state) => state.draftSummary)
   const setDraftSummary = useEngineHandoffStore((state) => state.setDraftSummary)
@@ -32,7 +36,15 @@ export function EngineHandoffCard({
 
   function reviewApproval() {
     restoreFrom()
-    focusAttention()
+    const store = useChatStore.getState()
+    if (!store.sessionId) return
+    const pending = store.pendingApproval
+    void focusAttention({
+      sessionId: store.sessionId,
+      workspaceId: store.workspaceId ?? undefined,
+      kind: pending ? (attentionKindFromEvent(pending) ?? "pending_approval") : "pending_approval",
+      navigate
+    })
   }
 
   if (phase === "idle") return null
