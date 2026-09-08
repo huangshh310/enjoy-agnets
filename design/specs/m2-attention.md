@@ -161,3 +161,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 ## 非目标
 
 - M3 handoff、M4 Registry、M5 worktree、系统通知（可后挂同一 Item）
+
+## 设计定稿补充（2026-09-08）
+
+PermissionDock **钉在 Conversation 与 Composer 之间**，sticky 于 Composer **上沿**（不是 Conversation 顶部 pinned）。

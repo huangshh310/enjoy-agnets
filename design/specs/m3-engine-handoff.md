@@ -129,3 +129,10 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 
 1. PermissionDock：挂在 **Composer 上沿 sticky**（Conversation 与 Composer 之间），不是 Conversation viewport 顶 pinned。
 2. Handoff 摘要：系统/隐藏上下文 + UI「已交接」微条；不做可见用户附注。
+
+## 设计定稿补充（2026-09-08）
+
+Handoff 摘要形态：
+1. 注入**系统/隐藏上下文**（新 runtime / ACP session），供模型续跑。
+2. UI 仅展示可 dismiss 的「已交接」微条（from→to）。
+3. **禁止**把摘要写成可见的用户首条附注。
