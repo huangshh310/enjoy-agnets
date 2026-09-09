@@ -11,6 +11,7 @@ import type {
   UninstallAgentToolResult
 } from "@enjoy-agents/ipc-contract"
 import { persistRuntimeId } from "@renderer/hooks/persist-runtime"
+import { completeCliProviderLogin } from "@renderer/components/ai-chat/agent-picker/cli-login-action"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
 export type AgentToolBusy = "install" | "login" | "doctor" | "activate" | "uninstall" | null
@@ -59,18 +60,24 @@ export async function handleLogin(
   tool: AgentToolPublic,
   setBusy: (value: AgentToolBusy) => void,
   setFeedback: (value: string | null) => void,
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  provider?: string
 ) {
   if (!hasIde()) return
   setBusy("login")
   try {
-    const res = (await getIde().agentTools.login({ id: tool.id as AgentToolId })) as {
-      ok: boolean
-      message: string
-    }
+    const res = provider
+      ? await completeCliProviderLogin({
+          toolId: tool.id as AgentToolId,
+          providerId: provider
+        })
+      : ((await getIde().agentTools.login({
+          id: tool.id as AgentToolId
+        })) as { ok: boolean; message: string })
     setFeedback(res.message)
     await getIde().agentTools.inspect({ id: tool.id as AgentToolId, refresh: true })
     await queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
+    await queryClient.invalidateQueries({ queryKey: ["settings"] })
   } finally {
     setBusy(null)
   }

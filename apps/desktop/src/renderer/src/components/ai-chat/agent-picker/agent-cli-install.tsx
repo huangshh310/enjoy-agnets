@@ -6,6 +6,8 @@ import type { AgentToolId, AgentToolPublic, InstallAgentToolResult } from "@enjo
 import { Button } from "@/components/ui/button"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
+import { AgentBrandIcon } from "./agent-brand-icon"
+import { ReadinessMark } from "./readiness-mark"
 
 export function AgentCliInstall({
   agent,
@@ -52,8 +54,15 @@ export function AgentCliInstall({
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-caption-1-medium leading-relaxed text-text-secondary">
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-background-secondary-default">
+          <AgentBrandIcon id={agent.id} size={16} />
+        </span>
+        <span className="min-w-0 truncate text-body-medium text-text-primary">{agent.label}</span>
+        <ReadinessMark kind="missing" label={t("chat.agentNotInstalledMark")} />
+      </div>
+      <p className="text-caption-1-regular leading-relaxed text-text-secondary">
         {t("chat.agentMissingHint", { cmd: agent.installCommand || agent.needsLoginHint })}
       </p>
       <div className="flex flex-wrap items-center gap-1.5">

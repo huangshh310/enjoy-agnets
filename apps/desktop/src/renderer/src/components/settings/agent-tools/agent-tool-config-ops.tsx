@@ -2,42 +2,64 @@
  * 配置弹窗：登录、连通性检查与 doctor 结果。
  */
 import { RiLoginBoxLine, RiPulseLine, RiShieldCheckLine } from "@remixicon/react"
+import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
+import { AgentToolOmpLogin } from "./agent-tool-omp-login"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
-export function AgentToolConfigOps({ actions }: { actions: AgentToolActions }) {
+export function AgentToolConfigOps({
+  tool,
+  actions
+}: {
+  tool: AgentToolPublic
+  actions: AgentToolActions
+}) {
   const t = useT()
   return (
     <>
-      <div className="flex items-center justify-between rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3">
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={actions.busyAction === "login"}
-            onClick={() => void actions.runLogin()}
-            className="gap-1.5 text-caption-1-medium"
-          >
-            <RiLoginBoxLine className="size-3.5 text-text-tertiary" />
-            {actions.busyAction === "login" ? t("settings.agentTools.loggingIn") : t("settings.agentTools.login")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={actions.busyAction === "doctor"}
-            onClick={() => void actions.runDoctor()}
-            className="gap-1.5 text-caption-1-medium"
-          >
-            <RiShieldCheckLine className="size-3.5 text-text-tertiary" />
-            {actions.busyAction === "doctor" ? t("settings.agentTools.checking") : t("settings.agentTools.doctorRun")}
-          </Button>
+      {tool.id === "omp" ? (
+        <div className="space-y-2">
+          <AgentToolOmpLogin tool={tool} actions={actions} />
+          <DoctorButton actions={actions} />
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center justify-between rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={actions.busyAction === "login"}
+              onClick={() => void actions.runLogin()}
+              className="gap-1.5 text-caption-1-medium"
+            >
+              <RiLoginBoxLine className="size-3.5 text-text-tertiary" />
+              {actions.busyAction === "login" ? t("settings.agentTools.loggingIn") : t("settings.agentTools.login")}
+            </Button>
+            <DoctorButton actions={actions} />
+          </div>
+        </div>
+      )}
       {actions.doctorResult ? <DoctorBanner actions={actions} /> : null}
     </>
+  )
+}
+
+function DoctorButton({ actions }: { actions: AgentToolActions }) {
+  const t = useT()
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="outline"
+      disabled={actions.busyAction === "doctor"}
+      onClick={() => void actions.runDoctor()}
+      className="gap-1.5 text-caption-1-medium"
+    >
+      <RiShieldCheckLine className="size-3.5 text-text-tertiary" />
+      {actions.busyAction === "doctor" ? t("settings.agentTools.checking") : t("settings.agentTools.doctorRun")}
+    </Button>
   )
 }
 

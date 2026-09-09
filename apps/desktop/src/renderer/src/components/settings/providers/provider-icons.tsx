@@ -158,6 +158,7 @@ export function ModelBrandIcon({
   className?: string
 }) {
   const mid = (modelId || "").toLowerCase().trim()
+  const slug = mid.includes("/") ? mid.slice(mid.lastIndexOf("/") + 1) : mid
 
   if (mid.includes("grok")) {
     return <Grok size={size} className={className} />
@@ -166,10 +167,10 @@ export function ModelBrandIcon({
     return <DeepSeek.Color size={size} className={className} />
   }
   if (
-    mid.startsWith("gpt-") ||
-    mid.startsWith("o1") ||
-    mid.startsWith("o3") ||
-    mid.startsWith("o4") ||
+    slug.startsWith("gpt-") ||
+    slug.startsWith("o1") ||
+    slug.startsWith("o3") ||
+    slug.startsWith("o4") ||
     mid.includes("chatgpt") ||
     mid.includes("text-embedding")
   ) {

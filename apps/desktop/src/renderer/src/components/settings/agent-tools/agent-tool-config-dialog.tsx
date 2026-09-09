@@ -4,6 +4,7 @@
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
+import { displayLoginMessage } from "@renderer/components/ai-chat/agent-picker/cli-login-hint"
 import { useT } from "@renderer/i18n"
 import { useState } from "react"
 import { AgentToolConfigCli } from "./agent-tool-config-cli"
@@ -34,7 +35,7 @@ export function AgentToolConfigDialog({
           <div className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-6 py-4">
             {actions.feedbackMessage ? (
               <div className="rounded-xl bg-accent-500/10 px-3.5 py-2 text-caption-1-medium text-accent-700">
-                {actions.feedbackMessage}
+                {displayLoginMessage(actions.feedbackMessage, t)}
               </div>
             ) : null}
             {actions.isDefaultLocal ? (

@@ -28,7 +28,7 @@ export function EngineHandoffDock() {
   if (!showCard && !showBanner) return null
 
   return (
-    <div className="mb-2 flex w-full flex-col items-start gap-2">
+    <div className="mb-2 flex w-full min-w-0 flex-col gap-2">
       {showCard ? (
         <EngineHandoffCard
           fromLabel={fromLabel}

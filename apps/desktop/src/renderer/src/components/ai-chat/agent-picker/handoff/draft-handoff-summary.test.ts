@@ -35,6 +35,19 @@ test("摘要含最近目标、文件与未决审批", () => {
   assert.ok(!parts.summary.includes("auth.ts"))
 })
 
+test("文件只收上一轮，不把更早工具路径算进来", () => {
+  const parts = draftHandoffParts({
+    messages: [
+      { role: "user", content: "先改登录" },
+      { role: "assistant", content: "好", tools: [{ args: { path: "src/old.ts" } }] },
+      { role: "user", content: "再改首页" },
+      { role: "assistant", content: "好", tools: [{ args: { path: "src/home.ts" } }] }
+    ]
+  })
+  assert.deepEqual(parts.files, ["home.ts"])
+  assert.ok(!parts.files.includes("old.ts"))
+})
+
 test("空线程给一句中性说明，不伪装成用户首条", () => {
   const text = draftHandoffSummary({ messages: [] })
   assert.ok(text.includes("上一引擎"))

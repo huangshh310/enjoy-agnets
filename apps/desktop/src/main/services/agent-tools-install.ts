@@ -13,6 +13,8 @@ import { catalogFor, loginBinaryFor, lookupOnPath } from "@enjoy-agents/agent-ha
 import { agentToolsCwd } from "./agent-tools-account/cwd"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { assertSafeAgentCommand, safeCustomBinaryPath } from "./agent-tools-guard"
+import { spawnOmpLogin } from "./agent-tools-account/spawn-omp-login"
+import { resolveLoginArgv } from "./agent-tools-login-args"
 import { listAgentTools } from "./agent-tools-service"
 
 const INSTALL_MS = 240_000
@@ -91,9 +93,8 @@ export async function uninstallAgentTool(id: AgentToolId): Promise<UninstallAgen
 }
 
 
-/** 后台拉起官方 login，立即返回；不假装打开了终端。 */
-export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolResult> {
-  const catalog = catalogFor(id)
+/** 后台拉起官方 login，立即返回；不假装打开了终端。OMP 必须带 provider。 */
+export async function loginAgentTool(id: AgentToolId, provider?: string): Promise<LoginAgentToolResult> {
   const listed = await listAgentTools()
   const tool = listed.find((item) => item.id === id)
   const loginName = loginBinaryFor(id)
@@ -101,8 +102,9 @@ export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolRes
   const command = loginName
     ? (loginPath && safeCustomBinaryPath(id, loginPath)) || undefined
     : safeCustomBinaryPath(id, tool?.binaryPath) || tool?.detectedPath
-  if (!catalog?.loginArgs.length) {
-    return { id, ok: false, message: tool?.needsLoginHint || "This CLI has no login command." }
+  const argv = resolveLoginArgv(id, provider, catalogFor(id)?.loginArgs ?? [])
+  if (!argv.ok) {
+    return { id, ok: false, message: tool?.needsLoginHint || argv.message }
   }
   if (!command) {
     return { id, ok: false, message: loginName ? `Install ${loginName} first.` : "Install the CLI first." }
@@ -112,8 +114,11 @@ export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolRes
   } catch (error) {
     return { id, ok: false, message: error instanceof Error ? error.message : String(error) }
   }
+  if (id === "omp") {
+    return loginOmpTool(id, command, argv.args, await agentToolsCwd())
+  }
   try {
-    const child = spawn(command, [...catalog.loginArgs], {
+    const child = spawn(command, argv.args, {
       cwd: await agentToolsCwd(),
       detached: true,
       stdio: "ignore",
@@ -130,6 +135,27 @@ export async function loginAgentTool(id: AgentToolId): Promise<LoginAgentToolRes
     ok: true,
     message: "Login started. Finish authorization in the browser or CLI window."
   }
+}
+
+/** 授权页打开就先回执（设备码要马上给 UI）；凭证写入后再清 inspect 缓存。 */
+function loginOmpTool(
+  id: AgentToolId,
+  command: string,
+  args: string[],
+  cwd: string
+): Promise<LoginAgentToolResult> {
+  return new Promise((resolve) => {
+    let sent = false
+    const send = (result: { ok: boolean; message: string }) => {
+      if (sent) return
+      sent = true
+      resolve({ id, ok: result.ok, message: result.message })
+    }
+    void spawnOmpLogin(command, args, cwd, { onOpened: send }).then((final) => {
+      invalidateAccountCache(id)
+      send(final)
+    })
+  })
 }
 
 function isInstallManager(command: string): boolean {

@@ -22,7 +22,7 @@ export function EngineHandoffBanner({
 
   return (
     <div
-      className="flex w-full max-w-[40rem] items-center gap-2 rounded-full border border-border-button-default bg-background-secondary-default px-3 py-1.5 shadow-2xs"
+      className="flex w-full items-center gap-2 rounded-full border border-border-button-default bg-background-secondary-default px-3 py-1.5 shadow-2xs"
       role="status"
     >
       <span className="min-w-0 flex-1 truncate text-caption-2-medium text-text-secondary">

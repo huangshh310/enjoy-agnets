@@ -43,11 +43,18 @@ export type AgentToolTransport = z.infer<typeof AgentToolTransport>
 export const AgentToolDetectStatus = z.enum(["ready", "missing", "comingSoon", "skillOnly"])
 export type AgentToolDetectStatus = z.infer<typeof AgentToolDetectStatus>
 
-export const AgentCliModel = z.object({
-  id: z.string().min(1).max(120),
-  label: z.string().min(1).max(80)
-})
-export type AgentCliModel = z.infer<typeof AgentCliModel>
+import {
+  AgentCliModel,
+  AgentCliProvider,
+  AgentToolLoginProvider
+} from "./agent-cli-provider.ts"
+export {
+  AgentCliModel,
+  AgentCliProvider,
+  AgentCliProviderOrigin,
+  AgentCliLoginKind,
+  AgentToolLoginProvider
+} from "./agent-cli-provider.ts"
 export const AgentToolAuthAccount = z.object({
   loggedIn: z.boolean(),
   email: z.string().optional(),
@@ -99,6 +106,7 @@ export const AgentToolPublic = z.object({
   version: z.string().nullable(),
   status: AgentToolDetectStatus,
   models: z.array(AgentCliModel).default([]),
+  providers: z.array(AgentCliProvider).optional(),
   selectedModel: z.string().optional(),
   installKind: AgentToolInstallKind.default("copy"),
   installCommand: z.string().default(""),
@@ -126,6 +134,15 @@ export const AgentToolIdInput = z
   })
   .strict()
 export type AgentToolIdInput = z.infer<typeof AgentToolIdInput>
+
+/** 登录可带供应商（OMP：`omp auth-broker login <provider>`）。 */
+export const LoginAgentToolInput = z
+  .object({
+    id: BuiltinAgentToolId,
+    provider: AgentToolLoginProvider.optional()
+  })
+  .strict()
+export type LoginAgentToolInput = z.infer<typeof LoginAgentToolInput>
 
 export const AnyAgentToolIdInput = z
   .object({
@@ -175,7 +192,8 @@ export const InspectAgentToolResult = z.object({
   id: AgentToolId,
   authAccount: AgentToolAuthAccount.optional(),
   quotaInfo: AgentToolQuotaInfo.optional(),
-  models: z.array(AgentCliModel).default([])
+  models: z.array(AgentCliModel).default([]),
+  providers: z.array(AgentCliProvider).optional()
 })
 export type InspectAgentToolResult = z.infer<typeof InspectAgentToolResult>
 

@@ -136,7 +136,7 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     binaries: ["omp"],
     acpArgs: ["acp"],
     detectArgs: ["--version"],
-    needsLoginHint: "ACP authenticate or TUI /login. Oh My Pi is a coding agent, not a skill root.",
+    needsLoginHint: "omp auth-broker login <provider>. Oh My Pi is a coding agent, not a skill root.",
     available: true,
     comingSoon: false,
     skillOnly: false

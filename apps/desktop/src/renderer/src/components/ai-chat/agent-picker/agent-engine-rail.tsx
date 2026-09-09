@@ -5,7 +5,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { CliRailExtras } from "./cli-rail-extras"
 import { EngineRailTab } from "./engine-rail-tab"
+import { splitCliReady } from "./split-cli-ready"
 
 export function AgentEngineRail({
   local,
@@ -23,6 +25,16 @@ export function AgentEngineRail({
   onSelect: (id: string) => void
 }) {
   const t = useT()
+  const { installed, missing } = splitCliReady(cli)
+  const extras = soon
+  const extraKey = extras.map((item) => item.id).join(",")
+  const [showExtras, setShowExtras] = useState(() =>
+    extras.some((item) => item.id === selectedId)
+  )
+
+  useEffect(() => {
+    if (extras.some((item) => item.id === selectedId)) setShowExtras(true)
+  }, [selectedId, extraKey])
 
   return (
     <div className="flex w-full shrink-0 flex-col gap-1 border-b border-separator-border bg-background-secondary-default/50 px-1 py-1">
@@ -47,7 +59,7 @@ export function AgentEngineRail({
           scroll
           scrollKey={`${cli.length}:${soon.length}`}
         >
-          {cli.map((agent) => (
+          {installed.map((agent) => (
             <EngineRailTab
               key={agent.id}
               agent={agent}
@@ -56,22 +68,24 @@ export function AgentEngineRail({
               onSelect={() => onSelect(agent.id)}
             />
           ))}
-          {soon.length > 0 ? (
-            <>
-              <span className="shrink-0 px-1.5 text-caption-2-medium text-text-tertiary">
-                {t("chat.agentSoon")}
-              </span>
-              {soon.map((agent) => (
-                <EngineRailTab
-                  key={agent.id}
-                  agent={agent}
-                  isSelected={agent.id === selectedId}
-                  isCurrent={false}
-                  onSelect={() => onSelect(agent.id)}
-                />
-              ))}
-            </>
-          ) : null}
+          {missing.map((agent) => (
+            <EngineRailTab
+              key={agent.id}
+              agent={agent}
+              isSelected={agent.id === selectedId}
+              isCurrent={agent.id === currentId}
+              onSelect={() => onSelect(agent.id)}
+            />
+          ))}
+          <CliRailExtras
+            extras={extras}
+            missingCount={0}
+            expanded={showExtras}
+            onToggle={() => setShowExtras((open) => !open)}
+            selectedId={selectedId}
+            currentId={currentId}
+            onSelect={onSelect}
+          />
         </RailGroup>
       ) : null}
     </div>

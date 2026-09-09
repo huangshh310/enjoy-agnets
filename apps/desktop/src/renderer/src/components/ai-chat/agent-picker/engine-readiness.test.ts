@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { engineReadiness, readinessSubtitle } from "./engine-readiness.ts"
+import { engineReadiness, readinessMarkKey, readinessSubtitle } from "./engine-readiness.ts"
 
 test("Enjoy Local 恒为就绪，不写副标题", () => {
   assert.equal(engineReadiness({ id: "enjoy-local", status: "missing" }), "ready")
@@ -41,4 +41,11 @@ test("已装且明确未登录才写需登录；inspect 未回不猜", () => {
     "ready"
   )
   assert.equal(readinessSubtitle("needs_login", (path) => path), "chat.agentNeedsLogin")
+})
+
+test("导轨胶囊用短标，就绪不画", () => {
+  assert.equal(readinessMarkKey("missing"), "chat.agentNotInstalledMark")
+  assert.equal(readinessMarkKey("needs_login"), "chat.agentNeedsLoginMark")
+  assert.equal(readinessMarkKey("soon"), "chat.agentSoonMark")
+  assert.equal(readinessMarkKey("ready"), null)
 })

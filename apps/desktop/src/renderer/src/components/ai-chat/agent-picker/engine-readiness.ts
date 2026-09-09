@@ -28,3 +28,11 @@ export function readinessSubtitle(
   if (kind === "soon") return t("chat.agentSoon")
   return ""
 }
+
+/** 导轨胶囊用短标；完整句只进 title / 面板。 */
+export function readinessMarkKey(kind: EngineReadiness): string | null {
+  if (kind === "missing") return "chat.agentNotInstalledMark"
+  if (kind === "needs_login") return "chat.agentNeedsLoginMark"
+  if (kind === "soon") return "chat.agentSoonMark"
+  return null
+}

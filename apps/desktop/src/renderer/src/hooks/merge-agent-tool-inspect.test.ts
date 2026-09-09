@@ -1,3 +1,6 @@
+/**
+ * inspect 合并：账号 / 模型 / 供应商；缺 providers 时保留原表。
+ */
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
@@ -55,4 +58,33 @@ test("inspect 合并账号与全量模型，保留已选模型", () => {
   assert.equal(merged[0]?.authAccount?.tier, "Ultra")
   assert.equal(merged[0]?.models.length, 3)
   assert.equal(merged[0]?.selectedModel, "composer-2.5")
+})
+
+test("OMP inspect 合并可登录供应商", () => {
+  const inspect: InspectAgentToolResult = {
+    id: "omp",
+    models: [{ id: "google-antigravity/gemini-3-flash", label: "Flash" }],
+    providers: [
+      { id: "google-antigravity", label: "Antigravity", loggedIn: true },
+      { id: "anthropic", label: "Anthropic", loggedIn: false }
+    ]
+  }
+  const merged = applyInspect([tool({ id: "omp", models: [] })], [inspect])
+  assert.equal(merged[0]?.providers?.length, 2)
+  assert.equal(merged[0]?.providers?.[1]?.loggedIn, false)
+})
+
+test("inspect 没带回 providers 时保留原表，不要写成空数组", () => {
+  const merged = applyInspect(
+    [
+      tool({
+        id: "omp",
+        models: [],
+        providers: [{ id: "anthropic", label: "Anthropic", loggedIn: false }]
+      })
+    ],
+    [{ id: "omp", models: [] }]
+  )
+  assert.equal(merged[0]?.providers?.length, 1)
+  assert.equal(merged[0]?.providers?.[0]?.id, "anthropic")
 })

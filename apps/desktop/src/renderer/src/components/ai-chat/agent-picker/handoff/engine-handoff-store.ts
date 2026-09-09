@@ -66,8 +66,7 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
   }
   const draft = draftHandoffParts({
     messages: chat.messages,
-    pendingApprovalName: chat.pendingApproval?.name,
-    filePaths: chat.changes.map((item) => item.path)
+    pendingApprovalName: chat.pendingApproval?.name
   })
   useEngineHandoffStore.setState({
     phase: plan.kind === "blocked_by_approval" ? "blocked_by_approval" : "handoff_pending",

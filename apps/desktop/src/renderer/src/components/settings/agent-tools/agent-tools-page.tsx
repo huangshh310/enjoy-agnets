@@ -8,20 +8,30 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
+import { agentToolCardId } from "./agent-tool-anchor"
 import { AgentToolCard } from "./agent-tool-card"
 import { AgentToolsEmpty } from "./agent-tools-empty"
 
 type FilterTab = "all" | "ready" | "available" | "soon"
 
-export function AgentToolsPage() {
+export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } | null }) {
   const t = useT()
   const queryClient = useQueryClient()
   const tools = useSettingsSnapshot().data?.agentTools ?? []
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
+  const [searchQuery, setSearchQuery] = useState("")
   useEffect(() => {
     void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
   }, [queryClient])
-  const [searchQuery, setSearchQuery] = useState("")
+  useEffect(() => {
+    if (!focus) return
+    setActiveTab("all")
+    setSearchQuery("")
+    const timer = window.setTimeout(() => {
+      document.getElementById(agentToolCardId(focus.id))?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }, 40)
+    return () => window.clearTimeout(timer)
+  }, [focus])
   const readyCount = useMemo(
     () => tools.filter((item) => item.status === "ready" || item.id === DEFAULT_RUNTIME_ID).length,
     [tools]
@@ -73,7 +83,7 @@ export function AgentToolsPage() {
       </div>
       <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
         {filteredTools.map((tool: AgentToolPublic) => (
-          <AgentToolCard key={tool.id} tool={tool} />
+          <AgentToolCard key={tool.id} tool={tool} flash={focus?.id === tool.id} />
         ))}
         {emptyKind ? (
           <AgentToolsEmpty

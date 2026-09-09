@@ -47,15 +47,26 @@ function lastUserGoal(messages: Array<{ role: string; content: string }>): strin
 }
 
 function collectFiles(
-  messages: Array<{ tools?: Array<{ args?: unknown }> }>,
+  messages: Array<{ role?: string; tools?: Array<{ args?: unknown }> }>,
   extra: string[] | undefined
 ): string[] {
   const seen = new Set<string>()
   for (const path of extra ?? []) addPath(seen, path)
-  for (const message of messages) {
+  const start = lastUserIndex(messages)
+  if (start < 0) return [...seen]
+  for (let index = start + 1; index < messages.length; index += 1) {
+    const message = messages[index]
+    if (!message || message.role === "user") break
     for (const tool of message.tools ?? []) addPath(seen, pathFromArgs(tool.args))
   }
   return [...seen]
+}
+
+function lastUserIndex(messages: Array<{ role?: string }>): number {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role === "user") return index
+  }
+  return -1
 }
 
 function pathFromArgs(args: unknown): string {

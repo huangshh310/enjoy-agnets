@@ -8,6 +8,7 @@ import {
   DisposeSessionInput,
   DoctorAgentToolInput,
   InspectAgentToolInput,
+  LoginAgentToolInput,
   RemoveCustomAgentInput,
   SetHandoffInput,
   SetSessionRuntimeInput,
@@ -67,8 +68,8 @@ export function registerAgentToolsIpc() {
     return uninstallAgentTool(input.id)
   })
   ipcMain.handle("agentTools.login", async (_event, raw: unknown) => {
-    const input = AgentToolIdInput.parse(raw)
-    return loginAgentTool(input.id)
+    const input = LoginAgentToolInput.parse(raw)
+    return loginAgentTool(input.id, input.provider)
   })
   ipcMain.handle("agentTools.openDocs", async (_event, raw: unknown) => {
     const input = AgentToolIdInput.parse(raw)

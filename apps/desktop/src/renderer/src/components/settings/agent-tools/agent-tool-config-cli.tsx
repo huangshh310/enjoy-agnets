@@ -24,7 +24,7 @@ export function AgentToolConfigCli({
       <AgentToolLaunchPrefs tool={tool} actions={actions} />
       <AgentToolProvider tool={tool} actions={actions} />
       <AgentToolAdvanced tool={tool} actions={actions} />
-      <AgentToolConfigOps actions={actions} />
+      <AgentToolConfigOps tool={tool} actions={actions} />
     </div>
   )
 }

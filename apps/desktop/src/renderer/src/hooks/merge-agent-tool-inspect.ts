@@ -27,6 +27,7 @@ export function applyInspect(
     return {
       ...tool,
       models,
+      providers: hit.providers ?? tool.providers,
       selectedModel: selected,
       authAccount: hit.authAccount,
       quotaInfo: hit.quotaInfo

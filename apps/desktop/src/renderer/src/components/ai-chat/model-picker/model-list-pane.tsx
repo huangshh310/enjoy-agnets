@@ -159,7 +159,7 @@ export function ModelListPane({
                 {/* 模型名称与详情 */}
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate text-[13px] font-medium">
+                    <span className="truncate text-caption-1-medium">
                       {model.label}
                     </span>
                     {model.isFast ? (
@@ -181,16 +181,21 @@ export function ModelListPane({
                     ) : null}
                   </div>
 
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="truncate font-mono text-[11px] text-text-tertiary">
-                      {model.id}
-                    </span>
-                    {selectedKey === "all" && model.providerName ? (
-                      <span className="rounded bg-background-secondary-default px-1 py-0.2 text-[9px] text-text-tertiary">
-                        {model.providerName}
-                      </span>
-                    ) : null}
-                  </div>
+                  {model.id.trim().toLowerCase() !== model.label.trim().toLowerCase() ||
+                  (selectedKey === "all" && model.providerName) ? (
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      {model.id.trim().toLowerCase() !== model.label.trim().toLowerCase() ? (
+                        <span className="truncate font-mono text-caption-2-medium text-text-tertiary">
+                          {model.id}
+                        </span>
+                      ) : null}
+                      {selectedKey === "all" && model.providerName ? (
+                        <span className="rounded bg-background-secondary-default px-1 text-caption-2-medium text-text-tertiary">
+                          {model.providerName}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* 选中对勾 */}

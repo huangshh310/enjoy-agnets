@@ -40,6 +40,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
   const [busyAction, setBusyAction] = useState<AgentToolBusy>(null)
   const [doctorResult, setDoctorResult] = useState<AgentToolDoctorResult | null>(null)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
+  const [loginProvider, setLoginProvider] = useState<string | null>(null)
 
   async function persist(patch: {
     enabled?: boolean
@@ -75,10 +76,18 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     doctorResult,
     setDoctorResult,
     feedbackMessage,
+    loginProvider,
     persist,
     persistRuntime: () => handleMakeActive(tool, setBusyAction, queryClient),
     runDoctor: () => handleRunDoctor(tool, setBusyAction, setDoctorResult, queryClient),
-    runLogin: () => handleLogin(tool, setBusyAction, setFeedbackMessage, queryClient),
+    runLogin: async (provider?: string) => {
+      setLoginProvider(provider ?? null)
+      try {
+        await handleLogin(tool, setBusyAction, setFeedbackMessage, queryClient, provider)
+      } finally {
+        setLoginProvider(null)
+      }
+    },
     runInstall: () => handleInstall(tool, setBusyAction, setFeedbackMessage, queryClient),
     runUninstall: () => handleUninstall(tool, setBusyAction, setFeedbackMessage, queryClient),
     syncToCli: () => handleSyncToCli(tool, setSyncingConfig, setFeedbackMessage),

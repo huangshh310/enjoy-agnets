@@ -1,116 +1,62 @@
 /**
- * CLI 智能体模型列表与检索。只显示名称，id 放悬停，避免左右重复。
+ * CLI 模型表。OMP 左栏列可登录供应商；未授权点行即走官方 login。
  */
-import { useMemo, useState } from "react"
 import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
-import { RiCheckLine, RiSearchLine, RiSparkling2Line } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
-import { AgentBrandIcon } from "./agent-brand-icon"
+import { CliModelsBrowser } from "./cli-models-browser"
+import { shouldShowCliProviderNav } from "./cli-provider-rows"
 
 export function AgentCliModels({
   agent,
   onPick,
-  onUseDefault
+  onUseDefault,
+  onLoginProvider,
+  loginBusy,
+  loginHint,
+  inspecting
 }: {
   agent: AgentToolPublic
   onPick: (model: AgentCliModel) => void
   onUseDefault?: () => void
+  onLoginProvider?: (providerId: string) => void
+  loginBusy?: string | null
+  loginHint?: string
+  inspecting?: boolean
 }) {
-  const t = useT()
-  const [query, setQuery] = useState("")
-  const filteredModels = useMemo(() => {
-    if (!query.trim()) return agent.models
-    const q = query.toLowerCase()
-    return agent.models.filter(
-      (item) => item.label.toLowerCase().includes(q) || item.id.toLowerCase().includes(q)
-    )
-  }, [agent.models, query])
-
-  if (agent.models.length === 0) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-caption-1-medium text-text-tertiary">{t("chat.agentCliModel")}</p>
-        <button
-          type="button"
-          className="rounded-full border border-border-button-default px-3 py-1 text-caption-1-medium text-text-primary hover:border-border-button-hover"
-          onClick={() => onUseDefault?.()}
-        >
-          {t("chat.agentUse", { name: agent.label })}
-        </button>
-      </div>
-    )
+  const showNav = shouldShowCliProviderNav(agent)
+  if (agent.models.length === 0 && !showNav) {
+    return <CliModelsEmpty agent={agent} onUseDefault={onUseDefault} />
   }
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-separator-border bg-background-secondary-default/20 px-3.5 py-2 text-text-tertiary">
-        <RiSearchLine className="size-3.5 shrink-0" />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={`搜索 ${agent.label} 模型...`}
-          className="min-w-0 flex-1 bg-transparent text-caption-1-regular text-text-primary outline-none placeholder:text-text-tertiary"
-        />
-      </div>
-      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden p-1.5">
-        {filteredModels.map((model) => (
-          <li key={model.id} className="min-w-0">
-            <CliModelRow
-              agentId={agent.id}
-              model={model}
-              selected={model.id === agent.selectedModel}
-              onPick={onPick}
-            />
-          </li>
-        ))}
-        {filteredModels.length === 0 ? (
-          <li className="py-6 text-center text-caption-2-medium text-text-tertiary">未找到匹配模型</li>
-        ) : null}
-      </ul>
-    </div>
+    <CliModelsBrowser
+      agent={agent}
+      onPick={onPick}
+      onLoginProvider={onLoginProvider}
+      loginBusy={loginBusy}
+      loginHint={loginHint}
+      inspecting={inspecting}
+    />
   )
 }
 
-function CliModelRow({
-  agentId,
-  model,
-  selected,
-  onPick
+function CliModelsEmpty({
+  agent,
+  onUseDefault
 }: {
-  agentId: string
-  model: AgentCliModel
-  selected: boolean
-  onPick: (model: AgentCliModel) => void
+  agent: AgentToolPublic
+  onUseDefault?: () => void
 }) {
-  const thinking =
-    model.label.toLowerCase().includes("thinking") || model.id.toLowerCase().includes("thinking")
+  const t = useT()
   return (
-    <button
-      type="button"
-      title={model.id === model.label ? model.label : `${model.label} · ${model.id}`}
-      onClick={() => onPick(model)}
-      className={`flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-lg px-2.5 py-1.5 text-left transition-colors ${
-        selected
-          ? "bg-accent-500/10 text-accent-700 ring-1 ring-accent-500/25 dark:text-accent-300"
-          : "text-text-primary hover:bg-background-secondary-hover/70"
-      }`}
-    >
-      <span className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="flex size-4 shrink-0 items-center justify-center">
-          <AgentBrandIcon id={agentId} size={15} />
-        </span>
-        <span className="min-w-0 truncate text-caption-1-medium">{model.label}</span>
-        {thinking ? (
-          <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-amber-500/15 px-1.5 text-caption-2-medium text-amber-700 dark:text-amber-300">
-            <RiSparkling2Line className="size-2.5" />
-            思考
-          </span>
-        ) : null}
-      </span>
-      <span className="flex w-3.5 shrink-0 justify-end">
-        {selected ? <RiCheckLine className="size-3.5 text-accent-500" /> : null}
-      </span>
-    </button>
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+      <p className="text-caption-1-medium text-text-tertiary">{t("chat.agentCliModel")}</p>
+      <button
+        type="button"
+        className="rounded-full border border-border-button-default px-3 py-1 text-caption-1-medium text-text-primary hover:border-border-button-hover"
+        onClick={() => onUseDefault?.()}
+      >
+        {t("chat.agentUse", { name: agent.label })}
+      </button>
+    </div>
   )
 }

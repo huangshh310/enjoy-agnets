@@ -6,10 +6,12 @@ import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { RiArrowDownSLine } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cx } from "@/utils/cx"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { canSwitchAgent, DEFAULT_RUNTIME_ID, isEngineReady } from "@renderer/lib/agent-runtime"
 import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
+import { canOpenAgentPicker } from "./handoff/plan-composer-switch"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ModelPickerBody } from "../model-picker/model-picker-body"
@@ -37,7 +39,10 @@ export function AgentPicker({
   const setOpen = useChatStore((state) => state.setAgentPickerOpen)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const handoffPhase = useEngineHandoffStore((state) => state.phase)
-  const tools = useSettingsSnapshot().data?.agentTools ?? []
+  const pendingToId = useEngineHandoffStore((state) => state.toRuntimeId)
+  const snapshot = useSettingsSnapshot()
+  const tools = snapshot.data?.agentTools ?? []
+  const inspecting = snapshot.isInspectingAccounts
   const { local, cli, soon } = composerRailSections(tools)
   const agents = [...local, ...cli, ...soon]
   const current = agents.find((item) => item.id === runtimeId)
@@ -50,7 +55,8 @@ export function AgentPicker({
 
   useEffect(() => {
     if (handoffPhase === "idle") setTabId(runtimeId)
-  }, [handoffPhase, runtimeId])
+    if (!canOpenAgentPicker(handoffPhase)) setOpen(false)
+  }, [handoffPhase, runtimeId, setOpen])
 
   useEffect(() => {
     if (!open || !hasIde()) return
@@ -58,22 +64,35 @@ export function AgentPicker({
       if (!Array.isArray(res)) return
       useChatStore.getState().setModels(res as ModelOption[])
     })
+    void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
     void getIde().agentTools.detect().then(() => {
       void queryClient.invalidateQueries({ queryKey: ["settings"] })
     })
   }, [open, queryClient])
 
   const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
+  const pendingTo = agents.find((item) => item.id === pendingToId)
+  const pendingToName =
+    pendingTo?.label ??
+    (pendingToId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (pendingToId ?? ""))
+  const pickerLocked = !canOpenAgentPicker(handoffPhase)
   const activeModelDisplay = runtimeId === DEFAULT_RUNTIME_ID ? (modelLabel || modelId) : cliModelLabel(current)
   const providerLabel =
     runtimeId === DEFAULT_RUNTIME_ID
       ? models.find((item) => item.id === modelId)?.providerName
       : undefined
-  const chip = composerChipParts({
-    engineLabel: currentAgentName,
-    modelLabel: activeModelDisplay,
-    providerLabel
-  })
+  const chip = pickerLocked
+    ? {
+        engine: t("chat.handoff.chipPending"),
+        model: pendingToName,
+        title: t("chat.handoff.chipPendingAria", { to: pendingToName })
+      }
+    : composerChipParts({
+        engineLabel: currentAgentName,
+        modelLabel: activeModelDisplay,
+        providerLabel
+      })
+  const chipIconId = pickerLocked && pendingToId ? pendingToId : runtimeId
 
   async function applyAgent(id: string, nextModelId?: string) {
     if (!isAgentToolId(id)) return
@@ -93,33 +112,60 @@ export function AgentPicker({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (pickerLocked) {
+          setOpen(false)
+          return
+        }
+        setOpen(next)
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label={t("chat.selectAgent")}
+          aria-label={pickerLocked ? chip.title : t("chat.selectAgent")}
           title={chip.title}
-          className="group inline-flex h-8 max-w-[18rem] shrink-0 items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-medium text-text-primary shadow-2xs outline-none transition-all duration-150 hover:border-border-button-hover hover:bg-background-secondary-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          className={cx(
+            "group inline-flex h-8 max-w-[18rem] shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-caption-1-medium shadow-2xs outline-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            pickerLocked
+              ? "border-accent-500 bg-background-secondary-default text-accent-500"
+              : "border-border-button-default bg-background-primary-default text-text-primary hover:border-border-button-hover hover:bg-background-secondary-hover"
+          )}
         >
           <span className="flex size-4 shrink-0 items-center justify-center">
-            <AgentBrandIcon id={runtimeId} size={14} />
+            <AgentBrandIcon id={chipIconId} size={14} />
           </span>
           <span className="flex min-w-0 items-baseline">
-            <span className="shrink-0 text-text-secondary">{chip.engine}</span>
+            <span className={cx("shrink-0", pickerLocked ? "text-accent-500" : "text-text-secondary")}>
+              {chip.engine}
+            </span>
             {chip.model ? (
               <>
                 <span className="mx-1 shrink-0 text-text-tertiary">·</span>
-                <span className="min-w-0 truncate font-semibold text-text-primary">{chip.model}</span>
+                <span
+                  className={cx(
+                    "min-w-0 truncate font-semibold",
+                    pickerLocked ? "text-accent-500" : "text-text-primary"
+                  )}
+                >
+                  {chip.model}
+                </span>
               </>
             ) : null}
           </span>
-          <UsagePill runtimeId={runtimeId} />
-          <span
-            className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
-              current ? (isEngineReady(current) ? "bg-accent-500" : "bg-text-tertiary") : "bg-text-tertiary"
-            }`}
-          />
-          <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          {pickerLocked ? null : <UsagePill runtimeId={runtimeId} />}
+          {pickerLocked ? null : (
+            <span
+              className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
+                current ? (isEngineReady(current) ? "bg-accent-500" : "bg-text-tertiary") : "bg-text-tertiary"
+              }`}
+            />
+          )}
+          {pickerLocked ? null : (
+            <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          )}
         </button>
       </PopoverTrigger>
 
@@ -127,7 +173,12 @@ export function AgentPicker({
         side="top"
         align="end"
         sideOffset={8}
-        className="flex h-[390px] w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
+        className={cx(
+          "flex w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card",
+          tab && tab.id !== DEFAULT_RUNTIME_ID && !canSwitchAgent(tab)
+            ? "max-h-[390px]"
+            : "h-[390px]"
+        )}
       >
         <AgentEngineRail
           local={local}
@@ -141,11 +192,13 @@ export function AgentPicker({
           {tab && tab.id !== DEFAULT_RUNTIME_ID ? (
             <AgentCliPane
               agent={tab}
+              inspecting={inspecting}
               onUse={(model) => {
                 void applyAgent(tab.id, model?.id).then(() => setOpen(false))
               }}
               onInstalled={() => {
                 void queryClient.invalidateQueries({ queryKey: ["settings"] })
+                void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
               }}
             />
           ) : (

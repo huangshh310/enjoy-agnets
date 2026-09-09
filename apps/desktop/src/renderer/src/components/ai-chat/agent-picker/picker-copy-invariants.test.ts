@@ -12,10 +12,25 @@ const files = [
   "agent-picker.tsx",
   "agent-engine-rail.tsx",
   "engine-rail-tab.tsx",
+  "readiness-mark.tsx",
   "agent-cli-pane.tsx",
   "composer-chip-label.ts",
   "engine-readiness.ts",
-  "split-composer-rail.ts"
+  "split-composer-rail.ts",
+  "split-cli-ready.ts",
+  "cli-model-groups.ts",
+  "cli-model-icon.ts",
+  "cli-rail-extras.tsx",
+  "cli-provider-nav.tsx",
+  "cli-provider-rows.ts",
+  "cli-login-hint.ts",
+  "cli-login-wait.ts",
+  "cli-login-action.ts",
+  "cli-need-login.tsx",
+  "cli-model-row.tsx",
+  "cli-models-browser.tsx",
+  "cli-provider-nav-rows.tsx",
+  "agent-cli-models.tsx"
 ]
 
 const banned = [

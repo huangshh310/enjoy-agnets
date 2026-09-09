@@ -31,11 +31,10 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 ### 设置 → 智能体 IA
 
-1. 分段：本机 CLI | 进阶沙箱 | 默认项
-2. 顶栏提示：切到 Cursor 后「Enjoy 密钥不会传给它」
-3. `CapabilityMatrix`：行=runtime（含沙箱一行 + 自定义 ACP），列=spawn / login / quota / thinking / fast / executionModes。自定义行画用户 **label**，不画 raw id/slug。
-4. `ConfigBoundaryTable`：Key→Enjoy vault · login→各家 CLI · MCP→`#/mcp` · Skills→`#/skills`
-5. CLI 卡 + 配置弹窗；账号额度跟 L1 同一套 inspect
+1. 分段：本机 CLI | Registry | 进阶沙箱 | 默认项
+2. 顶栏提示：切到 Cursor 后「Enjoy 密钥不会传给它」+ 扫描 / 体检
+3. **CLI 卡**（安装 / 登录 / 设为主引擎 / 配置弹窗）；账号额度跟 L1 同一套 inspect
+4. **能力说明**默认收起：`CapabilityMatrix`（行=runtime，含沙箱 + 自定义 ACP；列=spawn / login / quota / thinking / fast / executionModes；「支持」不是已登录；点行跳到对应卡或沙箱分段）+ `ConfigBoundaryTable`（Key→Enjoy vault · login→各家 CLI · MCP→`#/mcp` · Skills→`#/skills`）。自定义行画用户 **label**，不画 raw id/slug。
 
 已删除：`AgentToolsHubMetrics`（装载率条、常绿灯、「沙箱隔离·实时 Token 流」）。`AgentLimitsCard` 下半 `PlanLimitsSection` 已删，上半只作 L3 明细。
 
@@ -59,7 +58,8 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - Claude / Codex `inspect` 仍拉账号，但 `quota=false`，UI 不得回落空条 + `—`。
 - `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。空会话 `UsagePill` 必须 `quiet`（含 ≥85%），有消息才用 alert/mid/low。
 - `composerChromeFor` 的 Fast / 思考 / 模式显隐仍读同一张 capability 表；C 端 Rail/胶囊不要再画 `pathKind` 协议/路径微标（含 `ACP Stdio`）。协议词只进设置矩阵。
-- 能力矩阵自定义行必须画用户 label，不要用 `custom:<slug>` 当显示名。
+- 能力矩阵自定义行必须画用户 label，不要用 `custom:<slug>` 当显示名。本机 CLI 禁止再把矩阵/边界铺在卡片前面；「支持登录」不是已登录。
+- 设置里 OMP「打开登录」必须带 `provider` 并等 callback，禁止无参 `login`（会失败或打不开授权）。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。
 - UsagePill / QuotaExhaustedCard 只用审批铬语义 token（`text-error-primary` / `background-tertiary-error` / `border-error-default`），禁止 `bg-rose-500` / `bg-amber-500`。

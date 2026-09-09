@@ -63,7 +63,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 对话工具表面：`apps/desktop/.../ai-chat/thread/tool-surfaces/`
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（Attention 档案时间线；`openSession` 必须带 `sessionId`）
 - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`（清单在 `empty-state/checklist/`）；开始面编排在 `app-shell/chat/empty-session-start.tsx`
-- 引擎交接：`ai-chat/agent-picker/handoff/`（`EngineHandoffDock` 在 Composer 上沿；摘要只进隐藏上下文，UI 仅「已交接」微条）
+- 引擎交接：`ai-chat/agent-picker/handoff/`（`EngineHandoffDock` 在 Composer 上沿同宽坞；摘要默认折叠、只进隐藏上下文；pending 锁 Picker；确认后 UI 仅「已交接」微条）
  - 状态栏与 L3 上下文分桶：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`（无计划额度条）
 - Usage L1/L3/L4：`apps/desktop/src/renderer/src/components/ai-chat/usage/`（`UsagePill` / `SessionMeter` / `QuotaExhaustedCard`）
 - UI 包语言：`packages/ui/i18n/ui-locale.ts`
@@ -72,6 +72,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 - 审批卡只挂 PermissionDock（Composer 上沿），禁止写回 `ConversationContent`。M3 阻切「去处理审批」必须走 M2 `focusAttention({ sessionId, kind, navigate })`，不要无参滚 Dock stub，也不要在线程里复制一张卡。
 - 不要再画 Composer 上沿「写入自动 · Shell 需确认 · Git 需确认」。它和底栏「编辑」盾牌重复；「模式: 智能体」是执行模式，不是审批。
+- Agent Picker：未装 CLI 上轨，状态用中性胶囊「未装」，不要名字底下第二行灰字。点开一键安装，不要再收成「未安装 N」。模型行不要上下两行同名；未装面板不要 `h-[390px]` 空撑。OMP 右栏模型图标按模型族（Claude / Gemini / GPT），禁止用引擎 `omp` 灰圆字母。OMP 的 `google-antigravity` 是供应商，不是模型。OMP「登录」必须是实心按钮；点了要打开浏览器，禁止只回英文 Login started。打开授权页后按钮保持「正在打开授权…」，浏览器成功并写入凭证后左栏才变已登录，不要停在登录按钮。
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
 - 玻璃皮肤看起来仍是实体：画布 `bg-background-full` 不透明时，`backdrop-filter` 卷积纯色 Mist，肉眼无磨砂。光斑层禁止负 z-index（会画到窗口底板后面）。皮肤覆盖必须进 `styles/skins/<name>.css`，不要写回 `globals.css`。`SettingsCard` 必须带 `settings-card` 类，设置页内层卡片才能吃到半透。
 - 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`。frost 约 58% + 更强 blur，禁止 50% 把桌面当照片，也禁止 80% 把磨砂盖成实心黑。
@@ -125,8 +126,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 轨道按钮与次级卡片必须提供物理级触觉回弹（`active:scale-[0.98]` 或 `active:scale-90`）与流畅的时间过渡（`transition-all duration-200`），避免状态突变造成视觉卡顿。
 - 标题栏辅助开关高度必须严格锁定为 24px（`size-6` / `h-6`）：与系统窗口控制按钮保持垂直居中和基线对齐，严禁使用超出 24px 的拟物卡通开关。
 - 侧栏情境栏底栏用户卡片严禁硬编码过长字符串：212px 容器内文本空间极小，长邮箱（超过 15 字符）必须在侧栏卡片上优雅收敛或展示工作区标签，完整邮箱与账号操作统一在 265px 悬浮弹层（AriaPopover）中展示。
-- Composer 智能体动力选择器采用双层流式 HUD（`AgentPicker`）：触发胶囊只写品牌 + `引擎 · 模型` + 就绪微灯（完整引擎名，模型可省略号；供应商只进左栏 / `title`）。**禁止**常驻协议/路径微标（`本地 ToolLoop` / `ACP · 订阅登录` / `ACP Stdio` 及同类）。`quota=true` 且有官方数字时才旁挂 `UsagePill`。空会话 pill 一律 `quiet`（含 ≥85%）；有消息才走 M1 ≥85% 警报。百分比只信 inspect，禁止假 100%。浮层必须「顶部分组导轨 (`AgentEngineRail`)：本地 vs 本机助手/CLI + 下层自适应动力面板」。导轨项只画品牌、引擎名、就绪灯（未装/需登录可作就绪语义，不是协议标签）；进阶沙箱禁止上轨。底栏按 `composerChromeFor` 隐藏 ACP 不支持的 Fast / 思考 / 模式 / 语音，并挂 L3 `SessionMeter`（无用量隐藏）。
+- Composer 智能体动力选择器采用双层流式 HUD（`AgentPicker`）：触发胶囊只写品牌 + `引擎 · 模型` + 就绪微灯（完整引擎名，模型可省略号；供应商只进左栏 / `title`）。**禁止**常驻协议/路径微标（`本地 ToolLoop` / `ACP · 订阅登录` / `ACP Stdio` 及同类）。`quota=true` 且有官方数字时才旁挂 `UsagePill`。空会话 pill 一律 `quiet`（含 ≥85%）；有消息才走 M1 ≥85% 警报。百分比只信 inspect，禁止假 100%。浮层必须「顶部分组导轨 (`AgentEngineRail`)：本地 vs 本机助手/CLI + 下层自适应动力面板」。已装与未装 CLI 都上轨；未装点开一键安装。即将推进「即将推出 N」。Enjoy 本地模型行 `label===id` 不画第二行。OMP 左栏列全部可登录供应商（已登录在前，未登录点授权），不要等两家模型前缀才分栏。未装/即将推出面板用 `max-h-[390px]`，不要锁死 390 高空盒。导轨项只画品牌、引擎名、中性就绪胶囊（未装/需登录/即将）与当前就绪灯，不是协议标签；进阶沙箱禁止上轨。底栏按 `composerChromeFor` 隐藏 ACP 不支持的 Fast / 思考 / 模式 / 语音，并挂 L3 `SessionMeter`（无用量隐藏）。
 - 空态 `MissingRow` 不要嵌 `AgentCliInstall` 整卡，也不要把设置 Registry 铺进线程。缺口行只留品牌+名+一个 CTA。已检测 / 未安装只做问候下的一行折叠，有就绪时未安装默认收起，禁止两张描边卡把空会话做成安装目录。Composer 不能当 empty-state children；空会话走开始面（问候 → Composer → pills），有消息才钉底。卡片 `h-auto`。
 - 空会话禁止 `SkillSourcePullStrip` / 技能源同步条。M6 可选更新只进 `#/skills` 顶栏与 `#/settings/agent?tab=defaults`；合 #10 时不得把空会话条或 children 插槽加回来。
-- 设置智能体页禁止 Fake-Status-Chrome：已删 `AgentToolsHubMetrics`。能力矩阵与配置边界是证据表，不是营销 Hero。配置弹窗「运行偏好」只暴露 `LAUNCH_PREFS` 里该 CLI 真正认的旗标。
+- 设置智能体页禁止 Fake-Status-Chrome：已删 `AgentToolsHubMetrics`。本机 CLI 先卡片后「能力说明」；矩阵/边界默认收起，是证据表不是营销 Hero。配置弹窗「运行偏好」只暴露 `LAUNCH_PREFS` 里该 CLI 真正认的旗标。
 - L4 额度耗尽走 `QuotaExhaustedCard`，不要并进泛化 `rate limit` 红条。禁止 `Math.max(%,2)` 假填充与遥测伪造 5 小时/周度条。

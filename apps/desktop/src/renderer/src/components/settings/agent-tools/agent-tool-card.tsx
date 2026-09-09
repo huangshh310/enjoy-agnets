@@ -9,13 +9,14 @@ import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useT } from "@renderer/i18n"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { agentToolCardId } from "./agent-tool-anchor"
 import { AgentToolAccountRow } from "./agent-tool-account-row"
 import { AgentToolCardFoot, AgentToolCardHead } from "./agent-tool-card-parts"
 import { AgentToolConfigDialog } from "./agent-tool-config-dialog"
 import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
 import { useAgentToolActions } from "./use-agent-tool-actions"
 
-export function AgentToolCard({ tool }: { tool: AgentToolPublic }) {
+export function AgentToolCard({ tool, flash }: { tool: AgentToolPublic; flash?: boolean }) {
   const t = useT()
   const queryClient = useQueryClient()
   const actions = useAgentToolActions(tool)
@@ -33,12 +34,15 @@ export function AgentToolCard({ tool }: { tool: AgentToolPublic }) {
   return (
     <>
       <article
+        id={agentToolCardId(tool.id)}
         className={`flex flex-col justify-between rounded-xl border p-4 transition-all ${
-          actions.isActive
-            ? "border-accent-500/50 bg-background-primary-default shadow-card ring-1 ring-accent-500/25"
-            : ready
-              ? "border-border-button-default bg-background-primary-default shadow-2xs hover:border-border-button-hover"
-              : "border-dashed border-border-button-default/80 bg-background-secondary-default/30 opacity-80"
+          flash
+            ? "border-accent-500/50 bg-background-primary-default shadow-card ring-2 ring-accent-500/35"
+            : actions.isActive
+              ? "border-accent-500/50 bg-background-primary-default shadow-card ring-1 ring-accent-500/25"
+              : ready
+                ? "border-border-button-default bg-background-primary-default shadow-2xs hover:border-border-button-hover"
+                : "border-dashed border-border-button-default/80 bg-background-secondary-default/30 opacity-80"
         }`}
       >
         <AgentToolCardHead tool={tool} actions={actions} ready={ready} />
