@@ -1,6 +1,6 @@
 /**
  * C 端导轨 / Picker 就绪语义。只允许 ready（可空）、未安装、需登录。
- * 禁止把 ACP / 订阅登录等协议标签写成常驻副文案。
+ * 禁止把协议或登录方式写成常驻副文案。
  */
 export type EngineReadiness = "ready" | "missing" | "needs_login" | "soon"
 

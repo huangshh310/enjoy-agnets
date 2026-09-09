@@ -14,7 +14,8 @@ const files = [
   "engine-rail-tab.tsx",
   "agent-cli-pane.tsx",
   "composer-chip-label.ts",
-  "engine-readiness.ts"
+  "engine-readiness.ts",
+  "split-composer-rail.ts"
 ]
 
 test("C 端引擎选择器源码不含 ACP 协议常驻文案", () => {
