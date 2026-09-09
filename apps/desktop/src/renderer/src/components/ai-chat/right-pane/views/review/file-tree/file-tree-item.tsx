@@ -16,6 +16,7 @@ import {
 import type { FileTreeNode } from "../types/review.types"
 import { STATUS_CONFIG } from "../constants/review-constants"
 import { sameReviewPath } from "../same-review-path"
+import { useT } from "@renderer/i18n"
 
 export function FileTreeItem(props: {
   node: FileTreeNode
@@ -23,6 +24,7 @@ export function FileTreeItem(props: {
   selectedFilePath: string | null
   onSelectFile: (path: string) => void
   defaultExpanded?: boolean
+  onStage?: (path: string, action: "add" | "unstage") => void
 }) {
   const {
     node,
@@ -85,6 +87,7 @@ export function FileTreeItem(props: {
                 selectedFilePath={selectedFilePath}
                 onSelectFile={onSelectFile}
                 defaultExpanded={defaultExpanded}
+                onStage={props.onStage}
               />
             ))}
           </div>
@@ -111,7 +114,8 @@ export function FileTreeItem(props: {
         </span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 font-mono text-[11px]">
+      <div className="flex shrink-0 items-center gap-1 font-mono text-[11px]">
+        <StageToggle node={node} onStage={props.onStage} />
         {statusConfig ? (
           <span
             title={statusConfig.label}
@@ -122,5 +126,47 @@ export function FileTreeItem(props: {
         ) : null}
       </div>
     </button>
+  )
+}
+
+function StageToggle(props: {
+  node: FileTreeNode
+  onStage?: (path: string, action: "add" | "unstage") => void
+}) {
+  const t = useT()
+  const { node, onStage } = props
+  if (!onStage || node.isDir) return null
+  const canAdd = node.worktree !== false && node.status !== undefined
+  const canUnstage = node.staged === true
+  if (canUnstage) {
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        title={t("chat.reviewUnstage")}
+        onClick={(event) => {
+          event.stopPropagation()
+          onStage(node.path, "unstage")
+        }}
+        className="rounded px-1 text-[10px] text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
+      >
+        −
+      </span>
+    )
+  }
+  if (!canAdd) return null
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      title={t("chat.reviewStage")}
+      onClick={(event) => {
+        event.stopPropagation()
+        onStage(node.path, "add")
+      }}
+      className="rounded px-1 text-[10px] text-text-tertiary hover:bg-accent-500/15 hover:text-accent-500"
+    >
+      +
+    </span>
   )
 }

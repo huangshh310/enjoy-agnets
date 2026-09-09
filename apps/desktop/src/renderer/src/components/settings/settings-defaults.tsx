@@ -22,7 +22,6 @@ export function SettingsDefaults() {
   const modelLabel = useChatStore((state) => state.modelLabel)
   const defaultMode = useSettingsSnapshot().data?.preferences.defaultMode ?? "agent"
   const setModel = useChatStore((state) => state.setModel)
-  const setMode = useChatStore((state) => state.setMode)
 
   async function onModelChange(model: ModelOption) {
     setModel(model.id, model.label, model.provider, model.reasoningEffort)
@@ -41,7 +40,6 @@ export function SettingsDefaults() {
   }
 
   async function onModeChange(mode: AgentMode) {
-    setMode(mode)
     rememberDefaultMode(mode)
     await patchPreferences({ defaultMode: mode })
     await queryClient.invalidateQueries({ queryKey: ["settings"] })

@@ -12,17 +12,17 @@
 - 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
-- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore`）
+- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件暂存（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage`）
 - 写盘检查点列表与还原（`workspace.listCheckpoints` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`
 - 工作区绑定的 pty 终端（`terminal.open` / `write` / `close`）
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
 
 右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Review 栏对齐 Codex 审查工作台，提交历史是线性 log 不是拓扑图：
-- 顶层控制栏：7 个审查作用域（上一轮 `last-turn`、未提交 `uncommitted`、未暂存 `unstaged`、已暂存 `staged`、已提交 `commits`、分支 `branch`、检查点 `checkpoints`）；全局 `+N -M`；分支对比副行（**真实上游** `@{upstream}` → 当前分支，上游失败显示「无上游」，禁止写死 `main`）；`...` 更多（自动换行、隐藏空白、文字级差异、折叠大文件、复制完整 patch）；展开/折叠全部差异；Ctrl+P / ⌘P 跳文件；文件树开关；「提交或推送」。`checkpoints` 只列 `refs/enjoy/checkpoints/*`，不走 diff 流。还原必须 ConfirmDialog：换 index + 工作区，不移动 HEAD。
+- 顶层控制栏：7 个审查作用域（上一轮 `last-turn`、未提交 `uncommitted`、未暂存 `unstaged`、已暂存 `staged`、已提交 `commits`、分支 `branch`、检查点 `checkpoints`）；全局 `+N -M`；分支对比副行（**真实上游** `@{upstream}` → 当前分支，上游失败显示「无上游」，禁止写死 `main`）；`...` 更多（自动换行、隐藏空白、文字级差异、折叠大文件、复制完整 patch）；展开/折叠全部差异；Ctrl+P / ⌘P 跳文件；文件树开关；「提交或推送」只在改动作用域（检查点 / 提交历史不画这颗主 CTA）。`checkpoints` 只列 `refs/enjoy/checkpoints/*`，不走 diff 流。还原必须 ConfirmDialog：换 index + 工作区，不移动 HEAD；成功后**留在检查点时间线**，禁止偷切「未提交」。未暂存 / 已暂存文件树可按文件 `+` 暂存 / `−` 取消暂存（`workspace.gitStage`）。Review 底栏提交默认 `stageAll: false`，只提交已暂存；无已暂存则禁用，文案「提交已暂存」。Agent 工具 `git_commit` 仍可 `add -A`。
 - 变更工作台：默认 **左当前文件满高 FileDiff、右文件树**（对齐 Codex）。树宽可拖（`enjoy-agents-review-tree-split`，最小 140px，默认 200px，最大 50%）。无选中自动打开第一项。提交底栏贴底：输入框右上角 sparkle 用当前模型 `ai.generate` kind=`completion` 根据 patch 填 Conventional Commit 说明（renderer 不碰密钥）；提交/推送收到芯片行，推送用 ghost，禁止再竖排两颗大按钮。「展开全部差异」才用 compact 卡片叠放（禁止 `fill`）。`FileDiff` 的 `fill` 只给单文件主区。
 - 提交历史：`git log` 线性列表 + 单轨竖线。没有 parent 图，禁止用 index 伪装多色车道。没有远程 PR / CI。空仓库空态，禁止 mock 提交。
-Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（用量：消息字符、常驻规则拼装、已连 MCP 的 name+description、技能索引（`formatSkillCatalog`，不含 SKILL.md 正文）、启用芯片的 snippet，按 3.8 字/token 折算；**上限**取当前模型 `contextWindow`：探测目录 > Gateway `/v1/models` > 档案手填，禁止按 modelId 静态表猜，未知则「— / 窗口未知」）、会话压缩卡片（展示压缩状态、**压缩前/后 Tokens**、节省量、事实摘要与再次压缩/清除；未压缩态不编造预计节省）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。输入框底栏状态栏配备手动压缩按钮，支持一键触发当前会话上下文压缩并即时联动看板。原始载荷走 `agent.inspectPrompt`：已压缩会话将较早历史替换为一条 `[CONVERSATION SUMMARY]`（不插虚构助手句）；有本会话泵时快照且 `capturedAt >= compactedAt` 则标「本轮实发」；压缩后快照过期则回落 preview。preview 为库内消息 `toModelMessages` + 当前模式系统提示词，不落库。
+Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（用量：消息字符、常驻规则拼装、已连 MCP 的 name+description、技能索引（`formatSkillCatalog`，不含 SKILL.md 正文）、启用芯片的 snippet，按 3.8 字/token 折算；**上限**取当前模型 `contextWindow`：探测目录 > Gateway `/v1/models` > 档案手填，禁止按 modelId 静态表猜，未知则「— / 窗口未知」）。Limits 卡 / SessionMeter / Context **共用** `estimateContextWindowStats`，按当前 `runtimeId` 投影：ACP / `sandbox-harness` 不计 Enjoy 常驻规则、技能索引、Enjoy MCP；禁止 720 / 260 假地板。会话压缩卡片（展示压缩状态、**压缩前/后 Tokens**、节省量、事实摘要与再次压缩/清除；未压缩态不编造预计节省）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。输入框底栏状态栏配备手动压缩按钮，支持一键触发当前会话上下文压缩并即时联动看板。原始载荷走 `agent.inspectPrompt`：已压缩会话将较早历史替换为一条 `[CONVERSATION SUMMARY]`（不插虚构助手句）；有本会话泵时快照且 `capturedAt >= compactedAt` 则标「本轮实发」；压缩后快照过期则回落 preview。preview 为库内消息 `toModelMessages` + 当前模式系统提示词，不落库。`captureOpenStreamPrompt` 只在开流**成功**后写入，失败不得留下假 last-run。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 
@@ -42,7 +42,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 - 工作区档案：`apps/desktop/src/main/services/workspace.ts`
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
-- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`
+- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件暂存：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`
@@ -56,7 +56,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。
 - `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。
 - 审查栏 `gitCommit` 成功后必须 invalidate `["changes", workspaceId]`（改动条和 Review 共用这一份）。不要写成 `workspace-changes`，那条 query 不存在，提交后改动条会继续挂着已进 HEAD 的文件。
-- 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出改动数量与说明，再调 `workspace.gitCommit`。Agent `git_commit` 仍走 HMAC。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。
+- 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出**已暂存**数量与说明，再调 `workspace.gitCommit`（默认 `stageAll: false`，禁止再默认 `git add -A`）。Agent `git_commit` 仍走 HMAC，并可 `add -A`。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。按文件暂存走 `workspace.gitStage`，成功后 invalidate `["changes", workspaceId]`。
 - Review 主区出现横向空条纹：把全部 changed files 展开成 `FileDiff` 卡片流，且组件用 `flex-1` + `max-h-full`。滚动列给不出确定高度，diff 行塌成发丝。默认只渲染当前文件并 `fill`；叠放时必须 `compact`，禁止 `fill`。
 - 右栏 tab 用 `hidden` 保活，不卸载。审查栏若订整份 `messages`、绑全局 `Ctrl+P`/`Ctrl+Enter`、或每次渲染 `parseUnifiedDiff`，流式输出会拖死整窗。隐藏时 `active=false`：不订 messages、不听快捷键、不发 `gitLog`。`Ctrl+P` 仍是打开 Files，不要截走。分支对比才拉 `upstream...HEAD`。
 - 移除项目不是删文件夹。归档不是删除；永久删除走 `session.delete` / `session.deleteArchived`。
@@ -64,4 +64,4 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 会话芯片 `takeSessionContextChips` 只取走 `enabled !== false` 的项。排除芯片必须留在队列，否则发送后无法再点亮。
 - `agent.inspectPrompt` 的 last-run 快照只在 main 进程内存，按 sessionId 覆盖。重启后回落 preview，不要写成已落库。压缩会 `clearInspectPromptSnapshot`；若快照仍在但早于 `compactedAt`，也走 preview。Enjoy Local 的 instructions = `systemPromptFor` + `customInstructions` + 常驻项目规则（`pickAlwaysOnRules`，预算 24k）+ 技能索引（`formatSkillCatalog`，预算 8k，不含 SKILL.md 正文）。ACP 检查器不得假装走了 ToolLoop 提示词，也不得列出 Enjoy 的 `write_file` 等工具名。preview 的 runtime 必须 `resolveRuntimeId`（会话覆盖 > 偏好），禁止只读 `prefs.runtimeId`。检查器 queryKey 要带 `runtimeId`，否则切引擎后仍吃旧缓存。带 globs 且未 `alwaysApply` 的规则不注入。全局技能没有工作区相对路径，模型不能 `read_file` 出 jail。
 - 写盘检查点是 `refs/enjoy/checkpoints/*`，不是用户分支上的 commit。不要 `git commit` 到当前分支当「自动保存」，也不要 OpenHands 云沙箱。`git stash create` **不含未跟踪文件**（`write_file` 新建的正好是这类），必须用临时 `GIT_INDEX_FILE` + `read-tree HEAD` + `add -A` + `write-tree` + `commit-tree`。失败不得让写盘工具抛错。
-- `restoreCheckpoint` 不是 `git reset --hard`，也不 `git clean -fd`（会扫到 ignored）。校验 `^refs/enjoy/checkpoints/\\d+$`，否则 `CHECKPOINT_REF_INVALID`。先收集当时 `ls-files` + `ls-files --others --exclude-standard`，再 `read-tree <sha>` 换**用户 index**，`checkout-index -a -f`，然后删「当时 git 知道、但不在快照树里」的路径（`resolveInsideWorkspace` jail）。HEAD / 当前分支不动。还原后 index 等于快照，相对 HEAD 会显示成已暂存差异。找不到 `.git` 或 ref 抛 `CHECKPOINT_NOT_FOUND`。成功后 UI 必须 invalidate `["changes", workspaceId]`，切到「未提交」，不要停在空检查点列表。ACP 写盘不走 host，靠 `file.changed` / `run.end` 记账（每 run 最多一条），并 invalidate `["checkpoints", workspaceId]`。
+- `restoreCheckpoint` 不是 `git reset --hard`，也不 `git clean -fd`（会扫到 ignored）。校验 `^refs/enjoy/checkpoints/\\d+$`，否则 `CHECKPOINT_REF_INVALID`。先收集当时 `ls-files` + `ls-files --others --exclude-standard`，再 `read-tree <sha>` 换**用户 index**，`checkout-index -a -f`，然后删「当时 git 知道、但不在快照树里」的路径（`resolveInsideWorkspace` jail）。HEAD / 当前分支不动。还原后 index 等于快照，相对 HEAD 会显示成已暂存差异。找不到 `.git` 或 ref 抛 `CHECKPOINT_NOT_FOUND`。成功后 UI 必须 invalidate `["changes", workspaceId]`，**留在检查点作用域**看时间线，禁止偷切「未提交」。ACP 写盘不走 host，靠 `file.changed` / `run.end` 记账（每 run 最多一条），并 invalidate `["checkpoints", workspaceId]`。

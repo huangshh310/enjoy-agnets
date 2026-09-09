@@ -9,6 +9,7 @@ import {
   GitPatchInput,
   GitPushInput,
   GitRestoreInput,
+  GitStageInput,
   RestoreCheckpointInput,
   ListDirInput,
   OpenWorkspaceInput,
@@ -57,6 +58,7 @@ import {
   readWorkspacePatch,
   removeWorkspace,
   restoreWorkspacePaths,
+  stageWorkspacePaths,
   listEnjoyCheckpointItems,
   restoreEnjoyCheckpoint
 } from "./services/workspace"
@@ -87,6 +89,7 @@ export const SHELL_CHANNELS = [
   "workspace.gitPush",
   "workspace.gitPatch",
   "workspace.gitRestore",
+  "workspace.gitStage",
   "workspace.listCheckpoints",
   "workspace.restoreCheckpoint",
   "workspace.changes",
@@ -185,6 +188,11 @@ function registerWorkspaceIpc() {
     const input = GitRestoreInput.parse(raw)
     const ws = await getWorkspace(input.workspaceId)
     return restoreWorkspacePaths(ws.rootPath, input.paths)
+  })
+  ipcMain.handle("workspace.gitStage", async (_event, raw) => {
+    const input = GitStageInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return stageWorkspacePaths(ws.rootPath, input.paths, input.action)
   })
   ipcMain.handle("workspace.listCheckpoints", async (_event, raw) => {
     const workspaceId = WorkspaceIdInput.parse(raw).workspaceId

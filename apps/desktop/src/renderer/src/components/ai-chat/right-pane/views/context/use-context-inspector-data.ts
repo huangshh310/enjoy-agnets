@@ -43,7 +43,8 @@ export function useContextInspectorData(workspaceId: string | null) {
     catalogs.rules,
     catalogs.skills,
     chips,
-    customInstructions
+    customInstructions,
+    slice.runtimeId
   )
 
   return {
@@ -76,7 +77,8 @@ function useInspectorChatSlice() {
     running: useChatStore((state) => state.running),
     workspaceName: useChatStore((state) => state.workspaceName),
     changes: useChatStore((state) => state.changes),
-    sessionId: useChatStore((state) => state.sessionId)
+    sessionId: useChatStore((state) => state.sessionId),
+    runtimeId: useChatStore((state) => state.runtimeId)
   }
 }
 

@@ -128,6 +128,10 @@ export type ChatStore = {
   runtimeId: string
   preferredRuntimeId: string
   sessionRuntimes: Record<string, string>
+  /** 每个会话自己的 Ask/Plan，切会话还原，设置默认项不得改当前。 */
+  sessionModes: Record<string, AgentMode>
+  /** 交接确认后，早于该时间戳的气泡视为上一引擎记录。 */
+  sessionHandoffCuts: Record<string, number>
   reasoningEffort: ReasoningEffort | undefined
   isFastMode: boolean
   mode: AgentMode
@@ -164,6 +168,7 @@ export type ChatStore = {
   setRuntimeId: (runtimeId: string) => void
   setPreferredRuntimeId: (runtimeId: string) => void
   setSessionRuntimes: (sessionRuntimes: Record<string, string>) => void
+  markHandoffCut: (sessionId: string, at: number) => void
   setModel: (
     id: string,
     label: string,

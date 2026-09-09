@@ -175,3 +175,18 @@ test("estimateTurnPerformance respects TelemetryMetric when available", () => {
   assert.equal(perf.tokensPerSecond, 80.0)
   assert.equal(perf.isLive, true)
 })
+
+test("ACP 不把 Enjoy 规则和技能算进占用", () => {
+  const skill = {
+    id: "w:grill",
+    name: "grill-me",
+    description: "Stress-test",
+    scope: "workspace" as const,
+    directoryPath: "/ws/.agents/skills/grill-me",
+    skillFilePath: "/ws/.agents/skills/grill-me/SKILL.md"
+  }
+  const local = estimateContextWindowStats([], 200_000, [], [], [skill], [], "", "enjoy-local")
+  const acp = estimateContextWindowStats([], 200_000, [], [], [skill], [], "", "cursor")
+  assert.ok((local.buckets.find((b) => b.id === "skills")?.tokens ?? 0) > 0)
+  assert.equal(acp.buckets.find((b) => b.id === "skills")?.tokens, 0)
+})

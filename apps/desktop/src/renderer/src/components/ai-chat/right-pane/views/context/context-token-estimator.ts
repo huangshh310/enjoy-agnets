@@ -3,6 +3,7 @@
  */
 import { formatAlwaysOnRulePrompt } from "@enjoy-agents/ipc-contract/rules-always-on"
 import { formatSkillCatalog } from "@enjoy-agents/ipc-contract/skills-catalog"
+import { runtimePathKind } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import type { McpServer, ProjectRuleItem, SkillItem, TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { CHARS_PER_TOKEN } from "@enjoy-agents/agent-core/compaction"
@@ -41,16 +42,20 @@ export function estimateContextWindowStats(
   rules: ProjectRuleItem[] = [],
   skills: SkillItem[] = [],
   chips: ContextChipEstimate[] = [],
-  customInstructions = ""
+  customInstructions = "",
+  runtimeId = "enjoy-local"
 ): ContextWindowStats {
+  const local = countsEnjoyLocalLayers(runtimeId)
   const messageTokens = estimateCharTokens(sumMessageChars(messages))
   const systemTokens = estimateCharTokens(
-    formatAlwaysOnRulePrompt(rules).length + customInstructions.trim().length
+    (local ? formatAlwaysOnRulePrompt(rules).length : 0) + customInstructions.trim().length
   )
-  const mcpTokens = mcpServers
-    .filter((server) => server.connected)
-    .reduce((sum, server) => sum + estimateMcpSchemaTokens(server), 0)
-  const skillsTokens = estimateCharTokens(formatSkillCatalog(skills).length)
+  const mcpTokens = local
+    ? mcpServers
+        .filter((server) => server.connected)
+        .reduce((sum, server) => sum + estimateMcpSchemaTokens(server), 0)
+    : 0
+  const skillsTokens = local ? estimateCharTokens(formatSkillCatalog(skills).length) : 0
   const memoryTokens = chips
     .filter((chip) => chip.enabled !== false)
     .reduce((sum, chip) => sum + estimateCharTokens(chip.snippet?.length ?? 0), 0)
@@ -83,6 +88,11 @@ export function estimateTurnPerformance(
   const durationMs = lastAssistant?.thoughtSeconds ? lastAssistant.thoughtSeconds * 1000 : 0
   const tokensPerSecond = durationMs > 0 ? Number((outputTokens / (durationMs / 1000)).toFixed(1)) : 0
   return { durationMs, ttfoMs: 0, tokensPerSecond, outputTokens, isLive: isRunning }
+}
+
+/** Enjoy Local 才注入常驻规则 / 技能索引 / Enjoy MCP。ACP / 沙箱只垫自定义说明。 */
+export function countsEnjoyLocalLayers(runtimeId: string): boolean {
+  return runtimePathKind(runtimeId) === "enjoy-local"
 }
 
 function sumMessageChars(messages: ThreadMessage[]): number {

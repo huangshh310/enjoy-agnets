@@ -52,12 +52,16 @@ export function buildFileTree(
           isDir: !isLeaf,
           children: isLeaf ? undefined : [],
           status: isLeaf ? file.status : undefined,
+          staged: isLeaf ? file.staged : undefined,
+          worktree: isLeaf ? file.worktree : undefined,
           additions: isLeaf ? file.additions : undefined,
           deletions: isLeaf ? file.deletions : undefined
         }
         current.children.push(existing)
       } else if (isLeaf) {
         existing.status = file.status
+        existing.staged = file.staged
+        existing.worktree = file.worktree
         existing.additions = file.additions
         existing.deletions = file.deletions
       }

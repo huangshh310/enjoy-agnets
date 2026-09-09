@@ -2,7 +2,11 @@
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
 import { AgentToolId, migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
-import { modeForNewSession, readRememberedDefaultMode } from "../components/ai-chat/composer/composer-mode"
+import {
+  modeForLoadedSession,
+  modeForNewSession,
+  readRememberedDefaultMode
+} from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
 import { getIde, hasIde } from "../lib/ide"
@@ -36,6 +40,7 @@ export async function loadSession(sessionId: string, title: string) {
     if (store.sessionId) parkForegroundRun()
     store.setSession(sessionId, title)
     store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
+    useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
     useEngineHandoffStore.getState().resetPending()
     restoreComposerForSession(sessionId)
   } else {

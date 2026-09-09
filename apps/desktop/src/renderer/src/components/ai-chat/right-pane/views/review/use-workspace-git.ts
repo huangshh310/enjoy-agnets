@@ -69,7 +69,7 @@ export function useWorkspaceGit(
 
   async function commitChanges(
     message: string,
-    stageAll = true
+    stageAll = false
   ): Promise<{ ok: boolean; output?: string }> {
     if (!workspaceId || !message.trim()) return { ok: false }
     try {
@@ -101,6 +101,20 @@ export function useWorkspaceGit(
     }
   }
 
+  async function stagePaths(
+    paths: string[],
+    action: "add" | "unstage"
+  ): Promise<{ ok: boolean; output?: string }> {
+    if (!workspaceId || paths.length === 0) return { ok: false }
+    try {
+      await getIde().workspace.gitStage({ workspaceId, paths, action })
+      await queryClient.invalidateQueries({ queryKey: ["changes", workspaceId] })
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, output: err instanceof Error ? err.message : String(err) }
+    }
+  }
+
   async function readPatch(paths?: string[]): Promise<string> {
     if (!workspaceId) return ""
     const res = (await getIde().workspace.gitPatch({ workspaceId, paths })) as { patch: string }
@@ -116,6 +130,7 @@ export function useWorkspaceGit(
     refresh,
     commitChanges,
     pushChanges,
+    stagePaths,
     readPatch
   }
 }

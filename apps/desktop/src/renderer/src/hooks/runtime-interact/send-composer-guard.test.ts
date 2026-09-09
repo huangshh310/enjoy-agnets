@@ -6,7 +6,7 @@ import {
   NEED_CLI_LOGIN,
   NEED_PROVIDER_KEY
 } from "../../lib/usage/classify-thread-error.ts"
-import { guardComposerSend } from "./send-composer-guard.ts"
+import { composerSendReady, guardComposerSend } from "./send-composer-guard.ts"
 
 function store(partial: {
   runtimeId: string
@@ -137,6 +137,23 @@ test("检测中不打开 Picker，也不当成未登录", () => {
   assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
   assert.equal(chat.read().error, NEED_CLI_INSPECTING)
   assert.equal(chat.read().picker, false)
+})
+
+test("发送盘：Enjoy Local 无密钥不亮；CLI 未登录不亮", () => {
+  rememberAgentTools([claudeTool(false)])
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false }), false)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true }), true)
+  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true }), false)
+})
+
+test("发送盘：已登录 CLI 才亮", () => {
+  rememberAgentTools([claudeTool(true)])
+  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true }), true)
+})
+
+test("发送盘：缓存里还没有 CLI 行时不亮", () => {
+  rememberAgentTools([])
+  assert.equal(composerSendReady({ runtimeId: "cursor", hasKey: true }), false)
 })
 
 test("缓存里还没有 CLI 行时也是检测中", () => {

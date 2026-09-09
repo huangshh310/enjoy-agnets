@@ -14,7 +14,8 @@
 | 有历史切换 | Composer 同宽确认坞（摘要默认折叠）；确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文。`peekSessionHandoff` 开流前注入，`openCodingStream` 成功后才 `take`。pending 时胶囊改「确认切换 · 目标」，禁止再开 Picker。文件只取上一轮工具路径，不塞 `workspace.changes` |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
-| 已交接条 | 仅确认成功后出现；可 dismiss；文案 `{from} → {to}`。**确认卡打开时不画微条**；取消 / 未确认不留微条。卡与微条互斥 |
+| 已交接条 | 仅确认成功后出现；可 dismiss；文案 `{from} → {to}`。**确认卡打开时不画微条**；取消 / 未确认不留微条。卡与微条互斥。确认时 `markHandoffCut`：切点之前的气泡降透明度，交界画「上一引擎记录 · 新引擎只收到摘要」 |
+| inspect / brief | `captureOpenStreamPrompt` 与 `takeSessionHandoff` 都跟开流**成功**；`ACP_AUTH_REQUIRED` / 缺密钥不得留下假 last-run，也不得提前 `take` |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`（无装饰粉边；主钮一键安装、次钮复制、文档为链接）；就绪灯只信 `engineReadiness === ready`（`loggedIn==null` 是 inspecting，不是绿灯） |
 | 空态 | 开始面：问候 `text-title-1-bold`（工作区名 accent）+ 一条元数据胶囊（「N 项」/ 叠标已就绪 / 未安装，展开下拉）+ Composer + 下方命令 pills；Composer **不进** empty-state；藏审查条 / UsagePill 警报 / 技能源同步条 |
 | 三路 | Picker 顶部分组：「本地」= Enjoy Local（下层供应商→模型）；「本机助手 / CLI」= 已装与未装都上轨，未装点开一键安装。OMP 左栏列可登录供应商，实心登录打开浏览器。沙箱 `showOnEngineRail:false` |
@@ -126,7 +127,8 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 ## 已知坑
 
 - 设置「设为主引擎」若直接 `persistRuntimeId`，会绕过 `planComposerSwitch` / dispose / brief，有用户轮时假续跑。必须走 `requestEngineSwitch`；pending / blocked 再回 Chat 出坞。确认 IPC 失败必须 `setError(HANDOFF_CONFIRM_FAILED)`，坞留在 `handoff_pending`，不要静默。
-- `beginAgentRun` 禁止一上来 `takeSessionHandoff`。第一发 `ACP_AUTH_REQUIRED` / 缺密钥 / spawn 失败后 brief 必须还在；登录后再发仍带 `[Engine handoff — hidden context]`，且不是用户气泡。
+- `beginAgentRun` 禁止一上来 `takeSessionHandoff`。第一发 `ACP_AUTH_REQUIRED` / 缺密钥 / spawn 失败后 brief 必须还在；登录后再发仍带 `[Engine handoff — hidden context]`，且不是用户气泡。`openCodingStream` 失败同样不得 `captureOpenStreamPrompt`。
+- 交接后旧气泡若仍按当前引擎铬渲染，会像假续跑。必须按 `sessionHandoffCuts` 降级，并在旧→新交界（或全是旧气泡时列表末尾）画分界。
 - ACP 进程身份必须含 `toolId`（`acpProcessKey`）。旧实现只用 modelId+env，Claude→Cursor 会复用旧 stdio，看起来像假续跑。
 - `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
 - 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内，并写过只滚 Dock 的无参 `focusAttention` stub；现挂点是 Composer 上沿 `PermissionDock`，阻切必须走 M2 `focusAttention({ sessionId, kind, navigate })`。

@@ -15,6 +15,7 @@ export function ReviewFileTree(props: {
   changes: ChangedFileRow[]
   selectedFilePath: string | null
   onSelectFile: (path: string) => void
+  onStage?: (path: string, action: "add" | "unstage") => void
 }) {
   const { changes, selectedFilePath, onSelectFile } = props
   const t = useT()
@@ -61,6 +62,7 @@ export function ReviewFileTree(props: {
               node={node}
               selectedFilePath={selectedFilePath}
               onSelectFile={onSelectFile}
+              onStage={props.onStage}
             />
           ))
         )}

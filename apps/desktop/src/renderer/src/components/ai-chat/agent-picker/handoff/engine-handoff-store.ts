@@ -102,6 +102,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
       })
     }
     await persistRuntimeId(state.toRuntimeId, state.modelId)
+    useChatStore.getState().markHandoffCut(sessionId, Date.now())
     useEngineHandoffStore.setState({
       phase: "idle",
       fromRuntimeId: null,

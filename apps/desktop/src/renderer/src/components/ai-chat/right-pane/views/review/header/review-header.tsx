@@ -46,6 +46,7 @@ export function ReviewHeader(props: {
   onCopyUnifiedDiff?: () => void
   onPrimaryCommit?: () => void
   onPrimaryPush?: () => void
+  showCommitPush?: boolean
 }) {
   const {
     scope,
@@ -64,7 +65,8 @@ export function ReviewHeader(props: {
     onCopyApplyCmd,
     onCopyUnifiedDiff,
     onPrimaryCommit,
-    onPrimaryPush
+    onPrimaryPush,
+    showCommitPush = true
   } = props
   const t = useT()
 
@@ -134,7 +136,7 @@ export function ReviewHeader(props: {
             <RiFolder6Line className="size-4" />
           </button>
 
-          {/* 提交或推送主操作下拉胶囊 */}
+          {showCommitPush ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -163,6 +165,7 @@ export function ReviewHeader(props: {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          ) : null}
         </div>
       </div>
 

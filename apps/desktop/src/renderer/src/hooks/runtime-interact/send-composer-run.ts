@@ -14,7 +14,7 @@ import {
   dropEmptyPendingAssistant
 } from "../composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
-import { takeComposerSlash } from "../../components/ai-chat/composer/composer-mode"
+import { runModeForComposer, takeComposerSlash } from "../../components/ai-chat/composer/composer-mode"
 import { guardComposerSend } from "./send-composer-guard"
 import { clearComposerDraft, takeComposerText } from "./composer-draft"
 
@@ -49,7 +49,9 @@ function resolveSendPayload(prepared?: PreparedSend): SendPayload | null {
   const fromDraft = !prepared
   const raw = prepared?.content ?? takeComposerText()
   const parsed = takeComposerSlash(raw)
-  if (parsed.mode) useChatStore.getState().setMode(parsed.mode)
+  if (parsed.mode && runModeForComposer(useChatStore.getState().runtimeId, parsed.mode) === parsed.mode) {
+    useChatStore.getState().setMode(parsed.mode)
+  }
   const content = parsed.text
   if (!content) return null
   if (fromDraft) clearComposerDraft()

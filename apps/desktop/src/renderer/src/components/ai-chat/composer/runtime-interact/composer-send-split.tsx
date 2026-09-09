@@ -8,11 +8,13 @@ import { useT } from "@renderer/i18n"
 export function ComposerSendSplit({
   running,
   hasDraft,
+  ready = true,
   onSend,
   onStop
 }: {
   running: boolean
   hasDraft: boolean
+  ready?: boolean
   onSend: () => void
   onStop: () => void
 }) {
@@ -29,10 +31,10 @@ export function ComposerSendSplit({
     return (
       <button
         type={running ? "button" : "submit"}
-        aria-label={running ? t("chat.runtimeQueue") : t("chat.send")}
-        title={running ? t("chat.runtimeQueuedHint") : t("chat.send")}
+        aria-label={running ? t("chat.runtimeQueue") : ready ? t("chat.send") : t("chat.sendNotReady")}
+        title={running ? t("chat.runtimeQueuedHint") : ready ? t("chat.send") : t("chat.sendNotReady")}
         onClick={running ? onSend : undefined}
-        className={sendClassName}
+        className={ready ? sendClassName : mutedSendClassName}
       >
         <RiArrowUpLine className="size-5" aria-hidden />
       </button>
@@ -43,3 +45,6 @@ export function ComposerSendSplit({
 
 const sendClassName =
   "flex size-8 shrink-0 items-center justify-center rounded-full bg-linear-to-b from-accent-500 to-accent-600 text-text-white shadow-nav-selected transition-all hover:brightness-110 active:scale-95"
+
+const mutedSendClassName =
+  "flex size-8 shrink-0 items-center justify-center rounded-full border border-separator-border bg-background-secondary-default text-text-tertiary transition-all hover:text-text-primary"

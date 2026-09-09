@@ -115,9 +115,19 @@ export type GitLogResult = z.infer<typeof GitLogResult>
 export const GitCommitInput = z.object({
   workspaceId: z.string().min(1),
   message: z.string().trim().min(1).max(4000),
-  stageAll: z.boolean().default(true)
+  /** 默认只提交已暂存。true 才 `git add -A`（Agent 工具用）。 */
+  stageAll: z.boolean().default(false)
 })
 export type GitCommitInput = z.infer<typeof GitCommitInput>
+
+export const GitStageInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    paths: z.array(z.string().min(1)).min(1),
+    action: z.enum(["add", "unstage"])
+  })
+  .strict()
+export type GitStageInput = z.infer<typeof GitStageInput>
 
 export const GitCommitResult = z.object({
   ok: z.boolean(),

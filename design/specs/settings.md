@@ -21,7 +21,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/workspace` | 工作区管理（含已挂载目录列表） | 旧 `#/workspaces` redirect |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
-`#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。`#/settings/rules` 扫描到的常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）；设置 refetch 不得覆盖当前会话 mode。
+`#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。`#/settings/rules` 扫描到的常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
 设置分段 ID 完整保留 24 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
 侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；团队与账户：团队），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目；`skills` 自己就是一级入口，不再并进「说明」。
@@ -80,7 +80,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Providers 自带标题与分段控件。`SettingsSectionPage` 不要再叠一层 `h1`，否则出现两个「模型供应商」。空态虚线框必须 `flex-1`，不要按内容收在卡片上半截。
 - 账单页没有计费 IPC，也不要再挂演示套餐 / 升级弹窗。L4 卡可以深链到本页说明，不要假装能在 Enjoy 里充值。
 - 团队 / 成员 / 组织 / 集成禁止再塞 Alex Zhang、GitHub Enterprise「已连接」、`team@enjoy-agents.dev` 已登录云账号。没有云同步就写本地单机。用户卡禁止「退出登录」（没有云会话可退）。
-- 新建会话若 `settings.get` 会顺带 `listAgentTools`（PATH 探测），输入框会顿一下。默认模式只从已应用的 settings 快照记住。
+- 新建会话若 `settings.get` 会顺带 `listAgentTools`（PATH 探测），输入框会顿一下。默认模式只从已应用的 settings 快照记住。设置页改 Ask/Plan 默认项若顺便 `setMode`，会把正在看的会话改名实不符；必须只写偏好。
 - `#/settings/instructions` 能保存却不进默认引擎：旧路径只给 Harness 拼 `customInstructions`。Enjoy Local 必须 `extraInstructions`；ACP 只垫 `session/prompt`，检查器不得回 ToolLoop `systemPromptFor`。
 - 不要把 `AgentToolsHubMetrics` 装回来：装载率百分比、永远绿灯、「沙箱隔离 · 实时 Token 流」是 Fake-Status-Chrome，且把沙箱和 ACP 混成一条。
 - 本机 CLI 若把能力矩阵铺在卡片前面，用户会以为「登录=是」就是已登录，也找不到安装入口。矩阵必须默认收起，「支持」不是现场状态。

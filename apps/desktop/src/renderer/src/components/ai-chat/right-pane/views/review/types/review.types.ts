@@ -90,6 +90,8 @@ export interface FileTreeNode {
   children?: FileTreeNode[]
   /** Git 状态 */
   status?: ChangedFileRow["status"]
+  staged?: boolean
+  worktree?: boolean
   /** 新增行数 */
   additions?: number
   /** 删除行数 */

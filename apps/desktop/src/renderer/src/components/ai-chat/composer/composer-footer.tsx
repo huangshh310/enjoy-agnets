@@ -4,6 +4,7 @@
  */
 import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
+import { composerSendReady } from "@renderer/hooks/runtime-interact/send-composer-guard"
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -53,7 +54,9 @@ export function ComposerFooter({
   const setMode = useChatStore((state) => state.setMode)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   const runtimeId = useChatStore((state) => state.runtimeId)
+  const hasKey = useChatStore((state) => state.hasKey)
   const chrome = composerChromeFor(runtimeId)
+  const sendReady = composerSendReady({ runtimeId, hasKey })
   const showVoice = chrome.voice && canRealtime
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
@@ -97,6 +100,7 @@ export function ComposerFooter({
         <ComposerSendSplit
           running={running}
           hasDraft={hasDraft}
+          ready={sendReady}
           onSend={onSend}
           onStop={onStop}
         />

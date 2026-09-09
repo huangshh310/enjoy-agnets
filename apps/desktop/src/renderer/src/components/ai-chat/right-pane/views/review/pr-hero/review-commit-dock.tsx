@@ -81,7 +81,7 @@ export const ReviewCommitDock = forwardRef<
   }
 
   function tryCommit() {
-    if (!message.trim() || busy) return
+    if (!message.trim() || busy || changesCount === 0) return
     if (requireApproval) {
       setConfirmOpen(true)
       return
@@ -157,9 +157,15 @@ export const ReviewCommitDock = forwardRef<
             <span>{t("chat.reviewPushAction")}</span>
           </Button>
         ) : null}
-        <Button type="submit" size="xs" disabled={locked || !message.trim()} className="h-6 shrink-0 gap-1 px-2">
+        <Button
+          type="submit"
+          size="xs"
+          disabled={locked || !message.trim() || changesCount === 0}
+          title={changesCount === 0 ? t("chat.reviewNothingStaged") : undefined}
+          className="h-6 shrink-0 gap-1 px-2"
+        >
           <RiGitCommitLine className="size-3" />
-          <span>{busy ? t("chat.reviewCommitting") : t("chat.reviewCommitAction")}</span>
+          <span>{busy ? t("chat.reviewCommitting") : t("chat.reviewCommitStaged")}</span>
         </Button>
       </div>
 

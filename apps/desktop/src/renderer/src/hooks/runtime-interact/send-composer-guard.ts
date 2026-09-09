@@ -20,6 +20,20 @@ type ComposerGuardStore = {
   setAgentPickerOpen: (open: boolean) => void
 }
 
+/** 发送盘是否亮成可发：与闸门同一套 ready。 */
+export function composerSendReady(store: Pick<ComposerGuardStore, "runtimeId" | "hasKey">): boolean {
+  if (store.runtimeId === "enjoy-local") return store.hasKey
+  const tool = rememberedAgentTool(store.runtimeId)
+  const input = {
+    id: store.runtimeId,
+    status: tool?.status ?? "ready",
+    comingSoon: tool?.comingSoon,
+    requiresLogin: tool ? capabilitiesOf(tool).login : true,
+    loggedIn: tool?.authAccount?.loggedIn ?? null
+  }
+  return canBindEngine(input) && engineReadiness(input) === "ready"
+}
+
 export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?: boolean }): boolean {
   const ideReady = opts?.ideReady ?? hasIde()
   if (!ideReady) {

@@ -1,8 +1,6 @@
 /**
  * Review 按作用域切换：检查点、提交历史、未提交 diff。
  */
-import { useChatStore } from "@renderer/stores/chat-store"
-import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { CheckpointsList } from "./checkpoints/checkpoints-list"
 import { CommitsTimeline } from "./commits/commits-timeline"
 import { ReviewDiffStream } from "./diff-stream/review-diff-stream"
@@ -25,9 +23,6 @@ export function ReviewCheckpointsPane({ vm }: { vm: ReviewViewModel }) {
         onRestore={async (ref) => {
           const message = await vm.checkpoints.restore(ref)
           if (message) return message
-          vm.setScope("uncommitted")
-          const first = useChatStore.getState().changes[0]
-          if (first) void openChangedFile(first.path)
           return null
         }}
       />
@@ -62,6 +57,7 @@ export function ReviewChangesPane({ vm }: { vm: ReviewViewModel }) {
               changes={vm.scoped}
               selectedFilePath={vm.selectedFilePath}
               onSelectFile={vm.onSelectFile}
+              onStage={(path, action) => void vm.git.stagePaths([path], action)}
             />
           }
         >
@@ -97,7 +93,7 @@ function ReviewChangesStream({ vm }: { vm: ReviewViewModel }) {
       <div className="shrink-0 border-t border-separator-border bg-background-secondary-default/40 px-3 py-2">
         <ReviewCommitDock
           ref={vm.commitDockRef}
-          changesCount={vm.scoped.length}
+          changesCount={vm.changes.filter((file) => file.staged).length}
           onCommit={vm.git.commitChanges}
           onPush={() => vm.git.pushChanges()}
           onReadPatch={() => vm.git.readPatch(vm.scoped.map((file) => file.path))}

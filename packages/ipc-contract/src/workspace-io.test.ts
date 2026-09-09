@@ -3,6 +3,7 @@ import { test } from "node:test"
 import {
   ChangedFile,
   GitCommitInput,
+  GitStageInput,
   GitPatchInput,
   GitPushInput,
   GitRestoreInput,
@@ -24,7 +25,20 @@ test("PickFolderResult 需要 path 与 name", () => {
 test("GitCommitInput 会 trim 提交说明并拒绝空串", () => {
   const parsed = GitCommitInput.parse({ workspaceId: "ws_1", message: "  feat: x  " })
   assert.equal(parsed.message, "feat: x")
+  assert.equal(parsed.stageAll, false)
   assert.throws(() => GitCommitInput.parse({ workspaceId: "ws_1", message: "   " }))
+})
+
+test("GitStageInput 只要路径与 add/unstage", () => {
+  const parsed = GitStageInput.parse({
+    workspaceId: "ws_1",
+    paths: ["a.ts"],
+    action: "add"
+  })
+  assert.equal(parsed.action, "add")
+  assert.throws(() =>
+    GitStageInput.parse({ workspaceId: "ws_1", paths: [], action: "add" })
+  )
 })
 
 test("ChangedFile 默认 staged/worktree 为 false", () => {

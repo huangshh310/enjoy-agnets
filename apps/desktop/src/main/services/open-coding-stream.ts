@@ -27,13 +27,20 @@ export async function openCodingStream(
   input: OpenCodingStreamInput
 ): Promise<OpenedCodingStream> {
   const policy = approvalPolicyFromPrefs(input)
-  captureOpenStreamPrompt(input)
-  if (isE2eStub()) return openedE2eStub(input)
-  if (isAcpHostRuntime(input.runtimeId)) return openedAcpStream(input)
-  if (input.prefs.codingRuntime === "harness") {
-    return openHarnessStream(input, policy)
+  if (isE2eStub()) return rememberOpened(input, openedE2eStub(input))
+  if (isAcpHostRuntime(input.runtimeId)) {
+    return rememberOpened(input, await openedAcpStream(input))
   }
-  return openLocalStream(input, policy)
+  if (input.prefs.codingRuntime === "harness") {
+    return rememberOpened(input, await openHarnessStream(input, policy))
+  }
+  return rememberOpened(input, await openLocalStream(input, policy))
+}
+
+/** 开流成功才盖 last-run。失败不得留下假「本轮实发」。 */
+function rememberOpened(input: OpenCodingStreamInput, opened: OpenedCodingStream): OpenedCodingStream {
+  captureOpenStreamPrompt(input)
+  return opened
 }
 
 function openedE2eStub(input: OpenCodingStreamInput): OpenedCodingStream {

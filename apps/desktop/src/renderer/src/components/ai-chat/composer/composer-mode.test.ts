@@ -2,9 +2,11 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   coerceComposerMode,
+  modeForLoadedSession,
   modeForNewSession,
   readRememberedDefaultMode,
   rememberDefaultMode,
+  runModeForComposer,
   sessionModeAfterSettingsRefresh,
   takeComposerSlash
 } from "./composer-mode.ts"
@@ -35,6 +37,16 @@ test("隐藏模式收成 agent", () => {
   assert.equal(coerceComposerMode("code_mode"), "agent")
   assert.equal(coerceComposerMode("plan"), "plan")
   assert.equal(coerceComposerMode("debug"), "debug")
+})
+
+test("已有会话不用设置默认项，缺记录回落 agent", () => {
+  assert.equal(modeForLoadedSession("plan"), "plan")
+  assert.equal(modeForLoadedSession(), "agent")
+})
+
+test("ACP 发送强制 agent", () => {
+  assert.equal(runModeForComposer("cursor", "ask"), "agent")
+  assert.equal(runModeForComposer("enjoy-local", "ask"), "ask")
 })
 
 test("句首斜杠切模式并剥掉命令", () => {

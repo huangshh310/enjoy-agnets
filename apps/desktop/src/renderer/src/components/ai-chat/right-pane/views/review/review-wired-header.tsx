@@ -27,6 +27,7 @@ export function ReviewWiredHeader({ vm }: { vm: ReviewViewModel }) {
       onCopyUnifiedDiff={() => void vm.copyPatch()}
       onPrimaryCommit={() => vm.commitDockRef.current?.focus()}
       onPrimaryPush={() => void vm.git.pushChanges()}
+      showCommitPush={vm.scope !== "checkpoints" && vm.scope !== "commits"}
     />
   )
 }

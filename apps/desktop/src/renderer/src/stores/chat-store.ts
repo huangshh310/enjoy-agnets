@@ -48,6 +48,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   runtimeId: "enjoy-local",
   preferredRuntimeId: "enjoy-local",
   sessionRuntimes: {},
+  sessionModes: {},
+  sessionHandoffCuts: {},
   reasoningEffort: undefined,
   isFastMode: false,
   mode: "agent",
@@ -73,6 +75,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setRuntimeId: (runtimeId) => set({ runtimeId }),
   setPreferredRuntimeId: (preferredRuntimeId) => set({ preferredRuntimeId }),
   setSessionRuntimes: (sessionRuntimes) => set({ sessionRuntimes }),
+  markHandoffCut: (sessionId, at) =>
+    set((state) => ({
+      sessionHandoffCuts: { ...state.sessionHandoffCuts, [sessionId]: at }
+    })),
   setModel: (modelId, modelLabel, provider, effort) =>
     set({
       modelId,
@@ -83,7 +89,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
   setFastMode: (isFastMode) => set({ isFastMode }),
   toggleFastMode: () => set((state) => ({ isFastMode: !state.isFastMode })),
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) =>
+    set((state) => ({
+      mode,
+      sessionModes: state.sessionId
+        ? { ...state.sessionModes, [state.sessionId]: mode }
+        : state.sessionModes
+    })),
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
   setRightPanelCollapsed: (rightPanelCollapsed) => set({ rightPanelCollapsed }),
   toggleExpanded: (id) => {
