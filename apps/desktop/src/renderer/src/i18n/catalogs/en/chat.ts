@@ -174,6 +174,10 @@ export const enChat = {
   badgeExp: "Exp",
 
   emptyWorkspace: "Workspace",
+  emptyAskTitle: "What should we do in {name}?",
+  emptyAskLead: "What should we do in ",
+  emptyAskTail: "?",
+  emptyAskFallback: "What should we work on?",
   emptyChanges: "{count} changes to review",
   emptyChangesChip: "{count}",
   emptyReady: "Workspace ready",
@@ -181,6 +185,7 @@ export const enChat = {
   emptyReadyCount: "{count} ready",
   emptyDetectedNone: "No local CLIs detected yet.",
   emptyMissing: "Not installed",
+  emptyMissingCount: "{count} not installed",
   emptyMissingNone: "All allowlisted CLIs were found.",
   emptySamples: "Sample tasks",
   emptyInstall: "Install",

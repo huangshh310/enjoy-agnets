@@ -1,6 +1,6 @@
 # spec/m3-engine-handoff
 
-> M3 引擎切换与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-08
+> M3 引擎切换与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-09
 > 产品锁：M2 收完后做本文，再做 M4。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > 可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > handoff 摘要注入 system/hidden + 可关「已交接」微条，**禁止**当第一条可见用户消息。
@@ -16,7 +16,7 @@
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
 | 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
-| 空态 | 引导：`text-title-3` + 「已就绪 N 个」可折叠 + 未安装单 CTA + pills；Composer **钉 Stage 底**；空会话只留「N 项」芯片，藏审查条 / 策略一瞥 / UsagePill 警报 / 技能源同步条 |
+| 空态 | 开始面：问候 `text-title-1-bold`（工作区名 accent）+ 一条元数据胶囊（「N 项」/ 叠标已就绪 / 未安装，展开下拉）+ Composer + 下方命令 pills；Composer **不进** empty-state；藏审查条 / 策略一瞥 / UsagePill 警报 / 技能源同步条 |
 | 三路 | Enjoy 本地 / ACP 本机 CLI 上轨；沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。
@@ -91,10 +91,10 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 
 | 块 | 内容 |
 |---|---|
-| 检测行 | 默认折叠「已就绪 N 个」+ 品牌芯片，展开才列全名；空列表才写 `已检测`。禁止写成「已连接」 |
-| 缺口行 | missing：品牌+名+**一个**紧凑 CTA（npm/brew→「安装」，其余→「复制」）。点行展开命令，或深链 `#/settings/agent?tab=registry`。**禁止**嵌 `AgentCliInstall`（提示+安装+复制+文档整卡） |
-| 示例任务 | 3 条短 pill，点击填入 Composer；禁「开启奇妙旅程」类文案 |
-| 版式 | Stage：`Header → flex-1 滚动引导 → shrink-0 Composer`。引导栈 `shrink-0 gap-3 pt-3`，卡片 `h-auto`；**禁止** empty-state / 清单卡 `flex-1` `justify-center` `my-auto`。pills 在清单下、Composer 上。`bg-background-*` BoardUI；无大 Hero |
+| 检测行 | 元数据条里「已就绪 N 个」+ 叠标；点开下拉才列全名。空列表才写 `已检测`。禁止写成「已连接」 |
+| 缺口行 | 元数据条里「未安装 N 个」，点开下拉。行内：品牌+名+**一个**紧凑 CTA。**禁止**默认展开挡住 Composer，禁止嵌 `AgentCliInstall` |
+| 示例任务 | 3 条描边 pill，挂在 Composer **下方**；禁「开启奇妙旅程」类文案 |
+| 版式 | 空会话开始面：`Header → 垂直居中（问候 + 引擎一行 + Composer + pills）`。问候 `text-title-1`，不是会话名。清单 `h-auto`；**禁止**清单卡 `flex-1` `my-auto`。**禁止** Composer 进 empty-state。`bg-background-*` BoardUI；无口号 Hero、无光晕 Logo、无三等分功能卡 |
 
 ---
 
@@ -125,9 +125,9 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
 - 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内，并写过只滚 Dock 的无参 `focusAttention` stub；现挂点是 Composer 上沿 `PermissionDock`，阻切必须走 M2 `focusAttention({ sessionId, kind, navigate })`。
 - 切会话 / 新建会话必须 `resetPending()`，否则 HandoffCard 会跟着旧会话飘到新线程。会话生命周期在 `session-lifecycle.ts`，不要在 `use-agent-session` 再复制一份 `loadSession`。
-- 空态 `MissingRow` 曾嵌整张 `AgentCliInstall`（提示 + 安装 + 复制 + 文档），未装 CLI 一多就把 Composer / pill 顶出视口，**看起来像**设置 Registry，但路由仍是 Chat。修法只压密度 + 顶对齐。**禁止**把「像 Registry」修成删掉「已检测 / 未安装」两段，也禁止把 `AcpRegistryPage` 挂进空态。
-- 只改 empty-state 的 `justify-start`、却把 `ChatComposerCluster` 留在 children 里：引导和输入共一列，高 Stage 仍是「头顶空白 + 清单居中 + Composer 沉底」。必须拆成与有消息相同的拓扑：滚动区只放引导，Composer `shrink-0` 钉底。
-- `justify-center` / `flex-1` / `my-auto` 写在 empty-state 或清单卡上，会把 已检测 顶出 Header 下。引导栈只准 `shrink-0 gap-3 pt-3`。
+- 空态 `MissingRow` 曾嵌整张 `AgentCliInstall`（提示 + 安装 + 复制 + 文档），未装 CLI 一多就把 Composer / pill 顶出视口，**看起来像**设置 Registry，但路由仍是 Chat。修法：问候下只留一行折叠 + 有就绪时缺口默认折叠。**禁止**把「像 Registry」修成删掉「已检测 / 未安装」两段，也禁止把 `AcpRegistryPage` 挂进空态，禁止再画安装目录卡。
+- 空会话开始面要把 Composer 放在问候和 pills **中间**（对标 v0 式开始面）。Composer 仍不准写进 `AiChatEmptyState`；编排在 `empty-session-start.tsx`。有消息时 Composer 继续钉底。
+- 开始面可以垂直居中；**禁止**在 empty-state / 清单卡根上写 `flex-1` / `my-auto`。禁止口号、光晕 Logo、三等分 Learn/Code/Write 卡冒充开始面。
 - 空会话不要挂 SessionReviewBar（22 文件三钮）和「写入自动 · Shell…」策略行；改动只留标题旁「N 项」芯片进 Inspector。芯片和审查条不能同时出现。
 - 空会话 `UsagePill` 若先判 ≥85% 再判 quiet，额度高时仍会警报。必须先 `quiet`。
 - 合 M6 时不要把 `SkillSourcePullStrip` 加回空会话。技能源更新只在 Skills 顶栏与 Agent 默认项；空态不变量必须继续禁止该条。
@@ -138,7 +138,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 2. 有两轮对话：切 Claude→Cursor 出 HandoffCard；取消后仍停在 Claude。
 3. 确认后旧 ACP 已 dispose，新引擎首答能看到摘要语境。
 4. 有 pendingApproval 时切换被阻；卡上可取消或去处理审批。
-5. 空态展示 ready 单行 / missing 单 CTA + 示例 pill；Composer 钉底不进 empty-state；无居中营销 Hero、无五张高安装卡、无技能源同步条。
+5. 空态开始面：问候 + Composer + 下方 pill；ready 单行 / missing 单 CTA 折在问候下；Composer 不进 empty-state；无口号 Hero、无五张高安装卡、无技能源同步条。
 
 ## 非目标
 

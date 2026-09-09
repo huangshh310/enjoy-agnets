@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { pickMissingCta, splitEmptyStateTools } from "./empty-state-checklist-model.ts"
+import { pickMissingCta, shouldExpandMissing, splitEmptyStateTools } from "./empty-state-checklist-model.ts"
 
 test("空态只列本机 CLI：去掉 Enjoy 本地、技能-only、即将推出", () => {
   const { ready, missing } = splitEmptyStateTools([
@@ -26,4 +26,10 @@ test("缺口行只给一个 CTA：npm/brew 安装，其余复制", () => {
   assert.equal(pickMissingCta({ installKind: "brew" }), "install")
   assert.equal(pickMissingCta({ installKind: "copy" }), "copy")
   assert.equal(pickMissingCta({}), "copy")
+})
+
+test("开始面缺口下拉一律默认折叠，避免挡住输入框", () => {
+  assert.equal(shouldExpandMissing(7, 5), false)
+  assert.equal(shouldExpandMissing(0, 5), false)
+  assert.equal(shouldExpandMissing(0, 0), false)
 })

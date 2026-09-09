@@ -31,3 +31,8 @@ export function splitEmptyStateTools<T extends EmptyStateTool>(tools: T[]): { re
 export function pickMissingCta(agent: Pick<EmptyStateTool, "installKind">): MissingCtaKind {
   return agent.installKind && agent.installKind !== "copy" ? "install" : "copy"
 }
+
+/** 开始面缺口用下拉，默认折叠，避免挡住 Composer。 */
+export function shouldExpandMissing(_readyCount: number, _missingCount: number): boolean {
+  return false
+}

@@ -172,6 +172,10 @@ export const zhChat = {
   badgeExp: "实验",
 
   emptyWorkspace: "工作区",
+  emptyAskTitle: "在 {name} 里做什么？",
+  emptyAskLead: "在 ",
+  emptyAskTail: " 里做什么？",
+  emptyAskFallback: "要做什么？",
   emptyChanges: "{count} 项改动待审查",
   emptyChangesChip: "{count} 项",
   emptyReady: "工作区就绪",
@@ -179,6 +183,7 @@ export const zhChat = {
   emptyReadyCount: "已就绪 {count} 个",
   emptyDetectedNone: "还没有探测到本机 CLI。",
   emptyMissing: "未安装",
+  emptyMissingCount: "未安装 {count} 个",
   emptyMissingNone: "白名单 CLI 都已找到。",
   emptySamples: "示例任务",
   emptyInstall: "安装",

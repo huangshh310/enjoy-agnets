@@ -1,41 +1,44 @@
 /**
- * 空态清单：已检测可折叠摘要 + 未安装单行 CTA。禁止嵌 AgentCliInstall。
+ * 空态元数据条：改动 / 已就绪 / 未安装收成一粒，展开才出名单。
  */
-import type { ReactNode } from "react"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { useT } from "@renderer/i18n"
-import { splitEmptyStateTools } from "./empty-state-checklist-model"
-import { EmptyStateMissingRow } from "./empty-state-missing-row"
+import { EmptyStateChangesChip } from "../empty-state-header"
+import { splitEmptyStateTools, shouldExpandMissing } from "./empty-state-checklist-model"
+import { EmptyStateMissingBlock } from "./empty-state-missing-block"
 import { EmptyStateReadyBlock } from "./empty-state-ready-block"
 
-export function EmptyStateChecklist() {
-  const t = useT()
+export function EmptyStateChecklist({ changesCount = 0 }: { changesCount?: number }) {
   const tools = useSettingsSnapshot().data?.agentTools ?? []
   const { ready, missing } = splitEmptyStateTools(tools)
+  const showChanges = changesCount > 0
+  const showReady = ready.length > 0
+  const showMissing = missing.length > 0
+  const showDock = showChanges || showReady || showMissing
+
+  if (!showDock) {
+    return (
+      <div className="flex h-auto w-full max-w-lg flex-col items-center">
+        <EmptyStateReadyBlock ready={ready} />
+      </div>
+    )
+  }
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-2">
-      <EmptyStateReadyBlock ready={ready} />
-      <ChecklistBlock title={t("chat.emptyMissing")}>
-        {missing.length === 0 ? (
-          <p className="text-caption-1-regular text-text-tertiary">{t("chat.emptyMissingNone")}</p>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {missing.map((item) => (
-              <EmptyStateMissingRow key={item.id} agent={item} />
-            ))}
-          </ul>
-        )}
-      </ChecklistBlock>
+    <div className="flex h-auto w-full max-w-lg flex-col items-center">
+      <div className="inline-flex items-center rounded-full bg-background-secondary-default p-1">
+        {showChanges ? <EmptyStateChangesChip count={changesCount} /> : null}
+        {showChanges && (showReady || showMissing) ? <MetaRule /> : null}
+        {showReady ? <EmptyStateReadyBlock ready={ready} /> : null}
+        {showReady && showMissing ? <MetaRule /> : null}
+        <EmptyStateMissingBlock
+          missing={missing}
+          defaultOpen={shouldExpandMissing(ready.length, missing.length)}
+        />
+      </div>
     </div>
   )
 }
 
-function ChecklistBlock({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="h-auto rounded-2xl border border-border-button-default bg-background-secondary-default px-3 py-2">
-      <h2 className="text-caption-2-medium text-text-tertiary">{title}</h2>
-      <div className="mt-1.5">{children}</div>
-    </section>
-  )
+function MetaRule() {
+  return <span aria-hidden className="mx-0.5 h-3 w-px bg-separator-border" />
 }

@@ -10,6 +10,7 @@ import { ChatComposer } from "./chat-composer"
 
 export function ChatComposerCluster(props: {
   className?: string
+  composerClassName?: string
   onModelChange: (model: ModelOption) => void
   onSend: () => void
 }) {
@@ -17,7 +18,11 @@ export function ChatComposerCluster(props: {
     <div className={cx("flex shrink-0 flex-col", props.className)}>
       <PermissionDock />
       <AutoApproveBar />
-      <ChatComposer onModelChange={props.onModelChange} onSend={props.onSend} />
+      <ChatComposer
+        className={props.composerClassName}
+        onModelChange={props.onModelChange}
+        onSend={props.onSend}
+      />
     </div>
   )
 }
