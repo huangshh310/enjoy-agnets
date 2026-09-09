@@ -21,5 +21,6 @@ export type EngineHandoffState = {
   toRuntimeId: string | null
   modelId?: string
   draftSummary: string
+  filePaths: string[]
   banner: EngineHandoffBanner | null
 }

@@ -3,6 +3,9 @@
  */
 import { composerChromeFor, isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
+import { splitComposerRail } from "./split-composer-rail"
+
+export { splitComposerRail }
 
 const TAB_ORDER = [
   "enjoy-local",
@@ -44,6 +47,14 @@ export function composerAgentGroups(tools: AgentToolPublic[]): {
     primary: tabs.filter((item) => !item.comingSoon),
     soon: tabs.filter((item) => item.comingSoon)
   }
+}
+
+export function composerRailSections(tools: AgentToolPublic[]): {
+  local: AgentToolPublic[]
+  cli: AgentToolPublic[]
+  soon: AgentToolPublic[]
+} {
+  return splitComposerRail(composerAgentTabs(tools))
 }
 
 /** 触发器优先写模型名（对标 MonoCode），没有模型再写 Agent 名。 */

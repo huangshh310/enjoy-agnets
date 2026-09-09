@@ -5,10 +5,7 @@
 import { RiApps2Line, RiSettings3Line } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { ProviderIcon } from "@renderer/components/settings/providers/provider-icons"
-import {
-  type ProviderGroup,
-  formatApiStyle
-} from "./model-picker-types"
+import { type ProviderGroup } from "./model-picker-types"
 import { useT } from "@renderer/i18n"
 
 export function ProviderSidebar({
@@ -80,22 +77,15 @@ export function ProviderSidebar({
                 />
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="truncate text-[12px] font-medium leading-tight">
-                    {group.providerName}
-                  </span>
-                  {group.active ? (
-                    <span
-                      title={t("chat.activeProvider")}
-                      className="size-1.5 shrink-0 rounded-full bg-state-success-text"
-                    />
-                  ) : null}
-                </div>
-                {group.apiStyle ? (
-                  <span className="truncate text-[10px] text-text-tertiary">
-                    {formatApiStyle(group.apiStyle)}
-                  </span>
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <span className="truncate text-[12px] font-medium leading-tight">
+                  {group.providerName}
+                </span>
+                {group.active ? (
+                  <span
+                    title={t("chat.activeProvider")}
+                    className="size-1.5 shrink-0 rounded-full bg-state-success-text"
+                  />
                 ) : null}
               </div>
 

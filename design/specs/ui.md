@@ -122,7 +122,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 轨道按钮与次级卡片必须提供物理级触觉回弹（`active:scale-[0.98]` 或 `active:scale-90`）与流畅的时间过渡（`transition-all duration-200`），避免状态突变造成视觉卡顿。
 - 标题栏辅助开关高度必须严格锁定为 24px（`size-6` / `h-6`）：与系统窗口控制按钮保持垂直居中和基线对齐，严禁使用超出 24px 的拟物卡通开关。
 - 侧栏情境栏底栏用户卡片严禁硬编码过长字符串：212px 容器内文本空间极小，长邮箱（超过 15 字符）必须在侧栏卡片上优雅收敛或展示工作区标签，完整邮箱与账号操作统一在 265px 悬浮弹层（AriaPopover）中展示。
-- Composer 智能体动力选择器采用双层流式 HUD（`AgentPicker`）：触发胶囊整合品牌微标、引擎名称、模型名称、路径微标（`本地 ToolLoop` / `ACP · 订阅登录`）与就绪状态微灯；`quota=true` 时旁挂 `UsagePill`。空会话 pill 一律 `quiet`（含 ≥85%）；有消息才走 M1 ≥85% 警报。百分比只信 inspect，禁止假 100%。浮层必须「顶部横向引擎导轨 (`AgentEngineRail`) + 下层自适应动力面板」。导轨每项带路径微标；进阶沙箱禁止上轨。底栏按 `composerChromeFor` 隐藏 ACP 不支持的 Fast / 思考 / 模式 / 语音，并挂 L3 `SessionMeter`（无用量隐藏）。
+- Composer 智能体动力选择器采用双层流式 HUD（`AgentPicker`）：触发胶囊只写品牌 + `引擎 · 模型` + 就绪微灯（完整引擎名，模型可省略号；供应商只进左栏 / `title`）。**禁止**常驻协议/路径微标（`本地 ToolLoop` / `ACP · 订阅登录` / `ACP Stdio` 及同类）。`quota=true` 且有官方数字时才旁挂 `UsagePill`。空会话 pill 一律 `quiet`（含 ≥85%）；有消息才走 M1 ≥85% 警报。百分比只信 inspect，禁止假 100%。浮层必须「顶部分组导轨 (`AgentEngineRail`)：本地 vs 本机助手/CLI + 下层自适应动力面板」。导轨项只画品牌、引擎名、就绪灯（未装/需登录可作就绪语义，不是协议标签）；进阶沙箱禁止上轨。底栏按 `composerChromeFor` 隐藏 ACP 不支持的 Fast / 思考 / 模式 / 语音，并挂 L3 `SessionMeter`（无用量隐藏）。
 - 空态 `MissingRow` 不要嵌 `AgentCliInstall` 整卡，也不要把设置 Registry 铺进线程。缺口行只留品牌+名+一个 CTA。已检测 / 未安装只做问候下的一行折叠，有就绪时未安装默认收起，禁止两张描边卡把空会话做成安装目录。Composer 不能当 empty-state children；空会话走开始面（问候 → Composer → pills），有消息才钉底。卡片 `h-auto`。
 - 空会话禁止 `SkillSourcePullStrip` / 技能源同步条。M6 可选更新只进 `#/skills` 顶栏与 `#/settings/agent?tab=defaults`；合 #10 时不得把空会话条或 children 插槽加回来。
 - 设置智能体页禁止 Fake-Status-Chrome：已删 `AgentToolsHubMetrics`。能力矩阵与配置边界是证据表，不是营销 Hero。配置弹窗「运行偏好」只暴露 `LAUNCH_PREFS` 里该 CLI 真正认的旗标。

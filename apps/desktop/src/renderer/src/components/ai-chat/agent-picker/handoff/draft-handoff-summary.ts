@@ -3,21 +3,36 @@
  */
 const MAX_LEN = 800
 
+export type HandoffDraftParts = {
+  summary: string
+  files: string[]
+}
+
+export function draftHandoffParts(input: {
+  messages: Array<{ role: string; content: string; tools?: Array<{ name?: string; args?: unknown }> }>
+  pendingApprovalName?: string | null
+  filePaths?: string[]
+}): HandoffDraftParts {
+  const files = collectFiles(input.messages, input.filePaths)
+  const goal = lastUserGoal(input.messages)
+  const approval = input.pendingApprovalName?.trim()
+  const lines = [goal ? `目标：${goal}` : "", approval ? `未决审批：${approval}` : ""].filter(Boolean)
+  const summary = lines.join("\n") || "上一引擎的对话将结束；请根据工作区继续。"
+  return { summary: clip(summary, MAX_LEN), files }
+}
+
+export function formatHandoffHidden(summary: string, files: string[]): string {
+  const fileLine = files.length ? `文件：${files.slice(0, 6).join("、")}` : ""
+  return clip([summary.trim(), fileLine].filter(Boolean).join("\n") || "上一引擎的对话将结束；请根据工作区继续。", MAX_LEN)
+}
+
 export function draftHandoffSummary(input: {
   messages: Array<{ role: string; content: string; tools?: Array<{ name?: string; args?: unknown }> }>
   pendingApprovalName?: string | null
   filePaths?: string[]
 }): string {
-  const goal = lastUserGoal(input.messages)
-  const files = collectFiles(input.messages, input.filePaths)
-  const approval = input.pendingApprovalName?.trim()
-  const lines = [
-    goal ? `目标：${goal}` : "",
-    files.length ? `文件：${files.slice(0, 6).join("、")}` : "",
-    approval ? `未决审批：${approval}` : ""
-  ].filter(Boolean)
-  const text = lines.join("\n") || "上一引擎的对话将结束；请根据工作区继续。"
-  return text.length > MAX_LEN ? `${text.slice(0, MAX_LEN - 1)}…` : text
+  const parts = draftHandoffParts(input)
+  return formatHandoffHidden(parts.summary, parts.files)
 }
 
 function lastUserGoal(messages: Array<{ role: string; content: string }>): string {
@@ -56,4 +71,8 @@ function pathFromArgs(args: unknown): string {
 function addPath(seen: Set<string>, path: string | undefined) {
   const name = path?.trim().split(/[\\/]/).filter(Boolean).at(-1)
   if (name) seen.add(name)
+}
+
+function clip(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }

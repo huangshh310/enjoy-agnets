@@ -14,10 +14,10 @@
 | 有历史切换 | `EngineHandoffCard` 确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文 |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
-| 已交接条 | Composer 上沿微条，仅 `{from} → {to}`，可 dismiss；不展示摘要、不进用户气泡 |
-| 未装 | Rail/Picker 灰态；点开 `agent-cli-install`；就绪灯只信 `status===ready` |
+| 已交接条 | 仅确认成功后出现；可 dismiss；文案 `{from} → {to}`。**确认卡打开时不画微条**；取消 / 未确认不留微条。卡与微条互斥 |
+| 未装 | Rail/Picker 灰态；点开 `agent-cli-install`（无装饰粉边；主钮一键安装、次钮复制、文档为链接）；就绪灯只信 `status===ready` |
 | 空态 | 开始面：问候 `text-title-1-bold`（工作区名 accent）+ 一条元数据胶囊（「N 项」/ 叠标已就绪 / 未安装，展开下拉）+ Composer + 下方命令 pills；Composer **不进** empty-state；藏审查条 / 策略一瞥 / UsagePill 警报 / 技能源同步条 |
-| 三路 | Enjoy 本地 / ACP 本机 CLI 上轨；沙箱 `showOnEngineRail:false` |
+| 三路 | Picker 顶部分组：「本地」= Enjoy Local（下层供应商→模型）；「本机助手 / CLI」= DeepSeek / Oh My Pi 等本机引擎。沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。
 
@@ -77,13 +77,15 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 | `comingSoon` | 沉底分组「即将推出」；不可切；无假就绪灯 |
 | 就绪灯 | **只信** `status===ready`；禁探测中常绿 Fake-Status |
 
-### 5. 三路微文案（与 m1 一致）
+### 5. 三路微文案（C 端禁止协议/路径微标）
 
-| pathKind | Rail 副文案 | 出现 |
+| pathKind | Rail / 胶囊 | 出现 |
 |---|---|---|
-| enjoy-local | 本地 ToolLoop | Rail + 胶囊 |
-| acp-host | ACP · 订阅登录 | Rail + 胶囊 |
-| sandbox-harness | 实验 · 沙箱 | **仅设置**；`showOnEngineRail:false` |
+| enjoy-local | 品牌 + 引擎 + 模型 + 就绪灯 | 「本地」分组；下层才是供应商 |
+| acp-host | 品牌 + 引擎 + 模型 + 就绪灯；未装/需登录可作就绪语义 | 「本机助手 / CLI」；DeepSeek / OMP 也走这里 |
+| sandbox-harness | 不上轨 | **仅设置**；`showOnEngineRail:false` |
+
+C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议/路径微标：`ACP · 订阅登录`、`本地 ToolLoop`、`ACP Stdio` 及同类徽章。只画品牌、引擎名、模型、就绪灯（有额度才挂 `UsagePill`）。协议/登录只进设置分段、能力矩阵、配置边界与文档。供应商名只留在 Enjoy Local 弹层左栏或胶囊 `title`，不当第三段。胶囊优先完整引擎名，模型可省略号；悬停看全名。交接卡文件列表默认收成「N 个文件」。
 
 ### 6. 空态 checklist（禁营销 Hero）
 
@@ -107,7 +109,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 | `focusAttention` | `ai-chat/attention/focus-attention.ts` | **只用 M2 完整 API**（`sessionId` + `navigate`）；阻切传当前会话，落到 Dock |
 | Rail/Picker | 现有 | 空会话直切；有历史走 plan；取消后 tab 回 from |
 | empty-state checklist | `empty-state/checklist/*` | 检测/缺口单 CTA/示例；完整安装走设置 Registry |
-| path 微标 | `agent-engine-rail` / 胶囊 | 两路文案 |
+| 引擎铬 | `agent-engine-rail` / 胶囊 | 品牌 + 名 + 模型 + 就绪灯；禁止协议/路径微标 |
 
 ## 不变量
 
@@ -130,6 +132,8 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 - 开始面可以垂直居中；**禁止**在 empty-state / 清单卡根上写 `flex-1` / `my-auto`。禁止口号、光晕 Logo、三等分 Learn/Code/Write 卡冒充开始面。
 - 空会话不要挂 SessionReviewBar（22 文件三钮）和「写入自动 · Shell…」策略行；改动只留标题旁「N 项」芯片进 Inspector。芯片和审查条不能同时出现。
 - 空会话 `UsagePill` 若先判 ≥85% 再判 quiet，额度高时仍会警报。必须先 `quiet`。
+- 有历史切引擎若保留上一轮 `banner`，确认卡会和「已交接」微条叠在一起。进入 pending / 取消必须清 banner；渲染层再用 `handoffSurfaces` 互斥。
+- Rail 若把 Enjoy Local 与 DeepSeek / OMP 排进同一无标签行，C 端会把 CLI 引擎看成 BYOK 供应商。必须「本地」与「本机助手 / CLI」硬分组，卡片副标题只写就绪态。
 - 合 M6 时不要把 `SkillSourcePullStrip` 加回空会话。技能源更新只在 Skills 顶栏与 Agent 默认项；空态不变量必须继续禁止该条。
 
 ## 验收
@@ -139,6 +143,9 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 3. 确认后旧 ACP 已 dispose，新引擎首答能看到摘要语境。
 4. 有 pendingApproval 时切换被阻；卡上可取消或去处理审批。
 5. 空态开始面：问候 + Composer + 下方 pill；ready 单行 / missing 单 CTA 折在问候下；Composer 不进 empty-state；无口号 Hero、无五张高安装卡、无技能源同步条。
+6. Picker 顶部分组「本地」与「本机助手 / CLI」；DeepSeek / OMP 在 CLI 组。胶囊/导轨项无协议路径微标。
+7. 胶囊只有 `引擎 · 模型` + 就绪灯（有额度才 UsagePill）；悬停可见全名 / 供应商。
+8. 确认卡打开时无「已交接」微条；确认后只留微条；取消后两者皆无。
 
 ## 非目标
 
@@ -150,7 +157,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 
 1. PermissionDock：挂在 **Composer 上沿 sticky**（Conversation 与 Composer 之间），不是 Conversation viewport 顶 pinned。审批卡不进 `ConversationContent`。
 2. **Handoff 摘要只进新引擎的系统/隐藏上下文**（ACP 首轮 prompt 前缀，或 ToolLoop `system` 消息）。新 session 首答能读到 brief，**禁止**写成可见用户首条、用户气泡附注、或 annotated user turn。
-3. 确认后 UI **只**出可 dismiss 的「已交接」微条，文案仅 `{from} → {to}`；微条不展示摘要正文。
+3. 确认后 UI **只**出可 dismiss 的「已交接」微条，文案仅 `{from} → {to}`；微条不展示摘要正文。确认卡打开期间禁止同时画微条。
 
 ## 设计定稿补充（2026-09-08）
 

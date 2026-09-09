@@ -1,5 +1,5 @@
 /**
- * 未安装 CLI：一键 npm/brew 安装，或复制官方命令。不跑 curl|bash。
+ * 未安装 CLI：主按钮一键安装，次按钮复制命令，文档走链接。无装饰粉边。
  */
 import { useState } from "react"
 import type { AgentToolId, AgentToolPublic, InstallAgentToolResult } from "@enjoy-agents/ipc-contract"
@@ -18,9 +18,10 @@ export function AgentCliInstall({
   const [busy, setBusy] = useState<"install" | "login" | null>(null)
   const [copied, setCopied] = useState(false)
   const [message, setMessage] = useState("")
+  const canOneClick = agent.installKind !== "copy"
 
   async function install() {
-    if (!hasIde() || agent.installKind === "copy") return
+    if (!hasIde() || !canOneClick) return
     setBusy("install")
     setMessage("")
     const result = (await getIde().agentTools.install({
@@ -55,25 +56,20 @@ export function AgentCliInstall({
       <p className="text-caption-1-medium leading-relaxed text-text-secondary">
         {t("chat.agentMissingHint", { cmd: agent.installCommand || agent.needsLoginHint })}
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        {agent.installKind !== "copy" ? (
+      <div className="flex flex-wrap items-center gap-1.5">
+        {canOneClick ? (
           <Button type="button" size="sm" disabled={busy !== null} onClick={() => void install()}>
             {busy === "install" ? t("chat.agentInstalling") : t("chat.agentInstall")}
           </Button>
         ) : null}
         {agent.installCommand ? (
-          <Button type="button" size="sm" variant="outline" onClick={() => void copyCommand()}>
-            {copied ? t("chat.agentInstallCopied") : t("chat.agentInstallCopy")}
-          </Button>
-        ) : null}
-        {agent.docsUrl ? (
           <Button
             type="button"
             size="sm"
-            variant="outline"
-            onClick={() => void getIde().agentTools.openDocs({ id: agent.id as AgentToolId })}
+            variant={canOneClick ? "outline" : "default"}
+            onClick={() => void copyCommand()}
           >
-            {t("chat.agentDocs")}
+            {copied ? t("chat.agentInstallCopied") : t("chat.agentInstallCopy")}
           </Button>
         ) : null}
         {agent.status === "ready" ? (
@@ -82,6 +78,15 @@ export function AgentCliInstall({
           </Button>
         ) : null}
       </div>
+      {agent.docsUrl ? (
+        <button
+          type="button"
+          className="self-start text-caption-2-medium text-accent-500 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          onClick={() => void getIde().agentTools.openDocs({ id: agent.id as AgentToolId })}
+        >
+          {t("chat.agentDocs")}
+        </button>
+      ) : null}
       {message ? <p className="text-caption-2-medium text-text-tertiary">{message}</p> : null}
     </div>
   )
