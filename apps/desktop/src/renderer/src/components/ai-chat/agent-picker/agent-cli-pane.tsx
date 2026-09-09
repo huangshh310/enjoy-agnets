@@ -1,5 +1,5 @@
 /**
- * CLI 引擎面板：模型表或未装安装条。脚注只写路径与能力提示，不上 ACP 协议词。
+ * CLI 引擎面板：模型表或未装安装条。不画协议/路径微标。
  */
 import { capabilitiesOf, type AgentCliModel, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiCompass3Line } from "@remixicon/react"
@@ -39,16 +39,8 @@ export function AgentCliPane({
             onUseDefault={() => onUse()}
           />
           <div className="border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-caption-2-medium text-text-tertiary">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1.5 truncate font-mono">
-                <span>{t("chat.usage.source")}</span>
-                <span className="truncate text-text-secondary" title={agent.detectedPath ?? t("settings.agentTools.globalPath")}>
-                  {agent.detectedPath ? agent.detectedPath.split("/").slice(-2).join("/") : t("settings.agentTools.globalPath")}
-                </span>
-              </div>
-              {subtitle ? <span className="shrink-0 text-caption-2-medium text-text-secondary">{subtitle}</span> : null}
-            </div>
-            <p className="mt-1 truncate text-caption-2-medium text-text-tertiary" title={t("chat.cliFastViaModel")}>
+            {subtitle ? <p className="text-text-secondary">{subtitle}</p> : null}
+            <p className={subtitle ? "mt-1 truncate" : "truncate"} title={t("chat.cliFastViaModel")}>
               {t("chat.cliFastViaModel")}
             </p>
           </div>

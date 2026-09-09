@@ -8,9 +8,11 @@
 
 | 路径 | C 端导轨 / 胶囊 | 出现位置 |
 |---|---|---|
-| Enjoy 本地 (`enjoy-local`) | 分组「本地」；胶囊 `引擎 · 模型`；就绪副标题可空 | AgentEngineRail + 胶囊；下层才是供应商→模型 |
-| 本机 CLI (`claude` `cursor` `grok` `codex` `antigravity` `deepseek` `omp` …) | 分组「本机助手 / CLI」；副标题只写 `未安装` / `需登录` / 空 | AgentEngineRail + 胶囊；**禁止** ACP 协议登录标签 |
+| Enjoy 本地 (`enjoy-local`) | 分组「本地」；胶囊品牌 + `引擎 · 模型` + 就绪灯 | AgentEngineRail + 胶囊；下层才是供应商→模型 |
+| 本机 CLI (`claude` `cursor` `grok` `codex` `antigravity` `deepseek` `omp` …) | 分组「本机助手 / CLI」；品牌 + 引擎名 + 就绪灯；未装/需登录可作就绪语义 | AgentEngineRail + 胶囊 |
 | 进阶沙箱 (`sandbox-harness`) | 不上轨 | 设置分段 only；**禁止**上 AgentEngineRail |
+
+C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`、`本地 ToolLoop`、`ACP Stdio` 及同类。协议/登录只进设置分段、能力矩阵、配置边界与文档。有额度才挂 `UsagePill`。
 
 能力只信静态 `RUNTIME_CAPABILITIES` / `composerChromeFor`（`packages/ipc-contract/src/runtime-capabilities*.ts`）。未声明 = 不做。renderer 不 import `@enjoy-agents/agent-harness`。
 
@@ -56,7 +58,7 @@
 
 - Claude / Codex `inspect` 仍拉账号，但 `quota=false`，UI 不得回落空条 + `—`。
 - `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。空会话 `UsagePill` 必须 `quiet`（含 ≥85%），有消息才用 alert/mid/low。
-- `composerChromeFor` 的 Fast / 思考 / 模式显隐仍读同一张 capability 表；C 端 Rail/胶囊不要再画 `pathKind` 协议微标，只写就绪语义。
+- `composerChromeFor` 的 Fast / 思考 / 模式显隐仍读同一张 capability 表；C 端 Rail/胶囊不要再画 `pathKind` 协议/路径微标（含 `ACP Stdio`）。协议词只进设置矩阵。
 - 能力矩阵自定义行必须画用户 label，不要用 `custom:<slug>` 当显示名。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。

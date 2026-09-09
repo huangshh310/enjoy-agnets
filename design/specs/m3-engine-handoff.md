@@ -77,12 +77,12 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 | `comingSoon` | 沉底分组「即将推出」；不可切；无假就绪灯 |
 | 就绪灯 | **只信** `status===ready`；禁探测中常绿 Fake-Status |
 
-### 5. 三路微文案（C 端只写就绪语义）
+### 5. 三路微文案（C 端禁止协议/路径微标）
 
-| pathKind | Rail 副文案 | 出现 |
+| pathKind | Rail / 胶囊 | 出现 |
 |---|---|---|
-| enjoy-local | 空（就绪） | 「本地」分组；胶囊 `引擎 · 模型` |
-| acp-host | `未安装` / `需登录` / 空 | 「本机助手 / CLI」分组；DeepSeek / OMP 也走这里，不当 BYOK 供应商 |
+| enjoy-local | 品牌 + 引擎 + 模型 + 就绪灯 | 「本地」分组；下层才是供应商 |
+| acp-host | 品牌 + 引擎 + 模型 + 就绪灯；未装/需登录可作就绪语义 | 「本机助手 / CLI」；DeepSeek / OMP 也走这里 |
 | sandbox-harness | 不上轨 | **仅设置**；`showOnEngineRail:false` |
 
 C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议/路径微标：`ACP · 订阅登录`、`本地 ToolLoop`、`ACP Stdio` 及同类徽章。只画品牌、引擎名、模型、就绪灯（有额度才挂 `UsagePill`）。协议/登录只进设置分段、能力矩阵、配置边界与文档。供应商名只留在 Enjoy Local 弹层左栏或胶囊 `title`，不当第三段。胶囊优先完整引擎名，模型可省略号；悬停看全名。交接卡文件列表默认收成「N 个文件」。

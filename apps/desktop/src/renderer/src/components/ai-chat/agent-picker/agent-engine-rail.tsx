@@ -1,6 +1,6 @@
 /**
  * Picker 顶部分组导轨：本地 = Enjoy Local；本机助手 = CLI 引擎。
- * 组标题可带轻量 CLI 提示，卡片上不写 ACP 协议词。
+ * 组标题可带轻量 CLI 提示，卡片上不写协议或路径微标。
  */
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"

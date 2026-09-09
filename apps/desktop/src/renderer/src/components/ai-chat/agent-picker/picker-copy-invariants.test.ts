@@ -1,5 +1,5 @@
 /**
- * C 端 picker / 导轨 / 胶囊禁止常驻 ACP 协议登录文案。
+ * C 端 picker / 导轨 / 胶囊禁止常驻协议与路径微标。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -18,12 +18,22 @@ const files = [
   "split-composer-rail.ts"
 ]
 
-test("C 端引擎选择器源码不含 ACP 协议常驻文案", () => {
+const banned = [
+  "acpSubscribe",
+  "localToolLoop",
+  "sandboxHarness",
+  "chat.usage.source",
+  "ACP ·",
+  "ACP Stdio",
+  "订阅登录",
+  "本地 ToolLoop"
+]
+
+test("C 端引擎选择器源码不含协议/路径常驻微标", () => {
   for (const name of files) {
     const src = readFileSync(join(dir, name), "utf8")
-    assert.ok(!src.includes("acpSubscribe"), name)
-    assert.ok(!src.includes("ACP ·"), name)
-    assert.ok(!src.includes("localToolLoop"), name)
-    assert.ok(!src.includes("订阅登录"), name)
+    for (const token of banned) {
+      assert.ok(!src.includes(token), `${name} still contains ${token}`)
+    }
   }
 })
