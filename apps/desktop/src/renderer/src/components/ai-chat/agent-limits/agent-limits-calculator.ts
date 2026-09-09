@@ -2,6 +2,8 @@
  * 弹出卡 Token 分桶真实计算器。
  * 严禁硬编码虚假工具或静态百分比，所有数据基于当前会话与系统真实状态折算。
  */
+import { pickAlwaysOnRules } from "@enjoy-agents/ipc-contract/rules-always-on"
+import { formatSkillCatalog } from "@enjoy-agents/ipc-contract/skills-catalog"
 import type { McpServer, ProjectRuleItem, SkillItem } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import type { ContextWindowData, TokenBucketItem } from "./agent-limits.types"
@@ -27,11 +29,8 @@ export function calculateContextWindowUsage(
   const systemToolsTokens = 720
   const systemPromptTokens = 260
 
-  // 3. 技能描述 Token (仅对真实存在的技能进行估算)
-  const skillsTokens = liveSkills.reduce(
-    (sum, s) => sum + Math.max(0, Math.round((s.description?.length ?? 0) / 3.8)),
-    0
-  )
+  // 3. 技能索引 Token（与 Enjoy Local 注入的目录一致，不含 SKILL.md 正文）
+  const skillsTokens = Math.max(0, Math.round(formatSkillCatalog(liveSkills).length / 3.8))
 
   // 4. MCP Tools 真实已连接服务器构建 (无连接则为 0，严禁注入 mock 虚假工具)
   const connectedMcp = liveMcpServers.filter((s) => s.connected)
@@ -47,8 +46,8 @@ export function calculateContextWindowUsage(
   })
   const mcpToolsTokens = mcpChildren.reduce((sum, item) => sum + item.tokens, 0)
 
-  // 5. Memory Files 真实规则与记忆文件构建 (无规则则为 0，严禁注入 mock 虚假文件)
-  const memoryChildren: TokenBucketItem["children"] = liveRules.map((r) => ({
+  // 5. Memory Files：只计会注入 Enjoy Local 的常驻规则
+  const memoryChildren: TokenBucketItem["children"] = pickAlwaysOnRules(liveRules).map((r) => ({
     id: r.id,
     name: r.filePath.split(/[\\/]/).pop() ?? r.name,
     tokens: Math.round((r.content?.length ?? 0) / 3.8),

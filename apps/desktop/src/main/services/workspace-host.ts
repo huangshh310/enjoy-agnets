@@ -8,6 +8,7 @@ import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
 import { parseExecutableCommand, runExecutable, runGit } from "./command"
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths"
 import { readPreferences } from "./preferences"
+import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { commitWorkspaceAll } from "./workspace-git"
 
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
@@ -25,6 +26,7 @@ export function createWorkspaceHost(
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
       await fs.mkdir(dirname(absolute), { recursive: true })
       await fs.writeFile(absolute, content, "utf8")
+      await recordEnjoyCheckpoint(workspaceRoot)
     },
     editFile: async (relativePath, oldText, newText) => {
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
@@ -34,6 +36,7 @@ export function createWorkspaceHost(
       }
       const next = current.replace(oldText, newText)
       await fs.writeFile(absolute, next, "utf8")
+      await recordEnjoyCheckpoint(workspaceRoot)
       return next
     },
     listDir: async (relativePath) => {

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { resolveToolApproval, toHarnessApprovalSettings } from "./tool-approval.ts"
+import {
+  isMcpWriteToolName,
+  resolveToolApproval,
+  toHarnessApprovalSettings
+} from "./tool-approval.ts"
 
 const REQUIRE_ALL = {
   requireWriteApproval: true,
@@ -143,6 +147,12 @@ test("Ask 模式写入 Harness host toolApproval 为 denied", () => {
   })
 })
 
+test("MCP 写名按 leaf 判断，与注册过滤同一规则", () => {
+  assert.equal(isMcpWriteToolName("mcp_s1__read_file"), false)
+  assert.equal(isMcpWriteToolName("mcp_s1__write_file"), true)
+  assert.equal(isMcpWriteToolName("mcp_s1__delete_record"), true)
+})
+
 test("MCP 写工具要审批，读工具直接过", () => {
   assert.equal(resolveToolApproval("mcp_s1__read_file", "agent", REQUIRE_ALL), "not-applicable")
   assert.equal(resolveToolApproval("mcp_s1__write_file", "agent", REQUIRE_ALL), "user-approval")
@@ -150,6 +160,7 @@ test("MCP 写工具要审批，读工具直接过", () => {
     type: "denied",
     reason: "ask mode is read-only."
   })
+  assert.equal(resolveToolApproval("mcp_s1__read_file", "plan", REQUIRE_ALL), "not-applicable")
 })
 
 test("Harness 静态表不登记 ask_user_questions", () => {

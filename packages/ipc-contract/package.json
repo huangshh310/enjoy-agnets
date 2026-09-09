@@ -6,11 +6,13 @@
   "exports": {
     ".": "./src/index.ts",
     "./runtime-capabilities": "./src/runtime-capabilities.ts",
-    "./custom-agent": "./src/custom-agent.ts"
+    "./custom-agent": "./src/custom-agent.ts",
+    "./rules-always-on": "./src/rules-always-on.ts",
+    "./skills-catalog": "./src/skills-catalog.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts src/custom-agent.test.ts src/skill-sources.test.ts"
+    "test": "node --experimental-strip-types --test src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts src/custom-agent.test.ts src/skill-sources.test.ts src/rules-always-on.test.ts src/skills-catalog.test.ts"
   },
   "dependencies": { "zod": "catalog:" },
   "devDependencies": { "typescript": "catalog:" }

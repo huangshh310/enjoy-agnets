@@ -29,7 +29,8 @@ export const REVIEW_SCOPES: Array<{
   { id: "unstaged", label: "未暂存", desc: "查看尚未加入暂存区的修改" },
   { id: "staged", label: "已暂存", desc: "查看已经暂存就绪准备提交的代码" },
   { id: "commits", label: "已提交", desc: "查看工作区线性的 Git 提交历史记录" },
-  { id: "branch", label: "分支", desc: "查看当前工作分支与基础分支的整体差异" }
+  { id: "branch", label: "分支", desc: "查看当前工作分支与基础分支的整体差异" },
+  { id: "checkpoints", label: "检查点", desc: "Agent 写盘快照，还原不移动当前分支" }
 ]
 
 /** Git 状态标记字母、色彩与语义类名 */

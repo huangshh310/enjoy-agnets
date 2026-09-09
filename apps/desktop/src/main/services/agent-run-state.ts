@@ -39,6 +39,8 @@ export type ActiveRun = {
   assistantMessageId?: string
   /** ask_user_questions 放行后 execute 读取。 */
   questionAnswers?: AskUserAnswers
+  /** ACP / 本机写盘本轮已记过检查点。 */
+  checkpointNoted?: boolean
 }
 
 const activeRuns = new Map<string, ActiveRun>()

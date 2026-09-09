@@ -8,7 +8,7 @@
 
 1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。会话行左侧画**该会话绑定**的 Lobe 品牌标（`sessionRuntimes[sessionId]`，缺省 `preferredRuntimeId`），不要一律跟 Composer 当前 runtime，否则切一次 Cursor 所有历史会话都会变 Cursor。运行中右侧用 `LoadingStateGlyph` `drive`（与 Thinking 头同一套 3×3 点阵），不要再走 `DotMatrixLoader` wave。新建会话立刻 `bindSessionRuntime`，绑的是 **Composer 当前 `runtimeId`**，不是全局偏好。⌘L 最近会话同样画品牌标。
 2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。`wide` / `stage` 用原生 `overflow-y-auto` + 内层 `min-h-full flex flex-col`，**不要** Radix ScrollArea（viewport 内层 inline `display:table` 会盖掉 flex）。列表空态用 `flex-1 min-h-0` 铺满剩余高度。Skills / Media / MCP / Inbox / Observability / Workflows 用 `fill` + `hideChrome`：页内自带顶栏，不要再叠 `SecondaryPageChrome`。工具栏固定，空态与列表吃剩余高度。侧栏项目区在底栏用户卡之上 `flex-1`，无项目虚线框铺满该区。设置 Providers 仍用 `wide`，但空态虚线框同样 `flex-1`，不要按内容收高度。
-3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。始终挂载，切模块不卸掉。**工作台 Panel 不可 collapse 到 0**：加宽审查栏最多把 Stage 压到 42%，切模块若 Stage 被收成缝则拉回 62%。有 dirty 文件且还没开标签时，展开审查栏直接进 Review。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（Codex 控制台：6 大作用域、统计徽标、分支对比、⌘P 跳转文件；**左文件树可拖拽改宽、右单文件满高 diff**；「展开全部差异」才叠 compact 卡片；提交底栏贴底，主按钮走 `text-text-white`；「已提交」作用域才走 devl.dev 多色 SVG 提交时间线；只用真实 Git，不编造 CI/审批/第二车道）、Files、Terminal 与 Browser。macOS 快捷键用 ⌘，同时认 meta/ctrl。
+3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。始终挂载，切模块不卸掉。**工作台 Panel 不可 collapse 到 0**：加宽审查栏最多把 Stage 压到 42%，切模块若 Stage 被收成缝则拉回 62%。有 dirty 文件且还没开标签时，展开审查栏直接进 Review。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（Codex 控制台：7 个作用域含检查点、统计徽标、分支对比、⌘P 跳转文件；**左文件树可拖拽改宽、右单文件满高 diff**；「展开全部差异」才叠 compact 卡片；提交底栏贴底，主按钮走 `text-text-white`；「已提交」作用域才走 devl.dev 多色 SVG 提交时间线；「检查点」列 Enjoy 写盘快照，ConfirmDialog 后还原，不移动 HEAD；只用真实 Git，不编造 CI/审批/第二车道）、Files、Terminal 与 Browser。macOS 快捷键用 ⌘，同时认 meta/ctrl。
 
 Chat 与 Changes 之间是画布上的 12px 间隙，不是同一张白卡片里的发丝分割线。禁止把两栏融成一块白矩形。禁止第四张大卡片。
 
@@ -72,7 +72,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 - 审批卡只挂 PermissionDock（Composer 上沿），禁止写回 `ConversationContent`。M3 阻切「去处理审批」必须走 M2 `focusAttention({ sessionId, kind, navigate })`，不要无参滚 Dock stub，也不要在线程里复制一张卡。
 - 不要再画 Composer 上沿「写入自动 · Shell 需确认 · Git 需确认」。它和底栏「编辑」盾牌重复；「模式: 智能体」是执行模式，不是审批。
-- Agent Picker：未装 CLI 上轨，状态用中性胶囊「未装」，不要名字底下第二行灰字。点开一键安装，不要再收成「未安装 N」。模型行不要上下两行同名；未装面板不要 `h-[390px]` 空撑。OMP 右栏模型图标按模型族（Claude / Gemini / GPT），禁止用引擎 `omp` 灰圆字母。OMP 的 `google-antigravity` 是供应商，不是模型。OMP「登录」必须是实心按钮；点了要打开浏览器，禁止只回英文 Login started。打开授权页后按钮保持「正在打开授权…」，浏览器成功并写入凭证后左栏才变已登录，不要停在登录按钮。
+- Agent Picker：未装 CLI 上轨，状态用中性胶囊「未装」，不要名字底下第二行灰字。点开一键安装，不要再收成「未安装 N」。模型行不要上下两行同名；未装 / 需登录面板不要 `h-[390px]` 空撑。OMP 右栏模型图标按模型族（Claude / Gemini / GPT），禁止用引擎 `omp` 灰圆字母。OMP 的 `google-antigravity` 是供应商，不是模型。OMP「登录」必须是实心按钮；点了要打开浏览器，禁止只回英文 Login started。打开授权页后按钮保持「正在打开授权…」，浏览器成功并写入凭证后左栏才变已登录，不要停在登录按钮。**已装未登录**（含 Claude / Cursor）导轨标「登录」，点开下面板是实心登录，禁止「使用 {name}」空钮；`loggedIn===null` 标「检测」，禁止探测中绿灯。胶囊灯与发送口只信 `engineReadiness==="ready"`。Enjoy Local 无密钥标「密钥」，发送失败留在开始面，禁止自动跳设置。`ACP_AUTH_REQUIRED` 主钮打开 Picker 登录，禁止跳 `#/settings/providers`。设置「设为主引擎」必须走 `requestEngineSwitch`。
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
 - 玻璃皮肤看起来仍是实体：画布 `bg-background-full` 不透明时，`backdrop-filter` 卷积纯色 Mist，肉眼无磨砂。光斑层禁止负 z-index（会画到窗口底板后面）。皮肤覆盖必须进 `styles/skins/<name>.css`，不要写回 `globals.css`。`SettingsCard` 必须带 `settings-card` 类，设置页内层卡片才能吃到半透。
 - 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`。frost 约 58% + 更强 blur，禁止 50% 把桌面当照片，也禁止 80% 把磨砂盖成实心黑。
@@ -111,7 +111,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - Composer 边框流光（`BorderBeam`）溢色渗底：禁止 `colorVariant="colorful"`（粉/黄污斑）。只用 `ocean` + `theme="auto"`，空闲 `strength=0`。经典皮内层保持实体底；玻璃皮走 `[data-frost=chip]` 半透磨砂，不要再叠一层实心 `bg-background-primary-default`，否则 Composer 会变回白块。
 - 错误信息展示必须使用结构化卡片（`ThreadErrorBanner`）：禁止在会话流底部裸露单行无修饰红字。错误卡片必须配备警示图标、明确错误摘要、换行错误原文，并提供「重新生成 (Retry)」、「切换模型」与「关闭」操作。
 - 权限模式 (Permission Mode) 开关倒置与高危正则误判：底层 `require*Approval` 为 `false` 时代表自动放行。UI 菜单中的 Switch 必须以 `!require*Approval` 绑定 `checked`，确保选择 `All` 预设时开关处于开启高亮态；`tool-approval` 的 `DANGEROUS_BASH` 正则必须严格匹配管道后紧跟 shell 二进制（`bash|sh|zsh`），严禁泛匹配带 `sh` 的普通单词（如 `wttr.in/Shanghai`），避免合法命令在 All 模式下被误判触发二次审批。
-- 执行模式 (Execution Mode) 对标 Vercel AI SDK 7 架构：按「AI SDK 7 核心循环」与「专业工程工作流」两组分组呈现，完整支持 `Agent` (ToolLoopAgent)、`Plan` (只读架构蓝图)、`Ask` (只读语义问答)、`Debug` (根因排查修复)、`Workflow` (多阶段流水线)、`TDD` (测试先行循环) 与 `Code Mode` (批量代码脚本)。
+- 执行模式菜单只露智能体 / 规划 / 问答 / 调试（BoardUI token，不要彩虹皮、不要「模式:」前缀）。规划/问答是真只读工具集；调试与智能体同一套写工具。`workflow` / `tdd` / `code_mode` 不进菜单。附件「+」只打开本机文件选择器，禁止教 `@` / `/web`。导轨组标题不要再挂 `CLI` 协议副标题。
 - Context 检查器禁止 Fake-Status-Chrome：不要写死 AGENTS.md / RAG / MCP 芯片，也不要把每条工具标成完成。芯片来自会话挂载；工具状态跟 `ToolCallState`。
 - Composer Todo Dock 不要扫整段会话最后一次 `todo_write`：新用户轮发出后上一轮「Rust login logic 2/2」会一直挂着，直到本轮再写出表。必须只看最后一条**非续跑**用户消息之后的 tools。「继续完成未完成的内容」这类续跑句不能当新任务边界，否则切模型 / 报 `No output generated` 后 Dock 会消失。续跑走 `continueTodoTurn`，`persistUser: false`，不要 `setComposer` 插气泡，也不要落库用户句。折叠 Dock 也要能点「继续」。`in_progress` 只在 `store.running` 时转圈；跑完没再 `todo_write` 要显示「已停止」，否则像会话卡死。
 - 像素猫钉在改动条左上角：曾经用 rAF 读绝对定位空跑道的 `offsetWidth`，量为 0 时 `stepRunner` 每帧把 x 锁回左边。走动只准 WAAPI 写 `left: calc(100% - 22px)`，跑道必须是卡片上 `inset-x-0 w-full`，禁止再量空绝对盒子。`prefers-reduced-motion` 只放慢，禁止 `animation: none`。
@@ -131,3 +131,4 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 空会话禁止 `SkillSourcePullStrip` / 技能源同步条。M6 可选更新只进 `#/skills` 顶栏与 `#/settings/agent?tab=defaults`；合 #10 时不得把空会话条或 children 插槽加回来。
 - 设置智能体页禁止 Fake-Status-Chrome：已删 `AgentToolsHubMetrics`。本机 CLI 先卡片后「能力说明」；矩阵/边界默认收起，是证据表不是营销 Hero。配置弹窗「运行偏好」只暴露 `LAUNCH_PREFS` 里该 CLI 真正认的旗标。
 - L4 额度耗尽走 `QuotaExhaustedCard`，不要并进泛化 `rate limit` 红条。禁止 `Math.max(%,2)` 假填充与遥测伪造 5 小时/周度条。
+- 发送被拦：`NEED_CLI_INSPECTING` 标题走 `chat.agentInspecting`，主钮「重试检测」，禁止写成「还没登录」。`NEED_CLI_LOGIN` 才开 Picker。`HANDOFF_CONFIRM_FAILED` 走词表，不要静默。

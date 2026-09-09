@@ -51,7 +51,7 @@ export function AgentToolAccountRow({
 }
 
 function QuotaBar({ percent }: { percent: number }) {
-  const tone = percent >= 85 ? "bg-rose-500" : percent >= 50 ? "bg-amber-500" : "bg-accent-500"
+  const tone = percent >= 85 ? "bg-text-error-primary" : percent >= 50 ? "bg-accent-600" : "bg-accent-500"
   return (
     <div className="flex items-center gap-2 pt-0.5">
       <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-background-secondary-hover/70">

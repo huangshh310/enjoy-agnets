@@ -3,6 +3,7 @@ import { test } from "node:test"
 import {
   acpProcessKey,
   composeAcpPrompt,
+  CUSTOM_INSTRUCTIONS_PREFIX,
   formatHandoffContext,
   HANDOFF_PREFIX,
   lastUserText
@@ -45,6 +46,32 @@ test("没有 handoff 时只发最后一条用户句，不当成续跑伪装", ()
     ]),
     "再改入口"
   )
+})
+
+test("附件写成工作区路径清单，不写未转发", () => {
+  const prompt = composeAcpPrompt([
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "对照这份改" },
+        { type: "file", filename: "src/auth.ts", mediaType: "text/plain" }
+      ]
+    }
+  ])
+  assert.ok(prompt.includes("对照这份改"))
+  assert.ok(prompt.includes("Attached workspace files:"))
+  assert.ok(prompt.includes("- src/auth.ts"))
+  assert.ok(!prompt.includes("not forwarded"))
+})
+
+test("自定义说明垫在用户句前，空串不占位", () => {
+  const prompt = composeAcpPrompt([{ role: "user", content: "继续改" }], {
+    customInstructions: "  Prefer small diffs.  "
+  })
+  assert.ok(prompt.startsWith(CUSTOM_INSTRUCTIONS_PREFIX))
+  assert.ok(prompt.includes("Prefer small diffs."))
+  assert.ok(prompt.endsWith("继续改"))
+  assert.equal(composeAcpPrompt([{ role: "user", content: "只这一句" }], { customInstructions: "  " }), "只这一句")
 })
 
 test("lastUserText 忽略系统句", () => {

@@ -24,6 +24,25 @@ export function parseHandoffs(raw: string | undefined | null): Record<string, Ha
   }
 }
 
+export function peekHandoff(
+  all: Record<string, HandoffRecord>,
+  sessionId: string
+): HandoffRecord | null {
+  return all[sessionId] ?? null
+}
+
+/** 取出并从图里删掉；调用方负责写回存储。 */
+export function consumeHandoff(
+  all: Record<string, HandoffRecord>,
+  sessionId: string
+): { taken: HandoffRecord | null; next: Record<string, HandoffRecord> } {
+  const taken = all[sessionId] ?? null
+  if (!taken) return { taken: null, next: all }
+  const next = { ...all }
+  delete next[sessionId]
+  return { taken, next }
+}
+
 export function prependHandoffHistory<T extends { role: string; content: string }>(
   messages: T[],
   handoffText: string | null

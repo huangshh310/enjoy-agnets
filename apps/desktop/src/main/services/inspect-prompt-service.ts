@@ -1,7 +1,7 @@
 /**
  * agent.inspectPrompt：优先返回泵时快照，否则按库内消息做 preview。
  */
-import { CODING_TOOL_NAMES } from "@enjoy-agents/agent-core"
+import { codingToolNamesFor } from "@enjoy-agents/agent-core"
 import {
   InspectPromptInput,
   type AgentMode,
@@ -12,13 +12,16 @@ import { createMcpAgentTools } from "./mcp-agent-tools"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { isE2eStub } from "./e2e-stub"
 import { readPreferences } from "./preferences"
-import { listMessages } from "./session-queries"
+import { listDiscoveredRules } from "./rules-service"
+import { listInstalledSkills } from "./skills-service"
+import { listMessages, workspaceRootForSession } from "./session-queries"
 import {
   getInspectPromptSnapshot,
   rememberInspectPrompt,
   sanitizeModelMessages
 } from "./inspect-prompt-snapshot"
-import { codingInstructions } from "./inspect-prompt-instructions"
+import { resolveRuntimeId } from "./agent-run-helpers"
+import { codingInstructions, inspectListedToolNames } from "./inspect-prompt-instructions"
 import { toModelMessages } from "./to-model-messages"
 import { getActiveCompactedHistory, getSessionCompaction } from "./session-compaction-service"
 
@@ -30,6 +33,7 @@ export function captureOpenStreamPrompt(input: {
   messages: unknown[]
   prefs: { codingRuntime: string; customInstructions: string }
   runtimeId?: string
+  workspaceRoot?: string
 }) {
   const runtime = inspectRuntime(input.prefs.codingRuntime, input.runtimeId)
   rememberInspectPrompt({
@@ -40,9 +44,17 @@ export function captureOpenStreamPrompt(input: {
     modelId: input.modelId,
     mode: input.mode,
     runtime,
-    instructions: codingInstructions(input.mode, runtime, input.prefs.customInstructions),
+    instructions: composeInspectInstructions(
+      input.mode,
+      runtime,
+      input.prefs.customInstructions,
+      input.workspaceRoot
+    ),
     messages: sanitizeModelMessages(input.messages),
-    toolNames: [...CODING_TOOL_NAMES, ...Object.keys(createMcpAgentTools())]
+    toolNames: inspectListedToolNames(runtime, [
+      ...codingToolNamesFor(input.mode),
+      ...Object.keys(createMcpAgentTools({ mode: input.mode }))
+    ])
   })
 }
 
@@ -64,11 +76,14 @@ async function isSnapshotCurrent(sessionId: string, capturedAt: number): Promise
 async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptResult> {
   const prefs = readPreferences()
   const mode = input.mode ?? prefs.defaultMode
-  const runtime = inspectRuntime(prefs.codingRuntime, prefs.runtimeId)
+  // 跟开流同一套：会话覆盖 > 偏好。禁止只用 prefs.runtimeId，否则切到 CLI 未发过轮时检查器仍画 ToolLoop 提示词。
+  const runtimeId = resolveRuntimeId({ sessionId: input.sessionId }, prefs)
+  const runtime = inspectRuntime(prefs.codingRuntime, runtimeId)
   const rows = await listMessages(input.sessionId)
   const rawHistory = rows.map((row) => historyFromRow(row.role, row.content))
   const history = await getActiveCompactedHistory(input.sessionId, rawHistory)
-  const mcpNames = Object.keys(createMcpAgentTools())
+  const mcpNames = Object.keys(createMcpAgentTools({ mode }))
+  const workspaceRoot = await workspaceRootForSession(input.sessionId)
   return {
     source: "preview",
     capturedAt: Date.now(),
@@ -76,10 +91,21 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
     modelId: input.modelId ?? "",
     mode,
     runtime,
-    instructions: codingInstructions(mode, runtime, prefs.customInstructions),
+    instructions: composeInspectInstructions(mode, runtime, prefs.customInstructions, workspaceRoot),
     messages: sanitizeModelMessages(toModelMessages(history)),
-    toolNames: [...CODING_TOOL_NAMES, ...mcpNames]
+    toolNames: inspectListedToolNames(runtime, [...codingToolNamesFor(mode), ...mcpNames])
   }
+}
+
+function composeInspectInstructions(
+  mode: AgentMode,
+  runtime: InspectPromptResult["runtime"],
+  customInstructions: string,
+  workspaceRoot?: string
+) {
+  const rules = workspaceRoot ? listDiscoveredRules({ workspacePath: workspaceRoot }) : []
+  const skills = listInstalledSkills(workspaceRoot ? { workspacePath: workspaceRoot } : undefined)
+  return codingInstructions(mode, runtime, customInstructions, rules, { skills, workspaceRoot })
 }
 
 function inspectRuntime(

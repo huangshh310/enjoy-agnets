@@ -1,6 +1,8 @@
 /**
  * 上下文 Token 视窗与单轮性能：只折算已有字段，不编造 Cache / 系统地板。
  */
+import { formatAlwaysOnRulePrompt } from "@enjoy-agents/ipc-contract/rules-always-on"
+import { formatSkillCatalog } from "@enjoy-agents/ipc-contract/skills-catalog"
 import type { McpServer, ProjectRuleItem, SkillItem, TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { CHARS_PER_TOKEN } from "@enjoy-agents/agent-core/compaction"
@@ -38,16 +40,17 @@ export function estimateContextWindowStats(
   mcpServers: McpServer[] = [],
   rules: ProjectRuleItem[] = [],
   skills: SkillItem[] = [],
-  chips: ContextChipEstimate[] = []
+  chips: ContextChipEstimate[] = [],
+  customInstructions = ""
 ): ContextWindowStats {
   const messageTokens = estimateCharTokens(sumMessageChars(messages))
-  const systemTokens = estimateCharTokens(rules.reduce((sum, rule) => sum + (rule.content ?? "").length, 0))
+  const systemTokens = estimateCharTokens(
+    formatAlwaysOnRulePrompt(rules).length + customInstructions.trim().length
+  )
   const mcpTokens = mcpServers
     .filter((server) => server.connected)
     .reduce((sum, server) => sum + estimateMcpSchemaTokens(server), 0)
-  const skillsTokens = estimateCharTokens(
-    skills.reduce((sum, skill) => sum + (skill.description?.length ?? 0), 0)
-  )
+  const skillsTokens = estimateCharTokens(formatSkillCatalog(skills).length)
   const memoryTokens = chips
     .filter((chip) => chip.enabled !== false)
     .reduce((sum, chip) => sum + estimateCharTokens(chip.snippet?.length ?? 0), 0)

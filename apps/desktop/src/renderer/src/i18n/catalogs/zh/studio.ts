@@ -121,7 +121,7 @@ export const zhStudio = {
   instructions: {
     title: "全局系统指令",
     badge: "System Prompt 上下文",
-    desc: "配置全局预置指令与开发习惯，会在每个 Agent 会话开始时自动注入到模型 System Prompt。",
+    desc: "会写入 Enjoy Local 的系统提示；本机 CLI 作为本轮 session/prompt 前缀。带 globs 的上下文规则不自动注入。",
     presetsHint: "常用行为指令预设（点击追加到末尾）：",
     clickToAppend: "点击追加",
     stats: "{chars} 字符 · {lines} 行",
@@ -131,14 +131,14 @@ export const zhStudio = {
     save: "保存指令",
     placeholder:
       "例如：严格优先采用局部针对性修改，避免重写完整文件。单文件控制在 300 行以内。在完成任务前必须运行验证命令。",
-    helper: "编写明确的否定约束与验证门禁，能显著提高 Agent 代码产出质量。"
+    helper: "Enjoy Local 每轮都会带上这段说明。本机 CLI 只把它垫在用户句前，工作区 AGENTS.md 仍由 CLI 自己读盘。"
   },
   rules: {
     filterAll: "全部规则",
     title: "项目规则与规范",
     badge: "多 Agent 标准",
-    desc: "统一扫描并管理 AGENTS.md、CLAUDE.md、Cursor MDC、GitHub Copilot 与 Windsurf 规则。",
-    activeCount: "{count} 条已生效规则",
+    desc: "扫描 AGENTS.md、CLAUDE.md、Cursor MDC 等。无 globs 或 alwaysApply 的会注入 Enjoy Local；带 globs 的不自动塞进每一轮。",
+    activeCount: "{count} 条将注入 Enjoy Local",
     newRule: "新建规则",
     searchPlaceholder: "搜索规则或文件…",
     emptyTitle: "未扫描到任何 Agent 规范规则文件",

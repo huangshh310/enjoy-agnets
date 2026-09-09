@@ -21,6 +21,8 @@ export type WorkspaceRecord = {
 export { createWorkspaceHost } from "./workspace-host"
 export { changedFiles, readGitLog, commitWorkspaceAll } from "./workspace-git"
 export { restoreWorkspacePaths } from "./workspace-git-restore"
+export { listEnjoyCheckpointItems } from "./workspace-git-checkpoint"
+export { restoreEnjoyCheckpoint } from "./workspace-git-checkpoint-restore"
 export { pushWorkspace, readWorkspacePatch } from "./workspace-git-remote"
 
 /** 只弹出目录选择，不写 workspaces 表。 */

@@ -7,6 +7,7 @@ import type { ApprovalPolicy } from "../tool-approval.ts"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
 import { summarizeSubagent, type SubagentSummary } from "./subagent.ts"
 import { createSubagentApproval, type WaitForSubagentApproval } from "./subagent-approval.ts"
+import { joinInstructions } from "../join-instructions.ts"
 
 export async function runApprovedSubagent(options: {
   model: LanguageModel
@@ -17,6 +18,7 @@ export async function runApprovedSubagent(options: {
   abortSignal?: AbortSignal
   generate?: (task: string) => Promise<string>
   waitForApproval?: WaitForSubagentApproval
+  extraInstructions?: string
 }): Promise<SubagentSummary> {
   const text = options.generate
     ? await options.generate(options.task)
@@ -35,6 +37,7 @@ async function generateWithSharedApproval(options: {
   policy: ApprovalPolicy
   abortSignal?: AbortSignal
   waitForApproval?: WaitForSubagentApproval
+  extraInstructions?: string
 }): Promise<string> {
   const decide = createSubagentApproval({
     mode: options.mode,
@@ -42,11 +45,12 @@ async function generateWithSharedApproval(options: {
     waitForApproval: options.waitForApproval
   })
   const { createCodingTools } = await import("../tools/index.ts")
+  const role =
+    "You are a specialist subagent. Return a concise report. Writes and shell use the same approval policy as the parent agent. Do not claim you bypassed approval."
   const agent = new ToolLoopAgent({
     model: options.model,
-    instructions:
-      "You are a specialist subagent. Return a concise report. Writes and shell use the same approval policy as the parent agent. Do not claim you bypassed approval.",
-    tools: createCodingTools(options.host, { includeAskUser: false }),
+    instructions: joinInstructions(role, options.extraInstructions),
+    tools: createCodingTools(options.host, { includeAskUser: false, mode: options.mode }),
     toolApproval: ({ toolCall }) => {
       if (!toolCall) return { type: "denied", reason: "Missing tool call." }
       return decide({

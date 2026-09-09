@@ -1,5 +1,6 @@
 /**
- * Composer 能否立刻切到该 Agent。即将推出与未就绪自定义不可选。
+ * Composer 能否打开该 Agent 面板（已装或有自定义路径）。
+ * 不等于能 bind / 发送；登录态走 engine-readiness.canBindEngine。
  */
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 

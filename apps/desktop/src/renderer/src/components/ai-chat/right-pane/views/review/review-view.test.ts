@@ -55,7 +55,7 @@ test("buildFileTree: 支持通过搜索词进行文件过滤", () => {
   assert.equal(uiDir?.children?.[0].name, "dialog.tsx")
 })
 
-test("REVIEW_SCOPES: 必须包含完整的 6 大审查作用域", () => {
+test("REVIEW_SCOPES: 必须包含完整的 7 个审查作用域", () => {
   const scopeIds = REVIEW_SCOPES.map((s) => s.id)
   assert.deepEqual(scopeIds, [
     "last-turn",
@@ -63,7 +63,8 @@ test("REVIEW_SCOPES: 必须包含完整的 6 大审查作用域", () => {
     "unstaged",
     "staged",
     "commits",
-    "branch"
+    "branch",
+    "checkpoints"
   ])
 })
 

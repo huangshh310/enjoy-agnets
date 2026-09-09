@@ -1,7 +1,9 @@
 /**
  * ACP session/update → Enjoy StreamEvent（可多条）。
+ * 禁止 yield approval.required；审批只走 session/request_permission。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { extractAcpDiffs } from "./acp-diff.ts"
 
 export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   const rec = asRecord(update)
@@ -23,6 +25,10 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     ]
     events.push(...fileEvents(rec, runId))
     return events
+  }
+  if (kind === "available_commands_update") {
+    // 不进 Composer 假 slash 目录，也不发 structured.delta（会进气泡）。
+    return []
   }
   if (kind === "tool_call_update") {
     const toolCallId = String(rec.toolCallId ?? rec.id ?? "tool")
@@ -108,6 +114,11 @@ function extractToolArgs(rec: Record<string, unknown>): unknown {
     const nestedCmd = typeof nested.command === "string" ? nested.command : typeof nested.cmd === "string" ? nested.cmd : ""
     if (nestedCmd) recInput.command = nestedCmd
   }
+  const diffs = extractAcpDiffs(rec.content ?? rec)
+  if (diffs[0]) {
+    if (!recInput.path) recInput.path = diffs[0].path
+    if (!recInput.diff) recInput.diff = diffs[0].diff
+  }
   return Object.keys(recInput).length > 0 ? recInput : input
 }
 
@@ -182,10 +193,19 @@ function looksLikeShell(title: string): boolean {
 function fileEvents(rec: Record<string, unknown>, runId: string): StreamEvent[] {
   const locations = Array.isArray(rec.locations) ? rec.locations : []
   const events: StreamEvent[] = []
+  const seen = new Set<string>()
   for (const item of locations) {
     const path = locationPath(item) ?? (typeof item === "string" ? item : "")
     if (!looksLikeToolPath(path)) continue
-    events.push({ type: "file.changed", runId, path: normalizeAcpPath(path), kind: "modified" })
+    const normalized = normalizeAcpPath(path)
+    if (seen.has(normalized)) continue
+    seen.add(normalized)
+    events.push({ type: "file.changed", runId, path: normalized, kind: "modified" })
+  }
+  for (const block of extractAcpDiffs(rec.content ?? rec)) {
+    if (seen.has(block.path)) continue
+    seen.add(block.path)
+    events.push({ type: "file.changed", runId, path: block.path, kind: "modified" })
   }
   return events
 }

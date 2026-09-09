@@ -4,6 +4,7 @@
 import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-chat-empty-state"
 import { EmptyStatePills } from "@renderer/components/ai-chat/empty-state/empty-state-pills"
 import { focusComposerEnd } from "@renderer/components/ai-chat/empty-state/focus-composer"
+import { ThreadErrorBanner } from "@renderer/components/ai-chat/thread/thread-error-banner"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 
@@ -16,6 +17,7 @@ export function EmptySessionStart(props: {
   onSend: () => void
 }) {
   const setComposer = useChatStore((state) => state.setComposer)
+  const error = useChatStore((state) => state.error)
 
   function handleSelect(promptText: string) {
     setComposer(promptText)
@@ -33,6 +35,7 @@ export function EmptySessionStart(props: {
             changesCount={props.changesCount}
           />
           <div className="flex w-full flex-col items-center gap-4">
+            {error ? <ThreadErrorBanner error={error} className="my-0 w-full max-w-none" /> : null}
             <ChatComposerCluster
               className="w-full shrink-0"
               composerClassName="px-0 pb-2 [&_textarea]:min-h-[72px]"

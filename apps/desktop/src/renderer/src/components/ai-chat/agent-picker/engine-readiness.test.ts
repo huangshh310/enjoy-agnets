@@ -1,10 +1,19 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { engineReadiness, readinessMarkKey, readinessSubtitle } from "./engine-readiness.ts"
+import {
+  canBindEngine,
+  engineReadiness,
+  isEngineLit,
+  readinessMarkKey,
+  readinessSubtitle
+} from "./engine-readiness.ts"
 
-test("Enjoy Local 恒为就绪，不写副标题", () => {
+test("Enjoy Local 默认就绪；明确无密钥才标需密钥", () => {
   assert.equal(engineReadiness({ id: "enjoy-local", status: "missing" }), "ready")
-  assert.equal(readinessSubtitle("ready", (path) => path), "")
+  assert.equal(engineReadiness({ id: "enjoy-local", status: "ready", hasKey: false }), "needs_key")
+  assert.equal(engineReadiness({ id: "enjoy-local", status: "ready", hasKey: true }), "ready")
+  assert.equal(canBindEngine({ id: "enjoy-local", status: "ready", hasKey: false }), true)
+  assert.equal(isEngineLit({ id: "enjoy-local", status: "ready", hasKey: false }), false)
 })
 
 test("未安装只报未安装，不报协议登录", () => {
@@ -12,7 +21,7 @@ test("未安装只报未安装，不报协议登录", () => {
   assert.equal(readinessSubtitle("missing", (path) => path), "chat.agentNotInstalled")
 })
 
-test("已装且明确未登录才写需登录；inspect 未回不猜", () => {
+test("已装且需要登录：未登录 / 探测中都不能当就绪", () => {
   assert.equal(
     engineReadiness({
       id: "omp",
@@ -29,7 +38,16 @@ test("已装且明确未登录才写需登录；inspect 未回不猜", () => {
       requiresLogin: true,
       loggedIn: null
     }),
-    "ready"
+    "inspecting"
+  )
+  assert.equal(
+    canBindEngine({
+      id: "claude",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false
+    }),
+    false
   )
   assert.equal(
     engineReadiness({
@@ -41,11 +59,14 @@ test("已装且明确未登录才写需登录；inspect 未回不猜", () => {
     "ready"
   )
   assert.equal(readinessSubtitle("needs_login", (path) => path), "chat.agentNeedsLogin")
+  assert.equal(readinessSubtitle("inspecting", (path) => path), "chat.agentInspecting")
 })
 
 test("导轨胶囊用短标，就绪不画", () => {
   assert.equal(readinessMarkKey("missing"), "chat.agentNotInstalledMark")
   assert.equal(readinessMarkKey("needs_login"), "chat.agentNeedsLoginMark")
+  assert.equal(readinessMarkKey("inspecting"), "chat.agentInspectingMark")
+  assert.equal(readinessMarkKey("needs_key"), "chat.agentNeedsKeyMark")
   assert.equal(readinessMarkKey("soon"), "chat.agentSoonMark")
   assert.equal(readinessMarkKey("ready"), null)
 })

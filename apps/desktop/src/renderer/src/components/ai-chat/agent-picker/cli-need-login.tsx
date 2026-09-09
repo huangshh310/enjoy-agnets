@@ -10,17 +10,20 @@ export function CliNeedLogin({
   kind,
   busy,
   hint,
+  inspecting,
   onLogin
 }: {
   name: string
   kind?: AgentCliLoginKind
   busy: boolean
   hint?: string
+  inspecting?: boolean
   onLogin: () => void
 }) {
   const t = useT()
-  const need =
-    kind === "local"
+  const need = inspecting
+    ? t("chat.agentInspecting")
+    : kind === "local"
       ? t("chat.cliProviderNeedLocal")
       : kind === "api_key"
         ? t("chat.cliProviderNeedKey")
@@ -28,7 +31,7 @@ export function CliNeedLogin({
           ? t("chat.cliProviderNeedDevice")
           : t("chat.cliProviderNeedLogin")
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+    <div className="flex flex-col items-center justify-center gap-3 px-6 py-8 text-center">
       <p className="text-caption-1-medium text-text-secondary">{need}</p>
       <Button type="button" size="sm" disabled={busy} onClick={onLogin}>
         {busy ? t("chat.cliProviderLoggingIn") : t("chat.cliProviderLoginName", { name })}

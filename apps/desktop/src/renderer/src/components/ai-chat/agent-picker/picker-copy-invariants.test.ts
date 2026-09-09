@@ -16,6 +16,7 @@ const files = [
   "agent-cli-pane.tsx",
   "composer-chip-label.ts",
   "engine-readiness.ts",
+  "engine-readiness-input.ts",
   "split-composer-rail.ts",
   "split-cli-ready.ts",
   "cli-model-groups.ts",

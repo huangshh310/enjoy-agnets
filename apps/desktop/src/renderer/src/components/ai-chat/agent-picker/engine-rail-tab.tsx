@@ -2,11 +2,12 @@
  * 导轨单引擎：名称 + 就绪胶囊。就绪不写字；禁止协议/登录标签。
  */
 import { useEffect, useRef } from "react"
-import { capabilitiesOf, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
-import { isEngineReady } from "@renderer/lib/agent-runtime"
+import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "./agent-brand-icon"
-import { engineReadiness, readinessMarkKey, readinessSubtitle } from "./engine-readiness"
+import { engineReadiness, isEngineLit, readinessMarkKey, readinessSubtitle } from "./engine-readiness"
+import { readinessInputOf } from "./engine-readiness-input"
 import { ReadinessMark } from "./readiness-mark"
 
 export function EngineRailTab({
@@ -22,14 +23,10 @@ export function EngineRailTab({
 }) {
   const t = useT()
   const itemRef = useRef<HTMLButtonElement>(null)
-  const ready = isEngineReady(agent)
-  const kind = engineReadiness({
-    id: agent.id,
-    status: agent.status,
-    comingSoon: agent.comingSoon,
-    requiresLogin: capabilitiesOf(agent).login,
-    loggedIn: agent.authAccount?.loggedIn ?? null
-  })
+  const hasKey = useChatStore((state) => state.hasKey)
+  const input = readinessInputOf(agent, { hasKey })
+  const ready = isEngineLit(input)
+  const kind = engineReadiness(input)
   const markKey = readinessMarkKey(kind)
   const subtitle = readinessSubtitle(kind, t)
 

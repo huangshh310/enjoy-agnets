@@ -9,9 +9,42 @@ export function providerLoggedIn(inspect: InspectAgentToolResult, providerId: st
   return inspect.models.some((item) => item.id === providerId || item.id.startsWith(prefix))
 }
 
+export function engineLoggedIn(inspect: InspectAgentToolResult): boolean {
+  return inspect.authAccount?.loggedIn === true
+}
+
+export async function waitCliEngineReady(opts: {
+  inspect: () => Promise<InspectAgentToolResult>
+  intervalMs?: number
+  timeoutMs?: number
+  isCancelled?: () => boolean
+  now?: () => number
+  sleep?: (ms: number) => Promise<void>
+}): Promise<"ready" | "timeout" | "cancelled"> {
+  return waitUntil({
+    ...opts,
+    ready: engineLoggedIn
+  })
+}
+
 export async function waitCliProviderReady(opts: {
   inspect: () => Promise<InspectAgentToolResult>
   providerId: string
+  intervalMs?: number
+  timeoutMs?: number
+  isCancelled?: () => boolean
+  now?: () => number
+  sleep?: (ms: number) => Promise<void>
+}): Promise<"ready" | "timeout" | "cancelled"> {
+  return waitUntil({
+    ...opts,
+    ready: (snap) => providerLoggedIn(snap, opts.providerId)
+  })
+}
+
+async function waitUntil(opts: {
+  inspect: () => Promise<InspectAgentToolResult>
+  ready: (snap: InspectAgentToolResult) => boolean
   intervalMs?: number
   timeoutMs?: number
   isCancelled?: () => boolean
@@ -27,7 +60,7 @@ export async function waitCliProviderReady(opts: {
     if (opts.isCancelled?.()) return "cancelled"
     try {
       const snap = await opts.inspect()
-      if (providerLoggedIn(snap, opts.providerId)) return "ready"
+      if (opts.ready(snap)) return "ready"
     } catch {
       /* 登录进程还在写凭证时 inspect 可能短暂失败，继续等 */
     }

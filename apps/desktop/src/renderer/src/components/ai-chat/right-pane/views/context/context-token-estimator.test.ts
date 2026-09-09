@@ -42,6 +42,49 @@ test("estimateContextWindowStats does not invent a window when maxTokens is unkn
   assert.ok(stats.usedTokens > 0)
 })
 
+test("estimateContextWindowStats 只计常驻规则，不计带 glob 的 contextual", () => {
+  const always = {
+    id: "a",
+    name: "AGENTS.md Contract",
+    agentKind: "agents_md" as const,
+    agentKindLabel: "AGENTS.md",
+    scope: "workspace" as const,
+    filePath: "/ws/AGENTS.md",
+    content: "a".repeat(380)
+  }
+  const contextual = {
+    id: "c",
+    name: "tsx-only",
+    agentKind: "cursor_mdc" as const,
+    agentKindLabel: "Cursor MDC",
+    scope: "contextual" as const,
+    filePath: "/ws/.cursor/rules/tsx.mdc",
+    globs: "*.tsx",
+    content: "b".repeat(3800)
+  }
+  const withAll = estimateContextWindowStats([], 200_000, [], [always, contextual])
+  const onlyAlways = estimateContextWindowStats([], 200_000, [], [always])
+  assert.equal(withAll.usedTokens, onlyAlways.usedTokens)
+  assert.ok(withAll.usedTokens > 0)
+})
+
+test("estimateContextWindowStats 技能桶只计索引，不计 SKILL.md 正文", () => {
+  const listed = estimateContextWindowStats([], 200_000, [], [], [
+    {
+      id: "w:grill",
+      name: "grill-me",
+      description: "Stress-test",
+      scope: "workspace",
+      directoryPath: "/ws/.agents/skills/grill-me",
+      skillFilePath: "/ws/.agents/skills/grill-me/SKILL.md",
+      content: "x".repeat(8000)
+    }
+  ])
+  const skillsTokens = listed.buckets.find((bucket) => bucket.id === "skills")?.tokens ?? 0
+  assert.ok(skillsTokens > 0)
+  assert.ok(skillsTokens < estimateCharTokens(4000))
+})
+
 test("estimateContextWindowStats ignores excluded chips", () => {
   const statsActive = estimateContextWindowStats([], 200_000, [], [], [], [
     { snippet: "a".repeat(380), enabled: true }

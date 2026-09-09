@@ -1,6 +1,6 @@
 # spec/skills
 
-> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-08
+> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-09
 
 ## 当前真相
 
@@ -31,6 +31,7 @@
    - 进行中文案「正在更新…」；结果 toast「更新了 N 个」/「有源未更新」，禁止堆栈或 IPC 码。
    - **禁止**把更新条挂进空会话 / `AiChatEmptyState`（空态只允许标题 + checklist + pills，Composer 钉 Stage 底）。
    - **不做**：自动 pull、摩擦信号、周报 digest、团队 MCP 分发。
+8. **Enjoy Local 开流注入技能索引**（`formatSkillCatalog`）：名称、scope、trigger、一句 description、工作区内相对 `path`。模型要用时 `read_file` 该 SKILL.md。全局技能在工作区外，只给描述，**不灌正文**。预算 8k / 最多 48 条。ACP / Harness 不重复灌（CLI 自己读盘）。检查器 skills 桶按同一目录计 token。子 Agent 接同一份 `extraInstructions`。
 
 ## 不变量
 
@@ -50,6 +51,7 @@
 - 状态与查询 Hook：`apps/desktop/src/renderer/src/components/skills/hooks/use-skills-page.ts`、`use-skill-source-pull.ts`
 - 领域常量与主题：`apps/desktop/src/renderer/src/components/skills/constants/`
 - 后端服务：`apps/desktop/src/main/services/skills-service.ts`、`main/services/skill-sources/`
+- 开流索引：`packages/ipc-contract/src/skills-catalog.ts`；拼进 `inspect-prompt-instructions.ts` / `open-coding-stream.ts`
 - 设置入口：`components/settings/settings-skill-sources.tsx`
 - 更新 toast：`components/skills/components/skill-source-toast-host.tsx`
 
@@ -61,3 +63,4 @@
 - `updateAll` 只拉 Git：本机 `~/.agents/skills` 等发现组不会被 pull。没有 Git 源时入口必须不渲染，不要灰按钮空转。
 - 空态禁运维条：技能源更新与 SessionReviewBar 同类，不能进 `AiChatEmptyState` / 空会话引导。
 - 拉取后投影是尽力而为：`EMPTY_SELECTION` / `MISSING_CHECKOUT` 不算进 `errors`，只完成 checkout。需要覆盖目标目录时仍走 Skills 详情的「重新部署」。
+- Skills 页能装却不进 Enjoy Local：必须注入索引，禁止把 `SkillItem.content` 整份塞进系统提示。`read_file` 出不了工作区，全局技能不要编造绝对路径。

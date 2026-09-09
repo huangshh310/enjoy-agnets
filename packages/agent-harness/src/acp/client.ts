@@ -193,11 +193,13 @@ export class AcpClient {
     const rec = asRecord(params)
     const tool = asRecord(rec.toolCall)
     const options = Array.isArray(rec.options) ? rec.options.map(asOption) : []
+    const questions = rec.questions ?? tool.questions
+    const asking = Array.isArray(questions) && questions.length > 0
     const decision = (await this.hooks.onPermission?.({
       sessionId: String(rec.sessionId ?? ""),
       toolCallId: String(tool.toolCallId ?? tool.id ?? "tool"),
-      name: String(tool.title ?? tool.kind ?? tool.name ?? "tool"),
-      args: tool.rawInput ?? tool.input ?? rec.toolCall,
+      name: asking ? "ask_user_questions" : String(tool.title ?? tool.kind ?? tool.name ?? "tool"),
+      args: asking ? { questions } : tool.rawInput ?? tool.input ?? rec.toolCall,
       options
     })) ?? "deny"
     const outcome = pickAcpPermissionOption(decision, options)

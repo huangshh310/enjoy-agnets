@@ -139,6 +139,33 @@ test("弱 title command + argv 推断为 bash", () => {
   }
 })
 
+test("tool_call content type=diff 写入 args 并 file.changed", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "t-diff",
+      kind: "edit",
+      content: [{ type: "diff", path: "src/auth.ts", diff: "@@ -1 +1 @@\n-a\n+b\n" }]
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") {
+    const args = start.args as { path?: string; diff?: string }
+    assert.equal(args.path, "src/auth.ts")
+    assert.ok(args.diff?.includes("+b"))
+  }
+  assert.ok(events.some((event) => event.type === "file.changed"))
+})
+
+test("available_commands_update 不进气泡也不当审批", () => {
+  assert.deepEqual(
+    mapAcpUpdate({ sessionUpdate: "available_commands_update", availableCommands: [{ name: "plan" }] }, "run_1"),
+    []
+  )
+})
+
 test("permission options map allow / deny / session", () => {
   const options = [
     { optionId: "allow-once", kind: "allow_once" },

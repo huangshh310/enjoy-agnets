@@ -35,6 +35,19 @@ export async function listMessages(sessionId: string) {
   )
 }
 
+/** 检查器 preview / 规则注入：会话所属工作区根。找不到则空。 */
+export async function workspaceRootForSession(sessionId: string): Promise<string | undefined> {
+  const row = getDatabase()
+    .prepare("SELECT workspace_id as workspaceId FROM sessions WHERE id = ?")
+    .get(sessionId) as { workspaceId?: string } | undefined
+  if (!row?.workspaceId) return undefined
+  try {
+    return (await getWorkspace(row.workspaceId)).rootPath
+  } catch {
+    return undefined
+  }
+}
+
 export async function createSession(workspaceId: string, title: string) {
   await getWorkspace(workspaceId)
   const now = Date.now()

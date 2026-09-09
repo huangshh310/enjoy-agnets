@@ -24,8 +24,9 @@ export function useRawPromptView({
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(() => new Set([0, 1]))
+  const runtimeId = useChatStore((state) => state.runtimeId)
   const inspectQuery = useQuery({
-    queryKey: ["inspect-prompt", sessionId, mode, modelId],
+    queryKey: ["inspect-prompt", sessionId, mode, modelId, runtimeId],
     enabled: hasIde() && Boolean(sessionId),
     queryFn: () =>
       getIde().agent.inspectPrompt({ sessionId, mode, modelId }) as Promise<InspectPromptResult>

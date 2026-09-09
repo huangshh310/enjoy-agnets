@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { ExecutionModeMenu } from "@renderer/components/ai-chat/execution-mode-menu"
 import { ModelPicker } from "@renderer/components/ai-chat/model-picker"
+import { rememberDefaultMode } from "@renderer/components/ai-chat/composer/composer-mode"
 import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -41,6 +42,7 @@ export function SettingsDefaults() {
 
   async function onModeChange(mode: AgentMode) {
     setMode(mode)
+    rememberDefaultMode(mode)
     await patchPreferences({ defaultMode: mode })
     await queryClient.invalidateQueries({ queryKey: ["settings"] })
   }

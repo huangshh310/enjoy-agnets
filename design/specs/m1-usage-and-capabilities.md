@@ -21,7 +21,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 | 层 | 含义 | 数据源 | UI |
 |---|---|---|---|
 | L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 胶囊旁 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）；设置账号区 |
-| L2 | 自营积分 | 无真实 API | Billing 保持「本地演示」；不画假条 |
+| L2 | 自营积分 | 无真实 API | 账单页诚实空态；不画假条、不挂演示套餐 |
 | L3 | 本轮 token / 上下文 % | 会话折算（agent-limits / inspector） | Composer 底 `SessionMeter`；无用量则隐藏 |
 | L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |
 
@@ -43,7 +43,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - L1 数字只来自 inspect；`quota=false` 不画条。
 - 进阶沙箱不得出现在 `AgentEngineRail` / `composerAgentTabs`。
 - HMAC 审批契约不变。
-- Billing 未接后端时必须标明「本地演示」。
+- 没有自营计费：账单页诚实空态，禁止演示套餐 / 可点升级。
 
 ## 代码入口
 

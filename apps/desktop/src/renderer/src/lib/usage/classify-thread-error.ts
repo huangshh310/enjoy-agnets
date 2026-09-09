@@ -1,7 +1,12 @@
 /**
- * 线程错误分层：402/额度走 L4，429 仍是限流，禁止把 spend 当成泛化 rate limit。
+ * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
-export type ThreadErrorKind = "credit" | "rate_limit" | "generic"
+export type ThreadErrorKind = "credit" | "rate_limit" | "auth" | "needs_key" | "inspecting" | "generic"
+
+export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
+export const NEED_CLI_LOGIN = "NEED_CLI_LOGIN"
+export const NEED_CLI_INSPECTING = "NEED_CLI_INSPECTING"
+export const HANDOFF_CONFIRM_FAILED = "HANDOFF_CONFIRM_FAILED"
 
 const CREDIT_MARKERS = [
   "402",
@@ -17,6 +22,15 @@ const CREDIT_MARKERS = [
 
 export function classifyThreadError(message: string): ThreadErrorKind {
   const lower = message.toLowerCase()
+  if (message === NEED_PROVIDER_KEY || lower.includes("add a provider api key")) return "needs_key"
+  if (message === NEED_CLI_INSPECTING) return "inspecting"
+  if (
+    message === NEED_CLI_LOGIN ||
+    lower.includes("acp_auth_required") ||
+    lower.includes("needs login before a session")
+  ) {
+    return "auth"
+  }
   if (CREDIT_MARKERS.some((marker) => lower.includes(marker))) return "credit"
   if (lower.includes("429") || lower.includes("rate limit") || lower.includes("too many requests")) {
     return "rate_limit"

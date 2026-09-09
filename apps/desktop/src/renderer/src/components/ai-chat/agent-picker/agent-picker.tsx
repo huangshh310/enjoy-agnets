@@ -9,8 +9,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cx } from "@/utils/cx"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { canSwitchAgent, DEFAULT_RUNTIME_ID, isEngineReady } from "@renderer/lib/agent-runtime"
+import { canSwitchAgent, DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
+import { canBindEngine, isEngineLit } from "./engine-readiness"
+import { readinessInputOf } from "./engine-readiness-input"
 import { canOpenAgentPicker } from "./handoff/plan-composer-switch"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -38,6 +40,7 @@ export function AgentPicker({
   const open = useChatStore((state) => state.agentPickerOpen)
   const setOpen = useChatStore((state) => state.setAgentPickerOpen)
   const runtimeId = useChatStore((state) => state.runtimeId)
+  const hasKey = useChatStore((state) => state.hasKey)
   const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const pendingToId = useEngineHandoffStore((state) => state.toRuntimeId)
   const snapshot = useSettingsSnapshot()
@@ -108,6 +111,7 @@ export function AgentPicker({
     setTabId(id)
     const agent = agents.find((item) => item.id === id)
     if (!agent || !canSwitchAgent(agent)) return
+    if (!canBindEngine(readinessInputOf(agent, { hasKey }))) return
     await applyAgent(id)
   }
 
@@ -159,7 +163,9 @@ export function AgentPicker({
           {pickerLocked ? null : (
             <span
               className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
-                current ? (isEngineReady(current) ? "bg-accent-500" : "bg-text-tertiary") : "bg-text-tertiary"
+                current && isEngineLit(readinessInputOf(current, { hasKey }))
+                  ? "bg-accent-500"
+                  : "bg-text-tertiary"
               }`}
             />
           )}
@@ -177,7 +183,9 @@ export function AgentPicker({
           "flex w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card",
           tab && tab.id !== DEFAULT_RUNTIME_ID && !canSwitchAgent(tab)
             ? "max-h-[390px]"
-            : "h-[390px]"
+            : tab && tab.id !== DEFAULT_RUNTIME_ID && !canBindEngine(readinessInputOf(tab, { hasKey }))
+              ? "max-h-[390px]"
+              : "h-[390px]"
         )}
       >
         <AgentEngineRail

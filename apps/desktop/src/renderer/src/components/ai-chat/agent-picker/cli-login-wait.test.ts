@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
-import { providerLoggedIn, waitCliProviderReady } from "./cli-login-wait.ts"
+import { engineLoggedIn, providerLoggedIn, waitCliEngineReady, waitCliProviderReady } from "./cli-login-wait.ts"
 
 function snap(loggedIn: boolean): InspectAgentToolResult {
   return {
@@ -41,6 +41,25 @@ test("打开授权页后第一次 inspect 仍未登录，必须继续等到 logg
   })
   assert.equal(outcome, "ready")
   assert.equal(rows.length, 0)
+})
+
+test("引擎级登录只信 authAccount.loggedIn，spawn 成功不算", async () => {
+  assert.equal(engineLoggedIn({ id: "claude", models: [] }), false)
+  const rows: InspectAgentToolResult[] = [
+    { id: "claude", models: [] },
+    { id: "claude", models: [], authAccount: { loggedIn: true, email: "a@b.com" } }
+  ]
+  let clock = 0
+  const outcome = await waitCliEngineReady({
+    inspect: async () => rows.shift() ?? { id: "claude", models: [], authAccount: { loggedIn: true } },
+    intervalMs: 10,
+    timeoutMs: 1_000,
+    now: () => clock,
+    sleep: async (ms) => {
+      clock += ms
+    }
+  })
+  assert.equal(outcome, "ready")
 })
 
 test("一直未登录则超时，避免把 browser_opened 当成成功", async () => {

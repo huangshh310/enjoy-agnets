@@ -1,139 +1,77 @@
 /**
- * 运行模式胶囊：对标 Vercel AI SDK 7 完整支持的智能体执行模式体系。
- * 涵盖 ToolLoopAgent 核心循环、只读问答/架构蓝图，以及 Workflow/TDD/CodeMode 高阶工程工作流。
+ * 运行模式胶囊：智能体 / 规划 / 问答 / 调试。
+ * 规划与问答不注册写工具；调试与智能体同一套写工具，只换提示词。
  */
+import { useEffect } from "react"
 import {
   RiArrowDownSLine,
   RiBugLine,
   RiCheckLine,
-  RiCommandLine,
   RiCompass3Line,
   RiQuestionLine,
-  RiRouteLine,
-  RiTerminalBoxLine,
-  RiTestTubeLine
+  RiTerminalBoxLine
 } from "@remixicon/react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { useT, type TranslateFn } from "@renderer/i18n"
-
-
-export type ModeCategory = "core" | "engineering"
+import { coerceComposerMode, COMPOSER_VISIBLE_MODES, type ComposerVisibleMode } from "./composer/composer-mode"
 
 export interface ModeItemConfig {
-  id: AgentMode
+  id: ComposerVisibleMode
   label: string
   desc: string
   badge: string
-  category: ModeCategory
   icon: typeof RiTerminalBoxLine
-  colorClass: string
-  bgClass: string
-  iconColor: string
 }
 
-const MODE_ITEM_DEFS: Array<Omit<ModeItemConfig, "label" | "desc" | "badge">> = [
-  {
-    id: "agent",
-    category: "core",
-    icon: RiTerminalBoxLine,
-    colorClass: "text-purple-600 dark:text-purple-300",
-    bgClass: "bg-purple-500/10 border-purple-500/25 hover:bg-purple-500/15 dark:bg-purple-500/15 dark:border-purple-500/30",
-    iconColor: "text-purple-500 dark:text-purple-400"
-  },
-  {
-    id: "plan",
-    category: "core",
-    icon: RiCompass3Line,
-    colorClass: "text-amber-600 dark:text-amber-300",
-    bgClass: "bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:border-amber-500/30",
-    iconColor: "text-amber-500 dark:text-amber-400"
-  },
-  {
-    id: "ask",
-    category: "core",
-    icon: RiQuestionLine,
-    colorClass: "text-sky-600 dark:text-sky-300",
-    bgClass: "bg-sky-500/10 border-sky-500/25 hover:bg-sky-500/15 dark:bg-sky-500/15 dark:border-sky-500/30",
-    iconColor: "text-sky-500 dark:text-sky-400"
-  },
-  {
-    id: "debug",
-    category: "core",
-    icon: RiBugLine,
-    colorClass: "text-rose-600 dark:text-rose-300",
-    bgClass: "bg-rose-500/10 border-rose-500/25 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
-    iconColor: "text-rose-500 dark:text-rose-400"
-  },
-  {
-    id: "workflow",
-    category: "engineering",
-    icon: RiRouteLine,
-    colorClass: "text-emerald-600 dark:text-emerald-300",
-    bgClass: "bg-emerald-500/10 border-emerald-500/25 hover:bg-emerald-500/15 dark:bg-emerald-500/15 dark:border-emerald-500/30",
-    iconColor: "text-emerald-500 dark:text-emerald-400"
-  },
-  {
-    id: "tdd",
-    category: "engineering",
-    icon: RiTestTubeLine,
-    colorClass: "text-indigo-600 dark:text-indigo-300",
-    bgClass: "bg-indigo-500/10 border-indigo-500/25 hover:bg-indigo-500/15 dark:bg-indigo-500/15 dark:border-indigo-500/30",
-    iconColor: "text-indigo-500 dark:text-indigo-400"
-  },
-  {
-    id: "code_mode",
-    category: "engineering",
-    icon: RiCommandLine,
-    colorClass: "text-cyan-600 dark:text-cyan-300",
-    bgClass: "bg-cyan-500/10 border-cyan-500/25 hover:bg-cyan-500/15 dark:bg-cyan-500/15 dark:border-cyan-500/30",
-    iconColor: "text-cyan-500 dark:text-cyan-400"
-  }
-]
+const MODE_ICONS: Record<ComposerVisibleMode, typeof RiTerminalBoxLine> = {
+  agent: RiTerminalBoxLine,
+  plan: RiCompass3Line,
+  ask: RiQuestionLine,
+  debug: RiBugLine
+}
 
-const MODE_COPY: Record<AgentMode, { label: string; desc: string; badge: string }> = {
-  agent: { label: "chat.modeAgent", desc: "chat.modeAgentDesc", badge: "chat.modeAgentBadge" },
+const MODE_COPY: Record<ComposerVisibleMode, { label: string; desc: string; badge: string }> = {
+  agent: { label: "chat.modeAgent", desc: "chat.modeAgentDesc", badge: "chat.modeWriteBadge" },
   plan: { label: "chat.modePlan", desc: "chat.modePlanDesc", badge: "chat.modeReadOnlyBadge" },
   ask: { label: "chat.modeAsk", desc: "chat.modeAskDesc", badge: "chat.modeReadOnlyBadge" },
-  debug: { label: "chat.modeDebug", desc: "chat.modeDebugDesc", badge: "chat.modeDebugBadge" },
-  workflow: { label: "chat.modeWorkflow", desc: "chat.modeWorkflowDesc", badge: "chat.modeWorkflowBadge" },
-  tdd: { label: "chat.modeTdd", desc: "chat.modeTddDesc", badge: "chat.modeTddBadge" },
-  code_mode: { label: "chat.modeCode", desc: "chat.modeCodeDesc", badge: "chat.modeCodeBadge" }
+  debug: { label: "chat.modeDebug", desc: "chat.modeDebugDesc", badge: "chat.modeDebugBadge" }
 }
 
 export function getModeItems(t: TranslateFn): ModeItemConfig[] {
-  return MODE_ITEM_DEFS.map((item) => ({
-    ...item,
-    label: t(MODE_COPY[item.id].label),
-    desc: t(MODE_COPY[item.id].desc),
-    badge: t(MODE_COPY[item.id].badge)
+  return COMPOSER_VISIBLE_MODES.map((id) => ({
+    id,
+    label: t(MODE_COPY[id].label),
+    desc: t(MODE_COPY[id].desc),
+    badge: t(MODE_COPY[id].badge),
+    icon: MODE_ICONS[id]
   }))
 }
 
 export function ExecutionModeMenu({
   mode,
   onChange,
-  align = "start"
+  align = "end"
 }: {
   mode: AgentMode
   onChange: (mode: AgentMode) => void
   align?: "start" | "end"
 }) {
-  align = align ?? "end"
   const t = useT()
   const items = getModeItems(t)
-  const active = items.find((item) => item.id === mode) ?? items[0]
+  const visible = coerceComposerMode(mode)
+  const active = items.find((item) => item.id === visible) ?? items[0]
   const ActiveIcon = active.icon
 
-  const coreItems = items.filter((item) => item.category === "core")
-  const engineeringItems = items.filter((item) => item.category === "engineering")
+  useEffect(() => {
+    if (visible !== mode) onChange(visible)
+  }, [mode, visible, onChange])
 
   return (
     <DropdownMenu>
@@ -143,13 +81,13 @@ export function ExecutionModeMenu({
           aria-label={t("chat.selectMode")}
           className={cx(
             "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-caption-1-semibold transition-all shadow-2xs outline-none cursor-pointer active:scale-[0.97]",
-            "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-            active.bgClass,
-            active.colorClass
+            "border-border-button-default bg-background-secondary-default text-text-primary",
+            "hover:bg-background-secondary-hover",
+            "focus-visible:ring-2 focus-visible:ring-border-focus-ring"
           )}
         >
-          <ActiveIcon className={cx("size-3.5 shrink-0", active.iconColor)} />
-          <span className="whitespace-nowrap">模式: {active.label}</span>
+          <ActiveIcon className="size-3.5 shrink-0 text-foreground-icon-secondary" />
+          <span className="whitespace-nowrap">{active.label}</span>
           <RiArrowDownSLine className="size-3 opacity-60 ml-0.5" />
         </button>
       </DropdownMenuTrigger>
@@ -161,17 +99,13 @@ export function ExecutionModeMenu({
         <div className="px-2 pt-1 pb-1.5 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
           {t("chat.modeCoreGroup")}
         </div>
-        {coreItems.map((item) => (
-          <ModeMenuItem key={item.id} item={item} selected={mode === item.id} onPick={() => onChange(item.id)} />
-        ))}
-
-        <DropdownMenuSeparator className="-mx-1 my-1.5 bg-separator-border" />
-
-        <div className="px-2 pt-1 pb-1.5 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
-          {t("chat.modeWorkflowGroup")}
-        </div>
-        {engineeringItems.map((item) => (
-          <ModeMenuItem key={item.id} item={item} selected={mode === item.id} onPick={() => onChange(item.id)} />
+        {items.map((item) => (
+          <ModeMenuItem
+            key={item.id}
+            item={item}
+            selected={visible === item.id}
+            onPick={() => onChange(item.id)}
+          />
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -199,8 +133,8 @@ function ModeMenuItem({
       )}
     >
       <div className="flex items-start gap-2.5 min-w-0 flex-1">
-        <div className={cx("flex size-6 shrink-0 items-center justify-center rounded-lg border mt-0.5", item.bgClass)}>
-          <ItemIcon className={cx("size-3.5", item.iconColor)} />
+        <div className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-border-button-default bg-background-secondary-default mt-0.5">
+          <ItemIcon className="size-3.5 text-foreground-icon-secondary" />
         </div>
         <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -212,7 +146,7 @@ function ModeMenuItem({
           <span className="text-caption-2-regular text-text-tertiary leading-snug mt-0.5">{item.desc}</span>
         </div>
       </div>
-      {selected ? <RiCheckLine className={cx("size-4 shrink-0 ml-1.5", item.iconColor)} /> : null}
+      {selected ? <RiCheckLine className="size-4 shrink-0 ml-1.5 text-text-secondary" /> : null}
     </DropdownMenuItem>
   )
 }

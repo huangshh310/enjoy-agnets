@@ -91,7 +91,6 @@ function UserCardMenuItemRow({
   onSelect: () => void
 }) {
   const Icon = item.icon
-  const isSignOut = item.id === "sign-out"
 
   return (
     <button
@@ -102,21 +101,14 @@ function UserCardMenuItemRow({
       }}
       className={cx(
         "group flex w-full cursor-pointer items-center justify-between rounded-xl px-2.5 py-2 text-left outline-none transition-all duration-150 active:scale-[0.98]",
-        isSignOut
-          ? "text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
-          : item.isSelected
-            ? "bg-background-secondary-hover text-text-primary"
-            : "text-text-primary hover:bg-background-secondary-hover/90"
+        item.isSelected
+          ? "bg-background-secondary-hover text-text-primary"
+          : "text-text-primary hover:bg-background-secondary-hover/90"
       )}
     >
       <span className="flex min-w-0 flex-1 items-center gap-2.5">
         <Icon
-          className={cx(
-            "size-4 shrink-0 transition-colors",
-            isSignOut
-              ? "text-rose-500 group-hover:text-rose-600 dark:group-hover:text-rose-400"
-              : "text-foreground-icon-secondary group-hover:text-accent-500"
-          )}
+          className="size-4 shrink-0 text-foreground-icon-secondary transition-colors group-hover:text-accent-500"
           aria-hidden
         />
         <span className="truncate text-caption-1-medium">{item.label}</span>

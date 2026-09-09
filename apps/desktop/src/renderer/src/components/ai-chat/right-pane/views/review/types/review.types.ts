@@ -13,6 +13,7 @@ export type ReviewScope =
   | "staged"       // 已暂存：工作区已经 git add 的索引文件
   | "commits"      // 已提交：Git 线性历史记录
   | "branch"       // 分支：当前分支与基础分支的整体对比
+  | "checkpoints"  // 检查点：Agent 写盘快照，不进用户分支
 
 /** 基础标签分段模式 */
 export type ReviewTabMode = "changes" | "commits"

@@ -20,6 +20,8 @@ export async function openAcpStream(input: {
   /** ACP 忽略 Fast / 思考档；切回 Local 时 store 里的值仍保留。 */
   effort?: string
   fast?: boolean
+  /** 垫进 session/prompt；CLI 仍自己读工作区 AGENTS.md。 */
+  customInstructions?: string
 }): Promise<OpenedCodingStream> {
   if (!isAcpHostRuntime(input.runtimeId)) {
     throw new Error(`${input.runtimeId} is not a wired ACP host runtime.`)
@@ -55,7 +57,8 @@ export async function openAcpStream(input: {
       modelId: override?.modelId || publicTool?.selectedModel
     },
     env: injectedEnv,
-    waitForApproval: input.waitForSubagentApproval
+    waitForApproval: input.waitForSubagentApproval,
+    customInstructions: input.customInstructions
   })
   return {
     stream: opened.stream,
@@ -85,7 +88,8 @@ async function openCustomAcpStream(
       modelId: record.modelId
     },
     env: record.env,
-    waitForApproval: input.waitForSubagentApproval
+    waitForApproval: input.waitForSubagentApproval,
+    customInstructions: input.customInstructions
   })
   return {
     stream: opened.stream,

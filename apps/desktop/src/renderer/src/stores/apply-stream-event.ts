@@ -32,6 +32,7 @@ export function reduceStreamEvent(
   if (terminal) return terminal
   const approval = applyApprovalEvent(messages, event, activeRunId)
   if (approval) return approval
+  if (event.type === "file.changed") return { messages }
   if (!isLivePart(event.type) || !event.runId) return { messages }
   const next = cloneMessages(messages)
   const assistant = attachAssistant(next, event.runId, activeRunId)

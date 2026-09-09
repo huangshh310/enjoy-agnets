@@ -18,9 +18,7 @@ import type { ComposerProps } from "./composer.types"
 import { useT } from "@renderer/i18n"
 
 export function ComposerFooter({
-  composer,
   hasDraft,
-  onComposerChange,
   running,
   modelLabel,
   modelId,
@@ -60,11 +58,7 @@ export function ComposerFooter({
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
       <div className="flex min-w-0 items-center gap-2">
-        <ComposerAttachMenu
-          composer={composer}
-          onComposerChange={onComposerChange}
-          onPickFiles={onPickFiles}
-        />
+        <ComposerAttachMenu onPickFiles={onPickFiles} />
         <SessionMeter />
       </div>
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1">

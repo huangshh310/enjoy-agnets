@@ -27,12 +27,35 @@ export function applyInspect(
     return {
       ...tool,
       models,
-      providers: hit.providers ?? tool.providers,
+      providers: mergeProviders(hit.providers, tool.providers),
       selectedModel: selected,
-      authAccount: hit.authAccount,
-      quotaInfo: hit.quotaInfo
+      authAccount: hit.authAccount ?? tool.authAccount,
+      quotaInfo: hit.quotaInfo ?? tool.quotaInfo
     }
   })
+}
+
+/** 空数组常是 inspect 竞态，不要把已有供应商表冲掉。 */
+function mergeProviders(
+  incoming: AgentToolPublic["providers"],
+  fallback: AgentToolPublic["providers"]
+): AgentToolPublic["providers"] {
+  if (incoming === undefined) return fallback
+  if (incoming.length === 0 && fallback?.length) return fallback
+  return incoming
+}
+
+/** allSettled 后只收成功项，一家失败不能让整表停在 loggedIn==null。 */
+export function settledInspectResults(
+  results: PromiseSettledResult<InspectAgentToolResult>[]
+): InspectAgentToolResult[] {
+  return results.flatMap((item) => (item.status === "fulfilled" ? [item.value] : []))
+}
+
+/** 当前引擎先检测，避免 Hermes/OMP 拖死 Claude。 */
+export function orderInspectTargets<T extends { id: string }>(targets: T[], preferId?: string): T[] {
+  if (!preferId) return [...targets]
+  return [...targets].sort((left, right) => Number(right.id === preferId) - Number(left.id === preferId))
 }
 
 function mergeModels(

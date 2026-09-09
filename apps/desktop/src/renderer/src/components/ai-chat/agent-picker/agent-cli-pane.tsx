@@ -9,9 +9,10 @@ import { hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { AgentCliInstall } from "./agent-cli-install"
 import { AgentCliModels } from "./agent-cli-models"
-import { completeCliProviderLogin } from "./cli-login-action"
+import { completeCliEngineLogin, completeCliProviderLogin } from "./cli-login-action"
 import { loginHintFor } from "./cli-login-hint"
 import { engineReadiness, readinessSubtitle } from "./engine-readiness"
+import { readinessInputOf } from "./engine-readiness-input"
 
 export function AgentCliPane({
   agent,
@@ -28,25 +29,35 @@ export function AgentCliPane({
   const [loginBusy, setLoginBusy] = useState<string | null>(null)
   const [loginHint, setLoginHint] = useState("")
   const switchable = canSwitchAgent(agent)
-  const kind = engineReadiness({
-    id: agent.id,
-    status: agent.status,
-    comingSoon: agent.comingSoon,
-    requiresLogin: capabilitiesOf(agent).login,
-    loggedIn: agent.authAccount?.loggedIn ?? null
-  })
+  const kind = engineReadiness(readinessInputOf(agent))
   const subtitle = readinessSubtitle(kind, t)
+  const cap = capabilitiesOf(agent)
+
+  async function finishLogin(result: { ok: boolean; message: string }) {
+    setLoginHint(loginHintFor(result.message, result.ok, t))
+    if (!result.ok) return
+    onInstalled()
+    onUse()
+  }
 
   async function loginProvider(providerId: string) {
     if (!hasIde() || loginBusy) return
     setLoginBusy(providerId)
     try {
-      const result = await completeCliProviderLogin({
+      await finishLogin(await completeCliProviderLogin({
         toolId: agent.id as AgentToolId,
         providerId
-      })
-      setLoginHint(loginHintFor(result.message, result.ok, t))
-      if (result.ok) onInstalled()
+      }))
+    } finally {
+      setLoginBusy(null)
+    }
+  }
+
+  async function loginEngine() {
+    if (!hasIde() || loginBusy) return
+    setLoginBusy(agent.id)
+    try {
+      await finishLogin(await completeCliEngineLogin({ toolId: agent.id as AgentToolId }))
     } finally {
       setLoginBusy(null)
     }
@@ -64,14 +75,20 @@ export function AgentCliPane({
     <div className="flex min-h-0 flex-1 flex-col">
       <AgentCliModels
         agent={agent}
+        readiness={kind}
         onPick={(model) => onUse(model)}
         onUseDefault={() => onUse()}
         onLoginProvider={(id) => void loginProvider(id)}
+        onLoginEngine={() => void loginEngine()}
         loginBusy={loginBusy}
         loginHint={loginHint}
         inspecting={inspecting}
       />
-      <CliPaneFoot hint={loginHint} subtitle={subtitle} />
+      <CliPaneFoot
+        hint={loginHint}
+        subtitle={subtitle}
+        showFastNote={cap.fast !== "none" || cap.thinking !== "none"}
+      />
     </div>
   )
 }
@@ -79,23 +96,34 @@ export function AgentCliPane({
 function CliSoonPane({ label }: { label: string }) {
   const t = useT()
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-8 text-center">
       <RiCompass3Line className="size-8 text-text-tertiary opacity-60" />
-      <p className="mt-2 text-body-medium font-medium text-text-primary">{label}</p>
-      <p className="mt-1 text-caption-1-regular text-text-secondary">{t("chat.agentSoonHint")}</p>
+      <p className="text-body-medium font-medium text-text-primary">{label}</p>
+      <p className="text-caption-1-regular text-text-secondary">{t("chat.agentSoonHint")}</p>
     </div>
   )
 }
 
-function CliPaneFoot({ hint, subtitle }: { hint: string; subtitle: string }) {
+function CliPaneFoot({
+  hint,
+  subtitle,
+  showFastNote
+}: {
+  hint: string
+  subtitle: string
+  showFastNote: boolean
+}) {
   const t = useT()
+  if (!hint && !subtitle && !showFastNote) return null
   return (
     <div className="border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-caption-2-medium text-text-tertiary">
       {hint ? <p className="text-text-secondary">{hint}</p> : null}
       {subtitle ? <p className={hint ? "mt-1 text-text-secondary" : "text-text-secondary"}>{subtitle}</p> : null}
-      <p className={hint || subtitle ? "mt-1 truncate" : "truncate"} title={t("chat.cliFastViaModel")}>
-        {t("chat.cliFastViaModel")}
-      </p>
+      {showFastNote ? (
+        <p className={hint || subtitle ? "mt-1 truncate" : "truncate"} title={t("chat.cliFastViaModel")}>
+          {t("chat.cliFastViaModel")}
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -722,5 +722,22 @@ export const enSettings = {
     presetDesc: "Used for automatic protocol fallback, token limit defaults, and contextual help documentation.",
     testingSpeed: "Testing speed...",
     fetchingModels: "Fetching models…"
+  },
+
+  localBilling: {
+    title: "No in-app billing",
+    body: "Enjoy Agents does not sell plans or seats. Quotas live with each CLI or your own provider key. There is nothing to upgrade here."
+  },
+  localTeam: {
+    title: "Local only",
+    body: "Enjoy Agents has no cloud organization sync. You are the only operator on this machine. Use local Git for collaboration — there are no invite seats.",
+    membersBody: "There is no member directory or invite flow. This machine has only you."
+  },
+  localIntegrations: {
+    title: "Local integrations",
+    body: "There is no enterprise “connected” status. Third-party tools go through local MCP — do not tap a fake connect button here.",
+    openMcp: "Open MCP",
+    orgTitle: "No cloud organization",
+    orgBody: "There is no legal-entity badge, company domain, or SOC2 seal. Data residency is the workspace you opened."
   }
 }

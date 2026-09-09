@@ -12,6 +12,7 @@ import { planComposerSwitch, sessionHasUserTurns } from "./plan-composer-switch"
 import type { EngineHandoffState } from "./plan-composer-switch.types"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { restoreComposerEngineSelection } from "./restore-composer-engine"
+import { HANDOFF_CONFIRM_FAILED } from "@renderer/lib/usage/classify-thread-error"
 
 const idle: EngineHandoffState = {
   phase: "idle",
@@ -89,31 +90,38 @@ export async function confirmEngineHandoff(): Promise<boolean> {
   }
   if (!isAgentToolId(state.toRuntimeId) || !isAgentToolId(state.fromRuntimeId)) return false
   useEngineHandoffStore.setState({ phase: "disposing" })
-  await abortComposerRun()
-  if (hasIde()) {
-    await getIde().agentTools.disposeSession({ sessionId })
-    await getIde().agentTools.setHandoff({
-      sessionId,
-      fromRuntimeId: state.fromRuntimeId as AgentToolId,
-      toRuntimeId: state.toRuntimeId as AgentToolId,
-      summary: formatHandoffHidden(state.draftSummary, state.filePaths) || "上一引擎会话已结束。"
-    })
-  }
-  await persistRuntimeId(state.toRuntimeId, state.modelId)
-  useEngineHandoffStore.setState({
-    phase: "idle",
-    fromRuntimeId: null,
-    toRuntimeId: null,
-    modelId: undefined,
-    draftSummary: "",
-    filePaths: [],
-    banner: {
-      sessionId,
-      fromRuntimeId: state.fromRuntimeId,
-      toRuntimeId: state.toRuntimeId
+  try {
+    await abortComposerRun()
+    if (hasIde()) {
+      await getIde().agentTools.disposeSession({ sessionId })
+      await getIde().agentTools.setHandoff({
+        sessionId,
+        fromRuntimeId: state.fromRuntimeId as AgentToolId,
+        toRuntimeId: state.toRuntimeId as AgentToolId,
+        summary: formatHandoffHidden(state.draftSummary, state.filePaths) || "上一引擎会话已结束。"
+      })
     }
-  })
-  return true
+    await persistRuntimeId(state.toRuntimeId, state.modelId)
+    useEngineHandoffStore.setState({
+      phase: "idle",
+      fromRuntimeId: null,
+      toRuntimeId: null,
+      modelId: undefined,
+      draftSummary: "",
+      filePaths: [],
+      banner: {
+        sessionId,
+        fromRuntimeId: state.fromRuntimeId,
+        toRuntimeId: state.toRuntimeId
+      }
+    })
+    return true
+  } catch (error) {
+    const raw = error instanceof Error ? error.message : String(error)
+    useChatStore.getState().setError(raw.includes("HANDOFF") ? raw : HANDOFF_CONFIRM_FAILED)
+    useEngineHandoffStore.setState({ phase: "handoff_pending" })
+    return false
+  }
 }
 
 /** 取消交接：清 pending，并把 chat.runtimeId 拉回 from。 */

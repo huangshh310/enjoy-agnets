@@ -60,14 +60,14 @@ test("六家快照：spawn / thinking / fast / quota / providerBind", () => {
   assert.equal(capabilitiesFor("antigravity").quota, true)
 })
 
-test("已接线六家：HMAC 审批、可纠偏、无 Resume/委派/斜杠目录", () => {
+test("已接线引擎：HMAC 审批、可纠偏、无 Resume/斜杠目录；仅 Enjoy Local 委派", () => {
   for (const id of WIRED) {
     const cap = capabilitiesFor(id)
     assert.equal(cap.spawn, true)
     assert.equal(cap.permissionUi, "enjoy-hmac")
     assert.equal(cap.steer, true)
     assert.equal(cap.resumeFork, false)
-    assert.equal(cap.delegate, false)
+    assert.equal(cap.delegate, id === "enjoy-local")
     assert.notEqual(cap.slash, "acp-list")
   }
 })

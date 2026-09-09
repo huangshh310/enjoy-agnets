@@ -29,6 +29,7 @@ export type StreamAcpTurnInput = {
     toolCallId: string
     input: unknown
   }) => Promise<"allow" | "deny" | "allow_session">
+  customInstructions?: string
 }
 
 type LiveAcp = {
@@ -50,7 +51,9 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   live.runId = input.runId
   live.waitForApproval = input.waitForApproval
   sessionByRun.set(input.runId, input.sessionId)
-  const text = composeAcpPrompt(input.messages)
+  const text = composeAcpPrompt(input.messages, {
+    customInstructions: input.customInstructions
+  })
   const queue: StreamEvent[] = []
   let wake: (() => void) | undefined
   let finished = false

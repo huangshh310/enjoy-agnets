@@ -22,6 +22,8 @@ import {
 } from "./agent-run-state"
 import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
 import { clearSteer } from "./runtime-interact/steering-queue"
+import { takeSessionHandoff } from "./session-handoff"
+import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 
 export async function pumpStream(runId: string) {
   const run = getActiveRun(runId)
@@ -52,6 +54,7 @@ async function runOnePump(
   timedOut: () => boolean
 ) {
   const opened = await openRunStream(runId, run, prefs)
+  takeSessionHandoff(run.input.sessionId)
   await consumeRun(runId, run, opened.stream)
   const extraMessages = await readResponseMessages(opened.result)
   if (extraMessages.length > 0) {
@@ -168,9 +171,18 @@ async function consumeRun(
     onCheckpoint: () => {
       checkpointActiveRun(run)
     },
-    emit: (event) => emitEvent(run.window, event)
+    emit: (event) => {
+      emitEvent(run.window, event)
+      noteFileChangedCheckpoint(run, event)
+    }
   })
   checkpointActiveRun(run)
+}
+
+function noteFileChangedCheckpoint(run: ActiveRun, event: { type: string }): void {
+  if (event.type !== "file.changed" || run.checkpointNoted) return
+  run.checkpointNoted = true
+  void recordEnjoyCheckpoint(run.workspaceRoot).catch(() => undefined)
 }
 
 function parkForApproval(run: ActiveRun): boolean {

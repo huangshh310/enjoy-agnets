@@ -2,7 +2,7 @@
  * CLI 模型浏览：左栏供应商 + 右栏模型 / 登录空态。
  */
 import { useMemo, useState } from "react"
-import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesFor, type AgentCliModel, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiSearchLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
 import { CliModelRow } from "./cli-model-row"
@@ -144,8 +144,10 @@ function CliModelsPane({
         </li>
       ))}
       {visible.length === 0 ? (
-        <li className="py-6 text-center text-caption-2-medium text-text-tertiary">
-          {t("chat.noModelsFound")}
+        <li className="px-6 py-6 text-center text-caption-2-medium text-text-tertiary">
+          {capabilitiesFor(agentId).models === "none"
+            ? t("chat.cliDefaultModelHint")
+            : t("chat.noModelsFound")}
         </li>
       ) : null}
     </ul>

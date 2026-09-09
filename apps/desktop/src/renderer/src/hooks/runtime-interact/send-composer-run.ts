@@ -2,7 +2,7 @@
  * 空闲发送：占 running 槽、乐观气泡、再开 agent.run / 媒体生成。
  */
 import { resolveMediaType } from "@enjoy-agents/assets/media-type"
-import { getIde, hasIde } from "../../lib/ide"
+import { getIde } from "../../lib/ide"
 import { isAcpComposerRuntime } from "../../lib/agent-runtime"
 import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
@@ -14,6 +14,8 @@ import {
   dropEmptyPendingAssistant
 } from "../composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
+import { takeComposerSlash } from "../../components/ai-chat/composer/composer-mode"
+import { guardComposerSend } from "./send-composer-guard"
 import { clearComposerDraft, takeComposerText } from "./composer-draft"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
@@ -30,7 +32,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
   store.setRunning(true)
-  if (!(await guardComposer(store))) {
+  if (!guardComposerSend(store)) {
     store.setRunning(false)
     return
   }
@@ -45,7 +47,10 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
 
 function resolveSendPayload(prepared?: PreparedSend): SendPayload | null {
   const fromDraft = !prepared
-  const content = prepared?.content ?? takeComposerText()
+  const raw = prepared?.content ?? takeComposerText()
+  const parsed = takeComposerSlash(raw)
+  if (parsed.mode) useChatStore.getState().setMode(parsed.mode)
+  const content = parsed.text
   if (!content) return null
   if (fromDraft) clearComposerDraft()
   const queuedAssets = prepared?.assets ?? takeComposerAssetDetails()
@@ -146,19 +151,3 @@ async function startComposerRun(
   })
 }
 
-async function guardComposer(store: ChatState): Promise<boolean> {
-  if (!hasIde()) {
-    store.setError("The desktop IPC bridge is not available.")
-    return false
-  }
-  if (!store.workspaceId || !store.sessionId) {
-    store.setError("Open a workspace folder before running an agent.")
-    return false
-  }
-  if (isAcpComposerRuntime(store.runtimeId) || store.hasKey) return true
-  void import("../../router").then(({ router }) => {
-    void router.navigate({ to: "/settings/$section", params: { section: "providers" } })
-  })
-  store.setError("Add a provider API key in Settings before running an agent.")
-  return false
-}

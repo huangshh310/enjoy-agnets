@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { classifyThreadError } from "./classify-thread-error.ts"
+import {
+  classifyThreadError,
+  NEED_CLI_INSPECTING,
+  NEED_CLI_LOGIN,
+  NEED_PROVIDER_KEY
+} from "./classify-thread-error.ts"
 
 test("402 / spend / credit 走 L4，不并进泛化限流", () => {
   assert.equal(classifyThreadError("402 Payment Required"), "credit")
@@ -17,4 +22,14 @@ test("429 才是速率限制", () => {
 test("普通供应商错误保持 generic", () => {
   assert.equal(classifyThreadError("model not found"), "generic")
   assert.equal(classifyThreadError("No output generated"), "generic")
+})
+
+test("ACP 未登录不是可重试供应商错误", () => {
+  assert.equal(classifyThreadError(NEED_CLI_LOGIN), "auth")
+  assert.equal(
+    classifyThreadError("ACP_AUTH_REQUIRED: this CLI needs login before a session can start."),
+    "auth"
+  )
+  assert.equal(classifyThreadError(NEED_PROVIDER_KEY), "needs_key")
+  assert.equal(classifyThreadError(NEED_CLI_INSPECTING), "inspecting")
 })

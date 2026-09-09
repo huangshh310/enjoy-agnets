@@ -1,14 +1,11 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-08
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-09
 
 ## 当前真相
 
 内核在 `packages/agent-core`（纯 TS）。Electron main 的 `agent-runner` 建模型、注入 workspace host、消费 `fullStream`，映射成 `StreamEvent` 再 `webContents.send("agent.event")`。
-模式（`AgentMode`）：对标 Vercel AI SDK 7 架构，支持两大类 7 种模式：
-1. **AI SDK 7 核心智能体循环 (Core Loops)**：`agent` (ToolLoopAgent 全功能自主编码)、`plan` (架构规划蓝图，只读)、`ask` (只读问答与检索，只读)、`debug` (系统性根因诊断与修复)。
-2. **高阶专业工程工作流 (Specialized Engineering)**：`workflow` (WorkflowAgent 多阶段流水平水线)、`tdd` (测试驱动开发红-绿-重构循环)、`code_mode` (代码模式批量脚本执行)。
-系统提示由 `systemPromptFor(mode)` 针对各模式注入；`plan` / `ask` 强制只读，其余模式写盘与终端执行按审批策略放行。
+模式（`AgentMode` 合约仍是 7 值）：Composer 菜单只露 **智能体 / 规划 / 问答 / 调试**。`plan` / `ask` **不注册** `write_file` / `edit_file` / `bash` / `git_commit` / `code_mode`，模型看不见这些工具；审批层仍对漏网调用 deny。`agent` / `debug` 注册全套写工具（调试只换诊断提示词）。`workflow` / `tdd` / `code_mode` 仍在 enum 与 `systemPromptFor`，菜单与发送会 `coerceComposerMode` 成 `agent`。句首 `/plan` `/ask` `/agent` `/debug` 切模式。系统提示由 `systemPromptFor(mode)` + 设置里的 `customInstructions` + 常驻项目规则（无 globs / `alwaysApply`，见 `pickAlwaysOnRules`）+ 技能索引（`formatSkillCatalog`，不灌 SKILL.md 正文）注入；ACP 只把自定义说明垫进 `session/prompt`，不灌 Enjoy ToolLoop 提示词。`enjoy-local.delegate=true`：主循环注入 `delegate`；子 Agent 不再套 delegate，但接同一份 `extraInstructions`。
 开流三分：`isAcpHostRuntime(runtimeId)` → `streamAcpTurn`；否则 `codingRuntime: "harness"` → 现有沙箱桥；否则 Enjoy Local ToolLoop。ACP 开流忽略 `fast` / `reasoningEffort` / 执行模式（不传 `session/set_mode`）；纠偏对 ACP 是下一轮 `session/prompt` 文本。Enjoy Local Fast 开且 profile 有 `fastModelId` 时本轮用极速模型，不改 Composer 当前 `modelId`。本机 CLI 契约见 [agent-cli](./agent-cli.md)。DeepSeek **本机 CLI** 走 `dsh --profile acp`；旧 SDK 沙箱 Harness 适配器仍占位。外部 CLI **不是**默认内核。
 思考档按模型族发：官方族与 Kimi K3 走顶层 `reasoning`；DeepSeek 用 `providerOptions.deepseek`；MiniMax-M3 用兼容层 `thinking`，`reasoning_split` 只给官方 MiniMax 域名；GLM 用 `thinking.enabled` + `reasoningEffort`。流里的 `error` 部件要抛出并解开 cause。
 
@@ -39,7 +36,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 `run.start` → `text.delta` / `reasoning.delta` / `tool.*` / `approval.*` / `file.changed` / v2：`message.part.*` `structured.delta` `source.added` `asset.created` `usage.updated` `step.*` `workflow.*` `mcp.*` `realtime.*` `generation.warning` → `run.end` | `run.error`
 
-`delegate` 独立上下文只回 `SubagentSummary`。plan/ask 只有读工具；agent/debug 用 `createCodingTools`（不含再 delegate），写盘 / bash 经 `createSubagentApproval` 挂到主 run 的 `approval.required`。没有等待器时拒绝，不偷偷执行。Workflow / Code Mode 审批仍在 main。UIMessage parts 与旧 `content` 并存。
+`delegate` 独立上下文只回 `SubagentSummary`。`createCodingTools(host, { mode })`：plan/ask 只有读工具 + `todo_write` + `ask_user_questions` + `git_status` / `git_diff`；agent/debug 再加写工具。`createMcpAgentTools({ mode })`：plan/ask 不注册写名 MCP（leaf 匹配 `write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send`，与 `isMcpWriteToolName` 同一规则）；只读 MCP 在规划里是 `not-applicable`。子 Agent `includeAskUser: false` 且不再套 delegate。写盘 / bash 经 `createSubagentApproval` 挂到主 run 的 `approval.required`。没有等待器时拒绝，不偷偷执行。检查器 `toolNames` 与开流注册集一致（含按 mode 过滤的 MCP）。写盘成功后 main 记 `refs/enjoy/checkpoints/<stamp>`（临时 index + `commit-tree`，含未跟踪；不进用户当前分支）。ACP `file.changed` 每个 run 最多记一次。Review「检查点」可 `read-tree` + `checkout-index` 还原工作区与暂存区，不移动 HEAD；还原成功切到「未提交」。`applySettingsSnapshot` **不得**用 `preferences.defaultMode` 覆盖当前会话 mode。新建会话才 `modeForNewSession(defaultMode)`。UIMessage parts 与旧 `content` 并存。
 
 会话消息存在 SQLite。用户轮在发送时落库。助手侧复杂载荷用 `assistant-payload` 序列化（reasoning + tool + sources / assets / structured），不要把 tool JSON 当纯文本渲染。助手 transcript / tools 挂在 `ActiveRun` 上跨审批泵累积；流式过程按 `tool.result` / `approval.required` 立刻、`text.delta` / `reasoning.delta` 每 1.5s 节流 `checkpointActiveRun`，**同一条**助手消息 UPDATE，不新插行。`complete` / `fail` / `abort` / `before-quit` 再走 `persistActiveRun` 封口并改 `runs.status`。进程启动把库里遗留 `running` 标 `cancelled`（内存态已没了，无法续）。刷新会话时 `hydrate-thread` 优先读信封，缺失则从 `message_parts` 补回。
 
@@ -56,12 +53,13 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 - 建 agent / 流：`packages/agent-core/src/agent.ts`
 - 子 Agent 审批：`packages/agent-core/src/agents/subagent-approval.ts`、`subagent-loop.ts`
-- 工具：`packages/agent-core/src/tools/index.ts`、`todo-write.ts`、`ask-user-questions.ts`
+- 工具：`packages/agent-core/src/tools/index.ts`、`write-tools.ts`、`coding-tool-names.ts`、`todo-write.ts`、`ask-user-questions.ts`
 - 审批：`packages/agent-core/src/tool-approval.ts`
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
 - 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）
+- 写盘检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-restore.ts`
 - 纠偏队列：`runtime-interact/steering-queue.ts`、`steer-agent.ts`、`absorb-steering.ts`；检查点：`prepare-step.ts`（`mergeSteeringMessages`，仅 step≥1 注入）+ `agent-pump` 收工前 `absorbSteering`
 - 引导词：`packages/ipc-contract/src/action-chip.ts`；点击分流 `action-chip-intent.ts` / `apply-action-chip.ts`；气泡 `message-action-chips.tsx`
 - 排队 / 草稿：`hooks/followup-queue.ts`、`followup-autostart.ts`；发送拆到 `hooks/runtime-interact/`（`composer-draft` / `steer-composer` / `send-composer-run`）
@@ -71,7 +69,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 附件：`apps/desktop/src/main/services/attach-run-files.ts`
 - 用户附件落库 / 旧消息回挂：`persist-user-attachments.ts`、`user-attachment-parts.ts`
 - 会话上下文压缩与状态：`packages/agent-core/src/compaction/session-compactor.ts`、`apps/desktop/src/main/services/session-compaction-service.ts`（编排）、`session-compaction-store.ts`、`session-compaction-summary.ts`。压缩只改发给模型的 `ModelMessage[]`，UI 历史不删。注入一条 `[CONVERSATION SUMMARY]`，不再插虚构助手句。摘要优先 `generateText`（当前档案 `fastModelId || modelId`），失败回落规则抽取。错误码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，renderer 翻词表。
-- 本轮 ModelMessage 快照：`inspect-prompt-snapshot.ts`、`inspect-prompt-service.ts`；`openCodingStream` 开流时 `captureOpenStreamPrompt`。`agent.inspectPrompt` 优先未过期快照，否则 preview（已压缩则带 SUMMARY）。
+- 本轮 ModelMessage 快照：`inspect-prompt-snapshot.ts`、`inspect-prompt-service.ts`；`openCodingStream` 开流时 `captureOpenStreamPrompt`。`agent.inspectPrompt` 优先未过期快照，否则 preview（已压缩则带 SUMMARY）。拼指令：`inspect-prompt-instructions.ts`；常驻规则：`packages/ipc-contract/src/rules-always-on.ts`；技能索引：`packages/ipc-contract/src/skills-catalog.ts`。
 - SDK 能力表：[../references/vercel-ai-sdk-7-feature-matrix.md](../references/vercel-ai-sdk-7-feature-matrix.md)
 
 ## 已知坑
@@ -85,6 +83,9 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - AICSS Approval Card 的 plan 变体会 30s 倒计时后自动 `onApprove`。本产品不允许：没有倒计时 UI，也没有静默放行。写盘 / bash / commit 必须等人点允许、拒绝或本会话允许。
 - 审批分类：ACP 弱名 `command` + `argv` 走 command；不要用「有 args.command」把 MCP 收成 shell。questions 的 Continue 按选项 id 分流，禁止和 `t("chat.alwaysAllow")` 比字符串。
 - `ask_user_questions` 不是写盘，plan/ask 不得当只读拒绝。不要原样上架 Fluid registry（Base UI、framer-motion、Lucide、`bg-card`）。答案不能塞进 HMAC 校验的落库 args；放行后放 `ActiveRun.questionAnswers`，execute 再 take。禁止对本工具 `allow_session`：必须在 `recordApprovalDecision` 之前抛，否则库内行写死、卡片还停着。`toHarnessApprovalSettings` 不要登记该工具（ACP/CLI 没有 `createCodingTools`）。tool-approval 的 node:test 不能 value-import ipc-contract 入口（缺 `permission-mode`），工具名常量放 `ask-user-questions-name.ts`。
+- 设置「说明」能存却不进 Enjoy Local：旧路径只给 Harness 拼 `customInstructions`。必须 `streamCodingAgent({ extraInstructions })`，检查器同一套 `codingInstructions`。ACP inspect 不得回 `systemPromptFor` 假装 CLI 用了 ToolLoop 提示词。Skills 只注入索引（名/描述/工作区相对路径），禁止灌 `SkillItem.content`。
+- 子 Agent 若只用自己的短角色句，会丢掉用户说明与技能目录。`runDelegatedSubagent` 必须接父级 `extraInstructions`。
+- plan/ask 只靠 `resolveToolApproval` deny 不够：模型仍会看见 `write_file` 并空转。必须 `createCodingTools(..., { mode })` 不注册写工具。`enjoy-local.delegate` 必须与是否注入 `delegate` 同一边。
 - 建工具时必须闭包注入 `AgentWorkspaceHost`。AI SDK 7 不会把 runtimeContext 传进 `execute` 的 `options.context`。
 - 结构化输出在 v7 已并入 `generateText` / `streamText` 的 `output`，不要再用旧的 `generateObject` 主路径。
 - 渲染线程：Thinking 用 Beautiful UI 风格 trace，不要把 `message.content` 当纯字符串倒出来。

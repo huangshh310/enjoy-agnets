@@ -18,7 +18,7 @@ import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
 import { getActiveCompactedHistory } from "./session-compaction-service"
-import { prependHandoffHistory, takeSessionHandoff } from "./session-handoff"
+import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   const input = RunAgentInput.parse(rawInput)
@@ -69,8 +69,8 @@ async function beginAgentRun(
 
   const runId = options.runId ?? createId("run")
   const effectiveMessages = await getActiveCompactedHistory(input.sessionId, input.messages)
-  const taken = takeSessionHandoff(input.sessionId)
-  const handoffText = taken ? formatHandoffContext(taken).trim() : null
+  const peeked = peekSessionHandoff(input.sessionId)
+  const handoffText = peeked ? formatHandoffContext(peeked).trim() : null
   const history = prependHandoffHistory(effectiveMessages, handoffText)
   const modelMessages = toModelMessages(history)
   holdAgentRun({

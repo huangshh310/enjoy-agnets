@@ -17,7 +17,7 @@ export function AgentCliInstall({
   onDone: () => void
 }) {
   const t = useT()
-  const [busy, setBusy] = useState<"install" | "login" | null>(null)
+  const [busy, setBusy] = useState<"install" | "detect" | null>(null)
   const [copied, setCopied] = useState(false)
   const [message, setMessage] = useState("")
   const canOneClick = agent.installKind !== "copy"
@@ -34,16 +34,13 @@ export function AgentCliInstall({
     if (result.ok) onDone()
   }
 
-  async function login() {
+  async function rescan() {
     if (!hasIde()) return
-    setBusy("login")
+    setBusy("detect")
     setMessage("")
-    const result = (await getIde().agentTools.login({ id: agent.id as AgentToolId })) as {
-      ok: boolean
-      message: string
-    }
+    await getIde().agentTools.detect()
     setBusy(null)
-    setMessage(result.message)
+    onDone()
   }
 
   async function copyCommand() {
@@ -81,11 +78,9 @@ export function AgentCliInstall({
             {copied ? t("chat.agentInstallCopied") : t("chat.agentInstallCopy")}
           </Button>
         ) : null}
-        {agent.status === "ready" ? (
-          <Button type="button" size="sm" variant="outline" disabled={busy !== null} onClick={() => void login()}>
-            {busy === "login" ? t("chat.agentLoggingIn") : t("chat.agentLogin")}
-          </Button>
-        ) : null}
+        <Button type="button" size="sm" variant="outline" disabled={busy !== null} onClick={() => void rescan()}>
+          {busy === "detect" ? t("chat.agentScanning") : t("chat.agentRescan")}
+        </Button>
       </div>
       {agent.docsUrl ? (
         <button

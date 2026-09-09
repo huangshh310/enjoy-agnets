@@ -1,30 +1,50 @@
 /**
- * C 端导轨 / Picker 就绪语义。只允许 ready（可空）、未安装、需登录。
- * 禁止把协议或登录方式写成常驻副文案。
+ * C 端导轨 / Picker / 发送口共用的就绪语义。
+ * PATH 找到二进制 ≠ 能开流；inspect 未回 ≠ 已登录。
  */
-export type EngineReadiness = "ready" | "missing" | "needs_login" | "soon"
+export type EngineReadiness =
+  | "ready"
+  | "missing"
+  | "needs_login"
+  | "inspecting"
+  | "needs_key"
+  | "soon"
 
-export function engineReadiness(tool: {
+export type EngineReadinessInput = {
   id: string
   status: string
   comingSoon?: boolean
   requiresLogin?: boolean
   loggedIn?: boolean | null
-}): EngineReadiness {
+  hasKey?: boolean
+}
+
+export function engineReadiness(tool: EngineReadinessInput): EngineReadiness {
   if (tool.comingSoon || tool.status === "comingSoon") return "soon"
-  if (tool.id === "enjoy-local") return "ready"
+  if (tool.id === "enjoy-local") return tool.hasKey === false ? "needs_key" : "ready"
   if (tool.status === "missing" || tool.status === "skillOnly") return "missing"
   if (tool.requiresLogin && tool.loggedIn === false) return "needs_login"
+  if (tool.requiresLogin && tool.loggedIn !== true) return "inspecting"
   return "ready"
 }
 
-/** 就绪态不写副标题；即将推出走分组标题，卡片上也可省略。 */
-export function readinessSubtitle(
-  kind: EngineReadiness,
-  t: (path: string) => string
-): string {
+/** 绿灯 / 发送：只有 ready。Enjoy Local 无密钥不是 ready。 */
+export function isEngineLit(tool: EngineReadinessInput): boolean {
+  return engineReadiness(tool) === "ready"
+}
+
+/** 点导轨是否立刻 bind。未登录只打开面板，不换 runtime。本地始终可切。 */
+export function canBindEngine(tool: EngineReadinessInput): boolean {
+  if (tool.id === "enjoy-local") return true
+  return engineReadiness(tool) === "ready"
+}
+
+/** 就绪态不写副标题；即将推出走分组标题。 */
+export function readinessSubtitle(kind: EngineReadiness, t: (path: string) => string): string {
   if (kind === "missing") return t("chat.agentNotInstalled")
   if (kind === "needs_login") return t("chat.agentNeedsLogin")
+  if (kind === "inspecting") return t("chat.agentInspecting")
+  if (kind === "needs_key") return t("chat.agentNeedsKey")
   if (kind === "soon") return t("chat.agentSoon")
   return ""
 }
@@ -33,6 +53,8 @@ export function readinessSubtitle(
 export function readinessMarkKey(kind: EngineReadiness): string | null {
   if (kind === "missing") return "chat.agentNotInstalledMark"
   if (kind === "needs_login") return "chat.agentNeedsLoginMark"
+  if (kind === "inspecting") return "chat.agentInspectingMark"
+  if (kind === "needs_key") return "chat.agentNeedsKeyMark"
   if (kind === "soon") return "chat.agentSoonMark"
   return null
 }

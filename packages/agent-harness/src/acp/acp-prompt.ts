@@ -4,6 +4,7 @@
 import type { ModelMessage } from "ai"
 
 export const HANDOFF_PREFIX = "[Engine handoff — hidden context, not a user message]"
+export const CUSTOM_INSTRUCTIONS_PREFIX = "[Enjoy custom instructions]"
 
 export function formatHandoffContext(input: {
   fromRuntimeId: string
@@ -28,11 +29,16 @@ export function acpProcessKey(
   return `${toolId}:${modelId?.trim() || ""}:${JSON.stringify(env || {})}`
 }
 
-export function composeAcpPrompt(messages: ModelMessage[]): string {
+export function composeAcpPrompt(
+  messages: ModelMessage[],
+  extras?: { customInstructions?: string }
+): string {
   const user = lastUserText(messages)
   const handoff = extractHandoffText(messages)
-  if (!handoff) return user
-  return `${handoff}\n\n---\n${user}`
+  const custom = extras?.customInstructions?.trim()
+    ? `${CUSTOM_INSTRUCTIONS_PREFIX}\n${extras.customInstructions.trim()}`
+    : ""
+  return [custom, handoff, user].filter(Boolean).join("\n\n---\n")
 }
 
 export function lastUserText(messages: ModelMessage[]): string {
@@ -55,13 +61,37 @@ function extractHandoffText(messages: ModelMessage[]): string {
 function userTextOf(message: ModelMessage | undefined): string {
   if (!message || message.role !== "user") return ""
   const text = plainText(message)
-  const hasFile = hasFilePart(message)
-  if (text.trim() && hasFile) {
-    return `${text}\n[User also attached files. They are not forwarded over the ACP text prompt.]`
+  const files = attachmentLines(message)
+  if (text.trim() && files.length > 0) {
+    return `${text}\n\nAttached workspace files:\n${files.join("\n")}`
   }
   if (text.trim()) return text
-  if (hasFile) return "[User attached files. They are not forwarded over the ACP text prompt.]"
+  if (files.length > 0) return `Attached workspace files:\n${files.join("\n")}`
   return ""
+}
+
+/** 只写工作区相对路径 / 文件名，不把二进制灌进 JSON-RPC。 */
+function attachmentLines(message: ModelMessage): string[] {
+  if (!Array.isArray(message.content)) return []
+  const lines: string[] = []
+  for (const part of message.content) {
+    if (part.type !== "file" && part.type !== "image") continue
+    const name = filePartName(part as unknown as Record<string, unknown>)
+    if (!name) continue
+    lines.push(`- ${name}`)
+  }
+  return lines
+}
+
+function filePartName(part: Record<string, unknown>): string {
+  const raw =
+    (typeof part.filename === "string" && part.filename) ||
+    (typeof part.name === "string" && part.name) ||
+    (typeof part.path === "string" && part.path) ||
+    ""
+  const name = raw.trim().replace(/\\/g, "/")
+  if (!name || name.length > 400 || /[\n\r]/.test(name)) return ""
+  return name
 }
 
 function plainText(message: ModelMessage): string {
@@ -73,9 +103,3 @@ function plainText(message: ModelMessage): string {
     .join("\n")
 }
 
-function hasFilePart(message: ModelMessage): boolean {
-  return (
-    Array.isArray(message.content) &&
-    message.content.some((part) => part.type === "file" || part.type === "image")
-  )
-}

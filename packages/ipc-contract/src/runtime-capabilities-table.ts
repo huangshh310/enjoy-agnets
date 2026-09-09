@@ -62,7 +62,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     askUser: "enjoy-hmac",
     steer: true,
     realtime: true,
-    delegate: false,
+    delegate: true,
     providerBind: "none"
   },
   claude: acpHost({

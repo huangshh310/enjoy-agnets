@@ -4,7 +4,12 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
-import { applyInspect, shouldInspect } from "./merge-agent-tool-inspect.ts"
+import {
+  applyInspect,
+  orderInspectTargets,
+  settledInspectResults,
+  shouldInspect
+} from "./merge-agent-tool-inspect.ts"
 
 function tool(partial: Partial<AgentToolPublic> & Pick<AgentToolPublic, "id">): AgentToolPublic {
   return {
@@ -72,6 +77,45 @@ test("OMP inspect 合并可登录供应商", () => {
   const merged = applyInspect([tool({ id: "omp", models: [] })], [inspect])
   assert.equal(merged[0]?.providers?.length, 2)
   assert.equal(merged[0]?.providers?.[1]?.loggedIn, false)
+})
+
+test("inspect 带回空 providers 且本地已有表时保留原表", () => {
+  const merged = applyInspect(
+    [
+      tool({
+        id: "omp",
+        models: [],
+        providers: [{ id: "anthropic", label: "Anthropic", loggedIn: false }]
+      })
+    ],
+    [{ id: "omp", models: [], providers: [] }]
+  )
+  assert.equal(merged[0]?.providers?.length, 1)
+  assert.equal(merged[0]?.providers?.[0]?.id, "anthropic")
+})
+
+test("inspect 没带回 authAccount 时保留旧账号，不要当成从未检测", () => {
+  const merged = applyInspect(
+    [tool({ id: "claude", authAccount: { loggedIn: true, email: "a@b.c" } })],
+    [{ id: "claude", models: [] }]
+  )
+  assert.equal(merged[0]?.authAccount?.loggedIn, true)
+  assert.equal(merged[0]?.authAccount?.email, "a@b.c")
+})
+
+test("allSettled 只收成功项；当前引擎排前面", () => {
+  const settled = settledInspectResults([
+    { status: "rejected", reason: new Error("hermes") },
+    { status: "fulfilled", value: { id: "claude", models: [] } }
+  ])
+  assert.deepEqual(
+    settled.map((item) => item.id),
+    ["claude"]
+  )
+  assert.deepEqual(
+    orderInspectTargets([{ id: "hermes" }, { id: "claude" }], "claude").map((item) => item.id),
+    ["claude", "hermes"]
+  )
 })
 
 test("inspect 没带回 providers 时保留原表，不要写成空数组", () => {

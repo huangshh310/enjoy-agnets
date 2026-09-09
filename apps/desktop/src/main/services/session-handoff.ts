@@ -4,7 +4,7 @@
  */
 import { SetHandoffInput } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "./database"
-import { parseHandoffs, type HandoffRecord } from "./session-handoff-parse.ts"
+import { consumeHandoff, parseHandoffs, peekHandoff, type HandoffRecord } from "./session-handoff-parse.ts"
 
 export { parseHandoffs, prependHandoffHistory } from "./session-handoff-parse.ts"
 
@@ -17,12 +17,15 @@ export function writeSessionHandoff(input: SetHandoffInput): void {
   setSetting(KEY, JSON.stringify(all))
 }
 
-/** 取出并删除；开流只注入一次。 */
+/** 只读；开流失败必须还能再注入。 */
+export function peekSessionHandoff(sessionId: string): HandoffRecord | null {
+  return peekHandoff(parseHandoffs(getSetting(KEY)), sessionId)
+}
+
+/** 模型已经吃到 brief 之后才删。 */
 export function takeSessionHandoff(sessionId: string): HandoffRecord | null {
-  const all = parseHandoffs(getSetting(KEY))
-  const taken = all[sessionId] ?? null
+  const { taken, next } = consumeHandoff(parseHandoffs(getSetting(KEY)), sessionId)
   if (!taken) return null
-  delete all[sessionId]
-  setSetting(KEY, JSON.stringify(all))
+  setSetting(KEY, JSON.stringify(next))
   return taken
 }

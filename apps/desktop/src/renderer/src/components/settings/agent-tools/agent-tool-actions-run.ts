@@ -10,9 +10,10 @@ import type {
   SyncCliConfigResult,
   UninstallAgentToolResult
 } from "@enjoy-agents/ipc-contract"
-import { persistRuntimeId } from "@renderer/hooks/persist-runtime"
-import { completeCliProviderLogin } from "@renderer/components/ai-chat/agent-picker/cli-login-action"
+import { completeCliEngineLogin, completeCliProviderLogin } from "@renderer/components/ai-chat/agent-picker/cli-login-action"
+import { requestEngineSwitch } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { router } from "@renderer/router"
 
 export type AgentToolBusy = "install" | "login" | "doctor" | "activate" | "uninstall" | null
 
@@ -23,7 +24,10 @@ export async function handleMakeActive(
 ) {
   setBusy("activate")
   try {
-    await persistRuntimeId(tool.id, tool.selectedModel)
+    const result = await requestEngineSwitch(tool.id, tool.selectedModel)
+    if (result === "pending" || result === "blocked") {
+      await router.navigate({ to: "/" })
+    }
     await queryClient.invalidateQueries({ queryKey: ["settings"] })
   } finally {
     setBusy(null)
@@ -71,9 +75,7 @@ export async function handleLogin(
           toolId: tool.id as AgentToolId,
           providerId: provider
         })
-      : ((await getIde().agentTools.login({
-          id: tool.id as AgentToolId
-        })) as { ok: boolean; message: string })
+      : await completeCliEngineLogin({ toolId: tool.id as AgentToolId })
     setFeedback(res.message)
     await getIde().agentTools.inspect({ id: tool.id as AgentToolId, refresh: true })
     await queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })

@@ -123,7 +123,7 @@ export const enStudio = {
   instructions: {
     title: "Global System Instructions",
     badge: "System Prompt Context",
-    desc: "Configure global instructions and working habits. They are injected into the model System Prompt at the start of every Agent session.",
+    desc: "Injected into Enjoy Local’s system prompt. For a local CLI they are prepended to this turn’s session/prompt. Glob-gated rules are not auto-injected.",
     presetsHint: "Common behavior presets (click to append):",
     clickToAppend: "Click to append",
     stats: "{chars} chars · {lines} lines",
@@ -133,14 +133,14 @@ export const enStudio = {
     save: "Save instructions",
     placeholder:
       "e.g. Prefer precise local edits; avoid rewriting whole files. Keep files under 300 lines. Run verification commands before finishing.",
-    helper: "Clear negative constraints and verification gates significantly improve Agent code quality."
+    helper: "Enjoy Local includes this text every turn. A local CLI only prepends it to the user prompt; the CLI still reads AGENTS.md from disk."
   },
   rules: {
     filterAll: "All rules",
     title: "Project Rules & Guidelines",
     badge: "Multi-Agent Standards",
-    desc: "Scan and manage AGENTS.md, CLAUDE.md, Cursor MDC, GitHub Copilot, and Windsurf rules in one place.",
-    activeCount: "{count} active rules",
+    desc: "Scan AGENTS.md, CLAUDE.md, Cursor MDC, and similar files. Unglobbed or alwaysApply rules inject into Enjoy Local; glob-gated rules do not.",
+    activeCount: "{count} injected into Enjoy Local",
     newRule: "New rule",
     searchPlaceholder: "Search rules or files...",
     emptyTitle: "No agent rule files found",

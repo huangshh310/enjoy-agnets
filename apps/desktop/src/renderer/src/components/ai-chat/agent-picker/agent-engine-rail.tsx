@@ -55,7 +55,6 @@ export function AgentEngineRail({
       {cli.length > 0 || soon.length > 0 ? (
         <RailGroup
           label={t("chat.railCli")}
-          cue={t("chat.railCliCue")}
           scroll
           scrollKey={`${cli.length}:${soon.length}`}
         >

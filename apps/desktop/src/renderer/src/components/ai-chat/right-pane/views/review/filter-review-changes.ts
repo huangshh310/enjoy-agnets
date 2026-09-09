@@ -12,7 +12,7 @@ export function filterChangesByScope(
   lastTurnPaths: string[],
   branchFiles: ChangedFileRow[]
 ): ChangedFileRow[] {
-  if (scope === "commits") return []
+  if (scope === "commits" || scope === "checkpoints") return []
   if (scope === "unstaged") {
     return changes.filter((file) => file.worktree || file.status === "untracked")
   }

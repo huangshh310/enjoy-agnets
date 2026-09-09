@@ -159,3 +159,27 @@ export const GitRestoreResult = z.object({
   restored: z.number().int().nonnegative()
 })
 export type GitRestoreResult = z.infer<typeof GitRestoreResult>
+
+/** Agent 写盘快照。ref 必须是 refs/enjoy/checkpoints/<stamp>。 */
+export const EnjoyCheckpointItem = z.object({
+  ref: z.string().min(1),
+  sha: z.string().min(1),
+  createdAt: z.number().int().positive()
+})
+export type EnjoyCheckpointItem = z.infer<typeof EnjoyCheckpointItem>
+
+export const ListCheckpointsResult = z.object({
+  checkpoints: z.array(EnjoyCheckpointItem)
+})
+export type ListCheckpointsResult = z.infer<typeof ListCheckpointsResult>
+
+export const RestoreCheckpointInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    ref: z.string().regex(/^refs\/enjoy\/checkpoints\/\d+$/)
+  })
+  .strict()
+export type RestoreCheckpointInput = z.infer<typeof RestoreCheckpointInput>
+
+export const RestoreCheckpointResult = GitRestoreResult
+export type RestoreCheckpointResult = GitRestoreResult

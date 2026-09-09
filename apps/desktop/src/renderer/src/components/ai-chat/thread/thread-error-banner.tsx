@@ -1,13 +1,8 @@
 /**
- * 助手会话错误横幅组件 (Thread Error Banner)
- * 采用结构化卡片呈现错误原因、提供「重新生成 / 重试」、「切换模型」与「关闭」操作，取代生硬单行红字。
+ * 会话错误卡：额度走 L4，鉴权打开登录，密钥留在 Chat。
  */
-import {
-  RiAlertLine,
-  RiCloseLine,
-  RiRefreshLine,
-  RiSettings3Line
-} from "@remixicon/react"
+import { RiAlertLine, RiCloseLine, RiKey2Line, RiRefreshLine, RiUserLine } from "@remixicon/react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { continueTodoTurn } from "@renderer/hooks/continue-todo-turn"
@@ -19,24 +14,19 @@ import { useT } from "@renderer/i18n"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
 
-
-interface ThreadErrorBannerProps {
-  error: string
-  className?: string
-}
-
-export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) {
+export function ThreadErrorBanner({ error, className }: { error: string; className?: string }) {
   const t = useT()
   const navigate = useNavigate()
-  if (classifyThreadError(error) === "credit") {
+  const queryClient = useQueryClient()
+  const kind = classifyThreadError(error)
+  if (kind === "credit") {
     return <QuotaExhaustedCard error={error} id="thread-error-banner" />
   }
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
-
-  const lastAssistant = messages.filter((m) => m.role === "assistant").at(-1)
-  const lastUser = messages.filter((m) => m.role === "user").at(-1)
+  const lastAssistant = messages.filter((item) => item.role === "assistant").at(-1)
+  const lastUser = messages.filter((item) => item.role === "user").at(-1)
 
   function handleRetry() {
     setError(null)
@@ -52,75 +42,109 @@ export function ThreadErrorBanner({ error, className }: ThreadErrorBannerProps) 
     }
   }
 
-  function handleDismiss() {
+  function handleAuth() {
     setError(null)
+    useChatStore.getState().setAgentPickerOpen(true)
   }
 
-  function handleManageModel() {
-    void navigate({
-      to: "/settings/$section",
-      params: { section: "providers" }
-    })
+  function handleAddKey() {
+    setError(null)
+    void navigate({ to: "/settings/$section", params: { section: "providers" } })
   }
+
+  const title =
+    kind === "auth"
+      ? t("chat.acpAuthRequired")
+      : kind === "inspecting"
+        ? t("chat.agentInspecting")
+        : kind === "needs_key"
+          ? t("chat.needProviderKeyTitle")
+          : kind === "rate_limit"
+            ? t("chat.usage.rateLimitTitle")
+            : t("chat.errorTitle")
+  const detail =
+    kind === "auth"
+      ? t("chat.needCliLoginHint")
+      : kind === "inspecting"
+        ? t("chat.needCliInspectingHint")
+        : kind === "needs_key"
+          ? t("chat.needProviderKeyHint")
+          : error.includes("HANDOFF_CONFIRM_FAILED")
+            ? t("chat.handoffConfirmFailed")
+            : error
 
   return (
     <div
       id="thread-error-banner"
       data-testid="thread-error-banner"
       className={cx(
-        "relative my-2 flex w-full max-w-[40rem] flex-col gap-2.5 rounded-2xl border",
-        "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20 p-4 text-text-primary",
-        "shadow-card backdrop-blur-xs animate-in fade-in-50 duration-200 select-none",
+        "relative my-2 flex w-full max-w-[40rem] flex-col gap-2.5 rounded-2xl border border-border-error-default",
+        "bg-background-tertiary-error p-4 text-text-primary shadow-card",
+        "animate-in fade-in-50 duration-200 select-none",
         className
       )}
     >
       <div className="flex items-start gap-3">
-        {/* 左侧警示图标 */}
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-2xs">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-border-error-default bg-background-primary-default text-text-error-primary">
           <RiAlertLine className="size-4.5" aria-hidden />
         </div>
-
-        {/* 右侧错误详情与操作 */}
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-body-medium font-semibold text-text-primary">
-              {classifyThreadError(error) === "rate_limit" ? t("chat.usage.rateLimitTitle") : t("chat.errorTitle")}
-            </span>
+            <span className="text-body-medium font-semibold text-text-primary">{title}</span>
             <button
               type="button"
-              onClick={handleDismiss}
+              onClick={() => setError(null)}
               title={t("chat.dismissError")}
-              className="text-text-tertiary hover:text-text-primary transition-colors cursor-pointer"
+              className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
             >
               <RiCloseLine className="size-4" />
             </button>
           </div>
-
-          <p className="text-caption-1-medium text-text-secondary leading-relaxed font-mono select-text break-words">
-            {error}
-          </p>
-
-          {/* 快捷操作栏 */}
+          <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2 pt-1">
-            {!running ? (
+            {kind === "inspecting" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null)
+                  void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
+                }}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white"
+              >
+                <RiRefreshLine className="size-3" />
+                <span>{t("chat.retryInspect")}</span>
+              </button>
+            ) : null}
+            {kind === "auth" ? (
+              <button
+                type="button"
+                onClick={handleAuth}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white"
+              >
+                <RiUserLine className="size-3" />
+                <span>{t("chat.openCliLogin")}</span>
+              </button>
+            ) : null}
+            {kind === "needs_key" ? (
+              <button
+                type="button"
+                onClick={handleAddKey}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white"
+              >
+                <RiKey2Line className="size-3" />
+                <span>{t("chat.addProviderKey")}</span>
+              </button>
+            ) : null}
+            {kind !== "auth" && kind !== "needs_key" && kind !== "inspecting" && !running ? (
               <button
                 type="button"
                 onClick={handleRetry}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs transition-all hover:bg-background-secondary-hover hover:border-accent-500/40 cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs hover:border-accent-500/40 hover:bg-background-secondary-hover"
               >
                 <RiRefreshLine className="size-3 text-accent-500" />
                 <span>{t("common.retry")}</span>
               </button>
             ) : null}
-
-            <button
-              type="button"
-              onClick={handleManageModel}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-secondary shadow-2xs transition-all hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer"
-            >
-              <RiSettings3Line className="size-3" />
-              <span>{t("chat.switchModelKey")}</span>
-            </button>
           </div>
         </div>
       </div>

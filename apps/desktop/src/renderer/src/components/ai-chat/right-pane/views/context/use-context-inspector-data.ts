@@ -9,7 +9,13 @@ import {
 } from "@renderer/hooks/session-context-chips"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import type { McpServer, ProjectRuleItem, SkillItem, TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import type {
+  McpServer,
+  ProjectRuleItem,
+  SettingsSnapshot,
+  SkillItem,
+  TelemetryMetric
+} from "@enjoy-agents/ipc-contract"
 import { applySessionCompaction } from "@enjoy-agents/agent-core/compaction"
 import { citedSourcesFromMessages, toolsFromMessages } from "./thread-run-slice"
 import { contextWindowForModel } from "@renderer/lib/model-context-window"
@@ -24,6 +30,7 @@ export function useContextInspectorData(workspaceId: string | null) {
     listSessionContextChips
   )
   const catalogs = useInspectorCatalogs(workspaceId)
+  const customInstructions = useCustomInstructions()
   const { compaction } = useSessionCompaction(slice.sessionId)
   const contextWindow = contextWindowForModel(slice.models, slice.modelId)
   const effectiveMessages = compaction
@@ -35,7 +42,8 @@ export function useContextInspectorData(workspaceId: string | null) {
     catalogs.mcp,
     catalogs.rules,
     catalogs.skills,
-    chips
+    chips,
+    customInstructions
   )
 
   return {
@@ -94,6 +102,15 @@ function useInspectorCatalogs(workspaceId: string | null) {
     skills: skillsQuery.data ?? [],
     metric: metricsQuery.data?.[0] ?? null
   }
+}
+
+function useCustomInstructions(): string {
+  const settingsQuery = useQuery({
+    queryKey: ["settings"],
+    enabled: hasIde(),
+    queryFn: () => getIde().settings.get() as Promise<SettingsSnapshot>
+  })
+  return settingsQuery.data?.preferences.customInstructions ?? ""
 }
 
 function useIdeQuery<T>(queryKey: unknown[], queryFn: () => Promise<T>, extraEnabled = true) {

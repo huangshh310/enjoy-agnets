@@ -1,6 +1,10 @@
 export { createCodingAgent, streamCodingAgent } from "./agent";
+export type { CodingAgentOptions, StreamCodingAgentOptions } from "./coding-agent-options";
+export { joinInstructions } from "./join-instructions";
 export {
   resolveToolApproval,
+  isMcpWriteToolName,
+  mcpToolLeafName,
   toHarnessApprovalSettings,
   WRITE_TOOLS,
   BASH_TOOLS,
@@ -86,7 +90,7 @@ export { createDelegateTool, runReadOnlySubagent, runDelegatedSubagent } from ".
 export { runApprovedSubagent } from "./agents/subagent-loop";
 export { createSubagentApproval, type WaitForSubagentApproval } from "./agents/subagent-approval";
 export { createReadTools, READ_TOOL_NAMES } from "./tools/read-tools";
-export { CODING_TOOL_NAMES } from "./tools/coding-tool-names";
+export { CODING_TOOL_NAMES, codingToolNamesFor, isReadOnlyAgentMode } from "./tools/coding-tool-names";
 export { isExperimentalMedia, EXPERIMENTAL_MEDIA } from "./media/capabilities";
 export {
   generateImageBytes,

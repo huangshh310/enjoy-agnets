@@ -717,5 +717,22 @@ export const zhSettings = {
     presetDesc: "用于自动协议回退、默认 token 上限与上下文帮助文档。",
     testingSpeed: "正在测速…",
     fetchingModels: "正在拉取模型…"
+  },
+
+  localBilling: {
+    title: "没有自营账单",
+    body: "Enjoy Agents 不卖套餐、不收席位费。额度在各家 CLI 或你自己的供应商密钥里。这里没有可点的升级。"
+  },
+  localTeam: {
+    title: "本地单机",
+    body: "Enjoy Agents 没有云端组织同步。当前只有本机这一位操作者。多人协作请用本机 Git，不要期待邀请席位。",
+    membersBody: "没有成员目录或邀请函。本机只有你自己。"
+  },
+  localIntegrations: {
+    title: "本机集成",
+    body: "没有企业级「已连接」状态。第三方能力走本机 MCP，不要在这里点假连接。",
+    openMcp: "打开 MCP",
+    orgTitle: "没有云端组织",
+    orgBody: "没有法人认证、企业域名或 SOC2 印章。数据驻留就是你打开的工作区。"
   }
 }

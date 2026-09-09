@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { StreamEvent, type AskUserAnswers, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
 import { pickActiveModel } from "./pick-active-model"
@@ -42,10 +43,15 @@ export function useAgentSession() {
       const parsed = StreamEvent.safeParse(raw)
       if (!parsed.success) return
       dispatchAgentEvent(parsed.data)
-      if (parsed.data.type === "run.end" || parsed.data.type === "tool.result") {
+      if (
+        parsed.data.type === "run.end" ||
+        parsed.data.type === "tool.result" ||
+        parsed.data.type === "file.changed"
+      ) {
         const workspaceId = useChatStore.getState().workspaceId
         if (workspaceId) {
           void queryClient.invalidateQueries({ queryKey: ["changes", workspaceId] })
+          void queryClient.invalidateQueries({ queryKey: ["checkpoints", workspaceId] })
         }
       }
     })
@@ -135,11 +141,12 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()
   store.setHasKey(snapshot.hasKey)
   store.setProvider(snapshot.provider)
+  rememberDefaultMode(snapshot.preferences?.defaultMode)
+  // 会话 mode 由 Composer / 句首斜杠决定。默认项只在设置页写入，refetch 不得打回 agent。
   const preferred = snapshot.preferences?.runtimeId ?? "enjoy-local"
   store.setPreferredRuntimeId(preferred)
   store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
   store.setRuntimeId(pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, preferred))
-  if (snapshot.preferences?.defaultMode) store.setMode(snapshot.preferences.defaultMode)
   if (!hasIde()) return
   const models = (await getIde().models.list()) as ModelOption[]
   store.setModels(models)

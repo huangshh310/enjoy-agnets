@@ -1,6 +1,6 @@
 /**
  * 审查作用域下拉选单组件：
- * 对齐 Codex Image #8 交互规范，支持在“上一轮”、“未提交”、“未暂存”、“已暂存”、“已提交”与“分支”间自由切换。
+ * 对齐 Codex 作用域，并加 Enjoy 写盘检查点。
  */
 
 import { RiArrowDownSLine, RiCheckLine } from "@remixicon/react"

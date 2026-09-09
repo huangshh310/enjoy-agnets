@@ -53,6 +53,11 @@ test("last-turn 没有 git 命中仍列出 path，避免审查栏空白", () => 
   assert.equal(next[0]?.additions, 0)
 })
 
+test("checkpoints 不走改动列表", () => {
+  const next = filterChangesByScope([row("a.ts")], "checkpoints", [], [])
+  assert.deepEqual(next, [])
+})
+
 test("branch 合并上游文件与工作区", () => {
   const working = [row("a.ts", { additions: 3 })]
   const branch = [row("a.ts", { additions: 1 }), row("c.ts")]

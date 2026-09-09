@@ -69,19 +69,27 @@ export function resolveToolApproval(
   return "user-approval"
 }
 
+const MCP_WRITE_LEAF = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
+
+export function mcpToolLeafName(toolName: string): string {
+  return toolName.includes("__") ? toolName.slice(toolName.indexOf("__") + 2) : toolName
+}
+
+export function isMcpWriteToolName(toolName: string): boolean {
+  return MCP_WRITE_LEAF.test(mcpToolLeafName(toolName))
+}
+
 function resolveMcpApproval(
   toolName: string,
   mode: AgentMode,
   policy: ApprovalPolicy
 ): ToolApprovalDecision {
-  if (mode === "ask" || mode === "plan") {
+  if ((mode === "ask" || mode === "plan") && isMcpWriteToolName(toolName)) {
     return { type: "denied", reason: `${mode} mode is read-only.` }
   }
+  if (mode === "ask" || mode === "plan") return "not-applicable"
   if (sessionAllows(toolName, policy.sessionApprovedTools)) return "approved"
-  const leaf = toolName.includes("__") ? toolName.slice(toolName.indexOf("__") + 2) : toolName
-  if (/(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i.test(leaf)) {
-    return "user-approval"
-  }
+  if (isMcpWriteToolName(toolName)) return "user-approval"
   return "not-applicable"
 }
 

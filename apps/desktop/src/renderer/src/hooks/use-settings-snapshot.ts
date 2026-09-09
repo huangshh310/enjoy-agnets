@@ -5,19 +5,24 @@
 import { useQuery } from "@tanstack/react-query"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
+import { useChatStore } from "../stores/chat-store"
+import { rememberAgentTools } from "./agent-tools-cache"
 import { applyInspect } from "./merge-agent-tool-inspect"
 import { useAgentToolsInspect } from "./use-agent-tools-inspect"
 
 export function useSettingsSnapshot() {
+  const runtimeId = useChatStore((state) => state.runtimeId)
   const settings = useQuery({
     queryKey: ["settings"],
     enabled: hasIde(),
     queryFn: () => getIde().settings.get() as Promise<SettingsSnapshot>
   })
-  const inspect = useAgentToolsInspect(settings.data?.agentTools ?? [])
-  const data = settings.data
-    ? { ...settings.data, agentTools: applyInspect(settings.data.agentTools, inspect.data) }
+  const inspect = useAgentToolsInspect(settings.data?.agentTools ?? [], runtimeId)
+  const tools = settings.data
+    ? applyInspect(settings.data.agentTools, inspect.data)
     : undefined
+  if (tools) rememberAgentTools(tools)
+  const data = settings.data && tools ? { ...settings.data, agentTools: tools } : undefined
   return { ...settings, data, isInspectingAccounts: inspect.isFetching }
 }
 

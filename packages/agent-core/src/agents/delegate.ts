@@ -10,6 +10,7 @@ import type { ApprovalPolicy } from "../tool-approval.ts"
 import { summarizeSubagent, type SubagentSummary } from "./subagent.ts"
 import { runApprovedSubagent } from "./subagent-loop.ts"
 import type { WaitForSubagentApproval } from "./subagent-approval.ts"
+import { joinInstructions } from "../join-instructions.ts"
 
 export function createDelegateTool(run: (task: string) => Promise<SubagentSummary>) {
   return {
@@ -34,6 +35,7 @@ export async function runReadOnlySubagent(options: {
   host: AgentWorkspaceHost
   abortSignal?: AbortSignal
   generate?: (task: string) => Promise<string>
+  extraInstructions?: string
 }): Promise<SubagentSummary> {
   const text = options.generate
     ? await options.generate(options.task)
@@ -49,12 +51,15 @@ async function generateSubagentText(options: {
   task: string
   host: AgentWorkspaceHost
   abortSignal?: AbortSignal
+  extraInstructions?: string
 }): Promise<string> {
   const { text } = await generateText({
     model: options.model,
     abortSignal: options.abortSignal,
-    system:
+    system: joinInstructions(
       "You are a read-only specialist subagent. Use read tools only. Never write files or run shell. Return a concise report.",
+      options.extraInstructions
+    ),
     prompt: options.task,
     tools: createReadTools(options.host)
   })
@@ -71,6 +76,7 @@ export function runDelegatedSubagent(options: {
   abortSignal?: AbortSignal
   generate?: (task: string) => Promise<string>
   waitForApproval?: WaitForSubagentApproval
+  extraInstructions?: string
 }): Promise<SubagentSummary> {
   if (options.mode === "ask" || options.mode === "plan") {
     return runReadOnlySubagent(options)
