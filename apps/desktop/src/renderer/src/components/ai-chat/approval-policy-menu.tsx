@@ -8,7 +8,8 @@ import {
   RiFlashlightLine,
   RiShieldKeyholeLine
 } from "@remixicon/react"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
 import { useT, type TranslateFn } from "@renderer/i18n"
@@ -98,6 +99,35 @@ export function ApprovalFlagList({
         )
       })}
     </div>
+  )
+}
+
+/** 底栏盾牌的策略菜单体，不是第二套 Allow/Deny。 */
+export function ApprovalPolicyMenuBody({
+  kind,
+  flags,
+  onPersist
+}: {
+  kind: ApprovalPolicyKind
+  flags: ApprovalPrefFlags
+  onPersist: (next: ApprovalPrefFlags) => void
+}) {
+  const t = useT()
+  const mode = useChatStore((state) => state.mode)
+  const readOnly = mode === "ask" || mode === "plan"
+  return (
+    <>
+      <div className="px-2 py-1 text-caption-2-semibold text-text-tertiary uppercase tracking-wider">
+        {t("chat.approvalSection")}
+      </div>
+      <ApprovalPresetList kind={kind} onPick={onPersist} />
+      <DropdownMenuSeparator className="-mx-1.5 my-1.5 bg-separator-border" />
+      <ApprovalFlagList
+        flags={flags}
+        onToggle={(id, checked) => onPersist({ ...flags, [id]: checked })}
+      />
+      <PolicyHint readOnly={readOnly} />
+    </>
   )
 }
 

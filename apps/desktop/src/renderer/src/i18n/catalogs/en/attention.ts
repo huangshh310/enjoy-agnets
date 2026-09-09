@@ -6,14 +6,6 @@ export const enAttention = {
   dismiss: "Dismiss",
   dockLabel: "Waiting for your decision",
   currentSession: "This session · in progress",
-  glance: {
-    writeNeed: "Writes need confirm",
-    writeAuto: "Writes auto",
-    shellNeed: "Shell needs confirm",
-    shellAuto: "Shell auto",
-    gitNeed: "Git needs confirm",
-    gitAuto: "Git auto"
-  },
   kind: {
     pending_approval: "Needs approval",
     ask_user: "Needs answer",

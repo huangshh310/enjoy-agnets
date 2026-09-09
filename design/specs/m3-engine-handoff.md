@@ -16,7 +16,7 @@
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
 | 已交接条 | 仅确认成功后出现；可 dismiss；文案 `{from} → {to}`。**确认卡打开时不画微条**；取消 / 未确认不留微条。卡与微条互斥 |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`（无装饰粉边；主钮一键安装、次钮复制、文档为链接）；就绪灯只信 `status===ready` |
-| 空态 | 开始面：问候 `text-title-1-bold`（工作区名 accent）+ 一条元数据胶囊（「N 项」/ 叠标已就绪 / 未安装，展开下拉）+ Composer + 下方命令 pills；Composer **不进** empty-state；藏审查条 / 策略一瞥 / UsagePill 警报 / 技能源同步条 |
+| 空态 | 开始面：问候 `text-title-1-bold`（工作区名 accent）+ 一条元数据胶囊（「N 项」/ 叠标已就绪 / 未安装，展开下拉）+ Composer + 下方命令 pills；Composer **不进** empty-state；藏审查条 / UsagePill 警报 / 技能源同步条 |
 | 三路 | Picker 顶部分组：「本地」= Enjoy Local（下层供应商→模型）；「本机助手 / CLI」= DeepSeek / Oh My Pi 等本机引擎。沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。

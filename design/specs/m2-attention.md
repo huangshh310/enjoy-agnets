@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-08
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-09
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：**本 PR 只收 M2**。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -15,7 +15,7 @@
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。无 pending 则 `null`。 |
 | L2 Inbox `#/inbox` | live Attention 档案；无假种子。`openSession` 必须带 `sessionId`（可带 `workspaceId`）。阅读器只有摘要 + 跳回。`complete` 默认已读、不占红点。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
-| 策略一瞥 | 复用 `approval-policy-*`；`allow-all` 用 `text-text-error-primary` + `bg-background-tertiary-error`。不另做第二条栏。 |
+| 审批策略 | 只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。不另画上沿「写入 / Shell / Git」一瞥。执行模式（「模式: 智能体」）是另一件事。 |
 | plan diff | 写盘默认展开真实 diff；无 30s 自动放行。 |
 
 完成标准：后台会话要审批时，前台 **≤3s** 可见入口；点击跳回并可决策。
@@ -87,15 +87,9 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 | 阅读器 | 摘要 + 元数据；不渲染 `ApprovalCard` |
 | 轨徽标 | Inbox 轨图标只标**可行动**计数（pending_approval / ask_user / error）；complete 不计 |
 
-### 4. `AutoApproveBar`
+### 4. 审批策略（无上沿一瞥）
 
-| 项 | 合同 |
-|---|---|
-| 位置 | Composer 上沿、PermissionDock 之下；常驻一瞥，复用 `approval-policy-*` |
-| 文案 | 当前模式一瞥（如「写入需确认 · Shell 需确认 · Git 需确认」） |
-| YOLO/All | `text-text-error-primary` + `bg-background-tertiary-error` 高警示 |
-| token | BoardUI only；禁 `amber-500` / `rose-500` |
-| 不是 | 第二套 Allow/Deny；决策仍只在 Dock / 策略菜单 |
+写入 / Shell / Git 只在底栏盾牌菜单里改（`approval-policy-toggle.tsx`）。**不要**再画 `AutoApproveBar` 或 Composer 顶沿状态行。YOLO/All 的警示色只出现在盾牌本身。决策仍只在 PermissionDock / 策略菜单。
 
 ### 5. 侧栏会话灯（后置 M5）
 
@@ -149,7 +143,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 
 - 新：`apps/desktop/src/renderer/src/components/ai-chat/attention/`（`focusAttention({ sessionId, … })` 唯一入口；M3 阻切也走当前会话，禁止无参滚 Dock stub）
 - 状态：`apps/desktop/src/renderer/src/stores/attention/`
-- 挂载：`app-shell/layout/stage-split.tsx`（Strip）、`app-shell/chat/chat-composer-cluster.tsx`（Dock）
+- 挂载：`app-shell/layout/stage-split.tsx`（Strip）、`app-shell/chat/chat-composer-cluster.tsx`（Dock）；审批策略：`approval-policy-toggle.tsx`
 - Inbox：`inbox/lib/open-inbox-action.ts`、`inbox/lib/filter-inbox.ts`
 - 复用：`thread/approval/*`、`thread/ask-user/`、`approval-policy-*`
 - 契约：现有 HMAC / `ApprovalDecision`；不改签名模型
@@ -174,6 +168,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。
 - Inbox 假种子会冒充 live Attention，已删；空库只走空态。
+- 不要再画 Composer 上沿「写入自动 · Shell 需确认 · Git 需确认」。它和底栏盾牌是同一份策略，会多一条常驻铬；通栏色带还会把线程切断。「模式: 智能体」是执行模式，不是审批。
 
 ## 设计定稿补充（2026-09-08）
 
