@@ -7,6 +7,7 @@ import { focusAttention } from "@renderer/components/ai-chat/attention/focus-att
 import { useT } from "@renderer/i18n"
 import { attentionKindFromEvent } from "@renderer/stores/attention/ingest-attention"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { HandoffFileList } from "./handoff-file-list"
 import {
   cancelEngineHandoff,
   confirmEngineHandoff,
@@ -26,6 +27,7 @@ export function EngineHandoffCard({
   const navigate = useNavigate()
   const phase = useEngineHandoffStore((state) => state.phase)
   const draftSummary = useEngineHandoffStore((state) => state.draftSummary)
+  const filePaths = useEngineHandoffStore((state) => state.filePaths)
   const setDraftSummary = useEngineHandoffStore((state) => state.setDraftSummary)
   const blocked = phase === "blocked_by_approval"
   const busy = phase === "disposing"
@@ -62,15 +64,18 @@ export function EngineHandoffCard({
         {blocked ? t("chat.handoff.blocked") : t("chat.handoff.body")}
       </p>
       {blocked ? null : (
-        <label className="mt-3 flex flex-col gap-1.5">
-          <span className="text-caption-2-medium text-text-tertiary">{t("chat.handoff.summaryLabel")}</span>
-          <textarea
-            value={draftSummary}
-            onChange={(event) => setDraftSummary(event.target.value)}
-            rows={4}
-            className="w-full resize-none rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-regular text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
-          />
-        </label>
+        <div className="mt-3 flex flex-col gap-1.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-caption-2-medium text-text-tertiary">{t("chat.handoff.summaryLabel")}</span>
+            <textarea
+              value={draftSummary}
+              onChange={(event) => setDraftSummary(event.target.value)}
+              rows={4}
+              className="w-full resize-none rounded-xl border border-border-button-default bg-background-secondary-default px-3 py-2 text-caption-1-regular text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+            />
+          </label>
+          <HandoffFileList files={filePaths} />
+        </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
         {blocked ? (

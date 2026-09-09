@@ -1,13 +1,13 @@
 /**
- * CLI 引擎专属控制面板 (Agent CLI Dynamic HUD)
- * 极致紧凑、极客风格状态注脚，与 Enjoy 本地保持一致的简洁质感。
+ * CLI 引擎面板：模型表或未装安装条。脚注只写路径与能力提示，不上 ACP 协议词。
  */
-import type { AgentCliModel, AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesOf, type AgentCliModel, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiCompass3Line } from "@remixicon/react"
 import { canSwitchAgent } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
 import { AgentCliInstall } from "./agent-cli-install"
 import { AgentCliModels } from "./agent-cli-models"
+import { engineReadiness, readinessSubtitle } from "./engine-readiness"
 
 export function AgentCliPane({
   agent,
@@ -20,10 +20,17 @@ export function AgentCliPane({
 }) {
   const t = useT()
   const switchable = canSwitchAgent(agent)
+  const kind = engineReadiness({
+    id: agent.id,
+    status: agent.status,
+    comingSoon: agent.comingSoon,
+    requiresLogin: capabilitiesOf(agent).login,
+    loggedIn: agent.authAccount?.loggedIn ?? null
+  })
+  const subtitle = readinessSubtitle(kind, t)
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* 主体：模型列表或安装引导 */}
       {switchable ? (
         <>
           <AgentCliModels
@@ -31,8 +38,6 @@ export function AgentCliPane({
             onPick={(model) => onUse(model)}
             onUseDefault={() => onUse()}
           />
-
-          {/* 底部状态注脚：ACP 传输 + 一句说明 Fast/思考不进 argv */}
           <div className="border-t border-separator-border bg-background-secondary-default/40 px-3.5 py-2 text-caption-2-medium text-text-tertiary">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-1.5 truncate font-mono">
@@ -41,7 +46,7 @@ export function AgentCliPane({
                   {agent.detectedPath ? agent.detectedPath.split("/").slice(-2).join("/") : t("settings.agentTools.globalPath")}
                 </span>
               </div>
-              <span className="shrink-0 text-caption-2-medium text-text-secondary">{t("chat.usage.acpSubscribe")}</span>
+              {subtitle ? <span className="shrink-0 text-caption-2-medium text-text-secondary">{subtitle}</span> : null}
             </div>
             <p className="mt-1 truncate text-caption-2-medium text-text-tertiary" title={t("chat.cliFastViaModel")}>
               {t("chat.cliFastViaModel")}

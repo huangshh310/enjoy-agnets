@@ -138,6 +138,11 @@ export const zhChat = {
   agentUsing: "当前使用",
   agentReady: "本机已安装",
   agentMissing: "本机未找到",
+  agentNotInstalled: "未安装",
+  agentNeedsLogin: "需登录",
+  railLocal: "本地",
+  railCli: "本机助手",
+  railCliCue: "CLI",
   agentSoon: "即将推出",
   agentCliModel: "该 CLI 暂无内置模型表，发消息即可。",
   agentCliPickModel: "该 CLI 的模型",
@@ -215,7 +220,8 @@ export const zhChat = {
     reviewApproval: "去处理审批",
     cancel: "取消",
     banner: "已交接 {from} → {to}",
-    dismiss: "关闭交接提示"
+    dismiss: "关闭交接提示",
+    fileCount: "{count} 个文件"
   },
 
   projects: "项目",

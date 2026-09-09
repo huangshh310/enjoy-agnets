@@ -46,6 +46,20 @@ export function composerAgentGroups(tools: AgentToolPublic[]): {
   }
 }
 
+/** 导轨硬分组：本地 = Enjoy Local；本机助手 = ACP/CLI。禁止混进同一无标签行。 */
+export function composerRailSections(tools: AgentToolPublic[]): {
+  local: AgentToolPublic[]
+  cli: AgentToolPublic[]
+  soon: AgentToolPublic[]
+} {
+  const { primary, soon } = composerAgentGroups(tools)
+  return {
+    local: primary.filter((item) => item.id === DEFAULT_RUNTIME_ID),
+    cli: primary.filter((item) => item.id !== DEFAULT_RUNTIME_ID),
+    soon
+  }
+}
+
 /** 触发器优先写模型名（对标 MonoCode），没有模型再写 Agent 名。 */
 export function triggerLabel(runtimeId: string, agentLabel: string, modelLabel: string): string {
   if (runtimeId === DEFAULT_RUNTIME_ID) return modelLabel || agentLabel

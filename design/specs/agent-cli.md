@@ -1,6 +1,6 @@
 # spec/agent-cli
 
-> 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-08
+> 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-09
 
 Usage L1–L4、三路命名与能力矩阵见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
 
@@ -18,7 +18,7 @@ Pi 官方协议是 `pi --mode rpc`，Enjoy 只 spawn 已安装的 `pi-acp`（禁
 
 Antigravity 探测 `agy-acp` 再 `agy`。桥接 spawn `agy-acp`（无额外参数）；官方 CLI spawn `agy --acp`。自定义路径必须是该 CLI 白名单 basename 的绝对路径。
 
-Composer：顶栏引擎导轨 + 下层面板。Enjoy 本地是供应商 + 模型；CLI 是该 CLI 模型表。底栏按 `composerChromeFor(runtimeId)` 显隐：ACP 只留 `+`、审批盾牌、引擎胶囊、发送；Fast / 五档思考 / 执行模式 / 语音隐藏。切 runtime **不清空** store 里的 Fast / 思考档 / 模式。空会话直切并 `bindSessionRuntime`；有用户轮走 `EngineHandoffCard`，确认后 dispose 旧 ACP，brief 只进系统/隐藏上下文，「已交接」微条仅 from→to。CLI 面板脚注除「ACP Stdio」外写明 Fast/思考由模型选择、不传 argv。未找到：白名单 `npm` / `brew` 安装，或复制官方命令；`curl \| bash` 只展示不执行。已安装可「打开登录」：`detached` spawn 官方 login argv，立即返回，不打开 pty。`agent.run` 带 `runtimeId`。触发器就绪灯按 `status === ready` 着色，不是永远绿灯。胶囊微文案：`本地 ToolLoop` / `ACP · 订阅登录`；沙箱不上导轨。
+Composer：顶部分组导轨 + 下层面板。「本地」只有 Enjoy Local（下层供应商 + 模型）；「本机助手 / CLI」是本机引擎（DeepSeek / Oh My Pi 等按 CLI 呈现，就绪副标题，不当 BYOK 供应商）。胶囊只写 `引擎 · 模型`，禁止协议词与供应商第三段。底栏按 `composerChromeFor(runtimeId)` 显隐：ACP 只留 `+`、审批盾牌、引擎胶囊、发送；Fast / 五档思考 / 执行模式 / 语音隐藏。切 runtime **不清空** store 里的 Fast / 思考档 / 模式。空会话直切并 `bindSessionRuntime`；有用户轮走 `EngineHandoffCard`，确认后 dispose 旧 ACP，brief 只进系统/隐藏上下文；确认卡与「已交接」微条互斥，取消不留微条。CLI 面板脚注写路径与 Fast/思考由模型选择、不传 argv，**不上** ACP 协议标签。未找到：白名单 `npm` / `brew` 一键安装 + 复制命令，文档为链接，无装饰粉边；`curl \| bash` 只展示不执行。已安装可「打开登录」：`detached` spawn 官方 login argv，立即返回，不打开 pty。`agent.run` 带 `runtimeId`。触发器就绪灯按 `status === ready` 着色，不是永远绿灯。沙箱不上导轨。
 
 每家一份静态 `RuntimeCapabilities`（`packages/ipc-contract/src/runtime-capabilities.ts`）。`list` 投影到 `AgentToolPublic.capabilities`。UI **不信** ACP `initialize.agentCapabilities`。未声明 = 不做。ACP 开流忽略 `fast` / `reasoningEffort` / 执行模式，不传 `session/set_mode`。纠偏对 ACP 是下一轮 `session/prompt` 文本，不是 Cursor 原生 steer。Enjoy Local Fast 开且 profile 有 `fastModelId` 才换模型。
 
@@ -81,7 +81,8 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - Amp 没有官方 `amp acp`。只 spawn `amp-acp`，并把 `AMP_CLI_PATH` 指到 `amp`。登录 `amp login`，不要 `amp-acp login`。
 - Pi 官方是 RPC。Enjoy 本轮不自研 RPC；只 spawn `pi-acp`。能聊、Diff/审批可能被适配器削平。禁止 spawn 时 `npx pi-acp`。
 - OMP 是 `omp acp` 编码智能体，不是 `~/.omp/skills` 技能根。不要标 `skillOnly`。
-- DeepSeek Harness 的 `dsh --profile acp` 仍是 developer preview，argv 以 `--help` 为准。旧 Vercel Harness `deepseek` 适配器仍占位，和本机 CLI 不是一条路。
+- DeepSeek Harness 的 `dsh --profile acp` 仍是 developer preview，argv 以 `--help` 为准。旧 Vercel Harness `deepseek` 适配器仍占位，和本机 CLI 不是一条路。C 端导轨必须把它和 Oh My Pi 放进「本机助手 / CLI」，副标题只写未安装/需登录，禁止看起来像 Enjoy Local 的 BYOK 供应商。
+- C 端胶囊/导轨禁止常驻 `ACP · 订阅登录` / `本地 ToolLoop`。协议词只留设置能力矩阵，不上 Composer。
 - 七家新 CLI 本轮 `quota=false`。没有官方 usage 子命令就不画额度条。
 - ACP 复用进程的 key 必须含 `toolId`。漏掉时 Claude→Cursor 会假续跑旧 stdio。有用户轮切引擎必须 `disposeSession` + `setHandoff`；brief 只进系统/隐藏上下文，禁止用户首条附注。
 - 本阶段不实现 `session/set_mode`、slash 列表、`session/load`、跨 Agent 委派、寄生 Codex Desktop / SSH。Pi / OMP / Hermes 原生 RPC 或 TUI gateway 另开一轮。`mapAcpUpdate` 的 `available_commands_update` / diff content / 提问映射另开「ACP 事件保真」。

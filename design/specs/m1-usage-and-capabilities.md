@@ -1,16 +1,16 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-08
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-09
 
 ## 当前真相
 
 三条路径**永不**并进同一个 Composer 开关：
 
-| 路径 | 导轨微标 | 出现位置 |
+| 路径 | C 端导轨 / 胶囊 | 出现位置 |
 |---|---|---|
-| Enjoy 本地 (`enjoy-local`) | `本地 ToolLoop` | AgentEngineRail + 胶囊 |
-| ACP 本机 CLI (`claude` `cursor` `grok` `codex` `antigravity` …) | `ACP · 订阅登录` | AgentEngineRail + 胶囊 |
-| 进阶沙箱 (`sandbox-harness`) | `实验 · 沙箱 Harness` | 设置分段 only；**禁止**上 AgentEngineRail |
+| Enjoy 本地 (`enjoy-local`) | 分组「本地」；胶囊 `引擎 · 模型`；就绪副标题可空 | AgentEngineRail + 胶囊；下层才是供应商→模型 |
+| 本机 CLI (`claude` `cursor` `grok` `codex` `antigravity` `deepseek` `omp` …) | 分组「本机助手 / CLI」；副标题只写 `未安装` / `需登录` / 空 | AgentEngineRail + 胶囊；**禁止** ACP 协议登录标签 |
+| 进阶沙箱 (`sandbox-harness`) | 不上轨 | 设置分段 only；**禁止**上 AgentEngineRail |
 
 能力只信静态 `RUNTIME_CAPABILITIES` / `composerChromeFor`（`packages/ipc-contract/src/runtime-capabilities*.ts`）。未声明 = 不做。renderer 不 import `@enjoy-agents/agent-harness`。
 
@@ -56,7 +56,7 @@
 
 - Claude / Codex `inspect` 仍拉账号，但 `quota=false`，UI 不得回落空条 + `—`。
 - `barWidth` 必须等于官方百分比，禁止为「看得见」把 1% 撑到 4%。空会话 `UsagePill` 必须 `quiet`（含 ≥85%），有消息才用 alert/mid/low。
-- `composerChromeFor` 的 Fast / 思考 / 模式显隐与本 spec 的 path 微标是同一张表，不要再写第二套 capability 形状。
+- `composerChromeFor` 的 Fast / 思考 / 模式显隐仍读同一张 capability 表；C 端 Rail/胶囊不要再画 `pathKind` 协议微标，只写就绪语义。
 - 能力矩阵自定义行必须画用户 label，不要用 `custom:<slug>` 当显示名。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。

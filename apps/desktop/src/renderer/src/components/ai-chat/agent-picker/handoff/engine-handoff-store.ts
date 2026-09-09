@@ -7,7 +7,7 @@ import { persistRuntimeId } from "@renderer/hooks/persist-runtime"
 import { abortComposerRun } from "@renderer/hooks/composer-run-control"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { isAgentToolId } from "../agent-brand-icon"
-import { draftHandoffSummary } from "./draft-handoff-summary"
+import { draftHandoffParts, formatHandoffHidden } from "./draft-handoff-summary"
 import { planComposerSwitch, sessionHasUserTurns } from "./plan-composer-switch"
 import type { EngineHandoffState } from "./plan-composer-switch.types"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -18,6 +18,7 @@ const idle: EngineHandoffState = {
   fromRuntimeId: null,
   toRuntimeId: null,
   draftSummary: "",
+  filePaths: [],
   banner: null
 }
 
@@ -37,7 +38,8 @@ export const useEngineHandoffStore = create<
       fromRuntimeId: null,
       toRuntimeId: null,
       modelId: undefined,
-      draftSummary: ""
+      draftSummary: "",
+      filePaths: []
     })
 }))
 
@@ -62,7 +64,7 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     useEngineHandoffStore.getState().resetPending()
     return "applied"
   }
-  const draftSummary = draftHandoffSummary({
+  const draft = draftHandoffParts({
     messages: chat.messages,
     pendingApprovalName: chat.pendingApproval?.name,
     filePaths: chat.changes.map((item) => item.path)
@@ -72,8 +74,9 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     fromRuntimeId: plan.from,
     toRuntimeId: plan.to,
     modelId,
-    draftSummary,
-    banner: useEngineHandoffStore.getState().banner
+    draftSummary: draft.summary,
+    filePaths: draft.files,
+    banner: null
   })
   return plan.kind === "blocked_by_approval" ? "blocked" : "pending"
 }
@@ -94,7 +97,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
       sessionId,
       fromRuntimeId: state.fromRuntimeId as AgentToolId,
       toRuntimeId: state.toRuntimeId as AgentToolId,
-      summary: state.draftSummary.trim() || "上一引擎会话已结束。"
+      summary: formatHandoffHidden(state.draftSummary, state.filePaths) || "上一引擎会话已结束。"
     })
   }
   await persistRuntimeId(state.toRuntimeId, state.modelId)
@@ -104,6 +107,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
     toRuntimeId: null,
     modelId: undefined,
     draftSummary: "",
+    filePaths: [],
     banner: {
       sessionId,
       fromRuntimeId: state.fromRuntimeId,
@@ -116,7 +120,15 @@ export async function confirmEngineHandoff(): Promise<boolean> {
 /** 取消交接：清 pending，并把 chat.runtimeId 拉回 from。 */
 export function cancelEngineHandoff(): string | null {
   const from = useEngineHandoffStore.getState().fromRuntimeId
-  useEngineHandoffStore.getState().resetPending()
+  useEngineHandoffStore.setState({
+    phase: "idle",
+    fromRuntimeId: null,
+    toRuntimeId: null,
+    modelId: undefined,
+    draftSummary: "",
+    filePaths: [],
+    banner: null
+  })
   restoreComposerEngineSelection(from, useChatStore.getState().setRuntimeId)
   return from
 }

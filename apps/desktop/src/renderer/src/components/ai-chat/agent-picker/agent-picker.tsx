@@ -1,7 +1,6 @@
 /**
- * Composer Agent 动力机架选择器 (Smart Engine HUD)
- * 上层：等高横向引擎切换导轨 (AgentEngineRail)
- * 下层：自适应面板 (CLI 极客面板 或 Enjoy 本地双栏选择器)
+ * Composer Agent 选择器：顶部分组导轨 + 下层本地供应商/CLI 面板。
+ * 胶囊只写「引擎 · 模型」，协议词不上芯片。
  */
 import { useEffect, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -17,9 +16,9 @@ import { ModelPickerBody } from "../model-picker/model-picker-body"
 import { AgentBrandIcon, isAgentToolId } from "./agent-brand-icon"
 import { AgentCliPane } from "./agent-cli-pane"
 import { AgentEngineRail } from "./agent-engine-rail"
-import { composerChromeFor } from "@enjoy-agents/ipc-contract"
 import { UsagePill } from "../usage/usage-pill"
-import { cliModelLabel, composerAgentGroups } from "./composer-agents"
+import { cliModelLabel, composerRailSections } from "./composer-agents"
+import { composerChipParts } from "./composer-chip-label"
 
 export function AgentPicker({
   modelId,
@@ -39,8 +38,8 @@ export function AgentPicker({
   const runtimeId = useChatStore((state) => state.runtimeId)
   const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const tools = useSettingsSnapshot().data?.agentTools ?? []
-  const { primary, soon } = composerAgentGroups(tools)
-  const agents = [...primary, ...soon]
+  const { local, cli, soon } = composerRailSections(tools)
+  const agents = [...local, ...cli, ...soon]
   const current = agents.find((item) => item.id === runtimeId)
   const [tabId, setTabId] = useState(runtimeId)
   const tab = agents.find((item) => item.id === tabId) ?? current ?? agents[0]
@@ -49,7 +48,6 @@ export function AgentPicker({
     if (open) setTabId(runtimeId)
   }, [open, runtimeId])
 
-  // 取消交接时 runtimeId 往往仍是 from，必须靠 phase 把 Rail tab 拉回去。
   useEffect(() => {
     if (handoffPhase === "idle") setTabId(runtimeId)
   }, [handoffPhase, runtimeId])
@@ -65,16 +63,21 @@ export function AgentPicker({
     })
   }, [open, queryClient])
 
-  // 显示的引擎与模型名称
   const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
   const activeModelDisplay = runtimeId === DEFAULT_RUNTIME_ID ? (modelLabel || modelId) : cliModelLabel(current)
-  const pathKind = composerChromeFor(runtimeId).pathKind
-  const pathLabel =
-    pathKind === "enjoy-local" ? t("chat.usage.localToolLoop") : t("chat.usage.acpSubscribe")
+  const providerLabel =
+    runtimeId === DEFAULT_RUNTIME_ID
+      ? models.find((item) => item.id === modelId)?.providerName
+      : undefined
+  const chip = composerChipParts({
+    engineLabel: currentAgentName,
+    modelLabel: activeModelDisplay,
+    providerLabel
+  })
 
-  async function applyAgent(id: string, modelId?: string) {
+  async function applyAgent(id: string, nextModelId?: string) {
     if (!isAgentToolId(id)) return
-    const result = await requestEngineSwitch(id, modelId)
+    const result = await requestEngineSwitch(id, nextModelId)
     if (result === "pending" || result === "blocked") {
       setOpen(false)
       return
@@ -95,36 +98,27 @@ export function AgentPicker({
         <button
           type="button"
           aria-label={t("chat.selectAgent")}
-          className="group inline-flex h-8 max-w-[16rem] shrink-0 items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-medium text-text-primary shadow-2xs outline-none transition-all duration-150 hover:border-border-button-hover hover:bg-background-secondary-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          title={chip.title}
+          className="group inline-flex h-8 max-w-[18rem] shrink-0 items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 text-caption-1-medium text-text-primary shadow-2xs outline-none transition-all duration-150 hover:border-border-button-hover hover:bg-background-secondary-hover active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         >
-          {/* 品牌微标 */}
           <span className="flex size-4 shrink-0 items-center justify-center">
             <AgentBrandIcon id={runtimeId} size={14} />
           </span>
-
-          {/* 引擎名称与模型标签组合 */}
-          <span className="min-w-0 truncate text-caption-1-medium">
-            <span className="text-text-secondary">{currentAgentName}</span>
-            {activeModelDisplay ? (
+          <span className="flex min-w-0 items-baseline">
+            <span className="shrink-0 text-text-secondary">{chip.engine}</span>
+            {chip.model ? (
               <>
-                <span className="mx-1 text-text-tertiary">·</span>
-                <span className="font-semibold text-text-primary">{activeModelDisplay}</span>
+                <span className="mx-1 shrink-0 text-text-tertiary">·</span>
+                <span className="min-w-0 truncate font-semibold text-text-primary">{chip.model}</span>
               </>
             ) : null}
           </span>
-          <span className="hidden max-w-[6.5rem] truncate text-caption-2-medium text-text-tertiary sm:inline">
-            {pathLabel}
-          </span>
           <UsagePill runtimeId={runtimeId} />
-
-          {/* 就绪灯只信 status===ready */}
           <span
             className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
               current ? (isEngineReady(current) ? "bg-accent-500" : "bg-text-tertiary") : "bg-text-tertiary"
             }`}
           />
-
-          {/* 展开指示箭头 */}
           <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </button>
       </PopoverTrigger>
@@ -133,18 +127,16 @@ export function AgentPicker({
         side="top"
         align="end"
         sideOffset={8}
-        className="flex h-[370px] w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
+        className="flex h-[390px] w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
       >
-        {/* 上层：等高横向引擎导轨 */}
         <AgentEngineRail
-          primary={primary}
+          local={local}
+          cli={cli}
           soon={soon}
           selectedId={tab?.id ?? DEFAULT_RUNTIME_ID}
           currentId={runtimeId}
           onSelect={(id) => void onTab(id)}
         />
-
-        {/* 下层：当前引擎的专属面板 */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {tab && tab.id !== DEFAULT_RUNTIME_ID ? (
             <AgentCliPane

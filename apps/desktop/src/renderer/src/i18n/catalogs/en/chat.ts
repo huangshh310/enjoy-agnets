@@ -140,6 +140,11 @@ export const enChat = {
   agentUsing: "In use",
   agentReady: "Installed",
   agentMissing: "Not found",
+  agentNotInstalled: "Not installed",
+  agentNeedsLogin: "Sign in needed",
+  railLocal: "Local",
+  railCli: "Local assistants",
+  railCliCue: "CLI",
   agentSoon: "Coming soon",
   agentCliModel: "This CLI has no built-in model list. Just send a message.",
   agentCliPickModel: "Models for this CLI",
@@ -220,7 +225,8 @@ export const enChat = {
     reviewApproval: "Review approval",
     cancel: "Cancel",
     banner: "Handed off {from} → {to}",
-    dismiss: "Dismiss handoff"
+    dismiss: "Dismiss handoff",
+    fileCount: "{count} files"
   },
 
   projects: "Projects",
