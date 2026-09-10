@@ -44,6 +44,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
   const [busyAction, setBusyAction] = useState<AgentToolBusy>(null)
   const [doctorResult, setDoctorResult] = useState<AgentToolDoctorResult | null>(null)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
+  const [installError, setInstallError] = useState<string | null>(null)
   const [loginProvider, setLoginProvider] = useState<string | null>(null)
 
   async function persist(patch: {
@@ -87,6 +88,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     doctorResult,
     setDoctorResult,
     feedbackMessage,
+    installError,
     loginProvider,
     persist,
     persistRuntime: () => handleMakeActive(tool, setBusyAction, queryClient),
@@ -99,7 +101,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
         setLoginProvider(null)
       }
     },
-    runInstall: () => handleInstall(tool, setBusyAction, setFeedbackMessage, queryClient),
+    runInstall: () => handleInstall(tool, setBusyAction, setFeedbackMessage, queryClient, setInstallError),
     runUninstall: () => handleUninstall(tool, setBusyAction, setFeedbackMessage, queryClient),
     syncToCli: () => handleSyncToCli(tool, setSyncingConfig, setFeedbackMessage),
     restoreCli: () => handleRestoreCli(tool, setRestoringConfig, setFeedbackMessage),

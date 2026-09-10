@@ -79,6 +79,11 @@ export function AgentToolsCommandHub() {
           </button>
         </p>
       ) : null}
+      {snapshot?.harness.hasSandboxToken ? (
+        <p className="rounded-md border border-border-button-default bg-background-primary-default px-2.5 py-1.5 text-caption-2-regular text-text-secondary">
+          {t("settings.agentTools.sandboxTokenReady")}
+        </p>
+      ) : null}
       {diag ? (
         <p className="text-caption-2-medium text-text-secondary">
           {t("settings.agentTools.diagSummary", { total: diag.total, ok: diag.ok, failed: diag.failed })}

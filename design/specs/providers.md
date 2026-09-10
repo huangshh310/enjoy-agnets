@@ -22,7 +22,7 @@
 
 推理强度：`ReasoningEffort` + composer Energy Bar，按模型族都要发，禁止因中转就藏思考条。AI SDK 7 顶层 `reasoning` 对 OpenAI-compatible 会映成 `reasoning_effort`。MiniMax-M3 发 `thinking: adaptive`；`reasoning_split` **只给官方 MiniMax 域名**（`api.minimax.io` / `.chat` / `.com`）。中转 `/v1` 发 `reasoning_split` 会 `Unsupported parameter`，思考栏空转后报错。不拆时思考进 `content` 的 `<think>`，UI `absorbTextDelta` 再切开。GLM 发 `thinking.enabled` + `reasoningEffort`。Kimi K3 官方没有 `thinking` 字段，走顶层 `reasoning`。DeepSeek 另走 `usesDeepSeekReasoningApi`。未选档 = 供应商默认，不强制 `disabled`。
 
-设置页交互（Configured / Explore Presets、Dialog 四页签）以 [../references/visual-system.md](../references/visual-system.md) §14 为准；本 spec 只锁协议与密钥边界。
+设置页交互（Configured / Explore Presets、Dialog 四页签）以 [../references/visual-system.md](../references/visual-system.md) §14 为准；本 spec 只锁协议与密钥边界。Explore 预设分类标题是 **AI SDK 兼容**，不要「Vercel AI SDK」英雄卡，也不要假「Vercel 沙箱」供应商。Gateway 预设是可选云网关，不是沙箱。
 
 ## 不变量
 
@@ -51,6 +51,7 @@
 - 上下文窗口：不要写 `MODEL_CONTEXT_LIMITS["grok-4.6"]=1M`。官方 `/models` 常不带 `context_window`，此时靠 Gateway 目录或用户明确手填的档案窗口；都没有就显示「窗口未知」，不要猜 128k / 200k / 1M。旧档案若曾被表单默认写成 128000，用户需在参数页点「自动 / 未知」并保存才能清掉。
 - 删除仍被 CLI 引用的档案必须先解绑（`unbindProviderFromAgentTools`），否则智能体卡还显示已删档案名，开流会找不到 Key。UI 先列出助手名再 Confirm。
 - 不要把 `kind===custom` 当成「什么协议都能绑」。Claude 只收 anthropic；Codex 不收 google/anthropic；Gemini 只收 `kind===google`（即使 apiStyle 是 openai）。
+- Explore 若再写「Vercel AI SDK」英雄卡或「Vercel 沙箱」供应商，C 端会把运行时实现当成要买的云产品。分类用「AI SDK 兼容」；Gateway 只是可选网关，不是沙箱。
 - Ollama 等 `requiresKey === false` 的探测可塞占位 key，避免 SDK 因空 key 直接拒绝。
 - Fal / Replicate / ElevenLabs / Deepgram / Cohere 没有 OpenAI `/models`。`probeProvider` 只校验 Key 已填，真正建连发生在 generate。把它们设成当前聊天 Provider 会抛「media provider」而不是假装能对话。
 - xAI 官方生图是 `@ai-sdk/xai` 的 `xai.image('grok-imagine-image-2.0')` + `generateImage`。本仓尚未单独装 xAI preset；挂在 OpenAI `/v1` 兼容端点时走 `createOpenAI().image()`，对准 `images/generations`。不要用 `streamText` 调 imagine 模型。

@@ -52,7 +52,9 @@ export function createAdapterSandbox(
   }
   const token = input.credentials.vercelToken?.trim()
   if (!token) {
-    throw new Error(`${adapter.label} still needs a Vercel Sandbox token in Settings → Agent.`)
+    throw new Error(
+      `${adapter.label} still needs a sandbox isolation token in Settings → Agent (jail, not the model key).`
+    )
   }
   return createVercelSandbox({
     runtime: "node24",

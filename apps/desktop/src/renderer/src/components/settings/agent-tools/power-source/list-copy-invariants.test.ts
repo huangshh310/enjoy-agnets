@@ -1,5 +1,5 @@
 /**
- * dense-p0（唯一真源）：列表禁止协议微标、额度 hint、「官方仍保留」和 doctor 句。
+ * dense-p0（唯一真源）+ P0-A 安装态：列表禁止协议微标、额度、「官方仍保留」、假进度条。
  * 「官方仍保留」只允许出现在配置抽屉（agent-tool-account-aside），不上表。
  */
 import assert from "node:assert/strict"
@@ -12,9 +12,12 @@ const dir = dirname(fileURLToPath(import.meta.url))
 const files = [
   "../agent-tool-row.tsx",
   "../agent-tool-row-parts.tsx",
+  "../agent-tool-row-assistant.tsx",
+  "../agent-tool-row-actions.tsx",
   "../agent-tools-page.tsx",
   "../list-layout.ts",
   "../list-secondary.ts",
+  "../install-row-copy.ts",
   "power-source-capsule.tsx",
   "format-power-source.ts"
 ]
@@ -39,7 +42,10 @@ const banned = [
   "doctorOk",
   "doctorRun",
   "listLine",
-  "local-cli-dense-v2"
+  "local-cli-dense-v2",
+  "progressbar",
+  "ProgressBar",
+  "fakeProgress"
 ]
 
 test("本机 CLI 列表源码不含协议微标 / 额度 / 邮箱 / 表底禁令", () => {
@@ -52,7 +58,7 @@ test("本机 CLI 列表源码不含协议微标 / 额度 / 邮箱 / 表底禁令
 })
 
 test("助手次行只拼版本 · 短路径，不用品牌 meta / listLine / doctor", () => {
-  const src = readFileSync(join(dir, "../agent-tool-row-parts.tsx"), "utf8")
+  const src = readFileSync(join(dir, "../agent-tool-row-assistant.tsx"), "utf8")
   const secondary = readFileSync(join(dir, "../list-secondary.ts"), "utf8")
   assert.ok(src.includes("formatListSecondary"))
   assert.ok(src.includes("listSynced"))
@@ -76,7 +82,7 @@ test("「官方仍保留」只进抽屉旁注，不上列表文件", () => {
 
 test("操作列主槽定宽，复制-only 留空位", () => {
   const layout = readFileSync(join(dir, "../list-layout.ts"), "utf8")
-  const parts = readFileSync(join(dir, "../agent-tool-row-parts.tsx"), "utf8")
+  const parts = readFileSync(join(dir, "../agent-tool-row-actions.tsx"), "utf8")
   const page = readFileSync(join(dir, "../agent-tools-page.tsx"), "utf8")
   const row = readFileSync(join(dir, "../agent-tool-row.tsx"), "utf8")
   assert.ok(layout.includes("8.75rem"))
@@ -92,4 +98,18 @@ test("动力源格去掉额度 hint，未装画破折号", () => {
   assert.ok(src.includes("empty"))
   assert.ok(src.includes("isBlankPowerSource"))
   assert.ok(!src.includes("quotaHint"))
+})
+
+test("未找到行主槽含安装中 / 重试，失败有一行人话", () => {
+  const assistant = readFileSync(join(dir, "../agent-tool-row-assistant.tsx"), "utf8")
+  const actions = readFileSync(join(dir, "../agent-tool-row-actions.tsx"), "utf8")
+  const copy = readFileSync(join(dir, "../install-row-copy.ts"), "utf8")
+  assert.ok(assistant.includes("installingStatus"))
+  assert.ok(assistant.includes("installingHint"))
+  assert.ok(assistant.includes("formatInstallFailLine"))
+  assert.ok(actions.includes("installing"))
+  assert.ok(actions.includes("installRetry"))
+  assert.ok(copy.includes("mapInstallFailReason"))
+  assert.ok(!assistant.includes("role=\"progressbar\""))
+  assert.ok(!actions.includes("role=\"progressbar\""))
 })

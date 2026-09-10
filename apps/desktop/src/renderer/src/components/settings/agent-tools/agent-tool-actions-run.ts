@@ -89,17 +89,26 @@ export async function handleInstall(
   tool: AgentToolPublic,
   setBusy: (value: AgentToolBusy) => void,
   setFeedback: (value: string | null) => void,
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  setInstallError: (value: string | null) => void
 ) {
   if (!hasIde() || tool.installKind === "copy") return
   setBusy("install")
   setFeedback(null)
+  setInstallError(null)
   try {
     const res = (await getIde().agentTools.install({
       id: tool.id as AgentToolId
     })) as InstallAgentToolResult
-    setFeedback(res.message)
-    if (res.ok) await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    if (res.ok) {
+      setInstallError(null)
+      setFeedback(res.message)
+      await queryClient.invalidateQueries({ queryKey: ["settings"] })
+      return
+    }
+    setInstallError(res.message)
+  } catch (err) {
+    setInstallError(err instanceof Error ? err.message : String(err))
   } finally {
     setBusy(null)
   }
