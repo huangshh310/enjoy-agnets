@@ -42,7 +42,7 @@ export function protocolNameForBind(runtimeId: string): string {
   return ""
 }
 
-/** 给该 CLI 新建档案时预填的 preset；不要丢去供应商整页让用户猜。 */
+/** 该 CLI 在供应商页新建档案时建议的 preset。绑定抽屉不再就地 CRUD。 */
 export function createTargetForBind(runtimeId: string): { kind: string; apiStyle: string } | null {
   const bind = capabilitiesFor(runtimeId).providerBind
   if (bind === "anthropic") return { kind: "anthropic", apiStyle: "anthropic" }

@@ -51,6 +51,22 @@ test("凭证是可筛选下拉，不是电台列表", () => {
   assert.ok(!src.includes("ChoiceShell"))
 })
 
+test("绑定下拉只列官方登录和档案，添加在菜单外跳转供应商页", () => {
+  const dir = join(dirname(fileURLToPath(import.meta.url)), "agent-tools")
+  const menu = readFileSync(join(dir, "agent-tool-source-menu.tsx"), "utf8")
+  const slot = readFileSync(join(dir, "agent-tool-provider.tsx"), "utf8")
+  const link = readFileSync(join(dir, "agent-tool-add-archive-link.tsx"), "utf8")
+  assert.ok(!menu.includes("RiAddLine"))
+  assert.ok(!menu.includes("AddProviderRow"))
+  assert.ok(!menu.includes("goProviders"))
+  assert.ok(!menu.includes("onAdd"))
+  assert.ok(!slot.includes("AgentToolNeedProvider"))
+  assert.ok(!slot.includes("useAgentProviderCreate"))
+  assert.ok(slot.includes("AgentToolAddArchiveLink"))
+  assert.ok(link.includes('section: "providers"'))
+  assert.ok(link.includes("addArchiveLink"))
+})
+
 test("这个助手用在官方账号区之前，绑了档案不得把 inspect 当英雄", () => {
   const dir = join(dirname(fileURLToPath(import.meta.url)), "agent-tools")
   const cli = readFileSync(join(dir, "agent-tool-config-cli.tsx"), "utf8")
@@ -107,4 +123,6 @@ test("仅官方决策槽没有 Enjoy vault 下拉", () => {
   assert.ok(src.includes("officialNoBindHint"))
   assert.ok(!src.includes("AgentToolSourceMenu"))
   assert.ok(!src.includes("useCustomProvider"))
+  assert.ok(!src.includes("AgentToolAddArchiveLink"))
+  assert.ok(!src.includes("addArchiveLink"))
 })

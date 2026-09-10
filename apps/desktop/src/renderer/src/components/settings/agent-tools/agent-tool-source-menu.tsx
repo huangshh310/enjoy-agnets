@@ -1,11 +1,14 @@
 /**
- * 「这个助手用」下拉：官方登录 + 可筛选档案 + 底部添加。
+ * 「这个助手用」下拉：只列官方登录 + 已有 vault 档案。
+ * 添加档案在菜单外（见 AgentToolAddArchiveLink），禁止菜单内「+ 添加 {品牌}」。
  */
 import { useMemo, useState } from "react"
-import { RiAddLine, RiArrowDownSLine, RiCheckLine, RiSearchLine } from "@remixicon/react"
+import { RiArrowDownSLine, RiCheckLine, RiSearchLine } from "@remixicon/react"
 import {
   groupProvidersForBind,
+  providerBindGroupOf,
   type AgentToolPublic,
+  type ProviderBindGroupId,
   type ProviderPublic
 } from "@enjoy-agents/ipc-contract"
 import {
@@ -27,21 +30,14 @@ export function AgentToolSourceMenu({
   profiles,
   bound,
   usingProvider,
-  persist,
-  protocol,
-  canAdd,
-  onAdd
+  persist
 }: {
   tool: AgentToolPublic
   profiles: ProviderPublic[]
   bound?: ProviderPublic
   usingProvider: boolean
   persist: AgentToolActions["persist"]
-  protocol: string
-  canAdd: boolean
-  onAdd: () => void
 }) {
-  const t = useT()
   const [query, setQuery] = useState("")
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -54,7 +50,11 @@ export function AgentToolSourceMenu({
     )
   }, [profiles, query])
   return (
-    <DropdownMenu onOpenChange={(open) => { if (!open) setQuery("") }}>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (!open) setQuery("")
+      }}
+    >
       <SourceTrigger tool={tool} bound={bound} usingProvider={usingProvider} />
       <DropdownMenuContent
         align="start"
@@ -64,15 +64,7 @@ export function AgentToolSourceMenu({
           <SourceSearch query={query} onChange={setQuery} />
         ) : null}
         <div className="max-h-72 overflow-y-auto">
-          <DropdownMenuItem
-            onClick={() => {
-              if (usingProvider) void persist({ useCustomProvider: false })
-            }}
-            className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5"
-          >
-            <span className="text-caption-1-medium text-text-primary">{t("settings.agentTools.officialLogin")}</span>
-            {!usingProvider ? <RiCheckLine className="size-3.5 text-accent-500" /> : null}
-          </DropdownMenuItem>
+          <OfficialMenuItem usingProvider={usingProvider} persist={persist} />
           {filtered.length > 0 ? <DropdownMenuSeparator /> : null}
           <ProfileMenuRows
             profiles={filtered}
@@ -80,9 +72,32 @@ export function AgentToolSourceMenu({
             persist={persist}
           />
         </div>
-        {canAdd ? <AddProviderRow protocol={protocol} onAdd={onAdd} /> : null}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+function OfficialMenuItem({
+  usingProvider,
+  persist
+}: {
+  usingProvider: boolean
+  persist: AgentToolActions["persist"]
+}) {
+  const t = useT()
+  return (
+    <DropdownMenuItem
+      onClick={() => {
+        if (usingProvider) void persist({ useCustomProvider: false })
+      }}
+      className="flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5"
+    >
+      <span className="text-caption-1-medium text-text-primary">
+        {t("settings.agentTools.officialLogin")}
+        <span className="text-text-tertiary"> · {t("settings.agentTools.officialModeHint")}</span>
+      </span>
+      {!usingProvider ? <RiCheckLine className="size-3.5 text-accent-500" /> : null}
+    </DropdownMenuItem>
   )
 }
 
@@ -141,24 +156,6 @@ function SourceSearch({ query, onChange }: { query: string; onChange: (value: st
   )
 }
 
-function AddProviderRow({ protocol, onAdd }: { protocol: string; onAdd: () => void }) {
-  const t = useT()
-  return (
-    <>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        onClick={onAdd}
-        className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5"
-      >
-        <RiAddLine className="size-3.5 text-accent-500" />
-        <span className="text-caption-1-medium text-text-primary">
-          {t("settings.agentTools.goProviders", { protocol })}
-        </span>
-      </DropdownMenuItem>
-    </>
-  )
-}
-
 function ProfileMenuRows({
   profiles,
   boundId,
@@ -171,13 +168,7 @@ function ProfileMenuRows({
   const t = useT()
   const groups = groupProvidersForBind(profiles)
   const showHeads = groups.length > 1
-  const groupHeads = {
-    anthropic: t("settings.agentTools.bindGroupAnthropic"),
-    openai: t("settings.agentTools.bindGroupOpenai"),
-    google: t("settings.agentTools.bindGroupGoogle"),
-    deepseek: t("settings.agentTools.bindGroupDeepseek"),
-    other: t("settings.agentTools.bindGroupOther")
-  }
+  const groupHeads = bindGroupHeads(t)
   return (
     <>
       {groups.map((group) => (
@@ -191,6 +182,7 @@ function ProfileMenuRows({
             <ProfileRow
               key={profile.id}
               profile={profile}
+              brand={groupHeads[providerBindGroupOf(profile)]}
               selected={boundId === profile.id}
               persist={persist}
             />
@@ -201,12 +193,31 @@ function ProfileMenuRows({
   )
 }
 
+function bindGroupHeads(t: (key: string) => string): Record<ProviderBindGroupId, string> {
+  return {
+    anthropic: t("settings.agentTools.bindGroupAnthropic"),
+    openai: t("settings.agentTools.bindGroupOpenai"),
+    google: t("settings.agentTools.bindGroupGoogle"),
+    deepseek: t("settings.agentTools.bindGroupDeepseek"),
+    other: t("settings.agentTools.bindGroupOther")
+  }
+}
+
+/** 预览锁：{供应商} · {档案名}；档案名已含品牌或 other 组则不重复。 */
+function profileBrandName(profile: ProviderPublic, brand: string): string {
+  if (providerBindGroupOf(profile) === "other") return profile.name
+  if (!brand || brand.toLowerCase() === profile.name.toLowerCase()) return profile.name
+  return `${brand} · ${profile.name}`
+}
+
 function ProfileRow({
   profile,
+  brand,
   selected,
   persist
 }: {
   profile: ProviderPublic
+  brand: string
   selected: boolean
   persist: AgentToolActions["persist"]
 }) {
@@ -224,7 +235,7 @@ function ProfileRow({
     >
       <ProviderIcon kind={profile.kind} name={profile.name} apiStyle={profile.apiStyle} size={16} />
       <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-primary">
-        {profile.name}
+        {profileBrandName(profile, brand)}
         <span className="text-text-tertiary"> · {profile.modelId}</span>
       </span>
       {selected ? <RiCheckLine className="size-3.5 shrink-0 text-accent-500" /> : null}
