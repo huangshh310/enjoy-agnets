@@ -1,5 +1,5 @@
 /**
- * 智能体顶栏：扫描 / 体检 + 密钥边界提示。不含装载率条或常绿灯。
+ * 本机 CLI 顶栏：一行可关提示 + 扫描 / 体检。不是营销黄条。
  */
 import { useState } from "react"
 import { RiRefreshLine, RiShieldCheckLine, RiShieldKeyholeLine } from "@remixicon/react"
@@ -11,6 +11,8 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
 
+const TIP_KEY = "enjoy:cli-key-tip-dismissed"
+
 export function AgentToolsCommandHub() {
   const t = useT()
   const navigate = useNavigate()
@@ -19,17 +21,27 @@ export function AgentToolsCommandHub() {
   const [detecting, setDetecting] = useState(false)
   const [diagnosing, setDiagnosing] = useState(false)
   const [diag, setDiag] = useState<{ total: number; ok: number; failed: number } | null>(null)
+  const [tipOpen, setTipOpen] = useState(() => readTipOpen())
   const tools = snapshot?.agentTools ?? []
   const readyTools = tools.filter((item) => item.status === "ready" || item.id === DEFAULT_RUNTIME_ID)
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-card">
-      <p className="rounded-xl bg-background-secondary-default/60 px-3 py-2 text-caption-1-regular text-text-secondary">
-        {t("settings.agentTools.keyNotSharedTip")}
-      </p>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex flex-col gap-3">
+      {tipOpen ? (
+        <p className="rounded-lg border border-border-button-default bg-background-secondary-default/50 px-3 py-2 text-caption-1-regular text-text-secondary">
+          {t("settings.agentTools.keyNotSharedTip")}
+          <button
+            type="button"
+            onClick={() => dismissTip(setTipOpen)}
+            className="ml-2 text-caption-1-medium text-accent-600 hover:underline"
+          >
+            {t("settings.agentTools.keyTipDismiss")}
+          </button>
+        </p>
+      ) : null}
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-title-3-medium text-text-primary">{t("settings.agentTools.hubTitle")}</h2>
+          <h2 className="text-body-medium font-semibold text-text-primary">{t("settings.agentTools.hubTitle")}</h2>
           <p className="mt-0.5 text-caption-1-regular text-text-secondary">{t("settings.agentTools.hubDesc")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -38,7 +50,7 @@ export function AgentToolsCommandHub() {
             size="sm"
             variant="outline"
             onClick={() => void navigate({ to: "/settings/$section", params: { section: "providers" } })}
-            className="gap-1.5 text-caption-1-medium"
+            className="h-8 gap-1.5 text-caption-1-medium"
           >
             <RiShieldKeyholeLine className="size-3.5 text-accent-500" />
             {t("settings.agentTools.manageProviders")}
@@ -49,7 +61,7 @@ export function AgentToolsCommandHub() {
             variant="outline"
             disabled={detecting}
             onClick={() => void runDetect(queryClient, detecting, setDetecting)}
-            className="gap-1.5 text-caption-1-medium"
+            className="h-8 gap-1.5 text-caption-1-medium"
           >
             <RiRefreshLine className={`size-3.5 ${detecting ? "animate-spin text-accent-500" : ""}`} />
             {detecting ? t("settings.agentTools.scanning") : t("settings.agentTools.scanEnv")}
@@ -60,7 +72,7 @@ export function AgentToolsCommandHub() {
             variant="default"
             disabled={diagnosing}
             onClick={() => void runAllDoctor(readyTools, queryClient, diagnosing, setDiagnosing, setDiag)}
-            className="gap-1.5 text-caption-1-medium"
+            className="h-8 gap-1.5 text-caption-1-medium"
           >
             <RiShieldCheckLine className={`size-3.5 ${diagnosing ? "animate-spin" : ""}`} />
             {diagnosing ? t("settings.agentTools.diagnosing") : t("settings.agentTools.runDoctor")}
@@ -74,6 +86,16 @@ export function AgentToolsCommandHub() {
       ) : null}
     </div>
   )
+}
+
+function readTipOpen(): boolean {
+  if (typeof window === "undefined") return true
+  return window.localStorage.getItem(TIP_KEY) !== "1"
+}
+
+function dismissTip(setTipOpen: (value: boolean) => void) {
+  window.localStorage.setItem(TIP_KEY, "1")
+  setTipOpen(false)
 }
 
 async function runDetect(

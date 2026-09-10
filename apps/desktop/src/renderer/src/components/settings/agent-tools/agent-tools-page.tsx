@@ -1,5 +1,5 @@
 /**
- * Settings → 智能体：本机 CLI 列表、筛选与搜索。
+ * Settings → 智能体：本机 CLI 紧凑表（助手 / 动力源 / 操作）。
  */
 import { useEffect, useMemo, useState } from "react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
@@ -9,7 +9,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
 import { agentToolCardId } from "./agent-tool-anchor"
-import { AgentToolCard } from "./agent-tool-card"
+import { AgentToolRow } from "./agent-tool-row"
 import { AgentToolsEmpty } from "./agent-tools-empty"
 
 type FilterTab = "all" | "ready" | "available" | "soon"
@@ -58,48 +58,48 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
           : "filter"
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-body-medium font-semibold text-text-primary">{t("settings.agentTools.rackTitle")}</h3>
-          <p className="mt-0.5 text-caption-1-regular text-text-secondary">{t("settings.agentTools.rackDesc")}</p>
-        </div>
-        <div className="relative flex items-center">
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-separator-border pb-2">
+        <FilterTabButton label={t("settings.agentTools.filterAll")} count={tools.length} active={activeTab === "all"} onClick={() => setActiveTab("all")} />
+        <FilterTabButton label={t("settings.agentTools.filterReady")} count={readyCount} active={activeTab === "ready"} onClick={() => setActiveTab("ready")} />
+        <FilterTabButton label={t("settings.agentTools.filterMissing")} count={availableCount} active={activeTab === "available"} onClick={() => setActiveTab("available")} />
+        <FilterTabButton label={t("settings.agentTools.filterSoon")} count={soonCount} active={activeTab === "soon"} onClick={() => setActiveTab("soon")} />
+        <div className="relative ml-auto flex items-center">
           <RiSearchLine className="pointer-events-none absolute left-2.5 size-3.5 text-text-tertiary" />
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={t("settings.agentTools.searchPlaceholder")}
-            className="h-8 w-44 rounded-xl border border-border-button-default bg-background-primary-default pr-2.5 pl-8 text-caption-1-medium text-text-primary shadow-2xs outline-none placeholder:text-text-tertiary hover:border-border-button-hover focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+            className="h-8 w-40 rounded-xl border border-border-button-default bg-background-primary-default pr-2.5 pl-8 text-caption-1-medium text-text-primary shadow-2xs outline-none placeholder:text-text-tertiary hover:border-border-button-hover focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
           />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-separator-border pb-2">
-        <FilterTabButton label={t("settings.agentTools.filterAll")} count={tools.length} active={activeTab === "all"} onClick={() => setActiveTab("all")} />
-        <FilterTabButton label={t("settings.agentTools.filterReady")} count={readyCount} active={activeTab === "ready"} onClick={() => setActiveTab("ready")} />
-        <FilterTabButton label={t("settings.agentTools.filterMissing")} count={availableCount} active={activeTab === "available"} onClick={() => setActiveTab("available")} />
-        <FilterTabButton label={t("settings.agentTools.filterSoon")} count={soonCount} active={activeTab === "soon"} onClick={() => setActiveTab("soon")} />
-      </div>
-      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
-        {filteredTools.map((tool: AgentToolPublic) => (
-          <AgentToolCard key={tool.id} tool={tool} flash={focus?.id === tool.id} />
-        ))}
-        {emptyKind ? (
-          <AgentToolsEmpty
-            kind={emptyKind}
-            query={searchQuery}
-            readyCount={readyCount}
-            total={tools.length}
-            onViewReady={() => setActiveTab("ready")}
-            onViewAll={() => setActiveTab("all")}
-            onClearSearch={() => setSearchQuery("")}
-          />
-        ) : null}
-      </div>
-      <p className="rounded-xl bg-background-secondary-default/40 px-3.5 py-2.5 text-caption-2-medium text-text-tertiary">
-        {t("settings.agentTools.pathHintFooter")}
-      </p>
+      {emptyKind ? (
+        <AgentToolsEmpty
+          kind={emptyKind}
+          query={searchQuery}
+          readyCount={readyCount}
+          total={tools.length}
+          onViewReady={() => setActiveTab("ready")}
+          onViewAll={() => setActiveTab("all")}
+          onClearSearch={() => setSearchQuery("")}
+        />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-border-button-default">
+          <div className="grid grid-cols-[1.2fr_1.6fr_auto] gap-3 border-b border-separator-border bg-background-secondary-default/50 px-4 py-2 text-caption-2-medium font-semibold tracking-wide text-text-tertiary uppercase">
+            <span>{t("settings.agentTools.colAssistant")}</span>
+            <span>{t("settings.agentTools.colPower")}</span>
+            <span className="text-right">{t("settings.agentTools.colActions")}</span>
+          </div>
+          {filteredTools.map((tool: AgentToolPublic) => (
+            <AgentToolRow key={tool.id} tool={tool} flash={focus?.id === tool.id} />
+          ))}
+        </div>
+      )}
+      {emptyKind ? null : (
+        <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.listBanHint")}</p>
+      )}
     </section>
   )
 }
@@ -130,16 +130,14 @@ function FilterTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-caption-1-medium ${
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-caption-1-medium ${
         active
-          ? "bg-background-primary-default font-semibold text-text-primary shadow-xs ring-1 ring-border-button-default"
+          ? "bg-accent-500/10 font-medium text-accent-600"
           : "text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
       }`}
     >
       <span>{label}</span>
-      <span className="rounded-md bg-background-secondary-default px-1.5 font-mono text-caption-2-medium text-text-secondary">
-        {count}
-      </span>
+      <span>{count}</span>
     </button>
   )
 }

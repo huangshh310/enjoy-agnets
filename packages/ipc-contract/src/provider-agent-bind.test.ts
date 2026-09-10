@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   agentRefsForProvider,
+  alsoUseTargets,
   composeAgentModels,
   createTargetForBind,
   pickBoundModelId,
@@ -133,4 +134,17 @@ test("绑定后官方模型 id 不能当所选，回落到档案第一项", () =
   const vault = [{ id: "deepseek-flash" }, { id: "deepseek-v4-pro" }]
   assert.equal(pickBoundModelId("claude-sonnet-4-6", vault), "deepseek-flash")
   assert.equal(pickBoundModelId("deepseek-v4-pro", vault), "deepseek-v4-pro")
+})
+
+test("也用于不含沙箱与 Enjoy 本地", () => {
+  const profile = { apiStyle: "anthropic", kind: "anthropic" }
+  const ids = alsoUseTargets("claude", profile, [
+    { id: "opencode", status: "ready" },
+    { id: "sandbox-harness", status: "ready" },
+    { id: "enjoy-local", status: "ready" },
+    { id: "cursor", status: "ready" },
+    { id: "codex", status: "ready" }
+  ]).map((item) => item.id)
+  assert.deepEqual(ids, ["opencode"])
+  assert.ok(!ids.includes("sandbox-harness"))
 })

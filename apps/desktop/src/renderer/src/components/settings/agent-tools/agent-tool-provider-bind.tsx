@@ -1,12 +1,11 @@
 /**
  * 选中供应商后：带族标的模型下拉、套到其他兼容 CLI、可选同步本机。
  */
-import { useState } from "react"
 import { RiArrowDownSLine, RiCheckLine, RiRestartLine, RiUploadCloud2Line } from "@remixicon/react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
+  alsoUseTargets,
   providerBindCanSyncHome,
-  providersCompatibleWith,
   type AgentToolId,
   type AgentToolPublic,
   type ProviderPublic
@@ -159,12 +158,7 @@ function ApplyToOthers({
   const t = useT()
   const queryClient = useQueryClient()
   const tools = useSettingsSnapshot().data?.agentTools ?? []
-  const others = tools.filter(
-    (item) =>
-      item.id !== tool.id &&
-      item.status === "ready" &&
-      providersCompatibleWith(item.id, profile)
-  )
+  const others = alsoUseTargets(tool.id, profile, tools)
   if (others.length === 0) return null
 
   async function toggle(target: AgentToolPublic) {
@@ -183,7 +177,7 @@ function ApplyToOthers({
     <div className="flex flex-col gap-1.5">
       <p className="text-caption-2-medium text-text-tertiary">{t("settings.agentTools.alsoUseOn")}</p>
       <div className="flex flex-wrap gap-1.5">
-        {others.map((item) => {
+          {others.map((item) => {
           const on = item.useCustomProvider && item.providerId === profile.id
           return (
             <button
@@ -192,15 +186,17 @@ function ApplyToOthers({
               onClick={() => void toggle(item)}
               className={
                 on
-                  ? "rounded-lg border border-accent-500/40 bg-accent-500/10 px-2 py-1 text-caption-2-medium text-text-primary"
-                  : "rounded-lg border border-border-button-default px-2 py-1 text-caption-2-medium text-text-secondary hover:border-border-button-hover"
+                  ? "rounded-full bg-accent-500/10 px-2 py-0.5 text-caption-2-medium text-accent-600"
+                  : "rounded-full border border-border-button-default px-2 py-0.5 text-caption-2-medium text-text-tertiary hover:border-border-button-hover"
               }
             >
               {shortAgentLabel(item.id, item.label)}
+              {on ? " ✓" : ""}
             </button>
           )
         })}
       </div>
+      <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.alsoUseNoSandbox")}</p>
     </div>
   )
 }
@@ -216,45 +212,38 @@ function shortAgentLabel(id: string, label: string): string {
 
 function SyncFold({ actions }: { actions: AgentToolActions }) {
   const t = useT()
-  const [open, setOpen] = useState(false)
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="text-caption-2-medium text-text-tertiary hover:text-text-secondary"
-      >
+    <details className="rounded-xl border border-border-button-default px-3 py-2">
+      <summary className="cursor-pointer text-caption-2-medium text-text-tertiary">
         {t("settings.agentTools.syncToggle")}
-      </button>
-      {open ? (
-        <div className="mt-2 flex flex-col gap-2">
-          <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.syncHint")}</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={actions.syncingConfig}
-              onClick={() => void actions.syncToCli()}
-              className="gap-1.5 text-caption-1-medium"
-            >
-              <RiUploadCloud2Line className={`size-3.5 ${actions.syncingConfig ? "animate-spin text-accent-500" : ""}`} />
-              {actions.syncingConfig ? t("settings.agentTools.syncing") : t("settings.agentTools.syncToHome")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={actions.restoringConfig}
-              onClick={() => void actions.restoreCli()}
-              className="gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary"
-            >
-              <RiRestartLine className="size-3" />
-              {t("settings.agentTools.restoreOfficial")}
-            </Button>
-          </div>
+      </summary>
+      <div className="mt-2 flex flex-col gap-2">
+        <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.syncHint")}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={actions.syncingConfig}
+            onClick={() => void actions.syncToCli()}
+            className="gap-1.5 text-caption-1-medium"
+          >
+            <RiUploadCloud2Line className={`size-3.5 ${actions.syncingConfig ? "animate-spin text-accent-500" : ""}`} />
+            {actions.syncingConfig ? t("settings.agentTools.syncing") : t("settings.agentTools.syncToHome")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={actions.restoringConfig}
+            onClick={() => void actions.restoreCli()}
+            className="gap-1 text-caption-2-medium text-text-tertiary hover:text-text-primary"
+          >
+            <RiRestartLine className="size-3" />
+            {t("settings.agentTools.restoreOfficial")}
+          </Button>
         </div>
-      ) : null}
-    </div>
+      </div>
+    </details>
   )
 }

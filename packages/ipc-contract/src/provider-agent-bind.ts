@@ -69,6 +69,18 @@ export function providersSelectableFor<
   })
 }
 
+/** 「也用于」只列协议兼容的已装 CLI。沙箱 / Enjoy 本地永不出现。 */
+export function alsoUseTargets<
+  T extends { id: string; status?: string }
+>(runtimeId: string, profile: ProviderBindHint, tools: ReadonlyArray<T>): T[] {
+  return tools.filter((item) => {
+    if (item.id === runtimeId) return false
+    if (item.id === "sandbox-harness" || item.id === "enjoy-local") return false
+    if (item.status && item.status !== "ready") return false
+    return providersCompatibleWith(item.id, profile)
+  })
+}
+
 /** 哪些 CLI 正在用这份档案（已打开自定义动力源）。 */
 export function agentRefsForProvider(
   providerId: string,

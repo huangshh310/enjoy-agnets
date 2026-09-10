@@ -39,6 +39,16 @@ test("绑了档案还在拉 inspect：旁注占位，不要先闪官方名", () 
   assert.equal(officialAccountRole({ useCustomProvider: false }, true), "hero")
 })
 
+test("官方旁注是虚线盒文案，不摊邮箱或账号名", () => {
+  const dir = dirname(fileURLToPath(import.meta.url))
+  const src = readFileSync(join(dir, "agent-tool-account-aside.tsx"), "utf8")
+  assert.ok(src.includes("officialAccountAside"))
+  assert.ok(src.includes("border-dashed"))
+  assert.ok(!src.includes("accountName"))
+  assert.ok(!src.includes("email"))
+  assert.ok(!src.includes("{name}"))
+})
+
 test("官方账号 Hero 决策面不摊 authMethod / OAuth 原文", () => {
   const dir = dirname(fileURLToPath(import.meta.url))
   const src = readFileSync(join(dir, "agent-tool-account-panel.tsx"), "utf8")

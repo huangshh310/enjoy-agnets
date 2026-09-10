@@ -16,7 +16,7 @@
 | 助手引用 | `#/settings/agent` 配置抽屉 | 选官方登录，或选一份**协议能对上**的档案 + 模型 |
 | 开聊 | Composer 引擎胶囊 | 显示当前引用；不在这里 CRUD 供应商 |
 
-Cursor / Grok / Antigravity / OMP / Amp **没有**这件事：它们只吃官方登录，抽屉里不出现「这个助手用」。
+Cursor / Grok / Antigravity / Amp **只吃官方登录**：列表仍有动力源列（`官方登录 · 已登录/未登录`），抽屉「这个助手用」是只读官方态 + 登录 CTA，**禁止假 vault 下拉**。OMP 共用同一个槽，文案是「OMP 供应商」，不是 Enjoy 档案库。
 
 ## 2. 从别人抄什么、不抄什么
 
@@ -157,4 +157,4 @@ Configured 列表：
 
 代码已有：一份 vault、协议过滤、开流注入、家目录同步、右侧抽屉、下拉选档案、模型族标、也用于其他助手、就地添加。
 
-已对齐：添加收进下拉底部；≥6 筛选；多协议分组；胶囊正文仍是引擎 · 模型（绑定用 vault 所选，档案名进 title）；也用于短标签；绑了档案后官方 inspect 降为旁注，「这个助手用」在账号区之前。绑了档案后 Composer / 发送不要求官方 OAuth（缺 Key 才 needs_key）。upsert/开流校验协议。自定义 ACP 也是右侧抽屉。
+已对齐：本机 CLI 列表是同构表行（助手 | 动力源 | 操作）；Cursor/Grok 不再缺列。副标题走 `listLine` 短句；`quota=true` 仅官方行提示额度进配置；表底静音禁令。配置抽屉 380px 同壳，顶栏名称+配置提示+关闭。也用于圆片；同步带边框 details。添加收进下拉底部；≥6 筛选；多协议分组；胶囊正文仍是引擎 · 模型（绑定用 vault 所选，档案名进 title）；也用于短标签且不上沙箱；绑了档案后官方 inspect 降为旁注，「这个助手用」在账号区之前。仅官方 / OMP 共用该槽，不假 BYOK。绑了档案后 Composer / 发送不要求官方 OAuth（缺 Key 才 needs_key）。upsert/开流校验协议。自定义 ACP 也是右侧抽屉。对照预览：[`previews/local-cli-power-source.html`](../previews/local-cli-power-source.html)。

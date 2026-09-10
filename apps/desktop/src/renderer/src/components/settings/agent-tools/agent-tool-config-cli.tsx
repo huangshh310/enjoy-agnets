@@ -7,7 +7,7 @@ import { AgentToolAdvanced } from "./agent-tool-advanced"
 import { AgentToolConfigOps } from "./agent-tool-config-ops"
 import { AgentToolConfigSource } from "./agent-tool-config-source"
 import { AgentToolLaunchPrefs } from "./launch-prefs/panel"
-import { AgentToolProvider } from "./agent-tool-provider"
+import { AgentToolPowerSlot } from "./power-source/agent-tool-power-slot"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolConfigCli({
@@ -19,7 +19,7 @@ export function AgentToolConfigCli({
 }) {
   return (
     <div className="space-y-4">
-      <AgentToolProvider tool={tool} actions={actions} />
+      <AgentToolPowerSlot tool={tool} actions={actions} />
       <AgentToolAccountPanel tool={tool} />
       <AgentToolConfigSource tool={tool} actions={actions} />
       <AgentToolLaunchPrefs tool={tool} actions={actions} />
