@@ -56,13 +56,46 @@ export type ObservabilityReplayInput = z.infer<typeof ObservabilityReplayInput>
 export const ObservabilityCliUsageInput = z.object({}).strict()
 export type ObservabilityCliUsageInput = z.infer<typeof ObservabilityCliUsageInput>
 
-export const CliUsageSourceId = z.enum(["claude", "codex"])
-export type CliUsageSourceId = z.infer<typeof CliUsageSourceId>
+/** 与导轨 CLI 段同序；不含 enjoy-local / sandbox-harness / custom-acp。 */
+export const CLI_USAGE_SOURCE_IDS = [
+  "claude",
+  "cursor",
+  "grok",
+  "codex",
+  "antigravity",
+  "gemini",
+  "opencode",
+  "pi",
+  "hermes",
+  "amp",
+  "deepseek",
+  "omp"
+] as const
+
+export const CliUsageSourceId = z.enum(CLI_USAGE_SOURCE_IDS)
+export type CliUsageSourceId = (typeof CLI_USAGE_SOURCE_IDS)[number]
+
+export const CliUsageSourceStatus = z.enum([
+  "has-usage",
+  "directory-missing",
+  "scanned-empty",
+  "unsupported"
+])
+export type CliUsageSourceStatus = z.infer<typeof CliUsageSourceStatus>
+
+/** 1 USD = 10^10 ticks。换算函数在 renderer。 */
+export const GROK_USD_TICKS_PER_DOLLAR = 10_000_000_000
 
 export const CliUsageSource = z.object({
   id: CliUsageSourceId,
-  found: z.boolean(),
-  sessionCount: z.number().int().nonnegative()
+  status: CliUsageSourceStatus,
+  sessionCount: z.number().int().nonnegative(),
+  fileCount: z.number().int().nonnegative(),
+  inputTokens: z.number().int().nonnegative(),
+  outputTokens: z.number().int().nonnegative(),
+  cacheTokens: z.number().int().nonnegative(),
+  totalTokens: z.number().int().nonnegative(),
+  costUsdTicks: z.number().int().positive().optional()
 })
 export type CliUsageSource = z.infer<typeof CliUsageSource>
 
@@ -72,7 +105,9 @@ export const CliUsageBucket = z.object({
   outputTokens: z.number().int().nonnegative(),
   cacheTokens: z.number().int().nonnegative(),
   totalTokens: z.number().int().nonnegative(),
-  sessions: z.number().int().nonnegative()
+  sessions: z.number().int().nonnegative(),
+  breakdownSessions: z.number().int().nonnegative(),
+  sourceIds: z.array(CliUsageSourceId)
 })
 export type CliUsageBucket = z.infer<typeof CliUsageBucket>
 

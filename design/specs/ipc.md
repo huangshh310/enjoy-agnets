@@ -24,7 +24,7 @@
 | workflow | `list` `get` `start` `recover` `resume` `cancel` `retry` | Durable run |
 | mcp | `servers` `upsert` `remove` `connect` `disconnect` `test` `tools` `call` `setPermission` `openApp` `appMessage` | MCP；`call` 入参 `McpCallInput`；`openApp` / `appMessage` 仅 trusted，消息经 `sanitizeAppMessage` |
 | realtime | `open` `sendAudio` `close` | 实验语音；连不上远端返回 `{ transport: "loop" }` 且 `realtime.status=error`，禁止把本地回环标成 `open` |
-| observability | `metrics` `export` `setPolicy` `replay` `cliUsage` | 本地指标与内存 stream 回放；`replay` 可按 `runId` 过滤，摘要可带 `toolName` / `decision`，不含 args；`cliUsage` 入参空对象，返回本机 Claude/Codex transcript 聚合 token（日 / 模型 / 项目名），不含 prompt、jsonl 原文或绝对路径 |
+| observability | `metrics` `export` `setPolicy` `replay` `cliUsage` | 本地指标与内存 stream 回放；`replay` 可按 `runId` 过滤，摘要可带 `toolName` / `decision`，不含 args；`cliUsage` 入参空对象，返回 catalog 全量 `CliUsageSource`（`CliUsageSourceStatus` 四态）+ 日/模型/项目桶，不含 prompt、jsonl 原文或绝对路径 |
 | terminal | `open` `write` `resize` `close` | node-pty；`resize` 入参 `{ sessionId, cols, rows }` |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
 | app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |

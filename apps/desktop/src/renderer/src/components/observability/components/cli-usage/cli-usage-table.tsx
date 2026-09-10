@@ -5,7 +5,7 @@ import type { CliUsageBucket } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { formatTokens } from "@renderer/components/ai-chat/agent-limits/format-tokens"
-import { hasTokenBreakdown } from "./cli-usage-format"
+import { formatBucketLabel, hasTokenBreakdown } from "./lib/format"
 
 export function CliUsageBucketTable(props: {
   title: string
@@ -19,8 +19,8 @@ export function CliUsageBucketTable(props: {
       <h3 className="border-b border-separator-border/60 bg-background-secondary-default/60 px-3.5 py-2 text-caption-1-medium text-text-secondary">
         {props.title}
       </h3>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="min-w-0 overflow-x-auto">
+        <table className="w-full min-w-[40rem] text-left">
           <thead className="text-caption-2-medium text-text-tertiary">
             <tr>
               <th className="px-3.5 py-2 font-medium">{props.keyLabel}</th>
@@ -47,11 +47,12 @@ function NumHead({ children }: { children: string }) {
 }
 
 function BucketRow({ row }: { row: CliUsageBucket }) {
-  const split = hasTokenBreakdown(row)
+  const t = useT()
+  const split = row.breakdownSessions === row.sessions && hasTokenBreakdown(row)
   return (
     <tr className="border-t border-separator-border/40 hover:bg-background-secondary-hover/40">
       <td className="max-w-[14rem] truncate px-3.5 py-2 text-caption-1-medium text-text-primary">
-        {row.key}
+        {formatBucketLabel(row.key, t)}
       </td>
       <NumCell muted={!split}>{split ? formatTokens(row.inputTokens) : "—"}</NumCell>
       <NumCell muted={!split}>{split ? formatTokens(row.outputTokens) : "—"}</NumCell>

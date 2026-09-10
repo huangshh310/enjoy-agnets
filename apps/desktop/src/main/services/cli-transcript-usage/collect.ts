@@ -1,122 +1,126 @@
 /**
- * 扫描本机 Claude / Codex jsonl，聚合成日 / 模型 / 项目桶。不回传路径或原文。
+ * 编排 catalog × adapter → CliTranscriptUsage。不写路径特例。
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { existsSync, readFileSync, statSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
-import type { CliTranscriptUsage, CliUsageBucket, CliUsageSource } from "@enjoy-agents/ipc-contract"
-import { MAX_PROJECT_BUCKETS, MAX_TRANSCRIPT_BYTES, MAX_TRANSCRIPT_FILES } from "./constants.ts"
-import { parseClaudeTranscript } from "./parse-claude.ts"
-import { parseCodexTranscript } from "./parse-codex.ts"
-import type { UsageDelta } from "./parse-usage.ts"
+import type { CliTranscriptUsage, CliUsageSource, CliUsageSourceId } from "@enjoy-agents/ipc-contract"
+import { claudeAdapter } from "./adapters/claude.ts"
+import { codexAdapter } from "./adapters/codex.ts"
+import { grokAdapter } from "./adapters/grok.ts"
+import type { CliUsageAdapter } from "./adapters/types.ts"
+import { catalogEntry, catalogIds } from "./catalog.ts"
+import {
+  MAX_TRANSCRIPT_BYTES,
+  MAX_TRANSCRIPT_FILES,
+  MAX_USAGE_JSON_BYTES,
+  MAX_USAGE_JSON_FILES
+} from "./constants.ts"
+import { hasAnyTokens, type UsageDelta } from "./parsers/parse-usage.ts"
+import { rollupBuckets, rollupProjects, sumCostTicks, sumTokenFields } from "./rollup.ts"
+import { sourceStatus } from "./source-status.ts"
+import { walkMatchingFiles } from "./walk-files.ts"
 
-type SourceId = "claude" | "codex"
+type AdapterRun = { adapter: CliUsageAdapter; maxFiles: number; maxBytes: number }
 
-export function transcriptRoots(home: string): Record<SourceId, string[]> {
-  return {
-    claude: [join(home, ".claude", "projects")],
-    codex: [join(home, ".codex", "sessions"), join(home, ".codex", "archived_sessions")]
+function adapterRun(id: CliUsageSourceId): AdapterRun | undefined {
+  if (id === "claude") {
+    return { adapter: claudeAdapter, maxFiles: MAX_TRANSCRIPT_FILES, maxBytes: MAX_TRANSCRIPT_BYTES }
   }
+  if (id === "codex") {
+    return { adapter: codexAdapter, maxFiles: MAX_TRANSCRIPT_FILES, maxBytes: MAX_TRANSCRIPT_BYTES }
+  }
+  if (id === "grok") {
+    return { adapter: grokAdapter, maxFiles: MAX_USAGE_JSON_FILES, maxBytes: MAX_USAGE_JSON_BYTES }
+  }
+  return undefined
 }
 
 export function collectCliTranscriptUsage(
   home = homedir(),
   now = Date.now()
 ): CliTranscriptUsage {
-  const roots = transcriptRoots(home)
-  const claude = collectSource("claude", roots.claude, parseClaudeTranscript)
-  const codex = collectSource("codex", roots.codex, parseCodexTranscript)
-  const sessions = [...claude.deltas, ...codex.deltas]
+  const deltas: UsageDelta[] = []
+  const sources = catalogIds().map((id) => {
+    const collected = collectOne(id, home)
+    deltas.push(...collected.deltas)
+    return collected.source
+  })
   return {
     scannedAt: now,
-    sources: [claude.source, codex.source],
-    days: rollup(sessions, (item) => item.day || "—"),
-    models: rollup(sessions, (item) => item.model || "—"),
-    projects: rollup(sessions, (item) => item.project || "—").slice(0, MAX_PROJECT_BUCKETS)
+    sources,
+    days: rollupBuckets(deltas, (item) => item.day || "—"),
+    models: rollupBuckets(deltas, (item) => item.model || "—"),
+    projects: rollupProjects(deltas)
   }
 }
 
-function collectSource(
-  id: SourceId,
-  roots: string[],
-  parse: (text: string) => UsageDelta
+function collectOne(
+  id: CliUsageSourceId,
+  home: string
 ): { source: CliUsageSource; deltas: UsageDelta[] } {
-  const files = listJsonl(roots).slice(0, MAX_TRANSCRIPT_FILES)
-  const found = roots.some((root) => existsSync(root))
+  const spec = catalogEntry(id)
+  if (spec.scan === "none") return { source: unsupportedSource(id), deltas: [] }
+  const run = adapterRun(id)
+  if (!run) return { source: unsupportedSource(id), deltas: [] }
+  return collectAdapter(run, home)
+}
+
+function collectAdapter(
+  run: AdapterRun,
+  home: string
+): { source: CliUsageSource; deltas: UsageDelta[] } {
+  const { adapter, maxFiles, maxBytes } = run
+  const roots = adapter.roots(home)
+  const directoryFound = roots.some((root) => existsSync(root))
+  const files = walkMatchingFiles({ roots, matchRelPath: adapter.matchRelPath, maxFiles })
   const deltas: UsageDelta[] = []
   for (const file of files) {
-    const delta = readTranscript(file, parse)
-    if (delta && delta.totalTokens + delta.inputTokens + delta.outputTokens + delta.cacheTokens > 0) {
-      deltas.push(delta)
-    }
+    const parsed = readMatchedFile(file, adapter, roots, maxBytes)
+    if (parsed && hasAnyTokens(parsed)) deltas.push({ ...parsed, sourceId: adapter.id })
   }
+  const ticks = sumCostTicks(deltas)
   return {
-    source: { id, found, sessionCount: deltas.length },
+    source: {
+      id: adapter.id,
+      status: sourceStatus({
+        scan: catalogEntry(adapter.id).scan,
+        directoryFound,
+        sessionCount: deltas.length
+      }),
+      sessionCount: deltas.length,
+      fileCount: files.length,
+      ...sumTokenFields(deltas),
+      ...(ticks ? { costUsdTicks: ticks } : {})
+    },
     deltas
   }
 }
 
-function readTranscript(file: string, parse: (text: string) => UsageDelta): UsageDelta | null {
+function readMatchedFile(
+  file: string,
+  adapter: CliUsageAdapter,
+  roots: string[],
+  maxBytes: number
+): UsageDelta | null {
   try {
     const size = statSync(file).size
-    if (size <= 0 || size > MAX_TRANSCRIPT_BYTES) return null
-    return parse(readFileSync(file, "utf8"))
+    if (size <= 0 || size > maxBytes) return null
+    const root = roots.find((item) => file.startsWith(item)) ?? roots[0] ?? ""
+    return adapter.parse(readFileSync(file, "utf8"), { filePath: file, root })
   } catch {
     return null
   }
 }
 
-function listJsonl(roots: string[]): string[] {
-  const out: string[] = []
-  for (const root of roots) walkJsonl(root, out)
-  return out
-}
-
-function walkJsonl(dir: string, out: string[]): void {
-  if (out.length >= MAX_TRANSCRIPT_FILES || !existsSync(dir)) return
-  let entries: string[] = []
-  try {
-    entries = readdirSync(dir)
-  } catch {
-    return
+function unsupportedSource(id: CliUsageSourceId): CliUsageSource {
+  return {
+    id,
+    status: "unsupported",
+    sessionCount: 0,
+    fileCount: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheTokens: 0,
+    totalTokens: 0
   }
-  for (const name of entries) {
-    if (out.length >= MAX_TRANSCRIPT_FILES) return
-    const full = join(dir, name)
-    let stat
-    try {
-      stat = statSync(full)
-    } catch {
-      continue
-    }
-    if (stat.isDirectory()) {
-      walkJsonl(full, out)
-      continue
-    }
-    if (stat.isFile() && name.endsWith(".jsonl")) out.push(full)
-  }
-}
-
-function rollup(items: UsageDelta[], keyOf: (item: UsageDelta) => string): CliUsageBucket[] {
-  const map = new Map<string, CliUsageBucket>()
-  for (const item of items) {
-    const key = keyOf(item)
-    const prev = map.get(key) ?? {
-      key,
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheTokens: 0,
-      totalTokens: 0,
-      sessions: 0
-    }
-    map.set(key, {
-      key,
-      inputTokens: prev.inputTokens + item.inputTokens,
-      outputTokens: prev.outputTokens + item.outputTokens,
-      cacheTokens: prev.cacheTokens + item.cacheTokens,
-      totalTokens: prev.totalTokens + item.totalTokens,
-      sessions: prev.sessions + 1
-    })
-  }
-  return [...map.values()].sort((left, right) => right.totalTokens - left.totalTokens || right.sessions - left.sessions)
 }

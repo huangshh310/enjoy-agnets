@@ -32,6 +32,7 @@
 | `workflow` | [specs/workflow.md](./specs/workflow.md) | Durable run、checkpoint | `agent-core/agents/workflow` |
 | `mcp` | [specs/mcp.md](./specs/mcp.md) | Server、权限、隔离 App | `packages/mcp` |
 | `observability` | [specs/observability.md](./specs/observability.md) | 本地指标、脱敏、OTEL | `telemetry-service` |
+| `cli-usage` | [specs/cli-usage.md](./specs/cli-usage.md) | 本机记录补齐执行计划（catalog 四态、Grok `usage.json`、Codex 模型列）；PR5 前回写前，当前真相仍以 `m1-usage` + `observability` 为准 | `cli-transcript-usage/`、`observability/components/cli-usage/` |
 | `i18n` | [specs/i18n.md](./specs/i18n.md) | 中英界面语言，默认中文 | `renderer/src/i18n`、`packages/ui/i18n` |
 | `skills` | [specs/skills.md](./specs/skills.md) | 技能生态、Agent 专属整备舱、Bento 集市与同步投影 | `components/skills`、`main/services/skills-service.ts` |
 | `updates` | [specs/updates.md](./specs/updates.md) | 自动更新、发行说明、GitHub Releases | `main/services/app-update.ts`、`components/app-update/` |

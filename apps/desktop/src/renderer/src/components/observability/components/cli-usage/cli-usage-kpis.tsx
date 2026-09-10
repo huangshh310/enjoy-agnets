@@ -12,21 +12,37 @@ import type { CliUsageBucket } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { formatTokens } from "@renderer/components/ai-chat/agent-limits/format-tokens"
-import { hasTokenBreakdown, sharePercent } from "./cli-usage-format"
+import { CliUsageGrokCostCard } from "./components/cost-card"
+import { hasTokenBreakdown, sharePercent } from "./lib/format"
 
-export function CliUsageKpis({ totals }: { totals: CliUsageBucket }) {
-  const split = hasTokenBreakdown(totals)
-  return split ? <SplitKpiRow totals={totals} /> : <TotalKpiRow totals={totals} />
+export function CliUsageKpis(props: {
+  totals: CliUsageBucket
+  mixed: boolean
+  grokTicks?: number
+}) {
+  const split = !props.mixed && hasTokenBreakdown(props.totals)
+  return split ? (
+    <div className="flex flex-col gap-2.5">
+      <SplitKpiRow totals={props.totals} />
+      {props.grokTicks ? (
+        <div className="grid gap-2.5 sm:grid-cols-4">
+          <CliUsageGrokCostCard ticks={props.grokTicks} />
+        </div>
+      ) : null}
+    </div>
+  ) : (
+    <TotalKpiRow totals={props.totals} grokTicks={props.grokTicks} />
+  )
 }
 
-function TotalKpiRow({ totals }: { totals: CliUsageBucket }) {
+function TotalKpiRow(props: { totals: CliUsageBucket; grokTicks?: number }) {
   const t = useT()
   return (
-    <div className="grid gap-2.5 sm:grid-cols-3">
+    <div className={cx("grid gap-2.5", props.grokTicks ? "sm:grid-cols-4" : "sm:grid-cols-3")}>
       <div className="sm:col-span-2">
         <KpiCard
           label={t("pages.observability.cliUsageTotal")}
-          value={formatTokens(totals.totalTokens)}
+          value={formatTokens(props.totals.totalTokens)}
           hint={t("pages.observability.cliUsageNoSplit")}
           icon={RiPulseLine}
           iconClass="text-accent-500"
@@ -34,11 +50,12 @@ function TotalKpiRow({ totals }: { totals: CliUsageBucket }) {
       </div>
       <KpiCard
         label={t("pages.observability.cliUsageSessions")}
-        value={String(totals.sessions)}
-        hint={t("pages.observability.cliUsageSessionCount", { n: totals.sessions })}
+        value={String(props.totals.sessions)}
+        hint={t("pages.observability.cliUsageSessionCount", { n: props.totals.sessions })}
         icon={RiFileList3Line}
         iconClass="text-foreground-icon-secondary"
       />
+      {props.grokTicks ? <CliUsageGrokCostCard ticks={props.grokTicks} /> : null}
     </div>
   )
 }
@@ -108,7 +125,7 @@ function KpiCard(props: {
 }) {
   const Icon = props.icon
   return (
-    <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs">
+    <div className="flex h-full flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3 shadow-2xs">
       <div className="flex items-center justify-between text-text-tertiary">
         <span className="text-caption-2-medium">{props.label}</span>
         <Icon className={cx("size-3.5", props.iconClass)} />
