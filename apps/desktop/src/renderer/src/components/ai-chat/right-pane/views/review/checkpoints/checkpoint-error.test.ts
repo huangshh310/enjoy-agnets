@@ -14,6 +14,10 @@ test("检查点错误码翻成词表键", () => {
     "chat.reviewCheckpointNotFound"
   )
   assert.equal(
+    checkpointErrorMessage("CHECKPOINT_CONFIRM_REQUIRED", t),
+    "chat.reviewCheckpointConfirmRequired"
+  )
+  assert.equal(
     checkpointErrorMessage("CHECKPOINT_RESTORE_FAILED: index", t),
     "chat.reviewCheckpointRestoreFailed"
   )

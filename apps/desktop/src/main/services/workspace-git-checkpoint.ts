@@ -37,10 +37,9 @@ export async function enjoyGitDir(workspaceRoot: string): Promise<string | null>
 export async function recordEnjoyCheckpoint(workspaceRoot: string): Promise<string | null> {
   const gitAbs = await enjoyGitDir(workspaceRoot)
   if (!gitAbs) return null
-  const indexFile = join(gitAbs, `enjoy-index-${process.pid}-${Date.now()}`)
-  const env = { GIT_INDEX_FILE: indexFile }
+  const indexFile = enjoyTempIndexPath(gitAbs, "record")
   try {
-    const sha = await commitWorktreeSnapshot(workspaceRoot, env)
+    const sha = await commitWorktreeSnapshot(workspaceRoot, indexFile)
     if (!sha) return null
     const ref = enjoyCheckpointRef(Date.now())
     const updated = await runGit(workspaceRoot, ["update-ref", ref, sha])
@@ -77,25 +76,30 @@ export async function listEnjoyCheckpointItems(
 
 async function commitWorktreeSnapshot(
   workspaceRoot: string,
-  env: NodeJS.ProcessEnv
+  indexFile: string
 ): Promise<string | null> {
   const hasHead = (await runGit(workspaceRoot, ["rev-parse", "--verify", "HEAD"])).exitCode === 0
   if (hasHead) {
-    const read = await gitEnv(workspaceRoot, ["read-tree", "HEAD"], env)
+    const read = await runGitIndex(workspaceRoot, ["read-tree", "HEAD"], indexFile)
     if (read.exitCode !== 0) return null
   }
-  if ((await gitEnv(workspaceRoot, ["add", "-A"], env)).exitCode !== 0) return null
-  const tree = (await gitEnv(workspaceRoot, ["write-tree"], env)).stdout.trim()
+  if ((await runGitIndex(workspaceRoot, ["add", "-A"], indexFile)).exitCode !== 0) return null
+  const tree = (await runGitIndex(workspaceRoot, ["write-tree"], indexFile)).stdout.trim()
   if (!tree) return null
   const args = hasHead
     ? ["commit-tree", tree, "-p", "HEAD", "-m", "enjoy checkpoint"]
     : ["commit-tree", tree, "-m", "enjoy checkpoint"]
-  const sha = (await gitEnv(workspaceRoot, args, env)).stdout.trim()
+  const sha = (await runGitIndex(workspaceRoot, args, indexFile)).stdout.trim()
   return sha || null
 }
 
-function gitEnv(cwd: string, args: string[], extraEnv: NodeJS.ProcessEnv) {
-  return runExecutable(cwd, "git", args, 30_000, extraEnv)
+/** 记账 / 还原共用临时 index，禁止写用户 `.git/index`。 */
+export function enjoyTempIndexPath(gitAbs: string, purpose: "record" | "restore"): string {
+  return join(gitAbs, `enjoy-index-${purpose}-${process.pid}-${Date.now()}`)
+}
+
+export function runGitIndex(cwd: string, args: string[], indexFile: string) {
+  return runExecutable(cwd, "git", args, 30_000, { GIT_INDEX_FILE: indexFile })
 }
 
 function pathInside(root: string, target: string): boolean {

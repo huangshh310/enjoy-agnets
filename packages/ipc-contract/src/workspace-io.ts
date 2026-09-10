@@ -220,13 +220,43 @@ export const ListCheckpointsResult = z.object({
 })
 export type ListCheckpointsResult = z.infer<typeof ListCheckpointsResult>
 
+const EnjoyCheckpointRef = z.string().regex(/^refs\/enjoy\/checkpoints\/\d+$/)
+
+export const PreviewCheckpointInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    ref: EnjoyCheckpointRef
+  })
+  .strict()
+export type PreviewCheckpointInput = z.infer<typeof PreviewCheckpointInput>
+
+export const PreviewCheckpointResult = z.object({
+  ref: z.string().min(1),
+  sha: z.string().min(1),
+  untrackedToDelete: z.array(z.string()),
+  trackedToDelete: z.array(z.string())
+})
+export type PreviewCheckpointResult = z.infer<typeof PreviewCheckpointResult>
+
 export const RestoreCheckpointInput = z
   .object({
     workspaceId: z.string().min(1),
-    ref: z.string().regex(/^refs\/enjoy\/checkpoints\/\d+$/)
+    ref: EnjoyCheckpointRef,
+    /** 快照外未跟踪文件会删除；有此类路径时必须为 true。 */
+    confirmDeleteUntracked: z.boolean().optional()
   })
   .strict()
 export type RestoreCheckpointInput = z.infer<typeof RestoreCheckpointInput>
 
-export const RestoreCheckpointResult = GitRestoreResult
-export type RestoreCheckpointResult = GitRestoreResult
+export const RestoreCheckpointResult = z.discriminatedUnion("ok", [
+  z.object({
+    ok: z.literal(true),
+    restored: z.number().int().nonnegative()
+  }),
+  z.object({
+    ok: z.literal(false),
+    code: z.literal("CHECKPOINT_CONFIRM_REQUIRED"),
+    untrackedToDelete: z.array(z.string())
+  })
+])
+export type RestoreCheckpointResult = z.infer<typeof RestoreCheckpointResult>

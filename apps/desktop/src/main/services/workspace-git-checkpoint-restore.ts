@@ -1,73 +1,67 @@
 /**
- * 把工作区对齐到检查点快照：换 index + 工作区，不移动 HEAD。
+ * 把工作区对齐到检查点快照：临时 GIT_INDEX_FILE + checkout-index。
+ * 不移动 HEAD，不改用户暂存区。删除快照外未跟踪文件必须显式确认。
  */
 import { promises as fs } from "node:fs"
-import { runGit } from "./command.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
-import { enjoyGitDir, parseEnjoyCheckpointRef } from "./workspace-git-checkpoint.ts"
+import { planEnjoyCheckpointRestore } from "./workspace-git-checkpoint-plan.ts"
+import {
+  enjoyGitDir,
+  enjoyTempIndexPath,
+  runGitIndex
+} from "./workspace-git-checkpoint.ts"
+
+export type RestoreEnjoyCheckpointResult =
+  | { ok: true; restored: number }
+  | { ok: false; code: "CHECKPOINT_CONFIRM_REQUIRED"; untrackedToDelete: string[] }
 
 export async function restoreEnjoyCheckpoint(
   workspaceRoot: string,
-  ref: string
-): Promise<{ ok: true; restored: number }> {
-  if (parseEnjoyCheckpointRef(ref) == null) {
-    throw new Error("CHECKPOINT_REF_INVALID")
+  ref: string,
+  opts: { confirmDeleteUntracked?: boolean } = {}
+): Promise<RestoreEnjoyCheckpointResult> {
+  const plan = await planEnjoyCheckpointRestore(workspaceRoot, ref)
+  if (plan.untrackedToDelete.length > 0 && !opts.confirmDeleteUntracked) {
+    return {
+      ok: false,
+      code: "CHECKPOINT_CONFIRM_REQUIRED",
+      untrackedToDelete: plan.untrackedToDelete
+    }
   }
-  if (!(await enjoyGitDir(workspaceRoot))) {
-    throw new Error("CHECKPOINT_NOT_FOUND")
-  }
-  const sha = (await runGit(workspaceRoot, ["rev-parse", "--verify", ref])).stdout.trim()
-  if (!sha) throw new Error("CHECKPOINT_NOT_FOUND")
-  const keep = await treePaths(workspaceRoot, sha)
-  const extras = await worktreeCandidates(workspaceRoot)
-  await applyCheckpointTree(workspaceRoot, sha)
-  const removed = await deleteMissingPaths(workspaceRoot, extras, keep)
-  return { ok: true, restored: keep.size + removed }
+  await applyCheckpointTree(workspaceRoot, plan.sha)
+  const removed = await deleteListedPaths(workspaceRoot, [
+    ...plan.trackedToDelete,
+    ...plan.untrackedToDelete
+  ])
+  return { ok: true, restored: plan.keep.size + removed }
 }
 
 async function applyCheckpointTree(workspaceRoot: string, sha: string): Promise<void> {
-  const read = await runGit(workspaceRoot, ["read-tree", sha])
-  if (read.exitCode !== 0) {
-    throw new Error(read.stderr.trim() || "CHECKPOINT_RESTORE_FAILED")
+  const gitAbs = await enjoyGitDir(workspaceRoot)
+  if (!gitAbs) throw new Error("CHECKPOINT_NOT_FOUND")
+  const indexFile = enjoyTempIndexPath(gitAbs, "restore")
+  try {
+    const read = await runGitIndex(workspaceRoot, ["read-tree", sha], indexFile)
+    if (read.exitCode !== 0) {
+      throw new Error(read.stderr.trim() || "CHECKPOINT_RESTORE_FAILED")
+    }
+    const checkout = await runGitIndex(workspaceRoot, ["checkout-index", "-a", "-f"], indexFile)
+    if (checkout.exitCode !== 0) {
+      throw new Error(checkout.stderr.trim() || "CHECKPOINT_RESTORE_FAILED")
+    }
+  } finally {
+    await fs.unlink(indexFile).catch(() => undefined)
   }
-  const checkout = await runGit(workspaceRoot, ["checkout-index", "-a", "-f"])
-  if (checkout.exitCode !== 0) {
-    throw new Error(checkout.stderr.trim() || "CHECKPOINT_RESTORE_FAILED")
-  }
 }
 
-async function treePaths(workspaceRoot: string, sha: string): Promise<Set<string>> {
-  const listed = await runGit(workspaceRoot, ["ls-tree", "-r", "--name-only", sha])
-  return new Set(
-    listed.stdout
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-  )
-}
-
-async function worktreeCandidates(workspaceRoot: string): Promise<string[]> {
-  const tracked = await runGit(workspaceRoot, ["ls-files", "-z"])
-  const others = await runGit(workspaceRoot, ["ls-files", "--others", "--exclude-standard", "-z"])
-  return [...nulPaths(tracked.stdout), ...nulPaths(others.stdout)]
-}
-
-async function deleteMissingPaths(
-  workspaceRoot: string,
-  candidates: string[],
-  keep: Set<string>
-): Promise<number> {
+async function deleteListedPaths(workspaceRoot: string, paths: string[]): Promise<number> {
   let removed = 0
   const seen = new Set<string>()
-  for (const path of candidates) {
-    if (!path || keep.has(path) || seen.has(path)) continue
+  for (const path of paths) {
+    if (!path || seen.has(path)) continue
     seen.add(path)
     await fs.rm(resolveInsideWorkspace(workspaceRoot, path), { force: true, recursive: true })
     removed += 1
   }
   return removed
-}
-
-function nulPaths(stdout: string): string[] {
-  return stdout.split("\0").map((item) => item.trim()).filter(Boolean)
 }

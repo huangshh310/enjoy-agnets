@@ -20,11 +20,8 @@ export function ReviewCheckpointsPane({ vm }: { vm: ReviewViewModel }) {
         isRefreshing={vm.checkpoints.isRefreshing}
         error={vm.checkpoints.error}
         onRefresh={() => void vm.checkpoints.refresh()}
-        onRestore={async (ref) => {
-          const message = await vm.checkpoints.restore(ref)
-          if (message) return message
-          return null
-        }}
+        onPreview={vm.checkpoints.preview}
+        onRestore={vm.checkpoints.restore}
       />
     </div>
   )

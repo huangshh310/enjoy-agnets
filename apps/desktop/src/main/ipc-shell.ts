@@ -10,6 +10,7 @@ import {
   GitPushInput,
   GitRestoreInput,
   GitStageInput,
+  PreviewCheckpointInput,
   RestoreCheckpointInput,
   ListDirInput,
   MoveWorkspacePathInput,
@@ -65,6 +66,7 @@ import {
   restoreWorkspacePaths,
   stageWorkspacePaths,
   listEnjoyCheckpointItems,
+  previewEnjoyCheckpointRestore,
   restoreEnjoyCheckpoint
 } from "./services/workspace"
 import { writeWorkspaceFile } from "./services/workspace-write"
@@ -102,6 +104,7 @@ export const SHELL_CHANNELS = [
   "workspace.gitRestore",
   "workspace.gitStage",
   "workspace.listCheckpoints",
+  "workspace.previewCheckpoint",
   "workspace.restoreCheckpoint",
   "workspace.changes",
   "session.list",
@@ -222,10 +225,17 @@ function registerWorkspaceIpc() {
     const ws = await getWorkspace(workspaceId)
     return { checkpoints: await listEnjoyCheckpointItems(ws.rootPath) }
   })
+  ipcMain.handle("workspace.previewCheckpoint", async (_event, raw) => {
+    const input = PreviewCheckpointInput.parse(raw)
+    const ws = await getWorkspace(input.workspaceId)
+    return previewEnjoyCheckpointRestore(ws.rootPath, input.ref)
+  })
   ipcMain.handle("workspace.restoreCheckpoint", async (_event, raw) => {
     const input = RestoreCheckpointInput.parse(raw)
     const ws = await getWorkspace(input.workspaceId)
-    return restoreEnjoyCheckpoint(ws.rootPath, input.ref)
+    return restoreEnjoyCheckpoint(ws.rootPath, input.ref, {
+      confirmDeleteUntracked: input.confirmDeleteUntracked
+    })
   })
 }
 

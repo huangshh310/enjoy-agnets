@@ -24,6 +24,7 @@ export { restoreWorkspacePaths } from "./workspace-git-restore"
 export { stageWorkspacePaths } from "./workspace-git-stage"
 export { listEnjoyCheckpointItems } from "./workspace-git-checkpoint"
 export { restoreEnjoyCheckpoint } from "./workspace-git-checkpoint-restore"
+export { previewEnjoyCheckpointRestore } from "./workspace-git-checkpoint-plan"
 export { pushWorkspace, readWorkspacePatch } from "./workspace-git-remote"
 
 /** 只弹出目录选择，不写 workspaces 表。 */

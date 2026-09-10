@@ -1,6 +1,7 @@
 /**
  * 应用内确认框。不要用 window.confirm / Electron 原生框，标题会变成包名。
  */
+import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -19,6 +20,7 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   destructive = false,
+  children,
   onOpenChange,
   onConfirm
 }: {
@@ -28,6 +30,7 @@ export function ConfirmDialog({
   confirmLabel?: string
   cancelLabel?: string
   destructive?: boolean
+  children?: ReactNode
   onOpenChange: (open: boolean) => void
   onConfirm: () => void
 }) {
@@ -44,6 +47,7 @@ export function ConfirmDialog({
             {description}
           </DialogDescription>
         </DialogHeader>
+        {children ? <div className="mt-3">{children}</div> : null}
         <DialogFooter className="mt-2">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             {cancelText}

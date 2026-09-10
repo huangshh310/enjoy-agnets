@@ -8,7 +8,9 @@ import {
   GitPushInput,
   GitRestoreInput,
   MoveWorkspacePathInput,
+  PreviewCheckpointInput,
   RestoreCheckpointInput,
+  RestoreCheckpointResult,
   OpenWorkspaceInput,
   PickFolderResult
 } from "./workspace-io.ts"
@@ -81,9 +83,11 @@ test("MoveWorkspacePathInput 只要 from 与 toDir，拒绝逃逸字段", () => 
 test("RestoreCheckpointInput 只接受 enjoy 检查点 ref", () => {
   const parsed = RestoreCheckpointInput.parse({
     workspaceId: "ws_1",
-    ref: "refs/enjoy/checkpoints/1700000000000"
+    ref: "refs/enjoy/checkpoints/1700000000000",
+    confirmDeleteUntracked: true
   })
   assert.equal(parsed.ref, "refs/enjoy/checkpoints/1700000000000")
+  assert.equal(parsed.confirmDeleteUntracked, true)
   assert.throws(() =>
     RestoreCheckpointInput.parse({ workspaceId: "ws_1", ref: "refs/heads/main" })
   )
@@ -93,5 +97,30 @@ test("RestoreCheckpointInput 只接受 enjoy 检查点 ref", () => {
       ref: "refs/enjoy/checkpoints/1700000000000",
       extra: true
     })
+  )
+})
+
+test("RestoreCheckpointResult 未确认时带回 dry-run 列表", () => {
+  const dry = RestoreCheckpointResult.parse({
+    ok: false,
+    code: "CHECKPOINT_CONFIRM_REQUIRED",
+    untrackedToDelete: ["extra.txt"]
+  })
+  assert.equal(dry.ok, false)
+  if (!dry.ok) assert.deepEqual(dry.untrackedToDelete, ["extra.txt"])
+  assert.deepEqual(
+    RestoreCheckpointResult.parse({ ok: true, restored: 2 }),
+    { ok: true, restored: 2 }
+  )
+})
+
+test("PreviewCheckpointInput 与还原共用 ref 白名单", () => {
+  const parsed = PreviewCheckpointInput.parse({
+    workspaceId: "ws_1",
+    ref: "refs/enjoy/checkpoints/1700000000000"
+  })
+  assert.equal(parsed.ref, "refs/enjoy/checkpoints/1700000000000")
+  assert.throws(() =>
+    PreviewCheckpointInput.parse({ workspaceId: "ws_1", ref: "refs/heads/main" })
   )
 })
