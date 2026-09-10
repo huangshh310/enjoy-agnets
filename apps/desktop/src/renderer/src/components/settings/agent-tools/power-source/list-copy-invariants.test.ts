@@ -1,5 +1,5 @@
 /**
- * add29a4 同文预览：列表禁止协议微标、额度 hint、「官方仍保留」和 doctor 句。
+ * dense-p0（唯一真源）：列表禁止协议微标、额度 hint、「官方仍保留」和 doctor 句。
  * 「官方仍保留」只允许出现在配置抽屉（agent-tool-account-aside），不上表。
  */
 import assert from "node:assert/strict"
@@ -38,7 +38,8 @@ const banned = [
   "officialAccountAside",
   "doctorOk",
   "doctorRun",
-  "listLine"
+  "listLine",
+  "local-cli-dense-v2"
 ]
 
 test("本机 CLI 列表源码不含协议微标 / 额度 / 邮箱 / 表底禁令", () => {

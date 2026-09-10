@@ -55,8 +55,8 @@
 | [references/gap-audit-vs-github-agents.md](./references/gap-audit-vs-github-agents.md) | 对照 Orca / Cline / OpenHands / Goose / Hermes：假实现、半成品、该重设计的点 |
 | [references/oss-agent-landscape-2026.md](./references/oss-agent-landscape-2026.md) | 2026 高星 Agent 星数榜与设计课；Enjoy 该加深的 seam（不是空壳清单） |
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
-| [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | Luna 本机 CLI 密布局定稿（add29a4 起与 v2 同文；表行视觉真源） |
-| [previews/local-cli-dense-v2.html](./previews/local-cli-dense-v2.html) | 过程稿 stub（8bd7f6e），跳转到 dense-p0 |
+| [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | 本机 CLI 密表唯一视觉真源（main `add29a4`） |
+| [previews/local-cli-dense-v2.html](./previews/local-cli-dense-v2.html) | 过程稿，已作废；即使曾与 p0 同文也不要按此路径接线 |
 | [previews/local-cli-power-source.html](./previews/local-cli-power-source.html) | 动力源同构 + 抽屉同壳（历史预览） |
 
 ---
