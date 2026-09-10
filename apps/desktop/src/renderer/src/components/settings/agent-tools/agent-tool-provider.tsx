@@ -1,8 +1,9 @@
 /**
- * 这个助手用：Cline/OpenCode 式下拉（官方登录 + 可筛选供应商），不铺电台列表。
+ * 这个助手用：标签 + 双行账号/模型，不是两只无标签技术下拉。
  */
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { BindField } from "./bind-source/bind-field"
 import { AgentToolBoundExtras } from "./agent-tool-provider-bind"
 import { AgentToolNeedProvider, useAgentProviderCreate } from "./agent-tool-need-provider"
 import { AgentToolSourceMenu } from "./agent-tool-source-menu"
@@ -24,20 +25,25 @@ export function AgentToolProvider({
   if (!actions.supportsCustomInjection) return null
 
   return (
-    <section className="flex flex-col gap-2.5">
-      <h4 className="text-body-medium font-semibold text-text-primary">
-        {t("settings.agentTools.providerMode")}
-      </h4>
-      <AgentToolSourceMenu
-        tool={tool}
-        profiles={profiles}
-        bound={bound}
-        usingProvider={usingProvider}
-        persist={actions.persist}
-        protocol={create.protocol}
-        canAdd={create.canAdd}
-        onAdd={create.openAdd}
-      />
+    <section className="flex flex-col gap-3">
+      <header>
+        <h4 className="text-headline-medium text-text-primary">{t("settings.agentTools.providerMode")}</h4>
+        <p className="mt-0.5 text-caption-2-regular text-text-tertiary">
+          {t("settings.agentTools.providerModeHint")}
+        </p>
+      </header>
+      <BindField label={t("settings.agentTools.bindAccountLabel")}>
+        <AgentToolSourceMenu
+          tool={tool}
+          profiles={profiles}
+          bound={bound}
+          usingProvider={usingProvider}
+          persist={actions.persist}
+          protocol={create.protocol}
+          canAdd={create.canAdd}
+          onAdd={create.openAdd}
+        />
+      </BindField>
       {usingProvider && bound ? (
         <AgentToolBoundExtras tool={tool} actions={actions} profile={bound} />
       ) : null}

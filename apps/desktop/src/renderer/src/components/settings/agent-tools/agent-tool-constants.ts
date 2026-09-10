@@ -6,6 +6,9 @@
 /** 供应商 / 模型下拉超过这个数量才出现筛选框。 */
 export const BIND_SEARCH_AFTER = 6
 
+/** 配置抽屉宽度。给账号/模型双行和后续字段留空间，不要再锁回 380。 */
+export const AGENT_CONFIG_DRAWER_WIDTH_CLASS = "w-[min(36rem,calc(100vw-1.5rem))]"
+
 
 export interface AgentBrandMeta {
   accentColor: string

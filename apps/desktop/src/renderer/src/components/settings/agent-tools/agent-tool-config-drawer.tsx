@@ -9,6 +9,7 @@ import { useT } from "@renderer/i18n"
 import { SettingsSideDrawer } from "../settings-side-drawer"
 import { AgentToolConfigCli } from "./agent-tool-config-cli"
 import { AgentToolConfigFooter, AgentToolConfigHeader } from "./agent-tool-config-dialog-chrome"
+import { AGENT_CONFIG_DRAWER_WIDTH_CLASS } from "./agent-tool-constants"
 import { AgentToolConfigLocal } from "./agent-tool-config-local"
 import { useAgentToolActions } from "./use-agent-tool-actions"
 
@@ -33,7 +34,7 @@ export function AgentToolConfigDrawer({
         onClose={close}
         labelledBy="agent-tool-config-title"
         closeLabel={t("settings.agentTools.close")}
-        widthClass="w-[min(23.75rem,calc(100vw-1.5rem))]"
+        widthClass={AGENT_CONFIG_DRAWER_WIDTH_CLASS}
       >
         <AgentToolConfigHeader tool={tool} actions={actions} onClose={close} />
         <div className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-4 py-4">

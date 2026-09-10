@@ -78,15 +78,30 @@ test("本机 CLI 是同构表行，不是不等卡片网格", () => {
   assert.ok(!src.includes("listBanHint"))
 })
 
-test("配置抽屉对齐预览：380 宽、紧内边距、顶栏关", () => {
+test("配置抽屉对齐预览：576 宽、紧内边距、顶栏关", () => {
   const dir = join(dirname(fileURLToPath(import.meta.url)), "agent-tools")
   const drawer = readFileSync(join(dir, "agent-tool-config-drawer.tsx"), "utf8")
   const chrome = readFileSync(join(dir, "agent-tool-config-dialog-chrome.tsx"), "utf8")
-  assert.ok(drawer.includes("w-[min(23.75rem,calc(100vw-1.5rem))]"))
+  const constants = readFileSync(join(dir, "agent-tool-constants.ts"), "utf8")
+  assert.ok(drawer.includes("AGENT_CONFIG_DRAWER_WIDTH_CLASS"))
+  assert.ok(constants.includes("w-[min(36rem,calc(100vw-1.5rem))]"))
   assert.ok(drawer.includes("px-4 py-4"))
   assert.ok(chrome.includes("settings.agentTools.close"))
   assert.ok(!chrome.includes("makeActive"))
   assert.ok(!chrome.includes("AgentBrandIcon"))
+})
+
+test("这个助手用是标签+双行，档案触发器不夹模型 id", () => {
+  const dir = join(dirname(fileURLToPath(import.meta.url)), "agent-tools")
+  const provider = readFileSync(join(dir, "agent-tool-provider.tsx"), "utf8")
+  const menu = readFileSync(join(dir, "agent-tool-source-menu.tsx"), "utf8")
+  const bind = readFileSync(join(dir, "agent-tool-provider-bind.tsx"), "utf8")
+  assert.ok(provider.includes("bindAccountLabel"))
+  assert.ok(provider.includes("providerModeHint"))
+  assert.ok(bind.includes("bindModelLabel"))
+  assert.ok(menu.includes("archiveSubtitle"))
+  assert.ok(!menu.includes("selectedModel || bound.modelId"))
+  assert.ok(!menu.includes(" · {profile.modelId}"))
 })
 
 test("也用于是圆片，同步是带边框 details", () => {

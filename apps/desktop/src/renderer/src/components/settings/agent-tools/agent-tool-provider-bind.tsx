@@ -1,7 +1,8 @@
 /**
- * 选中供应商后：带族标的模型下拉、套到其他兼容 CLI、可选同步本机。
+ * 选中供应商后：带族标的模型行、套到其他兼容 CLI、可选同步本机。
+ * 模型是单独字段，不跟账号行拼成「档案 · 模型」。
  */
-import { RiArrowDownSLine, RiCheckLine, RiRestartLine, RiUploadCloud2Line } from "@remixicon/react"
+import { RiCheckLine, RiRestartLine, RiUploadCloud2Line } from "@remixicon/react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   alsoUseTargets,
@@ -24,6 +25,12 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ModelBrandIcon, ProviderIcon } from "../providers/provider-icons"
 import { adviseCatalogUrl, isApiStyle } from "@enjoy-agents/providers/presets"
 import { cliModelFamilyKey } from "@renderer/components/ai-chat/agent-picker/cli-model-icon"
+import {
+  BIND_TRIGGER_CLASS,
+  BindField,
+  BindMenuFace,
+  BindTriggerFace
+} from "./bind-source/bind-field"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolBoundExtras({
@@ -40,7 +47,7 @@ export function AgentToolBoundExtras({
   const modelId = tool.selectedModel || profile.modelId || models[0]?.id || ""
   const showCodexHint = tool.id === "codex" && profile.apiStyle === "openai"
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3">
       <ModelPicker modelId={modelId} models={models} profile={profile} actions={actions} />
       <BindHostHint profile={profile} />
       {showCodexHint ? (
@@ -66,52 +73,59 @@ function ModelPicker({
   const t = useT()
   if (models.length === 0) {
     return (
-      <input
-        defaultValue={modelId}
-        onBlur={(event) => {
-          const next = event.target.value.trim()
-          if (next) void actions.persist({ modelId: next })
-        }}
-        placeholder={t("settings.agentTools.bindModelHint")}
-        className="h-9 w-full rounded-xl border border-border-button-default bg-background-primary-default px-2.5 font-mono text-caption-2-medium outline-none focus:ring-1 focus:ring-accent-500"
-      />
+      <BindField label={t("settings.agentTools.bindModelLabel")}>
+        <input
+          defaultValue={modelId}
+          onBlur={(event) => {
+            const next = event.target.value.trim()
+            if (next) void actions.persist({ modelId: next })
+          }}
+          placeholder={t("settings.agentTools.bindModelHint")}
+          aria-label={t("settings.agentTools.bindModelLabel")}
+          className="h-11 w-full rounded-2xl border border-border-button-default bg-background-primary-default px-3 font-mono text-caption-1-medium outline-none focus:ring-1 focus:ring-accent-500"
+        />
+      </BindField>
     )
   }
   const current = models.find((item) => item.id === modelId)
+  const title = current?.label || current?.id || modelId
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t("settings.agentTools.bindModel")}
-          className="flex h-9 w-full items-center gap-2 rounded-xl border border-border-button-default bg-background-primary-default px-2.5 text-left shadow-2xs outline-none hover:border-border-button-hover focus:ring-1 focus:ring-accent-500"
-        >
-          <BindModelMark model={current ?? { id: modelId, label: modelId }} profile={profile} />
-          <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-primary">
-            {current?.label || current?.id || modelId}
-          </span>
-          <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        className={`${SETTINGS_DRAWER_Z_CLASS.float} max-h-80 w-72 overflow-y-auto rounded-xl border border-border-button-default bg-background-primary-default p-1 shadow-dropdown`}
-      >
-        {models.map((item) => (
-          <DropdownMenuItem
-            key={item.id}
-            onClick={() => void actions.persist({ modelId: item.id })}
-            className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5"
+    <BindField label={t("settings.agentTools.bindModelLabel")}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={t("settings.agentTools.bindModelLabel")}
+            className={BIND_TRIGGER_CLASS}
           >
-            <BindModelMark model={item} profile={profile} />
-            <span className="min-w-0 flex-1 truncate text-caption-1-medium text-text-primary">
-              {item.label || item.id}
-            </span>
-            {item.id === modelId ? <RiCheckLine className="size-3.5 shrink-0 text-accent-500" /> : null}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <BindTriggerFace
+              leading={<BindModelMark model={current ?? { id: modelId, label: modelId }} profile={profile} size={22} />}
+              title={title}
+              subtitle={t("settings.agentTools.bindModelSub")}
+            />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          className={`${SETTINGS_DRAWER_Z_CLASS.float} max-h-80 min-w-72 w-(--radix-dropdown-menu-trigger-width) overflow-y-auto rounded-2xl border border-border-button-default bg-background-primary-default p-1 shadow-dropdown`}
+        >
+          {models.map((item) => (
+            <DropdownMenuItem
+              key={item.id}
+              onClick={() => void actions.persist({ modelId: item.id })}
+              className="flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2"
+            >
+              <BindMenuFace
+                leading={<BindModelMark model={item} profile={profile} size={18} />}
+                title={item.label || item.id}
+                subtitle={item.label && item.label !== item.id ? item.id : undefined}
+              />
+              {item.id === modelId ? <RiCheckLine className="size-3.5 shrink-0 text-accent-500" /> : null}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </BindField>
   )
 }
 
@@ -129,21 +143,23 @@ function BindHostHint({ profile }: { profile: ProviderPublic }) {
 
 function BindModelMark({
   model,
-  profile
+  profile,
+  size = 15
 }: {
   model: { id: string; label?: string }
   profile: ProviderPublic
+  size?: number
 }) {
   if (cliModelFamilyKey(model.id, model.label ?? "")) {
     return (
       <ModelBrandIcon
         modelId={`${model.id} ${model.label ?? ""}`.trim()}
         providerKind={profile.kind}
-        size={15}
+        size={size}
       />
     )
   }
-  return <ProviderIcon kind={profile.kind} name={profile.name} apiStyle={profile.apiStyle} size={15} />
+  return <ProviderIcon kind={profile.kind} name={profile.name} apiStyle={profile.apiStyle} size={size} />
 }
 
 function ApplyToOthers({
@@ -175,9 +191,9 @@ function ApplyToOthers({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-caption-2-medium text-text-tertiary">{t("settings.agentTools.alsoUseOn")}</p>
+      <p className="text-caption-2-medium text-text-secondary">{t("settings.agentTools.alsoUseOn")}</p>
       <div className="flex flex-wrap gap-1.5">
-          {others.map((item) => {
+        {others.map((item) => {
           const on = item.useCustomProvider && item.providerId === profile.id
           return (
             <button
@@ -186,8 +202,8 @@ function ApplyToOthers({
               onClick={() => void toggle(item)}
               className={
                 on
-                  ? "rounded-full bg-accent-500/10 px-2 py-0.5 text-caption-2-medium text-accent-600"
-                  : "rounded-full border border-border-button-default px-2 py-0.5 text-caption-2-medium text-text-tertiary hover:border-border-button-hover"
+                  ? "rounded-full bg-accent-500/10 px-2.5 py-1 text-caption-2-medium text-accent-600"
+                  : "rounded-full border border-border-button-default px-2.5 py-1 text-caption-2-medium text-text-tertiary transition-colors hover:border-border-button-hover hover:text-text-primary"
               }
             >
               {shortAgentLabel(item.id, item.label)}
@@ -213,11 +229,11 @@ function shortAgentLabel(id: string, label: string): string {
 function SyncFold({ actions }: { actions: AgentToolActions }) {
   const t = useT()
   return (
-    <details className="rounded-xl border border-border-button-default px-3 py-2">
-      <summary className="cursor-pointer text-caption-2-medium text-text-tertiary">
+    <details>
+      <summary className="cursor-pointer text-caption-2-medium text-text-secondary transition-colors hover:text-text-primary">
         {t("settings.agentTools.syncToggle")}
       </summary>
-      <div className="mt-2 flex flex-col gap-2">
+      <div className="mt-2 flex flex-col gap-2 rounded-xl border border-border-button-default/80 bg-background-primary-default px-3 py-2.5">
         <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.syncHint")}</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button

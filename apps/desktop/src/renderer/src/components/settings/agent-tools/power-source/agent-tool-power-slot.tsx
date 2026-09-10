@@ -34,7 +34,7 @@ function PowerSlotShell({ children }: { children: ReactNode }) {
   const t = useT()
   return (
     <section className="flex flex-col gap-2.5">
-      <h4 className="text-body-medium font-semibold text-text-primary">
+      <h4 className="text-headline-medium text-text-primary">
         {t("settings.agentTools.providerMode")}
       </h4>
       {children}
