@@ -28,6 +28,9 @@ export type EditorState = {
 export type ProbeState = {
   status: "idle" | "pending" | "ok" | "error"
   message: string
+  /** 有 code 时 UI 走 i18n，不要把 main 的英文原文摊上屏幕。 */
+  code?: string
+  vars?: Record<string, string>
   models: Array<{ id: string; label: string }>
 }
 

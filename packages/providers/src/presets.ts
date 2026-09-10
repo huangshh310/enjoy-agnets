@@ -229,3 +229,14 @@ export function presetFor(kind: ProviderKind): ProviderPreset {
 export function normalizeBaseURL(value: string): string {
   return value.trim().replace(/\/+$/, "")
 }
+
+export {
+  adviseCatalogUrl,
+  catalogBaseCandidates,
+  catalogPersistBase,
+  CatalogError,
+  htmlCatalogError,
+  resolveCatalogBaseURL,
+  type CatalogAdvice,
+  type CatalogErrorCode
+} from "./catalog-url"

@@ -1,21 +1,21 @@
 /**
- * CLI 覆盖：只存 enabled / 绝对路径 / 额外参数，不存 login token。
+ * CLI 覆盖：enabled / 路径 / 额外参数 / 供应商引用。不存 login token。
  */
 import { isAbsolute } from "node:path"
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
 import { assertSafeAgentCommand } from "./agent-tools-guard"
+import {
+  mergeAgentToolOverride,
+  type AgentToolOverride
+} from "./agent-tools-override-merge"
+import { unbindProviderInOverrides } from "./agent-tools-unbind"
 import { getSetting, setSetting } from "./database"
+
+export { unbindProviderInOverrides } from "./agent-tools-unbind"
+export { mergeAgentToolOverride, type AgentToolOverride } from "./agent-tools-override-merge"
 
 const KEY = "agentTools.overrides"
 
-export type AgentToolOverride = {
-  enabled?: boolean
-  binaryPath?: string
-  extraArgs?: string[]
-  modelId?: string
-  providerId?: string
-  useCustomProvider?: boolean
-}
 export function readAgentToolOverrides(): Record<string, AgentToolOverride> {
   const raw = getSetting(KEY)
   if (!raw) return {}
@@ -32,7 +32,7 @@ export function writeAgentToolOverride(
   patch: AgentToolOverride
 ): AgentToolOverride {
   const all = readAgentToolOverrides()
-  const next: AgentToolOverride = { ...all[id], ...patch }
+  const next = mergeAgentToolOverride(all[id], patch)
   if (next.binaryPath !== undefined) {
     const path = next.binaryPath.trim()
     if (path) {
@@ -55,6 +55,12 @@ export function readSessionRuntimes(): Record<string, string> {
   } catch {
     return {}
   }
+}
+
+/** 删除供应商档案时解绑引用它的 CLI。 */
+export function unbindProviderFromAgentTools(providerId: string): void {
+  const { next, changed } = unbindProviderInOverrides(readAgentToolOverrides(), providerId)
+  if (changed) setSetting(KEY, JSON.stringify(next))
 }
 
 export function writeSessionRuntime(sessionId: string, runtimeId: string) {

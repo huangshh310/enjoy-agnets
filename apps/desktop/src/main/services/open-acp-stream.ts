@@ -1,12 +1,15 @@
 /**
- * 本机 CLI ACP 开流：不读 Providers Key，覆盖只含 path/args。
- * fast / effort 入参只占位兼容，不进 argv；env 注入跟 providerBind。
+ * 本机 CLI ACP 开流：覆盖只含 path/args。
+ * 绑定 Enjoy 供应商时读 vault Key，只注入子进程 env，不进 renderer。
+ * fast / effort 入参只占位兼容，不进 argv。
  */
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
-import { capabilitiesFor, isCustomAgentId } from "@enjoy-agents/ipc-contract"
+import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
 import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { listAgentTools } from "./agent-tools-service"
+import { assertAndClampBind } from "./agent-tools-bind-assert"
 import { readAgentToolOverrides } from "./agent-tools-vault"
+import { providerEnvFor, requireBindProfile } from "./provider-bind-env"
 import { readVault } from "./secrets-vault"
 import type { OpenedCodingStream } from "./open-coding-stream"
 export async function openAcpStream(input: {
@@ -34,14 +37,19 @@ export async function openAcpStream(input: {
   const publicTool = listed.find((item) => item.id === input.runtimeId)
   const detected = override?.binaryPath ? undefined : publicTool?.detectedPath
 
-  // 如果绑定了自定义供应商并开启了注入，组装对应协议的环境变量
   let injectedEnv: Record<string, string> | undefined
+  let boundModel = override?.modelId || publicTool?.selectedModel
   if (override?.useCustomProvider && override?.providerId) {
+    const clamped = await assertAndClampBind({
+      id: input.runtimeId,
+      useCustomProvider: true,
+      providerId: override.providerId,
+      modelId: boundModel
+    })
+    boundModel = clamped.modelId
     const vault = await readVault()
-    const profile = vault.profiles.find((p) => p.id === override.providerId)
-    if (profile && profile.apiKey.trim()) {
-      injectedEnv = providerEnvFor(input.runtimeId, profile)
-    }
+    const profile = requireBindProfile(vault.profiles.find((item) => item.id === override.providerId))
+    injectedEnv = providerEnvFor(input.runtimeId, profile, boundModel)
   }
 
   const opened = await streamAcpTurn({
@@ -54,7 +62,7 @@ export async function openAcpStream(input: {
     override: {
       binaryPath: override?.binaryPath || detected || undefined,
       extraArgs: override?.extraArgs ?? [],
-      modelId: override?.modelId || publicTool?.selectedModel
+      modelId: boundModel
     },
     env: injectedEnv,
     waitForApproval: input.waitForSubagentApproval,
@@ -98,29 +106,4 @@ async function openCustomAcpStream(
   }
 }
 
-/** Claude → ANTHROPIC_*，Codex → OPENAI_*。未声明 providerBind 不注入。 */
-function providerEnvFor(
-  runtimeId: string,
-  profile: { baseURL?: string; apiKey: string }
-): Record<string, string> | undefined {
-  const bind = capabilitiesFor(runtimeId).providerBind
-  if (bind === "anthropic") {
-    return {
-      ANTHROPIC_BASE_URL: profile.baseURL || "https://api.anthropic.com",
-      ANTHROPIC_API_KEY: profile.apiKey,
-      ANTHROPIC_AUTH_TOKEN: profile.apiKey
-    }
-  }
-  if (bind === "openai") {
-    return {
-      OPENAI_BASE_URL: profile.baseURL || "https://api.openai.com/v1",
-      OPENAI_API_KEY: profile.apiKey
-    }
-  }
-  if (bind === "deepseek") {
-    const env: Record<string, string> = { DEEPSEEK_API_KEY: profile.apiKey }
-    if (profile.baseURL?.trim()) env.DEEPSEEK_BASE_URL = profile.baseURL.trim()
-    return env
-  }
-  return undefined
-}
+

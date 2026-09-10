@@ -4,7 +4,7 @@
 import type { AgentCliModel } from "@enjoy-agents/ipc-contract"
 import { RiCheckLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
+import { ModelBrandIcon, ProviderIcon } from "@renderer/components/settings/providers/provider-icons"
 import { AgentBrandIcon } from "./agent-brand-icon"
 import { cliModelEngineFallback, cliModelFamilyKey, cliModelIconMode, cliModelIconQuery } from "./cli-model-icon"
 
@@ -12,12 +12,14 @@ export function CliModelRow({
   agentId,
   model,
   selected,
-  onPick
+  onPick,
+  fallbackProvider
 }: {
   agentId: string
   model: AgentCliModel
   selected: boolean
   onPick: (model: AgentCliModel) => void
+  fallbackProvider?: { kind?: string; name?: string; apiStyle?: string }
 }) {
   const showId = model.id.trim().toLowerCase() !== model.label.trim().toLowerCase()
   return (
@@ -33,7 +35,7 @@ export function CliModelRow({
       )}
     >
       <span className="flex size-4 shrink-0 items-center justify-center">
-        <CliModelMark agentId={agentId} model={model} />
+        <CliModelMark agentId={agentId} model={model} fallbackProvider={fallbackProvider} />
       </span>
       <span className="min-w-0 flex-1 truncate text-caption-1-medium">{model.label}</span>
       {selected ? <RiCheckLine className="size-3.5 shrink-0 text-accent-500" /> : null}
@@ -41,13 +43,38 @@ export function CliModelRow({
   )
 }
 
-function CliModelMark({ agentId, model }: { agentId: string; model: AgentCliModel }) {
-  if (cliModelIconMode(agentId, model.id) === "engine") {
-    return <AgentBrandIcon id={agentId} size={15} />
-  }
+function CliModelMark({
+  agentId,
+  model,
+  fallbackProvider
+}: {
+  agentId: string
+  model: AgentCliModel
+  fallbackProvider?: { kind?: string; name?: string; apiStyle?: string }
+}) {
   if (cliModelFamilyKey(model.id, model.label)) {
     const query = cliModelIconQuery(model)
-    return <ModelBrandIcon modelId={query.modelId} providerKind={query.providerKind} size={15} />
+    return (
+      <ModelBrandIcon
+        modelId={query.modelId}
+        providerKind={fallbackProvider?.kind || query.providerKind}
+        apiStyle={fallbackProvider?.apiStyle}
+        size={15}
+      />
+    )
+  }
+  if (fallbackProvider?.kind) {
+    return (
+      <ProviderIcon
+        kind={fallbackProvider.kind}
+        name={fallbackProvider.name}
+        apiStyle={fallbackProvider.apiStyle}
+        size={15}
+      />
+    )
+  }
+  if (cliModelIconMode(agentId, model.id, model.label) === "engine") {
+    return <AgentBrandIcon id={agentId} size={15} />
   }
   return <AgentBrandIcon id={cliModelEngineFallback(agentId, model.id)} size={15} />
 }

@@ -17,12 +17,16 @@ export type EngineReadinessInput = {
   requiresLogin?: boolean
   loggedIn?: boolean | null
   hasKey?: boolean
+  /** Cline/OpenCode：选了 API 档案就不再等官方 OAuth。 */
+  usingVaultProvider?: boolean
+  boundHasKey?: boolean
 }
 
 export function engineReadiness(tool: EngineReadinessInput): EngineReadiness {
   if (tool.comingSoon || tool.status === "comingSoon") return "soon"
   if (tool.id === "enjoy-local") return tool.hasKey === false ? "needs_key" : "ready"
   if (tool.status === "missing" || tool.status === "skillOnly") return "missing"
+  if (tool.usingVaultProvider) return tool.boundHasKey === false ? "needs_key" : "ready"
   if (tool.requiresLogin && tool.loggedIn === false) return "needs_login"
   if (tool.requiresLogin && tool.loggedIn !== true) return "inspecting"
   return "ready"
@@ -36,7 +40,9 @@ export function isEngineLit(tool: EngineReadinessInput): boolean {
 /** 点导轨是否立刻 bind。未登录只打开面板，不换 runtime。本地始终可切。 */
 export function canBindEngine(tool: EngineReadinessInput): boolean {
   if (tool.id === "enjoy-local") return true
-  return engineReadiness(tool) === "ready"
+  const kind = engineReadiness(tool)
+  if (kind === "ready") return true
+  return kind === "needs_key" && tool.usingVaultProvider === true
 }
 
 /** 就绪态不写副标题；即将推出走分组标题。 */

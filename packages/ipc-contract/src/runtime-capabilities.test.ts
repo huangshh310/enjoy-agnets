@@ -78,7 +78,9 @@ test("未知 id 回落隐藏表；七家新 ACP 可 spawn", () => {
   }
   assert.deepEqual(capabilitiesFor(undefined), HIDDEN_RUNTIME_CAPABILITIES)
   assert.equal(capabilitiesFor("gemini").spawn, true)
+  assert.equal(capabilitiesFor("gemini").providerBind, "google")
   assert.equal(capabilitiesFor("opencode").models, "inspect")
+  assert.equal(capabilitiesFor("opencode").providerBind, "opencode")
   assert.equal(capabilitiesFor("pi").spawn, true)
   assert.equal(capabilitiesFor("hermes").models, "none")
   assert.equal(capabilitiesFor("amp").models, "none")

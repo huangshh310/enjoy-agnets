@@ -4,21 +4,38 @@
  * 保证配置项和预设增多时交互整洁、层次分明。
  */
 import { useMemo, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { RiCompass3Line, RiServerLine, RiStackLine } from "@remixicon/react"
+import { agentRefsForProvider } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
+import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { ProviderConfiguredTab } from "./provider-configured-tab"
-import { ProviderEditorDialog } from "./provider-editor-dialog"
+import { ProviderEditorDrawer } from "./provider-editor-drawer"
 import { ProviderPresetsTab } from "./provider-presets-tab"
 import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 
 export function ProviderSettings() {
   const t = useT()
+  const navigate = useNavigate()
   const settings = useProviderSettings()
+  const agentTools = useSettingsSnapshot().data?.agentTools ?? []
   const [activeTab, setActiveTab] = useState<"configured" | "presets">("configured")
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string; agents: string } | null>(
+    null
+  )
+  const refsByProvider = useMemo(() => {
+    const map: Record<string, ReturnType<typeof agentRefsForProvider>> = {}
+    for (const profile of settings.providers) {
+      const refs = agentRefsForProvider(profile.id, agentTools)
+      if (refs.length > 0) map[profile.id] = refs
+    }
+    return map
+  }, [settings.providers, agentTools])
 
   const configuredKinds = useMemo(
     () => new Set(settings.providers.map((profile) => profile.kind)),
@@ -33,6 +50,15 @@ export function ProviderSettings() {
 
   function handleSelectPreset(kind: ProviderKind, apiStyle: ApiStyle) {
     settings.openCreate(kind, apiStyle)
+  }
+
+  function openAgent(runtimeId: string) {
+    settings.closeEditor()
+    void navigate({
+      to: "/settings/$section",
+      params: { section: "agent" },
+      search: { tool: runtimeId }
+    })
   }
 
   return (
@@ -123,9 +149,23 @@ export function ProviderSettings() {
             onPingAll={settings.pingAllProviders}
             onEdit={settings.openEdit}
             onActivate={(id) => void settings.activate(id)}
-            onRemove={(id) => void settings.remove(id)}
+            onRemove={(id) => {
+              const profile = settings.providers.find((item) => item.id === id)
+              const refs = refsByProvider[id] ?? []
+              if (refs.length > 0 && profile) {
+                setPendingRemove({
+                  id,
+                  name: profile.name,
+                  agents: refs.map((item) => item.label).join(" · ")
+                })
+                return
+              }
+              void settings.remove(id)
+            }}
             onAddCustom={handleSelectPreset}
             onExplorePresets={() => setActiveTab("presets")}
+            refsByProvider={refsByProvider}
+            onOpenAgent={openAgent}
           />
         ) : (
           <ProviderPresetsTab
@@ -135,19 +175,35 @@ export function ProviderSettings() {
         )}
       </div>
 
-      {/* 添加 / 编辑弹层 */}
-      <ProviderEditorDialog
+      <ProviderEditorDrawer
         editor={settings.editor}
         preset={settings.preset}
         probe={settings.probe}
         modelChoices={settings.modelChoices}
         keyHint={editingHint}
+        refs={settings.editor?.id ? refsByProvider[settings.editor.id] : undefined}
         canSave={settings.canSave}
         onClose={settings.closeEditor}
         onChangeKind={settings.changeKind}
         onChange={settings.updateEditor}
         onFetchModels={() => void settings.fetchModels()}
         onSave={() => void settings.save(true)}
+        onOpenAgent={openAgent}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingRemove)}
+        title={t("settings.providers.removeBoundTitle", { name: pendingRemove?.name ?? "" })}
+        description={t("settings.providers.removeBoundDesc", { agents: pendingRemove?.agents ?? "" })}
+        confirmLabel={t("common.delete")}
+        destructive
+        onOpenChange={(open) => {
+          if (!open) setPendingRemove(null)
+        }}
+        onConfirm={() => {
+          const id = pendingRemove?.id
+          if (id) void settings.remove(id)
+        }}
       />
     </div>
   )

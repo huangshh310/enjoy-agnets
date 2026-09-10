@@ -31,5 +31,9 @@ test("ACP 未登录不是可重试供应商错误", () => {
     "auth"
   )
   assert.equal(classifyThreadError(NEED_PROVIDER_KEY), "needs_key")
+  assert.equal(
+    classifyThreadError("Add a provider API key in Settings → Providers before using this bound profile."),
+    "needs_key"
+  )
   assert.equal(classifyThreadError(NEED_CLI_INSPECTING), "inspecting")
 })

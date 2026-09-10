@@ -1,7 +1,9 @@
 /**
  * 把 inspect 结果并进 PATH 列表：账号、额度、账号侧模型。
+ * 绑了 Enjoy 档案时模型表只信 vault，不把 CLI 官方目录混进 Composer。
  */
-import type { AgentToolPublic, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
+import type { AgentToolPublic, InspectAgentToolResult, ProviderPublic } from "@enjoy-agents/ipc-contract"
+import { resolveBoundAgentModels } from "@enjoy-agents/ipc-contract/provider-agent-bind"
 import { capabilitiesOf } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 
 export function shouldInspect(tool: AgentToolPublic): boolean {
@@ -12,27 +14,41 @@ export function shouldInspect(tool: AgentToolPublic): boolean {
 
 export function applyInspect(
   tools: AgentToolPublic[],
-  results: InspectAgentToolResult[] | undefined
+  results: InspectAgentToolResult[] | undefined,
+  profiles?: ReadonlyArray<Pick<ProviderPublic, "id" | "models">>
 ): AgentToolPublic[] {
-  if (!results?.length) return tools
-  const byId = new Map(results.map((item) => [item.id, item]))
-  return tools.map((tool) => {
-    const hit = byId.get(tool.id)
-    if (!hit) return tool
-    const models = mergeModels(hit.models, tool.models)
-    const selected =
-      tool.selectedModel && models.some((item) => item.id === tool.selectedModel)
-        ? tool.selectedModel
-        : (models[0]?.id ?? tool.selectedModel)
-    return {
-      ...tool,
-      models,
-      providers: mergeProviders(hit.providers, tool.providers),
-      selectedModel: selected,
-      authAccount: hit.authAccount ?? tool.authAccount,
-      quotaInfo: hit.quotaInfo ?? tool.quotaInfo
-    }
-  })
+  const byId = new Map((results ?? []).map((item) => [item.id, item]))
+  return tools.map((tool) => projectTool(tool, byId.get(tool.id), profiles))
+}
+
+function projectTool(
+  tool: AgentToolPublic,
+  hit: InspectAgentToolResult | undefined,
+  profiles?: ReadonlyArray<Pick<ProviderPublic, "id" | "models">>
+): AgentToolPublic {
+  const bound = tool.useCustomProvider === true
+  if (!hit && !bound) return tool
+  const models = bound
+    ? resolveBoundAgentModels(tool, profiles)
+    : mergeModels(hit?.models ?? [], tool.models)
+  return {
+    ...tool,
+    models,
+    providers: bound ? tool.providers : mergeProviders(hit?.providers, tool.providers),
+    selectedModel: pickSelectedModel(tool, models),
+    authAccount: hit?.authAccount ?? tool.authAccount,
+    quotaInfo: hit?.quotaInfo ?? tool.quotaInfo
+  }
+}
+
+function pickSelectedModel(
+  tool: AgentToolPublic,
+  models: AgentToolPublic["models"]
+): string | undefined {
+  if (tool.selectedModel && models.some((item) => item.id === tool.selectedModel)) {
+    return tool.selectedModel
+  }
+  return models[0]?.id ?? tool.selectedModel
 }
 
 /** 空数组常是 inspect 竞态，不要把已有供应商表冲掉。 */

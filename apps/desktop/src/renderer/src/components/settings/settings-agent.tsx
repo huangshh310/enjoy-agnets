@@ -10,27 +10,41 @@ import { AgentToolsCommandHub } from "./agent-tools/agent-tools-command-hub"
 import { AgentToolsPage } from "./agent-tools/agent-tools-page"
 import { parseAgentSettingsTab, type AgentSettingsTab } from "./settings-agent-tab"
 import { AgentSettingsTabs } from "./settings-agent-tabs"
+import { parseSettingsSectionSearch } from "./settings-section-search"
 import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 import { SettingsSkillSources } from "./settings-skill-sources"
 
 export function AgentSettings() {
   const navigate = useNavigate()
-  const search = useSearch({ strict: false }) as { tab?: string }
+  const search = parseSettingsSectionSearch(useSearch({ strict: false }))
   const fromUrl = parseAgentSettingsTab(search.tab)
-  const [activeTab, setActiveTab] = useState<AgentSettingsTab>(fromUrl)
+  const toolId = search.tool?.trim() ?? ""
+  const [activeTab, setActiveTab] = useState<AgentSettingsTab>(toolId ? "racks" : fromUrl)
   const [focus, setFocus] = useState<{ id: string; at: number } | null>(null)
 
   useEffect(() => {
     setActiveTab(fromUrl)
   }, [fromUrl])
 
+  useEffect(() => {
+    if (!toolId) return
+    setActiveTab("racks")
+    setFocus({ id: toolId, at: Date.now() })
+    void navigate({
+      to: "/settings/$section",
+      params: { section: "agent" },
+      search: { tab: undefined, tool: undefined },
+      replace: true
+    })
+  }, [toolId, navigate])
+
   function selectTab(id: AgentSettingsTab) {
     setActiveTab(id)
     void navigate({
       to: "/settings/$section",
       params: { section: "agent" },
-      search: { tab: id === "racks" ? undefined : id },
+      search: { tab: id === "racks" ? undefined : id, tool: undefined },
       replace: true
     })
   }

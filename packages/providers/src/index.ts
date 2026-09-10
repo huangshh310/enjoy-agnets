@@ -2,6 +2,7 @@
  * 供应商对外入口：建连、探测、目录。
  */
 import { rememberProbedModels } from "./capabilities/probe"
+import { CatalogError } from "./catalog-url"
 import { discoverRemoteModels } from "./discover"
 import { resolvedBaseURL } from "./config"
 import { usesOfficialGoogle } from "./google"
@@ -27,6 +28,15 @@ export {
 } from "./presets"
 
 export { pingProviderEndpoint, type PingResult } from "./discover"
+export {
+  adviseCatalogUrl,
+  catalogBaseCandidates,
+  catalogPersistBase,
+  CatalogError,
+  resolveCatalogBaseURL,
+  type CatalogAdvice,
+  type CatalogErrorCode
+} from "./catalog-url"
 export {
   lookupGatewayContextWindow,
   parseCatalogContextWindow,
@@ -127,6 +137,8 @@ export type ProbeResult = {
   message: string
   models: CatalogModel[]
   resolvedBaseURL?: string
+  code?: string
+  vars?: Record<string, string>
 }
 
 export async function probeProvider(
@@ -170,16 +182,28 @@ export async function probeProvider(
         ok: true,
         message: `Connected. Found ${discovered.models.length} models.`,
         models: discovered.models,
-        resolvedBaseURL: discovered.resolvedBaseURL
+        resolvedBaseURL: discovered.resolvedBaseURL,
+        code: "catalogOk",
+        vars: { count: String(discovered.models.length) }
       }
     }
     return {
       ok: true,
       message: "Connected. Enter a model ID if the catalog is empty.",
       models: preset.models,
-      resolvedBaseURL: discovered.resolvedBaseURL
+      resolvedBaseURL: discovered.resolvedBaseURL,
+      code: "catalogOkEmpty"
     }
   } catch (error) {
+    if (error instanceof CatalogError) {
+      return {
+        ok: false,
+        message: error.message,
+        models: preset.models,
+        code: error.code,
+        vars: error.vars
+      }
+    }
     return {
       ok: false,
       message: error instanceof Error ? error.message : String(error),

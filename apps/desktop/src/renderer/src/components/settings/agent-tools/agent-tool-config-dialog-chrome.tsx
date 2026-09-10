@@ -1,5 +1,5 @@
 /**
- * 智能体配置弹窗顶栏 / 底栏。
+ * 智能体配置抽屉顶栏 / 底栏。
  */
 import { RiCheckLine, RiCloseLine, RiDeleteBinLine, RiFlashlightLine } from "@remixicon/react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
@@ -19,13 +19,13 @@ export function AgentToolConfigHeader({
 }) {
   const t = useT()
   return (
-    <div className="flex items-center justify-between border-b border-separator-border px-6 py-4">
+    <div className="flex shrink-0 items-center justify-between border-b border-separator-border/60 bg-background-secondary-default/30 px-6 py-4">
       <div className="flex min-w-0 flex-1 items-center gap-3 pr-4">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border-button-default bg-background-secondary-default">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border-button-default bg-background-primary-default shadow-2xs">
           <AgentBrandIcon id={tool.id} size={22} />
         </span>
         <div className="min-w-0">
-          <h3 className="truncate text-body-medium text-text-primary">
+          <h3 id="agent-tool-config-title" className="truncate text-title-3-semibold text-text-primary">
             {t("settings.agentTools.configTitle", { label: tool.label })}
           </h3>
           <p className="mt-0.5 truncate text-caption-1-regular text-text-secondary">{actions.meta.tagline}</p>
@@ -76,7 +76,7 @@ export function AgentToolConfigFooter({
   const t = useT()
   const canUninstall = !actions.isDefaultLocal && tool.status === "ready" && tool.installKind !== "copy"
   return (
-    <div className="flex items-center justify-between border-t border-separator-border px-6 py-3">
+    <div className="flex shrink-0 items-center justify-between border-t border-separator-border/60 px-6 py-4">
       <div>
         {canUninstall ? (
           <Button

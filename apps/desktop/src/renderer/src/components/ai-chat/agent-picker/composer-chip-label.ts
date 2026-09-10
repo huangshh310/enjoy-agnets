@@ -28,17 +28,32 @@ export type ComposerActiveModelInput = {
     label?: string
     selectedModel?: string | null
     models?: readonly { id: string; label: string }[]
+    useCustomProvider?: boolean
+    boundProviderName?: string
   }
 }
 
-/** Enjoy Local 用档案目录；ACP 用 CLI selectedModel。禁止把上一引擎的 catalog 名带到 Grok。 */
+/** Enjoy Local 用档案目录；ACP 用 CLI selectedModel。绑定档案时不要用 inspect 假目录。 */
 export function composerActiveModelLabel(input: ComposerActiveModelInput): string {
   if (input.runtimeId === ENJOY_LOCAL) {
     return input.catalogLabel.trim() || input.catalogId.trim()
   }
   const selected = input.agent?.selectedModel?.trim()
-  const fromCli = selected
+  const fromList = selected
     ? (input.agent?.models?.find((item) => item.id === selected)?.label ?? selected)
     : ""
-  return fromCli || input.agent?.label?.trim() || input.runtimeId
+  if (input.agent?.useCustomProvider) {
+    return fromList || input.agent.boundProviderName?.trim() || input.agent.label?.trim() || input.runtimeId
+  }
+  return fromList || input.agent?.label?.trim() || input.runtimeId
+}
+
+/** 绑定档案时 title 带档案名；胶囊正文仍是引擎 · 模型。 */
+export function composerBoundProviderLabel(agent?: {
+  useCustomProvider?: boolean
+  boundProviderName?: string
+}): string | undefined {
+  if (!agent?.useCustomProvider) return undefined
+  const name = agent.boundProviderName?.trim()
+  return name || undefined
 }

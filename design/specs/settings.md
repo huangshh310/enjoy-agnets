@@ -28,7 +28,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单只到工作区 / 团队说明 / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
 
-Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。
+Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。
 
 `#/skills` 是唯一 Skills 工作模块（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。`#/settings/agent?tab=defaults` 另有一行**可选拉取**卡片（`SettingsSkillSources`），只调用 `skills.sources.updateAll`，不复制整页 Skills UI。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。M6 可选更新：无 Git 源则**不渲染**更新按钮；点了才快进，不自动同步。空会话禁止挂更新条。
 Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。`automations.run` 用当前会话 `agent.run`；Agent 写盘或 Files 保存（带 sessionId）会触发已启用的 `on_save`。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。
@@ -48,8 +48,8 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 侧栏条目必须 `navigate`，禁止 no-op。
 - Providers 禁用 `article`（760px），目录三列会被裁。
 - 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。通用页一行：当前版本（说明里带状态）+「检查更新」；有新版本同一行变成打开说明（见 `updates` spec）。
-- 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。Claude / Codex 可把已有供应商 Key **同步**到本机配置（用户点击、先备份 `*.enjoy.bak`、可恢复），不是给用户手改 toml。
-- Agent 段用顶部分段：本机 CLI / **Registry** / 进阶沙箱 / 默认项。三路命名与 M1 一致：Enjoy 本地 · ACP 本机 CLI · 进阶沙箱（实验 · 沙箱 Harness）。Registry 不上 EngineRail、不进新会话空态；`#/settings/agent?tab=registry` 打开 Registry（空态深链）。本机 CLI 页顶先提示「切到 Cursor 后 Enjoy 密钥不会传给它」与扫描 / 体检，**然后才是 CLI 卡**。只读 **能力矩阵** 与 **配置边界** 收进默认收起的「能力说明」；矩阵「支持」不是已登录，点行跳到对应卡（沙箱行切进阶沙箱）。OMP 配置弹窗必须按供应商登录并等 callback，禁止无参 `login`。禁止 `AgentToolsHubMetrics` 装载率条 / 常绿灯 /「沙箱隔离·实时 Token 流」。进阶沙箱文案是「实验 · 沙箱 Harness」，不上 Composer 导轨。CLI 是紧凑卡 + 配置弹窗（探测 / 安装 / 卸载 / 登录 / 模型 / **运行偏好** / 路径 / doctor / 账号详情 / 可选同步）。运行偏好只暴露 ACP 真正认的旗标（`LAUNCH_PREFS` 目前为空，避免再写出 `--fast`）；未收录项才出现在高级「自定义参数」。开流按 `RuntimeCapabilities` 丢掉 `--fast` / `--thinking`。账号与额度来自 `agentTools.inspect`（`login || quota || models==inspect` 且已就绪，不含 Enjoy Local）。进度条仅 `quota=true` **且** 有官方数字；否则诚实空态「该 CLI 无公开额度 API」，不画空条。企业账单是诚实空态，不做演示套餐（L2 不做假积分）。环境扫描、设置页挂载与 doctor / 登录会清 inspect 缓存并 `refresh: true`。详见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
+- 不要把 Codex `auth.json` / 原始 `config.toml` 编辑器当本页模型。Claude / Codex / Gemini / OpenCode 可把已绑定的 Enjoy 档案 **同步**到本机配置（用户点击、先备份 `*.enjoy.bak`、可恢复）；Enjoy 内开流默认只注入子进程 env，不必先同步。不是给用户手改 toml。
+- Agent 段用顶部分段：本机 CLI / **Registry** / 进阶沙箱 / 默认项。三路命名与 M1 一致：Enjoy 本地 · ACP 本机 CLI · 进阶沙箱（实验 · 沙箱 Harness）。Registry 不上 EngineRail、不进新会话空态；`#/settings/agent?tab=registry` 打开 Registry（空态深链）；`#/settings/agent?tool=<id>` 打开本机 CLI 并闪对应卡。本机 CLI 页顶先提示「切到 Cursor 后 Enjoy 密钥不会传给它」与扫描 / 体检，**然后才是 CLI 卡**。`providerBind !== none` 的卡在路径/额度之间画绑定摘要（官方登录或档案名 + 模型）。只读 **能力矩阵** 与 **配置边界** 收进默认收起的「能力说明」；矩阵「支持」不是已登录，点行跳到对应卡（沙箱行切进阶沙箱）。配置走右侧抽屉（对标知识库文档预览，禁止居中 Dialog）。「这个助手用」在官方账号区之前：官方登录与**能用的供应商档案**并列点选，已登录也可换。绑了档案后官方 inspect 降为旁注「官方登录仍保留」，禁止把 inspect 名 / 当前模型画成当前供应商。没有兼容档案时保持官方登录，虚线提示需要哪种协议，点按钮就地打开对应 preset 的新建表单（Claude → Anthropic），禁止跳到供应商整页让用户猜。禁止进入「已选 Enjoy 但没有档案」的空状态。OMP 配置必须按供应商登录并等 callback，禁止无参 `login`。禁止 `AgentToolsHubMetrics` 装载率条 / 常绿灯 /「沙箱隔离·实时 Token 流」。进阶沙箱文案是「实验 · 沙箱 Harness」，不上 Composer 导轨。CLI 是紧凑卡 + 配置抽屉（探测 / 安装 / 卸载 / 登录 / 模型 / **动力源** / **运行偏好** / 路径 / doctor / 账号详情 / 可选同步）。运行偏好只暴露 ACP 真正认的旗标（`LAUNCH_PREFS` 目前为空，避免再写出 `--fast`）；未收录项才出现在高级「自定义参数」。开流按 `RuntimeCapabilities` 丢掉 `--fast` / `--thinking`。账号与额度来自 `agentTools.inspect`（`login || quota || models==inspect` 且已就绪，不含 Enjoy Local）。进度条仅 `quota=true` **且** 有官方数字；否则诚实空态「该 CLI 无公开额度 API」，不画空条。企业账单是诚实空态，不做演示套餐（L2 不做假积分）。环境扫描、设置页挂载与 doctor / 登录会清 inspect 缓存并 `refresh: true`。详见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
 
 ## 代码入口
 
@@ -57,6 +57,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 路由：`apps/desktop/src/renderer/src/router.tsx`
 - 分段目录：`apps/desktop/src/renderer/src/components/settings/settings-catalog.ts`
 - 壳：`settings-shell.tsx`（登记情境栏）；应用铬 `app-shell/`
+- 抽屉叠层：`settings-overlay.ts`（base 50 / nested 70 / float 80）
 - 看板原语：`settings-hub.tsx`
 - 偏好段：`settings-general.tsx`、`settings-appearance.tsx`、`settings-agent.tsx`、`settings/agent-tools/`（`capability-matrix.tsx` / `config-boundary-table.tsx` / `acp-registry-*.tsx` / `custom-acp-agent-form.tsx`）、`settings-media.tsx`
 - AI 段：`settings-ai-pages.tsx`；Sandbox：`sandbox-settings.tsx`；偏好补丁：`settings-pref.ts`
@@ -70,6 +71,9 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 收件箱是 AppShell 模块，不是独立壳。不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
 - Studio / Team / Company / Account 旧 Hash 必须 redirect 进 AppShell，不要再挂 `SecondaryPageShell` 侧栏。
 - Skills 只有工作模块 `#/skills` 一套 UI。单个技能走 `skills.sources.deleteSkill`（本机目录删包，Git 只拆投影）。来源组 `skills.sources.remove`：Git 清 checkout 与投影；本机自动发现组写入 `ignoredOrigins` 隐藏，不删 `~/.agents/skills` 根。模版安装仍走 `skills.create`。
+- 嵌套供应商抽屉是 `z-[70]`。模型 Combobox / Select / Dropdown 若仍 `z-50` 或 `z-60`，菜单会开在抽屉背面，看起来「点击无法下拉」。弹出层必须用 `SETTINGS_DRAWER_Z_CLASS.float`（`z-[80]`），且 Popover 保持 `modal`，避免点菜单时点穿遮罩关掉抽屉。nested Escape 必须看 `defaultPrevented`，并忽略 popover / dropdown 内的 Esc。
+- 自定义 ACP 编辑也走 `SettingsSideDrawer`，不要居中 Dialog。
+- 绑了 Enjoy 档案后，配置抽屉顶部若仍画 `inspect.authAccount` 英雄卡（邮箱 / CUSTOM / 当前模型），用户会以为没换供应商。`authAccount` 是本机 CLI 官方登录。正确做法：「这个助手用」在前；`useCustomProvider` 时官方账号只作旁注，不展示 inspect 当前模型。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - 设置侧栏严禁无脑平铺全部 24 个分段。`skills` 是一级入口（智能体分组），不要再并进「说明」。其余子分段（`rules` / `billing` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
 - `mcp` 已落地，不要再写成占位。
@@ -78,6 +82,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 个人资料不要只写 renderer `localStorage`：刷新能活但换 userData / 主进程看不到。权威在 `preferences.accountProfile`；旧 key 迁完即删。
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
 - 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。
+- 本机 CLI 配置与供应商添加/编辑必须是右侧抽屉（`SettingsSideDrawer`，知识库文档预览同款），禁止再开居中 Dialog。卸载 / 删除仍可用 ConfirmDialog。从智能体抽屉里添加供应商用 nested 层，避免两只抽屉抢 Escape。
 - Providers 自带标题与分段控件。`SettingsSectionPage` 不要再叠一层 `h1`，否则出现两个「模型供应商」。空态虚线框必须 `flex-1`，不要按内容收在卡片上半截。
 - 账单页没有计费 IPC，也不要再挂演示套餐 / 升级弹窗。L4 卡可以深链到本页说明，不要假装能在 Enjoy 里充值。
 - 团队 / 成员 / 组织 / 集成禁止再塞 Alex Zhang、GitHub Enterprise「已连接」、`team@enjoy-agents.dev` 已登录云账号。没有云同步就写本地单机。用户卡禁止「退出登录」（没有云会话可退）。

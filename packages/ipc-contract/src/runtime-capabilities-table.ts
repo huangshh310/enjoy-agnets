@@ -111,7 +111,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     quota: false,
     thinking: "model-id",
     fast: "none",
-    providerBind: "none"
+    providerBind: "google"
   }),
   opencode: acpHost({
     models: "inspect",
@@ -119,7 +119,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     quota: false,
     thinking: "none",
     fast: "none",
-    providerBind: "none"
+    providerBind: "opencode"
   }),
   pi: acpHost({
     models: "inspect",

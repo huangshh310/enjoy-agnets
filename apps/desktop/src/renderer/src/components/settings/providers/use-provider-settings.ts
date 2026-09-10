@@ -195,7 +195,7 @@ async function runProviderProbe(
   setProbe: (probe: ProbeState) => void,
   updateEditor: (patch: Partial<EditorState>) => void
 ) {
-  setProbe({ status: "pending", message: "Fetching models…", models: currentModels })
+  setProbe({ status: "pending", message: "", code: "catalogPending", models: currentModels })
   try {
     const result = (await getIde().settings.probeProvider({
       id: editor.id,
@@ -209,8 +209,16 @@ async function runProviderProbe(
       message: string
       models: Array<{ id: string; label: string }>
       resolvedBaseURL?: string
+      code?: string
+      vars?: Record<string, string>
     }
-    setProbe({ status: result.ok ? "ok" : "error", message: result.message, models: result.models })
+    setProbe({
+      status: result.ok ? "ok" : "error",
+      message: result.message,
+      code: result.code,
+      vars: result.vars,
+      models: result.models
+    })
     applyProbeToEditor(editor, result, updateEditor)
   } catch (error) {
     setProbe({

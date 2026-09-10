@@ -79,6 +79,74 @@ test("OMP inspect 合并可登录供应商", () => {
   assert.equal(merged[0]?.providers?.[1]?.loggedIn, false)
 })
 
+test("绑定 Enjoy 档案时 inspect 不得改掉所选模型，也不得混进 CLI 目录", () => {
+  const merged = applyInspect(
+    [
+      tool({
+        id: "claude",
+        useCustomProvider: true,
+        providerId: "prv_1",
+        selectedModel: "deepseek-flash",
+        models: [
+          { id: "deepseek-flash", label: "deepseek-flash" },
+          { id: "deepseek-v4-pro", label: "deepseek-v4-pro" }
+        ]
+      })
+    ],
+    [
+      {
+        id: "claude",
+        models: [
+          { id: "sonnet", label: "Sonnet 4.6" },
+          { id: "opus", label: "Opus 4.6" }
+        ]
+      }
+    ]
+  )
+  assert.equal(merged[0]?.selectedModel, "deepseek-flash")
+  assert.deepEqual(
+    merged[0]?.models.map((item) => item.id),
+    ["deepseek-flash", "deepseek-v4-pro"]
+  )
+})
+
+test("list 已把官方表拼进 models 时，Composer 仍只显示 vault 两个模型", () => {
+  const merged = applyInspect(
+    [
+      tool({
+        id: "claude",
+        useCustomProvider: true,
+        providerId: "prv_1",
+        selectedModel: "deepseek-flash",
+        models: [
+          { id: "claude-sonnet-4-6", label: "Sonnet 4.6" },
+          { id: "claude-opus-4-6", label: "Opus 4.6" },
+          { id: "claude-sonnet-5", label: "Sonnet 5" },
+          { id: "claude-opus-5", label: "Opus 5" },
+          { id: "claude-haiku-4-5", label: "Haiku 4.5" },
+          { id: "deepseek-flash", label: "deepseek-flash" },
+          { id: "deepseek-v4-pro", label: "deepseek-v4-pro" }
+        ]
+      })
+    ],
+    undefined,
+    [
+      {
+        id: "prv_1",
+        models: [
+          { id: "deepseek-flash", label: "deepseek-flash" },
+          { id: "deepseek-v4-pro", label: "deepseek-v4-pro" }
+        ]
+      }
+    ]
+  )
+  assert.deepEqual(
+    merged[0]?.models.map((item) => item.id),
+    ["deepseek-flash", "deepseek-v4-pro"]
+  )
+  assert.equal(merged[0]?.selectedModel, "deepseek-flash")
+})
+
 test("inspect 带回空 providers 且本地已有表时保留原表", () => {
   const merged = applyInspect(
     [

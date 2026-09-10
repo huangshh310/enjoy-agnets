@@ -113,6 +113,12 @@ export const AgentToolPublic = z.object({
   docsUrl: z.string().default(""),
   providerId: z.string().optional(),
   useCustomProvider: z.boolean().default(false),
+  /** 已绑定 Enjoy 档案的显示名；未绑则省略。 */
+  boundProviderName: z.string().optional(),
+  boundProviderKind: z.string().optional(),
+  boundProviderApiStyle: z.string().optional(),
+  /** 绑定档案是否已存 Key；renderer 只看布尔，不看明文。 */
+  boundHasKey: z.boolean().optional(),
   supportedApiStyles: z.array(z.string()).default([]),
   authAccount: AgentToolAuthAccount.optional(),
   quotaInfo: AgentToolQuotaInfo.optional(),

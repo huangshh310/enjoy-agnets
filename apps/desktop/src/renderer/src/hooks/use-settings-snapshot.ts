@@ -19,7 +19,7 @@ export function useSettingsSnapshot() {
   })
   const inspect = useAgentToolsInspect(settings.data?.agentTools ?? [], runtimeId)
   const tools = settings.data
-    ? applyInspect(settings.data.agentTools, inspect.data)
+    ? applyInspect(settings.data.agentTools, inspect.data, settings.data.providers)
     : undefined
   if (tools) rememberAgentTools(tools)
   const data = settings.data && tools ? { ...settings.data, agentTools: tools } : undefined

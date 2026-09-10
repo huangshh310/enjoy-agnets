@@ -1,5 +1,5 @@
 /**
- * 配置弹窗里的账号详情与模型额度。数字只来自官方 CLI / 公开配额文件。
+ * 配置抽屉里的官方账号详情。绑了 Enjoy 档案时降为旁注，不把 inspect 当当前供应商。
  */
 import { useState } from "react"
 import { RiUser3Line } from "@remixicon/react"
@@ -8,8 +8,17 @@ import { useT } from "@renderer/i18n"
 import { HonestQuotaEmpty } from "./honest-quota-empty"
 import { pickQuotaPercent } from "./agent-tool-quota"
 import { AgentToolQuotaGrid } from "./agent-tool-account-quota"
+import { AgentToolAccountAside } from "./agent-tool-account-aside"
+import { officialAccountRole } from "./official-account-role"
 
 export function AgentToolAccountPanel({ tool }: { tool: AgentToolPublic }) {
+  const role = officialAccountRole(tool)
+  if (role === "hidden") return null
+  if (role === "aside") return <AgentToolAccountAside tool={tool} />
+  return <OfficialAccountHero tool={tool} />
+}
+
+function OfficialAccountHero({ tool }: { tool: AgentToolPublic }) {
   const t = useT()
   const [showAll, setShowAll] = useState(false)
   const account = tool.authAccount

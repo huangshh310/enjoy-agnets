@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cx } from "@/utils/cx"
 import { ModelBrandIcon } from "./provider-icons"
+import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
+import { displayProbeMessage } from "./display-probe-message"
 import type { ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
@@ -92,6 +94,7 @@ function ModelCombobox({
   apiStyle?: string
   onChange: (modelId: string) => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const selected = choices.find((item) => item.id === value)
@@ -121,7 +124,7 @@ function ModelCombobox({
                 value ? "text-text-primary" : "text-text-placeholder"
               )}
             >
-              {selected?.label ?? (value || "Select or enter a model ID")}
+              {selected?.label ?? (value || t("settings.providers.selectId"))}
             </span>
           </div>
           <RiArrowDownSLine className="size-4 shrink-0 text-foreground-icon-secondary" />
@@ -130,17 +133,17 @@ function ModelCombobox({
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="z-60 w-(--radix-popover-trigger-width) overflow-hidden rounded-2lg border-border-button-default bg-background-primary-default p-0 shadow-card"
+        className={`${SETTINGS_DRAWER_Z_CLASS.float} w-(--radix-popover-trigger-width) overflow-hidden rounded-2lg border-border-button-default bg-background-primary-default p-0 shadow-card`}
       >
         <Command className="rounded-none bg-transparent">
           <CommandInput
-            placeholder="Search or enter model ID..."
+            placeholder={t("settings.providers.searchId")}
             value={query}
             onValueChange={setQuery}
           />
           <CommandList className="max-h-60 p-1">
             <CommandEmpty className="py-4 text-center text-caption-1-medium text-text-tertiary">
-              No matching models. Type an ID and select it.
+              {t("settings.providers.noMatch")}
             </CommandEmpty>
             <ModelOptions
               choices={choices}
@@ -173,6 +176,7 @@ function ModelOptions({
   apiStyle?: string
   onPick: (id: string) => void
 }) {
+  const t = useT()
   return (
     <CommandGroup className="p-0">
       {typed ? (
@@ -187,7 +191,7 @@ function ModelOptions({
             apiStyle={apiStyle}
             size={15}
           />
-          <span>Use custom ID: &quot;{typed}&quot;</span>
+          <span>{t("settings.providers.useCustom", { id: typed })}</span>
         </CommandItem>
       ) : null}
       {choices.map((model) => (
@@ -220,11 +224,13 @@ function ModelOptions({
 }
 
 function ModelProbeStatus({ probe }: { probe: ProbeState }) {
+  const t = useT()
+  const text = displayProbeMessage(probe, t)
   if (probe.status === "pending") {
     return (
       <div className="flex items-center gap-1.5 rounded-lg bg-background-tertiary-default px-2.5 py-1.5 text-caption-1-medium text-text-secondary">
         <RiRefreshLine className="size-3.5 animate-spin text-accent-500 shrink-0" />
-        <span className="truncate">{probe.message || "Connecting to endpoint and fetching models..."}</span>
+        <span className="truncate">{text || t("settings.providers.connecting")}</span>
       </div>
     )
   }
@@ -233,7 +239,7 @@ function ModelProbeStatus({ probe }: { probe: ProbeState }) {
     return (
       <div className="flex items-center gap-1.5 rounded-lg bg-accent-50/50 border border-accent-500/20 px-2.5 py-1.5 text-caption-1-medium text-accent-600">
         <RiCheckLine className="size-3.5 shrink-0" />
-        <span className="truncate">{probe.message}</span>
+        <span className="truncate">{text}</span>
       </div>
     )
   }
@@ -242,14 +248,12 @@ function ModelProbeStatus({ probe }: { probe: ProbeState }) {
     return (
       <div className="flex items-start gap-1.5 rounded-lg bg-background-secondary-default border border-border-button-default px-2.5 py-1.5 text-caption-1-medium text-text-error-primary">
         <RiInformationLine className="size-3.5 mt-0.5 shrink-0" />
-        <span className="break-all">{probe.message}</span>
+        <span className="text-pretty">{text}</span>
       </div>
     )
   }
 
   return (
-    <p className="text-caption-1-medium text-text-tertiary">
-      Click &quot;Fetch&quot; to discover available models from the endpoint, or type an ID.
-    </p>
+    <p className="text-caption-1-medium text-text-tertiary">{t("settings.providers.fetchHint")}</p>
   )
 }

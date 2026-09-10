@@ -22,7 +22,7 @@ export const RuntimeCapabilities = z.object({
   steer: z.boolean(),
   realtime: z.boolean(),
   delegate: z.boolean(),
-  providerBind: z.enum(["none", "anthropic", "openai", "deepseek"])
+  providerBind: z.enum(["none", "anthropic", "openai", "deepseek", "google", "opencode"])
 })
 export type RuntimeCapabilities = z.infer<typeof RuntimeCapabilities>
 

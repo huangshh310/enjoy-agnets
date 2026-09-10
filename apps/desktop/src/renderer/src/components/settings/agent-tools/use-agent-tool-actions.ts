@@ -4,6 +4,7 @@
 import { useState } from "react"
 import {
   capabilitiesOf,
+  providersSelectableFor,
   type AgentToolId,
   type AgentToolDoctorResult,
   type AgentToolPublic
@@ -12,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useT } from "@renderer/i18n"
 import {
   copyOnce,
   handleInstall,
@@ -24,10 +26,12 @@ import {
   type AgentToolBusy
 } from "./agent-tool-actions-run"
 import { getAgentBrandMeta } from "./agent-tool-constants"
+import { mapBindError, unwrapIpcError } from "./map-agent-tool-error"
 
 export type { AgentToolBusy }
 
 export function useAgentToolActions(tool: AgentToolPublic) {
+  const t = useT()
   const queryClient = useQueryClient()
   const snapshot = useSettingsSnapshot().data
   const activeRuntimeId = snapshot?.preferences.runtimeId ?? DEFAULT_RUNTIME_ID
@@ -52,10 +56,16 @@ export function useAgentToolActions(tool: AgentToolPublic) {
   }) {
     if (!hasIde()) return
     try {
-      await getIde().agentTools.upsert({ id: tool.id as AgentToolId, ...patch })
+      await getIde().agentTools.upsert({
+        id: tool.id as AgentToolId,
+        useCustomProvider: tool.useCustomProvider,
+        providerId: tool.providerId,
+        ...patch
+      })
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
+      setFeedbackMessage(null)
     } catch (err) {
-      setFeedbackMessage(err instanceof Error ? err.message : String(err))
+      setFeedbackMessage(mapBindError(unwrapIpcError(err), t))
     }
   }
 
@@ -65,7 +75,8 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     isDefaultLocal: tool.id === DEFAULT_RUNTIME_ID,
     configurable: tool.available && !tool.skillOnly && tool.id !== DEFAULT_RUNTIME_ID,
     supportsCustomInjection: capabilitiesOf(tool).providerBind !== "none",
-    compatibleProviders: filterCompatibleProviders(tool.id, providers),
+    compatibleProviders: providersSelectableFor(tool.id, providers),
+    allProviders: providers,
     path,
     setPath,
     copiedPath,
@@ -98,23 +109,3 @@ export function useAgentToolActions(tool: AgentToolPublic) {
 }
 
 export type AgentToolActions = ReturnType<typeof useAgentToolActions>
-
-function filterCompatibleProviders(
-  toolId: string,
-  providers: Array<{ id: string; name: string; baseURL?: string; apiStyle?: string; kind?: string }>
-) {
-  return providers.filter((item) => {
-    if (toolId === "claude") {
-      return item.apiStyle === "anthropic" || item.kind === "anthropic" || item.kind === "custom"
-    }
-    if (toolId === "codex") {
-      return (
-        item.apiStyle === "openai" ||
-        item.apiStyle === "openai-responses" ||
-        item.kind === "openai" ||
-        item.kind === "custom"
-      )
-    }
-    return true
-  })
-}

@@ -14,12 +14,14 @@ import {
 } from "@enjoy-agents/agent-harness"
 import {
   capabilitiesFor,
+  composeAgentModels,
   isCustomAgentId,
-  type AgentCliModel,
+  pickBoundModelId,
   type AgentToolId,
   type AgentToolDoctorResult,
   type AgentToolPublic
 } from "@enjoy-agents/ipc-contract"
+import { assertAndClampBind } from "./agent-tools-bind-assert"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { doctorAcpHandshake } from "./agent-tools-doctor-acp"
 import { getCustomAgent, readCustomAgents, toPublicCustom, upsertCustomAgent } from "./agent-tools-custom"
@@ -29,7 +31,10 @@ import { readVault } from "./secrets-vault"
 
 export async function listAgentTools(): Promise<AgentToolPublic[]> {
   const overrides = readAgentToolOverrides()
-  const builtin = await Promise.all(AGENT_TOOL_PRESETS.map((preset) => toPublic(preset, overrides[preset.id])))
+  const names = await providerNames()
+  const builtin = await Promise.all(
+    AGENT_TOOL_PRESETS.map((preset) => toPublic(preset, overrides[preset.id], names))
+  )
   const custom = await Promise.all(readCustomAgents().map((record) => toPublicCustom(record)))
   return [...builtin, ...custom]
 }
@@ -64,11 +69,12 @@ export async function upsertAgentTool(input: {
     })
     return listAgentTools()
   }
+  const clamped = await assertAndClampBind(input)
   writeAgentToolOverride(input.id, {
     enabled: input.enabled,
     binaryPath: input.binaryPath,
     extraArgs: input.extraArgs,
-    modelId: input.modelId,
+    modelId: clamped.modelId,
     providerId: input.providerId,
     useCustomProvider: input.useCustomProvider
   })
@@ -122,9 +128,9 @@ export async function doctorAgentTool(id: AgentToolId): Promise<AgentToolDoctorR
 function supportedStylesForTool(id: string): string[] {
   if (id === "claude") return ["anthropic"]
   if (id === "codex") return ["openai", "openai-responses"]
-  if (id === "cursor") return ["openai", "anthropic"]
-  if (id === "antigravity") return ["google", "openai"]
-  if (id === "deepseek") return ["deepseek", "openai"]
+  if (id === "gemini") return ["google"]
+  if (id === "opencode") return ["openai", "openai-responses", "anthropic", "google"]
+  if (id === "deepseek") return ["deepseek"]
   return []
 }
 
@@ -137,13 +143,14 @@ async function toPublic(
     modelId?: string
     providerId?: string
     useCustomProvider?: boolean
-  }
+  },
+  providerNames?: Map<string, string>
 ): Promise<AgentToolPublic> {
   const custom = safeCustomBinaryPath(preset.id, override?.binaryPath)
-  const names = custom ? [custom] : [...preset.binaries]
+  const binaries = custom ? [custom] : [...preset.binaries]
   const probe =
-    names.length > 0
-      ? await probeBinaries(names, [])
+    binaries.length > 0
+      ? await probeBinaries(binaries, [])
       : { found: preset.id === "enjoy-local", path: null, version: null }
   let status = detectStatusFor(preset, probe)
   if (comingSoonFlag(preset)) status = "comingSoon"
@@ -152,9 +159,16 @@ async function toPublic(
     if (!companion.found) status = "missing"
   }
   const catalog = catalogFor(preset.id)
-  const models = await catalogModels(preset.id, override?.providerId)
-  const selected =
-    override?.modelId && models.some((item) => item.id === override.modelId)
+  const bound = override?.useCustomProvider === true
+  const profile = bound ? await loadBoundProfile(override?.providerId) : undefined
+  const models = composeAgentModels({
+    catalog: catalog?.models ? [...catalog.models] : [],
+    bound,
+    vaultModels: profile?.models
+  })
+  const selected = bound
+    ? pickBoundModelId(override?.modelId, models)
+    : override?.modelId && models.some((item) => item.id === override.modelId)
       ? override.modelId
       : (models[0]?.id ?? catalog?.defaultModel)
   return {
@@ -180,27 +194,33 @@ async function toPublic(
     docsUrl: catalog?.docsUrl ?? "",
     providerId: override?.providerId,
     useCustomProvider: override?.useCustomProvider ?? false,
+    boundProviderName:
+      bound && override.providerId ? providerNames?.get(override.providerId) : undefined,
+    boundProviderKind: profile?.kind,
+    boundProviderApiStyle: profile?.apiStyle,
+    boundHasKey: bound ? Boolean(profile?.apiKey?.trim()) : undefined,
     supportedApiStyles: supportedStylesForTool(preset.id),
     capabilities: capabilitiesFor(preset.id)
   }
 }
 
-/** 列表只用静态目录 + 已绑定供应商模型；账号侧模型走 inspect。 */
-async function catalogModels(presetId: string, providerId?: string): Promise<AgentCliModel[]> {
-  const baseModels = catalogFor(presetId)?.models ? [...catalogFor(presetId)!.models] : []
-  if (!providerId) return baseModels
+async function loadBoundProfile(providerId?: string) {
+  if (!providerId) return undefined
   try {
     const vault = await readVault()
-    const profile = vault.profiles.find((item) => item.id === providerId)
-    for (const model of profile?.models ?? []) {
-      if (!baseModels.some((item) => item.id === model.id)) {
-        baseModels.push({ id: model.id, label: model.label || model.id })
-      }
-    }
+    return vault.profiles.find((item) => item.id === providerId)
   } catch {
-    // vault 读失败时仍返回目录表
+    return undefined
   }
-  return baseModels
+}
+
+async function providerNames(): Promise<Map<string, string>> {
+  try {
+    const vault = await readVault()
+    return new Map(vault.profiles.map((profile) => [profile.id, profile.name]))
+  } catch {
+    return new Map()
+  }
 }
 
 function availableFlag(preset: AgentToolPreset): boolean {

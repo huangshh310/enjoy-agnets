@@ -10,6 +10,7 @@ import {
   type CatalogModel,
   type ProviderKind
 } from "@enjoy-agents/providers"
+import { unbindProviderFromAgentTools } from "./agent-tools-vault"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import {
@@ -100,6 +101,7 @@ export async function upsertProfile(input: {
 }
 
 export async function removeProfile(id: string): Promise<void> {
+  unbindProviderFromAgentTools(id)
   const vault = await readVault()
   vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
   if (vault.activeId === id) vault.activeId = vault.profiles[0]?.id ?? null

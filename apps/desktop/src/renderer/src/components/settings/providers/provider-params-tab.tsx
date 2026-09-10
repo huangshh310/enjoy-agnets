@@ -79,7 +79,10 @@ export function ProviderParamsTab({
         <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3 flex flex-col gap-2.5">
           <div className="flex items-center justify-between text-[11px]">
             <span className="font-medium text-text-primary">
-              Level {getEffortMeta(editor.reasoningEffort).index} · {getEffortMeta(editor.reasoningEffort).label}
+              {t("settings.providers.level", {
+                index: getEffortMeta(editor.reasoningEffort).index,
+                label: getEffortMeta(editor.reasoningEffort).label
+              })}
             </span>
             <span className="text-text-tertiary">
               {getEffortMeta(editor.reasoningEffort).desc}

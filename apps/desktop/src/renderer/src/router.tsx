@@ -29,6 +29,7 @@ import {
   mappedSettingsBeforeLoad,
   settingsBeforeLoad
 } from "@renderer/components/app-shell/routing/redirect-settings"
+import { parseSettingsSectionSearch } from "@renderer/components/settings/settings-section-search"
 
 function RootLayout() {
   useAgentSession()
@@ -89,9 +90,7 @@ const settingsIndexRoute = createRoute({
 const settingsSectionRoute = createRoute({
   getParentRoute: () => settingsRoute,
   path: "$section",
-  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
-    tab: typeof search.tab === "string" ? search.tab : undefined
-  }),
+  validateSearch: (search: Record<string, unknown>) => parseSettingsSectionSearch(search),
   beforeLoad: ({ params }) => {
     if (!isSettingsSectionId(params.section)) {
       throw redirect({ to: "/settings/$section", params: { section: "general" } })

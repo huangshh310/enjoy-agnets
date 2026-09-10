@@ -22,7 +22,13 @@ const CREDIT_MARKERS = [
 
 export function classifyThreadError(message: string): ThreadErrorKind {
   const lower = message.toLowerCase()
-  if (message === NEED_PROVIDER_KEY || lower.includes("add a provider api key")) return "needs_key"
+  if (
+    message === NEED_PROVIDER_KEY ||
+    lower.includes("add a provider api key") ||
+    lower.includes("before using this bound profile")
+  ) {
+    return "needs_key"
+  }
   if (message === NEED_CLI_INSPECTING) return "inspecting"
   if (
     message === NEED_CLI_LOGIN ||

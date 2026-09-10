@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { composerActiveModelLabel, composerChipParts, composerChipText } from "./composer-chip-label.ts"
+import {
+  composerActiveModelLabel,
+  composerBoundProviderLabel,
+  composerChipParts,
+  composerChipText
+} from "./composer-chip-label.ts"
 
 test("胶囊只有引擎 · 模型，供应商只进 title", () => {
   const parts = composerChipParts({
@@ -59,4 +64,31 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     agent: { label: "Grok Build", models: [] }
   })
   assert.equal(fallback, "Grok Build")
+})
+
+test("绑定档案时模型用 vault 所选，档案名只进 title", () => {
+  const label = composerActiveModelLabel({
+    runtimeId: "codex",
+    catalogLabel: "gpt-5.4",
+    catalogId: "gpt-5.4",
+    agent: {
+      label: "Codex CLI",
+      useCustomProvider: true,
+      boundProviderName: "lucky0625",
+      selectedModel: "hy3",
+      models: [{ id: "hy3", label: "hy3" }]
+    }
+  })
+  assert.equal(label, "hy3")
+  assert.equal(
+    composerBoundProviderLabel({ useCustomProvider: true, boundProviderName: "lucky0625" }),
+    "lucky0625"
+  )
+  const parts = composerChipParts({
+    engineLabel: "Codex CLI",
+    modelLabel: label,
+    providerLabel: "lucky0625"
+  })
+  assert.equal(composerChipText(parts), "Codex CLI · hy3")
+  assert.equal(parts.title, "Codex CLI · lucky0625 · hy3")
 })

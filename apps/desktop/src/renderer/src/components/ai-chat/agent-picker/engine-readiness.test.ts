@@ -62,6 +62,42 @@ test("已装且需要登录：未登录 / 探测中都不能当就绪", () => {
   assert.equal(readinessSubtitle("inspecting", (path) => path), "chat.agentInspecting")
 })
 
+test("绑了 Enjoy 档案：不登官方也能就绪，缺 Key 才 needs_key", () => {
+  assert.equal(
+    engineReadiness({
+      id: "claude",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false,
+      usingVaultProvider: true,
+      boundHasKey: true
+    }),
+    "ready"
+  )
+  assert.equal(
+    canBindEngine({
+      id: "claude",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false,
+      usingVaultProvider: true,
+      boundHasKey: true
+    }),
+    true
+  )
+  assert.equal(
+    engineReadiness({
+      id: "claude",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false,
+      usingVaultProvider: true,
+      boundHasKey: false
+    }),
+    "needs_key"
+  )
+})
+
 test("导轨胶囊用短标，就绪不画", () => {
   assert.equal(readinessMarkKey("missing"), "chat.agentNotInstalledMark")
   assert.equal(readinessMarkKey("needs_login"), "chat.agentNeedsLoginMark")

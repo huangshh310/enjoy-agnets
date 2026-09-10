@@ -1,11 +1,13 @@
 /**
- * 编辑已添加的自定义 ACP：BoardUI Dialog，删除需确认。
+ * 编辑已添加的自定义 ACP：右侧抽屉，删除需确认。
  */
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { RiCloseLine } from "@remixicon/react"
+import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useState } from "react"
+import { SettingsSideDrawer } from "../settings-side-drawer"
 import { CustomAcpAgentForm } from "./custom-acp-agent-form"
 
 export function CustomAcpAgentDialog({
@@ -21,24 +23,32 @@ export function CustomAcpAgentDialog({
 }) {
   const t = useT()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const close = () => onOpenChange(false)
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          showCloseButton={false}
-          className="flex max-h-[85vh] max-w-xl flex-col overflow-y-auto rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-dialog outline-none"
-        >
-          <h3 className="text-body-medium font-semibold text-text-primary">{t("settings.registry.editCustom")}</h3>
-          <div className="mt-3">
-            <CustomAcpAgentForm
-              initialId={id}
-              onSaved={() => {
-                onChanged()
-                onOpenChange(false)
-              }}
-              onCancel={() => onOpenChange(false)}
-            />
-          </div>
+      <SettingsSideDrawer
+        open={open}
+        onClose={close}
+        labelledBy="custom-acp-editor-title"
+        closeLabel={t("common.close")}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-separator-border/60 px-6 py-4">
+          <h3 id="custom-acp-editor-title" className="text-title-3-semibold text-text-primary">
+            {t("settings.registry.editCustom")}
+          </h3>
+          <Button type="button" size="sm" variant="ghost" onClick={close} className="size-8 p-0">
+            <RiCloseLine className="size-4" />
+          </Button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <CustomAcpAgentForm
+            initialId={id}
+            onSaved={() => {
+              onChanged()
+              close()
+            }}
+            onCancel={close}
+          />
           {id ? (
             <button
               type="button"
@@ -48,8 +58,8 @@ export function CustomAcpAgentDialog({
               {t("settings.registry.deleteCustom")}
             </button>
           ) : null}
-        </DialogContent>
-      </Dialog>
+        </div>
+      </SettingsSideDrawer>
       <ConfirmDialog
         open={confirmDelete}
         title={t("settings.registry.deleteTitle")}

@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-09
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-10
 
 ## 当前真相
 
@@ -33,8 +33,8 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 1. 分段：本机 CLI | Registry | 进阶沙箱 | 默认项
 2. 顶栏提示：切到 Cursor 后「Enjoy 密钥不会传给它」+ 扫描 / 体检
-3. **CLI 卡**（安装 / 登录 / 设为主引擎 / 配置弹窗）；账号额度跟 L1 同一套 inspect
-4. **能力说明**默认收起：`CapabilityMatrix`（行=runtime，含沙箱 + 自定义 ACP；列=spawn / login / quota / thinking / fast / executionModes；「支持」不是已登录；点行跳到对应卡或沙箱分段）+ `ConfigBoundaryTable`（Key→Enjoy vault · login→各家 CLI · MCP→`#/mcp` · Skills→`#/skills`）。自定义行画用户 **label**，不画 raw id/slug。
+3. **CLI 卡**（安装 / 登录 / 设为主引擎 / **配置抽屉**）；`providerBind !== none` 时路径行下画绑定摘要。「这个助手用」并列官方登录与能用的档案，且在官方账号区之前。绑了档案后官方 inspect 只作旁注，额度条仍只在走官方登录时画。供应商 Configured 芯片跳 `#/settings/agent?tool=<id>` 闪对应卡
+4. **能力说明**默认收起：`CapabilityMatrix`（行=runtime，含沙箱 + 自定义 ACP；列=spawn / login / quota / thinking / fast / executionModes；「支持」不是已登录；点行跳到对应卡或沙箱分段）+ `ConfigBoundaryTable`（Key→Enjoy vault · **CLI 引用的供应商→Enjoy vault** · login→各家 CLI · MCP→`#/mcp` · Skills→`#/skills`）。自定义行画用户 **label**，不画 raw id/slug。
 
 已删除：`AgentToolsHubMetrics`（装载率条、常绿灯、「沙箱隔离·实时 Token 流」）。`AgentLimitsCard` 下半 `PlanLimitsSection` 已删，上半只作 L3 明细。
 

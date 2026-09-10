@@ -12,10 +12,12 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import {
+  adviseCatalogUrl,
   API_STYLE_OPTIONS,
   type ApiStyle,
   type ProviderPreset
 } from "@enjoy-agents/providers/presets"
+import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
 import { SecretInput } from "../secret-input"
 import type { EditorState } from "./providers.types"
 import { useT, type TranslateFn } from "@renderer/i18n"
@@ -53,7 +55,7 @@ export function ProviderConnectionFields({
             <SelectTrigger className="h-9 w-full rounded-2lg">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className={SETTINGS_DRAWER_Z_CLASS.float}>
               {API_STYLE_OPTIONS.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
                   {item.name}
@@ -88,8 +90,21 @@ export function ProviderConnectionFields({
           }
           className="h-9 font-mono text-[13px]"
         />
+        <CatalogUrlHint baseURL={editor.baseURL} apiStyle={editor.apiStyle} />
       </Field>
     </div>
+  )
+}
+
+/** 填了控制台网页或协议对不上时，不用等点「拉取」才知道。 */
+function CatalogUrlHint({ baseURL, apiStyle }: { baseURL: string; apiStyle: ApiStyle }) {
+  const t = useT()
+  const advice = adviseCatalogUrl(baseURL, apiStyle)
+  if (advice.action !== "reject") return null
+  return (
+    <p className="text-pretty text-caption-2-medium text-text-error-primary">
+      {t(`settings.providers.${advice.code}`, advice.vars)}
+    </p>
   )
 }
 

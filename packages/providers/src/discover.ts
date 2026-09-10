@@ -1,7 +1,14 @@
 /**
- * 按协议拉模型目录。站点根路径常返回 HTML，会自动补 /v1；Anthropic 走 x-api-key。
+ * 按协议拉模型目录。站点根常返回 HTML，会补 /v1；`/anthropic` 会剥到根上打 /models。
+ * 成功候选若只是剥兼容路径，不得写回档案 Base URL。Anthropic 走 x-api-key。
  */
 import type { ApiStyle } from "./api-styles"
+import {
+  catalogBaseCandidates,
+  catalogPersistBase,
+  htmlCatalogError,
+  resolveCatalogBaseURL
+} from "./catalog-url.ts"
 import { parseCatalogContextWindow, parseCatalogMaxOutput } from "./context-window.ts"
 import { normalizeBaseURL, presetFor, type CatalogModel, type ProviderKind } from "./presets"
 
@@ -9,9 +16,6 @@ export type DiscoverResult = {
   models: CatalogModel[]
   resolvedBaseURL: string
 }
-
-const HTML_CATALOG_ERROR =
-  "This URL returned a web page, not the models API. Check the base URL and protocol."
 
 export async function discoverRemoteModels(config: {
   provider: ProviderKind
@@ -21,15 +25,15 @@ export async function discoverRemoteModels(config: {
 }): Promise<DiscoverResult> {
   const preset = presetFor(config.provider)
   const apiStyle = config.apiStyle ?? preset.apiStyle
-  const baseURL = normalizeBaseURL(config.baseURL)
+  const baseURL = resolveCatalogBaseURL(config.baseURL, apiStyle)
 
   if (config.provider === "ollama") {
     return { models: await fetchOllamaModels(baseURL, bearerHeaders(config.apiKey)), resolvedBaseURL: baseURL }
   }
   if (apiStyle === "anthropic") {
-    return fetchAnthropicCatalog(baseURL, config.apiKey)
+    return fetchAnthropicCatalog(baseURL, config.apiKey, apiStyle)
   }
-  return fetchOpenAICatalog(baseURL, bearerHeaders(config.apiKey))
+  return fetchOpenAICatalog(baseURL, bearerHeaders(config.apiKey), apiStyle)
 }
 
 export type PingResult = {
@@ -109,18 +113,22 @@ async function fetchOllamaModels(baseURL: string, headers: Record<string, string
   const origin = baseURL.replace(/\/v1$/, "")
   const response = await fetch(`${origin}/api/tags`, { headers, signal: AbortSignal.timeout(12_000) })
   if (!response.ok) throw new Error(`Ollama returned ${response.status}.`)
-  const body = await readJson<{ models?: Array<{ name?: string }> }>(response)
+  const body = await readJson<{ models?: Array<{ name?: string }> }>(response, "openai")
   return (body.models ?? [])
     .map((item) => item.name)
     .filter((name): name is string => Boolean(name))
     .map((name) => ({ id: name, label: name }))
 }
 
-async function fetchOpenAICatalog(baseURL: string, headers: Record<string, string>) {
-  return tryCatalogBases(baseURL, (candidate) => fetchOpenAIModels(candidate, headers))
+async function fetchOpenAICatalog(
+  baseURL: string,
+  headers: Record<string, string>,
+  apiStyle: ApiStyle
+) {
+  return tryCatalogBases(baseURL, (candidate) => fetchOpenAIModels(candidate, headers, apiStyle))
 }
 
-async function fetchAnthropicCatalog(baseURL: string, apiKey: string) {
+async function fetchAnthropicCatalog(baseURL: string, apiKey: string, apiStyle: ApiStyle) {
   const headers: Record<string, string> = {
     Accept: "application/json",
     "anthropic-version": "2023-06-01"
@@ -129,7 +137,7 @@ async function fetchAnthropicCatalog(baseURL: string, apiKey: string) {
     headers["x-api-key"] = apiKey
     headers.Authorization = `Bearer ${apiKey}`
   }
-  return tryCatalogBases(baseURL, (candidate) => fetchAnthropicModels(candidate, headers))
+  return tryCatalogBases(baseURL, (candidate) => fetchAnthropicModels(candidate, headers, apiStyle))
 }
 
 async function tryCatalogBases(
@@ -139,7 +147,10 @@ async function tryCatalogBases(
   let lastError: Error = new Error("Could not reach the models API.")
   for (const candidate of catalogBaseCandidates(baseURL)) {
     try {
-      return { models: await load(candidate), resolvedBaseURL: candidate }
+      return {
+        models: await load(candidate),
+        resolvedBaseURL: catalogPersistBase(baseURL, candidate)
+      }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
     }
@@ -147,19 +158,15 @@ async function tryCatalogBases(
   throw lastError
 }
 
-function catalogBaseCandidates(baseURL: string): string[] {
-  if (hasVersionRoot(baseURL)) return [baseURL]
-  return [baseURL, `${baseURL}/v1`]
-}
-
-function hasVersionRoot(baseURL: string): boolean {
-  return /\/v1(?:beta)?(?:\/openai)?$/i.test(baseURL)
-}
-
-async function fetchOpenAIModels(baseURL: string, headers: Record<string, string>) {
+async function fetchOpenAIModels(
+  baseURL: string,
+  headers: Record<string, string>,
+  apiStyle: ApiStyle
+) {
   const body = await getJson<{ data?: Array<{ id?: string; name?: string; display_name?: string }> }>(
     `${baseURL}/models`,
-    headers
+    headers,
+    apiStyle
   )
   return (body.data ?? [])
     .map((item) => item.id)
@@ -172,10 +179,15 @@ async function fetchOpenAIModels(baseURL: string, headers: Record<string, string
     })
 }
 
-async function fetchAnthropicModels(baseURL: string, headers: Record<string, string>) {
+async function fetchAnthropicModels(
+  baseURL: string,
+  headers: Record<string, string>,
+  apiStyle: ApiStyle
+) {
   const body = await getJson<{ data?: Array<{ id?: string; display_name?: string }> }>(
     `${baseURL}/models`,
-    headers
+    headers,
+    apiStyle
   )
   return (body.data ?? [])
     .map((item) => item.id)
@@ -200,27 +212,31 @@ function withCatalogWindow(
   }
 }
 
-async function getJson<T>(url: string, headers: Record<string, string>): Promise<T> {
+async function getJson<T>(url: string, headers: Record<string, string>, apiStyle: ApiStyle): Promise<T> {
   const response = await fetch(url, { headers, signal: AbortSignal.timeout(12_000) })
-  if (!response.ok) throw new Error(await httpCatalogError(response))
-  return readJson<T>(response)
+  if (!response.ok) throw await httpCatalogError(response, apiStyle)
+  return readJson<T>(response, apiStyle)
 }
 
-async function httpCatalogError(response: Response): Promise<string> {
+async function httpCatalogError(response: Response, apiStyle: ApiStyle): Promise<Error> {
   const text = await response.text()
-  if (looksLikeHtml(text)) return HTML_CATALOG_ERROR
+  if (looksLikeHtml(text)) return htmlCatalogError(apiStyle)
   const detail = extractProviderError(text)
   if (response.status === 401 || response.status === 403) {
-    return detail
-      ? `Authentication failed (${response.status}): ${detail}`
-      : `Authentication failed (${response.status}). Check the API key — this is not a proxy/network error.`
+    return new Error(
+      detail
+        ? `Authentication failed (${response.status}): ${detail}`
+        : `Authentication failed (${response.status}). Check the API key — this is not a proxy/network error.`
+    )
   }
   if (response.status === 407) {
-    return "Proxy requires authentication (407). Check the system proxy user/password."
+    return new Error("Proxy requires authentication (407). Check the system proxy user/password.")
   }
-  return detail
-    ? `Provider returned ${response.status}: ${detail}`
-    : `Provider returned ${response.status} ${response.statusText}.`
+  return new Error(
+    detail
+      ? `Provider returned ${response.status}: ${detail}`
+      : `Provider returned ${response.status} ${response.statusText}.`
+  )
 }
 
 /** DeepSeek / OpenAI 等会在 JSON 里写 Authentication Fails，比裸 401 更有用。 */
@@ -241,9 +257,9 @@ function extractProviderError(text: string): string | undefined {
   return undefined
 }
 
-async function readJson<T>(response: Response): Promise<T> {
+async function readJson<T>(response: Response, apiStyle: ApiStyle): Promise<T> {
   const text = await response.text()
-  if (looksLikeHtml(text)) throw new Error(HTML_CATALOG_ERROR)
+  if (looksLikeHtml(text)) throw htmlCatalogError(apiStyle)
   try {
     return JSON.parse(text) as T
   } catch {

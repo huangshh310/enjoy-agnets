@@ -78,8 +78,7 @@ export function CliModelsBrowser({
           catalogPending={catalogPending}
           current={current}
           visible={visible}
-          agentId={agent.id}
-          selectedModel={agent.selectedModel}
+          agent={agent}
           loginBusy={loginBusy}
           loginHint={loginHint}
           onPick={onPick}
@@ -94,8 +93,7 @@ function CliModelsPane({
   catalogPending,
   current,
   visible,
-  agentId,
-  selectedModel,
+  agent,
   loginBusy,
   loginHint,
   onPick,
@@ -104,8 +102,7 @@ function CliModelsPane({
   catalogPending: boolean
   current: ReturnType<typeof providerOf>
   visible: AgentCliModel[]
-  agentId: string
-  selectedModel?: string
+  agent: AgentToolPublic
   loginBusy?: string | null
   loginHint?: string
   onPick: (model: AgentCliModel) => void
@@ -136,16 +133,25 @@ function CliModelsPane({
       {visible.map((model) => (
         <li key={model.id} className="min-w-0">
           <CliModelRow
-            agentId={agentId}
+            agentId={agent.id}
             model={model}
-            selected={model.id === selectedModel}
+            selected={model.id === agent.selectedModel}
             onPick={onPick}
+            fallbackProvider={
+              agent.useCustomProvider
+                ? {
+                    kind: agent.boundProviderKind,
+                    name: agent.boundProviderName,
+                    apiStyle: agent.boundProviderApiStyle
+                  }
+                : undefined
+            }
           />
         </li>
       ))}
       {visible.length === 0 ? (
         <li className="px-6 py-6 text-center text-caption-2-medium text-text-tertiary">
-          {capabilitiesFor(agentId).models === "none"
+          {capabilitiesFor(agent.id).models === "none"
             ? t("chat.cliDefaultModelHint")
             : t("chat.noModelsFound")}
         </li>

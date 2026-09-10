@@ -6,6 +6,7 @@ import { useT } from "@renderer/i18n"
 
 const ROWS = [
   { id: "key", href: "/settings/$section", params: { section: "providers" } },
+  { id: "cliBind", href: "/settings/$section", params: { section: "providers" } },
   { id: "login", href: "/settings/$section", params: { section: "agent" } },
   { id: "mcp", href: "/mcp" },
   { id: "skills", href: "/skills" }

@@ -1,9 +1,10 @@
 /**
- * CLI 模型行图标：OMP 的 selector 是 provider/model，要画模型族，不要画引擎灰圆。
+ * CLI 模型行图标：有族名画模型族（含绑了中转的 deepseek-*）；无族名才回落引擎标。
  */
 import { providerKeyOf } from "./cli-model-groups.ts"
 
-export function cliModelIconMode(agentId: string, modelId: string): "family" | "engine" {
+export function cliModelIconMode(agentId: string, modelId: string, label = ""): "family" | "engine" {
+  if (cliModelFamilyKey(modelId, label)) return "family"
   return agentId === "omp" || modelId.includes("/") ? "family" : "engine"
 }
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { agentTabFromHash, parseAgentSettingsTab } from "./settings-agent-tab.ts"
+import { parseSettingsSectionSearch } from "./settings-section-search.ts"
 
 test("空态深链 tab=registry，非法值回落本机 CLI", () => {
   assert.equal(parseAgentSettingsTab("registry"), "registry")
@@ -9,4 +10,15 @@ test("空态深链 tab=registry，非法值回落本机 CLI", () => {
   assert.equal(parseAgentSettingsTab(undefined), "racks")
   assert.equal(agentTabFromHash("#/settings/agent?tab=registry"), "registry")
   assert.equal(agentTabFromHash("#/settings/agent"), "racks")
+})
+
+test("供应商反链 ?tool= 会进 search，空串丢掉", () => {
+  assert.deepEqual(parseSettingsSectionSearch({ tab: "registry", tool: "claude" }), {
+    tab: "registry",
+    tool: "claude"
+  })
+  assert.deepEqual(parseSettingsSectionSearch({ tool: "  " }), {
+    tab: undefined,
+    tool: undefined
+  })
 })

@@ -1,5 +1,5 @@
 /**
- * 配置弹窗：执行源路径与模型选择。
+ * 配置抽屉：执行源路径与官方模型选择（绑定 Enjoy 档案时隐藏，改走动力源）。
  */
 import { RiArrowDownSLine, RiCheckLine } from "@remixicon/react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
+import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
@@ -33,7 +34,7 @@ export function AgentToolConfigSource({
           {tool.detectedPath || t("settings.agentTools.globalPath")}
         </span>
       </div>
-      {tool.models.length > 0 ? (
+      {tool.models.length > 0 && !tool.useCustomProvider ? (
         <div className="flex items-center justify-between border-t border-separator-border/60 pt-2.5">
           <span className="text-caption-1-medium text-text-primary">{t("settings.agentTools.model")}</span>
           <ModelPicker tool={tool} actions={actions} selectedLabel={selectedModel?.label || selectedModel?.id} />
@@ -72,7 +73,7 @@ function ModelPicker({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="max-h-80 w-72 overflow-y-auto rounded-xl border border-border-button-default bg-background-primary-default p-1 shadow-dropdown"
+        className={`${SETTINGS_DRAWER_Z_CLASS.float} max-h-80 w-72 overflow-y-auto rounded-xl border border-border-button-default bg-background-primary-default p-1 shadow-dropdown`}
       >
         {tool.models.map((item) => (
           <DropdownMenuItem

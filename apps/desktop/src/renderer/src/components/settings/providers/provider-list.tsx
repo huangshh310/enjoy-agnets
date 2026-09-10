@@ -11,7 +11,7 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
-import type { ProviderPublic } from "@enjoy-agents/ipc-contract"
+import type { AgentBindRef, ProviderPublic } from "@enjoy-agents/ipc-contract"
 import { apiStyleLabel, isApiStyle } from "@enjoy-agents/providers/presets"
 import { ProviderIcon } from "./provider-icons"
 import type { PingStateMap } from "./use-provider-settings"
@@ -19,17 +19,21 @@ import { useT } from "@renderer/i18n"
 export function ProviderList({
   providers,
   pingStates,
+  refsByProvider,
   onPing,
   onEdit,
   onActivate,
-  onRemove
+  onRemove,
+  onOpenAgent
 }: {
   providers: ProviderPublic[]
   pingStates?: PingStateMap
+  refsByProvider?: Record<string, AgentBindRef[]>
   onPing?: (profile: ProviderPublic) => void
   onEdit: (profile: ProviderPublic) => void
   onActivate: (id: string) => void
   onRemove: (id: string) => void
+  onOpenAgent?: (runtimeId: string) => void
 }) {
   if (providers.length === 0) return null
 
@@ -40,10 +44,12 @@ export function ProviderList({
           key={profile.id}
           profile={profile}
           pingState={pingStates?.[profile.id]}
+          refs={refsByProvider?.[profile.id] ?? []}
           onPing={onPing ? () => onPing(profile) : undefined}
           onEdit={() => onEdit(profile)}
           onActivate={() => onActivate(profile.id)}
           onRemove={() => onRemove(profile.id)}
+          onOpenAgent={onOpenAgent}
         />
       ))}
     </div>
@@ -53,17 +59,21 @@ export function ProviderList({
 function ProviderItemRow({
   profile,
   pingState,
+  refs,
   onPing,
   onEdit,
   onActivate,
-  onRemove
+  onRemove,
+  onOpenAgent
 }: {
   profile: ProviderPublic
   pingState?: PingStateMap[string]
+  refs: AgentBindRef[]
   onPing?: () => void
   onEdit: () => void
   onActivate: () => void
   onRemove: () => void
+  onOpenAgent?: (runtimeId: string) => void
 }) {
   const t = useT()
   const protocolName = isApiStyle(profile.apiStyle)
@@ -177,6 +187,21 @@ function ProviderItemRow({
                 : t("settings.providers.noKeyRequired")}
           </span>
         </div>
+        {refs.length > 0 ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-caption-2-medium text-text-tertiary">{t("settings.providers.usedBy")}</span>
+            {refs.map((ref) => (
+              <button
+                key={ref.id}
+                type="button"
+                onClick={() => onOpenAgent?.(ref.id)}
+                className="rounded-md border border-border-button-default bg-background-primary-default px-1.5 py-0.5 text-caption-2-medium text-text-secondary hover:border-accent-500/50 hover:text-text-primary"
+              >
+                {ref.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {/* 右侧操作按钮组 */}

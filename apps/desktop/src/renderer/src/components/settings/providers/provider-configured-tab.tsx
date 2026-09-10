@@ -11,7 +11,7 @@ import {
   RiServerLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
-import type { ProviderPublic } from "@enjoy-agents/ipc-contract"
+import type { AgentBindRef, ProviderPublic } from "@enjoy-agents/ipc-contract"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 import { SettingsCard } from "../settings-row"
 import { ProviderIcon } from "./provider-icons"
@@ -27,7 +27,9 @@ export function ProviderConfiguredTab({
   onActivate,
   onRemove,
   onAddCustom,
-  onExplorePresets
+  onExplorePresets,
+  refsByProvider,
+  onOpenAgent
 }: {
   providers: ProviderPublic[]
   pingStates?: PingStateMap
@@ -38,6 +40,8 @@ export function ProviderConfiguredTab({
   onRemove: (id: string) => void
   onAddCustom: (kind: ProviderKind, apiStyle: ApiStyle) => void
   onExplorePresets: () => void
+  refsByProvider?: Record<string, AgentBindRef[]>
+  onOpenAgent?: (runtimeId: string) => void
 }) {
   const t = useT()
   const [searchQuery, setSearchQuery] = useState("")
@@ -151,10 +155,12 @@ export function ProviderConfiguredTab({
         <ProviderList
           providers={filteredProviders}
           pingStates={pingStates}
+          refsByProvider={refsByProvider}
           onPing={onPing}
           onEdit={onEdit}
           onActivate={onActivate}
           onRemove={onRemove}
+          onOpenAgent={onOpenAgent}
         />
       </SettingsCard>
     </div>

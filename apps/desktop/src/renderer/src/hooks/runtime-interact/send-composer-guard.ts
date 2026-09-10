@@ -1,9 +1,9 @@
 /**
  * 发送前置：无密钥 / 未登录先拦，不要跳设置或打出 ACP 英文堆栈。
  */
-import { capabilitiesOf } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { rememberedAgentTool } from "../agent-tools-cache.ts"
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
+import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
 import {
   NEED_CLI_INSPECTING,
@@ -27,13 +27,8 @@ export function composerSendReady(
 ): boolean {
   if (store.runtimeId === "enjoy-local") return Boolean(store.hasKey && store.modelId)
   const tool = rememberedAgentTool(store.runtimeId)
-  const input = {
-    id: store.runtimeId,
-    status: tool?.status ?? "ready",
-    comingSoon: tool?.comingSoon,
-    requiresLogin: tool ? capabilitiesOf(tool).login : true,
-    loggedIn: tool?.authAccount?.loggedIn ?? null
-  }
+  if (!tool) return false
+  const input = readinessInputOf(tool)
   return canBindEngine(input) && engineReadiness(input) === "ready"
 }
 
@@ -57,15 +52,17 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)
-  const input = {
-    id: store.runtimeId,
-    status: tool?.status ?? "ready",
-    comingSoon: tool?.comingSoon,
-    requiresLogin: tool ? capabilitiesOf(tool).login : true,
-    loggedIn: tool?.authAccount?.loggedIn ?? null
+  if (!tool) {
+    store.setError(NEED_CLI_INSPECTING)
+    return false
   }
+  const input = readinessInputOf(tool)
   const kind = engineReadiness(input)
   if (canBindEngine(input) && kind === "ready") return true
+  if (kind === "needs_key") {
+    store.setError(NEED_PROVIDER_KEY)
+    return false
+  }
   if (kind === "inspecting") {
     store.setError(NEED_CLI_INSPECTING)
     return false

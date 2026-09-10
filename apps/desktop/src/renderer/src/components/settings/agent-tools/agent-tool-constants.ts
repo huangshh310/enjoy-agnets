@@ -3,6 +3,10 @@
  * 定义各家 CLI 与本地内核的品牌色彩、技术能力胶囊与微角标配置。
  */
 
+/** 供应商 / 模型下拉超过这个数量才出现筛选框。 */
+export const BIND_SEARCH_AFTER = 6
+
+
 export interface AgentBrandMeta {
   accentColor: string
   borderColor: string

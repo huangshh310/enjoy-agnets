@@ -22,7 +22,11 @@ import { AgentCliPane } from "./agent-cli-pane"
 import { AgentEngineRail } from "./agent-engine-rail"
 import { UsagePill } from "../usage/usage-pill"
 import { composerRailSections } from "./composer-agents"
-import { composerActiveModelLabel, composerChipParts } from "./composer-chip-label"
+import {
+  composerActiveModelLabel,
+  composerBoundProviderLabel,
+  composerChipParts
+} from "./composer-chip-label"
 
 export function AgentPicker({
   modelId,
@@ -88,7 +92,7 @@ export function AgentPicker({
   const providerLabel =
     runtimeId === DEFAULT_RUNTIME_ID
       ? models.find((item) => item.id === modelId)?.providerName
-      : undefined
+      : composerBoundProviderLabel(current)
   const chip = pickerLocked
     ? {
         engine: t("chat.handoff.chipPending"),

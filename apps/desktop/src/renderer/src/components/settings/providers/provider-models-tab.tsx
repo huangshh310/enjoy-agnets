@@ -103,7 +103,11 @@ export function ProviderModelsTab({
               currentEffortMeta.badgeClass
             )}
           >
-            Level {currentEffortMeta.index} · {currentEffortMeta.label} ({currentEffortMeta.shortLabel})
+            {t("settings.providers.levelWithShort", {
+              index: currentEffortMeta.index,
+              label: currentEffortMeta.label,
+              short: currentEffortMeta.shortLabel
+            })}
           </span>
         </div>
 
@@ -143,7 +147,8 @@ export function ProviderModelsTab({
         {/* 当前档位描述文字 */}
         <div className="flex items-center justify-between px-0.5 text-[11px]">
           <span className="text-text-secondary">
-            Thinking Depth: <span className="font-medium text-text-primary">{currentEffortMeta.label}</span>
+            {t("settings.providers.thinkingDepth")}{" "}
+            <span className="font-medium text-text-primary">{currentEffortMeta.label}</span>
           </span>
           <span className="text-text-tertiary">{currentEffortMeta.desc}</span>
         </div>

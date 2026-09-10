@@ -21,6 +21,7 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
 import {
   PROVIDER_PRESETS,
   type ProviderKind
@@ -259,7 +260,7 @@ export function ProviderOverridesTab({
               </div>
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={SETTINGS_DRAWER_Z_CLASS.float}>
             {PROVIDER_PRESETS.map((item) => (
               <SelectItem key={item.kind} value={item.kind}>
                 <div className="flex items-center gap-2">

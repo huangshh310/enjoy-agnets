@@ -1,9 +1,9 @@
 /**
- * 智能体紧凑卡片：状态、安装、设为主引擎；配置进弹窗。
+ * 智能体紧凑卡片：状态、安装、设为主引擎；配置进侧边抽屉。
  */
 import { useState } from "react"
 import { RiTerminalBoxLine } from "@remixicon/react"
-import { isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesOf, isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useT } from "@renderer/i18n"
@@ -12,7 +12,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { agentToolCardId } from "./agent-tool-anchor"
 import { AgentToolAccountRow } from "./agent-tool-account-row"
 import { AgentToolCardFoot, AgentToolCardHead } from "./agent-tool-card-parts"
-import { AgentToolConfigDialog } from "./agent-tool-config-dialog"
+import { AgentToolConfigDrawer } from "./agent-tool-config-drawer"
 import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
 import { useAgentToolActions } from "./use-agent-tool-actions"
 
@@ -60,6 +60,7 @@ export function AgentToolCard({ tool, flash }: { tool: AgentToolPublic; flash?: 
                 (actions.isDefaultLocal ? t("settings.agentTools.model") : "")}
             </span>
           </div>
+          <AgentToolBindSummary tool={tool} />
           <AgentToolAccountRow tool={tool} loading={Boolean(inspecting && !tool.authAccount)} />
         </div>
         <AgentToolCardFoot
@@ -78,7 +79,7 @@ export function AgentToolCard({ tool, flash }: { tool: AgentToolPublic; flash?: 
           onChanged={() => void queryClient.invalidateQueries({ queryKey: ["settings"] })}
         />
       ) : (
-        <AgentToolConfigDialog tool={tool} open={configOpen} onOpenChange={setConfigOpen} />
+        <AgentToolConfigDrawer tool={tool} open={configOpen} onOpenChange={setConfigOpen} />
       )}
       <ConfirmDialog
         open={confirmUninstall}
@@ -96,6 +97,34 @@ export function AgentToolCard({ tool, flash }: { tool: AgentToolPublic; flash?: 
         }
       />
     </>
+  )
+}
+
+function AgentToolBindSummary({ tool }: { tool: AgentToolPublic }) {
+  const t = useT()
+  if (capabilitiesOf(tool).providerBind === "none") return null
+  if (tool.useCustomProvider) {
+    const boundName = tool.boundProviderName || tool.providerId
+    if (!boundName) {
+      return (
+        <p className="text-caption-2-medium text-text-secondary">{t("settings.agentTools.boundEmptySummary")}</p>
+      )
+    }
+    const title = `${boundName} · ${tool.selectedModel || "—"}`
+    return (
+      <p className="flex min-w-0 items-center gap-1.5 text-caption-2-medium text-text-secondary" title={title}>
+        <span className="size-1.5 shrink-0 rounded-full bg-accent-500" />
+        <span className="truncate">
+          {t("settings.agentTools.boundSummary", {
+            provider: boundName,
+            model: tool.selectedModel || "—"
+          })}
+        </span>
+      </p>
+    )
+  }
+  return (
+    <p className="text-caption-2-medium text-text-tertiary">{t("settings.agentTools.officialSummary")}</p>
   )
 }
 

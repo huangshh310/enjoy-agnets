@@ -11,7 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/reasoning.test.ts src/model-factory.test.ts src/capabilities/catalog.test.ts src/capabilities/probe.test.ts src/middleware.test.ts src/media-models.test.ts src/media/video-factory.test.ts src/google.test.ts src/embeddings/rerank-model.test.ts src/context-window.test.ts"
+    "test": "node --experimental-strip-types --test src/reasoning.test.ts src/model-factory.test.ts src/capabilities/catalog.test.ts src/capabilities/probe.test.ts src/middleware.test.ts src/media-models.test.ts src/media/video-factory.test.ts src/google.test.ts src/embeddings/rerank-model.test.ts src/context-window.test.ts src/catalog-url.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "catalog:",

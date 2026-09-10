@@ -27,6 +27,11 @@ test("Cursor 等无斜杠模型表仍画引擎标，避免退回插头", () => {
   assert.equal(cliModelFamilyKey("auto", "Auto (default)"), null)
 })
 
+test("Claude 绑了中转：deepseek-flash 画 DeepSeek 族标，不要 Claude 引擎标", () => {
+  assert.equal(cliModelFamilyKey("deepseek-flash"), "deepseek")
+  assert.equal(cliModelIconMode("claude", "deepseek-flash"), "family")
+})
+
 test("openai/gpt-5.4 这类 selector 认 OpenAI，不看供应商前缀 google", () => {
   assert.equal(cliModelIconMode("omp", "openai/gpt-5.4"), "family")
   assert.equal(cliModelFamilyKey("openai/gpt-5.4", "GPT-5.4"), "openai")

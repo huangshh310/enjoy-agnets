@@ -160,6 +160,26 @@ test("发送盘：已登录 CLI 才亮", () => {
   assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true, modelId: "m" }), true)
 })
 
+test("绑了 Enjoy 档案：没登官方也能发，缺 Key 才拦", () => {
+  const bound = {
+    ...claudeTool(false),
+    useCustomProvider: true,
+    providerId: "prv_1",
+    boundHasKey: true,
+    capabilities: { ...claudeTool(false).capabilities, providerBind: "anthropic" as const }
+  }
+  rememberAgentTools([bound])
+  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true, modelId: "deepseek-flash" }), true)
+  const chat = store({ runtimeId: "claude", hasKey: true, modelId: "deepseek-flash" })
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), true)
+
+  rememberAgentTools([{ ...bound, boundHasKey: false }])
+  const noKey = store({ runtimeId: "claude", hasKey: true, modelId: "deepseek-flash" })
+  assert.equal(guardComposerSend(noKey as never, { ideReady: true }), false)
+  assert.equal(noKey.read().error, NEED_PROVIDER_KEY)
+  assert.equal(noKey.read().picker, false)
+})
+
 test("发送盘：缓存里还没有 CLI 行时不亮", () => {
   rememberAgentTools([])
   assert.equal(composerSendReady({ runtimeId: "cursor", hasKey: true, modelId: "m" }), false)
