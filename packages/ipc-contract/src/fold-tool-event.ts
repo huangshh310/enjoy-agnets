@@ -12,6 +12,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       id: event.toolCallId,
       name: event.name,
       ...(event.args !== undefined ? { args: mergeToolArgs(current?.args, event.args) } : {}),
+      ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
       state: hasArgs ? "input-available" : "input-streaming"
     })
     return
@@ -30,6 +31,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       id: event.toolCallId,
       name: event.name,
       ...(event.args !== undefined ? { args: event.args } : {}),
+      ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
       result: event.result,
       errorText: event.error,
       state: event.error ? "output-error" : "output-available"
@@ -95,6 +97,7 @@ function upsertTool(tools: ThreadToolCall[], patch: Partial<ThreadToolCall> & { 
     argsText: patch.argsText,
     args: patch.args,
     result: patch.result,
-    errorText: patch.errorText
+    errorText: patch.errorText,
+    parentToolCallId: patch.parentToolCallId
   })
 }

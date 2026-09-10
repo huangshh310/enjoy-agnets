@@ -1,6 +1,6 @@
 /**
  * 与 AI SDK HarnessAgent.permissionMode 同名同义。
- * allow-reads / allow-edits / allow-all 管内置读写与 shell；git_commit 是我们多出来的一档。
+ * allow-reads / allow-edits / allow-all 管内置读写与 shell；git_commit / git_push 是我们多出来的一档。
  */
 import { z } from "zod"
 

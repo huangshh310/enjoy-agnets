@@ -37,6 +37,7 @@ import {
 } from "@renderer/hooks/use-agent-session"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { QuickSearchAcpCommands } from "./quick-search-acp-commands"
 
 export function openQuickSearch() {
   window.dispatchEvent(new CustomEvent("enjoy:open-quick-search"))
@@ -85,6 +86,7 @@ export function QuickSearchDialog() {
       <CommandInput placeholder={t("command.placeholder")} />
       <CommandList>
         <CommandEmpty>{t("command.empty")}</CommandEmpty>
+        <QuickSearchAcpCommands onPick={() => setOpen(false)} />
 
         <CommandGroup heading={t("command.groupStudio")}>
           <CommandItem

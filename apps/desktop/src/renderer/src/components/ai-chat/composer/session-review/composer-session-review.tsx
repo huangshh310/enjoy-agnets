@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views/review/last-turn-paths"
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
+import { useComposerActiveModelLabel } from "@renderer/components/ai-chat/agent-picker/use-composer-active-model"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { describeReviewFiles } from "./collect-session-files"
 import { openSessionReview } from "./open-session-review"
@@ -27,7 +28,7 @@ export function ComposerSessionReview() {
   const changes = useChatStore((state) => state.changes)
   const running = useChatStore((state) => state.running)
   const runStartedAt = useChatStore((state) => state.runStartedAt)
-  const modelLabel = useChatStore((state) => state.modelLabel)
+  const modelLabel = useComposerActiveModelLabel()
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
   const [undoOpen, setUndoOpen] = useState(false)
   const [busy, setBusy] = useState(false)

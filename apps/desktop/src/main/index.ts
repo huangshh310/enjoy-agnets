@@ -4,7 +4,11 @@ import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
-import { disposeAllAcpSessions } from "@enjoy-agents/agent-harness";
+import {
+  configureAcpChildLedger,
+  disposeAllAcpSessions,
+  reapOrphanAcpChildren
+} from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
@@ -62,6 +66,12 @@ function createWindow(): void {
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
+    void import("./services/restore-waiting-runs").then(({ restoreWaitingRuns }) => {
+      void restoreWaitingRuns(mainWindow)
+    })
+    void import("./services/restore-running-runs").then(({ restoreRunningRuns }) => {
+      void restoreRunningRuns(mainWindow)
+    })
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -82,6 +92,8 @@ app.whenReady().then(async () => {
   electronApp.setAppUserModelId("com.enjoyagents.desktop");
   handleAssetProtocol();
   getDatabase();
+  configureAcpChildLedger(join(app.getPath("userData"), "acp-children.json"))
+  reapOrphanAcpChildren()
   abandonOrphanRuns();
   await bootstrapE2eStub();
   void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {

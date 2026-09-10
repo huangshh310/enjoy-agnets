@@ -8,7 +8,7 @@ import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
 export const BASH_TOOLS = ["bash", "code_mode"] as const
-export const COMMIT_TOOLS = ["git_commit"] as const
+export const COMMIT_TOOLS = ["git_commit", "git_push"] as const
 export const MUTATING_TOOLS = [...WRITE_TOOLS, ...BASH_TOOLS, ...COMMIT_TOOLS] as const
 
 export type ApprovalPolicy = {
@@ -122,6 +122,7 @@ const HOST_READ_TOOLS = [
   "grep",
   "git_status",
   "git_diff",
+  "git_log",
   "read"
 ] as const
 

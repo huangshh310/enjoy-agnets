@@ -1,7 +1,8 @@
 /**
- * Composer 左下角：只打开本机文件选择器。没有 @ / /web 假入口。
+ * Composer 左下角：本机上传，或插入 @ 引用工作区文件。没有 /web 假入口。
  */
-import { RiAddLine, RiAttachmentLine } from "@remixicon/react"
+import type { ReactNode } from "react"
+import { RiAddLine, RiAtLine, RiAttachmentLine } from "@remixicon/react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +10,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
+import { openComposerMention } from "./mentions/mention-open.ts"
 
 export function ComposerAttachMenu({ onPickFiles }: { onPickFiles: () => void }) {
   const t = useT()
@@ -30,19 +32,46 @@ export function ComposerAttachMenu({ onPickFiles }: { onPickFiles: () => void })
         sideOffset={8}
         className="w-72 rounded-2xl border-none bg-background-primary-default p-1.5 shadow-card backdrop-blur-md"
       >
-        <DropdownMenuItem
+        <AttachRow
+          icon={<RiAttachmentLine className="size-4" />}
+          title={t("chat.addPhotos")}
+          hint={t("chat.uploadComputer")}
           onClick={onPickFiles}
-          className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-text-primary transition-colors hover:bg-background-secondary-hover"
-        >
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-background-secondary-default text-foreground-icon-secondary">
-            <RiAttachmentLine className="size-4" />
-          </div>
-          <div className="flex min-w-0 flex-col text-left">
-            <span className="truncate text-body-medium text-text-primary">{t("chat.addPhotos")}</span>
-            <span className="truncate text-caption-2-medium text-text-tertiary">{t("chat.uploadComputer")}</span>
-          </div>
-        </DropdownMenuItem>
+        />
+        <AttachRow
+          icon={<RiAtLine className="size-4" />}
+          title={t("chat.referenceFiles")}
+          hint={t("chat.insertAtMentionHint")}
+          onClick={() => openComposerMention("at")}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+function AttachRow({
+  icon,
+  title,
+  hint,
+  onClick
+}: {
+  icon: ReactNode
+  title: string
+  hint: string
+  onClick: () => void
+}) {
+  return (
+    <DropdownMenuItem
+      onClick={onClick}
+      className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-text-primary transition-colors hover:bg-background-secondary-hover"
+    >
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-background-secondary-default text-foreground-icon-secondary">
+        {icon}
+      </div>
+      <div className="flex min-w-0 flex-col text-left">
+        <span className="truncate text-body-medium text-text-primary">{title}</span>
+        <span className="truncate text-caption-2-medium text-text-tertiary">{hint}</span>
+      </div>
+    </DropdownMenuItem>
   )
 }

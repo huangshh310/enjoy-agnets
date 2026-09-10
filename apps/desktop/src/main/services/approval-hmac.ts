@@ -1,15 +1,47 @@
 /**
- * 审批 HMAC：密钥只在 main 内存。落库后 decide 再验，篡改即拒。
+ * 审批 HMAC：密钥进 userData（safeStorage），重启后未决审批仍可验。
  */
 import { randomBytes } from "node:crypto"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { app, safeStorage } from "electron"
 import { approvalPayload, getApproval, insertApproval, setApprovalDecision, signApproval, verifyApproval } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 
 let processSecret: string | undefined
 
+function hmacFile(): string {
+  return join(app.getPath("userData"), "approval-hmac.bin")
+}
+
 function approvalSecret(): string {
-  processSecret ??= randomBytes(32).toString("hex")
+  if (processSecret) return processSecret
+  processSecret = readPersistedSecret() ?? randomBytes(32).toString("hex")
+  persistSecret(processSecret)
   return processSecret
+}
+
+function readPersistedSecret(): string | undefined {
+  const file = hmacFile()
+  if (!existsSync(file)) return undefined
+  try {
+    const buf = readFileSync(file)
+    if (safeStorage.isEncryptionAvailable()) return safeStorage.decryptString(buf)
+    return buf.toString("utf8")
+  } catch {
+    return undefined
+  }
+}
+
+function persistSecret(secret: string): void {
+  try {
+    const payload = safeStorage.isEncryptionAvailable()
+      ? safeStorage.encryptString(secret)
+      : Buffer.from(secret, "utf8")
+    writeFileSync(hmacFile(), payload, { mode: 0o600 })
+  } catch {
+    // 写盘失败仍用内存密钥，本进程内审批可用。
+  }
 }
 
 export function rememberApproval(input: {

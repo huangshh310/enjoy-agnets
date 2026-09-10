@@ -5,7 +5,7 @@ import { getIde, hasIde } from "../../lib/ide"
 import { useChatStore } from "../../stores/chat-store"
 import { steerFallbackWhenNoRun } from "../composer-submit-intent"
 import { enqueueFollowup, setRuntimeHint } from "../followup-queue"
-import { clearComposerDraft } from "./composer-draft"
+import { clearComposerDraft, prefixHostModeForSend } from "./composer-draft"
 import { sendComposerMessage } from "./send-composer-run"
 
 export async function steerPreparedText(content: string) {
@@ -20,12 +20,13 @@ async function steerComposer(content: string) {
   }
   try {
     if (!hasIde() || !store.sessionId) throw new Error("STEER_NO_ACTIVE_RUN")
+    const steered = prefixHostModeForSend(content)
     await getIde().agent.steer({
       sessionId: store.sessionId,
       runId: store.runId ?? undefined,
-      text: content
+      text: steered
     })
-    store.appendUserMessage(content)
+    store.appendUserMessage(steered)
     clearComposerDraft()
     setRuntimeHint("steered")
   } catch (error) {

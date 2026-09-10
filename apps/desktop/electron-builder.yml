@@ -11,6 +11,8 @@ files:
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
 asarUnpack:
   - resources/**
+  - node_modules/node-pty/**
+npmRebuild: true
 publish:
   provider: github
   owner: huangshh310
@@ -41,4 +43,3 @@ linux:
   artifactName: enjoy-agents-${version}-linux.${ext}
   target:
     - AppImage
-npmRebuild: false

@@ -12,8 +12,11 @@ import {
   GitStageInput,
   RestoreCheckpointInput,
   ListDirInput,
+  MoveWorkspacePathInput,
   OpenWorkspaceInput,
   ReadFileInput,
+  WatchWorkspaceInput,
+  WriteFileInput,
   RemoveWorkspaceInput,
   SessionCompactInput,
   SessionCreateInput,
@@ -21,6 +24,7 @@ import {
   SessionRenameInput,
   TerminalCloseInput,
   TerminalOpenInput,
+  TerminalResizeInput,
   TerminalWriteInput,
   WorkspaceIdInput
 } from "@enjoy-agents/ipc-contract"
@@ -39,6 +43,7 @@ import { renameSession } from "./services/persist-session"
 import {
   closeWorkspaceTerminal,
   openWorkspaceTerminal,
+  resizeWorkspaceTerminal,
   writeWorkspaceTerminal
 } from "./services/terminal"
 import { queryIsMaximized, toggleMaximize } from "./services/window-maximize"
@@ -62,6 +67,9 @@ import {
   listEnjoyCheckpointItems,
   restoreEnjoyCheckpoint
 } from "./services/workspace"
+import { writeWorkspaceFile } from "./services/workspace-write"
+import { moveWorkspacePath } from "./services/workspace-move"
+import { watchWorkspace } from "./services/workspace-watch"
 import {
   archiveSession,
   deleteAllArchivedSessions,
@@ -83,6 +91,9 @@ export const SHELL_CHANNELS = [
   "workspace.list",
   "workspace.files",
   "workspace.readFile",
+  "workspace.writeFile",
+  "workspace.move",
+  "workspace.watch",
   "workspace.diff",
   "workspace.gitLog",
   "workspace.gitCommit",
@@ -112,6 +123,7 @@ export const SHELL_CHANNELS = [
   "agent.inspectPrompt",
   "terminal.open",
   "terminal.write",
+  "terminal.resize",
   "terminal.close",
   "window.minimize",
   "window.toggleMaximize",
@@ -155,6 +167,17 @@ function registerWorkspaceIpc() {
   ipcMain.handle("workspace.readFile", async (_event, raw) => {
     const input = ReadFileInput.parse(raw)
     return readWorkspaceFile(input.workspaceId, input.path)
+  })
+  ipcMain.handle("workspace.writeFile", async (_event, raw) => {
+    const input = WriteFileInput.parse(raw)
+    return writeWorkspaceFile(input)
+  })
+  ipcMain.handle("workspace.move", async (_event, raw) => {
+    return moveWorkspacePath(MoveWorkspacePathInput.parse(raw))
+  })
+  ipcMain.handle("workspace.watch", async (_event, raw) => {
+    const input = WatchWorkspaceInput.parse(raw)
+    return watchWorkspace(input.workspaceId)
   })
   ipcMain.handle("workspace.diff", async (_event, raw) => {
     const input = FileDiffInput.parse(raw)
@@ -262,6 +285,11 @@ function registerTerminalIpc() {
   ipcMain.handle("terminal.write", async (_event, raw) => {
     const input = TerminalWriteInput.parse(raw)
     writeWorkspaceTerminal(input.sessionId, input.data)
+    return { ok: true }
+  })
+  ipcMain.handle("terminal.resize", async (_event, raw) => {
+    const input = TerminalResizeInput.parse(raw)
+    resizeWorkspaceTerminal(input.sessionId, input.cols, input.rows)
     return { ok: true }
   })
   ipcMain.handle("terminal.close", async (_event, raw) => {

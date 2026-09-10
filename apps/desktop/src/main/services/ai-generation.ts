@@ -22,6 +22,7 @@ import { abortAgent, resumeAgentRun, runAgent } from "./agent-runner"
 import { startE2eGeneration } from "./e2e-generate"
 import { isE2eStub } from "./e2e-stub"
 import { rememberGenerationRun } from "./persist-run"
+import { parseAgentCheckpointExtras, TOOL_BOUNDARY } from "./running-orphan-plan"
 import { resumeWorkflow } from "./workflow-runner"
 import { executeKind } from "./ai-generation-kinds"
 
@@ -92,7 +93,13 @@ export async function resumeGeneration(window: BrowserWindow, raw: unknown) {
     attachments: snapshot.request.attachments ?? []
   })
   if (request.kind === "agent") {
-    await resumeAgentRun(window, input.runId, request)
+    const extras = parseAgentCheckpointExtras(row.checkpoint)
+    await resumeAgentRun(
+      window,
+      input.runId,
+      request,
+      extras.resumeAt === TOOL_BOUNDARY ? extras.modelMessages : undefined
+    )
     return { ok: true, runId: input.runId }
   }
   if (isE2eStub()) {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { planFromPending } from "./plan-from-pending.ts"
 
-const verbs = { write: "写入", edit: "编辑", commit: "提交" }
+const verbs = { write: "写入", edit: "编辑", commit: "提交", push: "推送" }
 
 test("git_commit 用提交说明当标题，不展开 diff", () => {
   const plan = planFromPending("git_commit", { message: "fix auth" }, "（空）", verbs)
@@ -24,4 +24,11 @@ test("edit_file 步骤带编辑动词", () => {
   const plan = planFromPending("edit_file", { file_path: "b.ts" }, "（空）", verbs)
   assert.equal(plan.headline, "b.ts")
   assert.equal(plan.steps[0]?.title, "编辑 b.ts")
+})
+
+test("git_push 用推送动词，不展开 diff", () => {
+  const plan = planFromPending("git_push", {}, "（空）", verbs)
+  assert.equal(plan.headline, "推送")
+  assert.equal(plan.steps[0]?.title, "推送")
+  assert.equal(plan.showDiff, false)
 })

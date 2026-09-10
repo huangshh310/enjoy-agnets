@@ -2,6 +2,7 @@
  * 排队后续任务的数据合同。prompt 是规范名，text 是同值别名。
  */
 import type { QuotedContext } from "@enjoy-agents/ipc-contract"
+import type { SkillMention } from "../../components/ai-chat/composer/mentions/mention-items.ts"
 import type { QueuedComposerAsset } from "../composer-assets"
 
 export type FollowupStatus = "pending" | "elevated_to_steer"
@@ -16,6 +17,7 @@ export type FollowupItem = {
   /** 回填输入框用的原文，不含引用块。 */
   draft?: string
   quotedContexts?: QuotedContext[]
+  skillChips?: SkillMention[]
   assets: QueuedComposerAsset[]
   createdAt: number
   status: FollowupStatus

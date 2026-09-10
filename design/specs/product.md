@@ -27,7 +27,7 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 | 阶段 | 状态 | 内容 |
 |---|---|---|
 | MVP | 进行中 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI |
-| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；自动更新走 GitHub Releases（见 `updates` spec）；Git 面板加深仍未完 |
+| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；自动更新走 GitHub Releases（见 `updates` spec）；Git Review 已落地线性 log / 暂存 / 还原 / 推送 / 检查点，**不做** PR / CI / 提交拓扑图 |
 | V1.5 | 后置 | 云账号、token 代理、外部 OTEL、Vercel Sandbox |
 
 ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：
@@ -35,11 +35,11 @@ ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：
 | 阶段 | 状态 | 内容 |
 |---|---|---|
 | M1 Usage | 已落地 | L1–L4 Usage、能力矩阵、配置边界 |
-| M2 Attention | 本 PR | Strip / Dock / Inbox 三层；后台审批 ≤3s 可见 |
+| M2 Attention | 已落地 | Strip / Dock / Inbox 三层；后台审批 ≤3s 可见；侧栏 `waiting_review` 灯 |
 | M3 handoff | 进行中 | 换引擎摘要注入 system/hidden，禁止当第一条可见用户消息；设置「设为主引擎」走同一套确认坞 |
 | M4 Registry | M3 之后 | ACP Registry + 自定义 agent；**不做** PTY 兜底 |
 
-整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP。可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources **可选更新** 已薄层落地（仅 Skills 顶栏 + Agent 默认项；无 Git 源不渲染按钮；空会话禁止同步条；不自动同步）。
+整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP。M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources **可选更新** 已薄层落地（仅 Skills 顶栏 + Agent 默认项；无 Git 源不渲染按钮；空会话禁止同步条；不自动同步）。
 
 ## 明确不做
 
@@ -58,3 +58,4 @@ ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：
 ## 已知坑
 
 - 技术栈长文里的目录（`packages/terminal`、独立 Hono 进程）是规划，不是当前仓结构。以本 spec 与 `architecture` 为准。
+- 对照高星 Agent 项目的缺口清单见 [../references/gap-audit-vs-github-agents.md](../references/gap-audit-vs-github-agents.md)。审计当时的假 Workflow / Automation / 通知 / Trace / MCP App / Monaco 多数已改；以文首与各 spec「当前真相」为准。仍不做 M5 worktree / M4 ACP PTY 登录兜底 / 云 MCP / `session/set_mode`。Agent Git 工具是 `git_status` / `git_diff` / `git_log` / `git_commit` / `git_push`。

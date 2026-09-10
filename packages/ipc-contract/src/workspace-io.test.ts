@@ -7,6 +7,7 @@ import {
   GitPatchInput,
   GitPushInput,
   GitRestoreInput,
+  MoveWorkspacePathInput,
   RestoreCheckpointInput,
   OpenWorkspaceInput,
   PickFolderResult
@@ -62,6 +63,19 @@ test("GitRestoreInput 拒绝空 paths 与逃逸字段", () => {
   assert.deepEqual(parsed.paths, ["a.ts"])
   assert.throws(() => GitRestoreInput.parse({ workspaceId: "ws_1", paths: [] }))
   assert.throws(() => GitRestoreInput.parse({ workspaceId: "ws_1", paths: ["a.ts"], extra: 1 }))
+})
+
+test("MoveWorkspacePathInput 只要 from 与 toDir，拒绝逃逸字段", () => {
+  const parsed = MoveWorkspacePathInput.parse({
+    workspaceId: "ws_1",
+    from: "src/a.ts",
+    toDir: "lib"
+  })
+  assert.equal(parsed.toDir, "lib")
+  assert.throws(() =>
+    MoveWorkspacePathInput.parse({ workspaceId: "ws_1", from: "a.ts", toDir: ".", extra: true })
+  )
+  assert.throws(() => MoveWorkspacePathInput.parse({ workspaceId: "ws_1", from: "", toDir: "." }))
 })
 
 test("RestoreCheckpointInput 只接受 enjoy 检查点 ref", () => {

@@ -169,7 +169,13 @@ export function registerAiIpc() {
   })
   ipcMain.handle("knowledge.search", (_event, raw) => {
     const input = KnowledgeSearchInput.parse(raw)
-    return searchKnowledge(input.workspaceId, input.query, input.limit, input.rerank)
+    return searchKnowledge(
+      input.workspaceId,
+      input.query,
+      input.limit,
+      input.rerank,
+      input.sourceIds
+    )
   })
   ipcMain.handle("knowledge.cancel", (_event, raw) => cancelKnowledgeIndex(KnowledgeCancelInput.parse(raw).sourceId))
   ipcMain.handle("knowledge.remove", (_event, raw) => removeKnowledgeSource(KnowledgeRemoveInput.parse(raw).sourceId))

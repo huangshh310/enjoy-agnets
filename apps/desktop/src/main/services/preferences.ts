@@ -6,6 +6,12 @@ import { getSetting, setSetting } from "./database"
 
 export type AppPreferences = SettingsSnapshot["preferences"]
 
+function e2eLanguage(): "zh" | "en" {
+  if (process.env.ENJOY_E2E_LANG === "en") return "en"
+  if (process.env.ENJOY_E2E_STUB === "1") return "en"
+  return "zh"
+}
+
 export const DEFAULT_PREFERENCES: AppPreferences = {
   requireWriteApproval: true,
   requireBashApproval: true,
@@ -24,18 +30,22 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   maxAgentSteps: 20,
   agentTimeoutMs: 0,
   toolTimeoutMs: 30_000,
-  stepTimeoutMs: 0
+  stepTimeoutMs: 0,
+  desktopPush: true,
+  agentCompleteSound: true,
+  approvalRequiredAlert: true
 }
 
 /** 读取持久化偏好；损坏或缺失时回落到安全默认（写盘/命令都要确认）。 */
 export function readPreferences(): AppPreferences {
   const raw = getSetting("preferences")
-  if (!raw) return { ...DEFAULT_PREFERENCES }
+  const defaults = { ...DEFAULT_PREFERENCES, language: e2eLanguage() }
+  if (!raw) return defaults
   try {
     const parsed = JSON.parse(raw) as Partial<AppPreferences>
-    return { ...DEFAULT_PREFERENCES, ...parsed }
+    return { ...defaults, ...parsed }
   } catch {
-    return { ...DEFAULT_PREFERENCES }
+    return defaults
   }
 }
 

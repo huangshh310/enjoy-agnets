@@ -1,5 +1,5 @@
 /**
- * P1 检索范围：IPC 暂无 sourceIds 时，按启用透镜 / 当前路径在前端收窄命中。
+ * 检索范围：IPC 已传 sourceIds；这里再按当前路径收窄（透镜目录 / 单文件）。
  */
 
 export type KnowledgeHitFilterItem = {

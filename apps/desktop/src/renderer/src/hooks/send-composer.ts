@@ -23,8 +23,8 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
   const intent = resolveComposerIntent(store.running, requested)
   if (intent === "send") return sendComposerMessage()
 
-  const { quotes, draft } = snapshotComposerDraft()
-  const content = takeComposerText()
+  const { quotes, skills, draft } = snapshotComposerDraft()
+  const content = await takeComposerText()
   if (!content) return
   if (intent === "queue") {
     if (!store.sessionId) return
@@ -33,6 +33,7 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
       prompt: content,
       draft,
       quotedContexts: quotes,
+      skillChips: skills,
       assets: takeComposerAssetDetails()
     })
     clearComposerDraft()

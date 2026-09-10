@@ -196,6 +196,7 @@ export function listChunkEmbeddings(
   workspaceId: string
 ): Array<{
   chunkId: string
+  sourceId: string
   path: string
   startLine: number | null
   endLine: number | null
@@ -205,7 +206,7 @@ export function listChunkEmbeddings(
 }> {
   const rows = db
     .prepare(
-      `SELECT c.id as chunkId, c.path, c.start_line as startLine, c.end_line as endLine, c.text,
+      `SELECT c.id as chunkId, c.source_id as sourceId, c.path, c.start_line as startLine, c.end_line as endLine, c.text,
               e.vector, e.model_id as modelId
        FROM knowledge_chunks c
        JOIN knowledge_embeddings e ON e.chunk_id = c.id
@@ -214,6 +215,7 @@ export function listChunkEmbeddings(
     )
     .all(workspaceId) as Array<{
     chunkId: string
+    sourceId: string
     path: string
     startLine: number | null
     endLine: number | null

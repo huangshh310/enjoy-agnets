@@ -44,15 +44,40 @@ export type ActiveRun = {
 }
 
 const activeRuns = new Map<string, ActiveRun>()
+const runWaiters = new Map<string, Array<(status: "end" | "error") => void>>()
+const settledRuns = new Map<string, "end" | "error">()
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
   const sessionId = event.sessionId ?? sessionIdOfRun(event)
   if (sessionId) {
     stampAndSend(window, event, sessionId)
+    settleRunWaiters(event)
     return
   }
   if (window.isDestroyed()) return
   window.webContents.send("agent.event", event)
+  settleRunWaiters(event)
+}
+
+/** Workflow / Automation 等待同一 run 收工。 */
+export function waitForRunSettle(runId: string): Promise<"end" | "error"> {
+  const already = settledRuns.get(runId)
+  if (already) return Promise.resolve(already)
+  return new Promise((resolve) => {
+    const queued = runWaiters.get(runId) ?? []
+    queued.push(resolve)
+    runWaiters.set(runId, queued)
+  })
+}
+
+function settleRunWaiters(event: StreamEvent): void {
+  if (event.type !== "run.end" && event.type !== "run.error") return
+  const status = event.type === "run.end" ? "end" : "error"
+  settledRuns.set(event.runId, status)
+  const waiters = runWaiters.get(event.runId)
+  if (!waiters?.length) return
+  runWaiters.delete(event.runId)
+  for (const resolve of waiters) resolve(status)
 }
 
 function sessionIdOfRun(event: StreamEvent): string | undefined {

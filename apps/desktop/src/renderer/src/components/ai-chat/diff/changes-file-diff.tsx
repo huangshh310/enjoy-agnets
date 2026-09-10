@@ -11,6 +11,7 @@ import { AiChatCodePane } from "../ai-chat-code-pane"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
 import type { ReviewOptions } from "../right-pane/views/review/types/review.types"
+import { commentDiffLine } from "./comment-diff-line"
 
 export function ChangesFileDiff({
   workspaceId,
@@ -66,6 +67,7 @@ export function ChangesFileDiff({
           wordDiff={options?.wordDiff}
           hideWhitespace={hideWhitespace}
           foldLargeFiles={options?.foldLargeFiles}
+          onCommentLine={(line) => commentDiffLine(path, line)}
         />
       </div>
     )

@@ -79,6 +79,7 @@ export function McpHeader(props: {
 
           <Button
             size="sm"
+            data-testid="mcp-add-server"
             onClick={onAddClick}
             className="gap-1.5 h-8 text-caption-2-medium shadow-xs"
           >

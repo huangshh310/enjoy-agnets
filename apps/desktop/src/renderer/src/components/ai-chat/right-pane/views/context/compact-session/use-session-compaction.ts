@@ -3,16 +3,15 @@
  */
 import { useState, useCallback } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { COMPACTION_ERROR, type SessionCompaction } from "@enjoy-agents/ipc-contract"
+import type { SessionCompaction } from "@enjoy-agents/ipc-contract"
 import { DEFAULT_KEEP_RECENT } from "@enjoy-agents/agent-core/compaction"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { useT } from "@renderer/i18n"
+import { localizeCompactionError } from "./compaction-error.ts"
 
 export const SESSION_COMPACTION_QUERY = "session-compaction"
 
 export function useSessionCompaction(sessionId: string | null) {
   const queryClient = useQueryClient()
-  const t = useT()
   const [isCompacting, setIsCompacting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const queryKey = [SESSION_COMPACTION_QUERY, sessionId]
@@ -44,14 +43,14 @@ export function useSessionCompaction(sessionId: string | null) {
         void queryClient.invalidateQueries({ queryKey: [SESSION_COMPACTION_QUERY] })
         return result
       } catch (err) {
-        const msg = localizeCompactionError(err, t)
+        const msg = localizeCompactionError(err)
         setError(msg)
         throw new Error(msg)
       } finally {
         setIsCompacting(false)
       }
     },
-    [sessionId, queryClient, queryKey, t]
+    [sessionId, queryClient, queryKey]
   )
 
   const clearCompaction = useCallback(async (): Promise<boolean> => {
@@ -63,10 +62,10 @@ export function useSessionCompaction(sessionId: string | null) {
       void queryClient.invalidateQueries({ queryKey: [SESSION_COMPACTION_QUERY] })
       return true
     } catch (err) {
-      setError(localizeCompactionError(err, t))
+      setError(localizeCompactionError(err))
       return false
     }
-  }, [sessionId, queryClient, queryKey, t])
+  }, [sessionId, queryClient, queryKey])
 
   return {
     compaction: query.data ?? null,
@@ -77,11 +76,4 @@ export function useSessionCompaction(sessionId: string | null) {
     clearCompaction,
     refetch: query.refetch
   }
-}
-
-function localizeCompactionError(err: unknown, t: (key: string) => string): string {
-  const raw = err instanceof Error ? err.message : ""
-  if (raw.includes(COMPACTION_ERROR.tooShort)) return t("chat.compactSessionTooShort")
-  if (raw.includes(COMPACTION_ERROR.notEligible)) return t("chat.compactSessionFailed")
-  return t("chat.compactSessionFailed")
 }

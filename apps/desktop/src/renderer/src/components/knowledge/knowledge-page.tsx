@@ -53,6 +53,7 @@ export function KnowledgePage() {
           setRerank={page.setRerank}
           hits={page.hits}
           recent={page.recentCitations}
+          focusChunkId={page.focusChunkId}
           isSearching={page.isSearching}
           hasSearched={page.hasSearched}
           totalChunks={page.totalChunks}

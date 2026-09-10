@@ -12,6 +12,7 @@ import {
   type FollowupItem
 } from "@renderer/hooks/followup-queue"
 import { setQuotedContexts } from "@renderer/hooks/quoted-context"
+import { setComposerSkillChips } from "../mentions/composer-skill-chips.ts"
 import { sendComposerMessage, steerPreparedText } from "@renderer/hooks/send-composer"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -84,6 +85,7 @@ function editFollowup(item: FollowupItem) {
   if (!taken) return
   useChatStore.getState().setComposer(taken.draft ?? taken.prompt)
   setQuotedContexts(taken.quotedContexts ?? [])
+  setComposerSkillChips(taken.skillChips ?? [])
   for (const asset of taken.assets) queueComposerAsset(asset)
   focusComposerEnd()
 }

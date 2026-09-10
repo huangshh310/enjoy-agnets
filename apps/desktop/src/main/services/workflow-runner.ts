@@ -6,8 +6,8 @@ import { runDurableWorkflow } from "@enjoy-agents/agent-core"
 import { getDatabase } from "./database"
 import { stampAndBroadcast } from "./event-bus"
 import { createId } from "./ids"
-import { searchKnowledge } from "./knowledge-service"
 import { readPreferences } from "./preferences"
+import { runWorkflowAgentStep } from "./workflow-step-agent"
 
 export function listWorkflows(filter: { workspaceId?: string; sessionId?: string }) {
   return listRuns(getDatabase(), { ...filter, kind: "workflow" }).map((row) => getWorkflow(row.id))
@@ -100,7 +100,7 @@ export async function resumeWorkflow(runId: string) {
       })
       emitWorkflowProgress(runId, row.sessionId, next.stepIndex, checkpointId, next.status, next.inputSummary)
     },
-    steps: durableSteps(checkpoint.steps, row.workspaceId, checkpoint.title)
+    steps: durableSteps(checkpoint.steps, row.workspaceId, row.sessionId, checkpoint.title)
   })
   updateRun(getDatabase(), runId, {
     status: result.status === "completed" ? "completed" : "paused"
@@ -172,6 +172,7 @@ function emitWorkflowProgress(
 function durableSteps(
   steps: Array<{ id: string; label: string; dependsOn?: string[] }> | undefined,
   workspaceId: string | null,
+  sessionId: string,
   title?: string
 ) {
   return (steps?.length ? steps : DEFAULT_STEPS).map((step) => ({
@@ -179,24 +180,17 @@ function durableSteps(
     label: step.label,
     dependsOn: step.dependsOn,
     run: async () => ({
-      outputSummary: await runWorkflowStep(step.id, step.label, workspaceId, title)
+      outputSummary: workspaceId
+        ? await runWorkflowAgentStep({
+            id: step.id,
+            label: step.label,
+            sessionId,
+            workspaceId,
+            title
+          })
+        : `${step.label} skipped (no workspace)`
     })
   }))
-}
-
-async function runWorkflowStep(
-  id: string,
-  label: string,
-  workspaceId: string | null,
-  title?: string
-): Promise<string> {
-  if ((id === "act" || id === "verify") && workspaceId) {
-    const hits = await searchKnowledge(workspaceId, title || label, 3)
-    if (hits.length > 0) {
-      return hits.map((hit) => `${hit.path}${hit.startLine ? `:${hit.startLine}` : ""}`).join(", ")
-    }
-  }
-  return `${label} complete`
 }
 
 function toPublic(row: ReturnType<typeof getRun>) {

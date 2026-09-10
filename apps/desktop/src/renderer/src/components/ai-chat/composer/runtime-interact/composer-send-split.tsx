@@ -22,7 +22,13 @@ export function ComposerSendSplit({
   const slot = composerActionSlot(running, hasDraft)
   if (slot === "stop") {
     return (
-      <button type="button" aria-label={t("chat.stop")} onClick={onStop} className={sendClassName}>
+      <button
+        type="button"
+        data-testid="composer-stop"
+        aria-label={t("chat.stop")}
+        onClick={onStop}
+        className={sendClassName}
+      >
         <RiStopLine className="size-5" aria-hidden />
       </button>
     )
@@ -31,6 +37,7 @@ export function ComposerSendSplit({
     return (
       <button
         type={running ? "button" : "submit"}
+        data-testid="composer-send"
         aria-label={running ? t("chat.runtimeQueue") : ready ? t("chat.send") : t("chat.sendNotReady")}
         title={running ? t("chat.runtimeQueuedHint") : ready ? t("chat.send") : t("chat.sendNotReady")}
         onClick={running ? onSend : undefined}

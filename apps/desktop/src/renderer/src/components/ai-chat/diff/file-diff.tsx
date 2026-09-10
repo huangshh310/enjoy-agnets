@@ -19,6 +19,7 @@ export function FileDiff({
   wordDiff = false,
   hideWhitespace = false,
   foldLargeFiles = false,
+  onCommentLine,
   className
 }: {
   model: FileDiffModel
@@ -30,6 +31,7 @@ export function FileDiff({
   wordDiff?: boolean
   hideWhitespace?: boolean
   foldLargeFiles?: boolean
+  onCommentLine?: (line: DiffLine) => void
   className?: string
 }) {
   const t = useT()
@@ -103,6 +105,7 @@ export function FileDiff({
                   prev={hunk.lines[index - 1]}
                   wordWrap={wordWrap}
                   wordDiff={wordDiff}
+                  onComment={onCommentLine}
                 />
               ))}
             </div>
@@ -117,13 +120,16 @@ function DiffRow({
   line,
   prev,
   wordWrap,
-  wordDiff
+  wordDiff,
+  onComment
 }: {
   line: DiffLine
   prev?: DiffLine
   wordWrap: boolean
   wordDiff: boolean
+  onComment?: (line: DiffLine) => void
 }) {
+  const t = useT()
   const isAdd = line.kind === "add"
   const isDel = line.kind === "del"
   const pair = wordDiff && isAdd && prev?.kind === "del" ? splitWordDiff(prev.text, line.text) : null
@@ -131,7 +137,7 @@ function DiffRow({
   return (
     <div
       className={cx(
-        "relative grid grid-cols-[32px_32px_18px_1fr] items-stretch text-[11.5px] transition-colors",
+        "group/diff relative grid grid-cols-[32px_32px_18px_1fr] items-stretch text-[11.5px] transition-colors",
         isAdd && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
         isDel && "bg-rose-500/10 text-rose-700 dark:text-rose-300",
         !isAdd && !isDel && "text-text-secondary hover:bg-background-secondary-hover/30"
@@ -172,6 +178,15 @@ function DiffRow({
           line.text
         )}
       </code>
+      {onComment ? (
+        <button
+          type="button"
+          className="absolute right-1 top-0 hidden rounded px-1 text-[10px] text-accent-500 group-hover/diff:block"
+          onClick={() => onComment(line)}
+        >
+          {t("chat.commentDiffLine")}
+        </button>
+      ) : null}
     </div>
   )
 }

@@ -26,7 +26,9 @@ export function AutomationList({
   onToggle,
   onEdit,
   onRemove,
-  onCopyPrompt
+  onCopyPrompt,
+  onRun,
+  runningId
 }: {
   automations: Automation[]
   totalCount: number
@@ -36,6 +38,8 @@ export function AutomationList({
   onEdit: (automation: Automation) => void
   onRemove: (id: string) => void
   onCopyPrompt: (id: string, text: string) => void
+  onRun: (automation: Automation) => void
+  runningId: string | null
 }) {
   const t = useT()
 
@@ -72,6 +76,8 @@ export function AutomationList({
               onEdit={onEdit}
               onRemove={onRemove}
               onCopyPrompt={onCopyPrompt}
+              onRun={onRun}
+              running={runningId === automation.id}
             />
           ))}
         </div>
@@ -86,7 +92,9 @@ function AutomationCard({
   onToggle,
   onEdit,
   onRemove,
-  onCopyPrompt
+  onCopyPrompt,
+  onRun,
+  running
 }: {
   automation: Automation
   copiedId: string | null
@@ -94,6 +102,8 @@ function AutomationCard({
   onEdit: (automation: Automation) => void
   onRemove: (id: string) => void
   onCopyPrompt: (id: string, text: string) => void
+  onRun: (automation: Automation) => void
+  running: boolean
 }) {
   const t = useT()
 
@@ -148,6 +158,15 @@ function AutomationCard({
               aria-label={automation.enabled ? t("studio.automations.disableAria") : t("studio.automations.enableAria")}
             />
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!automation.enabled || running}
+            onClick={() => onRun(automation)}
+            className="h-7 px-2 text-caption-2-medium"
+          >
+            {running ? t("studio.automations.running") : t("studio.automations.runNow")}
+          </Button>
           <Button size="icon-sm" variant="ghost" title={t("studio.automations.editAria")} onClick={() => onEdit(automation)}>
             <RiEditLine className="size-4" />
           </Button>

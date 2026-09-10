@@ -1,11 +1,19 @@
 /**
  * Agent 泵：开流、消费、审批续跑。内存态在 agent-run-state。
  */
-import { armTimeout, classifyError, resolveTimeoutMs, RuntimeError } from "@enjoy-agents/agent-core"
+import {
+  armTimeout,
+  classifyError,
+  resolveTimeoutMs,
+  RuntimeError,
+  type SubagentToolTraceEvent
+} from "@enjoy-agents/agent-core"
+import { foldToolEvent } from "@enjoy-agents/ipc-contract"
 import { rememberApproval } from "./approval-hmac"
 import { consumeFullStream } from "./consume-stream"
 import { completeAgentRun } from "./complete-agent-run"
 import { checkpointActiveRun, persistActiveRun } from "./flush-agent-run"
+import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { createId } from "./ids"
 import { disposeCodingStream, openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
@@ -61,15 +69,19 @@ async function runOnePump(
     run.messages.push(...ensureAssistantReasoning(extraMessages, run.transcript.think))
   }
   if (parkForApproval(run)) {
+    const { persistWaitingRun } = await import("./persist-waiting-run")
+    persistWaitingRun(run, runId)
     checkpointActiveRun(run)
     return
   }
   if (timedOut()) throw new RuntimeError("timeout", "Agent total timeout.", true)
   if (queueOpenTodoContinue(run)) {
+    persistRunningBoundary(run, runId)
     await opened.dispose()
     return
   }
   if (absorbSteering(run)) {
+    persistRunningBoundary(run, runId)
     run.continuePump = true
     await opened.dispose()
     return
@@ -142,8 +154,34 @@ async function openRunStream(
         args
       })
       return run.approvalGate.wait(approvalId)
-    }
+    },
+    onSubagentToolEvent: (event) => emitSubagentTool(run, runId, event)
   })
+}
+
+function emitSubagentTool(run: ActiveRun, runId: string, event: SubagentToolTraceEvent) {
+  const payload =
+    event.type === "tool.start"
+      ? {
+          type: "tool.start" as const,
+          runId,
+          toolCallId: event.toolCallId,
+          name: event.name,
+          args: event.args,
+          parentToolCallId: event.parentToolCallId
+        }
+      : {
+          type: "tool.result" as const,
+          runId,
+          toolCallId: event.toolCallId,
+          name: event.name,
+          args: event.args,
+          result: event.result,
+          error: event.error,
+          parentToolCallId: event.parentToolCallId
+        }
+  foldToolEvent(run.tools, payload)
+  emitEvent(run.window, payload)
 }
 
 async function consumeRun(
@@ -183,6 +221,11 @@ function noteFileChangedCheckpoint(run: ActiveRun, event: { type: string }): voi
   if (event.type !== "file.changed" || run.checkpointNoted) return
   run.checkpointNoted = true
   void recordEnjoyCheckpoint(run.workspaceRoot).catch(() => undefined)
+}
+
+function persistRunningBoundary(run: ActiveRun, runId: string): void {
+  persistRunningCheckpoint(run, runId)
+  checkpointActiveRun(run)
 }
 
 function parkForApproval(run: ActiveRun): boolean {

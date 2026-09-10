@@ -9,11 +9,11 @@ import { expect, test } from "@playwright/test"
 const mainEntry = join(process.cwd(), "out/main/index.js")
 
 const ROUTES = [
-  { hash: "#/knowledge", title: "Knowledge", marker: "Add & index" },
-  { hash: "#/workflows", title: "Workflows", marker: "Start workflow" },
-  { hash: "#/media", title: "Media", marker: "Translate" },
-  { hash: "#/mcp", title: "MCP", marker: "Add server" },
-  { hash: "#/observability", title: "Observability", marker: "TTFO" }
+  { hash: "#/knowledge", testid: "page-knowledge" },
+  { hash: "#/workflows", testid: "page-workflows" },
+  { hash: "#/media", testid: "page-media" },
+  { hash: "#/mcp", testid: "page-mcp" },
+  { hash: "#/observability", testid: "page-observability" }
 ] as const
 
 test("Electron 窗口能打开主界面并进入 Knowledge / Workflows / Media / MCP", async () => {
@@ -27,7 +27,8 @@ test("Electron 窗口能打开主界面并进入 Knowledge / Workflows / Media /
   const app = await electron.launch({
     args: [mainEntry],
     cwd: process.cwd(),
-    timeout: 45_000
+    timeout: 45_000,
+    env: { ...process.env, ENJOY_E2E_LANG: "en" }
   })
   try {
     const window = await app.firstWindow()
@@ -41,25 +42,20 @@ test("Electron 窗口能打开主界面并进入 Knowledge / Workflows / Media /
       await window.evaluate((hash) => {
         location.hash = hash
       }, route.hash)
-      await window.waitForFunction((title) => document.body.innerText.includes(title), route.title, { timeout: 12_000 })
-      await window.waitForFunction((marker) => document.body.innerText.includes(marker), route.marker, {
-        timeout: 8_000
-      })
+      await window.waitForSelector(`[data-testid="${route.testid}"]`, { timeout: 12_000 })
     }
     await window.evaluate(() => {
       location.hash = "#/mcp"
     })
     await window.waitForSelector('[data-testid="mcp-add-server"]', { timeout: 8_000 })
     await window.locator('[data-testid="mcp-add-server"]').click()
-    await window.waitForFunction(() => document.body.innerText.includes("untrusted"), undefined, {
-      timeout: 8_000
-    })
+    await window.waitForSelector('[data-testid="mcp-save-server"]', { timeout: 8_000 })
     await window.evaluate(() => {
       location.hash = "#/knowledge"
     })
     await window.waitForSelector('[data-testid="knowledge-add-index"]', { timeout: 8_000 })
-    await window.getByText("Rerank off").click()
-    await window.waitForFunction(() => document.body.innerText.includes("Rerank on"), undefined, {
+    await window.locator('[data-testid="knowledge-rerank"]').click()
+    await window.waitForFunction(() => document.body.innerText.includes("Rerank: ON"), undefined, {
       timeout: 8_000
     })
     await window.evaluate(() => {

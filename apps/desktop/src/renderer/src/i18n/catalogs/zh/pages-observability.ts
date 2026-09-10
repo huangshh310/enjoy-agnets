@@ -185,6 +185,7 @@ export const zhObservabilityPages = {
   msTotal: "{n}ms 总计",
   waitFirst: "首字等待：{n}ms ({percent}%)",
   streamXfer: "生成传输：{n}ms ({percent}%)",
+  phaseSend: "发送",
   phaseTtfo: "阶段 1：首字响应等待 (TTFO)",
   phaseStream: "阶段 2：流式输出传输 (Streaming)",
   errorClass: "执行异常分类：{errorClass}",

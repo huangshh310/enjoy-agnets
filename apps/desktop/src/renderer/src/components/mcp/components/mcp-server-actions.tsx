@@ -49,6 +49,7 @@ export function McpServerActions({
           "h-7 gap-1 px-2.5 text-caption-2-medium",
           server.trusted ? "text-text-secondary" : "text-text-primary"
         )}
+        data-testid="mcp-trust"
         onClick={onTrustClick}
       >
         {server.trusted ? (

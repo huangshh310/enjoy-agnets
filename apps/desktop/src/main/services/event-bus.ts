@@ -4,6 +4,7 @@
 import { BrowserWindow } from "electron"
 import { createEventBuffer, createEventStamper, summarizeReplayEvents } from "@enjoy-agents/agent-core"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { notifyAgentEvent } from "./desktop-notify"
 
 const stampers = new Map<string, ReturnType<typeof createEventStamper>>()
 const replayBuffer = createEventBuffer(400)
@@ -30,6 +31,7 @@ export function stampAndSend(window: BrowserWindow, event: StreamEvent, sessionI
   }
   const stamped = stamper({ ...event, sessionId: event.sessionId ?? sessionId })
   replayBuffer.push(stamped)
+  notifyAgentEvent(stamped)
   if (!window.isDestroyed()) {
     window.webContents.send("agent.event", stamped)
   }

@@ -21,6 +21,7 @@ import {
   type AgentToolPublic
 } from "@enjoy-agents/ipc-contract"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
+import { doctorAcpHandshake } from "./agent-tools-doctor-acp"
 import { getCustomAgent, readCustomAgents, toPublicCustom, upsertCustomAgent } from "./agent-tools-custom"
 import { safeCustomBinaryPath } from "./agent-tools-guard"
 import { readAgentToolOverrides, writeAgentToolOverride } from "./agent-tools-vault"
@@ -110,13 +111,12 @@ export async function doctorAgentTool(id: AgentToolId): Promise<AgentToolDoctorR
       }
     }
   }
-  return {
+  return doctorAcpHandshake({
     id,
-    ok: true,
-    message: probe.version ?? "Found.",
-    version: probe.version,
-    path: probe.path
-  }
+    preset,
+    probe,
+    binaryPath: custom ?? probe.path ?? undefined
+  })
 }
 
 function supportedStylesForTool(id: string): string[] {

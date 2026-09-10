@@ -13,19 +13,27 @@ import { Message, MessageAction, MessageActions, MessageContent } from "@/compon
 import { editAndResendUserTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { replaceQuotedDraft, splitQuotedDisplay } from "@enjoy-agents/ipc-contract"
+import {
+  extractHostModeFence,
+  stripHostModePrefix
+} from "../../composer/mentions/host-mode-prefix.ts"
 import { AssetPreview } from "../asset-preview"
 import { CopyMessageButton } from "../copy-message-button"
+import { UserSentQuotes } from "./user-sent-quotes"
 
 export function UserTurn({ message }: { message: ThreadMessage }) {
   const t = useT()
+  const quoted = splitQuotedDisplay(message.content)
+  const view = { chips: quoted.chips, text: stripHostModePrefix(quoted.text) }
   const [isEditing, setIsEditing] = useState(false)
-  const [draftContent, setDraftContent] = useState(message.content)
+  const [draftContent, setDraftContent] = useState(view.text || message.content)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const running = useChatStore((s) => s.running)
 
   useEffect(() => {
-    setDraftContent(message.content)
+    setDraftContent(visibleUserText(message.content) || message.content)
   }, [message.content])
 
   useEffect(() => {
@@ -39,7 +47,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
     if (!draftContent.trim() || isSubmitting || running) return
     setIsSubmitting(true)
     try {
-      await editAndResendUserTurn(message.id, draftContent)
+      await editAndResendUserTurn(message.id, replaceVisibleUserDraft(message.content, draftContent))
       setIsEditing(false)
     } finally {
       setIsSubmitting(false)
@@ -52,11 +60,12 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
       void handleSaveAndResend()
     } else if (e.key === "Escape") {
       setIsEditing(false)
-      setDraftContent(message.content)
+      setDraftContent(view.text || message.content)
     }
   }
 
-  const canCopy = Boolean(message.content.trim() || message.assets?.length)
+  const canCopy = Boolean(view.text.trim() || view.chips.length > 0 || message.assets?.length)
+  const copyText = [view.chips.map((chip) => chip.title).join(", "), view.text].filter(Boolean).join("\n")
 
   return (
     <Message
@@ -77,12 +86,12 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
             onChange={(e) => setDraftContent(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={Math.min(Math.max(draftContent.split("\n").length, 2), 8)}
-            className="w-full resize-none bg-transparent font-sans text-caption-1-medium text-text-primary focus-visible:outline-none leading-relaxed"
+            className="w-full resize-none bg-transparent font-sans text-caption-1-medium text-text-primary focus-visible:outline-none"
             placeholder={t("chat.editPlaceholder")}
           />
 
-          <div className="flex items-center justify-between border-t border-separator-border/40 pt-2 text-[11px]">
-            <span className="text-text-tertiary font-mono text-[10px]">
+          <div className="flex items-center justify-between border-t border-separator-border/40 pt-2">
+            <span className="font-mono text-caption-2-medium text-text-tertiary">
               {t("chat.editHint")}
             </span>
 
@@ -93,7 +102,7 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 disabled={isSubmitting}
                 onClick={() => {
                   setIsEditing(false)
-                  setDraftContent(message.content)
+                  setDraftContent(view.text || message.content)
                 }}
                 className="h-6.5 px-2 text-caption-2-medium"
               >
@@ -118,7 +127,12 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
         </div>
       ) : (
         <>
-          {message.content ? <MessageContent>{message.content}</MessageContent> : null}
+          <UserSentQuotes chips={view.chips} />
+          {view.text ? (
+            <MessageContent>
+              <p className="whitespace-pre-wrap break-words">{view.text}</p>
+            </MessageContent>
+          ) : null}
 
           <MessageActions className="-mr-1 justify-end">
             {!running ? (
@@ -131,10 +145,21 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
               </MessageAction>
             ) : null}
 
-            {canCopy ? <CopyMessageButton message={message} /> : null}
+            {canCopy ? <CopyMessageButton message={{ ...message, content: copyText }} /> : null}
           </MessageActions>
         </>
       )}
     </Message>
   )
+}
+
+function visibleUserText(content: string): string {
+  return stripHostModePrefix(splitQuotedDisplay(content).text)
+}
+
+function replaceVisibleUserDraft(content: string, draft: string): string {
+  const fence = extractHostModeFence(content)
+  return [replaceQuotedDraft(stripHostModePrefix(content), draft).replace(/\s+$/, ""), fence]
+    .filter(Boolean)
+    .join("\n\n")
 }

@@ -10,6 +10,8 @@ export * from "./todo-continue"
 export * from "./approval"
 export * from "./ask-user-questions"
 export * from "./workspace-io"
+export * from "./workspace-move-plan"
+export * from "./account-profile"
 export * from "./settings-input"
 export * from "./automations"
 export * from "./stream-event"
@@ -29,6 +31,7 @@ export { absorbTextDelta, clampThoughtSeconds, type ThinkBuffer } from "./think-
 export {
   TerminalCloseInput,
   TerminalOpenInput,
+  TerminalResizeInput,
   TerminalSession,
   TerminalWriteInput
 } from "./terminal"

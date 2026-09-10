@@ -14,20 +14,26 @@ test("plan/ask 工具表没有写盘与 shell", () => {
     const names = codingToolNamesFor(mode)
     assert.ok(names.includes("read_file"))
     assert.ok(names.includes("git_status"))
+    assert.ok(names.includes("git_log"))
     assert.ok(names.includes("ask_user_questions"))
     assert.ok(names.includes("delegate"))
     assert.ok(!names.includes("write_file"))
     assert.ok(!names.includes("edit_file"))
     assert.ok(!names.includes("bash"))
     assert.ok(!names.includes("git_commit"))
+    assert.ok(!names.includes("git_push"))
     assert.ok(!names.includes("code_mode"))
   }
+  assert.ok(codingToolNamesFor("plan").includes("submit_plan"))
+  assert.ok(!codingToolNamesFor("ask").includes("submit_plan"))
 })
 
 test("agent/debug 仍含写工具与 delegate", () => {
   const names = codingToolNamesFor("agent")
   assert.ok(names.includes("write_file"))
   assert.ok(names.includes("bash"))
+  assert.ok(names.includes("git_push"))
+  assert.ok(names.includes("git_log"))
   assert.ok(names.includes("delegate"))
 })
 

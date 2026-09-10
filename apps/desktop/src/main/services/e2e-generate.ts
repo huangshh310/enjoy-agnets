@@ -19,6 +19,18 @@ export async function startE2eGeneration(
   const runId = existingRunId ?? createId("run")
   rememberGenerationRun({ runId, request })
   stampAndSend(window, { type: "run.start", runId, sessionId: request.sessionId }, request.sessionId)
+  // 先返回 runId，让 renderer 订上事件再吐 structured.delta，否则 Extract 永远等不到 stub-card。
+  setTimeout(() => {
+    void finishE2eGeneration(window, runId, request)
+  }, 0)
+  return { runId, kind: request.kind }
+}
+
+async function finishE2eGeneration(
+  window: BrowserWindow,
+  runId: string,
+  request: ReturnType<typeof AiGenerateInput.parse>
+) {
   const started = Date.now()
   await emitStubKind(window, runId, request)
   updateRun(getDatabase(), runId, { status: "completed" })
@@ -31,7 +43,6 @@ export async function startE2eGeneration(
     ttfoMs: 1
   })
   stampAndSend(window, { type: "run.end", runId }, request.sessionId)
-  return { runId, kind: request.kind }
 }
 
 async function emitStubKind(

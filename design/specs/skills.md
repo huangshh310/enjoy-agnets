@@ -31,7 +31,7 @@
    - 进行中文案「正在更新…」；结果 toast「更新了 N 个」/「有源未更新」，禁止堆栈或 IPC 码。
    - **禁止**把更新条挂进空会话 / `AiChatEmptyState`（空态只允许标题 + checklist + pills，Composer 钉 Stage 底）。
    - **不做**：自动 pull、摩擦信号、周报 digest、团队 MCP 分发。
-8. **Enjoy Local 开流注入技能索引**（`formatSkillCatalog`）：名称、scope、trigger、一句 description、工作区内相对 `path`。模型要用时 `read_file` 该 SKILL.md。全局技能在工作区外，只给描述，**不灌正文**。预算 8k / 最多 48 条。ACP / Harness 不重复灌（CLI 自己读盘）。检查器 skills 桶按同一目录计 token。子 Agent 接同一份 `extraInstructions`。
+8. **Enjoy Local 开流注入技能索引**（`formatSkillCatalog`）：名称、scope、trigger、一句 description、工作区内相对 `path`。模型要用时 `read_file` 该 SKILL.md。全局技能在工作区外，只给描述，**不灌正文**。预算 8k / 最多 48 条。ACP / Harness 不重复灌（CLI 自己读盘）。检查器 skills 桶按同一目录计 token。子 Agent 接同一份 `extraInstructions`。Composer 句首 `/` 列出同一份已安装技能（工作区 / 个人标签）；选中变成 Chip，发送走 `formatSkillMention`，仍然不灌 SKILL.md。名称带空格且没有合法 `trigger` 时没有 `/` 呼号，只能点面板选。
 
 ## 不变量
 
@@ -52,13 +52,14 @@
 - 领域常量与主题：`apps/desktop/src/renderer/src/components/skills/constants/`
 - 后端服务：`apps/desktop/src/main/services/skills-service.ts`、`main/services/skill-sources/`
 - 开流索引：`packages/ipc-contract/src/skills-catalog.ts`；拼进 `inspect-prompt-instructions.ts` / `open-coding-stream.ts`
+- Composer `/` 技能面板：`ai-chat/composer/mentions/`（`formatSkillMention.ts`、`composer-skill-chips.ts`）
 - 设置入口：`components/settings/settings-skill-sources.tsx`
 - 更新 toast：`components/skills/components/skill-source-toast-host.tsx`
 
 ## 已知坑
 
 - 目标切换状态不更新：`toggleTarget` 执行后必须通过 QueryClient 刷新 `OVERVIEW_QUERY_KEY` 与 `ALL_SKILLS_QUERY_KEY`，否则情境栏数字与卡片徽标不会即时更新。
-- 触发词与指令前缀冲突：技能名称包含空格时不能生成合法命令前缀，必须降级为 `@` 标签或隐藏触发胶囊。
+- 触发词与指令前缀冲突：技能名称包含空格时不能生成合法命令前缀，必须降级为无 `/` 呼号、只能点面板选（`skillSlashToken` 返回 null）。不要编造 `/代码审查` 这种非法 token。
 - 整备舱技能行不能调用 `toggleTarget`：会把整组 selected 技能从目标卸掉。挂载只走来源组胶囊。
 - `updateAll` 只拉 Git：本机 `~/.agents/skills` 等发现组不会被 pull。没有 Git 源时入口必须不渲染，不要灰按钮空转。
 - 空态禁运维条：技能源更新与 SessionReviewBar 同类，不能进 `AiChatEmptyState` / 空会话引导。

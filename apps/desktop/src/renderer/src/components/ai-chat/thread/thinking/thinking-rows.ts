@@ -90,6 +90,14 @@ function codingVerb(name: string, t: TranslateFn): string | undefined {
   if (name === "write_file" || name === "write") return t("chat.verbWrite")
   if (name === "edit_file" || name === "edit") return t("chat.verbEdit")
   if (name === "bash") return t("chat.verbRun")
-  if (name === "git_diff" || name === "git_status" || name === "git_commit") return t("chat.verbGit")
+  if (
+    name === "git_diff" ||
+    name === "git_status" ||
+    name === "git_log" ||
+    name === "git_commit" ||
+    name === "git_push"
+  ) {
+    return t("chat.verbGit")
+  }
   return undefined
 }

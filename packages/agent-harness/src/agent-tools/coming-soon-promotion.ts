@@ -1,6 +1,7 @@
 /**
  * comingSoon → available 静态门闩。M4 只按 OpenCode → Gemini → Pi 升级。
- * 只查 catalog / RuntimeCapabilities / preset 硬接线，不是现场 ACP initialize / handshake。
+ * 升 available 只查 catalog / RuntimeCapabilities / preset 硬接线。
+ * 现场 initialize 在 `probeAcpInitialize`（doctor），不在每次 list。
  * 禁止手改 available 假装已接线。
  */
 import { capabilitiesFor } from "@enjoy-agents/ipc-contract/runtime-capabilities"

@@ -1,6 +1,6 @@
 export { parseGitignore, shouldIgnore } from "./sources/ignore"
 export { collectKnowledgeFiles } from "./sources/collect-files"
-export { canParse, parseDocument } from "./parsers"
+export { canParse, parseDocument, type ParseDocumentOptions } from "./parsers"
 export { chunkText, chunkId, type TextChunk } from "./indexer/chunk"
 export { embeddingsNeedRebuild } from "./indexer/stale"
 export { cosineSimilarity, rankByCosine, lexicalScore } from "./retriever/cosine"

@@ -64,7 +64,7 @@ export function updateRun(
   )
 }
 
-/** 进程重启后内存 ActiveRun 已不在，库里还停在 running 的行无法续，标 cancelled。 */
+/** 低层：把 running 一律标 cancelled。桌面层 abandonOrphanRuns 会先留下可续的工具边界快照。 */
 export function abandonRunningRuns(
   db: AppDatabase,
   error = "Abandoned after process restart."

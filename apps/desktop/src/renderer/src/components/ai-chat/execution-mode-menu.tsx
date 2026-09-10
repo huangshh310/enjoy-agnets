@@ -30,7 +30,7 @@ export interface ModeItemConfig {
   icon: typeof RiTerminalBoxLine
 }
 
-const MODE_ICONS: Record<ComposerVisibleMode, typeof RiTerminalBoxLine> = {
+export const MODE_ICONS: Record<ComposerVisibleMode, typeof RiTerminalBoxLine> = {
   agent: RiTerminalBoxLine,
   plan: RiCompass3Line,
   ask: RiQuestionLine,

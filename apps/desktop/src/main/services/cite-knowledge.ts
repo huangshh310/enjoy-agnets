@@ -13,7 +13,7 @@ export async function citeKnowledge(options: {
   workspaceId: string
   query: string
 }): Promise<{ messages: ModelMessage[]; sources: CitedSource[] }> {
-  const hits = await searchKnowledge(options.workspaceId, options.query, 6)
+  const { hits } = await searchKnowledge(options.workspaceId, options.query, 6)
   const sources: CitedSource[] = []
   for (const hit of hits) {
     stampAndSend(

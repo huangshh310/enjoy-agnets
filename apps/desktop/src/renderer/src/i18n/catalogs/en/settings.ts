@@ -523,16 +523,17 @@ export const enSettings = {
     deletions: "Line Deletions",
     prefs: "Commit & Safety Preferences",
     requireApproval: "Require commit approval",
-    requireApprovalDesc: "Pause and prompt for confirmation before executing git_commit in the workspace.",
+    requireApprovalDesc: "Pause and prompt for confirmation before git_commit or git_push.",
     conventional: "Conventional Commit format",
     conventionalDesc: "Instructs coding agents to format commit messages with feat:, fix:, refactor:, chore: prefixes.",
+    conventionalHint: "The Review sparkle can draft a message. It is not a forced standard.",
     activeStandard: "Active Standard"
   },
 
   workflow: {
     hubTitle: "Durable Workflow Engine",
     hubBadge: "SQLite Checkpoints",
-    hubDesc: "Executes multi-step Plan → Act → Verify DAG pipelines with step-level rollback and checkpoint recovery.",
+    hubDesc: "Each step runs the same Agent loop (tools and approvals included). Checkpoints land in SQLite.",
     openStudio: "Open Workflow Studio",
     policies: "Checkpoint & Recovery Policies",
     resume: "Resume on launch",

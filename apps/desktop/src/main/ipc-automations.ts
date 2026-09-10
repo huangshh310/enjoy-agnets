@@ -1,10 +1,17 @@
 /**
- * Automations IPC：列表 / 写入 / 删除，存在 settings 键。
+ * Automations IPC：列表 / 写入 / 删除 / 执行。
  */
 import { ipcMain } from "electron"
-import { AutomationIdInput, UpsertAutomationInput, type Automation } from "@enjoy-agents/ipc-contract"
-import { getSetting, setSetting } from "./services/database"
+import {
+  AutomationIdInput,
+  RunAutomationInput,
+  UpsertAutomationInput,
+  type Automation
+} from "@enjoy-agents/ipc-contract"
+import { runAutomation } from "./services/automations-run"
+import { readAutomations, writeAutomations } from "./services/automations-store"
 import { createId } from "./services/ids"
+import { windowFromEvent } from "./ipc-shell"
 
 export function registerAutomationIpc() {
   ipcMain.handle("automations.list", async () => readAutomations())
@@ -23,23 +30,16 @@ export function registerAutomationIpc() {
     const next = current.some((item) => item.id === id)
       ? current.map((item) => (item.id === id ? nextItem : item))
       : [nextItem, ...current]
-    setSetting("automations", JSON.stringify(next))
+    writeAutomations(next)
     return nextItem
   })
   ipcMain.handle("automations.remove", async (_event, raw) => {
     const id = AutomationIdInput.parse(raw).id
-    setSetting("automations", JSON.stringify(readAutomations().filter((item) => item.id !== id)))
+    writeAutomations(readAutomations().filter((item) => item.id !== id))
     return { ok: true }
   })
-}
-
-function readAutomations(): Automation[] {
-  const raw = getSetting("automations")
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as Automation[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
+  ipcMain.handle("automations.run", async (event, raw) => {
+    const input = RunAutomationInput.parse(raw)
+    return runAutomation(windowFromEvent(event), input)
+  })
 }

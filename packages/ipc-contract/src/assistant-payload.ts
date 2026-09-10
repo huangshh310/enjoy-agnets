@@ -22,6 +22,8 @@ export type ThreadToolCall = {
   state: ToolCallState
   /** 该工具开始时 assistant.reasoning 的字数，用来把思考链按步骤切开。 */
   reasoningChars?: number
+  /** 子 Agent 工具挂到父 delegate 的 toolCallId。 */
+  parentToolCallId?: string
 }
 
 export type CitedSource = {

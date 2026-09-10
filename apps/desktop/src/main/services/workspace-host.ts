@@ -7,9 +7,11 @@ import { assertSandboxCommand, type AgentWorkspaceHost } from "@enjoy-agents/age
 import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
 import { parseExecutableCommand, runExecutable, runGit } from "./command"
 import { resolveInsideWorkspace, toWorkspaceRelative } from "./paths"
+import { gitLogCommandArgs } from "./workspace-git-agent-log"
 import { readPreferences } from "./preferences"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { commitWorkspaceAll } from "./workspace-git"
+import { pushWorkspace } from "./workspace-git-remote"
 
 const IGNORED = new Set(["node_modules", ".git", "dist", "out", ".turbo", "coverage"])
 
@@ -27,6 +29,7 @@ export function createWorkspaceHost(
       await fs.mkdir(dirname(absolute), { recursive: true })
       await fs.writeFile(absolute, content, "utf8")
       await recordEnjoyCheckpoint(workspaceRoot)
+      await triggerOnSaveForRoot(workspaceRoot)
     },
     editFile: async (relativePath, oldText, newText) => {
       const absolute = resolveInsideWorkspace(workspaceRoot, relativePath)
@@ -37,6 +40,7 @@ export function createWorkspaceHost(
       const next = current.replace(oldText, newText)
       await fs.writeFile(absolute, next, "utf8")
       await recordEnjoyCheckpoint(workspaceRoot)
+      await triggerOnSaveForRoot(workspaceRoot)
       return next
     },
     listDir: async (relativePath) => {
@@ -66,8 +70,20 @@ export function createWorkspaceHost(
       const args = filePath ? ["diff", "--", filePath] : ["diff"]
       return (await runGit(workspaceRoot, args)).stdout
     },
+    gitLog: async (options) => {
+      const raw = options?.path?.trim()
+      const path = raw
+        ? toWorkspaceRelative(workspaceRoot, resolveInsideWorkspace(workspaceRoot, raw))
+        : undefined
+      const result = await runGit(workspaceRoot, gitLogCommandArgs({ limit: options?.limit, path }))
+      return result.stdout.trim() ? result.stdout : result.stderr
+    },
     gitCommit: async (message) => {
       const result = await commitWorkspaceAll(workspaceRoot, message)
+      return result.output
+    },
+    gitPush: async () => {
+      const result = await pushWorkspace(workspaceRoot)
       return result.output
     },
     takeQuestionAnswers: extras?.takeQuestionAnswers
@@ -116,6 +132,18 @@ async function grepFiles(workspaceRoot: string, pattern: string, glob?: string) 
     })
   }
   return matches
+}
+
+async function triggerOnSaveForRoot(workspaceRoot: string): Promise<void> {
+  const { listActiveRuns } = await import("./agent-run-state")
+  const { fireOnSaveAutomations } = await import("./automations-run")
+  const active = listActiveRuns().find((item) => item.run.workspaceRoot === workspaceRoot)
+  if (!active) return
+  await fireOnSaveAutomations(
+    active.run.window,
+    active.run.input.workspaceId,
+    active.run.input.sessionId
+  )
 }
 
 function globToRegExp(pattern: string): RegExp {

@@ -5,6 +5,7 @@ import { RiInboxArchiveLine } from "@remixicon/react"
 import { LoadingStateGlyph } from "@/components/ai-elements/loading-state"
 import { cx } from "@/utils/cx"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
+import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 import { useT } from "@renderer/i18n"
 import type { SidebarSessionRowProps } from "./sidebar-session-row.types"
 
@@ -20,6 +21,14 @@ export function SidebarSessionRow({
   className,
   nameClassName = "text-caption-1-medium"
 }: SidebarSessionRowProps) {
+  const waitingReview = useAttentionStore((state) =>
+    state.items.some(
+      (item) =>
+        item.sessionId === sessionId &&
+        (item.kind === "pending_approval" || item.kind === "ask_user") &&
+        (item.status === "active" || item.status === "focused")
+    )
+  )
   return (
     <div
       className={cx(
@@ -37,7 +46,13 @@ export function SidebarSessionRow({
       >
         <SessionAgentMark sessionId={sessionId} />
         <span className={cx("min-w-0 flex-1 truncate", nameClassName)}>{name}</span>
-        <SessionRowMeta running={running} updatedAt={updatedAt} formatTime={formatTime} hideOnHover={Boolean(onArchive)} />
+        <SessionRowMeta
+          running={running}
+          waitingReview={waitingReview}
+          updatedAt={updatedAt}
+          formatTime={formatTime}
+          hideOnHover={Boolean(onArchive)}
+        />
       </button>
       {onArchive ? <ArchiveSessionButton onArchive={onArchive} /> : null}
     </div>
@@ -46,17 +61,27 @@ export function SidebarSessionRow({
 
 function SessionRowMeta({
   running,
+  waitingReview,
   updatedAt,
   formatTime,
   hideOnHover
 }: {
   running: boolean
+  waitingReview: boolean
   updatedAt: number
   formatTime: (timestamp: number) => string
   hideOnHover: boolean
 }) {
   const hide = hideOnHover ? "group-hover/session:hidden" : undefined
   if (running) return <LoadingStateGlyph variant="drive" className={cx("shrink-0", hide)} />
+  if (waitingReview) {
+    return (
+      <span
+        className={cx("size-2 shrink-0 rounded-full bg-text-error-primary", hide)}
+        aria-label="waiting review"
+      />
+    )
+  }
   return <span className={cx("shrink-0 text-caption-2-medium text-text-tertiary", hide)}>{formatTime(updatedAt)}</span>
 }
 

@@ -513,7 +513,9 @@ better-auth
 | bash | 是 | cwd 锁在工作区；超时；输出截断 |
 | git_status | 否 | |
 | git_diff | 否 | |
+| git_log | 否 | 线性 porcelain，默认 20 条 |
 | git_commit | 是 | |
+| git_push | 是 | 与 commit 同一 Git 审批档 |
 
 MCP 工具动态合并进同一 tool map。高风险 MCP 默认走审批。
 

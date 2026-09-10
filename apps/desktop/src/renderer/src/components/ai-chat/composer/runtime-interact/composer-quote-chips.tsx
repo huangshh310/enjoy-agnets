@@ -8,6 +8,7 @@ import {
   removeQuotedContext,
   subscribeQuotedContexts
 } from "@renderer/hooks/quoted-context"
+import { FileKindIcon } from "../../right-pane/file-kind-icon"
 
 export function ComposerQuoteChips() {
   const quotes = useSyncExternalStore(
@@ -22,8 +23,14 @@ export function ComposerQuoteChips() {
       {quotes.map((quote) => (
         <span
           key={quote.id}
-          className="inline-flex max-w-full items-center gap-1 rounded-full border border-border-button-default bg-background-tertiary-default px-2 py-0.5 text-caption-2-medium text-text-secondary"
+          className="inline-flex max-w-full items-center gap-1 rounded-full border border-border-button-default bg-background-primary-default px-2 py-0.5 text-caption-2-medium text-text-secondary"
         >
+          {quote.type === "file" ? (
+            <FileKindIcon
+              name={quote.title.replace(/\/$/, "")}
+              kind={quote.title.endsWith("/") ? "directory" : "file"}
+            />
+          ) : null}
           <span className="truncate">{quote.title}</span>
           <button
             type="button"

@@ -8,6 +8,7 @@ export const zhCommand = {
   groupActions: "操作",
   groupSettings: "设置",
   groupRecent: "最近会话",
+  groupAcp: "当前引擎命令",
   chat: "对话",
   knowledge: "知识库与语义检索",
   studioHub: "可观测性大盘",

@@ -1,5 +1,5 @@
 /**
- * MCP Server 与插件生态页面：已配置服务 / 精选市场 / JSON 规格。
+ * MCP Server 与插件生态页面：已配置服务 / 本地预设 / JSON 规格。
  */
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { useT } from "@renderer/i18n"

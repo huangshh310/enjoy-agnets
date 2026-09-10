@@ -7,6 +7,7 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { pathDirs } from "../agent-tools/detect/probe.ts"
 import { resolveSpawnCommand, type SpawnOverride } from "../agent-tools/resolve-spawn.ts"
+import { rememberAcpChild } from "./acp-child-store.ts"
 
 export type AcpSpawned = {
   child: ChildProcess
@@ -30,6 +31,14 @@ export function spawnAcpProcess(input: {
     stdio: ["pipe", "pipe", "pipe"],
     env: filteredEnv(input.id, input.env)
   })
+  if (typeof child.pid === "number") {
+    rememberAcpChild({
+      pid: child.pid,
+      toolId: input.id,
+      command: resolved.command,
+      startedAt: Date.now()
+    })
+  }
   return { child, command: resolved.command, args: resolved.args }
 }
 

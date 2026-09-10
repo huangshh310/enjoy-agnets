@@ -3,6 +3,8 @@
  */
 import type { ChildProcess } from "node:child_process"
 import { completeAcpHandshake, toAcpRpcError } from "./auth.ts"
+import { acpChildStillAlive } from "./acp-child-alive.ts"
+import { forgetAcpChild } from "./acp-child-store.ts"
 import { pickAcpPermissionOption, type AcpPermissionOption } from "./permissions.ts"
 
 export type AcpPermissionRequest = {
@@ -48,6 +50,7 @@ export class AcpClient {
     child.on("error", (error) => this.failAll(error))
     child.on("exit", (code) => {
       if (this.killTimer) clearTimeout(this.killTimer)
+      forgetAcpChild(child.pid)
       if (!this.closed) this.failAll(new Error(exitMessage(code, this.stderr)))
     })
   }
@@ -99,14 +102,15 @@ export class AcpClient {
   dispose(mode: "term" | "kill" = "term") {
     this.closed = true
     this.failAll(new Error("ACP client disposed."))
-    if (this.child.killed) return
+    forgetAcpChild(this.child.pid)
+    if (!acpChildStillAlive(this.child)) return
     if (mode === "kill") {
       this.child.kill("SIGKILL")
       return
     }
     this.child.kill("SIGTERM")
     this.killTimer = setTimeout(() => {
-      if (!this.child.killed) this.child.kill("SIGKILL")
+      if (acpChildStillAlive(this.child)) this.child.kill("SIGKILL")
     }, 2000)
   }
 

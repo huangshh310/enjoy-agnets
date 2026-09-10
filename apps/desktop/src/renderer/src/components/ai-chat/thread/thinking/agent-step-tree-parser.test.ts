@@ -36,6 +36,17 @@ function createTool(id: string, name: string, args: Record<string, unknown>, res
   }
 }
 
+test("子 Agent 工具挂到 delegate 下面", () => {
+  const tools: ThreadToolCall[] = [
+    createTool("d1", "delegate", { task: "inspect" }, { title: "inspect" }),
+    { ...createTool("t2", "read_file", { path: "a.ts" }, {}), parentToolCallId: "d1" }
+  ]
+  const nodes = parseAgentStepNodes("", tools, mockT)
+  assert.equal(nodes.length, 1)
+  assert.equal(nodes[0]?.id, "d1")
+  assert.equal(nodes[0]?.children?.[0]?.id, "t2")
+})
+
 test("单个 editing 节点去除副标题重复路径，提取 fileName 与 fileDir", () => {
   const tools: ThreadToolCall[] = [
     createTool("t1", "write_file", { path: "login-rs/src/error.rs" }, { additions: 41, deletions: 0 })

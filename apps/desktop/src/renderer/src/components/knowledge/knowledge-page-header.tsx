@@ -70,6 +70,7 @@ export function KnowledgePageHeader({
         <Button
           size="sm"
           variant="outline"
+          data-testid="knowledge-open-index"
           onClick={onOpenIndexDrawer}
           className="h-8 gap-1.5 px-3 text-caption-2-medium"
         >
@@ -78,6 +79,7 @@ export function KnowledgePageHeader({
         </Button>
         <Button
           size="sm"
+          data-testid="knowledge-add-index"
           onClick={onAdd}
           className="h-8 gap-1.5 px-3.5 text-caption-2-medium shadow-xs"
         >

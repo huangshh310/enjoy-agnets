@@ -190,6 +190,7 @@ export const enObservabilityPages = {
   msTotal: "{n}ms total",
   waitFirst: "TTFO wait: {n}ms ({percent}%)",
   streamXfer: "Stream transfer: {n}ms ({percent}%)",
+  phaseSend: "send",
   phaseTtfo: "Phase 1: wait for first token (TTFO)",
   phaseStream: "Phase 2: streaming transfer",
   errorClass: "Error class: {errorClass}",

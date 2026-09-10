@@ -6,6 +6,7 @@ import { useChatStore } from "../chat-store"
 import { belongsToForeground } from "./foreground-event"
 import { eventRunId } from "./ingest-attention"
 import { useAttentionStore } from "./attention-store"
+import { useAcpCommands } from "../acp-commands"
 
 export { belongsToForeground } from "./foreground-event"
 
@@ -16,6 +17,10 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   if (sessionId) {
     const meta = sessionMetaOf(sessionId)
     useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId)
+  }
+
+  if (event.type === "commands.update") {
+    useAcpCommands.getState().setCommands(event.commands)
   }
 
   const store = useChatStore.getState()

@@ -11,6 +11,7 @@ import { composerSendReady, guardComposerSend } from "./send-composer-guard.ts"
 function store(partial: {
   runtimeId: string
   hasKey?: boolean
+  modelId?: string
   workspaceId?: string | null
   sessionId?: string | null
 }) {
@@ -19,6 +20,7 @@ function store(partial: {
   return {
     runtimeId: partial.runtimeId,
     hasKey: partial.hasKey ?? false,
+    modelId: partial.modelId ?? "m",
     workspaceId: partial.workspaceId === undefined ? "ws" : partial.workspaceId,
     sessionId: partial.sessionId === undefined ? "sess" : partial.sessionId,
     error,
@@ -37,6 +39,12 @@ test("Enjoy Local 无密钥留在 Chat，不假装能发", () => {
   assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
   assert.equal(chat.read().error, NEED_PROVIDER_KEY)
   assert.equal(chat.read().picker, false)
+})
+
+test("Enjoy Local 有密钥但还没模型时不打 agent.run", () => {
+  const chat = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+  assert.equal(chat.read().error, null)
 })
 
 test("已装未登录 CLI 打开 Picker，不打 agent.run", () => {
@@ -141,19 +149,20 @@ test("检测中不打开 Picker，也不当成未登录", () => {
 
 test("发送盘：Enjoy Local 无密钥不亮；CLI 未登录不亮", () => {
   rememberAgentTools([claudeTool(false)])
-  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false }), false)
-  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true }), true)
-  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true }), false)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: false, modelId: "m" }), false)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m" }), true)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "" }), false)
+  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true, modelId: "m" }), false)
 })
 
 test("发送盘：已登录 CLI 才亮", () => {
   rememberAgentTools([claudeTool(true)])
-  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true }), true)
+  assert.equal(composerSendReady({ runtimeId: "claude", hasKey: true, modelId: "m" }), true)
 })
 
 test("发送盘：缓存里还没有 CLI 行时不亮", () => {
   rememberAgentTools([])
-  assert.equal(composerSendReady({ runtimeId: "cursor", hasKey: true }), false)
+  assert.equal(composerSendReady({ runtimeId: "cursor", hasKey: true, modelId: "m" }), false)
 })
 
 test("缓存里还没有 CLI 行时也是检测中", () => {

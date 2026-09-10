@@ -4,7 +4,7 @@
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore } from "../stores/chat-store"
 import { completePrompt } from "./use-completion"
-import { waitForRunOutput } from "./wait-run-events"
+import { collectRunOutput } from "./wait-run-events"
 
 const DEFAULT_TITLES = new Set([
   "New agent",
@@ -43,24 +43,26 @@ export function applyOptimisticTitle(userText: string) {
 
 export async function completeSessionTitle(userText: string) {
   const store = useChatStore.getState()
-  if (!hasIde() || !store.sessionId) return
+  const sessionId = store.sessionId
+  if (!hasIde() || !sessionId) return
   // 只要当前标题仍是默认占位标题（无论第几轮），就执行智能精炼
   if (!isDefaultSessionTitle(store.sessionTitle)) return
 
   try {
-    const result = (await completePrompt({
-      sessionId: store.sessionId,
-      modelId: store.modelId,
-      prompt: `Generate a concise 3-8 word title for this conversation in the same language as the user input (e.g. if the request is Chinese, reply in concise Chinese). Reply with the title text ONLY, without quotes, prefixes, punctuations, or markdown.\n\nUser request:\n${userText.slice(0, 600)}`
-    })) as { runId: string }
-    const output = await waitForRunOutput(result.runId)
+    const output = await collectRunOutput(() =>
+      completePrompt({
+        sessionId,
+        modelId: store.modelId,
+        prompt: `Generate a concise 3-8 word title for this conversation in the same language as the user input (e.g. if the request is Chinese, reply in concise Chinese). Reply with the title text ONLY, without quotes, prefixes, punctuations, or markdown.\n\nUser request:\n${userText.slice(0, 600)}`
+      }) as Promise<{ runId: string }>
+    )
     const title = sanitizeTitle(output.text)
     if (!title || isDefaultSessionTitle(title)) return
     const renamed = (await getIde().session.rename({
-      sessionId: store.sessionId,
+      sessionId,
       title
     })) as { title: string }
-    useChatStore.getState().setSession(store.sessionId, renamed.title)
+    useChatStore.getState().setSession(sessionId, renamed.title)
   } catch {
     // 失败保留 maybeRenameSession / 乐观标题，不打断主循环
   }

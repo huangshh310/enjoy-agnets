@@ -14,9 +14,8 @@ import {
   dropEmptyPendingAssistant
 } from "../composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
-import { runModeForComposer, takeComposerSlash } from "../../components/ai-chat/composer/composer-mode"
 import { guardComposerSend } from "./send-composer-guard"
-import { clearComposerDraft, takeComposerText } from "./composer-draft"
+import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
 type PreparedSend = { content: string; assets?: QueuedComposerAsset[] }
@@ -36,7 +35,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     store.setRunning(false)
     return
   }
-  const payload = resolveSendPayload(prepared)
+  const payload = await resolveSendPayload(prepared)
   if (!payload) {
     store.setRunning(false)
     return
@@ -45,15 +44,11 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   await launchComposerRun(store, payload, messages)
 }
 
-function resolveSendPayload(prepared?: PreparedSend): SendPayload | null {
+async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
   const fromDraft = !prepared
-  const raw = prepared?.content ?? takeComposerText()
-  const parsed = takeComposerSlash(raw)
-  if (parsed.mode && runModeForComposer(useChatStore.getState().runtimeId, parsed.mode) === parsed.mode) {
-    useChatStore.getState().setMode(parsed.mode)
-  }
-  const content = parsed.text
-  if (!content) return null
+  const raw = prepared?.content ?? (await takeComposerText())
+  if (!raw.trim()) return null
+  const content = prefixHostModeForSend(raw)
   if (fromDraft) clearComposerDraft()
   const queuedAssets = prepared?.assets ?? takeComposerAssetDetails()
   return {

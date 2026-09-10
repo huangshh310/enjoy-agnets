@@ -1,6 +1,6 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与插件市场。最后更新：2026-09-06
+> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-09
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 `createMCPClient` 只在 main；`ai@7.0.84` 无该导出时 stdio / HTTP 走本机 JSON-RPC 会话：initialize 后 `tools/list`，`tools/call` 走 `mcp.call`。stdio `command` 必须是白名单裸二进制（`npx` / `npm` / `pnpm` / `yarn` / `bun` / `node` / `uvx` / `uv` / `python` / `python3`），禁止路径和 shell 元字符。写类工具名即使 allow 也再 ask；`mcp.call` 对 `ask` 直接拒，必须经 Agent ToolLoop 的 `user-approval` + `decideApproval` 后再执行（`fromApprovedAgent`）。已连接且 `trusted`（或写在 `modelVisibleTools`）的工具注入 ToolLoopAgent，名为 `mcp_<serverId>__<tool>`。`openApp` 的 `allowedResourceUris` 只信库内配置，不把调用方 `resourceUri` 塞进白名单。
 
-路由 `#/mcp` 在 `AppShell` 内换轨（情境栏=已配置/市场/JSON，Stage=对应视图），不要弹出「返回应用」页。Stage 用 `contentWidth="fill"` + `hideChrome`：只保留 `McpHeader`，不要再叠 `SecondaryPageChrome`。顶栏固定，已配置空态 / 市场列表 / JSON 编辑区铺满剩余高度，不要按内容收高度底下留白。对齐原型 Slide 10 与 13 ⑧（Trust 印章与声明）。包含已配置服务 (Configured Servers)、精选插件市场 (Featured Marketplace) 与 JSON 规格批量导入导出。卡片印章走 i18n（已信任 / 未信任），不要写死英文 TRUSTED。信任操作提供完整声明确认卡；顶部展示服务统计。支持 Ping 连通性测试、工具探索与细粒度权限控制 (Allow/Ask/Deny)、环境变量管理与沙箱 UI App 实时交互。仅 **trusted** Server 可 `mcp.openApp`，main 返回已包 CSP 的 `srcDoc`。iframe `sandbox="allow-scripts"`、无 `allow-same-origin`。`postMessage` 必须 `event.source === iframe.contentWindow`，再经 `mcp.appMessage` 在 main 消毒；`ui/log` 回显，`resources/read` 仅在已连接且 URI 白名单内走本机会话，`tools/result` 只展示已批准结果，**不会**从 iframe 自动执行写工具。发 `mcp.app` 事件。
+路由 `#/mcp` 在 `AppShell` 内换轨（情境栏=已配置/市场/JSON，Stage=对应视图），不要弹出「返回应用」页。Stage 用 `contentWidth="fill"` + `hideChrome`：只保留 `McpHeader`，不要再叠 `SecondaryPageChrome`。顶栏固定，已配置空态 / 市场列表 / JSON 编辑区铺满剩余高度，不要按内容收高度底下留白。对齐原型 Slide 10 与 13 ⑧（Trust 印章与声明）。包含已配置服务 (Configured Servers)、**本地预设**（内置模板，不是远程目录）与 JSON 规格批量导入导出。卡片印章走 i18n（已信任 / 未信任），不要写死英文 TRUSTED。信任操作提供完整声明确认卡；顶部展示服务统计。支持 Ping 连通性测试、工具探索与细粒度权限控制 (Allow/Ask/Deny)、环境变量管理与沙箱 UI App 实时交互。仅 **trusted** Server 可 `mcp.openApp`。能从允许的 resource URI 读到 HTML 才返回 `srcDoc`；否则 `available=false`、`srcDoc=null`，UI 写明没有 App。`ENJOY_E2E_STUB` 才返回 demo HTML。iframe `sandbox="allow-scripts"`、无 `allow-same-origin`。`postMessage` 必须 `event.source === iframe.contentWindow`，再经 `mcp.appMessage` 在 main 消毒；`ui/log` 回显，`resources/read` 仅在已连接且 URI 白名单内走本机会话，`tools/result` 只展示已批准结果，**不会**从 iframe 自动执行写工具。发 `mcp.app` 事件。
 ## 不变量
 
 - renderer 无 Node、无任意远程脚本读盘。

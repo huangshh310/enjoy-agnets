@@ -186,6 +186,7 @@ function AssetCardActions({
         <Button
           size="icon-sm"
           variant="ghost"
+          data-testid="asset-export"
           title={t("pages.media.exportToWorkspace")}
           className="size-7 rounded-lg bg-background-primary-default/90 text-text-primary shadow-xs hover:bg-background-primary-default"
           onClick={onExport}

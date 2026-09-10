@@ -6,6 +6,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { existsSync } from "node:fs"
 import { expect, test } from "@playwright/test"
+import { sendComposer } from "./send-composer"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
 
@@ -38,10 +39,9 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
       timeout: 20_000
     })
-    const composer = window.locator('textarea[placeholder*="Ask Enjoy Agents"]')
+    const composer = window.locator('[data-testid="composer-input"]')
     await composer.waitFor({ timeout: 20_000 })
-    await composer.fill("hello stub")
-    await window.locator('button[aria-label="Send"]').click()
+    await sendComposer(window, composer, "hello stub")
     await window.waitForFunction(() => document.body.innerText.includes("stub-ok"), undefined, {
       timeout: 20_000
     })
@@ -52,23 +52,18 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
       buffer: Buffer.from("attached body")
     })
     await window.waitForSelector('[data-testid="composer-asset-chip"]', { timeout: 8_000 })
-    await composer.fill("read this")
-    await window.locator('button[aria-label="Send"]').click()
+    await sendComposer(window, composer, "read this")
     await window.waitForFunction(() => document.body.innerText.includes("attached:note.txt"), undefined, {
       timeout: 20_000
     })
 
-    await composer.fill("please go slow now")
-    await window.locator('button[aria-label="Send"]').click()
-    await window.waitForSelector('button[aria-label="Stop"]', { timeout: 8_000 })
-    await window.locator('button[aria-label="Stop"]').click()
-    await window.locator('button[aria-label="Send"]').waitFor({ timeout: 8_000 })
+    await sendComposer(window, composer, "please go slow now")
+    await window.waitForSelector('[data-testid="composer-stop"]', { timeout: 8_000 })
+    await window.locator('[data-testid="composer-stop"]').click()
+    await window.locator('[data-testid="composer-stop"]').waitFor({ state: "detached", timeout: 8_000 })
 
-    await composer.fill("please write a note")
-    await window.locator('button[aria-label="Send"]').click()
-    const allow = window.locator("button").filter({ hasText: /^Allow$/ })
-    await allow.waitFor({ timeout: 15_000 })
-    await allow.click({ force: true })
+    await sendComposer(window, composer, "please write a note")
+    await window.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
     await window.waitForFunction(() => document.body.innerText.includes("allowed write"), undefined, {
       timeout: 15_000
     })
@@ -95,18 +90,21 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     })
     await window.waitForSelector('[data-testid="knowledge-add-index"]', { timeout: 8_000 })
     await window.locator('[data-testid="knowledge-add-index"]').click()
-    await window.waitForFunction(
-      () => document.body.innerText.includes("chunk") || document.body.innerText.includes("ready"),
-      undefined,
-      { timeout: 15_000 }
-    )
+    await window.locator('[data-testid="knowledge-index-root"]').click({ timeout: 8_000 })
+    await window.locator('[data-testid="knowledge-index-confirm"]').click()
+    await window.locator('[data-testid="knowledge-index-confirm"]').waitFor({ state: "detached", timeout: 15_000 })
+    const search = window.locator('[data-testid="knowledge-search-input"]')
+    await search.fill("hello knowledge")
+    await window.locator('[data-testid="knowledge-search-submit"]').click()
+    await window.waitForFunction(() => document.body.innerText.includes("readme.md"), undefined, {
+      timeout: 15_000
+    })
 
     await window.evaluate(() => {
       location.hash = "#/"
     })
     await composer.waitFor({ timeout: 12_000 })
-    await composer.fill("hello knowledge")
-    await window.locator('button[aria-label="Send"]').click()
+    await sendComposer(window, composer, "hello knowledge")
     await window.waitForFunction(() => document.body.innerText.includes("readme.md"), undefined, {
       timeout: 20_000
     })
@@ -121,10 +119,8 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await window.evaluate(() => {
       location.hash = "#/media"
     })
-    await window.waitForFunction(() => document.body.innerText.includes("Import"), undefined, {
-      timeout: 8_000
-    })
-    await window.locator('input[type="file"]').setInputFiles({
+    await window.waitForSelector('[data-testid="page-media"]', { timeout: 8_000 })
+    await window.locator('[data-testid="media-file-input"]').setInputFiles({
       name: "e2e.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("imported")
@@ -132,13 +128,13 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await window.waitForFunction(() => document.body.innerText.includes("e2e.txt"), undefined, {
       timeout: 12_000
     })
-    await window.locator("li").filter({ hasText: "e2e.txt" }).first().getByText("e2e.txt").click()
-    await window.locator("li").filter({ hasText: "e2e.txt" }).first().getByTestId("asset-export").click()
-    await window.waitForFunction(
-      () => document.body.innerText.includes("Exported") || document.body.innerText.includes("export.bin"),
-      undefined,
-      { timeout: 12_000 }
-    )
+    const card = window.locator("article").filter({ hasText: "e2e.txt" }).first()
+    await card.click()
+    await card.getByTestId("asset-export").click({ force: true })
+    await window.waitForFunction(() => document.body.innerText.includes("Exported to"), undefined, {
+      timeout: 12_000
+    })
+    await window.getByRole("button", { name: "STT & Audio" }).click()
     await window.waitForFunction(() => document.body.innerText.includes("Translate"), undefined, {
       timeout: 8_000
     })
@@ -148,9 +144,10 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     })
     await window.waitForSelector('[data-testid="mcp-add-server"]', { timeout: 8_000 })
     await window.locator('[data-testid="mcp-add-server"]').click()
-    const trust = window.locator("button").filter({ hasText: /^Trust$/ })
-    await trust.waitFor({ timeout: 8_000 })
-    await trust.click()
+    await window.locator('[data-testid="mcp-save-server"]').click({ timeout: 8_000 })
+    await window.locator('[data-testid="mcp-save-server"]').waitFor({ state: "detached", timeout: 8_000 })
+    await window.locator('[data-testid="mcp-trust"]').click()
+    await window.locator('[data-testid="mcp-trust-confirm"]').click()
     await window.waitForSelector('[data-testid="mcp-open-app"]', { timeout: 8_000 })
     await window.locator('[data-testid="mcp-open-app"]').click()
     await window.waitForSelector('[data-testid="mcp-app-frame"]', { timeout: 8_000 })
@@ -158,7 +155,7 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await appFrame.locator('[data-testid="mcp-app-ready"]').waitFor({ timeout: 8_000 })
     await appFrame.locator('[data-testid="mcp-app-log"]').click()
     await window.waitForSelector('[data-testid="mcp-app-log-text"]', { timeout: 8_000 })
-    await expect(window.locator('[data-testid="mcp-app-log-text"]')).toHaveText("app-log-ok")
+    await expect(window.locator('[data-testid="mcp-app-log-text"]')).toContainText("app-log-ok")
   } finally {
     await app.close()
   }

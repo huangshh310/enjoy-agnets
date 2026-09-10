@@ -52,7 +52,7 @@ export function readRememberedDefaultMode(): AgentMode {
   return rememberedDefaultMode
 }
 
-/** 句首 `/plan` `/ask` `/agent` `/debug` 切模式；只发斜杠则正文为空。 */
+/** 句首 `/plan` `/ask` `/agent` `/debug` 切模式；只发斜杠则正文为空。技能斜杠走 `applyLeadingSlash`。 */
 export function takeComposerSlash(text: string): { mode?: ComposerVisibleMode; text: string } {
   const match = text.trim().match(/^\/(\w+)(?:\s+([\s\S]*))?$/)
   if (!match || !SLASH_MODE.test(match[1] ?? "")) return { text }

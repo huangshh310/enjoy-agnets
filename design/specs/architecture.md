@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-08
+> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-09
 
 ## 当前真相
 
@@ -16,7 +16,7 @@ Main Process（可信）
   providers         packages/providers
   workspace         fs / git / 审批执行
   app-update        electron-updater → GitHub Releases
-  terminal          node-pty
+  terminal          node-pty + renderer xterm
   db                Drizzle 形态的 schema + node:sqlite
   secrets           safeStorage / OS keychain
         │  HTTPS（BYOK 直连）
@@ -38,7 +38,7 @@ Main Process（可信）
 | `packages/assets` | 资产哈希、导出路径策略 |
 | `packages/mcp` | Server 权限与 App JSON-RPC 隔离 |
 | `packages/ui` | tokens、shadcn、AI Elements、ThemeToggle / ComposerLoader |
-| `packages/editor` | Monaco 封装（接入中） |
+| `packages/editor` | Monaco 封装；Files 预览可写，不是完整 IDE |
 | `packages/config` | 共享 tsconfig |
 
 包管理：pnpm workspaces + Turborepo。语言：TypeScript strict。Node `>=22.12.0`。

@@ -1,5 +1,5 @@
 /**
- * MCP 页状态：列表、统计、App 沙箱、精选市场接入。
+ * MCP 页状态：列表、统计、App 沙箱、本地预设接入。
  */
 import { useCallback, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -80,8 +80,9 @@ export function useMcpPage() {
 
   async function openApp(serverId: string) {
     const opened = (await getIde().mcp.openApp({ id: serverId })) as {
-      srcDoc: string
+      srcDoc: string | null
       title?: string
+      available?: boolean
     }
     setOpenServerId(serverId)
     setAppSrcDoc(opened.srcDoc)

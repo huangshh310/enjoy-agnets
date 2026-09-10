@@ -1,10 +1,25 @@
 /**
- * 启动时收拾上次进程没走 before-quit 留下的 running 行。
- * 内存 ActiveRun 已经没了，这些 run 无法续，只能标 cancelled。
+ * 启动时收拾不能续的 running 行。waiting_review 留给 restoreWaitingRuns。
+ * 带工具边界 modelMessages 的 Enjoy Local running 留给 restoreRunningRuns。
  */
-import { abandonRunningRuns } from "@enjoy-agents/db"
+import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { listRuns, updateRun } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
+import { isE2eStub } from "./e2e-stub"
+import { canResumeRunningOrphan, parseAgentCheckpointExtras } from "./running-orphan-plan"
 
 export function abandonOrphanRuns(): void {
-  abandonRunningRuns(getDatabase())
+  const db = getDatabase()
+  const stub = isE2eStub()
+  for (const row of listRuns(db, {}).filter((item) => item.status === "running")) {
+    if (!stub && canKeepForResume(row)) continue
+    updateRun(db, row.id, { status: "cancelled", error: "Abandoned after process restart." })
+  }
+}
+
+function canKeepForResume(row: Parameters<typeof canResumeRunningOrphan>[0] & { checkpoint: string | null }): boolean {
+  if (!canResumeRunningOrphan(row)) return false
+  const runtimeId = parseAgentCheckpointExtras(row.checkpoint).runtimeId
+  if (runtimeId && isAcpHostRuntime(runtimeId)) return false
+  return true
 }

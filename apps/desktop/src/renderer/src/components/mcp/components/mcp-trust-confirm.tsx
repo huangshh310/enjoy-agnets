@@ -28,7 +28,12 @@ export function McpTrustConfirm({
         <Button size="sm" variant="ghost" className="h-6.5 px-2.5 text-caption-2-medium" onClick={onCancel}>
           {t("pages.mcp.dontTrust")}
         </Button>
-        <Button size="sm" className="h-6.5 gap-1 px-3 text-caption-2-medium" onClick={onConfirm}>
+        <Button
+          size="sm"
+          data-testid="mcp-trust-confirm"
+          className="h-6.5 gap-1 px-3 text-caption-2-medium"
+          onClick={onConfirm}
+        >
           <RiCheckLine className="size-3" />
           <span>{t("pages.mcp.trust")}</span>
         </Button>

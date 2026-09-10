@@ -21,6 +21,7 @@ export function ApprovalPreview({ name, args }: { name: string; args: Record<str
     return <BashPreview commandText={commandTextOf(name, args) || JSON.stringify(args, null, 2)} />
   }
   if (name === "git_commit") return <CommitPreview args={args} />
+  if (name === "git_push") return <PushPreview />
   return (
     <div className="overflow-hidden rounded-xl border border-separator-border/80 bg-background-secondary-default/40 p-3">
       <pre className="font-mono text-caption-2-medium text-text-primary whitespace-pre-wrap select-text">
@@ -62,6 +63,16 @@ function BashPreview({ commandText }: { commandText: string }) {
         <span className="mr-2 select-none text-state-success-text">$</span>
         <code>{commandText}</code>
       </div>
+    </div>
+  )
+}
+
+function PushPreview() {
+  const t = useT()
+  return (
+    <div className="flex items-center gap-1.5 rounded-xl border border-separator-border/80 bg-background-secondary-default/50 p-3 text-caption-1-medium text-text-primary">
+      <RiGitCommitLine className="size-3.5 text-accent-500" />
+      <span>{t("chat.gitPushHint")}</span>
     </div>
   )
 }

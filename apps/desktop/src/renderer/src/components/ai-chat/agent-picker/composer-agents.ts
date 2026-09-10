@@ -63,7 +63,12 @@ export function triggerLabel(runtimeId: string, agentLabel: string, modelLabel: 
   return modelLabel || agentLabel
 }
 
-export function cliModelLabel(agent: AgentToolPublic | undefined): string {
+export type CliModelSource = {
+  selectedModel?: string | null
+  models?: readonly { id: string; label: string }[]
+}
+
+export function cliModelLabel(agent: CliModelSource | undefined): string {
   if (!agent?.selectedModel) return ""
-  return agent.models.find((item) => item.id === agent.selectedModel)?.label ?? agent.selectedModel
+  return agent.models?.find((item) => item.id === agent.selectedModel)?.label ?? agent.selectedModel
 }

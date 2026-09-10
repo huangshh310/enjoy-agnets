@@ -2,6 +2,7 @@
  * 启动或按 checkpoint 续跑 Agent。泵循环在 agent-pump。
  */
 import type { BrowserWindow } from "electron"
+import type { ModelMessage } from "ai"
 import type { GenerationRequest } from "@enjoy-agents/agent-core"
 import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase, setSetting } from "./database"
@@ -19,13 +20,19 @@ import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
 import { getActiveCompactedHistory } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
+import { isE2eStub } from "./e2e-stub"
 
 export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   const input = RunAgentInput.parse(rawInput)
   return beginAgentRun(window, input, { persistUser: input.persistUser !== false })
 }
 
-export async function resumeAgentRun(window: BrowserWindow, runId: string, request: GenerationRequest) {
+export async function resumeAgentRun(
+  window: BrowserWindow,
+  runId: string,
+  request: GenerationRequest,
+  resumeMessages?: unknown
+) {
   const messages = request.messages?.length
     ? request.messages
     : [{ role: "user" as const, content: request.prompt ?? "" }]
@@ -39,14 +46,14 @@ export async function resumeAgentRun(window: BrowserWindow, runId: string, reque
       messages,
       attachments: request.attachments
     }),
-    { runId, persistUser: false }
+    { runId, persistUser: false, resumeMessages }
   )
 }
 
 async function beginAgentRun(
   window: BrowserWindow,
   input: RunAgentInput,
-  options: { runId?: string; persistUser: boolean }
+  options: { runId?: string; persistUser: boolean; resumeMessages?: unknown }
 ) {
   const prefs = readPreferences()
   const runtimeId = resolveRuntimeId(input, prefs)
@@ -56,6 +63,7 @@ async function beginAgentRun(
     input.modelId = `cli:${runtimeId}`
   }
   const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  if (isE2eStub() && !input.modelId) input.modelId = "stub-e2e"
   if (!isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }
@@ -68,11 +76,7 @@ async function beginAgentRun(
   if (!session) throw new Error("Unknown session for this workspace.")
 
   const runId = options.runId ?? createId("run")
-  const effectiveMessages = await getActiveCompactedHistory(input.sessionId, input.messages)
-  const peeked = peekSessionHandoff(input.sessionId)
-  const handoffText = peeked ? formatHandoffContext(peeked).trim() : null
-  const history = prependHandoffHistory(effectiveMessages, handoffText)
-  const modelMessages = toModelMessages(history)
+  const modelMessages = await modelMessagesForStart(input, options.resumeMessages)
   holdAgentRun({
     runId,
     window,
@@ -81,7 +85,9 @@ async function beginAgentRun(
     secret,
     messages: modelMessages
   })
-  rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
+  if (!options.resumeMessages) {
+    rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
+  }
 
   const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
   if (
@@ -96,4 +102,18 @@ async function beginAgentRun(
   emitEvent(window, { type: "run.start", runId, sessionId: input.sessionId })
   void prepareAndPump(runId)
   return { runId }
+}
+
+async function modelMessagesForStart(
+  input: RunAgentInput,
+  resumeMessages?: unknown
+): Promise<ModelMessage[]> {
+  if (Array.isArray(resumeMessages) && resumeMessages.length > 0) {
+    return resumeMessages as ModelMessage[]
+  }
+  const effectiveMessages = await getActiveCompactedHistory(input.sessionId, input.messages)
+  const peeked = peekSessionHandoff(input.sessionId)
+  const handoffText = peeked ? formatHandoffContext(peeked).trim() : null
+  const history = prependHandoffHistory(effectiveMessages, handoffText)
+  return toModelMessages(history)
 }

@@ -77,7 +77,7 @@ function PolicyGrid({
       title: t("chat.inspectorReadGroup"),
       policy: t("chat.inspectorPolicyFree"),
       policyClass: "text-state-success-text",
-      detail: "read / list / search"
+      detail: "read / list / search / git_log"
     },
     {
       id: "write",
@@ -95,7 +95,7 @@ function PolicyGrid({
       title: t("chat.inspectorExecGroup"),
       policy: t("chat.inspectorPolicyAsk"),
       policyClass: "text-amber-500",
-      detail: "bash / git_commit"
+      detail: "bash / git_commit / git_push"
     },
     {
       id: "mcp",

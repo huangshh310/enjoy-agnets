@@ -10,7 +10,10 @@ export type AgentWorkspaceHost = {
   bash: (command: string) => Promise<{ stdout: string; stderr: string; exitCode: number }>;
   gitStatus: () => Promise<string>;
   gitDiff: (path?: string) => Promise<string>;
+  /** 线性 git log，不是拓扑图。limit 默认 20、上限 100。 */
+  gitLog: (options?: { limit?: number; path?: string }) => Promise<string>;
   gitCommit: (message: string) => Promise<string>;
+  gitPush: () => Promise<string>;
   /** 审批放行后取出 ask_user_questions 的答案。 */
   takeQuestionAnswers?: () => AskUserAnswers | undefined;
 };

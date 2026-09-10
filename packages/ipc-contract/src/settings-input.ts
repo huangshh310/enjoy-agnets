@@ -2,6 +2,7 @@
  * 设置 / 供应商 / 偏好 IPC 合约。
  */
 import { z } from "zod"
+import { AccountProfilePref } from "./account-profile"
 import { AgentToolPublic } from "./agent-tools"
 import { AgentMode } from "./chat"
 import { PermissionMode as PermissionModeSchema } from "./permission-mode"
@@ -147,7 +148,11 @@ export const SettingsSnapshot = z.object({
     maxAgentSteps: z.number().int().min(1).max(64).default(20),
     agentTimeoutMs: z.number().int().min(0).max(600_000).default(0),
     toolTimeoutMs: z.number().int().min(1_000).max(300_000).default(30_000),
-    stepTimeoutMs: z.number().int().min(0).max(600_000).default(0)
+    stepTimeoutMs: z.number().int().min(0).max(600_000).default(0),
+    desktopPush: z.boolean().default(true),
+    agentCompleteSound: z.boolean().default(true),
+    approvalRequiredAlert: z.boolean().default(true),
+    accountProfile: AccountProfilePref.optional()
   }),
   harness: z
     .object({
@@ -211,7 +216,11 @@ export const SetPreferencesInput = z.object({
   maxAgentSteps: z.number().int().min(1).max(64).optional(),
   agentTimeoutMs: z.number().int().min(0).max(600_000).optional(),
   toolTimeoutMs: z.number().int().min(1_000).max(300_000).optional(),
-  stepTimeoutMs: z.number().int().min(0).max(600_000).optional()
+  stepTimeoutMs: z.number().int().min(0).max(600_000).optional(),
+  desktopPush: z.boolean().optional(),
+  agentCompleteSound: z.boolean().optional(),
+  approvalRequiredAlert: z.boolean().optional(),
+  accountProfile: AccountProfilePref.optional()
 })
 export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>
 

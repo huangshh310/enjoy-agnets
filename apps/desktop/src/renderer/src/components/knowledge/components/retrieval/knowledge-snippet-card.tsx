@@ -1,7 +1,7 @@
 /**
  * 检索命中卡。主 CTA 为钉到当前对话，由页面 handlePinToChat 写入会话芯片。
  */
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   RiCheckLine,
   RiClipboardLine,
@@ -16,19 +16,28 @@ import { useT } from "@renderer/i18n"
 
 export function KnowledgeSnippetCard({
   hit,
+  focused = false,
   onPreviewDoc,
   onPin,
   onFilterSource
 }: {
   hit: KnowledgeHit
+  focused?: boolean
   onPreviewDoc?: (path: string) => void
   onPin: () => void
   onFilterSource?: () => void
 }) {
   const t = useT()
+  const cardRef = useRef<HTMLDivElement | null>(null)
   const [copied, setCopied] = useState(false)
   const [pinned, setPinned] = useState(false)
+
+  useEffect(() => {
+    if (!focused) return
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [focused])
   const scorePercent = Math.round((hit.score ?? 0) * 100)
+  const showSemanticPercent = hit.embeddingKind === "provider" && scorePercent > 0
 
   function handleCopy() {
     void navigator.clipboard.writeText(hit.snippet)
@@ -43,7 +52,16 @@ export function KnowledgeSnippetCard({
   }
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border border-separator-border/70 border-l-2 border-l-accent-500 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-separator-border hover:shadow-card">
+    <div
+      ref={cardRef}
+      data-testid={focused ? "knowledge-cited-hit" : undefined}
+      className={cx(
+        "group relative flex flex-col justify-between rounded-2xl border border-l-2 bg-background-primary-default p-4 shadow-2xs transition-all hover:border-separator-border hover:shadow-card",
+        focused
+          ? "border-accent-500 border-l-accent-500 ring-2 ring-accent-500/40"
+          : "border-separator-border/70 border-l-accent-500"
+      )}
+    >
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between gap-2">
           <button
@@ -56,11 +74,24 @@ export function KnowledgeSnippetCard({
             <span className="truncate font-mono text-caption-2-medium text-text-primary hover:underline">
               {hit.path}
             </span>
+            {focused ? (
+              <span className="shrink-0 rounded-md bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium text-accent-700 dark:text-accent-300">
+                {t("pages.knowledge.citedFromChat")}
+              </span>
+            ) : null}
           </button>
           <div className="flex shrink-0 items-center gap-1.5">
-            {scorePercent > 0 ? (
+            {showSemanticPercent ? (
               <span className="rounded-md border border-separator-border/40 bg-background-secondary-default/80 px-2 py-0.5 font-mono text-caption-2-medium text-text-tertiary">
                 {t("pages.knowledge.matchPercent", { n: scorePercent })}
+              </span>
+            ) : hit.embeddingKind === "lexical" ? (
+              <span className="rounded-md border border-separator-border/40 bg-background-secondary-default/80 px-2 py-0.5 font-mono text-caption-2-medium text-text-tertiary">
+                {t("pages.knowledge.lexicalMatch")}
+              </span>
+            ) : hit.embeddingKind === "hashed" ? (
+              <span className="rounded-md border border-separator-border/40 bg-background-secondary-default/80 px-2 py-0.5 font-mono text-caption-2-medium text-text-tertiary">
+                {t("pages.knowledge.hashedMatch")}
               </span>
             ) : null}
             {onFilterSource ? (

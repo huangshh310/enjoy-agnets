@@ -63,6 +63,7 @@ function localStreamOptions(
     policy,
     extraTools: createMcpAgentTools({ mode: input.mode }),
     waitForSubagentApproval: input.waitForSubagentApproval,
+    onSubagentToolEvent: input.onSubagentToolEvent,
     maxSteps: input.prefs.maxAgentSteps,
     stepTimeoutMs: input.prefs.stepTimeoutMs,
     toolTimeoutMs: input.prefs.toolTimeoutMs,

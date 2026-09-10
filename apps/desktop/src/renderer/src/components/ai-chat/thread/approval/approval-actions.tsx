@@ -27,7 +27,13 @@ export function ApprovalActions({
     variant === "questions" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
     <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-      <Button size="sm" variant="ghost" onClick={decide.onDeny} className={cx("h-8 text-caption-1-medium", denyTone)}>
+      <Button
+        size="sm"
+        variant="ghost"
+        data-testid="approval-deny"
+        onClick={decide.onDeny}
+        className={cx("h-8 text-caption-1-medium", denyTone)}
+      >
         <RiCloseLine className="size-3.5" />
         {denyLabel}
       </Button>
@@ -35,6 +41,7 @@ export function ApprovalActions({
         <Button
           size="sm"
           variant="outline"
+          data-testid="approval-always"
           onClick={decide.onAllowSession}
           title={t("chat.alwaysAllowHint")}
           className="h-8 text-caption-1-medium"
@@ -46,6 +53,7 @@ export function ApprovalActions({
       <Button
         size="sm"
         variant="default"
+        data-testid="approval-allow"
         disabled={approveDisabled}
         onClick={decide.onApprove}
         className="h-8 text-caption-1-semibold"

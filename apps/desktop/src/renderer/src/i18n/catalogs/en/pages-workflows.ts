@@ -7,9 +7,9 @@ export const enWorkflowPages = {
   title: "Durable Workflows & Pipelines",
   checkpoints: "Durable Checkpoints",
   subtitle:
-    "Multi-step autonomous execution with durable SQLite checkpoints. Supports pause, step-by-step resume, failure retry, and recovery after application restart.",
-  recipesTitle: "Pre-built Workflow Recipes · Classic autonomous templates",
-  recipesHint: "1-click autonomous execution",
+    "Each step runs the same Agent loop (tools, HMAC, workspace). SQLite stores the step checkpoint so you can pause, resume, retry, or recover after restart.",
+  recipesTitle: "Starter chains",
+  recipesHint: "Each step is a real agent.run, not a fake complete string.",
   syntax: "Syntax: {chain}",
   runRecipe: "Run Recipe",
   builderTitle: "Custom Workflow Pipeline Builder",
@@ -20,8 +20,7 @@ export const enWorkflowPages = {
   livePreview: "Live Pipeline Preview:",
   executions: "Workflow Executions ({n})",
   emptyTitle: "No Workflow Runs Recorded Yet",
-  emptyHint:
-    "Launch one of the pre-built workflow recipes above to execute multi-step autonomous tasks with step-by-step state checkpointing.",
+  emptyHint: "Start a chain above. Plan / Act / Verify each call agent.run in the current workspace session.",
   copyRunId: "Copy Run ID",
   resume: "Resume",
   pause: "Pause",
@@ -36,7 +35,7 @@ export const enWorkflowPages = {
   stepN: "Step {n}",
   afterDeps: "after: {deps}",
   recipePlanTitle: "Plan → Act → Verify",
-  recipePlanSubtitle: "Fully automated plan, implement, and verify loop",
+  recipePlanSubtitle: "Three agent.run steps: plan, act, verify",
   recipePlanCategory: "Full Cycle Dev",
   recipePlanDesc:
     "Multi-step autonomous workflow: first writes a structural plan, makes precise code modifications, and validates with automated test suites.",

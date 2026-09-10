@@ -26,6 +26,7 @@ export {
   modelArgsFor
 } from "./agent-tools/catalogs"
 export { ACP_AUTH_REQUIRED, AcpAuthRequiredError } from "./acp/auth"
+export { probeAcpInitialize, type AcpInitializeProbe } from "./acp/probe-initialize"
 export {
   acpProcessKey,
   composeAcpPrompt,
@@ -54,3 +55,4 @@ export {
   disposeAllAcpSessions,
   type StreamAcpTurnInput
 } from "./acp/stream-acp"
+export { configureAcpChildLedger, reapOrphanAcpChildren } from "./acp/acp-child-store"

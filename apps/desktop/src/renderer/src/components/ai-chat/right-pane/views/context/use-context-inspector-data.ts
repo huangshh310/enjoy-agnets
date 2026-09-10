@@ -7,6 +7,7 @@ import {
   listSessionContextChips,
   subscribeSessionContextChips
 } from "@renderer/hooks/session-context-chips"
+import { useComposerActiveModelLabel } from "@renderer/components/ai-chat/agent-picker/use-composer-active-model"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type {
@@ -24,6 +25,7 @@ import { useSessionCompaction } from "./compact-session/use-session-compaction"
 
 export function useContextInspectorData(workspaceId: string | null) {
   const slice = useInspectorChatSlice()
+  const activeModelLabel = useComposerActiveModelLabel()
   const chips = useSyncExternalStore(
     subscribeSessionContextChips,
     listSessionContextChips,
@@ -52,7 +54,7 @@ export function useContextInspectorData(workspaceId: string | null) {
     compaction,
     contextWindow,
     modelId: slice.modelId,
-    modelLabel: slice.modelLabel,
+    modelLabel: activeModelLabel,
     mode: slice.mode,
     messages: slice.messages,
     running: slice.running,
@@ -70,7 +72,6 @@ export function useContextInspectorData(workspaceId: string | null) {
 function useInspectorChatSlice() {
   return {
     modelId: useChatStore((state) => state.modelId),
-    modelLabel: useChatStore((state) => state.modelLabel),
     models: useChatStore((state) => state.models),
     mode: useChatStore((state) => state.mode),
     messages: useChatStore((state) => state.messages),

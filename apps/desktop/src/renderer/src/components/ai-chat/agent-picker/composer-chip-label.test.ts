@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { composerChipParts, composerChipText } from "./composer-chip-label.ts"
+import { composerActiveModelLabel, composerChipParts, composerChipText } from "./composer-chip-label.ts"
 
 test("胶囊只有引擎 · 模型，供应商只进 title", () => {
   const parts = composerChipParts({
@@ -32,4 +32,31 @@ test("供应商不会变成胶囊第三段", () => {
   )
   assert.equal(text.split(" · ").length, 2)
   assert.ok(!text.includes("Anthropic"))
+})
+
+test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
+  const grok = composerActiveModelLabel({
+    runtimeId: "grok",
+    catalogLabel: "deepseek-v4-flash",
+    catalogId: "deepseek-v4-flash",
+    agent: {
+      label: "Grok Build",
+      selectedModel: "grok-4.6",
+      models: [{ id: "grok-4.6", label: "grok-4.6" }]
+    }
+  })
+  assert.equal(grok, "grok-4.6")
+  const local = composerActiveModelLabel({
+    runtimeId: "enjoy-local",
+    catalogLabel: "deepseek-v4-flash",
+    catalogId: "ds"
+  })
+  assert.equal(local, "deepseek-v4-flash")
+  const fallback = composerActiveModelLabel({
+    runtimeId: "grok",
+    catalogLabel: "deepseek-v4-flash",
+    catalogId: "ds",
+    agent: { label: "Grok Build", models: [] }
+  })
+  assert.equal(fallback, "Grok Build")
 })

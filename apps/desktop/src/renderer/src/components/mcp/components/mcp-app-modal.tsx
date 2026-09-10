@@ -20,8 +20,6 @@ export function McpAppModal(props: {
   const { open, onOpenChange, appTitle, appSrcDoc, lastLog, onAppMessage, onRefreshApp } = props
   const t = useT()
 
-  if (!appSrcDoc) return null
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden rounded-3xl border-border-button-default bg-background-primary-default shadow-2xl">
@@ -56,7 +54,13 @@ export function McpAppModal(props: {
 
         {/* 主体 iframe 区域 */}
         <div className="p-6 bg-background-secondary-default/30 flex flex-col gap-4">
-          <McpAppFrame srcDoc={appSrcDoc} title={appTitle} onAppMessage={onAppMessage} />
+          {appSrcDoc ? (
+            <McpAppFrame srcDoc={appSrcDoc} title={appTitle} onAppMessage={onAppMessage} />
+          ) : (
+            <p className="rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 text-caption-1-medium text-text-secondary">
+              {t("pages.mcp.appUnavailable")}
+            </p>
+          )}
 
           {/* 实时 IPC 日志回显 */}
           <div className="flex items-center gap-2 rounded-2xl border border-separator-border/80 bg-background-primary-default p-3.5 shadow-xs">

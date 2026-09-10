@@ -14,6 +14,7 @@ import { SettingsShell } from "@renderer/components/settings/settings-shell"
 import { isSettingsSectionId } from "@renderer/components/settings/settings-catalog"
 import { isCustomizeSectionId } from "@renderer/components/customize/customize-page"
 import { KnowledgePage } from "@renderer/components/knowledge/knowledge-page"
+import { parseKnowledgeSearch } from "@renderer/components/knowledge/lib/knowledge-route-search"
 import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
 import { MediaPage } from "@renderer/components/media/media-page"
 import { McpPage } from "@renderer/components/mcp/mcp-page"
@@ -105,6 +106,7 @@ const settingsSectionRoute = createRoute({
 const knowledgeRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/knowledge",
+  validateSearch: (search: Record<string, unknown>) => parseKnowledgeSearch(search),
   component: KnowledgePage
 })
 

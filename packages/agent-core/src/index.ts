@@ -89,8 +89,14 @@ export { summarizeSubagent, type SubagentSummary } from "./agents/subagent";
 export { createDelegateTool, runReadOnlySubagent, runDelegatedSubagent } from "./agents/delegate";
 export { runApprovedSubagent } from "./agents/subagent-loop";
 export { createSubagentApproval, type WaitForSubagentApproval } from "./agents/subagent-approval";
+export type { SubagentToolTraceEvent } from "./agents/subagent-tool-trace";
 export { createReadTools, READ_TOOL_NAMES } from "./tools/read-tools";
 export { CODING_TOOL_NAMES, codingToolNamesFor, isReadOnlyAgentMode } from "./tools/coding-tool-names";
+export {
+  clampGitLogLimit,
+  GIT_LOG_DEFAULT_LIMIT,
+  GIT_LOG_MAX_LIMIT
+} from "./tools/git-log-limit";
 export { isExperimentalMedia, EXPERIMENTAL_MEDIA } from "./media/capabilities";
 export {
   generateImageBytes,

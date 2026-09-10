@@ -9,6 +9,7 @@ import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
 import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
+import { prefixHostModeForSend } from "./runtime-interact/composer-draft"
 
 export async function continueTodoTurn(): Promise<void> {
   const store = useChatStore.getState()
@@ -42,7 +43,7 @@ async function startContinueRun(
       content: message.content,
       reasoning: message.reasoning
     })),
-    { role: "user" as const, content: TODO_CONTINUE_PROMPT }
+    { role: "user" as const, content: prefixHostModeForSend(TODO_CONTINUE_PROMPT) }
   ]
   try {
     const result = (await getIde().agent.run({

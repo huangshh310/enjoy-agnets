@@ -14,6 +14,7 @@ export function KnowledgeRetrievalStage({
   setRerank,
   hits,
   recent,
+  focusChunkId,
   isSearching,
   hasSearched,
   totalChunks,
@@ -35,6 +36,7 @@ export function KnowledgeRetrievalStage({
   setRerank: (fn: (prev: boolean) => boolean) => void
   hits: KnowledgeHit[]
   recent: KnowledgeHit[]
+  focusChunkId?: string | null
   isSearching: boolean
   hasSearched: boolean
   totalChunks: number
@@ -87,6 +89,7 @@ export function KnowledgeRetrievalStage({
           hasSearched={hasSearched}
           hits={hits}
           recent={recent}
+          focusChunkId={focusChunkId}
           totalChunks={totalChunks}
           workspaceDirs={workspaceDirs}
           indexing={indexing}

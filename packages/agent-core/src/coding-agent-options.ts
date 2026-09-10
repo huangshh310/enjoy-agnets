@@ -4,6 +4,7 @@
 import type { LanguageModel, ModelMessage } from "ai"
 import type { AgentMode, ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import type { WaitForSubagentApproval } from "./agents/subagent-approval.ts"
+import type { SubagentToolTraceEvent } from "./agents/subagent-tool-trace.ts"
 import type { AgentRuntimeContext } from "./runtime-context.ts"
 import type { ApprovalPolicy } from "./tool-approval.ts"
 
@@ -19,6 +20,7 @@ export type CodingAgentOptions = {
   providerOptions?: AgentProviderOptions
   extraTools?: Record<string, object>
   waitForSubagentApproval?: WaitForSubagentApproval
+  onSubagentToolEvent?: (event: SubagentToolTraceEvent) => void
   maxSteps?: number
   stopAfterTools?: string[]
   stepTimeoutMs?: number

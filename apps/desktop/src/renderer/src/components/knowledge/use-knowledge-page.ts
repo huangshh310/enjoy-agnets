@@ -1,8 +1,8 @@
 /**
- * 知识页状态：来源、文档、索引、检索。透镜范围在前端收窄命中。
+ * 知识页状态：来源、文档、检索。透镜范围在前端收窄命中。
  */
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { RiFolderLine, RiStackLine } from "@remixicon/react"
 import type {
   KnowledgeDocumentItem,
@@ -13,15 +13,10 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { addSessionContextChip } from "@renderer/hooks/session-context-chips"
-
-import { deriveKnowledgeStats, knowledgeActionErrorKey } from "./lib/derive-knowledge-stats"
+import { useKnowledgeCiteFromRoute } from "./hooks/use-knowledge-cite-from-route"
+import { useKnowledgeSourceMutations } from "./hooks/use-knowledge-source-mutations"
+import { deriveKnowledgeStats } from "./lib/derive-knowledge-stats"
 import { filterKnowledgeHits, resolveEnabledSourceIds } from "./lib/filter-knowledge-hits"
-import {
-  addAndIndexSource,
-  rebuildSourceIndex,
-  saveSourcePathAndReindex
-} from "./lib/knowledge-source-commands"
-import { findSourceIdByPath } from "./lib/knowledge-source-resolve"
 import { mergeRecentHits } from "./lib/merge-recent-hits"
 import type { KnowledgeLens } from "./types/knowledge-ui.types"
 
@@ -31,18 +26,13 @@ function defaultLensKey(workspaceId: string): string {
 
 export function useKnowledgePage() {
   const t = useT()
-  const queryClient = useQueryClient()
   const workspaceId = useChatStore((state) => state.workspaceId)
 
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingSource, setEditingSource] = useState<KnowledgeSource | null>(null)
-  const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [isIndexDrawerOpen, setIsIndexDrawerOpen] = useState(false)
-  const [indexingSourceId, setIndexingSourceId] = useState<string | null>(null)
-  const [isAdding, setIsAdding] = useState(false)
-  const [actionError, setActionError] = useState<string | null>(null)
   const [previewingDoc, setPreviewingDoc] = useState<KnowledgeDocumentItem | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -68,14 +58,11 @@ export function useKnowledgePage() {
   const sources = sourcesQuery.data ?? []
 
   const documentsQuery = useQuery({
-    queryKey: ["knowledge-documents", workspaceId, indexingSourceId],
+    queryKey: ["knowledge-documents", workspaceId],
     enabled: hasIde() && Boolean(workspaceId),
     queryFn: () =>
       getIde().knowledge.documents({ workspaceId: workspaceId! }) as Promise<KnowledgeDocumentItem[]>,
-    refetchInterval: () => {
-      if (indexingSourceId) return 1500
-      return sourcesQuery.data?.some((s) => s.status === "indexing") ? 1500 : false
-    }
+    refetchInterval: () => (sourcesQuery.data?.some((s) => s.status === "indexing") ? 1500 : false)
   })
   const documents = documentsQuery.data ?? []
   const documentsError = documentsQuery.error ? t("pages.knowledge.couldNotList") : null
@@ -147,118 +134,15 @@ export function useKnowledgePage() {
     ]
     return [{ id: "collections", label: t("pages.knowledge.navCollections"), items: folderItems }]
   }, [stats.askableChunks, sources, t])
-  function rememberError(error: unknown) {
-    const key = knowledgeActionErrorKey(error)
-    if (key === "pathNotFound") {
-      setActionError(null)
-      return
-    }
-    setActionError(t(`pages.knowledge.${key}`))
-  }
 
-  async function refresh() {
-    await queryClient.invalidateQueries({ queryKey: ["knowledge", workspaceId] })
-    await queryClient.invalidateQueries({ queryKey: ["knowledge-documents", workspaceId] })
-  }
-
-  function setDefaultLens(id: string) {
-    setDefaultLensIdState(id)
-    if (workspaceId) localStorage.setItem(defaultLensKey(workspaceId), id)
-  }
-
-  function toggleLens(id: string) {
-    setDisabledLensIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-  async function handleIndexFolder(targetPath: string, existingSourceId?: string) {
-    if (!workspaceId) return
-    const sourceId = existingSourceId ?? findSourceIdByPath(sources, targetPath)
-    if (stats.unavailable.some((item) => item.path === targetPath)) {
-      throw new Error("Path not found in workspace")
-    }
-    setActionError(null)
-    try {
-      if (sourceId) {
-        setIndexingSourceId(sourceId)
-        await rebuildSourceIndex(sourceId)
-      } else {
-        setIsAdding(true)
-        const createdId = await addAndIndexSource(workspaceId, targetPath)
-        setIndexingSourceId(createdId)
-      }
-    } catch (error) {
-      rememberError(error)
-      throw error
-    } finally {
-      setIsAdding(false)
-      setIndexingSourceId(null)
-      await refresh()
-    }
-  }
-
-  async function handleIndexCurrentLens() {
-    try {
-      if (selectedFolder) {
-        await handleIndexFolder(selectedFolder, findSourceIdByPath(sources, selectedFolder))
-        return
-      }
-      const usable = sources.filter((source) => source.status !== "error" && !source.error)
-      if (usable.length === 0) {
-        setIsAddModalOpen(true)
-        return
-      }
-      for (const source of usable) {
-        await handleRebuildIndex(source.id)
-      }
-    } catch {
-      // 横幅 / 健康卡已更新
-    }
-  }
-
-  async function handleRebuildIndex(sourceId: string) {
-    setActionError(null)
-    setIndexingSourceId(sourceId)
-    try {
-      await rebuildSourceIndex(sourceId)
-    } catch (error) {
-      rememberError(error)
-    } finally {
-      setIndexingSourceId(null)
-      await refresh()
-    }
-  }
-
-  async function handleRemoveSource(sourceId: string) {
-    await getIde().knowledge.remove(sourceId)
-    await refresh()
-  }
-
-  async function handleSaveAndReindexSource(oldSourceId: string, newPath: string) {
-    if (!workspaceId || !newPath.trim()) return
-    const current = sources.find((source) => source.id === oldSourceId)
-    setActionError(null)
-    setIsSavingEdit(true)
-    try {
-      const sourceId = await saveSourcePathAndReindex({
-        workspaceId,
-        oldSourceId,
-        newPath,
-        currentPath: current?.path
-      })
-      setIndexingSourceId(sourceId)
-    } catch (error) {
-      rememberError(error)
-    } finally {
-      setIsSavingEdit(false)
-      setIndexingSourceId(null)
-      setEditingSource(null)
-      await refresh()
-    }
-  }
+  const mutations = useKnowledgeSourceMutations({
+    workspaceId,
+    sources,
+    selectedFolder,
+    stats,
+    t,
+    onNeedAdd: () => setIsAddModalOpen(true)
+  })
 
   async function runSearch(
     nextQuery: string,
@@ -273,15 +157,32 @@ export function useKnowledgePage() {
         workspaceId,
         query: nextQuery.trim(),
         limit: 10,
-        rerank
-      })) as KnowledgeHit[]
-      const filtered = filterKnowledgeHits(result, { enabledSourceIds: sourceIds, selectedPath: folder })
+        rerank,
+        sourceIds: sourceIds.length ? [...sourceIds] : undefined
+      })) as { hits: KnowledgeHit[]; embeddingKind?: KnowledgeHit["embeddingKind"] } | KnowledgeHit[]
+      const nextHits = Array.isArray(result) ? result : result.hits
+      const filtered = filterKnowledgeHits(nextHits, {
+        enabledSourceIds: sourceIds,
+        selectedPath: folder
+      })
       setHits(filtered)
       setRecentCitations((prev) => mergeRecentHits(filtered, prev))
     } finally {
       setIsSearching(false)
     }
   }
+
+  const cite = useKnowledgeCiteFromRoute({
+    workspaceId,
+    documents,
+    documentsReady: documentsQuery.isFetched || !workspaceId,
+    hits,
+    enabledSourceIds,
+    setSelectedFolder,
+    setQuery,
+    setCitedPaths,
+    runSearch
+  })
 
   async function handleSearch() {
     await runSearch(query)
@@ -296,6 +197,7 @@ export function useKnowledgePage() {
     setIsIndexDrawerOpen(false)
     void runSearch(name, folder, resolveEnabledSourceIds(lenses, folder))
   }
+
   function handlePinToChat(hit: KnowledgeHit) {
     const parts = hit.path.replaceAll("\\", "/").split("/")
     addSessionContextChip({
@@ -314,6 +216,20 @@ export function useKnowledgePage() {
     setIsPreviewOpen(true)
   }
 
+  function setDefaultLens(id: string) {
+    setDefaultLensIdState(id)
+    if (workspaceId) localStorage.setItem(defaultLensKey(workspaceId), id)
+  }
+
+  function toggleLens(id: string) {
+    setDisabledLensIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   return {
     selectedFolder,
     setSelectedFolder,
@@ -323,12 +239,12 @@ export function useKnowledgePage() {
     setIsEditModalOpen,
     editingSource,
     setEditingSource,
-    isSavingEdit,
+    isSavingEdit: mutations.isSavingEdit,
     isIndexDrawerOpen,
     setIsIndexDrawerOpen,
-    indexingSourceId,
-    isAdding,
-    actionError,
+    indexingSourceId: mutations.indexingSourceId,
+    isAdding: mutations.isAdding,
+    actionError: mutations.actionError,
     previewingDoc,
     setPreviewingDoc,
     isPreviewOpen,
@@ -338,6 +254,7 @@ export function useKnowledgePage() {
     hits,
     recentCitations,
     citedPaths,
+    focusChunkId: cite.focusChunkId,
     rerank,
     setRerank,
     isSearching,
@@ -354,11 +271,11 @@ export function useKnowledgePage() {
     enabledSourceIds,
     toggleLens,
     setDefaultLens,
-    handleIndexFolder,
-    handleIndexCurrentLens,
-    handleRebuildIndex,
-    handleRemoveSource,
-    handleSaveAndReindexSource,
+    handleIndexFolder: mutations.handleIndexFolder,
+    handleIndexCurrentLens: mutations.handleIndexCurrentLens,
+    handleRebuildIndex: mutations.handleRebuildIndex,
+    handleRemoveSource: mutations.handleRemoveSource,
+    handleSaveAndReindexSource: mutations.handleSaveAndReindexSource,
     handleSearch,
     handleQuickSearchSource,
     handlePinToChat,

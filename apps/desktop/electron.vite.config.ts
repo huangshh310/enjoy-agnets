@@ -61,6 +61,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/custom-agent.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/workspace-move-plan",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-move-plan.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -94,6 +98,10 @@ export default defineConfig({
         {
           find: /^@enjoy-agents\/ui$/,
           replacement: resolve(uiRoot, "src/index.ts")
+        },
+        {
+          find: /^@enjoy-agents\/editor$/,
+          replacement: resolve(repoRoot, "packages/editor/src/index.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/runtime-capabilities",

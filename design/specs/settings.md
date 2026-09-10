@@ -17,7 +17,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/skills` |
 | `#/settings/team` `#/settings/members` | 团队资料 / 成员 | 旧 `#/team/*` redirect |
 | `#/settings/billing` `#/settings/organization` `#/settings/integrations` | 账单 / 组织 / 企业集成 | 旧 `#/company/*` redirect |
-| `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect |
+| `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect。通知偏好走 `preferences` + 主进程 `Notification`。个人资料（名/邮箱/头衔/封面/Blobatar）走 `settings.setPreferences.accountProfile`，进本机 `preferences` JSON；旧 `localStorage` `enjoy:account-profile` 只迁移一次。不是云账号 |
 | `#/settings/workspace` | 工作区管理（含已挂载目录列表） | 旧 `#/workspaces` redirect |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
@@ -31,7 +31,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，编辑走 Dialog 四页签（Connection / Models / Parameters / Overrides），不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。
 
 `#/skills` 是唯一 Skills 工作模块（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。`#/settings/agent?tab=defaults` 另有一行**可选拉取**卡片（`SettingsSkillSources`），只调用 `skills.sources.updateAll`，不复制整页 Skills UI。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。M6 可选更新：无 Git 源则**不渲染**更新按钮；点了才快进，不自动同步。空会话禁止挂更新条。
-Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。界面语言默认 `zh`，见 [i18n](./i18n.md)。
+Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。`automations.run` 用当前会话 `agent.run`；Agent 写盘或 Files 保存（带 sessionId）会触发已启用的 `on_save`。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。
 
 个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式：
 - 顶部 Hero 卡片集成 [Canvas UI](https://canvasui.dev/) 官方 WebGL 着色器动态封面，仅四套：代码雨（`GlyphRain`）、悬浮六角棱镜（`HexFloat`）、复古点阵（`RetroDither`）、冰晶融冻（`Frost`），右上角切换；叠层 [blobatar.dev](https://blobatar.dev/) 的 `BlobatarAvatar`（确定性哈希五官、表情、0~360° 色相、呼吸微动）；Share 复制姓名+handle，Edit 打开资料弹窗。
@@ -75,6 +75,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。
+- 个人资料不要只写 renderer `localStorage`：刷新能活但换 userData / 主进程看不到。权威在 `preferences.accountProfile`；旧 key 迁完即删。
 - `canvasui/` 是官方着色器 vendored 副本（单文件远超 300 行），不要拆 GLSL/WebGL 一体着色器。产品封面只接线四套，不要再挂 Unsplash 伪晶体预设。
 - 设置壳 `hideChrome` 对全部 Settings 分段生效：各页自带 `h1` 或 Hero，禁止再叠「团队资料」铬条。
 - Providers 自带标题与分段控件。`SettingsSectionPage` 不要再叠一层 `h1`，否则出现两个「模型供应商」。空态虚线框必须 `flex-1`，不要按内容收在卡片上半截。

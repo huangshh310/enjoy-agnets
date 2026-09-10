@@ -16,6 +16,7 @@
       "@/*": ["../../packages/ui/*"],
       "@renderer/*": ["src/renderer/src/*"],
       "@enjoy-agents/ui": ["../../packages/ui/src/index.ts"],
+      "@enjoy-agents/editor": ["../../packages/editor/src/index.ts"],
       "@enjoy-agents/agent-core": ["../../packages/agent-core/src/index.ts"],
       "@enjoy-agents/agent-core/diff": ["../../packages/agent-core/src/diff.ts"],
       "@enjoy-agents/providers/presets": ["../../packages/providers/src/presets.ts"],

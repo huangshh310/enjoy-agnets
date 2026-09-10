@@ -89,6 +89,9 @@ catalog:
   # Editor / workspace
   monaco-editor: ^0.56.0
   "@monaco-editor/react": ^4.7.0
+  node-pty: ^1.0.0
+  "@xterm/xterm": ^5.5.0
+  "@xterm/addon-fit": ^0.10.0
   "@vitejs/plugin-react": ^5.1.1
   chokidar: ^4.0.3
   simple-git: ^3.28.0
@@ -113,6 +116,7 @@ allowBuilds:
   esbuild: true
   node-liblzma: true
   protobufjs: true
+  node-pty: true
 
 minimumReleaseAgeExclude:
   - '@ai-sdk/gateway@4.0.69'

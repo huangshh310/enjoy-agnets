@@ -26,6 +26,8 @@ test("只读工具不走审批", () => {
   assert.equal(resolveToolApproval("read_file", "agent", REQUIRE_ALL), "not-applicable")
   assert.equal(resolveToolApproval("grep", "agent", REQUIRE_ALL), "not-applicable")
   assert.equal(resolveToolApproval("git_status", "agent", REQUIRE_ALL), "not-applicable")
+  assert.equal(resolveToolApproval("git_log", "agent", REQUIRE_ALL), "not-applicable")
+  assert.equal(resolveToolApproval("git_log", "plan", REQUIRE_ALL), "not-applicable")
 })
 
 test("ask_user_questions 在 plan/ask 也要停车，不因只读被拒", () => {
@@ -59,6 +61,7 @@ test("三项全开：突变工具全部 user-approval", () => {
   assert.equal(resolveToolApproval("write", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("edit", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("git_commit", "agent", REQUIRE_ALL), "user-approval")
+  assert.equal(resolveToolApproval("git_push", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("bash", "agent", REQUIRE_ALL), "user-approval")
 })
 
@@ -67,12 +70,14 @@ test("Edits 预设：自动写盘，仍审命令和提交", () => {
   assert.equal(resolveToolApproval("edit_file", "agent", EDITS), "approved")
   assert.equal(resolveToolApproval("write", "agent", EDITS), "approved")
   assert.equal(resolveToolApproval("git_commit", "agent", EDITS), "user-approval")
+  assert.equal(resolveToolApproval("git_push", "agent", EDITS), "user-approval")
   assert.equal(resolveToolApproval("bash", "agent", EDITS), "user-approval")
 })
 
-test("关闭提交确认后只有 git_commit 自动批准", () => {
+test("关闭提交确认后 git_commit / git_push 自动批准", () => {
   const policy = { ...REQUIRE_ALL, requireCommitApproval: false }
   assert.equal(resolveToolApproval("git_commit", "agent", policy), "approved")
+  assert.equal(resolveToolApproval("git_push", "agent", policy), "approved")
   assert.equal(resolveToolApproval("write_file", "agent", policy), "user-approval")
 })
 
@@ -119,6 +124,7 @@ test("Harness settings：allow-reads / allow-edits；All 降为 allow-edits", ()
   const reads = toHarnessApprovalSettings("agent", REQUIRE_ALL)
   assert.equal(reads.permissionMode, "allow-reads")
   assert.equal(reads.toolApproval.read_file, "not-applicable")
+  assert.equal(reads.toolApproval.git_log, "not-applicable")
   assert.equal(reads.toolApproval.write_file, "user-approval")
   assert.equal(reads.toolApproval.write, "user-approval")
   assert.equal(reads.toolApproval.edit, "user-approval")

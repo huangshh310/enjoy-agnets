@@ -82,6 +82,16 @@ export const McpOpenAppInput = z
   .strict()
 export type McpOpenAppInput = z.infer<typeof McpOpenAppInput>
 
+/** 读不到 Server HTML 时 srcDoc 为空，UI 不得画假 App。 */
+export const McpOpenAppResult = z.object({
+  srcDoc: z.string().nullable(),
+  available: z.boolean(),
+  demo: z.boolean(),
+  title: z.string(),
+  allowedResourceUris: z.array(z.string())
+})
+export type McpOpenAppResult = z.infer<typeof McpOpenAppResult>
+
 export const McpAppMessageInput = z
   .object({
     id: z.string().min(1),

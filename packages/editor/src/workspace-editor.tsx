@@ -1,4 +1,11 @@
-import Editor from "@monaco-editor/react";
+/**
+ * 工作区 Monaco：用本地 monaco-editor，不走 CDN。
+ */
+import { useEffect } from "react"
+import Editor, { loader } from "@monaco-editor/react"
+import * as monaco from "monaco-editor"
+
+loader.config({ monaco })
 
 export function WorkspaceEditor({
   path,
@@ -6,12 +13,15 @@ export function WorkspaceEditor({
   onChange,
   theme = "vs"
 }: {
-  path: string;
-  value: string;
-  onChange?: (value: string | undefined) => void;
-  theme?: "vs" | "vs-dark";
+  path: string
+  value: string
+  onChange?: (value: string | undefined) => void
+  theme?: "vs" | "vs-dark"
 }) {
-  const language = languageFromPath(path);
+  useEffect(() => {
+    loader.config({ monaco })
+  }, [])
+  const language = languageFromPath(path)
   return (
     <Editor
       height="100%"
@@ -30,31 +40,29 @@ export function WorkspaceEditor({
         smoothScrolling: true
       }}
     />
-  );
+  )
 }
 
 function languageFromPath(filePath: string): string {
-  const extension = filePath.split(".").pop()?.toLowerCase();
+  const extension = filePath.split(".").pop()?.toLowerCase()
   switch (extension) {
     case "ts":
-      return "typescript";
     case "tsx":
-      return "typescript";
+      return "typescript"
     case "js":
-      return "javascript";
     case "jsx":
-      return "javascript";
+      return "javascript"
     case "json":
-      return "json";
+      return "json"
     case "css":
-      return "css";
+      return "css"
     case "md":
-      return "markdown";
+      return "markdown"
     case "html":
-      return "html";
+      return "html"
     case "py":
-      return "python";
+      return "python"
     default:
-      return "plaintext";
+      return "plaintext"
   }
 }

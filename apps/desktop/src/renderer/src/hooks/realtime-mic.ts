@@ -31,7 +31,8 @@ export async function toggleRealtimeMic() {
     sessionId: store.sessionId,
     modelId: store.modelId,
     providerId: store.provider ?? undefined
-  })) as { runId: string }
+  })) as { runId: string; transport?: string }
+  if (opened.transport === "loop") return
   activeRunId = opened.runId
   unsub = getIde().agent.onEvent((raw) => {
     const parsed = StreamEvent.safeParse(raw)

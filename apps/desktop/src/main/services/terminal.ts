@@ -1,60 +1,68 @@
 /**
- * 工作区交互 shell：每个会话一个子进程，stdout/stderr 推回窗口。
- * 先用 spawn，不绑 node-pty，避免 Windows 原生编译。
+ * 工作区交互 shell：node-pty，原始按键进 PTY，不做按行回车。
  */
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process"
+import * as pty from "node-pty"
+import type { IPty } from "node-pty"
 import type { WebContents } from "electron"
 import { createId } from "./ids"
 import { getWorkspace } from "./workspace"
 
 type LiveSession = {
-  child: ChildProcessWithoutNullStreams
+  pty: IPty
   sender: WebContents
 }
 
 const sessions = new Map<string, LiveSession>()
 
-export async function openWorkspaceTerminal(workspaceId: string, sender: WebContents) {
+export async function openWorkspaceTerminal(
+  workspaceId: string,
+  sender: WebContents,
+  size?: { cols?: number; rows?: number }
+) {
   const workspace = await getWorkspace(workspaceId)
   const sessionId = createId("term")
   const { command, args } = shellCommand()
-  const child = spawn(command, args, {
+  const child = pty.spawn(command, args, {
+    name: "xterm-256color",
+    cols: size?.cols ?? 80,
+    rows: size?.rows ?? 24,
     cwd: workspace.rootPath,
-    env: process.env,
-    windowsHide: true
+    env: process.env as Record<string, string>
   })
-  child.stdout.on("data", (chunk: Buffer) => pushData(sender, sessionId, chunk))
-  child.stderr.on("data", (chunk: Buffer) => pushData(sender, sessionId, chunk))
-  child.on("exit", () => {
+  child.onData((text) => {
+    if (sender.isDestroyed()) return
+    sender.send("terminal.data", { sessionId, text })
+  })
+  child.onExit(() => {
     sessions.delete(sessionId)
     if (!sender.isDestroyed()) sender.send("terminal.exit", { sessionId })
   })
-  sessions.set(sessionId, { child, sender })
+  sessions.set(sessionId, { pty: child, sender })
   return { sessionId }
 }
 
 export function writeWorkspaceTerminal(sessionId: string, data: string) {
   const live = sessions.get(sessionId)
   if (!live) throw new Error("Terminal session is not running.")
-  const payload = data.endsWith("\n") ? data : `${data}\n`
-  live.child.stdin.write(process.platform === "win32" ? payload.replace(/\n/g, "\r\n") : payload)
+  live.pty.write(data)
+}
+
+export function resizeWorkspaceTerminal(sessionId: string, cols: number, rows: number) {
+  const live = sessions.get(sessionId)
+  if (!live) return
+  live.pty.resize(cols, rows)
 }
 
 export function closeWorkspaceTerminal(sessionId: string) {
   const live = sessions.get(sessionId)
   if (!live) return
-  live.child.kill()
+  live.pty.kill()
   sessions.delete(sessionId)
-}
-
-function pushData(sender: WebContents, sessionId: string, chunk: Buffer) {
-  if (sender.isDestroyed()) return
-  sender.send("terminal.data", { sessionId, text: chunk.toString() })
 }
 
 function shellCommand() {
   if (process.platform === "win32") {
-    return { command: "powershell.exe", args: ["-NoLogo", "-NoExit"] }
+    return { command: "powershell.exe", args: ["-NoLogo"] }
   }
   return { command: process.env.SHELL || "/bin/bash", args: ["-l"] }
 }

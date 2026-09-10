@@ -57,4 +57,5 @@ export interface AgentStepNode {
   actionVerb?: string
   isBatch?: boolean
   batchItems?: BatchFileItem[]
+  children?: AgentStepNode[]
 }

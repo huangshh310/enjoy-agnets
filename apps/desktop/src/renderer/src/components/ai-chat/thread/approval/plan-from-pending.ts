@@ -8,13 +8,20 @@ export function planFromPending(
   name: string,
   args: Record<string, unknown>,
   untitled: string,
-  verbs: { write: string; edit: string; commit: string }
+  verbs: { write: string; edit: string; commit: string; push: string }
 ): { headline: string; steps: ApprovalPlanStep[]; showDiff: boolean } {
   if (name === "git_commit") {
     const message = readArg(args, "message") || untitled
     return {
       headline: message,
       steps: [{ id: "commit", title: verbs.commit, detail: message }],
+      showDiff: false
+    }
+  }
+  if (name === "git_push") {
+    return {
+      headline: verbs.push,
+      steps: [{ id: "push", title: verbs.push, detail: untitled }],
       showDiff: false
     }
   }

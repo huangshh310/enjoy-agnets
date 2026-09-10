@@ -520,16 +520,17 @@ export const zhSettings = {
     deletions: "删除行",
     prefs: "提交与安全偏好",
     requireApproval: "提交需审批",
-    requireApprovalDesc: "在工作区执行 git_commit 前暂停并确认。",
+    requireApprovalDesc: "在工作区执行 git_commit 或 git_push 前暂停并确认。",
     conventional: "Conventional Commit 格式",
     conventionalDesc: "指示编码 Agent 使用 feat:、fix:、refactor:、chore: 前缀撰写提交说明。",
+    conventionalHint: "Review 底栏可生成说明，不是强制规范。",
     activeStandard: "现行标准"
   },
 
   workflow: {
     hubTitle: "持久化工作流引擎",
     hubBadge: "SQLite 检查点",
-    hubDesc: "执行多步 Plan → Act → Verify DAG，支持步骤级回滚与检查点恢复。",
+    hubDesc: "每一步都会跑同一条 Agent 循环（审批与工具都走主循环），检查点写在 SQLite。",
     openStudio: "打开工作流工作室",
     policies: "检查点与恢复策略",
     resume: "启动时续跑",

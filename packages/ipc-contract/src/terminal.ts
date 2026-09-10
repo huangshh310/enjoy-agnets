@@ -19,6 +19,15 @@ export const TerminalCloseInput = z.object({
 })
 export type TerminalCloseInput = z.infer<typeof TerminalCloseInput>
 
+export const TerminalResizeInput = z
+  .object({
+    sessionId: z.string().min(1),
+    cols: z.number().int().min(2).max(400),
+    rows: z.number().int().min(2).max(200)
+  })
+  .strict()
+export type TerminalResizeInput = z.infer<typeof TerminalResizeInput>
+
 export const TerminalSession = z.object({
   sessionId: z.string()
 })

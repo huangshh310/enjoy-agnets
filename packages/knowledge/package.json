@@ -8,7 +8,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/sources/ignore.test.ts src/sources/collect-files.test.ts src/indexer/chunk.test.ts src/indexer/stale.test.ts src/retriever/cosine.test.ts src/retriever/embed.test.ts src/retriever/rerank.test.ts src/retriever/provider-rerank.test.ts"
+    "test": "node --experimental-strip-types --test src/sources/ignore.test.ts src/sources/collect-files.test.ts src/indexer/chunk.test.ts src/indexer/stale.test.ts src/retriever/cosine.test.ts src/retriever/embed.test.ts src/retriever/rerank.test.ts src/retriever/provider-rerank.test.ts src/parsers/pdf-text.test.ts src/parsers/pdf-cmap.test.ts src/parsers/pdf-pnm.test.ts src/parsers/pdf-ocr.test.ts"
   },
   "dependencies": {
     "@enjoy-agents/db": "workspace:*",

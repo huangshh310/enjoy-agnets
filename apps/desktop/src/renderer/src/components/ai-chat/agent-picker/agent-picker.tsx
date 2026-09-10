@@ -21,8 +21,8 @@ import { AgentBrandIcon, isAgentToolId } from "./agent-brand-icon"
 import { AgentCliPane } from "./agent-cli-pane"
 import { AgentEngineRail } from "./agent-engine-rail"
 import { UsagePill } from "../usage/usage-pill"
-import { cliModelLabel, composerRailSections } from "./composer-agents"
-import { composerChipParts } from "./composer-chip-label"
+import { composerRailSections } from "./composer-agents"
+import { composerActiveModelLabel, composerChipParts } from "./composer-chip-label"
 
 export function AgentPicker({
   modelId,
@@ -79,7 +79,12 @@ export function AgentPicker({
     pendingTo?.label ??
     (pendingToId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (pendingToId ?? ""))
   const pickerLocked = !canOpenAgentPicker(handoffPhase)
-  const activeModelDisplay = runtimeId === DEFAULT_RUNTIME_ID ? (modelLabel || modelId) : cliModelLabel(current)
+  const activeModelDisplay = composerActiveModelLabel({
+    runtimeId,
+    catalogLabel: modelLabel,
+    catalogId: modelId,
+    agent: current
+  })
   const providerLabel =
     runtimeId === DEFAULT_RUNTIME_ID
       ? models.find((item) => item.id === modelId)?.providerName

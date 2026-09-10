@@ -1,48 +1,69 @@
 /**
- * Knowledge 检索：向量优先，空结果回落词袋；可选 rerank。
+ * Knowledge 检索：向量优先，空结果回落词袋；可选 rerank 与来源过滤。
  */
 import { listChunkEmbeddings, listSources } from "@enjoy-agents/db"
 import { fallbackLocalRerank, lexicalScore, rerankWithProvider } from "@enjoy-agents/knowledge"
+import type { KnowledgeEmbeddingKind, KnowledgeHit } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { queryVector, resolveRerankModel, scoreEmbedded } from "./knowledge-embed"
 
-type SearchHit = {
-  chunkId: string
-  sourceId: string
-  path: string
-  startLine?: number
-  endLine?: number
-  snippet: string
-  score: number
+export type SearchKnowledgeResult = {
+  hits: KnowledgeHit[]
+  embeddingKind: KnowledgeEmbeddingKind
 }
 
 export async function searchKnowledge(
   workspaceId: string,
   query: string,
   limit: number,
-  rerank = false
-) {
+  rerank = false,
+  sourceIds?: string[]
+): Promise<SearchKnowledgeResult> {
   const embedded = listChunkEmbeddings(getDatabase(), workspaceId)
+  const modelId = embedded[0]?.modelId
+  let embeddingKind: KnowledgeEmbeddingKind =
+    !modelId || modelId === "hashed" ? "hashed" : "provider"
   let hits =
     embedded.length > 0 ? await vectorHits(embedded, query, limit) : lexicalSearch(workspaceId, query, limit)
-  if (hits.length === 0) hits = lexicalSearch(workspaceId, query, limit)
-  if (!rerank) return hits.slice(0, limit)
+  if (embedded.length === 0) {
+    hits = lexicalSearch(workspaceId, query, limit)
+    embeddingKind = "lexical"
+  } else if (hits.length === 0) {
+    hits = lexicalSearch(workspaceId, query, limit)
+    embeddingKind = "lexical"
+  }
+  hits = filterSourceIds(hits, sourceIds)
+  if (!rerank) return stampKind({ hits: hits.slice(0, limit), embeddingKind })
   const withLexical = hits.map((hit) => ({ ...hit, lexical: lexicalScore(query, hit.snippet) }))
   const providerHits = await rerankWithProvider(await resolveRerankModel(), query, withLexical)
-  return (providerHits ?? fallbackLocalRerank(query, withLexical)).slice(0, limit)
+  const ranked = (providerHits ?? fallbackLocalRerank(query, withLexical)).slice(0, limit)
+  return stampKind({ hits: ranked, embeddingKind })
+}
+
+function stampKind(result: SearchKnowledgeResult): SearchKnowledgeResult {
+  return {
+    embeddingKind: result.embeddingKind,
+    hits: result.hits.map((hit) => ({ ...hit, embeddingKind: result.embeddingKind }))
+  }
+}
+
+function filterSourceIds(hits: KnowledgeHit[], sourceIds?: string[]): KnowledgeHit[] {
+  if (!sourceIds?.length) return hits
+  const allowed = new Set(sourceIds)
+  return hits.filter((hit) => allowed.has(hit.sourceId))
 }
 
 async function vectorHits(
   embedded: ReturnType<typeof listChunkEmbeddings>,
   query: string,
   limit: number
-): Promise<SearchHit[]> {
+): Promise<KnowledgeHit[]> {
   const queryVec = await queryVector(query, embedded[0]?.modelId ?? "hashed")
   if (!queryVec) return []
   return embedded
     .map((item) => ({
       chunkId: item.chunkId,
-      sourceId: "",
+      sourceId: item.sourceId,
       path: item.path,
       startLine: item.startLine ?? undefined,
       endLine: item.endLine ?? undefined,
@@ -53,8 +74,8 @@ async function vectorHits(
     .slice(0, limit)
 }
 
-function lexicalSearch(workspaceId: string, query: string, limit: number): SearchHit[] {
-  const hits: SearchHit[] = []
+function lexicalSearch(workspaceId: string, query: string, limit: number): KnowledgeHit[] {
+  const hits: KnowledgeHit[] = []
   for (const source of listSources(getDatabase(), workspaceId)) {
     const rows = getDatabase()
       .prepare(

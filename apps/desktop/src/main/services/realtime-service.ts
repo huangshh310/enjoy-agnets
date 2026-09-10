@@ -25,12 +25,19 @@ export async function openRealtime(window: BrowserWindow, raw: unknown) {
     session
   })
   if (mode === "loop") {
-    session.attach({
-      send: (payload) => {
-        stampAndSend(window, { type: "realtime.audio", runId, chunkBase64: payload }, input.sessionId)
+    session.close()
+    stampAndSend(
+      window,
+      {
+        type: "realtime.status",
+        runId,
+        status: "error",
+        message: "No remote Realtime session. Local echo is not a live model.",
+        experimental: true
       },
-      close: () => undefined
-    })
+      input.sessionId
+    )
+    return { runId, experimental: true, transport: "loop" as const }
   }
   sessions.set(runId, { sessionId: input.sessionId, session })
   stampAndSend(
@@ -39,15 +46,12 @@ export async function openRealtime(window: BrowserWindow, raw: unknown) {
       type: "realtime.status",
       runId,
       status: "open",
-      message:
-        mode === "ws"
-          ? "Realtime WebSocket opened in main. Experimental."
-          : "Realtime local loop in main. Experimental.",
+      message: "Realtime WebSocket opened in main. Experimental.",
       experimental: true
     },
     input.sessionId
   )
-  return { runId, experimental: true, transport: mode }
+  return { runId, experimental: true, transport: "ws" as const }
 }
 
 export function sendRealtimeAudio(window: BrowserWindow, raw: unknown) {

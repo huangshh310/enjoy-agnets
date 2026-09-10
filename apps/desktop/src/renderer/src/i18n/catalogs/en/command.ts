@@ -8,6 +8,7 @@ export const enCommand = {
   groupActions: "Actions",
   groupSettings: "Settings",
   groupRecent: "Recent Chat Sessions",
+  groupAcp: "Current engine commands",
   chat: "Chat",
   knowledge: "Knowledge & retrieval",
   studioHub: "Observability dashboard",

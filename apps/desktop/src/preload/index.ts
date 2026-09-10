@@ -11,6 +11,15 @@ const ide = {
     list: () => ipcRenderer.invoke("workspace.list"),
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
     readFile: (input: unknown) => ipcRenderer.invoke("workspace.readFile", input),
+    writeFile: (input: unknown) => ipcRenderer.invoke("workspace.writeFile", input),
+    move: (input: unknown) => ipcRenderer.invoke("workspace.move", input),
+    watch: (input: unknown) => ipcRenderer.invoke("workspace.watch", input),
+    onChanged: (callback: (event: { workspaceId: string; path: string }) => void) => {
+      const listener = (_event: unknown, payload: { workspaceId: string; path: string }) =>
+        callback(payload)
+      ipcRenderer.on("workspace.changed", listener)
+      return () => ipcRenderer.off("workspace.changed", listener)
+    },
     diff: (input: unknown) => ipcRenderer.invoke("workspace.diff", input),
     changes: (input: unknown) => ipcRenderer.invoke("workspace.changes", input),
     gitLog: (input: unknown) => ipcRenderer.invoke("workspace.gitLog", input),
@@ -87,7 +96,8 @@ const ide = {
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),
     upsert: (input: unknown) => ipcRenderer.invoke("automations.upsert", input),
-    remove: (input: unknown) => ipcRenderer.invoke("automations.remove", input)
+    remove: (input: unknown) => ipcRenderer.invoke("automations.remove", input),
+    run: (input: unknown) => ipcRenderer.invoke("automations.run", input)
   },
   models: {
     list: () => ipcRenderer.invoke("models.list")
@@ -96,6 +106,7 @@ const ide = {
     open: (input: unknown) =>
       ipcRenderer.invoke("terminal.open", input) as Promise<{ sessionId: string }>,
     write: (input: unknown) => ipcRenderer.invoke("terminal.write", input),
+    resize: (input: unknown) => ipcRenderer.invoke("terminal.resize", input),
     close: (input: unknown) => ipcRenderer.invoke("terminal.close", input),
     onData: (callback: (event: { sessionId: string; text: string }) => void) => {
       const listener = (_event: unknown, payload: { sessionId: string; text: string }) =>

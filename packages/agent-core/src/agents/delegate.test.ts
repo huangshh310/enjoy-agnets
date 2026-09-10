@@ -21,8 +21,12 @@ function host(): AgentWorkspaceHost {
     },
     gitStatus: async () => "",
     gitDiff: async () => "",
+    gitLog: async () => "",
     gitCommit: async () => {
       throw new Error("commit must not run")
+    },
+    gitPush: async () => {
+      throw new Error("push must not run")
     }
   }
 }

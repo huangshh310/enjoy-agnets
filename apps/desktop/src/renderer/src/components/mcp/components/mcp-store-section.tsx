@@ -1,6 +1,5 @@
 /**
- * MCP 精选插件市场 (Marketplace)：
- * 采用专业 IDE 风格，提供精简分类过滤、搜索、核心特性展示与一键安装 / 预填配置能力。
+ * MCP 本地预设：内置模板，不是远程目录。
  */
 import { useState } from "react"
 import {
@@ -42,6 +41,7 @@ export function McpStoreSection(props: {
 
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-4">
+      <p className="text-caption-2-regular text-text-tertiary">{t("pages.mcp.marketplaceLocalHint")}</p>
       {/* 紧凑分类筛选栏与搜索 */}
       <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         {/* 紧凑分类胶囊 */}

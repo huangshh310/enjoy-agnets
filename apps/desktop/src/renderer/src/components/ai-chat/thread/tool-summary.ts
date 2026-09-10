@@ -20,7 +20,9 @@ export function toolKind(name: string): "search" | "coding" | "other" {
     name === "read_file" ||
     name === "git_diff" ||
     name === "git_status" ||
-    name === "git_commit"
+    name === "git_log" ||
+    name === "git_commit" ||
+    name === "git_push"
   ) {
     return "coding"
   }

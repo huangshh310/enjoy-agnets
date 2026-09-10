@@ -1,26 +1,35 @@
 /**
- * 工作区目录树：筛选、逐级展开，以及全部展开 / 全部折叠。
+ * 工作区目录树：筛选、逐级展开，以及拖到文件夹里移动。
  */
-import { RiAddLine, RiArrowDownSLine, RiArrowRightSLine, RiSubtractLine } from "@remixicon/react"
+import { useState } from "react"
+import { RiAddLine, RiSubtractLine } from "@remixicon/react"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
-import { cx } from "@/utils/cx"
-import { PANE_FOCUS } from "../constants"
-import { FileKindIcon } from "../file-kind-icon"
 import type { DirEntry } from "./files-entries"
+import {
+  canDropOnEntry,
+  canDropOnRoot,
+  toDirForEntry,
+  type FilesDragPayload
+} from "./files-tree-dnd"
+import { FilesTreeRow } from "./files-tree-row"
 import { useFilesTree } from "./use-files-tree"
 import { useT } from "@renderer/i18n"
 
 export function FilesTree({
   workspaceId,
   selectedPath,
-  onSelectFile
+  onSelectFile,
+  onMove
 }: {
   workspaceId: string
   selectedPath: string | null
   onSelectFile: (path: string) => void
+  onMove: (from: string, toDir: string) => void
 }) {
   const tree = useFilesTree(workspaceId)
   const t = useT()
+  const [dragging, setDragging] = useState<FilesDragPayload | null>(null)
+  const rootDrop = dragging ? canDropOnRoot(dragging) : false
 
   return (
     <div className="flex h-full min-h-0 min-w-0 w-full flex-col">
@@ -44,7 +53,22 @@ export function FilesTree({
           onClick={tree.collapseAll}
         />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
+      <div
+        data-testid="files-tree-root"
+        className="min-h-0 flex-1 overflow-y-auto px-1 py-1"
+        onDragOver={(event) => {
+          if (!rootDrop) return
+          event.preventDefault()
+          event.dataTransfer.dropEffect = "move"
+        }}
+        onDrop={(event) => {
+          if (event.target !== event.currentTarget) return
+          if (!dragging || !rootDrop) return
+          event.preventDefault()
+          onMove(dragging.path, ".")
+          setDragging(null)
+        }}
+      >
         {tree.visible.map((entry) => (
           <TreeNode
             key={entry.path}
@@ -53,8 +77,12 @@ export function FilesTree({
             selectedPath={selectedPath}
             openPaths={tree.openPaths}
             childrenByPath={tree.childrenByPath}
+            dragging={dragging}
             onToggleDir={(path) => void tree.toggleDir(path)}
             onSelectFile={onSelectFile}
+            onDragStart={setDragging}
+            onDragEnd={() => setDragging(null)}
+            onMove={onMove}
           />
         ))}
       </div>
@@ -68,29 +96,46 @@ function TreeNode({
   selectedPath,
   openPaths,
   childrenByPath,
+  dragging,
   onToggleDir,
-  onSelectFile
+  onSelectFile,
+  onDragStart,
+  onDragEnd,
+  onMove
 }: {
   entry: DirEntry
   depth: number
   selectedPath: string | null
   openPaths: Set<string>
   childrenByPath: Record<string, DirEntry[]>
+  dragging: FilesDragPayload | null
   onToggleDir: (path: string) => void
   onSelectFile: (path: string) => void
+  onDragStart: (payload: FilesDragPayload) => void
+  onDragEnd: () => void
+  onMove: (from: string, toDir: string) => void
 }) {
   const isDir = entry.kind === "directory"
   const open = openPaths.has(entry.path)
   const children = childrenByPath[entry.path] ?? []
-
+  const droppable = dragging ? canDropOnEntry(dragging, entry) : false
   return (
     <div>
-      <TreeRow
+      <FilesTreeRow
         entry={entry}
         depth={depth}
         selected={selectedPath === entry.path}
         open={open}
+        droppable={droppable}
+        grabbing={dragging?.path === entry.path}
         onClick={() => (isDir ? onToggleDir(entry.path) : onSelectFile(entry.path))}
+        onDragStart={() => onDragStart({ path: entry.path, kind: entry.kind })}
+        onDragEnd={onDragEnd}
+        onDrop={() => {
+          if (!dragging) return
+          onMove(dragging.path, toDirForEntry(entry))
+          onDragEnd()
+        }}
       />
       {isDir && open
         ? children.map((child) => (
@@ -101,49 +146,15 @@ function TreeNode({
               selectedPath={selectedPath}
               openPaths={openPaths}
               childrenByPath={childrenByPath}
+              dragging={dragging}
               onToggleDir={onToggleDir}
               onSelectFile={onSelectFile}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onMove={onMove}
             />
           ))
         : null}
     </div>
-  )
-}
-
-function TreeRow({
-  entry,
-  depth,
-  selected,
-  open,
-  onClick
-}: {
-  entry: DirEntry
-  depth: number
-  selected: boolean
-  open: boolean
-  onClick: () => void
-}) {
-  const isDir = entry.kind === "directory"
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ paddingLeft: 8 + depth * 12 }}
-      className={cx(
-        "flex w-full items-center gap-1 rounded-md py-1 pr-2 text-left",
-        PANE_FOCUS,
-        selected
-          ? "bg-background-secondary-default text-text-primary"
-          : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-      )}
-    >
-      {isDir ? (
-        open ? <RiArrowDownSLine className="size-3.5 shrink-0" /> : <RiArrowRightSLine className="size-3.5 shrink-0" />
-      ) : (
-        <span className="w-3.5 shrink-0" />
-      )}
-      <FileKindIcon name={entry.name} kind={entry.kind} open={open} />
-      <span className="truncate text-caption-1-medium">{entry.name}</span>
-    </button>
   )
 }

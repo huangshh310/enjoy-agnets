@@ -221,6 +221,12 @@ catalogs:
     '@vitejs/plugin-react':
       specifier: ^5.1.1
       version: 5.2.0
+    '@xterm/addon-fit':
+      specifier: ^0.10.0
+      version: 0.10.0
+    '@xterm/xterm':
+      specifier: ^5.5.0
+      version: 5.5.0
     ai:
       specifier: ^7.0.84
       version: 7.0.84
@@ -263,6 +269,9 @@ catalogs:
     nanoid:
       specifier: ^6.0.1
       version: 6.0.1
+    node-pty:
+      specifier: ^1.0.0
+      version: 1.1.0
     playwright:
       specifier: ^1.56.1
       version: 1.62.1
@@ -364,6 +373,9 @@ importers:
       '@enjoy-agents/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@enjoy-agents/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       '@enjoy-agents/ipc-contract':
         specifier: workspace:*
         version: link:../../packages/ipc-contract
@@ -400,6 +412,12 @@ importers:
       '@tanstack/react-router':
         specifier: 'catalog:'
         version: 1.170.32(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@xterm/addon-fit':
+        specifier: 'catalog:'
+        version: 0.10.0(@xterm/xterm@5.5.0)
+      '@xterm/xterm':
+        specifier: 'catalog:'
+        version: 5.5.0
       ai:
         specifier: 'catalog:'
         version: 7.0.84(zod@4.5.2)
@@ -415,6 +433,9 @@ importers:
       motion:
         specifier: 'catalog:'
         version: 12.43.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      node-pty:
+        specifier: 'catalog:'
+        version: 1.1.0
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -3647,6 +3668,14 @@ packages:
     resolution: {integrity: sha512-5AXjrcMClTryPe9LgZrygpB1lj7s0S9E0+W+AHaVKAVyHanafK86iPSvG5xHVSp/jC+VH1UXu0TAEmY279xH7A==}
     engines: {node: '>=14.6'}
 
+  '@xterm/addon-fit@0.10.0':
+    resolution: {integrity: sha512-UFYkDm4HUahf2lnEyHvio51TNGiLK66mqP2JoATy7hRZeXaGMRDr00JiSF7m63vR5WKATF605yEggJKsw0JpMQ==}
+    peerDependencies:
+      '@xterm/xterm': ^5.0.0
+
+  '@xterm/xterm@5.5.0':
+    resolution: {integrity: sha512-hqJHYaQb5OptNunnyAnkHyM8aCjZ1MEIDTQu1iIbbTD/xops91NB5yq1ZK/dC2JDbVWtF23zUtl9JE2NqwT87A==}
+
   abbrev@4.0.0:
     resolution: {integrity: sha512-a1wflyaL0tHtJSmLSOVybYhy22vRih4eduhhrkcjgrWGnRfrZtovJ2FRjxuTtkkj47O/baf0R86QU5OuYpz8fA==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -5547,6 +5576,9 @@ packages:
     resolution: {integrity: sha512-ymk4aIzxdPopw2giv8Fs1Ec6vybGkjmyxUwVqhkI4MCy2tVfXdkOGGWieWVjL0THgH+7a8lRdevyupoYj3Js/Q==}
     engines: {node: '>=22.12.0'}
 
+  node-addon-api@7.1.1:
+    resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
+
   node-addon-api@8.9.2:
     resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
     engines: {node: ^18 || ^20 || >= 21}
@@ -5579,6 +5611,9 @@ packages:
     resolution: {integrity: sha512-s0KzNOWwOJJgPG6wxg6cKohnAl9Wk/oW1KrQaVzJBjQwVcUGPQCzpR46Ximygjqj/3KhOrtJXnYMp/xYAXp75g==}
     engines: {node: '>=16.0.0'}
     hasBin: true
+
+  node-pty@1.1.0:
+    resolution: {integrity: sha512-20JqtutY6JPXTUnL0ij1uad7Qe1baT46lyolh2sSENDd4sTzKZ4nmAFkeAARDKwmlLjPx6XKRlwRUxwjOy+lUg==}
 
   node-releases@2.0.54:
     resolution: {integrity: sha512-YHs7BmmcsdAI5Ozuf8JZo6PT0mv2GIWC9vMfvUC3dp65M8hn7Ux8CPL+2oBI7juNuj9d0ndhTcznq2ODBps9cQ==}
@@ -10293,6 +10328,12 @@ snapshots:
 
   '@xmldom/xmldom@0.9.12': {}
 
+  '@xterm/addon-fit@0.10.0(@xterm/xterm@5.5.0)':
+    dependencies:
+      '@xterm/xterm': 5.5.0
+
+  '@xterm/xterm@5.5.0': {}
+
   abbrev@4.0.0: {}
 
   accepts@2.0.0:
@@ -12775,6 +12816,8 @@ snapshots:
     dependencies:
       semver: 7.8.5
 
+  node-addon-api@7.1.1: {}
+
   node-addon-api@8.9.2:
     optional: true
 
@@ -12813,6 +12856,10 @@ snapshots:
       node-addon-api: 8.9.2
       node-gyp-build: 4.8.4
     optional: true
+
+  node-pty@1.1.0:
+    dependencies:
+      node-addon-api: 7.1.1
 
   node-releases@2.0.54: {}
 

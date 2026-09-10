@@ -5,13 +5,14 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { buildExtractPrompt, EXTRACT_SCHEMA, extractKind } from "./extract-object-shape"
 import { extractSourceText, pickExtractModelId } from "./extract-source"
 import { generateObject } from "./use-object"
-import { waitForRunOutput } from "./wait-run-events"
+import { collectRunOutput } from "./wait-run-events"
 
 export async function extractObjectFromMessage(messageId: string, fallbackText?: string) {
   const store = useChatStore.getState()
   const message = store.messages.find((item) => item.id === messageId)
   const source = extractSourceText(message?.content ?? "", fallbackText)
-  if (!source || !store.sessionId) {
+  const sessionId = store.sessionId
+  if (!source || !sessionId) {
     store.setError("Nothing to extract from this reply.")
     return
   }
@@ -25,13 +26,14 @@ export async function extractObjectFromMessage(messageId: string, fallbackText?:
       message?.content ?? "",
       Boolean(message?.assets?.some((asset) => asset.mediaType.startsWith("image/")))
     )
-    const result = (await generateObject({
-      sessionId: store.sessionId,
-      modelId,
-      prompt: buildExtractPrompt(source, kind),
-      schemaJson: EXTRACT_SCHEMA
-    })) as { runId: string }
-    const output = await waitForRunOutput(result.runId)
+    const output = await collectRunOutput(() =>
+      generateObject({
+        sessionId,
+        modelId,
+        prompt: buildExtractPrompt(source, kind),
+        schemaJson: EXTRACT_SCHEMA
+      }) as Promise<{ runId: string }>
+    )
     if (output.structured == null) {
       store.setError("Extract did not return a structured object.")
       return

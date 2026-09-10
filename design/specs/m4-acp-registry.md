@@ -1,8 +1,8 @@
 # spec/m4-acp-registry
 
-> M4 ACP 扩展与 Registry。最后更新：2026-09-08
+> M4 ACP 扩展与 Registry。最后更新：2026-09-09
 > 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
-> 可选后置：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
+> M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 当前真相
@@ -11,7 +11,7 @@
 
 自定义 stdio ACP：`custom:<slug>`，字段 command / args / env / cwd（工作区根或已存在的绝对目录）。保存进 `agentTools.customAgents`；出现在本机 CLI 列表与 Composer 导轨（`showOnEngineRail`）。spawn 经 `assertCustomAllowedCommand`（目录 binaries ∪ `acp`/`acp-agent`/`agent-acp`，禁止 bash/node/npx 等）；`shell:false`；审批不豁免。表单 C 端文案：只能选支持的助手程序，不能指定电脑上的任意软件；禁止 basename / stdio 行话。白名单拒绝时 UI 映射成人话（`无法使用「…」`），main 英文 throw 只留日志。能力走 `RUNTIME_CAPABILITIES["custom-acp"]`（quota=false、login=false、HMAC）。能力矩阵自定义行画用户 **label**，不画 `custom:<slug>`。删除确认后解绑会话 runtime，并把仍指向它的偏好 `runtimeId` 拉回 Enjoy 本地。
 
-comingSoon → available 只按 **OpenCode → Gemini → Pi**，且必须 `canPromoteComingSoon`：**静态门闩**（catalog + `RUNTIME_CAPABILITIES.spawn` + HMAC + preset `transport===acp-host`）。**不是**现场 ACP `initialize` / handshake 探测。三家当前硬接线已过，故 available。未过的 soon 不能 `canSwitchAgent`。
+comingSoon → available 只按 **OpenCode → Gemini → Pi**，且必须 `canPromoteComingSoon`：**静态门闩**（catalog + `RUNTIME_CAPABILITIES.spawn` + HMAC + preset `transport===acp-host`）。列表不现场 spawn。`agentTools.doctor` 对已找到的 ACP 二进制会再跑 `initialize`（5s 超时）；`auth_required` 算协议通，超时/崩溃则 doctor.ok=false。这不是 PTY 登录兜底。三家静态硬接线已过，故 available。未过的 soon 不能 `canSwitchAgent`。
 
 IPC：`agentTools.upsertCustom` / `removeCustom` / `getCustom`。无 PTY 入口。
 
@@ -63,7 +63,7 @@ IPC：`agentTools.upsertCustom` / `removeCustom` / `getCustom`。无 PTY 入口�
 
 UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 
-当前实现：`canPromoteComingSoon` 只做静态硬接线（catalog / caps / preset），不现场跑 initialize。上表是产品硬条件愿景；升 available 以静态门闩为准。
+当前实现：升 `available` 仍以静态门闩为准（避免每次 list 拉起三家 CLI）。现场 `initialize` 在 doctor：能握手才 doctor.ok。上表 3/4（往返 / HMAC）仍是开流时的路径，不在 doctor 里假跑一轮对话。
 
 ### 4. ACP 事件保真（增强大纲）
 

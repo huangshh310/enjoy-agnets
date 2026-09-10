@@ -27,8 +27,16 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     return events
   }
   if (kind === "available_commands_update") {
-    // 不进 Composer 假 slash 目录，也不发 structured.delta（会进气泡）。
-    return []
+    const rawCommands = Array.isArray(rec.availableCommands) ? rec.availableCommands : []
+    const commands: Array<{ name: string; description?: string }> = []
+    for (const item of rawCommands) {
+      const row = asRecord(item)
+      const name = String(row.name ?? "").trim()
+      if (!name) continue
+      const description = typeof row.description === "string" ? row.description : undefined
+      commands.push(description ? { name, description } : { name })
+    }
+    return commands.length ? [{ type: "commands.update", runId, commands }] : []
   }
   if (kind === "tool_call_update") {
     const toolCallId = String(rec.toolCallId ?? rec.id ?? "tool")

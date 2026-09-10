@@ -14,6 +14,7 @@ import {
 type ComposerGuardStore = {
   runtimeId: string
   hasKey: boolean
+  modelId: string
   workspaceId: string | null
   sessionId: string | null
   setError: (message: string | null) => void
@@ -21,8 +22,10 @@ type ComposerGuardStore = {
 }
 
 /** 发送盘是否亮成可发：与闸门同一套 ready。 */
-export function composerSendReady(store: Pick<ComposerGuardStore, "runtimeId" | "hasKey">): boolean {
-  if (store.runtimeId === "enjoy-local") return store.hasKey
+export function composerSendReady(
+  store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId">
+): boolean {
+  if (store.runtimeId === "enjoy-local") return Boolean(store.hasKey && store.modelId)
   const tool = rememberedAgentTool(store.runtimeId)
   const input = {
     id: store.runtimeId,
@@ -45,9 +48,13 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
     return false
   }
   if (store.runtimeId === "enjoy-local") {
-    if (store.hasKey) return true
-    store.setError(NEED_PROVIDER_KEY)
-    return false
+    if (!store.hasKey) {
+      store.setError(NEED_PROVIDER_KEY)
+      return false
+    }
+    // 档案已亮、models.list 还没写进 store 时不要打 agent.run，否则主进程抛 Choose a model。
+    if (!store.modelId) return false
+    return true
   }
   const tool = rememberedAgentTool(store.runtimeId)
   const input = {

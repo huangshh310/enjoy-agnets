@@ -43,3 +43,14 @@ export function getApproval(db: AppDatabase, id: string): ApprovalRow | undefine
 export function setApprovalDecision(db: AppDatabase, id: string, decision: string): void {
   db.prepare("UPDATE approvals SET decision = ? WHERE id = ?").run(decision, id)
 }
+
+export function listPendingApprovals(db: AppDatabase, runId?: string): ApprovalRow[] {
+  const rows = db
+    .prepare(
+      `SELECT id, run_id as runId, tool_call_id as toolCallId, name, args, hmac, decision,
+              created_at as createdAt
+       FROM approvals WHERE decision IS NULL`
+    )
+    .all() as ApprovalRow[]
+  return runId ? rows.filter((row) => row.runId === runId) : rows
+}

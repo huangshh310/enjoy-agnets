@@ -4,6 +4,8 @@ import {
   composeQuotedPrompt,
   deriveTaskStatus,
   formatQuotedContext,
+  replaceQuotedDraft,
+  splitQuotedDisplay,
   SteerAgentInput
 } from "./quoted-context.ts"
 
@@ -54,11 +56,28 @@ test("content 优先于 snippet", () => {
       snippet: "旧",
       content: "新"
     }),
-    "> [引用自步骤: a.ts]\n> 新"
+    "> [引用自文件: a.ts]\n> 新"
   )
 })
 
 test("SteerAgentInput 拒空文本", () => {
   assert.throws(() => SteerAgentInput.parse({ sessionId: "s", text: "" }))
   assert.equal(SteerAgentInput.parse({ sessionId: "s", text: "停，先读这个文件" }).text.length > 0, true)
+})
+
+test("气泡拆出文件 Chip，正文不含协议头", () => {
+  const prompt = composeQuotedPrompt(
+    [
+      { id: "q1", type: "file", title: "tsconfig.tsbuildinfo", content: '{"fileNames":[]}' },
+      { id: "q2", type: "file", title: "CLAUDE.md", content: "@AGENTS.md" }
+    ],
+    "你能看到我发的文件吗"
+  )
+  const view = splitQuotedDisplay(prompt)
+  assert.deepEqual(
+    view.chips.map((chip) => chip.title),
+    ["tsconfig.tsbuildinfo", "CLAUDE.md"]
+  )
+  assert.equal(view.text, "你能看到我发的文件吗")
+  assert.equal(replaceQuotedDraft(prompt, "换成这个"), prompt.replace("你能看到我发的文件吗", "换成这个"))
 })

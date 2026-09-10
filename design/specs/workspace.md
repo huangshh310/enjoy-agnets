@@ -13,8 +13,9 @@
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件暂存（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage`）
+- Agent host 只读 `gitStatus` / `gitDiff` / `gitLog`（porcelain 文本，默认 20 条、上限 100，path jail）；写 `gitCommit` / `gitPush` 走 Git 审批。Agent `git_log` **不是** Review 栏 structured `commits[]`
 - 写盘检查点列表与还原（`workspace.listCheckpoints` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`
-- 工作区绑定的 pty 终端（`terminal.open` / `write` / `close`）
+- 工作区绑定的 pty 终端（`terminal.open` / `write` / `resize` / `close`）：main `node-pty`，renderer `@xterm/xterm` + FitAddon。原始按键进 PTY，不按行补 `\n`。这是工作区壳，不是 M4 ACP PTY 登录兜底。
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
 
@@ -29,7 +30,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 默认树宽 240px，最小 160px，最大占 Files 栏 55%
 - 布局写入 `localStorage` 键 `enjoy-agents-files-tree-split`
 - 顶栏文件夹按钮在路径左侧，可整栏收起树（收起后只留预览）
-- 这是改宽，不是把文件拖进文件夹。文件移动 / 拖拽重组另开能力，未做。
+- 树条目可拖进文件夹（或拖到文件上 = 进该文件所在目录；空白处 = 工作区根）。`workspace.move` `{ from, toDir }`，路径 jail，`fs.rename`。目标已存在 / 进自己 / 同位置会拒。这不是多标签资源管理器，也不做跨工作区拖拽。
 
 ## 不变量
 
@@ -42,15 +43,18 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 - 工作区档案：`apps/desktop/src/main/services/workspace.ts`
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
-- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件暂存：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`
+- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件暂存：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`
+- 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`
 
 ## 已知坑
 
-- `packages/editor` 已在仓里，但主路径仍是 Changes / 文件 diff 卡片，不是完整 IDE 编辑器。文档不要写成「已经有完整 Monaco 工作区」。
-- 文件监视、PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
+- Files 预览已接 `WorkspaceEditor`（本地 monaco，不走 CDN）+ `workspace.writeFile`。⌘/Ctrl+S 与顶栏保存同一条路径。这是单文件编辑，不是多标签 LSP IDE。`workspace.watch` 用 `fs.watch` recursive；Windows 另开指纹轮询（最多 200 条）补漏事件，不要假装 inotify。
+- Files 树拖拽走 `workspace.move`（`workspace-move.ts` / `workspace-rename.ts` + `workspace-move-plan.ts`）。renderer 不 `fs.rename`。不要和 Review 改宽分隔条、也不要和 Composer 附件 drop 搞混。
+- Agent `git_log`（`workspace-git-agent-log.ts`）是线性 porcelain 文本，limit 默认 20、上限 100，path jail。不要和 Review `workspace.gitLog` 的 structured `commits[]` 混用。
+- PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。

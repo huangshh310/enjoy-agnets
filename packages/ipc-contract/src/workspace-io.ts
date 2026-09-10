@@ -37,6 +37,43 @@ export const ReadFileInput = z.object({
 })
 export type ReadFileInput = z.infer<typeof ReadFileInput>
 
+/** 用户在 Files 里保存；路径必须 jail。可选 sessionId 用来触发 on_save 自动化。 */
+export const WriteFileInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    path: z.string().min(1),
+    content: z.string(),
+    sessionId: z.string().min(1).optional()
+  })
+  .strict()
+export type WriteFileInput = z.infer<typeof WriteFileInput>
+
+/** Files 树拖拽移动。toDir 是目标目录（`.` 为工作区根），不是最终文件路径。 */
+export const MoveWorkspacePathInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    from: z.string().min(1),
+    toDir: z.string().min(1)
+  })
+  .strict()
+export type MoveWorkspacePathInput = z.infer<typeof MoveWorkspacePathInput>
+
+export const MoveWorkspacePathResult = z
+  .object({
+    ok: z.literal(true),
+    from: z.string().min(1),
+    to: z.string().min(1)
+  })
+  .strict()
+export type MoveWorkspacePathResult = z.infer<typeof MoveWorkspacePathResult>
+
+export const WatchWorkspaceInput = z
+  .object({
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type WatchWorkspaceInput = z.infer<typeof WatchWorkspaceInput>
+
 export const FileDiffInput = z.object({
   workspaceId: z.string(),
   path: z.string(),

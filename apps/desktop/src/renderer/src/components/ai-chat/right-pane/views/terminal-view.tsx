@@ -1,33 +1,13 @@
 /**
- * 工作区终端：跟主题色，在输出流末尾的光标处输入。
+ * 工作区终端：xterm + 本机 PTY。
  */
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
-import { cx } from "@/utils/cx"
-import { PANE_FOCUS } from "../constants"
+import { WorkspaceTerminal } from "./workspace-terminal"
 import { useTerminalSession } from "./use-terminal-session"
 import { useT } from "@renderer/i18n"
 
 export function TerminalView({ workspaceId }: { workspaceId: string | null }) {
   const t = useT()
-  const { sessionId, log, writeLine } = useTerminalSession(workspaceId)
-  const [draft, setDraft] = useState("")
-  const scroller = useRef<HTMLDivElement | null>(null)
-  const inputRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    scroller.current?.scrollTo({ top: scroller.current.scrollHeight })
-  }, [log, draft])
-
-  useEffect(() => {
-    if (sessionId) inputRef.current?.focus()
-  }, [sessionId])
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== "Enter" || event.nativeEvent.isComposing || !sessionId) return
-    event.preventDefault()
-    writeLine(draft)
-    setDraft("")
-  }
+  const { sessionId, error } = useTerminalSession(workspaceId)
 
   if (!workspaceId) {
     return (
@@ -36,34 +16,23 @@ export function TerminalView({ workspaceId }: { workspaceId: string | null }) {
       </p>
     )
   }
-
+  if (error) {
+    return (
+      <p className="flex flex-1 items-center justify-center px-4 text-center text-caption-1-medium text-text-error-primary">
+        {error}
+      </p>
+    )
+  }
+  if (!sessionId) {
+    return (
+      <p className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
+        {t("chat.terminalStarting")}
+      </p>
+    )
+  }
   return (
-    <div
-      className="flex min-h-0 flex-1 cursor-text flex-col overflow-hidden bg-background-primary-default"
-      onClick={() => inputRef.current?.focus()}
-    >
-      <div ref={scroller} className="min-h-0 flex-1 overflow-auto px-3 py-2">
-        <pre className="font-mono text-body-2-regular text-text-primary whitespace-pre-wrap break-all">
-          {log}
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={onKeyDown}
-            onClick={(event) => event.stopPropagation()}
-            disabled={!sessionId}
-            spellCheck={false}
-            autoCapitalize="off"
-            autoCorrect="off"
-            aria-label={t("chat.terminalInput")}
-            className={cx(
-              "inline border-0 bg-transparent p-0 font-mono text-body-2-regular text-text-primary caret-accent-500 disabled:caret-transparent",
-              PANE_FOCUS
-            )}
-            style={{ width: `${Math.max(draft.length + 1, 1)}ch` }}
-          />
-        </pre>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background-primary-default">
+      <WorkspaceTerminal sessionId={sessionId} />
     </div>
   )
 }

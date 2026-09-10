@@ -26,6 +26,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     toolCallId: z.string(),
     name: z.string(),
     args: z.unknown().optional(),
+    parentToolCallId: z.string().optional(),
     ...Envelope
   }),
   z.object({
@@ -43,6 +44,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     result: z.unknown().optional(),
     args: z.unknown().optional(),
     error: z.string().optional(),
+    parentToolCallId: z.string().optional(),
     ...Envelope
   }),
   z.object({
@@ -203,6 +205,17 @@ export const StreamEvent = z.discriminatedUnion("type", [
     code: z.string(),
     message: z.string(),
     experimental: z.boolean().optional(),
+    ...Envelope
+  }),
+  z.object({
+    type: z.literal("commands.update"),
+    runId: z.string(),
+    commands: z.array(
+      z.object({
+        name: z.string(),
+        description: z.string().optional()
+      })
+    ),
     ...Envelope
   })
 ])

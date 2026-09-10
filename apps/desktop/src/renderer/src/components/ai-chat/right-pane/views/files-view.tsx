@@ -1,13 +1,15 @@
 /**
- * 文件视图：左侧可拖拽改宽的目录树 + 右侧预览。
+ * 文件视图：左侧可拖拽改宽的目录树 + 右侧可编辑预览。
  */
-import { useState } from "react"
-import { RiFolder3Line, RiFolderOpenLine } from "@remixicon/react"
+import { useEffect, useState } from "react"
+import { RiFolder3Line } from "@remixicon/react"
+import { remapAfterMove } from "@enjoy-agents/ipc-contract"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { getIde } from "@renderer/lib/ide"
-import { AiChatCodePane } from "../../ai-chat-code-pane"
+import { FilesPreviewEditor } from "./files-preview-editor"
 import { FilesSplit } from "./files-split"
 import { FilesTree } from "./files-tree"
+import { moveFailureCopy } from "./files-move-error"
 import { useT } from "@renderer/i18n"
 
 const MAX_PREVIEW_CHARS = 200_000
@@ -17,12 +19,41 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
   const [path, setPath] = useState<string | null>(null)
   const [content, setContent] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [moveError, setMoveError] = useState<string | null>(null)
   const [treeOpen, setTreeOpen] = useState(true)
+  const [treeEpoch, setTreeEpoch] = useState(0)
+
+  useEffect(() => {
+    if (!workspaceId) return
+    void getIde().workspace.watch({ workspaceId })
+    const unsubscribe = getIde().workspace.onChanged((event) => {
+      if (event.workspaceId !== workspaceId) return
+      setTreeEpoch((value) => value + 1)
+    })
+    return () => {
+      unsubscribe()
+    }
+  }, [workspaceId])
+
+  async function moveEntry(from: string, toDir: string) {
+    if (!workspaceId) return
+    setMoveError(null)
+    try {
+      const result = (await getIde().workspace.move({ workspaceId, from, toDir })) as {
+        to: string
+      }
+      setPath((current) => (current ? remapAfterMove(current, from, result.to) : current))
+      setTreeEpoch((value) => value + 1)
+    } catch (caught) {
+      setMoveError(moveFailureCopy(caught, t))
+    }
+  }
 
   async function openFile(nextPath: string) {
     if (!workspaceId) return
     setPath(nextPath)
     setError(null)
+    setMoveError(null)
     try {
       const text = (await getIde().workspace.readFile({ workspaceId, path: nextPath })) as string
       setContent(text.length > MAX_PREVIEW_CHARS ? `${text.slice(0, MAX_PREVIEW_CHARS)}\n…` : text)
@@ -32,9 +63,21 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
     }
   }
 
-  const preview = <FilesPreview path={path} error={error} content={content} />
+  const preview = workspaceId ? (
+    <FilesPreviewEditor workspaceId={workspaceId} path={path} content={content} error={error} />
+  ) : (
+    <p className="flex h-full items-center justify-center px-3 text-center text-caption-1-medium text-text-tertiary">
+      {t("chat.openFolderFirst")}
+    </p>
+  )
   const tree = workspaceId ? (
-    <FilesTree workspaceId={workspaceId} selectedPath={path} onSelectFile={(next) => void openFile(next)} />
+    <FilesTree
+      key={`${workspaceId}-${treeEpoch}`}
+      workspaceId={workspaceId}
+      selectedPath={path}
+      onSelectFile={(next) => void openFile(next)}
+      onMove={(from, toDir) => void moveEntry(from, toDir)}
+    />
   ) : (
     <p className="flex h-full items-center justify-center px-3 text-center text-caption-1-medium text-text-tertiary">
       {t("chat.openFolderFirst")}
@@ -52,36 +95,15 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
           onClick={() => setTreeOpen((open) => !open)}
           className={treeOpen ? "bg-background-secondary-default text-text-primary" : undefined}
         />
-        <p className="min-w-0 flex-1 truncate font-mono text-caption-1-medium text-text-tertiary">
-          {path ?? t("chat.openAFile")}
+        <p
+          className={`min-w-0 flex-1 truncate font-mono text-caption-1-medium ${
+            moveError ? "text-text-error-primary" : "text-text-tertiary"
+          }`}
+        >
+          {moveError ?? path ?? t("chat.openAFile")}
         </p>
       </div>
       {treeOpen ? <FilesSplit tree={tree}>{preview}</FilesSplit> : preview}
-    </div>
-  )
-}
-
-function FilesPreview({
-  path,
-  error,
-  content
-}: {
-  path: string | null
-  error: string | null
-  content: string
-}) {
-  const t = useT()
-  if (path && error) {
-    return <p className="px-3 py-2 text-caption-1-medium text-text-error-primary">{error}</p>
-  }
-  if (path) {
-    return <AiChatCodePane path={path} value={content} />
-  }
-  return (
-    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-      <RiFolderOpenLine className="size-10 text-foreground-icon-secondary" aria-hidden />
-      <p className="text-body-medium text-text-primary">{t("chat.openAFile")}</p>
-      <p className="text-caption-1-medium text-text-tertiary">{t("chat.selectFile")}</p>
     </div>
   )
 }

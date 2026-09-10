@@ -2,12 +2,12 @@
  * Settings → Git：版本控制与提交偏好设置。
  * 支持 Git 提交人工确认开关、代码 Diff 预览偏好与 Conventional Commit 智能提交规范。
  */
-import {
-  RiCheckLine,
-  RiGitBranchLine
-} from "@remixicon/react"
+import { RiGitBranchLine } from "@remixicon/react"
 import { Switch } from "@/components/ui/switch"
+import { useQuery } from "@tanstack/react-query"
+import type { ChangedFile } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { usePrefUpdate } from "./settings-pref"
 import { useT } from "@renderer/i18n"
@@ -15,9 +15,15 @@ import { useT } from "@renderer/i18n"
 export function GitSettings() {
   const t = useT()
   const { preferences, update } = usePrefUpdate()
-  const changes = useChatStore((state) => state.changes)
-  const additions = useChatStore((state) => state.additions)
-  const deletions = useChatStore((state) => state.deletions)
+  const workspaceId = useChatStore((state) => state.workspaceId)
+  const changesQuery = useQuery({
+    queryKey: ["changes", workspaceId],
+    enabled: hasIde() && Boolean(workspaceId),
+    queryFn: () => getIde().workspace.changes({ workspaceId }) as Promise<ChangedFile[]>
+  })
+  const changes = changesQuery.data ?? []
+  const additions = changes.reduce((sum, file) => sum + (file.additions ?? 0), 0)
+  const deletions = changes.reduce((sum, file) => sum + (file.deletions ?? 0), 0)
 
   return (
     <div className="flex flex-col gap-6">
@@ -81,10 +87,7 @@ export function GitSettings() {
           title={t("settings.git.conventional")}
           description={t("settings.git.conventionalDesc")}
         >
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
-            <RiCheckLine className="size-3.5" />
-            <span>{t("settings.git.activeStandard")}</span>
-          </span>
+          <span className="text-caption-2-medium text-text-tertiary">{t("settings.git.conventionalHint")}</span>
         </SettingsRow>
       </SettingsCard>
     </div>

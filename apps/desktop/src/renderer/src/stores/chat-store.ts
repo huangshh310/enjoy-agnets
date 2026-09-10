@@ -23,11 +23,6 @@ export type {
   ThreadSource
 } from "./chat-store.types"
 
-function contextUsedFrom(messages: ThreadMessage[]): number {
-  const characters = messages.reduce((sum, message) => sum + message.content.length, 0)
-  return Math.min(99, Math.round((characters / 32_000) * 100))
-}
-
 export const useChatStore = create<ChatStore>((set, get) => ({
   userName: "Enjoy Agents",
   workspaceId: null,
@@ -228,8 +223,4 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
 export function formatNodeTime(timestamp: number): string {
   return relativeTime(timestamp)
-}
-
-export function contextUsed(messages: ThreadMessage[]): number {
-  return contextUsedFrom(messages)
 }

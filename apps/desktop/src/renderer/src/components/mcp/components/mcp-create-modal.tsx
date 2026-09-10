@@ -190,7 +190,7 @@ export function McpCreateModal(props: {
           </Button>
           <Button
             size="sm"
-            data-testid="mcp-add-server"
+            data-testid="mcp-save-server"
             disabled={isSaving}
             onClick={() => void handleSave()}
             className="gap-1.5 h-8 text-caption-2-medium shadow-xs"

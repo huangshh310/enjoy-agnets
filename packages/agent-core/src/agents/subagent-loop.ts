@@ -7,6 +7,7 @@ import type { ApprovalPolicy } from "../tool-approval.ts"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
 import { summarizeSubagent, type SubagentSummary } from "./subagent.ts"
 import { createSubagentApproval, type WaitForSubagentApproval } from "./subagent-approval.ts"
+import { traceSubagentTools, type SubagentToolTraceEvent } from "./subagent-tool-trace.ts"
 import { joinInstructions } from "../join-instructions.ts"
 
 export async function runApprovedSubagent(options: {
@@ -19,6 +20,8 @@ export async function runApprovedSubagent(options: {
   generate?: (task: string) => Promise<string>
   waitForApproval?: WaitForSubagentApproval
   extraInstructions?: string
+  parentToolCallId?: string
+  onToolEvent?: (event: SubagentToolTraceEvent) => void
 }): Promise<SubagentSummary> {
   const text = options.generate
     ? await options.generate(options.task)
@@ -38,6 +41,8 @@ async function generateWithSharedApproval(options: {
   abortSignal?: AbortSignal
   waitForApproval?: WaitForSubagentApproval
   extraInstructions?: string
+  parentToolCallId?: string
+  onToolEvent?: (event: SubagentToolTraceEvent) => void
 }): Promise<string> {
   const decide = createSubagentApproval({
     mode: options.mode,
@@ -47,10 +52,14 @@ async function generateWithSharedApproval(options: {
   const { createCodingTools } = await import("../tools/index.ts")
   const role =
     "You are a specialist subagent. Return a concise report. Writes and shell use the same approval policy as the parent agent. Do not claim you bypassed approval."
+  const tools = tracedSubagentTools(
+    createCodingTools(options.host, { includeAskUser: false, mode: options.mode }),
+    options
+  )
   const agent = new ToolLoopAgent({
     model: options.model,
     instructions: joinInstructions(role, options.extraInstructions),
-    tools: createCodingTools(options.host, { includeAskUser: false, mode: options.mode }),
+    tools,
     toolApproval: ({ toolCall }) => {
       if (!toolCall) return { type: "denied", reason: "Missing tool call." }
       return decide({
@@ -69,4 +78,15 @@ async function generateWithSharedApproval(options: {
     abortSignal: options.abortSignal
   })
   return text ?? ""
+}
+
+function tracedSubagentTools<T>(
+  tools: T,
+  options: { parentToolCallId?: string; onToolEvent?: (event: SubagentToolTraceEvent) => void }
+): T {
+  if (!options.onToolEvent || !options.parentToolCallId) return tools
+  return traceSubagentTools(tools, {
+    parentToolCallId: options.parentToolCallId,
+    emit: options.onToolEvent
+  })
 }

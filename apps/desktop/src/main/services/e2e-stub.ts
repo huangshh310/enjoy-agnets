@@ -7,21 +7,36 @@ export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
 }
 
-export function lastUserText(messages: ModelMessage[]): string {
+function userText(message: ModelMessage | undefined): string {
+  if (!message) return ""
+  if (typeof message.content === "string") return message.content
+  if (!Array.isArray(message.content)) return ""
+  return message.content
+    .map((part) => {
+      if (typeof part === "string") return part
+      if (part && typeof part === "object" && "text" in part) return String(part.text ?? "")
+      return ""
+    })
+    .join(" ")
+}
+
+function isCiteUser(message: ModelMessage): boolean {
+  return userText(message).startsWith("Cite these workspace sources:")
+}
+
+/** Stop 会丢掉空助手气泡，下一句和未完成用户句连在一起；cite 又会再垫一条。取最后一条非 cite 用户句。 */
+function lastRealUser(messages: ModelMessage[]): ModelMessage | undefined {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index]
-    if (!message || message.role !== "user") continue
-    if (typeof message.content === "string") return message.content
-    if (!Array.isArray(message.content)) continue
-    return message.content
-      .map((part) => {
-        if (typeof part === "string") return part
-        if (part && typeof part === "object" && "text" in part) return String(part.text ?? "")
-        return ""
-      })
-      .join(" ")
+    if (message?.role !== "user") continue
+    if (isCiteUser(message)) continue
+    return message
   }
-  return ""
+  return undefined
+}
+
+export function lastUserText(messages: ModelMessage[]): string {
+  return userText(lastRealUser(messages))
 }
 
 export function stubApprovedWrite(messages: ModelMessage[]): boolean {
@@ -39,7 +54,8 @@ export async function* createE2eStubStream(
   messages: ModelMessage[],
   signal: AbortSignal
 ): AsyncGenerator<Record<string, unknown>> {
-  const prompt = lastUserText(messages)
+  const real = lastRealUser(messages)
+  const prompt = userText(real)
   if (stubApprovedWrite(messages)) {
     yield* emitText("stub-ok allowed write", signal)
     return
@@ -54,14 +70,14 @@ export async function* createE2eStubStream(
     }
     return
   }
-  const attached = attachmentNames(messages)
+  const attached = attachmentNames(real ? [real] : [])
   if (attached.length) {
     yield* emitText(`stub-ok attached:${attached.join(",")}`, signal)
     return
   }
   const body = `stub-ok ${prompt.slice(0, 48)}`.trim()
   const slow = /\bslow\b/i.test(prompt)
-  yield* emitText(body, signal, slow ? 180 : 0)
+  yield* emitText(body, signal, slow ? 400 : 0)
 }
 
 async function* emitText(
@@ -81,14 +97,29 @@ async function* emitText(
 
 function attachmentNames(messages: ModelMessage[]): string[] {
   const names: string[] = []
-  for (const message of messages) {
-    if (!Array.isArray(message.content)) continue
+  for (const message of messages) collectAttachmentNames(message, names)
+  return names
+}
+
+function collectAttachmentNames(message: ModelMessage, names: string[]) {
+  const blobs: string[] = []
+  if (typeof message.content === "string") blobs.push(message.content)
+  else if (Array.isArray(message.content)) {
     for (const part of message.content) {
-      if (!part || typeof part !== "object" || !("type" in part) || part.type !== "file") continue
-      if ("filename" in part && typeof part.filename === "string") names.push(part.filename)
+      if (!part || typeof part !== "object") continue
+      if ("text" in part && typeof part.text === "string") blobs.push(part.text)
+      if ("type" in part && part.type === "file" && "filename" in part && typeof part.filename === "string") {
+        names.push(part.filename)
+      }
     }
   }
-  return names
+  pushAttachedNames(blobs.join("\n"), names)
+}
+
+function pushAttachedNames(text: string, names: string[]) {
+  for (const match of text.matchAll(/Attached file:\s*(\S+)/g)) {
+    if (match[1]) names.push(match[1])
+  }
 }
 
 function wait(ms: number) {

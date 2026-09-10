@@ -2,7 +2,11 @@
  * 开流入参与审批策略。从 open-coding-stream 抽出，避免调度函数超 50 行。
  */
 import type { ModelMessage } from "ai"
-import type { ApprovalPolicy, WaitForSubagentApproval } from "@enjoy-agents/agent-core"
+import type {
+  ApprovalPolicy,
+  SubagentToolTraceEvent,
+  WaitForSubagentApproval
+} from "@enjoy-agents/agent-core"
 import { type AgentMode, type AskUserAnswers, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
@@ -27,6 +31,7 @@ export type OpenCodingStreamInput = {
   fast?: boolean
   sessionApprovedTools: ReadonlySet<string>
   waitForSubagentApproval?: WaitForSubagentApproval
+  onSubagentToolEvent?: (event: SubagentToolTraceEvent) => void
   runtimeId?: string
   pullSteeringMessages?: () => ModelMessage[]
   takeQuestionAnswers?: () => AskUserAnswers | undefined

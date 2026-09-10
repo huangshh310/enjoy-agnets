@@ -67,7 +67,7 @@ function codingAgentTools(
 ) {
   return {
     ...createCodingTools(options.runtimeContext.host, { mode }),
-    ...createDelegateTool((task) =>
+    ...createDelegateTool((task, parentToolCallId) =>
       runDelegatedSubagent({
         model,
         task,
@@ -75,7 +75,9 @@ function codingAgentTools(
         mode,
         policy,
         waitForApproval: options.waitForSubagentApproval,
-        extraInstructions: options.extraInstructions
+        extraInstructions: options.extraInstructions,
+        parentToolCallId,
+        onToolEvent: options.onSubagentToolEvent
       })
     ),
     ...options.extraTools

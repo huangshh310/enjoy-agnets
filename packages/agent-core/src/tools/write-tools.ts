@@ -89,6 +89,14 @@ export function createWriteTools(host: AgentWorkspaceHost) {
         return { result: await host.gitCommit(message) }
       }
     }),
+    git_push: tool({
+      description:
+        "Push the current branch to its upstream. Requires user approval. Fails if there is no upstream.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        return { result: await host.gitPush() }
+      }
+    }),
     code_mode: createCodeModeTool(host)
   }
 }

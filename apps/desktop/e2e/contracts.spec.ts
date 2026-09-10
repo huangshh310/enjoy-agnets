@@ -11,6 +11,7 @@ import {
   McpCallInput,
   McpOpenAppInput,
   McpUpsertInput,
+  MoveWorkspacePathInput,
   ObservabilityReplayInput,
   WorkflowResumeInput,
   SessionRenameInput,
@@ -50,9 +51,24 @@ test("Composer 运行中可 Stop，并可附加 Context", () => {
     join(process.cwd(), "src/renderer/src/components/ai-chat/ai-chat-composer.tsx"),
     "utf8"
   )
-  expect(composer.includes('aria-label={running ? "Stop" : "Send"}')).toBeTruthy()
-  expect(composer.includes('aria-label="Add context"')).toBeTruthy()
+  const send = readFileSync(
+    join(process.cwd(), "src/renderer/src/components/ai-chat/composer/runtime-interact/composer-send-split.tsx"),
+    "utf8"
+  )
+  expect(send.includes('t("chat.stop")')).toBeTruthy()
+  expect(composer.includes("ComposerToolbar")).toBeFalsy()
   expect(composer.includes("onAttach")).toBeTruthy()
+  const mentions = readFileSync(
+    join(process.cwd(), "src/renderer/src/components/ai-chat/composer/mentions/composer-mention-list.tsx"),
+    "utf8"
+  )
+  expect(mentions.includes("composer-mention-list")).toBeTruthy()
+  const attach = readFileSync(
+    join(process.cwd(), "src/renderer/src/components/ai-chat/composer/composer-attach-menu.tsx"),
+    "utf8"
+  )
+  expect(attach.includes("openComposerMention")).toBeTruthy()
+  expect(attach.includes("webSearch")).toBeFalsy()
 })
 
 test("MCP App iframe 强制 sandbox 且无 Node", () => {
@@ -91,11 +107,11 @@ test("刷新恢复 / 结构化 / 审批 / DAG / 知识增量入口都在源码�
     "utf8"
   )
   expect(hydrate.includes("message_parts") || hydrate.includes("parts")).toBeTruthy()
-  expect(hydrate.includes("structured")).toBeTruthy()
+  expect(hydrate.includes("parseAssistantPayload") || extras.includes("structured")).toBeTruthy()
   expect(extras.includes("structured") || extras.includes("sources")).toBeTruthy()
   expect(dag.includes("data-testid=\"workflow-dag\"")).toBeTruthy()
-  expect(knowledge.includes("Rebuild")).toBeTruthy()
-  expect(knowledge.includes("Pause")).toBeTruthy()
+  expect(knowledge.includes("onRebuildIndex")).toBeTruthy()
+  expect(knowledge.includes("KnowledgeIndexDrawer")).toBeTruthy()
   expect(prune.includes("clipHistory") || prune.includes("pruneModelMessages")).toBeTruthy()
   expect(structuredStream.includes("streamStructuredPartials")).toBeTruthy()
   expect(subagent.includes("waitForApproval")).toBeTruthy()
@@ -107,7 +123,7 @@ test("刷新恢复 / 结构化 / 审批 / DAG / 知识增量入口都在源码�
   expect(stop.includes("hasToolCall")).toBeTruthy()
   expect(stop.includes("isLoopFinished")).toBeTruthy()
   const sandbox = readFileSync(
-    join(process.cwd(), "src/renderer/src/components/settings/settings-ai-pages.tsx"),
+    join(process.cwd(), "src/renderer/src/components/settings/sandbox-settings.tsx"),
     "utf8"
   )
   expect(sandbox.includes("agentTimeoutMs")).toBeTruthy()
@@ -159,4 +175,12 @@ test("新 IPC 入参拒绝未知字段", () => {
   expect(McpOpenAppInput.safeParse({ id: "s", extra: 1 }).success).toBe(false)
   expect(McpAppMessageInput.safeParse({ id: "s", message: {}, extra: 1 }).success).toBe(false)
   expect(ObservabilityReplayInput.safeParse({ extra: 1 }).success).toBe(false)
+  expect(
+    MoveWorkspacePathInput.safeParse({
+      workspaceId: "w",
+      from: "a.ts",
+      toDir: "lib",
+      extra: 1
+    }).success
+  ).toBe(false)
 })

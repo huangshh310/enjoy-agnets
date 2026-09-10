@@ -139,7 +139,8 @@ export async function decidePendingApproval(
 
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()
-  store.setHasKey(snapshot.hasKey)
+  const profileName = snapshot.preferences.accountProfile?.name?.trim()
+  if (profileName) useChatStore.setState({ userName: profileName })
   store.setProvider(snapshot.provider)
   rememberDefaultMode(snapshot.preferences?.defaultMode)
   // 会话 mode 由 Composer / 句首斜杠决定。默认项只在设置页写入，refetch 不得打回 agent。
@@ -147,7 +148,10 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   store.setPreferredRuntimeId(preferred)
   store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
   store.setRuntimeId(pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, preferred))
-  if (!hasIde()) return
+  if (!hasIde()) {
+    store.setHasKey(snapshot.hasKey)
+    return
+  }
   const models = (await getIde().models.list()) as ModelOption[]
   store.setModels(models)
   const selected = pickActiveModel(models, store.modelId, snapshot.defaultModelId)
@@ -158,9 +162,11 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
       selected.provider,
       store.reasoningEffort ?? selected.reasoningEffort
     )
-    return
+  } else {
+    store.setModel("", "")
   }
-  store.setModel("", "")
+  // 先写 model 再亮 hasKey，避免发送盘在 modelId 仍空时变成 Send。
+  store.setHasKey(snapshot.hasKey)
 }
 
 export async function openFolder() {

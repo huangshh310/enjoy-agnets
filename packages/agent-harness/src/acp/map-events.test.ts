@@ -159,11 +159,15 @@ test("tool_call content type=diff 写入 args 并 file.changed", () => {
   assert.ok(events.some((event) => event.type === "file.changed"))
 })
 
-test("available_commands_update 不进气泡也不当审批", () => {
-  assert.deepEqual(
-    mapAcpUpdate({ sessionUpdate: "available_commands_update", availableCommands: [{ name: "plan" }] }, "run_1"),
-    []
+test("available_commands_update 进 commands.update，不进气泡", () => {
+  const events = mapAcpUpdate(
+    { sessionUpdate: "available_commands_update", availableCommands: [{ name: "plan", description: "Plan" }] },
+    "run_1"
   )
+  assert.equal(events[0]?.type, "commands.update")
+  if (events[0]?.type === "commands.update") {
+    assert.equal(events[0].commands[0]?.name, "plan")
+  }
 })
 
 test("permission options map allow / deny / session", () => {

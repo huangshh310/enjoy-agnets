@@ -175,6 +175,7 @@ export function KnowledgeAddModal({
                   <RiFileLine className="absolute left-3 top-2.5 size-4 text-text-tertiary" />
                 )}
                 <Input
+                  data-testid="knowledge-add-path"
                   value={path}
                   onChange={(e) => setPath(e.target.value)}
                   placeholder={
@@ -232,7 +233,7 @@ export function KnowledgeAddModal({
             ) : null}
           </div>
 
-          {activeTab === "folder" && workspaceDirs.length > 0 ? (
+          {activeTab === "folder" ? (
             <div className="flex flex-col gap-1.5">
               <Label className="text-caption-2-medium text-text-tertiary">
                 {t("pages.knowledge.workspaceFoldersFound")}
@@ -240,6 +241,7 @@ export function KnowledgeAddModal({
               <div className="flex max-h-24 flex-wrap items-center gap-1.5 overflow-y-auto">
                 <button
                   type="button"
+                  data-testid="knowledge-index-root"
                   onClick={() => setPath(".")}
                   className="inline-flex items-center gap-1 rounded-lg border border-border-button-default bg-background-secondary-default px-2 py-1 font-mono text-caption-2-medium text-text-primary"
                 >
@@ -330,6 +332,7 @@ export function KnowledgeAddModal({
           <Button
             type="button"
             size="sm"
+            data-testid="knowledge-index-confirm"
             disabled={!path.trim() || isAdding}
             aria-busy={isAdding}
             onClick={() => void handleAdd()}

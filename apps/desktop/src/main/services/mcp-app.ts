@@ -1,22 +1,36 @@
 /**
- * MCP App：只渲染已批准 HTML。iframe 消息经 sanitize，不执行任意工具。
+ * MCP App：能读到 Server HTML 才渲染；否则诚实空态。E2E stub 才给 demo。
  */
-import { approvedDemoAppHtml, sanitizeAppMessage, uriFrom } from "@enjoy-agents/mcp"
+import { sanitizeAppMessage, uriFrom, wrapApprovedAppHtml, approvedDemoAppHtml } from "@enjoy-agents/mcp"
+import type { McpOpenAppResult } from "@enjoy-agents/ipc-contract"
 import { stampAndBroadcast } from "./event-bus"
 import { isE2eStub } from "./e2e-stub"
 import { listServers, readServerResource } from "./mcp-service"
 
-export function openMcpApp(serverId: string, resourceUri?: string) {
+export async function openMcpApp(serverId: string, resourceUri?: string): Promise<McpOpenAppResult> {
   const server = requireTrusted(serverId)
   const allowed = allowedUris(server.allowedResourceUris)
+  const uri = resourceUri && allowed.includes(resourceUri) ? resourceUri : allowed.find((item) => item !== "mcp://app")
   stampAndBroadcast(
-    { type: "mcp.app", runId: serverId, serverId, resourceUri: resourceUri ?? "mcp://app", phase: "open" },
+    { type: "mcp.app", runId: serverId, serverId, resourceUri: uri ?? "mcp://app", phase: "open" },
     serverId
   )
+  if (isE2eStub()) {
+    return {
+      srcDoc: approvedDemoAppHtml(),
+      available: true,
+      demo: true,
+      title: server.name,
+      allowedResourceUris: allowed
+    }
+  }
+  const html = uri ? await readAppHtml(serverId, uri) : null
   return {
-    srcDoc: approvedDemoAppHtml(),
-    allowedResourceUris: allowed,
-    title: server.name
+    srcDoc: html,
+    available: Boolean(html),
+    demo: false,
+    title: server.name,
+    allowedResourceUris: allowed
   }
 }
 
@@ -40,6 +54,14 @@ export async function handleMcpAppMessage(serverId: string, raw: unknown) {
     serverId
   )
   return { ok: true, method: sanitized.method, text }
+}
+
+async function readAppHtml(serverId: string, uri: string): Promise<string | null> {
+  const read = await readServerResource(serverId, uri)
+  if (!read.ok) return null
+  const text = resourceText(read.result)
+  if (!looksLikeHtml(text)) return null
+  return wrapApprovedAppHtml(text)
 }
 
 async function readResource(serverId: string, params: unknown) {
@@ -91,6 +113,11 @@ function resourceText(result: unknown): string {
   try {
     return JSON.stringify(result)
   } catch {
-    return "resource-read-ok"
+    return ""
   }
+}
+
+function looksLikeHtml(text: string): boolean {
+  const trimmed = text.trim().toLowerCase()
+  return trimmed.startsWith("<!doctype html") || trimmed.startsWith("<html") || trimmed.includes("<body")
 }

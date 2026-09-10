@@ -40,6 +40,7 @@ export function MediaPage() {
           ref={fileInputRef}
           type="file"
           multiple
+          data-testid="media-file-input"
           className="hidden"
           onChange={(event) => {
             const files = [...(event.target.files ?? [])]

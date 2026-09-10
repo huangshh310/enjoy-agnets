@@ -13,6 +13,7 @@ export function KnowledgeRetrievalBody({
   hasSearched,
   hits,
   recent,
+  focusChunkId,
   totalChunks,
   workspaceDirs = [],
   indexing = false,
@@ -27,6 +28,7 @@ export function KnowledgeRetrievalBody({
   hasSearched: boolean
   hits: KnowledgeHit[]
   recent: KnowledgeHit[]
+  focusChunkId?: string | null
   totalChunks: number
   workspaceDirs?: string[]
   indexing?: boolean
@@ -62,6 +64,7 @@ export function KnowledgeRetrievalBody({
     return (
       <HitList
         hits={hits}
+        focusChunkId={focusChunkId}
         onPreviewDoc={onPreviewDoc}
         onPin={onPin}
         onFilterSource={onFilterSource}
@@ -88,18 +91,26 @@ export function KnowledgeRetrievalBody({
   return (
     <div className="flex flex-col gap-3">
       <span className="px-1 text-caption-2-medium text-text-tertiary">{t("pages.knowledge.recentCitations")}</span>
-      <HitList hits={recent} onPreviewDoc={onPreviewDoc} onPin={onPin} onFilterSource={onFilterSource} />
+      <HitList
+        hits={recent}
+        focusChunkId={focusChunkId}
+        onPreviewDoc={onPreviewDoc}
+        onPin={onPin}
+        onFilterSource={onFilterSource}
+      />
     </div>
   )
 }
 
 function HitList({
   hits,
+  focusChunkId,
   onPreviewDoc,
   onPin,
   onFilterSource
 }: {
   hits: KnowledgeHit[]
+  focusChunkId?: string | null
   onPreviewDoc: (path: string) => void
   onPin: (hit: KnowledgeHit) => void
   onFilterSource: (sourceId: string) => void
@@ -115,6 +126,7 @@ function HitList({
         <KnowledgeSnippetCard
           key={hit.chunkId}
           hit={hit}
+          focused={hit.chunkId === focusChunkId}
           onPreviewDoc={onPreviewDoc}
           onPin={() => onPin(hit)}
           onFilterSource={() => onFilterSource(hit.sourceId)}

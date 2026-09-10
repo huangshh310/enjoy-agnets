@@ -1,17 +1,29 @@
 /**
- * 右栏浏览器：地址栏 + Electron webview 预览 http(s)。
+ * 右栏浏览器：地址栏 + webview。设计模式把 DOM 摘要送进对话。
  */
-import { createElement, useEffect, useState, type FormEvent } from "react"
-import { RiGlobalLine } from "@remixicon/react"
+import { createElement, useEffect, useRef, useState, type FormEvent } from "react"
+import { RiFocus3Line, RiGlobalLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { parseHttpUrl } from "@renderer/lib/http-url"
+import { addQuotedContext } from "@renderer/hooks/quoted-context"
+import { steerPreparedText } from "@renderer/hooks/runtime-interact/steer-composer"
 import { PANE_FOCUS } from "../constants"
 import { useT } from "@renderer/i18n"
+import { BROWSER_DESIGN_SCRIPT } from "./browser-design-script"
+
+type DesignPick = {
+  tag?: string
+  html?: string
+  text?: string
+  css?: string
+}
 
 export function BrowserView({ url }: { url?: string }) {
   const t = useT()
+  const webviewRef = useRef<Electron.WebviewTag | null>(null)
   const [draft, setDraft] = useState(url ?? "")
   const [src, setSrc] = useState(() => parseHttpUrl(url) ?? "")
+  const [picking, setPicking] = useState(false)
 
   useEffect(() => {
     const href = parseHttpUrl(url)
@@ -26,6 +38,28 @@ export function BrowserView({ url }: { url?: string }) {
     if (!href) return
     setDraft(href)
     setSrc(href)
+  }
+
+  async function startDesignMode() {
+    const view = webviewRef.current
+    if (!view || picking) return
+    setPicking(true)
+    try {
+      const picked = (await view.executeJavaScript(BROWSER_DESIGN_SCRIPT, true)) as DesignPick
+      const html = picked?.html?.trim() ?? ""
+      if (!html) return
+      const title = `${picked.tag ?? "element"} from ${src}`
+      addQuotedContext({
+        id: `design-${Date.now()}`,
+        type: "file",
+        title,
+        content: [html, picked.css, picked.text].filter(Boolean).join("\n\n"),
+        snippet: html.slice(0, 280)
+      })
+      void steerPreparedText(`Design mode picked <${picked.tag ?? "element"}>. Use the quoted HTML/CSS.`)
+    } finally {
+      setPicking(false)
+    }
   }
 
   return (
@@ -48,12 +82,23 @@ export function BrowserView({ url }: { url?: string }) {
             PANE_FOCUS
           )}
         />
+        <button
+          type="button"
+          disabled={!src || picking}
+          onClick={() => void startDesignMode()}
+          title={t("chat.designModeHint")}
+          className="shrink-0 rounded-md px-1.5 py-0.5 text-caption-2-medium text-text-secondary hover:text-text-primary disabled:opacity-40"
+        >
+          <RiFocus3Line className="size-4" />
+          <span className="sr-only">{t("chat.designMode")}</span>
+        </button>
       </form>
       {src ? (
-        <div key={src} className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           {createElement("webview", {
             src,
             partition: "persist:enjoy-preview",
+            ref: webviewRef,
             style: { width: "100%", height: "100%" }
           })}
         </div>

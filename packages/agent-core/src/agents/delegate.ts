@@ -10,19 +10,25 @@ import type { ApprovalPolicy } from "../tool-approval.ts"
 import { summarizeSubagent, type SubagentSummary } from "./subagent.ts"
 import { runApprovedSubagent } from "./subagent-loop.ts"
 import type { WaitForSubagentApproval } from "./subagent-approval.ts"
+import { traceSubagentTools, type SubagentToolTraceEvent } from "./subagent-tool-trace.ts"
 import { joinInstructions } from "../join-instructions.ts"
 
-export function createDelegateTool(run: (task: string) => Promise<SubagentSummary>) {
+export function createDelegateTool(
+  run: (task: string, parentToolCallId?: string) => Promise<SubagentSummary>
+) {
   return {
     delegate: tool({
       description:
-        "Delegate a specialist task. The subagent returns a summary. Writes use the same approval as the parent.",
+        "Delegate a specialist task. The subagent returns a summary. Its tool calls appear under this step. Writes use the same approval as the parent.",
       inputSchema: z.object({
         task: z.string().describe("What the specialist should investigate"),
         title: z.string().optional()
       }),
-      execute: async ({ task, title }: { task: string; title?: string }) => {
-        const summary = await run(task)
+      execute: async (
+        { task, title }: { task: string; title?: string },
+        options?: { toolCallId?: string }
+      ) => {
+        const summary = await run(task, options?.toolCallId)
         return { ...summary, title: title?.trim() || summary.title }
       }
     })
@@ -36,6 +42,8 @@ export async function runReadOnlySubagent(options: {
   abortSignal?: AbortSignal
   generate?: (task: string) => Promise<string>
   extraInstructions?: string
+  parentToolCallId?: string
+  onToolEvent?: (event: SubagentToolTraceEvent) => void
 }): Promise<SubagentSummary> {
   const text = options.generate
     ? await options.generate(options.task)
@@ -52,7 +60,17 @@ async function generateSubagentText(options: {
   host: AgentWorkspaceHost
   abortSignal?: AbortSignal
   extraInstructions?: string
+  parentToolCallId?: string
+  onToolEvent?: (event: SubagentToolTraceEvent) => void
 }): Promise<string> {
+  const rawTools = createReadTools(options.host)
+  const tools =
+    options.onToolEvent && options.parentToolCallId
+      ? traceSubagentTools(rawTools, {
+          parentToolCallId: options.parentToolCallId,
+          emit: options.onToolEvent
+        })
+      : rawTools
   const { text } = await generateText({
     model: options.model,
     abortSignal: options.abortSignal,
@@ -61,7 +79,7 @@ async function generateSubagentText(options: {
       options.extraInstructions
     ),
     prompt: options.task,
-    tools: createReadTools(options.host)
+    tools
   })
   return text
 }
@@ -77,6 +95,8 @@ export function runDelegatedSubagent(options: {
   generate?: (task: string) => Promise<string>
   waitForApproval?: WaitForSubagentApproval
   extraInstructions?: string
+  parentToolCallId?: string
+  onToolEvent?: (event: SubagentToolTraceEvent) => void
 }): Promise<SubagentSummary> {
   if (options.mode === "ask" || options.mode === "plan") {
     return runReadOnlySubagent(options)

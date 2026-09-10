@@ -19,6 +19,9 @@ export const KnowledgeSource = z.object({
 })
 export type KnowledgeSource = z.infer<typeof KnowledgeSource>
 
+export const KnowledgeEmbeddingKind = z.enum(["provider", "hashed", "lexical"])
+export type KnowledgeEmbeddingKind = z.infer<typeof KnowledgeEmbeddingKind>
+
 export const KnowledgeHit = z.object({
   chunkId: z.string(),
   sourceId: z.string(),
@@ -26,9 +29,16 @@ export const KnowledgeHit = z.object({
   startLine: z.number().int().optional(),
   endLine: z.number().int().optional(),
   snippet: z.string(),
-  score: z.number()
+  score: z.number(),
+  embeddingKind: KnowledgeEmbeddingKind.optional()
 })
 export type KnowledgeHit = z.infer<typeof KnowledgeHit>
+
+export const KnowledgeSearchResult = z.object({
+  hits: z.array(KnowledgeHit),
+  embeddingKind: KnowledgeEmbeddingKind
+})
+export type KnowledgeSearchResult = z.infer<typeof KnowledgeSearchResult>
 
 export const KnowledgeSourcesInput = z
   .object({
@@ -58,7 +68,8 @@ export const KnowledgeSearchInput = z
     workspaceId: z.string().min(1),
     query: z.string().min(1),
     limit: z.number().int().min(1).max(50).default(8),
-    rerank: z.boolean().default(false)
+    rerank: z.boolean().default(false),
+    sourceIds: z.array(z.string().min(1)).max(64).optional()
   })
   .strict()
 export type KnowledgeSearchInput = z.infer<typeof KnowledgeSearchInput>

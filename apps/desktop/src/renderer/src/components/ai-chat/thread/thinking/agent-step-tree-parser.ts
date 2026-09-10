@@ -8,6 +8,7 @@ import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { splitReasoningAroundTools } from "./split-reasoning-around-tools.ts"
 import { groupConsecutiveSteps } from "./agent-step-group.ts"
+import { nestChildSteps } from "./agent-step-nest.ts"
 import { extractDomainPills } from "./extract-domain-pills.ts"
 import { isBashTool, isEditTool, isReadTool, isSearchTool, isWeakCommandName } from "./agent-step-kind.ts"
 import { isGenericVerb } from "./is-generic-verb.ts"
@@ -46,7 +47,7 @@ export function parseAgentStepNodes(
     if (node) nodes.push(node)
   }
 
-  return groupConsecutiveSteps(nodes, t)
+  return groupConsecutiveSteps(nestChildSteps(nodes, tools), t)
 }
 
 function parseToolArguments(tool: ThreadToolCall): Record<string, unknown> {

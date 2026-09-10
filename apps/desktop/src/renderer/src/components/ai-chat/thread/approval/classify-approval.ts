@@ -17,7 +17,7 @@ const COMMAND_TOOLS = new Set([
   "exec",
   "terminal"
 ])
-const PLAN_TOOLS = new Set(["write_file", "write", "edit_file", "edit", "git_commit"])
+const PLAN_TOOLS = new Set(["write_file", "write", "edit_file", "edit", "git_commit", "git_push"])
 const PAYLOAD_LIMIT = 600
 
 export function readArg(args: Record<string, unknown>, key: string): string {

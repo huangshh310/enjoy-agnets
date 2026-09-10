@@ -1,7 +1,7 @@
 /**
- * Composer 外壳：拖拽/粘贴附件、自适应输入、顶栏与底栏。
+ * Composer 外壳：拖拽/粘贴附件、自适应输入、引用 Chip 与底栏。工作区名在状态栏，不进输入框顶。
  */
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { cx } from "@/utils/cx"
 import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
@@ -10,12 +10,14 @@ import { ComposerQueue } from "./composer-queue"
 import { ComposerContextChips } from "./composer/composer-context-chips"
 import { ComposerFollowupRail } from "./composer/runtime-interact/composer-followup-rail"
 import { ComposerQuoteChips } from "./composer/runtime-interact/composer-quote-chips"
+import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
+import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
+import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
 import { registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
 import { ComposerSessionReview } from "./composer/session-review/composer-session-review"
 import { ComposerTodoDock } from "./composer/composer-todo-dock"
-import { ComposerToolbar } from "./composer/composer-toolbar"
 import type { ComposerProps } from "./composer/composer.types"
 import { EngineHandoffDock } from "./agent-picker/handoff/engine-handoff-dock"
 import { useT } from "@renderer/i18n"
@@ -109,13 +111,6 @@ export function AiChatComposer({
     onSend()
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key !== "Enter" || event.shiftKey) return
-    event.preventDefault()
-    if (event.metaKey || event.ctrlKey) onSteer()
-    else onSend()
-  }
-
   return (
     <div className={cx("relative flex flex-col w-full min-w-0 px-6 pb-2", className)}>
       <EngineHandoffDock />
@@ -140,7 +135,7 @@ export function AiChatComposer({
           onDrop={handleDrop}
           data-frost="chip"
           className={cx(
-            "@container relative flex min-w-0 flex-col overflow-hidden rounded-[22px]",
+            "@container relative flex min-w-0 flex-col overflow-visible rounded-[22px] pt-2",
             "border border-border-button-default bg-background-secondary-default/95 dark:bg-background-tertiary-default",
             "shadow-card backdrop-blur-md transition-all duration-300 ease-out",
             "hover:border-border-button-hover hover:shadow-dropdown",
@@ -166,23 +161,21 @@ export function AiChatComposer({
             }}
           />
 
-          <ComposerToolbar onPickFiles={pickFiles} />
           <ComposerContextChips />
+          <ComposerHostModeChip />
           <ComposerQuoteChips />
-          <div className="px-3.5 py-1">
-            <textarea
-              ref={textareaRef}
-              rows={2}
-              value={composer}
-              onChange={(event) => onComposerChange(event.target.value)}
-              onKeyDown={onKeyDown}
-              onPaste={handlePaste}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder={running ? t("chat.placeholderRunning") : t("chat.placeholder")}
-              className="max-h-48 min-h-[52px] w-full resize-none bg-transparent py-1.5 text-body-medium leading-relaxed text-text-primary outline-none placeholder:text-text-secondary/70"
-            />
-          </div>
+          <ComposerSkillChipBar />
+          <ComposerInput
+            value={composer}
+            onChange={onComposerChange}
+            onSend={onSend}
+            onSteer={onSteer}
+            running={running}
+            textareaRef={textareaRef}
+            onPaste={handlePaste}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+          />
 
           <ComposerFooter
             composer={composer}

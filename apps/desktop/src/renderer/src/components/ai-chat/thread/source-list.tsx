@@ -1,8 +1,9 @@
 /**
- * 知识引用来源：点选打开审查，不把整篇塞进正文。
+ * 知识引用来源：点选跳回知识页定位 snippet。
  */
-import { openChangedFile } from "@renderer/hooks/use-agent-session"
+import { useNavigate } from "@tanstack/react-router"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { knowledgeSearchFromSource } from "@renderer/components/knowledge/lib/knowledge-route-search"
 
 import { InlineCitations, type CitationReference } from "@/components/ai-elements/inline-citations"
 
@@ -11,6 +12,7 @@ export function SourceList({
 }: {
   sources: NonNullable<ThreadMessage["sources"]>
 }) {
+  const navigate = useNavigate()
   if (sources.length === 0) return null
 
   const refs: CitationReference[] = sources.map((s, i) => ({
@@ -26,9 +28,8 @@ export function SourceList({
         refs={refs}
         onSelectRef={(ref) => {
           const raw = sources[ref.n - 1]
-          if (raw?.path) {
-            void openChangedFile(raw.path)
-          }
+          if (!raw?.path) return
+          void navigate({ to: "/knowledge", search: knowledgeSearchFromSource(raw) })
         }}
       />
     </div>

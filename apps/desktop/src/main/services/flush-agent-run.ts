@@ -6,9 +6,10 @@ import { updateRun } from "@enjoy-agents/db"
 import { persistFinishedAssistant } from "./persist-parts"
 import { flushPayloadFromRun } from "./agent-run-flush"
 import { getDatabase } from "./database"
+import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { listActiveRuns, type ActiveRun } from "./agent-run-state"
 
-export type RunFlushStatus = "completed" | "failed" | "cancelled"
+export type RunFlushStatus = "completed" | "failed" | "cancelled" | "waiting_review" | "running"
 
 export function persistActiveRun(
   run: ActiveRun,
@@ -58,7 +59,15 @@ function writeAssistantRow(run: ActiveRun): boolean {
 export function flushActiveRuns(): void {
   for (const { runId, run } of listActiveRuns()) {
     try {
-      persistActiveRun(run, runId, "cancelled")
+      if (run.pendingApprovals.length > 0) {
+        persistActiveRun(run, runId, "waiting_review")
+        void import("./persist-waiting-run").then(({ persistWaitingRun }) => {
+          persistWaitingRun(run, runId)
+        })
+      } else {
+        persistRunningCheckpoint(run, runId)
+        persistActiveRun(run, runId, "running")
+      }
     } catch {
       // 一条坏 JSON 不能挡住其它 run 落库。
     }

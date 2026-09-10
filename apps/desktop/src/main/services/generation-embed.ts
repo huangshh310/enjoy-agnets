@@ -62,7 +62,7 @@ export async function runRerankKind(
     )
     return
   }
-  const hits = await searchKnowledge(workspaceId, prompt.trim(), 8, true)
+  const { hits } = await searchKnowledge(workspaceId, prompt.trim(), 8, true)
   stampAndSend(window, { type: "structured.delta", runId, partial: { hits } }, sessionId)
 }
 

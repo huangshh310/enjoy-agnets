@@ -63,7 +63,11 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   run.pendingApprovals = run.pendingApprovals.filter(
     (item) => item.approvalId !== decision.approvalId
   )
-  run.approvalGate.resolve(decision.approvalId, decision.decision)
+  const hadWaiter = run.approvalGate.resolve(decision.approvalId, decision.decision)
+  if (!hadWaiter && decision.decision !== "deny") {
+    const { executeStoredTool } = await import("./execute-stored-tool")
+    await executeStoredTool(run, pending)
+  }
   run.messages.push(approvalResponseMessage(decision, pending.name))
   emitEvent(window, {
     type: "approval.resolved",

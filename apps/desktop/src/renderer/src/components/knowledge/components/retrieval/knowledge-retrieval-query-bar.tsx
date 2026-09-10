@@ -39,6 +39,7 @@ export function KnowledgeRetrievalQueryBar({
           <RiSearchLine className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
           <Input
             autoFocus
+            data-testid="knowledge-search-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => {
@@ -52,6 +53,7 @@ export function KnowledgeRetrievalQueryBar({
           />
           <button
             type="button"
+            data-testid="knowledge-rerank"
             onClick={() => setRerank((prev) => !prev)}
             className={cx(
               "absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 cursor-pointer items-center gap-1 rounded-lg border px-2 py-1 font-mono text-caption-2-medium",
@@ -68,6 +70,7 @@ export function KnowledgeRetrievalQueryBar({
       </BorderBeam>
       <Button
         size="default"
+        data-testid="knowledge-search-submit"
         disabled={!query.trim() || isSearching}
         onClick={onSearch}
         className="h-11 shrink-0 gap-1.5 rounded-2xl px-5 text-body-medium shadow-xs"

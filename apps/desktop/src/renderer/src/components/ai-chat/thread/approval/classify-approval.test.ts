@@ -20,6 +20,7 @@ test("写盘与提交走 plan，不因 args.command 被抢走", () => {
   assert.equal(classifyApproval("edit_file", { path: "a.ts" }), "plan")
   assert.equal(classifyApproval("write_file", { path: "a.ts", command: "nope" }), "plan")
   assert.equal(classifyApproval("git_commit", { message: "fix" }), "plan")
+  assert.equal(classifyApproval("git_push", {}), "plan")
 })
 
 test("其余工具走 questions，MCP 带 command 字段不算 shell", () => {

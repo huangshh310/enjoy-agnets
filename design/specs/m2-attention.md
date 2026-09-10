@@ -2,10 +2,10 @@
 
 > M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-09
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
-> 产品锁：**本 PR 只收 M2**。之后顺序：M3 → M4。
+> 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
-> 可选后置（不在本 PR）：M5 会话状态灯 + 进程收尸。M6 skill-sources 可选 pull 已另 PR 薄层落地。
-> 侧栏 `waiting_review` 灯后置 M5，本 PR 不做。
+> ACP 异常子进程收尸已落地（启动账本 SIGKILL）。M6 skill-sources 可选 pull 已另 PR 薄层落地。
+> 侧栏 `waiting_review` 红点已在 `SidebarSessionRow`（Attention 槽 `pending_approval` / `ask_user` 且 active/focused）。这不是 M5 worktree。
 
 ## 当前真相
 
@@ -91,9 +91,9 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 
 写入 / Shell / Git 只在底栏盾牌菜单里改（`approval-policy-toggle.tsx`）。**不要**再画 `AutoApproveBar` 或 Composer 顶沿状态行。YOLO/All 的警示色只出现在盾牌本身。决策仍只在 PermissionDock / 策略菜单。
 
-### 5. 侧栏会话灯（后置 M5）
+### 5. 侧栏会话灯 / ACP 收尸
 
-本 PR **不做**。`waiting_review` 灯与进程收尸属可选后置，不挡 M2 验收。
+侧栏 `waiting_review` 灯已做。ACP 子进程账本：`userData/acp-children.json`，启动核对 comm 后 SIGKILL。这不是 M5 worktree。
 
 ---
 

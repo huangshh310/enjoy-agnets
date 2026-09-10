@@ -35,7 +35,12 @@ export function AgentStepTree({ nodes, className }: { nodes: AgentStepNode[]; cl
               ) : node.isBatch && node.batchItems ? (
                 <BatchEditingGroupRow node={node} />
               ) : (
-                <ToolStepNodeRow node={node} />
+                <>
+                  <ToolStepNodeRow node={node} />
+                  {node.children && node.children.length > 0 ? (
+                    <AgentStepTree nodes={node.children} className="pl-1" />
+                  ) : null}
+                </>
               )}
             </div>
           </div>

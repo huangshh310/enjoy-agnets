@@ -13,7 +13,9 @@ export const CODING_TOOL_NAMES = [
   "bash",
   "git_status",
   "git_diff",
+  "git_log",
   "git_commit",
+  "git_push",
   "code_mode",
   "delegate"
 ] as const
@@ -24,6 +26,7 @@ const READ_ONLY_TOOL_NAMES = [
   "ask_user_questions",
   "git_status",
   "git_diff",
+  "git_log",
   "delegate"
 ] as const
 
@@ -37,7 +40,10 @@ export function codingToolNamesFor(
   mode: AgentMode,
   options?: { includeAskUser?: boolean }
 ): string[] {
-  const names = isReadOnlyAgentMode(mode) ? [...READ_ONLY_TOOL_NAMES] : [...CODING_TOOL_NAMES]
+  const names: string[] = isReadOnlyAgentMode(mode)
+    ? [...READ_ONLY_TOOL_NAMES]
+    : [...CODING_TOOL_NAMES]
+  if (mode === "plan") names.push("submit_plan")
   if (options?.includeAskUser === false) {
     return names.filter((name) => name !== "ask_user_questions")
   }

@@ -31,3 +31,13 @@ export const AutomationIdInput = z
   })
   .strict()
 export type AutomationIdInput = z.infer<typeof AutomationIdInput>
+
+/** 立刻用当前会话跑一条自动化。 */
+export const RunAutomationInput = z
+  .object({
+    id: z.string().min(1),
+    sessionId: z.string().min(1),
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type RunAutomationInput = z.infer<typeof RunAutomationInput>

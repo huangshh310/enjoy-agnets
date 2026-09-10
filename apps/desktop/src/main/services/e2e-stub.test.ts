@@ -41,6 +41,68 @@ test("已批准写盘后回 stub-ok allowed write", async () => {
   assert.match(text, /stub-ok allowed write/)
 })
 
+test("Stop 后未完成的上一句不抢本轮 write", async () => {
+  const parts: string[] = []
+  for await (const part of createE2eStubStream(
+    [
+      { role: "assistant", content: "stub-ok hello" },
+      { role: "user", content: "please go slow now" },
+      { role: "user", content: "please write a note" }
+    ],
+    new AbortController().signal
+  )) {
+    parts.push(String(part.type))
+  }
+  assert.deepEqual(parts, ["tool-approval-request"])
+})
+
+test("cite 垫句不吞本轮附件", async () => {
+  let text = ""
+  for await (const part of createE2eStubStream(
+    [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "read this" },
+          { type: "text", text: "Attached file: note.txt\n\nbody" }
+        ]
+      } as never,
+      { role: "user", content: "Cite these workspace sources:\n- readme.md:0 hello" }
+    ],
+    new AbortController().signal
+  )) {
+    if (part.type === "text-delta") text += String(part.text ?? "")
+  }
+  assert.match(text, /attached:note.txt/)
+})
+
+test("上一轮附件不抢本轮普通回复", async () => {
+  let text = ""
+  for await (const part of createE2eStubStream(
+    [
+      { role: "user", content: "Attached file: note.txt\n\nbody\n\nread this" },
+      { role: "assistant", content: "stub-ok attached:note.txt" },
+      { role: "user", content: "hello again" }
+    ],
+    new AbortController().signal
+  )) {
+    if (part.type === "text-delta") text += String(part.text ?? "")
+  }
+  assert.match(text, /stub-ok hello again/)
+  assert.doesNotMatch(text, /attached/)
+})
+
+test("内联文本附件也会出现在 stub 回复里", async () => {
+  let text = ""
+  for await (const part of createE2eStubStream(
+    [{ role: "user", content: "Attached file: note.txt\n\nbody\n\nread this" }],
+    new AbortController().signal
+  )) {
+    if (part.type === "text-delta") text += String(part.text ?? "")
+  }
+  assert.match(text, /attached:note.txt/)
+})
+
 test("附件文件名会出现在 stub 回复里", async () => {
   let text = ""
   for await (const part of createE2eStubStream(

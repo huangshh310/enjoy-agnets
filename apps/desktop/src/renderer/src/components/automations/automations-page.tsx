@@ -9,6 +9,7 @@ import type { Automation, AutomationTrigger } from "@enjoy-agents/ipc-contract"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { AutomationList } from "./components/automation-list"
 import { AutomationDraftForm } from "./components/draft-form"
 import { AutomationTemplatesGrid } from "./components/templates-grid"
@@ -25,6 +26,7 @@ export function AutomationsPage({ embed = false }: { embed?: boolean }) {
   const [prompt, setPrompt] = useState("")
   const [trigger, setTrigger] = useState<AutomationTrigger>("manual")
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [runningId, setRunningId] = useState<string | null>(null)
 
   const automationsQuery = useQuery({
     queryKey: ["automations"],
@@ -137,6 +139,18 @@ export function AutomationsPage({ embed = false }: { embed?: boolean }) {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
+  async function runNow(automation: Automation) {
+    const workspaceId = useChatStore.getState().workspaceId
+    const sessionId = useChatStore.getState().sessionId
+    if (!hasIde() || !workspaceId || !sessionId) return
+    setRunningId(automation.id)
+    try {
+      await getIde().automations.run({ id: automation.id, workspaceId, sessionId })
+    } finally {
+      setRunningId(null)
+    }
+  }
+
   const body = (
       <div className="flex min-h-0 flex-1 flex-col gap-7">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -194,6 +208,8 @@ export function AutomationsPage({ embed = false }: { embed?: boolean }) {
           }}
           onRemove={(id) => void removeAutomation(id)}
           onCopyPrompt={handleCopyPrompt}
+          onRun={(item) => void runNow(item)}
+          runningId={runningId}
         />
       </div>
   )

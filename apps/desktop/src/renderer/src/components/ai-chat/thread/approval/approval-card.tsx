@@ -86,7 +86,8 @@ function PlanApproval({
   const plan = planFromPending(name, args, t("chat.emptyValue"), {
     write: t("chat.verbWrite"),
     edit: t("chat.verbEdit"),
-    commit: t("chat.verbGit")
+    commit: t("chat.verbGit"),
+    push: t("chat.verbPush")
   })
   return (
     <ApprovalChrome
