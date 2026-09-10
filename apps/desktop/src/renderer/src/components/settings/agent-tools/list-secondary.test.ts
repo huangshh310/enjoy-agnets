@@ -1,5 +1,5 @@
 /**
- * 助手列次行：只拼版本 · 短路径；两者都缺不留行。
+ * 助手列次行：只拼版本 · 短路径，未找到两边缺则 — · —。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
@@ -21,7 +21,7 @@ test("无版本用破折号", () => {
   assert.equal(shortVersion("2.1.9 (Claude Code)"), "v2.1.9")
 })
 
-test("Enjoy / 已装有次行；未找到两边都缺则不留行", () => {
+test("Enjoy / 已装 / 未找到次行只含版本与短路径", () => {
   assert.equal(
     formatListSecondary(
       {
@@ -33,7 +33,7 @@ test("Enjoy / 已装有次行；未找到两边都缺则不留行", () => {
       },
       t
     ),
-    "内置 · —"
+    "— · 内置"
   )
   assert.equal(
     formatListSecondary(
@@ -72,9 +72,13 @@ test("Enjoy / 已装有次行；未找到两边都缺则不留行", () => {
       },
       t
     ),
-    null
+    "— · —"
   )
   const lines = [
+    formatListSecondary(
+      { id: "cursor", status: "missing", version: null, detectedPath: null, binaries: ["agent"] },
+      t
+    ),
     formatListSecondary(
       { id: "claude", status: "ready", version: "v2.1.9", detectedPath: "/usr/local/bin/claude", binaries: ["claude"] },
       t
@@ -85,7 +89,6 @@ test("Enjoy / 已装有次行；未找到两边都缺则不留行", () => {
     )
   ]
   for (const line of lines) {
-    assert.ok(line)
     assert.ok(!line.includes("npm"))
     assert.ok(!line.includes("体检"))
     assert.ok(!line.includes("体检正常"))

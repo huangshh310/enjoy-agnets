@@ -1,5 +1,5 @@
 /**
- * 本机 CLI 密布局：三列栅格与操作主槽定宽。对齐 previews/local-cli-dense-v2.html。
+ * 本机 CLI 密布局：三列栅格与操作主槽定宽。对齐 previews/local-cli-dense-p0.html（add29a4 同文）。
  */
 
 export const CLI_LIST_GRID = "grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem]"

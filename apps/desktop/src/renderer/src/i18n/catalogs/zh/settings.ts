@@ -152,7 +152,7 @@ export const zhSettings = {
     currentEngine: "当前主引擎",
     listCurrent: "当前",
     listCopy: "复制",
-    listSynced: "已同步本机",
+    listSynced: "已同步",
     listOfficialOut: "未登录",
     listOfficialCheck: "检测中",
     listEnjoyBuiltin: "内置",

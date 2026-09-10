@@ -59,11 +59,9 @@ export function AgentToolRowAssistant({
             {status}
           </span>
         </div>
-        {secondary ? (
-          <p className="truncate font-mono text-caption-2-regular text-text-tertiary" title={secondary}>
-            {secondary}
-          </p>
-        ) : null}
+        <p className="truncate font-mono text-caption-2-regular text-text-tertiary" title={secondary}>
+          {secondary}
+        </p>
       </div>
     </div>
   )

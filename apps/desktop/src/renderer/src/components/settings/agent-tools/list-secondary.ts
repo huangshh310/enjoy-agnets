@@ -1,20 +1,17 @@
 /**
- * 助手列次行：只拼 `{version} · {路径短名}`。两者都缺不返回，禁止体检句。
+ * 助手列次行：只拼 `{version} · {路径短名}`。禁止体检句、安装长句、绝对路径。
  */
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 
 type Translate = (key: string) => string
 
-/** Enjoy `内置 · —`；有版本或路径才拼行；两者都缺返回 null（不留空行）。 */
+/** Enjoy `— · 内置`；其余永远 `版本 · 短路径`，缺段用 —。 */
 export function formatListSecondary(
   tool: Pick<AgentToolPublic, "id" | "status" | "version" | "detectedPath" | "binaries">,
   t: Translate
-): string | null {
-  if (tool.id === "enjoy-local") return `${t("settings.agentTools.listEnjoyBuiltin")} · —`
-  const version = shortVersion(tool.version)
-  const path = shortPathFor(tool)
-  if (version === "—" && path === "—") return null
-  return `${version} · ${path}`
+): string {
+  if (tool.id === "enjoy-local") return `— · ${t("settings.agentTools.listEnjoyBuiltin")}`
+  return `${shortVersion(tool.version)} · ${shortPathFor(tool)}`
 }
 
 function shortPathFor(

@@ -152,7 +152,7 @@ export const enSettings = {
     currentEngine: "Active engine",
     listCurrent: "Current",
     listCopy: "Copy",
-    listSynced: "Synced locally",
+    listSynced: "Synced",
     listOfficialOut: "Signed out",
     listOfficialCheck: "Checking",
     listEnjoyBuiltin: "Built-in",
