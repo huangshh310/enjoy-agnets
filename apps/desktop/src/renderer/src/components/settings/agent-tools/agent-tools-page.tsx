@@ -88,7 +88,7 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
         />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border-button-default">
-          <div className={`grid ${CLI_LIST_GRID} gap-2 border-b border-separator-border bg-background-secondary-default/50 px-3 py-1.5 text-caption-2-medium font-semibold tracking-wide text-text-tertiary uppercase`}>
+          <div className={`grid ${CLI_LIST_GRID} gap-x-3 border-b border-separator-border bg-background-secondary-default/50 px-3 py-1.5 text-caption-2-medium font-semibold tracking-wide text-text-tertiary uppercase`}>
             <span>{t("settings.agentTools.colAssistant")}</span>
             <span>{t("settings.agentTools.colPower")}</span>
             <span className="text-right">{t("settings.agentTools.colActions")}</span>

@@ -33,7 +33,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 1. 分段：本机 CLI | Registry | 进阶沙箱 | 默认项
 2. 顶栏一行可关提示：切到本机助手时 Enjoy 密钥不会带过去 + 扫描 / 体检
-3. **CLI 密表**（助手 | 动力源 | 操作）；每行都有动力源。助手次行走版本 · 短路径 / 安装提示，不是 `listLine`。可绑才在抽屉里选档案；仅官方只读登录态。列表不画额度条或「额度进配置」。绑了档案后官方 inspect 只作旁注，额度条仍只在走官方登录时画、且不上列表。配置抽屉 380px 同壳。供应商 Configured 芯片跳 `#/settings/agent?tool=<id>` 闪对应行
+3. **CLI 密表**（助手 | 动力源 | 操作）；每行都有动力源。助手次行只拼版本 · 短路径，不是 `listLine` / doctor。可绑才在抽屉里选档案；仅官方只读登录态。列表不画额度条或「额度进配置」。绑了档案后官方 inspect 只作旁注，额度条仍只在走官方登录时画、且不上列表。配置抽屉 380px 同壳。供应商 Configured 芯片跳 `#/settings/agent?tool=<id>` 闪对应行
 4. **能力说明**默认收起：`CapabilityMatrix`（行=runtime，含沙箱 + 自定义 ACP；列=spawn / login / quota / thinking / fast / executionModes；「支持」不是已登录；点行跳到对应卡或沙箱分段）+ `ConfigBoundaryTable`（Key→Enjoy vault · **CLI 引用的供应商→Enjoy vault** · login→各家 CLI · MCP→`#/mcp` · Skills→`#/skills`）。自定义行画用户 **label**，不画 raw id/slug。
 
 已删除：`AgentToolsHubMetrics`（装载率条、常绿灯、「沙箱隔离·实时 Token 流」）。`AgentLimitsCard` 下半 `PlanLimitsSection` 已删，上半只作 L3 明细。

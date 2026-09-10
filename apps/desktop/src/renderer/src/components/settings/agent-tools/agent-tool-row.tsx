@@ -30,7 +30,7 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
     <>
       <div
         id={agentToolCardId(tool.id)}
-        className={`grid ${CLI_LIST_GRID} items-center gap-2 border-b border-separator-border px-3 py-2 last:border-b-0 ${
+        className={`grid ${CLI_LIST_GRID} items-center gap-x-3 border-b border-separator-border px-3 py-1.5 last:border-b-0 ${
           flash
             ? "bg-accent-500/10 ring-1 ring-inset ring-accent-500/30"
             : actions.isActive

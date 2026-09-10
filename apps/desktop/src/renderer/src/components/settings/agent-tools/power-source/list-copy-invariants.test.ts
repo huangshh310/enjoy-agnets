@@ -46,10 +46,13 @@ test("本机 CLI 列表源码不含协议微标 / 额度 / 邮箱 / 表底禁令
 
 test("表行副标题走短路径次行，不用品牌 meta 或 listLine", () => {
   const src = readFileSync(join(dir, "../agent-tool-row-parts.tsx"), "utf8")
+  const secondary = readFileSync(join(dir, "../list-secondary.ts"), "utf8")
   assert.ok(src.includes("formatListSecondary"))
   assert.ok(src.includes("listSynced"))
   assert.ok(!src.includes("listTaglineKey"))
   assert.ok(!src.includes("listLine."))
+  assert.ok(!secondary.includes("listHint"))
+  assert.ok(!secondary.includes("npm 全局"))
 })
 
 test("操作列主槽定宽，复制-only 留空位", () => {
@@ -57,8 +60,8 @@ test("操作列主槽定宽，复制-only 留空位", () => {
   const parts = readFileSync(join(dir, "../agent-tool-row-parts.tsx"), "utf8")
   const page = readFileSync(join(dir, "../agent-tools-page.tsx"), "utf8")
   const row = readFileSync(join(dir, "../agent-tool-row.tsx"), "utf8")
-  assert.ok(layout.includes("9.5rem"))
-  assert.ok(layout.includes("7.25rem"))
+  assert.ok(layout.includes("8.75rem"))
+  assert.ok(layout.includes("6.75rem"))
   assert.ok(parts.includes("CLI_LIST_PRIMARY_SLOT"))
   assert.ok(page.includes("CLI_LIST_GRID"))
   assert.ok(row.includes("CLI_LIST_GRID"))
