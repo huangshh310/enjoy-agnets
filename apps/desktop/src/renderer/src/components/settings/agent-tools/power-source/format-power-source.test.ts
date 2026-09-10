@@ -9,8 +9,8 @@ import { formatPowerSourceText } from "./format-power-source.ts"
 const copy: Record<string, string> = {
   "settings.agentTools.officialLogin": "官方登录",
   "settings.agentTools.accountSignedIn": "已登录",
-  "settings.agentTools.accountNeedsLogin": "未登录",
-  "settings.agentTools.accountChecking": "检测",
+  "settings.agentTools.listOfficialOut": "未登录",
+  "settings.agentTools.listOfficialCheck": "检测中",
   "settings.agentTools.boundSummary": "供应商 · {provider} · {model}",
   "settings.agentTools.ompSummary": "OMP 供应商 · {provider} · {model}"
 }
@@ -77,4 +77,21 @@ test("OMP 文案前缀不是 Enjoy 供应商", () => {
   )
   assert.equal(text, "OMP 供应商 · default · google-antigravity")
   assert.ok(!text.startsWith("供应商 ·"))
+})
+
+test("空档案不假装有 vault", () => {
+  assert.equal(
+    formatPowerSourceText({ kind: "enjoy-vault", present: true, mode: "vault" }, t),
+    "—"
+  )
+})
+
+test("官方检测中用列表文案", () => {
+  assert.equal(
+    formatPowerSourceText(
+      { kind: "official", present: true, mode: "official", official: "check" },
+      t
+    ),
+    "官方登录 · 检测中"
+  )
 })

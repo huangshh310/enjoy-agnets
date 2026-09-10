@@ -4,9 +4,9 @@
  */
 import { existsSync } from "node:fs"
 import { chmod, copyFile, mkdir, readFile, unlink, writeFile } from "node:fs/promises"
-import { homedir } from "node:os"
-import { dirname, join } from "node:path"
+import { dirname } from "node:path"
 import type { AgentToolId, SyncCliConfigResult } from "@enjoy-agents/ipc-contract"
+import { homeConfigPathFor } from "./agent-tools-home-sync"
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import {
   backupPathFor,
@@ -61,13 +61,9 @@ export async function syncCliConfig(id: AgentToolId): Promise<SyncCliConfigResul
 
 export async function restoreCliConfig(id: AgentToolId): Promise<SyncCliConfigResult> {
   try {
-    if (id === "claude") return restoreFromBackup(id, join(homedir(), ".claude", "settings.json"))
-    if (id === "codex") return restoreFromBackup(id, join(homedir(), ".codex", "config.toml"))
-    if (id === "opencode") {
-      return restoreFromBackup(id, join(homedir(), ".config", "opencode", "opencode.json"))
-    }
-    if (id === "gemini") return restoreFromBackup(id, join(homedir(), ".gemini", ".env"))
-    return { id, ok: false, message: "Nothing to restore.", configPath: null }
+    const configPath = homeConfigPathFor(id)
+    if (!configPath) return { id, ok: false, message: "Nothing to restore.", configPath: null }
+    return restoreFromBackup(id, configPath)
   } catch (err) {
     return {
       id,
@@ -96,7 +92,7 @@ async function resolveSyncProfile(id: AgentToolId): Promise<SyncProfile | null> 
 }
 
 async function syncClaudeSettings(id: AgentToolId, profile: SyncProfile): Promise<SyncCliConfigResult> {
-  const configPath = join(homedir(), ".claude", "settings.json")
+  const configPath = requireHomePath(id)
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = await readJsonObject(configPath)
@@ -115,7 +111,7 @@ async function syncClaudeSettings(id: AgentToolId, profile: SyncProfile): Promis
 }
 
 async function syncCodexTomlFile(id: AgentToolId, profile: SyncProfile): Promise<SyncCliConfigResult> {
-  const configPath = join(homedir(), ".codex", "config.toml")
+  const configPath = requireHomePath(id)
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = existsSync(configPath) ? await readFile(configPath, "utf-8") : ""
@@ -130,7 +126,7 @@ async function syncCodexTomlFile(id: AgentToolId, profile: SyncProfile): Promise
 }
 
 async function syncOpenCodeJsonFile(id: AgentToolId, profile: SyncProfile): Promise<SyncCliConfigResult> {
-  const configPath = join(homedir(), ".config", "opencode", "opencode.json")
+  const configPath = requireHomePath(id)
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = existsSync(configPath) ? await readFile(configPath, "utf-8") : ""
@@ -145,7 +141,7 @@ async function syncOpenCodeJsonFile(id: AgentToolId, profile: SyncProfile): Prom
 }
 
 async function syncGeminiEnvFile(id: AgentToolId, profile: SyncProfile): Promise<SyncCliConfigResult> {
-  const configPath = join(homedir(), ".gemini", ".env")
+  const configPath = requireHomePath(id)
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = existsSync(configPath) ? await readFile(configPath, "utf-8") : ""
@@ -156,6 +152,12 @@ async function syncGeminiEnvFile(id: AgentToolId, profile: SyncProfile): Promise
   })
   await writePrivate(configPath, next)
   return okResult(id, profile.name, "Gemini env", configPath)
+}
+
+function requireHomePath(id: AgentToolId): string {
+  const path = homeConfigPathFor(id)
+  if (!path) throw new Error(`This agent (${id}) cannot sync home-dir config.`)
+  return path
 }
 
 function okResult(

@@ -26,6 +26,7 @@ import { invalidateAccountCache } from "./agent-tools-account/inspect"
 import { doctorAcpHandshake } from "./agent-tools-doctor-acp"
 import { getCustomAgent, readCustomAgents, toPublicCustom, upsertCustomAgent } from "./agent-tools-custom"
 import { safeCustomBinaryPath } from "./agent-tools-guard"
+import { homeSyncedFor } from "./agent-tools-home-sync"
 import { readAgentToolOverrides, writeAgentToolOverride } from "./agent-tools-vault"
 import { readVault } from "./secrets-vault"
 
@@ -200,7 +201,8 @@ async function toPublic(
     boundProviderApiStyle: profile?.apiStyle,
     boundHasKey: bound ? Boolean(profile?.apiKey?.trim()) : undefined,
     supportedApiStyles: supportedStylesForTool(preset.id),
-    capabilities: capabilitiesFor(preset.id)
+    capabilities: capabilitiesFor(preset.id),
+    homeSynced: homeSyncedFor(preset.id)
   }
 }
 

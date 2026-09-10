@@ -5,15 +5,22 @@ import type { PowerSourceParts } from "@enjoy-agents/ipc-contract"
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
+/** 空档案 / 空 OMP 不假装有 vault。 */
+export function isBlankPowerSource(parts: PowerSourceParts): boolean {
+  if (parts.mode === "official") return false
+  return !parts.archive && !parts.model
+}
+
 /** 列表「动力源」列永远有非空正文。 */
 export function formatPowerSourceText(parts: PowerSourceParts, t: Translate): string {
+  if (isBlankPowerSource(parts)) return "—"
   if (parts.mode === "official") {
     const status =
       parts.official === "in"
         ? t("settings.agentTools.accountSignedIn")
         : parts.official === "check"
-          ? t("settings.agentTools.accountChecking")
-          : t("settings.agentTools.accountNeedsLogin")
+          ? t("settings.agentTools.listOfficialCheck")
+          : t("settings.agentTools.listOfficialOut")
     return `${t("settings.agentTools.officialLogin")} · ${status}`
   }
   const provider = parts.archive || "—"
