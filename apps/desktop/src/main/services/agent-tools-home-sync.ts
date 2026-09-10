@@ -4,7 +4,6 @@
 import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
-import { backupPathFor } from "./cli-config-format"
 
 /** 可同步 CLI 的家目录配置路径；Cursor / Grok 等返回 null。 */
 export function homeConfigPathFor(id: string): string | null {
@@ -18,5 +17,5 @@ export function homeConfigPathFor(id: string): string | null {
 /** 备份还在 = 同步过且未恢复。列表只信这个布尔，不读文件内容。 */
 export function homeSyncedFor(id: string): boolean {
   const path = homeConfigPathFor(id)
-  return path ? existsSync(backupPathFor(path)) : false
+  return path ? existsSync(`${path}.enjoy.bak`) : false
 }
