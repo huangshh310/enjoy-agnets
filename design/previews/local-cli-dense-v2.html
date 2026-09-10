@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>本机 CLI · 密而不乱 v2 · Luna</title>
+<title>本机 CLI · dense-v2 定稿 · Luna</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -19,221 +19,222 @@ tailwind.config = {
 </script>
 <style>
   body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
-  /* 操作列：主槽位定宽，按钮同高，右缘齐 */
-  .act-slot { width: 7.25rem; }
-  .act-btn { height: 1.75rem; min-width: 0; }
+  .act-main { width: 6.75rem; height: 1.75rem; }
+  .act-icon { width: 1.75rem; height: 1.75rem; }
 </style>
 </head>
 <body class="bg-paper text-ink antialiased">
-  <div class="mx-auto max-w-[1080px] border-x border-line bg-card">
+  <div class="mx-auto max-w-[1040px] border-x border-line bg-card">
     <header class="border-b border-line px-5 pt-3">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/local-cli-dense-v2.html · 等 jojo 定字段 P0</p>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/local-cli-dense-v2.html · jojo 定稿 · 云端 1:1 真源</p>
       <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 class="text-[15px] font-semibold">本机 CLI</h1>
-          <p class="text-[11px] text-mute">列表看动力源与次要信息；改绑定进配置。</p>
+          <p class="text-[11px] text-mute">检测、安装、登录。列表看动力源；改绑定进配置。</p>
         </div>
         <div class="flex gap-1.5">
-          <button class="act-btn rounded-lg border border-line px-2.5 text-[11px]">管理模型供应商</button>
-          <button class="act-btn rounded-lg border border-line px-2.5 text-[11px]">扫描本机</button>
-          <button class="act-btn rounded-lg bg-accent px-2.5 text-[11px] font-medium text-white">运行体检</button>
+          <button class="h-7 rounded-lg border border-line px-2.5 text-[11px]">管理模型供应商</button>
+          <button class="h-7 rounded-lg border border-line px-2.5 text-[11px]">扫描本机</button>
+          <button class="h-7 rounded-lg bg-accent px-2.5 text-[11px] font-medium text-white">运行体检</button>
         </div>
       </div>
-      <p class="mt-2 flex items-center justify-between rounded-md border border-line bg-paper px-2.5 py-1.5 text-[11px] text-mute">
+      <p class="mt-2 flex items-center justify-between rounded-md border border-line bg-paper px-2.5 py-1 text-[11px] text-mute">
         <span>切到本机助手时 Enjoy 密钥不会带过去；未登录请先官方登录。</span>
-        <button class="text-accent">知道了</button>
+        <button class="shrink-0 text-accent">知道了</button>
       </p>
       <div class="mt-2 flex flex-wrap items-center gap-1 border-b border-line pb-2 text-[11px]">
         <span class="rounded-full bg-soft px-2 py-0.5 font-medium text-accent">全部 13</span>
         <span class="rounded-full px-2 py-0.5 text-mute">已安装 8</span>
         <span class="rounded-full px-2 py-0.5 text-mute">未找到 5</span>
         <span class="rounded-full px-2 py-0.5 text-mute">规划 0</span>
-        <input class="ml-auto h-7 w-36 rounded-lg border border-line px-2 text-[11px]" placeholder="搜索助手…" />
+        <input class="ml-auto h-7 w-36 rounded-lg border border-line px-2" placeholder="搜索助手…" />
       </div>
     </header>
 
     <div class="px-5 py-3">
       <div class="overflow-hidden rounded-xl border border-line">
-        <!-- 表头：三列；操作列定宽 -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] gap-2 border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-mute">
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] gap-x-3 border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-mute">
           <span>助手</span>
           <span>动力源</span>
           <span class="text-right">操作</span>
         </div>
 
-        <!-- Enjoy -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 border-b border-line px-3 py-2 hover:bg-paper/70">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-amber-100 text-[10px] font-bold">E</span>
+        <!-- Enjoy：有版本·路径则画次要行 -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-amber-100 text-[10px] font-bold">E</span>
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Enjoy 本地</span>
-                <span class="rounded px-1 py-px text-[10px] text-ok ring-1 ring-ok/25">已安装</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="mt-0.5 truncate text-[10px] text-mute">本地核心 · v0 — · 内置</p>
+              <p class="truncate font-mono text-[10px] text-mute">内置 · —</p>
             </div>
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 justify-self-start">
             <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-line bg-paper px-2 py-0.5 text-[11px]">
               <span class="size-1.5 shrink-0 rounded-full bg-accent"></span>
               供应商 · lucky0625 · deepseek-v4-flash
             </span>
           </div>
           <div class="flex items-center justify-end gap-1">
-            <button class="act-btn act-slot rounded-lg border border-line px-2 text-[11px]">设为主引擎</button>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">配置</button>
+            <button class="act-main rounded-lg border border-line text-[11px]">设为主引擎</button>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="配置" aria-label="配置">⚙</button>
           </div>
         </div>
 
-        <!-- Claude current -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 border-b border-line bg-soft/40 px-3 py-2">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-orange-100 text-[10px] font-bold">C</span>
+        <!-- Claude 绑定：名旁「已同步本机」；「官方仍保留」不在列表（进抽屉） -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line bg-soft/35 px-3 py-1.5">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-orange-100 text-[10px] font-bold">C</span>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Claude Code</span>
-                <span class="rounded px-1 py-px text-[10px] text-ok ring-1 ring-ok/25">已安装</span>
-                <span class="rounded bg-soft px-1 py-px text-[10px] text-accent">已同步</span>
+                <span class="rounded bg-soft px-1 py-px text-[10px] text-accent">已同步本机</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="mt-0.5 truncate font-mono text-[10px] text-mute">v2.1.9 · bin/claude</p>
+              <p class="truncate font-mono text-[10px] text-mute">v2.1.9 · bin/claude</p>
             </div>
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 justify-self-start">
             <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-accent/30 bg-card px-2 py-0.5 text-[11px]">
               <span class="size-1.5 shrink-0 rounded-full bg-accent"></span>
               供应商 · deep · deepseek-flash
             </span>
           </div>
           <div class="flex items-center justify-end gap-1">
-            <span class="act-btn act-slot inline-flex items-center justify-center rounded-lg bg-accent/10 text-[11px] font-medium text-accent">✓ 当前</span>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">配置</button>
+            <span class="act-main inline-flex items-center justify-center rounded-lg bg-accent/10 text-[11px] font-medium text-accent">✓ 当前</span>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="配置" aria-label="配置">⚙</button>
           </div>
         </div>
 
-        <!-- Cursor official -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 border-b border-line px-3 py-2 hover:bg-paper/70">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-[10px] font-bold">Cu</span>
+        <!-- Cursor 仅官方：动力源贴左；无假 BYOK；无额度 hint -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-[10px] font-bold">Cu</span>
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Cursor CLI</span>
-                <span class="rounded px-1 py-px text-[10px] text-ok ring-1 ring-ok/25">已安装</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="mt-0.5 truncate font-mono text-[10px] text-mute">v1.4.0 · bin/agent</p>
+              <p class="truncate font-mono text-[10px] text-mute">v1.4.0 · bin/agent</p>
             </div>
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 justify-self-start">
             <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-line bg-paper px-2 py-0.5 text-[11px]">
               <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
               官方登录 · 已登录
             </span>
           </div>
           <div class="flex items-center justify-end gap-1">
-            <button class="act-btn act-slot rounded-lg border border-line px-2 text-[11px]">设为主引擎</button>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">配置</button>
+            <button class="act-main rounded-lg border border-line text-[11px]">设为主引擎</button>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="配置" aria-label="配置">⚙</button>
           </div>
         </div>
 
-        <!-- Grok — 无额度 hint 行 -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 border-b border-line px-3 py-2 hover:bg-paper/70">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-stone-900 text-[10px] font-bold text-white">G</span>
+        <!-- Grok：次要行仅版本·路径；医生不进列表 -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-stone-900 text-[10px] font-bold text-white">G</span>
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Grok Build</span>
-                <span class="rounded px-1 py-px text-[10px] text-ok ring-1 ring-ok/25">已安装</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="mt-0.5 truncate font-mono text-[10px] text-mute">v0.9 · bin/grok</p>
+              <p class="truncate font-mono text-[10px] text-mute">v0.9 · bin/grok</p>
             </div>
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 justify-self-start">
             <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-line bg-paper px-2 py-0.5 text-[11px]">
               <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
               官方登录 · 已登录
             </span>
           </div>
           <div class="flex items-center justify-end gap-1">
-            <button class="act-btn act-slot rounded-lg border border-line px-2 text-[11px]">设为主引擎</button>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">配置</button>
+            <button class="act-main rounded-lg border border-line text-[11px]">设为主引擎</button>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="配置" aria-label="配置">⚙</button>
           </div>
         </div>
 
-        <!-- OMP long truncate -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 border-b border-line px-3 py-2 hover:bg-paper/70">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-violet-100 text-[10px] font-bold">O</span>
+        <!-- OMP -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-violet-100 text-[10px] font-bold">O</span>
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Oh My Pi</span>
-                <span class="rounded px-1 py-px text-[10px] text-ok ring-1 ring-ok/25">已安装</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="mt-0.5 truncate font-mono text-[10px] text-mute">v1.2 · bin/omp</p>
+              <p class="truncate font-mono text-[10px] text-mute">v1.2 · bin/omp</p>
             </div>
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 justify-self-start">
             <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-line bg-paper px-2 py-0.5 text-[11px]" title="OMP 供应商 · default · google-antigravity">
               <span class="size-1.5 shrink-0 rounded-full bg-violet-500"></span>
               <span class="truncate">OMP 供应商 · default · google-antigravity</span>
             </span>
           </div>
           <div class="flex items-center justify-end gap-1">
-            <button class="act-btn act-slot rounded-lg border border-line px-2 text-[11px]">设为主引擎</button>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">配置</button>
+            <button class="act-main rounded-lg border border-line text-[11px]">设为主引擎</button>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="配置" aria-label="配置">⚙</button>
           </div>
         </div>
 
-        <!-- Missing: 一键安装占主槽同宽 -->
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 border-b border-line px-3 py-2 opacity-90">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-line text-[10px]">Ge</span>
+        <!-- 未找到：无版本无路径 → 不留空次要行 -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-line text-[10px]">Ge</span>
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Gemini CLI</span>
-                <span class="rounded px-1 py-px text-[10px] text-warn ring-1 ring-warn/25">未找到</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-warn"></span>
+                <span class="shrink-0 text-[10px] text-warn">未找到</span>
               </div>
-              <p class="mt-0.5 truncate text-[10px] text-mute">— · npm 全局可装</p>
             </div>
           </div>
-          <div class="min-w-0"><span class="text-[11px] text-mute">—</span></div>
+          <div class="min-w-0 justify-self-start"><span class="text-[11px] text-mute">—</span></div>
           <div class="flex items-center justify-end gap-1">
-            <button class="act-btn act-slot rounded-lg bg-accent px-2 text-[11px] font-medium text-white">一键安装</button>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">复制</button>
+            <button class="act-main rounded-lg bg-accent text-[11px] font-medium text-white">一键安装</button>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="复制安装命令" aria-label="复制">⎘</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_9.5rem] items-center gap-2 px-3 py-2 opacity-90">
-          <div class="flex min-w-0 items-start gap-2">
-            <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-line text-[10px]">Co</span>
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 px-3 py-1.5">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-line text-[10px]">Co</span>
             <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
+              <div class="flex items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Codex CLI</span>
-                <span class="rounded px-1 py-px text-[10px] text-warn ring-1 ring-warn/25">未找到</span>
+                <span class="size-1.5 shrink-0 rounded-full bg-warn"></span>
+                <span class="shrink-0 text-[10px] text-warn">未找到</span>
               </div>
-              <p class="mt-0.5 truncate text-[10px] text-mute">— · 仅复制安装命令</p>
             </div>
           </div>
-          <div class="min-w-0"><span class="text-[11px] text-mute">—</span></div>
+          <div class="min-w-0 justify-self-start"><span class="text-[11px] text-mute">—</span></div>
           <div class="flex items-center justify-end gap-1">
-            <span class="act-slot"></span>
-            <button class="act-btn rounded-lg border border-line px-2 text-[11px]">复制</button>
+            <span class="act-main"></span>
+            <button class="act-icon inline-flex items-center justify-center rounded-lg border border-line text-mute" title="复制安装命令" aria-label="复制">⎘</button>
           </div>
         </div>
       </div>
 
-      <!-- 无协议微标脚注；能力说明默认折 -->
       <details class="mt-3 rounded-lg border border-line">
         <summary class="cursor-pointer px-3 py-2 text-[11px] font-medium">能力说明</summary>
-        <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表与配置归属，默认折叠。不挡安装与登录。</p>
+        <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表与配置归属，默认折叠。抽屉内可写「官方仍保留」。不假 BYOK。医生一句不进列表。</p>
       </details>
     </div>
 
-    <section class="border-t border-line bg-paper px-5 py-4 text-[11px] leading-relaxed text-mute">
-      <p class="font-semibold text-ink">相对 #16 / 现状的改点（本预览）</p>
+    <section class="border-t border-line bg-paper px-5 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">字段锁（jojo 定稿）</p>
       <ul class="mt-1 list-disc space-y-0.5 pl-4">
-        <li>仍三列；行高压到 ~40–44px；助手下列 1～2 条次要信息占位：<code class="rounded bg-card px-1">版本 · 路径短名</code>，另可选轻标「已同步」（字段等 jojo P0）。</li>
-        <li>操作列定宽主槽：当前 / 设为主引擎 / 一键安装同宽同高；配置/复制为次按钮，右缘齐。</li>
-        <li>去掉表底 ToolLoop/ACP 脚注；去掉每行「额度进配置」重复 hint（额度只在抽屉）。</li>
-        <li>动力源仍同构胶囊；仅官方无假 vault；providerBind 驱动；禁品牌特判。</li>
+        <li>次要行：仅 <code class="rounded bg-card px-1">版本 · 路径短名</code>；两者都缺则不留空行；医生一句不进列表</li>
+        <li>绑定时：助手名旁「已同步本机」；「官方仍保留」只进抽屉</li>
+        <li>动力源贴左同构；操作定宽三态 + 配置 icon；无协议脚注；无列表配额</li>
       </ul>
     </section>
   </div>
