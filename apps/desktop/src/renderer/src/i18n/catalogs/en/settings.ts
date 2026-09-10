@@ -109,7 +109,7 @@ export const enSettings = {
   },
 
   agent: {
-    hubHarness: "Experimental · sandbox Harness",
+    hubHarness: "Advanced sandbox",
     hubLocal: "Enjoy Local",
     hubAcp: "ACP local CLI",
     hubTools: "Agent toolbox",
@@ -138,6 +138,15 @@ export const enSettings = {
     loginHint: "Run {cmd} in a terminal first",
     install: "Install",
     installing: "Installing…",
+    installingStatus: "Installing",
+    installingHint: "Running one-click install…",
+    installFailed: "Install failed",
+    installRetry: "Retry",
+    installFailPrefix: "Not installed: {reason}",
+    installFailTimeout: "network timeout — retry or copy the command",
+    installFailPermission: "permission denied — copy the command and install in a terminal",
+    installFailManager: "npm or brew is not on PATH",
+    installFailGeneric: "install did not finish — retry or copy the command",
     copyCommand: "Copy install command",
     copied: "Copied",
     docs: "Docs",
@@ -248,6 +257,7 @@ export const enSettings = {
     hubTitle: "Local CLIs",
     hubDesc: "Detect, install, and sign in. The list shows the power source; change binds in Configure.",
     keyNotSharedTip: "Enjoy keys stay here when you switch to a local assistant. Sign in first if that assistant is not logged in.",
+    sandboxTokenReady: "Advanced sandbox: isolation token configured",
     scanEnv: "Scan this machine",
     scanning: "Scanning…",
     runDoctor: "Run doctor",
@@ -342,7 +352,7 @@ export const enSettings = {
     no: "No",
     colRuntime: "Runtime",
     colPath: "Path",
-    sandboxLabel: "Experimental · sandbox Harness",
+    sandboxLabel: "Advanced sandbox",
     col: {
       spawn: "spawn",
       login: "login",
@@ -354,7 +364,7 @@ export const enSettings = {
     path: {
       "enjoy-local": "Enjoy Local",
       "acp-host": "ACP local CLI",
-      "sandbox-harness": "Sandbox"
+      "sandbox-harness": "Advanced sandbox"
     }
   },
 
@@ -403,26 +413,32 @@ export const enSettings = {
 
   harness: {
     cardTitle: "Coding runtime",
-    advancedTitle: "Sandbox · experimental Harness",
-    runtimeDesc: "Only when Composer is on Enjoy Local. Sandbox Harness never appears on the engine rail. Needs a Vercel sandbox and a Provider key.",
-    sandboxBadge: "Experimental · sandbox Harness",
+    advancedTitle: "Advanced sandbox",
+    pageDesc: "Isolation runtime + isolation token. Never appears on the Composer engine rail.",
+    runtimeDesc:
+      "Only when Composer is on Enjoy Local. Advanced sandbox never appears on the engine rail. Needs a sandbox isolation token + a model provider key.",
+    sandboxBadge: "Current provider · cloud isolation (default)",
+    providerLine: "Current provider · cloud isolation (default)",
     adapterDesc:
       "Auto follows the Provider (Anthropic→Claude Code, OpenAI→Codex). Pi uses local just-bash. DeepSeek CLI uses dsh ACP; the old SDK sandbox adapter is still a placeholder.",
     soon: " · soon",
     status: "Status",
     ready: "Ready to run this adapter.",
     none: "None",
-    sandboxSaved: "sandbox saved",
-    sandboxMissing: "sandbox missing",
-    vercelToken: "Vercel Sandbox token",
-    vercelTokenDesc: "Jail for Claude Code only. The model key comes from your Anthropic provider.",
+    sandboxSaved: "isolation token configured",
+    sandboxMissing: "missing isolation token (jail, not the model key)",
+    needProviderKey: "Save a model provider key first.",
+    isolationToken: "Isolation token",
+    isolationTokenDesc: "Issued by the sandbox provider · not a model key",
     tokenSaved: "•••• saved",
-    tokenPlaceholder: "vercel token",
-    teamProject: "Vercel team / project",
+    tokenPlaceholder: "sandbox token",
     teamProjectDesc: "Optional if the token already scopes a project.",
-    teamId: "team id",
-    projectId: "project id",
-    saveToken: "Save sandbox token"
+    teamId: "Team ID",
+    teamIdHint: "(optional)",
+    projectId: "Project ID",
+    projectIdHint: "(optional)",
+    saveToken: "Save isolation token",
+    needBoth: "Needs a sandbox isolation token + a model provider key (kept separately)."
   },
 
   capabilities: {
@@ -443,7 +459,7 @@ export const enSettings = {
     setDefault: "Set as Default",
     empty: "No models matching filter",
     emptyHint: "Try switching the capability filter or search term.",
-    specsTitle: "Vercel AI SDK 7 Capability Specs",
+    specsTitle: "AI SDK compatible capability notes",
     guideTools: "Tool Calling & Agent Loop",
     guideToolsDesc:
       "Drives autonomous ToolLoopAgent. Enables reading, writing, searching workspace files, executing terminal commands, and invoking MCP tools.",
@@ -688,7 +704,7 @@ export const enSettings = {
     use: "Use",
     edit: "Edit",
     deleteAria: "Delete {name}",
-    official: "Official Presets & Gateways",
+    official: "AI SDK compatible",
     allCount: "All ({count})",
     searchPresets: "Search presets or models...",
     noPresets: "No presets match your search.",

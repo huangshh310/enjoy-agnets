@@ -69,7 +69,7 @@ function blockedReason(input: {
     return `Add a ${kind} provider in Settings → Providers.`
   }
   if (input.adapter.needsSandbox && !input.hasSandboxToken) {
-    return "This adapter still needs a Vercel Sandbox token (jail, not the model)."
+    return "This adapter still needs a sandbox isolation token (jail, not the model key)."
   }
   return null
 }

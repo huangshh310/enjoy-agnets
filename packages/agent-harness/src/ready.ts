@@ -15,7 +15,9 @@ export function assertHarnessReady(input: CreateHarnessCodingAgentInput) {
     throw new Error(`Add a ${kind} provider in Settings → Providers.`)
   }
   if (adapter.sandboxKind === "vercel" && !input.credentials.vercelToken?.trim()) {
-    throw new Error(`${adapter.label} still needs a Vercel Sandbox token in Settings → Agent.`)
+    throw new Error(
+      `${adapter.label} still needs a sandbox isolation token in Settings → Agent (jail, not the model key).`
+    )
   }
   return adapter
 }

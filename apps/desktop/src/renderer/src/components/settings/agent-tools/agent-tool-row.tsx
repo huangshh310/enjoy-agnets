@@ -10,6 +10,7 @@ import { AgentToolConfigDrawer } from "./agent-tool-config-drawer"
 import { CLI_LIST_GRID } from "./list-layout"
 import { AgentToolRowActions, AgentToolRowAssistant } from "./agent-tool-row-parts"
 import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
+import { installRowPhase } from "./install-row-copy"
 import { PowerSourceCell } from "./power-source/power-source-capsule"
 import { powerSourcePartsForTool } from "./power-source/resolve-row-source"
 import { useAgentToolActions } from "./use-agent-tool-actions"
@@ -21,6 +22,11 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
   const custom = isCustomAgentId(tool.id)
   const [configOpen, setConfigOpen] = useState(false)
   const ready = tool.status === "ready" || actions.isDefaultLocal
+  const phase = installRowPhase({
+    ready,
+    busy: actions.busyAction,
+    installError: actions.installError
+  })
   const parts = powerSourcePartsForTool(tool, {
     inspecting: snapshot.isInspectingAccounts,
     providers: snapshot.data?.providers,
@@ -38,7 +44,12 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
               : ""
         }`}
       >
-        <AgentToolRowAssistant tool={tool} ready={ready} />
+        <AgentToolRowAssistant
+          tool={tool}
+          ready={ready}
+          installPhase={phase}
+          installError={actions.installError}
+        />
         <PowerSourceCell
           parts={parts}
           accent={actions.isActive && parts.mode === "vault" && Boolean(parts.archive)}
@@ -48,6 +59,7 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
           tool={tool}
           actions={actions}
           ready={ready}
+          installPhase={phase}
           onConfigure={() => setConfigOpen(true)}
         />
       </div>

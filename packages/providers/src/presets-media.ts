@@ -98,7 +98,7 @@ export const MEDIA_PROVIDER_PRESETS: MediaPreset[] = [
   {
     kind: "gateway",
     name: "AI Gateway",
-    description: "Vercel AI Gateway. Optional cloud adapter, not required.",
+    description: "AI SDK compatible cloud gateway. Optional adapter, not a sandbox.",
     defaultBaseURL: "https://ai-gateway.vercel.sh/v1",
     apiStyle: "openai",
     requiresKey: true,

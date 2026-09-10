@@ -44,7 +44,7 @@ export const zhCommon = {
   permissionAll: "全部（自主）",
   permissionCustom: "自定义",
   runtimeLocal: "Enjoy 本地（ToolLoop）",
-  runtimeHarness: "实验 · 沙箱 Harness",
+  runtimeHarness: "进阶沙箱（实验）",
   adapterAuto: "跟随供应商",
   providersKey: "已配置密钥",
   noProviderKey: "无供应商密钥",

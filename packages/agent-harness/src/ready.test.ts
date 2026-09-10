@@ -27,7 +27,7 @@ test("Claude / Codex 缺 Providers key 会拒", () => {
   )
 })
 
-test("桥接适配器缺 Vercel token 会拒", () => {
+test("桥接适配器缺隔离令牌会拒", () => {
   assert.throws(
     () =>
       assertHarnessReady({
@@ -35,7 +35,7 @@ test("桥接适配器缺 Vercel token 会拒", () => {
         adapterId: "claude-code",
         credentials: { providerApiKey: "sk-ant" }
       }),
-    /Vercel Sandbox/
+    /isolation token/
   )
 })
 

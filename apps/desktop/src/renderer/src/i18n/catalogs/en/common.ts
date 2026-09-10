@@ -44,7 +44,7 @@ export const enCommon = {
   permissionAll: "All (Autonomous)",
   permissionCustom: "Custom",
   runtimeLocal: "Enjoy Local (ToolLoop)",
-  runtimeHarness: "Experimental · sandbox Harness",
+  runtimeHarness: "Advanced sandbox (experimental)",
   adapterAuto: "Auto from Provider",
   providersKey: "Providers key",
   noProviderKey: "No provider key",
