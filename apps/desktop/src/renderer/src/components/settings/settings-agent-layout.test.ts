@@ -76,6 +76,27 @@ test("本机 CLI 是同构表行，不是不等卡片网格", () => {
   assert.ok(!src.includes("AgentToolCard"))
 })
 
+test("配置抽屉对齐预览：380 宽、紧内边距、顶栏关", () => {
+  const dir = join(dirname(fileURLToPath(import.meta.url)), "agent-tools")
+  const drawer = readFileSync(join(dir, "agent-tool-config-drawer.tsx"), "utf8")
+  const chrome = readFileSync(join(dir, "agent-tool-config-dialog-chrome.tsx"), "utf8")
+  assert.ok(drawer.includes("w-[min(23.75rem,calc(100vw-1.5rem))]"))
+  assert.ok(drawer.includes("px-4 py-4"))
+  assert.ok(chrome.includes("settings.agentTools.close"))
+  assert.ok(!chrome.includes("makeActive"))
+  assert.ok(!chrome.includes("AgentBrandIcon"))
+})
+
+test("也用于是圆片，同步是带边框 details", () => {
+  const src = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "agent-tools/agent-tool-provider-bind.tsx"),
+    "utf8"
+  )
+  assert.ok(src.includes("rounded-full"))
+  assert.ok(src.includes("<details"))
+  assert.ok(src.includes("syncToggle"))
+})
+
 test("仅官方决策槽没有 Enjoy vault 下拉", () => {
   const src = readFileSync(
     join(dirname(fileURLToPath(import.meta.url)), "agent-tools/power-source/official-power-slot.tsx"),

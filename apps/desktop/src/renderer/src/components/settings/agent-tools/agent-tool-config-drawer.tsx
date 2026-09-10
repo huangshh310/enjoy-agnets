@@ -33,9 +33,10 @@ export function AgentToolConfigDrawer({
         onClose={close}
         labelledBy="agent-tool-config-title"
         closeLabel={t("settings.agentTools.close")}
+        widthClass="w-[min(23.75rem,calc(100vw-1.5rem))]"
       >
         <AgentToolConfigHeader tool={tool} actions={actions} onClose={close} />
-        <div className="min-h-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto px-6 py-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-4 py-4">
           {actions.feedbackMessage ? (
             <div className="rounded-2xl bg-accent-500/10 px-3.5 py-2 text-caption-1-medium text-accent-700">
               {displayLoginMessage(actions.feedbackMessage, t)}

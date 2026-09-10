@@ -13,7 +13,8 @@ const files = [
   "../agent-tool-row-parts.tsx",
   "../agent-tools-page.tsx",
   "power-source-capsule.tsx",
-  "format-power-source.ts"
+  "format-power-source.ts",
+  "list-tagline.ts"
 ]
 
 const banned = [
@@ -35,4 +36,11 @@ test("本机 CLI 列表源码不含协议微标 / 路径 / 额度 / 邮箱", () 
       assert.ok(!src.includes(token), `${name} still contains ${token}`)
     }
   }
+})
+
+test("表行副标题走短 listLine，不用品牌 meta 长文", () => {
+  const src = readFileSync(join(dir, "../agent-tool-row-parts.tsx"), "utf8")
+  assert.ok(src.includes("listTaglineKey"))
+  assert.ok(!src.includes("meta.tagline"))
+  assert.ok(!src.includes("actions.meta"))
 })

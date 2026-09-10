@@ -2,14 +2,14 @@
  * 本机 CLI 紧凑表行：助手 | 动力源 | 操作。配置进侧边抽屉。
  */
 import { useState } from "react"
-import { isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesOf, isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { agentToolCardId } from "./agent-tool-anchor"
 import { AgentToolConfigDrawer } from "./agent-tool-config-drawer"
 import { AgentToolRowActions, AgentToolRowAssistant } from "./agent-tool-row-parts"
 import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
-import { PowerSourceCapsule } from "./power-source/power-source-capsule"
+import { PowerSourceCell } from "./power-source/power-source-capsule"
 import { powerSourcePartsForTool } from "./power-source/resolve-row-source"
 import { useAgentToolActions } from "./use-agent-tool-actions"
 
@@ -38,9 +38,11 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
         }`}
       >
         <AgentToolRowAssistant tool={tool} actions={actions} ready={ready} />
-        <div className="min-w-0">
-          <PowerSourceCapsule parts={parts} />
-        </div>
+        <PowerSourceCell
+          parts={parts}
+          accent={actions.isActive && parts.mode === "vault" && Boolean(parts.archive)}
+          quotaHint={parts.mode === "official" && capabilitiesOf(tool).quota}
+        />
         <AgentToolRowActions
           tool={tool}
           actions={actions}

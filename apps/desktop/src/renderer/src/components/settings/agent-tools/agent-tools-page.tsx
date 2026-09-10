@@ -97,6 +97,9 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
           ))}
         </div>
       )}
+      {emptyKind ? null : (
+        <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.listBanHint")}</p>
+      )}
     </section>
   )
 }

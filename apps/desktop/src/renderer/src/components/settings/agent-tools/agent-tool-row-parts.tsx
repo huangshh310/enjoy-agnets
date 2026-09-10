@@ -12,6 +12,7 @@ import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
+import { listTaglineKey } from "./power-source/list-tagline"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolRowAssistant({
@@ -42,7 +43,7 @@ export function AgentToolRowAssistant({
           <span className={`size-1.5 shrink-0 rounded-full ${ready ? "bg-notification-success-foreground" : "bg-text-tertiary"}`} />
           <span className="text-caption-2-medium text-text-tertiary">{label}</span>
         </div>
-        <p className="truncate text-caption-2-regular text-text-tertiary">{actions.meta.tagline}</p>
+        <p className="truncate text-caption-2-regular text-text-tertiary">{t(listTaglineKey(tool.id))}</p>
       </div>
     </div>
   )
