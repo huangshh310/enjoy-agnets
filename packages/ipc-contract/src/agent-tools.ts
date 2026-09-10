@@ -130,7 +130,7 @@ export const AgentToolPublic = z.object({
   customCwd: z.string().optional(),
   /** 只回显 env 键名，不把密钥值摊在列表里。 */
   envKeys: z.array(z.string()).optional(),
-  /** 家目录已同步且未恢复；列表只画「已同步」轻标。 */
+  /** 家目录已同步且未恢复；列表只画「已同步本机」轻标。 */
   homeSynced: z.boolean().optional()
 })
 export type AgentToolPublic = z.infer<typeof AgentToolPublic>

@@ -1,5 +1,5 @@
 /**
- * dense-p0：列表禁止协议微标、额度 hint、绝对路径、「官方仍保留」和 doctor 句。
+ * dense-v2：列表禁止协议微标、额度 hint、绝对路径、「官方仍保留」和 doctor 句。
  * 「官方仍保留」只允许出现在配置抽屉（agent-tool-account-aside），不上表。
  */
 import assert from "node:assert/strict"
@@ -62,6 +62,8 @@ test("助手次行只拼版本 · 短路径，不用品牌 meta / listLine / doc
   assert.ok(!secondary.includes("体检正常"))
   assert.ok(!secondary.includes("doctorOk"))
   assert.ok(secondary.includes("shortVersion"))
+  assert.ok(secondary.includes("null"))
+  assert.ok(src.includes("secondary ?"))
 })
 
 test("「官方仍保留」只进抽屉旁注，不上列表文件", () => {
