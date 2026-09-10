@@ -50,7 +50,10 @@ function OfficialAccountHero({ tool }: { tool: AgentToolPublic }) {
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2 border-t border-separator-border/60 pt-2.5 text-caption-2-medium">
-        <Meta label={t("settings.agentTools.accountAuthMethod")} value={account.authMethod} />
+        <Meta
+          label={t("settings.agentTools.accountAuthMethod")}
+          value={t("settings.agentTools.accountAuthOfficial")}
+        />
         <Meta label={t("settings.agentTools.accountOrg")} value={account.organization} />
         <Meta label={t("settings.agentTools.accountCliVersion")} value={account.cliVersion} />
         <Meta label={t("settings.agentTools.accountCurrentModel")} value={account.currentModel} />

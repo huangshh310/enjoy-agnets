@@ -8,6 +8,7 @@ import {
   GitPushInput,
   GitRestoreInput,
   MoveWorkspacePathInput,
+  PreviewCheckpointInput,
   RestoreCheckpointInput,
   OpenWorkspaceInput,
   PickFolderResult
@@ -81,9 +82,11 @@ test("MoveWorkspacePathInput 只要 from 与 toDir，拒绝逃逸字段", () => 
 test("RestoreCheckpointInput 只接受 enjoy 检查点 ref", () => {
   const parsed = RestoreCheckpointInput.parse({
     workspaceId: "ws_1",
-    ref: "refs/enjoy/checkpoints/1700000000000"
+    ref: "refs/enjoy/checkpoints/1700000000000",
+    confirmUntracked: true
   })
   assert.equal(parsed.ref, "refs/enjoy/checkpoints/1700000000000")
+  assert.equal(parsed.confirmUntracked, true)
   assert.throws(() =>
     RestoreCheckpointInput.parse({ workspaceId: "ws_1", ref: "refs/heads/main" })
   )
@@ -93,5 +96,16 @@ test("RestoreCheckpointInput 只接受 enjoy 检查点 ref", () => {
       ref: "refs/enjoy/checkpoints/1700000000000",
       extra: true
     })
+  )
+})
+
+test("PreviewCheckpointInput 与还原共用 ref 白名单", () => {
+  const parsed = PreviewCheckpointInput.parse({
+    workspaceId: "ws_1",
+    ref: "refs/enjoy/checkpoints/1700000000000"
+  })
+  assert.equal(parsed.ref, "refs/enjoy/checkpoints/1700000000000")
+  assert.throws(() =>
+    PreviewCheckpointInput.parse({ workspaceId: "ws_1", ref: "refs/heads/main" })
   )
 })

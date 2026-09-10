@@ -3,7 +3,10 @@
  * 对应用户现象：选了 lucky0625，抽屉顶仍是 xusen.online / gpt-5.6-terra。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { officialAccountRole } from "./official-account-role.ts"
 
 test("官方登录且有 inspect：账号卡是英雄", () => {
@@ -34,4 +37,11 @@ test("没有 inspect 就不画账号区", () => {
 test("绑了档案还在拉 inspect：旁注占位，不要先闪官方名", () => {
   assert.equal(officialAccountRole({ useCustomProvider: true }, true), "aside")
   assert.equal(officialAccountRole({ useCustomProvider: false }, true), "hero")
+})
+
+test("官方账号 Hero 决策面不摊 authMethod / OAuth 原文", () => {
+  const dir = dirname(fileURLToPath(import.meta.url))
+  const src = readFileSync(join(dir, "agent-tool-account-panel.tsx"), "utf8")
+  assert.ok(!src.includes("account.authMethod"), "Hero still renders raw authMethod")
+  assert.ok(!src.includes("OAuth"), "Hero still contains OAuth")
 })

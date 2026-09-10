@@ -2,10 +2,10 @@
  * Review「检查点」列表：时间、短 sha、还原到此步。必须 ConfirmDialog。
  */
 import { useState } from "react"
-import { RiHistoryLine, RiRefreshLine } from "@remixicon/react"
+import { RiRefreshLine } from "@remixicon/react"
 import type { EnjoyCheckpointItem } from "@enjoy-agents/ipc-contract"
-import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useT } from "@renderer/i18n"
+import { CheckpointRestoreDialog } from "./checkpoint-restore-dialog"
 import { checkpointErrorMessage } from "./checkpoint-error"
 
 export function CheckpointsList(props: {
@@ -13,11 +13,13 @@ export function CheckpointsList(props: {
   isRefreshing?: boolean
   error?: string | null
   onRefresh?: () => void
-  onRestore: (ref: string) => Promise<string | null>
+  onPreview: (ref: string) => Promise<{ untrackedToDelete: string[] } | string>
+  onRestore: (ref: string, confirmUntracked: boolean) => Promise<string | null>
 }) {
-  const { items, isRefreshing, error, onRefresh, onRestore } = props
+  const { items, isRefreshing, error, onRefresh, onPreview, onRestore } = props
   const t = useT()
   const [pending, setPending] = useState<EnjoyCheckpointItem | null>(null)
+  const [untracked, setUntracked] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const shownError = localError ?? error
@@ -51,12 +53,11 @@ export function CheckpointsList(props: {
         </p>
       ) : null}
       {items.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-1.5 p-8 text-center text-text-tertiary">
-          <RiHistoryLine className="mb-1 size-8 text-accent-500 opacity-40" />
-          <span className="text-caption-1-medium text-text-secondary">
-            {t("chat.reviewCheckpointsEmpty")}
-          </span>
-          <span className="text-caption-2-regular">{t("chat.reviewCheckpointsEmptyHint")}</span>
+        <div className="px-3.5 py-2.5">
+          <p className="text-caption-1-medium text-text-secondary">{t("chat.reviewCheckpointsEmpty")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">
+            {t("chat.reviewCheckpointsEmptyHint")}
+          </p>
         </div>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto">
@@ -65,23 +66,33 @@ export function CheckpointsList(props: {
               key={item.ref}
               item={item}
               disabled={busy}
-              onRestore={() => setPending(item)}
+              onRestore={() => {
+                void openPreview(item, onPreview, setBusy, setLocalError, setPending, setUntracked)
+              }}
             />
           ))}
         </ul>
       )}
-      <ConfirmDialog
-        open={pending != null}
-        destructive
-        title={t("chat.reviewCheckpointRestoreTitle")}
-        description={t("chat.reviewCheckpointRestoreDesc")}
-        confirmLabel={t("chat.reviewCheckpointRestore")}
+      <CheckpointRestoreDialog
+        item={pending}
+        untracked={untracked}
         onOpenChange={(open) => {
-          if (!open) setPending(null)
+          if (!open) {
+            setPending(null)
+            setUntracked([])
+          }
         }}
         onConfirm={() => {
           if (!pending) return
-          void runRestore(pending.ref, onRestore, setBusy, setLocalError, setPending)
+          void runRestore(
+            pending.ref,
+            untracked.length > 0,
+            onRestore,
+            setBusy,
+            setLocalError,
+            setPending,
+            setUntracked
+          )
         }}
       />
     </div>
@@ -116,17 +127,40 @@ function CheckpointRow(props: {
   )
 }
 
-async function runRestore(
-  ref: string,
-  onRestore: (ref: string) => Promise<string | null>,
+async function openPreview(
+  item: EnjoyCheckpointItem,
+  onPreview: (ref: string) => Promise<{ untrackedToDelete: string[] } | string>,
   setBusy: (busy: boolean) => void,
   setLocalError: (message: string | null) => void,
-  setPending: (item: EnjoyCheckpointItem | null) => void
+  setPending: (item: EnjoyCheckpointItem | null) => void,
+  setUntracked: (paths: string[]) => void
 ) {
   setBusy(true)
   setLocalError(null)
-  const message = await onRestore(ref)
+  const result = await onPreview(item.ref)
+  setBusy(false)
+  if (typeof result === "string") {
+    setLocalError(result)
+    return
+  }
+  setUntracked(result.untrackedToDelete)
+  setPending(item)
+}
+
+async function runRestore(
+  ref: string,
+  confirmUntracked: boolean,
+  onRestore: (ref: string, confirmUntracked: boolean) => Promise<string | null>,
+  setBusy: (busy: boolean) => void,
+  setLocalError: (message: string | null) => void,
+  setPending: (item: EnjoyCheckpointItem | null) => void,
+  setUntracked: (paths: string[]) => void
+) {
+  setBusy(true)
+  setLocalError(null)
+  const message = await onRestore(ref, confirmUntracked)
   setBusy(false)
   setPending(null)
+  setUntracked([])
   if (message) setLocalError(message)
 }
