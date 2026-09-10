@@ -91,5 +91,5 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 不要把 `AgentToolsHubMetrics` 装回来：装载率百分比、永远绿灯、「沙箱隔离 · 实时 Token 流」是 Fake-Status-Chrome，且把沙箱和 ACP 混成一条。
 - 本机 CLI 若把能力矩阵铺在卡片前面，用户会以为「登录=是」就是已登录，也找不到安装入口。矩阵必须默认收起，「支持」不是现场状态。
 - 本机 CLI 列表若按 `providerBind===none` 藏绑定摘要，Cursor / Grok 会缺「动力源」列。正确做法：每行都有同构胶囊；仅官方走 `官方登录 · 已登录/未登录/检测中`，未找到画 `—`，禁止假 BYOK。不要再铺不等高卡片网格，也不要在列表画绝对路径 / 额度 / 邮箱 / 协议微标。主引擎只轻标。
-- 列表副标题若用品牌 `meta.tagline` 或 `listLine` 长句，Grok 等会泄漏协议词。次行走 `formatListSecondary`（只拼版本 · 短路径，禁止 doctor）。官方旁注不要再插 `{name}` / 邮箱，「官方仍保留」不上列表。视觉锁见 [`previews/local-cli-dense-p0.html`](../previews/local-cli-dense-p0.html)。`dense-v2` 是过程稿 stub。
+- 列表副标题若用品牌 `meta.tagline` 或 `listLine` 长句，Grok 等会泄漏协议词。次行走 `formatListSecondary`（只拼 `{version} · {路径短名}`，禁止 doctor /「体检正常」/ 安装长句）。官方旁注不要再插 `{name}` / 邮箱，「官方仍保留」只进抽屉、不上列表。视觉锁见 [`previews/local-cli-dense-p0.html`](../previews/local-cli-dense-p0.html)。`dense-v2` 是过程稿 stub。
 - Registry 只在 `#/settings/agent?tab=registry`。空态 checklist 不得嵌 `AgentCliInstall` 整卡或 Registry 列表；深链用 search `tab`，不要新开路由。

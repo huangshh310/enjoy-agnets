@@ -78,7 +78,23 @@ test("Enjoy / 已装 / 未找到次行只含版本与短路径", () => {
     { id: "cursor", status: "missing", version: null, detectedPath: null, binaries: ["agent"] },
     t
   )
-  assert.ok(!missing.includes("npm"))
-  assert.ok(!missing.includes("体检"))
-  assert.ok(!missing.includes("doctor"))
+  const samples = [
+    missing,
+    formatListSecondary(
+      { id: "claude", status: "ready", version: "v2.1.9", detectedPath: "/usr/local/bin/claude", binaries: ["claude"] },
+      t
+    ),
+    formatListSecondary(
+      { id: "grok", status: "ready", version: null, detectedPath: "/home/me/.grok/bin/grok", binaries: ["grok"] },
+      t
+    )
+  ]
+  for (const line of samples) {
+    assert.ok(!line.includes("npm"))
+    assert.ok(!line.includes("体检"))
+    assert.ok(!line.includes("体检正常"))
+    assert.ok(!line.includes("doctor"))
+    assert.ok(!line.includes("官方仍保留"))
+    assert.match(line, /^[^·]+ · [^·]+$/)
+  }
 })

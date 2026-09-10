@@ -1,5 +1,6 @@
 /**
- * 密布局 v2：列表禁止协议微标、额度 hint、绝对路径和「官方仍保留」。
+ * dense-p0：列表禁止协议微标、额度 hint、绝对路径、「官方仍保留」和 doctor 句。
+ * 「官方仍保留」只允许出现在配置抽屉（agent-tool-account-aside），不上表。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -30,9 +31,14 @@ const banned = [
   "quotaInConfigHint",
   "listBanHint",
   "官方仍保留",
+  "体检正常",
   "额度进配置",
   "meta.tagline",
-  "actions.meta"
+  "actions.meta",
+  "officialAccountAside",
+  "doctorOk",
+  "doctorRun",
+  "listLine"
 ]
 
 test("本机 CLI 列表源码不含协议微标 / 额度 / 邮箱 / 表底禁令", () => {
@@ -44,15 +50,27 @@ test("本机 CLI 列表源码不含协议微标 / 额度 / 邮箱 / 表底禁令
   }
 })
 
-test("表行副标题走短路径次行，不用品牌 meta 或 listLine", () => {
+test("助手次行只拼版本 · 短路径，不用品牌 meta / listLine / doctor", () => {
   const src = readFileSync(join(dir, "../agent-tool-row-parts.tsx"), "utf8")
   const secondary = readFileSync(join(dir, "../list-secondary.ts"), "utf8")
   assert.ok(src.includes("formatListSecondary"))
   assert.ok(src.includes("listSynced"))
   assert.ok(!src.includes("listTaglineKey"))
-  assert.ok(!src.includes("listLine."))
+  assert.ok(!src.includes("listLine"))
   assert.ok(!secondary.includes("listHint"))
   assert.ok(!secondary.includes("npm 全局"))
+  assert.ok(!secondary.includes("体检正常"))
+  assert.ok(!secondary.includes("doctorOk"))
+  assert.ok(secondary.includes("shortVersion"))
+})
+
+test("「官方仍保留」只进抽屉旁注，不上列表文件", () => {
+  const aside = readFileSync(join(dir, "../agent-tool-account-aside.tsx"), "utf8")
+  assert.ok(aside.includes("officialAccountAside"))
+  for (const name of files) {
+    const src = readFileSync(join(dir, name), "utf8")
+    assert.ok(!src.includes("officialAccountAside"), `${name} leaked official aside onto the list`)
+  }
 })
 
 test("操作列主槽定宽，复制-only 留空位", () => {
