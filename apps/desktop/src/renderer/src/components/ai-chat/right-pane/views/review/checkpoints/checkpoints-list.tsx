@@ -14,7 +14,7 @@ export function CheckpointsList(props: {
   error?: string | null
   onRefresh?: () => void
   onPreview: (ref: string) => Promise<{ untrackedToDelete: string[] } | string>
-  onRestore: (ref: string, confirmUntracked: boolean) => Promise<string | null>
+  onRestore: (ref: string, confirmDeleteUntracked: boolean) => Promise<string | null>
 }) {
   const { items, isRefreshing, error, onRefresh, onPreview, onRestore } = props
   const t = useT()
@@ -149,8 +149,8 @@ async function openPreview(
 
 async function runRestore(
   ref: string,
-  confirmUntracked: boolean,
-  onRestore: (ref: string, confirmUntracked: boolean) => Promise<string | null>,
+  confirmDeleteUntracked: boolean,
+  onRestore: (ref: string, confirmDeleteUntracked: boolean) => Promise<string | null>,
   setBusy: (busy: boolean) => void,
   setLocalError: (message: string | null) => void,
   setPending: (item: EnjoyCheckpointItem | null) => void,
@@ -158,7 +158,7 @@ async function runRestore(
 ) {
   setBusy(true)
   setLocalError(null)
-  const message = await onRestore(ref, confirmUntracked)
+  const message = await onRestore(ref, confirmDeleteUntracked)
   setBusy(false)
   setPending(null)
   setUntracked([])

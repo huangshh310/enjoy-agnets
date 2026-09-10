@@ -5,7 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type {
   EnjoyCheckpointItem,
   ListCheckpointsResult,
-  PreviewCheckpointResult
+  PreviewCheckpointResult,
+  RestoreCheckpointResult
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 
@@ -45,10 +46,15 @@ export function useWorkspaceCheckpoints(
     }
   }
 
-  async function restore(ref: string, confirmUntracked = false): Promise<string | null> {
+  async function restore(ref: string, confirmDeleteUntracked = false): Promise<string | null> {
     if (!workspaceId) return "CHECKPOINT_NOT_FOUND"
     try {
-      await getIde().workspace.restoreCheckpoint({ workspaceId, ref, confirmUntracked })
+      const result = (await getIde().workspace.restoreCheckpoint({
+        workspaceId,
+        ref,
+        confirmDeleteUntracked
+      })) as RestoreCheckpointResult
+      if (!result.ok) return result.code
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["changes", workspaceId] }),
         queryClient.invalidateQueries({ queryKey: ["checkpoints", workspaceId] }),

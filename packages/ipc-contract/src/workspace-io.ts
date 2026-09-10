@@ -243,10 +243,20 @@ export const RestoreCheckpointInput = z
     workspaceId: z.string().min(1),
     ref: EnjoyCheckpointRef,
     /** 快照外未跟踪文件会删除；有此类路径时必须为 true。 */
-    confirmUntracked: z.boolean().optional()
+    confirmDeleteUntracked: z.boolean().optional()
   })
   .strict()
 export type RestoreCheckpointInput = z.infer<typeof RestoreCheckpointInput>
 
-export const RestoreCheckpointResult = GitRestoreResult
-export type RestoreCheckpointResult = GitRestoreResult
+export const RestoreCheckpointResult = z.discriminatedUnion("ok", [
+  z.object({
+    ok: z.literal(true),
+    restored: z.number().int().nonnegative()
+  }),
+  z.object({
+    ok: z.literal(false),
+    code: z.literal("CHECKPOINT_CONFIRM_REQUIRED"),
+    untrackedToDelete: z.array(z.string())
+  })
+])
+export type RestoreCheckpointResult = z.infer<typeof RestoreCheckpointResult>

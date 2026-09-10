@@ -234,7 +234,7 @@ function registerWorkspaceIpc() {
     const input = RestoreCheckpointInput.parse(raw)
     const ws = await getWorkspace(input.workspaceId)
     return restoreEnjoyCheckpoint(ws.rootPath, input.ref, {
-      confirmUntracked: input.confirmUntracked
+      confirmDeleteUntracked: input.confirmDeleteUntracked
     })
   })
 }

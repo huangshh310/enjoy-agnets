@@ -11,14 +11,22 @@ import {
   runGitIndex
 } from "./workspace-git-checkpoint.ts"
 
+export type RestoreEnjoyCheckpointResult =
+  | { ok: true; restored: number }
+  | { ok: false; code: "CHECKPOINT_CONFIRM_REQUIRED"; untrackedToDelete: string[] }
+
 export async function restoreEnjoyCheckpoint(
   workspaceRoot: string,
   ref: string,
-  opts: { confirmUntracked?: boolean } = {}
-): Promise<{ ok: true; restored: number }> {
+  opts: { confirmDeleteUntracked?: boolean } = {}
+): Promise<RestoreEnjoyCheckpointResult> {
   const plan = await planEnjoyCheckpointRestore(workspaceRoot, ref)
-  if (plan.untrackedToDelete.length > 0 && !opts.confirmUntracked) {
-    throw new Error("CHECKPOINT_CONFIRM_REQUIRED")
+  if (plan.untrackedToDelete.length > 0 && !opts.confirmDeleteUntracked) {
+    return {
+      ok: false,
+      code: "CHECKPOINT_CONFIRM_REQUIRED",
+      untrackedToDelete: plan.untrackedToDelete
+    }
   }
   await applyCheckpointTree(workspaceRoot, plan.sha)
   const removed = await deleteListedPaths(workspaceRoot, [

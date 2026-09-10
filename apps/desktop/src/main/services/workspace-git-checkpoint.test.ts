@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { test } from "node:test"
 import { runGit } from "./command.ts"
@@ -50,10 +50,14 @@ test("写盘后记检查点，HEAD 不动", async () => {
       () => restoreEnjoyCheckpoint(root, "refs/enjoy/checkpoints/1"),
       /CHECKPOINT_NOT_FOUND/
     )
-    await restoreEnjoyCheckpoint(root, ref ?? "", { confirmUntracked: true })
+    const restored = await restoreEnjoyCheckpoint(root, ref ?? "", {
+      confirmDeleteUntracked: true
+    })
+    assert.equal(restored.ok, true)
     assert.equal((await runGit(root, ["rev-parse", "HEAD"])).stdout.trim(), head)
     assert.equal(await readFile(join(root, "note.txt"), "utf8"), "dirty\n")
     await assert.rejects(() => access(join(root, "extra.txt")))
+    await assertTempIndexGone(root)
   })
 })
 
@@ -67,11 +71,13 @@ test("还原用临时 index，不改用户暂存区", async () => {
     const stagedBefore = (await runGit(root, ["diff", "--cached", "--name-only"])).stdout
     assert.ok(stagedBefore.includes("keep-staged.txt"))
     await writeFile(join(root, "note.txt"), "later\n", "utf8")
-    await restoreEnjoyCheckpoint(root, ref)
+    const restored = await restoreEnjoyCheckpoint(root, ref)
+    assert.equal(restored.ok, true)
     assert.equal(await readFile(join(root, "note.txt"), "utf8"), "dirty\n")
     const stagedAfter = (await runGit(root, ["diff", "--cached", "--name-only"])).stdout
     assert.ok(stagedAfter.includes("keep-staged.txt"))
     assert.equal((await runGit(root, ["ls-files", "--stage", "keep-staged.txt"])).exitCode, 0)
+    await assertTempIndexGone(root)
   })
 })
 
@@ -83,13 +89,19 @@ test("未跟踪文件 dry-run 后必须确认才删除", async () => {
     await writeFile(join(root, "extra.txt"), "gone\n", "utf8")
     const preview = await previewEnjoyCheckpointRestore(root, ref)
     assert.deepEqual(preview.untrackedToDelete, ["extra.txt"])
-    await assert.rejects(
-      () => restoreEnjoyCheckpoint(root, ref),
-      /CHECKPOINT_CONFIRM_REQUIRED/
-    )
+    const dry = await restoreEnjoyCheckpoint(root, ref)
+    assert.deepEqual(dry, {
+      ok: false,
+      code: "CHECKPOINT_CONFIRM_REQUIRED",
+      untrackedToDelete: ["extra.txt"]
+    })
     assert.equal(await readFile(join(root, "extra.txt"), "utf8"), "gone\n")
-    await restoreEnjoyCheckpoint(root, ref, { confirmUntracked: true })
+    const restored = await restoreEnjoyCheckpoint(root, ref, {
+      confirmDeleteUntracked: true
+    })
+    assert.equal(restored.ok, true)
     await assert.rejects(() => access(join(root, "extra.txt")))
+    await assertTempIndexGone(root)
   })
 })
 
@@ -104,6 +116,14 @@ async function withRepo(run: (root: string) => Promise<void>): Promise<void> {
     assert.equal((await runGit(root, ["commit", "-m", "seed"])).exitCode, 0)
     await run(root)
   })
+}
+
+async function assertTempIndexGone(root: string): Promise<void> {
+  const names = await readdir(join(root, ".git"))
+  assert.deepEqual(
+    names.filter((name) => name.startsWith("enjoy-index-")),
+    []
+  )
 }
 
 async function withTempDir(run: (root: string) => Promise<void>): Promise<void> {
