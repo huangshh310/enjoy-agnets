@@ -26,31 +26,19 @@ export function AgentToolsCommandHub() {
   const readyTools = tools.filter((item) => item.status === "ready" || item.id === DEFAULT_RUNTIME_ID)
 
   return (
-    <div className="flex flex-col gap-3">
-      {tipOpen ? (
-        <p className="rounded-lg border border-border-button-default bg-background-secondary-default/50 px-3 py-2 text-caption-1-regular text-text-secondary">
-          {t("settings.agentTools.keyNotSharedTip")}
-          <button
-            type="button"
-            onClick={() => dismissTip(setTipOpen)}
-            className="ml-2 text-caption-1-medium text-accent-600 hover:underline"
-          >
-            {t("settings.agentTools.keyTipDismiss")}
-          </button>
-        </p>
-      ) : null}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-body-medium font-semibold text-text-primary">{t("settings.agentTools.hubTitle")}</h2>
-          <p className="mt-0.5 text-caption-1-regular text-text-secondary">{t("settings.agentTools.hubDesc")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-secondary">{t("settings.agentTools.hubDesc")}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Button
             type="button"
             size="sm"
             variant="outline"
             onClick={() => void navigate({ to: "/settings/$section", params: { section: "providers" } })}
-            className="h-8 gap-1.5 text-caption-1-medium"
+            className="h-7 gap-1 px-2.5 text-caption-2-medium"
           >
             <RiShieldKeyholeLine className="size-3.5 text-accent-500" />
             {t("settings.agentTools.manageProviders")}
@@ -61,7 +49,7 @@ export function AgentToolsCommandHub() {
             variant="outline"
             disabled={detecting}
             onClick={() => void runDetect(queryClient, detecting, setDetecting)}
-            className="h-8 gap-1.5 text-caption-1-medium"
+            className="h-7 gap-1 px-2.5 text-caption-2-medium"
           >
             <RiRefreshLine className={`size-3.5 ${detecting ? "animate-spin text-accent-500" : ""}`} />
             {detecting ? t("settings.agentTools.scanning") : t("settings.agentTools.scanEnv")}
@@ -72,13 +60,25 @@ export function AgentToolsCommandHub() {
             variant="default"
             disabled={diagnosing}
             onClick={() => void runAllDoctor(readyTools, queryClient, diagnosing, setDiagnosing, setDiag)}
-            className="h-8 gap-1.5 text-caption-1-medium"
+            className="h-7 gap-1 px-2.5 text-caption-2-medium"
           >
             <RiShieldCheckLine className={`size-3.5 ${diagnosing ? "animate-spin" : ""}`} />
             {diagnosing ? t("settings.agentTools.diagnosing") : t("settings.agentTools.runDoctor")}
           </Button>
         </div>
       </div>
+      {tipOpen ? (
+        <p className="flex items-center justify-between gap-2 rounded-md border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1.5 text-caption-2-regular text-text-secondary">
+          <span>{t("settings.agentTools.keyNotSharedTip")}</span>
+          <button
+            type="button"
+            onClick={() => dismissTip(setTipOpen)}
+            className="shrink-0 text-caption-2-medium text-accent-600 hover:underline"
+          >
+            {t("settings.agentTools.keyTipDismiss")}
+          </button>
+        </p>
+      ) : null}
       {diag ? (
         <p className="text-caption-2-medium text-text-secondary">
           {t("settings.agentTools.diagSummary", { total: diag.total, ok: diag.ok, failed: diag.failed })}

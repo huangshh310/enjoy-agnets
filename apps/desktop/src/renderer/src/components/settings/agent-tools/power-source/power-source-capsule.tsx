@@ -1,31 +1,24 @@
 /**
- * 列表动力源胶囊：同高同构，不画额度 / 邮箱 / 协议微标。
+ * 列表动力源胶囊：同高同构、贴左。未装或空档案画 —，不画额度。
  */
 import type { PowerSourceParts } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
-import { formatPowerSourceText } from "./format-power-source"
+import { formatPowerSourceText, isBlankPowerSource } from "./format-power-source"
 
-/** 表行动力源格：胶囊 + 仅官方额度的配置提示。 */
+/** 表行动力源格：已装画胶囊，缺省或未找到只写破折号。 */
 export function PowerSourceCell({
   parts,
   accent,
-  quotaHint
+  empty
 }: {
   parts: PowerSourceParts
   accent: boolean
-  quotaHint: boolean
+  empty?: boolean
 }) {
-  const t = useT()
-  return (
-    <div className="min-w-0">
-      <PowerSourceCapsule parts={parts} accent={accent} />
-      {quotaHint ? (
-        <p className="mt-1 truncate text-caption-2-regular text-text-tertiary">
-          {t("settings.agentTools.quotaInConfigHint")}
-        </p>
-      ) : null}
-    </div>
-  )
+  if (empty || isBlankPowerSource(parts)) {
+    return <span className="text-caption-1-regular text-text-tertiary">—</span>
+  }
+  return <PowerSourceCapsule parts={parts} accent={accent} />
 }
 
 export function PowerSourceCapsule({
@@ -43,10 +36,12 @@ export function PowerSourceCapsule({
       ? parts.official === "in"
         ? "bg-notification-success-foreground"
         : "bg-text-tertiary"
-      : "bg-accent-500"
+      : parts.mode === "omp"
+        ? "bg-accent-600"
+        : "bg-accent-500"
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-caption-1-medium text-text-primary ${
+      className={`inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-caption-1-medium text-text-primary ${
         accent
           ? "border border-accent-500/30 bg-background-primary-default"
           : "border border-border-button-default bg-background-secondary-default/50"

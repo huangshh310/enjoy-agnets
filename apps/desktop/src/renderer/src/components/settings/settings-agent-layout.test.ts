@@ -72,8 +72,10 @@ test("本机 CLI 是同构表行，不是不等卡片网格", () => {
   )
   assert.ok(src.includes("colPower"))
   assert.ok(src.includes("AgentToolRow"))
+  assert.ok(src.includes("CLI_LIST_GRID"))
   assert.ok(!src.includes("md:grid-cols-2"))
   assert.ok(!src.includes("AgentToolCard"))
+  assert.ok(!src.includes("listBanHint"))
 })
 
 test("配置抽屉对齐预览：380 宽、紧内边距、顶栏关", () => {

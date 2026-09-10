@@ -9,6 +9,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
 import { agentToolCardId } from "./agent-tool-anchor"
+import { CLI_LIST_GRID } from "./list-layout"
 import { AgentToolRow } from "./agent-tool-row"
 import { AgentToolsEmpty } from "./agent-tools-empty"
 
@@ -71,7 +72,7 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={t("settings.agentTools.searchPlaceholder")}
-            className="h-8 w-40 rounded-xl border border-border-button-default bg-background-primary-default pr-2.5 pl-8 text-caption-1-medium text-text-primary shadow-2xs outline-none placeholder:text-text-tertiary hover:border-border-button-hover focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
+            className="h-7 w-36 rounded-lg border border-border-button-default bg-background-primary-default pr-2.5 pl-8 text-caption-2-medium text-text-primary shadow-2xs outline-none placeholder:text-text-tertiary hover:border-border-button-hover focus:border-accent-500 focus:ring-1 focus:ring-accent-500"
           />
         </div>
       </div>
@@ -86,8 +87,8 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
           onClearSearch={() => setSearchQuery("")}
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border-button-default">
-          <div className="grid grid-cols-[1.2fr_1.6fr_auto] gap-3 border-b border-separator-border bg-background-secondary-default/50 px-4 py-2 text-caption-2-medium font-semibold tracking-wide text-text-tertiary uppercase">
+        <div className="overflow-hidden rounded-xl border border-border-button-default">
+          <div className={`grid ${CLI_LIST_GRID} gap-2 border-b border-separator-border bg-background-secondary-default/50 px-3 py-1.5 text-caption-2-medium font-semibold tracking-wide text-text-tertiary uppercase`}>
             <span>{t("settings.agentTools.colAssistant")}</span>
             <span>{t("settings.agentTools.colPower")}</span>
             <span className="text-right">{t("settings.agentTools.colActions")}</span>
@@ -96,9 +97,6 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
             <AgentToolRow key={tool.id} tool={tool} flash={focus?.id === tool.id} />
           ))}
         </div>
-      )}
-      {emptyKind ? null : (
-        <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.listBanHint")}</p>
       )}
     </section>
   )
