@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0 · 添加供应商发现性 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', danger: '#DC2626'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-[#0b0b0c]/40 text-ink antialiased">
+  <div class="mx-auto flex min-h-screen max-w-[1100px] justify-end gap-6 px-4 py-8">
+    <!-- annotation -->
+    <aside class="hidden w-[320px] shrink-0 self-start rounded-2xl border border-line bg-card p-4 text-[11px] shadow-sm lg:block">
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-add-provider-discover.html · 【视觉真源】</p>
+      <h1 class="mt-1 text-[14px] font-semibold">抽屉 · 添加供应商发现性</h1>
+      <p class="mt-2 text-mute">问题：下拉里「+ 添加 DeepSeek 供应商」像选项又像入口，难发现。</p>
+      <ul class="mt-3 list-disc space-y-1.5 pl-4 text-mute">
+        <li><strong class="text-ink">下拉只列已有项</strong>：官方登录 · 用本机账号；已有 Enjoy 档案</li>
+        <li><strong class="text-ink">添加不进菜单</strong>：下拉下方次级文字链「添加供应商档案」→ 跳转模型供应商页（或打开新建）</li>
+        <li><strong class="text-ink">CRUD 仍只在供应商页</strong>：抽屉不建假 vault 表单</li>
+        <li>空档案时：下拉仅官方登录 + 下方链接更醒目（可 soft 主色）</li>
+      </ul>
+      <div class="mt-4 overflow-hidden rounded-xl border border-line">
+        <table class="w-full text-left">
+          <thead class="bg-paper text-[10px] font-semibold uppercase text-mute"><tr><th class="px-2 py-1.5">面</th><th class="px-2 py-1.5">文案</th></tr></thead>
+          <tbody class="divide-y divide-line">
+            <tr><td class="px-2 py-1.5">决策位标题</td><td class="px-2 py-1.5">这个助手用</td></tr>
+            <tr><td class="px-2 py-1.5">官方项</td><td class="px-2 py-1.5">官方登录 · 用本机账号</td></tr>
+            <tr><td class="px-2 py-1.5">档案项</td><td class="px-2 py-1.5">{供应商} · {档案名} · {模型}</td></tr>
+            <tr><td class="px-2 py-1.5">次级链</td><td class="px-2 py-1.5">添加供应商档案</td></tr>
+            <tr><td class="px-2 py-1.5">禁止</td><td class="px-2 py-1.5">菜单内「+ 添加 {品牌} 供应商」</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </aside>
+
+    <!-- drawer -->
+    <div class="flex h-[640px] w-[380px] flex-col rounded-2xl border border-line bg-card shadow-2xl">
+      <header class="flex items-start justify-between border-b border-line px-4 py-3">
+        <div>
+          <h2 class="text-[15px] font-semibold">DeepSeek</h2>
+          <p class="text-[11px] text-mute">配置 · 可绑 Enjoy 档案</p>
+        </div>
+        <button class="text-[12px] text-mute">关闭</button>
+      </header>
+
+      <div class="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        <!-- decision -->
+        <div>
+          <label class="text-[11px] font-medium">这个助手用</label>
+          <button type="button" class="mt-1 flex h-10 w-full items-center justify-between rounded-xl border border-line bg-card px-3 text-left text-[12px]">
+            <span>官方登录 · 用本机账号</span>
+            <span class="text-mute">▾</span>
+          </button>
+          <!-- open menu: only profiles -->
+          <div class="mt-1 overflow-hidden rounded-xl border border-line bg-card shadow-md">
+            <button class="flex w-full items-center gap-2 bg-soft px-3 py-2 text-left text-[12px] text-accent">
+              <span class="size-4 rounded-full border border-accent"></span>
+              官方登录 · 用本机账号
+            </button>
+            <button class="flex w-full items-center gap-2 border-t border-line px-3 py-2 text-left text-[12px]">
+              <span class="size-4 rounded-full border border-line"></span>
+              DeepSeek · 工作档案 · V4 Pro
+            </button>
+            <!-- NO + add inside menu -->
+          </div>
+          <a href="#" class="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-accent">添加供应商档案 →</a>
+          <p class="mt-1 text-[10px] text-mute">在「模型供应商」新建档案后，可回到此处绑定。</p>
+        </div>
+
+        <div>
+          <label class="text-[11px] font-medium">默认模型</label>
+          <div class="mt-1 flex h-10 items-center gap-2 rounded-xl border border-line px-3 text-[12px]">
+            <span class="grid size-5 place-items-center rounded bg-[#4D6BFE] text-[9px] text-white">DS</span>
+            DeepSeek V4 Pro
+          </div>
+        </div>
+
+        <button class="flex w-full items-center justify-between text-[12px] font-medium">
+          高级配置 <span class="text-mute">▾</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button class="flex h-9 items-center justify-center gap-1 rounded-xl border border-line text-[12px]">打开登录</button>
+          <button class="flex h-9 items-center justify-center gap-1 rounded-xl border border-line text-[12px]">连通性测试</button>
+        </div>
+      </div>
+
+      <footer class="flex items-center justify-between border-t border-line px-4 py-3">
+        <button class="text-[12px] text-danger">卸载</button>
+        <button class="h-8 rounded-xl bg-accent px-4 text-[12px] font-medium text-white">完成</button>
+      </footer>
+    </div>
+  </div>
+
+  <div class="mx-auto max-w-[1100px] px-4 pb-10 lg:hidden">
+    <div class="rounded-2xl border border-line bg-card p-4 text-[11px]">
+      <p class="font-semibold">锁</p>
+      <p class="mt-1 text-mute">下拉只列档案；「添加供应商档案」在菜单外次级链；CRUD 在供应商页。</p>
+    </div>
+  </div>
+</body>
+</html>
