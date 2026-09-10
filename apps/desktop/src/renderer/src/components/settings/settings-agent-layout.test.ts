@@ -7,7 +7,7 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-test("本机 CLI 页顺序是顶栏 → 卡片 → 能力说明", () => {
+test("本机 CLI 页顺序是顶栏 → 列表 → 能力说明", () => {
   const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "settings-agent.tsx"), "utf8")
   const hub = src.indexOf("<AgentToolsCommandHub")
   const page = src.indexOf("<AgentToolsPage")
@@ -55,12 +55,33 @@ test("这个助手用在官方账号区之前，绑了档案不得把 inspect �
   const dir = join(dirname(fileURLToPath(import.meta.url)), "agent-tools")
   const cli = readFileSync(join(dir, "agent-tool-config-cli.tsx"), "utf8")
   const panel = readFileSync(join(dir, "agent-tool-account-panel.tsx"), "utf8")
-  const provider = cli.indexOf("<AgentToolProvider")
+  const slot = cli.indexOf("<AgentToolPowerSlot")
   const account = cli.indexOf("<AgentToolAccountPanel")
-  assert.ok(provider >= 0 && account >= 0 && provider < account)
+  assert.ok(slot >= 0 && account >= 0 && slot < account)
   assert.ok(panel.includes("officialAccountRole"))
   assert.ok(panel.includes("AgentToolAccountAside"))
   const aside = readFileSync(join(dir, "agent-tool-account-aside.tsx"), "utf8")
   assert.ok(!aside.includes("accountCurrentModel"))
   assert.ok(!aside.includes("quotaInfo"))
+})
+
+test("本机 CLI 是同构表行，不是不等卡片网格", () => {
+  const src = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "agent-tools/agent-tools-page.tsx"),
+    "utf8"
+  )
+  assert.ok(src.includes("colPower"))
+  assert.ok(src.includes("AgentToolRow"))
+  assert.ok(!src.includes("md:grid-cols-2"))
+  assert.ok(!src.includes("AgentToolCard"))
+})
+
+test("仅官方决策槽没有 Enjoy vault 下拉", () => {
+  const src = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "agent-tools/power-source/official-power-slot.tsx"),
+    "utf8"
+  )
+  assert.ok(src.includes("officialNoBindHint"))
+  assert.ok(!src.includes("AgentToolSourceMenu"))
+  assert.ok(!src.includes("useCustomProvider"))
 })

@@ -1,8 +1,9 @@
 /**
  * 配置弹窗：登录、连通性检查与 doctor 结果。
+ * 仅官方助手的登录 CTA 在「这个助手用」槽，这里不再重复。
  */
 import { RiLoginBoxLine, RiPulseLine, RiShieldCheckLine } from "@remixicon/react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { classifyPowerSource, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { AgentToolOmpLogin } from "./agent-tool-omp-login"
@@ -23,6 +24,8 @@ export function AgentToolConfigOps({
           <AgentToolOmpLogin tool={tool} actions={actions} />
           <DoctorButton actions={actions} />
         </div>
+      ) : classifyPowerSource(tool.id) === "official" ? (
+        <DoctorButton actions={actions} />
       ) : (
         <div className="flex items-center justify-between rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3">
           <div className="flex items-center gap-2">

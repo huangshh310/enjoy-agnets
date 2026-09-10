@@ -22,7 +22,6 @@ export function AgentToolProvider({
   const usingProvider = Boolean(tool.useCustomProvider && bound)
 
   if (!actions.supportsCustomInjection) return null
-  if (tool.status !== "ready" && !actions.isDefaultLocal) return null
 
   return (
     <section className="flex flex-col gap-2.5">

@@ -2,7 +2,7 @@
  * 智能体配置抽屉顶栏 / 底栏。
  */
 import { RiCheckLine, RiCloseLine, RiDeleteBinLine, RiFlashlightLine } from "@remixicon/react"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { classifyPowerSource, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
@@ -28,7 +28,9 @@ export function AgentToolConfigHeader({
           <h3 id="agent-tool-config-title" className="truncate text-title-3-semibold text-text-primary">
             {t("settings.agentTools.configTitle", { label: tool.label })}
           </h3>
-          <p className="mt-0.5 truncate text-caption-1-regular text-text-secondary">{actions.meta.tagline}</p>
+          <p className="mt-0.5 truncate text-caption-1-regular text-text-secondary">
+            {configHintFor(tool.id, t)}
+          </p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -99,4 +101,12 @@ export function AgentToolConfigFooter({
       </Button>
     </div>
   )
+}
+
+function configHintFor(runtimeId: string, t: (key: string) => string): string {
+  const kind = classifyPowerSource(runtimeId)
+  if (kind === "bindable") return t("settings.agentTools.configBindableHint")
+  if (kind === "omp") return t("settings.agentTools.configOmpHint")
+  if (kind === "enjoy-vault") return t("settings.agentTools.configVaultHint")
+  return t("settings.agentTools.configOfficialHint")
 }

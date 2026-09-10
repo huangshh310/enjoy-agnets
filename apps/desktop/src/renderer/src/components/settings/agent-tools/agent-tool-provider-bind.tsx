@@ -5,8 +5,8 @@ import { useState } from "react"
 import { RiArrowDownSLine, RiCheckLine, RiRestartLine, RiUploadCloud2Line } from "@remixicon/react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
+  alsoUseTargets,
   providerBindCanSyncHome,
-  providersCompatibleWith,
   type AgentToolId,
   type AgentToolPublic,
   type ProviderPublic
@@ -159,12 +159,7 @@ function ApplyToOthers({
   const t = useT()
   const queryClient = useQueryClient()
   const tools = useSettingsSnapshot().data?.agentTools ?? []
-  const others = tools.filter(
-    (item) =>
-      item.id !== tool.id &&
-      item.status === "ready" &&
-      providersCompatibleWith(item.id, profile)
-  )
+  const others = alsoUseTargets(tool.id, profile, tools)
   if (others.length === 0) return null
 
   async function toggle(target: AgentToolPublic) {
@@ -183,7 +178,7 @@ function ApplyToOthers({
     <div className="flex flex-col gap-1.5">
       <p className="text-caption-2-medium text-text-tertiary">{t("settings.agentTools.alsoUseOn")}</p>
       <div className="flex flex-wrap gap-1.5">
-        {others.map((item) => {
+          {others.map((item) => {
           const on = item.useCustomProvider && item.providerId === profile.id
           return (
             <button
@@ -197,10 +192,12 @@ function ApplyToOthers({
               }
             >
               {shortAgentLabel(item.id, item.label)}
+              {on ? " ✓" : ""}
             </button>
           )
         })}
       </div>
+      <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.alsoUseNoSandbox")}</p>
     </div>
   )
 }
