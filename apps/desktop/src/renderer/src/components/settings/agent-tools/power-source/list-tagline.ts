@@ -1,5 +1,5 @@
 /**
- * 列表副标题：短句、无协议微标。不要用品牌 meta 里的 ACP / ToolLoop 长文。
+ * 列表副标题：短句、无协议微标。不要用品牌 meta 长文。
  */
 const LIST_LINE_IDS = new Set([
   "enjoy-local",
