@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>本机 CLI · 动力源同构 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612',
+        mute: '#6B645C',
+        line: '#E8E4DE',
+        paper: '#F7F5F2',
+        card: '#FFFFFF',
+        accent: '#2563EB',
+        accentSoft: '#EFF4FF',
+        danger: '#DC2626',
+        ok: '#16A34A'
+      },
+      boxShadow: {
+        card: '0 1px 2px rgba(26,22,18,0.04), 0 4px 12px rgba(26,22,18,0.04)'
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+</style>
+</head>
+<body class="bg-paper text-ink">
+  <div class="mx-auto flex min-h-screen max-w-[1180px] gap-0 border-x border-line bg-card shadow-card">
+    <!-- rail -->
+    <aside class="flex w-14 shrink-0 flex-col items-center gap-3 border-r border-line bg-paper py-4">
+      <div class="size-7 rounded-lg bg-accent/15"></div>
+      <div class="mt-2 size-5 rounded bg-line"></div>
+      <div class="size-5 rounded bg-line"></div>
+      <div class="size-5 rounded bg-accent/30"></div>
+    </aside>
+    <aside class="w-48 shrink-0 border-r border-line bg-paper/80 p-3 text-[12px]">
+      <p class="px-2 text-[11px] font-semibold uppercase tracking-wide text-mute">智能体</p>
+      <p class="mt-1 rounded-lg px-2 py-1.5 text-mute">模型供应商</p>
+      <p class="rounded-lg bg-accentSoft px-2 py-1.5 font-semibold text-accent">智能体</p>
+      <p class="rounded-lg px-2 py-1.5 text-mute">说明</p>
+      <p class="rounded-lg px-2 py-1.5 text-mute">技能</p>
+    </aside>
+
+    <main class="relative min-w-0 flex-1">
+      <header class="border-b border-line px-6 pt-4">
+        <h1 class="text-[17px] font-semibold">智能体</h1>
+        <nav class="mt-3 flex gap-4 text-[13px]">
+          <span class="border-b-2 border-accent pb-2 font-semibold text-accent">本机 CLI</span>
+          <span class="pb-2 text-mute">Registry</span>
+          <span class="pb-2 text-mute">高级沙箱</span>
+          <span class="pb-2 text-mute">默认项</span>
+        </nav>
+      </header>
+
+      <div class="space-y-4 px-6 py-4">
+        <!-- quiet tip, not hero -->
+        <p class="rounded-lg border border-line bg-paper px-3 py-2 text-[12px] text-mute">
+          切到本机助手时，Enjoy 密钥不会带过去；未登录的助手请先完成官方登录。
+          <button class="ml-2 text-accent hover:underline">知道了</button>
+        </p>
+
+        <div class="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 class="text-[14px] font-semibold">本机 CLI</h2>
+            <p class="mt-0.5 text-[12px] text-mute">检测、安装、登录。列表只看当前动力源；改绑定进配置。</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="h-8 rounded-xl border border-line bg-card px-3 text-[12px]">管理模型供应商</button>
+            <button class="h-8 rounded-xl border border-line bg-card px-3 text-[12px]">扫描本机</button>
+            <button class="h-8 rounded-xl bg-accent px-3 text-[12px] font-medium text-white">运行体检</button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 border-b border-line pb-2 text-[12px]">
+          <span class="rounded-full bg-accentSoft px-2.5 py-1 font-medium text-accent">全部 13</span>
+          <span class="rounded-full px-2.5 py-1 text-mute">已安装 8</span>
+          <span class="rounded-full px-2.5 py-1 text-mute">未找到 5</span>
+          <span class="rounded-full px-2.5 py-1 text-mute">规划 0</span>
+          <input class="ml-auto h-8 w-40 rounded-xl border border-line px-3 text-[12px]" placeholder="搜索助手…" />
+        </div>
+
+        <!-- isomorphic list -->
+        <div class="overflow-hidden rounded-2xl border border-line">
+          <div class="grid grid-cols-[1.2fr_1.6fr_auto] gap-3 border-b border-line bg-paper px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-mute">
+            <span>助手</span>
+            <span>动力源</span>
+            <span class="text-right">操作</span>
+          </div>
+
+          <!-- Enjoy local -->
+          <div class="grid grid-cols-[1.2fr_1.6fr_auto] items-center gap-3 border-b border-line px-4 py-3">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <div class="flex size-8 items-center justify-center rounded-lg bg-amber-100 text-[11px] font-bold">E</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="truncate text-[13px] font-semibold">Enjoy 本地</p>
+                  <span class="size-1.5 rounded-full bg-ok"></span>
+                  <span class="text-[11px] text-mute">已安装</span>
+                </div>
+                <p class="truncate text-[11px] text-mute">本地核心 · 多供应商拼装</p>
+              </div>
+            </div>
+            <div>
+              <span class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px]">
+                <span class="size-1.5 shrink-0 rounded-full bg-accent"></span>
+                <span class="truncate">供应商 · lucky0625 · deepseek-v4-flash</span>
+              </span>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">设为主引擎</button>
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">配置</button>
+            </div>
+          </div>
+
+          <!-- Claude bound + main -->
+          <div class="grid grid-cols-[1.2fr_1.6fr_auto] items-center gap-3 border-b border-line bg-accentSoft/40 px-4 py-3">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <div class="flex size-8 items-center justify-center rounded-lg bg-orange-100 text-[11px] font-bold">C</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="truncate text-[13px] font-semibold">Claude Code</p>
+                  <span class="size-1.5 rounded-full bg-ok"></span>
+                  <span class="text-[11px] text-mute">已安装</span>
+                </div>
+                <p class="truncate text-[11px] text-mute">Anthropic 官方编程助手</p>
+              </div>
+            </div>
+            <div>
+              <span class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-accent/30 bg-card px-2.5 py-1 text-[12px]">
+                <span class="size-1.5 shrink-0 rounded-full bg-accent"></span>
+                <span class="truncate">供应商 · deep · deepseek-v4-pro</span>
+              </span>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+              <span class="inline-flex h-8 items-center gap-1 rounded-xl bg-accent/10 px-2.5 text-[12px] font-medium text-accent">✓ 当前主引擎</span>
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">配置</button>
+            </div>
+          </div>
+
+          <!-- Cursor official-only — MUST have power row -->
+          <div class="grid grid-cols-[1.2fr_1.6fr_auto] items-center gap-3 border-b border-line px-4 py-3">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <div class="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-[11px] font-bold">Cu</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="truncate text-[13px] font-semibold">Cursor CLI</p>
+                  <span class="size-1.5 rounded-full bg-ok"></span>
+                  <span class="text-[11px] text-mute">已安装</span>
+                </div>
+                <p class="truncate text-[11px] text-mute">官方终端助手</p>
+              </div>
+            </div>
+            <div>
+              <span class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px]">
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="truncate">官方登录 · 已登录</span>
+              </span>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">设为主引擎</button>
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">配置</button>
+            </div>
+          </div>
+
+          <!-- Grok official-only -->
+          <div class="grid grid-cols-[1.2fr_1.6fr_auto] items-center gap-3 border-b border-line px-4 py-3">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <div class="flex size-8 items-center justify-center rounded-lg bg-stone-900 text-[11px] font-bold text-white">G</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="truncate text-[13px] font-semibold">Grok Build</p>
+                  <span class="size-1.5 rounded-full bg-ok"></span>
+                  <span class="text-[11px] text-mute">已安装</span>
+                </div>
+                <p class="truncate text-[11px] text-mute">xAI 官方助手</p>
+              </div>
+            </div>
+            <div>
+              <span class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px]">
+                <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                <span class="truncate">官方登录 · 已登录</span>
+              </span>
+              <p class="mt-1 truncate text-[11px] text-mute">额度与邮箱进配置，不占列表</p>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">设为主引擎</button>
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">配置</button>
+            </div>
+          </div>
+
+          <!-- OMP -->
+          <div class="grid grid-cols-[1.2fr_1.6fr_auto] items-center gap-3 px-4 py-3">
+            <div class="flex min-w-0 items-center gap-2.5">
+              <div class="flex size-8 items-center justify-center rounded-lg bg-violet-100 text-[11px] font-bold">O</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <p class="truncate text-[13px] font-semibold">Oh My Pi</p>
+                  <span class="size-1.5 rounded-full bg-ok"></span>
+                  <span class="text-[11px] text-mute">已安装</span>
+                </div>
+                <p class="truncate text-[11px] text-mute">本机助手</p>
+              </div>
+            </div>
+            <div>
+              <span class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line bg-paper px-2.5 py-1 text-[12px]">
+                <span class="size-1.5 shrink-0 rounded-full bg-violet-500"></span>
+                <span class="truncate">OMP 供应商 · default · google-antigravity</span>
+              </span>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">设为主引擎</button>
+              <button class="h-8 rounded-xl border border-line px-2.5 text-[12px]">配置</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-mute">列表禁：ToolLoop / ACP stdio / bin 路径 / 配额条。主引擎仅「当前」轻标，不整行特权信息块。</p>
+      </div>
+
+      <!-- Drawer mock: bindable -->
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex w-[380px] flex-col border-l border-line bg-card shadow-card">
+        <div class="flex items-center justify-between border-b border-line px-4 py-3">
+          <div>
+            <p class="text-[13px] font-semibold">Claude Code</p>
+            <p class="text-[11px] text-mute">配置 · 可绑 Enjoy 档案</p>
+          </div>
+          <span class="text-[12px] text-mute">关闭</span>
+        </div>
+        <div class="space-y-4 overflow-y-auto px-4 py-4 text-[12px]">
+          <section>
+            <h3 class="text-[13px] font-semibold">这个助手用</h3>
+            <button class="mt-2 flex h-9 w-full items-center justify-between rounded-xl border border-line px-3 text-left">
+              <span class="truncate">deep · deepseek-v4-pro</span>
+              <span class="text-mute">▾</span>
+            </button>
+            <button class="mt-2 flex h-9 w-full items-center justify-between rounded-xl border border-line px-3 text-left">
+              <span class="flex min-w-0 items-center gap-2">
+                <span class="size-4 rounded bg-sky-200"></span>
+                <span class="truncate font-medium">deepseek-v4-pro</span>
+              </span>
+              <span class="text-mute">▾</span>
+            </button>
+            <div class="mt-2">
+              <p class="text-[11px] text-mute">也用于</p>
+              <div class="mt-1 flex flex-wrap gap-1.5">
+                <span class="rounded-full bg-accentSoft px-2 py-0.5 text-accent">Codex ✓</span>
+                <span class="rounded-full border border-line px-2 py-0.5 text-mute">OpenCode</span>
+                <span class="rounded-full border border-line px-2 py-0.5 text-mute">Gemini</span>
+              </div>
+              <p class="mt-1 text-[10px] text-mute">不上高级沙箱</p>
+            </div>
+            <details class="mt-2 rounded-xl border border-line px-3 py-2">
+              <summary class="cursor-pointer text-mute">同时改本机终端配置</summary>
+              <p class="mt-1 text-[11px] text-mute">默认折叠。Enjoy 内已在用上方档案。</p>
+            </details>
+          </section>
+          <section class="rounded-xl border border-dashed border-line bg-paper px-3 py-2.5">
+            <p class="font-medium">官方登录仍保留 · 仅系统终端</p>
+            <p class="mt-0.5 text-[11px] text-mute">旁注，不当英雄卡</p>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <section class="mx-auto max-w-[1180px] border-x border-line bg-card px-6 py-8">
+    <h2 class="text-[15px] font-semibold">仅官方抽屉（同壳 · Cursor / Grok）</h2>
+    <div class="mt-3 max-w-sm rounded-2xl border border-line p-4 shadow-card">
+      <h3 class="text-[13px] font-semibold">这个助手用</h3>
+      <div class="mt-2 rounded-xl border border-line bg-paper px-3 py-2.5">
+        <p class="font-medium">官方登录 · 已登录</p>
+        <p class="mt-0.5 text-[11px] text-mute">此助手不支持 Enjoy 档案绑定。改模型用官方目录。</p>
+      </div>
+      <button class="mt-3 h-9 w-full rounded-xl border border-line text-[12px]">打开官方登录</button>
+      <p class="mt-3 text-[11px] text-mute">无假 vault 下拉 · 无「供应商 · 档案」伪装</p>
+    </div>
+
+    <div class="mt-8 grid gap-4 text-[12px] leading-relaxed text-mute md:grid-cols-3">
+      <div>
+        <p class="font-semibold text-ink">IA</p>
+        <p class="mt-1">本机 CLI 列表 = 状态 + 同构动力源 + 主引擎/配置。供应商 CRUD 只在「模型供应商」。沙箱 Tab 不出现「也用于」。</p>
+      </div>
+      <div>
+        <p class="font-semibold text-ink">关键路径</p>
+        <p class="mt-1">装好 → 设主引擎 → 配置改动力源。可绑：下拉选档案+模型；仅官方：登录 CTA；OMP：槽位文案「OMP 供应商」。</p>
+      </div>
+      <div>
+        <p class="font-semibold text-ink">C 端门</p>
+        <p class="mt-1">主行动=设主引擎+配置；动力源胶囊同高；禁协议微标；顶条可关非 Hero；主引擎轻标非特权卡。</p>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
