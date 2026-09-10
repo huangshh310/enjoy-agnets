@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-0 + P0-A · 去品牌 + 安装态 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A', danger: '#DC2626', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .act-main { width: 6.75rem; height: 1.75rem; }
+  .act-icon { width: 1.75rem; height: 1.75rem; }
+</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[980px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-sandbox-debrand-install-states.html · 【视觉真源】P0-0 + P0-A</p>
+      <h1 class="mt-1 text-[17px] font-semibold">进阶沙箱去品牌 + 本机 CLI 安装中/失败</h1>
+      <p class="mt-1 text-[12px] text-mute">短预览 + 文案表。实现可暂只接一家后端；C 端字段标题禁 Vercel。沙箱不上 Composer 导轨。</p>
+    </header>
+
+    <!-- P0-0 -->
+    <section class="space-y-3">
+      <h2 class="text-[14px] font-semibold">P0-0 · 进阶沙箱去品牌</h2>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h3 class="text-[13px] font-semibold">进阶沙箱</h3>
+            <p class="mt-0.5 text-[11px] text-mute">隔离运行时 + 隔离令牌。不出现在 Composer 引擎导轨。</p>
+          </div>
+          <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">当前提供商 · 云隔离（默认）</span>
+        </div>
+        <div class="mt-3 space-y-2.5">
+          <label class="block text-[11px]">
+            <span class="font-medium">隔离令牌</span>
+            <span class="ml-1 text-mute">当前由沙箱提供商签发 · 不是模型密钥</span>
+            <input class="mt-1 h-9 w-full rounded-xl border border-line px-3 text-[12px]" placeholder="隔离令牌 / sandbox token" />
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-[11px]">
+              <span class="font-medium">团队 ID</span>
+              <span class="text-mute">（可留空）</span>
+              <input class="mt-1 h-9 w-full rounded-xl border border-line px-3 text-[12px]" placeholder="团队 ID" />
+            </label>
+            <label class="block text-[11px]">
+              <span class="font-medium">项目 ID</span>
+              <span class="text-mute">（可留空）</span>
+              <input class="mt-1 h-9 w-full rounded-xl border border-line px-3 text-[12px]" placeholder="项目 ID" />
+            </label>
+          </div>
+          <button class="h-8 rounded-xl bg-accent px-3 text-[12px] font-medium text-white">保存隔离令牌</button>
+          <p class="text-[11px] text-mute">需要 <strong class="text-ink">沙箱隔离令牌</strong> + 模型供应商 Key（各归各处）。</p>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-line bg-paper px-3 py-2 text-[11px]">
+        <p class="font-medium text-ink">本机 CLI 顶条（有令牌时）</p>
+        <p class="mt-1 rounded-lg border border-line bg-card px-2.5 py-1.5 text-mute">进阶沙箱：隔离令牌已配置</p>
+        <p class="mt-1 text-mute">未配置：不展示或「进阶沙箱：隔离令牌未配置」。禁止「Token：Vercel」。</p>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-line">
+        <table class="w-full text-left text-[11px]">
+          <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+            <tr><th class="px-3 py-2">原写死</th><th class="px-3 py-2">改为</th><th class="px-3 py-2">不用</th></tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <tr><td class="px-3 py-2">Vercel Sandbox 令牌</td><td class="px-3 py-2">隔离令牌</td><td class="px-3 py-2">字段标题写品牌</td></tr>
+            <tr><td class="px-3 py-2">vercel token 占位</td><td class="px-3 py-2">隔离令牌 / sandbox token</td><td class="px-3 py-2">vercel token</td></tr>
+            <tr><td class="px-3 py-2">Vercel 团队/项目</td><td class="px-3 py-2">团队 ID / 项目 ID</td><td class="px-3 py-2">Vercel 团队</td></tr>
+            <tr><td class="px-3 py-2">需要 Vercel 沙箱与供应商 Key</td><td class="px-3 py-2">需要沙箱隔离令牌 + 模型供应商 Key</td><td class="px-3 py-2">绑定成「买 Vercel」</td></tr>
+            <tr><td class="px-3 py-2">缺少 Vercel Sandbox token</td><td class="px-3 py-2">缺少隔离令牌（隔离环境，不是模型密钥）</td><td class="px-3 py-2">品牌缺词</td></tr>
+            <tr><td class="px-3 py-2">保存沙箱令牌</td><td class="px-3 py-2">保存隔离令牌</td><td class="px-3 py-2">保存 Vercel…</td></tr>
+            <tr><td class="px-3 py-2">Token：Vercel</td><td class="px-3 py-2">进阶沙箱：隔离令牌已配置</td><td class="px-3 py-2">顶条品牌字</td></tr>
+            <tr><td class="px-3 py-2">实验 · 沙箱 Harness</td><td class="px-3 py-2">进阶沙箱（可选只读「当前提供商 · 云隔离」）</td><td class="px-3 py-2">Harness 当用户词</td></tr>
+            <tr><td class="px-3 py-2">供应商页「Vercel AI SDK」英雄卡</td><td class="px-3 py-2">分类「AI SDK 兼容」</td><td class="px-3 py-2">假「Vercel 沙箱」供应商</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- P0-A -->
+    <section class="space-y-3">
+      <h2 class="text-[14px] font-semibold">P0-A · 本机 CLI 安装中 / 失败</h2>
+      <p class="text-[11px] text-mute">在 dense-p0 表行骨架上加态：主槽定宽；失败原因一行贴左副文，可再试 / 复制命令。</p>
+
+      <div class="overflow-hidden rounded-xl border border-line">
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] gap-x-3 border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <span>助手</span><span>动力源</span><span class="text-right">操作</span>
+        </div>
+
+        <!-- installing -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="truncate text-[12px] font-semibold">Gemini CLI</span>
+              <span class="size-1.5 rounded-full bg-accent animate-pulse"></span>
+              <span class="text-[10px] text-accent">安装中</span>
+            </div>
+            <p class="truncate font-mono text-[10px] text-mute">— · —</p>
+            <p class="mt-0.5 truncate text-[10px] text-mute">正在执行一键安装…</p>
+          </div>
+          <div class="text-[11px] text-mute">—</div>
+          <div class="flex justify-end gap-1">
+            <button disabled class="act-main rounded-lg bg-accent/60 text-[11px] font-medium text-white opacity-90">安装中…</button>
+            <button disabled class="act-icon rounded-lg border border-line text-mute opacity-40">⎘</button>
+          </div>
+        </div>
+
+        <!-- fail -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="truncate text-[12px] font-semibold">Codex CLI</span>
+              <span class="size-1.5 rounded-full bg-danger"></span>
+              <span class="text-[10px] text-danger">安装失败</span>
+            </div>
+            <p class="truncate font-mono text-[10px] text-mute">— · —</p>
+            <p class="mt-0.5 truncate text-[10px] text-danger" title="npm 退出码 1：网络超时">未装上：网络超时，可重试或复制命令手动装</p>
+          </div>
+          <div class="text-[11px] text-mute">—</div>
+          <div class="flex justify-end gap-1">
+            <button class="act-main rounded-lg border border-danger/40 text-[11px] text-danger">重试</button>
+            <button class="act-icon rounded-lg border border-line text-mute" title="复制安装命令">⎘</button>
+          </div>
+        </div>
+
+        <!-- fail permission -->
+        <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 px-3 py-1.5">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="truncate text-[12px] font-semibold">OpenCode</span>
+              <span class="size-1.5 rounded-full bg-danger"></span>
+              <span class="text-[10px] text-danger">安装失败</span>
+            </div>
+            <p class="truncate font-mono text-[10px] text-mute">— · —</p>
+            <p class="mt-0.5 truncate text-[10px] text-danger">未装上：权限不足，请在终端用复制的命令安装</p>
+          </div>
+          <div class="text-[11px] text-mute">—</div>
+          <div class="flex justify-end gap-1">
+            <button class="act-main rounded-lg border border-danger/40 text-[11px] text-danger">重试</button>
+            <button class="act-icon rounded-lg border border-line text-mute">⎘</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-line">
+        <table class="w-full text-left text-[11px]">
+          <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+            <tr><th class="px-3 py-2">态</th><th class="px-3 py-2">助手列</th><th class="px-3 py-2">主槽</th><th class="px-3 py-2">不用</th></tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <tr><td class="px-3 py-2">安装中</td><td class="px-3 py-2">状态「安装中」+ 副文「正在执行一键安装…」</td><td class="px-3 py-2">定宽「安装中…」禁用</td><td class="px-3 py-2">无限转大面积占行</td></tr>
+            <tr><td class="px-3 py-2">失败</td><td class="px-3 py-2">「安装失败」+ 一行人话原因</td><td class="px-3 py-2">「重试」+ 复制 icon</td><td class="px-3 py-2">只 toast、行上无原因</td></tr>
+            <tr><td class="px-3 py-2">原因句</td><td class="px-3 py-2">未装上：{短原因}</td><td class="px-3 py-2">—</td><td class="px-3 py-2">堆栈 / npm 原文塞满</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收 / 边界</p>
+      <ul class="mt-1 list-disc space-y-0.5 pl-4">
+        <li>C 端零「Vercel」作字段标题；只可读「当前提供商 · 云隔离（默认）」</li>
+        <li>沙箱令牌 ≠ 模型供应商；不上轨；Registry/本机 CLI 列表无品牌字</li>
+        <li>安装态不破坏 dense-p0 三列与主槽定宽；失败必有一行人话原因</li>
+        <li>P0-B（抽屉 doctor / 额度）不做</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
