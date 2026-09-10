@@ -3,6 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
+import { bashAllowPrefix } from "@enjoy-agents/agent-core"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { persistActiveRun } from "./flush-agent-run"
@@ -56,7 +57,7 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     toolCallId: decision.toolCallId
   })
   recordApprovalDecision(decision.approvalId, decision.decision)
-  applyApprovalDecision(run, decision.decision, pending.name)
+  applyApprovalDecision(run, decision.decision, pending)
   if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision !== "deny") {
     run.questionAnswers = decision.answers ?? {}
   }
@@ -83,12 +84,27 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
 }
 
 function applyApprovalDecision(
-  run: { sessionApprovedTools: Set<string> },
+  run: { sessionApprovedTools: Set<string>; sessionApprovedBashPrefixes: Set<string> },
   decision: "allow" | "deny" | "allow_session",
-  toolName: string
+  pending: { name: string; args?: unknown }
 ) {
-  if (toolName === ASK_USER_QUESTIONS_TOOL) return
-  if (decision === "allow_session") run.sessionApprovedTools.add(toolName)
+  if (pending.name === ASK_USER_QUESTIONS_TOOL) return
+  if (decision !== "allow_session") return
+  if (pending.name === "bash" || pending.name === "code_mode") {
+    const prefix = bashAllowPrefix(commandFromArgs(pending.args))
+    if (prefix) run.sessionApprovedBashPrefixes.add(prefix)
+    return
+  }
+  run.sessionApprovedTools.add(pending.name)
+}
+
+function commandFromArgs(args: unknown): string {
+  if (typeof args === "string") return args
+  if (args && typeof args === "object" && "command" in args) {
+    const command = (args as { command?: unknown }).command
+    return typeof command === "string" ? command : ""
+  }
+  return ""
 }
 
 function approvalResponseMessage(decision: ApprovalDecision, toolName: string): ModelMessage {

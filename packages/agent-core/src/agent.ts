@@ -15,7 +15,11 @@ import { createCodingTools } from "./tools"
 import { createDelegateTool, runDelegatedSubagent } from "./agents/delegate.ts"
 import type { ApprovalPolicy } from "./tool-approval.ts"
 import { agentStopWhen } from "./policies/stop.ts"
-import { agentLoopTimeout, prepareAgentStep } from "./policies/prepare-step.ts"
+import {
+  agentLoopTimeout,
+  prepareAgentStep,
+  pullPrepareStepUserMessages
+} from "./policies/prepare-step.ts"
 import { resolveToolApproval } from "./tool-approval.ts"
 
 export type { CodingAgentOptions, StreamCodingAgentOptions } from "./coding-agent-options.ts"
@@ -42,7 +46,8 @@ export function createCodingAgent(
       maxSteps: options.maxSteps,
       stopAfterTools: options.stopAfterTools
     }),
-    prepareStep: (step) => codingPrepareStep(step, options.pullSteeringMessages),
+    prepareStep: (step) =>
+      codingPrepareStep(step, options.pullSteeringMessages, options.pullInstructionUpdates),
     ...(loopTimeout ? { timeout: loopTimeout } : {}),
     ...(options.onStepFinish ? { onStepFinish: options.onStepFinish } : {}),
     toolApproval: ({ toolCall }) =>
@@ -66,8 +71,8 @@ function codingAgentTools(
   options: CodingAgentOptions
 ) {
   return {
-    ...createCodingTools(options.runtimeContext.host, { mode }),
-    ...createDelegateTool((task, parentToolCallId) =>
+    ...createCodingTools(options.runtimeContext.host, { mode, skills: options.skills }),
+    ...createDelegateTool((task, parentToolCallId, kind) =>
       runDelegatedSubagent({
         model,
         task,
@@ -77,7 +82,9 @@ function codingAgentTools(
         waitForApproval: options.waitForSubagentApproval,
         extraInstructions: options.extraInstructions,
         parentToolCallId,
-        onToolEvent: options.onSubagentToolEvent
+        onToolEvent: options.onSubagentToolEvent,
+        kind,
+        exploreModel: options.exploreModel
       })
     ),
     ...options.extraTools
@@ -86,13 +93,16 @@ function codingAgentTools(
 
 function codingPrepareStep(
   step: { messages: ModelMessage[]; stepNumber?: number },
-  pullSteeringMessages?: () => ModelMessage[]
+  pullSteeringMessages?: () => ModelMessage[],
+  pullInstructionUpdates?: () => ModelMessage[]
 ) {
   const stepNumber = step.stepNumber ?? 0
   return prepareAgentStep({
     messages: step.messages,
     stepNumber,
-    // step 0 不 drain，避免首跳 LLM 前就把纠偏吃掉。
-    injectUserMessages: stepNumber > 0 ? pullSteeringMessages?.() : undefined
+    injectUserMessages: pullPrepareStepUserMessages(stepNumber, [
+      pullInstructionUpdates,
+      pullSteeringMessages
+    ])
   })
 }

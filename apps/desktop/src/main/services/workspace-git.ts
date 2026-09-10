@@ -146,7 +146,7 @@ export async function readGitLog(
 export async function commitWorkspaceAll(
   workspaceRoot: string,
   message: string,
-  stageAll = true
+  stageAll = false
 ): Promise<GitCommitResult> {
   const status = (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout.trim()
   if (!status) {

@@ -12,6 +12,18 @@ export type PrepareStepInput = {
   injectUserMessages?: ModelMessage[]
 }
 
+/**
+ * step 0 不 drain，避免首跳 LLM 前把纠偏 / 指令更新抽空却不注入。
+ * 调用方按数组顺序拼接：项目指令更新在前，纠偏在后。
+ */
+export function pullPrepareStepUserMessages(
+  stepNumber: number,
+  pulls: ReadonlyArray<(() => ModelMessage[]) | undefined>
+): ModelMessage[] | undefined {
+  if (stepNumber <= 0) return undefined
+  return pulls.flatMap((pull) => pull?.() ?? [])
+}
+
 /** 把纠偏句接到尾部；尾部已是同一批则不再接，避免与 run.messages 同引用时双写。 */
 export function mergeSteeringMessages(
   messages: ModelMessage[],

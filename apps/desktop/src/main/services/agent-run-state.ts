@@ -20,6 +20,7 @@ export type ActiveRun = {
   secret?: StoredSecret
   pendingApprovals: PendingApproval[]
   sessionApprovedTools: Set<string>
+  sessionApprovedBashPrefixes: Set<string>
   approvalGate: ApprovalGate
   pumping: boolean
   resumeAfterPump: boolean
@@ -120,6 +121,7 @@ export function holdAgentRun(
     secret: patch.secret,
     pendingApprovals: [],
     sessionApprovedTools: new Set(),
+    sessionApprovedBashPrefixes: new Set(),
     approvalGate: createApprovalGate(),
     pumping: false,
     resumeAfterPump: false,

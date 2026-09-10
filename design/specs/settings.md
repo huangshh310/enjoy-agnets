@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-09
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-10
 
 ## 当前真相
 
@@ -21,7 +21,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/workspace` | 工作区管理（含已挂载目录列表） | 旧 `#/workspaces` redirect |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
-`#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。`#/settings/rules` 扫描到的常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
+`#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
 设置分段 ID 完整保留 24 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
 侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；团队与账户：团队），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目；`skills` 自己就是一级入口，不再并进「说明」。

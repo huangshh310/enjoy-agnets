@@ -14,6 +14,7 @@ export type PendingApproval = {
   approvalId: string
   toolCallId: string
   name: string
+  args?: unknown
 }
 
 export async function consumeFullStream(input: {
@@ -47,7 +48,8 @@ export async function consumeFullStream(input: {
       const pending: PendingApproval = {
         approvalId: event.approvalId || createId("apr"),
         toolCallId: event.toolCallId || createId("tool"),
-        name: event.name
+        name: event.name,
+        args: event.args
       }
       rememberApproval({
         runId: input.runId,

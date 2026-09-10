@@ -5,8 +5,15 @@ import { isMutatingToolName, mcpAgentToolName, parseToolsList } from "./tools.ts
 test("parseToolsList 忽略无名项", () => {
   assert.deepEqual(
     parseToolsList({ tools: [{ name: "read_file", description: "Read" }, { name: "" }, 1] }),
-    [{ name: "read_file", description: "Read" }]
+    [{ name: "read_file", description: "Read", inputSchema: undefined }]
   )
+})
+
+test("parseToolsList 保留 inputSchema", () => {
+  const schema = { type: "object", properties: { q: { type: "string" } } }
+  assert.deepEqual(parseToolsList({ tools: [{ name: "search", inputSchema: schema }] }), [
+    { name: "search", description: undefined, inputSchema: schema }
+  ])
 })
 
 test("写类工具名视为 mutating", () => {

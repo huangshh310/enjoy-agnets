@@ -160,6 +160,7 @@ export function listVisibleMcpTools(): Array<{
   level?: PermissionLevel
   name: string
   description?: string
+  inputSchema?: unknown
 }> {
   const out: Array<{
     serverId: string
@@ -168,6 +169,7 @@ export function listVisibleMcpTools(): Array<{
     level?: PermissionLevel
     name: string
     description?: string
+    inputSchema?: unknown
   }> = []
   for (const row of listMcpServers(getDatabase())) {
     const handle = handles.get(row.id)
@@ -185,7 +187,8 @@ export function listVisibleMcpTools(): Array<{
         trusted: row.trusted === 1,
         level,
         name: tool.name,
-        description: tool.description
+        description: tool.description,
+        inputSchema: tool.inputSchema
       })
     }
   }

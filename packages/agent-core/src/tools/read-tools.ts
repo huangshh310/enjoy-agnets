@@ -5,6 +5,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import type { AgentWorkspaceHost } from "../runtime-context"
+import { createRepoOutlineTool } from "./repo-outline-tool.ts"
 
 const MAX_TOOL_CHARS = 80_000
 
@@ -55,8 +56,9 @@ export function createReadTools(host: AgentWorkspaceHost) {
         const matches = await host.grep(pattern, glob)
         return { pattern, matches: matches.slice(0, 200) }
       }
-    })
+    }),
+    ...createRepoOutlineTool(host)
   }
 }
 
-export const READ_TOOL_NAMES = ["read_file", "list_dir", "glob", "grep"] as const
+export const READ_TOOL_NAMES = ["read_file", "list_dir", "glob", "grep", "repo_outline"] as const

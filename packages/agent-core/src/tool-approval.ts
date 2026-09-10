@@ -3,12 +3,13 @@
  * 本机路径用函数看 bash 命令；Harness 的 toolApproval 是静态表，内置 write/edit/bash 走 permissionMode。
  */
 import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
+import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
 export const BASH_TOOLS = ["bash", "code_mode"] as const
-export const COMMIT_TOOLS = ["git_commit", "git_push"] as const
+export const COMMIT_TOOLS = ["git_commit", "git_push", "git_branch"] as const
 export const MUTATING_TOOLS = [...WRITE_TOOLS, ...BASH_TOOLS, ...COMMIT_TOOLS] as const
 
 export type ApprovalPolicy = {
@@ -16,6 +17,8 @@ export type ApprovalPolicy = {
   requireBashApproval: boolean
   requireCommitApproval: boolean
   sessionApprovedTools?: ReadonlySet<string>
+  /** 本会话放行的 bash 命令前缀（如 `git status`），不是整个 bash 工具。 */
+  sessionApprovedBashPrefixes?: readonly string[]
 }
 
 export type ToolApprovalDecision =
@@ -59,10 +62,18 @@ export function resolveToolApproval(
     return { type: "denied", reason: `${mode} mode is read-only.` }
   }
   // 会话放行不能越过高风险命令；Allow for session 之后 rm -rf 仍要停。
-  if (BASH_SET.has(toolName) && isDangerousBash(bashCommandFrom(input))) {
+  if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) {
     return "user-approval"
   }
-  if (sessionAllows(toolName, policy.sessionApprovedTools)) return "approved"
+  if (
+    BASH_SET.has(toolName) &&
+    sessionAllowsBash(commandFromToolInput(input), policy.sessionApprovedBashPrefixes)
+  ) {
+    return "approved"
+  }
+  if (!BASH_SET.has(toolName) && sessionAllows(toolName, policy.sessionApprovedTools)) {
+    return "approved"
+  }
   if (WRITE_SET.has(toolName) && !policy.requireWriteApproval) return "approved"
   if (BASH_SET.has(toolName) && !policy.requireBashApproval) return "approved"
   if (COMMIT_SET.has(toolName) && !policy.requireCommitApproval) return "approved"
@@ -100,15 +111,6 @@ function sessionAllows(toolName: string, session?: ReadonlySet<string>): boolean
   return false
 }
 
-function bashCommandFrom(input: unknown): string {
-  if (typeof input === "string") return input
-  if (input && typeof input === "object" && "command" in input) {
-    const command = (input as { command?: unknown }).command
-    return typeof command === "string" ? command : ""
-  }
-  return ""
-}
-
 function isDangerousBash(command: string): boolean {
   const trimmed = command.trim()
   if (!trimmed) return false
@@ -120,6 +122,8 @@ const HOST_READ_TOOLS = [
   "list_dir",
   "glob",
   "grep",
+  "repo_outline",
+  "skill",
   "git_status",
   "git_diff",
   "git_log",

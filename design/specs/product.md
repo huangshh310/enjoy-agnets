@@ -1,6 +1,6 @@
 # spec/product
 
-> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-09
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-10
 
 ## 当前真相
 
@@ -58,4 +58,5 @@ ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：
 ## 已知坑
 
 - 技术栈长文里的目录（`packages/terminal`、独立 Hono 进程）是规划，不是当前仓结构。以本 spec 与 `architecture` 为准。
-- 对照高星 Agent 项目的缺口清单见 [../references/gap-audit-vs-github-agents.md](../references/gap-audit-vs-github-agents.md)。审计当时的假 Workflow / Automation / 通知 / Trace / MCP App / Monaco 多数已改；以文首与各 spec「当前真相」为准。仍不做 M5 worktree / M4 ACP PTY 登录兜底 / 云 MCP / `session/set_mode`。Agent Git 工具是 `git_status` / `git_diff` / `git_log` / `git_commit` / `git_push`。
+- 对照高星 Agent 项目的缺口清单见 [../references/gap-audit-vs-github-agents.md](../references/gap-audit-vs-github-agents.md)。审计当时的假 Workflow / Automation / 通知 / Trace / MCP App / Monaco 多数已改；以文首与各 spec「当前真相」为准。仍不做 M5 worktree / M4 ACP PTY 登录兜底 / 云 MCP / `session/set_mode`。Agent Git 工具是 `git_status` / `git_diff` / `git_log` / `git_commit` / `git_branch` / `git_push`。`git_commit` 默认只提交已暂存，`stageAll: true` 才 `add -A`。
+- 2026 星数榜与设计课（OpenCode / Codex / Cline / Aider / OpenHands / Goose）见 [../references/oss-agent-landscape-2026.md](../references/oss-agent-landscape-2026.md)。那是对照笔记，不是把 TUI / worktree / 云 Server 抄进来的许可证。

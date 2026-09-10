@@ -22,7 +22,7 @@ export function ExecutePlanBar() {
         className="shrink-0 rounded-md bg-accent-500 px-2.5 py-1 text-caption-2-medium text-text-white"
         onClick={() => {
           setMode("agent")
-          void sendComposerMessage({ content: `${t("chat.executePlanPrompt")}\n${plan}` })
+          void sendComposerMessage({ content: t("chat.executePlanPrompt"), executePlan: true })
         }}
       >
         {t("chat.executePlan")}

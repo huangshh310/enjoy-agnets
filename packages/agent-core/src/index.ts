@@ -49,7 +49,8 @@ export { clampAgentSteps, agentStopWhen, type AgentStopOptions } from "./policie
 export {
   prepareAgentStep,
   agentLoopTimeout,
-  mergeSteeringMessages
+  mergeSteeringMessages,
+  pullPrepareStepUserMessages
 } from "./policies/prepare-step";
 export {
   snapshotGeneration,
@@ -75,6 +76,15 @@ export { clipHistory, pruneModelMessages } from "./generation/prune";
 export { runDurableWorkflow, type DurableStep, type WorkflowCheckpoint } from "./agents/workflow";
 export { orderWorkflowSteps, layerWorkflowSteps } from "./agents/workflow-graph";
 export { assertSandboxCommand, type SandboxPolicy } from "./policies/sandbox";
+export { bashAllowPrefix, sessionAllowsBash, commandFromToolInput } from "./policies/bash-prefix";
+export {
+  collectRepoOutline,
+  formatRepoOutline,
+  REPO_OUTLINE_CHAR_BUDGET
+} from "./context/repo-outline";
+export { formatExecutePlanInstructions } from "./context/execute-plan";
+export { createSkillTool, type SkillHost } from "./tools/skill-tool";
+export { shouldAutoCompact } from "./compaction/should-compact";
 export { createRealtimeSession, type RealtimeSession, type RealtimeStatus } from "./media/realtime-session";
 export {
   bindRealtimeSocket,
@@ -84,7 +94,13 @@ export {
   type RealtimeSocketMessage
 } from "./media/realtime-ws";
 export { withMediaFallback } from "./media/fallback";
-export { orderReplayEvents, summarizeReplayEvents, type ReplayEvent, type ReplaySummary } from "./observability/replay";
+export {
+  orderReplayEvents,
+  summarizeReplayEvents,
+  summarizeTraceEvents,
+  type ReplayEvent,
+  type ReplaySummary
+} from "./observability/replay";
 export { summarizeSubagent, type SubagentSummary } from "./agents/subagent";
 export { createDelegateTool, runReadOnlySubagent, runDelegatedSubagent } from "./agents/delegate";
 export { runApprovedSubagent } from "./agents/subagent-loop";

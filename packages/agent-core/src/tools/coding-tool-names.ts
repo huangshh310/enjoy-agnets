@@ -8,6 +8,7 @@ export const CODING_TOOL_NAMES = [
   ...READ_TOOL_NAMES,
   "todo_write",
   "ask_user_questions",
+  "skill",
   "edit_file",
   "write_file",
   "bash",
@@ -16,6 +17,7 @@ export const CODING_TOOL_NAMES = [
   "git_log",
   "git_commit",
   "git_push",
+  "git_branch",
   "code_mode",
   "delegate"
 ] as const
@@ -24,6 +26,7 @@ const READ_ONLY_TOOL_NAMES = [
   ...READ_TOOL_NAMES,
   "todo_write",
   "ask_user_questions",
+  "skill",
   "git_status",
   "git_diff",
   "git_log",

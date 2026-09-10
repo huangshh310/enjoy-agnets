@@ -1,6 +1,6 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-09
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-10
 
 ## 当前真相
 
@@ -9,7 +9,7 @@
 路由：`#/observability`，在 `AppShell` 内换轨。Stage 用 `fill` + `hideChrome`。左侧情境栏提供本地执行监控、模型路由、链路明细与事件回放 4 大导航入口，主舞台提供四大核心视图模式：
 1. **监控与图表大盘 (Dashboard)**：4 大核心 KPI 指标卡、耗时与 TTFO 时序趋势渐变面积图、模型负载分布柱状图、状态健康 Donut 环形图与异常根因分析；
 2. **模型路由与上游调度 (Model Routing)**：对齐 Grok2API 路由架构，可视化对外模型标识、上游**协议风格 + 模型 id**（不下发 vault `baseURL`）、接口多模态能力、按 Telemetry 聚合的调用量 / 成功率 / P95（忽略 0ms）、以及一键 `settings.pingProvider` Ping；
-3. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉。时间尺只用指标里有的 send → TTFO → done。`buildTraceDataFromMetric` **禁止**编造 RAG/MCP span 或 `|| 850` token。没有 `ttfoMs` 就不画 TTFO 段；没有 `durationMs` 就总时长为 0。`estimatedCost` 目前没有真实单价字段，固定 0。指标没有 `sessionId` 时只提供「回到对话」，不要假装能打开源会话；
+3. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉。时间尺用指标里有的 send → TTFO → done，再叠加本 run 回放缓冲里的 `tool.*` / `approval.required` / `approval.resolved`（工具名与 `decision`，不含 args）。`buildTraceDataFromMetric` **禁止**编造 RAG/MCP span 或 `|| 850` token。没有 `ttfoMs` 就不画 TTFO 段；没有 `durationMs` 就总时长为 0。`estimatedCost` 目前没有真实单价字段，固定 0。指标没有 `sessionId` 时只提供「回到对话」，不要假装能打开源会话；
 4. **事件流回放 (Stream Replay)**：主进程内存缓冲事件流回放。
 可一键导出 JSON / CSV 报表。
 ## 不变量

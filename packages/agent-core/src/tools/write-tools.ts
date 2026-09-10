@@ -8,6 +8,7 @@ import { z } from "zod"
 import { diffTexts, toUnifiedDiff } from "../diff.ts"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
 import { createCodeModeTool } from "./code-mode.ts"
+import { createGitWriteTools } from "./git-write-tools.ts"
 
 const MAX_TOOL_CHARS = 80_000
 
@@ -80,23 +81,7 @@ export function createWriteTools(host: AgentWorkspaceHost) {
         }
       }
     }),
-    git_commit: tool({
-      description: "Create a git commit. Requires user approval.",
-      inputSchema: z.object({
-        message: z.string()
-      }),
-      execute: async ({ message }) => {
-        return { result: await host.gitCommit(message) }
-      }
-    }),
-    git_push: tool({
-      description:
-        "Push the current branch to its upstream. Requires user approval. Fails if there is no upstream.",
-      inputSchema: z.object({}),
-      execute: async () => {
-        return { result: await host.gitPush() }
-      }
-    }),
+    ...createGitWriteTools(host),
     code_mode: createCodeModeTool(host)
   }
 }

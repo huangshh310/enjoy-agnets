@@ -559,9 +559,9 @@ export const zhSettings = {
   },
 
   sandbox: {
-    hubTitle: "执行沙箱与护栏",
-    hubBadge: "AI SDK 7 循环约束",
-    hubDesc: "严格步数上限（stopWhen: stepCountIs）、按工具 bash 超时，以及网络边界控制。",
+    hubTitle: "执行护栏",
+    hubBadge: "审批 + 工作区 cwd",
+    hubDesc: "bash 默认禁网二进制、禁 shell 包装器、cwd 锁工作区。macOS 另用 Seatbelt 限制写盘。这不是 Docker 沙箱。",
     limits: "执行上限与超时",
     maxSteps: "Agent 最大步数",
     maxStepsDesc: "ToolLoop 的 stopWhen 使用 AI SDK stepCountIs。默认 20 步，上限 64。",

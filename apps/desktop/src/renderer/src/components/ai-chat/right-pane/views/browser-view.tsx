@@ -9,6 +9,7 @@ import { addQuotedContext } from "@renderer/hooks/quoted-context"
 import { steerPreparedText } from "@renderer/hooks/runtime-interact/steer-composer"
 import { PANE_FOCUS } from "../constants"
 import { useT } from "@renderer/i18n"
+import { importDesignScreenshot } from "./browser-design-capture"
 import { BROWSER_DESIGN_SCRIPT } from "./browser-design-script"
 
 type DesignPick = {
@@ -56,7 +57,8 @@ export function BrowserView({ url }: { url?: string }) {
         content: [html, picked.css, picked.text].filter(Boolean).join("\n\n"),
         snippet: html.slice(0, 280)
       })
-      void steerPreparedText(`Design mode picked <${picked.tag ?? "element"}>. Use the quoted HTML/CSS.`)
+      await importDesignScreenshot(view, picked.tag ?? "element").catch(() => undefined)
+      void steerPreparedText(`Design mode picked <${picked.tag ?? "element"}>. Use the quoted HTML/CSS and screenshot.`)
     } finally {
       setPicking(false)
     }

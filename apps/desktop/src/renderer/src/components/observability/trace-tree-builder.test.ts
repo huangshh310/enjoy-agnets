@@ -33,6 +33,28 @@ test("有 TTFO 时画 send → ttfo → done，不捏 MCP", () => {
   assert.equal(names.includes("context.load"), false)
 })
 
+test("有回放事件时追加 tool/approval span，仍不带 args", () => {
+  const metric: TelemetryMetric = {
+    id: "met_tools",
+    runId: "run_tools",
+    kind: "agent",
+    status: "completed",
+    durationMs: 1000,
+    createdAt: Date.now()
+  }
+  const trace = buildTraceDataFromMetric(metric, undefined, [
+    { type: "tool.start", toolName: "bash" },
+    { type: "approval.required", toolName: "write_file" },
+    { type: "approval.resolved", toolName: "write_file", decision: "allow" },
+    { type: "text.delta" }
+  ])
+  const names = (trace.rootSpan.children ?? []).map((child) => child.name)
+  assert.ok(names.includes("tool.bash"))
+  assert.ok(names.includes("approval.write_file"))
+  assert.ok(names.includes("approval.allow"))
+  assert.equal(JSON.stringify(trace).includes("secret"), false)
+})
+
 test("缺 duration 与 token 时不填 1000ms / 850 token", () => {
   const metric: TelemetryMetric = {
     id: "met_sparse",

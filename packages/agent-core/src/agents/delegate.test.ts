@@ -57,6 +57,23 @@ test("delegate 工具把任务交给 run 并覆盖 title", async () => {
   assert.deepEqual(result.findings, ["done"])
 })
 
+test("explore 子 Agent 即使在 agent 模式也只读", async () => {
+  const summary = await runDelegatedSubagent({
+    model: {} as never,
+    task: "Find tests",
+    host: host(),
+    mode: "agent",
+    kind: "explore",
+    policy: {
+      requireWriteApproval: true,
+      requireBashApproval: true,
+      requireCommitApproval: true
+    },
+    generate: async () => "tests are in src"
+  })
+  assert.deepEqual(summary.findings, ["tests are in src"])
+})
+
 test("ask 模式 delegate 仍走只读摘要", async () => {
   const summary = await runDelegatedSubagent({
     model: {} as never,

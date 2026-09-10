@@ -9,8 +9,8 @@ export const SKILL_CATALOG_MAX_ITEMS = 48
 
 const HEADER = [
   "# Installed skills (index)",
-  "If a skill matches the task and lists a workspace path, read that SKILL.md with read_file.",
-  "Global skills are outside the opened folder — follow the description; do not invent a path outside the workspace."
+  "If a skill matches the task, call the skill tool with its name. That loads SKILL.md, including global skills outside the workspace.",
+  "Do not invent a path outside the workspace. Prefer skill over read_file for skills."
 ].join("\n")
 
 export function skillWorkspaceRelPath(

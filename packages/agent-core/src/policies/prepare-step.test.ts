@@ -1,6 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { agentLoopTimeout, mergeSteeringMessages, prepareAgentStep } from "./prepare-step.ts"
+import {
+  agentLoopTimeout,
+  mergeSteeringMessages,
+  prepareAgentStep,
+  pullPrepareStepUserMessages
+} from "./prepare-step.ts"
 
 test("prepareAgentStep 裁掉超长历史", async () => {
   const messages = Array.from({ length: 50 }, (_, index) => ({
@@ -39,6 +44,29 @@ test("尾部已是同一批纠偏句时不再重复追加", () => {
   const merged = mergeSteeringMessages(messages, injected)
   assert.equal(merged, messages)
   assert.equal(merged.length, 2)
+})
+
+test("step 0 不 drain 指令更新与纠偏", () => {
+  let drained = false
+  const injected = pullPrepareStepUserMessages(0, [
+    () => {
+      drained = true
+      return [{ role: "user", content: "instr" }]
+    }
+  ])
+  assert.equal(injected, undefined)
+  assert.equal(drained, false)
+})
+
+test("step≥1 先拼指令更新再拼纠偏", () => {
+  const injected = pullPrepareStepUserMessages(1, [
+    () => [{ role: "user", content: "instr" }],
+    () => [{ role: "user", content: "steer" }]
+  ])
+  assert.deepEqual(
+    injected?.map((message) => message.content),
+    ["instr", "steer"]
+  )
 })
 
 test("agentLoopTimeout 0 / 缺省不传对象", () => {

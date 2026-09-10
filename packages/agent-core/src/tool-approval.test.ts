@@ -92,14 +92,20 @@ test("Auto 下普通 bash 放行，高风险命令仍暂停", () => {
   )
 })
 
-test("本会话已允许的工具直接 approved，但高风险 bash 仍暂停", () => {
-  const policy = { ...REQUIRE_ALL, sessionApprovedTools: new Set(["bash"]) }
+test("本会话 bash 只放行命令前缀，不是整个 bash 工具", () => {
+  const policy = { ...REQUIRE_ALL, sessionApprovedBashPrefixes: ["pnpm test"] }
   assert.equal(
-    resolveToolApproval("bash", "agent", policy, { command: "pnpm test" }),
+    resolveToolApproval("bash", "agent", policy, { command: "pnpm test src/a.ts" }),
     "approved"
   )
   assert.equal(
-    resolveToolApproval("bash", "agent", policy, { command: "rm -rf dist" }),
+    resolveToolApproval("bash", "agent", policy, { command: "git push" }),
+    "user-approval"
+  )
+  assert.equal(
+    resolveToolApproval("bash", "agent", { ...REQUIRE_ALL, sessionApprovedTools: new Set(["bash"]) }, {
+      command: "pnpm test"
+    }),
     "user-approval"
   )
   assert.equal(resolveToolApproval("write_file", "agent", policy), "user-approval")

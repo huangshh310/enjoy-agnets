@@ -5,6 +5,7 @@
 export type McpToolInfo = {
   name: string
   description?: string
+  inputSchema?: unknown
 }
 
 export function parseToolsList(result: unknown): McpToolInfo[] {
@@ -16,7 +17,8 @@ export function parseToolsList(result: unknown): McpToolInfo[] {
     if (typeof row.name !== "string" || !row.name.trim()) continue
     out.push({
       name: row.name,
-      description: typeof row.description === "string" ? row.description : undefined
+      description: typeof row.description === "string" ? row.description : undefined,
+      inputSchema: row.inputSchema
     })
   }
   return out

@@ -1,11 +1,11 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-09
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-10
 
 ## 当前真相
 
 内核在 `packages/agent-core`（纯 TS）。Electron main 的 `agent-runner` 建模型、注入 workspace host、消费 `fullStream`，映射成 `StreamEvent` 再 `webContents.send("agent.event")`。
-模式（`AgentMode` 合约仍是 7 值）：Composer 菜单只露 **智能体 / 规划 / 问答 / 调试**。`plan` / `ask` **不注册** `write_file` / `edit_file` / `bash` / `git_commit` / `code_mode`，模型看不见这些工具；审批层仍对漏网调用 deny。`plan` 另注册 `submit_plan`：execute 把计划写入工作区根 `implementation_plan.md`（固定相对路径，不走 `write_file` 审批，写失败仍提交 UI）。Composer 上沿「按此执行」切到 `agent`，下一轮提示先读该文件。`agent` / `debug` 注册全套写工具（调试只换诊断提示词）。`workflow` / `tdd` / `code_mode` 仍在 enum 与 `systemPromptFor`，菜单与发送会 `coerceComposerMode` 成 `agent`。句首 `/` 打开 Composer 面板：内置 `/compact`（立刻 `session.compact`，不把命令发给模型）与 `/plan` `/ask` `/agent` `/debug` **各引擎都列**；已安装技能始终列出。`/plan` 等对照 Codex / Claude：**宿主切协作模式**，不是引用 Chip。Enjoy Local `setMode` 后 ToolLoop 按 mode 注册只读/写工具。ACP **不**传 `session/set_mode`、工具不锁；仍 `setMode` 进 store，Composer 顶上画「规划中」芯片，之后每一轮用户 Prompt 垫 `[Enjoy host mode: plan]` 围栏（气泡剥掉）。禁止再把 `/plan` 收成 `QuotedContext` / `引用自步骤`。选中技能钉 Chip，发送时只写「去 `read_file` SKILL.md」指令，不灌正文。ACP `available_commands` 仍只进 ⌘L。输入 `@` 把工作区文件/目录收成 `QuotedContext`；浮层挂到 `document.body`，避免被 Composer 裁切。Composer `mode` 按会话记在 `sessionModes`；设置默认项不得改当前会话。发送走 `runModeForComposer`：ACP / 无执行模式铬的 runtime **强制 `agent`**。系统提示由 `systemPromptFor(mode)` + 设置里的 `customInstructions` + 常驻项目规则（无 globs / `alwaysApply`，见 `pickAlwaysOnRules`）+ 技能索引（`formatSkillCatalog`，不灌 SKILL.md 正文）注入；ACP 只把自定义说明垫进 `session/prompt`，不灌 Enjoy ToolLoop 提示词。`enjoy-local.delegate=true`：主循环注入 `delegate`；子 Agent 不再套 delegate，但接同一份 `extraInstructions`。
+模式（`AgentMode` 合约仍是 7 值）：Composer 菜单只露 **智能体 / 规划 / 问答 / 调试**。`plan` / `ask` **不注册** `write_file` / `edit_file` / `bash` / `git_commit` / `code_mode`，模型看不见这些工具；审批层仍对漏网调用 deny。`plan` 另注册 `submit_plan`：execute 把计划写入工作区根 `implementation_plan.md`（固定相对路径，不走 `write_file` 审批，写失败仍提交 UI）。Composer 上沿「按此执行」切到 `agent`，用户气泡只留短确认；计划正文走 hidden/system（`executePlan` + `formatExecutePlanInstructions`），与 M3 handoff 同一类注入。`agent` / `debug` 注册全套写工具（调试只换诊断提示词）。`workflow` / `tdd` / `code_mode` 仍在 enum 与 `systemPromptFor`，菜单与发送会 `coerceComposerMode` 成 `agent`。句首 `/` 打开 Composer 面板：内置 `/compact`（立刻 `session.compact`，不把命令发给模型）与 `/plan` `/ask` `/agent` `/debug` **各引擎都列**；已安装技能始终列出。`/plan` 等对照 Codex / Claude：**宿主切协作模式**，不是引用 Chip。Enjoy Local `setMode` 后 ToolLoop 按 mode 注册只读/写工具。ACP **不**传 `session/set_mode`、工具不锁；仍 `setMode` 进 store，Composer 顶上画「规划中」芯片，之后每一轮用户 Prompt 垫 `[Enjoy host mode: plan]` 围栏（气泡剥掉）。禁止再把 `/plan` 收成 `QuotedContext` / `引用自步骤`。选中技能钉 Chip，发送时只写「去 `read_file` SKILL.md」指令，不灌正文。ACP `available_commands` 仍只进 ⌘L。输入 `@` 把工作区文件/目录收成 `QuotedContext`；浮层挂到 `document.body`，避免被 Composer 裁切。Composer `mode` 按会话记在 `sessionModes`；设置默认项不得改当前会话。发送走 `runModeForComposer`：ACP / 无执行模式铬的 runtime **强制 `agent`**。系统提示由 `systemPromptFor(mode)` + 设置里的 `customInstructions` + **AGENTS.md 链**（`formatAgentsMdChain`：`~/.enjoy-agents` 全局 → 工作区根 → cwd；每层 `AGENTS.override.md` > `AGENTS.md` > `CLAUDE.md` > `GEMINI.md`，合计 32_768 UTF-8 字节；靠近 cwd 的层排后面覆盖前面）+ 其余常驻项目规则（无 globs / `alwaysApply`，见 `pickAlwaysOnRules`，有链时剥掉同名 AGENTS/CLAUDE/GEMINI）+ 技能索引（`formatSkillCatalog`，不灌 SKILL.md 正文）注入。子目录 AGENTS.md **不**进每一轮基线：开流基线 cwd 是工作区根；`read_file` / `write_file` / `edit_file` / `list_dir` 碰到路径后，`prepareStep`（step≥1）注入 `[PROJECT INSTRUCTIONS UPDATE]`。`glob` / `grep` / `repo_outline` / 开流大纲扫描不记 touch（`listDir(..., { touch: false })`）。超 32KiB 时丢掉远离 cwd 的层，优先保留后面的覆盖层。会话压缩后每一轮开流从磁盘重读链，并在 extraInstructions 头加 `REHYDRATED_INSTRUCTIONS_NOTE`（优先这份，不要信 SUMMARY 里的旧指令）。ACP 只把自定义说明垫进 `session/prompt`，不灌 Enjoy ToolLoop 提示词，也不做 ACP `session/load`。`enjoy-local.delegate=true`：主循环注入 `delegate`；子 Agent 不再套 delegate，但接同一份 `extraInstructions`。
 开流三分：`isAcpHostRuntime(runtimeId)` → `streamAcpTurn`；否则 `codingRuntime: "harness"` → 现有沙箱桥；否则 Enjoy Local ToolLoop。ACP 开流忽略 `fast` / `reasoningEffort` / 执行模式（不传 `session/set_mode`）；纠偏对 ACP 是下一轮 `session/prompt` 文本。Enjoy Local Fast 开且 profile 有 `fastModelId` 时本轮用极速模型，不改 Composer 当前 `modelId`。本机 CLI 契约见 [agent-cli](./agent-cli.md)。DeepSeek **本机 CLI** 走 `dsh --profile acp`；旧 SDK 沙箱 Harness 适配器仍占位。外部 CLI **不是**默认内核。
 思考档按模型族发：官方族与 Kimi K3 走顶层 `reasoning`；DeepSeek 用 `providerOptions.deepseek`；MiniMax-M3 用兼容层 `thinking`，`reasoning_split` 只给官方 MiniMax 域名；GLM 用 `thinking.enabled` + `reasoningEffort`。流里的 `error` 部件要抛出并解开 cause。
 
@@ -17,6 +17,8 @@
 | `list_dir` | 否 | |
 | `glob` | 否 | 最多 400 条 |
 | `grep` | 否 | 最多 200 条 |
+| `repo_outline` | 否 | 深度/条数受限的目录骨架。开流也会注入一份进 system |
+| `skill` | 否 | 按名加载 SKILL.md；全局技能由宿主代读，不走工作区 jail |
 | `todo_write` | 否 | 整表替换对话内 Todo List，不写盘 |
 | `ask_user_questions` | 是（停车取答案，不是写盘） | 向用户提问；plan/ask 也放行。抄 Fluid AskUserQuestions 交互、BoardUI 皮 |
 | `submit_plan` | 否 | 仅 `plan` 模式。写入工作区根 `implementation_plan.md`（固定路径，不走 `write_file` 审批）。UI「按此执行」切到 agent，下一轮先读该文件 |
@@ -27,9 +29,10 @@
 | `git_status` | 否 | porcelain 状态 |
 | `git_diff` | 否 | 工作区或单路径 diff |
 | `git_log` | 否 | 线性 porcelain log；默认 20 条、上限 100；可选 path（jail）。plan/ask 也注册 |
-| `git_commit` | 是 | 走 `requireCommitApproval` |
+| `git_commit` | 是 | 走 `requireCommitApproval`。默认只提交已暂存；`stageAll: true` 才 `add -A` |
+| `git_branch` | 是 | 创建分支，可选 checkout。与 commit 同一 Git 审批档 |
 | `git_push` | 是 | 推当前上游；无上游即拒。与 `git_commit` 同一 Git 审批档 |
-| `delegate` | 否（子循环写盘仍审） | 独立上下文。子工具 `tool.start`/`tool.result` 带 `parentToolCallId`，Thinking 树挂在 delegate 下 |
+| `delegate` | 否（子循环写盘仍审） | `kind=explore` 强制只读（可用 `fastModelId`）；`general` 跟父模式。子工具带 `parentToolCallId` |
 
 工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。
 
@@ -77,7 +80,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 附件：`apps/desktop/src/main/services/attach-run-files.ts`
 - 用户附件落库 / 旧消息回挂：`persist-user-attachments.ts`、`user-attachment-parts.ts`
 - 会话上下文压缩与状态：`packages/agent-core/src/compaction/session-compactor.ts`、`apps/desktop/src/main/services/session-compaction-service.ts`（编排）、`session-compaction-store.ts`、`session-compaction-summary.ts`。压缩只改发给模型的 `ModelMessage[]`，UI 历史不删。注入一条 `[CONVERSATION SUMMARY]`，不再插虚构助手句。摘要优先 `generateText`（当前档案 `fastModelId || modelId`），失败回落规则抽取。错误码 `COMPACTION_TOO_SHORT` / `COMPACTION_NOT_ELIGIBLE`，renderer 翻词表。
-- 本轮 ModelMessage 快照：`inspect-prompt-snapshot.ts`、`inspect-prompt-service.ts`；`openCodingStream` **成功返回后**才 `captureOpenStreamPrompt`（失败不得留下假「本轮实发」）。`takeSessionHandoff` 在 `openRunStream` 成功之后。`agent.inspectPrompt` 优先未过期快照，否则 preview（已压缩则带 SUMMARY）。拼指令：`inspect-prompt-instructions.ts`；常驻规则：`packages/ipc-contract/src/rules-always-on.ts`；技能索引：`packages/ipc-contract/src/skills-catalog.ts`。
+- 本轮 ModelMessage 快照：`inspect-prompt-snapshot.ts`、`inspect-prompt-service.ts`；`openCodingStream` **成功返回后**才 `captureOpenStreamPrompt`（失败不得留下假「本轮实发」）。`takeSessionHandoff` 在 `openRunStream` 成功之后。`agent.inspectPrompt` 优先未过期快照，否则 preview（已压缩则带 SUMMARY）。拼指令：`inspect-prompt-instructions.ts`；AGENTS.md 链：`packages/ipc-contract/src/agents-md-chain.ts`、`agents-md-discover.ts`、`agents-md-touch-log.ts`；`pullInstructionUpdates` 在 `codingPrepareStep`（先于纠偏）；常驻规则：`packages/ipc-contract/src/rules-always-on.ts`；技能索引：`packages/ipc-contract/src/skills-catalog.ts`。
 - SDK 能力表：[../references/vercel-ai-sdk-7-feature-matrix.md](../references/vercel-ai-sdk-7-feature-matrix.md)
 
 ## 已知坑
@@ -94,6 +97,13 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - `ask_user_questions` 不是写盘，plan/ask 不得当只读拒绝。不要原样上架 Fluid registry（Base UI、framer-motion、Lucide、`bg-card`）。答案不能塞进 HMAC 校验的落库 args；放行后放 `ActiveRun.questionAnswers`，execute 再 take。禁止对本工具 `allow_session`：必须在 `recordApprovalDecision` 之前抛，否则库内行写死、卡片还停着。`toHarnessApprovalSettings` 不要登记该工具（ACP/CLI 没有 `createCodingTools`）。tool-approval 的 node:test 不能 value-import ipc-contract 入口（缺 `permission-mode`），工具名常量放 `ask-user-questions-name.ts`。
 - 设置「说明」能存却不进 Enjoy Local：旧路径只给 Harness 拼 `customInstructions`。必须 `streamCodingAgent({ extraInstructions })`，检查器同一套 `codingInstructions`。ACP inspect 不得回 `systemPromptFor` 假装 CLI 用了 ToolLoop 提示词。Skills 只注入索引（名/描述/工作区相对路径），禁止灌 `SkillItem.content`。Composer `/` 选中技能同样只写「去 read_file」指令；`@` 必须带文件正文或目录清单，失败也要写明路径。
 - `submit_plan` 写 `implementation_plan.md` 不走 `write_file` 审批，路径写死在工作区根。`files` 只能是相对路径；写盘失败仍要把 `plan` 回给 UI，否则「按此执行」出不来。
+- 「按此执行」禁止把计划拼进用户气泡。短确认 + `RunAgentInput.executePlan`；main 读盘后注入 extraInstructions。
+- bash 的「本会话总是允许」只白名单命令前缀（前两个 token），不是整个 `bash` 工具。高风险命令仍要停。
+- macOS 上 agent `bash` 经 `sandbox-exec` Seatbelt：写盘限工作区与 tmp，默认禁网。这不是 Docker。文案不要叫 Vercel Sandbox。
+- 接近上下文窗口（约 70%）**或**消息 ≥16 条时 `maybeAutoCompact`（有窗口数字也要看条数地板）；太短忽略。算法已有，触发在 `modelMessagesForStart`。压缩后必须从磁盘重读 AGENTS.md 链（`extraLocalInstructions.rehydratedAfterCompact`），不要把 SUMMARY 里的旧根指令当真。
+- 收集 repo outline 会 `listDir` 子目录。工具 `repo_outline` 必须 `listDir(..., { touch: false })`，开流大纲必须另开不带 `onTouchedPath` 的 host。`note` 必须在 `resolveInsideWorkspace` 之后，逃出根的路径不要进 touch log。超预算丢掉前面的远层，不要截掉靠近 cwd 的覆盖层。有链时从 always-on 剥掉同名 `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`，否则根文件灌两遍。ACP 不灌链（CLI 自己读盘）；**不做** ACP `session/load`。
+- 子 Agent `allow_session` 对 `bash` / `code_mode` 只记命令前缀，不要把整个工具名放进 `sessionApprovedTools`。`commitWorkspaceAll` 默认 `stageAll: false`。Seatbelt 读盘是 `(allow file-read*)`（编译器要读系统头），写盘仍锁工作区 + tmp。
+- 全局技能必须走 `skill` 工具。不要再让模型 `read_file` jail 外的 SKILL.md。
 - 子 Agent 若只用自己的短角色句，会丢掉用户说明与技能目录。`runDelegatedSubagent` 必须接父级 `extraInstructions`。
 - plan/ask 只靠 `resolveToolApproval` deny 不够：模型仍会看见 `write_file` 并空转。必须 `createCodingTools(..., { mode })` 不注册写工具。`enjoy-local.delegate` 必须与是否注入 `delegate` 同一边。
 - 建工具时必须闭包注入 `AgentWorkspaceHost`。AI SDK 7 不会把 runtimeContext 传进 `execute` 的 `options.context`。

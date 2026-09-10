@@ -9,6 +9,7 @@ import { createAskUserQuestionsTool } from "./ask-user-questions.ts"
 import { isReadOnlyAgentMode } from "./coding-tool-names.ts"
 import { createGitReadTools } from "./git-read-tools.ts"
 import { createReadTools } from "./read-tools.ts"
+import { createSkillTool, type SkillHost } from "./skill-tool.ts"
 import { createSubmitPlanTool } from "./submit-plan.ts"
 import { createTodoWriteTool } from "./todo-write.ts"
 import { createWriteTools } from "./write-tools.ts"
@@ -16,6 +17,7 @@ import { createWriteTools } from "./write-tools.ts"
 export type CodingToolsOptions = {
   includeAskUser?: boolean
   mode?: AgentMode
+  skills?: SkillHost
 }
 
 /**
@@ -26,6 +28,7 @@ export function createCodingTools(host: AgentWorkspaceHost, options?: CodingTool
   const readOnly = isReadOnlyAgentMode(options?.mode ?? "agent")
   return {
     ...createReadTools(host),
+    ...createSkillTool(options?.skills),
     ...createTodoWriteTool(),
     ...(options?.includeAskUser === false ? {} : createAskUserQuestionsTool(host)),
     ...createGitReadTools(host),

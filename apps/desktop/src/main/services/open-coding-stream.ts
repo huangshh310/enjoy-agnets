@@ -38,8 +38,11 @@ export async function openCodingStream(
 }
 
 /** 开流成功才盖 last-run。失败不得留下假「本轮实发」。 */
-function rememberOpened(input: OpenCodingStreamInput, opened: OpenedCodingStream): OpenedCodingStream {
-  captureOpenStreamPrompt(input)
+async function rememberOpened(
+  input: OpenCodingStreamInput,
+  opened: OpenedCodingStream
+): Promise<OpenedCodingStream> {
+  await captureOpenStreamPrompt(input)
   return opened
 }
 

@@ -65,6 +65,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-move-plan.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/agents-md-chain",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/agents-md-chain.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },

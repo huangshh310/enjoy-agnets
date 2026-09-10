@@ -3,7 +3,11 @@
  * 整合顶部摘要看板、左侧 Span 树状甘特瀑布流与右侧实时联动检查器。
  */
 import { useEffect, useState } from "react"
-import { buildTraceDataFromMetric } from "../../services/trace-tree-builder"
+import { getIde } from "@renderer/lib/ide"
+import {
+  buildTraceDataFromMetric,
+  type TraceReplayEvent
+} from "../../services/trace-tree-builder"
 import type { SpanNode } from "../../types/trace-span.types"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { SpanDetailInspector } from "./span-detail-inspector"
@@ -15,13 +19,28 @@ export function FullTraceWorkbench(props: {
   onBack: () => void
 }) {
   const { metric, onBack } = props
-
-  const traceData = buildTraceDataFromMetric(metric)
+  const [events, setEvents] = useState<TraceReplayEvent[]>([])
+  const traceData = buildTraceDataFromMetric(metric, undefined, events)
   const [selectedSpan, setSelectedSpan] = useState<SpanNode>(traceData.rootSpan)
 
   useEffect(() => {
+    let cancelled = false
+    void getIde()
+      .observability.replay({ runId: metric.runId, limit: 200 })
+      .then((rows) => {
+        if (!cancelled && Array.isArray(rows)) setEvents(rows as TraceReplayEvent[])
+      })
+      .catch(() => {
+        if (!cancelled) setEvents([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [metric.runId])
+
+  useEffect(() => {
     setSelectedSpan(traceData.rootSpan)
-  }, [metric.id])
+  }, [metric.id, events])
 
   return (
     <div className="flex flex-col gap-4 w-full">

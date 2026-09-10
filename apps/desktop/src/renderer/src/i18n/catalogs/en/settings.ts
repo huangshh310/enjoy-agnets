@@ -562,9 +562,9 @@ export const enSettings = {
   },
 
   sandbox: {
-    hubTitle: "Execution Sandbox & Guardrails",
-    hubBadge: "AI SDK 7 Loop Enforcement",
-    hubDesc: "Strict step limits (stopWhen: stepCountIs), per-tool bash timeouts, and network boundary controls.",
+    hubTitle: "Execution guardrails",
+    hubBadge: "Approval + workspace cwd",
+    hubDesc: "bash blocks network binaries by default, forbids shell wrappers, and locks cwd to the workspace. On macOS, Seatbelt also limits writes. This is not a Docker sandbox.",
     limits: "Execution Limits & Timeouts",
     maxSteps: "Max agent steps",
     maxStepsDesc: "ToolLoop stopWhen uses AI SDK stepCountIs. Default 20 steps, ceiling 64.",

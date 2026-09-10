@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-09
+> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-10
 
 ## 当前真相
 
@@ -83,3 +83,4 @@ Main Process（可信）
 - 技能来源：renderer 不读 `~/.enjoy-agents/skill-sources/` JSON。git clone / pull 只在 main，且 `shell: false`。部署目的地仅 `customize-roots` 白名单（`globalSkillRoots` ∪ 已登记工作区 `workspaceSkillRoots`）。SSH / `git@` / `clawhub:` 一律 `UNSUPPORTED_SOURCE`，不要半套协议。
 - `path-safe` / Customize 白名单单测不能在 Linux 上用 `C:/...`：POSIX 下不是绝对路径，`join`/`resolve` 会拼进 runner cwd。POSIX 用 `/proj/...`，Windows 用盘符。工作区显示名回退最后一段时要同时切 `/` 与 `\`。
 - CLI 用量探测会读本机已登录会话（Cursor `state.vscdb`、Grok `auth.json` 的 `key`）。这些密钥只在 main 内存里用一次打官方 HTTPS，禁止写进 `InspectAgentToolResult` 或 vault。Dashboard / billing 失败就空条 + `—`，不要回落 CLI `about`/`status` 里的猜数字段。
+- Agent `bash` 的「沙箱」不是容器。字符串过滤 + cwd jail + macOS Seatbelt。设置文案必须写明，禁止假装 Docker / Vercel Sandbox。

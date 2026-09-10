@@ -133,6 +133,8 @@ async function openRunStream(
     effort,
     fast: run.input.fast,
     sessionApprovedTools: run.sessionApprovedTools,
+    sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes],
+    executePlan: run.input.executePlan,
     runtimeId: run.input.runtimeId,
     pullSteeringMessages: () => absorbSteeringMessages(run),
     takeQuestionAnswers: () => {
@@ -142,7 +144,7 @@ async function openRunStream(
     },
     waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
       const approvalId = createId("apr")
-      run.pendingApprovals.push({ approvalId, toolCallId, name: toolName })
+      run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args })
       rememberApproval({ runId, approvalId, toolCallId, name: toolName, args })
       checkpointActiveRun(run)
       emitEvent(run.window, {

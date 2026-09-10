@@ -14,7 +14,11 @@ import { traceSubagentTools, type SubagentToolTraceEvent } from "./subagent-tool
 import { joinInstructions } from "../join-instructions.ts"
 
 export function createDelegateTool(
-  run: (task: string, parentToolCallId?: string) => Promise<SubagentSummary>
+  run: (
+    task: string,
+    parentToolCallId?: string,
+    kind?: "general" | "explore"
+  ) => Promise<SubagentSummary>
 ) {
   return {
     delegate: tool({
@@ -22,13 +26,17 @@ export function createDelegateTool(
         "Delegate a specialist task. The subagent returns a summary. Its tool calls appear under this step. Writes use the same approval as the parent.",
       inputSchema: z.object({
         task: z.string().describe("What the specialist should investigate"),
-        title: z.string().optional()
+        title: z.string().optional(),
+        kind: z
+          .enum(["general", "explore"])
+          .optional()
+          .describe("explore = read-only codebase search; general = same tools as the parent")
       }),
       execute: async (
-        { task, title }: { task: string; title?: string },
+        { task, title, kind }: { task: string; title?: string; kind?: "general" | "explore" },
         options?: { toolCallId?: string }
       ) => {
-        const summary = await run(task, options?.toolCallId)
+        const summary = await run(task, options?.toolCallId, kind ?? "general")
         return { ...summary, title: title?.trim() || summary.title }
       }
     })
@@ -97,9 +105,14 @@ export function runDelegatedSubagent(options: {
   extraInstructions?: string
   parentToolCallId?: string
   onToolEvent?: (event: SubagentToolTraceEvent) => void
+  kind?: "general" | "explore"
+  exploreModel?: LanguageModel
 }): Promise<SubagentSummary> {
-  if (options.mode === "ask" || options.mode === "plan") {
-    return runReadOnlySubagent(options)
+  if (options.kind === "explore" || options.mode === "ask" || options.mode === "plan") {
+    return runReadOnlySubagent({
+      ...options,
+      model: options.kind === "explore" && options.exploreModel ? options.exploreModel : options.model
+    })
   }
   return runApprovedSubagent(options)
 }

@@ -21,11 +21,12 @@ import {
   sanitizeModelMessages
 } from "./inspect-prompt-snapshot"
 import { resolveRuntimeId } from "./agent-run-helpers"
+import { formatWorkspaceAgentsMd } from "./agents-md-discover"
 import { codingInstructions, inspectListedToolNames } from "./inspect-prompt-instructions"
 import { toModelMessages } from "./to-model-messages"
 import { getActiveCompactedHistory, getSessionCompaction } from "./session-compaction-service"
 
-export function captureOpenStreamPrompt(input: {
+export async function captureOpenStreamPrompt(input: {
   runId: string
   sessionId: string
   modelId: string
@@ -36,6 +37,7 @@ export function captureOpenStreamPrompt(input: {
   workspaceRoot?: string
 }) {
   const runtime = inspectRuntime(input.prefs.codingRuntime, input.runtimeId)
+  const compaction = await getSessionCompaction(input.sessionId)
   rememberInspectPrompt({
     source: "last-run",
     capturedAt: Date.now(),
@@ -48,7 +50,8 @@ export function captureOpenStreamPrompt(input: {
       input.mode,
       runtime,
       input.prefs.customInstructions,
-      input.workspaceRoot
+      input.workspaceRoot,
+      { rehydratedAfterCompact: Boolean(compaction) }
     ),
     messages: sanitizeModelMessages(input.messages),
     toolNames: inspectListedToolNames(runtime, [
@@ -84,6 +87,7 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
   const history = await getActiveCompactedHistory(input.sessionId, rawHistory)
   const mcpNames = Object.keys(createMcpAgentTools({ mode }))
   const workspaceRoot = await workspaceRootForSession(input.sessionId)
+  const compaction = await getSessionCompaction(input.sessionId)
   return {
     source: "preview",
     capturedAt: Date.now(),
@@ -91,7 +95,9 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
     modelId: input.modelId ?? "",
     mode,
     runtime,
-    instructions: composeInspectInstructions(mode, runtime, prefs.customInstructions, workspaceRoot),
+    instructions: composeInspectInstructions(mode, runtime, prefs.customInstructions, workspaceRoot, {
+      rehydratedAfterCompact: Boolean(compaction)
+    }),
     messages: sanitizeModelMessages(toModelMessages(history)),
     toolNames: inspectListedToolNames(runtime, [...codingToolNamesFor(mode), ...mcpNames])
   }
@@ -101,11 +107,18 @@ function composeInspectInstructions(
   mode: AgentMode,
   runtime: InspectPromptResult["runtime"],
   customInstructions: string,
-  workspaceRoot?: string
+  workspaceRoot?: string,
+  extras?: { rehydratedAfterCompact?: boolean }
 ) {
   const rules = workspaceRoot ? listDiscoveredRules({ workspacePath: workspaceRoot }) : []
   const skills = listInstalledSkills(workspaceRoot ? { workspacePath: workspaceRoot } : undefined)
-  return codingInstructions(mode, runtime, customInstructions, rules, { skills, workspaceRoot })
+  const agentsMd = workspaceRoot ? formatWorkspaceAgentsMd(workspaceRoot) : ""
+  return codingInstructions(mode, runtime, customInstructions, rules, {
+    skills,
+    workspaceRoot,
+    agentsMd,
+    rehydratedAfterCompact: extras?.rehydratedAfterCompact
+  })
 }
 
 function inspectRuntime(

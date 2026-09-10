@@ -42,6 +42,23 @@ test("等待器 deny 后不执行", async () => {
   assert.deepEqual(result, { type: "denied", reason: "user denied subagent tool." })
 })
 
+test("bash 的 allow_session 只白名单命令前缀", async () => {
+  let asked = 0
+  const decide = createSubagentApproval({
+    mode: "agent",
+    policy,
+    waitForApproval: async () => {
+      asked += 1
+      return "allow_session"
+    }
+  })
+  assert.equal(await decide({ toolName: "bash", input: { command: "git status" } }), "approved")
+  assert.equal(await decide({ toolName: "bash", input: { command: "git status --short" } }), "approved")
+  assert.equal(asked, 1)
+  assert.equal(await decide({ toolName: "bash", input: { command: "pnpm test" } }), "approved")
+  assert.equal(asked, 2)
+})
+
 test("只读工具不打扰用户", async () => {
   const decide = createSubagentApproval({ mode: "agent", policy })
   assert.equal(await decide({ toolName: "read_file", input: { path: "a.ts" } }), "not-applicable")

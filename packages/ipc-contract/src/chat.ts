@@ -31,7 +31,9 @@ export const RunAgentInput = z.object({
   /** 本机 CLI / Enjoy Local。缺省走偏好 runtimeId 或旧 codingRuntime。 */
   runtimeId: z.string().optional(),
   /** false 时不把最后一条用户句落库。续跑 Todo 用，避免刷新后多出气泡。 */
-  persistUser: z.boolean().optional()
+  persistUser: z.boolean().optional(),
+  /** 「按此执行」：计划走 hidden/system，不进用户气泡。 */
+  executePlan: z.boolean().optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 

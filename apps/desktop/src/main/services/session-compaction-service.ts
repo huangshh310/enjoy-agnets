@@ -5,6 +5,8 @@ import {
   applySessionCompaction,
   compactSessionMessages,
   DEFAULT_KEEP_RECENT,
+  estimateMessageTokens,
+  shouldAutoCompact,
   type MessageLike
 } from "@enjoy-agents/agent-core/compaction"
 import { COMPACTION_ERROR, parseAssistantPayload, SessionCompaction } from "@enjoy-agents/ipc-contract"
@@ -18,6 +20,29 @@ import {
 } from "./session-compaction-store"
 
 export { clearSessionCompaction, getSessionCompaction }
+
+/** 接近窗口或消息过多时自动压缩；太短则忽略。 */
+export async function maybeAutoCompact(
+  sessionId: string,
+  messages: MessageLike[],
+  contextWindow?: number
+): Promise<boolean> {
+  if (
+    !shouldAutoCompact({
+      messageCount: messages.length,
+      estimatedTokens: estimateMessageTokens(messages),
+      contextWindow
+    })
+  ) {
+    return false
+  }
+  try {
+    await compactSession(sessionId)
+    return true
+  } catch {
+    return false
+  }
+}
 
 /** 对会话执行手动上下文压缩 */
 export async function compactSession(

@@ -18,12 +18,13 @@ import { guardComposerSend } from "./send-composer-guard"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
-type PreparedSend = { content: string; assets?: QueuedComposerAsset[] }
+type PreparedSend = { content: string; assets?: QueuedComposerAsset[]; executePlan?: boolean }
 
 type SendPayload = {
   content: string
   assetIds: string[]
   messageAssets: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
+  executePlan?: boolean
 }
 
 /** 先 setRunning 占位，避免双击连发两轮。 */
@@ -59,7 +60,8 @@ async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload 
       mediaType: resolveMediaType(item.name, item.mediaType),
       name: item.name,
       url: item.url
-    }))
+    })),
+    executePlan: prepared?.executePlan
   }
 }
 
@@ -95,7 +97,13 @@ async function launchComposerRun(
 ) {
   const sessionId = store.sessionId
   try {
-    const result = (await startComposerRun(store, payload.content, messages, payload.assetIds)) as {
+    const result = (await startComposerRun(
+      store,
+      payload.content,
+      messages,
+      payload.assetIds,
+      payload.executePlan
+    )) as {
       runId: string
     }
     if (!claimComposerRun(sessionId, result.runId)) {
@@ -120,7 +128,8 @@ async function startComposerRun(
   store: ChatState,
   content: string,
   messages: ChatState["messages"],
-  assetIds: string[]
+  assetIds: string[],
+  executePlan?: boolean
 ) {
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -144,7 +153,8 @@ async function startComposerRun(
   return getIde().agent.run({
     ...codingAgentRunInput(store),
     messages: history,
-    attachments: assetIds
+    attachments: assetIds,
+    executePlan: executePlan || undefined
   })
 }
 

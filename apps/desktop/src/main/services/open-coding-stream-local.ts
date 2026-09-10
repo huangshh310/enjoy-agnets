@@ -1,19 +1,32 @@
 /**
- * Enjoy Local ToolLoop 开流：密钥、Fast 模型、规则/技能尾巴。
+ * Enjoy Local ToolLoop 开流：密钥、Fast 模型、规则/技能/大纲尾巴。
  */
+import type { ModelMessage } from "ai"
 import { insertRunStep } from "@enjoy-agents/db"
-import { streamCodingAgent, type ApprovalPolicy } from "@enjoy-agents/agent-core"
+import {
+  collectRepoOutline,
+  formatExecutePlanInstructions,
+  formatRepoOutline,
+  streamCodingAgent,
+  type AgentWorkspaceHost,
+  type ApprovalPolicy,
+  type SkillHost
+} from "@enjoy-agents/agent-core"
 import {
   createLanguageModel,
   reasoningCallOptions
 } from "@enjoy-agents/providers"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
+import { formatWorkspaceAgentsMd } from "./agents-md-discover"
+import { createInstructionTouchLog } from "./agents-md-touch-log"
 import { extraLocalInstructions } from "./inspect-prompt-instructions"
 import { createMcpAgentTools } from "./mcp-agent-tools"
 import type { OpenedCodingStream, OpenCodingStreamInput } from "./open-coding-stream-input"
 import { listDiscoveredRules } from "./rules-service"
 import type { StoredSecret } from "./secrets"
+import { getSessionCompaction } from "./session-compaction-service"
+import { createSkillHost } from "./skill-host"
 import { listInstalledSkills } from "./skills-service"
 import { createWorkspaceHost } from "./workspace"
 
@@ -31,10 +44,19 @@ export async function openLocalStream(
     effort: input.effort,
     baseURL: secret.baseURL
   })
+  const extras = await loadLocalStreamExtras(input)
   const result = await streamCodingAgent(
-    localStreamOptions(input, policy, secret, modelId, thinking)
+    localStreamOptions(input, policy, secret, modelId, thinking, extras)
   )
   return openedLocalStream(result)
+}
+
+type LocalStreamExtras = {
+  extraInstructions: string
+  skills: SkillHost
+  exploreModel?: ReturnType<typeof createLanguageModel>
+  host: AgentWorkspaceHost
+  pullInstructionUpdates?: () => ModelMessage[]
 }
 
 function localStreamOptions(
@@ -42,19 +64,11 @@ function localStreamOptions(
   policy: ApprovalPolicy,
   secret: StoredSecret,
   modelId: string,
-  thinking: ReturnType<typeof reasoningCallOptions>
+  thinking: ReturnType<typeof reasoningCallOptions>,
+  extras: LocalStreamExtras
 ) {
   return {
-    model: createLanguageModel({
-      provider: secret.provider,
-      apiKey: secret.apiKey,
-      baseURL: secret.baseURL,
-      modelId,
-      apiStyle: secret.apiStyle,
-      reasoningEffort: input.effort,
-      customHeaders: secret.customHeaders,
-      customBody: secret.customBody
-    }),
+    model: languageModelFor(secret, modelId, input),
     mode: input.mode,
     messages: input.messages,
     abortSignal: input.abortSignal,
@@ -70,30 +84,94 @@ function localStreamOptions(
     onStepFinish: (step: { stepNumber?: number }) =>
       recordLocalModelStep(input.runId, step.stepNumber),
     pullSteeringMessages: input.pullSteeringMessages,
-    extraInstructions: loadLocalInstructions(input),
+    pullInstructionUpdates: extras.pullInstructionUpdates,
+    extraInstructions: extras.extraInstructions,
+    skills: extras.skills,
+    exploreModel: extras.exploreModel,
     runtimeContext: {
       workspaceRoot: input.workspaceRoot,
       sessionId: input.sessionId,
       runId: input.runId,
-      host: createWorkspaceHost(input.workspaceRoot, {
-        takeQuestionAnswers: input.takeQuestionAnswers
-      })
+      host: extras.host
     }
+  }
+}
+
+async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<LocalStreamExtras> {
+  const agents = await loadAgentsMdStream(input)
+  const host = createWorkspaceHost(input.workspaceRoot, {
+    takeQuestionAnswers: input.takeQuestionAnswers,
+    onTouchedPath: agents.onTouchedPath
+  })
+  // 大纲会 listDir 子目录；不能走带 touch 的 host，否则会把嵌套 AGENTS.md 一次灌进下一跳。
+  const outlineHost = createWorkspaceHost(input.workspaceRoot)
+  const nodes = await collectRepoOutline((path) => outlineHost.listDir(path))
+  const plan = input.executePlan ? formatExecutePlanInstructions(await readPlanFile(host)) : ""
+  return {
+    host,
+    skills: createSkillHost(input.workspaceRoot),
+    exploreModel: exploreModelFor(input),
+    pullInstructionUpdates: agents.pullInstructionUpdates,
+    extraInstructions: extraLocalInstructions({
+      customInstructions: input.prefs.customInstructions,
+      rules: listDiscoveredRules({ workspacePath: input.workspaceRoot }),
+      skills: listInstalledSkills({ workspacePath: input.workspaceRoot }),
+      workspaceRoot: input.workspaceRoot,
+      outline: formatRepoOutline(nodes),
+      executePlan: plan,
+      agentsMd: agents.agentsMd,
+      rehydratedAfterCompact: agents.rehydratedAfterCompact
+    })
+  }
+}
+
+/** 基线链进 system；touch log 只在模型工具碰到新目录时 drain。 */
+async function loadAgentsMdStream(input: OpenCodingStreamInput) {
+  const touch = createInstructionTouchLog({
+    workspaceRoot: input.workspaceRoot,
+    initialDirRels: ["."]
+  })
+  const compaction = await getSessionCompaction(input.sessionId)
+  return {
+    agentsMd: formatWorkspaceAgentsMd(input.workspaceRoot),
+    rehydratedAfterCompact: Boolean(compaction),
+    onTouchedPath: (relativePath: string, kind: "file" | "directory") =>
+      touch.note(relativePath, kind),
+    pullInstructionUpdates: () => touch.takeNew()
+  }
+}
+
+function languageModelFor(secret: StoredSecret, modelId: string, input: OpenCodingStreamInput) {
+  return createLanguageModel({
+    provider: secret.provider,
+    apiKey: secret.apiKey,
+    baseURL: secret.baseURL,
+    modelId,
+    apiStyle: secret.apiStyle,
+    reasoningEffort: input.effort,
+    customHeaders: secret.customHeaders,
+    customBody: secret.customBody
+  })
+}
+
+function exploreModelFor(input: OpenCodingStreamInput) {
+  const secret = input.secret
+  const fastId = secret?.fastModelId?.trim()
+  if (!secret || !fastId || fastId === input.modelId) return undefined
+  return languageModelFor(secret, fastId, input)
+}
+
+async function readPlanFile(host: AgentWorkspaceHost): Promise<string | null> {
+  try {
+    return await host.readFile("implementation_plan.md")
+  } catch {
+    return null
   }
 }
 
 function requireLocalSecret(secret: StoredSecret | undefined): StoredSecret {
   if (!secret) throw new Error("Add an API key in Settings before running an agent.")
   return secret
-}
-
-function loadLocalInstructions(input: OpenCodingStreamInput): string {
-  return extraLocalInstructions({
-    customInstructions: input.prefs.customInstructions,
-    rules: listDiscoveredRules({ workspacePath: input.workspaceRoot }),
-    skills: listInstalledSkills({ workspacePath: input.workspaceRoot }),
-    workspaceRoot: input.workspaceRoot
-  })
 }
 
 function recordLocalModelStep(runId: string, stepNumber: number | undefined): void {

@@ -18,7 +18,7 @@ import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
-import { getActiveCompactedHistory } from "./session-compaction-service"
+import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eStub } from "./e2e-stub"
 
@@ -76,7 +76,11 @@ async function beginAgentRun(
   if (!session) throw new Error("Unknown session for this workspace.")
 
   const runId = options.runId ?? createId("run")
-  const modelMessages = await modelMessagesForStart(input, options.resumeMessages)
+  const modelMessages = await modelMessagesForStart(
+    input,
+    options.resumeMessages,
+    secret?.contextWindow
+  )
   holdAgentRun({
     runId,
     window,
@@ -106,11 +110,13 @@ async function beginAgentRun(
 
 async function modelMessagesForStart(
   input: RunAgentInput,
-  resumeMessages?: unknown
+  resumeMessages?: unknown,
+  contextWindow?: number
 ): Promise<ModelMessage[]> {
   if (Array.isArray(resumeMessages) && resumeMessages.length > 0) {
     return resumeMessages as ModelMessage[]
   }
+  await maybeAutoCompact(input.sessionId, input.messages, contextWindow)
   const effectiveMessages = await getActiveCompactedHistory(input.sessionId, input.messages)
   const peeked = peekSessionHandoff(input.sessionId)
   const handoffText = peeked ? formatHandoffContext(peeked).trim() : null

@@ -30,6 +30,8 @@ export type OpenCodingStreamInput = {
   effort?: ReasoningEffort
   fast?: boolean
   sessionApprovedTools: ReadonlySet<string>
+  sessionApprovedBashPrefixes?: readonly string[]
+  executePlan?: boolean
   waitForSubagentApproval?: WaitForSubagentApproval
   onSubagentToolEvent?: (event: SubagentToolTraceEvent) => void
   runtimeId?: string
@@ -43,6 +45,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
-    sessionApprovedTools: input.sessionApprovedTools
+    sessionApprovedTools: input.sessionApprovedTools,
+    sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes
   }
 }

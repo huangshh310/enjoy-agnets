@@ -1,10 +1,14 @@
 /**
  * 开流 / 检查器看到的系统指令。
- * Enjoy Local：systemPromptFor + 自定义说明 + 常驻规则 + 技能索引。
+ * Enjoy Local：systemPromptFor + 自定义说明 + AGENTS.md 链 + 其余常驻规则 + 技能索引。
  * Harness：systemPromptFor + 自定义说明。
  * ACP：不假装走 ToolLoop 提示词，只展示将垫进 session/prompt 的自定义说明。
  */
 import { joinInstructions, systemPromptFor } from "@enjoy-agents/agent-core/prompts"
+import {
+  isAgentsChainFilePath,
+  REHYDRATED_INSTRUCTIONS_NOTE
+} from "@enjoy-agents/ipc-contract/agents-md-chain"
 import { formatAlwaysOnRulePrompt } from "@enjoy-agents/ipc-contract/rules-always-on"
 import { formatSkillCatalog } from "@enjoy-agents/ipc-contract/skills-catalog"
 import type { AgentMode, InspectPromptResult, ProjectRuleItem, SkillItem } from "@enjoy-agents/ipc-contract"
@@ -22,6 +26,10 @@ export type LocalInstructionExtras = {
   rules?: readonly ProjectRuleItem[]
   skills?: readonly SkillItem[]
   workspaceRoot?: string
+  outline?: string
+  executePlan?: string
+  agentsMd?: string
+  rehydratedAfterCompact?: boolean
 }
 
 export function formatCustomInstructions(text: string): string {
@@ -29,7 +37,6 @@ export function formatCustomInstructions(text: string): string {
   return extra ? `${CUSTOM_HEAD}\n${extra}` : ""
 }
 
-/** 本机 ToolLoop 除 mode 提示词以外的尾巴。 */
 /** ACP / e2e 不列 Enjoy ToolLoop 写工具名，避免检查器假装本机有 write_file。 */
 export function inspectListedToolNames(
   runtime: InspectPromptResult["runtime"],
@@ -40,10 +47,19 @@ export function inspectListedToolNames(
 }
 
 export function extraLocalInstructions(input: LocalInstructionExtras): string {
+  const chain = input.agentsMd?.trim() ?? ""
+  // 链已经按层拼过；再走 always-on 会把根 AGENTS.md 灌第二遍。
+  const rules = chain
+    ? (input.rules ?? []).filter((rule) => !isAgentsChainFilePath(rule.filePath))
+    : (input.rules ?? [])
   return [
+    input.rehydratedAfterCompact ? REHYDRATED_INSTRUCTIONS_NOTE : "",
     formatCustomInstructions(input.customInstructions),
-    formatAlwaysOnRulePrompt(input.rules ?? []),
-    formatSkillCatalog(input.skills ?? [], { workspaceRoot: input.workspaceRoot })
+    chain,
+    formatAlwaysOnRulePrompt(rules),
+    formatSkillCatalog(input.skills ?? [], { workspaceRoot: input.workspaceRoot }),
+    input.outline?.trim() ?? "",
+    input.executePlan?.trim() ?? ""
   ]
     .filter(Boolean)
     .join("\n\n")
@@ -54,7 +70,7 @@ export function codingInstructions(
   runtime: InspectPromptResult["runtime"],
   customInstructions: string,
   rules: readonly ProjectRuleItem[] = [],
-  extras?: Pick<LocalInstructionExtras, "skills" | "workspaceRoot">
+  extras?: Pick<LocalInstructionExtras, "skills" | "workspaceRoot" | "agentsMd" | "rehydratedAfterCompact">
 ): string {
   if (runtime === "e2e") return systemPromptFor(mode)
   if (runtime === "acp-host") {
@@ -71,7 +87,9 @@ export function codingInstructions(
       customInstructions,
       rules,
       skills: extras?.skills,
-      workspaceRoot: extras?.workspaceRoot
+      workspaceRoot: extras?.workspaceRoot,
+      agentsMd: extras?.agentsMd,
+      rehydratedAfterCompact: extras?.rehydratedAfterCompact
     })
   )
 }
