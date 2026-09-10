@@ -25,6 +25,7 @@ export function FilesView({ workspaceId }: { workspaceId: string | null }) {
 
   useEffect(() => {
     if (!workspaceId) return
+    // 工作区级已在 useWorkspaceChangeInvalidation watch；这里幂等重订，只刷新树。
     void getIde().workspace.watch({ workspaceId })
     const unsubscribe = getIde().workspace.onChanged((event) => {
       if (event.workspaceId !== workspaceId) return

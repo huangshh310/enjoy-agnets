@@ -5,7 +5,6 @@ export type SidebarSessionRowProps = {
   sessionId: string
   name: string
   active: boolean
-  running: boolean
   updatedAt: number
   formatTime: (timestamp: number) => string
   onSelect: () => void

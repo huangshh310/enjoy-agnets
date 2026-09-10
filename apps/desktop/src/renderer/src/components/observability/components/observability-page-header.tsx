@@ -5,6 +5,7 @@ import {
   RiDashboardLine,
   RiFileHistoryLine,
   RiFileList3Line,
+  RiHardDrive2Line,
   RiRefreshLine,
   RiRouteLine
 } from "@remixicon/react"
@@ -16,12 +17,13 @@ import type { ActiveObservabilityView } from "../types/observability-ui.types"
 const VIEW_TABS: Array<{
   id: ActiveObservabilityView
   icon: typeof RiDashboardLine
-  labelKey: "viewDashboard" | "navRouting" | "viewTraces" | "viewReplay"
+  labelKey: "viewDashboard" | "navRouting" | "viewTraces" | "viewReplay" | "navCliUsage"
 }> = [
   { id: "dashboard", icon: RiDashboardLine, labelKey: "viewDashboard" },
   { id: "routing", icon: RiRouteLine, labelKey: "navRouting" },
   { id: "traces", icon: RiFileList3Line, labelKey: "viewTraces" },
-  { id: "replay", icon: RiFileHistoryLine, labelKey: "viewReplay" }
+  { id: "replay", icon: RiFileHistoryLine, labelKey: "viewReplay" },
+  { id: "cliUsage", icon: RiHardDrive2Line, labelKey: "navCliUsage" }
 ]
 
 export function ObservabilityPageHeader(props: {

@@ -22,6 +22,7 @@ import {
   McpOpenAppInput,
   McpSetPermissionInput,
   McpUpsertInput,
+  ObservabilityCliUsageInput,
   ObservabilityExportInput,
   ObservabilityMetricsInput,
   ObservabilityReplayInput,
@@ -66,6 +67,7 @@ import {
 } from "./services/mcp-service"
 import { handleMcpAppMessage, openMcpApp } from "./services/mcp-app"
 import { closeRealtime, openRealtime, sendRealtimeAudio } from "./services/realtime-service"
+import { collectCliTranscriptUsage } from "./services/cli-transcript-usage"
 import { exportMetrics, queryMetrics, setTelemetryPolicy } from "./services/telemetry-service"
 import { listReplayEvents } from "./services/event-bus"
 import { readPreferences } from "./services/preferences"
@@ -120,7 +122,8 @@ export const AI_CHANNELS = [
   "observability.metrics",
   "observability.export",
   "observability.setPolicy",
-  "observability.replay"
+  "observability.replay",
+  "observability.cliUsage"
 ] as const
 
 function win(event: IpcMainInvokeEvent): BrowserWindow {
@@ -229,6 +232,10 @@ export function registerAiIpc() {
   ipcMain.handle("observability.replay", (_event, raw) => {
     const input = ObservabilityReplayInput.parse(raw ?? {})
     return listReplayEvents(input)
+  })
+  ipcMain.handle("observability.cliUsage", (_event, raw) => {
+    ObservabilityCliUsageInput.parse(raw ?? {})
+    return collectCliTranscriptUsage()
   })
 }
 

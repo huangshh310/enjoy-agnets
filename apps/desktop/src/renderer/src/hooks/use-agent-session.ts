@@ -19,8 +19,11 @@ import {
   type ChangedFileRow,
   type ModelOption
 } from "../stores/chat-store"
+import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
+import { useRightPaneStore } from "../stores/right-pane-store"
+import { useWorkspaceChangeInvalidation } from "./use-workspace-change-invalidation"
 
 export function useAgentSession() {
   const queryClient = useQueryClient()
@@ -54,6 +57,7 @@ export function useAgentSession() {
           void queryClient.invalidateQueries({ queryKey: ["checkpoints", workspaceId] })
         }
       }
+      if (parsed.data.type === "file.changed") followOpenReviewFile(parsed.data.path)
     })
     return () => {
       unsubscribe()
@@ -82,6 +86,7 @@ export function useAgentSession() {
   }, [workspacesQuery.data, settingsQuery.data])
 
   const workspaceId = useChatStore((state) => state.workspaceId)
+  useWorkspaceChangeInvalidation(workspaceId)
 
   const changesQuery = useQuery({
     queryKey: ["changes", workspaceId],
@@ -189,14 +194,14 @@ export async function startPersistedSession() {
   await createAndOpenSession(workspaceId)
 }
 
-export async function openChangedFile(path: string) {
+export async function openChangedFile(path: string, opts?: { reveal?: boolean }) {
   const store = useChatStore.getState()
   if (!store.workspaceId || !path) return
 
   const matched = store.changes.find((c) => sameReviewPath(c.path, path))
   let resolvedPath = matched?.path ?? path
 
-  revealRightPane("review")
+  if (opts?.reveal !== false) revealRightPane("review")
   store.setSelectedFile(resolvedPath, store.selectedFileContent || "")
 
   try {
@@ -235,6 +240,22 @@ export async function openChangedFile(path: string) {
   } catch {
     // 若读取失败，保留选中的文件路径使 Diff/视图依然能响应
   }
+}
+
+function followOpenReviewFile(path: string) {
+  const chat = useChatStore.getState()
+  const pane = useRightPaneStore.getState()
+  const tab = pane.tabs.find((item) => item.id === pane.activeId)
+  if (
+    !shouldFollowFileChanged({
+      collapsed: chat.rightPanelCollapsed,
+      activeTabKind: tab?.kind,
+      reviewScope: pane.reviewScope
+    })
+  ) {
+    return
+  }
+  void openChangedFile(path, { reveal: false })
 }
 
 async function tryReadFile(workspaceId: string, path: string): Promise<string | null> {

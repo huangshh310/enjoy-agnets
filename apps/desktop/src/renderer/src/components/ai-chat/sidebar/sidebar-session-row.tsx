@@ -1,19 +1,18 @@
 /**
- * 侧栏会话行：左侧 Agent 标，运行中右侧用与 Thinking 头相同的 LoadingStateGlyph。
+ * 侧栏会话行：左侧 Agent 标。等你（审批）优先于运行灯；运行灯含后台 parks。
  */
 import { RiInboxArchiveLine } from "@remixicon/react"
 import { LoadingStateGlyph } from "@/components/ai-elements/loading-state"
 import { cx } from "@/utils/cx"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
-import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 import { useT } from "@renderer/i18n"
 import type { SidebarSessionRowProps } from "./sidebar-session-row.types"
+import { useSessionActivity } from "./use-session-activity"
 
 export function SidebarSessionRow({
   sessionId,
   name,
   active,
-  running,
   updatedAt,
   formatTime,
   onSelect,
@@ -21,14 +20,7 @@ export function SidebarSessionRow({
   className,
   nameClassName = "text-caption-1-medium"
 }: SidebarSessionRowProps) {
-  const waitingReview = useAttentionStore((state) =>
-    state.items.some(
-      (item) =>
-        item.sessionId === sessionId &&
-        (item.kind === "pending_approval" || item.kind === "ask_user") &&
-        (item.status === "active" || item.status === "focused")
-    )
-  )
+  const activity = useSessionActivity(sessionId)
   return (
     <div
       className={cx(
@@ -47,8 +39,8 @@ export function SidebarSessionRow({
         <SessionAgentMark sessionId={sessionId} />
         <span className={cx("min-w-0 flex-1 truncate", nameClassName)}>{name}</span>
         <SessionRowMeta
-          running={running}
-          waitingReview={waitingReview}
+          running={activity.running}
+          waitingReview={activity.waitingReview}
           updatedAt={updatedAt}
           formatTime={formatTime}
           hideOnHover={Boolean(onArchive)}
@@ -73,7 +65,6 @@ function SessionRowMeta({
   hideOnHover: boolean
 }) {
   const hide = hideOnHover ? "group-hover/session:hidden" : undefined
-  if (running) return <LoadingStateGlyph variant="drive" className={cx("shrink-0", hide)} />
   if (waitingReview) {
     return (
       <span
@@ -82,6 +73,7 @@ function SessionRowMeta({
       />
     )
   }
+  if (running) return <LoadingStateGlyph variant="drive" className={cx("shrink-0", hide)} />
   return <span className={cx("shrink-0 text-caption-2-medium text-text-tertiary", hide)}>{formatTime(updatedAt)}</span>
 }
 

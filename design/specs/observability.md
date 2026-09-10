@@ -11,7 +11,8 @@
 2. **模型路由与上游调度 (Model Routing)**：对齐 Grok2API 路由架构，可视化对外模型标识、上游**协议风格 + 模型 id**（不下发 vault `baseURL`）、接口多模态能力、按 Telemetry 聚合的调用量 / 成功率 / P95（忽略 0ms）、以及一键 `settings.pingProvider` Ping；
 3. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉。时间尺用指标里有的 send → TTFO → done，再叠加本 run 回放缓冲里的 `tool.*` / `approval.required` / `approval.resolved`（工具名与 `decision`，不含 args）。`buildTraceDataFromMetric` **禁止**编造 RAG/MCP span 或 `|| 850` token。没有 `ttfoMs` 就不画 TTFO 段；没有 `durationMs` 就总时长为 0。`estimatedCost` 目前没有真实单价字段，固定 0。指标没有 `sessionId` 时只提供「回到对话」，不要假装能打开源会话；
 4. **事件流回放 (Stream Replay)**：主进程内存缓冲事件流回放。
-可一键导出 JSON / CSV 报表。
+5. **本机记录 (cliUsage)**：Claude / Codex 本机 jsonl 的聚合 token。不是官方额度，不上 Composer。
+可一键导出 JSON / CSV 报表（仍只含 Enjoy 遥测，不含 jsonl 原文）。
 ## 不变量
 
 - 日志与导出不得含明文 Key 或完整 prompt。
@@ -25,6 +26,7 @@
 - `apps/desktop/src/main/services/event-bus.ts`
 - `apps/desktop/src/renderer/src/components/observability/observability-page.tsx`
 - `apps/desktop/src/renderer/src/components/observability/use-observability-page.ts`
+- 本机记录：`apps/desktop/src/main/services/cli-transcript-usage/`、`observability/components/cli-usage/`
 
 ## 已知坑
 
@@ -37,3 +39,4 @@
 - Ping 必须打 `settings.pingProvider`（已存供应商 id + kind），禁止用 `observability.metrics` 耗时或 `Math.max(ms, 45)` 假装连通。没有 `providerId` 就禁用探测，不要报假成功。
 - 侧栏模型数量用 `store.models.length`，0 就是 0，禁止 `|| 10`。上游列没有协议信息时只显示模型 id，禁止拼 `Endpoint/{id}`。
 - 健康态看该行是否已配置模型 + 调用成功率，不要用全局 `hasKey` 一刀切。
+- `observability.cliUsage` 不得把 prompt、jsonl 原文或绝对路径交给 renderer。目录不存在是空态，不是 0 填充条。

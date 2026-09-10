@@ -27,6 +27,8 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 额度条只给 Cursor / Grok / Antigravity。Claude / Codex / Enjoy 本地：**不画空条**，诚实文案「该 CLI 无公开额度 API」。禁止 `Math.max(%, 2)` 假填充、90/95/100 占位、遥测伪造「5 小时 / 周度」计划条。
 
+本机记录（不是 L1）：`observability.cliUsage` 在 main 读 Claude `~/.claude/projects/**/*.jsonl` 与 Codex `~/.codex/{sessions,archived_sessions}/**/*.jsonl` 的官方 usage / `token_count` 字段，聚合成日 / 模型 / 项目名。挂 `#/observability`「本机记录」。renderer 只拿数字。目录不存在走空态，不画额度条。项目名只留 cwd 最后一段。
+
 状态：`empty` 隐藏 · `loading` 骨架 · `no-quota` 诚实空态 · `has-quota` 官方数字 · `error` L4 卡。
 
 ### 设置 → 智能体 IA
@@ -52,6 +54,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 设置：`settings/agent-tools/capability-matrix.tsx`、`config-boundary-table.tsx`
 - L3 明细：`ai-chat/agent-limits/`
 - L4：`thread/thread-error-banner.tsx`、`usage/quota-exhausted-card.tsx`
+- 本机记录：`main/services/cli-transcript-usage/`、`observability/components/cli-usage/`
 
 ## 已知坑
 
@@ -64,3 +67,4 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。
 - L3 禁止再写 720 系统 / 260 技能假地板。Limits 卡必须吃检查器同一本账（含芯片与压缩后消息），不要自己再估一套。切到 CLI 后规则/技能桶必须是 0。
 - UsagePill / QuotaExhaustedCard 只用审批铬语义 token（`text-error-primary` / `background-tertiary-error` / `border-error-default`），禁止 `bg-rose-500` / `bg-amber-500`。
+- 本机 jsonl 用量不是 L1。禁止把它画进 Composer `UsagePill`，也禁止按模型 id 猜单价做成账单。Claude 按行累加 `message.usage`；Codex 每个文件只取最后一次 `token_count.total_token_usage`。

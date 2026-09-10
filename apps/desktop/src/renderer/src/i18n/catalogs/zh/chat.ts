@@ -298,6 +298,7 @@ export const zhChat = {
   noProjects: "暂无项目",
   addProject: "+ 点击添加项目",
   recent: "最近",
+  sessionActive: "进行中",
   newChat: "新建对话",
   noChats: "暂无聊天",
   newChatPlus: "+ 新建",

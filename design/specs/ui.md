@@ -6,7 +6,7 @@
 
 窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。底板注入物理微环境漫射光斑（Ambient Canvas Glow），赋予三卡片自然进深感与悬浮质感。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
 
-1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。会话行左侧画**该会话绑定**的 Lobe 品牌标（`sessionRuntimes[sessionId]`，缺省 `preferredRuntimeId`），不要一律跟 Composer 当前 runtime，否则切一次 Cursor 所有历史会话都会变 Cursor。运行中右侧用 `LoadingStateGlyph` `drive`（与 Thinking 头同一套 3×3 点阵），不要再走 `DotMatrixLoader` wave。新建会话立刻 `bindSessionRuntime`，绑的是 **Composer 当前 `runtimeId`**，不是全局偏好。⌘L 最近会话同样画品牌标。
+1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。会话行左侧画**该会话绑定**的 Lobe 品牌标（`sessionRuntimes[sessionId]`，缺省 `preferredRuntimeId`），不要一律跟 Composer 当前 runtime，否则切一次 Cursor 所有历史会话都会变 Cursor。运行中右侧用 `LoadingStateGlyph` `drive`（与 Thinking 头同一套 3×3 点阵），不要再走 `DotMatrixLoader` wave。后台会话的 running 读 `attention-store.parks`，禁止只给当前选中行画灯。审批红点（`waiting_review`）优先于转圈。情境栏顶可钉「进行中」（running 或等你），无则整组不渲染；折叠 60px 轨道不画该组。running 不是 Attention kind。新建会话立刻 `bindSessionRuntime`，绑的是 **Composer 当前 `runtimeId`**，不是全局偏好。⌘L 最近会话同样画品牌标。
 2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。`wide` / `stage` 用原生 `overflow-y-auto` + 内层 `min-h-full flex flex-col`，**不要** Radix ScrollArea（viewport 内层 inline `display:table` 会盖掉 flex）。列表空态用 `flex-1 min-h-0` 铺满剩余高度。Skills / Media / MCP / Inbox / Observability / Workflows 用 `fill` + `hideChrome`：页内自带顶栏，不要再叠 `SecondaryPageChrome`。工具栏固定，空态与列表吃剩余高度。侧栏项目区在底栏用户卡之上 `flex-1`，无项目虚线框铺满该区。设置 Providers 仍用 `wide`，但空态虚线框同样 `flex-1`，不要按内容收高度。
 3. **Changes & Inspector pane** — 可改宽，**默认收起**。四种皮肤同样套在大卡片上。展开后约 38%，最小 280px。始终挂载，切模块不卸掉。**工作台 Panel 不可 collapse 到 0**：加宽审查栏最多把 Stage 压到 42%，切模块若 Stage 被收成缝则拉回 62%。有 dirty 文件且还没开标签时，展开审查栏直接进 Review。承载 Context（只画真实挂载芯片与本轮 sources/tools 状态）、Review（Codex 控制台：7 个作用域含检查点、统计徽标、分支对比、⌘P 跳转文件；**左文件树可拖拽改宽、右单文件满高 diff**；「展开全部差异」才叠 compact 卡片；提交底栏贴底，主按钮走 `text-text-white`；「已提交」作用域才走 devl.dev 多色 SVG 提交时间线；「检查点」列 Enjoy 写盘快照，空态贴顶短文；先 dry-run 未跟踪列表再 Confirm，文案写明不移动 HEAD / 不是分支回退；还原不改用户暂存区；只用真实 Git，不编造 CI/审批/第二车道）、Files、Terminal 与 Browser。macOS 快捷键用 ⌘，同时认 meta/ctrl。
 
@@ -52,11 +52,12 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 皮肤 CSS：`packages/ui/styles/skins/`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
 - 工作区壳：`apps/desktop/src/renderer/src/components/app-shell/app-shell.tsx`（轨道、情境、Chat 工作台、Inspector）
-- Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`（会话行 `sidebar-session-row.tsx` + `session-agent-mark.tsx`）
+- Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`（会话行 `sidebar-session-row.tsx` + `session-agent-mark.tsx` + `session-activity.ts` / `sidebar-active-sessions.tsx`）
 - Composer 底栏显隐：`composer/composer-footer.tsx` 读 `composerChromeFor`（`packages/ipc-contract/src/runtime-capabilities.ts`）
 - Composer `@` 文件引用与 `/` 内置命令（compact / plan）+ 技能面板：`ai-chat/composer/mentions/`
 - 审批策略：`ai-chat/approval-policy-toggle.tsx`（底栏盾牌）；禁止再挂 `AutoApproveBar`
 - Composer 本轮改动条与跳动宠物：`ai-chat/composer/session-review/`
+- 工作区 live 刷新：`hooks/use-workspace-change-invalidation.ts`（选中即 watch；审查跟 `onChanged`）
 - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
 - 审批卡片三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`；停靠：`ai-chat/attention/permission-dock.tsx` + `chat-composer-cluster.tsx`（Composer 上沿）
 - Attention 条：`ai-chat/attention/attention-strip.tsx` 挂在 `stage-split.tsx` Stage 顶（空则不渲染）
@@ -71,6 +72,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 ## 已知坑
 
+- 审查栏 / 改动条的 live 刷新不得绑在 Files 页才 `workspace.watch`。选中工作区即监视；`onChanged` 防抖 250ms 再 invalidate `changes` 与 git log。`file.changed` 仍立即刷新。审查收起时不要因写盘自动拉开。
 - 审批卡只挂 PermissionDock（Composer 上沿），禁止写回 `ConversationContent`。M3 阻切「去处理审批」必须走 M2 `focusAttention({ sessionId, kind, navigate })`，不要无参滚 Dock stub，也不要在线程里复制一张卡。
 - 不要再画 Composer 上沿「写入自动 · Shell 需确认 · Git 需确认」。它和底栏「编辑」盾牌重复；「模式: 智能体」是执行模式，不是审批。
 - Agent Picker：未装 CLI 上轨，状态用中性胶囊「未装」，不要名字底下第二行灰字。点开一键安装，不要再收成「未安装 N」。模型行不要上下两行同名；未装 / 需登录面板不要 `h-[390px]` 空撑。OMP 右栏模型图标按模型族（Claude / Gemini / GPT），禁止用引擎 `omp` 灰圆字母。OMP 的 `google-antigravity` 是供应商，不是模型。OMP「登录」必须是实心按钮；点了要打开浏览器，禁止只回英文 Login started。打开授权页后按钮保持「正在打开授权…」，浏览器成功并写入凭证后左栏才变已登录，不要停在登录按钮。**已装未登录**（含 Claude / Cursor）导轨标「登录」，点开下面板是实心登录，禁止「使用 {name}」空钮；`loggedIn===null` 标「检测」，禁止探测中绿灯。胶囊灯与发送盘只信 `composerSendReady` / `engineReadiness==="ready"`（Enjoy Local 看 `hasKey`）。未就绪发送盘禁止 `from-accent-500` 渐变，点击仍走闸门（开 Picker / 留开始面）。Enjoy Local 无密钥标「密钥」，发送失败留在开始面，禁止自动跳设置。`ACP_AUTH_REQUIRED` 主钮打开 Picker 登录，禁止跳 `#/settings/providers`。设置「设为主引擎」必须走 `requestEngineSwitch`。

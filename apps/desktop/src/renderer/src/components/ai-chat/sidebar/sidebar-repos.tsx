@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
+import { SidebarActiveSessions } from "@renderer/components/ai-chat/sidebar/sidebar-active-sessions"
 import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
@@ -37,7 +38,6 @@ export function SidebarRepos({
 }) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const t = useT()
-  const running = useChatStore((state) => state.running)
   const currentWorkspaceId = useChatStore((state) => state.workspaceId)
   const grouping = useChatStore((state) => state.sidebarGrouping)
   const setGrouping = useChatStore((state) => state.setSidebarGrouping)
@@ -135,6 +135,13 @@ export function SidebarRepos({
         </div>
       </div>
 
+      <SidebarActiveSessions
+        sessions={allSessions}
+        sessionId={sessionId}
+        onSelectSession={onSelectSession}
+        formatTime={formatTime}
+      />
+
       {/* 2. Workspaces Tree / Flat List */}
       {workspaces.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
@@ -156,7 +163,6 @@ export function SidebarRepos({
               sessionId={session.id}
               name={session.name}
               active={session.id === sessionId}
-              running={session.id === sessionId && running}
               updatedAt={session.updatedAt}
               formatTime={formatTime}
               className="rounded-xl"
@@ -196,7 +202,6 @@ export function SidebarRepos({
               sessionId={session.id}
               name={session.name}
               active={session.id === sessionId}
-              running={session.id === sessionId && running}
               updatedAt={session.updatedAt}
               formatTime={formatTime}
               className="rounded-xl"

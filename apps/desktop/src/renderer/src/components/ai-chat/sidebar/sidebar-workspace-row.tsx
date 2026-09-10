@@ -14,7 +14,7 @@ import {
   createAndOpenSession,
   loadWorkspace
 } from "@renderer/hooks/use-agent-session"
-import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
+import { type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
 export function SidebarWorkspaceRow({
@@ -143,7 +143,6 @@ function SessionList({
   onSelectSession: (id: string) => void
   formatTime: (timestamp: number) => string
 }) {
-  const running = useChatStore((state) => state.running)
   const t = useT()
 
   return (
@@ -170,7 +169,6 @@ function SessionList({
             sessionId={session.id}
             name={session.name}
             active={session.id === sessionId}
-            running={session.id === sessionId && running}
             updatedAt={session.updatedAt}
             formatTime={formatTime}
             className="rounded-lg"

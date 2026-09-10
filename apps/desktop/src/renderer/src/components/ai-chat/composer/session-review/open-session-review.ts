@@ -6,11 +6,14 @@ import { pathsFromLastTurn } from "@renderer/components/ai-chat/right-pane/views
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useRightPaneStore } from "@renderer/stores/right-pane-store"
-import { reviewScopeForLastTurnCount } from "./review-scope-for-session"
+import { reviewScopeForSession } from "./review-scope-for-session"
 
 export function openSessionReview(path?: string) {
-  const count = pathsFromLastTurn(useChatStore.getState().messages).length
-  useRightPaneStore.getState().setReviewScope(reviewScopeForLastTurnCount(count))
+  const store = useChatStore.getState()
+  const lastTurnCount = pathsFromLastTurn(store.messages).length
+  useRightPaneStore.getState().setReviewScope(
+    reviewScopeForSession({ lastTurnCount, dirtyCount: store.changes.length })
+  )
   revealRightPane("review")
   if (path) void openChangedFile(path)
 }

@@ -303,6 +303,7 @@ export const enChat = {
   noProjects: "No projects yet",
   addProject: "+ Click to add a project",
   recent: "Recent",
+  sessionActive: "In progress",
   newChat: "New chat",
   noChats: "No chats yet",
   newChatPlus: "+ New",

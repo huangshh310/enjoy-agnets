@@ -3,8 +3,8 @@
  */
 import { useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { RiFileHistoryLine, RiFileList3Line, RiPulseLine, RiRouteLine } from "@remixicon/react"
-import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
+import { RiFileHistoryLine, RiFileList3Line, RiHardDrive2Line, RiPulseLine, RiRouteLine } from "@remixicon/react"
+import type { CliTranscriptUsage, TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -35,6 +35,12 @@ export function useObservabilityPage() {
     queryFn: () => getIde().observability.metrics({ limit: 200 }) as Promise<TelemetryMetric[]>
   })
   const metrics = metricsQuery.data ?? []
+  const cliUsageQuery = useQuery({
+    queryKey: ["cliUsage"],
+    enabled: hasIde(),
+    queryFn: () => getIde().observability.cliUsage() as Promise<CliTranscriptUsage>
+  })
+  const cliUsage = cliUsageQuery.data
 
   const filteredMetrics = useMemo(
     () =>
@@ -61,7 +67,8 @@ export function useObservabilityPage() {
           { id: "dashboard", label: t("pages.observability.navLocal"), icon: RiPulseLine, meta: String(metrics.length) },
           { id: "routing", label: t("pages.observability.navRouting"), icon: RiRouteLine, meta: String(storeModels.length) },
           { id: "traces", label: t("pages.observability.viewTraces"), icon: RiFileList3Line },
-          { id: "replay", label: t("pages.observability.viewReplay"), icon: RiFileHistoryLine }
+          { id: "replay", label: t("pages.observability.viewReplay"), icon: RiFileHistoryLine },
+          { id: "cliUsage", label: t("pages.observability.navCliUsage"), icon: RiHardDrive2Line }
         ]
       }
     ],
@@ -81,8 +88,12 @@ export function useObservabilityPage() {
     activeView,
     setActiveView,
     metrics,
-    isRefreshing: metricsQuery.isFetching,
-    refresh: () => queryClient.invalidateQueries({ queryKey: ["metrics"] }),
+    isRefreshing: metricsQuery.isFetching || cliUsageQuery.isFetching,
+    refresh: () => {
+      void queryClient.invalidateQueries({ queryKey: ["metrics"] })
+      void queryClient.invalidateQueries({ queryKey: ["cliUsage"] })
+    },
+    cliUsage,
     statusFilter,
     kindFilter,
     search,

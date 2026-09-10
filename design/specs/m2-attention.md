@@ -1,11 +1,11 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-09
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-10
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > ACP 异常子进程收尸已落地（启动账本 SIGKILL）。M6 skill-sources 可选 pull 已另 PR 薄层落地。
-> 侧栏 `waiting_review` 红点已在 `SidebarSessionRow`（Attention 槽 `pending_approval` / `ask_user` 且 active/focused）。这不是 M5 worktree。
+> 侧栏 `waiting_review` 红点已在 `SidebarSessionRow`（Attention 槽 `pending_approval` / `ask_user` 且 active/focused）。后台 running 读 `parks`，情境栏顶「进行中」是钉住不是新 kind。这不是 M5 worktree。
 
 ## 当前真相
 
@@ -15,6 +15,7 @@
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。无 pending 则 `null`。 |
 | L2 Inbox `#/inbox` | live Attention 档案；无假种子。`openSession` 必须带 `sessionId`（可带 `workspaceId`）。阅读器只有摘要 + 跳回。`complete` 默认已读、不占红点。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
+| 侧栏进行中 | `sidebar/session-activity.ts`：当前会话跟 Composer `running`，后台跟 `parks[id].running`。等你红点优先于 drive 灯。情境栏顶「进行中」钉住最多 8 条；无则 `null`。不把 `running` / `complete` 加成 Attention kind。 |
 | 审批策略 | 只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。不另画上沿「写入 / Shell / Git」一瞥。执行模式（「模式: 智能体」）是另一件事。 |
 | plan diff | 写盘默认展开真实 diff；无 30s 自动放行。 |
 
@@ -93,7 +94,7 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 
 ### 5. 侧栏会话灯 / ACP 收尸
 
-侧栏 `waiting_review` 灯已做。ACP 子进程账本：`userData/acp-children.json`，启动核对 comm 后 SIGKILL。这不是 M5 worktree。
+侧栏 `waiting_review` 灯已做。后台 running 读 `parks`，与当前会话 Composer `running` 合成；「进行中」钉住不是第四层 Attention。ACP 子进程账本：`userData/acp-children.json`，启动核对 comm 后 SIGKILL。这不是 M5 worktree。
 
 ---
 
@@ -143,6 +144,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 
 - 新：`apps/desktop/src/renderer/src/components/ai-chat/attention/`（`focusAttention({ sessionId, … })` 唯一入口；M3 阻切也走当前会话，禁止无参滚 Dock stub）
 - 状态：`apps/desktop/src/renderer/src/stores/attention/`
+- 侧栏进行中：`ai-chat/sidebar/session-activity.ts`、`sidebar-active-sessions.tsx`
 - 挂载：`app-shell/layout/stage-split.tsx`（Strip）、`app-shell/chat/chat-composer-cluster.tsx`（Dock）；审批策略：`approval-policy-toggle.tsx`
 - Inbox：`inbox/lib/open-inbox-action.ts`、`inbox/lib/filter-inbox.ts`
 - 复用：`thread/approval/*`、`thread/ask-user/`、`approval-policy-*`

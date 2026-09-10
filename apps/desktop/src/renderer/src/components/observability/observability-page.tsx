@@ -8,6 +8,7 @@ import { ObservabilityPageHeader } from "./components/observability-page-header"
 import { ObservabilityTraceModal } from "./components/observability-trace-modal"
 import { ObservabilityTracesView } from "./components/observability-traces-view"
 import { FullTraceWorkbench } from "./components/trace-view/full-trace-workbench"
+import { ObservabilityCliUsageView } from "./components/cli-usage/observability-cli-usage-view"
 import { ObservabilityReplay } from "./observability-replay"
 import { useObservabilityPage } from "./use-observability-page"
 
@@ -76,6 +77,7 @@ export function ObservabilityPage() {
               <ObservabilityReplay />
             </div>
           ) : null}
+          {page.activeView === "cliUsage" ? <ObservabilityCliUsageView usage={page.cliUsage} /> : null}
         </div>
         <ObservabilityTraceModal
           metric={page.inspectMetric}

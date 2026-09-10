@@ -4,7 +4,7 @@
 
 export type MetricStatusFilter = "all" | "success" | "failed" | "running" | "timeout"
 export type MetricKindFilter = "all" | "agent" | "stream" | "image" | "video" | "embed"
-export type ActiveObservabilityView = "dashboard" | "routing" | "traces" | "replay"
+export type ActiveObservabilityView = "dashboard" | "routing" | "traces" | "replay" | "cliUsage"
 
 /** 聚合性能统计数据 */
 export interface ObservabilityAggregatedStats {

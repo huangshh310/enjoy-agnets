@@ -199,7 +199,8 @@ const ide = {
     metrics: (input?: unknown) => ipcRenderer.invoke("observability.metrics", input ?? {}),
     export: (format: "json" | "csv") => ipcRenderer.invoke("observability.export", { format }),
     setPolicy: (input: unknown) => ipcRenderer.invoke("observability.setPolicy", input),
-    replay: (input?: unknown) => ipcRenderer.invoke("observability.replay", input ?? {})
+    replay: (input?: unknown) => ipcRenderer.invoke("observability.replay", input ?? {}),
+    cliUsage: (input?: unknown) => ipcRenderer.invoke("observability.cliUsage", input ?? {})
   },
   window: {
     minimize: () => ipcRenderer.invoke("window.minimize") as Promise<WindowActionResult>,
