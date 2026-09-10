@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>本机 CLI · 密度 P0 · Luna</title>
+<title>本机 CLI · dense 定稿 · Luna</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -25,8 +25,8 @@ tailwind.config = {
 </head>
 <body class="bg-paper text-ink antialiased">
   <div class="mx-auto max-w-[1040px] border-x border-line bg-card">
-    <header class="border-b border-line px-5 pt-3 pb-0">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/local-cli-dense-p0.html · jojo P0</p>
+    <header class="border-b border-line px-5 pt-3">
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/local-cli-dense-p0.html · jojo 定稿（视觉真源）</p>
       <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 class="text-[15px] font-semibold">本机 CLI</h1>
@@ -59,7 +59,6 @@ tailwind.config = {
           <span class="text-right">操作</span>
         </div>
 
-        <!-- Enjoy vault -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-amber-100 text-[10px] font-bold">E</span>
@@ -69,7 +68,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
                 <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="truncate text-[10px] text-mute">内置 · 本地核心</p>
+              <p class="truncate font-mono text-[10px] text-mute">— · 内置</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start">
@@ -84,13 +83,13 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Claude bound + sync chip -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line bg-soft/35 px-3 py-1.5">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-orange-100 text-[10px] font-bold">C</span>
             <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Claude Code</span>
+                <span class="rounded bg-soft px-1 py-px text-[10px] text-accent">已同步</span>
                 <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
                 <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
@@ -98,14 +97,10 @@ tailwind.config = {
             </div>
           </div>
           <div class="min-w-0 justify-self-start">
-            <div class="flex flex-wrap items-center gap-1">
-              <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-accent/30 bg-card px-2 py-0.5 text-[11px]">
-                <span class="size-1.5 shrink-0 rounded-full bg-accent"></span>
-                供应商 · deep · deepseek-flash
-              </span>
-              <span class="rounded px-1 py-px text-[10px] text-accent ring-1 ring-accent/25">已同步本机</span>
-              <span class="rounded px-1 py-px text-[10px] text-mute ring-1 ring-line">官方仍保留</span>
-            </div>
+            <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-accent/30 bg-card px-2 py-0.5 text-[11px]">
+              <span class="size-1.5 shrink-0 rounded-full bg-accent"></span>
+              供应商 · deep · deepseek-flash
+            </span>
           </div>
           <div class="flex items-center justify-end gap-1">
             <span class="act-main inline-flex items-center justify-center rounded-lg bg-accent/10 text-[11px] font-medium text-accent">✓ 当前</span>
@@ -113,7 +108,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Cursor official-only -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-[10px] font-bold">Cu</span>
@@ -138,7 +132,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Grok: doctor line, no quota -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-stone-900 text-[10px] font-bold text-white">G</span>
@@ -148,7 +141,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
                 <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="truncate text-[10px] text-mute">体检正常 · bin/grok</p>
+              <p class="truncate font-mono text-[10px] text-mute">— · bin/grok</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start">
@@ -163,7 +156,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- OMP -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-violet-100 text-[10px] font-bold">O</span>
@@ -188,7 +180,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- missing: install main slot -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-line text-[10px]">Ge</span>
@@ -198,7 +189,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-warn"></span>
                 <span class="shrink-0 text-[10px] text-warn">未找到</span>
               </div>
-              <p class="truncate text-[10px] text-mute">可一键安装 · npm 全局</p>
+              <p class="truncate font-mono text-[10px] text-mute">— · —</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start"><span class="text-[11px] text-mute">—</span></div>
@@ -217,7 +208,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-warn"></span>
                 <span class="shrink-0 text-[10px] text-warn">未找到</span>
               </div>
-              <p class="truncate text-[10px] text-mute">仅复制安装命令</p>
+              <p class="truncate font-mono text-[10px] text-mute">— · —</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start"><span class="text-[11px] text-mute">—</span></div>
@@ -228,20 +219,18 @@ tailwind.config = {
         </div>
       </div>
 
-      <!-- 无协议脚注；能力说明折叠 -->
       <details class="mt-3 rounded-lg border border-line">
         <summary class="cursor-pointer px-3 py-2 text-[11px] font-medium">能力说明</summary>
-        <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表与配置归属，默认折叠，不挡安装与登录。不假 BYOK。</p>
+        <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表默认折叠。配置抽屉可写「官方仍保留」与 doctor。列表不假 BYOK、无配额条、无协议脚注。</p>
       </details>
     </div>
 
     <section class="border-t border-line bg-paper px-5 py-3 text-[11px] text-mute">
-      <p class="font-semibold text-ink">P0 验收点（mike 1:1）</p>
+      <p class="font-semibold text-ink">定稿锁</p>
       <ul class="mt-1 list-disc space-y-0.5 pl-4">
-        <li>紧凑三列表行；动力源同构贴左；可附「已同步本机」「官方仍保留」轻标</li>
-        <li>助手列下一行次要信息：路径短名 / 版本 / doctor 一句</li>
-        <li>操作：固定宽主按钮三态（设为主引擎 / 当前 / 一键安装）+ 配置 icon，右缘齐</li>
-        <li>无表底协议词；无列表配额条/额度 hint；能力说明折叠；仅官方无假 vault</li>
+        <li>次要行只 <code class="rounded bg-card px-1">版本 · 路径短名</code>（缺段用 —）；禁止医生句</li>
+        <li>列表无「官方仍保留」；有同步数据时助手名旁单枚「已同步」</li>
+        <li>动力源贴左同构；操作定宽三态+⚙；无协议脚注；配额不上表</li>
       </ul>
     </section>
   </div>

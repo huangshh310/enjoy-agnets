@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>本机 CLI · dense-v2 定稿 · Luna</title>
+<title>本机 CLI · dense 定稿 · Luna</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -26,7 +26,7 @@ tailwind.config = {
 <body class="bg-paper text-ink antialiased">
   <div class="mx-auto max-w-[1040px] border-x border-line bg-card">
     <header class="border-b border-line px-5 pt-3">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/local-cli-dense-v2.html · jojo 定稿 · 云端 1:1 真源</p>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/local-cli-dense-v2.html · 与 p0 同定稿（同步真源）</p>
       <div class="mt-1 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 class="text-[15px] font-semibold">本机 CLI</h1>
@@ -59,7 +59,6 @@ tailwind.config = {
           <span class="text-right">操作</span>
         </div>
 
-        <!-- Enjoy：有版本·路径则画次要行 -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-amber-100 text-[10px] font-bold">E</span>
@@ -69,7 +68,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
                 <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="truncate font-mono text-[10px] text-mute">内置 · —</p>
+              <p class="truncate font-mono text-[10px] text-mute">— · 内置</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start">
@@ -84,14 +83,13 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Claude 绑定：名旁「已同步本机」；「官方仍保留」不在列表（进抽屉） -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line bg-soft/35 px-3 py-1.5">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-orange-100 text-[10px] font-bold">C</span>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="truncate text-[12px] font-semibold">Claude Code</span>
-                <span class="rounded bg-soft px-1 py-px text-[10px] text-accent">已同步本机</span>
+                <span class="rounded bg-soft px-1 py-px text-[10px] text-accent">已同步</span>
                 <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
                 <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
@@ -110,7 +108,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Cursor 仅官方：动力源贴左；无假 BYOK；无额度 hint -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-[10px] font-bold">Cu</span>
@@ -135,7 +132,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- Grok：次要行仅版本·路径；医生不进列表 -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-stone-900 text-[10px] font-bold text-white">G</span>
@@ -145,7 +141,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
                 <span class="shrink-0 text-[10px] text-mute">已安装</span>
               </div>
-              <p class="truncate font-mono text-[10px] text-mute">v0.9 · bin/grok</p>
+              <p class="truncate font-mono text-[10px] text-mute">— · bin/grok</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start">
@@ -160,7 +156,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- OMP -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5 hover:bg-paper/60">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-violet-100 text-[10px] font-bold">O</span>
@@ -185,7 +180,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- 未找到：无版本无路径 → 不留空次要行 -->
         <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
           <div class="flex min-w-0 items-center gap-2">
             <span class="flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-line text-[10px]">Ge</span>
@@ -195,6 +189,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-warn"></span>
                 <span class="shrink-0 text-[10px] text-warn">未找到</span>
               </div>
+              <p class="truncate font-mono text-[10px] text-mute">— · —</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start"><span class="text-[11px] text-mute">—</span></div>
@@ -213,6 +208,7 @@ tailwind.config = {
                 <span class="size-1.5 shrink-0 rounded-full bg-warn"></span>
                 <span class="shrink-0 text-[10px] text-warn">未找到</span>
               </div>
+              <p class="truncate font-mono text-[10px] text-mute">— · —</p>
             </div>
           </div>
           <div class="min-w-0 justify-self-start"><span class="text-[11px] text-mute">—</span></div>
@@ -225,16 +221,16 @@ tailwind.config = {
 
       <details class="mt-3 rounded-lg border border-line">
         <summary class="cursor-pointer px-3 py-2 text-[11px] font-medium">能力说明</summary>
-        <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表与配置归属，默认折叠。抽屉内可写「官方仍保留」。不假 BYOK。医生一句不进列表。</p>
+        <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表默认折叠。配置抽屉可写「官方仍保留」与 doctor。列表不假 BYOK、无配额条、无协议脚注。</p>
       </details>
     </div>
 
     <section class="border-t border-line bg-paper px-5 py-3 text-[11px] text-mute">
-      <p class="font-semibold text-ink">字段锁（jojo 定稿）</p>
+      <p class="font-semibold text-ink">定稿锁</p>
       <ul class="mt-1 list-disc space-y-0.5 pl-4">
-        <li>次要行：仅 <code class="rounded bg-card px-1">版本 · 路径短名</code>；两者都缺则不留空行；医生一句不进列表</li>
-        <li>绑定时：助手名旁「已同步本机」；「官方仍保留」只进抽屉</li>
-        <li>动力源贴左同构；操作定宽三态 + 配置 icon；无协议脚注；无列表配额</li>
+        <li>次要行只 <code class="rounded bg-card px-1">版本 · 路径短名</code>（缺段用 —）；禁止医生句</li>
+        <li>列表无「官方仍保留」；有同步数据时助手名旁单枚「已同步」</li>
+        <li>动力源贴左同构；操作定宽三态+⚙；无协议脚注；配额不上表</li>
       </ul>
     </section>
   </div>
