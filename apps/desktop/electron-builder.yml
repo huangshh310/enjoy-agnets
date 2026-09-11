@@ -1,5 +1,6 @@
 appId: com.enjoyagents.desktop
 productName: Enjoy Agents
+executableName: enjoy-agents
 directories:
   buildResources: build
 files:
@@ -38,8 +39,12 @@ mac:
     - dmg
     - zip
 linux:
+  executableName: enjoy-agents
   icon: icon.png
   category: Development
   artifactName: enjoy-agents-${version}-linux.${ext}
+  desktop:
+    Name: Enjoy Agents
+    StartupWMClass: enjoy-agents
   target:
     - AppImage
