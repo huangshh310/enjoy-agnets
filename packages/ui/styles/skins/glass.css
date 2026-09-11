@@ -1,34 +1,36 @@
 /**
- * Skin: glass
+ * Skin: glass（Liquid Glass 网页近似，不是 Apple 官方材料）
  * 接口：html[data-skin="glass"]
  *
- * 新皮肤：新建 skins/<name>.css，在 globals.css @import。不要把覆盖写进 globals。
- *
- * 磨砂要肉眼可见：画布透明 + 光斑 z-0 + 铬层半透明模糊。
- * 按钮 / 输入 / 分段开关 / 气泡走下面重映射的语义 token，不要给每个控件写选择器。
+ * 分层：外壳 fill 26% + blur；内层 tile 16% 浅槽、禁止二次 blur；
+ * 嵌套 nested 8%；Composer chip 与外壳同填充、不再叠 blur。
+ * 追光用 --glass-light-x/y（百分比），角度只给棱镜描边。
+ * 画布光斑在 glass-canvas.css，由 globals.css 在本文件之后 import。
  */
 
 html[data-skin="glass"] {
   --color-background-full: transparent;
-  --color-background-primary-default: color-mix(in srgb, var(--color-white) 58%, transparent);
-  --color-background-primary-hover: color-mix(in srgb, var(--color-white) 72%, transparent);
-  --color-background-secondary-default: color-mix(in srgb, var(--color-white) 40%, transparent);
-  --color-background-secondary-hover: color-mix(in srgb, var(--color-white) 54%, transparent);
-  --color-background-tertiary-default: color-mix(in srgb, var(--color-white) 36%, transparent);
-  --color-background-tertiary-hover: color-mix(in srgb, var(--color-white) 50%, transparent);
-  --color-background-inner-default: color-mix(in srgb, var(--color-white) 50%, transparent);
-  --color-border-button-default: color-mix(in srgb, var(--color-white) 52%, transparent);
-  --color-border-button-hover: color-mix(in srgb, var(--color-white) 70%, transparent);
-  --color-border-button-white: color-mix(in srgb, var(--color-white) 58%, transparent);
-  --color-separator-border: color-mix(in srgb, var(--color-accent-500) 18%, transparent);
-  --color-border-table: color-mix(in srgb, var(--color-accent-500) 20%, transparent);
+  --color-background-primary-default: color-mix(in srgb, var(--color-white) 32%, transparent);
+  --color-background-primary-hover: color-mix(in srgb, var(--color-white) 46%, transparent);
+  --color-background-secondary-default: color-mix(in srgb, var(--color-white) 22%, transparent);
+  --color-background-secondary-hover: color-mix(in srgb, var(--color-white) 34%, transparent);
+  --color-background-tertiary-default: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --color-background-tertiary-hover: color-mix(in srgb, var(--color-white) 26%, transparent);
+  --color-background-inner-default: color-mix(in srgb, var(--color-white) 26%, transparent);
+
+  --color-border-button-default: color-mix(in srgb, var(--color-white) 58%, transparent);
+  --color-border-button-hover: color-mix(in srgb, var(--color-white) 78%, transparent);
+  --color-border-button-white: color-mix(in srgb, var(--color-white) 70%, transparent);
+  --color-separator-border: color-mix(in srgb, var(--color-white) 38%, transparent);
+  --color-border-table: color-mix(in srgb, var(--color-accent-500) 22%, transparent);
+
   --color-theme-toggle-sidebar-background: color-mix(in srgb, var(--color-white) 28%, transparent);
-  --color-theme-toggle-sidebar-selected-background: color-mix(in srgb, var(--color-white) 66%, transparent);
-  --color-segmented-control-background: color-mix(in srgb, var(--color-white) 28%, transparent);
-  --color-segmented-control-selected-background: color-mix(in srgb, var(--color-white) 66%, transparent);
-  --color-ai-chat-composer-add-background: color-mix(in srgb, var(--color-white) 62%, transparent);
-  --color-ai-chat-composer-add-hover-background: color-mix(in srgb, var(--color-white) 78%, transparent);
-  /* 浅色玻璃上必须深色字（对比度）；ink 收成冷石板，禁止纯黑炭灰贴冷蓝 */
+  --color-theme-toggle-sidebar-selected-background: color-mix(in srgb, var(--color-white) 52%, transparent);
+  --color-segmented-control-background: color-mix(in srgb, var(--color-white) 22%, transparent);
+  --color-segmented-control-selected-background: color-mix(in srgb, var(--color-white) 56%, transparent);
+  --color-ai-chat-composer-add-background: color-mix(in srgb, var(--color-white) 36%, transparent);
+  --color-ai-chat-composer-add-hover-background: color-mix(in srgb, var(--color-white) 52%, transparent);
+
   --color-text-primary: color-mix(in srgb, var(--color-neutral-800) 90%, var(--color-accent-800));
   --color-text-secondary: color-mix(in srgb, var(--color-neutral-600) 62%, var(--color-accent-700));
   --color-text-tertiary: color-mix(in srgb, var(--color-neutral-500) 58%, var(--color-accent-600));
@@ -37,35 +39,44 @@ html[data-skin="glass"] {
   --color-foreground-icon-secondary: color-mix(in srgb, var(--color-neutral-600) 58%, var(--color-accent-600));
   --color-foreground-icon-tertiary: color-mix(in srgb, var(--color-neutral-500) 55%, var(--color-accent-600));
   --color-foreground-icon-quaternary: color-mix(in srgb, var(--color-neutral-400) 60%, var(--color-accent-500));
-  --skin-frost-fill: color-mix(in srgb, var(--color-white) 42%, transparent);
-  --skin-frost-tile: color-mix(in srgb, var(--color-white) 62%, transparent);
-  --skin-frost-blur: blur(32px) saturate(170%);
-  --skin-frost-chip-blur: blur(20px) saturate(160%);
-  --skin-frost-line: color-mix(in srgb, var(--color-white) 64%, transparent);
+
+  --skin-frost-fill: color-mix(in srgb, var(--color-white) 26%, transparent);
+  --skin-frost-tile: color-mix(in srgb, var(--color-white) 16%, transparent);
+  --skin-frost-chip: var(--skin-frost-fill);
+  --skin-frost-nested: color-mix(in srgb, var(--color-white) 8%, transparent);
+  --skin-frost-blur: blur(40px) saturate(200%) contrast(102%);
+  --skin-frost-chip-blur: blur(22px) saturate(180%);
+  --skin-frost-line: color-mix(in srgb, var(--color-white) 55%, transparent);
   --skin-frost-inset: color-mix(in srgb, var(--color-white) 80%, transparent);
+  --skin-meniscus: inset 0 1px 0 var(--skin-frost-inset);
+  --glass-light-x: 50%;
+  --glass-light-y: 28%;
+  --glass-light-angle: 135deg;
 }
 
 html.dark[data-skin="glass"] {
-  /* 浅字保留。填充约 55–62% + 更强 blur：壁纸是光晕，不是照片，也不是实心底 */
-  --color-background-full: color-mix(in srgb, var(--color-neutral-925) 36%, transparent);
-  --color-background-primary-default: color-mix(in srgb, var(--color-neutral-800) 62%, transparent);
-  --color-background-primary-hover: color-mix(in srgb, var(--color-neutral-700) 68%, transparent);
-  --color-background-secondary-default: color-mix(in srgb, var(--color-neutral-900) 54%, transparent);
-  --color-background-secondary-hover: color-mix(in srgb, var(--color-neutral-800) 62%, transparent);
-  --color-background-tertiary-default: color-mix(in srgb, var(--color-neutral-800) 50%, transparent);
-  --color-background-tertiary-hover: color-mix(in srgb, var(--color-neutral-700) 58%, transparent);
-  --color-background-inner-default: color-mix(in srgb, var(--color-neutral-800) 56%, transparent);
-  --color-border-button-default: color-mix(in srgb, var(--color-white) 18%, transparent);
-  --color-border-button-hover: color-mix(in srgb, var(--color-white) 28%, transparent);
-  --color-border-button-white: color-mix(in srgb, var(--color-white) 14%, transparent);
-  --color-separator-border: color-mix(in srgb, var(--color-white) 12%, transparent);
-  --color-border-table: color-mix(in srgb, var(--color-white) 14%, transparent);
-  --color-theme-toggle-sidebar-background: color-mix(in srgb, var(--color-white) 12%, transparent);
-  --color-theme-toggle-sidebar-selected-background: color-mix(in srgb, var(--color-neutral-700) 70%, transparent);
-  --color-segmented-control-background: color-mix(in srgb, var(--color-white) 12%, transparent);
+  --color-background-full: transparent;
+  --color-background-primary-default: color-mix(in srgb, var(--color-neutral-800) 48%, transparent);
+  --color-background-primary-hover: color-mix(in srgb, var(--color-neutral-700) 58%, transparent);
+  --color-background-secondary-default: color-mix(in srgb, var(--color-neutral-900) 38%, transparent);
+  --color-background-secondary-hover: color-mix(in srgb, var(--color-neutral-800) 50%, transparent);
+  --color-background-tertiary-default: color-mix(in srgb, var(--color-neutral-800) 32%, transparent);
+  --color-background-tertiary-hover: color-mix(in srgb, var(--color-neutral-700) 44%, transparent);
+  --color-background-inner-default: color-mix(in srgb, var(--color-neutral-800) 42%, transparent);
+
+  --color-border-button-default: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --color-border-button-hover: color-mix(in srgb, var(--color-white) 24%, transparent);
+  --color-border-button-white: color-mix(in srgb, var(--color-white) 12%, transparent);
+  --color-separator-border: color-mix(in srgb, var(--color-white) 10%, transparent);
+  --color-border-table: color-mix(in srgb, var(--color-white) 12%, transparent);
+
+  --color-theme-toggle-sidebar-background: color-mix(in srgb, var(--color-white) 6%, transparent);
+  --color-theme-toggle-sidebar-selected-background: color-mix(in srgb, var(--color-neutral-700) 62%, transparent);
+  --color-segmented-control-background: color-mix(in srgb, var(--color-white) 6%, transparent);
   --color-segmented-control-selected-background: color-mix(in srgb, var(--color-neutral-700) 70%, transparent);
-  --color-ai-chat-composer-add-background: color-mix(in srgb, var(--color-neutral-700) 64%, transparent);
-  --color-ai-chat-composer-add-hover-background: color-mix(in srgb, var(--color-neutral-600) 72%, transparent);
+  --color-ai-chat-composer-add-background: color-mix(in srgb, var(--color-neutral-700) 52%, transparent);
+  --color-ai-chat-composer-add-hover-background: color-mix(in srgb, var(--color-neutral-600) 64%, transparent);
+
   --color-text-primary: color-mix(in srgb, var(--color-neutral-50) 92%, var(--color-accent-200));
   --color-text-secondary: color-mix(in srgb, var(--color-neutral-300) 70%, var(--color-accent-200));
   --color-text-tertiary: color-mix(in srgb, var(--color-neutral-400) 75%, var(--color-accent-300));
@@ -74,148 +85,160 @@ html.dark[data-skin="glass"] {
   --color-foreground-icon-secondary: color-mix(in srgb, var(--color-neutral-300) 72%, var(--color-accent-200));
   --color-foreground-icon-tertiary: color-mix(in srgb, var(--color-neutral-400) 75%, var(--color-accent-300));
   --color-foreground-icon-quaternary: var(--color-neutral-500);
-  --skin-frost-fill: color-mix(in srgb, var(--color-neutral-900) 58%, transparent);
-  --skin-frost-tile: color-mix(in srgb, var(--color-neutral-800) 64%, transparent);
-  --skin-frost-blur: blur(44px) saturate(190%);
-  --skin-frost-chip-blur: blur(28px) saturate(170%);
-  --skin-frost-line: color-mix(in srgb, var(--color-white) 18%, transparent);
-  --skin-frost-inset: color-mix(in srgb, var(--color-white) 20%, transparent);
+
+  --skin-frost-fill: color-mix(in srgb, var(--color-neutral-900) 44%, transparent);
+  --skin-frost-tile: color-mix(in srgb, var(--color-neutral-800) 36%, transparent);
+  --skin-frost-chip: color-mix(in srgb, var(--color-neutral-800) 40%, transparent);
+  --skin-frost-nested: color-mix(in srgb, var(--color-neutral-700) 32%, transparent);
+  --skin-frost-blur: blur(40px) saturate(190%) contrast(105%);
+  --skin-frost-chip-blur: blur(24px) saturate(180%);
+  --skin-frost-line: color-mix(in srgb, var(--color-white) 14%, transparent);
+  --skin-frost-inset: color-mix(in srgb, var(--color-white) 22%, transparent);
 }
 
-.skin-glass-orbs {
-  display: none;
-}
-
-html[data-skin="glass"] .skin-glass-orbs {
-  display: block;
-}
-
-html[data-skin="glass"] .skin-glass-orbs > span {
-  position: absolute;
-  border-radius: 9999px;
-  pointer-events: none;
-}
-
-html[data-skin="glass"] .skin-glass-orb-nw {
-  top: -8rem;
-  left: -6rem;
-  width: 40rem;
-  height: 40rem;
-  background: color-mix(in srgb, var(--color-accent-500) 45%, transparent);
-  filter: blur(7rem);
-}
-
-html[data-skin="glass"] .skin-glass-orb-ne {
-  top: 18%;
-  right: -7rem;
-  width: 34rem;
-  height: 34rem;
-  background: color-mix(in srgb, var(--color-accent-400) 35%, transparent);
-  filter: blur(7.5rem);
-}
-
-html[data-skin="glass"] .skin-glass-orb-s {
-  bottom: -7rem;
-  left: 28%;
-  width: 31rem;
-  height: 31rem;
-  background: color-mix(in srgb, var(--color-accent-600) 28%, transparent);
-  filter: blur(6.25rem);
-}
-
-html.dark[data-skin="glass"] .skin-glass-orb-nw {
-  background: color-mix(in srgb, var(--color-accent-400) 50%, transparent);
-}
-
-html.dark[data-skin="glass"] .skin-glass-orb-ne {
-  background: color-mix(in srgb, var(--color-accent-300) 40%, transparent);
-}
-
-html.dark[data-skin="glass"] .skin-glass-orb-s {
-  background: color-mix(in srgb, var(--color-accent-500) 32%, transparent);
-}
-
-html[data-skin="glass"] [data-testid="window-frame"] {
-  background-color: transparent;
-  background-image: none;
-}
-
-html.dark[data-skin="glass"] [data-testid="window-frame"] {
-  background-color: color-mix(in srgb, var(--color-neutral-925) 28%, transparent);
-}
-
-html[data-skin="glass"] [data-testid="window-frame"] > header {
-  background-color: transparent;
-}
-
-/* 侧栏 / 主舞台 / 右侧栏 */
+/* 三张铬外壳。不要用 .rounded-3xl.shadow-card，知识库舞台会变成第二层外壳 */
 html[data-skin="glass"] aside.rounded-3xl,
 html[data-skin="glass"] main,
-html[data-skin="glass"] .rounded-3xl.shadow-card {
+html[data-skin="glass"] [data-frost="shell"] {
+  position: relative;
   isolation: isolate;
   background-color: var(--skin-frost-fill);
   backdrop-filter: var(--skin-frost-blur);
   -webkit-backdrop-filter: var(--skin-frost-blur);
-  border-color: var(--skin-frost-line);
-  box-shadow:
-    0 14px 40px -16px color-mix(in srgb, var(--color-neutral-950) 18%, transparent),
-    inset 0 1px 0 var(--skin-frost-inset);
+  border: 1px solid var(--skin-frost-line);
 }
 
-/* 设置卡、Studio 卡：半透贴在已磨砂的 main 上 */
-html[data-skin="glass"] main .rounded-2xl.border,
-html[data-skin="glass"] .settings-card {
+html[data-skin="glass"] aside.rounded-3xl {
+  box-shadow: var(--shadow-sidebar), var(--skin-meniscus);
+}
+
+html[data-skin="glass"] main,
+html[data-skin="glass"] [data-frost="shell"] {
+  box-shadow: var(--shadow-card), var(--skin-meniscus);
+}
+
+html[data-skin="glass"] aside.rounded-3xl > *,
+html[data-skin="glass"] main > *,
+html[data-skin="glass"] [data-frost="shell"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 局部追光：圆心走百分比，禁止 deg×px */
+html[data-skin="glass"] aside.rounded-3xl::before,
+html[data-skin="glass"] main::before,
+html[data-skin="glass"] [data-frost="shell"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    240px circle at var(--glass-light-x) var(--glass-light-y),
+    color-mix(in srgb, var(--color-white) 28%, transparent) 0%,
+    transparent 58%
+  );
+  opacity: 0.45;
+}
+
+html.dark[data-skin="glass"] aside.rounded-3xl::before,
+html.dark[data-skin="glass"] main::before,
+html.dark[data-skin="glass"] [data-frost="shell"]::before {
+  opacity: 0.22;
+}
+
+html[data-skin="glass"] aside.rounded-3xl::after,
+html[data-skin="glass"] main::after,
+html[data-skin="glass"] [data-frost="shell"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  padding: 1px;
+  background: linear-gradient(
+    var(--glass-light-angle),
+    color-mix(in srgb, var(--color-white) 80%, transparent) 0%,
+    color-mix(in srgb, var(--color-accent-400) 28%, transparent) 32%,
+    color-mix(in srgb, var(--color-white) 40%, transparent) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.65;
+  filter: url(#skin-liquid-glass);
+}
+
+html.dark[data-skin="glass"] aside.rounded-3xl::after,
+html.dark[data-skin="glass"] main::after,
+html.dark[data-skin="glass"] [data-frost="shell"]::after {
+  opacity: 0.4;
+}
+
+/* 内层浅槽：外壳已经 blur */
+html[data-skin="glass"] .settings-card,
+html[data-skin="glass"] [data-frost="tile"],
+html[data-skin="glass"] main .rounded-3xl.border,
+html[data-skin="glass"] main .rounded-2xl.border {
   background-color: var(--skin-frost-tile);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-color: var(--skin-frost-line);
+  box-shadow: var(--skin-meniscus);
 }
 
-/* Composer、用户气泡等显式 chip */
+html[data-skin="glass"] :is(.settings-card, [data-frost="tile"], [data-frost="chip"], main .rounded-3xl.border, main .rounded-2xl.border)
+  :is(.rounded-3xl.border, .rounded-2xl.border, .rounded-xl.border, .settings-card) {
+  background-color: var(--skin-frost-nested) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: var(--skin-meniscus);
+}
+
+/* Composer：与外壳同填充，禁止二次 blur */
 html[data-skin="glass"] [data-frost="chip"] {
-  background-color: var(--skin-frost-tile);
-  backdrop-filter: var(--skin-frost-chip-blur);
-  -webkit-backdrop-filter: var(--skin-frost-chip-blur);
+  background-color: var(--skin-frost-chip) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-color: var(--skin-frost-line);
-  box-shadow: inset 0 1px 0 var(--skin-frost-inset);
+  box-shadow: var(--shadow-card), var(--skin-meniscus);
 }
 
 html[data-skin="glass"] .is-user .bg-background-tertiary-default {
-  background-color: var(--skin-frost-tile);
-  backdrop-filter: var(--skin-frost-chip-blur);
-  -webkit-backdrop-filter: var(--skin-frost-chip-blur);
+  background-color: var(--skin-frost-chip);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--skin-frost-line);
-  box-shadow: inset 0 1px 0 var(--skin-frost-inset);
+  box-shadow: var(--skin-meniscus);
 }
 
-/* Markdown / 结构化表：发丝冷色线，不要炭灰格线 */
 html[data-skin="glass"] table {
   border-collapse: collapse;
-  background-color: color-mix(in srgb, var(--color-white) 30%, transparent);
+  background-color: transparent;
   border: 1px solid var(--color-border-table);
 }
 
 html[data-skin="glass"] :is(th, td) {
   border-color: var(--color-border-table);
 }
+
 html[data-skin="glass"] th {
   color: var(--color-text-secondary);
-  background-color: color-mix(in srgb, var(--color-white) 36%, transparent);
+  background-color: var(--skin-frost-nested);
 }
 
-html.dark[data-skin="glass"] table {
-  background-color: color-mix(in srgb, var(--color-neutral-800) 40%, transparent);
+html[data-skin="glass"] pre {
+  background-color: var(--skin-frost-nested);
 }
 
-html.dark[data-skin="glass"] th {
-  background-color: color-mix(in srgb, var(--color-neutral-700) 36%, transparent);
-}
-
-/* outline / secondary 按钮跟皮肤走半透，主按钮仍是实心 accent */
 html[data-skin="glass"] [data-slot="button"][data-variant="outline"],
 html[data-skin="glass"] [data-slot="button"][data-variant="secondary"] {
   background-color: var(--skin-frost-tile);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
   border-color: var(--skin-frost-line);
+  box-shadow: var(--skin-meniscus);
 }
 
 html[data-skin="glass"] [data-slot="button"][data-variant="ghost"] {
@@ -225,6 +248,17 @@ html[data-skin="glass"] [data-slot="button"][data-variant="ghost"] {
 html[data-skin="glass"] [data-slot="button"][data-variant="ghost"]:hover {
   background-color: var(--skin-frost-tile);
   color: var(--color-text-primary);
+}
+
+html[data-skin="glass"] [data-slot="button"]:active,
+html[data-skin="glass"] [data-frost="chip"]:active {
+  transform: scale(0.97);
+}
+
+html[data-skin="glass"] .shadow-dropdown {
+  background-color: var(--color-background-primary-default);
+  backdrop-filter: var(--skin-frost-chip-blur);
+  -webkit-backdrop-filter: var(--skin-frost-chip-blur);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -244,8 +278,7 @@ html[data-skin="glass"] [data-slot="button"][data-variant="ghost"]:hover {
 
   html[data-skin="glass"] aside.rounded-3xl,
   html[data-skin="glass"] main,
-  html[data-skin="glass"] .rounded-3xl.shadow-card,
-  html[data-skin="glass"] main .rounded-2xl.border,
+  html[data-skin="glass"] [data-frost="shell"],
   html[data-skin="glass"] .settings-card,
   html[data-skin="glass"] [data-frost="chip"],
   html[data-skin="glass"] .is-user .bg-background-tertiary-default {

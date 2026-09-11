@@ -46,6 +46,7 @@ export function ComposerSessionReview() {
     <div className="relative z-20 mb-1.5 w-full animate-in fade-in-50 duration-200">
       <div
         data-session-review
+        data-frost="tile"
         className="relative flex w-full flex-col overflow-visible rounded-xl border border-border-button-default bg-background-secondary-default/95 px-3 py-1.5 shadow-2xs backdrop-blur-md"
       >
         {running ? <SessionMascotRunner active={running} /> : null}

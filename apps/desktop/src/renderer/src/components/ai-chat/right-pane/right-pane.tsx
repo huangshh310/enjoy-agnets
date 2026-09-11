@@ -58,7 +58,10 @@ export function RightPane({
   const empty = tabs.length === 0
 
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
+    <section
+      data-frost="shell"
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
+    >
       {empty ? (
         <div className="flex h-11 shrink-0 items-center justify-end gap-0.5 px-3">
           <PaneWidthToggle maximized={maximized} onToggle={onToggleWidth} />

@@ -12,6 +12,7 @@ import {
 import { AppUpdateHost } from "@renderer/components/app-update/app-update-host"
 import { WindowTitleBar } from "./window-title-bar"
 import { InkSketchFilters } from "./ink-sketch-filters"
+import { LiquidGlassFilters } from "./liquid-glass-filters"
 
 
 export function WindowFrame({ children }: { children: ReactNode }) {
@@ -50,15 +51,17 @@ export function WindowFrame({ children }: { children: ReactNode }) {
       )}
     >
       <InkSketchFilters />
+      <LiquidGlassFilters />
 
-      {/* 玻璃皮肤光斑：必须 z-0，负 z-index 会画到窗口底板后面 */}
+      {/* 玻璃皮肤流体液态画布与多节点动态光斑 */}
       <div
         aria-hidden="true"
         className="skin-glass-orbs pointer-events-none absolute inset-0 z-0 overflow-hidden select-none"
       >
-        <span className="skin-glass-orb-nw" />
-        <span className="skin-glass-orb-ne" />
-        <span className="skin-glass-orb-s" />
+        <div className="skin-glass-mesh-gradient" />
+        <span className="skin-glass-orb skin-glass-orb-nw" />
+        <span className="skin-glass-orb skin-glass-orb-ne" />
+        <span className="skin-glass-orb skin-glass-orb-s" />
       </div>
 
       <AppUpdateHost />

@@ -136,7 +136,7 @@ export function AiChatComposer({
           data-frost="chip"
           className={cx(
             "@container relative flex min-w-0 flex-col overflow-visible rounded-[22px] pt-2",
-            "border border-border-button-default bg-background-secondary-default/95 dark:bg-background-tertiary-default",
+            "border border-border-button-default bg-background-secondary-default dark:bg-background-tertiary-default",
             "shadow-card backdrop-blur-md transition-all duration-300 ease-out",
             "hover:border-border-button-hover hover:shadow-dropdown",
             isFocused && "border-accent-500 ring-2 ring-accent-500/20 shadow-[0_4px_24px_-2px_rgba(59,130,246,0.16)] dark:shadow-[0_4px_28px_-2px_rgba(59,130,246,0.22)]",

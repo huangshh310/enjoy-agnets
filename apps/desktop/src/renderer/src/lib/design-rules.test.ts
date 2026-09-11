@@ -87,12 +87,46 @@ test("皮肤 CSS 按文件拆分，globals 只负责 import", () => {
   const globals = readFileSync(join(stylesDir, "globals.css"), "utf-8")
   assert.ok(globals.includes('@import "./skins/classic.css"'))
   assert.ok(globals.includes('@import "./skins/glass.css"'))
+  assert.ok(globals.includes('@import "./skins/glass-canvas.css"'), "玻璃画布由 globals 在 glass.css 之后引入")
   assert.ok(globals.includes('@import "./skins/ink.css"'))
   assert.ok(globals.includes('@import "./skins/sketch.css"'))
   assert.equal(globals.includes("--skin-frost-fill"), false, "玻璃变量不得写进 globals.css")
 
   const glass = readFileSync(join(stylesDir, "skins/glass.css"), "utf-8")
+  const canvas = readFileSync(join(stylesDir, "skins/glass-canvas.css"), "utf-8")
   assert.ok(glass.includes('html[data-skin="glass"]'))
+  assert.equal(glass.includes("@import"), false, "glass.css 不再嵌套 @import，避免 Tailwind 丢画布")
+  assert.equal(glass.includes("form:has(textarea)"), false, "Composer 禁止 form:has(textarea) 叠白")
+  assert.equal(glass.includes("div:has(> textarea)"), false, "Composer 禁止 div:has(> textarea) 叠白")
+  assert.equal(`${glass}\n${canvas}`.includes("skin-glass-orb-center"), false, "禁止中心白光斑浇奶")
+  assert.ok(glass.includes("[data-frost=\"chip\"]"), "Composer 只走 data-frost=chip")
+  assert.ok(glass.includes("--skin-frost-nested"), "嵌套卡片必须有更薄的填充 token")
+  assert.ok(glass.includes("url(#skin-liquid-glass)"), "棱镜描边必须挂 #skin-liquid-glass")
+  assert.ok(glass.includes("--glass-light-x"), "追光圆心必须是百分比 --glass-light-x")
+  assert.equal(glass.includes("* 5px)"), false, "禁止 deg×px 非法 calc")
+  assert.ok(canvas.includes("blur(110px)"), "光斑漫射必须 ≥ 110px")
+
+  const filterRoots = [
+    join(process.cwd(), "src/renderer/src/components/layout/liquid-glass-filters.tsx"),
+    join(process.cwd(), "../../apps/desktop/src/renderer/src/components/layout/liquid-glass-filters.tsx")
+  ]
+  const filterPath = filterRoots.find((path) => existsSync(path))
+  assert.ok(filterPath, "LiquidGlassFilters 必须进包")
+  const filters = readFileSync(filterPath, "utf-8")
+  assert.ok(filters.includes('id="skin-liquid-glass"'))
+  assert.ok(filters.includes("--glass-light-x"))
+
+  const previewRoots = [
+    join(process.cwd(), "src/renderer/src/components/settings/appearance/appearance-skin-preview.tsx"),
+    join(process.cwd(), "../../apps/desktop/src/renderer/src/components/settings/appearance/appearance-skin-preview.tsx")
+  ]
+  const previewPath = previewRoots.find((path) => existsSync(path))
+  assert.ok(previewPath, "必须存在 appearance-skin-preview")
+  const preview = readFileSync(previewPath, "utf-8")
+  assert.equal(preview.includes("bg-cyan-400"), false, "预览禁止 raw cyan")
+  assert.equal(preview.includes("bg-white/"), false, "预览禁止 raw white")
+  assert.equal(preview.includes("slate-900"), false, "预览禁止 raw slate")
+  assert.ok(preview.includes("skin-glass-preview-pane"), "玻璃预览皮走 glass.css")
   assert.ok(existsSync(join(stylesDir, "skins/classic.css")))
   const ink = readFileSync(join(stylesDir, "skins/ink.css"), "utf-8")
   assert.ok(ink.includes('html[data-skin="ink"]'))

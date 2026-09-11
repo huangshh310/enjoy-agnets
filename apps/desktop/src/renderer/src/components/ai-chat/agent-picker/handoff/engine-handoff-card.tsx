@@ -30,6 +30,7 @@ export function EngineHandoffCard({
   if (phase === "idle") return null
   return (
     <section
+      data-frost="tile"
       className="w-full rounded-xl border border-border-button-default bg-background-secondary-default/95 px-3 py-2 shadow-2xs backdrop-blur-md"
       aria-label={t("chat.handoff.title")}
     >

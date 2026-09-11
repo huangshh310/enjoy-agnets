@@ -93,6 +93,7 @@ export function ComposerQueue({ className }: { className?: string }) {
     <>
       {/* 顶部探出式层叠附件托盘 (Layered Shelf) */}
       <div
+        data-frost="tile"
         className={cx(
           "relative z-0 mx-auto flex w-[93%] sm:w-[95%] flex-col gap-2",
           "-mb-3.5 rounded-t-2xl border-x border-t border-border-button-default/80",

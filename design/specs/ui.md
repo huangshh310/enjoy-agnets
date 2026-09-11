@@ -1,10 +1,10 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-10
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-11
 
 ## 当前真相
 
-窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 磨砂玻璃、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。浅色 `glass` 画布透明、冷石板深色字；暗色 `glass` 覆盖浅字，frost 约 58% + `blur(44px)`。底板注入物理微环境漫射光斑（Ambient Canvas Glow），赋予三卡片自然进深感与悬浮质感。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
+窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 液态玻璃 Liquid Glass、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。`glass` 是网页近似（不是 Apple 官方材料）：浅色画布透明、冷石板深色字；暗色覆盖浅字。画布在 `skins/glass-canvas.css`，由 `globals.css` 紧跟 `glass.css` 引入（不要写进 `glass.css` 的嵌套 `@import`，Tailwind 会丢掉）。三张铬外壳（`aside.rounded-3xl` / `main` / 审查栏 `[data-frost=shell]`）填充 26% + `blur(40px) saturate(200%)`，投影走 `--shadow-card` / `--shadow-sidebar` 再叠弯液面。内层卡片浅槽 16%、**不再二次 blur**；嵌套 8%。Composer `[data-frost=chip]` 与外壳同填充、关掉 blur。`#skin-liquid-glass` 只打在 1px 棱镜描边。指针写 `--glass-light-x` / `--glass-light-y`（百分比圆心）和 `--glass-light-angle`（只给描边），禁止 deg×px。外观迷你窗走 `[data-preview-skin=glass]`，禁止组件内 `bg-cyan-400` / `bg-white`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：
 
 1. **Nav card（轨道+情境）** — 展开 260px，折叠 60px。内部左侧 48px 图标轨道：上为 Chat / Knowledge / Workflows / Media / MCP / **Skills** / Observability，底部分隔 Inbox / Settings。右侧 212px 情境栏随模块更换（Chat=会话树，Knowledge=来源，MCP=服务/市场/JSON，Skills=来源组/精选/目标，Settings=分段…）。折叠只留轨道图标。禁止在情境栏底再叠一层 Module Rails。会话行左侧画**该会话绑定**的 Lobe 品牌标（`sessionRuntimes[sessionId]`，缺省 `preferredRuntimeId`），不要一律跟 Composer 当前 runtime，否则切一次 Cursor 所有历史会话都会变 Cursor。运行中右侧用 `LoadingStateGlyph` `drive`（与 Thinking 头同一套 3×3 点阵），不要再走 `DotMatrixLoader` wave。后台会话的 running 读 `attention-store.parks`，禁止只给当前选中行画灯。审批红点（`waiting_review`）优先于转圈。情境栏顶可钉「进行中」（running 或等你），无则整组不渲染；折叠 60px 轨道不画该组。running 不是 Attention kind。新建会话立刻 `bindSessionRuntime`，绑的是 **Composer 当前 `runtimeId`**，不是全局偏好。⌘L 最近会话同样画品牌标。
 2. **Stage** — flex，**始终铺满标题栏以下剩余高度**（与 Nav card 底边对齐），不要按内容收缩露出大块 Mist。Chat 为线程与 composer（`hidden` 藏起但不卸载）；其它模块换工作台。切模块不丢 `chat-store`、草稿、正在跑的 run。`SecondaryPageMain` 必须 `h-full`；Outlet 外层是 `absolute inset-0 flex flex-col`，禁止只写 `flex-1` 却挂在非 flex 父级上。`wide` / `stage` 用原生 `overflow-y-auto` + 内层 `min-h-full flex flex-col`，**不要** Radix ScrollArea（viewport 内层 inline `display:table` 会盖掉 flex）。列表空态用 `flex-1 min-h-0` 铺满剩余高度。Skills / Media / MCP / Inbox / Observability / Workflows 用 `fill` + `hideChrome`：页内自带顶栏，不要再叠 `SecondaryPageChrome`。工具栏固定，空态与列表吃剩余高度。侧栏项目区在底栏用户卡之上 `flex-1`，无项目虚线框铺满该区。设置 Providers 仍用 `wide`，但空态虚线框同样 `flex-1`，不要按内容收高度。
@@ -49,7 +49,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
  - 视觉全书：[../references/visual-system.md](../references/visual-system.md)
 - 权威设计规约与 Anti-Patterns：[../../DESIGN.md](../../DESIGN.md)
  - BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
-- 皮肤 CSS：`packages/ui/styles/skins/`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
+- 皮肤 CSS：`packages/ui/styles/skins/`；`globals.css` 依次引 `glass.css` + `glass-canvas.css`；滤镜 `layout/liquid-glass-filters.tsx`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
 - 工作区壳：`apps/desktop/src/renderer/src/components/app-shell/app-shell.tsx`（轨道、情境、Chat 工作台、Inspector）
 - Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`（会话行 `sidebar-session-row.tsx` + `session-agent-mark.tsx` + `session-activity.ts` / `sidebar-active-sessions.tsx`）
@@ -77,8 +77,11 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 不要再画 Composer 上沿「写入自动 · Shell 需确认 · Git 需确认」。它和底栏「编辑」盾牌重复；「模式: 智能体」是执行模式，不是审批。
 - Agent Picker：未装 CLI 上轨，状态用中性胶囊「未装」，不要名字底下第二行灰字。点开一键安装，不要再收成「未安装 N」。模型行不要上下两行同名；未装 / 需登录面板不要 `h-[390px]` 空撑。OMP 右栏模型图标按模型族（Claude / Gemini / GPT），禁止用引擎 `omp` 灰圆字母。OMP 的 `google-antigravity` 是供应商，不是模型。OMP「登录」必须是实心按钮；点了要打开浏览器，禁止只回英文 Login started。打开授权页后按钮保持「正在打开授权…」，浏览器成功并写入凭证后左栏才变已登录，不要停在登录按钮。**已装未登录**（含 Claude / Cursor）导轨标「登录」，点开下面板是实心登录，禁止「使用 {name}」空钮；`loggedIn===null` 标「检测」，禁止探测中绿灯。胶囊灯与发送盘只信 `composerSendReady` / `engineReadiness==="ready"`（Enjoy Local 看 `hasKey`）。未就绪发送盘禁止 `from-accent-500` 渐变，点击仍走闸门（开 Picker / 留开始面）。Enjoy Local 无密钥标「密钥」，发送失败留在开始面，禁止自动跳设置。`ACP_AUTH_REQUIRED` 主钮打开 Picker 登录，禁止跳 `#/settings/providers`。设置「设为主引擎」必须走 `requestEngineSwitch`。
 - shadcn 的裸 `accent` token 是 **hover 填充**，不是 Signal Blue。交互强调色用 `accent-500` / `primary`。
-- 玻璃皮肤看起来仍是实体：画布 `bg-background-full` 不透明时，`backdrop-filter` 卷积纯色 Mist，肉眼无磨砂。光斑层禁止负 z-index（会画到窗口底板后面）。皮肤覆盖必须进 `styles/skins/<name>.css`，不要写回 `globals.css`。`SettingsCard` 必须带 `settings-card` 类，设置页内层卡片才能吃到半透。
-- 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`。frost 约 58% + 更强 blur，禁止 50% 把桌面当照片，也禁止 80% 把磨砂盖成实心黑。
+- 玻璃皮肤看起来仍是实体/不像液体玻璃：
+  1. **底板不要孤立暖粉/暖橙，也不要中心白光斑**：留白页会直接露出脏色。光斑走 `accent-*` token，blur ≥ 110px（mesh 与 orb 都是）；禁止 `skin-glass-orb-center`。
+  2. **通透是看见底板，不是 70% 不透明白**：外壳 26%，内层 16% 且关掉二次 blur；嵌套 8%。Composer 不得比外壳更实，也不得再叠 `backdrop-filter`（会采样已磨砂的 main，浇成白板）。审查条 / 交接卡 / 附件托盘加 `data-frost="tile"`，不要靠 `main .rounded-xl.border` 一律浇色。
+  3. **选择器与 calc**：禁止 `form:has(textarea)` / `div:has(> textarea)`。禁止 `.rounded-3xl.shadow-card` 当铬外壳。追光圆心必须是 `--glass-light-x/y` 百分比；`calc((var(--glass-light-angle) - 135deg) * 5px)` 是非法 deg×px，X 位移整段作废。外观预览禁止 `bg-cyan-400` / `bg-white/30` / `dark:bg-slate-900`，皮进 `[data-preview-skin=glass]`。`prefers-reduced-motion` 只放慢光斑，禁止把按钮 `transition` 写成 `none`。
+- 暗色 + 玻璃：`html[data-skin=glass]` 的深色 ink 比对 `.dark` 更具体，不覆盖就会黑字贴壁纸。`html.dark[data-skin=glass]` 必须重写 `text-*` / `icon-*`，字色走 `neutral`+`accent` mix，不要 Tailwind Slate hex。外壳 frost 44% + `blur(40px)`；内层 tile 36%、嵌套 32%，禁止低于 32% 把桌面当照片，也禁止高于 70% 盖成实心黑。外壳投影叠 `--shadow-card` / `--shadow-sidebar`，不要再手写 `rgba(15, 23, 42, …)`。
 - 主题存在 `localStorage` 的 `boardui:theme`，不跟随系统。切换时冻住颜色过渡，走圆形揭示。皮肤存在 `boardui:skin`。
 - Playwright Electron 窗口流依赖桌面 `out/main/index.js` 与 `playwright` 包。CI 合约测只验收 Stop/Attach 源码与 Hash 路由；没有 launcher 时窗口用例 skip，不要当成已跑通真实聊天。
 - 切模块不得卸载 `chat-store` / Inspector：Chat 工作台用 `hidden` 藏起；Inspector 收起走 `Panel.collapse`，不要 `null` 卸掉 `RightPane`。不要把账单、团队、账号放进 48px 轨道。不要把 Agent Studio 当第二首页。`SecondaryPageShell` 禁止再画「返回应用」。Escape 从 Settings/Inbox 回工位时必须尊重 `defaultPrevented` 和 Dialog。

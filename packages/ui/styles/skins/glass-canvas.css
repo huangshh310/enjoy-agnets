@@ -1,0 +1,159 @@
+/**
+ * glass 画布：透明窗底 + 冷极光光斑。由 glass.css @import，globals 仍只引一份皮肤。
+ * 光斑色走 accent token，禁止中心白团、禁止暖粉/暖橙。
+ */
+
+html[data-skin="glass"] [data-testid="window-frame"] {
+  background-color: transparent;
+  background-image: none;
+}
+
+html.dark[data-skin="glass"] [data-testid="window-frame"] {
+  background-color: color-mix(in srgb, var(--color-neutral-925) 22%, transparent);
+}
+
+html[data-skin="glass"] [data-testid="window-frame"] > header {
+  background-color: transparent;
+}
+
+.skin-glass-orbs {
+  display: none;
+}
+
+html[data-skin="glass"] .skin-glass-orbs {
+  display: block;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html[data-skin="glass"] .skin-glass-mesh-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, color-mix(in srgb, var(--color-accent-400) 42%, transparent), transparent 70%),
+    radial-gradient(ellipse 65% 55% at 85% 20%, color-mix(in srgb, var(--color-accent-300) 32%, transparent), transparent 70%),
+    radial-gradient(ellipse 75% 65% at 50% 88%, color-mix(in srgb, var(--color-accent-500) 24%, transparent), transparent 75%);
+  opacity: 0.55;
+  filter: blur(110px);
+}
+
+html.dark[data-skin="glass"] .skin-glass-mesh-gradient {
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, color-mix(in srgb, var(--color-accent-400) 40%, transparent), transparent 70%),
+    radial-gradient(ellipse 65% 55% at 85% 20%, color-mix(in srgb, var(--color-accent-300) 34%, transparent), transparent 70%),
+    radial-gradient(ellipse 75% 65% at 50% 88%, color-mix(in srgb, var(--color-accent-500) 22%, transparent), transparent 75%);
+  opacity: 0.5;
+}
+
+html[data-skin="glass"] .skin-glass-orb {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(110px);
+}
+
+html[data-skin="glass"] .skin-glass-orb-nw {
+  top: -10rem;
+  left: -8rem;
+  width: 44rem;
+  height: 44rem;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-400) 50%, transparent), transparent 80%);
+  animation: glassOrbFloat1 20s ease-in-out infinite alternate;
+}
+
+html[data-skin="glass"] .skin-glass-orb-ne {
+  top: 0;
+  right: -10rem;
+  width: 40rem;
+  height: 40rem;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-300) 42%, transparent), transparent 80%);
+  animation: glassOrbFloat2 24s ease-in-out infinite alternate-reverse;
+}
+
+html[data-skin="glass"] .skin-glass-orb-s {
+  bottom: -12rem;
+  left: 22%;
+  width: 46rem;
+  height: 46rem;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-500) 32%, transparent), transparent 80%);
+  animation: glassOrbFloat3 22s ease-in-out infinite alternate;
+}
+
+html.dark[data-skin="glass"] .skin-glass-orb-nw {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-400) 45%, transparent), transparent 80%);
+}
+html.dark[data-skin="glass"] .skin-glass-orb-ne {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-300) 38%, transparent), transparent 80%);
+}
+html.dark[data-skin="glass"] .skin-glass-orb-s {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-500) 30%, transparent), transparent 80%);
+}
+
+@keyframes glassOrbFloat1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, 20px) scale(1.08); }
+  100% { transform: translate(-20px, 35px) scale(0.95); }
+}
+@keyframes glassOrbFloat2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-35px, -15px) scale(1.05); }
+  100% { transform: translate(25px, 25px) scale(0.92); }
+}
+@keyframes glassOrbFloat3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, -30px) scale(1.06); }
+  100% { transform: translate(30px, 15px) scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin="glass"] .skin-glass-orb {
+    animation-duration: 80s;
+  }
+}
+
+/* 外观页迷你窗：不依赖 html[data-skin]，当前皮是 classic 时玻璃预览仍要像玻璃 */
+[data-preview-skin="glass"] .skin-glass-preview-orb {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(16px);
+}
+
+[data-preview-skin="glass"] .skin-glass-preview-orb-nw {
+  top: -1rem;
+  left: -1rem;
+  width: 4rem;
+  height: 4rem;
+  background: color-mix(in srgb, var(--color-accent-400) 45%, transparent);
+}
+
+[data-preview-skin="glass"] .skin-glass-preview-orb-ne {
+  top: 25%;
+  right: -1rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: color-mix(in srgb, var(--color-accent-300) 40%, transparent);
+}
+
+[data-preview-skin="glass"] .skin-glass-preview-orb-s {
+  bottom: -1rem;
+  left: 25%;
+  width: 4rem;
+  height: 4rem;
+  background: color-mix(in srgb, var(--color-accent-500) 35%, transparent);
+}
+
+[data-preview-skin="glass"] .skin-glass-preview-pane {
+  border: 1px solid color-mix(in srgb, var(--color-white) 50%, transparent);
+  background: color-mix(in srgb, var(--color-white) 28%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-white) 70%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+html.dark [data-preview-skin="glass"] .skin-glass-preview-pane {
+  border-color: color-mix(in srgb, var(--color-white) 16%, transparent);
+  background: color-mix(in srgb, var(--color-neutral-900) 40%, transparent);
+}
