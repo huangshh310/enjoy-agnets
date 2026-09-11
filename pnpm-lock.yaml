@@ -327,6 +327,9 @@ catalogs:
       specifier: ^5.0.8
       version: 5.0.15
 
+overrides:
+  '@electron/get': 3.1.0
+
 importers:
 
   .:
@@ -1322,12 +1325,8 @@ packages:
     resolution: {integrity: sha512-zx0EIq78WlY/lBb1uXlziZmDZI4ubcCXIMJ4uGjXzZW0nS19TjSPeXPAjzzTmKQlJUZm0SbmZhPKP7tuQ1SsEw==}
     hasBin: true
 
-  '@electron/get@2.0.0':
-    resolution: {integrity: sha512-d0XfNGayKLrYRqddW4f2Zdjaj71LfvZlCnUN8ojyNMr7WD8v6B+fqdCV8Etnwn/vUfFWFwMk/HtLEFZy01h4tQ==}
-    engines: {node: '>=12'}
-
-  '@electron/get@3.0.0':
-    resolution: {integrity: sha512-hLv4BYFiyrNRI+U0Mm2X7RxCCdJLkDUn8GCEp9QJzbLpZRko+UaLlCjOMkj6TEtirNLPyBA7y1SeGfnpOB21aQ==}
+  '@electron/get@3.1.0':
+    resolution: {integrity: sha512-F+nKc0xW+kVbBRhFzaMgPy3KwmuNTYX1fx6+FxxoSnNgwYX6LD7AKBTWkU0MQ6IBoe7dz069CNkR673sPAgkCQ==}
     engines: {node: '>=14'}
 
   '@electron/notarize@2.5.0':
@@ -4085,9 +4084,6 @@ packages:
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
-  config-chain@1.1.13:
-    resolution: {integrity: sha512-qj+f8APARXHrM0hraqXYb2/bOVSV4PvJQlNZ/DVj0QrmNM2q2euizkeuVckQ57J+W0mRH6Hvi+k50M4Jul2VRQ==}
-
   content-disposition@1.1.0:
     resolution: {integrity: sha512-5jRCH9Z/+DRP7rkvY83B+yGIGX96OYdJmzngqnw2SBSxqCFPd0w2km3s5iawpGX8krnwSGmF0FW5Nhr0Hfai3g==}
     engines: {node: '>=18'}
@@ -4309,10 +4305,6 @@ packages:
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
-
-  encodeurl@1.0.2:
-    resolution: {integrity: sha512-TPJXq8JqFaVYm2CWmPvnP2Iyo4ZSM7/QKcSmuMLDObfpH5fi7RUGmd/rTDf+rut/saiDiQEeVTNgAmJEdAOx0w==}
-    engines: {node: '>= 0.8'}
 
   encodeurl@2.0.0:
     resolution: {integrity: sha512-Q0n9HRi4m6JuGIV1eFlmvJB7ZEVxu93IrMyiMsGC0lrMJMWzRgx6WGquyfQgZVb31vhGgXnfmPNNXmxnOkRBrg==}
@@ -4653,10 +4645,6 @@ packages:
   global-agent@3.0.0:
     resolution: {integrity: sha512-PT6XReJ+D07JvGoxQMkT6qji/jVNfX/h364XHZOWeRzy64sSFr+xJ5OX7LI3b4MPQzdL4H8Y8M0xzPpsVMwA8Q==}
     engines: {node: '>=10.0'}
-
-  global-tunnel-ng@2.7.1:
-    resolution: {integrity: sha512-4s+DyciWBV0eK148wqXxcmVAbFVPqtc3sEtUE/GTQfuU80rySLcMhUmHKSHI7/LDj8q0gDYI1lIhRRB7ieRAqg==}
-    engines: {node: '>=0.10'}
 
   globalthis@1.0.4:
     resolution: {integrity: sha512-DpLKbNU4WylpxJykQujfCcwYWiV/Jhm50Goo0wrVILAv5jOr9d+H+UR3PhSCD2rCCEIg0uc+G+muBTwD54JhDQ==}
@@ -5625,10 +5613,6 @@ packages:
     resolution: {integrity: sha512-VU4pzAuh7Kip71XEmO9aNREYAdMHFGTVj/i+CaTImS8x0i1d3jUZkXhqluy/PRgjPLMgsLQulYY3PJ/aSbSjpQ==}
     engines: {node: '>=10'}
 
-  npm-conf@1.1.3:
-    resolution: {integrity: sha512-Yic4bZHJOt9RCFbRP3GgpqhScOY4HH3V2P8yBj6CeYq118Qr+BLXqT2JvpJ00mryLESpgOxf5XlFv4ZjXxLScw==}
-    engines: {node: '>=4'}
-
   numeral@2.0.6:
     resolution: {integrity: sha512-qaKRmtYPZ5qdw4jWJD6bxEf1FJEqllJrwxCLIm0sQU/A7v2/czigzOb+C2uSiFsa9lBUzeH7M1oK+Q+OLxL3kA==}
 
@@ -5781,10 +5765,6 @@ packages:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
 
-  pify@3.0.0:
-    resolution: {integrity: sha512-C3FsVNH1udSEX48gGX1xfvwTWfsYWj5U+8/uK15BGzIGrKoUpghX8hWZwa/OFnakBiiVNmBvemTJR5mcy7iPcg==}
-    engines: {node: '>=4'}
-
   pkce-challenge@5.0.0:
     resolution: {integrity: sha512-ueGLflrrnvwB3xuo/uGob5pd5FN7l0MsLf0Z87o/UQmRtwjvfylfc9MurIxRAWywCYTgrvpXBcqjV4OfCYGCIQ==}
     engines: {node: '>=16.20.0'}
@@ -5858,9 +5838,6 @@ packages:
 
   property-information@7.2.0:
     resolution: {integrity: sha512-IAtzIB6sUiWaJYrX9smp3V46pBGbBeLFRGdh25kg1334VcBlD8HzhPeNIWQH9zhGmo2itIe25EHt9dQP7G5hmg==}
-
-  proto-list@1.2.4:
-    resolution: {integrity: sha512-vtK/94akxsTMhe0/cbfpR+syPuszcuwhqVjJq26CuNDgFGj682oRBXOP5MJpv2r7JtE8MsiepGIqvvOTBwn2vA==}
 
   protobufjs@7.6.6:
     resolution: {integrity: sha512-dYDWdjSl5RNb7SgPxGQcRU+GtvP7s2fpkrY0r432PcOIaZ0/rBcxEZnQN67iJhFuQiVw754JDoPruPCNdGsbjg==}
@@ -6356,10 +6333,6 @@ packages:
     resolution: {integrity: sha512-4SJ3dm0WAwWy/NVeioZh5AntkdJoWKxHxcmyP622fOkgHa4z3R0TdBJICINyaSDE6uNwVc8gZr+ZinwZAH4xIA==}
     hasBin: true
 
-  semver@6.2.0:
-    resolution: {integrity: sha512-jdFC1VdUGT/2Scgbimf7FSx9iJLXoqfglSF+gJeuNWVpiE37OIbc1jywR/GJyFdz3mnkz2/id0L0J/cr0izR5A==}
-    hasBin: true
-
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
@@ -6663,10 +6636,6 @@ packages:
 
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
-
-  tunnel@0.0.6:
-    resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
-    engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
 
   turbo@2.10.12:
     resolution: {integrity: sha512-AswgMPnpOoaVZHrrSBejETzEbuIA69OVGwfkHwfrY0A23VjWXBANzgq9+OymWOHAIArB7D1+1z498WY8fGg1Jw==}
@@ -7878,29 +7847,14 @@ snapshots:
       fs-extra: 9.0.1
       minimist: 1.2.8
 
-  '@electron/get@2.0.0(supports-color@7.1.0)':
+  '@electron/get@3.1.0(supports-color@7.1.0)':
     dependencies:
       debug: 4.4.3(supports-color@7.1.0)
       env-paths: 2.2.0
       fs-extra: 8.1.0
       got: 11.8.5
       progress: 2.0.3
-      semver: 6.2.0
-      sumchecker: 3.0.1(supports-color@7.1.0)
-    optionalDependencies:
-      global-agent: 3.0.0
-      global-tunnel-ng: 2.7.1
-    transitivePeerDependencies:
-      - supports-color
-
-  '@electron/get@3.0.0(supports-color@7.1.0)':
-    dependencies:
-      debug: 4.4.3(supports-color@7.1.0)
-      env-paths: 2.2.0
-      fs-extra: 8.1.0
-      got: 11.8.5
-      progress: 2.0.3
-      semver: 6.2.0
+      semver: 6.3.1
       sumchecker: 3.0.1(supports-color@7.1.0)
     optionalDependencies:
       global-agent: 3.0.0
@@ -10492,7 +10446,7 @@ snapshots:
     dependencies:
       '@electron/asar': 3.4.1
       '@electron/fuses': 1.8.0
-      '@electron/get': 3.0.0(supports-color@7.1.0)
+      '@electron/get': 3.1.0(supports-color@7.1.0)
       '@electron/notarize': 2.5.0(supports-color@7.1.0)
       '@electron/osx-sign': 1.3.3(supports-color@7.1.0)
       '@electron/rebuild': 4.2.0(supports-color@7.1.0)
@@ -10830,12 +10784,6 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  config-chain@1.1.13:
-    dependencies:
-      ini: 1.3.4
-      proto-list: 1.2.4
-    optional: true
-
   content-disposition@1.1.0: {}
 
   content-type@1.0.5: {}
@@ -11072,7 +11020,7 @@ snapshots:
 
   electron@39.8.10(supports-color@7.1.0):
     dependencies:
-      '@electron/get': 2.0.0(supports-color@7.1.0)
+      '@electron/get': 3.1.0(supports-color@7.1.0)
       '@types/node': 22.20.1
       extract-zip: 2.0.1(supports-color@7.1.0)
     transitivePeerDependencies:
@@ -11085,9 +11033,6 @@ snapshots:
   emoji-regex@10.6.0: {}
 
   emoji-regex@8.0.0: {}
-
-  encodeurl@1.0.2:
-    optional: true
 
   encodeurl@2.0.0: {}
 
@@ -11548,14 +11493,6 @@ snapshots:
       roarr: 2.15.3
       semver: 7.8.5
       serialize-error: 7.0.1
-    optional: true
-
-  global-tunnel-ng@2.7.1:
-    dependencies:
-      encodeurl: 1.0.2
-      lodash: 4.18.1
-      npm-conf: 1.1.3
-      tunnel: 0.0.6
     optional: true
 
   globalthis@1.0.4:
@@ -12866,12 +12803,6 @@ snapshots:
 
   normalize-url@6.0.1: {}
 
-  npm-conf@1.1.3:
-    dependencies:
-      config-chain: 1.1.13
-      pify: 3.0.0
-    optional: true
-
   numeral@2.0.6: {}
 
   object-assign@4.1.1: {}
@@ -13000,9 +12931,6 @@ snapshots:
 
   picomatch@4.0.7: {}
 
-  pify@3.0.0:
-    optional: true
-
   pkce-challenge@5.0.0: {}
 
   pkijs@3.4.0:
@@ -13091,9 +13019,6 @@ snapshots:
       signal-exit: 3.0.7
 
   property-information@7.2.0: {}
-
-  proto-list@1.2.4:
-    optional: true
 
   protobufjs@7.6.6:
     dependencies:
@@ -13803,8 +13728,6 @@ snapshots:
 
   semver@5.5.0: {}
 
-  semver@6.2.0: {}
-
   semver@6.3.1: {}
 
   semver@7.7.4: {}
@@ -14158,9 +14081,6 @@ snapshots:
   tunnel-agent@0.6.0:
     dependencies:
       safe-buffer: 5.1.2
-    optional: true
-
-  tunnel@0.0.6:
     optional: true
 
   turbo@2.10.12:

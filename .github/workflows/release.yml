@@ -36,6 +36,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Use official Electron downloads on CI
+        run: |
+          sed -i.bak -e '/^electron_mirror=/d' -e '/^electron_builder_binaries_mirror=/d' .npmrc
+          rm -f .npmrc.bak
       - name: Assert tag matches desktop version
         shell: bash
         run: |

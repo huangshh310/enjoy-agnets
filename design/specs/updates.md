@@ -42,3 +42,5 @@ IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.updat
 - `ENJOY_UPDATE_DEV=1` 必须同时 `forceDevUpdateConfig` 和 `updateConfigPath = …/dev-app-update.yml`（相对 `out/main` 是 `../../dev-app-update.yml`）。只改环境变量时 electron-updater 会静默跳过，快照停在 `checking`，设置按钮一直 disabled。`checkForUpdates` 结束后若仍是 `checking`，回落 `up-to-date`。
 - `quitAndInstall` 用 `installScheduled` 只调一次。不要在 `update-downloaded` 和 UI 按钮上各调一次无守卫的 quit。
 - `electron-builder` 会读 `apps/desktop/package.json` 的 `electron-updater` **字面量**。写成 `catalog:` 会被当成非法版本直接 `exit 1`（v0.1.0 三个平台同一秒挂）。此依赖不要进 pnpm catalog，桌面包必须写 semver（当前 `^6.6.2`）。发布前本地跑 `pnpm exec electron-builder --dir --publish never`。
+- `electron-builder@26.15` 会读 `@electron/get` 的 `ElectronDownloadCacheMode.ReadWrite`。锁到 `3.0.0` 时该枚举不存在，打包报 `Cannot read properties of undefined (reading 'ReadWrite')`。workspace `overrides` 钉 `@electron/get@3.1.0`。
+- 仓库 `.npmrc` 的 npmmirror 只给本机用。`release.yml` 在 `pnpm install` 前删掉 `electron_mirror` / `electron_builder_binaries_mirror`，GitHub runner 走官方下载。
