@@ -1,7 +1,7 @@
 /**
  * 侧栏底栏用户菜单：本机入口，没有退出登录或云账单。
  */
-import { RiFolder6Line, RiGroupLine, RiMessage2Line, RiSettings4Line } from "@remixicon/react"
+import { RiFolder6Line, RiMessage2Line, RiSettings4Line, RiUser3Line } from "@remixicon/react"
 import type { UserCardMenuGroup } from "./sidebar-user-card.types"
 
 export const APP_VERSION = "v0.1.0"
@@ -26,10 +26,10 @@ export function buildUserCardMenuGroups({
       label: t("chat.workspaceSection") || "工作空间",
       items: [
         {
-          id: "team-profile",
-          icon: RiGroupLine,
-          label: t("chat.teamAndMembers") || "团队与成员",
-          onClick: () => onNavigate("/settings/team")
+          id: "account-profile",
+          icon: RiUser3Line,
+          label: t("nav.account"),
+          onClick: () => onNavigate("/settings/account")
         },
         {
           id: "folders",

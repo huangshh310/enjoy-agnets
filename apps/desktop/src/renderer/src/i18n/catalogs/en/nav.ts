@@ -36,6 +36,6 @@ export const enNav = {
   billing: "Billing",
   organization: "Organization",
   companyIntegrations: "Company integrations",
-  account: "Account",
+  account: "Profile",
   notifications: "Notifications"
 }

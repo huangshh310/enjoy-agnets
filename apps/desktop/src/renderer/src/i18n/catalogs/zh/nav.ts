@@ -36,6 +36,6 @@ export const zhNav = {
   billing: "账单",
   organization: "组织资料",
   companyIntegrations: "企业集成",
-  account: "账号",
+  account: "个人资料",
   notifications: "通知"
 }

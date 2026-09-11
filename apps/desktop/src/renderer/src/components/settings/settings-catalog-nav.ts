@@ -1,18 +1,18 @@
 /**
- * 设置情境栏：应用偏好 / 智能体与模型 / 工作区与扩展 / 团队与账户。
- * 技能是一级入口。其余子路由仍映射到可见项，避免 24 项长列表。
+ * 设置情境栏：应用偏好 / 智能体与模型 / 工作区与扩展 / 组织。
+ * 组织一级入口是个人资料；团队/账单仍是诚实空态，不占侧栏。
  */
 import {
   RiEqualizer3Line,
   RiFileTextLine,
   RiFolder6Line,
-  RiGroupLine,
   RiKeyboardBoxLine,
   RiPaletteLine,
   RiPlugLine,
   RiSettings4Line,
   RiShieldKeyholeLine,
-  RiSparklingLine
+  RiSparklingLine,
+  RiUser3Line
 } from "@remixicon/react"
 import type { SettingsNavGroupDef } from "./settings-catalog.types"
 
@@ -94,10 +94,10 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
     labelKey: "nav.groupOrg",
     items: [
       {
-        id: "team",
-        labelKey: "nav.team",
-        icon: RiGroupLine,
-        keywords: ["profile", "members", "billing", "plan", "organization", "account", "notifications", "团队", "成员", "账单", "公司", "账号", "通知"]
+        id: "account",
+        labelKey: "nav.account",
+        icon: RiUser3Line,
+        keywords: ["profile", "avatar", "members", "billing", "plan", "organization", "account", "notifications", "个人", "资料", "团队", "成员", "账单", "公司", "账号", "通知"]
       }
     ]
   }

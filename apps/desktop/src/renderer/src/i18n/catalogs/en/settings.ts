@@ -823,7 +823,8 @@ export const enSettings = {
   localTeam: {
     title: "Local only",
     body: "Enjoy Agents has no cloud organization sync. You are the only operator on this machine. Use local Git for collaboration — there are no invite seats.",
-    membersBody: "There is no member directory or invite flow. This machine has only you."
+    membersBody: "There is no member directory or invite flow. This machine has only you.",
+    openProfile: "Open profile"
   },
   localIntegrations: {
     title: "Local integrations",

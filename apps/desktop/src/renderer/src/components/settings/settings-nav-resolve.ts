@@ -18,14 +18,14 @@ export function resolveActiveNavSectionId(section: SettingsSectionId): SettingsS
     case "telemetry":
     case "git":
       return "mcp"
+    case "team":
     case "members":
     case "billing":
     case "organization":
     case "integrations":
-    case "account":
     case "notifications":
     case "archived":
-      return "team"
+      return "account"
     default:
       return section
   }

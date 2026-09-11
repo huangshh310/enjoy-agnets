@@ -816,7 +816,8 @@ export const zhSettings = {
   localTeam: {
     title: "本地单机",
     body: "Enjoy Agents 没有云端组织同步。当前只有本机这一位操作者。多人协作请用本机 Git，不要期待邀请席位。",
-    membersBody: "没有成员目录或邀请函。本机只有你自己。"
+    membersBody: "没有成员目录或邀请函。本机只有你自己。",
+    openProfile: "打开个人资料"
   },
   localIntegrations: {
     title: "本机集成",

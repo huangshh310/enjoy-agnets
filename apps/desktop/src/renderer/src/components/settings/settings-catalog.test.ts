@@ -15,3 +15,12 @@ test("设置侧栏智能体分组包含技能入口", () => {
 test("打开 skills 时侧栏高亮技能自身而不是说明", () => {
   assert.equal(resolveActiveNavSectionId("skills"), "skills")
 })
+
+test("组织一级入口是个人资料，团队空态不高亮自己", () => {
+  const org = SETTINGS_NAV_DEF.find((group) => group.id === "org")
+  assert.ok(org)
+  assert.ok(org.items.some((item) => item.id === "account"))
+  assert.equal(org.items.some((item) => item.id === "team"), false)
+  assert.equal(resolveActiveNavSectionId("account"), "account")
+  assert.equal(resolveActiveNavSectionId("team"), "account")
+})
