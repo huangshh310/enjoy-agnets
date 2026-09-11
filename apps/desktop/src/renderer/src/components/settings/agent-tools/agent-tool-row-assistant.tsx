@@ -7,6 +7,8 @@ import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-
 import { formatInstallFailLine, type InstallRowPhase } from "./install-row-copy"
 import { formatListSecondary } from "./list-secondary"
 
+import { AgentToolMiniQuota } from "./agent-tool-mini-quota"
+
 export function AgentToolRowAssistant({
   tool,
   ready,
@@ -42,6 +44,7 @@ export function AgentToolRowAssistant({
           ) : null}
           <span className={`size-1.5 shrink-0 rounded-full ${status.dotClass}`} />
           <span className={`shrink-0 text-caption-2-medium ${status.textClass}`}>{status.label}</span>
+          <AgentToolMiniQuota tool={tool} />
         </div>
         <p className="truncate font-mono text-caption-2-regular text-text-tertiary" title={secondary}>
           {secondary}

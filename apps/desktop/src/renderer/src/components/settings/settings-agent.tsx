@@ -15,6 +15,8 @@ import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 import { SettingsSkillSources } from "./settings-skill-sources"
 
+import { SubscriptionsDashboard } from "./agent-tools/subscriptions-dashboard"
+
 export function AgentSettings() {
   const navigate = useNavigate()
   const search = parseSettingsSectionSearch(useSearch({ strict: false }))
@@ -67,6 +69,14 @@ export function AgentSettings() {
           <AgentToolsPage focus={focus} />
           <AgentCapabilityDocs onJump={onDocsJump} />
         </div>
+      ) : null}
+      {activeTab === "subscriptions" ? (
+        <SubscriptionsDashboard
+          onConfigureTool={(id) => {
+            setFocus({ id, at: Date.now() })
+            selectTab("racks")
+          }}
+        />
       ) : null}
       {activeTab === "registry" ? <AcpRegistryPage /> : null}
       {activeTab === "harness" ? <SettingsHarness /> : null}

@@ -8,19 +8,21 @@ import type { InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { catalogFor } from "@enjoy-agents/agent-harness"
 import { parseCodexDoctor, parseCodexLogin } from "../parse"
 import { runSafeCli } from "../run-cli"
+import { readCodexOfficialQuota } from "../session-usage"
 import { officialOrEmpty } from "./shared"
 
 export async function probeCodex(
   command: string,
   cwd: string
 ): Promise<Omit<InspectAgentToolResult, "id">> {
-  const [loginRaw, doctorRaw] = await Promise.all([
+  const [loginRaw, doctorRaw, officialQuota] = await Promise.all([
     runSafeCli("codex", command, ["login", "status"], { cwd }),
-    runSafeCli("codex", command, ["doctor", "--json"], { cwd })
+    runSafeCli("codex", command, ["doctor", "--json"], { cwd }),
+    readCodexOfficialQuota()
   ])
   const login = loginRaw
     ? parseCodexLogin(loginRaw)
-    : { loggedIn: false, authMethod: "codex login", organization: "OpenAI" }
+    : { loggedIn: Boolean(officialQuota?.hasQuota), authMethod: "codex login", organization: "OpenAI" }
   const doctor = doctorRaw ? parseCodexDoctor(doctorRaw) : { customProvider: false }
   const publicConfig = readCodexPublicConfig()
   const authAccount = buildCodexAccount(login, doctor, publicConfig)
@@ -28,7 +30,7 @@ export async function probeCodex(
     authAccount,
     quotaInfo: officialOrEmpty(
       authAccount.loggedIn,
-      undefined,
+      officialQuota,
       authAccount.tier ?? "Codex",
       publicConfig.host || publicConfig.model
     ),

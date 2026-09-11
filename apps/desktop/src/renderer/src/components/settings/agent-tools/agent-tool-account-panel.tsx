@@ -10,6 +10,9 @@ import { pickQuotaPercent } from "./agent-tool-quota"
 import { AgentToolQuotaGrid } from "./agent-tool-account-quota"
 import { AgentToolAccountAside } from "./agent-tool-account-aside"
 import { officialAccountRole } from "./official-account-role"
+import { RateLimitResetsCard } from "./rate-limit-resets-card"
+import { SubscriptionQuotaMeter } from "./subscription-quota-meter"
+import { UsageTrendSparkline } from "./usage-trend-sparkline"
 
 export function AgentToolAccountPanel({ tool }: { tool: AgentToolPublic }) {
   const role = officialAccountRole(tool)
@@ -69,19 +72,42 @@ function renderQuotaBlock(
   showAll: boolean,
   onToggle: () => void
 ) {
-  if (!capabilitiesOf(tool).quota) return <HonestQuotaEmpty reason="no-api" />
-  if (quotas.length > 0) {
-    return (
-      <AgentToolQuotaGrid
-        pinned={quotas.slice(0, 4)}
-        rest={quotas.slice(4)}
-        showAll={showAll}
-        onToggle={onToggle}
-      />
-    )
-  }
-  if (pickQuotaPercent(tool.quotaInfo, tool.selectedModel) != null) return null
-  return <HonestQuotaEmpty reason="no-data" />
+  const quotaInfo = tool.quotaInfo
+  const windows = quotaInfo?.windows ?? []
+  const hasWindows = windows.length > 0
+  const hasResetCredits = Boolean(quotaInfo?.resetCredits?.availableCount)
+  const hasSpend = Boolean(quotaInfo?.spend)
+
+  if (!capabilitiesOf(tool).quota && !hasSpend) return <HonestQuotaEmpty reason="no-api" />
+
+  return (
+    <div className="space-y-3 pt-1">
+      {hasWindows ? (
+        <div>
+          {windows.map((win) => (
+            <SubscriptionQuotaMeter key={win.id || win.name} window={win} />
+          ))}
+        </div>
+      ) : quotas.length > 0 ? (
+        <AgentToolQuotaGrid
+          pinned={quotas.slice(0, 4)}
+          rest={quotas.slice(4)}
+          showAll={showAll}
+          onToggle={onToggle}
+        />
+      ) : capabilitiesOf(tool).quota && pickQuotaPercent(quotaInfo, tool.selectedModel) == null ? (
+        <HonestQuotaEmpty reason="no-data" />
+      ) : null}
+
+      {hasResetCredits && quotaInfo?.resetCredits ? (
+        <RateLimitResetsCard resetCredits={quotaInfo.resetCredits} />
+      ) : null}
+
+      {hasSpend && quotaInfo?.spend ? (
+        <UsageTrendSparkline spend={quotaInfo.spend} />
+      ) : null}
+    </div>
+  )
 }
 
 function Meta({ label, value }: { label: string; value?: string }) {

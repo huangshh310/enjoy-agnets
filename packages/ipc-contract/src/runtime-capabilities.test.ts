@@ -37,7 +37,7 @@ test("六家快照：spawn / thinking / fast / quota / providerBind", () => {
 
   assert.equal(capabilitiesFor("claude").thinking, "model-id")
   assert.equal(capabilitiesFor("claude").fast, "none")
-  assert.equal(capabilitiesFor("claude").quota, false)
+  assert.equal(capabilitiesFor("claude").quota, true)
   assert.equal(capabilitiesFor("claude").login, true)
   assert.equal(capabilitiesFor("claude").models, "inspect")
   assert.equal(capabilitiesFor("claude").providerBind, "anthropic")
@@ -52,7 +52,7 @@ test("六家快照：spawn / thinking / fast / quota / providerBind", () => {
   assert.equal(capabilitiesFor("grok").thinking, "none")
   assert.equal(capabilitiesFor("grok").quota, true)
 
-  assert.equal(capabilitiesFor("codex").quota, false)
+  assert.equal(capabilitiesFor("codex").quota, true)
   assert.equal(capabilitiesFor("codex").models, "inspect")
   assert.equal(capabilitiesFor("codex").providerBind, "openai")
 

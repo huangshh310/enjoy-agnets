@@ -1,7 +1,7 @@
 /**
  * 智能体设置分段：空态可深链到 Registry，不上 EngineRail。
  */
-export const AGENT_SETTINGS_TABS = ["racks", "registry", "harness", "defaults"] as const
+export const AGENT_SETTINGS_TABS = ["racks", "subscriptions", "registry", "harness", "defaults"] as const
 export type AgentSettingsTab = (typeof AGENT_SETTINGS_TABS)[number]
 
 const AGENT_TAB_SET = new Set<string>(AGENT_SETTINGS_TABS)

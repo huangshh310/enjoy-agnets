@@ -1,12 +1,13 @@
 /**
  * 智能体设置分段条：本机 CLI / Registry / 沙箱 / 默认项。
  */
-import { RiApps2Line, RiCpuLine, RiEqualizer3Line, RiTerminalBoxLine } from "@remixicon/react"
+import { RiApps2Line, RiCpuLine, RiEqualizer3Line, RiSparklingLine, RiTerminalBoxLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
 import type { AgentSettingsTab } from "./settings-agent-tab"
 
 const ICONS = {
   racks: RiCpuLine,
+  subscriptions: RiSparklingLine,
   registry: RiApps2Line,
   harness: RiTerminalBoxLine,
   defaults: RiEqualizer3Line
@@ -22,6 +23,7 @@ export function AgentSettingsTabs({
   const t = useT()
   const tabs: Array<{ id: AgentSettingsTab; label: string }> = [
     { id: "racks", label: t("settings.agentTools.tabEngines") },
+    { id: "subscriptions", label: t("settings.agentTools.tabSubscriptions") },
     { id: "registry", label: t("settings.agentTools.tabRegistry") },
     { id: "harness", label: t("settings.agentTools.tabSandbox") },
     { id: "defaults", label: t("settings.agentTools.tabDefaults") }
@@ -38,7 +40,7 @@ export function AgentSettingsTabs({
             onClick={() => onSelect(tab.id)}
             className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-caption-1-medium ${
               on
-                ? "bg-background-primary-default font-semibold text-text-primary shadow-xs ring-1 ring-border-button-default"
+                ? "bg-background-primary-default text-text-primary shadow-xs ring-1 ring-border-button-default"
                 : "text-text-secondary hover:bg-background-primary-default/60 hover:text-text-primary"
             }`}
           >

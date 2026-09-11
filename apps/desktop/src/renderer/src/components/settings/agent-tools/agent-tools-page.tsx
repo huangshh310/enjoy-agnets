@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiSearchLine } from "@remixicon/react"
-import { useQueryClient } from "@tanstack/react-query"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
@@ -17,13 +16,9 @@ type FilterTab = "all" | "ready" | "available" | "soon"
 
 export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } | null }) {
   const t = useT()
-  const queryClient = useQueryClient()
   const tools = useSettingsSnapshot().data?.agentTools ?? []
   const [activeTab, setActiveTab] = useState<FilterTab>("all")
   const [searchQuery, setSearchQuery] = useState("")
-  useEffect(() => {
-    void queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
-  }, [queryClient])
   useEffect(() => {
     if (!focus) return
     setActiveTab("all")

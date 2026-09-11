@@ -76,13 +76,62 @@ export const ModelQuotaItem = z.object({
 })
 export type ModelQuotaItem = z.infer<typeof ModelQuotaItem>
 
+export const QuotaPacingStatus = z.enum(["safe", "warning", "danger", "exhausted"])
+export type QuotaPacingStatus = z.infer<typeof QuotaPacingStatus>
+
+export const QuotaWindowItem = z.object({
+  id: z.string(),
+  name: z.string(),
+  displayName: z.string(),
+  usedPercent: z.number(),
+  resetsIn: z.string().nullable().optional(),
+  resetAt: z.number().nullable().optional(),
+  windowType: z.enum(["session", "weekly", "monthly", "credit", "other"]).optional(),
+  /** Extra Usage 等无上限行，只展示 statusText */
+  statusText: z.string().optional(),
+  pacing: z.object({
+    status: QuotaPacingStatus,
+    evenPacePercent: z.number().optional(),
+    projectedPercentAtReset: z.number().optional(),
+    cushionPercent: z.number().optional(),
+    projectedRunOutAt: z.number().nullable().optional()
+  }).optional()
+})
+export type QuotaWindowItem = z.infer<typeof QuotaWindowItem>
+
+export const RateLimitResetCredit = z.object({
+  id: z.string(),
+  expiresAt: z.number(),
+  expiresIn: z.string()
+})
+export type RateLimitResetCredit = z.infer<typeof RateLimitResetCredit>
+
+export const ProviderSpendStats = z.object({
+  today: z.object({ costUsd: z.number().optional(), tokens: z.number() }).optional(),
+  yesterday: z.object({ costUsd: z.number().optional(), tokens: z.number() }).optional(),
+  last30Days: z.object({ costUsd: z.number().optional(), tokens: z.number() }).optional(),
+  trend30Days: z.array(z.object({
+    day: z.string(),
+    tokens: z.number(),
+    costUsd: z.number().optional()
+  })).optional()
+})
+export type ProviderSpendStats = z.infer<typeof ProviderSpendStats>
+
 export const AgentToolQuotaInfo = z.object({
   hasQuota: z.boolean(),
   usedPercent: z.number().optional(),
   resetsIn: z.string().optional(),
   windowType: z.string().optional(),
   details: z.string().optional(),
-  modelQuotas: z.array(ModelQuotaItem).optional()
+  modelQuotas: z.array(ModelQuotaItem).optional(),
+  windows: z.array(QuotaWindowItem).optional(),
+  resetCredits: z.object({
+    availableCount: z.number(),
+    credits: z.array(RateLimitResetCredit).optional(),
+    canClaim: z.boolean().optional()
+  }).optional(),
+  spend: ProviderSpendStats.optional()
 })
 export type AgentToolQuotaInfo = z.infer<typeof AgentToolQuotaInfo>
 

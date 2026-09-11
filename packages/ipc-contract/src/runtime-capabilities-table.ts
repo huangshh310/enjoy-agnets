@@ -68,7 +68,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
   claude: acpHost({
     models: "inspect",
     login: true,
-    quota: false,
+    quota: true,
     thinking: "model-id",
     fast: "none",
     providerBind: "anthropic"
@@ -92,7 +92,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
   codex: acpHost({
     models: "inspect",
     login: true,
-    quota: false,
+    quota: true,
     thinking: "none",
     fast: "none",
     providerBind: "openai"

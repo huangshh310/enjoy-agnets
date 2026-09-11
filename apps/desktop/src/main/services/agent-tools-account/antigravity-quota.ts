@@ -1,7 +1,8 @@
 /**
  * Antigravity 公开配额。quota_groups.remaining_fraction 是剩余，进度条画已用。
  */
-import type { AgentToolQuotaInfo, ModelQuotaItem } from "@enjoy-agents/ipc-contract"
+import type { AgentToolQuotaInfo, ModelQuotaItem, QuotaWindowItem } from "@enjoy-agents/ipc-contract"
+import { calculateQuotaPacing, DURATION_5_HOURS_MS, DURATION_7_DAYS_MS } from "./quota-pacing.ts"
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined
@@ -47,12 +48,40 @@ export function quotaFromAntigravity(
   details?: string
 ): AgentToolQuotaInfo | undefined {
   if (!groups.length) return undefined
+  const worstUsed = Math.max(...groups.map((g) => g.percentage))
+  const windows: QuotaWindowItem[] = groups.map((g) => {
+    const is5h = g.name.toLowerCase().includes("5h") || g.name.toLowerCase().includes("session")
+    const duration = is5h ? DURATION_5_HOURS_MS : DURATION_7_DAYS_MS
+    const resetMs = g.resetTime ? new Date(g.resetTime).getTime() : null
+    return {
+      id: g.name,
+      name: g.name,
+      displayName: antigravityWindowLabel(g.displayName, g.name),
+      usedPercent: g.percentage,
+      resetsIn: g.resetsIn,
+      resetAt: resetMs,
+      windowType: is5h ? "session" : "weekly",
+      pacing: calculateQuotaPacing(g.percentage, duration, resetMs)
+    }
+  })
   return {
     hasQuota: true,
+    usedPercent: worstUsed,
     windowType: tier ?? "Antigravity",
     details,
-    modelQuotas: groups
+    modelQuotas: groups,
+    windows
   }
+}
+
+function antigravityWindowLabel(displayName: string, name: string): string {
+  const text = `${displayName} ${name}`.toLowerCase()
+  const weekly = text.includes("week")
+  const gemini = text.includes("gemini")
+  if (gemini && weekly) return "Weekly"
+  if (gemini) return "Session"
+  if (weekly) return "Claude Weekly"
+  return "Claude"
 }
 
 function bucketToQuota(groupName: string, raw: unknown): ModelQuotaItem | undefined {

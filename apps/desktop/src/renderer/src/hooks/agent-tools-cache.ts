@@ -12,3 +12,7 @@ export function rememberAgentTools(tools: AgentToolPublic[]): void {
 export function rememberedAgentTool(id: string): AgentToolPublic | undefined {
   return cached.find((item) => item.id === id)
 }
+
+export function rememberedAgentTools(): AgentToolPublic[] {
+  return cached
+}
