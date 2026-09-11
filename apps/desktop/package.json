@@ -1,9 +1,13 @@
 {
   "name": "@enjoy-agents/desktop",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Enjoy Agents desktop shell",
   "author": "Enjoy Agents",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huangshh310/enjoy-agnets.git"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

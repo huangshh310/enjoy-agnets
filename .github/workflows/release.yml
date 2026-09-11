@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -27,8 +31,14 @@ jobs:
             args: --linux
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 12.3.4
@@ -36,13 +46,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - name: Use official Electron downloads on CI
-        run: |
-          sed -i.bak -e '/^electron_mirror=/d' -e '/^electron_builder_binaries_mirror=/d' .npmrc
-          rm -f .npmrc.bak
       - name: Assert tag matches desktop version
-        shell: bash
         run: |
+          set -euo pipefail
           if [[ "${GITHUB_REF}" != refs/tags/v* ]]; then
             echo "Release 只接受 v* tag（当前 ${GITHUB_REF}）"
             exit 1
@@ -55,9 +61,33 @@ jobs:
           fi
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @enjoy-agents/desktop run build
+      - name: Check packer deps
+        working-directory: apps/desktop
+        run: |
+          set -euo pipefail
+          node -e "
+            const { createRequire } = require('module')
+            const path = require('path')
+            const here = path.join(process.cwd(), 'package.json')
+            const pkg = require(here)
+            const updater = pkg.dependencies['electron-updater']
+            console.log('electron-updater field', updater)
+            if (!updater || updater.includes('catalog')) {
+              console.error('electron-updater must be a semver, not catalog:')
+              process.exit(1)
+            }
+            const req = createRequire(here)
+            const eb = req.resolve('electron-builder/package.json')
+            const abl = createRequire(eb).resolve('app-builder-lib/package.json')
+            const getPkg = createRequire(abl).resolve('@electron/get/package.json')
+            const getJson = require(getPkg)
+            const get = require(path.dirname(getPkg))
+            console.log('@electron/get', getJson.version)
+            if (!get.ElectronDownloadCacheMode) {
+              console.error('ElectronDownloadCacheMode missing; need @electron/get >= 3.1.0')
+              process.exit(1)
+            }
+          "
       - name: Publish
         working-directory: apps/desktop
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: pnpm exec electron-builder ${{ matrix.args }} --publish always
