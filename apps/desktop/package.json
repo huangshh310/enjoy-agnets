@@ -1,6 +1,6 @@
 {
   "name": "@enjoy-agents/desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Enjoy Agents desktop shell",
   "main": "./out/main/index.js",
@@ -54,7 +54,7 @@
     "react-resizable-panels": "catalog:",
     "shiki": "catalog:",
     "tailwind-merge": "catalog:",
-    "electron-updater": "catalog:",
+    "electron-updater": "^6.6.2",
     "zod": "catalog:",
     "zustand": "catalog:"
   },

@@ -1,6 +1,6 @@
 # spec/updates
 
-> 打包应用从 GitHub Releases 检查更新、展示发行说明、下载后重启安装。最后更新：2026-09-07
+> 打包应用从 GitHub Releases 检查更新、展示发行说明、下载后重启安装。最后更新：2026-09-11
 
 ## 当前真相
 
@@ -41,3 +41,4 @@ IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.updat
 - 开发态 `pnpm dev` 没有 `app-update.yml`，检查更新应返回 `dev`，不要抛到设置页红字。
 - `ENJOY_UPDATE_DEV=1` 必须同时 `forceDevUpdateConfig` 和 `updateConfigPath = …/dev-app-update.yml`（相对 `out/main` 是 `../../dev-app-update.yml`）。只改环境变量时 electron-updater 会静默跳过，快照停在 `checking`，设置按钮一直 disabled。`checkForUpdates` 结束后若仍是 `checking`，回落 `up-to-date`。
 - `quitAndInstall` 用 `installScheduled` 只调一次。不要在 `update-downloaded` 和 UI 按钮上各调一次无守卫的 quit。
+- `electron-builder` 会读 `apps/desktop/package.json` 的 `electron-updater` **字面量**。写成 `catalog:` 会被当成非法版本直接 `exit 1`（v0.1.0 三个平台同一秒挂）。此依赖不要进 pnpm catalog，桌面包必须写 semver（当前 `^6.6.2`）。发布前本地跑 `pnpm exec electron-builder --dir --publish never`。
