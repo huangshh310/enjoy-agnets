@@ -60,15 +60,34 @@ export function projectLabelFromCwd(cwd: string | undefined): string | undefined
 
 export function usageFromTokenFields(record: Record<string, unknown> | null): UsageDelta | null {
   if (!record) return null
-  const inputTokens = intField(record, "input_tokens")
-  const outputTokens =
-    intField(record, "output_tokens") + intField(record, "reasoning_output_tokens")
-  const cacheTokens =
-    intField(record, "cache_read_input_tokens") +
-    intField(record, "cache_creation_input_tokens") +
-    intField(record, "cached_input_tokens") +
-    intField(record, "cache_write_input_tokens")
-  const totalTokens = intField(record, "total_tokens")
+  const snake = usageFromNamedFields(record, {
+    input: ["input_tokens"],
+    output: ["output_tokens", "reasoning_output_tokens"],
+    cache: [
+      "cache_read_input_tokens",
+      "cache_creation_input_tokens",
+      "cached_input_tokens",
+      "cache_write_input_tokens"
+    ],
+    total: "total_tokens"
+  })
+  if (snake) return snake
+  return usageFromNamedFields(record, {
+    input: ["input", "inputTokens"],
+    output: ["output", "outputTokens"],
+    cache: ["cacheRead", "cacheWrite", "cachedReadTokens", "cacheCreationTokens"],
+    total: "totalTokens"
+  })
+}
+
+function usageFromNamedFields(
+  record: Record<string, unknown>,
+  keys: { input: string[]; output: string[]; cache: string[]; total: string }
+): UsageDelta | null {
+  const inputTokens = keys.input.reduce((sum, key) => sum + intField(record, key), 0)
+  const outputTokens = keys.output.reduce((sum, key) => sum + intField(record, key), 0)
+  const cacheTokens = keys.cache.reduce((sum, key) => sum + intField(record, key), 0)
+  const totalTokens = intField(record, keys.total)
   if (inputTokens + outputTokens + cacheTokens + totalTokens <= 0) return null
   return {
     inputTokens,

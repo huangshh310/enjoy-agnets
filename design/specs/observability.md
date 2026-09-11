@@ -1,6 +1,6 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-10
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-11
 
 ## 当前真相
 
@@ -11,7 +11,7 @@
 2. **模型路由与上游调度 (Model Routing)**：对齐 Grok2API 路由架构，可视化对外模型标识、上游**协议风格 + 模型 id**（不下发 vault `baseURL`）、接口多模态能力、按 Telemetry 聚合的调用量 / 成功率 / P95（忽略 0ms）、以及一键 `settings.pingProvider` Ping；
 3. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉。时间尺用指标里有的 send → TTFO → done，再叠加本 run 回放缓冲里的 `tool.*` / `approval.required` / `approval.resolved`（工具名与 `decision`，不含 args）。`buildTraceDataFromMetric` **禁止**编造 RAG/MCP span 或 `|| 850` token。没有 `ttfoMs` 就不画 TTFO 段；没有 `durationMs` 就总时长为 0。`estimatedCost` 目前没有真实单价字段，固定 0。指标没有 `sessionId` 时只提供「回到对话」，不要假装能打开源会话；
 4. **事件流回放 (Stream Replay)**：主进程内存缓冲事件流回放。
-5. **本机记录 (cliUsage)**：catalog 12 源四态。扫描 Claude / Codex jsonl 与 Grok `usage.json` session 合计。不是官方额度，不上 Composer。Grok ticks 可单独展示，不估其它 CLI 费用。
+5. **本机记录 (cliUsage)**：导轨 12 个 CLI **都扫盘**（不再标「本版本不扫描」）。Claude / Codex jsonl、Grok `usage.json`、OMP `~/.omp/agent/sessions/**/*.jsonl`（camelCase `message.usage`）有字段就入表。Cursor 只扫 `projects/*/agent-transcripts/*.jsonl`（无 usage 字段 → scanned-empty）。其余按家目录 jsonl 扫，目录不在是 directory-missing，有文件无用量是 scanned-empty。不是官方额度，不上 Composer。主区「按 CLI 贡献」；点选过滤。Grok ticks 挂在 Grok 行。无用量源默认收起。日 / 模型 / 项目一张表。不估单价、不读 `store.db` / prompt。顶栏本视图用「本机记录」文案。
 可一键导出 JSON / CSV 报表（仍只含 Enjoy 遥测，不含 jsonl 原文）。
 ## 不变量
 
@@ -39,4 +39,4 @@
 - Ping 必须打 `settings.pingProvider`（已存供应商 id + kind），禁止用 `observability.metrics` 耗时或 `Math.max(ms, 45)` 假装连通。没有 `providerId` 就禁用探测，不要报假成功。
 - 侧栏模型数量用 `store.models.length`，0 就是 0，禁止 `|| 10`。上游列没有协议信息时只显示模型 id，禁止拼 `Endpoint/{id}`。
 - 健康态看该行是否已配置模型 + 调用成功率，不要用全局 `hasKey` 一刀切。
-- `observability.cliUsage` 不得把 prompt、jsonl 原文或绝对路径交给 renderer。目录不存在是空态，不是 0 填充条。unsupported 不碰盘。Grok 只接受 `sessions/<group>/<id>/usage.json`。Codex 拆分全 0 画 `—`。混合有/无拆分不走四卡 KPI。
+- `observability.cliUsage` 不得把 prompt、jsonl 原文或绝对路径交给 renderer。目录不存在是空态，不是 0 填充条。导轨 CLI 都扫盘；没有用量字段是 scanned-empty，不要写「本版本不扫描」。Cursor 禁止读 `store.db` / 禁止扫 `node_modules`。Grok 只接受 `sessions/<group>/<id>/usage.json`。OMP 只累加 `message.usage` 数字，不把 `cost` 美元当账单。Codex 拆分全 0 画 `—`。混合有/无拆分时脉冲行不画输入/输出/缓存。过滤走 client-side：KPI 用源级字段，表行按 `sourceIds` 筛选。贡献列费用 / token / 占比定宽对齐；脉冲行合计与会话同一栅格。

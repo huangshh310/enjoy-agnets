@@ -57,10 +57,11 @@ export const CUSTOM_UPSTREAM_MODEL_KEY = "custom-upstream"
 
 export function formatBucketLabel(key: string, translate: (path: string) => string): string {
   if (key === CUSTOM_UPSTREAM_MODEL_KEY) return translate("pages.observability.cliUsageCustomUpstream")
+  if (key === "—" || key === "") return translate("pages.observability.cliUsageUnknownModel")
   return key
 }
 
-/** 与 ipc-contract GROK_USD_TICKS_PER_DOLLAR 同值：1 USD = 10^10 ticks。 */
+/** 与 ipc-contract GROK_USD_TICKS_PER_DOLLAR 同值。测试不能走 barrel 的 value import。 */
 export const GROK_USD_TICKS_PER_DOLLAR = 10_000_000_000
 
 export function grokTicksToUsd(ticks: number): number {

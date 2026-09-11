@@ -3,7 +3,7 @@
 | 字段 | 值 |
 |---|---|
 | 作者 | TBD |
-| 日期 | 2026-09-10 |
+| 日期 | 2026-09-11 |
 | 状态 | Implemented |
 | 仓库 | enjoy-agnets |
 | 关联 spec | `design/specs/m1-usage-and-capabilities.md` · `design/specs/observability.md` · `design/specs/ipc.md` |
@@ -508,16 +508,20 @@ const SOURCE_NAME_KEY: Record<CliUsageSourceId, string> = {
 
 PR1 加一条会失败的测试（renderer 纯函数或 snapshot）：`sourceChipLabel({ id: "grok", status: "unsupported", … })` 不得包含 Codex 词条 / `cliUsageCodex`。
 
-视觉：BoardUI 语义 token（`border-separator-border` / `text-text-*` / `bg-background-*`），与现芯片一致。
+视觉：BoardUI 语义 token（`border-separator-border` / `text-text-*` / `bg-background-*`）。**当前 UI（2026-09-11）**不再平铺 12 粒芯片 + 三张 KPI 卡 + 三张同构表：
 
-| status | 芯片 |
+- 脉冲行：合计 + 会话同一栅格对齐。混源不画输入/输出/缓存。
+- 主区「按 CLI 贡献」：费用 / token / 占比定宽列；点选过滤。
+- Grok 费用挂在 Grok 行，不与总 token 并排。
+- 导轨 12 个 CLI 都扫盘。无用量 / 目录缺失默认收起。不要再写「本版本不扫描」。
+- 日 / 模型 / 项目一张表、分段切换；行上画来源标。混源行标「多来源」。
+
+| status | 展示 |
 |---|---|
-| `has-usage` | 实线；`{name} · {n} 份会话` |
-| `directory-missing` | 虚线；`{name} · 未找到记录` |
-| `scanned-empty` | 虚线；`fileCount>0` → `{name} · 无用量字段`，否则 `{name} · 目录为空` |
-| `unsupported` | 更弱的 tertiary；`{name} · 本版本不扫描` |
-
-芯片按 `CLI_USAGE_SOURCE_IDS` 全列。过滤点击是 PR4 非阻塞项：`has-usage` 芯片切换 `selectedSourceId`；再点一次回到全部。KPI / 表 / 费用卡跟过滤走。不实现过滤也不阻塞 PR4 合并。
+| `has-usage` | 贡献列表一行；`{name}` + token + 会话 |
+| `directory-missing` | 收起组「未找到记录」 |
+| `scanned-empty` | 收起组；`fileCount>0` → 「无用量字段」，否则「目录为空」 |
+| `unsupported` | 收起组「本版本不扫描」 |
 
 ### 9. 性能与隐私
 

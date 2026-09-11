@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-10
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-11
 
 ## 当前真相
 
@@ -27,7 +27,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 额度条只给 Cursor / Grok / Antigravity。Claude / Codex / Enjoy 本地：**不画空条**，诚实文案「该 CLI 无公开额度 API」。禁止 `Math.max(%, 2)` 假填充、90/95/100 占位、遥测伪造「5 小时 / 周度」计划条。
 
-本机记录（不是 L1）：`observability.cliUsage` 返回导轨 12 个 CLI 的四态（`has-usage` / `directory-missing` / `scanned-empty` / `unsupported`）。本轮扫描 Claude jsonl、Codex jsonl、Grok `~/.grok/sessions/<group>/<id>/usage.json`（session 合计，不累加 `turns[]`，忽略 `subagents/`）。其余 catalog 源标 unsupported **且不碰盘**。聚合成日 / 模型 / 项目名。Grok `costUsdTicks`（1 USD = 10^10 ticks）可单独展示「Grok 记录的费用」，禁止按模型 id 猜单价。Codex 不用 `model_provider` 当模型名（`custom` → `custom-upstream`）。混合有/无拆分时 KPI 不走四卡。挂 `#/observability`「本机记录」。renderer 只拿数字。目录不存在走空态，不画额度条。项目名只留 cwd 最后一段。
+本机记录（不是 L1）：`observability.cliUsage` 返回导轨 12 个 CLI 的四态。**12 源都扫盘**：Claude jsonl、Codex jsonl、Grok `usage.json` session 合计、OMP sessions jsonl（`message.usage` camelCase）、Cursor `agent-transcripts` jsonl（无 usage → scanned-empty）、其余按各家家目录 jsonl。目录不在 → directory-missing；有文件无用量 → scanned-empty。不要把导轨 CLI 标成「本版本不扫描」。聚合成日 / 模型 / 项目名。UI 主区按 CLI 贡献；点选过滤。Grok ticks 写在 Grok 行，禁止按模型 id 猜单价。Codex 不用 `model_provider` 当模型名。混合有/无拆分时脉冲行不画拆分。无用量源默认收起。挂 `#/observability`「本机记录」。renderer 只拿数字。项目名只留 cwd 最后一段。
 
 状态：`empty` 隐藏 · `loading` 骨架 · `no-quota` 诚实空态 · `has-quota` 官方数字 · `error` L4 卡。
 
@@ -67,4 +67,4 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。
 - L3 禁止再写 720 系统 / 260 技能假地板。Limits 卡必须吃检查器同一本账（含芯片与压缩后消息），不要自己再估一套。切到 CLI 后规则/技能桶必须是 0。
 - UsagePill / QuotaExhaustedCard 只用审批铬语义 token（`text-error-primary` / `background-tertiary-error` / `border-error-default`），禁止 `bg-rose-500` / `bg-amber-500`。
-- 本机 jsonl 用量不是 L1。禁止把它画进 Composer `UsagePill`，也禁止按模型 id 猜单价做成账单。Claude 按行累加 `message.usage`；Codex 每个文件只取最后一次 `token_count.total_token_usage`。Grok 只读 `usage.json` 的 `session` 合计。unsupported 源禁止 `existsSync`。
+- 本机 jsonl 用量不是 L1。禁止把它画进 Composer `UsagePill`，也禁止按模型 id 猜单价做成账单。Claude 按行累加 `message.usage`；Codex 每个文件只取最后一次 `token_count.total_token_usage`。Grok 只读 `usage.json` 的 `session` 合计。OMP 按行累加 camelCase `message.usage`，不要把 OMP `cost` 美元并进 Grok ticks。Cursor transcript 无 usage 字段时是 scanned-empty，不要读 `store.db`。过滤后 KPI 必须用该源自己的 token 字段。

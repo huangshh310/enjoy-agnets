@@ -33,6 +33,7 @@ export function ObservabilityPageHeader(props: {
   onViewChange: (view: ActiveObservabilityView) => void
 }) {
   const t = useT()
+  const copy = headerCopy(props.activeView === "cliUsage", t)
   return (
     <header className="flex shrink-0 flex-col gap-2.5 border-b border-separator-border/70 pb-2">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -43,10 +44,10 @@ export function ObservabilityPageHeader(props: {
             </h1>
             <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.5 font-mono text-caption-2-medium text-accent-500">
               <span className="size-1.5 rounded-full bg-accent-500" />
-              {t("pages.observability.localApm")}
+              {copy.badge}
             </span>
           </div>
-          <p className="text-caption-2-medium text-text-tertiary">{t("pages.observability.subtitle")}</p>
+          <p className="text-caption-2-medium text-text-tertiary">{copy.subtitle}</p>
         </div>
         <Button
           size="sm"
@@ -56,7 +57,7 @@ export function ObservabilityPageHeader(props: {
           className="h-7.5 shrink-0 gap-1.5 text-caption-2-medium"
         >
           <RiRefreshLine className={cx("size-3.5", props.isRefreshing && "animate-spin")} />
-          <span>{t("pages.observability.refreshMetrics")}</span>
+          <span>{copy.refresh}</span>
         </Button>
       </div>
       <div className="flex items-center gap-1 pt-1">
@@ -72,6 +73,21 @@ export function ObservabilityPageHeader(props: {
       </div>
     </header>
   )
+}
+
+function headerCopy(cliUsage: boolean, t: ReturnType<typeof useT>) {
+  if (cliUsage) {
+    return {
+      badge: t("pages.observability.cliUsageEyebrow"),
+      subtitle: t("pages.observability.cliUsageSubtitle"),
+      refresh: t("pages.observability.refreshCliUsage")
+    }
+  }
+  return {
+    badge: t("pages.observability.localApm"),
+    subtitle: t("pages.observability.subtitle"),
+    refresh: t("pages.observability.refreshMetrics")
+  }
 }
 
 function ViewTab(props: {

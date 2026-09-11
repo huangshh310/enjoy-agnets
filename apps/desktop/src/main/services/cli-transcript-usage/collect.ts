@@ -4,9 +4,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs"
 import { homedir } from "node:os"
 import type { CliTranscriptUsage, CliUsageSource, CliUsageSourceId } from "@enjoy-agents/ipc-contract"
-import { claudeAdapter } from "./adapters/claude.ts"
-import { codexAdapter } from "./adapters/codex.ts"
-import { grokAdapter } from "./adapters/grok.ts"
+import { adapterFor } from "./adapters/index.ts"
 import type { CliUsageAdapter } from "./adapters/types.ts"
 import { catalogEntry, catalogIds } from "./catalog.ts"
 import {
@@ -23,16 +21,12 @@ import { walkMatchingFiles } from "./walk-files.ts"
 type AdapterRun = { adapter: CliUsageAdapter; maxFiles: number; maxBytes: number }
 
 function adapterRun(id: CliUsageSourceId): AdapterRun | undefined {
-  if (id === "claude") {
-    return { adapter: claudeAdapter, maxFiles: MAX_TRANSCRIPT_FILES, maxBytes: MAX_TRANSCRIPT_BYTES }
+  const adapter = adapterFor(id)
+  if (!adapter) return undefined
+  if (catalogEntry(id).scan === "usage-json") {
+    return { adapter, maxFiles: MAX_USAGE_JSON_FILES, maxBytes: MAX_USAGE_JSON_BYTES }
   }
-  if (id === "codex") {
-    return { adapter: codexAdapter, maxFiles: MAX_TRANSCRIPT_FILES, maxBytes: MAX_TRANSCRIPT_BYTES }
-  }
-  if (id === "grok") {
-    return { adapter: grokAdapter, maxFiles: MAX_USAGE_JSON_FILES, maxBytes: MAX_USAGE_JSON_BYTES }
-  }
-  return undefined
+  return { adapter, maxFiles: MAX_TRANSCRIPT_FILES, maxBytes: MAX_TRANSCRIPT_BYTES }
 }
 
 export function collectCliTranscriptUsage(

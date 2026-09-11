@@ -1,26 +1,37 @@
 /**
- * 本机记录分桶表：列名与区块标题分开，数字右对齐。
+ * 本机记录分桶表：列名与区块标题分开，数字右对齐，行上来源标。
  */
 import type { CliUsageBucket } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { formatTokens } from "@renderer/components/ai-chat/agent-limits/format-tokens"
-import { formatBucketLabel, hasTokenBreakdown } from "./lib/format"
+import { formatBucketLabel, hasTokenBreakdown } from "../../lib/format"
+import { isMixedBucket } from "../../lib/filter"
+import { CliUsageSourceMarks } from "../source-marks"
 
 export function CliUsageBucketTable(props: {
-  title: string
   keyLabel: string
   rows: CliUsageBucket[]
+  filtered: boolean
 }) {
   const t = useT()
-  if (props.rows.length === 0) return null
+  if (props.rows.length === 0) {
+    return (
+      <p className="px-3.5 py-6 text-center text-caption-1-medium text-text-tertiary">
+        {t("pages.observability.cliUsageEmptyBuckets")}
+      </p>
+    )
+  }
+  const mixedVisible = props.filtered && props.rows.some((row) => isMixedBucket(row))
   return (
-    <section className="overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default shadow-2xs">
-      <h3 className="border-b border-separator-border/60 bg-background-secondary-default/60 px-3.5 py-2 text-caption-1-medium text-text-secondary">
-        {props.title}
-      </h3>
+    <div className="min-w-0">
+      {mixedVisible ? (
+        <p className="border-b border-separator-border/40 px-3.5 py-2 text-caption-2-medium text-text-tertiary">
+          {t("pages.observability.cliUsageMixedFilterHint")}
+        </p>
+      ) : null}
       <div className="min-w-0 overflow-x-auto">
-        <table className="w-full min-w-[40rem] text-left">
+        <table className="w-full min-w-[44rem] text-left">
           <thead className="text-caption-2-medium text-text-tertiary">
             <tr>
               <th className="px-3.5 py-2 font-medium">{props.keyLabel}</th>
@@ -29,6 +40,7 @@ export function CliUsageBucketTable(props: {
               <NumHead>{t("pages.observability.cliUsageCache")}</NumHead>
               <NumHead>{t("pages.observability.cliUsageTotal")}</NumHead>
               <NumHead>{t("pages.observability.cliUsageSessions")}</NumHead>
+              <th className="px-3.5 py-2 font-medium">{t("pages.observability.cliUsageSourceCol")}</th>
             </tr>
           </thead>
           <tbody>
@@ -38,7 +50,7 @@ export function CliUsageBucketTable(props: {
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   )
 }
 
@@ -59,6 +71,9 @@ function BucketRow({ row }: { row: CliUsageBucket }) {
       <NumCell muted={!split}>{split ? formatTokens(row.cacheTokens) : "—"}</NumCell>
       <NumCell emphasize>{formatTokens(row.totalTokens)}</NumCell>
       <NumCell>{String(row.sessions)}</NumCell>
+      <td className="px-3.5 py-2">
+        <CliUsageSourceMarks ids={row.sourceIds} />
+      </td>
     </tr>
   )
 }

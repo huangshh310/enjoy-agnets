@@ -133,7 +133,7 @@ test("扫描家目录聚合并不回传绝对路径", () => {
   assert.equal(claudeDay?.inputTokens, 7)
 })
 
-test("空 tmp home：claude/codex directory-missing，其余 unsupported", () => {
+test("空 tmp home：导轨 12 源都是 directory-missing，不再 unsupported", () => {
   const home = mkdtempSync(join(tmpdir(), "enjoy-cli-usage-empty-"))
   const report = collectCliTranscriptUsage(home, 2)
   assert.deepEqual(
@@ -141,11 +141,7 @@ test("空 tmp home：claude/codex directory-missing，其余 unsupported", () =>
     [...catalogIds()]
   )
   for (const source of report.sources) {
-    if (source.id === "claude" || source.id === "codex" || source.id === "grok") {
-      assert.equal(source.status, "directory-missing")
-    } else {
-      assert.equal(source.status, "unsupported")
-    }
+    assert.equal(source.status, "directory-missing")
     assert.equal(source.fileCount, 0)
     assert.equal(source.sessionCount, 0)
   }
@@ -217,6 +213,37 @@ test("Grok usage.json 入表，嵌套 subagents 不计 fileCount", () => {
   assert.equal(blob.includes("%2FUsers"), false)
   assert.ok(report.projects.some((item) => item.key === "enjoy-agnets"))
   assert.equal(report.models.some((item) => item.key === "child"), false)
+})
+
+test("OMP camelCase usage 入表，Cursor 无用量字段是 scanned-empty", () => {
+  const home = mkdtempSync(join(tmpdir(), "enjoy-cli-usage-omp-"))
+  mkdirSync(join(home, ".omp", "agent", "sessions", "demo"), { recursive: true })
+  mkdirSync(join(home, ".cursor", "projects", "demo", "agent-transcripts"), { recursive: true })
+  writeFileSync(
+    join(home, ".omp", "agent", "sessions", "demo", "a.jsonl"),
+    `${JSON.stringify({
+      type: "session",
+      timestamp: "2026-09-06T06:37:01.840Z",
+      cwd: "/secret/enjoy-agnets"
+    })}\n${JSON.stringify({
+      type: "message",
+      timestamp: "2026-09-06T07:04:06.924Z",
+      message: { usage: { input: 10, output: 2, cacheRead: 4, totalTokens: 16 } }
+    })}\n`
+  )
+  writeFileSync(
+    join(home, ".cursor", "projects", "demo", "agent-transcripts", "t.jsonl"),
+    `${JSON.stringify({ role: "user", message: { content: "hi" } })}\n`
+  )
+  const report = collectCliTranscriptUsage(home, 6)
+  const omp = report.sources.find((item) => item.id === "omp")
+  const cursor = report.sources.find((item) => item.id === "cursor")
+  assert.equal(omp?.status, "has-usage")
+  assert.equal(omp?.totalTokens, 16)
+  assert.equal(omp?.cacheTokens, 4)
+  assert.equal(cursor?.status, "scanned-empty")
+  assert.ok((cursor?.fileCount ?? 0) > 0)
+  assert.equal(JSON.stringify(report).includes("/secret/"), false)
 })
 
 test("有 jsonl 但全 0 usage：scanned-empty 且 fileCount > 0", () => {

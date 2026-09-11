@@ -40,6 +40,7 @@ function walkDir(
       continue
     }
     if (stat.isDirectory()) {
+      if (name === "node_modules" || name === ".git") continue
       walkDir(root, full, out, matchRelPath, maxFiles)
       continue
     }
