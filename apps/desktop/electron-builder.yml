@@ -43,8 +43,5 @@ linux:
   icon: icon.png
   category: Development
   artifactName: enjoy-agents-${version}-linux.${ext}
-  desktop:
-    Name: Enjoy Agents
-    StartupWMClass: enjoy-agents
   target:
     - AppImage

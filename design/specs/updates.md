@@ -47,3 +47,4 @@ IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.updat
 - 本机 `.npmrc` npmmirror 可留着：v0.1.0 证明 GitHub runner 也能用它装 Electron。不要为 CI 删镜像反而引入 Windows 不兼容命令。
 - GitHub-hosted runner 默认 Node 堆约 2GB。`electron-vite` 打 renderer（含 shiki 语言包，产物约 15MB）会 OOM：`JavaScript heap out of memory` / exit 134。`release.yml` 必须设 `NODE_OPTIONS=--max-old-space-size=4096`（runner 内存 7GB，不要上 8GB）。
 - Linux AppImage 不能用 scoped npm 名当可执行文件。`@enjoy-agents/desktop` 含 `@` `/`，v0.1.3 只挂 ubuntu：`executableName contains characters that cannot be safely used in file paths`。`electron-builder.yml` 必须显式 `executableName: enjoy-agents`（不要改 workspace package name）。
+- electron-builder 26 的 `linux.desktop` 只能是 `{ entry, desktopActions }` 或 `null`。写成旧式 `{ Name, StartupWMClass }` 会 schema 校验失败，三个平台在 Publish 第一步就挂（v0.1.4）。不要为 WM_CLASS 警告加这块。
