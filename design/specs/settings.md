@@ -21,7 +21,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/workspace` | 工作区管理（含已挂载目录列表） | 旧 `#/workspaces` redirect |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
-`#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
+`#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置默认项 C 端只露「探索 / 执行」人话卡片（视觉锁 [`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)）：探索写入内部 `plan`，执行写入 `agent`。**禁止**把 `ask|plan|agent`、ACP、协议微标写进默认项文案。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
 设置分段 ID 完整保留 26 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
 侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；组织：**个人资料** `#/settings/account`），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）；`skills` 自己就是一级入口，不再并进「说明」。不要把一级入口做成「团队资料」空态，否则个人中心（Blobatar / Hero / 用量图）会从侧栏消失。
@@ -65,6 +65,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 账单 / 团队 / 组织 / 集成诚实空态：`settings/local-only-notice.tsx`、`company/company-billing-section.tsx`、`team/*-section.tsx`、`company/company-*-section.tsx`
 - Skills：`apps/desktop/src/renderer/src/components/skills/`（`skills-page.tsx`）。主进程：`main/services/skill-sources/`、`main/ipc-skill-sources.ts`
 - 技能源可选更新：`settings-skill-sources.tsx`（Agent 默认项）。禁止挂进空会话。
+- 默认模式人话卡片：`settings-defaults.tsx` + `settings-default-mode.tsx`（只写探索/执行）
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
@@ -87,7 +88,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Providers 自带标题与分段控件。`SettingsSectionPage` 不要再叠一层 `h1`，否则出现两个「模型供应商」。空态虚线框必须 `flex-1`，不要按内容收在卡片上半截。
 - 账单页没有计费 IPC，也不要再挂演示套餐 / 升级弹窗。L4 卡可以深链到本页说明，不要假装能在 Enjoy 里充值。
 - 团队 / 成员 / 组织 / 集成禁止再塞 Alex Zhang、GitHub Enterprise「已连接」、`team@enjoy-agents.dev` 已登录云账号。没有云同步就写本地单机。用户卡禁止「退出登录」（没有云会话可退）。
-- 新建会话若 `settings.get` 会顺带 `listAgentTools`（PATH 探测），输入框会顿一下。默认模式只从已应用的 settings 快照记住。设置页改 Ask/Plan 默认项若顺便 `setMode`，会把正在看的会话改名实不符；必须只写偏好。
+- 新建会话若 `settings.get` 会顺带 `listAgentTools`（PATH 探测），输入框会顿一下。默认模式只从已应用的 settings 快照记住。设置页改探索/执行默认项若顺便 `setMode`，会把正在看的会话改名实不符；必须只写偏好。C 端不要再写 Ask/Plan/Agent。
 - `#/settings/instructions` 能保存却不进默认引擎：旧路径只给 Harness 拼 `customInstructions`。Enjoy Local 必须 `extraInstructions`；ACP 只垫 `session/prompt`，检查器不得回 ToolLoop `systemPromptFor`。
 - 不要把 `AgentToolsHubMetrics` 装回来：装载率百分比、永远绿灯、「沙箱隔离 · 实时 Token 流」是 Fake-Status-Chrome，且把沙箱和 ACP 混成一条。
 - 本机 CLI 若把能力矩阵铺在卡片前面，用户会以为「登录=是」就是已登录，也找不到安装入口。矩阵必须默认收起，「支持」不是现场状态。

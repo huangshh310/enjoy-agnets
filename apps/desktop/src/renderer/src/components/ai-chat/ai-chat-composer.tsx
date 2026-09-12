@@ -11,6 +11,9 @@ import { ComposerContextChips } from "./composer/composer-context-chips"
 import { ComposerFollowupRail } from "./composer/runtime-interact/composer-followup-rail"
 import { ComposerQuoteChips } from "./composer/runtime-interact/composer-quote-chips"
 import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
+import { ExploreCapabilityRail } from "./composer/explore-execute/explore-capability-rail"
+import { ExploreExecuteToggle } from "./composer/explore-execute/explore-execute-toggle"
+import { ExploreInterceptBanner } from "./composer/explore-execute/explore-intercept-banner"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
@@ -118,6 +121,7 @@ export function AiChatComposer({
       <ComposerSessionReview />
       <ComposerQueue />
       <ComposerFollowupRail />
+      <ExploreInterceptBanner />
       <form onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
         <BorderBeam
           size="md"
@@ -161,6 +165,7 @@ export function AiChatComposer({
             }}
           />
 
+          <ExploreExecuteToggle />
           <ComposerContextChips />
           <ComposerHostModeChip />
           <ComposerQuoteChips />
@@ -176,6 +181,7 @@ export function AiChatComposer({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
           />
+          <ExploreCapabilityRail />
 
           <ComposerFooter
             composer={composer}

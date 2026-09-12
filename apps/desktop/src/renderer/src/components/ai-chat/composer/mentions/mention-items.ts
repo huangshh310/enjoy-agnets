@@ -1,7 +1,7 @@
 /**
- * Composer @ / 面板条目：工作区文件、内置命令 / 模式、已安装技能。
+ * Composer @ / 面板条目：文件 / 文档 / 技能；斜杠是压缩与探索/执行。
  */
-import type { ComposerVisibleMode } from "../composer-mode.ts"
+import type { ComposerSurface, ComposerVisibleMode } from "../composer-mode.ts"
 
 export type SkillMention = {
   id: string
@@ -25,10 +25,26 @@ export type ModeMentionItem = {
   kind: "mode"
   id: string
   mode: ComposerVisibleMode
+  /** C 端斜杠呼号：explore / execute，不把 ask|plan|agent 摊出来。 */
+  slash: ComposerSurface
   label: string
   description: string
   /** 与 /compact 同组的来源胶囊，缺省回落到 label。 */
   tag?: string
+}
+
+export type DocMentionItem = {
+  kind: "doc"
+  id: string
+  docId: string
+  path: string
+  name: string
+}
+
+export type WebMentionItem = {
+  kind: "web"
+  id: "web:disabled"
+  muted: true
 }
 
 export type SkillMentionItem = {
@@ -46,7 +62,13 @@ export type CommandMentionItem = {
   tag: string
 }
 
-export type MentionItem = FileMentionItem | ModeMentionItem | SkillMentionItem | CommandMentionItem
+export type MentionItem =
+  | FileMentionItem
+  | DocMentionItem
+  | WebMentionItem
+  | ModeMentionItem
+  | SkillMentionItem
+  | CommandMentionItem
 
 const SLASH_SAFE = /^[A-Za-z][\w.-]*$/
 
@@ -69,8 +91,10 @@ export function filterMentionItems(items: readonly MentionItem[], query: string)
 
 function mentionHaystack(item: MentionItem): string {
   if (item.kind === "file") return `${item.name} ${item.path}`.toLowerCase()
+  if (item.kind === "doc") return `${item.name} ${item.path}`.toLowerCase()
+  if (item.kind === "web") return "web 网页 browser"
   if (item.kind === "mode") {
-    return `${item.mode} ${item.label} ${item.description} ${item.tag ?? ""}`.toLowerCase()
+    return `${item.slash} ${item.label} ${item.description} ${item.tag ?? ""}`.toLowerCase()
   }
   if (item.kind === "command") return `${item.name} ${item.description}`.toLowerCase()
   const skill = item.skill

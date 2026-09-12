@@ -12,7 +12,13 @@ import {
 import { detectActiveMention } from "./composer-token.ts"
 import { insertMentionTrigger } from "./insert-mention-trigger.ts"
 import { registerMentionOpener } from "./mention-open.ts"
-import { buildAtMentionItems, buildSlashMentionItems, type ModeCopy, type SlashBuiltinCopy } from "./build-mention-items.ts"
+import {
+  buildAtMentionItems,
+  buildSlashMentionItems,
+  type MentionDoc,
+  type SlashBuiltinCopy,
+  type SurfaceCopy
+} from "./build-mention-items.ts"
 import type { MentionDirEntry } from "./collect-mention-files.ts"
 import type { MentionItem } from "./mention-items.ts"
 
@@ -22,7 +28,8 @@ export function useMentionPanel(
   textareaRef: RefObject<HTMLTextAreaElement | null>,
   roots: readonly MentionDirEntry[],
   files: readonly MentionDirEntry[],
-  modeCopy: ModeCopy,
+  docs: readonly MentionDoc[],
+  modeCopy: SurfaceCopy,
   builtinCopy: SlashBuiltinCopy
 ) {
   const [cursor, setCursor] = useState(value.length)
@@ -32,8 +39,8 @@ export function useMentionPanel(
   const mention = useMemo(() => detectActiveMention(value, cursor), [value, cursor])
   const open = Boolean(mention && !dismissed)
   const items = useMemo(
-    () => listItems(mention?.kind, mention?.query ?? "", roots, files, modeCopy, builtinCopy),
-    [mention?.kind, mention?.query, roots, files, modeCopy, builtinCopy]
+    () => listItems(mention?.kind, mention?.query ?? "", roots, files, docs, modeCopy, builtinCopy),
+    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy]
   )
 
   useLayoutEffect(() => {
@@ -98,10 +105,11 @@ function listItems(
   query: string,
   roots: readonly MentionDirEntry[],
   files: readonly MentionDirEntry[],
-  modeCopy: ModeCopy,
+  docs: readonly MentionDoc[],
+  modeCopy: SurfaceCopy,
   builtinCopy: SlashBuiltinCopy
 ): MentionItem[] {
-  if (kind === "at") return buildAtMentionItems(query, roots, files)
+  if (kind === "at") return buildAtMentionItems(query, roots, files, docs)
   if (kind === "slash") return buildSlashMentionItems(query, modeCopy, builtinCopy)
   return []
 }

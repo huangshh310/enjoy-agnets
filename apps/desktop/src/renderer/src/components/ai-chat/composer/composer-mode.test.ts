@@ -1,13 +1,16 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  applyComposerSurface,
   coerceComposerMode,
   modeForLoadedSession,
   modeForNewSession,
+  modeForSurface,
   readRememberedDefaultMode,
   rememberDefaultMode,
   runModeForComposer,
   sessionModeAfterSettingsRefresh,
+  surfaceForMode,
   takeComposerSlash
 } from "./composer-mode.ts"
 
@@ -52,6 +55,22 @@ test("ACP 发送强制 agent", () => {
 test("句首斜杠切模式并剥掉命令", () => {
   assert.deepEqual(takeComposerSlash("/plan 先画蓝图"), { mode: "plan", text: "先画蓝图" })
   assert.deepEqual(takeComposerSlash("/ask"), { mode: "ask", text: "" })
+  assert.deepEqual(takeComposerSlash("/explore 摸清登录"), { mode: "plan", text: "摸清登录" })
+  assert.deepEqual(takeComposerSlash("/execute"), { mode: "agent", text: "" })
   assert.deepEqual(takeComposerSlash("普通句子"), { text: "普通句子" })
   assert.deepEqual(takeComposerSlash("/web 搜索"), { text: "/web 搜索" })
+})
+
+test("C 端探索/执行只映射现有 ask/plan 与 agent", () => {
+  assert.equal(surfaceForMode("plan"), "explore")
+  assert.equal(surfaceForMode("ask"), "explore")
+  assert.equal(surfaceForMode("agent"), "execute")
+  assert.equal(surfaceForMode("debug"), "execute")
+  assert.equal(surfaceForMode("workflow"), "execute")
+  assert.equal(modeForSurface("explore"), "plan")
+  assert.equal(modeForSurface("execute"), "agent")
+  assert.equal(applyComposerSurface("ask", "explore"), "ask")
+  assert.equal(applyComposerSurface("debug", "execute"), "debug")
+  assert.equal(applyComposerSurface("agent", "explore"), "plan")
+  assert.equal(applyComposerSurface("plan", "execute"), "agent")
 })
