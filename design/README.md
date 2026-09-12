@@ -62,6 +62,7 @@
 | [previews/local-cli-dense-v2.html](./previews/local-cli-dense-v2.html) | 过程稿 stub（`8bd7f6e` 起）；勿按此路径接线 |
 | [previews/local-cli-power-source.html](./previews/local-cli-power-source.html) | 动力源同构 + 抽屉同壳（历史预览） |
 | [previews/p0-add-provider-discover.html](./previews/p0-add-provider-discover.html) | 绑定下拉发现性：菜单只列档案，添加在菜单外（锁 tip `033838f`） |
+| [previews/p0-b-drawer-trust.html](./previews/p0-b-drawer-trust.html) | 抽屉信任摘要：健康体检 + 本月用量（【视觉真源】P0-B） |
 
 ---
 
