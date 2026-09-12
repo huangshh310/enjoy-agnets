@@ -3,6 +3,7 @@ import { test } from "node:test"
 import {
   classifySourceKind,
   formatSourceChipLabel,
+  parseMcpServerId,
   splitVisibleSourceChips
 } from "./source-chip.ts"
 
@@ -24,6 +25,17 @@ test("三例形态：文件行号、文档名、技能短名", () => {
   assert.equal(
     formatSourceChipLabel({ kind: "skill", title: "读代码" }, (name) => `技能 · ${name}`),
     "技能 · 读代码"
+  )
+})
+
+test("MCP 工具名收成服务器芯片，不当文件", () => {
+  assert.equal(parseMcpServerId("mcp_filesystem__read_file"), "filesystem")
+  assert.equal(parseMcpServerId("mcp_mcp_ab__list_dir"), "mcp_ab")
+  assert.equal(parseMcpServerId("read_file"), null)
+  assert.equal(classifySourceKind({ toolName: "mcp_github__search" }), "mcp")
+  assert.equal(
+    formatSourceChipLabel({ kind: "mcp", title: "filesystem" }, (n) => n),
+    "filesystem"
   )
 })
 
