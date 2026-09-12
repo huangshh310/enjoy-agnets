@@ -41,7 +41,7 @@ export function insertMetric(db: AppDatabase, row: MetricRow): void {
 
 export function listMetrics(
   db: AppDatabase,
-  filter: { runId?: string; kind?: string; limit: number }
+  filter: { runId?: string; kind?: string; since?: number; limit: number }
 ): MetricRow[] {
   const rows = db
     .prepare(
@@ -50,9 +50,11 @@ export function listMetrics(
               duration_ms as durationMs, ttfo_ms as ttfoMs,
               tokens_per_second as tokensPerSecond, error_class as errorClass,
               created_at as createdAt
-       FROM telemetry_metrics ORDER BY created_at DESC LIMIT ?`
+       FROM telemetry_metrics
+       WHERE (? IS NULL OR created_at >= ?)
+       ORDER BY created_at DESC LIMIT ?`
     )
-    .all(filter.limit) as MetricRow[]
+    .all(filter.since ?? null, filter.since ?? null, filter.limit) as MetricRow[]
   return rows.filter((row) => {
     if (filter.runId && row.runId !== filter.runId) return false
     if (filter.kind && row.kind !== filter.kind) return false

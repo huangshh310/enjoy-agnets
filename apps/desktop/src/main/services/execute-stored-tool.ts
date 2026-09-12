@@ -1,9 +1,13 @@
 /**
- * 重启后的审批没有活着的 ToolLoop wait：按库里的 args 执行写盘 / bash。
+ * 重启后的审批没有活着的 ToolLoop wait：按库里的 args 直接执行工具。
+ * 分发表必须与 createCodingTools / createMcpAgentTools 的可审批工具集合一致，
+ * 漏一个就会出现「点了允许但什么都没发生」的假放行。
  */
+import { mcpAgentToolName } from "@enjoy-agents/mcp"
 import { createWorkspaceHost } from "./workspace-host"
 import { getApproval } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
+import { callServerTool, listVisibleMcpTools } from "./mcp-service"
 import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
 
@@ -35,11 +39,51 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     await host.bash(args.command)
     return
   }
+  if (pending.name === "code_mode" && path) {
+    await resumeCodeMode(host, args)
+    return
+  }
   if (pending.name === "git_commit" && typeof args.message === "string") {
-    await host.gitCommit(args.message)
+    await host.gitCommit(args.message, { stageAll: args.stageAll === true })
+    return
+  }
+  if (pending.name === "git_branch" && typeof args.name === "string") {
+    if (!host.gitBranch) throw new Error("git_branch is not available.")
+    await host.gitBranch(args.name, args.checkout === true)
     return
   }
   if (pending.name === "git_push") {
     await host.gitPush()
+    return
   }
+  const mcp = findVisibleMcpTool(pending.name)
+  if (mcp) {
+    await callServerTool(mcp.serverId, mcp.name, args, { fromApprovedAgent: true })
+    return
+  }
+  throw new Error(`Approved tool "${pending.name}" cannot be resumed after restart.`)
+}
+
+/** code_mode = 写脚本 + 执行，与工具 execute 保持同一顺序。 */
+async function resumeCodeMode(
+  host: ReturnType<typeof createWorkspaceHost>,
+  args: Record<string, unknown>
+): Promise<void> {
+  const source = typeof args.source === "string" ? args.source : ""
+  const command = typeof args.command === "string" ? args.command : ""
+  if (!source || !command) {
+    throw new Error("code_mode approval is missing source or command.")
+  }
+  await host.writeFile(args.path as string, source)
+  await host.bash(command)
+}
+
+/** MCP 工具名经字符清洗不可逆，只能对当前可见工具表反查。 */
+function findVisibleMcpTool(agentToolName: string) {
+  for (const item of listVisibleMcpTools()) {
+    if (mcpAgentToolName(item.serverId, item.name) === agentToolName) {
+      return { serverId: item.serverId, name: item.name }
+    }
+  }
+  return undefined
 }

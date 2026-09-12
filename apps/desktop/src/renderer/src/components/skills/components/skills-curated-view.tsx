@@ -5,6 +5,7 @@
 import { useMemo, useState } from "react"
 import { RiCompass3Line } from "@remixicon/react"
 import type { CuratedSkillSource, SkillSource } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import { STORE_CATEGORIES } from "../constants/skills-badge-theme"
 import { CuratedBentoHero } from "./curated/curated-bento-hero"
@@ -21,6 +22,7 @@ export function SkillsCuratedView({
   busy: boolean
   onInstall: (source: CuratedSkillSource) => void
 }) {
+  const t = useT()
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
 
   // 已安装的仓库来源集合
@@ -91,7 +93,7 @@ export function SkillsCuratedView({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <RiCompass3Line className="size-8 text-text-tertiary mb-2" />
-          <p className="text-caption-1-medium text-text-secondary">该分类下暂无精选技能包</p>
+          <p className="text-caption-1-medium text-text-secondary">{t("pages.skills.curatedView.emptyCategory")}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

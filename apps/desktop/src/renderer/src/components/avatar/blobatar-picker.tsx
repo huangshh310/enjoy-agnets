@@ -4,6 +4,7 @@
 import { useState } from "react"
 import { RiDiceLine } from "@remixicon/react"
 import { Input } from "@/components/ui/input"
+import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import { BlobatarAvatar } from "./blobatar-avatar"
 import {
@@ -23,17 +24,18 @@ interface BlobatarPickerProps {
   className?: string
 }
 
-const BACKDROP_OPTIONS: Array<{ id: BlobatarBackgroundShape; label: string }> = [
-  { id: "none", label: "无底板" },
-  { id: "circle", label: "圆形" },
-  { id: "squircle", label: "超椭圆" },
-  { id: "square", label: "方形" }
+// 选项文案在组件内经 i18n 生成，这里只保留选项 id。
+const BACKDROP_OPTIONS: Array<{ id: BlobatarBackgroundShape }> = [
+  { id: "none" },
+  { id: "circle" },
+  { id: "squircle" },
+  { id: "square" }
 ]
 
-const ANIMATE_OPTIONS: Array<{ id: BlobatarAnimateMode; label: string }> = [
-  { id: "always", label: "常驻呼吸" },
-  { id: "hover", label: "悬停微动" },
-  { id: "off", label: "静态节能" }
+const ANIMATE_OPTIONS: Array<{ id: BlobatarAnimateMode }> = [
+  { id: "always" },
+  { id: "hover" },
+  { id: "off" }
 ]
 
 export function BlobatarPicker({
@@ -41,7 +43,18 @@ export function BlobatarPicker({
   onChange,
   className
 }: BlobatarPickerProps) {
+  const t = useT()
   const [config, setConfig] = useState<BlobatarConfig>(value)
+
+  // 底板 / 动效选项的展示文案按 id 从词表取
+  const backdropOptions = BACKDROP_OPTIONS.map((option) => ({
+    ...option,
+    label: t(`pages.workspaces.avatar.backdrop.${option.id}`)
+  }))
+  const animateOptions = ANIMATE_OPTIONS.map((option) => ({
+    ...option,
+    label: t(`pages.workspaces.avatar.animate.${option.id}`)
+  }))
 
   function update(partial: Partial<BlobatarConfig>) {
     const next = { ...config, ...partial }
@@ -62,33 +75,34 @@ export function BlobatarPicker({
           <BlobatarAvatar config={config} size={108} />
         </div>
         <span className="mt-2.5 font-mono text-caption-2-medium text-text-tertiary">
-          面孔种子: <strong className="text-text-primary">{config.name}</strong>
+          {t("pages.workspaces.avatar.seedLabel")}
+          <strong className="text-text-primary">{config.name}</strong>
         </span>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label className="flex items-center justify-between text-caption-2-medium text-text-secondary">
-          <span>种子名称 (驱动面孔五官几何哈希)</span>
+          <span>{t("pages.workspaces.avatar.seedNameLabel")}</span>
           <button
             type="button"
             onClick={handleRandomSeed}
             className="inline-flex cursor-pointer items-center gap-1 text-caption-2-medium text-accent-500 hover:text-accent-600"
           >
             <RiDiceLine className="size-3.5" />
-            <span>随机生成</span>
+            <span>{t("pages.workspaces.avatar.random")}</span>
           </button>
         </label>
         <Input
           value={config.name}
           onChange={(event) => update({ name: event.target.value })}
-          placeholder="输入名字、邮箱或代号…"
+          placeholder={t("pages.workspaces.avatar.seedPlaceholder")}
           className="h-9"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label className="text-caption-2-medium text-text-secondary">
-          表情风格 ({BLOBATAR_EXPRESSIONS.length} 种)
+          {t("pages.workspaces.avatar.expressions", { n: BLOBATAR_EXPRESSIONS.length })}
         </label>
         <div className="grid grid-cols-3 gap-1.5">
           {BLOBATAR_EXPRESSIONS.map((expr) => {
@@ -121,7 +135,7 @@ export function BlobatarPicker({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-caption-2-medium text-text-secondary">主题色调预设</label>
+        <label className="text-caption-2-medium text-text-secondary">{t("pages.workspaces.avatar.toneLabel")}</label>
         <div className="flex flex-wrap items-center gap-2">
           {BLOBATAR_COLOR_PRESETS.map((preset) => {
             const selected =
@@ -143,7 +157,7 @@ export function BlobatarPicker({
         </div>
         <div className="flex flex-col gap-1 pt-1">
           <div className="flex justify-between text-caption-2-medium text-text-tertiary">
-            <span>色相角度 (Hue)</span>
+            <span>{t("pages.workspaces.avatar.hueLabel")}</span>
             <span className="font-mono">{config.hue ?? 235}°</span>
           </div>
           <input
@@ -163,14 +177,14 @@ export function BlobatarPicker({
 
       <div className="grid grid-cols-2 gap-3 border-t border-separator-border/50 pt-1">
         <OptionGroup
-          label="背景板形状"
-          options={BACKDROP_OPTIONS}
+          label={t("pages.workspaces.avatar.backdropLabel")}
+          options={backdropOptions}
           value={config.background ?? "squircle"}
           onChange={(background) => update({ background })}
         />
         <OptionGroup
-          label="动画表现"
-          options={ANIMATE_OPTIONS}
+          label={t("pages.workspaces.avatar.animateLabel")}
+          options={animateOptions}
           value={config.animate ?? "always"}
           onChange={(animate) => update({ animate })}
         />

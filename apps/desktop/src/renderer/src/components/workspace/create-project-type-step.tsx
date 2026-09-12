@@ -4,6 +4,7 @@
 import { RiComputerLine, RiGlobalLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 
 export function CreateProjectTypeStep({
@@ -17,34 +18,36 @@ export function CreateProjectTypeStep({
   onCancel: () => void
   onNext: () => void
 }) {
+  const t = useT()
+
   return (
     <div className="flex flex-col gap-4 py-2">
       <div className="flex flex-col gap-2">
-        <Label className="text-caption-1-medium font-semibold text-text-secondary">项目类型</Label>
+        <Label className="text-caption-1-medium font-semibold text-text-secondary">{t("pages.workspaces.createProject.typeLabel")}</Label>
         <div className="grid grid-cols-2 gap-3">
           <TypeCard
             selected={projectType === "local"}
             icon={RiComputerLine}
-            title="本地"
-            description="在你的电脑上直接编辑、运行和测试文件"
+            title={t("pages.workspaces.createProject.localTitle")}
+            description={t("pages.workspaces.createProject.localDesc")}
             onClick={() => onChangeType("local")}
           />
           <TypeCard
             selected={false}
             disabled
             icon={RiGlobalLine}
-            title="远程"
-            badge="即将推出"
-            description="SSH / 开发容器尚未接入，当前只能创建本地项目"
+            title={t("pages.workspaces.createProject.remoteTitle")}
+            badge={t("pages.workspaces.createProject.comingSoon")}
+            description={t("pages.workspaces.createProject.remoteDesc")}
           />
         </div>
       </div>
       <div className="mt-4 flex items-center justify-end gap-2 border-t border-separator-border/60 pt-4">
         <Button variant="outline" size="sm" onClick={onCancel}>
-          取消
+          {t("pages.workspaces.createProject.cancel")}
         </Button>
         <Button size="sm" onClick={onNext} className="gap-1 shadow-xs">
-          <span>下一步</span>
+          <span>{t("pages.workspaces.createProject.next")}</span>
         </Button>
       </div>
     </div>

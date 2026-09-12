@@ -662,6 +662,7 @@ export const zhChat = {
   openFolderTerminal: "打开文件夹后即可启动终端。",
   terminalInput: "终端输入",
   terminalFailed: "无法打开终端。",
+  terminalExited: "终端会话已结束。",
 
   enableMedia: "开启实验媒体？",
   enableMediaHint: "视频生成仍是实验功能。开启后即可继续。之后可在设置 → 媒体与资产中关闭。",

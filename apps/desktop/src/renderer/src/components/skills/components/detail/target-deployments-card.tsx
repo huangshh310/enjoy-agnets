@@ -9,6 +9,7 @@ import {
   RiShieldCheckLine
 } from "@remixicon/react"
 import type { SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import {
   GLOBAL_TARGET_IDS,
@@ -29,6 +30,8 @@ export function TargetDeploymentsCard({
   busy: boolean
   onToggleTarget: (source: SkillSource, targetId: SkillTargetId) => void
 }) {
+  const t = useT()
+
   return (
     <section className="flex flex-col gap-3 rounded-3xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -45,7 +48,10 @@ export function TargetDeploymentsCard({
         </div>
 
         <span className="text-[11px] font-mono text-text-tertiary">
-          已激活 {source.enabledTargetIds.length} / {GLOBAL_TARGET_IDS.length} 个目标环境
+          {t("pages.skills.targets.activeCount", {
+            enabled: source.enabledTargetIds.length,
+            total: GLOBAL_TARGET_IDS.length
+          })}
         </span>
       </div>
 
@@ -106,7 +112,7 @@ export function TargetDeploymentsCard({
                       : "text-text-tertiary"
                   )}
                 >
-                  {isEnabled ? "已同步生效" : "未挂载投影"}
+                  {isEnabled ? t("pages.skills.targets.synced") : t("pages.skills.targets.notProjected")}
                 </span>
               </div>
             </button>
@@ -119,7 +125,7 @@ export function TargetDeploymentsCard({
         <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-separator-border/40 text-caption-2-regular">
           <div className="flex items-center gap-1.5 text-text-tertiary">
             <RiFolderLine className="size-3.5" />
-            <span className="font-medium text-[11px]">当前工作区绑定:</span>
+            <span className="font-medium text-[11px]">{t("pages.skills.targets.workspaceBound")}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">

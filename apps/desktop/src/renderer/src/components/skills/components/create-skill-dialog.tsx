@@ -7,6 +7,7 @@ import { RiCheckLine, RiLoader4Line, RiSparklingLine } from "@remixicon/react"
 import type { SkillScope } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import {
   buildSkillMarkdownContent,
@@ -31,6 +32,7 @@ export function CreateSkillDialog({
   onOpenChange: (open: boolean) => void
   onCreated: () => Promise<void>
 }) {
+  const t = useT()
   const [selectedPresetId, setSelectedPresetId] = useState(DEFAULT_PRESET.id)
   const [name, setName] = useState(DEFAULT_PRESET.defaultSlug)
   const [trigger, setTrigger] = useState(DEFAULT_PRESET.defaultTrigger)
@@ -79,11 +81,11 @@ export function CreateSkillDialog({
     () =>
       buildSkillMarkdownContent({
         name: name || "my-custom-skill",
-        description: description || "技能简短描述",
+        description: description || t("pages.skills.createDialog.fallbackDescription"),
         trigger: trigger || `/${name || "my-skill"}`,
-        body: body || "## 执行指引\n\n在此撰写你的 Agent 规则..."
+        body: body || t("pages.skills.createDialog.fallbackBody")
       }),
-    [name, description, trigger, body]
+    [name, description, trigger, body, t]
   )
 
   function handleCopyPreview() {
@@ -96,7 +98,7 @@ export function CreateSkillDialog({
   async function handleCreate() {
     if (!hasIde() || !name.trim()) return
     if (scope === "workspace" && !workspacePath) {
-      setError("请先打开一个项目工作区后再创建工作区技能")
+      setError(t("pages.skills.createDialog.needWorkspace"))
       return
     }
     setBusy(true)
@@ -128,10 +130,10 @@ export function CreateSkillDialog({
             </div>
             <div>
               <DialogTitle className="text-title-3-semibold text-text-primary tracking-tight">
-                新建 Agent 专属超能力 (Create Skill Studio)
+                {t("pages.skills.createDialog.title")}
               </DialogTitle>
               <p className="text-caption-1-regular text-text-tertiary">
-                为你的 AI 助手定制领域规范、上下文指引与触发指令，即插即用自动挂载
+                {t("pages.skills.createDialog.subtitle")}
               </p>
             </div>
           </div>
@@ -163,7 +165,7 @@ export function CreateSkillDialog({
 
         <div className="flex items-center justify-between border-t border-separator-border/70 px-6 py-4 bg-background-secondary-default/30 shrink-0">
           <span className="text-caption-2-regular text-text-tertiary">
-            创建后将自动完成规范校验并同步至对应 Agent 运行环境
+            {t("pages.skills.createDialog.footerHint")}
           </span>
           <div className="flex items-center gap-2.5">
             <Button
@@ -172,7 +174,7 @@ export function CreateSkillDialog({
               onClick={() => onOpenChange(false)}
               className="h-8 px-3 text-caption-2-medium"
             >
-              取消
+              {t("pages.skills.createDialog.cancel")}
             </Button>
             <Button
               size="sm"
@@ -181,7 +183,7 @@ export function CreateSkillDialog({
               className="h-8 px-4 text-caption-2-medium gap-1.5 shadow-xs"
             >
               {busy ? <RiLoader4Line className="size-3.5 animate-spin" /> : <RiCheckLine className="size-3.5" />}
-              <span>立即创建技能包</span>
+              <span>{t("pages.skills.createDialog.create")}</span>
             </Button>
           </div>
         </div>

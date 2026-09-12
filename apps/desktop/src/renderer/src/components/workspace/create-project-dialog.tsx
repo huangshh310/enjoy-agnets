@@ -18,6 +18,7 @@ import { cx } from "@/utils/cx"
 import { createAndOpenSession, loadWorkspace, refreshAllWorkspaces } from "@renderer/hooks/use-agent-session"
 import { CreateProjectTypeStep } from "@renderer/components/workspace/create-project-type-step"
 import { folderNameFromPath, nextProjectName } from "@renderer/components/workspace/project-name"
+import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
 
 export function CreateProjectDialog({
@@ -27,6 +28,7 @@ export function CreateProjectDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const t = useT()
   const [step, setStep] = useState<1 | 2>(1)
   const [projectType, setProjectType] = useState<"local" | "remote">("local")
   const [projectName, setProjectName] = useState("")
@@ -64,7 +66,7 @@ export function CreateProjectDialog({
 
   async function handleCreateProject() {
     if (!selectedPath) {
-      setError("请先选择源文件夹")
+      setError(t("pages.workspaces.createProject.pickFirst"))
       return
     }
     setLoading(true)
@@ -80,12 +82,12 @@ export function CreateProjectDialog({
         rootPath: string
       }
       await loadWorkspace(workspace)
-      await createAndOpenSession(workspace.id, "新对话")
+      await createAndOpenSession(workspace.id, t("pages.workspaces.createProject.defaultSessionName"))
       await refreshAllWorkspaces()
       onOpenChange(false)
       resetState()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "创建项目失败")
+      setError(err instanceof Error ? err.message : t("pages.workspaces.createProject.createFailed"))
     } finally {
       setLoading(false)
     }
@@ -102,10 +104,12 @@ export function CreateProjectDialog({
       <DialogContent className="max-w-md p-6 overflow-hidden rounded-3xl bg-background-primary-default shadow-card border border-border-button-default">
         <DialogHeader className="mb-2">
           <DialogTitle className="text-title-3-semibold text-text-primary">
-            创建项目
+            {t("pages.workspaces.createProject.title")}
           </DialogTitle>
           <DialogDescription className="text-body-medium text-text-secondary">
-            {step === 1 ? "选择你的项目存储与运行环境" : "配置源文件路径与工作区名称"}
+            {step === 1
+              ? t("pages.workspaces.createProject.step1Desc")
+              : t("pages.workspaces.createProject.step2Desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -127,7 +131,7 @@ export function CreateProjectDialog({
             {/* Project Name */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="project-name" className="text-caption-1-medium font-semibold text-text-secondary">
-                项目名称
+                {t("pages.workspaces.createProject.nameLabel")}
               </Label>
               <div className="relative">
                 <Input
@@ -137,7 +141,7 @@ export function CreateProjectDialog({
                     setNameTouched(true)
                     setProjectName(e.target.value)
                   }}
-                  placeholder="例如：enjoy-agents"
+                  placeholder={t("pages.workspaces.createProject.namePlaceholder")}
                   className="rounded-xl"
                 />
               </div>
@@ -146,7 +150,7 @@ export function CreateProjectDialog({
             {/* Source Folder Picker Box */}
             <div className="flex flex-col gap-1.5">
               <Label className="text-caption-1-medium font-semibold text-text-secondary">
-                源文件夹
+                {t("pages.workspaces.createProject.folderLabel")}
               </Label>
               <button
                 type="button"
@@ -165,14 +169,14 @@ export function CreateProjectDialog({
                     </div>
                     <div className="max-w-full px-2">
                       <p className="text-caption-1-medium font-semibold text-text-primary">
-                        已选择源文件夹
+                        {t("pages.workspaces.createProject.folderPicked")}
                       </p>
                       <p className="mt-0.5 max-w-[340px] truncate font-mono text-caption-2-medium text-text-tertiary">
                         {selectedPath}
                       </p>
                     </div>
                     <span className="text-caption-2-medium text-accent-600 hover:underline">
-                      点击更换文件夹
+                      {t("pages.workspaces.createProject.changeFolder")}
                     </span>
                   </>
                 ) : (
@@ -181,10 +185,10 @@ export function CreateProjectDialog({
                       <RiFolderAddLine className="size-5 text-foreground-icon-secondary" />
                     </div>
                     <p className="text-caption-1-medium font-medium text-text-secondary">
-                      添加 Enjoy 可读取和编辑的文件夹
+                      {t("pages.workspaces.createProject.folderHint")}
                     </p>
                     <span className="text-caption-2-medium text-accent-600">
-                      点击浏览本机目录...
+                      {t("pages.workspaces.createProject.browseHint")}
                     </span>
                   </>
                 )}
@@ -197,7 +201,7 @@ export function CreateProjectDialog({
                 size="sm"
                 onClick={() => setStep(1)}
               >
-                返回上一步
+                {t("pages.workspaces.createProject.back")}
               </Button>
               <div className="flex items-center gap-2">
                 <Button
@@ -208,7 +212,7 @@ export function CreateProjectDialog({
                     onOpenChange(false)
                   }}
                 >
-                  取消
+                  {t("pages.workspaces.createProject.cancel")}
                 </Button>
                 <Button
                   size="sm"
@@ -217,7 +221,7 @@ export function CreateProjectDialog({
                   className="gap-1.5 shadow-xs"
                 >
                   {loading ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
-                  <span>创建项目</span>
+                  <span>{t("pages.workspaces.createProject.create")}</span>
                 </Button>
               </div>
             </div>

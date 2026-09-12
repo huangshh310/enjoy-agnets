@@ -30,6 +30,7 @@ import {
   WorkflowCancelInput,
   WorkflowGetInput,
   WorkflowListInput,
+  WorkflowPauseInput,
   WorkflowRecoverInput,
   WorkflowResumeInput,
   WorkflowRetryInput,
@@ -75,6 +76,7 @@ import {
   cancelWorkflow,
   getWorkflow,
   listWorkflows,
+  pauseWorkflow,
   recoverPausedWorkflows,
   resumeWorkflow,
   retryWorkflow,
@@ -104,6 +106,7 @@ export const AI_CHANNELS = [
   "workflow.recover",
   "workflow.resume",
   "workflow.cancel",
+  "workflow.pause",
   "workflow.retry",
   "mcp.servers",
   "mcp.upsert",
@@ -192,7 +195,11 @@ export function registerAiIpc() {
   })
   ipcMain.handle("workflow.resume", (_event, raw) => resumeWorkflow(WorkflowResumeInput.parse(raw).runId))
   ipcMain.handle("workflow.cancel", (_event, raw) => cancelWorkflow(WorkflowCancelInput.parse(raw).runId))
-  ipcMain.handle("workflow.retry", (_event, raw) => retryWorkflow(WorkflowRetryInput.parse(raw).runId))
+  ipcMain.handle("workflow.pause", (_event, raw) => pauseWorkflow(WorkflowPauseInput.parse(raw).runId))
+  ipcMain.handle("workflow.retry", (_event, raw) => {
+    const input = WorkflowRetryInput.parse(raw)
+    return retryWorkflow(input.runId, input.stepId)
+  })
 
   ipcMain.handle("mcp.servers", () => listServers())
   ipcMain.handle("mcp.upsert", (_event, raw) => upsertServer(McpUpsertInput.parse(raw)))
@@ -222,7 +229,7 @@ export function registerAiIpc() {
   ipcMain.handle("observability.metrics", (_event, raw) => queryMetrics(ObservabilityMetricsInput.parse(raw ?? {})))
   ipcMain.handle("observability.export", (_event, raw) => {
     const input = ObservabilityExportInput.parse(raw)
-    return { format: input.format, body: exportMetrics(input.format) }
+    return { format: input.format, body: exportMetrics(input.format, input.since) }
   })
   ipcMain.handle("observability.setPolicy", (_event, raw) => {
     const input = ObservabilitySetPolicyInput.parse(raw)

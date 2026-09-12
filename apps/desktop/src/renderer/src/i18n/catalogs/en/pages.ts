@@ -1,5 +1,5 @@
 /**
- * Studio, knowledge, media, MCP, workflows, observability.
+ * Studio, knowledge, media, MCP, workflows, observability, skills, workspaces.
  * Customize / automations live in the studio domain.
  */
 import { enInboxPages } from "./pages-inbox.ts"
@@ -8,6 +8,9 @@ import { enMediaPages } from "./pages-media.ts"
 import { enMcpPages } from "./pages-mcp.ts"
 import { enObservabilityPages } from "./pages-observability.ts"
 import { enWorkflowPages } from "./pages-workflows.ts"
+import { enAccountPages } from "./pages-account.ts"
+import { enSkillsPages } from "./pages-skills.ts"
+import { enWorkspacesPages } from "./pages-workspaces.ts"
 
 export const enPages = {
   studioTitle: "Agent Studio",
@@ -16,5 +19,8 @@ export const enPages = {
   mcp: enMcpPages,
   workflows: enWorkflowPages,
   observability: enObservabilityPages,
-  inbox: enInboxPages
+  inbox: enInboxPages,
+  account: enAccountPages,
+  skills: enSkillsPages,
+  workspaces: enWorkspacesPages
 }

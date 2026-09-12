@@ -30,7 +30,9 @@ export type ObservabilityMetricsInput = z.infer<typeof ObservabilityMetricsInput
 
 export const ObservabilityExportInput = z
   .object({
-    format: z.enum(["json", "csv"])
+    format: z.enum(["json", "csv"]),
+    /** 只导出该 epoch 毫秒之后的指标；缺省全量。 */
+    since: z.number().int().optional()
   })
   .strict()
 export type ObservabilityExportInput = z.infer<typeof ObservabilityExportInput>

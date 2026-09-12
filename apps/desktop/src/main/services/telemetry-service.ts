@@ -55,8 +55,8 @@ export function queryMetrics(filter: { runId?: string; kind?: string; limit: num
   return listMetrics(getDatabase(), filter)
 }
 
-export function exportMetrics(format: "json" | "csv"): string {
-  const rows = listMetrics(getDatabase(), { limit: 500 })
+export function exportMetrics(format: "json" | "csv", since?: number): string {
+  const rows = listMetrics(getDatabase(), { since, limit: 50_000 })
   if (format === "json") return JSON.stringify(rows, null, 2)
   const header =
     "id,runId,kind,modelId,status,inputTokens,outputTokens,durationMs,ttfoMs,tokensPerSecond,errorClass,createdAt"

@@ -26,6 +26,7 @@ import {
   deleteActiveRun,
   emitEvent,
   getActiveRun,
+  settleRun,
   type ActiveRun
 } from "./agent-run-state"
 import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
@@ -256,6 +257,7 @@ async function failPump(runId: string, run: ActiveRun, error: unknown) {
     durationMs: Date.now() - run.startedAt,
     errorClass: classified.errorClass
   })
+  settleRun(runId, { status: "error", summary: classified.message })
   emitEvent(run.window, { type: "run.error", runId, message: classified.message })
   clearSteer(run.input.sessionId)
   if (classified.errorClass === "timeout") {

@@ -138,8 +138,8 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
         >
           <defs>
             <linearGradient id="tpAreaGrad2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="var(--color-chart-success)" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="var(--color-chart-success)" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -186,7 +186,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
                     width={8}
                     height={p.inputBarHeight}
                     rx={1}
-                    fill="#3b82f6"
+                    fill="var(--color-accent-500)"
                     fillOpacity={0.65}
                   />
                 ) : null}
@@ -199,7 +199,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
                     width={8}
                     height={p.outputBarHeight}
                     rx={1}
-                    fill="#a855f7"
+                    fill="var(--color-chart-5)"
                     fillOpacity={0.8}
                   />
                 ) : null}
@@ -215,7 +215,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
             <path
               d={chartData.path}
               fill="none"
-              stroke="#10b981"
+              stroke="var(--color-chart-success)"
               strokeWidth="2.5"
               strokeLinecap="round"
             />
@@ -236,8 +236,8 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
                   cx={p.x}
                   cy={p.yThroughput}
                   r={isHovered ? 5 : 3.5}
-                  fill="#10b981"
-                  stroke="var(--background-primary-default, #fff)"
+                  fill="var(--color-chart-success)"
+                  stroke="var(--color-background-primary-default)"
                   strokeWidth={isHovered ? 2 : 1.5}
                   className="transition-all"
                 />
@@ -252,7 +252,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
               y1={chartData.padding.top}
               x2={activePoint.x}
               y2={chartData.padding.top + chartData.plotHeight}
-              stroke="#10b981"
+              stroke="var(--color-chart-success)"
               strokeWidth="1"
               strokeDasharray="2 2"
               className="pointer-events-none"

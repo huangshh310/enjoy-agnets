@@ -3,6 +3,7 @@
  */
 import { useState } from "react"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import { HEATMAP_LEVEL_CLASSES } from "../constants"
 import type { HeatmapCellData, HeatmapPeriod } from "../types/profile.types"
 
@@ -12,17 +13,12 @@ interface ProfileActivityHeatmapProps {
   onPeriodChange: (period: HeatmapPeriod) => void
 }
 
-const PERIOD_HINT: Record<HeatmapPeriod, string> = {
-  weekly: "最近 8 周",
-  monthly: "最近 20 周",
-  yearly: "最近 1 年"
-}
-
 export function ProfileActivityHeatmap({
   data,
   period,
   onPeriodChange
 }: ProfileActivityHeatmapProps) {
+  const t = useT()
   const [hoveredCell, setHoveredCell] = useState<HeatmapCellData | null>(null)
   const numRows = 7
   const numCols = Math.ceil(data.length / numRows)
@@ -43,14 +39,15 @@ export function ProfileActivityHeatmap({
     <div className="flex w-full select-none flex-col gap-3 pt-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-caption-1-medium text-text-primary">Activity</span>
+          <span className="text-caption-1-medium text-text-primary">{t("pages.account.heatmap.activity")}</span>
           {hoveredCell ? (
             <span className="font-mono text-caption-2-medium text-text-tertiary">
-              {hoveredCell.date} · <strong className="text-accent-500">{hoveredCell.count}</strong> 次
+              {t("pages.account.heatmap.count", { n: hoveredCell.count })} ·{" "}
+              <strong className="text-accent-500">{hoveredCell.date}</strong>
             </span>
           ) : (
             <span className="hidden font-mono text-caption-2-medium text-text-tertiary sm:inline">
-              {PERIOD_HINT[period]} 开发动态
+              {t(`pages.account.heatmap.${period}`)} {t("pages.account.heatmap.periodHintSuffix")}
             </span>
           )}
         </div>
@@ -87,7 +84,7 @@ export function ProfileActivityHeatmap({
                     "aspect-square w-full cursor-pointer rounded-[2.5px] transition-all",
                     HEATMAP_LEVEL_CLASSES[cell.level]
                   )}
-                  title={`${cell.date}: ${cell.count} 次活动`}
+                  title={t("pages.account.heatmap.tooltip", { date: cell.date, n: cell.count })}
                 />
               ))}
             </div>
@@ -97,10 +94,10 @@ export function ProfileActivityHeatmap({
 
       <div className="flex items-center justify-between pt-0.5 font-mono text-caption-2-medium text-text-tertiary">
         <span>
-          {startDate || "Start"} ~ Today
+          {startDate || t("pages.account.heatmap.start")} ~ {t("pages.account.heatmap.today")}
         </span>
         <div className="flex items-center gap-1.5">
-          <span>Less</span>
+          <span>{t("pages.account.heatmap.less")}</span>
           <div className="flex items-center gap-[2.5px]">
             {([0, 1, 2, 3, 4] as const).map((level) => (
               <span
@@ -109,7 +106,7 @@ export function ProfileActivityHeatmap({
               />
             ))}
           </div>
-          <span>More</span>
+          <span>{t("pages.account.heatmap.more")}</span>
         </div>
       </div>
     </div>

@@ -3,8 +3,9 @@
  */
 import { safeStorage } from "electron"
 import { HARNESS_ADAPTERS, resolveHarnessAdapter, type HarnessAdapter } from "@enjoy-agents/agent-harness"
+import { getSecretValue, setSecretValue } from "@enjoy-agents/db"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
-import { getSetting, setSetting } from "./database"
+import { deleteSetting, getDatabase, getSetting } from "./database"
 import { findProfileByKinds, getActiveProfile } from "./secrets"
 
 const HARNESS_KEY = "harness.secret"
@@ -77,7 +78,7 @@ function blockedReason(input: {
 /** 解密已存沙箱凭证；加密不可用或损坏时返回 null。 */
 export function readHarnessSecret(): HarnessSecret | null {
   if (!safeStorage.isEncryptionAvailable()) return null
-  const raw = getSetting(HARNESS_KEY)
+  const raw = readHarnessBlob()
   if (!raw) return null
   try {
     const json = safeStorage.decryptString(Buffer.from(raw, "base64"))
@@ -106,9 +107,21 @@ export function writeHarnessSecret(patch: Partial<HarnessSecret>): HarnessSecret
     vercelTeamId: patch.vercelTeamId ?? current?.vercelTeamId,
     vercelProjectId: patch.vercelProjectId ?? current?.vercelProjectId
   }
-  const stored = safeStorage.encryptString(JSON.stringify(next)).toString("base64")
-  setSetting(HARNESS_KEY, stored)
+  setSecretValue(getDatabase(), HARNESS_KEY, safeStorage.encryptString(JSON.stringify(next)).toString("base64"))
+  deleteSetting(HARNESS_KEY)
   return next
+}
+
+/** 密文已迁到 secrets_vault 专表；首次读到旧 settings 键时搬一次。 */
+function readHarnessBlob(): string | undefined {
+  const db = getDatabase()
+  const current = getSecretValue(db, HARNESS_KEY)
+  if (current) return current
+  const legacy = getSetting(HARNESS_KEY)
+  if (!legacy) return undefined
+  setSecretValue(db, HARNESS_KEY, legacy)
+  deleteSetting(HARNESS_KEY)
+  return legacy
 }
 
 function pickSecret(next: string | undefined, prev: string | undefined): string {

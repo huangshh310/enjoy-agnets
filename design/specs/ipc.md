@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-10
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -21,15 +21,16 @@
 | agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；`ask_user_questions` 可带可选 `answers`，但 `answers` 不能配 `allow_session`；对该工具 `allow_session` 由 main 在 HMAC 落库前拒；篡改 runId / toolCallId 或库内签名即拒 |
 | assets | `import` `list` `read` `export` `delete` `upload` | 资产库与 provider 引用 |
 | knowledge | `sources` `documents` `addSource` `index` `search` `cancel` `remove` | RAG；`documents` 可带 `sourceId`，合并库内文档与磁盘扫描 |
-| workflow | `list` `get` `start` `recover` `resume` `cancel` `retry` | Durable run |
+| workflow | `list` `get` `start` `recover` `resume` `pause` `cancel` `retry` | Durable run；`resume` 立即返回，推进在后台（workflow.* 事件 + 轮询）；`retry` 可带 `stepId` 从该步重跑；`pause` 在下一步边界落 paused |
 | mcp | `servers` `upsert` `remove` `connect` `disconnect` `test` `tools` `call` `setPermission` `openApp` `appMessage` | MCP；`call` 入参 `McpCallInput`；`openApp` / `appMessage` 仅 trusted，消息经 `sanitizeAppMessage` |
 | realtime | `open` `sendAudio` `close` | 实验语音；连不上远端返回 `{ transport: "loop" }` 且 `realtime.status=error`，禁止把本地回环标成 `open` |
 | observability | `metrics` `export` `setPolicy` `replay` `cliUsage` | 本地指标与内存 stream 回放；`replay` 可按 `runId` 过滤，摘要可带 `toolName` / `decision`，不含 args；`cliUsage` 入参空对象，返回 catalog 全量 `CliUsageSource`（`CliUsageSourceStatus` 四态）+ 日/模型/项目桶，不含 prompt、jsonl 原文或绝对路径 |
 | terminal | `open` `write` `resize` `close` | node-pty；`resize` 入参 `{ sessionId, cols, rows }` |
+| inbox.state | `list` `put` | Inbox 档案耐久层（SQLite `inbox_state` 表）：已读 / 隐藏状态 + error/complete 条目归档；`put` 合并语义，只覆盖传入的标志 |
 | window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
 | app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |
 | rules | `list` `read` `create` `delete` `reveal` | 项目规则；读删定位走允许根；工作区路径必须已登记 |
-| skills | `list` `read` `create` `delete` `reveal` `sources.overview` `sources.detail` `sources.add` `sources.update` `sources.remove` `sources.deleteSkill` `sources.configure` `sources.deploy` `sources.doctor` `sources.curated` `sources.updateAll` `sources.repair` | 技能包；删除只允许 skill root 的直接子目录。`sources.deleteSkill` 删来源内单个包；`sources.remove` 卸载来源组（Git 清投影，本机发现组只隐藏）。`sources.updateAll` 返回 `SkillSourceUpdateAllResult`（`updatedCount` / `skippedCount` / `errors`），只快进 Git 源 |
+| skills | `list` `read` `create` `delete` `reveal` `sources.all` `sources.overview` `sources.detail` `sources.add` `sources.update` `sources.remove` `sources.deleteSkill` `sources.configure` `sources.deploy` `sources.doctor` `sources.curated` `sources.updateAll` `sources.repair` | 技能包；删除只允许 skill root 的直接子目录。`sources.deleteSkill` 删来源内单个包；`sources.remove` 卸载来源组（Git 清投影，本机发现组只隐藏）。`sources.updateAll` 返回 `SkillSourceUpdateAllResult`（`updatedCount` / `skippedCount` / `errors`），只快进 Git 源 |
 
 ### 推送事件
 
@@ -38,6 +39,8 @@
 | `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
 | `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |
+| `terminal.data` / `terminal.exit` | `TerminalDataEvent` / `TerminalExitEvent`（contract 有 schema，main 发送前 parse；preload `ide.terminal.onData` / `onExit`） |
+| `workspace.changed` | `WorkspaceChangedEvent`（`{ workspaceId, path }`，contract 有 schema；path 为相对根路径，`.` 表示指纹轮询粗粒度信号） |
 
 新增频道的顺序：**先改 `ipc-contract` → main handle → preload → renderer 调用**。禁止 renderer 直接 `ipcRenderer`。
 
@@ -67,6 +70,7 @@
 - node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止 `allow_session`：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。
+- `message.part.delta` 已从 StreamEvent v2 删除：从未有过生产者（文本增量走 v1 `text.delta`），留着只会让消费端空等。
 - Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
 - harness / desktop 的 node:test 若 value-import `@enjoy-agents/ipc-contract` 入口，会因 index 无后缀 re-export 报 `ERR_MODULE_NOT_FOUND`。能力表走子路径 `@enjoy-agents/ipc-contract/runtime-capabilities`；自定义 id 走 `@enjoy-agents/ipc-contract/custom-agent`。renderer Vite 别名必须精确匹配包名，并单独写这些子路径；字符串前缀会拼成 `index.ts/runtime-capabilities`。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。

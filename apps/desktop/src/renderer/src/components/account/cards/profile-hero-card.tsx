@@ -5,6 +5,7 @@ import { useState } from "react"
 import { RiCheckLine, RiEditLine, RiShareLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { ProfileActivityHeatmap } from "../charts/profile-activity-heatmap"
 import { growthBadgeClass } from "../constants"
@@ -48,6 +49,7 @@ export function ProfileHeroCard({
   onAvatarClick,
   onCoverPresetChange
 }: ProfileHeroCardProps) {
+  const t = useT()
   const [copiedShare, setCopiedShare] = useState(false)
 
   function handleShare() {
@@ -71,7 +73,7 @@ export function ProfileHeroCard({
             type="button"
             onClick={onAvatarClick ?? onEditClick}
             className="group relative cursor-pointer overflow-hidden rounded-full bg-background-primary-default shadow-xl ring-4 ring-background-primary-default transition-transform hover:scale-105"
-            title="点击定制 Blobatar 几何头像"
+            title={t("pages.account.hero.avatarHint")}
           >
             <BlobatarAvatar config={profile.blobatarConfig} size={92} className="p-1" />
             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background-full/55 opacity-0 transition-opacity group-hover:opacity-100">
@@ -90,12 +92,12 @@ export function ProfileHeroCard({
               {copiedShare ? (
                 <>
                   <RiCheckLine className="size-3.5 text-accent-500" />
-                  <span>已复制</span>
+                  <span>{t("pages.account.hero.copied")}</span>
                 </>
               ) : (
                 <>
                   <RiShareLine className="size-3.5 text-text-tertiary" />
-                  <span>Share</span>
+                  <span>{t("pages.account.hero.share")}</span>
                 </>
               )}
             </Button>
@@ -107,7 +109,7 @@ export function ProfileHeroCard({
               className="h-8 gap-1.5 px-3 text-caption-2-medium"
             >
               <RiEditLine className="size-3.5 text-text-tertiary" />
-              <span>Edit</span>
+              <span>{t("pages.account.hero.edit")}</span>
             </Button>
           </div>
         </div>
@@ -130,7 +132,7 @@ export function ProfileHeroCard({
         </div>
 
         <div className="mt-4 flex flex-col gap-1.5 border-t border-separator-border/50 pt-5">
-          <span className="text-caption-2-medium text-text-tertiary">Contributions this year</span>
+          <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.hero.contributions")}</span>
           <div className="flex items-center gap-2">
             <span className="text-title-1-semibold tracking-tight text-text-primary">
               {formatContributionUsd(summary.contributionsCount)}
@@ -147,10 +149,10 @@ export function ProfileHeroCard({
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 pt-3.5 sm:grid-cols-4">
-          <KpiTile value={summary.lifetimeTokens} label="Lifetime tokens" />
-          <KpiTile value={summary.peakTokens} label="Peak tokens" />
-          <KpiTile value={summary.longestTaskDuration} label="Longest task" />
-          <KpiTile value={summary.topStreakDays} label="Top streak" />
+          <KpiTile value={summary.lifetimeTokens} label={t("pages.account.hero.lifetimeTokens")} />
+          <KpiTile value={summary.peakTokens} label={t("pages.account.hero.peakTokens")} />
+          <KpiTile value={summary.longestTaskDuration} label={t("pages.account.hero.longestTask")} />
+          <KpiTile value={summary.topStreakDays} label={t("pages.account.hero.topStreak")} />
         </div>
 
         <div className="mt-4 border-t border-separator-border/50 pt-5">

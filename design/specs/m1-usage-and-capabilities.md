@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-11
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -54,6 +54,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 官方探针与解析：`apps/desktop/src/main/services/agent-tools-account/probes/`、`parse-official-usage.ts`、`quota-pacing.ts`
 - Composer：`ai-chat/usage/`、`agent-picker/`、`composer/composer-footer.tsx`
 - 设置：`settings/agent-tools/subscriptions-dashboard.tsx`、`agent-subscription-card.tsx`、`subscription-quota-meter.tsx`、`agent-subscription-donut.tsx`、`usage-trend-sparkline.tsx`、`rate-limit-resets-card.tsx`
+- 能力矩阵 UI：`settings/agent-tools/capability-matrix.tsx` + `config-boundary-table.tsx`（包在 `agent-capability-docs.tsx` 的 `<details>` 里，默认收起）。注意 `settings-capabilities.tsx` 是另一回事（模型 vision/tools 矩阵），别照代码入口找错。
 - L3 明细：`ai-chat/agent-limits/`
 - L4：`thread/thread-error-banner.tsx`、`usage/quota-exhausted-card.tsx`
 - 本机记录：`main/services/cli-transcript-usage/`、`observability/components/cli-usage/`

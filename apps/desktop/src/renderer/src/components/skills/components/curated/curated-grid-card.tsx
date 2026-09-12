@@ -10,6 +10,7 @@ import {
   RiStarFill
 } from "@remixicon/react"
 import type { CuratedSkillSource } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { resolveSkillTheme } from "../../constants/skills-badge-theme"
@@ -25,6 +26,7 @@ export function CuratedGridCard({
   busy: boolean
   onInstall: (item: CuratedSkillSource) => void
 }) {
+  const t = useT()
   const theme = resolveSkillTheme(item.id || item.title)
   const ThemeIcon = theme.icon
 
@@ -59,7 +61,7 @@ export function CuratedGridCard({
                 <span>·</span>
                 <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
                   <RiShieldCheckLine className="size-3" />
-                  <span>精选</span>
+                  <span>{t("pages.skills.states.curated")}</span>
                 </span>
               </div>
             </div>
@@ -100,13 +102,13 @@ export function CuratedGridCard({
       {/* 底部动作栏：能力数量与安装按钮 */}
       <div className="mt-4 pt-3.5 border-t border-separator-border/50 flex items-center justify-between">
         <span className="text-[11.5px] text-text-tertiary">
-          含 {item.skillCount} 项专业超能力
+          {t("pages.skills.gridCard.countSkills", { n: item.skillCount ?? "" })}
         </span>
 
         {isInstalled ? (
           <div className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
             <RiCheckLine className="size-3.5" />
-            <span>已装备</span>
+            <span>{t("pages.skills.states.equipped")}</span>
           </div>
         ) : (
           <Button
@@ -120,7 +122,7 @@ export function CuratedGridCard({
             ) : (
               <RiDownloadLine className="size-3.5" />
             )}
-            <span>一键获取</span>
+            <span>{t("pages.skills.gridCard.getNow")}</span>
           </Button>
         )}
       </div>

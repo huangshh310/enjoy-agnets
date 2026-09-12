@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-11
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -23,7 +23,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 
 `#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
-设置分段 ID 完整保留 24 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
+设置分段 ID 完整保留 26 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
 侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；组织：**个人资料** `#/settings/account`），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）；`skills` 自己就是一级入口，不再并进「说明」。不要把一级入口做成「团队资料」空态，否则个人中心（Blobatar / Hero / 用量图）会从侧栏消失。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
@@ -76,7 +76,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 绑了 Enjoy 档案后，配置抽屉顶部若仍画 `inspect.authAccount` 英雄卡（邮箱 / CUSTOM / 当前模型），用户会以为没换供应商。`authAccount` 是本机 CLI 官方登录。正确做法：「这个助手用」在前；`useCustomProvider` 时官方账号只作旁注，不展示 inspect 当前模型。
 - 「这个助手用」若两只无标签下拉都写 `deep · deepseek-flash`，用户分不清在选账号还是模型。账号行只写档案名 + 品牌/密钥副行；模型单独标签。抽屉 576px（`36rem`），给后续字段留宽。同步是次级折叠，不要做成第三只下拉。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
-- 设置侧栏严禁无脑平铺全部 24 个分段。`skills` 是一级入口（智能体分组），不要再并进「说明」。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
+- 设置侧栏严禁无脑平铺全部 26 个分段。`skills` 是一级入口（智能体分组），不要再并进「说明」。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。

@@ -147,21 +147,34 @@ async function collectFiles(workspaceRoot: string, pattern: string): Promise<str
   return files
 }
 
+/** grep 单文件上限：超限跳过，防大产物 / 日志把整轮 grep 拖死。 */
+const GREP_MAX_FILE_BYTES = 2 * 1024 * 1024
+const BINARY_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".exe", ".dll", ".dylib", ".so",
+  ".pdf", ".zip", ".gz", ".tar", ".br", ".woff", ".woff2", ".ttf", ".otf", ".mp4", ".mp3",
+  ".sqlite", ".db", ".icns", ".wasm", ".node"
+])
+
 async function grepFiles(workspaceRoot: string, pattern: string, glob?: string) {
   const expression = new RegExp(pattern, "m")
   const files = await collectFiles(workspaceRoot, glob ?? "**/*")
   const matches: Array<{ path: string; line: number; text: string }> = []
   for (const filePath of files) {
-    if ([".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".exe"].includes(extname(filePath))) {
+    if (BINARY_EXTENSIONS.has(extname(filePath))) {
       continue
     }
     const absolute = resolveInsideWorkspace(workspaceRoot, filePath)
     let content = ""
     try {
+      const stat = await fs.stat(absolute)
+      if (stat.size > GREP_MAX_FILE_BYTES) continue
       content = await fs.readFile(absolute, "utf8")
     } catch {
       continue
     }
+    // 二进制误入（无扩展名）通常表现为 NUL 字节；截断到首段可读内容。
+    const nul = content.indexOf("\0")
+    if (nul !== -1) content = content.slice(0, nul)
     content.split(/\r?\n/).forEach((text, index) => {
       if (expression.test(text)) {
         matches.push({ path: filePath, line: index + 1, text })

@@ -10,6 +10,7 @@ import {
   RiSearchLine
 } from "@remixicon/react"
 import type { SkillSource, SkillSourceSkill } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 
@@ -30,6 +31,7 @@ export function SkillListPane({
   onToggleSkill: (source: SkillSource, skillId: string) => void
   onDeleteSkill: (skillId: string) => void
 }) {
+  const t = useT()
   const [searchQuery, setSearchQuery] = useState("")
   const [filterMode, setFilterMode] = useState<"all" | "enabled" | "disabled">("all")
 
@@ -58,10 +60,10 @@ export function SkillListPane({
       <div className="flex items-center justify-between pb-1">
         <div>
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
-            包含的技能清单 ({skills.length})
+            {t("pages.skills.listPane.listTitle", { n: skills.length })}
           </h4>
           <p className="text-[11px] text-text-tertiary">
-            已勾选 {enabledCount} / {skills.length} 项能力同步至目标
+            {t("pages.skills.listPane.selectedSummary", { enabled: enabledCount, total: skills.length })}
           </p>
         </div>
 
@@ -77,7 +79,7 @@ export function SkillListPane({
                 : "text-text-tertiary hover:text-text-secondary"
             )}
           >
-            全部
+            {t("pages.skills.listPane.filterAll")}
           </button>
           <button
             type="button"
@@ -89,7 +91,7 @@ export function SkillListPane({
                 : "text-text-tertiary hover:text-text-secondary"
             )}
           >
-            已启用 ({enabledCount})
+            {t("pages.skills.listPane.filterEnabled", { n: enabledCount })}
           </button>
           <button
             type="button"
@@ -101,7 +103,7 @@ export function SkillListPane({
                 : "text-text-tertiary hover:text-text-secondary"
             )}
           >
-            停用
+            {t("pages.skills.listPane.filterDisabled")}
           </button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export function SkillListPane({
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={`在 ${skills.length} 项技能中过滤名称或指令…`}
+          placeholder={t("pages.skills.listPane.searchPlaceholder", { n: skills.length })}
           className="pl-8 h-8 text-caption-2-medium bg-background-secondary-default/50"
         />
       </div>
@@ -122,7 +124,7 @@ export function SkillListPane({
         {filteredSkills.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center text-text-tertiary">
             <RiFilter3Line className="size-6 mb-1.5 opacity-50" />
-            <p className="text-caption-2-regular">未找到匹配的技能项</p>
+            <p className="text-caption-2-regular">{t("pages.skills.listPane.noMatch")}</p>
           </div>
         ) : (
           filteredSkills.map((skill) => {
@@ -156,7 +158,7 @@ export function SkillListPane({
                         ? "border-accent-500 bg-accent-500 text-text-white shadow-xs"
                         : "border-separator-border/80 bg-background-primary-default hover:border-text-tertiary"
                     )}
-                    aria-label={`切换 ${skill.name}`}
+                    aria-label={t("pages.skills.listPane.toggleAria", { name: skill.name })}
                   >
                     {isSelected ? <RiCheckLine className="size-3.5" /> : null}
                   </button>
@@ -187,7 +189,7 @@ export function SkillListPane({
                         : "bg-background-secondary-default text-text-tertiary"
                     )}
                   >
-                    {isSelected ? "已激活" : "已休眠"}
+                    {isSelected ? t("pages.skills.listPane.stateActive") : t("pages.skills.listPane.stateDormant")}
                   </span>
 
                   <button
@@ -198,8 +200,8 @@ export function SkillListPane({
                       onDeleteSkill(skill.id)
                     }}
                     className="opacity-0 group-hover:opacity-100 rounded-md p-1 text-text-tertiary hover:bg-rose-500/10 hover:text-rose-600 transition-opacity"
-                    aria-label="删除技能"
-                    title="从磁盘移除此技能"
+                    aria-label={t("pages.skills.listPane.deleteAria")}
+                    title={t("pages.skills.listPane.deleteTitle")}
                   >
                     <RiDeleteBinLine className="size-3.5" />
                   </button>

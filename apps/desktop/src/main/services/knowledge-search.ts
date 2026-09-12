@@ -19,7 +19,8 @@ export async function searchKnowledge(
   rerank = false,
   sourceIds?: string[]
 ): Promise<SearchKnowledgeResult> {
-  const embedded = listChunkEmbeddings(getDatabase(), workspaceId)
+  // 有来源过滤时先裁候选集：既省掉无关 chunk 的余弦计算，也避免全局 top-limit 过滤后命中率塌掉。
+  const embedded = listChunkEmbeddings(getDatabase(), workspaceId, sourceIds)
   const modelId = embedded[0]?.modelId
   let embeddingKind: KnowledgeEmbeddingKind =
     !modelId || modelId === "hashed" ? "hashed" : "provider"
@@ -32,7 +33,6 @@ export async function searchKnowledge(
     hits = lexicalSearch(workspaceId, query, limit)
     embeddingKind = "lexical"
   }
-  hits = filterSourceIds(hits, sourceIds)
   if (!rerank) return stampKind({ hits: hits.slice(0, limit), embeddingKind })
   const withLexical = hits.map((hit) => ({ ...hit, lexical: lexicalScore(query, hit.snippet) }))
   const providerHits = await rerankWithProvider(await resolveRerankModel(), query, withLexical)
@@ -45,12 +45,6 @@ function stampKind(result: SearchKnowledgeResult): SearchKnowledgeResult {
     embeddingKind: result.embeddingKind,
     hits: result.hits.map((hit) => ({ ...hit, embeddingKind: result.embeddingKind }))
   }
-}
-
-function filterSourceIds(hits: KnowledgeHit[], sourceIds?: string[]): KnowledgeHit[] {
-  if (!sourceIds?.length) return hits
-  const allowed = new Set(sourceIds)
-  return hits.filter((hit) => allowed.has(hit.sourceId))
 }
 
 async function vectorHits(

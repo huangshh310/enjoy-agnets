@@ -13,6 +13,7 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useT } from "@renderer/i18n"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +56,7 @@ export function SkillsToolbar({
   onImport: () => void
   onCreateSkill: () => void
 }) {
+  const t = useT()
   const hasIssues = driftCount > 0 || warningCount > 0
 
   return (
@@ -81,12 +83,14 @@ export function SkillsToolbar({
                 )}
               />
               {hasIssues
-                ? `${driftCount} 处需同步`
-                : `${deployedCount > 0 ? `${deployedCount} 项能力已就绪` : "状态就绪"}`}
+                ? t("pages.skills.toolbar.driftBadge", { n: driftCount })
+                : deployedCount > 0
+                  ? t("pages.skills.toolbar.readyBadge", { n: deployedCount })
+                  : t("pages.skills.toolbar.readyAll")}
             </span>
           </div>
           <p className="text-caption-2-regular text-text-tertiary">
-            为你的 AI 助手装备专业代码审查、UI 设计、文案创作等即插即用的领域超能力。
+            {t("pages.skills.toolbar.subtitle")}
           </p>
         </div>
 
@@ -97,7 +101,7 @@ export function SkillsToolbar({
             <Input
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="搜索技能名称或触发词…"
+              placeholder={t("pages.skills.toolbar.searchPlaceholder")}
               className="pl-8 h-8 text-caption-2-medium bg-background-primary-default"
             />
           </div>
@@ -108,7 +112,7 @@ export function SkillsToolbar({
             className="gap-1.5 h-8 px-3.5 text-caption-2-medium shadow-xs"
           >
             <RiAddLine className="size-3.5" />
-            <span>新建技能</span>
+            <span>{t("pages.skills.toolbar.createSkill")}</span>
           </Button>
 
           <Button
@@ -118,7 +122,7 @@ export function SkillsToolbar({
             className="gap-1.5 h-8 px-3 text-caption-2-medium"
           >
             <RiFolderLine className="size-3.5 text-text-tertiary" />
-            <span>导入来源</span>
+            <span>{t("pages.skills.toolbar.importSource")}</span>
           </Button>
 
           {gitSourceCount > 0 ? (
@@ -147,7 +151,7 @@ export function SkillsToolbar({
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={onDoctor} className="gap-2">
                 <RiStethoscopeLine className="size-3.5 text-accent-500" />
-                <span>Doctor 状态诊断</span>
+                <span>{t("pages.skills.toolbar.doctor")}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -168,7 +172,7 @@ export function SkillsToolbar({
             )}
           >
             <RiCompass3Line className="size-3.5" />
-            <span>精选集市</span>
+            <span>{t("pages.skills.toolbar.tabCurated")}</span>
             <span className="rounded-full bg-accent-500/10 px-1.5 py-0.2 text-[10px] text-accent-600 dark:text-accent-400 font-mono">
               Store
             </span>
@@ -185,7 +189,7 @@ export function SkillsToolbar({
             )}
           >
             <RiSparklingLine className="size-3.5" />
-            <span>全部能力库</span>
+            <span>{t("pages.skills.toolbar.tabAll")}</span>
             <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] text-text-secondary font-mono">
               {deployedCount}
             </span>
@@ -202,7 +206,7 @@ export function SkillsToolbar({
             )}
           >
             <RiFolderLine className="size-3.5" />
-            <span>技能包合集</span>
+            <span>{t("pages.skills.toolbar.tabPacks")}</span>
             <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] text-text-secondary font-mono">
               {sourceCount}
             </span>

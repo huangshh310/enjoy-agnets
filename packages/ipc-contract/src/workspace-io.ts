@@ -110,6 +110,13 @@ export const FileEntry = z.object({
 })
 export type FileEntry = z.infer<typeof FileEntry>
 
+/** main → renderer 推送：工作区文件变化（path 为相对根的路径，"." 表示指纹轮询的粗粒度信号）。 */
+export const WorkspaceChangedEvent = z.object({
+  workspaceId: z.string().min(1),
+  path: z.string().min(1)
+})
+export type WorkspaceChangedEvent = z.infer<typeof WorkspaceChangedEvent>
+
 export const ChangedFile = z.object({
   path: z.string(),
   status: z.enum(["added", "modified", "deleted", "untracked"]),

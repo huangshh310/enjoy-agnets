@@ -45,8 +45,14 @@ export type ActiveRun = {
 }
 
 const activeRuns = new Map<string, ActiveRun>()
-const runWaiters = new Map<string, Array<(status: "end" | "error") => void>>()
-const settledRuns = new Map<string, "end" | "error">()
+const runWaiters = new Map<string, Array<(result: RunSettleResult) => void>>()
+const settledRuns = new Map<string, RunSettleResult>()
+
+/** waitForRunSettle 的收工结果：end 带真实产出摘要，error 带失败原因。 */
+export type RunSettleResult = { status: "end" | "error"; summary: string }
+
+/** settledRuns 只为晚到的 waiter 兜底；上限防长进程内存缓涨。 */
+const SETTLED_RUNS_CAP = 200
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
   const sessionId = event.sessionId ?? sessionIdOfRun(event)
@@ -61,7 +67,7 @@ export function emitEvent(window: BrowserWindow, event: StreamEvent) {
 }
 
 /** Workflow / Automation 等待同一 run 收工。 */
-export function waitForRunSettle(runId: string): Promise<"end" | "error"> {
+export function waitForRunSettle(runId: string): Promise<RunSettleResult> {
   const already = settledRuns.get(runId)
   if (already) return Promise.resolve(already)
   return new Promise((resolve) => {
@@ -71,14 +77,40 @@ export function waitForRunSettle(runId: string): Promise<"end" | "error"> {
   })
 }
 
+/** 带摘要的显式收工：completeAgentRun / failPump 在 emit 前调用。 */
+export function settleRun(runId: string, result: RunSettleResult): void {
+  if (settledRuns.has(runId) && !runWaiters.has(runId)) return
+  settledRuns.set(runId, result)
+  while (settledRuns.size > SETTLED_RUNS_CAP) {
+    const oldest = settledRuns.keys().next().value
+    if (oldest === undefined) break
+    settledRuns.delete(oldest)
+  }
+  const waiters = runWaiters.get(runId)
+  if (!waiters?.length) return
+  runWaiters.delete(runId)
+  for (const resolve of waiters) resolve(result)
+}
+
+/** 兜底：没有显式 settleRun 的发射点（prepare 失败 / 生成类 run）在这里收口。 */
 function settleRunWaiters(event: StreamEvent): void {
   if (event.type !== "run.end" && event.type !== "run.error") return
-  const status = event.type === "run.end" ? "end" : "error"
-  settledRuns.set(event.runId, status)
+  if (!settledRuns.has(event.runId)) {
+    settledRuns.set(event.runId, {
+      status: event.type === "run.end" ? "end" : "error",
+      summary: ""
+    })
+    while (settledRuns.size > SETTLED_RUNS_CAP) {
+      const oldest = settledRuns.keys().next().value
+      if (oldest === undefined) break
+      settledRuns.delete(oldest)
+    }
+  }
   const waiters = runWaiters.get(event.runId)
   if (!waiters?.length) return
   runWaiters.delete(event.runId)
-  for (const resolve of waiters) resolve(status)
+  const result = settledRuns.get(event.runId) ?? { status: "error" as const, summary: "" }
+  for (const resolve of waiters) resolve(result)
 }
 
 function sessionIdOfRun(event: StreamEvent): string | undefined {

@@ -3,6 +3,7 @@
  */
 import { useState } from "react"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import { growthBadgeClass } from "../constants"
 import type { TokenTrendPoint } from "../types/profile.types"
 
@@ -17,6 +18,7 @@ export function ProfileTokensAreaChart({
   totalTokensFormatted,
   growthRate
 }: ProfileTokensAreaChartProps) {
+  const t = useT()
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
   const chartHeight = 110
   const chartWidth = 640
@@ -49,7 +51,7 @@ export function ProfileTokensAreaChart({
     <div className="flex select-none flex-col gap-4 rounded-2xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
-          <span className="text-caption-2-medium text-text-tertiary">Tokens</span>
+          <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.charts.tokens")}</span>
           <div className="mt-0.5 flex items-center gap-2">
             <h3 className="text-title-2-semibold text-text-primary">{totalTokensFormatted}</h3>
             <span

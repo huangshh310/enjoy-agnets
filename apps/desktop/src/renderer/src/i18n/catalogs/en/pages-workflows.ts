@@ -30,6 +30,7 @@ export const enWorkflowPages = {
   runningStep: "Step {current} / {total}",
   statusRunning: "Running",
   statusCompleted: "Completed",
+  statusWaiting: "Waiting for approval",
   statusPaused: "Paused",
   statusFailed: "Failed",
   stepN: "Step {n}",

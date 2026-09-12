@@ -239,8 +239,9 @@ export function optionalIntField(
 | ID | 是否进 cliUsage catalog | 本轮 scan | 理由 |
 |---|---|---|---|
 | `claude` `codex` | 是 | jsonl | 已有 |
-| `grok` | 是 | usage-json | 本轮必做 |
-| `cursor` `antigravity` `gemini` `opencode` `pi` `hermes` `amp` `deepseek` `omp` | 是 | **none** | 芯片标「本版本不扫描」 |
+| `grok` | 是 | usage-json | `usage.json` 专用 parser |
+| `cursor` | 是 | jsonl | 按 transcript 相对路径匹配 |
+| `antigravity` `gemini` `opencode` `pi` `hermes` `amp` `deepseek` `omp` | 是 | jsonl | **12 源全扫盘**（2026-09 决策，见 `m1-usage`：不要把导轨 CLI 标成「本版本不扫描」；本文早期 `scan: "none"` 计划已作废） |
 | `enjoy-local` | **否** | — | 遥测留在大盘 |
 | `sandbox-harness` | **否** | — | 不上导轨 |
 | `custom-acp` / `custom:*` | **否** | — | 无稳定路径 |
@@ -279,7 +280,7 @@ directoryFound && sessionCount === 0    → scanned-empty
 - `fileCount === 0`：目录在，没有目标文件
 - `fileCount > 0`：有会话文件但没有用量字段（Claude/Codex 空 jsonl；**不是** Cursor——Cursor 本轮是 `unsupported`，不读盘）
 
-`unsupported` **禁止** `existsSync`。不要因为本机有 `~/.gemini` 就把 Gemini 画成「未找到」或 0 会话。
+`unsupported` **禁止** `existsSync`。当前 12 源全部有 scan roots（`catalog.ts`），`unsupported` 态保留在 enum 里但现网不产生；若未来新增源不接 adapter，仍按「不碰盘」实现。
 
 #### 空态规则
 

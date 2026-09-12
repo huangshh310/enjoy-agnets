@@ -7,7 +7,8 @@ import { z } from "zod"
 export const WorkflowStatus = z.enum([
   "running",
   "paused",
-  "waiting_approval",
+  // 与 runs.status / TaskStatus 同词表：审批停车一律叫 waiting_review。
+  "waiting_review",
   "completed",
   "failed",
   "cancelled"
@@ -76,6 +77,10 @@ export type WorkflowResumeInput = z.infer<typeof WorkflowResumeInput>
 
 export const WorkflowCancelInput = z.object({ runId: z.string().min(1) }).strict()
 export type WorkflowCancelInput = z.infer<typeof WorkflowCancelInput>
+
+/** 请求暂停：durable loop 在下一步边界落 paused。 */
+export const WorkflowPauseInput = z.object({ runId: z.string().min(1) }).strict()
+export type WorkflowPauseInput = z.infer<typeof WorkflowPauseInput>
 
 export const WorkflowRetryInput = z
   .object({

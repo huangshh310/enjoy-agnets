@@ -670,6 +670,7 @@ export const enChat = {
   openFolderTerminal: "Open a folder to start a terminal.",
   terminalInput: "Terminal input",
   terminalFailed: "Failed to open terminal.",
+  terminalExited: "Terminal session ended.",
 
   enableMedia: "Enable experimental media?",
   enableMediaHint:

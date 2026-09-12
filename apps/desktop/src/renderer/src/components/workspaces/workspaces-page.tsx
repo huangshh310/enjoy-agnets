@@ -36,7 +36,7 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
         items: [
           {
             id: "all",
-            label: "全部项目与目录",
+            label: t("pages.workspaces.list.navAll"),
             icon: RiFolder6Line
           }
         ]
@@ -98,20 +98,21 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
             </div>
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">
-                <h2 className="text-title-3-semibold text-text-primary">本地项目工作区</h2>
+                <h2 className="text-title-3-semibold text-text-primary">{t("pages.workspaces.list.pageTitle")}</h2>
                 <span className="rounded-full bg-state-success-text/10 text-state-success-text border border-state-success-text/20 px-2 py-0.2 text-[11px] font-mono font-semibold">
-                  活跃中
+                  {t("pages.workspaces.list.activeBadge")}
                 </span>
               </div>
               <p className="font-mono text-caption-1-regular text-text-tertiary truncate max-w-xl">
-                当前挂载: <span className="text-text-primary font-medium">{currentRootLabel}</span>
+                {t("pages.workspaces.list.currentMount")}
+                <span className="text-text-primary font-medium">{currentRootLabel}</span>
               </p>
             </div>
           </div>
 
           <Button onClick={() => void openFolder()} className="h-9 gap-1.5 text-caption-1-medium">
             <RiFolderAddLine className="size-4" />
-            <span>打开新文件夹</span>
+            <span>{t("pages.workspaces.list.openFolder")}</span>
           </Button>
         </div>
 
@@ -119,7 +120,7 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
         <div className="flex items-center gap-4">
           <div className="flex-1 max-w-sm">
             <Input
-              placeholder="搜索文件夹名称或本地路径..."
+              placeholder={t("pages.workspaces.list.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-9 font-sans text-caption-1-regular"
@@ -133,11 +134,11 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
             <table className="w-full text-left border-collapse text-[12.5px]">
               <thead>
                 <tr className="border-b border-separator-border/70 bg-background-secondary-default/50 text-text-tertiary font-medium">
-                  <th className="py-2.5 px-4">项目名称</th>
-                  <th className="py-2.5 px-4">本地路径</th>
-                  <th className="py-2.5 px-4">Git 分支</th>
-                  <th className="py-2.5 px-4">会话数</th>
-                  <th className="py-2.5 px-4 text-right">状态与操作</th>
+                  <th className="py-2.5 px-4">{t("pages.workspaces.list.colName")}</th>
+                  <th className="py-2.5 px-4">{t("pages.workspaces.list.colPath")}</th>
+                  <th className="py-2.5 px-4">{t("pages.workspaces.list.colBranch")}</th>
+                  <th className="py-2.5 px-4">{t("pages.workspaces.list.colSessions")}</th>
+                  <th className="py-2.5 px-4 text-right">{t("pages.workspaces.list.colActions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-separator-border/50 font-sans">
@@ -162,14 +163,14 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
                     </td>
 
                     <td className="py-3 px-4 font-mono tabular-nums text-text-secondary">
-                      {item.sessionCount} 组对话
+                      {t("pages.workspaces.list.sessionCount", { n: item.sessionCount })}
                     </td>
 
                     <td className="py-3 px-4 text-right">
                       {item.isCurrent ? (
                         <span className="inline-flex items-center gap-1 text-state-success-text text-caption-2-medium font-semibold">
                           <RiCheckLine className="size-3.5" />
-                          当前已激活
+                          {t("pages.workspaces.list.currentActive")}
                         </span>
                       ) : (
                         <button
@@ -177,7 +178,7 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
                           onClick={() => void handleSwitch(item)}
                           className="px-2.5 py-1 text-caption-2-medium font-medium text-accent-600 hover:bg-accent-500/10 rounded-md transition-colors"
                         >
-                          切换到此工作区
+                          {t("pages.workspaces.list.switchTo")}
                         </button>
                       )}
                     </td>
@@ -194,12 +195,12 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="搜索工作区与文件夹路径..."
+      searchPlaceholder={t("pages.workspaces.list.shellSearchPlaceholder")}
       groups={navGroups}
       selectedId={filter}
       onSelect={setFilter}
       contentWidth="wide"
-      breadcrumbTitle="工作区管理 > 文件夹与项目"
+      breadcrumbTitle={t("pages.workspaces.list.crumbTitle")}
     >
       {body}
     </SecondaryPageShell>

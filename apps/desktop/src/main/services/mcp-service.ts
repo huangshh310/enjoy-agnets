@@ -74,10 +74,27 @@ export async function connectServer(id: string) {
     id,
     transport: row.transport as "stdio" | "sse" | "http",
     command: row.command ?? undefined,
-    url: row.url ?? undefined
+    url: row.url ?? undefined,
+    env: parseEnvRef(row.envRef)
   })
   handles.set(id, handle)
   return toPublic(row)
+}
+
+/** envRef 是 UI 存的 `{KEY: value}` JSON 串；坏 JSON 不阻断连接，只当空 env。 */
+function parseEnvRef(raw: string | null): Record<string, string> | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined
+    const env: Record<string, string> = {}
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === "string") env[key] = value
+    }
+    return Object.keys(env).length > 0 ? env : undefined
+  } catch {
+    return undefined
+  }
 }
 
 export async function disconnectServer(id: string) {

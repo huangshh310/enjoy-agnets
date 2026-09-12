@@ -142,8 +142,8 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
           <defs>
             {/* 渐变填充 */}
             <linearGradient id="durationAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="var(--color-accent-500)" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="var(--color-accent-500)" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -184,7 +184,7 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
             <path
               d={chartData.durationPath}
               fill="none"
-              stroke="#3b82f6"
+              stroke="var(--color-accent-500)"
               strokeWidth="2.5"
               strokeLinecap="round"
             />
@@ -195,7 +195,7 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
             <path
               d={chartData.ttfoPath}
               fill="none"
-              stroke="#f59e0b"
+              stroke="var(--color-chart-warning)"
               strokeWidth="1.8"
               strokeDasharray="4 3"
               strokeLinecap="round"
@@ -225,8 +225,8 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
                   cx={p.x}
                   cy={p.yDuration}
                   r={isHovered ? 5 : 3.5}
-                  fill={isSuccess ? "#3b82f6" : "#f43f5e"}
-                  stroke="var(--background-primary-default, #fff)"
+                  fill={isSuccess ? "var(--color-accent-500)" : "var(--color-chart-danger)"}
+                  stroke="var(--color-background-primary-default)"
                   strokeWidth={isHovered ? 2 : 1.5}
                   className="transition-all"
                 />
@@ -236,8 +236,8 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
                     cx={p.x}
                     cy={p.yTtfo}
                     r={isHovered ? 4 : 2.5}
-                    fill="#f59e0b"
-                    stroke="var(--background-primary-default, #fff)"
+                    fill="var(--color-chart-warning)"
+                    stroke="var(--color-background-primary-default)"
                     strokeWidth={1}
                   />
                 ) : null}
@@ -252,7 +252,7 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
               y1={chartData.padding.top}
               x2={activePoint.x}
               y2={chartData.padding.top + chartData.plotHeight}
-              stroke="#3b82f6"
+              stroke="var(--color-accent-500)"
               strokeWidth="1"
               strokeDasharray="2 2"
               className="pointer-events-none"

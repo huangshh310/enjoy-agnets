@@ -84,6 +84,7 @@ import {
   compactSession,
   getSessionCompaction
 } from "./services/session-compaction-service"
+import { listInboxStateRows, putInboxStates } from "./services/inbox-state-service"
 
 export const SHELL_CHANNELS = [
   "workspace.open",
@@ -107,6 +108,8 @@ export const SHELL_CHANNELS = [
   "workspace.previewCheckpoint",
   "workspace.restoreCheckpoint",
   "workspace.changes",
+  "inbox.state.list",
+  "inbox.state.put",
   "session.list",
   "session.listArchived",
   "session.create",
@@ -147,7 +150,13 @@ export function registerShellIpc() {
   registerSessionIpc()
   registerAgentIpc()
   registerTerminalIpc()
+  registerInboxIpc()
   registerWindowIpc()
+}
+
+function registerInboxIpc() {
+  ipcMain.handle("inbox.state.list", (_event, raw) => listInboxStateRows(raw))
+  ipcMain.handle("inbox.state.put", (_event, raw) => putInboxStates(raw))
 }
 
 function registerWorkspaceIpc() {

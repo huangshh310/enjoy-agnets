@@ -24,6 +24,7 @@ import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { BlobatarPickerDialog } from "../../avatar/blobatar-picker-dialog"
 import { BLOBATAR_EXPRESSIONS } from "../../avatar/blobatar.types"
 import { GLASS_COVER_PRESETS } from "../constants"
+import { useT } from "@renderer/i18n"
 import type { ExtendedUserProfile } from "../types/profile.types"
 
 interface ProfileEditDialogProps {
@@ -39,6 +40,7 @@ export function ProfileEditDialog({
   profile,
   onSave
 }: ProfileEditDialogProps) {
+  const t = useT()
   const [draft, setDraft] = useState<ExtendedUserProfile>(profile)
   const [pickerOpen, setPickerOpen] = useState(false)
 
@@ -57,7 +59,7 @@ export function ProfileEditDialog({
         <DialogContent className="max-w-xl overflow-hidden border border-separator-border bg-background-primary-default p-0 shadow-card sm:rounded-2xl select-none">
           <DialogHeader className="border-b border-separator-border/60 px-5 pt-5 pb-3">
             <DialogTitle className="text-title-3-semibold text-text-primary">
-              编辑个人资料与形象
+              {t("pages.account.editDialog.title")}
             </DialogTitle>
           </DialogHeader>
 
@@ -68,9 +70,12 @@ export function ProfileEditDialog({
                   <BlobatarAvatar config={draft.blobatarConfig} size={58} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-caption-1-medium text-text-primary">Blobatar 几何头像</span>
+                  <span className="text-caption-1-medium text-text-primary">{t("pages.account.editDialog.blobatarLabel")}</span>
                   <span className="font-mono text-caption-2-medium text-text-tertiary">
-                    种子: {draft.blobatarConfig.name} · 表情: {draft.blobatarConfig.expression ?? "idle"}
+                    {t("pages.account.editDialog.blobatarMeta", {
+                      seed: draft.blobatarConfig.name,
+                      expression: draft.blobatarConfig.expression ?? "idle"
+                    })}
                   </span>
                 </div>
               </div>
@@ -82,42 +87,42 @@ export function ProfileEditDialog({
                 className="h-8 gap-1.5 text-caption-2-medium"
               >
                 <RiPaletteLine className="size-3.5 text-accent-500" />
-                <span>定制头像</span>
+                <span>{t("pages.account.editDialog.customizeAvatar")}</span>
               </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-              <Field label="用户昵称">
+              <Field label={t("pages.account.editDialog.fieldName")}>
                 <Input
                   value={draft.name}
                   onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="例如: Enjoy Engineer"
+                  placeholder={t("pages.account.editDialog.placeholderName")}
                 />
               </Field>
-              <Field label="社交代号 (Handle)">
+              <Field label={t("pages.account.editDialog.fieldHandle")}>
                 <Input
                   value={draft.handle}
                   onChange={(event) => setDraft((current) => ({ ...current, handle: event.target.value }))}
-                  placeholder="例如: @enjoy-agents"
+                  placeholder={t("pages.account.editDialog.placeholderHandle")}
                 />
               </Field>
-              <Field label="职位头衔">
+              <Field label={t("pages.account.editDialog.fieldRole")}>
                 <Input
                   value={draft.roleTitle}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, roleTitle: event.target.value }))
                   }
-                  placeholder="例如: Agent Engineer"
+                  placeholder={t("pages.account.editDialog.placeholderRole")}
                 />
               </Field>
-              <Field label="电子邮箱">
+              <Field label={t("pages.account.editDialog.fieldEmail")}>
                 <Input
                   value={draft.email}
                   onChange={(event) => setDraft((current) => ({ ...current, email: event.target.value }))}
                   placeholder="name@example.com"
                 />
               </Field>
-              <Field label="时区">
+              <Field label={t("pages.account.editDialog.fieldTimezone")}>
                 <Input
                   value={draft.timezone}
                   onChange={(event) =>
@@ -127,7 +132,7 @@ export function ProfileEditDialog({
                 />
               </Field>
               <SelectField
-                label="头像表情"
+                label={t("pages.account.editDialog.fieldExpression")}
                 value={draft.blobatarConfig.expression ?? "idle"}
                 onValueChange={(expression) =>
                   setDraft((current) => ({
@@ -141,12 +146,12 @@ export function ProfileEditDialog({
                 }))}
               />
               <SelectField
-                label="Glass 封面风格"
+                label={t("pages.account.editDialog.fieldCover")}
                 value={draft.coverPreset}
                 onValueChange={(coverPreset) => setDraft((current) => ({ ...current, coverPreset }))}
                 items={GLASS_COVER_PRESETS.map((preset) => ({
                   value: preset.id,
-                  label: preset.label
+                  label: t(`pages.account.cover.${preset.labelKey}.label`)
                 }))}
               />
             </div>
@@ -154,10 +159,10 @@ export function ProfileEditDialog({
 
           <DialogFooter className="border-t border-separator-border/60 bg-background-secondary-default/30 px-5 py-3">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              取消
+              {t("pages.account.editDialog.cancel")}
             </Button>
             <Button size="sm" onClick={handleSave}>
-              保存修改
+              {t("pages.account.editDialog.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

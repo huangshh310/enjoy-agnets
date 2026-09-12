@@ -15,6 +15,7 @@ import {
   Sankey,
   Tooltip
 } from "recharts"
+import { useT } from "@renderer/i18n"
 import { formatTokens } from "../format-spend"
 import { SpendChartTooltip } from "./spend-chart-tooltip"
 import type { UsageChartModel } from "./usage-chart-data"
@@ -23,12 +24,19 @@ import { UsageChartCard } from "./usage-chart-card"
 export type ShapeChartView = "radar" | "radial" | "reliability" | "ride" | "sankey"
 
 export function UsageShapeGallery({ model, view }: { model: UsageChartModel; view: ShapeChartView }) {
+  const t = useT()
   const healthLabel =
-    model.health >= 820 ? "额度健康" : model.health >= 650 ? "额度尚可" : model.health >= 450 ? "额度偏紧" : "额度告急"
+    model.health >= 820
+      ? t("pages.observability.usageShape.healthGood")
+      : model.health >= 650
+        ? t("pages.observability.usageShape.healthFair")
+        : model.health >= 450
+          ? t("pages.observability.usageShape.healthTight")
+          : t("pages.observability.usageShape.healthLow")
 
   if (view === "radar") {
     return (
-      <UsageChartCard title="助手雷达" hint="Radar Chart · 剩余 / 已用 / 30 天份额">
+      <UsageChartCard title={t("pages.observability.usageShape.radarTitle")} hint={t("pages.observability.usageShape.radarHint")}>
         <ResponsiveContainer width="100%" height={240}>
           <RadarChart data={model.radar}>
             <PolarGrid stroke="var(--color-separator-border)" />
@@ -44,9 +52,9 @@ export function UsageShapeGallery({ model, view }: { model: UsageChartModel; vie
   }
   if (view === "radial") {
     return (
-      <UsageChartCard title="窗口径向" hint="Radial / monthly-budget · 各官方窗口已用%">
+      <UsageChartCard title={t("pages.observability.usageShape.radialTitle")} hint={t("pages.observability.usageShape.radialHint")}>
         {model.windows.length === 0 ? (
-          <p className="py-10 text-center text-caption-2-medium text-text-tertiary">没有官方窗口</p>
+          <p className="py-10 text-center text-caption-2-medium text-text-tertiary">{t("pages.observability.usageShape.noWindows")}</p>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <RadialBarChart
@@ -70,7 +78,7 @@ export function UsageShapeGallery({ model, view }: { model: UsageChartModel; vie
   }
   if (view === "reliability") {
     return (
-      <UsageChartCard title="额度健康度" hint="reliability-score · 官方窗口剩余均值 × 10">
+      <UsageChartCard title={t("pages.observability.usageShape.reliabilityTitle")} hint={t("pages.observability.usageShape.reliabilityHint")}>
         <div className="relative mx-auto h-[200px] w-full max-w-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -114,17 +122,17 @@ export function UsageShapeGallery({ model, view }: { model: UsageChartModel; vie
   }
   if (view === "ride") {
     return (
-      <UsageChartCard title="用量摘要" hint="ride-summary · 四个径向指标">
+      <UsageChartCard title={t("pages.observability.usageShape.rideTitle")} hint={t("pages.observability.usageShape.rideHint")}>
         <div className="grid grid-cols-2 gap-3">
-          <MiniRing label="官方窗口" value={String(model.windows.length)} ratio={model.windows.length / Math.max(8, model.windows.length)} />
-          <MiniRing label="助手" value={String(model.series.length)} ratio={model.series.length / Math.max(6, model.series.length)} />
+          <MiniRing label={t("pages.observability.usageShape.ringWindows")} value={String(model.windows.length)} ratio={model.windows.length / Math.max(8, model.windows.length)} />
+          <MiniRing label={t("pages.observability.usageShape.ringAgents")} value={String(model.series.length)} ratio={model.series.length / Math.max(6, model.series.length)} />
           <MiniRing
-            label="本周"
+            label={t("pages.observability.usageShape.ringThisWeek")}
             value={formatTokens(model.thisWeek)}
             ratio={model.thisWeek / Math.max(model.thisWeek, model.lastWeek, 1)}
           />
           <MiniRing
-            label="上周"
+            label={t("pages.observability.usageShape.ringLastWeek")}
             value={formatTokens(model.lastWeek)}
             ratio={model.lastWeek / Math.max(model.thisWeek, model.lastWeek, 1)}
           />
@@ -133,9 +141,9 @@ export function UsageShapeGallery({ model, view }: { model: UsageChartModel; vie
     )
   }
   return (
-      <UsageChartCard title="消耗流向" hint="Sankey · 本机记录 → 助手 → 官方窗口 / 仅日志">
+      <UsageChartCard title={t("pages.observability.usageShape.sankeyTitle")} hint={t("pages.observability.usageShape.sankeyHint")}>
         {model.sankey.links.length === 0 ? (
-          <p className="py-10 text-center text-caption-2-medium text-text-tertiary">没有流向数据</p>
+          <p className="py-10 text-center text-caption-2-medium text-text-tertiary">{t("pages.observability.usageShape.noFlow")}</p>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <Sankey

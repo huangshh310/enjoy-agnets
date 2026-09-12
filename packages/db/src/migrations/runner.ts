@@ -2,15 +2,20 @@
  * 迁移执行器：schema_migrations 记账；已有库若已有 sessions 则记 baseline 已跑。
  */
 import type { DatabaseSync } from "node:sqlite"
-import { baselineMigration } from "./001-baseline.ts"
-import { aiRuntimeMigration } from "./002-ai-runtime.ts"
-import { sessionArchiveMigration } from "./003-session-archive.ts"
+import { baselineMigration } from "./baseline.ts"
+import { aiRuntimeMigration } from "./ai-runtime.ts"
+import { sessionArchiveMigration } from "./session-archive.ts"
+import { secretsVaultMigration } from "./secrets-vault.ts"
+import { inboxStateMigration } from "./inbox-state.ts"
 import type { Migration } from "./types.ts"
 
+// 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
 export const MIGRATIONS: Migration[] = [
   baselineMigration,
   aiRuntimeMigration,
-  sessionArchiveMigration
+  sessionArchiveMigration,
+  secretsVaultMigration,
+  inboxStateMigration
 ]
 
 function tableExists(sqlite: DatabaseSync, name: string): boolean {

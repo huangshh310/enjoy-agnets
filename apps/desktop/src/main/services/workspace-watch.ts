@@ -4,6 +4,7 @@
  */
 import { watch, type FSWatcher } from "node:fs"
 import { BrowserWindow } from "electron"
+import { WorkspaceChangedEvent } from "@enjoy-agents/ipc-contract"
 import { getWorkspace } from "./workspace"
 import { shouldPollWorkspaceWatch, workspaceFingerprint } from "./workspace-watch-fingerprint.ts"
 
@@ -51,7 +52,7 @@ function startFingerprintPoll(workspaceId: string, rootPath: string) {
 }
 
 function emitWorkspaceChanged(workspaceId: string, path: string) {
-  const payload = { workspaceId, path }
+  const payload = WorkspaceChangedEvent.parse({ workspaceId, path })
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed()) window.webContents.send("workspace.changed", payload)
   }

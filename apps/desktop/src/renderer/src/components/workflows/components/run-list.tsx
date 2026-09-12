@@ -11,6 +11,7 @@ import {
   RiPlayCircleLine,
   RiRestartLine,
   RiRouteLine,
+  RiShieldCheckLine,
   RiStopCircleLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,7 @@ export function WorkflowRunList({
   runs: WorkflowRun[]
   copiedId: string | null
   onCopyId: (id: string) => void
-  onAct: (kind: "resume" | "cancel" | "retry", runId: string) => void
+  onAct: (kind: "resume" | "pause" | "cancel" | "retry", runId: string) => void
 }) {
   const t = useT()
   return (
@@ -71,7 +72,7 @@ function RunCard({
   run: WorkflowRun
   copiedId: string | null
   onCopyId: (id: string) => void
-  onAct: (kind: "resume" | "cancel" | "retry", runId: string) => void
+  onAct: (kind: "resume" | "pause" | "cancel" | "retry", runId: string) => void
 }) {
   const t = useT()
   const navigate = useNavigate()
@@ -140,6 +141,17 @@ function RunCard({
             <Button
               size="sm"
               variant="outline"
+              className="gap-1"
+              onClick={() => onAct("pause", run.id)}
+            >
+              <RiPauseCircleLine className="size-3.5" />
+              <span>{t("pages.workflows.pause")}</span>
+            </Button>
+          ) : null}
+          {run.status === "running" || run.status === "waiting_review" ? (
+            <Button
+              size="sm"
+              variant="outline"
               className="gap-1 text-rose-600 dark:text-rose-400"
               onClick={() => onAct("cancel", run.id)}
             >
@@ -181,6 +193,14 @@ function WorkflowStatusBadge({ status }: { status: WorkflowStatus }) {
       <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-amber-600 dark:text-amber-400">
         <RiPauseCircleLine className="size-3" />
         <span>{t("pages.workflows.statusPaused")}</span>
+      </span>
+    )
+  }
+  if (status === "waiting_review") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-amber-600 dark:text-amber-400">
+        <RiShieldCheckLine className="size-3" />
+        <span>{t("pages.workflows.statusWaiting")}</span>
       </span>
     )
   }

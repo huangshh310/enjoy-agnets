@@ -4,6 +4,7 @@
 import * as pty from "node-pty"
 import type { IPty } from "node-pty"
 import type { WebContents } from "electron"
+import { TerminalDataEvent, TerminalExitEvent } from "@enjoy-agents/ipc-contract"
 import { createId } from "./ids"
 import { getWorkspace } from "./workspace"
 
@@ -31,11 +32,11 @@ export async function openWorkspaceTerminal(
   })
   child.onData((text) => {
     if (sender.isDestroyed()) return
-    sender.send("terminal.data", { sessionId, text })
+    sender.send("terminal.data", TerminalDataEvent.parse({ sessionId, text }))
   })
   child.onExit(() => {
     sessions.delete(sessionId)
-    if (!sender.isDestroyed()) sender.send("terminal.exit", { sessionId })
+    if (!sender.isDestroyed()) sender.send("terminal.exit", TerminalExitEvent.parse({ sessionId }))
   })
   sessions.set(sessionId, { pty: child, sender })
   return { sessionId }

@@ -7,6 +7,7 @@ import type { InstalledSkillItem, SkillSource, SkillTargetId } from "@enjoy-agen
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
 import { SKILLS_UI_COPY } from "../constants/skills-ui.constants"
@@ -29,6 +30,7 @@ export function SkillDrawer({
   onToggleTarget: (source: SkillSource, targetId: SkillTargetId) => void
   onDeleteSkill: (sourceId: string, skillId: string) => void
 }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const copyTimer = useRef(0)
@@ -79,7 +81,7 @@ export function SkillDrawer({
         type="button"
         className="absolute inset-0 bg-black/50 animate-in fade-in duration-200"
         onClick={onClose}
-        aria-label="关闭技能详情"
+        aria-label={t("pages.skills.drawer.closeDetail")}
       />
 
       <aside
@@ -113,7 +115,7 @@ export function SkillDrawer({
             type="button"
             onClick={onClose}
             className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-secondary-default hover:text-text-primary cursor-pointer"
-            aria-label="关闭"
+            aria-label={t("pages.skills.drawer.close")}
           >
             <RiCloseLine className="size-5" />
           </button>
@@ -132,7 +134,7 @@ export function SkillDrawer({
         <footer className="shrink-0 border-t border-separator-border/60 px-5 py-4 flex flex-col gap-2.5 bg-background-primary-default">
           <Button size="default" onClick={handleCopy} className="w-full h-10 text-caption-1-medium gap-1.5 shadow-xs">
             {copied ? <RiCheckLine className="size-4" /> : null}
-            <span>{copied ? "已复制触发指令" : `复制触发指令 ${trigger}`}</span>
+            <span>{copied ? t("pages.skills.drawer.copiedTrigger") : t("pages.skills.drawer.copyTrigger", { trigger })}</span>
           </Button>
           <div className="flex items-center gap-2">
             {skill.skillFilePath ? (
@@ -143,7 +145,7 @@ export function SkillDrawer({
                 className="flex-1 h-8 gap-1.5 text-caption-2-medium"
               >
                 <RiFolderOpenLine className="size-3.5 text-text-tertiary" />
-                <span>定位源文件</span>
+                <span>{t("pages.skills.drawer.revealFile")}</span>
               </Button>
             ) : null}
             <Button
@@ -154,7 +156,7 @@ export function SkillDrawer({
               className="h-8 gap-1.5 text-caption-2-medium text-rose-600 dark:text-rose-400 hover:border-rose-500/40"
             >
               <RiDeleteBinLine className="size-3.5" />
-              <span>删除</span>
+              <span>{t("pages.skills.drawer.delete")}</span>
             </Button>
           </div>
         </footer>

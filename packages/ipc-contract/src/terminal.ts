@@ -32,3 +32,16 @@ export const TerminalSession = z.object({
   sessionId: z.string()
 })
 export type TerminalSession = z.infer<typeof TerminalSession>
+
+/** main → renderer 推送：PTY 输出。 */
+export const TerminalDataEvent = z.object({
+  sessionId: z.string(),
+  text: z.string()
+})
+export type TerminalDataEvent = z.infer<typeof TerminalDataEvent>
+
+/** main → renderer 推送：PTY 进程退出。 */
+export const TerminalExitEvent = z.object({
+  sessionId: z.string()
+})
+export type TerminalExitEvent = z.infer<typeof TerminalExitEvent>

@@ -4,6 +4,7 @@
 import { tokensPerSecond, ttfoMs } from "@enjoy-agents/agent-core"
 import { persistActiveRun } from "./flush-agent-run"
 import { recordMetric } from "./telemetry-service"
+import { settleRun } from "./agent-run-state"
 import type { ActiveRun } from "./agent-run-state"
 
 export function completeAgentRun(input: {
@@ -25,5 +26,15 @@ export function completeAgentRun(input: {
     ttfoMs: ttfoMs(run.startedAt, run.firstTokenAt),
     tokensPerSecond: tokensPerSecond(run.outputTokens, durationMs)
   })
+  // 摘要给 Workflow / Automation 的 waitForRunSettle 用：子 run 的真实产出尾巴。
+  settleRun(runId, { status: "end", summary: transcriptTail(run.transcript.visible) })
   input.emit({ type: "run.end", runId })
+}
+
+const TAIL_CHARS = 800
+
+function transcriptTail(visible: string): string {
+  const trimmed = visible.trim()
+  if (trimmed.length <= TAIL_CHARS) return trimmed
+  return trimmed.slice(-TAIL_CHARS)
 }

@@ -180,7 +180,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
                   onClick={() => handleCopy("input", span.input?.content ?? "")}
                   className="hover:text-text-primary"
                 >
-                  {copiedKey === "input" ? "已复制" : "复制"}
+                  {copiedKey === "input" ? t("pages.observability.copied") : t("pages.observability.copy")}
                 </button>
               </div>
               <div className="rounded border border-separator-border/50 bg-background-primary-default p-2.5 text-[11px] leading-relaxed text-text-primary whitespace-pre-wrap">
@@ -201,7 +201,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
                   onClick={() => handleCopy("output", span.output?.content ?? "")}
                   className="hover:text-text-primary"
                 >
-                  {copiedKey === "output" ? "已复制" : "复制"}
+                  {copiedKey === "output" ? t("pages.observability.copied") : t("pages.observability.copy")}
                 </button>
               </div>
               <div className="rounded border border-separator-border/50 bg-background-primary-default p-2.5 text-[11px] leading-relaxed text-text-primary whitespace-pre-wrap">
@@ -217,7 +217,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
         {activeTab === "attributes" && (
           <div className="flex flex-col rounded-lg border border-separator-border/60 overflow-hidden">
             {Object.entries(span.attributes ?? {}).length === 0 ? (
-              <div className="p-4 text-center text-text-tertiary">无语义属性数据</div>
+              <div className="p-4 text-center text-text-tertiary">{t("pages.observability.noAttrs")}</div>
             ) : (
               <div className="divide-y divide-separator-border/40">
                 {Object.entries(span.attributes ?? {}).map(([k, v]) => (

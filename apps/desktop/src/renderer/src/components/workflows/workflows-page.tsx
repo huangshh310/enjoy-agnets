@@ -30,7 +30,9 @@ export function WorkflowsPage() {
       getIde().workflow.list({ workspaceId: workspaceId ?? undefined }) as Promise<WorkflowRun[]>,
     refetchInterval: (query) => {
       const data = query.state.data as WorkflowRun[] | undefined
-      return data?.some((r) => r.status === "running") ? 1500 : false
+      return data?.some((r) => r.status === "running" || r.status === "waiting_review")
+        ? 1500
+        : false
     }
   })
   const runs = runsQuery.data ?? []
@@ -71,7 +73,7 @@ export function WorkflowsPage() {
     }
   }
 
-  async function act(kind: "resume" | "cancel" | "retry", runId: string) {
+  async function act(kind: "resume" | "pause" | "cancel" | "retry", runId: string) {
     await getIde().workflow[kind](runId)
     await refresh()
   }

@@ -94,7 +94,7 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
                 cy="44"
                 r="36"
                 fill="transparent"
-                stroke="#10b981"
+                stroke="var(--color-chart-success)"
                 strokeWidth="10"
                 strokeDasharray={`${successStroke} ${circumference}`}
                 strokeDashoffset="0"
@@ -107,7 +107,7 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
                   cy="44"
                   r="36"
                   fill="transparent"
-                  stroke="#f59e0b"
+                  stroke="var(--color-chart-warning)"
                   strokeWidth="10"
                   strokeDasharray={`${timeoutStroke} ${circumference}`}
                   strokeDashoffset={-successStroke}
@@ -121,7 +121,7 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
                   cy="44"
                   r="36"
                   fill="transparent"
-                  stroke="#f43f5e"
+                  stroke="var(--color-chart-danger)"
                   strokeWidth="10"
                   strokeDasharray={`${providerStroke + otherStroke} ${circumference}`}
                   strokeDashoffset={-(successStroke + timeoutStroke)}

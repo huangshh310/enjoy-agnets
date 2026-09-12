@@ -154,3 +154,8 @@ export function listRunSteps(
     checkpointId: string | null
   }>
 }
+
+/** 从指定步（含）开始删除持久化步骤记录，供「从某步重试」清掉过期行。 */
+export function deleteRunStepsFrom(db: AppDatabase, runId: string, fromIdx: number): void {
+  db.prepare("DELETE FROM run_steps WHERE run_id = ? AND idx >= ?").run(runId, fromIdx)
+}

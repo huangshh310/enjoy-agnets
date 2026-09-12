@@ -79,13 +79,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     partType: z.string(),
     ...Envelope
   }),
-  z.object({
-    type: z.literal("message.part.delta"),
-    runId: z.string(),
-    partId: z.string(),
-    text: z.string().optional(),
-    ...Envelope
-  }),
+  // message.part.delta 已删：文本增量走 v1 text.delta，v2 从未有过生产者，避免消费端空等。
   z.object({
     type: z.literal("message.part.end"),
     runId: z.string(),

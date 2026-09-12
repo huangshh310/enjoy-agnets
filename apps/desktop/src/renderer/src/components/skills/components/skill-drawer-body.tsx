@@ -4,6 +4,7 @@
 import { RiCheckLine } from "@remixicon/react"
 import type { InstalledSkillItem, SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import { AGENT_ARMORY_PROFILES } from "../constants/agent-armory.constants"
 import {
   GLOBAL_TARGET_IDS,
@@ -28,6 +29,8 @@ export function SkillDrawerBody({
   bodyText: string
   onToggleTarget: (source: SkillSource, targetId: SkillTargetId) => void
 }) {
+  const t = useT()
+
   return (
     <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5 [scrollbar-width:thin]">
       {skill.description ? (
@@ -40,10 +43,10 @@ export function SkillDrawerBody({
         <section className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <h4 className="text-caption-1-medium font-semibold text-text-primary">
-              生效目标助手
+              {t("pages.skills.drawerBody.targetsTitle")}
             </h4>
             <span className="text-caption-2-regular text-text-tertiary">
-              点击行切换来源组投影
+              {t("pages.skills.drawerBody.targetsHint")}
             </span>
           </div>
           <div className="flex flex-col rounded-2xl border border-separator-border/70 overflow-hidden">
@@ -80,7 +83,7 @@ export function SkillDrawerBody({
                       {TARGET_SHORT_LABELS[targetId]}
                     </span>
                     <span className="block text-caption-2-regular text-text-tertiary truncate">
-                      {isEnabled ? "已随来源组投影" : "未挂载"}
+                      {isEnabled ? t("pages.skills.drawerBody.projected") : t("pages.skills.states.notMounted")}
                     </span>
                   </span>
                   <span
@@ -100,7 +103,7 @@ export function SkillDrawerBody({
 
           {hasWorkspace ? (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-caption-2-regular text-text-tertiary">工作区:</span>
+              <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.drawerBody.workspaceLabel")}</span>
               {WORKSPACE_TARGET_IDS.map((targetId) => {
                 const isEnabled = source.enabledTargetIds.includes(targetId)
                 return (
@@ -142,7 +145,7 @@ export function SkillDrawerBody({
 
       <section className="flex flex-col gap-2">
         <h4 className="text-caption-1-medium font-semibold text-text-primary">
-          指令说明
+          {t("pages.skills.drawerBody.instructionsTitle")}
         </h4>
         <pre className="rounded-2xl border border-separator-border/60 bg-background-secondary-default/30 p-4 font-mono text-caption-2-regular text-text-primary whitespace-pre-wrap leading-relaxed">
           {bodyText}

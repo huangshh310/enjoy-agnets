@@ -25,3 +25,7 @@ export function setSetting(key: string, value: string): void {
     )
     .run(key, value);
 }
+
+export function deleteSetting(key: string): void {
+  getDatabase().prepare("DELETE FROM settings WHERE key = ?").run(key);
+}

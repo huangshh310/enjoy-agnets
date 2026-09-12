@@ -367,6 +367,14 @@
   --color-chart-agents-bar:        var(--color-purple-300);
   --color-chart-agents-bar-active: var(--color-purple-400);
 
+  /* 语义图表色：成功 / 失败 / 警告。fill 用于色块与条形，text 用于浅底上的文字。 */
+  --color-chart-success:      var(--color-emerald-500);
+  --color-chart-success-text: var(--color-emerald-600);
+  --color-chart-danger:       var(--color-rose-500);
+  --color-chart-danger-text:  var(--color-rose-600);
+  --color-chart-warning:      var(--color-amber-500);
+  --color-chart-warning-text: var(--color-amber-600);
+
   /* Button gradients */
   --gradient-button-primary-default:  linear-gradient(180deg, var(--color-accent-500)    0%, var(--color-accent-600)    100%);
   --gradient-button-primary-hover:    linear-gradient(180deg, var(--color-accent-400)    0%, var(--color-accent-500)    100%);
@@ -567,6 +575,14 @@
   --color-chart-neutral: var(--color-neutral-800);
   --color-chart-agents-bar:        var(--color-purple-500);
   --color-chart-agents-bar-active: var(--color-purple-600);
+
+  /* 暗色下 fill 保持 500 可读，文字提亮一档。 */
+  --color-chart-success:      var(--color-emerald-500);
+  --color-chart-success-text: var(--color-emerald-400);
+  --color-chart-danger:       var(--color-rose-500);
+  --color-chart-danger-text:  var(--color-rose-400);
+  --color-chart-warning:      var(--color-amber-500);
+  --color-chart-warning-text: var(--color-amber-400);
 }
 
 /* Non-default accents (data-accent set by the accent engine) can land on a
@@ -745,6 +761,12 @@
   --color-chart-8-active: var(--color-chart-8-active);
   --color-chart-agents-bar:        var(--color-chart-agents-bar);
   --color-chart-agents-bar-active: var(--color-chart-agents-bar-active);
+  --color-chart-success:      var(--color-chart-success);
+  --color-chart-success-text: var(--color-chart-success-text);
+  --color-chart-danger:       var(--color-chart-danger);
+  --color-chart-danger-text:  var(--color-chart-danger-text);
+  --color-chart-warning:      var(--color-chart-warning);
+  --color-chart-warning-text: var(--color-chart-warning-text);
 }
 
 /* ---------------------------------------------------------------------------

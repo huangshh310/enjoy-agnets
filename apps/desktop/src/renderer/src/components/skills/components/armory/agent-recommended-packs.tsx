@@ -12,6 +12,7 @@ import {
   RiStarFill
 } from "@remixicon/react"
 import type { CuratedSkillSource, SkillSource } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { AgentArmoryProfile } from "../../constants/agent-armory.constants"
@@ -32,6 +33,8 @@ export function AgentRecommendedPacks({
   onInstallCurated: (source: CuratedSkillSource) => void
   onToggleTarget: (source: SkillSource) => void
 }) {
+  const t = useT()
+
   // 筛选出针对当前 Agent 推荐的精选套件
   const recommendedItems = useMemo(() => {
     const list = curated.filter((c) => profile.recommendedCuratedIds.includes(c.id))
@@ -55,11 +58,11 @@ export function AgentRecommendedPacks({
         <div className="flex items-center gap-2">
           <RiFlashlightFill className={cx("size-4", profile.themeColor.text)} />
           <h3 className="text-title-3-semibold tracking-tight text-text-primary">
-            专为 {profile.shortName} 优化的超能力套件 (Recommended Skillsets)
+            {t("pages.skills.recommendedPacks.title", { agent: profile.shortName })}
           </h3>
         </div>
         <span className="text-caption-2-regular text-text-tertiary">
-          即插即用 · 开箱即用无需配置
+          {t("pages.skills.recommendedPacks.plugHint")}
         </span>
       </div>
 
@@ -109,7 +112,7 @@ export function AgentRecommendedPacks({
                         <span className="truncate">{item.author}</span>
                         <span>·</span>
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                          精选
+                          {t("pages.skills.states.curated")}
                         </span>
                       </div>
                     </div>
@@ -149,13 +152,13 @@ export function AgentRecommendedPacks({
               {/* 底部装备按钮 */}
               <div className="mt-4 pt-3 border-t border-separator-border/50 flex items-center justify-between">
                 <span className="text-[11px] text-text-tertiary">
-                  {item.skillCount} 项领域能力
+                  {t("pages.skills.recommendedPacks.countSkills", { n: item.skillCount ?? "" })}
                 </span>
 
                 {isTargetEnabled ? (
                   <div className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
                     <RiCheckLine className="size-3.5" />
-                    <span>已装备至 {profile.shortName}</span>
+                    <span>{t("pages.skills.recommendedPacks.equippedTo", { agent: profile.shortName })}</span>
                   </div>
                 ) : isInstalled && installedSource ? (
                   <Button
@@ -165,7 +168,7 @@ export function AgentRecommendedPacks({
                     className="h-7.5 px-3 text-caption-2-medium gap-1 shadow-2xs"
                   >
                     <RiShieldCheckLine className="size-3" />
-                    <span>一键关联到 {profile.shortName}</span>
+                    <span>{t("pages.skills.recommendedPacks.linkTo", { agent: profile.shortName })}</span>
                   </Button>
                 ) : (
                   <Button
@@ -179,7 +182,7 @@ export function AgentRecommendedPacks({
                     ) : (
                       <RiDownloadLine className="size-3" />
                     )}
-                    <span>获取并装配</span>
+                    <span>{t("pages.skills.recommendedPacks.getAndEquip")}</span>
                   </Button>
                 )}
               </div>

@@ -10,6 +10,7 @@ import {
   RiSearchLine
 } from "@remixicon/react"
 import type { InstalledSkillItem, SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { AgentArmoryProfile } from "../../constants/agent-armory.constants"
@@ -29,6 +30,7 @@ export function AgentQuickSlotMatrix({
   onToggleTarget: (source: SkillSource, targetId: SkillTargetId) => void
   onSelectSkill: (skill: InstalledSkillItem) => void
 }) {
+  const t = useT()
   const [searchQuery, setSearchQuery] = useState("")
 
   // 1. 过滤技能项
@@ -54,21 +56,28 @@ export function AgentQuickSlotMatrix({
       <div className="flex flex-col gap-1 pb-3 border-b border-separator-border/50">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-title-3-semibold text-text-primary tracking-tight">
-            从已有技能库快速装配至 {profile.shortName} (Armory Quick Matrix)
+            {t("pages.skills.quickMatrix.title", { agent: profile.shortName })}
           </h3>
           <span className="text-caption-2-medium font-mono text-text-tertiary">
-            已激活 {enabledSourcesCount} / {sources.length} 个来源组
+            {t("pages.skills.quickMatrix.activeCount", {
+              enabled: enabledSourcesCount,
+              total: sources.length
+            })}
           </span>
         </div>
         <p className="text-caption-1-regular text-text-secondary leading-relaxed">
-          当前已接入 {sources.length} 个来源组共 {allSkills.length} 项能力。点击下方来源组胶囊可快速一键为 {profile.shortName} 挂载或卸载整个来源包。
+          {t("pages.skills.quickMatrix.summary", {
+            sources: sources.length,
+            skills: allSkills.length,
+            agent: profile.shortName
+          })}
         </p>
       </div>
 
       {/* 来源组快速挂载条：独立换行排布，杜绝并排推挤 */}
       <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-background-secondary-default/40 border border-separator-border/40">
         <span className="text-[11px] font-semibold text-text-tertiary shrink-0 mr-1">
-          快速挂载来源组:
+          {t("pages.skills.quickMatrix.quickMountLabel")}
         </span>
         {sources.map((source) => {
           const isEnabled = source.enabledTargetIds.includes(profile.targetId)
@@ -85,7 +94,13 @@ export function AgentQuickSlotMatrix({
                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold shadow-2xs"
                   : "border-separator-border/60 bg-background-primary-default text-text-secondary hover:border-separator-border hover:text-text-primary"
               )}
-              title={`点击为 ${profile.shortName} ${isEnabled ? "取消挂载" : "一键挂载"} 该组全部 ${source.skillCount} 项能力`}
+              title={t("pages.skills.quickMatrix.toggleTitle", {
+                agent: profile.shortName,
+                action: isEnabled
+                  ? t("pages.skills.quickMatrix.unmount")
+                  : t("pages.skills.quickMatrix.mount"),
+                n: source.skillCount
+              })}
             >
               {source.kind === "git" ? (
                 <RiGitRepositoryLine className="size-3.5" />
@@ -110,14 +125,14 @@ export function AgentQuickSlotMatrix({
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`在已有 ${allSkills.length} 项技能库中过滤检索…`}
+            placeholder={t("pages.skills.quickMatrix.searchPlaceholder", { n: allSkills.length })}
             className="pl-9 h-8.5 text-caption-2-medium bg-background-secondary-default/50"
           />
         </div>
 
         {/* 预设推荐高频词点击直接过滤 */}
         <div className="flex flex-wrap items-center gap-1.5 text-caption-2-regular text-text-tertiary min-w-0">
-          <span className="shrink-0">推荐探索:</span>
+          <span className="shrink-0">{t("pages.skills.quickMatrix.exploreLabel")}</span>
           {profile.suggestedSkillNames.map((name) => (
             <button
               key={name}
@@ -134,7 +149,7 @@ export function AgentQuickSlotMatrix({
               onClick={() => setSearchQuery("")}
               className="text-[11px] text-accent-600 hover:underline"
             >
-              清除
+              {t("pages.skills.quickMatrix.clear")}
             </button>
           ) : null}
         </div>
@@ -178,7 +193,7 @@ export function AgentQuickSlotMatrix({
                     ) : null}
                   </div>
                   <p className="truncate text-caption-2-regular text-text-tertiary">
-                    {skill.description || "提供专业任务指令与上下文"}
+                    {skill.description || t("pages.skills.quickMatrix.defaultDesc")}
                   </p>
                 </div>
               </div>
@@ -189,9 +204,9 @@ export function AgentQuickSlotMatrix({
                     ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
                     : "border-separator-border/50 bg-background-primary-default text-text-tertiary"
                 )}
-                title="投影粒度是来源组：请用上方来源组胶囊挂载或卸载，避免误操作整组"
+                title={t("pages.skills.quickMatrix.slotTitle")}
               >
-                {isEnabled ? "已装备" : "未挂载"}
+                {isEnabled ? t("pages.skills.states.equipped") : t("pages.skills.states.notMounted")}
               </span>
             </div>
           )

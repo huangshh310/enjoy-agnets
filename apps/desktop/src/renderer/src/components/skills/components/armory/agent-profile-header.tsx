@@ -11,6 +11,7 @@ import {
   RiShieldCheckLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import type { AgentArmoryProfile } from "../../constants/agent-armory.constants"
 
@@ -25,6 +26,7 @@ export function AgentProfileHeader({
   onGoToStore: () => void
   onClearFilter: () => void
 }) {
+  const t = useT()
   const Icon = profile.icon
 
   return (
@@ -75,7 +77,7 @@ export function AgentProfileHeader({
                       activeCount > 0 ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
                     )}
                   />
-                  <span>{activeCount > 0 ? `${activeCount} 项能力已激活` : "整备中 · 待装配"}</span>
+                  <span>{activeCount > 0 ? t("pages.skills.armoryHeader.activeBadge", { n: activeCount }) : t("pages.skills.armoryHeader.standbyBadge")}</span>
                 </span>
               </div>
               <p className="max-w-2xl text-[13px] leading-relaxed text-text-secondary">
@@ -91,7 +93,7 @@ export function AgentProfileHeader({
               className="gap-1.5 h-8.5 px-3.5 text-caption-2-medium shadow-xs"
             >
               <RiCompass3Line className="size-3.5" />
-              <span>发现精选技能</span>
+              <span>{t("pages.skills.armoryHeader.goToStore")}</span>
               <RiArrowRightLine className="size-3 opacity-60" />
             </Button>
             <Button
@@ -100,7 +102,7 @@ export function AgentProfileHeader({
               onClick={onClearFilter}
               className="h-8.5 text-caption-2-medium"
             >
-              <span>查看全局库</span>
+              <span>{t("pages.skills.armoryHeader.viewAll")}</span>
             </Button>
           </div>
         </div>
@@ -110,7 +112,7 @@ export function AgentProfileHeader({
           <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/50 px-3 py-2 border border-separator-border/40">
             <RiCpuLine className="size-4 text-text-tertiary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10.5px] text-text-tertiary">契约协议</span>
+              <span className="text-[10.5px] text-text-tertiary">{t("pages.skills.armoryHeader.protocolLabel")}</span>
               <span className="font-mono text-text-primary text-[11.5px] truncate">
                 {profile.protocol}
               </span>
@@ -120,7 +122,7 @@ export function AgentProfileHeader({
           <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/50 px-3 py-2 border border-separator-border/40">
             <RiFolderOpenLine className="size-4 text-text-tertiary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10.5px] text-text-tertiary">投影目录</span>
+              <span className="text-[10.5px] text-text-tertiary">{t("pages.skills.armoryHeader.projectDirLabel")}</span>
               <span className="font-mono text-text-primary text-[11.5px] truncate">
                 {profile.runtimeEnv}
               </span>
@@ -130,7 +132,7 @@ export function AgentProfileHeader({
           <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/50 px-3 py-2 border border-separator-border/40">
             <RiInformationLine className="size-4 text-text-tertiary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10.5px] text-text-tertiary">专长标签</span>
+              <span className="text-[10.5px] text-text-tertiary">{t("pages.skills.armoryHeader.tagsLabel")}</span>
               <div className="flex items-center gap-1 overflow-hidden">
                 {profile.tags.map((tag) => (
                   <span

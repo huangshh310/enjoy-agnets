@@ -7,6 +7,7 @@ import {
   RiTerminalBoxLine
 } from "@remixicon/react"
 import type { InstalledSkillItem } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import { SKILLS_UI_COPY, TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
@@ -19,6 +20,7 @@ export function SkillItemCard({
   skill: InstalledSkillItem
   onSelect: () => void
 }) {
+  const t = useT()
   const theme = resolveSkillTheme(skill.name + " " + (skill.description || ""))
   const ThemeIcon = theme.icon
   const enabledCount = skill.enabledTargetIds.length
@@ -75,7 +77,7 @@ export function SkillItemCard({
       <div className="mt-3.5 pt-2.5 border-t border-separator-border/40 flex items-center justify-between gap-2 text-[10.5px]">
         <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           {enabledCount === 0 ? (
-            <span className="text-text-tertiary italic text-[10px]">未激活任何 Agent</span>
+            <span className="text-text-tertiary italic text-[10px]">{t("pages.skills.states.noneActive")}</span>
           ) : (
             <div className="flex items-center gap-1 flex-wrap">
               {skill.enabledTargetIds.slice(0, 3).map((targetId) => (
@@ -97,7 +99,7 @@ export function SkillItemCard({
         </div>
 
         <span className="font-medium text-accent-600 dark:text-accent-400 shrink-0 group-hover:translate-x-0.5 transition-transform text-[11px]">
-          详情 →
+          {t("pages.skills.itemCard.details")}
         </span>
       </div>
     </div>

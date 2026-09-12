@@ -193,7 +193,8 @@ export function listSourceChunkEmbeddings(
 
 export function listChunkEmbeddings(
   db: AppDatabase,
-  workspaceId: string
+  workspaceId: string,
+  sourceIds?: string[]
 ): Array<{
   chunkId: string
   sourceId: string
@@ -223,8 +224,11 @@ export function listChunkEmbeddings(
     vector: string
     modelId: string
   }>
-  return rows.map((row) => ({
-    ...row,
-    vector: JSON.parse(row.vector) as number[]
-  }))
+  const allowed = sourceIds?.length ? new Set(sourceIds) : undefined
+  return rows
+    .filter((row) => !allowed || allowed.has(row.sourceId))
+    .map((row) => ({
+      ...row,
+      vector: JSON.parse(row.vector) as number[]
+    }))
 }

@@ -1,5 +1,5 @@
 /**
- * Span 类型颜色与 locale 展示名。
+ * Span 类型颜色与 locale 展示名。颜色只走 BoardUI chart / accent token，禁裸 hex。
  */
 import type { TranslateFn } from "@renderer/i18n"
 
@@ -10,57 +10,57 @@ export const SPAN_KIND_CONFIG: Record<
 > = {
   agent: {
     label: "Agent",
-    color: "#f43f5e",
-    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-    barColor: "bg-rose-500"
+    color: "var(--color-chart-danger)",
+    badgeClass: "bg-chart-danger/10 text-chart-danger-text border-chart-danger/20",
+    barColor: "bg-chart-danger"
   },
   workflow: {
     label: "Workflow",
-    color: "#3b82f6",
-    badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-    barColor: "bg-blue-500"
+    color: "var(--color-accent-500)",
+    badgeClass: "bg-accent-500/10 text-accent-600 dark:text-accent-400 border-accent-500/20",
+    barColor: "bg-accent-500"
   },
   chat: {
     label: "Chat",
-    color: "#8b5cf6",
-    badgeClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-    barColor: "bg-purple-500"
+    color: "var(--color-chart-5)",
+    badgeClass: "bg-chart-5/10 text-chart-5-active border-chart-5/20",
+    barColor: "bg-chart-5"
   },
   retrieval: {
     label: "Retrieval",
-    color: "#06b6d4",
-    badgeClass: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
-    barColor: "bg-cyan-500"
+    color: "var(--color-chart-4)",
+    badgeClass: "bg-chart-4/10 text-chart-4-active border-chart-4/20",
+    barColor: "bg-chart-4"
   },
   tool: {
     label: "Tool",
-    color: "#10b981",
-    badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-    barColor: "bg-emerald-500"
+    color: "var(--color-chart-7)",
+    badgeClass: "bg-chart-7/10 text-chart-7-active border-chart-7/20",
+    barColor: "bg-chart-7"
   },
   function: {
     label: "Function",
-    color: "#14b8a6",
-    badgeClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20",
-    barColor: "bg-teal-500"
+    color: "var(--color-chart-1)",
+    badgeClass: "bg-chart-1/10 text-chart-1-active border-chart-1/20",
+    barColor: "bg-chart-1"
   },
   embeddings: {
     label: "Embeddings",
-    color: "#d946ef",
-    badgeClass: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-500/20",
-    barColor: "bg-fuchsia-500"
+    color: "var(--color-chart-3)",
+    badgeClass: "bg-chart-3/10 text-chart-3-active border-chart-3/20",
+    barColor: "bg-chart-3"
   },
   http: {
     label: "HTTP",
-    color: "#f59e0b",
-    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    barColor: "bg-amber-500"
+    color: "var(--color-chart-warning)",
+    badgeClass: "bg-chart-warning/10 text-chart-warning-text border-chart-warning/20",
+    barColor: "bg-chart-warning"
   },
   stream: {
     label: "Stream",
-    color: "#0284c7",
-    badgeClass: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
-    barColor: "bg-sky-500"
+    color: "var(--color-chart-6)",
+    badgeClass: "bg-chart-6/10 text-chart-6-active border-chart-6/20",
+    barColor: "bg-chart-6"
   }
 }
 

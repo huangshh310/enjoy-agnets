@@ -30,6 +30,8 @@ export { foldToolEvent, sealAbandonedTools } from "./fold-tool-event"
 export { absorbTextDelta, clampThoughtSeconds, type ThinkBuffer } from "./think-text"
 export {
   TerminalCloseInput,
+  TerminalDataEvent,
+  TerminalExitEvent,
   TerminalOpenInput,
   TerminalResizeInput,
   TerminalSession,
@@ -42,6 +44,7 @@ export * from "./ui-message"
 export * from "./assets"
 export * from "./knowledge"
 export * from "./workflow"
+export * from "./inbox"
 export * from "./mcp"
 export * from "./realtime"
 export * from "./observability"

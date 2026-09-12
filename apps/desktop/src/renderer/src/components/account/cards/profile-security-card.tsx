@@ -4,6 +4,7 @@
 import { RiComputerLine, RiShieldCheckLine, RiShieldLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
 import type { ExtendedUserProfile } from "../types/profile.types"
 
 interface ProfileSecurityCardProps {
@@ -11,13 +12,14 @@ interface ProfileSecurityCardProps {
 }
 
 export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
+  const t = useT()
   const hasKey = useChatStore((state) => state.hasKey)
   const protectedVault = hasKey || profile.safeStorageActive
 
   return (
     <div className="flex select-none flex-col gap-4 rounded-2xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
       <div className="flex items-center justify-between">
-        <h3 className="text-caption-1-medium text-text-primary">凭据加密与硬件安全</h3>
+        <h3 className="text-caption-1-medium text-text-primary">{t("pages.account.security.title")}</h3>
         <span
           className={cx(
             "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-caption-2-medium",
@@ -32,7 +34,7 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
               protectedVault ? "bg-accent-500" : "bg-text-tertiary"
             )}
           />
-          {protectedVault ? "密钥已托管" : "未写入密钥"}
+          {protectedVault ? t("pages.account.security.vaultProtected") : t("pages.account.security.vaultEmpty")}
         </span>
       </div>
 
@@ -45,15 +47,15 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
           )}
         </div>
         <div className="flex min-w-0 flex-col">
-          <span className="text-caption-1-medium text-text-primary">主进程 vault · 不见明文</span>
+          <span className="text-caption-1-medium text-text-primary">{t("pages.account.security.vaultTitle")}</span>
           <span className="text-caption-2-medium text-text-tertiary">
-            renderer 只读 hasKey / keyHint。供应商密钥由主进程 vault 保管，不在此页探测 OS 加密接口。
+            {t("pages.account.security.vaultDesc")}
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-2 border-t border-separator-border/50 pt-2">
-        <span className="text-caption-2-medium text-text-tertiary">当前终端节点</span>
+        <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.security.endpointLabel")}</span>
         {profile.activeDevices.map((device) => (
           <div
             key={device.id}
@@ -66,7 +68,7 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
                   <span className="text-caption-1-medium text-text-primary">{device.name}</span>
                   {device.isCurrent ? (
                     <span className="rounded bg-accent-500/10 px-1.5 font-mono text-caption-2-medium text-accent-500">
-                      当前终端
+                      {t("pages.account.security.currentDevice")}
                     </span>
                   ) : null}
                 </div>

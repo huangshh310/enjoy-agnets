@@ -73,6 +73,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 ## 已知坑
 
+- 情境栏徽标（`module-nav-list.tsx` 的 `navItemBadgeTheme`）只走语义 token 两态：选中 `accent-500`、未选中中性；per-module 彩虹色相（slate/purple/amber/pink…）已删，不要再加回来。观测图表颜色一律走 `--color-chart-*` token（含 2026-09 新增的语义三色 `chart-success` / `chart-danger` / `chart-warning` 及其 `-text` 伴随键，light/dark 各自映射），SVG `stroke` / `fill` / `stopColor` 直接引用 CSS 变量；背景穿洞用 `var(--color-background-primary-default)`（旧的 `var(--background-primary-default, #fff)` 变量名不存在，暗色会永远回退白色）。
+
 - 审查栏 / 改动条的 live 刷新不得绑在 Files 页才 `workspace.watch`。选中工作区即监视；`onChanged` 防抖 250ms 再 invalidate `changes` 与 git log。`file.changed` 仍立即刷新。审查收起时不要因写盘自动拉开。
 - 审批卡只挂 PermissionDock（Composer 上沿），禁止写回 `ConversationContent`。M3 阻切「去处理审批」必须走 M2 `focusAttention({ sessionId, kind, navigate })`，不要无参滚 Dock stub，也不要在线程里复制一张卡。
 - 不要再画 Composer 上沿「写入自动 · Shell 需确认 · Git 需确认」。它和底栏「编辑」盾牌重复；「模式: 智能体」是执行模式，不是审批。

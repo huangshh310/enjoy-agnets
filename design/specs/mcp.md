@@ -1,6 +1,6 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-10
+> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -23,6 +23,8 @@
 - `apps/desktop/src/renderer/src/components/mcp/hooks/use-mcp-page.ts`
 - `apps/desktop/src/renderer/src/components/mcp/lib/mcp-json-config.ts`
 - `apps/desktop/src/renderer/src/components/mcp/mcp-app-frame.tsx`
+
+- `envRef`（`{KEY: value}` JSON 串）连接时解析并与主进程 env 合并注入 stdio spawn（曾只落库不生效）；坏 JSON 回空 env 不阻断连接。
 
 ## 已知坑
 

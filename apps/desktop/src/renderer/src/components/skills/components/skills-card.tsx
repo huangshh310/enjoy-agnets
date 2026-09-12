@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
+import { useT } from "@renderer/i18n"
 import {
   HEALTH_CONFIG,
   SKILLS_UI_COPY,
@@ -43,6 +44,7 @@ export function SkillsCard({
   onDeploy: () => void
   onRemove: () => void
 }) {
+  const t = useT()
   const health = HEALTH_CONFIG[source.health]
   const enabledCount = source.enabledTargetIds.length
   const previewSkills = source.selectedSkillIds.slice(0, 4)
@@ -80,7 +82,7 @@ export function SkillsCard({
                 </h3>
                 {theme.verified ? (
                   <span className="shrink-0 rounded-full bg-blue-500/10 px-1.5 py-0.2 text-[10px] font-medium text-blue-600 dark:text-blue-400">
-                    认证
+                    {t("pages.skills.card.verified")}
                   </span>
                 ) : null}
               </div>
@@ -131,9 +133,9 @@ export function SkillsCard({
 
         {/* 激活助手状态行 */}
         <div className="flex flex-wrap items-center gap-1 rounded-xl bg-background-secondary-default/50 p-2 text-[11px]">
-          <span className="text-text-tertiary font-medium mr-1">已激活助手:</span>
+          <span className="text-text-tertiary font-medium mr-1">{t("pages.skills.card.activatedAgents")}</span>
           {enabledCount === 0 ? (
-            <span className="text-text-tertiary italic">未激活任何 Agent</span>
+            <span className="text-text-tertiary italic">{t("pages.skills.states.noneActive")}</span>
           ) : (
             source.enabledTargetIds.map((targetId) => (
               <span
@@ -152,7 +154,7 @@ export function SkillsCard({
           <div className="flex flex-wrap gap-1">
             {source.selectedSkillIds.length === 0 ? (
               <span className="text-caption-2-regular text-text-tertiary italic">
-                包含的技能均为未勾选状态
+                {t("pages.skills.card.allUnselected")}
               </span>
             ) : (
               previewSkills.map((skillId) => {
@@ -179,10 +181,12 @@ export function SkillsCard({
       {/* 底栏详情引导 */}
       <div className="mt-3.5 flex items-center justify-between border-t border-separator-border/40 pt-2.5 text-[11px]">
         <span className="font-mono text-text-tertiary">
-          共 <b className="text-text-primary font-medium">{source.skillCount}</b> 个专业能力
+          {t("pages.skills.card.countPrefix")}
+          <b className="text-text-primary font-medium">{source.skillCount}</b>
+          {t("pages.skills.card.countSuffix")}
         </span>
         <span className="inline-flex items-center gap-1 font-medium text-accent-600 dark:text-accent-400 group-hover:translate-x-0.5 transition-transform">
-          <span>管理配置</span>
+          <span>{t("pages.skills.card.manage")}</span>
           <RiArrowRightSLine className="size-3.5" />
         </span>
       </div>

@@ -2,6 +2,7 @@
  * CLI 覆盖：enabled / 路径 / 额外参数 / 供应商引用。不存 login token。
  */
 import { isAbsolute } from "node:path"
+import { z } from "zod"
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
 import { assertSafeAgentCommand } from "./agent-tools-guard"
 import {
@@ -16,12 +17,28 @@ export { mergeAgentToolOverride, type AgentToolOverride } from "./agent-tools-ov
 
 const KEY = "agentTools.overrides"
 
+const OVERRIDE_SCHEMA = z.object({
+  enabled: z.boolean().optional(),
+  binaryPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
+  modelId: z.string().optional(),
+  providerId: z.string().optional(),
+  useCustomProvider: z.boolean().optional()
+})
+
 export function readAgentToolOverrides(): Record<string, AgentToolOverride> {
   const raw = getSetting(KEY)
   if (!raw) return {}
   try {
-    const parsed = JSON.parse(raw) as Record<string, AgentToolOverride>
-    return parsed && typeof parsed === "object" ? parsed : {}
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
+    // 逐条校验：单个坏条目丢弃，不报废整份覆盖。
+    const out: Record<string, AgentToolOverride> = {}
+    for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+      const row = OVERRIDE_SCHEMA.safeParse(value)
+      if (row.success) out[id] = row.data
+    }
+    return out
   } catch {
     return {}
   }
@@ -50,8 +67,10 @@ export function readSessionRuntimes(): Record<string, string> {
   const raw = getSetting("session.runtimes")
   if (!raw) return {}
   try {
-    const parsed = JSON.parse(raw) as Record<string, string>
-    return parsed && typeof parsed === "object" ? parsed : {}
+    const parsed = z
+      .record(z.string(), z.string())
+      .safeParse(JSON.parse(raw))
+    return parsed.success ? parsed.data : {}
   } catch {
     return {}
   }

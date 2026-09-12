@@ -115,6 +115,11 @@ const ide = {
         callback(payload)
       ipcRenderer.on("terminal.data", listener)
       return () => ipcRenderer.off("terminal.data", listener)
+    },
+    onExit: (callback: (event: { sessionId: string }) => void) => {
+      const listener = (_event: unknown, payload: { sessionId: string }) => callback(payload)
+      ipcRenderer.on("terminal.exit", listener)
+      return () => ipcRenderer.off("terminal.exit", listener)
     }
   },
   ai: {
@@ -146,7 +151,12 @@ const ide = {
     recover: () => ipcRenderer.invoke("workflow.recover", {}),
     resume: (runId: string) => ipcRenderer.invoke("workflow.resume", { runId }),
     cancel: (runId: string) => ipcRenderer.invoke("workflow.cancel", { runId }),
+    pause: (runId: string) => ipcRenderer.invoke("workflow.pause", { runId }),
     retry: (runId: string) => ipcRenderer.invoke("workflow.retry", { runId })
+  },
+  inbox: {
+    listStates: () => ipcRenderer.invoke("inbox.state.list", {}),
+    putStates: (input: unknown) => ipcRenderer.invoke("inbox.state.put", input)
   },
   mcp: {
     servers: () => ipcRenderer.invoke("mcp.servers"),

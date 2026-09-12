@@ -2,6 +2,7 @@
  * 新建技能工坊右栏：SKILL.md 实时预览与复制。
  */
 import { RiCheckLine, RiClipboardLine, RiFileCodeLine } from "@remixicon/react"
+import { useT } from "@renderer/i18n"
 
 export function CreateSkillPreviewPane({
   markdown,
@@ -12,27 +13,29 @@ export function CreateSkillPreviewPane({
   copied: boolean
   onCopy: () => void
 }) {
+  const t = useT()
+
   return (
     <div className="md:col-span-5 flex flex-col bg-background-secondary-default/20 p-6 overflow-hidden">
       <div className="flex items-center justify-between pb-3 mb-2 border-b border-separator-border/50 text-caption-2-regular text-text-tertiary shrink-0">
         <div className="flex items-center gap-1.5 font-mono text-text-primary font-medium">
           <RiFileCodeLine className="size-4 text-accent-500" />
-          <span>SKILL.md · 规范实时预览</span>
+          <span>{t("pages.skills.previewPane.title")}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">实时编译联动</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("pages.skills.previewPane.liveCompile")}</span>
           <button
             type="button"
             onClick={onCopy}
             className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-text-tertiary hover:bg-background-secondary-default hover:text-text-primary transition-colors cursor-pointer"
-            title="复制生成的 SKILL.md"
+            title={t("pages.skills.previewPane.copyTitle")}
           >
             {copied ? (
               <RiCheckLine className="size-3 text-emerald-500" />
             ) : (
               <RiClipboardLine className="size-3" />
             )}
-            <span>{copied ? "已复制" : "复制"}</span>
+            <span>{copied ? t("pages.skills.previewPane.copied") : t("pages.skills.previewPane.copy")}</span>
           </button>
         </div>
       </div>

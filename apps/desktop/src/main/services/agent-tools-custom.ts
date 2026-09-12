@@ -1,8 +1,10 @@
 /**
  * 用户自定义 stdio ACP：入库、校验 cwd、投影到 AgentToolPublic。
+ * env 值落盘前经 safeStorage 加密（`enc:` 前缀标记），读侧解密；加密不可用回退明文。
  */
 import { existsSync, statSync } from "node:fs"
 import { isAbsolute } from "node:path"
+import { safeStorage } from "electron"
 import {
   assertCustomAllowedCommand,
   nextCustomAgentId,
@@ -22,6 +24,7 @@ import { readPreferences, writePreferences } from "./preferences"
 
 const KEY = "agentTools.customAgents"
 const BLOCKED_ENV = new Set(["NODE_OPTIONS", "ELECTRON_RUN_AS_NODE"])
+const ENV_ENC_PREFIX = "enc:"
 
 export function readCustomAgents(): CustomAgentRecord[] {
   const raw = getSetting(KEY)
@@ -31,7 +34,8 @@ export function readCustomAgents(): CustomAgentRecord[] {
     if (!Array.isArray(parsed)) return []
     return parsed.flatMap((item) => {
       const result = CustomAgentRecord.safeParse(item)
-      return result.success ? [result.data] : []
+      if (!result.success) return []
+      return [{ ...result.data, env: decryptEnvValues(result.data.env) }]
     })
   } catch {
     return []
@@ -39,7 +43,8 @@ export function readCustomAgents(): CustomAgentRecord[] {
 }
 
 export function writeCustomAgents(rows: CustomAgentRecord[]) {
-  setSetting(KEY, JSON.stringify(rows))
+  const stored = rows.map((row) => ({ ...row, env: encryptEnvValues(row.env) }))
+  setSetting(KEY, JSON.stringify(stored))
 }
 
 export function getCustomAgent(id: string): CustomAgentRecord | undefined {
@@ -135,6 +140,39 @@ function sanitizeEnv(env?: Record<string, string>): Record<string, string> {
     next[name] = value
   }
   return next
+}
+
+/** 值里出现 `enc:` 前缀的按密文处理；解不开视作用户原文，不二次加密。 */
+function encryptEnvValues(env: Record<string, string>): Record<string, string> {
+  if (!safeStorage.isEncryptionAvailable()) return env
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(env)) {
+    if (value.startsWith(ENV_ENC_PREFIX)) {
+      out[key] = value
+      continue
+    }
+    out[key] = ENV_ENC_PREFIX + safeStorage.encryptString(value).toString("base64")
+  }
+  return out
+}
+
+function decryptEnvValues(env: Record<string, string>): Record<string, string> {
+  if (!safeStorage.isEncryptionAvailable()) return env
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(env)) {
+    if (!value.startsWith(ENV_ENC_PREFIX)) {
+      out[key] = value
+      continue
+    }
+    try {
+      out[key] = safeStorage.decryptString(
+        Buffer.from(value.slice(ENV_ENC_PREFIX.length), "base64")
+      )
+    } catch {
+      out[key] = ""
+    }
+  }
+  return out
 }
 
 function unbindSessions(runtimeId: string) {

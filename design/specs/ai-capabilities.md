@@ -1,10 +1,10 @@
 # spec/ai-capabilities
 
-> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-09-09
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-09-12
 
 ## 当前真相
 
-`AiRuntime` 在 `packages/agent-core/src/runtime`：`createBufferedRuntime` + `createEventBuffer`。桌面 `createDesktopRuntime.start` 走 `startGeneration`（agent 必须用 `runAgent` 自己的 runId，不能先由缓冲层另发一个）；`stream(runId)` 读 `event-bus` 同一块 `createEventBuffer`。`createIdRuntime` 才包 `createBufferedRuntime`，并注入同一缓冲。`ai-generation` 执行文本/补全（`streamPlainText`）、结构化增量（`streamStructuredPartials`，失败再 `generateStructuredRepaired`）、媒体、embedding、rerank、workflow。kind=`agent` 必须带 `workspaceId`，转发同一条 `runAgent`（同一审批与 workspace host）。fullStream 的 text-start / finish / start-step 映射为 `message.part.*` / `usage.updated` / `step.*`。Workflow persist 发 `workflow.checkpoint`。MCP `tools/call` 发 `mcp.tool`；trusted `mcp.openApp` / `mcp.appMessage` 发 `mcp.app`。`ai.resume` 按 `runs.kind` 分流：workflow 走 checkpoint 续步；其它 kind 读 `runs.checkpoint` 里的 generation 快照再跑（Agent 用同一 `runId` 重启 ToolLoop，文本/结构化/媒体重放 `ai.generate`）。没有快照会拒。不要把文本/Agent run 当成 Workflow 恢复。
+`AiRuntime` 在 `packages/agent-core/src/runtime`：`createBufferedRuntime` + `createEventBuffer`。桌面 `createDesktopRuntime.start` 走 `startGeneration`（agent 必须用 `runAgent` 自己的 runId，不能先由缓冲层另发一个）；`stream(runId)` 读 `event-bus` 同一块 `createEventBuffer`。`createIdRuntime` 才包 `createBufferedRuntime`，并注入同一缓冲。`ai-generation` 执行文本/补全（`streamPlainText`）、结构化增量（`streamStructuredPartials`，失败再 `generateStructuredRepaired`）、媒体、embedding、rerank、workflow。kind=`agent` 必须带 `workspaceId`，转发同一条 `runAgent`（同一审批与 workspace host）。fullStream 的 text-start / finish / start-step 映射为 `message.part.start` / `message.part.end` / `usage.updated` / `step.*`（文本增量走 v1 `text.delta`；`message.part.delta` 曾有合约无生产者，已删）。Workflow persist 发 `workflow.checkpoint`。MCP `tools/call` 发 `mcp.tool`；trusted `mcp.openApp` / `mcp.appMessage` 发 `mcp.app`。`ai.resume` 按 `runs.kind` 分流：workflow 走 checkpoint 续步；其它 kind 读 `runs.checkpoint` 里的 generation 快照再跑（Agent 用同一 `runId` 重启 ToolLoop，文本/结构化/媒体重放 `ai.generate`）。没有快照会拒。不要把文本/Agent run 当成 Workflow 恢复。
 
 `GenerationRequest.kind`：`text` `structured-object` `structured-array` `completion` `image` `speech` `transcription` `translation` `video` `embedding` `rerank` `realtime-session` `agent` `workflow`。fullStream 映射在 `packages/agent-core/src/streams/map-part.ts`。Agent / `ai.generate` 完成时写 `ttfoMs` 与 `tokensPerSecond`。
 

@@ -56,7 +56,7 @@ export function ImportDialog({
   async function installPreset(preset: CuratedSkill, scope: SkillScope) {
     if (!hasIde()) return
     if (scope === "workspace" && !workspacePath) {
-      setError("请先打开一个项目工作区后再安装到工作区")
+      setError(t("pages.skills.importDialog.needWorkspace"))
       return
     }
     await run(`${preset.id}:${scope}`, async () => {
@@ -91,7 +91,7 @@ export function ImportDialog({
           <div className="flex items-center gap-2">
             <RiDownloadLine className="size-5 text-accent-600 dark:text-accent-400" />
             <DialogTitle className="text-title-3-semibold text-text-primary tracking-tight">
-              导入技能来源 (Import Skill Sources)
+              {t("pages.skills.importDialog.title")}
             </DialogTitle>
           </div>
         </div>
@@ -107,13 +107,13 @@ export function ImportDialog({
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-1.5 text-caption-2-medium font-semibold text-text-primary">
               <RiGitRepositoryLine className="size-4 text-text-tertiary" />
-              <span>从开源 Git 仓库导入</span>
+              <span>{t("pages.skills.importDialog.gitTitle")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Input
                 value={gitOrigin}
                 onChange={(e) => setGitOrigin(e.target.value)}
-                placeholder="例如: obra/superpowers 或 https://github.com/..."
+                placeholder={t("pages.skills.importDialog.gitPlaceholder")}
                 className="h-8.5 text-caption-2-medium"
               />
               <Button
@@ -123,7 +123,7 @@ export function ImportDialog({
                 className="h-8.5 px-3 text-caption-2-medium shrink-0 shadow-2xs"
               >
                 {busy === "git" ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
-                <span>拉取并挂载</span>
+                <span>{t("pages.skills.importDialog.gitFetch")}</span>
               </Button>
             </div>
           </div>
@@ -136,10 +136,10 @@ export function ImportDialog({
               </div>
               <div>
                 <h4 className="text-caption-1-medium font-semibold text-text-primary">
-                  选择本地已有技能目录
+                  {t("pages.skills.importDialog.localTitle")}
                 </h4>
                 <p className="text-[11px] text-text-tertiary">
-                  接入本机已有 Agent 技能或本地开发工作区
+                  {t("pages.skills.importDialog.localDesc")}
                 </p>
               </div>
             </div>
@@ -151,14 +151,14 @@ export function ImportDialog({
               className="h-8 text-caption-2-medium"
             >
               {busy === "local" ? <RiLoader4Line className="size-3.5 animate-spin" /> : null}
-              <span>选择文件夹</span>
+              <span>{t("pages.skills.importDialog.pickFolder")}</span>
             </Button>
           </div>
 
           {/* 3. 官方精选模版快速安装 */}
           <div className="flex flex-col gap-2.5 pt-2 border-t border-separator-border/40">
             <h4 className="text-caption-2-medium font-semibold text-text-primary">
-              官方快速安装模版 (Quick Presets)
+              {t("pages.skills.importDialog.presetsTitle")}
             </h4>
             <div className="flex flex-col gap-2">
               {curated.map((preset) => {
@@ -185,7 +185,7 @@ export function ImportDialog({
                         className="h-7 px-2 text-[11px]"
                       >
                         {isCurrentBusy ? <RiLoader4Line className="size-3 animate-spin" /> : null}
-                        <span>装至全局</span>
+                        <span>{t("pages.skills.importDialog.installGlobal")}</span>
                       </Button>
                       <Button
                         size="sm"
@@ -193,7 +193,7 @@ export function ImportDialog({
                         onClick={() => void installPreset(preset, "workspace")}
                         className="h-7 px-2 text-[11px] shadow-2xs"
                       >
-                        <span>装至工作区</span>
+                        <span>{t("pages.skills.importDialog.installWorkspace")}</span>
                       </Button>
                     </div>
                   </div>

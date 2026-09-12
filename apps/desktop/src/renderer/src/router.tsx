@@ -23,6 +23,7 @@ import { ObservabilityPage } from "@renderer/components/observability/observabil
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
+import { startAttentionPersistence } from "@renderer/stores/attention/persist-attention"
 import { InboxPage } from "@renderer/components/inbox/inbox-page"
 import {
   RedirectPlaceholder,
@@ -33,6 +34,7 @@ import { parseSettingsSectionSearch } from "@renderer/components/settings/settin
 
 function RootLayout() {
   useAgentSession()
+  useEffect(() => startAttentionPersistence(), [])
   const navigate = useNavigate()
 
   useEffect(() => {

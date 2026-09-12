@@ -4,6 +4,7 @@
 import { useState } from "react"
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import type { AgentBarPoint } from "../types/profile.types"
 
 interface ProfileAgentsBarChartProps {
@@ -23,6 +24,7 @@ export function ProfileAgentsBarChart({
   onPrevMonth,
   onNextMonth
 }: ProfileAgentsBarChartProps) {
+  const t = useT()
   const [hoveredPoint, setHoveredPoint] = useState<AgentBarPoint | null>(null)
   const maxCount = Math.max(...points.map((point) => point.count), 1)
   const chartHeight = 110
@@ -35,9 +37,9 @@ export function ProfileAgentsBarChart({
     <div className="flex select-none flex-col gap-4 rounded-2xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
-          <span className="text-caption-2-medium text-text-tertiary">Agents</span>
+          <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.charts.agents")}</span>
           <div className="mt-0.5 flex items-baseline gap-2">
-            <h3 className="text-title-2-semibold text-text-primary">{totalAgentsCount} runs</h3>
+            <h3 className="text-title-2-semibold text-text-primary">{totalAgentsCount} {t("pages.account.charts.runsUnit")}</h3>
             {hoveredPoint ? (
               <span className="font-mono text-caption-2-medium text-accent-500">
                 {hoveredPoint.label}: <strong>{hoveredPoint.count}</strong>
@@ -113,8 +115,8 @@ export function ProfileAgentsBarChart({
           })}
         </svg>
         <div className="flex justify-between pt-1 font-mono text-caption-2-medium text-text-tertiary">
-          <span>{points[0]?.label ?? "Day 1"}</span>
-          <span>{lastPoint?.isToday ? "Today" : (lastPoint?.label ?? "")}</span>
+          <span>{points[0]?.label ?? t("pages.account.charts.day", { n: 1 })}</span>
+          <span>{lastPoint?.isToday ? t("pages.account.heatmap.today") : (lastPoint?.label ?? "")}</span>
         </div>
       </div>
     </div>

@@ -23,12 +23,12 @@ export function AccountPage() {
         items: [
           {
             id: "profile",
-            label: "账户详情",
+            label: t("pages.account.navProfile"),
             icon: RiShieldUserLine
           },
           {
             id: "notifications",
-            label: "通知偏好",
+            label: t("pages.account.navNotifications"),
             icon: RiNotification3Line
           }
         ]
@@ -46,12 +46,12 @@ export function AccountPage() {
 
   return (
     <SecondaryPageShell
-      searchPlaceholder="搜索个人账户设置..."
+      searchPlaceholder={t("pages.account.searchPlaceholder")}
       groups={navGroups}
       selectedId={currentSection}
       onSelect={handleSelect}
       contentWidth="wide"
-      breadcrumbTitle={`个人中心 > ${currentSection === "notifications" ? "通知偏好" : "账户详情"}`}
+      breadcrumbTitle={`${t("pages.account.crumbTitle")} > ${currentSection === "notifications" ? t("pages.account.navNotifications") : t("pages.account.navProfile")}`}
     >
       {currentSection === "notifications" ? (
         <AccountNotificationsSection />

@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 渲染进程不受信；主进程是本机后端。最后更新：2026-09-10
+> 进程边界与安全基线。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -17,7 +17,7 @@ Main Process（可信）
   workspace         fs / git / 审批执行
   app-update        electron-updater → GitHub Releases
   terminal          node-pty + renderer xterm
-  db                Drizzle 形态的 schema + node:sqlite
+  db                手写 SQL 迁移 + repository 函数 + node:sqlite（未引入 Drizzle ORM）
   secrets           safeStorage / OS keychain
         │  HTTPS（BYOK 直连）
         ▼
@@ -46,8 +46,8 @@ Main Process（可信）
 ### 数据
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
-- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、assets、knowledge_*、mcp_*、telemetry_metrics）。向量存在 SQLite，检索在本机。
-- 供应商密钥：主进程 vault + `safeStorage`，renderer 只见 `hasKey` / `keyHint`。
+- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（safeStorage 密文专表，migration 004）与 `inbox_state`（Inbox 档案耐久层，migration 005）。向量存在 SQLite，检索在本机。
+- 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（`••••`+后四位）。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
 - 本机 CLI 账号探测：main 可读 Cursor IDE `state.vscdb` 的 `cursorAuth/accessToken`、Grok `~/.grok/auth.json` 的 `key`，只用于打官方账单接口。token / key **不**进 IPC、**不**进 renderer、**不**写回文件。
@@ -56,7 +56,7 @@ Main Process（可信）
 
 ## 不变量
 
-- `contextIsolation: true`，`nodeIntegration: false`，禁用 remote。
+- `contextIsolation: true`，`nodeIntegration: false`，禁用 remote。`sandbox: false` 与 `webviewTag: true` 是有意为之（webview 见下），改动前先评估。
 - preload 只暴露白名单 `window.ide`。
 - 所有 IPC 入参 Zod parse，失败即拒。
 - Customize 的 Rules / Skills 只读写白名单根（全局 `~/.enjoy-agents/{rules,skills}` 等 + 已登记工作区的规范子目录 / 已知文件名）。禁止 `process.cwd()`，禁止 renderer 绝对路径直接 `fs`。
@@ -73,6 +73,8 @@ Main Process（可信）
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
 
 ## 已知坑
+
+- `settings` KV 表曾是 JSON 垃圾场：vault / harness 密钥 / automations / overrides / runtimes / 压缩状态全塞一张表。2026-09 收敛：vault 与 harness 密钥迁到 `secrets_vault` 专表（惰性迁移旧键）；automations / overrides / session.runtimes 读取统一走 Zod 校验（坏条目丢弃）；压缩状态读侧已有 `SessionCompaction.parse`。仍在 settings 里的 JSON 是小对象（preferences 等），可接受。
 
 - AI SDK 7 的 `execute()` 只注入 `toolsContext[name]`，不会把 `runtimeContext` 放进 `options.context`。工具 host 必须在建工具时闭包注入，否则审批通过后会报 `Workspace host is missing`。见 `packages/agent-core/src/tools/index.ts`。
 - 不要把 `@ai-sdk/react` 的 `useChat`（HTTP）当桌面主路径。流从 main `webContents.send("agent.event")` 来。

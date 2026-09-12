@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import { Frost, GlyphRain, HexFloat, RetroDither } from "../../canvasui"
 import { GLASS_COVER_PRESETS } from "../constants"
 import type { GlassCoverPreset } from "../types/profile.types"
@@ -76,6 +77,7 @@ export function GlassCover({
   height = 210,
   children
 }: GlassCoverProps) {
+  const t = useT()
   const active = GLASS_COVER_PRESETS.find((item) => item.id === preset) ?? GLASS_COVER_PRESETS[0]!
 
   return (
@@ -102,7 +104,7 @@ export function GlassCover({
                 )}
               >
                 <RiImageLine className="size-3.5 text-foreground-icon-secondary" />
-                <span>更换特效封面</span>
+                <span>{t("pages.account.cover.change")}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 p-1">
@@ -115,9 +117,11 @@ export function GlassCover({
                     className="flex cursor-pointer items-center justify-between px-2 py-1.5 text-caption-2-medium"
                   >
                     <div className="flex min-w-0 flex-col pr-1">
-                      <span className="truncate text-caption-1-medium text-text-primary">{item.label}</span>
+                      <span className="truncate text-caption-1-medium text-text-primary">
+                        {t(`pages.account.cover.${item.labelKey}.label`)}
+                      </span>
                       <span className="mt-0.5 truncate text-caption-2-medium text-text-tertiary">
-                        {item.desc}
+                        {t(`pages.account.cover.${item.labelKey}.desc`)}
                       </span>
                     </div>
                     {selected ? <RiCheckLine className="ml-1 size-3.5 shrink-0 text-accent-500" /> : null}

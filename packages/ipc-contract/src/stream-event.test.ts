@@ -31,7 +31,6 @@ test("未知 type 被拒绝", () => {
 test("v2 事件全集可 safeParse", () => {
   const events = [
     { type: "message.part.start", runId: "r1", partId: "p", partType: "text" },
-    { type: "message.part.delta", runId: "r1", partId: "p", text: "x" },
     { type: "message.part.end", runId: "r1", partId: "p" },
     { type: "structured.delta", runId: "r1", partial: { a: 1 } },
     { type: "asset.created", runId: "r1", assetId: "a", mediaType: "image/png", name: "n", size: 1 },

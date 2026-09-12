@@ -11,6 +11,7 @@ import {
   RiStarFill
 } from "@remixicon/react"
 import type { CuratedSkillSource } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 
@@ -29,6 +30,8 @@ export function CuratedBentoHero({
   busy: boolean
   onInstall: (source: CuratedSkillSource) => void
 }) {
+  const t = useT()
+
   return (
     <div className="grid gap-4 lg:grid-cols-12 items-stretch">
       {/* 左侧 2/3：聚光灯官方焦点卡 */}
@@ -40,7 +43,7 @@ export function CuratedBentoHero({
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-accent-500/20 px-2.5 py-0.5 text-caption-2-medium font-semibold text-accent-700 dark:text-accent-300 border border-accent-500/30">
               <RiFlashlightFill className="size-3 text-accent-500" />
-              <span>官方本周焦点推荐</span>
+              <span>{t("pages.skills.hero.spotlightBadge")}</span>
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-mono font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20">
               <RiStarFill className="size-3 text-amber-500" />
@@ -77,7 +80,7 @@ export function CuratedBentoHero({
         {/* 底部动作栏：支持生态 + 安装主按钮 */}
         <div className="relative z-10 mt-6 pt-4 border-t border-separator-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary">
-            <span>支持运行时:</span>
+            <span>{t("pages.skills.hero.runtimeLabel")}</span>
             <span className="rounded bg-background-secondary-default/80 px-1.5 py-0.5 font-mono text-[10.5px] text-text-secondary">
               Enjoy · Claude · Cursor · Codex · Pi · OMP
             </span>
@@ -86,7 +89,7 @@ export function CuratedBentoHero({
           {isSpotlightInstalled ? (
             <div className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 px-4 py-2 text-caption-1-medium font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-2xs">
               <RiCheckLine className="size-4" />
-              <span>已全套装备至 AI</span>
+              <span>{t("pages.skills.hero.installedFull")}</span>
             </div>
           ) : (
             <Button
@@ -100,7 +103,7 @@ export function CuratedBentoHero({
               ) : (
                 <RiDownloadLine className="size-4" />
               )}
-              <span>一键装备完整套件 ({spotlightItem.skillCount} 项能力)</span>
+              <span>{t("pages.skills.hero.installAll", { n: spotlightItem.skillCount ?? "" })}</span>
             </Button>
           )}
         </div>
@@ -111,7 +114,7 @@ export function CuratedBentoHero({
         <div className="flex items-center justify-between pb-2.5 border-b border-separator-border/50">
           <div className="flex items-center gap-1.5 text-caption-1-medium font-semibold text-text-primary">
             <RiFireFill className="size-4 text-rose-500" />
-            <span>热门能力榜 (Trending)</span>
+            <span>{t("pages.skills.hero.trendingTitle")}</span>
           </div>
           <span className="text-[11px] font-mono text-text-tertiary">Top Installs</span>
         </div>
@@ -156,7 +159,7 @@ export function CuratedBentoHero({
                     <div className="flex items-center gap-1.5 text-[10.5px] text-text-tertiary">
                       <span>{item.stars?.toLocaleString()} ★</span>
                       <span>·</span>
-                      <span>{item.skillCount} 项</span>
+                      <span>{t("pages.skills.hero.countItems", { n: item.skillCount ?? "" })}</span>
                     </div>
                   </div>
                 </div>
@@ -165,7 +168,7 @@ export function CuratedBentoHero({
                   {isInstalled ? (
                     <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                       <RiCheckLine className="size-3" />
-                      <span>已装</span>
+                      <span>{t("pages.skills.hero.installedShort")}</span>
                     </span>
                   ) : (
                     <Button
@@ -175,7 +178,7 @@ export function CuratedBentoHero({
                       onClick={() => onInstall(item)}
                       className="h-6.5 px-2 text-[11px] shadow-2xs"
                     >
-                      <span>获取</span>
+                      <span>{t("pages.skills.hero.get")}</span>
                     </Button>
                   )}
                 </div>
@@ -188,9 +191,9 @@ export function CuratedBentoHero({
         <div className="pt-2.5 border-t border-separator-border/40 flex items-center justify-between text-[10.5px] text-text-tertiary">
           <div className="flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>社区版本每周实时同步</span>
+            <span>{t("pages.skills.hero.syncHint")}</span>
           </div>
-          <span className="font-mono">100% 离线可用</span>
+          <span className="font-mono">{t("pages.skills.hero.offline")}</span>
         </div>
       </div>
     </div>

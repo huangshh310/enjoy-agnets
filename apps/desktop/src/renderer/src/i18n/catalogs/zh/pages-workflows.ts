@@ -30,6 +30,7 @@ export const zhWorkflowPages = {
   runningStep: "步骤 {current} / {total}",
   statusRunning: "运行中",
   statusCompleted: "已完成",
+  statusWaiting: "已等待审批",
   statusPaused: "已暂停",
   statusFailed: "失败",
   stepN: "步骤 {n}",

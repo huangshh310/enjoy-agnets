@@ -3,13 +3,17 @@
  */
 import { safeStorage } from "electron"
 import {
+  getSecretValue,
+  setSecretValue,
+} from "@enjoy-agents/db"
+import {
   isApiStyle,
   presetFor,
   type ApiStyle,
   type CatalogModel,
   type ProviderKind
 } from "@enjoy-agents/providers"
-import { getSetting, setSetting } from "./database"
+import { deleteSetting, getDatabase, getSetting } from "./database"
 import { createId } from "./ids"
 
 const LEGACY_SECRET_KEY = "provider.secret"
@@ -108,7 +112,7 @@ export function toPublic(profile: ProviderProfile, activeId: string | null): Pro
 }
 
 export async function readVault(): Promise<Vault> {
-  const stored = getSetting(VAULT_KEY)
+  const stored = readVaultBlob()
   if (stored) return decryptJson<Vault>(stored) ?? emptyVault()
   const migrated = migrateLegacySecret()
   if (migrated) {
@@ -119,7 +123,21 @@ export async function readVault(): Promise<Vault> {
 }
 
 export async function writeVault(vault: Vault): Promise<void> {
-  setSetting(VAULT_KEY, encryptJson(vault))
+  setSecretValue(getDatabase(), VAULT_KEY, encryptJson(vault))
+  // 惰性清理 settings KV 里的旧位置；键不存在时无害。
+  deleteSetting(VAULT_KEY)
+}
+
+/** vault 密文已迁到 secrets_vault 专表；首次读到旧 settings 键时搬一次。 */
+function readVaultBlob(): string | undefined {
+  const db = getDatabase()
+  const current = getSecretValue(db, VAULT_KEY)
+  if (current) return current
+  const legacy = getSetting(VAULT_KEY)
+  if (!legacy) return undefined
+  setSecretValue(db, VAULT_KEY, legacy)
+  deleteSetting(VAULT_KEY)
+  return legacy
 }
 
 function encryptJson(value: unknown): string {
@@ -138,8 +156,12 @@ function decryptJson<T>(stored: string): T | undefined {
   }
 }
 
+/** spec 要求 `••••` + 后四位；短 Key / 非可见字符退回纯掩码，避免泄漏长度信息过多。 */
 function keyHint(apiKey: string): string {
-  return apiKey.trim() ? "••••" : ""
+  const trimmed = apiKey.trim()
+  if (!trimmed) return ""
+  const tail = trimmed.slice(-4)
+  return /^[A-Za-z0-9_-]{4}$/.test(tail) ? `••••${tail}` : "••••"
 }
 
 function emptyVault(): Vault {

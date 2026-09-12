@@ -41,6 +41,11 @@ export function WorkspaceTerminal({
     const offData = getIde().terminal.onData((event) => {
       if (event.sessionId === sessionId) term.write(event.text)
     })
+    const offExit = getIde().terminal.onExit((event) => {
+      if (event.sessionId !== sessionId) return
+      // 暗色弱化提示进程已结束，避免面板静默假活。
+      term.write(`\r\n\x1b[2m${t("chat.terminalExited")}\x1b[0m\r\n`)
+    })
     const resize = () => {
       fit.fit()
       void getIde().terminal.resize({
@@ -56,10 +61,11 @@ export function WorkspaceTerminal({
       observer.disconnect()
       dataSub.dispose()
       offData()
+      offExit()
       term.dispose()
       termRef.current = null
     }
-  }, [sessionId])
+  }, [sessionId, t])
 
   return (
     <div

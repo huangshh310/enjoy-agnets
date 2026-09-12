@@ -12,6 +12,7 @@ import {
 } from "@remixicon/react"
 import type { SkillSourceSkill } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
+import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { SKILLS_UI_COPY } from "../../constants/skills-ui.constants"
 
@@ -22,6 +23,7 @@ export function SkillDocInspector({
   skill: SkillSourceSkill | null
   onRevealFolder?: (filePath: string) => void
 }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
 
   // 解析 YAML Frontmatter 元数据
@@ -122,7 +124,7 @@ export function SkillDocInspector({
             {copied ? (
               <>
                 <RiCheckLine className="size-3.5 text-emerald-500" />
-                <span>已复制</span>
+                <span>{t("pages.skills.docInspector.copied")}</span>
               </>
             ) : (
               <>
@@ -145,7 +147,7 @@ export function SkillDocInspector({
           ) : null}
           {frontmatter["user-invocable"] ? (
             <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-              用户可直接调用
+              {t("pages.skills.docInspector.userInvocable")}
             </span>
           ) : null}
           {frontmatter["argument-hint"] ? (

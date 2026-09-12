@@ -78,14 +78,14 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
                     "border-accent-500/40 bg-accent-500/[0.06] ring-2 ring-accent-500/20 shadow-sm",
                   step.status === "paused" &&
                     "border-amber-500/20 bg-amber-500/[0.04] text-text-primary",
-                  step.status === "waiting_approval" &&
+                  step.status === "waiting_review" &&
                     "border-amber-500/30 bg-amber-500/[0.08] text-amber-700 dark:text-amber-300",
                   step.status === "failed" &&
                     "border-rose-500/20 bg-rose-500/[0.04] text-rose-700 dark:text-rose-300",
                   step.status !== "completed" &&
                     step.status !== "running" &&
                     step.status !== "paused" &&
-                    step.status !== "waiting_approval" &&
+                    step.status !== "waiting_review" &&
                     step.status !== "failed" &&
                     "border-border-button-default bg-background-primary-default text-text-secondary"
                 )}
@@ -155,7 +155,7 @@ function StepIcon({ status }: { status: string }) {
   if (status === "running") {
     return <RiLoader4Line className="size-3.5 text-accent-500 animate-spin" />
   }
-  if (status === "waiting_approval") {
+  if (status === "waiting_review") {
     return <RiShieldCheckLine className="size-3.5 text-amber-500" />
   }
   if (status === "paused") {

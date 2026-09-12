@@ -5,29 +5,13 @@ import type { GlassCoverPreset, HeatmapCellData } from "./types/profile.types"
 
 export const GLASS_COVER_PRESETS: Array<{
   id: GlassCoverPreset
-  label: string
-  desc: string
+  /** i18n 键：pages.account.cover.<labelKey>.label / desc */
+  labelKey: string
 }> = [
-  {
-    id: "glyph-rain",
-    label: "代码雨 · Glyph Rain",
-    desc: "数字代码粒子下落，游标扫过处激荡光芒"
-  },
-  {
-    id: "hex-float",
-    label: "悬浮棱镜 · Hex Float",
-    desc: "3D 六边形倾斜悬浮地砖"
-  },
-  {
-    id: "retro-dither",
-    label: "复古点阵 · Retro Dither",
-    desc: "8-bit 有序抖动透镜"
-  },
-  {
-    id: "frost",
-    label: "冰晶融冻 · Frost",
-    desc: "触碰融化的冰面透镜"
-  }
+  { id: "glyph-rain", labelKey: "glyphRain" },
+  { id: "hex-float", labelKey: "hexFloat" },
+  { id: "retro-dither", labelKey: "retroDither" },
+  { id: "frost", labelKey: "frost" }
 ]
 
 export const HEATMAP_LEVEL_CLASSES: Record<HeatmapCellData["level"], string> = {

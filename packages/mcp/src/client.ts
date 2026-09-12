@@ -27,6 +27,8 @@ export async function connectMcpServer(input: {
   transport: "stdio" | "sse" | "http"
   command?: string
   url?: string
+  /** stdio Server 的附加环境变量；与主进程 env 合并后注入子进程。 */
+  env?: Record<string, string>
 }): Promise<McpClientHandle> {
   if (input.transport === "stdio" && !input.command) {
     return { id: input.id, state: "error", error: "stdio transport requires a command." }
@@ -41,7 +43,7 @@ export async function connectMcpServer(input: {
     const sdk = await tryCreateSdkClient(input)
     if (sdk) return sdk
     if (input.transport === "stdio" && input.command) {
-      return await connectStdio(input.id, input.command)
+      return await connectStdio(input.id, input.command, input.env)
     }
     if ((input.transport === "sse" || input.transport === "http") && input.url) {
       return await connectHttp(input.id, input.url, input.transport)
@@ -94,6 +96,7 @@ async function tryCreateSdkClient(input: {
   transport: "stdio" | "sse" | "http"
   command?: string
   url?: string
+  env?: Record<string, string>
 }): Promise<McpClientHandle | null> {
   const mod = (await import("ai")) as Record<string, unknown>
   const create = mod.createMCPClient as
@@ -105,7 +108,7 @@ async function tryCreateSdkClient(input: {
   if (typeof create !== "function") return null
   const client = await create(
     input.transport === "stdio"
-      ? { transport: { type: "stdio", command: input.command } }
+      ? { transport: { type: "stdio", command: input.command, env: mergedEnv(input.env) } }
       : { transport: { type: input.transport, url: input.url } }
   )
   return {
@@ -118,9 +121,22 @@ async function tryCreateSdkClient(input: {
   }
 }
 
-async function connectStdio(id: string, command: string): Promise<McpClientHandle> {
+/** stdio Server 继承主进程 env，再叠加 UI 配置的附加变量。 */
+function mergedEnv(overrides?: Record<string, string>): Record<string, string> {
+  return { ...process.env, ...overrides } as Record<string, string>
+}
+
+async function connectStdio(
+  id: string,
+  command: string,
+  overrides?: Record<string, string>
+): Promise<McpClientHandle> {
   const parsed = parseStdioCommand(command)
-  const child = spawn(parsed.bin, parsed.args, { stdio: ["pipe", "pipe", "pipe"], windowsHide: true })
+  const child = spawn(parsed.bin, parsed.args, {
+    stdio: ["pipe", "pipe", "pipe"],
+    windowsHide: true,
+    env: mergedEnv(overrides)
+  })
   const session = createStdioSession(child, HANDSHAKE_MS)
   return finishSession(id, session, async () => {
     await session.request("initialize", initializeRequest().params)
