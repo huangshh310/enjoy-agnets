@@ -1,15 +1,19 @@
 /**
- * 改动条右侧：全部撤销 / 全部保留 / 审查。
+ * 改动条右侧：全部撤销 / 全部保留 / 在浏览器打开 / 审查。
  */
 import { useT } from "@renderer/i18n"
+import { SessionPreviewOpenButton } from "./preview-open/session-preview-open-button"
 import type { SessionReviewActionsProps } from "./session-review.types"
 
 export function SessionReviewActions({
   busy,
   hasFiles = true,
+  canOpenPreview = false,
+  previewBusy,
   onUndo,
   onKeep,
-  onOpenReview
+  onOpenReview,
+  onOpenPreview
 }: SessionReviewActionsProps) {
   const t = useT()
   const locked = Boolean(busy) || !hasFiles
@@ -26,6 +30,11 @@ export function SessionReviewActions({
         title={t("chat.sessionReviewKeepHint")}
         disabled={locked}
         onClick={onKeep}
+      />
+      <SessionPreviewOpenButton
+        enabled={canOpenPreview}
+        busy={previewBusy}
+        onOpen={onOpenPreview}
       />
       <button
         type="button"

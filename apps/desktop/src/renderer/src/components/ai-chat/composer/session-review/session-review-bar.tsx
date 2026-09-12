@@ -18,6 +18,9 @@ export function SessionReviewBar({
   onOpenFile,
   onUndo,
   onKeep,
+  onOpenPreview,
+  canOpenPreview,
+  previewBusy,
   busy,
   hasFiles,
   defaultExpanded = false
@@ -73,9 +76,12 @@ export function SessionReviewBar({
         <SessionReviewActions
           busy={busy}
           hasFiles={hasFiles}
+          canOpenPreview={canOpenPreview}
+          previewBusy={previewBusy}
           onUndo={onUndo}
           onKeep={onKeep}
           onOpenReview={onOpenReview}
+          onOpenPreview={onOpenPreview}
         />
       </div>
 

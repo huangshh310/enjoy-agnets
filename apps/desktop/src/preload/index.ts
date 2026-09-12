@@ -32,7 +32,8 @@ const ide = {
     previewCheckpoint: (input: unknown) =>
       ipcRenderer.invoke("workspace.previewCheckpoint", input),
     restoreCheckpoint: (input: unknown) =>
-      ipcRenderer.invoke("workspace.restoreCheckpoint", input)
+      ipcRenderer.invoke("workspace.restoreCheckpoint", input),
+    openPreview: (input: unknown) => ipcRenderer.invoke("workspace.openPreview", input)
   },
   session: {
     list: (input: unknown) => ipcRenderer.invoke("session.list", input),
