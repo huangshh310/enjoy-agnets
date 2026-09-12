@@ -2,7 +2,7 @@
 
 > 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-12
 
-视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。完成条「在浏览器打开」：[`../previews/p0-f-preview-open.html`](../previews/p0-f-preview-open.html)（锁 tip `9a1a4ca`）。
+视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。完成条「在浏览器打开」：[`../previews/p0-f-preview-open.html`](../previews/p0-f-preview-open.html)（锁 tip `9a1a4ca`）。本轮来源详情：[`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)（锁 tip `76b5ecd`）。
 
 ## 当前真相
 
@@ -59,6 +59,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - Composer 探索/执行分段与拦截：`ai-chat/composer/explore-execute/`；`composer-mode.ts` 只做 ask/plan ↔ 探索、agent ↔ 执行
 - Composer `@` 发现（文件 / 文档 / 技能，网页 muted）与 `/` 内置（compact + 探索/执行）+ 技能面板：`ai-chat/composer/mentions/`
 - 本轮来源芯片：`ai-chat/thread/sources/`（`SourceList` 只是薄封装）
+- P0-G 本轮来源详情 sheet（设计锁，未接线）：[`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)
 - 审批策略：`ai-chat/approval-policy-toggle.tsx`（底栏盾牌）；智能体发现条 `settings/approval-discover/`；禁止再挂 `AutoApproveBar`
 - Composer 本轮改动条与跳动宠物：`ai-chat/composer/session-review/`；系统浏览器预览：`session-review/preview-open/`
 - 工作区 live 刷新：`hooks/use-workspace-change-invalidation.ts`（选中即 watch；审查跟 `onChanged`）
