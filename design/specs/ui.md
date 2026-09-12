@@ -4,7 +4,7 @@
 
 视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。
 
-视觉真源（P0-R 远程 SSH 工作区）：[`../previews/p0-r-remote-workspace.html`](../previews/p0-r-remote-workspace.html)（设计已锁，**未接线**；定义见 [`../references/p0-r-remote.md`](../references/p0-r-remote.md)）。禁止在导轨加「远程引擎」。
+视觉真源（P0-R 远程 SSH 工作区）：[`../previews/p0-r-remote-workspace.html`](../previews/p0-r-remote-workspace.html)（锁 tip `3a3e00b`；设计已锁，**未接线**；定义见 [`../references/p0-r-remote.md`](../references/p0-r-remote.md)）。禁止在导轨加「远程引擎」。
 
 ## 当前真相
 

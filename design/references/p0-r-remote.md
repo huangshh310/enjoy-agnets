@@ -1,7 +1,7 @@
 # P0-R · 远程 = SSH 工作区
 
 > 产品定义，不是实现说明书。设计已锁，**应用未接线**。  
-> 视觉真源：[previews/p0-r-remote-workspace.html](../previews/p0-r-remote-workspace.html)（【视觉真源】P0-R）。  
+> 视觉真源：[previews/p0-r-remote-workspace.html](../previews/p0-r-remote-workspace.html)（【视觉真源】P0-R，锁 tip `3a3e00b`）。  
 > 最后更新：2026-09-12
 
 ## 远程是什么
