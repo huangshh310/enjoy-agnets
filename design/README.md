@@ -67,6 +67,7 @@
 | [previews/p0-b-drawer-trust.html](./previews/p0-b-drawer-trust.html) | 抽屉信任摘要：健康体检 + 本月用量（【视觉真源】P0-B，锁 tip `f48ab0d`） |
 | [previews/p0-d-approval-discover.html](./previews/p0-d-approval-discover.html) | 智能体设置审批发现性：本机 CLI / 默认项共享摘要条，跳已有权限卡（【视觉真源】P0-D，锁 tip `1a435e4`） |
 | [previews/p0-e-cli-outdated.html](./previews/p0-e-cli-outdated.html) | CLI 过旧/不兼容警告：永不绿灯就绪，次行例外与发送闸（【视觉真源】P0-E，锁 tip `4d33f07`） |
+| [previews/p0-f-preview-open.html](./previews/p0-f-preview-open.html) | 完成条「在浏览器打开」（【视觉真源】P0-F，锁 tip `9a1a4ca`；系统浏览器，不嵌 Chromium） |
 
 ---
 
