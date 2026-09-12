@@ -6,6 +6,7 @@ import {
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
+  NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY
 } from "./classify-thread-error.ts"
 
@@ -40,4 +41,5 @@ test("ACP 未登录不是可重试供应商错误", () => {
   assert.equal(classifyThreadError(NEED_CLI_INSPECTING), "inspecting")
   assert.equal(classifyThreadError(NEED_CLI_AUTHORIZING), "authorizing")
   assert.equal(classifyThreadError(NEED_CLI_LOGIN_FAILED), "login_failed")
+  assert.equal(classifyThreadError(NEED_CLI_OUTDATED), "outdated")
 })

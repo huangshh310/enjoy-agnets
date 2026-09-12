@@ -6,6 +6,7 @@ import {
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
+  NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY
 } from "../../lib/usage/classify-thread-error.ts"
 import {
@@ -223,6 +224,24 @@ test("仅官方四家：检测中 / 授权中不能发，也不开登录坞", ()
     useCliLoginLoopStore.getState().succeed(id)
   }
   resetCliLoginLoopStore()
+})
+
+test("已登录但版本过旧：不能发，也不开登录坞", () => {
+  rememberAgentTools([
+    {
+      ...claudeTool(true),
+      id: "cursor",
+      label: "Cursor",
+      version: "1.2",
+      requiredVersion: "1.5",
+      authAccount: { loggedIn: true, cliVersion: "1.2" }
+    }
+  ])
+  const chat = store({ runtimeId: "cursor", hasKey: true })
+  assert.equal(composerSendReady({ runtimeId: "cursor", hasKey: true, modelId: "m" }), false)
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+  assert.equal(chat.read().error, NEED_CLI_OUTDATED)
+  assert.equal(chat.read().picker, false)
 })
 
 test("仅官方登录失败：不能发，打开 Picker 重试", () => {

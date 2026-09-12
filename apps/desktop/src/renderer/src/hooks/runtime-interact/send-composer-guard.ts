@@ -10,6 +10,7 @@ import {
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
+  NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY
 } from "../../lib/usage/classify-thread-error.ts"
 
@@ -76,6 +77,10 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
   if (kind === "login_failed") {
     store.setError(NEED_CLI_LOGIN_FAILED)
     store.setAgentPickerOpen(true)
+    return false
+  }
+  if (kind === "outdated") {
+    store.setError(NEED_CLI_OUTDATED)
     return false
   }
   store.setError(NEED_CLI_LOGIN)

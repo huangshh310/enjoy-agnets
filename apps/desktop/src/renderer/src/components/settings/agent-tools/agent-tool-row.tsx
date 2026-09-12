@@ -14,6 +14,7 @@ import { AgentToolConfigDrawer } from "./agent-tool-config-drawer"
 import { CLI_LIST_GRID } from "./list-layout"
 import { AgentToolRowActions, AgentToolRowAssistant } from "./agent-tool-row-parts"
 import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
+import { isCliOutdated } from "./cli-outdated/cli-outdated-copy"
 import { listRowPhase } from "./list-row-phase"
 import { PowerSourceCell } from "./power-source/power-source-capsule"
 import { powerSourcePartsForTool } from "./power-source/resolve-row-source"
@@ -72,6 +73,7 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
           parts={parts}
           accent={actions.isActive && parts.mode === "vault" && Boolean(parts.archive)}
           empty={!pathReady || parts.kind === "none"}
+          outdated={isCliOutdated(tool)}
         />
         <AgentToolRowActions
           tool={tool}

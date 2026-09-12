@@ -73,6 +73,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/provider-agent-bind.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/cli-compat",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-compat.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -122,6 +126,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/provider-agent-bind",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/provider-agent-bind.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/cli-compat",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-compat.ts")
         },
         {
           find: /^@enjoy-agents\/ipc-contract$/,

@@ -9,6 +9,7 @@ export type ThreadErrorKind =
   | "login_failed"
   | "needs_key"
   | "inspecting"
+  | "outdated"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -16,6 +17,7 @@ export const NEED_CLI_LOGIN = "NEED_CLI_LOGIN"
 export const NEED_CLI_INSPECTING = "NEED_CLI_INSPECTING"
 export const NEED_CLI_AUTHORIZING = "NEED_CLI_AUTHORIZING"
 export const NEED_CLI_LOGIN_FAILED = "NEED_CLI_LOGIN_FAILED"
+export const NEED_CLI_OUTDATED = "NEED_CLI_OUTDATED"
 export const HANDOFF_CONFIRM_FAILED = "HANDOFF_CONFIRM_FAILED"
 
 const CREDIT_MARKERS = [
@@ -42,6 +44,7 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   if (message === NEED_CLI_INSPECTING) return "inspecting"
   if (message === NEED_CLI_AUTHORIZING) return "authorizing"
   if (message === NEED_CLI_LOGIN_FAILED) return "login_failed"
+  if (message === NEED_CLI_OUTDATED) return "outdated"
   if (
     message === NEED_CLI_LOGIN ||
     lower.includes("acp_auth_required") ||

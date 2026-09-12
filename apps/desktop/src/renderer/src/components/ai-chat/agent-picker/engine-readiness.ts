@@ -10,6 +10,7 @@ export type EngineReadiness =
   | "authorizing"
   | "login_failed"
   | "needs_key"
+  | "outdated"
   | "soon"
 
 export type EngineReadinessInput = {
@@ -24,21 +25,26 @@ export type EngineReadinessInput = {
   boundHasKey?: boolean
   /** 打开授权中 / 失败。inspect 已确认登录时仍以 loggedIn 为准。 */
   loginLoop?: "idle" | "authorizing" | "failed"
+  /** 已装可登录但仍低于对接版本。未知不写 outdated。 */
+  compat?: "ok" | "outdated" | "unknown"
 }
 
 export function engineReadiness(tool: EngineReadinessInput): EngineReadiness {
   if (tool.comingSoon || tool.status === "comingSoon") return "soon"
   if (tool.id === "enjoy-local") return tool.hasKey === false ? "needs_key" : "ready"
   if (tool.status === "missing" || tool.status === "skillOnly") return "missing"
-  if (tool.usingVaultProvider) return tool.boundHasKey === false ? "needs_key" : "ready"
-  if (tool.requiresLogin && tool.loginLoop === "authorizing" && tool.loggedIn !== true) {
-    return "authorizing"
+  if (tool.usingVaultProvider && tool.boundHasKey === false) return "needs_key"
+  if (!tool.usingVaultProvider) {
+    if (tool.requiresLogin && tool.loginLoop === "authorizing" && tool.loggedIn !== true) {
+      return "authorizing"
+    }
+    if (tool.requiresLogin && tool.loginLoop === "failed" && tool.loggedIn !== true) {
+      return "login_failed"
+    }
+    if (tool.requiresLogin && tool.loggedIn === false) return "needs_login"
+    if (tool.requiresLogin && tool.loggedIn !== true) return "inspecting"
   }
-  if (tool.requiresLogin && tool.loginLoop === "failed" && tool.loggedIn !== true) {
-    return "login_failed"
-  }
-  if (tool.requiresLogin && tool.loggedIn === false) return "needs_login"
-  if (tool.requiresLogin && tool.loggedIn !== true) return "inspecting"
+  if (tool.compat === "outdated") return "outdated"
   return "ready"
 }
 
@@ -63,6 +69,7 @@ export function readinessSubtitle(kind: EngineReadiness, t: (path: string) => st
   if (kind === "authorizing") return t("chat.agentAuthorizing")
   if (kind === "login_failed") return t("chat.agentLoginFailed")
   if (kind === "needs_key") return t("chat.agentNeedsKey")
+  if (kind === "outdated") return t("chat.agentOutdated")
   if (kind === "soon") return t("chat.agentSoon")
   return ""
 }
@@ -75,6 +82,7 @@ export function readinessMarkKey(kind: EngineReadiness): string | null {
   if (kind === "authorizing") return "chat.agentAuthorizingMark"
   if (kind === "login_failed") return "chat.agentLoginFailedMark"
   if (kind === "needs_key") return "chat.agentNeedsKeyMark"
+  if (kind === "outdated") return "chat.agentOutdatedMark"
   if (kind === "soon") return "chat.agentSoonMark"
   return null
 }

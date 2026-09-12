@@ -9,7 +9,8 @@ import { capabilitiesOf } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 export function shouldInspect(tool: AgentToolPublic): boolean {
   if (tool.status !== "ready") return false
   const cap = capabilitiesOf(tool)
-  return cap.login || cap.quota || cap.models === "inspect"
+  if (cap.login || cap.quota || cap.models === "inspect") return true
+  return Boolean(tool.requiredVersion)
 }
 
 export function applyInspect(
@@ -37,7 +38,8 @@ function projectTool(
     providers: bound ? tool.providers : mergeProviders(hit?.providers, tool.providers),
     selectedModel: pickSelectedModel(tool, models),
     authAccount: hit?.authAccount ?? tool.authAccount,
-    quotaInfo: hit?.quotaInfo ?? tool.quotaInfo
+    quotaInfo: hit?.quotaInfo ?? tool.quotaInfo,
+    version: firstVersion(hit?.version, hit?.authAccount?.cliVersion, tool.version)
   }
 }
 
@@ -72,6 +74,15 @@ export function settledInspectResults(
 export function orderInspectTargets<T extends { id: string }>(targets: T[], preferId?: string): T[] {
   if (!preferId) return [...targets]
   return [...targets].sort((left, right) => Number(right.id === preferId) - Number(left.id === preferId))
+}
+
+function firstVersion(
+  ...candidates: Array<string | null | undefined>
+): string | null {
+  for (const item of candidates) {
+    if (item?.trim()) return item.trim()
+  }
+  return null
 }
 
 function mergeModels(

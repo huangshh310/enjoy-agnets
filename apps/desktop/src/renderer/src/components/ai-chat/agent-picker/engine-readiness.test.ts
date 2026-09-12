@@ -123,7 +123,37 @@ test("导轨胶囊用短标，就绪不画", () => {
   assert.equal(readinessMarkKey("login_failed"), "chat.agentLoginFailedMark")
   assert.equal(readinessMarkKey("needs_key"), "chat.agentNeedsKeyMark")
   assert.equal(readinessMarkKey("soon"), "chat.agentSoonMark")
+  assert.equal(readinessMarkKey("outdated"), "chat.agentOutdatedMark")
   assert.equal(readinessMarkKey("ready"), null)
+})
+
+test("已登录但版本过旧不能当就绪灯 / 不能 bind", () => {
+  const outdated = {
+    id: "cursor",
+    status: "ready",
+    requiresLogin: true,
+    loggedIn: true,
+    compat: "outdated" as const
+  }
+  assert.equal(engineReadiness(outdated), "outdated")
+  assert.equal(isEngineLit(outdated), false)
+  assert.equal(canBindEngine(outdated), false)
+  assert.equal(readinessSubtitle("outdated", (path) => path), "chat.agentOutdated")
+})
+
+test("绑了 Enjoy 档案仍要过版本关", () => {
+  assert.equal(
+    engineReadiness({
+      id: "claude",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false,
+      usingVaultProvider: true,
+      boundHasKey: true,
+      compat: "outdated"
+    }),
+    "outdated"
+  )
 })
 
 test("仅官方四家：检测中 / 授权中 / 失败都不能当就绪灯", () => {

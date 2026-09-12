@@ -11,6 +11,8 @@ import { sendComposerMessage } from "@renderer/hooks/use-agent-session"
 import { isTodoContinueUserMessage } from "@renderer/components/ai-chat/composer/todo-continue-message"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
+import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
@@ -56,6 +58,14 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
     void navigate({ to: "/settings/$section", params: { section: "providers" } })
   }
 
+  const outdatedTool = rememberedAgentTool(runtimeId)
+  const outdated = outdatedTool
+    ? resolveCliCompat({
+        version: outdatedTool.version,
+        cliVersion: outdatedTool.authAccount?.cliVersion,
+        requiredVersion: outdatedTool.requiredVersion ?? requiredVersionFor(outdatedTool.id)
+      })
+    : null
   const gate = sendGateCopy(
     kind === "authorizing"
       ? "authorizing"
@@ -63,11 +73,14 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
         ? "login_failed"
         : kind === "inspecting"
           ? "inspecting"
-          : kind === "auth"
-            ? "needs_login"
-            : "ready",
+          : kind === "outdated"
+            ? "outdated"
+            : kind === "auth"
+              ? "needs_login"
+              : "ready",
     t,
-    loginLoop.reason
+    loginLoop.reason,
+    outdated ? { current: outdated.current, required: outdated.required } : undefined
   )
   const title =
     gate?.title ??
@@ -153,6 +166,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             kind !== "inspecting" &&
             kind !== "authorizing" &&
             kind !== "login_failed" &&
+            kind !== "outdated" &&
             !running ? (
               <button
                 type="button"
