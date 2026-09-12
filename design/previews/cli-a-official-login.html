@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CLI-A · 仅官方登录闭环 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  ink:'#1A1612', mute:'#6B645C', line:'#E8E4DE', paper:'#F7F5F2',
+  card:'#FFFFFF', accent:'#2563EB', soft:'#EFF4FF', ok:'#16A34A', warn:'#C2410C', danger:'#DC2626'
+}}}}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}.act{width:6.75rem;height:1.75rem}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+<div class="mx-auto max-w-[960px] space-y-6 border-x border-line bg-card px-6 py-6">
+  <header>
+    <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/cli-a-official-login.html · 【视觉真源】CLI-A</p>
+    <h1 class="mt-1 text-[17px] font-semibold">仅官方四家 · 登录闭环</h1>
+    <p class="mt-1 text-[12px] text-mute">Cursor / Grok / Antigravity / Amp。四态：检测中 / 打开授权中 / 已登录 / 失败人话。列表动力源同构；禁假 vault / 假 BYOK。</p>
+  </header>
+  <section class="overflow-hidden rounded-xl border border-line text-[11px]">
+    <table class="w-full text-left">
+      <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+        <tr><th class="px-3 py-2">态</th><th class="px-3 py-2">样例行</th><th class="px-3 py-2">动力源</th><th class="px-3 py-2">主槽</th><th class="px-3 py-2">硬规则</th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        <tr><td class="px-3 py-2 font-medium">检测中</td><td class="px-3 py-2">Cursor</td><td class="px-3 py-2">官方登录 · 检测中</td><td class="px-3 py-2">检测中…</td><td class="px-3 py-2 text-danger">≠ 就绪 / 已登录</td></tr>
+        <tr><td class="px-3 py-2 font-medium">打开授权中</td><td class="px-3 py-2">Grok</td><td class="px-3 py-2">官方登录 · 授权中</td><td class="px-3 py-2">等待授权…</td><td class="px-3 py-2 text-danger">打开授权 ≠ 已登录</td></tr>
+        <tr><td class="px-3 py-2 font-medium">已登录</td><td class="px-3 py-2">Antigravity</td><td class="px-3 py-2">官方登录 · 已登录</td><td class="px-3 py-2">当前引擎 / 设为主引擎</td><td class="px-3 py-2 text-ok">可发送</td></tr>
+        <tr><td class="px-3 py-2 font-medium">失败</td><td class="px-3 py-2">Amp</td><td class="px-3 py-2">官方登录 · 失败</td><td class="px-3 py-2">重试授权</td><td class="px-3 py-2">一行人话，禁堆栈</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2 class="mb-2 text-[14px] font-semibold">表行四态</h2>
+    <div class="overflow-hidden rounded-xl border border-line">
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] gap-x-3 border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase text-mute">
+        <span>助手</span><span>动力源</span><span class="text-right">操作</span>
+      </div>
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Cursor</span><span class="size-1.5 animate-pulse rounded-full bg-accent"></span><span class="text-[10px] text-accent">检测中</span></div>
+          <p class="font-mono text-[10px] text-mute">1.2.3 · bin/cursor</p>
+        </div>
+        <div class="text-[11px] text-mute">官方登录 · 检测中</div>
+        <div class="flex justify-end"><button disabled class="act rounded-lg bg-accent/50 text-[11px] text-white">检测中…</button></div>
+      </div>
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Grok</span><span class="size-1.5 animate-pulse rounded-full bg-accent"></span><span class="text-[10px] text-accent">打开授权中</span></div>
+          <p class="font-mono text-[10px] text-mute">— · bin/grok</p>
+          <p class="mt-0.5 text-[10px] text-mute">已打开授权页，完成前不算已登录</p>
+        </div>
+        <div class="text-[11px] text-mute">官方登录 · 授权中</div>
+        <div class="flex justify-end"><button disabled class="act rounded-lg border border-line text-[11px] text-mute">等待授权…</button></div>
+      </div>
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Antigravity</span><span class="size-1.5 rounded-full bg-ok"></span><span class="text-[10px] text-mute">已就绪</span></div>
+          <p class="font-mono text-[10px] text-mute">0.9.1 · bin/agy</p>
+        </div>
+        <div class="text-[11px]"><span class="rounded-md bg-paper px-1.5 py-0.5 ring-1 ring-line">官方登录 · 已登录</span></div>
+        <div class="flex justify-end gap-1">
+          <span class="act inline-flex items-center justify-center rounded-lg bg-accent/10 text-[11px] font-medium text-accent">当前引擎</span>
+          <button class="h-7 w-7 rounded-lg border border-line text-mute">⚙</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Amp</span><span class="size-1.5 rounded-full bg-danger"></span><span class="text-[10px] text-danger">登录失败</span></div>
+          <p class="font-mono text-[10px] text-mute">— · bin/amp</p>
+          <p class="mt-0.5 text-[10px] text-danger">未登录上：授权超时，可重试或换浏览器完成</p>
+        </div>
+        <div class="text-[11px] text-mute">官方登录 · 失败</div>
+        <div class="flex justify-end gap-1">
+          <button class="act rounded-lg border border-danger/40 text-[11px] text-danger">重试授权</button>
+          <button class="h-7 w-7 rounded-lg border border-line text-mute">⚙</button>
+        </div>
+      </div>
+    </div>
+    <p class="mt-2 text-[10px] text-mute">待登录主槽「打开授权」；点开后「打开授权中 / 等待授权…」。二者都 ≠ 已登录。</p>
+  </section>
+  <section class="grid gap-3 md:grid-cols-2">
+    <div class="rounded-2xl border border-line p-4">
+      <h2 class="text-[13px] font-semibold">抽屉 · 仅官方</h2>
+      <p class="mt-0.5 text-[10px] text-mute">这个助手用 · 只读；无假 vault</p>
+      <div class="mt-3 rounded-xl border border-line bg-paper px-3 py-2 text-[12px]">
+        <p class="font-medium">官方登录 · 用本机账号</p>
+        <p class="mt-1 text-[11px] text-mute">不提供供应商档案绑定。</p>
+      </div>
+      <button class="mt-3 h-8 w-full rounded-xl border border-line text-[12px]">打开授权</button>
+    </div>
+    <div class="rounded-2xl border border-line p-4">
+      <h2 class="text-[13px] font-semibold">发送闸</h2>
+      <div class="mt-2 space-y-1.5 text-[11px]">
+        <div class="rounded-lg bg-paper px-2.5 py-2 ring-1 ring-line"><p class="font-medium">检测账号中…</p><p class="text-mute">检测结束前不算就绪。</p></div>
+        <div class="rounded-lg bg-paper px-2.5 py-2 ring-1 ring-line"><p class="font-medium">先完成官方登录</p><p class="text-mute">已打开授权也不算成功。</p></div>
+        <div class="rounded-lg bg-paper px-2.5 py-2 ring-1 ring-danger/30"><p class="font-medium text-danger">登录没成功</p><p class="text-mute">未登录上：{短原因}</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+    <p class="font-semibold text-ink">验收四条</p>
+    <ol class="mt-1 list-decimal space-y-0.5 pl-4">
+      <li>检测中 ≠ 就绪 / 已登录（不放行发送）</li>
+      <li>打开授权 / 打开授权中 ≠ 已登录</li>
+      <li>失败一行人话 + 重试授权</li>
+      <li>仅官方无假 vault / 假 BYOK；动力源同构</li>
+    </ol>
+  </section>
+</div>
+</body>
+</html>

@@ -58,6 +58,7 @@
 | [references/peer-qm-craft-synara-zeron.md](./references/peer-qm-craft-synara-zeron.md) | 对照 QM / Craft / Synara / Zeron：能在现有壳里展示什么（不是抄云/worktree/PR） |
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
+| [previews/cli-a-official-login.html](./previews/cli-a-official-login.html) | CLI-A 仅官方四家登录闭环视觉真源（检测中 / 打开授权中 / 已登录 / 失败人话） |
 | [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | 本机 CLI 密表唯一视觉真源（锁 tip `8bd7f6e`；预览内容 `add29a4`） |
 | [previews/local-cli-dense-v2.html](./previews/local-cli-dense-v2.html) | 过程稿 stub（`8bd7f6e` 起）；勿按此路径接线 |
 | [previews/local-cli-power-source.html](./previews/local-cli-power-source.html) | 动力源同构 + 抽屉同壳（历史预览） |
