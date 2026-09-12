@@ -1,10 +1,11 @@
 /**
- * 从本轮 cited sources + 工具调用收成芯片，去重。
+ * 从本轮 cited sources + 工具调用收成芯片，去重。网页 URL 本轮不做。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { extractToolPath } from "../thinking/extract-step-fields.ts"
-import { classifySourceKind, formatSourceChipLabel, type TurnSourceChip } from "./source-chip.ts"
+import { classifySourceKind, formatSourceChipLabel, parseMcpServerId, type TurnSourceChip } from "./source-chip.ts"
+import { isHttpSource } from "./source-path.ts"
 
 export function collectTurnSources(
   message: Pick<ThreadMessage, "sources" | "tools">,
@@ -12,6 +13,7 @@ export function collectTurnSources(
 ): TurnSourceChip[] {
   const chips: TurnSourceChip[] = []
   for (const source of message.sources ?? []) {
+    if (isHttpSource(source.path) || isHttpSource(source.title)) continue
     chips.push(
       toChip(
         {
@@ -32,6 +34,10 @@ export function collectTurnSources(
 }
 
 function chipFromTool(tool: ThreadToolCall, skillPrefix: (name: string) => string): TurnSourceChip | null {
+  const serverId = parseMcpServerId(tool.name)
+  if (serverId) {
+    return toChip({ id: `mcp:${serverId}`, title: serverId, toolName: tool.name }, skillPrefix)
+  }
   const name = tool.name.trim().toLowerCase()
   if (name === "skill") {
     const title = skillTitle(tool)
@@ -39,7 +45,7 @@ function chipFromTool(tool: ThreadToolCall, skillPrefix: (name: string) => strin
   }
   if (!isReadLike(name)) return null
   const path = extractToolPath(asRecord(tool.args), tool.name, asRecord(tool.result))
-  if (!path) return null
+  if (!path || isHttpSource(path)) return null
   return toChip({ id: `file:${path}`, path, toolName: name }, skillPrefix)
 }
 

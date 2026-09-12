@@ -29,3 +29,24 @@ test("cited + read_file + skill 收成芯片并去重", () => {
   assert.equal(chips.some((chip) => chip.kind === "skill" && chip.label.includes("读代码")), true)
   assert.equal(chips.filter((chip) => chip.path === "src/auth/login.ts").length, 1)
 })
+
+test("MCP 工具收成服务器芯片，同服务器去重；网页 URL 丢掉", () => {
+  const chips = collectTurnSources(
+    {
+      sources: [{ sourceId: "web", title: "https://example.com/a", path: "https://example.com/a" }],
+      tools: [
+        { id: "m1", name: "mcp_filesystem__read_file", state: "output-available", args: {} },
+        { id: "m2", name: "mcp_filesystem__list_dir", state: "output-available", args: {} },
+        { id: "m3", name: "mcp_github__search", state: "output-available", args: {} }
+      ]
+    },
+    (name) => `技能 · ${name}`
+  )
+  const mcp = chips.filter((chip) => chip.kind === "mcp")
+  assert.equal(mcp.length, 2)
+  assert.deepEqual(
+    mcp.map((chip) => chip.title).sort(),
+    ["filesystem", "github"]
+  )
+  assert.equal(chips.some((chip) => chip.path?.startsWith("http")), false)
+})

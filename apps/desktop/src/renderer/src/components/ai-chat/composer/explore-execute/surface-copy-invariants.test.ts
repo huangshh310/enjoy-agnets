@@ -19,7 +19,9 @@ const files = [
   join("..", "..", "..", "settings", "settings-default-mode.tsx"),
   join("..", "..", "..", "settings", "settings-defaults.tsx"),
   join("..", "composer-host-mode-chip.tsx"),
-  join("..", "..", "thread", "sources", "source-chips.tsx")
+  join("..", "..", "thread", "sources", "source-chips.tsx"),
+  join("..", "..", "thread", "sources", "source-detail-sheet.tsx"),
+  join("..", "..", "thread", "sources", "source-detail-row.tsx")
 ]
 
 const banned = [
