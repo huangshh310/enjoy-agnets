@@ -13,8 +13,18 @@ export type SendGateCopy = {
 export function sendGateCopy(
   kind: EngineReadiness,
   t: TranslateFn,
-  failReason?: string
+  failReason?: string,
+  versions?: { current?: string; required?: string }
 ): SendGateCopy | null {
+  if (kind === "outdated") {
+    return {
+      title: t("chat.needCliOutdatedTitle"),
+      hint: t("chat.needCliOutdatedHint", {
+        current: versions?.current ?? "—",
+        required: versions?.required ?? "—"
+      })
+    }
+  }
   if (kind === "inspecting") {
     return {
       title: t("chat.agentInspecting"),

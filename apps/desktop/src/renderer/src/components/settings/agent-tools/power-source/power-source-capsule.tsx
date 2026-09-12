@@ -9,11 +9,14 @@ import { formatPowerSourceText, isBlankPowerSource } from "./format-power-source
 export function PowerSourceCell({
   parts,
   accent,
-  empty
+  empty,
+  outdated
 }: {
   parts: PowerSourceParts
   accent: boolean
   empty?: boolean
+  /** 已登录仍可写，旁标「需更新」，不改列结构。 */
+  outdated?: boolean
 }) {
   const t = useT()
   if (empty || isBlankPowerSource(parts)) {
@@ -30,12 +33,19 @@ export function PowerSourceCell({
   }
   if (parts.mode === "official" && parts.official === "in") {
     return (
-      <span
-        className="inline-flex max-w-full truncate rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium text-text-primary ring-1 ring-border-button-default"
-        title={text}
-      >
-        {text}
-      </span>
+      <div className="flex min-w-0 flex-wrap items-center gap-1">
+        <span
+          className="inline-flex max-w-full truncate rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium text-text-primary ring-1 ring-border-button-default"
+          title={text}
+        >
+          {text}
+        </span>
+        {outdated ? (
+          <span className="shrink-0 rounded-full bg-state-warning-text/10 px-1.5 py-px text-caption-2-medium text-state-warning-text ring-1 ring-state-warning-text/25">
+            {t("settings.agentTools.listOutdatedBadge")}
+          </span>
+        ) : null}
+      </div>
     )
   }
   return <PowerSourceCapsule parts={parts} accent={accent} />

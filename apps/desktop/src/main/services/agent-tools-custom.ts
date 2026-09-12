@@ -114,6 +114,7 @@ export async function toPublicCustom(record: CustomAgentRecord): Promise<AgentTo
     extraArgs: [...record.args],
     detectedPath: probe.path,
     version: probe.version,
+    requiredVersion: null,
     status: probe.found ? "ready" : "missing",
     models: [],
     selectedModel: record.modelId,

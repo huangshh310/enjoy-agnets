@@ -13,6 +13,7 @@ import {
   type OfficialLoginRowPhase
 } from "./official-login/official-login-phase"
 import { OfficialLoginPrimary } from "./official-login/official-login-primary"
+import { isCliOutdated } from "./cli-outdated/cli-outdated-copy"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolRowActions({
@@ -93,6 +94,19 @@ function PrimarySlot({
   const t = useT()
   if (overridesOfficialListReady(loginPhase)) {
     return <OfficialLoginPrimary phase={loginPhase} onLogin={onLogin} />
+  }
+  if (isCliOutdated(tool)) {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled
+        className={`${CLI_LIST_PRIMARY_SLOT} px-2 text-caption-2-medium opacity-50`}
+      >
+        {t("settings.agentTools.makeActive")}
+      </Button>
+    )
   }
   if (actions.isActive) {
     return (

@@ -153,6 +153,8 @@ export const AgentToolPublic = z.object({
   extraArgs: z.array(z.string()).optional(),
   detectedPath: z.string().nullable(),
   version: z.string().nullable(),
+  /** Enjoy 对接最低版本；缺省或 null 不检查，禁止假警告。 */
+  requiredVersion: z.string().max(40).nullable().optional(),
   status: AgentToolDetectStatus,
   models: z.array(AgentCliModel).default([]),
   providers: z.array(AgentCliProvider).optional(),
@@ -250,7 +252,9 @@ export const InspectAgentToolResult = z.object({
   authAccount: AgentToolAuthAccount.optional(),
   quotaInfo: AgentToolQuotaInfo.optional(),
   models: z.array(AgentCliModel).default([]),
-  providers: z.array(AgentCliProvider).optional()
+  providers: z.array(AgentCliProvider).optional(),
+  /** inspect 补的 --version / 官方 cliVersion，不阻塞 list。 */
+  version: z.string().nullable().optional()
 })
 export type InspectAgentToolResult = z.infer<typeof InspectAgentToolResult>
 

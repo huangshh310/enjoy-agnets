@@ -38,6 +38,22 @@ const passResult = {
   path: "/usr/bin/agent"
 }
 
+test("过旧健康行替换，不是体检通过绿灯", () => {
+  const view = resolveTrustHealth({
+    checking: false,
+    result: passResult,
+    ranAt: 1,
+    now: 2,
+    t,
+    outdatedLabel: "版本过旧 · 当前 v1.2 · 需要 ≥1.5"
+  })
+  assert.equal(view.kind, "outdated")
+  assert.equal(view.label, "版本过旧 · 当前 v1.2 · 需要 ≥1.5")
+  assert.ok(!view.dotClass.includes("success"))
+  assert.ok(view.dotClass.includes("warning"))
+  assert.equal(view.ctaDisabled, true)
+})
+
 test("尚未体检不是绿灯，也不写通过", () => {
   const view = resolveTrustHealth({
     checking: false,

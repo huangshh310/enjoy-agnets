@@ -23,6 +23,7 @@ import {
   probePi
 } from "./probes"
 import { emptyInspectResult } from "./inspect-empty"
+import { attachInspectVersion } from "./inspect-version"
 import { getToolSpendStats } from "./tool-spend.ts"
 
 export function invalidateAccountCache(id?: AgentToolId) {
@@ -52,10 +53,11 @@ export async function inspectReadyTools(ids: AgentToolId[]): Promise<InspectAgen
 
 async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
   let res: InspectAgentToolResult
+  let command: string | undefined
   if (isCustomAgentId(id)) {
     res = emptyInspectFor(id)
   } else {
-    const command = await resolveInspectCommand(id)
+    command = await resolveInspectCommand(id)
     if (!command) {
       res = emptyInspectFor(id)
     } else {
@@ -71,6 +73,7 @@ async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
       else res = emptyInspectFor(id)
     }
   }
+  res = await attachInspectVersion(id, command, res)
 
   const spend = getToolSpendStats(id)
   if (spend) {

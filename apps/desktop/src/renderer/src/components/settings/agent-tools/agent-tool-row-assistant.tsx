@@ -7,6 +7,7 @@ import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-
 import { formatInstallFailLine, type InstallRowPhase } from "./install-row-copy"
 import type { OfficialLoginRowPhase } from "./official-login/official-login-phase"
 import { officialLoginAssistantStatus, officialLoginHint } from "./official-login/official-login-row-copy"
+import { isCliOutdated, outdatedAssistantStatus } from "./cli-outdated/cli-outdated-copy"
 import { formatListSecondary } from "./list-secondary"
 
 import { AgentToolMiniQuota } from "./agent-tool-mini-quota"
@@ -28,8 +29,10 @@ export function AgentToolRowAssistant({
 }) {
   const t = useT()
   const planned = tool.comingSoon || tool.skillOnly
+  const outdated = isCliOutdated(tool)
   const status =
-    officialLoginAssistantStatus(loginPhase, t) ?? assistantStatus({ ready, planned, installPhase, t })
+    officialLoginAssistantStatus(loginPhase, t) ??
+    (outdated ? outdatedAssistantStatus(t) : assistantStatus({ ready, planned, installPhase, t }))
   const secondary = formatListSecondary(tool, t)
   const loginHint = officialLoginHint(loginPhase, loginReason, t)
   const failLine = installPhase === "failed" && installError ? formatInstallFailLine(installError, t) : null
@@ -54,7 +57,12 @@ export function AgentToolRowAssistant({
           <span className={`shrink-0 text-caption-2-medium ${status.textClass}`}>{status.label}</span>
           <AgentToolMiniQuota tool={tool} />
         </div>
-        <p className="truncate font-mono text-caption-2-regular text-text-tertiary" title={secondary}>
+        <p
+          className={`truncate font-mono text-caption-2-regular ${
+            outdated ? "text-state-warning-text" : "text-text-tertiary"
+          }`}
+          title={secondary}
+        >
           {secondary}
         </p>
         {installPhase === "installing" ? (

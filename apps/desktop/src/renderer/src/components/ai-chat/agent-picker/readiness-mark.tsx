@@ -16,9 +16,11 @@ export function ReadinessMark({
     <span
       className={cx(
         "shrink-0 rounded-full px-1.5 py-px text-caption-2-medium",
-        kind === "needs_login" || kind === "needs_key" || kind === "login_failed"
-          ? "bg-badge-new-background text-badge-new-text"
-          : "bg-badge-neutral-background text-text-secondary"
+        kind === "outdated"
+          ? "bg-state-warning-text/10 text-state-warning-text"
+          : kind === "needs_login" || kind === "needs_key" || kind === "login_failed"
+            ? "bg-badge-new-background text-badge-new-text"
+            : "bg-badge-neutral-background text-text-secondary"
       )}
     >
       {label}

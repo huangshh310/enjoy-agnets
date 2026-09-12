@@ -1,16 +1,20 @@
 /**
- * 助手列次行：只拼 `{version} · {路径短名}`。禁止体检句、安装长句、绝对路径。
+ * 助手列次行：只拼 `{version} · {路径短名}`。过旧例外见 P0-E。
  */
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { formatCliVersion } from "@enjoy-agents/ipc-contract/cli-compat"
+import { cliCompatOf, formatOutdatedSecondary } from "./cli-outdated/cli-outdated-copy.ts"
 
-type Translate = (key: string) => string
+type Translate = (key: string, vars?: Record<string, string | number>) => string
 
-/** Enjoy `— · 内置`；其余永远 `版本 · 短路径`，缺段用 —。 */
+/** Enjoy `— · 内置`；过旧写「需更新 · v1.2（要 ≥1.5）」；其余 `版本 · 短路径`。 */
 export function formatListSecondary(
-  tool: Pick<AgentToolPublic, "id" | "status" | "version" | "detectedPath" | "binaries">,
+  tool: Pick<AgentToolPublic, "id" | "status" | "version" | "detectedPath" | "binaries" | "requiredVersion" | "authAccount">,
   t: Translate
 ): string {
   if (tool.id === "enjoy-local") return `— · ${t("settings.agentTools.listEnjoyBuiltin")}`
+  const compat = cliCompatOf(tool)
+  if (compat.kind === "outdated") return formatOutdatedSecondary(compat, t)
   return `${shortVersion(tool.version)} · ${shortPathFor(tool)}`
 }
 
@@ -40,8 +44,5 @@ export function shortBinPath(detectedPath: string | null | undefined, binaries: 
 }
 
 export function shortVersion(raw: string | null | undefined): string {
-  if (!raw?.trim()) return "—"
-  const hit = raw.trim().match(/v?\d+(?:\.\d+){0,3}/i)
-  if (!hit) return "—"
-  return /^v/i.test(hit[0]) ? hit[0] : `v${hit[0]}`
+  return formatCliVersion(raw)
 }

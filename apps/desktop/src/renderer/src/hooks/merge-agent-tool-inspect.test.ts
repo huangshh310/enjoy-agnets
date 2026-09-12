@@ -47,6 +47,7 @@ test("只给已就绪且 login/quota/inspect 模型的 CLI 做 inspect", () => {
   assert.equal(shouldInspect(tool({ id: "omp", status: "ready" })), true)
   assert.equal(shouldInspect(tool({ id: "amp", status: "ready" })), true)
   assert.equal(shouldInspect(tool({ id: "deepseek", status: "ready" })), false)
+  assert.equal(shouldInspect(tool({ id: "deepseek", status: "ready", requiredVersion: "0.1.0" })), true)
 })
 
 test("inspect 合并账号与全量模型，保留已选模型", () => {
@@ -63,6 +64,14 @@ test("inspect 合并账号与全量模型，保留已选模型", () => {
   assert.equal(merged[0]?.authAccount?.tier, "Ultra")
   assert.equal(merged[0]?.models.length, 3)
   assert.equal(merged[0]?.selectedModel, "composer-2.5")
+})
+
+test("inspect 把 cliVersion 并进列表 version", () => {
+  const merged = applyInspect(
+    [tool({ id: "cursor", version: null })],
+    [{ id: "cursor", authAccount: { loggedIn: true, cliVersion: "1.2" }, models: [] }]
+  )
+  assert.equal(merged[0]?.version, "1.2")
 })
 
 test("OMP inspect 合并可登录供应商", () => {

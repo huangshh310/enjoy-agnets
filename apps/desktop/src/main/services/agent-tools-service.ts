@@ -17,6 +17,7 @@ import {
   composeAgentModels,
   isCustomAgentId,
   pickBoundModelId,
+  requiredVersionFor,
   type AgentToolId,
   type AgentToolDoctorResult,
   type AgentToolPublic
@@ -187,6 +188,7 @@ async function toPublic(
     extraArgs: override?.extraArgs,
     detectedPath: probe.path,
     version: probe.version,
+    requiredVersion: requiredVersionFor(preset.id),
     status,
     models,
     selectedModel: selected,

@@ -23,6 +23,15 @@ export function resolveTrustHealth(input: TrustHealthInput): TrustHealthView {
     const label = input.t("settings.agentTools.trustDoctorChecking")
     return healthView("checking", label, DOT.checking, "text-text-tertiary", true)
   }
+  if (input.outdatedLabel?.trim()) {
+    return healthView(
+      "outdated",
+      input.outdatedLabel,
+      "bg-state-warning-text",
+      "text-state-warning-text",
+      true
+    )
+  }
   if (!input.result) {
     const label = input.t("settings.agentTools.trustDoctorIdle")
     return healthView("idle", label, DOT.idle, "text-text-primary", false)

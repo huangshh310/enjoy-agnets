@@ -5,8 +5,12 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { formatListSecondary, shortBinPath, shortVersion } from "./list-secondary.ts"
 
-function t(key: string): string {
-  return key === "settings.agentTools.listEnjoyBuiltin" ? "内置" : key
+function t(key: string, vars?: Record<string, string | number>): string {
+  if (key === "settings.agentTools.listEnjoyBuiltin") return "内置"
+  if (key === "settings.agentTools.listOutdatedSecondary") {
+    return `需更新 · ${vars?.current ?? "—"}（要 ≥${vars?.required ?? "—"}）`
+  }
+  return key
 }
 
 test("短路径只留 bin/name，不回绝对路径", () => {
@@ -96,4 +100,35 @@ test("Enjoy / 已装 / 未找到次行只含版本与短路径", () => {
     assert.ok(!line.includes("官方仍保留"))
     assert.match(line, /^[^·]+ · [^·]+$/)
   }
+})
+
+test("过旧次行例外；升级后回到版本 · 路径", () => {
+  assert.equal(
+    formatListSecondary(
+      {
+        id: "cursor",
+        status: "ready",
+        version: "1.2",
+        requiredVersion: "1.5",
+        detectedPath: "/usr/local/bin/agent",
+        binaries: ["agent"]
+      },
+      t
+    ),
+    "需更新 · v1.2（要 ≥1.5）"
+  )
+  assert.equal(
+    formatListSecondary(
+      {
+        id: "cursor",
+        status: "ready",
+        version: "1.5",
+        requiredVersion: "1.5",
+        detectedPath: "/usr/local/bin/agent",
+        binaries: ["agent"]
+      },
+      t
+    ),
+    "v1.5 · bin/agent"
+  )
 })
