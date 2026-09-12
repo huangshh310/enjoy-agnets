@@ -1,20 +1,31 @@
 /**
- * 子智能体单行：人格 · 标题 · 运行/失败。点行才展开内部工具树。
- * 不是 Workflow DAG，也不是侧栏会话。
+ * 子智能体单行：Blobatar 面孔 + 种子名 · 人格 · 标题 · 运行/失败。
+ * 点行才展开内部工具树。不是 Workflow DAG，也不是侧栏会话。
  */
 import { useState, type ReactNode } from "react"
-import { RiArrowDownSLine, RiArrowRightSLine, RiLoader4Line, RiRobot2Line } from "@remixicon/react"
+import { RiArrowDownSLine, RiArrowRightSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { QuoteStepButton } from "@renderer/components/ai-chat/composer/runtime-interact/quote-step-button"
 import { useT } from "@renderer/i18n"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { subagentFailedHint, subagentPersonaLabel } from "../delegate-step"
+import { personaForSubagent, type SubagentPersona } from "../subagent-persona"
+import { SubagentMark } from "./subagent-mark"
 
-export function SubagentRow({ node, tree }: { node: AgentStepNode; tree?: ReactNode }) {
+export function SubagentRow({
+  node,
+  tree,
+  persona
+}: {
+  node: AgentStepNode
+  tree?: ReactNode
+  persona?: SubagentPersona
+}) {
   const t = useT()
   const [expanded, setExpanded] = useState(false)
   const expandable = Boolean(node.children && node.children.length > 0 && tree)
   const failedHint = subagentFailedHint(node.status, t)
+  const resolved = persona ?? personaForSubagent(node)
 
   return (
     <div className="group flex w-full min-w-0 flex-col gap-0.5">
@@ -30,12 +41,8 @@ export function SubagentRow({ node, tree }: { node: AgentStepNode; tree?: ReactN
             expandable ? "cursor-pointer" : "cursor-default"
           )}
         >
-          {node.status === "running" ? (
-            <RiLoader4Line className="size-3.5 shrink-0 animate-spin text-accent-500" />
-          ) : (
-            <RiRobot2Line className="size-3.5 shrink-0 text-text-tertiary" />
-          )}
-          <SubagentTitle node={node} />
+          <SubagentMark persona={resolved} running={node.status === "running"} />
+          <SubagentTitle node={node} persona={resolved} />
           {failedHint ? <span className="shrink-0 text-text-error-primary">{failedHint}</span> : null}
           {expandable ? (
             expanded ? (
@@ -54,14 +61,15 @@ export function SubagentRow({ node, tree }: { node: AgentStepNode; tree?: ReactN
   )
 }
 
-function SubagentTitle({ node }: { node: AgentStepNode }) {
+function SubagentTitle({ node, persona }: { node: AgentStepNode; persona: SubagentPersona }) {
   const t = useT()
   const kind = subagentPersonaLabel(node.subagentKind, t)
   const heading = node.heading?.trim() || ""
   return (
     <span className="min-w-0 flex-1 truncate" title={node.title}>
-      <span className="text-text-tertiary">{t("chat.subagentLead")}</span>
-      <span className="text-text-secondary"> {t("chat.subagentKind", { kind })}</span>
+      <span className="text-text-primary">{persona.seed}</span>
+      <span className="text-text-tertiary"> · </span>
+      <span className="text-text-secondary">{t("chat.subagentKind", { kind })}</span>
       {heading ? (
         <>
           <span className="text-text-tertiary"> · </span>
