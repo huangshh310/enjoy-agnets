@@ -46,7 +46,7 @@ export function AgentToolConfigDrawer({
           {actions.isDefaultLocal ? (
             <AgentToolConfigLocal tool={tool} onClose={close} />
           ) : (
-            <AgentToolConfigCli tool={tool} actions={actions} />
+            <AgentToolConfigCli tool={tool} actions={actions} onClose={close} />
           )}
         </div>
         <AgentToolConfigFooter

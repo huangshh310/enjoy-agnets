@@ -35,7 +35,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 1. 分段：本机 CLI | 订阅与额度 (subscriptions) | Registry | 进阶沙箱 | 默认项
 2. 顶栏一行可关提示：切到本机助手时 Enjoy 密钥不会带过去 + 扫描 / 体检；隔离令牌已配置时多「进阶沙箱：隔离令牌已配置」，禁止「Token：Vercel」
-3. **CLI 密表**（助手 | 动力源 | 操作）；每行都有动力源。助手次行只拼版本 · 短路径（缺段用 —），不是 `listLine` / doctor。助手行挂微型额度胶囊（`AgentToolMiniQuota`）。`homeSynced` 才在名旁画「已同步」；「官方仍保留」只进抽屉。未找到：主槽「一键安装 / 安装中… / 重试」，失败一行人话，无假进度条。可绑才在抽屉里选档案；仅官方只读登录态。配置抽屉 576px 同壳；「这个助手用」账号/模型分行。
+3. **CLI 密表**（助手 | 动力源 | 操作）；每行都有动力源。助手次行只拼版本 · 短路径（缺段用 —），不是 `listLine` / doctor。助手行挂微型额度胶囊（`AgentToolMiniQuota`）。`homeSynced` 才在名旁画「已同步」；「官方仍保留」只进抽屉。未找到：主槽「一键安装 / 安装中… / 重试」，失败一行人话，无假进度条。可绑才在抽屉里选档案；仅官方只读登录态。配置抽屉 576px 同壳；顶栏信任卡（健康四态 + 仅 `quota=true` 的本月用量，1:1 [`previews/p0-b-drawer-trust.html`](../previews/p0-b-drawer-trust.html)）；「这个助手用」账号/模型分行。列表行仍不画额度条。
 4. **订阅与额度**：Hub 摘要 + 饼/面积。图廊用顶栏切换一次只开一张图（组合 / 对比 / 分位 / 增长 / 本周 / 排行 / 日格 / 雷达 / 径向 / 健康 / 摘要 / 流向），禁止十二张图叠成超长页。数据仍接真实用量。每张卡仍是 OpenUsage 行密度。
 5. **能力说明**默认收起：`CapabilityMatrix`（行=runtime，含沙箱 + 自定义 ACP；列=spawn / login / quota / thinking / fast / executionModes；「支持」不是已登录；点行跳到对应卡或沙箱分段）+ `ConfigBoundaryTable`（Key→Enjoy vault · **CLI 引用的供应商→Enjoy vault** · login→各家 CLI · MCP→`#/mcp` · Skills→`#/skills`）。自定义行画用户 **label**，不画 raw id/slug。
 
@@ -43,7 +43,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 ## 不变量
 
-- L1 数字只来自 inspect；`quota=false` 不画条。
+- L1 数字只来自 inspect；`quota=false` 不画条。抽屉顶「本月用量」同一门闩。
 - 进阶沙箱不得出现在 `AgentEngineRail` / `composerAgentTabs`。
 - HMAC 审批契约不变。
 - 没有自营计费：账单页诚实空态，禁止演示套餐 / 可点升级。
@@ -53,7 +53,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 契约：`packages/ipc-contract/src/runtime-capabilities.ts`、`packages/ipc-contract/src/agent-tools.ts`
 - 官方探针与解析：`apps/desktop/src/main/services/agent-tools-account/probes/`、`parse-official-usage.ts`、`quota-pacing.ts`
 - Composer：`ai-chat/usage/`、`agent-picker/`、`composer/composer-footer.tsx`
-- 设置：`settings/agent-tools/subscriptions-dashboard.tsx`、`agent-subscription-card.tsx`、`subscription-quota-meter.tsx`、`agent-subscription-donut.tsx`、`usage-trend-sparkline.tsx`、`rate-limit-resets-card.tsx`
+- 设置：`settings/agent-tools/subscriptions-dashboard.tsx`、`agent-subscription-card.tsx`、`subscription-quota-meter.tsx`、`agent-subscription-donut.tsx`、`usage-trend-sparkline.tsx`、`rate-limit-resets-card.tsx`、`drawer-trust/`
 - 能力矩阵 UI：`settings/agent-tools/capability-matrix.tsx` + `config-boundary-table.tsx`（包在 `agent-capability-docs.tsx` 的 `<details>` 里，默认收起）。注意 `settings-capabilities.tsx` 是另一回事（模型 vision/tools 矩阵），别照代码入口找错。
 - L3 明细：`ai-chat/agent-limits/`
 - L4：`thread/thread-error-banner.tsx`、`usage/quota-exhausted-card.tsx`
@@ -67,6 +67,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 订阅页铺满 `wide` 舞台：Hub + 双列卡。禁止 `max-w-md` 贴左。无窗口助手禁止占一张空卡。
 - 订阅页要像 OpenUsage 一样先出缓存：main 磁盘+内存 5 分钟；renderer **禁止**默认 `refresh: true`；进「智能体」页 **禁止** `invalidateQueries(inspect)`。右上角刷新才 `refresh: true`。过期缓存先返回旧值再后台刷新。
 - `officialOrEmpty`：Cursor Dashboard token 仍可读用量时，**不得**因 CLI `loggedIn === false` 丢掉官方窗口。订阅页卡片认 `windows.length` 或 `hasQuota`。
+- 配置抽屉顶栏若按 `status===ready` 画健康绿灯，未跑体检也会假绿。信任卡只信 doctor 结果；`quota=false` 写「该助手无公开额度」，不要空条或「本月用量 0%」。
 - Cursor 的 Grok Bot 走 `GetSandUsageStatus`，Extra Usage 走 `cursor.com/api/usage-summary` 的 onDemand；**不要**指望 `GetCurrentPeriodUsage` 里带这两项。无 onDemand 时 Extra Usage 仍显示 `No data` 行。
 - 订阅页禁止四格 KPI、「燃烧速率态势」、搜索框、2 列卡片网格、假 plan（Ultra / SuperGrok Heavy）、假 sparkline 占位柱。额度条禁止 `bg-rose-500` / `bg-amber-500`，走 `accent` / `status-yellow-text` / `text-error-primary`。
 - `composerChromeFor` 的 Fast / 思考 / 模式显隐仍读同一张 capability 表；C 端 Rail/胶囊不要再画 `pathKind` 协议/路径微标（含 `ACP Stdio`）。协议词只进设置矩阵。
