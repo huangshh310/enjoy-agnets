@@ -1,7 +1,6 @@
 /**
- * 仅官方助手的决策槽：只读登录态 + 打开授权。禁止假 vault 下拉。
+ * 仅官方助手的决策槽：只读「官方登录 · 用本机账号」。禁止假 vault 下拉。
  */
-import { RiLoginBoxLine } from "@remixicon/react"
 import { capabilitiesOf, officialLoginState, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
@@ -12,8 +11,6 @@ import {
   officialLoginHint,
   officialLoginPrimaryLabel
 } from "../official-login/official-login-row-copy"
-import { formatPowerSourceText } from "./format-power-source"
-import { powerSourcePartsForTool } from "./resolve-row-source"
 
 export function OfficialPowerSlot({
   tool,
@@ -25,7 +22,6 @@ export function OfficialPowerSlot({
   const t = useT()
   const inspecting = useSettingsSnapshot().isInspectingAccounts
   const loop = useCliLoginLoop(tool.id)
-  const parts = powerSourcePartsForTool(tool, { inspecting, loginLoop: loop.phase })
   const phase = officialLoginState(tool.authAccount?.loggedIn ?? null, inspecting, loop.phase)
   const canLogin = capabilitiesOf(tool).login && tool.status === "ready"
   const busy = phase === "auth" || phase === "check"
@@ -37,9 +33,6 @@ export function OfficialPowerSlot({
           {t("settings.agentTools.officialModeTitle")}
         </p>
         <p className="mt-1 text-caption-2-regular text-text-tertiary">
-          {formatPowerSourceText(parts, t)}
-        </p>
-        <p className="mt-0.5 text-caption-2-regular text-text-tertiary">
           {t("settings.agentTools.officialNoVaultHint")}
         </p>
         {hint ? (
@@ -63,7 +56,6 @@ export function OfficialPowerSlot({
             phase === "fail" ? "border-border-error-default text-text-error-primary" : ""
           }`}
         >
-          <RiLoginBoxLine className="size-3.5 text-text-tertiary" />
           {officialLoginPrimaryLabel(phase === "in" ? "out" : phase, t)}
         </Button>
       ) : null}

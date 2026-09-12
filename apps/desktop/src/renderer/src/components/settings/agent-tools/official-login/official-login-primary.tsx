@@ -15,20 +15,38 @@ export function OfficialLoginPrimary({
   onLogin?: () => void
 }) {
   const t = useT()
-  const busy = phase === "check" || phase === "auth"
-  const failed = phase === "fail"
+  const label = officialLoginPrimaryLabel(phase, t)
+  if (phase === "check") {
+    return (
+      <Button type="button" size="sm" disabled className={`${CLI_LIST_PRIMARY_SLOT} px-2 text-caption-2-medium opacity-50`}>
+        {label}
+      </Button>
+    )
+  }
+  if (phase === "auth") {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled
+        className={`${CLI_LIST_PRIMARY_SLOT} px-2 text-caption-2-medium text-text-tertiary`}
+      >
+        {label}
+      </Button>
+    )
+  }
   return (
     <Button
       type="button"
       size="sm"
-      variant={failed ? "outline" : "default"}
-      disabled={busy}
+      variant={phase === "fail" ? "outline" : "default"}
       onClick={onLogin}
       className={`${CLI_LIST_PRIMARY_SLOT} px-2 text-caption-2-medium ${
-        failed ? "border-border-error-default text-text-error-primary" : ""
-      } ${busy ? "opacity-90" : ""}`}
+        phase === "fail" ? "border-border-error-default text-text-error-primary" : ""
+      }`}
     >
-      {officialLoginPrimaryLabel(phase, t)}
+      {label}
     </Button>
   )
 }

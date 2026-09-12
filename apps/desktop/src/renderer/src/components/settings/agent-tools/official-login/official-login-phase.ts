@@ -28,3 +28,8 @@ export function officialLoginRowPhase(input: {
 export function overridesOfficialListReady(phase: OfficialLoginRowPhase): boolean {
   return phase === "check" || phase === "out" || phase === "auth" || phase === "fail"
 }
+
+/** 预览：检测中 / 打开授权中不画 ⚙，已登录与失败才留配置。 */
+export function showsOfficialConfigure(phase: OfficialLoginRowPhase): boolean {
+  return phase === "idle" || phase === "in" || phase === "fail" || phase === "out"
+}

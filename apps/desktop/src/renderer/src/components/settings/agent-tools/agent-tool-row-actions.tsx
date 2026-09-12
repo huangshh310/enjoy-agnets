@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { CLI_LIST_ICON_SLOT, CLI_LIST_PRIMARY_SLOT } from "./list-layout"
 import type { InstallRowPhase } from "./install-row-copy"
-import { overridesOfficialListReady, type OfficialLoginRowPhase } from "./official-login/official-login-phase"
+import {
+  overridesOfficialListReady,
+  showsOfficialConfigure,
+  type OfficialLoginRowPhase
+} from "./official-login/official-login-phase"
 import { OfficialLoginPrimary } from "./official-login/official-login-primary"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
@@ -30,7 +34,7 @@ export function AgentToolRowActions({
 }) {
   const t = useT()
   const installing = installPhase === "installing"
-  const secondary = ready ? (
+  const secondary = ready && showsOfficialConfigure(loginPhase) ? (
     <Button
       type="button"
       size="sm"

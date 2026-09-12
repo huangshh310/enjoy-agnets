@@ -3,7 +3,11 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { officialLoginRowPhase, overridesOfficialListReady } from "./official-login-phase.ts"
+import {
+  officialLoginRowPhase,
+  overridesOfficialListReady,
+  showsOfficialConfigure
+} from "./official-login-phase.ts"
 
 const FOUR = ["cursor", "grok", "antigravity", "amp"] as const
 
@@ -59,6 +63,13 @@ test("失败仍是官方登录行，不是 vault", () => {
   })
   assert.equal(phase, "fail")
   assert.equal(overridesOfficialListReady(phase), true)
+})
+
+test("检测中 / 授权中不画配置，已登录与失败才留 ⚙", () => {
+  assert.equal(showsOfficialConfigure("check"), false)
+  assert.equal(showsOfficialConfigure("auth"), false)
+  assert.equal(showsOfficialConfigure("in"), true)
+  assert.equal(showsOfficialConfigure("fail"), true)
 })
 
 test("可绑 Claude 不走仅官方密表四态", () => {
