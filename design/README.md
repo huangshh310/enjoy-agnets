@@ -59,6 +59,7 @@
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
+| [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
 | [previews/cli-a-official-login.html](./previews/cli-a-official-login.html) | CLI-A 仅官方四家登录闭环视觉真源（锁 tip `a0ac8f5`；检测中 / 打开授权中 / 已登录 / 失败人话） |
 | [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | 本机 CLI 密表唯一视觉真源（锁 tip `8bd7f6e`；预览内容 `add29a4`） |
