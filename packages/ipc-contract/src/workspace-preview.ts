@@ -46,24 +46,24 @@ export function normalizeWorkspacePath(raw: string | null | undefined): string |
   return path
 }
 
+const LOCAL_PREVIEW_RE =
+  /^(https?):\/\/(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)(:\d+)?(\/[^]*)?$/i
+
 /**
- * 只接受本机预览 http(s)。0.0.0.0 改写成 127.0.0.1，方便系统浏览器打开。
+ * 只接受本机预览 http(s)。0.0.0.0 改写成 127.0.0.1。
+ * 不用全局 URL：ipc-contract tsconfig 只有 ES2022，没有 DOM / Node types。
  */
 export function parseLocalPreviewUrl(raw: string | null | undefined): string | null {
   if (raw == null) return null
-  const trimmed = raw.trim()
-  if (!trimmed) return null
-  let parsed: URL
-  try {
-    parsed = new URL(trimmed)
-  } catch {
-    return null
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null
-  const host = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase()
-  if (!LOCAL_HOSTS.has(host)) return null
-  if (host === "0.0.0.0") parsed.hostname = "127.0.0.1"
-  return parsed.href
+  const match = LOCAL_PREVIEW_RE.exec(raw.trim())
+  if (!match) return null
+  const protocol = (match[1] ?? "http").toLowerCase()
+  const hostToken = (match[2] ?? "").toLowerCase()
+  if (!LOCAL_HOSTS.has(hostToken.replace(/^\[|\]$/g, ""))) return null
+  const host = hostToken === "0.0.0.0" ? "127.0.0.1" : hostToken
+  const port = match[3] ?? ""
+  const path = match[4] ?? "/"
+  return `${protocol}://${host}${port}${path}`
 }
 
 const LOCAL_URL_RE =
