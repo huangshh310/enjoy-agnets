@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0 · Explore / Execute + Sources · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[980px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/explore-execute-p0.html · 【视觉真源】P0-1 Explore/Execute + P0-2 Sources</p>
+      <h1 class="mt-1 text-[17px] font-semibold">Explore / Execute 模式面 + Sources</h1>
+      <p class="mt-1 text-[12px] text-mute">学 Craft。P0-1 映射现有 plan/ask vs agent，不新 runtime。P0-2 气泡底脚芯片 + Composer @ 发现。禁 ACP/协议词。本轮不做 worktree / 云多租户 / 内置浏览器。</p>
+    </header>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">C 端人话</th><th class="px-3 py-2">含义</th><th class="px-3 py-2">映射（内部）</th><th class="px-3 py-2">不用</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2 font-medium">探索</td>
+            <td class="px-3 py-2">只读规划：读代码、搜、答、出方案</td>
+            <td class="px-3 py-2">ask / plan</td>
+            <td class="px-3 py-2">Explore runtime、ACP、ToolLoop</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2 font-medium">执行</td>
+            <td class="px-3 py-2">可写执行：改文件、跑命令、装依赖</td>
+            <td class="px-3 py-2">agent</td>
+            <td class="px-3 py-2">Execute 新引擎、协议微标</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">Composer · 探索</h2>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button class="rounded-full bg-soft px-3 py-1 text-[11px] font-semibold text-accent">探索</button>
+            <button class="rounded-full px-3 py-1 text-[11px] text-mute">执行</button>
+          </div>
+          <span class="text-[10px] text-mute">引擎 · 模型</span>
+        </div>
+        <div class="mt-3 min-h-[72px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">
+          先帮我摸清登录流程怎么改，先别动代码…
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">可读 · 搜索</span>
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">可读 · 打开文件</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">写文件</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">终端</span>
+        </div>
+        <p class="mt-2 rounded-lg bg-paper px-2.5 py-1.5 text-[11px] text-mute">探索模式下不会改你的项目。要改文件或跑命令，切换到<strong class="text-ink">执行</strong>。</p>
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">Composer · 执行</h2>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+            <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+          </div>
+          <span class="text-[10px] text-mute">引擎 · 模型</span>
+        </div>
+        <div class="mt-3 min-h-[72px] rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">
+          按方案改登录页并跑一遍类型检查…
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="rounded-md bg-soft px-2 py-0.5 text-[10px] text-accent ring-1 ring-accent/20">可写 · 改文件</span>
+          <span class="rounded-md bg-soft px-2 py-0.5 text-[10px] text-accent ring-1 ring-accent/20">可写 · 终端</span>
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">审批策略仍生效</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">探索态 · 写工具拦截</h2>
+      <div class="flex max-w-md items-start gap-2 rounded-xl border border-line bg-card p-3 shadow-sm">
+        <span class="mt-0.5 size-2 shrink-0 rounded-full bg-warn"></span>
+        <div class="min-w-0 text-[11px]">
+          <p class="font-medium">当前是探索，不能改文件</p>
+          <p class="mt-0.5 text-mute">已拦住「写入 src/…」。切换到执行后再试，或先继续只读梳理。</p>
+          <div class="mt-2 flex gap-2">
+            <button class="h-7 rounded-lg bg-accent px-2.5 text-[11px] font-medium text-white">切换到执行</button>
+            <button class="h-7 rounded-lg border border-line px-2.5 text-[11px] text-mute">继续探索</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">设置 · 默认项</h2>
+      <div class="rounded-2xl border border-line p-4">
+        <p class="text-[12px] font-medium">新对话默认模式</p>
+        <p class="mt-0.5 text-[11px] text-mute">只影响新开的对话；当前对话在 Composer 切换。</p>
+        <div class="mt-3 space-y-2">
+          <label class="flex cursor-pointer items-start gap-2 rounded-xl border border-accent/30 bg-soft p-3">
+            <span class="mt-0.5 size-3.5 rounded-full border-[5px] border-accent"></span>
+            <span>
+              <span class="text-[12px] font-medium">探索</span>
+              <span class="mt-0.5 block text-[11px] text-mute">先读后想，不改项目。适合摸清问题。</span>
+            </span>
+          </label>
+          <label class="flex cursor-pointer items-start gap-2 rounded-xl border border-line p-3">
+            <span class="mt-0.5 size-3.5 rounded-full border border-line"></span>
+            <span>
+              <span class="text-[12px] font-medium">执行</span>
+              <span class="mt-0.5 block text-[11px] text-mute">可以改文件、跑命令。危险操作仍走审批。</span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">文案</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr><td class="px-3 py-2">分段左</td><td class="px-3 py-2">探索</td></tr>
+          <tr><td class="px-3 py-2">分段右</td><td class="px-3 py-2">执行</td></tr>
+          <tr><td class="px-3 py-2">探索脚注</td><td class="px-3 py-2">探索模式下不会改你的项目。要改文件或跑命令，切换到执行。</td></tr>
+          <tr><td class="px-3 py-2">拦截标题</td><td class="px-3 py-2">当前是探索，不能改文件</td></tr>
+          <tr><td class="px-3 py-2">拦截主钮</td><td class="px-3 py-2">切换到执行</td></tr>
+          <tr><td class="px-3 py-2">默认项 · 探索</td><td class="px-3 py-2">先读后想，不改项目。适合摸清问题。</td></tr>
+          <tr><td class="px-3 py-2">默认项 · 执行</td><td class="px-3 py-2">可以改文件、跑命令。危险操作仍走审批。</td></tr>
+          <tr><td class="px-3 py-2">禁止</td><td class="px-3 py-2">ask/plan/agent 原文上 C 端；ACP / ToolLoop / 协议微标</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 第二屏：P0-2 Sources -->
+    <section class="space-y-4 rounded-2xl border border-line p-4">
+      <header>
+        <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">第二屏 · P0-2</p>
+        <h2 class="mt-1 text-[14px] font-semibold">Sources · 发现 + 轻量溯源</h2>
+        <p class="mt-1 text-[12px] text-mute">助手气泡底脚轻量芯片；Composer @ 发现文件 / 文档 / 技能。不上引用抽屉，不上内置浏览器。</p>
+      </header>
+
+      <div class="space-y-2">
+        <h3 class="text-[12px] font-semibold">结果气泡 · 底脚芯片</h3>
+        <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[12px]">登录入口在 <span class="font-medium">src/auth/login.ts</span> 的提交处理里。知识库里的「登录流程说明」和技能「读代码」对得上这段。</p>
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            <button class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">src/auth/login.ts · L42</button>
+            <button class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">登录流程说明</button>
+            <button class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">技能 · 读代码</button>
+            <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">+2</span>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">密度锁 3–4 颗可见，其余收成 +N。点芯片打开已有审查 / 知识页，不弹 citation 抽屉。</p>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="text-[12px] font-semibold">Composer · @ 发现</h3>
+        <div class="rounded-2xl border border-line p-4 shadow-sm">
+          <div class="min-h-[48px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">@</div>
+          <div class="mt-2 overflow-hidden rounded-xl border border-line bg-card text-[11px] shadow-sm">
+            <div class="border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-mute">发现</div>
+            <button class="flex w-full items-center justify-between px-3 py-2 text-left">
+              <span><span class="mr-2 text-[10px] text-mute">文件</span>src/auth/login.ts</span>
+              <span class="text-[10px] text-mute">工作区</span>
+            </button>
+            <button class="flex w-full items-center justify-between border-t border-line px-3 py-2 text-left">
+              <span><span class="mr-2 text-[10px] text-mute">文档</span>登录流程说明</span>
+              <span class="text-[10px] text-mute">知识库</span>
+            </button>
+            <button class="flex w-full items-center justify-between border-t border-line px-3 py-2 text-left">
+              <span><span class="mr-2 text-[10px] text-mute">技能</span>读代码</span>
+              <span class="text-[10px] text-mute">已安装</span>
+            </button>
+            <div class="flex w-full items-center justify-between border-t border-line bg-paper/80 px-3 py-2 text-mute/50">
+              <span><span class="mr-2 text-[10px]">网页</span>本轮不做内置浏览器</span>
+              <span class="text-[10px]">禁用</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-line">
+        <table class="w-full text-left text-[11px]">
+          <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+            <tr><th class="px-3 py-2">规则</th><th class="px-3 py-2">锁</th></tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <tr><td class="px-3 py-2">芯片密度</td><td class="px-3 py-2">3–4 颗 +N，禁止一排刷满</td></tr>
+            <tr><td class="px-3 py-2">三例形态</td><td class="px-3 py-2">file · line；文档名；技能 · 短名</td></tr>
+            <tr><td class="px-3 py-2">@ 发现</td><td class="px-3 py-2">文件 / 文档 / 技能可用；网页 muted</td></tr>
+            <tr><td class="px-3 py-2">禁止</td><td class="px-3 py-2">协议词、citation 抽屉、内置浏览器</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收 / 边界</p>
+      <ul class="mt-1 list-disc space-y-0.5 pl-4">
+        <li>Composer 顶部分段仅「探索 | 执行」两态；同一会话可切换</li>
+        <li>内部仍走 ask/plan vs agent；不新 runtime、不上第三引擎</li>
+        <li>探索：写工具灰显；若模型仍请求写入 → 拦截条 + 切执行 CTA</li>
+        <li>执行：写工具可用；PermissionDock / 审批不变</li>
+        <li>设置默认项用人话，不写内部枚举名</li>
+        <li>P0-2：结果气泡底脚芯片 + Composer @ 发现（文件 / 文档 / 技能）</li>
+        <li>本轮不做：worktree、云多租户、内置浏览器</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
