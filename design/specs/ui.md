@@ -4,6 +4,8 @@
 
 视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。
 
+视觉真源（P0-R 远程 SSH 工作区）：[`../previews/p0-r-remote-workspace.html`](../previews/p0-r-remote-workspace.html)（设计已锁，**未接线**；定义见 [`../references/p0-r-remote.md`](../references/p0-r-remote.md)）。禁止在导轨加「远程引擎」。
+
 ## 当前真相
 
 窗口画布支持全应用皮肤切换（`classic` 经典实体、`glass` 液态玻璃 Liquid Glass、`ink` 手绘墨线、`sketch` 素描铅笔纸）。接口只有 `html[data-skin]`；每种皮肤一份 CSS：`packages/ui/styles/skins/classic.css`、`glass.css`、`ink.css`、`sketch.css`，由 `globals.css` `@import`。`ink` 跟昼/夜开关同一套模具：天蓝底、2.5px 墨边、错位投影、`::after` 抖动描边；字/图标走墨色 `#1a1a1a`。`sketch` 是另一套：素描纸 + 淡排线分层，**不要黑框、不要错位硬影**，不改 ink。`glass` 是网页近似（不是 Apple 官方材料）：浅色画布透明、冷石板深色字；暗色覆盖浅字。画布在 `skins/glass-canvas.css`，由 `globals.css` 紧跟 `glass.css` 引入（不要写进 `glass.css` 的嵌套 `@import`，Tailwind 会丢掉）。三张铬外壳（`aside.rounded-3xl` / `main` / 审查栏 `[data-frost=shell]`）填充 26% + `blur(40px) saturate(200%)`，投影走 `--shadow-card` / `--shadow-sidebar` 再叠弯液面。内层卡片浅槽 16%、**不再二次 blur**；嵌套 8%。Composer `[data-frost=chip]` 与外壳同填充、关掉 blur。`#skin-liquid-glass` 只打在 1px 棱镜描边。指针写 `--glass-light-x` / `--glass-light-y`（百分比圆心）和 `--glass-light-angle`（只给描边），禁止 deg×px。外观迷你窗走 `[data-preview-skin=glass]`，禁止组件内 `bg-cyan-400` / `bg-white`。主工作区三张卡片、12px 窗内边距、间隙 `gap-3`。三卡片采用双层物理光学投影系统（`shadow-card` / `shadow-sidebar`），浅色具备细腻触地影与环境漫射扩散，暗色具备 1px 倒角微高光。全应用只有这一套铬（`AppShell`），禁止再弹出「返回应用」第二套侧栏：

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-R · 远程=SSH工作区 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', warn: '#C2410C', ok: '#16A34A'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-r-remote-workspace.html · 【视觉真源】P0-R — 远程=SSH工作区非新引擎</p>
+      <h1 class="mt-1 text-[17px] font-semibold">远程 = SSH 工作区位置 · 不是导轨上的新引擎</h1>
+      <p class="mt-1 text-[12px] text-mute">设计已锁，应用未接线。本机壳 + 远端 cwd。默认 <code class="rounded bg-paper px-1">local</code>。沙箱仍在设置。禁止云多租户 / worktree / 假 BYOK / 粘贴私钥。</p>
+    </header>
+
+    <div class="flex flex-col items-start justify-between gap-8 lg:flex-row">
+      <aside class="w-full shrink-0 space-y-3 text-[11px] lg:w-[300px]">
+        <p class="font-semibold text-ink">锁</p>
+        <ul class="list-disc space-y-1.5 pl-4 text-mute">
+          <li><strong class="text-ink">模型</strong>：<code class="rounded bg-paper px-1 text-ink">local | ssh</code>；默认本机</li>
+          <li><strong class="text-ink">抽屉</strong>：主机 / 用户 / 端口 / 认证 / 远端路径</li>
+          <li><strong class="text-ink">顶条</strong>：连接中 · 已连接 · 失败 · 断开</li>
+          <li><strong class="text-ink">Composer</strong>：脚注 <code class="rounded bg-paper px-1 text-ink">远程 · host:path</code></li>
+          <li><strong class="text-ink">导轨</strong>：不增「远程引擎」</li>
+        </ul>
+        <p class="rounded-lg bg-paper px-2.5 py-2 text-[10px] text-mute">远程 ≠ 引擎。会话本机，代码远端，不默认同步文件夹。</p>
+      </aside>
+
+      <section class="min-w-0 flex-1 space-y-2">
+        <h2 class="text-[14px] font-semibold">工作区切换</h2>
+        <p class="text-[11px] text-mute">打开位置，不是换引擎。选中默认：本机文件夹。</p>
+        <div class="space-y-2 rounded-2xl border border-line p-3 shadow-sm">
+          <label class="flex cursor-pointer items-start gap-2 rounded-xl border border-accent/30 bg-soft p-3">
+            <span class="mt-0.5 size-3.5 rounded-full border-[5px] border-accent"></span>
+            <span>
+              <span class="text-[12px] font-medium">本机文件夹</span>
+              <span class="mt-0.5 block font-mono text-[11px] text-mute">~/code/enjoy-agents</span>
+            </span>
+          </label>
+          <label class="flex cursor-pointer items-start gap-2 rounded-xl border border-line p-3">
+            <span class="mt-0.5 size-3.5 rounded-full border border-line"></span>
+            <span>
+              <span class="text-[12px] font-medium">远程 SSH…</span>
+              <span class="mt-0.5 block text-[11px] text-mute">连到一台机器上的目录。会话仍在本机。</span>
+            </span>
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">SSH 抽屉 · 380px</h2>
+      <p class="text-[11px] text-mute">短 C 端字段。认证只选本机 Agent 或密钥路径，不把私钥贴进对话。</p>
+      <div class="flex h-[560px] w-[380px] flex-col rounded-2xl border border-line bg-card shadow-2xl">
+        <header class="flex items-start justify-between border-b border-line px-4 py-3">
+          <div>
+            <h3 class="text-[15px] font-semibold">远程 SSH</h3>
+            <p class="text-[11px] text-mute">连到一台机器上的目录</p>
+          </div>
+          <button class="text-[12px] text-mute">关闭</button>
+        </header>
+        <div class="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <label class="block text-[11px] font-medium">主机
+            <input class="mt-1 h-8 w-full rounded-lg border border-line bg-paper px-2.5 text-[12px]" value="dev.example.com" readonly />
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-[11px] font-medium">用户
+              <input class="mt-1 h-8 w-full rounded-lg border border-line bg-paper px-2.5 text-[12px]" value="ubuntu" readonly />
+            </label>
+            <label class="block text-[11px] font-medium">端口
+              <input class="mt-1 h-8 w-full rounded-lg border border-line bg-paper px-2.5 text-[12px]" value="22" readonly />
+            </label>
+          </div>
+          <label class="block text-[11px] font-medium">认证
+            <div class="mt-1 rounded-xl border border-line bg-paper px-3 py-2">
+              <p class="text-[12px] font-medium">本机 SSH Agent</p>
+              <p class="mt-0.5 text-[11px] text-mute">或填密钥路径，例如 ~/.ssh/id_ed25519</p>
+            </div>
+          </label>
+          <label class="block text-[11px] font-medium">远端路径
+            <input class="mt-1 h-8 w-full rounded-lg border border-line bg-paper px-2.5 font-mono text-[12px]" value="/home/ubuntu/app" readonly />
+          </label>
+          <p class="rounded-lg bg-paper px-2.5 py-2 text-[11px] text-mute">会话在本机。代码在远端。不会默认同步文件夹。不要把私钥贴进对话。</p>
+        </div>
+        <footer class="border-t border-line px-4 py-3">
+          <button class="h-8 w-full rounded-xl bg-accent text-[12px] font-medium text-white">连接</button>
+        </footer>
+      </div>
+    </section>
+
+    <section class="space-y-3">
+      <h2 class="text-[14px] font-semibold">顶条四态</h2>
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="rounded-2xl border border-line p-3 shadow-sm">
+          <p class="text-[11px] font-semibold">连接中 · 不可发送</p>
+          <div class="mt-2 flex items-center gap-2 rounded-xl border border-line bg-paper px-3 py-2">
+            <span class="size-1.5 animate-pulse rounded-full bg-accent"></span>
+            <p class="min-w-0 flex-1 truncate text-[12px]">连接中… ubuntu@dev.example.com · /home/ubuntu/app</p>
+          </div>
+          <p class="mt-1 text-[10px] text-mute">发送盘禁用。不算已连接。</p>
+        </div>
+        <div class="rounded-2xl border border-line p-3 shadow-sm">
+          <p class="text-[11px] font-semibold">已连接</p>
+          <div class="mt-2 flex items-center gap-2 rounded-xl border border-accent/20 bg-soft px-3 py-2">
+            <span class="size-1.5 rounded-full bg-ok"></span>
+            <p class="min-w-0 flex-1 truncate text-[12px]">远程 · ubuntu@dev.example.com · /home/ubuntu/app</p>
+            <button class="shrink-0 text-[11px] text-accent">断开</button>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line p-3 shadow-sm">
+          <p class="text-[11px] font-semibold">失败 · 人话 + 重试</p>
+          <div class="mt-2 flex items-start gap-2 rounded-xl border border-line px-3 py-2">
+            <span class="mt-1.5 size-1.5 shrink-0 rounded-full bg-warn"></span>
+            <div class="min-w-0 flex-1">
+              <p class="text-[12px]">没连上：主机超时，检查网络或主机名</p>
+              <button class="mt-1 text-[11px] text-accent">重试</button>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line p-3 shadow-sm">
+          <p class="text-[11px] font-semibold">断开 · 禁写</p>
+          <div class="mt-2 flex items-start gap-2 rounded-xl border border-line bg-paper px-3 py-2">
+            <span class="mt-1.5 size-1.5 shrink-0 rounded-full bg-mute"></span>
+            <div class="min-w-0 flex-1">
+              <p class="text-[12px]">已断开 · 只能回顾对话</p>
+              <p class="mt-0.5 text-[11px] text-mute">写文件和 Agent 已停，先重新连接。</p>
+              <button class="mt-1 text-[11px] text-accent">重新连接</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">Composer</h2>
+      <p class="text-[11px] text-mute">探索 | 执行不变。引擎胶囊仍是 Claude。位置写在脚注，不新开「远程引擎」。</p>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+            <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+          </div>
+          <span class="rounded-full bg-paper px-2.5 py-1 text-[10px] ring-1 ring-line">Claude · sonnet</span>
+        </div>
+        <div class="mt-3 min-h-[64px] rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">按远端目录改登录页…</div>
+        <p class="mt-2 text-[11px] text-mute">远程 · dev.example.com:/home/ubuntu/app</p>
+      </div>
+      <div class="flex max-w-md items-start gap-2 rounded-xl border border-line p-3">
+        <span class="mt-0.5 size-2 shrink-0 rounded-full bg-warn"></span>
+        <div class="text-[11px]">
+          <p class="font-medium">远程已断开，先重新连接才能发送</p>
+          <p class="mt-0.5 text-mute">对话还能看。写文件和 Agent 要等连上。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">导轨不变</h2>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="rounded-full bg-soft px-3 py-1 text-[11px] font-medium text-accent ring-1 ring-accent/20">Enjoy 本地</span>
+        <span class="rounded-full bg-paper px-3 py-1 text-[11px] ring-1 ring-line">Claude</span>
+        <span class="rounded-full bg-paper px-3 py-1 text-[11px] ring-1 ring-line">Cursor</span>
+        <span class="rounded-full bg-paper/80 px-3 py-1 text-[11px] text-mute/50 ring-1 ring-line line-through">远程引擎 · 勿加</span>
+      </div>
+      <p class="text-[10px] text-mute">SSH 是工作区位置。沙箱继续呆在设置，不上轨。</p>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">文案</th>
+            <th class="px-3 py-2">不用</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">工作区</td>
+            <td class="px-3 py-2">本机文件夹 / 远程 SSH…</td>
+            <td class="px-3 py-2">远程引擎、云工作区</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">已连接</td>
+            <td class="px-3 py-2">远程 · user@host · path</td>
+            <td class="px-3 py-2">沙箱、ACP、云会话</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">Composer 脚注</td>
+            <td class="px-3 py-2">远程 · host:path</td>
+            <td class="px-3 py-2">工作区 · 本地 重复胶囊</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">认证</td>
+            <td class="px-3 py-2">本机 SSH Agent / 密钥路径</td>
+            <td class="px-3 py-2">粘贴私钥、会话里贴 Key</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">导轨</td>
+            <td class="px-3 py-2">Enjoy 本地 / Claude / Cursor</td>
+            <td class="px-3 py-2">远程引擎</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">边界</td>
+            <td class="px-3 py-2">远程 ≠ 引擎；沙箱留设置</td>
+            <td class="px-3 py-2">假 BYOK、云多租户、worktree</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>工作区切换只有「本机文件夹 / 远程 SSH…」；默认本机；远程不是新引擎。</li>
+        <li>380 抽屉：主机 / 用户 / 端口 / 认证（本机 SSH Agent 或密钥路径）/ 远端路径 + 连接；短人话；禁粘私钥。</li>
+        <li>顶条四态：连接中不可发送 / 已连接「远程 · user@host · path」/ 失败人话+重试 / 断开只读回顾且禁写 + Agent。</li>
+        <li>Composer 探索 | 执行不变；脚注「远程 · host:path」；断线发送闸「远程已断开，先重新连接才能发送」。</li>
+        <li>导轨不增「远程引擎」；沙箱留设置；无假 BYOK / 云多租户 / worktree。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">云多租户 · 沙箱上轨 · 远程引擎 · worktree · 假 BYOK · 默认同步文件夹 · 私钥进对话</p>
+    </section>
+  </div>
+</body>
+</html>
