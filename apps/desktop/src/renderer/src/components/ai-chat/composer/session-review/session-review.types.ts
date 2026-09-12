@@ -12,9 +12,12 @@ export type SessionReviewFile = {
 export type SessionReviewActionsProps = {
   busy?: boolean
   hasFiles?: boolean
+  canOpenPreview?: boolean
+  previewBusy?: boolean
   onUndo: () => void
   onKeep: () => void
   onOpenReview: () => void
+  onOpenPreview: () => void
 }
 
 export type SessionReviewBarProps = {
@@ -26,6 +29,9 @@ export type SessionReviewBarProps = {
   onOpenFile: (path: string) => void
   onUndo: () => void
   onKeep: () => void
+  onOpenPreview: () => void
+  canOpenPreview?: boolean
+  previewBusy?: boolean
   busy?: boolean
   hasFiles?: boolean
   /** 本轮写盘才默认展开；工作区脏文件保持折叠。 */

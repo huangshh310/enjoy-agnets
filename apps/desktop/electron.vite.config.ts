@@ -65,6 +65,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-move-plan.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/workspace-preview",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-preview.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/agents-md-chain",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/agents-md-chain.ts")
         },
@@ -130,6 +134,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/cli-compat",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-compat.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/workspace-preview",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-preview.ts")
         },
         {
           find: /^@enjoy-agents\/ipc-contract$/,

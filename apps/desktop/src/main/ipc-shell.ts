@@ -70,6 +70,7 @@ import {
   restoreEnjoyCheckpoint
 } from "./services/workspace"
 import { writeWorkspaceFile } from "./services/workspace-write"
+import { openWorkspacePreview } from "./services/workspace-open-preview"
 import { moveWorkspacePath } from "./services/workspace-move"
 import { watchWorkspace } from "./services/workspace-watch"
 import {
@@ -107,6 +108,7 @@ export const SHELL_CHANNELS = [
   "workspace.listCheckpoints",
   "workspace.previewCheckpoint",
   "workspace.restoreCheckpoint",
+  "workspace.openPreview",
   "workspace.changes",
   "inbox.state.list",
   "inbox.state.put",
@@ -246,6 +248,7 @@ function registerWorkspaceIpc() {
       confirmDeleteUntracked: input.confirmDeleteUntracked
     })
   })
+  ipcMain.handle("workspace.openPreview", async (_event, raw) => openWorkspacePreview(raw))
 }
 
 function registerSessionIpc() {

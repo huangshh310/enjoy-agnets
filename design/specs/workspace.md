@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-10
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -17,6 +17,7 @@
 - Agent `bash`：cwd 锁工作区、禁 shell 包装器、默认禁网二进制。macOS 再套 Seatbelt（写盘限工作区 + tmp）。不要把字符串过滤写成「沙箱已隔离」。
 - 写盘检查点列表与还原（`workspace.listCheckpoints` / `previewCheckpoint` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`
 - 工作区绑定的 pty 终端（`terminal.open` / `write` / `resize` / `close`）：main `node-pty`，renderer `@xterm/xterm` + FitAddon。原始按键进 PTY，不按行补 `\n`。这是工作区壳，不是 M4 ACP PTY 登录兜底。
+- 完成条「在浏览器打开」（`workspace.openPreview`）：工作区 `*.html` 转 `file://`，或本会话本机预览 URL，经 `shell.openExternal` 打开系统浏览器。不嵌右栏 Browser，不起 dev server。
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
 
@@ -49,6 +50,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 终端：`apps/desktop/src/main/services/terminal.ts`
 - 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`
+- 系统浏览器预览：`workspace-open-preview.ts`、`composer/session-review/preview-open/`
 
 ## 已知坑
 
@@ -60,6 +62,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。
 - `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。
+- `workspace.openPreview` 点了若走 `openBrowserUrl` 会进右栏 `<webview>`，不是系统浏览器。必须 main `shell.openExternal`。html 必须 jail + 后缀校验 + 文件存在；URL 只认环回。禁止远程、禁止自动 `vite` / dev server。探索态不禁用。由 `preview-open-invariants` 守门。
 - 审查栏 `gitCommit` 成功后必须 invalidate `["changes", workspaceId]`（改动条和 Review 共用这一份）。不要写成 `workspace-changes`，那条 query 不存在，提交后改动条会继续挂着已进 HEAD 的文件。
 - 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出**已暂存**数量与说明，再调 `workspace.gitCommit`（默认 `stageAll: false`，禁止再默认 `git add -A`）。Agent `git_commit` 仍走 HMAC，并可 `add -A`。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。按文件暂存走 `workspace.gitStage`，成功后 invalidate `["changes", workspaceId]`。
 - Review 主区出现横向空条纹：把全部 changed files 展开成 `FileDiff` 卡片流，且组件用 `flex-1` + `max-h-full`。滚动列给不出确定高度，diff 行塌成发丝。默认只渲染当前文件并 `fill`；叠放时必须 `compact`，禁止 `fill`。
