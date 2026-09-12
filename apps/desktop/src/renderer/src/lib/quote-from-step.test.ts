@@ -43,4 +43,13 @@ test("思考走 task_step，命令走 terminal_output，有路径的编辑走 di
     status: "completed"
   })
   assert.equal(read.type, "file")
+
+  const delegate = quoteFromStep({
+    id: "n5",
+    kind: "delegate",
+    title: "子智能体 Explore · 审查架构",
+    subagentKind: "explore",
+    status: "completed"
+  })
+  assert.equal(delegate.type, "task_step")
 })

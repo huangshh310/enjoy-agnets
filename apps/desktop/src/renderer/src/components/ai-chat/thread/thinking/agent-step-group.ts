@@ -4,15 +4,17 @@
 import type { AgentStepKind, AgentStepNode, BatchFileItem } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { isGenericVerb } from "./is-generic-verb.ts"
+import { groupDelegateRoster } from "./group-delegate-roster.ts"
 
 const BATCH_MIN = 2
 
 export function groupConsecutiveSteps(nodes: AgentStepNode[], t: TranslateFn): AgentStepNode[] {
   const result: AgentStepNode[] = []
   let i = 0
-  while (i < nodes.length) {
-    const node = nodes[i]!
-    const batched = tryBatch(nodes, i, t)
+  const rostered = groupDelegateRoster(nodes)
+  while (i < rostered.length) {
+    const node = rostered[i]!
+    const batched = tryBatch(rostered, i, t)
     if (batched) {
       result.push(batched.node)
       i = batched.next
@@ -31,6 +33,7 @@ function tryBatch(
 ): { node: AgentStepNode; next: number } | null {
   const head = nodes[start]
   if (!head) return null
+  if (head.kind === "delegate" || head.isRoster) return null
   if (head.kind === "editing" || head.kind === "reading" || head.kind === "command" || head.kind === "search") {
     return batchRun(nodes, start, head.kind, t)
   }

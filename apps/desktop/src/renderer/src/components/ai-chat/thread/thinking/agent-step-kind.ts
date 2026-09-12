@@ -39,3 +39,8 @@ export function isReadTool(name: string, args: Record<string, unknown>, toolName
 export function isWeakCommandName(name: string): boolean {
   return /^(command|cmd|tool|function|call|execute|exec|bash|sh)$/i.test(name)
 }
+
+/** ACP Task 在 map-events 里先归一成 delegate；解析器只认工具名。 */
+export function isDelegateToolName(name: string): boolean {
+  return /^(delegate|task)$/i.test(name.trim())
+}

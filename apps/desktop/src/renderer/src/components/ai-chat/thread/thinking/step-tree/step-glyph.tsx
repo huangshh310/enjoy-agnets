@@ -6,6 +6,7 @@ import {
   RiCpuLine,
   RiEditLine,
   RiGlobalLine,
+  RiNodeTree,
   RiSearchLine,
   RiSparklingLine,
   RiTerminalBoxLine
@@ -19,6 +20,7 @@ export function StepGlyph({ kind }: { kind: AgentStepKind }) {
   if (kind === "reading") return <RiGlobalLine className={cls} />
   if (kind === "command") return <RiTerminalBoxLine className={cls} />
   if (kind === "editing") return <RiEditLine className={cls} />
+  if (kind === "delegate") return <RiNodeTree className={cls} />
   if (kind === "analysis") return <RiCpuLine className={cls} />
   return <RiSparklingLine className="size-3.5 shrink-0 text-accent-500" />
 }

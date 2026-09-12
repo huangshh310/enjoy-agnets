@@ -23,6 +23,10 @@ const mockT: TranslateFn = (key: string, params?: Record<string, string | number
   if (key === "chat.verbFind") return "查找"
   if (key === "chat.verbRun") return "运行"
   if (key === "chat.searchingQuery") return `正在搜索 ${String(params?.query ?? "")}`
+  if (key === "chat.subagentTitle") return `子智能体 ${String(params?.kind ?? "")} · ${String(params?.title ?? "")}`
+  if (key === "chat.subagentFailed") return "执行失败"
+  if (key === "chat.subagentExplore") return "Explore"
+  if (key === "chat.subagentGeneral") return "General"
   return key
 }
 
@@ -44,6 +48,8 @@ test("子 Agent 工具挂到 delegate 下面", () => {
   const nodes = parseAgentStepNodes("", tools, mockT)
   assert.equal(nodes.length, 1)
   assert.equal(nodes[0]?.id, "d1")
+  assert.equal(nodes[0]?.kind, "delegate")
+  assert.equal(nodes[0]?.isRoster, undefined)
   assert.equal(nodes[0]?.children?.[0]?.id, "t2")
 })
 

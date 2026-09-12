@@ -1,9 +1,11 @@
 /**
  * ACP session/update → Enjoy StreamEvent（可多条）。
  * 禁止 yield approval.required；审批只走 session/request_permission。
+ * Task/Explore 归一成 delegate；无 parentToolCallId 时子工具保持平铺，禁止瞎编嵌套。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { extractAcpDiffs } from "./acp-diff.ts"
+import { stampDelegateArgs } from "./stamp-delegate-args.ts"
 
 export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   const rec = asRecord(update)
@@ -20,9 +22,7 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     const toolCallId = String(rec.toolCallId ?? rec.id ?? "tool")
     const name = inferToolName(rec)
     const args = extractToolArgs(rec)
-    const events: StreamEvent[] = [
-      { type: "tool.start", runId, toolCallId, name, args }
-    ]
+    const events: StreamEvent[] = [toolStartEvent(runId, toolCallId, name, args, rec)]
     events.push(...fileEvents(rec, runId))
     return events
   }
@@ -43,20 +43,12 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     const name = inferToolName(rec)
     const args = extractToolArgs(rec)
     const status = String(rec.status ?? "")
-    const events: StreamEvent[] = [
-      { type: "tool.start", runId, toolCallId, name, args }
-    ]
+    const events: StreamEvent[] = [toolStartEvent(runId, toolCallId, name, args, rec)]
     events.push(...fileEvents(rec, runId))
     if (status === "completed" || status === "failed") {
-      events.push({
-        type: "tool.result",
-        runId,
-        toolCallId,
-        name,
-        args,
-        result: rec.rawOutput ?? rec.content ?? rec.output,
-        error: status === "failed" ? stringify(rec.rawOutput ?? rec.content) : undefined
-      })
+      events.push(
+        toolResultEvent(runId, toolCallId, name, args, rec, status === "failed")
+      )
     }
     return events
   }
@@ -67,6 +59,7 @@ const WEAK_TOOL_NAME = /^(tool|function|call|command|cmd|execute|exec)$/i
 
 function inferToolName(rec: Record<string, unknown>): string {
   const kind = String(rec.kind ?? rec.toolKind ?? "").toLowerCase()
+  if (/^(task|delegate|subagent)$/.test(kind)) return "delegate"
   if (kind === "read") return "read_file"
   if (kind === "edit" || kind === "write" || kind === "delete") return "edit_file"
   if (kind === "execute" || kind === "shell" || kind === "terminal" || kind === "bash") return "bash"
@@ -90,6 +83,8 @@ function inferToolName(rec: Record<string, unknown>): string {
 
 function classifyTitle(title: string): string | null {
   if (!title || WEAK_TOOL_NAME.test(title)) return null
+  if (/^(task|delegate|subagent)$/i.test(title)) return "delegate"
+  if (/^(explore|scout)\b/i.test(title)) return "delegate"
   if (/^read\b/i.test(title)) return "read_file"
   if (/^(edit|write|create|delete|update|patch|strreplace)\b/i.test(title)) return "edit_file"
   if (/^(run|bash|shell|exec)\b/i.test(title)) return "bash"
@@ -127,7 +122,47 @@ function extractToolArgs(rec: Record<string, unknown>): unknown {
     if (!recInput.path) recInput.path = diffs[0].path
     if (!recInput.diff) recInput.diff = diffs[0].diff
   }
+  stampDelegateArgs(rec, recInput, input)
   return Object.keys(recInput).length > 0 ? recInput : input
+}
+
+function parentToolCallIdOf(rec: Record<string, unknown>): string | undefined {
+  const value = rec.parentToolCallId
+  return typeof value === "string" && value.trim() ? value.trim() : undefined
+}
+
+function toolStartEvent(
+  runId: string,
+  toolCallId: string,
+  name: string,
+  args: unknown,
+  rec: Record<string, unknown>
+): StreamEvent {
+  const parentToolCallId = parentToolCallIdOf(rec)
+  return parentToolCallId
+    ? { type: "tool.start", runId, toolCallId, name, args, parentToolCallId }
+    : { type: "tool.start", runId, toolCallId, name, args }
+}
+
+function toolResultEvent(
+  runId: string,
+  toolCallId: string,
+  name: string,
+  args: unknown,
+  rec: Record<string, unknown>,
+  failed: boolean
+): StreamEvent {
+  const parentToolCallId = parentToolCallIdOf(rec)
+  return {
+    type: "tool.result",
+    runId,
+    toolCallId,
+    name,
+    args,
+    result: rec.rawOutput ?? rec.content ?? rec.output,
+    error: failed ? stringify(rec.rawOutput ?? rec.content) : undefined,
+    ...(parentToolCallId ? { parentToolCallId } : {})
+  }
 }
 
 function parseRecord(value: unknown): Record<string, unknown> | null {

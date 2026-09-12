@@ -10,14 +10,15 @@ import { splitReasoningAroundTools } from "./split-reasoning-around-tools.ts"
 import { groupConsecutiveSteps } from "./agent-step-group.ts"
 import { nestChildSteps } from "./agent-step-nest.ts"
 import { extractDomainPills } from "./extract-domain-pills.ts"
-import { isBashTool, isEditTool, isReadTool, isSearchTool, isWeakCommandName } from "./agent-step-kind.ts"
+import { isBashTool, isDelegateToolName, isEditTool, isReadTool, isSearchTool, isWeakCommandName } from "./agent-step-kind.ts"
+import { mapDelegateToStepNode } from "./delegate-step.ts"
 import { isGenericVerb } from "./is-generic-verb.ts"
 import {
   extractCommandString,
   extractFilePaths,
   extractShellCommand,
   extractToolPath,
-  inputRecords,
+  mergeToolArgs,
   mapToolStatus
 } from "./extract-step-fields.ts"
 
@@ -50,17 +51,9 @@ export function parseAgentStepNodes(
   return groupConsecutiveSteps(nestChildSteps(nodes, tools), t)
 }
 
-function parseToolArguments(tool: ThreadToolCall): Record<string, unknown> {
-  const records = inputRecords(tool.args, tool.argsText)
-  const merged: Record<string, unknown> = {}
-  for (let i = records.length - 1; i >= 0; i--) {
-    Object.assign(merged, records[i])
-  }
-  return merged
-}
-
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {
-  const args = parseToolArguments(tool)
+  if (isDelegateToolName(tool.name)) return mapDelegateToStepNode(tool, t)
+  const args = mergeToolArgs(tool)
   const result = asRecord(tool.result)
   const shell = extractShellCommand(tool)
   const command = shell ?? extractCommandString(tool)

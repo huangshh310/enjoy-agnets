@@ -1,6 +1,6 @@
 # spec/workflow
 
-> Durable Workflow：检查点、暂停、恢复。最后更新：2026-09-09
+> Durable Workflow：检查点、暂停、恢复。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 UI `#/workflows` 在 `AppShell` 内换轨。对齐原型 Slide 8：展示预设流水线配方与 DAG 运行列表；支持 `Resume` / `Retry` / `Cancel` 控制，并提供 `Open in Chat →` 链接跳转回关联的会话画布。列表按依赖分层画 DAG（`workflow-dag`）。
 
-子 Agent 回 `SubagentSummary`，同时把子工具事件挂到父 `delegate`（`parentToolCallId`）。写盘必须走主循环同一条审批，不能另开后门。页面文案必须写明每步是 `agent.run`，禁止再写「一键自主 / 假完成」。
+子 Agent 回 `SubagentSummary`，同时把子工具事件挂到父 `delegate`（`parentToolCallId`）。写盘必须走主循环同一条审批，不能另开后门。页面文案必须写明每步是 `agent.run`，禁止再写「一键自主 / 假完成」。Chat 思考树花名册（连续顶层 `delegate`）不是 `#/workflows` DAG：前者是同一轮 ToolLoop 派工，后者是 durable `agent.run` 步骤图。
 
 路由：`#/workflows`。设置：Workflow Recovery。
 

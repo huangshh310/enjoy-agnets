@@ -10,6 +10,10 @@ export type AgentStepKind =
   | "editing"     // 代码与文件修改
   | "analysis"    // 分析与结论汇总
   | "thinking"    // 推理与意图规划
+  | "delegate"    // 子智能体派工（Explore / General）
+
+/** 子智能体人格：Explore 只读调查，General 跟父模式。文案不翻译。 */
+export type SubagentKind = "explore" | "general"
 
 export interface DomainPill {
   id: string
@@ -57,5 +61,12 @@ export interface AgentStepNode {
   actionVerb?: string
   isBatch?: boolean
   batchItems?: BatchFileItem[]
+  /** Explore / General；仅 kind=delegate。 */
+  subagentKind?: SubagentKind
+  /** 派工标题，不含「子智能体 Explore ·」前缀。 */
+  heading?: string
+  /** 连续 ≥2 条顶层 delegate 的花名册容器。不要复用 isBatch / children。 */
+  isRoster?: boolean
+  rosterItems?: AgentStepNode[]
   children?: AgentStepNode[]
 }

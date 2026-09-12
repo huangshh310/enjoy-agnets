@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-10
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-12
 
 ## 当前真相
 
@@ -32,7 +32,7 @@
 | `git_commit` | 是 | 走 `requireCommitApproval`。默认只提交已暂存；`stageAll: true` 才 `add -A` |
 | `git_branch` | 是 | 创建分支，可选 checkout。与 commit 同一 Git 审批档 |
 | `git_push` | 是 | 推当前上游；无上游即拒。与 `git_commit` 同一 Git 审批档 |
-| `delegate` | 否（子循环写盘仍审） | `kind=explore` 强制只读（可用 `fastModelId`）；`general` 跟父模式。子工具带 `parentToolCallId` |
+| `delegate` | 否（子循环写盘仍审） | `kind=explore` 强制只读（可用 `fastModelId`）；`general` 跟父模式。子工具带 `parentToolCallId`。聊天画「子智能体 {Explore\|General} · 标题」；同一步最多 4 个并行 `delegate.execute`（闸门挂 `createDelegateTool` 闭包） |
 
 工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。
 
@@ -62,7 +62,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 ## 代码入口
 
 - 建 agent / 流：`packages/agent-core/src/agent.ts`
-- 子 Agent 审批：`packages/agent-core/src/agents/subagent-approval.ts`、`subagent-loop.ts`
+- 子 Agent 审批：`packages/agent-core/src/agents/subagent-approval.ts`、`subagent-loop.ts`；派工闸门：`delegate-concurrency.ts`
 - 工具：`packages/agent-core/src/tools/index.ts`、`git-read-tools.ts`、`write-tools.ts`、`coding-tool-names.ts`、`todo-write.ts`、`ask-user-questions.ts`、`submit-plan.ts`、`implementation-plan.ts`
 - 审批：`packages/agent-core/src/tool-approval.ts`
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
@@ -105,6 +105,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 子 Agent `allow_session` 对 `bash` / `code_mode` 只记命令前缀，不要把整个工具名放进 `sessionApprovedTools`。`commitWorkspaceAll` 默认 `stageAll: false`。Seatbelt 读盘是 `(allow file-read*)`（编译器要读系统头），写盘仍锁工作区 + tmp。
 - 全局技能必须走 `skill` 工具。不要再让模型 `read_file` jail 外的 SKILL.md。
 - 子 Agent 若只用自己的短角色句，会丢掉用户说明与技能目录。`runDelegatedSubagent` 必须接父级 `extraInstructions`。
+- 同一步多个 `delegate` 会并行 `execute`。闸门上限 4 必须挂在 `createDelegateTool` 闭包，禁止模块单例跨 run 漏槽；abort / 抛错要 `finally` 释放。聊天花名册只展示真实 `tool.start`，不要在 UI 里假造多行。Chat 花名册不是 `#/workflows` DAG。
 - plan/ask 只靠 `resolveToolApproval` deny 不够：模型仍会看见 `write_file` 并空转。必须 `createCodingTools(..., { mode })` 不注册写工具。`enjoy-local.delegate` 必须与是否注入 `delegate` 同一边。
 - 建工具时必须闭包注入 `AgentWorkspaceHost`。AI SDK 7 不会把 runtimeContext 传进 `execute` 的 `options.context`。
 - Agent `git_log` 是 porcelain 文本（`%h %ad %an %s`，默认 20、上限 100），不是 Review `workspace.gitLog` 的 structured `commits[]`。不要把 UI 提交列表喂给模型。path 必须 jail。`git_status` / `git_diff` / `git_log` 审批 `not-applicable`，plan/ask 也注册。

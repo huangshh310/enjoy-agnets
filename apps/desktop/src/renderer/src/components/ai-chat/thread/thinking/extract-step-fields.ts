@@ -185,3 +185,13 @@ function joinStringArray(value: unknown): string | undefined {
   if (!value.every((item) => typeof item === "string")) return undefined
   return value.join(" ")
 }
+
+/** 合并工具 args / argsText；delegate 与 parser 共用，禁止两处各写一遍。 */
+export function mergeToolArgs(tool: ThreadToolCall): Record<string, unknown> {
+  const records = inputRecords(tool.args, tool.argsText)
+  const merged: Record<string, unknown> = {}
+  for (let i = records.length - 1; i >= 0; i--) {
+    Object.assign(merged, records[i])
+  }
+  return merged
+}

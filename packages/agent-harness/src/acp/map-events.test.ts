@@ -170,6 +170,123 @@ test("available_commands_update 进 commands.update，不进气泡", () => {
   }
 })
 
+test("kind=task 归一成 delegate", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "d1",
+      kind: "task",
+      title: "审查架构与 IPC 完整性"
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") {
+    assert.equal(start.name, "delegate")
+    const args = start.args as { title?: string }
+    assert.equal(args.title, "审查架构与 IPC 完整性")
+  }
+})
+
+test("标题 Explore 归一成 delegate 并写入 kind=explore", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "d2",
+      title: "Explore ipc contract",
+      rawInput: { task: "review ipc" }
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") {
+    assert.equal(start.name, "delegate")
+    const args = start.args as { kind?: string; task?: string; title?: string }
+    assert.equal(args.kind, "explore")
+    assert.equal(args.task, "review ipc")
+    assert.equal(args.title, undefined)
+  }
+})
+
+test("Explore 标题配字符串 rawInput 时保留原文", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "d-str",
+      title: "Explore routing",
+      rawInput: "please review src/app routes"
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") {
+    assert.equal(start.name, "delegate")
+    const args = start.args as { kind?: string; prompt?: string; title?: string }
+    assert.equal(args.kind, "explore")
+    assert.equal(args.prompt, "please review src/app routes")
+    assert.equal(args.title, undefined)
+  }
+})
+
+test("Explore 标题无 input 时去掉前缀再当 title", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "d3",
+      title: "Explore architecture review"
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") {
+    assert.equal(start.name, "delegate")
+    const args = start.args as { kind?: string; title?: string }
+    assert.equal(args.kind, "explore")
+    assert.equal(args.title, "architecture review")
+  }
+})
+
+test("有 parentToolCallId 则转发到 tool.start / tool.result", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call_update",
+      toolCallId: "t-child",
+      title: "Read File",
+      kind: "read",
+      parentToolCallId: "d1",
+      rawInput: { path: "a.ts" },
+      status: "completed"
+    },
+    "run_1"
+  )
+  const start = events.find((event) => event.type === "tool.start")
+  const result = events.find((event) => event.type === "tool.result")
+  assert.equal(start?.type, "tool.start")
+  assert.equal(result?.type, "tool.result")
+  if (start?.type === "tool.start") assert.equal(start.parentToolCallId, "d1")
+  if (result?.type === "tool.result") assert.equal(result.parentToolCallId, "d1")
+})
+
+test("无 parentToolCallId 时不编造嵌套", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call",
+      toolCallId: "t-flat",
+      title: "Read File",
+      kind: "read",
+      rawInput: { path: "a.ts" }
+    },
+    "run_1"
+  )
+  const start = events[0]
+  assert.equal(start?.type, "tool.start")
+  if (start?.type === "tool.start") assert.equal(start.parentToolCallId, undefined)
+})
+
 test("permission options map allow / deny / session", () => {
   const options = [
     { optionId: "allow-once", kind: "allow_once" },

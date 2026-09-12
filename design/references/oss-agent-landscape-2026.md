@@ -2,6 +2,7 @@
 
 > 位置：`design/references/oss-agent-landscape-2026.md`。落地以 `design/specs/` 为准；本文是对照笔记，不是实现说明书。  
 > 整理日期：2026-09-10  
+> 最后更新：2026-09-12  
 > 2026-09-10 已按 §7 加深：`repo_outline` + 开流大纲、自动 compact、「按此执行」hidden/`executePlan`、`skill` 工具、bash 命令前缀白名单、macOS Seatbelt、`delegate kind=explore`、Trace 回放 tool/approval、MCP `inputSchema`、Design Mode 截图、`git_branch` + commit 默认不 `add -A`。落地以 specs「当前真相」为准。  
 > 方法：GitHub 一手 README / 官方文档 + 本仓 spec「当前真相」与代码入口交叉核对。  
 > 星数来源：[tiennm99/awesome-coding-agents](https://github.com/tiennm99/awesome-coding-agents) 日更榜（2026-09-09 03:41 UTC）。  
@@ -109,7 +110,7 @@ Orca（Electron ADE + worktree 舰队）仍是形态对照，但产品锁砍了 
 
 **OpenCode：** `explore`（快、只读）、`scout`（查上游依赖）、`general`（可写、可并行）。主会话能切进子会话。
 
-**Enjoy：** `delegate` 真跑、写盘走同一 HMAC、Thinking 树挂 `parentToolCallId`、禁止嵌套。浅：串行、一种人格、回 `SubagentSummary`。产品锁不做舰队面板；值得加的是 **只读 explore**，不是并行 worktree。
+**Enjoy：** `delegate` 真跑、写盘走同一 HMAC、Thinking 树挂 `parentToolCallId`、禁止嵌套。聊天花名册已落地（Explore / General 人格、连续 ≥2 条顶层列出每一行）；同 step 并行上限 4。产品锁不做舰队面板 / worktree / 子会话表。
 
 ### 3.7 Git：提交是用户动作，检查点是 Agent Undo
 

@@ -1,5 +1,7 @@
 /**
  * delegate：主 Agent 派子任务。独立上下文，只回摘要；写盘走同一审批，不另开后门。
+ * 并发闸门挂本函数闭包（每 Agent 一份），禁止模块单例跨 run 漏槽。
+ * 不是 Workflow DAG，也不是侧栏会话。
  */
 import { generateText, tool, type LanguageModel } from "ai"
 import { z } from "zod"
@@ -12,6 +14,7 @@ import { runApprovedSubagent } from "./subagent-loop.ts"
 import type { WaitForSubagentApproval } from "./subagent-approval.ts"
 import { traceSubagentTools, type SubagentToolTraceEvent } from "./subagent-tool-trace.ts"
 import { joinInstructions } from "../join-instructions.ts"
+import { createDelegateGate, MAX_PARALLEL_DELEGATES } from "./delegate-concurrency.ts"
 
 export function createDelegateTool(
   run: (
@@ -20,6 +23,7 @@ export function createDelegateTool(
     kind?: "general" | "explore"
   ) => Promise<SubagentSummary>
 ) {
+  const gate = createDelegateGate(MAX_PARALLEL_DELEGATES)
   return {
     delegate: tool({
       description:
@@ -34,10 +38,12 @@ export function createDelegateTool(
       }),
       execute: async (
         { task, title, kind }: { task: string; title?: string; kind?: "general" | "explore" },
-        options?: { toolCallId?: string }
+        options?: { toolCallId?: string; abortSignal?: AbortSignal }
       ) => {
-        const summary = await run(task, options?.toolCallId, kind ?? "general")
-        return { ...summary, title: title?.trim() || summary.title }
+        return gate(async () => {
+          const summary = await run(task, options?.toolCallId, kind ?? "general")
+          return { ...summary, title: title?.trim() || summary.title }
+        }, options?.abortSignal)
       }
     })
   }

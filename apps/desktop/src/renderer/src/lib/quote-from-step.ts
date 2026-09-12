@@ -28,7 +28,7 @@ export function quoteFromStep(node: AgentStepNode): QuotedContext {
 }
 
 function quoteType(node: AgentStepNode): QuotedContext["type"] {
-  if (node.kind === "thinking") return "task_step"
+  if (node.kind === "thinking" || node.kind === "delegate") return "task_step"
   if (node.kind === "command") return "terminal_output"
   if (node.kind === "editing" && node.filePath) return "diff"
   if (node.filePath) return "file"
