@@ -7,6 +7,7 @@ import { addComposerSkillChip } from "./composer-skill-chips.ts"
 import type { MentionItem } from "./mention-items.ts"
 
 export function applySlashPick(item: Exclude<MentionItem, { kind: "file" }>): void {
+  if (item.kind === "web" || item.kind === "doc") return
   if (item.kind === "command") {
     if (item.name === "compact") compactFromSlash()
     return
@@ -15,7 +16,7 @@ export function applySlashPick(item: Exclude<MentionItem, { kind: "file" }>): vo
     addComposerSkillChip(item.skill)
     return
   }
-  useChatStore.getState().setMode(item.mode)
+  if (item.kind === "mode") useChatStore.getState().setMode(item.mode)
 }
 
 function compactFromSlash() {

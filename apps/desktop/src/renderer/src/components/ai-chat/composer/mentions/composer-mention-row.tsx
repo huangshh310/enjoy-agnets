@@ -1,10 +1,9 @@
 /**
- * @ / 面板一行：文件用类型微标；斜杠是强调色图标 + 深色 /名 + 来源胶囊。
+ * @ 发现一行：文件 / 文档 / 技能 / 网页 muted；斜杠是强调色 /名。
  */
-import { RiBookOpenLine, RiSparklingLine } from "@remixicon/react"
-import { FileKindIcon } from "../../right-pane/file-kind-icon"
-import { MODE_ICONS } from "../../execution-mode-menu"
+import { RiBookOpenLine, RiCompass3Line, RiSparklingLine, RiTerminalBoxLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
 
 export function ComposerMentionRow({
@@ -20,34 +19,97 @@ export function ComposerMentionRow({
   scopePersonal: string
   onPick: () => void
 }) {
+  const muted = item.kind === "web"
   return (
     <button
       type="button"
       data-testid="composer-mention-item"
       data-active={active ? "true" : "false"}
+      data-kind={item.kind}
+      disabled={muted}
       onMouseDown={(event) => event.preventDefault()}
-      onClick={onPick}
+      onClick={muted ? undefined : onPick}
       className={cx(
-        "flex w-full cursor-pointer items-start gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors",
-        active ? "bg-accent-500/10" : "hover:bg-background-secondary-hover"
+        "flex w-full items-start gap-2 rounded-xl px-2.5 py-1.5 text-left transition-colors",
+        muted
+          ? "cursor-default bg-background-tertiary-default/60 text-text-tertiary/50"
+          : "cursor-pointer",
+        !muted && active ? "bg-accent-500/10" : !muted && "hover:bg-background-secondary-hover"
       )}
     >
-      {item.kind === "file" ? <FileRow item={item} /> : <SlashRow item={item} scopeWorkspace={scopeWorkspace} scopePersonal={scopePersonal} />}
+      {isAtDiscovery(item) ? (
+        <DiscoverRow
+          item={item}
+          scopeWorkspace={scopeWorkspace}
+          scopePersonal={scopePersonal}
+        />
+      ) : (
+        <SlashRow item={item} scopeWorkspace={scopeWorkspace} scopePersonal={scopePersonal} />
+      )}
     </button>
   )
 }
 
-function FileRow({ item }: { item: Extract<MentionItem, { kind: "file" }> }) {
-  const dir = fileDir(item.path)
+function isAtDiscovery(
+  item: MentionItem
+): item is Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }> {
+  return item.kind === "file" || item.kind === "doc" || item.kind === "skill" || item.kind === "web"
+}
+
+function DiscoverRow({
+  item,
+  scopeWorkspace,
+  scopePersonal
+}: {
+  item: Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }>
+  scopeWorkspace: string
+  scopePersonal: string
+}) {
+  const t = useT()
+  const kindLabel =
+    item.kind === "file"
+      ? t("chat.mentionKindFile")
+      : item.kind === "doc"
+        ? t("chat.mentionKindDoc")
+        : item.kind === "skill"
+          ? t("chat.mentionKindSkill")
+          : t("chat.mentionKindWeb")
+  const name = item.kind === "web" ? t("chat.mentionWebMuted") : discoverName(item)
   return (
-    <>
-      <FileKindIcon name={item.name} kind={item.entryKind} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-body-2-semibold text-text-primary">{item.name}</span>
-        {dir ? <span className="block truncate text-caption-2-medium text-text-secondary">{dir}</span> : null}
+    <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+      <span className="min-w-0 truncate text-body-2-semibold text-text-primary">
+        <span className="mr-2 text-caption-2-medium text-text-tertiary">{kindLabel}</span>
+        {name}
       </span>
-    </>
+      <span className="shrink-0 text-caption-2-medium text-text-tertiary">
+        {item.kind === "web"
+          ? t("chat.mentionWebDisabled")
+          : item.kind === "doc"
+            ? t("chat.mentionScopeKnowledge")
+            : item.kind === "skill" && item.skill.scope !== "workspace"
+              ? t("chat.mentionScopeInstalled")
+              : discoverScope(item, scopeWorkspace, scopePersonal)}
+      </span>
+    </span>
   )
+}
+
+function discoverName(item: Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }>): string {
+  if (item.kind === "file") return item.path || item.name
+  if (item.kind === "doc") return item.name
+  if (item.kind === "skill") return item.skill.name
+  return ""
+}
+
+function discoverScope(
+  item: Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }>,
+  scopeWorkspace: string,
+  scopePersonal: string
+): string {
+  if (item.kind === "file") return scopeWorkspace
+  if (item.kind === "doc") return "knowledge"
+  if (item.kind === "skill") return item.skill.scope === "workspace" ? scopeWorkspace : scopePersonal
+  return ""
 }
 
 function SlashRow({
@@ -55,12 +117,12 @@ function SlashRow({
   scopeWorkspace,
   scopePersonal
 }: {
-  item: Exclude<MentionItem, { kind: "file" }>
+  item: Exclude<MentionItem, { kind: "file" | "doc" | "web" }>
   scopeWorkspace: string
   scopePersonal: string
 }) {
   const name =
-    item.kind === "mode" ? item.mode : item.kind === "command" ? item.name : (item.skill.slash ?? item.skill.name)
+    item.kind === "mode" ? item.slash : item.kind === "command" ? item.name : (item.skill.slash ?? item.skill.name)
   const detail =
     item.kind === "mode" ? item.description : item.kind === "command" ? item.description : item.skill.description
   const tag =
@@ -90,8 +152,15 @@ function SlashRow({
   )
 }
 
-function SlashGlyph({ item }: { item: Exclude<MentionItem, { kind: "file" }> }) {
-  const Icon = slashMentionIcon(item)
+function SlashGlyph({ item }: { item: Exclude<MentionItem, { kind: "file" | "doc" | "web" }> }) {
+  const Icon =
+    item.kind === "mode"
+      ? item.slash === "explore"
+        ? RiCompass3Line
+        : RiTerminalBoxLine
+      : item.kind === "command"
+        ? RiSparklingLine
+        : RiBookOpenLine
   return (
     <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg bg-accent-500/10">
       <Icon className="size-3.5 text-accent-500" aria-hidden />
@@ -104,24 +173,10 @@ function SlashTag({ label, builtin }: { label: string; builtin: boolean }) {
     <span
       className={cx(
         "shrink-0 rounded-md px-1.5 py-px text-caption-2-semibold",
-        builtin
-          ? "bg-accent-500/10 text-accent-600"
-          : "bg-background-secondary-default text-text-secondary"
+        builtin ? "bg-accent-500/10 text-accent-600" : "bg-background-secondary-default text-text-secondary"
       )}
     >
       {label}
     </span>
   )
-}
-
-function slashMentionIcon(item: Exclude<MentionItem, { kind: "file" }>) {
-  if (item.kind === "mode") return MODE_ICONS[item.mode]
-  if (item.kind === "command") return RiSparklingLine
-  return RiBookOpenLine
-}
-
-function fileDir(path: string): string {
-  const normalized = path.replaceAll("\\", "/")
-  const slash = normalized.lastIndexOf("/")
-  return slash >= 0 ? normalized.slice(0, slash) : ""
 }

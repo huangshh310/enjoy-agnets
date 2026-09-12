@@ -405,8 +405,12 @@ export const enSettings = {
     title: "Defaults",
     model: "Default model",
     modelDesc: "Same picker as the composer. Used for new runs.",
-    mode: "Default mode",
-    modeDesc: "Same mode chip as the composer. Ask is read-only."
+    mode: "Default mode for new chats",
+    modeDesc: "Only new chats. Switch the current chat in Composer.",
+    explore: "Explore",
+    exploreDesc: "Read and think first. Does not change the project.",
+    execute: "Execute",
+    executeDesc: "Can edit files and run commands. Risky actions still need approval."
   },
 
   skillSources: {

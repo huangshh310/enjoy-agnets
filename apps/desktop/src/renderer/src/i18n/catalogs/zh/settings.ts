@@ -405,8 +405,12 @@ export const zhSettings = {
     title: "默认项",
     model: "默认模型",
     modelDesc: "与输入框同一选择器，用于新运行。",
-    mode: "默认模式",
-    modeDesc: "与输入框同一模式胶囊。Ask 为只读。"
+    mode: "新对话默认模式",
+    modeDesc: "只影响新开的对话；当前对话在 Composer 切换。",
+    explore: "探索",
+    exploreDesc: "先读后想，不改项目。适合摸清问题。",
+    execute: "执行",
+    executeDesc: "可以改文件、跑命令。危险操作仍走审批。"
   },
 
   skillSources: {

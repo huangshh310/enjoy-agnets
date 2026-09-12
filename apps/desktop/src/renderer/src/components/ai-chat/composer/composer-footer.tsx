@@ -8,7 +8,6 @@ import { composerSendReady } from "@renderer/hooks/runtime-interact/send-compose
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { ExecutionModeMenu } from "../execution-mode-menu"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { AgentPicker } from "../agent-picker"
 import { ReasoningEffortToggle } from "../reasoning-effort-toggle"
@@ -50,8 +49,6 @@ export function ComposerFooter({
   onPickFiles: () => void
 }) {
   const t = useT()
-  const mode = useChatStore((state) => state.mode)
-  const setMode = useChatStore((state) => state.setMode)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const hasKey = useChatStore((state) => state.hasKey)
@@ -65,7 +62,6 @@ export function ComposerFooter({
         <SessionMeter />
       </div>
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
-        {chrome.executionModes ? <ExecutionModeMenu mode={mode} onChange={setMode} /> : null}
         {chrome.permission ? <ApprovalPolicyToggle /> : null}
         <AgentPicker
           modelId={modelId}
@@ -94,7 +90,7 @@ export function ComposerFooter({
         {running ? (
           <span className="flex max-w-[140px] items-center gap-1.5 truncate px-2 font-mono text-caption-2-medium text-accent-500 select-none">
             <span className="size-1.5 rounded-full bg-accent-500 animate-pulse" />
-            <span className="truncate">{thinkingLabel || t("chat.modeAgent")}</span>
+            <span className="truncate">{thinkingLabel || t("chat.working")}</span>
           </span>
         ) : null}
         <ComposerSendSplit

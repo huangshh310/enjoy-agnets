@@ -1,5 +1,6 @@
 /**
- * Composer 可见执行模式：智能体 / 规划 / 问答 / 调试。
+ * Composer 执行模式。
+ * C 端只露探索 / 执行；内部仍是 ask|plan vs agent，不新 runtime。
  * workflow / tdd / code_mode 仍在合约 enum，发送时收成 agent。
  */
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
@@ -8,7 +9,18 @@ import { composerChromeFor } from "@enjoy-agents/ipc-contract/runtime-capabiliti
 export const COMPOSER_VISIBLE_MODES = ["agent", "plan", "ask", "debug"] as const
 export type ComposerVisibleMode = (typeof COMPOSER_VISIBLE_MODES)[number]
 
-const SLASH_MODE = /^(agent|plan|ask|debug)$/
+/** C 端分段。探索 = ask/plan 只读语义；执行 = agent（debug 同面）。 */
+export const COMPOSER_SURFACES = ["explore", "execute"] as const
+export type ComposerSurface = (typeof COMPOSER_SURFACES)[number]
+
+const SLASH_MODE_ALIASES: Record<string, ComposerVisibleMode> = {
+  explore: "plan",
+  execute: "agent",
+  plan: "plan",
+  ask: "ask",
+  agent: "agent",
+  debug: "debug"
+}
 
 /** 设置 refetch 不得覆盖当前会话 mode。默认项只在设置页写入。 */
 export function sessionModeAfterSettingsRefresh(
@@ -18,11 +30,31 @@ export function sessionModeAfterSettingsRefresh(
   return current
 }
 
-/** 隐藏工程模式不当成真工具策略，回落到智能体。 */
+/** 隐藏工程模式不当成真工具策略，回落到 agent。 */
 export function coerceComposerMode(mode: AgentMode): ComposerVisibleMode {
   return COMPOSER_VISIBLE_MODES.includes(mode as ComposerVisibleMode)
     ? (mode as ComposerVisibleMode)
     : "agent"
+}
+
+/** ask/plan → 探索；其余（含 debug）→ 执行。 */
+export function surfaceForMode(mode: AgentMode): ComposerSurface {
+  const visible = coerceComposerMode(mode)
+  return visible === "plan" || visible === "ask" ? "explore" : "execute"
+}
+
+/** 分段默认写入：探索用 plan（可出方案），执行用 agent。 */
+export function modeForSurface(surface: ComposerSurface): ComposerVisibleMode {
+  return surface === "explore" ? "plan" : "agent"
+}
+
+/** 已在该面则保留 ask/debug；跨面才落到默认内部值。 */
+export function applyComposerSurface(
+  current: AgentMode,
+  surface: ComposerSurface
+): ComposerVisibleMode {
+  if (surfaceForMode(current) === surface) return coerceComposerMode(current)
+  return modeForSurface(surface)
 }
 
 /** 新建会话才读默认项；设置 refetch 仍走 sessionModeAfterSettingsRefresh。 */
@@ -52,12 +84,18 @@ export function readRememberedDefaultMode(): AgentMode {
   return rememberedDefaultMode
 }
 
-/** 句首 `/plan` `/ask` `/agent` `/debug` 切模式；只发斜杠则正文为空。技能斜杠走 `applyLeadingSlash`。 */
+/** 句首 `/explore` `/execute` 以及内部别名 `/plan` `/ask` `/agent` `/debug`。 */
 export function takeComposerSlash(text: string): { mode?: ComposerVisibleMode; text: string } {
   const match = text.trim().match(/^\/(\w+)(?:\s+([\s\S]*))?$/)
-  if (!match || !SLASH_MODE.test(match[1] ?? "")) return { text }
+  const token = match?.[1]?.toLowerCase() ?? ""
+  const mapped = SLASH_MODE_ALIASES[token]
+  if (!match || !mapped) return { text }
   return {
-    mode: match[1] as ComposerVisibleMode,
+    mode: mapped,
     text: (match[2] ?? "").trim()
   }
+}
+
+export function slashAliasToMode(token: string): ComposerVisibleMode | undefined {
+  return SLASH_MODE_ALIASES[token.toLowerCase()]
 }

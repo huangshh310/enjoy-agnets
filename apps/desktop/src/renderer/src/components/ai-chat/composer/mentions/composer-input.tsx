@@ -6,7 +6,7 @@ import { useT, type TranslateFn } from "@renderer/i18n"
 import { ComposerMentionList } from "./composer-mention-list.tsx"
 import { ComposerMentionPopover } from "./composer-mention-popover.tsx"
 import { useComposerMentions } from "./use-composer-mentions.ts"
-import type { ModeCopy, SlashBuiltinCopy } from "./build-mention-items.ts"
+import type { SlashBuiltinCopy, SurfaceCopy } from "./build-mention-items.ts"
 
 export function ComposerInput({
   value,
@@ -78,12 +78,10 @@ export function ComposerInput({
   )
 }
 
-function modeCopyFromT(t: TranslateFn): ModeCopy {
+function modeCopyFromT(t: TranslateFn): SurfaceCopy {
   return {
-    agent: { label: t("chat.modeAgent"), description: t("chat.modeAgentDesc") },
-    plan: { label: t("chat.modePlan"), description: t("chat.modePlanDesc") },
-    ask: { label: t("chat.modeAsk"), description: t("chat.modeAskDesc") },
-    debug: { label: t("chat.modeDebug"), description: t("chat.modeDebugDesc") }
+    explore: { label: t("chat.surfaceExplore"), description: t("chat.surfaceExploreDesc") },
+    execute: { label: t("chat.surfaceExecute"), description: t("chat.surfaceExecuteDesc") }
   }
 }
 

@@ -67,6 +67,7 @@ export function ComposerMentionList({
 }
 
 function groupLabel(id: MentionGroupId, t: (key: string) => string): string {
+  if (id === "discover") return t("chat.mentionDiscoverGroup")
   if (id === "files") return t("chat.mentionFilesGroup")
   if (id === "builtin") return t("chat.mentionBuiltinGroup")
   if (id === "workspace") return t("chat.mentionScopeWorkspace")

@@ -5,7 +5,10 @@ import { useEffect, useState } from "react"
 import type { SkillItem } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
+import type { KnowledgeDocumentItem } from "@enjoy-agents/ipc-contract"
 import { collectMentionFiles, type MentionDirEntry } from "./collect-mention-files.ts"
+import type { MentionDoc } from "./build-mention-items.ts"
+import { mentionDocsFromKnowledge } from "./mention-docs.ts"
 import { rememberSkillCatalog } from "./composer-skill-chips.ts"
 import { sortEntries } from "../../right-pane/views/files-entries.ts"
 
@@ -17,12 +20,14 @@ async function listDir(workspaceId: string, path: string): Promise<MentionDirEnt
 export function useMentionSources(workspaceId: string | null, loadSkills: boolean) {
   const [roots, setRoots] = useState<MentionDirEntry[]>([])
   const [files, setFiles] = useState<MentionDirEntry[]>([])
+  const [docs, setDocs] = useState<MentionDoc[]>([])
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     if (!workspaceId || !hasIde()) {
       setRoots([])
       setFiles([])
+      setDocs([])
       setReady(true)
       return
     }
@@ -40,6 +45,7 @@ export function useMentionSources(workspaceId: string | null, loadSkills: boolea
         if (!cancelled) {
           setRoots([])
           setFiles([])
+          setDocs([])
         }
       })
       .finally(() => {
@@ -64,7 +70,26 @@ export function useMentionSources(workspaceId: string | null, loadSkills: boolea
     }
   }, [loadSkills, workspaceId])
 
-  return { roots, files, ready }
+  useEffect(() => {
+    if (!workspaceId || !hasIde()) {
+      setDocs([])
+      return
+    }
+    let cancelled = false
+    void getIde()
+      .knowledge.documents({ workspaceId })
+      .then((rows) => {
+        if (!cancelled) setDocs(mentionDocsFromKnowledge(rows as KnowledgeDocumentItem[]))
+      })
+      .catch(() => {
+        if (!cancelled) setDocs([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [workspaceId])
+
+  return { roots, files, docs, ready }
 }
 
 async function loadSkillCatalog() {

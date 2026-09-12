@@ -13,6 +13,8 @@ const summarize: SkillMention = {
 test("句首模式命令剥掉并切 mode", () => {
   assert.deepEqual(applyLeadingSlash("/plan 先画蓝图", []), { mode: "plan", text: "先画蓝图" })
   assert.deepEqual(applyLeadingSlash("/ask", []), { mode: "ask", text: "" })
+  assert.deepEqual(applyLeadingSlash("/explore 摸清", []), { mode: "plan", text: "摸清" })
+  assert.deepEqual(applyLeadingSlash("/execute", []), { mode: "agent", text: "" })
 })
 
 test("已安装技能变成 skill，未知 /web 原样留下", () => {

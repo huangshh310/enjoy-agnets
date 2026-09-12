@@ -14,11 +14,14 @@ export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt
   const sources = message.sources ?? []
   const assets = message.assets ?? []
   const structured = message.structured
-  if (sources.length === 0 && assets.length === 0 && structured == null) return null
+  const hasToolSources = Boolean(message.tools?.length)
+  if (sources.length === 0 && assets.length === 0 && structured == null && !hasToolSources) return null
 
   return (
     <div className="mt-2 flex flex-col gap-2">
-      {sources.length > 0 ? <SourceList sources={sources} /> : null}
+      {sources.length > 0 || (message.tools?.length ?? 0) > 0 ? (
+        <SourceList sources={sources} tools={message.tools} />
+      ) : null}
       {assets.length > 0 ? <AssetPreview assets={assets} prompt={prompt} /> : null}
       {structured != null ? <StructuredCard value={structured} /> : null}
     </div>

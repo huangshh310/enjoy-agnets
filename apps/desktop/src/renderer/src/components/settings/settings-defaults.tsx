@@ -1,16 +1,21 @@
 /**
- * Settings → Agent Defaults：与输入框同一套 ModelPicker / 运行模式胶囊。
+ * Settings → Agent Defaults：模型选择器 + 探索/执行人话默认项。
  */
 import { useQueryClient } from "@tanstack/react-query"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
-import { ExecutionModeMenu } from "@renderer/components/ai-chat/execution-mode-menu"
 import { ModelPicker } from "@renderer/components/ai-chat/model-picker"
-import { rememberDefaultMode } from "@renderer/components/ai-chat/composer/composer-mode"
+import {
+  modeForSurface,
+  rememberDefaultMode,
+  surfaceForMode,
+  type ComposerSurface
+} from "@renderer/components/ai-chat/composer/composer-mode"
 import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
 import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
+import { SettingsDefaultMode } from "./settings-default-mode"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { useT } from "@renderer/i18n"
 
@@ -45,6 +50,10 @@ export function SettingsDefaults() {
     await queryClient.invalidateQueries({ queryKey: ["settings"] })
   }
 
+  function onSurfaceChange(surface: ComposerSurface) {
+    void onModeChange(modeForSurface(surface))
+  }
+
   return (
     <SettingsCard title={t("settings.defaults.title")}>
       <SettingsRow title={t("settings.defaults.model")} description={t("settings.defaults.modelDesc")}>
@@ -55,9 +64,7 @@ export function SettingsDefaults() {
           onModelChange={onModelChange}
         />
       </SettingsRow>
-      <SettingsRow title={t("settings.defaults.mode")} description={t("settings.defaults.modeDesc")}>
-        <ExecutionModeMenu mode={defaultMode} onChange={(mode) => void onModeChange(mode)} align="end" />
-      </SettingsRow>
+      <SettingsDefaultMode surface={surfaceForMode(defaultMode)} onChange={onSurfaceChange} />
     </SettingsCard>
   )
 }

@@ -1,7 +1,7 @@
 /**
  * 发送时消化句首 /：先切模式 / compact，再匹配已安装技能。未知斜杠原样留下。
  */
-import { COMPOSER_VISIBLE_MODES, type ComposerVisibleMode } from "../composer-mode.ts"
+import { slashAliasToMode, type ComposerVisibleMode } from "../composer-mode.ts"
 import type { SkillMention } from "./mention-items.ts"
 
 export type LeadingSlashResult = {
@@ -11,18 +11,18 @@ export type LeadingSlashResult = {
   text: string
 }
 
-const MODE_SET = new Set<string>(COMPOSER_VISIBLE_MODES)
 const LEADING = /^\/([A-Za-z][\w.-]*)(?:\s+([\s\S]*))?$/
 
-/** 句首 `/plan` 切模式；`/compact` 压缩；`/summarize` 钉技能；`/web` 等未登记命令不剥。 */
+/** 句首 `/explore` `/execute`（及内部别名）切模式；`/compact` 压缩；未知 `/web` 不剥。 */
 export function applyLeadingSlash(text: string, skills: readonly SkillMention[]): LeadingSlashResult {
   const trimmed = text.trim()
   const match = trimmed.match(LEADING)
   if (!match) return { text }
   const token = match[1] ?? ""
   const rest = (match[2] ?? "").trim()
-  if (MODE_SET.has(token)) {
-    return { mode: token as ComposerVisibleMode, text: rest }
+  const mode = slashAliasToMode(token)
+  if (mode) {
+    return { mode, text: rest }
   }
   if (token.toLowerCase() === "compact") {
     return { command: "compact", text: rest }

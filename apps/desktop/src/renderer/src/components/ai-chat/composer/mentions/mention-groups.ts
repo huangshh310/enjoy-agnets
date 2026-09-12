@@ -1,9 +1,9 @@
 /**
- * @ / 面板分组：文件一组；斜杠按内置命令 / 工作区技能 / 个人技能切开。
+ * @ / 面板分组：发现（文件/文档/技能）；斜杠按内置 / 工作区 / 个人。
  */
 import type { MentionItem } from "./mention-items.ts"
 
-export type MentionGroupId = "files" | "builtin" | "workspace" | "personal"
+export type MentionGroupId = "discover" | "files" | "builtin" | "workspace" | "personal"
 
 export type MentionGroup = {
   id: MentionGroupId
@@ -11,7 +11,12 @@ export type MentionGroup = {
 }
 
 export function groupMentionItems(kind: "at" | "slash", items: readonly MentionItem[]): MentionGroup[] {
-  if (kind === "at") return items.length > 0 ? [{ id: "files", items: [...items] }] : []
+  if (kind === "at") {
+    const live = items.filter((item) => item.kind !== "web")
+    const web = items.filter((item) => item.kind === "web")
+    const all = [...live, ...web]
+    return all.length > 0 ? [{ id: "discover", items: all }] : []
+  }
   const groups: MentionGroup[] = []
   const builtin = items.filter((item) => item.kind === "command" || item.kind === "mode")
   const workspace = items.filter((item) => item.kind === "skill" && item.skill.scope === "workspace")
@@ -21,3 +26,4 @@ export function groupMentionItems(kind: "at" | "slash", items: readonly MentionI
   if (personal.length > 0) groups.push({ id: "personal", items: personal })
   return groups
 }
+
