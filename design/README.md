@@ -65,6 +65,7 @@
 | [previews/p0-add-provider-discover.html](./previews/p0-add-provider-discover.html) | 绑定下拉发现性：菜单只列档案，添加在菜单外（锁 tip `033838f`） |
 | [previews/cli-b-registry-install.html](./previews/cli-b-registry-install.html) | CLI-B Registry / 安装未就绪视觉真源（未找到 / 检测中 / 安装中 / 安装失败 / 仅复制 / 已就绪；锁 tip `6c02931`） |
 | [previews/p0-b-drawer-trust.html](./previews/p0-b-drawer-trust.html) | 抽屉信任摘要：健康体检 + 本月用量（【视觉真源】P0-B，锁 tip `f48ab0d`） |
+| [previews/p0-e-cli-outdated.html](./previews/p0-e-cli-outdated.html) | CLI 过旧/不兼容警告：永不绿灯就绪，次行例外与发送闸（【视觉真源】P0-E） |
 
 ---
 
