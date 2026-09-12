@@ -147,6 +147,8 @@ export const enSettings = {
     installFailPermission: "permission denied — copy the command and install in a terminal",
     installFailManager: "npm or brew is not on PATH",
     installFailGeneric: "install did not finish — retry or copy the command",
+    installFailUnsupported: "command isn't supported — pick an assistant we allow",
+    inspectingStatus: "Checking…",
     copyCommand: "Copy install command",
     copied: "Copied",
     docs: "Docs",
@@ -328,11 +330,14 @@ export const enSettings = {
   },
 
   registry: {
-    title: "ACP Registry",
+    title: "Registry",
     desc: "Browse available local coding assistants. Install in one click, or copy the official install command. When adding your own, you can only pick assistants we support — not any program on your computer.",
     sourceOfficial: "Official catalog",
     emptyDetail: "Select an agent on the left.",
-    addCustom: "Add a custom ACP agent",
+    notReadyTitle: "This assistant isn't installed yet",
+    notReadyHint: "No binary on PATH. One-click if we have a recipe; otherwise copy the command.",
+    copyCommand: "Copy command",
+    addCustom: "Add a custom assistant",
     addCustomDesc: "Enter the launch command, arguments, environment variables, and working directory. For safety, the launch command must be a supported assistant. Approval rules still apply.",
     customBasenamePolicy: "You can only use supported assistants (the CLIs in the list, or the common names acp / acp-agent / agent-acp). Don't enter bash, node, npx, or any other program.",
     customCommandRefused: "Can't use “{command}”. Please pick a supported assistant name.",
@@ -359,11 +364,11 @@ export const enSettings = {
       antigravity: "Google Antigravity. Prefer agy-acp, otherwise agy --acp.",
       gemini: "Gemini CLI. Must be gemini --acp; never --experimental-acp.",
       opencode: "OpenCode official ACP: opencode acp.",
-      pi: "Pi’s official protocol is RPC. Enjoy only spawns installed pi-acp.",
-      hermes: "Hermes Agent. hermes acp or hermes-acp.",
+      pi: "Pi coding assistant. Install the official app, then use it here.",
+      hermes: "Hermes coding assistant. No one-click install — copy the official command.",
       amp: "Amp has no amp acp. Spawn amp-acp; sign in with amp login.",
       deepseek: "DeepSeek Harness. dsh --profile acp.",
-      omp: "Oh My Pi coding agent. omp acp."
+      omp: "Oh My Pi coding assistant. Install the official app, then use it here."
     }
   },
 

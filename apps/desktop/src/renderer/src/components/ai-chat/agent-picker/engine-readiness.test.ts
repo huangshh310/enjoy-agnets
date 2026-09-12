@@ -98,6 +98,23 @@ test("绑了 Enjoy 档案：不登官方也能就绪，缺 Key 才 needs_key", (
   )
 })
 
+test("Pi / Hermes 已装未确认登录不能当就绪；自定义无登录 PATH 找到即可", () => {
+  assert.equal(
+    engineReadiness({ id: "pi", status: "ready", requiresLogin: true, loggedIn: null }),
+    "inspecting"
+  )
+  assert.equal(
+    engineReadiness({ id: "hermes", status: "ready", requiresLogin: true, loggedIn: false }),
+    "needs_login"
+  )
+  assert.equal(isEngineLit({ id: "pi", status: "ready", requiresLogin: true, loggedIn: null }), false)
+  assert.equal(engineReadiness({ id: "custom:my-acp", status: "missing" }), "missing")
+  assert.equal(
+    engineReadiness({ id: "custom:my-acp", status: "ready", requiresLogin: false }),
+    "ready"
+  )
+})
+
 test("导轨胶囊用短标，就绪不画", () => {
   assert.equal(readinessMarkKey("missing"), "chat.agentNotInstalledMark")
   assert.equal(readinessMarkKey("needs_login"), "chat.agentNeedsLoginMark")

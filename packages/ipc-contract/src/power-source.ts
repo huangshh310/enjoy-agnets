@@ -5,7 +5,7 @@
 import { isCustomAgentId } from "./custom-agent.ts"
 import { capabilitiesFor } from "./runtime-capabilities.ts"
 
-export type PowerSourceKind = "enjoy-vault" | "bindable" | "official" | "omp"
+export type PowerSourceKind = "enjoy-vault" | "bindable" | "official" | "omp" | "none"
 
 /** 官方登录态：已登录 / 未登录 / 检测中 / 授权中 / 失败。 */
 export type OfficialLoginState = "in" | "out" | "check" | "auth" | "fail"
@@ -44,7 +44,8 @@ export type PowerSourceInput = {
 export function classifyPowerSource(runtimeId: string): PowerSourceKind {
   if (runtimeId === "enjoy-local") return "enjoy-vault"
   if (runtimeId === "omp") return "omp"
-  if (isCustomAgentId(runtimeId)) return "official"
+  // 自定义无官方登录 / Enjoy 档案，列表只画 —，禁止假 BYOK。
+  if (isCustomAgentId(runtimeId)) return "none"
   if (capabilitiesFor(runtimeId).providerBind !== "none") return "bindable"
   return "official"
 }
@@ -52,17 +53,14 @@ export function classifyPowerSource(runtimeId: string): PowerSourceKind {
 /** 每条助手都有动力源列；禁止再按品牌藏行。 */
 export function describePowerSource(input: PowerSourceInput): PowerSourceParts {
   const kind = classifyPowerSource(input.runtimeId)
+  if (kind === "none") {
+    return { kind, present: true, mode: "vault", archive: "", model: "" }
+  }
   if (kind === "enjoy-vault") {
     return vaultParts(kind, input.enjoyArchive, input.enjoyModel)
   }
   if (kind === "omp") {
-    return {
-      kind,
-      present: true,
-      mode: "omp",
-      archive: trimOrEmpty(input.ompSupplier),
-      model: trimOrEmpty(input.ompModel)
-    }
+    return describeOmpPower(input)
   }
   if (kind === "bindable" && input.useCustomProvider) {
     return vaultParts(kind, input.boundProviderName, input.selectedModel)
@@ -92,6 +90,27 @@ export function ompPowerFromSelection(
   return {
     supplier: logged?.label?.trim() || logged?.id || "",
     model: selected
+  }
+}
+
+/** OMP 已选供应商才画自己的槽；未就绪走官方登录检测/未登录，不假装 vault。 */
+function describeOmpPower(input: PowerSourceInput): PowerSourceParts {
+  const supplier = trimOrEmpty(input.ompSupplier)
+  const model = trimOrEmpty(input.ompModel)
+  if (supplier || model) {
+    return {
+      kind: "omp",
+      present: true,
+      mode: "omp",
+      archive: supplier,
+      model
+    }
+  }
+  return {
+    kind: "omp",
+    present: true,
+    mode: "official",
+    official: officialLoginState(input.loggedIn, input.inspecting, input.loginLoop)
   }
 }
 

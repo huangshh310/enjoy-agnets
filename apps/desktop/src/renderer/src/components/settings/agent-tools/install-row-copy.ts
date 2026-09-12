@@ -4,7 +4,7 @@
 import type { TranslateFn } from "@renderer/i18n"
 import type { AgentToolBusy } from "./agent-tool-actions-run"
 
-export type InstallRowPhase = "idle" | "installing" | "failed"
+export type InstallRowPhase = "idle" | "installing" | "failed" | "inspecting"
 
 export function installRowPhase(input: {
   ready: boolean
@@ -27,6 +27,7 @@ export function mapInstallFailReason(raw: string, t: TranslateFn): string {
   if (isTimeout(lower)) return t("settings.agentTools.installFailTimeout")
   if (isPermission(lower)) return t("settings.agentTools.installFailPermission")
   if (isMissingManager(lower)) return t("settings.agentTools.installFailManager")
+  if (isUnsupportedCommand(lower)) return t("settings.agentTools.installFailUnsupported")
   return t("settings.agentTools.installFailGeneric")
 }
 
@@ -42,4 +43,9 @@ function isPermission(lower: string): boolean {
 
 function isMissingManager(lower: string): boolean {
   return /need npm|need brew|npm or brew/.test(lower) && /path/.test(lower)
+}
+
+/** 自定义命令不在白名单：人话短因，不摊 Basename / spawn。 */
+function isUnsupportedCommand(lower: string): boolean {
+  return /refusing to spawn|basename must be a known|not (?:a |an )?supported assistant/.test(lower)
 }
