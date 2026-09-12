@@ -6,7 +6,6 @@ import {
   capabilitiesOf,
   providersSelectableFor,
   type AgentToolId,
-  type AgentToolDoctorResult,
   type AgentToolPublic
 } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
@@ -26,6 +25,7 @@ import {
   type AgentToolBusy
 } from "./agent-tool-actions-run"
 import { getAgentBrandMeta } from "./agent-tool-constants"
+import { useDrawerDoctor } from "./drawer-trust/use-drawer-doctor"
 import { mapBindError, unwrapIpcError } from "./map-agent-tool-error"
 
 export type { AgentToolBusy }
@@ -42,7 +42,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
   const [syncingConfig, setSyncingConfig] = useState(false)
   const [restoringConfig, setRestoringConfig] = useState(false)
   const [busyAction, setBusyAction] = useState<AgentToolBusy>(null)
-  const [doctorResult, setDoctorResult] = useState<AgentToolDoctorResult | null>(null)
+  const { doctorResult, doctorRanAt, rememberDoctor } = useDrawerDoctor(tool.id)
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
   const [loginProvider, setLoginProvider] = useState<string | null>(null)
@@ -86,13 +86,14 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     restoringConfig,
     busyAction,
     doctorResult,
-    setDoctorResult,
+    doctorRanAt,
+    setDoctorResult: rememberDoctor,
     feedbackMessage,
     installError,
     loginProvider,
     persist,
     persistRuntime: () => handleMakeActive(tool, setBusyAction, queryClient),
-    runDoctor: () => handleRunDoctor(tool, setBusyAction, setDoctorResult, queryClient),
+    runDoctor: () => handleRunDoctor(tool, setBusyAction, rememberDoctor, queryClient),
     runLogin: async (provider?: string) => {
       setLoginProvider(provider ?? null)
       try {

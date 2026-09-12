@@ -42,7 +42,6 @@ export async function handleRunDoctor(
 ) {
   if (!hasIde()) return
   setBusy("doctor")
-  setDoctor(null)
   try {
     const res = (await getIde().agentTools.doctor({ id: tool.id as AgentToolId })) as AgentToolDoctorResult
     setDoctor(res)
