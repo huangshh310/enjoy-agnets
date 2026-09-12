@@ -7,7 +7,7 @@ import {
   type OfficialLoginLoop,
   type OfficialLoginState,
   type PowerSourceKind
-} from "@enjoy-agents/ipc-contract"
+} from "@enjoy-agents/ipc-contract/power-source"
 
 export type OfficialLoginRowPhase = "idle" | OfficialLoginState
 

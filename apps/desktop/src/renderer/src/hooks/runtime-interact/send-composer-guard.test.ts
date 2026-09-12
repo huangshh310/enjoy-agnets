@@ -8,7 +8,10 @@ import {
   NEED_CLI_LOGIN_FAILED,
   NEED_PROVIDER_KEY
 } from "../../lib/usage/classify-thread-error.ts"
-import { resetCliLoginLoopStore, useCliLoginLoopStore } from "../../components/ai-chat/agent-picker/cli-login-loop.ts"
+import {
+  resetCliLoginLoopStore,
+  useCliLoginLoopStore
+} from "../../components/ai-chat/agent-picker/cli-login-loop.ts"
 import { composerSendReady, guardComposerSend } from "./send-composer-guard.ts"
 
 function store(partial: {

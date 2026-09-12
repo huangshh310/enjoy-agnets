@@ -2,8 +2,8 @@
  * 发送闸三块文案：检测中 / 授权中 / 失败。Picker、横幅、设置共用同一套键。
  */
 import type { TranslateFn } from "@renderer/i18n"
-import type { EngineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness"
-import { formatOfficialLoginFailLine } from "../../components/ai-chat/agent-picker/official-login-reason"
+import type { EngineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
+import { formatOfficialLoginFailLine } from "../../components/ai-chat/agent-picker/official-login-reason.ts"
 
 export type SendGateCopy = {
   title: string

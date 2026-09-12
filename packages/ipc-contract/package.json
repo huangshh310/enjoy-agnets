@@ -11,6 +11,7 @@
     "./skills-catalog": "./src/skills-catalog.ts",
     "./agents-md-chain": "./src/agents-md-chain.ts",
     "./provider-agent-bind": "./src/provider-agent-bind.ts",
+    "./power-source": "./src/power-source.ts",
     "./workspace-move-plan": "./src/workspace-move-plan.ts"
   },
   "scripts": {

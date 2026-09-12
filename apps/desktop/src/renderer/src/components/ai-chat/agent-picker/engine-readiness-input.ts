@@ -3,7 +3,7 @@
  */
 import type { AgentToolPublic, OfficialLoginLoop } from "@enjoy-agents/ipc-contract"
 import { capabilitiesOf } from "@enjoy-agents/ipc-contract/runtime-capabilities"
-import { getCliLoginLoop } from "./cli-login-loop"
+import { getCliLoginLoop } from "./cli-login-loop.ts"
 import type { EngineReadinessInput } from "./engine-readiness"
 
 export function readinessInputOf(
