@@ -1,15 +1,17 @@
 /**
- * 设置分段 Hash search：tab 切智能体子页，tool 闪本机 CLI 卡。
+ * 设置分段 Hash search：tab 切智能体子页，tool 闪本机 CLI 卡，from 记审批返回。
  */
 export type SettingsSectionSearch = {
   tab?: string
   tool?: string
+  from?: string
 }
 
 export function parseSettingsSectionSearch(search: Record<string, unknown>): SettingsSectionSearch {
   return {
     tab: asSearchToken(search.tab),
-    tool: asSearchToken(search.tool)
+    tool: asSearchToken(search.tool),
+    from: asSearchToken(search.from)
   }
 }
 

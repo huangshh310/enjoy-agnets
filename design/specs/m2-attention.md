@@ -16,7 +16,7 @@
 | L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。`openSession` 必须带 `sessionId`（可带 `workspaceId`）。阅读器只有摘要 + 跳回。`complete` 默认已读、不占红点。**耐久层**：`inbox_state` 表（migration 005）存已读 / 隐藏状态与 error/complete 条目归档；renderer `persist-attention.ts` 订阅 attention store 写穿，`use-inbox` 挂载时加载合并（实况条目优先，归档补位重启后历史）；隐藏超 30 天的归档行由 list 时清理。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
 | 侧栏进行中 | `sidebar/session-activity.ts`：当前会话跟 Composer `running`，后台跟 `parks[id].running`。等你红点优先于 drive 灯。情境栏顶「进行中」钉住最多 8 条；无则 `null`。不把 `running` / `complete` 加成 Attention kind。 |
-| 审批策略 | 只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。不另画上沿「写入 / Shell / Git」一瞥。执行模式（「模式: 智能体」）是另一件事。 |
+| 审批策略 | 会话内只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。智能体设置用共享摘要条跳 `#/settings/general` 已有权限卡，不另画上沿「写入 / Shell / Git」一瞥，也不做第二套 Allow/Deny。执行模式（探索 / 执行）是另一件事。 |
 | plan diff | 写盘默认展开真实 diff；无 30s 自动放行。 |
 
 完成标准：后台会话要审批时，前台 **≤3s** 可见入口；点击跳回并可决策。
@@ -90,7 +90,7 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 
 ### 4. 审批策略（无上沿一瞥）
 
-写入 / Shell / Git 只在底栏盾牌菜单里改（`approval-policy-toggle.tsx`）。**不要**再画 `AutoApproveBar` 或 Composer 顶沿状态行。YOLO/All 的警示色只出现在盾牌本身。决策仍只在 PermissionDock / 策略菜单。
+写入 / Shell / Git 在底栏盾牌菜单或 `#/settings/general` 权限卡改（智能体页只给摘要 +「管理审批策略 →」）。**不要**再画 `AutoApproveBar` 或 Composer 顶沿状态行。YOLO/All 的警示色出现在盾牌本身，以及智能体摘要条的警示态。决策仍只在 PermissionDock / 策略菜单，不在发现条里嵌全表。
 
 ### 5. 侧栏会话灯 / ACP 收尸
 
@@ -145,7 +145,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - 新：`apps/desktop/src/renderer/src/components/ai-chat/attention/`（`focusAttention({ sessionId, … })` 唯一入口；M3 阻切也走当前会话，禁止无参滚 Dock stub）
 - 状态：`apps/desktop/src/renderer/src/stores/attention/`
 - 侧栏进行中：`ai-chat/sidebar/session-activity.ts`、`sidebar-active-sessions.tsx`
-- 挂载：`app-shell/layout/stage-split.tsx`（Strip）、`app-shell/chat/chat-composer-cluster.tsx`（Dock）；审批策略：`approval-policy-toggle.tsx`
+- 挂载：`app-shell/layout/stage-split.tsx`（Strip）、`app-shell/chat/chat-composer-cluster.tsx`（Dock）；审批策略：`approval-policy-toggle.tsx`；设置发现性：`settings/approval-discover/`
 - Inbox：`inbox/lib/open-inbox-action.ts`、`inbox/lib/filter-inbox.ts`
 - 复用：`thread/approval/*`、`thread/ask-user/`、`approval-policy-*`
 - 契约：现有 HMAC / `ApprovalDecision`；不改签名模型

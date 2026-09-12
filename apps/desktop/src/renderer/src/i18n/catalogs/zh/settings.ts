@@ -53,6 +53,15 @@ export const zhSettings = {
     allHint: "自动写入、终端与提交"
   },
 
+  approvalDiscover: {
+    title: "审批策略",
+    manage: "管理审批策略 →",
+    back: "← 返回智能体设置",
+    summaryDefault: "每次写盘与命令都需确认",
+    summaryPartial: "本会话已放行部分操作 · 其余仍确认",
+    summaryYolo: "自动批准已开启 · 请谨慎"
+  },
+
   appearance: {
     hubTitle: "颜色模式",
     hubDesc: "手动浅色或深色。Enjoy Agents 不跟随操作系统主题。",

@@ -1,9 +1,17 @@
 /**
  * Settings → General：权限预设、界面语言、当前版本与检查更新。
  * 顶部看板与 Workspace / MCP 同构，下方仍是 SettingsCard 行。
+ * 从智能体发现条进来时顶栏可返回，并滚到已有权限卡。
  */
+import { useEffect } from "react"
+import { useSearch } from "@tanstack/react-router"
 import { classifyPermissionMode, type PermissionMode } from "@enjoy-agents/ipc-contract"
 import { RiSettings4Line } from "@remixicon/react"
+import { ApprovalDiscoverReturn } from "./approval-discover/approval-discover-return"
+import {
+  APPROVAL_PERMISSIONS_ANCHOR,
+  parseApprovalDiscoverFrom
+} from "./approval-discover/approval-discover-nav"
 import {
   Select,
   SelectContent,
@@ -16,6 +24,7 @@ import { SettingsHub } from "./settings-hub"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { SettingsUpdateCard } from "./settings-update-card"
+import { parseSettingsSectionSearch } from "./settings-section-search"
 import { usePrefUpdate } from "./settings-pref"
 
 function permissionModeLabel(t: TranslateFn): Record<PermissionMode | "custom", string> {
@@ -38,6 +47,7 @@ function languageLabel(t: TranslateFn): Record<"auto" | "en" | "zh", string> {
 export function GeneralSettings() {
   const t = useT()
   const { preferences, update } = usePrefUpdate()
+  const returnOrigin = parseApprovalDiscoverFrom(parseSettingsSectionSearch(useSearch({ strict: false })).from)
   const flags = {
     requireWriteApproval: preferences?.requireWriteApproval ?? true,
     requireBashApproval: preferences?.requireBashApproval ?? true,
@@ -53,8 +63,14 @@ export function GeneralSettings() {
     !flags.requireCommitApproval
   ].filter(Boolean).length
 
+  useEffect(() => {
+    if (!returnOrigin) return
+    document.getElementById(APPROVAL_PERMISSIONS_ANCHOR)?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [returnOrigin])
+
   return (
     <div className="flex flex-col gap-6">
+      {returnOrigin ? <ApprovalDiscoverReturn origin={returnOrigin} /> : null}
       <SettingsHub
         icon={RiSettings4Line}
         title={t("settings.general.hubTitle")}

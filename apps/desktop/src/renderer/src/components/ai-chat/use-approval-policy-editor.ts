@@ -1,5 +1,5 @@
 /**
- * 审批策略读写：底栏盾牌唯一入口，persist 只走这里。
+ * 审批策略读写：Composer 盾牌 persist 走这里。设置权限卡走 usePrefUpdate。
  */
 import { useQueryClient } from "@tanstack/react-query"
 import { patchPreferences, useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
