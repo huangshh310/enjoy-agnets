@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-G · 本轮来源详情 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-g-sources-detail.html · 【视觉真源】P0-G</p>
+      <h1 class="mt-1 text-[17px] font-semibold">本轮来源详情 · 底脚芯片 → sheet</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。点助手气泡底脚芯片，打开右（窄屏底）sheet「本轮来源」。只列本轮文件 / 技能 / MCP。网页来源本轮不做。不改探索/执行。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>点任一底脚芯片（含 +N）打开 sheet，不直接跳走，不上 InlineCitations 摘录皮</li>
+        <li>行列：图标 · 名称 · 类型标（文件 / 技能 / MCP）· 一行 path 或服务器名</li>
+        <li>点文件行：有 path 才聚焦审查 / 编辑器；技能 / MCP 只展示出处</li>
+        <li>无来源 → 不画底脚芯片，不弹空 sheet</li>
+      </ul>
+    </aside>
+
+    <!-- 有来源：气泡 + 右 sheet -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">有来源 · 点芯片出 sheet</h2>
+      <p class="text-[11px] text-mute">密度仍 3–4 颗 +N。芯片只作入口；完整名单在 sheet。</p>
+
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <!-- 气泡 -->
+        <div class="min-w-0 flex-1 rounded-2xl border border-line bg-card p-4 shadow-sm">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">助手气泡</p>
+          <div class="mt-2 rounded-2xl bg-paper px-3 py-3">
+            <p class="text-[12px]">登录入口在 <span class="font-medium">src/auth/login.ts</span> 的提交处理里。技能「读代码」对得上这段；本轮还问过 filesystem 与 github。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <button class="rounded-md bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/30">src/auth/login.ts · L42</button>
+              <button class="rounded-md bg-card px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">技能 · 读代码</button>
+              <button class="rounded-md bg-card px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">filesystem</button>
+              <button class="rounded-md bg-card px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">+2</button>
+            </div>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">高亮芯片 = 刚点开。+N 同样打开同一张 sheet，不另开名单。</p>
+        </div>
+
+        <!-- 右 sheet -->
+        <aside class="flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-2xl lg:w-[320px]">
+          <header class="flex items-start justify-between border-b border-line px-4 py-3">
+            <div>
+              <h3 class="text-[15px] font-semibold">本轮来源</h3>
+              <p class="mt-0.5 text-[11px] text-mute">5 项 · 网页来源本轮不做</p>
+            </div>
+            <button class="text-[12px] text-mute">关闭</button>
+          </header>
+          <ul class="divide-y divide-line">
+            <li>
+              <button class="flex w-full items-start gap-2 bg-soft px-3 py-2.5 text-left">
+                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-card ring-1 ring-accent/30" aria-hidden="true">
+                  <svg class="size-3.5 text-accent" viewBox="0 0 16 16" fill="none"><rect x="4" y="2.5" width="8" height="11" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-center gap-1.5">
+                    <span class="truncate text-[12px] font-medium">login.ts</span>
+                    <span class="shrink-0 rounded bg-card px-1.5 py-px text-[10px] text-mute ring-1 ring-line">文件</span>
+                  </span>
+                  <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">src/auth/login.ts · L42</span>
+                </span>
+              </button>
+            </li>
+            <li>
+              <button class="flex w-full items-start gap-2 px-3 py-2.5 text-left">
+                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                  <svg class="size-3.5 text-mute" viewBox="0 0 16 16" fill="none"><rect x="4" y="2.5" width="8" height="11" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-center gap-1.5">
+                    <span class="truncate text-[12px] font-medium">composer-mode.ts</span>
+                    <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">文件</span>
+                  </span>
+                  <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">ai-chat/composer/composer-mode.ts</span>
+                </span>
+              </button>
+            </li>
+            <li>
+              <div class="flex items-start gap-2 px-3 py-2.5">
+                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                  <svg class="size-3.5 text-mute" viewBox="0 0 16 16" fill="none"><path d="M8 2.5l1.2 3.4h3.6L10.2 8l1.2 3.4L8 9.3 4.6 11.4 5.8 8 3.2 5.9h3.6L8 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-center gap-1.5">
+                    <span class="truncate text-[12px] font-medium">读代码</span>
+                    <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">技能</span>
+                  </span>
+                  <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">skills/read-code/SKILL.md</span>
+                </span>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-start gap-2 px-3 py-2.5">
+                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                  <svg class="size-3.5 text-mute" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-center gap-1.5">
+                    <span class="truncate text-[12px] font-medium">filesystem</span>
+                    <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">MCP</span>
+                  </span>
+                  <span class="mt-0.5 block truncate text-[10px] text-mute">服务器 · filesystem</span>
+                </span>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-start gap-2 px-3 py-2.5">
+                <span class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                  <svg class="size-3.5 text-mute" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-center gap-1.5">
+                    <span class="truncate text-[12px] font-medium">github</span>
+                    <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">MCP</span>
+                  </span>
+                  <span class="mt-0.5 block truncate text-[10px] text-mute">服务器 · github</span>
+                </span>
+              </div>
+            </li>
+          </ul>
+          <p class="border-t border-line bg-paper px-3 py-2 text-[10px] text-mute">选中文件行 = 可聚焦。技能 / MCP 无文件 path，不编造跳转。</p>
+        </aside>
+      </div>
+      <p class="text-[10px] text-mute">窄屏：同一张 sheet 贴底，标题仍是「本轮来源」，行列不变。不要第二套底栏名单。</p>
+    </section>
+
+    <!-- 无来源：无底脚 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">无来源 · 不画底脚</h2>
+      <p class="text-[11px] text-mute">没有本轮文件 / 技能 / MCP 时，气泡收在正文。禁止空芯片条，禁止弹「0 项」sheet。</p>
+      <div class="max-w-xl rounded-2xl border border-dashed border-line bg-paper p-4">
+        <div class="rounded-2xl border border-line bg-card px-3 py-3">
+          <p class="text-[12px]">这段只根据你刚贴的报错推断，没有读仓库文件，也没有调技能或 MCP。</p>
+        </div>
+        <p class="mt-2 text-[10px] text-mute">注意：正文下方没有芯片，右侧 / 底部也没有 sheet。</p>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">文案 / 规则</th>
+            <th class="px-3 py-2">不用</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">标题</td>
+            <td class="px-3 py-2">本轮来源</td>
+            <td class="px-3 py-2">引用 / Citations / Sources 抽屉</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">类型标</td>
+            <td class="px-3 py-2">文件 / 技能 / MCP</td>
+            <td class="px-3 py-2">web · url · citation · 文档第三套标</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">出处</td>
+            <td class="px-3 py-2">一行 path，或「服务器 · {名}」</td>
+            <td class="px-3 py-2">摘录正文、网页结果、绝对盘符刷屏</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">点芯片</td>
+            <td class="px-3 py-2">打开 sheet（含 +N）</td>
+            <td class="px-3 py-2">立刻跳审查 / 知识 / 技能；InlineCitations</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">点文件行</td>
+            <td class="px-3 py-2">有 path 才聚焦审查 / 编辑器</td>
+            <td class="px-3 py-2">无 path 假跳转、内嵌浏览器</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">空</td>
+            <td class="px-3 py-2">不画底脚，不弹 sheet</td>
+            <td class="px-3 py-2">空态插画、「0 项」名单</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">网页</td>
+            <td class="px-3 py-2">本轮不做</td>
+            <td class="px-3 py-2">网页芯片、搜索结果行</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>点气泡底脚任一来源芯片（含 +N）打开右 sheet；窄屏贴底。标题「本轮来源」。</li>
+        <li>每行：图标 · 名称 · 类型标（文件 / 技能 / MCP）· 一行 path 或服务器名。</li>
+        <li>点文件行且有 path → 聚焦该文件；技能 / MCP 只展示出处。</li>
+        <li>本轮无来源：不画底脚芯片，不弹空 sheet。</li>
+        <li>网页来源本轮不做。芯片密度仍 3–4 +N，不改探索 / 执行。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">内嵌浏览器 · 改探索/执行 · 假 BYOK · 动密表 · 网页来源 · InlineCitations 摘录抽屉</p>
+    </section>
+  </div>
+</body>
+</html>
