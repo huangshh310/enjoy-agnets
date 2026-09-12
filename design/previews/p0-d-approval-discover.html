@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-D · 审批策略发现性 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A',
+        danger: '#DC2626', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[980px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-d-approval-discover.html · 【视觉真源】P0-D</p>
+      <h1 class="mt-1 text-[17px] font-semibold">智能体设置 · 审批策略发现性</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。本机 CLI / 默认项页顶共享摘要条，不按助手分行。主链跳已有权限卡，改完返回智能体。C 端禁协议词、第二套审批 UI、密表新列。</p>
+    </header>
+
+    <!-- 1 · CLI tab -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">本机 CLI · 摘要条在密表之上</h2>
+      <p class="text-[11px] text-mute">共享策略，不是每行一条。密表三列不动。</p>
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5 border-b border-line bg-paper px-4 py-2 text-[11px]">
+          <span class="rounded-lg bg-card px-2.5 py-1 font-medium shadow-sm ring-1 ring-line">本机 CLI</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">Registry</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">进阶沙箱</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">默认项</span>
+        </div>
+        <div class="px-4 py-3">
+          <div class="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h3 class="text-[13px] font-semibold">本机 CLI</h3>
+              <p class="text-[11px] text-mute">检测、安装、登录。列表看动力源；改绑定进配置。</p>
+            </div>
+            <div class="flex gap-1.5">
+              <button class="h-7 rounded-lg border border-line px-2.5 text-[11px]">管理模型供应商</button>
+              <button class="h-7 rounded-lg border border-line px-2.5 text-[11px]">扫描本机</button>
+            </div>
+          </div>
+          <p class="mt-2 rounded-md border border-line bg-paper px-2.5 py-1 text-[11px] text-mute">切到本机助手时 Enjoy 密钥不会带过去；未登录请先官方登录。</p>
+
+          <div class="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-3 py-2">
+            <div class="min-w-0">
+              <p class="text-[11px] font-semibold">审批策略</p>
+              <p class="truncate text-[12px]">每次写盘与命令都需确认</p>
+            </div>
+            <a href="#dest" class="shrink-0 text-[11px] font-medium text-accent">管理审批策略 →</a>
+          </div>
+
+          <div class="mt-3 overflow-hidden rounded-xl border border-line">
+            <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_5rem] gap-x-3 border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-mute">
+              <span>助手</span><span>动力源</span><span class="text-right">操作</span>
+            </div>
+            <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_5rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="truncate text-[12px] font-semibold">Claude Code</span>
+                  <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                </div>
+                <p class="truncate font-mono text-[10px] text-mute">v2.1.9 · bin/claude</p>
+              </div>
+              <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-line bg-paper px-2 py-0.5 text-[11px]">供应商 · deep · deepseek-flash</span>
+              <div class="text-right text-[11px] text-mute">⚙</div>
+            </div>
+            <div class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_5rem] items-center gap-x-3 px-3 py-1.5">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="truncate text-[12px] font-semibold">Cursor CLI</span>
+                  <span class="size-1.5 shrink-0 rounded-full bg-ok"></span>
+                </div>
+                <p class="truncate font-mono text-[10px] text-mute">v1.4.0 · bin/agent</p>
+              </div>
+              <span class="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-line bg-paper px-2 py-0.5 text-[11px]">官方登录 · 已登录</span>
+              <div class="text-right text-[11px] text-mute">⚙</div>
+            </div>
+          </div>
+          <details class="mt-2 rounded-lg border border-line">
+            <summary class="cursor-pointer px-3 py-2 text-[11px] font-medium">能力说明</summary>
+            <p class="border-t border-line px-3 py-2 text-[11px] text-mute">静态能力表默认折叠。审批不进此表，也不进密表新列。</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 · Defaults tab -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">默认项 · 同一条 + 入口</h2>
+      <p class="text-[11px] text-mute">中态用浅渐变底，文案互斥，不另开第二套审批面。</p>
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5 border-b border-line bg-paper px-4 py-2 text-[11px]">
+          <span class="rounded-lg px-2.5 py-1 text-mute">本机 CLI</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">Registry</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">进阶沙箱</span>
+          <span class="rounded-lg bg-card px-2.5 py-1 font-medium shadow-sm ring-1 ring-line">默认项</span>
+        </div>
+        <div class="space-y-3 px-4 py-3">
+          <div class="flex items-center justify-between gap-3 rounded-xl border border-line bg-gradient-to-r from-paper via-soft to-paper px-3 py-2">
+            <div class="min-w-0">
+              <p class="text-[11px] font-semibold">审批策略</p>
+              <p class="truncate text-[12px]">本会话已放行部分操作 · 其余仍确认</p>
+            </div>
+            <a href="#dest" class="shrink-0 text-[11px] font-medium text-accent">管理审批策略 →</a>
+          </div>
+          <div class="rounded-2xl border border-line p-3">
+            <p class="text-[12px] font-medium">新对话默认模式</p>
+            <p class="mt-0.5 text-[11px] text-mute">只影响新开的对话；当前对话在 Composer 切换。</p>
+            <div class="mt-2 space-y-2">
+              <div class="rounded-xl border border-line p-2.5 text-[12px]">探索<span class="ml-2 text-[11px] text-mute">先读后想，不改项目。</span></div>
+              <div class="rounded-xl border border-accent/30 bg-soft p-2.5 text-[12px]">执行<span class="ml-2 text-[11px] text-mute">可以改文件、跑命令。危险操作仍走审批。</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · YOLO warn -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">YOLO · 警示条</h2>
+      <p class="text-[11px] text-mute">自动放行全开时用警示色。标题与主链不变。</p>
+      <div class="flex items-center justify-between gap-3 rounded-xl border border-warn/30 bg-[#FFF7ED] px-3 py-2">
+        <div class="min-w-0">
+          <p class="text-[11px] font-semibold text-warn">审批策略</p>
+          <p class="truncate text-[12px] text-warn">自动批准已开启 · 请谨慎</p>
+        </div>
+        <a href="#dest" class="shrink-0 text-[11px] font-medium text-warn">管理审批策略 →</a>
+      </div>
+    </section>
+
+    <!-- 4 · destination -->
+    <section id="dest" class="space-y-2">
+      <h2 class="text-[14px] font-semibold">落点 · 已有审批策略（通用 · 权限）</h2>
+      <p class="text-[11px] text-mute">不在发现条里嵌全表。改完原路回智能体设置。</p>
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex items-center justify-between border-b border-line bg-paper px-4 py-2">
+          <a href="#" class="text-[11px] font-medium text-accent">← 返回智能体设置</a>
+          <span class="text-[10px] text-mute">#/settings/general</span>
+        </div>
+        <div class="space-y-3 px-4 py-3">
+          <div>
+            <h3 class="text-[13px] font-semibold">应用默认设置</h3>
+            <p class="text-[11px] text-mute">工具审批预设、自动放行开关。不是新的审批面。</p>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-line">
+            <div class="border-b border-line bg-paper px-3 py-2 text-[12px] font-medium">权限</div>
+            <div class="flex items-center justify-between border-b border-line px-3 py-2 text-[11px]">
+              <span>权限模式<span class="ml-2 text-mute">写入、终端、Git 需审批</span></span>
+              <span class="rounded-lg border border-line bg-paper px-2 py-0.5">读取</span>
+            </div>
+            <div class="flex items-center justify-between border-b border-line px-3 py-2 text-[11px]"><span>自动放行文件写入</span><span class="size-4 rounded-full bg-line"></span></div>
+            <div class="flex items-center justify-between border-b border-line px-3 py-2 text-[11px]"><span>自动运行终端命令</span><span class="size-4 rounded-full bg-line"></span></div>
+            <div class="flex items-center justify-between px-3 py-2 text-[11px]"><span>自动提交 Git 变更</span><span class="size-4 rounded-full bg-line"></span></div>
+          </div>
+          <p class="text-[10px] text-mute">此处只复用已有权限卡。会话内决策仍走 Composer 底栏盾牌，不另画一套。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- copy table -->
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">文案</th><th class="px-3 py-2">不用</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">条目标题</td>
+            <td class="px-3 py-2">审批策略</td>
+            <td class="px-3 py-2">权限协议 / 令牌绑定</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">默认态</td>
+            <td class="px-3 py-2">每次写盘与命令都需确认</td>
+            <td class="px-3 py-2">requireWrite / allow-reads</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">中态</td>
+            <td class="px-3 py-2">本会话已放行部分操作 · 其余仍确认</td>
+            <td class="px-3 py-2">本会话白名单 / allow_session</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">YOLO</td>
+            <td class="px-3 py-2 text-warn">自动批准已开启 · 请谨慎</td>
+            <td class="px-3 py-2">YOLO / allow-all / 自动放行全部</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">主链</td>
+            <td class="px-3 py-2">管理审批策略 →</td>
+            <td class="px-3 py-2">编辑审批 / 打开确认卡</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">返回</td>
+            <td class="px-3 py-2">返回智能体设置</td>
+            <td class="px-3 py-2">关闭 / 完成</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">落点</td>
+            <td class="px-3 py-2">#/settings/general 已有权限卡</td>
+            <td class="px-3 py-2">新路由、嵌全表、第二套开关</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>本机 CLI：摘要条在密表 / 能力说明之上；共享策略，不按助手分行，密表不加列。</li>
+        <li>默认项同一条 +「管理审批策略 →」；中态用浅渐变底；不另开第二套审批 UI。</li>
+        <li>主链落到已有通用权限卡，此处不嵌 Allow/Deny 全表；改完「返回智能体设置」。</li>
+        <li>YOLO 警示色「自动批准已开启 · 请谨慎」；C 端禁协议词、云多租户、worktree、假 BYOK。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">第二套审批 UI · 密表新列 · C 端协议词 · 云多租户 · worktree · 假 BYOK</p>
+    </section>
+  </div>
+</body>
+</html>

@@ -98,3 +98,4 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - Registry 只在 `#/settings/agent?tab=registry`。空态 checklist 不得嵌 `AgentCliInstall` 整卡或 Registry 列表；深链用 search `tab`，不要新开路由。
 - 配置抽屉若把 PATH 已装画成健康绿灯，未跑体检也会假绿。信任卡只信本会话 doctor 结果：未跑写「尚未体检」，检测中无绿灯，失败一行短因。不要在底部再堆 DoctorBanner（医生堆叠）。
 - 用量行若忽略 `quota` 门闩，无公开额度的助手也会出现「本月用量」或空条。只在 `quota=true` 且 inspect 有官方数字时写「本月用量 {n}% · 重置 {日期}」+「查看详情」；否则「该助手无公开额度」。列表仍不画额度条。视觉锁 [`previews/p0-b-drawer-trust.html`](../previews/p0-b-drawer-trust.html)（锁 tip `f48ab0d`）。
+- 智能体设置本机 CLI / 默认项找不到审批策略：策略只在 Composer 底栏盾牌与 `#/settings/general` 权限卡。发现性视觉真源 [`previews/p0-d-approval-discover.html`](../previews/p0-d-approval-discover.html)（锁 tip `1a435e4`）：两页顶共享摘要条（标题「审批策略」+ 一行互斥状态 +「管理审批策略 →」），跳已有通用权限卡，改完返回智能体。禁止第二套 Allow/Deny 表、密表新列、协议词上 C 端、假 BYOK / worktree / 云多租户。
