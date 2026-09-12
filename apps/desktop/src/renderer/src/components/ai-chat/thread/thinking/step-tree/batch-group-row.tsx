@@ -10,12 +10,14 @@ import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { DomainPills } from "./domain-pills"
+import { formatDisplayPath } from "./tool-step-row"
 
 export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
   const [open, setOpen] = useState(false)
   const items = node.batchItems ?? []
   const isCmd = node.kind === "command"
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
+  const workspaceRootPath = useChatStore((state) => state.workspaceRootPath)
   return (
     <div className="my-1 flex w-full flex-col">
       {/* 折叠标题行：左图标 + 文字 + 差异/药丸 + 右小箭头 */}
@@ -43,7 +45,7 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
           {items.map((item) => {
             const displayTarget = isCmd
               ? item.fileName || item.path
-              : formatFilePath(item.path, item.fileName)
+              : formatDisplayPath(item.path, item.fileName, workspaceRootPath)
 
             return (
               <button
@@ -104,12 +106,6 @@ export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
   )
 }
 
-function formatFilePath(path: string, fileName: string): string {
-  if (path && path !== fileName && (path.includes("/") || path.includes("\\"))) {
-    return path
-  }
-  return fileName || path
-}
 
 function BatchDiff({ additions, deletions }: { additions?: number; deletions?: number }) {
   if (additions == null && deletions == null) return null

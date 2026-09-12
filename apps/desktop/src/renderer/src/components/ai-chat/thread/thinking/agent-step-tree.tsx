@@ -83,7 +83,7 @@ function StepNodeBody({
     return <SubagentRoster node={node} renderItemTree={(item) => nestedTree(item.children, true)} />
   }
   if (node.kind === "delegate") {
-    return <SubagentRow node={node} tree={nestedTree(node.children, true)} />
+    return <SubagentRow node={node} tree={nestedTree(node.children, true)} isStandalone />
   }
   if (node.isBatch && node.batchItems) {
     return <BatchEditingGroupRow node={node} />

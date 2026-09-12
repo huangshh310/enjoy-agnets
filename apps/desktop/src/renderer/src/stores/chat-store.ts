@@ -28,6 +28,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   workspaceId: null,
   workspaceName: "No workspace",
   workspaceRootLabel: "open a folder",
+  workspaceRootPath: null,
   sessionId: null,
   sessionTitle: "New agent",
   repositories: [],
@@ -155,6 +156,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         workspaceId: null,
         workspaceName: "No workspace",
         workspaceRootLabel: "open a folder",
+        workspaceRootPath: null,
         sessionId: null,
         sessionTitle: "New agent",
         repositories: [],
@@ -172,7 +174,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({
       workspaceId: workspace.id,
       workspaceName: workspace.name,
-      workspaceRootLabel: workspace.rootPath.split(/[\\/]/).filter(Boolean).at(-1) ?? workspace.name
+      workspaceRootLabel: workspace.rootPath.split(/[\\/]/).filter(Boolean).at(-1) ?? workspace.name,
+      workspaceRootPath: workspace.rootPath
     })
   },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>

@@ -4,9 +4,10 @@
  */
 import { Blobatar } from "@blobatar/react"
 import * as expressions from "blobatar/expression"
+import { cx } from "@/utils/cx"
 import type { SubagentPersona } from "../subagent-persona"
 
-const MARK_SIZE = 18
+const MARK_SIZE = 16
 
 export function SubagentMark({
   persona,
@@ -20,7 +21,10 @@ export function SubagentMark({
 
   return (
     <span
-      className="inline-flex size-[18px] shrink-0 items-center justify-center"
+      className={cx(
+        "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-background-tertiary-default/80 ring-1 ring-border-button-default/60 shadow-2xs transition-transform duration-200",
+        running && "ring-accent-500/50"
+      )}
       title={persona.seed}
       aria-hidden
     >

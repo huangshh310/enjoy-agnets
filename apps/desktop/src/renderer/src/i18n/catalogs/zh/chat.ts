@@ -449,6 +449,7 @@ export const zhChat = {
   subagentFailed: "执行失败",
   subagentExplore: "Explore",
   subagentGeneral: "General",
+  subagentStepCount: "{count} 步骤",
   fullCommand: "完整执行命令",
   copyCommand: "复制命令",
   terminalOutput: "终端输出 / 回显",

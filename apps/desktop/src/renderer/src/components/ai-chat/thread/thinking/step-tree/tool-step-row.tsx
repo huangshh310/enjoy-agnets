@@ -105,7 +105,8 @@ function StepTitleRow({
 
 function FileTitle({ node }: { node: AgentStepNode }) {
   const t = useT()
-  const target = node.filePath || node.fileName || ""
+  const workspaceRootPath = useChatStore((state) => state.workspaceRootPath)
+  const displayTarget = formatDisplayPath(node.filePath, node.fileName, workspaceRootPath)
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const isSelected = Boolean(selectedFilePath && node.filePath && sameReviewPath(node.filePath, selectedFilePath))
 
@@ -131,12 +132,50 @@ function FileTitle({ node }: { node: AgentStepNode }) {
           {node.actionVerb}
         </span>
       ) : null}
-      <FileTypeIcon name={node.fileName || target} size={14} />
+      <FileTypeIcon name={node.fileName || displayTarget} size={14} />
       <span className={cx("transition-colors font-mono", !isSelected && "group-hover/file:text-accent-500")}>
-        {target}
+        {renderPathDisplay(displayTarget)}
       </span>
     </button>
   )
+}
+
+function renderPathDisplay(display: string) {
+  const lastSlash = display.lastIndexOf("/")
+  if (lastSlash === -1) {
+    return <span>{display}</span>
+  }
+  const dir = display.slice(0, lastSlash + 1)
+  const file = display.slice(lastSlash + 1)
+  return (
+    <>
+      <span className="text-text-tertiary">{dir}</span>
+      <span>{file}</span>
+    </>
+  )
+}
+
+export function formatDisplayPath(
+  filePath?: string,
+  fileName?: string,
+  workspaceRoot?: string | null
+): string {
+  if (!filePath) return fileName || ""
+  const norm = (s: string) => s.replace(/\\/g, "/").replace(/\/+$/, "")
+  const normFile = norm(filePath)
+  if (workspaceRoot) {
+    const normRoot = norm(workspaceRoot)
+    if (normFile.toLowerCase().startsWith(`${normRoot.toLowerCase()}/`)) {
+      return normFile.slice(normRoot.length + 1)
+    }
+  }
+  if (fileName && normFile !== fileName && normFile.includes("/")) {
+    const segments = normFile.split("/").filter(Boolean)
+    if (segments.length > 3) {
+      return segments.slice(-2).join("/")
+    }
+  }
+  return fileName || filePath
 }
 
 function LineDelta({ additions, deletions }: { additions?: number; deletions?: number }) {

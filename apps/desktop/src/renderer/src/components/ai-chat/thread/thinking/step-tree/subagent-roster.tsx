@@ -17,13 +17,14 @@ export function SubagentRoster({
   const items = node.rosterItems ?? []
   const personas = personasForSubagents(items)
   return (
-    <div className="flex flex-col gap-0.5 rounded-md border border-border-button-default px-2 py-1">
+    <div className="my-1 flex flex-col rounded-xl border border-border-button-default/70 bg-background-secondary-default/50 p-1 shadow-2xs divide-y divide-border-button-default/40">
       {items.map((item, index) => (
         <SubagentRow
           key={item.id}
           node={item}
           persona={personas[index]}
           tree={renderItemTree(item)}
+          isStandalone={false}
         />
       ))}
     </div>
