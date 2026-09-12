@@ -3,6 +3,7 @@
 > 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-12
 
 视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。
+视觉真源（P0-H 扩展发现壳）：[`../previews/p0-h-extensions-hub.html`](../previews/p0-h-extensions-hub.html)（设计已锁，**未接线**；定义见 [`../references/plugin-extensions-hub.md`](../references/plugin-extensions-hub.md)）。页名只写「扩展」；禁止 Marketplace / Store；禁止与 Registry 混页。
 
 ## 当前真相
 

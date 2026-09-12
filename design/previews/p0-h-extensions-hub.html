@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-H · 扩展 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-h-extensions-hub.html · 【视觉真源】P0-H</p>
+      <h1 class="mt-1 text-[17px] font-semibold">扩展 · 一页看清能给助手加什么</h1>
+      <p class="mt-1 text-[12px] text-mute">设计已锁，应用未接线。两列 MCP | Skills；添加深链到现有路由。本页 ≠ Registry。不上 Marketplace / Store / 协议微标。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁 · Jojo</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>页名只写<strong class="text-ink">扩展</strong>。禁止 Marketplace / Store / 插件商店</li>
+        <li>两列：MCP 已配置数 + 样本；Skills 已装数 + 样本</li>
+        <li>主钮「添加 MCP →」<code class="rounded bg-card px-1 text-ink">#/mcp</code>；「添加技能 →」<code class="rounded bg-card px-1 text-ink">#/skills</code></li>
+        <li>本页 ≠ Registry。装助手程序仍走设置 · 智能体 · Registry</li>
+        <li>I2「精选」只读、标可选 / P1；不做则整块拿掉</li>
+      </ul>
+    </aside>
+
+    <section class="space-y-2">
+      <div class="flex items-end justify-between gap-3">
+        <div>
+          <h2 class="text-[17px] font-semibold">扩展</h2>
+          <p class="mt-0.5 text-[12px] text-mute">给助手加连接和技能。装新助手请去 Registry。</p>
+        </div>
+        <p class="shrink-0 rounded-md bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/20">本页 ≠ Registry</p>
+      </div>
+
+      <div class="grid gap-3 md:grid-cols-2">
+        <article class="flex flex-col rounded-2xl border border-line p-4 shadow-sm">
+          <div class="flex items-baseline justify-between gap-2">
+            <h3 class="text-[14px] font-semibold">MCP</h3>
+            <p class="text-[11px] text-mute">已配置 3</p>
+          </div>
+          <p class="mt-1 text-[11px] text-mute">工具与数据连接。配置权威仍在 MCP 页。</p>
+          <ul class="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line text-[12px]">
+            <li class="px-3 py-2">filesystem <span class="ml-1 text-[10px] text-mute">本机文件</span></li>
+            <li class="px-3 py-2">github <span class="ml-1 text-[10px] text-mute">仓库只读</span></li>
+            <li class="px-3 py-2">context7 <span class="ml-1 text-[10px] text-mute">文档检索</span></li>
+          </ul>
+          <a href="#/mcp" class="mt-3 inline-flex h-8 items-center justify-center rounded-xl bg-accent px-3 text-[12px] font-medium text-white">添加 MCP →</a>
+        </article>
+
+        <article class="flex flex-col rounded-2xl border border-line p-4 shadow-sm">
+          <div class="flex items-baseline justify-between gap-2">
+            <h3 class="text-[14px] font-semibold">Skills</h3>
+            <p class="text-[11px] text-mute">已装 12</p>
+          </div>
+          <p class="mt-1 text-[11px] text-mute">可移植流程说明书。装源仍在 Skills 页。</p>
+          <ul class="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line text-[12px]">
+            <li class="px-3 py-2">读代码 <span class="ml-1 text-[10px] text-mute">/read-code</span></li>
+            <li class="px-3 py-2">写提交说明 <span class="ml-1 text-[10px] text-mute">/commit-msg</span></li>
+            <li class="px-3 py-2">审查 diff <span class="ml-1 text-[10px] text-mute">/review-diff</span></li>
+          </ul>
+          <a href="#/skills" class="mt-3 inline-flex h-8 items-center justify-center rounded-xl bg-accent px-3 text-[12px] font-medium text-white">添加技能 →</a>
+        </article>
+      </div>
+
+      <p class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[12px] text-ink">Claude / Codex 等自带插件请在各助手内管理。</p>
+    </section>
+
+    <section class="space-y-2">
+      <div class="flex items-baseline justify-between gap-2">
+        <h2 class="text-[14px] font-semibold">精选</h2>
+        <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">I2 · 可选 / P1 · 只读</span>
+      </div>
+      <p class="text-[11px] text-mute">可整块省略；省略则本块算 P1。只浏览，不装商店，不接计费。</p>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="text-[10px] text-mute">MCP</p>
+          <p class="mt-0.5 text-[12px] font-medium">filesystem</p>
+          <p class="mt-0.5 text-[11px] text-mute">本机目录只读样本</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="text-[10px] text-mute">技能</p>
+          <p class="mt-0.5 text-[12px] font-medium">读代码</p>
+          <p class="mt-0.5 text-[11px] text-mute">打开 SKILL.md，不灌正文</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="text-[10px] text-mute">技能</p>
+          <p class="mt-0.5 text-[12px] font-medium">写提交说明</p>
+          <p class="mt-0.5 text-[11px] text-mute">只读推荐，安装回 Skills</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">是什么</th>
+            <th class="px-3 py-2">入口</th>
+            <th class="px-3 py-2">不是</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2 font-medium">扩展</td>
+            <td class="px-3 py-2">给助手加 MCP / 技能</td>
+            <td class="px-3 py-2">本页 → #/mcp · #/skills</td>
+            <td class="px-3 py-2">Registry、Marketplace、Store</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2 font-medium">Registry</td>
+            <td class="px-3 py-2">装 ACP 助手程序</td>
+            <td class="px-3 py-2">设置 · 智能体 · Registry</td>
+            <td class="px-3 py-2">技能店、MCP 市场、本页混装</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2 font-medium">助手自带插件</td>
+            <td class="px-3 py-2">Claude / Codex 等私有捆包</td>
+            <td class="px-3 py-2">各助手内管理</td>
+            <td class="px-3 py-2">Enjoy 代跑插件运行时</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">写</th>
+            <th class="px-3 py-2">不写</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">页名</td>
+            <td class="px-3 py-2">扩展</td>
+            <td class="px-3 py-2">Marketplace / Store / 插件商店</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">MCP 主钮</td>
+            <td class="px-3 py-2">添加 MCP →　深链 #/mcp</td>
+            <td class="px-3 py-2">浏览市场、stdio / SSE / HTTP 堆砌</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">Skills 主钮</td>
+            <td class="px-3 py-2">添加技能 →　深链 #/skills</td>
+            <td class="px-3 py-2">Agent Skills 协议微标、skill-sources 原文</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">脚注</td>
+            <td class="px-3 py-2">Claude / Codex 等自带插件请在各助手内管理。</td>
+            <td class="px-3 py-2">Enjoy 代管 / 代跑各家插件</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">Registry</td>
+            <td class="px-3 py-2">本页 ≠ Registry</td>
+            <td class="px-3 py-2">Oh My Pi / Hermes / 自定义 ACP 混进本页</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">I2 精选</td>
+            <td class="px-3 py-2">只读瓦片；标可选 / P1</td>
+            <td class="px-3 py-2">收费店、一键买、Grok 假市场</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">计费</td>
+            <td class="px-3 py-2">不出现</td>
+            <td class="px-3 py-2">订阅、席位、升级、云插件店</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">协议</td>
+            <td class="px-3 py-2">人话：连接 / 技能</td>
+            <td class="px-3 py-2">ACP / ToolLoop / stdio / JSON-RPC 微标堆砌</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>10 秒内看到两列主钮「添加 MCP →」「添加技能 →」，分别深链 <code class="rounded bg-card px-1">#/mcp</code> / <code class="rounded bg-card px-1">#/skills</code>。</li>
+        <li>页名是「扩展」；页内写明 ≠ Registry。Registry 仍在设置 · 智能体，不混进本页。</li>
+        <li>无 ACP / stdio / ToolLoop / 协议微标堆砌；不上 Marketplace / Store。</li>
+        <li>虚线脚注原句「Claude / Codex 等自带插件请在各助手内管理。」不做应用内插件运行时、假 Grok 市场、计费。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">应用内插件运行时 · 假 Grok 市场 · Registry 混页 · 计费 / 云插件店 · Marketplace / Store 命名 · 协议微标堆砌</p>
+    </section>
+  </div>
+</body>
+</html>
