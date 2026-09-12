@@ -39,7 +39,7 @@ Enjoy 只有一份 Providers vault。智能体只引用档案，不在智能体�
   - OpenCode：`~/.config/opencode/opencode.json` 的 `provider.enjoy`，`apiKey: "{env:ENJOY_OPENCODE_KEY}"`
   - Gemini：`~/.gemini/.env` Enjoy 标记段 `GEMINI_*`
   - DeepSeek：只 env，没有稳定官方文件，不同步家目录
-- 本机 CLI **表行**动力源列永远在：可绑=`供应商 · 档案 · 模型` 或 `官方登录 · 已登录/未登录/检测中`；仅官方=`官方登录 · 已登录/未登录/检测中`；OMP=`OMP 供应商 · … · 模型`；未找到 / 空=`—`。列表可写短路径 `bin/xxx`，禁绝对路径 / 额度 / 邮箱 / 协议微标。`list` 投影 `homeSynced`（只看 `*.enjoy.bak`）。配置是右侧抽屉。「这个助手用」永远在官方账号区之前。可绑才是一条下拉（官方登录 + 可筛选档案，多协议才分组）；添加 {协议} 在菜单底。仅官方没有这条下拉。绑定后 Composer 胶囊正文仍是引擎 · vault 模型，档案名进 title；Composer 模型表**只列该档案 models[]**。图标按 `cliModelFamilyKey`；认不出族回落档案 `ProviderIcon`。`engineReadiness`：`useCustomProvider + providerId` 时**不走**官方 `needs_login` / `inspecting`；档案没 Key 才 `needs_key`。`upsert` / 开流再跑 `providersCompatibleWith`。也用于其他兼容 CLI 用短标签，**不上沙箱**。同步到本机默认折叠。`#/settings/agent?tool=<id>` 闪行。供应商 Configured 芯片反链；删除仍被引用先解绑。
+- 本机 CLI **表行**动力源列永远在：可绑=`供应商 · 档案 · 模型` 或 `官方登录 · 已登录/未登录/检测中`；仅官方=`官方登录 · 已登录/未登录/检测中`；OMP=`OMP 供应商 · … · 模型`；未找到 / 空=`—`。列表可写短路径 `bin/xxx`，禁绝对路径 / 额度 / 邮箱 / 协议微标。`list` 投影 `homeSynced`（只看 `*.enjoy.bak`）。配置是右侧抽屉。「这个助手用」永远在官方账号区之前。可绑才是一条下拉（官方登录 + 可筛选档案，多协议才分组）。添加档案是菜单外次级链「添加供应商档案」，跳转 `#/settings/providers`，禁止菜单内「+ 添加 {品牌} 供应商」。仅官方没有这条下拉，也没有添加链。绑定后 Composer 胶囊正文仍是引擎 · vault 模型，档案名进 title；Composer 模型表**只列该档案 models[]**。图标按 `cliModelFamilyKey`；认不出族回落档案 `ProviderIcon`。`engineReadiness`：`useCustomProvider + providerId` 时**不走**官方 `needs_login` / `inspecting`；档案没 Key 才 `needs_key`。`upsert` / 开流再跑 `providersCompatibleWith`。也用于其他兼容 CLI 用短标签，**不上沙箱**。同步到本机默认折叠。`#/settings/agent?tool=<id>` 闪行。供应商 Configured 芯片反链；删除仍被引用先解绑。
 
 Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `grok agent [--model] stdio`（`--model` 必须在 `stdio` 前），登录 `grok login`。安装是官方 `curl | bash`，只展示不执行。不要把 `~/.grok/bin/agent` 当成 Cursor。
 
@@ -121,7 +121,8 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - `~/.grok/bin` 必须补进探测 PATH，且排在系统 PATH 后面。不要探测名为 `agent` 的 Grok 别名，避免抢 Cursor。
 - 卸载 argv 必须写在 catalog `uninstallArgs`，不要从 install 的最后一个参数拼。Cursor 没有配方，只给复制官方命令。
 - 配置抽屉不要默认给 `extraArgs` 文本框。`--always-approve` / `--yolo` / `skip-permissions` 禁止做成开关。未收录旗标只出现在高级自定义。
-- 「这个助手用」是 Cline/OpenCode 式下拉（官方登录 + 可筛选供应商），不是电台卡片。账号行只写档案名 + 品牌/密钥副行，禁止再拼 `deep · deepseek-flash`；模型单独带「模型」标签和族标（`cliModelFamilyKey` / `ModelBrandIcon`）。一份档案可勾到其他协议兼容的 CLI。供应商 ≥6 出现筛选。添加档案就地开抽屉，禁止跳整页。禁止「已选 Enjoy 但没有档案」。
+- 「这个助手用」是 Cline/OpenCode 式下拉（官方登录 + 可筛选档案），不是电台卡片。账号行只写档案名 + 品牌/密钥副行，禁止再拼 `deep · deepseek-flash`；模型单独带「模型」标签和族标（`cliModelFamilyKey` / `ModelBrandIcon`）。一份档案可勾到其他协议兼容的 CLI。供应商 ≥6 出现筛选。禁止「已选 Enjoy 但没有档案」。
+- 绑定下拉里「+ 添加 {品牌} 供应商」既像选项又像入口，难发现，还会在智能体抽屉就地 CRUD。正确做法：下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，`navigate` 到 `#/settings/providers`（真源 [`previews/p0-add-provider-discover.html`](../previews/p0-add-provider-discover.html)，锁 tip `033838f`）。空档案时链接用 soft 主色更醒目。仅官方槽禁止出现该链。
 - 配置抽屉 380px 时两只无标签下拉会把档案名和模型粘成同一句，C 端分不清在选账号还是模型。宽度锁 576px，给后续字段留空；账号/模型分行，同步不要做成第三只下拉。
 - 绑了中转档案后，Composer 仍列出 Claude 官方 Sonnet/Opus 再加上 vault 的两个模型，且 `deepseek-flash` 画成 Claude 引擎标。根因：`catalogModels` 曾把 CLI 静态目录与 vault 拼在一起；`applyInspect` 在没 inspect 回执时原样放过这份混表，绑定时又 `bound ? tool.models` 把官方五行留下来。正确做法：`composeAgentModels` 绑定只用 vault；`applyInspect` 用 `settings.providers` 的档案 `models[]` 覆盖，没 inspect 也要裁；有族名先画 `ModelBrandIcon`。
 - 绑了 Enjoy 档案仍要官方 `loggedIn` 才能发送：`engineReadiness` 不看 `useCustomProvider`。Cline/OpenCode 选 API 档案就跳过 OAuth。正确做法：vault 绑定且有 Key → `ready`；没 Key → `needs_key`，不要 `NEED_CLI_LOGIN`。

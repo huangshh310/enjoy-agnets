@@ -1,5 +1,5 @@
 /**
- * 仅官方助手的决策槽：只读登录态 + 登录 CTA。禁止假 vault 下拉。
+ * 仅官方助手的决策槽：只读登录态 + 登录 CTA。禁止假 vault 下拉与「添加供应商档案」链。
  */
 import { RiLoginBoxLine } from "@remixicon/react"
 import { capabilitiesOf, type AgentToolPublic } from "@enjoy-agents/ipc-contract"

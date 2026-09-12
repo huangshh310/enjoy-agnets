@@ -1,13 +1,9 @@
 /**
- * 账号下拉里的行：官方登录、已保存档案、底部添加。
+ * 账号下拉里的行：官方登录与已保存档案。添加入口不进菜单。
  */
-import { RiAddLine, RiCheckLine, RiSearchLine } from "@remixicon/react"
+import { RiCheckLine, RiSearchLine } from "@remixicon/react"
 import { groupProvidersForBind, type ProviderPublic } from "@enjoy-agents/ipc-contract"
-import {
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenuItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { ProviderIcon } from "../../providers/provider-icons"
@@ -57,24 +53,6 @@ export function SourceSearch({ query, onChange }: { query: string; onChange: (va
         className="h-8 w-full rounded-lg border border-border-button-default bg-background-secondary-default/50 pr-2 pl-8 text-caption-2-medium outline-none focus:border-accent-500"
       />
     </div>
-  )
-}
-
-export function AddProviderRow({ protocol, onAdd }: { protocol: string; onAdd: () => void }) {
-  const t = useT()
-  return (
-    <>
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        onClick={onAdd}
-        className="flex cursor-pointer items-center gap-2 rounded-xl px-2.5 py-2"
-      >
-        <RiAddLine className="size-3.5 text-accent-500" />
-        <span className="text-caption-1-medium text-text-primary">
-          {t("settings.agentTools.goProviders", { protocol })}
-        </span>
-      </DropdownMenuItem>
-    </>
   )
 }
 
