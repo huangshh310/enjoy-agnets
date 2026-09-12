@@ -21,6 +21,7 @@ const files = [
   "../official-login/official-login-phase.ts",
   "../official-login/official-login-row-copy.ts",
   "../official-login/official-login-primary.tsx",
+  "../list-row-phase.ts",
   "power-source-capsule.tsx",
   "format-power-source.ts"
 ]
@@ -109,9 +110,11 @@ test("未找到行主槽含安装中 / 重试，失败有一行人话", () => {
   const copy = readFileSync(join(dir, "../install-row-copy.ts"), "utf8")
   assert.ok(assistant.includes("installingStatus"))
   assert.ok(assistant.includes("installingHint"))
+  assert.ok(assistant.includes("inspectingStatus"))
   assert.ok(assistant.includes("formatInstallFailLine"))
   assert.ok(actions.includes("installing"))
   assert.ok(actions.includes("installRetry"))
+  assert.ok(actions.includes("inspectingStatus"))
   assert.ok(copy.includes("mapInstallFailReason"))
   assert.ok(!assistant.includes("role=\"progressbar\""))
   assert.ok(!actions.includes("role=\"progressbar\""))

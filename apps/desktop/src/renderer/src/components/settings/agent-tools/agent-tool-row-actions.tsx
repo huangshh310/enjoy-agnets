@@ -104,6 +104,18 @@ function PrimarySlot({
       </span>
     )
   }
+  if (installPhase === "inspecting") {
+    return (
+      <Button
+        type="button"
+        size="sm"
+        disabled
+        className={`${CLI_LIST_PRIMARY_SLOT} px-2 text-caption-2-medium opacity-90`}
+      >
+        {t("settings.agentTools.inspectingStatus")}
+      </Button>
+    )
+  }
   if (ready && tool.enabled) {
     return (
       <Button

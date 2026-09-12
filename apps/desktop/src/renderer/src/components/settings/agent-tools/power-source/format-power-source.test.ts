@@ -114,3 +114,20 @@ test("官方授权中 / 失败仍是官方登录 ·", () => {
     "官方登录 · 失败"
   )
 })
+
+test("自定义动力源是破折号，不写官方登录也不写供应商", () => {
+  const text = formatPowerSourceText({ kind: "none", present: true, mode: "vault" }, t)
+  assert.equal(text, "—")
+  assert.ok(!text.includes("官方登录"))
+  assert.ok(!text.includes("供应商"))
+})
+
+test("OMP 未就绪走官方登录检测，不假装 vault", () => {
+  assert.equal(
+    formatPowerSourceText(
+      { kind: "omp", present: true, mode: "official", official: "check" },
+      t
+    ),
+    "官方登录 · 检测中"
+  )
+})

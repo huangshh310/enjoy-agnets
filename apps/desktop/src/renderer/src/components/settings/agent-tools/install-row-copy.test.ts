@@ -11,6 +11,7 @@ function t(path: string, vars?: Record<string, string | number>): string {
   if (path === "settings.agentTools.installFailPermission") return "权限不足，请在终端用复制的命令安装"
   if (path === "settings.agentTools.installFailManager") return "本机没有 npm 或 brew"
   if (path === "settings.agentTools.installFailGeneric") return "安装未完成，可重试或复制命令手动装"
+  if (path === "settings.agentTools.installFailUnsupported") return "命令不在白名单，请改用支持的助手程序"
   return path
 }
 
@@ -31,4 +32,10 @@ test("失败行是一行人话，不含堆栈", () => {
   assert.equal(line, "未装上：网络超时，可重试或复制命令手动装")
   assert.ok(!line.includes("at afterConnect"))
   assert.ok(!line.includes("ETIMEDOUT"))
+})
+
+test("白名单拒绝收成短因，不摊 Basename / spawn", () => {
+  const line = formatInstallFailLine("Refusing to spawn 'bash'. Basename must be a known ACP CLI.", t)
+  assert.equal(line, "未装上：命令不在白名单，请改用支持的助手程序")
+  assert.doesNotMatch(line, /Basename|spawn|bash/i)
 })

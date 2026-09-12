@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CLI-B · Registry / 安装未就绪 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: {
+  ink:'#1A1612', mute:'#6B645C', line:'#E8E4DE', paper:'#F7F5F2',
+  card:'#FFFFFF', accent:'#2563EB', soft:'#EFF4FF', ok:'#16A34A', warn:'#C2410C', danger:'#DC2626'
+}}}}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}.act{width:6.75rem;height:1.75rem}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+<div class="mx-auto max-w-[960px] space-y-6 border-x border-line bg-card px-6 py-6">
+  <header>
+    <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/cli-b-registry-install.html · 【视觉真源】CLI-B</p>
+    <h1 class="mt-1 text-[17px] font-semibold">Registry · 安装未就绪</h1>
+    <p class="mt-1 text-[12px] text-mute">Oh My Pi / Hermes / 自定义 ACP。六态：未找到 / 检测中 / 安装中 / 安装失败 / 仅复制 / 已就绪。检测中 ≠ 就绪。禁假进度条、假 BYOK。</p>
+  </header>
+
+  <section class="overflow-hidden rounded-xl border border-line text-[11px]">
+    <table class="w-full text-left">
+      <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+        <tr><th class="px-3 py-2">态</th><th class="px-3 py-2">样例行</th><th class="px-3 py-2">动力源</th><th class="px-3 py-2">主槽</th><th class="px-3 py-2">硬规则</th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        <tr><td class="px-3 py-2 font-medium">未找到</td><td class="px-3 py-2">Oh My Pi</td><td class="px-3 py-2 text-mute">—</td><td class="px-3 py-2">一键安装 + 复制</td><td class="px-3 py-2">随配方：一键 OR 仅复制</td></tr>
+        <tr><td class="px-3 py-2 font-medium">检测中</td><td class="px-3 py-2">Oh My Pi</td><td class="px-3 py-2">官方登录 · 检测中</td><td class="px-3 py-2">检测中…</td><td class="px-3 py-2 text-danger">≠ 就绪</td></tr>
+        <tr><td class="px-3 py-2 font-medium">安装中</td><td class="px-3 py-2">Hermes</td><td class="px-3 py-2 text-mute">—</td><td class="px-3 py-2">安装中…</td><td class="px-3 py-2 text-danger">禁假进度条</td></tr>
+        <tr><td class="px-3 py-2 font-medium">安装失败</td><td class="px-3 py-2">自定义·my-acp</td><td class="px-3 py-2 text-mute">—</td><td class="px-3 py-2">重试 + 复制</td><td class="px-3 py-2">未装上：{短原因}</td></tr>
+        <tr><td class="px-3 py-2 font-medium">仅复制</td><td class="px-3 py-2">Hermes</td><td class="px-3 py-2 text-mute">—</td><td class="px-3 py-2">主槽空，复制为主</td><td class="px-3 py-2 text-danger">不假一键</td></tr>
+        <tr><td class="px-3 py-2 font-medium">已就绪</td><td class="px-3 py-2">—</td><td class="px-3 py-2">官方登录 · 已登录</td><td class="px-3 py-2">设为主引擎</td><td class="px-3 py-2 text-ok">绿灯才可发送</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="mb-2 text-[14px] font-semibold">密表样本</h2>
+    <div class="overflow-hidden rounded-xl border border-line">
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] gap-x-3 border-b border-line bg-paper px-3 py-1.5 text-[10px] font-semibold uppercase text-mute">
+        <span>助手</span><span>动力源</span><span class="text-right">操作</span>
+      </div>
+
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Oh My Pi</span><span class="size-1.5 rounded-full bg-warn"></span><span class="text-[10px] text-warn">未找到</span></div>
+          <p class="font-mono text-[10px] text-mute">— · —</p>
+        </div>
+        <div class="text-[11px] text-mute">—</div>
+        <div class="flex justify-end gap-1">
+          <button class="act rounded-lg bg-accent text-[11px] font-medium text-white">一键安装</button>
+          <button class="h-7 w-7 rounded-lg border border-line text-mute" title="复制">⎘</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Hermes</span><span class="size-1.5 animate-pulse rounded-full bg-accent"></span><span class="text-[10px] text-accent">安装中</span></div>
+          <p class="font-mono text-[10px] text-mute">— · —</p>
+          <p class="mt-0.5 text-[10px] text-mute">正在执行一键安装…</p>
+        </div>
+        <div class="text-[11px] text-mute">—</div>
+        <div class="flex justify-end"><button disabled class="act rounded-lg bg-accent/50 text-[11px] text-white">安装中…</button></div>
+      </div>
+
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 border-b border-line px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">自定义·my-acp</span><span class="size-1.5 rounded-full bg-danger"></span><span class="text-[10px] text-danger">安装失败</span></div>
+          <p class="font-mono text-[10px] text-mute">— · —</p>
+          <p class="mt-0.5 text-[10px] text-danger">未装上：命令不在白名单，请改用支持的助手程序</p>
+        </div>
+        <div class="text-[11px] text-mute">—</div>
+        <div class="flex justify-end gap-1">
+          <button class="act rounded-lg border border-danger/40 text-[11px] text-danger">重试</button>
+          <button class="h-7 w-7 rounded-lg border border-line text-mute" title="复制">⎘</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-[1.2fr_1.4fr_8.75rem] items-center gap-x-3 px-3 py-1.5">
+        <div>
+          <div class="flex items-center gap-1.5"><span class="text-[12px] font-semibold">Oh My Pi</span><span class="size-1.5 animate-pulse rounded-full bg-accent"></span><span class="text-[10px] text-accent">检测中…</span></div>
+          <p class="font-mono text-[10px] text-mute">v1.2 · bin/omp</p>
+        </div>
+        <div class="text-[11px] text-mute">官方登录 · 检测中</div>
+        <div class="flex justify-end"><button disabled class="act rounded-lg bg-accent/50 text-[11px] text-white">检测中…</button></div>
+      </div>
+    </div>
+    <p class="mt-2 text-[10px] text-mute">未找到动力源 —。检测中 ≠ 就绪。自定义无动力源用 —。禁假 vault / 假 BYOK。</p>
+  </section>
+
+  <section class="grid gap-3 md:grid-cols-2">
+    <div class="rounded-2xl border border-line p-4">
+      <h2 class="text-[13px] font-semibold">Registry · 空</h2>
+      <p class="mt-1 text-[12px] font-medium">还没装好这个助手</p>
+      <p class="mt-1 text-[11px] text-mute">PATH 上没有二进制。有白名单配方可一键，否则只复制。</p>
+      <p class="mt-2 rounded-lg bg-paper px-3 py-2 font-mono text-[10px] text-mute">npm i -g @earendil-works/pi-coding-agent pi-acp</p>
+      <div class="mt-3 flex gap-2">
+        <button class="h-8 rounded-xl bg-accent px-3 text-[12px] font-medium text-white">一键安装</button>
+        <button class="h-8 rounded-xl border border-line px-3 text-[12px]">复制命令</button>
+      </div>
+    </div>
+    <div class="rounded-2xl border border-line p-4">
+      <h2 class="text-[13px] font-semibold">仅复制 · Hermes</h2>
+      <p class="mt-1 text-[12px] font-medium">还没装好这个助手</p>
+      <p class="mt-1 text-[11px] text-mute">没有白名单安装器。复制是主行动，不要画假一键。</p>
+      <p class="mt-2 rounded-lg bg-paper px-3 py-2 font-mono text-[10px] text-mute">cd ~/.hermes/hermes-agent && uv pip install -e ".[acp]"</p>
+      <div class="mt-3 flex items-center gap-2">
+        <span class="act"></span>
+        <button class="h-8 rounded-xl bg-accent px-3 text-[12px] font-medium text-white">复制命令</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="overflow-hidden rounded-xl border border-line text-[11px]">
+    <table class="w-full text-left">
+      <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+        <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">写</th><th class="px-3 py-2">不写</th></tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        <tr><td class="px-3 py-2">Registry 空</td><td class="px-3 py-2">还没装好这个助手</td><td class="px-3 py-2 text-mute">已连接 / 即将就绪</td></tr>
+        <tr><td class="px-3 py-2">失败</td><td class="px-3 py-2">未装上：{短原因}</td><td class="px-3 py-2 text-mute">堆栈 / 假进度条</td></tr>
+        <tr><td class="px-3 py-2">检测中</td><td class="px-3 py-2">检测中 / 官方登录 · 检测中</td><td class="px-3 py-2 text-mute">绿灯就绪</td></tr>
+        <tr><td class="px-3 py-2">未找到</td><td class="px-3 py-2">一键安装 + 复制</td><td class="px-3 py-2 text-mute">假 BYOK</td></tr>
+        <tr><td class="px-3 py-2">仅复制</td><td class="px-3 py-2">复制命令（主行动）</td><td class="px-3 py-2 text-mute">假一键</td></tr>
+        <tr><td class="px-3 py-2">已就绪</td><td class="px-3 py-2">已就绪 / 官方登录 · 已登录</td><td class="px-3 py-2 text-mute">检测中当绿灯</td></tr>
+        <tr><td class="px-3 py-2">自定义安装</td><td class="px-3 py-2">只能选支持的助手程序，不能指定电脑上的任意软件</td><td class="px-3 py-2 text-mute">假 vault / 任意程序</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+    <p class="font-semibold text-ink">验收</p>
+    <ul class="mt-1 list-disc space-y-0.5 pl-4">
+      <li>检测中 ≠ 就绪（不放行发送，不画绿灯）</li>
+      <li>未找到随配方：一键 <em>或</em> 仅复制；无白名单安装器不假一键</li>
+      <li>失败一行「未装上：…」+ 重试；禁假进度条</li>
+      <li>密表三列同构；未找到 / 自定义无动力源画 —；禁假 BYOK / 假 vault</li>
+      <li>Registry 空卡写「还没装好这个助手」</li>
+      <li>本页是视觉真源，不宣称应用已 1:1</li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>

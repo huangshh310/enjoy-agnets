@@ -16,7 +16,7 @@ const BINDABLE = ["claude", "codex", "deepseek", "gemini", "opencode"] as const
 test("分类只信 providerBind / runtime，不按 Cursor 品牌藏列", () => {
   assert.equal(classifyPowerSource("enjoy-local"), "enjoy-vault")
   assert.equal(classifyPowerSource("omp"), "omp")
-  assert.equal(classifyPowerSource("custom:demo"), "official")
+  assert.equal(classifyPowerSource("custom:demo"), "none")
   for (const id of BINDABLE) {
     assert.notEqual(capabilitiesFor(id).providerBind, "none")
     assert.equal(classifyPowerSource(id), "bindable")
@@ -53,6 +53,51 @@ test("仅官方四态：授权中 / 失败仍是官方登录，不是 vault", ()
   })
   assert.equal(fail.mode, "official")
   assert.equal(fail.official, "fail")
+})
+
+test("自定义 ACP 动力源永远是空列，不假官方登录也不假 vault", () => {
+  const parts = describePowerSource({
+    runtimeId: "custom:my-acp",
+    useCustomProvider: true,
+    boundProviderName: "lucky0625",
+    selectedModel: "hy3",
+    loggedIn: true
+  })
+  assert.equal(parts.kind, "none")
+  assert.equal(parts.archive, "")
+  assert.equal(parts.model, "")
+  assert.equal(parts.official, undefined)
+})
+
+test("OMP 未选供应商时走官方登录检测/未登录，不假装 Enjoy 档案", () => {
+  const checking = describePowerSource({
+    runtimeId: "omp",
+    inspecting: true,
+    loggedIn: null,
+    enjoyArchive: "lucky0625",
+    enjoyModel: "deepseek-v4-flash"
+  })
+  assert.equal(checking.mode, "official")
+  assert.equal(checking.official, "check")
+  assert.equal(checking.archive, undefined)
+
+  const signedOut = describePowerSource({
+    runtimeId: "omp",
+    loggedIn: false
+  })
+  assert.equal(signedOut.mode, "official")
+  assert.equal(signedOut.official, "out")
+})
+
+test("Pi / Hermes 已装未就绪是官方登录，不是 BYOK", () => {
+  for (const runtimeId of ["pi", "hermes"] as const) {
+    const checking = describePowerSource({ runtimeId, loggedIn: null, inspecting: true })
+    assert.equal(checking.mode, "official")
+    assert.equal(checking.official, "check")
+    const out = describePowerSource({ runtimeId, loggedIn: false })
+    assert.equal(out.official, "out")
+    assert.equal(out.archive, undefined)
+  }
 })
 
 test("Cursor / Grok 是官方登录，不假装 Enjoy 档案", () => {

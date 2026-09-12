@@ -147,6 +147,8 @@ export const zhSettings = {
     installFailPermission: "权限不足，请在终端用复制的命令安装",
     installFailManager: "本机没有 npm 或 brew",
     installFailGeneric: "安装未完成，可重试或复制命令手动装",
+    installFailUnsupported: "命令不在白名单，请改用支持的助手程序",
+    inspectingStatus: "检测中…",
     copyCommand: "复制安装命令",
     copied: "已复制",
     docs: "安装说明",
@@ -328,11 +330,14 @@ export const zhSettings = {
   },
 
   registry: {
-    title: "ACP Registry",
+    title: "Registry",
     desc: "浏览可用的本机编程助手。可一键安装或复制官方安装命令。自行添加时，只能选我们支持的助手程序，不能指定电脑上的任意软件。",
     sourceOfficial: "官方目录",
     emptyDetail: "从左侧选一个智能体。",
-    addCustom: "添加自定义 ACP",
+    notReadyTitle: "还没装好这个助手",
+    notReadyHint: "PATH 上没有二进制。有白名单配方可一键，否则只复制。",
+    copyCommand: "复制命令",
+    addCustom: "添加自定义助手",
     addCustomDesc: "填写启动命令、参数、环境变量和工作目录。为安全起见，启动命令只能是支持的助手程序名；审批规则同样生效。",
     customBasenamePolicy: "只能使用支持的助手程序（如列表中的 CLI，或通用名 acp / acp-agent / agent-acp）。不能填写 bash、node、npx 或其它任意程序。",
     customCommandRefused: "无法使用「{command}」。请改用支持的助手程序名。",
@@ -359,11 +364,11 @@ export const zhSettings = {
       antigravity: "Google Antigravity。优先 agy-acp，否则 agy --acp。",
       gemini: "Gemini CLI。必须 gemini --acp，禁止 --experimental-acp。",
       opencode: "OpenCode 官方 ACP。opencode acp。",
-      pi: "Pi 官方是 RPC。Enjoy 只 spawn 已安装的 pi-acp。",
-      hermes: "Hermes Agent。hermes acp 或 hermes-acp。",
+      pi: "Pi 编程助手。按官方说明装好后即可使用。",
+      hermes: "Hermes 编程助手。没有一键安装，请复制官方命令。",
       amp: "Amp 没有 amp acp。只 spawn amp-acp，登录走 amp login。",
       deepseek: "DeepSeek Harness。dsh --profile acp。",
-      omp: "Oh My Pi 编码智能体。omp acp。"
+      omp: "Oh My Pi 编码智能体。按官方说明安装后即可使用。"
     }
   },
 

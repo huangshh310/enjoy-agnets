@@ -1,13 +1,15 @@
 /**
- * Registry 详情：说明、command/args 预览、安装或复制、文档外开。
+ * Registry 详情：未找到走空卡；已装才展示说明与启动预览。无假「已连接」。
  */
 import { RiExternalLinkLine, RiFileCopyLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
-import { getIde, hasIde } from "@renderer/lib/ide"
+import { getIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
-import type { RegistryRow } from "./acp-registry.types"
-import type { AgentToolId } from "@enjoy-agents/ipc-contract"
 import { useState } from "react"
+import { asAgentToolId, copyRegistryCommand } from "./acp-registry-actions"
+import { AcpRegistryMissing } from "./acp-registry-missing"
+import { isRegistryNotReady, registryCommandFor } from "./acp-registry-model"
+import type { RegistryRow } from "./acp-registry.types"
 
 export function AcpRegistryDetail({
   row,
@@ -18,8 +20,6 @@ export function AcpRegistryDetail({
 }) {
   const t = useT()
   const [copied, setCopied] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   if (!row) {
     return (
       <div className="rounded-xl border border-dashed border-border-button-default px-4 py-8 text-caption-1-regular text-text-tertiary">
@@ -27,8 +27,12 @@ export function AcpRegistryDetail({
       </div>
     )
   }
-  const { tool, commandPreview } = row
+  if (isRegistryNotReady(row.status)) {
+    return <AcpRegistryMissing row={row} onInstalled={onInstalled} />
+  }
+  const { tool } = row
   const summary = registrySummary(tool.id, t) || tool.needsLoginHint
+  const commandPreview = registryCommandFor(tool, row.status)
   return (
     <article className="flex flex-col gap-3 rounded-xl border border-border-button-default bg-background-primary-default p-4">
       <div>
@@ -38,29 +42,17 @@ export function AcpRegistryDetail({
       <p className="rounded-lg bg-background-secondary-default/60 px-3 py-2 font-mono text-caption-2-medium text-text-secondary">
         {commandPreview || "—"}
       </p>
-      {error ? <p className="text-caption-1-medium text-text-error-primary">{error}</p> : null}
       <div className="flex flex-wrap items-center gap-2">
-        {tool.installKind !== "copy" && row.status !== "comingSoon" ? (
-          <Button
-            type="button"
-            size="sm"
-            disabled={busy}
-            onClick={() => void runInstall(tool.id, setBusy, setError, onInstalled)}
-            className="text-caption-1-medium"
-          >
-            {busy ? t("settings.agentTools.installing") : t("settings.agentTools.install")}
-          </Button>
-        ) : null}
         {tool.installCommand ? (
           <Button
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => copyText(tool.installCommand, setCopied)}
+            onClick={() => copyRegistryCommand(tool.installCommand, setCopied)}
             className="gap-1.5 text-caption-1-medium"
           >
             <RiFileCopyLine className="size-3.5 text-text-tertiary" />
-            {copied ? t("settings.agentTools.copied") : t("settings.agentTools.copyOfficial")}
+            {copied ? t("settings.agentTools.copied") : t("settings.registry.copyCommand")}
           </Button>
         ) : null}
         {tool.docsUrl ? (
@@ -68,7 +60,7 @@ export function AcpRegistryDetail({
             type="button"
             size="sm"
             variant="ghost"
-            onClick={() => void getIde().agentTools.openDocs({ id: tool.id as AgentToolId })}
+            onClick={() => void getIde().agentTools.openDocs({ id: asAgentToolId(tool.id) })}
             className="gap-1.5 text-caption-1-medium"
           >
             <RiExternalLinkLine className="size-3.5" />
@@ -78,26 +70,6 @@ export function AcpRegistryDetail({
       </div>
     </article>
   )
-}
-
-async function runInstall(
-  id: string,
-  setBusy: (value: boolean) => void,
-  setError: (value: string | null) => void,
-  onInstalled: () => void
-) {
-  if (!hasIde()) return
-  setBusy(true)
-  setError(null)
-  try {
-    const result = (await getIde().agentTools.install({ id })) as { ok?: boolean; message?: string }
-    if (!result?.ok) setError(result?.message || "Install failed.")
-    else onInstalled()
-  } catch (error) {
-    setError(error instanceof Error ? error.message : String(error))
-  } finally {
-    setBusy(false)
-  }
 }
 
 function registrySummary(id: string, t: ReturnType<typeof useT>): string {
@@ -116,11 +88,4 @@ function registrySummary(id: string, t: ReturnType<typeof useT>): string {
     omp: t("settings.registry.summary.omp")
   }
   return table[id] ?? ""
-}
-
-function copyText(text: string, setCopied: (value: boolean) => void) {
-  void navigator.clipboard.writeText(text).then(() => {
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1600)
-  })
 }

@@ -103,6 +103,13 @@ function assistantStatus(input: {
       textClass: "text-text-error-primary"
     }
   }
+  if (installPhase === "inspecting") {
+    return {
+      label: t("settings.agentTools.inspectingStatus"),
+      dotClass: "bg-accent-500 animate-pulse",
+      textClass: "text-accent-600"
+    }
+  }
   if (ready) {
     return {
       label: t("settings.agentTools.statusReady"),

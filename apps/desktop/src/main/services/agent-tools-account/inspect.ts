@@ -2,7 +2,7 @@
  * 账号 / 额度 / 动态模型。默认读 5 分钟缓存（含磁盘），refresh 才打官方接口。
  */
 import { isCustomAgentId, type AgentToolId, type InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
-import { AGENT_TOOL_PRESETS, catalogFor, probeBinaries } from "@enjoy-agents/agent-harness"
+import { AGENT_TOOL_PRESETS, probeBinaries } from "@enjoy-agents/agent-harness"
 import { safeCustomBinaryPath } from "../agent-tools-guard"
 import { readAgentToolOverrides } from "../agent-tools-vault"
 import { agentToolsCwd } from "./cwd"
@@ -22,6 +22,7 @@ import {
   probeOpenCode,
   probePi
 } from "./probes"
+import { emptyInspectResult } from "./inspect-empty"
 import { getToolSpendStats } from "./tool-spend.ts"
 
 export function invalidateAccountCache(id?: AgentToolId) {
@@ -52,11 +53,11 @@ export async function inspectReadyTools(ids: AgentToolId[]): Promise<InspectAgen
 async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
   let res: InspectAgentToolResult
   if (isCustomAgentId(id)) {
-    res = emptyInspect(id)
+    res = emptyInspectResult(id)
   } else {
     const command = await resolveInspectCommand(id)
     if (!command) {
-      res = emptyInspect(id)
+      res = emptyInspectResult(id)
     } else {
       const cwd = await agentToolsCwd()
       if (id === "cursor") res = { id, ...(await probeCursor(command, cwd)) }
@@ -67,7 +68,7 @@ async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
       else if (id === "opencode") res = { id, ...(await probeOpenCode(command, cwd)) }
       else if (id === "pi") res = { id, ...(await probePi(command, cwd)) }
       else if (id === "omp") res = { id, ...(await probeOmp(command, cwd)) }
-      else res = emptyInspect(id)
+      else res = emptyInspectResult(id)
     }
   }
 
@@ -95,6 +96,3 @@ async function resolveInspectCommand(id: AgentToolId): Promise<string | undefine
   return probe.path ?? undefined
 }
 
-function emptyInspect(id: AgentToolId): InspectAgentToolResult {
-  return { id, models: [...(catalogFor(id)?.models ?? [])] }
-}

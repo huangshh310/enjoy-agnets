@@ -5,8 +5,9 @@ import type { PowerSourceParts } from "@enjoy-agents/ipc-contract"
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
-/** 空档案 / 空 OMP 不假装有 vault。 */
+/** 空档案 / 自定义 / 空 OMP 不假装有 vault。 */
 export function isBlankPowerSource(parts: PowerSourceParts): boolean {
+  if (parts.kind === "none") return true
   if (parts.mode === "official") return false
   return !parts.archive && !parts.model
 }

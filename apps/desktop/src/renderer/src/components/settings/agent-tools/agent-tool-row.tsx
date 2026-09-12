@@ -4,6 +4,8 @@
 import { useState } from "react"
 import { capabilitiesOf, isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
+import { engineReadiness } from "@renderer/components/ai-chat/agent-picker/engine-readiness"
+import { readinessInputOf } from "@renderer/components/ai-chat/agent-picker/engine-readiness-input"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { agentToolCardId } from "./agent-tool-anchor"
@@ -12,7 +14,7 @@ import { AgentToolConfigDrawer } from "./agent-tool-config-drawer"
 import { CLI_LIST_GRID } from "./list-layout"
 import { AgentToolRowActions, AgentToolRowAssistant } from "./agent-tool-row-parts"
 import { CustomAcpAgentDialog } from "./custom-acp-agent-dialog"
-import { installRowPhase } from "./install-row-copy"
+import { listRowPhase } from "./list-row-phase"
 import { PowerSourceCell } from "./power-source/power-source-capsule"
 import { powerSourcePartsForTool } from "./power-source/resolve-row-source"
 import { useAgentToolActions } from "./use-agent-tool-actions"
@@ -24,15 +26,17 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
   const loginLoop = useCliLoginLoop(tool.id)
   const custom = isCustomAgentId(tool.id)
   const [configOpen, setConfigOpen] = useState(false)
-  const ready = tool.status === "ready" || actions.isDefaultLocal
-  const phase = installRowPhase({
-    ready,
+  const pathReady = tool.status === "ready" || actions.isDefaultLocal
+  const engineKind = engineReadiness(readinessInputOf(tool))
+  const phase = listRowPhase({
+    pathReady,
     busy: actions.busyAction,
-    installError: actions.installError
+    installError: actions.installError,
+    engineKind
   })
   const loginPhase = officialLoginRowPhase({
     runtimeId: tool.id,
-    pathReady: ready,
+    pathReady,
     canLogin: capabilitiesOf(tool).login,
     loggedIn: tool.authAccount?.loggedIn ?? null,
     inspecting: snapshot.isInspectingAccounts,
@@ -58,7 +62,7 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
       >
         <AgentToolRowAssistant
           tool={tool}
-          ready={ready}
+          ready={pathReady}
           installPhase={phase}
           installError={actions.installError}
           loginPhase={loginPhase}
@@ -67,12 +71,12 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
         <PowerSourceCell
           parts={parts}
           accent={actions.isActive && parts.mode === "vault" && Boolean(parts.archive)}
-          empty={!ready}
+          empty={!pathReady || parts.kind === "none"}
         />
         <AgentToolRowActions
           tool={tool}
           actions={actions}
-          ready={ready}
+          ready={pathReady}
           installPhase={phase}
           loginPhase={loginPhase}
           onLogin={() => void actions.runLogin()}

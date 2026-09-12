@@ -1,13 +1,13 @@
 # spec/m4-acp-registry
 
-> M4 ACP 扩展与 Registry。最后更新：2026-09-09
+> M4 ACP 扩展与 Registry。最后更新：2026-09-12
 > 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 当前真相
 
-设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。一键安装走配方 npm/brew；否则复制官方命令；文档 `openDocs`。无营销 Hero、无假「已连接」。
+设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。未找到详情是空卡「还没装好这个助手」+ 安装命令（视觉锁 [`previews/cli-b-registry-install.html`](../previews/cli-b-registry-install.html)，锁 tip `6c02931`）：有 npm/brew 配方才一键（Pi），否则复制是主行动（Hermes）；禁止假一键、假「已连接」。已装详情才展示说明与启动预览。文档 `openDocs`。无营销 Hero。
 
 自定义 stdio ACP：`custom:<slug>`，字段 command / args / env / cwd（工作区根或已存在的绝对目录）。保存进 `agentTools.customAgents`；出现在本机 CLI 列表与 Composer 导轨（`showOnEngineRail`）。spawn 经 `assertCustomAllowedCommand`（目录 binaries ∪ `acp`/`acp-agent`/`agent-acp`，禁止 bash/node/npx 等）；`shell:false`；审批不豁免。表单 C 端文案：只能选支持的助手程序，不能指定电脑上的任意软件；禁止 basename / stdio 行话。白名单拒绝时 UI 映射成人话（`无法使用「…」`），main 英文 throw 只留日志。能力走 `RUNTIME_CAPABILITIES["custom-acp"]`（quota=false、login=false、HMAC）。能力矩阵自定义行画用户 **label**，不画 `custom:<slug>`。删除确认后解绑会话 runtime，并把仍指向它的偏好 `runtimeId` 拉回 Enjoy 本地。
 
@@ -87,7 +87,7 @@ UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 
 | 块 | 路径 |
 |---|---|
-| Registry 列表/详情 | `settings/agent-tools/acp-registry-*.tsx` |
+| Registry 列表/详情 | `settings/agent-tools/acp-registry-*.tsx`、`acp-registry-missing.tsx`、`acp-registry-model.ts` |
 | 自定义 agent 表单 | `settings/agent-tools/custom-acp-agent-form.tsx` |
 | 升 available 门闩 | `packages/agent-harness/src/agent-tools/coming-soon-promotion.ts` |
 | 自定义 spawn | `packages/agent-harness/src/agent-tools/custom-spawn.ts` |
@@ -108,7 +108,8 @@ UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 - comingSoon 假升：只信 `canPromoteComingSoon`，不要手改 preset.available 绕过 OpenCode→Gemini→Pi。该函数是 catalog/caps/preset 硬接线检查，不要写成「已实测 initialize」。现场 handshake 只发生在开流，不决定 comingSoon 升级。
 - 能力矩阵自定义行必须画用户 label（显示名），不要露出 `custom:<slug>`。
 - 空态不得嵌 Registry 列表或 `AgentCliInstall` 整卡。新会话 checklist 只给单行安装/复制；深链 `?tab=registry` 才打开本页。
-- 自定义 agent 无 inspect / 额度条；不要画空条或假绿灯。
+- 未找到详情必须写「还没装好这个助手」，展示 `installCommand` 而不是启动预览；copy-only 禁止画灰掉的一键。
+- 自定义 agent 无 inspect / 额度条；不要画空条或假绿灯。密表动力源 `classifyPowerSource=none`，永远 —。
 - Composer 切引擎用 `can-switch-agent.ts`（自定义必须 ready）；轨徽标就绪灯用 `engine-ready.ts` 的 `isEngineReady`。M2/M3 合入后不要把两者并成一份再丢掉自定义规则。
 
 ## 验收
