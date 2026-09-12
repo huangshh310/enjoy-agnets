@@ -139,3 +139,21 @@ test("scout 人格归为 explore，标题按优先级截断", () => {
   assert.equal(pickDelegateTitle({ title: long }).length, 80)
   assert.equal(pickDelegateTitle({ task: "from-task", title: "from-title" }), "from-title")
 })
+
+test("子智能体内部的连续 read_file 递归聚合成批处理", () => {
+  const nodes = parseAgentStepNodes(
+    "",
+    [
+      createTool("d1", "delegate", { kind: "explore", title: "ipc" }),
+      { ...createTool("r1", "read_file", { path: "a.ts" }), parentToolCallId: "d1" },
+      { ...createTool("r2", "read_file", { path: "b.ts" }), parentToolCallId: "d1" },
+      { ...createTool("r3", "read_file", { path: "c.ts" }), parentToolCallId: "d1" }
+    ],
+    mockT
+  )
+  assert.equal(nodes.length, 1)
+  const delegateNode = nodes[0]!
+  assert.equal(delegateNode.children?.length, 1)
+  assert.equal(delegateNode.children?.[0]?.isBatch, true)
+  assert.equal(delegateNode.children?.[0]?.batchItems?.length, 3)
+})

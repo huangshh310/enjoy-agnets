@@ -426,6 +426,7 @@ export const enChat = {
   subagentFailed: "Failed",
   subagentExplore: "Explore",
   subagentGeneral: "General",
+  subagentStepCount: "{count} steps",
   fullCommand: "Full command",
   copyCommand: "Copy command",
   terminalOutput: "Terminal output",

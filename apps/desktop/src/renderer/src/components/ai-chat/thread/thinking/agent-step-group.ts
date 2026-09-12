@@ -20,7 +20,20 @@ export function groupConsecutiveSteps(nodes: AgentStepNode[], t: TranslateFn): A
       i = batched.next
       continue
     }
-    result.push(node)
+    const current = { ...node }
+    if (current.children && current.children.length > 0) {
+      current.children = groupConsecutiveSteps(current.children, t)
+    }
+    if (current.isRoster && current.rosterItems) {
+      current.rosterItems = current.rosterItems.map((item) => {
+        if (!item.children || item.children.length === 0) return item
+        return {
+          ...item,
+          children: groupConsecutiveSteps(item.children, t)
+        }
+      })
+    }
+    result.push(current)
     i += 1
   }
   return result

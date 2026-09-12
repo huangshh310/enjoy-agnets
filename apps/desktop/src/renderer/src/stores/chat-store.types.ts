@@ -111,6 +111,7 @@ export type ChatStore = {
   workspaceId: string | null
   workspaceName: string
   workspaceRootLabel: string
+  workspaceRootPath: string | null
   sessionId: string | null
   sessionTitle: string
   repositories: RepositoryNode[]
