@@ -30,7 +30,11 @@ export function AgentCliModels({
   inspecting?: boolean
 }) {
   const showNav = shouldShowCliProviderNav(agent)
-  const needEngineLogin = readiness === "needs_login" || readiness === "inspecting"
+  const needEngineLogin =
+    readiness === "needs_login" ||
+    readiness === "inspecting" ||
+    readiness === "authorizing" ||
+    readiness === "login_failed"
   if (!showNav && needEngineLogin) {
     return (
       <CliNeedLogin
@@ -38,6 +42,8 @@ export function AgentCliModels({
         busy={Boolean(loginBusy)}
         hint={loginHint}
         inspecting={readiness === "inspecting" && !loginBusy}
+        authorizing={readiness === "authorizing"}
+        failed={readiness === "login_failed"}
         onLogin={() => onLoginEngine?.()}
       />
     )

@@ -2,10 +2,12 @@
  * 本机 CLI 紧凑表行：助手 | 动力源 | 操作。配置进侧边抽屉。
  */
 import { useState } from "react"
-import { isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { capabilitiesOf, isCustomAgentId, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useQueryClient } from "@tanstack/react-query"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { agentToolCardId } from "./agent-tool-anchor"
+import { officialLoginRowPhase } from "./official-login/official-login-phase"
 import { AgentToolConfigDrawer } from "./agent-tool-config-drawer"
 import { CLI_LIST_GRID } from "./list-layout"
 import { AgentToolRowActions, AgentToolRowAssistant } from "./agent-tool-row-parts"
@@ -19,6 +21,7 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
   const queryClient = useQueryClient()
   const actions = useAgentToolActions(tool)
   const snapshot = useSettingsSnapshot()
+  const loginLoop = useCliLoginLoop(tool.id)
   const custom = isCustomAgentId(tool.id)
   const [configOpen, setConfigOpen] = useState(false)
   const ready = tool.status === "ready" || actions.isDefaultLocal
@@ -27,8 +30,17 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
     busy: actions.busyAction,
     installError: actions.installError
   })
+  const loginPhase = officialLoginRowPhase({
+    runtimeId: tool.id,
+    pathReady: ready,
+    canLogin: capabilitiesOf(tool).login,
+    loggedIn: tool.authAccount?.loggedIn ?? null,
+    inspecting: snapshot.isInspectingAccounts,
+    loginLoop: loginLoop.phase
+  })
   const parts = powerSourcePartsForTool(tool, {
     inspecting: snapshot.isInspectingAccounts,
+    loginLoop: loginLoop.phase,
     providers: snapshot.data?.providers,
     defaultModelId: snapshot.data?.defaultModelId
   })
@@ -49,6 +61,8 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
           ready={ready}
           installPhase={phase}
           installError={actions.installError}
+          loginPhase={loginPhase}
+          loginReason={loginLoop.reason}
         />
         <PowerSourceCell
           parts={parts}
@@ -60,6 +74,8 @@ export function AgentToolRow({ tool, flash }: { tool: AgentToolPublic; flash?: b
           actions={actions}
           ready={ready}
           installPhase={phase}
+          loginPhase={loginPhase}
+          onLogin={() => void actions.runLogin()}
           onConfigure={() => setConfigOpen(true)}
         />
       </div>

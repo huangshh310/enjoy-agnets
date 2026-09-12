@@ -2,8 +2,10 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   classifyThreadError,
+  NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
+  NEED_CLI_LOGIN_FAILED,
   NEED_PROVIDER_KEY
 } from "./classify-thread-error.ts"
 
@@ -36,4 +38,6 @@ test("ACP 未登录不是可重试供应商错误", () => {
     "needs_key"
   )
   assert.equal(classifyThreadError(NEED_CLI_INSPECTING), "inspecting")
+  assert.equal(classifyThreadError(NEED_CLI_AUTHORIZING), "authorizing")
+  assert.equal(classifyThreadError(NEED_CLI_LOGIN_FAILED), "login_failed")
 })

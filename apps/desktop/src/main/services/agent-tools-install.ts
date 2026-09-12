@@ -133,7 +133,7 @@ export async function loginAgentTool(id: AgentToolId, provider?: string): Promis
   return {
     id,
     ok: true,
-    message: "Login started. Finish authorization in the browser or CLI window."
+    message: "browser_opened"
   }
 }
 

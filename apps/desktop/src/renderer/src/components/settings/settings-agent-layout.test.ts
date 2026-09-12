@@ -138,7 +138,7 @@ test("仅官方决策槽没有 Enjoy vault 下拉", () => {
     join(dirname(fileURLToPath(import.meta.url)), "agent-tools/power-source/official-power-slot.tsx"),
     "utf8"
   )
-  assert.ok(src.includes("officialNoBindHint"))
+  assert.ok(src.includes("officialNoVaultHint"))
   assert.ok(!src.includes("AgentToolSourceMenu"))
   assert.ok(!src.includes("useCustomProvider"))
   assert.ok(!src.includes("AgentToolAddArchiveLink"))

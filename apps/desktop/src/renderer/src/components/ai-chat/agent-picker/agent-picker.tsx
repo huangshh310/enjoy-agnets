@@ -11,6 +11,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { canSwitchAgent, DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
+import { useCliLoginLoopStore } from "./cli-login-loop"
 import { canBindEngine, isEngineLit } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
 import { canOpenAgentPicker } from "./handoff/plan-composer-switch"
@@ -48,6 +49,7 @@ export function AgentPicker({
   const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const pendingToId = useEngineHandoffStore((state) => state.toRuntimeId)
   const snapshot = useSettingsSnapshot()
+  const loginLoops = useCliLoginLoopStore((state) => state.byId)
   const tools = snapshot.data?.agentTools ?? []
   const inspecting = snapshot.isInspectingAccounts
   const { local, cli, soon } = composerRailSections(tools)
@@ -120,7 +122,9 @@ export function AgentPicker({
     setTabId(id)
     const agent = agents.find((item) => item.id === id)
     if (!agent || !canSwitchAgent(agent)) return
-    if (!canBindEngine(readinessInputOf(agent, { hasKey }))) return
+    if (!canBindEngine(readinessInputOf(agent, { hasKey, loginLoop: loginLoops[agent.id]?.phase }))) {
+      return
+    }
     await applyAgent(id)
   }
 
@@ -172,7 +176,10 @@ export function AgentPicker({
           {pickerLocked ? null : (
             <span
               className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
-                current && isEngineLit(readinessInputOf(current, { hasKey }))
+                current &&
+                isEngineLit(
+                  readinessInputOf(current, { hasKey, loginLoop: loginLoops[current.id]?.phase })
+                )
                   ? "bg-accent-500"
                   : "bg-text-tertiary"
               }`}
@@ -192,7 +199,9 @@ export function AgentPicker({
           "flex w-[min(36rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default p-0 shadow-card",
           tab && tab.id !== DEFAULT_RUNTIME_ID && !canSwitchAgent(tab)
             ? "max-h-[390px]"
-            : tab && tab.id !== DEFAULT_RUNTIME_ID && !canBindEngine(readinessInputOf(tab, { hasKey }))
+            : tab &&
+                tab.id !== DEFAULT_RUNTIME_ID &&
+                !canBindEngine(readinessInputOf(tab, { hasKey, loginLoop: loginLoops[tab.id]?.phase }))
               ? "max-h-[390px]"
               : "h-[390px]"
         )}

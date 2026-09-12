@@ -4,6 +4,7 @@
  */
 import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
+import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { composerSendReady } from "@renderer/hooks/runtime-interact/send-composer-guard"
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
@@ -52,6 +53,7 @@ export function ComposerFooter({
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const hasKey = useChatStore((state) => state.hasKey)
+  useCliLoginLoop(runtimeId)
   const chrome = composerChromeFor(runtimeId)
   const sendReady = composerSendReady({ runtimeId, hasKey, modelId })
   const showVoice = chrome.voice && canRealtime

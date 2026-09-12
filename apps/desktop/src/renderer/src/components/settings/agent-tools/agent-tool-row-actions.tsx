@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { CLI_LIST_ICON_SLOT, CLI_LIST_PRIMARY_SLOT } from "./list-layout"
 import type { InstallRowPhase } from "./install-row-copy"
+import {
+  overridesOfficialListReady,
+  showsOfficialConfigure,
+  type OfficialLoginRowPhase
+} from "./official-login/official-login-phase"
+import { OfficialLoginPrimary } from "./official-login/official-login-primary"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolRowActions({
@@ -14,17 +20,21 @@ export function AgentToolRowActions({
   actions,
   ready,
   installPhase,
+  loginPhase = "idle",
+  onLogin,
   onConfigure
 }: {
   tool: AgentToolPublic
   actions: AgentToolActions
   ready: boolean
   installPhase: InstallRowPhase
+  loginPhase?: OfficialLoginRowPhase
+  onLogin?: () => void
   onConfigure: () => void
 }) {
   const t = useT()
   const installing = installPhase === "installing"
-  const secondary = ready ? (
+  const secondary = ready && showsOfficialConfigure(loginPhase) ? (
     <Button
       type="button"
       size="sm"
@@ -52,7 +62,14 @@ export function AgentToolRowActions({
   ) : null
   return (
     <div className="flex items-center justify-end gap-1">
-      <PrimarySlot tool={tool} actions={actions} ready={ready} installPhase={installPhase} />
+      <PrimarySlot
+        tool={tool}
+        actions={actions}
+        ready={ready}
+        installPhase={installPhase}
+        loginPhase={loginPhase}
+        onLogin={onLogin}
+      />
       {secondary}
     </div>
   )
@@ -62,14 +79,21 @@ function PrimarySlot({
   tool,
   actions,
   ready,
-  installPhase
+  installPhase,
+  loginPhase,
+  onLogin
 }: {
   tool: AgentToolPublic
   actions: AgentToolActions
   ready: boolean
   installPhase: InstallRowPhase
+  loginPhase: OfficialLoginRowPhase
+  onLogin?: () => void
 }) {
   const t = useT()
+  if (overridesOfficialListReady(loginPhase)) {
+    return <OfficialLoginPrimary phase={loginPhase} onLogin={onLogin} />
+  }
   if (actions.isActive) {
     return (
       <span

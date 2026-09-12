@@ -5,6 +5,8 @@ import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { formatInstallFailLine, type InstallRowPhase } from "./install-row-copy"
+import type { OfficialLoginRowPhase } from "./official-login/official-login-phase"
+import { officialLoginAssistantStatus, officialLoginHint } from "./official-login/official-login-row-copy"
 import { formatListSecondary } from "./list-secondary"
 
 import { AgentToolMiniQuota } from "./agent-tool-mini-quota"
@@ -13,17 +15,23 @@ export function AgentToolRowAssistant({
   tool,
   ready,
   installPhase,
-  installError
+  installError,
+  loginPhase = "idle",
+  loginReason = ""
 }: {
   tool: AgentToolPublic
   ready: boolean
   installPhase: InstallRowPhase
   installError: string | null
+  loginPhase?: OfficialLoginRowPhase
+  loginReason?: string
 }) {
   const t = useT()
   const planned = tool.comingSoon || tool.skillOnly
-  const status = assistantStatus({ ready, planned, installPhase, t })
+  const status =
+    officialLoginAssistantStatus(loginPhase, t) ?? assistantStatus({ ready, planned, installPhase, t })
   const secondary = formatListSecondary(tool, t)
+  const loginHint = officialLoginHint(loginPhase, loginReason, t)
   const failLine = installPhase === "failed" && installError ? formatInstallFailLine(installError, t) : null
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -52,6 +60,16 @@ export function AgentToolRowAssistant({
         {installPhase === "installing" ? (
           <p className="mt-0.5 truncate text-caption-2-regular text-text-tertiary">
             {t("settings.agentTools.installingHint")}
+          </p>
+        ) : null}
+        {loginHint ? (
+          <p
+            className={`mt-0.5 truncate text-caption-2-regular ${
+              loginPhase === "fail" ? "text-text-error-primary" : "text-text-tertiary"
+            }`}
+            title={loginHint}
+          >
+            {loginHint}
           </p>
         ) : null}
         {failLine ? (

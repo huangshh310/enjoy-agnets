@@ -10,9 +10,11 @@ import { useT } from "@renderer/i18n"
 import { AgentCliInstall } from "./agent-cli-install"
 import { AgentCliModels } from "./agent-cli-models"
 import { completeCliEngineLogin, completeCliProviderLogin } from "./cli-login-action"
+import { useCliLoginLoop } from "./cli-login-loop"
 import { loginHintFor } from "./cli-login-hint"
 import { engineReadiness, readinessSubtitle } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
+import { formatOfficialLoginFailLine } from "./official-login-reason"
 
 export function AgentCliPane({
   agent,
@@ -26,10 +28,17 @@ export function AgentCliPane({
   inspecting?: boolean
 }) {
   const t = useT()
+  const loop = useCliLoginLoop(agent.id)
   const [loginBusy, setLoginBusy] = useState<string | null>(null)
   const [loginHint, setLoginHint] = useState("")
   const switchable = canSwitchAgent(agent)
-  const kind = engineReadiness(readinessInputOf(agent))
+  const kind = engineReadiness(readinessInputOf(agent, { loginLoop: loop.phase }))
+  const loopHint =
+    kind === "authorizing"
+      ? t("settings.agentTools.loginAuthorizingHint")
+      : kind === "login_failed"
+        ? formatOfficialLoginFailLine(loop.reason, t)
+        : loginHint
   const subtitle = readinessSubtitle(kind, t)
   const cap = capabilitiesOf(agent)
 
@@ -81,11 +90,11 @@ export function AgentCliPane({
         onLoginProvider={(id) => void loginProvider(id)}
         onLoginEngine={() => void loginEngine()}
         loginBusy={loginBusy}
-        loginHint={loginHint}
+        loginHint={loopHint}
         inspecting={inspecting}
       />
       <CliPaneFoot
-        hint={loginHint}
+        hint={loopHint}
         subtitle={subtitle}
         showFastNote={cap.fast !== "none" || cap.thinking !== "none"}
       />

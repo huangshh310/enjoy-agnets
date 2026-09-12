@@ -15,8 +15,28 @@ export function PowerSourceCell({
   accent: boolean
   empty?: boolean
 }) {
+  const t = useT()
   if (empty || isBlankPowerSource(parts)) {
     return <span className="text-caption-1-regular text-text-tertiary">—</span>
+  }
+  const text = formatPowerSourceText(parts, t)
+  // CLI-A：未确认登录用纯字；只有已登录才画描边胶囊。
+  if (parts.mode === "official" && parts.official !== "in") {
+    return (
+      <span className="truncate text-caption-1-regular text-text-tertiary" title={text}>
+        {text}
+      </span>
+    )
+  }
+  if (parts.mode === "official" && parts.official === "in") {
+    return (
+      <span
+        className="inline-flex max-w-full truncate rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-1-medium text-text-primary ring-1 ring-border-button-default"
+        title={text}
+      >
+        {text}
+      </span>
+    )
   }
   return <PowerSourceCapsule parts={parts} accent={accent} />
 }
@@ -35,7 +55,11 @@ export function PowerSourceCapsule({
     parts.mode === "official"
       ? parts.official === "in"
         ? "bg-notification-success-foreground"
-        : "bg-text-tertiary"
+        : parts.official === "fail"
+          ? "bg-text-error-primary"
+          : parts.official === "auth" || parts.official === "check"
+            ? "bg-accent-500"
+            : "bg-text-tertiary"
       : parts.mode === "omp"
         ? "bg-accent-600"
         : "bg-accent-500"

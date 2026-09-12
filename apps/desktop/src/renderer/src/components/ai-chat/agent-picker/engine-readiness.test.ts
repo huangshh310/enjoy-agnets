@@ -102,7 +102,56 @@ test("导轨胶囊用短标，就绪不画", () => {
   assert.equal(readinessMarkKey("missing"), "chat.agentNotInstalledMark")
   assert.equal(readinessMarkKey("needs_login"), "chat.agentNeedsLoginMark")
   assert.equal(readinessMarkKey("inspecting"), "chat.agentInspectingMark")
+  assert.equal(readinessMarkKey("authorizing"), "chat.agentAuthorizingMark")
+  assert.equal(readinessMarkKey("login_failed"), "chat.agentLoginFailedMark")
   assert.equal(readinessMarkKey("needs_key"), "chat.agentNeedsKeyMark")
   assert.equal(readinessMarkKey("soon"), "chat.agentSoonMark")
   assert.equal(readinessMarkKey("ready"), null)
+})
+
+test("仅官方四家：检测中 / 授权中 / 失败都不能当就绪灯", () => {
+  for (const id of ["cursor", "grok", "antigravity", "amp"] as const) {
+    assert.equal(
+      engineReadiness({ id, status: "ready", requiresLogin: true, loggedIn: null }),
+      "inspecting"
+    )
+    assert.equal(
+      isEngineLit({ id, status: "ready", requiresLogin: true, loggedIn: null }),
+      false
+    )
+    assert.equal(
+      engineReadiness({
+        id,
+        status: "ready",
+        requiresLogin: true,
+        loggedIn: false,
+        loginLoop: "authorizing"
+      }),
+      "authorizing"
+    )
+    assert.equal(
+      canBindEngine({
+        id,
+        status: "ready",
+        requiresLogin: true,
+        loggedIn: false,
+        loginLoop: "authorizing"
+      }),
+      false
+    )
+    assert.equal(
+      engineReadiness({
+        id,
+        status: "ready",
+        requiresLogin: true,
+        loggedIn: false,
+        loginLoop: "failed"
+      }),
+      "login_failed"
+    )
+    assert.equal(
+      engineReadiness({ id, status: "ready", requiresLogin: true, loggedIn: true }),
+      "ready"
+    )
+  }
 })

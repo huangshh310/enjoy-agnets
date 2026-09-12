@@ -4,6 +4,7 @@
 import type { AgentToolId, InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
 import { isAwaitingCallback } from "./cli-login-hint"
+import { useCliLoginLoopStore } from "./cli-login-loop"
 import { waitCliEngineReady, waitCliProviderReady } from "./cli-login-wait"
 
 export async function completeCliProviderLogin(opts: {
@@ -32,11 +33,16 @@ export async function completeCliProviderLogin(opts: {
 export async function completeCliEngineLogin(opts: {
   toolId: AgentToolId
 }): Promise<{ ok: boolean; message: string }> {
+  const loop = useCliLoginLoopStore.getState()
+  loop.begin(opts.toolId)
   const result = (await getIde().agentTools.login({
     id: opts.toolId
   })) as { ok?: boolean; message?: string }
   const message = result.message ?? "failed"
-  if (!result.ok) return { ok: false, message }
+  if (!result.ok) {
+    loop.fail(opts.toolId, message)
+    return { ok: false, message }
+  }
   const outcome = await waitCliEngineReady({
     inspect: () =>
       getIde().agentTools.inspect({
@@ -44,7 +50,10 @@ export async function completeCliEngineLogin(opts: {
         refresh: true
       }) as Promise<InspectAgentToolResult>
   })
-  return finishWait(outcome)
+  const finished = finishWait(outcome)
+  if (finished.ok) loop.succeed(opts.toolId)
+  else loop.fail(opts.toolId, finished.message)
+  return finished
 }
 
 function finishWait(outcome: "ready" | "timeout" | "cancelled"): { ok: boolean; message: string } {

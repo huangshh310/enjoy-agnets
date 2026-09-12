@@ -11,6 +11,8 @@ const copy: Record<string, string> = {
   "settings.agentTools.accountSignedIn": "已登录",
   "settings.agentTools.listOfficialOut": "未登录",
   "settings.agentTools.listOfficialCheck": "检测中",
+  "settings.agentTools.listOfficialAuth": "授权中",
+  "settings.agentTools.listOfficialFail": "失败",
   "settings.agentTools.boundSummary": "供应商 · {provider} · {model}",
   "settings.agentTools.ompSummary": "OMP 供应商 · {provider} · {model}"
 }
@@ -93,5 +95,22 @@ test("官方检测中用列表文案", () => {
       t
     ),
     "官方登录 · 检测中"
+  )
+})
+
+test("官方授权中 / 失败仍是官方登录 ·", () => {
+  assert.equal(
+    formatPowerSourceText(
+      { kind: "official", present: true, mode: "official", official: "auth" },
+      t
+    ),
+    "官方登录 · 授权中"
+  )
+  assert.equal(
+    formatPowerSourceText(
+      { kind: "official", present: true, mode: "official", official: "fail" },
+      t
+    ),
+    "官方登录 · 失败"
   )
 })

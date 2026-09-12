@@ -7,8 +7,11 @@ import { capabilitiesFor } from "./runtime-capabilities.ts"
 
 export type PowerSourceKind = "enjoy-vault" | "bindable" | "official" | "omp"
 
-/** 官方登录态：已登录 / 未登录 / 仍在检测。 */
-export type OfficialLoginState = "in" | "out" | "check"
+/** 官方登录态：已登录 / 未登录 / 检测中 / 授权中 / 失败。 */
+export type OfficialLoginState = "in" | "out" | "check" | "auth" | "fail"
+
+/** renderer 登录闭环：打开授权中或失败。idle 表示没有进行中的 login。 */
+export type OfficialLoginLoop = "idle" | "authorizing" | "failed"
 
 export type PowerSourceMode = "vault" | "official" | "omp"
 
@@ -29,6 +32,8 @@ export type PowerSourceInput = {
   selectedModel?: string
   loggedIn?: boolean | null
   inspecting?: boolean
+  /** 打开授权中 / 失败。inspect 已确认登录时仍以 loggedIn 为准。 */
+  loginLoop?: OfficialLoginLoop
   enjoyArchive?: string
   enjoyModel?: string
   ompSupplier?: string
@@ -66,7 +71,7 @@ export function describePowerSource(input: PowerSourceInput): PowerSourceParts {
     kind,
     present: true,
     mode: "official",
-    official: officialLoginState(input.loggedIn, input.inspecting)
+    official: officialLoginState(input.loggedIn, input.inspecting, input.loginLoop)
   }
 }
 
@@ -92,8 +97,11 @@ export function ompPowerFromSelection(
 
 export function officialLoginState(
   loggedIn?: boolean | null,
-  inspecting?: boolean
+  inspecting?: boolean,
+  loginLoop?: OfficialLoginLoop
 ): OfficialLoginState {
+  if (loginLoop === "authorizing" && loggedIn !== true) return "auth"
+  if (loginLoop === "failed" && loggedIn !== true) return "fail"
   if (loggedIn === true) return "in"
   if (inspecting || loggedIn == null) return "check"
   return "out"

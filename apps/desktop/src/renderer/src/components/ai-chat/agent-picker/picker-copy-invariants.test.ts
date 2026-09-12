@@ -27,6 +27,8 @@ const files = [
   "cli-login-hint.ts",
   "cli-login-wait.ts",
   "cli-login-action.ts",
+  "cli-login-loop.ts",
+  "official-login-reason.ts",
   "cli-need-login.tsx",
   "cli-model-row.tsx",
   "cli-models-browser.tsx",
