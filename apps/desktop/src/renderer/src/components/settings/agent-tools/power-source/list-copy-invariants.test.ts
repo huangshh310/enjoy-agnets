@@ -18,6 +18,9 @@ const files = [
   "../list-layout.ts",
   "../list-secondary.ts",
   "../install-row-copy.ts",
+  "../official-login/official-login-phase.ts",
+  "../official-login/official-login-row-copy.ts",
+  "../official-login/official-login-primary.tsx",
   "power-source-capsule.tsx",
   "format-power-source.ts"
 ]

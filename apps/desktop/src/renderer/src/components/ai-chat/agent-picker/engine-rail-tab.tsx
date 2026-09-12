@@ -6,6 +6,7 @@ import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "./agent-brand-icon"
+import { useCliLoginLoop } from "./cli-login-loop"
 import { engineReadiness, isEngineLit, readinessMarkKey, readinessSubtitle } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
 import { ReadinessMark } from "./readiness-mark"
@@ -24,7 +25,8 @@ export function EngineRailTab({
   const t = useT()
   const itemRef = useRef<HTMLButtonElement>(null)
   const hasKey = useChatStore((state) => state.hasKey)
-  const input = readinessInputOf(agent, { hasKey })
+  const loop = useCliLoginLoop(agent.id)
+  const input = readinessInputOf(agent, { hasKey, loginLoop: loop.phase })
   const ready = isEngineLit(input)
   const kind = engineReadiness(input)
   const markKey = readinessMarkKey(kind)

@@ -36,6 +36,25 @@ test("每条 runtime 的动力源列都 present", () => {
   }
 })
 
+test("仅官方四态：授权中 / 失败仍是官方登录，不是 vault", () => {
+  const auth = describePowerSource({
+    runtimeId: "cursor",
+    loggedIn: false,
+    loginLoop: "authorizing"
+  })
+  assert.equal(auth.mode, "official")
+  assert.equal(auth.official, "auth")
+  assert.equal(auth.archive, undefined)
+
+  const fail = describePowerSource({
+    runtimeId: "amp",
+    loggedIn: false,
+    loginLoop: "failed"
+  })
+  assert.equal(fail.mode, "official")
+  assert.equal(fail.official, "fail")
+})
+
 test("Cursor / Grok 是官方登录，不假装 Enjoy 档案", () => {
   for (const runtimeId of ["cursor", "grok"] as const) {
     const parts = describePowerSource({

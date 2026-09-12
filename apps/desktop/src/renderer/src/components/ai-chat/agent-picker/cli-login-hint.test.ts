@@ -19,7 +19,10 @@ test("设备码优先于笼统的已打开授权", () => {
   assert.equal(isAwaitingCallback("device:AB12-CD34"), true)
   assert.equal(isAwaitingCallback("logged_in"), false)
   assert.equal(displayLoginMessage("logged_in", t), "chat.cliProviderLoginDone")
-  assert.equal(displayLoginMessage("Login started. Finish authorization in the browser or CLI window.", t), "Login started. Finish authorization in the browser or CLI window.")
+  assert.equal(
+    displayLoginMessage("Login started. Finish authorization in the browser or CLI window.", t),
+    "chat.cliProviderLoginStarted"
+  )
   assert.equal(loginHintFor("https://github.com/login/device", true, t), "chat.cliProviderLoginFailed")
   assert.equal(displayLoginMessage("https://evil.example/?access_token=x", t), "chat.cliProviderLoginFailed")
 })

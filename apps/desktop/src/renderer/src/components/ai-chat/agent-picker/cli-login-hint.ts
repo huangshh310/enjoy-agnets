@@ -13,12 +13,18 @@ export function loginHintFor(code: string | undefined, ok: boolean, t: Translate
   if (looksLikeSecretOrUrl(code)) return t("chat.cliProviderLoginFailed")
   const device = code?.match(DEVICE_RE)?.[1]
   if (device) return t("chat.cliProviderLoginDevice", { code: device })
-  if (code === "browser_opened") return t("chat.cliProviderLoginStarted")
+  if (code === "browser_opened" || isLegacyLoginStarted(code)) {
+    return t("chat.cliProviderLoginStarted")
+  }
   if (code === "logged_in") return t("chat.cliProviderLoginDone")
   if (code === "callback_timeout") return t("chat.cliProviderLoginTimeout")
   if (code === "needs_tui") return t("chat.cliProviderLoginNeedsTui")
   if (ok) return t("chat.cliProviderLoginStarted")
   return t("chat.cliProviderLoginFailed")
+}
+
+function isLegacyLoginStarted(code: string | undefined): boolean {
+  return Boolean(code && /login started/i.test(code))
 }
 
 function looksLikeSecretOrUrl(code: string | undefined): boolean {
@@ -31,12 +37,17 @@ export function displayLoginMessage(code: string | undefined, t: TranslateFn): s
   if (!code) return ""
   if (
     isAwaitingCallback(code) ||
+    isLegacyLoginStarted(code) ||
     code === "logged_in" ||
     code === "callback_timeout" ||
     code === "needs_tui" ||
     code === "failed"
   ) {
-    return loginHintFor(code, code === "logged_in" || isAwaitingCallback(code), t)
+    return loginHintFor(
+      isLegacyLoginStarted(code) ? "browser_opened" : code,
+      code === "logged_in" || isAwaitingCallback(code) || isLegacyLoginStarted(code),
+      t
+    )
   }
   if (looksLikeSecretOrUrl(code)) return t("chat.cliProviderLoginFailed")
   return code

@@ -2,10 +2,13 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { rememberAgentTools } from "../agent-tools-cache.ts"
 import {
+  NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
+  NEED_CLI_LOGIN_FAILED,
   NEED_PROVIDER_KEY
 } from "../../lib/usage/classify-thread-error.ts"
+import { resetCliLoginLoopStore, useCliLoginLoopStore } from "../../components/ai-chat/agent-picker/cli-login-loop.ts"
 import { composerSendReady, guardComposerSend } from "./send-composer-guard.ts"
 
 function store(partial: {
@@ -191,4 +194,42 @@ test("缓存里还没有 CLI 行时也是检测中", () => {
   assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
   assert.equal(chat.read().error, NEED_CLI_INSPECTING)
   assert.equal(chat.read().picker, false)
+})
+
+function officialTool(id: "cursor" | "grok" | "antigravity" | "amp", loggedIn: boolean | null) {
+  return { ...claudeTool(loggedIn), id, label: id }
+}
+
+test("仅官方四家：检测中 / 授权中不能发，也不开登录坞", () => {
+  resetCliLoginLoopStore()
+  for (const id of ["cursor", "grok", "antigravity", "amp"] as const) {
+    rememberAgentTools([officialTool(id, null)])
+    const inspecting = store({ runtimeId: id, hasKey: true })
+    assert.equal(composerSendReady({ runtimeId: id, hasKey: true, modelId: "m" }), false)
+    assert.equal(guardComposerSend(inspecting as never, { ideReady: true }), false)
+    assert.equal(inspecting.read().error, NEED_CLI_INSPECTING)
+    assert.equal(inspecting.read().picker, false)
+
+    rememberAgentTools([officialTool(id, false)])
+    useCliLoginLoopStore.getState().begin(id)
+    const authorizing = store({ runtimeId: id, hasKey: true })
+    assert.equal(composerSendReady({ runtimeId: id, hasKey: true, modelId: "m" }), false)
+    assert.equal(guardComposerSend(authorizing as never, { ideReady: true }), false)
+    assert.equal(authorizing.read().error, NEED_CLI_AUTHORIZING)
+    assert.equal(authorizing.read().picker, false)
+    useCliLoginLoopStore.getState().succeed(id)
+  }
+  resetCliLoginLoopStore()
+})
+
+test("仅官方登录失败：不能发，打开 Picker 重试", () => {
+  resetCliLoginLoopStore()
+  rememberAgentTools([officialTool("amp", false)])
+  useCliLoginLoopStore.getState().fail("amp", "callback_timeout")
+  const chat = store({ runtimeId: "amp", hasKey: true })
+  assert.equal(composerSendReady({ runtimeId: "amp", hasKey: true, modelId: "m" }), false)
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+  assert.equal(chat.read().error, NEED_CLI_LOGIN_FAILED)
+  assert.equal(chat.read().picker, true)
+  resetCliLoginLoopStore()
 })

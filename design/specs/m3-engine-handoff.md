@@ -1,6 +1,6 @@
 # spec/m3-engine-handoff
 
-> M3 引擎切换与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-09
+> M3 引擎切换与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-12
 > 产品锁：M2 收完后做本文，再做 M4。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > handoff 摘要注入 system/hidden + 可关「已交接」微条，**禁止**当第一条可见用户消息。
@@ -75,7 +75,7 @@ blocked_by_approval（有 pending）→ 仅取消或去处理 Attention
 |---|---|
 | `engineReadiness==="ready"` | 可 bind、可发送、绿灯 |
 | Enjoy Local 且无密钥 | 可切到本地；胶囊「密钥」；发送留在 Chat |
-| `needs_login` / `inspecting` | 可点开面板，不可 bind / 发送；标「登录」或「检测」 |
+| `needs_login` / `inspecting` / `authorizing` / `login_failed` | 可点开面板，不可 bind / 发送；标「登录」/「检测」/「授权」/「失败」 |
 | `missing` | Rail/Picker 灰态；点开 `agent-cli-install`：安装 / 复制 / 重新扫描 |
 | `comingSoon` | 沉底分组「即将推出」；不可切；无假就绪灯 |
 | 就绪灯 | **只信** `engineReadiness==="ready"`；`loggedIn===null` 禁止当 ready |

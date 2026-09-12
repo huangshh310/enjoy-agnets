@@ -15,13 +15,7 @@ export function isBlankPowerSource(parts: PowerSourceParts): boolean {
 export function formatPowerSourceText(parts: PowerSourceParts, t: Translate): string {
   if (isBlankPowerSource(parts)) return "—"
   if (parts.mode === "official") {
-    const status =
-      parts.official === "in"
-        ? t("settings.agentTools.accountSignedIn")
-        : parts.official === "check"
-          ? t("settings.agentTools.listOfficialCheck")
-          : t("settings.agentTools.listOfficialOut")
-    return `${t("settings.agentTools.officialLogin")} · ${status}`
+    return `${t("settings.agentTools.officialLogin")} · ${officialStatusText(parts.official, t)}`
   }
   const provider = parts.archive || "—"
   const model = parts.model || "—"
@@ -29,4 +23,15 @@ export function formatPowerSourceText(parts: PowerSourceParts, t: Translate): st
     return t("settings.agentTools.ompSummary", { provider, model })
   }
   return t("settings.agentTools.boundSummary", { provider, model })
+}
+
+function officialStatusText(
+  official: PowerSourceParts["official"],
+  t: Translate
+): string {
+  if (official === "in") return t("settings.agentTools.accountSignedIn")
+  if (official === "check") return t("settings.agentTools.listOfficialCheck")
+  if (official === "auth") return t("settings.agentTools.listOfficialAuth")
+  if (official === "fail") return t("settings.agentTools.listOfficialFail")
+  return t("settings.agentTools.listOfficialOut")
 }

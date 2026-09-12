@@ -5,6 +5,7 @@ import {
   describePowerSource,
   ompPowerFromSelection,
   type AgentToolPublic,
+  type OfficialLoginLoop,
   type PowerSourceInput,
   type PowerSourceParts,
   type ProviderPublic
@@ -26,6 +27,7 @@ export function powerSourceInputForTool(
   tool: AgentToolPublic,
   opts: {
     inspecting?: boolean
+    loginLoop?: OfficialLoginLoop
     providers?: ReadonlyArray<Pick<ProviderPublic, "name" | "modelId" | "active">>
     defaultModelId?: string
   } = {}
@@ -39,6 +41,7 @@ export function powerSourceInputForTool(
     selectedModel: tool.selectedModel,
     loggedIn: tool.authAccount?.loggedIn ?? null,
     inspecting: opts.inspecting,
+    loginLoop: opts.loginLoop,
     enjoyArchive: enjoy.archive,
     enjoyModel: enjoy.model,
     ompSupplier: omp.supplier,
@@ -50,6 +53,7 @@ export function powerSourcePartsForTool(
   tool: AgentToolPublic,
   opts: {
     inspecting?: boolean
+    loginLoop?: OfficialLoginLoop
     providers?: ReadonlyArray<Pick<ProviderPublic, "name" | "modelId" | "active">>
     defaultModelId?: string
   } = {}

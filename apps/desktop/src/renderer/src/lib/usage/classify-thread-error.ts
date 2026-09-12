@@ -1,11 +1,21 @@
 /**
  * 线程错误分层：402/额度走 L4，429 仍是限流，鉴权走打开登录。
  */
-export type ThreadErrorKind = "credit" | "rate_limit" | "auth" | "needs_key" | "inspecting" | "generic"
+export type ThreadErrorKind =
+  | "credit"
+  | "rate_limit"
+  | "auth"
+  | "authorizing"
+  | "login_failed"
+  | "needs_key"
+  | "inspecting"
+  | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
 export const NEED_CLI_LOGIN = "NEED_CLI_LOGIN"
 export const NEED_CLI_INSPECTING = "NEED_CLI_INSPECTING"
+export const NEED_CLI_AUTHORIZING = "NEED_CLI_AUTHORIZING"
+export const NEED_CLI_LOGIN_FAILED = "NEED_CLI_LOGIN_FAILED"
 export const HANDOFF_CONFIRM_FAILED = "HANDOFF_CONFIRM_FAILED"
 
 const CREDIT_MARKERS = [
@@ -30,6 +40,8 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     return "needs_key"
   }
   if (message === NEED_CLI_INSPECTING) return "inspecting"
+  if (message === NEED_CLI_AUTHORIZING) return "authorizing"
+  if (message === NEED_CLI_LOGIN_FAILED) return "login_failed"
   if (
     message === NEED_CLI_LOGIN ||
     lower.includes("acp_auth_required") ||

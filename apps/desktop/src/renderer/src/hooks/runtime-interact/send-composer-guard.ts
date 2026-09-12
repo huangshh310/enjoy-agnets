@@ -6,8 +6,10 @@ import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-p
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
 import {
+  NEED_CLI_AUTHORIZING,
   NEED_CLI_INSPECTING,
   NEED_CLI_LOGIN,
+  NEED_CLI_LOGIN_FAILED,
   NEED_PROVIDER_KEY
 } from "../../lib/usage/classify-thread-error.ts"
 
@@ -65,6 +67,15 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
   }
   if (kind === "inspecting") {
     store.setError(NEED_CLI_INSPECTING)
+    return false
+  }
+  if (kind === "authorizing") {
+    store.setError(NEED_CLI_AUTHORIZING)
+    return false
+  }
+  if (kind === "login_failed") {
+    store.setError(NEED_CLI_LOGIN_FAILED)
+    store.setAgentPickerOpen(true)
     return false
   }
   store.setError(NEED_CLI_LOGIN)
