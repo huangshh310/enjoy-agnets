@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-F · 在浏览器打开 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[980px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-f-preview-open.html · 【视觉真源】P0-F</p>
+      <h1 class="mt-1 text-[17px] font-semibold">一键在系统浏览器打开预览</h1>
+      <p class="mt-1 text-[12px] text-mute">Review / 完成条次级钮。点了走 <code class="rounded bg-paper px-1">shell.openExternal</code>，不嵌 Chromium。探索态只读也可开。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>选中工作区 <code class="rounded bg-card px-1">*.html</code>，或本会话已有本地预览 URL → 可点</li>
+        <li>否则禁用，悬停「暂无可预览页面」</li>
+        <li>成功 toast「已在浏览器打开」</li>
+      </ul>
+    </aside>
+
+    <!-- 启用 + toast -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">完成条 · 可开</h2>
+      <p class="text-[11px] text-mute">选中 <span class="font-mono">preview/index.html</span>。次级「在浏览器打开」，主钮仍是「审查」。</p>
+      <div class="relative rounded-2xl border border-line p-4 shadow-sm">
+        <div class="absolute -top-3 right-4 flex items-center gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1 text-[11px] shadow-md">
+          <span class="size-1.5 rounded-full bg-ok"></span>
+          已在浏览器打开
+        </div>
+        <div class="flex h-7 min-w-0 items-center justify-between gap-3">
+          <span class="truncate font-mono text-[12px]">preview/index.html</span>
+          <div class="flex shrink-0 items-center gap-0.5">
+            <span class="h-6 px-2 text-[11px] text-mute">全部撤销</span>
+            <span class="h-6 px-2 text-[11px] text-mute">全部保留</span>
+            <button class="ml-1 h-6 rounded-md border border-line px-2.5 text-[11px]">在浏览器打开</button>
+            <button class="ml-1 h-6 rounded-md bg-accent px-2.5 text-[11px] font-medium text-white">审查</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 禁用 + tooltip -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">完成条 · 不可开</h2>
+      <p class="text-[11px] text-mute">未选 html、也无本地预览 URL。禁用 + tooltip。</p>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex h-7 min-w-0 items-center justify-between gap-3">
+          <span class="truncate font-mono text-[12px]">src/auth/login.ts</span>
+          <div class="flex shrink-0 items-center gap-0.5">
+            <span class="h-6 px-2 text-[11px] text-mute">全部撤销</span>
+            <span class="h-6 px-2 text-[11px] text-mute">全部保留</span>
+            <span class="relative ml-1">
+              <button disabled class="h-6 cursor-not-allowed rounded-md border border-line px-2.5 text-[11px] text-mute opacity-50">在浏览器打开</button>
+              <span class="absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[10px] text-white">暂无可预览页面</span>
+            </span>
+            <button class="ml-1 h-6 rounded-md bg-accent px-2.5 text-[11px] font-medium text-white">审查</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 探索态 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">探索态 · 只读可开</h2>
+      <p class="text-[11px] text-mute">探索不改文件，但仍可打开已有页面。不启 dev server。</p>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button class="rounded-full bg-soft px-3 py-1 text-[11px] font-semibold text-accent">探索</button>
+            <button class="rounded-full px-3 py-1 text-[11px] text-mute">执行</button>
+          </div>
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">只读可开</span>
+        </div>
+        <p class="mt-3 rounded-lg bg-paper px-2.5 py-1.5 text-[11px] text-mute">探索模式下不会改你的项目。预览走系统浏览器，不嵌页内。</p>
+        <div class="mt-3 flex h-7 items-center justify-between gap-3 border-t border-line pt-3">
+          <span class="truncate font-mono text-[12px]">http://127.0.0.1:5173</span>
+          <button class="h-6 rounded-md border border-line px-2.5 text-[11px]">在浏览器打开</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">文案</th>
+            <th class="px-3 py-2">不用</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">次级钮</td>
+            <td class="px-3 py-2">在浏览器打开</td>
+            <td class="px-3 py-2">Preview / Live / 内嵌预览</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">可开</td>
+            <td class="px-3 py-2">选中工作区 *.html，或会话已有本地预览 URL</td>
+            <td class="px-3 py-2">自动起 dev server</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">不可开</td>
+            <td class="px-3 py-2">禁用 + tooltip「暂无可预览页面」</td>
+            <td class="px-3 py-2">假 URL、藏按钮</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">成功</td>
+            <td class="px-3 py-2">toast「已在浏览器打开」；main 调 shell.openExternal</td>
+            <td class="px-3 py-2">webview / 内嵌 Chromium</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">探索</td>
+            <td class="px-3 py-2">只读可开（有 html 或本地 URL 即可）</td>
+            <td class="px-3 py-2">探索禁用预览</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>完成 / Review 条有次级「在浏览器打开」；主钮仍是「审查」。</li>
+        <li>选中工作区 <code class="rounded bg-card px-1">*.html</code> 或本会话有本地预览 URL 才可点；否则禁用，悬停「暂无可预览页面」。</li>
+        <li>点击走 main <code class="rounded bg-card px-1">shell.openExternal</code>，toast「已在浏览器打开」；不嵌 Chromium。</li>
+        <li>探索态只读可开，不自动起 dev server。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">内嵌浏览器 · 自动起 dev server · worktree · 云多租户 · 假 BYOK · 动密表动力源</p>
+    </section>
+  </div>
+</body>
+</html>
