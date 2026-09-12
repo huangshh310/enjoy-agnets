@@ -7,13 +7,23 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-test("本机 CLI 页顺序是顶栏 → 列表 → 能力说明", () => {
+test("本机 CLI 页顺序是顶栏 → 审批摘要 → 列表 → 能力说明", () => {
   const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "settings-agent.tsx"), "utf8")
   const hub = src.indexOf("<AgentToolsCommandHub")
+  const strip = src.indexOf('<ApprovalDiscoverStrip origin="racks"')
   const page = src.indexOf("<AgentToolsPage")
   const docs = src.indexOf("<AgentCapabilityDocs")
-  assert.ok(hub >= 0 && page >= 0 && docs >= 0)
-  assert.ok(hub < page && page < docs)
+  assert.ok(hub >= 0 && strip >= 0 && page >= 0 && docs >= 0)
+  assert.ok(hub < strip && strip < page && page < docs)
+})
+
+test("默认项页顶是同一条审批摘要，不另开第二套审批面", () => {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "settings-agent.tsx"), "utf8")
+  const strip = src.indexOf('<ApprovalDiscoverStrip origin="defaults"')
+  const defaults = src.indexOf("<SettingsDefaults")
+  assert.ok(strip >= 0 && defaults >= 0 && strip < defaults)
+  assert.ok(!src.includes("ApprovalPolicyMenu"))
+  assert.ok(!src.includes("SettingsPermissions"))
 })
 
 test("自定义 ACP 编辑是右侧抽屉，不是居中 Dialog", () => {

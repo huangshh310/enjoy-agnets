@@ -11,6 +11,7 @@ import { AgentToolsPage } from "./agent-tools/agent-tools-page"
 import { parseAgentSettingsTab, type AgentSettingsTab } from "./settings-agent-tab"
 import { AgentSettingsTabs } from "./settings-agent-tabs"
 import { parseSettingsSectionSearch } from "./settings-section-search"
+import { ApprovalDiscoverStrip } from "./approval-discover/approval-discover-strip"
 import { SettingsDefaults } from "./settings-defaults"
 import { SettingsHarness } from "./settings-harness"
 import { SettingsSkillSources } from "./settings-skill-sources"
@@ -36,7 +37,7 @@ export function AgentSettings() {
     void navigate({
       to: "/settings/$section",
       params: { section: "agent" },
-      search: { tab: undefined, tool: undefined },
+      search: { tab: undefined, tool: undefined, from: undefined },
       replace: true
     })
   }, [toolId, navigate])
@@ -46,7 +47,7 @@ export function AgentSettings() {
     void navigate({
       to: "/settings/$section",
       params: { section: "agent" },
-      search: { tab: id === "racks" ? undefined : id, tool: undefined },
+      search: { tab: id === "racks" ? undefined : id, tool: undefined, from: undefined },
       replace: true
     })
   }
@@ -66,6 +67,7 @@ export function AgentSettings() {
       {activeTab === "racks" ? (
         <div className="flex flex-col gap-6">
           <AgentToolsCommandHub />
+          <ApprovalDiscoverStrip origin="racks" />
           <AgentToolsPage focus={focus} />
           <AgentCapabilityDocs onJump={onDocsJump} />
         </div>
@@ -82,6 +84,7 @@ export function AgentSettings() {
       {activeTab === "harness" ? <SettingsHarness /> : null}
       {activeTab === "defaults" ? (
         <div className="flex flex-col gap-6">
+          <ApprovalDiscoverStrip origin="defaults" />
           <SettingsDefaults />
           <SettingsSkillSources />
         </div>

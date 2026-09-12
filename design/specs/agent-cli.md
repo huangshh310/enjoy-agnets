@@ -64,7 +64,7 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - 覆盖与 IPC：`apps/desktop/src/main/services/agent-tools-*.ts`、`ipc-agent-tools.ts`
 - 绑定兼容 / 引用派生：`packages/ipc-contract/src/provider-agent-bind.ts`；开流 env：`provider-bind-env.ts`；家目录格式：`cli-config-format.ts`
 - 开流：`open-coding-stream.ts` → `open-acp-stream.ts` → `streamAcpTurn`
-- 设置 UI：`settings/agent-tools/`（表行 `agent-tool-row.tsx`，次行 `list-secondary.ts`，安装态 `install-row-copy.ts`，仅官方登录闭环 `official-login/`，动力源 `power-source/`，抽屉信任卡 `drawer-trust/`）；进阶沙箱 `settings-harness.tsx`
+- 设置 UI：`settings/agent-tools/`（表行 `agent-tool-row.tsx`，次行 `list-secondary.ts`，安装态 `install-row-copy.ts`，仅官方登录闭环 `official-login/`，动力源 `power-source/`，抽屉信任卡 `drawer-trust/`）；进阶沙箱 `settings-harness.tsx`；审批发现性 `settings/approval-discover/`（密表之上共享摘要条，不加列）
 - Composer：`agent-picker/`（输入框切 Agent / 模型 / 安装）
 - 合约：`packages/ipc-contract/src/agent-tools.ts`、`runtime-capabilities.ts`（静态保真表 + `composerChromeFor`）
 

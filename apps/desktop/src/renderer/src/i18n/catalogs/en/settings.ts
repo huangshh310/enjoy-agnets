@@ -53,6 +53,15 @@ export const enSettings = {
     allHint: "Auto writes, shell, commits"
   },
 
+  approvalDiscover: {
+    title: "Approval policy",
+    manage: "Manage approval policy →",
+    back: "← Back to agent settings",
+    summaryDefault: "Writes and commands need confirmation each time",
+    summaryPartial: "Some actions are already allowed this session · others still need confirmation",
+    summaryYolo: "Auto-approve is on · proceed with care"
+  },
+
   appearance: {
     hubTitle: "Color mode",
     hubDesc: "Manual light or dark. Enjoy Agents does not follow the operating system theme.",

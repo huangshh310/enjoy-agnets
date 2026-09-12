@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import { APPROVAL_PERMISSIONS_ANCHOR } from "./approval-discover/approval-discover-nav"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { useT } from "@renderer/i18n"
 
@@ -39,7 +40,7 @@ export function SettingsPermissions({
   }
 
   return (
-    <SettingsCard title={t("settings.permissions.title")}>
+    <SettingsCard id={APPROVAL_PERMISSIONS_ANCHOR} title={t("settings.permissions.title")}>
       <PermissionModeRow kind={kind} onPick={(mode) => persist(flagsForPermissionMode(mode), mode)} />
       <FlagRow
         title={t("settings.permissions.autoWrites")}

@@ -1,5 +1,6 @@
 /**
- * 输入框底栏盾牌：唯一审批策略入口（写入 / Shell / Git）。
+ * 输入框底栏盾牌：会话内审批策略入口（写入 / Shell / Git）。
+ * 设置页发现性另走 approval-discover 摘要条，不在这里画第二套表。
  */
 import type { ComponentProps } from "react"
 import {
