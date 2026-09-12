@@ -1,5 +1,6 @@
 /**
- * 「这个助手用」账号下拉：官方登录 + 可筛选档案 + 底部添加。
+ * 「这个助手用」账号下拉：只列官方登录 + 可筛选档案。
+ * 添加档案在菜单外（见 AgentToolAddArchiveLink），禁止菜单内「+ 添加 {品牌}」。
  * 触发器只写档案名（或官方登录），不把模型 id 粘进同一行。
  */
 import { useMemo, useState } from "react"
@@ -17,12 +18,7 @@ import { ProviderIcon } from "../providers/provider-icons"
 import { BIND_SEARCH_AFTER } from "./agent-tool-constants"
 import { archiveSubtitle } from "./bind-source/archive-copy"
 import { BIND_TRIGGER_CLASS, BindTriggerFace } from "./bind-source/bind-field"
-import {
-  AddProviderRow,
-  OfficialMenuRow,
-  ProfileMenuRows,
-  SourceSearch
-} from "./bind-source/source-menu-rows"
+import { OfficialMenuRow, ProfileMenuRows, SourceSearch } from "./bind-source/source-menu-rows"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolSourceMenu({
@@ -30,19 +26,13 @@ export function AgentToolSourceMenu({
   profiles,
   bound,
   usingProvider,
-  persist,
-  protocol,
-  canAdd,
-  onAdd
+  persist
 }: {
   tool: AgentToolPublic
   profiles: ProviderPublic[]
   bound?: ProviderPublic
   usingProvider: boolean
   persist: AgentToolActions["persist"]
-  protocol: string
-  canAdd: boolean
-  onAdd: () => void
 }) {
   const [query, setQuery] = useState("")
   const filtered = useMemo(() => {
@@ -82,7 +72,6 @@ export function AgentToolSourceMenu({
             showArchiveHead={groupProvidersForBind(filtered).length <= 1}
           />
         </div>
-        {canAdd ? <AddProviderRow protocol={protocol} onAdd={onAdd} /> : null}
       </DropdownMenuContent>
     </DropdownMenu>
   )

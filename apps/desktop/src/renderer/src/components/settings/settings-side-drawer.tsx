@@ -1,6 +1,6 @@
 /**
  * 设置侧边抽屉：portal 到 body，避免被上级 overflow / transform 裁切。
- * nested 叠在另一只抽屉上（智能体里加供应商）。
+ * nested 叠在另一只抽屉上（供应商 CRUD 已回到 `#/settings/providers`，不再从智能体抽屉叠新建）。
  */
 import { useEffect, type ReactNode } from "react"
 import { createPortal } from "react-dom"
