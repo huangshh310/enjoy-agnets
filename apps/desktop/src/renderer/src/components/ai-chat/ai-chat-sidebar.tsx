@@ -4,7 +4,7 @@
  * 聊天侧栏壳：品牌、导航、仓库树、折叠态。
  */
 import { RiAddLine, RiSearchLine } from "@remixicon/react"
-import { DashboardUserMenu } from "@/components/application/dashboard/dashboard-user-menu"
+import { WorkspaceDropdownMenu } from "@renderer/components/workspace/workspace-dropdown-menu"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
 import { Collapsible, SidebarAction } from "@renderer/components/ai-chat/sidebar/sidebar-action"
@@ -88,7 +88,7 @@ function SidebarHeader({
   return (
     <div className="flex w-full items-center">
       <div className="-m-2 min-w-0 overflow-hidden p-2">
-        <DashboardUserMenu collapsed={collapsed} name={userName} initials={initials} />
+        <WorkspaceDropdownMenu collapsed={collapsed} name={userName} initials={initials} />
       </div>
     </div>
   )
