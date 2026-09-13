@@ -110,10 +110,12 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
             </div>
           </div>
 
-          <Button onClick={() => void openFolder()} className="h-9 gap-1.5 text-caption-1-medium">
-            <RiFolderAddLine className="size-4" />
-            <span>{t("pages.workspaces.list.openFolder")}</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => void openFolder()} className="h-9 gap-1.5 text-caption-1-medium">
+              <RiFolderAddLine className="size-4" />
+              <span>{t("pages.workspaces.list.openFolder")}</span>
+            </Button>
+          </div>
         </div>
 
         {/* 搜索与过滤 */}

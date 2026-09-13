@@ -80,7 +80,7 @@ export function registerAgentToolsIpc() {
   })
   ipcMain.handle("agentTools.setSessionRuntime", async (_event, raw: unknown) => {
     const input = SetSessionRuntimeInput.parse(raw)
-    writeSessionRuntime(input.sessionId, input.runtimeId)
+    writeSessionRuntime(input.sessionId, input.runtimeId, input.modelId)
     return { ok: true as const }
   })
   ipcMain.handle("agentTools.syncConfig", async (_event, raw: unknown) => {

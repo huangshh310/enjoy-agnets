@@ -29,6 +29,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   workspaceName: "No workspace",
   workspaceRootLabel: "open a folder",
   workspaceRootPath: null,
+  workspaceKind: "local" as const,
+  remoteStatus: null,
+  remoteLabel: null,
   sessionId: null,
   sessionTitle: "New agent",
   repositories: [],
@@ -43,7 +46,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   provider: null,
   runtimeId: "enjoy-local",
   preferredRuntimeId: "enjoy-local",
+  preferredModelId: "",
   sessionRuntimes: {},
+  sessionModels: {},
+  sessionModelSwitches: {},
   sessionModes: {},
   sessionHandoffCuts: {},
   reasoningEffort: undefined,
@@ -70,7 +76,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setComposer: (composer) => set({ composer }),
   setRuntimeId: (runtimeId) => set({ runtimeId }),
   setPreferredRuntimeId: (preferredRuntimeId) => set({ preferredRuntimeId }),
+  setPreferredModelId: (preferredModelId) => set({ preferredModelId }),
   setSessionRuntimes: (sessionRuntimes) => set({ sessionRuntimes }),
+  setSessionModels: (sessionModels) => set({ sessionModels }),
+  markModelSwitch: (sessionId) =>
+    set((state) => ({
+      sessionModelSwitches: { ...state.sessionModelSwitches, [sessionId]: true }
+    })),
   markHandoffCut: (sessionId, at) =>
     set((state) => ({
       sessionHandoffCuts: { ...state.sessionHandoffCuts, [sessionId]: at }
@@ -150,6 +162,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
+  setRemoteStatus: (remoteStatus, remoteLabel) =>
+    set((state) => ({
+      remoteStatus,
+      remoteLabel: remoteLabel === undefined ? state.remoteLabel : remoteLabel
+    })),
   setWorkspace: (workspace) => {
     if (!workspace) {
       set({
@@ -157,6 +174,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         workspaceName: "No workspace",
         workspaceRootLabel: "open a folder",
         workspaceRootPath: null,
+        workspaceKind: "local",
+        remoteStatus: null,
+        remoteLabel: null,
         sessionId: null,
         sessionTitle: "New agent",
         repositories: [],
@@ -175,7 +195,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       workspaceId: workspace.id,
       workspaceName: workspace.name,
       workspaceRootLabel: workspace.rootPath.split(/[\\/]/).filter(Boolean).at(-1) ?? workspace.name,
-      workspaceRootPath: workspace.rootPath
+      workspaceRootPath: workspace.rootPath,
+      workspaceKind: workspace.kind === "ssh" ? "ssh" : "local",
+      remoteStatus: workspace.kind === "ssh" ? (workspace.sshStatus ?? "idle") : null,
+      remoteLabel: workspace.kind === "ssh" ? workspace.rootPath : null
     })
   },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>

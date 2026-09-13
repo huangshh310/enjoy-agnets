@@ -11,7 +11,8 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
-  NEED_PROVIDER_KEY
+  NEED_PROVIDER_KEY,
+  NEED_REMOTE_CONNECTED
 } from "../../lib/usage/classify-thread-error.ts"
 
 type ComposerGuardStore = {
@@ -20,14 +21,20 @@ type ComposerGuardStore = {
   modelId: string
   workspaceId: string | null
   sessionId: string | null
+  workspaceKind?: "local" | "ssh"
+  remoteStatus?: "idle" | "connecting" | "connected" | "failed" | "disconnected" | null
   setError: (message: string | null) => void
   setAgentPickerOpen: (open: boolean) => void
 }
 
 /** 发送盘是否亮成可发：与闸门同一套 ready。 */
 export function composerSendReady(
-  store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId">
+  store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">
 ): boolean {
+  if ((store.workspaceKind ?? "local") === "ssh") {
+    const status = store.remoteStatus ?? "disconnected"
+    if (status !== "connected") return false
+  }
   if (store.runtimeId === "enjoy-local") return Boolean(store.hasKey && store.modelId)
   const tool = rememberedAgentTool(store.runtimeId)
   if (!tool) return false
@@ -44,6 +51,13 @@ export function guardComposerSend(store: ComposerGuardStore, opts?: { ideReady?:
   if (!store.workspaceId || !store.sessionId) {
     store.setError("Open a workspace folder before running an agent.")
     return false
+  }
+  if ((store.workspaceKind ?? "local") === "ssh") {
+    const status = store.remoteStatus ?? "disconnected"
+    if (status === "connecting" || status === "failed" || status === "disconnected" || status === "idle") {
+      store.setError(NEED_REMOTE_CONNECTED)
+      return false
+    }
   }
   if (store.runtimeId === "enjoy-local") {
     if (!store.hasKey) {

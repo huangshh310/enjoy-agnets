@@ -20,6 +20,7 @@ export function SettingsSectionPage() {
   if (section === "automations") return <SettingsSectionBody section={section} />
   if (section === "account") return <SettingsSectionBody section={section} />
   if (section === "billing") return <SettingsSectionBody section={section} />
+  if (section === "extensions") return <SettingsSectionBody section={section} />
   if (section === "providers") {
     return (
       <div className="flex min-h-0 flex-1 flex-col">

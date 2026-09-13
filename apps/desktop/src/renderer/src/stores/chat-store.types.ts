@@ -67,6 +67,11 @@ export type RepositoryNode = {
   updatedAt: number
   workspaceId?: string
   rootPath?: string
+  locationKind?: "local" | "ssh"
+  sshStatus?: "idle" | "connecting" | "connected" | "failed" | "disconnected"
+  sshHost?: string
+  sshUser?: string
+  remotePath?: string
   isPinned?: boolean
   flagged?: boolean
   workflowStatus?: SessionWorkflowStatus | null
@@ -106,7 +111,16 @@ export type ModelOption = {
 }
 
 export type WorkspaceSessionHydrate = {
-  workspace: { id: string; name: string; rootPath?: string }
+  workspace: {
+    id: string
+    name: string
+    rootPath?: string
+    kind?: "local" | "ssh"
+    sshStatus?: "idle" | "connecting" | "connected" | "failed" | "disconnected"
+    sshHost?: string
+    sshUser?: string
+    remotePath?: string
+  }
   sessions: Array<{
     id: string
     title: string
@@ -125,6 +139,9 @@ export type ChatStore = {
   workspaceName: string
   workspaceRootLabel: string
   workspaceRootPath: string | null
+  workspaceKind: "local" | "ssh"
+  remoteStatus: "idle" | "connecting" | "connected" | "failed" | "disconnected" | null
+  remoteLabel: string | null
   sessionId: string | null
   sessionTitle: string
   repositories: RepositoryNode[]
@@ -141,7 +158,13 @@ export type ChatStore = {
   /** Composer 当前运行时：enjoy-local 或本机 CLI id。 */
   runtimeId: string
   preferredRuntimeId: string
+  /** 空会话写过的偏好默认模型；中途换模不得改它。 */
+  preferredModelId: string
   sessionRuntimes: Record<string, string>
+  /** 同引擎会话级模型覆盖，不进全局 agentTools.upsert。 */
+  sessionModels: Record<string, string>
+  /** 本会话 ACP 因换模重开过，角标「已切换」。 */
+  sessionModelSwitches: Record<string, boolean>
   /** 每个会话自己的 Ask/Plan，切会话还原，设置默认项不得改当前。 */
   sessionModes: Record<string, AgentMode>
   /** 交接确认后，早于该时间戳的气泡视为上一引擎记录。 */
@@ -185,7 +208,10 @@ export type ChatStore = {
   setComposer: (value: string) => void
   setRuntimeId: (runtimeId: string) => void
   setPreferredRuntimeId: (runtimeId: string) => void
+  setPreferredModelId: (modelId: string) => void
   setSessionRuntimes: (sessionRuntimes: Record<string, string>) => void
+  setSessionModels: (sessionModels: Record<string, string>) => void
+  markModelSwitch: (sessionId: string) => void
   markHandoffCut: (sessionId: string, at: number) => void
   setModel: (
     id: string,
@@ -206,7 +232,19 @@ export type ChatStore = {
   setHasKey: (hasKey: boolean) => void
   setError: (message: string | null) => void
   setAgentPickerOpen: (open: boolean) => void
-  setWorkspace: (workspace: { id: string; name: string; rootPath: string } | null) => void
+  setWorkspace: (
+    workspace: {
+      id: string
+      name: string
+      rootPath: string
+      kind?: "local" | "ssh"
+      sshStatus?: "idle" | "connecting" | "connected" | "failed" | "disconnected"
+    } | null
+  ) => void
+  setRemoteStatus: (
+    status: ChatStore["remoteStatus"],
+    label?: string | null
+  ) => void
   setSelectedFile: (path: string | null, content: string) => void
   setChanges: (changes: ChangedFileRow[]) => void
   setSessionReviewDismissedKey: (key: string | null) => void

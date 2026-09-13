@@ -244,6 +244,26 @@ test("已登录但版本过旧：不能发，也不开登录坞", () => {
   assert.equal(chat.read().picker, false)
 })
 
+test("SSH connecting|failed|disconnected 时 guardComposerSend 为 false", () => {
+  rememberAgentTools([])
+  for (const status of ["connecting", "failed", "disconnected"] as const) {
+    const chat = store({ runtimeId: "enjoy-local", hasKey: true })
+    Object.assign(chat, { workspaceKind: "ssh", remoteStatus: status })
+    assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+    assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "m", workspaceKind: "ssh", remoteStatus: status }), false)
+  }
+  assert.equal(
+    composerSendReady({
+      runtimeId: "enjoy-local",
+      hasKey: true,
+      modelId: "m",
+      workspaceKind: "ssh",
+      remoteStatus: "connected"
+    }),
+    true
+  )
+})
+
 test("仅官方登录失败：不能发，打开 Picker 重试", () => {
   resetCliLoginLoopStore()
   rememberAgentTools([officialTool("amp", false)])

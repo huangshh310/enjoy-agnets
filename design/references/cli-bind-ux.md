@@ -2,7 +2,7 @@
 
 > 背景长文，不是实现说明书。落地以 [`specs/agent-cli.md`](../specs/agent-cli.md)「当前真相」为准。  
 > 对照：Cline（Provider 下拉 + Model 下拉）、OpenCode（`供应商/模型` 一次选）、CC Switch（按 App 切换、人多了分子菜单）。  
-> 最后更新：2026-09-10
+> 最后更新：2026-09-13
 
 ## 1. 用户要完成的一件事
 
@@ -160,5 +160,7 @@ Configured 列表：
 ## 9. 对照现状的缺口
 
 代码已有：一份 vault、协议过滤、开流注入、家目录同步、右侧抽屉、下拉选档案、模型族标、也用于其他助手。添加档案在菜单外跳转供应商页。
+
+审计日 2026-09-13：对照 `local-cli-dense-p0.html` / `p0-add-provider-discover.html` 三条路径（官方 Claude + 中转、Codex 绑档案、「也用于」、≥6 筛选）**无用户可见差距**；不重开绑定模型。
 
 已对齐：本机 CLI 列表是密表三列（助手 | 动力源 | 操作）；Cursor/Grok 已装仍有动力源行。助手次行走版本 · 短路径（缺段用 —）；`homeSynced` 才画「已同步」；「官方仍保留」只进抽屉。动力源同构贴左，未找到 / 空档案为 `—`。列表无额度条、无「额度进配置」、无表底协议词。操作列定宽主槽 + 配置/复制。配置抽屉 576px 同壳，顶栏名称+配置提示+关闭。账号/模型分行，档案行不夹模型 id。也用于圆片；同步次级 details。添加在菜单外跳转供应商页；≥6 筛选；多协议分组；胶囊正文仍是引擎 · 模型（绑定用 vault 所选，档案名进 title）；也用于短标签且不上沙箱；绑了档案后官方 inspect 降为旁注，「这个助手用」在账号区之前。仅官方 / OMP 共用该槽，不假 BYOK。绑了档案后 Composer / 发送不要求官方 OAuth（缺 Key 才 needs_key）。upsert/开流校验协议。自定义 ACP 也是右侧抽屉。视觉真源只认 [`previews/local-cli-dense-p0.html`](../previews/local-cli-dense-p0.html)（锁 tip `8bd7f6e`）。发现性另认 [`previews/p0-add-provider-discover.html`](../previews/p0-add-provider-discover.html)（锁 tip `033838f`）。`dense-v2` 已废为 stub，即使内容相近也不要按 v2 路径接线。

@@ -5,14 +5,16 @@ import { getIde, hasIde } from "../lib/ide"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
+import { composerModelPatch } from "../lib/session-model.ts"
 import { pickActiveModel } from "./pick-active-model"
 import {
   createAndOpenSession,
   loadSession,
   refreshAllWorkspaces,
-  selectPersistedSession,
-  type WorkspaceRow
+  selectPersistedSession
 } from "./session-lifecycle"
+import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
+import type { WorkspaceRow } from "./workspace-row"
 import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
 import {
   useChatStore,
@@ -42,6 +44,11 @@ export function useAgentSession() {
 
   useEffect(() => {
     if (!hasIde()) return
+    const offRemote = getIde().workspace.onRemote?.((event) => {
+      const store = useChatStore.getState()
+      if (event.workspaceId !== store.workspaceId) return
+      store.setRemoteStatus(event.status as typeof store.remoteStatus, event.label)
+    })
     const unsubscribe = getIde().agent.onEvent((raw) => {
       const parsed = StreamEvent.safeParse(raw)
       if (!parsed.success) return
@@ -61,6 +68,7 @@ export function useAgentSession() {
     })
     return () => {
       unsubscribe()
+      offRemote?.()
     }
   }, [queryClient])
 
@@ -106,7 +114,9 @@ export function useAgentSession() {
 
 export async function loadWorkspace(workspace: WorkspaceRow) {
   const store = useChatStore.getState()
+  await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
   store.setWorkspace(workspace)
+  await connectSshIfNeeded(workspace)
   await refreshAllWorkspaces()
   const sessions = (await getIde().session.list({ workspaceId: workspace.id })) as Array<{
     id: string
@@ -123,7 +133,7 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
 export { abortComposerRun }
 export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
 export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersistedSession }
-export type { WorkspaceRow } from "./session-lifecycle"
+export type { WorkspaceRow } from "./workspace-row"
 
 export async function decidePendingApproval(
   decision: "allow" | "deny" | "allow_session",
@@ -152,14 +162,27 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const preferred = snapshot.preferences?.runtimeId ?? "enjoy-local"
   store.setPreferredRuntimeId(preferred)
   store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
+  store.setSessionModels(snapshot.sessionModels ?? {})
   store.setRuntimeId(pickSessionRuntime(store.sessionId, snapshot.sessionRuntimes, preferred))
+  if (!store.preferredModelId && snapshot.defaultModelId) {
+    store.setPreferredModelId(snapshot.defaultModelId)
+  }
   if (!hasIde()) {
     store.setHasKey(snapshot.hasKey)
     return
   }
   const models = (await getIde().models.list()) as ModelOption[]
   store.setModels(models)
-  const selected = pickActiveModel(models, store.modelId, snapshot.defaultModelId)
+  const preferredModel = store.preferredModelId || snapshot.defaultModelId
+  const sessionPatch = store.sessionId
+    ? composerModelPatch({
+        sessionId: store.sessionId,
+        sessionModels: snapshot.sessionModels ?? store.sessionModels,
+        preferredModelId: preferredModel,
+        models
+      })
+    : { modelId: preferredModel, modelLabel: "" }
+  const selected = pickActiveModel(models, sessionPatch.modelId, snapshot.defaultModelId)
   if (selected) {
     store.setModel(
       selected.id,
@@ -168,7 +191,7 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
       store.reasoningEffort ?? selected.reasoningEffort
     )
   } else {
-    store.setModel("", "")
+    store.setModel(sessionPatch.modelId, sessionPatch.modelLabel)
   }
   // 先写 model 再亮 hasKey，避免发送盘在 modelId 仍空时变成 Send。
   store.setHasKey(snapshot.hasKey)

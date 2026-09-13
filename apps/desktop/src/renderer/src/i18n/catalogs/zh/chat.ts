@@ -344,6 +344,10 @@ export const zhChat = {
     collapseSummary: "收起摘要",
     legacyHint: "上一引擎记录 · 新引擎只收到摘要"
   },
+  modelSwitch: {
+    badge: "已切换",
+    hint: "下一轮生效。本机助手会话会重开，不是热切换。"
+  },
 
   projects: "项目",
   organizeProjects: "整理项目侧边栏",

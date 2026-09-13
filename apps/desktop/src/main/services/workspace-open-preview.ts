@@ -14,7 +14,13 @@ export type { OpenPreviewDeps, PreviewPlan } from "./workspace-open-preview-plan
 export { planWorkspacePreviewHref } from "./workspace-open-preview-plan.ts"
 
 const defaultDeps: OpenPreviewDeps = {
-  resolveRoot: async (workspaceId) => (await getWorkspace(workspaceId)).rootPath,
+  resolveRoot: async (workspaceId) => {
+    const workspace = await getWorkspace(workspaceId)
+    if (workspace.kind === "ssh") {
+      throw new Error("SSH workspace has no local preview root.")
+    }
+    return workspace.rootPath
+  },
   fileExists: defaultFileExists,
   openExternal: (href) => shell.openExternal(href)
 }

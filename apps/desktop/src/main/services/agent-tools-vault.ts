@@ -82,8 +82,26 @@ export function unbindProviderFromAgentTools(providerId: string): void {
   if (changed) setSetting(KEY, JSON.stringify(next))
 }
 
-export function writeSessionRuntime(sessionId: string, runtimeId: string) {
+export function writeSessionRuntime(sessionId: string, runtimeId: string, modelId?: string) {
   const all = readSessionRuntimes()
   all[sessionId] = runtimeId
   setSetting("session.runtimes", JSON.stringify(all))
+  if (modelId?.trim()) writeSessionModel(sessionId, modelId.trim())
+}
+
+export function readSessionModels(): Record<string, string> {
+  const raw = getSetting("session.models")
+  if (!raw) return {}
+  try {
+    const parsed = z.record(z.string(), z.string()).safeParse(JSON.parse(raw))
+    return parsed.success ? parsed.data : {}
+  } catch {
+    return {}
+  }
+}
+
+export function writeSessionModel(sessionId: string, modelId: string) {
+  const all = readSessionModels()
+  all[sessionId] = modelId
+  setSetting("session.models", JSON.stringify(all))
 }

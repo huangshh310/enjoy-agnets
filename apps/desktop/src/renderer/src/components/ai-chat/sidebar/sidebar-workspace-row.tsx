@@ -105,7 +105,17 @@ function FolderHeader({
             isActive ? "text-accent-500" : "text-foreground-icon-secondary"
           )}
         />
-        <span className="min-w-0 flex-1 truncate text-body-medium">{workspace.name}</span>
+        <span
+          className="min-w-0 flex-1 truncate text-body-medium"
+          title={remoteTitle(workspace)}
+        >
+          {workspace.name}
+        </span>
+        {workspace.locationKind === "ssh" ? (
+          <span className="shrink-0 rounded bg-background-tertiary-default px-1 font-mono text-caption-2-medium text-text-tertiary">
+            {t("settings.workspace.remoteFootnote")}
+          </span>
+        ) : null}
         {isPinned ? <RiPushpin2Fill className="size-3 shrink-0 text-accent-500" /> : null}
       </div>
       <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
@@ -203,10 +213,24 @@ function SessionList({
   )
 }
 
+function remoteTitle(workspace: RepositoryNode): string | undefined {
+  if (workspace.locationKind !== "ssh") return workspace.rootPath
+  const user = workspace.sshUser
+  const host = workspace.sshHost
+  const path = workspace.remotePath
+  if (user && host && path) return `${user}@${host}:${path}`
+  return workspace.rootPath
+}
+
 function switchWorkspace(workspace: RepositoryNode) {
   return loadWorkspace({
     id: workspace.id,
     name: workspace.name,
-    rootPath: workspace.rootPath || ""
+    rootPath: workspace.rootPath || "",
+    kind: workspace.locationKind,
+    sshStatus: workspace.sshStatus,
+    sshHost: workspace.sshHost,
+    sshUser: workspace.sshUser,
+    remotePath: workspace.remotePath
   })
 }

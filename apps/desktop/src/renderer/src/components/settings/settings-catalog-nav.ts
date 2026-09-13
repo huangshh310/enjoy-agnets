@@ -5,6 +5,7 @@
 import {
   RiEqualizer3Line,
   RiFileTextLine,
+  RiApps2Line,
   RiFolder6Line,
   RiKeyboardBoxLine,
   RiPaletteLine,
@@ -80,6 +81,12 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         labelKey: "nav.workspace",
         icon: RiFolder6Line,
         keywords: ["folder", "project", "open", "knowledge", "rag", "index", "media", "asset", "工作区", "知识库", "媒体", "资产"]
+      },
+      {
+        id: "extensions",
+        labelKey: "nav.extensions",
+        icon: RiApps2Line,
+        keywords: ["extensions", "plugins", "mcp", "skills", "marketplace", "扩展", "插件", "技能", "市场"]
       },
       {
         id: "mcp",

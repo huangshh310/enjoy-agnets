@@ -23,6 +23,7 @@ export type OpenCodingStreamInput = {
   messages: ModelMessage[]
   abortSignal: AbortSignal
   workspaceRoot: string
+  workspaceId?: string
   sessionId: string
   modelId: string
   secret?: StoredSecret

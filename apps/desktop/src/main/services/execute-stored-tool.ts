@@ -3,8 +3,10 @@
  * 分发表必须与 createCodingTools / createMcpAgentTools 的可审批工具集合一致，
  * 漏一个就会出现「点了允许但什么都没发生」的假放行。
  */
+import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
 import { mcpAgentToolName } from "@enjoy-agents/mcp"
-import { createWorkspaceHost } from "./workspace-host"
+import { createWorkspaceHost, getWorkspace } from "./workspace"
+import { resolveWorkspaceHost } from "./workspace-host-factory"
 import { getApproval } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { callServerTool, listVisibleMcpTools } from "./mcp-service"
@@ -20,7 +22,7 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
   } catch {
     return
   }
-  const host = createWorkspaceHost(run.workspaceRoot)
+  const host = await hostForRun(run)
   const path = typeof args.path === "string" ? args.path : ""
   if (pending.name === "write_file" && path && typeof args.content === "string") {
     await host.writeFile(path, args.content)
@@ -64,9 +66,21 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
   throw new Error(`Approved tool "${pending.name}" cannot be resumed after restart.`)
 }
 
+async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {
+  if (run.input.workspaceId) {
+    try {
+      const record = await getWorkspace(run.input.workspaceId)
+      return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
+    } catch {
+      // 回落本机 host
+    }
+  }
+  return createWorkspaceHost(run.workspaceRoot)
+}
+
 /** code_mode = 写脚本 + 执行，与工具 execute 保持同一顺序。 */
 async function resumeCodeMode(
-  host: ReturnType<typeof createWorkspaceHost>,
+  host: AgentWorkspaceHost,
   args: Record<string, unknown>
 ): Promise<void> {
   const source = typeof args.source === "string" ? args.source : ""

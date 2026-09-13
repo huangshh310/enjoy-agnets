@@ -8,15 +8,17 @@ import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
 import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { listAgentTools } from "./agent-tools-service"
 import { assertAndClampBind } from "./agent-tools-bind-assert"
-import { readAgentToolOverrides } from "./agent-tools-vault"
+import { readAgentToolOverrides, readSessionModels } from "./agent-tools-vault"
 import { providerEnvFor, requireBindProfile } from "./provider-bind-env"
 import { readVault } from "./secrets-vault"
 import type { OpenedCodingStream } from "./open-coding-stream"
+import { resolveAcpSpawnDirect } from "./ssh/resolve-acp-spawn.ts"
 export async function openAcpStream(input: {
   runId: string
   sessionId: string
   runtimeId: string
   workspaceRoot: string
+  workspaceId?: string
   messages: Parameters<typeof streamAcpTurn>[0]["messages"]
   abortSignal: AbortSignal
   waitForSubagentApproval?: Parameters<typeof streamAcpTurn>[0]["waitForApproval"]
@@ -38,7 +40,8 @@ export async function openAcpStream(input: {
   const detected = override?.binaryPath ? undefined : publicTool?.detectedPath
 
   let injectedEnv: Record<string, string> | undefined
-  let boundModel = override?.modelId || publicTool?.selectedModel
+  const sessionModel = readSessionModels()[input.sessionId]?.trim()
+  let boundModel = sessionModel || override?.modelId || publicTool?.selectedModel
   if (override?.useCustomProvider && override?.providerId) {
     const clamped = await assertAndClampBind({
       id: input.runtimeId,
@@ -52,6 +55,13 @@ export async function openAcpStream(input: {
     injectedEnv = providerEnvFor(input.runtimeId, profile, boundModel)
   }
 
+  const spawnDirect = await resolveAcpSpawnDirect({
+    workspaceId: input.workspaceId,
+    runtimeId: input.runtimeId,
+    workspaceRoot: input.workspaceRoot,
+    extraArgs: override?.extraArgs ?? [],
+    modelId: boundModel
+  })
   const opened = await streamAcpTurn({
     runId: input.runId,
     sessionId: input.sessionId,
@@ -65,6 +75,7 @@ export async function openAcpStream(input: {
       modelId: boundModel
     },
     env: injectedEnv,
+    spawnDirect,
     waitForApproval: input.waitForSubagentApproval,
     customInstructions: input.customInstructions
   })

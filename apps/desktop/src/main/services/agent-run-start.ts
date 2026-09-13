@@ -10,7 +10,7 @@ import { createId } from "./ids"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
-import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import { resolveRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
@@ -59,6 +59,8 @@ async function beginAgentRun(
   const runtimeId = resolveRuntimeId(input, prefs)
   writeSessionRuntime(input.sessionId, runtimeId)
   input.runtimeId = runtimeId
+  const overlayModel = resolveRunModelId(input)
+  if (overlayModel) input.modelId = overlayModel
   if (isAcpHostRuntime(runtimeId) && !input.modelId) {
     input.modelId = `cli:${runtimeId}`
   }

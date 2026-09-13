@@ -30,6 +30,11 @@ export function buildWorkspaceTree(
       kind: "workspace",
       updatedAt: Date.now(),
       rootPath: item.workspace.rootPath,
+      locationKind: item.workspace.kind === "ssh" ? "ssh" : "local",
+      sshStatus: item.workspace.sshStatus,
+      sshHost: item.workspace.sshHost,
+      sshUser: item.workspace.sshUser,
+      remotePath: item.workspace.remotePath,
       isPinned: pinnedWorkspaceIds.includes(item.workspace.id)
     })
     for (const session of item.sessions) {

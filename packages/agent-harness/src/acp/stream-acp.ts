@@ -6,7 +6,7 @@ import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { AcpClient } from "./client.ts"
 import { acpProcessKey, composeAcpPrompt } from "./acp-prompt.ts"
 import { mapAcpUpdate } from "./map-events.ts"
-import { spawnAcpProcess } from "./spawn.ts"
+import { acpHandshakeCwd, mapAcpSpawnFailure, spawnAcpProcess, type AcpSpawnDirect } from "./spawn.ts"
 import type { SpawnOverride } from "../agent-tools/resolve-spawn.ts"
 
 export type AcpTurnHandle = {
@@ -24,6 +24,7 @@ export type StreamAcpTurnInput = {
   abortSignal?: AbortSignal
   override?: SpawnOverride
   env?: Record<string, string>
+  spawnDirect?: AcpSpawnDirect
   waitForApproval?: (input: {
     toolName: string
     toolCallId: string
@@ -151,7 +152,8 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
     id: input.toolId,
     cwd: input.workspaceRoot,
     override: input.override,
-    env: input.env
+    env: input.env,
+    spawnDirect: input.spawnDirect
   })
   const live: LiveAcp = {
     client: new AcpClient(spawned.child, {
@@ -171,12 +173,14 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
     modelKey
   }
   try {
-    live.acpSessionId = await live.client.handshake(input.workspaceRoot)
+    live.acpSessionId = await live.client.handshake(
+      acpHandshakeCwd(input.workspaceRoot, input.spawnDirect)
+    )
     liveBySession.set(input.sessionId, live)
     return live
   } catch (error) {
     live.client.dispose("kill")
-    throw error
+    throw mapAcpSpawnFailure(error, input.spawnDirect?.failHint)
   }
 }
 

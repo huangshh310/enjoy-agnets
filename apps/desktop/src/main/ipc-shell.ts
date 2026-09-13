@@ -3,27 +3,10 @@
  */
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import {
-  FileDiffInput,
-  GitCommitInput,
-  GitLogInput,
-  GitPatchInput,
-  GitPushInput,
-  GitRestoreInput,
-  GitStageInput,
-  PreviewCheckpointInput,
-  RestoreCheckpointInput,
-  ListDirInput,
-  MoveWorkspacePathInput,
-  OpenWorkspaceInput,
-  ReadFileInput,
-  WatchWorkspaceInput,
-  WriteFileInput,
-  RemoveWorkspaceInput,
   TerminalCloseInput,
   TerminalOpenInput,
   TerminalResizeInput,
-  TerminalWriteInput,
-  WorkspaceIdInput
+  TerminalWriteInput
 } from "@enjoy-agents/ipc-contract"
 import {
   abortAgent,
@@ -32,7 +15,6 @@ import {
   steerAgent
 } from "./services/agent-runner"
 import { inspectPrompt } from "./services/inspect-prompt-service"
-import { setSetting } from "./services/database"
 import {
   closeWorkspaceTerminal,
   openWorkspaceTerminal,
@@ -40,37 +22,15 @@ import {
   writeWorkspaceTerminal
 } from "./services/terminal"
 import { queryIsMaximized, toggleMaximize } from "./services/window-maximize"
-import {
-  changedFiles,
-  commitWorkspaceAll,
-  getWorkspace,
-  listWorkspaceDir,
-  listWorkspaces,
-  openWorkspace,
-  pickFile,
-  pickFolder,
-  pushWorkspace,
-  readGitLog,
-  readWorkspaceDiff,
-  readWorkspaceFile,
-  readWorkspacePatch,
-  removeWorkspace,
-  restoreWorkspacePaths,
-  stageWorkspacePaths,
-  listEnjoyCheckpointItems,
-  previewEnjoyCheckpointRestore,
-  restoreEnjoyCheckpoint
-} from "./services/workspace"
-import { writeWorkspaceFile } from "./services/workspace-write"
-import { openWorkspacePreview } from "./services/workspace-open-preview"
-import { moveWorkspacePath } from "./services/workspace-move"
-import { watchWorkspace } from "./services/workspace-watch"
+import { SSH_HOST_CHANNELS, registerSshHostIpc } from "./ipc-ssh-hosts.ts"
+import { registerWorkspaceIpc } from "./ipc-workspace.ts"
 import { listInboxStateRows, putInboxStates } from "./services/inbox-state-service"
 
 export const SHELL_CHANNELS = [
   "workspace.open",
   "workspace.pickFolder",
   "workspace.pickFile",
+  "workspace.pickSshKey",
   "workspace.remove",
   "workspace.list",
   "workspace.files",
@@ -89,6 +49,11 @@ export const SHELL_CHANNELS = [
   "workspace.previewCheckpoint",
   "workspace.restoreCheckpoint",
   "workspace.openPreview",
+  "workspace.openSsh",
+  "workspace.connect",
+  "workspace.disconnect",
+  "workspace.retry",
+  ...SSH_HOST_CHANNELS,
   "workspace.changes",
   "inbox.state.list",
   "inbox.state.put",
@@ -117,6 +82,7 @@ export function windowFromEvent(event: IpcMainInvokeEvent): BrowserWindow {
 
 export function registerShellIpc() {
   registerWorkspaceIpc()
+  registerSshHostIpc()
   registerAgentIpc()
   registerTerminalIpc()
   registerInboxIpc()
@@ -126,96 +92,6 @@ export function registerShellIpc() {
 function registerInboxIpc() {
   ipcMain.handle("inbox.state.list", (_event, raw) => listInboxStateRows(raw))
   ipcMain.handle("inbox.state.put", (_event, raw) => putInboxStates(raw))
-}
-
-function registerWorkspaceIpc() {
-  ipcMain.handle("workspace.open", async (_event, raw) => {
-    const input = OpenWorkspaceInput.parse(raw ?? {})
-    const workspace = await openWorkspace(input.path, input.name)
-    setSetting("lastWorkspaceId", workspace.id)
-    return workspace
-  })
-  ipcMain.handle("workspace.pickFolder", async () => pickFolder())
-  ipcMain.handle("workspace.pickFile", async () => pickFile())
-  ipcMain.handle("workspace.remove", async (_event, raw) => {
-    return removeWorkspace(RemoveWorkspaceInput.parse(raw).workspaceId)
-  })
-  ipcMain.handle("workspace.list", async () => listWorkspaces())
-  ipcMain.handle("workspace.files", async (_event, raw) => {
-    const input = ListDirInput.parse(raw)
-    return listWorkspaceDir(input.workspaceId, input.path)
-  })
-  ipcMain.handle("workspace.readFile", async (_event, raw) => {
-    const input = ReadFileInput.parse(raw)
-    return readWorkspaceFile(input.workspaceId, input.path)
-  })
-  ipcMain.handle("workspace.writeFile", async (_event, raw) => {
-    const input = WriteFileInput.parse(raw)
-    return writeWorkspaceFile(input)
-  })
-  ipcMain.handle("workspace.move", async (_event, raw) => {
-    return moveWorkspacePath(MoveWorkspacePathInput.parse(raw))
-  })
-  ipcMain.handle("workspace.watch", async (_event, raw) => {
-    const input = WatchWorkspaceInput.parse(raw)
-    return watchWorkspace(input.workspaceId)
-  })
-  ipcMain.handle("workspace.diff", async (_event, raw) => {
-    const input = FileDiffInput.parse(raw)
-    return readWorkspaceDiff(input.workspaceId, input.path, input.ignoreWhitespace)
-  })
-  ipcMain.handle("workspace.changes", async (_event, raw) => {
-    const workspaceId = WorkspaceIdInput.parse(raw).workspaceId
-    return changedFiles((await getWorkspace(workspaceId)).rootPath)
-  })
-  ipcMain.handle("workspace.gitLog", async (_event, raw) => {
-    const input = GitLogInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return readGitLog(ws.rootPath, input.limit ?? 30, input.includeBranchFiles ?? false)
-  })
-  ipcMain.handle("workspace.gitCommit", async (_event, raw) => {
-    const input = GitCommitInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return commitWorkspaceAll(ws.rootPath, input.message, input.stageAll)
-  })
-  ipcMain.handle("workspace.gitPush", async (_event, raw) => {
-    const input = GitPushInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return pushWorkspace(ws.rootPath)
-  })
-  ipcMain.handle("workspace.gitPatch", async (_event, raw) => {
-    const input = GitPatchInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return { patch: await readWorkspacePatch(ws.rootPath, input.paths) }
-  })
-  ipcMain.handle("workspace.gitRestore", async (_event, raw) => {
-    const input = GitRestoreInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return restoreWorkspacePaths(ws.rootPath, input.paths)
-  })
-  ipcMain.handle("workspace.gitStage", async (_event, raw) => {
-    const input = GitStageInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return stageWorkspacePaths(ws.rootPath, input.paths, input.action)
-  })
-  ipcMain.handle("workspace.listCheckpoints", async (_event, raw) => {
-    const workspaceId = WorkspaceIdInput.parse(raw).workspaceId
-    const ws = await getWorkspace(workspaceId)
-    return { checkpoints: await listEnjoyCheckpointItems(ws.rootPath) }
-  })
-  ipcMain.handle("workspace.previewCheckpoint", async (_event, raw) => {
-    const input = PreviewCheckpointInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return previewEnjoyCheckpointRestore(ws.rootPath, input.ref)
-  })
-  ipcMain.handle("workspace.restoreCheckpoint", async (_event, raw) => {
-    const input = RestoreCheckpointInput.parse(raw)
-    const ws = await getWorkspace(input.workspaceId)
-    return restoreEnjoyCheckpoint(ws.rootPath, input.ref, {
-      confirmDeleteUntracked: input.confirmDeleteUntracked
-    })
-  })
-  ipcMain.handle("workspace.openPreview", async (_event, raw) => openWorkspacePreview(raw))
 }
 
 function registerAgentIpc() {
@@ -268,3 +144,5 @@ function registerWindowIpc() {
     return { ok: true }
   })
 }
+
+

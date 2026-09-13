@@ -1,7 +1,7 @@
 # Enjoy：插件 / 扩展 / 技能 / MCP 仓库方案
 
 > 位置：计划落地 `design/references/plugin-extensions-hub.md`  
-> 角色：Reference（产品第一稿 · 2026-09-13）  
+> 角色：Reference（产品第一稿 · 2026-09-13）。P0-H 发现壳已落地：`#/settings/extensions`，视觉真源 `previews/p0-h-extensions-hub.html`。安装权威仍是 `#/mcp` / `#/skills`。  
 > 约束：Local-first · 三路勿混 · 不假 BYOK · 沙箱不上轨 · 不重开 worktree  
 > 关联：Registry / skill-sources / `#/mcp` / Sources / ACP 宿主
 

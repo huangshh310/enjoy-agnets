@@ -53,11 +53,21 @@ export function ComposerFooter({
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const hasKey = useChatStore((state) => state.hasKey)
+  const workspaceKind = useChatStore((state) => state.workspaceKind)
+  const remoteStatus = useChatStore((state) => state.remoteStatus)
+  const remoteLabel = useChatStore((state) => state.remoteLabel)
   useCliLoginLoop(runtimeId)
   const chrome = composerChromeFor(runtimeId)
-  const sendReady = composerSendReady({ runtimeId, hasKey, modelId })
+  const sendReady = composerSendReady({ runtimeId, hasKey, modelId, workspaceKind, remoteStatus })
   const showVoice = chrome.voice && canRealtime
   return (
+    <div className="flex min-w-0 flex-col">
+    {workspaceKind === "ssh" ? (
+      <p className="px-3 text-caption-2-regular text-text-tertiary">
+        {t("settings.workspace.remoteFootnote")}
+        {remoteLabel ? ` · ${remoteLabel}` : ""} · {t("settings.workspace.remoteNotEngine")}
+      </p>
+    ) : null}
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
       <div className="flex min-w-0 items-center gap-2">
         <ComposerAttachMenu onPickFiles={onPickFiles} />
@@ -103,6 +113,7 @@ export function ComposerFooter({
           onStop={onStop}
         />
       </div>
+    </div>
     </div>
   )
 }

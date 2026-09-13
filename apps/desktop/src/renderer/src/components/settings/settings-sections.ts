@@ -11,6 +11,7 @@ export const SETTINGS_SECTIONS = [
   "skills",
   "rules",
   "workspace",
+  "extensions",
   "mcp",
   "git",
   "capabilities",

@@ -6,7 +6,8 @@ import { dirname } from "node:path"
 import { BrowserWindow } from "electron"
 import { resolveKnowledgePath } from "@enjoy-agents/db"
 import { fireOnSaveAutomations } from "./automations-run"
-import { getWorkspace } from "./workspace"
+import { createWorkspaceHost, getWorkspace } from "./workspace"
+import { resolveWorkspaceHost } from "./workspace-host-factory"
 
 export async function writeWorkspaceFile(input: {
   workspaceId: string
@@ -15,9 +16,13 @@ export async function writeWorkspaceFile(input: {
   sessionId?: string
 }): Promise<{ ok: true; path: string }> {
   const workspace = await getWorkspace(input.workspaceId)
-  const resolved = resolveKnowledgePath(workspace.rootPath, input.path)
-  await fs.mkdir(dirname(resolved.abs), { recursive: true })
-  await fs.writeFile(resolved.abs, input.content, "utf8")
+  if (workspace.kind === "ssh") {
+    await resolveWorkspaceHost(workspace, undefined, createWorkspaceHost).writeFile(input.path, input.content)
+  } else {
+    const resolved = resolveKnowledgePath(workspace.rootPath, input.path)
+    await fs.mkdir(dirname(resolved.abs), { recursive: true })
+    await fs.writeFile(resolved.abs, input.content, "utf8")
+  }
   if (input.sessionId) {
     const window = BrowserWindow.getAllWindows().find((item) => !item.isDestroyed())
     await fireOnSaveAutomations(window, input.workspaceId, input.sessionId)

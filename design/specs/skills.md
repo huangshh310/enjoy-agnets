@@ -4,6 +4,8 @@
 
 ## 当前真相
 
+设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。
+
 1. **工作模块与路由**：`#/skills` 是应用内唯一的 Skills 工作模块。情境导航栏（Secondary Sidebar）包含三组导航：
    - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包合集 (`packs`)。
    - 按生效助手筛选 (`target:${targetId}`)：Enjoy, Claude, Cursor, Codex, Pi, OMP。

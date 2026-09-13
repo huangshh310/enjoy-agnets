@@ -2,7 +2,7 @@
 export const zhNav = {
   groupApp: "应用",
   groupAgent: "智能体",
-  groupWorkspace: "工作区",
+  groupWorkspace: "工作区与扩展",
   groupIntegrations: "集成",
   groupArchived: "已归档",
   groupOrg: "组织",
@@ -21,6 +21,7 @@ export const zhNav = {
   workflow: "工作流恢复",
   sandbox: "沙箱",
   workspace: "工作区",
+  extensions: "扩展",
   knowledge: "知识库索引",
   media: "媒体与资产",
   mcp: "MCP",

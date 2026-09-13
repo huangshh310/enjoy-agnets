@@ -14,11 +14,11 @@ Renderer（不受信）
 Main Process（可信）
   agent-runtime     packages/agent-core + AI SDK 7
   providers         packages/providers
-  workspace         fs / git / 审批执行
+  workspace         fs / git / 审批执行；SSH 时第二只 `AgentWorkspaceHost` 适配器（连接层 + 工厂，不把 SSH 散进每个 handler）
   app-update        electron-updater → GitHub Releases
   terminal          node-pty + renderer xterm
   db                手写 SQL 迁移 + repository 函数 + node:sqlite（未引入 Drizzle ORM）
-  secrets           safeStorage / OS keychain
+  secrets           safeStorage / OS keychain（含 SSH 登录密码，按 hostId）
         │  HTTPS（BYOK 直连）
         ▼
 模型供应商

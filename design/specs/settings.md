@@ -18,13 +18,13 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/team` `#/settings/members` | 团队资料 / 成员 | 旧 `#/team/*` redirect |
 | `#/settings/billing` `#/settings/organization` `#/settings/integrations` | 账单 / 组织 / 企业集成 | 旧 `#/company/*` redirect |
 | `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect。通知偏好走 `preferences` + 主进程 `Notification`。个人资料（名/邮箱/头衔/封面/Blobatar）走 `settings.setPreferences.accountProfile`，进本机 `preferences` JSON；旧 `localStorage` `enjoy:account-profile` 只迁移一次。不是云账号 |
-| `#/settings/workspace` | 工作区管理（含已挂载目录列表） | 旧 `#/workspaces` redirect |
+| `#/settings/workspace` | 工作区管理 + **远程连接名册**（SSH 主机，不是新一级导航） | 旧 `#/workspaces` redirect |
+| `#/settings/extensions` | 扩展发现壳 | 两列 MCP \| Skills；添加与精选卡深链 `#/mcp` / `#/skills`；无安装内核、无 Registry |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
 `#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（不灌 SKILL.md）。ACP 不重复灌 AGENTS.md / 技能正文（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置默认项 C 端只露「探索 / 执行」人话卡片（视觉锁 [`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)）：探索写入内部 `plan`，执行写入 `agent`。**禁止**把 `ask|plan|agent`、ACP、协议微标写进默认项文案。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
-设置分段 ID 完整保留 26 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
-侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；组织：**个人资料** `#/settings/account`），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）；`skills` 自己就是一级入口，不再并进「说明」。不要把一级入口做成「团队资料」空态，否则个人中心（Blobatar / Hero / 用量图）会从侧栏消失。
+设置分段 ID 含 `extensions`（工作区组）。侧栏情境栏 4 大板块 **11** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/**扩展**/MCP；组织：**个人资料** `#/settings/account`）。`#/settings/extensions` 是发现壳：两列 MCP | Skills，已配置计数 +「添加」深链现有工作模块，精选 4–6 卡只读投影 `mcp-presets` / `skills-curated`；点卡带 `preset` / `install`。页上无 Registry、无本机 CLI、无 `ACP · stdio` 协议微标。不增第八个工作模块。视觉真源 [`../previews/p0-h-extensions-hub.html`](../previews/p0-h-extensions-hub.html)。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）；`skills` 自己就是一级入口，不再并进「说明」。不要把一级入口做成「团队资料」空态，否则个人中心（Blobatar / Hero / 用量图）会从侧栏消失。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。Chat：Shift+Tab 循环审批档 `allow-reads → allow-edits → allow-all`（`use-permission-cycle-hotkey`；输入框 / contentEditable 内不触发；custom 档从 `allow-reads` 起算）。设置 shortcuts 已登记。
 
@@ -83,7 +83,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发落地：`manual` /
 - 绑了 Enjoy 档案后，配置抽屉顶部若仍画 `inspect.authAccount` 英雄卡（邮箱 / CUSTOM / 当前模型），用户会以为没换供应商。`authAccount` 是本机 CLI 官方登录。正确做法：「这个助手用」在前；`useCustomProvider` 时官方账号只作旁注，不展示 inspect 当前模型。
 - 「这个助手用」若两只无标签下拉都写 `deep · deepseek-flash`，用户分不清在选账号还是模型。账号行只写档案名 + 品牌/密钥副行；模型单独标签。抽屉 576px（`36rem`），给后续字段留宽。同步是次级折叠，不要做成第三只下拉。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
-- 设置侧栏严禁无脑平铺全部 26 个分段。`skills` 是一级入口（智能体分组），不要再并进「说明」。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
+- 设置侧栏严禁无脑平铺全部分段。`skills` 是一级入口（智能体分组），不要再并进「说明」。`extensions` 是工作区组一级入口（发现壳）。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。

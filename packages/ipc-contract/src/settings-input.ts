@@ -188,7 +188,8 @@ export const SettingsSnapshot = z.object({
       catalog: []
     }),
   agentTools: z.array(AgentToolPublic).default([]),
-  sessionRuntimes: z.record(z.string(), z.string()).default({})
+  sessionRuntimes: z.record(z.string(), z.string()).default({}),
+  sessionModels: z.record(z.string(), z.string()).default({})
 })
 export type SettingsSnapshot = z.infer<typeof SettingsSnapshot>
 

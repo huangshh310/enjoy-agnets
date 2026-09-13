@@ -289,7 +289,8 @@ export type SyncCliConfigResult = z.infer<typeof SyncCliConfigResult>
 export const SetSessionRuntimeInput = z
   .object({
     sessionId: z.string().min(1),
-    runtimeId: AgentToolId
+    runtimeId: AgentToolId,
+    modelId: z.string().min(1).optional()
   })
   .strict()
 export type SetSessionRuntimeInput = z.infer<typeof SetSessionRuntimeInput>

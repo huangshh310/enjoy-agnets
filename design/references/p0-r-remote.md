@@ -1,6 +1,7 @@
 # Enjoy：远程（Remote）第一刀定义
 
 > 计划落地：`design/references/p0-r-remote.md` + 预览 `design/previews/p0-r-remote-workspace.html`  
+> P0 已落地范围：SSH 工作区位置、连接态、host 工厂、ACP SSH spawn 规划。P1 仍留远程 Agent Server。视觉真源已入库。  
 > 产品 · 2026-09-13 · 用户定调：基础完善 + 创新 + **需要远程**  
 > 不挡 P0-F；假 BYOK / 沙箱上轨 / worktree 仍砍
 

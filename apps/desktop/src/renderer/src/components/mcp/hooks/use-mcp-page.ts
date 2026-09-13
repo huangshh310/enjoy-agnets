@@ -9,6 +9,7 @@ import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { textFromAppMessage } from "../lib/app-message-text"
 import type { McpActiveTab, McpOverviewStats, McpPluginPreset } from "../types/mcp-ui.types"
+import { useMcpRouteSearch } from "./use-mcp-route-search"
 
 export function useMcpPage() {
   const queryClient = useQueryClient()
@@ -139,6 +140,12 @@ export function useMcpPage() {
     }
     setCreateModalOpen(true)
   }
+
+  useMcpRouteSearch({
+    t,
+    setActiveTab,
+    onPrefill: handlePrefillPreset
+  })
 
   function openCreateModal(server: McpServer | null = null) {
     setEditingServer(server)

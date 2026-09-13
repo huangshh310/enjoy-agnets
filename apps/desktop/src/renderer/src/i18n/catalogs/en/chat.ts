@@ -349,6 +349,10 @@ export const enChat = {
     collapseSummary: "Hide brief",
     legacyHint: "Previous engine · the new one only got a brief"
   },
+  modelSwitch: {
+    badge: "Switched",
+    hint: "Takes effect next turn. The local assistant session will reopen; this is not a hot swap."
+  },
 
   projects: "Projects",
   organizeProjects: "Organize project sidebar",

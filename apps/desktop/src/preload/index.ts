@@ -7,6 +7,7 @@ const ide = {
     open: (input?: unknown) => ipcRenderer.invoke("workspace.open", input ?? {}),
     pickFolder: () => ipcRenderer.invoke("workspace.pickFolder"),
     pickFile: () => ipcRenderer.invoke("workspace.pickFile"),
+    pickSshKey: () => ipcRenderer.invoke("workspace.pickSshKey"),
     remove: (input: unknown) => ipcRenderer.invoke("workspace.remove", input),
     list: () => ipcRenderer.invoke("workspace.list"),
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
@@ -33,7 +34,29 @@ const ide = {
       ipcRenderer.invoke("workspace.previewCheckpoint", input),
     restoreCheckpoint: (input: unknown) =>
       ipcRenderer.invoke("workspace.restoreCheckpoint", input),
-    openPreview: (input: unknown) => ipcRenderer.invoke("workspace.openPreview", input)
+    openPreview: (input: unknown) => ipcRenderer.invoke("workspace.openPreview", input),
+    openSsh: (input: unknown) => ipcRenderer.invoke("workspace.openSsh", input),
+    connect: (input: unknown) => ipcRenderer.invoke("workspace.connect", input),
+    disconnect: (input: unknown) => ipcRenderer.invoke("workspace.disconnect", input),
+    retry: (input: unknown) => ipcRenderer.invoke("workspace.retry", input),
+    sshHosts: {
+      list: () => ipcRenderer.invoke("workspace.sshHosts.list"),
+      upsert: (input: unknown) => ipcRenderer.invoke("workspace.sshHosts.upsert", input),
+      remove: (input: unknown) => ipcRenderer.invoke("workspace.sshHosts.remove", input),
+      discover: () => ipcRenderer.invoke("workspace.sshHosts.discover"),
+      openConfig: (input?: { path?: string }) =>
+        ipcRenderer.invoke("workspace.openSshConfig", input ?? {})
+    },
+    sshProbe: (input: unknown) => ipcRenderer.invoke("workspace.sshProbe", input),
+    sshBrowse: (input: unknown) => ipcRenderer.invoke("workspace.sshBrowse", input),
+    onRemote: (callback: (event: { workspaceId: string; status: string; label: string; error?: string }) => void) => {
+      const listener = (
+        _event: unknown,
+        payload: { workspaceId: string; status: string; label: string; error?: string }
+      ) => callback(payload)
+      ipcRenderer.on("workspace.remote", listener)
+      return () => ipcRenderer.off("workspace.remote", listener)
+    }
   },
   session: {
     list: (input: unknown) => ipcRenderer.invoke("session.list", input),

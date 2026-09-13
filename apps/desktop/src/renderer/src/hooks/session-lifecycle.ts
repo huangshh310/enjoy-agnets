@@ -19,10 +19,13 @@ import {
 import { useChatStore } from "../stores/chat-store"
 import { threadFromRows } from "./hydrate-thread"
 import { mergeUserAssets } from "./merge-user-assets"
+import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
+import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
+import type { WorkspaceRow } from "./workspace-row"
 
-export type WorkspaceRow = { id: string; name: string; rootPath: string }
+export type { WorkspaceRow } from "./workspace-row"
 type SessionRow = {
   id: string
   workspaceId: string
@@ -49,6 +52,7 @@ export async function loadSession(sessionId: string, title: string) {
     if (store.sessionId) parkForegroundRun()
     store.setSession(sessionId, title)
     store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
+    applyComposerModel(store, sessionId)
     useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
     useEngineHandoffStore.getState().resetPending()
     restoreComposerForSession(sessionId)
@@ -74,6 +78,7 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "N
   store.setRuntimeId(runtimeId)
   store.setMessages([])
   store.setMode(modeForNewSession(readRememberedDefaultMode()))
+  applyComposerModel(store, session.id)
   await bindSessionRuntime(session.id, runtimeId)
   await refreshAllWorkspaces()
 }
@@ -88,7 +93,16 @@ export async function refreshAllWorkspaces() {
         try {
           const sessions = (await getIde().session.list({ workspaceId: ws.id })) as SessionRow[]
           return {
-            workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
+            workspace: {
+              id: ws.id,
+              name: ws.name,
+              rootPath: ws.rootPath,
+              kind: ws.kind,
+              sshStatus: ws.sshStatus,
+              sshHost: ws.sshHost,
+              sshUser: ws.sshUser,
+              remotePath: ws.remotePath
+            },
             sessions: sessions.map((s) => ({
               id: s.id,
               title: s.title,
@@ -98,7 +112,16 @@ export async function refreshAllWorkspaces() {
           }
         } catch {
           return {
-            workspace: { id: ws.id, name: ws.name, rootPath: ws.rootPath },
+            workspace: {
+              id: ws.id,
+              name: ws.name,
+              rootPath: ws.rootPath,
+              kind: ws.kind,
+              sshStatus: ws.sshStatus,
+              sshHost: ws.sshHost,
+              sshUser: ws.sshUser,
+              remotePath: ws.remotePath
+            },
             sessions: []
           }
         }
@@ -120,11 +143,19 @@ export async function selectPersistedSession(sessionId: string, workspaceId?: st
       (item) => item.id === targetWorkspaceId && item.kind === "workspace"
     )
     if (workspace) {
-      store.setWorkspace({
+      const row: WorkspaceRow = {
         id: workspace.id,
         name: workspace.name,
-        rootPath: workspace.rootPath || ""
-      })
+        rootPath: workspace.rootPath || "",
+        kind: workspace.locationKind,
+        sshStatus: workspace.sshStatus,
+        sshHost: workspace.sshHost,
+        sshUser: workspace.sshUser,
+        remotePath: workspace.remotePath
+      }
+      await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, row.id)
+      store.setWorkspace(row)
+      await connectSshIfNeeded(row)
     }
   }
   await loadSession(node.id, node.name)
@@ -160,6 +191,16 @@ export function restoreComposerForSession(sessionId: string) {
     return
   }
   useChatStore.setState(idleComposerPatch())
+}
+
+function applyComposerModel(store: ReturnType<typeof useChatStore.getState>, sessionId: string) {
+  const patch = composerModelPatch({
+    sessionId,
+    sessionModels: store.sessionModels,
+    preferredModelId: store.preferredModelId,
+    models: store.models
+  })
+  store.setModel(patch.modelId, patch.modelLabel, patch.provider)
 }
 
 function restoreUiMessages(rows: MessageRow[]) {

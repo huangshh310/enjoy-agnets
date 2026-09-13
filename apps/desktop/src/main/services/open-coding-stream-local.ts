@@ -28,7 +28,8 @@ import type { StoredSecret } from "./secrets"
 import { getSessionCompaction } from "./session-compaction-service"
 import { createSkillHost } from "./skill-host"
 import { listInstalledSkills } from "./skills-service"
-import { createWorkspaceHost } from "./workspace"
+import { createWorkspaceHost, getWorkspace } from "./workspace"
+import { resolveWorkspaceHost } from "./workspace-host-factory.ts"
 
 /** 本机 ToolLoop：需要供应商密钥。Fast 开且配了 fastModelId 才换模型。 */
 export async function openLocalStream(
@@ -99,12 +100,18 @@ function localStreamOptions(
 
 async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<LocalStreamExtras> {
   const agents = await loadAgentsMdStream(input)
-  const host = createWorkspaceHost(input.workspaceRoot, {
+  const extras = {
     takeQuestionAnswers: input.takeQuestionAnswers,
     onTouchedPath: agents.onTouchedPath
-  })
+  }
+  const record = input.workspaceId ? await getWorkspace(input.workspaceId) : null
+  const host = record
+    ? resolveWorkspaceHost(record, extras, createWorkspaceHost)
+    : createWorkspaceHost(input.workspaceRoot, extras)
   // 大纲会 listDir 子目录；不能走带 touch 的 host，否则会把嵌套 AGENTS.md 一次灌进下一跳。
-  const outlineHost = createWorkspaceHost(input.workspaceRoot)
+  const outlineHost = record
+    ? resolveWorkspaceHost(record, undefined, createWorkspaceHost)
+    : createWorkspaceHost(input.workspaceRoot)
   const nodes = await collectRepoOutline((path) => outlineHost.listDir(path))
   const plan = input.executePlan ? formatExecutePlanInstructions(await readPlanFile(host)) : ""
   return {

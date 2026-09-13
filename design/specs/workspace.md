@@ -1,14 +1,14 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-12
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-13
 
 ## 当前真相
 
-打开文件夹后，main 记下 `rootPath`，写入 `workspaces` 表。所有相对路径相对该根；工具与 `readFile` / `listDir` / `diff` / `changes` 不得逃出根目录。
+打开文件夹后，main 记下 `rootPath`，写入 `workspaces` 表。`kind=local` 时所有相对路径相对该根；`kind=ssh` 时 jail 在 `remote_path`，host 走 SSH 适配器（见 [`remote`](./remote.md)）。工具与 `readFile` / `listDir` / `diff` / `changes` 不得逃出根。
 
 当前能力：
 
-- 打开 / 列出 / 移除工作区；创建弹窗先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })` 写入 `workspaces` 表。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹。
+- 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹。
 - 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）

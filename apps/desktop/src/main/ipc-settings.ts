@@ -18,7 +18,7 @@ import { getSetting, setSetting } from "./services/database"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
-import { readSessionRuntimes } from "./services/agent-tools-vault"
+import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
   getActiveProfile,
@@ -74,7 +74,8 @@ async function settingsSnapshot() {
     preferences: readPreferences(),
     harness: await harnessPublicStatus(readPreferences().harnessId),
     agentTools: await listAgentTools(),
-    sessionRuntimes: readSessionRuntimes()
+    sessionRuntimes: readSessionRuntimes(),
+    sessionModels: readSessionModels()
   }
 }
 

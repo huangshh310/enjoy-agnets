@@ -127,6 +127,7 @@ async function openRunStream(
     messages: run.messages,
     abortSignal: run.abort.signal,
     workspaceRoot: run.workspaceRoot,
+    workspaceId: run.input.workspaceId,
     sessionId: run.input.sessionId,
     modelId: run.input.modelId,
     secret: run.secret,

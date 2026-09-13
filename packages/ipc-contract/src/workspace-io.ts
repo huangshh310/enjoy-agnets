@@ -2,6 +2,7 @@
  * 工作区文件 / diff / 变更列表合约。
  */
 import { z } from "zod"
+import { SshAuth } from "./workspace-remote.ts"
 
 export const OpenWorkspaceInput = z.object({
   path: z.string().optional(),
@@ -98,7 +99,16 @@ export type ListDirInput = z.infer<typeof ListDirInput>
 export const WorkspaceSummary = z.object({
   id: z.string(),
   name: z.string(),
-  rootPath: z.string()
+  rootPath: z.string(),
+  kind: z.enum(["local", "ssh"]).default("local"),
+  sshHost: z.string().optional(),
+  sshUser: z.string().optional(),
+  sshPort: z.number().int().optional(),
+  sshAuth: SshAuth.optional(),
+  sshKeyPath: z.string().optional(),
+  remotePath: z.string().optional(),
+  sshStatus: z.enum(["idle", "connecting", "connected", "failed", "disconnected"]).optional(),
+  sshHostId: z.string().optional()
 })
 export type WorkspaceSummary = z.infer<typeof WorkspaceSummary>
 

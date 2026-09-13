@@ -33,12 +33,11 @@ export function CreateProjectTypeStep({
             onClick={() => onChangeType("local")}
           />
           <TypeCard
-            selected={false}
-            disabled
+            selected={projectType === "remote"}
             icon={RiGlobalLine}
             title={t("pages.workspaces.createProject.remoteTitle")}
-            badge={t("pages.workspaces.createProject.comingSoon")}
             description={t("pages.workspaces.createProject.remoteDesc")}
+            onClick={() => onChangeType("remote")}
           />
         </div>
       </div>

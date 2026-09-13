@@ -4,6 +4,7 @@
 import { create } from "zustand"
 import type { AgentToolId } from "@enjoy-agents/ipc-contract"
 import { persistRuntimeId } from "@renderer/hooks/persist-runtime"
+import { requestModelSwitch } from "../request-model-switch"
 import { abortComposerRun } from "@renderer/hooks/composer-run-control"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { isAgentToolId } from "../agent-brand-icon"
@@ -57,7 +58,7 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     hasPendingApproval: Boolean(chat.pendingApproval)
   })
   if (plan.kind === "noop") {
-    if (modelId && to === chat.runtimeId) await persistRuntimeId(to, modelId)
+    if (modelId && to === chat.runtimeId) await requestModelSwitch(modelId)
     return "noop"
   }
   if (plan.kind === "apply") {

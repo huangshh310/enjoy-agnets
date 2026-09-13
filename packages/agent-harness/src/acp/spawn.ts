@@ -17,19 +17,48 @@ export type AcpSpawned = {
 
 const BLOCKED_ENV = new Set(["NODE_OPTIONS", "ELECTRON_RUN_AS_NODE"])
 
+export type AcpSpawnDirect = {
+  command: string
+  args: string[]
+  cwd?: string
+  handshakeCwd?: string
+  failHint?: string
+  env?: Record<string, string>
+  cleanup?: () => void
+}
+
+/** spawn 用的本机 cwd：SSH 直连不得用 user@host:path。 */
+export function acpSpawnCwd(workspaceRoot: string, spawnDirect?: Pick<AcpSpawnDirect, "cwd">): string {
+  return spawnDirect?.cwd || workspaceRoot
+}
+
+export function acpHandshakeCwd(
+  workspaceRoot: string,
+  spawnDirect?: Pick<AcpSpawnDirect, "handshakeCwd">
+): string {
+  return spawnDirect?.handshakeCwd || workspaceRoot
+}
+
+export function mapAcpSpawnFailure(error: unknown, failHint?: string): Error {
+  const raw = error instanceof Error ? error.message : String(error)
+  if (failHint && !raw.includes(failHint)) return new Error(failHint)
+  return error instanceof Error ? error : new Error(raw)
+}
+
 export function spawnAcpProcess(input: {
   id: string
   cwd: string
   override?: SpawnOverride
   env?: Record<string, string>
+  spawnDirect?: AcpSpawnDirect
 }): AcpSpawned {
-  const resolved = resolveSpawnCommand(input.id, input.override)
+  const resolved = input.spawnDirect ?? resolveSpawnCommand(input.id, input.override)
   const child = spawn(resolved.command, resolved.args, {
-    cwd: input.cwd,
+    cwd: acpSpawnCwd(input.cwd, input.spawnDirect),
     shell: false,
     windowsHide: true,
     stdio: ["pipe", "pipe", "pipe"],
-    env: filteredEnv(input.id, input.env)
+    env: filteredEnv(input.id, { ...input.env, ...input.spawnDirect?.env })
   })
   if (typeof child.pid === "number") {
     rememberAcpChild({
@@ -39,6 +68,7 @@ export function spawnAcpProcess(input: {
       startedAt: Date.now()
     })
   }
+  child.on("exit", () => input.spawnDirect?.cleanup?.())
   return { child, command: resolved.command, args: resolved.args }
 }
 

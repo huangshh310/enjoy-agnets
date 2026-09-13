@@ -9,16 +9,21 @@ import { getDatabase, getSetting, setSetting } from "./database"
 import { deleteSession } from "./session-lifecycle"
 import { createId } from "./ids"
 import { createWorkspaceHost } from "./workspace-host"
+import { resolveWorkspaceHost as resolveHost } from "./workspace-host-factory.ts"
 import { readFileDiff } from "./workspace-git"
 import { resolveWorkspaceName } from "./workspace-name"
+import { normalizeWorkspaceRow, WORKSPACE_SELECT, type WorkspaceRecord } from "./workspace-record.ts"
 
-export type WorkspaceRecord = {
-  id: string
-  name: string
-  rootPath: string
-}
+export type { WorkspaceRecord } from "./workspace-record.ts"
 
 export { createWorkspaceHost } from "./workspace-host"
+
+function resolveWorkspaceHost(
+  record: WorkspaceRecord,
+  extras?: Parameters<typeof resolveHost>[1]
+) {
+  return resolveHost(record, extras, createWorkspaceHost)
+}
 export { changedFiles, readGitLog, commitWorkspaceAll } from "./workspace-git"
 export { restoreWorkspacePaths } from "./workspace-git-restore"
 export { stageWorkspacePaths } from "./workspace-git-stage"
@@ -31,6 +36,24 @@ export { pushWorkspace, readWorkspacePatch } from "./workspace-git-remote"
 export async function pickFolder(): Promise<{ path: string; name: string }> {
   const path = await pickWorkspaceFolder()
   return { path, name: resolveWorkspaceName(path) }
+}
+
+/** 只弹出文件选择，不写 workspaces 表。 */
+export async function pickSshKeyPath(): Promise<{ path: string } | undefined> {
+  const { homedir } = await import("node:os")
+  const { existsSync } = await import("node:fs")
+  const sshDir = join(homedir(), ".ssh")
+  const picked = await dialog.showOpenDialog({
+    title: "SSH private key",
+    defaultPath: existsSync(sshDir) ? sshDir : homedir(),
+    properties: ["openFile"],
+    filters: [
+      { name: "All Files", extensions: ["*"] },
+      { name: "Key files", extensions: ["pem", "key", "ppk", "pub"] }
+    ]
+  })
+  if (picked.canceled || !picked.filePaths[0]) return undefined
+  return { path: picked.filePaths[0] }
 }
 
 /** 只弹出文件选择，不写 workspaces 表。 */
@@ -55,22 +78,24 @@ export async function openWorkspace(pathHint?: string, name?: string): Promise<W
   const now = Date.now()
   const displayName = resolveWorkspaceName(rootPath, name)
   const existing = getDatabase()
-    .prepare("SELECT id, name, root_path as rootPath FROM workspaces WHERE root_path = ?")
+    .prepare(`SELECT ${WORKSPACE_SELECT} FROM workspaces WHERE root_path = ?`)
     .get(rootPath) as WorkspaceRecord | undefined
   if (existing) {
-    if (name?.trim() && displayName !== existing.name) {
+    const row = normalizeWorkspaceRow(existing)
+    if (name?.trim() && displayName !== row.name) {
       getDatabase()
         .prepare("UPDATE workspaces SET name = ?, updated_at = ? WHERE id = ?")
-        .run(displayName, now, existing.id)
-      return { ...existing, name: displayName }
+        .run(displayName, now, row.id)
+      return { ...row, name: displayName }
     }
-    getDatabase().prepare("UPDATE workspaces SET updated_at = ? WHERE id = ?").run(now, existing.id)
-    return existing
+    getDatabase().prepare("UPDATE workspaces SET updated_at = ? WHERE id = ?").run(now, row.id)
+    return row
   }
   const record: WorkspaceRecord = {
     id: createId("ws"),
     name: displayName,
-    rootPath
+    rootPath,
+    kind: "local"
   }
   getDatabase()
     .prepare(
@@ -81,17 +106,18 @@ export async function openWorkspace(pathHint?: string, name?: string): Promise<W
 }
 
 export async function listWorkspaces(): Promise<WorkspaceRecord[]> {
-  return getDatabase()
-    .prepare("SELECT id, name, root_path as rootPath FROM workspaces ORDER BY updated_at DESC")
+  const rows = getDatabase()
+    .prepare(`SELECT ${WORKSPACE_SELECT} FROM workspaces ORDER BY updated_at DESC`)
     .all() as WorkspaceRecord[]
+  return rows.map((row) => normalizeWorkspaceRow(row))
 }
 
 export async function getWorkspace(workspaceId: string): Promise<WorkspaceRecord> {
   const record = getDatabase()
-    .prepare("SELECT id, name, root_path as rootPath FROM workspaces WHERE id = ?")
+    .prepare(`SELECT ${WORKSPACE_SELECT} FROM workspaces WHERE id = ?`)
     .get(workspaceId) as WorkspaceRecord | undefined
   if (!record) throw new Error(`Unknown workspace: ${workspaceId}`)
-  return record
+  return normalizeWorkspaceRow(record)
 }
 
 /**
@@ -113,6 +139,9 @@ export async function removeWorkspace(workspaceId: string): Promise<{ id: string
 
 export async function readWorkspaceFile(workspaceId: string, relativePath: string) {
   const workspace = await getWorkspace(workspaceId)
+  if (workspace.kind === "ssh") {
+    return resolveWorkspaceHost(workspace).readFile(relativePath)
+  }
   try {
     const resolved = resolveKnowledgePath(workspace.rootPath, relativePath)
     return await fs.readFile(resolved.abs, "utf8")
@@ -133,7 +162,7 @@ export async function readWorkspaceFile(workspaceId: string, relativePath: strin
 
 export async function listWorkspaceDir(workspaceId: string, relativePath: string) {
   const workspace = await getWorkspace(workspaceId)
-  const entries = await createWorkspaceHost(workspace.rootPath).listDir(relativePath)
+  const entries = await resolveWorkspaceHost(workspace).listDir(relativePath)
   return entries.map((entry) => ({
     ...entry,
     path: relativePath === "." ? entry.name : `${relativePath.replace(/\\/g, "/")}/${entry.name}`

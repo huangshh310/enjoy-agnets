@@ -17,11 +17,13 @@ import { openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { SettingsCard, SettingsRow } from "./settings-row"
+import { SshConnections } from "./workspace/ssh-connections"
 
 export function WorkspaceSettings() {
   const t = useT()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
+  const workspaceKind = useChatStore((state) => state.workspaceKind)
   const repositories = useChatStore((state) => state.repositories)
   const [copied, setCopied] = useState(false)
 
@@ -58,7 +60,7 @@ export function WorkspaceSettings() {
                   {workspaceName || t("common.untitledProject")}
                 </span>
                 <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary shrink-0">
-                  {t("settings.workspace.localBadge")}
+                  {workspaceKind === "ssh" ? t("settings.workspace.remoteFootnote") : t("settings.workspace.localBadge")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
@@ -110,6 +112,9 @@ export function WorkspaceSettings() {
           </div>
         </div>
       </div>
+
+      {/* ─── 远程 SSH 连接名册 ───────────────────────────── */}
+      <SshConnections />
 
       {/* ─── 扫描与忽略规则 ─────────────────────────────── */}
       <SettingsCard title={t("settings.workspace.scanTitle")}>

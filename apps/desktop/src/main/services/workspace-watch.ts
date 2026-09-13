@@ -16,6 +16,8 @@ const POLL_MS = 2500
 export async function watchWorkspace(workspaceId: string): Promise<{ ok: true }> {
   const workspace = await getWorkspace(workspaceId)
   stopWorkspaceWatch(workspaceId)
+  // SSH 根是 user@host:path，不是本机目录；禁止 fs.watch 假根。
+  if (workspace.kind === "ssh") return { ok: true }
   const watcher = watch(workspace.rootPath, { recursive: true }, (_event, filename) => {
     if (!filename) return
     emitWorkspaceChanged(workspaceId, String(filename).replaceAll("\\", "/"))

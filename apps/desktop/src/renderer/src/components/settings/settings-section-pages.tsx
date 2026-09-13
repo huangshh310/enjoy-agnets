@@ -23,6 +23,7 @@ import { GitSettings } from "./settings-git"
 import { SettingsComingSoon } from "./settings-row"
 import { ShortcutSettings } from "./settings-shortcuts"
 import { WorkspaceSettings } from "./settings-workspace"
+import { ExtensionsPage } from "./extensions/extensions-page"
 import {
   CapabilitySettings,
   KnowledgeSettings,
@@ -58,6 +59,7 @@ const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
   instructions: InstructionsSection,
   rules: RulesSection,
   workspace: WorkspaceSection,
+  extensions: ExtensionsPage,
   mcp: McpSettings,
   capabilities: CapabilitySettings,
   knowledge: KnowledgeSettings,

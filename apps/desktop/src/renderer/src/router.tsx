@@ -18,7 +18,9 @@ import { parseKnowledgeSearch } from "@renderer/components/knowledge/lib/knowled
 import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
 import { MediaPage } from "@renderer/components/media/media-page"
 import { McpPage } from "@renderer/components/mcp/mcp-page"
+import { parseMcpSearch } from "@renderer/components/mcp/lib/mcp-route-search"
 import { SkillsPage } from "@renderer/components/skills/skills-page"
+import { parseSkillsSearch } from "@renderer/components/skills/lib/skills-route-search"
 import { ObservabilityPage } from "@renderer/components/observability/observability-page"
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
@@ -126,12 +128,14 @@ const mediaRoute = createRoute({
 const mcpRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/mcp",
+  validateSearch: (search: Record<string, unknown>) => parseMcpSearch(search),
   component: McpPage
 })
 
 const skillsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/skills",
+  validateSearch: (search: Record<string, unknown>) => parseSkillsSearch(search),
   component: SkillsPage
 })
 

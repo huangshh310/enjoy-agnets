@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-H · 扩展发现壳 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-h-extensions-hub.html · 【视觉真源】P0-H + I2</p>
+      <h1 class="mt-1 text-[17px] font-semibold">扩展发现壳 · 设置「工作区与扩展」</h1>
+      <p class="mt-1 text-[12px] text-mute">两列 MCP | Skills。计数 +「添加」深链现有页。精选只读投影。不上第 8 轨，无 Registry / 本机 CLI / 协议微标。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>路由 <code>#/settings/extensions</code>，侧栏「工作区与扩展」三项：工作区 / 扩展 / MCP</li>
+        <li>「添加」进 <code>#/mcp</code> / <code>#/skills</code>，不弹第二套表单、不新 IPC</li>
+        <li>精选卡复用现有 mcp-presets / skills-curated，点卡带 preset / install</li>
+        <li>页上无 Registry、无本机 CLI、无 ACP · stdio 类协议微标</li>
+        <li>工作模块轨仍是 chat · knowledge · workflows · media · mcp · skills · observability</li>
+      </ul>
+    </aside>
+
+    <section class="space-y-3">
+      <h2 class="text-[14px] font-semibold">设置侧栏 · 工作区与扩展</h2>
+      <div class="flex gap-4">
+        <nav class="w-48 shrink-0 rounded-2xl border border-line bg-paper p-3 text-[12px]">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">工作区与扩展</p>
+          <ul class="mt-2 space-y-1">
+            <li class="rounded-md px-2 py-1 text-mute">工作区</li>
+            <li class="rounded-md bg-soft px-2 py-1 font-medium text-accent">扩展</li>
+            <li class="rounded-md px-2 py-1 text-mute">MCP</li>
+          </ul>
+        </nav>
+        <div class="min-w-0 flex-1 space-y-4">
+          <div class="rounded-2xl border border-line bg-card p-4">
+            <p class="text-[15px] font-semibold">扩展</p>
+            <p class="mt-0.5 text-[11px] text-mute">发现 MCP 服务器与技能套件。安装仍走现有工作模块，这里只做入口。</p>
+          </div>
+          <div class="grid gap-4 lg:grid-cols-2">
+            <article class="rounded-2xl border border-line p-4">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h3 class="text-[13px] font-semibold">MCP</h3>
+                  <p class="mt-0.5 text-[11px] text-mute">已配置 3</p>
+                </div>
+                <a class="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white" href="#/mcp">添加</a>
+              </div>
+              <ul class="mt-3 space-y-2">
+                <li class="rounded-xl border border-line px-3 py-2">
+                  <p class="text-[12px] font-medium">Filesystem</p>
+                  <p class="text-[10px] text-mute">读写工作区文件</p>
+                </li>
+                <li class="rounded-xl border border-line px-3 py-2">
+                  <p class="text-[12px] font-medium">GitHub</p>
+                  <p class="text-[10px] text-mute">仓库、Issue、PR</p>
+                </li>
+                <li class="rounded-xl border border-line px-3 py-2">
+                  <p class="text-[12px] font-medium">Postgres</p>
+                  <p class="text-[10px] text-mute">只读查询</p>
+                </li>
+              </ul>
+            </article>
+            <article class="rounded-2xl border border-line p-4">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h3 class="text-[13px] font-semibold">Skills</h3>
+                  <p class="mt-0.5 text-[11px] text-mute">已配置 12</p>
+                </div>
+                <a class="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white" href="#/skills">添加</a>
+              </div>
+              <ul class="mt-3 space-y-2">
+                <li class="rounded-xl border border-line px-3 py-2">
+                  <p class="text-[12px] font-medium">Superpowers for Agents</p>
+                  <p class="text-[10px] text-mute">TDD · 审查 · 子 Agent</p>
+                </li>
+                <li class="rounded-xl border border-line px-3 py-2">
+                  <p class="text-[12px] font-medium">Impeccable Design</p>
+                  <p class="text-[10px] text-mute">前端审美与排版</p>
+                </li>
+                <li class="rounded-xl border border-line px-3 py-2">
+                  <p class="text-[12px] font-medium">Anthropic Official Skills</p>
+                  <p class="text-[10px] text-mute">官方通用技能库</p>
+                </li>
+              </ul>
+            </article>
+          </div>
+          <p class="text-[11px] text-mute">Claude / Codex 等自带插件请在各助手内管理。</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

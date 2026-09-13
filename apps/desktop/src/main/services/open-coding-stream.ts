@@ -60,6 +60,7 @@ function openedAcpStream(input: OpenCodingStreamInput): Promise<OpenedCodingStre
     sessionId: input.sessionId,
     runtimeId: input.runtimeId ?? "",
     workspaceRoot: input.workspaceRoot,
+    workspaceId: input.workspaceId,
     messages: input.messages,
     abortSignal: input.abortSignal,
     waitForSubagentApproval: input.waitForSubagentApproval,

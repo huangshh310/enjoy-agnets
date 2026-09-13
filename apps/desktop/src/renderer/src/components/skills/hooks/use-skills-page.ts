@@ -2,6 +2,7 @@
  * 技能模块核心状态机与数据流 Hook。
  */
 import { useState } from "react"
+import { useSkillsRouteSearch } from "./use-skills-route-search"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import type {
   CuratedSkillSource,
@@ -64,6 +65,7 @@ const DETAIL_QUERY_KEY = "skills-sources-detail"
 export function useSkillsPage(): SkillsPageState {
   const queryClient = useQueryClient()
   const [selectedNavId, setSelectedNavId] = useState<string>("all")
+  useSkillsRouteSearch(setSelectedNavId)
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null)
   const [doctorOpen, setDoctorOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)

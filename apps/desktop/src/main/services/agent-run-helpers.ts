@@ -3,7 +3,7 @@
  */
 import type { ModelMessage } from "ai"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
-import { readSessionRuntimes } from "./agent-tools-vault"
+import { readSessionModels, readSessionRuntimes } from "./agent-tools-vault"
 import { harnessPublicStatus } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
@@ -19,6 +19,13 @@ export function resolveRuntimeId(
     prefs.runtimeId ||
     "enjoy-local"
   )
+}
+
+/** 会话覆盖 > 入参。同引擎换模下一轮读这里。 */
+export function resolveRunModelId(input: { sessionId: string; modelId?: string }): string | undefined {
+  const overlay = readSessionModels()[input.sessionId]?.trim()
+  if (overlay) return overlay
+  return input.modelId?.trim() || undefined
 }
 
 /** ACP 不读 Providers Key；Harness 查沙箱就绪；本机 ToolLoop 必须有 API key。 */
