@@ -1,11 +1,11 @@
 # spec/skills
 
-> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-10
+> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-13
 
 ## 当前真相
 
 1. **工作模块与路由**：`#/skills` 是应用内唯一的 Skills 工作模块。情境导航栏（Secondary Sidebar）包含三组导航：
-   - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包含集 (`packs`)。
+   - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包合集 (`packs`)。
    - 按生效助手筛选 (`target:${targetId}`)：Enjoy, Claude, Cursor, Codex, Pi, OMP。
    - 已安装技能组 (`sources`)：Git 仓库与本地文件夹来源组。
 2. **Agent 专属整备舱 (Agent Armory Staging)**：

@@ -1,7 +1,7 @@
 /**
- * 会话目标芯片与 Recap (Synara 灵感)：
- * 1. 目标设置与即时保存。
- * 2. 阶段总结 Recap 生成、悬浮查看与静默上下文注入。
+ * 会话目标芯片与 Recap：
+ * 1. 目标只落库（session.patch），不进模型。
+ * 2. Recap 由 session.recap 生成入库；下一轮 send-composer-run 垫 [Session Recap] system 句。
  */
 import { useState, type KeyboardEvent } from "react"
 import { RiCheckLine, RiCompass3Line, RiLoader4Line, RiSparkling2Line } from "@remixicon/react"

@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-12
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-13
 
 ## 当前真相
 
@@ -26,14 +26,14 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 设置分段 ID 完整保留 26 个（`general` `appearance` `shortcuts` `providers` `agent` `instructions` `skills` `rules` `workspace` `mcp` `git` `capabilities` `knowledge` `media` `workflow` `automations` `telemetry` `sandbox` `archived` `team` `members` `billing` `organization` `integrations` `account` `notifications`）。
 侧栏情境栏精炼为 4 大板块 **10** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/MCP；组织：**个人资料** `#/settings/account`），杜绝 24 项长滚动与底部截断。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）；`skills` 自己就是一级入口，不再并进「说明」。不要把一级入口做成「团队资料」空态，否则个人中心（Blobatar / Hero / 用量图）会从侧栏消失。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
-快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。
+快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。Chat：Shift+Tab 循环审批档 `allow-reads → allow-edits → allow-all`（`use-permission-cycle-hotkey`；输入框 / contentEditable 内不触发；custom 档从 `allow-reads` 起算）。设置 shortcuts 已登记。
 
 Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。
 
 `#/skills` 是唯一 Skills 工作模块（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。`#/settings/agent?tab=defaults` 另有一行**可选拉取**卡片（`SettingsSkillSources`），只调用 `skills.sources.updateAll`，不复制整页 Skills UI。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。M6 可选更新：无 Git 源则**不渲染**更新按钮；点了才快进，不自动同步。空会话禁止挂更新条。
 
 智能体设置本机 CLI / 默认项页顶共享一条审批策略摘要（视觉锁 [`../previews/p0-d-approval-discover.html`](../previews/p0-d-approval-discover.html)，锁 tip `1a435e4`）：标题「审批策略」+ 一行本机梯度（全确认 / 部分放行 / 自动批准警示）+「管理审批策略 →」。共享策略，不按助手分行，密表不加列。主链 `navigate` 到 `#/settings/general?from=agent`（默认项带 `from=agent-defaults`），滚到已有权限卡；改完「← 返回智能体设置」。Registry / 进阶沙箱不挂这条。会话内 Allow/Deny 仍只走 Composer 底栏盾牌。禁止第二套审批 UI、云多租户 / 团队看板审批、协议词上 C 端。
-Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_save`。`automations.run` 用当前会话 `agent.run`；Agent 写盘或 Files 保存（带 sessionId）会触发已启用的 `on_save`。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。
+Automations 存 `settings` 表的 `automations` JSON。触发落地：`manual` / `on_save`。`automations.run` 用当前会话 `agent.run`；Agent 写盘或 Files 保存（带 sessionId）会触发已启用的 `on_save`。合约里的 `cron` / `cronExpr` / `stopOnFailCount` **未实现**，UI Select 只有两档。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。
 
 个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式：
 - 顶部 Hero 卡片集成 [Canvas UI](https://canvasui.dev/) 官方 WebGL 着色器动态封面，仅四套：代码雨（`GlyphRain`）、悬浮六角棱镜（`HexFloat`）、复古点阵（`RetroDither`）、冰晶融冻（`Frost`），右上角切换；叠层 [blobatar.dev](https://blobatar.dev/) 的 `BlobatarAvatar`（确定性哈希五官、表情、0~360° 色相、呼吸微动）；Share 复制姓名+handle，Edit 打开资料弹窗。
@@ -73,6 +73,8 @@ Automations 存 `settings` 表的 `automations` JSON。触发：`manual` / `on_s
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
+- **隐患**：把 Automations 写成已支持 cron / 连续失败停跑。根因：Zod 提前加了字段。正确做法：执行面只有 `run` + `on_save`；调度器落地前当未实现。
+- **隐患**：Shift+Tab 在 Composer 里乱切审批档。正确做法：焦点在 input / textarea / contentEditable 时直接 return。
 - 收件箱是 AppShell 模块，不是独立壳。不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
 - Studio / Team / Company / Account 旧 Hash 必须 redirect 进 AppShell，不要再挂 `SecondaryPageShell` 侧栏。
 - Skills 只有工作模块 `#/skills` 一套 UI。单个技能走 `skills.sources.deleteSkill`（本机目录删包，Git 只拆投影）。来源组 `skills.sources.remove`：Git 清 checkout 与投影；本机自动发现组写入 `ignoredOrigins` 隐藏，不删 `~/.agents/skills` 根。模版安装仍走 `skills.create`。

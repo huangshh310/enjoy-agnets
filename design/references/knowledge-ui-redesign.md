@@ -5,7 +5,7 @@
 > 读者：产品、设计、实现知识页的 Agent  
 > 范围：`#/knowledge` 及与对话的衔接  
 > 现状入口：`apps/desktop/src/renderer/src/components/knowledge/`  
-> 领域契约：[`knowledge.md`](./knowledge.md) · 视觉规约：[`../../DESIGN.md`](../../DESIGN.md)
+> 领域契约：[`../specs/knowledge.md`](../specs/knowledge.md) · 视觉规约：[`../../DESIGN.md`](../../DESIGN.md)
 
 本文只改**展示与交互层级**，不改本地 RAG 不变量（路径 jail、显式加源、无 embedding 时词袋兜底、renderer 不读盘）。
 

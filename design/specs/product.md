@@ -1,6 +1,6 @@
 # spec/product
 
-> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-10
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-13
 
 ## 当前真相
 
@@ -8,7 +8,7 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 
 第一期必须同时满足：
 
-- 本机工作区可见（文件树 + Git Changes + 后续 Monaco）
+- 本机工作区可见（文件树 + Git Changes + Files Monaco 预览可写）
 - 流式推理与工具过程可见（Thinking / Tool / Diff）
 - 写文件、执行 shell 默认可审批
 - 用户自带 Key（BYOK），密钥不下发到渲染进程
@@ -26,7 +26,7 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 
 | 阶段 | 状态 | 内容 |
 |---|---|---|
-| MVP | 进行中 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI |
+| MVP | 已落地壳 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI、C 端探索/执行（内部 ask/plan/agent） |
 | V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；自动更新走 GitHub Releases（见 `updates` spec）；Git Review 已落地线性 log / 暂存 / 还原 / 推送 / 检查点，**不做** PR / CI / 提交拓扑图 |
 | V1.5 | 后置 | 云账号、token 代理、外部 OTEL、Vercel Sandbox |
 

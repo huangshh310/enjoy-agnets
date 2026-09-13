@@ -10,10 +10,10 @@
 
 ## 1. 每次任务怎么走
 
-1. 用下表锁定 **一个 spec ID**，打开对应文件。跨领域就开多份，不要靠猜。
-2. 只读任务：按 spec 的「代码入口」跳进仓库，结论以代码为准；若代码与 spec 打架，先记下来。
-3. 实现 / 修 bug：改代码的**同一次改动**里更新 spec（至少「当前真相」或「已知坑」）。
-4. 结束前自问：有没有新坑、新频道、新路由、新布局规则没写进文档？有就写。
+1. 用下表锁定 **一个 spec ID**，只打开正在改的那份。跨领域再开第二份。不要每次任务把整张地图读完，也不要在修 typo 前先读 `product` / `visual-system`。
+2. 只读任务：按 spec 的「代码入口」跳进仓库，结论以代码为准；若代码与 spec 打架，先记到「已知坑」。
+3. 实现 / 修 bug：改代码的**同一次改动**里更新 spec（至少「当前真相」或「已知坑」）。新隐患用 **隐患** 标记；已不存在的行为从「当前真相」删掉，不要叠一层「曾经」。
+4. 结束前自问：有没有新坑、新频道、新路由没写进文档？过时句子删了没有？
 
 不要把 `design/references/*` 当成实现说明书。那是选型与视觉全书；落地与否以 spec 的「当前真相」为准。
 
@@ -33,7 +33,8 @@
 | 工作区、文件、Git、终端 | [`design/specs/workspace.md`](./design/specs/workspace.md) |
 | 无边框窗口、标题栏、最小化 | [`design/specs/window.md`](./design/specs/window.md) |
 | 应用 logo、任务栏 / 打包图标 | [`design/specs/brand.md`](./design/specs/brand.md) |
-| 设置 / Automations / Customize | [`design/specs/settings.md`](./design/specs/settings.md) |
+| 设置 / Automations / Customize / Shift+Tab 审批循环 | [`design/specs/settings.md`](./design/specs/settings.md) |
+| 技能页 / 技能源 / 集市 | [`design/specs/skills.md`](./design/specs/skills.md) |
 | Usage L1–L4 / 能力矩阵 / 三路命名 | [`design/specs/m1-usage-and-capabilities.md`](./design/specs/m1-usage-and-capabilities.md) |
 | 跨会话 Attention / 审批停靠 / Inbox 档案 | [`design/specs/m2-attention.md`](./design/specs/m2-attention.md) |
 | 换引擎 handoff（M2 之后） | [`design/specs/m3-engine-handoff.md`](./design/specs/m3-engine-handoff.md) |
@@ -44,7 +45,8 @@
 | 资产库 / 媒体 | [`design/specs/media.md`](./design/specs/media.md) |
 | Workflow / 子 Agent | [`design/specs/workflow.md`](./design/specs/workflow.md) |
 | MCP | [`design/specs/mcp.md`](./design/specs/mcp.md) |
-| Telemetry | [`design/specs/observability.md`](./design/specs/observability.md) |
+| Telemetry / 本机记录 UI | [`design/specs/observability.md`](./design/specs/observability.md) |
+| 本机 CLI transcript 扫描实现 | [`design/specs/cli-usage.md`](./design/specs/cli-usage.md)（UI 仍以 observability 为准） |
 | 界面中英文、默认中文 | [`design/specs/i18n.md`](./design/specs/i18n.md) |
 | AI SDK 7 有没有某能力 | [`design/references/vercel-ai-sdk-7-feature-matrix.md`](./design/references/vercel-ai-sdk-7-feature-matrix.md) |
 | 为什么选这套栈 | [`design/references/tech-stack.md`](./design/references/tech-stack.md) |

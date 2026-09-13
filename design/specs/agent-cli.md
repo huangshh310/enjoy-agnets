@@ -1,6 +1,6 @@
 # spec/agent-cli
 
-> 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-12
+> 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-13
 
 Usage L1–L4、三路命名与能力矩阵见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
 
@@ -113,7 +113,7 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - C 端胶囊/导轨禁止常驻 `ACP · 订阅登录` / `本地 ToolLoop` / `ACP Stdio` 及同类协议路径微标。协议/登录只留设置能力矩阵、配置边界与文档，不上 Composer picker。
 - 七家新 CLI 本轮 `quota=false`。没有官方 usage 子命令就不画额度条。
 - ACP 复用进程的 key 必须含 `toolId`。漏掉时 Claude→Cursor 会假续跑旧 stdio。有用户轮切引擎必须 `disposeSession` + `setHandoff`；brief 只进系统/隐藏上下文，禁止用户首条附注。
-- 本阶段不实现 `session/set_mode`、把 ACP `available_commands` 画进 Composer 斜杠条、`session/load`、跨 Agent 委派、寄生 Codex Desktop / SSH。Pi / OMP / Hermes 原生 RPC 或 TUI gateway 另开一轮。Composer `/` 各引擎都列 `/compact` 与 `/plan` `/ask` `/agent` `/debug` + 已安装技能；ACP 命令仍只进 ⌘L。
+- 本阶段不实现 `session/set_mode`、把 ACP `available_commands` 画进 Composer 斜杠条、`session/load`、跨 Agent 委派、寄生 Codex Desktop / SSH。Pi / OMP / Hermes 原生 RPC 或 TUI gateway 另开一轮。Composer `/` 各引擎都列 `/compact` 与 **C 端** `/explore` `/execute` + 已安装技能；旧别名 `/plan` `/ask` `/agent` `/debug` 仍能切 store，**不能当显示名**。ACP 命令仍只进 ⌘L。
 - ACP 事件保真：`tool_call` content `type=diff` 写入 args 并 `file.changed`（Review / File Diff 能看）。`available_commands_update` 映射为 `commands.update`，进 ⌘L（`QuickSearchAcpCommands`），禁止 `structured.delta` 进气泡、禁止把 ACP 命令画进 Composer 斜杠条。提问走 `session/request_permission` 的 `questions` → 工具名 `ask_user_questions`（现有 Fluid Dock），**不要**从 `mapAcpUpdate` 再 yield `approval.required`。附件写成工作区相对路径清单，不把二进制灌进 JSON-RPC，也不再写「未转发」。`models:"none"`（Hermes / Amp）空态写「将使用 CLI 默认模型」，不要「未找到模型」。
 - 禁止写死「Cursor Pro User / 月度 Fast 额度」。
 - 禁止把 token / `key` / `refresh_token` 传给 renderer，也不要写回 `auth.json` / `state.vscdb`。不读 `~/.codex/auth.json` / `~/.claude.json`。

@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-09-12
+> 协议工厂，不是品牌锁定。最后更新：2026-09-13
 
 ## 当前真相
 
@@ -42,6 +42,7 @@
 
 ## 已知坑
 
+- **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。
 - 空 vault 曾在 `listAllPublicModels` 硬塞 DeepSeek 静态目录（`providerId: "default"`）。设置页「已配置 0」但选择器仍显示 4 个模型。目录必须跟档案走，空档案返回 `[]`。
 - 自定义 `/v1` 上 MiniMax / GLM / Kimi 报 `No output generated`：不是这些模型不思考，也不是该藏思考档。官方 `createOpenAI` 会丢掉 `reasoning_content`，必须 `createOpenAICompatible`。MiniMax-M3 要 `thinking`；`reasoning_split` 只给官方域名。GLM 要 `thinking` + `reasoning_effort`；Kimi K3 走顶层 `reasoning`。不要把 `reasoning: xhigh` 一刀切发给 MiniMax。
 - 中转 MiniMax 报 `Unsupported parameter(s): 'reasoning_split'`：这是 MiniMax 官方拆思考字段，严格 OpenAI 网关会拒。思考栏空转「本轮没有推理轨迹」是请求已失败、没有 token。中转只发 `thinking.adaptive`。
