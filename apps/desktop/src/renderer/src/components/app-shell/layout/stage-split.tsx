@@ -3,16 +3,12 @@
  * 工作台 Panel 不可 collapse：审查栏加宽最多压到 42%，切模块拉回 62%。
  */
 import { useEffect } from "react"
-import { RiLayoutRight2Line } from "@remixicon/react"
 import { Outlet } from "@tanstack/react-router"
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels"
-import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { cx } from "@/utils/cx"
-import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pane"
 import { useRightPaneShortcuts } from "@renderer/components/ai-chat/right-pane/use-right-pane-shortcuts"
 import { useRightPaneWidth } from "@renderer/components/ai-chat/right-pane/use-right-pane-width"
 import { useChatStore } from "@renderer/stores/chat-store"
-import { useT } from "@renderer/i18n"
 import type { AppModuleId } from "../app-shell.types"
 import { AttentionStrip } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStage } from "../chat/chat-stage"
@@ -26,7 +22,6 @@ export function StageSplit({
   isChat: boolean
   activeModule: AppModuleId
 }) {
-  const t = useT()
   const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
     id: "enjoy-agents-chat-split",
@@ -77,14 +72,6 @@ export function StageSplit({
             <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
               <Outlet />
             </div>
-            {rightPanelCollapsed && !isChat ? (
-              <QuietIconButton
-                icon={RiLayoutRight2Line}
-                aria-label={t("chat.expandPane")}
-                className="absolute right-3 top-3 z-10"
-                onClick={() => expandInspector()}
-              />
-            ) : null}
           </div>
         </div>
       </Panel>

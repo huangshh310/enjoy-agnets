@@ -27,19 +27,19 @@ export function ProfileAgentsBarChart({
   const t = useT()
   const [hoveredPoint, setHoveredPoint] = useState<AgentBarPoint | null>(null)
   const maxCount = Math.max(...points.map((point) => point.count), 1)
-  const chartHeight = 110
+  const chartHeight = 90
   const chartWidth = 640
   const barWidth = 8
   const spacing = (chartWidth - points.length * barWidth) / Math.max(points.length - 1, 1)
   const lastPoint = points[points.length - 1]
 
   return (
-    <div className="flex select-none flex-col gap-4 rounded-2xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
+    <div className="flex select-none flex-col gap-2.5 rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-card">
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
-          <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.charts.agents")}</span>
+          <span className="text-[11px] font-medium text-text-tertiary">{t("pages.account.charts.agents")}</span>
           <div className="mt-0.5 flex items-baseline gap-2">
-            <h3 className="text-title-2-semibold text-text-primary">{totalAgentsCount} {t("pages.account.charts.runsUnit")}</h3>
+            <h3 className="text-title-3-semibold text-text-primary">{totalAgentsCount} {t("pages.account.charts.runsUnit")}</h3>
             {hoveredPoint ? (
               <span className="font-mono text-caption-2-medium text-accent-500">
                 {hoveredPoint.label}: <strong>{hoveredPoint.count}</strong>
@@ -48,15 +48,15 @@ export function ProfileAgentsBarChart({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 rounded-lg border border-separator-border/70 bg-background-secondary-default/50 px-2 py-1 text-caption-2-medium text-text-secondary">
+        <div className="flex items-center gap-1 rounded-lg border border-separator-border/70 bg-background-secondary-default/50 px-1.5 py-0.5 text-caption-2-medium text-text-secondary">
           <button
             type="button"
             onClick={onPrevMonth}
             className="cursor-pointer text-text-tertiary transition-colors hover:text-text-primary"
           >
-            <RiArrowLeftSLine className="size-4" />
+            <RiArrowLeftSLine className="size-3.5" />
           </button>
-          <span className="px-1 text-caption-2-medium text-text-primary">{currentMonthLabel}</span>
+          <span className="px-0.5 text-[11px] font-medium text-text-primary">{currentMonthLabel}</span>
           <button
             type="button"
             onClick={onNextMonth}
@@ -66,7 +66,7 @@ export function ProfileAgentsBarChart({
               canGoNextMonth ? "cursor-pointer hover:text-text-primary" : "cursor-default opacity-30"
             )}
           >
-            <RiArrowRightSLine className="size-4" />
+            <RiArrowRightSLine className="size-3.5" />
           </button>
         </div>
       </div>
@@ -74,7 +74,7 @@ export function ProfileAgentsBarChart({
       <div className="relative w-full overflow-hidden">
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          className="h-28 w-full overflow-visible"
+          className="h-24 w-full overflow-visible"
           preserveAspectRatio="none"
         >
           <line

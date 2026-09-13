@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-13
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-14
 
 ## 当前真相
 
@@ -35,12 +35,14 @@ Providers 页是协议工厂（见 `providers` spec + visual-system §14）：�
 智能体设置本机 CLI / 默认项页顶共享一条审批策略摘要（视觉锁 [`../previews/p0-d-approval-discover.html`](../previews/p0-d-approval-discover.html)，锁 tip `1a435e4`）：标题「审批策略」+ 一行本机梯度（全确认 / 部分放行 / 自动批准警示）+「管理审批策略 →」。共享策略，不按助手分行，密表不加列。主链 `navigate` 到 `#/settings/general?from=agent`（默认项带 `from=agent-defaults`），滚到已有权限卡；改完「← 返回智能体设置」。Registry / 进阶沙箱不挂这条。会话内 Allow/Deny 仍只走 Composer 底栏盾牌。禁止第二套审批 UI、云多租户 / 团队看板审批、协议词上 C 端。
 Automations 存 `settings` 表的 `automations` JSON。触发落地：`manual` / `on_save`。`automations.run` 用当前会话 `agent.run`；Agent 写盘或 Files 保存（带 sessionId）会触发已启用的 `on_save`。合约里的 `cron` / `cronExpr` / `stopOnFailCount` **未实现**，UI Select 只有两档。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。
 
-个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式：
-- 顶部 Hero 卡片集成 [Canvas UI](https://canvasui.dev/) 官方 WebGL 着色器动态封面，仅四套：代码雨（`GlyphRain`）、悬浮六角棱镜（`HexFloat`）、复古点阵（`RetroDither`）、冰晶融冻（`Frost`），右上角切换；叠层 [blobatar.dev](https://blobatar.dev/) 的 `BlobatarAvatar`（确定性哈希五官、表情、0~360° 色相、呼吸微动）；Share 复制姓名+handle，Edit 打开资料弹窗。
-- 关键指标阵列来自 `observability.metrics`（最多 500 条）：年度贡献按 BoardUI 货币字面 `$` + 千分位（如 `$51`），旁挂环比胶囊（上年为 0 且今年 > 0 显示 `+100%`，双 0 显示 `0%`）；Lifetime tokens、Peak tokens、Longest task、Top streak。禁止正弦波或占位 9B。
-- 活跃矩阵热力图：7 行微单元格，Weekly / Monthly / Yearly；空日为 0 阶可见底，不补伪随机活跃。
-- Agents 柱状图按**选中月份**聚合真实 run 数，月份选择器可前后翻（不超过当前月）。
-- Tokens 面积图：该月每日 token 合计，平滑贝塞尔 + `accent-500` 渐变；标题旁始终挂环比胶囊（相对上月，规则同上）。
+个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式，全屏自适应 4 层 Bento 架构（大屏无底部大片留白，小屏自然纵向排布）：
+- **Tier 1 顶部全景 Hero 顶栏**：集成 [Canvas UI](https://canvasui.dev/) 官方 WebGL 着色器动态封面（140px 高度，代码雨 `GlyphRain`、悬浮六角棱镜 `HexFloat`、复古点阵 `RetroDither`、冰晶融冻 `Frost`），叠层 [blobatar.dev](https://blobatar.dev/) 的 `BlobatarAvatar`（确定性哈希五官、表情、0~360° 色相、呼吸微动）；展示开发者姓名、Handle、角色、邮箱、4 枚动态环境状态胶囊（当前主引擎/活动模型/凭据保管箱状态/设备终端）；右上角提供「编辑资料」与「分享画像」（复制 handle 链接）按钮。
+- **Tier 2 六栏核心效能 KPI 磁贴**：横向铺开 6 枚指标卡（年度贡献及环比、生涯 Tokens、单日峰值 Tokens、本月 Agent 运行数、最长连续开发天数、最长单任务用时），基于 `observability.metrics` 真实聚合。
+- **Tier 3 双翼分析矩阵 (7:5 比例)**：左侧 7 栏承载完整「活跃矩阵热力图」（Weekly/Monthly/Yearly 三档，空日为 0 阶可见底），右侧 5 栏上下紧凑堆叠「Agents 运行趋势柱状图」与「Tokens 吞吐面积图」，带月份选择器与环比胶囊。
+- **Tier 4 开发者生态与成长 Bento (3 列)**：
+  1. 智能体与模型架构：统计就绪 CLI 引擎生态芯片、当前主引擎、默认模型，支持一键直达引擎管理。
+  2. 硬件安全与运行环境：渲染进程零明文安全策略、操作系统安全凭据库托管状态、当前设备名与网络/SSH 状态。
+  3. 效能与成长里程碑：根据开发者连续开发、Token 规模、凭据保护与引擎协同动态解锁徽章成就。
 - 资料修改（昵称/邮箱/头衔/时区/形象）收纳于 Edit Dialog 与 `BlobatarPicker` / `BlobatarPickerDialog`。底栏安全卡片只反映 renderer 可见的 `hasKey` 与本机节点，不宣称 DPAPI/Keychain、不编造 IP。
 
 企业账单 (`#/settings/billing`)：诚实空态（`LocalOnlyNotice`）。没有自营套餐、席位滑块或可点升级。额度在各家 CLI / 供应商密钥里。`company/billing/` 演示草稿不再挂入口。

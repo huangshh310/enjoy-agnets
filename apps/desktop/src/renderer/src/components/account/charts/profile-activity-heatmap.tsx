@@ -11,12 +11,14 @@ interface ProfileActivityHeatmapProps {
   data: HeatmapCellData[]
   period: HeatmapPeriod
   onPeriodChange: (period: HeatmapPeriod) => void
+  hideHeader?: boolean
 }
 
 export function ProfileActivityHeatmap({
   data,
   period,
-  onPeriodChange
+  onPeriodChange,
+  hideHeader
 }: ProfileActivityHeatmapProps) {
   const t = useT()
   const [hoveredCell, setHoveredCell] = useState<HeatmapCellData | null>(null)
@@ -36,40 +38,42 @@ export function ProfileActivityHeatmap({
   const startDate = data[0]?.date ?? ""
 
   return (
-    <div className="flex w-full select-none flex-col gap-3 pt-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-caption-1-medium text-text-primary">{t("pages.account.heatmap.activity")}</span>
-          {hoveredCell ? (
-            <span className="font-mono text-caption-2-medium text-text-tertiary">
-              {t("pages.account.heatmap.count", { n: hoveredCell.count })} ·{" "}
-              <strong className="text-accent-500">{hoveredCell.date}</strong>
-            </span>
-          ) : (
-            <span className="hidden font-mono text-caption-2-medium text-text-tertiary sm:inline">
-              {t(`pages.account.heatmap.${period}`)} {t("pages.account.heatmap.periodHintSuffix")}
-            </span>
-          )}
-        </div>
+    <div className="flex w-full select-none flex-col gap-2 pt-1">
+      {!hideHeader ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-caption-1-medium text-text-primary">{t("pages.account.heatmap.activity")}</span>
+            {hoveredCell ? (
+              <span className="font-mono text-caption-2-medium text-text-tertiary">
+                {t("pages.account.heatmap.count", { n: hoveredCell.count })} ·{" "}
+                <strong className="text-accent-500">{hoveredCell.date}</strong>
+              </span>
+            ) : (
+              <span className="hidden font-mono text-caption-2-medium text-text-tertiary sm:inline">
+                {t(`pages.account.heatmap.${period}`)} {t("pages.account.heatmap.periodHintSuffix")}
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-center rounded-lg border border-separator-border/70 bg-background-secondary-default/60 p-0.5 text-caption-2-medium">
-          {(["weekly", "monthly", "yearly"] as HeatmapPeriod[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => onPeriodChange(item)}
-              className={cx(
-                "cursor-pointer rounded-md px-2 py-0.5 capitalize transition-all",
-                period === item
-                  ? "bg-background-primary-default text-text-primary shadow-2xs"
-                  : "text-text-tertiary hover:text-text-primary"
-              )}
-            >
-              {item}
-            </button>
-          ))}
+          <div className="flex items-center rounded-lg border border-separator-border/70 bg-background-secondary-default/60 p-0.5 text-caption-2-medium">
+            {(["weekly", "monthly", "yearly"] as HeatmapPeriod[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onPeriodChange(item)}
+                className={cx(
+                  "cursor-pointer rounded-md px-2 py-0.5 capitalize transition-all",
+                  period === item
+                    ? "bg-background-primary-default text-text-primary shadow-2xs"
+                    : "text-text-tertiary hover:text-text-primary"
+                )}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="w-full overflow-x-auto pb-1">
         <div className="flex w-full min-w-[640px] items-stretch justify-between gap-[3px]">
@@ -94,7 +98,13 @@ export function ProfileActivityHeatmap({
 
       <div className="flex items-center justify-between pt-0.5 font-mono text-caption-2-medium text-text-tertiary">
         <span>
-          {startDate || t("pages.account.heatmap.start")} ~ {t("pages.account.heatmap.today")}
+          {hoveredCell ? (
+            <span className="text-text-primary">
+              <strong className="text-accent-500 font-semibold">{hoveredCell.date}</strong> · {t("pages.account.heatmap.count", { n: hoveredCell.count })}
+            </span>
+          ) : (
+            startDate ? `${startDate} ~ ${t("pages.account.heatmap.today")}` : t("pages.account.heatmap.today")
+          )}
         </span>
         <div className="flex items-center gap-1.5">
           <span>{t("pages.account.heatmap.less")}</span>

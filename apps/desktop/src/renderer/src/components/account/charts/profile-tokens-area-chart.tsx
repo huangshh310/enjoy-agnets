@@ -20,7 +20,7 @@ export function ProfileTokensAreaChart({
 }: ProfileTokensAreaChartProps) {
   const t = useT()
   const [activeIdx, setActiveIdx] = useState<number | null>(null)
-  const chartHeight = 110
+  const chartHeight = 90
   const chartWidth = 640
   const maxTokens = Math.max(...points.map((point) => point.tokens), 1)
 
@@ -48,15 +48,15 @@ export function ProfileTokensAreaChart({
   const lastPoint = points[points.length - 1]
 
   return (
-    <div className="flex select-none flex-col gap-4 rounded-2xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
+    <div className="flex select-none flex-col gap-2.5 rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-card">
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
-          <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.charts.tokens")}</span>
+          <span className="text-[11px] font-medium text-text-tertiary">{t("pages.account.charts.tokens")}</span>
           <div className="mt-0.5 flex items-center gap-2">
-            <h3 className="text-title-2-semibold text-text-primary">{totalTokensFormatted}</h3>
+            <h3 className="text-title-3-semibold text-text-primary">{totalTokensFormatted}</h3>
             <span
               className={cx(
-                "inline-flex items-center rounded-md px-2 py-0.5 font-mono text-caption-2-medium",
+                "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-[10px] font-semibold",
                 growthBadgeClass(growthRate, "accent")
               )}
             >
@@ -74,7 +74,7 @@ export function ProfileTokensAreaChart({
       <div className="relative w-full overflow-hidden">
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          className="h-28 w-full overflow-visible"
+          className="h-24 w-full overflow-visible"
           preserveAspectRatio="none"
           onMouseLeave={() => setActiveIdx(null)}
         >
