@@ -3,13 +3,13 @@
  */
 import { useEffect, useState } from "react"
 import {
+  RiCloseLine,
   RiLoader4Line,
   RiPlayLine,
   RiSearchLine,
   RiToolsLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
@@ -40,7 +40,14 @@ export function McpServerToolsModal(props: {
     }
   }, [server, tools, selectedTool])
 
-  if (!server) return null
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onOpenChange(false)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open, onOpenChange])
 
   const filteredTools = tools.filter(
     (tool) =>
@@ -89,31 +96,53 @@ export function McpServerToolsModal(props: {
     }
   }
 
+  if (!open || !server) return null
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden rounded-3xl border-border-button-default bg-background-primary-default shadow-2xl">
+    <div className="fixed inset-0 z-50">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 animate-in fade-in duration-200"
+        onClick={() => onOpenChange(false)}
+        aria-label={t("common.close") || "Close"}
+      />
+
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mcp-tools-drawer-title"
+        className="absolute inset-y-3 right-3 flex w-[min(56rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-3xl border border-border-button-default bg-background-primary-default shadow-card animate-in slide-in-from-right duration-200"
+      >
         {/* 顶部 Header */}
-        <div className="flex items-center justify-between border-b border-separator-border/80 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500">
+        <header className="flex items-center justify-between border-b border-separator-border/80 px-6 py-4 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent-500/10 text-accent-500">
               <RiToolsLine className="size-5" />
             </div>
-            <div>
-              <DialogTitle className="text-body-medium font-semibold text-text-primary">
+            <div className="min-w-0">
+              <h3 id="mcp-tools-drawer-title" className="text-title-3-semibold text-text-primary tracking-tight truncate">
                 {t("pages.mcp.toolsModalTitle", { name: server.name })}
-              </DialogTitle>
-              <p className="text-[12px] text-text-secondary">
+              </h3>
+              <p className="text-caption-2-regular text-text-tertiary truncate">
                 {t("pages.mcp.toolsModalHint", { n: tools.length })}
               </p>
             </div>
           </div>
-        </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-secondary-default hover:text-text-primary cursor-pointer"
+            aria-label={t("common.close") || "Close"}
+          >
+            <RiCloseLine className="size-5" />
+          </button>
+        </header>
 
         {/* 主体两栏布局：左侧工具列表，右侧工具详情与测试 */}
-        <div className="grid grid-cols-1 md:grid-cols-12 min-h-[440px] max-h-[70vh]">
+        <div className="grid grid-cols-1 md:grid-cols-12 flex-1 min-h-0 overflow-hidden">
           {/* 左侧列表 */}
-          <div className="md:col-span-5 border-r border-separator-border/80 p-4 flex flex-col gap-3 bg-background-secondary-default/30">
-            <div className="relative">
+          <div className="md:col-span-5 border-r border-separator-border/80 p-4 flex flex-col gap-3 bg-background-secondary-default/30 min-h-0 overflow-hidden">
+            <div className="relative shrink-0">
               <RiSearchLine className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-text-tertiary" />
               <Input
                 value={search}
@@ -123,7 +152,7 @@ export function McpServerToolsModal(props: {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
+            <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1 min-h-0">
               {filteredTools.length === 0 ? (
                 <div className="py-12 text-center text-caption-2-medium text-text-tertiary">
                   {t("pages.mcp.noMatchingTools")}
@@ -138,7 +167,7 @@ export function McpServerToolsModal(props: {
                       type="button"
                       onClick={() => setSelectedTool(tool.name)}
                       className={cx(
-                        "flex flex-col gap-1 rounded-xl p-3 text-left transition-all border",
+                        "flex flex-col gap-1 rounded-xl p-3 text-left transition-all border cursor-pointer",
                         isSelected
                           ? "border-accent-500/40 bg-accent-500/5 shadow-xs"
                           : "border-transparent bg-background-primary-default hover:border-separator-border"
@@ -172,7 +201,7 @@ export function McpServerToolsModal(props: {
           </div>
 
           {/* 右侧工具详情与试调用 */}
-          <div className="md:col-span-7 p-5 flex flex-col justify-between overflow-y-auto">
+          <div className="md:col-span-7 p-6 flex flex-col justify-between overflow-y-auto min-h-0">
             {activeToolObj ? (
               <div className="flex flex-col gap-4">
                 <div>
@@ -201,7 +230,7 @@ export function McpServerToolsModal(props: {
                           type="button"
                           onClick={() => void handleSetPermission(activeToolObj.name, level)}
                           className={cx(
-                            "flex flex-col items-center justify-center rounded-xl p-2 text-center text-[11px] font-medium border transition-all",
+                            "flex flex-col items-center justify-center rounded-xl p-2 text-center text-[11px] font-medium border transition-all cursor-pointer",
                             isActive
                               ? level === "allow"
                                 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
@@ -281,7 +310,7 @@ export function McpServerToolsModal(props: {
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </aside>
+    </div>
   )
 }

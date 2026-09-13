@@ -37,6 +37,7 @@ export function McpCreateFormBody(props: {
   onRemoveEnv: (index: number) => void
   onEnvChange: (index: number, field: "key" | "value", val: string) => void
   errorMsg: string | null
+  className?: string
 }) {
   const {
     initialServer,
@@ -57,13 +58,14 @@ export function McpCreateFormBody(props: {
     onAddEnv,
     onRemoveEnv,
     onEnvChange,
-    errorMsg
+    errorMsg,
+    className
   } = props
   const t = useT()
   const presets = getFeaturedMcpPresets(t)
 
   return (
-    <div className="flex flex-col gap-4 p-5 max-h-[70vh] overflow-y-auto">
+    <div className={cx("flex flex-col gap-4 p-6 flex-1 min-h-0 overflow-y-auto", className)}>
       {!initialServer ? (
         <div className="flex flex-col gap-1.5 rounded-lg border border-separator-border/50 bg-background-secondary-default/30 p-2.5">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-text-secondary">

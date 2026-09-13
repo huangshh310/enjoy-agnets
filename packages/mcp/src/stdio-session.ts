@@ -10,9 +10,10 @@ export type McpSession = {
   close(): void
 }
 
-export function createStdioSession(child: ChildProcess, timeoutMs = 8_000): McpSession {
+export function createStdioSession(child: ChildProcess, timeoutMs = 25_000): McpSession {
   let nextId = 1
   let buffer = Buffer.alloc(0)
+  let stderrBuffer = ""
   const pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>()
 
   const onData = (chunk: Buffer) => {
@@ -28,11 +29,26 @@ export function createStdioSession(child: ChildProcess, timeoutMs = 8_000): McpS
       else wait.resolve(message.result)
     }
   }
+
+  const onStderr = (chunk: Buffer) => {
+    stderrBuffer = (stderrBuffer + chunk.toString("utf8")).slice(-4000)
+  }
+
+  const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
+    const detail = stderrBuffer.trim() || (code !== null ? `exit code ${code}` : `signal ${signal}`)
+    const err = new Error(`MCP process terminated: ${detail}`)
+    for (const wait of pending.values()) wait.reject(err)
+    pending.clear()
+  }
+
   child.stdout?.on("data", onData)
+  child.stderr?.on("data", onStderr)
   child.on("error", (error) => {
     for (const wait of pending.values()) wait.reject(error)
     pending.clear()
   })
+  child.on("exit", onExit)
+  child.on("close", onExit)
 
   return {
     request(method, params) {
@@ -41,7 +57,8 @@ export function createStdioSession(child: ChildProcess, timeoutMs = 8_000): McpS
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           pending.delete(id)
-          reject(new Error(`MCP ${method} timeout.`))
+          const detail = stderrBuffer.trim() ? ` (${stderrBuffer.trim().slice(-200)})` : ""
+          reject(new Error(`MCP ${method} timeout.${detail}`))
         }, timeoutMs)
         pending.set(id, {
           resolve: (value) => {
@@ -61,6 +78,9 @@ export function createStdioSession(child: ChildProcess, timeoutMs = 8_000): McpS
     },
     close() {
       child.stdout?.off("data", onData)
+      child.stderr?.off("data", onStderr)
+      child.off("exit", onExit)
+      child.off("close", onExit)
       child.kill()
     }
   }

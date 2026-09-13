@@ -2,9 +2,8 @@
  * MCP Server 注册与编辑弹窗：校验后 upsert。
  */
 import { useEffect, useState } from "react"
-import { RiCheckLine, RiLoader4Line } from "@remixicon/react"
+import { RiCheckLine, RiCloseLine, RiLoader4Line } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import type { McpServer, McpTransport } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { getIde } from "@renderer/lib/ide"
@@ -144,17 +143,50 @@ export function McpCreateModal(props: {
     }
   }
 
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onOpenChange(false)
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [open, onOpenChange])
+
+  if (!open) return null
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl p-0 gap-0 overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default shadow-xl">
-        <div className="border-b border-separator-border/70 px-5 py-3.5 flex flex-col gap-0.5">
-          <DialogTitle className="text-body-medium font-semibold text-text-primary">
-            {initialServer ? t("pages.mcp.editTitle") : t("pages.mcp.createTitle")}
-          </DialogTitle>
-          <p className="text-[11.5px] text-text-tertiary">
-            {t("pages.mcp.createHint")}
-          </p>
-        </div>
+    <div className="fixed inset-0 z-50">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 animate-in fade-in duration-200"
+        onClick={() => onOpenChange(false)}
+        aria-label={t("common.cancel")}
+      />
+
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mcp-create-drawer-title"
+        className="absolute inset-y-3 right-3 flex w-[min(34rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-3xl border border-border-button-default bg-background-primary-default shadow-card animate-in slide-in-from-right duration-200"
+      >
+        <header className="flex items-center justify-between border-b border-separator-border/70 px-6 py-4 shrink-0">
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <h3 id="mcp-create-drawer-title" className="text-title-3-semibold text-text-primary tracking-tight truncate">
+              {initialServer ? t("pages.mcp.editTitle") : t("pages.mcp.createTitle")}
+            </h3>
+            <p className="text-caption-2-regular text-text-tertiary truncate">
+              {t("pages.mcp.createHint")}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-secondary-default hover:text-text-primary cursor-pointer"
+            aria-label={t("common.cancel")}
+          >
+            <RiCloseLine className="size-5" />
+          </button>
+        </header>
 
         <McpCreateFormBody
           initialServer={initialServer}
@@ -178,7 +210,7 @@ export function McpCreateModal(props: {
           errorMsg={errorMsg}
         />
 
-        <div className="flex items-center justify-end gap-2 border-t border-separator-border/70 px-5 py-3 bg-background-secondary-default/30">
+        <footer className="flex items-center justify-end gap-2 border-t border-separator-border/70 px-6 py-4 bg-background-secondary-default/30 shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -202,8 +234,8 @@ export function McpCreateModal(props: {
             )}
             <span>{initialServer ? t("pages.mcp.saveUpdate") : t("pages.mcp.registerServer")}</span>
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </footer>
+      </aside>
+    </div>
   )
 }

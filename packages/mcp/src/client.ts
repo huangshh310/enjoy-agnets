@@ -20,7 +20,7 @@ export type McpClientHandle = {
   close?: () => void
 }
 
-const HANDSHAKE_MS = 8_000
+const HANDSHAKE_MS = 25_000
 
 export async function connectMcpServer(input: {
   id: string
