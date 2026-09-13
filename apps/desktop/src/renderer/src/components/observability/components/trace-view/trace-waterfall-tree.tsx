@@ -53,7 +53,7 @@ export function TraceWaterfallTree(props: {
   })
 
   return (
-    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px]">
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px] min-h-[360px] h-full">
       {/* 1. 图例标签栏 (Legend) */}
       <div className="flex items-center justify-between gap-3 bg-background-secondary-default/40 px-4 py-2 border-b border-separator-border/60 overflow-x-auto whitespace-nowrap text-[10.5px]">
         <div className="flex items-center gap-3">
@@ -206,6 +206,12 @@ export function TraceWaterfallTree(props: {
             </div>
           )
         })}
+      </div>
+
+      {/* 底部运行摘要 */}
+      <div className="flex items-center justify-between px-4 py-2 border-t border-separator-border/40 bg-background-secondary-default/20 text-[10.5px] text-text-tertiary mt-auto">
+        <span>已还原 {allRows.length} 个 Span 阶段</span>
+        <span>端到端总时延: {totalDurationMs}ms</span>
       </div>
     </div>
   )

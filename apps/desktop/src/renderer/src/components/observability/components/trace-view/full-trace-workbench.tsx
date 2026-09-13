@@ -1,7 +1,7 @@
 /**
  * 全景 Trace 深度诊断工作台 (Full Trace Diagnostic Workbench)：
- * 整合顶部指标看板、视角切换（Span 甘特瀑布流 / Flame Chart 火焰图时间线 / OTel 属性 / 原始 JSON）
- * 与右侧实时联动检查器 (SpanDetailInspector)。
+ * 整合顶部指标看板、视角切换（Span 甘特瀑布流 / Flame Chart 火焰图时间线 / OTel 属性 / 原始 JSON）、
+ * 右侧实时联动检查器 (SpanDetailInspector)，以及下方生命周期里程碑时序与同模型相邻执行对比。
  */
 import { useEffect, useState } from "react"
 import {
@@ -24,14 +24,17 @@ import { SpanDetailInspector } from "./span-detail-inspector"
 import { TraceFlameChart } from "./trace-flame-chart"
 import { TraceSummaryHeader } from "./trace-summary-header"
 import { TraceWaterfallTree } from "./trace-waterfall-tree"
+import { TraceMilestonesStream } from "./trace-milestones-stream"
 
 type TraceViewMode = "waterfall" | "flame" | "attributes" | "raw"
 
 export function FullTraceWorkbench(props: {
   metric: TelemetryMetric
+  allMetrics?: TelemetryMetric[]
   onBack: () => void
+  onSelectMetric?: (metric: TelemetryMetric) => void
 }) {
-  const { metric, onBack } = props
+  const { metric, allMetrics = [], onBack, onSelectMetric } = props
   const t = useT()
   const [viewMode, setViewMode] = useState<TraceViewMode>("waterfall")
   const [events, setEvents] = useState<TraceReplayEvent[]>([])
@@ -87,8 +90,8 @@ export function FullTraceWorkbench(props: {
   ]
 
   return (
-    <div className="flex flex-col gap-3.5 w-full">
-      {/* 1. 顶部全景指标看板 */}
+    <div className="flex flex-col gap-3.5 w-full pb-8">
+      {/* 1. 顶部全景指标看板与生命周期阶段分解 */}
       <TraceSummaryHeader data={traceData} onBack={onBack} />
 
       {/* 2. 诊断视角模式切换导轨 */}
@@ -120,9 +123,9 @@ export function FullTraceWorkbench(props: {
         </span>
       </div>
 
-      {/* 3. 核心视图展示区 */}
+      {/* 3. 核心视图展示区 (Gantt Tree / Flame Chart + Span 详情检查器) */}
       {viewMode === "waterfall" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           <div className="lg:col-span-7 min-w-0">
             <TraceWaterfallTree
               rootSpan={traceData.rootSpan}
@@ -138,7 +141,7 @@ export function FullTraceWorkbench(props: {
       ) : null}
 
       {viewMode === "flame" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           <div className="lg:col-span-7 min-w-0">
             <TraceFlameChart
               rootSpan={traceData.rootSpan}
@@ -164,6 +167,14 @@ export function FullTraceWorkbench(props: {
           <ObservabilityTraceJson rawJson={rawJson} />
         </div>
       ) : null}
+
+      {/* 4. 下方深度诊断：执行生命周期时序里程碑 + 同模型基准表现对比与相邻链路跳转 */}
+      <TraceMilestonesStream
+        metric={metric}
+        events={events}
+        allMetrics={allMetrics}
+        onSelectMetric={onSelectMetric}
+      />
     </div>
   )
 }

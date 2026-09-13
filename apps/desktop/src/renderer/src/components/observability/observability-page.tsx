@@ -55,7 +55,9 @@ export function ObservabilityPage() {
               <div className="min-h-0 flex-1 overflow-y-auto">
                 <FullTraceWorkbench
                   metric={page.inspectMetric}
+                  allMetrics={page.metrics}
                   onBack={() => page.setInspectMetric(null)}
+                  onSelectMetric={(metric) => page.setInspectMetric(metric)}
                 />
               </div>
             ) : (

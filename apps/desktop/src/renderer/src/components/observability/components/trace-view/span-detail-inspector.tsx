@@ -1,12 +1,20 @@
 /**
  * 选定 Span 联动详情检查器 (Span Detail Inspector)：
- * 呈现选中 Span 的核心指标、Metadata、Input/Output (Pretty Markdown/JSON 切换) 与 OTEL 属性。
+ * 呈现选中 Span 的核心指标、时序内切分解、脱敏隐私说明、Input/Output 与 OTEL 属性。
  */
 import { useState } from "react"
+import {
+  RiCheckLine,
+  RiClipboardLine,
+  RiShieldCheckLine
+} from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import { getSpanKindConfig } from "../../services/span-kind-config"
 import type { SpanNode } from "../../types/trace-span.types"
+import { formatTokens } from "@renderer/components/settings/agent-tools/format-spend"
+import { formatLatency } from "../model-routing/model-routing-row-cells"
 
 type InspectorTab = "io" | "attributes" | "metadata"
 
@@ -26,8 +34,15 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
     })
   }
 
+  const inTok = span.inputTokens ?? 0
+  const outTok = span.outputTokens ?? 0
+  const totalTok = inTok + outTok
+  const ttfo = span.ttfoMs ?? 0
+  const duration = span.durationMs ?? 0
+  const streamMs = ttfo > 0 && duration > ttfo ? duration - ttfo : 0
+
   return (
-    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px] h-full">
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px] h-full min-h-[360px]">
       {/* 1. Span 头部基本信息 */}
       <div className="flex flex-col gap-2.5 bg-background-secondary-default/30 p-4 border-b border-separator-border/60">
         <div className="flex items-center justify-between">
@@ -51,10 +66,10 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
 
           <span
             className={cx(
-              "rounded px-1.5 py-0.2 text-[9.5px] font-bold uppercase",
+              "rounded px-2 py-0.5 text-[9.5px] font-bold uppercase",
               span.status === "success"
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-rose-600 dark:text-rose-400 bg-rose-500/10"
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
+                : "text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20"
             )}
           >
             {span.status}
@@ -63,32 +78,55 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
 
         {/* 关键性能指标 4 列网格 */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          <div className="flex flex-col rounded bg-background-secondary-default/60 p-2">
+          <div className="flex flex-col rounded-lg bg-background-secondary-default/60 p-2 border border-separator-border/30">
             <span className="text-[10px] text-text-tertiary">Duration</span>
-            <span className="font-bold text-text-primary mt-0.5">{span.durationMs}ms</span>
+            <span className="font-bold text-text-primary mt-0.5">{formatLatency(duration)}</span>
           </div>
 
-          <div className="flex flex-col rounded bg-background-secondary-default/60 p-2">
-            <span className="text-[10px] text-text-tertiary">First Token</span>
+          <div className="flex flex-col rounded-lg bg-background-secondary-default/60 p-2 border border-separator-border/30">
+            <span className="text-[10px] text-text-tertiary">First Token (TTFO)</span>
             <span className="font-bold text-amber-600 dark:text-amber-400 mt-0.5">
-              {span.ttfoMs ? `${span.ttfoMs}ms` : "N/A"}
+              {ttfo > 0 ? `${ttfo}ms` : "N/A"}
             </span>
           </div>
 
-          <div className="flex flex-col rounded bg-background-secondary-default/60 p-2">
+          <div className="flex flex-col rounded-lg bg-background-secondary-default/60 p-2 border border-separator-border/30">
             <span className="text-[10px] text-text-tertiary">Tokens</span>
             <span className="font-bold text-text-primary mt-0.5">
-              {(span.inputTokens ?? 0) + (span.outputTokens ?? 0)} tok
+              {totalTok > 0 ? `${formatTokens(totalTok)} tok` : "—"}
             </span>
           </div>
 
-          <div className="flex flex-col rounded bg-background-secondary-default/60 p-2">
+          <div className="flex flex-col rounded-lg bg-background-secondary-default/60 p-2 border border-separator-border/30 min-w-0">
             <span className="text-[10px] text-text-tertiary">Model</span>
-            <span className="font-bold text-purple-600 dark:text-purple-400 mt-0.5 truncate">
-              {span.model ?? "default"}
-            </span>
+            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+              {span.model ? (
+                <>
+                  <ModelBrandIcon modelId={span.model} size={12} className="shrink-0" />
+                  <span className="font-bold text-text-primary truncate">{span.model}</span>
+                </>
+              ) : (
+                <span className="font-bold text-text-tertiary">default</span>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* 阶段耗时分解小条 (若有 TTFO) */}
+        {ttfo > 0 && streamMs > 0 ? (
+          <div className="flex items-center gap-2 pt-1 text-[10px] text-text-secondary">
+            <span className="text-text-tertiary">内切占比:</span>
+            <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+              <span className="size-1.5 rounded-full bg-amber-500" />
+              <span>TTFO {ttfo}ms</span>
+            </div>
+            <span>+</span>
+            <div className="flex items-center gap-1 text-accent-500 font-medium">
+              <span className="size-1.5 rounded-full bg-accent-500" />
+              <span>流式生成 {streamMs}ms</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* 2. 标签栏切换 */}
@@ -104,7 +142,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
-            Input / Output
+            载荷与脱敏 (Payload)
           </button>
 
           <button
@@ -117,7 +155,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
-            Attributes ({Object.keys(span.attributes ?? {}).length})
+            OTel 属性 ({Object.keys(span.attributes ?? {}).length})
           </button>
 
           <button
@@ -130,7 +168,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
                 : "text-text-secondary hover:text-text-primary"
             )}
           >
-            Metadata
+            元数据 (Metadata)
           </button>
         </div>
 
@@ -146,7 +184,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
                   : "text-text-secondary"
               )}
             >
-              Pretty
+              视图
             </button>
             <button
               type="button"
@@ -165,28 +203,56 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
       </div>
 
       {/* 3. 标签主体内容 */}
-      <div className="p-4 flex-1 overflow-y-auto max-h-[50vh] flex flex-col gap-3.5">
+      <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-3.5">
         {/* TAB 1: Input / Output */}
         {activeTab === "io" && (
           <div className="flex flex-col gap-3">
+            {/* 本地隐私脱敏提示条 */}
+            <div className="flex items-center gap-2 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/20 p-2.5 text-[10.5px] text-text-secondary">
+              <RiShieldCheckLine className="size-4 text-emerald-500 shrink-0" />
+              <span>
+                本地隐私切片保护：Prompt 正文与 API 密钥已脱敏，仅记录性能耗时与 Token 规模。
+              </span>
+            </div>
+
             {/* Input 块 */}
             <div className="flex flex-col gap-1.5 rounded-lg border border-separator-border/60 bg-background-secondary-default/30 p-3">
               <div className="flex items-center justify-between text-[10.5px] font-semibold text-text-tertiary">
                 <span className="uppercase tracking-wider">
                   INPUT ({span.input?.role ?? "user"})
+                  {inTok > 0 ? ` · ${formatTokens(inTok)} tokens` : ""}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleCopy("input", span.input?.content ?? "")}
-                  className="hover:text-text-primary"
+                  className="hover:text-text-primary inline-flex items-center gap-1 text-[10px]"
                 >
-                  {copiedKey === "input" ? t("pages.observability.copied") : t("pages.observability.copy")}
+                  {copiedKey === "input" ? (
+                    <>
+                      <RiCheckLine className="size-3 text-emerald-500" />
+                      <span>已复制</span>
+                    </>
+                  ) : (
+                    <>
+                      <RiClipboardLine className="size-3" />
+                      <span>复制</span>
+                    </>
+                  )}
                 </button>
               </div>
               <div className="rounded border border-separator-border/50 bg-background-primary-default p-2.5 text-[11px] leading-relaxed text-text-primary whitespace-pre-wrap">
-                {ioViewMode === "json"
-                  ? JSON.stringify(span.input ?? {}, null, 2)
-                  : span.input?.content || "No input payload"}
+                {ioViewMode === "json" ? (
+                  JSON.stringify(span.input ?? {}, null, 2)
+                ) : span.input?.content && span.input.content !== "No input payload" ? (
+                  span.input.content
+                ) : (
+                  <div className="flex flex-col gap-1 text-text-tertiary py-1">
+                    <span className="font-semibold text-text-secondary">用户任务输入已脱敏保密</span>
+                    <span className="text-[10px]">
+                      本次请求包含 {formatTokens(inTok)} 输入 Tokens，上游模型接收完整参数。
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -195,19 +261,39 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
               <div className="flex items-center justify-between text-[10.5px] font-semibold text-text-tertiary">
                 <span className="uppercase tracking-wider">
                   OUTPUT ({span.output?.role ?? "assistant"})
+                  {outTok > 0 ? ` · ${formatTokens(outTok)} tokens` : ""}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleCopy("output", span.output?.content ?? "")}
-                  className="hover:text-text-primary"
+                  className="hover:text-text-primary inline-flex items-center gap-1 text-[10px]"
                 >
-                  {copiedKey === "output" ? t("pages.observability.copied") : t("pages.observability.copy")}
+                  {copiedKey === "output" ? (
+                    <>
+                      <RiCheckLine className="size-3 text-emerald-500" />
+                      <span>已复制</span>
+                    </>
+                  ) : (
+                    <>
+                      <RiClipboardLine className="size-3" />
+                      <span>复制</span>
+                    </>
+                  )}
                 </button>
               </div>
               <div className="rounded border border-separator-border/50 bg-background-primary-default p-2.5 text-[11px] leading-relaxed text-text-primary whitespace-pre-wrap">
-                {ioViewMode === "json"
-                  ? JSON.stringify(span.output ?? {}, null, 2)
-                  : span.output?.content || "No output payload"}
+                {ioViewMode === "json" ? (
+                  JSON.stringify(span.output ?? {}, null, 2)
+                ) : span.output?.content && span.output.content !== "No output payload" ? (
+                  span.output.content
+                ) : (
+                  <div className="flex flex-col gap-1 text-text-tertiary py-1">
+                    <span className="font-semibold text-text-secondary">助手生成回复已脱敏保密</span>
+                    <span className="text-[10px]">
+                      本次执行流式产出 {formatTokens(outTok)} 输出 Tokens，状态为 {span.status}。
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -221,7 +307,7 @@ export function SpanDetailInspector(props: { span: SpanNode }) {
             ) : (
               <div className="divide-y divide-separator-border/40">
                 {Object.entries(span.attributes ?? {}).map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between px-3 py-2">
+                  <div key={k} className="flex items-center justify-between px-3 py-2 hover:bg-background-secondary-hover/30 transition-colors">
                     <span className="font-bold text-accent-600 dark:text-accent-400 truncate max-w-[200px]">
                       {k}
                     </span>

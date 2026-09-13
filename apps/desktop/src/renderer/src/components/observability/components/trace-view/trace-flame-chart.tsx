@@ -75,7 +75,7 @@ export function TraceFlameChart(props: {
   }, [maxTime])
 
   return (
-    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default shadow-2xs font-mono text-[11px] overflow-hidden">
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default shadow-2xs font-mono text-[11px] overflow-hidden min-h-[360px] h-full">
       {/* 1. 图例与模式说明栏 */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-separator-border/60 bg-background-secondary-default/30 px-3.5 py-2 text-[10.5px]">
         <div className="flex items-center gap-2">
