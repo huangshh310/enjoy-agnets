@@ -3,7 +3,9 @@
  */
 import {
   Anthropic,
+  Antigravity,
   Claude,
+  Cursor,
   DeepSeek,
   Gemini,
   Grok,
@@ -199,6 +201,15 @@ export function ModelBrandIcon({
   }
   if (mid.includes("perplexity") || mid.includes("sonar")) {
     return <Perplexity.Color size={size} className={className} />
+  }
+  if (mid.includes("antigravity")) {
+    return <Antigravity.Color size={size} className={className} />
+  }
+  if (mid.includes("cursor")) {
+    return <Cursor size={size} className={className} />
+  }
+  if (mid.includes("custom") || mid.includes("自定义") || mid.includes("other") || mid === "__other__") {
+    return <RiServerLine className={className} style={{ width: size, height: size }} />
   }
 
   return <ProviderIcon kind={providerKind} apiStyle={apiStyle} size={size} className={className} />

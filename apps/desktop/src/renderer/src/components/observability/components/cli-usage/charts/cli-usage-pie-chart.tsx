@@ -5,6 +5,7 @@
 import { useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import { spendSliceFill, type SpendSlice } from "@renderer/components/settings/agent-tools/charts/spend-chart-colors"
 import { SpendChartTooltip } from "@renderer/components/settings/agent-tools/charts/spend-chart-tooltip"
 import { formatTokens } from "@renderer/components/settings/agent-tools/format-spend"
@@ -104,7 +105,7 @@ export function CliUsagePieChart({
               {type === "sources" ? (
                 <AgentBrandIcon id={slice.id} size={12} />
               ) : (
-                <span className="font-mono text-[10px] text-text-tertiary">•</span>
+                <ModelBrandIcon modelId={slice.id} size={12} className="shrink-0" />
               )}
               <span className="min-w-0 flex-1 truncate text-text-primary" title={slice.label}>
                 {slice.label}

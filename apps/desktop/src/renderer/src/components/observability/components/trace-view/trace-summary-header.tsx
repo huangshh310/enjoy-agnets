@@ -9,6 +9,7 @@ import {
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import type { TraceSummaryData } from "../../types/trace-span.types"
 
 export function TraceSummaryHeader(props: {
@@ -58,6 +59,13 @@ export function TraceSummaryHeader(props: {
           <h2 className="font-mono text-title-3-semibold font-bold text-text-primary tracking-tight">
             {data.name}
           </h2>
+
+          {data.rootSpan.model ? (
+            <span className="flex items-center gap-1.5 rounded-md bg-background-secondary-default px-2 py-0.5 font-mono text-[11px] text-text-secondary">
+              <ModelBrandIcon modelId={data.rootSpan.model} size={13} className="shrink-0" />
+              <span>{data.rootSpan.model}</span>
+            </span>
+          ) : null}
 
           <span
             className={cx(
@@ -113,12 +121,19 @@ export function TraceSummaryHeader(props: {
           ) : null}
         </div>
 
-        {/* 4. 成本估算 */}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] text-text-tertiary uppercase">Cost (Est.)</span>
-          <span className="text-body-medium font-bold text-emerald-600 dark:text-emerald-400">
-            ${data.estimatedCost.toFixed(4)}
-          </span>
+        {/* 4. 模型架构 */}
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-[10px] text-text-tertiary uppercase">Model</span>
+          <div className="flex items-center gap-1.5 text-body-medium font-bold text-text-primary truncate">
+            {data.rootSpan.model ? (
+              <>
+                <ModelBrandIcon modelId={data.rootSpan.model} size={15} className="shrink-0" />
+                <span className="truncate">{data.rootSpan.model}</span>
+              </>
+            ) : (
+              <span className="text-text-tertiary">default</span>
+            )}
+          </div>
         </div>
 
         {/* 5. 跨度 Spans */}

@@ -1,6 +1,6 @@
 /**
  * Span 树状时序图与耗时甘特瀑布流 (Trace Waterfall Tree & Gantt Bar Chart)：
- * 支持多层级树展开折叠、时序标尺刻度、类型彩色徽标与点击联动高亮。
+ * 支持多层级树展开折叠、时序标尺刻度、类型彩色徽标、阶段微观内切 (TTFO + Stream) 与点击联动高亮。
  */
 import { useState } from "react"
 import {
@@ -9,6 +9,7 @@ import {
 } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import { getSpanKindConfig } from "../../services/span-kind-config"
 import type { SpanNode } from "../../types/trace-span.types"
 
@@ -54,13 +55,21 @@ export function TraceWaterfallTree(props: {
   return (
     <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px]">
       {/* 1. 图例标签栏 (Legend) */}
-      <div className="flex items-center gap-3 bg-background-secondary-default/40 px-4 py-2 border-b border-separator-border/60 overflow-x-auto whitespace-nowrap text-[10.5px]">
-        {Object.entries(kinds).map(([k, cfg]) => (
-          <div key={k} className="flex items-center gap-1.5 shrink-0">
-            <span style={{ backgroundColor: cfg.color }} className="size-2 rounded-full" />
-            <span className="text-text-secondary font-medium">{cfg.label}</span>
-          </div>
-        ))}
+      <div className="flex items-center justify-between gap-3 bg-background-secondary-default/40 px-4 py-2 border-b border-separator-border/60 overflow-x-auto whitespace-nowrap text-[10.5px]">
+        <div className="flex items-center gap-3">
+          {Object.entries(kinds).map(([k, cfg]) => (
+            <div key={k} className="flex items-center gap-1.5 shrink-0">
+              <span style={{ backgroundColor: cfg.color }} className="size-2 rounded-full" />
+              <span className="text-text-secondary font-medium">{cfg.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 text-text-tertiary">
+          <span className="size-2 rounded-full bg-amber-500" />
+          <span>TTFO 首字</span>
+          <span className="size-2 rounded-full bg-accent-500" />
+          <span>流式生成</span>
+        </div>
       </div>
 
       {/* 2. 表头与时间刻度标尺 (Time Axis Ruler) */}
@@ -69,13 +78,13 @@ export function TraceWaterfallTree(props: {
         <div className="col-span-3 truncate">Operation / Target</div>
         {/* 右侧 5 列为时间轴标尺 */}
         <div className="col-span-5 relative h-4 flex items-center">
-          {rulerTicks.map((t, idx) => (
+          {rulerTicks.map((tick, idx) => (
             <span
               key={idx}
-              style={{ left: `${t.ratio * 92}%` }}
+              style={{ left: `${tick.ratio * 92 + 2}%` }}
               className="absolute text-[9.5px] text-text-tertiary -translate-x-1/2 select-none"
             >
-              {t.label}
+              {tick.label}
             </span>
           ))}
         </div>
@@ -91,7 +100,14 @@ export function TraceWaterfallTree(props: {
 
           // 计算 Gantt 条的水平起点与宽度比例
           const leftPercent = Math.min((node.startOffsetMs / maxTime) * 100, 95)
-          const widthPercent = Math.max(Math.min((node.durationMs / maxTime) * 100, 100 - leftPercent), 4)
+          const widthPercent = Math.max(Math.min((node.durationMs / maxTime) * 100, 100 - leftPercent), 3)
+
+          const hasTtfoSplit = Boolean(
+            node.ttfoMs &&
+            node.ttfoMs > 0 &&
+            node.durationMs > node.ttfoMs
+          )
+          const ttfoWidthRatio = hasTtfoSplit && node.ttfoMs ? (node.ttfoMs / node.durationMs) * 100 : 0
 
           return (
             <div
@@ -143,14 +159,26 @@ export function TraceWaterfallTree(props: {
               </div>
 
               {/* Operation 标签 */}
-              <div className="col-span-3 text-text-secondary truncate pr-2">
-                <span className="text-[10px] text-text-tertiary">
+              <div className="col-span-3 text-text-secondary truncate pr-2 flex items-center gap-1.5 min-w-0">
+                {node.model ? (
+                  <ModelBrandIcon modelId={node.model} size={12} className="shrink-0" />
+                ) : null}
+                <span className="text-[10px] text-text-tertiary truncate">
                   {node.operation} {node.model ? `· ${node.model}` : ""}
                 </span>
               </div>
 
               {/* 右侧 Gantt 水平时序条 */}
               <div className="col-span-5 relative h-5 flex items-center">
+                {/* 垂直对齐刻度参考辅助线 */}
+                {rulerTicks.map((t, idx) => (
+                  <div
+                    key={idx}
+                    style={{ left: `${t.ratio * 92 + 2}%` }}
+                    className="pointer-events-none absolute inset-y-0 w-px border-r border-dashed border-separator-border/25"
+                  />
+                ))}
+
                 {/* 耗时条 */}
                 <div
                   style={{
@@ -158,10 +186,21 @@ export function TraceWaterfallTree(props: {
                     width: `${widthPercent}%`,
                     backgroundColor: node.status === "error" ? "#f43f5e" : cfg.color
                   }}
-                  className="h-3.5 rounded-sm flex items-center justify-end px-1 text-[9.5px] font-bold text-white shadow-2xs transition-all select-none overflow-hidden"
+                  className="relative h-4 rounded-sm flex items-center justify-end px-1 text-[9.5px] font-bold text-white shadow-2xs transition-all select-none overflow-hidden"
                   title={`${node.name}: ${node.durationMs}ms (offset: ${node.startOffsetMs}ms)`}
                 >
-                  <span className="truncate drop-shadow-sm">{node.durationMs}ms</span>
+                  {/* TTFO 阶段微观内切色块 */}
+                  {hasTtfoSplit ? (
+                    <div
+                      style={{ width: `${ttfoWidthRatio}%` }}
+                      className="absolute inset-y-0 left-0 bg-amber-500/90 border-r border-white/20 flex items-center px-0.5 overflow-hidden"
+                      title={`TTFO: ${node.ttfoMs}ms`}
+                    >
+                      <span className="text-[8px] text-amber-950 font-bold truncate">T</span>
+                    </div>
+                  ) : null}
+
+                  <span className="truncate drop-shadow-sm z-10">{node.durationMs}ms</span>
                 </div>
               </div>
             </div>

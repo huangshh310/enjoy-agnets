@@ -13,6 +13,7 @@ import {
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 
 export function ObservabilityMetricsList(props: {
   metrics: TelemetryMetric[]
@@ -124,9 +125,12 @@ export function ObservabilityMetricsList(props: {
 
               {/* 2. 模型 & Run ID */}
               <div className="md:col-span-3 flex flex-col min-w-0">
-                <span className="font-semibold text-text-primary truncate">
-                  {metric.modelId ?? "default-model"}
-                </span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <ModelBrandIcon modelId={metric.modelId} size={14} className="shrink-0" />
+                  <span className="font-semibold text-text-primary truncate" title={metric.modelId ?? "default-model"}>
+                    {metric.modelId ?? "default-model"}
+                  </span>
+                </div>
                 <span className="text-[9.5px] text-text-tertiary truncate">
                   {t("pages.observability.runId", { id: metric.runId.slice(0, 14) })}
                 </span>

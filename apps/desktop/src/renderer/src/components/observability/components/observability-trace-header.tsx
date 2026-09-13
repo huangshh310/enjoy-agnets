@@ -15,6 +15,7 @@ import { DialogTitle } from "@/components/ui/dialog"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import type { TraceModalTab } from "./observability-trace.types"
 
 export function ObservabilityTraceHeader({
@@ -54,7 +55,8 @@ export function ObservabilityTraceHeader({
               <DialogTitle className="text-body-medium font-bold tracking-tight text-text-primary">
                 {t("pages.observability.executionTrace", { kind: metric.kind.toUpperCase() })}
               </DialogTitle>
-              <span className="rounded bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-medium uppercase text-text-secondary">
+              <span className="flex items-center gap-1.5 rounded bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-medium uppercase text-text-secondary">
+                <ModelBrandIcon modelId={metric.modelId} size={13} className="shrink-0" />
                 {metric.modelId ?? t("pages.observability.default")}
               </span>
               <span

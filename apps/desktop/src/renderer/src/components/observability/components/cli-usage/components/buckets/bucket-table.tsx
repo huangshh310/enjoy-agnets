@@ -4,6 +4,7 @@
 import type { CliUsageBucket } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import { formatTokens } from "@renderer/components/ai-chat/agent-limits/format-tokens"
 import { formatBucketLabel, hasTokenBreakdown } from "../../lib/format"
 import { isMixedBucket } from "../../lib/filter"
@@ -13,6 +14,7 @@ export function CliUsageBucketTable(props: {
   keyLabel: string
   rows: CliUsageBucket[]
   filtered: boolean
+  isModelTab?: boolean
 }) {
   const t = useT()
   if (props.rows.length === 0) {
@@ -45,7 +47,7 @@ export function CliUsageBucketTable(props: {
           </thead>
           <tbody>
             {props.rows.map((row) => (
-              <BucketRow key={row.key} row={row} />
+              <BucketRow key={row.key} row={row} isModel={props.isModelTab} />
             ))}
           </tbody>
         </table>
@@ -58,13 +60,18 @@ function NumHead({ children }: { children: string }) {
   return <th className="px-3.5 py-2 text-right font-medium">{children}</th>
 }
 
-function BucketRow({ row }: { row: CliUsageBucket }) {
+function BucketRow({ row, isModel }: { row: CliUsageBucket; isModel?: boolean }) {
   const t = useT()
   const split = row.breakdownSessions === row.sessions && hasTokenBreakdown(row)
   return (
     <tr className="border-t border-separator-border/40 hover:bg-background-secondary-hover/40">
-      <td className="max-w-[14rem] truncate px-3.5 py-2 text-caption-1-medium text-text-primary">
-        {formatBucketLabel(row.key, t)}
+      <td className="max-w-[16rem] truncate px-3.5 py-2 text-caption-1-medium text-text-primary">
+        <div className="flex items-center gap-2 min-w-0">
+          {isModel ? (
+            <ModelBrandIcon modelId={row.key} size={15} className="shrink-0" />
+          ) : null}
+          <span className="truncate">{formatBucketLabel(row.key, t)}</span>
+        </div>
       </td>
       <NumCell muted={!split}>{split ? formatTokens(row.inputTokens) : "—"}</NumCell>
       <NumCell muted={!split}>{split ? formatTokens(row.outputTokens) : "—"}</NumCell>

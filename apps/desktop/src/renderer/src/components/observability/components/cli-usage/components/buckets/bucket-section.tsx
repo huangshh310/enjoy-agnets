@@ -46,6 +46,7 @@ export function CliUsageBucketSection(props: {
             keyLabel={t(`pages.observability.${TAB_COPY[tab].key}`)}
             rows={rows}
             filtered={props.filtered}
+            isModelTab={tab === "models"}
           />
         </TabsContent>
       </Tabs>

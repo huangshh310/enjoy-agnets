@@ -1,298 +1,253 @@
 /**
- * Vercel AI SDK 7 Token 细分与吞吐时序复合图：
- * 原生响应式 SVG 渲染，结合 Prompt Token (输入) 与 Completion Token (输出) 堆叠柱状图，
- * 并叠加 tok/s 吞吐速率曲线。
+ * Vercel AI SDK 7 Token 细分与吞吐时序复合图 (Throughput Composed Chart)：
+ * 使用 Recharts 响应式容器，支持 Prompt/Completion Token 堆叠柱与 TPS 吞吐曲线双轴对照。
  */
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts"
 import { RiSpeedUpLine } from "@remixicon/react"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
+import { formatTokens } from "@renderer/components/settings/agent-tools/format-spend"
+
+interface ThroughputDataPoint {
+  id: string
+  timeLabel: string
+  fullTime: string
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+  tokensPerSecond: number
+  modelId?: string
+  status: string
+}
 
 export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[] }) {
   const { metrics } = props
   const t = useT()
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
-  const sorted = useMemo(() => {
-    return [...metrics].sort((a, b) => a.createdAt - b.createdAt)
-  }, [metrics])
+  const { chartData, maxTps, avgTps } = useMemo(() => {
+    if (metrics.length === 0) return { chartData: [], maxTps: 0, avgTps: 0 }
 
-  const chartData = useMemo(() => {
-    if (sorted.length === 0) return null
+    const sorted = [...metrics].sort((a, b) => a.createdAt - b.createdAt)
+    let peakTps = 0
 
-    const width = 800
-    const height = 180
-    const padding = { top: 20, right: 25, bottom: 30, left: 45 }
-    const plotWidth = width - padding.left - padding.right
-    const plotHeight = height - padding.top - padding.bottom
+    const points: ThroughputDataPoint[] = sorted.map((m, idx) => {
+      const d = new Date(m.createdAt)
+      const hours = String(d.getHours()).padStart(2, "0")
+      const mins = String(d.getMinutes()).padStart(2, "0")
+      const secs = String(d.getSeconds()).padStart(2, "0")
+      const timeLabel = `${hours}:${mins}:${secs}`
+      const fullTime = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
 
-    const maxThroughput = Math.max(...sorted.map((m) => m.tokensPerSecond ?? 0), 50)
-    const maxTokens = Math.max(
-      ...sorted.map((m) => (m.inputTokens ?? 0) + (m.outputTokens ?? 0)),
-      1000
-    )
-
-    const points = sorted.map((m, i) => {
-      const x =
-        sorted.length > 1
-          ? padding.left + (i / (sorted.length - 1)) * plotWidth
-          : padding.left + plotWidth / 2
-
-      const throughput = m.tokensPerSecond ?? 0
-      const inputTokens = m.inputTokens ?? 0
-      const outputTokens = m.outputTokens ?? 0
-      const totalTokens = inputTokens + outputTokens
-
-      const yThroughput =
-        padding.top + plotHeight - (throughput / maxThroughput) * plotHeight
-      const totalBarHeight = (totalTokens / maxTokens) * (plotHeight * 0.85)
-      const inputBarHeight = totalTokens > 0 ? (inputTokens / totalTokens) * totalBarHeight : 0
-      const outputBarHeight = totalBarHeight - inputBarHeight
+      const promptTokens = m.inputTokens ?? 0
+      const completionTokens = m.outputTokens ?? 0
+      const totalTokens = promptTokens + completionTokens
+      const tokensPerSecond = Number((m.tokensPerSecond ?? 0).toFixed(1))
+      if (tokensPerSecond > peakTps) peakTps = tokensPerSecond
 
       return {
-        x,
-        yThroughput,
-        totalBarHeight,
-        inputBarHeight,
-        outputBarHeight,
-        metric: m,
-        throughput,
-        inputTokens,
-        outputTokens,
-        totalTokens
+        id: m.id || String(idx),
+        timeLabel,
+        fullTime,
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        tokensPerSecond,
+        modelId: m.modelId,
+        status: m.status
       }
     })
 
-    // 构建平滑吞吐曲线
-    let path = ""
-    let area = ""
-    if (points.length > 0) {
-      path = `M ${points[0]?.x} ${points[0]?.yThroughput}`
-      for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1]
-        const curr = points[i]
-        if (prev && curr) {
-          const cp1x = prev.x + (curr.x - prev.x) / 2
-          const cp1y = prev.yThroughput
-          const cp2x = cp1x
-          const cp2y = curr.yThroughput
-          path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curr.x} ${curr.yThroughput}`
-        }
-      }
+    const avgTps =
+      points.length > 0
+        ? Number((points.reduce((acc, p) => acc + p.tokensPerSecond, 0) / points.length).toFixed(1))
+        : 0
 
-      const first = points[0]
-      const last = points[points.length - 1]
-      if (first && last) {
-        area = `${path} L ${last.x} ${padding.top + plotHeight} L ${first.x} ${padding.top + plotHeight} Z`
-      }
-    }
-
-    return {
-      width,
-      height,
-      padding,
-      plotHeight,
-      plotWidth,
-      maxThroughput,
-      maxTokens,
-      points,
-      path,
-      area
-    }
-  }, [sorted])
-
-  if (!chartData || sorted.length === 0) return null
-
-  const activePoint = hoverIndex !== null ? chartData.points[hoverIndex] : null
+    return { chartData: points, maxTps: peakTps, avgTps }
+  }, [metrics])
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
-      <div className="flex items-center justify-between border-b border-separator-border/50 pb-2.5">
+    <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
+      {/* 顶栏与图例 */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-separator-border/50 pb-2.5">
         <div className="flex items-center gap-2">
-          <RiSpeedUpLine className="size-4 text-purple-500" />
+          <RiSpeedUpLine className="size-4 text-emerald-500 shrink-0" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.observability.throughputTitle")}
           </h3>
         </div>
 
-        <div className="flex items-center gap-3 text-[10.5px] font-mono text-text-tertiary">
-          <span className="flex items-center gap-1">
-            <span className="size-2 rounded bg-blue-500" />
+        <div className="flex items-center gap-3 text-caption-2-medium">
+          <div className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-chart-2" />
             <span className="text-text-secondary">{t("pages.observability.promptIn")}</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="size-2 rounded bg-purple-500" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-accent-500" />
             <span className="text-text-secondary">{t("pages.observability.completionOut")}</span>
-          </span>
-          <span className="flex items-center gap-1">
+          </div>
+          <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-500" />
             <span className="text-text-secondary">{t("pages.observability.rateToks")}</span>
-          </span>
+          </div>
+          {maxTps > 0 ? (
+            <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 font-mono text-[10px] text-text-tertiary">
+              Peak: {maxTps} t/s
+            </span>
+          ) : null}
         </div>
       </div>
 
-      <div className="relative w-full overflow-hidden">
-        <svg
-          viewBox={`0 0 ${chartData.width} ${chartData.height}`}
-          className="w-full h-44 select-none"
-        >
-          <defs>
-            <linearGradient id="tpAreaGrad2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-chart-success)" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="var(--color-chart-success)" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* Y 轴刻度 */}
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-            const y = chartData.padding.top + chartData.plotHeight * (1 - ratio)
-            const val = Math.round(chartData.maxThroughput * ratio)
-            return (
-              <g key={ratio}>
-                <line
-                  x1={chartData.padding.left}
-                  y1={y}
-                  x2={chartData.width - chartData.padding.right}
-                  y2={y}
-                  stroke="currentColor"
-                  className="text-separator-border/60"
-                  strokeDasharray="3 3"
+      {/* Recharts 自适应双轴图 */}
+      {chartData.length === 0 ? (
+        <div className="flex h-52 items-center justify-center text-caption-2-medium text-text-tertiary">
+          {t("pages.observability.emptyTraces")}
+        </div>
+      ) : (
+        <div className="h-64 w-full min-w-0">
+          <ResponsiveContainer width="100%" height={250}>
+            <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="var(--color-separator-border)"
+                opacity={0.35}
+              />
+              <XAxis
+                dataKey="timeLabel"
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 10 }}
+                tickLine={false}
+                axisLine={{ stroke: "var(--color-separator-border)", opacity: 0.4 }}
+                interval="preserveStartEnd"
+                minTickGap={24}
+              />
+              <YAxis
+                yAxisId="tokens"
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => formatTokens(v)}
+              />
+              <YAxis
+                yAxisId="tps"
+                orientation="right"
+                tick={{ fill: "var(--color-text-tertiary)", fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => `${v}`}
+              />
+              <Tooltip content={<ThroughputTooltip />} />
+              {avgTps > 0 ? (
+                <ReferenceLine
+                  yAxisId="tps"
+                  y={avgTps}
+                  stroke="#10b981"
+                  strokeDasharray="4 3"
+                  strokeWidth={1.2}
+                  label={{
+                    value: `Avg: ${avgTps} t/s`,
+                    fill: "#10b981",
+                    fontSize: 9.5,
+                    position: "insideTopRight"
+                  }}
                 />
-                <text
-                  x={chartData.padding.left - 8}
-                  y={y + 3}
-                  textAnchor="end"
-                  className="text-[9px] fill-text-tertiary font-mono select-none"
-                >
-                  {t("pages.observability.tPerS", { n: val })}
-                </text>
-              </g>
-            )
-          })}
+              ) : null}
+              <Bar
+                yAxisId="tokens"
+                dataKey="promptTokens"
+                name={t("pages.observability.promptIn")}
+                stackId="tokens"
+                fill="var(--color-chart-2)"
+                fillOpacity={0.65}
+                barSize={14}
+              />
+              <Bar
+                yAxisId="tokens"
+                dataKey="completionTokens"
+                name={t("pages.observability.completionOut")}
+                stackId="tokens"
+                fill="var(--color-accent-500)"
+                fillOpacity={0.85}
+                radius={[3, 3, 0, 0]}
+                barSize={14}
+              />
+              <Line
+                yAxisId="tps"
+                type="monotone"
+                dataKey="tokensPerSecond"
+                name={t("pages.observability.rateToks")}
+                stroke="#10b981"
+                strokeWidth={2}
+                dot={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  )
+}
 
-          {/* Token 消耗量双色堆叠柱状 */}
-          {chartData.points.map((p, idx) => {
-            const baseY = chartData.padding.top + chartData.plotHeight
-            const inputY = baseY - p.inputBarHeight
-            const outputY = inputY - p.outputBarHeight
+function ThroughputTooltip({
+  active,
+  payload
+}: {
+  active?: boolean
+  payload?: Array<{ payload: ThroughputDataPoint }>
+}) {
+  const t = useT()
+  if (!active || !payload || payload.length === 0) return null
+  const data = payload[0]?.payload
+  if (!data) return null
 
-            return (
-              <g key={idx}>
-                {/* Input Tokens (底部蓝色) */}
-                {p.inputBarHeight > 0 ? (
-                  <rect
-                    x={p.x - 4}
-                    y={inputY}
-                    width={8}
-                    height={p.inputBarHeight}
-                    rx={1}
-                    fill="var(--color-accent-500)"
-                    fillOpacity={0.65}
-                  />
-                ) : null}
-
-                {/* Output Tokens (顶部紫色) */}
-                {p.outputBarHeight > 0 ? (
-                  <rect
-                    x={p.x - 4}
-                    y={outputY}
-                    width={8}
-                    height={p.outputBarHeight}
-                    rx={1}
-                    fill="var(--color-chart-5)"
-                    fillOpacity={0.8}
-                  />
-                ) : null}
-              </g>
-            )
-          })}
-
-          {/* 吞吐量面积 */}
-          {chartData.area ? <path d={chartData.area} fill="url(#tpAreaGrad2)" /> : null}
-
-          {/* 吞吐量主曲线 */}
-          {chartData.path ? (
-            <path
-              d={chartData.path}
-              fill="none"
-              stroke="var(--color-chart-success)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          ) : null}
-
-          {/* 数据圆点 & Hover 触发区 */}
-          {chartData.points.map((p, idx) => {
-            const isHovered = hoverIndex === idx
-            return (
-              <g
-                key={idx}
-                onMouseEnter={() => setHoverIndex(idx)}
-                onMouseLeave={() => setHoverIndex(null)}
-                className="cursor-pointer"
-              >
-                <circle cx={p.x} cy={p.yThroughput} r={12} fill="transparent" />
-                <circle
-                  cx={p.x}
-                  cy={p.yThroughput}
-                  r={isHovered ? 5 : 3.5}
-                  fill="var(--color-chart-success)"
-                  stroke="var(--color-background-primary-default)"
-                  strokeWidth={isHovered ? 2 : 1.5}
-                  className="transition-all"
-                />
-              </g>
-            )
-          })}
-
-          {/* Hover 垂直指示线 */}
-          {activePoint ? (
-            <line
-              x1={activePoint.x}
-              y1={chartData.padding.top}
-              x2={activePoint.x}
-              y2={chartData.padding.top + chartData.plotHeight}
-              stroke="var(--color-chart-success)"
-              strokeWidth="1"
-              strokeDasharray="2 2"
-              className="pointer-events-none"
-            />
-          ) : null}
-        </svg>
-
-        {activePoint ? (
-          <div
-            style={{
-              left: Math.min(Math.max(activePoint.x - 70, 10), chartData.width - 160),
-              top: 8
-            }}
-            className="pointer-events-none absolute z-10 flex flex-col gap-0.5 rounded-lg border border-separator-border bg-background-primary-default p-2 text-[10.5px] font-mono shadow-md"
-          >
-            <div className="font-semibold text-text-primary border-b border-separator-border/40 pb-1 truncate max-w-[140px]">
-              {activePoint.metric.modelId ?? t("pages.observability.default")}
-            </div>
-            <div className="flex items-center justify-between gap-2 text-text-primary mt-0.5">
-              <span className="text-text-tertiary">{t("pages.observability.tooltipRate")}</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                {activePoint.throughput > 0
-                  ? t("pages.observability.tokPerS", { n: activePoint.throughput.toFixed(1) })
-                  : t("pages.observability.na")}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-2 text-text-primary">
-              <span className="text-text-tertiary">{t("pages.observability.tooltipPromptIn")}</span>
-              <span className="text-blue-600 dark:text-blue-400 font-medium">
-                {t("pages.observability.tokUnit", { n: activePoint.inputTokens })}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-2 text-text-primary">
-              <span className="text-text-tertiary">{t("pages.observability.tooltipCompletionOut")}</span>
-              <span className="text-purple-600 dark:text-purple-400 font-medium">
-                {t("pages.observability.tokUnit", { n: activePoint.outputTokens })}
-              </span>
-            </div>
-          </div>
+  return (
+    <div className="flex min-w-[11rem] flex-col gap-1.5 rounded-xl border border-separator-border/80 bg-background-primary-default p-2.5 font-mono text-[11px] shadow-lg">
+      <div className="flex items-center justify-between gap-2 border-b border-separator-border/50 pb-1.5">
+        <span className="font-semibold text-text-primary">{data.fullTime}</span>
+        {data.tokensPerSecond > 0 ? (
+          <span className="rounded bg-emerald-500/10 px-1 py-0.5 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
+            {data.tokensPerSecond} t/s
+          </span>
         ) : null}
+      </div>
+
+      <div className="flex items-center gap-1.5 min-w-0">
+        <ModelBrandIcon modelId={data.modelId} size={13} className="shrink-0" />
+        <span className="truncate text-text-secondary font-medium" title={data.modelId}>
+          {data.modelId ?? t("pages.observability.default")}
+        </span>
+      </div>
+
+      <div className="mt-0.5 flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-text-tertiary">{t("pages.observability.promptIn")}</span>
+          <span className="font-semibold text-chart-2 tabular-nums">
+            {formatTokens(data.promptTokens)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-text-tertiary">{t("pages.observability.completionOut")}</span>
+          <span className="font-semibold text-accent-500 tabular-nums">
+            {formatTokens(data.completionTokens)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2 border-t border-separator-border/30 pt-0.5">
+          <span className="text-text-tertiary">{t("pages.observability.cliUsageTotal")}</span>
+          <span className="font-semibold text-text-primary tabular-nums">
+            {formatTokens(data.totalTokens)}
+          </span>
+        </div>
       </div>
     </div>
   )

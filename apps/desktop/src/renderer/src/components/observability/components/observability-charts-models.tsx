@@ -1,6 +1,6 @@
 /**
  * 模型调用分布看板 (Model Usage)：
- * 遵循 Vercel AI SDK 7 Token 统计标准，计算模型负载、成功率与耗时。
+ * 遵循 Vercel AI SDK 7 Token 统计标准，计算模型负载、Token 消耗、成功率与耗时。
  * 不做费用估算：本地指标没有真实单价字段，禁止按 modelId 静态表猜价。
  */
 import { useMemo } from "react"
@@ -8,9 +8,15 @@ import { RiCpuLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
+import { formatTokens } from "@renderer/components/settings/agent-tools/format-spend"
 
-export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) {
-  const { metrics } = props
+export function ObservabilityModelsChart(props: {
+  metrics: TelemetryMetric[]
+  selectedModel?: string | null
+  onSelectModel?: (modelId: string | null) => void
+}) {
+  const { metrics, selectedModel, onSelectModel } = props
   const t = useT()
 
   const modelStats = useMemo(() => {
@@ -78,7 +84,7 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
   if (modelStats.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
+    <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs min-w-0">
       <div className="flex items-center justify-between border-b border-separator-border/50 pb-2.5">
         <div className="flex items-center gap-2">
           <RiCpuLine className="size-4 text-accent-500" />
@@ -86,22 +92,49 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
             {t("pages.observability.modelsTitle")}
           </h3>
         </div>
+        <span className="text-[11px] font-mono text-text-tertiary">
+          共 {modelStats.length} 个模型架构
+        </span>
       </div>
 
       <div className="flex flex-col gap-3">
         {modelStats.map((stat) => {
           const percent = totalCalls > 0 ? (stat.calls / totalCalls) * 100 : 0
+          const isSelected = selectedModel === stat.modelId
 
           return (
-            <div key={stat.modelId} className="flex flex-col gap-1.5 font-mono text-[11px]">
+            <div
+              key={stat.modelId}
+              onClick={() => onSelectModel?.(isSelected ? null : stat.modelId)}
+              className={cx(
+                "flex flex-col gap-1.5 font-mono text-[11px] rounded-lg p-1.5 transition-colors cursor-pointer",
+                isSelected
+                  ? "bg-accent-500/10 ring-1 ring-accent-500/30"
+                  : "hover:bg-background-secondary-hover/50"
+              )}
+            >
               <div className="flex items-center justify-between gap-2 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-semibold text-text-primary truncate max-w-[140px] sm:max-w-[240px]" title={stat.modelId}>
+                  <ModelBrandIcon modelId={stat.modelId} size={15} className="shrink-0" />
+                  <span
+                    className="font-semibold text-text-primary truncate max-w-[130px] sm:max-w-[200px]"
+                    title={stat.modelId}
+                  >
                     {stat.modelId}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap text-[10.5px]">
+                  {/* Token 消耗总计 */}
+                  {stat.totalTokens > 0 ? (
+                    <span
+                      className="text-text-secondary font-medium"
+                      title={`输入 ${formatTokens(stat.inputTokens)} · 输出 ${formatTokens(stat.outputTokens)}`}
+                    >
+                      {formatTokens(stat.totalTokens)} tok
+                    </span>
+                  ) : null}
+                  <span>·</span>
                   <span className="text-text-secondary font-medium">
                     {t("pages.observability.timesPercent", {
                       n: stat.calls,
@@ -122,7 +155,11 @@ export function ObservabilityModelsChart(props: { metrics: TelemetryMetric[] }) 
                     {t("pages.observability.okPercent", { n: stat.successRate.toFixed(0) })}
                   </span>
                   <span>·</span>
-                  <span>{stat.avgDurationMs >= 1000 ? `${(stat.avgDurationMs / 1000).toFixed(1)}s` : `${stat.avgDurationMs}ms`}</span>
+                  <span>
+                    {stat.avgDurationMs >= 1000
+                      ? `${(stat.avgDurationMs / 1000).toFixed(1)}s`
+                      : `${stat.avgDurationMs}ms`}
+                  </span>
                 </div>
               </div>
 

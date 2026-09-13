@@ -5,7 +5,6 @@ import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-pag
 import { ObservabilityDashboardView } from "./components/observability-dashboard-view"
 import { ObservabilityModelRouting } from "./components/observability-model-routing"
 import { ObservabilityPageHeader } from "./components/observability-page-header"
-import { ObservabilityTraceModal } from "./components/observability-trace-modal"
 import { ObservabilityTracesView } from "./components/observability-traces-view"
 import { FullTraceWorkbench } from "./components/trace-view/full-trace-workbench"
 import { ObservabilityCliUsageView } from "./components/cli-usage/observability-cli-usage-view"
@@ -33,7 +32,15 @@ export function ObservabilityPage() {
         />
         <div className="flex min-h-0 flex-1 flex-col pt-4">
           {page.activeView === "dashboard" ? (
-            <ObservabilityDashboardView metrics={page.metrics} />
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <ObservabilityDashboardView
+                metrics={page.metrics}
+                onInspectMetric={(metric) => {
+                  page.setInspectMetric(metric)
+                  page.setActiveView("traces")
+                }}
+              />
+            </div>
           ) : null}
           {page.activeView === "routing" ? (
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -83,13 +90,6 @@ export function ObservabilityPage() {
             </div>
           ) : null}
         </div>
-        <ObservabilityTraceModal
-          metric={page.inspectMetric}
-          open={Boolean(page.inspectMetric)}
-          onOpenChange={(open) => {
-            if (!open) page.setInspectMetric(null)
-          }}
-        />
       </div>
     </SecondaryPageShell>
   )
