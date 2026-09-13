@@ -11,14 +11,16 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/` | Chat 工作模块 | AppShell 情境=会话树，Stage=线程 |
 | `#/knowledge` `#/workflows` `#/media` `#/mcp` `#/observability` | 工作模块 | AppShell 内换轨，不弹出第二套壳 |
 | `#/inbox` | 消息 | 轨道底部 Inbox；`fill` 时间线+阅读器 |
-| `#/settings/general` 等 | 设置分段 | AppShell Settings 模块；Providers 必须 `wide` |
+| `#/settings/general` | 通用偏好 | 主题、语言、快捷键、自动更新、桌面系统通知与提示音偏好（`SettingsNotificationsCard`） |
+| `#/settings/appearance` | 外观与视觉 | 亮暗主题、5款主题强调色（Signal Blue/Terminal Green/Claude Amber/Cosmic Purple/Graphite Slate）、4款界面材质皮肤、UI 全局缩放（85%~120%）与代码/终端字号（12px~16px） |
 | `#/settings/archived` | 已归档的聊天 | Settings |
 | `#/settings/automations` | 自动化 | Settings；旧 `#/automations` redirect |
-| `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/skills` |
+| `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings 具备顶部双 Tab 导航（全局 Persona 指令与项目规则 `RulesSection`）；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/skills` |
 | `#/settings/team` `#/settings/members` | 团队资料 / 成员 | 旧 `#/team/*` redirect |
 | `#/settings/billing` `#/settings/organization` `#/settings/integrations` | 账单 / 组织 / 企业集成 | 旧 `#/company/*` redirect |
-| `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect。通知偏好走 `preferences` + 主进程 `Notification`。个人资料（名/邮箱/头衔/封面/Blobatar）走 `settings.setPreferences.accountProfile`，进本机 `preferences` JSON；旧 `localStorage` `enjoy:account-profile` 只迁移一次。不是云账号 |
-| `#/settings/workspace` | 工作区管理 + **远程连接名册**（SSH 主机，不是新一级导航） | 旧 `#/workspaces` redirect |
+| `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect。个人画像具备 Canvas 着色器封面、Blobatar 形象、六联 KPI、双翼图表、开发者战报海报弹窗（`ProfileSharePosterDialog`）导出。不是云账号 |
+| `#/settings/workspace` | 工作区管理 + **远程连接名册**（SSH 主机） | 工作区状态、远程名册、动态排除规则（默认/自定义 glob）与项目技术栈侦测（`WorkspaceExclusionsCard`） |
+| `#/settings/providers` | 模型供应商 | 协议工厂、测速评分徽章（极佳/良好/偏慢评级）、四页签抽屉编辑 |
 | `#/settings/extensions` | 扩展与能力中心 | 现代化 Bento 网格集市（MCP 外部协议与 Skills 技能套件）；三联指标大盘、分类筛选、即时搜索；添加与获取深链 `#/mcp` / `#/skills`；无独立安装内核、无 Registry |
 | `#/studio` | （已废止） | 重定向 `#/` |
 

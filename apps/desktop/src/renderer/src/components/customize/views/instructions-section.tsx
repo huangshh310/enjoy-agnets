@@ -5,19 +5,24 @@
 import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
+  RiBookOpenLine,
   RiCheckLine,
+  RiFileTextLine,
   RiInformationLine,
   RiLoader4Line,
   RiSparklingLine
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
+import { cx } from "@/utils/cx"
 import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { getInstructionPresets, type InstructionPreset } from "../constants/customize-presets"
+import { RulesSection } from "./rules/rules-section"
 
-export function InstructionsSection() {
+export function InstructionsSection(props: { defaultTab?: "instructions" | "rules" }) {
   const t = useT()
+  const [activeTab, setActiveTab] = useState<"instructions" | "rules">(props.defaultTab ?? "instructions")
   const queryClient = useQueryClient()
   const [isSaving, setIsSaving] = useState(false)
   const [copiedPreset, setCopiedPreset] = useState<string | null>(null)
@@ -58,17 +63,57 @@ export function InstructionsSection() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1 pb-2 border-b border-separator-border/70">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-title-3-semibold text-text-primary tracking-tight">
-            {t("studio.instructions.title")}
-          </h2>
-          <span className="rounded bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400">
-            {t("studio.instructions.badge")}
-          </span>
+      <div className="flex items-center justify-between pb-3 border-b border-separator-border/70 flex-wrap gap-3">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-title-3-semibold text-text-primary tracking-tight">
+              {activeTab === "instructions" ? t("studio.instructions.title") : t("studio.customize.projectRules")}
+            </h2>
+            <span className="rounded bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400">
+              {activeTab === "instructions" ? t("studio.instructions.badge") : "Rules"}
+            </span>
+          </div>
+          <p className="text-caption-2-medium text-text-tertiary">
+            {activeTab === "instructions"
+              ? t("studio.instructions.desc")
+              : "项目规范与工作区指令（如 .cursorrules、.enjoyrules、AGENTS.md）。"}
+          </p>
         </div>
-        <p className="text-caption-2-medium text-text-tertiary">{t("studio.instructions.desc")}</p>
+
+        <div className="flex items-center gap-1 rounded-xl border border-separator-border/80 bg-background-secondary-default/50 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("instructions")}
+            className={cx(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1 text-caption-1-medium transition-all cursor-pointer",
+              activeTab === "instructions"
+                ? "bg-background-primary-default text-text-primary font-semibold shadow-xs"
+                : "text-text-tertiary hover:text-text-primary"
+            )}
+          >
+            <RiFileTextLine className="size-3.5" />
+            <span>{t("studio.customize.instructions")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("rules")}
+            className={cx(
+              "flex items-center gap-1.5 rounded-lg px-3 py-1 text-caption-1-medium transition-all cursor-pointer",
+              activeTab === "rules"
+                ? "bg-background-primary-default text-text-primary font-semibold shadow-xs"
+                : "text-text-tertiary hover:text-text-primary"
+            )}
+          >
+            <RiBookOpenLine className="size-3.5" />
+            <span>{t("studio.customize.projectRules")}</span>
+          </button>
+        </div>
       </div>
+
+      {activeTab === "rules" ? (
+        <RulesSection />
+      ) : (
+        <>
 
       <div className="flex flex-col gap-2 rounded-xl border border-separator-border/60 bg-background-secondary-default/30 p-2.5">
         <div className="flex items-center justify-between">
@@ -163,6 +208,8 @@ export function InstructionsSection() {
           <span>{t("studio.instructions.helper")}</span>
         </div>
       </div>
-    </div>
+    </>
+  )}
+</div>
   )
 }

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { SettingsHub } from "./settings-hub"
+import { SettingsNotificationsCard } from "./general/settings-notifications-card"
 import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { SettingsUpdateCard } from "./settings-update-card"
@@ -88,6 +89,12 @@ export function GeneralSettings() {
       />
 
       <SettingsPermissions flags={flags} onChange={(patch) => void update(patch)} />
+      <SettingsNotificationsCard
+        desktopPush={preferences?.desktopPush ?? true}
+        approvalRequiredAlert={preferences?.approvalRequiredAlert ?? true}
+        agentCompleteSound={preferences?.agentCompleteSound ?? true}
+        onChange={(patch) => void update(patch)}
+      />
       <LanguageCard language={language} onChange={(value) => void update({ language: value })} />
       <SettingsUpdateCard />
     </div>

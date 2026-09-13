@@ -6,7 +6,6 @@ import { useMemo, useState } from "react"
 import {
   RiCheckLine,
   RiClipboardLine,
-  RiFileCodeLine,
   RiFolder6Line,
   RiGitBranchLine,
   RiRefreshLine,
@@ -16,7 +15,8 @@ import { Button } from "@/components/ui/button"
 import { openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
-import { SettingsCard, SettingsRow } from "./settings-row"
+import { WorkspaceExclusionsCard } from "./workspace/workspace-exclusions-card"
+import { SettingsCard } from "./settings-row"
 import { SshConnections } from "./workspace/ssh-connections"
 
 export function WorkspaceSettings() {
@@ -116,28 +116,8 @@ export function WorkspaceSettings() {
       {/* ─── 远程 SSH 连接名册 ───────────────────────────── */}
       <SshConnections />
 
-      {/* ─── 扫描与忽略规则 ─────────────────────────────── */}
-      <SettingsCard title={t("settings.workspace.scanTitle")}>
-        <SettingsRow title={t("settings.workspace.ignore")} description={t("settings.workspace.ignoreDesc")}>
-          <div className="flex flex-wrap items-center gap-1.5 max-w-[320px] justify-end">
-            {[".git", "node_modules", "dist", "out", "build", ".env*"].map((pat) => (
-              <span
-                key={pat}
-                className="font-mono rounded-md border border-border-button-default bg-background-secondary-default px-2 py-0.5 text-[10px] text-text-secondary"
-              >
-                {pat}
-              </span>
-            ))}
-          </div>
-        </SettingsRow>
-
-        <SettingsRow title={t("settings.workspace.instructions")} description={t("settings.workspace.instructionsDesc")}>
-          <span className="inline-flex items-center gap-1 rounded-full border border-accent-500/20 bg-accent-500/10 px-2.5 py-0.5 text-caption-2-medium text-accent-600 dark:text-accent-400">
-            <RiFileCodeLine className="size-3" />
-            <span>{t("settings.workspace.agentsActive")}</span>
-          </span>
-        </SettingsRow>
-      </SettingsCard>
+      {/* ─── 扫描、忽略规则与环境侦测 ───────────────────── */}
+      <WorkspaceExclusionsCard workspaceId={workspaceId} />
 
       {/* ─── 安全与沙箱边界 ─────────────────────────────── */}
       <SettingsCard title={t("settings.workspace.securityTitle")}>

@@ -3,7 +3,6 @@
  */
 import { useState } from "react"
 import {
-  RiCheckLine,
   RiComputerLine,
   RiCpuLine,
   RiEditLine,
@@ -18,6 +17,7 @@ import { useT } from "@renderer/i18n"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { GlassCover } from "../glass/glass-cover"
+import { ProfileSharePosterDialog } from "./profile-share-poster-dialog"
 import type { ExtendedUserProfile, GlassCoverPreset } from "../types/profile.types"
 
 interface ProfileHeroBannerProps {
@@ -38,20 +38,14 @@ export function ProfileHeroBanner({
   onCoverPresetChange
 }: ProfileHeroBannerProps) {
   const t = useT()
-  const [copiedShare, setCopiedShare] = useState(false)
+  const [posterOpen, setPosterOpen] = useState(false)
   const hasKey = useChatStore((state) => state.hasKey)
   const protectedVault = hasKey || profile.safeStorageActive
   const currentDevice = profile.activeDevices.find((d) => d.isCurrent) ?? profile.activeDevices[0]
 
-  function handleShare() {
-    const text = profile.handle ? `${profile.name} ${profile.handle}` : profile.name
-    void navigator.clipboard.writeText(text)
-    setCopiedShare(true)
-    window.setTimeout(() => setCopiedShare(false), 1800)
-  }
-
   return (
-    <div className="flex flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card">
+    <>
+      <div className="flex flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card">
       {/* 顶部动态着色器封面 */}
       <GlassCover
         preset={profile.coverPreset}
@@ -104,20 +98,11 @@ export function ProfileHeroBanner({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleShare}
-              className="h-8 gap-1.5 rounded-xl px-3 text-caption-2-medium"
+              onClick={() => setPosterOpen(true)}
+              className="h-8 gap-1.5 rounded-xl px-3 text-caption-2-medium cursor-pointer"
             >
-              {copiedShare ? (
-                <>
-                  <RiCheckLine className="size-3.5 text-accent-500" />
-                  <span>{t("pages.account.hero.copied")}</span>
-                </>
-              ) : (
-                <>
-                  <RiShareLine className="size-3.5 text-text-tertiary" />
-                  <span>{t("pages.account.hero.share")}</span>
-                </>
-              )}
+              <RiShareLine className="size-3.5 text-accent-500" />
+              <span>{t("pages.account.hero.share")}</span>
             </Button>
             <Button
               type="button"
@@ -175,5 +160,13 @@ export function ProfileHeroBanner({
         </div>
       </div>
     </div>
+    <ProfileSharePosterDialog
+      open={posterOpen}
+      onOpenChange={setPosterOpen}
+      profile={profile}
+      activeEngineLabel={activeEngineLabel}
+      activeModelLabel={activeModelLabel}
+    />
+  </>
   )
 }

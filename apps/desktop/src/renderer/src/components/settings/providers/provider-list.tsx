@@ -5,6 +5,7 @@
 import {
   RiDeleteBinLine,
   RiEditLine,
+  RiFlashlightLine,
   RiLoader4Line,
   RiPulseLine,
   RiStackLine
@@ -141,17 +142,12 @@ function ProviderItemRow({
                     : "bg-state-error-text/10 text-state-error-text"
               )}
             >
-              <span
-                className={cx(
-                  "size-1.5 rounded-full",
-                  pingState.latencyMs < 500
-                    ? "bg-state-success-text"
-                    : pingState.latencyMs < 1500
-                      ? "bg-state-warning-text"
-                      : "bg-state-error-text"
-                )}
-              />
-              {pingState.latencyMs}ms
+              <RiFlashlightLine className="size-3 shrink-0" />
+              <span>{pingState.latencyMs}ms</span>
+              <span className="opacity-75">·</span>
+              <span className="text-[10px]">
+                {pingState.latencyMs < 500 ? "极佳" : pingState.latencyMs < 1500 ? "良好" : "偏慢"}
+              </span>
             </span>
           ) : pingState?.status === "error" ? (
             <span className="inline-flex items-center gap-1 rounded-md bg-state-error-text/10 px-2 py-0.5 text-[11px] font-medium text-state-error-text">
