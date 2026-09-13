@@ -4,12 +4,15 @@
 import {
   Anthropic,
   Antigravity,
+  Baichuan,
   Claude,
   Cursor,
   DeepSeek,
+  Doubao,
   Gemini,
   Grok,
   Groq,
+  Hunyuan,
   Kimi,
   Minimax,
   Mistral,
@@ -19,6 +22,11 @@ import {
   Perplexity,
   Qwen,
   SiliconCloud,
+  Spark,
+  Stepfun,
+  Together,
+  Wenxin,
+  ZeroOne,
   Zhipu
 } from "@lobehub/icons"
 import { RiCloudLine, RiImageLine, RiMicLine, RiPlugLine, RiServerLine, RiVoiceprintLine } from "@remixicon/react"
@@ -64,6 +72,28 @@ export function ProviderIcon({
         return <SiliconCloud.Color size={size} className={className} />
       case "minimax":
         return <Minimax.Color size={size} className={className} />
+      case "doubao":
+        return <Doubao.Color size={size} className={className} />
+      case "wenxin":
+        return <Wenxin.Color size={size} className={className} />
+      case "hunyuan":
+        return <Hunyuan.Color size={size} className={className} />
+      case "stepfun":
+        return <Stepfun size={size} className={className} />
+      case "zeroone":
+        return <ZeroOne.Color size={size} className={className} />
+      case "baichuan":
+        return <Baichuan.Color size={size} className={className} />
+      case "spark":
+        return <Spark.Color size={size} className={className} />
+      case "xai":
+        return <Grok size={size} className={className} />
+      case "mistral":
+        return <Mistral.Color size={size} className={className} />
+      case "together":
+        return <Together.Color size={size} className={className} />
+      case "perplexity":
+        return <Perplexity.Color size={size} className={className} />
       case "ollama":
         return <Ollama size={size} className={className} />
       case "fal":
@@ -95,6 +125,30 @@ export function ProviderIcon({
   }
   if (normName.includes("gemini") || normName.includes("google")) {
     return <Gemini.Color size={size} className={className} />
+  }
+  if (normName.includes("doubao") || normName.includes("volcengine") || normName.includes("bytedance")) {
+    return <Doubao.Color size={size} className={className} />
+  }
+  if (normName.includes("wenxin") || normName.includes("qianfan") || normName.includes("baidu") || normName.includes("ernie")) {
+    return <Wenxin.Color size={size} className={className} />
+  }
+  if (normName.includes("hunyuan") || normName.includes("tencent")) {
+    return <Hunyuan.Color size={size} className={className} />
+  }
+  if (normName.includes("stepfun") || normName.includes("step-")) {
+    return <Stepfun size={size} className={className} />
+  }
+  if (normName.includes("zeroone") || normName.includes("01.ai") || normName.includes("lingyi") || normName.includes("yi-")) {
+    return <ZeroOne.Color size={size} className={className} />
+  }
+  if (normName.includes("baichuan")) {
+    return <Baichuan.Color size={size} className={className} />
+  }
+  if (normName.includes("spark") || normName.includes("xfyun") || normName.includes("iflytek") || normName.includes("讯飞")) {
+    return <Spark.Color size={size} className={className} />
+  }
+  if (normName.includes("together")) {
+    return <Together.Color size={size} className={className} />
   }
   if (normName.includes("qwen") || normName.includes("dashscope") || normName.includes("aliyun")) {
     return <Qwen.Color size={size} className={className} />
@@ -183,6 +237,30 @@ export function ModelBrandIcon({
   }
   if (mid.includes("gemini")) {
     return <Gemini.Color size={size} className={className} />
+  }
+  if (mid.includes("doubao")) {
+    return <Doubao.Color size={size} className={className} />
+  }
+  if (mid.includes("wenxin") || mid.includes("ernie")) {
+    return <Wenxin.Color size={size} className={className} />
+  }
+  if (mid.includes("hunyuan")) {
+    return <Hunyuan.Color size={size} className={className} />
+  }
+  if (mid.includes("stepfun") || slug.startsWith("step-") || slug.startsWith("step1") || slug.startsWith("step2")) {
+    return <Stepfun size={size} className={className} />
+  }
+  if (mid.includes("zeroone") || slug.startsWith("yi-") || mid.includes("01-ai") || mid.includes("01.ai")) {
+    return <ZeroOne.Color size={size} className={className} />
+  }
+  if (mid.includes("baichuan")) {
+    return <Baichuan.Color size={size} className={className} />
+  }
+  if (mid.includes("spark") || mid.includes("xfyun") || slug.startsWith("generalv") || slug.includes("4.0ultra")) {
+    return <Spark.Color size={size} className={className} />
+  }
+  if (mid.includes("together")) {
+    return <Together.Color size={size} className={className} />
   }
   if (mid.includes("qwen")) {
     return <Qwen.Color size={size} className={className} />

@@ -3,29 +3,32 @@
  */
 import { RiAddLine, RiCheckLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
-import type { ProviderPreset } from "@enjoy-agents/providers/presets"
+import { supportedApiStylesFor, type ApiStyle, type ProviderPreset } from "@enjoy-agents/providers/presets"
 import { ProviderIcon } from "./provider-icons"
 import { useT } from "@renderer/i18n"
 
 export function ProviderPresetCard({
   preset,
   isConfigured,
-  onClick
+  activeProtocol,
+  onClick,
+  onSelectProtocol
 }: {
   preset: ProviderPreset
   isConfigured: boolean
+  activeProtocol?: ApiStyle
   onClick: () => void
+  onSelectProtocol?: (style: ApiStyle) => void
 }) {
   const t = useT()
-  const isAnthropic = preset.apiStyle === "anthropic"
-  const isResponses = preset.apiStyle === "openai-responses"
-  const protocolBadge = isAnthropic
-    ? t("settings.providers.protocolMessages")
-    : isResponses
-      ? t("settings.providers.protocolResponses")
-      : preset.kind === "ollama"
-        ? t("settings.providers.protocolLocal")
-        : t("settings.providers.protocolOpenai")
+  const styles = supportedApiStylesFor(preset)
+
+  const getBadgeText = (style: ApiStyle) => {
+    if (style === "anthropic") return t("settings.providers.protocolMessages")
+    if (style === "openai-responses") return t("settings.providers.protocolResponses")
+    if (preset.kind === "ollama") return t("settings.providers.protocolLocal")
+    return t("settings.providers.protocolOpenai")
+  }
 
   return (
     <div
@@ -49,10 +52,10 @@ export function ProviderPresetCard({
         {/* 顶部：图标与状态/协议徽标 */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border-button-default bg-background-primary-default p-1 shadow-xs transition-transform group-hover:scale-105">
-            <ProviderIcon kind={preset.kind} apiStyle={preset.apiStyle} size={22} />
+            <ProviderIcon kind={preset.kind} apiStyle={activeProtocol ?? preset.apiStyle} size={22} />
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
             {isConfigured ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-state-success-text/10 px-2 py-0.5 text-caption-1-semibold text-state-success-text whitespace-nowrap shrink-0">
                 <RiCheckLine className="size-3" />
@@ -60,9 +63,31 @@ export function ProviderPresetCard({
               </span>
             ) : null}
 
-            <span className="rounded-md border border-border-button-default bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary whitespace-nowrap shrink-0">
-              {protocolBadge}
-            </span>
+            {styles.map((st) => {
+              const isHighlighted = activeProtocol === st
+              return (
+                <span
+                  key={st}
+                  role={onSelectProtocol ? "button" : undefined}
+                  tabIndex={onSelectProtocol ? 0 : undefined}
+                  onClick={(e) => {
+                    if (onSelectProtocol) {
+                      e.stopPropagation()
+                      onSelectProtocol(st)
+                    }
+                  }}
+                  className={cx(
+                    "rounded-md border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0 transition-all",
+                    isHighlighted
+                      ? "border-accent-500/50 bg-accent-500/10 text-accent-600 font-semibold shadow-2xs"
+                      : "border-border-button-default bg-background-secondary-default text-text-tertiary",
+                    onSelectProtocol ? "hover:border-accent-400 hover:text-accent-600" : ""
+                  )}
+                >
+                  {getBadgeText(st)}
+                </span>
+              )
+            })}
           </div>
         </div>
 

@@ -201,7 +201,7 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
       groups={navGroups}
       selectedId={filter}
       onSelect={setFilter}
-      contentWidth="wide"
+      contentWidth="stage"
       breadcrumbTitle={t("pages.workspaces.list.crumbTitle")}
     >
       {body}

@@ -34,7 +34,7 @@ export function SecondaryPageMain(props: {
               "flex min-h-full w-full flex-col",
               contentWidth === "article" && "mx-auto max-w-[760px] px-8 pt-7 pb-16",
               contentWidth === "wide" && "mx-auto max-w-5xl px-8 pt-7 pb-16",
-              contentWidth === "stage" && "px-8 pt-5 pb-6"
+              contentWidth === "stage" && "px-8 pt-6 pb-16"
             )}
           >
             {!hideChrome ? <SecondaryPageChrome label={selectedItemLabel} /> : null}

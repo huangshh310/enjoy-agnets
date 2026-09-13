@@ -42,3 +42,32 @@ test("DeepSeek 思考模型仍走 @ai-sdk/deepseek", () => {
     "deepseek"
   )
 })
+
+test("新增国产与国际主流预设（豆包、千帆、混元、阶跃、Grok、Mistral 等）走兼容层", () => {
+  assert.equal(
+    languageModelFactoryKind({ provider: "doubao", modelId: "doubao-1-5-pro-32k" }),
+    "openai-compatible"
+  )
+  assert.equal(
+    languageModelFactoryKind({ provider: "wenxin", modelId: "ernie-4.0-turbo-8k" }),
+    "openai-compatible"
+  )
+  assert.equal(
+    languageModelFactoryKind({ provider: "hunyuan", modelId: "hunyuan-turbo" }),
+    "openai-compatible"
+  )
+  assert.equal(
+    languageModelFactoryKind({ provider: "stepfun", modelId: "step-2-16k" }),
+    "openai-compatible"
+  )
+  assert.equal(
+    languageModelFactoryKind({ provider: "xai", modelId: "grok-2-latest" }),
+    "openai-compatible"
+  )
+  assert.equal(
+    languageModelFactoryKind({ provider: "mistral", modelId: "codestral-latest" }),
+    "openai-compatible"
+  )
+})
+
+

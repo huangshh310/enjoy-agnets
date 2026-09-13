@@ -59,7 +59,7 @@ export function CompanyPage() {
       groups={navGroups}
       selectedId={currentSection}
       onSelect={handleSelect}
-      contentWidth="wide"
+      contentWidth="stage"
       breadcrumbTitle={`企业中心 > ${breadcrumbName}`}
     >
       {currentSection === "details" ? (

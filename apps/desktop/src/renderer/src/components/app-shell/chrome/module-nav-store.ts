@@ -23,7 +23,7 @@ const EMPTY_NAV: ModuleNavSnapshot = {
   selectedId: "",
   onSelect: () => undefined,
   filterNav: true,
-  contentWidth: "wide"
+  contentWidth: "stage"
 }
 
 type ModuleNavStore = ModuleNavSnapshot & {

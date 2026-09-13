@@ -50,7 +50,7 @@ export function AccountPage() {
       groups={navGroups}
       selectedId={currentSection}
       onSelect={handleSelect}
-      contentWidth="wide"
+      contentWidth="stage"
       breadcrumbTitle={`${t("pages.account.crumbTitle")} > ${currentSection === "notifications" ? t("pages.account.navNotifications") : t("pages.account.navProfile")}`}
     >
       {currentSection === "notifications" ? (

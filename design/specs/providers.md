@@ -1,10 +1,10 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-09-13
+> 协议工厂，不是品牌锁定。最后更新：2026-09-14
 
 ## 当前真相
 
-运行时是 Vercel AI SDK 7：官方 OpenAI 走 `createOpenAI`；自定义 `/v1` 与 MiniMax / Kimi / GLM / Qwen 等走 `createOpenAICompatible`（才能解析 `reasoning_content`）。另有 `createAnthropic` / `createDeepSeek` / `createGoogle` / `createGateway` / `openai.responses`。Google 默认官方 Gemini API；Base URL 带 `/openai` 时仍走兼容端点。媒体官方工厂：`@ai-sdk/fal`、`@ai-sdk/replicate`、`@ai-sdk/elevenlabs`、`@ai-sdk/deepgram`、`@ai-sdk/cohere`；视频另加 `@ai-sdk/xai`（`grok-imagine-video*`）。其余品牌仍是 OpenAI 兼容。品牌卡片是 **preset**，填 `kind`、`apiStyle`、`defaultBaseURL`、默认模型目录。
+运行时是 Vercel AI SDK 7：官方 OpenAI 走 `createOpenAI`；自定义 `/v1` 与国产主流（豆包 Doubao、百度千帆 Wenxin、腾讯混元 Hunyuan、阶跃星辰 Stepfun、零一万物 ZeroOne、百川智能 Baichuan、讯飞星火 Spark、通义千问 Qwen、智谱 GLM、MiniMax、月之暗面 Kimi、硅基流动 SiliconFlow）及国际主流（xAI Grok、Mistral AI、Together AI、Perplexity、Groq、OpenRouter 等）均走 `createOpenAICompatible`（完整支持流式、函数调用与 `reasoning_content` 推理轨迹）。另有 `createAnthropic` / `createDeepSeek` / `createGoogle` / `createGateway` / `openai.responses`。Google 默认官方 Gemini API；Base URL 带 `/openai` 时仍走兼容端点。媒体官方工厂：`@ai-sdk/fal`、`@ai-sdk/replicate`、`@ai-sdk/elevenlabs`、`@ai-sdk/deepgram`、`@ai-sdk/cohere`；视频另加 `@ai-sdk/xai`（`grok-imagine-video*`）。品牌卡片是 **preset**，填 `kind`、`apiStyle`、`defaultBaseURL`、默认模型目录。
 
 | `apiStyle` | 线协议 | 典型路径 |
 |---|---|---|
@@ -56,5 +56,5 @@
 - Explore 若再写「Vercel AI SDK」英雄卡或「Vercel 沙箱」供应商，C 端会把运行时实现当成要买的云产品。分类用「AI SDK 兼容」；Gateway 只是可选网关，不是沙箱。
 - Ollama 等 `requiresKey === false` 的探测可塞占位 key，避免 SDK 因空 key 直接拒绝。
 - Fal / Replicate / ElevenLabs / Deepgram / Cohere 没有 OpenAI `/models`。`probeProvider` 只校验 Key 已填，真正建连发生在 generate。把它们设成当前聊天 Provider 会抛「media provider」而不是假装能对话。
-- xAI 官方生图是 `@ai-sdk/xai` 的 `xai.image('grok-imagine-image-2.0')` + `generateImage`。本仓尚未单独装 xAI preset；挂在 OpenAI `/v1` 兼容端点时走 `createOpenAI().image()`，对准 `images/generations`。不要用 `streamText` 调 imagine 模型。
+- xAI 官方生图是 `@ai-sdk/xai` 的 `xai.image('grok-imagine-image-2.0')` + `generateImage`。语言模型已有 `xai` preset 走 OpenAI `/v1` 兼容端点；挂在兼容端点时生图走 `createOpenAI().image()`，对准 `images/generations`。不要用 `streamText` 调 imagine 模型。
 - xAI 视频必须 `createXai().video('grok-imagine-video')` + `experimental_generateVideo`。不要用 `image()` 冒充。档案即使 kind=openai，只要模型 id 是 imagine-video 也走这条。Base URL 跟生图同一主机；只有空或 `api.openai.com` 才改打 `https://api.x.ai/v1`。国内中转能出图却强行打官方 x.ai 会 Connect Timeout。

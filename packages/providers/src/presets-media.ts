@@ -21,6 +21,7 @@ type MediaPreset = {
   description: string
   defaultBaseURL: string
   apiStyle: ApiStyle
+  supportedApiStyles?: readonly ApiStyle[]
   requiresKey: boolean
   docsURL?: string
   models: { id: string; label: string }[]
@@ -101,6 +102,7 @@ export const MEDIA_PROVIDER_PRESETS: MediaPreset[] = [
     description: "AI SDK compatible cloud gateway. Optional adapter, not a sandbox.",
     defaultBaseURL: "https://ai-gateway.vercel.sh/v1",
     apiStyle: "openai",
+    supportedApiStyles: ["openai", "anthropic", "openai-responses"],
     requiresKey: true,
     docsURL: "https://vercel.com/docs/ai-gateway",
     models: [{ id: "openai/gpt-4.1-mini", label: "GPT-4.1 Mini via Gateway" }]

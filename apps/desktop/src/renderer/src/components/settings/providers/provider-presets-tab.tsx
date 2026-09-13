@@ -8,6 +8,7 @@ import { cx } from "@/utils/cx"
 import {
   API_STYLE_OPTIONS,
   PROVIDER_PRESETS,
+  supportedApiStylesFor,
   type ApiStyle,
   type ProviderKind
 } from "@enjoy-agents/providers/presets"
@@ -31,8 +32,9 @@ export function ProviderPresetsTab({
     return PROVIDER_PRESETS.filter((preset) => {
       if (preset.kind === "custom") return false
 
+      const styles = supportedApiStylesFor(preset)
       const matchesProtocol =
-        selectedProtocol === "all" || preset.apiStyle === selectedProtocol
+        selectedProtocol === "all" || styles.includes(selectedProtocol as ApiStyle)
 
       const query = searchQuery.trim().toLowerCase()
       const matchesSearch =
@@ -67,7 +69,9 @@ export function ProviderPresetsTab({
               />
               {API_STYLE_OPTIONS.map((opt) => {
                 const count = PROVIDER_PRESETS.filter(
-                  (p) => p.kind !== "custom" && p.apiStyle === opt.id
+                  (p) =>
+                    p.kind !== "custom" &&
+                    supportedApiStylesFor(p).includes(opt.id as ApiStyle)
                 ).length
                 return (
                   <FilterPill
@@ -95,15 +99,24 @@ export function ProviderPresetsTab({
 
           {/* 预设卡片网格 */}
           {filteredPresets.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
-              {filteredPresets.map((preset) => (
-                <ProviderPresetCard
-                  key={preset.kind}
-                  preset={preset}
-                  isConfigured={configuredKinds.has(preset.kind)}
-                  onClick={() => onSelect(preset.kind, preset.apiStyle)}
-                />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pt-1">
+              {filteredPresets.map((preset) => {
+                const styles = supportedApiStylesFor(preset)
+                const targetStyle =
+                  selectedProtocol !== "all" && styles.includes(selectedProtocol as ApiStyle)
+                    ? (selectedProtocol as ApiStyle)
+                    : preset.apiStyle
+                return (
+                  <ProviderPresetCard
+                    key={preset.kind}
+                    preset={preset}
+                    activeProtocol={selectedProtocol !== "all" ? (selectedProtocol as ApiStyle) : undefined}
+                    isConfigured={configuredKinds.has(preset.kind)}
+                    onClick={() => onSelect(preset.kind, targetStyle)}
+                    onSelectProtocol={(style) => onSelect(preset.kind, style)}
+                  />
+                )
+              })}
             </div>
           ) : (
             <div className="py-12 text-center">

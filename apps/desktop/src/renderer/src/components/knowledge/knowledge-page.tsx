@@ -27,7 +27,7 @@ export function KnowledgePage() {
       groups={page.groups}
       selectedId={page.selectedFolder ?? "all"}
       onSelect={(id) => page.setSelectedFolder(id === "all" ? null : id)}
-      contentWidth="wide"
+      contentWidth="stage"
       hideChrome
     >
       <div className="flex min-h-0 flex-1 flex-col gap-6">

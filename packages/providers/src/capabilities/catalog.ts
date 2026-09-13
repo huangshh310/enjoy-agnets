@@ -51,7 +51,7 @@ export function staticCapabilitiesFor(modelId: string, kind: string): ProviderCa
     caps.add("image")
     caps.add("embedding")
   }
-  if (/(gpt-4o|gpt-5|claude|gemini|grok|qwen-vl|vision)/.test(id)) caps.add("vision")
+  if (/(gpt-4o|gpt-5|claude|gemini|grok|qwen-vl|vision|pixtral|step-1v)/.test(id)) caps.add("vision")
   if (/(gpt-4o|claude|gemini)/.test(id)) {
     caps.add("files")
     caps.add("skills")

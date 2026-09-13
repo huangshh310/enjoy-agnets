@@ -50,7 +50,7 @@ export function TeamPage() {
       groups={navGroups}
       selectedId={currentSection}
       onSelect={handleSelect}
-      contentWidth="wide"
+      contentWidth="stage"
       breadcrumbTitle={`团队中心 > ${currentSection === "members" ? "成员管理" : "团队资料"}`}
     >
       {currentSection === "members" ? <TeamMembersSection /> : <TeamProfileSection />}

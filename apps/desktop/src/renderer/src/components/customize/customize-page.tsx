@@ -53,7 +53,7 @@ export function CustomizePage() {
       groups={getCustomizeNav(t)}
       selectedId={section}
       onSelect={(id) => void navigate({ to: "/customize/$section", params: { section: id } })}
-      contentWidth="wide"
+      contentWidth="stage"
     >
       <div className="pb-8">
         {section === "instructions" ? <InstructionsSection /> : null}

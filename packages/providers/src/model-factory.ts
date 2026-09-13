@@ -27,7 +27,18 @@ const COMPAT_KINDS = new Set<string>([
   "qwen",
   "ollama",
   "groq",
-  "openrouter"
+  "openrouter",
+  "doubao",
+  "wenxin",
+  "hunyuan",
+  "stepfun",
+  "zeroone",
+  "baichuan",
+  "spark",
+  "xai",
+  "mistral",
+  "together",
+  "perplexity"
 ])
 
 export function languageModelFactoryKind(config: {

@@ -14,6 +14,7 @@ import {
 import {
   adviseCatalogUrl,
   API_STYLE_OPTIONS,
+  defaultBaseURLFor,
   type ApiStyle,
   type ProviderPreset
 } from "@enjoy-agents/providers/presets"
@@ -34,6 +35,23 @@ export function ProviderConnectionFields({
   onChange: (patch: Partial<EditorState>) => void
 }) {
   const t = useT()
+
+  const handleApiStyleChange = (value: string) => {
+    const nextStyle = value as ApiStyle
+    const knownUrls = new Set<string>(
+      [
+        preset.defaultBaseURL?.trim(),
+        ...(preset.baseURLForStyle ? Object.values(preset.baseURLForStyle).map((u) => u?.trim() || "") : [])
+      ].filter(Boolean)
+    )
+
+    const currentBase = editor.baseURL.trim()
+    const isDefaultOrKnown = !currentBase || knownUrls.has(currentBase)
+    const nextBase = isDefaultOrKnown ? defaultBaseURLFor(preset, nextStyle) : editor.baseURL
+
+    onChange({ apiStyle: nextStyle, baseURL: nextBase })
+  }
+
   return (
     <div className="flex flex-col gap-4 py-1">
       {/* 基础信息行：显示名称与协议 */}
@@ -50,7 +68,7 @@ export function ProviderConnectionFields({
         <Field label={t("settings.providers.protocol")} hint={t("settings.providers.protocolHint")}>
           <Select
             value={editor.apiStyle}
-            onValueChange={(value) => onChange({ apiStyle: value as ApiStyle })}
+            onValueChange={handleApiStyleChange}
           >
             <SelectTrigger className="h-9 w-full rounded-2lg">
               <SelectValue />

@@ -19,6 +19,8 @@ export {
   PROVIDER_PRESETS,
   normalizeBaseURL,
   presetFor,
+  supportedApiStylesFor,
+  defaultBaseURLFor,
   isMediaNativeKind,
   isMediaOnlyKind,
   type ApiStyle,

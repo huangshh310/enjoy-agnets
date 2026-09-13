@@ -21,7 +21,7 @@ export function SettingsShell() {
       searchPlaceholder={t("common.searchSettings")}
       groups={getSettingsNav(t)}
       selectedId={resolveActiveNavSectionId(section)}
-      contentWidth="wide"
+      contentWidth="stage"
       hideChrome
       onSelect={(id) => void navigate({ to: "/settings/$section", params: { section: id } })}
     >
