@@ -16,6 +16,8 @@ test("把用户/助手轮折成刻度条目", () => {
   assert.equal(items[0]?.id, "u1")
   assert.equal(items[0]?.label, "你")
   assert.match(items[0]?.ariaLabel ?? "", /^你:/)
+  assert.equal(Boolean(items[0]?.tickClassName?.includes("bg-accent-500")), true)
+  assert.equal(items[1]?.tickClassName, undefined)
   assert.match(items[1]?.ariaLabel ?? "", /^助手:/)
 })
 

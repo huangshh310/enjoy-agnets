@@ -6,6 +6,7 @@ import { isValidElement, useState, type HTMLAttributes, type ReactNode } from "r
 import { RiCheckLine, RiClipboardLine } from "@remixicon/react"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { cx } from "@/utils/cx"
+import { MermaidFence } from "./mermaid/mermaid-fence"
 import { highlightLine } from "../ai-chat-syntax"
 import { useT } from "@renderer/i18n"
 
@@ -41,6 +42,14 @@ export function MarkdownFence({ className, children, node, "data-block": dataBlo
   const filename = readFilename(node?.properties?.metastring)
   if (isCommandFence(language, code)) {
     return <CommandFence code={code} />
+  }
+  if (language.toLowerCase() === "mermaid") {
+    return (
+      <MermaidFence
+        code={code}
+        fallback={<SnippetFence language={language} code={code} filename={filename} />}
+      />
+    )
   }
   return <SnippetFence language={language} code={code} filename={filename} />
 }

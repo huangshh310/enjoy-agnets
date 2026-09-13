@@ -178,7 +178,8 @@ function RailTick({
       className={cn(
         "relative flex w-12 items-center justify-end text-text-tertiary outline-none",
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-        highlighted ? "text-text-primary" : undefined
+        highlighted ? "text-text-primary" : undefined,
+        item.itemClassName
       )}
     >
       <motion.span
@@ -186,7 +187,7 @@ function RailTick({
         aria-hidden="true"
         animate={{ scaleX: scale }}
         transition={reduce ? { duration: 0 } : SPRING_LAYOUT}
-        className="block h-0.5 w-12 origin-right bg-current"
+        className={cn("block h-0.5 w-12 origin-right bg-current", item.tickClassName)}
       />
     </button>
   )

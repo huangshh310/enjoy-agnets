@@ -87,3 +87,14 @@ test("@ 发现含文件、文档、技能，网页 muted", () => {
   assert.equal(items.some((item) => item.kind === "skill"), true)
   assert.equal(items.some((item) => item.kind === "web" && item.muted), true)
 })
+
+test("@ 提及在空查询时列出已连 MCP 服务", () => {
+  takeComposerSkillChips()
+  const roots = [{ path: "src", name: "src", kind: "directory" as const }]
+  const files = [{ path: "src/index.ts", name: "index.ts", kind: "file" as const }]
+  const mcps = [{ kind: "mcp" as const, id: "mcp:github", name: "github", description: "GitHub API" }]
+
+  const items = buildAtMentionItems("", roots, files, [], mcps)
+  assert.equal(items.some((i) => i.kind === "file" && i.name === "src"), true)
+  assert.equal(items.some((i) => i.kind === "mcp" && i.name === "github"), true)
+})

@@ -13,9 +13,10 @@ export function openInboxAction(
   actionKey: InboxActionKey,
   sessionId?: string,
   workspaceId?: string,
-  kind?: AttentionKind
+  kind?: AttentionKind | "running"
 ): void {
   if (actionKey !== "openSession") return
   if (!sessionId) return
-  void focusAttention({ sessionId, workspaceId, kind, navigate })
+  const attentionKind = kind === "running" ? undefined : kind
+  void focusAttention({ sessionId, workspaceId, kind: attentionKind, navigate })
 }

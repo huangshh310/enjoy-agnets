@@ -3,7 +3,7 @@
  */
 import { z } from "zod"
 
-export const AutomationTrigger = z.enum(["manual", "on_save"])
+export const AutomationTrigger = z.enum(["manual", "on_save", "cron"])
 export type AutomationTrigger = z.infer<typeof AutomationTrigger>
 
 export const Automation = z.object({
@@ -11,6 +11,11 @@ export const Automation = z.object({
   name: z.string(),
   prompt: z.string(),
   trigger: AutomationTrigger,
+  cronExpr: z.string().optional(),
+  timeZone: z.string().optional(),
+  stopOnFailCount: z.number().int().min(1).default(3).optional(),
+  consecutiveFails: z.number().int().min(0).default(0).optional(),
+  lastRunAt: z.number().optional(),
   enabled: z.boolean(),
   updatedAt: z.number()
 })
@@ -21,6 +26,11 @@ export const UpsertAutomationInput = z.object({
   name: z.string().min(1),
   prompt: z.string(),
   trigger: AutomationTrigger,
+  cronExpr: z.string().optional(),
+  timeZone: z.string().optional(),
+  stopOnFailCount: z.number().int().min(1).optional(),
+  consecutiveFails: z.number().int().min(0).optional(),
+  lastRunAt: z.number().optional(),
   enabled: z.boolean().default(true)
 })
 export type UpsertAutomationInput = z.infer<typeof UpsertAutomationInput>

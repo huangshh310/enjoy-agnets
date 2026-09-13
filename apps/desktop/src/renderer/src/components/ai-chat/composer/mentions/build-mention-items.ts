@@ -1,11 +1,17 @@
 /**
  * 按当前 token 拼面板条目。
- * @：文件 / 文档 / 技能，网页 muted。/：compact + 探索/执行 + 技能。
+ * @：文件 / 文档 / 技能 / MCP，网页 muted。/：compact + 探索/执行 + 技能。
  */
 import { modeForSurface, type ComposerSurface } from "../composer-mode.ts"
 import type { MentionDirEntry } from "./collect-mention-files.ts"
 import { listKnownSkills } from "./composer-skill-chips.ts"
-import { filterMentionItems, type MentionItem, type ModeMentionItem } from "./mention-items.ts"
+import {
+  filterMentionItems,
+  type McpMentionItem,
+  type MentionItem,
+  type ModeMentionItem,
+  type SkillMention
+} from "./mention-items.ts"
 
 export type SurfaceCopy = Record<ComposerSurface, { label: string; description: string }>
 
@@ -28,7 +34,9 @@ export function buildAtMentionItems(
   query: string,
   roots: readonly MentionDirEntry[],
   files: readonly MentionDirEntry[],
-  docs: readonly MentionDoc[] = []
+  docs: readonly MentionDoc[] = [],
+  mcps: readonly McpMentionItem[] = [],
+  skills: readonly SkillMention[] = listKnownSkills()
 ): MentionItem[] {
   const fileSource = query.trim() ? files : roots
   const fileItems: MentionItem[] = fileSource.map((entry) => ({
@@ -45,12 +53,19 @@ export function buildAtMentionItems(
     path: doc.path,
     name: doc.name
   }))
-  const skillItems: MentionItem[] = listKnownSkills().map((skill) => ({
+  const skillItems: MentionItem[] = skills.map((skill) => ({
     kind: "skill" as const,
     id: `skill:${skill.id}`,
     skill
   }))
-  const live = filterMentionItems([...fileItems, ...docItems, ...skillItems], query)
+  const mcpItems: MentionItem[] = mcps.map((mcp) => ({
+    kind: "mcp" as const,
+    id: mcp.id,
+    name: mcp.name,
+    status: mcp.status,
+    description: mcp.description
+  }))
+  const live = filterMentionItems([...fileItems, ...docItems, ...skillItems, ...mcpItems], query)
   const capped = query.trim() ? live.slice(0, VISIBLE_LIMIT) : capEmptyAtMentions(live)
   const web = filterMentionItems([MUTED_WEB], query)
   return [...capped, ...web]
@@ -61,7 +76,8 @@ function capEmptyAtMentions(items: readonly MentionItem[]): MentionItem[] {
   const files = items.filter((item) => item.kind === "file").slice(0, AT_KIND_LIMIT)
   const docs = items.filter((item) => item.kind === "doc").slice(0, AT_KIND_LIMIT)
   const skills = items.filter((item) => item.kind === "skill").slice(0, AT_KIND_LIMIT)
-  return [...files, ...docs, ...skills]
+  const mcps = items.filter((item) => item.kind === "mcp").slice(0, AT_KIND_LIMIT)
+  return [...files, ...docs, ...skills, ...mcps]
 }
 
 const SLASH_SURFACES: ComposerSurface[] = ["explore", "execute"]

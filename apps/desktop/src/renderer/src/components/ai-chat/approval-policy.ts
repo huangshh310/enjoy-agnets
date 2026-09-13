@@ -97,3 +97,10 @@ export function flagsFromPrefs(prefs?: Partial<ApprovalPrefFlags> | null): Appro
     requireCommitApproval: prefs?.requireCommitApproval ?? true
   }
 }
+
+export function cyclePermissionMode(current: PermissionMode): PermissionMode {
+  if (current === "allow-reads") return "allow-edits"
+  if (current === "allow-edits") return "allow-all"
+  return "allow-reads"
+}
+

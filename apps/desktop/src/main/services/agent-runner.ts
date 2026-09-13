@@ -16,7 +16,7 @@ import {
   getActiveRun
 } from "./agent-run-state"
 
-export { createSession, listMessages, listSessions } from "./session-queries"
+export { createSession, listMessages, listSessions, patchSession } from "./session-queries"
 export { runAgent, resumeAgentRun } from "./agent-run-start"
 export { steerAgent } from "./runtime-interact/steer-agent"
 export { emitEvent, holdAgentRun } from "./agent-run-state"

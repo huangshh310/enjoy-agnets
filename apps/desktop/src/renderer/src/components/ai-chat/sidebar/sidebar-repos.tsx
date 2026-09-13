@@ -16,6 +16,8 @@ import {
 import { SidebarActiveSessions } from "@renderer/components/ai-chat/sidebar/sidebar-active-sessions"
 import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
+import { SidebarStatusGroups } from "@renderer/components/ai-chat/sidebar/sidebar-status-groups"
+import { sortSessions } from "@renderer/components/ai-chat/sidebar/sort-sessions"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -56,10 +58,7 @@ export function SidebarRepos({
 
   const allSessions = useMemo(() => {
     const list = repositories.filter((node) => node.kind === "session")
-    if (sortOrder === "updated") {
-      return [...list].sort((a, b) => b.updatedAt - a.updatedAt)
-    }
-    return list
+    return sortSessions(list, { sortOrder })
   }, [repositories, sortOrder])
 
   return (
@@ -91,10 +90,13 @@ export function SidebarRepos({
               </DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={grouping}
-                onValueChange={(val) => setGrouping(val as "project" | "flat")}
+                onValueChange={(val) => setGrouping(val as "project" | "flat" | "status")}
               >
                 <DropdownMenuRadioItem value="project" className="text-body-medium">
                   {t("chat.groupByProject")}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="status" className="text-body-medium">
+                  {t("chat.groupByStatus")}
                 </DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="flat" className="text-body-medium">
                   {t("chat.groupFlat")}
@@ -142,7 +144,7 @@ export function SidebarRepos({
         formatTime={formatTime}
       />
 
-      {/* 2. Workspaces Tree / Flat List */}
+      {/* 2. Workspaces Tree / Status Groups / Flat List */}
       {workspaces.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
           <RiFolder6Line className="size-6 text-text-tertiary" />
@@ -155,6 +157,13 @@ export function SidebarRepos({
             {t("chat.addProject")}
           </button>
         </div>
+      ) : grouping === "status" ? (
+        <SidebarStatusGroups
+          sessions={allSessions}
+          sessionId={sessionId}
+          onSelectSession={onSelectSession}
+          formatTime={formatTime}
+        />
       ) : grouping === "flat" ? (
         <div className="flex flex-col gap-0.5">
           {allSessions.map((session) => (
@@ -165,6 +174,8 @@ export function SidebarRepos({
               active={session.id === sessionId}
               updatedAt={session.updatedAt}
               formatTime={formatTime}
+              flagged={session.flagged}
+              workflowStatus={session.workflowStatus}
               className="rounded-xl"
               nameClassName="text-body-medium"
               onSelect={() => onSelectSession(session.id)}
@@ -204,6 +215,8 @@ export function SidebarRepos({
               active={session.id === sessionId}
               updatedAt={session.updatedAt}
               formatTime={formatTime}
+              flagged={session.flagged}
+              workflowStatus={session.workflowStatus}
               className="rounded-xl"
               onSelect={() => onSelectSession(session.id)}
             />

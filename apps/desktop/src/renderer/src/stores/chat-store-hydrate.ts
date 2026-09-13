@@ -39,7 +39,11 @@ export function buildWorkspaceTree(
         kind: "session",
         parentId: item.workspace.id,
         updatedAt: session.updatedAt,
-        workspaceId: session.workspaceId
+        workspaceId: session.workspaceId,
+        flagged: session.flagged,
+        workflowStatus: session.workflowStatus,
+        goal: session.goal,
+        recap: session.recap
       })
     }
   }
@@ -48,7 +52,16 @@ export function buildWorkspaceTree(
 
 export function buildSessionTree(
   workspace: { id: string; name: string },
-  sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+  sessions: Array<{
+    id: string
+    title: string
+    updatedAt: number
+    workspaceId: string
+    flagged?: boolean
+    workflowStatus?: RepositoryNode["workflowStatus"]
+    goal?: string | null
+    recap?: string | null
+  }>
 ): RepositoryNode[] {
   return [
     {
@@ -63,7 +76,11 @@ export function buildSessionTree(
       kind: "session" as const,
       parentId: workspace.id,
       updatedAt: session.updatedAt,
-      workspaceId: session.workspaceId
+      workspaceId: session.workspaceId,
+      flagged: session.flagged,
+      workflowStatus: session.workflowStatus,
+      goal: session.goal,
+      recap: session.recap
     }))
   ]
 }

@@ -20,7 +20,7 @@ import {
   type SurfaceCopy
 } from "./build-mention-items.ts"
 import type { MentionDirEntry } from "./collect-mention-files.ts"
-import type { MentionItem } from "./mention-items.ts"
+import type { McpMentionItem, MentionItem } from "./mention-items.ts"
 
 export function useMentionPanel(
   value: string,
@@ -30,7 +30,8 @@ export function useMentionPanel(
   files: readonly MentionDirEntry[],
   docs: readonly MentionDoc[],
   modeCopy: SurfaceCopy,
-  builtinCopy: SlashBuiltinCopy
+  builtinCopy: SlashBuiltinCopy,
+  mcps: readonly McpMentionItem[] = []
 ) {
   const [cursor, setCursor] = useState(value.length)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -39,8 +40,8 @@ export function useMentionPanel(
   const mention = useMemo(() => detectActiveMention(value, cursor), [value, cursor])
   const open = Boolean(mention && !dismissed)
   const items = useMemo(
-    () => listItems(mention?.kind, mention?.query ?? "", roots, files, docs, modeCopy, builtinCopy),
-    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy]
+    () => listItems(mention?.kind, mention?.query ?? "", roots, files, docs, modeCopy, builtinCopy, mcps),
+    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy, mcps]
   )
 
   useLayoutEffect(() => {
@@ -107,9 +108,10 @@ function listItems(
   files: readonly MentionDirEntry[],
   docs: readonly MentionDoc[],
   modeCopy: SurfaceCopy,
-  builtinCopy: SlashBuiltinCopy
+  builtinCopy: SlashBuiltinCopy,
+  mcps: readonly McpMentionItem[]
 ): MentionItem[] {
-  if (kind === "at") return buildAtMentionItems(query, roots, files, docs)
+  if (kind === "at") return buildAtMentionItems(query, roots, files, docs, mcps)
   if (kind === "slash") return buildSlashMentionItems(query, modeCopy, builtinCopy)
   return []
 }

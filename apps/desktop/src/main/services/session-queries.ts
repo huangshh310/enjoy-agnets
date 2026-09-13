@@ -1,18 +1,91 @@
-/**
- * 会话列表 / 消息 / 新建。从 agent-runner 拆出，避免编排文件超 300 行。
- */
+import type { SessionPatchInput, SessionSummary } from "@enjoy-agents/ipc-contract"
 import { listMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
 import { backfillUserFileParts } from "./persist-user-attachments"
 import { getWorkspace } from "./workspace"
 
-export async function listSessions(workspaceId: string) {
-  return getDatabase()
+export async function listSessions(workspaceId: string): Promise<SessionSummary[]> {
+  const rows = getDatabase()
     .prepare(
-      "SELECT id, workspace_id as workspaceId, title, created_at as createdAt, updated_at as updatedAt FROM sessions WHERE workspace_id = ? AND archived_at IS NULL ORDER BY updated_at DESC"
+      `SELECT id, workspace_id as workspaceId, title, created_at as createdAt, updated_at as updatedAt,
+              flagged, workflow_status as workflowStatus, goal, recap
+       FROM sessions WHERE workspace_id = ? AND archived_at IS NULL ORDER BY updated_at DESC`
     )
-    .all(workspaceId)
+    .all(workspaceId) as Array<{
+    id: string
+    workspaceId: string
+    title: string
+    createdAt: number
+    updatedAt: number
+    flagged: number
+    workflowStatus: string | null
+    goal: string | null
+    recap: string | null
+  }>
+
+  return rows.map((r) => ({
+    id: r.id,
+    workspaceId: r.workspaceId,
+    title: r.title,
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+    flagged: Boolean(r.flagged),
+    workflowStatus: (r.workflowStatus as SessionSummary["workflowStatus"]) ?? null,
+    goal: r.goal ?? null,
+    recap: r.recap ?? null
+  }))
+}
+
+export async function patchSession(input: SessionPatchInput): Promise<SessionSummary> {
+  const db = getDatabase()
+  const current = db
+    .prepare(
+      `SELECT id, workspace_id as workspaceId, title, created_at as createdAt, updated_at as updatedAt,
+              flagged, workflow_status as workflowStatus, goal, recap
+       FROM sessions WHERE id = ?`
+    )
+    .get(input.id) as {
+    id: string
+    workspaceId: string
+    title: string
+    createdAt: number
+    updatedAt: number
+    flagged: number
+    workflowStatus: string | null
+    goal: string | null
+    recap: string | null
+  } | undefined
+
+  if (!current) {
+    throw new Error(`Session ${input.id} not found.`)
+  }
+
+  const newTitle = input.title !== undefined ? input.title : current.title
+  const newFlagged = input.flagged !== undefined ? (input.flagged ? 1 : 0) : current.flagged
+  const newStatus =
+    input.workflowStatus !== undefined ? input.workflowStatus : current.workflowStatus
+  const newGoal = input.goal !== undefined ? input.goal : current.goal
+  const newRecap = input.recap !== undefined ? input.recap : current.recap
+
+  // 注意：session.patch 绝不更新 updated_at，保证会话列表活跃度排序不被旗标/状态改动所干扰
+  db.prepare(
+    `UPDATE sessions
+     SET title = ?, flagged = ?, workflow_status = ?, goal = ?, recap = ?
+     WHERE id = ?`
+  ).run(newTitle, newFlagged, newStatus, newGoal, newRecap, input.id)
+
+  return {
+    id: current.id,
+    workspaceId: current.workspaceId,
+    title: newTitle,
+    createdAt: current.createdAt,
+    updatedAt: current.updatedAt,
+    flagged: Boolean(newFlagged),
+    workflowStatus: (newStatus as SessionSummary["workflowStatus"]) ?? null,
+    goal: newGoal ?? null,
+    recap: newRecap ?? null
+  }
 }
 
 export async function listMessages(sessionId: string) {
@@ -48,20 +121,25 @@ export async function workspaceRootForSession(sessionId: string): Promise<string
   }
 }
 
-export async function createSession(workspaceId: string, title: string) {
+export async function createSession(workspaceId: string, title: string): Promise<SessionSummary> {
   await getWorkspace(workspaceId)
   const now = Date.now()
-  const record = {
+  const record: SessionSummary = {
     id: createId("ses"),
     workspaceId,
     title,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    flagged: false,
+    workflowStatus: null,
+    goal: null,
+    recap: null
   }
   getDatabase()
     .prepare(
-      "INSERT INTO sessions (id, workspace_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+      "INSERT INTO sessions (id, workspace_id, title, created_at, updated_at, flagged) VALUES (?, ?, ?, ?, ?, 0)"
     )
-    .run(record.id, record.workspaceId, record.title, record.createdAt, record.updatedAt)
+    .run(record.id, record.workspaceId, record.title, now, now)
   return record
 }
+

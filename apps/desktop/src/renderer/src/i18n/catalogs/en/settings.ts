@@ -114,7 +114,9 @@ export const enSettings = {
     newLine: "New Line in Composer",
     newLineDesc: "Insert a line break inside the chat input textarea without sending.",
     paste: "Paste Image or Files",
-    pasteDesc: "Paste clipboard screenshots or files directly into the attachment queue."
+    pasteDesc: "Paste clipboard screenshots or files directly into the attachment queue.",
+    cyclePermission: "Cycle Approval Permission Mode",
+    cyclePermissionDesc: "Quickly cycle through Reads, Edits, and All approval modes (when composer is not focused)."
   },
 
   agent: {

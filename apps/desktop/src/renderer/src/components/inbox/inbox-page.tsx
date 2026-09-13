@@ -3,11 +3,18 @@
  */
 import { useMemo } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { RiInboxLine, RiMailUnreadLine, RiRobotLine, RiShieldCheckLine } from "@remixicon/react"
+import {
+  RiCheckboxCircleLine,
+  RiErrorWarningLine,
+  RiInboxLine,
+  RiMailUnreadLine,
+  RiPlayCircleLine,
+  RiShieldCheckLine
+} from "@remixicon/react"
 import { SecondaryPageShell, type SecondaryNavGroup } from "@renderer/components/app-pages/secondary-page-shell"
 import { useT } from "@renderer/i18n"
 import { InboxLayout } from "./feed/inbox-layout"
-import type { InboxCategory, InboxNotification } from "./inbox.types"
+import type { InboxCategory, InboxNavCounts, InboxNotification } from "./inbox.types"
 import { openInboxAction } from "./lib/open-inbox-action"
 import { useInbox } from "./use-inbox"
 
@@ -53,8 +60,10 @@ export function InboxPage() {
 
 function navLabel(filter: InboxCategory, t: (path: string) => string): string {
   if (filter === "unread") return t("pages.inbox.navUnread")
-  if (filter === "agent") return t("pages.inbox.navAgent")
-  if (filter === "system") return t("pages.inbox.navSystem")
+  if (filter === "running") return t("pages.inbox.navRunning")
+  if (filter === "waiting") return t("pages.inbox.navWaiting")
+  if (filter === "failed") return t("pages.inbox.navFailed")
+  if (filter === "complete") return t("pages.inbox.navComplete")
   return t("pages.inbox.navAll")
 }
 
@@ -64,7 +73,7 @@ function badge(count: number): string | undefined {
 
 function buildInboxNav(
   t: (path: string) => string,
-  counts: { all: number; unread: number; agent: number; system: number }
+  counts: InboxNavCounts
 ): SecondaryNavGroup[] {
   return [
     {
@@ -79,16 +88,28 @@ function buildInboxNav(
           meta: badge(counts.unread)
         },
         {
-          id: "agent",
-          label: t("pages.inbox.navAgent"),
-          icon: RiRobotLine,
-          meta: badge(counts.agent)
+          id: "running",
+          label: t("pages.inbox.navRunning"),
+          icon: RiPlayCircleLine,
+          meta: badge(counts.running)
         },
         {
-          id: "system",
-          label: t("pages.inbox.navSystem"),
+          id: "waiting",
+          label: t("pages.inbox.navWaiting"),
           icon: RiShieldCheckLine,
-          meta: badge(counts.system)
+          meta: badge(counts.waiting)
+        },
+        {
+          id: "failed",
+          label: t("pages.inbox.navFailed"),
+          icon: RiErrorWarningLine,
+          meta: badge(counts.failed)
+        },
+        {
+          id: "complete",
+          label: t("pages.inbox.navComplete"),
+          icon: RiCheckboxCircleLine,
+          meta: badge(counts.complete)
         }
       ]
     }

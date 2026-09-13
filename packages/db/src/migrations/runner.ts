@@ -7,6 +7,8 @@ import { aiRuntimeMigration } from "./ai-runtime.ts"
 import { sessionArchiveMigration } from "./session-archive.ts"
 import { secretsVaultMigration } from "./secrets-vault.ts"
 import { inboxStateMigration } from "./inbox-state.ts"
+import { sessionWorkflowMigration } from "./session-workflow.ts"
+import { runStepsChildRunMigration } from "./run-steps-child-run.ts"
 import type { Migration } from "./types.ts"
 
 // 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
@@ -15,7 +17,9 @@ export const MIGRATIONS: Migration[] = [
   aiRuntimeMigration,
   sessionArchiveMigration,
   secretsVaultMigration,
-  inboxStateMigration
+  inboxStateMigration,
+  sessionWorkflowMigration,
+  runStepsChildRunMigration
 ]
 
 function tableExists(sqlite: DatabaseSync, name: string): boolean {

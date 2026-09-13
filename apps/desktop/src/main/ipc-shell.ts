@@ -19,10 +19,6 @@ import {
   WatchWorkspaceInput,
   WriteFileInput,
   RemoveWorkspaceInput,
-  SessionCompactInput,
-  SessionCreateInput,
-  SessionIdInput,
-  SessionRenameInput,
   TerminalCloseInput,
   TerminalOpenInput,
   TerminalResizeInput,
@@ -31,16 +27,12 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import {
   abortAgent,
-  createSession,
   decideApproval,
-  listMessages,
-  listSessions,
   runAgent,
   steerAgent
 } from "./services/agent-runner"
 import { inspectPrompt } from "./services/inspect-prompt-service"
 import { setSetting } from "./services/database"
-import { renameSession } from "./services/persist-session"
 import {
   closeWorkspaceTerminal,
   openWorkspaceTerminal,
@@ -73,18 +65,6 @@ import { writeWorkspaceFile } from "./services/workspace-write"
 import { openWorkspacePreview } from "./services/workspace-open-preview"
 import { moveWorkspacePath } from "./services/workspace-move"
 import { watchWorkspace } from "./services/workspace-watch"
-import {
-  archiveSession,
-  deleteAllArchivedSessions,
-  deleteSession,
-  listArchivedSessions,
-  unarchiveSession
-} from "./services/session-lifecycle"
-import {
-  clearSessionCompaction,
-  compactSession,
-  getSessionCompaction
-} from "./services/session-compaction-service"
 import { listInboxStateRows, putInboxStates } from "./services/inbox-state-service"
 
 export const SHELL_CHANNELS = [
@@ -112,18 +92,6 @@ export const SHELL_CHANNELS = [
   "workspace.changes",
   "inbox.state.list",
   "inbox.state.put",
-  "session.list",
-  "session.listArchived",
-  "session.create",
-  "session.messages",
-  "session.rename",
-  "session.archive",
-  "session.unarchive",
-  "session.delete",
-  "session.deleteArchived",
-  "session.compact",
-  "session.getCompaction",
-  "session.clearCompaction",
   "agent.run",
   "agent.abort",
   "agent.steer",
@@ -149,7 +117,6 @@ export function windowFromEvent(event: IpcMainInvokeEvent): BrowserWindow {
 
 export function registerShellIpc() {
   registerWorkspaceIpc()
-  registerSessionIpc()
   registerAgentIpc()
   registerTerminalIpc()
   registerInboxIpc()
@@ -249,46 +216,6 @@ function registerWorkspaceIpc() {
     })
   })
   ipcMain.handle("workspace.openPreview", async (_event, raw) => openWorkspacePreview(raw))
-}
-
-function registerSessionIpc() {
-  ipcMain.handle("session.list", async (_event, raw) =>
-    listSessions(WorkspaceIdInput.parse(raw).workspaceId)
-  )
-  ipcMain.handle("session.listArchived", async () => listArchivedSessions())
-  ipcMain.handle("session.create", async (_event, raw) => {
-    const input = SessionCreateInput.parse(raw)
-    return createSession(input.workspaceId, input.title || "New agent")
-  })
-  ipcMain.handle("session.messages", async (_event, raw) =>
-    listMessages(SessionIdInput.parse(raw).sessionId)
-  )
-  ipcMain.handle("session.rename", async (_event, raw: unknown) => {
-    const input = SessionRenameInput.parse(raw)
-    return renameSession(input.sessionId, input.title)
-  })
-  ipcMain.handle("session.archive", async (_event, raw) =>
-    archiveSession(SessionIdInput.parse(raw).sessionId)
-  )
-  ipcMain.handle("session.unarchive", async (_event, raw) =>
-    unarchiveSession(SessionIdInput.parse(raw).sessionId)
-  )
-  ipcMain.handle("session.delete", async (_event, raw) =>
-    deleteSession(SessionIdInput.parse(raw).sessionId)
-  )
-  ipcMain.handle("session.deleteArchived", async () => deleteAllArchivedSessions())
-  ipcMain.handle("session.compact", async (_event, raw) => {
-    const input = SessionCompactInput.parse(raw)
-    return compactSession(input.sessionId, input.keepRecent)
-  })
-  ipcMain.handle("session.getCompaction", async (_event, raw) => {
-    const input = SessionIdInput.parse(raw)
-    return getSessionCompaction(input.sessionId)
-  })
-  ipcMain.handle("session.clearCompaction", async (_event, raw) => {
-    const input = SessionIdInput.parse(raw)
-    return clearSessionCompaction(input.sessionId)
-  })
 }
 
 function registerAgentIpc() {

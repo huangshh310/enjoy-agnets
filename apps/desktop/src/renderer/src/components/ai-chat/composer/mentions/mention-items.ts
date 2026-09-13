@@ -1,5 +1,5 @@
 /**
- * Composer @ / 面板条目：文件 / 文档 / 技能；斜杠是压缩与探索/执行。
+ * Composer @ / 面板条目：文件 / 文档 / 技能 / MCP；斜杠是压缩与探索/执行。
  */
 import type { ComposerSurface, ComposerVisibleMode } from "../composer-mode.ts"
 
@@ -62,6 +62,14 @@ export type CommandMentionItem = {
   tag: string
 }
 
+export type McpMentionItem = {
+  kind: "mcp"
+  id: string
+  name: string
+  status?: string
+  description?: string
+}
+
 export type MentionItem =
   | FileMentionItem
   | DocMentionItem
@@ -69,6 +77,7 @@ export type MentionItem =
   | ModeMentionItem
   | SkillMentionItem
   | CommandMentionItem
+  | McpMentionItem
 
 const SLASH_SAFE = /^[A-Za-z][\w.-]*$/
 
@@ -97,6 +106,7 @@ function mentionHaystack(item: MentionItem): string {
     return `${item.slash} ${item.label} ${item.description} ${item.tag ?? ""}`.toLowerCase()
   }
   if (item.kind === "command") return `${item.name} ${item.description}`.toLowerCase()
+  if (item.kind === "mcp") return `mcp ${item.name} ${item.description ?? ""}`.toLowerCase()
   const skill = item.skill
   return `${skill.slash ?? ""} ${skill.name} ${skill.description ?? ""}`.toLowerCase()
 }

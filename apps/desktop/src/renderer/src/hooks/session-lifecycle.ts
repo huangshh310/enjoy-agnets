@@ -1,7 +1,7 @@
 /**
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
-import { AgentToolId, migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
+import { AgentToolId, migrateContentToParts, safeValidateUIMessages, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
   modeForLoadedSession,
   modeForNewSession,
@@ -23,7 +23,16 @@ import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 
 export type WorkspaceRow = { id: string; name: string; rootPath: string }
-type SessionRow = { id: string; workspaceId: string; title: string; updatedAt: number }
+type SessionRow = {
+  id: string
+  workspaceId: string
+  title: string
+  updatedAt: number
+  flagged?: boolean
+  workflowStatus?: SessionWorkflowStatus | null
+  goal?: string | null
+  recap?: string | null
+}
 type MessageRow = {
   id: string
   role: "user" | "assistant"

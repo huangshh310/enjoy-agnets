@@ -52,7 +52,7 @@ export function ThreadPreviewRail({
   if (items.length < 2) return null
 
   return (
-    <div className="pointer-events-none absolute inset-y-8 right-2 z-20 flex w-64 items-center justify-end">
+    <div className="pointer-events-none absolute inset-y-8 right-2 z-20 hidden min-[768px]:flex w-64 items-center justify-end">
       <PreviewRail
         items={items}
         label={t("chat.previewRailLabel")}

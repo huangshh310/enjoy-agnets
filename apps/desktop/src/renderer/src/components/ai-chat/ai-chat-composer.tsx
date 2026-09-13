@@ -14,6 +14,7 @@ import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
 import { ExploreCapabilityRail } from "./composer/explore-execute/explore-capability-rail"
 import { ExploreExecuteToggle } from "./composer/explore-execute/explore-execute-toggle"
 import { ExploreInterceptBanner } from "./composer/explore-execute/explore-intercept-banner"
+import { SessionGoalChip } from "./composer/session-goal-chip"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
@@ -168,6 +169,7 @@ export function AiChatComposer({
           <ExploreExecuteToggle />
           <ComposerContextChips />
           <ComposerHostModeChip />
+          <SessionGoalChip />
           <ComposerQuoteChips />
           <ComposerSkillChipBar />
           <ComposerInput

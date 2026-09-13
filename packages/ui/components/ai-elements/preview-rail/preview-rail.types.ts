@@ -8,6 +8,8 @@ export type PreviewRailItem = {
   label: string
   ariaLabel?: string
   description?: ReactNode
+  tickClassName?: string
+  itemClassName?: string
 }
 
 export type PreviewRailProps = {

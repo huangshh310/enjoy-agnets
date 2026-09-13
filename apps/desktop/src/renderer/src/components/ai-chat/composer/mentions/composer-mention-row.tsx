@@ -1,10 +1,12 @@
 /**
- * @ 发现一行：文件 / 文档 / 技能 / 网页 muted；斜杠是强调色 /名。
+ * @ 发现一行：文件 / 文档 / 技能 / MCP / 网页 muted；斜杠是强调色 /名。
  */
 import { RiBookOpenLine, RiCompass3Line, RiSparklingLine, RiTerminalBoxLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
+
+type DiscoverKind = "file" | "doc" | "skill" | "mcp" | "web"
 
 export function ComposerMentionRow({
   item,
@@ -50,10 +52,14 @@ export function ComposerMentionRow({
   )
 }
 
-function isAtDiscovery(
-  item: MentionItem
-): item is Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }> {
-  return item.kind === "file" || item.kind === "doc" || item.kind === "skill" || item.kind === "web"
+function isAtDiscovery(item: MentionItem): item is Extract<MentionItem, { kind: DiscoverKind }> {
+  return (
+    item.kind === "file" ||
+    item.kind === "doc" ||
+    item.kind === "skill" ||
+    item.kind === "mcp" ||
+    item.kind === "web"
+  )
 }
 
 function DiscoverRow({
@@ -61,7 +67,7 @@ function DiscoverRow({
   scopeWorkspace,
   scopePersonal
 }: {
-  item: Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }>
+  item: Extract<MentionItem, { kind: DiscoverKind }>
   scopeWorkspace: string
   scopePersonal: string
 }) {
@@ -73,7 +79,9 @@ function DiscoverRow({
         ? t("chat.mentionKindDoc")
         : item.kind === "skill"
           ? t("chat.mentionKindSkill")
-          : t("chat.mentionKindWeb")
+          : item.kind === "mcp"
+            ? t("chat.mentionKindMcp")
+            : t("chat.mentionKindWeb")
   const name = item.kind === "web" ? t("chat.mentionWebMuted") : discoverName(item)
   return (
     <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
@@ -86,28 +94,32 @@ function DiscoverRow({
           ? t("chat.mentionWebDisabled")
           : item.kind === "doc"
             ? t("chat.mentionScopeKnowledge")
-            : item.kind === "skill" && item.skill.scope !== "workspace"
-              ? t("chat.mentionScopeInstalled")
-              : discoverScope(item, scopeWorkspace, scopePersonal)}
+            : item.kind === "mcp"
+              ? (item.status ?? t("chat.mentionMcpGroup"))
+              : item.kind === "skill" && item.skill.scope !== "workspace"
+                ? t("chat.mentionScopeInstalled")
+                : discoverScope(item, scopeWorkspace, scopePersonal)}
       </span>
     </span>
   )
 }
 
-function discoverName(item: Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }>): string {
+function discoverName(item: Extract<MentionItem, { kind: DiscoverKind }>): string {
   if (item.kind === "file") return item.path || item.name
   if (item.kind === "doc") return item.name
+  if (item.kind === "mcp") return item.name
   if (item.kind === "skill") return item.skill.name
   return ""
 }
 
 function discoverScope(
-  item: Extract<MentionItem, { kind: "file" | "doc" | "skill" | "web" }>,
+  item: Extract<MentionItem, { kind: DiscoverKind }>,
   scopeWorkspace: string,
   scopePersonal: string
 ): string {
   if (item.kind === "file") return scopeWorkspace
   if (item.kind === "doc") return "knowledge"
+  if (item.kind === "mcp") return item.status ?? ""
   if (item.kind === "skill") return item.skill.scope === "workspace" ? scopeWorkspace : scopePersonal
   return ""
 }
@@ -117,7 +129,7 @@ function SlashRow({
   scopeWorkspace,
   scopePersonal
 }: {
-  item: Exclude<MentionItem, { kind: "file" | "doc" | "web" }>
+  item: Exclude<MentionItem, { kind: DiscoverKind }>
   scopeWorkspace: string
   scopePersonal: string
 }) {
@@ -152,7 +164,7 @@ function SlashRow({
   )
 }
 
-function SlashGlyph({ item }: { item: Exclude<MentionItem, { kind: "file" | "doc" | "web" }> }) {
+function SlashGlyph({ item }: { item: Exclude<MentionItem, { kind: DiscoverKind }> }) {
   const Icon =
     item.kind === "mode"
       ? item.slash === "explore"

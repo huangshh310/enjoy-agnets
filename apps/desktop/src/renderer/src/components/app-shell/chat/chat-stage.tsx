@@ -16,9 +16,11 @@ import { ChatComposerCluster } from "./chat-composer-cluster"
 import { ChatStageHeader } from "./chat-stage-header"
 import { EmptySessionStart } from "./empty-session-start"
 import { useChatModelGate } from "./use-chat-model-gate"
+import { usePermissionCycleHotkey } from "@renderer/components/ai-chat/use-permission-cycle-hotkey"
 
 export function ChatStage() {
   const t = useT()
+  usePermissionCycleHotkey()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
   const workspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)

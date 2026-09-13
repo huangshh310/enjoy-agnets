@@ -114,7 +114,9 @@ export const zhSettings = {
     newLine: "输入框换行",
     newLineDesc: "在对话输入框中插入换行而不发送。",
     paste: "粘贴图片或文件",
-    pasteDesc: "将剪贴板截图或文件直接加入附件队列。"
+    pasteDesc: "将剪贴板截图或文件直接加入附件队列。",
+    cyclePermission: "循环切换审批风险档",
+    cyclePermissionDesc: "在只读、写代码、全放行三档审批策略间快速轮转（光标在输入框外生效）。"
   },
 
   agent: {

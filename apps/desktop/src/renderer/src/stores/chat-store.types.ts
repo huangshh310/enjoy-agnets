@@ -1,7 +1,7 @@
 /**
  * 聊天会话 store 的数据形状。实现仍在 chat-store.ts。
  */
-import type { ActionChip, AgentMode, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { ActionChip, AgentMode, SessionWorkflowStatus, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -68,6 +68,10 @@ export type RepositoryNode = {
   workspaceId?: string
   rootPath?: string
   isPinned?: boolean
+  flagged?: boolean
+  workflowStatus?: SessionWorkflowStatus | null
+  goal?: string | null
+  recap?: string | null
 }
 
 export type ChangedFileRow = {
@@ -103,7 +107,16 @@ export type ModelOption = {
 
 export type WorkspaceSessionHydrate = {
   workspace: { id: string; name: string; rootPath?: string }
-  sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+  sessions: Array<{
+    id: string
+    title: string
+    updatedAt: number
+    workspaceId: string
+    flagged?: boolean
+    workflowStatus?: SessionWorkflowStatus | null
+    goal?: string | null
+    recap?: string | null
+  }>
 }
 
 export type ChatStore = {
@@ -155,12 +168,16 @@ export type ChatStore = {
   error: string | null
   /** L4「切换引擎」打开 Composer AgentPicker，不跳设置。 */
   agentPickerOpen: boolean
-  sidebarGrouping: "project" | "flat"
+  sidebarGrouping: "project" | "flat" | "status"
   sessionSortOrder: "priority" | "updated" | "manual"
   pinnedWorkspaceIds: string[]
-  setSidebarGrouping: (grouping: "project" | "flat") => void
+  setSidebarGrouping: (grouping: "project" | "flat" | "status") => void
   setSessionSortOrder: (order: "priority" | "updated" | "manual") => void
   togglePinWorkspace: (id: string) => void
+  patchSessionNode: (
+    id: string,
+    patch: Partial<Pick<RepositoryNode, "name" | "flagged" | "workflowStatus" | "goal" | "recap">>
+  ) => void
   hydrateWorkspacesAndSessions: (
     items: WorkspaceSessionHydrate[],
     activeWorkspaceId?: string | null
@@ -198,7 +215,16 @@ export type ChatStore = {
   setProvider: (provider: string | null) => void
   hydrateSessions: (
     workspace: { id: string; name: string },
-    sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+    sessions: Array<{
+      id: string
+      title: string
+      updatedAt: number
+      workspaceId: string
+      flagged?: boolean
+      workflowStatus?: SessionWorkflowStatus | null
+      goal?: string | null
+      recap?: string | null
+    }>
   ) => void
   setSession: (sessionId: string, title: string) => void
   setMessages: (messages: ThreadMessage[]) => void

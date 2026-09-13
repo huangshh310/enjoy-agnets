@@ -6,8 +6,9 @@ import { compactSessionOrReport } from "../../right-pane/views/context/compact-s
 import { addComposerSkillChip } from "./composer-skill-chips.ts"
 import type { MentionItem } from "./mention-items.ts"
 
-export function applySlashPick(item: Exclude<MentionItem, { kind: "file" }>): void {
-  if (item.kind === "web" || item.kind === "doc") return
+export function applySlashPick(
+  item: Exclude<MentionItem, { kind: "file" | "mcp" | "web" | "doc" }>
+): void {
   if (item.kind === "command") {
     if (item.name === "compact") compactFromSlash()
     return

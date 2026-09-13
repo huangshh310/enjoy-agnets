@@ -24,6 +24,7 @@ export const WorkflowStep = z.object({
   outputSummary: z.string().optional(),
   durationMs: z.number().int().optional(),
   checkpointId: z.string().optional(),
+  childRunId: z.string().nullable().optional(),
   dependsOn: z.array(z.string()).default([])
 })
 export type WorkflowStep = z.infer<typeof WorkflowStep>

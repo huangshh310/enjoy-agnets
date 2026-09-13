@@ -12,6 +12,8 @@ export type ThreadRailItem = {
   label: string
   ariaLabel: string
   description: string
+  tickClassName?: string
+  itemClassName?: string
 }
 
 export function previewItemsFromMessages(
@@ -20,12 +22,15 @@ export function previewItemsFromMessages(
 ): ThreadRailItem[] {
   return messages.map((message) => {
     const snippet = messageSnippet(message.content)
-    const who = message.role === "user" ? labels.user : labels.assistant
+    const isUser = message.role === "user"
+    const who = isUser ? labels.user : labels.assistant
     return {
       id: message.id,
       label: who,
       ariaLabel: `${who}: ${snippet || labels.empty}`,
-      description: snippet || labels.empty
+      description: snippet || labels.empty,
+      itemClassName: isUser ? "text-accent-600 dark:text-accent-400 font-medium" : "text-text-tertiary",
+      tickClassName: isUser ? "!bg-accent-500 !h-[3px] rounded-full" : undefined
     }
   })
 }

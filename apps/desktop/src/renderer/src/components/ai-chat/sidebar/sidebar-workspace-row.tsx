@@ -14,7 +14,7 @@ import {
   createAndOpenSession,
   loadWorkspace
 } from "@renderer/hooks/use-agent-session"
-import { type RepositoryNode } from "@renderer/stores/chat-store"
+import { type RepositoryNode, useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
 export function SidebarWorkspaceRow({
@@ -144,6 +144,8 @@ function SessionList({
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
+  const additions = useChatStore((state) => state.additions)
+  const deletions = useChatStore((state) => state.deletions)
 
   return (
     <div className="relative my-0.5 ml-4 flex flex-col gap-0.5 border-l border-separator-border/60 pl-2">
@@ -163,25 +165,39 @@ function SessionList({
           </button>
         </div>
       ) : (
-        sessions.map((session) => (
-          <SidebarSessionRow
-            key={session.id}
-            sessionId={session.id}
-            name={session.name}
-            active={session.id === sessionId}
-            updatedAt={session.updatedAt}
-            formatTime={formatTime}
-            className="rounded-lg"
-            onSelect={() => {
-              if (workspace.id !== currentWorkspaceId) {
-                void switchWorkspace(workspace).then(() => onSelectSession(session.id))
-                return
+        [...sessions]
+          .sort((a, b) => {
+            const aFlag = a.flagged ? 1 : 0
+            const bFlag = b.flagged ? 1 : 0
+            if (aFlag !== bFlag) return bFlag - aFlag
+            return b.updatedAt - a.updatedAt
+          })
+          .map((session) => (
+            <SidebarSessionRow
+              key={session.id}
+              sessionId={session.id}
+              name={session.name}
+              active={session.id === sessionId}
+              updatedAt={session.updatedAt}
+              formatTime={formatTime}
+              flagged={session.flagged}
+              workflowStatus={session.workflowStatus}
+              changesSummary={
+                session.id === sessionId && (additions > 0 || deletions > 0)
+                  ? { additions, deletions }
+                  : null
               }
-              onSelectSession(session.id)
-            }}
-            onArchive={() => void archiveCurrentSession(session.id)}
-          />
-        ))
+              className="rounded-lg"
+              onSelect={() => {
+                if (workspace.id !== currentWorkspaceId) {
+                  void switchWorkspace(workspace).then(() => onSelectSession(session.id))
+                  return
+                }
+                onSelectSession(session.id)
+              }}
+              onArchive={() => void archiveCurrentSession(session.id)}
+            />
+          ))
       )}
     </div>
   )

@@ -27,11 +27,13 @@ test("斜杠按模式、工作区、个人分组，空组丢掉", () => {
   assert.equal(groupMentionItems("at", []).length, 0)
 })
 
-test("@ 发现收成一组，网页 muted 垫底", () => {
+test("@ 发现收成一组，网页 muted 垫底，MCP 进发现", () => {
   const groups = groupMentionItems("at", [
     { kind: "file", id: "f", path: "a.ts", name: "a.ts", entryKind: "file" },
+    { kind: "mcp", id: "m1", name: "sqlite", description: "Database" },
     { kind: "web", id: "web:disabled", muted: true }
   ])
   assert.equal(groups[0]?.id, "discover")
+  assert.equal(groups[0]?.items.some((item) => item.kind === "mcp"), true)
   assert.equal(groups[0]?.items.at(-1)?.kind, "web")
 })

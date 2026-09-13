@@ -1,5 +1,5 @@
 /**
- * @ 文件索引与 / 技能目录。技能在各引擎都拉；ACP 斜杠命令仍只进 ⌘L。
+ * @ 文件索引、知识文档、MCP 与 / 技能目录。技能在各引擎都拉；ACP 斜杠命令仍只进 ⌘L。
  */
 import { useEffect, useState } from "react"
 import type { SkillItem } from "@enjoy-agents/ipc-contract"
@@ -10,6 +10,7 @@ import { collectMentionFiles, type MentionDirEntry } from "./collect-mention-fil
 import type { MentionDoc } from "./build-mention-items.ts"
 import { mentionDocsFromKnowledge } from "./mention-docs.ts"
 import { rememberSkillCatalog } from "./composer-skill-chips.ts"
+import type { McpMentionItem } from "./mention-items.ts"
 import { sortEntries } from "../../right-pane/views/files-entries.ts"
 
 async function listDir(workspaceId: string, path: string): Promise<MentionDirEntry[]> {
@@ -21,6 +22,7 @@ export function useMentionSources(workspaceId: string | null, loadSkills: boolea
   const [roots, setRoots] = useState<MentionDirEntry[]>([])
   const [files, setFiles] = useState<MentionDirEntry[]>([])
   const [docs, setDocs] = useState<MentionDoc[]>([])
+  const [mcps, setMcps] = useState<McpMentionItem[]>([])
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -57,6 +59,34 @@ export function useMentionSources(workspaceId: string | null, loadSkills: boolea
   }, [workspaceId])
 
   useEffect(() => {
+    if (!hasIde()) {
+      setMcps([])
+      return
+    }
+    let cancelled = false
+    void getIde()
+      .mcp.servers()
+      .then((servers) => {
+        if (cancelled || !Array.isArray(servers)) return
+        setMcps(
+          servers.map((s: { id?: string; name: string; status?: string; description?: string }) => ({
+            kind: "mcp" as const,
+            id: `mcp:${s.id || s.name}`,
+            name: s.name,
+            status: s.status,
+            description: s.description
+          }))
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setMcps([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
     if (!loadSkills || !hasIde()) {
       rememberSkillCatalog([])
       return
@@ -89,7 +119,7 @@ export function useMentionSources(workspaceId: string | null, loadSkills: boolea
     }
   }, [workspaceId])
 
-  return { roots, files, docs, ready }
+  return { roots, files, docs, mcps, ready }
 }
 
 async function loadSkillCatalog() {

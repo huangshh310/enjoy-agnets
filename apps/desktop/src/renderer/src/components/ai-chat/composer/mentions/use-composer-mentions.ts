@@ -23,8 +23,18 @@ export function useComposerMentions(
   builtinCopy: SlashBuiltinCopy
 ) {
   const workspaceId = useChatStore((state) => state.workspaceId)
-  const { roots, files, docs } = useMentionSources(workspaceId, true)
-  const panel = useMentionPanel(value, onChange, textareaRef, roots, files, docs, modeCopy, builtinCopy)
+  const { roots, files, docs, mcps } = useMentionSources(workspaceId, true)
+  const panel = useMentionPanel(
+    value,
+    onChange,
+    textareaRef,
+    roots,
+    files,
+    docs,
+    modeCopy,
+    builtinCopy,
+    mcps
+  )
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
     syncCursor()
@@ -50,6 +60,10 @@ export function useComposerMentions(
         snippet: `Knowledge document ${item.path}`
       })
       applyReplace(token, "")
+      return
+    }
+    if (item.kind === "mcp") {
+      applyReplace(token, `@mcp:${item.name} `)
       return
     }
     if (item.kind === "skill" && token.kind === "at") {

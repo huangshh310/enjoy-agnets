@@ -104,6 +104,13 @@ const SHORTCUT_DEFS: ShortcutDef[] = [
     descKey: "settings.shortcuts.pasteDesc",
     keys: ["Mod", "V"],
     category: "chat"
+  },
+  {
+    id: "cycle-permission-mode",
+    actionKey: "settings.shortcuts.cyclePermission",
+    descKey: "settings.shortcuts.cyclePermissionDesc",
+    keys: ["Shift", "Tab"],
+    category: "chat"
   }
 ]
 
@@ -128,6 +135,7 @@ function shortcutGlyph(key: string): string {
   if (key === "Shift") return isMac ? "⇧" : "Shift"
   if (key === "Alt") return isMac ? "⌥" : "Alt"
   if (key === "Enter") return isMac ? "⏎" : "Enter"
+  if (key === "Tab") return isMac ? "⇥" : "Tab"
   return key
 }
 

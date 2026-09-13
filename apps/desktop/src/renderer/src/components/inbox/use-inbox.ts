@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"
+import { useChatStore } from "@renderer/stores/chat-store"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { InboxCategory, InboxNotification } from "./inbox.types"
 import {
@@ -13,6 +14,7 @@ import {
   inboxNavCounts,
   resolveSelected
 } from "./lib/filter-inbox"
+import { synthesizeRunningInbox } from "./lib/synthesize-running-inbox"
 import { groupInbox } from "./lib/inbox-time"
 
 export function useInbox() {
@@ -25,6 +27,13 @@ export function useInbox() {
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const attentionItems = useAttentionStore((state) => state.items)
+  const parks = useAttentionStore((state) => state.parks)
+  const fgRunning = useChatStore((state) => state.running)
+  const fgSessionId = useChatStore((state) => state.sessionId)
+  const fgSessionTitle = useChatStore((state) => state.sessionTitle)
+  const fgWorkspaceId = useChatStore((state) => state.workspaceId)
+  const fgStartedAt = useChatStore((state) => state.runStartedAt)
+  const repositories = useChatStore((state) => state.repositories)
 
   // 挂载时加载耐久层：已读 / 隐藏状态 + error/complete 归档条目。
   useEffect(() => {
@@ -51,8 +60,35 @@ export function useInbox() {
     // 实况优先；归档条目只在实况没有同 id 时补位（error/complete 重启后的历史）。
     const liveIds = new Set(attentionItems.map((item) => item.id))
     const merged = [...attentionItems, ...archivedItems.filter((item) => !liveIds.has(item.id))]
-    return inboxFromAttention(merged, { t, readIds, hiddenIds })
-  }, [attentionItems, archivedItems, hiddenIds, readIds, t])
+    const attentionList = inboxFromAttention(merged, { t, readIds, hiddenIds })
+    const runningList = synthesizeRunningInbox({
+      parks,
+      fgRunning,
+      fgSessionId,
+      fgSessionTitle,
+      fgWorkspaceId,
+      fgStartedAt,
+      repositories,
+      attentionItems,
+      t,
+      now
+    })
+    return [...runningList, ...attentionList]
+  }, [
+    attentionItems,
+    archivedItems,
+    hiddenIds,
+    readIds,
+    parks,
+    fgRunning,
+    fgSessionId,
+    fgSessionTitle,
+    fgWorkspaceId,
+    fgStartedAt,
+    repositories,
+    t,
+    now
+  ])
   const filteredItems = useMemo(
     () => filterInbox(items, filter, search),
     [filter, items, search]

@@ -134,11 +134,17 @@ async function startComposerRun(
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
     : composerRunKind(store.modelId, currentCaps(store))
+  const sessionNode = store.repositories.find((r) => r.id === store.sessionId)
+  const recap = sessionNode?.recap?.trim()
   const history = messages.map((message) => ({
     role: message.role,
     content: message.content,
     reasoning: message.reasoning
   }))
+  const outgoingMessages = recap
+    ? [{ role: "system" as const, content: `[Session Recap]: ${recap}` }, ...history]
+    : history
+
   if (kind === "image" || kind === "video") {
     return getIde().ai.generate({
       kind,
@@ -146,13 +152,13 @@ async function startComposerRun(
       workspaceId: store.workspaceId ?? undefined,
       modelId: store.modelId,
       prompt: content,
-      messages: history,
+      messages: outgoingMessages,
       attachments: assetIds
     })
   }
   return getIde().agent.run({
     ...codingAgentRunInput(store),
-    messages: history,
+    messages: outgoingMessages,
     attachments: assetIds,
     executePlan: executePlan || undefined
   })

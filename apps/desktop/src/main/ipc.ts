@@ -5,6 +5,7 @@ import { BrowserWindow, ipcMain } from "electron"
 import { AI_CHANNELS, registerAiIpc, unregisterAiIpc } from "./ipc-ai"
 import { SETTINGS_CHANNELS, registerSettingsIpc } from "./ipc-settings"
 import { SHELL_CHANNELS, registerShellIpc } from "./ipc-shell"
+import { SESSION_CHANNELS, registerSessionIpc } from "./ipc-session"
 import { SKILLS_CHANNELS, registerSkillsIpc } from "./ipc-skills"
 import { SKILL_SOURCE_CHANNELS, registerSkillSourceIpc } from "./ipc-skill-sources"
 import { RULES_CHANNELS, registerRulesIpc } from "./ipc-rules"
@@ -14,6 +15,7 @@ import { handleCaptionDoubleClick, queryIsMaximized, WM_NCLBUTTONDBLCLK } from "
 
 const CHANNELS = [
   ...SHELL_CHANNELS,
+  ...SESSION_CHANNELS,
   ...SETTINGS_CHANNELS,
   ...AI_CHANNELS,
   ...SKILLS_CHANNELS,
@@ -30,6 +32,7 @@ export function registerIpc(window: BrowserWindow) {
   ipcRegistered = true
   bindMaximizeEvents(window)
   registerShellIpc()
+  registerSessionIpc()
   registerSettingsIpc()
   registerSkillsIpc()
   registerSkillSourceIpc()

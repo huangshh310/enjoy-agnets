@@ -20,7 +20,7 @@ function attention(partial: Partial<AttentionItem> & Pick<AttentionItem, "id" | 
 
 function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id">): InboxNotification {
   return {
-    copyKey: "complete",
+    copyKey: partial.copyKey ?? "complete",
     title: partial.title ?? partial.id,
     summary: partial.summary ?? "",
     category: partial.category ?? "agent",
@@ -28,6 +28,7 @@ function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id"
     occurredAt: partial.occurredAt ?? 0,
     sessionId: partial.sessionId ?? "ses_1",
     actionKey: "openSession",
+    status: partial.status ?? "active",
     ...partial
   }
 }
@@ -65,23 +66,34 @@ test("选中项：命中 id，否则回落第一封，空列表为 null", () => 
 
 test("过滤：未读 / 分类 / 搜索同时生效", () => {
   const items = [
-    note({ id: "1", title: "待审批", category: "agent", read: false }),
-    note({ id: "2", title: "运行出错 HMAC", category: "system", read: false }),
-    note({ id: "3", title: "已完成", category: "agent", read: true })
+    note({ id: "1", title: "待审批", copyKey: "pending_approval", read: false }),
+    note({ id: "2", title: "运行出错 HMAC", copyKey: "error", read: false }),
+    note({ id: "3", title: "已完成", copyKey: "complete", read: true }),
+    note({ id: "4", title: "正在跑", copyKey: "running", status: "running", read: true })
   ]
   assert.equal(filterInbox(items, "unread", "").length, 2)
-  assert.equal(filterInbox(items, "agent", "").length, 2)
-  assert.equal(filterInbox(items, "system", "").map((item) => item.id).join(), "2")
+  assert.equal(filterInbox(items, "waiting", "").length, 1)
+  assert.equal(filterInbox(items, "failed", "").length, 1)
+  assert.equal(filterInbox(items, "complete", "").length, 1)
+  assert.equal(filterInbox(items, "running", "").length, 1)
   assert.equal(filterInbox(items, "all", "hmac").map((item) => item.id).join(), "2")
 })
 
-test("侧栏徽标只数未读", () => {
+test("导航计数统计各分类数量", () => {
   const counts = inboxNavCounts([
-    note({ id: "1", category: "agent", read: false }),
-    note({ id: "2", category: "agent", read: true }),
-    note({ id: "3", category: "system", read: false })
+    note({ id: "1", copyKey: "pending_approval", read: false }),
+    note({ id: "2", copyKey: "error", read: false }),
+    note({ id: "3", copyKey: "complete", read: true }),
+    note({ id: "4", copyKey: "running", status: "running", read: true })
   ])
-  assert.deepEqual(counts, { all: 2, unread: 2, agent: 1, system: 1 })
+  assert.deepEqual(counts, {
+    all: 4,
+    unread: 2,
+    running: 1,
+    waiting: 1,
+    failed: 1,
+    complete: 1
+  })
 })
 
 test("相对时间分档", () => {

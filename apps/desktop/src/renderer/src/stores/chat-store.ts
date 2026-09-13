@@ -197,6 +197,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         ? state.pinnedWorkspaceIds.filter((item) => item !== id)
         : [...state.pinnedWorkspaceIds, id]
     })),
+  patchSessionNode: (id, patch) =>
+    set((state) => ({
+      repositories: state.repositories.map((node) =>
+        node.id === id ? { ...node, ...patch } : node
+      )
+    })),
   hydrateWorkspacesAndSessions: (items, activeWorkspaceId) => {
     const tree = buildWorkspaceTree(
       items,

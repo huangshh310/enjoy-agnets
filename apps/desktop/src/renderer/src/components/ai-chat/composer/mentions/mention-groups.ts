@@ -1,9 +1,9 @@
 /**
- * @ / 面板分组：发现（文件/文档/技能）；斜杠按内置 / 工作区 / 个人。
+ * @ / 面板分组：发现（文件/文档/技能/MCP）；斜杠按内置 / 工作区 / 个人。
  */
 import type { MentionItem } from "./mention-items.ts"
 
-export type MentionGroupId = "discover" | "files" | "builtin" | "workspace" | "personal"
+export type MentionGroupId = "discover" | "files" | "skills" | "mcp" | "builtin" | "workspace" | "personal"
 
 export type MentionGroup = {
   id: MentionGroupId
@@ -26,4 +26,3 @@ export function groupMentionItems(kind: "at" | "slash", items: readonly MentionI
   if (personal.length > 0) groups.push({ id: "personal", items: personal })
   return groups
 }
-

@@ -41,8 +41,21 @@ export function filterInbox(
   const needle = query.trim().toLocaleLowerCase()
   return items.filter((item) => {
     if (filter === "unread" && item.read) return false
-    if (filter === "agent" && item.category !== "agent") return false
-    if (filter === "system" && item.category !== "system") return false
+    if (filter === "running" && item.status !== "running") return false
+    if (
+      filter === "waiting" &&
+      item.copyKey !== "pending_approval" &&
+      item.copyKey !== "ask_user"
+    ) {
+      return false
+    }
+    if (filter === "failed" && item.copyKey !== "error") {
+      return false
+    }
+    if (filter === "complete" && item.copyKey !== "complete") {
+      return false
+    }
+
     if (!needle) return true
     return (
       item.title.toLocaleLowerCase().includes(needle) ||
@@ -60,13 +73,20 @@ export function resolveSelected(
   return items.find((item) => item.id === selectedId) ?? items[0] ?? null
 }
 
-/** 侧栏徽标只统计未读，已读不占注意力。 */
+/** 统计各分类数量：unread 仍表示真实未读（不含 running），各栏目展示独立计数值。 */
 export function inboxNavCounts(items: InboxNotification[]): InboxNavCounts {
   const unread = items.filter((item) => !item.read)
+  const isWaiting = (i: InboxNotification) =>
+    i.copyKey === "pending_approval" || i.copyKey === "ask_user"
+  const isFailed = (i: InboxNotification) => i.copyKey === "error"
+  const isComplete = (i: InboxNotification) => i.copyKey === "complete"
+
   return {
-    all: unread.length,
+    all: items.length,
     unread: unread.length,
-    agent: unread.filter((item) => item.category === "agent").length,
-    system: unread.filter((item) => item.category === "system").length
+    running: items.filter((item) => item.status === "running").length,
+    waiting: items.filter(isWaiting).length,
+    failed: items.filter(isFailed).length,
+    complete: items.filter(isComplete).length
   }
 }

@@ -3,7 +3,7 @@
  */
 import type { AttentionKind, AttentionStatus } from "@renderer/stores/attention/attention.types"
 
-export type InboxCategory = "all" | "unread" | "agent" | "system"
+export type InboxCategory = "all" | "unread" | "running" | "waiting" | "failed" | "complete"
 
 /** 通知来源。错误进系统，其余进智能体运行。 */
 export type InboxKind = "agent" | "system"
@@ -12,9 +12,11 @@ export type InboxActionKey = "openSession"
 
 export type InboxGroupId = "today" | "yesterday" | "earlier"
 
+export type InboxNotificationStatus = AttentionStatus | "running"
+
 export interface InboxNotification {
   id: string
-  copyKey: AttentionKind
+  copyKey: AttentionKind | "running"
   title: string
   summary: string
   category: InboxKind
@@ -24,7 +26,7 @@ export interface InboxNotification {
   workspaceId?: string
   actionKey: InboxActionKey
   actionLabel?: string
-  status: AttentionStatus
+  status: InboxNotificationStatus
 }
 
 export interface InboxGroup {
@@ -35,6 +37,8 @@ export interface InboxGroup {
 export interface InboxNavCounts {
   all: number
   unread: number
-  agent: number
-  system: number
+  running: number
+  waiting: number
+  failed: number
+  complete: number
 }

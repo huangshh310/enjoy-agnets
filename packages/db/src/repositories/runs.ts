@@ -119,11 +119,12 @@ export function insertRunStep(
     outputSummary?: string
     durationMs?: number
     checkpointId?: string
+    childRunId?: string
   }
 ): void {
   db.prepare(
-    `INSERT INTO run_steps (id, run_id, idx, label, status, input_summary, output_summary, duration_ms, checkpoint_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO run_steps (id, run_id, idx, label, status, input_summary, output_summary, duration_ms, checkpoint_id, child_run_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     step.id,
     step.runId,
@@ -134,6 +135,7 @@ export function insertRunStep(
     step.outputSummary ?? null,
     step.durationMs ?? null,
     step.checkpointId ?? null,
+    step.childRunId ?? null,
     Date.now()
   )
 }
@@ -141,10 +143,17 @@ export function insertRunStep(
 export function listRunSteps(
   db: AppDatabase,
   runId: string
-): Array<{ id: string; idx: number; label: string; status: string; checkpointId: string | null }> {
+): Array<{
+  id: string
+  idx: number
+  label: string
+  status: string
+  checkpointId: string | null
+  childRunId: string | null
+}> {
   return db
     .prepare(
-      `SELECT id, idx, label, status, checkpoint_id as checkpointId FROM run_steps WHERE run_id = ? ORDER BY idx ASC`
+      `SELECT id, idx, label, status, checkpoint_id as checkpointId, child_run_id as childRunId FROM run_steps WHERE run_id = ? ORDER BY idx ASC`
     )
     .all(runId) as Array<{
     id: string
@@ -152,10 +161,20 @@ export function listRunSteps(
     label: string
     status: string
     checkpointId: string | null
+    childRunId: string | null
   }>
+}
+
+export function updateRunStepChildRunId(
+  db: AppDatabase,
+  stepId: string,
+  childRunId: string | null
+): void {
+  db.prepare("UPDATE run_steps SET child_run_id = ? WHERE id = ?").run(childRunId, stepId)
 }
 
 /** 从指定步（含）开始删除持久化步骤记录，供「从某步重试」清掉过期行。 */
 export function deleteRunStepsFrom(db: AppDatabase, runId: string, fromIdx: number): void {
   db.prepare("DELETE FROM run_steps WHERE run_id = ? AND idx >= ?").run(runId, fromIdx)
 }
+

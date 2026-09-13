@@ -22,6 +22,8 @@ export function SidebarActiveSessions({
   const t = useT()
   const currentId = useChatStore((state) => state.sessionId)
   const running = useChatStore((state) => state.running)
+  const additions = useChatStore((state) => state.additions)
+  const deletions = useChatStore((state) => state.deletions)
   const parks = useAttentionStore((state) => state.parks)
   const items = useAttentionStore((state) => state.items)
   const active = useMemo(
@@ -43,6 +45,11 @@ export function SidebarActiveSessions({
           active={session.id === sessionId}
           updatedAt={session.updatedAt}
           formatTime={formatTime}
+          changesSummary={
+            session.id === currentId && (additions > 0 || deletions > 0)
+              ? { additions, deletions }
+              : null
+          }
           className="rounded-xl"
           onSelect={() => onSelectSession(session.id)}
         />
