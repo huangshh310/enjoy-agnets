@@ -55,7 +55,7 @@ export function CommitRow(props: {
       className="group relative flex h-16 items-center justify-between gap-3 pl-14 pr-3 hover:bg-background-secondary-hover/60 cursor-pointer select-none transition-colors border-b border-separator-border/30"
     >
       {/* 提交正文与作者微标 */}
-      <div className="flex min-w-0 items-center gap-2.5">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
         {/* 作者彩色圆形头像 */}
         <span
           className={`flex size-6 shrink-0 items-center justify-center rounded-full font-mono text-[10.5px] font-bold border ${avatarClass}`}
@@ -63,7 +63,7 @@ export function CommitRow(props: {
           {commit.authorInitials}
         </span>
 
-        <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           {/* 主标题行 */}
           <div className="flex items-center gap-1.5 font-sans text-caption-1-medium text-text-primary">
             {commit.isMerge ? (
@@ -71,7 +71,7 @@ export function CommitRow(props: {
             ) : null}
 
             {prefixType ? (
-              <span className="font-semibold text-accent-500">
+              <span className="shrink-0 font-semibold text-accent-500">
                 {prefixType}
                 {prefixScope ? (
                   <span className="text-text-secondary">{prefixScope}</span>
@@ -86,7 +86,7 @@ export function CommitRow(props: {
 
             {/* Head 分支或 Tag 徽标 */}
             {isHead && branch ? (
-              <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-[10.5px] font-medium text-accent-500">
+              <span className="inline-flex max-w-[110px] shrink-0 truncate items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-[10.5px] font-medium text-accent-500" title={branch}>
                 {branch}
               </span>
             ) : null}
@@ -94,19 +94,20 @@ export function CommitRow(props: {
             {commit.tags?.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-0.5 rounded bg-background-secondary-default px-1.5 py-0.2 font-mono text-[10px] text-text-secondary border border-separator-border/60"
+                title={tag}
+                className="inline-flex max-w-[110px] shrink-0 truncate items-center gap-0.5 rounded bg-background-secondary-default px-1.5 py-0.2 font-mono text-[10px] text-text-secondary border border-separator-border/60"
               >
-                <RiPriceTag3Line className="size-2.5" />
-                <span>{tag}</span>
+                <RiPriceTag3Line className="size-2.5 shrink-0" />
+                <span className="truncate">{tag}</span>
               </span>
             ))}
           </div>
 
           {/* 副标题：作者 · 作用域 · 相对时间 · N 文件 +N -M */}
           <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">
-            <span>{commit.authorName}</span>
+            <span className="max-w-[110px] truncate" title={commit.authorName}>{commit.authorName}</span>
             <span aria-hidden>·</span>
-            <span>{commit.relativeTime}</span>
+            <span className="shrink-0">{commit.relativeTime}</span>
             {commit.filesChanged > 0 ? (
               <>
                 <span aria-hidden>·</span>

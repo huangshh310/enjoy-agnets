@@ -166,10 +166,12 @@ export function AiChatComposer({
             }}
           />
 
-          <ExploreExecuteToggle />
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 pt-0.5 pb-1">
+            <ExploreExecuteToggle />
+            <SessionGoalChip />
+          </div>
           <ComposerContextChips />
           <ComposerHostModeChip />
-          <SessionGoalChip />
           <ComposerQuoteChips />
           <ComposerSkillChipBar />
           <ComposerInput

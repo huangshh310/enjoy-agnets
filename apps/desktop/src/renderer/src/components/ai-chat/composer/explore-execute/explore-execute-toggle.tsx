@@ -11,7 +11,7 @@ import {
   type ComposerSurface
 } from "../composer-mode"
 
-export function ExploreExecuteToggle() {
+export function ExploreExecuteToggle({ className }: { className?: string } = {}) {
   const t = useT()
   const mode = useChatStore((state) => state.mode)
   const runtimeId = useChatStore((state) => state.runtimeId)
@@ -23,25 +23,26 @@ export function ExploreExecuteToggle() {
   }
 
   return (
-    <div className="flex items-center justify-between gap-2 px-3.5 pb-1">
-      <div
-        role="radiogroup"
-        aria-label={t("chat.surfaceSelect")}
-        className="inline-flex rounded-full bg-background-tertiary-default p-0.5 ring-1 ring-border-button-default"
-      >
-        <SurfaceButton
-          active={surface === "explore"}
-          variant="explore"
-          label={t("chat.surfaceExplore")}
-          onClick={() => pick("explore")}
-        />
-        <SurfaceButton
-          active={surface === "execute"}
-          variant="execute"
-          label={t("chat.surfaceExecute")}
-          onClick={() => pick("execute")}
-        />
-      </div>
+    <div
+      role="radiogroup"
+      aria-label={t("chat.surfaceSelect")}
+      className={cx(
+        "inline-flex items-center rounded-full bg-background-tertiary-default/90 p-0.5 ring-1 ring-border-button-default/80",
+        className
+      )}
+    >
+      <SurfaceButton
+        active={surface === "explore"}
+        variant="explore"
+        label={t("chat.surfaceExplore")}
+        onClick={() => pick("explore")}
+      />
+      <SurfaceButton
+        active={surface === "execute"}
+        variant="execute"
+        label={t("chat.surfaceExecute")}
+        onClick={() => pick("execute")}
+      />
     </div>
   )
 }
@@ -65,9 +66,9 @@ function SurfaceButton({
       data-testid={`composer-surface-${variant}`}
       onClick={onClick}
       className={cx(
-        "h-7 cursor-pointer rounded-full px-3 text-caption-1-semibold transition-colors",
-        active && variant === "explore" && "bg-accent-500/10 text-accent-600",
-        active && variant === "execute" && "bg-accent-500 text-text-white",
+        "h-6 cursor-pointer rounded-full px-2.5 text-caption-2-medium transition-all duration-150 select-none",
+        active && variant === "explore" && "bg-accent-500/15 font-medium text-accent-600 dark:text-accent-400 shadow-2xs",
+        active && variant === "execute" && "bg-accent-500 font-medium text-text-white shadow-2xs",
         !active && "text-text-tertiary hover:text-text-secondary"
       )}
     >

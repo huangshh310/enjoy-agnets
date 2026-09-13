@@ -31,7 +31,9 @@ export function TaskList({
   className,
   variant = "dock",
   live = true,
-  onContinue
+  onContinue,
+  action,
+  footer
 }: TaskListProps) {
   useUiLocale()
   const rows = normalizeTasks(tasks, currentIndex)
@@ -77,9 +79,9 @@ export function TaskList({
     return (
       <div
         className={cx(
-          "relative w-full overflow-hidden rounded-t-2xl rounded-b-none border-t border-x border-border-button-default/90 bg-background-tertiary-default/85 shadow-2xs backdrop-blur-md transition-all duration-300 ease-out",
+          "relative w-full overflow-hidden rounded-2xl border border-border-button-default bg-background-secondary-default/95 shadow-card backdrop-blur-md transition-all duration-300 ease-out",
           allDone && "border-emerald-500/30 bg-emerald-500/5",
-          collapsed ? "pb-3" : "pb-4",
+          footer ? (collapsed ? "py-0" : "pt-0 pb-0") : (collapsed ? "py-0.5" : "pb-3"),
           className
         )}
       >
@@ -91,14 +93,14 @@ export function TaskList({
           />
         ) : null}
         {collapsed ? (
-          <div className="flex h-10 w-full items-center gap-1 px-4">
+          <div className="flex h-10 w-full items-center gap-2 px-3.5">
             <button
               type="button"
               onClick={() => setCollapsed(false)}
               aria-expanded={false}
               className="group flex min-w-0 flex-1 cursor-pointer select-none items-center justify-between text-left transition-colors"
             >
-              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <DockStatusIcon
                   status={allDone ? "completed" : activeTask?.status ?? "pending"}
                   live={live}
@@ -114,14 +116,15 @@ export function TaskList({
                 <span className="tabular-nums">
                   {completedCount}/{total}
                 </span>
-                <RiArrowDownSLine className="size-4 text-foreground-icon-secondary" />
+                <RiArrowDownSLine className="size-4 text-foreground-icon-secondary transition-transform group-hover:translate-y-0.5" />
               </div>
             </button>
+            {action ? <div className="shrink-0">{action}</div> : null}
             {onContinue && !live && !allDone ? <ContinueButton onContinue={onContinue} /> : null}
           </div>
         ) : (
           /* Manus 展开态：完整的任务进度明细面板 (Image #3) */
-          <div className="flex flex-col px-4 pt-3 text-left animate-in fade-in-50 duration-200">
+          <div className={cx("flex flex-col px-4 pt-3 text-left animate-in fade-in-50 duration-200", footer ? "pb-3" : "")}>
             <div
               onClick={() => setCollapsed(true)}
               className="flex cursor-pointer select-none items-center justify-between py-1 transition-colors hover:opacity-80"
@@ -129,14 +132,15 @@ export function TaskList({
               <span className="text-caption-1-semibold text-text-tertiary">
                 {title ?? uiT("任务进度", "Task progress")}
               </span>
-              <div className="flex items-center gap-1 font-mono text-caption-2-regular text-text-tertiary">
+              <div className="flex items-center gap-1.5 font-mono text-caption-2-regular text-text-tertiary">
+                {action ? <div className="shrink-0">{action}</div> : null}
                 {onContinue && !live && !allDone ? (
                   <ContinueButton onContinue={onContinue} />
                 ) : null}
                 <span className="tabular-nums">
                   {completedCount}/{total}
                 </span>
-                <RiArrowUpSLine className="size-4 text-foreground-icon-secondary" />
+                <RiArrowUpSLine className="size-4 text-foreground-icon-secondary transition-transform group-hover:-translate-y-0.5" />
               </div>
             </div>
 
@@ -179,6 +183,7 @@ export function TaskList({
             </ul>
           </div>
         )}
+        {footer ? <div className="border-t border-separator-border/40">{footer}</div> : null}
       </div>
     )
   }

@@ -6,6 +6,7 @@ import { useT } from "@renderer/i18n"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
 import { collectTurnSources } from "./collect-turn-sources"
+import { openSourceRow } from "./open-source-row"
 import { SourceDetailSheet } from "./source-detail-sheet"
 import { splitVisibleSourceChips, type TurnSourceChip } from "./source-chip"
 
@@ -28,6 +29,14 @@ export function SourceChips({
     setOpen(true)
   }
 
+  function handleOpenChip(chip: TurnSourceChip) {
+    if (chip.path) {
+      openSourceRow(chip)
+      return
+    }
+    openSheet(chip.id)
+  }
+
   return (
     <>
       <div className="mt-3 flex flex-wrap gap-1.5" data-testid="turn-source-chips">
@@ -36,7 +45,7 @@ export function SourceChips({
             key={chip.id}
             chip={chip}
             selected={open && activeId === chip.id}
-            onOpen={() => openSheet(chip.id)}
+            onOpen={() => handleOpenChip(chip)}
           />
         ))}
         {rest > 0 ? (

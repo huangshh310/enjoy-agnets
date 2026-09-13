@@ -4,6 +4,8 @@
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { AssetPreview } from "../asset-preview"
 import { GenerativeUi } from "../generative-ui"
+import { extractGitCommitInfo } from "../extract-git-commit"
+import { GitCommitCard } from "../git-commit-card"
 import { SourceList } from "../source-list"
 import { StructuredCard } from "../structured-card"
 
@@ -15,10 +17,21 @@ export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt
   const assets = message.assets ?? []
   const structured = message.structured
   const hasToolSources = Boolean(message.tools?.length)
-  if (sources.length === 0 && assets.length === 0 && structured == null && !hasToolSources) return null
+  const commitInfo = extractGitCommitInfo(message)
+
+  if (
+    sources.length === 0 &&
+    assets.length === 0 &&
+    structured == null &&
+    !hasToolSources &&
+    !commitInfo
+  ) {
+    return null
+  }
 
   return (
     <div className="mt-2 flex flex-col gap-2">
+      {commitInfo ? <GitCommitCard info={commitInfo} /> : null}
       {sources.length > 0 || (message.tools?.length ?? 0) > 0 ? (
         <SourceList sources={sources} tools={message.tools} />
       ) : null}

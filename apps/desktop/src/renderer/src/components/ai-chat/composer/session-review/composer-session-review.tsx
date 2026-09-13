@@ -18,11 +18,14 @@ import { SessionMascotRunner } from "./session-mascot-runner"
 import { SessionReviewBar } from "./session-review-bar"
 import { shouldExpandReviewFiles } from "./session-review-visible"
 import { useSessionReviewModel } from "./use-session-review-model"
+import { usePreviewUrlReachable } from "./preview-open/use-preview-url-reachable"
 import type { SessionReviewFile } from "./session-review.types"
+import { latestSessionTodoList } from "../../thread/tool-surfaces/select-turn-tool-surfaces"
 
 export function ComposerSessionReview() {
   const t = useT()
   const queryClient = useQueryClient()
+  const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const runStartedAt = useChatStore((state) => state.runStartedAt)
   const modelLabel = useComposerActiveModelLabel()
@@ -30,11 +33,29 @@ export function ComposerSessionReview() {
   const preview = useOpenSessionPreview()
   const [undoOpen, setUndoOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [dismissedSlim, setDismissedSlim] = useState(false)
 
-  if (!model.showReview && !model.showSlim) return null
+  const todos = latestSessionTodoList(messages)
+  const hasTodos = Boolean(todos && todos.tasks.length > 0)
+
+  const previewUrl = model.previewTarget?.kind === "url" ? model.previewTarget.url : null
+  const isPreviewReachable = usePreviewUrlReachable(previewUrl)
+  const canOpenPreview =
+    model.previewTarget != null &&
+    (model.previewTarget.kind === "html" || isPreviewReachable)
+
+  const slimUrl = model.slimTarget?.kind === "url" ? model.slimTarget.url : null
+  const isSlimReachable = usePreviewUrlReachable(slimUrl)
+  const showSlim =
+    model.slimTarget != null &&
+    (model.slimTarget.kind === "html" || isSlimReachable)
+
+  // 若已有 TodoDock，文件修改与预览已一体化合入其内，避免上下堆叠两张大卡片
+  if (hasTodos) return null
+  if (!model.showReview && !showSlim) return null
 
   return (
-    <div className="relative z-20 mb-1.5 w-full animate-in fade-in-50 duration-200">
+    <div className="relative z-20 mb-2 flex w-full justify-center px-4 animate-in fade-in-50 duration-200">
       <SessionPreviewToast visible={preview.opened} />
       {model.showReview ? (
         <ReviewCard
@@ -43,14 +64,14 @@ export function ComposerSessionReview() {
           runStartedAt={runStartedAt ?? undefined}
           modelLabel={modelLabel}
           busy={busy}
-          canOpenPreview={model.previewTarget != null}
+          canOpenPreview={canOpenPreview}
           previewBusy={preview.busy}
           defaultExpanded={shouldExpandReviewFiles(model.pick.fromLastTurn, model.files.length)}
           onOpenPreview={() => model.previewTarget && void preview.open(model.previewTarget)}
           onKeep={() => keepSessionReview(model.filesKey)}
           onUndo={() => setUndoOpen(true)}
         />
-      ) : model.slimTarget ? (
+      ) : model.slimTarget && !dismissedSlim && showSlim ? (
         <SessionPreviewStrip
           target={model.slimTarget}
           busy={preview.busy}
@@ -58,6 +79,7 @@ export function ComposerSessionReview() {
             const target = model.slimTarget
             if (target) void preview.open(target)
           }}
+          onDismiss={() => setDismissedSlim(true)}
         />
       ) : null}
       <ConfirmDialog
@@ -102,7 +124,7 @@ function ReviewCard({
     <div
       data-session-review
       data-frost="tile"
-      className="relative flex w-full flex-col overflow-visible rounded-xl border border-border-button-default bg-background-secondary-default/95 px-3 py-1.5 shadow-2xs backdrop-blur-md"
+      className="relative flex w-full flex-col overflow-visible rounded-2xl border border-border-button-default bg-background-secondary-default/95 px-3.5 py-1.5 shadow-card backdrop-blur-md"
     >
       {running ? <SessionMascotRunner active={running} /> : null}
       <SessionReviewBar
@@ -125,11 +147,11 @@ function ReviewCard({
   )
 }
 
-function keepSessionReview(filesKey: string) {
+export function keepSessionReview(filesKey: string) {
   useChatStore.getState().setSessionReviewDismissedKey(filesKey)
 }
 
-async function undoSessionReview(
+export async function undoSessionReview(
   files: SessionReviewFile[],
   filesKey: string,
   queryClient: ReturnType<typeof useQueryClient>,

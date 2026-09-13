@@ -34,3 +34,9 @@ export function openBrowserUrl(raw: string) {
   if (!url) return
   revealRightPane("browser", { url })
 }
+
+export function openReviewCommits() {
+  useChatStore.getState().setRightPanelCollapsed(false)
+  useRightPaneStore.getState().openTool("review")
+  useRightPaneStore.getState().setReviewScope("commits")
+}

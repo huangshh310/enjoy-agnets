@@ -52,6 +52,7 @@ export function ComposerMentionList({
                 <ComposerMentionRow
                   key={item.id}
                   item={item}
+                  slash={kind === "slash"}
                   active={start + offset === activeIndex}
                   scopeWorkspace={t("chat.mentionScopeWorkspace")}
                   scopePersonal={t("chat.mentionScopePersonal")}

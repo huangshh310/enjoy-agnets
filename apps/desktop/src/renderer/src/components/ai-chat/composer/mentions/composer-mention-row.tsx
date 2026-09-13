@@ -6,22 +6,26 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
 
-type DiscoverKind = "file" | "doc" | "skill" | "mcp" | "web"
+type DiscoverMentionItem = Extract<MentionItem, { kind: "file" | "doc" | "skill" | "mcp" | "web" }>
+type SlashMentionItem = Extract<MentionItem, { kind: "mode" | "command" | "skill" }>
 
 export function ComposerMentionRow({
   item,
   active,
   scopeWorkspace,
   scopePersonal,
-  onPick
+  onPick,
+  slash
 }: {
   item: MentionItem
   active: boolean
   scopeWorkspace: string
   scopePersonal: string
   onPick: () => void
+  slash?: boolean
 }) {
   const muted = item.kind === "web"
+  const isSlash = slash || item.kind === "mode" || item.kind === "command"
   return (
     <button
       type="button"
@@ -39,26 +43,16 @@ export function ComposerMentionRow({
         !muted && active ? "bg-accent-500/10" : !muted && "hover:bg-background-secondary-hover"
       )}
     >
-      {isAtDiscovery(item) ? (
+      {isSlash && (item.kind === "mode" || item.kind === "command" || item.kind === "skill") ? (
+        <SlashRow item={item} scopeWorkspace={scopeWorkspace} scopePersonal={scopePersonal} />
+      ) : (
         <DiscoverRow
-          item={item}
+          item={item as DiscoverMentionItem}
           scopeWorkspace={scopeWorkspace}
           scopePersonal={scopePersonal}
         />
-      ) : (
-        <SlashRow item={item} scopeWorkspace={scopeWorkspace} scopePersonal={scopePersonal} />
       )}
     </button>
-  )
-}
-
-function isAtDiscovery(item: MentionItem): item is Extract<MentionItem, { kind: DiscoverKind }> {
-  return (
-    item.kind === "file" ||
-    item.kind === "doc" ||
-    item.kind === "skill" ||
-    item.kind === "mcp" ||
-    item.kind === "web"
   )
 }
 
@@ -67,7 +61,7 @@ function DiscoverRow({
   scopeWorkspace,
   scopePersonal
 }: {
-  item: Extract<MentionItem, { kind: DiscoverKind }>
+  item: DiscoverMentionItem
   scopeWorkspace: string
   scopePersonal: string
 }) {
@@ -104,7 +98,7 @@ function DiscoverRow({
   )
 }
 
-function discoverName(item: Extract<MentionItem, { kind: DiscoverKind }>): string {
+function discoverName(item: DiscoverMentionItem): string {
   if (item.kind === "file") return item.path || item.name
   if (item.kind === "doc") return item.name
   if (item.kind === "mcp") return item.name
@@ -113,7 +107,7 @@ function discoverName(item: Extract<MentionItem, { kind: DiscoverKind }>): strin
 }
 
 function discoverScope(
-  item: Extract<MentionItem, { kind: DiscoverKind }>,
+  item: DiscoverMentionItem,
   scopeWorkspace: string,
   scopePersonal: string
 ): string {
@@ -129,7 +123,7 @@ function SlashRow({
   scopeWorkspace,
   scopePersonal
 }: {
-  item: Exclude<MentionItem, { kind: DiscoverKind }>
+  item: SlashMentionItem
   scopeWorkspace: string
   scopePersonal: string
 }) {
@@ -164,7 +158,7 @@ function SlashRow({
   )
 }
 
-function SlashGlyph({ item }: { item: Exclude<MentionItem, { kind: DiscoverKind }> }) {
+function SlashGlyph({ item }: { item: SlashMentionItem }) {
   const Icon =
     item.kind === "mode"
       ? item.slash === "explore"

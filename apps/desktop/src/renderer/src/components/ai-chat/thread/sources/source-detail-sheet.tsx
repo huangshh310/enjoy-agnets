@@ -50,7 +50,7 @@ function SheetScrim({ onClose }: { onClose: () => void }) {
   return (
     <button
       type="button"
-      className="absolute inset-0 cursor-pointer bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
+      className="absolute inset-0 cursor-pointer bg-black/10 transition-opacity"
       onClick={onClose}
       aria-label={t("chat.sourcesSheetClose")}
     />
@@ -98,7 +98,15 @@ function SheetPanel({
       </header>
       <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
         {chips.map((chip) => (
-          <SourceDetailRow key={chip.id} chip={chip} selected={chip.id === activeId} onOpen={openSourceRow} />
+          <SourceDetailRow
+            key={chip.id}
+            chip={chip}
+            selected={chip.id === activeId}
+            onOpen={(c) => {
+              openSourceRow(c)
+              onClose()
+            }}
+          />
         ))}
       </ul>
       <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-tertiary">
