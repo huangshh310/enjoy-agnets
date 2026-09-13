@@ -6,7 +6,6 @@ import { useMemo } from "react"
 import {
   RiCheckLine,
   RiDownloadLine,
-  RiFlashlightFill,
   RiLoader4Line,
   RiShieldCheckLine,
   RiStarFill
@@ -34,6 +33,7 @@ export function AgentRecommendedPacks({
   onToggleTarget: (source: SkillSource) => void
 }) {
   const t = useT()
+  const AgentIcon = profile.icon
 
   // 筛选出针对当前 Agent 推荐的精选套件
   const recommendedItems = useMemo(() => {
@@ -56,7 +56,7 @@ export function AgentRecommendedPacks({
     <div className="flex flex-col gap-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <RiFlashlightFill className={cx("size-4", profile.themeColor.text)} />
+          <AgentIcon className="size-4" />
           <h3 className="text-title-3-semibold tracking-tight text-text-primary">
             {t("pages.skills.recommendedPacks.title", { agent: profile.shortName })}
           </h3>

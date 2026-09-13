@@ -5,12 +5,11 @@ import {
   RiCompass3Line,
   RiFolderLine,
   RiGitRepositoryLine,
-  RiPlugLine,
   RiSparklingLine
 } from "@remixicon/react"
 import type { InstalledSkillItem, SkillSource } from "@enjoy-agents/ipc-contract"
 import type { SecondaryNavGroup } from "@renderer/components/app-pages/secondary-nav.types"
-import { AGENT_ARMORY_PROFILES } from "../constants/agent-armory.constants"
+import { AGENT_ARMORY_PROFILES, getAgentArmoryProfile } from "../constants/agent-armory.constants"
 import { GLOBAL_TARGET_IDS, TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
 
 export function buildSkillsNavGroups({
@@ -55,13 +54,13 @@ export function buildSkillsNavGroups({
       label: "按生效助手筛选",
       items: GLOBAL_TARGET_IDS.map((targetId) => {
         const count = allSkills.filter((s) => s.enabledTargetIds.includes(targetId)).length
-        const profile = AGENT_ARMORY_PROFILES[targetId]
+        const profile = AGENT_ARMORY_PROFILES[targetId] ?? getAgentArmoryProfile(targetId)
         return {
           id: `target:${targetId}`,
           label: TARGET_SHORT_LABELS[targetId],
-          icon: profile?.icon || RiPlugLine,
+          icon: profile.icon,
           meta: count > 0 ? `${count}` : "0",
-          keywords: [targetId, TARGET_SHORT_LABELS[targetId], profile?.name || ""]
+          keywords: [targetId, TARGET_SHORT_LABELS[targetId], profile.name]
         }
       })
     }

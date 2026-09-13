@@ -8,11 +8,11 @@
 
 1. **工作模块与路由**：`#/skills` 是应用内唯一的 Skills 工作模块。情境导航栏（Secondary Sidebar）包含三组导航：
    - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包合集 (`packs`)。
-   - 按生效助手筛选 (`target:${targetId}`)：Enjoy, Claude, Cursor, Codex, Pi, OMP。
+   - 按生效助手筛选 (`target:${targetId}`)：Enjoy, Claude, Cursor, Codex, Pi, OMP。必须统一呈现各 Agent 官方品牌真实图标（走 `AgentBrandIcon`、`@lobehub/icons` 与 `AppMark`），严禁使用手电筒、终端盒、代码斜杠等通用 Remixicon 占位标。
    - 已安装技能组 (`sources`)：Git 仓库与本地文件夹来源组。
 2. **Agent 专属整备舱 (Agent Armory Staging)**：
    - 当用户在侧栏选择特定助手（如 `Pi`）时，**严禁展示孤立消极的空白圆角卡片**。
-   - 必须呈现 **Agent 专属能力整备舱 (Armory Staging)**：顶部 Agent Profile，中部推荐能力套件，底部来源组快速挂载胶囊 + 技能检索矩阵。
+   - 必须呈现 **Agent 专属能力整备舱 (Armory Staging)**：顶部 Agent Profile（展示官方真实品牌标、品牌基色微光与就绪参数），中部推荐能力套件，底部来源组快速挂载胶囊 + 技能检索矩阵。
    - 投影粒度是**来源组**（`enabledTargetIds`），不是单技能。技能行只展示是否已随来源组装备，点击打开详情；挂载/卸载只走上方来源组胶囊，避免误卸整组。
 3. **Master-Detail 技能组详情页**：
    - 目标 Agent 投影矩阵采用品牌插槽卡片（Slot Cards），禁止灰白扁平药丸。
@@ -63,6 +63,7 @@
 - 目标切换状态不更新：`toggleTarget` 执行后必须通过 QueryClient 刷新 `OVERVIEW_QUERY_KEY` 与 `ALL_SKILLS_QUERY_KEY`，否则情境栏数字与卡片徽标不会即时更新。
 - 触发词与指令前缀冲突：技能名称包含空格时不能生成合法命令前缀，必须降级为无 `/` 呼号、只能点面板选（`skillSlashToken` 返回 null）。不要编造 `/代码审查` 这种非法 token。
 - 整备舱技能行不能调用 `toggleTarget`：会把整组 selected 技能从目标卸掉。挂载只走来源组胶囊。
+- Agent 品牌标规范（2026-09）：按生效助手筛选列表、整备舱卡片头部与推荐套件严禁使用手电筒（RiFlashlight）、终端盒（RiTerminalBox）、代码斜杠（RiCodeSSlash）等通用占位图标。必须统一走 `AgentBrandIcon` 渲染官方品牌标（Enjoy 用 AppMark、Claude 用 Claude.Color、Codex 用 Codex.Color、Cursor 用 Cursor、Pi/OMP 用 Pi）。
 - `updateAll` 只拉 Git：本机 `~/.agents/skills` 等发现组不会被 pull。没有 Git 源时入口必须不渲染，不要灰按钮空转。
 - 空态禁运维条：技能源更新与 SessionReviewBar 同类，不能进 `AiChatEmptyState` / 空会话引导。
 - 拉取后投影是尽力而为：`EMPTY_SELECTION` / `MISSING_CHECKOUT` 不算进 `errors`，只完成 checkout。需要覆盖目标目录时仍走 Skills 详情的「重新部署」。

@@ -10,6 +10,7 @@ import { AgentToolConfigSource } from "./agent-tool-config-source"
 import { DrawerTrustStrip } from "./drawer-trust/drawer-trust-strip"
 import { AgentToolLaunchPrefs } from "./launch-prefs/panel"
 import { AgentToolPowerSlot } from "./power-source/agent-tool-power-slot"
+import { AgentToolUsageSection } from "./agent-tool-usage-section"
 import type { AgentToolActions } from "./use-agent-tool-actions"
 
 export function AgentToolConfigCli({
@@ -33,6 +34,7 @@ export function AgentToolConfigCli({
   return (
     <div className="space-y-4">
       <DrawerTrustStrip tool={tool} actions={actions} onViewUsage={onViewUsage} />
+      <AgentToolUsageSection tool={tool} onViewDashboard={onViewUsage} />
       <AgentToolPowerSlot tool={tool} actions={actions} />
       <AgentToolAccountPanel tool={tool} />
       <AgentToolConfigSource tool={tool} actions={actions} />

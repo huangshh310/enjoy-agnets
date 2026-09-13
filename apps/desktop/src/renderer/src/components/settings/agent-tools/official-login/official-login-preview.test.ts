@@ -59,13 +59,12 @@ test("中文词表与预览四态同文", () => {
   assert.equal(zhChat.needCliLoginFailTitle, "登录没成功")
 })
 
-test("动力源未登录走纯字，已登录才画描边胶囊", () => {
+test("动力源官方登录各态对齐统一轻胶囊，未登录不伪造就绪绿灯", () => {
   const src = readFileSync(join(dir, "../power-source/power-source-capsule.tsx"), "utf8")
-  assert.ok(src.includes('parts.official !== "in"'))
-  assert.ok(src.includes('parts.official === "in"'))
-  assert.ok(src.includes("rounded-md"))
-  assert.ok(src.includes("ring-1"))
-  assert.ok(!src.includes("rounded-full") || src.includes("PowerSourceCapsule"))
+  assert.ok(src.includes('status === "in"'))
+  assert.ok(src.includes("bg-notification-success-foreground"))
+  assert.ok(src.includes("powerOfficialDirect"))
+  assert.ok(src.includes("powerOfficialOut"))
 })
 
 test("密表主引擎轻标沿用 dense-p0「当前」，不改成预览示意「当前引擎」", () => {

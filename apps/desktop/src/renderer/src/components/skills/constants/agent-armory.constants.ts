@@ -2,16 +2,16 @@
  * Agent 专属整备舱 (Armory) 常量与各目标 Agent 运行时元数据。
  */
 import type { ComponentType } from "react"
-import {
-  RiCodeSSlashLine,
-  RiCompass3Line,
-  RiCpuLine,
-  RiFlashlightLine,
-  RiRobot2Line,
-  RiSparklingLine,
-  RiTerminalBoxLine
-} from "@remixicon/react"
 import type { SkillTargetId } from "@enjoy-agents/ipc-contract"
+import {
+  ClaudeTargetIcon,
+  CodexTargetIcon,
+  CursorTargetIcon,
+  EnjoyTargetIcon,
+  OmpTargetIcon,
+  PiTargetIcon,
+  createDynamicTargetIcon
+} from "./agent-armory-icons"
 
 export interface AgentArmoryProfile {
   targetId: SkillTargetId
@@ -43,7 +43,7 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     description: "专为轻量化、极速流式响应与最小化执行周期设计的本地高敏捷 Agent，原生契约化支持 Markdown 指令规范与 POSIX 终端增强。",
     protocol: "Markdown Spec + Shell Execution (SKILL.md v2.1)",
     runtimeEnv: "~/.pi/agent/skills/ & 本地工作区",
-    icon: RiFlashlightLine,
+    icon: PiTargetIcon,
     themeColor: {
       bg: "bg-amber-500/10",
       border: "border-amber-500/30",
@@ -63,13 +63,13 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     description: "Anthropic 官方旗舰编程智能体，擅长超长上下文分析、复杂工程重构、多文件一致性治理与自主任务规划。",
     protocol: "Claude Agent Tools + Extended Prompting",
     runtimeEnv: "~/.claude/skills/ & .claude/rules/",
-    icon: RiSparklingLine,
+    icon: ClaudeTargetIcon,
     themeColor: {
-      bg: "bg-purple-500/10",
-      border: "border-purple-500/30",
-      text: "text-purple-600 dark:text-purple-400",
-      glow: "shadow-purple-500/10",
-      pillBg: "bg-purple-500/15"
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/30",
+      text: "text-orange-600 dark:text-orange-400",
+      glow: "shadow-orange-500/10",
+      pillBg: "bg-orange-500/15"
     },
     tags: ["深度重构", "多文件治理", "长上下文", "工程规范"],
     recommendedCuratedIds: ["anthropics-skills", "obra-superpowers", "jimliu-baoyu-skills"],
@@ -83,7 +83,7 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     description: "深度融入现代 IDE 交互的感知型 Agent，支持工作区持久化规则 (.cursorrules) 与多文件即时编辑投影。",
     protocol: "Cursor Rules & Subagent Orchestration",
     runtimeEnv: "~/.cursor/skills/ & .cursor/rules/",
-    icon: RiCodeSSlashLine,
+    icon: CursorTargetIcon,
     themeColor: {
       bg: "bg-blue-500/10",
       border: "border-blue-500/30",
@@ -103,7 +103,7 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     description: "具备高确定性代码生成与受控沙盒执行能力的 Agent，精通微服务架构、并发编程与标准化 API 调用。",
     protocol: "Codex Function Calling & Standard Sandbox",
     runtimeEnv: "~/.codex/skills/ & 运行沙箱",
-    icon: RiTerminalBoxLine,
+    icon: CodexTargetIcon,
     themeColor: {
       bg: "bg-emerald-500/10",
       border: "border-emerald-500/30",
@@ -123,7 +123,7 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     description: "基于 Vercel AI SDK 7 架构构建的桌面原生引擎，内置智能安全审批、资产流水线与流式思考导轨。",
     protocol: "Vercel AI SDK 7 ToolLoopAgent + StreamEvent v2",
     runtimeEnv: "~/.enjoy-agents/skills/ & 核心运行时",
-    icon: RiRobot2Line,
+    icon: EnjoyTargetIcon,
     themeColor: {
       bg: "bg-accent-500/10",
       border: "border-accent-500/30",
@@ -143,7 +143,7 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     description: "专为复杂生产环境定制的高敏捷工程师 Harness，支持多智能体广播协同、长时间持久化任务与分布式工具中继。",
     protocol: "OMP Fleet IRC + Subagent IPC Protocol",
     runtimeEnv: "~/.omp/skills/ & 协作网络",
-    icon: RiCpuLine,
+    icon: OmpTargetIcon,
     themeColor: {
       bg: "bg-cyan-500/10",
       border: "border-cyan-500/30",
@@ -167,7 +167,7 @@ export function getAgentArmoryProfile(targetId: SkillTargetId): AgentArmoryProfi
       description: "通用 Agent 目标环境，支持标准化技能包文件同步与调用映射。",
       protocol: "Standard Skill Spec",
       runtimeEnv: `~/.${targetId}/skills/`,
-      icon: RiCompass3Line,
+      icon: createDynamicTargetIcon(targetId),
       themeColor: {
         bg: "bg-background-secondary-default",
         border: "border-separator-border",
@@ -181,3 +181,4 @@ export function getAgentArmoryProfile(targetId: SkillTargetId): AgentArmoryProfi
     }
   )
 }
+
