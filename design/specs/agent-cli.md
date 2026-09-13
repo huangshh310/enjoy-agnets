@@ -30,7 +30,7 @@ Composer：顶部分组导轨 + 下层面板。「本地」只有 Enjoy Local（
 
 Enjoy 只有一份 Providers vault。智能体只引用档案，不在智能体页做供应商 CRUD，也不做 `127.0.0.1` 协议代理。
 
-`providerBind`：`claude=anthropic`、`codex=openai`、`deepseek=deepseek`、`gemini=google`、`opencode=opencode`。Cursor / Grok / Antigravity / Amp / 自定义 ACP = `none`（列表仍画「官方登录 · 已登录/未登录」，抽屉只读官方态，**禁止假 BYOK**）。OMP 也是 `none`，但动力源槽文案是「OMP 供应商」，不是 Enjoy vault。兼容过滤走 `providersCompatibleWith`（按 `apiStyle` / `kind`，**禁止** `kind===custom` 通配）。Google 预设即使 `apiStyle=openai` 也只给 Gemini，不进 Codex。分类见 `classifyPowerSource`，不要按品牌特判 Cursor/Grok。
+`providerBind`：`claude=anthropic`、`codex=openai`、`deepseek=deepseek`、`gemini=google`、`opencode=opencode`。Cursor / Grok / Antigravity / Amp / 自定义 ACP = `none`（列表仍画「官方登录 · 已登录/未登录」，抽屉只读官方态，**禁止假 BYOK**）。OMP 也是 `none`，但动力源槽文案是「OMP 供应商」，不是 Enjoy vault。兼容过滤走 `providersCompatibleWith`：DeepSeek 放宽支持所有 OpenAI 兼容供应商（`kind=deepseek`、`style=openai`、`kind=openai`、`kind=siliconflow` 等，因 dsh 原生使用 OpenAI 协议）；Claude 仅 Anthropic；Codex 仅 OpenAI；Gemini 仅 Google。分类见 `classifyPowerSource`，不要按品牌特判 Cursor/Grok。
 
 - **应用（默认）**：打开 `useCustomProvider` 后，Enjoy 开该 ACP 注入子进程 env + `--model`。不点同步，系统终端里的同名 CLI 仍用自己的登录。绑定档案没 Key 时开流失败（「先在供应商里保存密钥」），禁止静默退回官方登录。env 键：Claude `ANTHROPIC_*`（含 `ANTHROPIC_MODEL`）、Codex `OPENAI_*`、DeepSeek `DEEPSEEK_*`、Gemini `GEMINI_*`、OpenCode `ENJOY_OPENCODE_KEY` 外加协议对应键。
 - **同步到本机**：用户点击才写家目录，先 `*.enjoy.bak`，文件 `0o600`，恢复只还原备份。不读不写 `auth.json` / Claude credentials。
@@ -39,7 +39,7 @@ Enjoy 只有一份 Providers vault。智能体只引用档案，不在智能体�
   - OpenCode：`~/.config/opencode/opencode.json` 的 `provider.enjoy`，`apiKey: "{env:ENJOY_OPENCODE_KEY}"`
   - Gemini：`~/.gemini/.env` Enjoy 标记段 `GEMINI_*`
   - DeepSeek：只 env，没有稳定官方文件，不同步家目录
-- 本机 CLI **表行**动力源列永远在：可绑=`供应商 · 档案 · 模型` 或 `官方登录 · 已登录/未登录/检测中/授权中/失败`；仅官方=`官方登录 · 已登录/未登录/检测中/授权中/失败`；OMP=`OMP 供应商 · … · 模型`；未找到 / 空=`—`。列表可写短路径 `bin/xxx`，禁绝对路径 / 额度 / 邮箱 / 协议微标。`list` 投影 `homeSynced`（只看 `*.enjoy.bak`）。配置是右侧抽屉。「这个助手用」永远在官方账号区之前。可绑才是一条下拉（官方登录 + 可筛选档案，多协议才分组）。添加档案是菜单外次级链「添加供应商档案」，跳转 `#/settings/providers`，禁止菜单内「+ 添加 {品牌} 供应商」。仅官方没有这条下拉，也没有添加链。绑定后 Composer 胶囊正文仍是引擎 · vault 模型，档案名进 title；Composer 模型表**只列该档案 models[]**。图标按 `cliModelFamilyKey`；认不出族回落档案 `ProviderIcon`。`engineReadiness`：`useCustomProvider + providerId` 时**不走**官方 `needs_login` / `inspecting`；档案没 Key 才 `needs_key`。`upsert` / 开流再跑 `providersCompatibleWith`。也用于其他兼容 CLI 用短标签，**不上沙箱**。同步到本机默认折叠。`#/settings/agent?tool=<id>` 闪行。供应商 Configured 芯片反链；删除仍被引用先解绑。
+- 本机 CLI **表行**动力源列永远在：可绑=`供应商 · 档案 · 模型` 或 `官方登录 · 已登录/未登录/检测中/授权中/失败`；仅官方=`官方登录 · 已登录/未登录/检测中/授权中/失败`；OMP=`OMP 供应商 · … · 模型`；未找到 / 空=`—`。列表可写短路径 `bin/xxx`，禁绝对路径 / 额度 / 邮箱 / 协议微标。`list` 投影 `homeSynced`（只看 `*.enjoy.bak`）。配置是右侧抽屉。「这个助手用」永远在官方账号区之前。可绑才是一条下拉（官方登录 + 可筛选档案，多协议才分组）。支持「快速填入 API Key」就地配置浮层（填 Key / Base URL、连通性测试、安全存入 Vault 并自动绑定为动力源）；保留菜单外次级链「添加供应商档案」跳转 `#/settings/providers` 完整管理，禁止菜单内「+ 添加 {品牌} 供应商」。仅官方没有这条下拉，也没有添加链。绑定后 Composer 胶囊正文仍是引擎 · vault 模型，档案名进 title；Composer 模型表**只列该档案 models[]**。图标按 `cliModelFamilyKey`；认不出族回落档案 `ProviderIcon`。`engineReadiness`：`useCustomProvider + providerId` 时**不走**官方 `needs_login` / `inspecting`；档案没 Key 才 `needs_key`。`upsert` / 开流再跑 `providersCompatibleWith`。也用于其他兼容 CLI 用短标签，**不上沙箱**。同步到本机默认折叠。`#/settings/agent?tool=<id>` 闪行。供应商 Configured 芯片反链；删除仍被引用先解绑。会话运行遇到「远端未找到 {bin}」时，`ThreadErrorBanner` 分类为 `remote_cli_missing`，展示智能引导卡片并提供「一键切换为 Enjoy 本地运行」与「复制远端安装命令」。
 
 Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `grok agent [--model] stdio`（`--model` 必须在 `stdio` 前），登录 `grok login`。安装是官方 `curl | bash`，只展示不执行。不要把 `~/.grok/bin/agent` 当成 Cursor。
 
@@ -134,3 +134,5 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - 自定义 ACP 的 command 必须走 `assertCustomAllowedCommand`（目录 basename 白名单）。禁止 `bash` / `node` / `npx`。cwd 自定义路径要存在且为绝对目录。
 - M4 只把 OpenCode → Gemini → Pi 在硬条件全过时标 available。不要手改另外几家 comingSoon 假装已接线。
 - Cursor `agent acp` 几乎只认 `--help`。Composer 极速 / 思考**不要**追加 `--fast` / `--thinking`，否则官方报 `unknown option '--fast'` 并 `ACP process exited with 1`。开流前必须丢掉这些旗标。Grok `agent stdio` 同样不认 `--fast`。ACP 退出要把 stderr 末几行带进错误，不要只报退出码。
+- `providersCompatibleWith` 判定协议兼容时，主进程必须用 `resolvedStyle(profile)` 补齐默认预设风格，且 `isOpenAiCompat` 需包含 `OPENAI_COMPAT_KINDS`（`xai`、`siliconflow`、`custom`、`openrouter` 等），避免 vault 内未显式持久化 `apiStyle` 的第三方档案在抽屉内触发「这份档案的协议对不上这个助手，没有改绑定」；修改跨包 contract 后须触发主进程重构重启。
+- `dsh`（DeepSeek Harness ACP）不接受标准命令行 `--model` 参数，必须通过 `--patch` 注入包含 `acp.config.model` 与 `llm-deepseek.config.models` 的 yaml 补丁，否则其开流时默认请求写死的 `deepseek-v4-flash` 模型，在绑定第三方供应商（如 Grok / SiliconFlow / OneAPI）时会导致上游接口报「模型不存在」。

@@ -1,7 +1,14 @@
-/**
- * 会话错误卡：额度走 L4，鉴权打开登录，密钥留在 Chat。
- */
-import { RiAlertLine, RiCloseLine, RiKey2Line, RiRefreshLine, RiUserLine } from "@remixicon/react"
+import {
+  RiAlertLine,
+  RiCheckLine,
+  RiCloseLine,
+  RiCommandLine,
+  RiComputerLine,
+  RiKey2Line,
+  RiRefreshLine,
+  RiUserLine
+} from "@remixicon/react"
+import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -16,7 +23,21 @@ import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
+
+const REMOTE_INSTALL_MAP: Record<string, string> = {
+  deepseek: "npm i -g @deepseek-ai/dsh",
+  claude: "npm i -g @anthropic-ai/claude-code",
+  codex: "npm i -g @openai/codex",
+  gemini: "npm i -g @google/gemini-cli",
+  opencode: "npm i -g opencode-ai",
+  pi: "npm i -g @earendil-works/pi-coding-agent pi-acp",
+  cursor: "curl https://cursor.com/install -fsS | bash",
+  grok: "curl -fsSL https://x.ai/cli/install.sh | bash",
+  amp: "curl -fsSL https://ampcode.com/install.sh | bash",
+  omp: "curl -fsSL https://omp.sh/install | sh"
+}
 
 export function ThreadErrorBanner({ error, className }: { error: string; className?: string }) {
   const t = useT()
@@ -28,6 +49,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
+  const [copiedInstall, setCopiedInstall] = useState(false)
   if (kind === "credit") {
     return <QuotaExhaustedCard error={error} id="thread-error-banner" />
   }
@@ -58,6 +80,27 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
     void navigate({ to: "/settings/$section", params: { section: "providers" } })
   }
 
+  async function handleSwitchToEnjoyLocal() {
+    setError(null)
+    useChatStore.getState().setRuntimeId("enjoy-local")
+    const sessionId = useChatStore.getState().sessionId
+    if (sessionId && hasIde()) {
+      try {
+        await getIde().agentTools.setSessionRuntime({ sessionId, runtimeId: "enjoy-local" })
+      } catch {
+        // ignore
+      }
+    }
+    handleRetry()
+  }
+
+  function handleCopyInstallCommand() {
+    const cmd = REMOTE_INSTALL_MAP[runtimeId] || `npm i -g ${runtimeId}`
+    void navigator.clipboard.writeText(cmd)
+    setCopiedInstall(true)
+    setTimeout(() => setCopiedInstall(false), 2000)
+  }
+
   const outdatedTool = rememberedAgentTool(runtimeId)
   const outdated = outdatedTool
     ? resolveCliCompat({
@@ -84,18 +127,22 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   )
   const title =
     gate?.title ??
-    (kind === "needs_key"
-      ? t("chat.needProviderKeyTitle")
-      : kind === "rate_limit"
-        ? t("chat.usage.rateLimitTitle")
-        : t("chat.errorTitle"))
+    (kind === "remote_cli_missing"
+      ? t("chat.remoteCliMissingTitle")
+      : kind === "needs_key"
+        ? t("chat.needProviderKeyTitle")
+        : kind === "rate_limit"
+          ? t("chat.usage.rateLimitTitle")
+          : t("chat.errorTitle"))
   const detail =
     gate?.hint ??
-    (kind === "needs_key"
-      ? t("chat.needProviderKeyHint")
-      : error.includes("HANDOFF_CONFIRM_FAILED")
-        ? t("chat.handoffConfirmFailed")
-        : error)
+    (kind === "remote_cli_missing"
+      ? t("chat.remoteCliMissingHint")
+      : kind === "needs_key"
+        ? t("chat.needProviderKeyHint")
+        : error.includes("HANDOFF_CONFIRM_FAILED")
+          ? t("chat.handoffConfirmFailed")
+          : error)
 
   return (
     <div
@@ -126,6 +173,34 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
           </div>
           <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2 pt-1">
+            {kind === "remote_cli_missing" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => void handleSwitchToEnjoyLocal()}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white shadow-2xs hover:bg-accent-600 transition-colors"
+                >
+                  <RiComputerLine className="size-3" />
+                  <span>{t("chat.switchToEnjoyLocal")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyInstallCommand}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium font-semibold text-text-primary shadow-2xs hover:border-accent-500/40 hover:bg-background-secondary-hover transition-colors"
+                >
+                  {copiedInstall ? (
+                    <RiCheckLine className="size-3 text-accent-500" />
+                  ) : (
+                    <RiCommandLine className="size-3 text-text-tertiary" />
+                  )}
+                  <span>
+                    {copiedInstall
+                      ? t("chat.agentInstallCopied")
+                      : t("chat.copyRemoteInstallCommand")}
+                  </span>
+                </button>
+              </>
+            ) : null}
             {kind === "inspecting" ? (
               <button
                 type="button"
@@ -167,6 +242,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             kind !== "authorizing" &&
             kind !== "login_failed" &&
             kind !== "outdated" &&
+            kind !== "remote_cli_missing" &&
             !running ? (
               <button
                 type="button"

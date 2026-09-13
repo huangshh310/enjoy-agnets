@@ -6,7 +6,7 @@ import {
   pickBoundModelId,
   providersCompatibleWith
 } from "@enjoy-agents/ipc-contract"
-import { readVault } from "./secrets-vault"
+import { readVault, resolvedStyle } from "./secrets-vault"
 
 export async function assertAndClampBind(input: {
   id: string
@@ -20,7 +20,8 @@ export async function assertAndClampBind(input: {
   const vault = await readVault()
   const profile = vault.profiles.find((item) => item.id === input.providerId)
   if (!profile) throw new Error("That provider profile was not found.")
-  if (!providersCompatibleWith(input.id, profile)) {
+  const style = resolvedStyle(profile)
+  if (!providersCompatibleWith(input.id, { ...profile, apiStyle: style })) {
     throw new Error("This provider protocol cannot bind to this CLI.")
   }
   const models = composeBoundAgentModels(profile.models)

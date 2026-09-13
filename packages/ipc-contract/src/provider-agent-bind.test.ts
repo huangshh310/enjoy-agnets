@@ -45,6 +45,17 @@ test("OpenCode 可收 openai / anthropic / google", () => {
   assert.equal(providersCompatibleWith("opencode", { kind: "google" }), true)
 })
 
+test("DeepSeek 可收 deepseek 档案与 OpenAI-compatible 档案", () => {
+  assert.equal(providersCompatibleWith("deepseek", { apiStyle: "openai", kind: "deepseek" }), true)
+  assert.equal(providersCompatibleWith("deepseek", { apiStyle: "openai", kind: "custom" }), true)
+  assert.equal(providersCompatibleWith("deepseek", { apiStyle: "openai", kind: "openai" }), true)
+  assert.equal(providersCompatibleWith("deepseek", { apiStyle: "openai", kind: "siliconflow" }), true)
+  assert.equal(providersCompatibleWith("deepseek", { kind: "xai" }), true)
+  assert.equal(providersCompatibleWith("deepseek", { kind: "custom" }), true)
+  assert.equal(providersCompatibleWith("deepseek", { apiStyle: "anthropic", kind: "anthropic" }), false)
+  assert.equal(providersCompatibleWith("deepseek", { apiStyle: "openai", kind: "google" }), false)
+})
+
 test("没 Key 的档案不进可选列表", () => {
   const rows = providersSelectableFor("claude", [
     { id: "a", apiStyle: "anthropic", kind: "anthropic", hasKey: true },
@@ -56,6 +67,7 @@ test("没 Key 的档案不进可选列表", () => {
 test("空态协议名给人看，不是内部 enum", () => {
   assert.equal(protocolNameForBind("claude"), "Anthropic")
   assert.equal(protocolNameForBind("codex"), "OpenAI")
+  assert.equal(protocolNameForBind("deepseek"), "DeepSeek / OpenAI")
   assert.equal(protocolNameForBind("cursor"), "")
 })
 

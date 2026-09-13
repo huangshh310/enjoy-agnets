@@ -28,7 +28,7 @@ export function providerEnvFor(
   const model = modelId?.trim()
   if (bind === "anthropic") return anthropicEnv(profile, model)
   if (bind === "openai") return openaiEnv(profile)
-  if (bind === "deepseek") return deepseekEnv(profile)
+  if (bind === "deepseek") return deepseekEnv(profile, model)
   if (bind === "google") return googleEnv(profile, model)
   if (bind === "opencode") return openCodeEnv(profile, model)
   return {}
@@ -51,9 +51,16 @@ function openaiEnv(profile: BindProfile): Record<string, string> {
   }
 }
 
-function deepseekEnv(profile: BindProfile): Record<string, string> {
-  const env: Record<string, string> = { DEEPSEEK_API_KEY: profile.apiKey }
-  if (profile.baseURL?.trim()) env.DEEPSEEK_BASE_URL = profile.baseURL.trim()
+function deepseekEnv(profile: BindProfile, model?: string): Record<string, string> {
+  const env: Record<string, string> = {
+    DEEPSEEK_API_KEY: profile.apiKey,
+    OPENAI_API_KEY: profile.apiKey
+  }
+  if (profile.baseURL?.trim()) {
+    env.DEEPSEEK_BASE_URL = profile.baseURL.trim()
+    env.OPENAI_BASE_URL = profile.baseURL.trim()
+  }
+  if (model) env.DEEPSEEK_MODEL = model
   return env
 }
 

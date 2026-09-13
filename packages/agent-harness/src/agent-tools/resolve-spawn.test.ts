@@ -93,10 +93,12 @@ test("七家新 ACP 的官方 argv；Gemini 不用 experimental；Amp/Pi 不发�
     command: "dsh",
     args: ["--profile", "acp"]
   })
-  assert.deepEqual(resolveSpawnCommand("deepseek", { modelId: "deepseek-v4-pro" }), {
-    command: "dsh",
-    args: ["--profile", "acp"]
-  })
+  const dshWithModel = resolveSpawnCommand("deepseek", { modelId: "deepseek-v4-pro" })
+  assert.equal(dshWithModel.command, "dsh")
+  assert.equal(dshWithModel.args[0], "--profile")
+  assert.equal(dshWithModel.args[1], "acp")
+  assert.equal(dshWithModel.args[2], "--patch")
+  assert.ok(dshWithModel.args[3].includes("patch-deepseek-v4-pro.yml"))
 })
 
 test("Antigravity：agy-acp 无额外参数，agy 带 --acp", () => {

@@ -2,7 +2,9 @@
  * 解析可 spawn 的 ACP 命令：白名单文件名，或用户确认的绝对路径。
  * Pi / Amp 的 companion 二进制只给登录与 inspect，不能当 ACP 入口。
  */
-import { basename, isAbsolute } from "node:path"
+import { mkdirSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { basename, isAbsolute, join } from "node:path"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract/custom-agent"
 import { capabilitiesFor, type RuntimeCapabilities } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { modelArgsFor } from "./catalogs.ts"
@@ -69,6 +71,21 @@ function isRejectedAcpFlag(
   return false
 }
 
+/** DeepSeek Harness（dsh）不认 --model，需通过 --patch 配置覆盖 provider/model 与 models 目录。 */
+function deepseekPatchArgs(modelId: string): string[] {
+  try {
+    const safeModel = modelId.replace(/[^a-zA-Z0-9._-]/g, "_")
+    const dir = join(tmpdir(), "enjoy-dsh-patches")
+    mkdirSync(dir, { recursive: true })
+    const patchFile = join(dir, `patch-${safeModel}.yml`)
+    const yaml = `- id: acp\n  config:\n    provider: deepseek-official\n    model: ${JSON.stringify(modelId)}\n- id: llm-deepseek\n  config:\n    models:\n      - id: ${JSON.stringify(modelId)}\n        name: ${JSON.stringify(modelId)}\n        description: ${JSON.stringify(modelId)}\n        contextWindow: 128000\n        maxTokens: 8192\n`
+    writeFileSync(patchFile, yaml, "utf8")
+    return ["--patch", patchFile]
+  } catch {
+    return []
+  }
+}
+
 /** Grok 的 --model 必须在 stdio 之前：`grok agent --model X stdio`。 */
 function spawnArgsFor(
   preset: AgentToolPreset,
@@ -80,6 +97,11 @@ function spawnArgsFor(
     const model = modelId?.trim()
     const mid = model ? ["--model", model] : []
     return ["agent", ...mid, "stdio", ...extra]
+  }
+  if (preset.id === "deepseek") {
+    const model = modelId?.trim()
+    const patch = model ? deepseekPatchArgs(model) : []
+    return [...acpArgsForCommand(preset, command), ...patch, ...extra]
   }
   return [...acpArgsForCommand(preset, command), ...modelArgsFor(preset.id, modelId), ...extra]
 }

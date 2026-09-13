@@ -23,7 +23,7 @@ export function providersCompatibleWith(runtimeId: string, provider: ProviderBin
   const kind = provider.kind?.trim() ?? ""
   if (bind === "anthropic") return style === "anthropic" || kind === "anthropic"
   if (bind === "openai") return isOpenAiCompat(style, kind)
-  if (bind === "deepseek") return kind === "deepseek"
+  if (bind === "deepseek") return kind === "deepseek" || isOpenAiCompat(style, kind)
   if (bind === "google") return kind === "google"
   if (bind === "opencode") {
     return isOpenAiCompat(style, kind) || style === "anthropic" || kind === "anthropic" || kind === "google"
@@ -37,7 +37,7 @@ export function protocolNameForBind(runtimeId: string): string {
   if (bind === "anthropic") return "Anthropic"
   if (bind === "openai") return "OpenAI"
   if (bind === "google") return "Gemini"
-  if (bind === "deepseek") return "DeepSeek"
+  if (bind === "deepseek") return "DeepSeek / OpenAI"
   if (bind === "opencode") return "OpenAI / Anthropic / Gemini"
   return ""
 }
@@ -101,6 +101,31 @@ export type ProviderBindGroupId = "anthropic" | "openai" | "google" | "deepseek"
 
 const BIND_GROUP_ORDER: ProviderBindGroupId[] = ["anthropic", "openai", "google", "deepseek", "other"]
 
+const OPENAI_COMPAT_KINDS = new Set([
+  "openai",
+  "azure-openai",
+  "openrouter",
+  "xai",
+  "groq",
+  "siliconflow",
+  "together",
+  "perplexity",
+  "mistral",
+  "qwen",
+  "kimi",
+  "zhipu",
+  "minimax",
+  "doubao",
+  "wenxin",
+  "hunyuan",
+  "stepfun",
+  "zeroone",
+  "baichuan",
+  "spark",
+  "ollama",
+  "custom"
+])
+
 /** 下拉分组用；人多了按协议，不按 CLI。 */
 export function providerBindGroupOf(provider: ProviderBindHint): ProviderBindGroupId {
   const style = provider.apiStyle?.trim() ?? ""
@@ -108,7 +133,14 @@ export function providerBindGroupOf(provider: ProviderBindHint): ProviderBindGro
   if (style === "anthropic" || kind === "anthropic") return "anthropic"
   if (kind === "google") return "google"
   if (kind === "deepseek") return "deepseek"
-  if (style === "openai" || style === "openai-responses" || kind === "openai") return "openai"
+  if (
+    style === "openai" ||
+    style === "openai-responses" ||
+    kind === "openai" ||
+    OPENAI_COMPAT_KINDS.has(kind)
+  ) {
+    return "openai"
+  }
   return "other"
 }
 
@@ -130,7 +162,8 @@ export function groupProvidersForBind<T extends ProviderBindHint & { id: string 
 
 function isOpenAiCompat(style: string, kind: string): boolean {
   if (kind === "google" || kind === "anthropic" || kind === "deepseek") return false
-  return style === "openai" || style === "openai-responses" || kind === "openai"
+  if (style === "openai" || style === "openai-responses" || kind === "openai") return true
+  return OPENAI_COMPAT_KINDS.has(kind)
 }
 
 /**

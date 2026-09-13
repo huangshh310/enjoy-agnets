@@ -10,6 +10,7 @@ export type ThreadErrorKind =
   | "needs_key"
   | "inspecting"
   | "outdated"
+  | "remote_cli_missing"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -46,6 +47,13 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   if (message === NEED_CLI_AUTHORIZING) return "authorizing"
   if (message === NEED_CLI_LOGIN_FAILED) return "login_failed"
   if (message === NEED_CLI_OUTDATED) return "outdated"
+  if (
+    message.includes("远端未找到") ||
+    lower.includes("remote binary not found") ||
+    lower.includes("远端未安装")
+  ) {
+    return "remote_cli_missing"
+  }
   if (
     message === NEED_CLI_LOGIN ||
     lower.includes("acp_auth_required") ||

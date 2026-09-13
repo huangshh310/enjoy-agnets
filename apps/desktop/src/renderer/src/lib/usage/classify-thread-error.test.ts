@@ -42,4 +42,6 @@ test("ACP 未登录不是可重试供应商错误", () => {
   assert.equal(classifyThreadError(NEED_CLI_AUTHORIZING), "authorizing")
   assert.equal(classifyThreadError(NEED_CLI_LOGIN_FAILED), "login_failed")
   assert.equal(classifyThreadError(NEED_CLI_OUTDATED), "outdated")
+  assert.equal(classifyThreadError("远端未找到 dsh"), "remote_cli_missing")
+  assert.equal(classifyThreadError("spawn remote binary not found"), "remote_cli_missing")
 })
