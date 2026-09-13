@@ -30,6 +30,6 @@ UI：`#/observability`「本机记录」= 按 CLI 贡献列表 + 无用量源收
 
 - **隐患**：把本文旧 Overview 当缺口，把扫描「修回」只扫 Claude/Codex。正确做法：以 `catalog.ts` + `observability` 当前真相为准。
 - **隐患**：把 `unsupported` /「本版本不扫描」写回 C 端。正常 12 源路径不应再出现该态。
-- Cursor 无 usage 字段 → `scanned-empty` 是预期，不是漏扫 Enjoy 遥测。
+- Cursor 与 Antigravity 本机 transcript（如 `~/.cursor/projects/*/agent-transcripts/*.jsonl`、`~/.gemini/antigravity/brain/*/transcript.jsonl`）均只记录交互步骤与工具调用，官方未将 Token 数量（`input_tokens`/`output_tokens`）持久化到本地文件，因此 `scanned-empty`（无用量字段）属预期；其用量属于官方云端配额。
 - Codex 禁止把 `model_provider` 当模型名（会显示 `custom`）。
 - gemini root 指向 `~/.gemini/config` 是启发式；多数机器 `directory-missing` 属预期，不要写成「已读真实 transcript」。

@@ -36,13 +36,29 @@ function IdleGroup(props: {
   const t = useT()
   if (props.status === "scanned-empty") {
     return (
-      <p className="text-caption-2-medium text-text-tertiary">
-        {props.sources
-          .map((item) =>
-            t(sourceChipStatusKey(item), { name: t(sourceNameKey(item.id)), n: item.sessionCount })
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-caption-2-medium text-text-tertiary">
+        {props.sources.map((item, idx) => {
+          const text = t(sourceChipStatusKey(item), {
+            name: t(sourceNameKey(item.id)),
+            n: item.sessionCount
+          })
+          const tooltip =
+            item.fileCount > 0
+              ? t("pages.observability.cliUsageChipNoFieldsTooltip")
+              : t("pages.observability.cliUsageChipEmptyDirTooltip")
+          return (
+            <span key={item.id} className="inline-flex items-center">
+              {idx > 0 ? <span className="mr-2 text-separator-border select-none">·</span> : null}
+              <span
+                title={tooltip}
+                className="cursor-help hover:text-text-secondary transition-colors underline decoration-dotted decoration-text-tertiary/40 underline-offset-2"
+              >
+                {text}
+              </span>
+            </span>
           )
-          .join(" · ")}
-      </p>
+        })}
+      </div>
     )
   }
   const label =

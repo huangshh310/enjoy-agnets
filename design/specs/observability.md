@@ -1,6 +1,6 @@
 # spec/observability
 
-> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-12
+> 本地指标、脱敏、可视化大盘与 OTEL 兼容。最后更新：2026-09-13
 
 ## 当前真相
 
@@ -11,7 +11,7 @@
 2. **模型路由与上游调度 (Model Routing)**：对齐 Grok2API 路由架构，可视化对外模型标识、上游**协议风格 + 模型 id**（不下发 vault `baseURL`）、接口多模态能力、按 Telemetry 聚合的调用量 / 成功率 / P95（忽略 0ms）、以及一键 `settings.pingProvider` Ping；
 3. **链路明细日志 (Traces Log)**：多维状态/类型过滤、高密度执行列表与 Trace 诊断详情抽屉。时间尺用指标里有的 send → TTFO → done，再叠加本 run 回放缓冲里的 `tool.*` / `approval.required` / `approval.resolved`（工具名与 `decision`，不含 args）。`buildTraceDataFromMetric` **禁止**编造 RAG/MCP span 或 `|| 850` token。没有 `ttfoMs` 就不画 TTFO 段；没有 `durationMs` 就总时长为 0。`estimatedCost` 目前没有真实单价字段，固定 0。模型路由图表**不显示费用**（曾按硬编码 MODEL_PRICING 表估算，违反本条已删）；要恢复费用必须先把真实单价做成 Provider 档案字段。指标没有 `sessionId` 时只提供「回到对话」，不要假装能打开源会话；
 4. **事件流回放 (Stream Replay)**：主进程内存缓冲事件流回放。
-5. **本机记录 (cliUsage)**：导轨 12 个 CLI **都扫盘**（不再标「本版本不扫描」）。Claude / Codex jsonl、Grok `usage.json`、OMP `~/.omp/agent/sessions/**/*.jsonl`（camelCase `message.usage`）有字段就入表。Cursor 只扫 `projects/*/agent-transcripts/*.jsonl`（无 usage 字段 → scanned-empty）。其余按家目录 jsonl 扫，目录不在是 directory-missing，有文件无用量是 scanned-empty。不是官方额度，不上 Composer。主区「按 CLI 贡献」；点选过滤。Grok ticks 挂在 Grok 行。无用量源默认收起。日 / 模型 / 项目一张表。不估单价、不读 `store.db` / prompt。顶栏本视图用「本机记录」文案。
+5. **本机记录 (cliUsage)**：导轨 12 个 CLI **都扫盘**（不再标「本版本不扫描」）。Claude / Codex jsonl、Grok `usage.json`、OMP `~/.omp/agent/sessions/**/*.jsonl`（camelCase `message.usage`）有字段就入表。Cursor 只扫 `projects/*/agent-transcripts/*.jsonl`（无 usage 字段 → scanned-empty）。其余按家目录 jsonl 扫，目录不在是 directory-missing，有文件无用量是 scanned-empty。不是官方额度，不上 Composer。顶部脉冲行展示总计与会话；下方配备核心双图展台（`CliUsageChartDock`：左侧环形甜甜圈图支持按 CLI 来源 / 模型分布双视角切换与品牌标联动，右侧时序趋势平滑渐变面积图支持按输入/输出/缓存 Token 构成堆叠与总量趋势）+ EvilCharts 多维图廊（`CliUsageGallery`：支持日格年度方块热力、模型消耗横向排行、日消耗+累计组合图与累计增长曲线切换）；下方保留「按 CLI 贡献」点选过滤芯片与无用量源收起；底部日 / 模型 / 项目一张表。不估单价、不读 `store.db` / prompt。顶栏本视图用「本机记录」文案。
 可一键导出 JSON / CSV 报表（仍只含 Enjoy 遥测，不含 jsonl 原文）。
 ## 不变量
 
@@ -40,3 +40,5 @@
 - 侧栏模型数量用 `store.models.length`，0 就是 0，禁止 `|| 10`。上游列没有协议信息时只显示模型 id，禁止拼 `Endpoint/{id}`。
 - 健康态看该行是否已配置模型 + 调用成功率，不要用全局 `hasKey` 一刀切。
 - `observability.cliUsage` 不得把 prompt、jsonl 原文或绝对路径交给 renderer。目录不存在是空态，不是 0 填充条。导轨 CLI 都扫盘；没有用量字段是 scanned-empty，不要写「本版本不扫描」。Cursor 禁止读 `store.db` / 禁止扫 `node_modules`。Grok 只接受 `sessions/<group>/<id>/usage.json`。OMP 只累加 `message.usage` 数字，不把 `cost` 美元当账单。Codex 拆分全 0 画 `—`。混合有/无拆分时脉冲行不画输入/输出/缓存。过滤走 client-side：KPI 用源级字段，表行按 `sourceIds` 筛选。贡献列费用 / token / 占比定宽对齐；脉冲行合计与会话同一栅格。
+- 本机记录滚动与 Recharts 规范：`observability-page.tsx` 中 `cliUsage` 视图必须由外层 `<div className="min-h-0 flex-1 overflow-y-auto">` 统一承担滚动，内部组件不得嵌套第二层 `overflow-y-auto` 以免外层剪裁导致无法滚动；CSS Grid 内的 Recharts 组件（如 `CliUsageAreaChart`、`CliUsageGallery`）必须设置显式像素高度（如 `height={210}` / `height={240}`），禁止在 Grid 单元中使用 `height="100%"` 导致高度测量坍塌；环形图图例禁止添加 `overflow-hidden` 以免多源被截断。
+

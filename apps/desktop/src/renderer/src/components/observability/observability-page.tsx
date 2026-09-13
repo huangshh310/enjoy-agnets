@@ -77,7 +77,11 @@ export function ObservabilityPage() {
               <ObservabilityReplay />
             </div>
           ) : null}
-          {page.activeView === "cliUsage" ? <ObservabilityCliUsageView usage={page.cliUsage} /> : null}
+          {page.activeView === "cliUsage" ? (
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <ObservabilityCliUsageView usage={page.cliUsage} />
+            </div>
+          ) : null}
         </div>
         <ObservabilityTraceModal
           metric={page.inspectMetric}

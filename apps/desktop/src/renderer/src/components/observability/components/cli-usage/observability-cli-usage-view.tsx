@@ -4,6 +4,9 @@
 import { useMemo, useState } from "react"
 import type { CliTranscriptUsage, CliUsageSourceId } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { buildCliUsageChartModel } from "./charts/cli-usage-chart-data"
+import { CliUsageChartDock } from "./charts/cli-usage-chart-dock"
+import { CliUsageGallery } from "./charts/cli-usage-gallery"
 import { CliUsageBucketSection } from "./components/buckets/bucket-section"
 import { CliUsageContributionList } from "./components/contribution/contribution-list"
 import { CliUsageIdleSources } from "./components/contribution/source-idle"
@@ -22,12 +25,16 @@ export function ObservabilityCliUsageView({ usage }: { usage: CliTranscriptUsage
   const [selectedId, setSelectedId] = useState<CliUsageSourceId | null>(null)
   const selected = useMemo(() => effectiveSelected(usage, selectedId), [usage, selectedId])
   const derived = useMemo(() => deriveView(usage, selected), [usage, selected])
+  const chartModel = useMemo(
+    () => (usage ? buildCliUsageChartModel(usage, selected, t) : null),
+    [usage, selected, t]
+  )
 
   if (!usage) return null
   if (!derived) {
     const scannedEmpty = usage.sources.some((item) => item.status === "scanned-empty")
     return (
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 pb-8">
         <div className="flex min-h-0 items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 px-6 py-10">
           <p className="max-w-md text-center text-caption-1-medium text-text-tertiary">
             {scannedEmpty
@@ -41,8 +48,20 @@ export function ObservabilityCliUsageView({ usage }: { usage: CliTranscriptUsage
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 pb-8">
       <CliUsagePulseStrip totals={derived.totals} mixed={derived.mixed} />
+
+      {chartModel ? (
+        <>
+          <CliUsageChartDock
+            model={chartModel}
+            selectedId={selected}
+            onSelectSource={(id) => setSelectedId(toggleSourceFilter(selected, id))}
+          />
+          <CliUsageGallery model={chartModel} />
+        </>
+      ) : null}
+
       <CliUsageContributionList
         items={derived.contributions}
         selectedId={selected}

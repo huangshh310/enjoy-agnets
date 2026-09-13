@@ -44,7 +44,13 @@ function catalogRoots(id: CliUsageSourceId, home: string): string[] {
   if (id === "codex") return [join(home, ".codex", "sessions"), join(home, ".codex", "archived_sessions")]
   if (id === "grok") return [join(home, ".grok", "sessions")]
   if (id === "cursor") return [join(home, ".cursor", "projects")]
-  if (id === "antigravity") return [join(home, ".gemini", "antigravity-cli")]
+  if (id === "antigravity") {
+    return [
+      join(home, ".gemini", "antigravity"),
+      join(home, ".gemini", "antigravity-cli"),
+      join(home, ".gemini", "antigravity-ide")
+    ]
+  }
   if (id === "gemini") return [join(home, ".gemini", "config")]
   if (id === "opencode") {
     return [join(home, ".local", "share", "opencode"), join(home, ".config", "opencode"), join(home, ".opencode")]
