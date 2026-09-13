@@ -4,11 +4,18 @@
 import type { ComponentType } from "react"
 import type { SkillTargetId } from "@enjoy-agents/ipc-contract"
 import {
+  AmpTargetIcon,
+  AntigravityTargetIcon,
   ClaudeTargetIcon,
   CodexTargetIcon,
   CursorTargetIcon,
+  DeepSeekTargetIcon,
   EnjoyTargetIcon,
+  GeminiTargetIcon,
+  GrokTargetIcon,
+  HermesTargetIcon,
   OmpTargetIcon,
+  OpenCodeTargetIcon,
   PiTargetIcon,
   createDynamicTargetIcon
 } from "./agent-armory-icons"
@@ -154,6 +161,146 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     tags: ["多智能体协同", "长任务管理", "分布式中继", "工具编排"],
     recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack", "anthropics-skills"],
     suggestedSkillNames: ["dispatching-parallel-agents", "autopilot", "systematic-debugging"]
+  },
+  grok: {
+    targetId: "grok",
+    name: "Grok Build 自治体",
+    shortName: "Grok",
+    badgeText: "Autonomous Build",
+    description: "xAI 打造的高效终端协同编码体，具备强推理分析与敏捷任务规划，支持标准 stdio 与 ACP 宿主协议。",
+    protocol: "xAI CLI & Agent Protocol",
+    runtimeEnv: "~/.grok/skills/ & 运行沙箱",
+    icon: GrokTargetIcon,
+    themeColor: {
+      bg: "bg-slate-500/10",
+      border: "border-slate-500/30",
+      text: "text-slate-700 dark:text-slate-300",
+      glow: "shadow-slate-500/10",
+      pillBg: "bg-slate-500/15"
+    },
+    tags: ["高效构建", "任务规划", "自治推理"],
+    recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack"],
+    suggestedSkillNames: ["code-review", "tdd", "diagnosing-bugs"]
+  },
+  antigravity: {
+    targetId: "antigravity",
+    name: "Antigravity 高阶结对体",
+    shortName: "Antigravity",
+    badgeText: "Advanced Agentic Coding",
+    description: "Google DeepMind 高级编码助手，深度集成规则、技能与 MCP 工具体系，支持按需加载与上下文渐进式披露。",
+    protocol: "Antigravity Skill Spec + MCP Protocol",
+    runtimeEnv: "~/.gemini/antigravity/skills/ & 本地工作区",
+    icon: AntigravityTargetIcon,
+    themeColor: {
+      bg: "bg-indigo-500/10",
+      border: "border-indigo-500/30",
+      text: "text-indigo-600 dark:text-indigo-400",
+      glow: "shadow-indigo-500/10",
+      pillBg: "bg-indigo-500/15"
+    },
+    tags: ["深度结对", "渐进披露", "MCP 集成", "架构治理"],
+    recommendedCuratedIds: ["pbakaus-impeccable", "obra-superpowers", "garrytan-gstack"],
+    suggestedSkillNames: ["codebase-design", "brainstorming", "tdd", "domain-modeling"]
+  },
+  gemini: {
+    targetId: "gemini",
+    name: "Gemini CLI 终端助理",
+    shortName: "Gemini",
+    badgeText: "Multimodal Agent",
+    description: "基于 Google Gemini 原生大模型生态的多模态工程智能体，支持长文本推理与跨文件感知。",
+    protocol: "Google Gemini ACP Mode",
+    runtimeEnv: "~/.gemini/skills/ & 系统终端",
+    icon: GeminiTargetIcon,
+    themeColor: {
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/30",
+      text: "text-blue-600 dark:text-blue-400",
+      glow: "shadow-blue-500/10",
+      pillBg: "bg-blue-500/15"
+    },
+    tags: ["多模态理解", "超长上下文", "Google 生态"],
+    recommendedCuratedIds: ["anthropics-skills", "obra-superpowers"],
+    suggestedSkillNames: ["code-review", "diagnosing-bugs"]
+  },
+  opencode: {
+    targetId: "opencode",
+    name: "OpenCode 协作终端",
+    shortName: "OpenCode",
+    badgeText: "Community Driven",
+    description: "开源高人气的交互式 TUI 编程智能体，原生支持按需技能挂载、灵活权限沙箱与细粒度工具策略。",
+    protocol: "OpenCode ACP & Skill Registry",
+    runtimeEnv: "~/.config/opencode/skills/ & 工作区",
+    icon: OpenCodeTargetIcon,
+    themeColor: {
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/30",
+      text: "text-emerald-600 dark:text-emerald-400",
+      glow: "shadow-emerald-500/10",
+      pillBg: "bg-emerald-500/15"
+    },
+    tags: ["开源生态", "TUI 交互", "安全沙箱"],
+    recommendedCuratedIds: ["garrytan-gstack", "obra-superpowers"],
+    suggestedSkillNames: ["tdd", "code-review", "autopilot"]
+  },
+  hermes: {
+    targetId: "hermes",
+    name: "Hermes 自治智能体",
+    shortName: "Hermes",
+    badgeText: "Nous Research",
+    description: "由 Nous Research 打造的开放权重与前沿推理 Agent，具备强大的工具调用与自主排错能力。",
+    protocol: "Hermes ACP Protocol",
+    runtimeEnv: "~/.hermes/skills/ & 运行环境",
+    icon: HermesTargetIcon,
+    themeColor: {
+      bg: "bg-purple-500/10",
+      border: "border-purple-500/30",
+      text: "text-purple-600 dark:text-purple-400",
+      glow: "shadow-purple-500/10",
+      pillBg: "bg-purple-500/15"
+    },
+    tags: ["开源权重", "函数调用", "研究前沿"],
+    recommendedCuratedIds: ["obra-superpowers", "pbakaus-impeccable"],
+    suggestedSkillNames: ["diagnosing-bugs", "systematic-debugging"]
+  },
+  amp: {
+    targetId: "amp",
+    name: "Amp 敏捷编程体",
+    shortName: "Amp",
+    badgeText: "High Velocity",
+    description: "极速响应的现代化命令行助手，专为高频迭代与即时编辑反馈设计。",
+    protocol: "Amp ACP Protocol",
+    runtimeEnv: "~/.amp/skills/ & 系统环境",
+    icon: AmpTargetIcon,
+    themeColor: {
+      bg: "bg-rose-500/10",
+      border: "border-rose-500/30",
+      text: "text-rose-600 dark:text-rose-400",
+      glow: "shadow-rose-500/10",
+      pillBg: "bg-rose-500/15"
+    },
+    tags: ["极速迭代", "代码生成", "敏捷开发"],
+    recommendedCuratedIds: ["garrytan-gstack", "obra-superpowers"],
+    suggestedSkillNames: ["code-review", "tdd"]
+  },
+  deepseek: {
+    targetId: "deepseek",
+    name: "DeepSeek 深度推理体",
+    shortName: "DeepSeek",
+    badgeText: "Deep Reasoning",
+    description: "搭载 DeepSeek 深度思考内核的原生 CLI 智能体，精通复杂算法设计、代码正确性形式化论证与严谨架构验证。",
+    protocol: "DeepSeek ACP Profile",
+    runtimeEnv: "~/.deepseek/skills/ & 运行沙箱",
+    icon: DeepSeekTargetIcon,
+    themeColor: {
+      bg: "bg-blue-600/10",
+      border: "border-blue-600/30",
+      text: "text-blue-700 dark:text-blue-300",
+      glow: "shadow-blue-600/10",
+      pillBg: "bg-blue-600/15"
+    },
+    tags: ["深度思考", "算法攻坚", "形式化论证", "架构设计"],
+    recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack", "anthropics-skills"],
+    suggestedSkillNames: ["diagnosing-bugs", "systematic-debugging", "codebase-design"]
   }
 }
 

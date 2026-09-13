@@ -14,8 +14,15 @@ const GLOBAL_DETECT: SkillTargetId[] = [
   "claude",
   "codex",
   "cursor",
+  "grok",
+  "antigravity",
+  "gemini",
+  "opencode",
+  "pi",
   "omp",
-  "pi"
+  "hermes",
+  "amp",
+  "deepseek"
 ]
 
 const WORKSPACE_DETECT: SkillTargetId[] = [
@@ -32,8 +39,15 @@ export const TARGET_TITLES: Partial<Record<SkillTargetId, string>> = {
   claude: "Claude Code 已安装技能",
   codex: "Codex 已安装技能",
   cursor: "Cursor 已安装技能",
+  grok: "Grok 已安装技能",
+  antigravity: "Antigravity 已安装技能",
+  gemini: "Gemini CLI 已安装技能",
+  opencode: "OpenCode 已安装技能",
   omp: "Oh My Pi 已安装技能",
   pi: "Pi 已安装技能",
+  hermes: "Hermes 已安装技能",
+  amp: "Amp 已安装技能",
+  deepseek: "DeepSeek 已安装技能",
   "workspace-agents": "工作区 Agents 技能",
   "workspace-claude": "工作区 Claude 技能",
   "workspace-cursor": "工作区 Cursor 技能",

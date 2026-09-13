@@ -40,7 +40,16 @@ export function globalSkillRoots(home = homedir()): string[] {
     join(home, ".codex", "skills"),
     join(home, ".cursor", "skills"),
     join(home, ".omp", "skills"),
-    join(home, ".pi", "agent", "skills")
+    join(home, ".pi", "agent", "skills"),
+    join(home, ".grok", "skills"),
+    join(home, ".gemini", "antigravity", "skills"),
+    join(home, ".antigravity", "skills"),
+    join(home, ".gemini", "skills"),
+    join(home, ".config", "opencode", "skills"),
+    join(home, ".opencode", "skills"),
+    join(home, ".hermes", "skills"),
+    join(home, ".amp", "skills"),
+    join(home, ".deepseek", "skills")
   ]
 }
 

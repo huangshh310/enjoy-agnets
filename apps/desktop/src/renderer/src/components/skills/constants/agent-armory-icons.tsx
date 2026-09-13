@@ -33,6 +33,27 @@ export const EnjoyTargetIcon = ({ className }: { className?: string }) => (
 export const OmpTargetIcon = ({ className }: { className?: string }) => (
   <AgentBrandIcon id="omp" className={className} />
 )
+export const GrokTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="grok" className={className} />
+)
+export const AntigravityTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="antigravity" className={className} />
+)
+export const GeminiTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="gemini" className={className} />
+)
+export const OpenCodeTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="opencode" className={className} />
+)
+export const HermesTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="hermes" className={className} />
+)
+export const AmpTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="amp" className={className} />
+)
+export const DeepSeekTargetIcon = ({ className }: { className?: string }) => (
+  <AgentBrandIcon id="deepseek" className={className} />
+)
 
 export function createDynamicTargetIcon(targetId: string) {
   return function DynamicTargetIcon({ className }: { className?: string }) {

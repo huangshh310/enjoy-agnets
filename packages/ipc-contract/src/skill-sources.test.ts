@@ -22,3 +22,25 @@ test("SkillSourceUpdateAllResult 缺 skippedCount 则拒", () => {
     })
   )
 })
+
+test("SkillTargetId 覆盖全部 13 款原生 CLI 智能体目标", async () => {
+  const { SkillTargetId } = await import("./skill-sources.ts")
+  const expectedCliTargets = [
+    "enjoy-agents",
+    "claude",
+    "cursor",
+    "grok",
+    "codex",
+    "antigravity",
+    "gemini",
+    "opencode",
+    "pi",
+    "omp",
+    "hermes",
+    "amp",
+    "deepseek"
+  ]
+  for (const target of expectedCliTargets) {
+    assert.equal(SkillTargetId.parse(target), target)
+  }
+})
