@@ -17,6 +17,7 @@ import {
   probeClaude,
   probeCodex,
   probeCursor,
+  probeDeepseek,
   probeGrok,
   probeOmp,
   probeOpenCode,
@@ -70,6 +71,7 @@ async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
       else if (id === "opencode") res = { id, ...(await probeOpenCode(command, cwd)) }
       else if (id === "pi") res = { id, ...(await probePi(command, cwd)) }
       else if (id === "omp") res = { id, ...(await probeOmp(command, cwd)) }
+      else if (id === "deepseek") res = { id, ...(await probeDeepseek(command, cwd)) }
       else res = emptyInspectFor(id)
     }
   }

@@ -10,6 +10,7 @@ const WORKSPACE_RULE_FILES = [
   "AGENTS.md",
   "CLAUDE.md",
   "CODEX.md",
+  "DEEPSEEK.md",
   ".cursorrules",
   ".windsurfrules"
 ] as const
@@ -19,7 +20,9 @@ export function globalRuleRoots(home = homedir()): string[] {
     join(home, ".enjoy-agents", "rules"),
     join(home, ".cursor", "rules"),
     join(home, ".claude", "rules"),
-    join(home, ".omp", "agent")
+    join(home, ".omp", "agent"),
+    join(home, ".deepseek", "rules"),
+    join(home, ".dsh", "rules")
   ]
 }
 
@@ -49,7 +52,8 @@ export function globalSkillRoots(home = homedir()): string[] {
     join(home, ".opencode", "skills"),
     join(home, ".hermes", "skills"),
     join(home, ".amp", "skills"),
-    join(home, ".deepseek", "skills")
+    join(home, ".deepseek", "skills"),
+    join(home, ".dsh", "skills")
   ]
 }
 

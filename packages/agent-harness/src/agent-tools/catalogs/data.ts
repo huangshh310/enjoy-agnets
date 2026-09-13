@@ -175,8 +175,11 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     loginBinary: "amp"
   },
   deepseek: {
-    models: [{ id: "deepseek-v4-pro", label: "DeepSeek V4 Pro" }],
-    defaultModel: "deepseek-v4-pro",
+    models: [
+      { id: "deepseek-chat", label: "DeepSeek-V3 (Chat)" },
+      { id: "deepseek-reasoner", label: "DeepSeek-R1 (Reasoner)" }
+    ],
+    defaultModel: "deepseek-chat",
     steps: [
       {
         manager: "npm",
@@ -186,7 +189,7 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g @deepseek-ai/dsh",
     docsUrl: "https://github.com/deepseek-ai/deepseek-harness",
-    loginArgs: []
+    loginArgs: ["web"]
   },
   omp: {
     models: [],

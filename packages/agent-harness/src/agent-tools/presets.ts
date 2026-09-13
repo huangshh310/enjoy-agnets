@@ -173,7 +173,7 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     binaries: ["dsh"],
     acpArgs: ["--profile", "acp"],
     detectArgs: ["--version"],
-    needsLoginHint: "Set DEEPSEEK_API_KEY, then dsh --profile acp",
+    needsLoginHint: "Run 'dsh web' to configure API key, or set DEEPSEEK_API_KEY",
     available: true,
     comingSoon: false,
     skillOnly: false

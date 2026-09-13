@@ -1,6 +1,6 @@
 # spec/agent-cli
 
-> 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-13
+> 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-14
 
 Usage L1–L4、三路命名与能力矩阵见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
 
@@ -109,7 +109,7 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - `inspect.providers` 只在异步 inspect 合并后才有。未回时 OMP 仍要分栏，但必须显示「正在读取供应商」，不要只剩「全部模型」假装没有供应商。`applyInspect` 在 `hit.providers` 缺省时保留旧表，不要写成 `[]`。
 - OMP 左栏不能只按已出现的模型 selector 分栏：`google-antigravity` 一家就会同时列出 Claude + Gemini，看起来像「已经有多家」其实只登了一家。必须列 `omp auth-broker list --json` 全表（约 70 家可 `/login`）；已登录 = 该 id 在 models 里出现过。`models.yml` 自定义**不在** list 里，有凭证才会进 `omp models`；没有凭证时只能从 yml **抽 id**（禁止读 apiKey）才能显示，且不能点登录。`omp auth-broker login` **只往 stdout 打 URL，自己不打开浏览器**。更坑的是官方会先 `readline.createInterface`：`github-copilot` 在打 `https://github.com/login/device` 之前先问 Enterprise 域名（空回车 = github.com）。`stdio: ignore` 会让 readline 立刻 `ERR_USE_AFTER_CLOSE`，GitHub 永远打不出 URL，按钮卡在「正在打开授权」。必须 `stdio: pipe`，看见 `blank for github.com` 写空行，再抽 URL / `Enter code:`。环回 OAuth（Gemini 等）同样不能在打出 URL 后把进程打死，否则 localhost callback 没了。更常见的体感坑：打开 URL 立刻 `invalidate` inspect，左栏仍是未登录；浏览器完成后没有第二次 refresh，用户以为「没有回调回来」。必须等 `Credentials saved` 再清缓存，UI 轮询 inspect，并在完成后 `app.focus`。禁止无参 `omp auth-broker login`。Fireworks / Exa / HuggingFace / GitLab 会先打仪表盘或授权 URL，再要粘贴 key / `vscode://` 回调——可以 `openExternal`，但不能代填，回 `needs_tui`。本机 `ollama` / `lm-studio` / `llama.cpp` / `vllm` 先要引擎在跑。不要读 `~/.omp/agent/agent.db`，也不要把 `auth-broker status` 当成本地登录态。禁止把 token 或授权 URL 传给 renderer；设备用户码可以进回执 `device:XXXX-XXXX`。
 - 未装 CLI 不要收成「未安装 N」让人点不到安装。未装上轨，用中性胶囊「未装」而不是名字底下第二行灰字；下面板一键安装 / 复制命令。即将推出才进溢出。
-- DeepSeek Harness 的 `dsh --profile acp` 仍是 developer preview，argv 以 `--help` 为准。旧 Vercel Harness `deepseek` 适配器仍占位，和本机 CLI 不是一条路。C 端导轨必须把它和 Oh My Pi 放进「本机助手 / CLI」，副标题只写未安装/需登录，禁止看起来像 Enjoy Local 的 BYOK 供应商。
+- DeepSeek Harness 官方基座（`dsh --profile acp`）已完整接线打通：支持探测 `process.env.DEEPSEEK_API_KEY`、`$DSH_HOME/.credentials.yaml` 与 `settings.yaml`；映射官方生产模型 `deepseek-chat` (DeepSeek-V3) 与 `deepseek-reasoner` (DeepSeek-R1)；登录引导走 `dsh web`；ACP stdio 开流注入 `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL`；C 端导轨置于「本机助手 / CLI」，动力源如实反映官方凭据与 Enjoy 绑定档案。旧 Vercel Harness `deepseek` 适配器仍占位，和本机 CLI 不是一条路。
 - C 端胶囊/导轨禁止常驻 `ACP · 订阅登录` / `本地 ToolLoop` / `ACP Stdio` 及同类协议路径微标。协议/登录只留设置能力矩阵、配置边界与文档，不上 Composer picker。
 - 七家新 CLI 本轮 `quota=false`。没有官方 usage 子命令就不画额度条。
 - ACP 复用进程的 key 必须含 `toolId`。漏掉时 Claude→Cursor 会假续跑旧 stdio。有用户轮切引擎必须 `disposeSession` + `setHandoff`；brief 只进系统/隐藏上下文，禁止用户首条附注。

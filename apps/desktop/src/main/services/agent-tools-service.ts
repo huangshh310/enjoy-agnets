@@ -132,7 +132,7 @@ function supportedStylesForTool(id: string): string[] {
   if (id === "codex") return ["openai", "openai-responses"]
   if (id === "gemini") return ["google"]
   if (id === "opencode") return ["openai", "openai-responses", "anthropic", "google"]
-  if (id === "deepseek") return ["deepseek"]
+  if (id === "deepseek") return ["openai"]
   return []
 }
 
