@@ -19,8 +19,8 @@ export function InboxFeed(props: {
 
   if (groups.length === 0) {
     return (
-      <div className="flex h-full min-h-0 w-[22rem] shrink-0 flex-col border-r border-separator-border">
-        <div className="p-4">
+      <div className="flex flex-1 min-h-0 flex-col">
+        <div className="p-6">
           <InboxEmpty />
         </div>
       </div>
@@ -28,25 +28,32 @@ export function InboxFeed(props: {
   }
 
   return (
-    <ScrollArea className="h-full min-h-0 w-[22rem] shrink-0 border-r border-separator-border bg-background-secondary-default/30">
-      {groups.map((group) => (
-        <section key={group.id}>
-          <h2 className="px-3 pb-1 pt-3 text-caption-2-medium text-text-tertiary">
-            {inboxGroupLabel(group.id, t)}
-          </h2>
-          <ul>
-            {group.items.map((item) => (
-              <InboxRow
-                key={item.id}
-                item={item}
-                selected={item.id === selectedId}
-                now={now}
-                onSelect={onSelect}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
+    <ScrollArea className="flex-1 min-h-0">
+      <div className="flex flex-col gap-3 p-1.5 pb-6">
+        {groups.map((group) => (
+          <section key={group.id} className="flex flex-col">
+            <div className="flex items-center justify-between px-3 pt-3 pb-1">
+              <span className="text-[11px] font-semibold tracking-wider text-text-tertiary">
+                {inboxGroupLabel(group.id, t)}
+              </span>
+              <span className="text-[10px] font-mono text-text-quaternary">
+                {group.items.length}
+              </span>
+            </div>
+            <ul className="flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <InboxRow
+                  key={item.id}
+                  item={item}
+                  selected={item.id === selectedId}
+                  now={now}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </ScrollArea>
   )
 }

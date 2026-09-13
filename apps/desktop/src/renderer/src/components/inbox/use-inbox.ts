@@ -60,7 +60,7 @@ export function useInbox() {
     // 实况优先；归档条目只在实况没有同 id 时补位（error/complete 重启后的历史）。
     const liveIds = new Set(attentionItems.map((item) => item.id))
     const merged = [...attentionItems, ...archivedItems.filter((item) => !liveIds.has(item.id))]
-    const attentionList = inboxFromAttention(merged, { t, readIds, hiddenIds })
+    const attentionList = inboxFromAttention(merged, { t, readIds, hiddenIds, repositories })
     const runningList = synthesizeRunningInbox({
       parks,
       fgRunning,

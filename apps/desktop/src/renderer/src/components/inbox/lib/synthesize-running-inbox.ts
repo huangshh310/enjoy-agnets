@@ -44,18 +44,25 @@ export function synthesizeRunningInbox(options: {
       .map((i) => i.sessionId)
   )
 
+  function findWsName(wsId?: string): string | undefined {
+    if (!wsId) return undefined
+    return repositories.find((r) => r.id === wsId && r.kind === "workspace")?.name
+  }
+
   // 1. 前台正在运行的会话（且非处于 waiting_review）
   if (fgRunning && fgSessionId && !liveWaitingSessionIds.has(fgSessionId)) {
     runningList.push({
       id: `running:${fgSessionId}`,
       copyKey: "running",
-      title: fgSessionTitle || t("chat.sessionActive"),
+      title: t("pages.inbox.navRunning"),
+      sessionTitle: fgSessionTitle || t("chat.sessionActive"),
       summary: t("chat.sessionActive"),
       category: "agent",
       read: true,
       occurredAt: fgStartedAt ?? now,
       sessionId: fgSessionId,
       workspaceId: fgWorkspaceId ?? undefined,
+      workspaceName: findWsName(fgWorkspaceId ?? undefined),
       actionKey: "openSession",
       actionLabel: t("pages.inbox.actions.openSession"),
       status: "running"
@@ -69,13 +76,15 @@ export function synthesizeRunningInbox(options: {
       runningList.push({
         id: `running:${sId}`,
         copyKey: "running",
-        title: repoNode?.name || t("chat.sessionActive"),
+        title: t("pages.inbox.navRunning"),
+        sessionTitle: repoNode?.name || t("chat.sessionActive"),
         summary: t("chat.sessionActive"),
         category: "agent",
         read: true,
         occurredAt: park.createdAt ?? now,
         sessionId: sId,
         workspaceId: repoNode?.workspaceId,
+        workspaceName: findWsName(repoNode?.workspaceId),
         actionKey: "openSession",
         actionLabel: t("pages.inbox.actions.openSession"),
         status: "running"

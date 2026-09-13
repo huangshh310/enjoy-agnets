@@ -41,6 +41,7 @@ export function InboxPage() {
       onSearchChange={inbox.setSearch}
       filterNav={false}
       breadcrumbTitle={navLabel(inbox.filter, t)}
+      hideChrome
     >
       <InboxLayout
         groups={inbox.groups}

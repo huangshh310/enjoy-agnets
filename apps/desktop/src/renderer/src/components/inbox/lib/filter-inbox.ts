@@ -2,6 +2,7 @@
  * 收件箱纯函数：Attention → 档案行、分类搜索、未读计数。
  */
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
+import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
@@ -12,24 +13,45 @@ export function inboxFromAttention(
     t: Translate
     readIds: ReadonlySet<string>
     hiddenIds: ReadonlySet<string>
+    repositories?: RepositoryNode[]
   }
 ): InboxNotification[] {
   return items
     .filter((item) => !input.hiddenIds.has(item.id))
-    .map((item) => ({
-      id: item.id,
-      copyKey: item.kind,
-      title: input.t(`attention.kind.${item.kind}`),
-      summary: item.summary,
-      category: (item.kind === "error" ? "system" : "agent") as InboxKind,
-      read: item.kind === "complete" || input.readIds.has(item.id),
-      occurredAt: item.occurredAt,
-      sessionId: item.sessionId,
-      workspaceId: item.workspaceId,
-      actionKey: "openSession" as const,
-      actionLabel: input.t("pages.inbox.actions.openSession"),
-      status: item.status
-    }))
+    .map((item) => {
+      const isAborted =
+        item.kind === "error" &&
+        Boolean(
+          item.errorMessage?.toLowerCase().includes("aborted") ||
+          item.errorMessage?.toLowerCase().includes("abort") ||
+          item.summary?.toLowerCase().includes("aborted")
+        )
+      const copyKey = isAborted ? ("aborted" as const) : item.kind
+      const wsNode =
+        item.workspaceId && input.repositories
+          ? input.repositories.find((r) => r.id === item.workspaceId && r.kind === "workspace")
+          : undefined
+
+      return {
+        id: item.id,
+        copyKey,
+        title: isAborted ? input.t("pages.inbox.badgeAborted") : input.t(`attention.kind.${item.kind}`),
+        summary: isAborted ? input.t("pages.inbox.statusAborted") : item.summary,
+        sessionTitle: item.sessionTitle,
+        errorMessage: isAborted ? input.t("pages.inbox.statusAborted") : item.errorMessage,
+        toolName: item.approval?.name,
+        category: (item.kind === "error" && !isAborted ? "system" : "agent") as InboxKind,
+        read: item.kind === "complete" || input.readIds.has(item.id),
+        occurredAt: item.occurredAt,
+        sessionId: item.sessionId,
+        workspaceId: item.workspaceId,
+        workspaceName: wsNode?.name,
+        actionKey: "openSession" as const,
+        actionLabel: input.t("pages.inbox.actions.openSession"),
+        status: item.status,
+        isAborted
+      }
+    })
     .sort((left, right) => right.occurredAt - left.occurredAt)
 }
 
@@ -49,7 +71,7 @@ export function filterInbox(
     ) {
       return false
     }
-    if (filter === "failed" && item.copyKey !== "error") {
+    if (filter === "failed" && item.copyKey !== "error" && item.copyKey !== "aborted") {
       return false
     }
     if (filter === "complete" && item.copyKey !== "complete") {
@@ -59,7 +81,8 @@ export function filterInbox(
     if (!needle) return true
     return (
       item.title.toLocaleLowerCase().includes(needle) ||
-      item.summary.toLocaleLowerCase().includes(needle)
+      item.summary.toLocaleLowerCase().includes(needle) ||
+      (item.sessionTitle?.toLocaleLowerCase().includes(needle) ?? false)
     )
   })
 }

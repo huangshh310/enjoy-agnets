@@ -16,7 +16,7 @@ export type InboxNotificationStatus = AttentionStatus | "running"
 
 export interface InboxNotification {
   id: string
-  copyKey: AttentionKind | "running"
+  copyKey: AttentionKind | "running" | "aborted"
   title: string
   summary: string
   category: InboxKind
@@ -24,9 +24,14 @@ export interface InboxNotification {
   occurredAt: number
   sessionId: string
   workspaceId?: string
+  workspaceName?: string
   actionKey: InboxActionKey
   actionLabel?: string
   status: InboxNotificationStatus
+  sessionTitle?: string
+  errorMessage?: string
+  toolName?: string
+  isAborted?: boolean
 }
 
 export interface InboxGroup {

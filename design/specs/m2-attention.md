@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-13
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-09-14
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -13,7 +13,7 @@
 |---|---|
 | L1 AttentionStrip | `ai-chat/attention/attention-strip.tsx` 挂在 Stage 列顶（`stage-split.tsx`）。无 active/focused 则整条 `null`。胶囊按优先级排序；当前会话 Dock 已开时收成微点。`complete` 约 10s 自消，不计入「需处理 N」。 |
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。无 pending 则 `null`。 |
-| L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。侧栏筛选是 `all` / `unread` / **`running` / `waiting` / `failed` / `complete`**（不是 agent/system 主导航）。运行中行由 `synthesizeRunningInbox` 合成（前台 `running` + 后台 `parks`），固定 `read: true`，**不进未读红点**，也不是 Attention kind。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回。`complete` 默认已读。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
+| L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、会话标题、摘要/错误预览与时间。侧栏筛选是 `all` / `unread` / **`running` / `waiting` / `failed` / `complete`**（不是 agent/system 主导航）。运行中行由 `synthesizeRunningInbox` 合成（前台 `running` + 后台 `parks`），固定 `read: true`，**不进未读红点**，也不是 Attention kind。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回。`complete` 默认已读。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
 | 侧栏进行中 | `sidebar/session-activity.ts`：当前会话跟 Composer `running`，后台跟 `parks[id].running`。等你红点优先于 drive 灯。情境栏顶「进行中」钉住最多 8 条；无则 `null`。不把 `running` / `complete` 加成 Attention kind。 |
 | 审批策略 | 会话内只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。智能体设置用共享摘要条跳 `#/settings/general` 已有权限卡，不另画上沿「写入 / Shell / Git」一瞥，也不做第二套 Allow/Deny。执行模式（探索 / 执行）是另一件事。 |

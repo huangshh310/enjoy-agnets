@@ -21,27 +21,30 @@ export function InboxLayout(props: {
   const { groups, selected, now } = props
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <InboxToolbar
-        unreadCount={props.unreadCount}
-        hasRead={props.hasRead}
-        onMarkAllRead={props.onMarkAllRead}
-        onClearRead={props.onClearRead}
-      />
-      <div className="flex min-h-0 flex-1">
+    <div className="flex h-full min-h-0">
+      {/* 左侧列表栏 */}
+      <div className="flex h-full min-h-0 w-[24rem] xl:w-[26rem] shrink-0 flex-col border-r border-separator-border/70 bg-background-secondary-default/20">
+        <InboxToolbar
+          unreadCount={props.unreadCount}
+          hasRead={props.hasRead}
+          onMarkAllRead={props.onMarkAllRead}
+          onClearRead={props.onClearRead}
+        />
         <InboxFeed
           groups={groups}
           selectedId={selected?.id ?? null}
           now={now}
           onSelect={props.onSelect}
         />
-        <InboxReader
-          item={selected}
-          now={now}
-          onToggleRead={props.onToggleRead}
-          onOpenAction={props.onOpenAction}
-        />
       </div>
+
+      {/* 右侧详情阅读器 */}
+      <InboxReader
+        item={selected}
+        now={now}
+        onToggleRead={props.onToggleRead}
+        onOpenAction={props.onOpenAction}
+      />
     </div>
   )
 }
