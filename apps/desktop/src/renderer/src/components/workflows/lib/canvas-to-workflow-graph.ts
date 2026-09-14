@@ -12,6 +12,19 @@ export type CanvasGraphResult = {
 }
 
 /**
+ * 净化连接线：过滤孤立连线（端点节点不存在）以及自环连线。
+ */
+export function sanitizeConnections(
+  nodes: CanvasNodeData[],
+  connections: CanvasConnection[]
+): CanvasConnection[] {
+  const nodeIds = new Set(nodes.map((n) => n.id))
+  return connections.filter(
+    (c) => nodeIds.has(c.fromNodeId) && nodeIds.has(c.toNodeId) && c.fromNodeId !== c.toNodeId
+  )
+}
+
+/**
  * 将画布节点与连线转换为可执行的 WorkflowStepDraft[] 列表。
  * 如果检测到依赖成环，返回具体成环节点并报错。
  */

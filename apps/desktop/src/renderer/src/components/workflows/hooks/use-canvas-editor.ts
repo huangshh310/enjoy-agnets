@@ -24,6 +24,7 @@ import {
   type SelectionBox,
   type ViewportTransform
 } from "../lib/canvas.types"
+import { sanitizeConnections } from "../lib/canvas-to-workflow-graph"
 import { useCanvasStore } from "../stores/use-canvas-store"
 import { useCanvasHistory } from "./use-canvas-history"
 
@@ -59,8 +60,10 @@ export function useCanvasEditor(projectId: string | null) {
 
   useEffect(() => {
     if (!project) return
-    setNodes(project.nodes)
-    setConnections(project.connections)
+    const cleanNodes = project.nodes
+    const cleanConnections = sanitizeConnections(cleanNodes, project.connections)
+    setNodes(cleanNodes)
+    setConnections(cleanConnections)
     setViewport(project.viewport)
     setBackgroundMode(project.backgroundMode)
     history.reset()
@@ -138,8 +141,10 @@ export function useCanvasEditor(projectId: string | null) {
         return { id: `conn-${fromNodeId}-${toNodeId}`, fromNodeId, toNodeId }
       })
       .filter((item): item is CanvasConnection => Boolean(item))
-    setNodes((prev) => [...prev, ...cloned])
-    setConnections((prev) => [...prev, ...clonedConns])
+    const nextNodes = [...nodesRef.current, ...cloned]
+    const nextConns = sanitizeConnections(nextNodes, [...connectionsRef.current, ...clonedConns])
+    setNodes(nextNodes)
+    setConnections(nextConns)
     setSelectedNodeIds(new Set(cloned.map((node) => node.id)))
     return true
   }, [snapshot])
@@ -148,14 +153,14 @@ export function useCanvasEditor(projectId: string | null) {
     const prev = history.undo({ nodes, connections })
     if (!prev) return
     setNodes(prev.nodes)
-    setConnections(prev.connections)
+    setConnections(sanitizeConnections(prev.nodes, prev.connections))
   }, [connections, history, nodes])
 
   const redoCanvas = useCallback(() => {
     const next = history.redo({ nodes, connections })
     if (!next) return
     setNodes(next.nodes)
-    setConnections(next.connections)
+    setConnections(sanitizeConnections(next.nodes, next.connections))
   }, [connections, history, nodes])
 
   const groupSelection = useCallback(() => {

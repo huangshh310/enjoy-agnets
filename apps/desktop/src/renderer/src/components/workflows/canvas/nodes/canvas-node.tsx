@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
+  RiAlertLine,
   RiCheckLine,
   RiCloseLine,
   RiFileTextLine,
@@ -27,6 +28,7 @@ export function CanvasNode({
   isFocusRelated,
   isConnectionTarget,
   isConnecting,
+  isCycle,
   stepStatus,
   showPanel,
   onMouseDown,
@@ -51,6 +53,7 @@ export function CanvasNode({
   isFocusRelated: boolean
   isConnectionTarget: boolean
   isConnecting: boolean
+  isCycle?: boolean
   stepStatus?: WorkflowStatus
   showPanel: boolean
   onMouseDown: (event: React.MouseEvent, nodeId: string) => void
@@ -180,24 +183,28 @@ export function CanvasNode({
         }`}
         style={{
           background: isGroup ? "transparent" : theme.node.fill,
-          borderColor: isGroup
-            ? isActive
-              ? SELECTION_BLUE
-              : theme.node.stroke
-            : isActive
-              ? SELECTION_BLUE
-              : isRelated
-                ? `${SELECTION_BLUE}88`
-                : theme.node.stroke,
-          boxShadow: stepStatus === "running"
-            ? "0 0 0 2px #3b82f6, 0 0 24px rgba(59,130,246,0.25)"
-            : stepStatus === "waiting_review"
-              ? "0 0 0 2px #f59e0b, 0 0 24px rgba(245,158,11,0.25)"
+          borderColor: isCycle
+            ? "#f43f5e"
+            : isGroup
+              ? isActive
+                ? SELECTION_BLUE
+                : theme.node.stroke
               : isActive
-                ? `0 0 0 1.5px ${SELECTION_BLUE}, 0 8px 24px rgba(59,130,246,0.12)`
+                ? SELECTION_BLUE
                 : isRelated
-                  ? `0 0 0 1px ${SELECTION_BLUE}44, 0 4px 12px rgba(0,0,0,0.06)`
-                  : "0 1px 3px rgba(0,0,0,0.05)"
+                  ? `${SELECTION_BLUE}88`
+                  : theme.node.stroke,
+          boxShadow: isCycle
+            ? "0 0 0 2px #f43f5e, 0 0 24px rgba(244,63,94,0.35)"
+            : stepStatus === "running"
+              ? "0 0 0 2px #3b82f6, 0 0 24px rgba(59,130,246,0.25)"
+              : stepStatus === "waiting_review"
+                ? "0 0 0 2px #f59e0b, 0 0 24px rgba(245,158,11,0.25)"
+                : isActive
+                  ? `0 0 0 1.5px ${SELECTION_BLUE}, 0 8px 24px rgba(59,130,246,0.12)`
+                  : isRelated
+                    ? `0 0 0 1px ${SELECTION_BLUE}44, 0 4px 12px rgba(0,0,0,0.06)`
+                    : "0 1px 3px rgba(0,0,0,0.05)"
         }}
         onMouseDown={(event) => onMouseDown(event, data.id)}
         onDoubleClick={(event) => {
@@ -255,6 +262,12 @@ export function CanvasNode({
               )}
             </div>
             <div className="flex items-center gap-1.5">
+              {isCycle && (
+                <span className="flex items-center gap-1 rounded-full bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:text-rose-400 animate-pulse" title="该节点在工作流中存在依赖回路环">
+                  <RiAlertLine className="size-3" />
+                  <span>回路异常</span>
+                </span>
+              )}
               {stepStatus === "running" && (
                 <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 animate-pulse">
                   <RiLoader4Line className="size-3 animate-spin" />

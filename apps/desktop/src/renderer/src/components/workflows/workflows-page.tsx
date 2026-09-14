@@ -34,10 +34,13 @@ export function WorkflowsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(projects[0]?.id ?? null)
   const [isStarting, setIsStarting] = useState(false)
   const [dagError, setDagError] = useState<string | null>(null)
+  const [cycleNodeIds, setCycleNodeIds] = useState<string[]>([])
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedId && projects[0]) setSelectedId(projects[0].id)
+    setDagError(null)
+    setCycleNodeIds([])
   }, [projects, selectedId])
 
   const { data: workflowRuns } = useQuery({
@@ -80,13 +83,15 @@ export function WorkflowsPage() {
     if (!sessionId || isStarting) return
     setIsStarting(true)
     setDagError(null)
+    setCycleNodeIds([])
     try {
-      const { steps, error } = canvasToWorkflowGraph(
+      const { steps, error, cycleNodes } = canvasToWorkflowGraph(
         currentProject?.nodes ?? [],
         currentProject?.connections ?? []
       )
       if (error) {
         setDagError(error)
+        if (cycleNodes?.length) setCycleNodeIds(cycleNodes)
         return
       }
 
@@ -203,7 +208,11 @@ export function WorkflowsPage() {
         </div>
 
         {selectedId ? (
-          <CanvasEditor projectId={selectedId} activeWorkflowRun={activeWorkflowRun} />
+          <CanvasEditor
+            projectId={selectedId}
+            activeWorkflowRun={activeWorkflowRun}
+            cycleNodeIds={cycleNodeIds}
+          />
         ) : (
           <div className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
             {t("pages.workflows.canvasEmpty")}
@@ -216,7 +225,10 @@ export function WorkflowsPage() {
             <span>{dagError}</span>
             <button
               type="button"
-              onClick={() => setDagError(null)}
+              onClick={() => {
+                setDagError(null)
+                setCycleNodeIds([])
+              }}
               className="ml-2 rounded p-0.5 hover:bg-white/20 transition"
             >
               <RiCloseLine className="size-3.5" />

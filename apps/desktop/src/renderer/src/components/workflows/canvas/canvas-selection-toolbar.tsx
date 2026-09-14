@@ -49,17 +49,22 @@ export function CanvasSelectionToolbar({
   }
 
   const pad = 12
-  const left = viewport.x + minX * viewport.k - pad
-  const top = viewport.y + minY * viewport.k - pad
+  const boxLeft = viewport.x + minX * viewport.k - pad
+  const boxTop = viewport.y + minY * viewport.k - pad
   const width = (maxX - minX) * viewport.k + pad * 2
   const height = (maxY - minY) * viewport.k + pad * 2
+
+  // 视口边界保护与智能翻转（当包围盒过于贴近顶栏时翻转至下方）
+  const isFlipped = boxTop - 48 < 60
+  const toolbarTop = isFlipped ? boxTop + height + 10 : boxTop - 10
+  const toolbarLeft = Math.max(160, Math.min(window.innerWidth - 160, boxLeft + width / 2))
 
   return (
     <>
       {/* 多选外包围盒虚线轮廓 */}
       <svg
         className="pointer-events-none absolute z-[60] overflow-visible"
-        style={{ left, top, width, height }}
+        style={{ left: boxLeft, top: boxTop, width, height }}
       >
         <rect
           x={1}
@@ -78,10 +83,12 @@ export function CanvasSelectionToolbar({
 
       {/* 浮动操作栏 */}
       <div
-        className="pointer-events-auto absolute z-[75] flex -translate-x-1/2 -translate-y-full items-center gap-1 rounded-2xl border p-1 shadow-xl backdrop-blur-md transition-all"
+        className={`pointer-events-auto absolute z-[75] flex -translate-x-1/2 items-center gap-1 rounded-2xl border p-1 shadow-xl backdrop-blur-md transition-all ${
+          isFlipped ? "translate-y-0" : "-translate-y-full"
+        }`}
         style={{
-          left: left + width / 2,
-          top: top - 10,
+          left: toolbarLeft,
+          top: toolbarTop,
           background: theme.toolbar.panel,
           borderColor: theme.toolbar.border,
           color: theme.toolbar.item

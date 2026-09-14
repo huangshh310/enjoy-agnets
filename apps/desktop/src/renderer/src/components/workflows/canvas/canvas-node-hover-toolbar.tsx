@@ -50,9 +50,15 @@ export function CanvasNodeHoverToolbar({
 
   if (!node) return null
 
-  // 世界坐标转换为屏幕视口坐标（位于节点上方居中）
-  const left = viewport.x + (node.position.x + node.width / 2) * viewport.k
-  const top = viewport.y + node.position.y * viewport.k - 14
+  // 世界坐标转换为屏幕视口坐标（位于节点上方或翻转到下方）
+  const nodeTopScreen = viewport.y + node.position.y * viewport.k
+  const nodeBottomScreen = viewport.y + (node.position.y + node.height) * viewport.k
+  const rawLeft = viewport.x + (node.position.x + node.width / 2) * viewport.k
+
+  // 工具栏高度为 44px (h-11)，当节点贴近视口顶栏 (小于 68px) 时智能翻转至节点下方
+  const isFlipped = nodeTopScreen - 58 < 64
+  const top = isFlipped ? nodeBottomScreen + 14 : nodeTopScreen - 14
+  const left = Math.max(160, Math.min(window.innerWidth - 160, rawLeft))
 
   const isText = node.type === CanvasNodeType.Text
   const isMedia =
@@ -75,7 +81,9 @@ export function CanvasNodeHoverToolbar({
   return (
     <>
       <div
-        className="pointer-events-auto absolute z-[75] flex h-11 -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-[18px] border border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 px-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)] backdrop-blur-md transition-all"
+        className={`pointer-events-auto absolute z-[75] flex h-11 -translate-x-1/2 items-center gap-0.5 rounded-[18px] border border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 px-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)] backdrop-blur-md transition-all ${
+          isFlipped ? "translate-y-0" : "-translate-y-full"
+        }`}
         style={{
           left,
           top,

@@ -14,6 +14,7 @@ import { CanvasPromptPanel } from "./canvas-prompt-panel"
 import { CanvasToolbar } from "./canvas-toolbar"
 import { CanvasZoomControls } from "./canvas-zoom-controls"
 import { CanvasNode } from "./nodes/canvas-node"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { importCanvasFiles } from "../lib/import-canvas-files"
 import { CanvasNodeType, type CanvasNodeData } from "../lib/canvas.types"
 import { useCanvasTheme } from "../stores/use-canvas-theme"
@@ -24,10 +25,12 @@ import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 
 export function CanvasEditor({
   projectId,
-  activeWorkflowRun
+  activeWorkflowRun,
+  cycleNodeIds
 }: {
   projectId: string
   activeWorkflowRun?: WorkflowRun | null
+  cycleNodeIds?: string[]
 }) {
   const theme = useCanvasTheme()
   const editor = useCanvasEditor(projectId)
@@ -130,6 +133,42 @@ export function CanvasEditor({
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
+  }, [])
+
+  const handleSaveAsset = useCallback(async (node: CanvasNodeData) => {
+    if (!hasIde()) return
+    const content = node.metadata?.content || node.metadata?.prompt || node.title
+    if (!content) return
+    try {
+      if (typeof content === "string" && content.startsWith("data:")) {
+        const matches = content.match(/^data:([^;]+);base64,(.+)$/)
+        if (matches) {
+          const mediaType = matches[1]
+          const bytesBase64 = matches[2]
+          const ext = mediaType.split("/")[1] || "bin"
+          await getIde().assets.import({
+            name: `${node.title || "workflow-asset"}.${ext}`,
+            mediaType,
+            bytesBase64
+          })
+        }
+      } else {
+        const encoder = new TextEncoder()
+        const bytes = encoder.encode(content)
+        let binary = ""
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i])
+        }
+        const bytesBase64 = btoa(binary)
+        await getIde().assets.import({
+          name: `${node.title || "workflow-asset"}.txt`,
+          mediaType: "text/plain",
+          bytesBase64
+        })
+      }
+    } catch {
+      // 容错处理
+    }
   }, [])
 
   const handleAlignSelected = useCallback(
@@ -241,6 +280,7 @@ export function CanvasEditor({
             isFocusRelated={editor.hoveredNodeId === node.id}
             isConnectionTarget={editor.connectionTargetNodeId === node.id}
             isConnecting={Boolean(editor.connectingParams)}
+            isCycle={cycleNodeIds?.includes(node.id)}
             stepStatus={stepStatusByNodeId.get(node.id)}
             showPanel={editor.dialogNodeId === node.id && !editor.selectionBox}
             onMouseDown={pointer.handleNodeMouseDown}
@@ -345,6 +385,7 @@ export function CanvasEditor({
           }
           onDownload={handleDownloadMedia}
           onUngroup={editor.ungroupSelection}
+          onSaveAsset={handleSaveAsset}
         />
       )}
 

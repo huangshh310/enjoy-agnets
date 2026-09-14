@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { CanvasNodeType, type CanvasConnection, type CanvasNodeData } from "./canvas.types.ts"
-import { canvasToWorkflowGraph } from "./canvas-to-workflow-graph.ts"
+import { canvasToWorkflowGraph, sanitizeConnections } from "./canvas-to-workflow-graph.ts"
 
 test("canvasToWorkflowGraph - 空画布回退到默认配方", () => {
   const result = canvasToWorkflowGraph([], [])
@@ -46,4 +46,21 @@ test("canvasToWorkflowGraph - 检测回路环并返回错误", () => {
   assert.ok(result.error)
   assert.ok(result.cycleNodes && result.cycleNodes.length > 0)
   assert.equal(result.steps.length, 0)
+})
+
+test("sanitizeConnections - 净化孤立连线与自环", () => {
+  const nodes: CanvasNodeData[] = [
+    { id: "n1", type: CanvasNodeType.Text, title: "1", position: { x: 0, y: 0 }, width: 100, height: 100 },
+    { id: "n2", type: CanvasNodeType.Text, title: "2", position: { x: 100, y: 0 }, width: 100, height: 100 }
+  ]
+  const dirtyConnections: CanvasConnection[] = [
+    { id: "c1", fromNodeId: "n1", toNodeId: "n2" },
+    { id: "c2", fromNodeId: "n1", toNodeId: "n999_missing" },
+    { id: "c3", fromNodeId: "n888_missing", toNodeId: "n2" },
+    { id: "c4", fromNodeId: "n1", toNodeId: "n1" }
+  ]
+
+  const cleaned = sanitizeConnections(nodes, dirtyConnections)
+  assert.equal(cleaned.length, 1)
+  assert.equal(cleaned[0].id, "c1")
 })
