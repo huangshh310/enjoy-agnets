@@ -466,6 +466,9 @@ importers:
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.6.0
+      ws:
+        specifier: 'catalog:'
+        version: 8.21.3
       zod:
         specifier: 'catalog:'
         version: 4.5.2

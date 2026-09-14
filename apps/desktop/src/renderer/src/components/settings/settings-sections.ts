@@ -7,6 +7,7 @@ export const SETTINGS_SECTIONS = [
   "shortcuts",
   "providers",
   "agent",
+  "tools",
   "instructions",
   "skills",
   "rules",

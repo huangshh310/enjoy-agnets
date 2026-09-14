@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-import type { WindowActionResult, WindowState } from "@enjoy-agents/ipc-contract";
+import type {
+  BuiltinToolsState,
+  WindowActionResult,
+  WindowState
+} from "@enjoy-agents/ipc-contract";
 
 const ide = {
   workspace: {
@@ -251,6 +255,25 @@ const ide = {
       ipcRenderer.on("window.maximized-changed", listener)
       return () => ipcRenderer.off("window.maximized-changed", listener)
     }
+  },
+  builtinTools: {
+    getState: () =>
+      ipcRenderer.invoke("builtinTools.getState") as Promise<BuiltinToolsState>,
+    toggle: (input: { tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals"; enabled: boolean }) =>
+      ipcRenderer.invoke("builtinTools.toggle", input) as Promise<BuiltinToolsState>,
+    regeneratePairingCode: () =>
+      ipcRenderer.invoke("builtinTools.regeneratePairingCode") as Promise<BuiltinToolsState>,
+    getDesktopPermissions: () =>
+      ipcRenderer.invoke("builtinTools.getDesktopPermissions") as Promise<{
+        accessibility: boolean
+        screenCapture: boolean
+      }>,
+    openSystemPermission: (input: { permission: "accessibility" | "screenCapture" }) =>
+      ipcRenderer.invoke("builtinTools.openSystemPermission", input) as Promise<{ ok: true }>,
+    revealExtensionDir: () =>
+      ipcRenderer.invoke("builtinTools.revealExtensionDir") as Promise<{ ok: boolean }>,
+    previewOverlay: () =>
+      ipcRenderer.invoke("builtinTools.previewOverlay") as Promise<{ ok: true }>
   },
   app: {
     updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),

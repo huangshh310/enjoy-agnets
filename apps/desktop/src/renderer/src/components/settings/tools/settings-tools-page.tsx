@@ -1,0 +1,128 @@
+/**
+ * 设置中心 - 内置工具页面：
+ * 聚合内置浏览器、Browser Bridge（Chrome 扩展）与 macOS 后台 Computer Use 桌面能力。
+ */
+import { useCallback, useEffect, useState } from "react"
+import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
+import { getIde, hasIde } from "@renderer/lib/ide"
+import { BrowserToolsCard } from "./browser-tools-card"
+import { DesktopToolsCard } from "./desktop-tools-card"
+
+const DEFAULT_STATE: BuiltinToolsState = {
+  builtinBrowser: { enabled: false },
+  browserBridge: {
+    enabled: false,
+    port: 47823,
+    pairingCode: "",
+    connectedBrowser: null,
+    extensionInstalled: false
+  },
+  computerUse: {
+    enabled: false,
+    accessibilityGranted: false,
+    screenCaptureGranted: false,
+    screenVisuals: true
+  }
+}
+
+export function SettingsToolsPage() {
+  const [state, setState] = useState<BuiltinToolsState>(DEFAULT_STATE)
+  const [loading, setLoading] = useState(true)
+
+  const loadState = useCallback(async () => {
+    if (!hasIde()) return
+    try {
+      const data = await getIde().builtinTools.getState()
+      setState(data)
+    } catch (err) {
+      console.error("Failed to load builtin tools state", err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const refreshPermissions = useCallback(async () => {
+    if (!hasIde()) return
+    try {
+      const perms = await getIde().builtinTools.getDesktopPermissions()
+      setState((prev) => ({
+        ...prev,
+        computerUse: {
+          ...prev.computerUse,
+          accessibilityGranted: perms.accessibility,
+          screenCaptureGranted: perms.screenCapture
+        }
+      }))
+    } catch (err) {
+      console.error("Failed to refresh permissions", err)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadState()
+  }, [loadState])
+
+  useEffect(() => {
+    window.addEventListener("focus", refreshPermissions)
+    return () => window.removeEventListener("focus", refreshPermissions)
+  }, [refreshPermissions])
+
+  const handleToggle = async (
+    tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals",
+    enabled: boolean
+  ) => {
+    if (!hasIde()) return
+    try {
+      const next = await getIde().builtinTools.toggle({ tool, enabled })
+      setState(next)
+    } catch (err) {
+      console.error("Failed to toggle builtin tool", err)
+    }
+  }
+
+  const handleRegenerateCode = async () => {
+    if (!hasIde()) return
+    try {
+      const next = await getIde().builtinTools.regeneratePairingCode()
+      setState(next)
+    } catch (err) {
+      console.error("Failed to regenerate pairing code", err)
+    }
+  }
+
+  const handleOpenPermission = async (permission: "accessibility" | "screenCapture") => {
+    if (!hasIde()) return
+    try {
+      await getIde().builtinTools.openSystemPermission({ permission })
+    } catch (err) {
+      console.error("Failed to open system permission", err)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="h-48 animate-pulse rounded-2xl border border-border-button-default bg-background-secondary-default" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <BrowserToolsCard
+        browser={state.builtinBrowser}
+        bridge={state.browserBridge}
+        onToggleBrowser={(val) => handleToggle("builtinBrowser", val)}
+        onToggleBridge={(val) => handleToggle("browserBridge", val)}
+        onRegenerateCode={handleRegenerateCode}
+      />
+
+      <DesktopToolsCard
+        desktop={state.computerUse}
+        onToggleComputerUse={(val) => handleToggle("computerUse", val)}
+        onToggleScreenVisuals={(val) => handleToggle("screenVisuals", val)}
+        onOpenPermission={handleOpenPermission}
+      />
+    </div>
+  )
+}

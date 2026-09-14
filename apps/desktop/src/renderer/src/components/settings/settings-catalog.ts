@@ -26,7 +26,8 @@ import {
   RiShieldUserLine,
   RiSparkling2Line,
   RiSparklingLine,
-  RiTerminalBoxLine
+  RiTerminalBoxLine,
+  RiToolsLine
 } from "@remixicon/react"
 import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
 import type { TranslateFn } from "@renderer/i18n"
@@ -62,6 +63,7 @@ const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: Sett
   shortcuts: { labelKey: "nav.shortcuts", icon: RiKeyboardBoxLine },
   providers: { labelKey: "nav.providers", icon: RiShieldKeyholeLine },
   agent: { labelKey: "nav.agent", icon: RiEqualizer3Line },
+  tools: { labelKey: "nav.tools", icon: RiToolsLine },
   instructions: { labelKey: "nav.instructions", icon: RiFileTextLine },
   skills: { labelKey: "nav.skills", icon: RiSparklingLine },
   rules: { labelKey: "nav.rules", icon: RiBookOpenLine },

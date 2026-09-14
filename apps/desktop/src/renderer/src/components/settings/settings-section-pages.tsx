@@ -16,6 +16,7 @@ import { WorkspacesPage } from "@renderer/components/workspaces/workspaces-page"
 import { useT } from "@renderer/i18n"
 import { ProviderSettings } from "./providers/providers-settings"
 import { AgentSettings } from "./settings-agent"
+import { SettingsToolsPage } from "./tools/settings-tools-page"
 import { AppearanceSettings } from "./settings-appearance"
 import type { SettingsSectionId } from "./settings-catalog"
 import { GeneralSettings } from "./settings-general"
@@ -56,6 +57,7 @@ const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
   shortcuts: ShortcutSettings,
   providers: ProviderSettings,
   agent: AgentSettings,
+  tools: SettingsToolsPage,
   instructions: InstructionsSection,
   rules: RulesSection,
   workspace: WorkspaceSection,

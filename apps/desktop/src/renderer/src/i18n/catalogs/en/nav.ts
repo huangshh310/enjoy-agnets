@@ -17,6 +17,7 @@ export const enNav = {
   shortcuts: "Keyboard shortcuts",
   providers: "Providers",
   agent: "Agent",
+  tools: "Built-in Tools",
   capabilities: "Model capabilities",
   workflow: "Workflow recovery",
   sandbox: "Sandbox",

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enjoy Agents Bridge</title>
+  <style>
+    :root {
+      --bg: #0e1117;
+      --card: #161b22;
+      --border: #30363d;
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent: #238636;
+      --accent-hover: #2ea043;
+      --danger: #da3633;
+      --success: #3fb950;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      width: 320px;
+      box-sizing: border-box;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: #21262d;
+      border: 1px solid var(--border);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .status-pill.connected .dot {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(63, 185, 80, 0.4);
+    }
+    .status-pill.connected {
+      color: var(--success);
+      border-color: rgba(63, 185, 80, 0.3);
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 12px;
+      font-family: ui-monospace, monospace;
+      outline: none;
+    }
+    input:focus {
+      border-color: #58a6ff;
+    }
+    button {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-connect {
+      background: var(--accent);
+      color: #ffffff;
+    }
+    .btn-connect:hover {
+      background: var(--accent-hover);
+    }
+    .btn-disconnect {
+      background: var(--danger);
+      color: #ffffff;
+      display: none;
+    }
+    .tip {
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">Enjoy Agents Bridge</div>
+    <div id="statusPill" class="status-pill">
+      <span class="dot"></span>
+      <span id="statusText">未连接</span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pairingCode">配对码 (从 Enjoy Agents 设置复制)</label>
+    <input
+      type="text"
+      id="pairingCode"
+      placeholder="enjoy-bridge:47823:..."
+      autocomplete="off"
+    />
+  </div>
+
+  <button id="connectBtn" class="btn-connect">连接客户端</button>
+  <button id="disconnectBtn" class="btn-disconnect">断开连接</button>
+
+  <div class="tip">
+    连接成功后，Enjoy Agents 智能体即可在后台控制已打开的网页或执行自动化。
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import {
   RiSettings4Line,
   RiShieldKeyholeLine,
   RiSparklingLine,
+  RiToolsLine,
   RiUser3Line
 } from "@remixicon/react"
 import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
@@ -58,6 +59,12 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         labelKey: "nav.agent",
         icon: RiEqualizer3Line,
         keywords: ["mode", "model", "ask", "plan", "approval", "harness", "sandbox", "capabilities", "cli", "cursor", "claude", "grok", "codex", "antigravity", "agy", "acp", "沙箱", "智能体", "内核", "能力", "命令行"]
+      },
+      {
+        id: "tools",
+        labelKey: "nav.tools",
+        icon: RiToolsLine,
+        keywords: ["tools", "browser", "bridge", "computer use", "accessibility", "screen recording", "chrome", "内置工具", "浏览器", "桌面", "权限", "屏幕录制", "辅助功能"]
       },
       {
         id: "instructions",

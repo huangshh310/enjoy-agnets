@@ -16,6 +16,13 @@ test("打开 skills 时侧栏高亮技能自身而不是说明", () => {
   assert.equal(resolveActiveNavSectionId("skills"), "skills")
 })
 
+test("设置侧栏智能体分组包含内置工具入口", () => {
+  const agent = SETTINGS_NAV_DEF.find((group) => group.id === "agent")
+  assert.ok(agent)
+  assert.ok(agent.items.some((item) => item.id === "tools"))
+  assert.equal(resolveActiveNavSectionId("tools"), "tools")
+})
+
 test("组织一级入口是个人资料，团队空态不高亮自己", () => {
   const org = SETTINGS_NAV_DEF.find((group) => group.id === "org")
   assert.ok(org)

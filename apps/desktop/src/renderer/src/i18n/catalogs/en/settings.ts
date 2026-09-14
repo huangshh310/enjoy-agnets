@@ -1057,5 +1057,36 @@ export const enSettings = {
     openMcp: "Open MCP",
     orgTitle: "No cloud organization",
     orgBody: "There is no legal-entity badge, company domain, or SOC2 seal. Data residency is the workspace you opened."
+  },
+
+  builtinTools: {
+    title: "Built-in Tools",
+    browserSection: "Browser",
+    builtinBrowserTitle: "Built-in Browser",
+    builtinBrowserDesc: "Disable if using external browser tools (such as Playwright, Puppeteer, or browser MCP servers).",
+    browserBridgeTitle: "Browser Bridge",
+    browserBridgeDesc: "Allow agents to operate your logged-in browser via the Enjoy Agents Browser Bridge extension",
+    statusConnectedPrefix: "Connected: ",
+    statusWaiting: "Disconnected: Waiting for extension",
+    installFromChromeStore: "Install from Chrome Web Store",
+    openExtensionFolder: "Load Unpacked Extension",
+    pairingCode: "Pairing Code",
+    copy: "Copy",
+    copied: "Copied",
+    regenerate: "Regenerate",
+    bridgeTip: "After installing, copy the pairing code above. Click the Enjoy Agents Browser Bridge extension icon → Settings, paste the pairing code, and click Authorize to connect.",
+    desktopSection: "Desktop",
+    computerUseTitle: "Computer Use",
+    computerUseDesc: "Allow agents to operate any app on your Mac in the background without moving your mouse. Requires Accessibility and Screen Recording permissions. Takes effect on new sessions.",
+    desktopTip: "Permissions are granted to Enjoy Agents itself; open sessions will automatically reconnect once Screen Recording permission is granted.",
+    accessibility: "Accessibility",
+    screenCapture: "Screen Recording",
+    granted: "Granted",
+    notGranted: "Not Granted",
+    openSettings: "Open Settings",
+    screenVisualsTitle: "Screen Action Visuals",
+    screenVisualsDesc: "Show ambient safety glowing borders, floating top status pill, and click ripples when the agent operates your desktop.",
+    previewVisuals: "Preview Effect",
+    previewing: "Previewing…"
   }
 }

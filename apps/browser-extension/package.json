@@ -1,0 +1,9 @@
+{
+  "name": "@enjoy-agents/browser-extension",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome Extension for Enjoy Agents Browser Bridge",
+  "scripts": {
+    "build": "echo 'Extension ready for loading'"
+  }
+}

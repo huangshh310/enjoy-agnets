@@ -17,6 +17,7 @@ export const zhNav = {
   shortcuts: "键盘快捷键",
   providers: "模型供应商",
   agent: "智能体",
+  tools: "内置工具",
   capabilities: "模型能力",
   workflow: "工作流恢复",
   sandbox: "沙箱",

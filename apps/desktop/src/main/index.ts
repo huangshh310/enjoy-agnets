@@ -106,6 +106,9 @@ app.whenReady().then(async () => {
   void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
     void recoverPausedWorkflows()
   })
+  void import("./services/builtin-tools/bridge-server").then(({ syncBridgeServerWithState }) => {
+    void syncBridgeServerWithState()
+  })
   app.on("browser-window-created", (_event, window) => {
     optimizer.watchWindowShortcuts(window);
   });
@@ -120,6 +123,12 @@ app.whenReady().then(async () => {
 app.on("before-quit", () => {
   flushActiveRuns();
   disposeAllAcpSessions();
+  void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {
+    void stopBridgeServer()
+  })
+  void import("./services/builtin-tools/screen-overlay-service").then(({ disposeOverlayWindow }) => {
+    disposeOverlayWindow()
+  })
 });
 
 app.on("window-all-closed", () => {

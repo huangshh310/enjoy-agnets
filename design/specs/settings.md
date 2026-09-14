@@ -22,6 +22,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/workspace` | 工作区管理 + **远程连接名册**（SSH 主机） | 工作区状态、远程名册、动态排除规则（默认/自定义 glob）与项目技术栈侦测（`WorkspaceExclusionsCard`） |
 | `#/settings/providers` | 模型供应商 | 协议工厂、测速评分徽章（极佳/良好/偏慢评级）、四页签抽屉编辑 |
 | `#/settings/telemetry` | 运行观测与遥测 | 本地 APM 监控仪表盘、调用追踪审计、模型路由统计与脱敏上报配置（旧 `#/observability` 自动重定向至此） |
+| `#/settings/tools` | 内置工具 | 内置浏览器开关、Browser Bridge（Chrome 扩展配对码、47823 端口本地环回 WebSocket 通信与连接状态）与桌面后台非干扰 Computer Use（系统辅助功能与屏幕录制权限诊断、CodeX 风格置顶透明屏幕安全呼吸边框、顶部状态 HUD 胶囊、精准点击波纹与实时预览） |
 | `#/settings/extensions` | 扩展中心重定向 | 自动 redirect 到一级核心工作模块 `#/extensions` |
 | `#/studio` | （已废止） | 重定向 `#/` |
 

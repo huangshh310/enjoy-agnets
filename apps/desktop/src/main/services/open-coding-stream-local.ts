@@ -22,6 +22,7 @@ import { formatWorkspaceAgentsMd } from "./agents-md-discover"
 import { createInstructionTouchLog } from "./agents-md-touch-log"
 import { extraLocalInstructions } from "./inspect-prompt-instructions"
 import { createMcpAgentTools } from "./mcp-agent-tools"
+import { createBuiltinAgentTools } from "./builtin-tools/builtin-agent-tools"
 import type { OpenedCodingStream, OpenCodingStreamInput } from "./open-coding-stream-input"
 import { listDiscoveredRules } from "./rules-service"
 import type { StoredSecret } from "./secrets"
@@ -76,7 +77,10 @@ function localStreamOptions(
     reasoning: thinking.reasoning,
     providerOptions: thinking.providerOptions,
     policy,
-    extraTools: createMcpAgentTools({ mode: input.mode }),
+    extraTools: {
+      ...createMcpAgentTools({ mode: input.mode }),
+      ...createBuiltinAgentTools()
+    },
     waitForSubagentApproval: input.waitForSubagentApproval,
     onSubagentToolEvent: input.onSubagentToolEvent,
     maxSteps: input.prefs.maxAgentSteps,

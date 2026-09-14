@@ -1050,5 +1050,36 @@ export const zhSettings = {
     openMcp: "打开 MCP",
     orgTitle: "没有云端组织",
     orgBody: "没有法人认证、企业域名或 SOC2 印章。数据驻留就是你打开的工作区。"
+  },
+
+  builtinTools: {
+    title: "内置工具",
+    browserSection: "浏览器",
+    builtinBrowserTitle: "内置浏览器",
+    builtinBrowserDesc: "如果使用外部浏览器工具 (如 Playwright、Puppeteer 或浏览器 MCP 服务器) 则禁用。",
+    browserBridgeTitle: "Browser Bridge",
+    browserBridgeDesc: "通过 Enjoy Agents Browser Bridge 扩展，让智能体操作你自己登录的浏览器",
+    statusConnectedPrefix: "已连接: ",
+    statusWaiting: "未连接: 等待扩展连接",
+    installFromChromeStore: "从 Chrome 应用商店安装",
+    openExtensionFolder: "本地加载扩展",
+    pairingCode: "配对码",
+    copy: "复制",
+    copied: "已复制",
+    regenerate: "重新生成",
+    bridgeTip: "安装后，复制上方配对码。点击 Enjoy Agents Browser Bridge 扩展图标 → Settings，在小弹窗中粘贴配对码，再点击 Authorize 完成连接。",
+    desktopSection: "桌面",
+    computerUseTitle: "Computer Use",
+    computerUseDesc: "让 agent 在后台操作 Mac 上的任意应用，不会移动你的鼠标，需要为 Enjoy Agents 授予辅助功能与屏幕录制权限。对新会话生效。",
+    desktopTip: "权限授予 Enjoy Agents 本身；屏幕录制授权后已打开的会话会自动重新连接。",
+    accessibility: "辅助功能",
+    screenCapture: "屏幕录制",
+    granted: "已授权",
+    notGranted: "未授权",
+    openSettings: "打开设置",
+    screenVisualsTitle: "屏幕视觉反馈",
+    screenVisualsDesc: "在智能体操作桌面时，显示四周安全发光边框、顶部状态指示胶囊与点击波纹光圈。",
+    previewVisuals: "预览动效",
+    previewing: "演示中…"
   }
 }

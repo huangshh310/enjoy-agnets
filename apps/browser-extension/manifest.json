@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Enjoy Agents Browser Bridge",
+  "version": "0.1.0",
+  "description": "Connect your browser with Enjoy Agents IDE to enable background web control and content extraction.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Enjoy Agents Browser Bridge"
+  }
+}
