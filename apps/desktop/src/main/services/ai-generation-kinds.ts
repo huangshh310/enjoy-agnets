@@ -8,17 +8,18 @@ import {
   streamStructuredPartials,
   toZodSchema
 } from "@enjoy-agents/agent-core"
-import { AiGenerateInput, type GenerationKind } from "@enjoy-agents/ipc-contract"
+import { AiGenerateInput } from "@enjoy-agents/ipc-contract"
 import { createLanguageModel, wrapWithDefaults, type ProviderConfig } from "@enjoy-agents/providers"
 import { stampAndSend } from "./event-bus"
 import { runEmbeddingKind, runRerankKind } from "./generation-embed"
 import { runMediaKind } from "./media-generation"
 import { mapStreamPart } from "./stream-parts"
-import { getActiveProfile, readSecret } from "./secrets"
+import { readVault } from "./secrets"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
 import { resumeWorkflow } from "./workflow-runner"
 import { assertMediaKindAllowed } from "./media-policy"
+import { effectiveMediaModelId, pickGenerateProfile } from "./generation-routing"
 
 export async function executeKind(
   window: BrowserWindow,
@@ -33,7 +34,7 @@ export async function executeKind(
   }
   if (isMediaKind(request.kind)) {
     assertMediaKindAllowed(request.kind)
-    const modelId = effectiveMediaModelId(request.kind, request.modelId)
+    const modelId = effectiveMediaModelId(request.kind, request.modelId, readPreferences())
     await runMediaKind({
       window,
       runId,
@@ -41,7 +42,7 @@ export async function executeKind(
       kind: request.kind,
       prompt: request.prompt,
       attachments: request.attachments,
-      config: await requireProviderConfig(modelId),
+      config: await requireProviderConfig(modelId, request.providerId),
       persistChat: Boolean(request.messages?.length),
       abortSignal: signal
     })
@@ -72,7 +73,7 @@ async function streamTextKind(
   signal: AbortSignal,
   noteFirst: () => void
 ) {
-  const config = await requireProviderConfig(request.modelId)
+  const config = await requireProviderConfig(request.modelId, request.providerId)
   const messages = request.messages?.length ? toModelMessages(request.messages) : undefined
   const result = streamPlainText({
     model: languageModel(config),
@@ -95,7 +96,7 @@ async function runStructured(
   signal: AbortSignal,
   noteFirst: () => void
 ) {
-  const config = await requireProviderConfig(request.modelId)
+  const config = await requireProviderConfig(request.modelId, request.providerId)
   const schema = toZodSchema(request.schemaJson)
   const model = languageModel(config)
   const array = request.kind === "structured-array"
@@ -126,15 +127,14 @@ async function runStructured(
   stampAndSend(window, { type: "structured.delta", runId, partial: output }, request.sessionId)
 }
 
-async function requireProviderConfig(modelId: string): Promise<ProviderConfig> {
-  const secret = await readSecret()
-  const active = await getActiveProfile()
-  if (!secret && !active) throw new Error("No provider key configured.")
+async function requireProviderConfig(modelId: string, providerId?: string): Promise<ProviderConfig> {
+  const profile = pickGenerateProfile(await readVault(), providerId)
+  if (!profile) throw new Error("No provider key configured.")
   return {
-    provider: (active?.kind ?? secret?.provider ?? "custom") as ProviderConfig["provider"],
-    apiKey: secret?.apiKey ?? active?.apiKey ?? "",
+    provider: profile.kind as ProviderConfig["provider"],
+    apiKey: profile.apiKey,
     modelId,
-    baseURL: active?.baseURL ?? secret?.baseURL
+    baseURL: profile.baseURL
   }
 }
 
@@ -153,13 +153,4 @@ function isMediaKind(kind: string): boolean {
     kind === "video" ||
     kind === "realtime-session"
   )
-}
-
-function effectiveMediaModelId(kind: GenerationKind, requestedModelId: string): string {
-  const prefs = readPreferences()
-  if (kind === "image" && prefs.defaultImageModelId) return prefs.defaultImageModelId
-  if (kind === "video" && prefs.defaultVideoModelId) return prefs.defaultVideoModelId
-  if (kind === "speech" && prefs.defaultSpeechModelId) return prefs.defaultSpeechModelId
-  if (kind === "transcription" && prefs.defaultTranscriptionModelId) return prefs.defaultTranscriptionModelId
-  return requestedModelId
 }

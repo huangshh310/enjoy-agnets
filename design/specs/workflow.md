@@ -1,6 +1,6 @@
 # spec/workflow
 
-> Durable Workflow：检查点、暂停、恢复、步级重试。最后更新：2026-09-13
+> Durable Workflow：检查点、暂停、恢复、步级重试。最后更新：2026-09-14
 
 ## 当前真相
 
@@ -10,7 +10,13 @@
 
 状态词表统一：`WorkflowStatus` 用 `waiting_review`（与 `runs.status` / `TaskStatus` 同词表；旧的 `waiting_approval` 已删，renderer `workflow-dag` 同步）。
 
-UI `#/workflows` 在 `AppShell` 内换轨。对齐原型 Slide 8：展示预设流水线配方与 DAG 运行列表；支持 `Resume` / `Pause` / `Retry` / `Cancel` 控制（running 显示暂停 + 取消，waiting_review 显示取消），并提供 `Open in Chat →` 链接。列表按依赖分层画 DAG（`workflow-dag`）。
+UI `#/workflows` 在 `AppShell` 内换轨。工作流编辑器已换成 infinite-canvas 同构无限画布（节点/视口/连线/工具坞从开源项目移植，命名走本仓 kebab-case）：
+- 左侧情境栏是画布项目列表（本地 `localStorage`，key `enjoy-agents:workflow-canvas-v1`）。
+- 中间是世界坐标无限画布：默认抓手工具、空格/Ctrl 临时切换、滚轮光标缩放 0.05–5、点阵/网格/空白背景、框选、节点拖拽、四角缩放、端口拉线、双击空白新建菜单。
+- 节点类型对齐开源项目：`image` / `text` / `config` / `video` / `audio` / `group`。
+- 底栏浮动工具坞 + 左下缩放坞 + 小地图。节点下方生成条带模型选择（按 image/video/audio/text 过滤能力），选中的 `metadata.model` + `metadata.providerId` 交给 `ai.generate`（renderer 不碰密钥）。生图模型（`grok-imagine-image` 等）不会被设置页 `defaultImageModelId` 覆盖。失败时节点展示 `run.error` 原文，不再写成固定的 `Generation failed.`。
+- 顶栏保留 `data-testid="workflow-start"` 启动 durable Plan→Act→Verify。画布容器带 `data-testid="workflow-dag"`。
+- 未移植：节点插件、第三方提示词源、裁剪/蒙版/超分、画布内助手。
 
 子 Agent 回 `SubagentSummary`，同时把子工具事件挂到父 `delegate`（`parentToolCallId`）。写盘必须走主循环同一条审批，不能另开后门。页面文案必须写明每步是 `agent.run`，禁止再写「一键自主 / 假完成」。Chat 思考树花名册（连续顶层 `delegate`）不是 `#/workflows` DAG：前者是同一轮 ToolLoop 派工，后者是 durable `agent.run` 步骤图。
 
@@ -27,10 +33,13 @@ UI `#/workflows` 在 `AppShell` 内换轨。对齐原型 Slide 8：展示预设�
 - `packages/agent-core/src/agents/workflow.ts`
 - `apps/desktop/src/main/services/workflow-runner.ts`
 - `apps/desktop/src/main/services/workflow-step-agent.ts`
+- UI 画布：`apps/desktop/src/renderer/src/components/workflows/canvas/`（视口 `infinite-canvas.tsx`，编辑器 `canvas-editor.tsx`）
 
 ## 已知坑
 
 - **隐患**：崩溃恢复后取消找不到子 agent。根因：`childRuns` 是内存 Map；`insertRunStep` 不写 `childRunId`，也未调 `updateRunStepChildRunId`。正确做法：未接线前只 abort 仍在 Map 里的子 run；持久化再补写库 + `getWorkflow` 投影。
-- 步骤支持 `dependsOn` 拓扑排序与 `layerWorkflowSteps` 分层。UI 用链式文本生成 DAG 并分层展示，不是节点画布。环在 `orderWorkflowSteps` 会被拒绝；步与步严格串行，`dependsOn` 只影响 UI 排布，不做并行层执行。
+- 步骤支持 `dependsOn` 拓扑排序与 `layerWorkflowSteps` 分层。画布连线是编辑态 DAG；durable 执行仍严格串行。环在 `orderWorkflowSteps` 会被拒绝。
+- 画布节点曾把 `run.error` 收成固定英文 `Generation failed.`，真实原因（错档案、无字节、供应商原文）看不到。正确做法：`applyCanvasGenerationEvent` 把 `event.message` 写进 `errorDetails`。
+- `executeKind` 曾无条件用设置页 `defaultImageModelId` 覆盖请求模型，画布选中 `grok-imagine-image` 也会被换成聊天默认生图模型；`requireProviderConfig` 只读当前激活档案，忽略 `GenerationRequest.providerId`。正确做法：image-only 请求原样使用；按 `providerId` 解析 vault。
 - `workflow.lastCheckpointId` 是 `cp_<stepIndex>` 形式的 id，不是整份 checkpoint JSON（曾返回整个 JSON 字符串，已修）。
 - 取消发生在步骤中途时，子 run 被 abort → 步骤抛错 → catch 里先看行状态是 `cancelled` 就直接返回，不会把 cancelled 覆写成 failed。
