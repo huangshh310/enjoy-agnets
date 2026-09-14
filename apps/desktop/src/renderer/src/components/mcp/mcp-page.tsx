@@ -12,9 +12,82 @@ import { McpServersView } from "./components/mcp-servers-view"
 import { useMcpPage } from "./hooks/use-mcp-page"
 import type { McpActiveTab } from "./types/mcp-ui.types"
 
-export function McpPage() {
+export function McpPage(props?: {
+  embedded?: boolean
+  onBrowseMarketplace?: () => void
+}) {
   const t = useT()
   const page = useMcpPage()
+
+  const content = (
+    <div className="flex h-full min-h-0 flex-col px-8 pt-5 pb-6">
+      <McpHeader
+        stats={page.stats}
+        onAddClick={() => page.openCreateModal()}
+        onRefresh={page.refresh}
+        isRefreshing={page.isRefreshing}
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col pt-5">
+        {page.activeTab === "servers" ? (
+          <McpServersView
+            servers={page.servers}
+            filteredServers={page.filteredServers}
+            serverSearch={page.serverSearch}
+            onServerSearchChange={page.setServerSearch}
+            onChanged={page.refresh}
+            onOpenApp={page.openApp}
+            onExploreTools={(s) => page.setToolsModalServer(s)}
+            onEdit={(s) => page.openCreateModal(s)}
+            onAdd={() => page.openCreateModal()}
+            onBrowseMarketplace={() => {
+              if (props?.onBrowseMarketplace) {
+                props.onBrowseMarketplace()
+              } else {
+                window.location.hash = "#/extensions"
+              }
+            }}
+          />
+        ) : null}
+
+        {page.activeTab === "json" ? (
+          <McpJsonEditorView servers={page.servers} onChanged={page.refresh} />
+        ) : null}
+      </div>
+
+      <McpCreateModal
+        open={page.createModalOpen}
+        onOpenChange={page.setCreateModalOpen}
+        initialServer={page.editingServer}
+        onChanged={page.refresh}
+      />
+
+      <McpServerToolsModal
+        server={page.toolsModalServer}
+        open={Boolean(page.toolsModalServer)}
+        onOpenChange={(open) => {
+          if (!open) page.setToolsModalServer(null)
+        }}
+        onChanged={page.refresh}
+      />
+
+      <McpAppModal
+        open={page.appModalOpen}
+        onOpenChange={page.setAppModalOpen}
+        appTitle={page.appTitle}
+        appSrcDoc={page.appSrcDoc}
+        lastLog={page.lastLog}
+        onAppMessage={page.onAppMessage}
+        onRefreshApp={() => {
+          if (page.openServerId) void page.openApp(page.openServerId)
+        }}
+      />
+    </div>
+  )
+
+  if (props?.embedded) {
+    return content
+  }
 
   return (
     <SecondaryPageShell
@@ -25,65 +98,7 @@ export function McpPage() {
       contentWidth="fill"
       hideChrome
     >
-      <div className="flex h-full min-h-0 flex-col px-8 pt-5 pb-6">
-        <McpHeader
-          stats={page.stats}
-          onAddClick={() => page.openCreateModal()}
-          onRefresh={page.refresh}
-          isRefreshing={page.isRefreshing}
-        />
-
-        <div className="flex min-h-0 flex-1 flex-col pt-5">
-          {page.activeTab === "servers" ? (
-            <McpServersView
-              servers={page.servers}
-              filteredServers={page.filteredServers}
-              serverSearch={page.serverSearch}
-              onServerSearchChange={page.setServerSearch}
-              onChanged={page.refresh}
-              onOpenApp={page.openApp}
-              onExploreTools={(s) => page.setToolsModalServer(s)}
-              onEdit={(s) => page.openCreateModal(s)}
-              onAdd={() => page.openCreateModal()}
-              onBrowseMarketplace={() => {
-                window.location.hash = "#/settings/extensions"
-              }}
-            />
-          ) : null}
-
-          {page.activeTab === "json" ? (
-            <McpJsonEditorView servers={page.servers} onChanged={page.refresh} />
-          ) : null}
-        </div>
-
-        <McpCreateModal
-          open={page.createModalOpen}
-          onOpenChange={page.setCreateModalOpen}
-          initialServer={page.editingServer}
-          onChanged={page.refresh}
-        />
-
-        <McpServerToolsModal
-          server={page.toolsModalServer}
-          open={Boolean(page.toolsModalServer)}
-          onOpenChange={(open) => {
-            if (!open) page.setToolsModalServer(null)
-          }}
-          onChanged={page.refresh}
-        />
-
-        <McpAppModal
-          open={page.appModalOpen}
-          onOpenChange={page.setAppModalOpen}
-          appTitle={page.appTitle}
-          appSrcDoc={page.appSrcDoc}
-          lastLog={page.lastLog}
-          onAppMessage={page.onAppMessage}
-          onRefreshApp={() => {
-            if (page.openServerId) void page.openApp(page.openServerId)
-          }}
-        />
-      </div>
+      {content}
     </SecondaryPageShell>
   )
 }

@@ -3,16 +3,14 @@
  */
 import type { ComponentType } from "react"
 import {
+  RiApps2Line,
   RiBookOpenLine,
   RiChat1Line,
   RiFlowChart,
   RiImageLine,
   RiInboxLine,
-  RiLineChartLine,
-  RiSettings4Line,
-  RiSparklingLine
+  RiSettings4Line
 } from "@remixicon/react"
-import { McpIcon } from "../../mcp/components/mcp-brand-icons.ts"
 import type { ActivityRailItem, AppModuleId } from "../app-shell.types"
 
 export type ActivityIcon = ComponentType<{
@@ -26,9 +24,7 @@ export const WORK_RAIL_ITEMS: ActivityRailItem[] = [
   { id: "knowledge", labelKey: "nav.knowledge", to: "/knowledge" },
   { id: "workflows", labelKey: "nav.workflows", to: "/workflows" },
   { id: "media", labelKey: "nav.media", to: "/media" },
-  { id: "mcp", labelKey: "nav.mcp", to: "/mcp" },
-  { id: "skills", labelKey: "nav.skills", to: "/skills" },
-  { id: "observability", labelKey: "nav.observability", to: "/observability" }
+  { id: "extensions", labelKey: "nav.extensions", to: "/extensions" }
 ]
 
 export const OVERLAY_RAIL_ITEMS: ActivityRailItem[] = [
@@ -41,9 +37,7 @@ export const ACTIVITY_ICONS: Record<AppModuleId, ActivityIcon> = {
   knowledge: RiBookOpenLine,
   workflows: RiFlowChart,
   media: RiImageLine,
-  mcp: McpIcon,
-  skills: RiSparklingLine,
-  observability: RiLineChartLine,
+  extensions: RiApps2Line,
   inbox: RiInboxLine,
   settings: RiSettings4Line
 }

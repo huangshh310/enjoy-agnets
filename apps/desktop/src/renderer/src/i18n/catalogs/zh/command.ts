@@ -13,6 +13,7 @@ export const zhCommand = {
   knowledge: "知识库与语义检索",
   studioHub: "可观测性大盘",
   workflows: "持久化工作流与 DAG",
+  extensions: "扩展与能力中心（MCP & 技能）",
   mcp: "模型上下文协议（MCP）",
   skills: "Skills 技能管理与目标投影",
   media: "媒体工作室（图像 / 语音 / 视频）",

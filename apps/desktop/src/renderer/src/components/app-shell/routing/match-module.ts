@@ -17,13 +17,16 @@ const SETTINGS_PREFIXES = [
   "/team",
   "/company",
   "/account",
-  "/workspaces"
+  "/workspaces",
+  "/observability"
 ] as const
 
 const MODULE_PREFIXES: Array<{ prefix: string; id: AppModuleId }> = [
   ...(Object.entries(WORK_MODULE_PATHS) as Array<[WorkModuleId, string]>)
     .filter(([id]) => id !== "chat")
     .map(([id, prefix]) => ({ prefix, id })),
+  { prefix: "/mcp", id: "extensions" as const },
+  { prefix: "/skills", id: "extensions" as const },
   { prefix: "/inbox", id: "inbox" },
   ...SETTINGS_PREFIXES.map((prefix) => ({ prefix, id: "settings" as const }))
 ]

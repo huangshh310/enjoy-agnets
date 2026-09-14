@@ -7,6 +7,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useT } from "@renderer/i18n"
 import {
   RiAddLine,
+  RiApps2Line,
   RiBookOpenLine,
   RiChat1Line,
   RiEqualizer3Line,
@@ -113,7 +114,17 @@ export function QuickSearchDialog() {
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
-                void navigate({ to: "/mcp" })
+                void navigate({ to: "/extensions" })
+              })
+            }
+          >
+            <RiApps2Line className="size-4 text-accent-500" />
+            <span>{t("command.extensions")}</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              handleSelect(() => {
+                void navigate({ to: "/extensions", search: { tab: "mcp" } })
               })
             }
           >
@@ -123,7 +134,7 @@ export function QuickSearchDialog() {
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
-                void navigate({ to: "/skills" })
+                void navigate({ to: "/extensions", search: { tab: "skills" } })
               })
             }
           >
@@ -179,7 +190,10 @@ export function QuickSearchDialog() {
           <CommandItem
             onSelect={() =>
               handleSelect(() => {
-                void navigate({ to: "/observability" })
+                void navigate({
+                  to: "/settings/$section",
+                  params: { section: "telemetry" }
+                })
               })
             }
           >

@@ -11,6 +11,7 @@ import { zhWorkflowPages } from "./pages-workflows.ts"
 import { zhAccountPages } from "./pages-account.ts"
 import { zhSkillsPages } from "./pages-skills.ts"
 import { zhWorkspacesPages } from "./pages-workspaces.ts"
+import { zhExtensionsPages } from "./pages-extensions.ts"
 
 export const zhPages = {
   studioTitle: "Agent Studio",
@@ -22,5 +23,6 @@ export const zhPages = {
   inbox: zhInboxPages,
   account: zhAccountPages,
   skills: zhSkillsPages,
-  workspaces: zhWorkspacesPages
+  workspaces: zhWorkspacesPages,
+  extensions: zhExtensionsPages
 }

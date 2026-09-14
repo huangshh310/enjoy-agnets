@@ -9,24 +9,25 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | Hash | 页面 | 落点 |
 |---|---|---|
 | `#/` | Chat 工作模块 | AppShell 情境=会话树，Stage=线程 |
-| `#/knowledge` `#/workflows` `#/media` `#/mcp` `#/observability` | 工作模块 | AppShell 内换轨，不弹出第二套壳 |
+| `#/knowledge` `#/workflows` `#/media` `#/extensions` | 工作模块 | AppShell 内换轨，不弹出第二套壳；`#/mcp` 与 `#/skills` 自动重定向至 `#/extensions` |
 | `#/inbox` | 消息 | 轨道底部 Inbox；`fill` 时间线+阅读器 |
 | `#/settings/general` | 通用偏好 | 主题、语言、快捷键、自动更新、桌面系统通知与提示音偏好（`SettingsNotificationsCard`） |
 | `#/settings/appearance` | 外观与视觉 | 亮暗主题、5款主题强调色（Signal Blue/Terminal Green/Claude Amber/Cosmic Purple/Graphite Slate）、4款界面材质皮肤、UI 全局缩放（85%~120%）与代码/终端字号（12px~16px） |
 | `#/settings/archived` | 已归档的聊天 | Settings |
 | `#/settings/automations` | 自动化 | Settings；旧 `#/automations` redirect |
-| `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings 具备顶部双 Tab 导航（全局 Persona 指令与项目规则 `RulesSection`）；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/skills` |
+| `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings 具备顶部双 Tab 导航（全局 Persona 指令与项目规则 `RulesSection`）；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/extensions?tab=skills` |
 | `#/settings/team` `#/settings/members` | 团队资料 / 成员 | 旧 `#/team/*` redirect |
 | `#/settings/billing` `#/settings/organization` `#/settings/integrations` | 账单 / 组织 / 企业集成 | 旧 `#/company/*` redirect |
 | `#/settings/account` `#/settings/notifications` | 账号 / 通知 | 旧 `#/account/*` redirect。个人画像具备 Canvas 着色器封面、Blobatar 形象、六联 KPI、双翼图表、开发者战报海报弹窗（`ProfileSharePosterDialog`）导出。不是云账号 |
 | `#/settings/workspace` | 工作区管理 + **远程连接名册**（SSH 主机） | 工作区状态、远程名册、动态排除规则（默认/自定义 glob）与项目技术栈侦测（`WorkspaceExclusionsCard`） |
 | `#/settings/providers` | 模型供应商 | 协议工厂、测速评分徽章（极佳/良好/偏慢评级）、四页签抽屉编辑 |
-| `#/settings/extensions` | 扩展与能力中心 | 现代化 Bento 网格集市（MCP 外部协议与 Skills 技能套件）；三联指标大盘、分类筛选、即时搜索；添加与获取深链 `#/mcp` / `#/skills`；无独立安装内核、无 Registry |
+| `#/settings/telemetry` | 运行观测与遥测 | 本地 APM 监控仪表盘、调用追踪审计、模型路由统计与脱敏上报配置（旧 `#/observability` 自动重定向至此） |
+| `#/settings/extensions` | 扩展中心重定向 | 自动 redirect 到一级核心工作模块 `#/extensions` |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
 `#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（`skill` 工具）与 ACP（`composeAcpPrompt`），不灌 SKILL.md。ACP 不重复灌 AGENTS.md（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置默认项 C 端只露「探索 / 执行」人话卡片（视觉锁 [`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)）：探索写入内部 `plan`，执行写入 `agent`。**禁止**把 `ask|plan|agent`、ACP、协议微标写进默认项文案。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
-设置分段 ID 含 `extensions`（工作区组）。侧栏情境栏 4 大板块 **11** 个核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/**技能**；工作区与扩展：工作区/**扩展**/MCP；组织：**个人资料** `#/settings/account`）。`#/settings/extensions` 是全景扩展与能力生态中心：顶部配备三联态势概览磁贴（已配置 MCP 服务数、已装载技能套件数、生态资源总池），具备交互式主 Tab 切换（全部/MCP/Skills）、多维分类药丸筛选（文件、工程、数据库、网络、设计、写作）与即时搜索框，正文采用 Raycast 式现代化 Bento 卡片响应式网格（品牌主题色图标、类型标、就绪绿灯徽标、星标/作者、能力亮点芯片、一键获取/管理操作）；添加与获取深链现有工作模块（带 `preset` / `install`），不另开第二套安装内核。页上无 Registry、无本机 CLI、无 `ACP · stdio` 协议微标。不增第八个工作模块。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）；`skills` 自己就是一级入口，不再并进「说明」。不要把一级入口做成「团队资料」空态，否则个人中心（Blobatar / Hero / 用量图）会从侧栏消失。
+设置分段 ID 含 `telemetry`。侧栏情境栏 4 大板块核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/技能/运行遥测；工作区与扩展：工作区/扩展/MCP；组织：**个人资料** `#/settings/account`）。`#/settings/telemetry` 承接原可观测性看板：指标概览、模型路由、调用审计、本机 CLI 与隐私上报模式。`#/settings/extensions` 与 `#/settings/skills`、`#/settings/mcp` 统一跳转至第一级工作模块 `#/extensions`。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。Chat：Shift+Tab 循环审批档 `allow-reads → allow-edits → allow-all`（`use-permission-cycle-hotkey`；输入框 / contentEditable 内不触发；custom 档从 `allow-reads` 起算）。设置 shortcuts 已登记。
 

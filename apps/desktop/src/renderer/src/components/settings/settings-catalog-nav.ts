@@ -9,6 +9,7 @@ import {
   RiFolder6Line,
   RiKeyboardBoxLine,
   RiPaletteLine,
+  RiPulseLine,
   RiSettings4Line,
   RiShieldKeyholeLine,
   RiSparklingLine,
@@ -69,6 +70,12 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         labelKey: "nav.skills",
         icon: RiSparklingLine,
         keywords: ["skill", "skills", "能力包", "技能", "来源组"]
+      },
+      {
+        id: "telemetry",
+        labelKey: "nav.telemetry",
+        icon: RiPulseLine,
+        keywords: ["telemetry", "observability", "traces", "metrics", "tokens", "cost", "logs", "otel", "privacy", "遥测", "可观测性", "指标", "监控", "耗时", "脱敏", "审计"]
       }
     ]
   },

@@ -5,14 +5,17 @@ import { isOverlayModule, isWorkModule, matchAppModule, pathForWorkModule } from
 test("工作模块按前缀命中", () => {
   assert.equal(matchAppModule("/"), "chat")
   assert.equal(matchAppModule("/knowledge"), "knowledge")
-  assert.equal(matchAppModule("/mcp"), "mcp")
-  assert.equal(matchAppModule("/skills"), "skills")
-  assert.equal(matchAppModule("/observability"), "observability")
+  assert.equal(matchAppModule("/workflows"), "workflows")
+  assert.equal(matchAppModule("/media"), "media")
+  assert.equal(matchAppModule("/extensions"), "extensions")
+  assert.equal(matchAppModule("/mcp"), "extensions")
+  assert.equal(matchAppModule("/skills"), "extensions")
 })
 
-test("Inbox / Settings 是叠加模块", () => {
+test("Inbox / Settings 是叠加模块，包含 Observability", () => {
   assert.equal(matchAppModule("/inbox"), "inbox")
   assert.equal(matchAppModule("/settings/general"), "settings")
+  assert.equal(matchAppModule("/observability"), "settings")
   assert.equal(matchAppModule("/automations"), "settings")
   assert.equal(matchAppModule("/team/profile"), "settings")
   assert.equal(matchAppModule("/workspaces"), "settings")
@@ -22,6 +25,6 @@ test("Inbox / Settings 是叠加模块", () => {
 
 test("工作模块路径表完整", () => {
   assert.equal(pathForWorkModule("chat"), "/")
-  assert.equal(pathForWorkModule("mcp"), "/mcp")
-  assert.equal(pathForWorkModule("skills"), "/skills")
+  assert.equal(pathForWorkModule("knowledge"), "/knowledge")
+  assert.equal(pathForWorkModule("extensions"), "/extensions")
 })

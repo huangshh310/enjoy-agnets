@@ -13,6 +13,7 @@ export const enCommand = {
   knowledge: "Knowledge & retrieval",
   studioHub: "Observability dashboard",
   workflows: "Durable Workflows & DAG",
+  extensions: "Extensions Hub (MCP & Skills)",
   mcp: "Model Context Protocol (MCP)",
   skills: "Skills management and projection",
   media: "Media Studio (Image / Speech / Video)",

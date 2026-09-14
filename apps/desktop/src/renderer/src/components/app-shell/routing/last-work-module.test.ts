@@ -19,9 +19,9 @@ test("未写入时回到 Chat", () => {
 
 test("读写上次工作模块", () => {
   const storage = memory()
-  writeLastWorkModule("mcp", storage)
-  assert.equal(storage.getItem(LAST_WORK_MODULE_KEY), "mcp")
-  assert.equal(readLastWorkModule(storage), "mcp")
+  writeLastWorkModule("extensions", storage)
+  assert.equal(storage.getItem(LAST_WORK_MODULE_KEY), "extensions")
+  assert.equal(readLastWorkModule(storage), "extensions")
 })
 
 test("非法值回落 Chat", () => {

@@ -11,6 +11,7 @@ import { enWorkflowPages } from "./pages-workflows.ts"
 import { enAccountPages } from "./pages-account.ts"
 import { enSkillsPages } from "./pages-skills.ts"
 import { enWorkspacesPages } from "./pages-workspaces.ts"
+import { enExtensionsPages } from "./pages-extensions.ts"
 
 export const enPages = {
   studioTitle: "Agent Studio",
@@ -22,5 +23,6 @@ export const enPages = {
   inbox: enInboxPages,
   account: enAccountPages,
   skills: enSkillsPages,
-  workspaces: enWorkspacesPages
+  workspaces: enWorkspacesPages,
+  extensions: enExtensionsPages
 }

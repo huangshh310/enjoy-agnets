@@ -50,15 +50,16 @@ test("扩展页 copy 不含 Registry、本机 CLI、ACP、stdio", () => {
   }
 })
 
-test("WORK_MODULE_IDS 仍为七项且不含 extensions", () => {
+test("WORK_MODULE_IDS 包含五大工作模块且包含 extensions，mcp/skills/observability 离开主轨道", () => {
   assert.deepEqual([...WORK_MODULE_IDS], [
     "chat",
     "knowledge",
     "workflows",
     "media",
-    "mcp",
-    "skills",
-    "observability"
+    "extensions"
   ])
-  assert.equal((WORK_MODULE_IDS as readonly string[]).includes("extensions"), false)
+  assert.equal((WORK_MODULE_IDS as readonly string[]).includes("extensions"), true)
+  assert.equal((WORK_MODULE_IDS as readonly string[]).includes("mcp"), false)
+  assert.equal((WORK_MODULE_IDS as readonly string[]).includes("skills"), false)
+  assert.equal((WORK_MODULE_IDS as readonly string[]).includes("observability"), false)
 })

@@ -21,7 +21,7 @@ import { useSkillSourcePull } from "./hooks/use-skill-source-pull"
 import { countGitSkillSources } from "./lib/git-skill-sources"
 import { skillVisibleForTarget } from "./lib/skill-visible-for-target"
 
-export function SkillsPage() {
+export function SkillsPage(props?: { embedded?: boolean }) {
   const page = useSkillsPage()
   const pullState = useSkillSourcePull()
   const [searchQuery, setSearchQuery] = useState("")
@@ -105,6 +105,156 @@ export function SkillsPage() {
     return page.sources.find((s) => s.id === selectedDrawerSkill.sourceId)
   }, [selectedDrawerSkill, page.sources])
 
+  const content = (
+    <div className="flex h-full min-h-0 flex-col gap-6 px-8 pt-5 pb-6">
+      {page.actionError ? (
+        <div className="shrink-0 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
+          {page.actionError}
+        </div>
+      ) : null}
+      {page.busyMessage ? (
+        <div className="shrink-0 rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-2.5 text-caption-2-medium text-accent-700 dark:text-accent-300">
+          正在{page.busyMessage}…
+        </div>
+      ) : null}
+
+      {isDetailView && page.detail ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <SkillsDetailView
+            detail={page.detail}
+            activeSkillId={page.activeSkillId}
+            hasWorkspace={page.hasWorkspace}
+            busy={Boolean(page.busyMessage)}
+            onBack={() => page.setSelectedNavId("all")}
+            onSelectSkill={(id) => page.setActiveSkillId(id)}
+            onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+            onToggleSkill={(source, skillId) => void page.toggleSkill(source, skillId)}
+            onUpdate={() => void page.updateSource(page.detail!.source.id)}
+            onDeploy={() => void page.deploySource(page.detail!.source.id)}
+            onRemove={() => void page.removeSource(page.detail!.source.id)}
+            onDeleteSkill={(skillId) => void page.deleteSkill(page.detail!.source.id, skillId)}
+          />
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
+          <SkillsToolbar
+            sourceCount={page.sources.length}
+            gitSourceCount={countGitSkillSources(page.sources)}
+            deployedCount={page.allSkills.length || page.overview?.installedCount || 0}
+            driftCount={page.overview?.driftCount ?? 0}
+            warningCount={page.warnings.length}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            busy={Boolean(page.busyMessage)}
+            updating={pullState.busy}
+            onDoctor={() => page.setDoctorOpen(true)}
+            onUpdateAll={() => void pullState.pull()}
+            onImport={() => page.setImportOpen(true)}
+            onCreateSkill={() => page.setCreateSkillOpen(true)}
+          />
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            {activeTargetId ? (
+              <AgentArmoryView
+                targetId={activeTargetId}
+                allSkills={page.allSkills}
+                sources={page.sources}
+                curated={page.curated}
+                busy={Boolean(page.busyMessage)}
+                onGoToStore={() => page.setSelectedNavId("curated")}
+                onClearFilter={() => page.setSelectedNavId("all")}
+                onInstallCurated={(source) => void page.installCurated(source)}
+                onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+                onSelectSkill={(skill) => setSelectedDrawerSkill(skill)}
+              />
+            ) : activeTab === "curated" ? (
+              <SkillsCuratedView
+                curated={page.curated}
+                sources={page.sources}
+                busy={Boolean(page.busyMessage)}
+                onInstall={(curatedSource) => void page.installCurated(curatedSource)}
+              />
+            ) : activeTab === "packs" ? (
+              <SkillsGrid
+                sources={displayedSources}
+                busy={Boolean(page.busyMessage)}
+                activeTargetId={activeTargetId}
+                onClearTargetFilter={() => page.setSelectedNavId("all")}
+                onSelect={(id) => page.setSelectedNavId(id)}
+                onUpdate={(id) => void page.updateSource(id)}
+                onDeploy={(id) => void page.deploySource(id)}
+                onRemove={(id) => void page.removeSource(id)}
+                onPickFolder={() => void page.addLocalSource()}
+                onGoToStore={() => page.setSelectedNavId("curated")}
+              />
+            ) : filteredSkills.length === 0 ? (
+              <SkillsEmptyState
+                activeTargetId={activeTargetId}
+                onClearTargetFilter={() => page.setSelectedNavId("all")}
+                onGoToStore={() => page.setSelectedNavId("curated")}
+                onPickFolder={() => void page.addLocalSource()}
+              />
+            ) : (
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredSkills.map((skill) => (
+                  <SkillItemCard
+                    key={`${skill.sourceId}:${skill.id}`}
+                    skill={skill}
+                    onSelect={() => setSelectedDrawerSkill(skill)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 技能详情抽屉 */}
+      <SkillDrawer
+        skill={selectedDrawerSkill}
+        source={drawerSource}
+        hasWorkspace={page.hasWorkspace}
+        busy={Boolean(page.busyMessage)}
+        onClose={() => setSelectedDrawerSkill(null)}
+        onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
+        onDeleteSkill={(sourceId, skillId) => {
+          void page.deleteSkill(sourceId, skillId)
+          setSelectedDrawerSkill(null)
+        }}
+      />
+
+      <SkillsDoctorModal
+        open={page.doctorOpen}
+        warnings={page.warnings}
+        onOpenChange={page.setDoctorOpen}
+        onRepairAll={async () => {
+          await page.repairTargets()
+        }}
+      />
+
+      <ImportDialog
+        open={page.importOpen}
+        onOpenChange={page.setImportOpen}
+        onImported={page.refreshAll}
+        workspacePath={page.workspacePath}
+      />
+
+      <CreateSkillDialog
+        open={page.createSkillOpen}
+        hasWorkspace={page.hasWorkspace}
+        workspacePath={page.workspacePath}
+        onOpenChange={page.setCreateSkillOpen}
+        onCreated={page.refreshAll}
+      />
+    </div>
+  )
+
+  if (props?.embedded) {
+    return content
+  }
+
   return (
     <SecondaryPageShell
       searchPlaceholder="搜索技能与来源组…"
@@ -118,149 +268,7 @@ export function SkillsPage() {
       contentWidth="fill"
       hideChrome
     >
-      <div className="flex h-full min-h-0 flex-col gap-6 px-8 pt-5 pb-6">
-        {page.actionError ? (
-          <div className="shrink-0 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
-            {page.actionError}
-          </div>
-        ) : null}
-        {page.busyMessage ? (
-          <div className="shrink-0 rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-2.5 text-caption-2-medium text-accent-700 dark:text-accent-300">
-            正在{page.busyMessage}…
-          </div>
-        ) : null}
-
-        {isDetailView && page.detail ? (
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <SkillsDetailView
-              detail={page.detail}
-              activeSkillId={page.activeSkillId}
-              hasWorkspace={page.hasWorkspace}
-              busy={Boolean(page.busyMessage)}
-              onBack={() => page.setSelectedNavId("all")}
-              onSelectSkill={(id) => page.setActiveSkillId(id)}
-              onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
-              onToggleSkill={(source, skillId) => void page.toggleSkill(source, skillId)}
-              onUpdate={() => void page.updateSource(page.detail!.source.id)}
-              onDeploy={() => void page.deploySource(page.detail!.source.id)}
-              onRemove={() => void page.removeSource(page.detail!.source.id)}
-              onDeleteSkill={(skillId) => void page.deleteSkill(page.detail!.source.id, skillId)}
-            />
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col gap-6">
-            <SkillsToolbar
-              sourceCount={page.sources.length}
-              gitSourceCount={countGitSkillSources(page.sources)}
-              deployedCount={page.allSkills.length || page.overview?.installedCount || 0}
-              driftCount={page.overview?.driftCount ?? 0}
-              warningCount={page.warnings.length}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              busy={Boolean(page.busyMessage)}
-              updating={pullState.busy}
-              onDoctor={() => page.setDoctorOpen(true)}
-              onUpdateAll={() => void pullState.pull()}
-              onImport={() => page.setImportOpen(true)}
-              onCreateSkill={() => page.setCreateSkillOpen(true)}
-            />
-
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-              {activeTargetId ? (
-                <AgentArmoryView
-                  targetId={activeTargetId}
-                  allSkills={page.allSkills}
-                  sources={page.sources}
-                  curated={page.curated}
-                  busy={Boolean(page.busyMessage)}
-                  onGoToStore={() => page.setSelectedNavId("curated")}
-                  onClearFilter={() => page.setSelectedNavId("all")}
-                  onInstallCurated={(source) => void page.installCurated(source)}
-                  onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
-                  onSelectSkill={(skill) => setSelectedDrawerSkill(skill)}
-                />
-              ) : activeTab === "curated" ? (
-                <SkillsCuratedView
-                  curated={page.curated}
-                  sources={page.sources}
-                  busy={Boolean(page.busyMessage)}
-                  onInstall={(curatedSource) => void page.installCurated(curatedSource)}
-                />
-              ) : activeTab === "packs" ? (
-                <SkillsGrid
-                  sources={displayedSources}
-                  busy={Boolean(page.busyMessage)}
-                  activeTargetId={activeTargetId}
-                  onClearTargetFilter={() => page.setSelectedNavId("all")}
-                  onSelect={(id) => page.setSelectedNavId(id)}
-                  onUpdate={(id) => void page.updateSource(id)}
-                  onDeploy={(id) => void page.deploySource(id)}
-                  onRemove={(id) => void page.removeSource(id)}
-                  onPickFolder={() => void page.addLocalSource()}
-                  onGoToStore={() => page.setSelectedNavId("curated")}
-                />
-              ) : filteredSkills.length === 0 ? (
-                <SkillsEmptyState
-                  activeTargetId={activeTargetId}
-                  onClearTargetFilter={() => page.setSelectedNavId("all")}
-                  onGoToStore={() => page.setSelectedNavId("curated")}
-                  onPickFolder={() => void page.addLocalSource()}
-                />
-              ) : (
-                <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredSkills.map((skill) => (
-                    <SkillItemCard
-                      key={`${skill.sourceId}:${skill.id}`}
-                      skill={skill}
-                      onSelect={() => setSelectedDrawerSkill(skill)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 技能详情抽屉 */}
-        <SkillDrawer
-          skill={selectedDrawerSkill}
-          source={drawerSource}
-          hasWorkspace={page.hasWorkspace}
-          busy={Boolean(page.busyMessage)}
-          onClose={() => setSelectedDrawerSkill(null)}
-          onToggleTarget={(source, targetId) => void page.toggleTarget(source, targetId)}
-          onDeleteSkill={(sourceId, skillId) => {
-            void page.deleteSkill(sourceId, skillId)
-            setSelectedDrawerSkill(null)
-          }}
-        />
-
-        <SkillsDoctorModal
-          open={page.doctorOpen}
-          warnings={page.warnings}
-          onOpenChange={page.setDoctorOpen}
-          onRepairAll={async () => {
-            await page.repairTargets()
-          }}
-        />
-
-        <ImportDialog
-          open={page.importOpen}
-          onOpenChange={page.setImportOpen}
-          onImported={page.refreshAll}
-          workspacePath={page.workspacePath}
-        />
-
-        <CreateSkillDialog
-          open={page.createSkillOpen}
-          hasWorkspace={page.hasWorkspace}
-          workspacePath={page.workspacePath}
-          onOpenChange={page.setCreateSkillOpen}
-          onCreated={page.refreshAll}
-        />
-      </div>
+      {content}
     </SecondaryPageShell>
   )
 }
