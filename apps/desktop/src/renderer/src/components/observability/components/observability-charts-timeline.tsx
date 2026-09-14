@@ -110,8 +110,8 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
                   <stop offset="95%" stopColor="var(--color-accent-500)" stopOpacity={0.0} />
                 </linearGradient>
                 <linearGradient id="obsTtfoGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="var(--color-chart-warning)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="var(--color-chart-warning)" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -138,12 +138,12 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
               {p95Duration > 0 ? (
                 <ReferenceLine
                   y={p95Duration}
-                  stroke="#ef4444"
+                  stroke="var(--color-chart-danger)"
                   strokeDasharray="4 3"
                   strokeWidth={1.2}
                   label={{
                     value: `P95: ${formatLatency(p95Duration)}`,
-                    fill: "#ef4444",
+                    fill: "var(--color-chart-danger)",
                     fontSize: 9.5,
                     position: "insideTopRight"
                   }}
@@ -162,7 +162,7 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
                 type="monotone"
                 dataKey="ttfo"
                 name={t("pages.observability.legendTtfo")}
-                stroke="#f59e0b"
+                stroke="var(--color-chart-warning)"
                 strokeWidth={1.5}
                 strokeDasharray="3 2"
                 fillOpacity={1}

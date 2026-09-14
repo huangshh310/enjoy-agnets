@@ -40,7 +40,13 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
   parks: {},
   runSessions: {},
   rememberRun: (runId, sessionId) =>
-    set((state) => ({ runSessions: { ...state.runSessions, [runId]: sessionId } })),
+    set((state) => {
+      const keys = Object.keys(state.runSessions)
+      const next = keys.length > 500
+        ? Object.fromEntries(Object.entries(state.runSessions).slice(100))
+        : state.runSessions
+      return { runSessions: { ...next, [runId]: sessionId } }
+    }),
   sessionOfRun: (runId) => (runId ? get().runSessions[runId] : undefined),
   ingest: (event, sessionId, sessionTitle, workspaceId) =>
     set((state) => ({

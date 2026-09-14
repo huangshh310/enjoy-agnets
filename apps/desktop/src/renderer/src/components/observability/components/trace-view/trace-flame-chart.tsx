@@ -133,7 +133,7 @@ export function TraceFlameChart(props: {
               const isHovered = hoveredNode?.id === node.id
               const cfg = kinds[node.kind] ?? kinds.agent
               const isError = node.status === "error"
-              const frameBg = isError ? "#f43f5e" : cfg.color
+              const frameBg = isError ? "var(--color-chart-danger)" : cfg.color
 
               return (
                 <div
@@ -193,7 +193,7 @@ export function TraceFlameChart(props: {
             <span className="text-text-tertiary">
               耗时: <b className="text-accent-500">{hoveredNode.durationMs}ms</b>
             </span>
-            <span className={cx("font-bold uppercase", hoveredNode.status === "error" ? "text-rose-500" : "text-emerald-500")}>
+            <span className={cx("font-bold uppercase", hoveredNode.status === "error" ? "text-chart-danger-text" : "text-chart-success-text")}>
               {hoveredNode.status}
             </span>
           </div>

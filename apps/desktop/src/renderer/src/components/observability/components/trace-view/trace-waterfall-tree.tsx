@@ -184,7 +184,7 @@ export function TraceWaterfallTree(props: {
                   style={{
                     left: `${leftPercent}%`,
                     width: `${widthPercent}%`,
-                    backgroundColor: node.status === "error" ? "#f43f5e" : cfg.color
+                    backgroundColor: node.status === "error" ? "var(--color-chart-danger)" : cfg.color
                   }}
                   className="relative h-4 rounded-sm flex items-center justify-end px-1 text-[9.5px] font-bold text-white shadow-2xs transition-all select-none overflow-hidden"
                   title={`${node.name}: ${node.durationMs}ms (offset: ${node.startOffsetMs}ms)`}

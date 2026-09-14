@@ -26,14 +26,42 @@ const EMPTY_NAV: ModuleNavSnapshot = {
   contentWidth: "stage"
 }
 
+function isSameNav(a: ModuleNavSnapshot, b: ModuleNavSnapshot): boolean {
+  if (
+    a.selectedId !== b.selectedId ||
+    a.searchValue !== b.searchValue ||
+    a.searchPlaceholder !== b.searchPlaceholder ||
+    a.filterNav !== b.filterNav ||
+    a.breadcrumbTitle !== b.breadcrumbTitle ||
+    a.contentWidth !== b.contentWidth ||
+    a.groups.length !== b.groups.length
+  ) {
+    return false
+  }
+  for (let i = 0; i < a.groups.length; i++) {
+    const ga = a.groups[i]
+    const gb = b.groups[i]
+    if (ga.id !== gb.id || ga.label !== gb.label || ga.items.length !== gb.items.length) return false
+    for (let j = 0; j < ga.items.length; j++) {
+      const ia = ga.items[j]
+      const ib = gb.items[j]
+      if (ia.id !== ib.id || ia.label !== ib.label || ia.meta !== ib.meta) return false
+    }
+  }
+  return true
+}
+
 type ModuleNavStore = ModuleNavSnapshot & {
   setNav: (next: ModuleNavSnapshot) => void
   clear: () => void
 }
 
-export const useModuleNavStore = create<ModuleNavStore>((set) => ({
+export const useModuleNavStore = create<ModuleNavStore>((set, get) => ({
   ...EMPTY_NAV,
-  setNav: (next) => set(next),
+  setNav: (next) => {
+    if (isSameNav(get(), next)) return
+    set(next)
+  },
   clear: () => set(EMPTY_NAV)
 }))
 
@@ -44,7 +72,16 @@ export function useRegisterModuleNav(nav: ModuleNavSnapshot): void {
 
   useLayoutEffect(() => {
     setNav(nav)
-  })
+  }, [
+    nav.selectedId,
+    nav.searchValue,
+    nav.searchPlaceholder,
+    nav.filterNav,
+    nav.breadcrumbTitle,
+    nav.contentWidth,
+    nav.groups,
+    setNav
+  ])
 
   useLayoutEffect(() => {
     return () => clear()

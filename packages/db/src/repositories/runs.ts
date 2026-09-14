@@ -91,20 +91,29 @@ export function listRuns(
   db: AppDatabase,
   filter: { workspaceId?: string; sessionId?: string; kind?: string }
 ): RunRow[] {
-  const rows = db
+  const clauses: string[] = []
+  const params: string[] = []
+  if (filter.workspaceId) {
+    clauses.push("workspace_id = ?")
+    params.push(filter.workspaceId)
+  }
+  if (filter.sessionId) {
+    clauses.push("session_id = ?")
+    params.push(filter.sessionId)
+  }
+  if (filter.kind) {
+    clauses.push("kind = ?")
+    params.push(filter.kind)
+  }
+  const where = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
+  return db
     .prepare(
       `SELECT id, session_id as sessionId, workspace_id as workspaceId, kind, status,
               model_id as modelId, provider_id as providerId, checkpoint, error,
               created_at as createdAt, updated_at as updatedAt
-       FROM runs ORDER BY updated_at DESC`
+       FROM runs ${where} ORDER BY updated_at DESC`
     )
-    .all() as RunRow[]
-  return rows.filter((row) => {
-    if (filter.workspaceId && row.workspaceId !== filter.workspaceId) return false
-    if (filter.sessionId && row.sessionId !== filter.sessionId) return false
-    if (filter.kind && row.kind !== filter.kind) return false
-    return true
-  })
+    .all(...params) as RunRow[]
 }
 
 export function insertRunStep(

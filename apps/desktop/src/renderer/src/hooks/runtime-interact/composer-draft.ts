@@ -76,5 +76,9 @@ export type ComposerDraftSnapshot = {
 }
 
 export function clearComposerDraft() {
-  useChatStore.getState().setComposer("")
+  const store = useChatStore.getState()
+  store.setComposer("")
+  if (store.sessionId) {
+    store.clearSessionDraft(store.sessionId)
+  }
 }

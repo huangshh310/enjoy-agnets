@@ -82,7 +82,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
       {/* 顶栏与图例 */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-separator-border/50 pb-2.5">
         <div className="flex items-center gap-2">
-          <RiSpeedUpLine className="size-4 text-emerald-500 shrink-0" />
+          <RiSpeedUpLine className="size-4 text-chart-success shrink-0" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.observability.throughputTitle")}
           </h3>
@@ -98,7 +98,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
             <span className="text-text-secondary">{t("pages.observability.completionOut")}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-emerald-500" />
+            <span className="size-2 rounded-full bg-chart-success" />
             <span className="text-text-secondary">{t("pages.observability.rateToks")}</span>
           </div>
           {maxTps > 0 ? (
@@ -152,12 +152,12 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
                 <ReferenceLine
                   yAxisId="tps"
                   y={avgTps}
-                  stroke="#10b981"
+                  stroke="var(--color-chart-success)"
                   strokeDasharray="4 3"
                   strokeWidth={1.2}
                   label={{
                     value: `Avg: ${avgTps} t/s`,
-                    fill: "#10b981",
+                    fill: "var(--color-chart-success)",
                     fontSize: 9.5,
                     position: "insideTopRight"
                   }}
@@ -187,7 +187,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
                 type="monotone"
                 dataKey="tokensPerSecond"
                 name={t("pages.observability.rateToks")}
-                stroke="#10b981"
+                stroke="var(--color-chart-success)"
                 strokeWidth={2}
                 dot={false}
               />
@@ -216,7 +216,7 @@ function ThroughputTooltip({
       <div className="flex items-center justify-between gap-2 border-b border-separator-border/50 pb-1.5">
         <span className="font-semibold text-text-primary">{data.fullTime}</span>
         {data.tokensPerSecond > 0 ? (
-          <span className="rounded bg-emerald-500/10 px-1 py-0.5 text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
+          <span className="rounded bg-chart-success/15 px-1 py-0.5 text-[9.5px] font-bold text-chart-success-text">
             {data.tokensPerSecond} t/s
           </span>
         ) : null}

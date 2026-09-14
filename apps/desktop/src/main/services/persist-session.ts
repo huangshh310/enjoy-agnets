@@ -61,28 +61,36 @@ export function persistMessage(
   const now = Date.now()
   const db = getDatabase()
   const id = messageId ?? createId("msg")
-  if (messageId && messageExists(id)) {
-    db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(content, id)
-    deleteMessageParts(db, id)
-  } else {
-    db.prepare(
-      "INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)"
-    ).run(id, sessionId, role, content, now)
+
+  db.exec("BEGIN IMMEDIATE;")
+  try {
+    if (messageId && messageExists(id)) {
+      db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(content, id)
+      deleteMessageParts(db, id)
+    } else {
+      db.prepare(
+        "INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)"
+      ).run(id, sessionId, role, content, now)
+    }
+    const stored = parts && parts.length > 0 ? parts : migrateContentToParts(content)
+    insertMessageParts(
+      db,
+      stored.map((part, idx) => ({
+        id: createId("prt"),
+        messageId: id,
+        idx,
+        type: part.type,
+        payload: JSON.stringify(part),
+        createdAt: now
+      }))
+    )
+    db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
+    db.exec("COMMIT;")
+    return id
+  } catch (err) {
+    db.exec("ROLLBACK;")
+    throw err
   }
-  const stored = parts && parts.length > 0 ? parts : migrateContentToParts(content)
-  insertMessageParts(
-    db,
-    stored.map((part, idx) => ({
-      id: createId("prt"),
-      messageId: id,
-      idx,
-      type: part.type,
-      payload: JSON.stringify(part),
-      createdAt: now
-    }))
-  )
-  db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
-  return id
 }
 
 function messageExists(id: string): boolean {

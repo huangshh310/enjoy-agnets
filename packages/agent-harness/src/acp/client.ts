@@ -155,12 +155,25 @@ export class AcpClient {
 
   private drain() {
     while (this.buffer.length > 0) {
-      if (this.contentLength == null && this.buffer.startsWith("Content-Length:")) {
-        const match = this.buffer.match(/^Content-Length:\s*(\d+)\r?\n\r?\n/)
-        if (!match) return
-        this.contentLength = Number(match[1])
-        this.buffer = this.buffer.slice(match[0].length)
-        continue
+      if (this.contentLength == null) {
+        if (/^(Content-Length|Content-Type):/i.test(this.buffer)) {
+          let headerEnd = this.buffer.indexOf("\r\n\r\n")
+          let delimLen = 4
+          if (headerEnd < 0) {
+            headerEnd = this.buffer.indexOf("\n\n")
+            delimLen = 2
+          }
+          if (headerEnd < 0) return
+          const headerBlock = this.buffer.slice(0, headerEnd)
+          const match = headerBlock.match(/Content-Length:\s*(\d+)/i)
+          if (!match) {
+            this.buffer = this.buffer.slice(headerEnd + delimLen)
+            continue
+          }
+          this.contentLength = Number(match[1])
+          this.buffer = this.buffer.slice(headerEnd + delimLen)
+          continue
+        }
       }
       if (this.contentLength != null) {
         if (this.buffer.length < this.contentLength) return

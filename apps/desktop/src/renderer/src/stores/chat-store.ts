@@ -73,6 +73,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sidebarGrouping: "project",
   sessionSortOrder: "priority",
   pinnedWorkspaceIds: [],
+  sessionDrafts: {},
+  saveSessionDraft: (sessionId, draft) =>
+    set((state) => ({ sessionDrafts: { ...state.sessionDrafts, [sessionId]: draft } })),
+  getSessionDraft: (sessionId) => get().sessionDrafts[sessionId],
+  clearSessionDraft: (sessionId) =>
+    set((state) => {
+      const { [sessionId]: _removed, ...rest } = state.sessionDrafts
+      return { sessionDrafts: rest }
+    }),
   setComposer: (composer) => set({ composer }),
   setRuntimeId: (runtimeId) => set({ runtimeId }),
   setPreferredRuntimeId: (preferredRuntimeId) => set({ preferredRuntimeId }),

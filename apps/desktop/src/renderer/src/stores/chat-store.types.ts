@@ -96,6 +96,12 @@ export type ChangedFileRow = {
   worktree?: boolean
 }
 
+export type SessionDraftState = {
+  text: string
+  assets?: any[]
+  quotedContexts?: any[]
+}
+
 export type ModelOption = {
   id: string
   label: string
@@ -202,6 +208,10 @@ export type ChatStore = {
   sidebarGrouping: "project" | "flat" | "status"
   sessionSortOrder: "priority" | "updated" | "manual"
   pinnedWorkspaceIds: string[]
+  sessionDrafts: Record<string, SessionDraftState>
+  saveSessionDraft: (sessionId: string, draft: SessionDraftState) => void
+  getSessionDraft: (sessionId: string) => SessionDraftState | undefined
+  clearSessionDraft: (sessionId: string) => void
   setSidebarGrouping: (grouping: "project" | "flat" | "status") => void
   setSessionSortOrder: (order: "priority" | "updated" | "manual") => void
   togglePinWorkspace: (id: string) => void

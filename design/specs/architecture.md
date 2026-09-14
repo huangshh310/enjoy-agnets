@@ -87,3 +87,6 @@ Main Process（可信）
 - `path-safe` / Customize 白名单单测不能在 Linux 上用 `C:/...`：POSIX 下不是绝对路径，`join`/`resolve` 会拼进 runner cwd。POSIX 用 `/proj/...`，Windows 用盘符。工作区显示名回退最后一段时要同时切 `/` 与 `\`。
 - CLI 用量探测会读本机已登录会话（Cursor `state.vscdb`、Grok `auth.json` 的 `key`）。这些密钥只在 main 内存里用一次打官方 HTTPS，禁止写进 `InspectAgentToolResult` 或 vault。Dashboard / billing 失败就空条 + `—`，不要回落 CLI `about`/`status` 里的猜数字段。
 - Agent `bash` 的「沙箱」不是容器。字符串过滤 + cwd jail + macOS Seatbelt。设置文案必须写明，禁止假装 Docker / Vercel Sandbox。
+- **隐患**：`window.open` 拦截器 `setWindowOpenHandler` 若直接放行外部 URL 或直接打开，可能被恶意 Markdown/HTML 注入 `file://` 或非受信任协议链接。正确做法：仅允许白名单协议（`http:` / `https:`）通过 `shell.openExternal` 打开，非白名单协议直接 `{ action: "deny" }` 拦截。
+- **隐患**：主进程应用退出（`before-quit` / `will-quit`）时，`flushActiveRuns` 使用动态 `import("./persist-waiting-run")` 会在事件循环关闭期发生 Module load race 报错，导致未完成的等待运行无法持久化落盘。正确做法：必须在文件顶层静态 import 关键持久化函数。
+- **隐患**：SQLite 并发读写与大表关联查询未建二级索引，在高频消息写入或列表过滤时容易发生锁等待（`database is locked`）与慢查询。正确做法：开启 `PRAGMA busy_timeout = 5000;`，并为 `sessions(workspace_id)`、`messages(session_id)`、`message_parts(message_id)`、`runs(session_id)`、`runs(status)` 等核心外键及高频过滤列建立专用二级索引。

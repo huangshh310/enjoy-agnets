@@ -23,8 +23,8 @@ import { cx } from "@/utils/cx"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useT } from "@renderer/i18n"
 import {
-  HEALTH_CONFIG,
-  SKILLS_UI_COPY,
+  getHealthConfig,
+  useSkillsUiCopy,
   TARGET_SHORT_LABELS
 } from "../constants/skills-ui.constants"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
@@ -46,7 +46,8 @@ export function SkillsCard({
   onRemove: () => void
 }) {
   const t = useT()
-  const health = HEALTH_CONFIG[source.health]
+  const copy = useSkillsUiCopy()
+  const health = getHealthConfig(t)[source.health]
   const hostTargets = hostEnabledTargetIds(source.enabledTargetIds)
   const enabledCount = hostTargets.length
   const previewSkills = source.selectedSkillIds.slice(0, 4)
@@ -118,15 +119,15 @@ export function SkillsCard({
               <DropdownMenuContent align="end" className="w-36">
                 <DropdownMenuItem onClick={onUpdate} disabled={busy}>
                   <RiRefreshLine className="size-3.5 mr-1.5" />
-                  <span>{SKILLS_UI_COPY.pullUpdates}</span>
+                  <span>{copy.pullUpdates}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onDeploy} disabled={busy}>
                   <RiShieldCheckLine className="size-3.5 mr-1.5 text-accent-500" />
-                  <span>{SKILLS_UI_COPY.redeploySource}</span>
+                  <span>{copy.redeploySource}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setConfirmRemove(true)} className="text-rose-600 dark:text-rose-400">
+                <DropdownMenuItem onClick={() => setConfirmRemove(true)} className="text-chart-danger-text">
                   <RiDeleteBinLine className="size-3.5 mr-1.5" />
-                  <span>{SKILLS_UI_COPY.removeSource}</span>
+                  <span>{copy.removeSource}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -196,8 +197,8 @@ export function SkillsCard({
       <ConfirmDialog
         open={confirmRemove}
         onOpenChange={setConfirmRemove}
-        title={SKILLS_UI_COPY.confirmRemoveTitle}
-        description={SKILLS_UI_COPY.confirmRemoveDesc}
+        title={copy.confirmRemoveTitle}
+        description={copy.confirmRemoveDesc}
         destructive
         onConfirm={() => {
           setConfirmRemove(false)

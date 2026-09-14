@@ -85,6 +85,7 @@ function MediaLibraryBody({
       ) : null}
       <AssetGrid
         visibleAssets={assets.visibleAssets}
+        isLoading={assets.isLoading}
         categoryLabel={getCategoryLabel(t, assets.selectedCategory)}
         selectedAssetId={assets.selectedAssetId}
         exportPath={io.exportPath}

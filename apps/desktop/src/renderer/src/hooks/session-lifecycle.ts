@@ -23,6 +23,8 @@ import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
+import { clearComposerAssets, listComposerAssets, setComposerAssets } from "./composer-assets"
+import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
 import type { WorkspaceRow } from "./workspace-row"
 
 export type { WorkspaceRow } from "./workspace-row"
@@ -44,12 +46,29 @@ type MessageRow = {
   parts?: unknown[]
 }
 
+export function saveCurrentSessionDraft() {
+  const store = useChatStore.getState()
+  const sid = store.sessionId
+  if (!sid) return
+  const text = store.composer
+  const assets = listComposerAssets()
+  const quotedContexts = listQuotedContexts()
+  if (text || assets.length > 0 || quotedContexts.length > 0) {
+    store.saveSessionDraft(sid, { text, assets, quotedContexts })
+  } else {
+    store.clearSessionDraft(sid)
+  }
+}
+
 export async function loadSession(sessionId: string, title: string) {
   const store = useChatStore.getState()
   const sameSession = store.sessionId === sessionId
   const previous = sameSession ? store.messages : []
   if (!sameSession) {
-    if (store.sessionId) parkForegroundRun()
+    if (store.sessionId) {
+      parkForegroundRun()
+      saveCurrentSessionDraft()
+    }
     store.setSession(sessionId, title)
     store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
     applyComposerModel(store, sessionId)
@@ -66,13 +85,16 @@ export async function loadSession(sessionId: string, title: string) {
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "New agent") {
   parkForegroundRun()
+  saveCurrentSessionDraft()
   const session = (await getIde().session.create({
     workspaceId,
     title: customTitle
   })) as SessionRow
   const store = useChatStore.getState()
   const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
-  useChatStore.setState(idleComposerPatch())
+  useChatStore.setState({ ...idleComposerPatch(), composer: "" })
+  clearComposerAssets()
+  setQuotedContexts([])
   useEngineHandoffStore.getState().resetPending()
   store.setSession(session.id, session.title)
   store.setRuntimeId(runtimeId)
@@ -170,27 +192,38 @@ export function restoreComposerForSession(sessionId: string) {
   const park = useAttentionStore.getState().takePark(sessionId)
   if (park) {
     useChatStore.setState(parkedComposerPatch(park))
-    return
+  } else {
+    const slot = useAttentionStore
+      .getState()
+      .items.find(
+        (item) =>
+          item.sessionId === sessionId &&
+          (item.status === "active" || item.status === "focused") &&
+          (item.kind === "pending_approval" || item.kind === "ask_user") &&
+          item.approval
+      )
+    if (slot?.approval) {
+      useChatStore.setState({
+        ...idleComposerPatch(),
+        running: true,
+        runId: slot.runId || null,
+        pendingApproval: slot.approval
+      })
+    } else {
+      useChatStore.setState(idleComposerPatch())
+    }
   }
-  const slot = useAttentionStore
-    .getState()
-    .items.find(
-      (item) =>
-        item.sessionId === sessionId &&
-        (item.status === "active" || item.status === "focused") &&
-        (item.kind === "pending_approval" || item.kind === "ask_user") &&
-        item.approval
-    )
-  if (slot?.approval) {
-    useChatStore.setState({
-      ...idleComposerPatch(),
-      running: true,
-      runId: slot.runId || null,
-      pendingApproval: slot.approval
-    })
-    return
+
+  const draft = useChatStore.getState().getSessionDraft(sessionId)
+  if (draft) {
+    useChatStore.setState({ composer: draft.text })
+    setComposerAssets(draft.assets ?? [])
+    setQuotedContexts(draft.quotedContexts ?? [])
+  } else {
+    useChatStore.setState({ composer: "" })
+    clearComposerAssets()
+    setQuotedContexts([])
   }
-  useChatStore.setState(idleComposerPatch())
 }
 
 function applyComposerModel(store: ReturnType<typeof useChatStore.getState>, sessionId: string) {

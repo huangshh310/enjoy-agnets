@@ -34,7 +34,7 @@ export function reduceStreamEvent(
   if (approval) return approval
   if (event.type === "file.changed") return { messages }
   if (!isLivePart(event.type) || !event.runId) return { messages }
-  const next = cloneMessages(messages)
+  const next = cloneMessagesForLiveEvent(messages)
   const assistant = attachAssistant(next, event.runId, activeRunId)
   if (!assistant) return { messages }
   return applyLiveEvent(next, assistant, event)
@@ -59,7 +59,7 @@ function applyApprovalEvent(
   activeRunId: string | null
 ): StreamPatch | null {
   if (event.type === "approval.required") {
-    const next = cloneMessages(messages)
+    const next = cloneMessagesForLiveEvent(messages)
     const assistant = attachAssistant(next, event.runId, activeRunId)
     if (assistant) {
       assistant.tools ??= []
@@ -68,7 +68,7 @@ function applyApprovalEvent(
     return { messages: next, thinkingLabel: "Waiting for approval", pendingApproval: event }
   }
   if (event.type !== "approval.resolved") return null
-  const next = cloneMessages(messages)
+  const next = cloneMessagesForLiveEvent(messages)
   const assistant = lastStreamingAssistant(next)
   if (assistant) {
     assistant.tools ??= []
@@ -141,15 +141,24 @@ function applyLiveEvent(
   return { messages, thinkingLabel: (name ?? "tool").replaceAll("_", " ") }
 }
 
-function cloneMessages(messages: ThreadMessage[]): ThreadMessage[] {
-  return messages.map((message) => ({
-    ...message,
-    tools: message.tools?.map((tool) => ({ ...tool })),
-    sources: message.sources?.map((source) => ({ ...source })),
-    assets: message.assets?.map((asset) => ({ ...asset })),
-    actionChips: message.actionChips?.map((chip) => ({ ...chip })),
-    mcpApps: message.mcpApps?.map((app) => ({ ...app }))
-  }))
+function cloneMessagesForLiveEvent(messages: ThreadMessage[]): ThreadMessage[] {
+  if (messages.length === 0) return []
+  const lastIndex = messages.length - 1
+  const last = messages[lastIndex]
+  if (last.role === "assistant" && last.streaming) {
+    const clonedLast: ThreadMessage = {
+      ...last,
+      tools: last.tools?.map((tool) => ({ ...tool })) ?? [],
+      sources: last.sources?.map((source) => ({ ...source })),
+      assets: last.assets?.map((asset) => ({ ...asset })),
+      actionChips: last.actionChips?.map((chip) => ({ ...chip })),
+      mcpApps: last.mcpApps?.map((app) => ({ ...app }))
+    }
+    const next = messages.slice(0, lastIndex)
+    next.push(clonedLast)
+    return next
+  }
+  return [...messages]
 }
 
 function lastStreamingAssistant(messages: ThreadMessage[]): ThreadMessage | undefined {

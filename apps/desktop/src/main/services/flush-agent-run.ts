@@ -7,6 +7,7 @@ import { persistFinishedAssistant } from "./persist-parts"
 import { flushPayloadFromRun } from "./agent-run-flush"
 import { getDatabase } from "./database"
 import { persistRunningCheckpoint } from "./persist-running-checkpoint"
+import { persistWaitingRun } from "./persist-waiting-run"
 import { listActiveRuns, type ActiveRun } from "./agent-run-state"
 
 export type RunFlushStatus = "completed" | "failed" | "cancelled" | "waiting_review" | "running"
@@ -61,9 +62,7 @@ export function flushActiveRuns(): void {
     try {
       if (run.pendingApprovals.length > 0) {
         persistActiveRun(run, runId, "waiting_review")
-        void import("./persist-waiting-run").then(({ persistWaitingRun }) => {
-          persistWaitingRun(run, runId)
-        })
+        persistWaitingRun(run, runId)
       } else {
         persistRunningCheckpoint(run, runId)
         persistActiveRun(run, runId, "running")

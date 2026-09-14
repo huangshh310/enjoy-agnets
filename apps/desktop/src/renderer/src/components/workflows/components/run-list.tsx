@@ -23,11 +23,13 @@ import { WorkflowDag } from "../workflow-dag"
 
 export function WorkflowRunList({
   runs,
+  isLoading,
   copiedId,
   onCopyId,
   onAct
 }: {
   runs: WorkflowRun[]
+  isLoading?: boolean
   copiedId: string | null
   onCopyId: (id: string) => void
   onAct: (kind: "resume" | "pause" | "cancel" | "retry", runId: string) => void
@@ -40,7 +42,26 @@ export function WorkflowRunList({
           {t("pages.workflows.executions", { n: runs.length })}
         </h3>
       </div>
-      {runs.length === 0 ? (
+      {isLoading ? (
+        <div className="grid gap-3.5">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="animate-pulse rounded-2xl border border-border-button-default bg-background-secondary-default/50 p-5"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="h-5 w-48 rounded-md bg-background-tertiary-default/60" />
+                <div className="h-6 w-20 rounded-full bg-background-tertiary-default/60" />
+              </div>
+              <div className="mt-4 flex gap-2">
+                <div className="h-8 w-24 rounded-lg bg-background-tertiary-default/50" />
+                <div className="h-8 w-24 rounded-lg bg-background-tertiary-default/50" />
+                <div className="h-8 w-24 rounded-lg bg-background-tertiary-default/50" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : runs.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-border-button-default bg-background-secondary-default/40 p-8 text-center">
           <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-500 shadow-xs">
             <RiRouteLine className="size-6" />

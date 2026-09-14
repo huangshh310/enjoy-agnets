@@ -6,7 +6,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { useAttentionStore } from "./attention-store"
 import type { AttentionItem } from "./attention.types"
 
-const persistedIds = new Set<string>()
+const persistedKeys = new Set<string>()
 
 function toArchived(item: AttentionItem) {
   return {
@@ -28,10 +28,15 @@ export function startAttentionPersistence(): () => void {
   if (!hasIde()) return () => undefined
   const writeThrough = (items: AttentionItem[]) => {
     const fresh = items.filter(
-      (item) => (item.kind === "error" || item.kind === "complete") && !persistedIds.has(item.id)
+      (item) =>
+        (item.kind === "error" || item.kind === "complete") &&
+        !persistedKeys.has(`${item.id}:${item.occurredAt}`)
     )
     if (fresh.length === 0) return
-    for (const item of fresh) persistedIds.add(item.id)
+    for (const item of fresh) {
+      if (persistedKeys.size > 1000) persistedKeys.clear()
+      persistedKeys.add(`${item.id}:${item.occurredAt}`)
+    }
     void getIde()
       .inbox.putStates({ entries: fresh.map((item) => ({ id: item.id, item: toArchived(item) })) })
       .catch(() => undefined)

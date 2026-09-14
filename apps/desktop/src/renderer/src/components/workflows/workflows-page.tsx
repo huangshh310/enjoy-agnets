@@ -130,7 +130,13 @@ export function WorkflowsPage() {
           isStarting={isStarting}
           onStart={() => void start()}
         />
-        <WorkflowRunList runs={runs} copiedId={copiedId} onCopyId={handleCopyRunId} onAct={(kind, id) => void act(kind, id)} />
+        <WorkflowRunList
+          runs={runs}
+          isLoading={runsQuery.isLoading}
+          copiedId={copiedId}
+          onCopyId={handleCopyRunId}
+          onAct={(kind, id) => void act(kind, id)}
+        />
       </div>
     </SecondaryPageShell>
   )

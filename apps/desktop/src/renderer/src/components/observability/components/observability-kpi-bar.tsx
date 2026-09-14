@@ -144,21 +144,21 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
               className={cx(
                 "rounded px-1.5 py-0.5 font-mono text-[10.5px] font-semibold",
                 stats.successRatePercent >= 90
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  ? "bg-chart-success/15 text-chart-success-text"
                   : stats.successRatePercent >= 70
-                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                    ? "bg-chart-warning/15 text-chart-warning-text"
+                    : "bg-chart-danger/15 text-chart-danger-text"
               )}
             >
               {stats.successRatePercent.toFixed(1)}% 成功
             </span>
           </div>
           <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-text-tertiary font-mono">
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="text-chart-success-text font-medium">
               ✓ {stats.successCount} 成功
             </span>
             <span>·</span>
-            <span className={stats.failedCount > 0 ? "text-rose-600 dark:text-rose-400 font-medium" : ""}>
+            <span className={stats.failedCount > 0 ? "text-chart-danger-text font-medium" : ""}>
               ✕ {stats.failedCount} 异常
             </span>
           </div>
@@ -174,11 +174,11 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       </div>
 
       {/* 2. 平均耗时与 P50/P95 分位数 */}
-      <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-blue-500/40">
+      <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-chart-6/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[11px] font-medium">{t("pages.observability.kpiDuration")}</span>
-            <div className="flex size-6 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+            <div className="flex size-6 items-center justify-center rounded-lg bg-chart-6/15 text-chart-6">
               <RiTimeLine className="size-3.5" />
             </div>
           </div>
@@ -208,23 +208,23 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
         <div className="mt-2.5 pt-1">
           <Sparkline
             data={sparklines.duration}
-            stroke="#3b82f6"
-            fill="#3b82f6"
+            stroke="var(--color-chart-6)"
+            fill="var(--color-chart-6)"
           />
         </div>
       </div>
 
       {/* 3. 首字延迟 (TTFO) */}
-      <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-amber-500/40">
+      <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-chart-warning/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[11px] font-medium">{t("pages.observability.kpiTtfo")}</span>
-            <div className="flex size-6 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+            <div className="flex size-6 items-center justify-center rounded-lg bg-chart-warning/15 text-chart-warning-text">
               <RiFlashlightLine className="size-3.5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono text-title-3-semibold font-bold text-amber-500">
+            <span className="font-mono text-title-3-semibold font-bold text-chart-warning-text">
               {stats.avgTtfoMs > 0 ? formatLatency(stats.avgTtfoMs) : "—"}
             </span>
             <span className="font-mono text-[10.5px] text-text-tertiary">
@@ -246,30 +246,30 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
         <div className="mt-2.5 pt-1">
           <Sparkline
             data={sparklines.ttfo}
-            stroke="#f59e0b"
-            fill="#f59e0b"
+            stroke="var(--color-chart-warning)"
+            fill="var(--color-chart-warning)"
           />
         </div>
       </div>
 
       {/* 4. Token 吞吐与规模 */}
-      <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-emerald-500/40">
+      <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-chart-success/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
             <span className="text-[11px] font-medium">{t("pages.observability.kpiThroughput")}</span>
-            <div className="flex size-6 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+            <div className="flex size-6 items-center justify-center rounded-lg bg-chart-success/15 text-chart-success-text">
               <RiSpeedUpLine className="size-3.5" />
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono text-title-3-semibold font-bold text-emerald-500">
+            <span className="font-mono text-title-3-semibold font-bold text-chart-success-text">
               {stats.avgTokensPerSec > 0 ? `${stats.avgTokensPerSec}` : "—"}
             </span>
             <span className="font-mono text-[10.5px] text-text-tertiary">
               tok/s
             </span>
             {stats.peakTokensPerSec > 0 ? (
-              <span className="rounded bg-emerald-500/10 px-1 py-0.2 font-mono text-[9.5px] text-emerald-600 dark:text-emerald-400">
+              <span className="rounded bg-chart-success/15 px-1 py-0.5 font-mono text-[9.5px] text-chart-success-text">
                 峰值 {stats.peakTokensPerSec}
               </span>
             ) : null}
@@ -285,8 +285,8 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
         <div className="mt-2.5 pt-1">
           <Sparkline
             data={sparklines.throughput}
-            stroke="#10b981"
-            fill="#10b981"
+            stroke="var(--color-chart-success)"
+            fill="var(--color-chart-success)"
           />
         </div>
       </div>

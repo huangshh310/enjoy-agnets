@@ -18,7 +18,8 @@ import type {
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
-import { HEALTH_CONFIG, SKILLS_UI_COPY } from "../constants/skills-ui.constants"
+import { useT } from "@renderer/i18n"
+import { getHealthConfig, useSkillsUiCopy } from "../constants/skills-ui.constants"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
 import { TargetDeploymentsCard } from "./detail/target-deployments-card"
 import { SkillListPane } from "./detail/skill-list-pane"
@@ -51,10 +52,12 @@ export function SkillsDetailView({
   onRemove: () => void
   onDeleteSkill: (skillId: string) => void
 }) {
+  const t = useT()
+  const copy = useSkillsUiCopy()
   const { source, skills } = detail
   const [confirmDialog, setConfirmDialog] = useState<"deploy" | "remove" | null>(null)
   const [pendingDeleteSkillId, setPendingDeleteSkillId] = useState<string | null>(null)
-  const health = HEALTH_CONFIG[source.health]
+  const health = getHealthConfig(t)[source.health]
 
   const activeSkill = useMemo(() => {
     if (activeSkillId) {
@@ -74,12 +77,12 @@ export function SkillsDetailView({
         <div className="flex items-center gap-3">
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={onBack}
-            className="gap-1 h-8 text-caption-2-medium"
+            className="gap-1 h-8 px-2 text-caption-2-medium text-text-secondary hover:text-text-primary"
           >
             <RiArrowLeftLine className="size-3.5" />
-            <span>{SKILLS_UI_COPY.backToList}</span>
+            <span>{copy.backToList}</span>
           </Button>
 
           <div className="flex items-center gap-2.5 min-w-0">
@@ -121,7 +124,7 @@ export function SkillsDetailView({
             ) : (
               <RiRefreshLine className="size-3.5" />
             )}
-            <span>{SKILLS_UI_COPY.pullUpdates}</span>
+            <span>{copy.pullUpdates}</span>
           </Button>
 
           <Button
@@ -131,7 +134,7 @@ export function SkillsDetailView({
             className="gap-1 h-8 text-caption-2-medium shadow-xs"
           >
             <RiShieldCheckLine className="size-3.5" />
-            <span>{SKILLS_UI_COPY.redeploySource}</span>
+            <span>{copy.redeploySource}</span>
           </Button>
 
           <Button
@@ -139,10 +142,10 @@ export function SkillsDetailView({
             variant="outline"
             disabled={busy}
             onClick={() => setConfirmDialog("remove")}
-            className="gap-1 h-8 text-caption-2-medium text-rose-600 dark:text-rose-400 hover:border-rose-500/40"
+            className="gap-1 h-8 text-caption-2-medium text-chart-danger-text hover:border-chart-danger/40"
           >
             <RiDeleteBinLine className="size-3.5" />
-            <span>{SKILLS_UI_COPY.removeSource}</span>
+            <span>{copy.removeSource}</span>
           </Button>
         </div>
       </header>
@@ -173,9 +176,9 @@ export function SkillsDetailView({
       {/* 二次确认弹窗 */}
       <ConfirmDialog
         open={confirmDialog === "deploy"}
-        title={SKILLS_UI_COPY.confirmDeployTitle}
-        description={SKILLS_UI_COPY.confirmDeployDesc}
-        confirmLabel={SKILLS_UI_COPY.redeploySource}
+        title={copy.confirmDeployTitle}
+        description={copy.confirmDeployDesc}
+        confirmLabel={copy.redeploySource}
         destructive={false}
         onOpenChange={(open) => {
           if (!open) setConfirmDialog(null)
@@ -188,9 +191,9 @@ export function SkillsDetailView({
 
       <ConfirmDialog
         open={confirmDialog === "remove"}
-        title={SKILLS_UI_COPY.confirmRemoveTitle}
-        description={SKILLS_UI_COPY.confirmRemoveDesc}
-        confirmLabel={SKILLS_UI_COPY.removeSource}
+        title={copy.confirmRemoveTitle}
+        description={copy.confirmRemoveDesc}
+        confirmLabel={copy.removeSource}
         destructive
         onOpenChange={(open) => {
           if (!open) setConfirmDialog(null)
@@ -203,9 +206,9 @@ export function SkillsDetailView({
 
       <ConfirmDialog
         open={Boolean(pendingDeleteSkillId)}
-        title={SKILLS_UI_COPY.confirmDeleteSkillTitle}
-        description={SKILLS_UI_COPY.confirmDeleteSkillDesc}
-        confirmLabel={SKILLS_UI_COPY.deleteSkill}
+        title={copy.confirmDeleteSkillTitle}
+        description={copy.confirmDeleteSkillDesc}
+        confirmLabel={copy.deleteSkill}
         destructive
         onOpenChange={(open) => {
           if (!open) setPendingDeleteSkillId(null)

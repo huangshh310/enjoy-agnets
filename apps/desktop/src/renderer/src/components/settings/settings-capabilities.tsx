@@ -5,7 +5,6 @@
 import { useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  RiCheckLine,
   RiEyeLine,
   RiGitBranchLine,
   RiImageLine,
@@ -24,6 +23,8 @@ import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { ModelBrandIcon } from "./providers/provider-icons"
 import { useT } from "@renderer/i18n"
 import { SettingsCard } from "./settings-row"
+import { CapabilityBadge, CapabilityGuideItem } from "./capabilities/capability-badge"
+import { ModelCapabilityRow } from "./capabilities/model-capability-row"
 
 export type CapabilityFilter = "all" | "vision" | "tools" | "reasoning" | "media" | "embeddings"
 
@@ -223,67 +224,14 @@ export function CapabilitySettings() {
         {/* 模型列表 */}
         <div className="flex flex-col divide-y divide-separator-border mt-1">
           {filteredModels.length > 0 ? (
-            filteredModels.map((model) => {
-              const isDefault = model.id === defaultModelId
-              return (
-                <div
-                  key={model.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3 px-2 transition-colors hover:bg-background-secondary-hover/60 rounded-xl"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border-button-default bg-background-primary-default p-1.5 shadow-2xs">
-                      <ModelBrandIcon
-                        modelId={model.id}
-                        providerKind={model.provider}
-                        apiStyle={model.apiStyle}
-                        size={18}
-                      />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-caption-1-semibold text-text-primary">
-                          {model.label || model.id}
-                        </span>
-                        {model.providerName ? (
-                          <span className="shrink-0 rounded bg-background-secondary-default px-1.5 py-0.2 text-[10px] font-medium text-text-tertiary">
-                            {model.providerName}
-                          </span>
-                        ) : null}
-                      </div>
-                      <span className="truncate font-mono text-[11px] text-text-tertiary">
-                        {model.id}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 能力徽标组 */}
-                  <div className="flex flex-wrap items-center gap-1.5 max-w-[400px]">
-                    {(model.capabilities ?? []).map((cap) => (
-                      <CapabilityBadge key={cap} capability={cap} compact />
-                    ))}
-                  </div>
-
-                  {/* 设为默认操作 */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isDefault ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
-                        <RiCheckLine className="size-3.5" />
-                        <span>{t("settings.capabilities.activeDefault")}</span>
-                      </span>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void handleSetDefaultModel(model)}
-                        className="h-7 px-2.5 text-caption-2-medium cursor-pointer"
-                      >
-                        {t("settings.capabilities.setDefault")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )
-            })
+            filteredModels.map((model) => (
+              <ModelCapabilityRow
+                key={model.id}
+                model={model}
+                isDefault={model.id === defaultModelId}
+                onSetDefault={(m) => void handleSetDefaultModel(m)}
+              />
+            ))
           ) : (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <div className="flex size-10 items-center justify-center rounded-full bg-background-secondary-default text-text-tertiary mb-2">
@@ -352,79 +300,5 @@ function FilterPill({
       {Icon ? <Icon className="size-3" /> : null}
       <span>{label}</span>
     </button>
-  )
-}
-
-const CAP_LABEL_KEYS: Record<string, string> = {
-  text: "settings.capabilities.capText",
-  streaming: "settings.capabilities.capStreaming",
-  reasoning: "settings.capabilities.capReasoning",
-  tools: "settings.capabilities.capTools",
-  structured: "settings.capabilities.capStructured",
-  vision: "settings.capabilities.capVision",
-  files: "settings.capabilities.capFiles",
-  skills: "settings.capabilities.capSkills",
-  image: "settings.capabilities.capImage",
-  video: "settings.capabilities.capVideo",
-  speech: "settings.capabilities.capSpeech",
-  transcription: "settings.capabilities.capTranscription",
-  embedding: "settings.capabilities.capEmbedding",
-  rerank: "settings.capabilities.capRerank",
-  realtime: "settings.capabilities.capRealtime"
-}
-
-function CapabilityBadge({ capability, compact = false }: { capability: string; compact?: boolean }) {
-  const t = useT()
-  const colorMap: Record<string, string> = {
-    text: "border-border-button-default bg-background-secondary-default text-text-secondary",
-    streaming: "border-sky-500/20 bg-sky-500/10 text-sky-600 dark:text-sky-300",
-    reasoning: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    tools: "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-300",
-    structured: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300",
-    vision: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-    files: "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-    skills: "border-teal-500/20 bg-teal-500/10 text-teal-600 dark:text-teal-300",
-    image: "border-pink-500/20 bg-pink-500/10 text-pink-600 dark:text-pink-300",
-    video: "border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-300",
-    speech: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300",
-    transcription: "border-cyan-500/20 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300",
-    embedding: "border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-300",
-    rerank: "border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300",
-    realtime: "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300"
-  }
-  const labelKey = CAP_LABEL_KEYS[capability]
-  const label = labelKey ? t(labelKey) : capability
-  const color = colorMap[capability] ?? "border-border-button-default bg-background-secondary-default text-text-secondary"
-
-  return (
-    <span
-      className={cx(
-        "inline-flex items-center rounded-md border font-medium",
-        compact ? "px-1.5 py-0.2 text-[10px]" : "px-2 py-0.5 text-caption-2-medium",
-        color
-      )}
-    >
-      {label}
-    </span>
-  )
-}
-
-function CapabilityGuideItem({
-  title,
-  badge,
-  desc
-}: {
-  title: string
-  badge: string
-  desc: string
-}) {
-  return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-      <div className="flex items-center justify-between">
-        <span className="text-caption-1-semibold text-text-primary">{title}</span>
-        <CapabilityBadge capability={badge} compact />
-      </div>
-      <p className="text-caption-2-regular text-text-tertiary leading-relaxed mt-0.5">{desc}</p>
-    </div>
   )
 }

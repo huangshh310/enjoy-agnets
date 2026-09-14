@@ -47,4 +47,5 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - **隐患**：`workspace.watch` / `openPreview` / checkpoint restore 若用 `workspaces.root_path`（`user@host:path`）当本机目录，会假成功或监视错盘。正确做法：SSH 跳过 `fs.watch`、preview 拒本机根、checkpoint 已连也诚实不可用（restore 抛错，不得 `{ok:true}`）。
 - **隐患**：探测用 `BatchMode=yes` 且不处理 host key / 密码，新云主机报 `Host key verification failed`，账号密码用户永远连不上。正确做法：`accept-new`；密码走应用内表单 + `SSH_ASKPASS`；指纹变更仍拒绝并说人话。
 - **隐患**：主机行探测按钮 `onProbe` 传入被 `void` 丢弃且前端用固定 600ms 定时器假重置，导致真实 SSH 探测（如超时 10s）在后台跑但前端看起来「毫无反应」，且成功态完全缺失反馈。正确做法：保持 Promise 链路真实 await；按钮提供完整的探测中（spinner）、连通正常（绿徽标）与连接失败（红徽标）三态转换，并在卡片内就近展开具体错误详情。
+- **隐患**：`workspace.openSshConfig` 接受任意 `targetPath` 并在系统默认应用或文件管理器中打开，存在被恶意构造相对路径跳转到敏感系统文件的路径穿越隐患。正确做法：在主进程通过规范化路径校验，严格限制目标路径只能在用户家目录的 `~/.ssh/` 范围内，越界一律抛出安全拒绝。
 

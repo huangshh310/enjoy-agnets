@@ -64,6 +64,11 @@ export function clearComposerAssets() {
   notify()
 }
 
+export function setComposerAssets(items: QueuedComposerAsset[]) {
+  pending = [...items]
+  notify()
+}
+
 
 export function takeComposerAssets(): string[] {
   const ids = pending.map((item) => item.id)

@@ -2,6 +2,7 @@
  * 技能工作模块 UI 常量与文案。
  */
 import type { SkillSourceHealth, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { useT } from "@renderer/i18n"
 
 export const SKILLS_UI_COPY = {
   moduleTitle: "Skills",
@@ -59,6 +60,65 @@ export const SKILLS_UI_COPY = {
   createCustom: "新建技能"
 } as const
 
+export function useSkillsUiCopy(): Record<keyof typeof SKILLS_UI_COPY, string> {
+  const t = useT()
+  return {
+    moduleTitle: t("pages.skills.uiCopy.moduleTitle"),
+    moduleDesc: t("pages.skills.uiCopy.moduleDesc"),
+    allSources: t("pages.skills.uiCopy.allSources"),
+    exploreCurated: t("pages.skills.uiCopy.exploreCurated"),
+    targetFilter: t("pages.skills.uiCopy.targetFilter"),
+    mySources: t("pages.skills.uiCopy.mySources"),
+    sourcesCount: t("pages.skills.uiCopy.sourcesCount"),
+    deployedCount: t("pages.skills.uiCopy.deployedCount"),
+    driftCount: t("pages.skills.uiCopy.driftCount"),
+    healthyState: t("pages.skills.uiCopy.healthyState"),
+    repairAll: t("pages.skills.uiCopy.repairAll"),
+    updateAll: t("pages.skills.uiCopy.updateAll"),
+    updating: t("pages.skills.uiCopy.updating"),
+    syncAll: t("pages.skills.uiCopy.syncAll"),
+    importSource: t("pages.skills.uiCopy.importSource"),
+    doctorTitle: t("pages.skills.uiCopy.doctorTitle"),
+    doctorDesc: t("pages.skills.uiCopy.doctorDesc"),
+    noIssues: t("pages.skills.uiCopy.noIssues"),
+    emptySkillDesc: t("pages.skills.uiCopy.emptySkillDesc"),
+    emptyTitle: t("pages.skills.uiCopy.emptyTitle"),
+    emptyDesc: t("pages.skills.uiCopy.emptyDesc"),
+    quickGitPlaceholder: t("pages.skills.uiCopy.quickGitPlaceholder"),
+    addGitBtn: t("pages.skills.uiCopy.addGitBtn"),
+    pickFolderBtn: t("pages.skills.uiCopy.pickFolderBtn"),
+    featuredTitle: t("pages.skills.uiCopy.featuredTitle"),
+    featuredSubtitle: t("pages.skills.uiCopy.featuredSubtitle"),
+    oneClickInstall: t("pages.skills.uiCopy.oneClickInstall"),
+    installedTag: t("pages.skills.uiCopy.installedTag"),
+    backToList: t("pages.skills.uiCopy.backToList"),
+    targetDeployments: t("pages.skills.uiCopy.targetDeployments"),
+    targetDeploymentsDesc: t("pages.skills.uiCopy.targetDeploymentsDesc"),
+    skillsListTitle: t("pages.skills.uiCopy.skillsListTitle"),
+    skillsListDesc: t("pages.skills.uiCopy.skillsListDesc"),
+    skillDocTitle: t("pages.skills.uiCopy.skillDocTitle"),
+    selectSkillHint: t("pages.skills.uiCopy.selectSkillHint"),
+    copyDefinition: t("pages.skills.uiCopy.copyDefinition"),
+    revealFolder: t("pages.skills.uiCopy.revealFolder"),
+    redeploySource: t("pages.skills.uiCopy.redeploySource"),
+    pullUpdates: t("pages.skills.uiCopy.pullUpdates"),
+    removeSource: t("pages.skills.uiCopy.removeSource"),
+    deleteSkill: t("pages.skills.uiCopy.deleteSkill"),
+    confirmRemoveTitle: t("pages.skills.uiCopy.confirmRemoveTitle"),
+    confirmRemoveDesc: t("pages.skills.uiCopy.confirmRemoveDesc"),
+    confirmDeleteSkillTitle: t("pages.skills.uiCopy.confirmDeleteSkillTitle"),
+    confirmDeleteSkillDesc: t("pages.skills.uiCopy.confirmDeleteSkillDesc"),
+    confirmDeployTitle: t("pages.skills.uiCopy.confirmDeployTitle"),
+    confirmDeployDesc: t("pages.skills.uiCopy.confirmDeployDesc"),
+    importDialogTitle: t("pages.skills.uiCopy.importDialogTitle"),
+    gitLabel: t("pages.skills.uiCopy.gitLabel"),
+    gitPlaceholder: t("pages.skills.uiCopy.gitPlaceholder"),
+    gitAdd: t("pages.skills.uiCopy.gitAdd"),
+    templates: t("pages.skills.uiCopy.templates"),
+    createCustom: t("pages.skills.uiCopy.createCustom")
+  }
+}
+
 export const TARGET_LABELS: Record<SkillTargetId, string> = {
   "enjoy-agents": "Enjoy Agents (~/.enjoy-agents/skills)",
   agents: "Standard Agents (~/.agents/skills)",
@@ -103,31 +163,35 @@ export const TARGET_SHORT_LABELS: Record<SkillTargetId, string> = {
   "workspace-dot-skills": "WS .skills"
 }
 
-export const HEALTH_CONFIG: Record<
+export function getHealthConfig(t?: (key: string) => string): Record<
   SkillSourceHealth,
   { label: string; badgeClass: string; dotClass: string }
-> = {
-  ok: {
-    label: "正常",
-    badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-    dotClass: "bg-emerald-500"
-  },
-  drift: {
-    label: "内容漂移",
-    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    dotClass: "bg-amber-500 animate-pulse"
-  },
-  missing: {
-    label: "目标缺失",
-    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-    dotClass: "bg-rose-500"
-  },
-  error: {
-    label: "异常",
-    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-    dotClass: "bg-rose-500"
+> {
+  return {
+    ok: {
+      label: t ? t("pages.skills.states.healthOk") : "正常",
+      badgeClass: "bg-chart-success/15 text-chart-success-text border-chart-success/25",
+      dotClass: "bg-chart-success"
+    },
+    drift: {
+      label: t ? t("pages.skills.states.healthDrift") : "内容漂移",
+      badgeClass: "bg-chart-warning/15 text-chart-warning-text border-chart-warning/25",
+      dotClass: "bg-chart-warning animate-pulse"
+    },
+    missing: {
+      label: t ? t("pages.skills.states.healthMissing") : "目标缺失",
+      badgeClass: "bg-chart-danger/15 text-chart-danger-text border-chart-danger/25",
+      dotClass: "bg-chart-danger"
+    },
+    error: {
+      label: t ? t("pages.skills.states.healthError") : "异常",
+      badgeClass: "bg-chart-danger/15 text-chart-danger-text border-chart-danger/25",
+      dotClass: "bg-chart-danger"
+    }
   }
 }
+
+export const HEALTH_CONFIG = getHealthConfig()
 
 export const GLOBAL_TARGET_IDS: SkillTargetId[] = [
   "enjoy-agents",

@@ -75,7 +75,14 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
+    try {
+      const parsed = new URL(details.url);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        shell.openExternal(details.url);
+      }
+    } catch {
+      // ignore invalid URL schemes
+    }
     return { action: "deny" };
   });
 

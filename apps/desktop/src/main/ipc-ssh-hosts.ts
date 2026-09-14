@@ -3,7 +3,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
 import { ipcMain, shell } from "electron"
 import {
   SshBrowseInput,
@@ -57,9 +57,9 @@ export function registerSshHostIpc() {
 
 export async function openSshConfigFile(customPath?: string): Promise<{ ok: boolean; path: string; error?: string }> {
   try {
+    const sshDir = resolve(homedir(), ".ssh")
     let targetPath = customPath?.trim()
     if (!targetPath) {
-      const sshDir = join(homedir(), ".ssh")
       targetPath = join(sshDir, "config")
       if (!existsSync(sshDir)) {
         mkdirSync(sshDir, { recursive: true, mode: 0o700 })
@@ -74,6 +74,10 @@ export async function openSshConfigFile(customPath?: string): Promise<{ ok: bool
     } else {
       if (targetPath.startsWith("~/")) {
         targetPath = join(homedir(), targetPath.slice(2))
+      }
+      targetPath = resolve(targetPath)
+      if (targetPath !== sshDir && !targetPath.startsWith(sshDir + "/")) {
+        return { ok: false, path: targetPath, error: "Access denied: SSH config must reside within ~/.ssh" }
       }
     }
 
