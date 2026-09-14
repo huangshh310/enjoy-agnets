@@ -25,6 +25,8 @@ export type AgentToolCatalog = {
   loginArgs: string[]
   /** 登录用的 basename；缺省则用探测到的 ACP 二进制。 */
   loginBinary?: string
+  /** 原生插件在系统终端执行；Enjoy 不代跑。 */
+  nativePluginCopy?: string
 }
 
 export type { AgentToolId }

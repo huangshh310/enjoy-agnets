@@ -66,6 +66,7 @@ import {
   testServer,
   upsertServer
 } from "./services/mcp-service"
+import { disposeAllAcpSessions } from "@enjoy-agents/agent-harness"
 import { handleMcpAppMessage, openMcpApp } from "./services/mcp-app"
 import { closeRealtime, openRealtime, sendRealtimeAudio } from "./services/realtime-service"
 import { collectCliTranscriptUsage } from "./services/cli-transcript-usage"
@@ -202,8 +203,16 @@ export function registerAiIpc() {
   })
 
   ipcMain.handle("mcp.servers", () => listServers())
-  ipcMain.handle("mcp.upsert", (_event, raw) => upsertServer(McpUpsertInput.parse(raw)))
-  ipcMain.handle("mcp.remove", (_event, raw) => removeServer(McpIdInput.parse(raw).id))
+  ipcMain.handle("mcp.upsert", (_event, raw) => {
+    const result = upsertServer(McpUpsertInput.parse(raw))
+    disposeAllAcpSessions()
+    return result
+  })
+  ipcMain.handle("mcp.remove", (_event, raw) => {
+    const result = removeServer(McpIdInput.parse(raw).id)
+    disposeAllAcpSessions()
+    return result
+  })
   ipcMain.handle("mcp.connect", (_event, raw) => connectServer(McpIdInput.parse(raw).id))
   ipcMain.handle("mcp.disconnect", (_event, raw) => disconnectServer(McpIdInput.parse(raw).id))
   ipcMain.handle("mcp.test", (_event, raw) => testServer(McpIdInput.parse(raw).id))

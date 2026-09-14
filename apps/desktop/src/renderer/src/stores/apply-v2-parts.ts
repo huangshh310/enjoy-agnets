@@ -1,6 +1,7 @@
 /**
  * StreamEvent v2：来源、结构化、资产折叠进当前助手消息。
  */
+import { wrapApprovedAppHtml } from "@enjoy-agents/mcp/app-host"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import type { StreamPatch } from "./apply-stream-event"
 import type { ThreadMessage } from "./chat-store"
@@ -36,6 +37,20 @@ export function applyV2Part(
     assistant.structured = event.partial
     upsertComponent(assistant, structuredComponentId(event.partial), { value: event.partial })
     return { messages, thinkingLabel: "Structured" }
+  }
+  if (event.type === "mcp.app") {
+    const srcDoc = event.srcDoc?.trim()
+    if (!srcDoc || event.phase === "error" || event.phase === "close") return { messages }
+    const wrapped = srcDoc.includes("Content-Security-Policy") ? srcDoc : wrapApprovedAppHtml(srcDoc)
+    const next = (assistant.mcpApps ?? []).filter((item) => item.resourceUri !== event.resourceUri)
+    next.push({
+      serverId: event.serverId,
+      resourceUri: event.resourceUri,
+      srcDoc: wrapped,
+      title: event.title
+    })
+    assistant.mcpApps = next
+    return { messages, thinkingLabel: "MCP App" }
   }
   return null
 }

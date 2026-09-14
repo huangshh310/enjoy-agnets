@@ -15,6 +15,7 @@ import { MessageActionChips } from "./message-action-chips"
 import { MarkdownResponse } from "../markdown-response"
 import { ThinkingTrace } from "../thinking/thinking-trace"
 import { TurnExtras } from "./turn-extras"
+import { TurnMcpApps } from "../tool-surfaces/turn-mcp-apps"
 import { TurnToolSurfaces } from "../tool-surfaces/turn-tool-surfaces"
 import { hasTurnToolSurfaces } from "../tool-surfaces/select-turn-tool-surfaces"
 
@@ -34,6 +35,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
         />
       ) : null}
       {surface.hasToolSurfaces ? <TurnToolSurfaces tools={surface.tools} /> : null}
+      {surface.mcpApps.length > 0 ? <TurnMcpApps apps={surface.mcpApps} /> : null}
       {surface.showGenerating ? (
         <MessageContent>
           {surface.turnKind === "video" ? (
@@ -68,10 +70,12 @@ function assistantSurface(message: ThreadMessage) {
     Boolean(message.sources?.length) ||
     Boolean(message.assets?.length) ||
     Boolean(message.components?.length) ||
-    message.structured != null
+    message.structured != null ||
+    Boolean(message.mcpApps?.length)
   return {
     reasoning,
     tools,
+    mcpApps: message.mcpApps ?? [],
     showThinking: shouldShowThinkingTrace({
       reasoning,
       toolCount: tools.length,

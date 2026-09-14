@@ -9,7 +9,7 @@
 
 ## 0. 一句话
 
-Enjoy 做 **扩展发现与安装编排**（MCP + Skills 为主），不做各家 CLI 的私有插件运行时，也不做收费云插件店。
+Enjoy 做 **扩展真源**（MCP + Skills 为主，当前引擎消费），不做各家 CLI 的私有插件运行时，也不做收费云插件店。
 
 ---
 
@@ -36,7 +36,7 @@ Enjoy 做 **扩展发现与安装编排**（MCP + Skills 为主），不做各�
 |------|-----|-------------------------------|-----------------|----------------|
 | **Codex** | Client；可作 MCP server | `~/.codex/skills` | 官方 Plugins | ACP 开会话；**不灌**技能正文（CLI 读盘）；Enjoy MCP 按 runtime 决定是否 host 透传 |
 | **Claude Code** | Client；`.mcp.json` / `claude mcp` | `~/.claude/skills`；Plugins 可捆 | Plugins + Hooks + Subagents | 同上；可 vault 绑 Anthropic 系；Claude 插件装在 Claude 侧 |
-| **Grok** | 随 CLI，非完整插件生态 | 非主路径 | 几乎无独立插件市场 | **仅官方登录**；禁止假「Grok 插件店」；工具扩展走 Enjoy MCP |
+| **Grok** | 随 CLI | 非主路径；Enjoy 仍只投影宿主目录 | 官方 `grok plugin marketplace list` / `/marketplace`；Enjoy 不跑 Grok plugin JS | **仅官方登录**；抽屉给复制命令，禁止假「已连接」；可移植 Skills/MCP 仍走 `#/skills` `#/mcp` |
 | **Pi / Oh My Pi** | 常靠扩展补齐 | `~/.pi/.../skills` 等 | 包 / 扩展散 | ACP；技能 CLI 读盘；OMP 供应商 ≠ Enjoy vault 插件 |
 | **DeepSeek** | 随 `dsh` / ACP | 文档少 | 无成熟市场 | ACP + 可绑 DeepSeek vault；扩展走 Enjoy MCP/Skills |
 | **Hermes** | 有 | 自创技能 + 持久记忆 | plugins + gateway | 适配/ACP；记忆技能在 Hermes 家目录；Enjoy 发现与跳转，不接管运行时 |
@@ -58,7 +58,7 @@ Enjoy 做 **扩展发现与安装编排**（MCP + Skills 为主），不做各�
 - **Skills**：保持 Agent Skills 标准 + `skill-sources` HTTPS Git 拉取；可选只读浏览外部 catalog（P1）。  
 - **MCP**：`#/mcp` 仍为权威配置；Sources / 扩展壳只做发现。  
 - **Registry**：只装 **Agent CLI 程序**，不混 Skills/MCP 市场。  
-- **对 Claude/Codex**：诚实文案「该助手也会读本机 `~/.claude|codex/skills`」；提供「打开本机技能文件夹」（P1），默认不代写家目录。
+- **对 Claude/Codex/DSH**：宿主 `#/mcp` / `#/skills` 经 ACP 灌给当前引擎。各家家目录只作只读发现/导入。原生 Cordis / hooks 在配置抽屉给复制命令，不在 Enjoy 内执行。Agent Plugins / Claude `plugin.json` 的 skills+mcp 子集可从本地文件夹导入。
 
 ### 不做
 

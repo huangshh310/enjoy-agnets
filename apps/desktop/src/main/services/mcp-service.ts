@@ -31,6 +31,22 @@ export function listServers() {
   return listMcpServers(getDatabase()).map(toPublic)
 }
 
+/** ACP 透传候选：已信任且服务器级未 deny。不要求 Enjoy 已 connect。 */
+export function listHostMcpCandidates() {
+  return listMcpServers(getDatabase()).map((row) => ({
+    id: row.id,
+    name: row.name,
+    transport: row.transport as "stdio" | "sse" | "http",
+    command: row.command ?? undefined,
+    url: row.url ?? undefined,
+    env: parseEnvRef(row.envRef),
+    trusted: row.trusted === 1,
+    denied: listMcpPermissions(getDatabase(), row.id).some(
+      (item) => item.scope === "server" && item.level === "deny"
+    )
+  }))
+}
+
 export function upsertServer(input: {
   id?: string
   name: string
@@ -79,6 +95,13 @@ export async function connectServer(id: string) {
   })
   handles.set(id, handle)
   return toPublic(row)
+}
+
+/** App / resources/read 需要本机会话；ACP 开流时用户未必点过 Connect。 */
+export async function connectServerIfNeeded(id: string) {
+  const handle = handles.get(id)
+  if (handle?.state === "connected") return
+  await connectServer(id)
 }
 
 /** envRef 是 UI 存的 `{KEY: value}` JSON 串；坏 JSON 不阻断连接，只当空 env。 */

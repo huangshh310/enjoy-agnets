@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./app-host": "./src/app-host.ts"
+    "./app-host": "./src/app-host.ts",
+    "./stdio-command": "./src/stdio-command.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

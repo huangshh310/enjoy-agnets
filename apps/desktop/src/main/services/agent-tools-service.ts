@@ -204,7 +204,8 @@ async function toPublic(
     boundHasKey: bound ? Boolean(profile?.apiKey?.trim()) : undefined,
     supportedApiStyles: supportedStylesForTool(preset.id),
     capabilities: capabilitiesFor(preset.id),
-    homeSynced: homeSyncedFor(preset.id)
+    homeSynced: homeSyncedFor(preset.id),
+    nativePluginCopy: catalog?.nativePluginCopy
   }
 }
 

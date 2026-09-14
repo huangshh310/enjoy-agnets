@@ -21,7 +21,11 @@ export const HIDDEN_RUNTIME_CAPABILITIES: RuntimeCapabilities = {
   steer: false,
   realtime: false,
   delegate: false,
-  providerBind: "none"
+  providerBind: "none",
+  hostMcp: "none",
+  hostSkills: "none",
+  mcpHttp: false,
+  mcpSse: false
 }
 
 /** 已接线 ACP 宿主的公共底：HMAC 审批、纠偏当下一轮 prompt、无斜杠/委派。 */
@@ -29,7 +33,8 @@ function acpHost(
   rest: Pick<
     RuntimeCapabilities,
     "models" | "login" | "quota" | "thinking" | "fast" | "providerBind"
-  >
+  > &
+    Partial<Pick<RuntimeCapabilities, "hostMcp" | "hostSkills" | "mcpHttp" | "mcpSse">>
 ): RuntimeCapabilities {
   return {
     spawn: true,
@@ -42,6 +47,10 @@ function acpHost(
     steer: true,
     realtime: false,
     delegate: false,
+    hostMcp: "acp-passthrough",
+    hostSkills: "catalog-prompt",
+    mcpHttp: true,
+    mcpSse: false,
     ...rest
   }
 }
@@ -63,7 +72,11 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     steer: true,
     realtime: true,
     delegate: true,
-    providerBind: "none"
+    providerBind: "none",
+    hostMcp: "local-tools",
+    hostSkills: "catalog-tool",
+    mcpHttp: false,
+    mcpSse: false
   },
   claude: acpHost({
     models: "inspect",
@@ -127,7 +140,8 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     quota: false,
     thinking: "none",
     fast: "none",
-    providerBind: "none"
+    providerBind: "none",
+    hostMcp: "none"
   }),
   hermes: acpHost({
     models: "none",
@@ -187,6 +201,10 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     steer: true,
     realtime: false,
     delegate: false,
-    providerBind: "none"
+    providerBind: "none",
+    hostMcp: "none",
+    hostSkills: "none",
+    mcpHttp: false,
+    mcpSse: false
   }
 }

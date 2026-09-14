@@ -5,8 +5,8 @@
 export const enSkillsPages = {
   states: {
     curated: "Curated",
-    noneActive: "No agent enabled",
-    notMounted: "Not mounted",
+    noneActive: "Not on host catalog",
+    notMounted: "Not imported",
     equipped: "Equipped"
   },
 
@@ -64,7 +64,7 @@ export const enSkillsPages = {
   emptyState: {
     titleNamed: "{agent} has no dedicated skills yet",
     titleGeneric: "No skill packs equipped yet",
-    descNamed: "No skills are linked to {agent} yet. Visit the curated store to equip it, or enable existing skill groups for {agent} on the left.",
+    descNamed: "This assistant consumes the host skill catalog. Equip packs from the store, or import skills already on disk.",
     descGeneric: "Skills give AI assistants plug-and-play superpowers in refactoring, full-stack testing, UI taste, and engineering automation.",
     exploreStore: "Explore the curated store",
     viewAllInstalled: "View all installed skills",
@@ -73,7 +73,7 @@ export const enSkillsPages = {
 
   card: {
     verified: "Verified",
-    activatedAgents: "Enabled agents:",
+    activatedAgents: "Host catalog:",
     allUnselected: "All contained skills are unchecked",
     countPrefix: "",
     countSuffix: " professional skills",
@@ -105,6 +105,7 @@ export const enSkillsPages = {
   drawerBody: {
     targetsTitle: "Target agents",
     targetsHint: "Click a row to toggle the group projection",
+    hostHint: "Project into the host catalog; the current engine reads this copy",
     projected: "Projected with group",
     workspaceLabel: "Workspace:",
     instructionsTitle: "Instructions"
@@ -114,6 +115,9 @@ export const enSkillsPages = {
     activeCount: "{enabled} / {total} targets active",
     synced: "Synced",
     notProjected: "No projection",
+    hostDesc: "The current engine reads the host catalog. Skills are not copied into ~/.claude and similar folders.",
+    hostOn: "On host catalog",
+    hostOff: "Not equipped",
     workspaceBound: "Current workspace bindings:"
   },
 
@@ -160,24 +164,24 @@ export const enSkillsPages = {
     title: "Skillsets tuned for {agent} (Recommended Skillsets)",
     plugHint: "Plug and play · no configuration needed",
     countSkills: "{n} domain skills",
-    equippedTo: "Equipped to {agent}",
-    linkTo: "Link to {agent} in one click",
-    getAndEquip: "Get & equip"
+    equippedTo: "On host catalog",
+    linkTo: "Import into host catalog",
+    getAndEquip: "Get & import to host"
   },
 
   quickMatrix: {
-    title: "Quick-equip existing skills to {agent} (Armory Quick Matrix)",
-    activeCount: "{enabled} / {total} source groups active",
-    summary: "{sources} source groups with {skills} skills are connected. Click a source pill below to mount or unmount the whole group for {agent}.",
-    quickMountLabel: "Quick-mount groups:",
-    toggleTitle: "Click to {action} all {n} skills of this group for {agent}",
-    mount: "mount",
-    unmount: "unmount",
+    title: "Import existing skills into the host catalog ({agent} reads this copy)",
+    activeCount: "{enabled} / {total} source groups on host",
+    summary: "{sources} source groups with {skills} skills are connected. Click a source pill to import or remove the whole group from the host catalog. The current engine reads that copy.",
+    quickMountLabel: "Import to host catalog:",
+    toggleTitle: "Click to {action} all {n} skills of this group on the host catalog",
+    mount: "import",
+    unmount: "remove",
     searchPlaceholder: "Filter {n} installed skills…",
     exploreLabel: "Explore:",
     clear: "Clear",
     defaultDesc: "Provides task instructions and context",
-    slotTitle: "Projection is per group: use the pills above to mount or unmount the whole group"
+    slotTitle: "Projection is per group: use the pills above to import or remove the whole group"
   }
 }
 

@@ -1,21 +1,18 @@
 /**
- * 目标 Agent 投影控制卡片 (Target Deployments Card)。
- * 将死板灰白的药丸表单升级为现代 Agent 插槽矩阵 (Slot Cards)，呈现品牌专属图标与部署同步状态。
+ * 宿主技能目录投影：Enjoy 全局与工作区 .agents/skills。
  */
 import {
   RiCheckLine,
   RiCompass3Line,
-  RiFolderLine,
   RiShieldCheckLine
 } from "@remixicon/react"
 import type { SkillSource, SkillTargetId } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import {
-  GLOBAL_TARGET_IDS,
+  HOST_DEPLOY_TARGET_IDS,
   SKILLS_UI_COPY,
-  TARGET_SHORT_LABELS,
-  WORKSPACE_TARGET_IDS
+  TARGET_SHORT_LABELS
 } from "../../constants/skills-ui.constants"
 import { AGENT_ARMORY_PROFILES } from "../../constants/agent-armory.constants"
 
@@ -43,21 +40,13 @@ export function TargetDeploymentsCard({
             </h3>
           </div>
           <p className="text-[11.5px] text-text-secondary">
-            {SKILLS_UI_COPY.targetDeploymentsDesc}
+            {t("pages.skills.targets.hostDesc")}
           </p>
         </div>
-
-        <span className="text-[11px] font-mono text-text-tertiary">
-          {t("pages.skills.targets.activeCount", {
-            enabled: source.enabledTargetIds.length,
-            total: GLOBAL_TARGET_IDS.length
-          })}
-        </span>
       </div>
 
-      {/* 全局 Agent 插槽卡片网格 */}
-      <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-        {GLOBAL_TARGET_IDS.map((targetId) => {
+      <div className="grid gap-2.5 grid-cols-2 sm:grid-cols-3">
+        {HOST_DEPLOY_TARGET_IDS.filter((id) => id !== "workspace-agents" || hasWorkspace).map((targetId) => {
           const isEnabled = source.enabledTargetIds.includes(targetId)
           const profile = AGENT_ARMORY_PROFILES[targetId]
           const TargetIcon = profile?.icon || RiCompass3Line
@@ -112,46 +101,13 @@ export function TargetDeploymentsCard({
                       : "text-text-tertiary"
                   )}
                 >
-                  {isEnabled ? t("pages.skills.targets.synced") : t("pages.skills.targets.notProjected")}
+                  {isEnabled ? t("pages.skills.targets.hostOn") : t("pages.skills.targets.hostOff")}
                 </span>
               </div>
             </button>
           )
         })}
       </div>
-
-      {/* 工作区目标（仅当存在打开的工作区时） */}
-      {hasWorkspace ? (
-        <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-separator-border/40 text-caption-2-regular">
-          <div className="flex items-center gap-1.5 text-text-tertiary">
-            <RiFolderLine className="size-3.5" />
-            <span className="font-medium text-[11px]">{t("pages.skills.targets.workspaceBound")}</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            {WORKSPACE_TARGET_IDS.map((targetId) => {
-              const isEnabled = source.enabledTargetIds.includes(targetId)
-              return (
-                <button
-                  key={targetId}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => onToggleTarget(source, targetId)}
-                  className={cx(
-                    "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-all cursor-pointer",
-                    isEnabled
-                      ? "border-purple-500/40 bg-purple-500/10 text-purple-600 dark:text-purple-400 font-medium shadow-2xs"
-                      : "border-separator-border/60 bg-background-secondary-default/40 text-text-tertiary hover:border-separator-border hover:text-text-secondary"
-                  )}
-                >
-                  {isEnabled ? <RiCheckLine className="size-3 text-purple-500" /> : null}
-                  <span>{TARGET_SHORT_LABELS[targetId]}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
     </section>
   )
 }

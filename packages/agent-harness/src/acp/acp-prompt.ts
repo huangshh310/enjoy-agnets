@@ -24,21 +24,24 @@ export function formatHandoffContext(input: {
 export function acpProcessKey(
   toolId: string,
   modelId?: string,
-  env?: Record<string, string>
+  env?: Record<string, string>,
+  mcpFingerprint?: string,
+  pluginDirsKey?: string
 ): string {
-  return `${toolId}:${modelId?.trim() || ""}:${JSON.stringify(env || {})}`
+  return `${toolId}:${modelId?.trim() || ""}:${JSON.stringify(env || {})}:${mcpFingerprint ?? ""}:${pluginDirsKey ?? ""}`
 }
 
 export function composeAcpPrompt(
   messages: ModelMessage[],
-  extras?: { customInstructions?: string }
+  extras?: { customInstructions?: string; skillCatalog?: string }
 ): string {
   const user = lastUserText(messages)
   const handoff = extractHandoffText(messages)
   const custom = extras?.customInstructions?.trim()
     ? `${CUSTOM_INSTRUCTIONS_PREFIX}\n${extras.customInstructions.trim()}`
     : ""
-  return [custom, handoff, user].filter(Boolean).join("\n\n---\n")
+  const skills = extras?.skillCatalog?.trim() ?? ""
+  return [custom, skills, handoff, user].filter(Boolean).join("\n\n---\n")
 }
 
 export function lastUserText(messages: ModelMessage[]): string {

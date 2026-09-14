@@ -2,7 +2,7 @@
  * 开流 / 检查器看到的系统指令。
  * Enjoy Local：systemPromptFor + 自定义说明 + AGENTS.md 链 + 其余常驻规则 + 技能索引。
  * Harness：systemPromptFor + 自定义说明。
- * ACP：不假装走 ToolLoop 提示词，只展示将垫进 session/prompt 的自定义说明。
+ * ACP：不假装走 ToolLoop 提示词；展示将垫进 session/prompt 的自定义说明与技能索引。
  */
 import { joinInstructions, systemPromptFor } from "@enjoy-agents/agent-core/prompts"
 import {
@@ -17,8 +17,9 @@ const CUSTOM_HEAD = "# User custom instructions"
 
 const ACP_INSPECT_NOTE = [
   "ACP host: Enjoy does not inject ToolLoop systemPromptFor.",
-  "Custom instructions are prepended to session/prompt.",
-  "Workspace AGENTS.md / CLAUDE.md / skills are read by the CLI from disk."
+  "Custom instructions and the host skill catalog are prepended to session/prompt.",
+  "Trusted #/mcp servers are passed on session/new.",
+  "Workspace AGENTS.md / CLAUDE.md are still read by the CLI from disk."
 ].join(" ")
 
 export type LocalInstructionExtras = {
@@ -75,7 +76,8 @@ export function codingInstructions(
   if (runtime === "e2e") return systemPromptFor(mode)
   if (runtime === "acp-host") {
     const custom = formatCustomInstructions(customInstructions)
-    return joinInstructions(ACP_INSPECT_NOTE, custom)
+    const skills = formatSkillCatalog(extras?.skills ?? [], { workspaceRoot: extras?.workspaceRoot })
+    return joinInstructions(joinInstructions(ACP_INSPECT_NOTE, custom), skills)
   }
   const base = systemPromptFor(mode)
   if (runtime === "harness") {

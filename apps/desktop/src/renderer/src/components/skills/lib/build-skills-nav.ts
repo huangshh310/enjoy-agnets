@@ -8,6 +8,7 @@ import {
   RiSparklingLine
 } from "@remixicon/react"
 import type { InstalledSkillItem, SkillSource } from "@enjoy-agents/ipc-contract"
+import { skillVisibleForTarget } from "./skill-visible-for-target.ts"
 import type { SecondaryNavGroup } from "@renderer/components/app-pages/secondary-nav.types"
 import { AGENT_ARMORY_PROFILES, getAgentArmoryProfile } from "../constants/agent-armory.constants"
 import { GLOBAL_TARGET_IDS, TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
@@ -51,9 +52,9 @@ export function buildSkillsNavGroups({
     },
     {
       id: "targets",
-      label: "按生效助手筛选",
+      label: "按助手查看",
       items: GLOBAL_TARGET_IDS.map((targetId) => {
-        const count = allSkills.filter((s) => s.enabledTargetIds.includes(targetId)).length
+        const count = allSkills.filter((s) => skillVisibleForTarget(s, targetId)).length
         const profile = AGENT_ARMORY_PROFILES[targetId] ?? getAgentArmoryProfile(targetId)
         return {
           id: `target:${targetId}`,

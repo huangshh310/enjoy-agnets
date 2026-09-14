@@ -5,11 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./catalogs": "./src/agent-tools/catalogs/index.ts"
+    "./catalogs": "./src/agent-tools/catalogs/index.ts",
+    "./probe": "./src/agent-tools/detect/probe.ts",
+    "./acp-mcp": "./src/acp/acp-mcp.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts src/ready.test.ts src/agent-tools/resolve-spawn.test.ts src/agent-tools/catalogs.test.ts src/agent-tools/detect/probe.test.ts src/acp/map-events.test.ts src/acp/auth.test.ts src/acp/probe-initialize.test.ts src/acp/acp-prompt.test.ts src/agent-tools/coming-soon-promotion.test.ts src/agent-tools/custom-spawn.test.ts src/acp/custom-turn.test.ts src/acp/acp-child-ledger.test.ts src/acp/acp-child-alive.test.ts src/acp/spawn-cwd.test.ts"
+    "test": "node --experimental-strip-types --test src/inactive-tools.test.ts src/catalog.test.ts src/ready.test.ts src/agent-tools/resolve-spawn.test.ts src/agent-tools/catalogs.test.ts src/agent-tools/detect/probe.test.ts src/acp/map-events.test.ts src/acp/auth.test.ts src/acp/probe-initialize.test.ts src/acp/acp-prompt.test.ts src/acp/acp-mcp.test.ts src/agent-tools/coming-soon-promotion.test.ts src/agent-tools/custom-spawn.test.ts src/acp/custom-turn.test.ts src/acp/acp-child-ledger.test.ts src/acp/acp-child-alive.test.ts src/acp/spawn-cwd.test.ts"
   },
   "dependencies": {
     "@ai-sdk/harness": "catalog:",

@@ -28,6 +28,7 @@ import {
   TARGET_SHORT_LABELS
 } from "../constants/skills-ui.constants"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
+import { hostEnabledTargetIds } from "../lib/skill-visible-for-target"
 
 export function SkillsCard({
   source,
@@ -46,7 +47,8 @@ export function SkillsCard({
 }) {
   const t = useT()
   const health = HEALTH_CONFIG[source.health]
-  const enabledCount = source.enabledTargetIds.length
+  const hostTargets = hostEnabledTargetIds(source.enabledTargetIds)
+  const enabledCount = hostTargets.length
   const previewSkills = source.selectedSkillIds.slice(0, 4)
   const theme = resolveSkillTheme(source.id || source.name, source.kind)
   const ThemeIcon = theme.icon
@@ -137,7 +139,7 @@ export function SkillsCard({
           {enabledCount === 0 ? (
             <span className="text-text-tertiary italic">{t("pages.skills.states.noneActive")}</span>
           ) : (
-            source.enabledTargetIds.map((targetId) => (
+            hostTargets.map((targetId) => (
               <span
                 key={targetId}
                 className="inline-flex items-center gap-1 rounded-md bg-background-primary-default px-1.5 py-0.5 text-[10.5px] font-medium text-text-primary border border-separator-border/40 shadow-2xs"

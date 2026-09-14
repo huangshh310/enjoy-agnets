@@ -89,6 +89,17 @@ test("未知 id 回落隐藏表；七家新 ACP 可 spawn", () => {
   assert.equal(capabilitiesFor("omp").quota, false)
 })
 
+test("宿主扩展：Local 注入工具，ACP 透传，Pi 不传 MCP", () => {
+  assert.equal(capabilitiesFor("enjoy-local").hostMcp, "local-tools")
+  assert.equal(capabilitiesFor("enjoy-local").hostSkills, "catalog-tool")
+  assert.equal(capabilitiesFor("cursor").hostMcp, "acp-passthrough")
+  assert.equal(capabilitiesFor("cursor").hostSkills, "catalog-prompt")
+  assert.equal(capabilitiesFor("deepseek").hostMcp, "acp-passthrough")
+  assert.equal(capabilitiesFor("pi").hostMcp, "none")
+  assert.equal(capabilitiesFor("pi").hostSkills, "catalog-prompt")
+  assert.equal(capabilitiesFor("sandbox-harness").hostMcp, "none")
+})
+
 test("composerChromeFor：Cursor 只剩 + / 审批 / 胶囊 / 发送", () => {
   const chrome = composerChromeFor("cursor")
   assert.deepEqual(chrome, {

@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-13
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-14
 
 ## 当前真相
 
@@ -50,7 +50,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 会话消息存在 SQLite。用户轮在发送时落库。助手侧复杂载荷用 `assistant-payload` 序列化（reasoning + tool + sources / assets / structured），不要把 tool JSON 当纯文本渲染。助手 transcript / tools 挂在 `ActiveRun` 上跨审批泵累积；流式过程按 `tool.result` / `approval.required` 立刻、`text.delta` / `reasoning.delta` 每 1.5s 节流 `checkpointActiveRun`，**同一条**助手消息 UPDATE，不新插行。`complete` / `fail` / `abort` / `before-quit` 再走 `persistActiveRun` 封口并改 `runs.status`。每一轮 ToolLoop **收束后**（即将再泵，不是工具 execute 中途）把 `modelMessages` 写入 running checkpoint（`resumeAt=tool-boundary`）。启动时：带这份快照的 Enjoy Local `running` 由 `restoreRunningRuns` 接回泵；没有快照、ACP、E2E stub、或仍在流式中途的 `running` 仍 `cancelled`。`waiting_review` 把 `modelMessages` + pending 写入 checkpoint，HMAC 密钥进 `userData/approval-hmac.bin`（`safeStorage`）；启动 `restoreWaitingRuns` 再挂 ActiveRun 并重发 `approval.required`。没有活着的 ToolLoop wait 时 `executeStoredTool` 按库内 args 执行。分发表必须覆盖全部可审批工具：write_file / edit_file / bash / code_mode / git_commit / git_branch / git_push / MCP 工具（对可见工具表反查 `mcpAgentToolName`）；漏一个就是「点了允许但什么都没发生」的假放行（code_mode / git_branch / MCP 曾漏，已补）。刷新会话时 `hydrate-thread` 优先读信封，缺失则从 `message_parts` 补回。
 
-用户消息可带 `attachments`（资产 id）。main 按 MIME 分流后编进最后一条用户消息：`text/*` / markdown / json 等编成 `text` part；`image/*` 需模型有 `vision` 才编 `file` part；PDF 与其它二进制需 `files`。空 `File.type` 或 `application/octet-stream` 按文件名推断，不要默认当二进制。用户附件以 `message_parts` 的 `file` part 落库（按 `attachments` id 写，不依赖编模型 parts 的返回值），刷新后从 parts 恢复气泡。列出消息时若旧用户轮只有 text，按「上一轮之后、本轮发送之前」导入的资产补回 file part。跑循环前 `citeKnowledge` 检索知识库：UI 收 `source.added`，prompt 只塞片段。Composer 选 `grok-imagine-image*` / dall-e 等生图模型时走 `ai.generate` kind=`image`；`grok-imagine-video*` 走 kind=`video`（`experimental_generateVideo`），不要塞进 ToolLoop。助手落库把 `runKind` 写进 assistant-payload（`completeAgentRun` 写 `agent`，媒体生成写 `image`/`video`），刷新后 Thinking / 生图表面仍认 stamp。纯文本无 stamp 仍不包信封；有 `runKind` 必须走 JSON 信封。运行中点 Stop 走 `ai.abort`（内部也会中止 Agent）。
+用户消息可带 `attachments`（资产 id）。main 按 MIME 分流后编进最后一条用户消息：`text/*` / markdown / json 等编成 `text` part；`image/*` 需模型有 `vision` 才编 `file` part；PDF 与其它二进制需 `files`。空 `File.type` 或 `application/octet-stream` 按文件名推断，不要默认当二进制。用户附件以 `message_parts` 的 `file` part 落库（按 `attachments` id 写，不依赖编模型 parts 的返回值），刷新后从 parts 恢复气泡。列出消息时若旧用户轮只有 text，按「上一轮之后、本轮发送之前」导入的资产补回 file part。跑循环前 `citeKnowledge` 检索知识库：UI 收 `source.added`，prompt 只塞片段。Composer 选 `grok-imagine-image*` / dall-e 等生图模型时走 `ai.generate` kind=`image`；`grok-imagine-video*` 走 kind=`video`（`experimental_generateVideo`），不要塞进 ToolLoop。助手落库把 `runKind` 写进 assistant-payload（`completeAgentRun` 写 `agent`，媒体生成写 `image`/`video`），刷新后 Thinking / 生图表面仍认 stamp。纯文本无 stamp 仍不包信封；有 `runKind` 必须走 JSON 信封。运行中点 Stop 走 `ai.abort`（内部也会中止 Agent）。ACP 宿主 Stop 只 `session/cancel`（`cancelCodingStream` → `cancelAcpTurn`），**禁止** `disposeAcpSession`；Enjoy 侧 fail 且 CLI 子进程仍活着同样只 cancel。换引擎 / 换模型 / 删会话 / 增删 MCP / 子进程已死 / 退出应用才 dispose。`#/mcp` 已信任行经 `hostExtensionsFor` 进 `session/new.mcpServers`（stdio 解析成绝对路径；SSH 不传 stdio）。ACP `session/update` 的 `plan` 映射为 `todo_write`，进 Composer Todo Dock。
 
 ## 不变量
 
@@ -68,7 +68,9 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
-- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）
+- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）；ACP Stop：`open-coding-stream.ts` `cancelCodingStream` → `cancelAcpTurn`
+- ACP plan → Todo Dock：`packages/agent-harness/src/acp/map-acp-plan.ts`
+- ACP `mcpServers`：`apps/desktop/src/main/services/host-extensions/`、`packages/agent-harness/src/acp/acp-mcp.ts`
 - 写盘检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-restore.ts`
 - 纠偏队列：`runtime-interact/steering-queue.ts`、`steer-agent.ts`、`absorb-steering.ts`；检查点：`prepare-step.ts`（`mergeSteeringMessages`，仅 step≥1 注入）+ `agent-pump` 收工前 `absorbSteering`
 - 引导词：`packages/ipc-contract/src/action-chip.ts`；点击分流 `action-chip-intent.ts` / `apply-action-chip.ts`；气泡 `message-action-chips.tsx`
@@ -87,6 +89,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 - **隐患**：Goal 当已注入、Recap 当「已经在模型里」。Goal 只 `session.patch` 落库。Recap 由 renderer 在下一轮 `messages` 头垫 `[Session Recap]` system 句（`send-composer-run.ts`），不是 `extraInstructions`；`inspect-prompt` 从 SQLite 重建时可能看不到。ACP 同样会带上这条 messages，但 CLI 未必当 system 用。
 - ACP 开流忽略 `fast` / `reasoningEffort` / 执行模式；纠偏进下一轮 `session/prompt`，不要当成 Cursor 原生 steer。Enjoy Local Fast 没配 `fastModelId` 时本轮不换模型。Composer 探索对照 Codex 切宿主协作模式。ACP 禁止 `session/set_mode`，也禁止用 `引用自步骤` 假装切了模式（模型会当成引用、声称仍是 Normal）。正确做法：`setMode` + 每轮 Prompt 围栏 + 「探索中」芯片。Grok 工具仍可能写盘，不要把 ACP 探索画成 Enjoy 只读工具集。C 端不要写 `/plan`。
+- **隐患**：ACP Stop 若 `disposeAcpSession` 会丢掉 CLI 上下文，下一轮 `composeAcpPrompt` 只带最后一句用户句。正确做法：Stop / 活着的 fail 只 `session/cancel`。换引擎 / 换模型 / 删会话 / 增删 MCP / 子进程已死 / 退出才 dispose。`plan` 事件必须走 `mapAcpPlan` → `todo_write`，不要在 `mapAcpUpdate` 里丢掉。
 - Composer `/compact` 走 Enjoy `session.compact`（压缩发给模型的 SQLite 历史，UI 气泡不删）。不要把 `/compact` 当用户句发出去；会话太短会抛 `COMPACTION_TOO_SHORT`，UI 翻词表。ACP `compact=cli` 仍用这条宿主压缩，不是引擎原生 slash。
 - 纠偏不能 `abort` 当前工具。`agent.steer` 只入队；`prepareStep` 仅 `stepNumber > 0` 才 drain+注入（SDK 跨步保留）/ 泵结束才 absorb。step 0 若仍 `pullSteeringMessages()` 会把队列抽空却不注入。`prepareStep` 与 `run.messages` 可能同引用，必须 `mergeSteeringMessages` 去重，禁止再拼一套。没有 ActiveRun：已 idle 立刻 `agent.run`；UI 仍 running 才进 followup 等自启。fail / 收工 / Stop 都 `clearSteer`，避免下一轮把已落库的纠偏再注一次。
 - 消息底 ActionChip 与排队条「立即纠偏」不是同一件事。Chip 未点击不得自动跑；idle 后自动消费的只是用户主动入队的 followupQueue。`waiting_review` 不要自启下一轮。围栏必须从可见 Markdown 剥离，不要把 `:::enjoy-actions` 渲染进气泡。idle 点 Chip 必须 `takeQuotedContexts` 并进本轮 Prompt，否则引用会漏到下一轮。

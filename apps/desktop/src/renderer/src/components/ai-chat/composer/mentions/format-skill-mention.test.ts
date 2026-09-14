@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { formatSkillMention, formatSkillMentions } from "./format-skill-mention.ts"
 
-test("工作区技能写出相对路径，让模型 read_file", () => {
+test("工作区技能写出相对路径，不点名 Local 工具", () => {
   const text = formatSkillMention({
     id: "s",
     name: "Summarize",
@@ -12,7 +12,8 @@ test("工作区技能写出相对路径，让模型 read_file", () => {
   })
   assert.match(text, /\/summarize/)
   assert.match(text, /\.agents\/skills\/summarize\/SKILL\.md/)
-  assert.match(text, /read_file/)
+  assert.match(text, /Read that SKILL\.md/)
+  assert.doesNotMatch(text, /read_file/)
   assert.doesNotMatch(text, /# Summarize/)
 })
 

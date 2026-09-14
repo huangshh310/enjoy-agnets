@@ -171,6 +171,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     serverId: z.string(),
     resourceUri: z.string(),
     phase: z.enum(["open", "update", "close", "error"]),
+    srcDoc: z.string().max(200_000).optional(),
+    title: z.string().max(200).optional(),
     ...Envelope
   }),
   z.object({

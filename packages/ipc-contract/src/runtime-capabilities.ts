@@ -22,7 +22,13 @@ export const RuntimeCapabilities = z.object({
   steer: z.boolean(),
   realtime: z.boolean(),
   delegate: z.boolean(),
-  providerBind: z.enum(["none", "anthropic", "openai", "deepseek", "google", "opencode"])
+  providerBind: z.enum(["none", "anthropic", "openai", "deepseek", "google", "opencode"]),
+  /** 宿主 MCP：Local 注入工具 / ACP session/new 透传 / 不传。 */
+  hostMcp: z.enum(["local-tools", "acp-passthrough", "none"]),
+  /** 宿主 Skills：Local skill 工具 / ACP prompt 索引 / 不灌。 */
+  hostSkills: z.enum(["catalog-tool", "catalog-prompt", "none"]),
+  mcpHttp: z.boolean(),
+  mcpSse: z.boolean()
 })
 export type RuntimeCapabilities = z.infer<typeof RuntimeCapabilities>
 
@@ -86,6 +92,18 @@ export function composerChromeFor(runtimeId: string | undefined): ComposerChrome
     showOnEngineRail: pathKind !== "sandbox-harness" && Boolean(runtimeId) && cap.spawn,
     quota: cap.quota
   }
+}
+
+/** L3 / 检查器：宿主把 MCP schema 计进当前引擎。 */
+export function countsHostMcpTokens(runtimeId: string | undefined): boolean {
+  const mode = capabilitiesFor(runtimeId).hostMcp
+  return mode === "local-tools" || mode === "acp-passthrough"
+}
+
+/** L3 / 检查器：宿主把技能索引计进当前引擎。 */
+export function countsHostSkillTokens(runtimeId: string | undefined): boolean {
+  const mode = capabilitiesFor(runtimeId).hostSkills
+  return mode === "catalog-tool" || mode === "catalog-prompt"
 }
 
 /** 设置能力矩阵行序：Enjoy 本地 → ACP → 进阶沙箱（末行，不上导轨）。 */

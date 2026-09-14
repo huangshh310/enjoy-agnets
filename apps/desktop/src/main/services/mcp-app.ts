@@ -5,10 +5,11 @@ import { sanitizeAppMessage, uriFrom, wrapApprovedAppHtml, approvedDemoAppHtml }
 import type { McpOpenAppResult } from "@enjoy-agents/ipc-contract"
 import { stampAndBroadcast } from "./event-bus"
 import { isE2eStub } from "./e2e-stub"
-import { listServers, readServerResource } from "./mcp-service"
+import { connectServerIfNeeded, listServers, readServerResource } from "./mcp-service"
 
 export async function openMcpApp(serverId: string, resourceUri?: string): Promise<McpOpenAppResult> {
   const server = requireTrusted(serverId)
+  await ensureConnected(serverId)
   const allowed = allowedUris(server.allowedResourceUris)
   const uri = resourceUri && allowed.includes(resourceUri) ? resourceUri : allowed.find((item) => item !== "mcp://app")
   stampAndBroadcast(
@@ -87,6 +88,10 @@ async function readResource(serverId: string, params: unknown) {
   )
   if (!read.ok) return { ok: false, error: read.error }
   return { ok: true, method: "resources/read", text: resourceText(read.result) }
+}
+
+async function ensureConnected(serverId: string) {
+  await connectServerIfNeeded(serverId)
 }
 
 function requireTrusted(id: string) {

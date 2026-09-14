@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { AgentArmoryProfile } from "../../constants/agent-armory.constants"
 import { resolveSkillTheme } from "../../constants/skills-badge-theme"
+import { hostCatalogEnabled } from "../../lib/skill-visible-for-target"
 
 export function AgentRecommendedPacks({
   profile,
@@ -75,7 +76,7 @@ export function AgentRecommendedPacks({
 
           const isInstalled = Boolean(installedSource)
           const isTargetEnabled = installedSource
-            ? installedSource.enabledTargetIds.includes(profile.targetId)
+            ? hostCatalogEnabled(installedSource.enabledTargetIds)
             : false
 
           const theme = resolveSkillTheme(item.id || item.title)
@@ -158,7 +159,7 @@ export function AgentRecommendedPacks({
                 {isTargetEnabled ? (
                   <div className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
                     <RiCheckLine className="size-3.5" />
-                    <span>{t("pages.skills.recommendedPacks.equippedTo", { agent: profile.shortName })}</span>
+                    <span>{t("pages.skills.recommendedPacks.equippedTo")}</span>
                   </div>
                 ) : isInstalled && installedSource ? (
                   <Button
@@ -168,7 +169,7 @@ export function AgentRecommendedPacks({
                     className="h-7.5 px-3 text-caption-2-medium gap-1 shadow-2xs"
                   >
                     <RiShieldCheckLine className="size-3" />
-                    <span>{t("pages.skills.recommendedPacks.linkTo", { agent: profile.shortName })}</span>
+                    <span>{t("pages.skills.recommendedPacks.linkTo")}</span>
                   </Button>
                 ) : (
                   <Button

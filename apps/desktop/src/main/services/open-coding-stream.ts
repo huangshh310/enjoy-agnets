@@ -2,6 +2,8 @@
  * 按 runtimeId / 偏好打开 Enjoy Local、本机 ACP 或 SDK 沙箱流。
  */
 import {
+  acpSessionAlive,
+  cancelAcpTurn,
   disposeAcpTurn,
   disposeHarnessTurn,
   isAcpHostRuntime,
@@ -100,8 +102,16 @@ async function openHarnessStream(
   return { stream: opened.stream, result: opened.result, dispose: opened.dispose }
 }
 
-/** 结束本轮 Harness / ACP 子进程。 */
+/** Stop：取消当前 turn，ACP 进程留下给下一轮。 */
+export async function cancelCodingStream(runId: string): Promise<void> {
+  await disposeHarnessTurn(runId)
+  await cancelAcpTurn(runId)
+}
+
+/** 换引擎 / 删会话 / CLI 已死：拆掉 Harness 与 ACP 子进程。 */
 export async function disposeCodingStream(runId: string): Promise<void> {
   await disposeHarnessTurn(runId)
   await disposeAcpTurn(runId)
 }
+
+export { acpSessionAlive }

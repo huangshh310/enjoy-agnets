@@ -50,9 +50,12 @@ export { probeBinaries, lookupOnPath, pathDirs, type ProbeResult } from "./agent
 export { detectStatusFor } from "./agent-tools/detect/status.ts"
 export {
   streamAcpTurn,
+  cancelAcpTurn,
   disposeAcpTurn,
   disposeAcpSession,
   disposeAllAcpSessions,
+  acpSessionAlive,
   type StreamAcpTurnInput
 } from "./acp/stream-acp.ts"
+export { filterAcpMcpServers, type AcpMcpServer } from "./acp/acp-mcp.ts"
 export { configureAcpChildLedger, reapOrphanAcpChildren } from "./acp/acp-child-store.ts"

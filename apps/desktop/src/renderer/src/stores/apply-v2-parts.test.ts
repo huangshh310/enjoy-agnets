@@ -15,6 +15,22 @@ function assistant(): ThreadMessage {
   }
 }
 
+test("mcp.app 把 srcDoc 折进当前助手消息", () => {
+  const next = assistant()
+  const patch = applyV2Part([next], next, {
+    type: "mcp.app",
+    runId: "run_1",
+    serverId: "acp",
+    resourceUri: "ui://dash",
+    phase: "open",
+    srcDoc: "<p>app</p>",
+    title: "Dash"
+  })
+  assert.equal(patch?.messages[0]?.mcpApps?.[0]?.resourceUri, "ui://dash")
+  assert.ok(patch?.messages[0]?.mcpApps?.[0]?.srcDoc.includes("Content-Security-Policy"))
+  assert.equal(patch?.thinkingLabel, "MCP App")
+})
+
 test("source.added 折进当前助手消息", () => {
   const next = assistant()
   const patch = applyV2Part([next], next, {

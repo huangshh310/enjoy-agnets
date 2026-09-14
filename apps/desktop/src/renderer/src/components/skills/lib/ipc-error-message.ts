@@ -33,5 +33,7 @@ const SKILL_SOURCE_ERROR_ZH: Record<string, string> = {
   EMPTY_SELECTION: "请先选择要投影的技能和目标 Agent",
   MISSING_CHECKOUT: "来源尚未检出，请先更新或重新导入",
   UNMANAGED_SOURCE: "本机自动发现的技能目录不能从列表移除",
-  "Open a workspace first.": "请先打开一个工作区"
+  "Open a workspace first.": "请先打开一个工作区",
+  PLUGIN_NOT_PORTABLE: "这个包不是可移植插件（需要 skills 或 MCP）。Cordis / hooks 请在助手侧安装。",
+  PLUGIN_NOT_FOUND: "找不到要导入的文件夹"
 }

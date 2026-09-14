@@ -5,6 +5,8 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { extractAcpDiffs } from "./acp-diff.ts"
+import { mapAcpMcpApps } from "./map-acp-mcp-app.ts"
+import { isAcpPlanUpdate, mapAcpPlan } from "./map-acp-plan.ts"
 import { stampDelegateArgs } from "./stamp-delegate-args.ts"
 
 export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
@@ -24,8 +26,10 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     const args = extractToolArgs(rec)
     const events: StreamEvent[] = [toolStartEvent(runId, toolCallId, name, args, rec)]
     events.push(...fileEvents(rec, runId))
+    events.push(...mapAcpMcpApps(rec, runId))
     return events
   }
+  if (isAcpPlanUpdate(kind)) return mapAcpPlan(rec, runId)
   if (kind === "available_commands_update") {
     const rawCommands = Array.isArray(rec.availableCommands) ? rec.availableCommands : []
     const commands: Array<{ name: string; description?: string }> = []
@@ -45,6 +49,7 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     const status = String(rec.status ?? "")
     const events: StreamEvent[] = [toolStartEvent(runId, toolCallId, name, args, rec)]
     events.push(...fileEvents(rec, runId))
+    events.push(...mapAcpMcpApps(rec, runId))
     if (status === "completed" || status === "failed") {
       events.push(
         toolResultEvent(runId, toolCallId, name, args, rec, status === "failed")

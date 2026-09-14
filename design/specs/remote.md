@@ -1,6 +1,6 @@
 # spec/remote
 
-> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-09-13
+> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-09-14
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 连接态：`idle | connecting | connected | failed | disconnected`。事件 `workspace.remote`。`connecting` / `failed` / `disconnected` / `idle` 时 Composer 发送闸禁发。已连接时文件 / bash / git / 终端 cwd / ACP spawn 走 `AgentWorkspaceHost` 的 SSH 适配器，路径 jail 在 `remote_path`。断线写操作抛 `REMOTE_DISCONNECTED`，不得 `{ok:true}`。
 
-入口：`#/settings/workspace` 远程连接名册（添加 / 编辑 / 删除 / 从 `~/.ssh/config` 发现具体 Host / 探测 / 一键打开配置文件）；创建项目弹窗可选远程，填已有远端路径后 `openSsh` + `connect`（不是 `mkdir`）；侧栏 SSH 项目带「远程」微标，切换会 `connect`（切走上一台 ssh 先 `disconnect`）；顶条重构为高质感远程环境控制台（Remote Environment Bar）：包含连接状态脉冲发光圆点、当前主机快速切换下拉面板（`RemoteHostSwitcher`，支持直观查看名册中各主机、工作区数、认证类型与一键切换）、远端工作区路径胶囊（带一键复制与反馈）以及消除歧义的「远程环境 · 本地驱动」架构微标（带 Tooltip 解释说明：远端执行、本地调度），并提供带图标的高质感重试与断开操作按钮。右栏不加「远程连接」项。
+入口：`#/settings/workspace` 远程连接名册（添加 / 编辑 / 删除 / 从 `~/.ssh/config` 发现具体 Host / 探测 / 一键打开配置文件）；创建项目弹窗可选远程，填已有远端路径后 `openSsh` + `connect`（不是 `mkdir`）；侧栏 SSH 项目带「远程」微标，切换会 `connect`（切走上一台 ssh 先 `disconnect`）；顶条重构为高质感远程环境控制台（Remote Environment Bar）：包含连接状态脉冲发光圆点、当前主机快速切换下拉面板（`RemoteHostSwitcher`，支持直观查看名册中各主机、工作区数、认证类型与一键切换）、远端工作区路径胶囊（带一键复制与反馈）以及消除歧义的「远程环境 · 本地驱动」架构微标（带 Tooltip 解释说明：远端执行、本地调度），并提供带图标的高质感重试与断开操作按钮。右栏不加「远程连接」项。ACP `session/new.mcpServers` 的 stdio 在 SSH 工作区经已连接 pool 跑远端 `command -v`，换成远端绝对路径；找不到则跳过。Grok `--plugin-dir` 是本机路径，SSH 不传。
 
 IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.sshProbe`、`workspace.openSsh`（可带 `hostId`）/ `connect` / `disconnect` / `retry`。编辑主机时 `upsert` 传入已有 `id`，自动同步更新已有关联工作区的连接列。`openConfig`（即 `workspace.openSshConfig`）支持一键使用系统默认应用打开 `~/.ssh/config`（文件不存在时自动安全创建）或在系统文件管理器中一键定位私钥文件（`shell.showItemInFolder`）。删主机若仍有项目抛 `HOST_IN_USE`。导轨无「远程引擎」，`runtimeId` 不加 `ssh`。ACP 远程 spawn 经本机 `ssh` 跑远端 catalog basename，stdio 回 main；失败人话「远端未找到 {bin}」，会话横幅智能分类为 `remote_cli_missing` 并提供「一键切换为 Enjoy 本地运行」和「复制远端安装命令」。本机不装远端 CLI 假路径，不读远端 `auth.json`。
 

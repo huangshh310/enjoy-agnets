@@ -3,6 +3,50 @@ import { test } from "node:test"
 import { mapAcpUpdate } from "./map-events.ts"
 import { pickAcpPermissionOption } from "./permissions.ts"
 
+test("maps MCP App HTML resource to mcp.app", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "tool_call_update",
+      toolCallId: "ui1",
+      status: "completed",
+      content: [
+        {
+          type: "resource",
+          mimeType: "text/html;profile=mcp-app",
+          uri: "ui://dashboard",
+          text: "<!doctype html><html><body><p>hi</p></body></html>"
+        }
+      ]
+    },
+    "run_1"
+  )
+  const app = events.find((item) => item.type === "mcp.app") as
+    | { type: "mcp.app"; resourceUri?: string; srcDoc?: string }
+    | undefined
+  assert.equal(app?.type, "mcp.app")
+  assert.equal(app?.resourceUri, "ui://dashboard")
+  assert.ok(app?.srcDoc?.includes("<p>hi</p>"))
+})
+
+test("maps plan snapshot to todo_write", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "plan",
+      entries: [
+        { content: "读入口", status: "completed" },
+        { content: "改 auth", status: "in_progress" }
+      ]
+    },
+    "run_1"
+  )
+  assert.equal(events[0]?.type, "tool.start")
+  assert.equal(events[1]?.type, "tool.result")
+  const start = events[0] as { name?: string; args?: { todos?: Array<{ title: string; status: string }> } }
+  assert.equal(start.name, "todo_write")
+  assert.equal(start.args?.todos?.[1]?.title, "改 auth")
+  assert.equal(start.args?.todos?.[1]?.status, "in_progress")
+})
+
 test("maps thought and message chunks", () => {
   assert.deepEqual(
     mapAcpUpdate({ sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "先想" } }, "run_1"),

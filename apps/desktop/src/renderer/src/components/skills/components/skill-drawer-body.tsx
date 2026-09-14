@@ -7,9 +7,8 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { AGENT_ARMORY_PROFILES } from "../constants/agent-armory.constants"
 import {
-  GLOBAL_TARGET_IDS,
-  TARGET_SHORT_LABELS,
-  WORKSPACE_TARGET_IDS
+  HOST_DEPLOY_TARGET_IDS,
+  TARGET_SHORT_LABELS
 } from "../constants/skills-ui.constants"
 
 export function SkillDrawerBody({
@@ -46,11 +45,11 @@ export function SkillDrawerBody({
               {t("pages.skills.drawerBody.targetsTitle")}
             </h4>
             <span className="text-caption-2-regular text-text-tertiary">
-              {t("pages.skills.drawerBody.targetsHint")}
+              {t("pages.skills.drawerBody.hostHint")}
             </span>
           </div>
           <div className="flex flex-col rounded-2xl border border-separator-border/70 overflow-hidden">
-            {GLOBAL_TARGET_IDS.map((targetId, index) => {
+            {HOST_DEPLOY_TARGET_IDS.filter((id) => id !== "workspace-agents" || hasWorkspace).map((targetId, index) => {
               const isEnabled = source.enabledTargetIds.includes(targetId)
               const profile = AGENT_ARMORY_PROFILES[targetId]
               const Icon = profile?.icon
@@ -83,7 +82,7 @@ export function SkillDrawerBody({
                       {TARGET_SHORT_LABELS[targetId]}
                     </span>
                     <span className="block text-caption-2-regular text-text-tertiary truncate">
-                      {isEnabled ? t("pages.skills.drawerBody.projected") : t("pages.skills.states.notMounted")}
+                      {isEnabled ? t("pages.skills.targets.hostOn") : t("pages.skills.targets.hostOff")}
                     </span>
                   </span>
                   <span
@@ -101,30 +100,7 @@ export function SkillDrawerBody({
             })}
           </div>
 
-          {hasWorkspace ? (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.drawerBody.workspaceLabel")}</span>
-              {WORKSPACE_TARGET_IDS.map((targetId) => {
-                const isEnabled = source.enabledTargetIds.includes(targetId)
-                return (
-                  <button
-                    key={targetId}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onToggleTarget(source, targetId)}
-                    className={cx(
-                      "rounded-lg border px-2 py-0.5 text-caption-2-regular font-mono cursor-pointer",
-                      isEnabled
-                        ? "border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                        : "border-separator-border/50 text-text-tertiary hover:text-text-secondary"
-                    )}
-                  >
-                    {TARGET_SHORT_LABELS[targetId]}
-                  </button>
-                )
-              })}
-            </div>
-          ) : null}
+
         </section>
       ) : null}
 

@@ -7,7 +7,7 @@ import { bashAllowPrefix } from "@enjoy-agents/agent-core"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { persistActiveRun } from "./flush-agent-run"
-import { disposeCodingStream } from "./open-coding-stream"
+import { cancelCodingStream } from "./open-coding-stream"
 import { pumpStream } from "./agent-pump"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import {
@@ -33,7 +33,7 @@ export async function abortAgent(rawInput: unknown) {
   }
   run?.abort.abort()
   deleteActiveRun(runId)
-  await disposeCodingStream(runId)
+  await cancelCodingStream(runId)
   return { ok: true }
 }
 

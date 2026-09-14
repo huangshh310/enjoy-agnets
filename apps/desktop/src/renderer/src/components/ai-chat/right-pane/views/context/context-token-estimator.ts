@@ -3,7 +3,11 @@
  */
 import { formatAlwaysOnRulePrompt } from "@enjoy-agents/ipc-contract/rules-always-on"
 import { formatSkillCatalog } from "@enjoy-agents/ipc-contract/skills-catalog"
-import { runtimePathKind } from "@enjoy-agents/ipc-contract/runtime-capabilities"
+import {
+  countsHostMcpTokens,
+  countsHostSkillTokens,
+  runtimePathKind
+} from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import type { McpServer, ProjectRuleItem, SkillItem, TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { CHARS_PER_TOKEN } from "@enjoy-agents/agent-core/compaction"
@@ -50,12 +54,14 @@ export function estimateContextWindowStats(
   const systemTokens = estimateCharTokens(
     (local ? formatAlwaysOnRulePrompt(rules).length : 0) + customInstructions.trim().length
   )
-  const mcpTokens = local
+  const mcpTokens = countsHostMcpTokens(runtimeId)
     ? mcpServers
-        .filter((server) => server.connected)
+        .filter((server) => server.connected || server.trusted)
         .reduce((sum, server) => sum + estimateMcpSchemaTokens(server), 0)
     : 0
-  const skillsTokens = local ? estimateCharTokens(formatSkillCatalog(skills).length) : 0
+  const skillsTokens = countsHostSkillTokens(runtimeId)
+    ? estimateCharTokens(formatSkillCatalog(skills).length)
+    : 0
   const memoryTokens = chips
     .filter((chip) => chip.enabled !== false)
     .reduce((sum, chip) => sum + estimateCharTokens(chip.snippet?.length ?? 0), 0)

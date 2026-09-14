@@ -6,6 +6,11 @@ import { completeAcpHandshake, toAcpRpcError } from "./auth.ts"
 import { acpChildStillAlive } from "./acp-child-alive.ts"
 import { forgetAcpChild } from "./acp-child-store.ts"
 import { pickAcpPermissionOption, type AcpPermissionOption } from "./permissions.ts"
+import {
+  filterAcpMcpServers,
+  parseAgentMcpCaps,
+  type AcpMcpServer
+} from "./acp-mcp.ts"
 
 export type AcpPermissionRequest = {
   sessionId: string
@@ -34,6 +39,8 @@ export class AcpClient {
   private hooks: AcpClientHooks
   private closed = false
   private killTimer: ReturnType<typeof setTimeout> | undefined
+  private mcpCaps = { http: false, sse: false }
+  private mcpServers: AcpMcpServer[] = []
 
   constructor(
     private readonly child: ChildProcess,
@@ -61,6 +68,7 @@ export class AcpClient {
       clientInfo: { name: "enjoy-agents", version: "0.1.0" },
       clientCapabilities: { fs: { readTextFile: false, writeTextFile: false } }
     })
+    this.mcpCaps = parseAgentMcpCaps(result)
     await this.notify("initialized", {})
     return result
   }
@@ -70,7 +78,8 @@ export class AcpClient {
   }
 
   /** initialize → session/new；遇到 auth_required 再走 agent 型 authenticate。 */
-  async handshake(cwd: string): Promise<string> {
+  async handshake(cwd: string, mcpServers: AcpMcpServer[] = []): Promise<string> {
+    this.mcpServers = mcpServers
     return completeAcpHandshake({
       initialize: () => this.initialize(),
       authenticate: (methodId) => this.authenticate(methodId),
@@ -78,9 +87,14 @@ export class AcpClient {
     })
   }
 
+  stillAlive(): boolean {
+    return !this.closed && acpChildStillAlive(this.child)
+  }
+
   async newSession(cwd: string): Promise<string> {
+    const mcpServers = filterAcpMcpServers(this.mcpServers, this.mcpCaps)
     const result = asRecord(
-      await this.request("session/new", { cwd, mcpServers: [] })
+      await this.request("session/new", { cwd, mcpServers })
     )
     const id = String(result.sessionId ?? "")
     if (!id) throw new Error("ACP session/new did not return sessionId.")

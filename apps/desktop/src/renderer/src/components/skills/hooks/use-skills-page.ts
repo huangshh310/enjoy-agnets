@@ -16,9 +16,9 @@ import type {
 import type { SecondaryNavGroup } from "@renderer/components/app-pages/secondary-nav.types"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { CURATED_SKILL_SOURCES } from "../constants/skills-curated.constants"
-import { ipcErrorMessage } from "../lib/ipc-error-message"
 import { buildSkillsNavGroups } from "../lib/build-skills-nav"
 import { SKILL_SOURCES_OVERVIEW_QUERY_KEY } from "../lib/git-skill-sources"
+import { createSkillsPageActions } from "./use-skills-page-actions"
 
 export type SkillsPageState = {
   sources: SkillSource[]
@@ -62,6 +62,7 @@ const ALL_SKILLS_QUERY_KEY = ["skills-sources-all"] as const
 const DOCTOR_QUERY_KEY = ["skills-sources-doctor"] as const
 const CURATED_QUERY_KEY = ["skills-sources-curated"] as const
 const DETAIL_QUERY_KEY = "skills-sources-detail"
+
 export function useSkillsPage(): SkillsPageState {
   const queryClient = useQueryClient()
   const [selectedNavId, setSelectedNavId] = useState<string>("all")
@@ -132,126 +133,15 @@ export function useSkillsPage(): SkillsPageState {
     ])
   }
 
-  async function runAction(name: string, fn: () => Promise<void>) {
-    if (!hasIde()) {
-      setActionError("Enjoy Agents IPC 不可用，请完全重启应用后再试")
-      return
-    }
-    setBusyMessage(name)
-    setActionError(null)
-    try {
-      await fn()
-      await refreshAll()
-    } catch (err) {
-      setActionError(ipcErrorMessage(err))
-    } finally {
-      setBusyMessage(null)
-    }
-  }
-
-  // 1. 快速添加 Git 仓库
-  async function addGitSource(origin: string, name?: string) {
-    await runAction("添加技能组", async () => {
-      await getIde().skills.sources.add({ kind: "git", origin: origin.trim(), name: name?.trim() })
-    })
-  }
-
-  // 2. 选取本地文件夹
-  async function addLocalSource() {
-    await runAction("添加本地技能", async () => {
-      const picked = await getIde().workspace.pickFolder()
-      if (picked && typeof picked === "object" && "path" in picked && typeof picked.path === "string") {
-        await getIde().skills.sources.add({
-          kind: "local",
-          origin: picked.path,
-          name: "name" in picked && typeof picked.name === "string" ? picked.name : undefined
-        })
-      }
-    })
-  }
-
-  async function installCurated(curatedSource: CuratedSkillSource) {
-    await runAction(`导入 ${curatedSource.name}`, async () => {
-      const added = (await getIde().skills.sources.add({
-        kind: "git",
-        origin: curatedSource.locator,
-        name: curatedSource.name
-      })) as { id?: string }
-      if (typeof added?.id !== "string" || !added.id) {
-        throw new Error("SOURCE_NOT_FOUND")
-      }
-      setSelectedNavId(added.id)
-      await getIde().skills.sources.deploy({ sourceId: added.id })
-    })
-  }
-
-  // 4. 更新来源
-  async function updateSource(sourceId: string) {
-    await runAction("拉取更新", async () => {
-      await getIde().skills.sources.update({ sourceId })
-    })
-  }
-
-  // 5. 重新部署来源
-  async function deploySource(sourceId: string) {
-    await runAction("重新部署", async () => {
-      await getIde().skills.sources.deploy({ sourceId })
-    })
-  }
-
-  // 7. 一键修复目标
-  async function repairTargets(sourceId?: string) {
-    await runAction("修复目标投影", async () => {
-      await getIde().skills.sources.repair({ sourceId })
-    })
-  }
-
-  // 8. 移除来源
-  async function removeSource(sourceId: string) {
-    await runAction("移除技能组", async () => {
-      await getIde().skills.sources.remove({ sourceId })
-      if (selectedNavId === sourceId) {
-        setSelectedNavId("all")
-      }
-    })
-  }
-
-  async function deleteSkill(sourceId: string, skillId: string) {
-    await runAction("删除技能", async () => {
-      await getIde().skills.sources.deleteSkill({ sourceId, skillId })
-      if (activeSkillId === skillId) setActiveSkillId(null)
-    })
-  }
-
-  // 9. 切换目标开启状态
-  async function toggleTarget(source: SkillSource, targetId: SkillTargetId) {
-    const nextTargets = source.enabledTargetIds.includes(targetId)
-      ? source.enabledTargetIds.filter((t) => t !== targetId)
-      : [...source.enabledTargetIds, targetId]
-
-    await runAction("切换目标", async () => {
-      await getIde().skills.sources.configure({
-        sourceId: source.id,
-        selectedSkillIds: source.selectedSkillIds,
-        enabledTargetIds: nextTargets
-      })
-    })
-  }
-
-  // 10. 切换技能勾选状态
-  async function toggleSkill(source: SkillSource, skillId: string) {
-    const nextSkills = source.selectedSkillIds.includes(skillId)
-      ? source.selectedSkillIds.filter((s) => s !== skillId)
-      : [...source.selectedSkillIds, skillId]
-
-    await runAction("切换技能", async () => {
-      await getIde().skills.sources.configure({
-        sourceId: source.id,
-        selectedSkillIds: nextSkills,
-        enabledTargetIds: source.enabledTargetIds
-      })
-    })
-  }
+  const actions = createSkillsPageActions({
+    selectedNavId,
+    activeSkillId,
+    setSelectedNavId,
+    setActiveSkillId,
+    setBusyMessage,
+    setActionError,
+    refreshAll
+  })
 
   const navGroups = buildSkillsNavGroups({
     allSkills,
@@ -284,16 +174,7 @@ export function useSkillsPage(): SkillsPageState {
     setActionError,
     navGroups,
     refreshAll,
-    addGitSource,
-    addLocalSource,
-    installCurated,
-    updateSource,
-    deploySource,
-    repairTargets,
-    removeSource,
-    deleteSkill,
-    toggleTarget,
-    toggleSkill
+    ...actions
   }
 }
 

@@ -59,6 +59,21 @@ test("五家 ACP 按 capability 丢掉 --fast / --thinking，Grok 的 --model �
   assert.equal(grokArgs.some((flag) => flag.startsWith("--thinking")), false)
 })
 
+test("Grok --plugin-dir 插在 stdio 前，相对路径丢掉", () => {
+  const args = resolveSpawnCommand("grok", {
+    modelId: "grok-4.6",
+    pluginDirs: ["/tmp/enjoy-grok-plugin", "relative/nope"]
+  }).args
+  assert.deepEqual(args, [
+    "agent",
+    "--model",
+    "grok-4.6",
+    "--plugin-dir",
+    "/tmp/enjoy-grok-plugin",
+    "stdio"
+  ])
+})
+
 test("选定模型会追加 --model", () => {
   assert.deepEqual(resolveSpawnCommand("claude", { modelId: "claude-sonnet-4-6" }), {
     command: "claude",

@@ -12,6 +12,7 @@ import { cx } from "@/utils/cx"
 import { SKILLS_UI_COPY, TARGET_SHORT_LABELS } from "../constants/skills-ui.constants"
 import { resolveSkillTheme } from "../constants/skills-badge-theme"
 import { displaySkillDescription } from "../lib/skill-description"
+import { hostEnabledTargetIds } from "../lib/skill-visible-for-target"
 
 export function SkillItemCard({
   skill,
@@ -23,7 +24,8 @@ export function SkillItemCard({
   const t = useT()
   const theme = resolveSkillTheme(skill.name + " " + (skill.description || ""))
   const ThemeIcon = theme.icon
-  const enabledCount = skill.enabledTargetIds.length
+  const hostTargets = hostEnabledTargetIds(skill.enabledTargetIds)
+  const enabledCount = hostTargets.length
   const trigger = skill.trigger || (skill.name.includes(" ") ? undefined : `@${skill.name}`)
 
   return (
@@ -80,7 +82,7 @@ export function SkillItemCard({
             <span className="text-text-tertiary italic text-[10px]">{t("pages.skills.states.noneActive")}</span>
           ) : (
             <div className="flex items-center gap-1 flex-wrap">
-              {skill.enabledTargetIds.slice(0, 3).map((targetId) => (
+              {hostTargets.map((targetId) => (
                 <span
                   key={targetId}
                   className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 bg-background-secondary-default text-text-secondary font-medium text-[10px]"
@@ -89,11 +91,6 @@ export function SkillItemCard({
                   {TARGET_SHORT_LABELS[targetId]}
                 </span>
               ))}
-              {skill.enabledTargetIds.length > 3 ? (
-                <span className="text-[9.5px] text-text-tertiary">
-                  +{skill.enabledTargetIds.length - 3}
-                </span>
-              ) : null}
             </div>
           )}
         </div>

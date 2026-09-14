@@ -35,6 +35,39 @@ test("文档 URL 只允许 https 与目录 host", () => {
   assert.equal(isAllowedDocsUrl("not-a-url"), false)
 })
 
+test("DeepSeek 原生插件是复制命令，不是 Enjoy 一键装", () => {
+  assert.equal(
+    catalogFor("deepseek")?.nativePluginCopy,
+    "dsh plugin --profile acp add @openma/dsh-agents-plugins-bridge@latest"
+  )
+  assert.ok(catalogFor("claude")?.nativePluginCopy?.startsWith("claude plugin"))
+})
+
+test("原生插件复制命令可粘贴，不含占位符", () => {
+  const ids = [
+    "claude",
+    "cursor",
+    "grok",
+    "codex",
+    "antigravity",
+    "gemini",
+    "opencode",
+    "pi",
+    "hermes",
+    "amp",
+    "deepseek"
+  ] as const
+  for (const id of ids) {
+    const copy = catalogFor(id)?.nativePluginCopy
+    assert.ok(copy && copy.length > 0, `${id} missing nativePluginCopy`)
+    assert.equal(/[<>]/.test(copy), false, `${id} nativePluginCopy has placeholder: ${copy}`)
+  }
+  assert.equal(catalogFor("cursor")?.nativePluginCopy, "https://cursor.com/marketplace")
+  assert.equal(catalogFor("codex")?.nativePluginCopy, "codex plugin marketplace list")
+  assert.equal(catalogFor("grok")?.nativePluginCopy, "grok plugin marketplace list")
+  assert.equal(catalogFor("amp")?.nativePluginCopy, "amp plugins repositories")
+})
+
 test("Grok Build 是 copy 安装，有模型表", () => {
   assert.equal(installKindFor("grok"), "copy")
   assert.equal(catalogFor("grok")?.defaultModel, "grok-4.6")

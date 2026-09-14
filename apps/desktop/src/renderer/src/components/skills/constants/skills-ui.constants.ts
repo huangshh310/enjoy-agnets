@@ -5,7 +5,7 @@ import type { SkillSourceHealth, SkillTargetId } from "@enjoy-agents/ipc-contrac
 
 export const SKILLS_UI_COPY = {
   moduleTitle: "Skills",
-  moduleDesc: "Agent 技能中心与多目标编排：管理本机与开源社区技能包，一键投影至不同 Agent 运行环境。",
+  moduleDesc: "Agent 技能中心：技能装进宿主目录，当前引擎消费这一份。",
   allSources: "全部来源组",
   exploreCurated: "精选发现",
   targetFilter: "按目标 Agent 筛选",
@@ -33,8 +33,8 @@ export const SKILLS_UI_COPY = {
   oneClickInstall: "一键导入",
   installedTag: "已添加",
   backToList: "返回来源组列表",
-  targetDeployments: "Agent 目标投影 (Target Deployments)",
-  targetDeploymentsDesc: "配置本工作流中的技能需要同步到哪些 Agent 运行环境：",
+  targetDeployments: "宿主技能目录",
+  targetDeploymentsDesc: "当前引擎只读宿主目录，不再复制到各家家目录。",
   skillsListTitle: "包含的技能清单 (Skills)",
   skillsListDesc: "勾选开启或关闭特定技能的部署投影：",
   skillDocTitle: "SKILL.md 文档检视",
@@ -50,7 +50,7 @@ export const SKILLS_UI_COPY = {
   confirmDeleteSkillTitle: "确认删除该技能？",
   confirmDeleteSkillDesc: "将从本机技能目录删除此技能包。此操作不能撤销。",
   confirmDeployTitle: "重新部署此技能组？",
-  confirmDeployDesc: "将重新把当前选中的技能文件覆盖投影至所有已启用的目标 Agent 目录中。",
+  confirmDeployDesc: "将把当前选中的技能覆盖写入宿主目录（Enjoy 与工作区 .agents/skills）。",
   importDialogTitle: "导入",
   gitLabel: "Git HTTPS",
   gitPlaceholder: "owner/repo 或 https://github.com/…",
@@ -145,9 +145,11 @@ export const GLOBAL_TARGET_IDS: SkillTargetId[] = [
   "deepseek"
 ]
 
-export const WORKSPACE_TARGET_IDS: SkillTargetId[] = [
-  "workspace-agents",
-  "workspace-claude",
-  "workspace-cursor",
-  "workspace-skills"
-]
+export const WORKSPACE_TARGET_IDS: SkillTargetId[] = ["workspace-agents"]
+
+/** 宿主真源可勾选的投影目标；各家家目录只读发现。 */
+export const HOST_DEPLOY_TARGET_IDS: SkillTargetId[] = ["enjoy-agents", "workspace-agents"]
+
+export function isHostDeployTarget(id: SkillTargetId): boolean {
+  return HOST_DEPLOY_TARGET_IDS.includes(id)
+}

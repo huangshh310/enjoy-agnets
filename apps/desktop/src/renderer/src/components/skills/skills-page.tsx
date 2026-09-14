@@ -19,6 +19,7 @@ import { AgentArmoryView } from "./components/armory/agent-armory-view"
 import { useSkillsPage } from "./hooks/use-skills-page"
 import { useSkillSourcePull } from "./hooks/use-skill-source-pull"
 import { countGitSkillSources } from "./lib/git-skill-sources"
+import { skillVisibleForTarget } from "./lib/skill-visible-for-target"
 
 export function SkillsPage() {
   const page = useSkillsPage()
@@ -61,7 +62,7 @@ export function SkillsPage() {
   const filteredSkills = useMemo(() => {
     let list = page.allSkills
     if (activeTargetId) {
-      list = list.filter((s) => s.enabledTargetIds.includes(activeTargetId))
+      list = list.filter((s) => skillVisibleForTarget(s, activeTargetId))
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
@@ -80,7 +81,11 @@ export function SkillsPage() {
   const displayedSources = useMemo(() => {
     let list = page.sources
     if (activeTargetId) {
-      list = list.filter((s) => s.enabledTargetIds.includes(activeTargetId))
+      list = list.filter((s) =>
+        s.enabledTargetIds.includes("enjoy-agents") ||
+        s.enabledTargetIds.includes("workspace-agents") ||
+        s.enabledTargetIds.includes(activeTargetId)
+      )
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()

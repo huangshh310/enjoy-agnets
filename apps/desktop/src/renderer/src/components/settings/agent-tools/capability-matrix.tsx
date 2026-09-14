@@ -15,7 +15,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { matrixRuntimeLabel } from "./capability-matrix-label"
 
-const COLS = ["spawn", "login", "quota", "thinking", "fast", "executionModes"] as const
+const COLS = ["spawn", "login", "quota", "thinking", "fast", "executionModes", "hostMcp", "hostSkills"] as const
 
 export function CapabilityMatrix({ onJump }: { onJump?: (runtimeId: string) => void }) {
   const t = useT()
@@ -98,6 +98,8 @@ function MatrixRow({
       <td className="px-3 py-2 font-mono text-caption-2-medium text-text-secondary">{cap.thinking}</td>
       <td className="px-3 py-2 font-mono text-caption-2-medium text-text-secondary">{cap.fast}</td>
       <td className="px-3 py-2 font-mono text-caption-2-medium text-text-secondary">{cap.executionModes}</td>
+      <td className="px-3 py-2 font-mono text-caption-2-medium text-text-secondary">{cap.hostMcp}</td>
+      <td className="px-3 py-2 font-mono text-caption-2-medium text-text-secondary">{cap.hostSkills}</td>
     </tr>
   )
 }

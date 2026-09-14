@@ -91,6 +91,7 @@ function isLivePart(type: StreamEvent["type"]) {
     type === "source.added" ||
     type === "asset.created" ||
     type === "structured.delta" ||
+    type === "mcp.app" ||
     type === "realtime.text"
   )
 }
@@ -146,7 +147,8 @@ function cloneMessages(messages: ThreadMessage[]): ThreadMessage[] {
     tools: message.tools?.map((tool) => ({ ...tool })),
     sources: message.sources?.map((source) => ({ ...source })),
     assets: message.assets?.map((asset) => ({ ...asset })),
-    actionChips: message.actionChips?.map((chip) => ({ ...chip }))
+    actionChips: message.actionChips?.map((chip) => ({ ...chip })),
+    mcpApps: message.mcpApps?.map((app) => ({ ...app }))
   }))
 }
 

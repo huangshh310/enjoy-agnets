@@ -1,6 +1,6 @@
 /**
  * Agent 快速能力插槽装配矩阵 (Quick Slot Matrix)。
- * 解决新 Agent 初始无技能时需反复在来源组穿梭的繁琐痛点，直接在整备舱内一键激活已有来源与核心能力。
+ * 来源组胶囊导入 / 卸下宿主目录，不按当前助手勾 13 家家目录。
  */
 import { useMemo, useState } from "react"
 import {
@@ -14,6 +14,10 @@ import { useT } from "@renderer/i18n"
 import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import type { AgentArmoryProfile } from "../../constants/agent-armory.constants"
+import { hostCatalogEnabled } from "../../lib/skill-visible-for-target"
+
+/** 整备舱胶囊只切换 Enjoy 全局宿主目录，不勾各家家目录。 */
+const HOST_TOGGLE_TARGET: SkillTargetId = "enjoy-agents"
 
 export function AgentQuickSlotMatrix({
   profile,
@@ -45,10 +49,8 @@ export function AgentQuickSlotMatrix({
     )
   }, [allSkills, searchQuery])
 
-  // 2. 统计当前已启用的技能组数量
-  const enabledSourcesCount = sources.filter((s) =>
-    s.enabledTargetIds.includes(profile.targetId)
-  ).length
+  // 2. 统计已导入宿主目录的技能组数量（各家家目录不算装备）
+  const enabledSourcesCount = sources.filter((s) => hostCatalogEnabled(s.enabledTargetIds)).length
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl border border-separator-border/80 bg-background-primary-default p-6 shadow-2xs">
@@ -74,19 +76,19 @@ export function AgentQuickSlotMatrix({
         </p>
       </div>
 
-      {/* 来源组快速挂载条：独立换行排布，杜绝并排推挤 */}
+      {/* 来源组导入宿主条：独立换行排布，杜绝并排推挤 */}
       <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-background-secondary-default/40 border border-separator-border/40">
         <span className="text-[11px] font-semibold text-text-tertiary shrink-0 mr-1">
           {t("pages.skills.quickMatrix.quickMountLabel")}
         </span>
         {sources.map((source) => {
-          const isEnabled = source.enabledTargetIds.includes(profile.targetId)
+          const isEnabled = hostCatalogEnabled(source.enabledTargetIds)
           return (
             <button
               key={source.id}
               type="button"
               disabled={busy}
-              onClick={() => onToggleTarget(source, profile.targetId)}
+              onClick={() => onToggleTarget(source, HOST_TOGGLE_TARGET)}
               className={cx(
                 "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-caption-2-medium transition-all cursor-pointer border",
                 "active:scale-[0.98]",
@@ -95,7 +97,6 @@ export function AgentQuickSlotMatrix({
                   : "border-separator-border/60 bg-background-primary-default text-text-secondary hover:border-separator-border hover:text-text-primary"
               )}
               title={t("pages.skills.quickMatrix.toggleTitle", {
-                agent: profile.shortName,
                 action: isEnabled
                   ? t("pages.skills.quickMatrix.unmount")
                   : t("pages.skills.quickMatrix.mount"),
@@ -158,7 +159,7 @@ export function AgentQuickSlotMatrix({
       {/* 高密度能力插槽卡片网格 */}
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {filteredSkills.map((skill) => {
-          const isEnabled = skill.enabledTargetIds.includes(profile.targetId)
+          const isEnabled = hostCatalogEnabled(skill.enabledTargetIds)
           return (
             <div
               key={`${skill.sourceId}:${skill.id}`}

@@ -6,7 +6,7 @@ import { basename, dirname, join, resolve } from "node:path"
 import { pathIsInsideRoot } from "@enjoy-agents/db/path-safe"
 import type { SkillTargetId } from "@enjoy-agents/ipc-contract"
 import { assertAllowedSkillPackage } from "../customize-roots.ts"
-import { assertSkillTargetAllowed, resolveSkillTarget } from "./constants.ts"
+import { assertSkillTargetAllowed, HOST_SKILL_DEPLOY_TARGETS, resolveSkillTarget } from "./constants.ts"
 import type { LockDeployment } from "./source-state.ts"
 
 export function copySkillPackToTarget(input: {
@@ -35,14 +35,16 @@ export function deploySelectedSkills(input: {
   workspaceRoots: string[]
   workspacePath?: string
 }): LockDeployment[] {
-  if (input.selectedRelativeDirs.length === 0 || input.targetIds.length === 0) {
+  if (input.selectedRelativeDirs.length === 0) {
     throw new Error("EMPTY_SELECTION")
   }
+  const targetIds = input.targetIds.filter((id) => HOST_SKILL_DEPLOY_TARGETS.has(id))
+  if (targetIds.length === 0) return []
   const deployments: LockDeployment[] = []
   for (const relativeDir of input.selectedRelativeDirs) {
     const srcPack = resolve(join(input.sourceRoot, relativeDir))
     const packageName = basename(srcPack)
-    for (const targetId of input.targetIds) {
+    for (const targetId of targetIds) {
       const targetRoot = resolveSkillTarget(targetId, input.home, input.workspacePath)
       assertSkillTargetAllowed(targetRoot, input.home, input.workspaceRoots)
       const destPack = join(targetRoot, packageName)

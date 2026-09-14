@@ -32,6 +32,13 @@ export type ThreadAsset = {
   url?: string
 }
 
+export type ThreadMcpApp = {
+  serverId: string
+  resourceUri: string
+  srcDoc: string
+  title?: string
+}
+
 export type ThreadMessage = {
   id: string
   role: ChatRole
@@ -49,6 +56,7 @@ export type ThreadMessage = {
   thinkOpen?: boolean
   sources?: ThreadSource[]
   assets?: ThreadAsset[]
+  mcpApps?: ThreadMcpApp[]
   structured?: unknown
   components?: Array<{ componentId: string; props: Record<string, unknown> }>
   /** 本轮赞踩，仅会话内存，不落库 */

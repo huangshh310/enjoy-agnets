@@ -74,6 +74,15 @@ test("自定义说明垫在用户句前，空串不占位", () => {
   assert.equal(composeAcpPrompt([{ role: "user", content: "只这一句" }], { customInstructions: "  " }), "只这一句")
 })
 
+test("技能索引垫在用户句前", () => {
+  const prompt = composeAcpPrompt([{ role: "user", content: "继续" }], {
+    skillCatalog: "# Installed skills (index)\n- tdd"
+  })
+  assert.ok(prompt.includes("Installed skills"))
+  assert.ok(prompt.includes("- tdd"))
+  assert.ok(prompt.endsWith("继续"))
+})
+
 test("lastUserText 忽略系统句", () => {
   assert.equal(
     lastUserText([

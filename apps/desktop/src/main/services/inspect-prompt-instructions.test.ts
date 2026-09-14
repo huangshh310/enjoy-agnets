@@ -47,11 +47,25 @@ test("local 拼自定义说明与常驻规则，丢掉带 glob 的 contextual", 
   assert.ok(!text.includes("should not appear"))
 })
 
-test("acp-host 不假装注入 ToolLoop 系统提示", () => {
-  const text = codingInstructions("plan", "acp-host", "Speak Chinese.")
+test("acp-host 不假装注入 ToolLoop 系统提示，但垫技能索引", () => {
+  const text = codingInstructions("plan", "acp-host", "Speak Chinese.", [], {
+    workspaceRoot: "/ws",
+    skills: [
+      {
+        id: "w:grill",
+        name: "grill-me",
+        scope: "workspace",
+        directoryPath: "/ws/.agents/skills/grill-me",
+        skillFilePath: "/ws/.agents/skills/grill-me/SKILL.md",
+        description: "Ask clarifying questions"
+      }
+    ]
+  })
   assert.ok(!text.includes(systemPromptFor("plan")))
-  assert.ok(text.includes("session/prompt"))
+  assert.ok(text.includes("session/new"))
   assert.ok(text.includes("Speak Chinese."))
+  assert.ok(text.includes("grill-me"))
+  assert.ok(!text.includes("# Ask clarifying questions"))
 })
 
 test("harness 只拼自定义说明", () => {

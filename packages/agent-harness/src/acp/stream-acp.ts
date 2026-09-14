@@ -8,6 +8,7 @@ import { acpProcessKey, composeAcpPrompt } from "./acp-prompt.ts"
 import { mapAcpUpdate } from "./map-events.ts"
 import { acpHandshakeCwd, mapAcpSpawnFailure, spawnAcpProcess, type AcpSpawnDirect } from "./spawn.ts"
 import type { SpawnOverride } from "../agent-tools/resolve-spawn.ts"
+import { acpMcpFingerprint, type AcpMcpServer } from "./acp-mcp.ts"
 
 export type AcpTurnHandle = {
   stream: AsyncIterable<Record<string, unknown>>
@@ -31,6 +32,9 @@ export type StreamAcpTurnInput = {
     input: unknown
   }) => Promise<"allow" | "deny" | "allow_session">
   customInstructions?: string
+  mcpServers?: AcpMcpServer[]
+  skillCatalog?: string
+  pluginDirs?: string[]
 }
 
 type LiveAcp = {
@@ -53,7 +57,8 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   live.waitForApproval = input.waitForApproval
   sessionByRun.set(input.runId, input.sessionId)
   const text = composeAcpPrompt(input.messages, {
-    customInstructions: input.customInstructions
+    customInstructions: input.customInstructions,
+    skillCatalog: input.skillCatalog
   })
   const queue: StreamEvent[] = []
   let wake: (() => void) | undefined
@@ -97,16 +102,27 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   return {
     stream,
     result: prompt,
-    dispose: async () => {
-      if (input.abortSignal?.aborted) await disposeAcpSession(input.sessionId)
-    }
+    dispose: async () => undefined
   }
+}
+
+/** Stop：只取消当前 turn，保留 ACP 进程与会话上下文。 */
+export async function cancelAcpTurn(runId: string): Promise<void> {
+  const sessionId = sessionByRun.get(runId)
+  sessionByRun.delete(runId)
+  const live = sessionId ? liveBySession.get(sessionId) : undefined
+  if (live) await live.client.cancel(live.acpSessionId)
 }
 
 export async function disposeAcpTurn(runId: string): Promise<void> {
   const sessionId = sessionByRun.get(runId)
   sessionByRun.delete(runId)
   if (sessionId) await disposeAcpSession(sessionId)
+}
+
+export function acpSessionAlive(sessionId: string): boolean {
+  const live = liveBySession.get(sessionId)
+  return Boolean(live?.client.stillAlive())
 }
 
 export async function disposeAcpSession(sessionId: string): Promise<void> {
@@ -151,7 +167,7 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
   const spawned = spawnAcpProcess({
     id: input.toolId,
     cwd: input.workspaceRoot,
-    override: input.override,
+    override: { ...input.override, pluginDirs: input.pluginDirs },
     env: input.env,
     spawnDirect: input.spawnDirect
   })
@@ -174,7 +190,8 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
   }
   try {
     live.acpSessionId = await live.client.handshake(
-      acpHandshakeCwd(input.workspaceRoot, input.spawnDirect)
+      acpHandshakeCwd(input.workspaceRoot, input.spawnDirect),
+      input.mcpServers ?? []
     )
     liveBySession.set(input.sessionId, live)
     return live
@@ -185,5 +202,11 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
 }
 
 function modelKeyFor(input: StreamAcpTurnInput): string {
-  return acpProcessKey(input.toolId, input.override?.modelId, input.env)
+  return acpProcessKey(
+    input.toolId,
+    input.override?.modelId,
+    input.env,
+    acpMcpFingerprint(input.mcpServers ?? []),
+    input.pluginDirs?.join("|")
+  )
 }

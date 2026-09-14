@@ -62,7 +62,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g @anthropic-ai/claude-code",
     docsUrl: "https://docs.anthropic.com/en/docs/claude-code",
-    loginArgs: ["auth", "login"]
+    loginArgs: ["auth", "login"],
+    nativePluginCopy: "claude plugin marketplace add anthropics/claude-plugins-official"
   },
   cursor: {
     models: CURSOR_MODELS,
@@ -70,7 +71,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     steps: [],
     installCommand: "curl https://cursor.com/install -fsS | bash",
     docsUrl: "https://cursor.com/docs/cli/overview",
-    loginArgs: ["login"]
+    loginArgs: ["login"],
+    nativePluginCopy: "https://cursor.com/marketplace"
   },
   grok: {
     models: GROK_MODELS,
@@ -78,7 +80,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     steps: [],
     installCommand: "curl -fsSL https://x.ai/cli/install.sh | bash",
     docsUrl: "https://docs.x.ai/build/overview",
-    loginArgs: ["login"]
+    loginArgs: ["login"],
+    nativePluginCopy: "grok plugin marketplace list"
   },
   codex: {
     models: CODEX_MODELS,
@@ -92,7 +95,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g @openai/codex",
     docsUrl: "https://github.com/openai/codex",
-    loginArgs: ["login"]
+    loginArgs: ["login"],
+    nativePluginCopy: "codex plugin marketplace list"
   },
   antigravity: {
     models: ANTIGRAVITY_MODELS,
@@ -107,7 +111,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     installCommand: "brew install antigravity-cli",
     docsUrl: "https://antigravity.google/product/antigravity-cli",
     loginArgs: ["login"],
-    loginBinary: "agy"
+    loginBinary: "agy",
+    nativePluginCopy: "agy plugin list"
   },
   gemini: {
     models: GEMINI_MODELS,
@@ -121,7 +126,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g @google/gemini-cli",
     docsUrl: "https://geminicli.com/docs/cli/acp-mode/",
-    loginArgs: []
+    loginArgs: [],
+    nativePluginCopy: "gemini extensions install https://github.com/gemini-cli-extensions/security"
   },
   opencode: {
     models: [
@@ -138,7 +144,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g opencode-ai",
     docsUrl: "https://opencode.ai/docs/acp",
-    loginArgs: ["auth", "login"]
+    loginArgs: ["auth", "login"],
+    nativePluginCopy: "opencode plugin list"
   },
   pi: {
     models: [],
@@ -156,7 +163,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g @earendil-works/pi-coding-agent pi-acp",
     docsUrl: "https://github.com/svkozak/pi-acp",
-    loginArgs: []
+    loginArgs: [],
+    nativePluginCopy: "pi list"
   },
   hermes: {
     models: [],
@@ -164,7 +172,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     installCommand: 'cd ~/.hermes/hermes-agent && uv pip install -e ".[acp]"',
     docsUrl: "https://hermes-agent.nousresearch.com/docs/developer-guide/programmatic-integration",
     loginArgs: ["acp", "--setup"],
-    loginBinary: "hermes"
+    loginBinary: "hermes",
+    nativePluginCopy: "hermes plugins --help"
   },
   amp: {
     models: [],
@@ -172,7 +181,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     installCommand: "curl -fsSL https://ampcode.com/install.sh | bash",
     docsUrl: "https://ampcode.com",
     loginArgs: ["login"],
-    loginBinary: "amp"
+    loginBinary: "amp",
+    nativePluginCopy: "amp plugins repositories"
   },
   deepseek: {
     models: [
@@ -189,7 +199,8 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     ],
     installCommand: "npm i -g @deepseek-ai/dsh",
     docsUrl: "https://github.com/deepseek-ai/deepseek-harness",
-    loginArgs: ["web"]
+    loginArgs: ["web"],
+    nativePluginCopy: "dsh plugin --profile acp add @openma/dsh-agents-plugins-bridge@latest"
   },
   omp: {
     models: [],

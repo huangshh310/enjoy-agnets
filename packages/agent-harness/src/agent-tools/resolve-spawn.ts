@@ -16,6 +16,8 @@ export type SpawnOverride = {
   binaryPath?: string
   extraArgs?: string[]
   modelId?: string
+  /** Grok `--plugin-dir`，必须插在 `stdio` 前。 */
+  pluginDirs?: string[]
 }
 
 export type ResolvedSpawn = {
@@ -45,11 +47,11 @@ export function resolveSpawnCommand(id: string, override: SpawnOverride = {}): R
     if (!isAbsolute(custom)) throw new Error("Custom CLI path must be absolute.")
     assertAllowedCommand(preset, custom)
     assertAcpEntry(preset, custom)
-    return { command: custom, args: spawnArgsFor(preset, custom, override.modelId, extra) }
+    return { command: custom, args: spawnArgsFor(preset, custom, override.modelId, extra, override.pluginDirs) }
   }
   const command = preset.binaries[0]
   if (!command) throw new Error(`${preset.label} has no binary.`)
-  return { command, args: spawnArgsFor(preset, command, override.modelId, extra) }
+  return { command, args: spawnArgsFor(preset, command, override.modelId, extra, override.pluginDirs) }
 }
 
 /**
@@ -91,12 +93,13 @@ function spawnArgsFor(
   preset: AgentToolPreset,
   command: string,
   modelId: string | undefined,
-  extra: string[]
+  extra: string[],
+  pluginDirs?: string[]
 ): string[] {
   if (preset.id === "grok") {
     const model = modelId?.trim()
     const mid = model ? ["--model", model] : []
-    return ["agent", ...mid, "stdio", ...extra]
+    return ["agent", ...mid, ...pluginDirFlags(pluginDirs), "stdio", ...extra]
   }
   if (preset.id === "deepseek") {
     const model = modelId?.trim()
@@ -138,4 +141,14 @@ export function assertAcpEntry(preset: AgentToolPreset, command: string) {
 
 export function cliBasename(command: string): string {
   return basename(command).replace(/\.(exe|cmd|bat)$/i, "")
+}
+
+function pluginDirFlags(dirs: string[] | undefined): string[] {
+  const flags: string[] = []
+  for (const dir of dirs ?? []) {
+    const trimmed = dir.trim()
+    if (!trimmed || !isAbsolute(trimmed)) continue
+    flags.push("--plugin-dir", trimmed)
+  }
+  return flags
 }

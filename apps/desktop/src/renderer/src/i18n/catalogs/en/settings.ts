@@ -165,6 +165,8 @@ export const enSettings = {
     listOutdatedSecondary: "Needs update · {current} (need ≥{required})",
     copyCommand: "Copy install command",
     copied: "Copied",
+    nativePluginTitle: "Native plugins stay on the CLI",
+    nativePluginHint: "Enjoy only imports portable Skills and MCP. Run Cordis / hooks in a system terminal. This is not a connected status.",
     docs: "Docs",
     login: "Sign in",
     loggingIn: "Signing in…",
@@ -451,7 +453,9 @@ export const enSettings = {
       quota: "quota",
       thinking: "thinking",
       fast: "fast",
-      executionModes: "modes"
+      executionModes: "modes",
+      hostMcp: "host MCP",
+      hostSkills: "host Skills"
     },
     path: {
       "enjoy-local": "Enjoy Local",
@@ -473,10 +477,10 @@ export const enSettings = {
     loginOwner: "Each vendor login. Enjoy does not manage OAuth files.",
     loginGo: "Local CLIs",
     mcp: "MCP",
-    mcpOwner: "Local #/mcp; forwarding depends on the runtime",
+    mcpOwner: "Local #/mcp; the current engine consumes it via ACP session/new or Local tools",
     mcpGo: "MCP",
     skills: "Skills",
-    skillsOwner: "#/skills plus each vendor ~/.xxx/skills",
+    skillsOwner: "#/skills; the current engine reads the host catalog, not N home copies",
     skillsGo: "Skills",
     cliBind: "CLI bound providers",
     cliBindOwner: "Enjoy vault profiles referenced by Claude / Codex / Gemini / OpenCode / DeepSeek",

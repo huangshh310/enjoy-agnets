@@ -5,8 +5,8 @@
 export const zhSkillsPages = {
   states: {
     curated: "精选",
-    noneActive: "未激活任何 Agent",
-    notMounted: "未挂载",
+    noneActive: "未装备到宿主目录",
+    notMounted: "未导入",
     equipped: "已装备"
   },
 
@@ -64,7 +64,7 @@ export const zhSkillsPages = {
   emptyState: {
     titleNamed: "{agent} 助手尚未开启专属技能",
     titleGeneric: "尚未装配任何技能能力包",
-    descNamed: "当前没有技能关联到 {agent}。你可以前往精选集市为它装备专业能力，或在左侧已有技能组中勾选激活 {agent}。",
+    descNamed: "当前助手会消费宿主技能目录。去精选集市装备，或把本机已有技能导入宿主。",
     descGeneric: "技能是赋予 AI 助手在代码重构、全栈测试、UI 审美与复杂工程自动化等领域的即插即用超能力。",
     exploreStore: "探索精选技能集市",
     viewAllInstalled: "查看全部已安装技能",
@@ -73,7 +73,7 @@ export const zhSkillsPages = {
 
   card: {
     verified: "认证",
-    activatedAgents: "已激活助手:",
+    activatedAgents: "宿主目录:",
     allUnselected: "包含的技能均为未勾选状态",
     countPrefix: "共 ",
     countSuffix: " 个专业能力",
@@ -105,6 +105,7 @@ export const zhSkillsPages = {
   drawerBody: {
     targetsTitle: "生效目标助手",
     targetsHint: "点击行切换来源组投影",
+    hostHint: "只投影到宿主目录；当前引擎会读这一份",
     projected: "已随来源组投影",
     workspaceLabel: "工作区:",
     instructionsTitle: "指令说明"
@@ -114,6 +115,9 @@ export const zhSkillsPages = {
     activeCount: "已激活 {enabled} / {total} 个目标环境",
     synced: "已同步生效",
     notProjected: "未挂载投影",
+    hostDesc: "当前引擎只读宿主目录，不再复制到各家 ~/.claude 等路径。",
+    hostOn: "已装备到宿主",
+    hostOff: "未装备",
     workspaceBound: "当前工作区绑定:"
   },
 
@@ -160,24 +164,24 @@ export const zhSkillsPages = {
     title: "专为 {agent} 优化的超能力套件 (Recommended Skillsets)",
     plugHint: "即插即用 · 开箱即用无需配置",
     countSkills: "{n} 项领域能力",
-    equippedTo: "已装备至 {agent}",
-    linkTo: "一键关联到 {agent}",
-    getAndEquip: "获取并装配"
+    equippedTo: "已导入宿主目录",
+    linkTo: "导入到宿主目录",
+    getAndEquip: "获取并导入宿主"
   },
 
   quickMatrix: {
-    title: "从已有技能库快速装配至 {agent} (Armory Quick Matrix)",
-    activeCount: "已激活 {enabled} / {total} 个来源组",
-    summary: "当前已接入 {sources} 个来源组共 {skills} 项能力。点击下方来源组胶囊可快速一键为 {agent} 挂载或卸载整个来源包。",
-    quickMountLabel: "快速挂载来源组:",
-    toggleTitle: "点击为 {agent} {action} 该组全部 {n} 项能力",
-    mount: "一键挂载",
-    unmount: "取消挂载",
+    title: "从已有技能库导入宿主目录（{agent} 会读这一份）",
+    activeCount: "已导入 {enabled} / {total} 个来源组",
+    summary: "当前已接入 {sources} 个来源组共 {skills} 项能力。点击下方来源组胶囊可导入或卸下整个来源包；当前引擎只读宿主目录。",
+    quickMountLabel: "导入宿主目录:",
+    toggleTitle: "点击{action}该组全部 {n} 项能力到宿主目录",
+    mount: "导入",
+    unmount: "卸下",
     searchPlaceholder: "在已有 {n} 项技能库中过滤检索…",
     exploreLabel: "推荐探索:",
     clear: "清除",
     defaultDesc: "提供专业任务指令与上下文",
-    slotTitle: "投影粒度是来源组：请用上方来源组胶囊挂载或卸载，避免误操作整组"
+    slotTitle: "投影粒度是来源组：请用上方来源组胶囊导入或卸下，避免误操作整组"
   }
 }
 

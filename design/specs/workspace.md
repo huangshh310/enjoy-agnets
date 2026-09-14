@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-13
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-14
 
 ## 当前真相
 
@@ -25,7 +25,7 @@ Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `comm
 - 顶层控制栏：7 个审查作用域（上一轮 `last-turn`、未提交 `uncommitted`、未暂存 `unstaged`、已暂存 `staged`、已提交 `commits`、分支 `branch`、检查点 `checkpoints`）；全局 `+N -M`；分支对比副行（**真实上游** `@{upstream}` → 当前分支，上游失败显示「无上游」，禁止写死 `main`）；`...` 更多（自动换行、隐藏空白、文字级差异、折叠大文件、复制完整 patch）；展开/折叠全部差异；Ctrl+P / ⌘P 跳文件；文件树开关；「提交或推送」只在改动作用域（检查点 / 提交历史不画这颗主 CTA）。`checkpoints` 只列 `refs/enjoy/checkpoints/*`，不走 diff 流。空态贴顶短文，禁止居中大图标。还原先 `previewCheckpoint` 列出快照外未跟踪文件，ConfirmDialog 写明**不移动 HEAD / 不是分支回退**，有未跟踪删除必须显式确认；真正还原用临时 `GIT_INDEX_FILE` + `checkout-index`，不改用户暂存区。成功后**留在检查点时间线**，禁止偷切「未提交」。未暂存 / 已暂存文件树可按文件 `+` 暂存 / `−` 取消暂存（`workspace.gitStage`）。Review 底栏提交默认 `stageAll: false`，只提交已暂存；无已暂存则禁用，文案「提交已暂存」。Agent `git_commit` 同样默认 staged-only，`stageAll: true` 才 `add -A`。
 - 变更工作台：默认 **左当前文件满高 FileDiff、右文件树**（对齐 Codex）。树宽可拖（`enjoy-agents-review-tree-split`，最小 140px，默认 200px，最大 50%）。无选中自动打开第一项。提交底栏贴底：输入框右上角 sparkle 用当前模型 `ai.generate` kind=`completion` 根据 patch 填 Conventional Commit 说明（renderer 不碰密钥）；提交/推送收到芯片行，推送用 ghost，禁止再竖排两颗大按钮。「展开全部差异」才用 compact 卡片叠放（禁止 `fill`）。`FileDiff` 的 `fill` 只给单文件主区。
 - 提交历史：`git log` 线性列表 + 单轨竖线。没有 parent 图，禁止用 index 伪装多色车道。没有远程 PR / CI。空仓库空态，禁止 mock 提交。
-Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（用量：消息字符、常驻规则拼装、已连 MCP 的 name+description、技能索引（`formatSkillCatalog`，不含 SKILL.md 正文）、启用芯片的 snippet，按 3.8 字/token 折算；**上限**取当前模型 `contextWindow`：探测目录 > Gateway `/v1/models` > 档案手填，禁止按 modelId 静态表猜，未知则「— / 窗口未知」）。Limits 卡 / SessionMeter / Context **共用** `estimateContextWindowStats`，按当前 `runtimeId` 投影：ACP / `sandbox-harness` 不计 Enjoy 常驻规则、技能索引、Enjoy MCP；禁止 720 / 260 假地板。会话压缩卡片（展示压缩状态、**压缩前/后 Tokens**、节省量、事实摘要与再次压缩/清除；未压缩态不编造预计节省）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。输入框底栏状态栏配备手动压缩按钮，支持一键触发当前会话上下文压缩并即时联动看板。原始载荷走 `agent.inspectPrompt`：已压缩会话将较早历史替换为一条 `[CONVERSATION SUMMARY]`（不插虚构助手句）；有本会话泵时快照且 `capturedAt >= compactedAt` 则标「本轮实发」；压缩后快照过期则回落 preview。preview 为库内消息 `toModelMessages` + 当前模式系统提示词，不落库。`captureOpenStreamPrompt` 只在开流**成功**后写入，失败不得留下假 last-run。
+Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（用量：消息字符、常驻规则拼装、已连 MCP 的 name+description、技能索引（`formatSkillCatalog`，不含 SKILL.md 正文）、启用芯片的 snippet，按 3.8 字/token 折算；**上限**取当前模型 `contextWindow`：探测目录 > Gateway `/v1/models` > 档案手填，禁止按 modelId 静态表猜，未知则「— / 窗口未知」）。Limits 卡 / SessionMeter / Context **共用** `estimateContextWindowStats`，按当前 `runtimeId` 投影：ACP / 沙箱不计 Enjoy 常驻规则；`hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板。会话压缩卡片（展示压缩状态、**压缩前/后 Tokens**、节省量、事实摘要与再次压缩/清除；未压缩态不编造预计节省）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。输入框底栏状态栏配备手动压缩按钮，支持一键触发当前会话上下文压缩并即时联动看板。原始载荷走 `agent.inspectPrompt`：已压缩会话将较早历史替换为一条 `[CONVERSATION SUMMARY]`（不插虚构助手句）；有本会话泵时快照且 `capturedAt >= compactedAt` 则标「本轮实发」；压缩后快照过期则回落 preview。preview 为库内消息 `toModelMessages` + 当前模式系统提示词，不落库。`captureOpenStreamPrompt` 只在开流**成功**后写入，失败不得留下假 last-run。
 
 Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（`react-resizable-panels`，热区 12px，`cursor-col-resize`）：
 

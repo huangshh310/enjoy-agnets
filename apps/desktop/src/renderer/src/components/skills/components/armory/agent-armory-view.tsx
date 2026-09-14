@@ -10,10 +10,14 @@ import type {
   SkillTargetId
 } from "@enjoy-agents/ipc-contract"
 import { getAgentArmoryProfile } from "../../constants/agent-armory.constants"
+import { skillVisibleForTarget } from "../../lib/skill-visible-for-target"
 import { SkillItemCard } from "../skill-item-card"
 import { AgentProfileHeader } from "./agent-profile-header"
 import { AgentQuickSlotMatrix } from "./agent-quick-slot-matrix"
 import { AgentRecommendedPacks } from "./agent-recommended-packs"
+import { NativePluginCopy } from "@renderer/components/settings/agent-tools/native-plugin-copy"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { useT } from "@renderer/i18n"
 
 export function AgentArmoryView({
   targetId,
@@ -39,10 +43,11 @@ export function AgentArmoryView({
   onSelectSkill: (skill: InstalledSkillItem) => void
 }) {
   const profile = useMemo(() => getAgentArmoryProfile(targetId), [targetId])
+  const t = useT()
+  const nativeTool = useSettingsSnapshot().data?.agentTools.find((item) => item.id === targetId)
 
-  // 当前已在该 Agent 生效的技能
   const targetSkills = useMemo(
-    () => allSkills.filter((s) => s.enabledTargetIds.includes(targetId)),
+    () => allSkills.filter((s) => skillVisibleForTarget(s, targetId)),
     [allSkills, targetId]
   )
 
@@ -55,6 +60,7 @@ export function AgentArmoryView({
         onGoToStore={onGoToStore}
         onClearFilter={onClearFilter}
       />
+      {nativeTool?.nativePluginCopy ? <NativePluginCopy tool={nativeTool} /> : null}
 
       {/* 2. 模式分支：如果已有已激活技能，呈现专属技能矩阵；如果尚无技能，呈现全景整备舱 */}
       {targetSkills.length === 0 ? (
@@ -66,7 +72,7 @@ export function AgentArmoryView({
             sources={sources}
             busy={busy}
             onInstallCurated={onInstallCurated}
-            onToggleTarget={(source) => onToggleTarget(source, targetId)}
+            onToggleTarget={(source) => onToggleTarget(source, "enjoy-agents")}
           />
 
           {/* 从全部已有技能库中快速勾选装配 */}
@@ -83,10 +89,10 @@ export function AgentArmoryView({
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h3 className="text-title-3-semibold text-text-primary tracking-tight">
-              已为 {profile.shortName} 挂载的能力 ({targetSkills.length})
+              {t("pages.skills.armoryHeader.activeBadge", { n: targetSkills.length })}
             </h3>
             <span className="text-caption-2-regular text-text-tertiary">
-              在下方卡片中点击即可查看定义或调整参数
+              {t("pages.skills.targets.hostDesc")}
             </span>
           </div>
 

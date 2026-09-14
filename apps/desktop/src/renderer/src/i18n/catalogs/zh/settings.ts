@@ -165,6 +165,8 @@ export const zhSettings = {
     listOutdatedSecondary: "需更新 · {current}（要 ≥{required}）",
     copyCommand: "复制安装命令",
     copied: "已复制",
+    nativePluginTitle: "原生插件在助手侧",
+    nativePluginHint: "Enjoy 只导入可移植的 Skills 与 MCP。Cordis / hooks 请在系统终端执行，不要当成已连接。",
     docs: "安装说明",
     login: "打开登录",
     loggingIn: "登录中…",
@@ -451,7 +453,9 @@ export const zhSettings = {
       quota: "额度",
       thinking: "思考",
       fast: "Fast",
-      executionModes: "执行模式"
+      executionModes: "执行模式",
+      hostMcp: "宿主 MCP",
+      hostSkills: "宿主 Skills"
     },
     path: {
       "enjoy-local": "Enjoy 本地",
@@ -473,10 +477,10 @@ export const zhSettings = {
     loginOwner: "各家官方 login，Enjoy 不代管 OAuth 文件",
     loginGo: "本机 CLI",
     mcp: "MCP",
-    mcpOwner: "本机 #/mcp；是否转发随 runtime",
+    mcpOwner: "本机 #/mcp；当前引擎经 ACP session/new 或 Local 工具消费",
     mcpGo: "MCP",
     skills: "Skills",
-    skillsOwner: "#/skills + 各家 ~/.xxx/skills",
+    skillsOwner: "#/skills；当前引擎读宿主索引，不再复制到各家目录",
     skillsGo: "Skills",
     cliBind: "CLI 引用的供应商",
     cliBindOwner: "Claude / Codex / Gemini / OpenCode / DeepSeek 引用的 Enjoy 档案",

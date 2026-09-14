@@ -13,6 +13,7 @@ import { providerEnvFor, requireBindProfile } from "./provider-bind-env"
 import { readVault } from "./secrets-vault"
 import type { OpenedCodingStream } from "./open-coding-stream"
 import { resolveAcpSpawnDirect } from "./ssh/resolve-acp-spawn.ts"
+import { hostExtensionsFor } from "./host-extensions/host-extensions.ts"
 export async function openAcpStream(input: {
   runId: string
   sessionId: string
@@ -62,6 +63,12 @@ export async function openAcpStream(input: {
     extraArgs: override?.extraArgs ?? [],
     modelId: boundModel
   })
+  const extensions = await hostExtensionsFor({
+    runtimeId: input.runtimeId,
+    workspaceRoot: input.workspaceRoot,
+    ssh: Boolean(spawnDirect),
+    workspaceId: input.workspaceId
+  })
   const opened = await streamAcpTurn({
     runId: input.runId,
     sessionId: input.sessionId,
@@ -77,7 +84,10 @@ export async function openAcpStream(input: {
     env: injectedEnv,
     spawnDirect,
     waitForApproval: input.waitForSubagentApproval,
-    customInstructions: input.customInstructions
+    customInstructions: input.customInstructions,
+    mcpServers: extensions.mcpServers,
+    skillCatalog: extensions.skillCatalog,
+    pluginDirs: extensions.pluginDirs
   })
   return {
     stream: opened.stream,
@@ -94,11 +104,16 @@ async function openCustomAcpStream(
   if (!record || !record.enabled) {
     throw new Error(`${input.runtimeId} is not a registered custom ACP agent.`)
   }
+  const cwd = resolveCustomCwd(record, input.workspaceRoot)
+  const extensions = await hostExtensionsFor({
+    runtimeId: input.runtimeId,
+    workspaceRoot: cwd
+  })
   const opened = await streamAcpTurn({
     runId: input.runId,
     sessionId: input.sessionId,
     toolId: input.runtimeId,
-    workspaceRoot: resolveCustomCwd(record, input.workspaceRoot),
+    workspaceRoot: cwd,
     messages: input.messages,
     abortSignal: input.abortSignal,
     override: {
@@ -108,7 +123,10 @@ async function openCustomAcpStream(
     },
     env: record.env,
     waitForApproval: input.waitForSubagentApproval,
-    customInstructions: input.customInstructions
+    customInstructions: input.customInstructions,
+    mcpServers: extensions.mcpServers,
+    skillCatalog: extensions.skillCatalog,
+    pluginDirs: extensions.pluginDirs
   })
   return {
     stream: opened.stream,

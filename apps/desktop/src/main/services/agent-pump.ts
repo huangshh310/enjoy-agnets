@@ -15,7 +15,8 @@ import { completeAgentRun } from "./complete-agent-run"
 import { checkpointActiveRun, persistActiveRun } from "./flush-agent-run"
 import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { createId } from "./ids"
-import { disposeCodingStream, openCodingStream } from "./open-coding-stream"
+import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { acpSessionAlive, cancelCodingStream, disposeCodingStream, openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
 import { shouldContinueOpenTodos, TODO_CONTINUE_PROMPT } from "./todo-continue"
 import { readResponseMessages } from "./agent-run-helpers"
@@ -270,6 +271,11 @@ async function failPump(runId: string, run: ActiveRun, error: unknown) {
     })
   }
   deleteActiveRun(runId)
+  const sessionId = run.input.sessionId
+  if (isAcpHostRuntime(run.input.runtimeId) && acpSessionAlive(sessionId)) {
+    await cancelCodingStream(runId)
+    return
+  }
   await disposeCodingStream(runId)
 }
 

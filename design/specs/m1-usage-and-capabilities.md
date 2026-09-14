@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-12
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-14
 
 ## 当前真相
 
@@ -22,7 +22,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 |---|---|---|---|
 | L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 胶囊旁 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）；设置账号区 |
 | L2 | 自营积分 | 无真实 API | 账单页诚实空态；不画假条、不挂演示套餐 |
-| L3 | 本轮 token / 上下文 % | 与 Context 共用 `estimateContextWindowStats`（按当前 runtime 投影） | Composer 底 `SessionMeter` + Limits 卡；无用量则隐藏。ACP / 沙箱不计 Enjoy 规则、技能、Enjoy MCP。禁止 720 / 260 假地板 |
+| L3 | 本轮 token / 上下文 % | 与 Context 共用 `estimateContextWindowStats`（按当前 runtime 投影） | Composer 底 `SessionMeter` + Limits 卡；无用量则隐藏。ACP 不计 Enjoy 常驻规则，但 `hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板 |
 | L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |
 
 额度条支持 Cursor / Grok / Antigravity 以及通过官方 CLI 凭据探针接入的 Claude（5h 会话 / 7d 周度窗口，来自 macOS Keychain 或 ~/.claude/.credentials.json 调取 api.anthropic.com/api/oauth/usage）与 Codex（5h 会话 / 周度窗口 / 速率限制重置额度 credits，来自 ~/.codex/auth.json 调取 chatgpt.com/backend-api/wham/usage）。Enjoy 本地与未登录/无额度 API 助手：**不画空条**，诚实展示空态或「该 CLI 暂无公开额度 API」。禁止 `Math.max(%, 2)` 假填充、90/95/100 占位、遥测伪造假数据。
@@ -75,6 +75,6 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 设置里 OMP「打开登录」必须带 `provider` 并等 callback，禁止无参 `login`（会失败或打不开授权）。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。
 - L4「切换引擎」必须 `setAgentPickerOpen(true)` 打开 Composer 胶囊，禁止 `navigate` 到 `#/settings/agent`。
-- L3 禁止再写 720 系统 / 260 技能假地板。Limits 卡必须吃检查器同一本账（含芯片与压缩后消息），不要自己再估一套。切到 CLI 后规则/技能桶必须是 0。
+- L3 禁止再写 720 系统 / 260 技能假地板。Limits 卡必须吃检查器同一本账（含芯片与压缩后消息），不要自己再估一套。切到 CLI 后 Enjoy 常驻规则桶仍是 0；宿主技能索引与已信任 MCP 要计入。
 - UsagePill / QuotaExhaustedCard 只用审批铬语义 token（`text-error-primary` / `background-tertiary-error` / `border-error-default`），禁止 `bg-rose-500` / `bg-amber-500`。
 - 本机 jsonl 用量不是 L1。禁止把它画进 Composer `UsagePill`，也禁止按模型 id 猜单价做成账单。Claude 按行累加 `message.usage`；Codex 每个文件只取最后一次 `token_count.total_token_usage`。Grok 只读 `usage.json` 的 `session` 合计。OMP 按行累加 camelCase `message.usage`，不要把 OMP `cost` 美元并进 Grok ticks。Cursor transcript 无 usage 字段时是 scanned-empty，不要读 `store.db`。过滤后 KPI 必须用该源自己的 token 字段。

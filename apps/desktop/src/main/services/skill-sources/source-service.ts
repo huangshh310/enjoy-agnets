@@ -14,14 +14,13 @@ import type {
   SkillSourceUpdateAllResult
 } from "@enjoy-agents/ipc-contract"
 import { pullAllGitSkillSources, pullGitSkillSource } from "./source-update.ts"
-
 import { cloneGitSource, parseGitOrigin, removeGitCheckout } from "./source-git.ts"
-
 import { fetchSkillsMarket } from "./skills-market-fetcher.ts"
 import { persistDiscoveredSources } from "./source-discover.ts"
 import { deleteSourceSkill as deleteSkillPack, removeSourceProjections } from "./source-delete.ts"
 import { doctorSkillSources } from "./source-doctor.ts"
 import { deploySelectedSkills } from "./source-deploy.ts"
+import { inspectPluginImportRoot } from "./import-plugin.ts"
 import {
   assertLocalOriginAllowed,
   discoverSourceSkills,
@@ -87,7 +86,7 @@ export async function addSkillSource(
   input: SkillSourceAddInput
 ): Promise<SkillSource> {
   if (input.kind === "git") return addGitSource(ctx, input)
-  return addLocalSource(ctx, input)
+  return await addLocalSource(ctx, input)
 }
 
 export async function updateSkillSource(ctx: SkillSourceContext, sourceId: string): Promise<void> {
@@ -198,21 +197,30 @@ async function addGitSource(ctx: SkillSourceContext, input: SkillSourceAddInput)
   return presentSource(record, ctx, [])
 }
 
-function addLocalSource(ctx: SkillSourceContext, input: SkillSourceAddInput): SkillSource {
+async function addLocalSource(ctx: SkillSourceContext, input: SkillSourceAddInput): Promise<SkillSource> {
   const origin = assertLocalOriginAllowed(input.origin, ctx.workspaceRoots, ctx.home)
-  const id = localSourceId(origin)
+  const inspected = inspectPluginImportRoot(origin)
+  if (inspected.kind === "rejected") {
+    throw new Error(inspected.reason ?? "PLUGIN_NOT_PORTABLE")
+  }
+  const skillsRoot = assertLocalOriginAllowed(inspected.skillsRoot, ctx.workspaceRoots, ctx.home)
+  const id = localSourceId(skillsRoot)
   assertSourceIdFree(ctx, id)
-  assertLocalOriginFree(ctx, origin)
+  assertLocalOriginFree(ctx, skillsRoot)
   const record: ManifestSource = {
     id,
-    name: input.name?.trim() || basename(origin),
+    name: input.name?.trim() || basename(skillsRoot),
     kind: "local",
-    origin,
+    origin: skillsRoot,
     selectedSkillIds: [],
     enabledTargetIds: ["enjoy-agents"]
   }
   record.selectedSkillIds = discoverSourceSkills(record, ctx.stateRoot, ctx.workspaceRoots).map((skill) => skill.id)
   appendSource(ctx, record)
+  if (inspected.mcpServers.length > 0) {
+    const { applyImportedMcp } = await import("./apply-imported-mcp.ts")
+    applyImportedMcp(inspected.mcpServers)
+  }
   return presentSource(record, ctx, [])
 }
 
@@ -286,7 +294,6 @@ function sourceSkillCount(source: ManifestSource, ctx: SkillSourceContext): numb
     return 0
   }
 }
-
 
 function localSourceId(abs: string): string {
   const hex = Buffer.from(resolve(abs)).toString("hex").slice(-8)

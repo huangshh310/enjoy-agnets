@@ -9,7 +9,7 @@ export function formatSkillMention(skill: SkillMention): string {
     return [
       `Follow the installed skill ${title} (${skill.name}).`,
       `Workspace path: ${skill.relPath}`,
-      "Read that SKILL.md with read_file before acting. Do not guess the instructions."
+      "Read that SKILL.md before acting. Do not guess the instructions."
     ].join("\n")
   }
   return [

@@ -33,6 +33,12 @@ export const TARGET_RELATIVE: Record<SkillTargetId, string[]> = {
   "workspace-dot-skills": [".skills"]
 }
 
+/** 宿主真源：默认只投影到 Enjoy 目录与工作区 .agents/skills。 */
+export const HOST_SKILL_DEPLOY_TARGETS = new Set<SkillTargetId>([
+  "enjoy-agents",
+  "workspace-agents"
+])
+
 const WORKSPACE_TARGETS = new Set<SkillTargetId>([
   "workspace-agents",
   "workspace-claude",

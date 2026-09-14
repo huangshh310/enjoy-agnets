@@ -176,7 +176,7 @@ test("estimateTurnPerformance respects TelemetryMetric when available", () => {
   assert.equal(perf.isLive, true)
 })
 
-test("ACP 不把 Enjoy 规则和技能算进占用", () => {
+test("ACP 不计 Enjoy 规则，但计入宿主技能索引", () => {
   const skill = {
     id: "w:grill",
     name: "grill-me",
@@ -188,5 +188,5 @@ test("ACP 不把 Enjoy 规则和技能算进占用", () => {
   const local = estimateContextWindowStats([], 200_000, [], [], [skill], [], "", "enjoy-local")
   const acp = estimateContextWindowStats([], 200_000, [], [], [skill], [], "", "cursor")
   assert.ok((local.buckets.find((b) => b.id === "skills")?.tokens ?? 0) > 0)
-  assert.equal(acp.buckets.find((b) => b.id === "skills")?.tokens, 0)
+  assert.ok((acp.buckets.find((b) => b.id === "skills")?.tokens ?? 0) > 0)
 })

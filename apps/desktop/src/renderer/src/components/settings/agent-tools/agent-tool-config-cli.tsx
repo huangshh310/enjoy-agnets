@@ -6,6 +6,7 @@ import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { AgentToolAccountPanel } from "./agent-tool-account-panel"
 import { AgentToolAdvanced } from "./agent-tool-advanced"
 import { AgentToolConfigOps } from "./agent-tool-config-ops"
+import { NativePluginCopy } from "./native-plugin-copy"
 import { AgentToolConfigSource } from "./agent-tool-config-source"
 import { DrawerTrustStrip } from "./drawer-trust/drawer-trust-strip"
 import { AgentToolLaunchPrefs } from "./launch-prefs/panel"
@@ -39,6 +40,7 @@ export function AgentToolConfigCli({
       <AgentToolAccountPanel tool={tool} />
       <AgentToolConfigSource tool={tool} actions={actions} />
       <AgentToolLaunchPrefs tool={tool} actions={actions} />
+      <NativePluginCopy tool={tool} />
       <AgentToolAdvanced tool={tool} actions={actions} />
       <AgentToolConfigOps tool={tool} actions={actions} />
     </div>
