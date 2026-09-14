@@ -1,7 +1,8 @@
 /**
  * 本轮来源 sheet 一行：图标 · 名称 · 类型标 · 出处。
  */
-import { RiFileTextLine, RiPlugLine, RiSparklingLine } from "@remixicon/react"
+import { RiFileTextLine, RiSparklingLine } from "@remixicon/react"
+import { McpIcon } from "@renderer/components/mcp/components/mcp-brand-icons.ts"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
 import { canFocusSourceRow, sourceBadgeKind, sourceRowName, sourceRowProvenance } from "./source-detail"
@@ -11,7 +12,7 @@ import type { TurnSourceChip } from "./source-chip"
 const ICONS = {
   file: RiFileTextLine,
   skill: RiSparklingLine,
-  mcp: RiPlugLine
+  mcp: McpIcon
 } as const
 
 export function SourceDetailRow({

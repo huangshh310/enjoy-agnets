@@ -1,7 +1,8 @@
 /**
  * MCP 已配置服务列表：搜索、空态、卡片操作。
  */
-import { RiAddLine, RiPlugLine, RiSearchLine, RiSparklingLine } from "@remixicon/react"
+import { RiAddLine, RiSearchLine, RiSparklingLine } from "@remixicon/react"
+import { McpIcon } from "./mcp-brand-icons.ts"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
@@ -66,7 +67,7 @@ export function McpServersView(props: {
       {servers.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-separator-border/80 bg-background-secondary-default/20 p-10 text-center">
           <div className="flex size-10 items-center justify-center rounded-lg bg-background-secondary-default text-text-tertiary mb-3">
-            <RiPlugLine className="size-5" />
+            <McpIcon className="size-5" />
           </div>
           <h3 className="text-body-medium font-semibold text-text-primary">
             {t("pages.mcp.emptyTitle")}

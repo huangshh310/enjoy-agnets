@@ -21,6 +21,7 @@ import {
   RiShieldLine,
   RiSparklingLine
 } from "@remixicon/react"
+import { McpIcon } from "@renderer/components/mcp/components/mcp-brand-icons.ts"
 import {
   CommandDialog,
   CommandEmpty,
@@ -116,7 +117,7 @@ export function QuickSearchDialog() {
               })
             }
           >
-            <RiPlugLine className="size-4 text-accent-500" />
+            <McpIcon className="size-4 text-accent-500" />
             <span>{t("command.mcp")}</span>
           </CommandItem>
           <CommandItem

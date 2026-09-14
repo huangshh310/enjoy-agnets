@@ -21,7 +21,7 @@ export const enMcpPages = {
   emptyTitle: "No MCP servers configured yet",
   emptyHint:
     "Connect filesystems, databases, or external APIs through Model Context Protocol so the Agent can call them in chat.",
-  browseMarketplace: "Browse local presets",
+  browseMarketplace: "Explore in Extensions Hub",
   marketplaceLocalHint: "These are built-in templates, not a remote catalog. Adding one writes mcp_servers on this machine.",
   noMatchingServers: "No matching servers",
   needIdentifier: "Enter a Server Identifier",

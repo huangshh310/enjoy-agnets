@@ -9,7 +9,6 @@ import { McpHeader } from "./components/mcp-header"
 import { McpJsonEditorView } from "./components/mcp-json-editor-view"
 import { McpServerToolsModal } from "./components/mcp-server-tools-modal"
 import { McpServersView } from "./components/mcp-servers-view"
-import { McpStoreSection } from "./components/mcp-store-section"
 import { useMcpPage } from "./hooks/use-mcp-page"
 import type { McpActiveTab } from "./types/mcp-ui.types"
 
@@ -46,16 +45,9 @@ export function McpPage() {
               onExploreTools={(s) => page.setToolsModalServer(s)}
               onEdit={(s) => page.openCreateModal(s)}
               onAdd={() => page.openCreateModal()}
-              onBrowseMarketplace={() => page.setActiveTab("marketplace")}
-            />
-          ) : null}
-
-          {page.activeTab === "marketplace" ? (
-            <McpStoreSection
-              servers={page.servers}
-              onQuickConnect={page.handleQuickConnectPreset}
-              onPrefill={page.handlePrefillPreset}
-              isAdding={false}
+              onBrowseMarketplace={() => {
+                window.location.hash = "#/settings/extensions"
+              }}
             />
           ) : null}
 

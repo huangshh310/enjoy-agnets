@@ -25,9 +25,9 @@ test("工作区组含 extensions，且 MCP 仍在", () => {
 })
 
 test("添加与精选卡 href 指向现有 #/mcp / #/skills", () => {
-  assert.equal(mcpHubHref(), `${MCP_HUB_HREF}?tab=marketplace`)
+  assert.equal(mcpHubHref(), MCP_HUB_HREF)
   assert.equal(skillsHubHref(), `${SKILLS_HUB_HREF}?tab=curated`)
-  assert.equal(mcpPresetHref("filesystem"), "#/mcp?tab=marketplace&preset=filesystem")
+  assert.equal(mcpPresetHref("filesystem"), "#/mcp?preset=filesystem")
   assert.equal(skillsInstallHref("obra-superpowers"), "#/skills?tab=curated&install=obra-superpowers")
   const mcpCards = projectMcpCurated(FEATURED_MCP_PRESETS)
   const skillCards = projectSkillsCurated(CURATED_SKILL_SOURCES)

@@ -4,11 +4,11 @@
  */
 import {
   RiAddLine,
-  RiPlugLine,
   RiRefreshLine,
   RiShieldCheckLine,
   RiToolsLine
 } from "@remixicon/react"
+import { McpIcon } from "./mcp-brand-icons.ts"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
@@ -47,7 +47,7 @@ export function McpHeader(props: {
           {/* 精简状态胶囊组 */}
           <div className="hidden lg:flex items-center gap-3 rounded-lg border border-separator-border/60 bg-background-secondary-default/40 px-3 py-1 text-[11px] text-text-secondary mr-1 font-mono">
             <span className="flex items-center gap-1.5">
-              <RiPlugLine className="size-3 text-emerald-500" />
+              <McpIcon className="size-3 text-emerald-500" />
               <span className="text-text-primary font-semibold">{stats.connected}</span>
               <span className="text-text-tertiary">{t("pages.mcp.runningOf", { total: stats.total })}</span>
             </span>

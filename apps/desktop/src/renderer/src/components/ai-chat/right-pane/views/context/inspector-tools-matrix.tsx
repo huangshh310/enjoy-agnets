@@ -8,10 +8,10 @@ import {
   RiEditLine,
   RiEyeLine,
   RiLoader4Line,
-  RiPlugLine,
   RiShieldLine,
   RiTerminalBoxLine
 } from "@remixicon/react"
+import { McpIcon } from "@renderer/components/mcp/components/mcp-brand-icons.ts"
 import type { McpServer, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { formatTokens } from "../../../agent-limits/agent-limits-calculator"
 import { useT } from "@renderer/i18n"
@@ -99,7 +99,7 @@ function PolicyGrid({
     },
     {
       id: "mcp",
-      icon: RiPlugLine,
+      icon: McpIcon,
       iconClass: "text-accent-500",
       title: t("chat.inspectorMcpGroup"),
       policy: t("chat.inspectorPolicySandbox"),

@@ -9,12 +9,12 @@ import {
   RiFolder6Line,
   RiKeyboardBoxLine,
   RiPaletteLine,
-  RiPlugLine,
   RiSettings4Line,
   RiShieldKeyholeLine,
   RiSparklingLine,
   RiUser3Line
 } from "@remixicon/react"
+import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
 import type { SettingsNavGroupDef } from "./settings-catalog.types"
 
 export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
@@ -91,7 +91,7 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
       {
         id: "mcp",
         labelKey: "nav.mcp",
-        icon: RiPlugLine,
+        icon: McpIcon,
         keywords: ["mcp", "tools", "servers", "automations", "trigger", "telemetry", "git", "工具", "协议", "自动化", "遥测", "版本控制"]
       }
     ]

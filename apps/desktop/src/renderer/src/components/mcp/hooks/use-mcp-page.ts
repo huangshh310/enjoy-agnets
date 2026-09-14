@@ -3,7 +3,8 @@
  */
 import { useCallback, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { RiFileCodeLine, RiPlugLine, RiShoppingBag3Line } from "@remixicon/react"
+import { RiFileCodeLine } from "@remixicon/react"
+import { McpIcon } from "../components/mcp-brand-icons.ts"
 import type { McpServer } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -51,13 +52,8 @@ export function useMcpPage() {
           {
             id: "servers",
             label: t("pages.mcp.navServers"),
-            icon: RiPlugLine,
+            icon: McpIcon,
             meta: String(servers.length)
-          },
-          {
-            id: "marketplace",
-            label: t("pages.mcp.navMarketplace"),
-            icon: RiShoppingBag3Line
           },
           {
             id: "json",

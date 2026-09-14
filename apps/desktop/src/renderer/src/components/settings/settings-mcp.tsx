@@ -5,9 +5,9 @@
 import { useNavigate } from "@tanstack/react-router"
 import {
   RiArrowRightLine,
-  RiPlugLine,
   RiShieldCheckLine
 } from "@remixicon/react"
+import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
 import { Button } from "@/components/ui/button"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { useT } from "@renderer/i18n"
@@ -25,7 +25,7 @@ export function McpSettings() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <RiPlugLine className="size-6" />
+              <McpIcon className="size-6" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export function McpSettings() {
             onClick={() => void navigate({ to: "/mcp" })}
             className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium shrink-0"
           >
-            <RiPlugLine className="size-3.5 text-purple-500" />
+            <McpIcon className="size-3.5 text-purple-500" />
             <span>{t("settings.mcp.openHub")}</span>
             <RiArrowRightLine className="size-3.5 opacity-60 ml-0.5" />
           </Button>

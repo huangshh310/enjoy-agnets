@@ -19,7 +19,7 @@ export function useMcpRouteSearch(input: {
   const { t, setActiveTab, onPrefill } = input
 
   useEffect(() => {
-    if (parsed.tab) setActiveTab(parsed.tab)
+    if (parsed.tab) setActiveTab(parsed.tab === "marketplace" ? "servers" : parsed.tab)
   }, [parsed.tab, setActiveTab])
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export function useMcpRouteSearch(input: {
     const preset = getFeaturedMcpPresets(t).find((item) => item.id === parsed.preset)
     if (!preset) return
     applied.current = parsed.preset
-    setActiveTab("marketplace")
+    setActiveTab("servers")
     onPrefill(preset)
   }, [onPrefill, parsed.preset, setActiveTab, t])
 }

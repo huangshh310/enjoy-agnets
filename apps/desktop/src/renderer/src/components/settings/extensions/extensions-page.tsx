@@ -46,6 +46,7 @@ export function ExtensionsPage() {
   const [searchQuery, setSearchQuery] = useState("")
 
   const [createMcpOpen, setCreateMcpOpen] = useState(false)
+  const [selectedPresetServer, setSelectedPresetServer] = useState<McpServer | null>(null)
   const [importSkillOpen, setImportSkillOpen] = useState(false)
 
   const mcpQuery = useQuery({
@@ -89,6 +90,25 @@ export function ExtensionsPage() {
 
   function handleGoToMcpJson() {
     window.location.hash = "#/mcp?tab=json"
+  }
+
+  function handleConfigurePreset(presetId: string) {
+    const featuredPresets = getFeaturedMcpPresets(t)
+    const preset = featuredPresets.find((p) => p.id === presetId)
+    if (!preset) return
+    setSelectedPresetServer({
+      id: "",
+      name: preset.id,
+      transport: preset.transport,
+      command: preset.command,
+      url: preset.url,
+      allowedResourceUris: [],
+      modelVisibleTools: [],
+      appOnlyTools: [],
+      trusted: false,
+      connected: false
+    })
+    setCreateMcpOpen(true)
   }
 
   // 多重响应式过滤
@@ -150,7 +170,10 @@ export function ExtensionsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72 p-1.5">
               <DropdownMenuItem
-                onClick={() => setCreateMcpOpen(true)}
+                onClick={() => {
+                  setSelectedPresetServer(null)
+                  setCreateMcpOpen(true)
+                }}
                 className="flex items-center gap-2.5 cursor-pointer py-2 px-2.5 rounded-lg"
               >
                 <RiCpuLine className="size-4 text-accent-500 shrink-0" />
@@ -207,12 +230,19 @@ export function ExtensionsPage() {
       {filteredCards.length > 0 ? (
         <div className="grid grid-cols-1 gap-4.5 md:grid-cols-2 xl:grid-cols-3">
           {filteredCards.map((card) => (
-            <ExtensionCard key={`${card.kind}-${card.id}`} card={card} />
+            <ExtensionCard
+              key={`${card.kind}-${card.id}`}
+              card={card}
+              onConfigurePreset={handleConfigurePreset}
+            />
           ))}
 
           {/* 网格末尾的自定义添加引导卡 */}
           <article
-            onClick={() => setCreateMcpOpen(true)}
+            onClick={() => {
+              setSelectedPresetServer(null)
+              setCreateMcpOpen(true)
+            }}
             className="group relative flex flex-col justify-between rounded-2xl border border-dashed border-separator-border/90 bg-background-primary-default/50 p-5 transition-all duration-200 hover:border-accent-500/60 hover:bg-background-secondary-default/30 cursor-pointer"
           >
             <div>
@@ -261,7 +291,10 @@ export function ExtensionsPage() {
             </button>
             <button
               type="button"
-              onClick={() => setCreateMcpOpen(true)}
+              onClick={() => {
+                setSelectedPresetServer(null)
+                setCreateMcpOpen(true)
+              }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-primary-default px-3 py-1.5 text-caption-2-medium font-medium text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
             >
               <RiAddLine className="size-3.5 text-accent-500" />
@@ -280,7 +313,11 @@ export function ExtensionsPage() {
       {/* 6. 模态抽屉 */}
       <McpCreateModal
         open={createMcpOpen}
-        onOpenChange={setCreateMcpOpen}
+        onOpenChange={(open) => {
+          setCreateMcpOpen(open)
+          if (!open) setSelectedPresetServer(null)
+        }}
+        initialServer={selectedPresetServer}
         onChanged={handleMcpChanged}
       />
 

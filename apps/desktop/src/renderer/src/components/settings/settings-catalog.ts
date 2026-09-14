@@ -18,7 +18,6 @@ import {
   RiKeyboardBoxLine,
   RiNotification3Line,
   RiPaletteLine,
-  RiPlugLine,
   RiPulseLine,
   RiRouteLine,
   RiSchoolLine,
@@ -29,6 +28,7 @@ import {
   RiSparklingLine,
   RiTerminalBoxLine
 } from "@remixicon/react"
+import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
 import type { TranslateFn } from "@renderer/i18n"
 import { SETTINGS_NAV_DEF } from "./settings-catalog-nav"
 import type { SettingsNavGroup, SettingsNavItem, SettingsSectionId, SettingsNavIcon } from "./settings-catalog.types"
@@ -72,7 +72,7 @@ const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: Sett
   extensions: { labelKey: "nav.extensions", icon: RiApps2Line },
   knowledge: { labelKey: "nav.knowledge", icon: RiBookOpenLine },
   media: { labelKey: "nav.media", icon: RiImageLine },
-  mcp: { labelKey: "nav.mcp", icon: RiPlugLine },
+  mcp: { labelKey: "nav.mcp", icon: McpIcon },
   automations: { labelKey: "nav.automations", icon: RiFlashlightLine },
   telemetry: { labelKey: "nav.telemetry", icon: RiPulseLine },
   git: { labelKey: "nav.git", icon: RiGitBranchLine },

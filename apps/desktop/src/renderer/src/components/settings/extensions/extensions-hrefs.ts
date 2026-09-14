@@ -4,18 +4,18 @@
 import { MCP_HUB_HREF, SKILLS_HUB_HREF } from "./constants.ts"
 
 export function mcpHubHref(): string {
-  return `${MCP_HUB_HREF}?tab=marketplace`
+  return MCP_HUB_HREF
 }
 
 export function skillsHubHref(): string {
   return `${SKILLS_HUB_HREF}?tab=curated`
 }
 
-/** MCP 市场并打开指定预设的创建表单。 */
+/** MCP 运维页，带 preset 定位作为兼容深链。 */
 export function mcpPresetHref(presetId: string): string {
   const id = presetId.trim()
-  if (!id) return `${MCP_HUB_HREF}?tab=marketplace`
-  return `${MCP_HUB_HREF}?tab=marketplace&preset=${encodeURIComponent(id)}`
+  if (!id) return MCP_HUB_HREF
+  return `${MCP_HUB_HREF}?preset=${encodeURIComponent(id)}`
 }
 
 /** Skills 精选集市并定位该套件。 */

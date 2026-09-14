@@ -14,7 +14,13 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { ExtensionCuratedCard } from "./extensions.types.ts"
 
-export function ExtensionCard({ card }: { card: ExtensionCuratedCard }) {
+export function ExtensionCard({
+  card,
+  onConfigurePreset
+}: {
+  card: ExtensionCuratedCard
+  onConfigurePreset?: (presetId: string) => void
+}) {
   const t = useT()
   const FallbackIcon = card.kind === "mcp" ? RiCpuLine : RiFlashlightLine
   const Icon = card.icon ?? FallbackIcon
@@ -120,27 +126,32 @@ export function ExtensionCard({ card }: { card: ExtensionCuratedCard }) {
           {card.categoryLabel || card.category ? `#${card.categoryLabel || card.category}` : "即插即用"}
         </span>
 
-        <a
-          href={card.href}
-          className={cx(
-            "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-caption-2-medium font-semibold transition-all cursor-pointer",
-            card.isConfigured
-              ? "border border-border-button-default bg-background-secondary-default text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
-              : "bg-accent-500 text-white hover:bg-accent-600 shadow-xs active:scale-98"
-          )}
-        >
-          {card.isConfigured ? (
-            <>
-              <span>{t("settings.extensions.actionManage")}</span>
-              <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </>
-          ) : (
-            <>
-              <RiDownload2Line className="size-3.5" />
-              <span>{t("settings.extensions.actionGet")}</span>
-            </>
-          )}
-        </a>
+        {card.isConfigured ? (
+          <a
+            href={card.href}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-button-default bg-background-secondary-default px-3 py-1.5 text-caption-2-medium font-semibold text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary transition-all cursor-pointer"
+          >
+            <span>{t("settings.extensions.actionManage")}</span>
+            <RiArrowRightLine className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </a>
+        ) : onConfigurePreset && card.kind === "mcp" ? (
+          <button
+            type="button"
+            onClick={() => onConfigurePreset(card.id)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-1.5 text-caption-2-medium font-semibold text-white hover:bg-accent-600 shadow-xs active:scale-98 transition-all cursor-pointer"
+          >
+            <RiDownload2Line className="size-3.5" />
+            <span>{t("settings.extensions.actionGet")}</span>
+          </button>
+        ) : (
+          <a
+            href={card.href}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent-500 px-3 py-1.5 text-caption-2-medium font-semibold text-white hover:bg-accent-600 shadow-xs active:scale-98 transition-all cursor-pointer"
+          >
+            <RiDownload2Line className="size-3.5" />
+            <span>{t("settings.extensions.actionGet")}</span>
+          </a>
+        )}
       </div>
     </article>
   )

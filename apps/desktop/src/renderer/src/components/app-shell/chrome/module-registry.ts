@@ -1,6 +1,7 @@
 /**
  * 48px 图标轨道目录。工作模块在上，Inbox / Settings 在底部分隔。
  */
+import type { ComponentType } from "react"
 import {
   RiBookOpenLine,
   RiChat1Line,
@@ -8,13 +9,17 @@ import {
   RiImageLine,
   RiInboxLine,
   RiLineChartLine,
-  RiPlugLine,
   RiSettings4Line,
   RiSparklingLine
 } from "@remixicon/react"
+import { McpIcon } from "../../mcp/components/mcp-brand-icons.ts"
 import type { ActivityRailItem, AppModuleId } from "../app-shell.types"
 
-export type ActivityIcon = typeof RiChat1Line
+export type ActivityIcon = ComponentType<{
+  className?: string
+  size?: number | string
+  "aria-hidden"?: boolean | "true" | "false"
+}>
 
 export const WORK_RAIL_ITEMS: ActivityRailItem[] = [
   { id: "chat", labelKey: "nav.chat", to: "/" },
@@ -36,7 +41,7 @@ export const ACTIVITY_ICONS: Record<AppModuleId, ActivityIcon> = {
   knowledge: RiBookOpenLine,
   workflows: RiFlowChart,
   media: RiImageLine,
-  mcp: RiPlugLine,
+  mcp: McpIcon,
   skills: RiSparklingLine,
   observability: RiLineChartLine,
   inbox: RiInboxLine,
