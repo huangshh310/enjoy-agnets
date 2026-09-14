@@ -10,12 +10,16 @@
 
 状态词表统一：`WorkflowStatus` 用 `waiting_review`（与 `runs.status` / `TaskStatus` 同词表；旧的 `waiting_approval` 已删，renderer `workflow-dag` 同步）。
 
-UI `#/workflows` 在 `AppShell` 内换轨。工作流编辑器已换成 infinite-canvas 同构无限画布（节点/视口/连线/工具坞从开源项目移植，命名走本仓 kebab-case）：
+UI `#/workflows` 在 `AppShell` 内换轨。工作流编辑器对齐 infinite-canvas 同构无限画布，并融合 Enjoy Agents BoardUI 规范：
 - 左侧情境栏是画布项目列表（本地 `localStorage`，key `enjoy-agents:workflow-canvas-v1`）。
-- 中间是世界坐标无限画布：默认抓手工具、空格/Ctrl 临时切换、滚轮光标缩放 0.05–5、点阵/网格/空白背景、框选、节点拖拽、四角缩放、端口拉线、双击空白新建菜单。
-- 节点类型对齐开源项目：`image` / `text` / `config` / `video` / `audio` / `group`。
-- 底栏浮动工具坞 + 左下缩放坞 + 小地图。节点下方生成条带模型选择（按 image/video/audio/text 过滤能力），选中的 `metadata.model` + `metadata.providerId` 交给 `ai.generate`（renderer 不碰密钥）。生图模型（`grok-imagine-image` 等）不会被设置页 `defaultImageModelId` 覆盖。失败时节点展示 `run.error` 原文，不再写成固定的 `Generation failed.`。
-- 顶栏保留 `data-testid="workflow-start"` 启动 durable Plan→Act→Verify。画布容器带 `data-testid="workflow-dag"`。
+- 中间是世界坐标无限画布：冷灰/石板微底与中性卡片（适配白天/暗夜主题）、默认抓手工具、空格/Ctrl 临时切换、滚轮光标缩放 0.05–5、点阵/网格/空白背景（收纳进外观 Popover 面板）、框选、节点拖拽、四角白底微圆角悬浮缩放手柄、端口呼吸发光与拉线、双击空白新建菜单。
+- 节点规范：所有节点内嵌标准化 Node Header（类型图标 + 双击就地重命名 + 状态指示徽标 + 类型微标），卡片采用 `rounded-2xl`、柔和边框与 `shadow-card`，选中态采用 Signal Blue 柔和光晕；节点类型支持 `image` / `text` / `config` / `video` / `audio` / `group`。
+- 底栏浮动工具坞（h-12 胶囊，带选择/抓手分段控制器、Appearance 外观收纳弹层与 DockTip 快捷键指示）+ 左下缩放坞（h-12 统一高度与快捷键面板）+ 小地图。节点下方生成条带模型选择（按 image/video/audio/text 过滤能力），选中的 `metadata.model` + `metadata.providerId` 交给 `ai.generate`（renderer 不碰密钥）。生图模型（`grok-imagine-image` 等）不会被设置页 `defaultImageModelId` 覆盖。失败时节点展示 `run.error` 原文，不再写成固定的 `Generation failed.`。
+- 顶栏：项目节点数量微标、删除项目防误触二次确认弹窗（Confirm Dialog）、`data-testid="workflow-start"` 启动 DAG 流水线与 `data-testid="workflow-stop"` 停止流水线。画布容器带 `data-testid="workflow-dag"`。
+- 画布 DAG 真实打通：点击「启动流水线」使用 `canvasToWorkflowGraph` 将画布节点与连线解析为带有 DAG 依赖（`dependsOn`）的 `WorkflowStepDraft[]`，进行 Kahn 拓扑排序与成环/自环检测（回路环浮动警报拦截，空画布回退 Plan→Act→Verify 默认三步，单画布最多 32 个执行节点）。
+- 画布执行状态实时投影：画布节点（`CanvasNode`）实时接收活跃工作流运行（`activeWorkflowRun`）的各步状态（`running` 流光蓝、`waiting_review` 琥珀警示发光、`completed`、`failed`），展示旋转指示与步骤徽标。
+- 节点悬浮快捷条（`CanvasNodeHoverToolbar`）：选中或悬浮单节点时在上方浮现快捷工具（复制、字号 A-/A+、生成面板开关、素材下载、解散编组、删除）。
+- 选区操作栏（`CanvasSelectionToolbar`）：多选 2 个及以上节点时在包围盒上方展示一键成组（Group）、6 种对齐方式（左/水平居中/右/顶/垂直居中/底）与批量删除。
 - 未移植：节点插件、第三方提示词源、裁剪/蒙版/超分、画布内助手。
 
 子 Agent 回 `SubagentSummary`，同时把子工具事件挂到父 `delegate`（`parentToolCallId`）。写盘必须走主循环同一条审批，不能另开后门。页面文案必须写明每步是 `agent.run`，禁止再写「一键自主 / 假完成」。Chat 思考树花名册（连续顶层 `delegate`）不是 `#/workflows` DAG：前者是同一轮 ToolLoop 派工，后者是 durable `agent.run` 步骤图。
@@ -33,12 +37,15 @@ UI `#/workflows` 在 `AppShell` 内换轨。工作流编辑器已换成 infinite
 - `packages/agent-core/src/agents/workflow.ts`
 - `apps/desktop/src/main/services/workflow-runner.ts`
 - `apps/desktop/src/main/services/workflow-step-agent.ts`
-- UI 画布：`apps/desktop/src/renderer/src/components/workflows/canvas/`（视口 `infinite-canvas.tsx`，编辑器 `canvas-editor.tsx`）
+- UI 画布：`apps/desktop/src/renderer/src/components/workflows/canvas/`（视口 `infinite-canvas.tsx`，编辑器 `canvas-editor.tsx`，悬浮条 `canvas-node-hover-toolbar.tsx`，选区条 `canvas-selection-toolbar.tsx`）
+- DAG 转换器：`apps/desktop/src/renderer/src/components/workflows/lib/canvas-to-workflow-graph.ts`
 
 ## 已知坑
 
 - **隐患**：崩溃恢复后取消找不到子 agent。根因：`childRuns` 是内存 Map；`insertRunStep` 不写 `childRunId`，也未调 `updateRunStepChildRunId`。正确做法：未接线前只 abort 仍在 Map 里的子 run；持久化再补写库 + `getWorkflow` 投影。
-- 步骤支持 `dependsOn` 拓扑排序与 `layerWorkflowSteps` 分层。画布连线是编辑态 DAG；durable 执行仍严格串行。环在 `orderWorkflowSteps` 会被拒绝。
+- 步骤支持 `dependsOn` 拓扑排序与 `layerWorkflowSteps` 分层。画布连线是编辑态 DAG；durable 执行仍严格串行。环在 `orderWorkflowSteps` 会被拒绝；前端 `canvasToWorkflowGraph` 会在提交前校验回路环与自环并拦截。
+- `WorkflowStartInput.steps` 契约支持上限为 32 个节点；超量画布需拆分或提示。
+- 画布节点拖动与点击对话框唤起：`useCanvasPointer` 在节点单击完成（`wasClick`）时必须主动 `setDialogNodeId(clickedNodeId)`，确保点击节点始终打开下方提示词面板；Node Header 严禁加 `e.stopPropagation()`，保证整卡拖拽连贯；卡片本体禁止加 `transition-all`（改为 `transition-shadow`），避免拖动过程产生 150ms 滞后跳变；拖拽高频计算经 `requestAnimationFrame` 缓冲。
 - 画布节点曾把 `run.error` 收成固定英文 `Generation failed.`，真实原因（错档案、无字节、供应商原文）看不到。正确做法：`applyCanvasGenerationEvent` 把 `event.message` 写进 `errorDetails`。
 - `executeKind` 曾无条件用设置页 `defaultImageModelId` 覆盖请求模型，画布选中 `grok-imagine-image` 也会被换成聊天默认生图模型；`requireProviderConfig` 只读当前激活档案，忽略 `GenerationRequest.providerId`。正确做法：image-only 请求原样使用；按 `providerId` 解析 vault。
 - `workflow.lastCheckpointId` 是 `cp_<stepIndex>` 形式的 id，不是整份 checkpoint JSON（曾返回整个 JSON 字符串，已修）。

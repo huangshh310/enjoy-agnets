@@ -113,11 +113,14 @@ export function NodeContents({
 
 function EmptySlot({ theme, icon, label }: { theme: CanvasTheme; icon: React.ReactNode; label: string }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-3" style={{ color: theme.node.placeholder }}>
-      <div className="flex size-14 items-center justify-center rounded-2xl" style={{ background: theme.toolbar.activeBg }}>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2.5 p-4 text-center" style={{ color: theme.node.placeholder }}>
+      <div
+        className="flex size-12 items-center justify-center rounded-xl shadow-xs transition-transform"
+        style={{ background: theme.toolbar.itemHover, color: theme.node.muted }}
+      >
         {icon}
       </div>
-      <span className="text-[10px] tracking-[0.18em] opacity-50">{label}</span>
+      <span className="text-[11px] font-medium tracking-wide opacity-70">{label}</span>
     </div>
   )
 }
@@ -138,41 +141,54 @@ function TextBody({
   onStopEditing: () => void
 }) {
   const t = useT()
-  const fontSize = node.metadata?.fontSize || 14
+  const fontSize = node.metadata?.fontSize || 13
   const content = node.metadata?.content || ""
   const textStyle = {
     fontSize: `${fontSize}px`,
-    lineHeight: `${Math.round(fontSize * 1.65)}px`,
+    lineHeight: `${Math.round(fontSize * 1.6)}px`,
     color: theme.node.text
   } as React.CSSProperties
+
   if (isEditingContent) {
     return (
-      <textarea
-        ref={textareaRef}
-        data-canvas-no-zoom
-        className="thin-scrollbar block h-full w-full resize-none overflow-y-auto whitespace-pre-wrap break-words border-none bg-transparent p-4 font-mono outline-none"
-        style={textStyle}
-        value={content}
-        onChange={(event) => onContentChange(node.id, event.target.value)}
-        onBlur={onStopEditing}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") onStopEditing()
-        }}
-        onMouseDown={(event) => event.stopPropagation()}
-        onWheel={(event) => event.stopPropagation()}
-      />
+      <div className="relative h-full w-full p-3.5">
+        <textarea
+          ref={textareaRef}
+          data-canvas-no-zoom
+          className="thin-scrollbar block h-full w-full resize-none overflow-y-auto whitespace-pre-wrap break-words border-none bg-transparent font-sans text-left outline-none selection:bg-blue-500/20"
+          style={textStyle}
+          value={content}
+          placeholder={t("pages.workflows.canvasEditText")}
+          onChange={(event) => onContentChange(node.id, event.target.value)}
+          onBlur={onStopEditing}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") onStopEditing()
+          }}
+          onMouseDown={(event) => event.stopPropagation()}
+          onWheel={(event) => event.stopPropagation()}
+        />
+      </div>
     )
   }
+
   if (content) {
     return (
-      <div className="thin-scrollbar block h-full w-full overflow-y-auto whitespace-pre-wrap break-words p-4 font-mono" style={textStyle} onWheel={(event) => event.stopPropagation()}>
+      <div
+        className="thin-scrollbar block h-full w-full overflow-y-auto whitespace-pre-wrap break-words p-3.5 font-sans text-left"
+        style={textStyle}
+        onWheel={(event) => event.stopPropagation()}
+      >
         {content}
       </div>
     )
   }
+
   return (
-    <div className="p-4 font-mono" style={{ color: theme.node.placeholder }}>
-      {t("pages.workflows.canvasEditText")}
+    <div className="flex h-full w-full flex-col justify-start p-3.5 text-left font-sans select-none" style={{ color: theme.node.placeholder }}>
+      <p className="text-xs leading-relaxed opacity-60">
+        {t("pages.workflows.canvasEditText")}
+      </p>
+      <span className="mt-2 text-[10px] opacity-40">双击输入文本、提示词或说明</span>
     </div>
   )
 }

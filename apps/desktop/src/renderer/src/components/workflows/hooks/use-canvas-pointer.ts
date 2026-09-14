@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useRef } from "react"
 import { CONNECTION_HANDLE_HIT_RADIUS, CONNECTION_NODE_HIT_PADDING } from "../lib/canvas-constants"
-import type { CanvasNodeData, Position } from "../lib/canvas.types"
+import { CanvasNodeType, type CanvasNodeData, type Position } from "../lib/canvas.types"
 import type { useCanvasEditor } from "./use-canvas-editor"
 
 type Editor = ReturnType<typeof useCanvasEditor>
@@ -15,6 +15,7 @@ export function useCanvasPointer({
   editor: Editor
   worldOf: (clientX: number, clientY: number) => Position
 }) {
+  const rafRef = useRef<number | null>(null)
   const dragRef = useRef({
     isDraggingNode: false,
     hasMoved: false,
@@ -79,13 +80,22 @@ export function useCanvasPointer({
       event.stopPropagation()
       const nextSelected = pendingSelectionRef.current ?? selectNodeByEvent(event, nodeId)
       pendingSelectionRef.current = null
+      const dragIds = new Set(nextSelected)
+      editor.nodesRef.current.forEach((node) => {
+        if (!nextSelected.has(node.id)) return
+        if (node.type === CanvasNodeType.Group) {
+          editor.nodesRef.current.forEach((child) => {
+            if (child.metadata?.groupId === node.id) dragIds.add(child.id)
+          })
+        }
+      })
       dragRef.current = {
         isDraggingNode: true,
         hasMoved: false,
         startX: event.clientX,
         startY: event.clientY,
         initialSelectedNodes: editor.nodesRef.current
-          .filter((node) => nextSelected.has(node.id))
+          .filter((node) => dragIds.has(node.id))
           .map((node) => ({ id: node.id, x: node.position.x, y: node.position.y }))
       }
     },
@@ -111,12 +121,16 @@ export function useCanvasPointer({
           dragRef.current.hasMoved = true
         }
         const initial = dragRef.current.initialSelectedNodes
-        editor.setNodes((prev) =>
-          prev.map((node) => {
-            const start = initial.find((item) => item.id === node.id)
-            return start ? { ...node, position: { x: start.x + dx, y: start.y + dy } } : node
-          })
-        )
+        if (rafRef.current) cancelAnimationFrame(rafRef.current)
+        rafRef.current = requestAnimationFrame(() => {
+          editor.setNodes((prev) =>
+            prev.map((node) => {
+              const start = initial.find((item) => item.id === node.id)
+              return start ? { ...node, position: { x: Math.round(start.x + dx), y: Math.round(start.y + dy) } } : node
+            })
+          )
+          rafRef.current = null
+        })
         return
       }
       if (connectingRef.current) {
@@ -142,8 +156,28 @@ export function useCanvasPointer({
       editor.setSelectedNodeIds(next)
     }
     const onUp = (event: MouseEvent) => {
-      if (dragRef.current.isDraggingNode && dragRef.current.hasMoved) editor.snapshot()
-      dragRef.current.isDraggingNode = false
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+      if (dragRef.current.isDraggingNode) {
+        const wasClick = !dragRef.current.hasMoved && dragRef.current.initialSelectedNodes.length === 1
+        const clickedNodeId = dragRef.current.initialSelectedNodes[0]?.id
+        if (dragRef.current.hasMoved) {
+          editor.snapshot()
+        }
+        dragRef.current.isDraggingNode = false
+        dragRef.current.hasMoved = false
+        dragRef.current.initialSelectedNodes = []
+
+        if (wasClick && clickedNodeId) {
+          editor.setSelectedNodeIds(new Set([clickedNodeId]))
+          const clickedNode = editor.nodesRef.current.find((node) => node.id === clickedNodeId)
+          if (clickedNode && clickedNode.type !== CanvasNodeType.Group) {
+            editor.setDialogNodeId(clickedNodeId)
+          }
+        }
+      }
       editor.setSelectionBox(null)
       const conn = connectingRef.current
       if (conn) {
@@ -158,6 +192,7 @@ export function useCanvasPointer({
     window.addEventListener("mouseup", onUp)
     window.addEventListener("pointermove", onPointerMove)
     return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
       window.removeEventListener("mousemove", onMove)
       window.removeEventListener("mouseup", onUp)
       window.removeEventListener("pointermove", onPointerMove)

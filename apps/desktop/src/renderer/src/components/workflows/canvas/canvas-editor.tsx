@@ -2,9 +2,12 @@
  * 无限画布编辑器：对齐 infinite-canvas project.tsx 的视口、框选、拖拽、连线与工具坞。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { WorkflowRun, WorkflowStatus } from "@enjoy-agents/ipc-contract"
 import { ActiveConnectionPath, ConnectionPath } from "./canvas-connections"
 import { CanvasContextMenu } from "./canvas-context-menu"
 import { ConnectionCreateMenu, NodeCreateMenu } from "./canvas-create-menus"
+import { CanvasNodeHoverToolbar } from "./canvas-node-hover-toolbar"
+import { CanvasSelectionToolbar, type AlignmentType } from "./canvas-selection-toolbar"
 import { InfiniteCanvas } from "./infinite-canvas"
 import { CanvasMinimap } from "./canvas-mini-map"
 import { CanvasPromptPanel } from "./canvas-prompt-panel"
@@ -12,14 +15,20 @@ import { CanvasToolbar } from "./canvas-toolbar"
 import { CanvasZoomControls } from "./canvas-zoom-controls"
 import { CanvasNode } from "./nodes/canvas-node"
 import { importCanvasFiles } from "../lib/import-canvas-files"
-import { CanvasNodeType } from "../lib/canvas.types"
+import { CanvasNodeType, type CanvasNodeData } from "../lib/canvas.types"
 import { useCanvasTheme } from "../stores/use-canvas-theme"
 import { useCanvasEditor, screenToWorld } from "../hooks/use-canvas-editor"
 import { useCanvasGeneration } from "../hooks/use-canvas-generation"
 import { useCanvasKeyboard } from "../hooks/use-canvas-keyboard"
 import { useCanvasPointer } from "../hooks/use-canvas-pointer"
 
-export function CanvasEditor({ projectId }: { projectId: string }) {
+export function CanvasEditor({
+  projectId,
+  activeWorkflowRun
+}: {
+  projectId: string
+  activeWorkflowRun?: WorkflowRun | null
+}) {
   const theme = useCanvasTheme()
   const editor = useCanvasEditor(projectId)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -53,6 +62,115 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
 
   const nodeById = useMemo(() => new Map(editor.nodes.map((node) => [node.id, node])), [editor.nodes])
   const related = useMemo(() => relatedIds(editor.selectedNodeIds, editor.connections), [editor.connections, editor.selectedNodeIds])
+
+  const stepStatusByNodeId = useMemo(() => {
+    const map = new Map<string, WorkflowStatus>()
+    if (!activeWorkflowRun?.steps) return map
+    for (const step of activeWorkflowRun.steps) {
+      if (activeWorkflowRun.status === "waiting_review" && step.status === "running") {
+        map.set(step.id, "waiting_review")
+      } else if (step.status) {
+        map.set(step.id, step.status)
+      }
+    }
+    return map
+  }, [activeWorkflowRun])
+
+  const selectedNodes = useMemo(
+    () => editor.nodes.filter((node) => editor.selectedNodeIds.has(node.id)),
+    [editor.nodes, editor.selectedNodeIds]
+  )
+
+  const singleNodeForToolbar = useMemo(() => {
+    if (editor.selectionBox || editor.connectingParams) return null
+    if (selectedNodes.length === 1) return selectedNodes[0]
+    if (selectedNodes.length === 0 && editor.hoveredNodeId) {
+      return editor.nodes.find((n) => n.id === editor.hoveredNodeId) ?? null
+    }
+    return null
+  }, [editor.connectingParams, editor.hoveredNodeId, editor.nodes, editor.selectionBox, selectedNodes])
+
+  const handleDuplicateNode = useCallback((node: CanvasNodeData) => {
+    const clone: CanvasNodeData = {
+      ...node,
+      id: `${node.type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      position: { x: node.position.x + 32, y: node.position.y + 32 }
+    }
+    editor.snapshot()
+    editor.setNodes((prev) => [...prev, clone])
+    editor.setSelectedNodeIds(new Set([clone.id]))
+  }, [editor])
+
+  const handleDeleteNode = useCallback((node: CanvasNodeData) => {
+    editor.deleteNodes(new Set([node.id]))
+  }, [editor])
+
+  const handleIncreaseFont = useCallback((node: CanvasNodeData) => {
+    const current = (node.metadata?.fontSize as number) || 14
+    const next = Math.min(current + 2, 48)
+    editor.setNodes((prev) =>
+      prev.map((n) => (n.id === node.id ? { ...n, metadata: { ...n.metadata, fontSize: next } } : n))
+    )
+  }, [editor])
+
+  const handleDecreaseFont = useCallback((node: CanvasNodeData) => {
+    const current = (node.metadata?.fontSize as number) || 14
+    const next = Math.max(current - 2, 10)
+    editor.setNodes((prev) =>
+      prev.map((n) => (n.id === node.id ? { ...n, metadata: { ...n.metadata, fontSize: next } } : n))
+    )
+  }, [editor])
+
+  const handleDownloadMedia = useCallback((node: CanvasNodeData) => {
+    const content = node.metadata?.content
+    if (!content) return
+    const a = document.createElement("a")
+    a.href = content
+    a.download = `${node.title || "workflow-asset"}`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }, [])
+
+  const handleAlignSelected = useCallback(
+    (type: AlignmentType) => {
+      if (selectedNodes.length < 2) return
+      editor.snapshot()
+
+      let minX = Infinity
+      let minY = Infinity
+      let maxX = -Infinity
+      let maxY = -Infinity
+
+      for (const node of selectedNodes) {
+        minX = Math.min(minX, node.position.x)
+        minY = Math.min(minY, node.position.y)
+        maxX = Math.max(maxX, node.position.x + node.width)
+        maxY = Math.max(maxY, node.position.y + node.height)
+      }
+
+      const centerX = (minX + maxX) / 2
+      const centerY = (minY + maxY) / 2
+
+      editor.setNodes((prev) =>
+        prev.map((node) => {
+          if (!editor.selectedNodeIds.has(node.id)) return node
+          let newX = node.position.x
+          let newY = node.position.y
+
+          if (type === "left") newX = minX
+          else if (type === "center-x") newX = centerX - node.width / 2
+          else if (type === "right") newX = maxX - node.width
+          else if (type === "top") newY = minY
+          else if (type === "center-y") newY = centerY - node.height / 2
+          else if (type === "bottom") newY = maxY - node.height
+
+          return { ...node, position: { x: Math.round(newX), y: Math.round(newY) } }
+        })
+      )
+    },
+    [editor, selectedNodes]
+  )
 
   async function importFiles(files: File[], position?: { x: number; y: number }) {
     const created = await importCanvasFiles(files, position ?? worldOf(size.width / 2, size.height / 2))
@@ -123,6 +241,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             isFocusRelated={editor.hoveredNodeId === node.id}
             isConnectionTarget={editor.connectionTargetNodeId === node.id}
             isConnecting={Boolean(editor.connectingParams)}
+            stepStatus={stepStatusByNodeId.get(node.id)}
             showPanel={editor.dialogNodeId === node.id && !editor.selectionBox}
             onMouseDown={pointer.handleNodeMouseDown}
             onSelectCapture={pointer.handleNodeSelectCapture}
@@ -200,6 +319,34 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
           />
         ) : null}
       </InfiniteCanvas>
+
+      {/* 选区多选操作栏（>= 2 个节点） */}
+      {selectedNodes.length >= 2 && !editor.selectionBox && !editor.connectingParams ? (
+        <CanvasSelectionToolbar
+          nodes={selectedNodes}
+          viewport={editor.viewport}
+          onGroup={editor.groupSelection}
+          onAlign={handleAlignSelected}
+          onDelete={() => editor.deleteNodes(new Set(editor.selectedNodeIds))}
+        />
+      ) : null}
+
+      {/* 单节点快捷工具栏 */}
+      {singleNodeForToolbar && (
+        <CanvasNodeHoverToolbar
+          node={singleNodeForToolbar}
+          viewport={editor.viewport}
+          onDuplicate={handleDuplicateNode}
+          onDelete={handleDeleteNode}
+          onIncreaseFont={handleIncreaseFont}
+          onDecreaseFont={handleDecreaseFont}
+          onTogglePanel={(node) =>
+            editor.setDialogNodeId((prev) => (prev === node.id ? null : node.id))
+          }
+          onDownload={handleDownloadMedia}
+          onUngroup={editor.ungroupSelection}
+        />
+      )}
 
       <CanvasToolbar
         selectedCount={editor.selectedNodeIds.size}

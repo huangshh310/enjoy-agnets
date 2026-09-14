@@ -56,13 +56,14 @@ export const WorkflowStepDraft = z.object({
   label: z.string().min(1),
   dependsOn: z.array(z.string()).default([])
 })
+export type WorkflowStepDraft = z.infer<typeof WorkflowStepDraft>
 
 export const WorkflowStartInput = z
   .object({
     sessionId: z.string().min(1),
     workspaceId: z.string().optional(),
     title: z.string().min(1).max(80).default("Plan → Act → Verify"),
-    steps: z.array(WorkflowStepDraft).max(12).optional()
+    steps: z.array(WorkflowStepDraft).max(32).optional()
   })
   .strict()
 export type WorkflowStartInput = z.infer<typeof WorkflowStartInput>

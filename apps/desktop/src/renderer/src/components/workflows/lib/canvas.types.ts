@@ -9,14 +9,15 @@ export type ViewportTransform = {
     k: number;
 };
 
-export enum CanvasNodeType {
-    Image = "image",
-    Text = "text",
-    Config = "config",
-    Video = "video",
-    Audio = "audio",
-    Group = "group",
-}
+export const CanvasNodeType = {
+    Image: "image",
+    Text: "text",
+    Config: "config",
+    Video: "video",
+    Audio: "audio",
+    Group: "group",
+} as const;
+export type CanvasNodeType = (typeof CanvasNodeType)[keyof typeof CanvasNodeType];
 
 // Node types are open strings: built-ins use CanvasNodeType and plugins use "<pluginId>:<name>".
 export type CanvasNodeTypeId = CanvasNodeType | (string & {});
