@@ -81,18 +81,18 @@ export function CuratedGridCard({
         </p>
 
         {/* 能力指令胶囊 */}
-        <div className="flex flex-wrap gap-1 pt-0.5">
+        <div className="flex flex-wrap items-center gap-1 pt-0.5">
           {item.featuredSkills.slice(0, 3).map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center gap-0.5 rounded-md border border-separator-border/60 bg-background-secondary-default/50 px-2 py-0.5 text-[10.5px] font-mono text-text-secondary"
+              className="inline-flex items-center gap-0.5 rounded-md border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[10.5px] font-mono font-medium text-purple-700 dark:text-purple-300"
             >
-              <span className="text-text-tertiary font-semibold">/</span>
+              <span className="opacity-50 font-semibold">/</span>
               <span>{skill}</span>
             </span>
           ))}
           {item.featuredSkills.length > 3 ? (
-            <span className="rounded-md bg-background-secondary-default/40 px-1.5 py-0.5 text-[10px] text-text-tertiary">
+            <span className="inline-flex items-center rounded-md border border-separator-border/60 bg-background-secondary-default px-1.5 py-0.5 text-[10px] font-mono font-medium text-text-secondary">
               +{item.featuredSkills.length - 3}
             </span>
           ) : null}

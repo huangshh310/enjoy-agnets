@@ -82,5 +82,83 @@ export const CURATED_SKILL_SOURCES: CuratedSkillSource[] = [
     stars: 3500,
     skillCount: 12,
     featuredSkills: ["code-analysis", "document-reader", "task-orchestrator"]
+  },
+  {
+    id: "clean-code-refactor",
+    name: "refactor-expert/clean-code",
+    title: "Clean Architecture & Refactoring",
+    author: "@refactor-expert",
+    locator: "refactor-expert/clean-code",
+    description: "代码重构专家套件：坏味道自动化探测、SOLID 原则对齐、模块分层解耦与设计模式重构。",
+    category: "engineering",
+    tags: ["#Refactoring", "#Architecture", "#CleanCode"],
+    stars: 4100,
+    skillCount: 16,
+    featuredSkills: ["code-smell-detector", "extract-service", "decouple-modules", "solid-audit"]
+  },
+  {
+    id: "security-audit-skills",
+    name: "sec-ops/agent-security-guard",
+    title: "Code Security & Vulnerability Audit",
+    author: "@sec-ops",
+    locator: "sec-ops/agent-security-guard",
+    description: "自动化代码安全审计：OWASP Top 10 检测、敏感秘钥扫描、依赖漏洞分析与防注入加固建议。",
+    category: "engineering",
+    tags: ["#Security", "#Audit", "#OWASP"],
+    stars: 3200,
+    skillCount: 11,
+    featuredSkills: ["vulnerability-scan", "secret-detector", "auth-audit", "sql-injection-check"]
+  },
+  {
+    id: "api-design-spec",
+    name: "api-craft/rest-graphql-openapi",
+    title: "API Craft & OpenAPI 3.1 Spec",
+    author: "@api-craft",
+    locator: "api-craft/rest-graphql-openapi",
+    description: "工业级 API 架构设计：RESTful 规范校验、OpenAPI 3.1 契约生成与 GraphQL Schema 评审。",
+    category: "engineering",
+    tags: ["#API", "#OpenAPI", "#Backend"],
+    stars: 2800,
+    skillCount: 10,
+    featuredSkills: ["openapi-lint", "rest-design", "contract-test-gen"]
+  },
+  {
+    id: "tdd-test-automation",
+    name: "test-ninja/automated-testing-pack",
+    title: "TDD & Automated Test Ninja",
+    author: "@test-ninja",
+    locator: "test-ninja/automated-testing-pack",
+    description: "全面测试工程工作流：高质量单元测试生成、Mock 模拟器脚手架、边界条件推导与 E2E 验证。",
+    category: "engineering",
+    tags: ["#Testing", "#TDD", "#Quality"],
+    stars: 1900,
+    skillCount: 12,
+    featuredSkills: ["unit-test-gen", "edge-case-finder", "mock-factory", "e2e-scaffold"]
+  },
+  {
+    id: "devops-docker-k8s",
+    name: "cloud-native/devops-k8s-pipelines",
+    title: "Cloud Native DevOps & CI/CD",
+    author: "@cloud-native",
+    locator: "cloud-native/devops-k8s-pipelines",
+    description: "云原生工程流水线：Dockerfile 体积极致调优、K8s 清单与 Helm Chart 生成、GitHub Actions CI 编排。",
+    category: "utility",
+    tags: ["#DevOps", "#Docker", "#Kubernetes", "#CI/CD"],
+    stars: 3600,
+    skillCount: 14,
+    featuredSkills: ["dockerfile-optimize", "k8s-manifest-gen", "github-actions-builder"]
+  },
+  {
+    id: "markdown-docs-pro",
+    name: "doc-master/technical-writing",
+    title: "Technical Writing & RFC Docs",
+    author: "@doc-master",
+    locator: "doc-master/technical-writing",
+    description: "专业技术文档撰写：系统架构设计说明书、技术 RFC 提案、API 开发手册与高可读 Markdown 排版。",
+    category: "content",
+    tags: ["#Docs", "#Writing", "#RFC"],
+    stars: 2400,
+    skillCount: 8,
+    featuredSkills: ["rfc-generator", "architecture-doc", "api-reference-writer"]
   }
 ]

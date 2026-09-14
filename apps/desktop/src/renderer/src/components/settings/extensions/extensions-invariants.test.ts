@@ -31,8 +31,8 @@ test("添加与精选卡 href 指向现有 #/mcp / #/skills", () => {
   assert.equal(skillsInstallHref("obra-superpowers"), "#/skills?tab=curated&install=obra-superpowers")
   const mcpCards = projectMcpCurated(FEATURED_MCP_PRESETS)
   const skillCards = projectSkillsCurated(CURATED_SKILL_SOURCES)
-  assert.ok(mcpCards.length >= 4 && mcpCards.length <= 6)
-  assert.ok(skillCards.length >= 4 && skillCards.length <= 6)
+  assert.ok(mcpCards.length >= 6)
+  assert.ok(skillCards.length >= 6)
   for (const card of mcpCards) {
     assert.ok(card.href.startsWith("#/mcp"))
     assert.ok(card.href.includes("preset="))

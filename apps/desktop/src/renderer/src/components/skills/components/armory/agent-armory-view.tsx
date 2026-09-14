@@ -60,7 +60,7 @@ export function AgentArmoryView({
         onGoToStore={onGoToStore}
         onClearFilter={onClearFilter}
       />
-      {nativeTool?.nativePluginCopy ? <NativePluginCopy tool={nativeTool} /> : null}
+      {nativeTool ? <NativePluginCopy tool={nativeTool} onGoToStore={onGoToStore} /> : null}
 
       {/* 2. 模式分支：如果已有已激活技能，呈现专属技能矩阵；如果尚无技能，呈现全景整备舱 */}
       {targetSkills.length === 0 ? (

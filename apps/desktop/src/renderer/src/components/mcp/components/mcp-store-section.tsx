@@ -35,7 +35,9 @@ export function McpStoreSection(props: {
     const matchSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
       item.description.toLowerCase().includes(search.toLowerCase()) ||
-      item.categoryLabel.toLowerCase().includes(search.toLowerCase())
+      item.categoryLabel.toLowerCase().includes(search.toLowerCase()) ||
+      item.features.some((f) => f.toLowerCase().includes(search.toLowerCase())) ||
+      (item.sampleTools && item.sampleTools.some((st) => st.toLowerCase().includes(search.toLowerCase())))
     return matchCategory && matchSearch
   })
 
@@ -120,11 +122,16 @@ export function McpStoreSection(props: {
                 </p>
 
                 {/* 特性标签 */}
-                <div className="mt-2.5 flex items-center gap-1 flex-wrap">
+                <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
                   {plugin.features.slice(0, 3).map((feat, idx) => (
                     <span
                       key={idx}
-                      className="rounded bg-background-secondary-default/60 px-1.5 py-0.5 text-[9.5px] text-text-tertiary"
+                      className={cx(
+                        "inline-flex items-center rounded-md border px-2 py-0.5 text-[10.5px] font-medium transition-colors",
+                        plugin.badgeColorClass
+                          ? `${plugin.badgeColorClass} border-current/20`
+                          : "bg-background-secondary-default text-text-secondary border-separator-border/70"
+                      )}
                     >
                       {feat}
                     </span>

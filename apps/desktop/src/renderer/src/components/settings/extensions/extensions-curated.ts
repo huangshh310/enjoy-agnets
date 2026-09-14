@@ -2,7 +2,6 @@
  * 精选只读投影：数据只引用现有 MCP presets 与 Skills curated，禁止再造 catalog。
  */
 import type { ComponentType } from "react"
-import { EXTENSIONS_CURATED_LIMIT } from "./constants.ts"
 import { mcpPresetHref, skillsInstallHref } from "./extensions-hrefs.ts"
 import type { ExtensionCuratedCard } from "./extensions.types.ts"
 
@@ -19,9 +18,11 @@ export function projectMcpCurated(
     badgeColorClass?: string
     sampleTools?: string[]
   }>,
-  configuredIds: ReadonlySet<string> = new Set()
+  configuredIds: ReadonlySet<string> = new Set(),
+  limit?: number
 ): ExtensionCuratedCard[] {
-  return presets.slice(0, EXTENSIONS_CURATED_LIMIT).map((preset) => ({
+  const items = typeof limit === "number" ? presets.slice(0, limit) : presets
+  return items.map((preset) => ({
     id: preset.id,
     kind: "mcp",
     title: preset.name || preset.title || preset.id,
@@ -48,9 +49,11 @@ export function projectSkillsCurated(
     tags?: string[]
     featuredSkills?: string[]
   }>,
-  installedIds: ReadonlySet<string> = new Set()
+  installedIds: ReadonlySet<string> = new Set(),
+  limit?: number
 ): ExtensionCuratedCard[] {
-  return sources.slice(0, EXTENSIONS_CURATED_LIMIT).map((source) => ({
+  const items = typeof limit === "number" ? sources.slice(0, limit) : sources
+  return items.map((source) => ({
     id: source.id,
     kind: "skills",
     title: source.title,
@@ -60,6 +63,7 @@ export function projectSkillsCurated(
     author: source.author,
     stars: source.stars,
     tags: source.tags,
+    badgeColorClass: "bg-purple-500/10 text-purple-700 dark:text-purple-300",
     sampleTools: source.featuredSkills,
     isConfigured: installedIds.has(source.id)
   }))

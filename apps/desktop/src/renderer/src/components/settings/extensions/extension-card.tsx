@@ -88,17 +88,25 @@ export function ExtensionCard({ card }: { card: ExtensionCuratedCard }) {
 
         {/* 能力亮点 Chips (Sample Tools / Featured Skills) */}
         {card.sampleTools && card.sampleTools.length > 0 ? (
-          <div className="mt-3.5 flex flex-wrap gap-1.5 pt-3 border-t border-separator-border/50">
+          <div className="mt-3.5 flex flex-wrap items-center gap-1.5 pt-3 border-t border-separator-border/50">
             {card.sampleTools.slice(0, 3).map((tool) => (
               <span
                 key={tool}
-                className="inline-flex items-center rounded-md border border-border-button-default bg-background-secondary-default/60 px-2 py-0.5 font-mono text-[10px] text-text-tertiary"
+                className={cx(
+                  "inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[11px] font-medium transition-colors",
+                  card.badgeColorClass
+                    ? `${card.badgeColorClass} border-current/20`
+                    : card.kind === "mcp"
+                      ? "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                      : "border-purple-500/20 bg-purple-500/10 text-purple-700 dark:text-purple-300"
+                )}
               >
+                {card.kind === "skills" ? <span className="opacity-50 mr-0.5 font-semibold">/</span> : null}
                 {tool}
               </span>
             ))}
             {card.sampleTools.length > 3 ? (
-              <span className="font-mono text-[10px] text-text-tertiary self-center">
+              <span className="inline-flex items-center rounded-md border border-separator-border/60 bg-background-secondary-default px-1.5 py-0.5 font-mono text-[10px] font-medium text-text-secondary">
                 +{card.sampleTools.length - 3}
               </span>
             ) : null}

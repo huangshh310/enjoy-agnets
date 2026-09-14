@@ -79,7 +79,7 @@ Grok Build：二进制 `grok`（安装目录常在 `~/.grok/bin`），ACP 为 `g
 - 输入框不要拆「运行时 + 模型」两个控件。已安装 CLI 点左栏即切，右栏选该 CLI 模型；未安装给一键安装 / 复制命令，不要强制先去设置打勾。
 - 同一 Enjoy `sessionId` 复用 ACP 进程。Regenerate 不会强制新开 CLI；上下文由 CLI 自己攒。Stop 只 `session/cancel`，**禁止**杀子进程。换引擎 / 换模型 / 删会话 / 增删 MCP / 子进程已死 / 退出应用才 `disposeAcpSession`。Enjoy 侧 fail 但 CLI 仍活着时同样不杀。
 - `#/mcp` 已信任行经 `hostExtensionsFor` 进 `session/new.mcpServers`；技能索引进 `composeAcpPrompt`。`mapAcpUpdate` 把 `plan` 映射为 `todo_write`，进 Todo Dock。
-- 配置抽屉对有 `nativePluginCopy` 的助手展示只读复制命令（DSH Bridge、Claude marketplace、Cursor Marketplace URL、`codex/grok plugin marketplace list`、`amp plugins repositories` 等）。命令必须可粘贴，禁止 `<package>` / `<github-url>` 占位。禁止假「已连接」。Enjoy 不代跑 Cordis / hooks / 各家 Plugin JS。
+- 配置抽屉以「宿主扩展与能力」看板为主视觉：图形化呈现已自动连接的已信任 MCP 外部工具数量与技能数量，并提供直通「扩展与能力中心」主按钮。原生插件复制命令（如 DSH Bridge 等）默认收进底部折叠的开发者高级选项，禁止主屏大黑框终端说教，普通用户无需碰终端。命令必须可粘贴，禁止 `<package>` / `<github-url>` 占位。禁止假「已连接」。Enjoy 不代跑 Cordis / hooks / 各家 Plugin JS。
 - Composer 不要用纯图标 Tab：图标难认，未知 Agent 回退成 Enjoy 标会看起来像两个 Enjoy。左栏必须带名字；未知 id 用首字母，不要 `AppMark`。
 - 官方 `agy` 的原生 `--acp` 仍可能未发布（上游 issue 追踪）。PATH 上有 `agy-acp` 时优先走桥接；只有 `agy` 且 `--acp` 失败时，让用户在设置里填 `agy-acp` 绝对路径，不要去读 Google 的 login 文件。
 - Cursor CLI 没有可静默执行的 npm/brew 配方，一键安装会拒绝并让用户复制官方 `curl | bash`。Claude / Codex 走 `npm i -g`，Antigravity 走 `brew install antigravity-cli`。

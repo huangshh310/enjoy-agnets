@@ -40,7 +40,7 @@ export function AgentToolConfigCli({
       <AgentToolAccountPanel tool={tool} />
       <AgentToolConfigSource tool={tool} actions={actions} />
       <AgentToolLaunchPrefs tool={tool} actions={actions} />
-      <NativePluginCopy tool={tool} />
+      <NativePluginCopy tool={tool} onClose={onClose} />
       <AgentToolAdvanced tool={tool} actions={actions} />
       <AgentToolConfigOps tool={tool} actions={actions} />
     </div>

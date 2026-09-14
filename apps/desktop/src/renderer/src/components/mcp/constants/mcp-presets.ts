@@ -2,12 +2,17 @@
  * MCP 精选插件库与生态预设。文案走 i18n，结构字段供测试使用。
  */
 import {
+  RiBookOpenLine,
+  RiBrainLine,
+  RiChat1Line,
   RiCodeSSlashLine,
   RiCpuLine,
   RiDatabase2Line,
   RiFolderLine,
+  RiGitBranchLine,
   RiGlobalLine,
   RiMindMap,
+  RiServerLine,
   RiSparklingLine
 } from "@remixicon/react"
 import type { TranslateFn } from "@renderer/i18n"
@@ -224,6 +229,291 @@ const PRESET_DEFS: PresetDef[] = [
     ],
     sampleTools: ["create_entities", "create_relations", "read_graph", "search_nodes"],
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/memory"
+  },
+  {
+    id: "docker",
+    nameKey: "pages.mcp.presetDockerName",
+    category: "dev",
+    categoryLabelKey: "pages.mcp.presetDockerCategory",
+    icon: RiServerLine,
+    colorClass: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
+    badgeColorClass: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    descKey: "pages.mcp.presetDockerDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-docker",
+    featKeys: [
+      "pages.mcp.presetDockerFeat0",
+      "pages.mcp.presetDockerFeat1",
+      "pages.mcp.presetDockerFeat2",
+      "pages.mcp.presetDockerFeat3"
+    ],
+    sampleTools: ["list_containers", "start_container", "stop_container", "get_logs"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/docker"
+  },
+  {
+    id: "redis",
+    nameKey: "pages.mcp.presetRedisName",
+    category: "database",
+    categoryLabelKey: "pages.mcp.presetRedisCategory",
+    icon: RiDatabase2Line,
+    colorClass: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+    badgeColorClass: "bg-red-500/10 text-red-600 dark:text-red-400",
+    descKey: "pages.mcp.presetRedisDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-redis redis://localhost:6379",
+    featKeys: [
+      "pages.mcp.presetRedisFeat0",
+      "pages.mcp.presetRedisFeat1",
+      "pages.mcp.presetRedisFeat2",
+      "pages.mcp.presetRedisFeat3"
+    ],
+    sampleTools: ["get", "set", "keys", "ttl"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/redis"
+  },
+  {
+    id: "gitlab",
+    nameKey: "pages.mcp.presetGitlabName",
+    category: "dev",
+    categoryLabelKey: "pages.mcp.presetGitlabCategory",
+    icon: RiCodeSSlashLine,
+    colorClass: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
+    badgeColorClass: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    descKey: "pages.mcp.presetGitlabDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-gitlab",
+    envDescKey: "pages.mcp.presetGitlabEnv",
+    envTemplates: [
+      {
+        key: "GITLAB_PERSONAL_ACCESS_TOKEN",
+        description: "GitLab Personal Access Token with api scope",
+        required: true,
+        placeholder: "glpat-xxxxxxxxxxxxxxxxxxxx"
+      }
+    ],
+    featKeys: [
+      "pages.mcp.presetGitlabFeat0",
+      "pages.mcp.presetGitlabFeat1",
+      "pages.mcp.presetGitlabFeat2",
+      "pages.mcp.presetGitlabFeat3"
+    ],
+    sampleTools: ["get_project", "list_merge_requests", "get_issue"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/gitlab"
+  },
+  {
+    id: "slack",
+    nameKey: "pages.mcp.presetSlackName",
+    category: "apps",
+    categoryLabelKey: "pages.mcp.presetSlackCategory",
+    icon: RiChat1Line,
+    colorClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    badgeColorClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    descKey: "pages.mcp.presetSlackDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-slack",
+    envDescKey: "pages.mcp.presetSlackEnv",
+    envTemplates: [
+      {
+        key: "SLACK_BOT_TOKEN",
+        description: "Slack Bot Token (xoxb-...)",
+        required: true,
+        placeholder: "xoxb-xxxxxxxxxxxxxxxxxxxx"
+      }
+    ],
+    featKeys: [
+      "pages.mcp.presetSlackFeat0",
+      "pages.mcp.presetSlackFeat1",
+      "pages.mcp.presetSlackFeat2",
+      "pages.mcp.presetSlackFeat3"
+    ],
+    sampleTools: ["post_message", "list_channels", "get_channel_history"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/slack"
+  },
+  {
+    id: "notion",
+    nameKey: "pages.mcp.presetNotionName",
+    category: "apps",
+    categoryLabelKey: "pages.mcp.presetNotionCategory",
+    icon: RiBookOpenLine,
+    colorClass: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 border-zinc-500/20",
+    badgeColorClass: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
+    descKey: "pages.mcp.presetNotionDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-notion",
+    envDescKey: "pages.mcp.presetNotionEnv",
+    envTemplates: [
+      {
+        key: "NOTION_API_KEY",
+        description: "Notion Integration Token",
+        required: true,
+        placeholder: "secret_xxxxxxxxxxxxxxxxxxxx"
+      }
+    ],
+    featKeys: [
+      "pages.mcp.presetNotionFeat0",
+      "pages.mcp.presetNotionFeat1",
+      "pages.mcp.presetNotionFeat2",
+      "pages.mcp.presetNotionFeat3"
+    ],
+    sampleTools: ["search_pages", "get_page", "query_database"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/notion"
+  },
+  {
+    id: "linear",
+    nameKey: "pages.mcp.presetLinearName",
+    category: "dev",
+    categoryLabelKey: "pages.mcp.presetLinearCategory",
+    icon: RiCodeSSlashLine,
+    colorClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+    badgeColorClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+    descKey: "pages.mcp.presetLinearDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-linear",
+    envDescKey: "pages.mcp.presetLinearEnv",
+    envTemplates: [
+      {
+        key: "LINEAR_API_KEY",
+        description: "Linear Personal API Key",
+        required: true,
+        placeholder: "lin_api_xxxxxxxxxxxxxxxxxxxx"
+      }
+    ],
+    featKeys: [
+      "pages.mcp.presetLinearFeat0",
+      "pages.mcp.presetLinearFeat1",
+      "pages.mcp.presetLinearFeat2",
+      "pages.mcp.presetLinearFeat3"
+    ],
+    sampleTools: ["search_issues", "create_issue", "get_project"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/linear"
+  },
+  {
+    id: "sentry",
+    nameKey: "pages.mcp.presetSentryName",
+    category: "dev",
+    categoryLabelKey: "pages.mcp.presetSentryCategory",
+    icon: RiCodeSSlashLine,
+    colorClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+    badgeColorClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    descKey: "pages.mcp.presetSentryDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-sentry",
+    envDescKey: "pages.mcp.presetSentryEnv",
+    envTemplates: [
+      {
+        key: "SENTRY_AUTH_TOKEN",
+        description: "Sentry Authentication Token",
+        required: true,
+        placeholder: "sntrys_xxxxxxxxxxxxxxxxxxxx"
+      }
+    ],
+    featKeys: [
+      "pages.mcp.presetSentryFeat0",
+      "pages.mcp.presetSentryFeat1",
+      "pages.mcp.presetSentryFeat2",
+      "pages.mcp.presetSentryFeat3"
+    ],
+    sampleTools: ["list_issues", "get_issue_details", "get_events"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/sentry"
+  },
+  {
+    id: "fetch",
+    nameKey: "pages.mcp.presetFetchName",
+    category: "web",
+    categoryLabelKey: "pages.mcp.presetFetchCategory",
+    icon: RiGlobalLine,
+    colorClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20",
+    badgeColorClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+    descKey: "pages.mcp.presetFetchDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-fetch",
+    featKeys: [
+      "pages.mcp.presetFetchFeat0",
+      "pages.mcp.presetFetchFeat1",
+      "pages.mcp.presetFetchFeat2",
+      "pages.mcp.presetFetchFeat3"
+    ],
+    sampleTools: ["fetch_url"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch"
+  },
+  {
+    id: "sequential-thinking",
+    nameKey: "pages.mcp.presetSequentialThinkingName",
+    category: "apps",
+    categoryLabelKey: "pages.mcp.presetSequentialThinkingCategory",
+    icon: RiBrainLine,
+    colorClass: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20",
+    badgeColorClass: "bg-pink-500/10 text-pink-600 dark:text-pink-400",
+    descKey: "pages.mcp.presetSequentialThinkingDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-sequential-thinking",
+    featKeys: [
+      "pages.mcp.presetSequentialThinkingFeat0",
+      "pages.mcp.presetSequentialThinkingFeat1",
+      "pages.mcp.presetSequentialThinkingFeat2",
+      "pages.mcp.presetSequentialThinkingFeat3"
+    ],
+    sampleTools: ["sequentialthinking"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/sequential-thinking"
+  },
+  {
+    id: "git",
+    nameKey: "pages.mcp.presetGitName",
+    category: "dev",
+    categoryLabelKey: "pages.mcp.presetGitCategory",
+    icon: RiGitBranchLine,
+    colorClass: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+    badgeColorClass: "bg-red-500/10 text-red-600 dark:text-red-400",
+    descKey: "pages.mcp.presetGitDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-git",
+    featKeys: [
+      "pages.mcp.presetGitFeat0",
+      "pages.mcp.presetGitFeat1",
+      "pages.mcp.presetGitFeat2",
+      "pages.mcp.presetGitFeat3"
+    ],
+    sampleTools: ["git_status", "git_diff", "git_log"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/git"
+  },
+  {
+    id: "mysql",
+    nameKey: "pages.mcp.presetMysqlName",
+    category: "database",
+    categoryLabelKey: "pages.mcp.presetMysqlCategory",
+    icon: RiDatabase2Line,
+    colorClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    badgeColorClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    descKey: "pages.mcp.presetMysqlDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-mysql mysql://root@localhost/db",
+    featKeys: [
+      "pages.mcp.presetMysqlFeat0",
+      "pages.mcp.presetMysqlFeat1",
+      "pages.mcp.presetMysqlFeat2",
+      "pages.mcp.presetMysqlFeat3"
+    ],
+    sampleTools: ["describe_table", "read_query", "list_tables"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/mysql"
+  },
+  {
+    id: "playwright",
+    nameKey: "pages.mcp.presetPlaywrightName",
+    category: "web",
+    categoryLabelKey: "pages.mcp.presetPlaywrightCategory",
+    icon: RiGlobalLine,
+    colorClass: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+    badgeColorClass: "bg-green-500/10 text-green-600 dark:text-green-400",
+    descKey: "pages.mcp.presetPlaywrightDesc",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-playwright",
+    featKeys: [
+      "pages.mcp.presetPlaywrightFeat0",
+      "pages.mcp.presetPlaywrightFeat1",
+      "pages.mcp.presetPlaywrightFeat2",
+      "pages.mcp.presetPlaywrightFeat3"
+    ],
+    sampleTools: ["browser_navigate", "browser_click", "browser_snapshot"],
+    docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/playwright"
   }
 ]
 
