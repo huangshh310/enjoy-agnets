@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-09-13
+> 进程边界与安全基线。最后更新：2026-09-15
 
 ## 当前真相
 
@@ -29,6 +29,7 @@ Main Process（可信）
 | 路径 | 职责 |
 |---|---|
 | `apps/desktop` | Electron 壳：main / preload / renderer。品牌源 `public/enjoy-ui-kit`，打包图标 `build/`，运行时窗标 `resources/` |
+| `apps/browser-extension` | Chrome 扩展：Browser Bridge；无 npm 依赖，lockfile 必须有 `importers["apps/browser-extension"]`（空对象即可） |
 | `packages/agent-core` | 会话提示、工具、审批、diff（无 React / 无 Electron） |
 | `packages/agent-harness` | 外部编码 Agent 插件：Claude Code / Codex / Pi / OpenCode（非默认内核） |
 | `packages/providers` | 协议工厂：语言 + 官方媒体（Fal / Replicate / ElevenLabs / Deepgram / Cohere / Gateway） |

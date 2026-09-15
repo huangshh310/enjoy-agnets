@@ -1,6 +1,6 @@
 # spec/updates
 
-> 打包应用从 GitHub Releases 检查更新、展示发行说明、下载后重启安装。最后更新：2026-09-11
+> 打包应用从 GitHub Releases 检查更新、展示发行说明、下载后重启安装。最后更新：2026-09-15
 
 ## 当前真相
 
@@ -49,3 +49,4 @@ IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.updat
 - Linux AppImage 不能用 scoped npm 名当可执行文件。`@enjoy-agents/desktop` 含 `@` `/`，v0.1.3 只挂 ubuntu：`executableName contains characters that cannot be safely used in file paths`。`electron-builder.yml` 必须显式 `executableName: enjoy-agents`（不要改 workspace package name）。
 - electron-builder 26 的 `linux.desktop` 只能是 `{ entry, desktopActions }` 或 `null`。写成旧式 `{ Name, StartupWMClass }` 会 schema 校验失败，三个平台在 Publish 第一步就挂（v0.1.4）。不要为 WM_CLASS 警告加这块。
 - 三个平台并行 `--publish always` 会竞态：先完成的 POST 创建 Release，后完成的再 POST 同一 `tag_name` 得到 `422 already_exists`（v0.1.5 mac）。`createRelease()` 不消化 422。正确做法：先单独 job `gh release create`（已存在则跳过），matrix 再上传资产。设 `EP_GH_IGNORE_TIME=true`，否则超过 2 小时重跑会拒传。不要用 `workflow_dispatch` 无 tag 发版。
+- `pnpm install --frozen-lockfile` 要求每个 workspace 包都在 `pnpm-lock.yaml` 的 `importers` 里。新增 `apps/*` / `packages/*` 后，无依赖包在 pnpm 12.3.4 上 `pnpm install --lockfile-only` 会跳过 resolution、不写 importer。必须让 lockfile 出现该路径（空包写成 `apps/foo: {}`）。v0.1.7 三平台同一秒挂 `ERR_PNPM_PACKAGE_MANAGER_NO_IMPORTER`（缺 `apps/browser-extension`）。

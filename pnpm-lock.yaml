@@ -350,6 +350,8 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  apps/browser-extension: {}
+
   apps/desktop:
     dependencies:
       '@ai-sdk/anthropic':
