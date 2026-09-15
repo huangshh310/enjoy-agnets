@@ -16,11 +16,21 @@
 
 IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.update`（整份 `AppUpdateSnapshot`）。renderer 只走 `window.ide.app`。`release.yml` 在 tag 上校验 `v*` 去掉 v 后等于 `apps/desktop/package.json` 的 `version`；`workflow_dispatch` 也必须在该 tag 上跑。
 
+发版：`apps/desktop/package.json` 的 `version` 只在准备让用户装到的那一刀递增，然后推匹配的 `v*` tag。CI 失败 **不涨号、不新开 tag**。修好后把同一 tag 移到新 commit 再推（只 force 该版本 tag，禁止 force `main`）：
+
+```bash
+git tag -f vX.Y.Z
+git push -f origin vX.Y.Z
+```
+
+`create-release` 见 Release 已存在则跳过，matrix 往**同一个** Release 传资产。空的失败 Release 可留可删，不要为此改 semver。`electron-updater` 读的是资产里的 `latest.yml`，不是 tag 被推过几次。
+
 ## 不变量
 
 - renderer **不** import `electron-updater`，不直接 `ipcRenderer`。
 - 未打包不联网查更新，除非 `ENJOY_UPDATE_DEV=1`（本地对着 `dev-app-update.yml` 试）。
 - 发布 tag 必须与 `apps/desktop/package.json` 的 `version` 一致（如 `v0.1.1`）。
+- `version` / `v*` 只对应一次用户可安装的产品切口。发版 CI 失败不涨号。
 - 密钥、Agent 循环、工作区路径不进更新频道。
 
 ## 代码入口
@@ -50,3 +60,4 @@ IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.updat
 - electron-builder 26 的 `linux.desktop` 只能是 `{ entry, desktopActions }` 或 `null`。写成旧式 `{ Name, StartupWMClass }` 会 schema 校验失败，三个平台在 Publish 第一步就挂（v0.1.4）。不要为 WM_CLASS 警告加这块。
 - 三个平台并行 `--publish always` 会竞态：先完成的 POST 创建 Release，后完成的再 POST 同一 `tag_name` 得到 `422 already_exists`（v0.1.5 mac）。`createRelease()` 不消化 422。正确做法：先单独 job `gh release create`（已存在则跳过），matrix 再上传资产。设 `EP_GH_IGNORE_TIME=true`，否则超过 2 小时重跑会拒传。不要用 `workflow_dispatch` 无 tag 发版。
 - `pnpm install --frozen-lockfile` 要求每个 workspace 包都在 `pnpm-lock.yaml` 的 `importers` 里。新增 `apps/*` / `packages/*` 后，无依赖包在 pnpm 12.3.4 上 `pnpm install --lockfile-only` 会跳过 resolution、不写 importer。必须让 lockfile 出现该路径（空包写成 `apps/foo: {}`）。v0.1.7 三平台同一秒挂 `ERR_PNPM_PACKAGE_MANAGER_NO_IMPORTER`（缺 `apps/browser-extension`）。
+- v0.1.0–v0.1.6 打包脚本迭代、以及 v0.1.7 lockfile 失败后发 v0.1.8，都把 CI 失败当成新版本。错误。失败应 `git tag -f` + `git push -f origin vX.Y.Z` 重推同一 tag。已发出去的号不必改写历史；空 Release（如 v0.1.7）从 GitHub Releases 删掉即可。
