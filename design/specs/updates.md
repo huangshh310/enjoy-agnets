@@ -16,11 +16,11 @@
 
 IPC：`app.update.status` / `check` / `download` / `install`，推送 `app.update`（整份 `AppUpdateSnapshot`）。renderer 只走 `window.ide.app`。`release.yml` 在 tag 上校验 `v*` 去掉 v 后等于 `apps/desktop/package.json` 的 `version`；`workflow_dispatch` 也必须在该 tag 上跑。
 
-发版：`apps/desktop/package.json` 的 `version` 只在准备让用户装到的那一刀递增，然后推匹配的 `v*` tag。CI 失败 **不涨号、不新开 tag**。修好后把同一 tag 移到新 commit 再推（只 force 该版本 tag，禁止 force `main`）：
+发版：`apps/desktop/package.json` 的 `version` 只在准备让用户装到的那一刀递增，然后推匹配的 `v*` tag。手动入口是仓库根 `./scripts/release-tag.sh`（读 desktop version，校验已提交）。CI 失败 **不涨号、不新开 tag**，同一脚本加 `--retry`（只 force 该版本 tag，禁止 force `main`）：
 
 ```bash
-git tag -f vX.Y.Z
-git push -f origin vX.Y.Z
+./scripts/release-tag.sh          # 首次：git tag -a + push
+./scripts/release-tag.sh --retry  # 失败重试：git tag -f + push -f refs/tags/vX.Y.Z
 ```
 
 `create-release` 见 Release 已存在则跳过，matrix 往**同一个** Release 传资产。空的失败 Release 可留可删，不要为此改 semver。`electron-updater` 读的是资产里的 `latest.yml`，不是 tag 被推过几次。
@@ -42,6 +42,7 @@ git push -f origin vX.Y.Z
 - 设置行：`settings-update-card.tsx`
 - 打包：`apps/desktop/electron-builder.yml` `publish.github`
 - CI：`.github/workflows/release.yml`、`.github/workflows/ci.yml`
+- 手动打 tag：`scripts/release-tag.sh`（`--retry` 失败重推同一 tag）
 
 ## 已知坑
 

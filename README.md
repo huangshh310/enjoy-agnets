@@ -18,21 +18,14 @@ pnpm dev
 
 ## Release
 
-Tag must match `apps/desktop/package.json` `version`. Pushing the tag runs `.github/workflows/release.yml`, which publishes macOS / Windows / Linux installers to GitHub Releases. Packaged apps then check that feed and offer in-app update + restart. See `design/specs/updates.md`.
+Tag must match `apps/desktop/package.json` `version`. The operator command is `./scripts/release-tag.sh`; pushing the tag runs `.github/workflows/release.yml`, which publishes macOS / Windows / Linux installers to GitHub Releases. Packaged apps then check that feed and offer in-app update + restart. See `design/specs/updates.md`.
 
 ```bash
-git tag vX.Y.Z
-git push origin vX.Y.Z
+./scripts/release-tag.sh          # first cut of the current desktop version
+./scripts/release-tag.sh --retry  # same tag after a failed Release CI; do not bump version
 ```
 
-If that run fails, do **not** bump the version. Fix, move the same tag, and let the workflow upload onto the existing Release:
-
-```bash
-git tag -f vX.Y.Z
-git push -f origin vX.Y.Z
-```
-
-Force only that version tag, never `main`.
+The script force-pushes only `refs/tags/vX.Y.Z`, never `main`.
 
 Add a provider key in Settings (stored with Electron `safeStorage`, never in the renderer).
 

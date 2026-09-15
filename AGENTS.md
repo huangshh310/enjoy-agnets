@@ -112,6 +112,13 @@ pnpm test
 pnpm typecheck
 ```
 
+发版（契约 `design/specs/updates.md`；version 来自 `apps/desktop/package.json`，失败不涨号）：
+
+```bash
+./scripts/release-tag.sh          # 首次推当前 version 的 v* tag
+./scripts/release-tag.sh --retry  # CI 失败：同一 tag 移到 HEAD 再推
+```
+
 UI 安装控件（在 `packages/ui` 或 `apps/desktop`）：
 
 ```bash
