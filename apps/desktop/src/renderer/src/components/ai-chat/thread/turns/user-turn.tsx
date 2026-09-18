@@ -14,12 +14,12 @@ import { editAndResendUserTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { replaceQuotedDraft, splitQuotedDisplay } from "@enjoy-agents/ipc-contract"
-import {
-  extractHostModeFence,
-  stripHostModePrefix
-} from "../../composer/mentions/host-mode-prefix.ts"
+import { extractHostModeFence, stripHostModePrefix } from "../../composer/mentions/host-mode-prefix.ts"
+import { visibleUserText } from "@renderer/lib/user-message-text"
 import { AssetPreview } from "../asset-preview"
 import { CopyMessageButton } from "../copy-message-button"
+import { canRewindConversation } from "@renderer/hooks/rewind-from-here"
+import { RewindFromHereAction } from "./rewind-from-here-dialog"
 import { UserSentQuotes } from "./user-sent-quotes"
 
 export function UserTurn({ message }: { message: ThreadMessage }) {
@@ -31,6 +31,8 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const running = useChatStore((s) => s.running)
+  const runtimeId = useChatStore((s) => s.runtimeId)
+  const canRewind = canRewindConversation(runtimeId)
 
   useEffect(() => {
     setDraftContent(visibleUserText(message.content) || message.content)
@@ -144,6 +146,9 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
                 <RiEditLine className="size-3.5" />
               </MessageAction>
             ) : null}
+            {!running ? (
+              <RewindFromHereAction messageId={message.id} disabled={running} canRewind={canRewind} />
+            ) : null}
 
             {canCopy ? <CopyMessageButton message={{ ...message, content: copyText }} /> : null}
           </MessageActions>
@@ -151,10 +156,6 @@ export function UserTurn({ message }: { message: ThreadMessage }) {
       )}
     </Message>
   )
-}
-
-function visibleUserText(content: string): string {
-  return stripHostModePrefix(splitQuotedDisplay(content).text)
 }
 
 function replaceVisibleUserDraft(content: string, draft: string): string {

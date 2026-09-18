@@ -5,6 +5,7 @@
 // @ts-nocheck — 与 createCodingTools / createMcpAgentTools 相同：AI SDK Tool 泛型与 Zod 4 不合。
 import { tool } from "ai"
 import { z } from "zod"
+import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { getBuiltinToolsState } from "./builtin-tools-state"
 import {
   executeNonDisruptiveClick,
@@ -14,10 +15,13 @@ import {
 
 import { sendBridgeCommand } from "./bridge-server"
 
+const BRIDGE_MISSING = "Browser Bridge is not connected."
+
 /**
  * 构造内置工具集合（根据当前用户的开启配置动态返回）
  */
-export function createBuiltinAgentTools() {
+export function createBuiltinAgentTools(mode: AgentMode = "agent") {
+  if (mode === "plan" || mode === "ask") return {}
   const state = getBuiltinToolsState()
   const tools: Record<string, ReturnType<typeof tool>> = {}
 
@@ -29,23 +33,22 @@ export function createBuiltinAgentTools() {
         url: z.string().url().describe("The URL to open in the browser")
       }),
       execute: async ({ url }) => {
-        if (state.browserBridge.enabled && state.browserBridge.connectedBrowser) {
-          try {
-            const bridgeRes = await sendBridgeCommand<{ url: string; status: string }>("navigate", { url })
-            return {
-              success: true,
-              mode: "browser-bridge",
-              ...bridgeRes
-            }
-          } catch (err) {
-            console.warn("Bridge navigate error, falling back", err)
-          }
+        if (!(state.browserBridge.enabled && state.browserBridge.connectedBrowser)) {
+          return { success: false, url, error: BRIDGE_MISSING }
         }
-        return {
-          success: true,
-          status: "loaded",
-          url,
-          mode: state.browserBridge.enabled ? "browser-bridge" : "builtin-browser"
+        try {
+          const bridgeRes = await sendBridgeCommand<{ url: string; status: string }>("navigate", { url })
+          return {
+            success: true,
+            mode: "browser-bridge",
+            ...bridgeRes
+          }
+        } catch (err) {
+          return {
+            success: false,
+            url,
+            error: err instanceof Error ? err.message : BRIDGE_MISSING
+          }
         }
       }
     })
@@ -56,22 +59,25 @@ export function createBuiltinAgentTools() {
         selector: z.string().optional().describe("Optional CSS selector to query")
       }),
       execute: async ({ selector }) => {
-        if (state.browserBridge.enabled && state.browserBridge.connectedBrowser) {
-          try {
-            const content = await sendBridgeCommand<{ title?: string; url?: string; text?: string }>("extract_content", { selector })
-            return {
-              success: true,
-              mode: "browser-bridge",
-              ...content
-            }
-          } catch (err) {
-            console.warn("Bridge extract_content error, falling back", err)
-          }
+        if (!(state.browserBridge.enabled && state.browserBridge.connectedBrowser)) {
+          return { success: false, selector: selector ?? "body", error: BRIDGE_MISSING }
         }
-        return {
-          success: true,
-          selector: selector ?? "body",
-          content: "[Page content successfully extracted via Browser Bridge]"
+        try {
+          const content = await sendBridgeCommand<{ title?: string; url?: string; text?: string }>(
+            "extract_content",
+            { selector }
+          )
+          return {
+            success: true,
+            mode: "browser-bridge",
+            ...content
+          }
+        } catch (err) {
+          return {
+            success: false,
+            selector: selector ?? "body",
+            error: err instanceof Error ? err.message : BRIDGE_MISSING
+          }
         }
       }
     })

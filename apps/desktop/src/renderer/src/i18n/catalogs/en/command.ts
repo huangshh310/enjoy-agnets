@@ -8,6 +8,8 @@ export const enCommand = {
   groupActions: "Actions",
   groupSettings: "Settings",
   groupRecent: "Recent Chat Sessions",
+  groupMessages: "This thread",
+  groupShortcuts: "Shortcuts",
   groupAcp: "Current engine commands",
   chat: "Chat",
   knowledge: "Knowledge & retrieval",

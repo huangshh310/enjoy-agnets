@@ -18,8 +18,10 @@ import { SessionGoalChip } from "./composer/session-goal-chip"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
+import { listComposerAssets } from "@renderer/hooks/composer-assets"
 import { registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
+import { clipboardModifiers, isPasteInlineShortcut, planComposerPaste } from "@renderer/lib/pasted-text"
 import { ComposerSessionReview } from "./composer/session-review/composer-session-review"
 import { ComposerTodoDock } from "./composer/composer-todo-dock"
 import type { ComposerProps } from "./composer/composer.types"
@@ -79,17 +81,20 @@ export function AiChatComposer({
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLTextAreaElement>) {
-    const items = event.clipboardData?.items
-    if (!items?.length) return
-    let hasImage = false
-    for (const item of items) {
-      if (!item.type.startsWith("image/")) continue
-      const file = item.getAsFile()
-      if (!file) continue
-      hasImage = true
-      onAttach(file)
-    }
-    if (hasImage && !event.clipboardData.getData("text/plain")) event.preventDefault()
+    const data = event.clipboardData
+    if (!data) return
+    const textarea = event.currentTarget
+    const plan = planComposerPaste({
+      text: data.getData("text/plain"),
+      imageFiles: clipboardImageFiles(data.items),
+      value: composer,
+      selectionStart: textarea.selectionStart,
+      selectionEnd: textarea.selectionEnd,
+      existingNames: listComposerAssets().map((item) => item.name),
+      bypassAutoAttachment: isPasteInlineShortcut(clipboardModifiers(event))
+    })
+    for (const file of plan.attach) onAttach(file)
+    if (plan.preventDefault) event.preventDefault()
   }
 
   function handleDragOver(event: React.DragEvent) {
@@ -208,4 +213,15 @@ export function AiChatComposer({
       </form>
     </div>
   )
+}
+
+function clipboardImageFiles(items: DataTransferItemList | undefined): File[] {
+  if (!items?.length) return []
+  const files: File[] = []
+  for (const item of items) {
+    if (!item.type.startsWith("image/")) continue
+    const file = item.getAsFile()
+    if (file) files.push(file)
+  }
+  return files
 }

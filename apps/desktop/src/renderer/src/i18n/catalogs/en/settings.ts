@@ -115,6 +115,12 @@ export const enSettings = {
     newLineDesc: "Insert a line break inside the chat input textarea without sending.",
     paste: "Paste Image or Files",
     pasteDesc: "Paste clipboard screenshots or files directly into the attachment queue.",
+    pasteInline: "Paste as inline text",
+    pasteInlineDesc: "Keep a large paste in the composer instead of attaching pasted-text.txt.",
+    recall: "Recall last prompt",
+    recallDesc: "With an empty composer, press ↑ to bring back sent text from this thread (no attachments).",
+    steer: "Steer now",
+    steerDesc: "While a run is active, send the current draft at the next safe checkpoint.",
     cyclePermission: "Cycle Approval Permission Mode",
     cyclePermissionDesc: "Quickly cycle through Reads, Edits, and All approval modes (when composer is not focused)."
   },

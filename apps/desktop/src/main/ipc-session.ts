@@ -9,6 +9,7 @@ import {
   SessionPatchInput,
   SessionRecapInput,
   SessionRenameInput,
+  SessionTruncateFromInput,
   WorkspaceIdInput
 } from "@enjoy-agents/ipc-contract"
 import {
@@ -31,6 +32,7 @@ import {
   getSessionCompaction
 } from "./services/session-compaction-service"
 import { generateSessionRecap } from "./services/session-recap-service"
+import { truncateSessionFrom } from "./services/session-truncate"
 
 export const SESSION_CHANNELS = [
   "session.list",
@@ -46,7 +48,8 @@ export const SESSION_CHANNELS = [
   "session.deleteArchived",
   "session.compact",
   "session.getCompaction",
-  "session.clearCompaction"
+  "session.clearCompaction",
+  "session.truncateFrom"
 ] as const
 
 export function registerSessionIpc() {
@@ -95,5 +98,9 @@ export function registerSessionIpc() {
   ipcMain.handle("session.clearCompaction", async (_event, raw) => {
     const input = SessionIdInput.parse(raw)
     return clearSessionCompaction(input.sessionId)
+  })
+  ipcMain.handle("session.truncateFrom", async (_event, raw) => {
+    const input = SessionTruncateFromInput.parse(raw)
+    return truncateSessionFrom(input.sessionId, input.messageId)
   })
 }

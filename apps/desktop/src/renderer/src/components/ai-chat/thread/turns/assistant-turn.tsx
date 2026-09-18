@@ -15,6 +15,7 @@ import { MessageActionChips } from "./message-action-chips"
 import { MarkdownResponse } from "../markdown-response"
 import { ThinkingTrace } from "../thinking/thinking-trace"
 import { TurnExtras } from "./turn-extras"
+import { TurnChangedFiles } from "./turn-changed-files"
 import { TurnMcpApps } from "../tool-surfaces/turn-mcp-apps"
 import { TurnToolSurfaces } from "../tool-surfaces/turn-tool-surfaces"
 import { hasTurnToolSurfaces } from "../tool-surfaces/select-turn-tool-surfaces"
@@ -35,6 +36,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
         />
       ) : null}
       {surface.hasToolSurfaces ? <TurnToolSurfaces tools={surface.tools} /> : null}
+      <TurnChangedFiles message={message} />
       {surface.mcpApps.length > 0 ? <TurnMcpApps apps={surface.mcpApps} /> : null}
       {surface.showGenerating ? (
         <MessageContent>

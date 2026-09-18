@@ -42,14 +42,41 @@ export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
   for (let i = lastUser + 1; i < messages.length; i++) {
     const msg = messages[i]
     if (!msg || msg.role === "user") break
-    for (const tool of msg.tools ?? []) {
-      const path = pathFromTool(tool)
-      if (!path || seen[path]) continue
+    for (const path of pathsFromTools(msg.tools ?? [])) {
+      if (seen[path]) continue
       seen[path] = true
       paths.push(path)
     }
   }
   return paths
+}
+
+/** 单条助手轮里写盘工具的 path，给气泡下改动树。 */
+export function pathsFromTools(tools: ThreadToolCall[]): string[] {
+  const paths: string[] = []
+  const seen: Record<string, true> = {}
+  for (const tool of tools) {
+    const path = pathFromTool(tool)
+    if (!path || seen[path]) continue
+    seen[path] = true
+    paths.push(path)
+  }
+  return paths
+}
+
+/** 按目录分组，气泡下画两级改动树。 */
+export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: string[] }> {
+  const groups = new Map<string, string[]>()
+  for (const path of paths) {
+    const normalized = path.replace(/\\/g, "/")
+    const slash = normalized.lastIndexOf("/")
+    const dir = slash < 0 ? "." : normalized.slice(0, slash)
+    const file = slash < 0 ? normalized : normalized.slice(slash + 1)
+    const files = groups.get(dir) ?? []
+    files.push(file)
+    groups.set(dir, files)
+  }
+  return [...groups.entries()].map(([dir, files]) => ({ dir, files }))
 }
 
 function pathFromTool(tool: ThreadToolCall): string | null {

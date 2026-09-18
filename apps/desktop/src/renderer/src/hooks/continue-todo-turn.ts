@@ -50,7 +50,8 @@ async function startContinueRun(
       ...codingAgentRunInput(store),
       messages: history,
       attachments: [],
-      persistUser: false
+      persistUser: false,
+      commandId: crypto.randomUUID()
     })) as { runId: string }
     if (!claimComposerRun(sessionId, result.runId)) abortOrphanedRun(result.runId)
   } catch (error) {

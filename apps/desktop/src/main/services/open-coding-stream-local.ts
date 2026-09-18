@@ -79,7 +79,7 @@ function localStreamOptions(
     policy,
     extraTools: {
       ...createMcpAgentTools({ mode: input.mode }),
-      ...createBuiltinAgentTools()
+      ...createBuiltinAgentTools(input.mode)
     },
     waitForSubagentApproval: input.waitForSubagentApproval,
     onSubagentToolEvent: input.onSubagentToolEvent,

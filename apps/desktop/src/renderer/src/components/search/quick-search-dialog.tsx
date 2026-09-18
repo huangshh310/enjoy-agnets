@@ -1,28 +1,10 @@
 /**
  * 全局快捷命令面板 (Quick Search / ⌘L):
- * 快速跳转工作模块、设置与历史会话。
+ * 命令、设置、会话、本会话消息。
  */
 import { useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { useT } from "@renderer/i18n"
-import {
-  RiAddLine,
-  RiApps2Line,
-  RiBookOpenLine,
-  RiChat1Line,
-  RiEqualizer3Line,
-  RiFlashlightLine,
-  RiFolder6Line,
-  RiImageLine,
-  RiInboxArchiveLine,
-  RiPlugLine,
-  RiPulseLine,
-  RiRouteLine,
-  RiSettings4Line,
-  RiShieldLine,
-  RiSparklingLine
-} from "@remixicon/react"
-import { McpIcon } from "@renderer/components/mcp/components/mcp-brand-icons.ts"
 import {
   CommandDialog,
   CommandEmpty,
@@ -32,14 +14,13 @@ import {
   CommandList,
   CommandSeparator
 } from "@/components/ui/command"
-import {
-  openFolder,
-  selectPersistedSession,
-  startPersistedSession
-} from "@renderer/hooks/use-agent-session"
+import { selectPersistedSession } from "@renderer/hooks/use-agent-session"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { QuickSearchAcpCommands } from "./quick-search-acp-commands"
+import { QuickSearchMessages } from "./quick-search-messages"
+import { QuickSearchNav } from "./quick-search-nav"
+import { QuickSearchShortcuts } from "./quick-search-shortcuts"
 
 export function openQuickSearch() {
   window.dispatchEvent(new CustomEvent("enjoy:open-quick-search"))
@@ -48,6 +29,7 @@ export function openQuickSearch() {
 export function QuickSearchDialog() {
   const t = useT()
   const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState("")
   const navigate = useNavigate()
   const repositories = useChatStore((state) => state.repositories)
   const sessionNodes = repositories.filter((item) => item.kind === "session")
@@ -81,211 +63,30 @@ export function QuickSearchDialog() {
   return (
     <CommandDialog
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (!next) setQuery("")
+      }}
       title={t("command.title")}
       description={t("command.description")}
     >
-      <CommandInput placeholder={t("command.placeholder")} />
+      <CommandInput
+        placeholder={t("command.placeholder")}
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>{t("command.empty")}</CommandEmpty>
+        <QuickSearchMessages
+          query={query}
+          onPick={() => {
+            setOpen(false)
+            void navigate({ to: "/" })
+          }}
+        />
         <QuickSearchAcpCommands onPick={() => setOpen(false)} />
-
-        <CommandGroup heading={t("command.groupStudio")}>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/" })
-              })
-            }
-          >
-            <RiChat1Line className="size-4 text-accent-500" />
-            <span>{t("command.chat")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/workflows" })
-              })
-            }
-          >
-            <RiRouteLine className="size-4 text-accent-500" />
-            <span>{t("command.workflows")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/extensions" })
-              })
-            }
-          >
-            <RiApps2Line className="size-4 text-accent-500" />
-            <span>{t("command.extensions")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/extensions", search: { tab: "mcp" } })
-              })
-            }
-          >
-            <McpIcon className="size-4 text-accent-500" />
-            <span>{t("command.mcp")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/extensions", search: { tab: "skills" } })
-              })
-            }
-          >
-            <RiSparklingLine className="size-4 text-accent-500" />
-            <span>{t("command.skills")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/knowledge" })
-              })
-            }
-          >
-            <RiBookOpenLine className="size-4 text-accent-500" />
-            <span>{t("command.knowledge")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/media" })
-              })
-            }
-          >
-            <RiImageLine className="size-4 text-accent-500" />
-            <span>{t("command.media")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "automations" }
-                })
-              })
-            }
-          >
-            <RiFlashlightLine className="size-4 text-accent-500" />
-            <span>{t("command.automations")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "instructions" }
-                })
-              })
-            }
-          >
-            <RiEqualizer3Line className="size-4 text-accent-500" />
-            <span>{t("command.customize")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "telemetry" }
-                })
-              })
-            }
-          >
-            <RiPulseLine className="size-4 text-accent-500" />
-            <span>{t("command.observability")}</span>
-          </CommandItem>
-        </CommandGroup>
-
-        <CommandSeparator />
-
-        <CommandGroup heading={t("command.groupActions")}>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/" })
-                void startPersistedSession()
-              })
-            }
-          >
-            <RiAddLine className="size-4 text-emerald-500" />
-            <span>{t("command.newChat")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({ to: "/" })
-                void openFolder()
-              })
-            }
-          >
-            <RiFolder6Line className="size-4 text-text-secondary" />
-            <span>{t("command.openWorkspace")}</span>
-          </CommandItem>
-        </CommandGroup>
-
-        <CommandSeparator />
-
-        <CommandGroup heading={t("command.groupSettings")}>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "general" }
-                })
-              })
-            }
-          >
-            <RiSettings4Line className="size-4 text-text-secondary" />
-            <span>{t("command.generalSettings")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "archived" }
-                })
-              })
-            }
-          >
-            <RiInboxArchiveLine className="size-4 text-text-secondary" />
-            <span>{t("command.archivedChats")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "providers" }
-                })
-              })
-            }
-          >
-            <RiPlugLine className="size-4 text-text-secondary" />
-            <span>{t("command.providers")}</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() => {
-                void navigate({
-                  to: "/settings/$section",
-                  params: { section: "rules" }
-                })
-              })
-            }
-          >
-            <RiShieldLine className="size-4 text-text-secondary" />
-            <span>{t("command.rules")}</span>
-          </CommandItem>
-        </CommandGroup>
-
+        <QuickSearchShortcuts onPick={() => setOpen(false)} />
+        <QuickSearchNav navigate={navigate} onSelect={handleSelect} />
         {sessionNodes.length > 0 ? (
           <>
             <CommandSeparator />

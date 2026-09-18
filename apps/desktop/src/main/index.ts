@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { app, BrowserWindow, nativeImage, shell } from "electron";
+import { app, BrowserWindow, nativeImage, shell, type WebContents } from "electron";
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
@@ -38,6 +38,22 @@ function applyMacDockIcon(): void {
   app.dock.setIcon(image);
 }
 
+function lockPreviewWebview(contents: WebContents): void {
+  contents.on("will-attach-webview", (event, webPreferences, params) => {
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    webPreferences.sandbox = true;
+    delete webPreferences.preload;
+    params.partition = "persist:enjoy-preview";
+    try {
+      const protocol = new URL(params.src).protocol;
+      if (protocol !== "http:" && protocol !== "https:") event.preventDefault();
+    } catch {
+      event.preventDefault();
+    }
+  });
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1440,
@@ -73,6 +89,8 @@ function createWindow(): void {
       void restoreRunningRuns(mainWindow)
     })
   });
+
+  lockPreviewWebview(mainWindow.webContents);
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     try {

@@ -56,6 +56,15 @@ export const SessionIdInput = z
   .strict()
 export type SessionIdInput = z.infer<typeof SessionIdInput>
 
+/** 删掉该条及之后的消息，把 Prompt 退回 Composer。 */
+export const SessionTruncateFromInput = z
+  .object({
+    sessionId: z.string().min(1),
+    messageId: z.string().min(1)
+  })
+  .strict()
+export type SessionTruncateFromInput = z.infer<typeof SessionTruncateFromInput>
+
 export const SessionCreateInput = z
   .object({
     workspaceId: z.string().min(1),

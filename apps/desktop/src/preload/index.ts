@@ -76,7 +76,8 @@ const ide = {
     deleteArchived: () => ipcRenderer.invoke("session.deleteArchived"),
     compact: (input: unknown) => ipcRenderer.invoke("session.compact", input),
     getCompaction: (input: unknown) => ipcRenderer.invoke("session.getCompaction", input),
-    clearCompaction: (input: unknown) => ipcRenderer.invoke("session.clearCompaction", input)
+    clearCompaction: (input: unknown) => ipcRenderer.invoke("session.clearCompaction", input),
+    truncateFrom: (input: unknown) => ipcRenderer.invoke("session.truncateFrom", input)
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),

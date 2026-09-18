@@ -137,6 +137,7 @@ async function startComposerRun(
   const sessionNode = store.repositories.find((r) => r.id === store.sessionId)
   const recap = sessionNode?.recap?.trim()
   const history = messages.map((message) => ({
+    id: message.id,
     role: message.role,
     content: message.content,
     reasoning: message.reasoning
@@ -160,7 +161,8 @@ async function startComposerRun(
     ...codingAgentRunInput(store),
     messages: outgoingMessages,
     attachments: assetIds,
-    executePlan: executePlan || undefined
+    executePlan: executePlan || undefined,
+    commandId: crypto.randomUUID()
   })
 }
 

@@ -11,7 +11,7 @@ export async function renderMermaidSvg(code: string): Promise<string> {
   // 每次按当前主题配置初始化
   mermaid.initialize({
     startOnLoad: false,
-    securityLevel: "loose",
+    securityLevel: "strict",
     theme: isDark ? "dark" : "neutral",
     fontFamily: "var(--font-inter, sans-serif)",
     themeVariables: {

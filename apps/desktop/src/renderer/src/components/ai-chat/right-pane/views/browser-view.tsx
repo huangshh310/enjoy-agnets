@@ -173,6 +173,7 @@ export function BrowserView({ url }: { url?: string }) {
             {createElement("webview", {
               src,
               partition: "persist:enjoy-preview",
+              webpreferences: "contextIsolation=yes, nodeIntegration=no",
               ref: webviewRef,
               style: { width: "100%", height: "100%" }
             })}

@@ -2,6 +2,7 @@
  * Composer 输入框：@ 文件引用与 / 内置命令、技能浮层。
  */
 import { useMemo, useRef, type ClipboardEvent, type KeyboardEvent, type RefObject } from "react"
+import { useComposerPromptHistory } from "@renderer/hooks/use-composer-prompt-history"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { ComposerMentionList } from "./composer-mention-list.tsx"
 import { ComposerMentionPopover } from "./composer-mention-popover.tsx"
@@ -34,9 +35,11 @@ export function ComposerInput({
   const modeCopy = useMemo(() => modeCopyFromT(t), [t])
   const builtinCopy = useMemo(() => builtinCopyFromT(t), [t])
   const mentions = useComposerMentions(value, onChange, textareaRef, modeCopy, builtinCopy)
+  const handleRecall = useComposerPromptHistory({ value, onChange, textareaRef })
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (mentions.handleKeyDown(event)) return
+    if (handleRecall(event)) return
     if (event.key !== "Enter" || event.shiftKey) return
     event.preventDefault()
     if (event.metaKey || event.ctrlKey) onSteer()

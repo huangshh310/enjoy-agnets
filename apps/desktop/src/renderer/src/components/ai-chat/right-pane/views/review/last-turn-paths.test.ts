@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { pathsFromLastTurn } from "./last-turn-paths.ts"
+import { groupChangedPaths, pathsFromLastTurn, pathsFromTools } from "./last-turn-paths.ts"
 import type { ThreadMessage } from "../../../../stores/chat-store.types.ts"
 
 function msg(partial: Partial<ThreadMessage> & Pick<ThreadMessage, "role" | "content">): ThreadMessage {
@@ -87,4 +87,21 @@ test("助手正文变长不改变上一轮 path", () => {
     msg({ role: "assistant", content: "a".repeat(4000), tools })
   ]
   assert.deepEqual(pathsFromLastTurn(before), pathsFromLastTurn(after))
+})
+
+test("单轮工具 path 给气泡改动树", () => {
+  assert.deepEqual(
+    pathsFromTools([
+      { id: "1", name: "write_file", args: { path: "a.ts" }, state: "output-available" },
+      { id: "2", name: "read_file", args: { path: "skip.ts" }, state: "output-available" }
+    ]),
+    ["a.ts"]
+  )
+})
+
+test("按目录分成两级改动树", () => {
+  assert.deepEqual(groupChangedPaths(["src/a.ts", "src/b.ts", "readme.md"]), [
+    { dir: "src", files: ["a.ts", "b.ts"] },
+    { dir: ".", files: ["readme.md"] }
+  ])
 })

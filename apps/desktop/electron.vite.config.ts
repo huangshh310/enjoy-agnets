@@ -81,6 +81,14 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-compat.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/quoted-context",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/quoted-context.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/workspace-io",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-io.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -95,6 +103,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/agent-core/compaction",
           replacement: resolve(repoRoot, "packages/agent-core/src/compaction/index.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/drainable-queue",
+          replacement: resolve(repoRoot, "packages/agent-core/src/drainable-queue.ts")
         },
         ...MAIN_WORKSPACE_PACKAGES.map(workspacePackageAlias)
       ]
@@ -140,6 +152,14 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-preview.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/quoted-context",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/quoted-context.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/workspace-io",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-io.ts")
+        },
+        {
           find: /^@enjoy-agents\/ipc-contract$/,
           replacement: resolve(repoRoot, "packages/ipc-contract/src/index.ts")
         },
@@ -150,6 +170,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/agent-core/compaction",
           replacement: resolve(repoRoot, "packages/agent-core/src/compaction/index.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/drainable-queue",
+          replacement: resolve(repoRoot, "packages/agent-core/src/drainable-queue.ts")
         },
         {
           find: "@enjoy-agents/providers/presets",

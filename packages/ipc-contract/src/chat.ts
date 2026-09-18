@@ -33,7 +33,9 @@ export const RunAgentInput = z.object({
   /** false 时不把最后一条用户句落库。续跑 Todo 用，避免刷新后多出气泡。 */
   persistUser: z.boolean().optional(),
   /** 「按此执行」：计划走 hidden/system，不进用户气泡。 */
-  executePlan: z.boolean().optional()
+  executePlan: z.boolean().optional(),
+  /** 幂等收据。同一 commandId 重试返回第一次的 runId，不双开 turn。 */
+  commandId: z.string().min(1).optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 

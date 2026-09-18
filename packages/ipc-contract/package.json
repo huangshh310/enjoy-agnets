@@ -14,7 +14,10 @@
     "./power-source": "./src/power-source.ts",
     "./cli-compat": "./src/cli-compat.ts",
     "./workspace-move-plan": "./src/workspace-move-plan.ts",
-    "./workspace-preview": "./src/workspace-preview.ts"
+    "./workspace-preview": "./src/workspace-preview.ts",
+    "./quoted-context": "./src/quoted-context.ts",
+    "./workspace-io": "./src/workspace-io.ts",
+    "./checkpoint-pick": "./src/checkpoint-pick.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

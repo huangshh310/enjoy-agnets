@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 import { ipcMain, shell } from "electron"
+import { pathIsInsideRoot } from "@enjoy-agents/db"
 import {
   SshBrowseInput,
   SshHostRemoveInput,
@@ -76,7 +77,7 @@ export async function openSshConfigFile(customPath?: string): Promise<{ ok: bool
         targetPath = join(homedir(), targetPath.slice(2))
       }
       targetPath = resolve(targetPath)
-      if (targetPath !== sshDir && !targetPath.startsWith(sshDir + "/")) {
+      if (!pathIsInsideRoot(sshDir, targetPath)) {
         return { ok: false, path: targetPath, error: "Access denied: SSH config must reside within ~/.ssh" }
       }
     }

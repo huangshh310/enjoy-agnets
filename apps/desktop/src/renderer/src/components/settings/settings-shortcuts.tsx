@@ -9,6 +9,7 @@ import {
   RiSearchLine
 } from "@remixicon/react"
 import { useT, type TranslateFn } from "@renderer/i18n"
+import { SHORTCUT_DEFS, type ShortcutCategory } from "./shortcut-defs"
 import { SettingsCard, SettingsRow } from "./settings-row"
 
 export interface ShortcutItem {
@@ -16,103 +17,8 @@ export interface ShortcutItem {
   action: string
   desc: string
   keys: string[]
-  category: "global" | "views" | "chat" | "studio"
+  category: ShortcutCategory
 }
-
-type ShortcutDef = {
-  id: string
-  actionKey: string
-  descKey: string
-  keys: string[]
-  category: ShortcutItem["category"]
-}
-
-const SHORTCUT_DEFS: ShortcutDef[] = [
-  {
-    id: "quick-search",
-    actionKey: "settings.shortcuts.quickSearch",
-    descKey: "settings.shortcuts.quickSearchDesc",
-    keys: ["Mod", "L"],
-    category: "global"
-  },
-  {
-    id: "quick-search-alt",
-    actionKey: "settings.shortcuts.quickSearchAlt",
-    descKey: "settings.shortcuts.quickSearchAltDesc",
-    keys: ["Mod", "K"],
-    category: "global"
-  },
-  {
-    id: "open-settings",
-    actionKey: "settings.shortcuts.openSettings",
-    descKey: "settings.shortcuts.openSettingsDesc",
-    keys: ["Mod", ","],
-    category: "global"
-  },
-  {
-    id: "back-workspace",
-    actionKey: "settings.shortcuts.backWorkspace",
-    descKey: "settings.shortcuts.backWorkspaceDesc",
-    keys: ["Esc"],
-    category: "global"
-  },
-  {
-    id: "files-tree",
-    actionKey: "settings.shortcuts.filesTree",
-    descKey: "settings.shortcuts.filesTreeDesc",
-    keys: ["Mod", "P"],
-    category: "views"
-  },
-  {
-    id: "review-diff",
-    actionKey: "settings.shortcuts.reviewDiff",
-    descKey: "settings.shortcuts.reviewDiffDesc",
-    keys: ["Mod", "Shift", "G"],
-    category: "views"
-  },
-  {
-    id: "integrated-terminal",
-    actionKey: "settings.shortcuts.terminal",
-    descKey: "settings.shortcuts.terminalDesc",
-    keys: ["Mod", "`"],
-    category: "views"
-  },
-  {
-    id: "in-app-browser",
-    actionKey: "settings.shortcuts.browser",
-    descKey: "settings.shortcuts.browserDesc",
-    keys: ["Mod", "T"],
-    category: "views"
-  },
-  {
-    id: "send-message",
-    actionKey: "settings.shortcuts.send",
-    descKey: "settings.shortcuts.sendDesc",
-    keys: ["Enter"],
-    category: "chat"
-  },
-  {
-    id: "new-line",
-    actionKey: "settings.shortcuts.newLine",
-    descKey: "settings.shortcuts.newLineDesc",
-    keys: ["Shift", "Enter"],
-    category: "chat"
-  },
-  {
-    id: "paste-attachment",
-    actionKey: "settings.shortcuts.paste",
-    descKey: "settings.shortcuts.pasteDesc",
-    keys: ["Mod", "V"],
-    category: "chat"
-  },
-  {
-    id: "cycle-permission-mode",
-    actionKey: "settings.shortcuts.cyclePermission",
-    descKey: "settings.shortcuts.cyclePermissionDesc",
-    keys: ["Shift", "Tab"],
-    category: "chat"
-  }
-]
 
 function shortcutRegistry(t: TranslateFn): ShortcutItem[] {
   return SHORTCUT_DEFS.map((item) => ({

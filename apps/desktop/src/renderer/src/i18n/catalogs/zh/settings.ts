@@ -115,6 +115,12 @@ export const zhSettings = {
     newLineDesc: "在对话输入框中插入换行而不发送。",
     paste: "粘贴图片或文件",
     pasteDesc: "将剪贴板截图或文件直接加入附件队列。",
+    pasteInline: "强制内联粘贴",
+    pasteInlineDesc: "大段文本也留在输入框，不收成 pasted-text.txt。",
+    recall: "召回上次发送",
+    recallDesc: "空输入框按 ↑ 召回本线程已发正文，不带回附件。",
+    steer: "立即纠偏",
+    steerDesc: "运行中把当前草稿立刻交给下一步检查点。",
     cyclePermission: "循环切换审批风险档",
     cyclePermissionDesc: "在只读、写代码、全放行三档审批策略间快速轮转（光标在输入框外生效）。"
   },

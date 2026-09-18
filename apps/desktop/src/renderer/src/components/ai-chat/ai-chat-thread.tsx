@@ -13,6 +13,7 @@ import { AssistantTurn } from "./thread/turns/assistant-turn"
 import { UserTurn } from "./thread/turns/user-turn"
 import { visibleThreadMessages } from "./thread/orphan-extract-turn"
 import { HandoffLegacyDivider, isLegacyHandoffTurn } from "./thread/handoff-legacy-divider"
+import { QueuedFollowups } from "./thread/queued-followups"
 import { ThreadErrorBanner } from "./thread/thread-error-banner"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 
@@ -51,6 +52,7 @@ export function AiChatThread({
           {last && isLegacyHandoffTurn(last.createdAt, handoffCut) ? <HandoffLegacyDivider /> : null}
 
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
+          <QueuedFollowups />
 
           {error ? <ThreadErrorBanner error={error} /> : null}
           <div id="thread-turn-end" />

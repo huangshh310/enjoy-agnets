@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { resetFollowupAutostart, tryStartNextFollowup } from "./followup-autostart.ts"
+import {
+  drainFollowupAutostart,
+  resetFollowupAutostart,
+  tryStartNextFollowup
+} from "./followup-autostart.ts"
 import { enqueueFollowup, listFollowups, takeNextFollowup } from "./followup-queue.ts"
 
 function drain(sessionId: string) {
@@ -22,7 +26,7 @@ test("已 idle 入队立刻取出并发送", async () => {
     }
   })
   assert.equal(started, true)
-  await Promise.resolve()
+  await drainFollowupAutostart()
   assert.deepEqual(sent, ["下一件"])
   assert.equal(listFollowups("sess_idle").length, 0)
 })
@@ -81,7 +85,7 @@ test("发送中不再取下一项", async () => {
   )
   assert.equal(listFollowups("sess_lock").length, 1)
   release()
-  await gate
+  await drainFollowupAutostart()
   drain("sess_lock")
   resetFollowupAutostart()
 })

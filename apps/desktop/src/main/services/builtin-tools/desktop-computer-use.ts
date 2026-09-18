@@ -116,19 +116,14 @@ export async function executeNonDisruptiveClick(
         targetName: `PID ${target.pid}`
       })
       const binary = getHelperBinaryPath()
-      if (binary) {
-        await execFileAsync(binary, ["click", String(target.pid), String(target.x), String(target.y)])
-        return { success: true }
+      if (!binary) {
+        return { success: false, error: "Background click helper is not available." }
       }
-    } else if (target.x !== undefined && target.y !== undefined) {
-      triggerScreenAction({
-        action: "click",
-        x: target.x,
-        y: target.y
-      })
+      await execFileAsync(binary, ["click", String(target.pid), String(target.x), String(target.y)])
+      return { success: true }
     }
 
-    return { success: true }
+    return { success: false, error: "Background click needs a target pid and coordinates." }
   } catch (err) {
     return {
       success: false,
@@ -164,18 +159,14 @@ export async function executeNonDisruptiveKeyPress(
         targetName: `PID ${target.pid}`
       })
       const binary = getHelperBinaryPath()
-      if (binary) {
-        await execFileAsync(binary, ["type", String(target.pid), target.text])
-        return { success: true }
+      if (!binary) {
+        return { success: false, error: "Background type helper is not available." }
       }
-    } else if (target.text) {
-      triggerScreenAction({
-        action: "type",
-        text: target.text
-      })
+      await execFileAsync(binary, ["type", String(target.pid), target.text])
+      return { success: true }
     }
 
-    return { success: true }
+    return { success: false, error: "Background type needs a target pid and text." }
   } catch (err) {
     return {
       success: false,

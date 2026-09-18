@@ -9,7 +9,8 @@ import {
   insertRunStep,
   listRunSteps,
   listRuns,
-  updateRun
+  updateRun,
+  updateRunStepChildRunId
 } from "@enjoy-agents/db"
 import { runDurableWorkflow, type WorkflowCheckpoint } from "@enjoy-agents/agent-core"
 import { abortAgent } from "./agent-runner"
@@ -36,7 +37,8 @@ export function getWorkflow(runId: string) {
       label: draft.label,
       status: saved?.status ?? "paused",
       dependsOn: draft.dependsOn ?? [],
-      checkpointId: saved?.checkpointId ?? undefined
+      checkpointId: saved?.checkpointId ?? undefined,
+      childRunId: saved?.childRunId ?? undefined
     }
   })
   return { ...toPublic(row), steps }
@@ -56,6 +58,33 @@ const activeWorkflowRuns = new Set<string>()
 const pauseRequests = new Set<string>()
 /** workflow runId → 正在执行的子 agent runId；取消时连带中止。 */
 const childRuns = new Map<string, string>()
+
+function persistChildRun(workflowRunId: string, childRunId: string): void {
+  childRuns.set(workflowRunId, childRunId)
+  const db = getDatabase()
+  const steps = listRunSteps(db, workflowRunId)
+  const current =
+    [...steps].reverse().find((step) => step.status === "running") ?? steps.at(-1)
+  if (current) updateRunStepChildRunId(db, current.id, childRunId)
+  const row = getRun(db, workflowRunId)
+  if (!row) return
+  const parsed = parseCheckpoint(row.checkpoint)
+  updateRun(db, workflowRunId, {
+    checkpoint: JSON.stringify({ ...parsed, childRunId })
+  })
+}
+
+function childRunIdFor(workflowRunId: string): string | undefined {
+  const live = childRuns.get(workflowRunId)
+  if (live) return live
+  const fromSteps = listRunSteps(getDatabase(), workflowRunId)
+    .map((step) => step.childRunId)
+    .filter((id): id is string => Boolean(id))
+    .at(-1)
+  if (fromSteps) return fromSteps
+  const row = getRun(getDatabase(), workflowRunId)
+  return row ? parseCheckpoint(row.checkpoint).childRunId : undefined
+}
 
 export function startWorkflow(input: {
   sessionId: string
@@ -118,7 +147,7 @@ export function pauseWorkflow(runId: string) {
 
 export function cancelWorkflow(runId: string) {
   if (!getRun(getDatabase(), runId)) throw new Error("Workflow not found.")
-  const childRunId = childRuns.get(runId)
+  const childRunId = childRunIdFor(runId)
   if (childRunId) void abortAgent(childRunId).catch(() => undefined)
   updateRun(getDatabase(), runId, { status: "cancelled" })
   return getWorkflow(runId)
@@ -199,7 +228,12 @@ function persistCheckpoint(
         : next.status === "completed"
           ? "completed"
           : "running",
-    checkpoint: JSON.stringify({ ...next, title: checkpoint.title, steps: checkpoint.steps })
+    checkpoint: JSON.stringify({
+      ...next,
+      title: checkpoint.title,
+      steps: checkpoint.steps,
+      childRunId: childRuns.get(runId)
+    })
   })
   insertRunStep(getDatabase(), {
     id: createId("wfs"),
@@ -217,6 +251,7 @@ function parseCheckpoint(raw: string | null): {
   stepIndex: number
   title?: string
   steps?: Array<{ id: string; label: string; dependsOn?: string[] }>
+  childRunId?: string
 } {
   if (!raw) return { stepIndex: 0, steps: DEFAULT_STEPS }
   try {
@@ -224,11 +259,13 @@ function parseCheckpoint(raw: string | null): {
       stepIndex?: number
       title?: string
       steps?: Array<{ id: string; label: string; dependsOn?: string[] }>
+      childRunId?: string
     }
     return {
       stepIndex: parsed.stepIndex ?? 0,
       title: parsed.title,
-      steps: parsed.steps?.length ? parsed.steps : DEFAULT_STEPS
+      steps: parsed.steps?.length ? parsed.steps : DEFAULT_STEPS,
+      childRunId: parsed.childRunId
     }
   } catch {
     return { stepIndex: 0, steps: DEFAULT_STEPS }
@@ -279,7 +316,7 @@ function durableSteps(
             sessionId,
             workspaceId,
             title,
-            onChildRun: (childRunId) => childRuns.set(runId, childRunId),
+            onChildRun: (childRunId) => persistChildRun(runId, childRunId),
             onChildStatus: (childStatus) => syncWorkflowStatus(runId, childStatus)
           })
         }

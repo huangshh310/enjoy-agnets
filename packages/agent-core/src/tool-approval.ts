@@ -10,7 +10,18 @@ import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
 export const BASH_TOOLS = ["bash", "code_mode"] as const
 export const COMMIT_TOOLS = ["git_commit", "git_push", "git_branch"] as const
-export const MUTATING_TOOLS = [...WRITE_TOOLS, ...BASH_TOOLS, ...COMMIT_TOOLS] as const
+/** 桌面 / 浏览器控制：默认停车，不跟 Edits 写盘档走。 */
+export const HOST_CONTROL_TOOLS = [
+  "browser_navigate",
+  "desktop_background_click",
+  "desktop_background_type"
+] as const
+export const MUTATING_TOOLS = [
+  ...WRITE_TOOLS,
+  ...BASH_TOOLS,
+  ...COMMIT_TOOLS,
+  ...HOST_CONTROL_TOOLS
+] as const
 
 export type ApprovalPolicy = {
   requireWriteApproval: boolean
@@ -35,6 +46,7 @@ export type ToolApprovalDecision =
 const WRITE_SET = new Set<string>(WRITE_TOOLS)
 const BASH_SET = new Set<string>(BASH_TOOLS)
 const COMMIT_SET = new Set<string>(COMMIT_TOOLS)
+const HOST_CONTROL_SET = new Set<string>(HOST_CONTROL_TOOLS)
 const MUTATING_SET = new Set<string>(MUTATING_TOOLS)
 
 /** Auto 下仍强制确认的高风险 shell，只做保守匹配。 */
@@ -61,6 +73,9 @@ export function resolveToolApproval(
   if (mode === "ask" || mode === "plan") {
     return { type: "denied", reason: `${mode} mode is read-only.` }
   }
+  if (HOST_CONTROL_SET.has(toolName)) {
+    return sessionAllows(toolName, policy.sessionApprovedTools) ? "approved" : "user-approval"
+  }
   // 会话放行不能越过高风险命令；Allow for session 之后 rm -rf 仍要停。
   if (BASH_SET.has(toolName) && isDangerousBash(commandFromToolInput(input))) {
     return "user-approval"
@@ -73,6 +88,10 @@ export function resolveToolApproval(
   }
   if (!BASH_SET.has(toolName) && sessionAllows(toolName, policy.sessionApprovedTools)) {
     return "approved"
+  }
+  if (WRITE_SET.has(toolName) && BASH_SET.has(toolName)) {
+    if (!policy.requireWriteApproval && !policy.requireBashApproval) return "approved"
+    return "user-approval"
   }
   if (WRITE_SET.has(toolName) && !policy.requireWriteApproval) return "approved"
   if (BASH_SET.has(toolName) && !policy.requireBashApproval) return "approved"
@@ -152,6 +171,13 @@ export function toHarnessApprovalSettings(
   for (const name of WRITE_TOOLS) toolApproval[name] = write
   for (const name of BASH_TOOLS) toolApproval[name] = bash
   for (const name of COMMIT_TOOLS) toolApproval[name] = commit
+  if (!readOnly) {
+    toolApproval.code_mode =
+      policy.requireWriteApproval || policy.requireBashApproval ? "user-approval" : "approved"
+    for (const name of HOST_CONTROL_TOOLS) toolApproval[name] = "user-approval"
+  } else {
+    for (const name of HOST_CONTROL_TOOLS) toolApproval[name] = denied
+  }
   applySessionApprovals(toolApproval, policy.sessionApprovedTools, readOnly)
   // ACP / Harness 没有 createCodingTools，不要登记 ask_user_questions。
   return { permissionMode: harnessPermissionMode(policy), toolApproval }
@@ -175,7 +201,9 @@ function applySessionApprovals(
   if (readOnly || !session) return
   const names = new Set(session)
   if (WRITE_TOOLS.some((name) => names.has(name))) {
-    for (const name of WRITE_TOOLS) names.add(name)
+    for (const name of WRITE_TOOLS) {
+      if (!BASH_SET.has(name)) names.add(name)
+    }
   }
   for (const name of names) {
     const current = map[name]

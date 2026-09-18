@@ -228,9 +228,14 @@ export type GitRestoreResult = z.infer<typeof GitRestoreResult>
 export const EnjoyCheckpointItem = z.object({
   ref: z.string().min(1),
   sha: z.string().min(1),
-  createdAt: z.number().int().positive()
+  createdAt: z.number().int().positive(),
+  sessionId: z.string().min(1).optional(),
+  runId: z.string().min(1).optional(),
+  kind: z.enum(["baseline", "turn"]).optional()
 })
 export type EnjoyCheckpointItem = z.infer<typeof EnjoyCheckpointItem>
+
+export { pickTurnBaseline } from "./checkpoint-pick.ts"
 
 export const ListCheckpointsResult = z.object({
   checkpoints: z.array(EnjoyCheckpointItem)

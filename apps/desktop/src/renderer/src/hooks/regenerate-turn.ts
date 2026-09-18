@@ -183,7 +183,8 @@ function startTurnIpc(
   return getIde().agent.run({
     ...codingAgentRunInput(store),
     messages: history,
-    attachments: assetIds
+    attachments: assetIds,
+    commandId: crypto.randomUUID()
   })
 }
 

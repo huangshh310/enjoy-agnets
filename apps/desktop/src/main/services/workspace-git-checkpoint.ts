@@ -5,11 +5,21 @@
 import { promises as fs } from "node:fs"
 import { isAbsolute, join, resolve, sep } from "node:path"
 import { runExecutable, runGit } from "./command.ts"
+import {
+  formatCheckpointSubject,
+  parseCheckpointSubject,
+  type EnjoyCheckpointMeta
+} from "./workspace-git-checkpoint-meta.ts"
+
+export type { EnjoyCheckpointKind, EnjoyCheckpointMeta } from "./workspace-git-checkpoint-meta.ts"
 
 export type EnjoyCheckpointRecord = {
   ref: string
   sha: string
   createdAt: number
+  sessionId?: string
+  runId?: string
+  kind?: EnjoyCheckpointMeta["kind"]
 }
 
 export function enjoyCheckpointRef(stamp: number): string {
@@ -34,12 +44,15 @@ export async function enjoyGitDir(workspaceRoot: string): Promise<string | null>
 }
 
 /** 当前工作树快照；非 git 仓库返回 null。 */
-export async function recordEnjoyCheckpoint(workspaceRoot: string): Promise<string | null> {
+export async function recordEnjoyCheckpoint(
+  workspaceRoot: string,
+  meta?: EnjoyCheckpointMeta
+): Promise<string | null> {
   const gitAbs = await enjoyGitDir(workspaceRoot)
   if (!gitAbs) return null
   const indexFile = enjoyTempIndexPath(gitAbs, "record")
   try {
-    const sha = await commitWorktreeSnapshot(workspaceRoot, indexFile)
+    const sha = await commitWorktreeSnapshot(workspaceRoot, indexFile, formatCheckpointSubject(meta))
     if (!sha) return null
     const ref = enjoyCheckpointRef(Date.now())
     const updated = await runGit(workspaceRoot, ["update-ref", ref, sha])
@@ -59,24 +72,30 @@ export async function listEnjoyCheckpointItems(
   if (!(await enjoyGitDir(workspaceRoot))) return []
   const result = await runGit(workspaceRoot, [
     "for-each-ref",
-    "--format=%(refname)%09%(objectname)",
+    "--format=%(refname)%09%(objectname)%09%(contents:subject)",
     "--sort=-refname",
     "refs/enjoy/checkpoints"
   ])
   if (result.exitCode !== 0) return []
   const items: EnjoyCheckpointRecord[] = []
   for (const line of result.stdout.split("\n")) {
-    const [ref, sha] = line.trim().split("\t")
+    const [ref, sha, ...subjectParts] = line.trim().split("\t")
     const createdAt = parseEnjoyCheckpointRef(ref ?? "")
     if (!createdAt || !sha) continue
-    items.push({ ref: ref ?? "", sha, createdAt })
+    items.push({
+      ref: ref ?? "",
+      sha,
+      createdAt,
+      ...parseCheckpointSubject(subjectParts.join("\t"))
+    })
   }
   return items
 }
 
 async function commitWorktreeSnapshot(
   workspaceRoot: string,
-  indexFile: string
+  indexFile: string,
+  message: string
 ): Promise<string | null> {
   const hasHead = (await runGit(workspaceRoot, ["rev-parse", "--verify", "HEAD"])).exitCode === 0
   if (hasHead) {
@@ -87,8 +106,8 @@ async function commitWorktreeSnapshot(
   const tree = (await runGitIndex(workspaceRoot, ["write-tree"], indexFile)).stdout.trim()
   if (!tree) return null
   const args = hasHead
-    ? ["commit-tree", tree, "-p", "HEAD", "-m", "enjoy checkpoint"]
-    : ["commit-tree", tree, "-m", "enjoy checkpoint"]
+    ? ["commit-tree", tree, "-p", "HEAD", "-m", message]
+    : ["commit-tree", tree, "-m", message]
   const sha = (await runGitIndex(workspaceRoot, args, indexFile)).stdout.trim()
   return sha || null
 }

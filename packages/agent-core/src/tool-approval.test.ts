@@ -53,6 +53,14 @@ test("Ask 模式下写盘、命令、提交一律拒绝", () => {
     type: "denied",
     reason: "ask mode is read-only."
   })
+  assert.deepEqual(resolveToolApproval("code_mode", "ask", AUTO_ALL), {
+    type: "denied",
+    reason: "ask mode is read-only."
+  })
+  assert.deepEqual(resolveToolApproval("desktop_background_click", "plan", EDITS), {
+    type: "denied",
+    reason: "plan mode is read-only."
+  })
 })
 
 test("三项全开：突变工具全部 user-approval", () => {
@@ -63,6 +71,7 @@ test("三项全开：突变工具全部 user-approval", () => {
   assert.equal(resolveToolApproval("git_commit", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("git_push", "agent", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("bash", "agent", REQUIRE_ALL), "user-approval")
+  assert.equal(resolveToolApproval("code_mode", "agent", REQUIRE_ALL), "user-approval")
 })
 
 test("Edits 预设：自动写盘，仍审命令和提交", () => {
@@ -72,6 +81,9 @@ test("Edits 预设：自动写盘，仍审命令和提交", () => {
   assert.equal(resolveToolApproval("git_commit", "agent", EDITS), "user-approval")
   assert.equal(resolveToolApproval("git_push", "agent", EDITS), "user-approval")
   assert.equal(resolveToolApproval("bash", "agent", EDITS), "user-approval")
+  assert.equal(resolveToolApproval("code_mode", "agent", EDITS), "user-approval")
+  assert.equal(resolveToolApproval("browser_navigate", "agent", EDITS), "user-approval")
+  assert.equal(resolveToolApproval("code_mode", "agent", AUTO_ALL), "approved")
 })
 
 test("关闭提交确认后 git_commit / git_push 自动批准", () => {
@@ -140,11 +152,14 @@ test("Harness settings：allow-reads / allow-edits；All 降为 allow-edits", ()
   assert.equal(edits.toolApproval.edit_file, "approved")
   assert.equal(edits.toolApproval.write, "approved")
   assert.equal(edits.toolApproval.bash, "user-approval")
+  assert.equal(edits.toolApproval.code_mode, "user-approval")
+  assert.equal(edits.toolApproval.browser_navigate, "user-approval")
 
   const all = toHarnessApprovalSettings("debug", AUTO_ALL)
   assert.equal(all.permissionMode, "allow-edits")
   assert.equal(all.toolApproval.bash, "approved")
   assert.equal(all.toolApproval.write, "approved")
+  assert.equal(all.toolApproval.code_mode, "approved")
 })
 
 test("Ask 模式写入 Harness host toolApproval 为 denied", () => {
@@ -188,4 +203,5 @@ test("Harness 映射会带上会话已放行的工具", () => {
   assert.equal(settings.toolApproval.write_file, "approved")
   assert.equal(settings.toolApproval.write, "approved")
   assert.equal(settings.toolApproval.bash, "user-approval")
+  assert.equal(settings.toolApproval.code_mode, "user-approval")
 })

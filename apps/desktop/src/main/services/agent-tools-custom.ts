@@ -1,6 +1,6 @@
 /**
  * 用户自定义 stdio ACP：入库、校验 cwd、投影到 AgentToolPublic。
- * env 值落盘前经 safeStorage 加密（`enc:` 前缀标记），读侧解密；加密不可用回退明文。
+ * env 值落盘前经 safeStorage 加密（`enc:` 前缀标记），读侧解密；加密不可用则拒绝写入。
  */
 import { existsSync, statSync } from "node:fs"
 import { isAbsolute } from "node:path"
@@ -145,7 +145,9 @@ function sanitizeEnv(env?: Record<string, string>): Record<string, string> {
 
 /** 值里出现 `enc:` 前缀的按密文处理；解不开视作用户原文，不二次加密。 */
 function encryptEnvValues(env: Record<string, string>): Record<string, string> {
-  if (!safeStorage.isEncryptionAvailable()) return env
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("OS keychain encryption is not available on this machine.")
+  }
   const out: Record<string, string> = {}
   for (const [key, value] of Object.entries(env)) {
     if (value.startsWith(ENV_ENC_PREFIX)) {

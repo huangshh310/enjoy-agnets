@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-14
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-15
 
 ## 当前真相
 
@@ -15,7 +15,7 @@
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件暂存（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage`）
 - Agent host 只读 `gitStatus` / `gitDiff` / `gitLog`（porcelain 文本，默认 20 条、上限 100，path jail）；写 `gitCommit`（默认不 `add -A`）/ `gitBranch` / `gitPush` 走 Git 审批。Agent `git_log` **不是** Review 栏 structured `commits[]`
 - Agent `bash`：cwd 锁工作区、禁 shell 包装器、默认禁网二进制。macOS 再套 Seatbelt（写盘限工作区 + tmp）。不要把字符串过滤写成「沙箱已隔离」。
-- 写盘检查点列表与还原（`workspace.listCheckpoints` / `previewCheckpoint` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`
+- 写盘检查点列表与还原（`workspace.listCheckpoints` / `previewCheckpoint` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`。每轮开流记 `kind=baseline`（commit subject 带 session/run）。Enjoy Local 写盘与 ACP `file.changed` 记 `kind=turn`。列表项可带 `sessionId` / `runId` / `kind`；旧检查点没有这些字段。助手气泡下「本轮改动」按目录两级树，点开审查。用户气泡「从这里重来」只给 Enjoy Local：先还原该轮 baseline（失败则停），再截对话；不移动 HEAD。ACP 不能 rewind CLI 上下文，按钮禁用。
 - 工作区绑定的 pty 终端（`terminal.open` / `write` / `resize` / `close`）：main `node-pty`，renderer `@xterm/xterm` + FitAddon。原始按键进 PTY，不按行补 `\n`。这是工作区壳，不是 M4 ACP PTY 登录兜底。
 - 完成条「在浏览器打开」（`workspace.openPreview`）：工作区 `*.html` 转 `file://`，或本会话本机预览 URL，经 `shell.openExternal` 打开系统浏览器。不嵌右栏 Browser，不起 dev server。
 

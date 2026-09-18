@@ -144,7 +144,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     const messages: ThreadMessage[] = [
       ...get().messages,
       {
-        id: `msg_user_${Date.now()}`,
+        id: `msg_user_${crypto.randomUUID()}`,
         role: "user",
         content,
         createdAt: Date.now(),

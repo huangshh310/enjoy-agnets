@@ -18,6 +18,8 @@ import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
 import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
+import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
+import { peekCommandReceipt, rememberCommandReceipt } from "./command-receipts"
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eStub } from "./e2e-stub"
@@ -77,6 +79,10 @@ async function beginAgentRun(
     .get(input.sessionId, input.workspaceId) as { id: string } | undefined
   if (!session) throw new Error("Unknown session for this workspace.")
 
+  if (input.commandId && !options.runId) {
+    const existing = peekCommandReceipt(input.commandId)
+    if (existing) return { runId: existing }
+  }
   const runId = options.runId ?? createId("run")
   const modelMessages = await modelMessagesForStart(
     input,
@@ -91,23 +97,33 @@ async function beginAgentRun(
     secret,
     messages: modelMessages
   })
+  if (input.commandId) rememberCommandReceipt(input.commandId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }
-
-  const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
-  if (
-    lastUser &&
-    options.persistUser &&
-    !isTodoContinueUserMessage(lastUser.content)
-  ) {
-    persistUserTurn(input.sessionId, lastUser.content, metasFromAssetIds(input.attachments))
-    maybeRenameSession(input.sessionId, lastUser.content)
-  }
-
+  persistOutgoingUser(input, options.persistUser)
   emitEvent(window, { type: "run.start", runId, sessionId: input.sessionId })
+  if (!options.resumeMessages) {
+    void recordEnjoyCheckpoint(workspace.rootPath, {
+      sessionId: input.sessionId,
+      runId,
+      kind: "baseline"
+    }).catch(() => undefined)
+  }
   void prepareAndPump(runId)
   return { runId }
+}
+
+function persistOutgoingUser(input: RunAgentInput, persistUser: boolean) {
+  const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
+  if (!lastUser || !persistUser || isTodoContinueUserMessage(lastUser.content)) return
+  persistUserTurn(
+    input.sessionId,
+    lastUser.content,
+    metasFromAssetIds(input.attachments),
+    lastUser.id
+  )
+  maybeRenameSession(input.sessionId, lastUser.content)
 }
 
 async function modelMessagesForStart(

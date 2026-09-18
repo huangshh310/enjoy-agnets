@@ -1,20 +1,14 @@
 /**
- * Agent Todo List：Manus 风格的输入框一体化层叠任务舱 (Stacked Task Dock)。
- * 严丝合缝依附在输入框顶部，支持折叠态单行活跃步骤摘要与展开态高密度步骤清单。
+ * Agent 任务列表。Dock 对标 T3 Tasks 面板（进度条 + 圆点 + 右侧状态），皮走 BoardUI token。
  */
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import {
-  RiArrowDownSLine,
-  RiArrowUpSLine,
-  RiCheckboxCircleFill,
-  RiLoader4Line,
-  RiPauseCircleLine,
-  RiTimeLine
-} from "@remixicon/react"
+import { RiArrowDownSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { uiT, useUiLocale } from "@/i18n/ui-locale"
+import { TaskListDock } from "./task-list-dock"
+import { ContinueButton, normalizeTasks, TaskRadio } from "./task-list-helpers"
 import type {
   NormalizedTask,
   TaskItem,
@@ -23,6 +17,7 @@ import type {
 } from "./task-list.types"
 
 export type { TaskItem, TaskListProps, TaskStatus, NormalizedTask }
+
 export function TaskList({
   title,
   tasks,
@@ -40,190 +35,67 @@ export function TaskList({
   const total = rows.length
   const completedCount = rows.filter((task) => task.status === "completed").length
   const allDone = total > 0 && completedCount === total
-
-  // 默认折叠策略：若已全完成则默认优雅紧凑折叠；若有进行中任务则展开
   const [collapsed, setCollapsed] = useState(() =>
     defaultCollapsed !== undefined ? defaultCollapsed : allDone
   )
-
   const previousDone = useRef(allDone)
+
   useEffect(() => {
-    // 当任务从未全部完成变为全完成时，自动平滑收缩
-    if (!previousDone.current && allDone) {
-      setCollapsed(true)
-    }
-    // 当有新未决任务进入时，自动展开
-    if (previousDone.current && !allDone) {
-      setCollapsed(false)
-    }
+    if (!previousDone.current && allDone) setCollapsed(true)
+    if (previousDone.current && !allDone) setCollapsed(false)
     previousDone.current = allDone
   }, [allDone])
 
-  const activeTask =
-    rows.find((task) => task.status === "in_progress") ??
-    (allDone ? rows[rows.length - 1] : rows.find((task) => task.status === "pending") ?? rows[0])
-
-  const activeLive = isLiveProgress(activeTask?.status, live)
-  const activeStatusLabel = allDone
-    ? uiT("全部完成", "Completed")
-    : activeLive
-      ? uiT("正在执行...", "Running...")
-      : activeTask?.status === "in_progress"
-        ? uiT("已停止", "Stopped")
-        : uiT("等待执行", "Pending")
-
-  // --------------------------------------------------------------------------
-  // Variant A: Manus 一体化层叠控制舱模式 (Dock Variant - Attached to Composer)
-  // --------------------------------------------------------------------------
   if (variant === "dock") {
     return (
-      <div
-        className={cx(
-          "relative w-full overflow-hidden rounded-2xl border border-border-button-default bg-background-secondary-default/95 shadow-card backdrop-blur-md transition-all duration-300 ease-out",
-          allDone && "border-emerald-500/30 bg-emerald-500/5",
-          footer ? (collapsed ? "py-0" : "pt-0 pb-0") : (collapsed ? "py-0.5" : "pb-3"),
-          className
-        )}
-      >
-        {/* 达成瞬间极光扫掠微动效 (Completion Shimmer) */}
-        {allDone ? (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-80 animate-in fade-in duration-500"
-          />
-        ) : null}
-        {collapsed ? (
-          <div className="flex h-10 w-full items-center gap-2 px-3.5">
-            <button
-              type="button"
-              onClick={() => setCollapsed(false)}
-              aria-expanded={false}
-              className="group flex min-w-0 flex-1 cursor-pointer select-none items-center justify-between text-left transition-colors"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <DockStatusIcon
-                  status={allDone ? "completed" : activeTask?.status ?? "pending"}
-                  live={live}
-                />
-                <span className="truncate text-caption-1-medium text-text-primary">
-                  {activeTask?.title || title || uiT("任务进行中", "Task in progress")}
-                </span>
-                <span className="shrink-0 text-caption-2-regular text-text-tertiary">
-                  | {activeStatusLabel}
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5 pl-2 font-mono text-caption-2-regular text-text-tertiary">
-                <span className="tabular-nums">
-                  {completedCount}/{total}
-                </span>
-                <RiArrowDownSLine className="size-4 text-foreground-icon-secondary transition-transform group-hover:translate-y-0.5" />
-              </div>
-            </button>
-            {action ? <div className="shrink-0">{action}</div> : null}
-            {onContinue && !live && !allDone ? <ContinueButton onContinue={onContinue} /> : null}
-          </div>
-        ) : (
-          /* Manus 展开态：完整的任务进度明细面板 (Image #3) */
-          <div className={cx("flex flex-col px-4 pt-3 text-left animate-in fade-in-50 duration-200", footer ? "pb-3" : "")}>
-            <div
-              onClick={() => setCollapsed(true)}
-              className="flex cursor-pointer select-none items-center justify-between py-1 transition-colors hover:opacity-80"
-            >
-              <span className="text-caption-1-semibold text-text-tertiary">
-                {title ?? uiT("任务进度", "Task progress")}
-              </span>
-              <div className="flex items-center gap-1.5 font-mono text-caption-2-regular text-text-tertiary">
-                {action ? <div className="shrink-0">{action}</div> : null}
-                {onContinue && !live && !allDone ? (
-                  <ContinueButton onContinue={onContinue} />
-                ) : null}
-                <span className="tabular-nums">
-                  {completedCount}/{total}
-                </span>
-                <RiArrowUpSLine className="size-4 text-foreground-icon-secondary transition-transform group-hover:-translate-y-0.5" />
-              </div>
-            </div>
-
-            {/* 任务列表体：高密度优雅罗列 */}
-            <ul className="mt-2 flex max-h-52 flex-col gap-2 overflow-y-auto pr-1">
-              {rows.map((task, index) => {
-                const isActive = isLiveProgress(task.status, live)
-                const isStopped = task.status === "in_progress" && !live
-                const isCompleted = task.status === "completed"
-
-                return (
-                  <li
-                    key={`${task.title}-${index}`}
-                    className="flex items-center gap-2.5 text-caption-1-medium leading-snug"
-                  >
-                    <DockStatusIcon status={task.status} live={live} />
-                    <span
-                      className={cx(
-                        "min-w-0 flex-1 truncate",
-                        isCompleted && "text-text-tertiary line-through select-text",
-                        isActive && "font-medium text-text-primary",
-                        !isCompleted && !isActive && "text-text-secondary"
-                      )}
-                    >
-                      {task.title}
-                    </span>
-                    {isActive ? (
-                      <span className="shrink-0 text-caption-2-medium text-amber-500">
-                        | {uiT("运行中...", "Running...")}
-                      </span>
-                    ) : null}
-                    {isStopped ? (
-                      <span className="shrink-0 text-caption-2-medium text-text-tertiary">
-                        | {uiT("已停止", "Stopped")}
-                      </span>
-                    ) : null}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )}
-        {footer ? <div className="border-t border-separator-border/40">{footer}</div> : null}
+      <div className={cx("w-full min-w-0", className)}>
+        <TaskListDock
+          title={title}
+          rows={rows}
+          collapsed={collapsed}
+          live={live}
+          onToggle={() => setCollapsed((value) => !value)}
+          onContinue={onContinue}
+          action={action}
+          footer={footer}
+        />
       </div>
     )
   }
 
-  // --------------------------------------------------------------------------
-  // Variant B: 常规卡片模式 (Card Variant - In Message Thread)
-  // --------------------------------------------------------------------------
   return (
     <div
       className={cx(
-        "w-full max-w-[440px] overflow-hidden rounded-2xl border border-separator-border/80 bg-background-secondary-default/95 dark:bg-background-tertiary-default/95 shadow-dropdown backdrop-blur-md",
+        "w-full max-w-[440px] overflow-hidden rounded-xl border border-border-button-default bg-background-primary-default shadow-card",
         className
       )}
     >
       <button
         type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        className="flex w-full items-center justify-between border-b border-separator-border/50 px-3.5 py-2.5 text-left select-none hover:bg-background-secondary-hover/40 transition-colors"
+        onClick={() => setCollapsed((value) => !value)}
+        className="flex w-full items-center justify-between px-3 py-2 text-left"
       >
         <span className="truncate text-caption-1-semibold text-text-primary">
-          {title ?? uiT("任务清单", "Tasks")}
+          {title ?? uiT("任务", "Tasks")}
         </span>
-        <div className="flex items-center gap-1.5 font-mono text-caption-2-regular text-text-tertiary">
-          <span>
-            {completedCount}/{total}
+        <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary">
+          {onContinue && !live && !allDone ? <ContinueButton onContinue={onContinue} /> : null}
+          <span className="tabular-nums">
+            {completedCount}/{total} {uiT("完成", "complete")}
           </span>
           <RiArrowDownSLine className={cx("size-4 transition-transform", !collapsed && "rotate-180")} />
         </div>
       </button>
-
       {collapsed ? null : (
-        <ul className="flex max-h-48 flex-col gap-1.5 p-2 overflow-y-auto">
+        <ul className="flex max-h-48 flex-col border-t border-separator-border/60 px-2 py-1">
           {rows.map((task, index) => (
-            <li key={`${task.title}-${index}`} className="flex items-center gap-2 text-caption-1-medium">
-              <DockStatusIcon status={task.status} />
+            <li key={`${task.title}-${index}`} className="flex items-center gap-2.5 px-1.5 py-1.5">
+              <TaskRadio status={task.status} live={live} />
               <span
                 className={cx(
-                  "min-w-0 flex-1 truncate",
-                  task.status === "completed" && "text-text-tertiary line-through",
-                  task.status === "in_progress" && "font-medium text-text-primary",
+                  "min-w-0 flex-1 truncate text-caption-1-medium",
+                  task.status === "completed" && "text-text-tertiary",
+                  task.status === "in_progress" && "text-text-primary",
                   task.status === "pending" && "text-text-secondary"
                 )}
               >
@@ -235,70 +107,4 @@ export function TaskList({
       )}
     </div>
   )
-}
-
-/**
- * 状态图标：与 Manus 视觉完全对齐：
- * - 进行中：黄色/琥珀色旋转环 (Manus 虚线圈质感)
- * - 待处理：灰色时钟图标 (Manus 待办时钟)
- * - 已完成：翠绿圆底勾勾
- */
-function DockStatusIcon({ status, live = true }: { status: TaskStatus; live?: boolean }) {
-  if (status === "in_progress" && live) {
-    return (
-      <RiLoader4Line className="size-4 shrink-0 animate-spin text-amber-500" />
-    )
-  }
-  if (status === "in_progress") {
-    return <RiPauseCircleLine className="size-4 shrink-0 text-text-tertiary" />
-  }
-  if (status === "completed") {
-    return (
-      <RiCheckboxCircleFill className="size-4 shrink-0 text-emerald-500 animate-in zoom-in-75 duration-200" />
-    )
-  }
-  return (
-    <RiTimeLine className="size-4 shrink-0 text-text-tertiary/80" />
-  )
-}
-
-function normalizeTasks(
-  tasks: Array<TaskItem | string>,
-  currentIndex?: number
-): NormalizedTask[] {
-  return tasks.map((task, index) => {
-    if (typeof task === "string") {
-      return { title: task, status: statusFromIndex(index, currentIndex) }
-    }
-    return {
-      title: task.title,
-      status: task.status ?? statusFromIndex(index, currentIndex)
-    }
-  })
-}
-
-function ContinueButton({ onContinue }: { onContinue: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation()
-        onContinue()
-      }}
-      className="rounded-full border border-border-button-default bg-background-primary-default px-2 py-0.5 text-caption-2-medium text-text-secondary hover:text-text-primary"
-    >
-      {uiT("继续", "Continue")}
-    </button>
-  )
-}
-
-function isLiveProgress(status: TaskStatus | undefined, live: boolean): boolean {
-  return status === "in_progress" && live
-}
-
-function statusFromIndex(index: number, currentIndex?: number): TaskStatus {
-  if (currentIndex === undefined) return "pending"
-  if (index < currentIndex) return "completed"
-  if (index === currentIndex) return "in_progress"
-  return "pending"
 }

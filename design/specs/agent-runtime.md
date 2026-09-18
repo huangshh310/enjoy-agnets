@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-14
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-18
 
 ## 当前真相
 
@@ -25,7 +25,7 @@
 | `edit_file` | 是 | 工作区写 + diff |
 | `write_file` | 是 | |
 | `bash` | 是 | cwd 锁工作区；默认禁网；超时；输出截断 |
-| `code_mode` | 是 | 写脚本再执行，走写盘 + bash 审批 |
+| `code_mode` | 是 | 写脚本再执行，走写盘 **且** bash 审批。Edits 档不得因 `requireWriteApproval=false` 短路放行 |
 | `git_status` | 否 | porcelain 状态 |
 | `git_diff` | 否 | 工作区或单路径 diff |
 | `git_log` | 否 | 线性 porcelain log；默认 20 条、上限 100；可选 path（jail）。plan/ask 也注册 |
@@ -33,20 +33,24 @@
 | `git_branch` | 是 | 创建分支，可选 checkout。与 commit 同一 Git 审批档 |
 | `git_push` | 是 | 推当前上游；无上游即拒。与 `git_commit` 同一 Git 审批档 |
 | `delegate` | 否（子循环写盘仍审） | `kind=explore` 强制只读（可用 `fastModelId`）；`general` 跟父模式。子工具带 `parentToolCallId`。聊天画「子智能体 {Explore\|General} · 标题」；同一步最多 4 个并行 `delegate.execute`（闸门挂 `createDelegateTool` 闭包） |
+| `browser_navigate` | 是 | Enjoy Local `extraTools`（`HOST_CONTROL_TOOLS`）。plan/ask 不注册。Bridge 未连接返回 `success: false` |
+| `browser_extract_content` | 否 | 读当前 tab。未连接 `success: false`，禁止占位假正文 |
+| `desktop_list_windows` | 否 | 可捕获窗口列表 |
+| `desktop_background_click` / `desktop_background_type` | 是 | `HOST_CONTROL_TOOLS`，不跟 Edits 写盘档。缺 pid / helper 返回 `success: false` |
 
-工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。
+工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。桌面 / 浏览器控制见 `HOST_CONTROL_TOOLS`。
 
 决策 UI 只在 PermissionDock（会话内容与 Composer 之间、贴 Composer 顶边），见 [m2-attention](./m2-attention.md)。审批策略来自用户偏好：`requireWriteApproval`、`requireBashApproval`、`requireCommitApproval`、`permissionMode`。UI 决定：`allow`（Allow once 仅本次）/ `deny`（拒绝）/ `allow_session`（Always allow this session 本会话总是允许，只白名单本会话工具名，不是工作区级）。卡片按工具换三种表面（抄 AICSS 交互、BoardUI 皮）：`bash` / `code_mode` / 管道与 ACP 弱名（`command` / `cmd` + `argv`）→ command（cwd 用 `args.cwd` 否则工作区 `rootPath`）；`write_file` / `edit_file` / `git_commit` → plan（待办来自本次入参，不是 Todo Dock）；`ask_user_questions` → Fluid 步进问答（数字键 1–9、可跳过、可其它）；其余 → questions（选项 id=`allow_once`/`allow_session`）。MCP 只带 `args.command` 不算 shell。底部标明 HMAC 令牌绑定；**禁止** plan 倒计时自动放行。`ask_user_questions` 的答案走 `ApprovalDecision.answers`，execute 从 `host.takeQuestionAnswers` 取出。对本工具禁止 `allow_session`（`decideApproval` 在 HMAC 落库前抛）。空问卷 execute 抛 `ASK_USER_QUESTIONS_EMPTY`。子 Agent `createCodingTools(host, { includeAskUser: false })`。Harness 静态表不登记该工具。执行只在 main。`approval.required` 落库时用进程内密钥签 HMAC；`agent.decide` 再验库内行 + HMAC。`ApprovalDecision` `.strict()`，多传的 `args` 被拒而不是丢掉；签名校验的是落库 args，不是 renderer 再传一份。
 
 ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false）+ 可选 `hasToolCall`。步数来自偏好 `maxAgentSteps`（默认 20，上限 64）。`prepareStep` 每步裁历史。每步 `onStepFinish` 写 `run_steps`。总超时 `agentTimeoutMs`（0 不限）经 `withTimeout` / `armTimeout` 接到 Agent 泵和 `ai.generate`；步进超时 `stepTimeoutMs` 以 `{ stepMs, toolMs }` 对象传给 ToolLoop（`bash` 等工具用 `toolTimeoutMs`；不要传数字，会被当成总超时）。超时发 `run.error` + `generation.warning`（`code=timeout`），指标 `errorClass=timeout`。bash 用 `toolTimeoutMs`。`ai.resume` 对 failed Agent run 用 checkpoint 快照重启同一 `runId`（实现比措辞保守：cancelled 不自动复活，属有意行为）。
 运行时交互：会话任务态是派生值 `idle | running | paused | waiting_review`（审批 park = `waiting_review`，Stop 后回 `idle`，不另做可恢复 pause）。**安全检查点**在每次工具 `execute` 结束、下一跳 LLM 之前：仅 `stepNumber > 0` 才 `pullSteeringMessages` + 注入，`prepareStep` 返回的 `messages`（SDK 7.x 跨步保留）接上纠偏句；step 0 不 drain，避免首跳 LLM 前把纠偏吃掉却不注入。泵收工前再 absorb 一次；有剩余则 `continuePump` **续同一 run**，不是 idle 后再发。禁止在单次工具执行中途截断，也不要用 `abort` 当引导。`steeringQueue` 挂 main（`agent.steer`），有消息就拼成 `role: user`。ACP/CLI 没有 `prepareStep`，引导要等当前流走完再由泵 absorb。`followupQueue` 在 renderer：`run.end` / idle 后自动 `agent.run`；已 idle 再入队也必须立刻自启（订阅队列，不能只听 `running` 边沿）。`waiting_review`（`pendingApproval`）时不要 `takeNextFollowup`。没有 ActiveRun 且已 idle 的引导立刻新开 `agent.run`；UI 仍 `running` 才改排队。引用块用 `QuotedContext`（规范类型 `file|diff|terminal_output|task_step`，兼容旧 `tool_call|file_diff|text_selection|thought_step`；正文优先 `content`，否则 `snippet`）格式化后拼在用户句前。排队项规范字段是 `prompt`，`text` 为同值别名；编辑走 `editQueuedMessage`，升纠偏走 `elevateToSteer`（标 `elevated_to_steer`）。Stop / fail / 正常收工后 `clearSteer`，未消费纠偏丢弃且不注入下一轮（已落库的用户气泡保留）。
-助手轮末尾可带静态 **ActionChip**（正文围栏 `:::enjoy-actions`，落库进 assistant-payload）。这是建议词，不是纠偏。未点击必须保持 idle，禁止倒计时或回合结束自动发送建议。空闲点击 = 新开 `agent.run`；运行中 `queue` 入 followupQueue（提示「已加入执行队列」），`fill_input` 只回填输入框。排队条上的「立即纠偏」才是 Elevate to Steer。
+助手轮末尾可带静态 **ActionChip**（正文围栏 `:::enjoy-actions`，落库进 assistant-payload）。这是建议词，不是纠偏。未点击必须保持 idle，禁止倒计时或回合结束自动发送建议。空闲点击 = 新开 `agent.run`；运行中 `queue` 入 followupQueue（提示「已加入执行队列」），`fill_input` 只回填输入框。虚线泡上的「立即纠偏 / 立即发送」才是 Elevate to Steer（运行中纠偏，空闲立刻开下一轮）。
 
 ### 流事件（实现已有）
 
 `run.start` → `text.delta` / `reasoning.delta` / `tool.*` / `approval.*` / `file.changed` / v2：`message.part.*` `structured.delta` `source.added` `asset.created` `usage.updated` `step.*` `workflow.*` `mcp.*` `realtime.*` `generation.warning` → `run.end` | `run.error`
 
-`delegate` 独立上下文回 `SubagentSummary`，同时把子循环工具事件挂到父 `toolCallId`。`createCodingTools(host, { mode })`：plan/ask 只有读工具 + `todo_write` + `ask_user_questions` + `git_status` / `git_diff` / `git_log`；agent/debug 再加写工具。`createMcpAgentTools({ mode })`：plan/ask 不注册写名 MCP（leaf 匹配 `write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send`，与 `isMcpWriteToolName` 同一规则）；只读 MCP 在规划里是 `not-applicable`。子 Agent `includeAskUser: false` 且不再套 delegate。写盘 / bash 经 `createSubagentApproval` 挂到主 run 的 `approval.required`。没有等待器时拒绝，不偷偷执行。检查器 `toolNames` 与开流注册集一致（含按 mode 过滤的 MCP）。写盘成功后 main 记 `refs/enjoy/checkpoints/<stamp>`（临时 index + `commit-tree`，含未跟踪；不进用户当前分支）。ACP `file.changed` 每个 run 最多记一次。Review「检查点」用临时 index + `checkout-index` 还原工作区文件，不移动 HEAD、不改用户暂存区；未跟踪删除先 dry-run 再 Confirm。成功后留在检查点时间线。`applySettingsSnapshot` **不得**用 `preferences.defaultMode` 覆盖当前会话 mode。新建会话才 `modeForNewSession(defaultMode)`。UIMessage parts 与旧 `content` 并存。
+`delegate` 独立上下文回 `SubagentSummary`，同时把子循环工具事件挂到父 `toolCallId`。`createCodingTools(host, { mode })`：plan/ask 只有读工具 + `todo_write` + `ask_user_questions` + `git_status` / `git_diff` / `git_log`；agent/debug 再加写工具。`createMcpAgentTools({ mode })`：plan/ask 不注册写名 MCP（leaf 匹配 `write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send`，与 `isMcpWriteToolName` 同一规则）；只读 MCP 在规划里是 `not-applicable`。子 Agent `includeAskUser: false` 且不再套 delegate。写盘 / bash 经 `createSubagentApproval` 挂到主 run 的 `approval.required`。没有等待器时拒绝，不偷偷执行。检查器 `toolNames` 与开流注册集一致（含按 mode 过滤的 MCP）。写盘成功后 main 记 `refs/enjoy/checkpoints/<stamp>`（临时 index + `commit-tree`，含未跟踪；不进用户当前分支）。开流另记一条 `kind=baseline`。Enjoy Local 的 `writeFile`/`editFile` 带 active run 记 `kind=turn`；ACP `file.changed` 每个 run 最多再记一次 `kind=turn`。Review「检查点」用临时 index + `checkout-index` 还原工作区文件，不移动 HEAD、不改用户暂存区；未跟踪删除先 dry-run 再 Confirm。成功后留在检查点时间线。Enjoy Local 用户气泡可「从这里重来」：先还原该轮 baseline（失败则停），成功后再 `session.truncateFrom`。乐观用户气泡 id 与落库 id 相同。ACP `supportsConversationRollback=false`，按钮禁用。`agent.run` 带 `commandId`；排队自启走 `DrainableQueue.drain()`。`applySettingsSnapshot` **不得**用 `preferences.defaultMode` 覆盖当前会话 mode。新建会话才 `modeForNewSession(defaultMode)`。UIMessage parts 与旧 `content` 并存。
 
 会话消息存在 SQLite。用户轮在发送时落库。助手侧复杂载荷用 `assistant-payload` 序列化（reasoning + tool + sources / assets / structured），不要把 tool JSON 当纯文本渲染。助手 transcript / tools 挂在 `ActiveRun` 上跨审批泵累积；流式过程按 `tool.result` / `approval.required` 立刻、`text.delta` / `reasoning.delta` 每 1.5s 节流 `checkpointActiveRun`，**同一条**助手消息 UPDATE，不新插行。`complete` / `fail` / `abort` / `before-quit` 再走 `persistActiveRun` 封口并改 `runs.status`。每一轮 ToolLoop **收束后**（即将再泵，不是工具 execute 中途）把 `modelMessages` 写入 running checkpoint（`resumeAt=tool-boundary`）。启动时：带这份快照的 Enjoy Local `running` 由 `restoreRunningRuns` 接回泵；没有快照、ACP、E2E stub、或仍在流式中途的 `running` 仍 `cancelled`。`waiting_review` 把 `modelMessages` + pending 写入 checkpoint，HMAC 密钥进 `userData/approval-hmac.bin`（`safeStorage`）；启动 `restoreWaitingRuns` 再挂 ActiveRun 并重发 `approval.required`。没有活着的 ToolLoop wait 时 `executeStoredTool` 按库内 args 执行。分发表必须覆盖全部可审批工具：write_file / edit_file / bash / code_mode / git_commit / git_branch / git_push / MCP 工具（对可见工具表反查 `mcpAgentToolName`）；漏一个就是「点了允许但什么都没发生」的假放行（code_mode / git_branch / MCP 曾漏，已补）。刷新会话时 `hydrate-thread` 优先读信封，缺失则从 `message_parts` 补回。
 
@@ -68,13 +72,13 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
-- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）；ACP Stop：`open-coding-stream.ts` `cancelCodingStream` → `cancelAcpTurn`
+- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）；ACP Stop：`open-coding-stream.ts` `cancelCodingStream` → `cancelAcpTurn`。`commandId` 收据：`command-receipts.ts`；可排干队列：`packages/agent-core/src/drainable-queue.ts`
 - ACP plan → Todo Dock：`packages/agent-harness/src/acp/map-acp-plan.ts`
 - ACP `mcpServers`：`apps/desktop/src/main/services/host-extensions/`、`packages/agent-harness/src/acp/acp-mcp.ts`
 - 写盘检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-restore.ts`
 - 纠偏队列：`runtime-interact/steering-queue.ts`、`steer-agent.ts`、`absorb-steering.ts`；检查点：`prepare-step.ts`（`mergeSteeringMessages`，仅 step≥1 注入）+ `agent-pump` 收工前 `absorbSteering`
 - 引导词：`packages/ipc-contract/src/action-chip.ts`；点击分流 `action-chip-intent.ts` / `apply-action-chip.ts`；气泡 `message-action-chips.tsx`
-- 排队 / 草稿：`hooks/followup-queue.ts`、`followup-autostart.ts`；发送拆到 `hooks/runtime-interact/`（`composer-draft` / `steer-composer` / `send-composer-run`）。Recap 注入在 `send-composer-run.ts`，生成在 `session-recap-service.ts`
+- 排队 / 草稿：`hooks/followup-queue.ts`、`followup-autostart.ts`、`runtime-interact/followup-actions.ts`；时间线虚线泡 `thread/queued-followups.tsx`；大段粘贴 `lib/pasted-text.ts`；↑ 召回 `hooks/composer-prompt-history.ts`。发送拆到 `hooks/runtime-interact/`（`composer-draft` / `steer-composer` / `send-composer-run`）。Recap 注入在 `send-composer-run.ts`，生成在 `session-recap-service.ts`
 - Composer `@` / `/`：`ai-chat/composer/mentions/`（token、内置 compact + 探索/执行、技能 Chip、`formatSkillMention`、`host-mode-prefix`）；句首模式仍 `composer-mode.ts`；C 端分段 `explore-execute/`
 - 内存态：`agent-run-state.ts`；泵循环：`agent-pump.ts`；启动：`agent-run-start.ts`；附件 / 知识 / 开泵：`agent-run-prepare.ts`
 - 助手落库：`agent-run-flush.ts`（payload / checkpoint 节流）、`flush-agent-run.ts`（checkpoint + 终态）、`persist-parts.ts`、`persist-session.ts`（同 id UPDATE）、`complete-agent-run.ts`；启动收拾：`abandon-orphan-runs.ts`；工具边界续跑：`persist-running-checkpoint.ts`、`restore-running-runs.ts`、`running-orphan-plan.ts`；审批后是否再泵：`park-for-approval.ts`
@@ -92,7 +96,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：ACP Stop 若 `disposeAcpSession` 会丢掉 CLI 上下文，下一轮 `composeAcpPrompt` 只带最后一句用户句。正确做法：Stop / 活着的 fail 只 `session/cancel`。换引擎 / 换模型 / 删会话 / 增删 MCP / 子进程已死 / 退出才 dispose。`plan` 事件必须走 `mapAcpPlan` → `todo_write`，不要在 `mapAcpUpdate` 里丢掉。
 - Composer `/compact` 走 Enjoy `session.compact`（压缩发给模型的 SQLite 历史，UI 气泡不删）。不要把 `/compact` 当用户句发出去；会话太短会抛 `COMPACTION_TOO_SHORT`，UI 翻词表。ACP `compact=cli` 仍用这条宿主压缩，不是引擎原生 slash。
 - 纠偏不能 `abort` 当前工具。`agent.steer` 只入队；`prepareStep` 仅 `stepNumber > 0` 才 drain+注入（SDK 跨步保留）/ 泵结束才 absorb。step 0 若仍 `pullSteeringMessages()` 会把队列抽空却不注入。`prepareStep` 与 `run.messages` 可能同引用，必须 `mergeSteeringMessages` 去重，禁止再拼一套。没有 ActiveRun：已 idle 立刻 `agent.run`；UI 仍 running 才进 followup 等自启。fail / 收工 / Stop 都 `clearSteer`，避免下一轮把已落库的纠偏再注一次。
-- 消息底 ActionChip 与排队条「立即纠偏」不是同一件事。Chip 未点击不得自动跑；idle 后自动消费的只是用户主动入队的 followupQueue。`waiting_review` 不要自启下一轮。围栏必须从可见 Markdown 剥离，不要把 `:::enjoy-actions` 渲染进气泡。idle 点 Chip 必须 `takeQuotedContexts` 并进本轮 Prompt，否则引用会漏到下一轮。
+- 消息底 ActionChip 与虚线泡「立即纠偏」不是同一件事。Chip 未点击不得自动跑；idle 后自动消费的只是用户主动入队的 followupQueue。`waiting_review` 不要自启下一轮。围栏必须从可见 Markdown 剥离，不要把 `:::enjoy-actions` 渲染进气泡。idle 点 Chip 必须 `takeQuotedContexts` 并进本轮 Prompt，否则引用会漏到下一轮。
 - 用户在 stream 还没结束时点 Allow：必须 `resumeAfterPump`。pending 未清空时不能提前 return 丢掉该标志。consume 结束后用 `decideAfterConsume`：还有 pending 就 park；`resumeAfterPump` 且最后工具已是 `output-available` 则收工，不要只因为点过 Allow / 见过 `approval.required` 再开一轮 ToolLoop。`finally` 里若仍有 pending 不得 `pumpStream`（会把 pending 清空）。
 - 总超时在进入审批等待时会清 timer，避免用户思考时被当成 timeout；恢复泵后重新计时。
 - HMAC 密钥进 `userData/approval-hmac.bin`（能加密就 `safeStorage`）。重启后 `waiting_review` 可再验；密钥文件丢了才作废。不要从 renderer 回传 hmac。没有 waiter 时不要空放行，走 `executeStoredTool`。

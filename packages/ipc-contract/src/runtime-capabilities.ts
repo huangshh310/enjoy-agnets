@@ -106,6 +106,14 @@ export function countsHostSkillTokens(runtimeId: string | undefined): boolean {
   return mode === "catalog-tool" || mode === "catalog-prompt"
 }
 
+/**
+ * 对话回滚：Enjoy Local 的 SQLite 历史是真源，可截断后重开。
+ * ACP CLI 自己攒上下文，截断 UI 不会 rewind，必须先拒。
+ */
+export function supportsConversationRollback(runtimeId: string | undefined): boolean {
+  return runtimePathKind(runtimeId) === "enjoy-local"
+}
+
 /** 设置能力矩阵行序：Enjoy 本地 → ACP → 进阶沙箱（末行，不上导轨）。 */
 export const MATRIX_RUNTIME_IDS = [
   "enjoy-local",

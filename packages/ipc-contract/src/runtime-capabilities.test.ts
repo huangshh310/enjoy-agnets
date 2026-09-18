@@ -6,7 +6,8 @@ import {
   HIDDEN_RUNTIME_CAPABILITIES,
   MATRIX_RUNTIME_IDS,
   runtimePathKind,
-  SANDBOX_HARNESS_ID
+  SANDBOX_HARNESS_ID,
+  supportsConversationRollback
 } from "./runtime-capabilities.ts"
 
 const WIRED = [
@@ -34,6 +35,9 @@ test("六家快照：spawn / thinking / fast / quota / providerBind", () => {
   assert.equal(capabilitiesFor("enjoy-local").executionModes, "enjoy-local")
   assert.equal(capabilitiesFor("enjoy-local").realtime, true)
   assert.equal(capabilitiesFor("enjoy-local").providerBind, "none")
+  assert.equal(supportsConversationRollback("enjoy-local"), true)
+  assert.equal(supportsConversationRollback("cursor"), false)
+  assert.equal(supportsConversationRollback("claude"), false)
 
   assert.equal(capabilitiesFor("claude").thinking, "model-id")
   assert.equal(capabilitiesFor("claude").fast, "none")

@@ -22,11 +22,16 @@ export type MessageRowWithParts = {
   parts: unknown[]
 }
 
-export function persistUserTurn(sessionId: string, content: string, attached: UserFileAsset[]) {
+export function persistUserTurn(
+  sessionId: string,
+  content: string,
+  attached: UserFileAsset[],
+  messageId?: string
+) {
   const last = lastUserTurn(sessionId)
   if (shouldSkipDuplicateUserTurn(last, content, Date.now())) return
   const parts = userTurnParts(content, attached) as UIMessagePart[]
-  persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined)
+  persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId)
 }
 
 function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {

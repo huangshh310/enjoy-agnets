@@ -52,7 +52,7 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched) {
       note(toWorkspaceRelative(workspaceRoot, absolute), "file")
       await fs.mkdir(dirname(absolute), { recursive: true })
       await fs.writeFile(absolute, content, "utf8")
-      await recordEnjoyCheckpoint(workspaceRoot)
+      await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot))
       await triggerOnSaveForRoot(workspaceRoot)
     },
     editFile: async (relativePath: string, oldText: string, newText: string) => {
@@ -64,7 +64,7 @@ function workspaceFileOps(workspaceRoot: string, note: NoteTouched) {
       }
       const next = current.replace(oldText, newText)
       await fs.writeFile(absolute, next, "utf8")
-      await recordEnjoyCheckpoint(workspaceRoot)
+      await recordEnjoyCheckpoint(workspaceRoot, await turnCheckpointMeta(workspaceRoot))
       await triggerOnSaveForRoot(workspaceRoot)
       return next
     },
@@ -185,15 +185,29 @@ async function grepFiles(workspaceRoot: string, pattern: string, glob?: string) 
 }
 
 async function triggerOnSaveForRoot(workspaceRoot: string): Promise<void> {
-  const { listActiveRuns } = await import("./agent-run-state")
   const { fireOnSaveAutomations } = await import("./automations-run")
-  const active = listActiveRuns().find((item) => item.run.workspaceRoot === workspaceRoot)
+  const active = await activeRunForRoot(workspaceRoot)
   if (!active) return
   await fireOnSaveAutomations(
     active.run.window,
     active.run.input.workspaceId,
     active.run.input.sessionId
   )
+}
+
+async function turnCheckpointMeta(workspaceRoot: string) {
+  const active = await activeRunForRoot(workspaceRoot)
+  if (!active) return undefined
+  return {
+    sessionId: active.run.input.sessionId,
+    runId: active.runId,
+    kind: "turn" as const
+  }
+}
+
+async function activeRunForRoot(workspaceRoot: string) {
+  const { listActiveRuns } = await import("./agent-run-state")
+  return listActiveRuns().find((item) => item.run.workspaceRoot === workspaceRoot)
 }
 
 function globToRegExp(pattern: string): RegExp {

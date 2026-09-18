@@ -14,6 +14,7 @@ import { consumeFullStream } from "./consume-stream"
 import { completeAgentRun } from "./complete-agent-run"
 import { checkpointActiveRun, persistActiveRun } from "./flush-agent-run"
 import { persistRunningCheckpoint } from "./persist-running-checkpoint"
+import { persistWaitingRun } from "./persist-waiting-run"
 import { createId } from "./ids"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { acpSessionAlive, cancelCodingStream, disposeCodingStream, openCodingStream } from "./open-coding-stream"
@@ -71,7 +72,6 @@ async function runOnePump(
     run.messages.push(...ensureAssistantReasoning(extraMessages, run.transcript.think))
   }
   if (parkForApproval(run)) {
-    const { persistWaitingRun } = await import("./persist-waiting-run")
     persistWaitingRun(run, runId)
     checkpointActiveRun(run)
     return
@@ -216,16 +216,20 @@ async function consumeRun(
     },
     emit: (event) => {
       emitEvent(run.window, event)
-      noteFileChangedCheckpoint(run, event)
+      noteFileChangedCheckpoint(run, runId, event)
     }
   })
   checkpointActiveRun(run)
 }
 
-function noteFileChangedCheckpoint(run: ActiveRun, event: { type: string }): void {
+function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type: string }): void {
   if (event.type !== "file.changed" || run.checkpointNoted) return
   run.checkpointNoted = true
-  void recordEnjoyCheckpoint(run.workspaceRoot).catch(() => undefined)
+  void recordEnjoyCheckpoint(run.workspaceRoot, {
+    sessionId: run.input.sessionId,
+    runId,
+    kind: "turn"
+  }).catch(() => undefined)
 }
 
 function persistRunningBoundary(run: ActiveRun, runId: string): void {

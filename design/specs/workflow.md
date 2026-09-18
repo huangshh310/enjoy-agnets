@@ -1,12 +1,12 @@
 # spec/workflow
 
-> Durable Workflow：检查点、暂停、恢复、步级重试。最后更新：2026-09-14
+> Durable Workflow：检查点、暂停、恢复、步级重试。最后更新：2026-09-18
 
 ## 当前真相
 
 `runDurableWorkflow` 在 `packages/agent-core/src/agents/workflow.ts`。每步写入 `runs` / `run_steps` checkpoint，并 emit `workflow.checkpoint` / `step.start` / `step.end` / `workflow.paused`。有 workspace 时每步 `runWorkflowAgentStep` 走同一条 `agent.run`（审批 / 工具 / HMAC 都在主循环），等待 `run.end`；收工摘要取子 run transcript 尾巴（`waitForRunSettle` 返回 `{status, summary}`），不再是 `"X finished (run id)"` 合成文案。缺 active profile / apiKey 时 fail-fast 抛错（run 落 `failed` + 人话 error），不再静默 `"X failed"`。
 
-`workflow.resume` **立即返回**：`driveWorkflow` 在 main 后台推进，IPC 不被多步循环阻塞；进度靠 `workflow.*` 事件与 renderer 1.5s 轮询（running / waiting_review 都轮询）。`workflow.pause` 把 runId 塞进请求集，durable loop 在下一步边界落 `paused`。`workflow.retry` 可带 `stepId`：从该步（含）重跑，先 `deleteRunStepsFrom` 清掉过期步骤行再归位 checkpoint。`workflow.cancel` 连带 abort 当前子 agent run（进程内 `childRuns` Map），loop 在下一个 persist 边界退出且不覆盖 cancelled。DB 列 `run_steps.child_run_id` 与 Zod `WorkflowStep.childRunId` **已有**，生产路径 **未写入、getWorkflow 未投影**——不要写成 DAG 已能按 child run 穿透。子 run 停车审批时，workflow 行经 1s 轮询对齐成 `waiting_review`，恢复后回到 `running`。步骤抛错 → run 落 `failed`。偏好 `workflowAutoResume` 为真时，启动应用会 `recoverPausedWorkflows`。仍不是 SDK `WorkflowAgent`。
+`workflow.resume` **立即返回**：`driveWorkflow` 在 main 后台推进，IPC 不被多步循环阻塞；进度靠 `workflow.*` 事件与 renderer 1.5s 轮询（running / waiting_review 都轮询）。`workflow.pause` 把 runId 塞进请求集，durable loop 在下一步边界落 `paused`。`workflow.retry` 可带 `stepId`：从该步（含）重跑，先 `deleteRunStepsFrom` 清掉过期步骤行再归位 checkpoint。`workflow.cancel` 连带 abort 当前子 agent run：先内存 `childRuns`，没有再读 `run_steps.child_run_id`。`persistChildRun` 在步骤 `running` checkpoint 之后写库，`getWorkflow` 投影 `childRunId`。loop 在下一个 persist 边界退出且不覆盖 cancelled。子 run 停车审批时，workflow 行经 1s 轮询对齐成 `waiting_review`，恢复后回到 `running`。步骤抛错 → run 落 `failed`。偏好 `workflowAutoResume` 为真时，启动应用会 `recoverPausedWorkflows`。仍不是 SDK `WorkflowAgent`。
 
 状态词表统一：`WorkflowStatus` 用 `waiting_review`（与 `runs.status` / `TaskStatus` 同词表；旧的 `waiting_approval` 已删，renderer `workflow-dag` 同步）。
 
@@ -43,7 +43,7 @@ UI `#/workflows` 在 `AppShell` 内换轨。工作流编辑器对齐 infinite-ca
 
 ## 已知坑
 
-- **隐患**：崩溃恢复后取消找不到子 agent。根因：`childRuns` 是内存 Map；`insertRunStep` 不写 `childRunId`，也未调 `updateRunStepChildRunId`。正确做法：未接线前只 abort 仍在 Map 里的子 run；持久化再补写库 + `getWorkflow` 投影。
+- 崩溃发生在 `persist({ status: "running" })` 与 `onChildRun` 之间时，库里这步还没有 `child_run_id`，恢复后 cancel 仍杀不到子 agent。
 - 步骤支持 `dependsOn` 拓扑排序与 `layerWorkflowSteps` 分层。画布连线是编辑态 DAG；durable 执行仍严格串行。环在 `orderWorkflowSteps` 会被拒绝；前端 `canvasToWorkflowGraph` 会在提交前校验回路环与自环并拦截。
 - `WorkflowStartInput.steps` 契约支持上限为 32 个节点；超量画布需拆分或提示。
 - 画布节点拖动与点击对话框唤起：`useCanvasPointer` 在节点单击完成（`wasClick`）时必须主动 `setDialogNodeId(clickedNodeId)`，确保点击节点始终打开下方提示词面板；Node Header 严禁加 `e.stopPropagation()`，保证整卡拖拽连贯；卡片本体禁止加 `transition-all`（改为 `transition-shadow`），避免拖动过程产生 150ms 滞后跳变；拖拽高频计算经 `requestAnimationFrame` 缓冲。
