@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { canHostInterceptExplore } from "@enjoy-agents/ipc-contract"
+import { canHostInterceptExplore } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 

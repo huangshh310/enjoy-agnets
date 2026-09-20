@@ -7,7 +7,7 @@ import { test } from "node:test"
 const dir = dirname(fileURLToPath(import.meta.url))
 
 test("顶栏铬序是探索/执行 → 思考 → 引擎 → 模型芯片", () => {
-  const src = readFileSync(join(dir, "../ai-chat-composer.tsx"), "utf8")
+  const src = readFileSync(join(dir, "composer-top-chrome.tsx"), "utf8")
   const explore = src.indexOf("<ExploreExecuteToggle")
   const thinking = src.indexOf("<ComposerThinkingChrome")
   const engine = src.indexOf("<AgentPicker")

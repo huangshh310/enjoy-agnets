@@ -109,7 +109,7 @@ export const zhChat = {
   surfaceExplore: "探索",
   surfaceExecute: "执行",
   surfaceSelect: "选择探索或执行",
-  surfaceExploreDisabled: "此引擎无法只读拦截写操作与命令",
+  surfaceExploreDisabled: "此助手暂不支持探索/执行切换",
   thinkingFollowModel: "思考 · 跟模型",
   thinkingFollowModelHint: "思考由所选模型决定。当前 {model}。",
   surfaceExploreDesc: "先读后想，不改项目。适合摸清问题。",

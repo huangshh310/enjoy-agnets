@@ -111,7 +111,7 @@ export const enChat = {
   surfaceExplore: "Explore",
   surfaceExecute: "Execute",
   surfaceSelect: "Choose Explore or Execute",
-  surfaceExploreDisabled: "This engine cannot intercept writes or commands",
+  surfaceExploreDisabled: "This assistant cannot switch Explore / Execute",
   thinkingFollowModel: "Think · follows model",
   thinkingFollowModelHint: "Thinking comes from the model you pick. Current {model}.",
   surfaceExploreDesc: "Read and think first. Does not change the project.",

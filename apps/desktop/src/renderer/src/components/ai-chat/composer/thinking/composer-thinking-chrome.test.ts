@@ -6,7 +6,8 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { composerThinkingChrome } from "@enjoy-agents/ipc-contract"
+import { composerThinkingChrome } from "@enjoy-agents/ipc-contract/runtime-capabilities"
+import { zhChat } from "../../../../i18n/catalogs/zh/chat.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
@@ -21,6 +22,12 @@ test("跟模型面不引入五档条", () => {
   const src = readFileSync(join(dir, "composer-thinking-chrome.tsx"), "utf8")
   assert.match(src, /composer-thinking-follow-model/)
   assert.match(src, /thinkingFollowModel/)
+  assert.match(src, /composerThinkingChrome/)
   assert.match(src, /kind === "effort"/)
+  assert.match(src, /onOpenModels/)
   assert.equal(src.includes("getEffortLevels"), false)
+})
+
+test("model-id 人话入口不写五档词", () => {
+  assert.equal(zhChat.thinkingFollowModel, "思考 · 跟模型")
 })

@@ -22,15 +22,21 @@ import { useComposerModelSwitch } from "./use-composer-model-switch"
 export function ComposerModelChip({
   modelId,
   modelLabel,
-  models
+  models,
+  menuOpen,
+  onMenuOpenChange
 }: {
   modelId: string
   modelLabel: string
   models: ModelOption[]
+  menuOpen?: boolean
+  onMenuOpenChange?: (open: boolean) => void
 }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const [innerOpen, setInnerOpen] = useState(false)
+  const open = menuOpen ?? innerOpen
+  const setOpen = onMenuOpenChange ?? setInnerOpen
   const [toastLabel, setToastLabel] = useState<string | null>(null)
   const state = useComposerModelSwitch({ modelId, modelLabel, models })
 

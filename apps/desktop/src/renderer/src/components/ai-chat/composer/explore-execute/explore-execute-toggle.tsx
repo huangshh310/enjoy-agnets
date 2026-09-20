@@ -28,6 +28,7 @@ export function ExploreExecuteToggle({ className }: { className?: string } = {})
       role="radiogroup"
       aria-label={t("chat.surfaceSelect")}
       data-testid="composer-surface-toggle"
+      title={!canIntercept ? t("chat.surfaceExploreDisabled") : undefined}
       className={cx(
         "inline-flex items-center rounded-full bg-background-tertiary-default/90 p-0.5 ring-1 ring-border-button-default/80",
         className
