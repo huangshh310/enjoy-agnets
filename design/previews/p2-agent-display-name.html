@@ -1,0 +1,354 @@
+<!-- 【视觉真源】P2 命名身份（显示名）· Luna -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P2 · 命名身份（显示名）· Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', warn: '#C2410C', ok: '#16A34A'
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .strike { text-decoration: line-through; text-decoration-color: #C2410C; text-decoration-thickness: 1.5px; }
+</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p2-agent-display-name.html · 【视觉真源】P2 命名身份 · Luna</p>
+      <h1 class="mt-1 text-[17px] font-semibold">引擎显示名 · 人话在面，真名在悬停</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。引擎级可选显示名（如「前端搭档」/「代码审」）。芯片、侧栏、Inbox <strong class="text-ink">优先人话</strong>；悬停见引擎真名。空则<strong class="text-ink">品牌名 + 模型</strong>。编辑走设置或 Picker「重命名」。不做小队 / 看板 / 强制设名 / 头像社交。设计已锁，不宣称应用 1:1。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>作用域：<strong class="text-ink">引擎级</strong>可选显示名。会话覆盖本刀可后置，预览不画</li>
+        <li>编辑：设置「显示名」<strong class="text-ink">或</strong> Picker 行「重命名」。空 → 品牌名 + 模型，禁止「未命名」</li>
+        <li>表面：Composer 单芯片、会话侧栏、Inbox 行都优先显示名；<strong class="text-ink">悬停 / title 见引擎真名</strong>（如 <code>Claude · 真名</code>）</li>
+        <li>图标仍认引擎品牌。本机偏好，不进云身份</li>
+        <li>≠ 小队 / 看板 / 强制每人设名 / 头像社交 / 改 slim 密度</li>
+      </ul>
+    </aside>
+
+    <!-- A 自定义名 + Inbox -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">A · 主稿 · 「代码审」在芯片 / 侧栏 / Inbox</h2>
+      <p class="text-[11px] text-mute">给 Claude 设显示名<strong class="text-ink">代码审</strong>。表面写人话；<code>title="Claude · 真名"</code>。本刀只做引擎级。</p>
+      <div class="overflow-hidden rounded-2xl border-2 border-accent/40 bg-card shadow-sm">
+        <div class="flex min-h-[300px]">
+          <aside class="w-[196px] shrink-0 border-r border-line bg-paper p-2.5">
+            <p class="px-1 text-[10px] font-semibold uppercase tracking-wide text-mute">会话</p>
+            <ul class="mt-1.5 space-y-0.5 text-[11px]">
+              <li class="flex items-center gap-1.5 rounded-lg bg-soft px-2 py-1.5 ring-1 ring-accent/15" title="Claude · 真名">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="min-w-0">
+                  <span class="block truncate font-medium text-ink">代码审</span>
+                  <span class="block truncate text-[10px] text-mute">拆登录页</span>
+                </span>
+              </li>
+              <li class="flex items-center gap-1.5 rounded-lg px-2 py-1.5" title="Grok · 真名">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">G</span>
+                <span class="min-w-0">
+                  <span class="block truncate">前端搭档</span>
+                  <span class="block truncate text-[10px] text-mute">补无障碍</span>
+                </span>
+              </li>
+            </ul>
+            <p class="mt-3 px-1 text-[10px] font-semibold uppercase tracking-wide text-mute">引擎</p>
+            <ul class="mt-1.5 space-y-0.5 text-[11px]">
+              <li class="flex items-center gap-1.5 rounded-lg bg-card px-2 py-1 font-medium ring-1 ring-accent/25" title="Claude · 真名">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                代码审
+              </li>
+              <li class="rounded-lg px-2 py-1 text-mute" title="Grok · 真名">前端搭档</li>
+            </ul>
+          </aside>
+          <div class="min-w-0 flex-1 space-y-2 p-3">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+                <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+              </div>
+              <span class="min-w-[1rem] flex-1"></span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30" title="Claude · 真名">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="text-mute">代码审</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span>
+                <span class="text-mute">▾</span>
+              </span>
+              <span class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">✦ 中</span>
+            </div>
+            <div class="min-h-[56px] rounded-xl border border-line bg-paper px-3 py-2 text-[12px] text-mute">
+              先从 <span class="font-medium text-ink">src/auth/login.ts</span> 切开提交处理。
+            </div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/20">扩展 · MCP 2 · Skills 3</span>
+            <div class="rounded-xl border border-line bg-paper px-2.5 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">Inbox</p>
+              <div class="mt-1.5 flex items-center gap-2 rounded-lg bg-card px-2 py-1.5 ring-1 ring-line" title="Claude · 真名">
+                <span class="inline-flex size-[16px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-[11px] font-medium">代码审 · 拆登录页</span>
+                  <span class="block truncate text-[10px] text-mute">等你验收 · 3 个文件</span>
+                </span>
+                <span class="shrink-0 rounded-full bg-soft px-1.5 py-px text-[10px] text-accent">待验收</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B 空名回退 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">B · 空名回退 · 品牌名 + 模型</h2>
+      <p class="text-[11px] text-mute">显示名 trim 后空。芯片 / 侧栏 / Inbox 回退 <strong class="text-ink">Claude · Sonnet 4</strong>。禁止「未命名」当身份。</p>
+      <div class="overflow-hidden rounded-2xl border border-line bg-card">
+        <div class="flex min-h-[220px]">
+          <aside class="w-[196px] shrink-0 border-r border-line bg-paper p-2.5">
+            <p class="px-1 text-[10px] font-semibold uppercase tracking-wide text-mute">会话</p>
+            <ul class="mt-1.5 space-y-0.5 text-[11px]">
+              <li class="flex items-center gap-1.5 rounded-lg bg-soft px-2 py-1.5" title="Claude · 真名">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="min-w-0">
+                  <span class="block truncate font-medium">Claude</span>
+                  <span class="block truncate text-[10px] text-mute">拆登录页</span>
+                </span>
+              </li>
+            </ul>
+            <p class="strike mt-2 px-2 text-[10px] text-mute">未命名助手 · 勿画</p>
+          </aside>
+          <div class="min-w-0 flex-1 space-y-2 p-3">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+                <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+              </div>
+              <span class="min-w-[1rem] flex-1"></span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30" title="Claude · 真名">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span>
+              </span>
+            </div>
+            <div class="rounded-xl border border-line bg-paper px-2.5 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">Inbox</p>
+              <div class="mt-1.5 flex items-center gap-2 text-[11px]" title="Claude · 真名">
+                <span class="inline-flex size-[16px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="font-medium">Claude · 拆登录页</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-mute">空 = 品牌名 + 模型。不影响探索\|执行、换模、扩展注入。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- C 设置 + Picker 重命名 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">C · 重命名 · 设置 或 Picker</h2>
+      <p class="text-[11px] text-mute">两条编辑路径等价：设置字段，或 Picker 行「重命名」。hint 写<strong class="text-ink">空则回退品牌名+模型</strong>。</p>
+      <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div class="overflow-hidden rounded-2xl border border-line">
+          <div class="flex min-h-[360px]">
+            <nav class="hidden w-32 shrink-0 border-r border-line bg-paper p-3 text-[12px] sm:block">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">智能体</p>
+              <ul class="mt-2 space-y-1">
+                <li class="rounded-md bg-soft px-2 py-1 font-medium text-accent">本机 CLI</li>
+              </ul>
+            </nav>
+            <div class="relative min-w-0 flex-1">
+              <div class="border-b border-line px-4 py-3">
+                <p class="text-[15px] font-semibold">本机 CLI</p>
+                <p class="mt-0.5 text-[11px] text-mute">引擎级显示名。会话覆盖本刀不做。</p>
+              </div>
+              <div class="absolute inset-y-0 right-0 flex w-[min(100%,300px)] flex-col border-l border-line bg-card shadow-2xl">
+                <header class="flex items-start justify-between border-b border-line px-4 py-3">
+                  <div>
+                    <h3 class="text-[15px] font-semibold">Claude</h3>
+                    <p class="text-[11px] text-mute">配置 · 官方登录</p>
+                  </div>
+                  <span class="text-[12px] text-mute">关闭</span>
+                </header>
+                <div class="flex-1 space-y-3 px-4 py-4">
+                  <div>
+                    <label for="display-name" class="text-[11px] font-medium">显示名</label>
+                    <input id="display-name" value="代码审" class="mt-1 h-9 w-full rounded-xl border border-line bg-paper px-3 text-[12px] outline-none focus:ring-2 focus:ring-accent/30" />
+                    <p class="mt-1 text-[10px] text-mute">空则回退品牌名+模型</p>
+                  </div>
+                  <p class="rounded-lg border border-dashed border-line bg-paper px-2.5 py-2 text-[10px] text-mute">本机标签 · 不进云身份 · runtimeId 仍是 <span class="font-mono text-ink">claude</span></p>
+                </div>
+                <footer class="border-t border-line px-4 py-3">
+                  <button id="save-name" type="button" class="h-8 w-full rounded-lg bg-accent text-[12px] font-medium text-white">保存</button>
+                </footer>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="space-y-2">
+          <div class="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+            <p class="border-b border-line bg-paper px-3 py-2 text-[11px] font-semibold">Picker · 行菜单</p>
+            <ul class="divide-y divide-line text-[12px]">
+              <li class="flex items-center gap-2 bg-soft px-3 py-2">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span id="picker-face">代码审</span>
+                <span class="ml-auto text-[10px] text-accent">当前</span>
+              </li>
+              <li class="px-3 py-2 font-medium text-accent">重命名</li>
+              <li class="px-3 py-2 text-mute">换模型…</li>
+            </ul>
+            <p class="border-t border-line bg-paper px-3 py-2 text-[10px] text-mute">与设置同一字段。切换引擎仍走导轨，不是这里。</p>
+          </div>
+          <div id="saved-toast" hidden class="rounded-full bg-card px-2.5 py-1 text-[11px] shadow-sm ring-1 ring-ok/25">
+            <span class="inline-block size-1.5 rounded-full bg-ok"></span>
+            <span class="font-medium">已更新芯片 / 侧栏 / Inbox</span>
+          </div>
+          <div class="rounded-2xl border border-line p-3">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">保存后立刻</p>
+            <div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30" title="Claude · 真名">
+              <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+              <span id="live-chip" class="text-mute">代码审</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span>
+            </div>
+            <p class="mt-2 text-[11px]"><span id="live-inbox" class="font-medium">代码审</span> · Inbox 同行</p>
+            <button id="clear-name" type="button" class="mt-2 text-[10px] font-medium text-accent">演示清空</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- D 悬停真名 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">D · 悬停见引擎真名</h2>
+      <p class="text-[11px] text-mute">面写「代码审」。悬停 / <code>title</code> 写出 <strong class="text-ink">Claude · 真名</strong>。列表行同一套。</p>
+      <div class="rounded-2xl border border-line p-4">
+        <div class="relative inline-block">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/40" title="Claude · 真名">
+            <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+            <span class="text-mute">代码审</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span>
+          </span>
+          <div class="absolute left-1/2 top-[calc(100%+8px)] z-10 w-[148px] -translate-x-1/2 rounded-lg border border-ink bg-ink px-2.5 py-1.5 text-center text-[11px] text-white shadow-lg">
+            Claude · 真名
+            <span class="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-ink"></span>
+          </div>
+        </div>
+        <p class="mt-12 text-[10px] text-mute">芯片、侧栏会话/引擎行、Inbox 行都带同一 <code>title</code>。换名不是换引擎。</p>
+      </div>
+    </section>
+
+    <!-- E 反例 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">E · 反例 · 划掉 / 勿画</h2>
+      <p class="text-[11px] text-mute">只抄显示名，不抄 Multica 小队。<strong class="text-warn">对照划掉。</strong></p>
+      <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-2xl border border-dashed border-warn/50 bg-paper/80 p-3 opacity-80">
+          <p class="text-[11px] font-semibold">小队 / 团队</p>
+          <p class="strike mt-2 text-[11px] text-mute">设计小队 · 3 席</p>
+          <p class="strike mt-1 text-[11px] text-mute">leader 派活</p>
+        </div>
+        <div class="rounded-2xl border border-dashed border-warn/50 bg-paper/80 p-3 opacity-80">
+          <p class="text-[11px] font-semibold">看板</p>
+          <div class="mt-2 grid grid-cols-3 gap-1 text-[10px] text-mute">
+            <p class="strike rounded-md border border-line bg-card px-1 py-2">待办</p>
+            <p class="strike rounded-md border border-line bg-card px-1 py-2">进行中</p>
+            <p class="strike rounded-md border border-line bg-card px-1 py-2">完成</p>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-dashed border-warn/50 bg-paper/80 p-3 opacity-80">
+          <p class="text-[11px] font-semibold">强制设名</p>
+          <p class="strike mt-2 text-[11px] text-mute">必须填写显示名才能开聊</p>
+          <p class="strike mt-1 text-[11px] text-mute">未命名助手（正式身份）</p>
+        </div>
+        <div class="rounded-2xl border border-dashed border-warn/50 bg-paper/80 p-3 opacity-80">
+          <p class="text-[11px] font-semibold">头像社交</p>
+          <p class="strike mt-2 text-[11px] text-mute">名片 · 关注 · 花名册同步</p>
+        </div>
+      </div>
+      <p class="text-[10px] font-semibold text-warn">小队 · 看板 · 强制设名 · 头像社交 · 勿画</p>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">写</th><th class="px-3 py-2">不用</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">作用域</td>
+            <td class="px-3 py-2">引擎级可选显示名</td>
+            <td class="px-3 py-2">本刀必做会话覆盖；小队席位</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">编辑</td>
+            <td class="px-3 py-2">设置显示名 / Picker「重命名」</td>
+            <td class="px-3 py-2">强制每人设名</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">空</td>
+            <td class="px-3 py-2">品牌名 + 模型</td>
+            <td class="px-3 py-2">未命名助手</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">表面</td>
+            <td class="px-3 py-2">芯片 / 侧栏 / Inbox 人话；悬停真名</td>
+            <td class="px-3 py-2">换名当换引擎</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>给 Claude 设「代码审」→ 芯片、侧栏、Inbox 显示该名。</li>
+        <li>清空显示名 → 回退 Claude · Sonnet 4（品牌名+模型）。</li>
+        <li>悬停芯片 / 列表 / Inbox 见 <code>Claude · 真名</code>。</li>
+        <li>设置或 Picker「重命名」都能改；不影响探索\|执行、换模、扩展注入。</li>
+        <li>无小队、无看板、无强制设名、无头像社交。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">小队 / leader 派活 / 看板 / 强制设名 / 头像社交 / 云身份 / 改 slim / 改 SoT / I2</p>
+    </section>
+
+    <p class="text-[10px] text-mute">产品短锁认 <span class="font-medium text-ink">design/references/p2-agent-display-name.md</span>（Jojo）。芯片密度仍认 <a class="text-accent" href="./p0-composer-slim.html">p0-composer-slim.html</a>。不宣称应用 1:1。</p>
+  </div>
+  <script>
+    const BRAND = "Claude";
+    const MODEL = "Sonnet 4";
+    const input = document.getElementById("display-name");
+    const toast = document.getElementById("saved-toast");
+
+    /** 空则品牌名；永不写「未命名」。芯片右段仍拼模型。 */
+    function resolveFace(raw) {
+      const trimmed = (raw ?? "").trim();
+      return trimmed === "" ? BRAND : trimmed;
+    }
+
+    function paint(raw) {
+      const face = resolveFace(raw);
+      document.getElementById("live-chip").textContent = face;
+      document.getElementById("live-inbox").textContent = face;
+      document.getElementById("picker-face").textContent = face;
+    }
+
+    function save() {
+      paint(input.value);
+      toast.hidden = false;
+    }
+
+    document.getElementById("save-name").addEventListener("click", save);
+    document.getElementById("clear-name").addEventListener("click", () => {
+      input.value = "";
+      save();
+    });
+  </script>
+</body>
+</html>
