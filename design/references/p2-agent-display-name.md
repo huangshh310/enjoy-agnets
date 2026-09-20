@@ -44,6 +44,6 @@
 
 ## 可选并行（不挡）
 
-若你想更高价值下一刀，可改切 **I4-P1：webhook / 保存后触发**（补全 Automations）。本锁默认走命名身份。
+若你想更高价值下一刀，可改切 **I4-P1：webhook / 保存后触发**（[`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)；预览待 luna）。本锁默认走命名身份。
 
 *冲突以 `design/specs/*` 为准。*

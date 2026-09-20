@@ -72,7 +72,7 @@
 
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`SESSION_CHANNELS`（含 `session.patch` / `session.recap` / `session.rename`）必须进 `CHANNELS`，否则卸载会留下 handler。
 - `patchSession` 不碰 `updated_at`；`rename` / 归档才会 bump。
-- Zod `AutomationTrigger` 含 `cron` 已接本机调度（`automations-scheduler` 20s 滴答）。关应用不补跑。`webhook` 不是 trigger enum。`stopOnFailCount` 仍不当已实现。`on_save` 仍走 `fireOnSaveAutomations`，I4 UI 不新做。
+- Zod `AutomationTrigger` 含 `cron` 已接本机调度（`automations-scheduler` 20s 滴答）。关应用不补跑。`webhook` 不是 trigger enum。`stopOnFailCount` 仍不当已实现。`on_save` 仍走 `fireOnSaveAutomations`，I4 UI 不新做。I4-P1 保存后 / 本机 webhook 短锁 [`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md) 不是当前真相；预览 `previews/i4-p1-webhook-onsave.html` 待 luna。
 - node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止 `allow_session`：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。
