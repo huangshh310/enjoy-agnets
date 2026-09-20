@@ -55,21 +55,17 @@ export function resolveSpawnCommand(id: string, override: SpawnOverride = {}): R
 }
 
 /**
- * 按 capability 剥掉该 CLI 不认的旗标。未声明 fast=flag / thinking=acp-mode 则丢掉。
+ * 按 capability 剥掉该 CLI 不认的旗标。`--thinking` 一律丢掉（走 thought_level）。
  * Cursor `agent acp` 只认 --help，`--fast` / `--thinking` 会 unknown option 并 exit 1。
  */
 export function sanitizeAcpExtraArgs(id: string, extra: string[]): string[] {
   const cap = capabilitiesFor(id)
-  return extra.filter((flag) => !isRejectedAcpFlag(flag, cap.fast, cap.thinking))
+  return extra.filter((flag) => !isRejectedAcpFlag(flag, cap.fast))
 }
 
-function isRejectedAcpFlag(
-  flag: string,
-  fast: RuntimeCapabilities["fast"],
-  thinking: RuntimeCapabilities["thinking"]
-): boolean {
+function isRejectedAcpFlag(flag: string, fast: RuntimeCapabilities["fast"]): boolean {
   if (fast !== "flag" && flag === "--fast") return true
-  if (thinking !== "acp-mode" && (flag === "--thinking" || flag.startsWith("--thinking="))) return true
+  if (flag === "--thinking" || flag.startsWith("--thinking=")) return true
   return false
 }
 

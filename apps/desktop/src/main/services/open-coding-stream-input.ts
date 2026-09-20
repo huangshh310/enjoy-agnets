@@ -36,6 +36,7 @@ export type OpenCodingStreamInput = {
   secret?: StoredSecret
   prefs: AppPreferences
   effort?: ReasoningEffort
+  thoughtLevel?: string
   fast?: boolean
   sessionApprovedTools: ReadonlySet<string>
   sessionApprovedBashPrefixes?: readonly string[]

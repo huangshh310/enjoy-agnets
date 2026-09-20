@@ -27,7 +27,14 @@ const ALLOWED_DOCS_HOSTS = new Set([
   "platform.deepseek.com",
   "geminicli.com",
   "www.geminicli.com",
-  "ohmypi.xyz"
+  "ohmypi.xyz",
+  "www.codebuddy.cn",
+  "codebuddy.cn",
+  "docs.qoder.com",
+  "qoder.com",
+  "agent.minimax.io",
+  "moonshotai.github.io",
+  "qwenlm.github.io"
 ])
 
 export function isAllowedDocsUrl(raw: string): boolean {

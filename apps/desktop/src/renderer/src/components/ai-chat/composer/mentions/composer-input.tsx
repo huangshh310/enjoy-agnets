@@ -62,7 +62,7 @@ export function ComposerInput({
       <textarea
         ref={textareaRef}
         data-testid="composer-input"
-        rows={2}
+        rows={1}
         value={value}
         onChange={(event) => {
           onChange(event.target.value)
@@ -75,7 +75,7 @@ export function ComposerInput({
         onFocus={onFocus}
         onBlur={onBlur}
         placeholder={running ? t("chat.placeholderRunning") : t("chat.placeholder")}
-        className="max-h-48 min-h-[52px] w-full resize-none bg-transparent py-1.5 text-body-medium text-text-primary outline-none placeholder:text-text-secondary/70"
+        className="max-h-48 min-h-[38px] w-full resize-none bg-transparent py-1 text-body-medium text-text-primary outline-none placeholder:text-text-secondary/70 leading-relaxed"
       />
     </div>
   )

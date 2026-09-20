@@ -9,6 +9,8 @@ import { composerSendReady } from "@renderer/hooks/runtime-interact/send-compose
 import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { AgentPicker } from "../agent-picker"
+import { ComposerThinkingChrome } from "./thinking/composer-thinking-chrome"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
@@ -17,6 +19,7 @@ import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
 import { formatComposerRemoteFootnote } from "@renderer/components/settings/workspace/parse-remote-label"
 import { ModelSwitchFootnoteSlot } from "./model-switch/model-switch-footnote-slot"
+import { HostInjectBar } from "./host-inject/host-inject-bar"
 import { useT } from "@renderer/i18n"
 
 export function ComposerFooter({
@@ -25,6 +28,7 @@ export function ComposerFooter({
   modelLabel,
   modelId,
   models,
+  onModelChange,
   onStop,
   onSend,
   canRealtime,
@@ -39,6 +43,7 @@ export function ComposerFooter({
   | "modelLabel"
   | "modelId"
   | "models"
+  | "onModelChange"
   | "onStop"
   | "onSend"
 > & {
@@ -70,8 +75,16 @@ export function ComposerFooter({
       <ModelSwitchFootnoteSlot modelId={modelId} modelLabel={modelLabel} models={models} />
     )}
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         <ComposerAttachMenu onPickFiles={onPickFiles} />
+        <AgentPicker
+          modelId={modelId}
+          modelLabel={modelLabel}
+          models={models}
+          onModelChange={onModelChange}
+        />
+        <ComposerThinkingChrome compact modelId={modelId} modelLabel={modelLabel} models={models} />
+        <HostInjectBar />
         <SessionMeter />
       </div>
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1">

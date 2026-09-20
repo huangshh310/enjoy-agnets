@@ -14,18 +14,17 @@ export function SessionMeter() {
   if (stats.usedTokens <= 0 && !running) return null
 
   const percent = stats.maxTokens > 0 ? Math.round(stats.usagePercent) : null
+  const titleHint =
+    percent != null
+      ? `${t("chat.usage.sessionMeterHint")} (${percent}%)`
+      : t("chat.usage.sessionMeterHint")
+
   return (
     <span
-      className="inline-flex shrink-0 items-center gap-1 font-mono text-caption-2-medium tabular-nums text-text-tertiary"
-      title={t("chat.usage.sessionMeterHint")}
+      className="inline-flex shrink-0 items-center gap-1 font-mono text-caption-2-medium tabular-nums text-text-tertiary select-none"
+      title={titleHint}
     >
-      <span>{formatTokens(stats.usedTokens)}</span>
-      {percent != null ? (
-        <>
-          <span className="text-text-tertiary/70">·</span>
-          <span>{percent}%</span>
-        </>
-      ) : null}
+      <span>{formatTokens(stats.usedTokens)} tok</span>
     </span>
   )
 }

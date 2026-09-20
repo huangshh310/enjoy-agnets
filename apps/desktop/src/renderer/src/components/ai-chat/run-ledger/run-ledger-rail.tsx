@@ -3,6 +3,7 @@
  */
 import { useMemo } from "react"
 import { useT } from "@renderer/i18n"
+import { RiCloseLine } from "@remixicon/react"
 import { collectTurnSources } from "../thread/sources/collect-turn-sources"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
@@ -13,7 +14,13 @@ import { RunLedgerGroup } from "./run-ledger-group"
 import { RunLedgerRow } from "./run-ledger-row"
 import type { LedgerGroupKind, RunLedgerEntry } from "./run-ledger.types"
 
-export function RunLedgerRail() {
+export function RunLedgerRail({
+  open = true,
+  onClose
+}: {
+  open?: boolean
+  onClose?: () => void
+} = {}) {
   const t = useT()
   const messages = useChatStore((state) => state.messages)
   const assistant = lastAssistantTurn(messages)
@@ -26,7 +33,7 @@ export function RunLedgerRail() {
   const chips = assistant
     ? collectTurnSources({ ...assistant, hostInject }, (name) => t("chat.sourceSkillLabel", { name }))
     : []
-  if (!assistant && entries.length === 0) return null
+  if (!open || (!assistant && entries.length === 0)) return null
 
   return (
     <aside
@@ -34,7 +41,19 @@ export function RunLedgerRail() {
       className="hidden w-[18.25rem] shrink-0 flex-col border-l border-separator-border bg-background-primary-default min-[1100px]:flex"
     >
       <header className="border-b border-separator-border px-3 py-2">
-        <h3 className="text-caption-1-semibold text-text-primary">{t("sessionOps.ledgerTitle")}</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-caption-1-semibold text-text-primary">{t("sessionOps.ledgerTitle")}</h3>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-5 cursor-pointer items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
+              aria-label="关闭账本"
+            >
+              <RiCloseLine className="size-3.5" />
+            </button>
+          ) : null}
+        </div>
         <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("sessionOps.ledgerHint")}</p>
         <LedgerCountPills entries={entries} />
       </header>

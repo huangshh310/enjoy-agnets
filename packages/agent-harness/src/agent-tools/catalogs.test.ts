@@ -55,7 +55,13 @@ test("原生插件复制命令可粘贴，不含占位符", () => {
     "pi",
     "hermes",
     "amp",
-    "deepseek"
+    "deepseek",
+    "qwen",
+    "kimi",
+    "codebuddy",
+    "glm",
+    "minimax",
+    "qoder"
   ] as const
   for (const id of ids) {
     const copy = catalogFor(id)?.nativePluginCopy
@@ -66,6 +72,17 @@ test("原生插件复制命令可粘贴，不含占位符", () => {
   assert.equal(catalogFor("codex")?.nativePluginCopy, "codex plugin marketplace list")
   assert.equal(catalogFor("grok")?.nativePluginCopy, "grok plugin marketplace list")
   assert.equal(catalogFor("amp")?.nativePluginCopy, "amp plugins repositories")
+})
+
+test("国产 CLI 有安装说明与文档 host", () => {
+  assert.equal(installKindFor("qwen"), "npm")
+  assert.equal(installKindFor("codebuddy"), "npm")
+  assert.equal(installKindFor("glm"), "npm")
+  assert.equal(installKindFor("minimax"), "npm")
+  assert.equal(installKindFor("qoder"), "npm")
+  assert.equal(installKindFor("kimi"), "copy")
+  assert.equal(isAllowedDocsUrl("https://www.codebuddy.cn/cli/"), true)
+  assert.equal(isAllowedDocsUrl("https://docs.qoder.com/cli/acp"), true)
 })
 
 test("Grok Build 是 copy 安装，有模型表", () => {

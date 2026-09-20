@@ -39,6 +39,7 @@ export function ModelSwitchFootnote({
       </div>
     )
   }
+  if (!switched) return null
   const short = shortSessionId(sessionId)
   const line =
     switched && short

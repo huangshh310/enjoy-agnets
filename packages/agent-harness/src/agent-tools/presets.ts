@@ -177,6 +177,78 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     available: true,
     comingSoon: false,
     skillOnly: false
+  },
+  {
+    id: "qwen",
+    label: "Qwen Code",
+    transport: "acp-host",
+    binaries: ["qwen"],
+    acpArgs: ["--acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "qwen then sign in, or set OPENAI_API_KEY / DASHSCOPE_API_KEY",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "kimi",
+    label: "Kimi CLI",
+    transport: "acp-host",
+    binaries: ["kimi"],
+    acpArgs: ["acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "kimi login",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "codebuddy",
+    label: "CodeBuddy",
+    transport: "acp-host",
+    binaries: ["codebuddy"],
+    acpArgs: ["--acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "codebuddy login, or set CODEBUDDY_API_KEY",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "glm",
+    label: "GLM Agent",
+    transport: "acp-host",
+    binaries: ["glm-acp-agent"],
+    acpArgs: [],
+    detectArgs: ["--version"],
+    needsLoginHint: "Set ZAI_API_KEY or GLM_API_KEY for Zhipu Coding Plan",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "minimax",
+    label: "MiniMax Code",
+    transport: "acp-host",
+    binaries: ["mcode"],
+    acpArgs: ["acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "mcode login",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "qoder",
+    label: "Qoder CLI",
+    transport: "acp-host",
+    binaries: ["qodercli"],
+    acpArgs: ["--acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "qodercli login",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
   }
 ]
 

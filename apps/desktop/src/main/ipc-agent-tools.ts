@@ -2,7 +2,7 @@
  * 本机 CLI 工具箱 IPC：目录、探测、覆盖、doctor、安装、登录。
  */
 import { catalogFor, isAllowedDocsUrl } from "@enjoy-agents/agent-harness"
-import { disposeAcpSession } from "@enjoy-agents/agent-harness"
+import { disposeAcpSession, setAcpConfigOption } from "@enjoy-agents/agent-harness"
 import {
   AgentToolIdInput,
   DisposeSessionInput,
@@ -10,6 +10,7 @@ import {
   InspectAgentToolInput,
   LoginAgentToolInput,
   RemoveCustomAgentInput,
+  SetConfigOptionInput,
   SetHandoffInput,
   SetSessionRuntimeInput,
   UpsertAgentToolInput,
@@ -45,7 +46,8 @@ export const AGENT_TOOLS_CHANNELS = [
   "agentTools.setHandoff",
   "agentTools.upsertCustom",
   "agentTools.removeCustom",
-  "agentTools.getCustom"
+  "agentTools.getCustom",
+  "agentTools.setConfigOption"
 ] as const
 
 export function registerAgentToolsIpc() {
@@ -120,5 +122,9 @@ export function registerAgentToolsIpc() {
     const record = getCustomAgent(input.id)
     if (!record) throw new Error(`Unknown custom agent '${input.id}'.`)
     return record
+  })
+  ipcMain.handle("agentTools.setConfigOption", async (_event, raw: unknown) => {
+    const input = SetConfigOptionInput.parse(raw)
+    return setAcpConfigOption(input.sessionId, input.configId, input.value)
   })
 }

@@ -51,7 +51,7 @@ function PolicyTrigger({
       type="button"
       aria-label={t("chat.approvalAria")}
       className={cx(
-        "group flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs cursor-pointer",
+        "group flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-caption-2-medium outline-none transition-all shadow-2xs cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         tone.bgClass,
         tone.colorClass,
@@ -60,7 +60,7 @@ function PolicyTrigger({
       {...props}
     >
       <Icon className={cx("size-3.5 shrink-0", tone.iconColor)} />
-      <span className="whitespace-nowrap font-semibold">
+      <span className="whitespace-nowrap font-medium">
         {kind === "custom" ? t("common.permissionCustom") : titleCase(kind, t)}
       </span>
     </button>

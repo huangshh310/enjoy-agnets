@@ -29,13 +29,12 @@ const picker = readFileSync(join(dir, "../agent-picker/agent-picker.tsx"), "utf8
 const thinking = readFileSync(join(dir, "thinking/composer-thinking-chrome.tsx"), "utf8")
 const preview = readPreview()
 
-test("顶栏铬序是探索/执行 → 单一引擎芯片 → 思考小档", () => {
-  const explore = chrome.indexOf("<ExploreExecuteToggle")
-  const engine = chrome.indexOf("<AgentPicker")
-  const think = chrome.indexOf("<ComposerThinkingChrome")
-  assert.ok(explore > 0 && engine > explore && think > engine)
+test("顶栏铬序是探索/执行分段，模型与思考下沉至底栏", () => {
+  assert.ok(chrome.includes("<ExploreExecuteToggle"))
   assert.equal(chrome.includes("<ComposerModelChip"), false)
   assert.equal(chrome.includes("<SessionGoalChip"), false)
+  assert.ok(footer.includes("<AgentPicker"))
+  assert.ok(footer.includes("<ComposerThinkingChrome"))
 })
 
 test("底栏溢出收目标/阶段，不并排探索分段", () => {

@@ -1,7 +1,8 @@
 /**
  * Chat 工作台顶栏：工作区 / 会话面包屑与 Inspector 开关。
  */
-import { RiFolder6Line, RiLayoutRight2Line } from "@remixicon/react"
+import { RiFileList3Line, RiFolder6Line, RiLayoutRight2Line } from "@remixicon/react"
+import { cx } from "@/utils/cx"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,13 +20,19 @@ export function ChatStageHeader({
   sessionTitle,
   reviewPhase,
   rightPanelCollapsed,
-  onToggleRightPane
+  onToggleRightPane,
+  hasLedger,
+  ledgerOpen,
+  onToggleLedger
 }: {
   workspaceName: string
   sessionTitle: string
   reviewPhase?: ReviewGatePhase | null
   rightPanelCollapsed: boolean
   onToggleRightPane: () => void
+  hasLedger?: boolean
+  ledgerOpen?: boolean
+  onToggleLedger?: () => void
 }) {
   const t = useT()
   return (
@@ -43,6 +50,23 @@ export function ChatStageHeader({
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        {hasLedger && onToggleLedger ? (
+          <button
+            type="button"
+            onClick={onToggleLedger}
+            title={ledgerOpen ? t("chat.collapsePane") : t("sessionOps.ledgerTitle")}
+            aria-pressed={ledgerOpen}
+            className={cx(
+              "flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-caption-2-medium transition-colors cursor-pointer",
+              ledgerOpen
+                ? "border-border-button-default bg-background-secondary-default text-text-primary shadow-2xs"
+                : "border-transparent text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
+            )}
+          >
+            <RiFileList3Line className="size-3.5 text-foreground-icon-secondary" aria-hidden />
+            <span>{t("sessionOps.ledgerTitle")}</span>
+          </button>
+        ) : null}
         {reviewPhase ? <ReviewGateHeader phase={reviewPhase} /> : null}
         <QuietIconButton
           icon={RiLayoutRight2Line}

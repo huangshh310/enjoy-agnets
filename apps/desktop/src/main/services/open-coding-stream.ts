@@ -75,6 +75,7 @@ function openedAcpStream(input: OpenCodingStreamInput): Promise<OpenedCodingStre
     abortSignal: input.abortSignal,
     waitForSubagentApproval: input.waitForSubagentApproval,
     effort: input.effort,
+    thoughtLevel: input.thoughtLevel,
     fast: input.fast,
     customInstructions: input.prefs.customInstructions
   })

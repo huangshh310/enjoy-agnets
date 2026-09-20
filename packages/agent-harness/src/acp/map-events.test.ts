@@ -214,6 +214,31 @@ test("available_commands_update 进 commands.update，不进气泡", () => {
   }
 })
 
+test("config_option_update 进 session.config", () => {
+  const events = mapAcpUpdate(
+    {
+      sessionUpdate: "config_option_update",
+      configOptions: [
+        {
+          id: "reasoning_effort",
+          name: "Effort",
+          category: "thought_level",
+          currentValue: "high",
+          options: [
+            { value: "low", name: "Low" },
+            { value: "high", name: "High" }
+          ]
+        }
+      ]
+    },
+    "run_1"
+  )
+  assert.equal(events[0]?.type, "session.config")
+  if (events[0]?.type === "session.config") {
+    assert.equal(events[0].configOptions[0]?.id, "reasoning_effort")
+  }
+})
+
 test("kind=task 归一成 delegate", () => {
   const events = mapAcpUpdate(
     {

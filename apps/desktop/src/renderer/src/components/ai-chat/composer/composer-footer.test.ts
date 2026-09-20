@@ -6,14 +6,14 @@ import { test } from "node:test"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
-test("顶栏铬序是探索/执行 → 单一引擎芯片 → 思考小档", () => {
+test("顶栏只留探索/执行分段，模型与思考下沉至底栏", () => {
   const src = readFileSync(join(dir, "composer-top-chrome.tsx"), "utf8")
-  const explore = src.indexOf("<ExploreExecuteToggle")
-  const engine = src.indexOf("<AgentPicker")
-  const thinking = src.indexOf("<ComposerThinkingChrome")
-  assert.ok(explore > 0 && engine > explore && thinking > engine)
+  const footerSrc = readFileSync(join(dir, "composer-footer.tsx"), "utf8")
+  assert.ok(src.includes("<ExploreExecuteToggle"))
   assert.equal(src.includes("<ComposerModelChip"), false)
   assert.equal(src.includes("<SessionGoalChip"), false)
+  assert.ok(footerSrc.includes("<AgentPicker"))
+  assert.ok(footerSrc.includes("<ComposerThinkingChrome"))
 })
 
 test("底栏溢出菜单收目标/阶段", () => {

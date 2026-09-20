@@ -57,12 +57,12 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
 - 工作区壳：`apps/desktop/src/renderer/src/components/app-shell/app-shell.tsx`（轨道、情境、Chat 工作台、Inspector）
 - Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`（会话行 `sidebar-session-row.tsx` + `session-agent-mark.tsx` + `session-activity.ts` / `sidebar-active-sessions.tsx`）。P2 显示名：`lib/agent-display-name.ts` + `hooks/use-engine-display-name.ts`；设置字段 `settings/agent-tools/display-name/`；Picker `agent-picker/engine-rename-action.tsx`
-- Composer 底栏显隐：`composer/composer-footer.tsx` 读 `composerChromeFor`（`packages/ipc-contract/src/runtime-capabilities.ts`）；瘦身顶栏：`composer/composer-top-chrome.tsx`（单一 `AgentPicker` + 思考小档）；目标/阶段：`composer/composer-overflow-menu.tsx`；I1 换模逻辑：`composer/model-switch/` + `requestModelSwitch`（视觉锁 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)，入口是同一份引擎芯片）；思考铬：`composer/thinking/` 读 `composerThinkingChrome`。铬条**能力**仍认 chrome / I1 / C1；**密度/布局**认 slim 锁与本页当前真相
+- Composer 底栏显隐：`composer/composer-footer.tsx` 读 `composerChromeFor`；模型选择器 `AgentPicker` 与思考小档下沉至底栏左侧工具条（与附件、`HostInjectBar`、用量并列），对齐 Cursor / Windsurf / Claude 等主流 AI IDE 底部操作流；顶栏 `composer-top-chrome.tsx` 仅保留轻量探索/执行分段。目标/阶段：`composer-overflow-menu.tsx`；I1 换模逻辑：`composer/model-switch/` + `requestModelSwitch`；思考铬：`composer/thinking/` 读 `composerThinkingChrome`。铬条**能力**仍认 chrome / I1 / C1；**密度/布局**认 slim 锁与本页当前真相
 - Composer 探索/执行分段与拦截：`ai-chat/composer/explore-execute/`（C1 全引擎常驻）；`composer-mode.ts` 只做 ask/plan ↔ 探索、agent ↔ 执行
 - Composer 宿主注入一行芯片：`ai-chat/composer/host-inject/`（空不画；Popover 内脚注 / 管理扩展）；快照 `stores/host-inject/`；合约 `packages/ipc-contract/src/host-inject.ts`
 - Composer `@` 发现（文件 / 文档 / 技能 / MCP，网页 muted）与 `/` 内置（compact + 探索/执行）+ 技能面板：`ai-chat/composer/mentions/`
 - 会话目标 / Recap：`composer/session-goal-chip.tsx`（只从底栏 `…` 打开，不贴探索|执行旁）；侧栏状态分组：`sidebar/sidebar-status-groups.tsx`、`session-row-menu.tsx`、`sort-sessions.ts`
-- Mermaid：`thread/mermaid/`；Preview Rail：`thread/thread-preview-rail.tsx`（窄屏隐藏）
+- Mermaid：`thread/mermaid/`；Preview Rail：`thread/thread-preview-rail.tsx`（窄屏与账本开启时隐藏，杜绝刻度穿插气泡）
 - Shift+Tab 审批循环：`use-permission-cycle-hotkey.ts`（挂 `chat-stage.tsx`）
 - 本轮来源芯片与「本轮来源」sheet：`ai-chat/thread/sources/` + `stores/sources-sheet/`（芯片 / 账本行共用；芯片入口仍认 [`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)，锁 tip `76b5ecd`；账本分组 / 来源诚实空态认 [`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)，锁 tip `b1721a7`）
 - 验收闸：`ai-chat/review-gate/`（顶栏三段 + 打回/通过）；账本：`ai-chat/run-ledger/`（按 kind 分组折叠，文件行开同一张 sheet）
@@ -92,6 +92,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - **隐患**：Recap tooltip 写「已注入」但本轮还没发。正确做法：只在下一轮 `send-composer-run` 垫 system 句；Goal 永不进模型。inspect-prompt 从 SQLite 重建时可能看不到这条合成 system 句。
 - Mermaid：`securityLevel: "strict"`，失败回退代码块，不要 CDN mermaid.js。改皮只动 `render-mermaid.ts`。`themeVariables` 仍有裸 hex。
 - **隐患**：窄屏看不见 Preview Rail。根因：有意 `min-[768px]:flex`。不要当 bug 加回挤布局。
+- **隐患**：账本打开时 Preview Rail 刺入右侧用户气泡。根因：绝对定位在 Stage 右侧，账本占据 292px 后刻度正好贴在分割线上且 48px 亮蓝横条向左穿透气泡。正确做法：账本存在时（`hasLedger && min-[1100px]`）自动隐藏 Rail，单栏刻度收敛至 24px 微线且去纯蓝粗刺。
+- **隐患**：输入框空态无发送键且「全部」被误认为主按钮。根因：无草稿无运行 slot=none 直接 return null；右下角留下刺眼红底「⚡ 全部」。正确做法：发送键永久常驻右下角（空态淡灰禁用环，有输入激活，运行中止）；全部放行采用琥珀预警温和药丸，禁止抢占主视觉；换模脚注仅在换模后出现，日常不常驻「同一助手，不换引擎」。
 - **隐患**：Shift+Tab 在输入框「失灵」。根因：hotkey 跳过 input/textarea/contentEditable。
 - **隐患**：Composer `@` 漏 MCP / 把 MCP 当授权。发现组是 discover（文件+文档+技能+MCP+muted web）；执行仍走 ToolLoop。
 - **隐患**：有 path 的文件 chip 直接 `openSourceRow` / `openChangedFile`，底脚会跳过「本轮来源」sheet。根因：把审查捷径绑在芯片上。正确做法（P0-G `76b5ecd`）：芯片与 +N **只开 sheet**；聚焦审查只从 sheet 内有 path 的文件行；技能 / MCP 不跳转。sheet 用轻 scrim（`bg-black/10`），禁止全屏黑底遮死右侧看板。

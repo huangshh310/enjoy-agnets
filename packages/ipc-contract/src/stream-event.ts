@@ -4,6 +4,7 @@
  */
 import { z } from "zod"
 import { HostInjectSnapshot } from "./host-inject.ts"
+import { SessionConfigOption } from "./session-config.ts"
 
 const Envelope = {
   sequence: z.number().int().optional(),
@@ -219,6 +220,12 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("host.inject"),
     runId: z.string(),
     ...HostInjectSnapshot.shape,
+    ...Envelope
+  }),
+  z.object({
+    type: z.literal("session.config"),
+    runId: z.string(),
+    configOptions: z.array(SessionConfigOption),
     ...Envelope
   })
 ])

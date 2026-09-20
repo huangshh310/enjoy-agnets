@@ -30,7 +30,7 @@ export function previewItemsFromMessages(
       ariaLabel: `${who}: ${snippet || labels.empty}`,
       description: snippet || labels.empty,
       itemClassName: isUser ? "text-accent-600 dark:text-accent-400 font-medium" : "text-text-tertiary",
-      tickClassName: isUser ? "!bg-accent-500 !h-[3px] rounded-full" : undefined
+      tickClassName: isUser ? "bg-accent-500 rounded-full" : undefined
     }
   })
 }

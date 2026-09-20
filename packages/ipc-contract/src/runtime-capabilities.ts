@@ -11,7 +11,8 @@ export const RuntimeCapabilities = z.object({
   models: z.enum(["none", "catalog", "inspect"]),
   login: z.boolean(),
   quota: z.boolean(),
-  thinking: z.enum(["none", "model-id", "acp-mode", "effort"]),
+  /** advertised = ACP thought_level / 种子档，不是 session/set_mode。 */
+  thinking: z.enum(["none", "model-id", "advertised", "effort"]),
   fast: z.enum(["none", "model-id", "flag", "local"]),
   permissionUi: z.enum(["enjoy-hmac", "hidden"]),
   executionModes: z.enum(["enjoy-local", "hidden"]),
@@ -99,13 +100,14 @@ export function canHostInterceptExplore(runtimeId: string | undefined): boolean 
   return capabilitiesFor(runtimeId).permissionUi === "enjoy-hmac"
 }
 
-export type ComposerThinkingChrome = "effort" | "follow-model" | "none"
+export type ComposerThinkingChrome = "effort" | "follow-model" | "advertised" | "none"
 
-/** 思考铬：effort 五档；model-id / acp-mode 跟模型；none 隐藏。 */
+/** 思考铬：effort 五档；advertised 用广告/种子档；model-id 跟模型；none 隐藏。 */
 export function composerThinkingChrome(runtimeId: string | undefined): ComposerThinkingChrome {
   const thinking = capabilitiesFor(runtimeId).thinking
   if (thinking === "effort") return "effort"
-  if (thinking === "model-id" || thinking === "acp-mode") return "follow-model"
+  if (thinking === "advertised") return "advertised"
+  if (thinking === "model-id") return "follow-model"
   return "none"
 }
 
@@ -144,5 +146,11 @@ export const MATRIX_RUNTIME_IDS = [
   "amp",
   "deepseek",
   "omp",
+  "qwen",
+  "kimi",
+  "codebuddy",
+  "glm",
+  "minimax",
+  "qoder",
   SANDBOX_HARNESS_ID
 ] as const

@@ -8,6 +8,7 @@ import { extractAcpDiffs } from "./acp-diff.ts"
 import { mapAcpMcpApps } from "./map-acp-mcp-app.ts"
 import { isAcpPlanUpdate, mapAcpPlan } from "./map-acp-plan.ts"
 import { stampDelegateArgs } from "./stamp-delegate-args.ts"
+import { parseSessionConfigOptions, sessionConfigEvent } from "./parse-session-config.ts"
 
 export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   const rec = asRecord(update)
@@ -30,6 +31,10 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     return events
   }
   if (isAcpPlanUpdate(kind)) return mapAcpPlan(rec, runId)
+  if (kind === "config_option_update") {
+    const event = sessionConfigEvent(runId, parseSessionConfigOptions(rec))
+    return event ? [event] : []
+  }
   if (kind === "available_commands_update") {
     const rawCommands = Array.isArray(rec.availableCommands) ? rec.availableCommands : []
     const commands: Array<{ name: string; description?: string }> = []

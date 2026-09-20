@@ -62,6 +62,29 @@ test("已装且需要登录：未登录 / 探测中都不能当就绪", () => {
   assert.equal(readinessSubtitle("inspecting", (path) => path), "chat.agentInspecting")
 })
 
+test("无账号探针不得把 loggedIn=false 当发送闸", () => {
+  assert.equal(
+    engineReadiness({
+      id: "qwen",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false,
+      loginProbed: false
+    }),
+    "ready"
+  )
+  assert.equal(
+    canBindEngine({
+      id: "qwen",
+      status: "ready",
+      requiresLogin: true,
+      loggedIn: false,
+      loginProbed: false
+    }),
+    true
+  )
+})
+
 test("绑了 Enjoy 档案：不登官方也能就绪，缺 Key 才 needs_key", () => {
   assert.equal(
     engineReadiness({

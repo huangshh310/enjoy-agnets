@@ -53,6 +53,21 @@ test("v2 事件全集可 safeParse", () => {
         skipped: [],
         mounted: false
       }
+    },
+    {
+      type: "session.config",
+      runId: "r1",
+      configOptions: [
+        {
+          id: "reasoning_effort",
+          name: "Effort",
+          category: "thought_level",
+          choices: [
+            { value: "low", name: "Low" },
+            { value: "high", name: "High" }
+          ]
+        }
+      ]
     }
   ]
   for (const event of events) {

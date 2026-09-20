@@ -187,7 +187,7 @@ function RailTick({
         aria-hidden="true"
         animate={{ scaleX: scale }}
         transition={reduce ? { duration: 0 } : SPRING_LAYOUT}
-        className={cn("block h-0.5 w-12 origin-right bg-current", item.tickClassName)}
+        className={cn("block h-0.5 w-6 origin-right bg-current", item.tickClassName)}
       />
     </button>
   )

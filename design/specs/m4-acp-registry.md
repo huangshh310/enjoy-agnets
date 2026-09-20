@@ -1,11 +1,13 @@
 # spec/m4-acp-registry
 
-> M4 ACP 扩展与 Registry。最后更新：2026-09-12
+> M4 ACP 扩展与 Registry。最后更新：2026-09-20
 > 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 当前真相
+
+本机 CLI 密表已上架国产 ACP：Qwen Code（`qwen --acp`）/ Kimi CLI（`kimi acp`）/ CodeBuddy（`codebuddy --acp`）/ GLM Agent（`glm-acp-agent`）/ MiniMax Code（`mcode acp`）/ Qoder CLI（`qodercli --acp`）。安装走 catalog npm 或复制（Kimi 是 GitHub Release 二进制）。无账号探针时 `probed: false`，已装即可切/发，不永久 `needs_login`。思考档等 live `thought_level` 广告，无静态种子。协议摘录 [`../references/acp-protocol.md`](../references/acp-protocol.md)。
 
 设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。未找到详情是空卡「还没装好这个助手」+ 安装命令（视觉锁 [`previews/cli-b-registry-install.html`](../previews/cli-b-registry-install.html)，锁 tip `6c02931`）：有 npm/brew 配方才一键（Pi），否则复制是主行动（Hermes）；禁止假一键、假「已连接」。已装详情才展示说明与启动预览。文档 `openDocs`。无营销 Hero。
 

@@ -30,9 +30,9 @@ export const APPROVAL_PRESETS = [
   },
   {
     id: "allow-all" as const,
-    colorClass: "text-text-error-primary",
-    bgClass: "bg-background-tertiary-error border-border-error-default hover:bg-background-tertiary-error",
-    iconColor: "text-text-error-primary"
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:border-amber-500/30",
+    iconColor: "text-amber-500 dark:text-amber-400"
   }
 ]
 

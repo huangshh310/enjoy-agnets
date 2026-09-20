@@ -1,7 +1,14 @@
 /**
  * 聊天会话 store 的数据形状。实现仍在 chat-store.ts。
  */
-import type { ActionChip, AgentMode, SessionWorkflowStatus, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type {
+  ActionChip,
+  AgentMode,
+  SessionConfigOption,
+  SessionWorkflowStatus,
+  StreamEvent,
+  ThreadToolCall
+} from "@enjoy-agents/ipc-contract"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -189,6 +196,9 @@ export type ChatStore = {
   /** 交接确认后，早于该时间戳的气泡视为上一引擎记录。 */
   sessionHandoffCuts: Record<string, number>
   reasoningEffort: ReasoningEffort | undefined
+  /** ACP thought_level 当前值；无广告时用静态种子。 */
+  acpThoughtLevel: string | undefined
+  acpConfigOptions: SessionConfigOption[]
   isFastMode: boolean
   mode: AgentMode
   running: boolean
@@ -243,6 +253,7 @@ export type ChatStore = {
     reasoningEffort?: ReasoningEffort
   ) => void
   setReasoningEffort: (effort: ReasoningEffort | undefined) => void
+  setAcpThoughtLevel: (value: string | undefined) => void
   setFastMode: (isFast: boolean) => void
   toggleFastMode: () => void
   setMode: (mode: ChatStore["mode"]) => void

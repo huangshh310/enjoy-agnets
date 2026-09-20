@@ -4,6 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
 import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
@@ -14,6 +15,7 @@ import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { reviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate-phase"
 import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledger-rail"
+import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
 import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { ChatStageHeader } from "./chat-stage-header"
@@ -89,6 +91,9 @@ function ChatWorkspaceBody(props: {
   const repositories = useChatStore((state) => state.repositories)
   const workflowStatus = repositories.find((node) => node.id === sessionId)?.workflowStatus ?? null
   const reviewPhase = reviewGatePhase({ running, workflowStatus })
+  const [ledgerOpen, setLedgerOpen] = useState(true)
+  const assistant = lastAssistantTurn(messages)
+  const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -98,6 +103,9 @@ function ChatWorkspaceBody(props: {
         reviewPhase={reviewPhase}
         rightPanelCollapsed={props.rightPanelCollapsed}
         onToggleRightPane={props.onToggleRightPane}
+        hasLedger={hasLedger}
+        ledgerOpen={ledgerOpen}
+        onToggleLedger={() => setLedgerOpen((open) => !open)}
       />
       {props.empty ? (
         <EmptySessionStart
@@ -117,7 +125,7 @@ function ChatWorkspaceBody(props: {
               thinkingLabel={thinkingLabel}
               error={error}
             />
-            <RunLedgerRail />
+            <RunLedgerRail open={ledgerOpen} onClose={() => setLedgerOpen(false)} />
           </div>
           <SourcesSheetHost />
           <ChatComposerCluster className="shrink-0" onModelChange={props.onModelChange} onSend={props.onSend} />

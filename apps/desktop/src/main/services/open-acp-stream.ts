@@ -1,7 +1,7 @@
 /**
  * 本机 CLI ACP 开流：覆盖只含 path/args。
  * 绑定 Enjoy 供应商时读 vault Key，只注入子进程 env，不进 renderer。
- * fast / effort 入参只占位兼容，不进 argv。
+ * Fast / Enjoy 五档不进 ACP。thoughtLevel 在 session/new 后走 set_config_option。
  */
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
@@ -25,8 +25,9 @@ export async function openAcpStream(input: {
   messages: Parameters<typeof streamAcpTurn>[0]["messages"]
   abortSignal: AbortSignal
   waitForSubagentApproval?: Parameters<typeof streamAcpTurn>[0]["waitForApproval"]
-  /** ACP 忽略 Fast / 思考档；切回 Local 时 store 里的值仍保留。 */
+  /** ACP 思考档：session/new 后 set_config_option，不进 argv。 */
   effort?: string
+  thoughtLevel?: string
   fast?: boolean
   /** 垫进 session/prompt；CLI 仍自己读工作区 AGENTS.md。 */
   customInstructions?: string
@@ -89,7 +90,8 @@ export async function openAcpStream(input: {
     customInstructions: input.customInstructions,
     mcpServers: extensions.mcpServers,
     skillCatalog: extensions.skillCatalog,
-    pluginDirs: extensions.pluginDirs
+    pluginDirs: extensions.pluginDirs,
+    thoughtLevel: input.thoughtLevel
   })
   return {
     stream: opened.stream,
@@ -137,7 +139,8 @@ async function openCustomAcpStream(
     customInstructions: input.customInstructions,
     mcpServers: extensions.mcpServers,
     skillCatalog: extensions.skillCatalog,
-    pluginDirs: extensions.pluginDirs
+    pluginDirs: extensions.pluginDirs,
+    thoughtLevel: input.thoughtLevel
   })
   return {
     stream: opened.stream,

@@ -2,7 +2,7 @@
  * 聊天会话 Zustand store。类型在 chat-store.types.ts，树灌入在 chat-store-hydrate.ts。
  */
 import { create } from "zustand"
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
@@ -54,6 +54,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sessionModes: {},
   sessionHandoffCuts: {},
   reasoningEffort: undefined,
+  acpThoughtLevel: undefined,
+  acpConfigOptions: [],
   isFastMode: false,
   mode: "agent",
   running: false,
@@ -84,7 +86,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       return { sessionDrafts: rest }
     }),
   setComposer: (composer) => set({ composer }),
-  setRuntimeId: (runtimeId) => set({ runtimeId }),
+  setRuntimeId: (runtimeId) => set({ runtimeId, acpConfigOptions: [] }),
   setPreferredRuntimeId: (preferredRuntimeId) => set({ preferredRuntimeId }),
   setPreferredModelId: (preferredModelId) => set({ preferredModelId }),
   setSessionRuntimes: (sessionRuntimes) => set({ sessionRuntimes }),
@@ -105,6 +107,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       reasoningEffort: effort
     }),
   setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
+  setAcpThoughtLevel: (acpThoughtLevel) => set({ acpThoughtLevel }),
   setFastMode: (isFastMode) => set({ isFastMode }),
   toggleFastMode: () => set((state) => ({ isFastMode: !state.isFastMode })),
   setMode: (mode) =>
@@ -123,6 +126,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set({ expandedIds })
   },
   applyStreamEvent: (event: StreamEvent) => {
+    if (event.type === "session.config") {
+      const thought = thoughtLevelOption(event.configOptions)
+      const current = typeof thought?.currentValue === "string" ? thought.currentValue : undefined
+      set({
+        acpConfigOptions: event.configOptions,
+        ...(current ? { acpThoughtLevel: current } : {})
+      })
+      return
+    }
     if (shouldBufferComposerEvent(get().running, get().runId)) {
       const queued = get().pendingStreamEvents
       if (queued.length >= 80) return

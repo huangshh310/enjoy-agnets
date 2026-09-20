@@ -4,6 +4,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { cx } from "@/utils/cx"
 import { PreviewRail } from "@/components/ai-elements/preview-rail"
 import { useT } from "@renderer/i18n"
 import { previewItemsFromMessages, railItemSize } from "./thread-preview-rail-items"
@@ -11,9 +12,11 @@ import { previewItemsFromMessages, railItemSize } from "./thread-preview-rail-it
 const MESSAGE_ATTR = "data-thread-message"
 
 export function ThreadPreviewRail({
-  messages
+  messages,
+  hasLedger = false
 }: {
   messages: Array<{ id: string; role: "user" | "assistant"; content: string }>
+  hasLedger?: boolean
 }) {
   const t = useT()
   const [activeId, setActiveId] = useState(messages.at(-1)?.id ?? "")
@@ -52,7 +55,12 @@ export function ThreadPreviewRail({
   if (items.length < 2) return null
 
   return (
-    <div className="pointer-events-none absolute inset-y-8 right-2 z-20 hidden min-[768px]:flex w-64 items-center justify-end">
+    <div
+      className={cx(
+        "pointer-events-none absolute inset-y-8 right-2 z-20 hidden min-[768px]:flex w-64 items-center justify-end",
+        hasLedger && "min-[1100px]:hidden"
+      )}
+    >
       <PreviewRail
         items={items}
         label={t("chat.previewRailLabel")}

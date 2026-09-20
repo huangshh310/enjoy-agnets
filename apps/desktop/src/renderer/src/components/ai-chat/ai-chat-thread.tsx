@@ -16,6 +16,7 @@ import { HandoffLegacyDivider, isLegacyHandoffTurn } from "./thread/handoff-lega
 import { QueuedFollowups } from "./thread/queued-followups"
 import { ThreadErrorBanner } from "./thread/thread-error-banner"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
+import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
 
 export function AiChatThread({
   messages,
@@ -36,6 +37,8 @@ export function AiChatThread({
   const visible = visibleThreadMessages(messages)
   const last = visible.at(-1)
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
+  const assistant = lastAssistantTurn(messages)
+  const hasLedger = Boolean(assistant && collectRunLedger(assistant).length > 0)
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
@@ -59,7 +62,7 @@ export function AiChatThread({
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
-      <ThreadPreviewRail messages={visible} />
+      <ThreadPreviewRail messages={visible} hasLedger={hasLedger} />
     </div>
   )
 }

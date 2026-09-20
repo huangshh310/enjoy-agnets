@@ -2,10 +2,11 @@
  * 本机 ACP 一轮：按 Enjoy sessionId 复用进程，审批不新开子进程。
  */
 import type { ModelMessage } from "ai"
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { thoughtLevelOption, type SessionConfigOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { AcpClient } from "./client.ts"
 import { acpProcessKey, composeAcpPrompt } from "./acp-prompt.ts"
 import { mapAcpUpdate } from "./map-events.ts"
+import { sessionConfigEvent } from "./parse-session-config.ts"
 import { acpHandshakeCwd, mapAcpSpawnFailure, spawnAcpProcess, type AcpSpawnDirect } from "./spawn.ts"
 import type { SpawnOverride } from "../agent-tools/resolve-spawn.ts"
 import { acpMcpFingerprint, type AcpMcpServer } from "./acp-mcp.ts"
@@ -35,6 +36,8 @@ export type StreamAcpTurnInput = {
   mcpServers?: AcpMcpServer[]
   skillCatalog?: string
   pluginDirs?: string[]
+  /** ACP thought_level 原值；session/new 之后 set_config_option。 */
+  thoughtLevel?: string
 }
 
 type LiveAcp = {
@@ -55,6 +58,7 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   const live = await ensureLive(input)
   live.runId = input.runId
   live.waitForApproval = input.waitForApproval
+  await applyThoughtLevel(live, input.thoughtLevel)
   sessionByRun.set(input.runId, input.sessionId)
   const text = composeAcpPrompt(input.messages, {
     customInstructions: input.customInstructions,
@@ -63,6 +67,8 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   const queue: StreamEvent[] = []
   let wake: (() => void) | undefined
   let finished = false
+  const configEvent = sessionConfigEvent(input.runId, live.client.getConfigOptions())
+  if (configEvent) queue.push(configEvent)
 
   live.onUpdate = (update) => {
     for (const event of mapAcpUpdate(update, input.runId)) queue.push(event)
@@ -198,6 +204,30 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
   } catch (error) {
     live.client.dispose("kill")
     throw mapAcpSpawnFailure(error, input.spawnDirect?.failHint)
+  }
+}
+
+export async function setAcpConfigOption(
+  sessionId: string,
+  configId: string,
+  value: string
+): Promise<{ ok: boolean; pending?: boolean; configOptions?: SessionConfigOption[] }> {
+  const live = liveBySession.get(sessionId)
+  if (!live?.client.stillAlive()) return { ok: true, pending: true }
+  const configOptions = await live.client.setConfigOption(live.acpSessionId, configId, value)
+  return { ok: true, configOptions }
+}
+
+async function applyThoughtLevel(live: LiveAcp, thoughtLevel: string | undefined): Promise<void> {
+  const wanted = thoughtLevel?.trim()
+  if (!wanted) return
+  const option = thoughtLevelOption(live.client.getConfigOptions())
+  if (!option || !option.choices.some((item) => item.value === wanted)) return
+  if (option.currentValue === wanted) return
+  try {
+    await live.client.setConfigOption(live.acpSessionId, option.id, wanted)
+  } catch {
+    /* 模型不认该档时继续用 Agent 默认值 */
   }
 }
 

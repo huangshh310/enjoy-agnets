@@ -47,7 +47,18 @@ export function ComposerSendSplit({
       </button>
     )
   }
-  return null
+  return (
+    <button
+      type="button"
+      disabled
+      data-testid="composer-send"
+      aria-label={t("chat.send")}
+      title={t("chat.send")}
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background-tertiary-default/80 text-foreground-icon-tertiary/40 transition-all cursor-not-allowed opacity-40 select-none"
+    >
+      <RiArrowUpLine className="size-5" aria-hidden />
+    </button>
+  )
 }
 
 const sendClassName =

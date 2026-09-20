@@ -27,6 +27,8 @@ export type EngineReadinessInput = {
   loginLoop?: "idle" | "authorizing" | "failed"
   /** 已装可登录但仍低于对接版本。未知不写 outdated。 */
   compat?: "ok" | "outdated" | "unknown"
+  /** false = 无账号探针，loggedIn 不能当发送闸。 */
+  loginProbed?: boolean
 }
 
 export function engineReadiness(tool: EngineReadinessInput): EngineReadiness {
@@ -41,8 +43,9 @@ export function engineReadiness(tool: EngineReadinessInput): EngineReadiness {
     if (tool.requiresLogin && tool.loginLoop === "failed" && tool.loggedIn !== true) {
       return "login_failed"
     }
-    if (tool.requiresLogin && tool.loggedIn === false) return "needs_login"
-    if (tool.requiresLogin && tool.loggedIn !== true) return "inspecting"
+    const loginKnown = tool.loginProbed !== false
+    if (loginKnown && tool.requiresLogin && tool.loggedIn === false) return "needs_login"
+    if (loginKnown && tool.requiresLogin && tool.loggedIn !== true) return "inspecting"
   }
   if (tool.compat === "outdated") return "outdated"
   return "ready"

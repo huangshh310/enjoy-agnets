@@ -24,6 +24,7 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { assertAndClampBind } from "./agent-tools-bind-assert"
 import { invalidateAccountCache } from "./agent-tools-account/inspect"
+import { hasOfficialAccountProbe } from "./agent-tools-account/inspect-empty"
 import { doctorAcpHandshake } from "./agent-tools-doctor-acp"
 import { getCustomAgent, readCustomAgents, toPublicCustom, upsertCustomAgent } from "./agent-tools-custom"
 import { safeCustomBinaryPath } from "./agent-tools-guard"
@@ -205,7 +206,10 @@ async function toPublic(
     supportedApiStyles: supportedStylesForTool(preset.id),
     capabilities: capabilitiesFor(preset.id),
     homeSynced: homeSyncedFor(preset.id),
-    nativePluginCopy: catalog?.nativePluginCopy
+    nativePluginCopy: catalog?.nativePluginCopy,
+    ...(hasOfficialAccountProbe(preset.id)
+      ? {}
+      : { authAccount: { loggedIn: false, probed: false } })
   }
 }
 

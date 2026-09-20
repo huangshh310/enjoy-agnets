@@ -1,5 +1,5 @@
 /**
- * agent.run 公共字段：本机 CLI 带 runtimeId。ACP 不传 Fast / 思考档。
+ * agent.run 公共字段：本机 CLI 带 runtimeId。ACP 不传 Fast；思考档走 thoughtLevel。
  */
 import { runModeForComposer } from "../components/ai-chat/composer/composer-mode"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
@@ -21,6 +21,7 @@ export function codingAgentRunInput(store: ChatStore) {
     modelId,
     mode: runModeForComposer(store.runtimeId, store.mode),
     reasoningEffort: acp ? undefined : store.reasoningEffort,
+    thoughtLevel: acp ? store.acpThoughtLevel : undefined,
     fast: acp ? undefined : store.isFastMode,
     runtimeId: store.runtimeId
   }

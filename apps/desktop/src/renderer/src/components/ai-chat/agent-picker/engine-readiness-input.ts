@@ -21,6 +21,7 @@ export function readinessInputOf(
     usingVaultProvider: Boolean(tool.useCustomProvider && tool.providerId),
     boundHasKey: tool.boundHasKey,
     loginLoop: extras?.loginLoop ?? getCliLoginLoop(tool.id).phase,
+    loginProbed: tool.authAccount?.probed !== false,
     compat: resolveCliCompat({
       version: tool.version,
       cliVersion: tool.authAccount?.cliVersion,

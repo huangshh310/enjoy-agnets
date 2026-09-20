@@ -74,6 +74,15 @@ test("Grok --plugin-dir 插在 stdio 前，相对路径丢掉", () => {
   ])
 })
 
+test("国产 CLI ACP argv 跟 Registry 一致", () => {
+  assert.deepEqual(resolveSpawnCommand("qwen"), { command: "qwen", args: ["--acp"] })
+  assert.deepEqual(resolveSpawnCommand("kimi"), { command: "kimi", args: ["acp"] })
+  assert.deepEqual(resolveSpawnCommand("codebuddy"), { command: "codebuddy", args: ["--acp"] })
+  assert.deepEqual(resolveSpawnCommand("glm"), { command: "glm-acp-agent", args: [] })
+  assert.deepEqual(resolveSpawnCommand("minimax"), { command: "mcode", args: ["acp"] })
+  assert.deepEqual(resolveSpawnCommand("qoder"), { command: "qodercli", args: ["--acp"] })
+})
+
 test("选定模型会追加 --model", () => {
   assert.deepEqual(resolveSpawnCommand("claude", { modelId: "claude-sonnet-4-6" }), {
     command: "claude",

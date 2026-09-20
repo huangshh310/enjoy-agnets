@@ -24,6 +24,10 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   if (event.type === "commands.update") {
     useAcpCommands.getState().setCommands(event.commands)
   }
+  if (event.type === "session.config") {
+    const current = useChatStore.getState()
+    if (!sessionId || sessionId === current.sessionId) current.applyStreamEvent(event)
+  }
   if (event.type === "host.inject" && sessionId) {
     useHostInjectStore.getState().remember(sessionId, {
       runId: event.runId,

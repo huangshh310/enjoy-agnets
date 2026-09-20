@@ -19,7 +19,13 @@ export const BuiltinAgentToolId = z.enum([
   "omp",
   "hermes",
   "amp",
-  "deepseek"
+  "deepseek",
+  "qwen",
+  "kimi",
+  "codebuddy",
+  "glm",
+  "minimax",
+  "qoder"
 ])
 export type BuiltinAgentToolId = z.infer<typeof BuiltinAgentToolId>
 
@@ -57,6 +63,8 @@ export {
 } from "./agent-cli-provider.ts"
 export const AgentToolAuthAccount = z.object({
   loggedIn: z.boolean(),
+  /** false = 无账号探针，不得把 loggedIn=false 当发送闸。缺省视为已探测。 */
+  probed: z.boolean().optional(),
   email: z.string().optional(),
   tier: z.string().optional(),
   authMethod: z.string().optional(),
@@ -336,7 +344,13 @@ export const ACP_HOST_IDS = [
   "hermes",
   "amp",
   "deepseek",
-  "omp"
+  "omp",
+  "qwen",
+  "kimi",
+  "codebuddy",
+  "glm",
+  "minimax",
+  "qoder"
 ] as const
 
 export function isAcpHostRuntimeId(id: string | undefined): boolean {

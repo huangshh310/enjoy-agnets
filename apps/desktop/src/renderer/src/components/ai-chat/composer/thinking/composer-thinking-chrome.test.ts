@@ -13,9 +13,10 @@ const dir = dirname(fileURLToPath(import.meta.url))
 
 test("思考铬种类跟能力表走", () => {
   assert.equal(composerThinkingChrome("enjoy-local"), "effort")
-  assert.equal(composerThinkingChrome("claude"), "follow-model")
+  assert.equal(composerThinkingChrome("claude"), "advertised")
   assert.equal(composerThinkingChrome("cursor"), "follow-model")
-  assert.equal(composerThinkingChrome("grok"), "none")
+  assert.equal(composerThinkingChrome("grok"), "advertised")
+  assert.equal(composerThinkingChrome("codex"), "advertised")
 })
 
 test("跟模型面不引入五档条", () => {
@@ -24,6 +25,7 @@ test("跟模型面不引入五档条", () => {
   assert.match(src, /thinkingFollowModel/)
   assert.match(src, /composerThinkingChrome/)
   assert.match(src, /kind === "effort"/)
+  assert.match(src, /advertised/)
   assert.match(src, /setAgentPickerOpen/)
   assert.equal(src.includes("getEffortLevels"), false)
 })

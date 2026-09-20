@@ -1,5 +1,22 @@
 import { AgentToolId } from "@enjoy-agents/ipc-contract"
-import { Amp, Antigravity, Claude, Codex, Cursor, DeepSeek, Gemini, Grok, HermesAgent, OpenCode, Pi } from "@lobehub/icons"
+import {
+  Amp,
+  Antigravity,
+  Claude,
+  Codex,
+  Cursor,
+  DeepSeek,
+  Gemini,
+  Grok,
+  HermesAgent,
+  Hunyuan,
+  Kimi,
+  Minimax,
+  OpenCode,
+  Pi,
+  Qwen,
+  Zhipu
+} from "@lobehub/icons"
 import { AppMark } from "@renderer/components/brand/app-mark"
 import { cx } from "@/utils/cx"
 
@@ -30,6 +47,11 @@ export function AgentBrandIcon({
   if (normId === "hermes") return <HermesAgent size={resolvedSize} className={className} />
   if (normId === "amp") return <Amp.Color size={resolvedSize} className={className} />
   if (normId === "deepseek") return <DeepSeek.Color size={resolvedSize} className={className} />
+  if (normId === "qwen") return <Qwen size={resolvedSize} className={className} />
+  if (normId === "kimi") return <Kimi size={resolvedSize} className={className} />
+  if (normId === "codebuddy") return <Hunyuan size={resolvedSize} className={className} />
+  if (normId === "glm") return <Zhipu size={resolvedSize} className={className} />
+  if (normId === "minimax") return <Minimax size={resolvedSize} className={className} />
   return <AgentFallbackMark id={id} size={resolvedSize} className={className} />
 }
 

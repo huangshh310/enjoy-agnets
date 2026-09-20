@@ -53,6 +53,7 @@
 | [references/tech-stack.md](./references/tech-stack.md) | 原技术栈说明书：选型理由、禁令、分期 |
 | [references/vercel-ai-sdk-7-feature-matrix.md](./references/vercel-ai-sdk-7-feature-matrix.md) | AI SDK 7 能力对照 + Enjoy Agents 落地状态 |
 | [references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md](./references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md) | 全能力落地计划 |
+| [references/acp-protocol.md](./references/acp-protocol.md) | ACP 官方协议摘录（stdio、configOptions / thought_level、Registry 国产 CLI）；落地以 agent-cli 为准 |
 | [references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md](./references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md) | ACP 多引擎宿主分期；落地以 specs 为准 |
 | [references/gap-audit-vs-github-agents.md](./references/gap-audit-vs-github-agents.md) | 对照 Orca / Cline / OpenHands / Goose / Hermes：假实现、半成品、该重设计的点 |
 | [references/oss-agent-landscape-2026.md](./references/oss-agent-landscape-2026.md) | 2026 高星 Agent 星数榜与设计课；Enjoy 该加深的 seam（不是空壳清单） |

@@ -11,6 +11,8 @@ import {
   parseAgentMcpCaps,
   type AcpMcpServer
 } from "./acp-mcp.ts"
+import { parseSessionConfigOptions } from "./parse-session-config.ts"
+import type { SessionConfigOption } from "@enjoy-agents/ipc-contract"
 
 export type AcpPermissionRequest = {
   sessionId: string
@@ -41,6 +43,7 @@ export class AcpClient {
   private killTimer: ReturnType<typeof setTimeout> | undefined
   private mcpCaps = { http: false, sse: false }
   private mcpServers: AcpMcpServer[] = []
+  private configOptions: SessionConfigOption[] = []
 
   constructor(
     private readonly child: ChildProcess,
@@ -66,7 +69,10 @@ export class AcpClient {
     const result = await this.request("initialize", {
       protocolVersion: 1,
       clientInfo: { name: "enjoy-agents", version: "0.1.0" },
-      clientCapabilities: { fs: { readTextFile: false, writeTextFile: false } }
+      clientCapabilities: {
+        fs: { readTextFile: false, writeTextFile: false },
+        session: { configOptions: { boolean: {} } }
+      }
     })
     this.mcpCaps = parseAgentMcpCaps(result)
     await this.notify("initialized", {})
@@ -98,7 +104,27 @@ export class AcpClient {
     )
     const id = String(result.sessionId ?? "")
     if (!id) throw new Error("ACP session/new did not return sessionId.")
+    this.configOptions = parseSessionConfigOptions(result)
     return id
+  }
+
+  getConfigOptions(): SessionConfigOption[] {
+    return this.configOptions
+  }
+
+  async setConfigOption(
+    sessionId: string,
+    configId: string,
+    value: string
+  ): Promise<SessionConfigOption[]> {
+    const result = await this.request("session/set_config_option", {
+      sessionId,
+      configId,
+      value
+    })
+    const parsed = parseSessionConfigOptions(result)
+    if (parsed.length > 0) this.configOptions = parsed
+    return this.configOptions
   }
 
   async prompt(sessionId: string, text: string): Promise<unknown> {

@@ -108,7 +108,8 @@ const ide = {
     setHandoff: (input: unknown) => ipcRenderer.invoke("agentTools.setHandoff", input),
     upsertCustom: (input: unknown) => ipcRenderer.invoke("agentTools.upsertCustom", input),
     removeCustom: (input: unknown) => ipcRenderer.invoke("agentTools.removeCustom", input),
-    getCustom: (input: unknown) => ipcRenderer.invoke("agentTools.getCustom", input)
+    getCustom: (input: unknown) => ipcRenderer.invoke("agentTools.getCustom", input),
+    setConfigOption: (input: unknown) => ipcRenderer.invoke("agentTools.setConfigOption", input)
   },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),

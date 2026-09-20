@@ -25,7 +25,13 @@ const WIRED = [
   "hermes",
   "amp",
   "deepseek",
-  "omp"
+  "omp",
+  "qwen",
+  "kimi",
+  "codebuddy",
+  "glm",
+  "minimax",
+  "qoder"
 ] as const
 const HIDDEN_IDS = ["not-a-tool"] as const
 
@@ -41,7 +47,7 @@ test("六家快照：spawn / thinking / fast / quota / providerBind", () => {
   assert.equal(supportsConversationRollback("cursor"), false)
   assert.equal(supportsConversationRollback("claude"), false)
 
-  assert.equal(capabilitiesFor("claude").thinking, "model-id")
+  assert.equal(capabilitiesFor("claude").thinking, "advertised")
   assert.equal(capabilitiesFor("claude").fast, "none")
   assert.equal(capabilitiesFor("claude").quota, true)
   assert.equal(capabilitiesFor("claude").login, true)
@@ -55,11 +61,12 @@ test("六家快照：spawn / thinking / fast / quota / providerBind", () => {
   assert.equal(capabilitiesFor("cursor").providerBind, "none")
 
   assert.equal(capabilitiesFor("grok").fast, "none")
-  assert.equal(capabilitiesFor("grok").thinking, "none")
+  assert.equal(capabilitiesFor("grok").thinking, "advertised")
   assert.equal(capabilitiesFor("grok").quota, true)
 
   assert.equal(capabilitiesFor("codex").quota, true)
   assert.equal(capabilitiesFor("codex").models, "inspect")
+  assert.equal(capabilitiesFor("codex").thinking, "advertised")
   assert.equal(capabilitiesFor("codex").providerBind, "openai")
 
   assert.equal(capabilitiesFor("antigravity").thinking, "model-id")
@@ -93,6 +100,12 @@ test("未知 id 回落隐藏表；七家新 ACP 可 spawn", () => {
   assert.equal(capabilitiesFor("deepseek").providerBind, "deepseek")
   assert.equal(capabilitiesFor("omp").spawn, true)
   assert.equal(capabilitiesFor("omp").quota, false)
+  assert.equal(capabilitiesFor("qwen").spawn, true)
+  assert.equal(capabilitiesFor("kimi").thinking, "advertised")
+  assert.equal(capabilitiesFor("codebuddy").login, true)
+  assert.equal(capabilitiesFor("glm").login, false)
+  assert.equal(capabilitiesFor("minimax").spawn, true)
+  assert.equal(capabilitiesFor("qoder").spawn, true)
 })
 
 test("宿主扩展：Local 注入工具，ACP 透传，Pi 不传 MCP", () => {
@@ -132,14 +145,15 @@ test("composerChromeFor：Enjoy Local 露出模式 / Fast / 思考 / 语音位",
   assert.equal(chrome.permission, true)
 })
 
-test("思考铬：effort 五档，model-id 跟模型，none 隐藏", () => {
+test("思考铬：effort 五档，model-id 跟模型，advertised 广告档，none 隐藏", () => {
   assert.equal(composerThinkingChrome("enjoy-local"), "effort")
-  assert.equal(composerThinkingChrome("claude"), "follow-model")
+  assert.equal(composerThinkingChrome("claude"), "advertised")
   assert.equal(composerThinkingChrome("cursor"), "follow-model")
   assert.equal(composerThinkingChrome("gemini"), "follow-model")
   assert.equal(composerThinkingChrome("antigravity"), "follow-model")
-  assert.equal(composerThinkingChrome("grok"), "none")
-  assert.equal(composerThinkingChrome("codex"), "none")
+  assert.equal(composerThinkingChrome("grok"), "advertised")
+  assert.equal(composerThinkingChrome("codex"), "advertised")
+  assert.equal(composerThinkingChrome("qwen"), "advertised")
   assert.equal(canHostInterceptExplore("cursor"), true)
   assert.equal(canHostInterceptExplore("enjoy-local"), true)
   assert.equal(canHostInterceptExplore("not-a-tool"), false)
@@ -158,7 +172,13 @@ test("ACP 宿主都不露 Fast / 五档思考 / 语音；探索分段由 UI 常�
     "hermes",
     "amp",
     "deepseek",
-    "omp"
+    "omp",
+    "qwen",
+    "kimi",
+    "codebuddy",
+    "glm",
+    "minimax",
+    "qoder"
   ] as const) {
     const chrome = composerChromeFor(id)
     assert.equal(chrome.fast, false, id)

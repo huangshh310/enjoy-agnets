@@ -70,7 +70,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 - 配置抽屉顶栏若按 `status===ready` 画健康绿灯，未跑体检也会假绿。信任卡只信 doctor 结果；`quota=false` 写「该助手无公开额度」，不要空条或「本月用量 0%」。
 - Cursor 的 Grok Bot 走 `GetSandUsageStatus`，Extra Usage 走 `cursor.com/api/usage-summary` 的 onDemand；**不要**指望 `GetCurrentPeriodUsage` 里带这两项。无 onDemand 时 Extra Usage 仍显示 `No data` 行。
 - 订阅页禁止四格 KPI、「燃烧速率态势」、搜索框、2 列卡片网格、假 plan（Ultra / SuperGrok Heavy）、假 sparkline 占位柱。额度条禁止 `bg-rose-500` / `bg-amber-500`，走 `accent` / `status-yellow-text` / `text-error-primary`。
-- `composerChromeFor` 的 Fast / 五档思考仍读同一张 capability 表；探索/执行分段不再跟 `executionModes` 整颗藏掉。C 端 Rail/胶囊不要再画 `pathKind` 协议/路径微标（含 `ACP Stdio`）。协议词只进设置矩阵。
+- `composerChromeFor` 的 Fast / 五档思考仍读同一张 capability 表（五档仅 `thinking==="effort"`）。ACP `thought_level` 走 `composerThinkingChrome` 的 advertised 面，不是五档能量条。探索/执行分段不再跟 `executionModes` 整颗藏掉。C 端 Rail/胶囊不要再画 `pathKind` 协议/路径微标（含 `ACP Stdio`）。协议词只进设置矩阵。
 - 能力矩阵自定义行必须画用户 label，不要用 `custom:<slug>` 当显示名。此处是 Registry 自定义行的 label，≠ P2 引擎本机显示名（设计锁 [`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)，短锁 [`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)）。本机 CLI 禁止再把矩阵/边界铺在卡片前面；「支持登录」不是已登录。
 - 设置里 OMP「打开登录」必须带 `provider` 并等 callback，禁止无参 `login`（会失败或打不开授权）。
 - 词表禁止残留 `limitFiveHour` / `limitWeekly*` 等 5 小时·周度占位文案；计划条已删，键也必须删。

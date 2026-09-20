@@ -55,7 +55,9 @@ export {
   disposeAcpSession,
   disposeAllAcpSessions,
   acpSessionAlive,
+  setAcpConfigOption,
   type StreamAcpTurnInput
 } from "./acp/stream-acp.ts"
+
 export { filterAcpMcpServers, type AcpMcpServer } from "./acp/acp-mcp.ts"
 export { configureAcpChildLedger, reapOrphanAcpChildren } from "./acp/acp-child-store.ts"

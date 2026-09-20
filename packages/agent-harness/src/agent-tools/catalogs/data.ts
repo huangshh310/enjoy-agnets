@@ -208,5 +208,93 @@ export const AGENT_TOOL_CATALOGS: Partial<Record<AgentToolId, AgentToolCatalog>>
     installCommand: "curl -fsSL https://omp.sh/install | sh",
     docsUrl: "https://ohmypi.xyz/",
     loginArgs: []
+  },
+  qwen: {
+    models: [
+      { id: "qwen3-coder-plus", label: "Qwen3 Coder Plus" },
+      { id: "qwen3-max", label: "Qwen3 Max" }
+    ],
+    defaultModel: "qwen3-coder-plus",
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "@qwen-code/qwen-code"],
+        uninstallArgs: ["uninstall", "-g", "@qwen-code/qwen-code"]
+      }
+    ],
+    installCommand: "npm i -g @qwen-code/qwen-code",
+    docsUrl: "https://github.com/QwenLM/qwen-code",
+    loginArgs: [],
+    nativePluginCopy: "qwen --help"
+  },
+  kimi: {
+    models: [{ id: "kimi-k2.5", label: "Kimi K2.5" }],
+    defaultModel: "kimi-k2.5",
+    steps: [],
+    installCommand: "See https://github.com/MoonshotAI/kimi-cli/releases",
+    docsUrl: "https://github.com/MoonshotAI/kimi-cli",
+    loginArgs: ["login"],
+    nativePluginCopy: "kimi --help"
+  },
+  codebuddy: {
+    models: [],
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "@tencent-ai/codebuddy-code"],
+        uninstallArgs: ["uninstall", "-g", "@tencent-ai/codebuddy-code"]
+      }
+    ],
+    installCommand: "npm i -g @tencent-ai/codebuddy-code",
+    docsUrl: "https://www.codebuddy.cn/cli/",
+    loginArgs: [],
+    nativePluginCopy: "codebuddy --help"
+  },
+  glm: {
+    models: [
+      { id: "glm-4.7", label: "GLM-4.7" },
+      { id: "glm-5", label: "GLM-5" }
+    ],
+    defaultModel: "glm-4.7",
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "glm-acp-agent"],
+        uninstallArgs: ["uninstall", "-g", "glm-acp-agent"]
+      }
+    ],
+    installCommand: "npm i -g glm-acp-agent",
+    docsUrl: "https://github.com/stefandevo/glm-acp-agent",
+    loginArgs: [],
+    nativePluginCopy: "glm-acp-agent --help"
+  },
+  minimax: {
+    models: [{ id: "MiniMax-M2.5", label: "MiniMax M2.5" }],
+    defaultModel: "MiniMax-M2.5",
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "@minimax-ai/code"],
+        uninstallArgs: ["uninstall", "-g", "@minimax-ai/code"]
+      }
+    ],
+    installCommand: "npm i -g @minimax-ai/code",
+    docsUrl: "https://github.com/MiniMax-AI",
+    loginArgs: ["login"],
+    nativePluginCopy: "mcode --help"
+  },
+  qoder: {
+    models: [],
+    steps: [
+      {
+        manager: "npm",
+        args: ["install", "-g", "@qoder-ai/qodercli"],
+        uninstallArgs: ["uninstall", "-g", "@qoder-ai/qodercli"]
+      }
+    ],
+    installCommand: "npm i -g @qoder-ai/qodercli",
+    docsUrl: "https://docs.qoder.com/cli/acp",
+    loginArgs: [],
+    nativePluginCopy: "qodercli --help"
   }
 }

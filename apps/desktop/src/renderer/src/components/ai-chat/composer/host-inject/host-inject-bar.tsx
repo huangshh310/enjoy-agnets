@@ -1,6 +1,7 @@
 /**
  * P0-S 一行芯片：空不画；有启用才画；不支持仍一行。脚注只进 Popover。
  */
+import { useState } from "react"
 import { RiErrorWarningLine } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cx } from "@/utils/cx"
@@ -37,6 +38,7 @@ function HostInjectChip({
   lane: "both" | "mcp" | "skills"
 }) {
   const t = useT()
+  const [open, setOpen] = useState(false)
   const unsupported = view.kind === "unsupported" || view.kind === "failed"
   const label =
     lane === "both"
@@ -45,8 +47,8 @@ function HostInjectChip({
         ? t("chat.hostInjectChipMcp", { mcp: enabledMcp })
         : t("chat.hostInjectChipSkills", { skills: enabledSkills })
   return (
-    <div className="px-3.5 pb-1" data-testid="host-inject-bar" data-kind={view.kind}>
-      <Popover>
+    <div className="shrink-0" data-testid="host-inject-bar" data-kind={view.kind}>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -70,7 +72,12 @@ function HostInjectChip({
           sideOffset={8}
           className="rounded-xl border border-border-button-default bg-background-primary-default p-0 shadow-card"
         >
-          <HostInjectPopover view={view} enabledMcp={enabledMcp} enabledSkills={enabledSkills} />
+          <HostInjectPopover
+            view={view}
+            enabledMcp={enabledMcp}
+            enabledSkills={enabledSkills}
+            onClose={() => setOpen(false)}
+          />
         </PopoverContent>
       </Popover>
     </div>

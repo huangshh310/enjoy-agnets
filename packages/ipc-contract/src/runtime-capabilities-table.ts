@@ -82,7 +82,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     models: "inspect",
     login: true,
     quota: true,
-    thinking: "model-id",
+    thinking: "advertised",
     fast: "none",
     providerBind: "anthropic"
   }),
@@ -98,7 +98,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     models: "catalog",
     login: true,
     quota: true,
-    thinking: "none",
+    thinking: "advertised",
     fast: "none",
     providerBind: "none"
   }),
@@ -106,7 +106,7 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     models: "inspect",
     login: true,
     quota: true,
-    thinking: "none",
+    thinking: "advertised",
     fast: "none",
     providerBind: "openai"
   }),
@@ -172,6 +172,54 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     login: true,
     quota: false,
     thinking: "none",
+    fast: "none",
+    providerBind: "none"
+  }),
+  qwen: acpHost({
+    models: "catalog",
+    login: true,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
+  kimi: acpHost({
+    models: "catalog",
+    login: true,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
+  codebuddy: acpHost({
+    models: "catalog",
+    login: true,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
+  glm: acpHost({
+    models: "catalog",
+    login: false,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
+  minimax: acpHost({
+    models: "catalog",
+    login: true,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
+  qoder: acpHost({
+    models: "catalog",
+    login: true,
+    quota: false,
+    thinking: "advertised",
     fast: "none",
     providerBind: "none"
   }),

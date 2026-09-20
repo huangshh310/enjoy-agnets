@@ -12,7 +12,6 @@ import { ComposerFollowupRail } from "./composer/runtime-interact/composer-follo
 import { ComposerQuoteChips } from "./composer/runtime-interact/composer-quote-chips"
 import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
 import { ExploreCapabilityRail } from "./composer/explore-execute/explore-capability-rail"
-import { HostInjectBar } from "./composer/host-inject/host-inject-bar"
 import { ExploreInterceptBanner } from "./composer/explore-execute/explore-intercept-banner"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
@@ -171,12 +170,7 @@ export function AiChatComposer({
             }}
           />
 
-          <ComposerTopChrome
-            modelId={modelId}
-            modelLabel={modelLabel}
-            models={models}
-            onModelChange={onModelChange}
-          />
+          <ComposerTopChrome />
           <ComposerContextChips />
           <ComposerHostModeChip />
           <ComposerQuoteChips />
@@ -193,7 +187,6 @@ export function AiChatComposer({
             onBlur={() => setIsFocused(false)}
           />
           <ExploreCapabilityRail />
-          <HostInjectBar />
 
           <ComposerFooter
             composer={composer}
@@ -203,6 +196,7 @@ export function AiChatComposer({
             modelLabel={modelLabel}
             modelId={modelId}
             models={models}
+            onModelChange={onModelChange}
             onStop={onStop}
             onSend={onSend}
             canRealtime={canRealtime}
