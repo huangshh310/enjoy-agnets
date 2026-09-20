@@ -4,7 +4,8 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { isLedgerFileSourceName } from "../../run-ledger/format-ledger-entry.ts"
-import { extractToolPath } from "../thinking/extract-step-fields.ts"
+import { extractShellCommand, extractToolPath } from "../thinking/extract-step-fields.ts"
+import { isBashTool, isTodoWriteName } from "../thinking/agent-step-kind.ts"
 import { classifySourceKind, formatSourceChipLabel, parseMcpServerId, type TurnSourceChip } from "./source-chip.ts"
 import { isHttpSource } from "./source-path.ts"
 
@@ -59,9 +60,11 @@ function chipFromTool(tool: ThreadToolCall, skillPrefix: (name: string) => strin
     const title = skillTitle(tool)
     return toChip({ id: `skill:${tool.id}`, title, toolName: "skill" }, skillPrefix)
   }
-  if (!isLedgerFileSourceName(name)) return null
+  if (isTodoWriteName(name)) return null
   const path = extractToolPath(asRecord(tool.args), tool.name, asRecord(tool.result))
   if (!path || isHttpSource(path)) return null
+  const shell = extractShellCommand(tool)
+  if (!isLedgerFileSourceName(name) && isBashTool(name, shell)) return null
   return toChip({ id: `file:${path}`, path, toolName: name }, skillPrefix)
 }
 

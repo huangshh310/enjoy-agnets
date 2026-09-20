@@ -15,11 +15,18 @@ export function isBashTool(name: string, shell?: string): boolean {
   return Boolean(shell) && (name.includes("bash") || name.includes("shell") || name.includes("terminal"))
 }
 
+/** 任务清单不是磁盘写入；Composer 任务坞已经画过。 */
+export function isTodoWriteName(name: string): boolean {
+  const n = name.trim().toLowerCase().replace(/[\s-]/g, "_")
+  return n === "todo_write" || n === "todo" || n === "update_todos"
+}
+
 export function isEditTool(
   name: string,
   args: Record<string, unknown>,
   result: Record<string, unknown>
 ): boolean {
+  if (isTodoWriteName(name)) return false
   if (name.includes("write") || name.includes("edit") || name.includes("patch") || name.includes("strreplace")) {
     return true
   }

@@ -3,6 +3,7 @@
  * 旧消息没有 reasoningChars 时，仍把全部思考放在工具前面。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { isTodoWriteName } from "./agent-step-kind.ts"
 
 export type ReasoningTimelineItem =
   | { kind: "think"; text: string }
@@ -38,7 +39,3 @@ function legacyTimeline(reasoning: string, tools: ThreadToolCall[]): ReasoningTi
   return items
 }
 
-function isTodoWriteName(name: string): boolean {
-  const normalized = name.toLowerCase()
-  return normalized === "todo_write" || normalized === "todo" || normalized === "update_todos"
-}

@@ -5,6 +5,7 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord, readString } from "../../../../lib/record.ts"
 import { isTodoContinueUserMessage } from "../../composer/todo-continue-message.ts"
+import { isTodoWriteName } from "../thinking/agent-step-kind.ts"
 
 export type TurnTodoItem = {
   id?: string
@@ -65,11 +66,6 @@ function isRichToolResult(tool: ThreadToolCall): boolean {
   if (tool.state !== "output-available") return false
   const result = asRecord(tool.result)
   return Boolean(readString(result, "diff").trim())
-}
-
-function isTodoWriteName(name: string): boolean {
-  const normalized = name.toLowerCase()
-  return normalized === "todo_write" || normalized === "todo" || normalized === "update_todos"
 }
 
 function todosFromTool(tool: ThreadToolCall): TurnTodoList {

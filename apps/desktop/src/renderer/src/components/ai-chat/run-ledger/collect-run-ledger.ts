@@ -3,6 +3,7 @@
  * TODO: 耐久 run_steps IPC 未接线；先吃内存 transcript，不编造耗时。
  */
 import type { ThreadMessage } from "@renderer/stores/chat-store.types"
+import { collapseLedgerEntries } from "./collapse-ledger-entries.ts"
 import { entryFromTool } from "./format-ledger-entry.ts"
 import { LEDGER_GROUPS, type RunLedgerEntry, type RunLedgerGroup } from "./run-ledger.types.ts"
 
@@ -24,7 +25,7 @@ export function collectRunLedger(
     const entry = entryFromTool(tool)
     if (entry) rows.push(entry)
   }
-  return [...rows, ...usageRow(usageTokens)]
+  return [...collapseLedgerEntries(rows), ...usageRow(usageTokens)]
 }
 
 export function groupRunLedger(entries: readonly RunLedgerEntry[]): {

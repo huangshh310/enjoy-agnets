@@ -58,6 +58,21 @@ test("MCP 工具收成服务器芯片，同服务器去重；网页 URL 丢掉",
   assert.equal(chips.some((chip) => chip.path?.startsWith("http")), false)
 })
 
+test("弱名 command 带 path 进文件芯片；todo_write 与纯 bash 不进", () => {
+  const chips = collectTurnSources(
+    {
+      tools: [
+        { id: "t1", name: "command", state: "output-available", args: { path: "src/app.css" } },
+        { id: "t2", name: "todo_write", state: "output-available", args: { todos: [] } },
+        { id: "t3", name: "bash", state: "output-available", args: { command: "pnpm lint" } }
+      ]
+    },
+    (name) => `技能 · ${name}`
+  )
+  assert.equal(chips.length, 1)
+  assert.equal(chips[0]?.path, "src/app.css")
+})
+
 test("Enjoy 注入行标 fromEnjoy；空注入不造假行", () => {
   const empty = collectTurnSources({ hostInject: { mcp: [], skills: [] } }, (name) => `技能 · ${name}`)
   assert.equal(empty.length, 0)

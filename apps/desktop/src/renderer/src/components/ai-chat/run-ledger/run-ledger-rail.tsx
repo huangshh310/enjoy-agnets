@@ -1,9 +1,9 @@
 /**
- * 会话内只读账本。按 kind 分组；点文件行打开同一张 P0-G「本轮来源」sheet。
+ * 会话内只读账本。顶栏一句摘要；文件名优先；点带 path 的文件行开「本轮来源」。
  */
 import { useMemo } from "react"
-import { useT } from "@renderer/i18n"
 import { RiCloseLine } from "@remixicon/react"
+import { useT } from "@renderer/i18n"
 import { collectTurnSources } from "../thread/sources/collect-turn-sources"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
@@ -12,7 +12,9 @@ import { collectRunLedger, groupRunLedger, lastAssistantTurn } from "./collect-r
 import { ledgerOpensSources } from "./format-ledger-entry"
 import { RunLedgerGroup } from "./run-ledger-group"
 import { RunLedgerRow } from "./run-ledger-row"
-import type { LedgerGroupKind, RunLedgerEntry } from "./run-ledger.types"
+import { ledgerKindCounts, ledgerSummarySegments } from "./run-ledger-summary"
+import type { RunLedgerEntry, RunLedgerGroup as LedgerGroup } from "./run-ledger.types"
+import type { TurnSourceChip } from "../thread/sources/source-chip"
 
 export function RunLedgerRail({
   open = true,
@@ -24,7 +26,6 @@ export function RunLedgerRail({
   const t = useT()
   const messages = useChatStore((state) => state.messages)
   const assistant = lastAssistantTurn(messages)
-  // 用量行只在有真实 token 时出现；本轮未存 usage.updated，不编造。
   const entries = useMemo(() => collectRunLedger(assistant), [assistant])
   const { groups, usage } = useMemo(() => groupRunLedger(entries), [entries])
   const ledgerId = useSourcesSheetStore((state) => state.ledgerEntry?.id ?? null)
@@ -40,82 +41,126 @@ export function RunLedgerRail({
       data-testid="run-ledger-rail"
       className="hidden w-[18.25rem] shrink-0 flex-col border-l border-separator-border bg-background-primary-default min-[1100px]:flex"
     >
-      <header className="border-b border-separator-border px-3 py-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-caption-1-semibold text-text-primary">{t("sessionOps.ledgerTitle")}</h3>
-          {onClose ? (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex size-5 cursor-pointer items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
-              aria-label="关闭账本"
-            >
-              <RiCloseLine className="size-3.5" />
-            </button>
-          ) : null}
-        </div>
-        <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("sessionOps.ledgerHint")}</p>
-        <LedgerCountPills entries={entries} />
-      </header>
+      <LedgerRailHeader
+        onClose={onClose}
+        segments={ledgerSummarySegments(ledgerKindCounts(entries), t)}
+        join={t("sessionOps.ledgerSummaryJoin")}
+      />
       {entries.length === 0 ? (
-        <p data-testid="run-ledger-empty" className="px-3 py-4 text-caption-1-regular text-text-primary">
+        <p data-testid="run-ledger-empty" className="px-3 py-4 text-caption-1-regular text-text-tertiary">
           {t("sessionOps.ledgerEmpty")}
         </p>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto pb-2">
-          {groups.map((group) => (
-            <RunLedgerGroup
-              key={group.kind}
-              kind={group.kind}
-              entries={group.entries}
-              selectedId={ledgerId}
-              onOpen={(row) => openLedgerSources(row, chips)}
-            />
-          ))}
-          {usage ? <RunLedgerRow entry={usage} onOpen={() => undefined} /> : null}
-        </div>
+        <LedgerRailBody
+          groups={groups}
+          usage={usage}
+          selectedId={ledgerId}
+          onOpen={(row) => openLedgerSources(row, chips)}
+        />
       )}
     </aside>
   )
 }
 
-function LedgerCountPills({ entries }: { entries: readonly RunLedgerEntry[] }) {
+function LedgerRailHeader({
+  onClose,
+  segments,
+  join
+}: {
+  onClose?: () => void
+  segments: Array<{ text: string; warn?: boolean }>
+  join: string
+}) {
   const t = useT()
-  const pills = (
-    [
-      ["read", "sessionOps.ledgerPillRead"],
-      ["edit", "sessionOps.ledgerPillEdit"],
-      ["command", "sessionOps.ledgerPillCommand"],
-      ["error", "sessionOps.ledgerPillError"]
-    ] as const
-  ).flatMap(([kind, key]) => {
-    const n = entries.filter((entry) => entry.kind === kind).length
-    return n > 0 ? [{ kind, key, n }] : []
-  })
-  if (pills.length === 0) return null
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1">
-      {pills.map((pill) => (
-        <span
-          key={pill.kind}
-          className={cxPill(pill.kind)}
-        >
-          {t(pill.key, { n: pill.n })}
-        </span>
-      ))}
+    <header className="border-b border-separator-border px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-caption-1-semibold text-text-primary">{t("sessionOps.ledgerTitle")}</h3>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex size-5 cursor-pointer items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
+            aria-label={t("sessionOps.ledgerClose")}
+          >
+            <RiCloseLine className="size-3.5" />
+          </button>
+        ) : null}
+      </div>
+      {segments.length > 0 ? <LedgerSummaryLine segments={segments} join={join} /> : null}
+    </header>
+  )
+}
+
+function LedgerRailBody({
+  groups,
+  usage,
+  selectedId,
+  onOpen
+}: {
+  groups: LedgerGroup[]
+  usage: RunLedgerEntry | null
+  selectedId: string | null
+  onOpen: (entry: RunLedgerEntry) => void
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto py-1">
+        {groups.map((group) => (
+          <RunLedgerGroup
+            key={group.kind}
+            kind={group.kind}
+            entries={group.entries}
+            selectedId={selectedId}
+            onOpen={onOpen}
+          />
+        ))}
+      </div>
+      {usage ? (
+        <div className="border-t border-separator-border">
+          <RunLedgerRow entry={usage} onOpen={() => undefined} />
+        </div>
+      ) : null}
     </div>
   )
 }
 
-function cxPill(kind: LedgerGroupKind): string {
-  const warn = kind === "error" ? " text-text-warning-primary" : " text-text-primary"
-  return `rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular ring-1 ring-border-button-default${warn}`
+function LedgerSummaryLine({
+  segments,
+  join
+}: {
+  segments: Array<{ text: string; warn?: boolean }>
+  join: string
+}) {
+  return (
+    <p className="mt-1 text-caption-2-regular text-text-tertiary">
+      {segments.map((segment, index) => (
+        <span key={segment.text}>
+          {index > 0 ? join : null}
+          <span className={segment.warn ? "text-text-warning-primary" : undefined}>{segment.text}</span>
+        </span>
+      ))}
+    </p>
+  )
 }
 
-function openLedgerSources(entry: RunLedgerEntry, chips: ReturnType<typeof collectTurnSources>): void {
+function openLedgerSources(entry: RunLedgerEntry, chips: TurnSourceChip[]): void {
   if (!ledgerOpensSources(entry)) return
-  const activeId = entry.sourceChipId && chips.some((chip) => chip.id === entry.sourceChipId)
+  const withFile = ensureFileChip(entry, chips)
+  if (withFile.length === 0) return
+  const activeId = entry.sourceChipId && withFile.some((chip) => chip.id === entry.sourceChipId)
     ? entry.sourceChipId
-    : (chips[0]?.id ?? null)
-  openSourcesSheet({ chips, activeId, ledgerEntry: entry })
+    : (withFile[0]?.id ?? null)
+  openSourcesSheet({ chips: withFile, activeId, ledgerEntry: entry })
+}
+
+function ensureFileChip(entry: RunLedgerEntry, chips: TurnSourceChip[]): TurnSourceChip[] {
+  const path = entry.path?.trim()
+  if (!path) return chips
+  if (chips.some((chip) => chip.path === path || chip.id === `file:${path}`)) return chips
+  const name = entry.fileName || entry.title
+  return [
+    ...chips,
+    { id: `file:${path}`, kind: "file", label: name, path, title: name }
+  ]
 }

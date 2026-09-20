@@ -8,7 +8,8 @@ import {
   isBashTool,
   isEditTool,
   isReadTool,
-  isSearchTool
+  isSearchTool,
+  isTodoWriteName
 } from "../thread/thinking/agent-step-kind.ts"
 import { extractCommandString, extractShellCommand, extractToolPath } from "../thread/thinking/extract-step-fields.ts"
 import type { LedgerGroupKind, RunLedgerEntry, RunLedgerKind } from "./run-ledger.types"
@@ -20,9 +21,10 @@ export function isLedgerFileSourceName(name: string): boolean {
   return FILE_SOURCE_NAMES.test(name.trim().toLowerCase().replace(/[\s-]/g, "_"))
 }
 
-/** 用量不弹 sheet。文件行必开；纯命令也可开（给无文件轮次的诚实空态）。 */
+/** 只有带 path 的读/改/错行才开「本轮来源」。命令只原地展开输出，不弹空 sheet。 */
 export function ledgerOpensSources(entry: RunLedgerEntry): boolean {
-  return entry.kind !== "usage"
+  if (entry.kind === "usage" || entry.kind === "command") return false
+  return Boolean(entry.path?.trim())
 }
 
 export function ledgerGroupDefaultOpen(kind: LedgerGroupKind): boolean {
@@ -55,14 +57,18 @@ export function entryFromTool(tool: ThreadToolCall): RunLedgerEntry | null {
 
 function kindFromTool(tool: ThreadToolCall): RunLedgerKind | null {
   const name = normalizeToolName(tool.name)
+  if (isTodoWriteName(name)) return null
   const args = asRecord(tool.args)
   const result = asRecord(tool.result)
   const shell = extractShellCommand(tool)
-  if (isCommandLike(name, shell)) return "command"
+  const path = toolPath(tool)
+  const editing = Boolean(path) && isEditTool(name, args, result)
+  // 真 shell 才进命令组。带 path 的写入即使叫 bash/command 也算改文件。
+  if (isCommandLike(name, shell) && !editing) return "command"
   if (toolFailed(tool)) return "error"
-  if (isEditTool(name, args, result)) return "edit"
-  if (isSearchTool(tool, name) && toolPath(tool)) return "read"
-  if (isReadTool(name, args, tool.name) && toolPath(tool)) return "read"
+  if (editing) return "edit"
+  if (isSearchTool(tool, name) && path) return "read"
+  if (isReadTool(name, args, tool.name) && path) return "read"
   return null
 }
 
@@ -88,7 +94,7 @@ function commandEntry(
 
 function isCommandLike(name: string, shell?: string): boolean {
   if (name.startsWith("git_")) return true
-  return isBashTool(name, shell) || /^(bash|command|cmd|argv|shell)$/.test(name)
+  return isBashTool(name, shell)
 }
 
 function toolFailed(tool: ThreadToolCall): boolean {

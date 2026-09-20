@@ -1,9 +1,10 @@
 /**
- * 账本一行：人话主行 + 目录次行。文件行开 sheet；命令默认只露摘要。
+ * 账本一行：文件名 + 类型标；命令是 $ 摘要。组头已经标明读/改，行上不再重复动词。
  */
 import { useState } from "react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { FileTypeIcon } from "@renderer/components/ai-chat/file-type-icon"
 import { ledgerOpensSources } from "./format-ledger-entry"
 import type { RunLedgerEntry } from "./run-ledger.types"
 
@@ -32,33 +33,35 @@ function FileRow({
   selected: boolean
   onOpen: (entry: RunLedgerEntry) => void
 }) {
-  const t = useT()
+  const name = entry.fileName || entry.title
+  const opens = ledgerOpensSources(entry)
   return (
     <button
       type="button"
       data-testid="run-ledger-row"
       data-kind={entry.kind}
-      title={entry.path || entry.title}
-      onClick={() => onOpen(entry)}
+      title={entry.path || name}
+      onClick={() => {
+        if (opens) onOpen(entry)
+      }}
       className={cx(
-        "flex w-full items-start justify-between gap-2 px-3 py-1.5 text-left outline-none",
+        "flex w-full items-center gap-2 px-3 py-1.5 text-left outline-none",
         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         selected
-          ? "bg-accent-50 shadow-[inset_0_0_0_1px] shadow-accent-500/25"
+          ? "bg-accent-50"
           : "hover:bg-background-secondary-hover"
       )}
     >
-      <span className="min-w-0">
-        <span className="block truncate text-caption-1-medium text-text-primary">
-          {filePrimary(entry, t)}
-        </span>
+      <FileTypeIcon name={name} size={14} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-caption-1-medium text-text-primary">{name}</span>
         {entry.pathHint ? (
-          <span className="mt-0.5 block truncate font-mono text-caption-2-regular text-text-tertiary">
+          <span className="mt-px block truncate font-mono text-caption-2-regular text-text-tertiary">
             {entry.pathHint}
           </span>
         ) : null}
         {entry.kind === "error" && entry.detail ? (
-          <span className="mt-0.5 block truncate text-caption-2-regular text-text-warning-primary">
+          <span className="mt-px block truncate text-caption-2-regular text-text-warning-primary">
             {entry.detail}
           </span>
         ) : null}
@@ -81,23 +84,29 @@ function CommandRow({
   const opens = ledgerOpensSources(entry)
   const outcome = entry.failed ? t("sessionOps.ledgerCommandFail") : t("sessionOps.ledgerCommandOk")
   return (
-    <div className={cx(selected && "bg-accent-50 shadow-[inset_0_0_0_1px] shadow-accent-500/25")}>
+    <div className={cx(selected && "bg-accent-50")}>
       <button
         type="button"
         data-testid="run-ledger-row"
         data-kind="command"
-        title={entry.path || entry.title}
+        title={entry.title}
         onClick={() => {
           if (entry.output) setExpanded((open) => !open)
           if (opens) onOpen(entry)
         }}
-        className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+        className="flex w-full items-center gap-1.5 px-3 py-1.5 text-left outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
       >
-        <span className="min-w-0 truncate text-caption-1-regular text-text-primary">
-          {entry.toolLabel ?? "bash"} · {entry.title} ·{" "}
-          <span className={entry.failed ? "text-text-warning-primary" : "text-state-success-text"}>
-            {outcome}
-          </span>
+        <span className="shrink-0 font-mono text-caption-2-regular text-text-tertiary">$</span>
+        <span className="min-w-0 flex-1 truncate font-mono text-caption-1-regular text-text-primary">
+          {entry.title}
+        </span>
+        <span
+          className={cx(
+            "shrink-0 text-caption-2-regular",
+            entry.failed ? "text-text-warning-primary" : "text-state-success-text"
+          )}
+        >
+          {outcome}
         </span>
       </button>
       {expanded && entry.output ? (
@@ -117,23 +126,12 @@ function UsageRow({ entry }: { entry: RunLedgerEntry }) {
   const tokens = Number(entry.title)
   if (!Number.isFinite(tokens) || tokens <= 0) return null
   return (
-    <div data-testid="run-ledger-row" data-kind="usage" className="px-3 py-1.5">
-      <p className="text-caption-2-regular text-text-tertiary">{t("sessionOps.ledgerGroupUsage")}</p>
-      <p className="text-caption-1-regular text-text-primary">
+    <div data-testid="run-ledger-row" data-kind="usage" className="px-3 py-2">
+      <p className="font-mono text-caption-2-regular tabular-nums text-text-tertiary">
         {t("sessionOps.ledgerUsageTokens", { n: formatTokenCount(tokens) })}
       </p>
     </div>
   )
-}
-
-function filePrimary(
-  entry: RunLedgerEntry,
-  t: (path: string, vars?: Record<string, string | number>) => string
-): string {
-  const name = entry.fileName || entry.title
-  if (entry.kind === "edit") return `${t("sessionOps.ledgerVerbEdit")} · ${name}`
-  if (entry.kind === "error") return `${t("sessionOps.ledgerVerbError")} · ${name}`
-  return `${t("sessionOps.ledgerVerbRead")} · ${name}`
 }
 
 function formatTokenCount(n: number): string {
