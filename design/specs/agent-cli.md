@@ -3,6 +3,7 @@
 > 本机 Agent CLI 工具箱：探测、配置、ACP 开流。最后更新：2026-09-20
 
 Usage L1–L4、三路命名与能力矩阵见 [`m1-usage-and-capabilities.md`](./m1-usage-and-capabilities.md)。
+I3 Registry「更多助手」产品短锁（未落地）：[`../references/i3-registry-more-agents.md`](../references/i3-registry-more-agents.md)；预览 `previews/i3-registry-more-agents.html` 待 luna，不是当前真相。
 
 ## 当前真相
 

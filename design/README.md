@@ -61,6 +61,7 @@
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；≠ M3 handoff；视觉真源见预览；不是当前真相，边界见 m3 spec） |
+| [references/i3-registry-more-agents.md](./references/i3-registry-more-agents.md) | I3 Registry「更多助手」短锁（Jojo；#76 I4-P1 后下一刀；已就绪 / 更多助手分组；comingSoon/未验证；禁 npx 默认装、禁假已连接；Registry≠插件市场；预览待 `previews/i3-registry-more-agents.html`（luna）；不是当前真相，边界见 agent-cli / m4-registry） |
 | [references/i4-automations.md](./references/i4-automations.md) | I4 本机 Automations 短锁（Jojo；手动/cron P0；webhook/保存后/工作单后置；local-only；视觉真源见 [`previews/i4-automations.html`](./previews/i4-automations.html)；不是当前真相，边界见 settings） |
 | [references/i4-p1-webhook-onsave.md](./references/i4-p1-webhook-onsave.md) | I4-P1 Automations 保存后 / 本机 webhook 短锁（Jojo；仍 local-only、关应用不补跑、无云隧道默认开；视觉真源见 [`previews/i4-p1-webhook-onsave.html`](./previews/i4-p1-webhook-onsave.html)；接线已落 settings / ipc 当前真相；本文不是当前真相） |
 | [references/i2-extensions-curated.md](./references/i2-extensions-curated.md) | I2 扩展精选短锁（Jojo；P0-H 壳只读精选；一键写入 `#/mcp` / `#/skills` SoT → P0-S；无收费店 / Registry 混入 / 宿主跑插件；视觉真源见 [`previews/i2-extensions-curated.html`](./previews/i2-extensions-curated.html)；接线已落 settings 当前真相；不是当前真相，边界见 settings） |

@@ -44,7 +44,7 @@ R/I/C/E 各 1–10，分≈ R×I×C÷E。
 |----|----|-----|----|---------------------|
 | **I1** | 同引擎中途换模型（Kilo） | ~98 | **已落地** #50 `5033c10` | 同一 Enjoy 会话、同一引擎，Composer 模型芯片换模；角标「已切换」。**≠** M3 引擎 handoff，不写「换模会重开会话」。当前真相见 [`../specs/m3-engine-handoff.md`](../specs/m3-engine-handoff.md)；产品锁 [`i1-mid-model-switch.md`](./i1-mid-model-switch.md)。视觉真源 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)，不宣称应用 1:1 |
 | **I2** | 扩展壳 MCP/Skills 精选浏览（Goose/Cline） | ~68 | **设计锁**（并进/紧随 H；应用未接线） | 扩展页只读精选卡 +「添加到…」写入 SoT；无新运行时。产品锁 [`i2-extensions-curated.md`](./i2-extensions-curated.md)；视觉真源 [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)，不宣称应用 1:1 |
-| I3 | Registry ACP 花名册扩容（OpenClaw） | ~58 | P1 | 「更多助手」分组；未验证标即将推出 |
+| I3 | Registry ACP 花名册扩容（OpenClaw） | ~58 | **设计锁** | 「更多助手」分组；未验证标即将推出。产品锁 [`i3-registry-more-agents.md`](./i3-registry-more-agents.md)；预览待 `../previews/i3-registry-more-agents.html`（luna）；不是当前真相，边界见 agent-cli / m4-acp-registry |
 | I4 | Automations 日程+webhook（OpenHands） | ~35 | P1 | 触发=手动/保存/cron/webhook；诚实本地。产品锁 [`i4-automations.md`](./i4-automations.md)；P1 切片 [`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)（预览待 luna）；视觉真源 [`../previews/i4-automations.html`](../previews/i4-automations.html)，不宣称应用 1:1 |
 | I5 | 跨引擎会话检索（Codeg） | ~18 | P1 | 侧栏搜所有引擎会话；结果带引擎标 |
 | I6 | 工作流只读可视化（Shofer） | ~12 | soft | Plan 步骤时间线变小图；非执行引擎 |
@@ -62,6 +62,7 @@ R/I/C/E 各 1–10，分≈ R×I×C÷E。
 | 插件参考 | `plugin-extensions-hub.md` | PR #35 |
 | **I1** | 同引擎中途换模型 | 已落地 #50（`5033c10`）；**≠** M3 引擎 handoff。C 端禁止「换模会重开会话」 |
 | **I2** | 精选浏览 | 设计锁已入库（视觉真源 `previews/i2-extensions-curated.html`）；**未**宣称应用 1:1 |
+| **I3** | Registry 更多助手 | 设计锁已入库；预览待 luna（`previews/i3-registry-more-agents.html`）；**未**宣称应用 1:1 |
 
 砍项：假 BYOK · 沙箱上轨 · worktree · 跨 Agent MCP 委派。
 

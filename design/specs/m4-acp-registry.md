@@ -1,13 +1,13 @@
 # spec/m4-acp-registry
 
-> M4 ACP 扩展与 Registry。最后更新：2026-09-12
+> M4 ACP 扩展与 Registry。最后更新：2026-09-20
 > 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 当前真相
 
-设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。未找到详情是空卡「还没装好这个助手」+ 安装命令（视觉锁 [`previews/cli-b-registry-install.html`](../previews/cli-b-registry-install.html)，锁 tip `6c02931`）：有 npm/brew 配方才一键（Pi），否则复制是主行动（Hermes）；禁止假一键、假「已连接」。已装详情才展示说明与启动预览。文档 `openDocs`。无营销 Hero。
+设置 → 智能体 第四分段 **Registry**（`#/settings/agent?tab=registry`，不上 EngineRail，不进空态主区）。左列表右详情：内置 ACP 目录 + `agentTools.detect` 状态（未装 / ready / 即将推出）。未找到详情是空卡「还没装好这个助手」+ 安装命令（视觉锁 [`previews/cli-b-registry-install.html`](../previews/cli-b-registry-install.html)，锁 tip `6c02931`）：有 npm/brew 配方才一键（Pi），否则复制是主行动（Hermes）；禁止假一键、假「已连接」。已装详情才展示说明与启动预览。文档 `openDocs`。无营销 Hero。I3「更多助手」分组短锁（未落地）：[`../references/i3-registry-more-agents.md`](../references/i3-registry-more-agents.md)；预览 `previews/i3-registry-more-agents.html` 待 luna，不是当前真相。
 
 自定义 stdio ACP：`custom:<slug>`，字段 command / args / env / cwd（工作区根或已存在的绝对目录）。保存进 `agentTools.customAgents`；出现在本机 CLI 列表与 Composer 导轨（`showOnEngineRail`）。spawn 经 `assertCustomAllowedCommand`（目录 binaries ∪ `acp`/`acp-agent`/`agent-acp`，禁止 bash/node/npx 等）；`shell:false`；审批不豁免。表单 C 端文案：只能选支持的助手程序，不能指定电脑上的任意软件；禁止 basename / stdio 行话。白名单拒绝时 UI 映射成人话（`无法使用「…」`），main 英文 throw 只留日志。能力走 `RUNTIME_CAPABILITIES["custom-acp"]`（quota=false、login=false、HMAC）。能力矩阵自定义行画用户 **label**，不画 `custom:<slug>`。删除确认后解绑会话 runtime，并把仍指向它的偏好 `runtimeId` 拉回 Enjoy 本地。
 
@@ -111,6 +111,7 @@ UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 - 未找到详情必须写「还没装好这个助手」，展示 `installCommand` 而不是启动预览；copy-only 禁止画灰掉的一键。
 - 自定义 agent 无 inspect / 额度条；不要画空条或假绿灯。密表动力源 `classifyPowerSource=none`，永远 —。
 - Composer 切引擎用 `can-switch-agent.ts`（自定义必须 ready）；轨徽标就绪灯用 `engine-ready.ts` 的 `isEngineReady`。M2/M3 合入后不要把两者并成一份再丢掉自定义规则。
+- **隐患**：把 I3「更多助手」花名册写成已落地分组，或默认 `npx` 临时下载、点未验证项假「已连接」。根因：短锁只在 reference，当前仍是内置目录 + detect。正确做法：未接线前不画「更多助手」分组、不混已就绪密表、不卖 MCP/Skills。产品锁 [`../references/i3-registry-more-agents.md`](../references/i3-registry-more-agents.md)。
 
 ## 验收
 
