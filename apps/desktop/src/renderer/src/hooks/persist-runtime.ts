@@ -2,9 +2,10 @@
  * 把 Composer 选中的 runtimeId 写入偏好与当前会话覆盖。
  * 中途换模走 persistSessionModel，禁止误写成全局 upsert。
  */
-import type { AgentToolId } from "@enjoy-agents/ipc-contract"
+import { capabilitiesFor, type AgentToolId } from "@enjoy-agents/ipc-contract"
 import { sessionHasUserTurns } from "../components/ai-chat/agent-picker/handoff/plan-composer-switch.ts"
 import { getIde, hasIde } from "../lib/ide"
+import { supportsMidSessionModelSwitch } from "../lib/model-switch-state.ts"
 import { nextPreferredModelId, planSessionModelWrite } from "../lib/session-model.ts"
 import { useChatStore } from "../stores/chat-store"
 import { patchPreferences } from "./use-settings-snapshot"
@@ -26,9 +27,19 @@ export async function persistSessionModel(modelId: string) {
   const store = useChatStore.getState()
   const next = modelId.trim()
   if (!next) return
+  if (!supportsMidSessionModelSwitch(capabilitiesFor(store.runtimeId).models)) {
+    throw new Error("MODEL_SWITCH_UNSUPPORTED")
+  }
   const sessionId = store.sessionId
   const plan = planSessionModelWrite({ hasUserTurns: sessionHasUserTurns(store.messages) })
   const catalog = store.models.find((item) => item.id === next)
+  const previous = {
+    modelId: store.modelId,
+    modelLabel: store.modelLabel,
+    preferredModelId: store.preferredModelId,
+    sessionModels: store.sessionModels,
+    reasoningEffort: store.reasoningEffort
+  }
   store.setModel(next, catalog?.label ?? store.modelLabel, catalog?.provider, catalog?.reasoningEffort)
   store.setPreferredModelId(
     nextPreferredModelId({
@@ -40,20 +51,43 @@ export async function persistSessionModel(modelId: string) {
   if (sessionId) {
     store.setSessionModels({ ...store.sessionModels, [sessionId]: next })
   }
+  try {
+    await persistSessionModelRemote(store.runtimeId as AgentToolId, sessionId, next, plan.writePreferenceDefault)
+  } catch (error) {
+    restoreSessionModel(previous)
+    throw error
+  }
+}
+
+async function persistSessionModelRemote(
+  runtimeId: AgentToolId,
+  sessionId: string | null,
+  next: string,
+  writePreferenceDefault: boolean
+) {
   if (!hasIde()) return
   if (sessionId) {
-    await getIde().agentTools.setSessionRuntime({
-      sessionId,
-      runtimeId: store.runtimeId as AgentToolId,
-      modelId: next
-    })
+    await getIde().agentTools.setSessionRuntime({ sessionId, runtimeId, modelId: next })
   }
-  if (!plan.writePreferenceDefault) return
-  if (store.runtimeId === "enjoy-local") {
+  if (!writePreferenceDefault) return
+  if (runtimeId === "enjoy-local") {
     await getIde().settings.setActiveModel({ modelId: next })
     return
   }
-  await getIde().agentTools.upsert({ id: store.runtimeId as AgentToolId, modelId: next })
+  await getIde().agentTools.upsert({ id: runtimeId, modelId: next })
+}
+
+function restoreSessionModel(previous: {
+  modelId: string
+  modelLabel: string
+  preferredModelId: string
+  sessionModels: Record<string, string>
+  reasoningEffort: ReturnType<typeof useChatStore.getState>["reasoningEffort"]
+}) {
+  const store = useChatStore.getState()
+  store.setModel(previous.modelId, previous.modelLabel, undefined, previous.reasoningEffort)
+  store.setPreferredModelId(previous.preferredModelId)
+  store.setSessionModels(previous.sessionModels)
 }
 
 export async function persistRuntimeId(runtimeId: AgentToolId, modelId?: string) {

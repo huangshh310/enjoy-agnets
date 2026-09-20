@@ -23,6 +23,19 @@ export function modelSwitchKind(input: {
   return "ready"
 }
 
+/** persist 前闸：none 直接 failed，禁止空成功。 */
+export function modelSwitchWriteOutcome(input: {
+  modelsCapability: "none" | "catalog" | "inspect"
+  next: string
+  current?: string
+}): "failed" | "noop" | "write" {
+  const next = input.next.trim()
+  if (!next) return "noop"
+  if (!supportsMidSessionModelSwitch(input.modelsCapability)) return "failed"
+  if (input.current?.trim() === next) return "noop"
+  return "write"
+}
+
 export function isModelSwitchLoginBlocked(readiness: EngineReadiness): boolean {
   return (
     readiness === "needs_login" ||

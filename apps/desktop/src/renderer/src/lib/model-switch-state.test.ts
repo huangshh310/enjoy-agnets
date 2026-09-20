@@ -6,6 +6,7 @@ import { test } from "node:test"
 import {
   formatHistoryModelLabel,
   modelSwitchKind,
+  modelSwitchWriteOutcome,
   shortSessionId,
   supportsMidSessionModelSwitch
 } from "./model-switch-state.ts"
@@ -17,6 +18,21 @@ test("models none 不支持中途换模型", () => {
   assert.equal(
     modelSwitchKind({ modelsCapability: "none", readiness: "ready", modelCount: 3 }),
     "unsupported"
+  )
+})
+
+test("models none 写覆盖直接 failed，禁止空成功", () => {
+  assert.equal(
+    modelSwitchWriteOutcome({ modelsCapability: "none", next: "auto", current: "auto" }),
+    "failed"
+  )
+  assert.equal(
+    modelSwitchWriteOutcome({ modelsCapability: "catalog", next: "opus", current: "sonnet" }),
+    "write"
+  )
+  assert.equal(
+    modelSwitchWriteOutcome({ modelsCapability: "inspect", next: "sonnet", current: "sonnet" }),
+    "noop"
   )
 })
 

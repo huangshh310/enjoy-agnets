@@ -1,10 +1,11 @@
 /**
  * 同引擎换模入口：只写会话覆盖，禁止进 handoff store。
  */
-import type { AgentToolId } from "@enjoy-agents/ipc-contract"
+import { capabilitiesFor, type AgentToolId } from "@enjoy-agents/ipc-contract"
 import { persistSessionModel } from "@renderer/hooks/persist-runtime"
 import { isAcpComposerRuntime } from "@renderer/lib/agent-runtime"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { modelSwitchWriteOutcome } from "@renderer/lib/model-switch-state"
 import { getEffectiveModel } from "@renderer/lib/session-model"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { sessionHasUserTurns } from "./handoff/plan-composer-switch"
@@ -13,12 +14,16 @@ export async function requestModelSwitch(modelId: string): Promise<"applied" | "
   const next = modelId.trim()
   if (!next) return "noop"
   const chat = useChatStore.getState()
-  const current = getEffectiveModel({
-    sessionId: chat.sessionId,
-    sessionModels: chat.sessionModels,
-    engineDefault: chat.modelId
+  const gate = modelSwitchWriteOutcome({
+    modelsCapability: capabilitiesFor(chat.runtimeId).models,
+    next,
+    current: getEffectiveModel({
+      sessionId: chat.sessionId,
+      sessionModels: chat.sessionModels,
+      engineDefault: chat.modelId
+    })
   })
-  if (current === next) return "noop"
+  if (gate !== "write") return gate
   try {
     await persistSessionModel(next)
     if (
