@@ -103,7 +103,7 @@ async function beginAgentRun(
   }
   persistOutgoingUser(input, options.persistUser)
   emitEvent(window, { type: "run.start", runId, sessionId: input.sessionId })
-  if (!options.resumeMessages) {
+  if (!options.resumeMessages && workspace.kind !== "ssh") {
     void recordEnjoyCheckpoint(workspace.rootPath, {
       sessionId: input.sessionId,
       runId,

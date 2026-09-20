@@ -169,7 +169,7 @@ export function CreateProjectRemoteStep({
           ) : (
             <RiRadarLine className="size-3.5 text-text-secondary" />
           )}
-          <span>{remote.busy ? "正在测试…" : t("pages.workspaces.createProject.testHost")}</span>
+          <span>{remote.busy ? t("pages.workspaces.createProject.testingHost") : t("pages.workspaces.createProject.testHost")}</span>
         </Button>
 
         {remote.probeNote ? (
@@ -188,7 +188,9 @@ export function CreateProjectRemoteStep({
           </div>
         ) : (
           <span className="text-[11px] text-text-tertiary">
-            {remote.hostReady ? "主机已就绪，可测通连通性" : "请先选择或配置主机"}
+            {remote.hostReady
+              ? t("pages.workspaces.createProject.hostReady")
+              : t("pages.workspaces.createProject.pickHostFirst")}
           </span>
         )}
       </div>

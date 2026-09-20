@@ -32,6 +32,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   workspaceKind: "local" as const,
   remoteStatus: null,
   remoteLabel: null,
+  remoteError: null,
   sessionId: null,
   sessionTitle: "New agent",
   repositories: [],
@@ -171,10 +172,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
-  setRemoteStatus: (remoteStatus, remoteLabel) =>
+  setRemoteStatus: (remoteStatus, remoteLabel, remoteError) =>
     set((state) => ({
       remoteStatus,
-      remoteLabel: remoteLabel === undefined ? state.remoteLabel : remoteLabel
+      remoteLabel: remoteLabel === undefined ? state.remoteLabel : remoteLabel,
+      remoteError:
+        remoteError !== undefined
+          ? remoteError
+          : remoteStatus === "failed"
+            ? state.remoteError
+            : null
     })),
   setWorkspace: (workspace) => {
     if (!workspace) {
@@ -186,6 +193,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         workspaceKind: "local",
         remoteStatus: null,
         remoteLabel: null,
+        remoteError: null,
         sessionId: null,
         sessionTitle: "New agent",
         repositories: [],
@@ -207,7 +215,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       workspaceRootPath: workspace.rootPath,
       workspaceKind: workspace.kind === "ssh" ? "ssh" : "local",
       remoteStatus: workspace.kind === "ssh" ? (workspace.sshStatus ?? "idle") : null,
-      remoteLabel: workspace.kind === "ssh" ? workspace.rootPath : null
+      remoteLabel: workspace.kind === "ssh" ? workspace.rootPath : null,
+      remoteError: null
     })
   },
   setSelectedFile: (selectedFilePath, selectedFileContent) =>

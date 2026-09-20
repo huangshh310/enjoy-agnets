@@ -47,7 +47,7 @@ export function useAgentSession() {
     const offRemote = getIde().workspace.onRemote?.((event) => {
       const store = useChatStore.getState()
       if (event.workspaceId !== store.workspaceId) return
-      store.setRemoteStatus(event.status as typeof store.remoteStatus, event.label)
+      store.setRemoteStatus(event.status as typeof store.remoteStatus, event.label, event.error)
     })
     const unsubscribe = getIde().agent.onEvent((raw) => {
       const parsed = StreamEvent.safeParse(raw)

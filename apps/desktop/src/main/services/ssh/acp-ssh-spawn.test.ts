@@ -62,6 +62,7 @@ test("resolveAcpSpawnDirect 把 transport 传给 spawn 计划", async () => {
   const src = readFileSync(new URL("./resolve-acp-spawn.ts", import.meta.url), "utf8")
   assert.match(src, /transport: spec\.transport/)
   assert.match(src, /sshSpecFromRecord/)
+  assert.match(src, /assertSshPoolConnected/)
 })
 
 test("本机 argv 不是远端 CLI 的假本地路径", () => {

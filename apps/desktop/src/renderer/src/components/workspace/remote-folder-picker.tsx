@@ -45,7 +45,7 @@ export function RemoteFolderPicker({
             onClick={() => onOpen(listing.parent!)}
           >
             <RiArrowUpLine className="size-3.5" />
-            <span>上一级</span>
+            <span>{t("pages.workspaces.createProject.browseUp")}</span>
           </Button>
         ) : null}
       </div>
@@ -55,7 +55,7 @@ export function RemoteFolderPicker({
         {busy ? (
           <div className="flex items-center justify-center gap-2 py-6 text-caption-2-regular text-text-tertiary">
             <RiLoader4Line className="size-4 animate-spin text-accent-500" />
-            <span>正在读取目录…</span>
+            <span>{t("pages.workspaces.createProject.readingDir")}</span>
           </div>
         ) : dirs.length === 0 ? (
           <div className="py-6 px-3 text-center text-caption-2-regular text-text-tertiary">
@@ -74,7 +74,7 @@ export function RemoteFolderPicker({
                 <RiFolder6Line className="size-3.5 text-accent-500/80 shrink-0" />
                 <span className="font-mono text-caption-2-regular truncate">{item.name}</span>
               </div>
-              <span className="text-[10px] text-text-tertiary">目录</span>
+              <span className="text-[10px] text-text-tertiary">{t("pages.workspaces.createProject.dirKind")}</span>
             </button>
           ))
         )}

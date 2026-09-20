@@ -3,6 +3,7 @@
  */
 import { agentToolPreset } from "@enjoy-agents/agent-harness"
 import { catalogBasenamesFrom, planAcpSshSpawn, toAcpSpawnDirect, type AcpSpawnDirect } from "./acp-ssh-spawn.ts"
+import { assertSshPoolConnected } from "./refuse-local-cwd.ts"
 import { getWorkspace } from "../workspace"
 import { sshSpecFromRecord } from "../workspace-ssh.ts"
 
@@ -16,6 +17,7 @@ export async function resolveAcpSpawnDirect(input: {
   if (!input.workspaceId) return undefined
   const record = await getWorkspace(input.workspaceId)
   if (record.kind !== "ssh") return undefined
+  assertSshPoolConnected(record.id, "acp")
   const preset = agentToolPreset(input.runtimeId)
   const binary = preset?.binaries[0]
   if (!binary) throw new Error(`远端未找到 ${input.runtimeId}`)

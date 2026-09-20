@@ -5,6 +5,8 @@
  */
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
 import { mcpAgentToolName } from "@enjoy-agents/mcp"
+import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
+import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
 import { resolveWorkspaceHost } from "./workspace-host-factory"
 import { getApproval } from "@enjoy-agents/db"
@@ -68,12 +70,11 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
 
 async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {
   if (run.input.workspaceId) {
-    try {
-      const record = await getWorkspace(run.input.workspaceId)
-      return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
-    } catch {
-      // 回落本机 host
-    }
+    const record = await getWorkspace(run.input.workspaceId)
+    return resolveWorkspaceHost(record, undefined, createWorkspaceHost)
+  }
+  if (looksLikeSshRoot(run.workspaceRoot)) {
+    throw disconnectedError("tool")
   }
   return createWorkspaceHost(run.workspaceRoot)
 }

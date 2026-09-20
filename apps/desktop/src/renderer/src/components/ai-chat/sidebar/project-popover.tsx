@@ -23,6 +23,8 @@ import {
 import { cx } from "@/utils/cx"
 import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { createAndOpenSession, loadWorkspace } from "@renderer/hooks/use-agent-session"
+import { workspaceRowFromNode } from "@renderer/hooks/workspace-row"
+import type { RepositoryNode } from "@renderer/stores/chat-store"
 import { removeProject } from "@renderer/hooks/workspace-lifecycle"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -34,7 +36,10 @@ export function ProjectPopover({
   isActive = false,
   children
 }: {
-  workspace: { id: string; name: string; rootPath?: string; isPinned?: boolean }
+  workspace: Pick<
+    RepositoryNode,
+    "id" | "name" | "rootPath" | "isPinned" | "locationKind" | "sshStatus" | "sshHost" | "sshUser" | "remotePath"
+  >
   sessionCount?: number
   isActive?: boolean
   children?: React.ReactNode
@@ -57,14 +62,14 @@ export function ProjectPopover({
   async function handleNewChat(e: React.MouseEvent) {
     e.stopPropagation()
     setOpen(false)
-    await loadWorkspace({ id: workspace.id, name: workspace.name, rootPath: workspace.rootPath || "" })
+    await loadWorkspace(workspaceRowFromNode(workspace))
     await createAndOpenSession(workspace.id, t("chat.newAgent"))
   }
 
   async function handleSwitchWorkspace(e: React.MouseEvent) {
     e.stopPropagation()
     setOpen(false)
-    await loadWorkspace({ id: workspace.id, name: workspace.name, rootPath: workspace.rootPath || "" })
+    await loadWorkspace(workspaceRowFromNode(workspace))
   }
 
   return (

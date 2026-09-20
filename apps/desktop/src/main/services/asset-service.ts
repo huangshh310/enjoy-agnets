@@ -16,6 +16,7 @@ import {
 import { getDatabase } from "./database"
 import { createId } from "./ids"
 import { isE2eStub } from "./e2e-stub"
+import { refuseSshLocalFilesystem } from "./ssh/refuse-local-cwd.ts"
 import { getWorkspace } from "./workspace"
 
 function assetsDir(): string {
@@ -66,6 +67,7 @@ export async function exportAsset(
   }
 ) {
   const workspace = await getWorkspace(input.workspaceId)
+  refuseSshLocalFilesystem(workspace, "asset export")
   const row = getAsset(getDatabase(), input.id)
   if (!row) throw new Error("Asset not found.")
   const defaultTarget = assertInsideRoot(workspace.rootPath, input.relativePath)

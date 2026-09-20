@@ -8,6 +8,19 @@ export interface ParsedRemoteLabel {
   path: string
 }
 
+/** Composer 脚注：host:path，不要 user@，不要再叠「远程 ≠ 引擎」。 */
+export function formatComposerRemoteFootnote(label?: string | null): string {
+  const { endpoint, path } = parseRemoteLabel(label)
+  const host = hostFromEndpoint(endpoint)
+  if (host && path) return `${host}:${path}`
+  return host || path
+}
+
+function hostFromEndpoint(endpoint: string): string {
+  const at = endpoint.lastIndexOf("@")
+  return at === -1 ? endpoint : endpoint.slice(at + 1)
+}
+
 export function parseRemoteLabel(label?: string | null): ParsedRemoteLabel {
   if (!label || !label.trim()) {
     return { endpoint: "", path: "" }

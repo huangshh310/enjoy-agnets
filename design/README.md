@@ -76,7 +76,7 @@
 | [previews/p0-f-preview-open.html](./previews/p0-f-preview-open.html) | 完成条「在浏览器打开」（【视觉真源】P0-F，锁 tip `9a1a4ca`；系统浏览器，不嵌 Chromium） |
 | [previews/p0-g-sources-detail.html](./previews/p0-g-sources-detail.html) | 气泡底脚芯片 → 右/底 sheet「本轮来源」（【视觉真源】P0-G，锁 tip `76b5ecd`；文件/技能/MCP，无来源无底脚） |
 | [previews/p0-h-extensions-hub.html](./previews/p0-h-extensions-hub.html) | 扩展发现壳：设置两列 MCP \| Skills + 添加深链（【视觉真源】P0-H） |
-| [previews/p0-r-remote-workspace.html](./previews/p0-r-remote-workspace.html) | SSH 远程工作区：抽屉 / 顶条 /「远程 ≠ 引擎」（【视觉真源】P0-R） |
+| [previews/p0-r-remote-workspace.html](./previews/p0-r-remote-workspace.html) | SSH 远程工作区：抽屉 / 顶条 /「远程 ≠ 引擎」（【视觉真源】P0-R，锁 tip `3a3e00b`） |
 
 ---
 

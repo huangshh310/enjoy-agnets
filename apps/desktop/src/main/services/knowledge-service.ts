@@ -29,6 +29,7 @@ import {
   resolveEmbeddingModelId,
   storeHashedEmbeddings
 } from "./knowledge-embed"
+import { refuseSshLocalFilesystem } from "./ssh/refuse-local-cwd.ts"
 import { getWorkspace } from "./workspace"
 import { clearSourceContent, hashText, markDocumentReady, shouldSkipIndexedFile } from "./knowledge-index"
 
@@ -50,6 +51,7 @@ export async function listKnowledgeSources(workspaceId: string) {
 
 export async function addKnowledgeSource(workspaceId: string, path: string) {
   const workspace = await getWorkspace(workspaceId)
+  refuseSshLocalFilesystem(workspace, "knowledge")
   const resolved = resolveKnowledgePath(workspace.rootPath, path)
   try {
     await stat(resolved.abs)
@@ -76,6 +78,7 @@ export async function indexKnowledgeSource(sourceId: string, rebuild = false) {
   if (!source) throw new Error("Knowledge source not found.")
   cancelled.delete(sourceId)
   const workspace = await getWorkspace(source.workspaceId)
+  refuseSshLocalFilesystem(workspace, "knowledge")
   upsertSource(getDatabase(), { ...source, status: "indexing", error: null, updatedAt: Date.now() })
   if (rebuild) clearSourceContent(source)
   try {

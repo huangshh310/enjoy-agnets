@@ -36,6 +36,25 @@ test("kind=local 仍走本机 host", async () => {
   assert.equal(await host.readFile("a.txt"), "hello")
 })
 
+test("SSH 未入 pool 即使 DB 写 connected 也按断开禁写", async () => {
+  const record: WorkspaceRecord = {
+    id: "ws_ssh_label",
+    name: "remote",
+    rootPath: "alice@dev:/home/alice/app",
+    kind: "ssh",
+    sshStatus: "connected"
+  }
+  const host = resolveWorkspaceHost(record)
+  await assert.rejects(() => host.writeFile("a.txt", "x"), (error: unknown) => isRemoteDisconnected(error))
+})
+
+test("工厂源码用 requireSshRemotePath，不回落 rootPath", async () => {
+  const { readFileSync } = await import("node:fs")
+  const src = readFileSync(new URL("./workspace-host-factory.ts", import.meta.url), "utf8")
+  assert.match(src, /requireSshRemotePath/)
+  assert.equal(src.includes("record.remotePath || record.rootPath"), false)
+})
+
 test("SSH 未连接时写/bash 抛断开错误", async () => {
   const record: WorkspaceRecord = {
     id: "ws_ssh",

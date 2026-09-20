@@ -7,7 +7,8 @@ import {
   NEED_CLI_LOGIN,
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
-  NEED_PROVIDER_KEY
+  NEED_PROVIDER_KEY,
+  NEED_REMOTE_CONNECTED
 } from "./classify-thread-error.ts"
 
 test("402 / spend / credit 走 L4，不并进泛化限流", () => {
@@ -44,4 +45,6 @@ test("ACP 未登录不是可重试供应商错误", () => {
   assert.equal(classifyThreadError(NEED_CLI_OUTDATED), "outdated")
   assert.equal(classifyThreadError("远端未找到 dsh"), "remote_cli_missing")
   assert.equal(classifyThreadError("spawn remote binary not found"), "remote_cli_missing")
+  assert.equal(classifyThreadError(NEED_REMOTE_CONNECTED), "remote_disconnected")
+  assert.equal(classifyThreadError("REMOTE_DISCONNECTED: write refused"), "remote_disconnected")
 })

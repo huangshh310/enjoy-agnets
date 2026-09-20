@@ -34,6 +34,7 @@ import {
 import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { takeSessionHandoff } from "./session-handoff"
+import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 
 export async function pumpStream(runId: string) {
@@ -225,6 +226,7 @@ async function consumeRun(
 function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type: string }): void {
   if (event.type !== "file.changed" || run.checkpointNoted) return
   run.checkpointNoted = true
+  if (looksLikeSshRoot(run.workspaceRoot)) return
   void recordEnjoyCheckpoint(run.workspaceRoot, {
     sessionId: run.input.sessionId,
     runId,

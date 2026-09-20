@@ -283,6 +283,8 @@ export const enChat = {
   needCliOutdatedHint: "Current {current}, need ≥{required}. Update, then send.",
   retryInspect: "Retry check",
   retryOfficialLogin: "Retry authorization",
+  needRemoteConnectedTitle: "Remote is disconnected — reconnect before sending",
+  needRemoteConnectedHint: "You can still read the chat. Writes and the Agent wait until you reconnect.",
   remoteCliMissingTitle: "CLI Not Found on Remote Server",
   remoteCliMissingHint: "You are currently in an SSH remote workspace. CLI engines execute on the remote host, but the binary was not found there. You can switch to 'Enjoy Local' (runs locally and drives remote files over SSH without tools installed on the remote machine), or install the CLI on the server.",
   switchToEnjoyLocal: "Switch to Enjoy Local",
