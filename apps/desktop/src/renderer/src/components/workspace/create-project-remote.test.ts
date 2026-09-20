@@ -21,4 +21,21 @@ test("远程创建步走 openSsh，不调用本机 pickFolder", () => {
   assert.match(dialog, /workspace\.openSsh/)
   assert.match(typeStep, /onChangeType\("remote"\)/)
   assert.equal(typeStep.includes("comingSoon"), false)
+  assert.match(dialog, /max-w-\[380px\]/)
+})
+
+test("P0-R 开项目词表对齐 3a3e00b", () => {
+  const zh = readFileSync(
+    join(dir, "../../i18n/catalogs/zh/pages-workspaces.ts"),
+    "utf8"
+  )
+  const en = readFileSync(
+    join(dir, "../../i18n/catalogs/en/pages-workspaces.ts"),
+    "utf8"
+  )
+  assert.match(zh, /localTitle: "本机文件夹"/)
+  assert.match(zh, /remoteTitle: "远程 SSH…"/)
+  assert.match(zh, /打开位置，不是换引擎/)
+  assert.match(en, /localTitle: "Local folder"/)
+  assert.match(en, /remoteTitle: "Remote SSH…"/)
 })

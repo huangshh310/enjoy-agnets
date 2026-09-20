@@ -127,22 +127,26 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   )
   const title =
     gate?.title ??
-    (kind === "remote_cli_missing"
-      ? t("chat.remoteCliMissingTitle")
-      : kind === "needs_key"
-        ? t("chat.needProviderKeyTitle")
-        : kind === "rate_limit"
-          ? t("chat.usage.rateLimitTitle")
-          : t("chat.errorTitle"))
+    (kind === "remote_disconnected"
+      ? t("chat.needRemoteConnectedTitle")
+      : kind === "remote_cli_missing"
+        ? t("chat.remoteCliMissingTitle")
+        : kind === "needs_key"
+          ? t("chat.needProviderKeyTitle")
+          : kind === "rate_limit"
+            ? t("chat.usage.rateLimitTitle")
+            : t("chat.errorTitle"))
   const detail =
     gate?.hint ??
-    (kind === "remote_cli_missing"
-      ? t("chat.remoteCliMissingHint")
-      : kind === "needs_key"
-        ? t("chat.needProviderKeyHint")
-        : error.includes("HANDOFF_CONFIRM_FAILED")
-          ? t("chat.handoffConfirmFailed")
-          : error)
+    (kind === "remote_disconnected"
+      ? t("chat.needRemoteConnectedHint")
+      : kind === "remote_cli_missing"
+        ? t("chat.remoteCliMissingHint")
+        : kind === "needs_key"
+          ? t("chat.needProviderKeyHint")
+          : error.includes("HANDOFF_CONFIRM_FAILED")
+            ? t("chat.handoffConfirmFailed")
+            : error)
 
   return (
     <div
@@ -236,6 +240,20 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                 <span>{t("chat.addProviderKey")}</span>
               </button>
             ) : null}
+            {kind === "remote_disconnected" && hasIde() ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const workspaceId = useChatStore.getState().workspaceId
+                  setError(null)
+                  if (workspaceId) void getIde().workspace.retry({ workspaceId })
+                }}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500 px-2.5 py-1 text-caption-2-medium font-semibold text-text-white shadow-2xs hover:bg-accent-600 transition-colors"
+              >
+                <RiRefreshLine className="size-3" />
+                <span>{t("settings.workspace.sshReconnect")}</span>
+              </button>
+            ) : null}
             {kind !== "auth" &&
             kind !== "needs_key" &&
             kind !== "inspecting" &&
@@ -243,6 +261,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             kind !== "login_failed" &&
             kind !== "outdated" &&
             kind !== "remote_cli_missing" &&
+            kind !== "remote_disconnected" &&
             !running ? (
               <button
                 type="button"

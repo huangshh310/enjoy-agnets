@@ -156,6 +156,7 @@ export type ChatStore = {
   workspaceKind: "local" | "ssh"
   remoteStatus: "idle" | "connecting" | "connected" | "failed" | "disconnected" | null
   remoteLabel: string | null
+  remoteError: string | null
   sessionId: string | null
   sessionTitle: string
   repositories: RepositoryNode[]
@@ -261,7 +262,8 @@ export type ChatStore = {
   ) => void
   setRemoteStatus: (
     status: ChatStore["remoteStatus"],
-    label?: string | null
+    label?: string | null,
+    remoteError?: string | null
   ) => void
   setSelectedFile: (path: string | null, content: string) => void
   setChanges: (changes: ChangedFileRow[]) => void

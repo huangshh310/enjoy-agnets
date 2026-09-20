@@ -3,6 +3,7 @@
  */
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
 import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
+import { requireSshRemotePath } from "./ssh/refuse-local-cwd.ts"
 import { createDisconnectedHost } from "./ssh/ssh-disconnected-host.ts"
 import { createSshWorkspaceHost } from "./ssh/ssh-workspace-host.ts"
 import { getSshPoolEntry } from "./ssh/ssh-pool.ts"
@@ -28,6 +29,6 @@ export function resolveWorkspaceHost(
   if (!live?.layer || live.status !== "connected") {
     return createDisconnectedHost(live?.status ?? record.sshStatus ?? "disconnected")
   }
-  const remote = record.remotePath || record.rootPath
+  const remote = requireSshRemotePath(record)
   return createSshWorkspaceHost(live.layer, remote)
 }

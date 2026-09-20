@@ -139,14 +139,14 @@ export function SshHostFields({
             <RiKey2Line className="size-3.5 text-text-tertiary" />
             <span>{t("settings.workspace.sshKeyPath")}</span>
           </Label>
-          <span className="text-[11px] text-text-tertiary">默认使用系统 SSH-Agent</span>
+          <span className="text-[11px] text-text-tertiary">{t("settings.workspace.sshAgentDefault")}</span>
         </div>
         <div className="flex items-center gap-2">
           <Input
             className="h-9 min-w-0 flex-1 rounded-xl font-mono text-caption-2-regular"
             value={value.keyPath}
             onChange={(event) => patch({ keyPath: event.target.value })}
-            placeholder="~/.ssh/id_ed25519 或留空"
+            placeholder={t("settings.workspace.sshKeyPathPlaceholder")}
           />
           <Button
             size="sm"
@@ -160,7 +160,7 @@ export function SshHostFields({
           </Button>
         </div>
         <p className="text-[11px] text-text-tertiary leading-normal">
-          仅引用本机私钥文件路径；私钥内容绝不读取、不入库、不发送至模型或网络。
+          {t("settings.workspace.sshKeyPathHint")}
         </p>
       </div>
     </div>

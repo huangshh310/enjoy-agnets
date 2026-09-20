@@ -29,6 +29,8 @@ import type { StoredSecret } from "./secrets"
 import { getSessionCompaction } from "./session-compaction-service"
 import { createSkillHost } from "./skill-host"
 import { listInstalledSkills } from "./skills-service"
+import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
+import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
 import { resolveWorkspaceHost } from "./workspace-host-factory.ts"
 
@@ -109,6 +111,9 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
     onTouchedPath: agents.onTouchedPath
   }
   const record = input.workspaceId ? await getWorkspace(input.workspaceId) : null
+  if (!record && looksLikeSshRoot(input.workspaceRoot)) {
+    throw disconnectedError("io")
+  }
   const host = record
     ? resolveWorkspaceHost(record, extras, createWorkspaceHost)
     : createWorkspaceHost(input.workspaceRoot, extras)
@@ -118,16 +123,18 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
     : createWorkspaceHost(input.workspaceRoot)
   const nodes = await collectRepoOutline((path) => outlineHost.listDir(path))
   const plan = input.executePlan ? formatExecutePlanInstructions(await readPlanFile(host)) : ""
+  const isSsh = record?.kind === "ssh"
+  const localScanRoot = isSsh ? undefined : input.workspaceRoot
   return {
     host,
-    skills: createSkillHost(input.workspaceRoot),
+    skills: localScanRoot ? createSkillHost(localScanRoot) : emptyRemoteSkillHost(),
     exploreModel: exploreModelFor(input),
     pullInstructionUpdates: agents.pullInstructionUpdates,
     extraInstructions: extraLocalInstructions({
       customInstructions: input.prefs.customInstructions,
-      rules: listDiscoveredRules({ workspacePath: input.workspaceRoot }),
-      skills: listInstalledSkills({ workspacePath: input.workspaceRoot }),
-      workspaceRoot: input.workspaceRoot,
+      rules: localScanRoot ? listDiscoveredRules({ workspacePath: localScanRoot }) : [],
+      skills: localScanRoot ? listInstalledSkills({ workspacePath: localScanRoot }) : [],
+      workspaceRoot: localScanRoot,
       outline: formatRepoOutline(nodes),
       executePlan: plan,
       agentsMd: agents.agentsMd,
@@ -136,13 +143,32 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
   }
 }
 
-/** 基线链进 system；touch log 只在模型工具碰到新目录时 drain。 */
+/** SSH 不扫本机 user@host:path；全局技能也不假装在远端根下。 */
+function emptyRemoteSkillHost(): SkillHost {
+  return {
+    list: () => [],
+    read: async () => {
+      throw new Error("Workspace skills are not scanned on SSH remote workspaces.")
+    }
+  }
+}
+
+/** 基线链进 system；touch log 只在模型工具碰到新目录时 drain。SSH 不扫本机假根。 */
 async function loadAgentsMdStream(input: OpenCodingStreamInput) {
+  const compaction = await getSessionCompaction(input.sessionId)
+  const record = input.workspaceId ? await getWorkspace(input.workspaceId) : null
+  if (record?.kind === "ssh" || looksLikeSshRoot(input.workspaceRoot)) {
+    return {
+      agentsMd: "",
+      rehydratedAfterCompact: Boolean(compaction),
+      onTouchedPath: () => undefined,
+      pullInstructionUpdates: () => []
+    }
+  }
   const touch = createInstructionTouchLog({
     workspaceRoot: input.workspaceRoot,
     initialDirRels: ["."]
   })
-  const compaction = await getSessionCompaction(input.sessionId)
   return {
     agentsMd: formatWorkspaceAgentsMd(input.workspaceRoot),
     rehydratedAfterCompact: Boolean(compaction),

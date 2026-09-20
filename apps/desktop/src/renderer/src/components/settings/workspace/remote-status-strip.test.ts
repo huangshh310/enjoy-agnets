@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { test } from "node:test"
-import { parseRemoteLabel } from "./parse-remote-label.ts"
+import { formatComposerRemoteFootnote, parseRemoteLabel } from "./parse-remote-label.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
@@ -17,6 +17,14 @@ test("parseRemoteLabel: 解析带端口的 host:port:/path 格式", () => {
   const parsed = parseRemoteLabel("152.32.225.119:2222:/var/www/app")
   assert.equal(parsed.endpoint, "152.32.225.119:2222")
   assert.equal(parsed.path, "/var/www/app")
+})
+
+test("Composer 脚注是 host:path，不要 user@ 也不要叠远程≠引擎", () => {
+  assert.equal(
+    formatComposerRemoteFootnote("ubuntu@dev.example.com:/home/ubuntu/app"),
+    "dev.example.com:/home/ubuntu/app"
+  )
+  assert.equal(formatComposerRemoteFootnote("dev.example.com:/home/ubuntu/app"), "dev.example.com:/home/ubuntu/app")
 })
 
 test("parseRemoteLabel: 解析仅主机与仅路径等边界情况", () => {
@@ -43,6 +51,11 @@ test("RemoteStatusStrip 与 RemoteHostSwitcher 结构不变量验证", () => {
   assert.match(stripCode, /handleCopyPath/)
   assert.match(stripCode, /remoteEnvBadge/)
   assert.match(stripCode, /remoteEnvTooltip/)
+  assert.match(stripCode, /sshConnectingLine/)
+  assert.match(stripCode, /sshFailedPrefix/)
+  assert.match(stripCode, /sshDisconnectedReadOnly/)
+  assert.match(stripCode, /sshReconnect/)
+  assert.match(stripCode, /remoteError/)
 
   // 切换面板必须具备主机查询与工作区切换逻辑
   assert.match(switcherCode, /workspace\.sshHosts\.list/)

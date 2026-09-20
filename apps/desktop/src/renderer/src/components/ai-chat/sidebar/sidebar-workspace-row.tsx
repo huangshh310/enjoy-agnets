@@ -14,6 +14,7 @@ import {
   createAndOpenSession,
   loadWorkspace
 } from "@renderer/hooks/use-agent-session"
+import { workspaceRowFromNode } from "@renderer/hooks/workspace-row"
 import { type RepositoryNode, useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 
@@ -223,14 +224,5 @@ function remoteTitle(workspace: RepositoryNode): string | undefined {
 }
 
 function switchWorkspace(workspace: RepositoryNode) {
-  return loadWorkspace({
-    id: workspace.id,
-    name: workspace.name,
-    rootPath: workspace.rootPath || "",
-    kind: workspace.locationKind,
-    sshStatus: workspace.sshStatus,
-    sshHost: workspace.sshHost,
-    sshUser: workspace.sshUser,
-    remotePath: workspace.remotePath
-  })
+  return loadWorkspace(workspaceRowFromNode(workspace))
 }

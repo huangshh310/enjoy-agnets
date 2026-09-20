@@ -11,6 +11,7 @@ export type ThreadErrorKind =
   | "inspecting"
   | "outdated"
   | "remote_cli_missing"
+  | "remote_disconnected"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -42,6 +43,9 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     lower.includes("before using this bound profile")
   ) {
     return "needs_key"
+  }
+  if (message === NEED_REMOTE_CONNECTED || lower.includes("remote_disconnected") || message.includes("REMOTE_DISCONNECTED")) {
+    return "remote_disconnected"
   }
   if (message === NEED_CLI_INSPECTING) return "inspecting"
   if (message === NEED_CLI_AUTHORIZING) return "authorizing"

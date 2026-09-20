@@ -27,6 +27,7 @@ export function RemoteStatusStrip() {
   const kind = useChatStore((state) => state.workspaceKind)
   const status = useChatStore((state) => state.remoteStatus)
   const label = useChatStore((state) => state.remoteLabel)
+  const remoteError = useChatStore((state) => state.remoteError)
   const [copied, setCopied] = useState(false)
 
   if (kind !== "ssh" || !workspaceId) return null
@@ -34,6 +35,7 @@ export function RemoteStatusStrip() {
   const connecting = status === "connecting"
   const isConnected = status === "connected"
   const isFailed = status === "failed"
+  const isDisconnected = !connecting && !isConnected && !isFailed
 
   const { endpoint, path } = parseRemoteLabel(label)
 
@@ -57,12 +59,12 @@ export function RemoteStatusStrip() {
         : "bg-text-tertiary ring-text-tertiary/20"
 
   const statusText = isConnected
-    ? t("settings.workspace.sshConnected")
+    ? `${t("settings.workspace.remoteFootnote")} · ${endpoint || label || t("settings.workspace.sshConnected")}`
     : connecting
-      ? t("settings.workspace.sshConnecting")
+      ? `${t("settings.workspace.sshConnectingLine")} ${endpoint || label || ""}`.trim()
       : isFailed
-        ? t("settings.workspace.sshFailed")
-        : t("settings.workspace.sshDisconnected")
+        ? `${t("settings.workspace.sshFailedPrefix")}${remoteError ? `：${remoteError}` : ""}`
+        : t("settings.workspace.sshDisconnectedReadOnly")
 
   const containerToneClass = isConnected
     ? "border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.10] via-teal-500/[0.06] to-accent-500/[0.08] dark:from-emerald-500/[0.15] dark:via-teal-500/[0.09] dark:to-accent-500/[0.12] dark:border-emerald-500/40 shadow-xs shadow-emerald-500/5"
@@ -74,7 +76,8 @@ export function RemoteStatusStrip() {
 
   return (
     <div
-      className={`mb-2 flex h-10 shrink-0 items-center justify-between gap-3 rounded-2xl border px-3.5 py-1 text-caption-2-medium text-text-secondary select-none backdrop-blur-md transition-colors ${containerToneClass}`}
+      className={`mb-2 flex min-h-10 shrink-0 items-center justify-between gap-3 rounded-2xl border px-3.5 py-1 text-caption-2-medium text-text-secondary select-none backdrop-blur-md transition-colors ${containerToneClass}`}
+      title={isDisconnected ? t("settings.workspace.sshDisconnectedHint") : undefined}
     >
       {/* 左侧：连接状态指示器 + 主机切换器 + 远端路径胶囊 */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -143,29 +146,33 @@ export function RemoteStatusStrip() {
           <span>{t("settings.workspace.remoteEnvBadge")}</span>
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          type="button"
-          disabled={connecting || !hasIde()}
-          onClick={() => void getIde().workspace.retry({ workspaceId })}
-          className="h-7 px-2.5 gap-1 text-caption-2-medium bg-background-primary-default/90 hover:bg-background-primary-default"
-        >
-          <RiRefreshLine className={`size-3.5 ${connecting ? "animate-spin" : ""}`} />
-          <span>{t("settings.workspace.sshRetry")}</span>
-        </Button>
-
-        <Button
-          size="sm"
-          variant="outline"
-          type="button"
-          disabled={connecting || !hasIde()}
-          onClick={() => void getIde().workspace.disconnect({ workspaceId })}
-          className="h-7 px-2.5 gap-1 text-caption-2-medium bg-background-primary-default/90 text-notification-error-foreground hover:bg-notification-error-foreground/10 hover:border-notification-error-foreground/30 hover:text-notification-error-foreground"
-        >
-          <RiLinkUnlinkM className="size-3.5" />
-          <span>{t("settings.workspace.sshDisconnect")}</span>
-        </Button>
+        {isConnected ? (
+          <Button
+            size="sm"
+            variant="outline"
+            type="button"
+            disabled={!hasIde()}
+            onClick={() => void getIde().workspace.disconnect({ workspaceId })}
+            className="h-7 px-2.5 gap-1 text-caption-2-medium bg-background-primary-default/90 text-notification-error-foreground hover:bg-notification-error-foreground/10 hover:border-notification-error-foreground/30 hover:text-notification-error-foreground"
+          >
+            <RiLinkUnlinkM className="size-3.5" />
+            <span>{t("settings.workspace.sshDisconnect")}</span>
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            type="button"
+            disabled={connecting || !hasIde()}
+            onClick={() => void getIde().workspace.retry({ workspaceId })}
+            className="h-7 px-2.5 gap-1 text-caption-2-medium bg-background-primary-default/90 hover:bg-background-primary-default"
+          >
+            <RiRefreshLine className={`size-3.5 ${connecting ? "animate-spin" : ""}`} />
+            <span>
+              {isDisconnected ? t("settings.workspace.sshReconnect") : t("settings.workspace.sshRetry")}
+            </span>
+          </Button>
+        )}
       </div>
     </div>
   )

@@ -1,12 +1,12 @@
 # spec/remote
 
-> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-09-14
+> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-09-20
 
 ## 当前真相
 
 两层：`ssh_hosts` 是机器名册（alias / host / user / port / auth=`agent|keypath|password` / 本机 key_path / source=`manual|ssh_config|wsl`）；`workspaces` `kind=ssh` 是该机上的一个远端路径（`ssh_host_id` + 反范式 ssh_* 列给 factory / pool）。私钥内容不入库、不进 renderer、不进聊天。登录密码只走 IPC 写通道，main `safeStorage` 按 hostId 存；list / `workspace.remote` / SQLite 主机表都不含明文。新主机 `StrictHostKeyChecking=accept-new`（不必先去终端敲 yes）；密码登录走 `SSH_ASKPASS`，密钥/agent 仍 `BatchMode=yes`。用户在应用内填密码即可探测 / 浏览 / 连接。
 
-连接态：`idle | connecting | connected | failed | disconnected`。事件 `workspace.remote`。`connecting` / `failed` / `disconnected` / `idle` 时 Composer 发送闸禁发。已连接时文件 / bash / git / 终端 cwd / ACP spawn 走 `AgentWorkspaceHost` 的 SSH 适配器，路径 jail 在 `remote_path`。断线写操作抛 `REMOTE_DISCONNECTED`，不得 `{ok:true}`。
+连接态：`idle | connecting | connected | failed | disconnected`。事件 `workspace.remote`（失败带 `error` 人话）。`connecting` / `failed` / `disconnected` / `idle` 时 Composer 发送闸禁发，横幅「远程已断开，先重新连接才能发送」。已连接时文件 / bash / git / 终端 cwd / ACP spawn 走 `AgentWorkspaceHost` 的 SSH 适配器，路径 jail **必须**是 `remote_path`（禁止回落 `root_path` / 本机 cwd）。断线写操作与 catalog ACP spawn 抛 `REMOTE_DISCONNECTED`，不得 `{ok:true}`，不得 `createWorkspaceHost(user@host:path)`。自定义 ACP 在 SSH 上诚实拒绝，不拿远端标签当本机 cwd。Knowledge / 资产导出 / Customize 规则扫描对 `kind=ssh` 拒绝本机盘。Composer 脚注是 `远程 · host:path`（不要 `user@`，不要再叠「远程 ≠ 引擎」）。开项目文案：本机文件夹 / 远程 SSH…。远程第二步弹窗 380px。视觉真源锁 tip `3a3e00b`。
 
 入口：`#/settings/workspace` 远程连接名册（添加 / 编辑 / 删除 / 从 `~/.ssh/config` 发现具体 Host / 探测 / 一键打开配置文件）；创建项目弹窗可选远程，填已有远端路径后 `openSsh` + `connect`（不是 `mkdir`）；侧栏 SSH 项目带「远程」微标，切换会 `connect`（切走上一台 ssh 先 `disconnect`）；顶条重构为高质感远程环境控制台（Remote Environment Bar）：包含连接状态脉冲发光圆点、当前主机快速切换下拉面板（`RemoteHostSwitcher`，支持直观查看名册中各主机、工作区数、认证类型与一键切换）、远端工作区路径胶囊（带一键复制与反馈）以及消除歧义的「远程环境 · 本地驱动」架构微标（带 Tooltip 解释说明：远端执行、本地调度），并提供带图标的高质感重试与断开操作按钮。右栏不加「远程连接」项。ACP `session/new.mcpServers` 的 stdio 在 SSH 工作区经已连接 pool 跑远端 `command -v`，换成远端绝对路径；找不到则跳过。Grok `--plugin-dir` 是本机路径，SSH 不传。
 
@@ -26,6 +26,8 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - renderer 只见 host/user/port/keyPath；密码框是写通道，列表不回填明文。本机密钥路径用 `workspace.pickSshKey` 系统文件对话框选择（默认打开 `~/.ssh`），不读私钥内容。
 - 不得要求用户先去系统终端 `ssh` / `ssh-copy-id` 才能在应用里连上。
 - 未接通不得列本机目录冒充远端。
+- 断线 / 缺 `remote_path` / 缺 workspaceId 时禁止回落本机 cwd。
+- Composer 脚注固定 `远程 · host:path`。
 - Cursor / Grok 等仅官方登录不因远程出现假 vault。
 
 ## 代码入口
@@ -34,7 +36,8 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - 合约：`packages/ipc-contract/src/workspace-remote.ts`
 - 连接层 / host：`apps/desktop/src/main/services/ssh/`
 - 工厂：`workspace-host-factory.ts`
-- UI：`settings/workspace/ssh-connections.tsx`（独立卡片名册）、`ssh-host-row.tsx`（服务器节点卡片）、`ssh-host-fields.tsx`（语义 Label + 双列网格）、`create-project-remote-step.tsx`、`remote-folder-picker.tsx`、`remote-status-strip.tsx`
+- UI：`settings/workspace/ssh-connections.tsx`（独立卡片名册）、`ssh-host-row.tsx`（服务器节点卡片）、`ssh-host-fields.tsx`（语义 Label + 双列网格）、`create-project-remote-step.tsx`、`remote-folder-picker.tsx`、`remote-status-strip.tsx`（四态文案 + 主机切换器）
+- 禁本机回落：`ssh/refuse-local-cwd.ts`、`resolve-acp-spawn.ts`、`execute-stored-tool.ts`
 
 ## 已知坑
 
@@ -43,7 +46,8 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - **隐患**：把 SSH 散进每个 IPC handler。正确做法：handler 只问 host 工厂；测试替身只替换连接层。
 - **隐患**：ACP 远程当热切换。正确做法：远端进程经 SSH stdio，失败说「远端未找到」，不假装 Kilo 式热切换。
 - 本环境通常没有可达开发机；闸是注入连接层的单元测试 + 本机回归，不是真 SSH e2e。
-- **隐患**：侧栏 `refreshAllWorkspaces` / `buildWorkspaceTree` 丢掉 `kind` 后，点远程项目会当成本机且不 `connect`。正确做法：hydrate 必须带 `locationKind` 与 ssh 字段；`loadWorkspace` 与 `selectPersistedSession` 对 ssh 自动 connect，切走上一台先 disconnect。
+- **隐患**：侧栏 `refreshAllWorkspaces` / `buildWorkspaceTree` 丢掉 `kind` 后，点远程项目会当成本机且不 `connect`。正确做法：hydrate 必须带 `locationKind` 与 ssh 字段；`loadWorkspace` 一律走 `workspaceRowFromNode`（含 ProjectPopover），禁止只传 `{id,name,rootPath}`。
+- **隐患**：`getWorkspace` 失败或缺 `workspaceId` 时 `createWorkspaceHost(run.workspaceRoot)`，SSH 的 `user@host:path` 会当成本机盘。正确做法：SSH 只问 host 工厂 + pool；缺 `remote_path` 或未接通就抛 `REMOTE_DISCONNECTED`，自定义 ACP 直接拒绝。
 - **隐患**：`workspace.watch` / `openPreview` / checkpoint restore 若用 `workspaces.root_path`（`user@host:path`）当本机目录，会假成功或监视错盘。正确做法：SSH 跳过 `fs.watch`、preview 拒本机根、checkpoint 已连也诚实不可用（restore 抛错，不得 `{ok:true}`）。
 - **隐患**：探测用 `BatchMode=yes` 且不处理 host key / 密码，新云主机报 `Host key verification failed`，账号密码用户永远连不上。正确做法：`accept-new`；密码走应用内表单 + `SSH_ASKPASS`；指纹变更仍拒绝并说人话。
 - **隐患**：主机行探测按钮 `onProbe` 传入被 `void` 丢弃且前端用固定 600ms 定时器假重置，导致真实 SSH 探测（如超时 10s）在后台跑但前端看起来「毫无反应」，且成功态完全缺失反馈。正确做法：保持 Promise 链路真实 await；按钮提供完整的探测中（spinner）、连通正常（绿徽标）与连接失败（红徽标）三态转换，并在卡片内就近展开具体错误详情。

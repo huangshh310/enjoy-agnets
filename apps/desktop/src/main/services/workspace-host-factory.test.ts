@@ -36,6 +36,17 @@ test("kind=local 仍走本机 host", async () => {
   assert.equal(await host.readFile("a.txt"), "hello")
 })
 
+test("SSH 已连接也不得用 root_path 当 jail", () => {
+  const record: WorkspaceRecord = {
+    id: "ws_ssh",
+    name: "remote",
+    rootPath: "alice@dev:/home/alice/app",
+    kind: "ssh",
+    sshStatus: "connected"
+  }
+  assert.throws(() => resolveWorkspaceHost(record), /remote_path/)
+})
+
 test("SSH 未连接时写/bash 抛断开错误", async () => {
   const record: WorkspaceRecord = {
     id: "ws_ssh",

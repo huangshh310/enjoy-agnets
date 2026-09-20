@@ -12,8 +12,10 @@ import { readAgentToolOverrides, readSessionModels } from "./agent-tools-vault"
 import { providerEnvFor, requireBindProfile } from "./provider-bind-env"
 import { readVault } from "./secrets-vault"
 import type { OpenedCodingStream } from "./open-coding-stream"
+import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { resolveAcpSpawnDirect } from "./ssh/resolve-acp-spawn.ts"
 import { hostExtensionsFor } from "./host-extensions/host-extensions.ts"
+import { getWorkspace } from "./workspace"
 export async function openAcpStream(input: {
   runId: string
   sessionId: string
@@ -103,6 +105,14 @@ async function openCustomAcpStream(
   const record = getCustomAgent(input.runtimeId)
   if (!record || !record.enabled) {
     throw new Error(`${input.runtimeId} is not a registered custom ACP agent.`)
+  }
+  if (input.workspaceId) {
+    const workspace = await getWorkspace(input.workspaceId)
+    if (workspace.kind === "ssh") {
+      throw new Error("自定义助手暂不支持远程工作区")
+    }
+  } else if (looksLikeSshRoot(input.workspaceRoot)) {
+    throw new Error("自定义助手暂不支持远程工作区")
   }
   const cwd = resolveCustomCwd(record, input.workspaceRoot)
   const extensions = await hostExtensionsFor({

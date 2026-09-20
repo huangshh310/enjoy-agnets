@@ -6,11 +6,13 @@ import { matchRegisteredWorkspace } from "./customize-roots.ts"
 import { listWorkspaces } from "./workspace"
 
 export async function registeredWorkspaceRoots(): Promise<string[]> {
-  return (await listWorkspaces()).map((workspace) => workspace.rootPath)
+  return (await listWorkspaces())
+    .filter((workspace) => workspace.kind !== "ssh")
+    .map((workspace) => workspace.rootPath)
 }
 
 export async function resolveCustomizeWorkspace(requested?: string): Promise<string | undefined> {
-  const workspaces = await listWorkspaces()
+  const workspaces = (await listWorkspaces()).filter((workspace) => workspace.kind !== "ssh")
   const roots = workspaces.map((workspace) => workspace.rootPath)
   if (requested) return matchRegisteredWorkspace(requested, roots)
   const lastId = getSetting("lastWorkspaceId")

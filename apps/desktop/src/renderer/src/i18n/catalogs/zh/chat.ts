@@ -280,6 +280,8 @@ export const zhChat = {
   needCliOutdatedHint: "当前 {current}，需要 ≥{required}。更新后再发送。",
   retryInspect: "重试检测",
   retryOfficialLogin: "重试授权",
+  needRemoteConnectedTitle: "远程已断开，先重新连接才能发送",
+  needRemoteConnectedHint: "对话还能看。写文件和 Agent 要等连上。",
   remoteCliMissingTitle: "远端服务器未安装该 CLI",
   remoteCliMissingHint: "当前处于 SSH 远程工作区。本机 CLI 需在远端服务器上运行，但远端未找到该命令。您可以直接一键切换为「Enjoy 本地」引擎（本地调度远程代码，无需在远端安装环境），或在远端服务器上执行安装。",
   switchToEnjoyLocal: "切换为 Enjoy 本地运行",
