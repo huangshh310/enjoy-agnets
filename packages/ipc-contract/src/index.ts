@@ -17,6 +17,7 @@ export * from "./account-profile"
 export * from "./settings-input"
 export * from "./automations"
 export * from "./stream-event"
+export * from "./host-inject"
 export {
   parseAssistantPayload,
   serializeAssistantPayload,

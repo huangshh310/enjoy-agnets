@@ -90,6 +90,11 @@ function SourceRowBody({
           <span className="shrink-0 rounded bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-tertiary ring-1 ring-border-button-default">
             {badgeLabel(badge, t)}
           </span>
+          {chip.fromEnjoy ? (
+            <span className="shrink-0 rounded bg-accent-50 px-1.5 py-px text-caption-2-regular text-accent-600 ring-1 ring-accent-500/20">
+              {t("chat.hostInjectFromEnjoy")}
+            </span>
+          ) : null}
         </span>
         {provenance ? (
           <span className="mt-0.5 block truncate font-mono text-caption-2-regular text-text-tertiary">

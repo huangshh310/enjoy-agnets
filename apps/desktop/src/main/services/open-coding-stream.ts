@@ -19,6 +19,7 @@ import {
   type OpenCodingStreamInput,
   type OpenedCodingStream
 } from "./open-coding-stream-input"
+import { assembleHostInject } from "./host-extensions/assemble-host-inject.ts"
 import { openLocalStream } from "./open-coding-stream-local"
 import { findProfileByKinds } from "./secrets"
 
@@ -52,7 +53,14 @@ function openedE2eStub(input: OpenCodingStreamInput): OpenedCodingStream {
   return {
     stream: createE2eStubStream(input.messages, input.abortSignal),
     result: {},
-    dispose: async () => undefined
+    dispose: async () => undefined,
+    hostInject: assembleHostInject({
+      runtimeId: input.runtimeId ?? "enjoy-local",
+      mcpEnabled: [],
+      mcpInjected: [],
+      skillEnabled: [],
+      skillInjected: []
+    })
   }
 }
 
@@ -99,7 +107,18 @@ async function openHarnessStream(
       workspaceRoot: input.workspaceRoot
     }
   })
-  return { stream: opened.stream, result: opened.result, dispose: opened.dispose }
+  return {
+    stream: opened.stream,
+    result: opened.result,
+    dispose: opened.dispose,
+    hostInject: assembleHostInject({
+      runtimeId: input.runtimeId ?? "sandbox-harness",
+      mcpEnabled: [],
+      mcpInjected: [],
+      skillEnabled: [],
+      skillInjected: []
+    })
+  }
 }
 
 /** Stop：取消当前 turn，ACP 进程留下给下一轮。 */

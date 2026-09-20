@@ -4,7 +4,7 @@
 
 ## 当前真相
 
-设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。P0-S 宿主技能注入视觉真源（设计锁，不宣称应用 1:1）：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)；产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。`#/skills`（+ skill-sources）仍是唯一 SoT，家目录不作第二真源。
+设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。P0-S 已落地：开流把已安装宿主技能收成 `HostInjectSnapshot.skills`（`catalog-tool` / `catalog-prompt`），Composer `HostInjectBar` 画已启用 / 已注入本轮；`hostSkills=none` 时 `injected=[]` 并诚实「此引擎不支持宿主技能注入」。视觉真源 [`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)；产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。`#/skills`（+ skill-sources）仍是唯一 SoT，家目录不作第二真源。不执行 Cordis / Claude hooks / OpenCode `plugin.ts`。
 
 1. **工作模块与路由**：`#/skills` 是应用内唯一的 Skills 工作模块。情境导航栏（Secondary Sidebar）包含三组导航：
    - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包合集 (`packs`)。
@@ -54,6 +54,7 @@
 - 领域常量与主题：`apps/desktop/src/renderer/src/components/skills/constants/`
 - 后端服务：`apps/desktop/src/main/services/skills-service.ts`、`main/services/skill-sources/`
 - 开流索引：`packages/ipc-contract/src/skills-catalog.ts`；拼进 `inspect-prompt-instructions.ts` / Local `open-coding-stream-local.ts` / ACP `composeAcpPrompt`
+- 本轮注入快照：`host-extensions/collect-host-inject.ts` + `host.inject`；Composer 诚实条 `ai-chat/composer/host-inject/`
 - 可移植插件导入：`skill-sources/import-plugin.ts`
 - Grok `--plugin-dir`：`host-extensions/grok-plugin-dir.ts`
 - Composer `/` 技能面板：`ai-chat/composer/mentions/`（`formatSkillMention.ts`、`composer-skill-chips.ts`）
@@ -70,6 +71,6 @@
 - `updateAll` 只拉 Git：本机 `~/.agents/skills` 等发现组不会被 pull。没有 Git 源时入口必须不渲染，不要灰按钮空转。
 - 空态禁运维条：技能源更新与 SessionReviewBar 同类，不能进 `AiChatEmptyState` / 空会话引导。
 - 拉取后投影是尽力而为：`EMPTY_SELECTION` / `MISSING_CHECKOUT` 不算进 `errors`，只完成 checkout。需要覆盖目标目录时仍走 Skills 详情的「重新部署」。
-- Skills 页能装却不进当前引擎：Local 必须注入索引 + `skill` 工具；ACP 必须垫同一份 `formatSkillCatalog`。禁止把 `SkillItem.content` 整份塞进系统提示。全局技能 Local 由 main `readSkillContent` 代读；ACP 不要编造 jail 外路径。
+- Skills 页能装却不进当前引擎：Local 必须注入索引 + `skill` 工具；ACP 必须垫同一份 `formatSkillCatalog`。禁止把 `SkillItem.content` 整份塞进系统提示。全局技能 Local 由 main `readSkillContent` 代读；ACP 不要编造 jail 外路径。`hostSkills=none` 时快照 `injected=[]`，UI 写「此引擎不支持宿主技能注入」，禁止「已注入 0 Skills」。
 - 部署不得再 `cpSync` 到 `~/.claude/skills` 等家目录。默认只写 `enjoy-agents` 与工作区 `.agents/skills`。整备舱按助手查看宿主目录；各家家目录只读，导入是加宿主目标。原生 Cordis/hooks 只给复制命令。
 - 可移植插件（根 `plugin.json` / `.claude-plugin/plugin.json`）经 `skills.sources.add` 本地文件夹导入 skills + MCP。无 skills/mcp 的 Cordis 包抛 `PLUGIN_NOT_PORTABLE`。

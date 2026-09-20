@@ -3,6 +3,7 @@
  * v2 为每个事件补 sequence / timestamp / sessionId，旧事件字段保持可解析。
  */
 import { z } from "zod"
+import { HostInjectSnapshot } from "./host-inject.ts"
 
 const Envelope = {
   sequence: z.number().int().optional(),
@@ -212,6 +213,12 @@ export const StreamEvent = z.discriminatedUnion("type", [
         description: z.string().optional()
       })
     ),
+    ...Envelope
+  }),
+  z.object({
+    type: z.literal("host.inject"),
+    runId: z.string(),
+    ...HostInjectSnapshot.shape,
     ...Envelope
   })
 ])

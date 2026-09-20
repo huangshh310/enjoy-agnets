@@ -6,10 +6,12 @@ import { SourceChips } from "./sources/source-chips"
 
 export function SourceList({
   sources,
-  tools
+  tools,
+  messageId
 }: {
   sources: NonNullable<ThreadMessage["sources"]>
   tools?: ThreadMessage["tools"]
+  messageId?: string
 }) {
-  return <SourceChips sources={sources} tools={tools} />
+  return <SourceChips sources={sources} tools={tools} messageId={messageId} />
 }

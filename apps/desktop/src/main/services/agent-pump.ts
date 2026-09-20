@@ -8,7 +8,7 @@ import {
   RuntimeError,
   type SubagentToolTraceEvent
 } from "@enjoy-agents/agent-core"
-import { foldToolEvent } from "@enjoy-agents/ipc-contract"
+import { foldToolEvent, type HostInjectSnapshot } from "@enjoy-agents/ipc-contract"
 import { rememberApproval } from "./approval-hmac"
 import { consumeFullStream } from "./consume-stream"
 import { shouldEmitRunEnd } from "./claim-run-end"
@@ -60,6 +60,7 @@ async function runOnePump(
   timedOut: () => boolean
 ) {
   const opened = await openRunStream(runId, run, prefs)
+  emitHostInject(run, runId, opened.hostInject)
   takeSessionHandoff(run.input.sessionId)
   await consumeRun(runId, run, opened.stream)
   const extraMessages = await readResponseMessages(opened.result)
@@ -167,6 +168,18 @@ async function openRunStream(
       return run.approvalGate.wait(approvalId)
     },
     onSubagentToolEvent: (event) => emitSubagentTool(run, runId, event)
+  })
+}
+
+function emitHostInject(run: ActiveRun, runId: string, snapshot?: HostInjectSnapshot) {
+  if (!snapshot) return
+  emitEvent(run.window, {
+    type: "host.inject",
+    runId,
+    sessionId: run.input.sessionId,
+    runtimeId: snapshot.runtimeId,
+    mcp: snapshot.mcp,
+    skills: snapshot.skills
   })
 }
 

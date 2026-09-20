@@ -7,7 +7,12 @@ import type {
   SubagentToolTraceEvent,
   WaitForSubagentApproval
 } from "@enjoy-agents/agent-core"
-import { type AgentMode, type AskUserAnswers, type ReasoningEffort } from "@enjoy-agents/ipc-contract"
+import {
+  type AgentMode,
+  type AskUserAnswers,
+  type HostInjectSnapshot,
+  type ReasoningEffort
+} from "@enjoy-agents/ipc-contract"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
 
@@ -15,6 +20,8 @@ export type OpenedCodingStream = {
   stream: AsyncIterable<Record<string, unknown>>
   result: unknown
   dispose: () => Promise<void>
+  /** 本轮 Enjoy SoT 注入结果；失败或能力 none 时 injected 为空。 */
+  hostInject?: HostInjectSnapshot
 }
 
 export type OpenCodingStreamInput = {

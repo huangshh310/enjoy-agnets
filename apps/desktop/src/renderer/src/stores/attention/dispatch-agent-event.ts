@@ -7,6 +7,7 @@ import { belongsToForeground } from "./foreground-event"
 import { eventRunId } from "./ingest-attention"
 import { useAttentionStore } from "./attention-store"
 import { useAcpCommands } from "../acp-commands"
+import { useHostInjectStore } from "../host-inject/host-inject-store"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 
 export { belongsToForeground } from "./foreground-event"
@@ -22,6 +23,14 @@ export function dispatchAgentEvent(event: StreamEvent): void {
 
   if (event.type === "commands.update") {
     useAcpCommands.getState().setCommands(event.commands)
+  }
+  if (event.type === "host.inject" && sessionId) {
+    useHostInjectStore.getState().remember(sessionId, {
+      runId: event.runId,
+      runtimeId: event.runtimeId,
+      mcp: event.mcp,
+      skills: event.skills
+    })
   }
 
   const store = useChatStore.getState()

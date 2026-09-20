@@ -2,6 +2,8 @@
  * 助手气泡底脚来源芯片：3–4 颗可见，其余 +N。点芯片（含 +N）打开「本轮来源」sheet。
  */
 import { useT } from "@renderer/i18n"
+import { useChatStore } from "@renderer/stores/chat-store"
+import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { openSourcesSheet, useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import { cx } from "@/utils/cx"
@@ -10,13 +12,20 @@ import { splitVisibleSourceChips, type TurnSourceChip } from "./source-chip"
 
 export function SourceChips({
   sources,
-  tools
+  tools,
+  messageId
 }: {
   sources?: ThreadMessage["sources"]
   tools?: ThreadMessage["tools"]
+  messageId?: string
 }) {
   const t = useT()
-  const chips = collectTurnSources({ sources, tools }, (name) => t("chat.sourceSkillLabel", { name }))
+  const sessionId = useChatStore((state) => state.sessionId)
+  const hostInject = useHostInjectNames(sessionId, messageId)
+  const chips = collectTurnSources(
+    { sources, tools, hostInject },
+    (name) => t("chat.sourceSkillLabel", { name })
+  )
   const open = useSourcesSheetStore((state) => state.open)
   const activeId = useSourcesSheetStore((state) => state.activeId)
   if (chips.length === 0) return null

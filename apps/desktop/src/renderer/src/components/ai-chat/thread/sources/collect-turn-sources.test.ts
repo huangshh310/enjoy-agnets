@@ -57,3 +57,16 @@ test("MCP 工具收成服务器芯片，同服务器去重；网页 URL 丢掉",
   )
   assert.equal(chips.some((chip) => chip.path?.startsWith("http")), false)
 })
+
+test("Enjoy 注入行标 fromEnjoy；空注入不造假行", () => {
+  const empty = collectTurnSources({ hostInject: { mcp: [], skills: [] } }, (name) => `技能 · ${name}`)
+  assert.equal(empty.length, 0)
+  const chips = collectTurnSources(
+    { hostInject: { mcp: ["Filesystem"], skills: ["form-a11y"] } },
+    (name) => `技能 · ${name}`
+  )
+  const enjoy = chips.filter((chip) => chip.fromEnjoy)
+  assert.equal(enjoy.length, 2)
+  assert.equal(chips.some((chip) => chip.kind === "mcp" && chip.title === "Filesystem"), true)
+  assert.equal(chips.some((chip) => chip.kind === "skill" && chip.title === "form-a11y"), true)
+})

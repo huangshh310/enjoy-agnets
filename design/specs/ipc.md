@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-18
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-09-20
 
 ## 当前真相
 
@@ -37,7 +37,7 @@
 
 | 频道 | 载荷 |
 |---|---|
-| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
+| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`host.inject`（本轮 Enjoy SoT Skills/MCP 快照 `HostInjectSnapshot`，开流即发，不落库）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
 | `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |
 | `terminal.data` / `terminal.exit` | `TerminalDataEvent` / `TerminalExitEvent`（contract 有 schema，main 发送前 parse；preload `ide.terminal.onData` / `onExit`） |
@@ -55,7 +55,7 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、预览打开 `workspace-preview.ts`（子路径 `@enjoy-agents/ipc-contract/workspace-preview`）、移动规划 `workspace-move-plan.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts`、本机 CLI `agent-tools.ts` + 静态保真 `runtime-capabilities.ts` + 供应商引用 `provider-agent-bind.ts`（不是 IPC 频道）、AGENTS.md 链 `agents-md-chain.ts`（不是 IPC 频道）各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、预览打开 `workspace-preview.ts`（子路径 `@enjoy-agents/ipc-contract/workspace-preview`）、移动规划 `workspace-move-plan.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window / terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts`、本机 CLI `agent-tools.ts` + 静态保真 `runtime-capabilities.ts` + 供应商引用 `provider-agent-bind.ts`（不是 IPC 频道）、AGENTS.md 链 `agents-md-chain.ts`（不是 IPC 频道）、宿主注入快照 `host-inject.ts`（子路径 `@enjoy-agents/ipc-contract/host-inject`，不是 invoke 频道）各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 会话：`ipc-session.ts`（`SESSION_CHANNELS` 必须进 `CHANNELS`，含 `patch` / `recap`）
 - 壳频道：`ipc-shell.ts`（workspace / agent / terminal / window / inbox.state；**无** session）
@@ -77,7 +77,7 @@
 - `ApprovalDecision.answers` 不能配 `allow_session`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止 `allow_session`：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。
 - `message.part.delta` 已从 StreamEvent v2 删除：从未有过生产者（文本增量走 v1 `text.delta`），留着只会让消费端空等。
 - Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
-- harness / desktop 的 node:test 若 value-import `@enjoy-agents/ipc-contract` 入口，会因 index 无后缀 re-export 报 `ERR_MODULE_NOT_FOUND`。能力表走子路径 `@enjoy-agents/ipc-contract/runtime-capabilities`；自定义 id 走 `@enjoy-agents/ipc-contract/custom-agent`；预览打开走 `@enjoy-agents/ipc-contract/workspace-preview`。renderer Vite 别名必须精确匹配包名，并单独写这些子路径；字符串前缀会拼成 `index.ts/runtime-capabilities`。
+- harness / desktop 的 node:test 若 value-import `@enjoy-agents/ipc-contract` 入口，会因 index 无后缀 re-export 报 `ERR_MODULE_NOT_FOUND`。能力表走子路径 `@enjoy-agents/ipc-contract/runtime-capabilities`；自定义 id 走 `@enjoy-agents/ipc-contract/custom-agent`；预览打开走 `@enjoy-agents/ipc-contract/workspace-preview`；注入快照走 `@enjoy-agents/ipc-contract/host-inject`；技能索引走 `@enjoy-agents/ipc-contract/skills-catalog`。renderer Vite 别名必须精确匹配包名，并单独写这些子路径；字符串前缀会拼成 `index.ts/runtime-capabilities`。
 - `workspace.openPreview` 必须进 `SHELL_CHANNELS` 与 preload。点完成条若走 `openBrowserUrl` 会进右栏 webview。html / URL 校验在 main，失败只回稳定码，禁止把绝对路径摊给 renderer。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。
 - `workspace.gitCommit` 是用户主动提交，没有 runId / HMAC。合约默认 `stageAll: false`（只提交已暂存）；Review UI 必须显式走这条。Agent 工具 `git_commit` 仍走 `approval.required` + `agent.decide`，并可 `add -A`。不要把 UI 提交硬接进 HMAC 管道。`workspace.gitStage` 路径必须 jail，空匹配抛 `STAGE_NOTHING_MATCHED`。

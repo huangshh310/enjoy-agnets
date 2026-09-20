@@ -8,8 +8,13 @@ import { extractToolPath } from "../thinking/extract-step-fields.ts"
 import { classifySourceKind, formatSourceChipLabel, parseMcpServerId, type TurnSourceChip } from "./source-chip.ts"
 import { isHttpSource } from "./source-path.ts"
 
+export type HostInjectSourceNames = {
+  mcp?: readonly string[]
+  skills?: readonly string[]
+}
+
 export function collectTurnSources(
-  message: Pick<ThreadMessage, "sources" | "tools">,
+  message: Pick<ThreadMessage, "sources" | "tools"> & { hostInject?: HostInjectSourceNames },
   skillPrefix: (name: string) => string
 ): TurnSourceChip[] {
   const chips: TurnSourceChip[] = []
@@ -30,6 +35,16 @@ export function collectTurnSources(
   for (const tool of message.tools ?? []) {
     const fromTool = chipFromTool(tool, skillPrefix)
     if (fromTool) chips.push(fromTool)
+  }
+  for (const name of message.hostInject?.mcp ?? []) {
+    const title = name.trim()
+    if (!title) continue
+    chips.push(toChip({ id: `enjoy-mcp:${title}`, title, toolName: "mcp", fromEnjoy: true }, skillPrefix))
+  }
+  for (const name of message.hostInject?.skills ?? []) {
+    const title = name.trim()
+    if (!title) continue
+    chips.push(toChip({ id: `enjoy-skill:${title}`, title, toolName: "skill", fromEnjoy: true }, skillPrefix))
   }
   return dedupeChips(chips)
 }
@@ -57,6 +72,7 @@ function toChip(
     startLine?: number
     title?: string
     toolName?: string
+    fromEnjoy?: boolean
   },
   skillPrefix: (name: string) => string
 ): TurnSourceChip {
@@ -67,7 +83,8 @@ function toChip(
     label: "",
     path: input.path,
     startLine: input.startLine,
-    title: input.title
+    title: input.title,
+    fromEnjoy: input.fromEnjoy
   }
   return { ...chip, label: formatSourceChipLabel(chip, skillPrefix) }
 }
