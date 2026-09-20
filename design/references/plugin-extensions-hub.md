@@ -1,7 +1,7 @@
 # Enjoy：插件 / 扩展 / 技能 / MCP 仓库方案
 
 > 位置：计划落地 `design/references/plugin-extensions-hub.md`  
-> 角色：Reference（产品第一稿 · 2026-09-13）。P0-H 发现壳已落地：`#/settings/extensions`，视觉真源 `previews/p0-h-extensions-hub.html`。安装权威仍是 `#/mcp` / `#/skills`。  
+> 角色：Reference（产品第一稿 · 2026-09-13）。P0-H 发现壳已落地：`#/settings/extensions`，视觉真源 `previews/p0-h-extensions-hub.html`。安装权威仍是 `#/mcp` / `#/skills`。脚注：「助手自带原生插件（Claude hooks / DSH Cordis / OpenCode 等）请在各 CLI 内管理。MCP 与 Skills 以 Enjoy `#/mcp` · `#/skills` 为真源，会话透传给当前助手。」  
 > 约束：Local-first · 三路勿混 · 不假 BYOK · 沙箱不上轨 · 不重开 worktree  
 > 关联：Registry / skill-sources / `#/mcp` / Sources / ACP 宿主
 
@@ -85,7 +85,7 @@ Enjoy 做 **扩展真源**（MCP + Skills 为主，当前引擎消费），不�
 
 - 设置或工作模块一页：`MCP | Skills` 两列（可加「说明」脚注）  
 - 每列：已配置数 +「添加」→ 现有路由  
-- 脚注：「Claude / Codex 等自带插件请在各助手内管理」  
+- 脚注：「助手自带原生插件（Claude hooks / DSH Cordis / OpenCode 等）请在各 CLI 内管理。MCP 与 Skills 以 Enjoy `#/mcp` · `#/skills` 为真源，会话透传给当前助手。」  
 - 验收：10 秒找到添加 MCP/技能；不与 Registry 混淆；无协议微标堆砌  
 
 **原型**：`design/previews/p0-h-extensions-hub.html`（等产品点头）
@@ -111,7 +111,7 @@ Enjoy 做 **扩展真源**（MCP + Skills 为主，当前引擎消费），不�
 |----|----|------|
 | P0-F | 系统浏览器打开预览 | 已落地（以 `ui` spec 为准） |
 | P0-G | Sources 明细 sheet | 已落地（以 `ui` spec 为准） |
-| P0-H | 扩展发现壳 | 短稿已有，F 合后点头开预览 |
+| P0-H | 扩展发现壳 | 已落地（以 `settings` spec 为准） |
 
 ---
 

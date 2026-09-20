@@ -1,6 +1,5 @@
 /**
- * 统一扩展模块 Hash 查询参数解析：
- * 支持 tab (marketplace | mcp | skills | json)、preset、install 与 category。
+ * 旧 #/extensions Hash 查询：只给书签拆回 #/mcp / #/skills / 设置发现壳。
  */
 
 export type ExtensionsRouteTab = "marketplace" | "mcp" | "skills" | "json"

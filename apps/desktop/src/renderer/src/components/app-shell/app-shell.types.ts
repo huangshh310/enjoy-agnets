@@ -6,7 +6,8 @@ export const WORK_MODULE_IDS = [
   "knowledge",
   "workflows",
   "media",
-  "extensions"
+  "mcp",
+  "skills"
 ] as const
 
 export const OVERLAY_MODULE_IDS = ["inbox", "settings"] as const

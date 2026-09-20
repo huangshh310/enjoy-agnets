@@ -7,9 +7,9 @@ test("工作模块按前缀命中", () => {
   assert.equal(matchAppModule("/knowledge"), "knowledge")
   assert.equal(matchAppModule("/workflows"), "workflows")
   assert.equal(matchAppModule("/media"), "media")
-  assert.equal(matchAppModule("/extensions"), "extensions")
-  assert.equal(matchAppModule("/mcp"), "extensions")
-  assert.equal(matchAppModule("/skills"), "extensions")
+  assert.equal(matchAppModule("/mcp"), "mcp")
+  assert.equal(matchAppModule("/skills"), "skills")
+  assert.equal(matchAppModule("/extensions"), "settings")
 })
 
 test("Inbox / Settings 是叠加模块，包含 Observability", () => {
@@ -26,5 +26,6 @@ test("Inbox / Settings 是叠加模块，包含 Observability", () => {
 test("工作模块路径表完整", () => {
   assert.equal(pathForWorkModule("chat"), "/")
   assert.equal(pathForWorkModule("knowledge"), "/knowledge")
-  assert.equal(pathForWorkModule("extensions"), "/extensions")
+  assert.equal(pathForWorkModule("mcp"), "/mcp")
+  assert.equal(pathForWorkModule("skills"), "/skills")
 })

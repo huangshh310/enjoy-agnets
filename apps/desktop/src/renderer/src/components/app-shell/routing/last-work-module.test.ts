@@ -19,9 +19,15 @@ test("未写入时回到 Chat", () => {
 
 test("读写上次工作模块", () => {
   const storage = memory()
-  writeLastWorkModule("extensions", storage)
-  assert.equal(storage.getItem(LAST_WORK_MODULE_KEY), "extensions")
-  assert.equal(readLastWorkModule(storage), "extensions")
+  writeLastWorkModule("mcp", storage)
+  assert.equal(storage.getItem(LAST_WORK_MODULE_KEY), "mcp")
+  assert.equal(readLastWorkModule(storage), "mcp")
+})
+
+test("过期 extensions 工位回落 Chat", () => {
+  const storage = memory()
+  storage.setItem(LAST_WORK_MODULE_KEY, "extensions")
+  assert.equal(readLastWorkModule(storage), "chat")
 })
 
 test("非法值回落 Chat", () => {

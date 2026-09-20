@@ -51,7 +51,7 @@
 
 ### D1 · H 落点：设置页，不上第 8 轨
 
-**做** `#/settings/extensions`（设置「工作区与扩展」组新增「扩展」）。两列 MCP | Skills：已配置数 +「添加」深链 `#/mcp` / `#/skills`。脚注：「Claude / Codex 等自带插件请在各助手内管理」。
+**做** `#/settings/extensions`（设置「工作区与扩展」组新增「扩展」）。两列 MCP | Skills：已配置数 +「添加」深链 `#/mcp` / `#/skills`。脚注：「助手自带原生插件（Claude hooks / DSH Cordis / OpenCode 等）请在各 CLI 内管理。MCP 与 Skills 以 Enjoy `#/mcp` · `#/skills` 为真源，会话透传给当前助手。」
 
 **不做** 新工作模块抢 MCP/Skills 轨道位，**不**新增第四套存储。
 

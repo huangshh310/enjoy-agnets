@@ -100,7 +100,7 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         id: "extensions",
         labelKey: "nav.extensions",
         icon: RiApps2Line,
-        keywords: ["extensions", "plugins", "mcp", "skills", "marketplace", "扩展", "插件", "技能", "市场"]
+        keywords: ["extensions", "plugins", "mcp", "skills", "扩展", "插件", "技能"]
       },
       {
         id: "mcp",

@@ -10,7 +10,8 @@ export const WORK_MODULE_PATHS = {
   knowledge: "/knowledge",
   workflows: "/workflows",
   media: "/media",
-  extensions: "/extensions"
+  mcp: "/mcp",
+  skills: "/skills"
 } as const
 
 export const LAST_WORK_MODULE_KEY = "enjoy-agents:last-work-module"

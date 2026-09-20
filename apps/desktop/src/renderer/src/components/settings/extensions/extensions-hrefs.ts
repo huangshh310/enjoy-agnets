@@ -11,7 +11,7 @@ export function skillsHubHref(): string {
   return `${SKILLS_HUB_HREF}?tab=curated`
 }
 
-/** MCP 运维页，带 preset 定位作为兼容深链。 */
+/** MCP 工作模块，带 preset 打开现有创建表单。 */
 export function mcpPresetHref(presetId: string): string {
   const id = presetId.trim()
   if (!id) return MCP_HUB_HREF

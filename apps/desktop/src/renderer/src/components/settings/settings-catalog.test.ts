@@ -23,6 +23,15 @@ test("设置侧栏智能体分组包含内置工具入口", () => {
   assert.equal(resolveActiveNavSectionId("tools"), "tools")
 })
 
+test("设置侧栏工作区组是工作区 / 扩展 / MCP", () => {
+  const workspace = SETTINGS_NAV_DEF.find((group) => group.id === "workspace")
+  assert.ok(workspace)
+  assert.deepEqual(
+    workspace.items.map((item) => item.id),
+    ["workspace", "extensions", "mcp"]
+  )
+})
+
 test("组织一级入口是个人资料，团队空态不高亮自己", () => {
   const org = SETTINGS_NAV_DEF.find((group) => group.id === "org")
   assert.ok(org)
