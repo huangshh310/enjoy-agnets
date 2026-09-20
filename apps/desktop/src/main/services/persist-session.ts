@@ -97,12 +97,25 @@ function messageExists(id: string): boolean {
   return Boolean(getDatabase().prepare("SELECT 1 FROM messages WHERE id = ?").get(id))
 }
 
+/** 与 renderer `DEFAULT_SESSION_TITLES` 对齐：中英占位都算未命名。 */
+const PLACEHOLDER_TITLES = new Set([
+  "New agent",
+  "新对话",
+  "新会话",
+  "未命名会话",
+  "Untitled",
+  "Untitled session"
+])
+
 export function maybeRenameSession(sessionId: string, userText: string) {
   const current = getDatabase()
     .prepare("SELECT title FROM sessions WHERE id = ?")
     .get(sessionId) as { title: string } | undefined
-  if (!current || current.title !== "New agent") return
-  renameSession(sessionId, userText.replace(/\s+/g, " ").slice(0, 42) || "New agent")
+  const title = current?.title.trim() ?? ""
+  if (!current || (title && !PLACEHOLDER_TITLES.has(title))) return
+  const next = userText.replace(/\s+/g, " ").trim().slice(0, 42)
+  if (!next) return
+  renameSession(sessionId, next)
 }
 
 /** 标题由 renderer useCompletion 精炼后回写。 */

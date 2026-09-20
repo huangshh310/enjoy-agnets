@@ -15,6 +15,7 @@ import { loginHintFor } from "./cli-login-hint"
 import { engineReadiness, readinessSubtitle } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
 import { formatOfficialLoginFailLine } from "./official-login-reason"
+import { AcpSessionImport } from "./acp-session-import"
 
 export function AgentCliPane({
   agent,
@@ -93,6 +94,7 @@ export function AgentCliPane({
         loginHint={loopHint}
         inspecting={inspecting}
       />
+      <AcpSessionImport runtimeId={agent.id} />
       <CliPaneFoot
         hint={loopHint}
         subtitle={subtitle}

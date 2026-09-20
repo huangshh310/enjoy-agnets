@@ -21,5 +21,9 @@ test("parseAgentMcpCaps 只信握手广告", () => {
     http: true,
     sse: false
   })
+  assert.deepEqual(parseAgentMcpCaps({ capabilities: { session: { mcp: { http: {} } } } }), {
+    http: true,
+    sse: false
+  })
   assert.deepEqual(parseAgentMcpCaps({}), { http: false, sse: false })
 })

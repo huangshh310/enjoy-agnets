@@ -31,6 +31,10 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
     return events
   }
   if (isAcpPlanUpdate(kind)) return mapAcpPlan(rec, runId)
+  if (kind === "session_info_update") {
+    const title = typeof rec.title === "string" ? rec.title.trim() : ""
+    return title ? [{ type: "session.title", runId, title }] : []
+  }
   if (kind === "config_option_update") {
     const event = sessionConfigEvent(runId, parseSessionConfigOptions(rec))
     return event ? [event] : []

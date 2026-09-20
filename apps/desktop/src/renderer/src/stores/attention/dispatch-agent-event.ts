@@ -8,6 +8,8 @@ import { eventRunId } from "./ingest-attention"
 import { useAttentionStore } from "./attention-store"
 import { useAcpCommands } from "../acp-commands"
 import { useHostInjectStore } from "../host-inject/host-inject-store"
+import { isDefaultSessionTitle } from "@renderer/hooks/session-title"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 
 export { belongsToForeground } from "./foreground-event"
@@ -27,6 +29,9 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   if (event.type === "session.config") {
     const current = useChatStore.getState()
     if (!sessionId || sessionId === current.sessionId) current.applyStreamEvent(event)
+  }
+  if (event.type === "session.title") {
+    applyAgentSessionTitle(event.title)
   }
   if (event.type === "host.inject" && sessionId) {
     useHostInjectStore.getState().remember(sessionId, {
@@ -55,6 +60,18 @@ export function resolveEventSessionId(event: StreamEvent): string | undefined {
   const store = useChatStore.getState()
   if (runId && store.runId === runId && store.sessionId) return store.sessionId
   return undefined
+}
+
+function applyAgentSessionTitle(title: string): void {
+  const store = useChatStore.getState()
+  if (!isDefaultSessionTitle(store.sessionTitle)) return
+  const next = title.trim().slice(0, 80)
+  if (!next) return
+  const sessionId = store.sessionId
+  if (!sessionId) return
+  store.setSession(sessionId, next)
+  if (!hasIde()) return
+  void getIde().session.rename({ sessionId, title: next })
 }
 
 function sessionMetaOf(sessionId: string): { title: string; workspaceId?: string } {

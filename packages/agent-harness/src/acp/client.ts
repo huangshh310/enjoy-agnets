@@ -5,22 +5,32 @@ import type { ChildProcess } from "node:child_process"
 import { completeAcpHandshake, toAcpRpcError } from "./auth.ts"
 import { acpChildStillAlive } from "./acp-child-alive.ts"
 import { forgetAcpChild } from "./acp-child-store.ts"
-import { pickAcpPermissionOption, type AcpPermissionOption } from "./permissions.ts"
+import type { AcpPermissionRequest } from "./permissions.ts"
+import { acpExitMessage, asRecord } from "./acp-rpc-util.ts"
+import { answerAcpPermission } from "./acp-permission-answer.ts"
 import {
   filterAcpMcpServers,
-  parseAgentMcpCaps,
   type AcpMcpServer
 } from "./acp-mcp.ts"
 import { parseSessionConfigOptions } from "./parse-session-config.ts"
+import { AcpNdjsonReader } from "./acp-ndjson.ts"
+import { fetchAcpSessionPages, type AcpListedSession } from "./acp-listed-session.ts"
+import {
+  EMPTY_SESSION_CAPS,
+  parseAcpSessionCaps,
+  type AcpSessionCaps
+} from "./acp-session-caps.ts"
 import type { SessionConfigOption } from "@enjoy-agents/ipc-contract"
 
-export type AcpPermissionRequest = {
-  sessionId: string
-  toolCallId: string
-  name: string
-  args: unknown
-  options: AcpPermissionOption[]
+const CLIENT_INFO = {
+  name: "enjoy-agents",
+  title: "Enjoy Agents",
+  version: "0.1.8"
 }
+const SUPPORTED_PROTOCOL = 2
+
+export type { AcpListedSession } from "./acp-listed-session.ts"
+export type { AcpPermissionRequest } from "./permissions.ts"
 
 type Pending = {
   resolve: (value: unknown) => void
@@ -35,13 +45,13 @@ export type AcpClientHooks = {
 export class AcpClient {
   private nextId = 1
   private pending = new Map<number, Pending>()
-  private buffer = ""
   private stderr = ""
-  private contentLength: number | null = null
+  private reader: AcpNdjsonReader
   private hooks: AcpClientHooks
   private closed = false
   private killTimer: ReturnType<typeof setTimeout> | undefined
   private mcpCaps = { http: false, sse: false }
+  private sessionCaps: AcpSessionCaps = EMPTY_SESSION_CAPS
   private mcpServers: AcpMcpServer[] = []
   private configOptions: SessionConfigOption[] = []
 
@@ -50,8 +60,9 @@ export class AcpClient {
     hooks: AcpClientHooks = {}
   ) {
     this.hooks = hooks
+    this.reader = new AcpNdjsonReader((raw) => this.handleRaw(raw))
     child.stdout?.setEncoding("utf8")
-    child.stdout?.on("data", (chunk: string) => this.push(chunk))
+    child.stdout?.on("data", (chunk: string) => this.reader.push(chunk))
     child.stderr?.setEncoding("utf8")
     child.stderr?.on("data", (chunk: string) => {
       this.stderr += chunk
@@ -61,35 +72,46 @@ export class AcpClient {
     child.on("exit", (code) => {
       if (this.killTimer) clearTimeout(this.killTimer)
       forgetAcpChild(child.pid)
-      if (!this.closed) this.failAll(new Error(exitMessage(code, this.stderr)))
+      if (!this.closed) this.failAll(new Error(acpExitMessage(code, this.stderr)))
     })
   }
 
   async initialize(): Promise<unknown> {
-    const result = await this.request("initialize", {
-      protocolVersion: 1,
-      clientInfo: { name: "enjoy-agents", version: "0.1.0" },
-      clientCapabilities: {
-        fs: { readTextFile: false, writeTextFile: false },
-        session: { configOptions: { boolean: {} } }
-      }
-    })
-    this.mcpCaps = parseAgentMcpCaps(result)
+    let result: unknown
+    try {
+      result = await this.initializeWith(SUPPORTED_PROTOCOL)
+    } catch {
+      result = await this.initializeWith(1)
+    }
+    const caps = parseAcpSessionCaps(result)
+    if (caps.protocolVersion > SUPPORTED_PROTOCOL) {
+      throw new Error("This assistant uses a newer ACP version than Enjoy supports.")
+    }
+    this.sessionCaps = caps
+    this.mcpCaps = caps.mcp
     await this.notify("initialized", {})
     return result
+  }
+
+  getSessionCaps(): AcpSessionCaps {
+    return this.sessionCaps
   }
 
   async authenticate(methodId: string): Promise<void> {
     await this.request("authenticate", { methodId })
   }
 
-  /** initialize → session/new；遇到 auth_required 再走 agent 型 authenticate。 */
-  async handshake(cwd: string, mcpServers: AcpMcpServer[] = []): Promise<string> {
+  /** initialize → resume 或 new；遇到 auth_required 再走 agent 型 authenticate。 */
+  async handshake(
+    cwd: string,
+    mcpServers: AcpMcpServer[] = [],
+    resumeId?: string
+  ): Promise<string> {
     this.mcpServers = mcpServers
     return completeAcpHandshake({
       initialize: () => this.initialize(),
       authenticate: (methodId) => this.authenticate(methodId),
-      newSession: () => this.newSession(cwd)
+      newSession: () => this.openSession(cwd, resumeId)
     })
   }
 
@@ -98,14 +120,34 @@ export class AcpClient {
   }
 
   async newSession(cwd: string): Promise<string> {
-    const mcpServers = filterAcpMcpServers(this.mcpServers, this.mcpCaps)
-    const result = asRecord(
-      await this.request("session/new", { cwd, mcpServers })
-    )
-    const id = String(result.sessionId ?? "")
-    if (!id) throw new Error("ACP session/new did not return sessionId.")
-    this.configOptions = parseSessionConfigOptions(result)
-    return id
+    return this.requestSession("session/new", { cwd, mcpServers: this.filteredMcp() })
+  }
+
+  async resumeSession(sessionId: string, cwd: string): Promise<string> {
+    const result = await this.request("session/resume", {
+      sessionId,
+      cwd,
+      mcpServers: this.filteredMcp()
+    })
+    const rec = asRecord(result)
+    const parsed = parseSessionConfigOptions(result)
+    if (parsed.length > 0) this.configOptions = parsed
+    return String(rec.sessionId ?? sessionId)
+  }
+
+  async closeSession(sessionId: string): Promise<void> {
+    if (!this.sessionCaps.close) return
+    await this.request("session/close", { sessionId }).catch(() => undefined)
+  }
+
+  async deleteRemoteSession(sessionId: string): Promise<void> {
+    if (!this.sessionCaps.delete) return
+    await this.request("session/delete", { sessionId }).catch(() => undefined)
+  }
+
+  async listRemoteSessions(cwd: string): Promise<AcpListedSession[]> {
+    if (!this.sessionCaps.list) return []
+    return fetchAcpSessionPages((method, params) => this.request(method, params), cwd)
   }
 
   getConfigOptions(): SessionConfigOption[] {
@@ -154,6 +196,46 @@ export class AcpClient {
     }, 2000)
   }
 
+  private async initializeWith(protocolVersion: number): Promise<unknown> {
+    return this.request("initialize", {
+      protocolVersion,
+      clientInfo: { name: CLIENT_INFO.name, version: CLIENT_INFO.version },
+      info: CLIENT_INFO,
+      clientCapabilities: {
+        fs: { readTextFile: false, writeTextFile: false },
+        session: { configOptions: { boolean: {} } }
+      },
+      capabilities: {
+        fs: { readTextFile: false, writeTextFile: false },
+        session: { configOptions: { boolean: {} } }
+      }
+    })
+  }
+
+  private async openSession(cwd: string, resumeId?: string): Promise<string> {
+    const id = resumeId?.trim()
+    if (id && this.sessionCaps.resume) {
+      try {
+        return await this.resumeSession(id, cwd)
+      } catch {
+        /* 未知 / 已删：开新会话 */
+      }
+    }
+    return this.newSession(cwd)
+  }
+
+  private filteredMcp(): AcpMcpServer[] {
+    return filterAcpMcpServers(this.mcpServers, this.mcpCaps)
+  }
+
+  private async requestSession(method: string, params: unknown): Promise<string> {
+    const result = asRecord(await this.request(method, params))
+    const id = String(result.sessionId ?? "")
+    if (!id) throw new Error(`${method} did not return sessionId.`)
+    this.configOptions = parseSessionConfigOptions(result)
+    return id
+  }
+
   private request(method: string, params: unknown): Promise<unknown> {
     const id = this.nextId++
     this.write({ jsonrpc: "2.0", id, method, params })
@@ -172,49 +254,6 @@ export class AcpClient {
       throw new Error("ACP stdin is closed.")
     }
     this.child.stdin.write(`${JSON.stringify(message)}\n`)
-  }
-
-  private push(chunk: string) {
-    this.buffer += chunk
-    this.drain()
-  }
-
-  private drain() {
-    while (this.buffer.length > 0) {
-      if (this.contentLength == null) {
-        if (/^(Content-Length|Content-Type):/i.test(this.buffer)) {
-          let headerEnd = this.buffer.indexOf("\r\n\r\n")
-          let delimLen = 4
-          if (headerEnd < 0) {
-            headerEnd = this.buffer.indexOf("\n\n")
-            delimLen = 2
-          }
-          if (headerEnd < 0) return
-          const headerBlock = this.buffer.slice(0, headerEnd)
-          const match = headerBlock.match(/Content-Length:\s*(\d+)/i)
-          if (!match) {
-            this.buffer = this.buffer.slice(headerEnd + delimLen)
-            continue
-          }
-          this.contentLength = Number(match[1])
-          this.buffer = this.buffer.slice(headerEnd + delimLen)
-          continue
-        }
-      }
-      if (this.contentLength != null) {
-        if (this.buffer.length < this.contentLength) return
-        const raw = this.buffer.slice(0, this.contentLength)
-        this.buffer = this.buffer.slice(this.contentLength)
-        this.contentLength = null
-        this.handleRaw(raw)
-        continue
-      }
-      const nl = this.buffer.indexOf("\n")
-      if (nl < 0) return
-      const line = this.buffer.slice(0, nl).trim()
-      this.buffer = this.buffer.slice(nl + 1)
-      if (line) this.handleRaw(line)
-    }
   }
 
   private handleRaw(raw: string) {
@@ -243,24 +282,7 @@ export class AcpClient {
   }
 
   private async answerServerRequest(id: number, method: string, params: unknown) {
-    if (method !== "session/request_permission") {
-      this.write({ jsonrpc: "2.0", id, error: { code: -32601, message: `Unknown method ${method}` } })
-      return
-    }
-    const rec = asRecord(params)
-    const tool = asRecord(rec.toolCall)
-    const options = Array.isArray(rec.options) ? rec.options.map(asOption) : []
-    const questions = rec.questions ?? tool.questions
-    const asking = Array.isArray(questions) && questions.length > 0
-    const decision = (await this.hooks.onPermission?.({
-      sessionId: String(rec.sessionId ?? ""),
-      toolCallId: String(tool.toolCallId ?? tool.id ?? "tool"),
-      name: asking ? "ask_user_questions" : String(tool.title ?? tool.kind ?? tool.name ?? "tool"),
-      args: asking ? { questions } : tool.rawInput ?? tool.input ?? rec.toolCall,
-      options
-    })) ?? "deny"
-    const outcome = pickAcpPermissionOption(decision, options)
-    this.write({ jsonrpc: "2.0", id, result: { outcome } })
+    await answerAcpPermission((message) => this.write(message), this.hooks.onPermission, id, method, params)
   }
 
   private failAll(error: Error) {
@@ -269,29 +291,4 @@ export class AcpClient {
   }
 }
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {}
-}
 
-function asOption(value: unknown): AcpPermissionOption {
-  const rec = asRecord(value)
-  return {
-    optionId: String(rec.optionId ?? rec.id ?? ""),
-    name: typeof rec.name === "string" ? rec.name : undefined,
-    kind: typeof rec.kind === "string" ? rec.kind : undefined
-  }
-}
-
-function exitMessage(code: number | null, stderr: string): string {
-  const detail = stderr
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(-3)
-    .join(" ")
-  return detail
-    ? `ACP process exited with ${code ?? "null"}: ${detail}`
-    : `ACP process exited with ${code ?? "null"}`
-}

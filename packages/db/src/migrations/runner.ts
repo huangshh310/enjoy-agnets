@@ -12,6 +12,7 @@ import { runStepsChildRunMigration } from "./run-steps-child-run.ts"
 import { workspaceSshMigration } from "./workspace-ssh.ts"
 import { sshHostsMigration } from "./ssh-hosts.ts"
 import { coreIndexesMigration } from "./core-indexes.ts"
+import { acpSessionBindMigration } from "./acp-session-bind.ts"
 import type { Migration } from "./types.ts"
 
 // 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
@@ -25,7 +26,8 @@ export const MIGRATIONS: Migration[] = [
   runStepsChildRunMigration,
   workspaceSshMigration,
   sshHostsMigration,
-  coreIndexesMigration
+  coreIndexesMigration,
+  acpSessionBindMigration
 ]
 
 function tableExists(sqlite: DatabaseSync, name: string): boolean {

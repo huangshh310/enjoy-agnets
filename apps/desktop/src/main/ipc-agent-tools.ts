@@ -10,6 +10,8 @@ import {
   InspectAgentToolInput,
   LoginAgentToolInput,
   RemoveCustomAgentInput,
+  ImportAcpSessionInput,
+  ListAcpSessionsInput,
   SetConfigOptionInput,
   SetHandoffInput,
   SetSessionRuntimeInput,
@@ -21,6 +23,7 @@ import { inspectAgentTool } from "./services/agent-tools-account/inspect"
 import { installAgentTool, loginAgentTool, uninstallAgentTool } from "./services/agent-tools-install"
 import { getCustomAgent, removeCustomAgent, upsertCustomAgent } from "./services/agent-tools-custom"
 import { writeSessionHandoff } from "./services/session-handoff"
+import { importAcpSession, listImportableAcpSessions } from "./services/acp-session-import"
 import {
   detectAgentTools,
   doctorAgentTool,
@@ -47,7 +50,9 @@ export const AGENT_TOOLS_CHANNELS = [
   "agentTools.upsertCustom",
   "agentTools.removeCustom",
   "agentTools.getCustom",
-  "agentTools.setConfigOption"
+  "agentTools.setConfigOption",
+  "agentTools.listAcpSessions",
+  "agentTools.importAcpSession"
 ] as const
 
 export function registerAgentToolsIpc() {
@@ -126,5 +131,17 @@ export function registerAgentToolsIpc() {
   ipcMain.handle("agentTools.setConfigOption", async (_event, raw: unknown) => {
     const input = SetConfigOptionInput.parse(raw)
     return setAcpConfigOption(input.sessionId, input.configId, input.value)
+  })
+  ipcMain.handle("agentTools.listAcpSessions", async (_event, raw: unknown) => {
+    const input = ListAcpSessionsInput.parse(raw)
+    try {
+      return await listImportableAcpSessions(input.runtimeId, input.workspaceId)
+    } catch {
+      return { supported: false, sessions: [] }
+    }
+  })
+  ipcMain.handle("agentTools.importAcpSession", async (_event, raw: unknown) => {
+    const input = ImportAcpSessionInput.parse(raw)
+    return importAcpSession(input)
   })
 }

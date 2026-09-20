@@ -214,6 +214,15 @@ test("available_commands_update 进 commands.update，不进气泡", () => {
   }
 })
 
+test("session_info_update 进 session.title", () => {
+  const events = mapAcpUpdate(
+    { sessionUpdate: "session_info_update", title: "Implement session list" },
+    "run_1"
+  )
+  assert.equal(events[0]?.type, "session.title")
+  if (events[0]?.type === "session.title") assert.equal(events[0].title, "Implement session list")
+})
+
 test("config_option_update 进 session.config", () => {
   const events = mapAcpUpdate(
     {

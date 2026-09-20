@@ -5,6 +5,7 @@
 import { SetHandoffInput } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "./database"
 import { consumeHandoff, parseHandoffs, peekHandoff, type HandoffRecord } from "./session-handoff-parse.ts"
+import { clearAcpSessionBind } from "./acp-session-bind.ts"
 
 export { parseHandoffs, prependHandoffHistory } from "./session-handoff-parse.ts"
 
@@ -15,6 +16,7 @@ export function writeSessionHandoff(input: SetHandoffInput): void {
   const all = parseHandoffs(getSetting(KEY))
   all[parsed.sessionId] = parsed
   setSetting(KEY, JSON.stringify(all))
+  clearAcpSessionBind(parsed.sessionId)
 }
 
 /** 只读；开流失败必须还能再注入。 */

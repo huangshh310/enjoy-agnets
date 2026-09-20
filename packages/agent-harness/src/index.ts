@@ -56,8 +56,12 @@ export {
   disposeAllAcpSessions,
   acpSessionAlive,
   setAcpConfigOption,
+  deleteAcpRemoteIfLive,
   type StreamAcpTurnInput
 } from "./acp/stream-acp.ts"
+export { listAcpRemoteSessions } from "./acp/acp-session-list.ts"
+export type { AcpListedSession } from "./acp/acp-listed-session.ts"
+export type { AcpSessionCaps } from "./acp/acp-session-caps.ts"
 
 export { filterAcpMcpServers, type AcpMcpServer } from "./acp/acp-mcp.ts"
 export { configureAcpChildLedger, reapOrphanAcpChildren } from "./acp/acp-child-store.ts"

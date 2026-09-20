@@ -227,6 +227,12 @@ export const StreamEvent = z.discriminatedUnion("type", [
     runId: z.string(),
     configOptions: z.array(SessionConfigOption),
     ...Envelope
+  }),
+  z.object({
+    type: z.literal("session.title"),
+    runId: z.string(),
+    title: z.string().min(1).max(200),
+    ...Envelope
   })
 ])
 export type StreamEvent = z.infer<typeof StreamEvent>

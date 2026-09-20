@@ -11,6 +11,7 @@ import {
 } from "./agent-tools-override-merge"
 import { unbindProviderInOverrides } from "./agent-tools-unbind"
 import { getSetting, setSetting } from "./database"
+import { clearAcpSessionBind } from "./acp-session-bind.ts"
 
 export { unbindProviderInOverrides } from "./agent-tools-unbind"
 export { mergeAgentToolOverride, type AgentToolOverride } from "./agent-tools-override-merge"
@@ -84,9 +85,11 @@ export function unbindProviderFromAgentTools(providerId: string): void {
 
 export function writeSessionRuntime(sessionId: string, runtimeId: string, modelId?: string) {
   const all = readSessionRuntimes()
+  const previous = all[sessionId]
   all[sessionId] = runtimeId
   setSetting("session.runtimes", JSON.stringify(all))
   if (modelId?.trim()) writeSessionModel(sessionId, modelId.trim())
+  if (previous && previous !== runtimeId) clearAcpSessionBind(sessionId)
 }
 
 export function readSessionModels(): Record<string, string> {

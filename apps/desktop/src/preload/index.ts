@@ -109,7 +109,9 @@ const ide = {
     upsertCustom: (input: unknown) => ipcRenderer.invoke("agentTools.upsertCustom", input),
     removeCustom: (input: unknown) => ipcRenderer.invoke("agentTools.removeCustom", input),
     getCustom: (input: unknown) => ipcRenderer.invoke("agentTools.getCustom", input),
-    setConfigOption: (input: unknown) => ipcRenderer.invoke("agentTools.setConfigOption", input)
+    setConfigOption: (input: unknown) => ipcRenderer.invoke("agentTools.setConfigOption", input),
+    listAcpSessions: (input: unknown) => ipcRenderer.invoke("agentTools.listAcpSessions", input),
+    importAcpSession: (input: unknown) => ipcRenderer.invoke("agentTools.importAcpSession", input)
   },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),

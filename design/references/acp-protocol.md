@@ -21,22 +21,32 @@ Enjoy 是 ACP **Client**：spawn 本机 CLI → `initialize` → `session/new` �
 ## 2. 会话生命周期（宿主必须认）
 
 ```
-initialize → session/new → session/prompt ⇄ session/update
-                          → session/cancel
-                          → session/set_config_option
+initialize → session/new | session/resume → session/prompt ⇄ session/update
+                                          → session/cancel | session/close
+                                          → session/set_config_option
+             session/list  → 选一条 → session/resume（可选 replayFrom）
+             session/delete（Agent 广告 session.delete 才可调）
 ```
 
-| 方法 / 通知 | 作用 |
-|---|---|
-| `initialize` | 协议版本、双方 capabilities |
-| `session/new` | 开会话；**MAY** 带 `configOptions` |
-| `session/prompt` | 一轮用户输入 |
-| `session/update` | 流式：文本 / `agent_thought_chunk` / `tool_call` / `plan` / `config_option_update` |
-| `session/request_permission` | 审批；Enjoy 映射 HMAC，禁止从 `mapAcpUpdate` 再 yield 一份 |
-| `session/set_config_option` | 改模式 / 模型 / **思考档** |
-| `session/cancel` | 停当前 turn，不杀进程 |
+| 方法 / 通知 | 作用 | Enjoy 现状 |
+|---|---|---|
+| `initialize` | 协议版本、双方 capabilities | 发 v2，失败回落 v1；解析 `capabilities.session` |
+| `session/new` | 开会话；**MAY** 带 `configOptions` | 已接；绑定写入 `sessions.acp_*` |
+| `session/list` | 发现 Agent 侧已有会话（cwd 过滤 + 分页） | `agentTools.listAcpSessions`；Picker 导入 |
+| `session/resume` | 按 ACP `sessionId` 续上；可选 `replayFrom` 回放 | 无回放 resume；失败再 new |
+| `session/close` | 取消进行中工作并释放该会话资源 | dispose 先 close 再杀进程 |
+| `session/delete` | 从未来 `session/list` 里拿掉 | 永久删 Enjoy 会话时若进程仍活且广告 delete |
+| `session/prompt` | 一轮用户输入 | 已接，目前几乎只发 text |
+| `session/update` | 流式文本 / thought / tool / plan / `config_option_update` / **`session_info_update`** | `session.title` 仅覆盖默认名 |
+| `session/request_permission` | 审批 | HMAC；禁止从 `mapAcpUpdate` 再 yield |
+| `session/set_config_option` | 改模式 / 模型 / **思考档** | 已接 |
+| `session/cancel` | 停当前 turn，不杀进程 | Stop 已接 |
 
-`session/set_mode` 已被 Config Options 取代；有 `configOptions` 的 Client **应忽略** 旧 `modes` 字段。Enjoy 仍不实现 `session/set_mode`。
+v2：Agent 若广告 `session: {}`，**必须**同时支持 `new` / `list` / `resume` / `close` / `prompt` / `cancel` / `update`。`session/list` 只发现，**不**恢复；选中后必须 `session/resume`。`session_info_update` 只改 title / updatedAt / `_meta`，不改 cwd。
+
+`session/set_mode` 已被 Config Options 取代。Enjoy 仍不实现 `session/set_mode`。
+
+Registry 矩阵里 Grok / Claude ACP / Qwen / Kimi / GLM 等多家已报 `session/list` + `session/resume`。当前真相仍以 [`../specs/agent-cli.md`](../specs/agent-cli.md) 为准（本阶段不做 ACP 历史回放）。
 
 ---
 

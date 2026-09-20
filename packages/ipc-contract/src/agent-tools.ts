@@ -269,6 +269,38 @@ export const InspectAgentToolResult = z.object({
 export type InspectAgentToolResult = z.infer<typeof InspectAgentToolResult>
 
 
+export const ListAcpSessionsInput = z
+  .object({
+    runtimeId: AgentToolId,
+    workspaceId: z.string().min(1)
+  })
+  .strict()
+export type ListAcpSessionsInput = z.infer<typeof ListAcpSessionsInput>
+
+export const AcpRemoteSession = z.object({
+  sessionId: z.string().min(1),
+  title: z.string().optional(),
+  updatedAt: z.string().optional(),
+  imported: z.boolean()
+})
+export type AcpRemoteSession = z.infer<typeof AcpRemoteSession>
+
+export const ListAcpSessionsResult = z.object({
+  supported: z.boolean(),
+  sessions: z.array(AcpRemoteSession)
+})
+export type ListAcpSessionsResult = z.infer<typeof ListAcpSessionsResult>
+
+export const ImportAcpSessionInput = z
+  .object({
+    runtimeId: AgentToolId,
+    workspaceId: z.string().min(1),
+    acpSessionId: z.string().min(1).max(200),
+    title: z.string().max(80).optional()
+  })
+  .strict()
+export type ImportAcpSessionInput = z.infer<typeof ImportAcpSessionInput>
+
 export const LoginAgentToolResult = z.object({
   id: AgentToolId,
   ok: z.boolean(),

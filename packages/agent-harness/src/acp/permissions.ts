@@ -7,6 +7,14 @@ export type AcpPermissionOption = {
   kind?: string
 }
 
+export type AcpPermissionRequest = {
+  sessionId: string
+  toolCallId: string
+  name: string
+  args: unknown
+  options: AcpPermissionOption[]
+}
+
 export function pickAcpPermissionOption(
   decision: "allow" | "deny" | "allow_session",
   options: AcpPermissionOption[]

@@ -68,7 +68,8 @@ test("v2 事件全集可 safeParse", () => {
           ]
         }
       ]
-    }
+    },
+    { type: "session.title", runId: "r1", title: "Implement session list" }
   ]
   for (const event of events) {
     assert.equal(StreamEvent.safeParse(event).success, true, event.type)

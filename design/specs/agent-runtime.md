@@ -110,7 +110,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - bash 的「本会话总是允许」只白名单命令前缀（前两个 token），不是整个 `bash` 工具。高风险命令仍要停。
 - macOS 上 agent `bash` 经 `sandbox-exec` Seatbelt：写盘限工作区与 tmp，默认禁网。这不是 Docker。文案不要叫 Vercel Sandbox。
 - 接近上下文窗口（约 70%）**或**消息 ≥16 条时 `maybeAutoCompact`（有窗口数字也要看条数地板）；太短忽略。算法已有，触发在 `modelMessagesForStart`。压缩后必须从磁盘重读 AGENTS.md 链（`extraLocalInstructions.rehydratedAfterCompact`），不要把 SUMMARY 里的旧根指令当真。
-- 收集 repo outline 会 `listDir` 子目录。工具 `repo_outline` 必须 `listDir(..., { touch: false })`，开流大纲必须另开不带 `onTouchedPath` 的 host。`note` 必须在 `resolveInsideWorkspace` 之后，逃出根的路径不要进 touch log。超预算丢掉前面的远层，不要截掉靠近 cwd 的覆盖层。有链时从 always-on 剥掉同名 `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`，否则根文件灌两遍。ACP 不灌链（CLI 自己读盘）；**不做** ACP `session/load`。
+- 收集 repo outline 会 `listDir` 子目录。工具 `repo_outline` 必须 `listDir(..., { touch: false })`，开流大纲必须另开不带 `onTouchedPath` 的 host。`note` 必须在 `resolveInsideWorkspace` 之后，逃出根的路径不要进 touch log。超预算丢掉前面的远层，不要截掉靠近 cwd 的覆盖层。有链时从 always-on 剥掉同名 `AGENTS.md` / `CLAUDE.md` / `GEMINI.md`，否则根文件灌两遍。ACP 不灌链（CLI 自己读盘）；**不做** ACP 历史回放（`replayFrom`）。
 - 子 Agent `allow_session` 对 `bash` / `code_mode` 只记命令前缀，不要把整个工具名放进 `sessionApprovedTools`。`commitWorkspaceAll` 默认 `stageAll: false`。Seatbelt 读盘是 `(allow file-read*)`（编译器要读系统头），写盘仍锁工作区 + tmp。
 - 全局技能必须走 `skill` 工具。不要再让模型 `read_file` jail 外的 SKILL.md。
 - 子 Agent 若只用自己的短角色句，会丢掉用户说明与技能目录。`runDelegatedSubagent` 必须接父级 `extraInstructions`。

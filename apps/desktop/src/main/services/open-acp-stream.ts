@@ -16,6 +16,7 @@ import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { resolveAcpSpawnDirect } from "./ssh/resolve-acp-spawn.ts"
 import { hostExtensionsFor } from "./host-extensions/host-extensions.ts"
 import { getWorkspace } from "./workspace"
+import { readAcpSessionBind, writeAcpSessionBind } from "./acp-session-bind.ts"
 export async function openAcpStream(input: {
   runId: string
   sessionId: string
@@ -91,7 +92,9 @@ export async function openAcpStream(input: {
     mcpServers: extensions.mcpServers,
     skillCatalog: extensions.skillCatalog,
     pluginDirs: extensions.pluginDirs,
-    thoughtLevel: input.thoughtLevel
+    thoughtLevel: input.thoughtLevel,
+    resumeSessionId: resumeIdFor(input.sessionId, input.runtimeId),
+    onSessionBound: (acpSessionId) => writeAcpSessionBind(input.sessionId, input.runtimeId, acpSessionId)
   })
   return {
     stream: opened.stream,
@@ -140,7 +143,9 @@ async function openCustomAcpStream(
     mcpServers: extensions.mcpServers,
     skillCatalog: extensions.skillCatalog,
     pluginDirs: extensions.pluginDirs,
-    thoughtLevel: input.thoughtLevel
+    thoughtLevel: input.thoughtLevel,
+    resumeSessionId: resumeIdFor(input.sessionId, input.runtimeId),
+    onSessionBound: (acpSessionId) => writeAcpSessionBind(input.sessionId, input.runtimeId, acpSessionId)
   })
   return {
     stream: opened.stream,
@@ -148,6 +153,12 @@ async function openCustomAcpStream(
     dispose: opened.dispose,
     hostInject: extensions.inject
   }
+}
+
+function resumeIdFor(sessionId: string, runtimeId: string): string | undefined {
+  const bind = readAcpSessionBind(sessionId)
+  if (!bind || bind.runtimeId !== runtimeId) return undefined
+  return bind.acpSessionId
 }
 
 

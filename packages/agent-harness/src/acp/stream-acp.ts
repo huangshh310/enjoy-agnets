@@ -38,6 +38,9 @@ export type StreamAcpTurnInput = {
   pluginDirs?: string[]
   /** ACP thought_level 原值；session/new 之后 set_config_option。 */
   thoughtLevel?: string
+  /** 落库的 ACP sessionId；握手时优先 resume。 */
+  resumeSessionId?: string
+  onSessionBound?: (acpSessionId: string) => void
 }
 
 type LiveAcp = {
@@ -134,7 +137,9 @@ export function acpSessionAlive(sessionId: string): boolean {
 export async function disposeAcpSession(sessionId: string): Promise<void> {
   const live = liveBySession.get(sessionId)
   liveBySession.delete(sessionId)
-  live?.client.dispose()
+  if (!live) return
+  if (live.acpSessionId) await live.client.closeSession(live.acpSessionId)
+  live.client.dispose()
 }
 
 /** 退出应用时立刻杀掉全部 ACP 子进程，避免泄漏。 */
@@ -197,14 +202,22 @@ async function connectLive(input: StreamAcpTurnInput, modelKey: string): Promise
   try {
     live.acpSessionId = await live.client.handshake(
       acpHandshakeCwd(input.workspaceRoot, input.spawnDirect),
-      input.mcpServers ?? []
+      input.mcpServers ?? [],
+      input.resumeSessionId
     )
+    input.onSessionBound?.(live.acpSessionId)
     liveBySession.set(input.sessionId, live)
     return live
   } catch (error) {
     live.client.dispose("kill")
     throw mapAcpSpawnFailure(error, input.spawnDirect?.failHint)
   }
+}
+
+export async function deleteAcpRemoteIfLive(sessionId: string): Promise<void> {
+  const live = liveBySession.get(sessionId)
+  if (!live?.acpSessionId) return
+  await live.client.deleteRemoteSession(live.acpSessionId)
 }
 
 export async function setAcpConfigOption(

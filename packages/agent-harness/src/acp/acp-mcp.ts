@@ -1,6 +1,7 @@
 /**
  * ACP session/new 的 MCP 声明。stdio command 必须是绝对路径。
  */
+import { parseAcpSessionCaps } from "./acp-session-caps.ts"
 export type AcpMcpEnvVar = { name: string; value: string }
 
 export type AcpMcpStdioServer = {
@@ -39,16 +40,7 @@ export function acpMcpFingerprint(servers: AcpMcpServer[]): string {
   return JSON.stringify(servers)
 }
 
-/** 只读握手里的 mcpCapabilities；UI 不画这些字段。 */
+/** 只读握手里的 MCP 广告；UI 不画这些字段。 */
 export function parseAgentMcpCaps(initializeResult: unknown): { http: boolean; sse: boolean } {
-  const rec = asRecord(initializeResult)
-  const agent = asRecord(rec.agentCapabilities)
-  const mcp = asRecord(agent.mcpCapabilities)
-  return { http: mcp.http === true, sse: mcp.sse === true }
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {}
+  return parseAcpSessionCaps(initializeResult).mcp
 }

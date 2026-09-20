@@ -3,8 +3,9 @@ import { test } from "node:test"
 import {
   isDefaultSessionTitle,
   sanitizeTitle,
-  formatOptimisticTitle
-} from "./session-title.ts"
+  formatOptimisticTitle,
+  shouldRefineSessionTitle
+} from "../lib/session-title.ts"
 
 test("isDefaultSessionTitle 正确识别默认占位标题", () => {
   assert.equal(isDefaultSessionTitle("新对话"), true)
@@ -37,4 +38,12 @@ test("formatOptimisticTitle 正确截取并格式化首轮标题", () => {
   )
   assert.equal(formatOptimisticTitle(""), "新对话")
   assert.equal(formatOptimisticTitle("   "), "新对话")
+})
+
+test("shouldRefineSessionTitle 占位与乐观截断可精炼，手改不覆盖", () => {
+  assert.equal(shouldRefineSessionTitle("新对话", "hi"), true)
+  assert.equal(shouldRefineSessionTitle("New agent", "fix login"), true)
+  assert.equal(shouldRefineSessionTitle("hi", "hi"), true)
+  assert.equal(shouldRefineSessionTitle("帮我生成一个html 的登录页仿照苹果官网", "帮我生成一个html 的登录页仿照苹果官网"), true)
+  assert.equal(shouldRefineSessionTitle("登录页改版", "帮我生成一个html 的登录页仿照苹果官网"), false)
 })

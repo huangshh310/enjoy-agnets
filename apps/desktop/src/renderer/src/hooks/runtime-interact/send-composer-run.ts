@@ -114,9 +114,7 @@ async function launchComposerRun(
       abortOrphanedRun(result.runId)
       return
     }
-    if (composerRunKind(store.modelId, currentCaps(store)) === "agent") {
-      void completeSessionTitle(payload.content)
-    }
+    void completeSessionTitle(payload.content)
   } catch (error) {
     dropEmptyPendingAssistant()
     store.setRunning(false)

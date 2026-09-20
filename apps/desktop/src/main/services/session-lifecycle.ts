@@ -1,7 +1,7 @@
 /**
  * 会话归档 / 恢复 / 永久删除。只动 SQLite，不删工作区磁盘文件。
  */
-import { disposeAcpSession } from "@enjoy-agents/agent-harness"
+import { deleteAcpRemoteIfLive, disposeAcpSession } from "@enjoy-agents/agent-harness"
 import { getDatabase } from "./database"
 
 export function listArchivedSessions() {
@@ -40,7 +40,7 @@ export function deleteSession(sessionId: string) {
   const db = getDatabase()
   const exists = db.prepare("SELECT id FROM sessions WHERE id = ?").get(sessionId)
   if (!exists) throw new Error("Unknown session.")
-  void disposeAcpSession(sessionId)
+  void deleteAcpRemoteIfLive(sessionId).finally(() => void disposeAcpSession(sessionId))
   db.exec("BEGIN")
   try {
     db.prepare(

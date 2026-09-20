@@ -1,6 +1,6 @@
 # spec/ai-capabilities
 
-> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-09-20
+> 统一 AI Runtime、StreamEvent v2、UIMessage parts。最后更新：2026-09-21
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 `GenerationRequest.kind`：`text` `structured-object` `structured-array` `completion` `image` `speech` `transcription` `translation` `video` `embedding` `rerank` `realtime-session` `agent` `workflow`。fullStream 映射在 `packages/agent-core/src/streams/map-part.ts`。Agent / `ai.generate` 完成时写 `ttfoMs` 与 `tokensPerSecond`。
 
-StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）/ `session.config`（ACP `configOptions` 与 `config_option_update`，选项形状复用 `SessionConfigOption`；思考档认 `thought_level` 或 `effort` / `reasoning_effort`）。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
+StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）/ `session.config`（ACP `configOptions` 与 `config_option_update`，选项形状复用 `SessionConfigOption`；思考档认 `thought_level` 或 `effort` / `reasoning_effort`）/ `session.title`（`session_info_update`，仅默认标题时 `session.rename`）。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
 
 消息 parts：`UIMessage` + `migrateContentToParts`。旧 `messages.content` 仍是兼容字段。生成式 UI 只能选 `GENERATIVE_COMPONENT_IDS` 白名单。
 
@@ -18,7 +18,7 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 
 开流有效模型：会话覆盖 `sessionModels[sessionId]` > 引擎默认 > 档案 `models[0]`。同引擎换模下一轮读覆盖。助手信封可带本轮 `modelId` / `runtimeId`，hydrate 回写气泡；换模不改写旧 stamp。
 
-聊天主路径：Composer 语言模型 → `agent.run`；`grok-imagine-*` / dall-e 等生图模型 → `ai.generate` kind=`image`（`generateImage`），带 `messages` 时把 prompt 与 `asset.created` 落库。Stop → `ai.abort`。附件 → `assets.import` + `attachments`（文本内联，图片需 vision，PDF 需 files）；`source.added` / `asset.created` / `structured.delta` 折进当前助手消息并合成白名单 `component` parts，刷新后从 payload 或 `message_parts` 恢复，parts 经 `safeValidateUIMessages`。首轮标题：乐观截断 + `ai.generate` kind=`completion` + `session.rename`。助手 Extract 走 `structured-object`。ToolLoop `stopWhen` = `[stepCountIs(maxAgentSteps), isLoopFinished(), 可选 hasToolCall]`；`prepareStep` 先 `pruneModelMessages`。`stepTimeoutMs` 以对象 `{ stepMs, toolMs }` 传给 SDK，不要传数字（会被当成总超时）。
+聊天主路径：Composer 语言模型 → `agent.run`；`grok-imagine-*` / dall-e 等生图模型 → `ai.generate` kind=`image`（`generateImage`），带 `messages` 时把 prompt 与 `asset.created` 落库。Stop → `ai.abort`。附件 → `assets.import` + `attachments`（文本内联，图片需 vision，PDF 需 files）；`source.added` / `asset.created` / `structured.delta` 折进当前助手消息并合成白名单 `component` parts，刷新后从 payload 或 `message_parts` 恢复，parts 经 `safeValidateUIMessages`。首轮标题：乐观截断立刻 `session.rename`；后台 `ai.generate` kind=`completion` 精炼（占位名或本轮乐观截断都可覆盖，用户手改不覆盖）。ACP 精炼用 Enjoy `preferredModelId` / `defaultModelId`，禁止拿 CLI modelId 去 vault。助手 Extract 走 `structured-object`。ToolLoop `stopWhen` = `[stepCountIs(maxAgentSteps), isLoopFinished(), 可选 hasToolCall]`；`prepareStep` 先 `pruneModelMessages`。`stepTimeoutMs` 以对象 `{ stepMs, toolMs }` 传给 SDK，不要传数字（会被当成总超时）。
 
 `ENJOY_E2E_STUB=1` 时不打真实 Provider：`openCodingStream` 吐固定 fullStream（含 write 审批与附件文件名），`ai.generate` 走 `e2e-generate`。启动前设置 `ENJOY_E2E_USERDATA` + `ENJOY_E2E_WORKSPACE`，`bootstrapE2eStub` 写入 Ollama 档案（无需 Key）、`defaultModelId=stub-e2e`、会话，并索引工作区根 `.`。`agent.run` 若仍缺 `modelId` 回落 `stub-e2e`。这不是产品路径。`ai.generate.timeoutMs` 与偏好 `agentTimeoutMs` 会中止生成。
 
@@ -47,4 +47,5 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 - `experimental_streamTranscribe` 可能无导出，没有则转写回落 `transcribe`。`experimental_streamTranslate` 在 `ai@7.0.84` 有导出；`kind=translation` 走 `createTranslationModel`（OpenAI `translation()`）。不能同时读 `fullStream` 和 `translationText`。模型不合法时 `translateAudio` 返回 null。
 - `WorkflowAgent` / `createMCPClient` 在 `ai@7.0.84` 仍无导出，不要假装已接官方类。
 - 窗口 E2E 的发聊天 / 停止 / 恢复 / 审批走 `ENJOY_E2E_STUB`，不要在 CI 里假装打过真实 Key。stub 取最后一条非 cite 用户句（`Cite these workspace sources:` 是 `citeKnowledge` 垫的）。Stop 会 `dropEmptyPendingAssistant`，下一句和未完成用户句连在一起，不能取「本轮第一条」。Playwright Electron 不要并行起两个窗口（`workers: 1`）。
-- 会话标题自动更新机制：默认标题集合包含 `新对话`、`新会话`、`New agent`、`Untitled`。`isDefaultSessionTitle` 只要当前标题处于默认集合（无论第几轮），首轮发送即触发乐观截断命名与 `useCompletion` 后台精炼，完成生成后调用 `session.rename` 持久化，支持中英文同语言自然精炼；用户已显式重命名的标题不覆盖。
+- 会话标题自动更新机制：默认标题集合包含 `新对话`、`新会话`、`未命名会话`、`New agent`、`Untitled`、`Untitled session`。首轮发送立刻乐观截断并落库；`shouldRefineSessionTitle` 在占位名或本轮乐观截断时才跑 `useCompletion` 精炼，再 `session.rename`。ACP 用 Enjoy 默认文本模型，不用 CLI modelId。用户已显式重命名的标题不覆盖。`session_info_update` 仍只覆盖占位名。
+- **隐患**：侧栏停在「新对话」或首句原文（如 `hi`），精炼标题出不来。根因：乐观标题不再算默认，`completeSessionTitle` 直接 return；ACP 拿 CLI modelId 走 `ai.generate` 对不上 Enjoy vault；main `maybeRenameSession` 只认 `New agent`，中文「新对话」永不落库。正确做法：占位或乐观截断都可精炼；ACP 用 `preferredModelId` / `defaultModelId`；中英占位都认。
