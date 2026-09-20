@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { claimDoneForcesReview, reviewGatePhase } from "./review-gate-phase.ts"
+import { claimDoneForcesReview, reviewGatePhase, workflowAfterStreamEvent } from "./review-gate-phase.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
@@ -29,9 +29,17 @@ test("宣称收工必须进待验收；失败 / 开跑不走这扇门", () => {
   assert.equal(claimDoneForcesReview("run.start"), false)
 })
 
-test("sync 对 run.end 一律 needs_review，不看写盘 path", () => {
+test("流事件分流：成功待验收，失败/开跑回执行中", () => {
+  assert.equal(workflowAfterStreamEvent("run.end"), "needs_review")
+  assert.equal(workflowAfterStreamEvent("run.error"), "in_progress")
+  assert.equal(workflowAfterStreamEvent("run.start"), "in_progress")
+  assert.equal(workflowAfterStreamEvent("text.delta"), null)
+})
+
+test("sync 按结束原因分流，废止一律 needs_review，不看写盘 path", () => {
   const sync = readFileSync(join(dir, "sync-review-gate.ts"), "utf8")
-  assert.ok(sync.includes('patchSessionWorkflow(sessionId, "needs_review")'))
+  assert.ok(sync.includes("workflowAfterStreamEvent"))
+  assert.ok(!sync.includes('if (!claimDoneForcesReview(event.type)) return'))
   assert.ok(!sync.includes("pathsFromLastTurn"))
   assert.ok(!sync.includes("runNeedsHumanReview"))
 })

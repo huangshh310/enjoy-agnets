@@ -48,6 +48,14 @@ test("中文词表与预览同文", () => {
   assert.equal(zhSessionOps.ledgerTitle, "本轮账本")
 })
 
+test("失败阅读器无通过/打回；待验收列勿混失败", () => {
+  const reader = readFileSync(join(dir, "../feed/inbox-reader.tsx"), "utf8")
+  assert.ok(!reader.includes("sessionOps.approve"))
+  assert.ok(!reader.includes("review-gate-approve"))
+  assert.ok(!reader.includes("sessionOps.reject"))
+  assert.ok(preview.includes("待验收列勿混失败"))
+})
+
 test("Inbox 筛只有三档，默认拍板，不要全部/运行中", () => {
   assert.ok(pageSrc.includes('id: "approval"'))
   assert.ok(pageSrc.includes('id: "needs_review"'))

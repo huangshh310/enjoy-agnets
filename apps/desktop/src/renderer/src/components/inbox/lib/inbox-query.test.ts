@@ -93,6 +93,38 @@ test("导航计数：徽标口径与拍板列一致", () => {
   })
 })
 
+test("失败 / 已取消走失败筛，不进待验收，也不进拍板计数", () => {
+  const items = [
+    note({ id: "e", copyKey: "error", read: false }),
+    note({ id: "a", copyKey: "aborted", read: true }),
+    note({ id: "r", copyKey: "needs_review", read: true }),
+    note({ id: "p", copyKey: "pending_approval", read: false })
+  ]
+  assert.deepEqual(filterInbox(items, "failed", "").map((item) => item.id), ["e", "a"])
+  assert.deepEqual(filterInbox(items, "needs_review", "").map((item) => item.id), ["r"])
+  assert.equal(inboxNavCounts(items).approval, 1)
+  assert.equal(inboxNavCounts(items).failed, 2)
+  assert.equal(inboxNavCounts(items).needs_review, 1)
+})
+
+test("Attention error 含 abort 标已取消，合成待验收只看 workflowStatus", () => {
+  const aborted = inboxFromAttention(
+    [attention({ id: "ses_x:error", sessionId: "ses_x", kind: "error", errorMessage: "Aborted by user.", summary: "Aborted by user." })],
+    { t, readIds: new Set(), hiddenIds: new Set() }
+  )
+  assert.equal(aborted[0]?.copyKey, "aborted")
+  assert.equal(aborted[0]?.isAborted, true)
+  const failedSession: RepositoryNode = {
+    id: "ses_fail",
+    name: "失败轮",
+    kind: "session",
+    parentId: "ws",
+    updatedAt: 4,
+    workflowStatus: "in_progress"
+  }
+  assert.equal(synthesizeNeedsReviewInbox({ repositories: [failedSession], t, now: 5 }).length, 0)
+})
+
 test("待验收从会话 workflowStatus 合成，不进拍板计数", () => {
   const repositories: RepositoryNode[] = [
     { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },

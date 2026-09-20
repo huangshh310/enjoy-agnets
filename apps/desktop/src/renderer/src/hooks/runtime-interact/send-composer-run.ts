@@ -8,6 +8,7 @@ import { useChatStore } from "../../stores/chat-store"
 import { codingAgentRunInput } from "../agent-run-payload"
 import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
 import { composerRunKind } from "../composer-run-kind"
+import { syncReviewGateOnComposerStart } from "../../components/ai-chat/review-gate/sync-review-gate"
 import {
   abortOrphanedRun,
   claimComposerRun,
@@ -37,6 +38,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     store.setRunning(false)
     return
   }
+  syncReviewGateOnComposerStart(store.sessionId)
   const payload = await resolveSendPayload(prepared)
   if (!payload) {
     store.setRunning(false)

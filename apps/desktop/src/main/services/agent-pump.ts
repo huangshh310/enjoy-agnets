@@ -3,7 +3,6 @@
  */
 import {
   armTimeout,
-  classifyError,
   resolveTimeoutMs,
   RuntimeError,
   type SubagentToolTraceEvent
@@ -11,26 +10,20 @@ import {
 import { foldToolEvent } from "@enjoy-agents/ipc-contract"
 import { rememberApproval } from "./approval-hmac"
 import { consumeFullStream } from "./consume-stream"
+import { shouldEmitRunEnd } from "./claim-run-end"
 import { completeAgentRun } from "./complete-agent-run"
-import { checkpointActiveRun, persistActiveRun } from "./flush-agent-run"
+import { failAgentPump } from "./fail-agent-pump"
+import { checkpointActiveRun } from "./flush-agent-run"
 import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { persistWaitingRun } from "./persist-waiting-run"
 import { createId } from "./ids"
-import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
-import { acpSessionAlive, cancelCodingStream, disposeCodingStream, openCodingStream } from "./open-coding-stream"
+import { openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
 import { shouldContinueOpenTodos, TODO_CONTINUE_PROMPT } from "./todo-continue"
 import { readResponseMessages } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
-import { recordMetric } from "./telemetry-service"
 import { ensureAssistantReasoning } from "./to-model-messages"
-import {
-  deleteActiveRun,
-  emitEvent,
-  getActiveRun,
-  settleRun,
-  type ActiveRun
-} from "./agent-run-state"
+import { deleteActiveRun, emitEvent, getActiveRun, type ActiveRun } from "./agent-run-state"
 import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { takeSessionHandoff } from "./session-handoff"
@@ -52,7 +45,7 @@ export async function pumpStream(runId: string) {
   try {
     await runOnePump(runId, run, prefs, () => timedOut)
   } catch (error) {
-    await failPump(runId, run, error)
+    await failAgentPump(runId, run, error)
   } finally {
     clearTimer()
     resumeIfNeeded(runId)
@@ -89,8 +82,18 @@ async function runOnePump(
     await opened.dispose()
     return
   }
-  // 收工窗口迟到的引导已落库/进气泡，清掉以免下一轮 prepareStep 再注一次。
   clearSteer(run.input.sessionId)
+  if (
+    !shouldEmitRunEnd({
+      aborted: run.abort.signal.aborted,
+      timedOut: timedOut(),
+      userCancelled: run.userCancelled
+    })
+  ) {
+    await opened.dispose()
+    deleteActiveRun(runId)
+    return
+  }
   completeAgentRun({
     runId,
     run,
@@ -252,37 +255,6 @@ function parkForApproval(run: ActiveRun): boolean {
     return true
   }
   return false
-}
-
-async function failPump(runId: string, run: ActiveRun, error: unknown) {
-  const classified = classifyError(error)
-  persistActiveRun(run, runId, "failed", classified.message)
-  recordMetric({
-    runId,
-    kind: "agent",
-    modelId: run.input.modelId,
-    status: "failed",
-    durationMs: Date.now() - run.startedAt,
-    errorClass: classified.errorClass
-  })
-  settleRun(runId, { status: "error", summary: classified.message })
-  emitEvent(run.window, { type: "run.error", runId, message: classified.message })
-  clearSteer(run.input.sessionId)
-  if (classified.errorClass === "timeout") {
-    emitEvent(run.window, {
-      type: "generation.warning",
-      runId,
-      code: "timeout",
-      message: classified.message
-    })
-  }
-  deleteActiveRun(runId)
-  const sessionId = run.input.sessionId
-  if (isAcpHostRuntime(run.input.runtimeId) && acpSessionAlive(sessionId)) {
-    await cancelCodingStream(runId)
-    return
-  }
-  await disposeCodingStream(runId)
 }
 
 function resumeIfNeeded(runId: string) {

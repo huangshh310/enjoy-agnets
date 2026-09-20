@@ -13,7 +13,7 @@
 |---|---|
 | L1 AttentionStrip | `ai-chat/attention/attention-strip.tsx` 浮动居中于 Stage 顶（`stage-split.tsx`），不占位、不推挤下方页面布局，支持一键关闭及单项关闭。无 active/focused 则整条 `null`。胶囊按优先级排序；当前会话 Dock 已开时收成微点。`complete` 约 10s 自消，不计入「需处理 N」。 |
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。无 pending 则 `null`。 |
-| L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、会话标题、摘要/错误预览与时间。**M-C 安静 Inbox**：侧栏筛选只有 **`approval`（拍板） / `needs_review`（待验收） / `failed`（失败）**，默认 `approval`。拍板 = `pending_approval` + `ask_user`。待验收行由会话 `workflowStatus === "needs_review"` 合成，不是 Attention kind。完成 / 运行中 / 读文件刷屏不进默认列；运行中仍只在侧栏「进行中」。轨徽标与页内数字徽标 = **拍板数**（`stripApprovalCount`），不计待验收 / 失败 / 完成 / 运行中。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
+| L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、会话标题、摘要/错误预览与时间。**M-C 安静 Inbox**：侧栏筛选只有 **`approval`（拍板） / `needs_review`（待验收） / `failed`（失败）**，默认 `approval`。拍板 = `pending_approval` + `ask_user`。待验收行由会话 `workflowStatus === "needs_review"` 合成，不是 Attention kind；**只有宣称收工的 `run.end` 才标 `needs_review`**。`run.error` / 用户取消保持 `in_progress`，走失败筛（取消文案含 abort →「已取消」），不进待验收、不进拍板角标。完成 / 运行中 / 读文件刷屏不进默认列；运行中仍只在侧栏「进行中」。轨徽标与页内数字徽标 = **拍板数**（`stripApprovalCount`），不计待验收 / 失败 / 完成 / 运行中。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回；失败阅读器无通过/打回。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
 | 侧栏进行中 | `sidebar/session-activity.ts`：当前会话跟 Composer `running`，后台跟 `parks[id].running`。等你红点优先于 drive 灯。情境栏顶「进行中」钉住最多 8 条；无则 `null`。不把 `running` / `complete` 加成 Attention kind。 |
 | 审批策略 | 会话内只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。智能体设置用共享摘要条跳 `#/settings/general` 已有权限卡，不另画上沿「写入 / Shell / Git」一瞥，也不做第二套 Allow/Deny。执行模式（探索 / 执行）是另一件事。 |
@@ -171,7 +171,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：Inbox「未读」出现大量「运行中」→ 合成 running 被标成未读。正确做法：`synthesize-running-inbox.ts` 固定 `read: true`；`inboxNavCounts.unread` 只计 `!read`。running 不得加成 Attention kind。
 - **隐患**：导航仍按「智能体 / 系统」或「全部 / 运行中」筛 → 旧 IA 残留。正确做法：筛 `InboxCategory` 的 approval / needs_review / failed。
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。
-- **隐患**：一轮 `run.end` 直接标 `done` 或刷 complete Inbox。正确做法：宣称收工必须进 `needs_review`，只有人点「通过」才能 `done`；`run.error` 仍走失败筛，不进验收闸。
+- **隐患**：一轮 `run.end` 直接标 `done`、刷 complete Inbox，或把失败/取消也一律 `needs_review`（#47 曾一刀切）。正确做法：只有 Agent 宣称收工的 `run.end` 进待验收；`run.error` / 用户 abort 保持 `in_progress`，走 Inbox 失败筛（取消文案含 abort →「已取消」）。取消后泵不得再发 `run.end`。只有人点「通过」才能 `done`。产品锁：[../references/m-cbd-f1-review-taxonomy.md](../references/m-cbd-f1-review-taxonomy.md)。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。
 - Inbox 假种子会冒充 live Attention，已删；空库只走空态。
