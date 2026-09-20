@@ -3,7 +3,7 @@
  */
 import { capabilitiesFor } from "@enjoy-agents/ipc-contract"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { formatQuotaPercent, pickQuotaPercent, pickQuotaWindow } from "../../settings/agent-tools/agent-tool-quota"
+import { pickQuotaPercent, pickQuotaWindow } from "../../settings/agent-tools/agent-tool-quota"
 
 export function useQuotaHint(runtimeId: string): {
   percent: number | null
@@ -25,12 +25,3 @@ export function useQuotaHint(runtimeId: string): {
   }
 }
 
-export function quotaHintText(
-  percent: number | null,
-  reset: string | undefined,
-  used: (percent: string) => string
-): string | undefined {
-  if (percent == null) return reset
-  const line = used(formatQuotaPercent(percent))
-  return reset ? `${line} · ${reset}` : line
-}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { quotaHintText } from "./use-quota-hint.ts"
+import { quotaHintText } from "./quota-hint-text.ts"
 
 test("用量文案只给悬停/Popover，没有数字则只留重置窗", () => {
   assert.equal(quotaHintText(74, "6d", (percent) => `已用 ${percent}`), "已用 74% · 6d")

@@ -25,7 +25,8 @@ import { ModelSwitchBadge } from "./model-switch-badge"
 import { ModelSwitchToast } from "../composer/model-switch/model-switch-feedback"
 import { shouldShowModelSwitchBadge } from "@renderer/lib/session-model"
 import { UsagePill } from "../usage/usage-pill"
-import { quotaHintText, useQuotaHint } from "../usage/use-quota-hint"
+import { quotaHintText } from "../usage/quota-hint-text"
+import { useQuotaHint } from "../usage/use-quota-hint"
 import { composerRailSections } from "./composer-agents"
 import {
   composerActiveModelLabel,
