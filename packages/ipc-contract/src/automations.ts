@@ -15,6 +15,20 @@ export type AutomationMode = z.infer<typeof AutomationMode>
 export const AutomationTrigger = z.enum(["manual", "on_save", "cron", "webhook"])
 export type AutomationTrigger = z.infer<typeof AutomationTrigger>
 
+export function automationTriggerList(item: {
+  trigger: AutomationTrigger
+  triggers?: AutomationTrigger[]
+}): AutomationTrigger[] {
+  return [...new Set([item.trigger, ...(item.triggers ?? [])])]
+}
+
+export function automationHasTrigger(
+  item: { trigger: AutomationTrigger; triggers?: AutomationTrigger[] },
+  trigger: AutomationTrigger
+): boolean {
+  return automationTriggerList(item).includes(trigger)
+}
+
 export const AutomationWebhookPort = z.number().int().min(1).max(65535)
 
 export const AutomationRunStatus = z.enum(["ok", "failed", "running"])
@@ -25,6 +39,8 @@ export const Automation = z.object({
   name: z.string(),
   prompt: z.string(),
   trigger: AutomationTrigger,
+  /** 可并存的额外触发；缺省只认 trigger。 */
+  triggers: z.array(AutomationTrigger).optional(),
   cronExpr: z.string().optional(),
   timeZone: z.string().optional(),
   webhookPort: AutomationWebhookPort.optional(),
@@ -51,6 +67,8 @@ export const UpsertAutomationInput = z.object({
   name: z.string().min(1),
   prompt: z.string(),
   trigger: AutomationTrigger,
+  /** 可并存的额外触发；缺省只认 trigger。 */
+  triggers: z.array(AutomationTrigger).optional(),
   cronExpr: z.string().optional(),
   timeZone: z.string().optional(),
   webhookPort: AutomationWebhookPort.optional(),

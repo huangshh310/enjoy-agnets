@@ -35,6 +35,7 @@ export async function tickAutomations(now: Date): Promise<string[]> {
       !shouldFireCron({
         enabled: item.enabled,
         trigger: item.trigger,
+        triggers: item.triggers,
         cronExpr: item.cronExpr,
         timeZone: item.timeZone,
         lastRunAt: item.lastRunAt,

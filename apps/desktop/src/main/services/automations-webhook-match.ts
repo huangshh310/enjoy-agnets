@@ -23,7 +23,7 @@ export function normalizeWebhookPath(raw?: string): string {
 export function webhookRoutesFrom(items: Automation[]): Map<number, WebhookRoute[]> {
   const grouped = new Map<number, WebhookRoute[]>()
   for (const item of items) {
-    if (!item.enabled || item.trigger !== "webhook" || item.webhookPort == null) continue
+    if (!item.enabled || !hasWebhookTrigger(item) || item.webhookPort == null) continue
     const route: WebhookRoute = {
       id: item.id,
       path: normalizeWebhookPath(item.webhookPath),
@@ -85,4 +85,8 @@ export function matchWebhookRoutes(
 function headerValue(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0]?.trim()
   return value?.trim()
+}
+
+function hasWebhookTrigger(item: Automation): boolean {
+  return item.trigger === "webhook" || Boolean(item.triggers?.includes("webhook"))
 }

@@ -3,6 +3,8 @@ import { test } from "node:test"
 import {
   Automation,
   AutomationsChangedEvent,
+  automationHasTrigger,
+  automationTriggerList,
   RunAutomationInput,
   UpsertAutomationInput
 } from "./automations.ts"
@@ -81,6 +83,13 @@ test("upsert 收下 webhook 本机端口与可选密钥", () => {
     assert.equal(parsed.data.webhookPort, 8765)
     assert.equal(parsed.data.webhookPath, "/hooks/enjoy")
   }
+})
+
+test("徽章可并存：trigger + triggers 去重", () => {
+  const item = { trigger: "on_save" as const, triggers: ["on_save", "webhook"] as const }
+  assert.deepEqual(automationTriggerList(item), ["on_save", "webhook"])
+  assert.equal(automationHasTrigger(item, "webhook"), true)
+  assert.equal(automationHasTrigger({ trigger: "manual" }, "on_save"), false)
 })
 
 test("webhook 端口越界即拒，公网不是合法 trigger", () => {

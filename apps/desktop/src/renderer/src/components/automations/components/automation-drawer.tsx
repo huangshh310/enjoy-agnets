@@ -42,9 +42,9 @@ export function AutomationDrawer({
   const t = useT()
   if (!draft) return null
   const canSave = Boolean(draft.name.trim())
-  const cronReady = draft.trigger !== "cron" || Boolean(draft.cronExpr.trim())
-  const webhookReady = draft.trigger !== "webhook" || webhookPortReady(draft.webhookPort)
-  const runNow = draft.trigger === "manual"
+  const cronReady = !draft.triggers.includes("cron") || Boolean(draft.cronExpr.trim())
+  const webhookReady = !draft.triggers.includes("webhook") || webhookPortReady(draft.webhookPort)
+  const runNow = draft.triggers.length === 1 && draft.triggers[0] === "manual"
 
   return (
     <SettingsSideDrawer
@@ -75,8 +75,11 @@ export function AutomationDrawer({
             className="mt-1"
           />
         </label>
-        <TriggerPills value={draft.trigger} onChange={(trigger) => onChange({ trigger })} />
-        {draft.trigger === "cron" ? (
+        <TriggerPills
+          value={draft.triggers}
+          onChange={(triggers) => onChange({ triggers, trigger: triggers[0] ?? draft.trigger })}
+        />
+        {draft.triggers.includes("cron") ? (
           <div className="grid grid-cols-2 gap-2">
             <label>
               <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.cronLabel")}</span>
@@ -96,12 +99,12 @@ export function AutomationDrawer({
             </label>
           </div>
         ) : null}
-        {draft.trigger === "on_save" ? (
+        {draft.triggers.includes("on_save") ? (
           <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-[10px] text-text-tertiary">
             {t("studio.automations.onSaveHint")}
           </p>
         ) : null}
-        {draft.trigger === "webhook" ? <WebhookFields draft={draft} onChange={onChange} /> : null}
+        {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
         <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
         <label className="block">
           <span className="text-caption-1-medium text-text-tertiary">
@@ -132,7 +135,7 @@ export function AutomationDrawer({
             {running ? t("studio.automations.running") : t("studio.automations.runNow")}
           </Button>
         ) : (
-          <span className="mr-auto text-[10px] text-text-tertiary">{footerHint(draft.trigger, t)}</span>
+          <span className="mr-auto text-[10px] text-text-tertiary">{footerHint(draft.triggers, t)}</span>
         )}
         {draft.id ? (
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
@@ -147,8 +150,8 @@ export function AutomationDrawer({
   )
 }
 
-function footerHint(trigger: AutomationDraft["trigger"], t: (key: string) => string): string {
-  if (trigger === "on_save") return t("studio.automations.onSaveNoRun")
-  if (trigger === "webhook") return t("studio.automations.webhookNoRun")
+function footerHint(triggers: AutomationDraft["triggers"], t: (key: string) => string): string {
+  if (triggers.includes("webhook")) return t("studio.automations.webhookNoRun")
+  if (triggers.includes("on_save")) return t("studio.automations.onSaveNoRun")
   return t("studio.automations.cronNoRun")
 }

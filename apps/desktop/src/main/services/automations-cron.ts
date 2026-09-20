@@ -22,6 +22,7 @@ export type CronFields = {
 export type CronFireInput = {
   enabled: boolean
   trigger: string
+  triggers?: string[]
   cronExpr?: string
   timeZone?: string
   lastRunAt?: number
@@ -75,7 +76,7 @@ export function cronMatches(expr: string, now: Date, timeZone: string): boolean 
 
 /** 到点才开；错过的小时不补。running / 同一分钟已开则跳过。 */
 export function shouldFireCron(input: CronFireInput): boolean {
-  if (!input.enabled || input.trigger !== "cron" || input.running) return false
+  if (!input.enabled || !hasTrigger(input, "cron") || input.running) return false
   const expr = input.cronExpr?.trim()
   const timeZone = input.timeZone?.trim() || "UTC"
   if (!expr || !parseCronExpr(expr)) return false
@@ -152,4 +153,8 @@ function zonedParts(now: Date, timeZone: string) {
 
 function pad(value: number): string {
   return String(value).padStart(2, "0")
+}
+
+function hasTrigger(input: { trigger: string; triggers?: string[] }, kind: string): boolean {
+  return input.trigger === kind || Boolean(input.triggers?.includes(kind))
 }

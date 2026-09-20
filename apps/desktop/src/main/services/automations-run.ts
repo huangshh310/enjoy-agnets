@@ -53,7 +53,9 @@ async function runOnSaveJobs(
   ) {
     return
   }
-  const jobs = readAutomations().filter((item) => item.enabled && item.trigger === "on_save")
+  const jobs = readAutomations().filter(
+    (item) => item.enabled && (item.trigger === "on_save" || Boolean(item.triggers?.includes("on_save")))
+  )
   for (const item of jobs) {
     await launchAutomationAgent(window, item, sessionId, workspaceId).catch(() => {
       // 失败已 stamp run.error；其余保存后规则继续。

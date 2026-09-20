@@ -72,9 +72,20 @@ test("只收集已启用 webhook 行", () => {
       trigger: "on_save",
       enabled: true,
       updatedAt: 1
+    },
+    {
+      id: "d",
+      name: "并存",
+      prompt: "x",
+      trigger: "on_save",
+      triggers: ["webhook"],
+      webhookPort: 9000,
+      enabled: true,
+      updatedAt: 1
     }
   ] as Automation[]
   const grouped = webhookRoutesFrom(items)
   assert.equal(grouped.get(8765)?.length, 1)
   assert.equal(grouped.get(8765)?.[0]?.id, "a")
+  assert.equal(grouped.get(9000)?.[0]?.id, "d")
 })

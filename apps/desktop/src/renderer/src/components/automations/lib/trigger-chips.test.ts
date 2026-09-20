@@ -17,6 +17,23 @@ test("徽章区分手动 / cron / 保存后 / webhook 端口", () => {
   )
 })
 
+test("保存后与 webhook 徽章可并存", () => {
+  const chips = listTriggerChips({
+    id: "5",
+    name: "写盘后复盘",
+    prompt: "y",
+    trigger: "on_save",
+    triggers: ["webhook"],
+    webhookPort: 8765,
+    enabled: true,
+    updatedAt: 1
+  } as Automation)
+  assert.deepEqual(
+    chips.map((chip) => chip.text),
+    ["on_save", "webhook · :8765"]
+  )
+})
+
 test("webhook 端口必须是 1–65535", () => {
   assert.equal(webhookPortReady("8765"), true)
   assert.equal(webhookPortReady("0"), false)

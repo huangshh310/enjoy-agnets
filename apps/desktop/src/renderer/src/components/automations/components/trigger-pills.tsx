@@ -1,9 +1,10 @@
 /**
- * I4-P1 触发：手动 · cron · 保存后 · webhook。不再划掉后两项。
+ * I4-P1 触发：手动 · cron · 保存后 · webhook，可多选并存。
  */
 import { cx } from "@/utils/cx"
 import type { AutomationTrigger } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
+import { toggleTrigger } from "../lib/trigger-chips"
 
 const TRIGGERS: { id: AutomationTrigger; labelKey: string }[] = [
   { id: "manual", labelKey: "studio.automations.manual" },
@@ -16,8 +17,8 @@ export function TriggerPills({
   value,
   onChange
 }: {
-  value: AutomationTrigger
-  onChange: (value: AutomationTrigger) => void
+  value: AutomationTrigger[]
+  onChange: (value: AutomationTrigger[]) => void
 }) {
   const t = useT()
   return (
@@ -27,8 +28,8 @@ export function TriggerPills({
         {TRIGGERS.map((item) => (
           <TriggerChip
             key={item.id}
-            selected={value === item.id}
-            onClick={() => onChange(item.id)}
+            selected={value.includes(item.id)}
+            onClick={() => onChange(toggleTrigger(value, item.id))}
             label={t(item.labelKey)}
           />
         ))}

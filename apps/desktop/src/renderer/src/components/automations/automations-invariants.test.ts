@@ -50,6 +50,7 @@ test("P1 触发可点手动/cron/保存后/webhook，不再划掉", () => {
   assert.ok(pills.includes('"cron"'))
   assert.ok(pills.includes('"on_save"'))
   assert.ok(pills.includes('"webhook"'))
+  assert.ok(pills.includes("toggleTrigger"))
   assert.ok(!pills.includes("line-through"))
   const drawer = readFileSync(join(dir, "components/automation-drawer.tsx"), "utf8")
   assert.ok(drawer.includes("WebhookFields"))

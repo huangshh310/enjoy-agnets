@@ -122,7 +122,9 @@ async function handleWebhookRequest(
   }
   const jobs = matched.matched
     .map((route) => state.items.get(route.id))
-    .filter((item): item is Automation => Boolean(item?.enabled && item.trigger === "webhook"))
+    .filter((item): item is Automation =>
+      Boolean(item?.enabled && (item.trigger === "webhook" || item.triggers?.includes("webhook")))
+    )
   if (jobs.length === 0) {
     writeJson(res, 404, { ok: false, error: "not_found" })
     return

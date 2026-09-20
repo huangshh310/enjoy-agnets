@@ -14,6 +14,7 @@ export function mergeAutomation(
     name: input.name,
     prompt: input.prompt,
     trigger: input.trigger,
+    triggers: input.triggers !== undefined ? input.triggers : existing?.triggers,
     cronExpr: pickOptional(input.cronExpr, existing?.cronExpr),
     timeZone: pickOptional(input.timeZone, existing?.timeZone),
     webhookPort: input.webhookPort ?? existing?.webhookPort,

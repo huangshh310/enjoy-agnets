@@ -4,6 +4,7 @@
 import type { Automation, AutomationTrigger } from "@enjoy-agents/ipc-contract"
 
 const FALLBACK_WEBHOOK_PORT = 8765
+const ORDER: AutomationTrigger[] = ["manual", "cron", "on_save", "webhook"]
 
 export type TriggerChip = {
   kind: AutomationTrigger
@@ -11,21 +12,42 @@ export type TriggerChip = {
   mono?: boolean
 }
 
+export function selectedTriggers(item: {
+  trigger: AutomationTrigger
+  triggers?: AutomationTrigger[]
+}): AutomationTrigger[] {
+  const unique = new Set<AutomationTrigger>([item.trigger, ...(item.triggers ?? [])])
+  return ORDER.filter((kind) => unique.has(kind))
+}
+
 export function listTriggerChips(item: Automation): TriggerChip[] {
-  if (item.trigger === "cron") {
-    return [{ kind: "cron", text: item.cronExpr?.trim() || "cron", mono: true }]
+  return selectedTriggers(item).map((kind) => chipFor(item, kind))
+}
+
+function chipFor(item: Automation, kind: AutomationTrigger): TriggerChip {
+  if (kind === "cron") return { kind, text: item.cronExpr?.trim() || "cron", mono: true }
+  if (kind === "on_save") return { kind, text: "on_save" }
+  if (kind === "webhook") {
+    return { kind, text: `webhook · :${item.webhookPort ?? FALLBACK_WEBHOOK_PORT}`, mono: true }
   }
-  if (item.trigger === "on_save") {
-    return [{ kind: "on_save", text: "on_save" }]
-  }
-  if (item.trigger === "webhook") {
-    const port = item.webhookPort ?? FALLBACK_WEBHOOK_PORT
-    return [{ kind: "webhook", text: `webhook · :${port}`, mono: true }]
-  }
-  return [{ kind: "manual", text: "manual" }]
+  return { kind, text: "manual" }
 }
 
 export function webhookPortReady(raw: string): boolean {
   const port = Number(raw)
   return Number.isInteger(port) && port >= 1 && port <= 65535
+}
+
+export function toggleTrigger(
+  current: AutomationTrigger[],
+  next: AutomationTrigger
+): AutomationTrigger[] {
+  const set = new Set(current)
+  if (set.has(next)) {
+    if (set.size === 1) return current
+    set.delete(next)
+  } else {
+    set.add(next)
+  }
+  return ORDER.filter((kind) => set.has(kind))
 }
