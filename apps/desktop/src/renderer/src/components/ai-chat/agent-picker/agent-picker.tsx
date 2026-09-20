@@ -12,16 +12,20 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { canSwitchAgent, DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
 import { useCliLoginLoopStore } from "./cli-login-loop"
-import { canBindEngine, isEngineLit } from "./engine-readiness"
+import { canBindEngine } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
-import { canOpenAgentPicker } from "./handoff/plan-composer-switch"
+import { canOpenAgentPicker, sessionHasUserTurns } from "./handoff/plan-composer-switch"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { ModelPickerBody } from "../model-picker/model-picker-body"
 import { AgentBrandIcon, isAgentToolId } from "./agent-brand-icon"
 import { AgentCliPane } from "./agent-cli-pane"
 import { AgentEngineRail } from "./agent-engine-rail"
+import { ModelSwitchBadge } from "./model-switch-badge"
+import { ModelSwitchToast } from "../composer/model-switch/model-switch-feedback"
+import { shouldShowModelSwitchBadge } from "@renderer/lib/session-model"
 import { UsagePill } from "../usage/usage-pill"
+import { quotaHintText, useQuotaHint } from "../usage/use-quota-hint"
 import { composerRailSections } from "./composer-agents"
 import {
   composerActiveModelLabel,
@@ -58,7 +62,23 @@ export function AgentPicker({
   const agents = [...local, ...cli, ...soon]
   const current = agents.find((item) => item.id === runtimeId)
   const [tabId, setTabId] = useState(runtimeId)
+  const [toastLabel, setToastLabel] = useState<string | null>(null)
   const tab = agents.find((item) => item.id === tabId) ?? current ?? agents[0]
+  const quota = useQuotaHint(runtimeId)
+  const messages = useChatStore((state) => state.messages)
+  const remembered = current
+  const showBadge = shouldShowModelSwitchBadge({
+    sessionId,
+    sessionModels,
+    engineDefault: remembered?.selectedModel ?? null,
+    hasUserTurns: sessionHasUserTurns(messages)
+  })
+
+  useEffect(() => {
+    if (!toastLabel) return
+    const timer = window.setTimeout(() => setToastLabel(null), 3200)
+    return () => window.clearTimeout(timer)
+  }, [toastLabel])
 
   useEffect(() => {
     if (open) setTabId(runtimeId)
@@ -110,15 +130,21 @@ export function AgentPicker({
         providerLabel
       })
   const chipIconId = pickerLocked && pendingToId ? pendingToId : runtimeId
+  const quotaTitle = quotaHintText(quota.percent, quota.reset, (percent) =>
+    t("chat.usage.usedPercent", { percent })
+  )
+  const chipTitle = [chip.title, quotaTitle].filter(Boolean).join(" · ")
 
-  async function applyAgent(id: string, nextModelId?: string) {
+  async function applyAgent(id: string, nextModelId?: string, nextLabel?: string) {
     if (!isAgentToolId(id)) return
+    const from = useChatStore.getState().runtimeId
     const result = await requestEngineSwitch(id, nextModelId)
     if (result === "pending" || result === "blocked") {
       setOpen(false)
       return
     }
     if (result === "applied") await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    if (nextModelId && id === from && nextLabel) setToastLabel(nextLabel)
   }
 
   async function onTab(id: string) {
@@ -132,6 +158,8 @@ export function AgentPicker({
   }
 
   return (
+    <div className="relative shrink-0">
+      {toastLabel ? <ModelSwitchToast modelLabel={toastLabel} /> : null}
     <Popover
       open={open}
       onOpenChange={(next) => {
@@ -145,16 +173,17 @@ export function AgentPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
+          data-testid="composer-engine-chip"
           aria-label={pickerLocked ? chip.title : t("chat.selectAgent")}
-          title={chip.title}
+          title={chipTitle}
           className={cx(
-            "group inline-flex h-8 max-w-[18rem] shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-caption-1-medium shadow-2xs outline-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            "group inline-flex h-6 max-w-[16rem] shrink-0 items-center gap-1 rounded-full border px-2 text-caption-2-medium outline-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-border-focus-ring",
             pickerLocked
               ? "border-accent-500 bg-background-secondary-default text-accent-500"
-              : "border-border-button-default bg-background-primary-default text-text-primary hover:border-border-button-hover hover:bg-background-secondary-hover"
+              : "border-border-button-default bg-accent-500/10 text-text-primary ring-1 ring-accent-500/20 hover:bg-accent-500/15"
           )}
         >
-          <span className="flex size-4 shrink-0 items-center justify-center">
+          <span className="flex size-3.5 shrink-0 items-center justify-center">
             <AgentBrandIcon id={chipIconId} size={14} />
           </span>
           <span className="flex min-w-0 items-baseline">
@@ -175,21 +204,9 @@ export function AgentPicker({
               </>
             ) : null}
           </span>
-          {pickerLocked ? null : <UsagePill runtimeId={runtimeId} />}
+          {pickerLocked ? null : <ModelSwitchBadge visible={showBadge} />}
           {pickerLocked ? null : (
-            <span
-              className={`size-1.5 shrink-0 rounded-full shadow-2xs ${
-                current &&
-                isEngineLit(
-                  readinessInputOf(current, { hasKey, loginLoop: loginLoops[current.id]?.phase })
-                )
-                  ? "bg-accent-500"
-                  : "bg-text-tertiary"
-              }`}
-            />
-          )}
-          {pickerLocked ? null : (
-            <RiArrowDownSLine className="size-3.5 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            <RiArrowDownSLine className="size-3 shrink-0 text-text-tertiary transition-transform duration-200 group-data-[state=open]:rotate-180" />
           )}
         </button>
       </PopoverTrigger>
@@ -209,6 +226,12 @@ export function AgentPicker({
               : "h-[390px]"
         )}
       >
+        {pickerLocked || quota.percent == null ? null : (
+          <div className="flex items-center justify-between gap-2 border-b border-separator-border px-3 py-1.5">
+            <p className="text-caption-2-medium text-text-secondary">{t("chat.usage.accountTitle")}</p>
+            <UsagePill runtimeId={runtimeId} />
+          </div>
+        )}
         <AgentEngineRail
           local={local}
           cli={cli}
@@ -223,7 +246,7 @@ export function AgentPicker({
               agent={tab}
               inspecting={inspecting}
               onUse={(model) => {
-                void applyAgent(tab.id, model?.id).then(() => setOpen(false))
+                void applyAgent(tab.id, model?.id, model?.label).then(() => setOpen(false))
               }}
               onInstalled={() => {
                 void queryClient.invalidateQueries({ queryKey: ["settings"] })
@@ -235,7 +258,7 @@ export function AgentPicker({
               modelId={modelId}
               models={models}
               onSelectModel={(model) => {
-                void applyAgent(DEFAULT_RUNTIME_ID)
+                void applyAgent(DEFAULT_RUNTIME_ID, model.id, model.label)
                 onModelChange(model)
                 setOpen(false)
               }}
@@ -244,5 +267,6 @@ export function AgentPicker({
         </div>
       </PopoverContent>
     </Popover>
+    </div>
   )
 }

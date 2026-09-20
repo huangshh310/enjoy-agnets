@@ -4,7 +4,7 @@
 
 ## 当前真相
 
-设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。I2 同页精选区（「添加到技能」写入 SoT、catalog 失败诚实空）是设计锁，不宣称应用 1:1：[`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)；产品锁 [`../references/i2-extensions-curated.md`](../references/i2-extensions-curated.md)。P0-S 已落地：开流把已安装宿主技能收成 `HostInjectSnapshot.skills`（`catalog-tool` / `catalog-prompt`），Composer `HostInjectBar` 画已启用 / 已注入本轮；`hostSkills=none` 时 `injected=[]` 并诚实「此引擎不支持宿主技能注入」。视觉真源 [`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)；产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。`#/skills`（+ skill-sources）仍是唯一 SoT，家目录不作第二真源。不执行 Cordis / Claude hooks / OpenCode `plugin.ts`。
+设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。I2 同页精选区（「添加到技能」写入 SoT、catalog 失败诚实空）是设计锁，不宣称应用 1:1：[`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)；产品锁 [`../references/i2-extensions-curated.md`](../references/i2-extensions-curated.md)。P0-S 已落地：开流把已安装宿主技能收成 `HostInjectSnapshot.skills`（`catalog-tool` / `catalog-prompt`），Composer `HostInjectBar` 画一行芯片（点开见已启用 / 已注入本轮）；`hostSkills=none` 时 `injected=[]` 并诚实「此引擎不支持宿主技能注入」。视觉真源 [`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)；产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。`#/skills`（+ skill-sources）仍是唯一 SoT，家目录不作第二真源。不执行 Cordis / Claude hooks / OpenCode `plugin.ts`。
 
 1. **工作模块与路由**：`#/skills` 是应用内唯一的 Skills 工作模块。情境导航栏（Secondary Sidebar）包含三组导航：
    - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包合集 (`packs`)。

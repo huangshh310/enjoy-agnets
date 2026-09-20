@@ -1,0 +1,76 @@
+/**
+ * P0 Composer 瘦身密度锁：单一芯片、Goal 不贴分段、注入一行、思考不占宽行。
+ */
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { test } from "node:test"
+import { fileURLToPath } from "node:url"
+
+const dir = dirname(fileURLToPath(import.meta.url))
+
+function readPreview(): string {
+  let cursor = dir
+  for (let i = 0; i < 12; i += 1) {
+    const candidate = join(cursor, "design/previews/p0-composer-slim.html")
+    try {
+      return readFileSync(candidate, "utf8")
+    } catch {
+      cursor = join(cursor, "..")
+    }
+  }
+  throw new Error("p0-composer-slim.html 必须在仓内")
+}
+
+const chrome = readFileSync(join(dir, "composer-top-chrome.tsx"), "utf8")
+const footer = readFileSync(join(dir, "composer-footer.tsx"), "utf8")
+const bar = readFileSync(join(dir, "host-inject/host-inject-bar.tsx"), "utf8")
+const picker = readFileSync(join(dir, "../agent-picker/agent-picker.tsx"), "utf8")
+const thinking = readFileSync(join(dir, "thinking/composer-thinking-chrome.tsx"), "utf8")
+const preview = readPreview()
+
+test("顶栏铬序是探索/执行 → 单一引擎芯片 → 思考小档", () => {
+  const explore = chrome.indexOf("<ExploreExecuteToggle")
+  const engine = chrome.indexOf("<AgentPicker")
+  const think = chrome.indexOf("<ComposerThinkingChrome")
+  assert.ok(explore > 0 && engine > explore && think > engine)
+  assert.equal(chrome.includes("<ComposerModelChip"), false)
+  assert.equal(chrome.includes("<SessionGoalChip"), false)
+})
+
+test("底栏溢出收目标/阶段，不并排探索分段", () => {
+  assert.ok(footer.includes("ComposerOverflowMenu"))
+  assert.equal(footer.includes("SessionGoalChip"), false)
+})
+
+test("引擎芯片面上不挂 UsagePill，用量进 title 或 Popover", () => {
+  const trigger = picker.slice(picker.indexOf("PopoverTrigger"), picker.indexOf("PopoverContent"))
+  assert.equal(trigger.includes("<UsagePill"), false)
+  assert.ok(picker.includes("useQuotaHint"))
+  assert.ok(picker.includes("<UsagePill"))
+  assert.ok(picker.includes("data-testid=\"composer-engine-chip\""))
+})
+
+test("思考跟模型打开同一份 Picker，不另开模型芯片", () => {
+  assert.ok(thinking.includes("setAgentPickerOpen(true)"))
+  assert.equal(thinking.includes("onOpenModels"), false)
+  assert.ok(thinking.includes("compact"))
+})
+
+test("HostInject 空不画；表面无脚注墙与双管理链", () => {
+  assert.ok(bar.includes("view.kind === \"hidden\""))
+  assert.ok(bar.includes("host-inject-chip"))
+  assert.equal(bar.includes("hostInjectManageMcp"), false)
+  assert.equal(bar.includes("hostInjectManageSkills"), false)
+  assert.equal(bar.includes("to: \"/mcp\""), false)
+  assert.equal(bar.includes("to: \"/skills\""), false)
+  const surface = bar.slice(0, bar.indexOf("HostInjectPopover"))
+  assert.equal(surface.includes("hostInjectFootnote"), false)
+})
+
+test("瘦身预览锁住勿画反例", () => {
+  assert.ok(preview.includes("【视觉真源】P0 Composer 输入区瘦身"))
+  assert.ok(preview.includes("扩展 · MCP 2 · Skills 3"))
+  assert.ok(preview.includes("设置目标"))
+  assert.ok(preview.includes("strike"))
+})

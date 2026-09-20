@@ -1,5 +1,5 @@
 /**
- * Composer 思考铬：effort 五档；model-id 只写「思考 · 跟模型」；none 不画。
+ * 思考铬：贴在单一引擎芯片旁的小档。不单独占一整行宽条。
  */
 import { RiBrainLine } from "@remixicon/react"
 import { composerThinkingChrome } from "@enjoy-agents/ipc-contract/runtime-capabilities"
@@ -13,35 +13,35 @@ export function ComposerThinkingChrome({
   modelId,
   modelLabel,
   models,
-  onOpenModels
+  compact = false
 }: {
   modelId: string
   modelLabel: string
   models: ModelOption[]
-  /** model-id 入口打开本引擎 I1 名单，不假五档。 */
-  onOpenModels?: () => void
+  compact?: boolean
 }) {
   const t = useT()
   const runtimeId = useChatStore((state) => state.runtimeId)
   const kind = composerThinkingChrome(runtimeId)
   const switched = useComposerModelSwitch({ modelId, modelLabel, models })
   if (kind === "none") return null
-  if (kind === "effort") return <ReasoningEffortToggle />
+  if (kind === "effort") return <ReasoningEffortToggle compact={compact} />
   const current = switched.chip.model || switched.engineLabel
   return (
     <button
       type="button"
       data-testid="composer-thinking-follow-model"
       title={t("chat.thinkingFollowModelHint", { model: current })}
-      onClick={onOpenModels}
+      onClick={() => useChatStore.getState().setAgentPickerOpen(true)}
       className={cx(
-        "inline-flex h-6 shrink-0 items-center gap-1 rounded-full px-2 text-caption-2-medium",
+        "inline-flex shrink-0 items-center gap-1 rounded-full text-caption-2-medium",
         "bg-background-tertiary-default/90 text-text-secondary ring-1 ring-border-button-default/80",
-        "outline-none hover:bg-background-tertiary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+        "outline-none hover:bg-background-tertiary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+        compact ? "h-6 px-2" : "h-6 px-2"
       )}
     >
       <RiBrainLine className="size-3 shrink-0 text-text-tertiary" aria-hidden />
-      <span className="whitespace-nowrap">{t("chat.thinkingFollowModel")}</span>
+      <span className="whitespace-nowrap">{t("chat.thinkingFollowModelShort")}</span>
     </button>
   )
 }
