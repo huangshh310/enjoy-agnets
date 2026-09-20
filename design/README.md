@@ -64,6 +64,7 @@
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
+| [references/p0-s-skills-mcp-inject.md](./references/p0-s-skills-mcp-inject.md) | P0-S Skills/MCP 宿主透传短锁；预览待 `previews/p0-s-skills-mcp-inject.html` |
 | [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |
 | [references/dev-plan-p0-h-i-r.md](./references/dev-plan-p0-h-i-r.md) | 执行计划：P0-H 扩展壳 + I2 精选 + I1 换模型 + P0-R SSH；落地以 specs 为准，本文不是当前真相 |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
