@@ -79,7 +79,7 @@
 | [previews/p0-h-extensions-hub.html](./previews/p0-h-extensions-hub.html) | 扩展发现壳：设置两列 MCP \| Skills + 添加深链（【视觉真源】P0-H） |
 | [previews/p0-r-remote-workspace.html](./previews/p0-r-remote-workspace.html) | SSH 远程工作区：抽屉 / 顶条 /「远程 ≠ 引擎」（【视觉真源】P0-R，锁 tip `3a3e00b`） |
 | [previews/m-cbd-session-ops.html](./previews/m-cbd-session-ops.html) | Multica P0 会话作业：安静 Inbox × 验收闸 × 运行账本（【视觉真源】M-CBD） |
-| [previews/i1-mid-model-switch.html](./previews/i1-mid-model-switch.html) | 同引擎中途换模型：芯片 / 已切换 / 不支持 / 失败（【视觉真源】I1） |
+| [previews/i1-mid-model-switch.html](./previews/i1-mid-model-switch.html) | 同引擎中途换模型：芯片 / 已切换 / 不支持 / 失败（【视觉真源】I1，锁 tip `6dfac6c`） |
 
 ---
 
