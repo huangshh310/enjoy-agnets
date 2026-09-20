@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { collectTurnSources } from "./collect-turn-sources.ts"
 
-test("cited + read_file + skill 收成芯片并去重", () => {
+test("cited + read_file + edit_file + skill 收成芯片并去重", () => {
   const chips = collectTurnSources(
     {
       sources: [
@@ -20,6 +20,12 @@ test("cited + read_file + skill 收成芯片并去重", () => {
           name: "skill",
           state: "output-available",
           args: { name: "读代码" }
+        },
+        {
+          id: "t3",
+          name: "edit_file",
+          state: "output-available",
+          args: { path: "src/auth/LoginForm.tsx" }
         }
       ]
     },
@@ -28,6 +34,7 @@ test("cited + read_file + skill 收成芯片并去重", () => {
   assert.equal(chips.some((chip) => chip.kind === "file" && chip.label.includes("login.ts")), true)
   assert.equal(chips.some((chip) => chip.kind === "skill" && chip.label.includes("读代码")), true)
   assert.equal(chips.filter((chip) => chip.path === "src/auth/login.ts").length, 1)
+  assert.equal(chips.some((chip) => chip.path === "src/auth/LoginForm.tsx"), true)
 })
 
 test("MCP 工具收成服务器芯片，同服务器去重；网页 URL 丢掉", () => {

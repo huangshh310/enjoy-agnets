@@ -73,9 +73,10 @@ function SheetPanel({
   onClose: () => void
 }) {
   const t = useT()
+  const empty = chips.length === 0
   const meta =
     ledgerEntry != null
-      ? t("sessionOps.sourcesFromLedger")
+      ? t("sessionOps.sourcesFromLedger", { label: ledgerSheetLabel(ledgerEntry, t) })
       : t("chat.sourcesSheetMeta", { n: chips.length })
   return (
     <aside
@@ -104,30 +105,47 @@ function SheetPanel({
           {t("chat.sourcesSheetClose")}
         </button>
       </header>
-      {ledgerEntry ? (
-        <div className="border-b border-separator-border bg-background-secondary-default px-4 py-2">
-          <p className="text-caption-1-medium text-text-primary">{ledgerEntry.title}</p>
-          {ledgerEntry.detail ? (
-            <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{ledgerEntry.detail}</p>
-          ) : null}
+      {empty ? (
+        <div data-testid="turn-sources-empty" className="px-4 py-5">
+          <p className="text-caption-1-medium text-text-primary">{t("sessionOps.sourcesEmptyTitle")}</p>
+          <p className="mt-1 text-caption-2-regular text-text-tertiary">{t("sessionOps.sourcesEmptyHint")}</p>
         </div>
-      ) : null}
-      <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
-        {chips.map((chip) => (
-          <SourceDetailRow
-            key={chip.id}
-            chip={chip}
-            selected={chip.id === activeId}
-            onOpen={(c) => {
-              openSourceRow(c)
-              onClose()
-            }}
-          />
-        ))}
-      </ul>
-      <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-tertiary">
-        {t("chat.sourcesSheetFooter")}
-      </p>
+      ) : (
+        <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
+          {chips.map((chip) => (
+            <SourceDetailRow
+              key={chip.id}
+              chip={chip}
+              selected={chip.id === activeId}
+              onOpen={(c) => {
+                openSourceRow(c)
+                onClose()
+              }}
+            />
+          ))}
+        </ul>
+      )}
+      {empty ? null : (
+        <p className="border-t border-separator-border bg-background-secondary-default px-3 py-2 text-caption-2-regular text-text-tertiary">
+          {t("chat.sourcesSheetFooter")}
+        </p>
+      )}
     </aside>
   )
+}
+
+function ledgerSheetLabel(
+  entry: RunLedgerEntry,
+  t: (path: string, vars?: Record<string, string | number>) => string
+): string {
+  const name = entry.fileName || entry.title
+  if (entry.kind === "command") return t("sessionOps.ledgerGroupCommand")
+  if (entry.kind === "usage") return t("sessionOps.ledgerGroupUsage")
+  if (entry.kind === "error") {
+    return name ? `${t("sessionOps.ledgerVerbError")} ${name}` : t("sessionOps.ledgerGroupError")
+  }
+  if (entry.kind === "edit") {
+    return name ? `${t("sessionOps.ledgerVerbEdit")} ${name}` : t("sessionOps.ledgerGroupEdit")
+  }
+  return name ? `${t("sessionOps.ledgerVerbRead")} ${name}` : t("sessionOps.ledgerGroupRead")
 }

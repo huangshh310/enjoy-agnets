@@ -74,11 +74,13 @@ test("芯片与 +N 只开 sheet，不立刻跳审查 / 知识 / 技能", () => {
   assert.ok(files.list.includes("SourceChips"))
 })
 
-test("sheet 是右/底面板，不上 InlineCitations，空名单不渲染", () => {
+test("sheet 是右/底面板，不上 InlineCitations；无芯片且无账本行不渲染", () => {
   assert.ok(files.sheet.includes("turn-sources-sheet"))
   assert.ok(files.sheet.includes("md:right-3"))
   assert.ok(files.sheet.includes("bottom-3"))
-  assert.ok(files.sheet.includes("chips.length === 0"))
+  assert.ok(files.sheet.includes("chips.length === 0 && !ledgerEntry"))
+  assert.ok(files.sheet.includes("turn-sources-empty"))
+  assert.ok(files.sheet.includes("sourcesEmptyTitle"))
   assert.ok(!files.sheet.includes("<InlineCitations"))
   assert.ok(!files.sheet.includes("inline-citations"))
   assert.ok(!files.sheet.includes("DialogContent"))
