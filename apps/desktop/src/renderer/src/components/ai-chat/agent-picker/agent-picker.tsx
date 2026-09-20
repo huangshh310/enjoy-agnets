@@ -28,9 +28,6 @@ import {
   composerBoundProviderLabel,
   composerChipParts
 } from "./composer-chip-label"
-import { sessionHasUserTurns } from "./handoff/plan-composer-switch"
-import { ModelSwitchBadge } from "./model-switch-badge"
-import { shouldShowModelSwitchBadge } from "@renderer/lib/session-model"
 
 export function AgentPicker({
   modelId,
@@ -50,7 +47,6 @@ export function AgentPicker({
   const runtimeId = useChatStore((state) => state.runtimeId)
   const sessionId = useChatStore((state) => state.sessionId)
   const sessionModels = useChatStore((state) => state.sessionModels)
-  const messages = useChatStore((state) => state.messages)
   const hasKey = useChatStore((state) => state.hasKey)
   const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const pendingToId = useEngineHandoffStore((state) => state.toRuntimeId)
@@ -95,6 +91,7 @@ export function AgentPicker({
     runtimeId,
     catalogLabel: modelLabel,
     catalogId: modelId,
+    sessionModelId: sessionId ? sessionModels[sessionId] : undefined,
     agent: current
   })
   const providerLabel =
@@ -113,12 +110,6 @@ export function AgentPicker({
         providerLabel
       })
   const chipIconId = pickerLocked && pendingToId ? pendingToId : runtimeId
-  const showModelSwitch = shouldShowModelSwitchBadge({
-    sessionId,
-    sessionModels,
-    engineDefault: current?.selectedModel ?? null,
-    hasUserTurns: sessionHasUserTurns(messages)
-  })
 
   async function applyAgent(id: string, nextModelId?: string) {
     if (!isAgentToolId(id)) return
@@ -184,7 +175,6 @@ export function AgentPicker({
               </>
             ) : null}
           </span>
-          {pickerLocked ? null : <ModelSwitchBadge visible={showModelSwitch} />}
           {pickerLocked ? null : <UsagePill runtimeId={runtimeId} />}
           {pickerLocked ? null : (
             <span

@@ -12,7 +12,7 @@
 | 点 | 现状 |
 |---|---|
 | 切引擎 | 空会话：`planComposerSwitch` → `setRuntimeId` + `bindSessionRuntime`，无卡 |
-| 同引擎换模 | 同 `runtimeId` 换 `modelId` **不是** handoff，不进 `EngineHandoffCard`。有用户轮只写 `sessionModels[sessionId]`；空会话可同时写偏好默认。新会话不继承上一会话中途模型。Enjoy Local 下一轮用新模型、不断桥；ACP 拆 session 再 spawn `--model`，角标「已切换」，文案「下一轮生效 / 本机助手会话会重开」。禁止当用户气泡、禁止当 handoff brief、禁止中途 `agentTools.upsert`。C 端视觉 / 文案锁见 I1 预览，不宣称应用已 1:1 |
+| 同引擎换模 | 同 `runtimeId` 换 `modelId` **不是** handoff，不进 `EngineHandoffCard`。入口是 Composer 顶栏模型芯片，只列当前引擎 advertised / 档案模型，不夹导轨。有用户轮只写 `sessionModels[sessionId]`；空会话可同时写偏好默认。新会话不继承上一会话中途模型。Enjoy Local 下一轮用新模型、不断桥；ACP 可 dispose 再 spawn `--model`，**Enjoy session id 不变**。C 端成功：角标「已切换」、微条「已切换到 {model}」、脚注「同一助手，不换引擎」。`capabilities.models===none` 禁用芯片 +「此引擎不支持中途换模型」；`requestModelSwitch` / `persistSessionModel` 对 none 直接 failed 并回滚 store，禁止写覆盖。未登录 / 名单空诚实失败 + 重试，禁止空成功。禁止「已切换引擎」/「已交接」/ 当用户气泡 / handoff brief / 中途 `agentTools.upsert`。视觉锁 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html) |
 | 有历史切换 | Composer 同宽确认坞（摘要默认折叠）；确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文。`peekSessionHandoff` 开流前注入，`openCodingStream` 成功后才 `take`。pending 时胶囊改「确认切换 · 目标」，禁止再开 Picker。文件只取上一轮工具路径，不塞 `workspace.changes` |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
@@ -128,11 +128,12 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 
 ## 已知坑
 
+- I1 同引擎换模若走 `requestEngineSwitch` 会进 handoff。必须 `requestModelSwitch` → `persistSessionModel`。ACP 可 `disposeSession` 再带 `--model` 开流，**Enjoy session id 不变**；C 端禁止「已切换引擎」「已交接」「会话会重开」。`models===none` 必须禁用芯片；入口与 persist 对 none 回 failed 并回滚，禁止空表成功。
 - 设置「设为主引擎」若直接 `persistRuntimeId`，会绕过 `planComposerSwitch` / dispose / brief，有用户轮时假续跑。必须走 `requestEngineSwitch`；pending / blocked 再回 Chat 出坞。确认 IPC 失败必须 `setError(HANDOFF_CONFIRM_FAILED)`，坞留在 `handoff_pending`，不要静默。
 - `beginAgentRun` 禁止一上来 `takeSessionHandoff`。第一发 `ACP_AUTH_REQUIRED` / 缺密钥 / spawn 失败后 brief 必须还在；登录后再发仍带 `[Engine handoff — hidden context]`，且不是用户气泡。`openCodingStream` 失败同样不得 `captureOpenStreamPrompt`。
 - 交接后旧气泡若仍按当前引擎铬渲染，会像假续跑。必须按 `sessionHandoffCuts` 降级，并在旧→新交界（或全是旧气泡时列表末尾）画分界。
 - ACP 进程身份必须含 `toolId`（`acpProcessKey`）。旧实现只用 modelId+env，Claude→Cursor 会复用旧 stdio，看起来像假续跑。
-- `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 删会话。
+- `setSessionRuntime` **不要**顺便 dispose：每次 `agent.run` 也会写 runtime，会把刚开的桥杀掉。dispose 只在 handoff 确认 / 同引擎换模 / 删会话。
 - 合入 M2 后不要把 `ApprovalCard` 写回 `ConversationContent`。M3 曾把 `#permission-dock` 临时挂在 Thread 内，并写过只滚 Dock 的无参 `focusAttention` stub；现挂点是 Composer 上沿 `PermissionDock`，阻切必须走 M2 `focusAttention({ sessionId, kind, navigate })`。
 - 切会话 / 新建会话必须 `resetPending()`，否则 HandoffCard 会跟着旧会话飘到新线程。会话生命周期在 `session-lifecycle.ts`，不要在 `use-agent-session` 再复制一份 `loadSession`。
 - 空态 `MissingRow` 曾嵌整张 `AgentCliInstall`（提示 + 安装 + 复制 + 文档），未装 CLI 一多就把 Composer / pill 顶出视口，**看起来像**设置 Registry，但路由仍是 Chat。修法：问候下只留一行折叠 + 有就绪时缺口默认折叠。**禁止**把「像 Registry」修成删掉「已检测 / 未安装」两段，也禁止把 `AcpRegistryPage` 挂进空态，禁止再画安装目录卡。

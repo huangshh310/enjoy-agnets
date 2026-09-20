@@ -372,7 +372,20 @@ export const zhChat = {
   },
   modelSwitch: {
     badge: "已切换",
-    hint: "下一轮生效。本机助手会话会重开，不是热切换。"
+    hint: "同一助手，不换引擎。下一轮才生效。",
+    toast: "已切换到 {model}",
+    footnote: "同一助手，不换引擎",
+    footnoteSession: "同一助手，不换引擎 · 会话仍是 {sessionId}",
+    unsupported: "此引擎不支持中途换模型",
+    unsupportedHint: "同一助手，不换引擎。要换助手，走导轨。",
+    menuTitle: "换模型",
+    menuSubtitle: "{engine} 已宣传的模型 · 同一助手，不换引擎",
+    current: "当前",
+    menuFootnote: "名单里没有其它引擎。换引擎走导轨，不是这里。",
+    notLoggedIn: "还没登录这个助手，换不了模型",
+    empty: "这个助手还没有可换的模型",
+    emptyHint: "没有可点的名单，也没有成功条。",
+    retry: "重试"
   },
 
   projects: "项目",

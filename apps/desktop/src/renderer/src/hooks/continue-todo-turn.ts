@@ -9,6 +9,7 @@ import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
 import { composerRunKind } from "./composer-run-kind"
 import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
+import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { prefixHostModeForSend } from "./runtime-interact/composer-draft"
 
 export async function continueTodoTurn(): Promise<void> {
@@ -34,7 +35,7 @@ async function startContinueRun(
   runKind: ReturnType<typeof composerRunKind>
 ) {
   store.setError(null)
-  store.setMessages([...trimmed, pendingAssistant(runKind)])
+  store.setMessages([...trimmed, pendingAssistant(store, runKind)])
   store.setRunning(true)
   const sessionId = store.sessionId
   const history = [
@@ -60,7 +61,10 @@ async function startContinueRun(
   }
 }
 
-function pendingAssistant(runKind: ReturnType<typeof composerRunKind>): ThreadMessage {
+function pendingAssistant(
+  store: ChatStore,
+  runKind: ReturnType<typeof composerRunKind>
+): ThreadMessage {
   return {
     id: `msg_pending_${Date.now()}`,
     role: "assistant",
@@ -69,6 +73,7 @@ function pendingAssistant(runKind: ReturnType<typeof composerRunKind>): ThreadMe
     streaming: true,
     reasoning: "",
     tools: [],
-    runKind
+    runKind,
+    ...pendingAssistantStamp(store)
   }
 }

@@ -378,7 +378,20 @@ export const enChat = {
   },
   modelSwitch: {
     badge: "Switched",
-    hint: "Takes effect next turn. The local assistant session will reopen; this is not a hot swap."
+    hint: "Same assistant, same engine. Takes effect on the next turn.",
+    toast: "Switched to {model}",
+    footnote: "Same assistant, same engine",
+    footnoteSession: "Same assistant, same engine · session still {sessionId}",
+    unsupported: "This engine cannot change models mid-session",
+    unsupportedHint: "Same assistant, same engine. Switch assistants from the rail.",
+    menuTitle: "Change model",
+    menuSubtitle: "{engine} advertised models · same assistant, same engine",
+    current: "Current",
+    menuFootnote: "No other engines in this list. Switch engines from the rail.",
+    notLoggedIn: "Sign in to this assistant before changing models",
+    empty: "This assistant has no models to switch to",
+    emptyHint: "No list to pick, and no success toast.",
+    retry: "Retry"
   },
 
   projects: "Projects",

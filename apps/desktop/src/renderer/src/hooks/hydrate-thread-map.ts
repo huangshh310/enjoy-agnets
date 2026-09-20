@@ -38,6 +38,8 @@ export function mapAssistantThreadMessage(
     structured: payload.structured ?? extras.structured,
     components: extras.components,
     runKind: payload.runKind,
+    modelId: payload.modelId,
+    runtimeId: payload.runtimeId,
     actionChips: payload.actionChips
   }
 }

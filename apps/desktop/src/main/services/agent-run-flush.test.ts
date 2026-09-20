@@ -77,6 +77,14 @@ test("tool.result / 审批立刻 checkpoint，text.delta 隔 1.5s", () => {
   assert.equal(shouldCheckpointPersist("tool.start", 0, 9000), false)
 })
 
+test("落库带上本轮 modelId / runtimeId，换模不改旧泡", () => {
+  const payload = flushPayloadFromRun(
+    failedHtmlRun({ modelId: "opus", runtimeId: "claude" })
+  )
+  assert.equal(payload?.modelId, "opus")
+  assert.equal(payload?.runtimeId, "claude")
+})
+
 test("checkpoint 未封口时 payload 仍在，硬杀才能靠同一行 hydrate", () => {
   const payload = flushPayloadFromRun(failedHtmlRun({ assistantPersisted: false }))
   assert.ok(payload)

@@ -63,6 +63,10 @@ export type ThreadMessage = {
   feedback?: "up" | "down"
   /** 发送时 stamp，Thinking / 生图表面认这个，不认当前 picker */
   runKind?: ComposerRunKind
+  /** 本轮模型 stamp，换模后旧泡不改写 */
+  modelId?: string
+  runtimeId?: string
+  modelLabel?: string
   /** 轮末静态引导词；未点击不得自动发送 */
   actionChips?: ActionChip[]
 }
