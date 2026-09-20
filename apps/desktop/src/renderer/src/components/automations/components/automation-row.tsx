@@ -7,6 +7,7 @@ import type { Automation } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { formatLastRunWhen } from "../lib/last-run-label"
 import { automationRowStatus } from "../lib/row-status"
+import { listTriggerChips } from "../lib/trigger-chips"
 
 export function AutomationRow({
   automation,
@@ -27,7 +28,7 @@ export function AutomationRow({
 }) {
   const t = useT()
   const status = automationRowStatus(automation)
-  const trigger = triggerLabel(automation, t)
+  const chips = listTriggerChips(automation)
 
   return (
     <li
@@ -40,14 +41,17 @@ export function AutomationRow({
         <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
-            <span
-              className={cx(
-                "rounded-full bg-background-secondary-default px-1.5 py-px text-[10px] text-text-primary ring-1 ring-border-button-default",
-                automation.trigger === "cron" && "font-mono"
-              )}
-            >
-              {trigger}
-            </span>
+            {chips.map((chip) => (
+              <span
+                key={`${chip.kind}:${chip.text}`}
+                className={cx(
+                  "rounded-full bg-background-secondary-default px-1.5 py-px text-[10px] text-text-primary ring-1 ring-border-button-default",
+                  chip.mono && "font-mono"
+                )}
+              >
+                {chipLabel(chip.kind, chip.text, t)}
+              </span>
+            ))}
             <StatusChip status={status} t={t} />
           </div>
           <p className="mt-0.5 text-caption-1-medium text-text-tertiary">
@@ -112,9 +116,9 @@ function StatusChip({
   )
 }
 
-function triggerLabel(item: Automation, t: (key: string) => string): string {
-  if (item.trigger === "cron") return item.cronExpr?.trim() || t("studio.automations.cron")
-  if (item.trigger === "on_save") return t("studio.automations.onSave")
+function chipLabel(kind: string, text: string, t: (key: string) => string): string {
+  if (kind === "cron" || kind === "webhook") return text
+  if (kind === "on_save") return t("studio.automations.onSave")
   return t("studio.automations.manual")
 }
 

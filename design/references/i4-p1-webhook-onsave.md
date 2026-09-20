@@ -4,7 +4,7 @@
 > 对照：`i4-automations.md` 后置切片；真源仍 `i4-automations.html`（可加态）  
 > 预览：`design/previews/i4-p1-webhook-onsave.html`  
 > 入库：`design/references/i4-p1-webhook-onsave.md`  
-> 队列：#73 P2 后 **下一刀**
+> 队列：接线见 settings / ipc 当前真相
 
 ---
 

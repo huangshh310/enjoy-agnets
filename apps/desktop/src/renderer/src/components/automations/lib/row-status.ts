@@ -11,8 +11,14 @@ export function automationRowStatus(item: Automation): AutomationRowStatus {
   return "idle"
 }
 
-export function triggerChipText(item: Automation): { kind: "cron" | "manual" | "on_save"; text: string } {
+export function triggerChipText(item: Automation): {
+  kind: "cron" | "manual" | "on_save" | "webhook"
+  text: string
+} {
   if (item.trigger === "cron") return { kind: "cron", text: item.cronExpr?.trim() || "cron" }
   if (item.trigger === "on_save") return { kind: "on_save", text: "on_save" }
+  if (item.trigger === "webhook") {
+    return { kind: "webhook", text: `webhook · :${item.webhookPort ?? 8765}` }
+  }
   return { kind: "manual", text: "manual" }
 }

@@ -38,7 +38,7 @@ Providers 页是协议工厂（见 `providers` spec + visual-system §14）：�
 
 智能体设置本机 CLI / 默认项页顶共享一条审批策略摘要（视觉锁 [`../previews/p0-d-approval-discover.html`](../previews/p0-d-approval-discover.html)，锁 tip `1a435e4`）：标题「审批策略」+ 一行本机梯度（全确认 / 部分放行 / 自动批准警示）+「管理审批策略 →」。共享策略，不按助手分行，密表不加列。主链 `navigate` 到 `#/settings/general?from=agent`（默认项带 `from=agent-defaults`），滚到已有权限卡；改完「← 返回智能体设置」。Registry / 进阶沙箱不挂这条。会话内 Allow/Deny 仍只走 Composer 底栏盾牌。禁止第二套审批 UI、云多租户 / 团队看板审批、协议词上 C 端。P2 命名身份已接线：本机 CLI / Enjoy 本地配置抽屉顶有「显示名」字段，与 Picker 行「重命名」写同一 `preferences.agentDisplayNames`（按 runtimeId）。空则回退品牌名+模型，禁止「未命名」当身份。密表助手列仍写品牌真名。产品锁 [`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)；视觉真源 [`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)（不宣称像素 1:1）。不做小队/看板。
 
-Automations 存 `settings` 表的 `automations` JSON。I4 P0 已落地：`#/settings/automations` 紧凑列表（名称 · 触发 · 上次 · 开/停 · 空闲/运行中/失败）+ 约 380px `SettingsSideDrawer`（引擎、可选模型、探索/执行、提示词）。触发 **手动 · cron（本机）**；页脚钉死「仅在本机运行，关闭应用则暂停」。`automations.run` 不带 `sessionId` 时在当前工作区 **新建会话** 再 `runAgent`（指定 `runtimeId` / 可选 `modelId` / `mode`），开流仍走 P0-S `host.inject`。主进程 20s 滴答对点 `cronExpr`+`timeZone`，关应用不补跑。失败发 `run.error` 进 Inbox「失败」，不标 `needs_review`。旧 `on_save` 行仍能跑，UI 划掉「保存后 / webhook」不当已做。`stopOnFailCount` 仍未实现。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。产品锁 [`../references/i4-automations.md`](../references/i4-automations.md)；视觉真源 [`../previews/i4-automations.html`](../previews/i4-automations.html)（不宣称像素 1:1）。I4-P1 保存后 / 本机 webhook 产品短锁（未落地）：[`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md)；视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)（不宣称像素 1:1），不是当前真相。不做云隧道默认开。
+Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 已落地：`#/settings/automations` 紧凑列表（名称 · 触发徽章 · 上次 · 开/停 · 空闲/运行中/失败）+ 约 380px `SettingsSideDrawer`（引擎、可选模型、探索/执行、提示词）。触发 **手动 · cron（本机）· 保存后 · webhook（本机端口）**，抽屉可多选；列表徽章可并存（webhook 写作 `webhook · :8765`）。仅手动出「立即运行」。页脚钉死「仅在本机运行，关闭应用则暂停 · webhook 仅本机端口，非公网」。`automations.run` 不带 `sessionId` 时在当前工作区 **新建会话** 再 `runAgent`（指定 `runtimeId` / 可选 `modelId` / `mode`），开流仍走 P0-S `host.inject`。主进程 20s 滴答对点 `cronExpr`+`timeZone`；`workspace.writeFile` / host 写盘防抖后开 `on_save`（P1 任意保存，路径/glob 未做）；启用的 webhook 只听 `127.0.0.1`（默认 `:8765/hooks/enjoy`，可选 token），关应用停听、不补跑、不开隧道。失败发 `run.error` 进 Inbox「失败」，不标 `needs_review`。`stopOnFailCount` 仍未实现。通知开关节入 `preferences.desktopPush` / `approvalRequiredAlert` / `agentCompleteSound`，主进程在 `approval.required` / `run.end` 弹系统通知。界面语言默认 `zh`，见 [i18n](./i18n.md)。产品锁 [`../references/i4-automations.md`](../references/i4-automations.md) + [`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md)；视觉真源 [`../previews/i4-automations.html`](../previews/i4-automations.html) + [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)（不宣称像素 1:1）。不做云隧道默认开。
 
 个人中心画像 (`#/settings/account`)：对齐 [BoardUI AI Profile](https://www.boardui.com/templates/ai-profile) 范式，全屏自适应 4 层 Bento 架构（大屏无底部大片留白，小屏自然纵向排布）：
 - **Tier 1 顶部全景 Hero 顶栏**：集成 [Canvas UI](https://canvasui.dev/) 官方 WebGL 着色器动态封面（140px 高度，代码雨 `GlyphRain`、悬浮六角棱镜 `HexFloat`、复古点阵 `RetroDither`、冰晶融冻 `Frost`），叠层 [blobatar.dev](https://blobatar.dev/) 的 `BlobatarAvatar`（确定性哈希五官、表情、0~360° 色相、呼吸微动）；展示开发者姓名、Handle、角色、邮箱、4 枚动态环境状态胶囊（当前主引擎/活动模型/凭据保管箱状态/设备终端）；右上角提供「编辑资料」与「分享画像」（复制 handle 链接）按钮。
@@ -55,7 +55,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0 已落地：`#/sett
 ## 不变量
 
 - 侧栏条目必须 `navigate`，禁止 no-op。
-- Automations 页脚必须是「仅在本机运行，关闭应用则暂停」。编辑走约 380px `SettingsSideDrawer`，列表是紧凑行不是营销卡。C 端只写探索/执行，禁止 ask\|plan\|agent。
+- Automations 页脚必须是「仅在本机运行，关闭应用则暂停 · webhook 仅本机端口，非公网」。编辑走约 380px `SettingsSideDrawer`，列表是紧凑行不是营销卡。C 端只写探索/执行，禁止 ask\|plan\|agent。webhook 只绑 127.0.0.1，禁止默认开公网隧道。
 - 智能体本机 CLI / 默认项必须有共享审批摘要条，主链只跳 `#/settings/general` 已有权限卡；禁止第二套 Allow/Deny、密表新列、云多租户审批。
 - Providers 禁用 `article`（760px），目录三列会被裁。
 - 设置行：标题 + 说明 + 右侧控件，放在内层 bordered card。偏好页先 `SettingsHub` 再卡片，不要只丢一行开关在空白画布上。通用页一行：当前版本（说明里带状态）+「检查更新」；有新版本同一行变成打开说明（见 `updates` spec）。
@@ -74,7 +74,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0 已落地：`#/sett
 - AI 段：`settings-ai-pages.tsx`；本机执行沙箱：`sandbox-settings.tsx`；进阶沙箱：`settings-harness.tsx` / `settings-harness-credentials.tsx`；偏好补丁：`settings-pref.ts`
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
 - 账单 / 团队 / 组织 / 集成诚实空态：`settings/local-only-notice.tsx`、`company/company-billing-section.tsx`、`team/*-section.tsx`、`company/company-*-section.tsx`
-- Automations：`apps/desktop/src/renderer/src/components/automations/`（`automations-page.tsx` 列表+抽屉）；主进程 `main/services/automations-*.ts`、`ipc-automations.ts`；调度 `automations-scheduler.ts` 在 `app.whenReady` 启动
+- Automations：`apps/desktop/src/renderer/src/components/automations/`（`automations-page.tsx` 列表+抽屉）；主进程 `main/services/automations-*.ts`、`ipc-automations.ts`；调度 `automations-scheduler.ts` 在 `app.whenReady` 启动；保存后防抖 `automations-onsave.ts`；本机 webhook `automations-webhook.ts`（`before-quit` 停听）
 - 扩展发现壳：`apps/desktop/src/renderer/src/components/settings/extensions/`（`extensions-page.tsx` 组装 H 两列 + I2 `curated/`；深链 `extensions-hrefs.ts`；写入 `curated/add-curated-to-sot.ts`）
 - Skills：`apps/desktop/src/renderer/src/components/skills/`（`skills-page.tsx`）。主进程：`main/services/skill-sources/`、`main/ipc-skill-sources.ts`
 - 技能源可选更新：`settings-skill-sources.tsx`（Agent 默认项）。禁止挂进空会话。
@@ -84,7 +84,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0 已落地：`#/sett
 ## 已知坑
 
 - **隐患**：空显示名回落「未命名」/「未命名助手」当引擎身份。根因：通用 `untitled` 词条容易被误用。正确做法：trim 空则品牌名+模型；「未命名」只禁作身份，不进 `agentDisplayNames`。
-- **隐患**：把 webhook / 保存后 / 连续失败停跑 /「关闭应用仍跑」写成 I4 已做。根因：合约早就有 `on_save` 与 `stopOnFailCount`。正确做法：P0 只有手动 + 本机 cron；`on_save` 是旧执行面，UI 划掉；错过的点不补跑。P1 短锁 [`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md) 不是当前真相；视觉真源见 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)，应用未接线前 UI 仍划掉。
+- **隐患**：把云 webhook / 公网隧道 / 连续失败停跑 /「关闭应用仍收包」写成 I4-P1 已做。根因：合约现在有 `webhook` 与 `on_save`，执行面是本机。正确做法：P1 只绑 `127.0.0.1` + 保存后防抖；路径/glob 与 `stopOnFailCount` 仍未做；错过的点不补跑。产品锁 [`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md)，视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)。
 - **隐患**：Shift+Tab 在 Composer 里乱切审批档。正确做法：焦点在 input / textarea / contentEditable 时直接 return。
 - 收件箱是 AppShell 模块，不是独立壳。不要 Generic-SaaS-Card，也不要「大白卡片里再套一张圆角列表」：用 `contentWidth="fill"` 左右分栏。未读用字重，不要 8 个相同蓝点；日期用 caption 而不是灰条表头；点时间线只打开阅读器，跳转只走阅读器主按钮。
 - Studio / Team / Company / Account 旧 Hash 必须 redirect 进 AppShell，不要再挂 `SecondaryPageShell` 侧栏。

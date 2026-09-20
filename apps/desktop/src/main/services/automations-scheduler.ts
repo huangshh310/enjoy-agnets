@@ -1,10 +1,11 @@
 /**
- * 本机 cron 滴答。没有窗口就不跑；退出即停，不补错过的点。
+ * 本机 cron 滴答 + webhook 监听。没有窗口就不跑；退出即停，不补错过的点。
  */
 import { shouldFireCron } from "./automations-cron"
-import { launchAutomationAgent } from "./automations-run"
+import { cancelOnSaveFire, launchAutomationAgent } from "./automations-run"
 import { firstLiveWindow } from "./automations-notify"
 import { isAutomationRunning, readAutomations } from "./automations-store"
+import { stopWebhookListeners, syncWebhookListeners } from "./automations-webhook"
 
 const DEFAULT_INTERVAL_MS = 20_000
 let timer: ReturnType<typeof setInterval> | undefined
@@ -15,11 +16,14 @@ export function startAutomationScheduler(intervalMs = DEFAULT_INTERVAL_MS): void
     void tickAutomations(new Date())
   }, intervalMs)
   void tickAutomations(new Date())
+  void syncWebhookListeners()
 }
 
 export function stopAutomationScheduler(): void {
   if (timer) clearInterval(timer)
   timer = undefined
+  cancelOnSaveFire()
+  void stopWebhookListeners()
 }
 
 export async function tickAutomations(now: Date): Promise<string[]> {
@@ -31,6 +35,7 @@ export async function tickAutomations(now: Date): Promise<string[]> {
       !shouldFireCron({
         enabled: item.enabled,
         trigger: item.trigger,
+        triggers: item.triggers,
         cronExpr: item.cronExpr,
         timeZone: item.timeZone,
         lastRunAt: item.lastRunAt,

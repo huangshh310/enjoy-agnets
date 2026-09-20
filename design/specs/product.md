@@ -27,7 +27,7 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 | 阶段 | 状态 | 内容 |
 |---|---|---|
 | MVP | 已落地壳 | 无边框窗口 + 三栏、本机 SQLite 会话、OpenAI 兼容 / Anthropic + ToolLoopAgent、读/搜/写（审批）/ bash（审批）、流式 UI、C 端探索/执行（内部 ask/plan/agent） |
-| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；自动更新走 GitHub Releases（见 `updates` spec）；Git Review 已落地线性 log / 暂存 / 还原 / 推送 / 检查点，**不做** PR / CI / 提交拓扑图；P0-H 扩展发现壳、I1 会话换模、P0-R SSH 远程工作区、**I4 本机 Automations（手动 + cron）**已落地。**I3 / I5–I7 与 I4 的 webhook** 未落地（Registry 花名册、跨引擎检索、工作流小图、CI 失败再跑、云 cron） |
+| V1 | 进行中 | MCP、Knowledge、Workflow 恢复、资产库、官方媒体工厂（Fal/ElevenLabs 等）、本地 Telemetry、能力探测、本机 CLI（Cursor / Claude / Codex / Antigravity ACP）；自动更新走 GitHub Releases（见 `updates` spec）；Git Review 已落地线性 log / 暂存 / 还原 / 推送 / 检查点，**不做** PR / CI / 提交拓扑图；P0-H 扩展发现壳、I1 会话换模、P0-R SSH 远程工作区、**I4 本机 Automations（手动 + cron + 保存后 + 本机 webhook）**已落地。**I3 / I5–I7 与云 webhook / 云 cron** 未落地（Registry 花名册、跨引擎检索、工作流小图、CI 失败再跑、多机舰队） |
 | V1.5 | 后置 | 云账号、token 代理、外部 OTEL、Vercel Sandbox |
 
 ACP 宿主里程碑（对照 `m1`–`m4` specs，不是口号）：

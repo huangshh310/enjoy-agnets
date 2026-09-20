@@ -19,7 +19,8 @@ const uiFiles = [
   "components/trigger-pills.tsx",
   "components/mode-pills.tsx",
   "components/engine-pills.tsx",
-  "components/automation-footer.tsx"
+  "components/automation-footer.tsx",
+  "components/webhook-fields.tsx"
 ]
 
 const banned = ["chat.modeAgent", "chat.modePlan", "chat.modeAsk", "ACP", "ToolLoop", "云端执行中"]
@@ -27,8 +28,11 @@ const banned = ["chat.modeAgent", "chat.modePlan", "chat.modeAsk", "ACP", "ToolL
 test("页脚钉死本机诚实句", () => {
   assert.equal(zhStudio.automations.localOnly, "仅在本机运行，关闭应用则暂停")
   assert.equal(enStudio.automations.localOnly, "仅在本机运行，关闭应用则暂停")
+  assert.equal(zhStudio.automations.webhookLocalOnly, "webhook 仅本机端口，非公网")
+  assert.equal(enStudio.automations.webhookLocalOnly, "webhook 仅本机端口，非公网")
   const footer = readFileSync(join(dir, "components/automation-footer.tsx"), "utf8")
   assert.ok(footer.includes("studio.automations.localOnly"))
+  assert.ok(footer.includes("studio.automations.webhookLocalOnly"))
 })
 
 test("编辑走 SettingsSideDrawer 380px，不是居中 Dialog", () => {
@@ -40,13 +44,19 @@ test("编辑走 SettingsSideDrawer 380px，不是居中 Dialog", () => {
   assert.ok(constants.includes("380px"))
 })
 
-test("P0 触发只点手动/cron，保存后与 webhook 划掉", () => {
+test("P1 触发可点手动/cron/保存后/webhook，不再划掉", () => {
   const pills = readFileSync(join(dir, "components/trigger-pills.tsx"), "utf8")
-  assert.ok(pills.includes('onChange("manual")'))
-  assert.ok(pills.includes('onChange("cron")'))
-  assert.ok(pills.includes("line-through"))
-  assert.ok(!pills.includes('onChange("on_save")'))
-  assert.ok(!pills.includes('onChange("webhook")'))
+  assert.ok(pills.includes('"manual"'))
+  assert.ok(pills.includes('"cron"'))
+  assert.ok(pills.includes('"on_save"'))
+  assert.ok(pills.includes('"webhook"'))
+  assert.ok(pills.includes("toggleTrigger"))
+  assert.ok(!pills.includes("line-through"))
+  const drawer = readFileSync(join(dir, "components/automation-drawer.tsx"), "utf8")
+  assert.ok(drawer.includes("WebhookFields"))
+  const fields = readFileSync(join(dir, "components/webhook-fields.tsx"), "utf8")
+  assert.ok(fields.includes("webhookListenHint"))
+  assert.ok(!fields.includes("https://"))
 })
 
 test("探索/执行表面不含协议模式标签", () => {

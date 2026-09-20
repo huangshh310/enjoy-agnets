@@ -39,6 +39,20 @@ test("到点才开：关、跑着、同一分钟已开都不发", () => {
   assert.equal(shouldFireCron({ ...base, lastRunAt: nine.getTime() }), false)
 })
 
+test("并存触发含 cron 时仍到点才开", () => {
+  assert.equal(
+    shouldFireCron({
+      enabled: true,
+      trigger: "on_save",
+      triggers: ["on_save", "cron"],
+      cronExpr: "0 9 * * *",
+      timeZone: TZ,
+      now: nine
+    }),
+    true
+  )
+})
+
 test("应用关闭错过 09:00，10:00 回来不补", () => {
   assert.equal(
     shouldFireCron({

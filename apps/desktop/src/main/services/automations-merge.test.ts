@@ -49,3 +49,27 @@ test("新建默认执行 mode", () => {
   assert.equal(next.mode, "agent")
   assert.equal(next.trigger, "manual")
 })
+
+test("开关保留 webhook 端口与密钥", () => {
+  const webhook = {
+    ...existing,
+    trigger: "webhook" as const,
+    webhookPort: 8765,
+    webhookPath: "/hooks/enjoy",
+    webhookSecret: "local-token"
+  }
+  const next = mergeAutomation(
+    webhook,
+    {
+      name: webhook.name,
+      prompt: webhook.prompt,
+      trigger: webhook.trigger,
+      enabled: false
+    },
+    webhook.id,
+    200
+  )
+  assert.equal(next.webhookPort, 8765)
+  assert.equal(next.webhookPath, "/hooks/enjoy")
+  assert.equal(next.webhookSecret, "local-token")
+})

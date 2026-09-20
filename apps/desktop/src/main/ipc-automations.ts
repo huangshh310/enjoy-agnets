@@ -16,6 +16,7 @@ import {
   upsertStoredAutomation,
   writeAutomations
 } from "./services/automations-store"
+import { syncWebhookListeners } from "./services/automations-webhook"
 import { createId } from "./services/ids"
 import { windowFromEvent } from "./ipc-shell"
 
@@ -23,17 +24,23 @@ export function registerAutomationIpc() {
   ipcMain.handle("automations.list", async () => presentAutomations())
   ipcMain.handle("automations.upsert", async (_event, raw) => {
     const input = UpsertAutomationInput.parse(raw)
-    if (input.trigger === "cron" && !parseCronExpr(input.cronExpr ?? "")) {
+    const kinds = new Set([input.trigger, ...(input.triggers ?? [])])
+    if (kinds.has("cron") && !parseCronExpr(input.cronExpr ?? "")) {
       throw new Error("Invalid cron expression.")
+    }
+    if (kinds.has("webhook") && input.webhookPort == null) {
+      throw new Error("Webhook port is required.")
     }
     const id = input.id ?? createId("auto")
     const nextItem = upsertStoredAutomation(input, id)
+    await syncWebhookListeners()
     emitAutomationsChanged("upsert", nextItem.id)
     return nextItem
   })
   ipcMain.handle("automations.remove", async (_event, raw) => {
     const id = AutomationIdInput.parse(raw).id
     writeAutomations(readAutomations().filter((item) => item.id !== id))
+    await syncWebhookListeners()
     emitAutomationsChanged("remove", id)
     return { ok: true }
   })

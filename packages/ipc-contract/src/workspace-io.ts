@@ -38,7 +38,7 @@ export const ReadFileInput = z.object({
 })
 export type ReadFileInput = z.infer<typeof ReadFileInput>
 
-/** 用户在 Files 里保存；路径必须 jail。可选 sessionId 用来触发 on_save 自动化。 */
+/** 用户在 Files 里保存；路径必须 jail。任意保存可触发 on_save（防抖）；可选 sessionId 复用会话。 */
 export const WriteFileInput = z
   .object({
     workspaceId: z.string().min(1),

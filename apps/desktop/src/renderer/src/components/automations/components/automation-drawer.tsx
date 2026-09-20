@@ -10,9 +10,11 @@ import { SettingsSideDrawer } from "@renderer/components/settings/settings-side-
 import { useT } from "@renderer/i18n"
 import { AUTOMATION_DRAWER_WIDTH_CLASS } from "../constants"
 import type { AutomationDraft } from "../lib/draft"
+import { webhookPortReady } from "../lib/trigger-chips"
 import { EnginePills } from "./engine-pills"
 import { ModePills } from "./mode-pills"
 import { TriggerPills } from "./trigger-pills"
+import { WebhookFields } from "./webhook-fields"
 
 export function AutomationDrawer({
   open,
@@ -40,7 +42,9 @@ export function AutomationDrawer({
   const t = useT()
   if (!draft) return null
   const canSave = Boolean(draft.name.trim())
-  const cronReady = draft.trigger !== "cron" || Boolean(draft.cronExpr.trim())
+  const cronReady = !draft.triggers.includes("cron") || Boolean(draft.cronExpr.trim())
+  const webhookReady = !draft.triggers.includes("webhook") || webhookPortReady(draft.webhookPort)
+  const runNow = draft.triggers.length === 1 && draft.triggers[0] === "manual"
 
   return (
     <SettingsSideDrawer
@@ -71,8 +75,11 @@ export function AutomationDrawer({
             className="mt-1"
           />
         </label>
-        <TriggerPills value={draft.trigger} onChange={(trigger) => onChange({ trigger })} />
-        {draft.trigger === "cron" ? (
+        <TriggerPills
+          value={draft.triggers}
+          onChange={(triggers) => onChange({ triggers, trigger: triggers[0] ?? draft.trigger })}
+        />
+        {draft.triggers.includes("cron") ? (
           <div className="grid grid-cols-2 gap-2">
             <label>
               <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.cronLabel")}</span>
@@ -92,6 +99,12 @@ export function AutomationDrawer({
             </label>
           </div>
         ) : null}
+        {draft.triggers.includes("on_save") ? (
+          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-[10px] text-text-tertiary">
+            {t("studio.automations.onSaveHint")}
+          </p>
+        ) : null}
+        {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
         <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
         <label className="block">
           <span className="text-caption-1-medium text-text-tertiary">
@@ -117,22 +130,28 @@ export function AutomationDrawer({
         </label>
       </div>
       <footer className="flex items-center justify-end gap-2 border-t border-separator-border px-4 py-3">
-        {draft.trigger === "cron" ? (
-          <span className="mr-auto text-[10px] text-text-tertiary">{t("studio.automations.cronNoRun")}</span>
-        ) : (
+        {runNow ? (
           <Button type="button" size="sm" variant="outline" disabled={!draft.id || running} onClick={onRun}>
             {running ? t("studio.automations.running") : t("studio.automations.runNow")}
           </Button>
+        ) : (
+          <span className="mr-auto text-[10px] text-text-tertiary">{footerHint(draft.triggers, t)}</span>
         )}
         {draft.id ? (
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
             {t("common.delete")}
           </Button>
         ) : null}
-        <Button type="button" size="sm" disabled={!canSave || !cronReady || saving} onClick={onSave}>
+        <Button type="button" size="sm" disabled={!canSave || !cronReady || !webhookReady || saving} onClick={onSave}>
           {t("studio.automations.save")}
         </Button>
       </footer>
     </SettingsSideDrawer>
   )
+}
+
+function footerHint(triggers: AutomationDraft["triggers"], t: (key: string) => string): string {
+  if (triggers.includes("webhook")) return t("studio.automations.webhookNoRun")
+  if (triggers.includes("on_save")) return t("studio.automations.onSaveNoRun")
+  return t("studio.automations.cronNoRun")
 }
