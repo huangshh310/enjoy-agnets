@@ -62,7 +62,7 @@
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；视觉真源见预览；不是当前真相） |
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
-| [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；预览待 m-d-g-ledger-sources.html |
+| [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
 | [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |
 | [references/dev-plan-p0-h-i-r.md](./references/dev-plan-p0-h-i-r.md) | 执行计划：P0-H 扩展壳 + I2 精选 + I1 换模型 + P0-R SSH；落地以 specs 为准，本文不是当前真相 |
@@ -81,7 +81,7 @@
 | [previews/p0-h-extensions-hub.html](./previews/p0-h-extensions-hub.html) | 扩展发现壳：设置两列 MCP \| Skills + 添加深链（【视觉真源】P0-H） |
 | [previews/p0-r-remote-workspace.html](./previews/p0-r-remote-workspace.html) | SSH 远程工作区：抽屉 / 顶条 /「远程 ≠ 引擎」（【视觉真源】P0-R，锁 tip `3a3e00b`） |
 | [previews/m-cbd-session-ops.html](./previews/m-cbd-session-ops.html) | Multica P0 会话作业：安静 Inbox × 验收闸 × 运行账本（【视觉真源】M-CBD；账本+来源列密日志观感已被 `m-d-g-ledger-sources.html` 取代） |
-| [previews/m-d-g-ledger-sources.html](./previews/m-d-g-ledger-sources.html) | M-D + P0-G 账本/来源可读性：分组折叠、文件名优先、诚实空态（【视觉真源】；M-CBD 产品锁其余不变，F1 不在范围） |
+| [previews/m-d-g-ledger-sources.html](./previews/m-d-g-ledger-sources.html) | M-D + P0-G 账本/来源可读性：分组折叠、文件名优先、诚实空态（【视觉真源】，锁 tip `b1721a7`；M-CBD 产品锁其余不变，F1 不在范围） |
 | [previews/i1-mid-model-switch.html](./previews/i1-mid-model-switch.html) | 同引擎中途换模型：芯片 / 已切换 / 不支持 / 失败（【视觉真源】I1，锁 tip `6dfac6c`） |
 
 ---
