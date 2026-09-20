@@ -33,6 +33,8 @@ const ide = {
     gitPatch: (input: unknown) => ipcRenderer.invoke("workspace.gitPatch", input),
     gitRestore: (input: unknown) => ipcRenderer.invoke("workspace.gitRestore", input),
     gitStage: (input: unknown) => ipcRenderer.invoke("workspace.gitStage", input),
+    gitBranches: (input: unknown) => ipcRenderer.invoke("workspace.gitBranches", input),
+    gitSwitch: (input: unknown) => ipcRenderer.invoke("workspace.gitSwitch", input),
     listCheckpoints: (input: unknown) => ipcRenderer.invoke("workspace.listCheckpoints", input),
     previewCheckpoint: (input: unknown) =>
       ipcRenderer.invoke("workspace.previewCheckpoint", input),

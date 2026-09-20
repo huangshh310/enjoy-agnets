@@ -196,6 +196,34 @@ export const GitPushInput = z
   .strict()
 export type GitPushInput = z.infer<typeof GitPushInput>
 
+export const GitBranchItem = z.object({
+  name: z.string().min(1),
+  current: z.boolean()
+})
+export type GitBranchItem = z.infer<typeof GitBranchItem>
+
+export const GitBranchesResult = z.object({
+  current: z.string().default(""),
+  branches: z.array(GitBranchItem)
+})
+export type GitBranchesResult = z.infer<typeof GitBranchesResult>
+
+export const GitSwitchInput = z
+  .object({
+    workspaceId: z.string().min(1),
+    name: z.string().trim().min(1).max(200)
+  })
+  .strict()
+export type GitSwitchInput = z.infer<typeof GitSwitchInput>
+
+export const GitSwitchResult = z.object({
+  ok: z.boolean(),
+  branch: z.string().default(""),
+  code: z.enum(["GIT_SWITCH_DIRTY", "GIT_SWITCH_FAILED"]).optional(),
+  error: z.string().optional()
+})
+export type GitSwitchResult = z.infer<typeof GitSwitchResult>
+
 export const GitPatchInput = z
   .object({
     workspaceId: z.string().min(1),

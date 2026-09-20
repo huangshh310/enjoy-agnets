@@ -45,6 +45,8 @@ export const SHELL_CHANNELS = [
   "workspace.gitPatch",
   "workspace.gitRestore",
   "workspace.gitStage",
+  "workspace.gitBranches",
+  "workspace.gitSwitch",
   "workspace.listCheckpoints",
   "workspace.previewCheckpoint",
   "workspace.restoreCheckpoint",

@@ -12,7 +12,8 @@
 - 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
-- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件暂存（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage`）
+- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
+- 底栏项目选择：已打开工作区列表 + 添加项目（`workspace.list` / `open` / `pickFolder`），对标 Synara ProjectPicker，不扫整个家目录
 - Agent host 只读 `gitStatus` / `gitDiff` / `gitLog`（porcelain 文本，默认 20 条、上限 100，path jail）；写 `gitCommit`（默认不 `add -A`）/ `gitBranch` / `gitPush` 走 Git 审批。Agent `git_log` **不是** Review 栏 structured `commits[]`
 - Agent `bash`：cwd 锁工作区、禁 shell 包装器、默认禁网二进制。macOS 再套 Seatbelt（写盘限工作区 + tmp）。不要把字符串过滤写成「沙箱已隔离」。
 - 写盘检查点列表与还原（`workspace.listCheckpoints` / `previewCheckpoint` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`。每轮开流记 `kind=baseline`（commit subject 带 session/run）。Enjoy Local 写盘与 ACP `file.changed` 记 `kind=turn`。列表项可带 `sessionId` / `runId` / `kind`；旧检查点没有这些字段。助手气泡下「本轮改动」按目录两级树，点开审查。用户气泡「从这里重来」只给 Enjoy Local：先还原该轮 baseline（失败则停），再截对话；不移动 HEAD。ACP 不能 rewind CLI 上下文，按钮禁用。
@@ -45,7 +46,8 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 - 工作区档案：`apps/desktop/src/main/services/workspace.ts`
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-plan.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
-- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件暂存：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
+- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
+- 底栏选择器：`ai-chat/status-bar/status-project-picker.tsx`、`status-branch-picker.tsx`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`
 - 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
@@ -60,7 +62,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
-- Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。
+- Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。底栏曾经写死 `Main`，现走 `gitBranches.current`。`gitSwitch` 遇未提交改动返回 `GIT_SWITCH_DIRTY`，禁止 `switch -f`。
 - `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。
 - `workspace.openPreview` 点了若走 `openBrowserUrl` 会进右栏 `<webview>`，不是系统浏览器。必须 main `shell.openExternal`。html 必须 jail + 后缀校验 + 文件存在；URL 只认环回。禁止远程、禁止自动 `vite` / dev server。探索态不禁用。由 `preview-open-invariants` 守门。
 - 审查栏 `gitCommit` 成功后必须 invalidate `["changes", workspaceId]`（改动条和 Review 共用这一份）。不要写成 `workspace-changes`，那条 query 不存在，提交后改动条会继续挂着已进 HEAD 的文件。

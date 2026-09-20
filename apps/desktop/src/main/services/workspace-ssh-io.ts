@@ -2,8 +2,10 @@
  * SSH 工作区 git / diff / move：只问 host，禁止拿 user@host:path 当本机 root。
  */
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
-import type { GitLogResult } from "@enjoy-agents/ipc-contract"
+import type { GitBranchesResult, GitLogResult, GitSwitchResult } from "@enjoy-agents/ipc-contract"
 import { planWorkspaceMove } from "@enjoy-agents/ipc-contract/workspace-move-plan"
+import { assertGitBranchName } from "./workspace-git-branch.ts"
+import { parseBranchList } from "./workspace-git-branches.ts"
 import { parseGitLogStdout } from "./workspace-git-log.ts"
 import { parsePorcelainLine, type ChangeRow } from "./workspace-git-status.ts"
 import { quoteRemote, resolveRemoteJail, toRemoteRelative } from "./ssh/ssh-path.ts"
@@ -98,6 +100,41 @@ export async function sshWorkspaceMove(
   )
   if (res.exitCode !== 0) throw new Error(res.stderr || "REMOTE_MOVE_FAILED")
   return { ok: true, from: src, to: planned.dest }
+}
+
+export async function sshWorkspaceBranches(host: AgentWorkspaceHost): Promise<GitBranchesResult> {
+  const current = (await sshGit(host, ["branch", "--show-current"])).stdout.trim()
+  const listed = await sshGit(host, ["branch", "--list"])
+  const branches = parseBranchList(listed.stdout, current)
+  if (current && !branches.some((row) => row.name === current)) {
+    branches.unshift({ name: current, current: true })
+  }
+  return { current, branches }
+}
+
+export async function sshWorkspaceSwitch(
+  host: AgentWorkspaceHost,
+  name: string
+): Promise<GitSwitchResult> {
+  const safe = assertGitBranchName(name)
+  const dirty = (await sshGit(host, ["status", "--porcelain"])).stdout.trim()
+  if (dirty) {
+    return { ok: false, branch: "", code: "GIT_SWITCH_DIRTY", error: "Working tree has uncommitted changes." }
+  }
+  const switched = await sshGit(host, ["switch", safe])
+  if (switched.exitCode !== 0) {
+    const fallback = await sshGit(host, ["checkout", safe])
+    if (fallback.exitCode !== 0) {
+      return {
+        ok: false,
+        branch: "",
+        code: "GIT_SWITCH_FAILED",
+        error: fallback.stderr || switched.stderr || "git switch failed"
+      }
+    }
+  }
+  const current = (await sshGit(host, ["branch", "--show-current"])).stdout.trim()
+  return { ok: true, branch: current }
 }
 
 

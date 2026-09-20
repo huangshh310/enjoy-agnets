@@ -1,11 +1,12 @@
 "use client"
 
-import { RiFolder6Line, RiGitBranchLine } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentLimitsCard } from "./agent-limits/agent-limits-card"
 import { CompactSessionButton } from "./right-pane/views/context/compact-session"
 import { useContextInspectorData } from "./right-pane/views/context/use-context-inspector-data"
+import { StatusBranchPicker } from "./status-bar/status-branch-picker"
+import { StatusProjectPicker } from "./status-bar/status-project-picker"
 import { useT } from "@renderer/i18n"
 
 
@@ -25,14 +26,8 @@ export function AiChatStatusBar({
 
   return (
     <div className="flex items-center gap-3 px-8 pb-4 text-caption-1-medium text-text-tertiary">
-      <span className="inline-flex items-center gap-1">
-        <RiGitBranchLine className="size-3.5" aria-hidden />
-        Main
-      </span>
-      <span className="inline-flex items-center gap-1">
-        <RiFolder6Line className="size-3.5" aria-hidden />
-        {workspaceRootLabel}
-      </span>
+      <StatusBranchPicker />
+      <StatusProjectPicker workspaceRootLabel={workspaceRootLabel} />
       <div className="ml-auto inline-flex items-center gap-2">
         <CompactSessionButton sessionId={sessionId} messageCount={messageCount} />
         <Popover>

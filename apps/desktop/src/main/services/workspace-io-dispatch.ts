@@ -8,6 +8,7 @@ import {
   readFileDiff,
   readGitLog
 } from "./workspace-git.ts"
+import { listWorkspaceBranches, switchWorkspaceBranch } from "./workspace-git-branches.ts"
 import { readWorkspacePatch, pushWorkspace } from "./workspace-git-remote.ts"
 import { restoreWorkspacePaths } from "./workspace-git-restore.ts"
 import { stageWorkspacePaths } from "./workspace-git-stage.ts"
@@ -17,13 +18,15 @@ import { getSshPoolEntry } from "./ssh/ssh-pool.ts"
 import { createWorkspaceHost } from "./workspace-host.ts"
 import { resolveWorkspaceHost } from "./workspace-host-factory.ts"
 import {
+  sshWorkspaceBranches,
   sshWorkspaceChanges,
   sshWorkspaceDiff,
   sshWorkspaceGitLog,
   sshWorkspaceMove,
   sshWorkspacePatch,
   sshWorkspaceRestore,
-  sshWorkspaceStage
+  sshWorkspaceStage,
+  sshWorkspaceSwitch
 } from "./workspace-ssh-io.ts"
 import type { WorkspaceRecord } from "./workspace-record.ts"
 
@@ -88,6 +91,20 @@ export async function dispatchGitRestore(workspaceId: string, paths: string[]) {
     return sshWorkspaceRestore(hostForWorkspace(ws), ws.remotePath || ".", paths)
   }
   return restoreWorkspacePaths(ws.rootPath, paths)
+}
+
+export async function dispatchGitBranches(workspaceId: string) {
+  const ws = await getWorkspace(workspaceId)
+  assertConnected(ws, "git")
+  if (ws.kind === "ssh") return sshWorkspaceBranches(hostForWorkspace(ws))
+  return listWorkspaceBranches(ws.rootPath)
+}
+
+export async function dispatchGitSwitch(workspaceId: string, name: string) {
+  const ws = await getWorkspace(workspaceId)
+  assertConnected(ws, "git")
+  if (ws.kind === "ssh") return sshWorkspaceSwitch(hostForWorkspace(ws), name)
+  return switchWorkspaceBranch(ws.rootPath, name)
 }
 
 export async function dispatchGitStage(

@@ -65,6 +65,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 会话目标 / Recap：有内容走 `composer/stacked-rail/` 上沿融合轨；未设入口仍是底栏 `composer-overflow-menu.tsx` + `session-goal-chip.tsx`。发送垫 `hooks/session-context-inject.ts`；启发式头标 `packages/ipc-contract/src/session-recap-kind.ts`。侧栏会话行 `h-7 rounded-md`：`sidebar/sidebar-session-row.tsx`
 - 线程提示：失败 `thread/thread-error-banner.tsx`；非失败 `thread/thread-notice-banner.tsx`
 - Environment 卡片：`ai-chat/environment/`（对话列覆盖，不替代 Inspector）
+- 底栏项目 / 分支选择：`ai-chat/status-bar/`（禁止写死 Main）
 - Mermaid：`thread/mermaid/`；Preview Rail：`thread/thread-preview-rail.tsx`（窄屏与账本开启时隐藏，杜绝刻度穿插气泡）
 - Shift+Tab 审批循环：`use-permission-cycle-hotkey.ts`（挂 `chat-stage.tsx`）
 - 本轮来源芯片与「本轮来源」sheet：`ai-chat/thread/sources/` + `stores/sources-sheet/`（芯片 / 账本行共用；芯片入口仍认 [`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)，锁 tip `76b5ecd`；账本分组 / 来源诚实空态认 [`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)，锁 tip `b1721a7`）

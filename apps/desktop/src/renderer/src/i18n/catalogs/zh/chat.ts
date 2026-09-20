@@ -2,6 +2,14 @@
 export const zhChat = {
   newAgent: "新对话",
   openFolder: "打开文件夹",
+  searchProjects: "搜索项目",
+  projectPickerGroup: "已打开的项目",
+  addProject: "添加项目",
+  switchBranch: "切换分支",
+  searchBranches: "搜索分支",
+  gitNoBranch: "未检出分支",
+  gitSwitchDirty: "有未提交改动，先提交或收起后再切分支。",
+  gitSwitchFailed: "切换分支失败。",
   support: "支持",
   folder: "文件夹",
 

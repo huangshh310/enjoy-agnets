@@ -7,6 +7,7 @@ import {
   GitCommitInput,
   GitLogInput,
   GitPatchInput,
+  GitSwitchInput,
   GitPushInput,
   GitRestoreInput,
   GitStageInput,
@@ -30,12 +31,14 @@ import { connectWorkspace, disconnectWorkspace, openSshWorkspace, retryWorkspace
 import {
   dispatchChanges,
   dispatchDiff,
+  dispatchGitBranches,
   dispatchGitCommit,
   dispatchGitLog,
   dispatchGitPatch,
   dispatchGitPush,
   dispatchGitRestore,
   dispatchGitStage,
+  dispatchGitSwitch,
   dispatchMove
 } from "./services/workspace-io-dispatch.ts"
 import { openWorkspacePreview } from "./services/workspace-open-preview"
@@ -144,6 +147,13 @@ function registerWorkspaceGitIpc() {
   ipcMain.handle("workspace.gitStage", async (_event, raw) => {
     const input = GitStageInput.parse(raw)
     return dispatchGitStage(input.workspaceId, input.paths, input.action)
+  })
+  ipcMain.handle("workspace.gitBranches", async (_event, raw) => {
+    return dispatchGitBranches(WorkspaceIdInput.parse(raw).workspaceId)
+  })
+  ipcMain.handle("workspace.gitSwitch", async (_event, raw) => {
+    const input = GitSwitchInput.parse(raw)
+    return dispatchGitSwitch(input.workspaceId, input.name)
   })
   registerCheckpointIpc()
 }

@@ -2,6 +2,14 @@
 export const enChat = {
   newAgent: "New agent",
   openFolder: "Open folder",
+  searchProjects: "Search projects",
+  projectPickerGroup: "Open projects",
+  addProject: "Add new project",
+  switchBranch: "Switch branch",
+  searchBranches: "Search branches",
+  gitNoBranch: "No branch",
+  gitSwitchDirty: "Uncommitted changes. Commit or stash before switching.",
+  gitSwitchFailed: "Could not switch branch.",
   support: "Support",
   folder: "Folder",
 
