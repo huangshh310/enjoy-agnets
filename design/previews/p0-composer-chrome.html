@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0 · Composer 铬条回归 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-composer-chrome.html · 【视觉真源】P0 Composer 铬条回归 · Luna</p>
+      <h1 class="mt-1 text-[17px] font-semibold">Composer 铬条三件套不丢 · 图标 · 思考 · 探索/执行</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。同一 Composer 示意：左探索\|执行（C1 默认全引擎）、思考按能力、右引擎标 + 带图标模型芯片。对齐 <span class="font-medium text-ink">explore-execute-p0.html</span> 与 I1 换模成功脚注。设计已锁，不宣称应用 1:1。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁 · 铬条 L→R（可 wrap，不可删）</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li><strong class="text-ink">探索 | 执行</strong> — 每个有 Composer 的会话都在。默认 <strong class="text-ink">C1</strong>：宿主只读拦截写文件 / 磁盘 / 终端，不依赖 CLI 原生规划档。</li>
+        <li><strong class="text-ink">思考</strong> — 仅当 capabilities 声明 thinking / reasoning_effort。effort = 五档；model-id = 人话「思考 · 跟模型」；none = <strong class="text-ink">不画</strong>（优于灰死）。</li>
+        <li>弹性空白 / 发送区</li>
+        <li><strong class="text-ink">引擎</strong> 品牌标 — 点开既有 Picker / handoff，<strong class="text-ink">≠ I1</strong></li>
+        <li><strong class="text-ink">模型芯片</strong> — I1 同引擎换模；芯片与名单行都带标（缺图 → 单字母色块，禁止空白）</li>
+      </ol>
+      <p class="mt-2">I1 只换模型 id，不得拆模式与思考入口。脚注「同一助手，不换引擎」可留，不得挤掉分段。</p>
+    </aside>
+
+    <!-- 诊断 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">现状诊断 · main 铬条误伤</h2>
+      <p class="text-[11px] text-mute">真机：模型无图标、多 agent 无思考模式、缺探索/执行。根因在铬条显隐与 I1 芯片，不是整页 Composer。</p>
+      <div class="overflow-hidden rounded-xl border border-line">
+        <table class="w-full text-left text-[11px]">
+          <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+            <tr><th class="px-3 py-2">用户说</th><th class="px-3 py-2">现状</th><th class="px-3 py-2">根因</th></tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            <tr>
+              <td class="px-3 py-2 font-medium">模型无图标</td>
+              <td class="px-3 py-2">I1 芯片 / 名单秃文字</td>
+              <td class="px-3 py-2">引擎胶囊 <span class="font-mono">AgentPicker</span> 已接 <span class="font-mono">AgentBrandIcon</span>；I1 芯片/弹层未接。<span class="font-mono">cli-model-icon.ts</span> 族标在，没接到 I1。</td>
+            </tr>
+            <tr>
+              <td class="px-3 py-2 font-medium">多 agent 无思考</td>
+              <td class="px-3 py-2">CLI 底栏没有思考入口</td>
+              <td class="px-3 py-2"><span class="font-mono">composerChromeFor</span> 只在 <span class="font-mono">thinking === "effort"</span> 画五档。<span class="font-mono">model-id</span>（Claude / Cursor / Antigravity / Gemini）无 C 端控件。</td>
+            </tr>
+            <tr>
+              <td class="px-3 py-2 font-medium">缺探索 \| 执行</td>
+              <td class="px-3 py-2">切到 Claude 等整段消失</td>
+              <td class="px-3 py-2"><span class="font-mono">ExploreExecuteToggle</span> 在 <span class="font-mono">executionModes</span> 非 Enjoy Local 时 <span class="font-mono">return null</span>。<span class="font-mono">acpHost()</span> 写死 <span class="font-mono">hidden</span>。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 主屏 C1 -->
+    <section class="space-y-2">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <h2 class="text-[14px] font-semibold">主屏 · C1 全引擎露出</h2>
+        <span class="rounded-full bg-soft px-2.5 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/20">Jojo 默认 · 所有 runtime</span>
+      </div>
+      <p class="text-[11px] text-mute">Claude 会话。探索 = 宿主拦截写工具，不问 CLI 有没有原生规划档。铬条顺序锁死；换模成功脚注不挤分段。</p>
+
+      <p class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-mute">
+        <span><span class="font-semibold text-ink">1</span> 探索 \| 执行</span>
+        <span><span class="font-semibold text-ink">2</span> 思考</span>
+        <span><span class="font-semibold text-ink">3</span> 弹性 / 发送</span>
+        <span><span class="font-semibold text-ink">4</span> 引擎标 ≠ I1</span>
+        <span><span class="font-semibold text-ink">5</span> 模型芯片</span>
+      </p>
+
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div class="min-w-0 flex-1 space-y-2">
+          <div class="rounded-2xl border border-dashed border-line bg-paper px-3 py-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">历史 · 旧模型标留下</p>
+            <p class="mt-1 text-[12px]">先摸清登录流程，先别动代码。</p>
+            <p class="mt-1 text-[10px] text-mute">Claude · Sonnet 4 · 当时用的模型</p>
+          </div>
+
+          <div class="rounded-2xl border border-line p-4 shadow-sm">
+            <!-- 铬条 -->
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+              <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line" title="1 探索 | 执行">
+                <button class="rounded-full bg-soft px-3 py-1 text-[11px] font-semibold text-accent">探索</button>
+                <button class="rounded-full px-3 py-1 text-[11px] text-mute">执行</button>
+              </div>
+              <button class="inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] ring-1 ring-line" title="2 思考 · model-id">
+                <span class="text-[11px] leading-none">✦</span>
+                <span class="font-medium">思考</span>
+                <span class="text-mute">·</span>
+                <span class="text-mute">跟模型</span>
+                <span class="text-mute">▾</span>
+              </button>
+              <span class="min-w-[1.5rem] flex-1" title="3 弹性"></span>
+              <button class="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white" title="3 发送">↑</button>
+              <button class="flex size-7 shrink-0 items-center justify-center rounded-full bg-paper ring-1 ring-line" title="4 引擎 · 打开 Picker / handoff">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+              </button>
+              <button class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2.5 py-1 text-[10px] ring-1 ring-accent/30" title="5 I1 模型芯片">
+                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+                <span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Opus 4.1</span>
+                <span class="rounded-full bg-card px-1.5 py-px text-[10px] text-mute">已切换</span>
+                <span class="text-mute">▾</span>
+              </button>
+            </div>
+
+            <div class="mt-3 min-h-[56px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">
+              先帮我摸清登录流程怎么改，先别动代码…
+            </div>
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">可读 · 搜索</span>
+              <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">可读 · 打开文件</span>
+              <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">写文件</span>
+              <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">终端</span>
+            </div>
+            <p class="mt-2 rounded-lg bg-paper px-2.5 py-1.5 text-[11px] text-mute">探索模式下不会改你的项目。要改文件或跑命令，切换到<strong class="text-ink">执行</strong>。拦截由<strong class="text-ink">宿主</strong>完成，不看助手有没有原生规划档。</p>
+            <p class="mt-1.5 text-[11px] text-mute">同一助手，不换引擎 · 下一轮才用 Opus 4.1</p>
+          </div>
+        </div>
+
+        <aside class="w-full shrink-0 overflow-hidden rounded-2xl border border-line bg-card shadow-2xl lg:w-[280px]">
+          <header class="border-b border-line px-3 py-2.5">
+            <p class="text-[13px] font-semibold">换模型</p>
+            <p class="mt-0.5 text-[10px] text-mute">Claude 已宣传的模型 · 同一助手，不换引擎</p>
+          </header>
+          <ul class="divide-y divide-line text-[12px]">
+            <li class="flex items-center justify-between px-3 py-2">
+              <span class="flex items-center gap-2">
+                <span class="inline-flex size-5 items-center justify-center rounded-[5px] bg-[#D97757] text-[10px] font-bold text-white">C</span>
+                <span>Sonnet 4</span>
+              </span>
+            </li>
+            <li class="flex items-center justify-between bg-soft px-3 py-2">
+              <span class="flex items-center gap-2">
+                <span class="inline-flex size-5 items-center justify-center rounded-[5px] bg-[#D97757] text-[10px] font-bold text-white">C</span>
+                <span class="font-medium">Opus 4.1</span>
+                <span class="rounded-full bg-card px-1.5 py-px text-[10px] text-mute ring-1 ring-line">带思考</span>
+              </span>
+              <span class="text-[10px] text-accent">当前</span>
+            </li>
+            <li class="flex items-center justify-between px-3 py-2">
+              <span class="flex items-center gap-2">
+                <span class="inline-flex size-5 items-center justify-center rounded-[5px] bg-[#D97757] text-[10px] font-bold text-white">C</span>
+                <span>Haiku 4</span>
+              </span>
+            </li>
+          </ul>
+          <p class="border-t border-line bg-paper px-3 py-2 text-[10px] text-mute">换引擎仍走导轨，不是这里。图标是品牌标，不是协议微标。缺图用单字母色块。</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 反例 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">反例 · 秃文字名单 · 勿画</h2>
+      <p class="text-[11px] text-mute">I1 弹层每一行都必须有引擎/族标（约 16–20px）。只有文字 = 本次回归要修掉的样子。</p>
+      <div class="max-w-xs overflow-hidden rounded-2xl border border-dashed border-warn/40 bg-paper/80 opacity-70">
+        <header class="border-b border-line px-3 py-2">
+          <p class="text-[12px] font-semibold line-through decoration-warn">换模型</p>
+          <p class="text-[10px] text-mute line-through">Claude · 无图标</p>
+        </header>
+        <ul class="divide-y divide-line text-[12px] text-mute">
+          <li class="px-3 py-2 line-through decoration-warn">Sonnet 4</li>
+          <li class="px-3 py-2 line-through decoration-warn">Opus 4.1</li>
+          <li class="px-3 py-2 line-through decoration-warn">Haiku 4</li>
+        </ul>
+        <p class="border-t border-line px-3 py-2 text-[10px] font-semibold text-warn">秃列 · 勿画</p>
+      </div>
+    </section>
+
+    <!-- 额外态 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">额外态 · 同一套铬条</h2>
+      <div class="grid gap-3 lg:grid-cols-2">
+        <!-- 无思考 -->
+        <div class="rounded-2xl border border-line p-4">
+          <p class="text-[12px] font-semibold">无思考引擎态</p>
+          <p class="mt-0.5 text-[11px] text-mute">Hermes / Amp / 未声明 thinking。不画思考控件，优于灰死按钮。探索\|执行<strong class="text-ink">仍在</strong>。</p>
+          <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+              <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+              <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+            </div>
+            <span class="rounded-md border border-dashed border-line px-2 py-0.5 text-[10px] text-mute/50">思考 · 不画</span>
+            <span class="min-w-[1rem] flex-1"></span>
+            <button class="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</button>
+            <button class="flex size-7 shrink-0 items-center justify-center rounded-full bg-paper ring-1 ring-line">
+              <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#8B7E74] text-[8px] font-bold text-white">H</span>
+            </button>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[10px] ring-1 ring-line">
+              <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#8B7E74] text-[8px] font-bold text-white">H</span>
+              <span class="text-mute">Hermes</span><span class="text-mute">·</span><span class="font-semibold">Auto</span>
+            </span>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">缺图时单字母色块兜底，禁止空白圆。</p>
+        </div>
+
+        <!-- C2 -->
+        <div class="rounded-2xl border border-dashed border-line bg-paper p-4">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[12px] font-semibold">C2 · 禁用例外</p>
+            <span class="rounded-full bg-card px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">非默认</span>
+          </div>
+          <p class="mt-0.5 text-[11px] text-mute">仅当宿主<strong class="text-ink">确实拦不住写</strong>。分段不消失，禁用 + 一行人话。</p>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <div class="inline-flex cursor-not-allowed rounded-full bg-card p-0.5 opacity-50 ring-1 ring-line">
+              <button class="rounded-full px-3 py-1 text-[11px] text-mute" disabled>探索</button>
+              <button class="rounded-full bg-mute/20 px-3 py-1 text-[11px] font-semibold text-mute" disabled>执行</button>
+            </div>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[10px] ring-1 ring-line">
+              <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">?</span>
+              <span class="font-semibold">自定义助手</span>
+            </span>
+          </div>
+          <p class="mt-2 text-[11px] text-warn">此助手暂不支持探索/执行切换</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 思考三态 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">思考 · 按能力诚实</h2>
+      <p class="text-[11px] text-mute">表驱动，禁止写死「只有三家」。无 capability 不画可点成功条。</p>
+      <div class="grid gap-3 md:grid-cols-3">
+        <div class="rounded-2xl border border-line p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">effort · Enjoy Local</p>
+          <button class="mt-2 inline-flex items-center gap-1 rounded-full bg-soft px-2.5 py-1 text-[10px] font-medium text-accent ring-1 ring-accent/20">
+            ✦ 思考 · 中
+          </button>
+          <div class="mt-2 flex flex-wrap gap-1">
+            <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">关</span>
+            <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">低</span>
+            <span class="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">中</span>
+            <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">高</span>
+            <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">最大</span>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">沿用已有五档条。只在 effort API 上画。</p>
+        </div>
+        <div class="rounded-2xl border border-line p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">model-id · CLI</p>
+          <button class="mt-2 inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] ring-1 ring-line">
+            ✦ 思考 · 跟模型
+          </button>
+          <p class="mt-2 text-[11px] text-mute">人话入口。点开本引擎名单，带思考的模型加「带思考」。换模即换思考能力。</p>
+          <p class="mt-1 text-[10px] font-medium text-warn">禁止假画五档滑条</p>
+        </div>
+        <div class="rounded-2xl border border-line p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">none · 未声明</p>
+          <p class="mt-2 text-[11px] text-ink font-medium">不画思考控件</p>
+          <p class="mt-1 text-[10px] text-mute">不要灰死按钮，不要「此引擎无思考档」占位（除非产品另锁）。模式分段仍在。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 执行态对齐 explore-execute -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">C1 · 执行态（对齐 explore-execute-p0）</h2>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+            <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+          </div>
+          <button class="inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] ring-1 ring-line">
+            <span>✦</span><span class="font-medium">思考</span><span class="text-mute">·</span><span class="text-mute">跟模型</span>
+          </button>
+          <span class="min-w-[1rem] flex-1"></span>
+          <button class="flex size-7 items-center justify-center rounded-full bg-paper ring-1 ring-line">
+            <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">▶</span>
+          </button>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[10px] ring-1 ring-line">
+            <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">▶</span>
+            <span class="text-mute">Cursor</span><span class="text-mute">·</span><span class="font-semibold">Composer</span>
+          </span>
+        </div>
+        <div class="mt-3 min-h-[48px] rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">按方案改登录页并跑一遍类型检查…</div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="rounded-md bg-soft px-2 py-0.5 text-[10px] text-accent ring-1 ring-accent/20">可写 · 改文件</span>
+          <span class="rounded-md bg-soft px-2 py-0.5 text-[10px] text-accent ring-1 ring-accent/20">可写 · 终端</span>
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">审批策略仍生效</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 文案 -->
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">写</th><th class="px-3 py-2">不用</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">分段</td>
+            <td class="px-3 py-2">探索 · 执行</td>
+            <td class="px-3 py-2">Explore runtime、ask/plan/agent 原文上 C 端</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">C1 探索脚注</td>
+            <td class="px-3 py-2">探索模式下不会改你的项目。要改文件或跑命令，切换到执行。</td>
+            <td class="px-3 py-2">依赖 CLI 原生 plan/ask 才露出</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">C2 禁用</td>
+            <td class="px-3 py-2">此助手暂不支持探索/执行切换</td>
+            <td class="px-3 py-2">整段消失、空成功</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">思考 · effort</td>
+            <td class="px-3 py-2">关 / 低 / 中 / 高 / 最大</td>
+            <td class="px-3 py-2">在无 effort API 的引擎上复用五档条</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">思考 · model-id</td>
+            <td class="px-3 py-2">思考 · 跟模型；名单标「带思考」</td>
+            <td class="px-3 py-2">假思考条、协议枚举原文</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">思考 · none</td>
+            <td class="px-3 py-2">不画</td>
+            <td class="px-3 py-2">灰死按钮冒充可点</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">I1 成功</td>
+            <td class="px-3 py-2">已切换到 {model} / 已切换；同一助手，不换引擎</td>
+            <td class="px-3 py-2">已交接、已切换引擎、挤掉模式分段</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">图标</td>
+            <td class="px-3 py-2">引擎/族标；缺图单字母色块</td>
+            <td class="px-3 py-2">空白、ACP / 协议微标</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>Claude 等常用引擎会话：一眼能切探索/执行（C1）；图标在芯片与名单行上都在。</li>
+        <li>有 model-id / effort 思考能力时，有人话入口；换模后入口跟新模型刷新。</li>
+        <li>无思考能力：不画思考控件，探索\|执行仍在。</li>
+        <li>C2 仅宿主拦不住写时：分段可见但禁用 +「此助手暂不支持探索/执行切换」，永不整段消失。</li>
+        <li>I1 成功脚注不挤掉模式切换；名单无秃文字列。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">重做整页 Composer · 把模式塞进 I1 菜单当隐藏项 · 无 capability 假思考 · ACP / 协议微标 · worktree / 新 runtime</p>
+    </section>
+  </div>
+</body>
+</html>
