@@ -1,6 +1,6 @@
 /**
  * I1 反馈：成功微条「已切换到 {model}」、脚注「同一助手，不换引擎」。
- * 禁止已交接 / 已切换引擎 / handoff。
+ * 成功句不写换引擎或交接。
  */
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"

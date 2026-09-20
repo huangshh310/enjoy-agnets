@@ -40,7 +40,10 @@ export async function requestModelSwitch(modelId: string): Promise<"applied" | "
   }
 }
 
-export async function requestSameEngineModel(to: AgentToolId, modelId?: string): Promise<"applied" | "noop"> {
+export async function requestSameEngineModel(
+  to: AgentToolId,
+  modelId?: string
+): Promise<"applied" | "noop" | "failed"> {
   if (to !== useChatStore.getState().runtimeId) return "noop"
   if (!modelId) return "noop"
   return requestModelSwitch(modelId)

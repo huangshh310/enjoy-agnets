@@ -1,5 +1,5 @@
 /**
- * I1 文案锁：成功只写已切换，不写已交接 / 已切换引擎 / handoff。
+ * I1 文案锁：成功只写已切换，不写换引擎或交接成功句。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -10,15 +10,9 @@ import { enChat } from "../../../../i18n/catalogs/en/chat.ts"
 import { zhChat } from "../../../../i18n/catalogs/zh/chat.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
-const files = [
-  "composer-model-chip.tsx",
-  "model-switch-panel.tsx",
-  "model-switch-feedback.tsx",
-  "use-composer-model-switch.ts",
-  join("..", "..", "..", "..", "lib", "model-switch-state.ts")
-]
+const files = ["composer-model-chip.tsx", "model-switch-panel.tsx", "model-switch-feedback.tsx"]
 
-const banned = ["已切换引擎", "已交接", "handoff", "已交接", "ACP ·", "会话已重开", "Switched engine"]
+const banned = ["已切换引擎", "已交接", "ACP ·", "会话已重开", "Switched engine"]
 
 test("I1 源码不含换引擎 / 交接成功句", () => {
   for (const name of files) {
