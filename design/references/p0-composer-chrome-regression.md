@@ -4,7 +4,9 @@
 > 触发：真机吐槽——模型列表无图标、多引擎无思考档、探索/执行切换消失  
 > 嫌疑：I1 换模芯片 / 账本改动误伤 Composer 铬条  
 > 预览：回写或合订 `design/previews/explore-execute-p0.html` + 新页 `design/previews/p0-composer-chrome.html`（图标·思考·模式同屏）  
-> **插队**：高于 P0-S 接线；P0-S 预览可并行，实现让路本刀
+> 【视觉真源】[`../previews/p0-composer-chrome.html`](../previews/p0-composer-chrome.html)  
+> **插队**：高于 P0-S 接线；P0-S 预览可并行，实现让路本刀  
+> 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
 
@@ -24,6 +26,12 @@ Composer **底栏铬条必备三件套不丢**：（1）**探索 | 执行** 模�
 | 存活 | **每个**有 Composer 的会话都显示；不随 I1 换模、不随引擎 handoff 卸载 |
 | 禁用 | 仅当引擎/能力明确不支持模式时：控件在，禁用 + 一句人话；**禁止整段消失** |
 
+### C1 默认（jojo 续锁）
+
+- **默认 C1**：分段在**所有引擎**的 Composer 上可见（对齐 `explore-execute-p0.html`）。
+- 探索 = **宿主只读拦截**（拦写文件 / 磁盘 / 终端），**不依赖** CLI 原生 plan/ask。
+- **仅当宿主确实拦不住写** 才回落 C2：分段仍在但**禁用** +「此助手暂不支持探索/执行切换」——**禁止整段消失**。
+
 ## 2. 思考档（按能力，不是按心情）
 
 **出现规则**（`RuntimeCapabilities` / 模型 advertised）：
@@ -41,6 +49,14 @@ Composer **底栏铬条必备三件套不丢**：（1）**探索 | 执行** 模�
 - Gemini / Antigravity（若暴露 thinking）  
 - DeepSeek / DSH（`reasoning_effort` 等）  
 - 其他：以 capabilities 为准，**表驱动**，禁止写死「只有三家」
+
+**按能力诚实（C 端）**
+
+| 能力 | UI |
+|------|-----|
+| `thinking: "effort"`（Enjoy Local / 沙箱） | 已有五档思考条（关 / 低 / 中 / 高 / 最大） |
+| `thinking: "model-id"`（Claude / Cursor / Antigravity / Gemini 等） | 人话入口：次级芯片「思考 · 跟模型」（或开/关）；点开带标注的本引擎模型表。**禁止**在无 effort API 的引擎上假画五档滑条 |
+| `thinking: "none"` | **不画**思考控件 |
 
 **禁止**：I1 模型菜单打开后盖住/卸掉思考档；换模后思考档不随新模型 capabilities 刷新。
 
@@ -88,8 +104,9 @@ Composer **底栏铬条必备三件套不丢**：（1）**探索 | 执行** 模�
 
 ## Luna 一句话
 
-`p0-composer-chrome.html`：同一 Composer 示意——左探索/执行、思考档、右引擎标+模型芯片列表（带图标）；另：无思考引擎态、I1 列表秃文字反例划掉。
+`p0-composer-chrome.html`：同一 Composer 示意——左探索/执行、思考档、右引擎标+模型芯片列表（带图标）；另：无思考引擎态、I1 列表秃文字反例划掉。主屏 C1 全引擎露出；次卡 C2 禁用例外。
 
 ---
 
-*插队实现；P0-S 短锁与预览不废，接线排本刀之后。*
+*插队实现；P0-S 短锁与预览不废，接线排本刀之后。*  
+*冲突以 `design/specs/*` 为准。*

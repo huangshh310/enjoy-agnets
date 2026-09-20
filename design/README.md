@@ -61,7 +61,7 @@
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；≠ M3 handoff；视觉真源见预览；不是当前真相，边界见 m3 spec） |
-| [references/p0-composer-chrome-regression.md](./references/p0-composer-chrome-regression.md) | 紧急：Composer 铬条三件套；预览待 p0-composer-chrome.html |
+| [references/p0-composer-chrome-regression.md](./references/p0-composer-chrome-regression.md) | P0 Composer 铬条回归短锁（Jojo；C1 默认全引擎露出；视觉真源见预览；不是当前真相） |
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
@@ -85,6 +85,7 @@
 | [previews/m-cbd-session-ops.html](./previews/m-cbd-session-ops.html) | Multica P0 会话作业：安静 Inbox × 验收闸 × 运行账本（【视觉真源】M-CBD；账本+来源列密日志观感已被 `m-d-g-ledger-sources.html` 取代） |
 | [previews/m-d-g-ledger-sources.html](./previews/m-d-g-ledger-sources.html) | M-D + P0-G 账本/来源可读性：分组折叠、文件名优先、诚实空态（【视觉真源】，锁 tip `b1721a7`；M-CBD 产品锁其余不变，F1 不在范围） |
 | [previews/i1-mid-model-switch.html](./previews/i1-mid-model-switch.html) | 同引擎中途换模型：芯片 / 已切换 / 不支持 / 失败（【视觉真源】I1，锁 tip `6dfac6c`） |
+| [previews/p0-composer-chrome.html](./previews/p0-composer-chrome.html) | P0 Composer 铬条回归：探索\|执行常在（C1）· 思考按能力 · 引擎/模型图标（【视觉真源】） |
 
 ---
 
