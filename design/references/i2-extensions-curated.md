@@ -4,7 +4,7 @@
 > 对照：`emerging-agent-innovation.md` I2；P0-H 扩展壳；P0-S SoT 注入  
 > 【视觉真源】I2：[`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)（可并进 / 紧邻 `p0-h-extensions-hub.html`；内容锁 `db6b455`）  
 > 入库：`design/references/i2-extensions-curated.md`  
-> 队列：#64 I4 后 **下一刀** → 命名身份 P2  
+> 队列：#64 I4 后原下一刀；**接线让路** Composer 瘦身 [`p0-composer-slim.md`](./p0-composer-slim.md)（I2 视觉真源已入库，接线让路） → 命名身份 P2  
 > 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
@@ -79,8 +79,9 @@ I2 **不是**新设置 tab，只是 H 同页下方的精选区。
 | 序 | 项 | 状态 |
 |----|----|------|
 | — | I4 #64 | 已合 |
-| **1** | **I2 精选** | **下一刀**（本锁 + 视觉真源；应用未接线） |
+| **0** | **Composer 瘦身** | **紧急插队**（[`p0-composer-slim.md`](./p0-composer-slim.md)；本刀接线让路） |
+| **1** | **I2 精选** | 视觉真源已入库；接线让路瘦身（应用未接线） |
 | 2 | 命名身份 | P2 |
 | — | webhook / 保存后触发 | I4 后置 P1 |
 
-*冲突以 `design/specs/*` 与 P0-H / P0-S 锁为准。*
+*冲突以 `design/specs/*` 与 P0-H / P0-S 锁为准；Composer 呈现密度以 `p0-composer-slim` 为准。*
