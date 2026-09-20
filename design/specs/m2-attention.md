@@ -171,7 +171,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：Inbox「未读」出现大量「运行中」→ 合成 running 被标成未读。正确做法：`synthesize-running-inbox.ts` 固定 `read: true`；`inboxNavCounts.unread` 只计 `!read`。running 不得加成 Attention kind。
 - **隐患**：导航仍按「智能体 / 系统」或「全部 / 运行中」筛 → 旧 IA 残留。正确做法：筛 `InboxCategory` 的 approval / needs_review / failed。
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。
-- **隐患**：后台轮 `run.end` 时 renderer 看不到写盘 path，若一律标 `needs_review` 会把纯问答推进待验收。正确做法：只在前台 `pathsFromLastTurn` 非空时写 `needs_review`。
+- **隐患**：一轮 `run.end` 直接标 `done` 或刷 complete Inbox。正确做法：宣称收工必须进 `needs_review`，只有人点「通过」才能 `done`；`run.error` 仍走失败筛，不进验收闸。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。
 - Inbox 假种子会冒充 live Attention，已删；空库只走空态。

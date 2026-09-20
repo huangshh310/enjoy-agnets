@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { reviewGatePhase, runNeedsHumanReview } from "./review-gate-phase.ts"
+import { claimDoneForcesReview, reviewGatePhase } from "./review-gate-phase.ts"
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
@@ -23,10 +23,17 @@ test("todo / in_progress / 空不画顶栏铬", () => {
   assert.equal(reviewGatePhase({ running: false, workflowStatus: null }), null)
 })
 
-test("只有真实写盘 path 才需要人验收", () => {
-  assert.equal(runNeedsHumanReview(["preview/index.html"]), true)
-  assert.equal(runNeedsHumanReview(["  "]), false)
-  assert.equal(runNeedsHumanReview([]), false)
+test("宣称收工必须进待验收；失败 / 开跑不走这扇门", () => {
+  assert.equal(claimDoneForcesReview("run.end"), true)
+  assert.equal(claimDoneForcesReview("run.error"), false)
+  assert.equal(claimDoneForcesReview("run.start"), false)
+})
+
+test("sync 对 run.end 一律 needs_review，不看写盘 path", () => {
+  const sync = readFileSync(join(dir, "sync-review-gate.ts"), "utf8")
+  assert.ok(sync.includes('patchSessionWorkflow(sessionId, "needs_review")'))
+  assert.ok(!sync.includes("pathsFromLastTurn"))
+  assert.ok(!sync.includes("runNeedsHumanReview"))
 })
 
 test("打回 / 通过不调用 git commit 或 push", () => {

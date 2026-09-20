@@ -10,7 +10,7 @@ export function reviewGatePhase(input: ReviewGatePhaseInput): ReviewGatePhase | 
   return null
 }
 
-/** 本轮有写盘 path 才进人验收；纯问答不假装待验收。 */
-export function runNeedsHumanReview(writePaths: readonly string[]): boolean {
-  return writePaths.some((path) => path.trim().length > 0)
+/** 一轮宣称收工必须进待验收。run.error 走失败筛，不进这扇门。 */
+export function claimDoneForcesReview(eventType: string): boolean {
+  return eventType === "run.end"
 }
