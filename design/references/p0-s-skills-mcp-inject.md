@@ -2,8 +2,9 @@
 
 > 2026-09-20 · jojo  
 > 对照：`plugin-extensions-hub` 第二稿 SoT 锁；队列：#55 后 **下一刀**  
-> 预览建议：`design/previews/p0-s-skills-mcp-inject.html`  
-> 入库：`design/references/p0-s-skills-mcp-inject.md`
+> 【视觉真源】P0-S：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)  
+> 入库：`design/references/p0-s-skills-mcp-inject.md`  
+> 落地以 `design/specs/*` 与 runtime capabilities 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
 
@@ -42,6 +43,19 @@
 | I1 换模 | 正交；不改 SoT |
 | 第四层原生插件 | 仍助手侧；脚注「hooks/Cordis 等在各 CLI」 |
 
+## P0-H 发现 vs P0-S 注入
+
+| | **P0-H 发现** | **P0-S 注入** |
+|---|---|---|
+| 路由 | `#/settings/extensions` | 开流旁 / SoT 启用条；配置权威仍是 `#/mcp` · `#/skills` |
+| 数字 | 已配置 | 已启用 / 已注入本轮 |
+| CTA | 「添加」深链现有页 | 「管理」深链现有页；**无**第二套 CRUD |
+| 职责 | 10 秒找到 MCP / Skills 并跳进真源页 | 把**当前已启用**项透传给当前引擎，并诚实画出注入结果 |
+| 失败 | — | 不支持引擎用警告卡；**禁止**空绿成功「已同步到助手」 |
+| 存储 | 不新开 | 不新开；家目录 / `dsh plugin add` 不是第二 SoT |
+
+对齐 P0-H：Claude hooks / DSH Cordis / OpenCode native 仍在各 CLI；MCP / Skills SoT 是 Enjoy `#/mcp` · `#/skills`。
+
 ## 能力降级
 
 | 引擎能力 | UX |
@@ -49,6 +63,19 @@
 | 支持 mcpServers 透传 | 默认注入启用项 |
 | 不支持宿主 MCP | 设置/开流旁诚实：「此引擎只用自带 MCP；Enjoy `#/mcp` 未注入」 |
 | 不支持技能挂载/注入 | 同上类文案；不假装已注入 |
+
+## 文案锁
+
+| 面 | 写 | 不用 |
+|----|----|------|
+| SoT 计数 | 已启用 2 MCP · 3 Skills | 已配置、已同步到助手 |
+| 管理 | 管理 → `#/mcp` / `#/skills` | 第二套表单、去助手侧装 |
+| 开流微条 | 已注入本轮 · MCP 2 · Skills 3 | 已同步到助手、ACP 协议微标 |
+| 来源标 | 来自 Enjoy | 来自 `~/.claude`、`dsh plugin add` |
+| 空启用 | 不画微条，不造假行 | 已注入 0、空名单成功 |
+| MCP 不支持 | 此引擎只用自带 MCP；Enjoy `#/mcp` 未注入 | 绿灯空成功 |
+| Skills 不支持 | 此引擎不支持宿主技能注入 | 已注入 0 Skills |
+| 脚注 | 真源在 Enjoy；助手只消费。原生插件仍在各 CLI。 | 插件市场、假 Grok 店 |
 
 ## 验收
 
@@ -60,6 +87,8 @@
 ## Luna 一句话原型
 
 一页三态：① SoT 列表（MCP|Skills 已启用）② 开流「已注入本轮」摘要条 ③ 引擎不支持诚实卡。脚注：「真源在 Enjoy；助手只消费。原生插件仍在各 CLI。」
+
+视觉真源已入库：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)（三态 + 空启用诚实空 + 文案表；不宣称应用已 1:1）。
 
 ---
 

@@ -65,7 +65,7 @@
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
-| [references/p0-s-skills-mcp-inject.md](./references/p0-s-skills-mcp-inject.md) | P0-S Skills/MCP 宿主透传短锁；预览待 `previews/p0-s-skills-mcp-inject.html` |
+| [references/p0-s-skills-mcp-inject.md](./references/p0-s-skills-mcp-inject.md) | P0-S Skills/MCP 宿主透传短锁（Jojo；视觉真源见预览；不是当前真相） |
 | [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |
 | [references/dev-plan-p0-h-i-r.md](./references/dev-plan-p0-h-i-r.md) | 执行计划：P0-H 扩展壳 + I2 精选 + I1 换模型 + P0-R SSH；落地以 specs 为准，本文不是当前真相 |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
@@ -81,6 +81,7 @@
 | [previews/p0-f-preview-open.html](./previews/p0-f-preview-open.html) | 完成条「在浏览器打开」（【视觉真源】P0-F，锁 tip `9a1a4ca`；系统浏览器，不嵌 Chromium） |
 | [previews/p0-g-sources-detail.html](./previews/p0-g-sources-detail.html) | 气泡底脚芯片 → 右/底 sheet「本轮来源」（【视觉真源】P0-G，锁 tip `76b5ecd`；文件/技能/MCP，无来源无底脚） |
 | [previews/p0-h-extensions-hub.html](./previews/p0-h-extensions-hub.html) | 扩展发现壳：设置两列 MCP \| Skills + 添加深链（【视觉真源】P0-H） |
+| [previews/p0-s-skills-mcp-inject.html](./previews/p0-s-skills-mcp-inject.html) | Skills/MCP 宿主透传：已启用 SoT / 已注入本轮 / 引擎不支持（【视觉真源】P0-S，锁 tip `5282c60`） |
 | [previews/p0-r-remote-workspace.html](./previews/p0-r-remote-workspace.html) | SSH 远程工作区：抽屉 / 顶条 /「远程 ≠ 引擎」（【视觉真源】P0-R，锁 tip `3a3e00b`） |
 | [previews/m-cbd-session-ops.html](./previews/m-cbd-session-ops.html) | Multica P0 会话作业：安静 Inbox × 验收闸 × 运行账本（【视觉真源】M-CBD；账本+来源列密日志观感已被 `m-d-g-ledger-sources.html` 取代） |
 | [previews/m-d-g-ledger-sources.html](./previews/m-d-g-ledger-sources.html) | M-D + P0-G 账本/来源可读性：分组折叠、文件名优先、诚实空态（【视觉真源】，锁 tip `b1721a7`；M-CBD 产品锁其余不变，F1 不在范围） |
