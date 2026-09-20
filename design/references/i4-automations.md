@@ -4,7 +4,7 @@
 > 对照：`emerging-agent-innovation.md` I4；Multica Autopilots（只抄节奏）  
 > 预览：[`../previews/i4-automations.html`](../previews/i4-automations.html)（【视觉真源】I4 本机 Automations · Luna）  
 > 入库：`design/references/i4-automations.md`  
-> 队列：#61 P0-S 后 **下一刀** → 再 I2 精选 / 命名身份  
+> 队列：P0 #64 已落地；webhook / 保存后 → I4-P1 [`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md) · [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)  
 > 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
@@ -51,7 +51,7 @@
 | 项 | 级 |
 |----|-----|
 | 手动 + cron + 列表开停 + 诚实本机文案 | **P0（本刀）** |
-| webhook 入站 | P1（[`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)；预览待 luna） |
+| webhook 入站 | P1（[`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)；视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)） |
 | 「保存后」触发 | P1（同上） |
 | 绑工作单 M-A | 后置 |
 
@@ -68,6 +68,8 @@
 
 视觉真源已入库：[`../previews/i4-automations.html`](../previews/i4-automations.html)（列表行 / 380px 抽屉 / 运行中条 / 失败→Inbox「失败」；不宣称应用已 1:1）。
 
+webhook / 保存后不改本锁，见 I4-P1：[`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md) · [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)。
+
 ---
 
 ## 全队列（本轮）
@@ -75,7 +77,8 @@
 | 序 | 项 | 状态 |
 |----|-----|------|
 | — | 铬条 #60 / P0-S #61 | 已合 |
-| **1** | **I4 Automations** | **P0 已落地**；后置切片 [`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)（预览待 luna） |
+| **1** | **I4 Automations** | **P0 已落地**；后置切片 [`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md) |
+| 1b | I4-P1 webhook + 保存后 | 视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)；应用未接线 |
 | 2 | I2 扩展精选浏览 | P1（SoT 已通，可跟） |
 | 3 | 命名身份 | P2 |
 | — | #60 思考 ▾ 抛光 | soft |
