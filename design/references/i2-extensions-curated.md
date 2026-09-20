@@ -82,6 +82,6 @@ I2 **不是**新设置 tab，只是 H 同页下方的精选区。
 | **0** | **Composer 瘦身** | **紧急插队**（[`p0-composer-slim.md`](./p0-composer-slim.md)；本刀接线让路） |
 | **1** | **I2 精选** | 视觉真源已入库；接线已落 `#/settings/extensions` 同页精选（应用以 specs 当前真相为准） |
 | 2 | 命名身份 | P2（[`p2-agent-display-name.md`](./p2-agent-display-name.md)；【视觉真源】[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)） |
-| — | webhook / 保存后触发 | I4 后置 P1 |
+| — | webhook / 保存后触发 | I4-P1（[`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)；预览待 luna） |
 
 *冲突以 `design/specs/*` 与 P0-H / P0-S 锁为准；Composer 呈现密度以 `p0-composer-slim` 为准。*

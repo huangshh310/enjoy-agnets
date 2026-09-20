@@ -51,8 +51,8 @@
 | 项 | 级 |
 |----|-----|
 | 手动 + cron + 列表开停 + 诚实本机文案 | **P0（本刀）** |
-| webhook 入站 | P1（可同 PR 若薄） |
-| 「保存后」触发 | P1 |
+| webhook 入站 | P1（[`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)；预览待 luna） |
+| 「保存后」触发 | P1（同上） |
 | 绑工作单 M-A | 后置 |
 
 ## 验收
@@ -75,7 +75,7 @@
 | 序 | 项 | 状态 |
 |----|-----|------|
 | — | 铬条 #60 / P0-S #61 | 已合 |
-| **1** | **I4 Automations** | **P0 已落地**（webhook / 保存后仍后置） |
+| **1** | **I4 Automations** | **P0 已落地**；后置切片 [`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md)（预览待 luna） |
 | 2 | I2 扩展精选浏览 | P1（SoT 已通，可跟） |
 | 3 | 命名身份 | P2 |
 | — | #60 思考 ▾ 抛光 | soft |
