@@ -60,7 +60,7 @@ export function ComposerSessionReview() {
   if (!showGate && !model.showReview && !showSlim) return null
 
   return (
-    <div className="relative z-20 mb-2 flex w-full justify-center px-4 animate-in fade-in-50 duration-200">
+    <div className="relative w-full min-w-0">
       <SessionPreviewToast visible={preview.opened} />
       {showGate ? (
         <ReviewGateCard
@@ -143,7 +143,7 @@ function ReviewCard({
     <div
       data-session-review
       data-frost="tile"
-      className="relative flex w-full flex-col overflow-visible rounded-2xl border border-border-button-default bg-background-secondary-default/95 px-3.5 py-1.5 shadow-card backdrop-blur-md"
+      className="relative flex w-full flex-col overflow-visible border-b border-separator-border/70 px-3.5 py-1.5"
     >
       {running ? <SessionMascotRunner active={running} /> : null}
       <SessionReviewBar

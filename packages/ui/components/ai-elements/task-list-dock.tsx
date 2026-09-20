@@ -22,7 +22,9 @@ export function TaskListDock({
   onToggle,
   onContinue,
   action,
-  footer
+  footer,
+  fused,
+  className
 }: {
   title?: string
   rows: NormalizedTask[]
@@ -32,6 +34,8 @@ export function TaskListDock({
   onContinue?: () => void
   action?: React.ReactNode
   footer?: React.ReactNode
+  fused?: boolean
+  className?: string
 }) {
   const total = rows.length
   const completedCount = rows.filter((task) => task.status === "completed").length
@@ -41,8 +45,11 @@ export function TaskListDock({
   return (
     <div
       className={cx(
-        "w-full overflow-hidden rounded-xl border border-border-button-default",
-        "bg-background-primary-default shadow-card"
+        "w-full overflow-hidden",
+        fused
+          ? "border-b border-separator-border/70 bg-transparent"
+          : "rounded-xl border border-border-button-default bg-background-primary-default shadow-card",
+        className
       )}
     >
       <button

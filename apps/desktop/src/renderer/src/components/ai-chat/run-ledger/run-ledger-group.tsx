@@ -38,15 +38,15 @@ export function RunLedgerGroup({
         <RiArrowRightSLine
           aria-hidden
           className={cx(
-            "size-3.5 shrink-0 text-text-tertiary transition-transform",
+            "size-3.5 shrink-0 text-text-secondary transition-transform",
             open && "rotate-90"
           )}
         />
-        <span className="text-caption-2-medium text-text-tertiary">{groupLabel(kind, t)}</span>
+        <span className="text-caption-2-medium text-text-secondary">{groupLabel(kind, t)}</span>
         <span
           className={cx(
             "ml-auto font-mono text-caption-2-regular tabular-nums",
-            kind === "error" || failed > 0 ? "text-text-warning-primary" : "text-text-tertiary"
+            kind === "error" || failed > 0 ? "text-text-warning-primary" : "text-text-secondary"
           )}
         >
           {failed > 0 && kind === "command" ? `${failed}/${entries.length}` : entries.length}
@@ -64,7 +64,7 @@ export function RunLedgerGroup({
             </li>
           ))}
           {kind === "command" && hidden > 0 ? (
-            <li className="px-3 py-1 text-caption-2-regular text-text-tertiary">
+            <li className="px-3 py-1 text-caption-2-regular text-text-secondary">
               {t("sessionOps.ledgerCommandMore", { n: hidden })}
             </li>
           ) : null}

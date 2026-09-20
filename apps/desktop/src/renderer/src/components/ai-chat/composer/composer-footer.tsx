@@ -1,6 +1,6 @@
 /**
  * Composer 底栏：附件、策略、Fast、语音与发送。
- * 探索/执行、单一引擎芯片与思考小档在顶栏；目标/阶段进溢出菜单。
+ * 探索/执行在顶栏；引擎芯片与思考在底栏，窄时按容器宽度藏文案。目标/阶段有内容走上沿轨，空入口仍在溢出菜单。
  */
 import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
@@ -67,7 +67,7 @@ export function ComposerFooter({
   return (
     <div className="flex min-w-0 flex-col">
     {workspaceKind === "ssh" ? (
-      <p className="px-3 text-caption-2-regular text-text-tertiary">
+      <p className="px-3 text-caption-2-regular text-text-secondary">
         {t("settings.workspace.remoteFootnote")}
         {remoteLabel ? ` · ${formatComposerRemoteFootnote(remoteLabel)}` : ""}
       </p>

@@ -23,6 +23,7 @@ function readPreview(): string {
 }
 
 const chrome = readFileSync(join(dir, "composer-top-chrome.tsx"), "utf8")
+const composer = readFileSync(join(dir, "../ai-chat-composer.tsx"), "utf8")
 const footer = readFileSync(join(dir, "composer-footer.tsx"), "utf8")
 const bar = readFileSync(join(dir, "host-inject/host-inject-bar.tsx"), "utf8")
 const picker = readFileSync(join(dir, "../agent-picker/agent-picker.tsx"), "utf8")
@@ -40,6 +41,19 @@ test("顶栏铬序是探索/执行分段，模型与思考下沉至底栏", () =
 test("底栏溢出收目标/阶段，不并排探索分段", () => {
   assert.ok(footer.includes("ComposerOverflowMenu"))
   assert.equal(footer.includes("SessionGoalChip"), false)
+})
+
+test("有内容的 Goal/Recap 走输入壳上沿轨，不进顶栏分段", () => {
+  assert.ok(composer.includes("ComposerActivityFrame"))
+  assert.equal(chrome.includes("ComposerContextRail"), false)
+  assert.equal(chrome.includes("<SessionGoalChip"), false)
+})
+
+test("任务与改动在输入框上方独立轨，不进输入壳", () => {
+  assert.ok(composer.includes("ComposerActivityFrame"))
+  const shell = composer.slice(composer.indexOf("<form"), composer.indexOf("</form>"))
+  assert.equal(shell.includes("ComposerActivityFrame"), false)
+  assert.equal(shell.includes("ComposerLiveChanges"), false)
 })
 
 test("引擎芯片面上不挂 UsagePill，用量进 title 或 Popover", () => {

@@ -1,7 +1,7 @@
 /**
  * Chat 工作台顶栏：工作区 / 会话面包屑与 Inspector 开关。
  */
-import { RiFileList3Line, RiFolder6Line, RiLayoutRight2Line } from "@remixicon/react"
+import { RiDashboard3Line, RiFileList3Line, RiFolder6Line, RiLayoutRight2Line } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import {
   Breadcrumb,
@@ -23,7 +23,9 @@ export function ChatStageHeader({
   onToggleRightPane,
   hasLedger,
   ledgerOpen,
-  onToggleLedger
+  onToggleLedger,
+  environmentOpen,
+  onToggleEnvironment
 }: {
   workspaceName: string
   sessionTitle: string
@@ -33,6 +35,8 @@ export function ChatStageHeader({
   hasLedger?: boolean
   ledgerOpen?: boolean
   onToggleLedger?: () => void
+  environmentOpen?: boolean
+  onToggleEnvironment?: () => void
 }) {
   const t = useT()
   return (
@@ -50,6 +54,15 @@ export function ChatStageHeader({
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-auto flex items-center gap-2">
+        {onToggleEnvironment ? (
+          <QuietIconButton
+            icon={RiDashboard3Line}
+            aria-label={t("chat.environmentToggle")}
+            aria-pressed={Boolean(environmentOpen)}
+            onClick={onToggleEnvironment}
+            className={environmentOpen ? "bg-background-secondary-default text-text-primary" : undefined}
+          />
+        ) : null}
         {hasLedger && onToggleLedger ? (
           <button
             type="button"

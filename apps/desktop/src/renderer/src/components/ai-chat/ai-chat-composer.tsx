@@ -8,7 +8,6 @@ import { isRealtimeOpen, toggleRealtimeMic } from "@renderer/hooks/realtime-mic"
 import { useComposerHasDraft } from "@renderer/hooks/runtime-interact/use-composer-has-draft"
 import { ComposerQueue } from "./composer-queue"
 import { ComposerContextChips } from "./composer/composer-context-chips"
-import { ComposerFollowupRail } from "./composer/runtime-interact/composer-followup-rail"
 import { ComposerQuoteChips } from "./composer/runtime-interact/composer-quote-chips"
 import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
 import { ExploreCapabilityRail } from "./composer/explore-execute/explore-capability-rail"
@@ -17,12 +16,11 @@ import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-ba
 import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
 import { ComposerTopChrome } from "./composer/composer-top-chrome"
+import { ComposerActivityFrame } from "./composer/stacked-rail/composer-activity-frame"
 import { listComposerAssets } from "@renderer/hooks/composer-assets"
 import { registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
 import { clipboardModifiers, isPasteInlineShortcut, planComposerPaste } from "@renderer/lib/pasted-text"
-import { ComposerSessionReview } from "./composer/session-review/composer-session-review"
-import { ComposerTodoDock } from "./composer/composer-todo-dock"
 import type { ComposerProps } from "./composer/composer.types"
 import { EngineHandoffDock } from "./agent-picker/handoff/engine-handoff-dock"
 import { useT } from "@renderer/i18n"
@@ -122,11 +120,9 @@ export function AiChatComposer({
   return (
     <div className={cx("relative flex flex-col w-full min-w-0 px-6 pb-2", className)}>
       <EngineHandoffDock />
-      <ComposerTodoDock />
-      <ComposerSessionReview />
       <ComposerQueue />
-      <ComposerFollowupRail />
       <ExploreInterceptBanner />
+      <ComposerActivityFrame />
       <form onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
         <BorderBeam
           size="md"
@@ -157,7 +153,6 @@ export function AiChatComposer({
               <p className="text-body-medium font-medium text-accent-500">{t("chat.dropAttach")}</p>
             </div>
           ) : null}
-
           <input
             ref={fileRef}
             type="file"

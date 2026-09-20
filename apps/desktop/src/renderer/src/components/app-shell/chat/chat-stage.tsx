@@ -4,7 +4,8 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
-import { useState, useMemo } from "react"
+import { useMemo, useState } from "react"
+import { cx } from "@/utils/cx"
 import { Button } from "@/components/ui/button"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
 import { AiChatThread } from "@renderer/components/ai-chat/ai-chat-thread"
@@ -17,6 +18,7 @@ import { reviewGatePhase } from "@renderer/components/ai-chat/review-gate/review
 import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledger-rail"
 import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
 import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
+import { EnvironmentPanel } from "@renderer/components/ai-chat/environment/environment-panel"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { ChatStageHeader } from "./chat-stage-header"
 import { EmptySessionStart } from "./empty-session-start"
@@ -91,7 +93,8 @@ function ChatWorkspaceBody(props: {
   const repositories = useChatStore((state) => state.repositories)
   const workflowStatus = repositories.find((node) => node.id === sessionId)?.workflowStatus ?? null
   const reviewPhase = reviewGatePhase({ running, workflowStatus })
-  const [ledgerOpen, setLedgerOpen] = useState(true)
+  const [ledgerOpen, setLedgerOpen] = useState(false)
+  const [environmentOpen, setEnvironmentOpen] = useState(true)
   const assistant = lastAssistantTurn(messages)
   const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
 
@@ -105,26 +108,51 @@ function ChatWorkspaceBody(props: {
         onToggleRightPane={props.onToggleRightPane}
         hasLedger={hasLedger}
         ledgerOpen={ledgerOpen}
-        onToggleLedger={() => setLedgerOpen((open) => !open)}
+        onToggleLedger={() => {
+          setLedgerOpen((open) => {
+            const next = !open
+            if (next) setEnvironmentOpen(false)
+            return next
+          })
+        }}
+        environmentOpen={environmentOpen}
+        onToggleEnvironment={() => {
+          setEnvironmentOpen((open) => {
+            const next = !open
+            if (next) setLedgerOpen(false)
+            return next
+          })
+        }}
       />
       {props.empty ? (
-        <EmptySessionStart
-          workspaceName={props.workspaceName}
-          sessionTitle={props.sessionTitle}
-          workspaceRootLabel={props.workspaceRootLabel}
-          changesCount={props.changesCount}
-          onModelChange={props.onModelChange}
-          onSend={props.onSend}
-        />
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          <EmptySessionStart
+            workspaceName={props.workspaceName}
+            sessionTitle={props.sessionTitle}
+            workspaceRootLabel={props.workspaceRootLabel}
+            changesCount={props.changesCount}
+            onModelChange={props.onModelChange}
+            onSend={props.onSend}
+          />
+          <EnvironmentPanel open={environmentOpen} />
+        </div>
       ) : (
         <>
-          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-            <AiChatThread
-              messages={messages}
-              running={running}
-              thinkingLabel={thinkingLabel}
-              error={error}
-            />
+          <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+            <div
+              className={cx(
+                "flex min-h-0 min-w-0 flex-1 flex-col",
+                environmentOpen && "min-[900px]:pr-[18.75rem]"
+              )}
+            >
+              <AiChatThread
+                messages={messages}
+                running={running}
+                thinkingLabel={thinkingLabel}
+                error={error}
+              />
+            </div>
+            <EnvironmentPanel open={environmentOpen} />
             <RunLedgerRail open={ledgerOpen} onClose={() => setLedgerOpen(false)} />
           </div>
           <SourcesSheetHost />

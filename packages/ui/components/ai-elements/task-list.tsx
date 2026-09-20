@@ -28,7 +28,8 @@ export function TaskList({
   live = true,
   onContinue,
   action,
-  footer
+  footer,
+  fused
 }: TaskListProps) {
   useUiLocale()
   const rows = normalizeTasks(tasks, currentIndex)
@@ -48,7 +49,7 @@ export function TaskList({
 
   if (variant === "dock") {
     return (
-      <div className={cx("w-full min-w-0", className)}>
+      <div className="w-full min-w-0">
         <TaskListDock
           title={title}
           rows={rows}
@@ -58,6 +59,8 @@ export function TaskList({
           onContinue={onContinue}
           action={action}
           footer={footer}
+          fused={fused}
+          className={className}
         />
       </div>
     )

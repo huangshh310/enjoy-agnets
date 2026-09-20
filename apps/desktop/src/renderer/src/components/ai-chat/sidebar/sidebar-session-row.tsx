@@ -28,7 +28,7 @@ export function SidebarSessionRow({
   workflowStatus = null,
   changesSummary = null,
   className,
-  nameClassName = "text-caption-1-medium"
+  nameClassName = "text-caption-2-medium"
 }: SidebarSessionRowProps) {
   const activity = useSessionActivity(sessionId)
   const statusMeta = getWorkflowStatusMeta(workflowStatus)
@@ -36,9 +36,9 @@ export function SidebarSessionRow({
   return (
     <div
       className={cx(
-        "group/session flex w-full items-center gap-1",
+        "group/session flex h-7 w-full items-center gap-1 rounded-md",
         active
-          ? "bg-background-tertiary-default text-text-primary shadow-2xs"
+          ? "bg-background-secondary-hover text-text-primary"
           : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary",
         className
       )}
@@ -46,7 +46,7 @@ export function SidebarSessionRow({
       <button
         type="button"
         onClick={onSelect}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1 text-left"
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-md px-2 py-0.5 text-left"
       >
         <SessionAgentMark sessionId={sessionId} />
         {flagged ? (
@@ -141,5 +141,5 @@ function SessionRowMeta({
     )
   }
   if (running) return <LoadingStateGlyph variant="drive" className={cx("shrink-0", hide)} />
-  return <span className={cx("shrink-0 text-caption-2-medium text-text-tertiary", hide)}>{formatTime(updatedAt)}</span>
+  return <span className={cx("shrink-0 text-caption-2-regular text-text-secondary", hide)}>{formatTime(updatedAt)}</span>
 }

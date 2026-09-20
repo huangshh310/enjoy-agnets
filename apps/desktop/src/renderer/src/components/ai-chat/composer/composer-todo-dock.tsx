@@ -105,10 +105,10 @@ export function ComposerTodoDock() {
     ) : null
 
   return (
-    <div className="relative z-20 mb-2 w-full min-w-0 px-6 animate-in fade-in-50 duration-200">
+    <div className="relative w-full min-w-0">
       {running ? <SessionMascotRunner active={running} /> : null}
       <TaskList
-        className="w-full min-w-0"
+        fused
         title={todos.title ?? t("chat.todos")}
         tasks={todos.tasks}
         variant="dock"

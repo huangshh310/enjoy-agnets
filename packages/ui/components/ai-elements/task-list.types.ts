@@ -22,6 +22,8 @@ export interface TaskListProps {
   action?: React.ReactNode
   /** 控制舱底部附加区域（如合并展示的文件改动栏）。 */
   footer?: React.ReactNode
+  /** 贴进 Composer 壳：去独立圆角投影，只留底部分割。 */
+  fused?: boolean
 }
 
 export type TaskStatus = NonNullable<TaskItem["status"]>

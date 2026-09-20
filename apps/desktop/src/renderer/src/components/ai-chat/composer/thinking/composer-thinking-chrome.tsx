@@ -168,8 +168,8 @@ function ThoughtChip({
           "outline-none hover:bg-background-tertiary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         )}
       >
-        <RiBrainLine className={cx("size-3 shrink-0", accent ? "text-accent-500" : "text-text-tertiary")} aria-hidden />
-        <span className="whitespace-nowrap">{label}</span>
+        <RiBrainLine className={cx("size-3 shrink-0", accent ? "text-accent-500" : "text-text-secondary")} aria-hidden />
+        <span className="hidden whitespace-nowrap @[28rem]:inline">{label}</span>
       </button>
     </PopoverTrigger>
   )

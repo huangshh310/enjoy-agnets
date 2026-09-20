@@ -195,15 +195,20 @@ export function AgentPicker({
             <AgentBrandIcon id={chipIconId} size={14} />
           </span>
           <span className="flex min-w-0 items-baseline">
-            <span className={cx("shrink-0", pickerLocked ? "text-accent-500" : "text-text-secondary")}>
+            <span
+              className={cx(
+                "hidden shrink-0 @[18rem]:inline",
+                pickerLocked ? "text-accent-500" : "text-text-secondary"
+              )}
+            >
               {chip.engine}
             </span>
             {chip.model ? (
               <>
-                <span className="mx-1 shrink-0 text-text-tertiary">·</span>
+                <span className="mx-1 hidden shrink-0 text-text-secondary @[24rem]:inline">·</span>
                 <span
                   className={cx(
-                    "min-w-0 truncate font-semibold",
+                    "hidden min-w-0 truncate font-semibold @[24rem]:inline",
                     pickerLocked ? "text-accent-500" : "text-text-primary"
                   )}
                 >

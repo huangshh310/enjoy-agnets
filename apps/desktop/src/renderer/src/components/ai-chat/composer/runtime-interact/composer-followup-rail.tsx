@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { getRuntimeHint, setRuntimeHint, subscribeFollowups, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-styles"
 
 export function ComposerFollowupRail() {
   const t = useT()
@@ -15,15 +16,15 @@ export function ComposerFollowupRail() {
   if (!hint) return null
 
   return (
-    <div className="mx-auto mb-1.5 flex w-full items-center gap-1 px-1">
-      <p className="min-w-0 flex-1 font-mono text-caption-2-regular text-text-tertiary">
+    <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>
+      <p className="min-w-0 flex-1 text-caption-2-regular text-text-secondary">
         {hintLabel(hint, t)}
       </p>
       <button
         type="button"
         aria-label={t("common.close")}
         onClick={() => setRuntimeHint(null)}
-        className="inline-flex size-5 cursor-pointer items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
+        className="inline-flex size-5 cursor-pointer items-center justify-center rounded-md text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
       >
         <RiCloseLine className="size-3" aria-hidden />
       </button>

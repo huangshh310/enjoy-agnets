@@ -14,7 +14,7 @@ export function ExploreCapabilityRail() {
   }
 
   return (
-    <div className="flex items-center justify-between gap-2 px-3.5 py-1 text-caption-2-medium text-text-tertiary">
+    <div className="flex items-center justify-between gap-2 px-3.5 py-1 text-caption-2-medium text-text-secondary">
       <div className="flex min-w-0 items-center gap-1.5 truncate">
         <span className="size-1.5 shrink-0 rounded-full bg-accent-500/80" />
         <span className="truncate">{t("chat.surfaceExploreFootnote")}</span>
