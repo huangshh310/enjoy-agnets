@@ -3,6 +3,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { isLedgerFileSourceName } from "../../run-ledger/format-ledger-entry.ts"
 import { extractToolPath } from "../thinking/extract-step-fields.ts"
 import { classifySourceKind, formatSourceChipLabel, parseMcpServerId, type TurnSourceChip } from "./source-chip.ts"
 import { isHttpSource } from "./source-path.ts"
@@ -43,7 +44,7 @@ function chipFromTool(tool: ThreadToolCall, skillPrefix: (name: string) => strin
     const title = skillTitle(tool)
     return toChip({ id: `skill:${tool.id}`, title, toolName: "skill" }, skillPrefix)
   }
-  if (!isReadLike(name)) return null
+  if (!isLedgerFileSourceName(name)) return null
   const path = extractToolPath(asRecord(tool.args), tool.name, asRecord(tool.result))
   if (!path || isHttpSource(path)) return null
   return toChip({ id: `file:${path}`, path, toolName: name }, skillPrefix)
@@ -75,10 +76,6 @@ function skillTitle(tool: ThreadToolCall): string {
   const args = asRecord(tool.args)
   const raw = args.name ?? args.skill ?? args.title
   return typeof raw === "string" && raw.trim() ? raw.trim() : tool.name
-}
-
-function isReadLike(name: string): boolean {
-  return /^(read_file|read|open_file|glob|grep|repo_outline|list_dir)$/.test(name)
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
