@@ -2,15 +2,18 @@
 
 > 2026-09-20 · jojo  
 > 对照：`emerging-agent-innovation.md` I4；Multica Autopilots（只抄节奏）  
-> 预览：`design/previews/i4-automations.html`  
+> 预览：[`../previews/i4-automations.html`](../previews/i4-automations.html)（【视觉真源】I4 本机 Automations · Luna）  
 > 入库：`design/references/i4-automations.md`  
-> 队列：#61 P0-S 后 **下一刀** → 再 I2 精选 / 命名身份
+> 队列：#61 P0-S 后 **下一刀** → 再 I2 精选 / 命名身份  
+> 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
 
 ## 一句话
 
 本机 **Automations**：定时或事件触发「开一轮会话 / 工作单」，诚实 **local-only**；不做云调度、不做团队看板派活。
+
+加深现有 `#/settings/automations` 壳（`manual` / `on_save` 已落地）；**cron + 诚实本机文案**是 I4 加深，**不要**另做第二套 Automations。
 
 ---
 
@@ -41,6 +44,7 @@
 | M-CBD | 失败/待验收进 Inbox，不新铃系统 |
 | I1 / 铬条 | 用当前引擎模型偏好；可在规则里钉死 model |
 | Multica | 只抄「定时自己跑」节奏，不抄服务端工作区 |
+| 现壳 | `#/settings/automations` 已有列表 / 草稿 / `automations.run`；触发落地只有 `manual` / `on_save`。合约里的 `cron` / `cronExpr` **未实现**（见 `settings` / `ipc` 已知坑）。I4 加深这一页，不新开路由 |
 
 ## 切片
 
@@ -61,6 +65,8 @@
 ## Luna 一句话
 
 `i4-automations.html`：列表（开/停/上次）+ 编辑抽屉（触发=手动/cron、引擎、提示词）+ 脚注「仅本机」；另：运行中/失败各一态。
+
+视觉真源已入库：[`../previews/i4-automations.html`](../previews/i4-automations.html)（列表行 / 380px 抽屉 / 运行中条 / 失败→Inbox「失败」；不宣称应用已 1:1）。
 
 ---
 
