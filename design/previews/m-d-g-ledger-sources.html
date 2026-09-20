@@ -215,8 +215,8 @@ tailwind.config = {
             </div>
           </aside>
 
-          <!-- 本轮来源 sheet：贴在账本左侧，连着选中行 -->
-          <aside class="absolute bottom-3 right-[304px] hidden w-[272px] overflow-hidden rounded-2xl border border-line bg-card shadow-2xl xl:block">
+          <!-- 本轮来源 sheet：贴在账本左侧，连着选中行；窄屏落到双栏下方，避免藏掉 -->
+          <aside class="m-3 overflow-hidden rounded-2xl border border-line bg-card shadow-2xl lg:absolute lg:bottom-3 lg:right-[304px] lg:m-0 lg:w-[272px]">
             <header class="flex items-start justify-between border-b border-line px-3 py-2.5">
               <div>
                 <h3 class="text-[13px] font-semibold">本轮来源</h3>
