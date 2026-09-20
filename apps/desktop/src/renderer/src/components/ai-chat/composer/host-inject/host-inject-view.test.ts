@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { hostInjectBarView } from "./host-inject-view.ts"
+import { hostInjectBarView, hostInjectCountLane } from "./host-inject-view.ts"
 
 const injectedSnap = {
   runtimeId: "cursor",
@@ -96,6 +96,13 @@ test("尚未开流但有已启用项：画 SoT 计数，不是已注入 0", () =
     enabledSkills: 3
   })
   assert.deepEqual(view, { kind: "enabled", mcp: 2, skills: 3 })
+})
+
+test("计数文案：0 的一侧不进锁表句，避免已注入 0", () => {
+  assert.equal(hostInjectCountLane(2, 3), "both")
+  assert.equal(hostInjectCountLane(2, 0), "mcp")
+  assert.equal(hostInjectCountLane(0, 3), "skills")
+  assert.equal(hostInjectCountLane(0, 0), "none")
 })
 
 test("单服解析失败且本轮 0 注入：失败态，不是绿灯", () => {

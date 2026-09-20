@@ -4,6 +4,17 @@
 import type { HostInjectSkip, HostInjectSnapshot } from "@enjoy-agents/ipc-contract"
 import { capabilitiesFor } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 
+/** 文案锁：0 的一侧不写，避免「已启用 0 / 已注入 0」。 */
+export function hostInjectCountLane(
+  mcp: number,
+  skills: number
+): "both" | "mcp" | "skills" | "none" {
+  if (mcp > 0 && skills > 0) return "both"
+  if (mcp > 0) return "mcp"
+  if (skills > 0) return "skills"
+  return "none"
+}
+
 export type HostInjectBarView =
   | { kind: "hidden" }
   | { kind: "enabled"; mcp: number; skills: number }

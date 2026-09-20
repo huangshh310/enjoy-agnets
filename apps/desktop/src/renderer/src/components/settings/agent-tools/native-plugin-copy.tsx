@@ -16,6 +16,7 @@ import {
 import type { AgentToolPublic, McpServer } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
+import { hostInjectCountLane } from "@renderer/components/ai-chat/composer/host-inject/host-inject-view.ts"
 import { nativePluginHonesty } from "./native-plugin-honesty.ts"
 
 export function NativePluginCopy({
@@ -112,10 +113,7 @@ export function NativePluginCopy({
         <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-border-button-default/60 bg-background-primary-default/60 px-2.5 py-1.5">
           <RiServerLine className="size-3.5 shrink-0 text-accent-500" />
           <span className="truncate text-caption-2-medium text-text-secondary">
-            {t("settings.agentTools.hostExtensionsEnabled", {
-              mcp: honesty.mcpCount,
-              skills: honesty.skillCount
-            })}
+            {enabledHostCountText(t, honesty.mcpCount, honesty.skillCount)}
           </span>
         </div>
       ) : null}
@@ -174,4 +172,15 @@ export function NativePluginCopy({
       ) : null}
     </div>
   )
+}
+
+function enabledHostCountText(
+  t: ReturnType<typeof useT>,
+  mcp: number,
+  skills: number
+): string {
+  const lane = hostInjectCountLane(mcp, skills)
+  if (lane === "both") return t("settings.agentTools.hostExtensionsEnabled", { mcp, skills })
+  if (lane === "mcp") return t("settings.agentTools.hostExtensionsEnabledMcp", { mcp })
+  return t("settings.agentTools.hostExtensionsEnabledSkills", { skills })
 }
