@@ -1,0 +1,352 @@
+<!-- 【视觉真源】P0 Composer 输入区瘦身 · Luna -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0 · Composer 输入区瘦身 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .strike { text-decoration: line-through; text-decoration-color: #C2410C; text-decoration-thickness: 1.5px; }
+</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-composer-slim.html · 【视觉真源】P0 Composer 输入区瘦身 · Luna</p>
+      <h1 class="mt-1 text-[17px] font-semibold">一屏只留主行动 · 输入 + 精简铬条</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 紧急锁。次要进抽屉 / 悬停 / 一行芯片。<strong class="text-ink">禁止</strong>脚注墙、双引擎条、目标/阶段常驻占高。C1 探索\|执行、I1 换模、P0-S 注入逻辑<strong class="text-ink">不砍</strong>，只改密度。与 <span class="font-medium text-ink">p0-composer-chrome.html</span> 布局冲突以本页为准。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁 · 常驻 ≤ 两行铬 + 输入 + 底栏</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>铬条 L：<strong class="text-ink">探索 \| 执行</strong> 紧凑分段（C1）。<strong class="text-ink">不</strong>并排「设置目标」「阶段总结」</li>
+        <li>铬条 R：<strong class="text-ink">单一</strong>引擎·模型芯片（图标 + 短名 + 模型）。点开 = Picker / I1。用量%只进悬停或 Popover，<strong class="text-ink">禁止</strong>第二条 grok 行 / 重复 74%</li>
+        <li>思考：芯片旁<strong class="text-ink">小档位</strong>或模型菜单内；不单独占一整行宽条</li>
+        <li>主区输入；底栏发送 + 必要附件/token；溢出进 <code>…</code></li>
+        <li>有启用才画一行 <code>扩展 · MCP n · Skills m</code>；0/0 <strong class="text-ink">不画</strong>芯片</li>
+        <li>≠ 第三套简洁模式设置 · 砍能力 · 看板 / worktree · 营销 Hero</li>
+      </ul>
+    </aside>
+
+    <!-- A 主屏瘦身 -->
+    <section class="space-y-2">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <h2 class="text-[14px] font-semibold">A · 瘦身 Composer（主稿）</h2>
+        <span class="rounded-full bg-soft px-2.5 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/20">红框 ≈ 清爽可扫</span>
+      </div>
+      <p class="text-[11px] text-mute">主行动一眼：选模式 → 输入 → 发送。换引擎 / 换模 / 扩展 / 目标是次级点击。铬一条 + 输入 + 可选扩展芯片 + 底栏。</p>
+
+      <p class="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-mute">
+        <span><span class="font-semibold text-ink">1</span> 探索 \| 执行</span>
+        <span><span class="font-semibold text-ink">2</span> 单一引擎·模型</span>
+        <span><span class="font-semibold text-ink">3</span> 思考小档（旁）</span>
+        <span><span class="font-semibold text-ink">4</span> 输入</span>
+        <span><span class="font-semibold text-ink">5</span> 扩展一行（有启用才画）</span>
+        <span><span class="font-semibold text-ink">6</span> 底栏发送</span>
+      </p>
+
+      <div class="rounded-2xl border-2 border-accent/40 bg-card p-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line" title="1 探索 | 执行 · C1">
+            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</button>
+            <button type="button" class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</button>
+          </div>
+          <span class="min-w-[1rem] flex-1"></span>
+          <div class="relative" data-demo="usage">
+            <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30" title="2 点开 = 引擎 Picker / I1 模型；用量进悬停" id="engine-chip">
+              <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">G</span>
+              <span class="text-mute">Grok</span><span class="text-mute">·</span><span class="font-semibold">4.6</span>
+              <span class="text-mute">▾</span>
+            </button>
+            <div id="usage-pop" hidden class="absolute right-0 top-[calc(100%+6px)] z-20 w-[200px] overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+              <p class="border-b border-line px-3 py-2 text-[11px] font-semibold">用量 · 本账户</p>
+              <p class="px-3 py-2 text-[11px]">已用 <span class="font-semibold tabular-nums">74%</span> · 周期重置 6d</p>
+              <p class="border-t border-line bg-paper px-3 py-1.5 text-[10px] text-mute">% 只挂这一份芯片，不要第二条 grok 行</p>
+            </div>
+          </div>
+          <button type="button" class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line" title="3 思考小档 · 有 capability 才画">
+            <span class="text-[11px] leading-none">✦</span>
+            <span class="font-medium">中</span>
+          </button>
+        </div>
+
+        <div class="mt-2 min-h-[64px] rounded-xl border border-line bg-paper px-3 py-2 text-[12px] text-mute">
+          对照 <span class="font-medium text-ink">src/auth/login.ts</span> 补无障碍，并核对 GitHub Issue。
+        </div>
+
+        <div class="relative mt-2">
+          <button type="button" id="ext-chip" class="inline-flex items-center gap-1 rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/20" title="5 点开 Popover" aria-expanded="false" aria-controls="ext-pop">
+            扩展 · MCP 2 · Skills 3
+          </button>
+          <aside id="ext-pop" hidden class="absolute left-0 top-[calc(100%+8px)] z-20 w-[260px] overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+            <header class="border-b border-line px-3 py-2">
+              <p class="text-[12px] font-semibold">扩展</p>
+              <p class="mt-0.5 text-[10px] text-mute">真源仍在 Enjoy · 助手只消费</p>
+            </header>
+            <dl class="space-y-1.5 px-3 py-2 text-[11px]">
+              <div class="flex justify-between gap-2">
+                <dt class="text-mute">已启用</dt>
+                <dd class="font-medium">2 MCP · 3 Skills</dd>
+              </div>
+              <div class="flex justify-between gap-2">
+                <dt class="text-mute">已注入本轮</dt>
+                <dd class="font-medium">MCP 2 · Skills 3</dd>
+              </div>
+            </dl>
+            <p class="border-t border-line bg-paper px-3 py-2 text-[11px] font-medium text-accent">管理扩展 → <span class="font-normal text-mute">#/settings/extensions</span></p>
+          </aside>
+        </div>
+
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-1.5">
+          <div class="flex items-center gap-1.5">
+            <button type="button" class="flex size-6 items-center justify-center rounded-full bg-paper text-[12px] ring-1 ring-line" title="附件">+</button>
+            <span class="text-[10px] tabular-nums text-mute">1.2k tok</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <details class="relative">
+              <summary class="flex size-6 cursor-pointer list-none items-center justify-center rounded-full bg-paper text-[12px] ring-1 ring-line [&::-webkit-details-marker]:hidden" title="溢出：目标 / 阶段 / 其余">…</summary>
+              <div class="absolute bottom-[calc(100%+6px)] right-0 z-20 w-[168px] overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+                <p class="px-3 py-2 text-[11px]">设置目标</p>
+                <p class="border-t border-line px-3 py-2 text-[11px]">阶段总结</p>
+                <p class="border-t border-line bg-paper px-3 py-1.5 text-[10px] text-mute">也可放会话顶 · 禁止贴在分段旁</p>
+              </div>
+            </details>
+            <button type="button" class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white" title="6 发送">↑</button>
+          </div>
+        </div>
+      </div>
+      <p class="text-[10px] text-mute">点扩展芯片打开 Popover（已启用 / 已注入本轮 / 管理扩展）。点引擎芯片看用量；点 <code>…</code> 看目标 / 阶段。思考不是满宽条。</p>
+    </section>
+
+    <!-- B 扩展 Popover -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">B · 扩展芯片 Popover</h2>
+      <p class="text-[11px] text-mute">点芯片展开。Composer <strong class="text-ink">不</strong>常驻脚注墙。双「管理」深链收成单一「管理扩展」。</p>
+
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div class="min-w-0 flex-1 rounded-2xl border border-line p-3 shadow-sm">
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+              <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+              <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+            </div>
+            <span class="min-w-[1rem] flex-1"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30">
+              <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">G</span>
+              <span class="text-mute">Grok</span><span class="text-mute">·</span><span class="font-semibold">4.6</span>
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">✦ 中</span>
+          </div>
+          <div class="mt-2 min-h-[48px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">输入保持主焦点…</div>
+          <div class="relative mt-2 inline-block">
+            <span class="inline-flex items-center gap-1 rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/40">扩展 · MCP 2 · Skills 3</span>
+            <aside class="absolute left-0 top-[calc(100%+8px)] z-20 w-[260px] overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+              <header class="border-b border-line px-3 py-2">
+                <p class="text-[12px] font-semibold">扩展</p>
+                <p class="mt-0.5 text-[10px] text-mute">真源仍在 Enjoy · 助手只消费</p>
+              </header>
+              <dl class="space-y-1.5 px-3 py-2 text-[11px]">
+                <div class="flex justify-between gap-2">
+                  <dt class="text-mute">已启用</dt>
+                  <dd class="font-medium">2 MCP · 3 Skills</dd>
+                </div>
+                <div class="flex justify-between gap-2">
+                  <dt class="text-mute">已注入本轮</dt>
+                  <dd class="font-medium">MCP 2 · Skills 3</dd>
+                </div>
+                <div>
+                  <dt class="text-mute">引擎</dt>
+                  <dd class="mt-0.5">此引擎支持宿主透传</dd>
+                </div>
+              </dl>
+              <p class="border-t border-line bg-paper px-3 py-2 text-[11px] font-medium text-accent">管理扩展 → <span class="font-normal text-mute">#/settings/extensions</span></p>
+            </aside>
+          </div>
+          <div class="mt-2 h-[148px]" aria-hidden="true"></div>
+        </div>
+
+        <aside class="w-full shrink-0 space-y-2 lg:w-[300px]">
+          <div class="overflow-hidden rounded-2xl border border-line">
+            <p class="border-b border-line bg-paper px-3 py-2 text-[11px] font-semibold">不支持 · 仍一行</p>
+            <div class="space-y-2 px-3 py-3">
+              <span class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute/70 ring-1 ring-line opacity-70">
+                扩展 · MCP 2 · Skills 3 <span class="font-semibold text-warn">!</span>
+              </span>
+              <p class="rounded-lg border border-line bg-paper px-2.5 py-2 text-[11px] text-warn">此引擎只用自带 MCP；Enjoy 未注入</p>
+              <p class="text-[10px] text-mute">芯片变淡或叹号。点开见诚实卡。<strong class="text-ink">仍一行</strong>，不铺两句警告占高。</p>
+            </div>
+          </div>
+          <p class="rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[10px] text-mute">Popover 内可留小字脚注。Composer 表面禁止「真源在 Enjoy；助手只消费。原生插件…」墙。</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- C 反例 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">C · 反例条 · 划掉 / 勿画</h2>
+      <p class="text-[11px] text-mute">当前臃肿：双芯片 + SessionGoal 贴在探索旁 + P0-S 长脚注 + 双管理链 + 重复 74%。<strong class="text-warn">对照真机划掉。</strong></p>
+
+      <div class="rounded-2xl border border-dashed border-warn/50 bg-paper/80 p-3 opacity-80">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <div class="inline-flex rounded-full bg-card p-0.5 ring-1 ring-line">
+            <span class="rounded-full bg-soft px-2.5 py-0.5 text-[11px] font-semibold text-accent">探索</span>
+            <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">执行</span>
+          </div>
+          <span class="strike rounded-full px-2 py-0.5 text-[10px] text-mute">设置目标</span>
+          <span class="strike rounded-full px-2 py-0.5 text-[10px] text-mute">阶段总结</span>
+          <span class="min-w-[0.5rem] flex-1"></span>
+          <span class="strike inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[10px] ring-1 ring-line">
+            <span class="inline-flex size-[12px] items-center justify-center rounded-[3px] bg-ink text-[7px] font-bold text-white">G</span>
+            Grok
+          </span>
+          <span class="strike inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[10px] ring-1 ring-line">
+            <span class="inline-flex size-[12px] items-center justify-center rounded-[3px] bg-ink text-[7px] font-bold text-white">G</span>
+            Grok · grok-4.6
+          </span>
+          <span class="strike text-[10px] tabular-nums text-mute">74%</span>
+        </div>
+        <div class="strike mt-2 rounded-lg border border-line bg-card px-2 py-1.5 text-[10px] text-mute">思考 · 关 / 低 / 中 / 高 / 最大 · 满宽档条</div>
+        <div class="mt-2 min-h-[40px] rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">输入被铬条和脚注顶矮…</div>
+        <p class="strike mt-2 text-[10px] leading-relaxed text-mute">真源在 Enjoy；助手只消费。原生插件仍在各 CLI。hooks / Cordis / OpenCode native 请去助手侧装。</p>
+        <div class="strike mt-1.5 rounded-lg border border-line bg-soft px-2 py-1.5 text-[10px] text-accent">已注入本轮 · MCP 2 · Skills 3 · Filesystem · GitHub · form-a11y · Superpowers · impeccable</div>
+        <div class="mt-1.5 flex flex-wrap gap-3 text-[10px]">
+          <span class="strike text-accent">管理 → #/mcp</span>
+          <span class="strike text-accent">管理 → #/skills</span>
+          <span class="strike text-mute">Grok · 74%</span>
+        </div>
+        <p class="mt-2 text-[10px] font-semibold text-warn">双芯片 · Goal 常驻 · 脚注墙 · 双管理 · 重复用量 · 勿画</p>
+      </div>
+    </section>
+
+    <!-- D 空扩展 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">D · 空扩展 · 0 MCP · 0 Skills</h2>
+      <p class="text-[11px] text-mute">沿 P0-S 旧锁：启用均为 0 时<strong class="text-ink">不画</strong>任何注入条 / 芯片。不要「已注入 0」空成功。</p>
+      <div class="rounded-2xl border border-line p-3">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <span class="rounded-full bg-soft px-2.5 py-0.5 text-[11px] font-semibold text-accent">探索</span>
+            <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">执行</span>
+          </div>
+          <span class="min-w-[1rem] flex-1"></span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30">
+            <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-[#D97757] text-[8px] font-bold text-white">C</span>
+            <span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span>
+          </span>
+        </div>
+        <div class="mt-2 min-h-[48px] rounded-xl border border-line bg-paper px-3 py-2 text-[12px] text-mute">先摸清登录流程，先别动代码…</div>
+        <p class="mt-2 rounded-md border border-dashed border-line px-2 py-1 text-[10px] text-mute/50 strike">扩展 · MCP 0 · Skills 0 · 勿画</p>
+        <div class="mt-2 flex items-center justify-between">
+          <span class="text-[10px] text-mute">+ · tok</span>
+          <span class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">写</th><th class="px-3 py-2">不用</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">分段</td>
+            <td class="px-3 py-2">探索 · 执行（紧凑）</td>
+            <td class="px-3 py-2">旁贴设置目标 / 阶段总结；Explore runtime</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">引擎·模型</td>
+            <td class="px-3 py-2">一份芯片：图标 + 短名 + 模型</td>
+            <td class="px-3 py-2">引擎胶囊 + 模型芯片双份；第二条 grok；重复 74%</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">用量</td>
+            <td class="px-3 py-2">芯片悬停 / Popover「已用 74%」</td>
+            <td class="px-3 py-2">铬条常驻第二行进度条</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">思考</td>
+            <td class="px-3 py-2">✦ 中 / 思考 · 跟模型（芯片旁或菜单内）</td>
+            <td class="px-3 py-2">满宽五档条抢第一视觉</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">扩展芯片</td>
+            <td class="px-3 py-2">扩展 · MCP 2 · Skills 3（或 MCP 2 · Skills 3）</td>
+            <td class="px-3 py-2">已同步到助手；展开名单常驻</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">扩展 Popover</td>
+            <td class="px-3 py-2">已启用 / 已注入本轮 / 不支持说明 / 管理扩展</td>
+            <td class="px-3 py-2">管理 → #/mcp 与 #/skills 双链；脚注墙</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">空启用</td>
+            <td class="px-3 py-2">不画芯片</td>
+            <td class="px-3 py-2">已注入 0、空绿成功</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">目标 / Recap</td>
+            <td class="px-3 py-2">会话顶或 <code>…</code></td>
+            <td class="px-3 py-2">探索\|执行旁常驻占高</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">I1 / C1 / P0-S</td>
+            <td class="px-3 py-2">能力仍在，只改呈现密度</td>
+            <td class="px-3 py-2">借瘦身卸分段、卸换模、卸注入</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>红框输入区：铬一条 + 输入 +（可选一行扩展）+ 底栏；无双引擎、无脚注墙、无目标阶段常驻。</li>
+        <li>探索\|执行仍一眼可切（C1）。I1 仍从这一份芯片进模型名单。</li>
+        <li>有启用：一行芯片；点开见已启用 / 已注入 / 诚实不支持 / 单一「管理扩展」。</li>
+        <li>0 MCP 且 0 Skills：不画注入芯片。</li>
+        <li>用量%只出现在那一份芯片的悬停或 Popover。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">砍探索\|执行 · 砍 I1 · 砍 P0-S 注入 · 第三套简洁模式设置迷宫 · 看板 / worktree · 居中营销 Hero</p>
+    </section>
+
+    <p class="text-[10px] text-mute">能力仍认 chrome / P0-S / explore-execute；<strong class="text-ink">密度与布局以本页为准</strong>。设计已锁，不宣称应用 1:1。</p>
+  </div>
+  <script>
+    function bindToggle(buttonId, popId) {
+      const button = document.getElementById(buttonId);
+      const pop = document.getElementById(popId);
+      if (!button || !pop) return;
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const next = pop.hidden;
+        pop.hidden = !next;
+        button.setAttribute("aria-expanded", String(next));
+      });
+      document.addEventListener("click", () => {
+        pop.hidden = true;
+        button.setAttribute("aria-expanded", "false");
+      });
+      pop.addEventListener("click", (event) => event.stopPropagation());
+    }
+    bindToggle("engine-chip", "usage-pop");
+    bindToggle("ext-chip", "ext-pop");
+  </script>
+</body>
+</html>

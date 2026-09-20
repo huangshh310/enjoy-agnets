@@ -90,6 +90,10 @@
 
 视觉真源已入库：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)（三态 + 空启用诚实空 + 文案表；不宣称应用已 1:1）。Composer **呈现密度**（脚注墙 / 一行芯片）冲突让路 [`p0-composer-slim.md`](./p0-composer-slim.md)；三态逻辑与 SoT 不废。
 
+## Composer 呈现（slim 覆盖密度）
+
+三态逻辑保留（SoT / 已注入本轮 / 不支持诚实卡）。Composer **只留一行入口** `扩展 · MCP n · Skills m`；长脚注与双「管理」深链进芯片 Popover。空启用仍不画。表面密度以 [`p0-composer-slim.md`](./p0-composer-slim.md) 为准。
+
 ---
 
 *实现以 `design/specs/*` 与 runtime capabilities 为准；与本文冲突先改 specs。Composer 上呈现密度以 `p0-composer-slim` 为准。*
