@@ -41,12 +41,12 @@ tailwind.config = {
       <h2 class="text-[14px] font-semibold">联动一屏 · 待验收打开闸门 · 账本行打开来源</h2>
       <p class="text-[11px] text-mute">左筛在「待验收」，选中行 = 中栏会话。徽标仍是 2（只计拍板）。右行高亮 = 刚点开「本轮来源」。</p>
 
-      <div class="relative overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
-        <div class="grid min-h-[420px] lg:grid-cols-[220px_minmax(0,1fr)_228px]">
+      <div class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <div class="grid lg:grid-cols-[220px_minmax(0,1fr)_260px]">
 
           <!-- M-C 安静 Inbox -->
           <aside class="flex flex-col border-b border-line bg-card lg:border-b-0 lg:border-r">
-            <header class="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
+            <header class="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
               <div class="flex items-center gap-1.5">
                 <h3 class="text-[12px] font-semibold">收件箱</h3>
                 <span class="rounded-full bg-accent px-1.5 py-px text-[10px] font-semibold text-white" title="只要人拍板">2</span>
@@ -58,10 +58,10 @@ tailwind.config = {
               <button class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/30">待验收</button>
               <button class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">失败</button>
             </div>
-            <p class="px-3 pb-1.5 text-[10px] text-mute">默认不列读文件 / 跑命令。徽标 ≠ 列表条数。</p>
-            <ul class="min-h-0 flex-1 divide-y divide-line">
+            <p class="px-3 pb-1 text-[10px] text-mute">默认不列读文件 / 跑命令。徽标 ≠ 列表条数。</p>
+            <ul class="divide-y divide-line">
               <li>
-                <button class="flex w-full flex-col gap-0.5 bg-soft px-3 py-2.5 text-left ring-inset ring-2 ring-accent/20">
+                <button class="flex w-full flex-col gap-0.5 bg-soft px-3 py-2 text-left ring-inset ring-2 ring-accent/20">
                   <span class="flex items-center justify-between gap-2">
                     <span class="truncate text-[12px] font-medium">登录页改版</span>
                     <span class="shrink-0 rounded bg-card px-1.5 py-px text-[10px] text-accent ring-1 ring-accent/30">待验收</span>
@@ -70,7 +70,7 @@ tailwind.config = {
                 </button>
               </li>
               <li>
-                <button class="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left">
+                <button class="flex w-full flex-col gap-0.5 px-3 py-2 text-left">
                   <span class="flex items-center justify-between gap-2">
                     <span class="truncate text-[12px] font-medium">结算预览页</span>
                     <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">待验收</span>
@@ -79,12 +79,12 @@ tailwind.config = {
                 </button>
               </li>
             </ul>
-            <p class="border-t border-dashed border-line px-3 py-2 text-[10px] text-mute">拍板 2 条在另一筛：写盘方案、选登录态。不进本列，也不进运行中。</p>
+            <p class="mt-auto border-t border-dashed border-line px-3 py-2 text-[10px] text-mute">拍板 2 条在另一筛：写盘方案、选登录态。不进本列，也不进运行中。</p>
           </aside>
 
           <!-- M-B 验收闸 -->
           <div class="flex min-w-0 flex-col bg-card">
-            <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+            <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
               <div class="min-w-0">
                 <p class="truncate text-[13px] font-semibold">登录页改版</p>
                 <p class="text-[10px] text-mute">从 Inbox「待验收」进来 · 未自动提交</p>
@@ -96,7 +96,7 @@ tailwind.config = {
               </div>
             </header>
 
-            <div class="min-h-0 flex-1 space-y-3 overflow-auto px-4 py-3">
+            <div class="space-y-2.5 px-3 py-2.5">
               <div class="rounded-xl border border-line">
                 <div class="flex items-center justify-between gap-2 border-b border-line bg-paper px-3 py-1.5">
                   <span class="truncate font-mono text-[11px]">preview/index.html</span>
@@ -108,7 +108,7 @@ tailwind.config = {
 <span class="bg-[#E8F8EE] text-ok">+ 42  &lt;p class="hint"&gt;验证码 60 秒后重发&lt;/p&gt;</span></pre>
               </div>
 
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
                 <button class="h-6 rounded-md border border-line bg-card px-2.5 text-[11px]">在浏览器打开</button>
                 <button class="rounded-md bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/30">preview/index.html · L41</button>
                 <button class="rounded-md bg-card px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">技能 · 读代码</button>
@@ -117,7 +117,7 @@ tailwind.config = {
               <p class="text-[10px] text-mute">预览走系统浏览器（P0-F）。芯片与账本行打开同一张「本轮来源」（P0-G）。</p>
             </div>
 
-            <footer class="flex items-center justify-between gap-2 border-t border-line px-4 py-2.5">
+            <footer class="mt-auto flex items-center justify-between gap-2 border-t border-line px-3 py-2">
               <p class="text-[10px] text-mute">通过只收工。不自动 commit，不自动 push。</p>
               <div class="flex shrink-0 items-center gap-1.5">
                 <button class="h-7 rounded-md border border-line px-3 text-[11px]">打回</button>
@@ -126,87 +126,85 @@ tailwind.config = {
             </footer>
           </div>
 
-          <!-- M-D 运行账本 -->
+          <!-- M-D 运行账本：上半时间线，下半点行后的「本轮来源」 -->
           <aside class="flex flex-col border-t border-line bg-card lg:border-l lg:border-t-0">
-            <header class="border-b border-line px-3 py-2.5">
+            <header class="border-b border-line px-3 py-2">
               <h3 class="text-[12px] font-semibold">本轮账本</h3>
               <p class="mt-0.5 text-[10px] text-mute">只读 · 点行开来源</p>
             </header>
-            <ol class="min-h-0 flex-1 divide-y divide-line">
-              <li class="px-3 py-2">
+            <ol class="divide-y divide-line">
+              <li class="px-3 py-1.5">
                 <p class="text-[11px] font-medium">读 login.ts</p>
                 <p class="text-[10px] text-mute">工具 · 0.4s</p>
               </li>
-              <li class="bg-soft px-3 py-2 ring-inset ring-2 ring-accent/20">
+              <li class="bg-soft px-3 py-1.5 ring-inset ring-2 ring-accent/20">
                 <p class="text-[11px] font-medium">改 preview/index.html</p>
                 <p class="text-[10px] text-accent">工具 · 点开 → 本轮来源</p>
               </li>
-              <li class="px-3 py-2">
+              <li class="px-3 py-1.5">
                 <p class="font-mono text-[11px]">$ pnpm test</p>
                 <p class="text-[10px] text-warn">命令 · 失败 1</p>
               </li>
-              <li class="px-3 py-2">
+              <li class="px-3 py-1.5">
                 <p class="text-[11px] font-medium">断言未过 · login.spec</p>
                 <p class="text-[10px] text-warn">错误 · 已停，等验收</p>
               </li>
-              <li class="px-3 py-2">
+              <li class="px-3 py-1.5">
                 <p class="text-[11px] font-medium">本轮用量</p>
                 <p class="text-[10px] text-mute">1.2k tokens · 只读</p>
               </li>
             </ol>
+            <aside class="m-2 overflow-hidden rounded-xl border border-line bg-card shadow-md">
+              <header class="flex items-start justify-between border-b border-line px-2.5 py-2">
+                <div>
+                  <h3 class="text-[12px] font-semibold">本轮来源</h3>
+                  <p class="mt-0.5 text-[10px] text-mute">3 项 · 从账本行打开</p>
+                </div>
+                <span class="text-[11px] text-mute">关闭</span>
+              </header>
+              <ul class="divide-y divide-line">
+                <li>
+                  <button class="flex w-full items-start gap-2 bg-soft px-2.5 py-1.5 text-left">
+                    <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-card ring-1 ring-accent/30" aria-hidden="true">
+                      <svg class="size-3 text-accent" viewBox="0 0 16 16" fill="none"><rect x="4" y="2.5" width="8" height="11" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="flex items-center gap-1.5">
+                        <span class="truncate text-[11px] font-medium">index.html</span>
+                        <span class="shrink-0 rounded bg-card px-1 py-px text-[10px] text-mute ring-1 ring-line">文件</span>
+                      </span>
+                      <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">preview/index.html · L41</span>
+                    </span>
+                  </button>
+                </li>
+                <li class="flex items-start gap-2 px-2.5 py-1.5">
+                  <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                    <svg class="size-3 text-mute" viewBox="0 0 16 16" fill="none"><path d="M8 2.5l1.2 3.4h3.6L10.2 8l1.2 3.4L8 9.3 4.6 11.4 5.8 8 3.2 5.9h3.6L8 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                  </span>
+                  <span class="min-w-0">
+                    <span class="flex items-center gap-1.5">
+                      <span class="truncate text-[11px] font-medium">读代码</span>
+                      <span class="shrink-0 rounded bg-paper px-1 py-px text-[10px] text-mute ring-1 ring-line">技能</span>
+                    </span>
+                    <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">skills/read-code/SKILL.md</span>
+                  </span>
+                </li>
+                <li class="flex items-start gap-2 px-2.5 py-1.5">
+                  <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                    <svg class="size-3 text-mute" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
+                  </span>
+                  <span class="min-w-0">
+                    <span class="flex items-center gap-1.5">
+                      <span class="truncate text-[11px] font-medium">filesystem</span>
+                      <span class="shrink-0 rounded bg-paper px-1 py-px text-[10px] text-mute ring-1 ring-line">MCP</span>
+                    </span>
+                    <span class="mt-0.5 block truncate text-[10px] text-mute">服务器 · filesystem</span>
+                  </span>
+                </li>
+              </ul>
+            </aside>
           </aside>
         </div>
-
-        <!-- P0-G 式「本轮来源」：账本行点开 -->
-        <aside class="border-t border-line bg-card lg:absolute lg:bottom-3 lg:right-3 lg:w-[280px] lg:overflow-hidden lg:rounded-2xl lg:border lg:shadow-2xl">
-          <header class="flex items-start justify-between border-b border-line px-3 py-2.5">
-            <div>
-              <h3 class="text-[13px] font-semibold">本轮来源</h3>
-              <p class="mt-0.5 text-[10px] text-mute">3 项 · 从账本行打开</p>
-            </div>
-            <span class="text-[11px] text-mute">关闭</span>
-          </header>
-          <ul class="divide-y divide-line">
-            <li>
-              <button class="flex w-full items-start gap-2 bg-soft px-3 py-2 text-left">
-                <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-card ring-1 ring-accent/30" aria-hidden="true">
-                  <svg class="size-3 text-accent" viewBox="0 0 16 16" fill="none"><rect x="4" y="2.5" width="8" height="11" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                </span>
-                <span class="min-w-0">
-                  <span class="flex items-center gap-1.5">
-                    <span class="truncate text-[11px] font-medium">index.html</span>
-                    <span class="shrink-0 rounded bg-card px-1 py-px text-[10px] text-mute ring-1 ring-line">文件</span>
-                  </span>
-                  <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">preview/index.html · L41</span>
-                </span>
-              </button>
-            </li>
-            <li class="flex items-start gap-2 px-3 py-2">
-              <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
-                <svg class="size-3 text-mute" viewBox="0 0 16 16" fill="none"><path d="M8 2.5l1.2 3.4h3.6L10.2 8l1.2 3.4L8 9.3 4.6 11.4 5.8 8 3.2 5.9h3.6L8 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-              </span>
-              <span class="min-w-0">
-                <span class="flex items-center gap-1.5">
-                  <span class="truncate text-[11px] font-medium">读代码</span>
-                  <span class="shrink-0 rounded bg-paper px-1 py-px text-[10px] text-mute ring-1 ring-line">技能</span>
-                </span>
-                <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">skills/read-code/SKILL.md</span>
-              </span>
-            </li>
-            <li class="flex items-start gap-2 px-3 py-2">
-              <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
-                <svg class="size-3 text-mute" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
-              </span>
-              <span class="min-w-0">
-                <span class="flex items-center gap-1.5">
-                  <span class="truncate text-[11px] font-medium">filesystem</span>
-                  <span class="shrink-0 rounded bg-paper px-1 py-px text-[10px] text-mute ring-1 ring-line">MCP</span>
-                </span>
-                <span class="mt-0.5 block truncate text-[10px] text-mute">服务器 · filesystem</span>
-              </span>
-            </li>
-          </ul>
-        </aside>
       </div>
     </section>
 
