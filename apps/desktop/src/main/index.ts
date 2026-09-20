@@ -133,12 +133,18 @@ app.whenReady().then(async () => {
   applyMacDockIcon();
   createWindow();
   startAppUpdate();
+  void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
+    startAutomationScheduler()
+  })
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
 app.on("before-quit", () => {
+  void import("./services/automations-scheduler").then(({ stopAutomationScheduler }) => {
+    stopAutomationScheduler()
+  })
   flushActiveRuns();
   disposeAllAcpSessions();
   void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {

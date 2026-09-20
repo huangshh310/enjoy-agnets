@@ -1,12 +1,25 @@
 /**
- * 执行自动化：把配方 prompt 交给同一条 Agent 循环。
+ * 执行自动化：新建或复用会话，再走同一条 Agent 循环（含 P0-S 注入）。
+ * 失败只发 run.error，进 Inbox「失败」，不标 needs_review。
  */
 import type { BrowserWindow } from "electron"
-import { RunAgentInput, type Automation, type RunAutomationInput } from "@enjoy-agents/ipc-contract"
-import { runAgent } from "./agent-run-start"
-import { waitForRunSettle } from "./agent-run-state"
-import { readAutomations } from "./automations-store"
-import { getActiveProfile } from "./secrets"
+import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
+import { listActiveRuns, waitForRunSettle } from "./agent-run-state"
+import {
+  isAutomationRunning,
+  markAutomationIdle,
+  markAutomationRunning,
+  patchStoredAutomation,
+  readAutomations
+} from "./automations-store"
+import { emitAutomationsChanged } from "./automations-notify"
+import {
+  openAutomationSession,
+  resolveAutomationWorkspaceId,
+  startAutomationRun
+} from "./automations-launch"
+import { createId } from "./ids"
+import { stampAndSend } from "./event-bus"
 
 export async function runAutomation(window: BrowserWindow, input: RunAutomationInput) {
   const item = readAutomations().find((row) => row.id === input.id)
@@ -15,14 +28,13 @@ export async function runAutomation(window: BrowserWindow, input: RunAutomationI
   return launchAutomationAgent(window, item, input.sessionId, input.workspaceId)
 }
 
-/** 写盘后触发所有已启用的 on_save 配方。 */
+/** 写盘后触发所有已启用的 on_save 配方。I4 P0 不新做保存后，旧数据仍跑。 */
 export async function fireOnSaveAutomations(
   window: BrowserWindow | undefined,
   workspaceId: string,
   sessionId: string
 ): Promise<void> {
   if (!window || window.isDestroyed()) return
-  const { listActiveRuns } = await import("./agent-run-state")
   if (listActiveRuns().some((item) => item.run.input.sessionId === sessionId)) return
   const jobs = readAutomations().filter((item) => item.enabled && item.trigger === "on_save")
   for (const item of jobs) {
@@ -30,21 +42,58 @@ export async function fireOnSaveAutomations(
   }
 }
 
-async function launchAutomationAgent(
+export async function launchAutomationAgent(
   window: BrowserWindow,
   item: Automation,
-  sessionId: string,
-  workspaceId: string
+  sessionId?: string,
+  workspaceId?: string
 ) {
-  const profile = await getActiveProfile()
-  const payload = RunAgentInput.parse({
-    sessionId,
-    workspaceId,
-    modelId: profile?.modelId,
-    persistUser: true,
-    messages: [{ role: "user", content: item.prompt }]
+  if (isAutomationRunning(item.id)) {
+    return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: workspaceId ?? "" }
+  }
+  let openedSessionId = sessionId ?? ""
+  let openedWorkspaceId = workspaceId ?? ""
+  markAutomationRunning(item.id)
+  emitAutomationsChanged("run", item.id)
+  try {
+    openedWorkspaceId = await resolveAutomationWorkspaceId(workspaceId)
+    const opened = await openAutomationSession(item, openedWorkspaceId, sessionId)
+    openedSessionId = opened.sessionId
+    openedWorkspaceId = opened.workspaceId
+    patchStoredAutomation(item.id, {
+      lastRunAt: Date.now(),
+      lastSessionId: openedSessionId,
+      lastError: undefined
+    })
+    emitAutomationsChanged("status", item.id)
+    const started = await startAutomationRun(window, item, openedSessionId, openedWorkspaceId)
+    const settled = await waitForRunSettle(started.runId)
+    finishAutomationRun(item.id, settled.status === "end" ? "ok" : "failed", settled.summary)
+    return {
+      id: item.id,
+      sessionId: openedSessionId,
+      workspaceId: openedWorkspaceId,
+      runId: started.runId
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (openedSessionId) {
+      stampAndSend(window, { type: "run.error", runId: createId("run"), message }, openedSessionId)
+    }
+    finishAutomationRun(item.id, "failed", message)
+    throw error
+  } finally {
+    markAutomationIdle(item.id)
+    emitAutomationsChanged("status", item.id)
+  }
+}
+
+function finishAutomationRun(id: string, status: "ok" | "failed", summary: string): void {
+  const current = readAutomations().find((row) => row.id === id)
+  const fails = status === "failed" ? (current?.consecutiveFails ?? 0) + 1 : 0
+  patchStoredAutomation(id, {
+    lastRunStatus: status,
+    lastError: status === "failed" ? summary || "Automation failed." : undefined,
+    consecutiveFails: fails
   })
-  const started = await runAgent(window, payload)
-  await waitForRunSettle(started.runId)
-  return started
 }

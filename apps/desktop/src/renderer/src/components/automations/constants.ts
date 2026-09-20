@@ -1,42 +1,9 @@
 /**
- * Automations 模版与筛选类型。文案走 i18n。
+ * I4 Automations 抽屉宽度与页脚诚实句。
  */
-import type { AutomationTrigger } from "@enjoy-agents/ipc-contract"
-import type { TranslateFn } from "@renderer/i18n"
+export const AUTOMATION_DRAWER_WIDTH_CLASS = "w-[min(380px,calc(100vw-1.5rem))]"
 
-export type AutomationFilter = "all" | "manual" | "on_save"
+export const LOCAL_ONLY_FOOTER = "仅在本机运行，关闭应用则暂停"
 
-export type AutomationTemplate = {
-  id: string
-  name: string
-  trigger: AutomationTrigger
-  category: string
-  prompt: string
-  badge: string
-}
-
-export function getAutomationTemplates(t: TranslateFn): AutomationTemplate[] {
-  return [
-    automationTemplate(t, "tpl-diffs", "diffs", "on_save"),
-    automationTemplate(t, "tpl-todos", "todos", "on_save"),
-    automationTemplate(t, "tpl-typecheck", "typecheck", "manual"),
-    automationTemplate(t, "tpl-commit-notes", "commitNotes", "manual")
-  ]
-}
-
-function automationTemplate(
-  t: TranslateFn,
-  id: string,
-  key: string,
-  trigger: AutomationTrigger
-): AutomationTemplate {
-  const base = `studio.automationTemplates.${key}`
-  return {
-    id,
-    name: t(`${base}.name`),
-    trigger,
-    category: t(`${base}.category`),
-    prompt: t(`${base}.prompt`),
-    badge: t(`${base}.badge`)
-  }
-}
+export const P0_TRIGGERS = ["manual", "cron"] as const
+export type AutomationP0Trigger = (typeof P0_TRIGGERS)[number]
