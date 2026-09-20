@@ -637,6 +637,8 @@ export const zhChat = {
   approve: "允许执行",
   shellCommand: "Shell 命令",
   gitCommitMessage: "Git 提交说明：",
+  gitCommitCardTitle: "Git 提交已合入",
+  gitCommitReviewDiff: "在审查中查看差异",
   emptyValue: "（空）",
   paneContext: "上下文",
   paneContextHint: "挂载源、工具执行与运行检查器",

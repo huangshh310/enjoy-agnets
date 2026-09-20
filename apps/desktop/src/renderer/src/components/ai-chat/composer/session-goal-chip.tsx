@@ -125,7 +125,7 @@ export function SessionGoalChip({ className }: { className?: string } = {}) {
         ) : (
           <RiSparkling2Line className="size-3 text-accent-500 shrink-0" />
         )}
-        <span>{currentRecap ? "Recap" : t("chat.generateRecap")}</span>
+        <span>{t("chat.generateRecap")}</span>
       </button>
     </div>
   )

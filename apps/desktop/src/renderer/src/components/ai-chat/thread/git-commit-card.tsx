@@ -55,7 +55,7 @@ export function GitCommitCard({ info }: { info: GitCommitInfo }) {
             <RiGitCommitLine className="size-3.5" />
           </span>
           <span className="text-caption-2-medium font-semibold text-text-primary">
-            Git 提交已合入
+            {t("chat.gitCommitCardTitle")}
           </span>
           {info.branch ? (
             <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-[10.5px] font-medium text-accent-500">
@@ -105,7 +105,7 @@ export function GitCommitCard({ info }: { info: GitCommitInfo }) {
           className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent-500/10 px-2.5 py-1 text-caption-2-medium font-medium text-accent-500 hover:bg-accent-500/20 active:bg-accent-500/25 transition-colors"
         >
           <RiExternalLinkLine className="size-3.5" />
-          <span>在审查中查看差异 (Review Diff)</span>
+          <span>{t("chat.gitCommitReviewDiff")}</span>
         </button>
       </div>
     </div>
