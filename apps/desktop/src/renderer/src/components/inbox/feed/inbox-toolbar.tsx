@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 
 export function InboxToolbar(props: {
+  approvalCount: number
   unreadCount: number
   hasRead: boolean
   onMarkAllRead: () => void
   onClearRead: () => void
 }) {
   const t = useT()
-  const { unreadCount, hasRead, onMarkAllRead, onClearRead } = props
+  const { approvalCount, unreadCount, hasRead, onMarkAllRead, onClearRead } = props
 
   return (
     <header
@@ -23,15 +24,15 @@ export function InboxToolbar(props: {
         <span className="text-caption-1-semibold text-text-primary truncate">
           {t("pages.inbox.title")}
         </span>
-        {unreadCount > 0 ? (
-          <span className="inline-flex items-center rounded-full bg-accent-500/10 px-2 py-0.5 text-[11px] font-medium text-accent-600 dark:text-accent-400">
-            {t("pages.inbox.unreadCount", { n: unreadCount })}
+        {approvalCount > 0 ? (
+          <span
+            className="inline-flex items-center rounded-full bg-accent-500 px-1.5 py-px text-[10px] font-semibold text-text-white"
+            title={t("pages.inbox.approvalBadgeTitle")}
+          >
+            {approvalCount}
           </span>
-        ) : (
-          <span className="text-[11px] text-text-quaternary">
-            {t("pages.inbox.allCaughtUp")}
-          </span>
-        )}
+        ) : null}
+        <span className="text-[10px] text-text-tertiary">{t("pages.inbox.quietHint")}</span>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">

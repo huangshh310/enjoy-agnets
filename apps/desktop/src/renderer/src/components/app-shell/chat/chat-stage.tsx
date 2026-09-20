@@ -12,6 +12,9 @@ import { expandInspector } from "@renderer/components/ai-chat/right-pane/open-pa
 import { openFolder } from "@renderer/hooks/use-agent-session"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { reviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate-phase"
+import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledger-rail"
+import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { ChatStageHeader } from "./chat-stage-header"
 import { EmptySessionStart } from "./empty-session-start"
@@ -82,12 +85,17 @@ function ChatWorkspaceBody(props: {
   const running = useChatStore((state) => state.running)
   const thinkingLabel = useChatStore((state) => state.thinkingLabel)
   const error = useChatStore((state) => state.error)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const repositories = useChatStore((state) => state.repositories)
+  const workflowStatus = repositories.find((node) => node.id === sessionId)?.workflowStatus ?? null
+  const reviewPhase = reviewGatePhase({ running, workflowStatus })
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ChatStageHeader
         workspaceName={props.workspaceName}
         sessionTitle={props.sessionTitle}
+        reviewPhase={reviewPhase}
         rightPanelCollapsed={props.rightPanelCollapsed}
         onToggleRightPane={props.onToggleRightPane}
       />
@@ -102,12 +110,16 @@ function ChatWorkspaceBody(props: {
         />
       ) : (
         <>
-          <AiChatThread
-            messages={messages}
-            running={running}
-            thinkingLabel={thinkingLabel}
-            error={error}
-          />
+          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+            <AiChatThread
+              messages={messages}
+              running={running}
+              thinkingLabel={thinkingLabel}
+              error={error}
+            />
+            <RunLedgerRail />
+          </div>
+          <SourcesSheetHost />
           <ChatComposerCluster className="shrink-0" onModelChange={props.onModelChange} onSend={props.onSend} />
         </>
       )}

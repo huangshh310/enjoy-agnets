@@ -109,6 +109,13 @@ export function stripNeedsCount(items: AttentionItem[]): number {
   return stripVisibleItems(items).filter((item) => item.kind !== "complete").length
 }
 
+/** Inbox 轨徽标只要拍板（pending_approval / ask_user），不计失败 / 完成 / 运行中。 */
+export function stripApprovalCount(items: AttentionItem[]): number {
+  return stripVisibleItems(items).filter(
+    (item) => item.kind === "pending_approval" || item.kind === "ask_user"
+  ).length
+}
+
 export function isStripCompact(
   item: AttentionItem,
   currentSessionId: string | null,

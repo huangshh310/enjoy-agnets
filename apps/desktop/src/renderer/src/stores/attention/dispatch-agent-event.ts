@@ -7,6 +7,7 @@ import { belongsToForeground } from "./foreground-event"
 import { eventRunId } from "./ingest-attention"
 import { useAttentionStore } from "./attention-store"
 import { useAcpCommands } from "../acp-commands"
+import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 
 export { belongsToForeground } from "./foreground-event"
 
@@ -26,9 +27,11 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   const store = useChatStore.getState()
   if (belongsToForeground(event, store.sessionId, store.runId, store.running, sessionId)) {
     store.applyStreamEvent(event)
+    syncReviewGateAfterEvent(event, sessionId, true)
     return
   }
   if (sessionId) useAttentionStore.getState().applyParkEvent(sessionId, event)
+  syncReviewGateAfterEvent(event, sessionId, false)
 }
 
 export function resolveEventSessionId(event: StreamEvent): string | undefined {

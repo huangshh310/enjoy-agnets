@@ -21,6 +21,9 @@ import { useSessionReviewModel } from "./use-session-review-model"
 import { usePreviewUrlReachable } from "./preview-open/use-preview-url-reachable"
 import type { SessionReviewFile } from "./session-review.types"
 import { latestSessionTodoList } from "../../thread/tool-surfaces/select-turn-tool-surfaces"
+import { ReviewGateCard, chipsFromLastAssistant } from "../../review-gate/review-gate-card"
+import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-gate-actions"
+import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
 
 export function ComposerSessionReview() {
   const t = useT()
@@ -35,8 +38,10 @@ export function ComposerSessionReview() {
   const [busy, setBusy] = useState(false)
   const [dismissedSlim, setDismissedSlim] = useState(false)
 
+  const sessionId = useChatStore((state) => state.sessionId)
   const todos = latestSessionTodoList(messages)
   const hasTodos = Boolean(todos && todos.tasks.length > 0)
+  const showGate = model.needsReview && !running
 
   const previewUrl = model.previewTarget?.kind === "url" ? model.previewTarget.url : null
   const isPreviewReachable = usePreviewUrlReachable(previewUrl)
@@ -50,14 +55,28 @@ export function ComposerSessionReview() {
     model.slimTarget != null &&
     (model.slimTarget.kind === "html" || isSlimReachable)
 
-  // 若已有 TodoDock，文件修改与预览已一体化合入其内，避免上下堆叠两张大卡片
-  if (hasTodos) return null
-  if (!model.showReview && !showSlim) return null
+  // 待验收闸优先于 Todo 合层；其它情况仍避免与 TodoDock 叠两张卡。
+  if (hasTodos && !showGate) return null
+  if (!showGate && !model.showReview && !showSlim) return null
 
   return (
     <div className="relative z-20 mb-2 flex w-full justify-center px-4 animate-in fade-in-50 duration-200">
       <SessionPreviewToast visible={preview.opened} />
-      {model.showReview ? (
+      {showGate ? (
+        <ReviewGateCard
+          files={model.files}
+          chips={chipsFromLastAssistant(lastAssistantTurn(messages), (name) =>
+            t("chat.sourceSkillLabel", { name })
+          )}
+          canOpenPreview={canOpenPreview}
+          previewBusy={preview.busy}
+          busy={busy}
+          onOpenPreview={() => model.previewTarget && void preview.open(model.previewTarget)}
+          onOpenFile={(path) => openSessionReview(path)}
+          onReject={() => void rejectReviewGate(sessionId)}
+          onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
+        />
+      ) : model.showReview ? (
         <ReviewCard
           files={model.files}
           running={running}

@@ -1,0 +1,25 @@
+/** M-CBD session ops: quiet Inbox / review gate / run ledger. */
+export const enSessionOps = {
+  quietHint: "Hide noise",
+  quietHintDetail: "Hide read-file / command spam. Badge = decide count, not review count.",
+  approvalBadgeTitle: "Human decide only",
+  phaseRunning: "Running",
+  phaseReview: "Review",
+  phaseDone: "Done",
+  gateSubtitle: "Not auto-committed",
+  gateHint: "Accept only finishes the turn. No auto commit or push.",
+  reject: "Send back",
+  approve: "Accept",
+  ledgerTitle: "This run",
+  ledgerHint: "Read-only · open sources",
+  ledgerKindTool: "Tool",
+  ledgerKindCommand: "Command",
+  ledgerKindError: "Error",
+  ledgerKindUsage: "Usage",
+  ledgerUsageLine: "{n} tokens · read-only",
+  ledgerOpenSources: "Open → this turn",
+  ledgerWaitingReview: "Stopped, waiting review",
+  ledgerFailed: "Failed",
+  sourcesFromLedger: "Opened from ledger",
+  needsReviewSummary: "Waiting for review · not auto-committed"
+}

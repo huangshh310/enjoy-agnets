@@ -9,6 +9,7 @@ import { enCommon } from "./common.ts"
 import { enNav } from "./nav.ts"
 import { enPages } from "./pages.ts"
 import { enSettings } from "./settings.ts"
+import { enSessionOps } from "./session-ops.ts"
 import { enStudio } from "./studio.ts"
 
 export const en: Messages = {
@@ -19,5 +20,6 @@ export const en: Messages = {
   chat: enChat,
   attention: enAttention,
   studio: enStudio,
+  sessionOps: enSessionOps,
   pages: enPages
 }

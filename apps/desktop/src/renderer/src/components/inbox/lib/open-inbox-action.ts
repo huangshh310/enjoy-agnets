@@ -3,8 +3,7 @@
  */
 import type { useNavigate } from "@tanstack/react-router"
 import { focusAttention } from "@renderer/components/ai-chat/attention/focus-attention"
-import type { AttentionKind } from "@renderer/stores/attention/attention.types"
-import type { InboxActionKey } from "../inbox.types"
+import type { InboxCopyKey, InboxActionKey } from "../inbox.types"
 
 type InboxNavigate = ReturnType<typeof useNavigate>
 
@@ -13,10 +12,13 @@ export function openInboxAction(
   actionKey: InboxActionKey,
   sessionId?: string,
   workspaceId?: string,
-  kind?: AttentionKind | "running" | "aborted"
+  kind?: InboxCopyKey
 ): void {
   if (actionKey !== "openSession") return
   if (!sessionId) return
-  const attentionKind = kind === "running" || kind === "aborted" ? undefined : kind
+  const attentionKind =
+    kind === "pending_approval" || kind === "ask_user" || kind === "error" || kind === "complete"
+      ? kind
+      : undefined
   void focusAttention({ sessionId, workspaceId, kind: attentionKind, navigate })
 }

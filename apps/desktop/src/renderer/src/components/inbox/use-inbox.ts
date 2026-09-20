@@ -14,7 +14,7 @@ import {
   inboxNavCounts,
   resolveSelected
 } from "./lib/filter-inbox"
-import { synthesizeRunningInbox } from "./lib/synthesize-running-inbox"
+import { synthesizeNeedsReviewInbox } from "./lib/synthesize-needs-review-inbox"
 import { groupInbox } from "./lib/inbox-time"
 
 export function useInbox() {
@@ -23,16 +23,10 @@ export function useInbox() {
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set())
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set())
   const [archivedItems, setArchivedItems] = useState<AttentionItem[]>(() => [])
-  const [filter, setFilter] = useState<InboxCategory>("all")
+  const [filter, setFilter] = useState<InboxCategory>("approval")
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const attentionItems = useAttentionStore((state) => state.items)
-  const parks = useAttentionStore((state) => state.parks)
-  const fgRunning = useChatStore((state) => state.running)
-  const fgSessionId = useChatStore((state) => state.sessionId)
-  const fgSessionTitle = useChatStore((state) => state.sessionTitle)
-  const fgWorkspaceId = useChatStore((state) => state.workspaceId)
-  const fgStartedAt = useChatStore((state) => state.runStartedAt)
   const repositories = useChatStore((state) => state.repositories)
 
   // 挂载时加载耐久层：已读 / 隐藏状态 + error/complete 归档条目。
@@ -61,34 +55,9 @@ export function useInbox() {
     const liveIds = new Set(attentionItems.map((item) => item.id))
     const merged = [...attentionItems, ...archivedItems.filter((item) => !liveIds.has(item.id))]
     const attentionList = inboxFromAttention(merged, { t, readIds, hiddenIds, repositories })
-    const runningList = synthesizeRunningInbox({
-      parks,
-      fgRunning,
-      fgSessionId,
-      fgSessionTitle,
-      fgWorkspaceId,
-      fgStartedAt,
-      repositories,
-      attentionItems,
-      t,
-      now
-    })
-    return [...runningList, ...attentionList]
-  }, [
-    attentionItems,
-    archivedItems,
-    hiddenIds,
-    readIds,
-    parks,
-    fgRunning,
-    fgSessionId,
-    fgSessionTitle,
-    fgWorkspaceId,
-    fgStartedAt,
-    repositories,
-    t,
-    now
-  ])
+    const reviewList = synthesizeNeedsReviewInbox({ repositories, t, now })
+    return [...reviewList, ...attentionList]
+  }, [attentionItems, archivedItems, hiddenIds, readIds, repositories, t, now])
   const filteredItems = useMemo(
     () => filterInbox(items, filter, search),
     [filter, items, search]
@@ -105,7 +74,8 @@ export function useInbox() {
     setSearch,
     groups,
     counts,
-    unreadCount: counts.unread,
+    approvalCount: counts.approval,
+    unreadCount: items.filter((item) => !item.read).length,
     hasRead: items.some((item) => item.read),
     selected,
     selectItem: (item: InboxNotification) => {

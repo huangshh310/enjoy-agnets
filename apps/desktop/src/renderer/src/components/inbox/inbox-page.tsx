@@ -1,16 +1,9 @@
 /**
- * 消息中心：左右分栏阅读，分类过滤与跳转。
+ * 安静 Inbox：筛选只有拍板 / 待验收 / 失败。徽标=拍板数。
  */
 import { useMemo } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import {
-  RiCheckboxCircleLine,
-  RiErrorWarningLine,
-  RiInboxLine,
-  RiMailUnreadLine,
-  RiPlayCircleLine,
-  RiShieldCheckLine
-} from "@remixicon/react"
+import { RiErrorWarningLine, RiEyeLine, RiShieldCheckLine } from "@remixicon/react"
 import { SecondaryPageShell, type SecondaryNavGroup } from "@renderer/components/app-pages/secondary-page-shell"
 import { useT } from "@renderer/i18n"
 import { InboxLayout } from "./feed/inbox-layout"
@@ -47,6 +40,7 @@ export function InboxPage() {
         groups={inbox.groups}
         selected={inbox.selected}
         now={inbox.now}
+        approvalCount={inbox.approvalCount}
         unreadCount={inbox.unreadCount}
         hasRead={inbox.hasRead}
         onSelect={inbox.selectItem}
@@ -60,12 +54,9 @@ export function InboxPage() {
 }
 
 function navLabel(filter: InboxCategory, t: (path: string) => string): string {
-  if (filter === "unread") return t("pages.inbox.navUnread")
-  if (filter === "running") return t("pages.inbox.navRunning")
-  if (filter === "waiting") return t("pages.inbox.navWaiting")
+  if (filter === "needs_review") return t("pages.inbox.navNeedsReview")
   if (filter === "failed") return t("pages.inbox.navFailed")
-  if (filter === "complete") return t("pages.inbox.navComplete")
-  return t("pages.inbox.navAll")
+  return t("pages.inbox.navApproval")
 }
 
 function badge(count: number): string | undefined {
@@ -81,36 +72,23 @@ function buildInboxNav(
       id: "inbox_nav",
       label: t("pages.inbox.navGroup"),
       items: [
-        { id: "all", label: t("pages.inbox.navAll"), icon: RiInboxLine, meta: badge(counts.all) },
         {
-          id: "unread",
-          label: t("pages.inbox.navUnread"),
-          icon: RiMailUnreadLine,
-          meta: badge(counts.unread)
-        },
-        {
-          id: "running",
-          label: t("pages.inbox.navRunning"),
-          icon: RiPlayCircleLine,
-          meta: badge(counts.running)
-        },
-        {
-          id: "waiting",
-          label: t("pages.inbox.navWaiting"),
+          id: "approval",
+          label: t("pages.inbox.navApproval"),
           icon: RiShieldCheckLine,
-          meta: badge(counts.waiting)
+          meta: badge(counts.approval)
+        },
+        {
+          id: "needs_review",
+          label: t("pages.inbox.navNeedsReview"),
+          icon: RiEyeLine,
+          meta: badge(counts.needs_review)
         },
         {
           id: "failed",
           label: t("pages.inbox.navFailed"),
           icon: RiErrorWarningLine,
           meta: badge(counts.failed)
-        },
-        {
-          id: "complete",
-          label: t("pages.inbox.navComplete"),
-          icon: RiCheckboxCircleLine,
-          meta: badge(counts.complete)
         }
       ]
     }

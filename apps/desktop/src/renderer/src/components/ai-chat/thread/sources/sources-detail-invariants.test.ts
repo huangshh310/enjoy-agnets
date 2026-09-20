@@ -59,7 +59,7 @@ test("中英词表与预览同文，不用 Citations / Sources 抽屉", () => {
 })
 
 test("芯片与 +N 只开 sheet，不立刻跳审查 / 知识 / 技能", () => {
-  assert.ok(files.chips.includes("SourceDetailSheet"))
+  assert.ok(files.chips.includes("openSourcesSheet"))
   assert.ok(files.chips.includes("turn-source-chip-more"))
   assert.ok(files.chips.includes("openSheet(chip.id)"))
   assert.ok(files.chips.includes("openSheet(null)"))

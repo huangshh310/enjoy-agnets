@@ -1,8 +1,10 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types.ts"
+import type { RepositoryNode } from "@renderer/stores/chat-store.types.ts"
 import type { InboxNotification } from "../inbox.types.ts"
 import { filterInbox, inboxFromAttention, inboxNavCounts, resolveSelected } from "./filter-inbox.ts"
+import { synthesizeNeedsReviewInbox } from "./synthesize-needs-review-inbox.ts"
 import { groupInbox, inboxGroupId, inboxTimeParts, startOfLocalDay } from "./inbox-time.ts"
 
 const t = (path: string) => path
@@ -20,7 +22,7 @@ function attention(partial: Partial<AttentionItem> & Pick<AttentionItem, "id" | 
 
 function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id">): InboxNotification {
   return {
-    copyKey: partial.copyKey ?? "complete",
+    copyKey: partial.copyKey ?? "pending_approval",
     title: partial.title ?? partial.id,
     summary: partial.summary ?? "",
     category: partial.category ?? "agent",
@@ -33,13 +35,13 @@ function note(partial: Partial<InboxNotification> & Pick<InboxNotification, "id"
   }
 }
 
-test("complete 默认已读，不占红点", () => {
+test("complete 不进安静 Inbox，不占拍板徽标", () => {
   const items = inboxFromAttention(
     [attention({ id: "c", sessionId: "ses_c", kind: "complete", summary: "done" })],
     { t, readIds: new Set(), hiddenIds: new Set() }
   )
-  assert.equal(items[0]?.read, true)
-  assert.equal(inboxNavCounts(items).unread, 0)
+  assert.equal(items.length, 0)
+  assert.equal(inboxNavCounts(items).approval, 0)
 })
 
 test("Attention 物化：隐藏项丢弃，必须带 sessionId", () => {
@@ -64,36 +66,52 @@ test("选中项：命中 id，否则回落第一封，空列表为 null", () => 
   assert.equal(resolveSelected([], "1"), null)
 })
 
-test("过滤：未读 / 分类 / 搜索同时生效", () => {
+test("过滤：拍板 / 待验收 / 失败，拍板列不含待验收", () => {
   const items = [
     note({ id: "1", title: "待审批", copyKey: "pending_approval", read: false }),
     note({ id: "2", title: "运行出错 HMAC", copyKey: "error", read: false }),
-    note({ id: "3", title: "已完成", copyKey: "complete", read: true }),
-    note({ id: "4", title: "正在跑", copyKey: "running", status: "running", read: true })
+    note({ id: "3", title: "登录页改版", copyKey: "needs_review", read: true }),
+    note({ id: "4", title: "提问", copyKey: "ask_user", read: false })
   ]
-  assert.equal(filterInbox(items, "unread", "").length, 2)
-  assert.equal(filterInbox(items, "waiting", "").length, 1)
+  assert.deepEqual(filterInbox(items, "approval", "").map((item) => item.id), ["1", "4"])
+  assert.deepEqual(filterInbox(items, "needs_review", "").map((item) => item.id), ["3"])
   assert.equal(filterInbox(items, "failed", "").length, 1)
-  assert.equal(filterInbox(items, "complete", "").length, 1)
-  assert.equal(filterInbox(items, "running", "").length, 1)
-  assert.equal(filterInbox(items, "all", "hmac").map((item) => item.id).join(), "2")
+  assert.equal(filterInbox(items, "failed", "hmac").map((item) => item.id).join(), "2")
 })
 
-test("导航计数统计各分类数量", () => {
+test("导航计数：徽标口径与拍板列一致", () => {
   const counts = inboxNavCounts([
     note({ id: "1", copyKey: "pending_approval", read: false }),
     note({ id: "2", copyKey: "error", read: false }),
-    note({ id: "3", copyKey: "complete", read: true }),
-    note({ id: "4", copyKey: "running", status: "running", read: true })
+    note({ id: "3", copyKey: "needs_review", read: true }),
+    note({ id: "4", copyKey: "ask_user", read: false })
   ])
   assert.deepEqual(counts, {
-    all: 4,
-    unread: 2,
-    running: 1,
-    waiting: 1,
-    failed: 1,
-    complete: 1
+    approval: 2,
+    needs_review: 1,
+    failed: 1
   })
+})
+
+test("待验收从会话 workflowStatus 合成，不进拍板计数", () => {
+  const repositories: RepositoryNode[] = [
+    { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+    {
+      id: "ses_r",
+      name: "登录页改版",
+      kind: "session",
+      parentId: "ws",
+      updatedAt: 9,
+      workflowStatus: "needs_review"
+    },
+    { id: "ses_d", name: "已完成", kind: "session", parentId: "ws", updatedAt: 8, workflowStatus: "done" }
+  ]
+  const rows = synthesizeNeedsReviewInbox({ repositories, t, now: 10 })
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.sessionId, "ses_r")
+  assert.equal(rows[0]?.copyKey, "needs_review")
+  assert.equal(inboxNavCounts(rows).approval, 0)
+  assert.equal(inboxNavCounts(rows).needs_review, 1)
 })
 
 test("相对时间分档", () => {

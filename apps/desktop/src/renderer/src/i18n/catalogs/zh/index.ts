@@ -8,6 +8,7 @@ import { zhCommon } from "./common.ts"
 import { zhNav } from "./nav.ts"
 import { zhPages } from "./pages.ts"
 import { zhSettings } from "./settings.ts"
+import { zhSessionOps } from "./session-ops.ts"
 import { zhStudio } from "./studio.ts"
 
 export const zh = {
@@ -18,6 +19,7 @@ export const zh = {
   chat: zhChat,
   attention: zhAttention,
   studio: zhStudio,
+  sessionOps: zhSessionOps,
   pages: zhPages
 }
 

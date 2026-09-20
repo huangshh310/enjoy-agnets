@@ -1,12 +1,11 @@
 /**
  * 助手气泡底脚来源芯片：3–4 颗可见，其余 +N。点芯片（含 +N）打开「本轮来源」sheet。
  */
-import { useState } from "react"
 import { useT } from "@renderer/i18n"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { openSourcesSheet, useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import { cx } from "@/utils/cx"
 import { collectTurnSources } from "./collect-turn-sources"
-import { SourceDetailSheet } from "./source-detail-sheet"
 import { splitVisibleSourceChips, type TurnSourceChip } from "./source-chip"
 
 export function SourceChips({
@@ -18,15 +17,14 @@ export function SourceChips({
 }) {
   const t = useT()
   const chips = collectTurnSources({ sources, tools }, (name) => t("chat.sourceSkillLabel", { name }))
-  const [open, setOpen] = useState(false)
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const open = useSourcesSheetStore((state) => state.open)
+  const activeId = useSourcesSheetStore((state) => state.activeId)
   if (chips.length === 0) return null
   const { shown, rest } = splitVisibleSourceChips(chips)
 
   /** 芯片 / +N 只开 sheet。有 path 也不直跳审查；审查只从 sheet 文件行。 */
   function openSheet(chipId: string | null) {
-    setActiveId(chipId)
-    setOpen(true)
+    openSourcesSheet({ chips, activeId: chipId })
   }
 
   return (
@@ -56,7 +54,6 @@ export function SourceChips({
           </button>
         ) : null}
       </div>
-      <SourceDetailSheet open={open} chips={chips} activeId={activeId} onClose={() => setOpen(false)} />
     </>
   )
 }

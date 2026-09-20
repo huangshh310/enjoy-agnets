@@ -11,9 +11,11 @@ export function sessionReviewVisible(
   running: boolean,
   dismissedKey?: string | null,
   filesKey?: string,
-  messageCount?: number
+  messageCount?: number,
+  needsReview?: boolean
 ): boolean {
   if (messageCount === 0) return false
+  if (needsReview && !running) return true
   if (dismissedKey != null && filesKey != null && dismissedKey === filesKey) return false
   if (fileCount > 0) return true
   return running

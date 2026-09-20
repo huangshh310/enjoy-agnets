@@ -18,6 +18,10 @@ export function useSessionReviewModel() {
   const running = useChatStore((state) => state.running)
   const selectedFilePath = useChatStore((state) => state.selectedFilePath)
   const dismissedKey = useChatStore((state) => state.sessionReviewDismissedKey)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const repositories = useChatStore((state) => state.repositories)
+  const needsReview =
+    repositories.find((node) => node.id === sessionId)?.workflowStatus === "needs_review"
 
   const pick = useMemo(
     () => describeReviewFiles(pathsFromLastTurn(messages), changes, running),
@@ -39,7 +43,8 @@ export function useSessionReviewModel() {
     running,
     dismissedKey,
     filesKey,
-    messages.length
+    messages.length,
+    needsReview
   )
   return {
     pick,
@@ -48,6 +53,7 @@ export function useSessionReviewModel() {
     previewTarget,
     slimTarget,
     showReview,
+    needsReview,
     showSlim: !showReview && messages.length > 0 && slimTarget != null
   }
 }
