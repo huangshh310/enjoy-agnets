@@ -1,5 +1,7 @@
 /**
- * Composer 顶部分段：探索 | 执行。全引擎常驻；不能拦截时只禁用探索。
+ * Composer 顶部分段：探索 | 执行。全引擎常驻。
+ * C1 能拦截：两钮都可点，探索 = 宿主只读拦截。
+ * C2 不能拦截：整组禁用 + 可见原因，禁止只灰探索、禁止整颗藏掉。
  */
 import { canHostInterceptExplore } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { cx } from "@/utils/cx"
@@ -16,37 +18,62 @@ export function ExploreExecuteToggle({ className }: { className?: string } = {})
   const mode = useChatStore((state) => state.mode)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const surface = surfaceForMode(mode)
-  const canIntercept = canHostInterceptExplore(runtimeId)
+  const locked = !canHostInterceptExplore(runtimeId)
 
   function pick(next: ComposerSurface) {
-    if (next === "explore" && !canIntercept) return
+    if (locked) return
     useChatStore.getState().setMode(applyComposerSurface(mode, next))
   }
 
   return (
+    <div className={cx("inline-flex min-w-0 flex-wrap items-center gap-1.5", className)}>
+      <SurfaceGroup surface={surface} locked={locked} onPick={pick} />
+      {locked ? (
+        <span
+          data-testid="composer-surface-disabled-reason"
+          className="max-w-[14rem] text-caption-2-regular text-text-warning-primary"
+        >
+          {t("chat.surfaceExploreDisabled")}
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+function SurfaceGroup({
+  surface,
+  locked,
+  onPick
+}: {
+  surface: ComposerSurface
+  locked: boolean
+  onPick: (next: ComposerSurface) => void
+}) {
+  const t = useT()
+  return (
     <div
       role="radiogroup"
       aria-label={t("chat.surfaceSelect")}
+      aria-disabled={locked || undefined}
       data-testid="composer-surface-toggle"
-      title={!canIntercept ? t("chat.surfaceExploreDisabled") : undefined}
       className={cx(
         "inline-flex items-center rounded-full bg-background-tertiary-default/90 p-0.5 ring-1 ring-border-button-default/80",
-        className
+        locked && "cursor-not-allowed opacity-50"
       )}
     >
       <SurfaceButton
         active={surface === "explore"}
-        disabled={!canIntercept}
+        disabled={locked}
         variant="explore"
         label={t("chat.surfaceExplore")}
-        title={!canIntercept ? t("chat.surfaceExploreDisabled") : undefined}
-        onClick={() => pick("explore")}
+        onClick={() => onPick("explore")}
       />
       <SurfaceButton
         active={surface === "execute"}
+        disabled={locked}
         variant="execute"
         label={t("chat.surfaceExecute")}
-        onClick={() => pick("execute")}
+        onClick={() => onPick("execute")}
       />
     </div>
   )
@@ -57,14 +84,12 @@ function SurfaceButton({
   disabled,
   variant,
   label,
-  title,
   onClick
 }: {
   active: boolean
   disabled?: boolean
   variant: ComposerSurface
   label: string
-  title?: string
   onClick: () => void
 }) {
   return (
@@ -74,16 +99,15 @@ function SurfaceButton({
       aria-checked={active}
       aria-disabled={disabled || undefined}
       disabled={disabled}
-      title={title}
       data-testid={`composer-surface-${variant}`}
       onClick={onClick}
       className={cx(
         "h-6 rounded-full px-2.5 text-caption-2-medium transition-all duration-150 select-none",
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+        disabled ? "cursor-not-allowed" : "cursor-pointer",
         active && variant === "explore" && "bg-accent-500/15 font-medium text-accent-600 dark:text-accent-400 shadow-2xs",
         active && variant === "execute" && "bg-accent-500 font-medium text-text-white shadow-2xs",
-        !active && !disabled && "text-text-tertiary hover:text-text-secondary",
-        !active && disabled && "text-text-tertiary"
+        !active && "text-text-tertiary",
+        !active && !disabled && "hover:text-text-secondary"
       )}
     >
       {label}

@@ -1,5 +1,5 @@
 /**
- * C1：探索/执行分段全引擎常驻，不能拦截时只禁用探索。
+ * C1：两钮都可点。C2：整组禁用 + 可见原因。禁止整颗 return null。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -10,13 +10,16 @@ import { canHostInterceptExplore } from "@enjoy-agents/ipc-contract/runtime-capa
 
 const dir = dirname(fileURLToPath(import.meta.url))
 
-test("C1 源码不再按 executionModes 整颗 return null", () => {
+test("C1/C2 源码：常驻分段，C2 整组禁用，不按 executionModes 藏掉", () => {
   const src = readFileSync(join(dir, "explore-execute-toggle.tsx"), "utf8")
   assert.match(src, /composer-surface-toggle/)
   assert.match(src, /canHostInterceptExplore/)
+  assert.match(src, /composer-surface-disabled-reason/)
   assert.match(src, /surfaceExploreDisabled/)
+  assert.match(src, /disabled=\{locked\}/)
   assert.equal(src.includes("composerChromeFor"), false)
   assert.equal(src.includes("return null"), false)
+  assert.equal(src.includes("disabled={!canIntercept}"), false)
 })
 
 test("HMAC 引擎能拦截；未知 id 不能", () => {

@@ -2,7 +2,7 @@
  * Composer 思考铬：effort 五档；model-id 只写「思考 · 跟模型」；none 不画。
  */
 import { RiBrainLine } from "@remixicon/react"
-import { composerThinkingChrome } from "@enjoy-agents/ipc-contract"
+import { composerThinkingChrome } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { cx } from "@/utils/cx"
 import { ReasoningEffortToggle } from "../../reasoning-effort-toggle"
 import { useComposerModelSwitch } from "../model-switch/use-composer-model-switch"
