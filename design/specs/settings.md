@@ -92,6 +92,7 @@ Automations 存 `settings` 表的 `automations` JSON。触发落地：`manual` /
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - 设置侧栏严禁无脑平铺全部分段。`skills` 是一级入口（智能体分组），点它 redirect 到 `#/skills`，不要再并进「说明」。`extensions` 是工作区组一级入口（P0-H 发现壳，停在 `#/settings/extensions`）。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
 - **隐患**：把扩展发现壳做成第 8 轨工作模块或 MCP+Skills 集市内核。根因：H 只做入口。正确做法：两列 +「添加」深链现有 `#/mcp` / `#/skills`；不弹第二套表单、不新 IPC、不混 Registry、不假 Grok 店。
+- **隐患**：不变量测试 `import` 轨道 registry 时若 `McpIcon` 走 `@renderer` 别名，Node `--experimental-strip-types` 会 `ERR_MODULE_NOT_FOUND`。正确做法：`module-registry` 对 `mcp-brand-icons.ts` 用相对路径。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
 - 安全卡片不能探测 `safeStorage.isEncryptionAvailable()`（无对应 IPC）；只展示 `hasKey`。不要为了绿点去加频道。

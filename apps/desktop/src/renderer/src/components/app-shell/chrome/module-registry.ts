@@ -11,7 +11,7 @@ import {
   RiSettings4Line,
   RiSparklingLine
 } from "@remixicon/react"
-import { McpIcon } from "@renderer/components/mcp/components/mcp-brand-icons.ts"
+import { McpIcon } from "../../mcp/components/mcp-brand-icons.ts"
 import type { ActivityRailItem, AppModuleId } from "../app-shell.types"
 
 export type ActivityIcon = ComponentType<{
