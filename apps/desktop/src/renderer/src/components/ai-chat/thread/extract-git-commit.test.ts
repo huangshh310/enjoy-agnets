@@ -1,7 +1,14 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import { extractGitCommitInfo } from "./extract-git-commit.ts"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { enChat } from "../../../i18n/catalogs/en/chat.ts"
+import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
+
+const dir = dirname(fileURLToPath(import.meta.url))
 
 test("从助手提交总结文本中提取 Git 提交信息", () => {
   const message = {
@@ -34,4 +41,16 @@ test("普通文本不误报 Git 提交", () => {
 
   const info = extractGitCommitInfo(message)
   assert.equal(info, null)
+})
+
+test("Git 提交卡片标题与审查入口走词表，不中英混写", () => {
+  const src = readFileSync(join(dir, "git-commit-card.tsx"), "utf8")
+  assert.ok(src.includes('t("chat.gitCommitCardTitle")'))
+  assert.ok(src.includes('t("chat.gitCommitReviewDiff")'))
+  assert.ok(!src.includes("Git 提交已合入"))
+  assert.ok(!src.includes("Review Diff"))
+  assert.equal(zhChat.gitCommitCardTitle, "Git 提交已合入")
+  assert.equal(zhChat.gitCommitReviewDiff, "在审查中查看差异")
+  assert.equal(enChat.gitCommitCardTitle, "Git commit landed")
+  assert.equal(enChat.gitCommitReviewDiff, "Review Diff")
 })

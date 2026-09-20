@@ -6,7 +6,6 @@ import { useT } from "@renderer/i18n"
 import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
 import { collectTurnSources } from "./collect-turn-sources"
-import { openSourceRow } from "./open-source-row"
 import { SourceDetailSheet } from "./source-detail-sheet"
 import { splitVisibleSourceChips, type TurnSourceChip } from "./source-chip"
 
@@ -24,17 +23,10 @@ export function SourceChips({
   if (chips.length === 0) return null
   const { shown, rest } = splitVisibleSourceChips(chips)
 
+  /** 芯片 / +N 只开 sheet。有 path 也不直跳审查；审查只从 sheet 文件行。 */
   function openSheet(chipId: string | null) {
     setActiveId(chipId)
     setOpen(true)
-  }
-
-  function handleOpenChip(chip: TurnSourceChip) {
-    if (chip.path) {
-      openSourceRow(chip)
-      return
-    }
-    openSheet(chip.id)
   }
 
   return (
@@ -45,7 +37,7 @@ export function SourceChips({
             key={chip.id}
             chip={chip}
             selected={open && activeId === chip.id}
-            onOpen={() => handleOpenChip(chip)}
+            onOpen={() => openSheet(chip.id)}
           />
         ))}
         {rest > 0 ? (

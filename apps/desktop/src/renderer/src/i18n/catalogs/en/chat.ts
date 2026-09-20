@@ -645,6 +645,8 @@ export const enChat = {
   approve: "Approve",
   shellCommand: "Shell Command",
   gitCommitMessage: "Git Commit Message:",
+  gitCommitCardTitle: "Git commit landed",
+  gitCommitReviewDiff: "Review Diff",
   emptyValue: "(empty)",
   paneContext: "Context",
   paneContextHint: "Active sources, tool runs & inspector",
