@@ -92,7 +92,7 @@ Enjoy 做 **扩展真源**（MCP + Skills 为主，当前引擎消费），不�
 
 ### P1
 
-- 只读 Skills / MCP 精选目录（兼容 Cline catalog 或自建 curated JSON）+ 一键写入现有存储  
+- 只读 Skills / MCP 精选目录（兼容 Cline catalog 或自建 curated JSON）+ 一键写入现有存储（I2 设计锁：[`i2-extensions-curated.md`](./i2-extensions-curated.md)，视觉真源 [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)；不宣称应用 1:1）  
 - Claude/Codex「打开本机 skills 文件夹」  
 - Agent Plugins（`plugin.json`）只读导入实验（仅 skills+mcp 子集）  
 - Hermes「技能/记忆在助手侧」说明卡  
@@ -113,6 +113,7 @@ Enjoy 做 **扩展真源**（MCP + Skills 为主，当前引擎消费），不�
 | P0-G | Sources 明细 sheet | 已落地（以 `ui` spec 为准） |
 | P0-H | 扩展发现壳 | 已落地（以 `settings` spec 为准） |
 | P0-S | Skills/MCP 宿主透传 | 设计锁已入库（视觉真源 `previews/p0-s-skills-mcp-inject.html`）；**未**宣称应用 1:1 |
+| I2 | 扩展精选浏览 | 设计锁已入库（视觉真源 `previews/i2-extensions-curated.html`）；H 同页精选区，**未**宣称应用 1:1 |
 
 ---
 

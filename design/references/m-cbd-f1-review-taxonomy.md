@@ -58,6 +58,6 @@
 | **2** | **P0-S** | Skills/MCP 宿主 SoT → 会话透传/挂载 | **P0 大**（F1 后） |
 | 3 | I4 | Automations 本机 cron/webhook | P1 |
 | 4 | — | 命名身份（智能体昵称） | P2 |
-| — | I2 | 扩展精选 | 可跟 H 后；不插队 F1/P0-S |
+| — | I2 | 扩展精选 | 设计锁已入库（`i2-extensions-curated.md`）；可跟 H 后；不插队 F1/P0-S |
 
 *P0-S / I4 短锁 F1 合后再出。*

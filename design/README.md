@@ -62,7 +62,7 @@
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；≠ M3 handoff；视觉真源见预览；不是当前真相，边界见 m3 spec） |
 | [references/i4-automations.md](./references/i4-automations.md) | I4 本机 Automations 短锁（Jojo；手动/cron P0；webhook/保存后/工作单后置；local-only；视觉真源见 [`previews/i4-automations.html`](./previews/i4-automations.html)；不是当前真相，边界见 settings） |
-| [references/i2-extensions-curated.md](./references/i2-extensions-curated.md) | I2 扩展精选短锁（Jojo；P0-H 壳只读精选；一键写入 `#/mcp` / `#/skills` SoT → P0-S；无收费店 / Registry 混入 / 宿主跑插件；预览待 `previews/i2-extensions-curated.html`（luna）；不是当前真相，边界见 settings） |
+| [references/i2-extensions-curated.md](./references/i2-extensions-curated.md) | I2 扩展精选短锁（Jojo；P0-H 壳只读精选；一键写入 `#/mcp` / `#/skills` SoT → P0-S；无收费店 / Registry 混入 / 宿主跑插件；视觉真源见 [`previews/i2-extensions-curated.html`](./previews/i2-extensions-curated.html)；不是当前真相，边界见 settings） |
 | [references/p0-composer-chrome-regression.md](./references/p0-composer-chrome-regression.md) | P0 Composer 铬条回归短锁（Jojo；C1 默认全引擎露出；视觉真源见预览；不是当前真相） |
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
@@ -83,6 +83,7 @@
 | [previews/p0-f-preview-open.html](./previews/p0-f-preview-open.html) | 完成条「在浏览器打开」（【视觉真源】P0-F，锁 tip `9a1a4ca`；系统浏览器，不嵌 Chromium） |
 | [previews/p0-g-sources-detail.html](./previews/p0-g-sources-detail.html) | 气泡底脚芯片 → 右/底 sheet「本轮来源」（【视觉真源】P0-G，锁 tip `76b5ecd`；文件/技能/MCP，无来源无底脚） |
 | [previews/p0-h-extensions-hub.html](./previews/p0-h-extensions-hub.html) | 扩展发现壳：设置两列 MCP \| Skills + 添加深链（【视觉真源】P0-H） |
+| [previews/i2-extensions-curated.html](./previews/i2-extensions-curated.html) | H 同页精选：MCP\|Skills 卡写入 SoT + catalog 失败空态（【视觉真源】I2，设计锁，不宣称应用 1:1） |
 | [previews/p0-s-skills-mcp-inject.html](./previews/p0-s-skills-mcp-inject.html) | Skills/MCP 宿主透传：已启用 SoT / 已注入本轮 / 引擎不支持（【视觉真源】P0-S，锁 tip `5282c60`） |
 | [previews/p0-r-remote-workspace.html](./previews/p0-r-remote-workspace.html) | SSH 远程工作区：抽屉 / 顶条 /「远程 ≠ 引擎」（【视觉真源】P0-R，锁 tip `3a3e00b`） |
 | [previews/m-cbd-session-ops.html](./previews/m-cbd-session-ops.html) | Multica P0 会话作业：安静 Inbox × 验收闸 × 运行账本（【视觉真源】M-CBD；账本+来源列密日志观感已被 `m-d-g-ledger-sources.html` 取代） |
