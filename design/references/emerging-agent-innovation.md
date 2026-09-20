@@ -42,7 +42,7 @@ R/I/C/E 各 1–10，分≈ R×I×C÷E。
 
 | ID | 项 | ≈分 | 级 | luna 一句话原型诉求 |
 |----|----|-----|----|---------------------|
-| **I1** | 同引擎中途换模型（Kilo） | ~98 | **P0**（H 后） | Composer 模型芯片可换；角标「已切换」；不换引擎、不走 handoff |
+| **I1** | 同引擎中途换模型（Kilo） | ~98 | **P0**（H 后） | Composer 模型芯片可换；角标「已切换」；不换引擎、不走 handoff。视觉真源 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)；产品锁 [`i1-mid-model-switch.md`](./i1-mid-model-switch.md) |
 | **I2** | 扩展壳 MCP/Skills 精选浏览（Goose/Cline） | ~68 | **P0**（并进/紧随 H） | 扩展页只读精选卡 + 一键深链安装；无新运行时 |
 | I3 | Registry ACP 花名册扩容（OpenClaw） | ~58 | P1 | 「更多助手」分组；未验证标即将推出 |
 | I4 | Automations 日程+webhook（OpenHands） | ~35 | P1 | 触发=手动/保存/cron/webhook；诚实本地 |

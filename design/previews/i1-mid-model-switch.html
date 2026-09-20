@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>I1 · 同引擎中途换模型 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', warn: '#C2410C', ok: '#16A34A'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/i1-mid-model-switch.html · 【视觉真源】I1</p>
+      <h1 class="mt-1 text-[17px] font-semibold">同引擎中途换模型 · 同一助手，不换引擎</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。同一会话、同一引擎，Composer 底栏芯片换模型；角标「已切换」。不是 M3 handoff，不开新会话。设计已锁，不宣称应用 1:1。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>芯片 → <strong class="text-ink">只打开当前引擎</strong>已宣传 / 已绑定模型表 → 选中：芯片更新 +「已切换到 {model}」</li>
+        <li>下一轮才生效；历史气泡保留旧模型标；<strong class="text-ink">session id 不变</strong></li>
+        <li>不支持：禁用 +「此引擎不支持中途换模型」。失败：未登录 / 不支持 / 列表空 + 重试。禁止空成功</li>
+        <li>≠ 换引擎 / 新会话 / 假交接卡 /「已切换引擎」/ 模型菜单夹引擎 / 清上下文 / 自动 commit-push / worktree</li>
+      </ul>
+    </aside>
+
+    <!-- 1 默认 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">默认 · 芯片打开本引擎模型表</h2>
+      <p class="text-[11px] text-mute">会话 <span class="font-mono text-ink">s_8f2a</span> · Claude。弹层只有 Claude 的模型。导轨不出现在这张菜单里。</p>
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+        <div class="min-w-0 flex-1 space-y-2">
+          <div class="rounded-2xl border border-dashed border-line bg-paper px-3 py-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">历史 · 旧模型标留下</p>
+            <p class="mt-1 text-[12px]">把登录页拆成更小的模块。</p>
+            <div class="mt-2 rounded-xl border border-line bg-card px-3 py-2">
+              <p class="text-[12px]">先从 <span class="font-medium">src/auth/login.ts</span> 切开提交处理，表单先不动。</p>
+              <p class="mt-1 text-[10px] text-mute">Claude · Sonnet 4</p>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-line p-4 shadow-sm">
+            <div class="flex items-center justify-between gap-2">
+              <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+                <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+              </div>
+              <button class="inline-flex items-center gap-1 rounded-full bg-soft px-2.5 py-1 text-[10px] ring-1 ring-accent/30">
+                <span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span>
+                <span class="text-mute">▾</span>
+              </button>
+            </div>
+            <div class="mt-3 min-h-[56px] rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">按方案改登录页…</div>
+            <p class="mt-2 text-[11px] text-mute">同一助手，不换引擎</p>
+          </div>
+        </div>
+        <aside class="w-full shrink-0 overflow-hidden rounded-2xl border border-line bg-card shadow-2xl lg:w-[280px]">
+          <header class="border-b border-line px-3 py-2.5">
+            <p class="text-[13px] font-semibold">换模型</p>
+            <p class="mt-0.5 text-[10px] text-mute">Claude 已宣传的模型 · 同一助手，不换引擎</p>
+          </header>
+          <ul class="divide-y divide-line text-[12px]">
+            <li class="flex items-center justify-between bg-soft px-3 py-2">
+              <span class="font-medium">Sonnet 4</span>
+              <span class="text-[10px] text-accent">当前</span>
+            </li>
+            <li class="px-3 py-2">Opus 4.1</li>
+            <li class="px-3 py-2">Haiku 4</li>
+          </ul>
+          <p class="border-t border-line bg-paper px-3 py-2 text-[10px] text-mute">名单里没有 Cursor / Enjoy 本地。换引擎走导轨，不是这里。</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 2 成功 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">成功 · 已切换到新模型</h2>
+      <p class="text-[11px] text-mute">仍是 <span class="font-mono text-ink">s_8f2a</span>。芯片已是 Opus。历史仍标 Sonnet。没有交接卡，没有「已交接」。</p>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="mb-3 rounded-xl border border-dashed border-line bg-paper px-3 py-2">
+          <p class="text-[12px]">先从 <span class="font-medium">src/auth/login.ts</span> 切开提交处理，表单先不动。</p>
+          <p class="mt-1 text-[10px] text-mute">Claude · Sonnet 4 · 当时用的模型</p>
+        </div>
+        <div class="relative">
+          <div class="absolute -top-1 right-0 z-10 inline-flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-[11px] shadow-sm ring-1 ring-ok/25">
+            <span class="size-1.5 rounded-full bg-ok"></span>
+            <span class="font-medium">已切换到 Opus 4.1</span>
+          </div>
+          <div class="flex items-center justify-between gap-2 pt-7">
+            <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+              <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+              <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+            </div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-card px-2.5 py-1 text-[10px] ring-1 ring-line">
+              <span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Opus 4.1</span>
+              <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-mute">已切换</span>
+            </span>
+          </div>
+          <div class="mt-3 min-h-[56px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">下一轮才用 Opus 4.1。现在发送才会换。</div>
+          <p class="mt-2 text-[11px] text-mute">同一助手，不换引擎 · 会话仍是 s_8f2a</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-[10px] text-mute">导轨不变</span>
+        <span class="rounded-full bg-paper px-3 py-1 text-[11px] ring-1 ring-line">Enjoy 本地</span>
+        <span class="rounded-full bg-soft px-3 py-1 text-[11px] font-medium text-accent ring-1 ring-accent/20">Claude</span>
+        <span class="rounded-full bg-paper px-3 py-1 text-[11px] ring-1 ring-line">Cursor</span>
+        <span class="rounded-full bg-paper/80 px-3 py-1 text-[11px] text-mute/50 ring-1 ring-line line-through">已交接 Claude → Cursor · 勿画</span>
+      </div>
+    </section>
+
+    <!-- 3 不支持 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">不支持 · 禁用 + 一行原因</h2>
+      <p class="text-[11px] text-mute">仅官方 CLI、引擎不提供中途换模。芯片不可点。禁止弹出空表再假装成功。</p>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex items-center justify-between gap-2">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button class="rounded-full px-3 py-1 text-[11px] text-mute">探索</button>
+            <button class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</button>
+          </div>
+          <span class="inline-flex cursor-not-allowed items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] text-mute/70 ring-1 ring-line opacity-60" title="此引擎不支持中途换模型">
+            <span>Cursor</span><span>·</span><span class="font-semibold">Auto</span>
+          </span>
+        </div>
+        <div class="mt-3 min-h-[48px] rounded-xl border border-line bg-card px-3 py-2 text-[12px] text-mute">继续改登录页…</div>
+        <p class="mt-2 text-[11px] text-warn">此引擎不支持中途换模型</p>
+        <p class="mt-0.5 text-[10px] text-mute">同一助手，不换引擎。要换助手，走导轨（那是 M3，不是本页）。</p>
+      </div>
+    </section>
+
+    <!-- 4 失败 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">失败 · 人话 + 重试</h2>
+      <p class="text-[11px] text-mute">芯片仍停在旧模型。三种失败都要诚实，不要 toast「已切换」。</p>
+      <div class="grid gap-3 md:grid-cols-3">
+        <div class="rounded-2xl border border-line p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">未登录</p>
+          <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] ring-1 ring-line"><span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span></p>
+          <div class="mt-2 flex items-start gap-2 rounded-xl border border-line bg-paper px-2.5 py-2">
+            <span class="mt-1 size-2 shrink-0 rounded-full bg-warn"></span>
+            <div class="text-[11px]">
+              <p class="font-medium">还没登录这个助手，换不了模型</p>
+              <button class="mt-1.5 h-7 rounded-lg bg-accent px-2.5 text-[11px] font-medium text-white">重试</button>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">不支持</p>
+          <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] text-mute/70 ring-1 ring-line opacity-60"><span>Cursor</span><span>·</span><span class="font-semibold">Auto</span></p>
+          <div class="mt-2 flex items-start gap-2 rounded-xl border border-line bg-paper px-2.5 py-2">
+            <span class="mt-1 size-2 shrink-0 rounded-full bg-warn"></span>
+            <div class="text-[11px]">
+              <p class="font-medium">此引擎不支持中途换模型</p>
+              <p class="mt-0.5 text-mute">没有可点的名单，也没有成功条。</p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">列表空</p>
+          <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] ring-1 ring-line"><span class="text-mute">Claude</span><span class="text-mute">·</span><span class="font-semibold">Sonnet 4</span></p>
+          <div class="mt-2 flex items-start gap-2 rounded-xl border border-line bg-paper px-2.5 py-2">
+            <span class="mt-1 size-2 shrink-0 rounded-full bg-warn"></span>
+            <div class="text-[11px]">
+              <p class="font-medium">这个助手还没有可换的模型</p>
+              <button class="mt-1.5 h-7 rounded-lg border border-line px-2.5 text-[11px]">重试</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">写</th>
+            <th class="px-3 py-2">不用</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">成功微条</td>
+            <td class="px-3 py-2">已切换到 {model}</td>
+            <td class="px-3 py-2">已交接、已切换引擎、handoff</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">角标</td>
+            <td class="px-3 py-2">已切换</td>
+            <td class="px-3 py-2">已交接</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">脚注</td>
+            <td class="px-3 py-2">同一助手，不换引擎</td>
+            <td class="px-3 py-2">新引擎续跑、会话已重开（当成功主句）</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">不支持</td>
+            <td class="px-3 py-2">此引擎不支持中途换模型</td>
+            <td class="px-3 py-2">空表成功、假 vault 模型</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">未登录 / 空表</td>
+            <td class="px-3 py-2">还没登录… / 还没有可换的模型 + 重试</td>
+            <td class="px-3 py-2">ACP_AUTH、0 models、空成功</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">历史</td>
+            <td class="px-3 py-2">旧气泡保留当时模型标</td>
+            <td class="px-3 py-2">清上下文、改写旧标、新 session id</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>换模后没有新的 session id。</li>
+        <li>没有「已切换引擎」文案。</li>
+        <li>不支持 = 禁用 + 一行原因，不是空成功。</li>
+        <li>弹层只有当前引擎模型，不含第二引擎导轨、不含协议微标。</li>
+        <li>成功写「已切换到 {model}」/「已切换」，不写「已交接」、不画交接卡。</li>
+        <li>历史保留旧模型标；新模型下一轮才生效。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">M3 handoff · 新会话 · 假交接卡 · 模型菜单换引擎 · 清上下文 · 自动 commit-push · worktree · 假 BYOK · ACP/协议微标</p>
+    </section>
+  </div>
+</body>
+</html>

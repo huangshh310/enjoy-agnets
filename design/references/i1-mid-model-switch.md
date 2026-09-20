@@ -1,8 +1,9 @@
 # I1 · 同引擎中途换模型 — 产品短锁
 
 > 2026-09-20 · jojo  
-> 对照：`emerging-agent-innovation.md` I1；真源预览待 Luna：`design/previews/i1-mid-model-switch.html`  
-> 队列：M-CBD #47 已合 `28823d3` → **I1**
+> 对照：`emerging-agent-innovation.md` I1；【视觉真源】I1：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)  
+> 队列：M-CBD #47 已合 `28823d3` → **I1**  
+> 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
 
@@ -47,6 +48,8 @@
 ## Luna 一句话原型
 
 Composer 底栏：模型芯片打开本引擎模型列表 → 选中后芯片文案变 + 淡入「已切换」；旁注小字「同一助手，不换引擎」。另给：不支持态、失败态各一屏。
+
+视觉真源已入库：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)（默认 / 已切换 / 不支持 / 失败；不宣称应用已 1:1）。
 
 ---
 
