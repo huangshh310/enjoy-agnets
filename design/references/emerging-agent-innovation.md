@@ -45,7 +45,7 @@ R/I/C/E 各 1–10，分≈ R×I×C÷E。
 | **I1** | 同引擎中途换模型（Kilo） | ~98 | **已落地** #50 `5033c10` | 同一 Enjoy 会话、同一引擎，Composer 模型芯片换模；角标「已切换」。**≠** M3 引擎 handoff，不写「换模会重开会话」。当前真相见 [`../specs/m3-engine-handoff.md`](../specs/m3-engine-handoff.md)；产品锁 [`i1-mid-model-switch.md`](./i1-mid-model-switch.md)。视觉真源 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)，不宣称应用 1:1 |
 | **I2** | 扩展壳 MCP/Skills 精选浏览（Goose/Cline） | ~68 | **P0**（并进/紧随 H） | 扩展页只读精选卡 + 一键深链安装；无新运行时 |
 | I3 | Registry ACP 花名册扩容（OpenClaw） | ~58 | P1 | 「更多助手」分组；未验证标即将推出 |
-| I4 | Automations 日程+webhook（OpenHands） | ~35 | P1 | 触发=手动/保存/cron/webhook；诚实本地 |
+| I4 | Automations 日程+webhook（OpenHands） | ~35 | P1 | 触发=手动/保存/cron/webhook；诚实本地。产品锁 [`i4-automations.md`](./i4-automations.md)；视觉真源 [`../previews/i4-automations.html`](../previews/i4-automations.html)，不宣称应用 1:1 |
 | I5 | 跨引擎会话检索（Codeg） | ~18 | P1 | 侧栏搜所有引擎会话；结果带引擎标 |
 | I6 | 工作流只读可视化（Shofer） | ~12 | soft | Plan 步骤时间线变小图；非执行引擎 |
 | I7 | CI 失败再跑（AO，无 worktree） | ~14 | soft | 本机「测试失败→再开一轮」；PR 后置 |

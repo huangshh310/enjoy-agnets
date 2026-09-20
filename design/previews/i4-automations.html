@@ -1,0 +1,332 @@
+<!-- 【视觉真源】I4 本机 Automations · Luna -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>I4 · 本机 Automations · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', warn: '#C2410C', ok: '#16A34A'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/i4-automations.html · 【视觉真源】I4 本机 Automations · Luna</p>
+      <h1 class="mt-1 text-[17px] font-semibold">本机 Automations · 定时或手动开一轮</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。诚实 <strong class="text-ink">local-only</strong>：到点或手动开一轮会话 / 工作单。不做云调度、不做团队看板派活。加深现有 <code>#/settings/automations</code>（manual / on_save 已有）；I4 是 cron + 诚实本机，<strong class="text-ink">不是第二套产品</strong>。设计已锁，不宣称应用 1:1。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>路由仍是 <code>#/settings/automations</code>。列表是<strong class="text-ink">紧凑 C 端行</strong>，不是营销卡。</li>
+        <li>行：名称 · 触发（手动 / cron 简写）· 上次运行或「尚未运行」· 开/停。可选胶囊：空闲 / 运行中 / 失败。</li>
+        <li>编辑走右侧抽屉约 <strong class="text-ink">380px</strong>：名称、触发、cron+时区、引擎、可选模型、探索\|执行、提示词。主钮<strong class="text-ink">保存</strong>；手动才出次钮「立即运行」。</li>
+        <li>本刀 P0 触发 = <strong class="text-ink">手动 · cron</strong>。「保存后」/ webhook 灰掉或脚注「本刀不做」。</li>
+        <li>页脚固定：「仅在本机运行，关闭应用则暂停」。失败进 Inbox「失败」，<strong class="text-ink">不挤待验收</strong>（F1）。</li>
+        <li>开流仍走现 Composer + P0-S 注入。不新 runtime、不新铃、不新看板。</li>
+      </ul>
+      <p class="mt-2 font-semibold text-ink">反目标</p>
+      <p class="mt-0.5">≠ 云调度 / 多机守护 / 看板派活 / worktree / 假「关闭仍跑」 / 插件市场 / 新 runtime</p>
+    </aside>
+
+    <aside class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">加深现有壳 · 勿另起炉灶</p>
+      <p class="mt-1">现壳已有模版、草稿表、列表，触发落地只有 <code>manual</code> / <code>on_save</code>。I4 把列表收成行、编辑收进抽屉、补 cron 与诚实脚注。<strong class="text-ink">不要</strong>再做一个「日程」工作模块或第二套 Automations。</p>
+    </aside>
+
+    <!-- ① 列表 + 抽屉 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">① 列表 + 编辑抽屉</h2>
+      <p class="text-[11px] text-mute">设置页。行可点开抽屉。主屏演示 cron 编辑；「立即运行」见手动抽屉。页脚钉死本机诚实句。</p>
+
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex min-h-[520px]">
+          <nav class="hidden w-36 shrink-0 border-r border-line bg-paper p-3 text-[12px] sm:block">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">设置</p>
+            <ul class="mt-2 space-y-1">
+              <li class="rounded-md px-2 py-1 text-mute">通用</li>
+              <li class="rounded-md bg-soft px-2 py-1 font-medium text-accent">自动化</li>
+              <li class="rounded-md px-2 py-1 text-mute">供应商</li>
+            </ul>
+          </nav>
+
+          <div class="relative min-w-0 flex-1">
+            <div class="flex h-full flex-col">
+              <div class="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <div>
+                  <h3 class="text-[15px] font-semibold">自动化</h3>
+                  <p class="mt-0.5 text-[11px] text-mute">到点或手动开一轮。关应用就停。</p>
+                </div>
+                <button class="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white">新建</button>
+              </div>
+
+              <ul class="divide-y divide-line">
+                <li class="flex items-center gap-3 bg-soft/70 px-4 py-2.5">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">晨间类型检查</p>
+                      <span class="rounded-full bg-card px-1.5 py-px font-mono text-[10px] text-ink ring-1 ring-line">0 9 * * *</span>
+                      <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">空闲</span>
+                    </div>
+                    <p class="mt-0.5 text-[11px] text-mute">上次 · 昨天 09:02</p>
+                  </div>
+                  <button class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-label="开" title="开">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+                <li class="flex items-center gap-3 px-4 py-2.5">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">复盘当前 diff</p>
+                      <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-ink ring-1 ring-line">手动</span>
+                      <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">空闲</span>
+                    </div>
+                    <p class="mt-0.5 text-[11px] text-mute">尚未运行</p>
+                  </div>
+                  <button class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-label="开" title="开">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+                <li class="flex items-center gap-3 px-4 py-2.5 opacity-70">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">周五周报</p>
+                      <span class="rounded-full bg-paper px-1.5 py-px font-mono text-[10px] text-ink ring-1 ring-line">0 18 * * 5</span>
+                    </div>
+                    <p class="mt-0.5 text-[11px] text-mute">上次 · 上周五 18:01</p>
+                  </div>
+                  <button class="relative h-5 w-9 shrink-0 rounded-full bg-line" aria-label="停" title="停">
+                    <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+              </ul>
+
+              <p class="mt-auto border-t border-line bg-paper px-4 py-2 text-[11px] text-mute">仅在本机运行，关闭应用则暂停</p>
+            </div>
+
+            <aside class="absolute inset-y-0 right-0 flex w-[min(380px,100%)] flex-col border-l border-line bg-card shadow-2xl">
+              <header class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
+                <div>
+                  <p class="text-[13px] font-semibold">编辑自动化</p>
+                  <p class="mt-0.5 text-[10px] text-mute">当前工作区 · 走现 Composer</p>
+                </div>
+                <span class="text-[11px] text-mute">×</span>
+              </header>
+              <div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+                <label class="block">
+                  <span class="text-[11px] text-mute">名称</span>
+                  <input class="mt-1 w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px]" value="晨间类型检查" readonly />
+                </label>
+                <div>
+                  <p class="text-[11px] text-mute">触发</p>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] text-mute ring-1 ring-line">手动</span>
+                    <span class="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">cron</span>
+                    <span class="rounded-full bg-paper/70 px-2.5 py-1 text-[11px] text-mute/50 ring-1 ring-line line-through">保存后</span>
+                    <span class="rounded-full bg-paper/70 px-2.5 py-1 text-[11px] text-mute/50 ring-1 ring-line line-through">webhook</span>
+                  </div>
+                  <p class="mt-1 text-[10px] text-mute">本刀 P0：手动 · cron。「保存后」/ webhook 本刀不做。</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <label>
+                    <span class="text-[11px] text-mute">Cron</span>
+                    <input class="mt-1 w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 font-mono text-[12px]" value="0 9 * * *" readonly />
+                  </label>
+                  <label>
+                    <span class="text-[11px] text-mute">时区</span>
+                    <input class="mt-1 w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px]" value="Asia/Shanghai" readonly />
+                  </label>
+                </div>
+                <div>
+                  <p class="text-[11px] text-mute">引擎</p>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-soft px-2 py-1 text-[11px] ring-1 ring-accent/30">
+                      <span class="inline-flex size-3.5 items-center justify-center rounded-[3px] bg-[#D97757] text-[7px] font-bold text-white">C</span>
+                      Claude
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-1 text-[11px] ring-1 ring-line">
+                      <span class="inline-flex size-3.5 items-center justify-center rounded-[3px] bg-ink text-[7px] font-bold text-white">▶</span>
+                      Cursor
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-1 text-[11px] ring-1 ring-line">
+                      <span class="inline-flex size-3.5 items-center justify-center rounded-[3px] bg-accent text-[7px] font-bold text-white">E</span>
+                      Enjoy Local
+                    </span>
+                  </div>
+                </div>
+                <label class="block">
+                  <span class="text-[11px] text-mute">模型 <span class="text-mute/70">可选</span></span>
+                  <input class="mt-1 w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px]" value="Sonnet 4" readonly />
+                </label>
+                <div>
+                  <p class="text-[11px] text-mute">模式 · 对齐 C1</p>
+                  <div class="mt-1 inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                    <span class="rounded-full px-3 py-1 text-[11px] text-mute">探索</span>
+                    <span class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</span>
+                  </div>
+                </div>
+                <label class="block">
+                  <span class="text-[11px] text-mute">提示词模板</span>
+                  <textarea class="mt-1 h-20 w-full resize-none rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px]" readonly>跑一遍类型检查，只报错，先别改文件。</textarea>
+                </label>
+              </div>
+              <footer class="flex items-center justify-end gap-2 border-t border-line px-4 py-3">
+                <span class="mr-auto text-[10px] text-mute">cron 到点才开 · 无立即运行</span>
+                <button class="rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-white">保存</button>
+              </footer>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ② 手动抽屉：立即运行 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">② 手动抽屉 · 次钮「立即运行」</h2>
+      <p class="text-[11px] text-mute">触发=手动才出次钮。主钮仍是保存。立刻开一轮，走现会话 / Composer，不新 runtime。</p>
+      <div class="ml-auto w-full overflow-hidden rounded-2xl border border-line bg-card shadow-sm sm:w-[380px]">
+        <header class="border-b border-line px-4 py-2.5">
+          <p class="text-[13px] font-semibold">编辑自动化</p>
+          <p class="mt-0.5 text-[10px] text-mute">复盘当前 diff · 手动</p>
+        </header>
+        <div class="space-y-2 px-4 py-3 text-[12px]">
+          <p>触发 <span class="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">手动</span></p>
+          <p class="text-[11px] text-mute">提示词：对照暂存区写复盘，先别 commit。</p>
+        </div>
+        <footer class="flex justify-end gap-2 border-t border-line px-4 py-3">
+          <button class="rounded-md border border-line px-3 py-1.5 text-[11px]">立即运行</button>
+          <button class="rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-white">保存</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ③ 运行中 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">③ 运行中行 / 条</h2>
+      <p class="text-[11px] text-mute">真在跑才画。不要假进度条、不要「云端执行中」。</p>
+      <div class="overflow-hidden rounded-xl border border-line">
+        <div class="flex items-center gap-3 px-4 py-2.5">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <p class="truncate text-[13px] font-medium">晨间类型检查</p>
+              <span class="rounded-full bg-paper px-1.5 py-px font-mono text-[10px] ring-1 ring-line">0 9 * * *</span>
+              <span class="rounded-full bg-soft px-1.5 py-px text-[10px] font-medium text-accent ring-1 ring-accent/20">运行中</span>
+            </div>
+            <p class="mt-0.5 text-[11px] text-mute">本轮已开 · 会话列表可见</p>
+          </div>
+          <button class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-hidden="true">
+            <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+          </button>
+        </div>
+        <p class="border-t border-accent/15 bg-soft px-4 py-1.5 text-[11px] text-accent">正在本机开一轮 · Claude · 执行</p>
+      </div>
+    </section>
+
+    <!-- ④ 失败 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">④ 失败行 · 进 Inbox「失败」</h2>
+      <p class="text-[11px] text-mute">F1：失败不是待验收。无通过 / 打回。点提示进 Inbox 失败筛。</p>
+      <div class="overflow-hidden rounded-xl border border-line">
+        <div class="flex items-center gap-3 px-4 py-2.5">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <p class="truncate text-[13px] font-medium">晨间类型检查</p>
+              <span class="rounded-full bg-paper px-1.5 py-px font-mono text-[10px] ring-1 ring-line">0 9 * * *</span>
+              <span class="rounded-full bg-paper px-1.5 py-px text-[10px] font-medium text-warn ring-1 ring-warn/25">失败</span>
+            </div>
+            <p class="mt-0.5 text-[11px] text-mute">上次 · 今天 09:00</p>
+          </div>
+          <button class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-hidden="true">
+            <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+          </button>
+        </div>
+        <p class="border-t border-warn/15 bg-paper px-4 py-1.5 text-[11px] text-warn">进 Inbox「失败」查看 · 不是待验收</p>
+      </div>
+      <p class="text-[11px] text-mute"><span class="line-through text-mute/60">待验收 · 通过 / 打回</span> · 勿画</p>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr><th class="px-3 py-2">面</th><th class="px-3 py-2">写</th><th class="px-3 py-2">不用</th></tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">脚注</td>
+            <td class="px-3 py-2">仅在本机运行，关闭应用则暂停</td>
+            <td class="px-3 py-2">关闭后仍跑、云端守护、多机舰队</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">触发 P0</td>
+            <td class="px-3 py-2">手动 · cron</td>
+            <td class="px-3 py-2">把保存后 / webhook 写成已做</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">触发标签</td>
+            <td class="px-3 py-2">手动 / <span class="font-mono">0 9 * * *</span></td>
+            <td class="px-3 py-2">每天精彩时刻、云调度已就绪</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">上次运行</td>
+            <td class="px-3 py-2">昨天 09:02 / 尚未运行</td>
+            <td class="px-3 py-2">实时在线、假进度、从未失败</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">状态</td>
+            <td class="px-3 py-2">空闲 / 运行中 / 失败</td>
+            <td class="px-3 py-2">待验收、云端执行中、Always-on</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">失败</td>
+            <td class="px-3 py-2">进 Inbox「失败」</td>
+            <td class="px-3 py-2">挤待验收、通过 / 打回</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">动作</td>
+            <td class="px-3 py-2">开一轮会话 / 工作单</td>
+            <td class="px-3 py-2">看板派活、新 runtime、worktree</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">模式</td>
+            <td class="px-3 py-2">探索 · 执行</td>
+            <td class="px-3 py-2">ask / plan / agent 原文上 C 端</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">产品</td>
+            <td class="px-3 py-2">加深现有 Automations</td>
+            <td class="px-3 py-2">第二套日程产品、插件市场</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>建一条每日 cron → 到点本机开一轮，会话列表可见。</li>
+        <li>应用退出期间 <strong class="text-ink">不</strong>偷偷跑；文案诚实。</li>
+        <li>失败进 Inbox「失败」，不挤待验收（F1）。</li>
+        <li>开流仍走 P0-S 注入；无新插件市场。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">云调度 · 多机守护 · 看板派活 · worktree · 假「关闭仍跑」 · 插件市场 · 新 runtime · 第二套 Automations</p>
+    </section>
+
+    <p class="text-[11px] text-mute">仅在本机运行，关闭应用则暂停。</p>
+    <p class="text-[10px] text-mute">对照 <span class="font-mono">emerging-agent-innovation.md</span> I4；产品锁 <span class="font-mono">design/references/i4-automations.md</span>。落地以 <span class="font-mono">design/specs/*</span> 为准，本文不宣称应用已 1:1。</p>
+  </div>
+</body>
+</html>
