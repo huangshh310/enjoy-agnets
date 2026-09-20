@@ -10,6 +10,7 @@ import { useCliLoginLoop } from "./cli-login-loop"
 import { engineReadiness, isEngineLit, readinessMarkKey, readinessSubtitle } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
 import { ReadinessMark } from "./readiness-mark"
+import { useEngineFace } from "@renderer/hooks/use-engine-display-name"
 
 export function EngineRailTab({
   agent,
@@ -31,6 +32,7 @@ export function EngineRailTab({
   const kind = engineReadiness(input)
   const markKey = readinessMarkKey(kind)
   const subtitle = readinessSubtitle(kind, t)
+  const { face, trueNameTitle } = useEngineFace(agent.id, agent.label)
 
   useEffect(() => {
     if (isSelected) {
@@ -44,7 +46,7 @@ export function EngineRailTab({
       type="button"
       role="tab"
       aria-selected={isSelected}
-      title={subtitle ? `${agent.label} · ${subtitle}` : agent.label}
+      title={subtitle ? `${trueNameTitle} · ${subtitle}` : trueNameTitle}
       onClick={onSelect}
       className={`group relative flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-caption-1-medium transition-all duration-150 outline-none select-none ${
         isSelected
@@ -55,7 +57,7 @@ export function EngineRailTab({
       <span className="flex size-3.5 shrink-0 items-center justify-center">
         <AgentBrandIcon id={agent.id} size={14} />
       </span>
-      <span className="whitespace-nowrap">{agent.label}</span>
+      <span className="whitespace-nowrap">{face}</span>
       {markKey ? <ReadinessMark kind={kind} label={t(markKey)} /> : null}
       {isCurrent && ready ? (
         <span className="size-1.5 shrink-0 rounded-full bg-accent-500 shadow-2xs" title={t("chat.agentReady")} />

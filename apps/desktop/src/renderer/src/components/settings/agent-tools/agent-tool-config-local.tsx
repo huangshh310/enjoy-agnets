@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useAgentToolActions } from "./use-agent-tool-actions"
 import { AgentToolPowerSlot } from "./power-source/agent-tool-power-slot"
 import { AgentToolUsageSection } from "./agent-tool-usage-section"
+import { EngineDisplayNameField } from "./display-name/engine-display-name-field"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 
 export function AgentToolConfigLocal({
@@ -26,6 +27,7 @@ export function AgentToolConfigLocal({
   }
   return (
     <div className="space-y-4">
+      <EngineDisplayNameField runtimeId={tool.id} />
       <AgentToolUsageSection tool={tool} onViewDashboard={onViewUsage} />
       <AgentToolPowerSlot tool={tool} actions={actions} />
     </div>

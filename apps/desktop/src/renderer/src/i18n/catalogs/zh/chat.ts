@@ -246,6 +246,8 @@ export const zhChat = {
 
   selectRuntime: "选择运行时",
   selectAgent: "选择 Agent",
+  renameEngine: "重命名",
+  engineRealName: "真名",
   runtimeLocal: "Enjoy 本地",
   runtimeCliDecides: "由 CLI 决定",
   agentUse: "使用 {name}",

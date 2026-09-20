@@ -33,7 +33,9 @@ const files = [
   "cli-model-row.tsx",
   "cli-models-browser.tsx",
   "cli-provider-nav-rows.tsx",
-  "agent-cli-models.tsx"
+  "agent-cli-models.tsx",
+  "engine-rename-action.tsx",
+  "engine-picker-rename-row.tsx"
 ]
 
 const banned = [
