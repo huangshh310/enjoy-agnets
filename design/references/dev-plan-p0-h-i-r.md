@@ -2,8 +2,9 @@
 
 > 角色：执行计划（不是「当前真相」）。落地仍以 `design/specs/*` 为准。  
 > 对照产品稿：`cli-bind-ux.md` · `plugin-extensions-hub.md` · `emerging-agent-innovation.md` · `p0-r-remote.md`  
-> 最后更新：2026-09-13  
-> 约束：不挡已合的 F/G；假 BYOK / 沙箱上轨 / worktree / 跨 Agent MCP 委派仍砍
+> 最后更新：2026-09-20  
+> 约束：不挡已合的 F/G；假 BYOK / 沙箱上轨 / worktree / 跨 Agent MCP 委派仍砍  
+> I1 已合 #50（`5033c10`）。下文 Wave 2 缺口表是当时基线，不是当前真相。C 端禁止「换模会重开会话」；边界见 `m3-engine-handoff` 与 I1 短锁。
 
 ---
 
@@ -240,7 +241,7 @@ ipc-contract: session.patch 或 agentTools.setSessionRuntime 扩 modelId
 
 **回写**：`agent-cli.md`、`m3-engine-handoff.md`（明确同引擎换模不是 handoff）、`ai-capabilities.md` 若开流读会话模型。
 
-**已知坑预埋**：ACP 拆进程会丢 CLI 侧上下文——文案必须诚实（「新模型从下一轮生效；本机助手会话会重开」），不要假装 Kilo 式热切换。
+**已知坑预埋**：ACP 拆**子进程**可能丢 CLI 侧上下文——C 端只写「下一轮才生效 / 同一助手，不换引擎」，**禁止**「本机助手会话会重开」。Enjoy session id 不变，≠ M3 handoff。不要假装 Kilo 式热切换。
 
 ---
 

@@ -38,7 +38,7 @@
 | 技能页 / 技能源 / 集市 | [`design/specs/skills.md`](./design/specs/skills.md) |
 | Usage L1–L4 / 能力矩阵 / 三路命名 | [`design/specs/m1-usage-and-capabilities.md`](./design/specs/m1-usage-and-capabilities.md) |
 | 跨会话 Attention / 审批停靠 / Inbox 档案 | [`design/specs/m2-attention.md`](./design/specs/m2-attention.md) |
-| 换引擎 handoff（M2 之后） | [`design/specs/m3-engine-handoff.md`](./design/specs/m3-engine-handoff.md) |
+| 换引擎 handoff（M2 之后；同引擎换模见 I1，不是 handoff） | [`design/specs/m3-engine-handoff.md`](./design/specs/m3-engine-handoff.md) |
 | ACP Registry（M3 之后） | [`design/specs/m4-acp-registry.md`](./design/specs/m4-acp-registry.md) |
 | 自动更新、GitHub Release | [`design/specs/updates.md`](./design/specs/updates.md) |
 | AI Runtime / StreamEvent v2 | [`design/specs/ai-capabilities.md`](./design/specs/ai-capabilities.md) |

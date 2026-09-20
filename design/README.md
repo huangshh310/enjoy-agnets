@@ -39,7 +39,7 @@
 | `updates` | [specs/updates.md](./specs/updates.md) | 自动更新、发行说明、GitHub Releases | `main/services/app-update.ts`、`components/app-update/` |
 | `m1-usage` | [specs/m1-usage-and-capabilities.md](./specs/m1-usage-and-capabilities.md) | 三路命名、Usage L1–L4、能力矩阵、配置边界 | `runtime-capabilities.ts`、`ai-chat/usage/`、`settings/agent-tools/` |
 | `m2-attention` | [specs/m2-attention.md](./specs/m2-attention.md) | AttentionStrip、PermissionDock、Inbox 档案 | `stores/attention/`、`ai-chat/attention/`、`inbox/` |
-| `m3-handoff` | [specs/m3-engine-handoff.md](./specs/m3-engine-handoff.md) | 换引擎 handoff、空态 checklist | `agent-picker`、`empty-state` |
+| `m3-handoff` | [specs/m3-engine-handoff.md](./specs/m3-engine-handoff.md) | 换引擎 handoff、空态 checklist（同引擎换模是 I1，不是 handoff） | `agent-picker`、`empty-state` |
 | `m4-registry` | [specs/m4-acp-registry.md](./specs/m4-acp-registry.md) | ACP Registry、自定义 agent、comingSoon 升级 | `agent-tools`、ACP spawn |
 找不到对应 ID 时：先在本表加一行和空 spec，再写代码。不要把新领域塞进无关 spec。
 
@@ -60,7 +60,7 @@
 | [references/multica-gap.md](./references/multica-gap.md) | 对照 Multica：抄会话工单节奏，不抄团队看板架构；落地以 specs 为准 |
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
-| [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；视觉真源见预览；不是当前真相） |
+| [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；≠ M3 handoff；视觉真源见预览；不是当前真相，边界见 m3 spec） |
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
