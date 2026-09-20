@@ -1,7 +1,7 @@
 # spec/m3-engine-handoff
 
-> M3 引擎切换与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-20
-> I1 同引擎换模视觉真源（设计锁，不宣称应用 1:1）：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)。产品锁 [`../references/i1-mid-model-switch.md`](../references/i1-mid-model-switch.md)。
+> M3 **只**管换引擎与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-20
+> 同引擎中途换模型是 **I1**，不是本里程碑的 handoff。产品锁 [`../references/i1-mid-model-switch.md`](../references/i1-mid-model-switch.md)。视觉真源（设计锁，不宣称应用 1:1）：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)。
 > 产品锁：M2 收完后做本文，再做 M4。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > handoff 摘要注入 system/hidden + 可关「已交接」微条，**禁止**当第一条可见用户消息。
@@ -12,7 +12,7 @@
 | 点 | 现状 |
 |---|---|
 | 切引擎 | 空会话：`planComposerSwitch` → `setRuntimeId` + `bindSessionRuntime`，无卡 |
-| 同引擎换模 | 同 `runtimeId` 换 `modelId` **不是** handoff，不进 `EngineHandoffCard`。入口是 Composer 顶栏模型芯片，只列当前引擎 advertised / 档案模型，不夹导轨。有用户轮只写 `sessionModels[sessionId]`；空会话可同时写偏好默认。新会话不继承上一会话中途模型。Enjoy Local 下一轮用新模型、不断桥；ACP 可 dispose 再 spawn `--model`，**Enjoy session id 不变**。C 端成功：角标「已切换」、微条「已切换到 {model}」、脚注「同一助手，不换引擎」。`capabilities.models===none` 禁用芯片 +「此引擎不支持中途换模型」；`requestModelSwitch` / `persistSessionModel` 对 none 直接 failed 并回滚 store，禁止写覆盖。未登录 / 名单空诚实失败 + 重试，禁止空成功。禁止「已切换引擎」/「已交接」/ 当用户气泡 / handoff brief / 中途 `agentTools.upsert`。视觉锁 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html) |
+| 同引擎换模（I1，**不是** M3） | 同 `runtimeId` 换 `modelId` **不是** handoff，不进 `EngineHandoffCard`。入口是 Composer 顶栏模型芯片，只列当前引擎 advertised / 档案模型，不夹导轨。有用户轮只写 `sessionModels[sessionId]`；空会话可同时写偏好默认。新会话不继承上一会话中途模型。Enjoy Local 下一轮用新模型、不断桥。ACP 可 dispose **子进程**再 spawn `--model`，这是桥实现，**Enjoy session id 不变**，**不是**重开 Enjoy 会话。C 端成功：角标「已切换」、微条「已切换到 {model}」、脚注「同一助手，不换引擎」。`capabilities.models===none` 禁用芯片 +「此引擎不支持中途换模型」；`requestModelSwitch` / `persistSessionModel` 对 none 直接 failed 并回滚 store，禁止写覆盖。未登录 / 名单空诚实失败 + 重试，禁止空成功。禁止「已切换引擎」/「已交接」/「换模会重开会话」/「本机助手会话会重开」/ 当用户气泡 / handoff brief / 中途 `agentTools.upsert`。视觉锁 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html) |
 | 有历史切换 | Composer 同宽确认坞（摘要默认折叠）；确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文。`peekSessionHandoff` 开流前注入，`openCodingStream` 成功后才 `take`。pending 时胶囊改「确认切换 · 目标」，禁止再开 Picker。文件只取上一轮工具路径，不塞 `workspace.changes` |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
@@ -23,6 +23,18 @@
 | 三路 | Picker 顶部分组：「本地」= Enjoy Local（下层供应商→模型）；「本机助手 / CLI」= 已装与未装都上轨，未装点开一键安装。OMP 左栏列可登录供应商，实心登录打开浏览器。沙箱 `showOnEngineRail:false` |
 
 完成标准：Claude→Cursor 且已有用户轮时，**不会**静默丢上下文或假续跑。
+
+### 与 I1 正交（换模 ≠ handoff）
+
+| | M3 引擎 handoff | I1 同引擎换模 |
+|---|---|---|
+| 切什么 | `runtimeId` | 同 `runtimeId` 的 `modelId` |
+| Enjoy 会话 | 同一 `sessionId`；有历史才确认交接 | 同一 `sessionId`，**不**新开、**不**重开 |
+| 入口 | Rail / Picker / 设为主引擎 | Composer 模型芯片 |
+| C 端成功 | 「已交接 {from} → {to}」 | 「已切换」「已切换到 {model}」「同一助手，不换引擎」 |
+| 禁止 | 静默切引擎、假续跑 | 「已切换引擎」「已交接」「换模会重开会话」、handoff 卡 |
+
+ACP 子进程 dispose 再 spawn `--model` **不是** Enjoy 会话重开，也不是 M3。产品锁 [`../references/i1-mid-model-switch.md`](../references/i1-mid-model-switch.md)。
 
 ## IA
 
@@ -118,8 +130,8 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 
 ## 不变量
 
-- 有用户轮切换必经 HandoffCard。
-- 切换不绕过未决审批（默认阻切）。阻切出口只有取消或去处理 Attention。
+- 有用户轮**切引擎**必经 HandoffCard。同引擎换模（I1）不走本卡、不重开 Enjoy 会话。
+- **切引擎**不绕过未决审批（默认阻切）。阻切出口只有取消或去处理 Attention。
 - 取消交接必须恢复 from 选中，禁止停在 to。
 - 沙箱不上 EngineRail。
 - 无 Fake-Status 就绪灯；comingSoon 不装成 available。
@@ -128,7 +140,7 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 
 ## 已知坑
 
-- I1 同引擎换模若走 `requestEngineSwitch` 会进 handoff。必须 `requestModelSwitch` → `persistSessionModel`。ACP 可 `disposeSession` 再带 `--model` 开流，**Enjoy session id 不变**；C 端禁止「已切换引擎」「已交接」「会话会重开」。`models===none` 必须禁用芯片；入口与 persist 对 none 回 failed 并回滚，禁止空表成功。
+- I1 同引擎换模若走 `requestEngineSwitch` 会进 handoff。必须 `requestModelSwitch` → `persistSessionModel`。ACP 可 `disposeSession` 再带 `--model` 开流，这是桥实现，**Enjoy session id 不变**；C 端禁止「已切换引擎」「已交接」「换模会重开会话」「本机助手会话会重开」。`models===none` 必须禁用芯片；入口与 persist 对 none 回 failed 并回滚，禁止空表成功。
 - 设置「设为主引擎」若直接 `persistRuntimeId`，会绕过 `planComposerSwitch` / dispose / brief，有用户轮时假续跑。必须走 `requestEngineSwitch`；pending / blocked 再回 Chat 出坞。确认 IPC 失败必须 `setError(HANDOFF_CONFIRM_FAILED)`，坞留在 `handoff_pending`，不要静默。
 - `beginAgentRun` 禁止一上来 `takeSessionHandoff`。第一发 `ACP_AUTH_REQUIRED` / 缺密钥 / spawn 失败后 brief 必须还在；登录后再发仍带 `[Engine handoff — hidden context]`，且不是用户气泡。`openCodingStream` 失败同样不得 `captureOpenStreamPrompt`。
 - 交接后旧气泡若仍按当前引擎铬渲染，会像假续跑。必须按 `sessionHandoffCuts` 降级，并在旧→新交界（或全是旧气泡时列表末尾）画分界。
@@ -160,9 +172,11 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 8. 确认卡打开时无「已交接」微条；确认后只留微条；取消后两者皆无。
 9. 设置「设为主引擎」有用户轮时出同一确认坞，取消仍停 from。
 10. 已装未登录：导轨「登录」、发送被拦、错误主钮打开 Picker，不跳 Providers。
+11. 同引擎换模（I1）：无 HandoffCard、无「已交接」、无「换模会重开会话」；Enjoy session id 不变。
 
 ## 非目标
 
+- 把同引擎换模写成 handoff / 「换模会重开会话」（那是 I1，见上表）
 - Registry / 自定义 agent（M4）
 - worktree 并行（砍）
 - PTY 兜底（砍）
