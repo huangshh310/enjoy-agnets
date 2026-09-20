@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>M-CBD · 会话作业三件套 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1280px] space-y-6 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/m-cbd-session-ops.html · 【视觉真源】M-CBD</p>
+      <h1 class="mt-1 text-[17px] font-semibold">安静 Inbox × 验收闸 × 运行账本</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。一页看联动：左「待验收」打开中栏闸门；右账本行打开「本轮来源」。不自动 push / commit。无看板、无第二 Inbox、无 worktree。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li><span class="font-medium text-ink">M-C 安静 Inbox</span>：筛选只要 <strong class="text-ink">拍板 | 待验收 | 失败</strong>。默认藏工具噪音。徽标只计要人拍板的条（本页 = 2），不计运行中 / 完成 / 读文件刷屏。</li>
+        <li><span class="font-medium text-ink">M-B 验收闸</span>：会话顶栏 <strong class="text-ink">执行中 | 待验收 | 完成</strong>。待验收时同一屏：diff +「在浏览器打开」+「本轮来源」+ 打回 / 通过。人说了才收工，<strong class="text-ink">不自动 push / commit</strong>。≠ 工具 HMAC 审批。</li>
+        <li><span class="font-medium text-ink">M-D 运行账本</span>：右侧只读时间线（工具 / 命令 / 错误 / 用量）。点行 → P0-G 式 sheet「本轮来源」。不上新模块页，不写 Observability 大盘。</li>
+      </ul>
+    </aside>
+
+    <!-- 三栏联动：左 Inbox · 中闸门 · 右账本 + Sources -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">联动一屏 · 待验收打开闸门 · 账本行打开来源</h2>
+      <p class="text-[11px] text-mute">左筛在「待验收」，选中行 = 中栏会话。徽标仍是 2（只计拍板）。右行高亮 = 刚点开「本轮来源」。</p>
+
+      <div class="relative overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <div class="grid min-h-[420px] lg:grid-cols-[220px_minmax(0,1fr)_228px]">
+
+          <!-- M-C 安静 Inbox -->
+          <aside class="flex flex-col border-b border-line bg-card lg:border-b-0 lg:border-r">
+            <header class="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
+              <div class="flex items-center gap-1.5">
+                <h3 class="text-[12px] font-semibold">收件箱</h3>
+                <span class="rounded-full bg-accent px-1.5 py-px text-[10px] font-semibold text-white" title="只要人拍板">2</span>
+              </div>
+              <span class="text-[10px] text-mute">藏噪音</span>
+            </header>
+            <div class="flex flex-wrap gap-1 px-3 py-2">
+              <button class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">拍板 <span class="font-semibold text-accent">2</span></button>
+              <button class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/30">待验收</button>
+              <button class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">失败</button>
+            </div>
+            <p class="px-3 pb-1.5 text-[10px] text-mute">默认不列读文件 / 跑命令。徽标 ≠ 列表条数。</p>
+            <ul class="min-h-0 flex-1 divide-y divide-line">
+              <li>
+                <button class="flex w-full flex-col gap-0.5 bg-soft px-3 py-2.5 text-left ring-inset ring-2 ring-accent/20">
+                  <span class="flex items-center justify-between gap-2">
+                    <span class="truncate text-[12px] font-medium">登录页改版</span>
+                    <span class="shrink-0 rounded bg-card px-1.5 py-px text-[10px] text-accent ring-1 ring-accent/30">待验收</span>
+                  </span>
+                  <span class="truncate text-[10px] text-mute">等你看 diff · 打开中栏闸门</span>
+                </button>
+              </li>
+              <li>
+                <button class="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left">
+                  <span class="flex items-center justify-between gap-2">
+                    <span class="truncate text-[12px] font-medium">结算预览页</span>
+                    <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">待验收</span>
+                  </span>
+                  <span class="truncate text-[10px] text-mute">3 个文件 · 未打开</span>
+                </button>
+              </li>
+            </ul>
+            <p class="border-t border-dashed border-line px-3 py-2 text-[10px] text-mute">拍板 2 条在另一筛：写盘方案、选登录态。不进本列，也不进运行中。</p>
+          </aside>
+
+          <!-- M-B 验收闸 -->
+          <div class="flex min-w-0 flex-col bg-card">
+            <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+              <div class="min-w-0">
+                <p class="truncate text-[13px] font-semibold">登录页改版</p>
+                <p class="text-[10px] text-mute">从 Inbox「待验收」进来 · 未自动提交</p>
+              </div>
+              <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                <span class="rounded-full px-2.5 py-1 text-[10px] text-mute">执行中</span>
+                <span class="rounded-full bg-soft px-2.5 py-1 text-[10px] font-semibold text-accent">待验收</span>
+                <span class="rounded-full px-2.5 py-1 text-[10px] text-mute">完成</span>
+              </div>
+            </header>
+
+            <div class="min-h-0 flex-1 space-y-3 overflow-auto px-4 py-3">
+              <div class="rounded-xl border border-line">
+                <div class="flex items-center justify-between gap-2 border-b border-line bg-paper px-3 py-1.5">
+                  <span class="truncate font-mono text-[11px]">preview/index.html</span>
+                  <span class="text-[10px] text-ok">+18 −3</span>
+                </div>
+                <pre class="overflow-x-auto px-3 py-2 font-mono text-[10px] leading-5"><span class="text-mute">  40</span>  &lt;form class="login"&gt;
+<span class="bg-[#FDECEC] text-warn">- 41  &lt;button type="submit"&gt;Submit&lt;/button&gt;</span>
+<span class="bg-[#E8F8EE] text-ok">+ 41  &lt;button type="submit"&gt;登录&lt;/button&gt;</span>
+<span class="bg-[#E8F8EE] text-ok">+ 42  &lt;p class="hint"&gt;验证码 60 秒后重发&lt;/p&gt;</span></pre>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <button class="h-6 rounded-md border border-line bg-card px-2.5 text-[11px]">在浏览器打开</button>
+                <button class="rounded-md bg-soft px-2 py-0.5 text-[10px] font-medium text-accent ring-1 ring-accent/30">preview/index.html · L41</button>
+                <button class="rounded-md bg-card px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">技能 · 读代码</button>
+                <button class="rounded-md bg-card px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">filesystem</button>
+              </div>
+              <p class="text-[10px] text-mute">预览走系统浏览器（P0-F）。芯片与账本行打开同一张「本轮来源」（P0-G）。</p>
+            </div>
+
+            <footer class="flex items-center justify-between gap-2 border-t border-line px-4 py-2.5">
+              <p class="text-[10px] text-mute">通过只收工。不自动 commit，不自动 push。</p>
+              <div class="flex shrink-0 items-center gap-1.5">
+                <button class="h-7 rounded-md border border-line px-3 text-[11px]">打回</button>
+                <button class="h-7 rounded-md bg-accent px-3 text-[11px] font-medium text-white">通过</button>
+              </div>
+            </footer>
+          </div>
+
+          <!-- M-D 运行账本 -->
+          <aside class="flex flex-col border-t border-line bg-card lg:border-l lg:border-t-0">
+            <header class="border-b border-line px-3 py-2.5">
+              <h3 class="text-[12px] font-semibold">本轮账本</h3>
+              <p class="mt-0.5 text-[10px] text-mute">只读 · 点行开来源</p>
+            </header>
+            <ol class="min-h-0 flex-1 divide-y divide-line">
+              <li class="px-3 py-2">
+                <p class="text-[11px] font-medium">读 login.ts</p>
+                <p class="text-[10px] text-mute">工具 · 0.4s</p>
+              </li>
+              <li class="bg-soft px-3 py-2 ring-inset ring-2 ring-accent/20">
+                <p class="text-[11px] font-medium">改 preview/index.html</p>
+                <p class="text-[10px] text-accent">工具 · 点开 → 本轮来源</p>
+              </li>
+              <li class="px-3 py-2">
+                <p class="font-mono text-[11px]">$ pnpm test</p>
+                <p class="text-[10px] text-warn">命令 · 失败 1</p>
+              </li>
+              <li class="px-3 py-2">
+                <p class="text-[11px] font-medium">断言未过 · login.spec</p>
+                <p class="text-[10px] text-warn">错误 · 已停，等验收</p>
+              </li>
+              <li class="px-3 py-2">
+                <p class="text-[11px] font-medium">本轮用量</p>
+                <p class="text-[10px] text-mute">1.2k tokens · 只读</p>
+              </li>
+            </ol>
+          </aside>
+        </div>
+
+        <!-- P0-G 式「本轮来源」：账本行点开 -->
+        <aside class="border-t border-line bg-card lg:absolute lg:bottom-3 lg:right-3 lg:w-[280px] lg:overflow-hidden lg:rounded-2xl lg:border lg:shadow-2xl">
+          <header class="flex items-start justify-between border-b border-line px-3 py-2.5">
+            <div>
+              <h3 class="text-[13px] font-semibold">本轮来源</h3>
+              <p class="mt-0.5 text-[10px] text-mute">3 项 · 从账本行打开</p>
+            </div>
+            <span class="text-[11px] text-mute">关闭</span>
+          </header>
+          <ul class="divide-y divide-line">
+            <li>
+              <button class="flex w-full items-start gap-2 bg-soft px-3 py-2 text-left">
+                <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-card ring-1 ring-accent/30" aria-hidden="true">
+                  <svg class="size-3 text-accent" viewBox="0 0 16 16" fill="none"><rect x="4" y="2.5" width="8" height="11" rx="1.2" stroke="currentColor" stroke-width="1.3"/><path d="M6 6h4M6 8.5h4M6 11h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                </span>
+                <span class="min-w-0">
+                  <span class="flex items-center gap-1.5">
+                    <span class="truncate text-[11px] font-medium">index.html</span>
+                    <span class="shrink-0 rounded bg-card px-1 py-px text-[10px] text-mute ring-1 ring-line">文件</span>
+                  </span>
+                  <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">preview/index.html · L41</span>
+                </span>
+              </button>
+            </li>
+            <li class="flex items-start gap-2 px-3 py-2">
+              <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                <svg class="size-3 text-mute" viewBox="0 0 16 16" fill="none"><path d="M8 2.5l1.2 3.4h3.6L10.2 8l1.2 3.4L8 9.3 4.6 11.4 5.8 8 3.2 5.9h3.6L8 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="min-w-0">
+                <span class="flex items-center gap-1.5">
+                  <span class="truncate text-[11px] font-medium">读代码</span>
+                  <span class="shrink-0 rounded bg-paper px-1 py-px text-[10px] text-mute ring-1 ring-line">技能</span>
+                </span>
+                <span class="mt-0.5 block truncate font-mono text-[10px] text-mute">skills/read-code/SKILL.md</span>
+              </span>
+            </li>
+            <li class="flex items-start gap-2 px-3 py-2">
+              <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-paper ring-1 ring-line" aria-hidden="true">
+                <svg class="size-3 text-mute" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M7 8h2" stroke="currentColor" stroke-width="1.3"/></svg>
+              </span>
+              <span class="min-w-0">
+                <span class="flex items-center gap-1.5">
+                  <span class="truncate text-[11px] font-medium">filesystem</span>
+                  <span class="shrink-0 rounded bg-paper px-1 py-px text-[10px] text-mute ring-1 ring-line">MCP</span>
+                </span>
+                <span class="mt-0.5 block truncate text-[10px] text-mute">服务器 · filesystem</span>
+              </span>
+            </li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">文案 / 规则</th>
+            <th class="px-3 py-2">不用</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">Inbox 筛</td>
+            <td class="px-3 py-2">拍板 / 待验收 / 失败</td>
+            <td class="px-3 py-2">全部 · 运行中 · 智能体/系统 · 看板列</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">Inbox 徽标</td>
+            <td class="px-3 py-2">只要人拍板的条数（本页 = 2）</td>
+            <td class="px-3 py-2">工具噪音、完成、运行中、待验收条数</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">闸门顶栏</td>
+            <td class="px-3 py-2">执行中 / 待验收 / 完成</td>
+            <td class="px-3 py-2">in_review 原文、自动变完成</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">待验收屏</td>
+            <td class="px-3 py-2">diff + 在浏览器打开 + 本轮来源 + 打回 / 通过</td>
+            <td class="px-3 py-2">自动 push / commit、内嵌 Chromium、第二套 Allow/Deny</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">账本</td>
+            <td class="px-3 py-2">只读：工具 / 命令 / 错误 / 用量；点行开「本轮来源」</td>
+            <td class="px-3 py-2">新 Ledger 页、可写、Observability 大盘</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">来源 sheet</td>
+            <td class="px-3 py-2">本轮来源 · 文件 / 技能 / MCP</td>
+            <td class="px-3 py-2">Citations、网页来源、协议微标</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">技能 / MCP</td>
+            <td class="px-3 py-2">Enjoy 宿主为真源</td>
+            <td class="px-3 py-2">引擎自带商店、团队技能云</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>左栏安静 Inbox：筛选只有拍板 / 待验收 / 失败；默认不画工具噪音；徽标 = 2 且只计拍板。</li>
+        <li>中栏待验收：顶栏执行中 | 待验收 | 完成；同一屏 diff +「在浏览器打开」+「本轮来源」+ 打回 / 通过；不自动 push / commit。</li>
+        <li>右栏账本只读（工具 / 命令 / 错误 / 用量）；点行打开 P0-G 式「本轮来源」sheet。</li>
+        <li>联动：Inbox「待验收」打开中栏闸门；账本行打开「本轮来源」。无看板、无第二 Inbox、无 worktree、无协议微标。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">看板 · 第二 Inbox · worktree · 技能/MCP 另起真源 · 协议微标 · 团队 SaaS · 自动 push/commit · 内嵌浏览器</p>
+    </section>
+  </div>
+</body>
+</html>
