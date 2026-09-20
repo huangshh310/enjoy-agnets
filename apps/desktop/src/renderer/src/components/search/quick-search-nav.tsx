@@ -47,9 +47,9 @@ export function QuickSearchNav({
   const studio: NavItem[] = [
     { id: "chat", label: t("command.chat"), icon: <RiChat1Line className={icon} />, run: (go) => void go({ to: "/" }) },
     { id: "workflows", label: t("command.workflows"), icon: <RiRouteLine className={icon} />, run: (go) => void go({ to: "/workflows" }) },
-    { id: "extensions", label: t("command.extensions"), icon: <RiApps2Line className={icon} />, run: (go) => void go({ to: "/extensions" }) },
-    { id: "mcp", label: t("command.mcp"), icon: <McpIcon className={icon} />, run: (go) => void go({ to: "/extensions", search: { tab: "mcp" } }) },
-    { id: "skills", label: t("command.skills"), icon: <RiSparklingLine className={icon} />, run: (go) => void go({ to: "/extensions", search: { tab: "skills" } }) },
+    { id: "extensions", label: t("command.extensions"), icon: <RiApps2Line className={icon} />, run: (go) => void go({ to: "/settings/$section", params: { section: "extensions" } }) },
+    { id: "mcp", label: t("command.mcp"), icon: <McpIcon className={icon} />, run: (go) => void go({ to: "/mcp" }) },
+    { id: "skills", label: t("command.skills"), icon: <RiSparklingLine className={icon} />, run: (go) => void go({ to: "/skills" }) },
     { id: "knowledge", label: t("command.knowledge"), icon: <RiBookOpenLine className={icon} />, run: (go) => void go({ to: "/knowledge" }) },
     { id: "media", label: t("command.media"), icon: <RiImageLine className={icon} />, run: (go) => void go({ to: "/media" }) },
     {

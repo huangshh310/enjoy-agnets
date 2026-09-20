@@ -17,9 +17,11 @@ import { KnowledgePage } from "@renderer/components/knowledge/knowledge-page"
 import { parseKnowledgeSearch } from "@renderer/components/knowledge/lib/knowledge-route-search"
 import { WorkflowsPage } from "@renderer/components/workflows/workflows-page"
 import { MediaPage } from "@renderer/components/media/media-page"
-import { ExtensionsModulePage } from "@renderer/components/extensions/extensions-module-page"
 import { parseExtensionsSearch } from "@renderer/components/extensions/lib/extensions-route-search"
+import { resolveExtensionsLegacyRedirect } from "@renderer/components/settings/extensions/extensions-legacy-redirect"
+import { McpPage } from "@renderer/components/mcp/mcp-page"
 import { parseMcpSearch } from "@renderer/components/mcp/lib/mcp-route-search"
+import { SkillsPage } from "@renderer/components/skills/skills-page"
 import { parseSkillsSearch } from "@renderer/components/skills/lib/skills-route-search"
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
@@ -98,8 +100,11 @@ const settingsSectionRoute = createRoute({
     if (!isSettingsSectionId(params.section)) {
       throw redirect({ to: "/settings/$section", params: { section: "general" } })
     }
-    if (params.section === "skills" || params.section === "extensions" || params.section === "mcp") {
-      throw redirect({ to: "/extensions" })
+    if (params.section === "skills") {
+      throw redirect({ to: "/skills" })
+    }
+    if (params.section === "mcp") {
+      throw redirect({ to: "/mcp" })
     }
   },
   component: SettingsSectionPage
@@ -128,39 +133,24 @@ const extensionsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/extensions",
   validateSearch: (search: Record<string, unknown>) => parseExtensionsSearch(search),
-  component: ExtensionsModulePage
+  beforeLoad: ({ search }) => {
+    throw redirect(resolveExtensionsLegacyRedirect(search))
+  },
+  component: RedirectPlaceholder
 })
 
 const mcpRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/mcp",
   validateSearch: (search: Record<string, unknown>) => parseMcpSearch(search),
-  beforeLoad: ({ search }) => {
-    throw redirect({
-      to: "/extensions",
-      search: {
-        tab: "mcp",
-        preset: search.preset
-      }
-    })
-  },
-  component: RedirectPlaceholder
+  component: McpPage
 })
 
 const skillsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/skills",
   validateSearch: (search: Record<string, unknown>) => parseSkillsSearch(search),
-  beforeLoad: ({ search }) => {
-    throw redirect({
-      to: "/extensions",
-      search: {
-        tab: "skills",
-        install: search.install
-      }
-    })
-  },
-  component: RedirectPlaceholder
+  component: SkillsPage
 })
 
 const observabilityRoute = createRoute({
@@ -208,8 +198,14 @@ const customizeSectionRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/customize/$section",
   beforeLoad: ({ params }) => {
-    if (params.section === "skills" || params.section === "extensions" || params.section === "mcp") {
-      throw redirect({ to: "/extensions" })
+    if (params.section === "skills") {
+      throw redirect({ to: "/skills" })
+    }
+    if (params.section === "mcp") {
+      throw redirect({ to: "/mcp" })
+    }
+    if (params.section === "extensions") {
+      throw redirect({ to: "/settings/$section", params: { section: "extensions" } })
     }
     throw redirect({
       to: "/settings/$section",

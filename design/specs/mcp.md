@@ -1,6 +1,6 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-14
+> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-20
 
 ## 当前真相
 
@@ -8,9 +8,9 @@
 
 `createMCPClient` 只在 main；`ai@7.0.84` 无该导出时 stdio / HTTP 走本机 JSON-RPC 会话：initialize 后 `tools/list`，`tools/call` 走 `mcp.call`。stdio `command` 必须是白名单裸二进制（`npx` / `npm` / `pnpm` / `yarn` / `bun` / `node` / `uvx` / `uv` / `python` / `python3`），禁止路径和 shell 元字符。写类工具名即使 allow 也再 ask；`mcp.call` 对 `ask` 直接拒，必须经 Agent ToolLoop 的 `user-approval` + `decideApproval` 后再执行（`fromApprovedAgent`）。已连接且 `trusted`（或写在 `modelVisibleTools`）的工具注入 ToolLoopAgent，名为 `mcp_<serverId>__<tool>`。`tools/list` 的 `inputSchema` 经 `jsonSchemaToZod` 交给模型（object / array / enum / anyOf / oneOf）；`$ref` 与无法识别的结构回落 `z.unknown()`，没有 schema 才回落 `z.record(unknown)`。`openApp` 的 `allowedResourceUris` 只信库内配置，不把调用方 `resourceUri` 塞进白名单。
 
-设置 `#/settings/extensions` 作为全生态统一应用集市（涵盖 MCP 工具服务与技能套件，20+ 款高频预设），未配置卡片点击「获取并配置」原地呼出 `McpCreateModal` 右侧抽屉无感连接，已配置卡片跳转 `#/mcp` 运维；提供顶部「添加扩展」快捷入口（自定义抽屉表单、直跳 `#/mcp?tab=json` 全屏导入、技能导入）与网格末尾引导，不新开存储。
+设置 `#/settings/extensions` 是 P0-H 发现壳：两列 MCP \| Skills，已配置数 +「添加」深链 `#/mcp` / `#/skills`，精选只读投影（`mcp-presets`）。不在设置页弹第二套创建表单，不新开存储。
 
-路由 `#/mcp` 在 `AppShell` 内换轨（情境栏=已配置服务/JSON 规格配置两栏，Stage=对应视图），不要弹出「返回应用」页。Stage 用 `contentWidth="fill"` + `hideChrome`：只保留 `McpHeader`，不要再叠 `SecondaryPageChrome`。顶栏固定，已配置服务空态引导去扩展中心安装新生态或注册自定义服务；JSON 编辑区铺满剩余高度。不再并存冗余的「本地预设」大货架，全生态发现与安装统一由 `#/settings/extensions` 承担，`#/mcp` 专心作为协议运行时控制台（状态、连通性测试、工具 Allow/Ask/Deny、沙箱 App、JSON 配置）。对齐原型 Slide 10 与 13 ⑧（Trust 印章与声明）。卡片印章走 i18n（已信任 / 未信任），不要写死英文 TRUSTED。信任操作提供完整声明确认卡；顶部展示服务统计。支持 Ping 连通性测试、工具探索与细粒度权限控制 (Allow/Ask/Deny)、环境变量管理与沙箱 UI App 实时交互。服务注册编辑、工具探索权限与沙箱 App 均统一使用右侧内缩悬浮抽屉（`inset-y-3 right-3 rounded-3xl shadow-card`），与 Skills 抽屉规范一致，禁止使用居中阻断弹框。仅 **trusted** Server 可 `mcp.openApp`。能从允许的 resource URI 读到 HTML 才返回 `srcDoc`；否则 `available=false`、`srcDoc=null`，UI 写明没有 App。`ENJOY_E2E_STUB` 才返回 demo HTML。iframe `sandbox="allow-scripts"`、无 `allow-same-origin`。`postMessage` 必须 `event.source === iframe.contentWindow`，再经 `mcp.appMessage` 在 main 消毒；`ui/log` 回显，`resources/read` 仅在已连接且 URI 白名单内走本机会话，`tools/result` 只展示已批准结果，**不会**从 iframe 自动执行写工具。发 `mcp.app` 事件。Composer `@` 发现面板可列出已连 MCP（`kind: "mcp"`），选中只钉 `@mcp:名` 文本到输入框，**不是**授权、也不是 `mcp.call`。
+路由 `#/mcp` 在 `AppShell` 内换轨（情境栏=已配置服务/JSON 规格配置两栏，Stage=对应视图），不要弹出「返回应用」页。Stage 用 `contentWidth="fill"` + `hideChrome`：只保留 `McpHeader`，不要再叠 `SecondaryPageChrome`。顶栏固定，已配置服务空态可链回 `#/settings/extensions` 或就地注册自定义服务；JSON 编辑区铺满剩余高度。`#/mcp` 是协议运行时控制台（状态、连通性测试、工具 Allow/Ask/Deny、沙箱 App、JSON 配置）。对齐原型 Slide 10 与 13 ⑧（Trust 印章与声明）。卡片印章走 i18n（已信任 / 未信任），不要写死英文 TRUSTED。信任操作提供完整声明确认卡；顶部展示服务统计。支持 Ping 连通性测试、工具探索与细粒度权限控制 (Allow/Ask/Deny)、环境变量管理与沙箱 UI App 实时交互。服务注册编辑、工具探索权限与沙箱 App 均统一使用右侧内缩悬浮抽屉（`inset-y-3 right-3 rounded-3xl shadow-card`），与 Skills 抽屉规范一致，禁止使用居中阻断弹框。仅 **trusted** Server 可 `mcp.openApp`。能从允许的 resource URI 读到 HTML 才返回 `srcDoc`；否则 `available=false`、`srcDoc=null`，UI 写明没有 App。`ENJOY_E2E_STUB` 才返回 demo HTML。iframe `sandbox="allow-scripts"`、无 `allow-same-origin`。`postMessage` 必须 `event.source === iframe.contentWindow`，再经 `mcp.appMessage` 在 main 消毒；`ui/log` 回显，`resources/read` 仅在已连接且 URI 白名单内走本机会话，`tools/result` 只展示已批准结果，**不会**从 iframe 自动执行写工具。发 `mcp.app` 事件。Composer `@` 发现面板可列出已连 MCP（`kind: "mcp"`），选中只钉 `@mcp:名` 文本到输入框，**不是**授权、也不是 `mcp.call`。
 
 ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny** 的 `#/mcp` 行映射进 `session/new.mcpServers`。stdio 在 main 把白名单裸 bin 解析成绝对路径；SSH 工作区用远端 `command -v` 换成远端 abs，找不到就跳过，**禁止**把本机 `/opt/homebrew/bin/npx` 塞给远端 CLI。HTTP/SSE 仅当握手广告了 `mcpCapabilities`。Enjoy Local 仍走 ToolLoop `createMcpAgentTools`，不要给同一会话再把 MCP 工具注入 ToolLoop。增删 MCP / 改信任会 `disposeAllAcpSessions`，下一轮重 `session/new`。MCP Apps iframe：`#/mcp` 打开时若未 Connect 会先建本机会话；ACP 工具结果里的 HTML / `ui://` 资源映射为 `mcp.app`，在助手气泡内嵌同一隔离 iframe。Pi 静态 `hostMcp=none`，不假装透传。
 

@@ -19,7 +19,7 @@ export const zhMcpPages = {
   searchServers: "搜索服务名称…",
   emptyTitle: "暂未配置任何 MCP Server",
   emptyHint: "通过 Model Context Protocol 连接文件系统、数据库或外部 API，让 Agent 在对话中调度。",
-  browseMarketplace: "前往扩展中心浏览生态",
+  browseMarketplace: "浏览扩展",
   marketplaceLocalHint: "这是内置模板，不是在线目录。添加后写入本机 mcp_servers。",
   noMatchingServers: "未搜索到匹配的服务",
   needIdentifier: "请输入 Server Identifier",

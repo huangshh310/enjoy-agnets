@@ -1,7 +1,6 @@
 /**
- * 扩展发现与生态中心视图模型类型。
+ * 扩展发现壳视图模型：两列 MCP | Skills，精选只读投影。
  */
-import type { ComponentType } from "react"
 
 export type ExtensionsColumnId = "mcp" | "skills"
 export type ExtensionKind = "mcp" | "skills"
@@ -12,16 +11,6 @@ export type ExtensionCuratedCard = {
   title: string
   description: string
   href: string
-  category?: string
-  categoryLabel?: string
-  author?: string
-  stars?: number
-  icon?: ComponentType<{ className?: string }>
-  colorClass?: string
-  badgeColorClass?: string
-  tags?: string[]
-  sampleTools?: string[]
-  isConfigured?: boolean
 }
 
 export type ExtensionsColumnModel = {
@@ -32,6 +21,3 @@ export type ExtensionsColumnModel = {
   addLabel: string
   cards: ExtensionCuratedCard[]
 }
-
-export type ExtensionsFilterTab = "all" | "mcp" | "skills"
-export type ExtensionsCategoryFilter = "all" | "storage" | "dev" | "database" | "web" | "design" | "content"
