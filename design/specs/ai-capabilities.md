@@ -8,7 +8,7 @@
 
 `GenerationRequest.kind`：`text` `structured-object` `structured-array` `completion` `image` `speech` `transcription` `translation` `video` `embedding` `rerank` `realtime-session` `agent` `workflow`。fullStream 映射在 `packages/agent-core/src/streams/map-part.ts`。Agent / `ai.generate` 完成时写 `ttfoMs` 与 `tokensPerSecond`。
 
-StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
+StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事件，新增 part / structured / source / asset / usage / step / workflow / mcp / realtime / warning / `host.inject`（本轮 Enjoy SoT Skills/MCP 快照，开流由 `agent-pump` 发出，不落库）。可选 `sequence` `timestamp` `sessionId`，由 `createEventStamper` 写入。
 
 消息 parts：`UIMessage` + `migrateContentToParts`。旧 `messages.content` 仍是兼容字段。生成式 UI 只能选 `GENERATIVE_COMPONENT_IDS` 白名单。
 

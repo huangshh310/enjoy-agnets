@@ -12,6 +12,8 @@ export type TurnSourceChip = {
   path?: string
   startLine?: number
   title?: string
+  /** Enjoy SoT 注入的本轮源，不是家目录 / dsh plugin add。 */
+  fromEnjoy?: boolean
 }
 
 export const SOURCE_CHIP_VISIBLE = 4

@@ -27,6 +27,8 @@ import type { OpenedCodingStream, OpenCodingStreamInput } from "./open-coding-st
 import { listDiscoveredRules } from "./rules-service"
 import type { StoredSecret } from "./secrets"
 import { getSessionCompaction } from "./session-compaction-service"
+import { snapshotFromReports } from "./host-extensions/collect-host-inject.ts"
+import { reportLocalHostMcp } from "./host-extensions/local-mcp-report.ts"
 import { createSkillHost } from "./skill-host"
 import { listInstalledSkills } from "./skills-service"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
@@ -52,7 +54,7 @@ export async function openLocalStream(
   const result = await streamCodingAgent(
     localStreamOptions(input, policy, secret, modelId, thinking, extras)
   )
-  return openedLocalStream(result)
+  return openedLocalStream(result, extras.hostInject)
 }
 
 type LocalStreamExtras = {
@@ -61,6 +63,7 @@ type LocalStreamExtras = {
   exploreModel?: ReturnType<typeof createLanguageModel>
   host: AgentWorkspaceHost
   pullInstructionUpdates?: () => ModelMessage[]
+  hostInject: ReturnType<typeof snapshotFromReports>
 }
 
 function localStreamOptions(
@@ -125,6 +128,7 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
   const plan = input.executePlan ? formatExecutePlanInstructions(await readPlanFile(host)) : ""
   const isSsh = record?.kind === "ssh"
   const localScanRoot = isSsh ? undefined : input.workspaceRoot
+  const skills = localScanRoot ? listInstalledSkills({ workspacePath: localScanRoot }) : []
   return {
     host,
     skills: localScanRoot ? createSkillHost(localScanRoot) : emptyRemoteSkillHost(),
@@ -133,12 +137,18 @@ async function loadLocalStreamExtras(input: OpenCodingStreamInput): Promise<Loca
     extraInstructions: extraLocalInstructions({
       customInstructions: input.prefs.customInstructions,
       rules: localScanRoot ? listDiscoveredRules({ workspacePath: localScanRoot }) : [],
-      skills: localScanRoot ? listInstalledSkills({ workspacePath: localScanRoot }) : [],
+      skills,
       workspaceRoot: localScanRoot,
       outline: formatRepoOutline(nodes),
       executePlan: plan,
       agentsMd: agents.agentsMd,
       rehydratedAfterCompact: agents.rehydratedAfterCompact
+    }),
+    hostInject: snapshotFromReports({
+      runtimeId: input.runtimeId ?? "enjoy-local",
+      mcp: reportLocalHostMcp(),
+      skills,
+      workspaceRoot: localScanRoot
     })
   }
 }
@@ -221,10 +231,13 @@ function recordLocalModelStep(runId: string, stepNumber: number | undefined): vo
   })
 }
 
-function openedLocalStream(result: unknown): OpenedCodingStream {
+function openedLocalStream(
+  result: unknown,
+  hostInject: LocalStreamExtras["hostInject"]
+): OpenedCodingStream {
   const stream = (result as { fullStream?: AsyncIterable<Record<string, unknown>> }).fullStream
   if (!stream) throw new Error("Agent stream did not expose fullStream.")
-  return { stream, result, dispose: async () => undefined }
+  return { stream, result, dispose: async () => undefined, hostInject }
 }
 
 /** Fast 开且 profile 配了极速模型才切换；没配则保持当前模型。 */

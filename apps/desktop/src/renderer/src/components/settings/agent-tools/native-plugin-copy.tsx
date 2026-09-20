@@ -11,12 +11,12 @@ import {
   RiArrowDownSLine,
   RiArrowRightUpLine,
   RiFileCopyLine,
-  RiFlashlightLine,
   RiServerLine
 } from "@remixicon/react"
 import type { AgentToolPublic, McpServer } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useT } from "@renderer/i18n"
+import { nativePluginHonesty } from "./native-plugin-honesty.ts"
 
 export function NativePluginCopy({
   tool,
@@ -46,6 +46,11 @@ export function NativePluginCopy({
 
   const readyMcpCount = mcpQuery.data?.filter((s) => s.trusted).length ?? 0
   const skillCount = skillsQuery.data?.length ?? 0
+  const honesty = nativePluginHonesty({
+    runtimeId: tool.id,
+    trustedMcp: readyMcpCount,
+    skillCount
+  })
 
   function copy() {
     if (!command) return
@@ -78,10 +83,6 @@ export function NativePluginCopy({
           <span className="truncate text-caption-1-medium text-text-primary">
             {t("settings.agentTools.hostExtensionsTitle")}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-border-card/60 bg-background-primary-default px-1.5 py-0.5 text-[10px] font-medium text-text-tertiary">
-            <span className="size-1.5 rounded-full bg-status-success-default" />
-            {t("settings.agentTools.hostExtensionsBadge")}
-          </span>
         </div>
 
         <button
@@ -94,24 +95,54 @@ export function NativePluginCopy({
         </button>
       </div>
 
-      {/* 核心指标统计药丸 */}
-      <div className="mt-2.5 grid grid-cols-2 gap-2">
-        <div className="flex items-center gap-2 rounded-lg border border-border-button-default/60 bg-background-primary-default/60 px-2.5 py-1.5">
-          <RiServerLine className="size-3.5 shrink-0 text-signal-blue" />
+      {honesty.kind === "unsupported" ? (
+        <div className="mt-2.5 space-y-1.5">
+          {honesty.mcp ? (
+            <p className="text-caption-2-medium text-text-warning-primary">
+              {t("settings.agentTools.hostExtensionsMcpUnsupported")}
+            </p>
+          ) : null}
+          {honesty.skills ? (
+            <p className="text-caption-2-medium text-text-warning-primary">
+              {t("settings.agentTools.hostExtensionsSkillsUnsupported")}
+            </p>
+          ) : null}
+        </div>
+      ) : honesty.mcpCount + honesty.skillCount > 0 ? (
+        <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-border-button-default/60 bg-background-primary-default/60 px-2.5 py-1.5">
+          <RiServerLine className="size-3.5 shrink-0 text-accent-500" />
           <span className="truncate text-caption-2-medium text-text-secondary">
-            {readyMcpCount > 0
-              ? t("settings.agentTools.hostExtensionsMcpCount", { n: readyMcpCount })
-              : t("settings.agentTools.hostExtensionsMcpEmpty")}
+            {t("settings.agentTools.hostExtensionsEnabled", {
+              mcp: honesty.mcpCount,
+              skills: honesty.skillCount
+            })}
           </span>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border-button-default/60 bg-background-primary-default/60 px-2.5 py-1.5">
-          <RiFlashlightLine className="size-3.5 shrink-0 text-accent-primary" />
-          <span className="truncate text-caption-2-medium text-text-secondary">
-            {skillCount > 0
-              ? t("settings.agentTools.hostExtensionsSkillCount", { n: skillCount })
-              : t("settings.agentTools.hostExtensionsSkillEmpty")}
-          </span>
-        </div>
+      ) : null}
+      <p className="mt-2 text-caption-2-regular text-text-tertiary">
+        {t("settings.agentTools.hostExtensionsFootnote")}
+      </p>
+      <div className="mt-1 flex gap-3">
+        <button
+          type="button"
+          className="text-caption-2-medium text-accent-600"
+          onClick={() => {
+            onClose?.()
+            void navigate({ to: "/mcp" })
+          }}
+        >
+          {t("settings.agentTools.hostExtensionsManageMcp")}
+        </button>
+        <button
+          type="button"
+          className="text-caption-2-medium text-accent-600"
+          onClick={() => {
+            onClose?.()
+            void navigate({ to: "/skills" })
+          }}
+        >
+          {t("settings.agentTools.hostExtensionsManageSkills")}
+        </button>
       </div>
 
       {/* 高级选项：助手专有原生调试命令（仅在存在时显示，默认折叠，极简收纳） */}

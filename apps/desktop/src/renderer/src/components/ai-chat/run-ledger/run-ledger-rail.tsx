@@ -5,6 +5,7 @@ import { useMemo } from "react"
 import { useT } from "@renderer/i18n"
 import { collectTurnSources } from "../thread/sources/collect-turn-sources"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
 import { openSourcesSheet, useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import { collectRunLedger, groupRunLedger, lastAssistantTurn } from "./collect-run-ledger"
 import { ledgerOpensSources } from "./format-ledger-entry"
@@ -20,11 +21,12 @@ export function RunLedgerRail() {
   const entries = useMemo(() => collectRunLedger(assistant), [assistant])
   const { groups, usage } = useMemo(() => groupRunLedger(entries), [entries])
   const ledgerId = useSourcesSheetStore((state) => state.ledgerEntry?.id ?? null)
-  if (!assistant && entries.length === 0) return null
-
+  const sessionId = useChatStore((state) => state.sessionId)
+  const hostInject = useHostInjectNames(sessionId, assistant?.id)
   const chips = assistant
-    ? collectTurnSources(assistant, (name) => t("chat.sourceSkillLabel", { name }))
+    ? collectTurnSources({ ...assistant, hostInject }, (name) => t("chat.sourceSkillLabel", { name }))
     : []
+  if (!assistant && entries.length === 0) return null
 
   return (
     <aside

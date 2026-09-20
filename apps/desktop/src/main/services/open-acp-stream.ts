@@ -94,7 +94,8 @@ export async function openAcpStream(input: {
   return {
     stream: opened.stream,
     result: opened.result,
-    dispose: opened.dispose
+    dispose: opened.dispose,
+    hostInject: extensions.inject
   }
 }
 
@@ -141,7 +142,8 @@ async function openCustomAcpStream(
   return {
     stream: opened.stream,
     result: opened.result,
-    dispose: opened.dispose
+    dispose: opened.dispose,
+    hostInject: extensions.inject
   }
 }
 

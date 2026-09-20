@@ -2,6 +2,8 @@
  * 助手消息附加区：优先白名单生成式 UI，否则回落来源 / 资产 / 结构化。
  */
 import type { ThreadMessage } from "@renderer/stores/chat-store"
+import { useChatStore } from "@renderer/stores/chat-store"
+import { useHostInjectNames } from "@renderer/stores/host-inject/host-inject-store"
 import { AssetPreview } from "../asset-preview"
 import { GenerativeUi } from "../generative-ui"
 import { extractGitCommitInfo } from "../extract-git-commit"
@@ -10,6 +12,8 @@ import { SourceList } from "../source-list"
 import { StructuredCard } from "../structured-card"
 
 export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt?: string }) {
+  const sessionId = useChatStore((state) => state.sessionId)
+  const hostInject = useHostInjectNames(sessionId, message.id)
   const components = message.components ?? []
   if (components.length > 0) return <GenerativeUi components={components} prompt={prompt} />
 
@@ -17,6 +21,7 @@ export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt
   const assets = message.assets ?? []
   const structured = message.structured
   const hasToolSources = Boolean(message.tools?.length)
+  const hasHostInject = Boolean(hostInject)
   const commitInfo = extractGitCommitInfo(message)
 
   if (
@@ -24,6 +29,7 @@ export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt
     assets.length === 0 &&
     structured == null &&
     !hasToolSources &&
+    !hasHostInject &&
     !commitInfo
   ) {
     return null
@@ -32,8 +38,8 @@ export function TurnExtras({ message, prompt }: { message: ThreadMessage; prompt
   return (
     <div className="mt-2 flex flex-col gap-2">
       {commitInfo ? <GitCommitCard info={commitInfo} /> : null}
-      {sources.length > 0 || (message.tools?.length ?? 0) > 0 ? (
-        <SourceList sources={sources} tools={message.tools} />
+      {sources.length > 0 || (message.tools?.length ?? 0) > 0 || hasHostInject ? (
+        <SourceList sources={sources} tools={message.tools} messageId={message.id} />
       ) : null}
       {assets.length > 0 ? <AssetPreview assets={assets} prompt={prompt} /> : null}
       {structured != null ? <StructuredCard value={structured} /> : null}

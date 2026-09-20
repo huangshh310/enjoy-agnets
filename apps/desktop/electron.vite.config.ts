@@ -89,6 +89,14 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-io.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/host-inject",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/host-inject.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/skills-catalog",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/skills-catalog.ts")
+        },
+        {
           find: "@enjoy-agents/db/path-safe",
           replacement: resolve(repoRoot, "packages/db/src/path-safe.ts")
         },
@@ -158,6 +166,14 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/workspace-io",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/workspace-io.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/host-inject",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/host-inject.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/skills-catalog",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/skills-catalog.ts")
         },
         {
           find: /^@enjoy-agents\/ipc-contract$/,

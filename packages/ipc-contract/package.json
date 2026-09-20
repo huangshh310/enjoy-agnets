@@ -16,12 +16,13 @@
     "./workspace-move-plan": "./src/workspace-move-plan.ts",
     "./workspace-preview": "./src/workspace-preview.ts",
     "./quoted-context": "./src/quoted-context.ts",
+    "./host-inject": "./src/host-inject.ts",
     "./workspace-io": "./src/workspace-io.ts",
     "./checkpoint-pick": "./src/checkpoint-pick.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/observability-cli-usage.test.ts src/think-text.test.ts src/stream-event.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/workspace-preview.test.ts src/workspace-move-plan.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts src/custom-agent.test.ts src/skill-sources.test.ts src/rules-always-on.test.ts src/skills-catalog.test.ts src/agents-md-chain.test.ts src/provider-agent-bind.test.ts src/power-source.test.ts src/cli-compat.test.ts src/workspace-remote.test.ts src/builtin-tools.test.ts"
+    "test": "node --experimental-strip-types --test src/observability-cli-usage.test.ts src/think-text.test.ts src/stream-event.test.ts src/host-inject.test.ts src/ui-message.test.ts src/generation.test.ts src/assets.test.ts src/assistant-payload.test.ts src/session.test.ts src/approval.test.ts src/ask-user-questions.test.ts src/workspace-io.test.ts src/workspace-preview.test.ts src/workspace-move-plan.test.ts src/session-compaction.test.ts src/todo-continue.test.ts src/app-update.test.ts src/quoted-context.test.ts src/action-chip.test.ts src/runtime-capabilities.test.ts src/custom-agent.test.ts src/skill-sources.test.ts src/rules-always-on.test.ts src/skills-catalog.test.ts src/agents-md-chain.test.ts src/provider-agent-bind.test.ts src/power-source.test.ts src/cli-compat.test.ts src/workspace-remote.test.ts src/builtin-tools.test.ts"
   },
   "dependencies": { "zod": "catalog:" },
   "devDependencies": { "typescript": "catalog:" }

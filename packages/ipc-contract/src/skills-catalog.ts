@@ -26,28 +26,43 @@ export function skillWorkspaceRelPath(
   return rel
 }
 
-/** 拼进系统提示的技能目录；调用方传入 listInstalledSkills 即可。 */
-export function formatSkillCatalog(
+/** 预算内能垫进索引的技能；超出的记 omitted。 */
+export function takeSkillCatalog(
   skills: readonly SkillItem[],
   options?: { workspaceRoot?: string; budget?: number }
-): string {
+): { items: SkillItem[]; omitted: number } {
   const budget = options?.budget ?? SKILL_CATALOG_CHAR_BUDGET
   const selected = pickSkillCatalog(skills)
-  if (selected.length === 0) return ""
+  if (selected.length === 0) return { items: [], omitted: 0 }
   let remaining = Math.max(0, budget - HEADER.length - 2)
-  const parts = [HEADER]
+  const items: SkillItem[] = []
   let omitted = 0
   for (let index = 0; index < selected.length; index += 1) {
-    const block = formatSkillEntry(selected[index]!, options?.workspaceRoot)
+    const skill = selected[index]!
+    const block = formatSkillEntry(skill, options?.workspaceRoot)
     if (!block) continue
     if (block.length + 2 <= remaining) {
-      parts.push(block)
+      items.push(skill)
       remaining -= block.length + 2
       continue
     }
     omitted = selected.length - index
     break
   }
+  return { items, omitted }
+}
+
+/** 拼进系统提示的技能目录；调用方传入 listInstalledSkills 即可。 */
+export function formatSkillCatalog(
+  skills: readonly SkillItem[],
+  options?: { workspaceRoot?: string; budget?: number }
+): string {
+  const { items, omitted } = takeSkillCatalog(skills, options)
+  if (items.length === 0) return ""
+  const parts = [
+    HEADER,
+    ...items.map((skill) => formatSkillEntry(skill, options?.workspaceRoot)).filter(Boolean)
+  ]
   if (omitted > 0) {
     parts.push(`[truncated: ${omitted} skill(s) exceeded catalog budget]`)
   }

@@ -40,7 +40,20 @@ test("v2 事件全集可 safeParse", () => {
     { type: "workflow.checkpoint", runId: "r1", checkpointId: "c", stepIndex: 0 },
     { type: "workflow.paused", runId: "r1" },
     { type: "mcp.tool", runId: "r1", serverId: "m", toolName: "t", phase: "start" },
-    { type: "realtime.text", runId: "r1", text: "hi" }
+    { type: "realtime.text", runId: "r1", text: "hi" },
+    {
+      type: "host.inject",
+      runId: "r1",
+      runtimeId: "cursor",
+      mcp: { capability: "acp-passthrough", enabled: ["fs"], injected: ["fs"], skipped: [] },
+      skills: {
+        capability: "catalog-prompt",
+        enabled: ["a11y"],
+        injected: ["a11y"],
+        skipped: [],
+        mounted: false
+      }
+    }
   ]
   for (const event of events) {
     assert.equal(StreamEvent.safeParse(event).success, true, event.type)
