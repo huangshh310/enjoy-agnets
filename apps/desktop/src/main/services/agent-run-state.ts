@@ -42,6 +42,8 @@ export type ActiveRun = {
   questionAnswers?: AskUserAnswers
   /** ACP / 本机写盘本轮已记过检查点。 */
   checkpointNoted?: boolean
+  /** 用户点 Stop。与超时 abort 共用 AbortController，必须单独记。 */
+  userCancelled?: boolean
 }
 
 const activeRuns = new Map<string, ActiveRun>()

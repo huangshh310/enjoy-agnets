@@ -61,6 +61,7 @@
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/i1-mid-model-switch.md](./references/i1-mid-model-switch.md) | I1 同引擎中途换模型短锁（Jojo；视觉真源见预览；不是当前真相） |
+| [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；预览待 m-d-g-ledger-sources.html |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
 | [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |

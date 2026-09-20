@@ -2,6 +2,7 @@
  * Composer 运行控制：Stop、认领 runId。切会话只停车，不 abort。
  * agent.run 返回前 runId 为空，Stop 也必须先松 UI，不能空 return。
  */
+import { patchSessionWorkflow } from "../components/ai-chat/review-gate/patch-session-workflow"
 import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import { useChatStore } from "../stores/chat-store"
@@ -43,7 +44,11 @@ export async function abortComposerRun() {
   finalizeStreamingAssistant()
   store.setPendingApproval(null)
   store.setRunning(false)
-  if (sessionId) useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
+  if (sessionId) {
+    useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
+    // 取消不得残留待验收；主进程随后发 run.error 再确认一次。
+    void patchSessionWorkflow(sessionId, "in_progress")
+  }
   if (runId) abortOrphanedRun(runId)
 }
 

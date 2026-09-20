@@ -13,6 +13,8 @@ export function completeAgentRun(input: {
   emit: (event: { type: "run.end"; runId: string }) => void
 }): void {
   const { run, runId } = input
+  // 取消 / abort 后泵可能仍走到这里；禁止覆盖 cancelled、禁止发 run.end。
+  if (run.userCancelled || run.abort.signal.aborted) return
   persistActiveRun(run, runId, "completed")
   const durationMs = Date.now() - run.startedAt
   recordMetric({

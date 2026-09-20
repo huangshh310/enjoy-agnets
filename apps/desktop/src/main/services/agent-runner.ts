@@ -6,6 +6,7 @@ import type { ModelMessage } from "ai"
 import { bashAllowPrefix } from "@enjoy-agents/agent-core"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
+import { USER_ABORT_MESSAGE } from "./claim-run-end"
 import { persistActiveRun } from "./flush-agent-run"
 import { cancelCodingStream } from "./open-coding-stream"
 import { pumpStream } from "./agent-pump"
@@ -13,7 +14,8 @@ import { clearSteer } from "./runtime-interact/steering-queue"
 import {
   deleteActiveRun,
   emitEvent,
-  getActiveRun
+  getActiveRun,
+  settleRun
 } from "./agent-run-state"
 
 export { createSession, listMessages, listSessions, patchSession } from "./session-queries"
@@ -28,8 +30,11 @@ export async function abortAgent(rawInput: unknown) {
   )
   const run = getActiveRun(runId)
   if (run) {
+    run.userCancelled = true
     persistActiveRun(run, runId, "cancelled")
     clearSteer(run.input.sessionId)
+    settleRun(runId, { status: "error", summary: USER_ABORT_MESSAGE })
+    emitEvent(run.window, { type: "run.error", runId, message: USER_ABORT_MESSAGE })
   }
   run?.abort.abort()
   deleteActiveRun(runId)
