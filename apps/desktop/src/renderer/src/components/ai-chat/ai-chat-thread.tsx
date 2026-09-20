@@ -38,7 +38,7 @@ export function AiChatThread({
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col animate-in fade-in-50 duration-300">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
       <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">
         <ConversationContent className="gap-8 px-8 py-6 pr-16">
           {visible.map((message, index) => (

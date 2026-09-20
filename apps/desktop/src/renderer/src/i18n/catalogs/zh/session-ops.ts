@@ -1,0 +1,25 @@
+/** M-CBD 会话作业：安静 Inbox / 验收闸 / 本轮账本。C 端短中文跟预览锁。 */
+export const zhSessionOps = {
+  quietHint: "藏噪音",
+  quietHintDetail: "默认不列读文件 / 跑命令。徽标=拍板数，不是待验收条数。",
+  approvalBadgeTitle: "只要人拍板",
+  phaseRunning: "执行中",
+  phaseReview: "待验收",
+  phaseDone: "完成",
+  gateSubtitle: "未自动提交",
+  gateHint: "通过只收工。不自动 commit，不自动 push。",
+  reject: "打回",
+  approve: "通过",
+  ledgerTitle: "本轮账本",
+  ledgerHint: "只读 · 点行开来源",
+  ledgerKindTool: "工具",
+  ledgerKindCommand: "命令",
+  ledgerKindError: "错误",
+  ledgerKindUsage: "用量",
+  ledgerUsageLine: "{n} tokens · 只读",
+  ledgerOpenSources: "点开 → 本轮来源",
+  ledgerWaitingReview: "已停，等验收",
+  ledgerFailed: "失败",
+  sourcesFromLedger: "从账本行打开",
+  needsReviewSummary: "等你验收 · 未自动提交"
+}

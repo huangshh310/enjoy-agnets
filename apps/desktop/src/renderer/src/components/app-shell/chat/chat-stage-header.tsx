@@ -10,16 +10,20 @@ import {
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb"
 import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
+import { ReviewGateHeader } from "@renderer/components/ai-chat/review-gate/review-gate-header"
+import type { ReviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate.types"
 import { useT } from "@renderer/i18n"
 
 export function ChatStageHeader({
   workspaceName,
   sessionTitle,
+  reviewPhase,
   rightPanelCollapsed,
   onToggleRightPane
 }: {
   workspaceName: string
   sessionTitle: string
+  reviewPhase?: ReviewGatePhase | null
   rightPanelCollapsed: boolean
   onToggleRightPane: () => void
 }) {
@@ -38,7 +42,8 @@ export function ChatStageHeader({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
+        {reviewPhase ? <ReviewGateHeader phase={reviewPhase} /> : null}
         <QuietIconButton
           icon={RiLayoutRight2Line}
           aria-label={rightPanelCollapsed ? t("chat.expandPane") : t("chat.collapsePane")}

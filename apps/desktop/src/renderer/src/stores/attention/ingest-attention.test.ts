@@ -10,6 +10,7 @@ import {
   ingestAttentionEvent,
   isStripCompact,
   stripNeedsCount,
+  stripApprovalCount,
   stripVisibleItems
 } from "./ingest-attention.ts"
 import type { AttentionItem } from "./attention.types.ts"
@@ -106,6 +107,7 @@ test("Strip 按优先级排序，当前会话仍可见", () => {
     ["pending_approval", "ask_user", "error", "complete"]
   )
   assert.equal(stripNeedsCount(items), 3)
+  assert.equal(stripApprovalCount(items), 2)
   assert.equal(stripVisibleItems([]).length, 0)
 })
 

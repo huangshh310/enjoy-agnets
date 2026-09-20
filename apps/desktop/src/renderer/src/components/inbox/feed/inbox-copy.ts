@@ -62,12 +62,21 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
       }
     case "pending_approval":
       return {
-        badgeBg: "bg-amber-500/10 dark:bg-amber-500/15",
-        badgeText: "text-amber-600 dark:text-amber-400",
-        badgeBorder: "border-amber-500/25",
-        badgeDot: "bg-amber-500",
-        badgeLabel: t("pages.inbox.navWaiting") || "等你审批",
+        badgeBg: "bg-accent-500/10 dark:bg-accent-500/15",
+        badgeText: "text-accent-600 dark:text-accent-400",
+        badgeBorder: "border-accent-500/25",
+        badgeDot: "bg-accent-500",
+        badgeLabel: t("pages.inbox.navApproval") || "拍板",
         icon: RiShieldKeyholeLine
+      }
+    case "needs_review":
+      return {
+        badgeBg: "bg-accent-500/10 dark:bg-accent-500/15",
+        badgeText: "text-accent-600 dark:text-accent-400",
+        badgeBorder: "border-accent-500/25",
+        badgeDot: "bg-accent-500",
+        badgeLabel: t("pages.inbox.navNeedsReview") || "待验收",
+        icon: RiCheckboxCircleLine
       }
     case "ask_user":
       return {

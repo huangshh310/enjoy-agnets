@@ -1,6 +1,7 @@
 /**
  * 合成 Activity 运行中条目：前台 run 与后台 parks。
  * 注意：read 设为 true，绝不计入 Attention 侧栏红点未读数。
+ * M-C 安静 Inbox 不再合并这些行；运行中只留侧栏「进行中」。
  */
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"

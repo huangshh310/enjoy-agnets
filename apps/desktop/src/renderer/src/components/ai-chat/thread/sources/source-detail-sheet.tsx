@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
+import type { RunLedgerEntry } from "../../run-ledger/run-ledger.types"
 import { openSourceRow } from "./open-source-row"
 import { SourceDetailRow } from "./source-detail-row"
 import type { TurnSourceChip } from "./source-chip"
@@ -13,20 +14,23 @@ export function SourceDetailSheet({
   open,
   chips,
   activeId,
+  ledgerEntry = null,
   onClose
 }: {
   open: boolean
   chips: readonly TurnSourceChip[]
   activeId: string | null
+  ledgerEntry?: RunLedgerEntry | null
   onClose: () => void
 }) {
   useEscapeToClose(open, onClose)
-  if (!open || chips.length === 0 || typeof document === "undefined") return null
+  if (!open || typeof document === "undefined") return null
+  if (chips.length === 0 && !ledgerEntry) return null
 
   return createPortal(
     <div className="fixed inset-0 z-50">
       <SheetScrim onClose={onClose} />
-      <SheetPanel chips={chips} activeId={activeId} onClose={onClose} />
+      <SheetPanel chips={chips} activeId={activeId} ledgerEntry={ledgerEntry} onClose={onClose} />
     </div>,
     document.body
   )
@@ -60,13 +64,19 @@ function SheetScrim({ onClose }: { onClose: () => void }) {
 function SheetPanel({
   chips,
   activeId,
+  ledgerEntry,
   onClose
 }: {
   chips: readonly TurnSourceChip[]
   activeId: string | null
+  ledgerEntry: RunLedgerEntry | null
   onClose: () => void
 }) {
   const t = useT()
+  const meta =
+    ledgerEntry != null
+      ? t("sessionOps.sourcesFromLedger")
+      : t("chat.sourcesSheetMeta", { n: chips.length })
   return (
     <aside
       role="dialog"
@@ -84,9 +94,7 @@ function SheetPanel({
           <h3 id="turn-sources-sheet-title" className="text-headline-semibold text-text-primary">
             {t("chat.sourcesSheetTitle")}
           </h3>
-          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">
-            {t("chat.sourcesSheetMeta", { n: chips.length })}
-          </p>
+          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{meta}</p>
         </div>
         <button
           type="button"
@@ -96,6 +104,14 @@ function SheetPanel({
           {t("chat.sourcesSheetClose")}
         </button>
       </header>
+      {ledgerEntry ? (
+        <div className="border-b border-separator-border bg-background-secondary-default px-4 py-2">
+          <p className="text-caption-1-medium text-text-primary">{ledgerEntry.title}</p>
+          {ledgerEntry.detail ? (
+            <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{ledgerEntry.detail}</p>
+          ) : null}
+        </div>
+      ) : null}
       <ul className="min-h-0 flex-1 divide-y divide-separator-border overflow-y-auto">
         {chips.map((chip) => (
           <SourceDetailRow

@@ -1,11 +1,23 @@
 /**
- * 收件箱纯函数：Attention → 档案行、分类搜索、未读计数。
+ * 收件箱纯函数：Attention → 档案行。安静筛只要拍板 / 待验收 / 失败。
  */
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
+
+export function isApprovalItem(item: InboxNotification): boolean {
+  return item.copyKey === "pending_approval" || item.copyKey === "ask_user"
+}
+
+export function isFailedItem(item: InboxNotification): boolean {
+  return item.copyKey === "error" || item.copyKey === "aborted"
+}
+
+export function isQuietInboxItem(item: InboxNotification): boolean {
+  return isApprovalItem(item) || isFailedItem(item) || item.copyKey === "needs_review"
+}
 
 export function inboxFromAttention(
   items: AttentionItem[],
@@ -52,6 +64,7 @@ export function inboxFromAttention(
         isAborted
       }
     })
+    .filter(isQuietInboxItem)
     .sort((left, right) => right.occurredAt - left.occurredAt)
 }
 
@@ -62,21 +75,9 @@ export function filterInbox(
 ): InboxNotification[] {
   const needle = query.trim().toLocaleLowerCase()
   return items.filter((item) => {
-    if (filter === "unread" && item.read) return false
-    if (filter === "running" && item.status !== "running") return false
-    if (
-      filter === "waiting" &&
-      item.copyKey !== "pending_approval" &&
-      item.copyKey !== "ask_user"
-    ) {
-      return false
-    }
-    if (filter === "failed" && item.copyKey !== "error" && item.copyKey !== "aborted") {
-      return false
-    }
-    if (filter === "complete" && item.copyKey !== "complete") {
-      return false
-    }
+    if (filter === "approval" && !isApprovalItem(item)) return false
+    if (filter === "needs_review" && item.copyKey !== "needs_review") return false
+    if (filter === "failed" && !isFailedItem(item)) return false
 
     if (!needle) return true
     return (
@@ -96,20 +97,11 @@ export function resolveSelected(
   return items.find((item) => item.id === selectedId) ?? items[0] ?? null
 }
 
-/** 统计各分类数量：unread 仍表示真实未读（不含 running），各栏目展示独立计数值。 */
+/** 三筛计数。徽标只用 approval（拍板），不计待验收 / 失败 / 运行中。 */
 export function inboxNavCounts(items: InboxNotification[]): InboxNavCounts {
-  const unread = items.filter((item) => !item.read)
-  const isWaiting = (i: InboxNotification) =>
-    i.copyKey === "pending_approval" || i.copyKey === "ask_user"
-  const isFailed = (i: InboxNotification) => i.copyKey === "error"
-  const isComplete = (i: InboxNotification) => i.copyKey === "complete"
-
   return {
-    all: items.length,
-    unread: unread.length,
-    running: items.filter((item) => item.status === "running").length,
-    waiting: items.filter(isWaiting).length,
-    failed: items.filter(isFailed).length,
-    complete: items.filter(isComplete).length
+    approval: items.filter(isApprovalItem).length,
+    needs_review: items.filter((item) => item.copyKey === "needs_review").length,
+    failed: items.filter(isFailedItem).length
   }
 }

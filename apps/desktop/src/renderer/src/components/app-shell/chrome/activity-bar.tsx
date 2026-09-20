@@ -7,7 +7,7 @@ import { useT } from "@renderer/i18n"
 import type { AppModuleId } from "../app-shell.types"
 import { ACTIVITY_BAR_PX, NAV_CARD_COLLAPSED_PX } from "../constants"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"
-import { stripNeedsCount } from "@renderer/stores/attention/ingest-attention"
+import { stripApprovalCount } from "@renderer/stores/attention/ingest-attention"
 import { ACTIVITY_ICONS, OVERLAY_RAIL_ITEMS, WORK_RAIL_ITEMS } from "./module-registry"
 import { RailButton } from "./rail-button"
 
@@ -25,7 +25,7 @@ export function ActivityBar({
   onSelect: (moduleId: AppModuleId, to: string) => void
 }) {
   const t = useT()
-  const attentionCount = useAttentionStore((state) => stripNeedsCount(state.items))
+  const attentionCount = useAttentionStore((state) => stripApprovalCount(state.items))
   return (
     <nav
       aria-label={t("nav.modules")}

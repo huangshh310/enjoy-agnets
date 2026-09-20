@@ -10,6 +10,7 @@ export function InboxLayout(props: {
   groups: InboxGroup[]
   selected: InboxNotification | null
   now: number
+  approvalCount: number
   unreadCount: number
   hasRead: boolean
   onSelect: (item: InboxNotification) => void
@@ -25,6 +26,7 @@ export function InboxLayout(props: {
       {/* 左侧列表栏 */}
       <div className="flex h-full min-h-0 w-[24rem] xl:w-[26rem] shrink-0 flex-col border-r border-separator-border/70 bg-background-secondary-default/20">
         <InboxToolbar
+          approvalCount={props.approvalCount}
           unreadCount={props.unreadCount}
           hasRead={props.hasRead}
           onMarkAllRead={props.onMarkAllRead}

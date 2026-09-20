@@ -38,6 +38,13 @@ test("空会话即使有脏文件也不出审查条", () => {
   assert.equal(sessionReviewVisible(0, true, undefined, undefined, 0), false)
 })
 
+test("待验收闸在停泵后仍出现，即使改动条已 Keep", () => {
+  const key = reviewFilesKey(["a.ts"])
+  assert.equal(sessionReviewVisible(1, false, key, key, 2, true), true)
+  assert.equal(sessionReviewVisible(0, false, undefined, undefined, 2, true), true)
+  assert.equal(sessionReviewVisible(0, true, undefined, undefined, 2, true), true)
+})
+
 test("工作区脏文件默认折叠；本轮 2–6 个文件才展开", () => {
   assert.equal(shouldExpandReviewFiles(false, 22), false)
   assert.equal(shouldExpandReviewFiles(true, 1), false)
