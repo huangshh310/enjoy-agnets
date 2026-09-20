@@ -85,7 +85,7 @@
 | [previews/m-cbd-session-ops.html](./previews/m-cbd-session-ops.html) | Multica P0 会话作业：安静 Inbox × 验收闸 × 运行账本（【视觉真源】M-CBD；账本+来源列密日志观感已被 `m-d-g-ledger-sources.html` 取代） |
 | [previews/m-d-g-ledger-sources.html](./previews/m-d-g-ledger-sources.html) | M-D + P0-G 账本/来源可读性：分组折叠、文件名优先、诚实空态（【视觉真源】，锁 tip `b1721a7`；M-CBD 产品锁其余不变，F1 不在范围） |
 | [previews/i1-mid-model-switch.html](./previews/i1-mid-model-switch.html) | 同引擎中途换模型：芯片 / 已切换 / 不支持 / 失败（【视觉真源】I1，锁 tip `6dfac6c`） |
-| [previews/p0-composer-chrome.html](./previews/p0-composer-chrome.html) | P0 Composer 铬条回归：探索\|执行常在（C1）· 思考按能力 · 引擎/模型图标（【视觉真源】） |
+| [previews/p0-composer-chrome.html](./previews/p0-composer-chrome.html) | P0 Composer 铬条回归：探索\|执行常在（C1）· 思考按能力 · 引擎/模型图标（【视觉真源】，锁 tip `f0187a6`） |
 
 ---
 
