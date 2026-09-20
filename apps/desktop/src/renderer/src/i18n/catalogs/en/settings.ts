@@ -684,6 +684,14 @@ export const enSettings = {
     skillsTitle: "Skills",
     configured: "{count} configured",
     add: "Add",
+    curatedTitle: "Curated",
+    curatedDesc: "Read-only curated list. Add into Enjoy #/mcp and #/skills — not a second editor.",
+    addToMcp: "Add to MCP",
+    addToSkills: "Add to Skills",
+    written: "Written to Enjoy · injects on the next turn",
+    catalogFailTitle: "Curated list is unavailable",
+    catalogFailDesc: "Configured items on this machine are unchanged. Do not fill this area with fake installed cards.",
+    retry: "Retry",
     footnote:
       "Native plugins that ship with an assistant (Claude hooks / DSH Cordis / OpenCode, etc.) are managed inside each CLI. MCP and Skills use Enjoy #/mcp · #/skills as the source of truth and pass through to the current assistant."
   },

@@ -1,5 +1,5 @@
 /**
- * 扩展发现壳单列：标题、已配置数、「添加」深链、精选槽。
+ * 扩展发现壳单列：标题、已配置数、「添加」深链、已配置短名单。
  */
 import { ExtensionsItem } from "./extensions-item.tsx"
 import type { ExtensionsColumnModel } from "./extensions.types.ts"
@@ -23,11 +23,13 @@ export function ExtensionsColumn({ column }: { column: ExtensionsColumnModel }) 
           {column.addLabel}
         </a>
       </div>
-      <ul className="mt-3 space-y-2">
-        {column.cards.map((card) => (
-          <ExtensionsItem key={`${card.kind}-${card.id}`} card={card} />
-        ))}
-      </ul>
+      {column.configured.length > 0 ? (
+        <ul className="mt-3 space-y-1.5">
+          {column.configured.map((name) => (
+            <ExtensionsItem key={name} label={name} />
+          ))}
+        </ul>
+      ) : null}
     </article>
   )
 }

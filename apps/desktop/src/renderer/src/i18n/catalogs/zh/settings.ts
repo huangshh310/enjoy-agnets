@@ -680,6 +680,14 @@ export const zhSettings = {
     skillsTitle: "Skills",
     configured: "已配置 {count}",
     add: "添加",
+    curatedTitle: "精选",
+    curatedDesc: "只读 curated。添加到现有真源，不新开商店。",
+    addToMcp: "添加到 MCP",
+    addToSkills: "添加到技能",
+    written: "已写入 Enjoy · 下一轮可注入",
+    catalogFailTitle: "精选暂时加载不了",
+    catalogFailDesc: "本机已配置不受影响。不要用假卡片填满这里。",
+    retry: "重试",
     footnote:
       "助手自带原生插件（Claude hooks / DSH Cordis / OpenCode 等）请在各 CLI 内管理。MCP 与 Skills 以 Enjoy #/mcp · #/skills 为真源，会话透传给当前助手。"
   },

@@ -23,7 +23,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/providers` | 模型供应商 | 协议工厂、测速评分徽章（极佳/良好/偏慢评级）、四页签抽屉编辑 |
 | `#/settings/telemetry` | 运行观测与遥测 | 本地 APM 监控仪表盘、调用追踪审计、模型路由统计与脱敏上报配置（旧 `#/observability` 自动重定向至此） |
 | `#/settings/tools` | 内置工具 | 内置浏览器开关、Browser Bridge（Chrome 扩展配对码、47823 端口本地环回 WebSocket 通信与连接状态）与桌面后台非干扰 Computer Use（系统辅助功能与屏幕录制权限诊断、CodeX 风格置顶透明屏幕安全呼吸边框、顶部状态 HUD 胶囊、精准点击波纹与实时预览） |
-| `#/settings/extensions` | 扩展发现壳（P0-H） | 设置「工作区与扩展」一页两列 MCP \| Skills；已配置数 +「添加」深链 `#/mcp` / `#/skills`；精选只读投影。视觉锁 [`../previews/p0-h-extensions-hub.html`](../previews/p0-h-extensions-hub.html)。开流注入诚实态在 Composer `HostInjectBar` 一行芯片（P0-S），不改本页「已配置」职责：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)。I2 同页精选区（写入 SoT / catalog 失败空）是设计锁，不宣称应用 1:1：[`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)，产品锁 [`../references/i2-extensions-curated.md`](../references/i2-extensions-curated.md)。 |
+| `#/settings/extensions` | 扩展发现壳（P0-H）+ 同页精选（I2） | 设置「工作区与扩展」一页两列 MCP \| Skills；已配置数 +「添加」深链 `#/mcp` / `#/skills`；H 列只列本机 SoT 名。同页下方 I2 精选：只读 curated，「添加到 MCP / 添加到技能」走现有 `mcp.upsert`（trusted）与 `skills.sources.add` + `deploy`；写后「已写入 Enjoy · 下一轮可注入」。catalog 失败只空精选区 + 重试，H 计数仍在。视觉锁 [`../previews/p0-h-extensions-hub.html`](../previews/p0-h-extensions-hub.html) + [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)。开流注入仍是 Composer `HostInjectBar`（P0-S），本页不改注入协议：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)。 |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
 `#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（`skill` 工具）与 ACP（`composeAcpPrompt`），不灌 SKILL.md。ACP 不重复灌 AGENTS.md（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置默认项 C 端只露「探索 / 执行」人话卡片（视觉锁 [`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)）：探索写入内部 `plan`，执行写入 `agent`。**禁止**把 `ask|plan|agent`、ACP、协议微标写进默认项文案。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
@@ -74,7 +74,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0 已落地：`#/sett
 - 个人中心：`apps/desktop/src/renderer/src/components/account/`（`lib/profile-metrics.ts` 聚合、`glass/glass-cover.tsx` 封面、`avatar/` Blobatar）
 - 账单 / 团队 / 组织 / 集成诚实空态：`settings/local-only-notice.tsx`、`company/company-billing-section.tsx`、`team/*-section.tsx`、`company/company-*-section.tsx`
 - Automations：`apps/desktop/src/renderer/src/components/automations/`（`automations-page.tsx` 列表+抽屉）；主进程 `main/services/automations-*.ts`、`ipc-automations.ts`；调度 `automations-scheduler.ts` 在 `app.whenReady` 启动
-- 扩展发现壳：`apps/desktop/src/renderer/src/components/settings/extensions/`（`extensions-page.tsx` 组装两列；深链 `extensions-hrefs.ts`）
+- 扩展发现壳：`apps/desktop/src/renderer/src/components/settings/extensions/`（`extensions-page.tsx` 组装 H 两列 + I2 `curated/`；深链 `extensions-hrefs.ts`；写入 `curated/add-curated-to-sot.ts`）
 - Skills：`apps/desktop/src/renderer/src/components/skills/`（`skills-page.tsx`）。主进程：`main/services/skill-sources/`、`main/ipc-skill-sources.ts`
 - 技能源可选更新：`settings-skill-sources.tsx`（Agent 默认项）。禁止挂进空会话。
 - 默认模式人话卡片：`settings-defaults.tsx` + `settings-default-mode.tsx`（只写探索/执行）
@@ -94,6 +94,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0 已落地：`#/sett
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - 设置侧栏严禁无脑平铺全部分段。`skills` 是一级入口（智能体分组），点它 redirect 到 `#/skills`，不要再并进「说明」。`extensions` 是工作区组一级入口（P0-H 发现壳，停在 `#/settings/extensions`）。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
 - **隐患**：把扩展发现壳做成第 8 轨工作模块或 MCP+Skills 集市内核。根因：H 只做入口。正确做法：两列 +「添加」深链现有 `#/mcp` / `#/skills`；不弹第二套表单、不新 IPC、不混 Registry、不假 Grok 店。
+- **隐患**：精选「添加」另开一套 Plugins 存储，或失败时用假已装卡填满。根因：I2 只是 H 上的只读 catalog。正确做法：写入现有 `mcp.upsert` / `skills.sources.add`+`deploy`；catalog 抛错只空精选区 + 重试；写后只报「已写入 Enjoy · 下一轮可注入」，禁止「已同步到助手」。
 - **隐患**：不变量测试 `import` 轨道 registry 时若 `McpIcon` 走 `@renderer` 别名，Node `--experimental-strip-types` 会 `ERR_MODULE_NOT_FOUND`。正确做法：`module-registry` 对 `mcp-brand-icons.ts` 用相对路径。
 - `mcp` 已落地，不要再写成占位。
 - 个人中心图表禁止 Fake-Status-Chrome：没有遥测就画 0，不要 `Math.max(count, 14)` 或种子随机填热力图。IPC `observability.metrics` 上限 500，年视图会截断更早记录。
