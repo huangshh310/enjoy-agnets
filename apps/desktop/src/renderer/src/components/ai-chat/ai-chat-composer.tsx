@@ -19,6 +19,8 @@ import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-ba
 import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
 import { ComposerModelChip } from "./composer/model-switch/composer-model-chip"
+import { ComposerThinkingChrome } from "./composer/thinking/composer-thinking-chrome"
+import { AgentPicker } from "./agent-picker"
 import { listComposerAssets } from "@renderer/hooks/composer-assets"
 import { registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
@@ -173,11 +175,20 @@ export function AiChatComposer({
           />
 
           <div className="flex flex-wrap items-center justify-between gap-2 px-3 pt-0.5 pb-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <ExploreExecuteToggle />
+              <ComposerThinkingChrome modelId={modelId} modelLabel={modelLabel} models={models} />
               <SessionGoalChip />
             </div>
-            <ComposerModelChip modelId={modelId} modelLabel={modelLabel} models={models} />
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+              <AgentPicker
+                modelId={modelId}
+                modelLabel={modelLabel}
+                models={models}
+                onModelChange={onModelChange}
+              />
+              <ComposerModelChip modelId={modelId} modelLabel={modelLabel} models={models} />
+            </div>
           </div>
           <ComposerContextChips />
           <ComposerHostModeChip />
@@ -204,7 +215,6 @@ export function AiChatComposer({
             modelLabel={modelLabel}
             modelId={modelId}
             models={models}
-            onModelChange={onModelChange}
             onStop={onStop}
             onSend={onSend}
             canRealtime={canRealtime}

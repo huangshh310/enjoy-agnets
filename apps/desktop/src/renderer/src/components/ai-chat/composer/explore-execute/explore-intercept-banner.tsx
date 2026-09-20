@@ -2,7 +2,6 @@
  * 探索态写工具拦截条：切执行 CTA，不改审批策略。
  */
 import { useState } from "react"
-import { composerChromeFor } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { applyComposerSurface, surfaceForMode } from "../composer-mode"
@@ -11,10 +10,8 @@ import { findExploreWriteIntercept } from "./write-intercept"
 export function ExploreInterceptBanner() {
   const t = useT()
   const mode = useChatStore((state) => state.mode)
-  const runtimeId = useChatStore((state) => state.runtimeId)
   const messages = useChatStore((state) => state.messages)
   const [dismissedKey, setDismissedKey] = useState("")
-  if (!composerChromeFor(runtimeId).executionModes) return null
   if (surfaceForMode(mode) !== "explore") return null
 
   const assistant = [...messages].reverse().find((row) => row.role === "assistant")

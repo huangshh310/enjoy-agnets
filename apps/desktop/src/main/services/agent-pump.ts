@@ -3,6 +3,7 @@
  */
 import {
   armTimeout,
+  isExploreMutatingDeny,
   resolveTimeoutMs,
   RuntimeError,
   type SubagentToolTraceEvent
@@ -150,6 +151,7 @@ async function openRunStream(
       return answers
     },
     waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
+      if (isExploreMutatingDeny(run.input.mode, toolName)) return "deny"
       const approvalId = createId("apr")
       run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args })
       rememberApproval({ runId, approvalId, toolCallId, name: toolName, args })

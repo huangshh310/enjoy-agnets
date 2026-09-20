@@ -1,6 +1,6 @@
 /**
- * Composer 底栏：附件菜单、策略/模型/推理、语音与发送。
- * 控件显隐跟 runtime 静态能力表走，ACP 不露 Enjoy Local 的皮。
+ * Composer 底栏：附件、策略、Fast、语音与发送。
+ * 探索/执行、思考、引擎与模型芯片在顶栏。
  */
 import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
@@ -10,8 +10,6 @@ import { ComposerSendSplit } from "./runtime-interact/composer-send-split"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
-import { AgentPicker } from "../agent-picker"
-import { ReasoningEffortToggle } from "../reasoning-effort-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
 import { SessionMeter } from "../usage/session-meter"
@@ -26,7 +24,6 @@ export function ComposerFooter({
   modelLabel,
   modelId,
   models,
-  onModelChange,
   onStop,
   onSend,
   canRealtime,
@@ -41,7 +38,6 @@ export function ComposerFooter({
   | "modelLabel"
   | "modelId"
   | "models"
-  | "onModelChange"
   | "onStop"
   | "onSend"
 > & {
@@ -79,14 +75,7 @@ export function ComposerFooter({
       </div>
       <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
         {chrome.permission ? <ApprovalPolicyToggle /> : null}
-        <AgentPicker
-          modelId={modelId}
-          modelLabel={modelLabel}
-          models={models}
-          onModelChange={onModelChange}
-        />
         {chrome.fast ? <FastModeToggle /> : null}
-        {chrome.thinking ? <ReasoningEffortToggle /> : null}
         {showVoice ? (
           <button
             type="button"

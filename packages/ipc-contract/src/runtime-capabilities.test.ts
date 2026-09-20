@@ -3,6 +3,8 @@ import { test } from "node:test"
 import {
   capabilitiesFor,
   composerChromeFor,
+  composerThinkingChrome,
+  canHostInterceptExplore,
   HIDDEN_RUNTIME_CAPABILITIES,
   MATRIX_RUNTIME_IDS,
   runtimePathKind,
@@ -130,7 +132,20 @@ test("composerChromeFor：Enjoy Local 露出模式 / Fast / 思考 / 语音位",
   assert.equal(chrome.permission, true)
 })
 
-test("ACP 宿主都不露 Fast / 思考 / 模式 / 语音", () => {
+test("思考铬：effort 五档，model-id 跟模型，none 隐藏", () => {
+  assert.equal(composerThinkingChrome("enjoy-local"), "effort")
+  assert.equal(composerThinkingChrome("claude"), "follow-model")
+  assert.equal(composerThinkingChrome("cursor"), "follow-model")
+  assert.equal(composerThinkingChrome("gemini"), "follow-model")
+  assert.equal(composerThinkingChrome("antigravity"), "follow-model")
+  assert.equal(composerThinkingChrome("grok"), "none")
+  assert.equal(composerThinkingChrome("codex"), "none")
+  assert.equal(canHostInterceptExplore("cursor"), true)
+  assert.equal(canHostInterceptExplore("enjoy-local"), true)
+  assert.equal(canHostInterceptExplore("not-a-tool"), false)
+})
+
+test("ACP 宿主都不露 Fast / 五档思考 / 语音；探索分段由 UI 常驻", () => {
   for (const id of [
     "claude",
     "cursor",
