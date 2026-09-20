@@ -57,6 +57,7 @@
 | [references/gap-audit-vs-github-agents.md](./references/gap-audit-vs-github-agents.md) | 对照 Orca / Cline / OpenHands / Goose / Hermes：假实现、半成品、该重设计的点 |
 | [references/oss-agent-landscape-2026.md](./references/oss-agent-landscape-2026.md) | 2026 高星 Agent 星数榜与设计课；Enjoy 该加深的 seam（不是空壳清单） |
 | [references/peer-qm-craft-synara-zeron.md](./references/peer-qm-craft-synara-zeron.md) | 对照 QM / Craft / Synara / Zeron：能在现有壳里展示什么（不是抄云/worktree/PR） |
+| [references/multica-gap.md](./references/multica-gap.md) | 对照 Multica：抄会话工单节奏，不抄团队看板架构；落地以 specs 为准 |
 | [references/cli-bind-ux.md](./references/cli-bind-ux.md) | CLI × 供应商引用的交互逻辑（对照 Cline / OpenCode / CC Switch；落地以 agent-cli 为准） |
 | [references/emerging-agent-innovation.md](./references/emerging-agent-innovation.md) | 新兴 Agent 创新清单与 I1–I7 backlog（产品第一稿；落地以 specs 为准） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
