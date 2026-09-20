@@ -31,32 +31,22 @@ test("工作区组含 extensions，且 MCP 仍在", () => {
   assert.ok(SETTINGS_SECTIONS.includes("extensions"))
 })
 
-test("添加与精选卡 href 指向现有 #/mcp / #/skills", () => {
+test("添加深链仍指向现有 #/mcp / #/skills，精选卡不再靠 href 当 CRUD", () => {
   assert.equal(mcpHubHref(), MCP_HUB_HREF)
   assert.equal(skillsHubHref(), `${SKILLS_HUB_HREF}?tab=curated`)
   assert.equal(mcpPresetHref("filesystem"), "#/mcp?preset=filesystem")
   assert.equal(skillsInstallHref("obra-superpowers"), "#/skills?tab=curated&install=obra-superpowers")
-  const mcpCards = projectMcpCurated(FEATURED_MCP_PRESETS)
-  const skillCards = projectSkillsCurated(CURATED_SKILL_SOURCES)
-  assert.ok(mcpCards.length >= 6)
-  assert.ok(skillCards.length >= 6)
-  for (const card of mcpCards) {
-    assert.ok(card.href.startsWith("#/mcp"))
-    assert.ok(card.href.includes("preset="))
-  }
-  for (const card of skillCards) {
-    assert.ok(card.href.startsWith("#/skills"))
-    assert.ok(card.href.includes("install="))
-  }
   const hubMcp = projectMcpCurated(pickByIds(FEATURED_MCP_PRESETS, EXTENSIONS_HUB_MCP_IDS))
   const hubSkills = projectSkillsCurated(pickByIds(CURATED_SKILL_SOURCES, EXTENSIONS_HUB_SKILL_IDS))
   assert.deepEqual(hubMcp.map((card) => card.id), [...EXTENSIONS_HUB_MCP_IDS])
   assert.deepEqual(hubSkills.map((card) => card.id), [...EXTENSIONS_HUB_SKILL_IDS])
   assert.equal(hubMcp.length, EXTENSIONS_CURATED_LIMIT)
   assert.equal(hubSkills.length, EXTENSIONS_CURATED_LIMIT)
+  assert.ok(hubMcp.every((card) => card.kind === "mcp" && card.transport))
+  assert.ok(hubSkills.every((card) => card.kind === "skills" && card.locator))
 })
 
-test("扩展页 copy 不含 Registry、本机 CLI、ACP、stdio、Marketplace", () => {
+test("扩展页 copy 不含 Registry、本机 CLI、ACP、已同步到助手", () => {
   const blob = JSON.stringify({ zh: zh.settings.extensions, en: en.settings.extensions })
   for (const term of EXTENSIONS_FORBIDDEN_TERMS) {
     assert.equal(blob.includes(term), false, `forbidden: ${term}`)
@@ -65,6 +55,10 @@ test("扩展页 copy 不含 Registry、本机 CLI、ACP、stdio、Marketplace", 
   assert.match(zh.settings.extensions.footnote, /#\/skills/)
   assert.match(en.settings.extensions.footnote, /#\/mcp/)
   assert.match(en.settings.extensions.footnote, /#\/skills/)
+  assert.equal(zh.settings.extensions.written, "已写入 Enjoy · 下一轮可注入")
+  assert.equal(zh.settings.extensions.catalogFailTitle, "精选暂时加载不了")
+  assert.equal(zh.settings.extensions.addToMcp, "添加到 MCP")
+  assert.equal(zh.settings.extensions.addToSkills, "添加到技能")
 })
 
 test("WORK_MODULE_IDS 保持 chat · knowledge · workflows · media · mcp · skills，不上第八轨", () => {

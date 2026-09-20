@@ -1,7 +1,6 @@
 /**
- * 精选只读投影：数据只引用现有 MCP presets 与 Skills curated，禁止再造 catalog。
+ * 精选只读投影：复用 MCP presets / Skills curated，禁止再造 catalog 真源。
  */
-import { mcpPresetHref, skillsInstallHref } from "./extensions-hrefs.ts"
 import type { ExtensionCuratedCard } from "./extensions.types.ts"
 
 export function pickByIds<T extends { id: string }>(
@@ -21,6 +20,9 @@ export function projectMcpCurated(
     name?: string
     title?: string
     description: string
+    transport?: "stdio" | "sse" | "http"
+    command?: string
+    url?: string
   }>,
   limit?: number
 ): ExtensionCuratedCard[] {
@@ -30,7 +32,9 @@ export function projectMcpCurated(
     kind: "mcp",
     title: preset.name || preset.title || preset.id,
     description: preset.description,
-    href: mcpPresetHref(preset.id)
+    transport: preset.transport ?? "stdio",
+    command: preset.command,
+    url: preset.url
   }))
 }
 
@@ -39,6 +43,8 @@ export function projectSkillsCurated(
     id: string
     title: string
     description: string
+    locator: string
+    name: string
   }>,
   limit?: number
 ): ExtensionCuratedCard[] {
@@ -48,6 +54,7 @@ export function projectSkillsCurated(
     kind: "skills",
     title: source.title,
     description: source.description,
-    href: skillsInstallHref(source.id)
+    locator: source.locator,
+    sourceName: source.name
   }))
 }

@@ -1,5 +1,5 @@
 /**
- * 扩展发现壳常量：深链 hash 与列 id。
+ * 扩展发现壳常量：深链 hash、精选 id 与禁词。
  * 发现壳，权威配置仍是 #/mcp 与 #/skills，本页不新开存储。
  */
 
@@ -28,5 +28,11 @@ export const EXTENSIONS_FORBIDDEN_TERMS = [
   "ACP",
   "stdio",
   "Marketplace",
-  "Store"
+  "Store",
+  "已同步到助手",
+  "已安装到助手",
+  "已安装到 Claude",
+  "购买",
+  "synced to assistant",
+  "Buy now"
 ] as const
