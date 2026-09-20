@@ -6,6 +6,7 @@
 > 预览：回写或合订 `design/previews/explore-execute-p0.html` + 新页 `design/previews/p0-composer-chrome.html`（图标·思考·模式同屏）  
 > 【视觉真源】[`../previews/p0-composer-chrome.html`](../previews/p0-composer-chrome.html)  
 > **插队**：高于 P0-S 接线；P0-S 预览可并行，实现让路本刀  
+> **密度 / 布局**：与本文冲突时让路 [`p0-composer-slim.md`](./p0-composer-slim.md)（能力三件套、C1、思考按能力、图标真源不废）  
 > 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
@@ -109,4 +110,4 @@ Composer **底栏铬条必备三件套不丢**：（1）**探索 | 执行** 模�
 ---
 
 *插队实现；P0-S 短锁与预览不废，接线排本刀之后。*  
-*冲突以 `design/specs/*` 为准。*
+*能力冲突以 `design/specs/*` 为准；Composer 呈现密度以 [`p0-composer-slim.md`](./p0-composer-slim.md) 为准。*
