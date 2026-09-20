@@ -81,5 +81,9 @@ const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
 }
 
 function AutomationsEmbedded() {
-  return <AutomationsPage embed />
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <AutomationsPage embed />
+    </div>
+  )
 }

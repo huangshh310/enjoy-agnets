@@ -16,6 +16,7 @@ import {
 } from "./lib/filter-inbox"
 import { synthesizeNeedsReviewInbox } from "./lib/synthesize-needs-review-inbox"
 import { groupInbox } from "./lib/inbox-time"
+import { takeInboxFilter } from "./lib/pending-inbox-filter"
 
 export function useInbox() {
   const t = useT()
@@ -23,7 +24,7 @@ export function useInbox() {
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set())
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set())
   const [archivedItems, setArchivedItems] = useState<AttentionItem[]>(() => [])
-  const [filter, setFilter] = useState<InboxCategory>("approval")
+  const [filter, setFilter] = useState<InboxCategory>(() => takeInboxFilter() ?? "approval")
   const [search, setSearch] = useState("")
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const attentionItems = useAttentionStore((state) => state.items)

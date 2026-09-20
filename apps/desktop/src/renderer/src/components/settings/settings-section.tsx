@@ -17,7 +17,13 @@ export function SettingsSectionPage() {
   const item = findSettingsItem(section, getSettingsNav(t))
 
   if (section === "archived") return <ArchivedChatsPage />
-  if (section === "automations") return <SettingsSectionBody section={section} />
+  if (section === "automations") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <SettingsSectionBody section={section} />
+      </div>
+    )
+  }
   if (section === "account") return <SettingsSectionBody section={section} />
   if (section === "billing") return <SettingsSectionBody section={section} />
   if (section === "extensions") return <SettingsSectionBody section={section} />

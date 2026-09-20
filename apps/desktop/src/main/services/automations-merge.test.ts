@@ -1,0 +1,51 @@
+import assert from "node:assert/strict"
+import { test } from "node:test"
+import { mergeAutomation } from "./automations-merge.ts"
+
+const existing = {
+  id: "auto_1",
+  name: "晨间类型检查",
+  prompt: "跑类型检查",
+  trigger: "cron",
+  cronExpr: "0 9 * * *",
+  timeZone: "Asia/Shanghai",
+  runtimeId: "claude",
+  modelId: "sonnet",
+  mode: "agent",
+  lastRunAt: 100,
+  lastRunStatus: "failed",
+  lastSessionId: "ses_1",
+  enabled: true,
+  updatedAt: 1
+} as const
+
+test("开关只改 enabled，保留 cron 与上次运行", () => {
+  const next = mergeAutomation(
+    existing,
+    {
+      name: existing.name,
+      prompt: existing.prompt,
+      trigger: existing.trigger,
+      enabled: false
+    },
+    existing.id,
+    200
+  )
+  assert.equal(next.enabled, false)
+  assert.equal(next.cronExpr, "0 9 * * *")
+  assert.equal(next.runtimeId, "claude")
+  assert.equal(next.lastRunAt, 100)
+  assert.equal(next.lastRunStatus, "failed")
+  assert.equal(next.updatedAt, 200)
+})
+
+test("新建默认执行 mode", () => {
+  const next = mergeAutomation(
+    undefined,
+    { name: "复盘", prompt: "看 diff", trigger: "manual", enabled: true },
+    "auto_2",
+    3
+  )
+  assert.equal(next.mode, "agent")
+  assert.equal(next.trigger, "manual")
+})

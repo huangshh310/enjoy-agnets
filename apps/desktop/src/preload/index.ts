@@ -130,7 +130,12 @@ const ide = {
     list: () => ipcRenderer.invoke("automations.list"),
     upsert: (input: unknown) => ipcRenderer.invoke("automations.upsert", input),
     remove: (input: unknown) => ipcRenderer.invoke("automations.remove", input),
-    run: (input: unknown) => ipcRenderer.invoke("automations.run", input)
+    run: (input: unknown) => ipcRenderer.invoke("automations.run", input),
+    onChanged: (callback: (event: { reason: string; id?: string }) => void) => {
+      const listener = (_event: unknown, payload: { reason: string; id?: string }) => callback(payload)
+      ipcRenderer.on("automations.changed", listener)
+      return () => ipcRenderer.off("automations.changed", listener)
+    }
   },
   models: {
     list: () => ipcRenderer.invoke("models.list")

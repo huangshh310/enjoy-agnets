@@ -15,7 +15,7 @@
 | agent | `run` `abort` `steer` `decide` `inspectPrompt` | 跑循环、中止、运行中纠偏、审批、本轮 ModelMessage 快照；`run` 可带 `attachments`、`runtimeId`、`executePlan`（计划走 hidden/system）、`commandId`（renderer 每次发送生成；同一 id 重试返回第一次的 runId，不双开 turn）；用户气泡 `messages[].id` 原样落库。`steer` 入参 `{ sessionId, runId?, text }`，无 ActiveRun 抛 `STEER_NO_ACTIVE_RUN`（renderer：已 idle 立刻 `agent.run`，仍 running 才进 followup）；`inspectPrompt` 入参 `{ sessionId, mode?, modelId? }` |
 | agentTools | `list` `detect` `upsert` `doctor` `install` `uninstall` `login` `openDocs` `setSessionRuntime` `syncConfig` `restoreConfig` `inspect` `disposeSession` `setHandoff` `upsertCustom` `removeCustom` `getCustom` | 本机 CLI 目录与探测；覆盖含 path/args/modelId/`providerId`/`useCustomProvider`，无 token；`list` 每条带静态 `capabilities`（含 `hostMcp` / `hostSkills` / `mcpHttp` / `mcpSse`）、可选 `nativePluginCopy`、只读 `boundProviderName` 与可选 `homeSynced`（`*.enjoy.bak` 仍在），含 `custom:<slug>`；引用列表由 renderer 用 `settings.get` 的 `agentTools[]` × `providers[]` 经 `agentRefsForProvider` 派生，**不新开频道**；`install`/`uninstall`/`openDocs`/`syncConfig`/`restoreConfig` 入参内置 `{ id }`；`login` 入参 `{ id, provider? }`（OMP 必须带 `provider`，spawn `omp auth-broker login <provider>`）；`inspect` 入参 `{ id, refresh? }`，返回公开账号 / 额度 / 动态模型 / OMP `providers[]`（id/label/loggedIn，可选 origin/loginKind），不含 token；自定义走 `upsertCustom` / `removeCustom` / `getCustom`（command 经 basename 白名单）；安装/卸载只跑配方里写死的 npm/brew argv（多步必须全跑，例如 Pi = `pi-coding-agent` + `pi-acp`）；`login` 可用 catalog `loginBinary`（Amp → `amp login`）；`openDocs` 仅 https + host 白名单；`syncConfig` 写 Claude `settings.json` / Codex `config.toml`（官方 `[model_providers.enjoy]` + `env_key`，禁止顶层 `api_key`）/ OpenCode `opencode.json`（`{env:ENJOY_OPENCODE_KEY}`）/ Gemini `~/.gemini/.env`（先备份 `*.enjoy.bak`，不写 auth.json）；`list` 只 PATH 查找；`setSessionRuntime` `{ sessionId, runtimeId, modelId? }` 接受内置或 `custom:*`，可选会话模型覆盖；`disposeSession` `{ sessionId }` 杀掉该 Enjoy 会话的 ACP 子进程；`setHandoff` `{ sessionId, fromRuntimeId, toRuntimeId, summary }` 写入一次性隐藏 brief，开流消费，不进用户气泡 |
 | settings | `get` `saveSecret` `setDefaultModel` `setPreferences` `setHarness` `listProviders` `presets` `upsertProvider` `removeProvider` `activateProvider` `setActiveModel` `probeProvider` `pingProvider` | 设置与供应商；`setDefaultModel` `{ modelId }`；`removeProvider`/`activateProvider` `{ id }`；`removeProvider` 先解绑引用该档案的 CLI；`kind` 必须是 `PROVIDER_KINDS`；`setPreferences` 可带 `accountProfile`（本机画像，不是云账号） |
-| automations | `list` `upsert` `remove` `run` | 自动化；触发落地只有 `manual` / `on_save`。`run` 入参 `{ id, sessionId, workspaceId }` 立刻 `agent.run`。Zod 里的 `cron` / `cronExpr` / `timeZone` / `stopOnFailCount` **仅合约**，无调度器、UI 不暴露 |
+| automations | `list` `upsert` `remove` `run` | I4 P0：`manual` / `cron` 落地。`upsert` 可带 `cronExpr` / `timeZone` / `runtimeId` / `modelId` / `mode`；cron 表达式非法即拒。`run` 入参 `{ id, sessionId?, workspaceId? }`：不带 session 则当前工作区新建会话再 `agent.run`。推送 `automations.changed` `{ reason, id? }` 刷新列表与会话树。旧 `on_save` 仍由 `workspace.writeFile` 触发。`stopOnFailCount` 仍未实现 |
 | models | `list` | 已配置模型目录；每条可带 `contextWindow`（探测 / Gateway / 手填，没有则省略）与 `maxTokens`（最大**输出**，不是窗口） |
 | ai | `generate` `abort` `resume` | 文本/结构化/媒体/embedding/translation；kind=`agent` 转发 `runAgent`，必须带 workspaceId；`resume` 按 kind 分流：workflow 续步，其它读 generation 快照再跑 |
 | agent | `decide` | 验 HMAC；`ApprovalDecision` `.strict()`，多余 `args` 即拒；`ask_user_questions` 可带可选 `answers`，但 `answers` 不能配 `allow_session`；对该工具 `allow_session` 由 main 在 HMAC 落库前拒；篡改 runId / toolCallId 或库内签名即拒 |
@@ -43,6 +43,7 @@
 | `terminal.data` / `terminal.exit` | `TerminalDataEvent` / `TerminalExitEvent`（contract 有 schema，main 发送前 parse；preload `ide.terminal.onData` / `onExit`） |
 | `workspace.changed` | `WorkspaceChangedEvent`（`{ workspaceId, path }`，contract 有 schema；path 为相对根路径，`.` 表示指纹轮询粗粒度信号） |
 | `workspace.remote` | `{ workspaceId, status, label, error? }`（SSH 连接态；无私钥） |
+| `automations.changed` | `{ reason: upsert\|remove\|run\|status, id? }`；preload `ide.automations.onChanged` |
 
 新增频道的顺序：**先改 `ipc-contract` → main handle → preload → renderer 调用**。禁止 renderer 直接 `ipcRenderer`。
 
@@ -60,7 +61,7 @@
 - 会话：`ipc-session.ts`（`SESSION_CHANNELS` 必须进 `CHANNELS`，含 `patch` / `recap`）
 - 壳频道：`ipc-shell.ts`（workspace / agent / terminal / window / inbox.state；**无** session）
 - 自动更新：`ipc-app-update.ts`
-- 设置频道：`ipc-settings.ts`；探测 `ipc-provider-probe.ts`；Automations `ipc-automations.ts`
+- 设置频道：`ipc-settings.ts`；探测 `ipc-provider-probe.ts`；Automations `ipc-automations.ts`；调度 `services/automations-scheduler.ts` + cron `automations-cron.ts`
 - AI 频道：`ipc-ai.ts`
 - 技能来源：`ipc-skill-sources.ts`；Skills 扫描：`ipc-skills.ts`
 - 本机 CLI：`ipc-agent-tools.ts`；`settings.get` 带 `agentTools[]`、`sessionRuntimes`、`sessionModels`；自定义 ACP 合约 `custom-agent.ts`；远程工作区 `workspace-remote.ts`；SSH 名册 `ipc-ssh-hosts.ts`（`workspace.sshBrowse`、`workspace.openSshConfig`；preload `sshHosts.openConfig` 转到后者，不是独立频道）
@@ -71,7 +72,7 @@
 
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`SESSION_CHANNELS`（含 `session.patch` / `session.recap` / `session.rename`）必须进 `CHANNELS`，否则卸载会留下 handler。
 - `patchSession` 不碰 `updated_at`；`rename` / 归档才会 bump。
-- Zod `AutomationTrigger` 含 `cron` 仅合约。执行面只有 `automations.run` + `fireOnSaveAutomations`；落地调度器之前当未实现。
+- Zod `AutomationTrigger` 含 `cron` 已接本机调度（`automations-scheduler` 20s 滴答）。关应用不补跑。`webhook` 不是 trigger enum。`stopOnFailCount` 仍不当已实现。`on_save` 仍走 `fireOnSaveAutomations`，I4 UI 不新做。
 - node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止 `allow_session`：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。
