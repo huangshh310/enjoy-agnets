@@ -23,9 +23,7 @@ export async function writeWorkspaceFile(input: {
     await fs.mkdir(dirname(resolved.abs), { recursive: true })
     await fs.writeFile(resolved.abs, input.content, "utf8")
   }
-  if (input.sessionId) {
-    const window = BrowserWindow.getAllWindows().find((item) => !item.isDestroyed())
-    await fireOnSaveAutomations(window, input.workspaceId, input.sessionId)
-  }
+  const window = BrowserWindow.getAllWindows().find((item) => !item.isDestroyed())
+  fireOnSaveAutomations(window, input.workspaceId, input.sessionId)
   return { ok: true, path: input.path }
 }

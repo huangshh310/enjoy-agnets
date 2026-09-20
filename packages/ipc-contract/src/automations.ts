@@ -1,15 +1,21 @@
 /**
  * Automations 列表、写入与立刻开一轮。
- * P0 触发落地：manual / cron；on_save 仍能解析旧数据，本刀 UI 不新做。
+ * I4-P1 触发：manual / cron / on_save / webhook（本机 127.0.0.1）。
  */
 import { z } from "zod"
+
+/** 预览锁默认端口；只绑 127.0.0.1，不是公网。 */
+export const DEFAULT_WEBHOOK_PORT = 8765
+export const DEFAULT_WEBHOOK_PATH = "/hooks/enjoy"
 
 /** 内部值；C 端只露探索/执行。与 AgentMode 的 plan/ask/agent 对齐。 */
 export const AutomationMode = z.enum(["agent", "plan", "ask"])
 export type AutomationMode = z.infer<typeof AutomationMode>
 
-export const AutomationTrigger = z.enum(["manual", "on_save", "cron"])
+export const AutomationTrigger = z.enum(["manual", "on_save", "cron", "webhook"])
 export type AutomationTrigger = z.infer<typeof AutomationTrigger>
+
+export const AutomationWebhookPort = z.number().int().min(1).max(65535)
 
 export const AutomationRunStatus = z.enum(["ok", "failed", "running"])
 export type AutomationRunStatus = z.infer<typeof AutomationRunStatus>
@@ -21,6 +27,10 @@ export const Automation = z.object({
   trigger: AutomationTrigger,
   cronExpr: z.string().optional(),
   timeZone: z.string().optional(),
+  webhookPort: AutomationWebhookPort.optional(),
+  webhookPath: z.string().optional(),
+  /** 本机 webhook 可选 token；空则不校验。 */
+  webhookSecret: z.string().optional(),
   runtimeId: z.string().optional(),
   modelId: z.string().optional(),
   /** 内部 ask|plan|agent；C 端只露探索/执行。缺省执行=agent。 */
@@ -43,6 +53,9 @@ export const UpsertAutomationInput = z.object({
   trigger: AutomationTrigger,
   cronExpr: z.string().optional(),
   timeZone: z.string().optional(),
+  webhookPort: AutomationWebhookPort.optional(),
+  webhookPath: z.string().optional(),
+  webhookSecret: z.string().optional(),
   runtimeId: z.string().optional(),
   modelId: z.string().optional(),
   mode: AutomationMode.optional(),

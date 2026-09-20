@@ -65,3 +65,42 @@ test("changed 事件只要 reason", () => {
   assert.equal(AutomationsChangedEvent.safeParse({ reason: "status" }).success, true)
   assert.equal(AutomationsChangedEvent.safeParse({ reason: "cloud" }).success, false)
 })
+
+test("upsert 收下 webhook 本机端口与可选密钥", () => {
+  const parsed = UpsertAutomationInput.safeParse({
+    name: "本地 hook 开一轮",
+    prompt: "复盘",
+    trigger: "webhook",
+    webhookPort: 8765,
+    webhookPath: "/hooks/enjoy",
+    webhookSecret: "local-token",
+    enabled: true
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success) {
+    assert.equal(parsed.data.webhookPort, 8765)
+    assert.equal(parsed.data.webhookPath, "/hooks/enjoy")
+  }
+})
+
+test("webhook 端口越界即拒，公网不是合法 trigger", () => {
+  assert.equal(
+    UpsertAutomationInput.safeParse({
+      name: "坏端口",
+      prompt: "x",
+      trigger: "webhook",
+      webhookPort: 70000,
+      enabled: true
+    }).success,
+    false
+  )
+  assert.equal(
+    UpsertAutomationInput.safeParse({
+      name: "云",
+      prompt: "x",
+      trigger: "cloud",
+      enabled: true
+    }).success,
+    false
+  )
+})

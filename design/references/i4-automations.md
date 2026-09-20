@@ -78,7 +78,7 @@ webhook / 保存后不改本锁，见 I4-P1：[`i4-p1-webhook-onsave.md`](./i4-p
 |----|-----|------|
 | — | 铬条 #60 / P0-S #61 | 已合 |
 | **1** | **I4 Automations** | **P0 已落地**；后置切片 [`i4-p1-webhook-onsave.md`](./i4-p1-webhook-onsave.md) |
-| 1b | I4-P1 webhook + 保存后 | 视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)；应用未接线 |
+| 1b | I4-P1 webhook + 保存后 | 视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)；接线见 settings / ipc 当前真相 |
 | 2 | I2 扩展精选浏览 | P1（SoT 已通，可跟） |
 | 3 | 命名身份 | P2 |
 | — | #60 思考 ▾ 抛光 | soft |

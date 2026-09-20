@@ -18,8 +18,11 @@ import {
   resolveAutomationWorkspaceId,
   startAutomationRun
 } from "./automations-launch"
+import { scheduleOnSaveFire, cancelOnSaveFire } from "./automations-onsave"
 import { createId } from "./ids"
 import { stampAndSend } from "./event-bus"
+
+export { cancelOnSaveFire }
 
 export async function runAutomation(window: BrowserWindow, input: RunAutomationInput) {
   const item = readAutomations().find((row) => row.id === input.id)
@@ -28,17 +31,33 @@ export async function runAutomation(window: BrowserWindow, input: RunAutomationI
   return launchAutomationAgent(window, item, input.sessionId, input.workspaceId)
 }
 
-/** 写盘后触发所有已启用的 on_save 配方。I4 P0 不新做保存后，旧数据仍跑。 */
-export async function fireOnSaveAutomations(
+/** 工作区任意保存后防抖开一轮。无 session 则新建会话。关应用取消未发的点。 */
+export function fireOnSaveAutomations(
   window: BrowserWindow | undefined,
   workspaceId: string,
-  sessionId: string
+  sessionId?: string,
+  debounceMs?: number
+): void {
+  scheduleOnSaveFire(() => runOnSaveJobs(window, workspaceId, sessionId), debounceMs)
+}
+
+async function runOnSaveJobs(
+  window: BrowserWindow | undefined,
+  workspaceId: string,
+  sessionId?: string
 ): Promise<void> {
   if (!window || window.isDestroyed()) return
-  if (listActiveRuns().some((item) => item.run.input.sessionId === sessionId)) return
+  if (
+    sessionId &&
+    listActiveRuns().some((item) => item.run.input.sessionId === sessionId)
+  ) {
+    return
+  }
   const jobs = readAutomations().filter((item) => item.enabled && item.trigger === "on_save")
   for (const item of jobs) {
-    await launchAutomationAgent(window, item, sessionId, workspaceId)
+    await launchAutomationAgent(window, item, sessionId, workspaceId).catch(() => {
+      // 失败已 stamp run.error；其余保存后规则继续。
+    })
   }
 }
 
