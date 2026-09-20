@@ -65,6 +65,7 @@
 | [references/i2-extensions-curated.md](./references/i2-extensions-curated.md) | I2 扩展精选短锁（Jojo；P0-H 壳只读精选；一键写入 `#/mcp` / `#/skills` SoT → P0-S；无收费店 / Registry 混入 / 宿主跑插件；视觉真源见 [`previews/i2-extensions-curated.html`](./previews/i2-extensions-curated.html)；接线已落 settings 当前真相；不是当前真相，边界见 settings） |
 | [references/p0-composer-chrome-regression.md](./references/p0-composer-chrome-regression.md) | P0 Composer 铬条回归短锁（Jojo；C1 默认全引擎露出；视觉真源见预览；**呈现密度**冲突让路 [`p0-composer-slim.md`](./references/p0-composer-slim.md)；不是当前真相） |
 | [references/p0-composer-slim.md](./references/p0-composer-slim.md) | P0 Composer 瘦身短锁（Jojo；常驻探索\|执行 + 单一引擎模型芯片 + 输入；P0-S 一行芯片；删脚注墙/双 Grok/目标阶段常驻；插队高于 I2；【视觉真源】[`previews/p0-composer-slim.html`](./previews/p0-composer-slim.html)；密度冲突以本锁为准，落地见 ui 当前真相） |
+| [references/p2-agent-display-name.md](./references/p2-agent-display-name.md) | P2 命名身份短锁（Jojo；引擎可选显示名；芯片/列表用人话；空回退品牌名+模型；不抄小队/看板；#70 I2 后下一刀；预览待 `previews/p2-agent-display-name.html`（luna）；不是当前真相，边界见 ui / settings / m2 / m3） |
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |

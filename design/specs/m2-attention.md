@@ -6,6 +6,7 @@
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > ACP 异常子进程收尸已落地（启动账本 SIGKILL）。M6 skill-sources 可选 pull 已另 PR 薄层落地。
 > 侧栏 `waiting_review` 红点已在 `SidebarSessionRow`（Attention 槽 `pending_approval` / `ask_user` 且 active/focused）。后台 running 读 `parks`，情境栏顶「进行中」是钉住不是新 kind。这不是 M5 worktree。
+> Inbox / 会话行人话显示名是 **P2** 产品锁（未落地）：[`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)；预览 `previews/p2-agent-display-name.html` 待 luna。不抄小队/看板。
 
 ## 当前真相
 
