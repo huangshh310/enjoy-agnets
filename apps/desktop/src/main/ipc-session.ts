@@ -8,6 +8,7 @@ import {
   SessionIdInput,
   SessionPatchInput,
   SessionRecapInput,
+  SessionRecapResult,
   SessionRenameInput,
   SessionTruncateFromInput,
   WorkspaceIdInput
@@ -59,7 +60,7 @@ export function registerSessionIpc() {
   ipcMain.handle("session.listArchived", async () => listArchivedSessions())
   ipcMain.handle("session.create", async (_event, raw) => {
     const input = SessionCreateInput.parse(raw)
-    return createSession(input.workspaceId, input.title || "New agent")
+    return createSession(input.workspaceId, input.title || "新对话")
   })
   ipcMain.handle("session.messages", async (_event, raw) =>
     listMessages(SessionIdInput.parse(raw).sessionId)
@@ -74,8 +75,8 @@ export function registerSessionIpc() {
   })
   ipcMain.handle("session.recap", async (_event, raw: unknown) => {
     const input = SessionRecapInput.parse(raw)
-    const recap = await generateSessionRecap(input.sessionId)
-    return { recap }
+    const generated = await generateSessionRecap(input.sessionId)
+    return SessionRecapResult.parse(generated)
   })
   ipcMain.handle("session.archive", async (_event, raw) =>
     archiveSession(SessionIdInput.parse(raw).sessionId)

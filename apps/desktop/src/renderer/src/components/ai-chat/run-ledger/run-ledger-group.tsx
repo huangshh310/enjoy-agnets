@@ -5,6 +5,7 @@ import { useState } from "react"
 import { RiArrowRightSLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { visibleLedgerEntries } from "./collect-run-ledger"
 import { ledgerGroupDefaultOpen } from "./format-ledger-entry"
 import { RunLedgerRow } from "./run-ledger-row"
 import type { LedgerGroupKind, RunLedgerEntry } from "./run-ledger.types"
@@ -24,6 +25,8 @@ export function RunLedgerGroup({
   const [open, setOpen] = useState(() => ledgerGroupDefaultOpen(kind))
   if (entries.length === 0) return null
   const failed = entries.filter((entry) => entry.failed).length
+  const visible = visibleLedgerEntries(entries)
+  const hidden = entries.length - visible.length
   return (
     <section data-testid="run-ledger-group" data-kind={kind} className="py-0.5">
       <button
@@ -51,7 +54,7 @@ export function RunLedgerGroup({
       </button>
       {open ? (
         <ul>
-          {entries.map((entry) => (
+          {visible.map((entry) => (
             <li key={entry.id}>
               <RunLedgerRow
                 entry={entry}
@@ -60,6 +63,11 @@ export function RunLedgerGroup({
               />
             </li>
           ))}
+          {kind === "command" && hidden > 0 ? (
+            <li className="px-3 py-1 text-caption-2-regular text-text-tertiary">
+              {t("sessionOps.ledgerCommandMore", { n: hidden })}
+            </li>
+          ) : null}
         </ul>
       ) : null}
     </section>

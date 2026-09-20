@@ -33,6 +33,7 @@ export const enSessionOps = {
   ledgerVerbError: "Err",
   ledgerCommandOk: "passed",
   ledgerCommandFail: "failed",
+  ledgerCommandMore: "{n} more",
   ledgerPillRead: "Reads {n}",
   ledgerPillEdit: "Edits {n}",
   ledgerPillCommand: "Cmd {n}",

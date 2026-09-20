@@ -48,4 +48,4 @@ StreamEvent v2 在 `packages/ipc-contract/src/stream-event.ts`：保留 v1 事�
 - `WorkflowAgent` / `createMCPClient` 在 `ai@7.0.84` 仍无导出，不要假装已接官方类。
 - 窗口 E2E 的发聊天 / 停止 / 恢复 / 审批走 `ENJOY_E2E_STUB`，不要在 CI 里假装打过真实 Key。stub 取最后一条非 cite 用户句（`Cite these workspace sources:` 是 `citeKnowledge` 垫的）。Stop 会 `dropEmptyPendingAssistant`，下一句和未完成用户句连在一起，不能取「本轮第一条」。Playwright Electron 不要并行起两个窗口（`workers: 1`）。
 - 会话标题自动更新机制：默认标题集合包含 `新对话`、`新会话`、`未命名会话`、`New agent`、`Untitled`、`Untitled session`。首轮发送立刻乐观截断并落库；`shouldRefineSessionTitle` 在占位名或本轮乐观截断时才跑 `useCompletion` 精炼，再 `session.rename`。ACP 用 Enjoy 默认文本模型，不用 CLI modelId。用户已显式重命名的标题不覆盖。`session_info_update` 仍只覆盖占位名。
-- **隐患**：侧栏停在「新对话」或首句原文（如 `hi`），精炼标题出不来。根因：乐观标题不再算默认，`completeSessionTitle` 直接 return；ACP 拿 CLI modelId 走 `ai.generate` 对不上 Enjoy vault；main `maybeRenameSession` 只认 `New agent`，中文「新对话」永不落库。正确做法：占位或乐观截断都可精炼；ACP 用 `preferredModelId` / `defaultModelId`；中英占位都认。
+- **隐患**：探索态 / 目标围栏曾写进侧栏标题。正确做法：`stripTitleSource` 后再乐观截断与精炼；精炼按发起时的 sessionId 回写，不跟前台切走。

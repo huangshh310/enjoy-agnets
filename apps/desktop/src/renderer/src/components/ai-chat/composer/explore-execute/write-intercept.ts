@@ -22,7 +22,7 @@ const WRITE_LIKE = new Set([
   "apply_patch"
 ])
 
-const INTERCEPT_STATES = new Set(["output-denied", "approval-requested"])
+const INTERCEPT_STATES = new Set(["output-denied", "approval-requested", "output-error"])
 
 export type ExploreWriteIntercept = {
   toolName: string
@@ -45,7 +45,7 @@ export function findExploreWriteIntercept(
 export function isWriteLikeTool(tool: Pick<InterceptTool, "name">): boolean {
   const name = tool.name.trim().toLowerCase()
   if (WRITE_LIKE.has(name)) return true
-  return /^(write|edit|bash|shell|command)$/.test(name)
+  return /^(write|edit|bash|shell|command|cmd|str_replace|apply_patch|create|update)$/.test(name)
 }
 
 function extractInterceptPath(tool: InterceptTool): string {

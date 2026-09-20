@@ -72,6 +72,14 @@ export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnH
   let finished = false
   const configEvent = sessionConfigEvent(input.runId, live.client.getConfigOptions())
   if (configEvent) queue.push(configEvent)
+  if (live.client.takeResumeFallBack()) {
+    queue.push({
+      type: "generation.warning",
+      runId: input.runId,
+      code: "acp_resume_fallback",
+      message: "ACP_RESUME_FALLBACK: Could not resume the CLI session; started a new one."
+    })
+  }
 
   live.onUpdate = (update) => {
     for (const event of mapAcpUpdate(update, input.runId)) queue.push(event)

@@ -36,3 +36,10 @@ test("读工具与已完成写入不触发拦截", () => {
     null
   )
 })
+
+test("探索 deny 的 output-error 也出拦截条", () => {
+  const hit = findExploreWriteIntercept([
+    { id: "t", name: "command", state: "output-error", args: { command: "rm -rf" } }
+  ])
+  assert.equal(hit?.toolName, "command")
+})

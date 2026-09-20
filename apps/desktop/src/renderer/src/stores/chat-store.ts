@@ -34,7 +34,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   remoteLabel: null,
   remoteError: null,
   sessionId: null,
-  sessionTitle: "New agent",
+  sessionTitle: "新对话",
   repositories: [],
   expandedIds: [],
   sidebarCollapsed: false,
@@ -72,6 +72,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sessionReviewDismissedKey: null,
   pendingApproval: null,
   error: null,
+  notice: null,
   agentPickerOpen: false,
   sidebarGrouping: "project",
   sessionSortOrder: "priority",
@@ -150,7 +151,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       ...(patch.running === true ? { runStartedAt: get().runStartedAt ?? Date.now() } : {}),
       ...(patch.running === false ? { runStartedAt: null } : {}),
       ...(patch.runId !== undefined ? { runId: patch.runId } : {}),
-      ...(patch.error !== undefined ? { error: patch.error } : {})
+      ...(patch.error !== undefined ? { error: patch.error } : {}),
+      ...(patch.notice !== undefined ? { notice: patch.notice } : {})
     })
   },
   appendUserMessage: (content, assets) => {
@@ -164,7 +166,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         ...(assets?.length ? { assets } : {})
       }
     ]
-    set({ messages, composer: "", error: null })
+    set({ messages, composer: "", error: null, notice: null })
     return messages
   },
   setRunning: (running, runId = null) => {
@@ -183,6 +185,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
+  setNotice: (notice) => set({ notice }),
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
   setRemoteStatus: (remoteStatus, remoteLabel, remoteError) =>
     set((state) => ({
@@ -207,7 +210,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         remoteLabel: null,
         remoteError: null,
         sessionId: null,
-        sessionTitle: "New agent",
+        sessionTitle: "新对话",
         repositories: [],
         expandedIds: [],
         messages: [],
@@ -276,6 +279,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       sessionId,
       sessionTitle,
+      notice: null,
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )

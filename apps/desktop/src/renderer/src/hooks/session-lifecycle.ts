@@ -83,7 +83,7 @@ export async function loadSession(sessionId: string, title: string) {
   store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
 }
 
-export async function createAndOpenSession(workspaceId: string, customTitle = "New agent") {
+export async function createAndOpenSession(workspaceId: string, customTitle = "新对话") {
   parkForegroundRun()
   saveCurrentSessionDraft()
   const session = (await getIde().session.create({

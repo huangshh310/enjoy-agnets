@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
-import { collectRunLedger, groupRunLedger, lastAssistantTurn } from "./collect-run-ledger.ts"
+import {
+  collectRunLedger,
+  groupRunLedger,
+  lastAssistantTurn,
+  visibleLedgerEntries
+} from "./collect-run-ledger.ts"
 import { ledgerGroupDefaultOpen, ledgerOpensSources } from "./format-ledger-entry.ts"
 
 function tool(partial: Partial<ThreadToolCall> & Pick<ThreadToolCall, "id" | "name">): ThreadToolCall {
@@ -15,6 +20,20 @@ test("最后一条助手轮，没有则 null", () => {
   ])
   assert.equal(last?.id, "a")
   assert.equal(lastAssistantTurn([]), null)
+})
+
+test("最后一条助手若无工具，回落到最近一条带工具的助手", () => {
+  const last = lastAssistantTurn([
+    {
+      id: "a1",
+      role: "assistant",
+      content: "改了",
+      createdAt: 2,
+      tools: [{ id: "t1", name: "edit_file", state: "output-available", args: { path: "a.ts" } }]
+    },
+    { id: "a2", role: "assistant", content: "总结", createdAt: 3 }
+  ])
+  assert.equal(last?.id, "a1")
 })
 
 test("按 kind 收人话行：读/改/命令/错，不编造耗时，不带 stdout", () => {
@@ -90,6 +109,19 @@ test("读/命令默认折叠，改/错误默认展开；用量行不开 sheet", 
     ledgerOpensSources({ id: "e", kind: "edit", title: "todo_write" }),
     false
   )
+})
+
+test("命令组超过 8 条时露出失败和最近几条", () => {
+  const rows = Array.from({ length: 12 }, (_, i) => ({
+    id: `c${i}`,
+    kind: "command" as const,
+    title: `cmd ${i}`,
+    failed: i === 0
+  }))
+  const visible = visibleLedgerEntries(rows)
+  assert.equal(visible.some((row) => row.id === "c0"), true)
+  assert.equal(visible.length, 8)
+  assert.equal(visible.at(-1)?.id, "c11")
 })
 
 test("todo_write 不进账本", () => {

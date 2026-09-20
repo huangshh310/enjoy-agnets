@@ -10,6 +10,7 @@ import {
   type ThreadToolCall,
   type UIMessagePart
 } from "@enjoy-agents/ipc-contract"
+import { formatOptimisticTitle, isDefaultSessionTitle } from "@enjoy-agents/ipc-contract/session-title"
 import { deleteMessageParts, insertMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
@@ -97,23 +98,12 @@ function messageExists(id: string): boolean {
   return Boolean(getDatabase().prepare("SELECT 1 FROM messages WHERE id = ?").get(id))
 }
 
-/** 与 renderer `DEFAULT_SESSION_TITLES` 对齐：中英占位都算未命名。 */
-const PLACEHOLDER_TITLES = new Set([
-  "New agent",
-  "新对话",
-  "新会话",
-  "未命名会话",
-  "Untitled",
-  "Untitled session"
-])
-
 export function maybeRenameSession(sessionId: string, userText: string) {
   const current = getDatabase()
     .prepare("SELECT title FROM sessions WHERE id = ?")
     .get(sessionId) as { title: string } | undefined
-  const title = current?.title.trim() ?? ""
-  if (!current || (title && !PLACEHOLDER_TITLES.has(title))) return
-  const next = userText.replace(/\s+/g, " ").trim().slice(0, 42)
+  if (!current || !isDefaultSessionTitle(current.title)) return
+  const next = formatOptimisticTitle(userText)
   if (!next) return
   renameSession(sessionId, next)
 }

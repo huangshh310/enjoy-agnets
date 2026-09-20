@@ -9,11 +9,13 @@ export function SessionRecapButton({
   recap,
   recapping,
   error,
+  heuristic = false,
   onGenerate
 }: {
   recap: string
   recapping: boolean
   error?: string | null
+  heuristic?: boolean
   onGenerate: () => void
 }) {
   const t = useT()
@@ -37,7 +39,7 @@ export function SessionRecapButton({
         <p className="px-2 text-caption-2-regular text-text-warning-primary">{error}</p>
       ) : recap ? (
         <p className="line-clamp-3 px-2 text-caption-2-regular text-text-tertiary" title={recap}>
-          {recap}
+          {heuristic ? `${t("chat.recapHeuristic")} · ${recap}` : recap}
         </p>
       ) : null}
     </div>

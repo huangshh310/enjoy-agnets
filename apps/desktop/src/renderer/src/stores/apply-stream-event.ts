@@ -20,6 +20,7 @@ export type StreamPatch = {
   running?: boolean
   runId?: string | null
   error?: string | null
+  notice?: string | null
 }
 
 export function reduceStreamEvent(
@@ -32,6 +33,9 @@ export function reduceStreamEvent(
   if (terminal) return terminal
   const approval = applyApprovalEvent(messages, event, activeRunId)
   if (approval) return approval
+  if (event.type === "generation.warning" && event.code === "acp_resume_fallback") {
+    return { messages, notice: event.message }
+  }
   if (event.type === "file.changed") return { messages }
   if (!isLivePart(event.type) || !event.runId) return { messages }
   const next = cloneMessagesForLiveEvent(messages)

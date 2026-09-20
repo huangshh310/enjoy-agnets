@@ -14,7 +14,13 @@ export async function collectRunOutput(
   let claimed: string | undefined
   let settled = false
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => finish(), timeoutMs)
+    const timer = setTimeout(() => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      unsub()
+      reject(new Error("Timed out waiting for completion."))
+    }, timeoutMs)
     const unsub = getIde().agent.onEvent((raw) => {
       const parsed = StreamEvent.safeParse(raw)
       if (!parsed.success || !("runId" in parsed.data) || !parsed.data.runId) return

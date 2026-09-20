@@ -14,7 +14,7 @@ import { isE2eStub } from "./e2e-stub"
 import { readPreferences } from "./preferences"
 import { listDiscoveredRules } from "./rules-service"
 import { listInstalledSkills } from "./skills-service"
-import { listMessages, workspaceRootForSession } from "./session-queries"
+import { listMessages, readSessionContext, workspaceRootForSession } from "./session-queries"
 import {
   getInspectPromptSnapshot,
   rememberInspectPrompt,
@@ -22,7 +22,11 @@ import {
 } from "./inspect-prompt-snapshot"
 import { resolveRuntimeId } from "./agent-run-helpers"
 import { formatWorkspaceAgentsMd } from "./agents-md-discover"
-import { codingInstructions, inspectListedToolNames } from "./inspect-prompt-instructions"
+import {
+  codingInstructions,
+  inspectListedToolNames,
+  withPendingSessionContext
+} from "./inspect-prompt-instructions"
 import { toModelMessages } from "./to-model-messages"
 import { getActiveCompactedHistory, getSessionCompaction } from "./session-compaction-service"
 
@@ -88,6 +92,7 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
   const mcpNames = Object.keys(createMcpAgentTools({ mode }))
   const workspaceRoot = await workspaceRootForSession(input.sessionId)
   const compaction = await getSessionCompaction(input.sessionId)
+  const context = readSessionContext(input.sessionId)
   return {
     source: "preview",
     capturedAt: Date.now(),
@@ -95,9 +100,13 @@ async function previewPrompt(input: InspectPromptInput): Promise<InspectPromptRe
     modelId: input.modelId ?? "",
     mode,
     runtime,
-    instructions: composeInspectInstructions(mode, runtime, prefs.customInstructions, workspaceRoot, {
-      rehydratedAfterCompact: Boolean(compaction)
-    }),
+    instructions: withPendingSessionContext(
+      composeInspectInstructions(mode, runtime, prefs.customInstructions, workspaceRoot, {
+        rehydratedAfterCompact: Boolean(compaction)
+      }),
+      context.goal,
+      context.recap
+    ),
     messages: sanitizeModelMessages(toModelMessages(history)),
     toolNames: inspectListedToolNames(runtime, [...codingToolNamesFor(mode), ...mcpNames])
   }

@@ -6,6 +6,7 @@ import {
   codingInstructions,
   extraLocalInstructions,
   formatCustomInstructions,
+  formatPendingSessionContext,
   inspectListedToolNames
 } from "./inspect-prompt-instructions.ts"
 
@@ -154,4 +155,13 @@ test("ACP / e2e 检查器不列 Enjoy 写工具名", () => {
   assert.deepEqual(inspectListedToolNames("local", local), local)
   assert.deepEqual(inspectListedToolNames("acp-host", local), [])
   assert.deepEqual(inspectListedToolNames("e2e", local), [])
+})
+
+test("preview 标注 Goal/Recap 下一轮才注入，空则不写", () => {
+  assert.equal(formatPendingSessionContext("", "  "), "")
+  const text = formatPendingSessionContext("改登录", "[Enjoy recap kind: heuristic]\n已拆模块")
+  assert.match(text, /Next send will inject/)
+  assert.match(text, /Goal: 改登录/)
+  assert.match(text, /Recap: 已拆模块/)
+  assert.doesNotMatch(text, /Enjoy recap kind/)
 })

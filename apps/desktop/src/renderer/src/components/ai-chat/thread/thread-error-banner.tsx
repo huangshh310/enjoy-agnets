@@ -127,26 +127,30 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   )
   const title =
     gate?.title ??
-    (kind === "remote_disconnected"
-      ? t("chat.needRemoteConnectedTitle")
-      : kind === "remote_cli_missing"
-        ? t("chat.remoteCliMissingTitle")
-        : kind === "needs_key"
-          ? t("chat.needProviderKeyTitle")
-          : kind === "rate_limit"
-            ? t("chat.usage.rateLimitTitle")
-            : t("chat.errorTitle"))
+    (kind === "resume_fallback"
+      ? t("chat.acpResumeFallbackTitle")
+      : kind === "remote_disconnected"
+        ? t("chat.needRemoteConnectedTitle")
+        : kind === "remote_cli_missing"
+          ? t("chat.remoteCliMissingTitle")
+          : kind === "needs_key"
+            ? t("chat.needProviderKeyTitle")
+            : kind === "rate_limit"
+              ? t("chat.usage.rateLimitTitle")
+              : t("chat.errorTitle"))
   const detail =
     gate?.hint ??
-    (kind === "remote_disconnected"
-      ? t("chat.needRemoteConnectedHint")
-      : kind === "remote_cli_missing"
-        ? t("chat.remoteCliMissingHint")
-        : kind === "needs_key"
-          ? t("chat.needProviderKeyHint")
-          : error.includes("HANDOFF_CONFIRM_FAILED")
-            ? t("chat.handoffConfirmFailed")
-            : error)
+    (kind === "resume_fallback"
+      ? t("chat.acpResumeFallbackHint")
+      : kind === "remote_disconnected"
+        ? t("chat.needRemoteConnectedHint")
+        : kind === "remote_cli_missing"
+          ? t("chat.remoteCliMissingHint")
+          : kind === "needs_key"
+            ? t("chat.needProviderKeyHint")
+            : error.includes("HANDOFF_CONFIRM_FAILED")
+              ? t("chat.handoffConfirmFailed")
+              : error)
 
   return (
     <div
@@ -262,6 +266,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             kind !== "outdated" &&
             kind !== "remote_cli_missing" &&
             kind !== "remote_disconnected" &&
+            kind !== "resume_fallback" &&
             !running ? (
               <button
                 type="button"

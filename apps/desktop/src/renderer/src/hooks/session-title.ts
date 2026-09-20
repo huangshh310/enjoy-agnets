@@ -29,14 +29,15 @@ export function applyOptimisticTitle(userText: string) {
   const title = formatOptimisticTitle(userText)
   patchSessionTitle(sessionId, title)
   if (!hasIde()) return
-  void getIde().session.rename({ sessionId, title })
+  void getIde().session.rename({ sessionId, title }).catch(() => undefined)
 }
 
 export async function completeSessionTitle(userText: string) {
   const store = useChatStore.getState()
   const sessionId = store.sessionId
+  const startedTitle = store.sessionTitle
   if (!hasIde() || !sessionId) return
-  if (!shouldRefineSessionTitle(store.sessionTitle, userText)) return
+  if (!shouldRefineSessionTitle(startedTitle, userText)) return
 
   const modelId = await pickTitleModelId()
   if (!modelId) return
@@ -51,7 +52,8 @@ export async function completeSessionTitle(userText: string) {
     )
     const title = sanitizeTitle(output.text)
     if (!title || isDefaultSessionTitle(title)) return
-    if (!shouldRefineSessionTitle(useChatStore.getState().sessionTitle, userText)) return
+    const current = titleOfSession(sessionId)
+    if (!shouldRefineSessionTitle(current, userText)) return
     const renamed = (await getIde().session.rename({
       sessionId,
       title
@@ -60,6 +62,13 @@ export async function completeSessionTitle(userText: string) {
   } catch {
     // 失败保留乐观标题，不打断主循环
   }
+}
+
+function titleOfSession(sessionId: string): string {
+  const store = useChatStore.getState()
+  const node = store.repositories.find((row) => row.id === sessionId)
+  if (node?.name) return node.name
+  return store.sessionId === sessionId ? store.sessionTitle : ""
 }
 
 function titlePrompt(userText: string): string {
@@ -86,15 +95,10 @@ async function pickTitleModelId(): Promise<string | undefined> {
   }
 }
 
-function patchSessionTitle(sessionId: string, title: string) {
+export function patchSessionTitle(sessionId: string, title: string) {
   const store = useChatStore.getState()
+  store.patchSessionNode(sessionId, { name: title })
   if (store.sessionId === sessionId) {
-    store.setSession(sessionId, title)
-    return
+    useChatStore.setState({ sessionTitle: title })
   }
-  useChatStore.setState({
-    repositories: store.repositories.map((node) =>
-      node.id === sessionId ? { ...node, name: title } : node
-    )
-  })
 }

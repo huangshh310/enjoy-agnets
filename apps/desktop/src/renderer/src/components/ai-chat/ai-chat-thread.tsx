@@ -15,6 +15,7 @@ import { visibleThreadMessages } from "./thread/orphan-extract-turn"
 import { HandoffLegacyDivider, isLegacyHandoffTurn } from "./thread/handoff-legacy-divider"
 import { QueuedFollowups } from "./thread/queued-followups"
 import { ThreadErrorBanner } from "./thread/thread-error-banner"
+import { ThreadNoticeBanner } from "./thread/thread-notice-banner"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
 import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
 
@@ -57,6 +58,7 @@ export function AiChatThread({
           {showPlaceholder ? <ThreadLoadingPlaceholder label={thinkingLabel} /> : null}
           <QueuedFollowups />
 
+          <ThreadNoticeBanner />
           {error ? <ThreadErrorBanner error={error} /> : null}
           <div id="thread-turn-end" />
         </ConversationContent>

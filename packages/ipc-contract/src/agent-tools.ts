@@ -287,7 +287,8 @@ export type AcpRemoteSession = z.infer<typeof AcpRemoteSession>
 
 export const ListAcpSessionsResult = z.object({
   supported: z.boolean(),
-  sessions: z.array(AcpRemoteSession)
+  sessions: z.array(AcpRemoteSession),
+  error: z.string().optional()
 })
 export type ListAcpSessionsResult = z.infer<typeof ListAcpSessionsResult>
 

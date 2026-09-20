@@ -110,7 +110,8 @@ export function isMcpWriteToolName(toolName: string): boolean {
 }
 
 /** ACP 弱名：command / shell 也算探索态要拦的写。 */
-const EXPLORE_BLOCK_NAMES = /^(write|edit|bash|shell|command|cmd|git_commit|git_push|git_branch|code_mode)$/i
+const EXPLORE_BLOCK_NAMES =
+  /^(write|edit|bash|shell|command|cmd|git_commit|git_push|git_branch|code_mode|str_replace|apply_patch|create|update)$/i
 
 /** 探索态宿主拦截：写盘 / 命令 / 提交 / MCP 写名直接 deny，不进审批停靠。 */
 export function isExploreMutatingDeny(mode: AgentMode, toolName: string): boolean {

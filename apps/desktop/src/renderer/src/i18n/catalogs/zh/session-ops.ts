@@ -33,6 +33,7 @@ export const zhSessionOps = {
   ledgerVerbError: "错",
   ledgerCommandOk: "通过",
   ledgerCommandFail: "失败",
+  ledgerCommandMore: "其余 {n} 条",
   ledgerPillRead: "读 {n}",
   ledgerPillEdit: "改 {n}",
   ledgerPillCommand: "命令 {n}",

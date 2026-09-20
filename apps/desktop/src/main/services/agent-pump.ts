@@ -153,7 +153,17 @@ async function openRunStream(
       return answers
     },
     waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
-      if (isExploreMutatingDeny(run.input.mode, toolName)) return "deny"
+      if (isExploreMutatingDeny(run.input.mode, toolName)) {
+        emitEvent(run.window, {
+          type: "tool.result",
+          runId,
+          toolCallId,
+          name: toolName,
+          args,
+          error: "Explore mode is read-only."
+        })
+        return "deny"
+      }
       const approvalId = createId("apr")
       run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args })
       rememberApproval({ runId, approvalId, toolCallId, name: toolName, args })

@@ -41,6 +41,7 @@ test("探索态宿主拦截含 ACP 弱名 command", () => {
   assert.equal(isExploreMutatingDeny("plan", "write_file"), true)
   assert.equal(isExploreMutatingDeny("ask", "command"), true)
   assert.equal(isExploreMutatingDeny("plan", "bash"), true)
+  assert.equal(isExploreMutatingDeny("plan", "str_replace"), true)
   assert.equal(isExploreMutatingDeny("plan", "read_file"), false)
   assert.equal(isExploreMutatingDeny("agent", "write_file"), false)
 })

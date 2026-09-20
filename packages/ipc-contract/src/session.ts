@@ -91,6 +91,7 @@ export const SessionRecapInput = z
 export type SessionRecapInput = z.infer<typeof SessionRecapInput>
 
 export const SessionRecapResult = z.object({
-  recap: z.string()
+  recap: z.string(),
+  heuristic: z.boolean().optional()
 })
 export type SessionRecapResult = z.infer<typeof SessionRecapResult>

@@ -134,11 +134,7 @@ export function registerAgentToolsIpc() {
   })
   ipcMain.handle("agentTools.listAcpSessions", async (_event, raw: unknown) => {
     const input = ListAcpSessionsInput.parse(raw)
-    try {
-      return await listImportableAcpSessions(input.runtimeId, input.workspaceId)
-    } catch {
-      return { supported: false, sessions: [] }
-    }
+    return listImportableAcpSessions(input.runtimeId, input.workspaceId)
   })
   ipcMain.handle("agentTools.importAcpSession", async (_event, raw: unknown) => {
     const input = ImportAcpSessionInput.parse(raw)

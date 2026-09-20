@@ -38,6 +38,10 @@ test("formatOptimisticTitle 正确截取并格式化首轮标题", () => {
   )
   assert.equal(formatOptimisticTitle(""), "新对话")
   assert.equal(formatOptimisticTitle("   "), "新对话")
+  assert.equal(
+    formatOptimisticTitle("[Enjoy host mode: plan]\nDo not edit.\n[/Enjoy host mode]\n\n改登录页"),
+    "改登录页"
+  )
 })
 
 test("shouldRefineSessionTitle 占位与乐观截断可精炼，手改不覆盖", () => {

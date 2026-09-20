@@ -8,11 +8,27 @@ import { entryFromTool } from "./format-ledger-entry.ts"
 import { LEDGER_GROUPS, type RunLedgerEntry, type RunLedgerGroup } from "./run-ledger.types.ts"
 
 export function lastAssistantTurn(messages: readonly ThreadMessage[]): ThreadMessage | null {
+  let last: ThreadMessage | null = null
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i]
-    if (message?.role === "assistant") return message
+    if (message?.role !== "assistant") continue
+    if (!last) last = message
+    if ((message.tools?.length ?? 0) > 0) return message
   }
-  return null
+  return last
+}
+
+const COMMAND_LEDGER_CAP = 8
+
+export function visibleLedgerEntries(entries: readonly RunLedgerEntry[]): RunLedgerEntry[] {
+  const commands = entries.filter((entry) => entry.kind === "command")
+  if (commands.length <= COMMAND_LEDGER_CAP) return [...entries]
+  const failed = commands.filter((entry) => entry.failed)
+  const ok = commands.filter((entry) => !entry.failed)
+  const room = Math.max(0, COMMAND_LEDGER_CAP - failed.length)
+  const keepOk = ok.slice(Math.max(0, ok.length - room))
+  const keep = new Set([...failed, ...keepOk])
+  return entries.filter((entry) => entry.kind !== "command" || keep.has(entry))
 }
 
 export function collectRunLedger(

@@ -8,6 +8,7 @@ import {
   NEED_CLI_LOGIN_FAILED,
   NEED_CLI_OUTDATED,
   NEED_PROVIDER_KEY,
+  ACP_RESUME_FALLBACK,
   NEED_REMOTE_CONNECTED
 } from "./classify-thread-error.ts"
 
@@ -47,4 +48,8 @@ test("ACP 未登录不是可重试供应商错误", () => {
   assert.equal(classifyThreadError("spawn remote binary not found"), "remote_cli_missing")
   assert.equal(classifyThreadError(NEED_REMOTE_CONNECTED), "remote_disconnected")
   assert.equal(classifyThreadError("REMOTE_DISCONNECTED: write refused"), "remote_disconnected")
+  assert.equal(
+    classifyThreadError(`${ACP_RESUME_FALLBACK}: Could not resume the CLI session; started a new one.`),
+    "resume_fallback"
+  )
 })

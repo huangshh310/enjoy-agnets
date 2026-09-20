@@ -1,6 +1,8 @@
 /**
  * 会话目标 / 阶段总结：Enjoy 走 system 句，ACP 折进用户 prompt 围栏（气泡要剥掉）。
  */
+import { visibleRecapText } from "@enjoy-agents/ipc-contract/session-recap-kind"
+
 const CONTEXT_OPEN = "[Enjoy session context]"
 const CONTEXT_CLOSE = "[/Enjoy session context]"
 const CONTEXT_FENCE = /\[Enjoy session context\][\s\S]*?\[\/Enjoy session context\]\s*/
@@ -23,7 +25,7 @@ export function sessionSystemMessages(input: SessionContextInput): Array<{
 }> {
   const out: Array<{ role: "system"; content: string }> = []
   const goal = input.goal?.trim()
-  const recap = input.recap?.trim()
+  const recap = visibleRecapText(input.recap)
   if (goal) out.push({ role: "system", content: `[Session Goal]: ${goal}` })
   if (recap) out.push({ role: "system", content: `[Session Recap]: ${recap}` })
   return out
@@ -33,7 +35,7 @@ export function prefixSessionContext(draft: string, input: SessionContextInput):
   if (CONTEXT_FENCE.test(draft)) return draft
   const lines: string[] = []
   const goal = input.goal?.trim()
-  const recap = input.recap?.trim()
+  const recap = visibleRecapText(input.recap)
   if (goal) lines.push(`Goal: ${goal}`)
   if (recap) lines.push(`Recap: ${recap}`)
   if (lines.length === 0) return draft
@@ -57,10 +59,13 @@ export function applySessionContextToOutgoing(
   }))
   if (!isAcp) return [...systems, ...messages]
   const index = lastUserIndex(messages)
-  if (index < 0) return [...systems, ...messages]
+  if (index < 0) {
+    const content = prefixSessionContext("", input)
+    return content ? [...messages, { role: "user", content }] : messages
+  }
   const next = messages.slice()
   const current = next[index]
-  if (!current) return [...systems, ...messages]
+  if (!current) return messages
   next[index] = { ...current, content: prefixSessionContext(current.content, input) }
   return next
 }

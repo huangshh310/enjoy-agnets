@@ -218,6 +218,8 @@ export type ChatStore = {
   sessionReviewDismissedKey: string | null
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
+  /** 非失败提示（如 ACP resume 回落），不走错误条。 */
+  notice: string | null
   /** L4「切换引擎」打开 Composer AgentPicker，不跳设置。 */
   agentPickerOpen: boolean
   sidebarGrouping: "project" | "flat" | "status"
@@ -265,6 +267,7 @@ export type ChatStore = {
   setRunning: (running: boolean, runId?: string | null) => void
   setHasKey: (hasKey: boolean) => void
   setError: (message: string | null) => void
+  setNotice: (message: string | null) => void
   setAgentPickerOpen: (open: boolean) => void
   setWorkspace: (
     workspace: {

@@ -108,6 +108,14 @@ export async function listMessages(sessionId: string) {
   )
 }
 
+/** 检查器 preview：Goal / Recap 是否会在下一轮垫进模型。 */
+export function readSessionContext(sessionId: string): { goal: string | null; recap: string | null } {
+  const row = getDatabase()
+    .prepare("SELECT goal, recap FROM sessions WHERE id = ?")
+    .get(sessionId) as { goal: string | null; recap: string | null } | undefined
+  return { goal: row?.goal ?? null, recap: row?.recap ?? null }
+}
+
 /** 检查器 preview / 规则注入：会话所属工作区根。找不到则空。 */
 export async function workspaceRootForSession(sessionId: string): Promise<string | undefined> {
   const row = getDatabase()

@@ -5,6 +5,7 @@ import { listAcpRemoteSessions } from "@enjoy-agents/agent-harness"
 import type { ImportAcpSessionInput, ListAcpSessionsResult } from "@enjoy-agents/ipc-contract"
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import { listBoundAcpSessionIds, writeAcpSessionBind } from "./acp-session-bind.ts"
+import { projectListedAcpSessions } from "./acp-session-import-project.ts"
 import { createSession } from "./session-queries"
 import { getWorkspace } from "./workspace"
 import { writeSessionRuntime } from "./agent-tools-vault"
@@ -15,25 +16,26 @@ export async function listImportableAcpSessions(
 ): Promise<ListAcpSessionsResult> {
   const workspace = await getWorkspace(workspaceId)
   const override = readAgentToolOverrides()[runtimeId]
-  const remote = await listAcpRemoteSessions({
-    id: runtimeId,
-    cwd: workspace.rootPath,
-    override: override?.binaryPath
-      ? { binaryPath: override.binaryPath, extraArgs: override.extraArgs, modelId: override.modelId }
-      : { extraArgs: override?.extraArgs, modelId: override.modelId }
-  })
-  if (!remote.supported) return { supported: false, sessions: [] }
+  let remote: Awaited<ReturnType<typeof listAcpRemoteSessions>>
+  try {
+    remote = await listAcpRemoteSessions({
+      id: runtimeId,
+      cwd: workspace.rootPath,
+      override: override?.binaryPath
+        ? { binaryPath: override.binaryPath, extraArgs: override.extraArgs, modelId: override.modelId }
+        : { extraArgs: override?.extraArgs, modelId: override.modelId }
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { supported: true, sessions: [], error: message }
+  }
   const imported = listBoundAcpSessionIds(workspaceId, runtimeId)
-  const cwd = workspace.rootPath.replace(/\\/g, "/")
-  const sessions = remote.sessions
-    .filter((row) => row.cwd.replace(/\\/g, "/") === cwd)
-    .map((row) => ({
-      sessionId: row.sessionId,
-      title: row.title,
-      updatedAt: row.updatedAt,
-      imported: imported.has(row.sessionId)
-    }))
-  return { supported: true, sessions }
+  return projectListedAcpSessions({
+    supported: remote.supported,
+    sessions: remote.sessions,
+    imported,
+    cwd: workspace.rootPath
+  })
 }
 
 export async function importAcpSession(input: ImportAcpSessionInput) {

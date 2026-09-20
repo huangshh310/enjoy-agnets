@@ -12,6 +12,7 @@ export type ThreadErrorKind =
   | "outdated"
   | "remote_cli_missing"
   | "remote_disconnected"
+  | "resume_fallback"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -22,6 +23,7 @@ export const NEED_CLI_LOGIN_FAILED = "NEED_CLI_LOGIN_FAILED"
 export const NEED_CLI_OUTDATED = "NEED_CLI_OUTDATED"
 export const HANDOFF_CONFIRM_FAILED = "HANDOFF_CONFIRM_FAILED"
 export const NEED_REMOTE_CONNECTED = "NEED_REMOTE_CONNECTED"
+export const ACP_RESUME_FALLBACK = "ACP_RESUME_FALLBACK"
 
 const CREDIT_MARKERS = [
   "402",
@@ -37,6 +39,7 @@ const CREDIT_MARKERS = [
 
 export function classifyThreadError(message: string): ThreadErrorKind {
   const lower = message.toLowerCase()
+  if (message.startsWith(ACP_RESUME_FALLBACK)) return "resume_fallback"
   if (
     message === NEED_PROVIDER_KEY ||
     lower.includes("add a provider api key") ||

@@ -127,7 +127,7 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
     await loadSession(current.id, current.title)
     return
   }
-  await createAndOpenSession(workspace.id)
+  await createAndOpenSession(workspace.id, "新对话")
 }
 
 export { abortComposerRun }
@@ -214,7 +214,7 @@ export async function startPersistedSession() {
     await openFolder()
     return
   }
-  await createAndOpenSession(workspaceId)
+  await createAndOpenSession(workspaceId, "新对话")
 }
 
 export async function openChangedFile(path: string, opts?: { reveal?: boolean }) {

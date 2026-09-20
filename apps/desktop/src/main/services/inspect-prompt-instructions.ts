@@ -5,6 +5,7 @@
  * ACP：不假装走 ToolLoop 提示词；展示将垫进 session/prompt 的自定义说明与技能索引。
  */
 import { joinInstructions, systemPromptFor } from "@enjoy-agents/agent-core/prompts"
+import { visibleRecapText } from "@enjoy-agents/ipc-contract/session-recap-kind"
 import {
   isAgentsChainFilePath,
   REHYDRATED_INSTRUCTIONS_NOTE
@@ -45,6 +46,25 @@ export function inspectListedToolNames(
 ): string[] {
   if (runtime === "acp-host" || runtime === "e2e") return []
   return [...localNames]
+}
+
+/** preview 才写：库里的 Goal/Recap 下一轮才垫，不要假装已经在历史里。 */
+export function formatPendingSessionContext(goal?: string | null, recap?: string | null): string {
+  const lines: string[] = []
+  const nextGoal = goal?.trim()
+  const nextRecap = visibleRecapText(recap)
+  if (nextGoal) lines.push(`Goal: ${nextGoal}`)
+  if (nextRecap) lines.push(`Recap: ${nextRecap}`)
+  if (lines.length === 0) return ""
+  return ["Next send will inject session context (not yet in history):", ...lines].join("\n")
+}
+
+export function withPendingSessionContext(
+  instructions: string,
+  goal?: string | null,
+  recap?: string | null
+): string {
+  return joinInstructions(instructions, formatPendingSessionContext(goal, recap))
 }
 
 export function extraLocalInstructions(input: LocalInstructionExtras): string {

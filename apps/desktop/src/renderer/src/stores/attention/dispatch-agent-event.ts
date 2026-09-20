@@ -8,7 +8,9 @@ import { eventRunId } from "./ingest-attention"
 import { useAttentionStore } from "./attention-store"
 import { useAcpCommands } from "../acp-commands"
 import { useHostInjectStore } from "../host-inject/host-inject-store"
-import { isDefaultSessionTitle } from "@renderer/hooks/session-title"
+import { patchSessionTitle } from "@renderer/hooks/session-title"
+import { shouldRefineSessionTitle } from "@renderer/lib/session-title"
+import { visibleUserText } from "@renderer/lib/user-message-text"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
 
@@ -31,7 +33,7 @@ export function dispatchAgentEvent(event: StreamEvent): void {
     if (!sessionId || sessionId === current.sessionId) current.applyStreamEvent(event)
   }
   if (event.type === "session.title") {
-    applyAgentSessionTitle(event.title)
+    applyAgentSessionTitle(event.title, sessionId)
   }
   if (event.type === "host.inject" && sessionId) {
     useHostInjectStore.getState().remember(sessionId, {
@@ -62,16 +64,23 @@ export function resolveEventSessionId(event: StreamEvent): string | undefined {
   return undefined
 }
 
-function applyAgentSessionTitle(title: string): void {
+function applyAgentSessionTitle(title: string, sessionId?: string): void {
   const store = useChatStore.getState()
-  if (!isDefaultSessionTitle(store.sessionTitle)) return
+  const targetId = sessionId ?? store.sessionId
+  if (!targetId) return
   const next = title.trim().slice(0, 80)
   if (!next) return
-  const sessionId = store.sessionId
-  if (!sessionId) return
-  store.setSession(sessionId, next)
+  const node = store.repositories.find((item) => item.id === targetId)
+  const current = node?.name ?? (store.sessionId === targetId ? store.sessionTitle : "")
+  const lastUser =
+    store.sessionId === targetId
+      ? [...store.messages].reverse().find((row) => row.role === "user")?.content
+      : undefined
+  const userText = lastUser ? visibleUserText(lastUser) : ""
+  if (!shouldRefineSessionTitle(current, userText)) return
+  patchSessionTitle(targetId, next)
   if (!hasIde()) return
-  void getIde().session.rename({ sessionId, title: next })
+  void getIde().session.rename({ sessionId: targetId, title: next }).catch(() => undefined)
 }
 
 function sessionMetaOf(sessionId: string): { title: string; workspaceId?: string } {

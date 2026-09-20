@@ -8,19 +8,13 @@ import { forgetAcpChild } from "./acp-child-store.ts"
 import type { AcpPermissionRequest } from "./permissions.ts"
 import { acpExitMessage, asRecord } from "./acp-rpc-util.ts"
 import { answerAcpPermission } from "./acp-permission-answer.ts"
-import {
-  filterAcpMcpServers,
-  type AcpMcpServer
-} from "./acp-mcp.ts"
+import { filterAcpMcpServers, type AcpMcpServer } from "./acp-mcp.ts"
 import { parseSessionConfigOptions } from "./parse-session-config.ts"
 import { AcpNdjsonReader } from "./acp-ndjson.ts"
 import { fetchAcpSessionPages, type AcpListedSession } from "./acp-listed-session.ts"
-import {
-  EMPTY_SESSION_CAPS,
-  parseAcpSessionCaps,
-  type AcpSessionCaps
-} from "./acp-session-caps.ts"
+import { EMPTY_SESSION_CAPS, parseAcpSessionCaps, type AcpSessionCaps } from "./acp-session-caps.ts"
 import type { SessionConfigOption } from "@enjoy-agents/ipc-contract"
+import { openAcpSession } from "./acp-open-session.ts"
 
 const CLIENT_INFO = {
   name: "enjoy-agents",
@@ -54,6 +48,7 @@ export class AcpClient {
   private sessionCaps: AcpSessionCaps = EMPTY_SESSION_CAPS
   private mcpServers: AcpMcpServer[] = []
   private configOptions: SessionConfigOption[] = []
+  private resumeFellBack = false
 
   constructor(
     private readonly child: ChildProcess,
@@ -95,6 +90,13 @@ export class AcpClient {
 
   getSessionCaps(): AcpSessionCaps {
     return this.sessionCaps
+  }
+
+  /** 读一次就清，避免同一活会话后续轮再警告。 */
+  takeResumeFallBack(): boolean {
+    const fell = this.resumeFellBack
+    this.resumeFellBack = false
+    return fell
   }
 
   async authenticate(methodId: string): Promise<void> {
@@ -213,15 +215,14 @@ export class AcpClient {
   }
 
   private async openSession(cwd: string, resumeId?: string): Promise<string> {
-    const id = resumeId?.trim()
-    if (id && this.sessionCaps.resume) {
-      try {
-        return await this.resumeSession(id, cwd)
-      } catch {
-        /* 未知 / 已删：开新会话 */
-      }
-    }
-    return this.newSession(cwd)
+    const opened = await openAcpSession({
+      resumeId,
+      canResume: this.sessionCaps.resume,
+      resume: (id) => this.resumeSession(id, cwd),
+      create: () => this.newSession(cwd)
+    })
+    this.resumeFellBack = Boolean(resumeId?.trim()) && !opened.resumed
+    return opened.sessionId
   }
 
   private filteredMcp(): AcpMcpServer[] {
