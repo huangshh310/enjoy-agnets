@@ -146,7 +146,7 @@ I3–I7 **本计划不排进 P0 实现**，只留接口，避免和 H/I1/R 抢�
 
 | 项 | 内容 |
 |----|------|
-| 文件 | `design/previews/p0-h-extensions-hub.html` |
+| 文件 | `design/previews/p0-h-extensions-hub.html`（铬条）；精选区另见 `design/previews/i2-extensions-curated.html` |
 | 画 | 两列 MCP \| Skills；计数；添加；精选卡（I2）；脚注诚实文案；无协议微标；无 Registry 混排 |
 | 锁 | 提交 tip 写入 `plugin-extensions-hub.md` + 本计划 + 日后 `settings` spec |
 
@@ -186,12 +186,9 @@ packages/ui 不新增运行时控件；用现有 Card / Button
 
 #### PR-H2 I2 精选浏览（可与 H1 后半合并）
 
-扩展页每列下方只读精选 4–6 卡。点卡：
+产品锁与视觉真源：[`i2-extensions-curated.md`](./i2-extensions-curated.md) · [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)。H 同页下方「精选」，不是新设置 tab。卡「添加到 MCP / 添加到技能」写入现有 SoT；写后「已写入 Enjoy · 下一轮可注入」。catalog 失败诚实空 + 重试。
 
-- Skills → `#/skills` 精选集市，定位该套件
-- MCP → `#/mcp` 市场/创建，带 preset id
-
-**验收**：一键深链安装走现有存储；无新运行时；未配置仍可浏览。
+**验收**：一键写入现有存储；无新运行时；无「已同步到助手」；未配置仍可浏览。
 
 ---
 
