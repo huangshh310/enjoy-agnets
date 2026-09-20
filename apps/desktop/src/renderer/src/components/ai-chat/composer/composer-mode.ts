@@ -4,7 +4,6 @@
  * workflow / tdd / code_mode 仍在合约 enum，发送时收成 agent。
  */
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
-import { composerChromeFor } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 
 export const COMPOSER_VISIBLE_MODES = ["agent", "plan", "ask", "debug"] as const
 export type ComposerVisibleMode = (typeof COMPOSER_VISIBLE_MODES)[number]
@@ -67,9 +66,8 @@ export function modeForLoadedSession(saved?: AgentMode): ComposerVisibleMode {
   return saved ? coerceComposerMode(saved) : "agent"
 }
 
-/** ACP 没有执行模式：发送一律 agent。 */
-export function runModeForComposer(runtimeId: string, mode: AgentMode): ComposerVisibleMode {
-  if (!composerChromeFor(runtimeId).executionModes) return "agent"
+/** 探索/执行跟 store；宿主拦截写工具，不再因 ACP 强制 agent。 */
+export function runModeForComposer(_runtimeId: string, mode: AgentMode): ComposerVisibleMode {
   return coerceComposerMode(mode)
 }
 

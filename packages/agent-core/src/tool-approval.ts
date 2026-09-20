@@ -109,6 +109,23 @@ export function isMcpWriteToolName(toolName: string): boolean {
   return MCP_WRITE_LEAF.test(mcpToolLeafName(toolName))
 }
 
+/** ACP 弱名：command / shell 也算探索态要拦的写。 */
+const EXPLORE_BLOCK_NAMES = /^(write|edit|bash|shell|command|cmd|git_commit|git_push|git_branch|code_mode)$/i
+
+/** 探索态宿主拦截：写盘 / 命令 / 提交 / MCP 写名直接 deny，不进审批停靠。 */
+export function isExploreMutatingDeny(mode: AgentMode, toolName: string): boolean {
+  if (mode !== "ask" && mode !== "plan") return false
+  const decision = resolveToolApproval(toolName, mode, {
+    requireWriteApproval: true,
+    requireBashApproval: true,
+    requireCommitApproval: true
+  })
+  if (decision === "denied") return true
+  if (typeof decision === "object" && decision.type === "denied") return true
+  const leaf = mcpToolLeafName(toolName).trim().toLowerCase()
+  return EXPLORE_BLOCK_NAMES.test(leaf) || isMcpWriteToolName(toolName)
+}
+
 function resolveMcpApproval(
   toolName: string,
   mode: AgentMode,

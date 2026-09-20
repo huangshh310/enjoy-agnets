@@ -47,8 +47,9 @@ test("已有会话不用设置默认项，缺记录回落 agent", () => {
   assert.equal(modeForLoadedSession(), "agent")
 })
 
-test("ACP 发送强制 agent", () => {
-  assert.equal(runModeForComposer("cursor", "ask"), "agent")
+test("探索态所有引擎都保留 plan/ask，不因 ACP 强制 agent", () => {
+  assert.equal(runModeForComposer("cursor", "ask"), "ask")
+  assert.equal(runModeForComposer("cursor", "plan"), "plan")
   assert.equal(runModeForComposer("enjoy-local", "ask"), "ask")
 })
 

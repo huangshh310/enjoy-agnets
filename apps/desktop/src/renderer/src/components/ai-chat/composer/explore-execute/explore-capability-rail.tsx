@@ -1,4 +1,3 @@
-import { composerChromeFor } from "@enjoy-agents/ipc-contract/runtime-capabilities"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { applyComposerSurface, surfaceForMode } from "../composer-mode"
@@ -6,8 +5,6 @@ import { applyComposerSurface, surfaceForMode } from "../composer-mode"
 export function ExploreCapabilityRail() {
   const t = useT()
   const mode = useChatStore((state) => state.mode)
-  const runtimeId = useChatStore((state) => state.runtimeId)
-  if (!composerChromeFor(runtimeId).executionModes) return null
   const explore = surfaceForMode(mode) === "explore"
 
   if (!explore) return null

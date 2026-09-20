@@ -3,6 +3,7 @@ export type { CodingAgentOptions, StreamCodingAgentOptions } from "./coding-agen
 export { joinInstructions } from "./join-instructions";
 export {
   resolveToolApproval,
+  isExploreMutatingDeny,
   isMcpWriteToolName,
   mcpToolLeafName,
   toHarnessApprovalSettings,

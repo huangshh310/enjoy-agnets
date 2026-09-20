@@ -45,8 +45,10 @@ test("探索/执行表面源码不含协议模式标签", () => {
 test("C 端默认项与分段词表只写探索/执行", () => {
   assert.equal(zhChat.surfaceExplore, "探索")
   assert.equal(zhChat.surfaceExecute, "执行")
+  assert.equal(zhChat.surfaceExploreDisabled, "此助手暂不支持探索/执行切换")
   assert.equal(enChat.surfaceExplore, "Explore")
   assert.equal(enChat.surfaceExecute, "Execute")
+  assert.equal(enChat.surfaceExploreDisabled, "This assistant cannot switch Explore / Execute")
   assert.doesNotMatch(zhSettings.defaults.modeDesc, /ask|plan|agent|ACP|Ask|Plan|Agent/i)
   assert.doesNotMatch(enSettings.defaults.modeDesc, /ask|plan|agent|ACP/i)
   assert.doesNotMatch(zhChat.surfaceExploreFootnote, /ask|plan|agent|ACP/i)

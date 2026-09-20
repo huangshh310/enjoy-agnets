@@ -2,6 +2,7 @@
  * 本引擎模型表。不含导轨、不含第二引擎、不含协议微标。
  */
 import { cx } from "@/utils/cx"
+import { CliModelMark } from "@renderer/components/ai-chat/agent-picker/cli-model-mark"
 import { useT } from "@renderer/i18n"
 import type { ModelSwitchKind } from "@renderer/lib/model-switch-state"
 
@@ -9,6 +10,7 @@ export type SwitchableModel = { id: string; label: string }
 
 export function ModelSwitchPanel({
   kind,
+  runtimeId,
   engineLabel,
   models,
   currentId,
@@ -16,6 +18,7 @@ export function ModelSwitchPanel({
   onRetry
 }: {
   kind: ModelSwitchKind
+  runtimeId: string
   engineLabel: string
   models: SwitchableModel[]
   currentId: string
@@ -44,13 +47,20 @@ export function ModelSwitchPanel({
                 data-testid={`model-switch-item-${model.id}`}
                 onClick={() => onPick(model)}
                 className={cx(
-                  "flex w-full items-center justify-between px-3 py-2 text-left text-caption-1-regular transition-colors",
+                  "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-caption-1-regular transition-colors",
                   current
                     ? "bg-accent-500/10 text-text-primary"
                     : "text-text-primary hover:bg-background-secondary-hover"
                 )}
               >
-                <span className={current ? "font-medium" : undefined}>{model.label}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="flex size-4 shrink-0 items-center justify-center">
+                    <CliModelMark agentId={runtimeId} model={model} />
+                  </span>
+                  <span className={current ? "min-w-0 truncate font-medium" : "min-w-0 truncate"}>
+                    {model.label}
+                  </span>
+                </span>
                 {current ? (
                   <span className="text-caption-2-medium text-accent-500">{t("chat.modelSwitch.current")}</span>
                 ) : null}

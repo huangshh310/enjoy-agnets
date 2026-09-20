@@ -12,13 +12,11 @@ import { ComposerFollowupRail } from "./composer/runtime-interact/composer-follo
 import { ComposerQuoteChips } from "./composer/runtime-interact/composer-quote-chips"
 import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
 import { ExploreCapabilityRail } from "./composer/explore-execute/explore-capability-rail"
-import { ExploreExecuteToggle } from "./composer/explore-execute/explore-execute-toggle"
 import { ExploreInterceptBanner } from "./composer/explore-execute/explore-intercept-banner"
-import { SessionGoalChip } from "./composer/session-goal-chip"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
-import { ComposerModelChip } from "./composer/model-switch/composer-model-chip"
+import { ComposerTopChrome } from "./composer/composer-top-chrome"
 import { listComposerAssets } from "@renderer/hooks/composer-assets"
 import { registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
@@ -172,13 +170,12 @@ export function AiChatComposer({
             }}
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 pt-0.5 pb-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <ExploreExecuteToggle />
-              <SessionGoalChip />
-            </div>
-            <ComposerModelChip modelId={modelId} modelLabel={modelLabel} models={models} />
-          </div>
+          <ComposerTopChrome
+            modelId={modelId}
+            modelLabel={modelLabel}
+            models={models}
+            onModelChange={onModelChange}
+          />
           <ComposerContextChips />
           <ComposerHostModeChip />
           <ComposerQuoteChips />
@@ -204,7 +201,6 @@ export function AiChatComposer({
             modelLabel={modelLabel}
             modelId={modelId}
             models={models}
-            onModelChange={onModelChange}
             onStop={onStop}
             onSend={onSend}
             canRealtime={canRealtime}

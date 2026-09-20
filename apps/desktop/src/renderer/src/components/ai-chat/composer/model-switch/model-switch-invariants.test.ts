@@ -14,6 +14,13 @@ const files = ["composer-model-chip.tsx", "model-switch-panel.tsx", "model-switc
 
 const banned = ["已切换引擎", "已交接", "ACP ·", "会话已重开", "Switched engine"]
 
+test("I1 芯片与面板接上引擎/模型标，禁止纯文本空位", () => {
+  const chip = readFileSync(join(dir, "composer-model-chip.tsx"), "utf8")
+  const panel = readFileSync(join(dir, "model-switch-panel.tsx"), "utf8")
+  assert.match(chip, /AgentBrandIcon/)
+  assert.match(panel, /CliModelMark/)
+})
+
 test("I1 源码不含换引擎 / 交接成功句", () => {
   for (const name of files) {
     const src = readFileSync(join(dir, name), "utf8")

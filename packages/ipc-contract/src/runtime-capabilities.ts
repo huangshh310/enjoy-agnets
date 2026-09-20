@@ -72,8 +72,8 @@ export function runtimePathKind(runtimeId: string | undefined): RuntimePathKind 
 }
 
 /**
- * Composer 底栏显隐。ACP 只留 + / 审批 / 引擎胶囊 / 发送。
- * Fast 仅 local|flag 显示；thinking 仅 effort 显示五档条。
+ * Composer 底栏显隐。C 端探索/执行分段不再跟 executionModes 整颗藏掉。
+ * Fast 仅 local|flag；五档思考仅 effort。model-id 走「思考 · 跟模型」。
  * 进阶沙箱不得出现在引擎导轨。
  */
 export function composerChromeFor(runtimeId: string | undefined): ComposerChrome {
@@ -92,6 +92,21 @@ export function composerChromeFor(runtimeId: string | undefined): ComposerChrome
     showOnEngineRail: pathKind !== "sandbox-harness" && Boolean(runtimeId) && cap.spawn,
     quota: cap.quota
   }
+}
+
+/** HMAC 审批才能在探索态拦写/命令。否则 C2：分段仍在，探索禁用 + 原因。 */
+export function canHostInterceptExplore(runtimeId: string | undefined): boolean {
+  return capabilitiesFor(runtimeId).permissionUi === "enjoy-hmac"
+}
+
+export type ComposerThinkingChrome = "effort" | "follow-model" | "none"
+
+/** 思考铬：effort 五档；model-id / acp-mode 跟模型；none 隐藏。 */
+export function composerThinkingChrome(runtimeId: string | undefined): ComposerThinkingChrome {
+  const thinking = capabilitiesFor(runtimeId).thinking
+  if (thinking === "effort") return "effort"
+  if (thinking === "model-id" || thinking === "acp-mode") return "follow-model"
+  return "none"
 }
 
 /** L3 / 检查器：宿主把 MCP schema 计进当前引擎。 */

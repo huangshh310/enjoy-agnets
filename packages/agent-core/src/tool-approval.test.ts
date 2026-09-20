@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  isExploreMutatingDeny,
   isMcpWriteToolName,
   resolveToolApproval,
   toHarnessApprovalSettings
@@ -34,6 +35,14 @@ test("ask_user_questions 在 plan/ask 也要停车，不因只读被拒", () => 
   assert.equal(resolveToolApproval("ask_user_questions", "plan", AUTO_ALL), "user-approval")
   assert.equal(resolveToolApproval("ask_user_questions", "ask", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("ask_user_questions", "agent", AUTO_ALL), "user-approval")
+})
+
+test("探索态宿主拦截含 ACP 弱名 command", () => {
+  assert.equal(isExploreMutatingDeny("plan", "write_file"), true)
+  assert.equal(isExploreMutatingDeny("ask", "command"), true)
+  assert.equal(isExploreMutatingDeny("plan", "bash"), true)
+  assert.equal(isExploreMutatingDeny("plan", "read_file"), false)
+  assert.equal(isExploreMutatingDeny("agent", "write_file"), false)
 })
 
 test("Ask 模式下写盘、命令、提交一律拒绝", () => {

@@ -14,6 +14,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { ModelSwitchToast } from "./model-switch-feedback"
 import { ModelSwitchPanel, type SwitchableModel } from "./model-switch-panel"
 import { useComposerModelSwitch } from "./use-composer-model-switch"
@@ -21,15 +22,21 @@ import { useComposerModelSwitch } from "./use-composer-model-switch"
 export function ComposerModelChip({
   modelId,
   modelLabel,
-  models
+  models,
+  menuOpen,
+  onMenuOpenChange
 }: {
   modelId: string
   modelLabel: string
   models: ModelOption[]
+  menuOpen?: boolean
+  onMenuOpenChange?: (open: boolean) => void
 }) {
   const t = useT()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const [innerOpen, setInnerOpen] = useState(false)
+  const open = menuOpen ?? innerOpen
+  const setOpen = onMenuOpenChange ?? setInnerOpen
   const [toastLabel, setToastLabel] = useState<string | null>(null)
   const state = useComposerModelSwitch({ modelId, modelLabel, models })
 
@@ -82,6 +89,9 @@ export function ComposerModelChip({
                 : "bg-accent-500/10 text-text-primary ring-1 ring-accent-500/30 hover:bg-accent-500/15"
             )}
           >
+            <span className="flex size-3.5 shrink-0 items-center justify-center">
+              <AgentBrandIcon id={state.runtimeId} size={14} />
+            </span>
             <span className="text-text-secondary">{state.chip.engine}</span>
             {state.chip.model ? (
               <>
@@ -101,6 +111,7 @@ export function ComposerModelChip({
         >
           <ModelSwitchPanel
             kind={state.kind}
+            runtimeId={state.runtimeId}
             engineLabel={state.engineLabel}
             models={state.engineModels}
             currentId={state.effectiveId}
