@@ -39,6 +39,24 @@ test("供应商不会变成胶囊第三段", () => {
   assert.ok(!text.includes("Anthropic"))
 })
 
+test("ACP 会话覆盖优先于引擎默认 selectedModel", () => {
+  const label = composerActiveModelLabel({
+    runtimeId: "claude",
+    catalogLabel: "Sonnet 4",
+    catalogId: "sonnet",
+    sessionModelId: "opus",
+    agent: {
+      label: "Claude",
+      selectedModel: "sonnet",
+      models: [
+        { id: "sonnet", label: "Sonnet 4" },
+        { id: "opus", label: "Opus 4.1" }
+      ]
+    }
+  })
+  assert.equal(label, "Opus 4.1")
+})
+
 test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
   const grok = composerActiveModelLabel({
     runtimeId: "grok",

@@ -17,6 +17,7 @@ import { ComposerAttachMenu } from "./composer-attach-menu"
 import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
 import { formatComposerRemoteFootnote } from "@renderer/components/settings/workspace/parse-remote-label"
+import { ModelSwitchFootnoteSlot } from "./model-switch/model-switch-footnote-slot"
 import { useT } from "@renderer/i18n"
 
 export function ComposerFooter({
@@ -68,7 +69,9 @@ export function ComposerFooter({
         {t("settings.workspace.remoteFootnote")}
         {remoteLabel ? ` · ${formatComposerRemoteFootnote(remoteLabel)}` : ""}
       </p>
-    ) : null}
+    ) : (
+      <ModelSwitchFootnoteSlot modelId={modelId} modelLabel={modelLabel} models={models} />
+    )}
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
       <div className="flex min-w-0 items-center gap-2">
         <ComposerAttachMenu onPickFiles={onPickFiles} />

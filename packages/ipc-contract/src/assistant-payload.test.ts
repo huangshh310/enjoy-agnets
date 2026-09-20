@@ -38,6 +38,19 @@ test("正文里的引导词块写入信封并剥离围栏", () => {
   assert.equal(parsed.actionChips?.[0]?.label, "补测试")
 })
 
+test("本轮模型 stamp 走信封，换模后旧泡能回读", () => {
+  const raw = serializeAssistantPayload({
+    content: "ok",
+    modelId: "opus",
+    runtimeId: "claude"
+  })
+  assert.notEqual(raw, "ok")
+  const parsed = parseAssistantPayload(raw)
+  assert.equal(parsed.modelId, "opus")
+  assert.equal(parsed.runtimeId, "claude")
+  assert.equal(parseAssistantPayload("plain").modelId, undefined)
+})
+
 test("agent runKind 即使纯文本也走信封", () => {
   const raw = serializeAssistantPayload({ content: "hello", runKind: "agent" })
   assert.notEqual(raw, "hello")

@@ -24,6 +24,8 @@ export type ComposerActiveModelInput = {
   runtimeId: string
   catalogLabel: string
   catalogId: string
+  /** 会话覆盖优先于引擎默认 selectedModel。 */
+  sessionModelId?: string | null
   agent?: {
     label?: string
     selectedModel?: string | null
@@ -33,12 +35,12 @@ export type ComposerActiveModelInput = {
   }
 }
 
-/** Enjoy Local 用档案目录；ACP 用 CLI selectedModel。绑定档案时不要用 inspect 假目录。 */
+/** Enjoy Local 用档案目录；ACP 用会话覆盖或 CLI selectedModel。绑定档案时不要用 inspect 假目录。 */
 export function composerActiveModelLabel(input: ComposerActiveModelInput): string {
   if (input.runtimeId === ENJOY_LOCAL) {
     return input.catalogLabel.trim() || input.catalogId.trim()
   }
-  const selected = input.agent?.selectedModel?.trim()
+  const selected = input.sessionModelId?.trim() || input.agent?.selectedModel?.trim()
   const fromList = selected
     ? (input.agent?.models?.find((item) => item.id === selected)?.label ?? selected)
     : ""

@@ -53,6 +53,9 @@ export type AssistantPayload = {
   /** 本轮思考耗时（秒），结束后 Thinking 头仍显示 */
   thoughtSeconds?: number
   runKind?: AssistantRunKind
+  /** 本轮实际用的模型，换模后旧泡不改写。 */
+  modelId?: string
+  runtimeId?: string
   /** 轮末静态引导词；未点击不得自动发送。 */
   actionChips?: ActionChip[]
 } & AssistantExtras
@@ -69,13 +72,17 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
   const actionChips = taken.chips
   const hasExtras = sources.length > 0 || assets.length > 0 || payload.structured != null
   const runKind = parseRunKind(payload.runKind)
-  // 有 runKind / 引导词必须走信封，否则 hydrate 只能靠资产/正文推断。
+  const modelId = payload.modelId?.trim() || undefined
+  const runtimeId = payload.runtimeId?.trim() || undefined
+  // 有 runKind / 引导词 / 本轮模型必须走信封，否则 hydrate 只能靠资产/正文推断。
   if (
     !reasoning &&
     tools.length === 0 &&
     thoughtSeconds == null &&
     !hasExtras &&
     !runKind &&
+    !modelId &&
+    !runtimeId &&
     actionChips.length === 0
   ) {
     return taken.content
@@ -90,6 +97,8 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
     assets: assets.length > 0 ? assets : undefined,
     structured: payload.structured,
     runKind,
+    modelId,
+    runtimeId,
     actionChips: actionChips.length > 0 ? actionChips : undefined
   } satisfies AssistantPayload)
 }
@@ -111,6 +120,8 @@ export function parseAssistantPayload(raw: string): AssistantPayload {
         assets: parsed.assets,
         structured: parsed.structured,
         runKind: parseRunKind(parsed.runKind),
+        modelId: typeof parsed.modelId === "string" ? parsed.modelId : undefined,
+        runtimeId: typeof parsed.runtimeId === "string" ? parsed.runtimeId : undefined,
         actionChips: parsed.actionChips
       })
     }

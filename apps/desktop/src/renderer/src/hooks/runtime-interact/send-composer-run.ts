@@ -15,6 +15,7 @@ import {
 } from "../composer-run-control"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
+import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
@@ -84,7 +85,8 @@ function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
       streaming: true,
       reasoning: "",
       tools: [],
-      runKind
+      runKind,
+      ...pendingAssistantStamp(store)
     }
   ])
   return messages

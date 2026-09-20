@@ -44,6 +44,17 @@ test("hydrate 恢复轮末引导词", () => {
   assert.equal(message.actionChips?.[0]?.label, "补测试")
 })
 
+test("hydrate 恢复本轮模型 stamp，不看当前 picker", () => {
+  const message = mapAssistantThreadMessage(
+    { id: "msg_3", content: "ok", createdAt: 1 },
+    { v: 1, content: "ok", modelId: "opus", runtimeId: "claude" },
+    { sources: [], assets: [], components: [] },
+    []
+  )
+  assert.equal(message.modelId, "opus")
+  assert.equal(message.runtimeId, "claude")
+})
+
 test("无 stamp 的旧信封 runKind 为空", () => {
   const message = mapAssistantThreadMessage(
     { id: "msg_2", content: "ok", createdAt: 1 },

@@ -13,6 +13,7 @@ import { composerRunKind } from "./composer-run-kind"
 import { continueTodoTurn } from "./continue-todo-turn"
 import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
+import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -66,7 +67,8 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
       sources: undefined,
       assets: undefined,
       structured: undefined,
-      runKind
+      runKind,
+      ...pendingAssistantStamp(store)
     }
   ]
 
@@ -135,7 +137,8 @@ export async function editAndResendUserTurn(
       sources: undefined,
       assets: undefined,
       structured: undefined,
-      runKind
+      runKind,
+      ...pendingAssistantStamp(store)
     }
   ]
 

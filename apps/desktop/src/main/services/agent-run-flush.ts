@@ -12,6 +12,8 @@ export type FlushableRun = {
   startedAt: number
   extras: AssistantExtras
   runKind?: AssistantRunKind
+  modelId?: string
+  runtimeId?: string
 }
 
 export type AssistantFlushPayload = {
@@ -22,6 +24,8 @@ export type AssistantFlushPayload = {
   startedAt: number
   extras: AssistantExtras
   runKind?: AssistantRunKind
+  modelId?: string
+  runtimeId?: string
 }
 
 /** 流式 checkpoint 最短间隔：每个 token 都写库会拖慢 ACP 长跑。 */
@@ -55,7 +59,9 @@ export function flushPayloadFromRun(run: FlushableRun): AssistantFlushPayload | 
     tools: run.tools,
     startedAt: run.startedAt,
     extras: run.extras,
-    runKind: run.runKind
+    runKind: run.runKind,
+    modelId: run.modelId,
+    runtimeId: run.runtimeId
   }
 }
 

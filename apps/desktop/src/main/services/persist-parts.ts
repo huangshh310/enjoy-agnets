@@ -85,6 +85,8 @@ export function persistFinishedAssistant(input: {
   startedAt: number
   extras: AssistantExtras
   runKind?: AssistantRunKind
+  modelId?: string
+  runtimeId?: string
   /** 已有行则覆盖，保证一轮只占一条助手消息。 */
   messageId?: string
 }): string | undefined {
@@ -115,6 +117,8 @@ function serializeAssistantEnvelope(input: {
   startedAt: number
   extras: AssistantExtras
   runKind?: AssistantRunKind
+  modelId?: string
+  runtimeId?: string
 }): string {
   const extras = input.extras
   const envelope = {
@@ -125,7 +129,9 @@ function serializeAssistantEnvelope(input: {
     sources: extras.sources,
     assets: extras.assets,
     structured: extras.structured,
-    runKind: input.runKind
+    runKind: input.runKind,
+    modelId: input.modelId,
+    runtimeId: input.runtimeId
   }
   try {
     return serializeAssistantPayload(envelope)

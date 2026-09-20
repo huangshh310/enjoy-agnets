@@ -10,8 +10,16 @@ export function useComposerActiveModelLabel(): string {
   const runtimeId = useChatStore((state) => state.runtimeId)
   const catalogLabel = useChatStore((state) => state.modelLabel)
   const catalogId = useChatStore((state) => state.modelId)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const sessionModels = useChatStore((state) => state.sessionModels)
   const snapshot = useSettingsSnapshot()
   const agent =
     snapshot.data?.agentTools?.find((tool) => tool.id === runtimeId) ?? rememberedAgentTool(runtimeId)
-  return composerActiveModelLabel({ runtimeId, catalogLabel, catalogId, agent })
+  return composerActiveModelLabel({
+    runtimeId,
+    catalogLabel,
+    catalogId,
+    sessionModelId: sessionId ? sessionModels[sessionId] : undefined,
+    agent
+  })
 }

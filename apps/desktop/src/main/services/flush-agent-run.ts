@@ -41,7 +41,9 @@ function writeAssistantRow(run: ActiveRun): boolean {
     tools: run.tools,
     startedAt: run.startedAt,
     extras: { sources: run.citedSources },
-    runKind: "agent"
+    runKind: "agent",
+    modelId: run.input.modelId,
+    runtimeId: run.input.runtimeId
   })
   if (!payload) return false
   try {
