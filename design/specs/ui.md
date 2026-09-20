@@ -61,7 +61,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - Composer 探索/执行分段与拦截：`ai-chat/composer/explore-execute/`（C1 全引擎常驻）；`composer-mode.ts` 只做 ask/plan ↔ 探索、agent ↔ 执行
 - Composer 宿主注入一行芯片：`ai-chat/composer/host-inject/`（空不画；Popover 内脚注 / 管理扩展）；快照 `stores/host-inject/`；合约 `packages/ipc-contract/src/host-inject.ts`
 - Composer `@` 发现（文件 / 文档 / 技能 / MCP，网页 muted）与 `/` 内置（compact + 探索/执行）+ 技能面板：`ai-chat/composer/mentions/`
-- 会话目标 / Recap：`composer/session-goal-chip.tsx`（只从底栏 `…` 打开，不贴探索|执行旁）；侧栏状态分组：`sidebar/sidebar-status-groups.tsx`、`session-row-menu.tsx`、`sort-sessions.ts`
+- 会话目标 / Recap：`composer/session-goal-chip.tsx` + `session-recap-button.tsx`（只从底栏指南针打开）；发送垫 `hooks/session-context-inject.ts`。侧栏状态分组：`sidebar/sidebar-status-groups.tsx`、`session-row-menu.tsx`、`sort-sessions.ts`
 - Mermaid：`thread/mermaid/`；Preview Rail：`thread/thread-preview-rail.tsx`（窄屏与账本开启时隐藏，杜绝刻度穿插气泡）
 - Shift+Tab 审批循环：`use-permission-cycle-hotkey.ts`（挂 `chat-stage.tsx`）
 - 本轮来源芯片与「本轮来源」sheet：`ai-chat/thread/sources/` + `stores/sources-sheet/`（芯片 / 账本行共用；芯片入口仍认 [`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)，锁 tip `76b5ecd`；账本分组 / 来源诚实空态认 [`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)，锁 tip `b1721a7`）
@@ -90,7 +90,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - **隐患**：Claude / Cursor 等选不了思考。根因：`composerChromeFor.thinking` 只认 `effort`，`model-id` 被整颗藏掉。正确做法：`composerThinkingChrome` — effort 五档；model-id 「思考 · 跟模型」；none 隐藏。
 - **隐患**：ACP 上探索/执行分段消失。根因：`ExploreExecuteToggle` 按 `executionModes!==enjoy-local` `return null`。正确做法（C1）：全引擎常驻、两钮可点，探索 = 宿主拦写/命令；不能拦截才 C2 整组禁用 + 可见原因，禁止只灰探索。
 - **隐患**：改旗标/状态后会话被顶到最上。根因：`session.patch` 误 bump `updated_at`。正确做法：patch 不改活跃时间；排序仍按真实对话。
-- **隐患**：Recap tooltip 写「已注入」但本轮还没发。正确做法：只在下一轮 `send-composer-run` 垫 system 句；Goal 永不进模型。inspect-prompt 从 SQLite 重建时可能看不到这条合成 system 句。
+- **隐患**：Recap tooltip 写「已注入」但本轮还没发；Goal 只落库助手看不见。正确做法：下一轮 `send-composer-run` 垫 `[Session Goal]` / `[Session Recap]`（Enjoy 走 system；ACP 折进用户 prompt 围栏，气泡剥掉）。失败要在溢出菜单写出来。inspect-prompt 从 SQLite 重建时可能看不到合成句。
 - Mermaid：`securityLevel: "strict"`，失败回退代码块，不要 CDN mermaid.js。改皮只动 `render-mermaid.ts`。`themeVariables` 仍有裸 hex。
 - **隐患**：窄屏看不见 Preview Rail。根因：有意 `min-[768px]:flex`。不要当 bug 加回挤布局。
 - **隐患**：账本打开时 Preview Rail 刺入右侧用户气泡。根因：绝对定位在 Stage 右侧，账本占据 292px 后刻度正好贴在分割线上且 48px 亮蓝横条向左穿透气泡。正确做法：账本存在时（`hasLedger && min-[1100px]`）自动隐藏 Rail，单栏刻度收敛至 24px 微线且去纯蓝粗刺。

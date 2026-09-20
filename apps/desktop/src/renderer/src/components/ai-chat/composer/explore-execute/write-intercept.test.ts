@@ -4,6 +4,7 @@ import { findExploreWriteIntercept, isWriteLikeTool } from "./write-intercept.ts
 
 test("只拦探索态被拒或待审的写工具", () => {
   assert.equal(isWriteLikeTool({ name: "write_file" }), true)
+  assert.equal(isWriteLikeTool({ name: "str_replace" }), true)
   assert.equal(isWriteLikeTool({ name: "read_file" }), false)
   const hit = findExploreWriteIntercept([
     {

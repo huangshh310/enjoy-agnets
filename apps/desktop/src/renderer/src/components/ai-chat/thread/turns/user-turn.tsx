@@ -25,7 +25,7 @@ import { UserSentQuotes } from "./user-sent-quotes"
 export function UserTurn({ message }: { message: ThreadMessage }) {
   const t = useT()
   const quoted = splitQuotedDisplay(message.content)
-  const view = { chips: quoted.chips, text: stripHostModePrefix(quoted.text) }
+  const view = { chips: quoted.chips, text: visibleUserText(message.content) }
   const [isEditing, setIsEditing] = useState(false)
   const [draftContent, setDraftContent] = useState(view.text || message.content)
   const [isSubmitting, setIsSubmitting] = useState(false)

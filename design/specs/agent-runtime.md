@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-20
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-21
 
 ## 当前真相
 
@@ -91,7 +91,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 
 ## 已知坑
 
-- **隐患**：Goal 当已注入、Recap 当「已经在模型里」。Goal 只 `session.patch` 落库。Recap 由 renderer 在下一轮 `messages` 头垫 `[Session Recap]` system 句（`send-composer-run.ts`），不是 `extraInstructions`；`inspect-prompt` 从 SQLite 重建时可能看不到。ACP 同样会带上这条 messages，但 CLI 未必当 system 用。
+- **隐患**：Goal 当已注入、Recap 当「已经在模型里」。正确做法：下一轮 `applySessionContextToOutgoing`。Enjoy 垫 `[Session Goal]` / `[Session Recap]` system 句；ACP 折进最后一条用户正文的 `[Enjoy session context]` 围栏（气泡剥掉），因为 CLI 常丢掉 system。不是 `extraInstructions`。`inspect-prompt` 从 SQLite 重建时可能看不到。
 - ACP 开流忽略 `fast` / `reasoningEffort` / 执行模式；纠偏进下一轮 `session/prompt`，不要当成 Cursor 原生 steer。Enjoy Local Fast 没配 `fastModelId` 时本轮不换模型。Composer 探索对照 Codex 切宿主协作模式。ACP 禁止 `session/set_mode`，也禁止用 `引用自步骤` 假装切了模式（模型会当成引用、声称仍是 Normal）。正确做法：`setMode` + 每轮 Prompt 围栏 + 顶栏分段 + 宿主 deny 写/命令。不要把 ACP 探索画成「引擎自己锁了工具」。C 端不要写 `/plan`。
 - **隐患**：ACP Stop 若 `disposeAcpSession` 会丢掉 CLI 上下文，下一轮 `composeAcpPrompt` 只带最后一句用户句。正确做法：Stop / 活着的 fail 只 `session/cancel`。换引擎 / 换模型 / 删会话 / 增删 MCP / 子进程已死 / 退出才 dispose。`plan` 事件必须走 `mapAcpPlan` → `todo_write`，不要在 `mapAcpUpdate` 里丢掉。
 - Composer `/compact` 走 Enjoy `session.compact`（压缩发给模型的 SQLite 历史，UI 气泡不删）。不要把 `/compact` 当用户句发出去；会话太短会抛 `COMPACTION_TOO_SHORT`，UI 翻词表。ACP `compact=cli` 仍用这条宿主压缩，不是引擎原生 slash。

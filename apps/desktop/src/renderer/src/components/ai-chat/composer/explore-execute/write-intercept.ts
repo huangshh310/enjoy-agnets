@@ -17,7 +17,9 @@ const WRITE_LIKE = new Set([
   "code_mode",
   "git_commit",
   "git_branch",
-  "git_push"
+  "git_push",
+  "str_replace",
+  "apply_patch"
 ])
 
 const INTERCEPT_STATES = new Set(["output-denied", "approval-requested"])

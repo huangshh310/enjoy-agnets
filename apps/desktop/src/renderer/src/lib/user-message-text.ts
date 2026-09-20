@@ -3,9 +3,10 @@
  */
 import { splitQuotedDisplay } from "@enjoy-agents/ipc-contract/quoted-context"
 import { stripHostModePrefix } from "../components/ai-chat/composer/mentions/host-mode-prefix.ts"
+import { stripSessionContext } from "../hooks/session-context-inject.ts"
 
 export function visibleUserText(content: string): string {
-  return stripHostModePrefix(splitQuotedDisplay(content).text).trim()
+  return stripSessionContext(stripHostModePrefix(splitQuotedDisplay(content).text)).trim()
 }
 
 /** 本线程已发送的用户正文，最近的在前。空句丢掉。 */

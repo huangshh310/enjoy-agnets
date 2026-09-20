@@ -110,7 +110,7 @@ test("探索/执行表面文件未被这轮改写", () => {
 })
 
 test("阶段总结芯片不硬编码 Recap", () => {
-  const goal = readFileSync(join(dir, "../../composer/session-goal-chip.tsx"), "utf8")
+  const goal = readFileSync(join(dir, "../../composer/session-recap-button.tsx"), "utf8")
   assert.ok(goal.includes('t("chat.generateRecap")'))
   assert.ok(!goal.includes('currentRecap ? "Recap"'))
   assert.equal(zhChat.generateRecap, "阶段总结")

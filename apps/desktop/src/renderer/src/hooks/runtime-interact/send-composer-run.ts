@@ -17,6 +17,7 @@ import {
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
+import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
@@ -137,16 +138,17 @@ async function startComposerRun(
     ? "agent"
     : composerRunKind(store.modelId, currentCaps(store))
   const sessionNode = store.repositories.find((r) => r.id === store.sessionId)
-  const recap = sessionNode?.recap?.trim()
   const history = messages.map((message) => ({
     id: message.id,
     role: message.role,
     content: message.content,
     reasoning: message.reasoning
   }))
-  const outgoingMessages = recap
-    ? [{ role: "system" as const, content: `[Session Recap]: ${recap}` }, ...history]
-    : history
+  const outgoingMessages = applySessionContextToOutgoing(
+    isAcpComposerRuntime(store.runtimeId),
+    { goal: sessionNode?.goal, recap: sessionNode?.recap },
+    history
+  )
 
   if (kind === "image" || kind === "video") {
     return getIde().ai.generate({

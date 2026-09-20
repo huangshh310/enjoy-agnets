@@ -25,7 +25,7 @@ export function ComposerOverflowMenu() {
         side="top"
         align="end"
         sideOffset={6}
-        className="w-[230px] rounded-xl border border-border-button-default bg-background-primary-default p-2.5 shadow-card"
+        className="w-[272px] rounded-xl border border-border-button-default bg-background-primary-default p-2.5 shadow-card"
       >
         <div className="border-b border-separator-border/60 px-1 pb-2 mb-1.5">
           <p className="text-caption-1-semibold text-text-primary">{t("chat.composerOverflow")}</p>

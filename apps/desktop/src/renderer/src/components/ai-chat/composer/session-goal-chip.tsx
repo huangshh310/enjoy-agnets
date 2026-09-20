@@ -1,32 +1,31 @@
 /**
- * 会话目标芯片与 Recap：
- * 1. 目标只落库（session.patch），不进模型。
- * 2. Recap 由 session.recap 生成入库；下一轮 send-composer-run 垫 [Session Recap] system 句。
+ * 会话目标与 Recap：落库；下一轮 send 垫进模型（气泡剥掉）。
  */
 import { useState, type KeyboardEvent } from "react"
-import { RiCheckLine, RiCompass3Line, RiLoader4Line, RiSparkling2Line } from "@remixicon/react"
+import { RiCheckLine, RiCompass3Line } from "@remixicon/react"
 import { getIde } from "@renderer/lib/ide"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import { cx } from "@/utils/cx"
+import { SessionRecapButton } from "./session-recap-button"
 
 export function SessionGoalChip({
   className,
   layout = "bar"
 }: {
   className?: string
-  /** menu：底栏溢出，不占探索|执行旁。 */
   layout?: "bar" | "menu"
 } = {}) {
   const t = useT()
   const sessionId = useChatStore((state) => state.sessionId)
   const sessionNode = useChatStore((state) =>
-    state.repositories.find((r) => r.id === sessionId)
+    state.repositories.find((row) => row.id === sessionId)
   )
-
   const [isEditing, setIsEditing] = useState(false)
   const [goalDraft, setGoalDraft] = useState("")
   const [isRecapping, setIsRecapping] = useState(false)
+  const [goalError, setGoalError] = useState<string | null>(null)
+  const [recapError, setRecapError] = useState<string | null>(null)
 
   if (!sessionId || !sessionNode) return null
 
@@ -35,6 +34,7 @@ export function SessionGoalChip({
 
   function handleStartEdit() {
     setGoalDraft(currentGoal)
+    setGoalError(null)
     setIsEditing(true)
   }
 
@@ -45,16 +45,17 @@ export function SessionGoalChip({
     try {
       await getIde().session.patch({ id: sessionId!, goal: nextGoal })
       useChatStore.getState().patchSessionNode(sessionId!, { goal: nextGoal })
+      setGoalError(null)
     } catch {
-      // 忽略失败
+      setGoalError(t("chat.goalSaveFailed"))
     }
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      e.preventDefault()
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault()
       void handleSaveGoal()
-    } else if (e.key === "Escape") {
+    } else if (event.key === "Escape") {
       setIsEditing(false)
     }
   }
@@ -62,13 +63,16 @@ export function SessionGoalChip({
   async function handleGenerateRecap() {
     if (isRecapping || !sessionId) return
     setIsRecapping(true)
+    setRecapError(null)
     try {
       const res = (await getIde().session.recap({ sessionId })) as { recap: string }
-      if (res?.recap) {
-        useChatStore.getState().patchSessionNode(sessionId, { recap: res.recap })
+      if (!res?.recap) {
+        setRecapError(t("chat.recapFailed"))
+        return
       }
+      useChatStore.getState().patchSessionNode(sessionId, { recap: res.recap })
     } catch {
-      // 静默失败
+      setRecapError(t("chat.recapFailed"))
     } finally {
       setIsRecapping(false)
     }
@@ -78,83 +82,102 @@ export function SessionGoalChip({
     <div
       className={cx(
         "text-caption-2-medium",
-        layout === "menu" ? "flex flex-col gap-0.5" : "inline-flex items-center gap-1.5",
+        layout === "menu" ? "flex flex-col gap-1" : "inline-flex items-center gap-1.5",
         className
       )}
     >
-      {/* 目标展示 / 编辑 */}
-      {isEditing ? (
-        <div className="flex h-6 items-center gap-1 rounded-full border border-accent-500 bg-background-primary-default px-2 shadow-2xs">
-          <RiCompass3Line className="size-3 text-accent-500 shrink-0" />
-          <input
-            type="text"
-            value={goalDraft}
-            autoFocus
-            placeholder={t("chat.setGoalPlaceholder")}
-            onChange={(e) => setGoalDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={() => void handleSaveGoal()}
-            className="w-32 bg-transparent text-caption-2-medium text-text-primary focus:outline-hidden"
-          />
-          <button
-            type="button"
-            onClick={() => void handleSaveGoal()}
-            className="cursor-pointer text-accent-600 hover:text-accent-500"
-          >
-            <RiCheckLine className="size-3" />
-          </button>
-        </div>
-      ) : currentGoal ? (
-        <button
-          type="button"
-          onClick={handleStartEdit}
-          title={t("chat.editGoalTitle")}
-          className={cx(
-            "group inline-flex cursor-pointer items-center gap-1 text-text-secondary transition-colors hover:text-text-primary",
-            layout === "menu"
-              ? "h-8 w-full rounded-lg px-2 hover:bg-background-secondary-hover"
-              : "h-6 max-w-[180px] rounded-full border border-border-button-default bg-background-primary-default/80 px-2 hover:border-border-button-hover"
-          )}
-        >
-          <RiCompass3Line className="size-3 text-accent-500 shrink-0" />
-          <span className="truncate">{currentGoal}</span>
-        </button>
+      <GoalRow
+        layout={layout}
+        editing={isEditing}
+        draft={goalDraft}
+        current={currentGoal}
+        onDraft={setGoalDraft}
+        onStart={handleStartEdit}
+        onSave={() => void handleSaveGoal()}
+        onKeyDown={handleKeyDown}
+      />
+      {goalError ? (
+        <p className="px-2 text-caption-2-regular text-text-warning-primary">{goalError}</p>
+      ) : null}
+      {layout === "menu" ? (
+        <SessionRecapButton
+          recap={currentRecap}
+          recapping={isRecapping}
+          error={recapError}
+          onGenerate={() => void handleGenerateRecap()}
+        />
       ) : (
-        <button
-          type="button"
-          onClick={handleStartEdit}
-          className={cx(
-            "inline-flex cursor-pointer items-center gap-1 text-text-tertiary transition-colors hover:text-text-secondary",
-            layout === "menu"
-              ? "h-8 w-full rounded-lg px-2 hover:bg-background-secondary-hover"
-              : "h-6 rounded-full px-2 hover:bg-background-tertiary-default"
-          )}
-        >
-          <RiCompass3Line className="size-3 shrink-0" />
-          <span>{t("chat.addGoal")}</span>
-        </button>
+        <SessionRecapButton
+          recap=""
+          recapping={isRecapping}
+          error={recapError}
+          onGenerate={() => void handleGenerateRecap()}
+        />
       )}
+    </div>
+  )
+}
 
-      {/* Recap 阶段总结 */}
-      <button
-        type="button"
-        onClick={() => void handleGenerateRecap()}
-        disabled={isRecapping}
-        title={currentRecap ? `${t("chat.recapTooltipPrefix")}\n${currentRecap}` : t("chat.generateRecapTitle")}
+function GoalRow({
+  layout,
+  editing,
+  draft,
+  current,
+  onDraft,
+  onStart,
+  onSave,
+  onKeyDown
+}: {
+  layout: "bar" | "menu"
+  editing: boolean
+  draft: string
+  current: string
+  onDraft: (value: string) => void
+  onStart: () => void
+  onSave: () => void
+  onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
+}) {
+  const t = useT()
+  if (editing) {
+    return (
+      <div
         className={cx(
-          "inline-flex cursor-pointer items-center gap-1 text-text-tertiary transition-colors hover:text-text-secondary disabled:opacity-50",
-          layout === "menu"
-            ? "h-8 w-full rounded-lg px-2 hover:bg-background-secondary-hover"
-            : "h-6 rounded-full px-2 hover:bg-background-tertiary-default"
+          "flex items-center gap-1 border border-accent-500 bg-background-primary-default px-2 shadow-2xs",
+          layout === "menu" ? "h-8 w-full rounded-lg" : "h-6 rounded-full"
         )}
       >
-        {isRecapping ? (
-          <RiLoader4Line className="size-3 animate-spin text-accent-500 shrink-0" />
-        ) : (
-          <RiSparkling2Line className="size-3 text-accent-500 shrink-0" />
-        )}
-        <span>{t("chat.generateRecap")}</span>
-      </button>
-    </div>
+        <RiCompass3Line className="size-3 shrink-0 text-accent-500" />
+        <input
+          type="text"
+          value={draft}
+          autoFocus
+          placeholder={t("chat.setGoalPlaceholder")}
+          onChange={(event) => onDraft(event.target.value)}
+          onKeyDown={onKeyDown}
+          onBlur={onSave}
+          className="min-w-0 flex-1 bg-transparent text-caption-2-medium text-text-primary focus:outline-hidden"
+        />
+        <button type="button" onClick={onSave} className="cursor-pointer text-accent-600 hover:text-accent-500">
+          <RiCheckLine className="size-3" />
+        </button>
+      </div>
+    )
+  }
+  return (
+    <button
+      type="button"
+      onClick={onStart}
+      title={current ? t("chat.editGoalTitle") : undefined}
+      className={cx(
+        "inline-flex cursor-pointer items-center gap-1.5 transition-colors",
+        layout === "menu"
+          ? "h-8 w-full rounded-lg px-2 hover:bg-background-secondary-hover"
+          : "h-6 max-w-[180px] rounded-full px-2 hover:bg-background-tertiary-default",
+        current ? "text-text-secondary hover:text-text-primary" : "text-text-tertiary hover:text-text-secondary"
+      )}
+    >
+      <RiCompass3Line className={cx("size-3 shrink-0", current && "text-accent-500")} />
+      <span className="min-w-0 truncate">{current || t("chat.addGoal")}</span>
+    </button>
   )
 }

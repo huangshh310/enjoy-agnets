@@ -7,6 +7,8 @@ test("剥引用块与宿主围栏，只留用户正文", () => {
   assert.equal(visibleUserText(quoted), "请改这里")
   const fenced = "[Enjoy host mode: plan]\nDo not edit.\n[/Enjoy host mode]\n\n只读看看"
   assert.equal(visibleUserText(fenced), "只读看看")
+  const context = "[Enjoy session context]\nGoal: 改登录\n[/Enjoy session context]\n\n继续"
+  assert.equal(visibleUserText(context), "继续")
 })
 
 test("召回列表最近的在前，空用户句丢掉", () => {
