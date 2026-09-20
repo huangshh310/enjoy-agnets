@@ -21,7 +21,7 @@ import {
 } from "./reasoning-effort-config"
 import { MiniEnergyMeter, ReasoningEnergyBar } from "./reasoning-energy-bar"
 
-export function ReasoningEffortToggle() {
+export function ReasoningEffortToggle({ compact = false }: { compact?: boolean } = {}) {
   const reasoningEffort = useChatStore((state) => state.reasoningEffort)
   const setReasoningEffort = useChatStore((state) => state.setReasoningEffort)
   const t = useT()
@@ -33,19 +33,25 @@ export function ReasoningEffortToggle() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-testid="composer-thinking-effort"
           aria-label={t("chat.effortAria")}
           className={cx(
-            "group flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-caption-1-medium outline-none transition-all shadow-2xs focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            "group flex shrink-0 items-center whitespace-nowrap rounded-full outline-none transition-all focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            compact
+              ? "h-6 gap-1 px-2 text-caption-2-medium ring-1 ring-border-button-default/80"
+              : "h-8 gap-1.5 px-2.5 text-caption-1-medium shadow-2xs",
             currentMeta.value !== "none"
               ? currentMeta.badgeClass
               : "text-text-secondary hover:bg-background-secondary-hover hover:text-text-primary"
           )}
         >
-          <RiBrainLine className={cx("size-3.5 shrink-0 transition-colors", currentMeta.iconColorClass)} />
+          <RiBrainLine className={cx("size-3 shrink-0 transition-colors", currentMeta.iconColorClass)} />
           <span className="whitespace-nowrap font-semibold">{currentMeta.label}</span>
-          <span className="ml-0.5 inline-flex">
-            <MiniEnergyMeter value={reasoningEffort} />
-          </span>
+          {compact ? null : (
+            <span className="ml-0.5 inline-flex">
+              <MiniEnergyMeter value={reasoningEffort} />
+            </span>
+          )}
         </button>
       </DropdownMenuTrigger>
 

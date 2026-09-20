@@ -6,6 +6,7 @@ import type { McpServer, SkillItem } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useHostInjectStore } from "@renderer/stores/host-inject/host-inject-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { hostInjectEnabledCounts } from "./host-inject-chip-label.ts"
 import { hostInjectBarView } from "./host-inject-view.ts"
 
 export function useHostInjectBar() {
@@ -27,12 +28,24 @@ export function useHostInjectBar() {
         workspacePath: useChatStore.getState().workspaceRootPath ?? undefined
       }) as Promise<SkillItem[]>
   })
-  const enabledMcp = mcpQuery.data?.filter((row) => row.trusted).length ?? 0
-  const enabledSkills = skillsQuery.data?.length ?? 0
-  return hostInjectBarView({
-    runtimeId,
-    snapshot: snapshot?.runtimeId === runtimeId ? snapshot : undefined,
-    enabledMcp,
-    enabledSkills
+  const queryMcp = mcpQuery.data?.filter((row) => row.trusted).length ?? 0
+  const querySkills = skillsQuery.data?.length ?? 0
+  const sameRuntime = snapshot?.runtimeId === runtimeId
+  const enabled = hostInjectEnabledCounts({
+    snapshotEnabledMcp: snapshot?.mcp.enabled.length,
+    snapshotEnabledSkills: snapshot?.skills.enabled.length,
+    queryMcp,
+    querySkills,
+    sameRuntime: Boolean(sameRuntime)
   })
+  return {
+    view: hostInjectBarView({
+      runtimeId,
+      snapshot: sameRuntime ? snapshot : undefined,
+      enabledMcp: queryMcp,
+      enabledSkills: querySkills
+    }),
+    enabledMcp: enabled.mcp,
+    enabledSkills: enabled.skills
+  }
 }

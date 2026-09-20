@@ -28,6 +28,7 @@ function readPreview(): string {
 
 const preview = readPreview()
 const bar = readFileSync(join(dir, "host-inject-bar.tsx"), "utf8")
+const popover = readFileSync(join(dir, "host-inject-popover.tsx"), "utf8")
 const view = readFileSync(join(dir, "host-inject-view.ts"), "utf8")
 const honesty = readFileSync(join(dir, "../../../settings/agent-tools/native-plugin-copy.tsx"), "utf8")
 
@@ -46,6 +47,8 @@ test("中英词表对齐预览，不用已同步/已注入 0", () => {
   assert.equal(zhChat.hostInjectMcpUnsupported, "此引擎只用自带 MCP；Enjoy #/mcp 未注入")
   assert.equal(zhChat.hostInjectSkillsUnsupported, "此引擎不支持宿主技能注入")
   assert.equal(zhChat.hostInjectFromEnjoy, "来自 Enjoy")
+  assert.equal(zhChat.hostInjectChip, "扩展 · MCP {mcp} · Skills {skills}")
+  assert.equal(zhChat.hostInjectManage, "管理扩展")
   assert.equal(zhChat.hostInjectManageMcp, "管理 → #/mcp")
   assert.equal(zhChat.hostInjectManageSkills, "管理 → #/skills")
   assert.equal(zhChat.hostInjectFootnote, "真源在 Enjoy；助手只消费。原生插件仍在各 CLI。")
@@ -59,12 +62,14 @@ test("中英词表对齐预览，不用已同步/已注入 0", () => {
   assert.doesNotMatch(enSettings.agentTools.hostExtensionsFootnote, /marketplace|Grok store/i)
 })
 
-test("微条与抽屉源码不含空绿成功与协议微标", () => {
-  assert.ok(bar.includes("hostInjectedTurn"))
-  assert.ok(bar.includes("hostInjectFootnote"))
-  assert.ok(bar.includes("hostInjectMcpUnsupported"))
-  assert.ok(bar.includes('to: "/mcp"'))
-  assert.ok(bar.includes('to: "/skills"'))
+test("微条是一行芯片，脚注与管理只进 Popover", () => {
+  assert.ok(bar.includes("host-inject-chip"))
+  assert.ok(bar.includes("HostInjectPopover"))
+  assert.ok(popover.includes("hostInjectFootnote"))
+  assert.ok(popover.includes("hostInjectManage"))
+  assert.ok(popover.includes('section: "extensions"'))
+  assert.equal(bar.includes("hostInjectManageMcp"), false)
+  assert.equal(bar.includes("hostInjectManageSkills"), false)
   assert.ok(!bar.includes("已同步到助手"))
   assert.ok(!bar.includes("ACP"))
   assert.ok(!bar.includes("hostExtensionsBadge"))

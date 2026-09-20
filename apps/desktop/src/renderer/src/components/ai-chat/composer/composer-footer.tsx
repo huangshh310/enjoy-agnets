@@ -1,6 +1,6 @@
 /**
  * Composer 底栏：附件、策略、Fast、语音与发送。
- * 探索/执行、思考、引擎与模型芯片在顶栏。
+ * 探索/执行、单一引擎芯片与思考小档在顶栏；目标/阶段进溢出菜单。
  */
 import { RiMicLine } from "@remixicon/react"
 import { composerChromeFor } from "@enjoy-agents/ipc-contract"
@@ -12,6 +12,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
+import { ComposerOverflowMenu } from "./composer-overflow-menu"
 import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
 import { formatComposerRemoteFootnote } from "@renderer/components/settings/workspace/parse-remote-label"
@@ -98,6 +99,7 @@ export function ComposerFooter({
             <span className="truncate">{thinkingLabel || t("chat.working")}</span>
           </span>
         ) : null}
+        <ComposerOverflowMenu />
         <ComposerSendSplit
           running={running}
           hasDraft={hasDraft}
