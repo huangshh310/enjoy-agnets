@@ -4,7 +4,7 @@
 
 ## 当前真相
 
-设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。
+设置 `#/settings/extensions` 对精选技能只读投影（`skills-curated.constants.ts`），添加 / 点卡深链本页（`?tab=curated&install=`），不新开安装内核。P0-S 宿主技能注入视觉真源（设计锁，不宣称应用 1:1）：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)；产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。`#/skills`（+ skill-sources）仍是唯一 SoT，家目录不作第二真源。
 
 1. **工作模块与路由**：`#/skills` 是应用内唯一的 Skills 工作模块。情境导航栏（Secondary Sidebar）包含三组导航：
    - 技能中心：精选集市 (`curated`)、全部能力库 (`all`)、技能包合集 (`packs`)。

@@ -1,0 +1,245 @@
+<!-- 【视觉真源】P0-S Skills/MCP 宿主透传 · Luna -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0-S · Skills/MCP 宿主透传 · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', warn: '#C2410C', ok: '#16A34A'
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-s-skills-mcp-inject.html · 【视觉真源】P0-S Skills/MCP 宿主透传 · Luna</p>
+      <h1 class="mt-1 text-[17px] font-semibold">Skills / MCP 宿主透传 · 真源在 Enjoy，助手只消费</h1>
+      <p class="mt-1 text-[12px] text-mute">Jojo 锁。<code>#/mcp</code> + <code>#/skills</code>（+ skill-sources）是唯一 SoT。开 ACP 流时把当前已启用项注入本轮引擎；CLI 只读消费。家目录 / <code>dsh plugin add</code> 不是第二真源。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">锁</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li>配置只在 Enjoy <code>#/mcp</code> · <code>#/skills</code>；本页深链「管理」，<strong class="text-ink">无第二套 CRUD</strong></li>
+        <li>开流摘要只报<strong class="text-ink">本轮已注入</strong>；空启用不造假行</li>
+        <li>引擎不支持：警告卡，<strong class="text-ink">禁止</strong>绿灯空成功「已同步到助手」</li>
+        <li>P0-H 是发现壳；P0-S 是开流注入。原生 hooks / Cordis / OpenCode 仍在各 CLI</li>
+        <li>≠ 插件市场 / Registry 卖 MCP·Skills / 假 Grok 店 / 改 F1 / 假 BYOK / worktree / 主路径「去助手侧装」</li>
+      </ul>
+    </aside>
+
+    <!-- ① SoT -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">① MCP | Skills 已启用 SoT</h2>
+      <p class="text-[11px] text-mute">紧凑条只列 Enjoy 真源里<strong class="text-ink">已启用</strong>的项。计数不是「已配置」。管理只深链，不在这里再开表单。</p>
+      <div class="rounded-2xl border border-line p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p class="text-[13px] font-semibold">已启用 2 MCP · 3 Skills</p>
+          <div class="flex items-center gap-3 text-[11px]">
+            <a class="text-accent" href="#/mcp">管理 → #/mcp</a>
+            <a class="text-accent" href="#/skills">管理 → #/skills</a>
+          </div>
+        </div>
+        <div class="mt-3 grid gap-3 md:grid-cols-2">
+          <article class="rounded-xl border border-line bg-paper px-3 py-2.5">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">MCP</p>
+            <ul class="mt-1.5 space-y-1.5">
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-[12px] font-medium">Filesystem</span>
+                <span class="text-[10px] text-mute">读写工作区</span>
+              </li>
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-[12px] font-medium">GitHub</span>
+                <span class="text-[10px] text-mute">仓库 · Issue · PR</span>
+              </li>
+            </ul>
+          </article>
+          <article class="rounded-xl border border-line bg-paper px-3 py-2.5">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">Skills</p>
+            <ul class="mt-1.5 space-y-1.5">
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-[12px] font-medium">form-a11y</span>
+                <span class="text-[10px] text-mute">表单无障碍</span>
+              </li>
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-[12px] font-medium">Superpowers</span>
+                <span class="text-[10px] text-mute">TDD · 审查 · 子 Agent</span>
+              </li>
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-[12px] font-medium">impeccable</span>
+                <span class="text-[10px] text-mute">前端审美与排版</span>
+              </li>
+            </ul>
+          </article>
+        </div>
+        <p class="mt-3 text-[11px] text-mute">切换引擎仍用同一真源再注入</p>
+      </div>
+    </section>
+
+    <!-- ② 开流已注入 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">② 开流「已注入本轮」摘要</h2>
+      <p class="text-[11px] text-mute">支持引擎开流后出现微条。点开才列名。Sources 可标「来自 Enjoy」。空启用不画假注入行。</p>
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div class="min-w-0 flex-1 rounded-2xl border border-line p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-2">
+            <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+              <span class="rounded-full px-3 py-1 text-[11px] text-mute">探索</span>
+              <span class="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-white">执行</span>
+            </div>
+            <span class="rounded-full bg-card px-2.5 py-1 text-[10px] ring-1 ring-line"><span class="text-mute">Claude</span> · <span class="font-semibold">Sonnet 4</span></span>
+          </div>
+          <div class="mt-3 rounded-xl border border-line bg-paper px-3 py-2.5">
+            <p class="text-[12px]">对照 <span class="font-medium">src/auth/login.ts</span> 补无障碍，并核对 GitHub Issue。</p>
+            <p class="mt-1 text-[10px] text-mute">本轮已开流 · 引擎支持宿主透传</p>
+          </div>
+          <details class="mt-3 overflow-hidden rounded-xl border border-line bg-soft" open>
+            <summary class="cursor-pointer list-none px-3 py-2 text-[11px] font-medium text-accent [&::-webkit-details-marker]:hidden">
+              已注入本轮 · MCP 2 · Skills 3
+            </summary>
+            <p class="border-t border-accent/15 px-3 py-2 text-[11px] text-ink">Filesystem · GitHub · form-a11y · Superpowers · impeccable</p>
+          </details>
+          <p class="mt-2 text-[10px] text-mute">微条可收起。不要改成营销 Hero，也不要堆 ACP 协议微标。</p>
+        </div>
+        <aside class="w-full shrink-0 overflow-hidden rounded-2xl border border-line bg-card shadow-2xl lg:w-[300px]">
+          <header class="border-b border-line px-3 py-2.5">
+            <p class="text-[13px] font-semibold">本轮来源</p>
+            <p class="mt-0.5 text-[10px] text-mute">M-D / P0-G · 展示注入源，不负责配置</p>
+          </header>
+          <ul class="divide-y divide-line text-[12px]">
+            <li class="flex items-center justify-between gap-2 px-3 py-2">
+              <span>filesystem</span>
+              <span class="rounded bg-soft px-1.5 py-px text-[10px] text-accent ring-1 ring-accent/20">来自 Enjoy</span>
+            </li>
+            <li class="flex items-center justify-between gap-2 px-3 py-2">
+              <span>form-a11y</span>
+              <span class="rounded bg-soft px-1.5 py-px text-[10px] text-accent ring-1 ring-accent/20">来自 Enjoy</span>
+            </li>
+          </ul>
+          <p class="border-t border-line bg-paper px-3 py-2 text-[10px] text-mute">点行只看来源。增删启用仍回 <code>#/mcp</code> / <code>#/skills</code>。</p>
+        </aside>
+      </div>
+      <div class="rounded-xl border border-dashed border-line bg-paper px-3 py-2.5">
+        <p class="text-[11px] font-medium text-ink">空启用 · 诚实不造条目</p>
+        <p class="mt-1 text-[11px] text-mute">SoT 为 0 MCP · 0 Skills 时：开流后<strong class="text-ink">不画</strong>「已注入本轮」微条，Sources <strong class="text-ink">不</strong>出现假 MCP / Skills 行。</p>
+        <div class="mt-2 rounded-lg border border-line bg-card px-3 py-2">
+          <p class="text-[12px] text-mute">这段只根据你刚贴的报错推断，没有挂载宿主 MCP 或技能。</p>
+          <p class="mt-1.5 text-[10px] text-mute line-through">已注入本轮 · MCP 0 · Skills 0 · 勿画</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 不支持 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">③ 引擎不支持诚实卡</h2>
+      <p class="text-[11px] text-mute">按 <code>RuntimeCapabilities</code> 降级。禁用态 + 一行原因。禁止空绿成功。</p>
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="rounded-2xl border border-line p-4">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">MCP 不支持宿主透传</p>
+          <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] text-mute/70 ring-1 ring-line opacity-70">Pi · 自带 MCP</p>
+          <div class="mt-3 flex items-start gap-2 rounded-xl border border-line bg-paper px-2.5 py-2">
+            <span class="mt-1 size-2 shrink-0 rounded-full bg-warn"></span>
+            <p class="text-[11px] font-medium text-warn">此引擎只用自带 MCP；Enjoy <code>#/mcp</code> 未注入</p>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">真源仍在 Enjoy。换支持引擎后用同一 SoT 再注入。</p>
+        </div>
+        <div class="rounded-2xl border border-line p-4">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">Skills 不支持宿主注入</p>
+          <p class="mt-2 inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-[10px] text-mute/70 ring-1 ring-line opacity-70">仅官方 CLI · 不挂载宿主技能</p>
+          <div class="mt-3 flex items-start gap-2 rounded-xl border border-line bg-paper px-2.5 py-2">
+            <span class="mt-1 size-2 shrink-0 rounded-full bg-warn"></span>
+            <p class="text-[11px] font-medium text-warn">此引擎不支持宿主技能注入</p>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">不要写「已注入 0 Skills」冒充成功。</p>
+        </div>
+      </div>
+      <p class="text-[11px] text-mute"><span class="mr-1 inline-block size-1.5 rounded-full bg-ok align-middle"></span><span class="line-through text-mute/60">已同步到助手</span> · 空绿成功禁止上架</p>
+    </section>
+
+    <aside class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">P0-H 发现 vs P0-S 注入</p>
+      <p class="mt-1">P0-H <code>#/settings/extensions</code> 只做发现：已配置数 +「添加」深链，精选只读投影。P0-S 不新开存储、不改 F1 发现壳；它只在开流时把<strong class="text-ink">当前已启用</strong>的 MCP / Skills 透传给当前引擎，并诚实画出「已注入本轮」或「未注入」。</p>
+    </aside>
+
+    <section class="overflow-hidden rounded-xl border border-line">
+      <table class="w-full text-left text-[11px]">
+        <thead class="bg-paper text-[10px] font-semibold uppercase tracking-wide text-mute">
+          <tr>
+            <th class="px-3 py-2">面</th>
+            <th class="px-3 py-2">写</th>
+            <th class="px-3 py-2">不用</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          <tr>
+            <td class="px-3 py-2">SoT 计数</td>
+            <td class="px-3 py-2">已启用 2 MCP · 3 Skills</td>
+            <td class="px-3 py-2">已配置、已同步到助手</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">管理</td>
+            <td class="px-3 py-2">管理 → <code>#/mcp</code> / <code>#/skills</code></td>
+            <td class="px-3 py-2">第二套表单、去助手侧装</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">开流微条</td>
+            <td class="px-3 py-2">已注入本轮 · MCP 2 · Skills 3</td>
+            <td class="px-3 py-2">已同步到助手、ACP 协议微标</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">来源标</td>
+            <td class="px-3 py-2">来自 Enjoy</td>
+            <td class="px-3 py-2">来自 ~/.claude、dsh plugin add</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">空启用</td>
+            <td class="px-3 py-2">不画微条，不造假行</td>
+            <td class="px-3 py-2">已注入 0、空名单成功</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">MCP 不支持</td>
+            <td class="px-3 py-2">此引擎只用自带 MCP；Enjoy <code>#/mcp</code> 未注入</td>
+            <td class="px-3 py-2">绿灯空成功</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">Skills 不支持</td>
+            <td class="px-3 py-2">此引擎不支持宿主技能注入</td>
+            <td class="px-3 py-2">已注入 0 Skills</td>
+          </tr>
+          <tr>
+            <td class="px-3 py-2">脚注</td>
+            <td class="px-3 py-2">真源在 Enjoy；助手只消费。原生插件仍在各 CLI。</td>
+            <td class="px-3 py-2">插件市场、假 Grok 店</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">验收</p>
+      <ol class="mt-1 list-decimal space-y-0.5 pl-5">
+        <li>只在 Enjoy 配 1 个 MCP + 1 个 Skill → 新开支持引擎的一轮，Agent 能用到（或 Sources 可见已注入）。</li>
+        <li>关掉启用 → 下一轮不再注入。</li>
+        <li>不支持引擎：禁用态 / 说明，<strong class="text-ink">无</strong>空成功「已同步到助手」。</li>
+        <li>全程无写各家家目录当权威；无新看板 / 市场。</li>
+      </ol>
+      <p class="mt-2 font-semibold text-ink">非目标</p>
+      <p class="mt-0.5">插件市场 · 第二存储 · Registry 卖 MCP·Skills · 假 Grok 店 · 改 F1 · 假 BYOK · worktree · 主路径「去助手侧装」 · ACP 协议微标堆砌</p>
+    </section>
+
+    <p class="text-[11px] text-mute">真源在 Enjoy；助手只消费。原生插件仍在各 CLI。</p>
+    <p class="text-[10px] text-mute">对齐 P0-H：Claude hooks / DSH Cordis / OpenCode native 仍在各 CLI；MCP / Skills SoT 是 Enjoy <code>#/mcp</code> · <code>#/skills</code>。</p>
+  </div>
+</body>
+</html>

@@ -112,6 +112,7 @@ Enjoy 做 **扩展真源**（MCP + Skills 为主，当前引擎消费），不�
 | P0-F | 系统浏览器打开预览 | 已落地（以 `ui` spec 为准） |
 | P0-G | Sources 明细 sheet | 已落地（以 `ui` spec 为准） |
 | P0-H | 扩展发现壳 | 已落地（以 `settings` spec 为准） |
+| P0-S | Skills/MCP 宿主透传 | 设计锁已入库（视觉真源 `previews/p0-s-skills-mcp-inject.html`）；**未**宣称应用 1:1 |
 
 ---
 
