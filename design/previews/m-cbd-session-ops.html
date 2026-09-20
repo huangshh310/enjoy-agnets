@@ -30,7 +30,7 @@ tailwind.config = {
     <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
       <p class="font-semibold text-ink">锁</p>
       <ul class="mt-1 list-disc space-y-1 pl-4">
-        <li><span class="font-medium text-ink">M-C 安静 Inbox</span>：筛选只要 <strong class="text-ink">拍板 | 待验收 | 失败</strong>。默认藏工具噪音。徽标只计要人拍板的条（本页 = 2），不计运行中 / 完成 / 读文件刷屏。</li>
+        <li><span class="font-medium text-ink">M-C 安静 Inbox</span>：筛选只要 <strong class="text-ink">拍板 | 待验收 | 失败</strong>。默认藏工具噪音。徽标=拍板数（示例 1），不计运行中 / 完成 / 读文件刷屏。</li>
         <li><span class="font-medium text-ink">M-B 验收闸</span>：会话顶栏 <strong class="text-ink">执行中 | 待验收 | 完成</strong>。待验收时同一屏：diff +「在浏览器打开」+「本轮来源」+ 打回 / 通过。人说了才收工，<strong class="text-ink">不自动 push / commit</strong>。≠ 工具 HMAC 审批。</li>
         <li><span class="font-medium text-ink">M-D 运行账本</span>：右侧只读时间线（工具 / 命令 / 错误 / 用量）。点行 → P0-G 式 sheet「本轮来源」。不上新模块页，不写 Observability 大盘。</li>
       </ul>
@@ -39,7 +39,7 @@ tailwind.config = {
     <!-- 三栏联动：左 Inbox · 中闸门 · 右账本 + Sources -->
     <section class="space-y-2">
       <h2 class="text-[14px] font-semibold">联动一屏 · 待验收打开闸门 · 账本行打开来源</h2>
-      <p class="text-[11px] text-mute">左筛在「待验收」，选中行 = 中栏会话。徽标仍是 2（只计拍板）。右行高亮 = 刚点开「本轮来源」。</p>
+      <p class="text-[11px] text-mute">左筛在「拍板」，列表只有 1 条拍板（与徽标一致）。待验收是另一筛，点开才进中栏闸门。右行高亮 = 刚点开「本轮来源」。</p>
 
       <div class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
         <div class="grid lg:grid-cols-[220px_minmax(0,1fr)_260px]">
@@ -49,37 +49,28 @@ tailwind.config = {
             <header class="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
               <div class="flex items-center gap-1.5">
                 <h3 class="text-[12px] font-semibold">收件箱</h3>
-                <span class="rounded-full bg-accent px-1.5 py-px text-[10px] font-semibold text-white" title="只要人拍板">2</span>
+                <span class="rounded-full bg-accent px-1.5 py-px text-[10px] font-semibold text-white" title="只要人拍板">1</span>
               </div>
               <span class="text-[10px] text-mute">藏噪音</span>
             </header>
             <div class="flex flex-wrap gap-1 px-3 py-2">
-              <button class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">拍板 <span class="font-semibold text-accent">2</span></button>
-              <button class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/30">待验收</button>
+              <button class="rounded-full bg-soft px-2 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/30">拍板 <span class="font-semibold">1</span></button>
+              <button class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-ink ring-1 ring-line">待验收</button>
               <button class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">失败</button>
             </div>
-            <p class="px-3 pb-1 text-[10px] text-mute">默认不列读文件 / 跑命令。徽标 ≠ 列表条数。</p>
+            <p class="px-3 pb-1 text-[10px] text-mute">默认不列读文件 / 跑命令。徽标=拍板数（示例 1），不是待验收条数。</p>
             <ul class="divide-y divide-line">
               <li>
                 <button class="flex w-full flex-col gap-0.5 bg-soft px-3 py-2 text-left ring-inset ring-2 ring-accent/20">
                   <span class="flex items-center justify-between gap-2">
-                    <span class="truncate text-[12px] font-medium">登录页改版</span>
-                    <span class="shrink-0 rounded bg-card px-1.5 py-px text-[10px] text-accent ring-1 ring-accent/30">待验收</span>
+                    <span class="truncate text-[12px] font-medium">写盘方案</span>
+                    <span class="shrink-0 rounded bg-card px-1.5 py-px text-[10px] text-accent ring-1 ring-accent/30">拍板</span>
                   </span>
-                  <span class="truncate text-[10px] text-mute">等你看 diff · 打开中栏闸门</span>
-                </button>
-              </li>
-              <li>
-                <button class="flex w-full flex-col gap-0.5 px-3 py-2 text-left">
-                  <span class="flex items-center justify-between gap-2">
-                    <span class="truncate text-[12px] font-medium">结算预览页</span>
-                    <span class="shrink-0 rounded bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">待验收</span>
-                  </span>
-                  <span class="truncate text-[10px] text-mute">3 个文件 · 未打开</span>
+                  <span class="truncate text-[10px] text-mute">等你拍板 · 本列只有这一条</span>
                 </button>
               </li>
             </ul>
-            <p class="mt-auto border-t border-dashed border-line px-3 py-2 text-[10px] text-mute">拍板 2 条在另一筛：写盘方案、选登录态。不进本列，也不进运行中。</p>
+            <p class="mt-auto border-t border-dashed border-line px-3 py-2 text-[10px] text-mute">待验收是另一筛：登录页改版等，点开才进中栏闸门。不进本列，也不进运行中。</p>
           </aside>
 
           <!-- M-B 验收闸 -->
@@ -225,7 +216,7 @@ tailwind.config = {
           </tr>
           <tr>
             <td class="px-3 py-2">Inbox 徽标</td>
-            <td class="px-3 py-2">只要人拍板的条数（本页 = 2）</td>
+            <td class="px-3 py-2">徽标=拍板数（示例 1）</td>
             <td class="px-3 py-2">工具噪音、完成、运行中、待验收条数</td>
           </tr>
           <tr>
@@ -260,7 +251,7 @@ tailwind.config = {
     <section class="rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[11px] text-mute">
       <p class="font-semibold text-ink">验收</p>
       <ol class="mt-1 list-decimal space-y-0.5 pl-5">
-        <li>左栏安静 Inbox：筛选只有拍板 / 待验收 / 失败；默认不画工具噪音；徽标 = 2 且只计拍板。</li>
+        <li>左栏安静 Inbox：筛选只有拍板 / 待验收 / 失败；拍板筛下列表只有拍板条；默认不画工具噪音；徽标 = 1 且只计拍板。</li>
         <li>中栏待验收：顶栏执行中 | 待验收 | 完成；同一屏 diff +「在浏览器打开」+「本轮来源」+ 打回 / 通过；不自动 push / commit。</li>
         <li>右栏账本只读（工具 / 命令 / 错误 / 用量）；点行打开 P0-G 式「本轮来源」sheet。</li>
         <li>联动：Inbox「待验收」打开中栏闸门；账本行打开「本轮来源」。无看板、无第二 Inbox、无 worktree、无协议微标。</li>
