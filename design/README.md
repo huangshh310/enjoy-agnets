@@ -65,7 +65,7 @@
 | [references/i2-extensions-curated.md](./references/i2-extensions-curated.md) | I2 扩展精选短锁（Jojo；P0-H 壳只读精选；一键写入 `#/mcp` / `#/skills` SoT → P0-S；无收费店 / Registry 混入 / 宿主跑插件；视觉真源见 [`previews/i2-extensions-curated.html`](./previews/i2-extensions-curated.html)；接线已落 settings 当前真相；不是当前真相，边界见 settings） |
 | [references/p0-composer-chrome-regression.md](./references/p0-composer-chrome-regression.md) | P0 Composer 铬条回归短锁（Jojo；C1 默认全引擎露出；视觉真源见预览；**呈现密度**冲突让路 [`p0-composer-slim.md`](./references/p0-composer-slim.md)；不是当前真相） |
 | [references/p0-composer-slim.md](./references/p0-composer-slim.md) | P0 Composer 瘦身短锁（Jojo；常驻探索\|执行 + 单一引擎模型芯片 + 输入；P0-S 一行芯片；删脚注墙/双 Grok/目标阶段常驻；插队高于 I2；【视觉真源】[`previews/p0-composer-slim.html`](./previews/p0-composer-slim.html)；密度冲突以本锁为准，落地见 ui 当前真相） |
-| [references/p2-agent-display-name.md](./references/p2-agent-display-name.md) | P2 命名身份短锁（Jojo；引擎可选显示名；芯片/列表/Inbox 用人话；空回退品牌名+模型；不抄小队/看板；【视觉真源】[`previews/p2-agent-display-name.html`](./previews/p2-agent-display-name.html)；不是当前真相，边界见 ui / settings / m2 / m3） |
+| [references/p2-agent-display-name.md](./references/p2-agent-display-name.md) | P2 命名身份短锁（Jojo；引擎可选显示名；芯片/列表/Inbox 用人话；空回退品牌名+模型；不抄小队/看板；【视觉真源】[`previews/p2-agent-display-name.html`](./previews/p2-agent-display-name.html)，锁 tip `8d43ae9`；不是当前真相，边界见 ui / settings / m2 / m3） |
 | [references/m-cbd-f1-review-taxonomy.md](./references/m-cbd-f1-review-taxonomy.md) | M-CBD-F1：失败/取消勿挤待验收（产品短锁；落地以 m2-attention / ui 当前真相为准） |
 | [references/m-d-g-ledger-sources-readable.md](./references/m-d-g-ledger-sources-readable.md) | 账本/来源可读性短锁；视觉真源见 `m-d-g-ledger-sources.html`（锁 tip `b1721a7`） |
 | [references/plugin-extensions-hub.md](./references/plugin-extensions-hub.md) | 插件 / 扩展 / 技能 / MCP 仓库方案（产品第一稿；落地以 specs 为准） |
@@ -93,7 +93,7 @@
 | [previews/i1-mid-model-switch.html](./previews/i1-mid-model-switch.html) | 同引擎中途换模型：芯片 / 已切换 / 不支持 / 失败（【视觉真源】I1，锁 tip `6dfac6c`） |
 | [previews/p0-composer-chrome.html](./previews/p0-composer-chrome.html) | P0 Composer 铬条回归：探索\|执行常在（C1）· 思考按能力 · 引擎/模型图标（【视觉真源】，锁 tip `f0187a6`；**密度/布局**让路 `p0-composer-slim`） |
 | [previews/p0-composer-slim.html](./previews/p0-composer-slim.html) | P0 Composer 输入区瘦身：单一引擎·模型芯片 · 扩展一行 · 勿画反例（【视觉真源】P0 Composer 输入区瘦身 · Luna；密度冲突压过 chrome） |
-| [previews/p2-agent-display-name.html](./previews/p2-agent-display-name.html) | P2 命名身份：芯片/侧栏/Inbox 人话显示名 · 空回退品牌名+模型 · 设置或 Picker 重命名 · 悬停见真名 · 勿画小队/看板（【视觉真源】P2 · Luna；设计锁，不宣称应用 1:1） |
+| [previews/p2-agent-display-name.html](./previews/p2-agent-display-name.html) | P2 命名身份：芯片/侧栏/Inbox 人话显示名 · 空回退品牌名+模型 · 设置或 Picker 重命名 · 悬停见真名 · 勿画小队/看板（【视觉真源】P2 · Luna；锁 tip `8d43ae9`；设计锁，不宣称应用 1:1） |
 | [previews/i4-automations.html](./previews/i4-automations.html) | I4 本机 Automations：紧凑列表 / 380px 抽屉 / 运行中 / 失败进 Inbox（【视觉真源】；加深现有壳，不宣称应用 1:1） |
 
 ---

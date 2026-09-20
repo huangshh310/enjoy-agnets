@@ -2,7 +2,7 @@
 
 > 2026-09-20 · jojo  
 > 对照：Multica「智能体也是队友」——**只抄显示名**，不抄小队/看板  
-> 预览：`design/previews/p2-agent-display-name.html`  
+> 预览：`design/previews/p2-agent-display-name.html`（【视觉真源】锁 tip `8d43ae9`）  
 > 入库：`design/references/p2-agent-display-name.md`  
 > 队列：#70 I2 后 **下一刀（P2 薄）**
 
