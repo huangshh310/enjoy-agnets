@@ -4,6 +4,8 @@
  */
 import type { SkillItem } from "./skills.ts"
 
+export type { SkillItem }
+
 export const SKILL_CATALOG_CHAR_BUDGET = 8_000
 export const SKILL_CATALOG_MAX_ITEMS = 48
 
