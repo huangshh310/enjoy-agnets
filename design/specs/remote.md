@@ -48,6 +48,7 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - 本环境通常没有可达开发机；闸是注入连接层的单元测试 + 本机回归，不是真 SSH e2e。
 - **隐患**：侧栏 `refreshAllWorkspaces` / `buildWorkspaceTree` 丢掉 `kind` 后，点远程项目会当成本机且不 `connect`。正确做法：hydrate 必须带 `locationKind` 与 ssh 字段；`loadWorkspace` 一律走 `workspaceRowFromNode`（含 ProjectPopover），禁止只传 `{id,name,rootPath}`。
 - **隐患**：`getWorkspace` 失败或缺 `workspaceId` 时 `createWorkspaceHost(run.workspaceRoot)`，SSH 的 `user@host:path` 会当成本机盘。正确做法：SSH 只问 host 工厂 + pool；缺 `remote_path` 或未接通就抛 `REMOTE_DISCONNECTED`，自定义 ACP 直接拒绝。
+- **隐患**：重启后 SQLite `ssh_status` 仍可能是 `connected`，但 pool 已空。若工厂把该状态传给断开 stub，会抛 `REMOTE_NOT_READY` 而不是断开。正确做法：没有 live layer 时把 `connected` 当成 `disconnected`。
 - **隐患**：`workspace.watch` / `openPreview` / checkpoint restore 若用 `workspaces.root_path`（`user@host:path`）当本机目录，会假成功或监视错盘。正确做法：SSH 跳过 `fs.watch`、preview 拒本机根、checkpoint 已连也诚实不可用（restore 抛错，不得 `{ok:true}`）。
 - **隐患**：探测用 `BatchMode=yes` 且不处理 host key / 密码，新云主机报 `Host key verification failed`，账号密码用户永远连不上。正确做法：`accept-new`；密码走应用内表单 + `SSH_ASKPASS`；指纹变更仍拒绝并说人话。
 - **隐患**：主机行探测按钮 `onProbe` 传入被 `void` 丢弃且前端用固定 600ms 定时器假重置，导致真实 SSH 探测（如超时 10s）在后台跑但前端看起来「毫无反应」，且成功态完全缺失反馈。正确做法：保持 Promise 链路真实 await；按钮提供完整的探测中（spinner）、连通正常（绿徽标）与连接失败（红徽标）三态转换，并在卡片内就近展开具体错误详情。

@@ -27,7 +27,9 @@ export function resolveWorkspaceHost(
   }
   const live = getSshPoolEntry(record.id)
   if (!live?.layer || live.status !== "connected") {
-    return createDisconnectedHost(live?.status ?? record.sshStatus ?? "disconnected")
+    const reported = live?.status ?? record.sshStatus ?? "disconnected"
+    // 重启后 DB 可能仍写 connected，但 pool 已空：按断开处理，禁止当成本机盘。
+    return createDisconnectedHost(reported === "connected" ? "disconnected" : reported)
   }
   const remote = requireSshRemotePath(record)
   return createSshWorkspaceHost(live.layer, remote)
