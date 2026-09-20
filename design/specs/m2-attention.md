@@ -6,7 +6,7 @@
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > ACP 异常子进程收尸已落地（启动账本 SIGKILL）。M6 skill-sources 可选 pull 已另 PR 薄层落地。
 > 侧栏 `waiting_review` 红点已在 `SidebarSessionRow`（Attention 槽 `pending_approval` / `ask_user` 且 active/focused）。后台 running 读 `parks`，情境栏顶「进行中」是钉住不是新 kind。这不是 M5 worktree。
-> Inbox / 会话行人话显示名是 **P2** 产品锁（未落地）：[`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)；【视觉真源】[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)。不抄小队/看板。
+> Inbox / 会话行人话显示名是 **P2**（已接线引擎级）：[`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)；【视觉真源】[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)。行主标题 `{显示名或品牌} · {会话题}`，悬停 `{品牌} · 真名`。不抄小队/看板。会话覆盖本刀不做。
 
 ## 当前真相
 
@@ -14,7 +14,7 @@
 |---|---|
 | L1 AttentionStrip | `ai-chat/attention/attention-strip.tsx` 浮动居中于 Stage 顶（`stage-split.tsx`），不占位、不推挤下方页面布局，支持一键关闭及单项关闭。无 active/focused 则整条 `null`。胶囊按优先级排序；当前会话 Dock 已开时收成微点。`complete` 约 10s 自消，不计入「需处理 N」。 |
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。无 pending 则 `null`。 |
-| L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、会话标题、摘要/错误预览与时间。**M-C 安静 Inbox**：侧栏筛选只有 **`approval`（拍板） / `needs_review`（待验收） / `failed`（失败）**，默认 `approval`。拍板 = `pending_approval` + `ask_user`。待验收行由会话 `workflowStatus === "needs_review"` 合成，不是 Attention kind；**只有宣称收工的 `run.end` 才标 `needs_review`**。`run.error` / 用户取消保持 `in_progress`，走失败筛（取消文案含 abort →「已取消」），不进待验收、不进拍板角标。完成 / 运行中 / 读文件刷屏不进默认列；运行中仍只在侧栏「进行中」。轨徽标与页内数字徽标 = **拍板数**（`stripApprovalCount`），不计待验收 / 失败 / 完成 / 运行中。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回；失败阅读器无通过/打回。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
+| L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、`{显示名或品牌} · {会话题}`（P2，悬停引擎真名）、摘要/错误预览与时间。**M-C 安静 Inbox**：侧栏筛选只有 **`approval`（拍板） / `needs_review`（待验收） / `failed`（失败）**，默认 `approval`。拍板 = `pending_approval` + `ask_user`。待验收行由会话 `workflowStatus === "needs_review"` 合成，不是 Attention kind；**只有宣称收工的 `run.end` 才标 `needs_review`**。`run.error` / 用户取消保持 `in_progress`，走失败筛（取消文案含 abort →「已取消」），不进待验收、不进拍板角标。完成 / 运行中 / 读文件刷屏不进默认列；运行中仍只在侧栏「进行中」。轨徽标与页内数字徽标 = **拍板数**（`stripApprovalCount`），不计待验收 / 失败 / 完成 / 运行中。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回；失败阅读器无通过/打回。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
 | 侧栏进行中 | `sidebar/session-activity.ts`：当前会话跟 Composer `running`，后台跟 `parks[id].running`。等你红点优先于 drive 灯。情境栏顶「进行中」钉住最多 8 条；无则 `null`。不把 `running` / `complete` 加成 Attention kind。 |
 | 审批策略 | 会话内只走 Composer 底栏盾牌（`ApprovalPolicyToggle` /「编辑」）。智能体设置用共享摘要条跳 `#/settings/general` 已有权限卡，不另画上沿「写入 / Shell / Git」一瞥，也不做第二套 Allow/Deny。执行模式（探索 / 执行）是另一件事。 |

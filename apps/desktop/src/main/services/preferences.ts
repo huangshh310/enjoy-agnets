@@ -33,7 +33,8 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   stepTimeoutMs: 0,
   desktopPush: true,
   agentCompleteSound: true,
-  approvalRequiredAlert: true
+  approvalRequiredAlert: true,
+  agentDisplayNames: {}
 }
 
 /** 读取持久化偏好；损坏或缺失时回落到安全默认（写盘/命令都要确认）。 */

@@ -84,6 +84,20 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
   assert.equal(fallback, "Grok Build")
 })
 
+test("显示名人话上芯片，不把未命名当引擎", () => {
+  const named = composerChipParts({
+    engineLabel: "代码审",
+    modelLabel: "Sonnet 4"
+  })
+  assert.equal(composerChipText(named), "代码审 · Sonnet 4")
+  const fallback = composerChipParts({
+    engineLabel: "Claude Code",
+    modelLabel: "Sonnet 4"
+  })
+  assert.equal(composerChipText(fallback), "Claude Code · Sonnet 4")
+  assert.ok(!composerChipText(fallback).includes("未命名"))
+})
+
 test("绑定档案时模型用 vault 所选，档案名只进 title", () => {
   const label = composerActiveModelLabel({
     runtimeId: "codex",

@@ -11,6 +11,7 @@ import {
 import { LoadingStateGlyph } from "@/components/ai-elements/loading-state"
 import { cx } from "@/utils/cx"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
+import { useSessionEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { SessionRowMenu } from "./session-row-menu"
 import { getWorkflowStatusMeta, type SessionWorkflowStatus } from "./session-workflow"
 import type { SidebarSessionRowProps } from "./sidebar-session-row.types"
@@ -57,7 +58,7 @@ export function SidebarSessionRow({
         {statusMeta ? (
           <WorkflowStatusGlyph status={workflowStatus!} className={statusMeta.colorClass} />
         ) : null}
-        <span className={cx("min-w-0 flex-1 truncate", nameClassName)}>{name}</span>
+        <SessionRowIdentity sessionId={sessionId} name={name} nameClassName={nameClassName} />
         {changesSummary && (changesSummary.additions > 0 || changesSummary.deletions > 0) ? (
           <span
             title="工作区未提交"
@@ -87,6 +88,24 @@ export function SidebarSessionRow({
         className="mr-1"
       />
     </div>
+  )
+}
+
+function SessionRowIdentity({
+  sessionId,
+  name,
+  nameClassName
+}: {
+  sessionId: string
+  name: string
+  nameClassName?: string
+}) {
+  const { face, trueNameTitle } = useSessionEngineFace(sessionId)
+  return (
+    <span className="min-w-0 flex-1" title={trueNameTitle}>
+      <span className={cx("block truncate", nameClassName)}>{face}</span>
+      <span className="block truncate text-caption-2-medium text-text-tertiary">{name}</span>
+    </span>
   )
 }
 

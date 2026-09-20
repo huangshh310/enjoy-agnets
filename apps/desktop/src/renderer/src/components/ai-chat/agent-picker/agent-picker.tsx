@@ -33,6 +33,9 @@ import {
   composerBoundProviderLabel,
   composerChipParts
 } from "./composer-chip-label"
+import { EnginePickerRenameRow } from "./engine-picker-rename-row"
+import { useEngineFace } from "@renderer/hooks/use-engine-display-name"
+import { engineTrueNameTitle } from "@renderer/lib/agent-display-name"
 
 export function AgentPicker({
   modelId,
@@ -103,6 +106,7 @@ export function AgentPicker({
   }, [open, queryClient])
 
   const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
+  const currentFace = useEngineFace(runtimeId, currentAgentName)
   const pendingTo = agents.find((item) => item.id === pendingToId)
   const pendingToName =
     pendingTo?.label ??
@@ -126,7 +130,7 @@ export function AgentPicker({
         title: t("chat.handoff.chipPendingAria", { to: pendingToName })
       }
     : composerChipParts({
-        engineLabel: currentAgentName,
+        engineLabel: currentFace.face,
         modelLabel: activeModelDisplay,
         providerLabel
       })
@@ -134,7 +138,10 @@ export function AgentPicker({
   const quotaTitle = quotaHintText(quota.percent, quota.reset, (percent) =>
     t("chat.usage.usedPercent", { percent })
   )
-  const chipTitle = [chip.title, quotaTitle].filter(Boolean).join(" · ")
+  const trueNameTitle = pickerLocked
+    ? chip.title
+    : engineTrueNameTitle(currentAgentName, t("chat.engineRealName"))
+  const chipTitle = [trueNameTitle, quotaTitle].filter(Boolean).join(" · ")
 
   async function applyAgent(id: string, nextModelId?: string, nextLabel?: string) {
     if (!isAgentToolId(id)) return
@@ -241,6 +248,9 @@ export function AgentPicker({
           currentId={runtimeId}
           onSelect={(id) => void onTab(id)}
         />
+        {pickerLocked || !tab ? null : (
+          <EnginePickerRenameRow runtimeId={tab.id} brandLabel={tab.label} />
+        )}
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {tab && tab.id !== DEFAULT_RUNTIME_ID ? (
             <AgentCliPane

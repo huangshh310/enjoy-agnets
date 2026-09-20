@@ -1,5 +1,7 @@
 import { RiFolderLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { useSessionEngineFace } from "@renderer/hooks/use-engine-display-name"
+import { inboxIdentityTitle } from "@renderer/lib/agent-display-name"
 import { useT } from "@renderer/i18n"
 import type { InboxNotification } from "../inbox.types"
 import { getInboxTheme, inboxTimeLabel } from "./inbox-copy"
@@ -15,7 +17,9 @@ export function InboxRow(props: {
   const theme = getInboxTheme(item.copyKey, t)
   const ThemeIcon = theme.icon
   const time = inboxTimeLabel(item.occurredAt, now, t)
-  const displayTitle = item.sessionTitle || item.title || t("chat.untitledSession")
+  const identity = useSessionEngineFace(item.sessionId)
+  const sessionTitle = item.sessionTitle || item.title || t("common.untitledSession")
+  const displayTitle = inboxIdentityTitle(identity.face, sessionTitle)
   const snippet = item.errorMessage || item.summary
 
   return (
@@ -24,6 +28,7 @@ export function InboxRow(props: {
         type="button"
         onClick={() => onSelect(item)}
         aria-current={selected ? "true" : undefined}
+        title={identity.trueNameTitle}
         className={cx(
           "group flex w-full flex-col gap-1.5 rounded-2xl border p-3.5 text-left outline-none transition-all duration-150 cursor-pointer",
           "focus-visible:ring-2 focus-visible:ring-border-focus-ring focus-visible:ring-offset-1",

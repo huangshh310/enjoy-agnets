@@ -249,6 +249,8 @@ export const enChat = {
 
   selectRuntime: "Select runtime",
   selectAgent: "Select agent",
+  renameEngine: "Rename",
+  engineRealName: "real name",
   runtimeLocal: "Enjoy Local",
   runtimeCliDecides: "CLI decides",
   agentUse: "Use {name}",
