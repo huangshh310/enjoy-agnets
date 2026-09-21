@@ -19,11 +19,15 @@ export function installRowPhase(input: {
 
 /** 把安装失败原文收成短原因，再套「未装上：…」。 */
 export function formatInstallFailLine(raw: string, t: TranslateFn): string {
-  return t("settings.agentTools.installFailPrefix", { reason: mapInstallFailReason(raw, t) })
+  const prefix = raw.includes("UPDATE_VERSION_UNCHANGED")
+    ? "settings.agentTools.updateFailPrefix"
+    : "settings.agentTools.installFailPrefix"
+  return t(prefix, { reason: mapInstallFailReason(raw, t) })
 }
 
 export function mapInstallFailReason(raw: string, t: TranslateFn): string {
   const lower = raw.toLowerCase()
+  if (raw.includes("UPDATE_VERSION_UNCHANGED")) return t("settings.agentTools.installFailVersionUnchanged")
   if (isTimeout(lower)) return t("settings.agentTools.installFailTimeout")
   if (isPermission(lower)) return t("settings.agentTools.installFailPermission")
   if (isMissingManager(lower)) return t("settings.agentTools.installFailManager")

@@ -113,7 +113,19 @@ const ide = {
     getCustom: (input: unknown) => ipcRenderer.invoke("agentTools.getCustom", input),
     setConfigOption: (input: unknown) => ipcRenderer.invoke("agentTools.setConfigOption", input),
     listAcpSessions: (input: unknown) => ipcRenderer.invoke("agentTools.listAcpSessions", input),
-    importAcpSession: (input: unknown) => ipcRenderer.invoke("agentTools.importAcpSession", input)
+    importAcpSession: (input: unknown) => ipcRenderer.invoke("agentTools.importAcpSession", input),
+    onInstallProgress: (callback: (event: {
+      id: string
+      step: string
+      detail?: string
+    }) => void) => {
+      const listener = (
+        _event: unknown,
+        payload: { id: string; step: string; detail?: string }
+      ) => callback(payload)
+      ipcRenderer.on("agentTools.progress", listener)
+      return () => ipcRenderer.off("agentTools.progress", listener)
+    }
   },
   settings: {
     get: () => ipcRenderer.invoke("settings.get"),

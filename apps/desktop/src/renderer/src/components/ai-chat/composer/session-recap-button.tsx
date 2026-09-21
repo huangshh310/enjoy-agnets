@@ -2,7 +2,6 @@
  * 阶段总结：生成入库，下一轮才垫进模型。失败要写出来，不能吞掉。
  */
 import { RiLoader4Line, RiSparkling2Line } from "@remixicon/react"
-import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 
 export function SessionRecapButton({

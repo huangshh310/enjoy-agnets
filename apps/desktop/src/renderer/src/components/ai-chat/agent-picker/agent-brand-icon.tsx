@@ -56,6 +56,7 @@ export function AgentBrandIcon({
 }
 
 function AgentFallbackMark({ id, size, className }: { id: string; size: number; className?: string }) {
+  const mark = fallbackLetter(id)
   return (
     <span
       aria-hidden
@@ -63,9 +64,9 @@ function AgentFallbackMark({ id, size, className }: { id: string; size: number; 
         "inline-flex items-center justify-center rounded-md bg-background-secondary-default text-text-tertiary select-none font-medium",
         className
       )}
-      style={{ width: size, height: size, fontSize: Math.max(9, size * 0.55) }}
+      style={{ width: size, height: size, fontSize: Math.max(8, size * (mark.length > 1 ? 0.38 : 0.55)) }}
     >
-      {fallbackLetter(id)}
+      {mark}
     </span>
   )
 }
@@ -76,6 +77,9 @@ export function isAgentToolId(id: string): id is AgentToolId {
 
 function fallbackLetter(id: string): string {
   const slug = id.startsWith("custom:") ? id.slice("custom:".length) : id
+  const key = slug.toLowerCase()
+  if (key === "droid") return "Dr"
+  if (key === "devin") return "De"
   return (slug[0] ?? "?").toUpperCase()
 }
 

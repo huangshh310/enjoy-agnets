@@ -22,6 +22,7 @@ export {
   catalogFor,
   installKindFor,
   isAllowedDocsUrl,
+  latestPackageSource,
   loginBinaryFor,
   modelArgsFor
 } from "./agent-tools/catalogs/index.ts"
@@ -46,7 +47,13 @@ export {
   comingSoonHardGates,
   availableAfterPromotion
 } from "./agent-tools/coming-soon-promotion.ts"
-export { probeBinaries, lookupOnPath, pathDirs, type ProbeResult } from "./agent-tools/detect/probe.ts"
+export {
+  probeBinaries,
+  lookupOnPath,
+  pathDirs,
+  spawnPathCommand,
+  type ProbeResult
+} from "./agent-tools/detect/probe.ts"
 export { detectStatusFor } from "./agent-tools/detect/status.ts"
 export {
   streamAcpTurn,

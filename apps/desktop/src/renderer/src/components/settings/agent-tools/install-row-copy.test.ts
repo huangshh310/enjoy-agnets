@@ -12,6 +12,10 @@ function t(path: string, vars?: Record<string, string | number>): string {
   if (path === "settings.agentTools.installFailManager") return "本机没有 npm 或 brew"
   if (path === "settings.agentTools.installFailGeneric") return "安装未完成，可重试或复制命令手动装"
   if (path === "settings.agentTools.installFailUnsupported") return "命令不在白名单，请改用支持的助手程序"
+  if (path === "settings.agentTools.updateFailPrefix") return `没更新上：${vars?.reason ?? ""}`
+  if (path === "settings.agentTools.installFailVersionUnchanged") {
+    return "自动升级没换上新版本。请再点一次获取最新版；还不行就点右侧齿轮打开官方说明"
+  }
   return path
 }
 
@@ -32,6 +36,14 @@ test("失败行是一行人话，不含堆栈", () => {
   assert.equal(line, "未装上：网络超时，可重试或复制命令手动装")
   assert.ok(!line.includes("at afterConnect"))
   assert.ok(!line.includes("ETIMEDOUT"))
+})
+
+test("更新后版本没变，用人话说明不是装失败", () => {
+  const line = formatInstallFailLine("UPDATE_VERSION_UNCHANGED: still v2.1.272; ran npm install -g @anthropic-ai/claude-code@latest", t)
+  assert.equal(
+    line,
+    "没更新上：自动升级没换上新版本。请再点一次获取最新版；还不行就点右侧齿轮打开官方说明"
+  )
 })
 
 test("白名单拒绝收成短因，不摊 Basename / spawn", () => {

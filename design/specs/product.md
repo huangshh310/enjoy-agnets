@@ -1,6 +1,6 @@
 # spec/product
 
-> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-13
+> 本地优先的 Agent IDE：工作区、Agent 循环、审批、MCP。最后更新：2026-09-21
 
 ## 当前真相
 
@@ -14,13 +14,14 @@ Enjoy Agents 不是 VS Code 插件，也不是「聊天框套一层 Electron」�
 - 用户自带 Key（BYOK），密钥不下发到渲染进程
 - 可以完全没有云服务
 
-当前桌面壳：`apps/desktop`。Hash 路由，主界面是三卡片工作区（轨道+情境 / Stage / Inspector），模块在壳内换轨，不是独立产品页。C 端引擎选择（`AgentEngineRail` / `AgentPicker` 胶囊与导轨项）只画品牌、引擎名、模型、就绪灯；协议/登录微标（`ACP · 订阅登录` / `本地 ToolLoop` / `ACP Stdio` 等）只进设置分段、能力矩阵、配置边界与文档。
+当前桌面壳：`apps/desktop`，发版目标是 **Windows / macOS / Linux** 同一套产品，不是只给开发者本机一种系统用。Hash 路由，主界面是三卡片工作区（轨道+情境 / Stage / Inspector），模块在壳内换轨，不是独立产品页。C 端引擎选择（`AgentEngineRail` / `AgentPicker` 胶囊与导轨项）只画品牌、引擎名、模型、就绪灯；协议/登录微标（`ACP · 订阅登录` / `本地 ToolLoop` / `ACP Stdio` 等）只进设置分段、能力矩阵、配置边界与文档。
 
 ## 不变量
 
 - Agent 主循环必须留在本机（Electron main），不要上云。
 - 渲染进程只画界面，不调模型、不读明文 Key、不直接 `fs` / `child_process`。
 - 第一期不做：云账号、实时多端 CRDT。向量检索与多 Agent 已按本地路径落地（Knowledge / Workflow / 子 Agent 摘要）；云 Gateway / OTEL / Vercel Sandbox 仍是可选适配器。
+- 每次功能必须能在 Win / macOS / Linux 上诚实工作或明确降级；禁止把 Homebrew / Unix PATH / macOS 快捷键写进「已经全平台」。
 
 ## 分期（对照实现，不是口号）
 

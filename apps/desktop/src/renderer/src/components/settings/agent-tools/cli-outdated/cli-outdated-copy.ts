@@ -2,6 +2,7 @@
  * P0-E 过旧文案：密表次行例外、信任行、发送闸。禁止协议词。
  */
 import {
+  isBehindLatest,
   requiredVersionFor,
   resolveCliCompat,
   type CliCompatView
@@ -22,6 +23,13 @@ export function cliCompatOf(tool: Pick<AgentToolPublic, "id" | "version" | "requ
 
 export function isCliOutdated(tool: Pick<AgentToolPublic, "id" | "version" | "requiredVersion" | "authAccount">): boolean {
   return cliCompatOf(tool).kind === "outdated"
+}
+
+export function canUpdateCli(
+  tool: Pick<AgentToolPublic, "installKind" | "version" | "latestVersion" | "authAccount">
+): boolean {
+  if (tool.installKind !== "npm" && tool.installKind !== "brew") return false
+  return isBehindLatest(tool.version ?? tool.authAccount?.cliVersion, tool.latestVersion)
 }
 
 export function outdatedAssistantStatus(t: TranslateFn): {

@@ -23,6 +23,8 @@ export type AgentToolCatalog = {
   installCommand: string
   docsUrl: string
   loginArgs: string[]
+  /** 已装时对 PATH 上那份二进制跑官方自更新（如 claude update），给普通用户一键升级。 */
+  selfUpdateArgs?: readonly string[]
   /** 登录用的 basename；缺省则用探测到的 ACP 二进制。 */
   loginBinary?: string
   /** 原生插件在系统终端执行；Enjoy 不代跑。 */

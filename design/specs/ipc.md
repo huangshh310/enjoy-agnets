@@ -44,6 +44,7 @@
 | `workspace.changed` | `WorkspaceChangedEvent`（`{ workspaceId, path }`，contract 有 schema；path 为相对根路径，`.` 表示指纹轮询粗粒度信号） |
 | `workspace.remote` | `{ workspaceId, status, label, error? }`（SSH 连接态；无私钥） |
 | `automations.changed` | `{ reason: upsert\|remove\|run\|status, id? }`；preload `ide.automations.onChanged` |
+| `agentTools.progress` | `AgentToolInstallProgress`（安装/更新步骤与短日志，不含堆栈）；preload `ide.agentTools.onInstallProgress` |
 
 新增频道的顺序：**先改 `ipc-contract` → main handle → preload → renderer 调用**。禁止 renderer 直接 `ipcRenderer`。
 

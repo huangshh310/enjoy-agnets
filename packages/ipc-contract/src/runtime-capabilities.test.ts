@@ -24,6 +24,8 @@ const WIRED = [
   "pi",
   "hermes",
   "amp",
+  "droid",
+  "devin",
   "deepseek",
   "omp",
   "qwen",
@@ -106,6 +108,10 @@ test("未知 id 回落隐藏表；七家新 ACP 可 spawn", () => {
   assert.equal(capabilitiesFor("glm").login, false)
   assert.equal(capabilitiesFor("minimax").spawn, true)
   assert.equal(capabilitiesFor("qoder").spawn, true)
+  assert.equal(capabilitiesFor("droid").spawn, true)
+  assert.equal(capabilitiesFor("devin").spawn, true)
+  assert.equal(capabilitiesFor("droid").providerBind, "none")
+  assert.equal(capabilitiesFor("devin").login, true)
 })
 
 test("宿主扩展：Local 注入工具，ACP 透传，Pi 不传 MCP", () => {
@@ -171,6 +177,8 @@ test("ACP 宿主都不露 Fast / 五档思考 / 语音；探索分段由 UI 常�
     "pi",
     "hermes",
     "amp",
+    "droid",
+    "devin",
     "deepseek",
     "omp",
     "qwen",

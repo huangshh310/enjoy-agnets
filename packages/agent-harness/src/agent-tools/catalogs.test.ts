@@ -1,11 +1,17 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { catalogFor, installKindFor, isAllowedDocsUrl, modelArgsFor } from "./catalogs.ts"
+import {
+  catalogFor,
+  installKindFor,
+  isAllowedDocsUrl,
+  latestPackageSource,
+  modelArgsFor
+} from "./catalogs.ts"
 
 test("P0 CLI 有模型表和安装说明", () => {
   assert.equal(installKindFor("claude"), "npm")
   assert.equal(installKindFor("codex"), "npm")
-  assert.equal(installKindFor("antigravity"), "brew")
+  assert.equal(installKindFor("antigravity"), process.platform === "win32" ? "copy" : "brew")
   assert.equal(installKindFor("cursor"), "copy")
   assert.ok((catalogFor("claude")?.models.length ?? 0) >= 3)
   assert.ok((catalogFor("cursor")?.models.length ?? 0) >= 3)
@@ -24,6 +30,17 @@ test("卸载 argv 写死在配方里，不从 install 推断", () => {
   const brew = catalogFor("antigravity")?.steps[0]
   assert.deepEqual(brew?.uninstallArgs, ["uninstall", "antigravity-cli"])
   assert.equal(catalogFor("cursor")?.steps.length, 0)
+})
+
+test("Claude 已装走官方 claude update，不让用户自己敲命令", () => {
+  assert.deepEqual(catalogFor("claude")?.selfUpdateArgs, ["update"])
+})
+
+test("npm/brew 才有 registry 最新版来源，curl 安装不可知", () => {
+  assert.deepEqual(latestPackageSource("codex"), { manager: "npm", name: "@openai/codex" })
+  assert.deepEqual(latestPackageSource("antigravity"), { manager: "brew", name: "antigravity-cli" })
+  assert.equal(latestPackageSource("cursor"), null)
+  assert.equal(latestPackageSource("grok"), null)
 })
 
 test("文档 URL 只允许 https 与目录 host", () => {
@@ -61,7 +78,9 @@ test("原生插件复制命令可粘贴，不含占位符", () => {
     "codebuddy",
     "glm",
     "minimax",
-    "qoder"
+    "qoder",
+    "droid",
+    "devin"
   ] as const
   for (const id of ids) {
     const copy = catalogFor(id)?.nativePluginCopy
@@ -83,6 +102,22 @@ test("国产 CLI 有安装说明与文档 host", () => {
   assert.equal(installKindFor("kimi"), "copy")
   assert.equal(isAllowedDocsUrl("https://www.codebuddy.cn/cli/"), true)
   assert.equal(isAllowedDocsUrl("https://docs.qoder.com/cli/acp"), true)
+})
+
+test("Droid 一键 npm，Devin brew cask（Windows 降 copy），都有官方自更新", () => {
+  assert.equal(installKindFor("droid"), "npm")
+  assert.deepEqual(latestPackageSource("droid"), { manager: "npm", name: "droid" })
+  assert.deepEqual(catalogFor("droid")?.selfUpdateArgs, ["update"])
+  assert.equal(isAllowedDocsUrl("https://docs.factory.ai/cli/getting-started/overview"), true)
+  assert.equal(installKindFor("devin"), process.platform === "win32" ? "copy" : "brew")
+  assert.deepEqual(catalogFor("devin")?.selfUpdateArgs, ["update"])
+  assert.deepEqual(catalogFor("devin")?.loginArgs, ["auth", "login"])
+  assert.equal(isAllowedDocsUrl("https://docs.devin.ai/cli"), true)
+  if (process.platform === "win32") {
+    assert.match(catalogFor("devin")?.installCommand ?? "", /setup\.ps1/)
+  } else {
+    assert.match(catalogFor("devin")?.installCommand ?? "", /install\.sh/)
+  }
 })
 
 test("Grok Build 是 copy 安装，有模型表", () => {

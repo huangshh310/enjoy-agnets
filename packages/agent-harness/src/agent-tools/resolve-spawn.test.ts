@@ -83,6 +83,22 @@ test("国产 CLI ACP argv 跟 Registry 一致", () => {
   assert.deepEqual(resolveSpawnCommand("qoder"), { command: "qodercli", args: ["--acp"] })
 })
 
+test("Droid / Devin 官方 ACP argv，禁止 npx", () => {
+  assert.deepEqual(resolveSpawnCommand("droid"), {
+    command: "droid",
+    args: ["exec", "--output-format", "acp"]
+  })
+  assert.deepEqual(resolveSpawnCommand("droid", { modelId: "claude-sonnet-4-6" }), {
+    command: "droid",
+    args: ["exec", "--output-format", "acp", "--model", "claude-sonnet-4-6"]
+  })
+  assert.deepEqual(resolveSpawnCommand("devin"), { command: "devin", args: ["acp"] })
+  assert.deepEqual(resolveSpawnCommand("devin", { modelId: "opus" }), {
+    command: "devin",
+    args: ["acp", "--model", "opus"]
+  })
+})
+
 test("选定模型会追加 --model", () => {
   assert.deepEqual(resolveSpawnCommand("claude", { modelId: "claude-sonnet-4-6" }), {
     command: "claude",

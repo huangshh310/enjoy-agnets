@@ -167,6 +167,30 @@ export const AGENT_TOOL_PRESETS: readonly AgentToolPreset[] = [
     skillOnly: false
   },
   {
+    id: "droid",
+    label: "Factory Droid",
+    transport: "acp-host",
+    binaries: ["droid"],
+    acpArgs: ["exec", "--output-format", "acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "Run droid and /login, or set FACTORY_API_KEY",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
+    id: "devin",
+    label: "Devin CLI",
+    transport: "acp-host",
+    binaries: ["devin"],
+    acpArgs: ["acp"],
+    detectArgs: ["--version"],
+    needsLoginHint: "devin auth login",
+    available: true,
+    comingSoon: false,
+    skillOnly: false
+  },
+  {
     id: "deepseek",
     label: "DeepSeek",
     transport: "acp-host",

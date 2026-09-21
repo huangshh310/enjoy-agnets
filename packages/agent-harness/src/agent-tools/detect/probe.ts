@@ -1,7 +1,7 @@
 /**
  * 在 PATH 上找 CLI，并可选跑 version。测试可注入 lookup。
  */
-import { spawn } from "node:child_process"
+import { spawn, type SpawnOptions } from "node:child_process"
 import { homedir } from "node:os"
 import { delimiter, join } from "node:path"
 import { access } from "node:fs/promises"
@@ -28,6 +28,17 @@ export async function probeBinaries(
     return { found: true, path, version }
   }
   return { found: false, path: null, version: null }
+}
+
+/** Windows 的 npm.cmd / *.bat 必须 shell，否则 spawn 直接失败。 */
+export function spawnPathCommand(command: string, args: readonly string[], extra: SpawnOptions = {}) {
+  const winScript = process.platform === "win32" && /\.(cmd|bat)$/i.test(command)
+  const file = winScript && /\s/.test(command) ? `"${command}"` : command
+  return spawn(file, [...args], {
+    windowsHide: true,
+    shell: winScript,
+    ...extra
+  })
 }
 
 export async function lookupOnPath(name: string): Promise<string | undefined> {
@@ -60,11 +71,29 @@ export function pathDirs(): string[] {
   const home = homedir()
   const system = (process.env.PATH ?? "").split(delimiter).filter(Boolean)
   const brew =
-    process.platform === "win32" ? [] : ["/opt/homebrew/bin", "/usr/local/bin"]
+    process.platform === "win32"
+      ? []
+      : [
+          "/opt/homebrew/bin",
+          "/usr/local/bin",
+          "/home/linuxbrew/.linuxbrew/bin",
+          join(home, ".linuxbrew", "bin")
+        ]
   const user =
     process.platform === "win32"
-      ? [join(home, "AppData", "Roaming", "npm"), join(home, ".grok", "bin")]
-      : [join(home, ".local", "bin"), join(home, ".npm-global", "bin"), join(home, ".grok", "bin")]
+      ? [
+          join(process.env.ProgramFiles ?? "C:\\Program Files", "nodejs"),
+          join(process.env["ProgramFiles(x86)"] ?? "C:\\Program Files (x86)", "nodejs"),
+          join(home, "AppData", "Roaming", "npm"),
+          join(home, ".grok", "bin"),
+          join(home, ".factory", "bin")
+        ]
+      : [
+          join(home, ".local", "bin"),
+          join(home, ".npm-global", "bin"),
+          join(home, ".grok", "bin"),
+          join(home, ".factory", "bin")
+        ]
   return uniqueDirs([...system, ...brew, ...user])
 }
 
@@ -83,7 +112,7 @@ const VERSION_OUT_CAP = 8_192
 
 function readVersion(command: string, args: string[]): Promise<string | null> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, { shell: false, windowsHide: true })
+    const child = spawnPathCommand(command, args)
     let out = ""
     let settled = false
     const take = (chunk: Buffer | string) => {

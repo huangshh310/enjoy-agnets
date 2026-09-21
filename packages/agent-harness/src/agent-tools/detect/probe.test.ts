@@ -42,6 +42,15 @@ test("系统 PATH 排在用户可写目录前面", () => {
   if (userIndex >= 0) assert.ok(pathIndex < userIndex)
 })
 
+test("Linux 补 linuxbrew；Windows 补 nodejs 与 Roaming npm", () => {
+  const dirs = pathDirs()
+  if (process.platform === "win32") {
+    assert.ok(dirs.some((dir) => /nodejs$/i.test(dir) || /Roaming[/\\]npm$/i.test(dir)))
+    return
+  }
+  assert.ok(dirs.includes("/home/linuxbrew/.linuxbrew/bin"))
+})
+
 test("补上 Grok 官方安装目录，且排在系统 PATH 后面", () => {
   const dirs = pathDirs()
   const grokBin = join(homedir(), ".grok", "bin")
@@ -49,4 +58,13 @@ test("补上 Grok 官方安装目录，且排在系统 PATH 后面", () => {
   const pathFirst = (process.env.PATH ?? "").split(delimiter).find(Boolean)
   if (!pathFirst || process.platform === "win32") return
   assert.ok(dirs.indexOf(pathFirst) < dirs.indexOf(grokBin))
+})
+
+test("补上 Factory Droid 官方安装目录，且排在系统 PATH 后面", () => {
+  const dirs = pathDirs()
+  const factoryBin = join(homedir(), ".factory", "bin")
+  assert.ok(dirs.includes(factoryBin))
+  const pathFirst = (process.env.PATH ?? "").split(delimiter).find(Boolean)
+  if (!pathFirst || process.platform === "win32") return
+  assert.ok(dirs.indexOf(pathFirst) < dirs.indexOf(factoryBin))
 })

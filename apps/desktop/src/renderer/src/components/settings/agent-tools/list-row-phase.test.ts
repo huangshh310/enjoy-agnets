@@ -20,6 +20,17 @@ test("未找到：一键安装中 / 失败 / 空闲", () => {
   )
 })
 
+test("已装点获取最新版走安装中；失败不改已装点", () => {
+  assert.equal(
+    listRowPhase({ pathReady: true, busy: "install", installError: null, engineKind: "ready" }),
+    "installing"
+  )
+  assert.equal(
+    listRowPhase({ pathReady: true, busy: null, installError: "EACCES", engineKind: "ready" }),
+    "idle"
+  )
+})
+
 test("已装检测中不是就绪；已登录才 idle", () => {
   assert.equal(
     listRowPhase({ pathReady: true, busy: null, installError: null, engineKind: "inspecting" }),

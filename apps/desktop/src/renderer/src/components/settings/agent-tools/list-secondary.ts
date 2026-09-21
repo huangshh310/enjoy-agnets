@@ -9,7 +9,17 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 /** Enjoy `— · 内置`；过旧写「需更新 · v1.2（要 ≥1.5）」；其余 `版本 · 短路径`。 */
 export function formatListSecondary(
-  tool: Pick<AgentToolPublic, "id" | "status" | "version" | "detectedPath" | "binaries" | "requiredVersion" | "authAccount">,
+  tool: Pick<
+    AgentToolPublic,
+    | "id"
+    | "status"
+    | "version"
+    | "detectedPath"
+    | "binaries"
+    | "requiredVersion"
+    | "authAccount"
+    | "latestVersion"
+  >,
   t: Translate
 ): string {
   if (tool.id === "enjoy-local") return `— · ${t("settings.agentTools.listEnjoyBuiltin")}`

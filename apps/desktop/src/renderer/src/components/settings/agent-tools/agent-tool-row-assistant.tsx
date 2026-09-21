@@ -11,6 +11,8 @@ import { isCliOutdated, outdatedAssistantStatus } from "./cli-outdated/cli-outda
 import { formatListSecondary } from "./list-secondary"
 
 import { AgentToolMiniQuota } from "./agent-tool-mini-quota"
+import { AgentToolInstallProgress } from "./agent-tool-install-progress"
+import { AgentToolVersionPill } from "./agent-tool-version-pill"
 
 export function AgentToolRowAssistant({
   tool,
@@ -35,7 +37,7 @@ export function AgentToolRowAssistant({
     (outdated ? outdatedAssistantStatus(t) : assistantStatus({ ready, planned, installPhase, t }))
   const secondary = formatListSecondary(tool, t)
   const loginHint = officialLoginHint(loginPhase, loginReason, t)
-  const failLine = installPhase === "failed" && installError ? formatInstallFailLine(installError, t) : null
+  const failLine = installError?.trim() ? formatInstallFailLine(installError, t) : null
   return (
     <div className="flex min-w-0 items-center gap-2">
       <span
@@ -55,6 +57,7 @@ export function AgentToolRowAssistant({
           ) : null}
           <span className={`size-1.5 shrink-0 rounded-full ${status.dotClass}`} />
           <span className={`shrink-0 text-caption-2-medium ${status.textClass}`}>{status.label}</span>
+          <AgentToolVersionPill tool={tool} />
           <AgentToolMiniQuota tool={tool} />
         </div>
         <p
@@ -65,11 +68,7 @@ export function AgentToolRowAssistant({
         >
           {secondary}
         </p>
-        {installPhase === "installing" ? (
-          <p className="mt-0.5 truncate text-caption-2-regular text-text-tertiary">
-            {t("settings.agentTools.installingHint")}
-          </p>
-        ) : null}
+        {installPhase === "installing" ? <AgentToolInstallProgress id={tool.id} /> : null}
         {loginHint ? (
           <p
             className={`mt-0.5 truncate text-caption-2-regular ${

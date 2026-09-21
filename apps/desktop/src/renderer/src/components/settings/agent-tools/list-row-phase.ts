@@ -13,8 +13,8 @@ export function listRowPhase(input: {
   installError: string | null
   engineKind: EngineReadiness
 }): ListRowPhase {
+  if (input.busy === "install") return "installing"
   if (!input.pathReady) {
-    if (input.busy === "install") return "installing"
     if (input.installError?.trim()) return "failed"
     return "idle"
   }

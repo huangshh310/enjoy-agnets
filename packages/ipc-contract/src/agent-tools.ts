@@ -25,7 +25,9 @@ export const BuiltinAgentToolId = z.enum([
   "codebuddy",
   "glm",
   "minimax",
-  "qoder"
+  "qoder",
+  "droid",
+  "devin"
 ])
 export type BuiltinAgentToolId = z.infer<typeof BuiltinAgentToolId>
 
@@ -163,6 +165,10 @@ export const AgentToolPublic = z.object({
   version: z.string().nullable(),
   /** Enjoy 对接最低版本；缺省或 null 不检查，禁止假警告。 */
   requiredVersion: z.string().max(40).nullable().optional(),
+  /** npm/brew registry 最新版；探不到则省略。 */
+  latestVersion: z.string().max(40).nullable().optional(),
+  /** false = 官方自管发行，禁止假装能探到。 */
+  latestKnowable: z.boolean().optional(),
   status: AgentToolDetectStatus,
   models: z.array(AgentCliModel).default([]),
   providers: z.array(AgentCliProvider).optional(),
@@ -233,6 +239,13 @@ export const UpsertAgentToolInput = z
   .strict()
 export type UpsertAgentToolInput = z.infer<typeof UpsertAgentToolInput>
 
+export const AgentToolInstallProgress = z.object({
+  id: AgentToolId,
+  step: z.enum(["start", "self_update", "npm", "brew", "verify", "log", "done"]),
+  detail: z.string().max(200).optional()
+})
+export type AgentToolInstallProgress = z.infer<typeof AgentToolInstallProgress>
+
 export const InstallAgentToolResult = z.object({
   id: AgentToolId,
   ok: z.boolean(),
@@ -264,7 +277,9 @@ export const InspectAgentToolResult = z.object({
   models: z.array(AgentCliModel).default([]),
   providers: z.array(AgentCliProvider).optional(),
   /** inspect 补的 --version / 官方 cliVersion，不阻塞 list。 */
-  version: z.string().nullable().optional()
+  version: z.string().nullable().optional(),
+  latestVersion: z.string().max(40).nullable().optional(),
+  latestKnowable: z.boolean().optional()
 })
 export type InspectAgentToolResult = z.infer<typeof InspectAgentToolResult>
 
@@ -383,7 +398,9 @@ export const ACP_HOST_IDS = [
   "codebuddy",
   "glm",
   "minimax",
-  "qoder"
+  "qoder",
+  "droid",
+  "devin"
 ] as const
 
 export function isAcpHostRuntimeId(id: string | undefined): boolean {

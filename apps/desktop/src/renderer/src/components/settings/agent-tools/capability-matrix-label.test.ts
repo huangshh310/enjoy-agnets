@@ -15,4 +15,6 @@ test("自定义行没有 label 才回落 slug", () => {
 test("内置行仍走固定显示名", () => {
   assert.equal(matrixRuntimeLabel("cursor"), "Cursor CLI")
   assert.equal(matrixRuntimeLabel("enjoy-local"), "Enjoy 本地")
+  assert.equal(matrixRuntimeLabel("droid"), "Factory Droid")
+  assert.equal(matrixRuntimeLabel("devin"), "Devin CLI")
 })

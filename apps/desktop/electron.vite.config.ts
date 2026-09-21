@@ -81,6 +81,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-compat.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/cli-region",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-region.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/quoted-context",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/quoted-context.ts")
         },
@@ -154,6 +158,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/cli-compat",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-compat.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/cli-region",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/cli-region.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/workspace-preview",

@@ -3,6 +3,8 @@ import { test } from "node:test"
 import {
   compareCliVersions,
   formatCliVersion,
+  formatVersionArrow,
+  isBehindLatest,
   requiredVersionFor,
   resolveCliCompat
 } from "./cli-compat.ts"
@@ -37,6 +39,13 @@ test("预览夹具：v1.2 对 ≥1.5 是 outdated", () => {
   assert.equal(view.kind, "outdated")
   assert.equal(view.current, "v1.2")
   assert.equal(view.required, "1.5")
+})
+
+test("低于 registry 最新才 behind；缺段不假更新", () => {
+  assert.equal(isBehindLatest("0.154.0", "0.155.1"), true)
+  assert.equal(isBehindLatest("0.155.1", "0.155.1"), false)
+  assert.equal(isBehindLatest(null, "0.155.1"), false)
+  assert.equal(formatVersionArrow("0.154.0", "0.155.1"), "v0.154.0 → v0.155.1")
 })
 
 test("升级后回到 ok；Enjoy Local / 自定义无最低版本", () => {

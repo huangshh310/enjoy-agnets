@@ -34,7 +34,11 @@ const ALLOWED_DOCS_HOSTS = new Set([
   "qoder.com",
   "agent.minimax.io",
   "moonshotai.github.io",
-  "qwenlm.github.io"
+  "qwenlm.github.io",
+  "docs.factory.ai",
+  "factory.ai",
+  "docs.devin.ai",
+  "cli.devin.ai"
 ])
 
 export function isAllowedDocsUrl(raw: string): boolean {
@@ -53,7 +57,20 @@ export function catalogFor(id: string | undefined): AgentToolCatalog | undefined
 
 export function installKindFor(id: string | undefined): "npm" | "brew" | "copy" {
   const first = catalogFor(id)?.steps[0]
-  return first?.manager ?? "copy"
+  if (!first) return "copy"
+  if (first.manager === "brew" && process.platform === "win32") return "copy"
+  return first.manager
+}
+
+/** npm/brew 才探得到 registry 最新版；curl|bash 的助手不可知。 */
+export function latestPackageSource(
+  id: string | undefined
+): { manager: "npm" | "brew"; name: string } | null {
+  const step = catalogFor(id)?.steps[0]
+  if (!step || (step.manager !== "npm" && step.manager !== "brew")) return null
+  const name = step.args.filter((part) => !part.startsWith("-")).at(-1)?.trim()
+  if (!name) return null
+  return { manager: step.manager, name }
 }
 
 export function loginBinaryFor(id: string | undefined): string | undefined {

@@ -25,6 +25,7 @@ import {
 } from "./probes"
 import { emptyInspectResult } from "./inspect-empty"
 import { attachInspectVersion } from "./inspect-version"
+import { probeLatestVersion } from "../agent-tools-latest"
 import { getToolSpendStats } from "./tool-spend.ts"
 
 export function invalidateAccountCache(id?: AgentToolId) {
@@ -76,6 +77,8 @@ async function inspectFresh(id: AgentToolId): Promise<InspectAgentToolResult> {
     }
   }
   res = await attachInspectVersion(id, command, res)
+  const latest = await probeLatestVersion(id)
+  res = { ...res, latestVersion: latest.version, latestKnowable: latest.knowable }
 
   const spend = getToolSpendStats(id)
   if (spend) {

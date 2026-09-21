@@ -144,6 +144,8 @@ export const MATRIX_RUNTIME_IDS = [
   "pi",
   "hermes",
   "amp",
+  "droid",
+  "devin",
   "deepseek",
   "omp",
   "qwen",

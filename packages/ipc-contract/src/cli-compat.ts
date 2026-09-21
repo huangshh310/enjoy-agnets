@@ -81,6 +81,16 @@ export function formatRequiredVersion(raw: string | null | undefined): string {
   return formatted === "—" ? "—" : formatted.replace(/^v/i, "")
 }
 
+export function isBehindLatest(current?: string | null, latest?: string | null): boolean {
+  if (!current?.trim() || !latest?.trim()) return false
+  return compareCliVersions(current, latest) === "below"
+}
+
+export function formatVersionArrow(current?: string | null, latest?: string | null): string | null {
+  if (!isBehindLatest(current, latest)) return null
+  return `${formatCliVersion(current)} → ${formatCliVersion(latest)}`
+}
+
 export function compareCliVersions(
   current: string,
   required: string

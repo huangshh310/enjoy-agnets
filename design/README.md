@@ -16,7 +16,7 @@
 | ID | 文件 | 管什么 | 主要代码 |
 |---|---|---|---|
 | `product` | [specs/product.md](./specs/product.md) | 产品边界、分期、明确不做 | 仓库级决策 |
-| `architecture` | [specs/architecture.md](./specs/architecture.md) | 进程模型、包职责、安全基线 | `apps/desktop/src/main`、`packages/*` |
+| `architecture` | [specs/architecture.md](./specs/architecture.md) | 进程模型、包职责、安全基线、Win/macOS/Linux | `apps/desktop/src/main`、`packages/*`、`detect/probe.ts` |
 | `ui` | [specs/ui.md](./specs/ui.md) | 三卡片布局、token、组件来源 | `apps/desktop/.../ai-chat`、`packages/ui` |
 | `agent-runtime` | [specs/agent-runtime.md](./specs/agent-runtime.md) | Agent 循环、工具、审批、模式 | `packages/agent-core`、`main/services/agent-runner.ts` |
 | `agent-cli` | [specs/agent-cli.md](./specs/agent-cli.md) | 本机 CLI 工具箱、ACP、探测 | `packages/agent-harness/src/agent-tools`、`acp/` |

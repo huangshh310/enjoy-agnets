@@ -160,6 +160,8 @@ export const zhSettings = {
     installFailed: "安装失败",
     installRetry: "重试",
     installFailPrefix: "未装上：{reason}",
+    updateFailPrefix: "没更新上：{reason}",
+    installFailVersionUnchanged: "自动升级没换上新版本。请再点一次获取最新版；还不行就点右侧齿轮打开官方说明",
     installFailTimeout: "网络超时，可重试或复制命令手动装",
     installFailPermission: "权限不足，请在终端用复制的命令安装",
     installFailManager: "本机没有 npm 或 brew",
@@ -216,6 +218,13 @@ export const zhSettings = {
     loginFailGeneric: "没能完成官方登录，可重试",
     listEnjoyBuiltin: "内置",
     makeActive: "设为主引擎",
+    listUpdate: "获取最新版",
+    listUpdating: "更新中…",
+    installProgressSelf: "正在升级你正在用的助手…",
+    installProgressNpm: "正在下载最新版…",
+    installProgressBrew: "正在用 Homebrew 升级…",
+    installProgressVerify: "正在确认版本…",
+    installProgressElapsed: "已用 {seconds} 秒",
     statusPending: "待登录",
     advanced: "高级配置",
     savePath: "保存路径",
@@ -383,6 +392,8 @@ export const zhSettings = {
     rackDesc: "探测、安装、登录与模型。不读取各家 token。",
     searchPlaceholder: "搜索助手…",
     filterAll: "全部",
+    filterInternational: "国外",
+    filterDomestic: "国产",
     filterReady: "已安装",
     filterMissing: "未找到",
     filterSoon: "规划",
@@ -452,7 +463,9 @@ export const zhSettings = {
       hermes: "Hermes 编程助手。没有一键安装，请复制官方命令。",
       amp: "Amp 没有 amp acp。只 spawn amp-acp，登录走 amp login。",
       deepseek: "DeepSeek Harness。dsh --profile acp。",
-      omp: "Oh My Pi 编码智能体。按官方说明安装后即可使用。"
+      omp: "Oh My Pi 编码智能体。按官方说明安装后即可使用。",
+      droid: "Factory Droid。ACP 为 droid exec --output-format acp。",
+      devin: "Cognition Devin CLI。ACP 为 devin acp，登录 devin auth login。"
     }
   },
 

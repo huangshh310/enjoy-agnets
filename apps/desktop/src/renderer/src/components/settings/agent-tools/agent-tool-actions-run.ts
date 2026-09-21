@@ -102,6 +102,8 @@ export async function handleInstall(
     if (res.ok) {
       setInstallError(null)
       setFeedback(res.message)
+      await getIde().agentTools.inspect({ id: tool.id as AgentToolId, refresh: true })
+      await queryClient.invalidateQueries({ queryKey: ["agentTools.inspect"] })
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
       return
     }

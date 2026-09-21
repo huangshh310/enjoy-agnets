@@ -159,6 +159,24 @@ export const RUNTIME_CAPABILITIES: Record<string, RuntimeCapabilities> = {
     fast: "none",
     providerBind: "none"
   }),
+  /** Factory Droid：官方 `droid exec --output-format acp`；登录走 FACTORY_API_KEY 或 REPL /login。 */
+  droid: acpHost({
+    models: "none",
+    login: true,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
+  /** Cognition Devin CLI：官方 `devin acp`；登录 `devin auth login`。 */
+  devin: acpHost({
+    models: "none",
+    login: true,
+    quota: false,
+    thinking: "advertised",
+    fast: "none",
+    providerBind: "none"
+  }),
   deepseek: acpHost({
     models: "catalog",
     login: false,

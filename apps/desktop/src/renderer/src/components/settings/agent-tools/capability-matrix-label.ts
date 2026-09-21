@@ -15,8 +15,16 @@ const BUILTIN_LABELS: Record<string, string> = {
   pi: "Pi",
   hermes: "Hermes",
   amp: "Amp",
+  droid: "Factory Droid",
+  devin: "Devin CLI",
   deepseek: "DeepSeek",
-  omp: "Oh My Pi"
+  omp: "Oh My Pi",
+  qwen: "Qwen Code",
+  kimi: "Kimi CLI",
+  codebuddy: "CodeBuddy",
+  glm: "GLM Agent",
+  minimax: "MiniMax Code",
+  qoder: "Qoder CLI"
 }
 
 /** 自定义行用显示名；缺省才回落 slug。 */

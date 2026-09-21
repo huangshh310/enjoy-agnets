@@ -103,7 +103,7 @@ export function StatusProjectPicker({ workspaceRootLabel }: { workspaceRootLabel
           className="flex w-full cursor-pointer items-center gap-2 border-t border-separator-border/70 px-3 py-2 text-left text-caption-1-medium text-text-primary hover:bg-background-secondary-hover"
         >
           <RiAddLine className="size-3.5 shrink-0" />
-          {t("chat.addProject")}
+          {t("chat.pickerAddProject")}
         </button>
       </PopoverContent>
     </Popover>

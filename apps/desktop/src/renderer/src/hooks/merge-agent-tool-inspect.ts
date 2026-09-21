@@ -10,6 +10,7 @@ export function shouldInspect(tool: AgentToolPublic): boolean {
   if (tool.status !== "ready") return false
   const cap = capabilitiesOf(tool)
   if (cap.login || cap.quota || cap.models === "inspect") return true
+  if (tool.installKind === "npm" || tool.installKind === "brew") return true
   return Boolean(tool.requiredVersion)
 }
 
@@ -39,7 +40,9 @@ function projectTool(
     selectedModel: pickSelectedModel(tool, models),
     authAccount: hit?.authAccount ?? tool.authAccount,
     quotaInfo: hit?.quotaInfo ?? tool.quotaInfo,
-    version: firstVersion(hit?.version, hit?.authAccount?.cliVersion, tool.version)
+    version: firstVersion(hit?.version, hit?.authAccount?.cliVersion, tool.version),
+    latestVersion: hit?.latestVersion ?? tool.latestVersion,
+    latestKnowable: hit?.latestKnowable ?? tool.latestKnowable
   }
 }
 

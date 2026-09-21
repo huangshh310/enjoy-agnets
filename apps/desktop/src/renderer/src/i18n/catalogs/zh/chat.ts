@@ -4,7 +4,7 @@ export const zhChat = {
   openFolder: "打开文件夹",
   searchProjects: "搜索项目",
   projectPickerGroup: "已打开的项目",
-  addProject: "添加项目",
+  pickerAddProject: "添加项目",
   switchBranch: "切换分支",
   searchBranches: "搜索分支",
   gitNoBranch: "未检出分支",

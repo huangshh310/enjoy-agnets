@@ -9,19 +9,32 @@ import type {
   LoginAgentToolResult,
   UninstallAgentToolResult
 } from "@enjoy-agents/ipc-contract"
-import { catalogFor, loginBinaryFor, lookupOnPath } from "@enjoy-agents/agent-harness"
+import { catalogFor, loginBinaryFor, lookupOnPath, spawnPathCommand } from "@enjoy-agents/agent-harness"
+import { isBehindLatest } from "@enjoy-agents/ipc-contract/cli-compat"
 import { agentToolsCwd } from "./agent-tools-account/cwd"
-import { invalidateAccountCache } from "./agent-tools-account/inspect"
+import { inspectAgentTool, invalidateAccountCache } from "./agent-tools-account/inspect"
+import { invalidateLatestCache } from "./agent-tools-latest"
 import { assertSafeAgentCommand, safeCustomBinaryPath } from "./agent-tools-guard"
 import { spawnOmpLogin } from "./agent-tools-account/spawn-omp-login"
 import { resolveLoginArgv } from "./agent-tools-login-args"
 import { listAgentTools } from "./agent-tools-service"
+import { emitInstallProgress } from "./agent-tools-install-progress"
+import { sanitizeInstallLog } from "./agent-tools-install-log"
 
 const INSTALL_MS = 240_000
 const OUT_CAP = 64 * 1024
 const INSTALL_MANAGERS = new Set(["npm", "brew"])
 
 export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToolResult> {
+  emitInstallProgress({ id, step: "start" })
+  try {
+    return await installAgentToolBody(id)
+  } finally {
+    emitInstallProgress({ id, step: "done" })
+  }
+}
+
+async function installAgentToolBody(id: AgentToolId): Promise<InstallAgentToolResult> {
   const catalog = catalogFor(id)
   if (!catalog) {
     return { id, ok: false, message: "This tool has no installer.", command: "", path: null }
@@ -35,6 +48,12 @@ export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToo
       path: null
     }
   }
+  const listedBefore = await listAgentTools()
+  const alreadyReady = listedBefore.find((item) => item.id === id)?.status === "ready"
+  if (alreadyReady) {
+    const self = await trySelfUpdate(id, listedBefore.find((item) => item.id === id)?.detectedPath)
+    if (self) return self
+  }
   let lastCommand = catalog.installCommand
   let lastMessage = ""
   let ranAny = false
@@ -42,8 +61,13 @@ export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToo
     const manager = await lookupOnPath(step.manager)
     if (!manager || !isInstallManager(manager)) continue
     ranAny = true
-    lastCommand = displayCommand(step.manager, step.args)
-    const ran = await runCommand(manager, [...step.args], INSTALL_MS)
+    const args = argsForStep(step.manager, step.args, alreadyReady)
+    lastCommand = displayCommand(step.manager, args)
+    emitInstallProgress({ id, step: step.manager === "brew" ? "brew" : "npm", detail: lastCommand })
+    const ran = await runCommand(manager, args, INSTALL_MS, (line) => {
+      const detail = sanitizeInstallLog(line)
+      if (detail) emitInstallProgress({ id, step: "log", detail })
+    })
     lastMessage = ran.message
     if (!ran.ok) {
       return {
@@ -57,7 +81,23 @@ export async function installAgentTool(id: AgentToolId): Promise<InstallAgentToo
   }
   const listed = await listAgentTools()
   const found = listed.find((item) => item.id === id)
-  if (ranAny || found?.status === "ready") {
+  if (ranAny) {
+    invalidateLatestCache(id)
+    invalidateAccountCache(id)
+    if (alreadyReady) {
+      emitInstallProgress({ id, step: "verify" })
+      const after = await inspectAgentTool(id, true)
+      const current = after.version ?? after.authAccount?.cliVersion
+      if (isBehindLatest(current, after.latestVersion)) {
+        return {
+          id,
+          ok: false,
+          message: `UPDATE_VERSION_UNCHANGED: still ${current ?? "unknown"}; ran ${lastCommand}`,
+          command: lastCommand,
+          path: found?.detectedPath ?? null
+        }
+      }
+    }
     return {
       id,
       ok: true,
@@ -158,6 +198,49 @@ function loginOmpTool(
   })
 }
 
+async function trySelfUpdate(
+  id: AgentToolId,
+  detectedPath: string | null | undefined
+): Promise<InstallAgentToolResult | null> {
+  const args = catalogFor(id)?.selfUpdateArgs
+  if (!args?.length || !detectedPath?.trim()) return null
+  try {
+    assertSafeAgentCommand(id, detectedPath)
+  } catch {
+    return null
+  }
+  emitInstallProgress({ id, step: "self_update" })
+  const ran = await runCommand(detectedPath, [...args], INSTALL_MS, (line) => {
+    const detail = sanitizeInstallLog(line)
+    if (detail) emitInstallProgress({ id, step: "log", detail })
+  })
+  if (!ran.ok) return null
+  invalidateLatestCache(id)
+  invalidateAccountCache(id)
+  const after = await inspectAgentTool(id, true)
+  const current = after.version ?? after.authAccount?.cliVersion
+  if (isBehindLatest(current, after.latestVersion)) return null
+  return {
+    id,
+    ok: true,
+    message: ran.message || "Updated.",
+    command: displayCommand(basename(detectedPath), args),
+    path: detectedPath
+  }
+}
+
+function argsForStep(manager: string, args: readonly string[], updating: boolean): string[] {
+  if (!updating) return [...args]
+  if (manager === "brew") return ["upgrade", ...args.filter((part) => part !== "install")]
+  if (manager === "npm") {
+    const pkg = args.filter((part) => !part.startsWith("-") && part !== "install").at(-1)
+    if (!pkg) return [...args]
+    const bare = pkg.replace(/@latest$/, "")
+    return ["install", "-g", `${bare}@latest`]
+  }
+  return [...args]
+}
+
 function isInstallManager(command: string): boolean {
   const name = basename(command).replace(/\.(exe|cmd|bat)$/i, "")
   return INSTALL_MANAGERS.has(name)
@@ -170,16 +253,26 @@ function displayCommand(manager: string, args: readonly string[]): string {
 function runCommand(
   command: string,
   args: string[],
-  timeoutMs: number
+  timeoutMs: number,
+  onLog?: (line: string) => void
 ): Promise<{ ok: boolean; message: string }> {
   return new Promise((resolve) => {
-    const child = spawn(command, args, { shell: false, windowsHide: true })
+    const child = spawnPathCommand(command, args, {
+      env: { ...process.env, CI: "1" }
+    })
     let out = ""
+    let pending = ""
     let settled = false
     const take = (chunk: Buffer | string) => {
-      if (out.length >= OUT_CAP) return
-      out += String(chunk)
-      if (out.length > OUT_CAP) out = out.slice(0, OUT_CAP)
+      const text = String(chunk)
+      if (out.length < OUT_CAP) {
+        out += text
+        if (out.length > OUT_CAP) out = out.slice(0, OUT_CAP)
+      }
+      pending += text
+      const parts = pending.split(/\r?\n/)
+      pending = parts.pop() ?? ""
+      for (const line of parts) onLog?.(line)
     }
     const finish = (ok: boolean, fallback: string) => {
       if (settled) return
@@ -197,6 +290,9 @@ function runCommand(
     child.stdout?.on("data", take)
     child.stderr?.on("data", take)
     child.on("error", (error) => finish(false, error.message))
-    child.on("close", (code) => finish(code === 0, code === 0 ? "Done." : `Exit ${code ?? "null"}.`))
+    child.on("close", (code) => {
+      if (pending.trim()) onLog?.(pending)
+      finish(code === 0, code === 0 ? "Done." : `Exit ${code ?? "null"}.`)
+    })
   })
 }

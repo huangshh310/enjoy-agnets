@@ -14,6 +14,7 @@
 2. 只读任务：按 spec 的「代码入口」跳进仓库，结论以代码为准；若代码与 spec 打架，先记到「已知坑」。
 3. 实现 / 修 bug：改代码的**同一次改动**里更新 spec（至少「当前真相」或「已知坑」）。新隐患用 **隐患** 标记；已不存在的行为从「当前真相」删掉，不要叠一层「曾经」。
 4. 结束前自问：有没有新坑、新频道、新路由没写进文档？过时句子删了没有？
+5. 实现会碰路径、spawn、安装、快捷键、文件监视时，必须同时想 **Windows / macOS / Linux**（见 `architecture` 不变量）。禁止按本机一种系统写死。
 
 不要把 `design/references/*` 当成实现说明书。那是选型与视觉全书；落地与否以 spec 的「当前真相」为准。
 
@@ -85,6 +86,7 @@
 - 路由用 Hash History。设置是路由不是 modal。
 - UI：BoardUI 语义 token + 复合字号；控件先 shadcn / AI Elements 再 restyle。品牌标用 Lobe Icons。
 - 密钥进 `safeStorage`，不进 Git，不进 renderer。
+- 桌面是三端：路径分隔、PATH、spawn、安装配方、快捷键（⌘ vs Ctrl）、文件监视都要过 Win / macOS / Linux。一种系统上的 Homebrew / `npm` 裸 spawn 不能当成全平台。
 
 细节与禁令清单：`architecture`、`product`、`ui`。
 
@@ -148,3 +150,4 @@ pnpm dlx shadcn@latest add @ai-elements/<name>
 - [ ] 新坑写进了「已知坑」
 - [ ] 若加了 IPC / 路由 / 工具 / 供应商，对应 spec 与 contract 已改
 - [ ] 没有把未实现功能写成已经落地
+- [ ] 若碰路径 / spawn / 安装 / 快捷键 / 监视：Win、macOS、Linux 都想过，spec 写了平台差异

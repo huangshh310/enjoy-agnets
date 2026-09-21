@@ -4,7 +4,7 @@ export const enChat = {
   openFolder: "Open folder",
   searchProjects: "Search projects",
   projectPickerGroup: "Open projects",
-  addProject: "Add new project",
+  pickerAddProject: "Add new project",
   switchBranch: "Switch branch",
   searchBranches: "Search branches",
   gitNoBranch: "No branch",

@@ -1,7 +1,7 @@
 # ACP（Agent Client Protocol）对照笔记
 
 > 位置：`design/references/acp-protocol.md`。落地以 `design/specs/agent-cli.md` 为准；本文是官方协议的宿主向摘录，不是实现说明书。  
-> 整理日期：2026-09-20  
+> 整理日期：2026-09-21  
 > 一手源：[Introduction](https://agentclientprotocol.com/get-started/introduction)、[Architecture](https://agentclientprotocol.com/get-started/architecture)、[Agents](https://agentclientprotocol.com/get-started/agents)、[Registry](https://agentclientprotocol.com/get-started/registry)、[Session Config Options v1](https://agentclientprotocol.com/protocol/v1/session-config-options)、[v2](https://agentclientprotocol.com/protocol/v2/session-config-options)、CDN [`registry.json`](https://cdn.agentclientprotocol.com/registry/v1/latest/registry.json)。
 
 ---
@@ -89,6 +89,8 @@ Agent 在 `session/new` / `set_config_option` 回执 / `config_option_update` �
 | `glm` | 智谱 GLM Agent | `glm-acp-agent` | `glm-acp-agent`（无额外参数） |
 | `minimax` | MiniMax Code | `minimax-code` · `@minimax-ai/code` | `mcode acp` |
 | `qoder` | 阿里 Qoder | `qoder` · `@qoder-ai/qodercli` | `qodercli --acp` |
+| `droid` | Factory Droid | `droid` · npm `droid` | `droid exec --output-format acp` |
+| `devin` | Cognition Devin | `devin` · brew cask `devin-cli` | `devin acp` |
 
 未上 Enjoy 导轨、但 Registry 有的国内相关：iFlow（`--experimental-acp`，本仓禁 experimental 旗标）、Trae。要加必须先过 spawn 白名单 + HMAC + 一轮开流，禁止手改 `comingSoon`。
 

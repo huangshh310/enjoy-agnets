@@ -13,19 +13,15 @@ export async function attachInspectVersion(
   command: string | undefined,
   result: InspectAgentToolResult
 ): Promise<InspectAgentToolResult> {
-  const known = pickInspectVersion(result)
-  if (known) return { ...result, version: known }
-  if (!command) return { ...result, version: result.version ?? null }
   const preset = AGENT_TOOL_PRESETS.find((item) => item.id === id)
   const args = preset?.detectArgs.length ? [...preset.detectArgs] : ["--version"]
-  const probe = await probeBinaries([command], args)
-  const version = probe.version
-  if (!version) return { ...result, version: null }
+  const disk = command ? (await probeBinaries([command], args)).version : null
+  const version = disk || pickInspectVersion(result) || result.version || null
   return {
     ...result,
     version,
     authAccount: result.authAccount
-      ? { ...result.authAccount, cliVersion: result.authAccount.cliVersion ?? version }
+      ? { ...result.authAccount, cliVersion: result.authAccount.cliVersion ?? version ?? undefined }
       : result.authAccount
   }
 }

@@ -2,23 +2,38 @@
  * Settings → 智能体：本机 CLI 紧凑表（助手 / 动力源 / 操作）。
  */
 import { useEffect, useMemo, useState } from "react"
+import { AgentToolInstallProgress as AgentToolInstallProgressEvent } from "@enjoy-agents/ipc-contract"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { RiSearchLine } from "@remixicon/react"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
-import { DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useT } from "@renderer/i18n"
 import { agentToolCardId } from "./agent-tool-anchor"
+import {
+  countAgentToolsByTab,
+  matchAgentTool,
+  type AgentToolFilterTab
+} from "./agent-tool-list-filter"
 import { CLI_LIST_GRID } from "./list-layout"
 import { AgentToolRow } from "./agent-tool-row"
 import { AgentToolsEmpty } from "./agent-tools-empty"
-
-type FilterTab = "all" | "ready" | "available" | "soon"
+import { applyInstallProgress } from "./install-progress-store"
+import { getIde, hasIde } from "@renderer/lib/ide"
 
 export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } | null }) {
   const t = useT()
   const tools = useSettingsSnapshot().data?.agentTools ?? []
-  const [activeTab, setActiveTab] = useState<FilterTab>("all")
+  const [activeTab, setActiveTab] = useState<AgentToolFilterTab>("all")
   const [searchQuery, setSearchQuery] = useState("")
+  useEffect(() => {
+    if (!hasIde()) return
+    const off = getIde().agentTools.onInstallProgress?.((raw) => {
+      const parsed = AgentToolInstallProgressEvent.safeParse(raw)
+      if (parsed.success) applyInstallProgress(parsed.data)
+    })
+    return () => {
+      off?.()
+    }
+  }, [])
   useEffect(() => {
     if (!focus) return
     setActiveTab("all")
@@ -28,20 +43,13 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
     }, 40)
     return () => window.clearTimeout(timer)
   }, [focus])
-  const readyCount = useMemo(
-    () => tools.filter((item) => item.status === "ready" || item.id === DEFAULT_RUNTIME_ID).length,
-    [tools]
-  )
-  const availableCount = useMemo(
-    () => tools.filter((item) => item.status === "missing" && !item.comingSoon && !item.skillOnly).length,
-    [tools]
-  )
-  const soonCount = useMemo(
-    () => tools.filter((item) => item.comingSoon || item.skillOnly).length,
-    [tools]
-  )
+  const readyCount = useMemo(() => countAgentToolsByTab(tools, "ready"), [tools])
+  const availableCount = useMemo(() => countAgentToolsByTab(tools, "available"), [tools])
+  const soonCount = useMemo(() => countAgentToolsByTab(tools, "soon"), [tools])
+  const internationalCount = useMemo(() => countAgentToolsByTab(tools, "international"), [tools])
+  const domesticCount = useMemo(() => countAgentToolsByTab(tools, "domestic"), [tools])
   const filteredTools = useMemo(
-    () => tools.filter((tool) => matchTool(tool, activeTab, searchQuery)),
+    () => tools.filter((tool) => matchAgentTool(tool, activeTab, searchQuery)),
     [tools, activeTab, searchQuery]
   )
   const emptyKind =
@@ -57,6 +65,9 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 border-b border-separator-border pb-2">
         <FilterTabButton label={t("settings.agentTools.filterAll")} count={tools.length} active={activeTab === "all"} onClick={() => setActiveTab("all")} />
+        <FilterTabButton label={t("settings.agentTools.filterInternational")} count={internationalCount} active={activeTab === "international"} onClick={() => setActiveTab("international")} />
+        <FilterTabButton label={t("settings.agentTools.filterDomestic")} count={domesticCount} active={activeTab === "domestic"} onClick={() => setActiveTab("domestic")} />
+        <span className="mx-1 h-3 w-px bg-separator-border" aria-hidden />
         <FilterTabButton label={t("settings.agentTools.filterReady")} count={readyCount} active={activeTab === "ready"} onClick={() => setActiveTab("ready")} />
         <FilterTabButton label={t("settings.agentTools.filterMissing")} count={availableCount} active={activeTab === "available"} onClick={() => setActiveTab("available")} />
         <FilterTabButton label={t("settings.agentTools.filterSoon")} count={soonCount} active={activeTab === "soon"} onClick={() => setActiveTab("soon")} />
@@ -95,17 +106,6 @@ export function AgentToolsPage({ focus }: { focus?: { id: string; at: number } |
       )}
     </section>
   )
-}
-
-function matchTool(tool: AgentToolPublic, tab: FilterTab, searchQuery: string): boolean {
-  if (searchQuery.trim()) {
-    const query = searchQuery.toLowerCase()
-    if (!tool.label.toLowerCase().includes(query) && !tool.id.toLowerCase().includes(query)) return false
-  }
-  if (tab === "ready") return tool.status === "ready" || tool.id === DEFAULT_RUNTIME_ID
-  if (tab === "available") return tool.status === "missing" && !tool.comingSoon && !tool.skillOnly
-  if (tab === "soon") return tool.comingSoon || tool.skillOnly
-  return true
 }
 
 function FilterTabButton({

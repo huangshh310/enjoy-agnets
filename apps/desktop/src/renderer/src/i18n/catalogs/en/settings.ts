@@ -160,6 +160,8 @@ export const enSettings = {
     installFailed: "Install failed",
     installRetry: "Retry",
     installFailPrefix: "Not installed: {reason}",
+    updateFailPrefix: "Not updated: {reason}",
+    installFailVersionUnchanged: "The update did not replace this assistant. Tap Update again, or open official docs from the gear",
     installFailTimeout: "network timeout — retry or copy the command",
     installFailPermission: "permission denied — copy the command and install in a terminal",
     installFailManager: "npm or brew is not on PATH",
@@ -216,6 +218,13 @@ export const enSettings = {
     loginFailGeneric: "official sign-in did not finish — retry",
     listEnjoyBuiltin: "Built-in",
     makeActive: "Set as engine",
+    listUpdate: "Update",
+    listUpdating: "Updating…",
+    installProgressSelf: "Updating the assistant on this machine…",
+    installProgressNpm: "Downloading the latest version…",
+    installProgressBrew: "Upgrading with Homebrew…",
+    installProgressVerify: "Checking the version…",
+    installProgressElapsed: "{seconds}s elapsed",
     statusPending: "Needs login",
     advanced: "Advanced",
     savePath: "Save path",
@@ -383,6 +392,8 @@ export const enSettings = {
     rackDesc: "Detect, install, sign in, and pick a model. Enjoy never reads their tokens.",
     searchPlaceholder: "Search assistants…",
     filterAll: "All",
+    filterInternational: "International",
+    filterDomestic: "China",
     filterReady: "Installed",
     filterMissing: "Missing",
     filterSoon: "Planned",
@@ -452,7 +463,9 @@ export const enSettings = {
       hermes: "Hermes coding assistant. No one-click install — copy the official command.",
       amp: "Amp has no amp acp. Spawn amp-acp; sign in with amp login.",
       deepseek: "DeepSeek Harness. dsh --profile acp.",
-      omp: "Oh My Pi coding assistant. Install the official app, then use it here."
+      omp: "Oh My Pi coding assistant. Install the official app, then use it here.",
+      droid: "Factory Droid. ACP is droid exec --output-format acp.",
+      devin: "Cognition Devin CLI. ACP is devin acp; sign in with devin auth login."
     }
   },
 
