@@ -12,6 +12,7 @@ import {
   RiChat1Line,
   RiEqualizer3Line,
   RiFlashlightLine,
+  RiKanbanView2,
   RiFolder6Line,
   RiImageLine,
   RiInboxArchiveLine,
@@ -46,6 +47,7 @@ export function QuickSearchNav({
   const muted = "size-4 text-text-secondary"
   const studio: NavItem[] = [
     { id: "chat", label: t("command.chat"), icon: <RiChat1Line className={icon} />, run: (go) => void go({ to: "/" }) },
+    { id: "kanban", label: t("command.kanban"), icon: <RiKanbanView2 className={icon} />, run: (go) => void go({ to: "/kanban" }) },
     { id: "workflows", label: t("command.workflows"), icon: <RiRouteLine className={icon} />, run: (go) => void go({ to: "/workflows" }) },
     { id: "extensions", label: t("command.extensions"), icon: <RiApps2Line className={icon} />, run: (go) => void go({ to: "/settings/$section", params: { section: "extensions" } }) },
     { id: "mcp", label: t("command.mcp"), icon: <McpIcon className={icon} />, run: (go) => void go({ to: "/mcp" }) },
@@ -56,7 +58,7 @@ export function QuickSearchNav({
       id: "automations",
       label: t("command.automations"),
       icon: <RiFlashlightLine className={icon} />,
-      run: (go) => void go({ to: "/settings/$section", params: { section: "automations" } })
+      run: (go) => void go({ to: "/automations" })
     },
     {
       id: "customize",

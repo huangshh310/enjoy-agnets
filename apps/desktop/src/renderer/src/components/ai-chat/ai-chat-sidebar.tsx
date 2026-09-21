@@ -3,7 +3,8 @@
 /**
  * 聊天侧栏壳：品牌、导航、仓库树、折叠态。
  */
-import { RiAddLine, RiSearchLine } from "@remixicon/react"
+import { RiAddLine, RiFlashlightLine, RiKanbanView2, RiSearchLine } from "@remixicon/react"
+import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { WorkspaceDropdownMenu } from "@renderer/components/workspace/workspace-dropdown-menu"
 import { Kbd } from "@/components/ui/kbd"
 import { cx } from "@/utils/cx"
@@ -41,6 +42,8 @@ export function AiChatSidebar({
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
+  const navigate = useNavigate()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
   const initials = userName.slice(0, 1).toUpperCase()
 
   return (
@@ -49,7 +52,29 @@ export function AiChatSidebar({
         <SidebarHeader collapsed={collapsed} userName={userName} initials={initials} />
         <QuickSearch collapsed={collapsed} onExpand={onToggleCollapsed} />
         <nav className={cx("flex w-full flex-col gap-1", collapsed && "items-center")}>
-          <SidebarAction collapsed={collapsed} icon={RiAddLine} label={t("chat.newAgent")} onClick={onNewSession} />
+          <SidebarAction
+            collapsed={collapsed}
+            icon={RiAddLine}
+            label={t("chat.newAgent")}
+            onClick={() => {
+              onNewSession()
+              if (pathname !== "/") void navigate({ to: "/" })
+            }}
+          />
+          <SidebarAction
+            collapsed={collapsed}
+            icon={RiKanbanView2}
+            label={t("chat.kanbanTitle")}
+            active={pathname === "/kanban"}
+            onClick={() => void navigate({ to: "/kanban" })}
+          />
+          <SidebarAction
+            collapsed={collapsed}
+            icon={RiFlashlightLine}
+            label={t("nav.automations")}
+            active={pathname === "/automations" || pathname.startsWith("/settings/automations")}
+            onClick={() => void navigate({ to: "/automations" })}
+          />
         </nav>
       </div>
       {collapsed ? (
@@ -61,7 +86,10 @@ export function AiChatSidebar({
             expandedIds={expandedIds}
             sessionId={sessionId}
             onToggleExpanded={onToggleExpanded}
-            onSelectSession={onSelectSession}
+            onSelectSession={(id) => {
+              onSelectSession(id)
+              if (pathname !== "/") void navigate({ to: "/" })
+            }}
             formatTime={formatTime}
           />
         </div>

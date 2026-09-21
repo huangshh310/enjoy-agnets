@@ -5,15 +5,18 @@ import { cx } from "@/utils/cx"
 
 export function FileTypeIcon({
   name,
+  kind = "file",
   size = 14,
   className
 }: {
   name: string
+  kind?: "file" | "directory"
   size?: number
   className?: string
 }) {
   const lower = name.toLowerCase()
   const cls = cx("shrink-0", className)
+  if (kind === "directory") return <FolderGlyph size={size} className={cx(cls, "text-accent-500")} />
   if (isTestFile(lower)) return <TestGlyph size={size} className={cls} />
   if (lower.endsWith(".tsx") || lower.endsWith(".jsx")) return <ReactGlyph size={size} className={cls} />
   if (lower.endsWith(".ts") || lower.endsWith(".mts") || lower.endsWith(".cts")) {
@@ -134,6 +137,22 @@ function MarkGlyph({
       <text x="8" y="11.5" textAnchor="middle" fill={ink ?? fill} fontSize="10" fontFamily="monospace" fontWeight="bold">
         {label}
       </text>
+    </svg>
+  )
+}
+
+function FolderGlyph({ size, className }: { size: number; className: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" className={className} aria-hidden>
+      <path
+        d="M2 4.25h4.1L7.4 5.8H14v7.45H2V4.25Z"
+        fill="currentColor"
+        fillOpacity="0.18"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path d="M2 6.6h12" stroke="currentColor" strokeWidth="1.2" />
     </svg>
   )
 }

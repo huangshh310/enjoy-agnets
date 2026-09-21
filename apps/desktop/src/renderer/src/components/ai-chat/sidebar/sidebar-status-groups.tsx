@@ -3,19 +3,14 @@
  * 依次呈现：旗标置顶、进行中、待审查、待办、已完成、其它。
  */
 import { useMemo } from "react"
-import {
-  RiBookmarkFill,
-  RiCheckboxCircleLine,
-  RiErrorWarningLine,
-  RiInboxLine,
-  RiPlayCircleLine,
-  RiTimeLine
-} from "@remixicon/react"
+import { RiBookmarkFill, RiInboxLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { SidebarSessionRow } from "./sidebar-session-row"
+import { WORKFLOW_STATUSES } from "./session-workflow"
+import { WORKFLOW_STATUS_ICONS } from "./workflow-status-glyph"
 
 export function SidebarStatusGroups({
   sessions,
@@ -42,10 +37,10 @@ export function SidebarStatusGroups({
 
     return [
       { key: "flagged", label: t("chat.sessionFlaggedGroup"), icon: RiBookmarkFill, color: "text-accent-600 dark:text-accent-400", items: flagged },
-      { key: "in_progress", label: t("chat.statusInProgress"), icon: RiPlayCircleLine, color: "text-accent-600 dark:text-accent-400", items: inProgress },
-      { key: "needs_review", label: t("chat.statusNeedsReview"), icon: RiErrorWarningLine, color: "text-text-warning-primary", items: needsReview },
-      { key: "todo", label: t("chat.statusTodo"), icon: RiTimeLine, color: "text-text-tertiary", items: todo },
-      { key: "done", label: t("chat.statusDone"), icon: RiCheckboxCircleLine, color: "text-text-success-primary", items: done },
+      { key: "in_progress", label: t("chat.statusInProgress"), icon: WORKFLOW_STATUS_ICONS.in_progress, color: WORKFLOW_STATUSES.in_progress.colorClass, items: inProgress },
+      { key: "needs_review", label: t("chat.statusNeedsReview"), icon: WORKFLOW_STATUS_ICONS.needs_review, color: WORKFLOW_STATUSES.needs_review.colorClass, items: needsReview },
+      { key: "todo", label: t("chat.statusTodo"), icon: WORKFLOW_STATUS_ICONS.todo, color: WORKFLOW_STATUSES.todo.colorClass, items: todo },
+      { key: "done", label: t("chat.statusDone"), icon: WORKFLOW_STATUS_ICONS.done, color: WORKFLOW_STATUSES.done.colorClass, items: done },
       { key: "none", label: t("chat.statusNone"), icon: RiInboxLine, color: "text-text-tertiary", items: none }
     ].filter((g) => g.items.length > 0)
   }, [sessions, t])

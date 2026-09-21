@@ -30,7 +30,7 @@ export function useThreadFindOpen(): boolean {
 }
 
 function chatStageVisible(): boolean {
-  const node = document.querySelector("[data-chat-stage]")
+  const node = document.querySelector("[data-chat-stage][data-chat-surface='thread']")
   if (!(node instanceof HTMLElement)) return false
   return node.getClientRects().length > 0
 }

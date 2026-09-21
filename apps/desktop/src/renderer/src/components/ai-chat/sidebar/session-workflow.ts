@@ -32,15 +32,15 @@ export const WORKFLOW_STATUSES: Record<SessionWorkflowStatus, WorkflowStatusMeta
   needs_review: {
     status: "needs_review",
     labelKey: "chat.statusNeedsReview",
-    colorClass: "text-text-warning-primary",
-    badgeBgClass: "bg-text-warning-primary/10 text-text-warning-primary",
+    colorClass: "text-status-yellow-text",
+    badgeBgClass: "bg-status-yellow-background text-status-yellow-text",
     iconName: "needs_review"
   },
   done: {
     status: "done",
     labelKey: "chat.statusDone",
-    colorClass: "text-text-success-primary",
-    badgeBgClass: "bg-text-success-primary/10 text-text-success-primary",
+    colorClass: "text-state-success-text",
+    badgeBgClass: "bg-state-success-base text-state-success-text",
     iconName: "done"
   }
 }

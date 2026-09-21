@@ -1,5 +1,5 @@
 /**
- * `#/settings/automations`：本机列表 + 380px 抽屉。加深现壳，不新开路由。
+ * 本机 Automations：列表 + 380px 抽屉。Chat `#/automations` 与设置段共用。
  */
 import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -17,7 +17,7 @@ import { AutomationFooter } from "./components/automation-footer"
 import { AutomationList } from "./components/automation-list"
 import { draftFromAutomation, draftToUpsert, emptyAutomationDraft, type AutomationDraft } from "./lib/draft"
 
-export function AutomationsPage({ embed = false }: { embed?: boolean }) {
+export function AutomationsPage() {
   const t = useT()
   const { locale } = useI18n()
   const navigate = useNavigate()
@@ -129,5 +129,5 @@ export function AutomationsPage({ embed = false }: { embed?: boolean }) {
     </div>
   )
 
-  return embed ? body : body
+  return body
 }

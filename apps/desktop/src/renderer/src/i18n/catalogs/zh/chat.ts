@@ -1,6 +1,12 @@
 /** 对话舞台、侧栏、作曲器、审批与空状态。 */
 export const zhChat = {
   newAgent: "新对话",
+  kanbanTitle: "看板",
+  kanbanHint: "按待办 / 进行中 / 待验收 / 已完成排列会话。拖到另一列会改状态。",
+  kanbanActiveHint: "{running} 个进行中 · {review} 个待验收",
+  kanbanNew: "新建",
+  kanbanEmpty: "拖到这里",
+  kanbanWaiting: "等你",
   openFolder: "打开文件夹",
   searchProjects: "搜索项目",
   projectPickerGroup: "已打开的项目",

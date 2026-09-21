@@ -42,7 +42,7 @@ export function ReviewGateCard({
     >
       <p className="text-caption-2-regular text-text-tertiary">{t("sessionOps.gateSubtitle")}</p>
       {files.length > 0 ? (
-        <ul className="overflow-hidden rounded-xl border border-border-button-default">
+        <ul className="max-h-40 min-h-0 overflow-y-auto rounded-xl border border-border-button-default">
           {files.map((file) => (
             <li key={file.path} className="border-b border-separator-border last:border-b-0">
               <SessionFileRow file={file} onOpen={onOpenFile} />

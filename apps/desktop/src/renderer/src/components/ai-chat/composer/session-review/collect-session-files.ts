@@ -18,12 +18,15 @@ export function collectSessionFiles(
     const change = matchChange(path, changes)
     const resolved = change?.path ?? path
     const parts = sessionFileParts(resolved)
+    const additions = change?.additions ?? 0
+    const deletions = change?.deletions ?? 0
     files.push({
       path: resolved,
       name: parts.name,
       dir: parts.dir,
-      additions: change?.additions ?? 0,
-      deletions: change?.deletions ?? 0
+      additions,
+      deletions,
+      kind: sessionEntryKind(resolved, parts.name, additions, deletions)
     })
   }
   return files
@@ -83,6 +86,35 @@ function sessionFileParts(path: string): { name: string; dir: string } {
   const parts = path.split("/").filter(Boolean)
   const name = parts.pop() ?? path
   return { name, dir: parts.join("/") }
+}
+
+const FILE_BASENAMES = new Set([
+  "dockerfile",
+  "makefile",
+  "license",
+  "licence",
+  "gemfile",
+  "procfile",
+  "rakefile",
+  "readme",
+  "changelog",
+  "authors",
+  "copying",
+  "notice"
+])
+
+/** Git 未跟踪目录常无行统计、路径带尾斜杠；无扩展名的 0/0 也当目录。 */
+export function sessionEntryKind(
+  path: string,
+  name: string,
+  additions: number,
+  deletions: number
+): "file" | "directory" {
+  if (path.endsWith("/") || path.endsWith("\\")) return "directory"
+  if (name.includes(".")) return "file"
+  if (FILE_BASENAMES.has(name.toLowerCase())) return "file"
+  if (additions <= 0 && deletions <= 0) return "directory"
+  return "file"
 }
 
 function matchChange(path: string, changes: ChangedFileRow[]): ChangedFileRow | undefined {

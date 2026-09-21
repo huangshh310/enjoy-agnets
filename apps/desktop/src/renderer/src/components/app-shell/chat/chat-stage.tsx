@@ -1,10 +1,11 @@
 /**
- * Chat 工作台：线程、composer、空态。始终挂载，切走模块时用 hidden 藏起。
+ * Chat 工作台：线程、composer、空态；`#/kanban` / `#/automations` 换表面不叠线程铬。
  * 有消息：Header → 线程 → shrink-0 Composer。
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
 import { useMemo, useState } from "react"
+import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
 import { Button } from "@/components/ui/button"
 import { AiChatStatusBar } from "@renderer/components/ai-chat/ai-chat-status-bar"
@@ -20,6 +21,8 @@ import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-cha
 import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
 import { EnvironmentPanel } from "@renderer/components/ai-chat/environment/environment-panel"
 import { ChatComposerCluster } from "./chat-composer-cluster"
+import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
+import { AutomationsPage } from "@renderer/components/automations/automations-page"
 import { ChatStageHeader } from "./chat-stage-header"
 import { EmptySessionStart } from "./empty-session-start"
 import { useChatModelGate } from "./use-chat-model-gate"
@@ -44,19 +47,23 @@ export function ChatStage() {
   const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
   const setRightPanelCollapsed = useChatStore((state) => state.setRightPanelCollapsed)
   const gate = useChatModelGate()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const surface = pathname === "/kanban" ? "kanban" : pathname === "/automations" ? "automations" : "thread"
 
   return (
     <main
       data-chat-stage="true"
+      data-chat-surface={surface}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
     >
-      {workspaceId ? (
+      {workspaceId || surface !== "thread" ? (
         <ChatWorkspaceBody
           workspaceName={workspaceName}
           sessionTitle={sessionTitle}
           workspaceRootLabel={workspaceRootLabel}
           changesCount={changes.length}
           empty={messages.length === 0 && !running}
+          surface={surface}
           rightPanelCollapsed={rightPanelCollapsed}
           onToggleRightPane={() => {
             if (rightPanelCollapsed) expandInspector()
@@ -84,6 +91,30 @@ export function ChatStage() {
 }
 
 function ChatWorkspaceBody(props: {
+  workspaceName: string
+  sessionTitle: string
+  workspaceRootLabel: string
+  changesCount: number
+  empty: boolean
+  surface: "thread" | "kanban" | "automations"
+  rightPanelCollapsed: boolean
+  onToggleRightPane: () => void
+  onModelChange: (model: ModelOption) => void
+  onSend: () => void
+}) {
+  if (props.surface === "kanban") return <KanbanBoard />
+  if (props.surface === "automations") {
+    return (
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <AutomationsPage />
+      </div>
+    )
+  }
+  const { surface: _surface, ...thread } = props
+  return <ChatThreadBody {...thread} />
+}
+
+function ChatThreadBody(props: {
   workspaceName: string
   sessionTitle: string
   workspaceRootLabel: string

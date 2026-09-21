@@ -1,6 +1,12 @@
 /** Chat stage, sidebar, composer, approvals, empty state. */
 export const enChat = {
   newAgent: "New agent",
+  kanbanTitle: "Kanban",
+  kanbanHint: "Sessions by To do / In progress / Needs review / Done. Drop a card to change status.",
+  kanbanActiveHint: "{running} in progress · {review} need review",
+  kanbanNew: "New",
+  kanbanEmpty: "Drop here",
+  kanbanWaiting: "Needs you",
   openFolder: "Open folder",
   searchProjects: "Search projects",
   projectPickerGroup: "Open projects",

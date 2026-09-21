@@ -20,6 +20,7 @@ export const zhCommand = {
   skills: "Skills 技能管理与目标投影",
   media: "媒体工作室（图像 / 语音 / 视频）",
   automations: "自动化与触发器",
+  kanban: "会话看板",
   customize: "自定义系统提示与说明",
   observability: "可观测性与遥测追踪",
   newChat: "新建 Agent 会话",

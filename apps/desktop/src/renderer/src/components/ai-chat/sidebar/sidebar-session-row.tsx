@@ -1,18 +1,13 @@
 /**
  * 侧栏会话行：左侧 Agent 标、旗标与工作流状态徽章。等你（审批）优先于运行灯；右侧操作菜单。
  */
-import {
-  RiBookmarkFill,
-  RiCheckboxCircleLine,
-  RiErrorWarningLine,
-  RiPlayCircleLine,
-  RiTimeLine
-} from "@remixicon/react"
+import { RiBookmarkFill } from "@remixicon/react"
 import { LoadingStateGlyph } from "@/components/ai-elements/loading-state"
 import { cx } from "@/utils/cx"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
 import { SessionRowMenu } from "./session-row-menu"
-import { getWorkflowStatusMeta, type SessionWorkflowStatus } from "./session-workflow"
+import { getWorkflowStatusMeta } from "./session-workflow"
+import { WorkflowStatusGlyph } from "./workflow-status-glyph"
 import type { SidebarSessionRowProps } from "./sidebar-session-row.types"
 import { useSessionActivity } from "./use-session-activity"
 
@@ -54,9 +49,7 @@ export function SidebarSessionRow({
             <RiBookmarkFill className="size-3 text-accent-600 dark:text-accent-400" />
           </span>
         ) : null}
-        {statusMeta ? (
-          <WorkflowStatusGlyph status={workflowStatus!} className={statusMeta.colorClass} />
-        ) : null}
+        {statusMeta ? <WorkflowStatusGlyph status={statusMeta.status} className={statusMeta.colorClass} /> : null}
         <SessionRowIdentity name={name} nameClassName={nameClassName} />
         {changesSummary && (changesSummary.additions > 0 || changesSummary.deletions > 0) ? (
           <span
@@ -103,19 +96,6 @@ function SessionRowIdentity({
       {name}
     </span>
   )
-}
-
-function WorkflowStatusGlyph({
-  status,
-  className
-}: {
-  status: SessionWorkflowStatus
-  className?: string
-}) {
-  if (status === "in_progress") return <RiPlayCircleLine className={cx("size-3 shrink-0", className)} />
-  if (status === "needs_review") return <RiErrorWarningLine className={cx("size-3 shrink-0", className)} />
-  if (status === "done") return <RiCheckboxCircleLine className={cx("size-3 shrink-0", className)} />
-  return <RiTimeLine className={cx("size-3 shrink-0", className)} />
 }
 
 function SessionRowMeta({

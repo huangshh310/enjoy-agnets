@@ -12,7 +12,6 @@ import { WORK_MODULE_PATHS } from "../constants.ts"
 
 const SETTINGS_PREFIXES = [
   "/settings",
-  "/automations",
   "/customize",
   "/team",
   "/company",

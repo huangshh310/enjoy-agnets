@@ -22,7 +22,7 @@ export function SessionFileTrigger({
       onClick={() => onOpen(file.path)}
       className="group flex min-w-0 flex-1 items-center gap-1.5 py-0.5 text-left text-text-secondary transition-colors hover:text-text-primary"
     >
-      <FileTypeIcon name={file.name} size={15} />
+      <FileTypeIcon name={file.name} kind={file.kind} size={15} />
       <span className="truncate font-mono text-caption-1-medium tracking-tight text-text-primary/90 group-hover:text-accent-500">
         {file.name}
       </span>
@@ -48,7 +48,7 @@ export function SessionFileRow({
       onClick={() => onOpen(file.path)}
       className="group flex h-7.5 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-text-primary/80 transition-all hover:bg-background-primary-default/90 hover:text-text-primary"
     >
-      <FileTypeIcon name={file.name} size={15} />
+      <FileTypeIcon name={file.name} kind={file.kind} size={15} />
       <span className="min-w-0 truncate font-mono text-caption-1-medium text-text-primary group-hover:text-accent-500">
         {file.name}
       </span>

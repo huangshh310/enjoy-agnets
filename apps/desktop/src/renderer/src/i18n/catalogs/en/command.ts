@@ -20,6 +20,7 @@ export const enCommand = {
   skills: "Skills management and projection",
   media: "Media Studio (Image / Speech / Video)",
   automations: "Automations & Triggers",
+  kanban: "Session kanban",
   customize: "Customize System Prompts & Instructions",
   observability: "Observability & Telemetry Trace",
   newChat: "New Agent Chat Session",

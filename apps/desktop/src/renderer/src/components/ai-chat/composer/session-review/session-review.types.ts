@@ -7,6 +7,7 @@ export type SessionReviewFile = {
   dir: string
   additions: number
   deletions: number
+  kind: "file" | "directory"
 }
 
 export type SessionReviewActionsProps = {

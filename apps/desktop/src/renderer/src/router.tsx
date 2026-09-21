@@ -78,6 +78,14 @@ const indexRoute = createRoute({
   }
 })
 
+const kanbanRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: "/kanban",
+  component: function KanbanIndex() {
+    return null
+  }
+})
+
 const settingsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/settings",
@@ -183,8 +191,9 @@ const studioRoute = createRoute({
 const automationsRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/automations",
-  beforeLoad: settingsBeforeLoad("automations"),
-  component: RedirectPlaceholder
+  component: function AutomationsIndex() {
+    return null
+  }
 })
 
 const customizeIndexRoute = createRoute({
@@ -273,6 +282,7 @@ const accountSectionRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   shellRoute.addChildren([
     indexRoute,
+    kanbanRoute,
     settingsRoute.addChildren([settingsIndexRoute, settingsSectionRoute]),
     knowledgeRoute,
     workflowsRoute,

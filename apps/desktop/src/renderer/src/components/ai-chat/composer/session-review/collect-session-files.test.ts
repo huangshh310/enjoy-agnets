@@ -4,7 +4,8 @@ import {
   collectDirtySessionFiles,
   collectSessionFiles,
   describeReviewFiles,
-  pickReviewFiles
+  pickReviewFiles,
+  sessionEntryKind
 } from "./collect-session-files.ts"
 
 test("按上一轮 path 列文件，并贴上 Git 增减", () => {
@@ -16,8 +17,8 @@ test("按上一轮 path 列文件，并贴上 Git 增减", () => {
     ]
   )
   assert.deepEqual(files, [
-    { path: "src/a.ts", name: "a.ts", dir: "src", additions: 4, deletions: 1 },
-    { path: "src/b.ts", name: "b.ts", dir: "src", additions: 0, deletions: 0 }
+    { path: "src/a.ts", name: "a.ts", dir: "src", additions: 4, deletions: 1, kind: "file" },
+    { path: "src/b.ts", name: "b.ts", dir: "src", additions: 0, deletions: 0, kind: "file" }
   ])
 })
 
@@ -67,6 +68,13 @@ test("本轮仍 dirty 时 fromLastTurn 为 true", () => {
     false
   )
   assert.equal(pick.fromLastTurn, true)
+})
+
+test("无扩展名且无行统计的未跟踪目录画文件夹", () => {
+  assert.equal(sessionEntryKind("src/app/(marketing)/", "(marketing)", 0, 0), "directory")
+  assert.equal(sessionEntryKind("src/app/login", "login", 0, 0), "directory")
+  assert.equal(sessionEntryKind("src/a.ts", "a.ts", 0, 0), "file")
+  assert.equal(sessionEntryKind("Dockerfile", "Dockerfile", 0, 0), "file")
 })
 
 test("相对路径后缀也能对上 Git 行", () => {
