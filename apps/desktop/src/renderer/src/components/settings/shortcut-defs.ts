@@ -117,5 +117,12 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     descKey: "settings.shortcuts.cyclePermissionDesc",
     keys: ["Shift", "Tab"],
     category: "chat"
+  },
+  {
+    id: "thread-find",
+    actionKey: "settings.shortcuts.threadFind",
+    descKey: "settings.shortcuts.threadFindDesc",
+    keys: ["Mod", "F"],
+    category: "chat"
   }
 ]

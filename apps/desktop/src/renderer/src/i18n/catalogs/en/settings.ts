@@ -122,7 +122,9 @@ export const enSettings = {
     steer: "Steer now",
     steerDesc: "While a run is active, send the current draft at the next safe checkpoint.",
     cyclePermission: "Cycle Approval Permission Mode",
-    cyclePermissionDesc: "Quickly cycle through Reads, Edits, and All approval modes (when composer is not focused)."
+    cyclePermissionDesc: "Quickly cycle through Reads, Edits, and All approval modes (when composer is not focused).",
+    threadFind: "Find in this thread",
+    threadFindDesc: "Open the in-thread find bar and jump to the previous or next match."
   },
 
   agent: {

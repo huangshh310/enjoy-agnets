@@ -11,6 +11,7 @@ import {
 } from "@renderer/lib/window-control"
 import { AppUpdateHost } from "@renderer/components/app-update/app-update-host"
 import { WindowTitleBar } from "./window-title-bar"
+import { WindowQuitGuard } from "./window-quit-guard"
 import { InkSketchFilters } from "./ink-sketch-filters"
 import { LiquidGlassFilters } from "./liquid-glass-filters"
 
@@ -65,6 +66,7 @@ export function WindowFrame({ children }: { children: ReactNode }) {
       </div>
 
       <AppUpdateHost />
+      <WindowQuitGuard />
       <WindowTitleBar
         isMaximized={isMaximized}
         onToggleMaximize={handleToggleMaximize}

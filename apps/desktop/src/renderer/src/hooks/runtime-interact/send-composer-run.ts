@@ -19,6 +19,7 @@ import { guardComposerSend } from "./send-composer-guard"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
+import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
 type PreparedSend = { content: string; assets?: QueuedComposerAsset[]; executePlan?: boolean }
@@ -115,6 +116,7 @@ async function launchComposerRun(
       abortOrphanedRun(result.runId)
       return
     }
+    rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
   } catch (error) {
     dropEmptyPendingAssistant()

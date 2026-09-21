@@ -1,12 +1,14 @@
 /**
  * 工作区 / 会话 / Agent / 终端 / 窗口 IPC。
  */
-import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
+import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
+import { markQuitAllowed } from "./services/window-quit"
 import {
   TerminalCloseInput,
   TerminalOpenInput,
   TerminalResizeInput,
-  TerminalWriteInput
+  TerminalWriteInput,
+  WindowForceQuitInput
 } from "@enjoy-agents/ipc-contract"
 import {
   abortAgent,
@@ -71,7 +73,8 @@ export const SHELL_CHANNELS = [
   "window.minimize",
   "window.toggleMaximize",
   "window.isMaximized",
-  "window.close"
+  "window.close",
+  "window.forceQuit"
 ] as const
 
 export function windowFromEvent(event: IpcMainInvokeEvent): BrowserWindow {
@@ -143,6 +146,12 @@ function registerWindowIpc() {
   }))
   ipcMain.handle("window.close", async (event) => {
     windowFromEvent(event).close()
+    return { ok: true }
+  })
+  ipcMain.handle("window.forceQuit", async (_event, raw) => {
+    WindowForceQuitInput.parse(raw ?? {})
+    markQuitAllowed()
+    app.quit()
     return { ok: true }
   })
 }

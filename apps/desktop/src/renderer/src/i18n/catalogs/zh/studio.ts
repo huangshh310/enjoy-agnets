@@ -12,7 +12,10 @@ export const zhStudio = {
     maximizeWindow: "最大化窗口",
     restoreDown: "向下还原",
     restoreWindow: "还原窗口",
-    closeWindow: "关闭窗口"
+    closeWindow: "关闭窗口",
+    quitBusyTitle: "还有会话在进行",
+    quitBusyDesc: "有助手仍在跑，或还在等你审批。退出会停掉这些工作。",
+    quitAnyway: "退出"
   },
   header: {
     controlCenter: "控制中心与能力",

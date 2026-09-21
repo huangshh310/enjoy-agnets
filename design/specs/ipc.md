@@ -27,7 +27,7 @@
 | observability | `metrics` `export` `setPolicy` `replay` `cliUsage` | 本地指标与内存 stream 回放；`replay` 可按 `runId` 过滤，摘要可带 `toolName` / `decision`，不含 args；`cliUsage` 入参空对象，返回 catalog 全量 `CliUsageSource`（`CliUsageSourceStatus` 四态）+ 日/模型/项目桶，不含 prompt、jsonl 原文或绝对路径 |
 | terminal | `open` `write` `resize` `close` | node-pty；`resize` 入参 `{ sessionId, cols, rows }` |
 | inbox.state | `list` `put` | Inbox 档案耐久层（SQLite `inbox_state` 表）：已读 / 隐藏状态 + error/complete 条目归档；`put` 合并语义，只覆盖传入的标志 |
-| window | `minimize` `toggleMaximize` `isMaximized` `close` | 无边框窗 |
+| window | `minimize` `toggleMaximize` `isMaximized` `close` `forceQuit` | 无边框窗；`forceQuit` 放行后再 `app.quit`。关窗/⌘Q 若有跑中会话，main `before-quit` 先 `preventDefault` 并推 `window.quit-requested`，renderer 确认后才 `forceQuit` |
 | app.update | `status` `check` `download` `install` | 自动更新；入参空对象；返回 `AppUpdateSnapshot`。`status` 只读快照不打 GitHub。开发态 `status=dev`。`check` 才查更新。`download` 进度走推送；下完 main `quitAndInstall`，UI 在 `ready` 再调 `install` 是幂等兜底 |
 | builtinTools | `getState` `toggle` `regeneratePairingCode` `getDesktopPermissions` `openSystemPermission` `revealExtensionDir` `previewOverlay` | 内置工具与后台桌面控制；内置浏览器、Browser Bridge（Chrome 扩展配对码与 47823 环回 WS）与 macOS 后台非干扰 Computer Use 权限诊断与跳转。`revealExtensionDir` 打开扩展目录；`previewOverlay` 预览屏幕叠加层 |
 | rules | `list` `read` `create` `delete` `reveal` | 项目规则；读删定位走允许根；工作区路径必须已登记 |
@@ -38,6 +38,7 @@
 | 频道 | 载荷 |
 |---|---|
 | `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`session.config`（ACP `configOptions` / `config_option_update`，思考档认 `thought_level`）；`host.inject`（本轮 Enjoy SoT Skills/MCP 快照 `HostInjectSnapshot`，开流即发，不落库）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
+| `window.quit-requested` | 空载荷。`before-quit` 未放行时推到窗口，renderer 确认或空闲后 `window.forceQuit` |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
 | `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |
 | `terminal.data` / `terminal.exit` | `TerminalDataEvent` / `TerminalExitEvent`（contract 有 schema，main 发送前 parse；preload `ide.terminal.onData` / `onExit`） |

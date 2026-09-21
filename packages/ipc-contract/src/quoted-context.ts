@@ -58,6 +58,7 @@ function quoteHeader(type: QuotedContextType): string {
   if (type === "file") return "引用自文件"
   if (type === "diff" || type === "file_diff") return "引用自 diff"
   if (type === "terminal_output") return "引用自终端"
+  if (type === "text_selection") return "引用自对话"
   return "引用自步骤"
 }
 
@@ -80,7 +81,7 @@ export function splitQuotedDisplay(content: string): { chips: QuotedDisplayChip[
   const chips: QuotedDisplayChip[] = []
   let rest = content.replace(/^\uFEFF/, "")
   while (rest.length > 0) {
-    const match = rest.match(/^> \[引用自(文件|diff|终端|步骤): (.+)\](?:\n|$)/)
+    const match = rest.match(/^> \[引用自(文件|diff|终端|步骤|对话): (.+)\](?:\n|$)/)
     if (!match) break
     chips.push({ title: match[2]!.trim(), kind: displayKind(match[1]!) })
     rest = rest.slice(match[0].length)

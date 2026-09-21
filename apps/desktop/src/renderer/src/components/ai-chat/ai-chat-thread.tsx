@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { ThreadFindBar } from "./thread/thread-find/thread-find-bar"
+import { useThreadFindOpen } from "./thread/thread-find/use-thread-find-hotkey"
+import { TranscriptSelectionAction } from "./thread/transcript-selection-action"
 import { LoadingState } from "@/components/ai-elements/loading-state"
 import {
   Conversation,
@@ -40,9 +43,12 @@ export function AiChatThread({
   const showPlaceholder = running && !pendingApproval && last?.role !== "assistant"
   const assistant = lastAssistantTurn(messages)
   const hasLedger = Boolean(assistant && collectRunLedger(assistant).length > 0)
+  const findOpen = useThreadFindOpen()
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col animate-in fade-in-50 duration-300">
+      <ThreadFindBar open={findOpen} messages={visible} />
+      <TranscriptSelectionAction />
       <Conversation className="min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&>div]:[scrollbar-width:none] [&>div::-webkit-scrollbar]:hidden">
         <ConversationContent className="gap-8 px-8 py-6 pr-16">
           {visible.map((message, index) => (

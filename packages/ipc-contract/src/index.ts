@@ -40,7 +40,7 @@ export {
   TerminalSession,
   TerminalWriteInput
 } from "./terminal"
-export { WindowState, WindowActionResult } from "./window"
+export { WindowState, WindowActionResult, WindowForceQuitInput } from "./window"
 export * from "./app-update"
 export * from "./generation"
 export * from "./ui-message"

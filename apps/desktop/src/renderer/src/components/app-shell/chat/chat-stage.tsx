@@ -24,10 +24,16 @@ import { ChatStageHeader } from "./chat-stage-header"
 import { EmptySessionStart } from "./empty-session-start"
 import { useChatModelGate } from "./use-chat-model-gate"
 import { usePermissionCycleHotkey } from "@renderer/components/ai-chat/use-permission-cycle-hotkey"
+import {
+  useThreadFindHotkey,
+  useThreadFindOpen
+} from "@renderer/components/ai-chat/thread/thread-find/use-thread-find-hotkey"
+import { ThreadFindBar } from "@renderer/components/ai-chat/thread/thread-find/thread-find-bar"
 
 export function ChatStage() {
   const t = useT()
   usePermissionCycleHotkey()
+  useThreadFindHotkey()
   const workspaceId = useChatStore((state) => state.workspaceId)
   const workspaceName = useChatStore((state) => state.workspaceName)
   const workspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)
@@ -40,7 +46,10 @@ export function ChatStage() {
   const gate = useChatModelGate()
 
   return (
-    <main className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card">
+    <main
+      data-chat-stage="true"
+      className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
+    >
       {workspaceId ? (
         <ChatWorkspaceBody
           workspaceName={workspaceName}
@@ -95,6 +104,7 @@ function ChatWorkspaceBody(props: {
   const reviewPhase = reviewGatePhase({ running, workflowStatus })
   const [ledgerOpen, setLedgerOpen] = useState(false)
   const [environmentOpen, setEnvironmentOpen] = useState(true)
+  const findOpen = useThreadFindOpen()
   const assistant = lastAssistantTurn(messages)
   const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
 
@@ -134,6 +144,7 @@ function ChatWorkspaceBody(props: {
             onModelChange={props.onModelChange}
             onSend={props.onSend}
           />
+          <ThreadFindBar open={findOpen} messages={messages} />
           <EnvironmentPanel open={environmentOpen} />
         </div>
       ) : (

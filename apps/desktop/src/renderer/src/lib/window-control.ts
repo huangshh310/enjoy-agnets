@@ -30,6 +30,23 @@ export async function closeWindow(): Promise<void> {
   }
 }
 
+export async function forceQuitWindow(): Promise<void> {
+  const win = windowBridge()
+  if (win?.forceQuit) {
+    await win.forceQuit()
+    return
+  }
+  await closeWindow()
+}
+
+export function onQuitRequested(callback: () => void): () => void {
+  const win = windowBridge()
+  if (win?.onQuitRequested) {
+    return win.onQuitRequested(callback)
+  }
+  return () => {}
+}
+
 export async function checkIsMaximized(): Promise<boolean> {
   const win = windowBridge()
   if (win) {

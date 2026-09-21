@@ -7,6 +7,7 @@ import { app, BrowserWindow } from "electron"
 import { autoUpdater } from "electron-updater"
 import type { AppUpdateSnapshot } from "@enjoy-agents/ipc-contract"
 import { clampUpdatePercent, notesFromRelease } from "./app-update-notes"
+import { markQuitAllowed } from "./window-quit"
 
 const CHECK_DELAY_MS = 12_000
 
@@ -149,6 +150,7 @@ function bindUpdaterEvents(): void {
 function scheduleInstall(): void {
   if (installScheduled || snapshot.status !== "ready") return
   installScheduled = true
+  markQuitAllowed()
   autoUpdater.quitAndInstall(false, true)
 }
 

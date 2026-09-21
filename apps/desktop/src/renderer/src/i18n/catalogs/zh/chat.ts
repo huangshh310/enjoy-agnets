@@ -10,6 +10,13 @@ export const zhChat = {
   gitNoBranch: "未检出分支",
   gitSwitchDirty: "有未提交改动，先提交或收起后再切分支。",
   gitSwitchFailed: "切换分支失败。",
+  branchMismatchTitle: "发送后这条会话会跟到当前分支",
+  threadFindPlaceholder: "在本会话查找…",
+  threadFindNone: "无匹配",
+  threadFindCount: "{n}/{total}",
+  threadFindPrev: "上一条",
+  threadFindNext: "下一条",
+  addSelectionToChat: "加入对话",
   support: "支持",
   folder: "文件夹",
 

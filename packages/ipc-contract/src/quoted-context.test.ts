@@ -9,6 +9,19 @@ import {
   SteerAgentInput
 } from "./quoted-context.ts"
 
+test("划词引用走对话头", () => {
+  const block = formatQuotedContext({
+    id: "q-sel",
+    type: "text_selection",
+    title: "hello",
+    content: "hello world"
+  })
+  assert.match(block, /> \[引用自对话: hello\]/)
+  const view = splitQuotedDisplay(`${block}\n\n请继续`)
+  assert.equal(view.chips[0]?.title, "hello")
+  assert.equal(view.text, "请继续")
+})
+
 test("引用转成步骤 Markdown 块，拼在正文前", () => {
   const block = formatQuotedContext({
     id: "q1",

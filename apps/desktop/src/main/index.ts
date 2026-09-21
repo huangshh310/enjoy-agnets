@@ -10,6 +10,7 @@ import {
   reapOrphanAcpChildren
 } from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
+import { isQuitAllowed, markQuitAllowed } from "./services/window-quit";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import { startAppUpdate } from "./services/app-update";
@@ -141,7 +142,24 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on("before-quit", () => {
+app.on("before-quit", (event) => {
+  if (isQuitAllowed()) return
+  event.preventDefault()
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) {
+    markQuitAllowed()
+    app.quit()
+    return
+  }
+  try {
+    win.webContents.send("window.quit-requested")
+  } catch {
+    markQuitAllowed()
+    app.quit()
+  }
+});
+
+app.on("will-quit", () => {
   void import("./services/automations-scheduler").then(({ stopAutomationScheduler }) => {
     stopAutomationScheduler()
   })
@@ -159,5 +177,8 @@ app.on("window-all-closed", () => {
   flushActiveRuns();
   disposeAllAcpSessions();
   unregisterIpc();
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    markQuitAllowed();
+    app.quit();
+  }
 });

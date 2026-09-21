@@ -10,6 +10,13 @@ export const enChat = {
   gitNoBranch: "No branch",
   gitSwitchDirty: "Uncommitted changes. Commit or stash before switching.",
   gitSwitchFailed: "Could not switch branch.",
+  branchMismatchTitle: "Sending will move this thread to the current branch",
+  threadFindPlaceholder: "Find in this thread…",
+  threadFindNone: "No matches",
+  threadFindCount: "{n}/{total}",
+  threadFindPrev: "Previous",
+  threadFindNext: "Next",
+  addSelectionToChat: "Add to chat",
   support: "Support",
   folder: "Folder",
 

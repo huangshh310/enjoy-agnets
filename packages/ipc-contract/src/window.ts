@@ -12,3 +12,7 @@ export const WindowActionResult = z.object({
   ok: z.boolean()
 });
 export type WindowActionResult = z.infer<typeof WindowActionResult>;
+
+/** 空闲或用户确认后放行退出；无字段。 */
+export const WindowForceQuitInput = z.object({}).strict();
+export type WindowForceQuitInput = z.infer<typeof WindowForceQuitInput>;

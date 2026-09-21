@@ -272,11 +272,17 @@ const ide = {
     isMaximized: () =>
       ipcRenderer.invoke("window.isMaximized") as Promise<WindowState>,
     close: () => ipcRenderer.invoke("window.close") as Promise<WindowActionResult>,
+    forceQuit: () => ipcRenderer.invoke("window.forceQuit", {}) as Promise<WindowActionResult>,
     onMaximizedChange: (callback: (isMaximized: boolean) => void) => {
       const listener = (_event: unknown, payload: WindowState) =>
         callback(payload.isMaximized)
       ipcRenderer.on("window.maximized-changed", listener)
       return () => ipcRenderer.off("window.maximized-changed", listener)
+    },
+    onQuitRequested: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on("window.quit-requested", listener)
+      return () => ipcRenderer.off("window.quit-requested", listener)
     }
   },
   builtinTools: {

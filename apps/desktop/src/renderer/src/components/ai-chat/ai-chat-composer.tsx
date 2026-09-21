@@ -17,6 +17,7 @@ import { ComposerInput } from "./composer/mentions/composer-input"
 import { ComposerFooter } from "./composer/composer-footer"
 import { ComposerTopChrome } from "./composer/composer-top-chrome"
 import { ComposerActivityFrame } from "./composer/stacked-rail/composer-activity-frame"
+import { ComposerBranchMismatch } from "./composer/composer-branch-mismatch"
 import { listComposerAssets } from "@renderer/hooks/composer-assets"
 import { registerComposerFocus } from "@renderer/hooks/composer-focus"
 import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
@@ -122,8 +123,9 @@ export function AiChatComposer({
       <EngineHandoffDock />
       <ComposerQueue />
       <ExploreInterceptBanner />
+      <ComposerBranchMismatch />
       <ComposerActivityFrame />
-      <form onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
+      <form data-composer="true" onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
         <BorderBeam
           size="md"
           colorVariant="ocean"

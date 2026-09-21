@@ -12,10 +12,8 @@ import { AppMark } from "@renderer/components/brand/app-mark"
 import { AppWordmark } from "@renderer/components/brand/app-wordmark"
 import { AppUpdateChip } from "@renderer/components/app-update/app-update-chip"
 import { TitleBarToggles } from "./title-bar-toggles"
-import {
-  closeWindow,
-  minimizeWindow
-} from "@renderer/lib/window-control"
+import { minimizeWindow } from "@renderer/lib/window-control"
+import { requestCloseWindow } from "./window-quit-guard"
 import { useT } from "@renderer/i18n"
 
 export function WindowTitleBar({
@@ -87,7 +85,7 @@ export function WindowTitleBar({
           title={t("common.close")}
           onClick={(e) => {
             e.stopPropagation()
-            void closeWindow()
+            requestCloseWindow()
           }}
           className="flex size-6 cursor-pointer items-center justify-center rounded-md text-foreground-icon-secondary outline-none transition-colors hover:bg-state-error-text/15 hover:text-state-error-text focus-visible:ring-2 focus-visible:ring-state-error-text"
         >

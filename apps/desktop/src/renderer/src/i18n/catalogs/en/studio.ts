@@ -12,7 +12,10 @@ export const enStudio = {
     maximizeWindow: "Maximize window",
     restoreDown: "Restore down",
     restoreWindow: "Restore window",
-    closeWindow: "Close window"
+    closeWindow: "Close window",
+    quitBusyTitle: "Sessions are still active",
+    quitBusyDesc: "An assistant is still running, or a review is waiting. Quitting stops that work.",
+    quitAnyway: "Quit"
   },
   header: {
     controlCenter: "Control Center & Capabilities",
