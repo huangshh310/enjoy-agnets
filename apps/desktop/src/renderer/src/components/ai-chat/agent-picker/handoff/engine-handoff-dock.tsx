@@ -25,20 +25,18 @@ export function EngineHandoffDock() {
   const fromLabel = labelFor(tools, fromId, t("chat.usage.enjoyLocal"))
   const toLabel = labelFor(tools, toId, t("chat.usage.enjoyLocal"))
 
-  if (!showCard && !showBanner) return null
+  if (showBanner) return <EngineHandoffBanner fromLabel={fromLabel} toLabel={toLabel} />
+  if (!showCard) return null
 
   return (
     <div className="mb-2 flex w-full min-w-0 flex-col gap-2">
-      {showCard ? (
-        <EngineHandoffCard
-          fromLabel={fromLabel}
-          toLabel={toLabel}
-          onCancelRestore={(from) => {
-            restoreComposerEngineSelection(from, useChatStore.getState().setRuntimeId)
-          }}
-        />
-      ) : null}
-      {showBanner ? <EngineHandoffBanner fromLabel={fromLabel} toLabel={toLabel} /> : null}
+      <EngineHandoffCard
+        fromLabel={fromLabel}
+        toLabel={toLabel}
+        onCancelRestore={(from) => {
+          restoreComposerEngineSelection(from, useChatStore.getState().setRuntimeId)
+        }}
+      />
     </div>
   )
 }

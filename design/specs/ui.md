@@ -89,7 +89,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 思考树与子智能体花名册：`ai-chat/thread/thinking/`（`delegate-step.ts` / `subagent-persona.ts` / `group-delegate-roster.ts` / `step-tree/subagent-roster.tsx` / `subagent-mark.tsx`）
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（Attention 档案时间线；`openSession` 必须带 `sessionId`）。Inbox 行主标题是 `{显示名或品牌} · {会话题}`，悬停仍见引擎真名
 - 会话空状态（Zero State）：`apps/desktop/src/renderer/src/components/ai-chat/empty-state/`（清单在 `empty-state/checklist/`）；开始面编排在 `app-shell/chat/empty-session-start.tsx`
-- 引擎交接：`ai-chat/agent-picker/handoff/`（`EngineHandoffDock` 在 Composer 上沿同宽坞；摘要默认折叠、只进隐藏上下文；pending 锁 Picker；确认后 UI 仅「已交接」微条）
+- 引擎交接：`ai-chat/agent-picker/handoff/`（`EngineHandoffDock` 在 Composer 上沿同宽坞；摘要默认折叠、只进隐藏上下文；pending 锁 Picker；确认后不占输入框上沿，芯片旁短提示数秒后消失；对话分隔线仍写「上一引擎记录 · 新引擎只收到摘要」）
  - 状态栏与 L3 上下文分桶：`apps/desktop/src/renderer/src/components/ai-chat/agent-limits/`（无计划额度条）
 - Usage L1/L3/L4：`apps/desktop/src/renderer/src/components/ai-chat/usage/`（`UsagePill` / `SessionMeter` / `QuotaExhaustedCard`）
 - UI 包语言：`packages/ui/i18n/ui-locale.ts`

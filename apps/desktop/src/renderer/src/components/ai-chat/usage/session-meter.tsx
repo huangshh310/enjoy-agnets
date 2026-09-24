@@ -21,7 +21,7 @@ export function SessionMeter() {
 
   return (
     <span
-      className="hidden shrink-0 items-center gap-1 font-mono text-caption-2-medium tabular-nums text-text-secondary select-none @[36rem]:inline-flex"
+      className="hidden shrink-0 items-center gap-1 font-mono text-caption-2-medium tabular-nums text-text-tertiary select-none @[36rem]:inline-flex"
       title={titleHint}
     >
       <span>{formatTokens(stats.usedTokens)} tok</span>

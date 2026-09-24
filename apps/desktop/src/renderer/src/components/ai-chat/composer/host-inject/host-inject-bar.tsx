@@ -56,8 +56,8 @@ function HostInjectChip({
             className={cx(
               "inline-flex h-6 max-w-full items-center gap-1 rounded-full px-2 text-caption-2-medium outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
               unsupported
-                ? "bg-background-tertiary-default/80 text-text-tertiary ring-1 ring-border-button-default/80 opacity-70"
-                : "bg-accent-500/10 text-accent-600 ring-1 ring-accent-500/20 hover:bg-accent-500/15"
+                ? "text-text-tertiary opacity-70"
+                : "text-text-tertiary hover:bg-background-secondary-hover hover:text-text-secondary"
             )}
           >
             <span className="truncate">{label}</span>

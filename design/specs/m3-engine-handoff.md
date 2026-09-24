@@ -1,11 +1,11 @@
 # spec/m3-engine-handoff
 
-> M3 **只**管换引擎与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-20
+> M3 **只**管换引擎与空态：空会话直切、有历史 handoff、未装态、三路微文案、空态 checklist。最后更新：2026-09-24
 > 同引擎中途换模型是 **I1**，不是本里程碑的 handoff。产品锁 [`../references/i1-mid-model-switch.md`](../references/i1-mid-model-switch.md)。视觉真源（设计锁，不宣称应用 1:1）：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)。
 > 引擎可选显示名是 **P2**，不是 handoff / 换模。已接线引擎级标签（`preferences.agentDisplayNames`）；换名不是换引擎。产品锁 [`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)；【视觉真源】[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)。
 > 产品锁：M2 收完后做本文，再做 M4。整段程序不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
-> handoff 摘要注入 system/hidden + 可关「已交接」微条，**禁止**当第一条可见用户消息。
+> handoff 摘要注入 system/hidden + 输入框上沿短提示（数秒后消失），**禁止**当第一条可见用户消息，也不占 Composer 上一整行。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 
 ## 当前真相
@@ -17,7 +17,7 @@
 | 有历史切换 | Composer 同宽确认坞（摘要默认折叠）；确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文。`peekSessionHandoff` 开流前注入，`openCodingStream` 成功后才 `take`。pending 时胶囊改「确认切换 · 目标」，禁止再开 Picker。文件只取上一轮工具路径，不塞 `workspace.changes` |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
-| 已交接条 | 仅确认成功后出现；可 dismiss；文案 `{from} → {to}`。**确认卡打开时不画微条**；取消 / 未确认不留微条。卡与微条互斥。确认时 `markHandoffCut`：切点之前的气泡降透明度，交界画「上一引擎记录 · 新引擎只收到摘要」 |
+| 已交接提示 | 仅确认成功后出现；文案 `{from} → {to}`；贴在输入框上沿、不占一行，约 3 秒后消失。**确认卡打开时不画**；取消 / 未确认不留。卡与提示互斥。确认时 `markHandoffCut`：切点之前的气泡降透明度，交界画「上一引擎记录 · 新引擎只收到摘要」 |
 | inspect / brief | `captureOpenStreamPrompt` 与 `takeSessionHandoff` 都跟开流**成功**；`ACP_AUTH_REQUIRED` / 缺密钥不得留下假 last-run，也不得提前 `take` |
 | 未装 | Rail/Picker 灰态；点开 `agent-cli-install`（无装饰粉边；主钮一键安装、次钮复制、文档为链接）；就绪灯只信 `engineReadiness === ready`（`loggedIn==null` 是 inspecting，不是绿灯） |
 | 空态 | 开始面：问候 `text-title-1-bold`（工作区名 accent）+ 一条元数据胶囊（「N 项」/ 叠标已就绪 / 未安装，展开下拉）+ Composer + 下方命令 pills；Composer **不进** empty-state；藏审查条 / UsagePill 警报 / 技能源同步条 |
@@ -68,7 +68,7 @@ Rail / Picker 选中即生效；未 `ready` 见 §4。
 | 摘要区 | 可编辑 textarea（默认折叠；自动摘要最近轮：目标/上一轮文件/未决审批）；`text-caption-1-regular` |
 | 主钮 | 确认切换（`accent`） |
 | 次钮 | 取消（恢复 from 选中态） |
-| 确认后 | `disposeAcpSession(from)`（若 ACP）→ `bindSessionRuntime(to)` → 摘要注入 **系统/隐藏上下文**（不进用户气泡）；线程或 Composer 上沿出「已交接」微条（from→to，可dismiss）。**禁止**伪装成用户首条附注 |
+| 确认后 | `disposeAcpSession(from)`（若 ACP）→ `bindSessionRuntime(to)` → 摘要注入 **系统/隐藏上下文**（不进用户气泡）；输入框上沿短提示「已交接」（from→to，约 3 秒消失），对话交界仍画分隔线。**禁止**伪装成用户首条附注，也禁止在 Composer 上沿占一整行 |
 | 未决审批 | 若 `pendingApproval`：默认 **阻切**。卡上只有取消（恢复 from）或「去处理审批」（`focusAttention` → `#permission-dock`） |
 
 禁静默切换。禁假「已在新引擎续跑」而无 dispose。
@@ -186,11 +186,11 @@ C 端 `AgentEngineRail` / `AgentPicker` 胶囊与导轨项**禁止**常驻协议
 
 1. PermissionDock：挂在 **Composer 上沿 sticky**（Conversation 与 Composer 之间），不是 Conversation viewport 顶 pinned。审批卡不进 `ConversationContent`。
 2. **Handoff 摘要只进新引擎的系统/隐藏上下文**（ACP 首轮 prompt 前缀，或 ToolLoop `system` 消息）。新 session 首答能读到 brief，**禁止**写成可见用户首条、用户气泡附注、或 annotated user turn。
-3. 确认后 UI **只**出可 dismiss 的「已交接」微条，文案仅 `{from} → {to}`；微条不展示摘要正文。确认卡打开期间禁止同时画微条。
+3. 确认后 UI **只**出「已交接」短提示，文案仅 `{from} → {to}`，不占输入框上一整行，约 3 秒消失；不展示摘要正文。确认卡打开期间禁止同时画提示。
 
 ## 设计定稿补充（2026-09-08）
 
 Handoff 摘要形态：
 1. 注入**系统/隐藏上下文**（新 runtime / ACP session），供模型续跑。
-2. UI 仅展示可 dismiss 的「已交接」微条（from→to）。
+2. UI 仅展示「已交接」短提示（from→to），不占 Composer 上一整行。
 3. **禁止**把摘要写成可见的用户首条附注。
