@@ -1,10 +1,22 @@
 /**
- * I1 反馈：成功微条「已切换到 {model}」、脚注「同一助手，不换引擎」。
- * 成功句不写换引擎或交接。
+ * I1 反馈：成功微条「已切换到 {model}」独占改动条上方一行，脚注「同一助手，不换引擎」。
+ * 成功句不写换引擎或交接。微条不盖改动条，也不盖底栏芯片。
  */
+import { useSyncExternalStore } from "react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { shortSessionId } from "@renderer/lib/model-switch-state"
+import { modelSwitchNoticeLabel, subscribeModelSwitchNotice } from "./model-switch-notice"
+
+export function ModelSwitchNotice() {
+  const label = useSyncExternalStore(subscribeModelSwitchNotice, modelSwitchNoticeLabel, modelSwitchNoticeLabel)
+  if (!label) return null
+  return (
+    <div className="mx-auto mb-2 flex w-[calc(100%-1.25rem)]">
+      <ModelSwitchToast modelLabel={label} />
+    </div>
+  )
+}
 
 export function ModelSwitchToast({ modelLabel }: { modelLabel: string }) {
   const t = useT()
@@ -13,7 +25,7 @@ export function ModelSwitchToast({ modelLabel }: { modelLabel: string }) {
     <div
       role="status"
       data-testid="model-switch-toast"
-      className="absolute -top-1 right-0 z-10 inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-primary shadow-card"
+      className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default px-2.5 py-1 text-caption-2-medium text-text-primary shadow-card"
     >
       <span className="size-1.5 rounded-full bg-state-success-text" />
       <span className="font-medium">{t("chat.modelSwitch.toast", { model: modelLabel })}</span>

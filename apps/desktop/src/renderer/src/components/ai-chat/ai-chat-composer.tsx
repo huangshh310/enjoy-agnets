@@ -24,6 +24,7 @@ import { useFollowupAutostart } from "@renderer/hooks/use-followup-autostart"
 import { clipboardModifiers, isPasteInlineShortcut, planComposerPaste } from "@renderer/lib/pasted-text"
 import type { ComposerProps } from "./composer/composer.types"
 import { EngineHandoffDock } from "./agent-picker/handoff/engine-handoff-dock"
+import { ModelSwitchNotice } from "./composer/model-switch/model-switch-feedback"
 import { useT } from "@renderer/i18n"
 
 
@@ -124,6 +125,7 @@ export function AiChatComposer({
       <ComposerQueue />
       <ExploreInterceptBanner />
       <ComposerBranchMismatch />
+      <ModelSwitchNotice />
       <ComposerActivityFrame />
       <form data-composer="true" onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
         <BorderBeam

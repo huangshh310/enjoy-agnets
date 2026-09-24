@@ -5,6 +5,10 @@ export function contextWindowForModel(
   models: ReadonlyArray<{ id: string; contextWindow?: number }>,
   modelId: string
 ): number | undefined {
-  const window = models.find((model) => model.id === modelId)?.contextWindow
-  return window && window > 0 ? window : undefined
+  const id = modelId.trim()
+  if (!id) return undefined
+  const exact = models.find((model) => model.id === id)
+  if (exact?.contextWindow && exact.contextWindow > 0) return exact.contextWindow
+  const suffix = models.find((model) => model.id.endsWith(`/${id}`) && (model.contextWindow ?? 0) > 0)
+  return suffix?.contextWindow
 }

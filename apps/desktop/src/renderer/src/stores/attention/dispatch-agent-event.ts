@@ -27,7 +27,10 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   }
 
   if (sessionId && event.type === "run.start") clearSessionUsage(sessionId)
-  if (event.type === "usage.updated" && sessionId) rememberSessionUsage(sessionId, event)
+  if (event.type === "usage.updated" && sessionId) {
+    const chat = useChatStore.getState()
+    rememberSessionUsage(sessionId, event, sessionId === chat.sessionId ? chat.runtimeId : undefined)
+  }
   if (event.type === "commands.update") {
     useAcpCommands.getState().setCommands(event.commands)
   }

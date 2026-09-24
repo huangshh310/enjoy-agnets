@@ -3,7 +3,9 @@
  */
 import type { ModelMessage } from "ai"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract"
 import { readSessionModels, readSessionRuntimes } from "./agent-tools-vault"
+import { listAgentTools } from "./agent-tools-service"
 import { harnessPublicStatus } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
 import { hasSecret, readSecret, type StoredSecret } from "./secrets"
@@ -32,11 +34,37 @@ export function resolveSessionBinding(
   }
 }
 
-/** 会话覆盖 > 入参。同引擎换模下一轮读这里。 */
-export function resolveRunModelId(input: { sessionId: string; modelId?: string }): string | undefined {
-  const overlay = readSessionModels()[input.sessionId]?.trim()
+/**
+ * 会话覆盖 > 入参。非 Enjoy 本地时，覆盖必须在该引擎名单里。
+ * modelIds 不传表示名单还没到，先保留；传空数组表示名单已到但不含这个 id。
+ */
+export function resolveRunModelId(input: {
+  sessionId: string
+  modelId?: string
+  runtimeId?: string
+  engineModelIds?: readonly string[]
+}): string | undefined {
+  const overlay = sessionOverlayOnEngine({
+    runtimeId: input.runtimeId,
+    sessionModelId: readSessionModels()[input.sessionId],
+    modelIds: input.runtimeId && input.runtimeId !== "enjoy-local" ? input.engineModelIds : undefined
+  })
   if (overlay) return overlay
   return input.modelId?.trim() || undefined
+}
+
+/** 开跑前按引擎名单滤掉上一台留下的模型 id。 */
+export async function resolveBoundRunModelId(
+  input: { sessionId: string; modelId?: string },
+  runtimeId: string
+): Promise<string | undefined> {
+  const engineModelIds = runtimeId === "enjoy-local" ? undefined : await modelIdsForRuntime(runtimeId)
+  return resolveRunModelId({ ...input, runtimeId, engineModelIds })
+}
+
+async function modelIdsForRuntime(runtimeId: string): Promise<readonly string[]> {
+  const listed = await listAgentTools()
+  return listed.find((item) => item.id === runtimeId)?.models.map((item) => item.id) ?? []
 }
 
 /** ACP 不读 Providers Key；Harness 查沙箱就绪；本机 ToolLoop 必须有 API key。 */

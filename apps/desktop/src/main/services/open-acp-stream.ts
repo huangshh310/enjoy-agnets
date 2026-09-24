@@ -4,7 +4,7 @@
  * Fast / Enjoy 五档不进 ACP。thoughtLevel 在 session/new 后走 set_config_option。
  */
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
-import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
+import { isCustomAgentId, sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract"
 import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { listAgentTools } from "./agent-tools-service"
 import { assertAndClampBind } from "./agent-tools-bind-assert"
@@ -46,7 +46,11 @@ export async function openAcpStream(input: {
   const detected = override?.binaryPath ? undefined : publicTool?.detectedPath
 
   let injectedEnv: Record<string, string> | undefined
-  const sessionModel = readSessionModels()[input.sessionId]?.trim()
+  const sessionModel = sessionOverlayOnEngine({
+    runtimeId: input.runtimeId,
+    sessionModelId: readSessionModels()[input.sessionId],
+    modelIds: publicTool?.models.map((item) => item.id) ?? []
+  })
   let boundModel = sessionModel || override?.modelId || publicTool?.selectedModel
   if (override?.useCustomProvider && override?.providerId) {
     const clamped = await assertAndClampBind({

@@ -61,8 +61,9 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     hasPendingApproval: Boolean(chat.pendingApproval)
   })
   if (plan.kind === "noop") {
-    if (modelId && to === chat.runtimeId) await requestModelSwitch(modelId)
-    return "noop"
+    if (!modelId || to !== chat.runtimeId) return "noop"
+    const switched = await requestModelSwitch(modelId)
+    return switched === "applied" ? "applied" : "noop"
   }
   if (plan.kind === "apply") {
     await persistRuntimeId(to, modelId)

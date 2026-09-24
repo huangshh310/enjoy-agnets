@@ -37,7 +37,7 @@
 
 | 频道 | 载荷 |
 |---|---|
-| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`session.config`（ACP `configOptions` / `config_option_update`，思考档认 `thought_level`）；`host.inject`（本轮 Enjoy SoT Skills/MCP 快照 `HostInjectSnapshot`，开流即发，不落库）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
+| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`session.config`（ACP `configOptions` / `config_option_update`，思考档认 `thought_level`）；`usage.updated` 可带 `contextWindow`（ACP `usage_update.size`，没有则省略）；`host.inject`（本轮 Enjoy SoT Skills/MCP 快照 `HostInjectSnapshot`，开流即发，不落库）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
 | `window.quit-requested` | 空载荷。`before-quit` 未放行时推到窗口，renderer 确认或空闲后 `window.forceQuit` |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
 | `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |

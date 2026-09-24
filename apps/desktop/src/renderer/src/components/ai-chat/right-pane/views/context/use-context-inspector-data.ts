@@ -7,7 +7,11 @@ import {
   listSessionContextChips,
   subscribeSessionContextChips
 } from "@renderer/hooks/session-context-chips"
-import { useComposerActiveModelLabel } from "@renderer/components/ai-chat/agent-picker/use-composer-active-model"
+import { inspectorContextModel } from "./inspector-context-model"
+import { useEngineHandoffStore } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
+import { publishedContextWindow } from "@enjoy-agents/providers/context-window"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { sessionUsageFor, sessionUsageVersion, subscribeSessionUsage } from "@renderer/stores/session-usage"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type {
@@ -25,7 +29,7 @@ import { useSessionCompaction } from "./compact-session/use-session-compaction"
 
 export function useContextInspectorData(workspaceId: string | null) {
   const slice = useInspectorChatSlice()
-  const activeModelLabel = useComposerActiveModelLabel()
+  const face = useInspectorFace(slice)
   const chips = useSyncExternalStore(
     subscribeSessionContextChips,
     listSessionContextChips,
@@ -34,7 +38,36 @@ export function useContextInspectorData(workspaceId: string | null) {
   const catalogs = useInspectorCatalogs(workspaceId)
   const customInstructions = useCustomInstructions()
   const { compaction } = useSessionCompaction(slice.sessionId)
-  const contextWindow = contextWindowForModel(slice.models, slice.modelId)
+  useSyncExternalStore(subscribeSessionUsage, sessionUsageVersion, sessionUsageVersion)
+  const usage = sessionUsageFor(slice.sessionId)
+  const contextWindow = resolveInspectorWindow(
+    slice.models,
+    face.id,
+    usage?.contextWindow,
+    usage?.contextRuntimeId,
+    face.runtimeId
+  )
+  return inspectorSnapshot({
+    slice,
+    face,
+    chips,
+    catalogs,
+    customInstructions,
+    compaction,
+    contextWindow
+  })
+}
+
+function inspectorSnapshot(input: {
+  slice: ReturnType<typeof useInspectorChatSlice>
+  face: ReturnType<typeof useInspectorFace>
+  chips: ReturnType<typeof listSessionContextChips>
+  catalogs: ReturnType<typeof useInspectorCatalogs>
+  customInstructions: string
+  compaction: ReturnType<typeof useSessionCompaction>["compaction"]
+  contextWindow: number | undefined
+}) {
+  const { slice, face, chips, catalogs, customInstructions, compaction, contextWindow } = input
   const effectiveMessages = compaction
     ? (applySessionCompaction(slice.messages, compaction) as typeof slice.messages)
     : slice.messages
@@ -48,13 +81,12 @@ export function useContextInspectorData(workspaceId: string | null) {
     customInstructions,
     slice.runtimeId
   )
-
   return {
     sessionId: slice.sessionId,
     compaction,
     contextWindow,
-    modelId: slice.modelId,
-    modelLabel: activeModelLabel,
+    modelId: face.id,
+    modelLabel: face.label,
     mode: slice.mode,
     messages: slice.messages,
     running: slice.running,
@@ -69,9 +101,38 @@ export function useContextInspectorData(workspaceId: string | null) {
   }
 }
 
+function useInspectorFace(slice: ReturnType<typeof useInspectorChatSlice>) {
+  const phase = useEngineHandoffStore((state) => state.phase)
+  const toRuntimeId = useEngineHandoffStore((state) => state.toRuntimeId)
+  const snapshot = useSettingsSnapshot()
+  return inspectorContextModel({
+    phase,
+    toRuntimeId,
+    runtimeId: slice.runtimeId,
+    catalogId: slice.modelId,
+    catalogLabel: slice.modelLabel,
+    sessionModelId: slice.sessionId ? slice.sessionModels[slice.sessionId] : undefined,
+    agents: snapshot.data?.agentTools ?? []
+  })
+}
+
+/** 只信报出这次窗口的那台引擎。交接中看目标引擎，不用上一台留下的 size。 */
+function resolveInspectorWindow(
+  models: ReturnType<typeof useInspectorChatSlice>["models"],
+  modelId: string,
+  advertised: number | undefined,
+  advertisedRuntime: string | undefined,
+  faceRuntime: string
+): number | undefined {
+  if (advertised && advertised > 0 && advertisedRuntime === faceRuntime) return advertised
+  return contextWindowForModel(models, modelId) ?? publishedContextWindow(modelId)
+}
+
 function useInspectorChatSlice() {
   return {
     modelId: useChatStore((state) => state.modelId),
+    modelLabel: useChatStore((state) => state.modelLabel),
+    sessionModels: useChatStore((state) => state.sessionModels),
     models: useChatStore((state) => state.models),
     mode: useChatStore((state) => state.mode),
     messages: useChatStore((state) => state.messages),

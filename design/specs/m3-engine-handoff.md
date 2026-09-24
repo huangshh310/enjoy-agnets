@@ -13,7 +13,7 @@
 | 点 | 现状 |
 |---|---|
 | 切引擎 | 空会话：`planComposerSwitch` → `setRuntimeId` + `bindSessionRuntime`，无卡 |
-| 同引擎换模（I1，**不是** M3） | 同 `runtimeId` 换 `modelId` **不是** handoff，不进 `EngineHandoffCard`。入口是 Composer 瘦身铬条上**同一份**引擎·模型芯片（`AgentPicker`：点开 = 换引擎 / I1 换模）。同引擎换模仍走 `requestModelSwitch`，不进 handoff。密度认 slim 锁，禁止再并排第二份 `ComposerModelChip`。有用户轮只写 `sessionModels[sessionId]`；空会话可同时写偏好默认。新会话不继承上一会话中途模型。Enjoy Local 下一轮用新模型、不断桥。ACP 可 dispose **子进程**再 spawn `--model`，这是桥实现，**Enjoy session id 不变**，**不是**重开 Enjoy 会话。C 端成功：角标「已切换」、微条「已切换到 {model}」、脚注「同一助手，不换引擎」。`capabilities.models===none` 禁用芯片 +「此引擎不支持中途换模型」；`requestModelSwitch` / `persistSessionModel` 对 none 直接 failed 并回滚 store，禁止写覆盖。未登录 / 名单空诚实失败 + 重试，禁止空成功。禁止「已切换引擎」/「已交接」/「换模会重开会话」/「本机助手会话会重开」/ 当用户气泡 / handoff brief / 中途 `agentTools.upsert`。视觉锁 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html) |
+| 同引擎换模（I1，**不是** M3） | 同 `runtimeId` 换 `modelId` **不是** handoff，不进 `EngineHandoffCard`。入口是 Composer 瘦身铬条上**同一份**引擎·模型芯片（`AgentPicker`：点开 = 换引擎 / I1 换模）。同引擎换模仍走 `requestModelSwitch`，不进 handoff。密度认 slim 锁，禁止再并排第二份 `ComposerModelChip`。有用户轮只写 `sessionModels[sessionId]`；空会话可同时写偏好默认。新会话不继承上一会话中途模型。Enjoy Local 下一轮用新模型、不断桥。ACP 可 dispose **子进程**再 spawn `--model`，这是桥实现，**Enjoy session id 不变**，**不是**重开 Enjoy 会话。C 端成功：微条「已切换到 {model}」独占改动条上方一行，不盖改动条和芯片。芯片不常驻「已切换」。脚注只在会话模型不同于引擎默认时出现；没有默认不算已切换。`capabilities.models===none` 禁用芯片 +「此引擎不支持中途换模型」；`requestModelSwitch` / `persistSessionModel` 对 none 直接 failed 并回滚 store，禁止写覆盖。未登录 / 名单空诚实失败 + 重试，禁止空成功。禁止「已切换引擎」/「已交接」/「换模会重开会话」/「本机助手会话会重开」/ 当用户气泡 / handoff brief / 中途 `agentTools.upsert`。视觉锁 [`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html) |
 | 有历史切换 | Composer 同宽确认坞（摘要默认折叠）；确认后 `disposeAcpSession` + `setHandoff`；brief 只进系统/隐藏上下文。`peekSessionHandoff` 开流前注入，`openCodingStream` 成功后才 `take`。pending 时胶囊改「确认切换 · 目标」，禁止再开 Picker。文件只取上一轮工具路径，不塞 `workspace.changes` |
 | 取消 | 恢复 from：`chat.runtimeId` + Picker/Rail `tabId`；不 `bindSessionRuntime` |
 | 阻切 | 取消，或「去处理审批」：恢复 from 并 `focusAttention({ sessionId, kind, navigate })` 落到当前会话 PermissionDock |
@@ -32,7 +32,7 @@
 | 切什么 | `runtimeId` | 同 `runtimeId` 的 `modelId` |
 | Enjoy 会话 | 同一 `sessionId`；有历史才确认交接 | 同一 `sessionId`，**不**新开、**不**重开 |
 | 入口 | Rail / Picker / 设为主引擎 | Composer 模型芯片 |
-| C 端成功 | 「已交接 {from} → {to}」 | 「已切换」「已切换到 {model}」「同一助手，不换引擎」 |
+| C 端成功 | 「已交接 {from} → {to}」 | 「已切换到 {model}」；芯片不常驻「已切换」 |
 | 禁止 | 静默切引擎、假续跑 | 「已切换引擎」「已交接」「换模会重开会话」、handoff 卡 |
 
 ACP 子进程 dispose 再 spawn `--model` **不是** Enjoy 会话重开，也不是 M3。产品锁 [`../references/i1-mid-model-switch.md`](../references/i1-mid-model-switch.md)。

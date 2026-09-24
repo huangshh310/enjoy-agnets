@@ -733,6 +733,7 @@ export const zhChat = {
   inspectorUsed: "已用",
   inspectorCap: "{n} 上限",
   inspectorCapUnknown: "未公布窗口",
+  inspectorCapUnknownModel: "{model} · 未公布窗口",
   inspectorToolsPolicy: "工具与策略",
   inspectorReadGroup: "只读探查",
   inspectorWriteGroup: "磁盘写入",

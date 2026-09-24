@@ -68,8 +68,9 @@ export function useComposerModelSwitch(input: {
     showBadge: shouldShowModelSwitchBadge({
       sessionId,
       sessionModels,
-      engineDefault: agent?.selectedModel ?? null,
-      hasUserTurns: sessionHasUserTurns(messages)
+      engineDefault: runtimeId === DEFAULT_RUNTIME_ID ? input.modelId : (agent?.selectedModel ?? null),
+      hasUserTurns: sessionHasUserTurns(messages),
+      engineModelIds: runtimeId === DEFAULT_RUNTIME_ID ? undefined : agent?.models?.map((item) => item.id)
     }),
     unsupported: kind === "unsupported"
   }

@@ -76,11 +76,16 @@ export function shouldShowModelSwitchBadge(input: {
   sessionModels: Record<string, string>
   engineDefault?: string | null
   hasUserTurns: boolean
+  /** 当前引擎名单。非空且不含覆盖时，这是上一引擎留下的 id，不要出「已切换」。 */
+  engineModelIds?: readonly string[]
 }): boolean {
   if (!input.sessionId || !input.hasUserTurns) return false
   const overlay = input.sessionModels[input.sessionId]?.trim()
   if (!overlay) return false
+  const ids = input.engineModelIds
+  if (ids && !ids.includes(overlay)) return false
   const engine = input.engineDefault?.trim()
-  if (!engine) return true
+  // Enjoy 本地没有 CLI selectedModel。空默认不是「已切换」。
+  if (!engine) return false
   return overlay !== engine
 }

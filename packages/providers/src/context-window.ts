@@ -56,22 +56,64 @@ export function resolveModelContextWindow(hints: ContextWindowHints): number | u
   return firstWindow(hints.profileWindow, hints.catalogWindow, hints.gatewayWindow)
 }
 
-/** 在 Gateway 条目里按精确 id、provider/id、后缀 id 查找。 */
+/**
+ * Gateway 没有官方短 id `deepseek-flash`，目录行是 `deepseek/deepseek-v4.1-flash`。
+ * 先对到现行行，再回落到仍在路由的 v4-flash。
+ */
+const GATEWAY_ALIASES: Record<string, readonly string[]> = {
+  "deepseek-flash": ["deepseek-v4.1-flash", "deepseek-v4-flash"]
+}
+
+/** 在 Gateway 条目里按精确 id、provider/id、后缀 id 查找；官方短 id 再走别名。 */
 export function lookupGatewayContextWindow(
   entries: ReadonlyArray<{ id: string; contextWindow?: number }>,
   modelId: string,
   provider?: string
 ): number | undefined {
-  if (!modelId || entries.length === 0) return undefined
-  const exact = entries.find((entry) => entry.id === modelId)
+  const direct = findGatewayWindow(entries, modelId, provider)
+  if (direct) return direct
+  const bare = bareModelId(modelId)
+  if (bare !== modelId.trim()) {
+    const viaBare = findGatewayWindow(entries, bare, provider)
+    if (viaBare) return viaBare
+  }
+  return aliasGatewayWindow(entries, bare.toLowerCase(), provider)
+}
+
+function findGatewayWindow(
+  entries: ReadonlyArray<{ id: string; contextWindow?: number }>,
+  modelId: string,
+  provider?: string
+): number | undefined {
+  const id = modelId.trim()
+  if (!id || entries.length === 0) return undefined
+  const exact = entries.find((entry) => entry.id === id)
   if (exact?.contextWindow) return exact.contextWindow
   if (provider) {
-    const prefixed = entries.find((entry) => entry.id === `${provider}/${modelId}`)
+    const prefixed = entries.find((entry) => entry.id === `${provider}/${id}`)
     if (prefixed?.contextWindow) return prefixed.contextWindow
   }
-  const suffix = `/${modelId}`
-  const bySuffix = entries.find((entry) => entry.id.endsWith(suffix))
-  return bySuffix?.contextWindow
+  const suffix = `/${id}`
+  return entries.find((entry) => entry.id.endsWith(suffix))?.contextWindow
+}
+
+function aliasGatewayWindow(
+  entries: ReadonlyArray<{ id: string; contextWindow?: number }>,
+  modelId: string,
+  provider?: string
+): number | undefined {
+  const aliases = GATEWAY_ALIASES[modelId]
+  if (!aliases) return undefined
+  for (const alias of aliases) {
+    const found = findGatewayWindow(entries, alias, provider)
+    if (found) return found
+  }
+  return undefined
+}
+
+/** 去掉 Claude Code 的 `[1m]` 窗口后缀，别名表只认裸 id。 */
+function bareModelId(modelId: string): string {
+  return modelId.trim().replace(/\[[^\]]*\]$/u, "")
 }
 
 function firstWindow(...values: Array<number | undefined>): number | undefined {

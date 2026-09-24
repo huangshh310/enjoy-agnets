@@ -5,6 +5,10 @@
 export type SessionUsage = {
   inputTokens: number
   outputTokens?: number
+  /** ACP usage_update.size：报出这次用量的那台引擎的窗口。 */
+  contextWindow?: number
+  /** 和 contextWindow 一起记下，换引擎后不再拿上一台的 size。 */
+  contextRuntimeId?: string
 }
 
 const bySession = new Map<string, SessionUsage>()
@@ -19,14 +23,35 @@ export function clearSessionUsage(sessionId: string): void {
 
 export function rememberSessionUsage(
   sessionId: string,
-  usage: { inputTokens?: number; outputTokens?: number }
+  usage: { inputTokens?: number; outputTokens?: number; contextWindow?: number },
+  runtimeId?: string
 ): void {
-  if (typeof usage.inputTokens !== "number" || usage.inputTokens < 0) return
+  const tokensOk = typeof usage.inputTokens === "number" && usage.inputTokens >= 0
+  const windowOk = typeof usage.contextWindow === "number" && usage.contextWindow > 0
+  if (!tokensOk && !windowOk) return
+  const prev = bySession.get(sessionId)
+  const sameEngine = !runtimeId || !prev?.contextRuntimeId || prev.contextRuntimeId === runtimeId
   bySession.set(sessionId, {
-    inputTokens: usage.inputTokens,
-    ...(typeof usage.outputTokens === "number" ? { outputTokens: usage.outputTokens } : {})
+    inputTokens: tokensOk ? usage.inputTokens! : (prev?.inputTokens ?? 0),
+    ...(typeof usage.outputTokens === "number" ? { outputTokens: usage.outputTokens } : {}),
+    ...keptWindow(windowOk ? usage.contextWindow : undefined, sameEngine ? prev : undefined, runtimeId)
   })
   bump()
+}
+
+function keptWindow(
+  next: number | undefined,
+  prev: SessionUsage | undefined,
+  runtimeId?: string
+): Pick<SessionUsage, "contextWindow" | "contextRuntimeId"> {
+  if (next && next > 0) return { contextWindow: next, ...(runtimeId ? { contextRuntimeId: runtimeId } : {}) }
+  if (prev?.contextWindow) {
+    return {
+      contextWindow: prev.contextWindow,
+      ...(prev.contextRuntimeId ? { contextRuntimeId: prev.contextRuntimeId } : {})
+    }
+  }
+  return {}
 }
 
 function bump(): void {

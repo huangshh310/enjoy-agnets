@@ -21,7 +21,8 @@ export function AgentLimitsCard({
   const t = useT()
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const workspaceId = useChatStore((state) => state.workspaceId)
-  const data = contextWindowDataFromStats(useContextInspectorData(workspaceId).tokenStats)
+  const inspector = useContextInspectorData(workspaceId)
+  const data = contextWindowDataFromStats(inspector.tokenStats)
   if (usedTokens !== undefined) data.usedTokens = usedTokens
   if (maxTokens !== undefined) data.maxTokens = maxTokens
   data.buckets = withLocalizedBucketLabels(data.buckets, t)

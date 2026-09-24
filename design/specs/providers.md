@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-09-14
+> 协议工厂，不是品牌锁定。最后更新：2026-09-24
 
 ## 当前真相
 
@@ -16,7 +16,7 @@
 
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 
-探测：`probeProvider` / `pingProvider` / `discoverRemoteModels`。Fetch `/models` 合并进用户目录后 `rememberProbedModels`；`models.list` 带 `staticCaps` / `probedCaps` / `probedAt`，以及按模型解析的 `contextWindow`。窗口优先级：探测目录字段（`context_window` / `max_model_len` 等）> AI Gateway 公开目录 `GET https://ai-gateway.vercel.sh/v1/models`（启动缓存）> 档案**手填** `contextWindow`。设置页 128k 等只是快捷芯片，默认「自动 / 未知」，未手填不写入档案、不进解析链。SDK 7 的 `LanguageModel` **没有** `contextWindow`，禁止按 modelId 写死 1M/200k 映射表。未探测时 UI 用静态目录（id/label），窗口仍走 Gateway / 手填。都没有则省略 `contextWindow`，UI 显示「窗口未知」。拉模型前先 `adviseCatalogUrl`：按路径认协议。DeepSeek `https://api.deepseek.com/anthropic` 是官方 Messages（cc-switch Claude 预设同款），放行；控制台或 Chat 根 + Anthropic 改写成该路径，不要去打 HTML。`/models` 候选会剥 `/anthropic`，但 `resolvedBaseURL` 不得把档案基址改成 Chat 根。没有 Messages 线的官方主机（如 `api.openai.com`）仍拒。HTML 当 JSON 走 `catalogHtml` 中英文案。
+探测：`probeProvider` / `pingProvider` / `discoverRemoteModels`。Fetch `/models` 合并进用户目录后 `rememberProbedModels`；`models.list` 带 `staticCaps` / `probedCaps` / `probedAt`，以及按模型解析的 `contextWindow`。窗口优先级：探测目录字段（`context_window` / `max_model_len` 等）> AI Gateway 公开目录 `GET https://ai-gateway.vercel.sh/v1/models`（启动缓存）> 档案**手填** `contextWindow`。设置页 128k 等只是快捷芯片，默认「自动 / 未知」，未手填不写入档案、不进解析链。SDK 7 的 `LanguageModel` **没有** `contextWindow`，禁止在 `models.list` 里按 modelId 写死窗口。未探测时 UI 用静态目录（id/label），窗口仍走 Gateway / 手填。都没有则省略 `contextWindow`；检查器再落到 `publishedContextWindow`（价目表写明的家族），其余仍显示「窗口未知」。拉模型前先 `adviseCatalogUrl`：按路径认协议。DeepSeek `https://api.deepseek.com/anthropic` 是官方 Messages（cc-switch Claude 预设同款），放行；控制台或 Chat 根 + Anthropic 改写成该路径，不要去打 HTML。`/models` 候选会剥 `/anthropic`，但 `resolvedBaseURL` 不得把档案基址改成 Chat 根。没有 Messages 线的官方主机（如 `api.openai.com`）仍拒。HTML 当 JSON 走 `catalogHtml` 中英文案。
 
 能力：`ProviderCapability`（text/streaming/reasoning/tools/structured/vision/files/skills/image/embedding/rerank/speech/transcription/realtime/video）。静态目录在 `packages/providers/src/capabilities/catalog.ts`；Fal/Replicate/ElevenLabs/Deepgram/Cohere 只声明媒体能力，不能当聊天 LanguageModel。`grok-imagine-*` / dall-e / gpt-image 也只声明 `image`（或 video），不要因为 id 含 `grok` 就加 vision/tools。`createLanguageModel` 会套 `wrapLanguageModel`。`createEnjoyRegistry` 用 SDK `createProviderRegistry`。`createRerankModel` 只给 Cohere / 模型名含 rerank 的档案建 `reranking` 工厂。`createTranslationModel` 走 OpenAI 兼容 `translation()`。`uploadFile` / `uploadSkill` 在 main 调，引用按 hash 缓存。媒体官方 Provider 与语言 Provider 共用设置 UI，不复制一套页面。`resolveModelAlias` 解析 `provider/model`。
 
@@ -49,7 +49,7 @@
 - 添加 Anthropic 时把 Base URL 填成 `https://platform.deepseek.com`，点「拉取」会打到控制台网页。那是控制台不是接口。正确做法：识别已知控制台 / 官方主机；DeepSeek 官方 Messages 在 `https://api.deepseek.com/anthropic`（Chat Completions 才是 `/v1`），控制台或 Chat 根 + Anthropic 改写成 `/anthropic`，不要按主机名拒。`api.openai.com` 没有 Messages 线才拒。拉 `/models` 要剥 `/anthropic` 打根上的目录，但禁止把档案 Base URL 覆盖成 Chat 根（否则 Claude 的 `ANTHROPIC_BASE_URL` 会坏）。
 - DeepSeek 双入口：Chat / Codex 走 `https://api.deepseek.com/v1`；Claude 走 `https://api.deepseek.com/anthropic`。不是独立 SDK，也不要抄 cc-switch 的本机协议代理。
 - 国内中转只改 `baseURL` + 透传模型 ID。preset 不是唯一合法供应商。
-- 上下文窗口：不要写 `MODEL_CONTEXT_LIMITS["grok-4.6"]=1M`。官方 `/models` 常不带 `context_window`，此时靠 Gateway 目录或用户明确手填的档案窗口；都没有就显示「窗口未知」，不要猜 128k / 200k / 1M。旧档案若曾被表单默认写成 128000，用户需在参数页点「自动 / 未知」并保存才能清掉。
+- 上下文窗口：不要写一张覆盖全部 id 的 `MODEL_CONTEXT_LIMITS`。官方 `/models` 常不带 `context_window`，优先 Gateway 目录或用户手填。都没有时，UI 只用 `publishedContextWindow` 里厂商价目表写明的家族（Claude 200k、grok-4.6 为 2M、`deepseek-flash` / V4 为 1M）。Gateway 没有 `deepseek/deepseek-flash` 这一行，短 id 要对到 `deepseek-v4.1-flash`。价目表没写的 id 仍显示「窗口未知」，不要猜 128k。旧档案若曾被表单默认写成 128000，用户需在参数页点「自动 / 未知」并保存才能清掉。
 - 删除仍被 CLI 引用的档案必须先解绑（`unbindProviderFromAgentTools`），否则智能体卡还显示已删档案名，开流会找不到 Key。UI 先列出助手名再 Confirm。
 - 不要把 `kind===custom` 当成「什么协议都能绑」。Claude 只收 anthropic；Codex 不收 google/anthropic；Gemini 只收 `kind===google`（即使 apiStyle 是 openai）。
 - 绑定下拉里「+ 添加 {品牌} 供应商」既像选项又像入口，还会在智能体抽屉就地 CRUD。正确做法：下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外跳转本页。仅官方槽不要画这条链。

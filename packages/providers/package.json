@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./presets": "./src/presets.ts",
     "./capabilities": "./src/capabilities/catalog.ts",
-    "./reasoning": "./src/reasoning.ts"
+    "./reasoning": "./src/reasoning.ts",
+    "./context-window": "./src/published-context-window.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

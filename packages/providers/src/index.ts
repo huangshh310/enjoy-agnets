@@ -29,6 +29,7 @@ export {
   type ProviderPreset
 } from "./presets"
 
+export { publishedContextWindow } from "./published-context-window"
 export { pingProviderEndpoint, type PingResult } from "./discover"
 export {
   adviseCatalogUrl,

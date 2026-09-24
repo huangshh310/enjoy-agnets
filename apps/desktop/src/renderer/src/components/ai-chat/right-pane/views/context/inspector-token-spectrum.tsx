@@ -17,10 +17,12 @@ const BUCKET_KEYS: Record<TokenSpectrumBucketId, string> = {
 
 export function InspectorTokenSpectrum({
   stats,
-  compaction
+  compaction,
+  modelLabel
 }: {
   stats: ContextWindowStats
   compaction?: SessionCompaction | null
+  modelLabel?: string
 }) {
   const t = useT()
   const { usedTokens, maxTokens, usagePercent, buckets } = stats
@@ -55,7 +57,7 @@ export function InspectorTokenSpectrum({
           windowKnown={maxTokens > 0}
           usedLabel={t("chat.inspectorUsed")}
         />
-        <BucketLegend usedTokens={usedTokens} maxTokens={maxTokens} buckets={buckets} />
+        <BucketLegend usedTokens={usedTokens} maxTokens={maxTokens} buckets={buckets} modelLabel={modelLabel} />
       </div>
     </section>
   )
@@ -114,13 +116,18 @@ function UsageRing({
 function BucketLegend({
   usedTokens,
   maxTokens,
-  buckets
+  buckets,
+  modelLabel
 }: {
   usedTokens: number
   maxTokens: number
   buckets: ContextWindowStats["buckets"]
+  modelLabel?: string
 }) {
   const t = useT()
+  const unknown = modelLabel
+    ? t("chat.inspectorCapUnknownModel", { model: modelLabel })
+    : t("chat.inspectorCapUnknown")
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
       <div className="flex items-baseline justify-between font-mono text-caption-2-medium">
@@ -129,7 +136,7 @@ function BucketLegend({
           <span className="font-normal text-text-tertiary">Tokens</span>
         </span>
         <span className="text-text-tertiary">
-          {maxTokens > 0 ? t("chat.inspectorCap", { n: formatTokens(maxTokens) }) : t("chat.inspectorCapUnknown")}
+          {maxTokens > 0 ? t("chat.inspectorCap", { n: formatTokens(maxTokens) }) : unknown}
         </span>
       </div>
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-background-secondary-default">

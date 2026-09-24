@@ -188,6 +188,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/index.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/session-overlay",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/session-overlay.ts")
+        },
+        {
           find: "@enjoy-agents/agent-core/diff",
           replacement: resolve(repoRoot, "packages/agent-core/src/diff.ts")
         },
@@ -206,6 +210,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/providers/capabilities",
           replacement: resolve(repoRoot, "packages/providers/src/capabilities/catalog.ts")
+        },
+        {
+          find: "@enjoy-agents/providers/context-window",
+          replacement: resolve(repoRoot, "packages/providers/src/published-context-window.ts")
         },
         {
           find: "@enjoy-agents/assets/playback-url",

@@ -741,6 +741,7 @@ export const enChat = {
   inspectorUsed: "Used",
   inspectorCap: "{n} cap",
   inspectorCapUnknown: "no advertised window",
+  inspectorCapUnknownModel: "{model} · no advertised window",
   inspectorToolsPolicy: "Tools & policy",
   inspectorReadGroup: "Inspect",
   inspectorWriteGroup: "Write",

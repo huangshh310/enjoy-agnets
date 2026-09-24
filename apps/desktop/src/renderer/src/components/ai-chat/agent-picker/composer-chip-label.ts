@@ -2,6 +2,8 @@
  * Composer 引擎胶囊：只拼「引擎 · 模型」。
  * 供应商仅进 title / Picker 左栏，禁止第三段，禁止协议词。
  */
+import { sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract/session-overlay"
+
 const ENJOY_LOCAL = "enjoy-local"
 
 export function composerChipParts(input: {
@@ -35,12 +37,35 @@ export type ComposerActiveModelInput = {
   }
 }
 
+/**
+ * 会话覆盖只在当前引擎的名单里生效。
+ * 没拿到 agent 时先保留；名单已到但是空或不含该 id，就丢掉。
+ */
+export function sessionModelOnEngine(input: {
+  runtimeId: string
+  sessionModelId?: string | null
+  agent?: { models?: readonly { id: string }[] }
+}): string {
+  return sessionOverlayOnEngine({
+    runtimeId: input.runtimeId,
+    sessionModelId: input.sessionModelId,
+    modelIds: input.agent ? (input.agent.models?.map((item) => item.id) ?? []) : undefined
+  })
+}
+
+/** 当前引擎正在用的模型 id。Enjoy 本地用档案；ACP 用本引擎会话覆盖或 CLI selectedModel。 */
+export function composerActiveModelId(input: ComposerActiveModelInput): string {
+  const overlay = sessionModelOnEngine(input)
+  if (input.runtimeId === ENJOY_LOCAL) return overlay || input.catalogId.trim()
+  return overlay || input.agent?.selectedModel?.trim() || ""
+}
+
 /** Enjoy Local 用档案目录；ACP 用会话覆盖或 CLI selectedModel。绑定档案时不要用 inspect 假目录。 */
 export function composerActiveModelLabel(input: ComposerActiveModelInput): string {
   if (input.runtimeId === ENJOY_LOCAL) {
     return input.catalogLabel.trim() || input.catalogId.trim()
   }
-  const selected = input.sessionModelId?.trim() || input.agent?.selectedModel?.trim()
+  const selected = sessionModelOnEngine(input) || input.agent?.selectedModel?.trim()
   const fromList = selected
     ? (input.agent?.models?.find((item) => item.id === selected)?.label ?? selected)
     : ""

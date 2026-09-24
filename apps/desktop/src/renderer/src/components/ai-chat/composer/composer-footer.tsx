@@ -11,7 +11,6 @@ import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { AgentPicker } from "../agent-picker"
 import { ComposerThinkingChrome } from "./thinking/composer-thinking-chrome"
-import { ContextRing } from "./context-ring"
 import { ApprovalPolicyToggle } from "../approval-policy-toggle"
 import { FastModeToggle } from "../fast-mode-toggle"
 import { ComposerAttachMenu } from "./composer-attach-menu"
@@ -85,7 +84,6 @@ export function ComposerFooter({
           onModelChange={onModelChange}
         />
         <ComposerThinkingChrome compact modelId={modelId} modelLabel={modelLabel} models={models} />
-        <ContextRing />
         <HostInjectBar />
         <SessionMeter />
       </div>

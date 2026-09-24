@@ -149,4 +149,33 @@ test("有用户轮且覆盖不同于引擎默认才出已切换角标", () => {
     }),
     false
   )
+  assert.equal(
+    shouldShowModelSwitchBadge({
+      sessionId: "s1",
+      sessionModels: { s1: "deepseek-flash" },
+      engineDefault: "claude-sonnet-4-5",
+      hasUserTurns: true,
+      engineModelIds: ["claude-sonnet-4-5"]
+    }),
+    false
+  )
+  assert.equal(
+    shouldShowModelSwitchBadge({
+      sessionId: "s1",
+      sessionModels: { s1: "deepseek-flash" },
+      engineDefault: "claude-sonnet-4-5",
+      hasUserTurns: true,
+      engineModelIds: []
+    }),
+    false
+  )
+  assert.equal(
+    shouldShowModelSwitchBadge({
+      sessionId: "s1",
+      sessionModels: { s1: "deepseek-v4-flash" },
+      engineDefault: null,
+      hasUserTurns: true
+    }),
+    false
+  )
 })

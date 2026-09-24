@@ -43,7 +43,11 @@ export function AiChatStatusBar({
             >
               <ContextRing value={capKnown ? usagePercent : 0} />
               <span className="font-medium font-mono">
-                {capKnown ? `${usagePercent}%` : t("chat.inspectorCapUnknown")}
+                {capKnown
+                  ? `${usagePercent}%`
+                  : inspector.modelLabel
+                    ? t("chat.inspectorCapUnknownModel", { model: inspector.modelLabel })
+                    : t("chat.inspectorCapUnknown")}
               </span>
             </button>
           </PopoverTrigger>

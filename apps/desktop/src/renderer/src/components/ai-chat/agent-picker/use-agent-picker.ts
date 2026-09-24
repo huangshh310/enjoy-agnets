@@ -8,14 +8,14 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { canSwitchAgent, DEFAULT_RUNTIME_ID } from "@renderer/lib/agent-runtime"
 import { useEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { engineTrueNameTitle } from "@renderer/lib/agent-display-name"
-import { shouldShowModelSwitchBadge } from "@renderer/lib/session-model"
-import { useT } from "@renderer/i18n"
+import { useT, type TranslateFn } from "@renderer/i18n"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { quotaHintText } from "../usage/quota-hint-text"
 import { useQuotaHint } from "../usage/use-quota-hint"
 import { isAgentToolId } from "./agent-brand-icon"
 import { composerRailSections } from "./composer-agents"
 import {
+  composerActiveModelId,
   composerActiveModelLabel,
   composerBoundProviderLabel,
   composerChipParts
@@ -24,7 +24,8 @@ import { useCliLoginLoopStore } from "./cli-login-loop"
 import { canBindEngine } from "./engine-readiness"
 import { readinessInputOf } from "./engine-readiness-input"
 import { requestEngineSwitch, useEngineHandoffStore } from "./handoff/engine-handoff-store"
-import { canOpenAgentPicker, sessionHasUserTurns } from "./handoff/plan-composer-switch"
+import { showModelSwitchNotice } from "../composer/model-switch/model-switch-notice"
+import { canOpenAgentPicker } from "./handoff/plan-composer-switch"
 
 type RailAgent = ReturnType<typeof composerRailSections>["local"][number]
 
@@ -45,7 +46,6 @@ function useAgentPickerBase() {
   const sessionId = useChatStore((state) => state.sessionId)
   const sessionModels = useChatStore((state) => state.sessionModels)
   const hasKey = useChatStore((state) => state.hasKey)
-  const messages = useChatStore((state) => state.messages)
   const handoffPhase = useEngineHandoffStore((state) => state.phase)
   const pendingToId = useEngineHandoffStore((state) => state.toRuntimeId)
   const snapshot = useSettingsSnapshot()
@@ -54,22 +54,16 @@ function useAgentPickerBase() {
   const agents = [...local, ...cli, ...soon]
   const current = agents.find((item) => item.id === runtimeId)
   const [tabId, setTabId] = useState(runtimeId)
-  const [toastLabel, setToastLabel] = useState<string | null>(null)
   return {
-    t, queryClient, open, setOpen, runtimeId, sessionId, sessionModels, hasKey, messages,
+    t, queryClient, open, setOpen, runtimeId, sessionId, sessionModels, hasKey,
     handoffPhase, pendingToId, loginLoops, inspecting: snapshot.isInspectingAccounts,
-    local, cli, soon, agents, current, tabId, setTabId, toastLabel, setToastLabel,
+    local, cli, soon, agents, current, tabId, setTabId,
     tab: agents.find((item) => item.id === tabId) ?? current ?? agents[0]
   }
 }
 
 function useAgentPickerEffects(base: ReturnType<typeof useAgentPickerBase>) {
-  const { open, runtimeId, handoffPhase, setOpen, setTabId, toastLabel, setToastLabel, queryClient } = base
-  useEffect(() => {
-    if (!toastLabel) return
-    const timer = window.setTimeout(() => setToastLabel(null), 3200)
-    return () => window.clearTimeout(timer)
-  }, [toastLabel, setToastLabel])
+  const { open, runtimeId, handoffPhase, setOpen, setTabId, queryClient } = base
   useEffect(() => {
     if (open) setTabId(runtimeId)
   }, [open, runtimeId, setTabId])
@@ -96,47 +90,73 @@ function useAgentPickerFace(
   modelLabel: string,
   models: ModelOption[]
 ) {
-  const { t, runtimeId, sessionId, sessionModels, messages, current, agents, pendingToId, handoffPhase } = base
+  const { t, runtimeId, sessionId, sessionModels, current, agents, pendingToId, handoffPhase } = base
   const pickerLocked = !canOpenAgentPicker(handoffPhase)
   const currentAgentName = current?.label ?? (runtimeId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : runtimeId)
   const currentFace = useEngineFace(runtimeId, currentAgentName)
   const pendingTo = agents.find((item) => item.id === pendingToId)
   const pendingToName =
     pendingTo?.label ?? (pendingToId === DEFAULT_RUNTIME_ID ? t("chat.usage.enjoyLocal") : (pendingToId ?? ""))
-  const activeModelDisplay = composerActiveModelLabel({
-    runtimeId,
-    catalogLabel: modelLabel,
-    catalogId: modelId,
-    sessionModelId: sessionId ? sessionModels[sessionId] : undefined,
-    agent: current
-  })
-  const providerLabel = runtimeId === DEFAULT_RUNTIME_ID
-    ? models.find((item) => item.id === modelId)?.providerName
-    : composerBoundProviderLabel(current)
-  const chip = pickerLocked
-    ? { engine: t("chat.handoff.chipPending"), model: pendingToName, title: t("chat.handoff.chipPendingAria", { to: pendingToName }) }
-    : composerChipParts({ engineLabel: currentFace.face, modelLabel: activeModelDisplay, providerLabel })
   const quota = useQuotaHint(runtimeId)
+  const modelFace = pickerModelFace({
+    t, runtimeId, sessionId, sessionModels, current, modelId, modelLabel, models,
+    pickerLocked, pendingToName, engineFace: currentFace.face
+  })
   return {
     pickerLocked,
-    chip,
+    ...modelFace,
     chipIconId: pickerLocked && pendingToId ? pendingToId : runtimeId,
     chipTitle: [
-      pickerLocked ? chip.title : engineTrueNameTitle(currentAgentName, t("chat.engineRealName")),
+      pickerLocked ? modelFace.chip.title : engineTrueNameTitle(currentAgentName, t("chat.engineRealName")),
       quotaHintText(quota.percent, quota.reset, (percent) => t("chat.usage.usedPercent", { percent }))
     ].filter(Boolean).join(" · "),
-    quota,
-    showBadge: shouldShowModelSwitchBadge({
-      sessionId,
-      sessionModels,
-      engineDefault: current?.selectedModel ?? null,
-      hasUserTurns: sessionHasUserTurns(messages)
-    })
+    quota
+  }
+}
+
+function pickerModelFace(input: {
+  t: TranslateFn
+  runtimeId: string
+  sessionId: string | null
+  sessionModels: Record<string, string>
+  current: ReturnType<typeof useAgentPickerBase>["current"]
+  modelId: string
+  modelLabel: string
+  models: ModelOption[]
+  pickerLocked: boolean
+  pendingToName: string
+  engineFace: string
+}) {
+  const sessionModelId = input.sessionId ? input.sessionModels[input.sessionId] : undefined
+  const face = {
+    runtimeId: input.runtimeId,
+    catalogLabel: input.modelLabel,
+    catalogId: input.modelId,
+    sessionModelId,
+    agent: input.current
+  }
+  const providerLabel = input.runtimeId === DEFAULT_RUNTIME_ID
+    ? input.models.find((item) => item.id === input.modelId)?.providerName
+    : composerBoundProviderLabel(input.current)
+  const chip = input.pickerLocked
+    ? {
+        engine: input.t("chat.handoff.chipPending"),
+        model: input.pendingToName,
+        title: input.t("chat.handoff.chipPendingAria", { to: input.pendingToName })
+      }
+    : composerChipParts({
+        engineLabel: input.engineFace,
+        modelLabel: composerActiveModelLabel(face),
+        providerLabel
+      })
+  return {
+    activeModelId: composerActiveModelId(face),
+    chip
   }
 }
 
 function useAgentPickerActions(base: ReturnType<typeof useAgentPickerBase>) {
-  const { queryClient, setOpen, agents, hasKey, loginLoops, setTabId, setToastLabel } = base
+  const { queryClient, setOpen, agents, hasKey, loginLoops, setTabId } = base
   async function applyAgent(id: string, nextModelId?: string, nextLabel?: string) {
     if (!isAgentToolId(id)) return
     const from = useChatStore.getState().runtimeId
@@ -146,7 +166,7 @@ function useAgentPickerActions(base: ReturnType<typeof useAgentPickerBase>) {
       return
     }
     if (result === "applied") await queryClient.invalidateQueries({ queryKey: ["settings"] })
-    if (nextModelId && id === from && nextLabel) setToastLabel(nextLabel)
+    if (result === "applied" && nextModelId && id === from && nextLabel) showModelSwitchNotice(nextLabel)
   }
   async function onTab(id: string) {
     setTabId(id)

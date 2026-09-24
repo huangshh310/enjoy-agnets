@@ -1,11 +1,13 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  composerActiveModelId,
   composerActiveModelLabel,
   composerBoundProviderLabel,
   composerChipParts,
   composerChipText
 } from "./composer-chip-label.ts"
+import { inspectorContextModel } from "../right-pane/views/context/inspector-context-model.ts"
 
 test("胶囊只有引擎 · 模型，供应商只进 title", () => {
   const parts = composerChipParts({
@@ -69,6 +71,15 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     }
   })
   assert.equal(grok, "grok-4.6")
+  assert.equal(
+    composerActiveModelId({
+      runtimeId: "grok",
+      catalogLabel: "deepseek-v4-flash",
+      catalogId: "deepseek-v4-flash",
+      agent: { selectedModel: "grok-4.6" }
+    }),
+    "grok-4.6"
+  )
   const local = composerActiveModelLabel({
     runtimeId: "enjoy-local",
     catalogLabel: "deepseek-v4-flash",
@@ -82,6 +93,60 @@ test("ACP 审查条不用 Enjoy Local 档案模型名", () => {
     agent: { label: "Grok Build", models: [] }
   })
   assert.equal(fallback, "Grok Build")
+  const pending = inspectorContextModel({
+    phase: "handoff_pending",
+    toRuntimeId: "claude",
+    runtimeId: "enjoy-local",
+    catalogId: "deepseek-flash",
+    catalogLabel: "deepseek-flash",
+    agents: [{ id: "claude", label: "Claude Code", selectedModel: "claude-sonnet-4-5" }]
+  })
+  assert.equal(pending.id, "claude-sonnet-4-5")
+  assert.equal(pending.label, "claude-sonnet-4-5")
+})
+
+test("上一引擎的 deepseek 覆盖不会粘到没有这个 id 的 Claude", () => {
+  const face = {
+    runtimeId: "claude",
+    catalogLabel: "deepseek-flash",
+    catalogId: "deepseek-flash",
+    sessionModelId: "deepseek-flash",
+    agent: {
+      label: "Claude Code",
+      selectedModel: "claude-sonnet-4-5",
+      models: [{ id: "claude-sonnet-4-5", label: "Sonnet 4.5" }]
+    }
+  }
+  assert.equal(composerActiveModelId(face), "claude-sonnet-4-5")
+  assert.equal(composerActiveModelLabel(face), "Sonnet 4.5")
+})
+
+test("Claude 名单已到但是空时，不再粘着上一引擎的 deepseek", () => {
+  const id = composerActiveModelId({
+    runtimeId: "claude",
+    catalogLabel: "deepseek-flash",
+    catalogId: "deepseek-flash",
+    sessionModelId: "deepseek-flash",
+    agent: { selectedModel: "claude-sonnet-4-5", models: [] }
+  })
+  assert.equal(id, "claude-sonnet-4-5")
+})
+
+test("Claude 名单里有 deepseek-flash 时会话覆盖仍然生效", () => {
+  const id = composerActiveModelId({
+    runtimeId: "claude",
+    catalogLabel: "deepseek-flash",
+    catalogId: "deepseek-flash",
+    sessionModelId: "deepseek-flash",
+    agent: {
+      selectedModel: "claude-sonnet-4-5",
+      models: [
+        { id: "claude-sonnet-4-5", label: "Sonnet 4.5" },
+        { id: "deepseek-flash", label: "deepseek-flash" }
+      ]
+    }
+  })
+  assert.equal(id, "deepseek-flash")
 })
 
 test("显示名人话上芯片，不把未命名当引擎", () => {

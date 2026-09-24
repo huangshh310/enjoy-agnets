@@ -214,6 +214,15 @@ test("available_commands_update 进 commands.update，不进气泡", () => {
   }
 })
 
+test("usage_update 带上窗口 size", () => {
+  const events = mapAcpUpdate({ sessionUpdate: "usage_update", used: 2200, size: 200000 }, "run_1")
+  assert.equal(events[0]?.type, "usage.updated")
+  if (events[0]?.type === "usage.updated") {
+    assert.equal(events[0].inputTokens, 2200)
+    assert.equal(events[0].contextWindow, 200000)
+  }
+})
+
 test("session_info_update 进 session.title", () => {
   const events = mapAcpUpdate(
     { sessionUpdate: "session_info_update", title: "Implement session list" },

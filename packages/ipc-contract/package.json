@@ -22,6 +22,7 @@
     "./session-title": "./src/session-title.ts",
     "./session-heartbeat": "./src/session-heartbeat.ts",
     "./session-recap-kind": "./src/session-recap-kind.ts",
+    "./session-overlay": "./src/session-overlay.ts",
     "./workspace-io": "./src/workspace-io.ts",
     "./checkpoint-pick": "./src/checkpoint-pick.ts"
   },

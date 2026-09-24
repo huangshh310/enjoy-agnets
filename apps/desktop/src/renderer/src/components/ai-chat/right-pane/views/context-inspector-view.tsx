@@ -57,7 +57,7 @@ function DashboardBody({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-0.5">
-      <InspectorTokenSpectrum stats={data.tokenStats} compaction={data.compaction} />
+      <InspectorTokenSpectrum stats={data.tokenStats} compaction={data.compaction} modelLabel={data.modelLabel} />
       <InspectorCompactionCard sessionId={data.sessionId} messageCount={data.messages.length} />
       <InspectorTurnWatermark perf={data.turnPerf} />
       <InspectorGroundingCard

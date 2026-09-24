@@ -1,9 +1,10 @@
 /**
- * Composer 模型菜单的一行：名称和当前勾。
+ * Composer 模型菜单的一行：族标、名称和当前勾。
  */
 import { RiCheckLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { ModelBrandIcon } from "@renderer/components/settings/providers/provider-icons"
 import type { ModelOption } from "@renderer/stores/chat-store"
 
 export function ComposerModelMenuRow({
@@ -28,6 +29,14 @@ export function ComposerModelMenuRow({
         "hover:bg-background-secondary-hover"
       )}
     >
+      <span className="flex size-4 shrink-0 items-center justify-center">
+        <ModelBrandIcon
+          modelId={`${model.id} ${model.label}`}
+          providerKind={model.provider}
+          apiStyle={model.apiStyle}
+          size={16}
+        />
+      </span>
       <span className="min-w-0 flex-1 truncate">{model.label}</span>
       {videoLocked ? <span className="shrink-0 text-caption-2-medium text-text-tertiary">{t("chat.badgeExp")}</span> : null}
       {selected ? <RiCheckLine className="size-3.5 shrink-0 text-text-tertiary" aria-hidden /> : null}
