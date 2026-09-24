@@ -40,6 +40,8 @@ export type StreamAcpTurnInput = {
   thoughtLevel?: string
   /** 落库的 ACP sessionId；握手时优先 resume。 */
   resumeSessionId?: string
+  /** 分叉会话的新建 ACP 进程才把先前可见轮次垫进首个 prompt。 */
+  forkSeed?: boolean
   onSessionBound?: (acpSessionId: string) => void
 }
 
@@ -58,21 +60,21 @@ const sessionByRun = new Map<string, string>()
 const inflightBySession = new Map<string, Promise<LiveAcp>>()
 
 export async function streamAcpTurn(input: StreamAcpTurnInput): Promise<AcpTurnHandle> {
+  const before = liveBySession.get(input.sessionId)
   const live = await ensureLive(input)
+  const reused = before != null && liveBySession.get(input.sessionId) === before
   live.runId = input.runId
   live.waitForApproval = input.waitForApproval
   await applyThoughtLevel(live, input.thoughtLevel)
   sessionByRun.set(input.runId, input.sessionId)
-  const text = composeAcpPrompt(input.messages, {
-    customInstructions: input.customInstructions,
-    skillCatalog: input.skillCatalog
-  })
+  const fellBack = live.client.takeResumeFallBack()
+  const text = promptForTurn(input, reused, fellBack)
   const queue: StreamEvent[] = []
   let wake: (() => void) | undefined
   let finished = false
   const configEvent = sessionConfigEvent(input.runId, live.client.getConfigOptions())
   if (configEvent) queue.push(configEvent)
-  if (live.client.takeResumeFallBack()) {
+  if (fellBack) {
     queue.push({
       type: "generation.warning",
       runId: input.runId,
@@ -156,6 +158,15 @@ export function disposeAllAcpSessions(): void {
   liveBySession.clear()
   sessionByRun.clear()
   inflightBySession.clear()
+}
+
+function promptForTurn(input: StreamAcpTurnInput, reused: boolean, fellBack: boolean): string {
+  const resumed = Boolean(input.resumeSessionId) && !fellBack
+  return composeAcpPrompt(input.messages, {
+    customInstructions: input.customInstructions,
+    skillCatalog: input.skillCatalog,
+    seedPriorTranscript: Boolean(input.forkSeed) && !reused && !resumed
+  })
 }
 
 async function ensureLive(input: StreamAcpTurnInput): Promise<LiveAcp> {

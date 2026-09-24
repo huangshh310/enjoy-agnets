@@ -10,6 +10,7 @@ import { buildTraceRows, isTraceExpanded, thinkingHeadline } from "./thinking-ro
 import { ThinkingSteps } from "./thinking-steps"
 import { parseAgentStepNodes } from "./agent-step-tree-parser"
 import { useT } from "@renderer/i18n"
+import { useOpenTraceForFocus } from "../subagent-pill/delegate-focus"
 
 const SHIMMER_TONE = {
   "--bui-agent-thinking-tone": "var(--color-text-secondary)"
@@ -30,6 +31,7 @@ export function ThinkingTrace({
 }) {
   const t = useT()
   const [manualOpen, setManualOpen] = useState<boolean | null>(null)
+  useOpenTraceForFocus(tools, setManualOpen)
   const seconds = useSettledSeconds(startedAt, streaming, thoughtSeconds)
   const rows = buildTraceRows(reasoning, tools, t)
   const nodes = parseAgentStepNodes(reasoning, tools, t)

@@ -29,6 +29,33 @@ export function captureParkedRun(store: {
   }
 }
 
+export function seedParkFromRunStart(sessionId: string, runId: string, now = Date.now()): ParkedRun {
+  return {
+    sessionId,
+    runId,
+    running: true,
+    runStartedAt: now,
+    pendingApproval: null,
+    error: null,
+    thinkingLabel: "Thinking",
+    pendingStreamEvents: []
+  }
+}
+
+/** 没有 park 时只认 run.start。其它事件保持原表。 */
+export function nextParks(
+  parks: Record<string, ParkedRun>,
+  sessionId: string,
+  event: StreamEvent
+): Record<string, ParkedRun> | null {
+  const existing = parks[sessionId]
+  if (!existing) {
+    if (event.type !== "run.start") return null
+    return { ...parks, [sessionId]: seedParkFromRunStart(sessionId, event.runId) }
+  }
+  return { ...parks, [sessionId]: applyEventToPark(existing, event) }
+}
+
 export function applyEventToPark(park: ParkedRun, event: StreamEvent): ParkedRun {
   if (event.type === "run.start") {
     return { ...park, runId: event.runId, running: true }

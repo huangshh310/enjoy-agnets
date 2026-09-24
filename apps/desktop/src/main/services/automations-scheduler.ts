@@ -6,6 +6,7 @@ import { cancelOnSaveFire, launchAutomationAgent } from "./automations-run"
 import { firstLiveWindow } from "./automations-notify"
 import { isAutomationRunning, readAutomations } from "./automations-store"
 import { stopWebhookListeners, syncWebhookListeners } from "./automations-webhook"
+import { tickSessionHeartbeats } from "./session-heartbeat-tick"
 
 const DEFAULT_INTERVAL_MS = 20_000
 let timer: ReturnType<typeof setInterval> | undefined
@@ -29,6 +30,7 @@ export function stopAutomationScheduler(): void {
 export async function tickAutomations(now: Date): Promise<string[]> {
   const window = firstLiveWindow()
   if (!window) return []
+  void tickSessionHeartbeats(window, now).catch(() => undefined)
   const fired: string[] = []
   for (const item of readAutomations()) {
     if (

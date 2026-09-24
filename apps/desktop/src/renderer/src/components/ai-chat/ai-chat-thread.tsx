@@ -20,6 +20,7 @@ import { QueuedFollowups } from "./thread/queued-followups"
 import { ThreadErrorBanner } from "./thread/thread-error-banner"
 import { ThreadNoticeBanner } from "./thread/thread-notice-banner"
 import { ThreadPreviewRail } from "./thread/thread-preview-rail"
+import { SubagentPill } from "./thread/subagent-pill/subagent-pill"
 import { collectRunLedger, lastAssistantTurn } from "./run-ledger/collect-run-ledger"
 
 export function AiChatThread({
@@ -71,6 +72,7 @@ export function AiChatThread({
         <ConversationScrollButton />
       </Conversation>
       <ThreadPreviewRail messages={visible} hasLedger={hasLedger} />
+      <SubagentPill messages={visible} />
     </div>
   )
 }

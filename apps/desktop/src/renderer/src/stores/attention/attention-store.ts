@@ -11,7 +11,7 @@ import {
   ingestAttentionEvent,
   resolveDecisionSlots
 } from "./ingest-attention"
-import { applyEventToPark, attachParkedRunId } from "./session-run-park"
+import { attachParkedRunId, nextParks } from "./session-run-park"
 
 type AttentionStore = {
   items: AttentionItem[]
@@ -68,11 +68,10 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
     return park
   },
   applyParkEvent: (sessionId, event) => {
-    const existing = get().parks[sessionId]
-    if (!existing) return
-    set((state) => ({
-      parks: { ...state.parks, [sessionId]: applyEventToPark(existing, event) }
-    }))
+    set((state) => {
+      const parks = nextParks(state.parks, sessionId, event)
+      return parks ? { parks } : state
+    })
   },
   claimParkedRun: (sessionId, runId) => {
     const existing = get().parks[sessionId]

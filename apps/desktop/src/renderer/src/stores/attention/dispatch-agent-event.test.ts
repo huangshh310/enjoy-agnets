@@ -28,6 +28,19 @@ test("后台会话事件不写进前台线程", () => {
   )
 })
 
+test("当前会话空闲时，本会话 run.start 归前台", () => {
+  assert.equal(
+    belongsToForeground(
+      { type: "run.start", runId: "run_hb", sessionId: "ses_a", prompt: "看构建" },
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    true
+  )
+})
+
 test("当前会话仍 running 且尚未认领 runId 时，同 session 事件归前台", () => {
   assert.equal(
     belongsToForeground(

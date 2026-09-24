@@ -5,6 +5,11 @@ import { ipcMain } from "electron"
 import {
   SessionCompactInput,
   SessionCreateInput,
+  SessionForkInput,
+  SessionForkResult,
+  SessionHeartbeatClearInput,
+  SessionHeartbeatGetInput,
+  SessionHeartbeatPutInput,
   SessionIdInput,
   SessionPatchInput,
   SessionRecapInput,
@@ -34,6 +39,8 @@ import {
 } from "./services/session-compaction-service"
 import { generateSessionRecap } from "./services/session-recap-service"
 import { truncateSessionFrom } from "./services/session-truncate"
+import { forkSession } from "./services/session-fork"
+import { clearHeartbeat, putHeartbeat, readHeartbeat } from "./services/session-heartbeat-store"
 
 export const SESSION_CHANNELS = [
   "session.list",
@@ -50,10 +57,21 @@ export const SESSION_CHANNELS = [
   "session.compact",
   "session.getCompaction",
   "session.clearCompaction",
-  "session.truncateFrom"
+  "session.truncateFrom",
+  "session.fork",
+  "session.heartbeat.get",
+  "session.heartbeat.put",
+  "session.heartbeat.clear"
 ] as const
 
 export function registerSessionIpc() {
+  registerSessionCatalogIpc()
+  registerSessionEditIpc()
+  registerSessionLifecycleIpc()
+  registerSessionForkIpc()
+}
+
+function registerSessionCatalogIpc() {
   ipcMain.handle("session.list", async (_event, raw) =>
     listSessions(WorkspaceIdInput.parse(raw).workspaceId)
   )
@@ -65,6 +83,9 @@ export function registerSessionIpc() {
   ipcMain.handle("session.messages", async (_event, raw) =>
     listMessages(SessionIdInput.parse(raw).sessionId)
   )
+}
+
+function registerSessionEditIpc() {
   ipcMain.handle("session.rename", async (_event, raw: unknown) => {
     const input = SessionRenameInput.parse(raw)
     return renameSession(input.sessionId, input.title)
@@ -78,6 +99,13 @@ export function registerSessionIpc() {
     const generated = await generateSessionRecap(input.sessionId)
     return SessionRecapResult.parse(generated)
   })
+  ipcMain.handle("session.fork", async (_event, raw) => {
+    const input = SessionForkInput.parse(raw)
+    return SessionForkResult.parse(await forkSession(input.sessionId, input.messageId))
+  })
+}
+
+function registerSessionLifecycleIpc() {
   ipcMain.handle("session.archive", async (_event, raw) =>
     archiveSession(SessionIdInput.parse(raw).sessionId)
   )
@@ -103,5 +131,20 @@ export function registerSessionIpc() {
   ipcMain.handle("session.truncateFrom", async (_event, raw) => {
     const input = SessionTruncateFromInput.parse(raw)
     return truncateSessionFrom(input.sessionId, input.messageId)
+  })
+}
+
+function registerSessionForkIpc() {
+  ipcMain.handle("session.heartbeat.get", async (_event, raw) => {
+    const input = SessionHeartbeatGetInput.parse(raw)
+    return readHeartbeat(input.sessionId)
+  })
+  ipcMain.handle("session.heartbeat.put", async (_event, raw) => {
+    const input = SessionHeartbeatPutInput.parse(raw)
+    return putHeartbeat(input)
+  })
+  ipcMain.handle("session.heartbeat.clear", async (_event, raw) => {
+    const input = SessionHeartbeatClearInput.parse(raw)
+    return clearHeartbeat(input.sessionId)
   })
 }

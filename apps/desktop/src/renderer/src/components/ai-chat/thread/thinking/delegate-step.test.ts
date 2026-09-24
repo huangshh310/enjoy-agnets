@@ -8,6 +8,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { TranslateFn } from "@renderer/i18n"
 import { parseAgentStepNodes } from "./agent-step-tree-parser.ts"
 import { inferSubagentKind, pickDelegateTitle, subagentFailedHint } from "./delegate-step.ts"
+import { selectCurrentTurnDelegates } from "../subagent-pill/select-current-delegates.ts"
 
 const mockT: TranslateFn = (key: string, params?: Record<string, string | number>) => {
   if (key === "chat.batchCommandsRun") return `运行 ${String(params?.count ?? 0)} 条命令`
@@ -156,4 +157,27 @@ test("子智能体内部的连续 read_file 递归聚合成批处理", () => {
   assert.equal(delegateNode.children?.length, 1)
   assert.equal(delegateNode.children?.[0]?.isBatch, true)
   assert.equal(delegateNode.children?.[0]?.batchItems?.length, 3)
+})
+
+test("药丸只收当前用户轮之后的顶层 delegate", () => {
+  const items = selectCurrentTurnDelegates([
+    { id: "u0", role: "user" },
+    { id: "a0", role: "assistant", tools: [createTool("old", "delegate", { title: "旧的" })] },
+    { id: "u1", role: "user" },
+    {
+      id: "a1",
+      role: "assistant",
+      tools: [
+        createTool("d1", "delegate", { kind: "explore", title: "看 ipc" }),
+        { ...createTool("child", "delegate", { title: "内部" }), parentToolCallId: "d1" },
+        createTool("read", "read_file", { path: "a.ts" })
+      ]
+    }
+  ])
+  assert.deepEqual(
+    items.map((item) => item.id),
+    ["d1"]
+  )
+  assert.equal(items[0]?.kind, "explore")
+  assert.equal(items[0]?.title, "看 ipc")
 })

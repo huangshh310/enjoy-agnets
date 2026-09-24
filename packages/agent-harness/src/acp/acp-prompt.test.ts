@@ -4,6 +4,7 @@ import {
   acpProcessKey,
   composeAcpPrompt,
   CUSTOM_INSTRUCTIONS_PREFIX,
+  FORK_TRANSCRIPT_PREFIX,
   formatHandoffContext,
   HANDOFF_PREFIX,
   lastUserText
@@ -35,6 +36,20 @@ test("composeAcpPrompt 把 handoff 系统上下文垫在用户句前", () => {
   assert.ok(prompt.includes("正在改 auth.ts"))
   assert.ok(prompt.endsWith("换成 Cursor 接着做"))
   assert.ok(prompt.includes("\n---\n"))
+})
+
+test("分叉首轮才垫先前可见轮次", () => {
+  const messages = [
+    { role: "user" as const, content: "先看登录" },
+    { role: "assistant" as const, content: "在 auth.ts" },
+    { role: "user" as const, content: "接着改" }
+  ]
+  assert.equal(composeAcpPrompt(messages), "接着改")
+  const seeded = composeAcpPrompt(messages, { seedPriorTranscript: true })
+  assert.ok(seeded.includes(FORK_TRANSCRIPT_PREFIX))
+  assert.ok(seeded.includes("User:\n先看登录"))
+  assert.ok(seeded.includes("Assistant:\n在 auth.ts"))
+  assert.ok(seeded.endsWith("接着改"))
 })
 
 test("没有 handoff 时只发最后一条用户句，不当成续跑伪装", () => {

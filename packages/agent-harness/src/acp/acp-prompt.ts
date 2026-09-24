@@ -5,6 +5,7 @@ import type { ModelMessage } from "ai"
 
 export const HANDOFF_PREFIX = "[Engine handoff — hidden context, not a user message]"
 export const CUSTOM_INSTRUCTIONS_PREFIX = "[Enjoy custom instructions]"
+export const FORK_TRANSCRIPT_PREFIX = "[Forked transcript — prior visible turns]"
 
 export function formatHandoffContext(input: {
   fromRuntimeId: string
@@ -33,7 +34,7 @@ export function acpProcessKey(
 
 export function composeAcpPrompt(
   messages: ModelMessage[],
-  extras?: { customInstructions?: string; skillCatalog?: string }
+  extras?: { customInstructions?: string; skillCatalog?: string; seedPriorTranscript?: boolean }
 ): string {
   const user = lastUserText(messages)
   const handoff = extractHandoffText(messages)
@@ -41,7 +42,32 @@ export function composeAcpPrompt(
     ? `${CUSTOM_INSTRUCTIONS_PREFIX}\n${extras.customInstructions.trim()}`
     : ""
   const skills = extras?.skillCatalog?.trim() ?? ""
-  return [custom, skills, handoff, user].filter(Boolean).join("\n\n---\n")
+  const prior = extras?.seedPriorTranscript ? priorVisibleTranscript(messages) : ""
+  return [custom, skills, handoff, prior, user].filter(Boolean).join("\n\n---\n")
+}
+
+/** 最后一条用户句之前的可见轮次。没有更早的正文则空。 */
+function priorVisibleTranscript(messages: ModelMessage[]): string {
+  const lastUser = lastUserIndex(messages)
+  if (lastUser <= 0) return ""
+  const lines: string[] = []
+  for (let index = 0; index < lastUser; index += 1) {
+    const message = messages[index]
+    if (!message || (message.role !== "user" && message.role !== "assistant")) continue
+    const text = plainText(message).trim()
+    if (!text || text.startsWith(HANDOFF_PREFIX)) continue
+    const label = message.role === "user" ? "User" : "Assistant"
+    lines.push(`${label}:\n${text}`)
+  }
+  if (lines.length === 0) return ""
+  return `${FORK_TRANSCRIPT_PREFIX}\n${lines.join("\n\n")}`
+}
+
+function lastUserIndex(messages: ModelMessage[]): number {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (userTextOf(messages[index])) return index
+  }
+  return -1
 }
 
 export function lastUserText(messages: ModelMessage[]): string {

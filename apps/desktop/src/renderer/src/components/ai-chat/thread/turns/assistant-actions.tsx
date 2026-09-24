@@ -13,6 +13,7 @@ import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
 import { MessageAction, MessageActions } from "@/components/ai-elements/message"
 import { CopyMessageButton } from "../copy-message-button"
+import { canForkTurn, ForkTurnButton } from "./fork-turn-button"
 import { useT } from "@renderer/i18n"
 
 export function AssistantActions({
@@ -73,6 +74,7 @@ export function AssistantActions({
         <RiRefreshLine className="size-4" />
       </MessageAction>
       <CopyMessageButton message={message} prompt={prompt} label={t("chat.copyResponse")} />
+      {canForkTurn(message) ? <ForkTurnButton messageId={message.id} /> : null}
     </MessageActions>
   )
 }

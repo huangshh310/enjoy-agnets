@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { cronMatches, parseCronExpr, shouldFireCron } from "./automations-cron.ts"
+import { planHeartbeatTick } from "./session-heartbeat-plan.ts"
 
 const TZ = "Asia/Shanghai"
 /** 2026-09-21 09:00 CST（周一） */
@@ -63,5 +64,42 @@ test("应用关闭错过 09:00，10:00 回来不补", () => {
       now: ten
     }),
     false
+  )
+})
+
+test("心跳到点且忙碌则跳过，次数用尽则停", () => {
+  assert.equal(
+    planHeartbeatTick({
+      enabled: true,
+      cronExpr: "0 9 * * *",
+      timeZone: TZ,
+      runCount: 0,
+      blocked: true,
+      now: nine
+    }),
+    "skip"
+  )
+  assert.equal(
+    planHeartbeatTick({
+      enabled: true,
+      cronExpr: "0 9 * * *",
+      timeZone: TZ,
+      runCount: 0,
+      blocked: false,
+      now: nine
+    }),
+    "fire"
+  )
+  assert.equal(
+    planHeartbeatTick({
+      enabled: true,
+      cronExpr: "0 9 * * *",
+      timeZone: TZ,
+      runCount: 3,
+      maxRuns: 3,
+      blocked: false,
+      now: nine
+    }),
+    "retire"
   )
 })

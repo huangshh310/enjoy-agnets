@@ -21,6 +21,17 @@ export function resolveRuntimeId(
   )
 }
 
+/** 分叉与心跳都认会话上已绑定的引擎和模型，不另传一份。 */
+export function resolveSessionBinding(
+  sessionId: string,
+  prefs: AppPreferences
+): { runtimeId: string; modelId: string | undefined } {
+  return {
+    runtimeId: resolveRuntimeId({ sessionId }, prefs),
+    modelId: resolveRunModelId({ sessionId })
+  }
+}
+
 /** 会话覆盖 > 入参。同引擎换模下一轮读这里。 */
 export function resolveRunModelId(input: { sessionId: string; modelId?: string }): string | undefined {
   const overlay = readSessionModels()[input.sessionId]?.trim()

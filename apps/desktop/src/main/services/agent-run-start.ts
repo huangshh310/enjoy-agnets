@@ -29,6 +29,12 @@ export async function runAgent(window: BrowserWindow, rawInput: unknown) {
   return beginAgentRun(window, input, { persistUser: input.persistUser !== false })
 }
 
+/** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。 */
+export async function runHeartbeatAgent(window: BrowserWindow, rawInput: unknown) {
+  const input = RunAgentInput.parse(rawInput)
+  return beginAgentRun(window, input, { persistUser: true, promptEcho: true })
+}
+
 export async function resumeAgentRun(
   window: BrowserWindow,
   runId: string,
@@ -55,7 +61,7 @@ export async function resumeAgentRun(
 async function beginAgentRun(
   window: BrowserWindow,
   input: RunAgentInput,
-  options: { runId?: string; persistUser: boolean; resumeMessages?: unknown }
+  options: { runId?: string; persistUser: boolean; resumeMessages?: unknown; promptEcho?: boolean }
 ) {
   const prefs = readPreferences()
   const runtimeId = resolveRuntimeId(input, prefs)
@@ -102,7 +108,7 @@ async function beginAgentRun(
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }
   persistOutgoingUser(input, options.persistUser)
-  emitEvent(window, { type: "run.start", runId, sessionId: input.sessionId })
+  emitRunStart(window, input, runId, options.promptEcho)
   if (!options.resumeMessages && workspace.kind !== "ssh") {
     void recordEnjoyCheckpoint(workspace.rootPath, {
       sessionId: input.sessionId,
@@ -114,8 +120,32 @@ async function beginAgentRun(
   return { runId }
 }
 
+function emitRunStart(
+  window: BrowserWindow,
+  input: RunAgentInput,
+  runId: string,
+  promptEcho?: boolean
+): void {
+  const echoed = promptEcho ? lastUserContent(input) : ""
+  emitEvent(window, {
+    type: "run.start",
+    runId,
+    sessionId: input.sessionId,
+    ...(echoed ? { prompt: echoed } : {})
+  })
+}
+
+function lastOutgoingUser(input: RunAgentInput): RunAgentInput["messages"][number] | undefined {
+  return [...input.messages].reverse().find((message) => message.role === "user")
+}
+
+function lastUserContent(input: RunAgentInput): string {
+  const content = lastOutgoingUser(input)?.content
+  return typeof content === "string" ? content.trim() : ""
+}
+
 function persistOutgoingUser(input: RunAgentInput, persistUser: boolean) {
-  const lastUser = [...input.messages].reverse().find((message) => message.role === "user")
+  const lastUser = lastOutgoingUser(input)
   if (!lastUser || !persistUser || isTodoContinueUserMessage(lastUser.content)) return
   persistUserTurn(
     input.sessionId,

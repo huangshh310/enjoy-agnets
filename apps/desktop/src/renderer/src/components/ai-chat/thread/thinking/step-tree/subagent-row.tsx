@@ -16,6 +16,7 @@ import type { AgentStepNode } from "../agent-step-tree.types"
 import { subagentFailedHint, subagentPersonaLabel } from "../delegate-step"
 import { personaForSubagent, type SubagentPersona } from "../subagent-persona"
 import { SubagentMark } from "./subagent-mark"
+import { useExpandFocusedDelegate } from "../../subagent-pill/delegate-focus"
 
 export function SubagentRow({
   node,
@@ -30,6 +31,7 @@ export function SubagentRow({
 }) {
   const t = useT()
   const [expanded, setExpanded] = useState(false)
+  useExpandFocusedDelegate(node.id, setExpanded)
   const expandable = Boolean(node.children && node.children.length > 0 && tree)
   const failedHint = subagentFailedHint(node.status, t)
   const resolved = persona ?? personaForSubagent(node)
@@ -37,6 +39,7 @@ export function SubagentRow({
 
   return (
     <div
+      data-delegate-id={node.id}
       className={cx(
         "group flex w-full min-w-0 flex-col transition-colors",
         isStandalone

@@ -5,6 +5,7 @@ import { RiCompass3Line } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useT } from "@renderer/i18n"
 import { SessionGoalChip } from "./session-goal-chip"
+import { SessionHeartbeatForm } from "./session-heartbeat-form"
 
 export function ComposerOverflowMenu() {
   const t = useT()
@@ -25,13 +26,14 @@ export function ComposerOverflowMenu() {
         side="top"
         align="end"
         sideOffset={6}
-        className="w-[272px] rounded-xl border border-border-button-default bg-background-primary-default p-2.5 shadow-card"
+        className="w-[320px] rounded-xl border border-border-button-default bg-background-primary-default p-2.5 shadow-card"
       >
         <div className="border-b border-separator-border/60 px-1 pb-2 mb-1.5">
           <p className="text-caption-1-semibold text-text-primary">{t("chat.composerOverflow")}</p>
           <p className="mt-0.5 text-caption-2-regular leading-normal text-text-tertiary">{t("chat.composerOverflowHint")}</p>
         </div>
         <SessionGoalChip layout="menu" />
+        <SessionHeartbeatForm />
       </PopoverContent>
     </Popover>
   )

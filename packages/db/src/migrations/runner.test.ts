@@ -3,11 +3,11 @@ import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, appliedVersions } from "./runner.ts"
 
-test("空库依次跑全部迁移至 11（含 acp-session-bind）", () => {
+test("空库依次跑全部迁移至 12（含分叉与会话心跳）", () => {
   const db = new DatabaseSync(":memory:")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .all() as Array<{ name: string }>
@@ -28,6 +28,8 @@ test("空库依次跑全部迁移至 11（含 acp-session-bind）", () => {
   assert.ok(sColNames.includes("recap"))
   assert.ok(sColNames.includes("acp_runtime_id"))
   assert.ok(sColNames.includes("acp_session_id"))
+  assert.ok(sColNames.includes("forked_from"))
+  assert.ok(names.includes("session_heartbeats"))
 
   // 验证 run_steps 新字段
   const stepCols = db.prepare("PRAGMA table_info(run_steps)").all() as Array<{ name: string }>
@@ -62,8 +64,8 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
     );
   `)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 })
 
 test("重复 apply 不再执行", () => {

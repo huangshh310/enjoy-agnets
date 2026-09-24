@@ -79,7 +79,11 @@ const ide = {
     compact: (input: unknown) => ipcRenderer.invoke("session.compact", input),
     getCompaction: (input: unknown) => ipcRenderer.invoke("session.getCompaction", input),
     clearCompaction: (input: unknown) => ipcRenderer.invoke("session.clearCompaction", input),
-    truncateFrom: (input: unknown) => ipcRenderer.invoke("session.truncateFrom", input)
+    truncateFrom: (input: unknown) => ipcRenderer.invoke("session.truncateFrom", input),
+    fork: (input: unknown) => ipcRenderer.invoke("session.fork", input),
+    heartbeatGet: (input: unknown) => ipcRenderer.invoke("session.heartbeat.get", input),
+    heartbeatPut: (input: unknown) => ipcRenderer.invoke("session.heartbeat.put", input),
+    heartbeatClear: (input: unknown) => ipcRenderer.invoke("session.heartbeat.clear", input)
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),

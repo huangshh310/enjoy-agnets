@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-21
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-24
 
 ## 当前真相
 
@@ -46,9 +46,11 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 运行时交互：会话任务态是派生值 `idle | running | paused | waiting_review`（审批 park = `waiting_review`，Stop 后回 `idle`，不另做可恢复 pause）。**安全检查点**在每次工具 `execute` 结束、下一跳 LLM 之前：仅 `stepNumber > 0` 才 `pullSteeringMessages` + 注入，`prepareStep` 返回的 `messages`（SDK 7.x 跨步保留）接上纠偏句；step 0 不 drain，避免首跳 LLM 前把纠偏吃掉却不注入。泵收工前再 absorb 一次；有剩余则 `continuePump` **续同一 run**，不是 idle 后再发。禁止在单次工具执行中途截断，也不要用 `abort` 当引导。`steeringQueue` 挂 main（`agent.steer`），有消息就拼成 `role: user`。ACP/CLI 没有 `prepareStep`，引导要等当前流走完再由泵 absorb。`followupQueue` 在 renderer：`run.end` / idle 后自动 `agent.run`；已 idle 再入队也必须立刻自启（订阅队列，不能只听 `running` 边沿）。`waiting_review`（`pendingApproval`）时不要 `takeNextFollowup`。没有 ActiveRun 且已 idle 的引导立刻新开 `agent.run`；UI 仍 `running` 才改排队。引用块用 `QuotedContext`（规范类型 `file|diff|terminal_output|task_step`，兼容旧 `tool_call|file_diff|text_selection|thought_step`；正文优先 `content`，否则 `snippet`）格式化后拼在用户句前。排队项规范字段是 `prompt`，`text` 为同值别名；编辑走 `editQueuedMessage`，升纠偏走 `elevateToSteer`（标 `elevated_to_steer`）。Stop / fail / 正常收工后 `clearSteer`，未消费纠偏丢弃且不注入下一轮（已落库的用户气泡保留）。
 助手轮末尾可带静态 **ActionChip**（正文围栏 `:::enjoy-actions`，落库进 assistant-payload）。这是建议词，不是纠偏。未点击必须保持 idle，禁止倒计时或回合结束自动发送建议。空闲点击 = 新开 `agent.run`；运行中 `queue` 入 followupQueue（提示「已加入执行队列」），`fill_input` 只回填输入框。虚线泡上的「立即纠偏 / 立即发送」才是 Elevate to Steer（运行中纠偏，空闲立刻开下一轮）。
 
+分叉（`session.fork`）新建同工作区会话，只写入截止该助手轮的可见正文，并复制 runtime/model。不复制 `acp_session_id`，不 abort 源会话。ACP 仅在该会话带 `forked_from`、进程是新建、且 resume 未成功时，把先前可见轮次垫进首个 `session/prompt`。会话心跳是另一条 cron：到点对**原** `sessionId` `agent.run`，消息是该会话已有可见正文再加这一拍的 prompt。ActiveRun 或 `waiting_review` 只记下这一拍，不进 followupQueue。开跑失败不记这一拍。保存替换并把 `run_count` 清零。达到次数只停用、不删行。关应用即停。它不走 `#/automations`，也不新建会话。会话已删或已归档时这一拍不发、也不自动停用。
+
 ### 流事件（实现已有）
 
-`run.start` → `text.delta` / `reasoning.delta` / `tool.*` / `approval.*` / `file.changed` / v2：`message.part.*` `structured.delta` `source.added` `asset.created` `usage.updated` `step.*` `workflow.*` `mcp.*` `realtime.*` `generation.warning` → `run.end` | `run.error`
+`run.start`（心跳可带可选 `prompt`，前台空闲时补用户句）→ `text.delta` / `reasoning.delta` / `tool.*` / `approval.*` / `file.changed` / v2：`message.part.*` `structured.delta` `source.added` `asset.created` `usage.updated` `step.*` `workflow.*` `mcp.*` `realtime.*` `generation.warning` → `run.end` | `run.error`
 
 `delegate` 独立上下文回 `SubagentSummary`，同时把子循环工具事件挂到父 `toolCallId`。`createCodingTools(host, { mode })`：plan/ask 只有读工具 + `todo_write` + `ask_user_questions` + `git_status` / `git_diff` / `git_log`；agent/debug 再加写工具。`createMcpAgentTools({ mode })`：plan/ask 不注册写名 MCP（leaf 匹配 `write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send`，与 `isMcpWriteToolName` 同一规则）；只读 MCP 在规划里是 `not-applicable`。子 Agent `includeAskUser: false` 且不再套 delegate。写盘 / bash 经 `createSubagentApproval` 挂到主 run 的 `approval.required`。没有等待器时拒绝，不偷偷执行。检查器 `toolNames` 与开流注册集一致（含按 mode 过滤的 MCP）。写盘成功后 main 记 `refs/enjoy/checkpoints/<stamp>`（临时 index + `commit-tree`，含未跟踪；不进用户当前分支）。开流另记一条 `kind=baseline`。Enjoy Local 的 `writeFile`/`editFile` 带 active run 记 `kind=turn`；ACP `file.changed` 每个 run 最多再记一次 `kind=turn`。Review「检查点」用临时 index + `checkout-index` 还原工作区文件，不移动 HEAD、不改用户暂存区；未跟踪删除先 dry-run 再 Confirm。成功后留在检查点时间线。Enjoy Local 用户气泡可「从这里重来」：先还原该轮 baseline（失败则停），成功后再 `session.truncateFrom`。乐观用户气泡 id 与落库 id 相同。ACP `supportsConversationRollback=false`，按钮禁用。`agent.run` 带 `commandId`；排队自启走 `DrainableQueue.drain()`。`applySettingsSnapshot` **不得**用 `preferences.defaultMode` 覆盖当前会话 mode。新建会话才 `modeForNewSession(defaultMode)`。UIMessage parts 与旧 `content` 并存。
 

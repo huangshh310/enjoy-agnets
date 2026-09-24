@@ -17,6 +17,7 @@ import { resolveAcpSpawnDirect } from "./ssh/resolve-acp-spawn.ts"
 import { hostExtensionsFor } from "./host-extensions/host-extensions.ts"
 import { getWorkspace } from "./workspace"
 import { readAcpSessionBind, writeAcpSessionBind } from "./acp-session-bind.ts"
+import { sessionWasForked } from "./session-fork.ts"
 export async function openAcpStream(input: {
   runId: string
   sessionId: string
@@ -93,8 +94,7 @@ export async function openAcpStream(input: {
     skillCatalog: extensions.skillCatalog,
     pluginDirs: extensions.pluginDirs,
     thoughtLevel: input.thoughtLevel,
-    resumeSessionId: resumeIdFor(input.sessionId, input.runtimeId),
-    onSessionBound: (acpSessionId) => writeAcpSessionBind(input.sessionId, input.runtimeId, acpSessionId)
+    ...acpSessionAttach(input.sessionId, input.runtimeId)
   })
   return {
     stream: opened.stream,
@@ -144,14 +144,21 @@ async function openCustomAcpStream(
     skillCatalog: extensions.skillCatalog,
     pluginDirs: extensions.pluginDirs,
     thoughtLevel: input.thoughtLevel,
-    resumeSessionId: resumeIdFor(input.sessionId, input.runtimeId),
-    onSessionBound: (acpSessionId) => writeAcpSessionBind(input.sessionId, input.runtimeId, acpSessionId)
+    ...acpSessionAttach(input.sessionId, input.runtimeId)
   })
   return {
     stream: opened.stream,
     result: opened.result,
     dispose: opened.dispose,
     hostInject: extensions.inject
+  }
+}
+
+function acpSessionAttach(sessionId: string, runtimeId: string) {
+  return {
+    resumeSessionId: resumeIdFor(sessionId, runtimeId),
+    forkSeed: sessionWasForked(sessionId),
+    onSessionBound: (acpSessionId: string) => writeAcpSessionBind(sessionId, runtimeId, acpSessionId)
   }
 }
 

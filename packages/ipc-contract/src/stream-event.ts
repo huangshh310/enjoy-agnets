@@ -17,6 +17,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("run.start"),
     runId: z.string(),
     sessionId: z.string(),
+    /** 主进程代发的用户句。前台线程还没有这条时才补进气泡。 */
+    prompt: z.string().optional(),
     sequence: z.number().int().optional(),
     timestamp: z.number().int().optional()
   }),

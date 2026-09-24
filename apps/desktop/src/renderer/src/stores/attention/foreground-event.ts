@@ -17,6 +17,7 @@ export function belongsToForeground(
   const runId = eventRunId(event)
   if (runId && currentRunId && runId === currentRunId) return true
   if (!eventSessionId || eventSessionId !== currentSessionId) return false
+  if (event.type === "run.start" && !running) return true
   if (!running) return false
   return !currentRunId || !runId || currentRunId === runId
 }

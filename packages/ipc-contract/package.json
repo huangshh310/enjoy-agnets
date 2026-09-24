@@ -20,6 +20,7 @@
     "./host-inject": "./src/host-inject.ts",
     "./session-config": "./src/session-config.ts",
     "./session-title": "./src/session-title.ts",
+    "./session-heartbeat": "./src/session-heartbeat.ts",
     "./session-recap-kind": "./src/session-recap-kind.ts",
     "./workspace-io": "./src/workspace-io.ts",
     "./checkpoint-pick": "./src/checkpoint-pick.ts"

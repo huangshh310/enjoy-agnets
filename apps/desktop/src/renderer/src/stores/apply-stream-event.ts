@@ -28,6 +28,15 @@ export function reduceStreamEvent(
   event: StreamEvent,
   activeRunId: string | null = null
 ): StreamPatch {
+  if (event.type === "run.start") {
+    if (isForeignRunId(event.runId, activeRunId)) return { messages }
+    return {
+      messages: event.prompt ? appendPromptTurn(messages, event.prompt, event.runId) : messages,
+      running: true,
+      runId: event.runId,
+      error: null
+    }
+  }
   if (isForeignRunId(eventRunId(event), activeRunId)) return { messages }
   const terminal = applyTerminalEvent(messages, event, activeRunId)
   if (terminal) return terminal
@@ -79,6 +88,17 @@ function applyApprovalEvent(
     foldToolEvent(assistant.tools, event)
   }
   return { messages: next, pendingApproval: null }
+}
+
+function appendPromptTurn(messages: ThreadMessage[], prompt: string, runId: string): ThreadMessage[] {
+  const text = prompt.trim()
+  if (!text) return messages
+  const lastUser = [...messages].reverse().find((row) => row.role === "user")
+  if (lastUser?.content.trim() === text) return messages
+  return [
+    ...messages,
+    { id: `msg_user_${runId}`, role: "user", content: text, createdAt: Date.now() }
+  ]
 }
 
 function eventRunId(event: StreamEvent): string | undefined {

@@ -65,6 +65,20 @@ export const SessionTruncateFromInput = z
   .strict()
 export type SessionTruncateFromInput = z.infer<typeof SessionTruncateFromInput>
 
+export const SessionForkInput = z
+  .object({
+    sessionId: z.string().min(1),
+    messageId: z.string().min(1)
+  })
+  .strict()
+export type SessionForkInput = z.infer<typeof SessionForkInput>
+
+export const SessionForkResult = SessionSummary.extend({
+  runtimeId: z.string().min(1),
+  modelId: z.string().optional()
+})
+export type SessionForkResult = z.infer<typeof SessionForkResult>
+
 export const SessionCreateInput = z
   .object({
     workspaceId: z.string().min(1),
