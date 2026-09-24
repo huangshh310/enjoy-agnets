@@ -171,7 +171,7 @@ export const enSettings = {
     hubTitle: "Keyboard Shortcuts Directory",
     layoutMac: "macOS Layout (⌘)",
     layoutWin: "Windows / Linux (Ctrl)",
-    hubDesc: "Speed up your workflow with global command palette, pane toggles, and chat shortcuts.",
+    hubDesc: "Speed up your workflow with global command palette, pane toggles, and chat shortcuts. Press ? in chat to open this same list.",
     searchPlaceholder: "Search shortcuts...",
     groupGlobal: "Global & Navigation",
     groupViews: "Right Stage & Development Panes",

@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-20
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-24
 
 ## 当前真相
 
@@ -8,8 +8,8 @@
 
 | 路径 | C 端导轨 / 胶囊 | 出现位置 |
 |---|---|---|
-| Enjoy 本地 (`enjoy-local`) | 分组「本地」；胶囊品牌 + `引擎 · 模型` + 就绪灯 | AgentEngineRail + 胶囊；下层才是供应商→模型 |
-| 本机 CLI (`claude` `cursor` `grok` `codex` `antigravity` `deepseek` `omp` …) | 分组「本机助手 / CLI」；品牌 + 引擎名 + 就绪灯；未装/需登录可作就绪语义 | AgentEngineRail + 胶囊 |
+| Enjoy 本地 (`enjoy-local`) | 图标轨一格；胶囊品牌 + `引擎 · 模型` + 就绪灯 | 浮层左轨图标；多家供应商先下拉，再列这一家的模型 |
+| 本机 CLI (`claude` `cursor` `grok` `codex` `antigravity` `deepseek` `omp` …) | 图标轨一格，未装变淡；胶囊品牌 + 引擎名 | 同一条竖向图标轨 |
 | 进阶沙箱 (`sandbox-harness`) | 不上轨 | 设置分段 only；**禁止**上 AgentEngineRail |
 
 C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`、`本地 ToolLoop`、`ACP Stdio` 及同类。协议/登录只进设置分段、能力矩阵、配置边界与文档。有额度才挂 `UsagePill`。
@@ -20,7 +20,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 | 层 | 含义 | 数据源 | UI |
 |---|---|---|---|
-| L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 胶囊旁 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）；设置账号区 |
+| L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 模型浮层顶 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）；设置账号区 |
 | L2 | 自营积分 | 无真实 API | 账单页诚实空态；不画假条、不挂演示套餐 |
 | L3 | 本轮 token / 上下文 % | 与 Context 共用 `estimateContextWindowStats`（按当前 runtime 投影） | Composer 底 `SessionMeter` + Limits 卡；无用量则隐藏。ACP 不计 Enjoy 常驻规则，但 `hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板 |
 | L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |

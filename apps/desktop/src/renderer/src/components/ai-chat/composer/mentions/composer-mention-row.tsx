@@ -5,6 +5,7 @@ import { RiBookOpenLine, RiCompass3Line, RiSparklingLine, RiTerminalBoxLine } fr
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
+import { FileKindMark } from "@renderer/components/ai-chat/file-kind-mark"
 
 type DiscoverMentionItem = Extract<MentionItem, { kind: "file" | "doc" | "skill" | "mcp" | "web" }>
 type SlashMentionItem = Extract<MentionItem, { kind: "mode" | "command" | "skill" }>
@@ -79,7 +80,8 @@ function DiscoverRow({
   const name = item.kind === "web" ? t("chat.mentionWebMuted") : discoverName(item)
   return (
     <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-      <span className="min-w-0 truncate text-body-2-semibold text-text-primary">
+      <span className="flex min-w-0 items-center gap-1.5 truncate text-body-2-semibold text-text-primary">
+        {item.kind === "file" ? <FileKindMark name={item.name} /> : null}
         <span className="mr-2 text-caption-2-medium text-text-tertiary">{kindLabel}</span>
         {name}
       </span>

@@ -11,7 +11,7 @@ import { usagePillTone } from "./usage-pill-tone"
 
 const BAR_TONE = {
   alert: "bg-text-error-primary",
-  mid: "bg-text-secondary",
+  mid: "bg-amber-500",
   low: "bg-accent-500",
   quiet: "bg-text-tertiary"
 } as const
@@ -43,7 +43,7 @@ export function UsagePill({ runtimeId }: { runtimeId: string }) {
       <span
         className={cx(
           "font-mono text-caption-2-medium tabular-nums",
-          tone === "alert" ? "text-text-error-primary" : tone === "quiet" ? "text-text-tertiary" : "text-text-secondary"
+          tone === "alert" ? "text-text-error-primary" : tone === "mid" ? "text-amber-500" : tone === "quiet" ? "text-text-tertiary" : "text-text-secondary"
         )}
       >
         {formatQuotaPercent(percent)}

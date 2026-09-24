@@ -20,6 +20,7 @@ import { RunLedgerRail } from "@renderer/components/ai-chat/run-ledger/run-ledge
 import { collectRunLedger, lastAssistantTurn } from "@renderer/components/ai-chat/run-ledger/collect-run-ledger"
 import { SourcesSheetHost } from "@renderer/stores/sources-sheet/sources-sheet-host"
 import { EnvironmentPanel } from "@renderer/components/ai-chat/environment/environment-panel"
+import { ShortcutSheet } from "@renderer/components/ai-chat/shortcut-sheet"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
@@ -56,6 +57,7 @@ export function ChatStage() {
       data-chat-surface={surface}
       className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-3xl bg-background-primary-default shadow-card"
     >
+      <ShortcutSheet />
       {workspaceId || surface !== "thread" ? (
         <ChatWorkspaceBody
           workspaceName={workspaceName}

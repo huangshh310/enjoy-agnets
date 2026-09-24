@@ -26,7 +26,9 @@ const chrome = readFileSync(join(dir, "composer-top-chrome.tsx"), "utf8")
 const composer = readFileSync(join(dir, "../ai-chat-composer.tsx"), "utf8")
 const footer = readFileSync(join(dir, "composer-footer.tsx"), "utf8")
 const bar = readFileSync(join(dir, "host-inject/host-inject-bar.tsx"), "utf8")
-const picker = readFileSync(join(dir, "../agent-picker/agent-picker.tsx"), "utf8")
+const pickerView = readFileSync(join(dir, "../agent-picker/agent-picker-view.tsx"), "utf8")
+const pickerFlyout = readFileSync(join(dir, "../agent-picker/composer-model-flyout.tsx"), "utf8")
+const pickerHook = readFileSync(join(dir, "../agent-picker/use-agent-picker.ts"), "utf8")
 const thinking = readFileSync(join(dir, "thinking/composer-thinking-chrome.tsx"), "utf8")
 const preview = readPreview()
 
@@ -56,12 +58,13 @@ test("任务与改动在输入框上方独立轨，不进输入壳", () => {
   assert.equal(shell.includes("ComposerLiveChanges"), false)
 })
 
-test("引擎芯片面上不挂 UsagePill，用量进 title 或 Popover", () => {
-  const trigger = picker.slice(picker.indexOf("PopoverTrigger"), picker.indexOf("PopoverContent"))
+test("引擎芯片面上不挂 UsagePill，点击落在 button 上", () => {
+  const trigger = pickerView.slice(pickerView.indexOf("<PopoverTrigger"), pickerView.indexOf("</PopoverTrigger>"))
   assert.equal(trigger.includes("<UsagePill"), false)
-  assert.ok(picker.includes("useQuotaHint"))
-  assert.ok(picker.includes("<UsagePill"))
-  assert.ok(picker.includes("data-testid=\"composer-engine-chip\""))
+  assert.match(trigger, /<PopoverTrigger asChild>\s*<button/)
+  assert.ok(pickerHook.includes("useQuotaHint"))
+  assert.ok(pickerFlyout.includes("<UsagePill"))
+  assert.ok(pickerView.includes('data-testid="composer-engine-chip"'))
 })
 
 test("思考跟模型打开同一份 Picker，不另开模型芯片", () => {

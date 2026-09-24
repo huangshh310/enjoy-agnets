@@ -7,7 +7,7 @@ import { RiSearchLine } from "@remixicon/react"
 import { useT } from "@renderer/i18n"
 import { CliModelRow } from "./cli-model-row"
 import { CliCustomNeedConfig, CliNeedLogin } from "./cli-need-login"
-import { CliProviderNav } from "./cli-provider-nav"
+import { CliProviderDrop } from "./cli-provider-nav"
 import {
   buildCliProviderRows,
   cliCatalogPending,
@@ -40,30 +40,30 @@ export function CliModelsBrowser({
   const [providerKey, setProviderKey] = useState(() =>
     initialCliNavKey(rows, agent.selectedModel)
   )
-  const current = providerOf(rows, providerKey)
+  const activeKey = split && providerKey === "all" ? (rows.find((row) => row.loggedIn)?.key ?? rows[0]?.key ?? providerKey) : providerKey
+  const current = providerOf(rows, activeKey)
   const visible = useMemo(() => {
-    const source = split ? modelsForCliProvider(agent.models, providerKey) : agent.models
+    const source = split ? modelsForCliProvider(agent.models, activeKey) : agent.models
     const q = query.trim().toLowerCase()
     if (!q) return source
     return source.filter(
       (item) => item.label.toLowerCase().includes(q) || item.id.toLowerCase().includes(q)
     )
-  }, [agent.models, providerKey, query, split])
+  }, [agent.models, activeKey, query, split])
 
   return (
-    <div className="flex min-h-0 flex-1">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
       {split ? (
-        <CliProviderNav
+        <CliProviderDrop
           rows={rows}
-          total={agent.models.length}
-          selectedKey={providerKey}
+          selectedKey={activeKey}
           loginBusy={loginBusy}
           catalogPending={catalogPending}
           onSelect={setProviderKey}
           onLogin={onLoginProvider}
         />
       ) : null}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden">
         <div className="flex items-center gap-2 border-b border-separator-border bg-background-secondary-default/20 px-3.5 py-2 text-text-tertiary">
           <RiSearchLine className="size-3.5 shrink-0" />
           <input
@@ -129,7 +129,7 @@ function CliModelsPane({
     )
   }
   return (
-    <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden p-1.5">
+    <ul className="no-scrollbar min-h-0 flex-1 space-y-0.5 overflow-x-hidden overflow-y-auto p-1.5">
       {visible.map((model) => (
         <li key={model.id} className="min-w-0">
           <CliModelRow

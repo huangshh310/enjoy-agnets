@@ -75,14 +75,14 @@ export function AgentCliPane({
 
   if (!switchable) {
     return agent.comingSoon ? <CliSoonPane label={agent.label} /> : (
-      <div className="p-3">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
         <AgentCliInstall agent={agent} onDone={onInstalled} />
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden">
       <AgentCliModels
         agent={agent}
         readiness={kind}

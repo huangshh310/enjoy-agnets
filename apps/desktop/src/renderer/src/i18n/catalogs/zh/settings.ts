@@ -171,7 +171,7 @@ export const zhSettings = {
     hubTitle: "键盘快捷键目录",
     layoutMac: "macOS 布局（⌘）",
     layoutWin: "Windows / Linux（Ctrl）",
-    hubDesc: "用全局命令面板、面板切换和对话快捷键加快工作流。",
+    hubDesc: "用全局命令面板、面板切换和对话快捷键加快工作流。对话里按 ? 打开同一份列表。",
     searchPlaceholder: "搜索快捷键…",
     groupGlobal: "全局与导航",
     groupViews: "右侧舞台与开发面板",

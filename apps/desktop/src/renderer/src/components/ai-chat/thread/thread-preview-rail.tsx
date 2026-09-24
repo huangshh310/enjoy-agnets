@@ -1,5 +1,5 @@
 /**
- * 会话右侧 Preview Rail：一条消息一刻度，悬停预览，点击滚到该轮。
+ * 会话右侧刻度：只收有正文的用户句。少于两句不出现。点击滚到该句。
  */
 "use client"
 
@@ -8,6 +8,8 @@ import { cx } from "@/utils/cx"
 import { PreviewRail } from "@/components/ai-elements/preview-rail"
 import { useT } from "@renderer/i18n"
 import { previewItemsFromMessages, railItemSize } from "./thread-preview-rail-items"
+import { promptScaleItems } from "./prompt-scale"
+import { visibleUserText } from "@renderer/lib/user-message-text"
 
 const MESSAGE_ATTR = "data-thread-message"
 
@@ -19,38 +21,8 @@ export function ThreadPreviewRail({
   hasLedger?: boolean
 }) {
   const t = useT()
-  const [activeId, setActiveId] = useState(messages.at(-1)?.id ?? "")
-  const items = useMemo(
-    () =>
-      previewItemsFromMessages(messages, {
-        user: t("chat.previewRailUser"),
-        assistant: t("chat.previewRailAssistant"),
-        empty: t("chat.previewRailEmpty")
-      }),
-    [messages, t]
-  )
-
-  useEffect(() => {
-    setActiveId((current) => (messages.some((item) => item.id === current) ? current : (messages.at(-1)?.id ?? "")))
-  }, [messages])
-
-  useEffect(() => {
-    if (messages.length < 2) return
-    const nodes = [...document.querySelectorAll<HTMLElement>(`[${MESSAGE_ATTR}]`)]
-    if (nodes.length === 0) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const hit = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        const id = hit?.target.getAttribute(MESSAGE_ATTR)
-        if (id) setActiveId(id)
-      },
-      { threshold: [0.25, 0.5, 0.8] }
-    )
-    for (const node of nodes) observer.observe(node)
-    return () => observer.disconnect()
-  }, [messages])
+  const items = useMemo(() => userScaleItems(messages, t), [messages, t])
+  const [activeId, setActiveId] = useActiveThreadMessage(messages)
 
   if (items.length < 2) return null
 
@@ -71,6 +43,48 @@ export function ThreadPreviewRail({
         onItemSelect={(item) => scrollToThreadMessage(item.id)}
       />
     </div>
+  )
+}
+
+function useActiveThreadMessage(messages: Array<{ id: string }>): [string, (id: string) => void] {
+  const [activeId, setActiveId] = useState(messages.at(-1)?.id ?? "")
+  useEffect(() => {
+    setActiveId((current) => (messages.some((item) => item.id === current) ? current : (messages.at(-1)?.id ?? "")))
+  }, [messages])
+  useEffect(() => watchVisibleMessage(messages.length, setActiveId), [messages])
+  return [activeId, setActiveId]
+}
+
+function watchVisibleMessage(count: number, setActiveId: (id: string) => void): () => void {
+  if (count < 2) return () => undefined
+  const nodes = [...document.querySelectorAll<HTMLElement>(`[${MESSAGE_ATTR}]`)]
+  if (nodes.length === 0) return () => undefined
+  const observer = new IntersectionObserver((entries) => {
+    const hit = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+    const id = hit?.target.getAttribute(MESSAGE_ATTR)
+    if (id) setActiveId(id)
+  }, { threshold: [0.25, 0.5, 0.8] })
+  for (const node of nodes) observer.observe(node)
+  return () => observer.disconnect()
+}
+
+function userScaleItems(
+  messages: Array<{ id: string; role: "user" | "assistant"; content: string }>,
+  t: (path: string) => string
+) {
+  const prompts = promptScaleItems(
+    messages.map((message) => ({
+      ...message,
+      content: message.role === "user" ? visibleUserText(message.content) : message.content
+    }))
+  )
+  return previewItemsFromMessages(
+    prompts.map((item) => ({ id: item.id, role: "user" as const, content: item.label })),
+    {
+      user: t("chat.previewRailUser"),
+      assistant: t("chat.previewRailAssistant"),
+      empty: t("chat.previewRailEmpty")
+    }
   )
 }
 

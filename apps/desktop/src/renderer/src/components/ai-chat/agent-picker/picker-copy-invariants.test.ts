@@ -35,7 +35,11 @@ const files = [
   "cli-provider-nav-rows.tsx",
   "agent-cli-models.tsx",
   "engine-rename-action.tsx",
-  "engine-picker-rename-row.tsx"
+  "engine-picker-rename-row.tsx",
+  "composer-model-menu.tsx",
+  "composer-model-menu-row.tsx",
+  "composer-model-flyout.tsx",
+  "composer-model-provider-drop.tsx"
 ]
 
 const banned = [

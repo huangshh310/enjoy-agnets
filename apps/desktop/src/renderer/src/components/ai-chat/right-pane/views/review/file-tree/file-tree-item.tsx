@@ -9,7 +9,7 @@ import { useState, useMemo, useEffect } from "react"
 import {
   RiArrowDownSLine,
   RiArrowRightSLine,
-  RiFileCodeLine,
+
   RiFolderLine,
   RiFolderOpenLine
 } from "@remixicon/react"
@@ -17,6 +17,7 @@ import type { FileTreeNode } from "../types/review.types"
 import { STATUS_CONFIG } from "../constants/review-constants"
 import { sameReviewPath } from "../same-review-path"
 import { useT } from "@renderer/i18n"
+import { FileKindMark } from "@renderer/components/ai-chat/file-kind-mark"
 
 export function FileTreeItem(props: {
   node: FileTreeNode
@@ -108,7 +109,7 @@ export function FileTreeItem(props: {
       }`}
     >
       <div className="flex min-w-0 items-center gap-1.5">
-        <RiFileCodeLine className="size-3.5 shrink-0 text-accent-500/80 group-hover:text-accent-500" />
+        <FileKindMark name={node.name} />
         <span className="truncate text-text-primary group-hover:text-accent-500">
           {node.name}
         </span>

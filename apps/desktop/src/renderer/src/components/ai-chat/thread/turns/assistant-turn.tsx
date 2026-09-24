@@ -20,6 +20,7 @@ import { TurnMcpApps } from "../tool-surfaces/turn-mcp-apps"
 import { TurnModelLabel } from "./turn-model-label"
 import { TurnToolSurfaces } from "../tool-surfaces/turn-tool-surfaces"
 import { hasTurnToolSurfaces } from "../tool-surfaces/select-turn-tool-surfaces"
+import { PlanCard } from "../../composer/plan-card"
 
 export function AssistantTurn({ message }: { message: ThreadMessage }) {
   const prompt = usePrecedingUserPrompt(message.id)
@@ -38,6 +39,7 @@ export function AssistantTurn({ message }: { message: ThreadMessage }) {
       ) : null}
       {surface.hasToolSurfaces ? <TurnToolSurfaces tools={surface.tools} /> : null}
       <TurnChangedFiles message={message} />
+      <PlanCard messageId={message.id} />
       {surface.mcpApps.length > 0 ? <TurnMcpApps apps={surface.mcpApps} /> : null}
       {surface.showGenerating ? (
         <MessageContent>

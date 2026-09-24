@@ -13,6 +13,7 @@ import { shouldRefineSessionTitle } from "@renderer/lib/session-title"
 import { visibleUserText } from "@renderer/lib/user-message-text"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { syncReviewGateAfterEvent } from "@renderer/components/ai-chat/review-gate/sync-review-gate"
+import { clearSessionUsage, rememberSessionUsage } from "../session-usage"
 
 export { belongsToForeground } from "./foreground-event"
 
@@ -25,6 +26,8 @@ export function dispatchAgentEvent(event: StreamEvent): void {
     useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId)
   }
 
+  if (sessionId && event.type === "run.start") clearSessionUsage(sessionId)
+  if (event.type === "usage.updated" && sessionId) rememberSessionUsage(sessionId, event)
   if (event.type === "commands.update") {
     useAcpCommands.getState().setCommands(event.commands)
   }
