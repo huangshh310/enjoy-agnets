@@ -26,6 +26,7 @@ import { SettingsPermissions } from "./settings-permissions"
 import { SettingsCard, SettingsRow } from "./settings-row"
 import { SettingsUpdateCard } from "./settings-update-card"
 import { parseSettingsSectionSearch } from "./settings-section-search"
+import { SetupGuideReplay } from "@renderer/components/setup-guide/setup-guide-replay"
 import { usePrefUpdate } from "./settings-pref"
 
 function permissionModeLabel(t: TranslateFn): Record<PermissionMode | "custom", string> {
@@ -96,6 +97,7 @@ export function GeneralSettings() {
         onChange={(patch) => void update(patch)}
       />
       <LanguageCard language={language} onChange={(value) => void update({ language: value })} />
+      <SetupGuideReplay />
       <SettingsUpdateCard />
     </div>
   )
@@ -112,17 +114,17 @@ function LanguageCard({
   return (
     <SettingsCard title={t("nav.general")}>
       <SettingsRow title={t("settings.language")} description={t("settings.languageDesc")}>
-        <Select value={language} onValueChange={(value) => onChange(value as "auto" | "en" | "zh")}>
-          <SelectTrigger className="min-w-[9rem] rounded-2lg">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="auto">{t("settings.detectAuto")}</SelectItem>
-            <SelectItem value="en">{t("common.english")}</SelectItem>
-            <SelectItem value="zh">{t("common.chinese")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingsRow>
+          <Select value={language} onValueChange={(value) => onChange(value as "auto" | "en" | "zh")}>
+            <SelectTrigger className="min-w-[9rem] rounded-2lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">{t("settings.detectAuto")}</SelectItem>
+              <SelectItem value="en">{t("common.english")}</SelectItem>
+              <SelectItem value="zh">{t("common.chinese")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingsRow>
     </SettingsCard>
   )
 }

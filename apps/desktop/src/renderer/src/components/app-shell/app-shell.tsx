@@ -1,6 +1,7 @@
 /**
  * 全应用唯一铬：轨道+情境 | 工作台 | Inspector。切模块不卸载会话与右栏。
  */
+import { SetupGuideHost } from "@renderer/components/setup-guide/setup-guide-host"
 import { RemoteStatusStrip } from "@renderer/components/settings/workspace/remote-status-strip"
 import { NavCard } from "./chrome/nav-card"
 import { StageSplit } from "./layout/stage-split"
@@ -20,6 +21,7 @@ export function AppShell() {
         <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-purple-500/6 blur-[110px]" />
       </div>
 
+      <SetupGuideHost />
       <NavCard activeModule={activeModule} isChat={isChat} onSelect={selectModule} />
       <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
         <RemoteStatusStrip />

@@ -34,7 +34,8 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   desktopPush: true,
   agentCompleteSound: true,
   approvalRequiredAlert: true,
-  agentDisplayNames: {}
+  agentDisplayNames: {},
+  setupGuideCompletedAt: null
 }
 
 /** 读取持久化偏好；损坏或缺失时回落到安全默认（写盘/命令都要确认）。 */
