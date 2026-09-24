@@ -105,7 +105,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - **已修**：会话列表主行曾显示供应商名。现在主行只写会话题；引擎走左侧 `SessionAgentMark`。
 - **隐患**：Composer 顶栏并排 `AgentPicker` + `ComposerModelChip`，Goal/Recap 贴探索|执行旁，P0-S 常驻脚注墙与双「管理」链。根因：铬条回归把能力全摊在表面。正确做法（slim）：一份引擎·模型芯片（点开=换引擎/I1）；思考贴芯片旁小档；Goal 进底栏 `…`；注入空不画、有启用一行芯片 + Popover。禁止再并排第二份 grok / 铬面 UsagePill。
 - **隐患**：I1 模型芯片/名单只写字，真机上看起来没引擎/模型标。根因：`ComposerModelChip` / `ModelSwitchPanel` 没接 `AgentBrandIcon` / `CliModelMark`。正确做法：跟 AgentPicker 同一套标，字母色块兜底，禁止空白。
-- **隐患**：Claude / Cursor 等选不了思考。根因：`composerChromeFor.thinking` 只认 `effort`，`model-id` 被整颗藏掉。正确做法：`composerThinkingChrome` — effort 五档；model-id 「思考 · 跟模型」；none 隐藏。
+- **隐患**：Claude / Cursor 等选不了思考。根因：`composerChromeFor.thinking` 只认 `effort`，`model-id` 被整颗藏掉。正确做法：`composerThinkingChrome` — effort 五档；advertised 用同一张思考能量面板，名字中文，写入仍是 CLI 档位值；model-id 「思考 · 跟模型」；none 隐藏。
+- **隐患**：思考能量条拖起来一顿一顿，或一点就关掉弹层。根因：每个指针移动都写 store，再套 `transition-all`；`setPointerCapture` 会被弹出层当成点到外面。正确做法：拖动时滑块跟着指针，松手再吸到最近档；档位变化才提交；拖动期间拦住弹出层关闭。
 - **隐患**：ACP 上探索/执行分段消失。根因：`ExploreExecuteToggle` 按 `executionModes!==enjoy-local` `return null`。正确做法（C1）：全引擎常驻、两钮可点，探索 = 宿主拦写/命令；不能拦截才 C2 整组禁用 + 可见原因，禁止只灰探索。
 - **隐患**：改旗标/状态后会话被顶到最上。根因：`session.patch` 误 bump `updated_at`。正确做法：patch 不改活跃时间；排序仍按真实对话。
 - **隐患**：Recap tooltip 写「已注入」但本轮还没发。正确做法：下一轮才垫 `[Session Goal]` / `[Session Recap]`；失败写在溢出菜单；启发式结果标「规则摘要」，头标 `[Enjoy recap kind: heuristic]` 落在 `recap` 正文（注入 / 展示剥掉）。inspect-prompt **preview** 写将注入，**last-run** 才有合成句。

@@ -4,6 +4,7 @@
  * 2. 弹层内嵌入交互式思考能量条 (Reasoning Energy Bar)，支持直接拖拽/点选档位
  * 3. 5 档深度与渐变色彩实时联动
  */
+import { useState } from "react"
 import { RiBrainLine, RiCheckLine } from "@remixicon/react"
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import {
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { blockDismissWhileEnergyDrag } from "./reasoning-energy-drag"
 import {
   getEffortLevels,
   getEffortMeta
@@ -25,11 +27,18 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
   const reasoningEffort = useChatStore((state) => state.reasoningEffort)
   const setReasoningEffort = useChatStore((state) => state.setReasoningEffort)
   const t = useT()
+  const [open, setOpen] = useState(false)
   const currentMeta = getEffortMeta(reasoningEffort, t)
   const levels = getEffortLevels(t)
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && document.documentElement.dataset.energyDrag === "1") return
+        setOpen(next)
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -59,6 +68,9 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
         align="end"
         sideOffset={8}
         className="w-72 rounded-2xl border border-border-button-default bg-background-primary-default p-2.5 shadow-card overflow-hidden"
+        onPointerDownOutside={blockDismissWhileEnergyDrag}
+        onInteractOutside={blockDismissWhileEnergyDrag}
+        onFocusOutside={blockDismissWhileEnergyDrag}
       >
         {/* 顶部标题与当前能量档位徽标 */}
         <div className="flex items-center justify-between px-1 pt-0.5 pb-2">

@@ -2,7 +2,7 @@
  * 思考铬：Enjoy 本地五档；ACP 用广告/种子档；model-id 跟模型。
  */
 import { useState } from "react"
-import { RiArrowRightSLine, RiBrainLine, RiCheckLine } from "@remixicon/react"
+import { RiArrowRightSLine, RiBrainLine } from "@remixicon/react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   composerThinkingChrome,
@@ -13,6 +13,9 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { ReasoningEffortToggle } from "../../reasoning-effort-toggle"
+import { blockDismissWhileEnergyDrag } from "../../reasoning-energy-drag"
+import { AdvertisedThoughtMenu } from "./advertised-thought-menu"
+import { thoughtChoiceCopy, thoughtToneAt } from "./thought-choice-copy"
 import { useComposerModelSwitch } from "../model-switch/use-composer-model-switch"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
@@ -38,58 +41,48 @@ export function ComposerThinkingChrome({
 }
 
 function AdvertisedThoughtPicker({ modelId }: { modelId: string }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const runtimeId = useChatStore((state) => state.runtimeId)
   const live = thoughtLevelOption(useChatStore((state) => state.acpConfigOptions))
   const option = live ?? thoughtSeedFor(runtimeId, modelId)
   const current = useChatStore((state) => state.acpThoughtLevel) ?? currentOf(option)
   if (!option) return null
+  const index = Math.max(0, option.choices.findIndex((item) => item.value === current))
+  const choice = option.choices[index]
+  const copy = thoughtChoiceCopy(choice?.value ?? "", choice?.name ?? "", t)
+  const tone = thoughtToneAt(index, option.choices.length)
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && document.documentElement.dataset.energyDrag === "1") return
+        setOpen(next)
+      }}
+    >
       <ThoughtChip
         testId="composer-thinking-advertised"
-        title={option.name}
-        accent
-        label={option.choices.find((item) => item.value === current)?.name ?? current ?? option.name}
+        title={t("chat.effortEnergy")}
+        label={copy.short}
+        className={tone.badgeClass}
       />
-      <AdvertisedThoughtMenu option={option} current={current} onPick={() => setOpen(false)} />
+      <PopoverContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className="w-auto border-0 bg-transparent p-0 shadow-none"
+        onPointerDownOutside={blockDismissWhileEnergyDrag}
+        onInteractOutside={blockDismissWhileEnergyDrag}
+        onFocusOutside={blockDismissWhileEnergyDrag}
+      >
+        <AdvertisedThoughtMenu
+          option={option}
+          current={current}
+          onChange={(value) => void pickThought(option, value)}
+          onClose={() => setOpen(false)}
+        />
+      </PopoverContent>
     </Popover>
-  )
-}
-
-function AdvertisedThoughtMenu({
-  option,
-  current,
-  onPick
-}: {
-  option: SessionConfigOption
-  current: string | undefined
-  onPick: () => void
-}) {
-  const t = useT()
-  return (
-    <PopoverContent
-      side="top"
-      align="start"
-      sideOffset={8}
-      className="w-[240px] rounded-xl border border-border-button-default bg-background-primary-default p-1.5 shadow-card"
-    >
-      <p className="px-2 py-1.5 text-caption-2-medium text-text-tertiary">{t("chat.thinkingFollowModel")}</p>
-      {option.choices.map((choice) => (
-        <button
-          key={choice.value}
-          type="button"
-          onClick={() => {
-            void pickThought(option, choice.value)
-            onPick()
-          }}
-          className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-caption-2-medium text-text-primary hover:bg-background-secondary-hover"
-        >
-          <span>{choice.name}</span>
-          {choice.value === current ? <RiCheckLine className="size-3.5 text-accent-500" /> : null}
-        </button>
-      ))}
-    </PopoverContent>
   )
 }
 
@@ -148,13 +141,13 @@ function FollowModelMenu({ model, onClose }: { model: string; onClose: () => voi
 function ThoughtChip({
   testId,
   title,
-  accent,
-  label
+  label,
+  className
 }: {
   testId: string
   title: string
-  accent?: boolean
   label: string
+  className?: string
 }) {
   return (
     <PopoverTrigger asChild>
@@ -163,12 +156,11 @@ function ThoughtChip({
         data-testid={testId}
         title={title}
         className={cx(
-          "inline-flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded-full px-2 text-caption-2-medium transition-colors",
-          "bg-background-tertiary-default/90 text-text-secondary ring-1 ring-border-button-default/80",
-          "outline-none hover:bg-background-tertiary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          "inline-flex h-6 shrink-0 cursor-pointer items-center gap-1 rounded-full px-2 text-caption-2-medium ring-1 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+          className ?? "bg-background-tertiary-default/90 text-text-secondary ring-border-button-default/80 hover:bg-background-tertiary-hover hover:text-text-primary"
         )}
       >
-        <RiBrainLine className={cx("size-3 shrink-0", accent ? "text-accent-500" : "text-text-secondary")} aria-hidden />
+        <RiBrainLine className="size-3 shrink-0" aria-hidden />
         <span className="hidden whitespace-nowrap @[28rem]:inline">{label}</span>
       </button>
     </PopoverTrigger>

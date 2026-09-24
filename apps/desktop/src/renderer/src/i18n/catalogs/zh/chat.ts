@@ -299,6 +299,12 @@ export const zhChat = {
   effortMax: "最大",
   effortMaxShort: "极限",
   effortMaxDesc: "面向复杂架构的穷尽式深度思考",
+  effortExtra: "极高",
+  effortExtraShort: "加强",
+  effortExtraDesc: "比高档更长的推理",
+  effortMinimal: "最低",
+  effortMinimalShort: "极简",
+  effortMinimalDesc: "几乎不展开思考",
 
   selectRuntime: "选择运行时",
   selectAgent: "选择 Agent",

@@ -302,6 +302,12 @@ export const enChat = {
   effortMax: "Max",
   effortMaxShort: "Extreme",
   effortMaxDesc: "Exhaustive deep thinking for complex architectures",
+  effortExtra: "Extra high",
+  effortExtraShort: "Extra",
+  effortExtraDesc: "Longer reasoning than high",
+  effortMinimal: "Minimal",
+  effortMinimalShort: "Minimal",
+  effortMinimalDesc: "Almost no extra thinking",
 
   selectRuntime: "Select runtime",
   selectAgent: "Select agent",
