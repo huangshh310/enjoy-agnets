@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-21
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-24
 
 ## 当前真相
 
@@ -20,7 +20,7 @@
 - 工作区绑定的 pty 终端（`terminal.open` / `write` / `resize` / `close`）：main `node-pty`，renderer `@xterm/xterm` + FitAddon。原始按键进 PTY，不按行补 `\n`。这是工作区壳，不是 M4 ACP PTY 登录兜底。
 - 完成条「在浏览器打开」（`workspace.openPreview`）：工作区 `*.html` 转 `file://`，或本会话本机预览 URL，经 `shell.openExternal` 打开系统浏览器。不嵌右栏 Browser，不起 dev server。
 
-Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，输出截断，Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
+Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，模型侧输出按头尾截断（见 [agent-runtime](./agent-runtime.md)），Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
 
 右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Review 栏对齐 Codex 审查工作台，提交历史是线性 log 不是拓扑图：
 - 顶层控制栏：7 个审查作用域（上一轮 `last-turn`、未提交 `uncommitted`、未暂存 `unstaged`、已暂存 `staged`、已提交 `commits`、分支 `branch`、检查点 `checkpoints`）；全局 `+N -M`；分支对比副行（**真实上游** `@{upstream}` → 当前分支，上游失败显示「无上游」，禁止写死 `main`）；`...` 更多（自动换行、隐藏空白、文字级差异、折叠大文件、复制完整 patch）；展开/折叠全部差异；Ctrl+P / ⌘P 跳文件；文件树开关；「提交或推送」只在改动作用域（检查点 / 提交历史不画这颗主 CTA）。`checkpoints` 只列 `refs/enjoy/checkpoints/*`，不走 diff 流。空态贴顶短文，禁止居中大图标。还原先 `previewCheckpoint` 列出快照外未跟踪文件，ConfirmDialog 写明**不移动 HEAD / 不是分支回退**，有未跟踪删除必须显式确认；真正还原用临时 `GIT_INDEX_FILE` + `checkout-index`，不改用户暂存区。成功后**留在检查点时间线**，禁止偷切「未提交」。未暂存 / 已暂存文件树可按文件 `+` 暂存 / `−` 取消暂存（`workspace.gitStage`）。Review 底栏提交默认 `stageAll: false`，只提交已暂存；无已暂存则禁用，文案「提交已暂存」。Agent `git_commit` 同样默认 staged-only，`stageAll: true` 才 `add -A`。

@@ -5,6 +5,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
+import { CLIP_COMMAND_CHARS, clipToolText } from "./clip-tool-text.ts"
 
 export function createGitWriteTools(host: AgentWorkspaceHost) {
   return {
@@ -16,7 +17,8 @@ export function createGitWriteTools(host: AgentWorkspaceHost) {
         stageAll: z.boolean().optional()
       }),
       execute: async ({ message, stageAll }) => {
-        return { result: await host.gitCommit(message, { stageAll: stageAll === true }) }
+        const result = await host.gitCommit(message, { stageAll: stageAll === true })
+        return { result: clipToolText(result, CLIP_COMMAND_CHARS) }
       }
     }),
     git_branch: tool({
@@ -27,7 +29,8 @@ export function createGitWriteTools(host: AgentWorkspaceHost) {
       }),
       execute: async ({ name, checkout }) => {
         if (!host.gitBranch) throw new Error("git_branch is not available.")
-        return { result: await host.gitBranch(name, checkout === true) }
+        const result = await host.gitBranch(name, checkout === true)
+        return { result: clipToolText(result, CLIP_COMMAND_CHARS) }
       }
     }),
     git_push: tool({
@@ -35,7 +38,7 @@ export function createGitWriteTools(host: AgentWorkspaceHost) {
         "Push the current branch to its upstream. Requires user approval. Fails if there is no upstream.",
       inputSchema: z.object({}),
       execute: async () => {
-        return { result: await host.gitPush() }
+        return { result: clipToolText(await host.gitPush(), CLIP_COMMAND_CHARS) }
       }
     })
   }

@@ -16,7 +16,7 @@
 | `read_file` | 否 | 限工作区相对路径 |
 | `list_dir` | 否 | |
 | `glob` | 否 | 最多 400 条 |
-| `grep` | 否 | 最多 200 条 |
+| `grep` | 否 | 最多 200 条；单行正文约 2_000 字符，头尾都留 |
 | `repo_outline` | 否 | 深度/条数受限的目录骨架。开流也会注入一份进 system |
 | `skill` | 否 | 按名加载 SKILL.md；全局技能由宿主代读，不走工作区 jail |
 | `todo_write` | 否 | 整表替换对话内 Todo List，不写盘 |
@@ -38,7 +38,7 @@
 | `desktop_list_windows` | 否 | 可捕获窗口列表 |
 | `desktop_background_click` / `desktop_background_type` | 是 | `HOST_CONTROL_TOOLS`，不跟 Edits 写盘档。缺 pid / helper 返回 `success: false` |
 
-工具输出超过约 80_000 字符截断。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。桌面 / 浏览器控制见 `HOST_CONTROL_TOOLS`。
+工具文本超限时留开头和结尾，中间标记 `...[omitted N chars]...`（按 JS 字符串长度，标记本身不占上限）。命令流（`bash` / `code_mode` 的 stdout 与 stderr、`git_status` / `git_log`、`git_commit` / `git_branch` / `git_push` 的 `result`、Agent 路径上的 MCP 文本）约 16_000。文件流（`read_file`、写盘 diff、`git_diff`、超限的 `repo_outline`）约 48_000。`skill` 正文仍约 24_000，同样留头尾。设置页人手 `mcp.call` 不截断。ACP CLI 自己的工具输出不经过这里。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。桌面 / 浏览器控制见 `HOST_CONTROL_TOOLS`。
 
 决策 UI 只在 PermissionDock（会话内容与 Composer 之间、贴 Composer 顶边），见 [m2-attention](./m2-attention.md)。审批策略来自用户偏好：`requireWriteApproval`、`requireBashApproval`、`requireCommitApproval`、`permissionMode`。UI 决定：`allow`（Allow once 仅本次）/ `deny`（拒绝）/ `allow_session`（Always allow this session 本会话总是允许，只白名单本会话工具名，不是工作区级）。卡片按工具换三种表面（抄 AICSS 交互、BoardUI 皮）：`bash` / `code_mode` / 管道与 ACP 弱名（`command` / `cmd` + `argv`）→ command（cwd 用 `args.cwd` 否则工作区 `rootPath`）；`write_file` / `edit_file` / `git_commit` → plan（待办来自本次入参，不是 Todo Dock）；`ask_user_questions` → Fluid 步进问答（数字键 1–9、可跳过、可其它）；其余 → questions（选项 id=`allow_once`/`allow_session`）。MCP 只带 `args.command` 不算 shell。底部标明 HMAC 令牌绑定；**禁止** plan 倒计时自动放行。`ask_user_questions` 的答案走 `ApprovalDecision.answers`，execute 从 `host.takeQuestionAnswers` 取出。对本工具禁止 `allow_session`（`decideApproval` 在 HMAC 落库前抛）。空问卷 execute 抛 `ASK_USER_QUESTIONS_EMPTY`。子 Agent `createCodingTools(host, { includeAskUser: false })`。Harness 静态表不登记该工具。执行只在 main。`approval.required` 落库时用进程内密钥签 HMAC；`agent.decide` 再验库内行 + HMAC。`ApprovalDecision` `.strict()`，多传的 `args` 被拒而不是丢掉；签名校验的是落库 args，不是 renderer 再传一份。
 

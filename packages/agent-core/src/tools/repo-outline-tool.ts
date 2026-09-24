@@ -6,6 +6,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
 import { collectRepoOutline, formatRepoOutline } from "../context/repo-outline.ts"
+import { CLIP_FILE_CHARS, clipToolText } from "./clip-tool-text.ts"
 
 export function createRepoOutlineTool(host: AgentWorkspaceHost) {
   return {
@@ -21,7 +22,10 @@ export function createRepoOutlineTool(host: AgentWorkspaceHost) {
           (path) => host.listDir(path, { touch: false }),
           { maxDepth }
         )
-        return { outline: formatRepoOutline(nodes), count: nodes.length }
+        return {
+          outline: clipToolText(formatRepoOutline(nodes), CLIP_FILE_CHARS),
+          count: nodes.length
+        }
       }
     })
   }

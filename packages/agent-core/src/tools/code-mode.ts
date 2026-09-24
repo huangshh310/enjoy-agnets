@@ -4,13 +4,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import type { AgentWorkspaceHost } from "../runtime-context"
-
-const MAX_TOOL_CHARS = 80_000
-
-function truncate(value: string): string {
-  if (value.length <= MAX_TOOL_CHARS) return value
-  return `${value.slice(0, MAX_TOOL_CHARS)}\n...[truncated]`
-}
+import { CLIP_COMMAND_CHARS, clipToolText } from "./clip-tool-text.ts"
 
 export function createCodeModeTool(host: AgentWorkspaceHost) {
   return tool({
@@ -26,8 +20,8 @@ export function createCodeModeTool(host: AgentWorkspaceHost) {
       return {
         path,
         exitCode: result.exitCode,
-        stdout: truncate(result.stdout),
-        stderr: truncate(result.stderr)
+        stdout: clipToolText(result.stdout, CLIP_COMMAND_CHARS),
+        stderr: clipToolText(result.stderr, CLIP_COMMAND_CHARS)
       }
     }
   })

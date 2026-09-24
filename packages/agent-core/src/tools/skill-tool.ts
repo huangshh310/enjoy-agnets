@@ -4,6 +4,7 @@
  */
 import { tool } from "ai"
 import { z } from "zod"
+import { clipToolText } from "./clip-tool-text.ts"
 
 const MAX_SKILL_CHARS = 24_000
 
@@ -31,7 +32,7 @@ export function createSkillTool(host?: SkillHost) {
         return {
           name: loaded.name,
           scope: loaded.scope,
-          content: clipSkill(loaded.content)
+          content: clipToolText(loaded.content, MAX_SKILL_CHARS)
         }
       }
     })
@@ -53,9 +54,4 @@ function skillToolDescription(host?: SkillHost): string {
     ...lines,
     "</available_skills>"
   ].join("\n")
-}
-
-function clipSkill(content: string): string {
-  if (content.length <= MAX_SKILL_CHARS) return content
-  return `${content.slice(0, MAX_SKILL_CHARS)}\n...[truncated]`
 }

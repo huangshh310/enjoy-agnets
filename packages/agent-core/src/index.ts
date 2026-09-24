@@ -115,6 +115,13 @@ export {
   GIT_LOG_DEFAULT_LIMIT,
   GIT_LOG_MAX_LIMIT
 } from "./tools/git-log-limit";
+export {
+  CLIP_COMMAND_CHARS,
+  CLIP_FILE_CHARS,
+  CLIP_GREP_LINE_CHARS,
+  clipToolPayload,
+  clipToolText
+} from "./tools/clip-tool-text";
 export { isExperimentalMedia, EXPERIMENTAL_MEDIA } from "./media/capabilities";
 export {
   generateImageBytes,

@@ -5,14 +5,8 @@
 import { tool } from "ai"
 import { z } from "zod"
 import type { AgentWorkspaceHost } from "../runtime-context"
+import { CLIP_FILE_CHARS, CLIP_GREP_LINE_CHARS, clipToolText } from "./clip-tool-text.ts"
 import { createRepoOutlineTool } from "./repo-outline-tool.ts"
-
-const MAX_TOOL_CHARS = 80_000
-
-function truncate(value: string): string {
-  if (value.length <= MAX_TOOL_CHARS) return value
-  return `${value.slice(0, MAX_TOOL_CHARS)}\n...[truncated]`
-}
 
 export function createReadTools(host: AgentWorkspaceHost) {
   return {
@@ -23,7 +17,7 @@ export function createReadTools(host: AgentWorkspaceHost) {
       }),
       execute: async ({ path }) => {
         const content = await host.readFile(path)
-        return { path, content: truncate(content) }
+        return { path, content: clipToolText(content, CLIP_FILE_CHARS) }
       }
     }),
     list_dir: tool({
@@ -54,7 +48,7 @@ export function createReadTools(host: AgentWorkspaceHost) {
       }),
       execute: async ({ pattern, glob }) => {
         const matches = await host.grep(pattern, glob)
-        return { pattern, matches: matches.slice(0, 200) }
+        return { pattern, matches: clipGrepMatches(matches) }
       }
     }),
     ...createRepoOutlineTool(host)
@@ -62,3 +56,10 @@ export function createReadTools(host: AgentWorkspaceHost) {
 }
 
 export const READ_TOOL_NAMES = ["read_file", "list_dir", "glob", "grep", "repo_outline"] as const
+
+function clipGrepMatches<T extends { text: string }>(matches: T[]): T[] {
+  return matches.slice(0, 200).map((match) => ({
+    ...match,
+    text: clipToolText(match.text, CLIP_GREP_LINE_CHARS)
+  }))
+}

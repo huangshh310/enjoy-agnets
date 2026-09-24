@@ -5,14 +5,8 @@
 import { tool } from "ai"
 import { z } from "zod"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
+import { CLIP_COMMAND_CHARS, CLIP_FILE_CHARS, clipToolText } from "./clip-tool-text.ts"
 import { clampGitLogLimit, GIT_LOG_DEFAULT_LIMIT, GIT_LOG_MAX_LIMIT } from "./git-log-limit.ts"
-
-const MAX_TOOL_CHARS = 80_000
-
-function truncate(value: string): string {
-  if (value.length <= MAX_TOOL_CHARS) return value
-  return `${value.slice(0, MAX_TOOL_CHARS)}\n...[truncated]`
-}
 
 export function createGitReadTools(host: AgentWorkspaceHost) {
   return {
@@ -20,7 +14,7 @@ export function createGitReadTools(host: AgentWorkspaceHost) {
       description: "Show git status for the workspace.",
       inputSchema: z.object({}),
       execute: async () => {
-        return { status: await host.gitStatus() }
+        return { status: clipToolText(await host.gitStatus(), CLIP_COMMAND_CHARS) }
       }
     }),
     git_diff: tool({
@@ -29,7 +23,7 @@ export function createGitReadTools(host: AgentWorkspaceHost) {
         path: z.string().optional()
       }),
       execute: async ({ path }) => {
-        return { diff: truncate(await host.gitDiff(path)) }
+        return { diff: clipToolText(await host.gitDiff(path), CLIP_FILE_CHARS) }
       }
     }),
     git_log: tool({
@@ -41,11 +35,12 @@ export function createGitReadTools(host: AgentWorkspaceHost) {
       }),
       execute: async ({ limit, path }) => {
         return {
-          log: truncate(
+          log: clipToolText(
             await host.gitLog({
               limit: clampGitLogLimit(limit ?? GIT_LOG_DEFAULT_LIMIT),
               path
-            })
+            }),
+            CLIP_COMMAND_CHARS
           )
         }
       }
