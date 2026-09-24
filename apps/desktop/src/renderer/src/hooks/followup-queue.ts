@@ -12,6 +12,7 @@ export type { EnqueueFollowupInput, FollowupItem, FollowupStatus, RuntimeHintCod
 
 let items: FollowupItem[] = []
 let hint: RuntimeHintCode = null
+let hintSessionId: string | null = null
 const listeners = new Set<() => void>()
 
 function notify() {
@@ -94,12 +95,19 @@ export function moveFollowup(id: string, delta: -1 | 1) {
   notify()
 }
 
-export function setRuntimeHint(code: RuntimeHintCode) {
+export function setRuntimeHint(code: RuntimeHintCode, sessionId?: string | null) {
   hint = code
+  hintSessionId = code ? (sessionId ?? null) : null
   notify()
 }
 
 export function getRuntimeHint(): RuntimeHintCode {
+  return hint
+}
+
+/** 提示只属于入队的那条会话。别的会话不显示上一句。 */
+export function visibleRuntimeHint(sessionId: string | null): RuntimeHintCode {
+  if (!hint || hintSessionId !== sessionId) return null
   return hint
 }
 

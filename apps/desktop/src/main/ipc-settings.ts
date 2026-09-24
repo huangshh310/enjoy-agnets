@@ -4,6 +4,8 @@
 import { ipcMain } from "electron"
 import {
   ProviderIdInput,
+  RemoveComposerPresetInput,
+  SaveComposerPresetInput,
   SaveSecretInput,
   SetActiveModelInput,
   SetDefaultModelInput,
@@ -14,6 +16,7 @@ import {
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers"
 import { registerAutomationIpc } from "./ipc-automations"
 import { asKind, pingStoredProvider, probeStoredProvider } from "./ipc-provider-probe"
+import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
 import { getSetting, setSetting } from "./services/database"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readPreferences, writePreferences } from "./services/preferences"
@@ -46,6 +49,9 @@ export const SETTINGS_CHANNELS = [
   "settings.probeProvider",
   "settings.pingProvider",
   "settings.presets",
+  "settings.composerPresets",
+  "settings.saveComposerPreset",
+  "settings.removeComposerPreset",
   "automations.list",
   "automations.upsert",
   "automations.remove",
@@ -113,6 +119,13 @@ function registerCoreSettingsIpc() {
     writeHarnessSecret(SetHarnessInput.parse(raw))
     return { ok: true, harness: await harnessPublicStatus(readPreferences().harnessId) }
   })
+  ipcMain.handle("settings.composerPresets", async () => listComposerPresets())
+  ipcMain.handle("settings.saveComposerPreset", async (_event, raw) =>
+    saveComposerPreset(SaveComposerPresetInput.parse(raw))
+  )
+  ipcMain.handle("settings.removeComposerPreset", async (_event, raw) =>
+    removeComposerPreset(RemoveComposerPresetInput.parse(raw).id)
+  )
 }
 
 function registerProviderIpc() {

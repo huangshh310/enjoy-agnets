@@ -35,6 +35,7 @@ test("ask_user_questions 在 plan/ask 也要停车，不因只读被拒", () => 
   assert.equal(resolveToolApproval("ask_user_questions", "plan", AUTO_ALL), "user-approval")
   assert.equal(resolveToolApproval("ask_user_questions", "ask", REQUIRE_ALL), "user-approval")
   assert.equal(resolveToolApproval("ask_user_questions", "agent", AUTO_ALL), "user-approval")
+  assert.equal(resolveToolApproval("set_session_heartbeat", "plan", AUTO_ALL), "user-approval")
 })
 
 test("探索态宿主拦截含 ACP 弱名 command", () => {

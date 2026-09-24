@@ -37,7 +37,7 @@ export async function submitComposer(requested: ComposerSubmitIntent = "send") {
       assets: takeComposerAssetDetails()
     })
     clearComposerDraft()
-    setRuntimeHint("queued")
+    setRuntimeHint("queued", store.sessionId)
     return
   }
   await steerPreparedText(content)

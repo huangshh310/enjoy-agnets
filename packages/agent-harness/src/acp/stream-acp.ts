@@ -165,7 +165,8 @@ function promptForTurn(input: StreamAcpTurnInput, reused: boolean, fellBack: boo
   return composeAcpPrompt(input.messages, {
     customInstructions: input.customInstructions,
     skillCatalog: input.skillCatalog,
-    seedPriorTranscript: Boolean(input.forkSeed) && !reused && !resumed
+    // 新建进程或 resume 失败才垫可见正文。活会话和成功 resume 仍只发最后一句。
+    seedPriorTranscript: !reused && !resumed
   })
 }
 

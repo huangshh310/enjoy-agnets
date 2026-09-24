@@ -30,6 +30,25 @@ export type CronFireInput = {
   now: Date
 }
 
+/**
+ * 五段 cron 原样保留。`15m` / `1h` / `15分钟` / `1小时` 编成 cron，不另存一种间隔。
+ */
+export function compileCadence(raw: string): string | null {
+  const text = raw.trim()
+  if (!text) return null
+  if (parseCronExpr(text)) return text
+  const match = text.match(/^(\d+)\s*(m|h|分钟|小时)$/i)
+  if (!match) return null
+  const amount = Number(match[1])
+  const unit = (match[2] ?? "").toLowerCase()
+  if (unit === "m" || unit === "分钟") {
+    if (amount < 1 || amount > 59) return null
+    return `*/${amount} * * * *`
+  }
+  if (amount < 1 || amount > 23) return null
+  return `0 */${amount} * * *`
+}
+
 export function parseCronExpr(expr: string): CronFields | null {
   const parts = expr.trim().split(/\s+/)
   if (parts.length !== 5) return null

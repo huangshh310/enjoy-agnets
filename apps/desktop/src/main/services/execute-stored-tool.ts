@@ -5,6 +5,7 @@
  */
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
 import { mcpAgentToolName } from "@enjoy-agents/mcp"
+import { SET_SESSION_HEARTBEAT_TOOL } from "@enjoy-agents/agent-core"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
@@ -16,14 +17,8 @@ import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
 
 export async function executeStoredTool(run: ActiveRun, pending: PendingApproval): Promise<void> {
-  const row = getApproval(getDatabase(), pending.approvalId)
-  if (!row) return
-  let args: Record<string, unknown> = {}
-  try {
-    args = JSON.parse(row.args) as Record<string, unknown>
-  } catch {
-    return
-  }
+  const args = storedToolArgs(pending.approvalId)
+  if (!args) return
   const host = await hostForRun(run)
   const path = typeof args.path === "string" ? args.path : ""
   if (pending.name === "write_file" && path && typeof args.content === "string") {
@@ -60,12 +55,43 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     await host.gitPush()
     return
   }
+  if (pending.name === SET_SESSION_HEARTBEAT_TOOL) {
+    await resumeSessionHeartbeat(run.input.sessionId, args)
+    return
+  }
   const mcp = findVisibleMcpTool(pending.name)
   if (mcp) {
     await callServerTool(mcp.serverId, mcp.name, args, { fromApprovedAgent: true })
     return
   }
   throw new Error(`Approved tool "${pending.name}" cannot be resumed after restart.`)
+}
+
+/** 库里的 args 解析失败或行已不在，就当这次恢复没有发生。 */
+function storedToolArgs(approvalId: string): Record<string, unknown> | null {
+  const row = getApproval(getDatabase(), approvalId)
+  if (!row) return null
+  try {
+    return JSON.parse(row.args) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+async function resumeSessionHeartbeat(sessionId: string, args: Record<string, unknown>): Promise<void> {
+  const cadence = typeof args.cadence === "string" ? args.cadence : ""
+  const prompt = typeof args.prompt === "string" ? args.prompt : ""
+  if (!cadence || !prompt) {
+    throw new Error("set_session_heartbeat approval is missing cadence or prompt.")
+  }
+  const { saveHostHeartbeat } = await import("./workspace-host")
+  const saved = await saveHostHeartbeat({
+    sessionId,
+    cadence,
+    prompt,
+    maxRuns: typeof args.maxRuns === "number" ? args.maxRuns : null
+  })
+  if (!saved.ok) throw new Error(saved.error)
 }
 
 async function hostForRun(run: ActiveRun): Promise<AgentWorkspaceHost> {

@@ -1,4 +1,5 @@
 import type { AskUserAnswers } from "@enjoy-agents/ipc-contract"
+import type { SessionHeartbeatRequest } from "./tools/session-heartbeat-name"
 
 export type AgentWorkspaceHost = {
   readFile: (relativePath: string) => Promise<string>;
@@ -23,9 +24,15 @@ export type AgentWorkspaceHost = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined;
 };
 
+export type SaveSessionHeartbeat = (
+  input: SessionHeartbeatRequest
+) => Promise<{ ok: true; cronExpr: string } | { ok: false; error: string }>;
+
 export type AgentRuntimeContext = {
   workspaceRoot: string;
   sessionId: string;
   runId: string;
   host: AgentWorkspaceHost;
+  /** 本机心跳，不经过工作区文件。ACP 不提供。 */
+  setSessionHeartbeat?: SaveSessionHeartbeat;
 };

@@ -112,9 +112,11 @@ export async function launchAutomationAgent(
 function finishAutomationRun(id: string, status: "ok" | "failed", summary: string): void {
   const current = readAutomations().find((row) => row.id === id)
   const fails = status === "failed" ? (current?.consecutiveFails ?? 0) + 1 : 0
+  const limit = current?.stopOnFailCount ?? 3
   patchStoredAutomation(id, {
     lastRunStatus: status,
     lastError: status === "failed" ? summary || "Automation failed." : undefined,
-    consecutiveFails: fails
+    consecutiveFails: fails,
+    ...(status === "failed" && fails >= limit ? { enabled: false } : {})
   })
 }

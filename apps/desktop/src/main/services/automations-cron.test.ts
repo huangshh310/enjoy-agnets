@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { cronMatches, parseCronExpr, shouldFireCron } from "./automations-cron.ts"
+import { compileCadence, cronMatches, parseCronExpr, shouldFireCron } from "./automations-cron.ts"
 import { planHeartbeatTick } from "./session-heartbeat-plan.ts"
 
 const TZ = "Asia/Shanghai"
@@ -8,6 +8,14 @@ const TZ = "Asia/Shanghai"
 const nine = new Date("2026-09-21T01:00:00.000Z")
 /** 2026-09-21 10:00 CST */
 const ten = new Date("2026-09-21T02:00:00.000Z")
+
+test("15m 和 1小时 编成 cron", () => {
+  assert.equal(compileCadence("15m"), "*/15 * * * *")
+  assert.ok(parseCronExpr(compileCadence("15m") ?? ""))
+  assert.equal(compileCadence("1小时"), "0 */1 * * *")
+  assert.equal(compileCadence("0 9 * * *"), "0 9 * * *")
+  assert.equal(compileCadence("soon"), null)
+})
 
 test("解析 5 段 cron，拒绝少段", () => {
   assert.ok(parseCronExpr("0 9 * * *"))

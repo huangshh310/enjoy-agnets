@@ -12,6 +12,7 @@ import {
 import { joinInstructions } from "./join-instructions.ts"
 import { systemPromptFor } from "./prompts.ts"
 import { createCodingTools } from "./tools"
+import { createSessionHeartbeatTool } from "./tools/session-heartbeat-tool"
 import { createDelegateTool, runDelegatedSubagent } from "./agents/delegate.ts"
 import type { ApprovalPolicy } from "./tool-approval.ts"
 import { agentStopWhen } from "./policies/stop.ts"
@@ -72,6 +73,10 @@ function codingAgentTools(
 ) {
   return {
     ...createCodingTools(options.runtimeContext.host, { mode, skills: options.skills }),
+    ...createSessionHeartbeatTool(
+      options.runtimeContext.sessionId,
+      options.runtimeContext.setSessionHeartbeat
+    ),
     ...createDelegateTool((task, parentToolCallId, kind) =>
       runDelegatedSubagent({
         model,

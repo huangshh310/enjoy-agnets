@@ -45,5 +45,5 @@ export function applyActionChip(chip: ActionChip) {
     quotedContexts: quotes,
     assets: []
   })
-  setRuntimeHint("chipQueued")
+  setRuntimeHint("chipQueued", store.sessionId)
 }

@@ -28,7 +28,7 @@ async function steerComposer(content: string) {
     })
     store.appendUserMessage(steered)
     clearComposerDraft()
-    setRuntimeHint("steered")
+    setRuntimeHint("steered", store.sessionId)
   } catch (error) {
     const raw = error instanceof Error ? error.message : String(error)
     if (raw.includes("STEER_NO_ACTIVE_RUN")) {
@@ -48,5 +48,5 @@ async function fallbackSteerWithoutRun(content: string) {
   }
   enqueueFollowup({ sessionId: store.sessionId ?? "", prompt: content, assets: [] })
   clearComposerDraft()
-  setRuntimeHint("queued")
+  setRuntimeHint("queued", store.sessionId)
 }

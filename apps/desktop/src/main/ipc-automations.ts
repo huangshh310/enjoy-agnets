@@ -7,7 +7,7 @@ import {
   RunAutomationInput,
   UpsertAutomationInput
 } from "@enjoy-agents/ipc-contract"
-import { parseCronExpr } from "./services/automations-cron"
+import { compileCadence } from "./services/automations-cron"
 import { emitAutomationsChanged } from "./services/automations-notify"
 import { runAutomation } from "./services/automations-run"
 import {
@@ -20,19 +20,24 @@ import { syncWebhookListeners } from "./services/automations-webhook"
 import { createId } from "./services/ids"
 import { windowFromEvent } from "./ipc-shell"
 
+function compiledCron(needsCron: boolean, raw: string | undefined): string | undefined {
+  if (!needsCron) return raw
+  const compiled = compileCadence(raw ?? "")
+  if (!compiled) throw new Error("Invalid cron expression.")
+  return compiled
+}
+
 export function registerAutomationIpc() {
   ipcMain.handle("automations.list", async () => presentAutomations())
   ipcMain.handle("automations.upsert", async (_event, raw) => {
     const input = UpsertAutomationInput.parse(raw)
     const kinds = new Set([input.trigger, ...(input.triggers ?? [])])
-    if (kinds.has("cron") && !parseCronExpr(input.cronExpr ?? "")) {
-      throw new Error("Invalid cron expression.")
-    }
+    const cronExpr = compiledCron(kinds.has("cron"), input.cronExpr)
     if (kinds.has("webhook") && input.webhookPort == null) {
       throw new Error("Webhook port is required.")
     }
     const id = input.id ?? createId("auto")
-    const nextItem = upsertStoredAutomation(input, id)
+    const nextItem = upsertStoredAutomation({ ...input, cronExpr }, id)
     await syncWebhookListeners()
     emitAutomationsChanged("upsert", nextItem.id)
     return nextItem

@@ -20,6 +20,7 @@ export function HeartbeatFields({
         <input
           id="session-heartbeat-cron"
           value={draft.cronExpr}
+          placeholder={t("chat.heartbeatCadence")}
           onChange={(event) => onChange({ cronExpr: event.target.value })}
           className={fieldClass}
         />
@@ -28,7 +29,7 @@ export function HeartbeatFields({
         <input
           id="session-heartbeat-tz"
           value={draft.timeZone}
-          placeholder="Asia/Shanghai"
+          placeholder={t("chat.heartbeatTimeZone")}
           onChange={(event) => onChange({ timeZone: event.target.value })}
           className={fieldClass}
         />

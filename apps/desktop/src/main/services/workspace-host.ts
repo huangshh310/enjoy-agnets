@@ -102,6 +102,22 @@ async function runWorkspaceBash(workspaceRoot: string, command: string) {
   return runExecutable(workspaceRoot, launched.executable, launched.args, prefs.toolTimeoutMs)
 }
 
+export async function saveHostHeartbeat(input: import("@enjoy-agents/agent-core").SessionHeartbeatRequest) {
+  const { putHeartbeat } = await import("./session-heartbeat-store")
+  try {
+    const saved = putHeartbeat({
+      sessionId: input.sessionId,
+      cronExpr: input.cadence,
+      prompt: input.prompt,
+      maxRuns: input.maxRuns
+    })
+    return { ok: true as const, cronExpr: saved.cronExpr }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return { ok: false as const, error: message }
+  }
+}
+
 function workspaceGitOps(workspaceRoot: string) {
   return {
     gitStatus: async () => (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout,

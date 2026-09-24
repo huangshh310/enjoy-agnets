@@ -14,6 +14,7 @@ import type { EngineHandoffState } from "./plan-composer-switch.types"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { restoreComposerEngineSelection } from "./restore-composer-engine"
 import { HANDOFF_CONFIRM_FAILED } from "@renderer/lib/usage/classify-thread-error"
+import { applyPresetFace } from "../preset-face"
 
 const idle: EngineHandoffState = {
   phase: "idle",
@@ -21,7 +22,8 @@ const idle: EngineHandoffState = {
   toRuntimeId: null,
   draftSummary: "",
   filePaths: [],
-  banner: null
+  banner: null,
+  pendingPreset: null
 }
 
 export const useEngineHandoffStore = create<
@@ -41,7 +43,8 @@ export const useEngineHandoffStore = create<
       toRuntimeId: null,
       modelId: undefined,
       draftSummary: "",
-      filePaths: []
+      filePaths: [],
+      pendingPreset: null
     })
 }))
 
@@ -77,7 +80,8 @@ export async function requestEngineSwitch(to: string, modelId?: string): Promise
     modelId,
     draftSummary: draft.summary,
     filePaths: draft.files,
-    banner: null
+    banner: null,
+    pendingPreset: null
   })
   return plan.kind === "blocked_by_approval" ? "blocked" : "pending"
 }
@@ -103,6 +107,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
       })
     }
     await persistRuntimeId(state.toRuntimeId, state.modelId)
+    if (state.pendingPreset) applyPresetFace(state.pendingPreset)
     useChatStore.getState().markHandoffCut(sessionId, Date.now())
     useEngineHandoffStore.setState({
       phase: "idle",
@@ -111,6 +116,7 @@ export async function confirmEngineHandoff(): Promise<boolean> {
       modelId: undefined,
       draftSummary: "",
       filePaths: [],
+      pendingPreset: null,
       banner: {
         sessionId,
         fromRuntimeId: state.fromRuntimeId,
@@ -136,6 +142,7 @@ export function cancelEngineHandoff(): string | null {
     modelId: undefined,
     draftSummary: "",
     filePaths: [],
+    pendingPreset: null,
     banner: null
   })
   restoreComposerEngineSelection(from, useChatStore.getState().setRuntimeId)

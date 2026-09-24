@@ -33,6 +33,7 @@ import { createSkillHost } from "./skill-host"
 import { listInstalledSkills } from "./skills-service"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { disconnectedError } from "./ssh/ssh-errors.ts"
+import { saveHostHeartbeat } from "./workspace-host"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
 import { resolveWorkspaceHost } from "./workspace-host-factory.ts"
 
@@ -102,7 +103,8 @@ function localStreamOptions(
       workspaceRoot: input.workspaceRoot,
       sessionId: input.sessionId,
       runId: input.runId,
-      host: extras.host
+      host: extras.host,
+      setSessionHeartbeat: saveHostHeartbeat
     }
   }
 }

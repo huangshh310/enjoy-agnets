@@ -17,6 +17,7 @@ export {
   type HarnessToolApprovalMap
 } from "./tool-approval";
 export { createCodingTools } from "./tools";
+export { SET_SESSION_HEARTBEAT_TOOL, type SessionHeartbeatRequest } from "./tools/session-heartbeat-name";
 export {
   hasOpenTodosFromTools,
   lastTodoStatuses,

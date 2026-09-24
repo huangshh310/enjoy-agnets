@@ -4,7 +4,7 @@
 import type { SessionHeartbeat, SessionHeartbeatPutInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
-import { defaultTimeZone, parseCronExpr } from "./automations-cron"
+import { compileCadence, defaultTimeZone } from "./automations-cron"
 
 type HeartbeatRow = {
   id: string
@@ -38,7 +38,8 @@ export function listEnabledHeartbeats(): SessionHeartbeat[] {
 
 /** 非法 cron 拒绝。同一会话再保存会替换旧的一条。 */
 export function putHeartbeat(input: SessionHeartbeatPutInput): SessionHeartbeat {
-  if (!parseCronExpr(input.cronExpr)) throw new Error("HEARTBEAT_CRON_INVALID")
+  const cronExpr = compileCadence(input.cronExpr)
+  if (!cronExpr) throw new Error("HEARTBEAT_CRON_INVALID")
   const now = Date.now()
   const existing = readHeartbeat(input.sessionId)
   const id = existing?.id ?? createId("hb")
@@ -59,7 +60,7 @@ export function putHeartbeat(input: SessionHeartbeatPutInput): SessionHeartbeat 
          last_run_at = NULL,
          updated_at = excluded.updated_at`
     )
-    .run(id, input.sessionId, input.cronExpr.trim(), timeZone, input.prompt.trim(), maxRuns, now, now)
+    .run(id, input.sessionId, cronExpr, timeZone, input.prompt.trim(), maxRuns, now, now)
   const saved = readHeartbeat(input.sessionId)
   if (!saved) throw new Error("HEARTBEAT_SAVE_FAILED")
   return saved

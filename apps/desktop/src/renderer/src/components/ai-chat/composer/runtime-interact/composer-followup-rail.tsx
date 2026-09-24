@@ -4,21 +4,29 @@
 import { useEffect, useState } from "react"
 import { RiCloseLine } from "@remixicon/react"
 import { useT, type TranslateFn } from "@renderer/i18n"
-import { getRuntimeHint, setRuntimeHint, subscribeFollowups, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { listFollowups, setRuntimeHint, subscribeFollowups, visibleRuntimeHint, type RuntimeHintCode } from "@renderer/hooks/followup-queue"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { STACKED_PANEL_CLASS_NAME } from "../stacked-rail/composer-stacked-styles"
 
 export function ComposerFollowupRail() {
   const t = useT()
-  const [hint, setHint] = useState<RuntimeHintCode>(getRuntimeHint)
+  const sessionId = useChatStore((state) => state.sessionId)
+  const [hint, setHint] = useState<RuntimeHintCode>(() => visibleRuntimeHint(sessionId))
+  const [nextText, setNextText] = useState(() => nextQueuedText(sessionId))
   useEffect(() => {
-    return subscribeFollowups(() => setHint(getRuntimeHint()))
-  }, [])
+    const sync = () => {
+      setHint(visibleRuntimeHint(sessionId))
+      setNextText(nextQueuedText(sessionId))
+    }
+    sync()
+    return subscribeFollowups(sync)
+  }, [sessionId])
   if (!hint) return null
 
   return (
     <div className={`${STACKED_PANEL_CLASS_NAME} flex items-center gap-1.5 px-3 py-1`}>
-      <p className="min-w-0 flex-1 text-caption-2-regular text-text-secondary">
-        {hintLabel(hint, t)}
+      <p className="min-w-0 flex-1 truncate text-caption-2-regular text-text-secondary">
+        {hintLabel(hint, t, nextText)}
       </p>
       <button
         type="button"
@@ -32,9 +40,16 @@ export function ComposerFollowupRail() {
   )
 }
 
-function hintLabel(hint: RuntimeHintCode, t: TranslateFn) {
-  if (hint === "chipQueued") return t("chat.runtimeChipQueued")
-  if (hint === "queued") return t("chat.runtimeQueuedHint")
+function nextQueuedText(sessionId: string | null): string {
+  const item = listFollowups(sessionId)[0]
+  const raw = item?.draft || item?.prompt || ""
+  return raw.replace(/\s+/g, " ").trim().slice(0, 80)
+}
+
+function hintLabel(hint: RuntimeHintCode, t: TranslateFn, nextText: string) {
+  if (hint === "chipQueued" || hint === "queued") {
+    return nextText ? t("chat.runtimeQueuedNext", { text: nextText }) : t("chat.runtimeQueuedHint")
+  }
   if (hint === "steered") return t("chat.runtimeSteeredHint")
   return ""
 }
