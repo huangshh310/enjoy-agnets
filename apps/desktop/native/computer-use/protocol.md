@@ -4,6 +4,8 @@ stdin / stdout 各一行一个 JSON。stderr 只写诊断，main 不解析。
 
 请求：`{ "id": "1", "method": "doctor|list_apps|snapshot|act|screenshot", "params": {} }`
 
+`list_apps` 的 `result.apps[]` 必有 `pid` / `name`；可选 `bundleId` / `exe` / `aumid` / `appKey`。宿主用这些拼稳 appKey（bundleId → exe/AUMID → 规范化名）。**pid 不是键**。darwin 现网会带 `bundleId`；win32 / linux 目前多半只有 name，回落规范化名。
+
 没有 `cancel` 方法。用户停时宿主拒绝在途请求并 `child.kill` helper（与超时同一条路），错误码 `executor_cancelled` 由宿主生成。OS 已落下的 click 无法撤回。
 
 `doctor` 的 `result` 可带 `trusted` / `backgroundClick`；darwin 另带 `executablePath`（当前进程路径，给宿主对即将 spawn 的 helper 做身份核对）。宿主还会验路径与 codesign；未签名或错位时 `success` 为假，不改执行器错误码表。

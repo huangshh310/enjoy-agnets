@@ -28,6 +28,7 @@ export function ComposerMentionList({
     <div
       ref={listRef}
       data-testid="composer-mention-list"
+      data-mention-sheet={items.some((item) => item.kind === "desktop") ? "true" : "false"}
       className="max-h-[min(18rem,42vh)] overflow-y-auto overscroll-contain rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-dropdown"
     >
       {items.length === 0 ? (
@@ -45,9 +46,13 @@ export function ComposerMentionList({
           return (
             <section
               key={group.id}
+              data-testid={group.id === "desktop" ? "mention-sheet" : undefined}
               className={cx("pb-1 last:pb-0", groupIndex > 0 && "mt-1 border-t border-separator-border pt-1")}
             >
               <p className="px-2.5 py-1 text-caption-2-semibold tracking-wide text-text-secondary">{heading}</p>
+              {group.id === "desktop" ? (
+                <p className="px-2.5 pb-1 text-caption-2-medium text-text-tertiary">{t("chat.mentionDesktopSheetHint")}</p>
+              ) : null}
               {group.items.map((item, offset) => (
                 <ComposerMentionRow
                   key={item.id}
@@ -68,6 +73,7 @@ export function ComposerMentionList({
 }
 
 function groupLabel(id: MentionGroupId, t: (key: string) => string): string {
+  if (id === "desktop") return t("chat.mentionDesktopGroup")
   if (id === "discover") return t("chat.mentionDiscoverGroup")
   if (id === "files") return t("chat.mentionFilesGroup")
   if (id === "skills") return t("chat.mentionSkillsGroup")

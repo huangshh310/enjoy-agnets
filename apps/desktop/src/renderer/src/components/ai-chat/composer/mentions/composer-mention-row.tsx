@@ -5,6 +5,7 @@ import { RiBookOpenLine, RiCompass3Line, RiSparklingLine, RiTerminalBoxLine } fr
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
+import { DesktopMentionRow } from "./desktop/desktop-mention-row.tsx"
 import { FileKindMark } from "@renderer/components/ai-chat/file-kind-mark"
 
 type DiscoverMentionItem = Extract<MentionItem, { kind: "file" | "doc" | "skill" | "mcp" | "web" | "desktop" }>
@@ -46,6 +47,8 @@ export function ComposerMentionRow({
     >
       {isSlash && (item.kind === "mode" || item.kind === "command" || item.kind === "skill") ? (
         <SlashRow item={item} scopeWorkspace={scopeWorkspace} scopePersonal={scopePersonal} />
+      ) : item.kind === "desktop" ? (
+        <DesktopMentionRow item={item} active={active} />
       ) : (
         <DiscoverRow
           item={item as DiscoverMentionItem}

@@ -81,7 +81,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 纠偏队列：`runtime-interact/steering-queue.ts`、`steer-agent.ts`、`absorb-steering.ts`；检查点：`prepare-step.ts`（`mergeSteeringMessages`，仅 step≥1 注入）+ `agent-pump` 收工前 `absorbSteering`
 - 引导词：`packages/ipc-contract/src/action-chip.ts`；点击分流 `action-chip-intent.ts` / `apply-action-chip.ts`；气泡 `message-action-chips.tsx`
 - 排队 / 草稿：`hooks/followup-queue.ts`、`followup-autostart.ts`、`runtime-interact/followup-actions.ts`；时间线虚线泡 `thread/queued-followups.tsx`；大段粘贴 `lib/pasted-text.ts`；↑ 召回 `hooks/composer-prompt-history.ts`。发送拆到 `hooks/runtime-interact/`（`composer-draft` / `steer-composer` / `send-composer-run`）。Recap 注入在 `send-composer-run.ts`，生成在 `session-recap-service.ts`
-- Composer `@` / `/`：`ai-chat/composer/mentions/`（token、内置 compact + 探索/执行、技能 Chip、`formatSkillMention`、`host-mode-prefix`）；句首模式仍 `composer-mode.ts`；C 端分段 `explore-execute/`
+- Composer `@` / `/`：`ai-chat/composer/mentions/`（token、内置 compact + 探索/执行、技能 Chip、`formatSkillMention`、`host-mode-prefix`、CU-P1-B `@桌面`/`@应用`）；句首模式仍 `composer-mode.ts`；C 端分段 `explore-execute/`
 - 内存态：`agent-run-state.ts`；泵循环：`agent-pump.ts`；启动：`agent-run-start.ts`；附件 / 知识 / 开泵：`agent-run-prepare.ts`
 - 助手落库：`agent-run-flush.ts`（payload / checkpoint 节流）、`flush-agent-run.ts`（checkpoint + 终态）、`persist-parts.ts`、`persist-session.ts`（同 id UPDATE）、`complete-agent-run.ts`；启动收拾：`abandon-orphan-runs.ts`；工具边界续跑：`persist-running-checkpoint.ts`、`restore-running-runs.ts`、`running-orphan-plan.ts`；审批后是否再泵：`park-for-approval.ts`
 - 知识引用：`apps/desktop/src/main/services/cite-knowledge.ts`

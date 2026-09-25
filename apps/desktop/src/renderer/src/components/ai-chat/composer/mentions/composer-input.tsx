@@ -4,6 +4,7 @@
 import { useMemo, useRef, type ClipboardEvent, type KeyboardEvent, type RefObject } from "react"
 import { useComposerPromptHistory } from "@renderer/hooks/use-composer-prompt-history"
 import { useT, type TranslateFn } from "@renderer/i18n"
+import { ComposerDesktopBiasBar } from "./desktop/composer-desktop-bias-bar.tsx"
 import { ComposerMentionList } from "./composer-mention-list.tsx"
 import { ComposerMentionPopover } from "./composer-mention-popover.tsx"
 import { useComposerMentions } from "./use-composer-mentions.ts"
@@ -77,6 +78,7 @@ export function ComposerInput({
         placeholder={running ? t("chat.placeholderRunning") : t("chat.placeholder")}
         className="max-h-48 min-h-[38px] w-full resize-none bg-transparent py-1 text-body-medium text-text-primary outline-none placeholder:text-text-secondary/70 leading-relaxed"
       />
+      <ComposerDesktopBiasBar value={value} apps={mentions.desktopApps} />
     </div>
   )
 }

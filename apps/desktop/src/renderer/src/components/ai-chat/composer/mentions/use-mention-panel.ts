@@ -20,6 +20,7 @@ import {
   type SurfaceCopy
 } from "./build-mention-items.ts"
 import type { MentionDirEntry } from "./collect-mention-files.ts"
+import type { DesktopMentionApp } from "@enjoy-agents/ipc-contract"
 import type { McpMentionItem, MentionItem } from "./mention-items.ts"
 
 export function useMentionPanel(
@@ -32,7 +33,8 @@ export function useMentionPanel(
   modeCopy: SurfaceCopy,
   builtinCopy: SlashBuiltinCopy,
   mcps: readonly McpMentionItem[] = [],
-  desktopEnabled = false
+  desktopEnabled = false,
+  desktopApps: readonly DesktopMentionApp[] = []
 ) {
   const [cursor, setCursor] = useState(value.length)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -41,8 +43,20 @@ export function useMentionPanel(
   const mention = useMemo(() => detectActiveMention(value, cursor), [value, cursor])
   const open = Boolean(mention && !dismissed)
   const items = useMemo(
-    () => listItems(mention?.kind, mention?.query ?? "", roots, files, docs, modeCopy, builtinCopy, mcps, desktopEnabled),
-    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy, mcps, desktopEnabled]
+    () =>
+      listItems(
+        mention?.kind,
+        mention?.query ?? "",
+        roots,
+        files,
+        docs,
+        modeCopy,
+        builtinCopy,
+        mcps,
+        desktopEnabled,
+        desktopApps
+      ),
+    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy, mcps, desktopEnabled, desktopApps]
   )
 
   useLayoutEffect(() => {
@@ -111,9 +125,12 @@ function listItems(
   modeCopy: SurfaceCopy,
   builtinCopy: SlashBuiltinCopy,
   mcps: readonly McpMentionItem[],
-  desktopEnabled: boolean
+  desktopEnabled: boolean,
+  desktopApps: readonly DesktopMentionApp[]
 ): MentionItem[] {
-  if (kind === "at") return buildAtMentionItems(query, roots, files, docs, mcps, undefined, desktopEnabled)
+  if (kind === "at") {
+    return buildAtMentionItems(query, roots, files, docs, mcps, undefined, desktopEnabled, desktopApps)
+  }
   if (kind === "slash") return buildSlashMentionItems(query, modeCopy, builtinCopy)
   return []
 }

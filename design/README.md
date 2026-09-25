@@ -78,6 +78,7 @@
 | [references/computer-use-codex-parity.md](./references/computer-use-codex-parity.md) | P0 Computer Use × Codex 对标短锁（Jojo；§3.2a–e Hard locks：TTL 重拍二次确认 / appKey / doctor=当前 helper / resume / Win·Linux 门；【视觉真源】[`previews/p0-computer-use.html`](./previews/p0-computer-use.html)；对标 tip `86228f9`；不是当前真相，边界见 computer-use spec） |
 | [references/cu-p1-a-always-allow.md](./references/cu-p1-a-always-allow.md) | CU-P1-A Always-allow 短锁（Jojo；本机按应用持久簿 + Dock「始终允许此应用」；`allow_always` 只写簿、撤销只清簿；【视觉真源】[`previews/cu-p1-a-always-allow.html`](./previews/cu-p1-a-always-allow.html)；基线 tip `63e5d8f`；不是当前真相，边界见 computer-use spec） |
 | [references/cu-p0-c-overlay.md](./references/cu-p0-c-overlay.md) | CU-P0-C / CU-P1-O Overlay 短锁（Jojo 正式全文；冷静蓝边 + 右栏跟观察 + 一键/Esc 停；Dock 同宇宙；Explore 无 desktop_*；【视觉真源】[`previews/cu-p0-c-overlay.html`](./previews/cu-p0-c-overlay.html)；基线 tip `e7cdeb0`；不是当前真相，边界见 computer-use spec） |
+| [references/cu-p1-b-composer-mention.md](./references/cu-p1-b-composer-mention.md) | CU-P1-B Composer `@桌面` / `@应用` 短锁（Jojo；偏置宿主 `desktop_*`，非插件店，不跳过审批；【视觉真源】[`previews/cu-p1-b-composer-mention.html`](./previews/cu-p1-b-composer-mention.html)；不是当前真相，边界见 computer-use spec） |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
 | [previews/cli-a-official-login.html](./previews/cli-a-official-login.html) | CLI-A 仅官方四家登录闭环视觉真源（锁 tip `a0ac8f5`；检测中 / 打开授权中 / 已登录 / 失败人话） |
 | [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | 本机 CLI 密表唯一视觉真源（锁 tip `8bd7f6e`；预览内容 `add29a4`） |

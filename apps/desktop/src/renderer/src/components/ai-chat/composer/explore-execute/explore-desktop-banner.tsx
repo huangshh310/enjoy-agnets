@@ -1,5 +1,5 @@
 /**
- * Explore 诚实条：电脑操控已开时明示没有 desktop_act，引导切执行。
+ * Explore 诚实条：电脑操控已开时明示无 desktop_*，引导切执行。提及 ≠ 已连接。
  */
 import { useComputerUseEnabled } from "@renderer/hooks/use-computer-use-enabled"
 import { useChatStore } from "@renderer/stores/chat-store"

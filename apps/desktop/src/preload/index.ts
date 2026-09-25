@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 import type {
   BuiltinToolsState,
+  DesktopMentionAppsResult,
   WindowActionResult,
   WindowState
 } from "@enjoy-agents/ipc-contract";
@@ -316,6 +317,8 @@ const ide = {
     desktopDoctor: () => ipcRenderer.invoke("builtinTools.desktopDoctor"),
     desktopView: () => ipcRenderer.invoke("builtinTools.desktopView"),
     desktopCapturePreview: () => ipcRenderer.invoke("builtinTools.desktopCapturePreview"),
+    desktopListApps: () =>
+      ipcRenderer.invoke("builtinTools.desktopListApps") as Promise<DesktopMentionAppsResult>,
     revokeAlwaysAllow: (input: { appKey: string; sessionId?: string }) =>
       ipcRenderer.invoke("builtinTools.revokeAlwaysAllow", input) as Promise<BuiltinToolsState>
   },

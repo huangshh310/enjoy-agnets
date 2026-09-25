@@ -3,7 +3,15 @@
  */
 import type { MentionItem } from "./mention-items.ts"
 
-export type MentionGroupId = "discover" | "files" | "skills" | "mcp" | "builtin" | "workspace" | "personal"
+export type MentionGroupId =
+  | "desktop"
+  | "discover"
+  | "files"
+  | "skills"
+  | "mcp"
+  | "builtin"
+  | "workspace"
+  | "personal"
 
 export type MentionGroup = {
   id: MentionGroupId
@@ -12,10 +20,14 @@ export type MentionGroup = {
 
 export function groupMentionItems(kind: "at" | "slash", items: readonly MentionItem[]): MentionGroup[] {
   if (kind === "at") {
-    const live = items.filter((item) => item.kind !== "web")
+    const desktop = items.filter((item) => item.kind === "desktop")
+    const live = items.filter((item) => item.kind !== "web" && item.kind !== "desktop")
     const web = items.filter((item) => item.kind === "web")
-    const all = [...live, ...web]
-    return all.length > 0 ? [{ id: "discover", items: all }] : []
+    const groups: MentionGroup[] = []
+    if (desktop.length > 0) groups.push({ id: "desktop", items: desktop })
+    const rest = [...live, ...web]
+    if (rest.length > 0) groups.push({ id: "discover", items: rest })
+    return groups
   }
   const groups: MentionGroup[] = []
   const builtin = items.filter((item) => item.kind === "command" || item.kind === "mode")

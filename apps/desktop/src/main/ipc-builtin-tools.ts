@@ -6,6 +6,7 @@ import { app, ipcMain, shell } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import {
+  DesktopMentionAppsResult,
   GetBuiltinToolsStateInput,
   OpenSystemPermissionInput,
   RevokeDesktopAlwaysAllowInput,
@@ -36,6 +37,7 @@ export const BUILTIN_TOOLS_CHANNELS = [
   "builtinTools.desktopDoctor",
   "builtinTools.desktopView",
   "builtinTools.desktopCapturePreview",
+  "builtinTools.desktopListApps",
   "builtinTools.revokeAlwaysAllow"
 ] as const
 
@@ -105,6 +107,11 @@ export function registerBuiltinToolsIpc() {
   ipcMain.handle("builtinTools.desktopCapturePreview", async () => {
     const { captureDesktopPreview } = await import("./services/builtin-tools/computer-use/desktop-tools")
     return captureDesktopPreview()
+  })
+
+  ipcMain.handle("builtinTools.desktopListApps", async () => {
+    const { listDesktopMentionAppsIpc } = await import("./services/builtin-tools/computer-use/desktop-tools")
+    return DesktopMentionAppsResult.parse(await listDesktopMentionAppsIpc())
   })
 
   ipcMain.handle("builtinTools.revokeAlwaysAllow", async (_event, raw: unknown) => {
