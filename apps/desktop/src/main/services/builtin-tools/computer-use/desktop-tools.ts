@@ -19,6 +19,14 @@ import {
   forgetSecondConfirm,
   mergeSecondConfirmApprovalArgs
 } from "./desktop-second-confirm"
+import {
+  confirmActArgs,
+  enrichSecondConfirmApprovalArgs,
+  hasDesktopSecondConfirmWait,
+  isDesktopSecondConfirmResult,
+  mergeSecondConfirmArgs,
+  waitDesktopSecondConfirm
+} from "./desktop-second-confirm-park"
 import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDesktopView } from "./desktop-thumbs"
 import { startExecutor, type ExecutorHandle } from "./executor-client"
 import { resolveExecutorCommand } from "./executor-command"
@@ -209,8 +217,25 @@ function actTool(session: DesktopSession) {
   return tool({
     description: "Act on one element from desktop_snapshot. A spent or expired observationId is refused and nothing is clicked. needs_foreground means the same id can be retried with allowForeground after the user agrees.",
     inputSchema: actSchema,
-    execute: async (input) => session.act(input)
+    execute: async (input) => finishDesktopAct(session, input, await session.act(input))
   })
+}
+
+/** 活泵里重拍对不上：再停一张二次确认卡，确认后只点新观察。 */
+async function finishDesktopAct(
+  session: DesktopSession,
+  input: ActInput,
+  result: Record<string, unknown>
+) {
+  if (!isDesktopSecondConfirmResult(result) || !hasDesktopSecondConfirmWait()) return result
+  const parked = await enrichSecondConfirmApprovalArgs(mergeSecondConfirmArgs({ ...input }, result))
+  const decision = await waitDesktopSecondConfirm(parked)
+  if (decision === "deny") {
+    releaseParkedDesktopAct(parked)
+    return { ...result, denied: true }
+  }
+  const confirmed = normalizeActInput(confirmActArgs(parked))
+  return finishDesktopAct(session, confirmed, await session.act(confirmed))
 }
 
 function openExecutor(): ExecutorHandle | null {

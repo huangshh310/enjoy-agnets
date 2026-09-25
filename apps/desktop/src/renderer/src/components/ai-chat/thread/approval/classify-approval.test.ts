@@ -30,6 +30,14 @@ test("其余工具走 questions，MCP 带 command 字段不算 shell", () => {
 
 test("desktop_act 走桌面名片，不走通用 questions", () => {
   assert.equal(classifyApproval("desktop_act", { observationId: "obs_1", action: "click" }), "desktop")
+  assert.equal(
+    classifyApproval("desktop_act", {
+      observationId: "obs_2",
+      action: "click",
+      code: "needs_second_confirm"
+    }),
+    "desktop"
+  )
 })
 
 test("commandTextOf 优先 args.command，否则 argv", () => {

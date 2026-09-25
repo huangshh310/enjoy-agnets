@@ -14,6 +14,7 @@ type ApprovalActionsProps = ApprovalActionIds & {
   alwaysLabel?: string
   showAlways: boolean
   approveDisabled?: boolean
+  approveTitle?: string
   decide: ApprovalDecide
 }
 
@@ -24,6 +25,7 @@ export function ApprovalActions({
   alwaysLabel,
   showAlways,
   approveDisabled,
+  approveTitle,
   denyTestId = "approval-deny",
   allowTestId = "approval-allow",
   decide
@@ -61,6 +63,7 @@ export function ApprovalActions({
         variant="default"
         data-testid={allowTestId}
         disabled={approveDisabled}
+        title={approveTitle}
         onClick={decide.onApprove}
         className="h-8 text-caption-1-semibold"
       >

@@ -7,7 +7,7 @@ import { RiListCheck3, RiLock2Line, RiQuestionAnswerLine, RiTerminalBoxLine } fr
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { ApprovalActions } from "./approval-actions"
-import type { ApprovalActionIds, ApprovalDecide, ApprovalVariant } from "./approval.types"
+import type { ApprovalActionIds, ApprovalDecide, ApprovalTone, ApprovalVariant } from "./approval.types"
 
 const ICON = {
   command: RiTerminalBoxLine,
@@ -32,6 +32,8 @@ type ApprovalChromeProps = ApprovalActionIds & {
   alwaysLabel?: string
   showAlways?: boolean
   approveDisabled?: boolean
+  approveTitle?: string
+  tone?: ApprovalTone
   decide: ApprovalDecide
 }
 
@@ -44,6 +46,8 @@ export function ApprovalChrome({
   alwaysLabel,
   showAlways = true,
   approveDisabled,
+  approveTitle,
+  tone,
   denyTestId,
   allowTestId,
   decide
@@ -53,10 +57,27 @@ export function ApprovalChrome({
   return (
     <article
       data-variant={variant}
-      className="flex flex-col gap-3 overflow-hidden rounded-2xl border border-separator-border/80 bg-background-primary-default p-3 shadow-card"
+      data-tone={tone}
+      className={cx(
+        "flex flex-col gap-3 overflow-hidden rounded-2xl border bg-background-primary-default p-3 shadow-card",
+        tone === "danger"
+          ? "border-border-error-default/40"
+          : tone === "warn"
+            ? "border-chart-warning/40"
+            : "border-separator-border/80"
+      )}
     >
       <header className="flex items-center gap-2">
-        <span className={cx("inline-flex size-6 shrink-0 items-center justify-center rounded-md", ICON_TONE[variant])}>
+        <span
+          className={cx(
+            "inline-flex size-6 shrink-0 items-center justify-center rounded-md",
+            tone === "danger"
+              ? "bg-background-tertiary-error text-text-error-primary"
+              : tone === "warn"
+                ? "bg-chart-warning/15 text-chart-warning-text"
+                : ICON_TONE[variant]
+          )}
+        >
           <Icon className="size-3.5" aria-hidden />
         </span>
         <h3 className="min-w-0 flex-1 text-caption-1-semibold text-text-primary">{title}</h3>
@@ -74,6 +95,7 @@ export function ApprovalChrome({
           alwaysLabel={alwaysLabel}
           showAlways={showAlways}
           approveDisabled={approveDisabled}
+          approveTitle={approveTitle}
           denyTestId={denyTestId}
           allowTestId={allowTestId}
           decide={decide}

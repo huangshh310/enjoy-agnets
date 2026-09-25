@@ -16,8 +16,10 @@ import {
   deleteActiveRun,
   emitEvent,
   getActiveRun,
-  settleRun
+  settleRun,
+  type ActiveRun
 } from "./agent-run-state"
+import type { PendingApproval } from "./consume-stream"
 
 export { createSession, listMessages, listSessions, patchSession } from "./session-queries"
 export { runAgent, resumeAgentRun } from "./agent-run-start"
@@ -81,6 +83,15 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     const outcome = await executeStoredTool(run, pending)
     if (outcome.kind === "desktop_act") desktopResume = outcome.result
   }
+  emitEvent(window, {
+    type: "approval.resolved",
+    runId: decision.runId,
+    toolCallId: decision.toolCallId,
+    decision: decision.decision
+  })
+  if (await maybeReparkSecondConfirm(window, run, decision.runId, pending, desktopResume)) {
+    return { ok: true }
+  }
   const resumeCode = desktopActFailureCode(desktopResume)
   run.messages.push(approvalResponseMessage(decision, pending.name, resumeCode || undefined))
   if (desktopResume && !desktopActMayReportSuccess(desktopResume)) {
@@ -94,17 +105,40 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
       error: resumeCode
     })
   }
-  emitEvent(window, {
-    type: "approval.resolved",
-    runId: decision.runId,
-    toolCallId: decision.toolCallId,
-    decision: decision.decision
-  })
   run.resumeAfterPump = true
   if (!run.pumping) {
     void pumpStream(decision.runId)
   }
   return { ok: true }
+}
+
+/** 重拍对不上：再停 Dock 卡，不把失败当终态塞给模型。 */
+async function maybeReparkSecondConfirm(
+  window: BrowserWindow,
+  run: ActiveRun,
+  runId: string,
+  pending: PendingApproval,
+  desktopResume: Record<string, unknown> | undefined
+): Promise<boolean> {
+  const { isDesktopSecondConfirmResult } = await import(
+    "./builtin-tools/computer-use/desktop-second-confirm-park"
+  )
+  if (pending.name !== "desktop_act" || !isDesktopSecondConfirmResult(desktopResume)) return false
+  const { reparkDesktopSecondConfirm } = await import("./repark-desktop-second-confirm")
+  await reparkDesktopSecondConfirm({
+    run,
+    runId,
+    window,
+    pending,
+    result: desktopResume ?? {}
+  })
+  return true
+}
+
+function isSecondConfirmPending(args: unknown): boolean {
+  if (!args || typeof args !== "object") return false
+  const row = args as Record<string, unknown>
+  return row.code === "needs_second_confirm" || row.needsSecondConfirm === true
 }
 
 function applyApprovalDecision(
@@ -124,6 +158,8 @@ function applyApprovalDecision(
     return
   }
   if (pending.name === "desktop_act") {
+    // CU-P1-R 二次确认不是 H2 / P1-S 会话放行；确认只当一次 allow。
+    if (isSecondConfirmPending(pending.args)) return
     // §3.2b / P1-S：write-through 会话表 + run 副本。禁止裸 desktop_act。
     writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, pending.args)
     return

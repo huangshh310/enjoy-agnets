@@ -36,6 +36,10 @@ export async function pumpStream(runId: string) {
   if (!run || run.pumping) return
   run.pumping = true
   run.pendingApprovals = []
+  const { bindSecondConfirmWaiter, unbindSecondConfirmWaiter } = await import(
+    "./bind-desktop-second-confirm-waiter"
+  )
+  await bindSecondConfirmWaiter(runId, run)
 
   const prefs = readPreferences()
   const totalMs = resolveTimeoutMs(undefined, prefs.agentTimeoutMs)
@@ -49,6 +53,7 @@ export async function pumpStream(runId: string) {
     await failAgentPump(runId, run, error)
   } finally {
     clearTimer()
+    await unbindSecondConfirmWaiter()
     resumeIfNeeded(runId)
   }
 }
