@@ -1164,7 +1164,7 @@ export const zhSettings = {
     desktopSection: "桌面",
     computerUseTitle: "Computer Use",
     computerUseDesc: "让 Enjoy Local 操作本机其它应用。macOS 用辅助功能在后台点控件；Windows 用界面自动化，提权窗口需要同一完整性级别；Linux 在 X11 可后台点，Wayland 需要你允许切到前台。对新会话生效。",
-    desktopTip: "权限授给 Enjoy Agents 自己。开发时 macOS 授给的是 computer-use 二进制，不是每次解释执行的 swift。",
+    desktopTip: "辅助功能必须授给即将点击的 Enjoy Computer Use helper。打包二进制要有团队签名；开发机 swiftc / .build 未签名时医生不会报绿。",
     platformHintWindows: "Windows 用 UI Automation 后台 Invoke。目标窗口若以更高完整性运行，动作会返回 integrity_blocked，两边需要同一级别。",
     platformHintX11: "X11 走 AT-SPI。缺库时请安装 at-spi2-core 与 python3-pyatspi。",
     platformHintWayland: "Wayland 没有后台点击。动作会先停在审批卡，允许切到前台后再点。",

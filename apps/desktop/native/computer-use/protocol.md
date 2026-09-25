@@ -4,6 +4,8 @@ stdin / stdout 各一行一个 JSON。stderr 只写诊断，main 不解析。
 
 请求：`{ "id": "1", "method": "doctor|list_apps|snapshot|act|screenshot", "params": {} }`
 
+`doctor` 的 `result` 可带 `trusted` / `backgroundClick`；darwin 另带 `executablePath`（当前进程路径，给宿主对即将 spawn 的 helper 做身份核对）。宿主还会验路径与 codesign；未签名或错位时 `success` 为假，不改执行器错误码表。
+
 响应：`{ "id": "1", "result": {} }` 或 `{ "id": "1", "error": { "code": "...", "message": "..." } }`
 
 `snapshot` 的 `result.observation` 含 `id`、`pid`、`windowId`、`appName`、`elements`、`createdAt`、`platform`。`elements[]` 含 `id`、`role`、`name`、`clickable`。

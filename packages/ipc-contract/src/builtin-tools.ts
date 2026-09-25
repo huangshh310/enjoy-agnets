@@ -33,7 +33,15 @@ export const DesktopDoctorReport = z.object({
   line: z.string(),
   session: z.enum(["macos", "windows", "x11", "wayland", "none"]).optional(),
   backgroundClick: z.boolean().optional(),
-  code: z.string().optional()
+  code: z.string().optional(),
+  helperPath: z.string().nullable().optional(),
+  helperSigned: z.boolean().optional(),
+  helperIdentity: z.string().nullable().optional(),
+  helperMatchesSpawn: z.boolean().optional(),
+  helperTeamId: z.string().nullable().optional(),
+  trusted: z.boolean().optional(),
+  accessibility: z.boolean().optional(),
+  hostAccessibility: z.boolean().optional()
 })
 export type DesktopDoctorReport = z.infer<typeof DesktopDoctorReport>
 

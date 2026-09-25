@@ -19,6 +19,8 @@ export class ExecutorFailure extends Error {
 export type ExecutorHandle = {
   request: (method: string, params: Record<string, unknown>) => Promise<unknown>
   dispose: () => void
+  command?: string
+  args?: string[]
 }
 
 type Pending = {
@@ -32,7 +34,12 @@ type Reply = { id?: string; result?: unknown; error?: { code?: string; message?:
 /** 拉起一个执行器进程。`command` 是可执行文件，不是参数数组。 */
 export function startExecutor(command: string, args: string[] = [], timeoutMs = DEFAULT_TIMEOUT_MS): ExecutorHandle {
   const proc = new ExecutorProcess(command, args, timeoutMs)
-  return { request: (method, params) => proc.request(method, params), dispose: () => proc.dispose() }
+  return {
+    request: (method, params) => proc.request(method, params),
+    dispose: () => proc.dispose(),
+    command,
+    args
+  }
 }
 
 class ExecutorProcess {
