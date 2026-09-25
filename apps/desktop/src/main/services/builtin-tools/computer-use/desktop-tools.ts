@@ -11,7 +11,7 @@ import {
 import { tool } from "ai"
 import { z } from "zod"
 import { checkDesktopPermissions } from "../builtin-tools-state"
-import { triggerScreenAction } from "../screen-overlay-service"
+import { beginDesktopActOverlay, endDesktopActOverlay } from "../desktop-overlay-chrome"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
 import { formatDoctorLine } from "./doctor-report"
 import {
@@ -61,11 +61,10 @@ function sharedSession(): DesktopSession {
     onView: setLastDesktopView,
     resolveCommand: () => resolveExecutorCommand(),
     onAct: (input, observation) => {
-      triggerScreenAction({
-        action: input.action === "type" || input.action === "key" ? "type" : "click",
-        targetName: observation.appName,
-        text: typeof input.elementName === "string" ? input.elementName : input.action
-      })
+      beginDesktopActOverlay({ action: input.action, appName: observation.appName })
+    },
+    onActEnd: () => {
+      endDesktopActOverlay()
     }
   })
   return singleton

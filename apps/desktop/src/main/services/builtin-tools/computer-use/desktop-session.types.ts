@@ -41,6 +41,8 @@ export type DesktopSessionHooks = {
     thumbnailPath?: string
   }) => void
   onAct?: (input: ActInput, observation: Observation) => void
+  /** act 执行器返回后调用（成功或失败），用来熄 overlay。 */
+  onActEnd?: (input: ActInput, observation: Observation) => void
   now?: () => number
   ttlMs?: number
   /** 与真实 spawn 同一条 resolve；单测可塞假路径。 */

@@ -50,7 +50,12 @@ async function deliverAct(
   forgetSecondConfirm(input.observationId)
   forgetSecondConfirm(observation.id)
   hooks.onAct?.(input, observation)
-  const acted = await call("act", actParams(observation, input))
+  let acted: Record<string, unknown>
+  try {
+    acted = await call("act", actParams(observation, input))
+  } finally {
+    hooks.onActEnd?.(input, observation)
+  }
   if (acted.success !== true) {
     if (RESTORE_CODES.has(String(acted.code))) ledger.put(observation)
     return acted

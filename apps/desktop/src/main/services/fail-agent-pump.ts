@@ -22,6 +22,8 @@ export async function failAgentPump(runId: string, run: ActiveRun, error: unknow
     return
   }
   await disposeCodingStream(runId)
+  const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
+  endDesktopActOverlay()
 }
 
 function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {

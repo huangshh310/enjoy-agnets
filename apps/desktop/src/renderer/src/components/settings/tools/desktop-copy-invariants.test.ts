@@ -24,6 +24,13 @@ test("中英文 Computer Use 不把 Win/Linux 标成可用", () => {
   assert.match(en.computerUseDesc, /macOS is the supported path/)
 })
 
+test("屏幕视觉文案写冷静铬，不提波纹或霓虹 HUD", () => {
+  assert.match(zh.screenVisualsDesc, /冷静蓝边|正在操控/)
+  assert.match(en.screenVisualsDesc, /calm blue|Controlling/i)
+  assert.doesNotMatch(zh.screenVisualsDesc, /波纹|霓虹|红警/)
+  assert.doesNotMatch(en.screenVisualsDesc, /ripple|neon|radar/i)
+})
+
 test("无图形会话提示保持诚实，不把 Win/Linux 写成可用", () => {
   assert.match(zh.platformHintNone, /没有图形会话/)
   assert.match(zh.platformHintNone, /不可用/)

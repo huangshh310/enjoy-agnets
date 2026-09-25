@@ -1209,8 +1209,8 @@ export const enSettings = {
     notGranted: "Not Granted",
     openSettings: "Open Settings",
     screenVisualsTitle: "Screen Action Visuals",
-    screenVisualsDesc: "Show ambient safety glowing borders, floating top status pill, and click ripples when the agent operates your desktop.",
-    previewVisuals: "Preview Effect",
+    screenVisualsDesc: "During Execute desktop acts, show a calm blue border and a Controlling bar. Stop with one tap or Esc. Idle never pretends to control.",
+    previewVisuals: "Preview chrome",
     previewing: "Previewing…"
   }
 }

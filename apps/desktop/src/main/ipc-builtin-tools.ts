@@ -23,7 +23,7 @@ import {
   stopBridgeServer,
   syncBridgeServerWithState
 } from "./services/builtin-tools/bridge-server"
-import { previewScreenOverlay } from "./services/builtin-tools/screen-overlay-service"
+import { previewScreenOverlay } from "./services/builtin-tools/desktop-overlay-chrome"
 
 export const BUILTIN_TOOLS_CHANNELS = [
   "builtinTools.getState",

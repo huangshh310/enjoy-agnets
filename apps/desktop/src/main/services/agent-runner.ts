@@ -47,6 +47,8 @@ export async function abortAgent(rawInput: unknown) {
   run?.abort.abort()
   deleteActiveRun(runId)
   await cancelCodingStream(runId)
+  const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
+  endDesktopActOverlay()
   return { ok: true }
 }
 

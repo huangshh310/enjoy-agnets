@@ -1,20 +1,19 @@
 /**
- * macOS Computer Use 屏幕实时视觉反馈服务 (参考 CodeX 交互范式)：
- * 维护置顶透明无焦点覆盖层，提供全屏安全操作呼吸边框、顶部状态 HUD 胶囊与精准坐标点击波纹。
+ * Computer Use overlay 窗：透明置顶、默认点穿。铬显隐由 desktop-overlay-chrome 驱动。
  */
-import { app, BrowserWindow, screen } from "electron"
+import { app, BrowserWindow, ipcMain, screen } from "electron"
 import path from "node:path"
 import fs from "node:fs"
-import { getBuiltinToolsState } from "./builtin-tools-state"
 
 let overlayWindow: BrowserWindow | null = null
+let overlayIpcBound = false
 
-export interface ScreenActionPayload {
-  action: "click" | "type" | "observe" | "custom"
-  x?: number
-  y?: number
-  text?: string
-  targetName?: string
+export type OverlayChromePayload = {
+  visible: boolean
+  title?: string
+  stopLabel?: string
+  escHint?: string
+  lang?: "zh-CN" | "en"
 }
 
 function resolveOverlayFile(fileName: string): string {
@@ -24,24 +23,34 @@ function resolveOverlayFile(fileName: string): string {
     path.resolve(__dirname, "../../resources/overlay", fileName),
     path.resolve(__dirname, "../../../resources/overlay", fileName)
   ]
-  for (const c of candidates) {
+  for (const candidate of candidates) {
     try {
-      if (fs.existsSync(c)) return c
+      if (fs.existsSync(candidate)) return candidate
     } catch {
-      // ignore
+      // 候选路径不存在就试下一个
     }
   }
   return candidates[0]
 }
 
+function bindOverlayIpcOnce(): void {
+  if (overlayIpcBound) return
+  overlayIpcBound = true
+  ipcMain.on("overlay:stop", () => {
+    void import("./desktop-overlay-chrome").then(({ stopDesktopActOverlay }) => {
+      void stopDesktopActOverlay()
+    })
+  })
+  ipcMain.on("overlay:ignore-mouse", (_event, ignore: unknown) => {
+    setOverlayIgnoreMouse(ignore !== false)
+  })
+}
+
 export function ensureOverlayWindow(): BrowserWindow {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    return overlayWindow
-  }
+  bindOverlayIpcOnce()
+  if (overlayWindow && !overlayWindow.isDestroyed()) return overlayWindow
 
-  const primaryDisplay = screen.getPrimaryDisplay()
-  const bounds = primaryDisplay.bounds
-
+  const bounds = screen.getPrimaryDisplay().bounds
   overlayWindow = new BrowserWindow({
     x: bounds.x,
     y: bounds.y,
@@ -62,76 +71,57 @@ export function ensureOverlayWindow(): BrowserWindow {
     }
   })
 
-  // macOS 穿透与置顶保障：完全忽略鼠标点击，不干扰用户正在进行的工作
   overlayWindow.setAlwaysOnTop(true, "screen-saver")
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   overlayWindow.setIgnoreMouseEvents(true, { forward: true })
-
-  const htmlPath = resolveOverlayFile("computer-use-overlay.html")
-  void overlayWindow.loadFile(htmlPath)
-
+  void overlayWindow.loadFile(resolveOverlayFile("computer-use-overlay.html"))
   overlayWindow.on("closed", () => {
     overlayWindow = null
   })
-
   return overlayWindow
 }
 
-/**
- * 触发一次屏幕视觉反馈动效
- */
-export function triggerScreenAction(payload: ScreenActionPayload): void {
-  const state = getBuiltinToolsState()
-  if (!state.computerUse.enabled || !state.computerUse.screenVisuals) {
+/** HUD 可点时关掉点穿；离开 HUD 再点穿，避免挡住本机目标窗。 */
+export function setOverlayIgnoreMouse(ignore: boolean): void {
+  if (!overlayWindow || overlayWindow.isDestroyed()) return
+  overlayWindow.setIgnoreMouseEvents(ignore, { forward: true })
+}
+
+export function sendOverlayChrome(payload: OverlayChromePayload): void {
+  if (!payload.visible) {
+    hideOverlayWindow()
     return
   }
-
-  try {
-    const win = ensureOverlayWindow()
-    if (!win.isVisible()) {
-      win.showInactive()
-    }
-    win.webContents.send("overlay:action", payload)
-  } catch (err) {
-    console.warn("Failed to trigger screen overlay action", err)
+  const win = ensureOverlayWindow()
+  if (!win.isVisible()) win.showInactive()
+  const push = () => {
+    if (!overlayWindow || overlayWindow.isDestroyed()) return
+    overlayWindow.webContents.send("overlay:chrome", payload)
   }
+  if (win.webContents.isLoading()) {
+    win.webContents.once("did-finish-load", push)
+    return
+  }
+  push()
 }
 
-/**
- * 供设置页面随时调用的测试预览动效
- */
-export function previewScreenOverlay(): void {
-  try {
-    const win = ensureOverlayWindow()
-    if (!win.isVisible()) {
-      win.showInactive()
-    }
-    const bounds = screen.getPrimaryDisplay().bounds
-    const centerX = Math.round(bounds.width / 2)
-    const centerY = Math.round(bounds.height / 2)
-
-    win.webContents.send("overlay:action", {
-      action: "click",
-      x: centerX,
-      y: centerY,
-      text: "正在执行示例点击操作 · 屏幕动效运行正常",
-      targetName: "预览中心"
-    })
-  } catch (err) {
-    console.warn("Failed to preview screen overlay", err)
-  }
+function hideOverlayWindow(): void {
+  if (!overlayWindow || overlayWindow.isDestroyed()) return
+  overlayWindow.webContents.send("overlay:chrome", { visible: false })
+  setOverlayIgnoreMouse(true)
+  overlayWindow.hide()
 }
 
-/**
- * 退出清理
- */
 export function disposeOverlayWindow(): void {
+  void import("./desktop-overlay-chrome").then(({ resetDesktopOverlayChrome }) => {
+    resetDesktopOverlayChrome()
+  })
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     try {
       overlayWindow.close()
     } catch {
-      // ignore
+      // 退出时窗可能已毁
     }
-    overlayWindow = null
   }
+  overlayWindow = null
 }

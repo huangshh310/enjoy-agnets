@@ -1,11 +1,16 @@
 /**
- * Computer Use Overlay Preload Script:
- * 安全将主进程的 overlay:action 事件通过 CustomEvent 桥接至轻量动效网页。
+ * Overlay 窗 preload：主进程铬事件 ↔ HTML；停止 / 鼠标穿透不进 renderer 合约。
  */
 const { ipcRenderer } = require("electron")
 
 window.addEventListener("DOMContentLoaded", () => {
-  ipcRenderer.on("overlay:action", (_event, payload) => {
-    window.dispatchEvent(new CustomEvent("computer-use-action", { detail: payload }))
+  ipcRenderer.on("overlay:chrome", (_event, payload) => {
+    window.dispatchEvent(new CustomEvent("overlay-chrome", { detail: payload }))
+  })
+  window.addEventListener("overlay-stop", () => {
+    ipcRenderer.send("overlay:stop")
+  })
+  window.addEventListener("overlay-ignore-mouse", (event) => {
+    ipcRenderer.send("overlay:ignore-mouse", event.detail !== false)
   })
 })

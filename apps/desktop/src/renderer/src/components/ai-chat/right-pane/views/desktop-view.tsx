@@ -31,17 +31,26 @@ export function DesktopObservationView() {
   }, [])
 
   if (!view) {
-    return <p className="px-3 py-4 text-caption-1-medium text-text-tertiary">{t("chat.paneDesktopEmpty")}</p>
+    return (
+      <p data-testid="desktop-rail-empty" className="px-3 py-4 text-caption-1-medium text-text-tertiary">
+        {t("chat.paneDesktopEmpty")}
+      </p>
+    )
   }
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-auto p-3">
+    <div data-testid="desktop-rail-card" className="flex h-full flex-col gap-3 overflow-auto p-3">
       <p className="text-body-medium text-text-primary">{view.appName}</p>
       {view.appKey ? (
         <p className="text-caption-2-medium text-text-tertiary">{t("chat.paneDesktopAppKey", { appKey: view.appKey })}</p>
       ) : null}
       {view.thumbnailDataUrl ? (
-        <img src={view.thumbnailDataUrl} alt={view.appName} className="max-h-40 w-full rounded-lg object-contain" />
+        <img
+          data-testid="desktop-rail-thumb"
+          src={view.thumbnailDataUrl}
+          alt={view.appName}
+          className="max-h-40 w-full rounded-lg object-contain"
+        />
       ) : null}
       <ul className="flex flex-col gap-1">
         {view.elements.slice(0, 40).map((item) => (
