@@ -76,6 +76,7 @@
 | [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |
 | [references/dev-plan-p0-h-i-r.md](./references/dev-plan-p0-h-i-r.md) | 执行计划：P0-H 扩展壳 + I2 精选 + I1 换模型 + P0-R SSH；落地以 specs 为准，本文不是当前真相 |
 | [references/computer-use-codex-parity.md](./references/computer-use-codex-parity.md) | P0 Computer Use × Codex 对标短锁（Jojo；§3.2a–e Hard locks：TTL 重拍二次确认 / appKey / doctor=当前 helper / resume / Win·Linux 门；【视觉真源】[`previews/p0-computer-use.html`](./previews/p0-computer-use.html)；对标 tip `86228f9`；不是当前真相，边界见 computer-use spec） |
+| [references/cu-p1-a-always-allow.md](./references/cu-p1-a-always-allow.md) | CU-P1-A Always-allow 短锁（Jojo；本机按应用持久簿 + Dock「始终允许此应用」；`allow_always` 只写簿、撤销只清簿；【视觉真源】[`previews/cu-p1-a-always-allow.html`](./previews/cu-p1-a-always-allow.html)；基线 tip `63e5d8f`；不是当前真相，边界见 computer-use spec） |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
 | [previews/cli-a-official-login.html](./previews/cli-a-official-login.html) | CLI-A 仅官方四家登录闭环视觉真源（锁 tip `a0ac8f5`；检测中 / 打开授权中 / 已登录 / 失败人话） |
 | [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | 本机 CLI 密表唯一视觉真源（锁 tip `8bd7f6e`；预览内容 `add29a4`） |
@@ -102,6 +103,7 @@
 | [previews/i4-p1-webhook-onsave.html](./previews/i4-p1-webhook-onsave.html) | I4-P1 webhook + 保存后：列表徽章 / 本机端口 :8765 / 脚注非公网 / 反例划掉（【视觉真源】；沿 I4 壳，不宣称应用 1:1） |
 | [previews/p0-computer-use.html](./previews/p0-computer-use.html) | P0 Computer Use：doctor=当前 helper · 本会话任意桌面默认关折叠 · 允许一次/本会话允许此应用/拒绝 · §3.2a stale→重拍→二次确认 · act 蓝边 + 右栏名片 · Explore 无 desktop_act（【视觉真源】P0 · Luna；反例：无第二套遥控器、无脚注墙、无双引擎条、无空「已连接」） |
 | [previews/cu-p1-r-second-confirm.html](./previews/cu-p1-r-second-confirm.html) | CU-P1-R `needs_second_confirm` 并排二次确认：批前观察\|重拍后缩略图 · 缺图诚实失败禁静默 click · 人为换窗进此卡（【视觉真源】CU-P1-R · Luna；补厚 p0 §3.2a；基线 tip `ac12110`） |
+| [previews/cu-p1-a-always-allow.html](./previews/cu-p1-a-always-allow.html) | CU-P1-A Always-allow：Dock 四态 + 无稳 appKey 隐藏第三项 · 设置「始终允许的应用」撤销/空态 · 硬每次问不被簿盖住（【视觉真源】CU-P1-A · Luna；基线 tip `63e5d8f`；产品锁见 [`references/cu-p1-a-always-allow.md`](./references/cu-p1-a-always-allow.md)） |
 
 ---
 

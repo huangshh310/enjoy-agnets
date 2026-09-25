@@ -1,0 +1,335 @@
+<!-- 【视觉真源】CU-P1-A Always-allow · Luna · jojo 短锁 · base 63e5d8f -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CU-P1-A · Always-allow · 可撕应用贴纸 · Enjoy Agents</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Inter", "ui-sans-serif", "system-ui", "PingFang SC", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+        sticker: "0 6px 18px rgba(15,20,25,0.08)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .fake-screen {
+    background:
+      linear-gradient(180deg, #dbeafe 0%, #eff6ff 42%, #f8fafc 42%),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(43,109,229,.05) 24px, rgba(43,109,229,.05) 25px);
+  }
+  .sticker {
+    position: relative;
+    background: linear-gradient(180deg, #fffef8 0%, #fff 72%);
+  }
+  .sticker::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, transparent 50%, #F7F8FA 50%);
+    box-shadow: -2px 2px 4px rgba(15,20,25,0.06);
+  }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">CU-P1-A · Always-allow · 可撕应用贴纸</h1>
+    <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
+      设置里可撤销的<strong class="text-ink">本机</strong>按应用持久允许簿；现有 Permission Dock 增加「始终允许此应用」。对标 Codex Always allow，补 G2。不与「本会话」/ <code>anyDesktopSession</code> 混为一谈。
+      真源句：「设置里的可撕应用贴纸」。基线 tip <code>63e5d8f</code> · I3 Registry more-agents 仍停。
+    </p>
+  </header>
+
+  <main class="mx-auto max-w-[1100px] space-y-10 px-6 py-8">
+
+    <aside class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-mute">jojo 正式验收 · A1–A6</p>
+      <ol class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li><strong>A1</strong> 始终允许 X 后 → 关会话 / 重启 / 新聊天再对 X 的 AX click·type·key → 不再弹普通审批</li>
+        <li><strong>A2</strong> 簿有 X、对 Y → 必须再批</li>
+        <li><strong>A3</strong> 设置撤销 X → 下一击再批；列表立即更新</li>
+        <li><strong>A4</strong> 坐标 / 前台 → 在簿仍每次 Dock</li>
+        <li><strong>A5</strong> 敏感窗 → 在簿仍每次问</li>
+        <li><strong>A6</strong> stale 二次确认不因 Always-allow 静默 click</li>
+      </ol>
+      <div class="mt-4 grid gap-3 text-[12px] leading-relaxed md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="font-semibold">设置文案钉</p>
+          <p class="mt-1 text-mute">标题「始终允许的应用」· 行按钮「撤销」· 空态「还没有始终允许的应用…」· 说明必须含「坐标/前台/敏感仍每次问」</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="font-semibold">分层与写入（已锁）</p>
+          <p class="mt-1 text-mute">硬每次问（坐标/前台/敏感/二次确认）→ 会话表 → 持久簿 <code>desktopAlwaysAllowAppKeys</code>。<code>allow_always</code> 只写簿；「本会话」只写表；「撤销」只清簿。无稳 appKey 隐藏第三项。</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 1 Dock 四态 -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">1 · Permission Dock 四态（非新壳）</h2>
+          <p class="mt-1 text-[13px] text-mute">复用 CU-P0-B / CU-P1-R 桌面名片铬。突出第三项：「始终允许此应用」→ <code>allow_always</code>。主键 <code>appKey</code>，pid 不是键。</p>
+        </div>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 text-[11px] font-medium text-ok">allow_always</span>
+      </div>
+
+      <div class="mx-auto max-w-[440px] rounded-2xl border border-line bg-paper p-3 shadow-dock">
+        <p class="mb-2 px-1 text-[10px] font-medium uppercase tracking-wide text-mute">需要你确认 · Permission Dock</p>
+        <div class="rounded-xl border border-line bg-card p-4">
+          <div class="flex items-start gap-3">
+            <div class="fake-screen h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-line">
+              <div class="m-1.5 rounded bg-white/90 p-1 text-center font-mono text-[12px] font-semibold">1</div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[14px] font-semibold leading-snug">允许操控「计算器」？</p>
+              <p class="mt-0.5 text-[12px] text-mute">计算器 · 「1」 · click</p>
+              <p class="mt-1 font-mono text-[11px] text-mute" data-testid="desktop-approval-app-key">com.apple.calculator</p>
+              <p class="mt-1 text-[10px] text-mute">待批中 · 本观察 TTL 已冻结（§3.2a）</p>
+            </div>
+          </div>
+
+          <div class="mt-3 space-y-1.5" id="dock-choices">
+            <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[12px]" data-testid="approval-allow">
+              <span class="size-3.5 rounded-full border border-line"></span>
+              允许一次
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[12px]" data-testid="approval-session">
+              <span class="size-3.5 rounded-full border border-line"></span>
+              本会话允许「计算器」
+            </label>
+            <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-accent bg-accent/5 px-2.5 py-2 text-[12px] ring-1 ring-accent/30" data-testid="approval-always-app">
+              <span class="mt-0.5 size-3.5 rounded-full border-2 border-accent bg-accent"></span>
+              <span>
+                <span class="font-semibold">始终允许「计算器」</span>
+                <span class="mt-0.5 block text-[11px] text-mute">本机名单 · 可随时在设置撤销</span>
+              </span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[12px]" data-testid="approval-deny">
+              <span class="size-3.5 rounded-full border border-line"></span>
+              拒绝
+            </label>
+          </div>
+
+          <div class="mt-4 flex justify-end">
+            <button type="button" class="rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white shadow-sm">继续</button>
+          </div>
+          <p class="mt-2 text-center text-[10px] text-mute">
+            testid：<code>approval-allow</code> 一次 · <code>approval-session</code> 本会话 · <code>approval-always-app</code> 始终允许 · <code>approval-deny</code> 拒绝
+          </p>
+        </div>
+      </div>
+
+      <p class="mx-auto mt-3 max-w-[440px] text-center text-[11px] text-mute">
+        覆盖：同 <code>appKey</code> 的 click / type / key。<code>wait</code> 仍免批。坐标 / 前台 / 敏感 / 二次确认仍每次问。
+      </p>
+    </section>
+
+    <!-- 无稳 appKey -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">1b · 无稳 appKey：始终允许钮隐藏</h2>
+          <p class="mt-1 text-[13px] text-mute">无 bundleId / exe / AUMID / 规范化 appName 时隐藏始终允许。只留一次 + 拒绝；本会话按现有规则（无稳键或 bypass 也不出）。禁止用 pid 顶替。</p>
+        </div>
+        <span class="rounded-full bg-warnSoft px-2.5 py-1 text-[11px] font-medium text-warn">hide always-allow</span>
+      </div>
+      <div class="mx-auto max-w-[440px] rounded-2xl border border-dashed border-warn/40 bg-paper p-3">
+        <div class="rounded-xl border border-line bg-card p-4">
+          <p class="text-[14px] font-semibold">允许操控未识别窗口？</p>
+          <p class="mt-1 text-[12px] text-mute">控件 · click · 仅 pid <code>18422</code> · 无 bundleId / exe / AUMID / 规范化名</p>
+          <div class="mt-3 space-y-1.5 text-[12px]">
+            <p class="rounded-lg border border-line px-2.5 py-1.5">允许一次</p>
+            <p class="rounded-lg border border-dashed border-line/80 px-2.5 py-1.5 text-mute">本会话允许此应用 · 无稳键时按现有规则隐藏</p>
+            <p class="rounded-lg border border-dashed border-line/70 bg-paper px-2.5 py-1.5 text-mute line-through">始终允许此应用</p>
+            <p class="rounded-lg border border-line px-2.5 py-1.5">拒绝</p>
+          </div>
+          <p class="mt-3 text-center text-[11px] font-medium text-warn">无稳 appKey 时：始终允许钮隐藏</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 Settings -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold">2 · 设置 · 始终允许的应用</h2>
+        <p class="mt-1 text-[13px] text-mute">嵌在现有「电脑操控」卡内。贴纸隐喻可留在说明；行按钮必须写「撤销」。</p>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5 border-b border-line bg-paper px-4 py-2 text-[11px]">
+          <span class="rounded-lg px-2.5 py-1 text-mute">本机 CLI</span>
+          <span class="rounded-lg bg-card px-2.5 py-1 font-medium shadow-sm ring-1 ring-line">智能体工具</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">默认项</span>
+        </div>
+        <div class="space-y-4 px-4 py-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-[13px] font-semibold">电脑操控</h3>
+                <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok ring-1 ring-ok/20">就绪</span>
+              </div>
+              <p class="mt-0.5 text-[11px] text-mute">本机执行器看屏、点选、打字。不进云端虚拟桌面。</p>
+            </div>
+            <button type="button" class="relative h-6 w-10 shrink-0 rounded-full bg-accent" aria-pressed="true">
+              <span class="absolute right-0.5 top-0.5 size-5 rounded-full bg-white shadow"></span>
+            </button>
+          </div>
+
+          <div>
+            <h4 class="text-[13px] font-semibold">始终允许的应用</h4>
+            <p class="mt-1 text-[12px] leading-relaxed text-mute">像贴纸一样贴在本机。撤销即从本机名单拿掉。坐标/前台/敏感仍每次问。不进云端。</p>
+          </div>
+
+          <div class="space-y-2" id="sticker-list">
+            <article class="sticker flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 shadow-sticker" data-app="calc">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-[13px] font-bold text-accent ring-1 ring-line">计</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-[13px] font-semibold">计算器</p>
+                <p class="truncate font-mono text-[11px] text-mute">com.apple.calculator</p>
+              </div>
+              <button type="button" class="revoke h-8 rounded-lg border border-line bg-card px-3 text-[12px] font-medium">撤销</button>
+            </article>
+            <article class="sticker flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 shadow-sticker" data-app="notes">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-okSoft text-[13px] font-bold text-ok ring-1 ring-line">N</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-[13px] font-semibold">Notes</p>
+                <p class="truncate font-mono text-[11px] text-mute">com.apple.Notes</p>
+              </div>
+              <button type="button" class="revoke h-8 rounded-lg border border-line bg-card px-3 text-[12px] font-medium">撤销</button>
+            </article>
+            <article class="sticker flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 shadow-sticker" data-app="safari">
+              <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-warnSoft text-[13px] font-bold text-warn ring-1 ring-line">S</span>
+              <div class="min-w-0 flex-1">
+                <p class="text-[13px] font-semibold">Safari</p>
+                <p class="truncate font-mono text-[11px] text-mute">com.apple.Safari</p>
+              </div>
+              <button type="button" class="revoke h-8 rounded-lg border border-line bg-card px-3 text-[12px] font-medium">撤销</button>
+            </article>
+          </div>
+
+          <div id="sticker-empty" class="hidden rounded-xl border border-dashed border-line bg-paper px-4 py-6 text-center">
+            <p class="text-[13px] font-semibold">还没有始终允许的应用…</p>
+            <p class="mt-1 text-[12px] text-mute">在审批卡选「始终允许此应用」后会出现在这里</p>
+          </div>
+
+          <p class="text-[11px] leading-relaxed text-mute">「本会话允许」只活在当前对话，不在本页。「撤销」只从本机名单拿掉，不清会话表。禁画「任意桌面永久」进本名单。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 键 / 覆盖 -->
+    <section class="grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <h2 class="text-base font-semibold">§3.2b 键</h2>
+        <ol class="mt-3 list-decimal space-y-1.5 pl-4 text-[13px] text-mute">
+          <li><code class="text-ink">bundleId</code></li>
+          <li><code class="text-ink">exe</code> / AUMID</li>
+          <li>规范化 <code class="text-ink">appName</code></li>
+        </ol>
+        <p class="mt-3 text-[12px] text-mute">pid 不得单独作键。禁把 <code>desktop_act:*</code> 写入持久簿。</p>
+      </div>
+      <div class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+        <h2 class="text-base font-semibold">持久与覆盖</h2>
+        <ul class="mt-3 list-disc space-y-1.5 pl-4 text-[13px] text-mute">
+          <li>跨会话 / 重启直至撤销；本机 only，禁云同步</li>
+          <li>同 appKey 的 click / type / key 可跳普通 Dock</li>
+          <li><code>wait</code> 免批（已有）</li>
+          <li><code>allow_always</code> 只写 <code>desktopAlwaysAllowAppKeys</code>；「本会话」只写会话表；「撤销」只清簿</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 反例 -->
+    <section class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-6">
+      <h2 class="text-base font-semibold text-danger">反例 · 禁止画出 / 禁止接线</h2>
+      <ul class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li class="strike">裸 <code>desktop_act</code> / 「任意桌面永久」进持久簿</li>
+        <li class="strike">坐标 / allowForeground 因始终允许跳过</li>
+        <li class="strike">敏感窗因始终允许跳过</li>
+        <li class="strike">Always-allow 跳过 CU-P1-R <code>needs_second_confirm</code> 并排卡</li>
+        <li class="strike">pid 当键；无稳 appKey 仍露出始终允许</li>
+        <li class="strike">与「本会话」糊成一种；只点本会话却写入持久簿；<code>allow_always</code> 同时写会话表</li>
+        <li class="strike">云同步名单 / Registry 策略 / Explore 注册 desktop_act</li>
+        <li class="strike">第二套遥控器 · 脚注墙 · 空「已连接」假绿 · 行按钮写撕掉/移除/删除/Forget</li>
+      </ul>
+    </section>
+
+    <!-- handoff -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">给 mike / kai 的交接</h2>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">mike · 名片与设置</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>沿用 Permission Dock，不是新壳；四态齐全时突出「始终允许此应用」</li>
+            <li>决策名：文案「始终允许此应用」→ <code>allow_always</code>（与 <code>allow</code> / <code>allow_session</code> / <code>deny</code> 并列）</li>
+            <li>testid：<code>approval-allow</code> · <code>approval-session</code>（今日或仍叫 <code>approval-always</code>，本会话 ≠ 持久，请改名）· <code>approval-always-app</code> · <code>approval-deny</code></li>
+            <li>无稳 appKey（无 bundleId / exe / AUMID / 规范化名）：<strong>隐藏</strong>始终允许；一次 + 拒绝必在；本会话按现有规则（无键或 bypass 也藏）</li>
+            <li>设置嵌「电脑操控」卡：标题 / 含坐标前台敏感的说明 / 「撤销」/ 空态原文；撤销后列表立即更新</li>
+            <li>勿画第二套遥控器、勿脚注墙、勿「任意桌面永久」进本名单</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">kai · 簿与闸</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>持久键数组：<code>desktopAlwaysAllowAppKeys</code>（本机 prefs）</li>
+            <li><code>allow_always</code> <strong>只写</strong>持久簿，不写会话表</li>
+            <li>「本会话允许此应用」只写会话表，不升簿</li>
+            <li>设置「撤销」只从簿删该键，不清会话表（本会话仍由 CU-P1-S 管）</li>
+            <li>命中顺序：硬每次问（坐标/前台/敏感/二次确认）→ 会话表 → 持久簿</li>
+            <li>禁持久 <code>desktop_act:*</code> / 任意桌面永久；Explore 不注册；禁云策略</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] text-mute">C 端门（luna）：四态非新壳 · 设置名单可撤销 · 无稳键隐藏第三项 · 硬每次问不被簿盖住 · 禁永久 anyDesktop · 始终允许与本会话各写各的。</p>
+    </section>
+  </main>
+
+  <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
+    CU-P1-A visual source · Luna · base <code>63e5d8f</code> · SoT <code>design/references/cu-p1-a-always-allow.md</code> · I3 仍停
+  </footer>
+
+  <script>
+    const list = document.getElementById("sticker-list");
+    const empty = document.getElementById("sticker-empty");
+    list?.addEventListener("click", (event) => {
+      const button = event.target.closest(".revoke");
+      if (!button) return;
+      button.closest("[data-app]")?.remove();
+      if (!list.querySelector("[data-app]")) {
+        empty.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>
