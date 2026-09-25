@@ -7,7 +7,7 @@ import { RiListCheck3, RiLock2Line, RiQuestionAnswerLine, RiTerminalBoxLine } fr
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { ApprovalActions } from "./approval-actions"
-import type { ApprovalActionIds, ApprovalDecide, ApprovalTone, ApprovalVariant } from "./approval.types"
+import type { ApprovalActionIds, ApprovalDecide, ApprovalFooter, ApprovalTone, ApprovalVariant } from "./approval.types"
 
 const ICON = {
   command: RiTerminalBoxLine,
@@ -30,9 +30,8 @@ type ApprovalChromeProps = ApprovalActionIds & {
   approveLabel: string
   denyLabel: string
   alwaysLabel?: string
-  alwaysAppLabel?: string
   showAlways?: boolean
-  showAlwaysApp?: boolean
+  footer?: ApprovalFooter
   approveDisabled?: boolean
   approveTitle?: string
   tone?: ApprovalTone
@@ -46,9 +45,8 @@ export function ApprovalChrome({
   approveLabel,
   denyLabel,
   alwaysLabel,
-  alwaysAppLabel,
   showAlways = true,
-  showAlwaysApp = false,
+  footer = "buttons",
   approveDisabled,
   approveTitle,
   tone,
@@ -97,9 +95,8 @@ export function ApprovalChrome({
           approveLabel={approveLabel}
           denyLabel={denyLabel}
           alwaysLabel={alwaysLabel}
-          alwaysAppLabel={alwaysAppLabel}
           showAlways={showAlways}
-          showAlwaysApp={showAlwaysApp}
+          footer={footer}
           approveDisabled={approveDisabled}
           approveTitle={approveTitle}
           denyTestId={denyTestId}

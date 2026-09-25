@@ -4,7 +4,7 @@ import {
   normalizeDesktopAlwaysAllowEntries,
   removeDesktopAlwaysAllowEntry,
   upsertDesktopAlwaysAllowEntry
-} from "./desktop-always-allow-ledger.ts"
+} from "./desktop-always-allow-entries.ts"
 
 test("稳 appKey 写入簿，重复键覆盖显示名", () => {
   const first = upsertDesktopAlwaysAllowEntry([], {

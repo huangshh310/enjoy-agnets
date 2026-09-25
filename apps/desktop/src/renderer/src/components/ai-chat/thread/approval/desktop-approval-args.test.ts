@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { desktopApprovalView } from "./desktop-approval-args.ts"
+import { desktopApprovalChoiceIds, resolveDesktopApprovalChoice } from "./desktop-approval-choice.ts"
 
 test("普通 allow 只有单缩略图，不是二次确认", () => {
   const view = desktopApprovalView({
@@ -116,5 +117,22 @@ test("pid 或无稳 appKey 时隐藏始终允许此应用", () => {
       appKey: "com.apple.calculator"
     }).canAlwaysAllow,
     true
+  )
+})
+
+test("四选一：无稳键不出现 allow_always，隐藏项回落到 allow", () => {
+  assert.deepEqual(desktopApprovalChoiceIds({ canSessionAllow: true, canAlwaysAllow: true }), [
+    "allow",
+    "allow_session",
+    "allow_always",
+    "deny"
+  ])
+  assert.deepEqual(desktopApprovalChoiceIds({ canSessionAllow: false, canAlwaysAllow: false }), [
+    "allow",
+    "deny"
+  ])
+  assert.equal(
+    resolveDesktopApprovalChoice("allow_always", desktopApprovalChoiceIds({ canSessionAllow: false, canAlwaysAllow: false })),
+    "allow"
   )
 })

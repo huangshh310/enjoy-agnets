@@ -1,21 +1,20 @@
 /**
- * 审批底栏按钮：拒绝 / 本会话允许 / 始终允许此应用 / 主操作。
- * 会话钮 testid 是 approval-session；始终允许是 approval-always-app。禁止再用 approval-always。
+ * 审批底栏：command/plan 仍是拒绝 / 本会话 / 主操作。
+ * 桌面首次允许改四选一，底栏只留「继续」。会话钮 testid 是 approval-session。禁止再用 approval-always。
  */
-import { RiCheckLine, RiCloseLine, RiShieldCheckLine, RiShieldKeyholeLine } from "@remixicon/react"
+import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
-import type { ApprovalActionIds, ApprovalDecide, ApprovalVariant } from "./approval.types"
+import type { ApprovalActionIds, ApprovalDecide, ApprovalFooter, ApprovalVariant } from "./approval.types"
 
 type ApprovalActionsProps = ApprovalActionIds & {
   variant: ApprovalVariant
   approveLabel: string
   denyLabel: string
   alwaysLabel?: string
-  alwaysAppLabel?: string
   showAlways: boolean
-  showAlwaysApp?: boolean
+  footer?: ApprovalFooter
   approveDisabled?: boolean
   approveTitle?: string
   decide: ApprovalDecide
@@ -26,9 +25,8 @@ export function ApprovalActions({
   approveLabel,
   denyLabel,
   alwaysLabel,
-  alwaysAppLabel,
   showAlways,
-  showAlwaysApp = false,
+  footer = "buttons",
   approveDisabled,
   approveTitle,
   denyTestId = "approval-deny",
@@ -36,6 +34,24 @@ export function ApprovalActions({
   decide
 }: ApprovalActionsProps) {
   const t = useT()
+  if (footer === "continue") {
+    return (
+      <div className="ml-auto flex items-center justify-end">
+        <Button
+          size="sm"
+          variant="default"
+          data-testid="approval-continue"
+          disabled={approveDisabled}
+          title={approveTitle}
+          onClick={decide.onApprove}
+          className="h-8 text-caption-1-semibold"
+        >
+          <RiCheckLine className="size-3.5" />
+          {approveLabel}
+        </Button>
+      </div>
+    )
+  }
   const denyTone =
     variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
@@ -61,19 +77,6 @@ export function ApprovalActions({
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
           {alwaysLabel ?? t("chat.alwaysAllow")}
-        </Button>
-      ) : null}
-      {showAlwaysApp ? (
-        <Button
-          size="sm"
-          variant="outline"
-          data-testid="approval-always-app"
-          onClick={() => decide.onAllowAlways?.()}
-          title={t("chat.desktopAllowAlwaysHint")}
-          className="h-8 border-accent-500/40 bg-accent-500/5 text-caption-1-medium hover:bg-accent-500/10"
-        >
-          <RiShieldKeyholeLine className="size-3.5 text-accent-500" />
-          {alwaysAppLabel ?? t("chat.desktopAllowAlways")}
         </Button>
       ) : null}
       <Button
