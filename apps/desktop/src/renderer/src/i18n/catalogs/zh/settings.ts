@@ -1175,6 +1175,7 @@ export const zhSettings = {
     stepHelper: "3 · 执行器",
     stepHelperOk: "helper 已签名",
     stepHelperNeed: "未就绪",
+    helperSignedDot: "helper 签名",
     doctorTitle: "权限医生 · 当前执行器",
     checkPermissions: "检测权限",
     captureScreen: "拍一张屏",

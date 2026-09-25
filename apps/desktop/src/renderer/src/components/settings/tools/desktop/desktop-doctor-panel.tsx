@@ -1,9 +1,10 @@
 /**
- * 权限医生：展示当前 helper 路径/签名，不用 Electron AX 假绿。
+ * 权限医生：点位认 helperSigned + helper AX，不用宿主 Electron AX 假绿。
  */
 import type { DesktopDoctorReport } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { helperAccessibilityOk, helperIdentityOk } from "./desktop-readiness"
 
 export function DesktopDoctorPanel({
   doctor,
@@ -14,8 +15,6 @@ export function DesktopDoctorPanel({
 }) {
   const t = useT()
   if (!doctor) return null
-  const helperOk = doctor.trusted !== false && doctor.code !== "permission_denied"
-  const screenOk = doctor.screenCapture !== false
   return (
     <div
       className={cx(
@@ -27,9 +26,11 @@ export function DesktopDoctorPanel({
         {t("settings.builtinTools.doctorTitle")}
       </p>
       <p className="mt-1 text-caption-1-medium text-text-secondary">{doctor.line}</p>
+      {doctor.helperPath ? <p className="mt-1 truncate text-caption-2-medium text-text-tertiary">{doctor.helperPath}</p> : null}
       <ul className="mt-1.5 space-y-1 text-caption-1-medium text-text-secondary">
-        <DoctorDot ok={screenOk} label={t("settings.builtinTools.screenCapture")} />
-        <DoctorDot ok={helperOk} label={`${t("settings.builtinTools.accessibility")} · helper`} />
+        <DoctorDot ok={doctor.screenCapture !== false} label={t("settings.builtinTools.screenCapture")} />
+        <DoctorDot ok={helperIdentityOk(doctor)} label={t("settings.builtinTools.helperSignedDot")} />
+        <DoctorDot ok={helperAccessibilityOk(doctor)} label={`${t("settings.builtinTools.accessibility")} · helper`} />
       </ul>
     </div>
   )

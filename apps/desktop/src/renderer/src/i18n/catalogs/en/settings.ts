@@ -1182,6 +1182,7 @@ export const enSettings = {
     stepHelper: "3 · Helper",
     stepHelperOk: "Helper signed",
     stepHelperNeed: "Not ready",
+    helperSignedDot: "Helper signature",
     doctorTitle: "Doctor · current helper",
     checkPermissions: "Check permissions",
     captureScreen: "Take a screenshot",

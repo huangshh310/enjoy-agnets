@@ -42,12 +42,12 @@
 - 协议：`apps/desktop/native/computer-use/protocol.md`
 - 执行器：`native/computer-use/darwin|win32|linux`
 - 审批卡：`thread/approval/desktop-approval-card.tsx`
-- 设置：`settings/tools/desktop-tools-card.tsx`
+- 设置：`settings/tools/desktop-tools-card.tsx`；开通绿：`desktop/desktop-readiness.ts`、`desktop-doctor-panel.tsx`
 - 右栏：`right-pane/views/desktop-view.tsx`
 
 ## 已知坑
 
-- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。开通徽章若仍读遗留 `signed` / 宿主 AX，会假绿。
+- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。开通徽章与医生点只读 `helperSigned` + helper AX；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
 - Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过。Win/Linux 可用性文案门是 H5，不在 §3.2c。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
 - **二次确认卡 UI**（新旧缩略图并排）仍薄：数据面回 `needs_second_confirm` 载荷，名片尚未并排新旧图。
