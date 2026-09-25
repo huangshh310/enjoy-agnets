@@ -9,6 +9,7 @@ import { desktopApprovalView } from "./desktop-approval-args"
 import { DesktopApprovalChoices } from "./desktop-approval-choices"
 import {
   applyDesktopApprovalChoice,
+  defaultDesktopApprovalChoice,
   desktopApprovalChoiceIds,
   resolveDesktopApprovalChoice,
   type DesktopApprovalChoice
@@ -41,7 +42,7 @@ function FirstAllowChrome({
     canSessionAllow: view.canSessionAllow,
     canAlwaysAllow: view.canAlwaysAllow
   })
-  const [choice, setChoice] = useState<DesktopApprovalChoice>("allow")
+  const [choice, setChoice] = useState<DesktopApprovalChoice>(() => defaultDesktopApprovalChoice(available))
   const selected = resolveDesktopApprovalChoice(choice, available)
   return (
     <ApprovalChrome

@@ -27,7 +27,14 @@ export function resolveDesktopApprovalChoice(
   choice: DesktopApprovalChoice,
   available: readonly DesktopApprovalChoice[]
 ): DesktopApprovalChoice {
-  return available.includes(choice) ? choice : "allow"
+  return available.includes(choice) ? choice : defaultDesktopApprovalChoice(available)
+}
+
+/** 预览锁定：有稳键时默认高亮第三项「始终允许此应用」。 */
+export function defaultDesktopApprovalChoice(
+  available: readonly DesktopApprovalChoice[]
+): DesktopApprovalChoice {
+  return available.includes("allow_always") ? "allow_always" : "allow"
 }
 
 export function desktopApprovalChoiceTestId(choice: DesktopApprovalChoice): string {

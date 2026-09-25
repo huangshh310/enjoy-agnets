@@ -1,7 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { desktopApprovalView } from "./desktop-approval-args.ts"
-import { desktopApprovalChoiceIds, resolveDesktopApprovalChoice } from "./desktop-approval-choice.ts"
+import {
+  defaultDesktopApprovalChoice,
+  desktopApprovalChoiceIds,
+  resolveDesktopApprovalChoice
+} from "./desktop-approval-choice.ts"
 
 test("普通 allow 只有单缩略图，不是二次确认", () => {
   const view = desktopApprovalView({
@@ -133,6 +137,14 @@ test("四选一：无稳键不出现 allow_always，隐藏项回落到 allow", (
   ])
   assert.equal(
     resolveDesktopApprovalChoice("allow_always", desktopApprovalChoiceIds({ canSessionAllow: false, canAlwaysAllow: false })),
+    "allow"
+  )
+  assert.equal(
+    defaultDesktopApprovalChoice(desktopApprovalChoiceIds({ canSessionAllow: true, canAlwaysAllow: true })),
+    "allow_always"
+  )
+  assert.equal(
+    defaultDesktopApprovalChoice(desktopApprovalChoiceIds({ canSessionAllow: false, canAlwaysAllow: false })),
     "allow"
   )
 })
