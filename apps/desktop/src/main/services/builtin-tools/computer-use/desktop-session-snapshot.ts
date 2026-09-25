@@ -27,6 +27,7 @@ export async function rememberSnapshot(
   hooks.onView?.({
     observationId: observation.id,
     appName: observation.appName,
+    appKey: observation.appKey,
     elements: observation.elements,
     thumbnailPath: observation.thumbnailPath
   })

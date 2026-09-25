@@ -10,6 +10,7 @@ const CAP = 20
 export type DesktopView = {
   observationId: string
   appName: string
+  appKey?: string
   elements: Array<{ id: string; role: string; name: string; clickable: boolean }>
   thumbnailPath?: string
 }

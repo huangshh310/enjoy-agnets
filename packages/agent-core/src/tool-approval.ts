@@ -6,7 +6,7 @@ import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
-import { desktopActBypassesSessionAllow, desktopActSkipsApproval } from "./computer-use/desktop-act-policy.ts"
+import { desktopActAlwaysAsks, desktopActSkipsApproval, sessionAllowsDesktopAct } from "./computer-use/desktop-act-policy.ts"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
@@ -28,6 +28,8 @@ export type ApprovalPolicy = {
   sessionApprovedTools?: ReadonlySet<string>
   /** 本会话放行的 bash 命令前缀（如 `git status`），不是整个 bash 工具。 */
   sessionApprovedBashPrefixes?: readonly string[]
+  /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗仍每次问。 */
+  anyDesktopSession?: boolean
 }
 
 export type ToolApprovalDecision =
@@ -75,7 +77,10 @@ export function resolveToolApproval(
   }
   if (HOST_CONTROL_SET.has(toolName)) {
     if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
-    if (toolName === "desktop_act" && desktopActBypassesSessionAllow(input)) return "user-approval"
+    if (toolName === "desktop_act" && desktopActAlwaysAsks(input)) return "user-approval"
+    if (toolName === "desktop_act") {
+      return sessionAllowsDesktopAct(input, policy) ? "approved" : "user-approval"
+    }
     return sessionAllows(toolName, policy.sessionApprovedTools) ? "approved" : "user-approval"
   }
   // 会话放行不能越过高风险命令；Allow for session 之后 rm -rf 仍要停。
@@ -226,6 +231,7 @@ function applySessionApprovals(
     }
   }
   for (const name of names) {
+    if (name === "desktop_act" || name.startsWith("desktop_act:")) continue
     const current = map[name]
     if (typeof current === "string" && current !== "denied") map[name] = "approved"
   }

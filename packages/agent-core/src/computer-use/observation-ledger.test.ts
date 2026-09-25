@@ -2,9 +2,12 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { createObservationLedger, type Observation } from "./observation-ledger.ts"
 import {
+  desktopActAppKey,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
-  desktopActSkipsApproval
+  desktopActSessionKey,
+  desktopActSkipsApproval,
+  sessionAllowsDesktopAct
 } from "./desktop-act-policy.ts"
 
 function sample(id: string, createdAt: number): Observation {
@@ -53,9 +56,34 @@ test("坐标和前台动作不能被会话放行盖掉", () => {
   assert.equal(desktopActBypassesSessionAllow({ elementId: "e1", allowForeground: true }), true)
 })
 
-test("审批文案带应用、控件和前台", () => {
+test("审批文案带应用、控件、前台和 appKey", () => {
   assert.equal(
-    desktopActApprovalText({ appName: "计算器", elementName: "等于", action: "click", allowForeground: true }),
-    "计算器 · 等于 · click · 会切到前台"
+    desktopActApprovalText({
+      appName: "计算器",
+      elementName: "等于",
+      action: "click",
+      allowForeground: true,
+      appKey: "com.apple.calculator"
+    }),
+    "计算器 · 「等于」 · click · 会切到前台 · com.apple.calculator"
+  )
+})
+
+test("appKey 优先 bundleId，会话键禁止裸 desktop_act", () => {
+  assert.equal(desktopActAppKey({ bundleId: "com.apple.calculator", appName: "计算器" }), "com.apple.calculator")
+  assert.equal(desktopActAppKey({ exe: "notepad.exe", appName: "记事本" }), "notepad.exe")
+  assert.equal(desktopActAppKey({ appName: "Calculator.app" }), "calculator")
+  assert.equal(desktopActSessionKey(""), null)
+  assert.equal(desktopActSessionKey("com.apple.calculator"), "desktop_act:com.apple.calculator")
+  assert.equal(
+    sessionAllowsDesktopAct({ appKey: "com.apple.notes" }, { sessionApprovedTools: new Set(["desktop_act"]) }),
+    false
+  )
+  assert.equal(
+    sessionAllowsDesktopAct(
+      { appKey: "com.apple.calculator" },
+      { sessionApprovedTools: new Set(["desktop_act:com.apple.calculator"]) }
+    ),
+    true
   )
 })

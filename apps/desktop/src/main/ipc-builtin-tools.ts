@@ -31,7 +31,8 @@ export const BUILTIN_TOOLS_CHANNELS = [
   "builtinTools.revealExtensionDir",
   "builtinTools.previewOverlay",
   "builtinTools.desktopDoctor",
-  "builtinTools.desktopView"
+  "builtinTools.desktopView",
+  "builtinTools.desktopCapturePreview"
 ] as const
 
 export function registerBuiltinToolsIpc() {
@@ -94,5 +95,10 @@ export function registerBuiltinToolsIpc() {
   ipcMain.handle("builtinTools.desktopView", async () => {
     const { readDesktopView } = await import("./services/builtin-tools/computer-use/desktop-tools")
     return readDesktopView()
+  })
+
+  ipcMain.handle("builtinTools.desktopCapturePreview", async () => {
+    const { captureDesktopPreview } = await import("./services/builtin-tools/computer-use/desktop-tools")
+    return captureDesktopPreview()
   })
 }

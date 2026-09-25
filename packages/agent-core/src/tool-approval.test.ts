@@ -74,16 +74,69 @@ test("Ask 模式下写盘、命令、提交一律拒绝", () => {
   })
 })
 
-test("desktop_act：wait 不审，会话放行盖不住坐标和前台", () => {
-  const allowed = { ...EDITS, sessionApprovedTools: new Set(["desktop_act"]) }
+test("desktop_act：wait 不审，会话放行绑 appKey，裸工具名不放行", () => {
+  const naked = { ...EDITS, sessionApprovedTools: new Set(["desktop_act"]) }
+  const calc = {
+    ...EDITS,
+    sessionApprovedTools: new Set(["desktop_act:com.apple.calculator"])
+  }
   assert.equal(resolveToolApproval("desktop_act", "agent", EDITS, { action: "wait", observationId: "obs" }), "not-applicable")
   assert.equal(
-    resolveToolApproval("desktop_act", "agent", allowed, { action: "click", elementId: "e1" }),
+    resolveToolApproval("desktop_act", "agent", naked, {
+      action: "click",
+      elementId: "e1",
+      appKey: "com.apple.calculator"
+    }),
+    "user-approval"
+  )
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", calc, {
+      action: "click",
+      elementId: "e1",
+      appKey: "com.apple.calculator"
+    }),
     "approved"
   )
-  assert.equal(resolveToolApproval("desktop_act", "agent", allowed, { action: "click", x: 1 }), "user-approval")
   assert.equal(
-    resolveToolApproval("desktop_act", "agent", allowed, { action: "click", elementId: "e1", allowForeground: true }),
+    resolveToolApproval("desktop_act", "agent", calc, {
+      action: "click",
+      elementId: "e1",
+      appKey: "com.apple.notes"
+    }),
+    "user-approval"
+  )
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", calc, { action: "click", x: 1, appKey: "com.apple.calculator" }),
+    "user-approval"
+  )
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", calc, {
+      action: "click",
+      elementId: "e1",
+      allowForeground: true,
+      appKey: "com.apple.calculator"
+    }),
+    "user-approval"
+  )
+})
+
+test("desktop_act：任意桌面开关放行元素点击，仍拦坐标和敏感窗", () => {
+  const any = { ...EDITS, anyDesktopSession: true }
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", any, {
+      action: "click",
+      elementId: "e1",
+      appKey: "com.apple.notes"
+    }),
+    "approved"
+  )
+  assert.equal(resolveToolApproval("desktop_act", "agent", any, { action: "click", x: 1 }), "user-approval")
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", any, {
+      action: "click",
+      elementId: "e1",
+      appName: "系统设置"
+    }),
     "user-approval"
   )
 })

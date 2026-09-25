@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { bashAllowPrefix } from "@enjoy-agents/agent-core"
+import { bashAllowPrefix, desktopActAppKey, desktopActSessionKey } from "@enjoy-agents/agent-core"
 import { desktopActFailureCode, desktopActMayReportSuccess } from "@enjoy-agents/agent-core/computer-use"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
@@ -117,6 +117,11 @@ function applyApprovalDecision(
   if (pending.name === "bash" || pending.name === "code_mode") {
     const prefix = bashAllowPrefix(commandFromArgs(pending.args))
     if (prefix) run.sessionApprovedBashPrefixes.add(prefix)
+    return
+  }
+  if (pending.name === "desktop_act") {
+    const key = desktopActSessionKey(desktopActAppKey(pending.args))
+    if (key) run.sessionApprovedTools.add(key)
     return
   }
   run.sessionApprovedTools.add(pending.name)

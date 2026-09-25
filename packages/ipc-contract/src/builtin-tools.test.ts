@@ -24,6 +24,7 @@ test("BuiltinToolsState validates default structure", () => {
   assert.equal(parsed.browserBridge.port, 47823)
   assert.equal(parsed.browserBridge.connectedBrowser, null)
   assert.equal(parsed.computerUse.screenVisuals, true)
+  assert.equal(parsed.computerUse.anyDesktopSession, false)
 })
 
 test("ToggleBuiltinToolInput validates tools enum", () => {

@@ -44,6 +44,7 @@ async function deliverAct(
   input: ActInput,
   hooks: DesktopSessionHooks
 ) {
+  hooks.onAct?.(input, observation)
   const acted = await call("act", actParams(observation, input))
   if (acted.success !== true) {
     if (RESTORE_CODES.has(String(acted.code))) ledger.put(observation)

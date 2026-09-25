@@ -22,6 +22,7 @@ interface PersistedBuiltinTools {
   browserBridgeEnabled?: boolean
   computerUseEnabled?: boolean
   screenVisualsEnabled?: boolean
+  anyDesktopSession?: boolean
   bridgePort?: number
   bridgeToken?: string
 }
@@ -144,13 +145,14 @@ export function getBuiltinToolsState(): BuiltinToolsState {
       accessibilityGranted: permissions.accessibility,
       screenCaptureGranted: permissions.screenCapture,
       screenVisuals: saved.screenVisualsEnabled ?? true,
+      anyDesktopSession: saved.anyDesktopSession ?? false,
       session: displaySession()
     }
   }
 }
 
 export function setBuiltinToolEnabled(
-  tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals",
+  tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals" | "anyDesktopSession",
   enabled: boolean
 ): BuiltinToolsState {
   const saved = readPersistedState()
@@ -158,6 +160,7 @@ export function setBuiltinToolEnabled(
   if (tool === "browserBridge") saved.browserBridgeEnabled = enabled
   if (tool === "computerUse") saved.computerUseEnabled = enabled
   if (tool === "screenVisuals") saved.screenVisualsEnabled = enabled
+  if (tool === "anyDesktopSession") saved.anyDesktopSession = enabled
   writePersistedState(saved)
   return getBuiltinToolsState()
 }

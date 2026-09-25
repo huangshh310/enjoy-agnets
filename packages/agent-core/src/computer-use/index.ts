@@ -22,7 +22,15 @@ export {
   type ResnapTarget
 } from "./observation-match.ts"
 export {
+  DESKTOP_ACT_ANY_SESSION_KEY,
+  DESKTOP_ACT_SESSION_PREFIX,
+  desktopActAlwaysAsks,
+  desktopActAppKey,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
-  desktopActSkipsApproval
+  desktopActIsSensitive,
+  desktopActSessionKey,
+  desktopActSkipsApproval,
+  normalizeDesktopAppName,
+  sessionAllowsDesktopAct
 } from "./desktop-act-policy.ts"

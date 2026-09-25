@@ -1,6 +1,21 @@
 /**
- * desktop_act 的审批策略：wait 放行、坐标/前台不吃会话白名单、审批卡文案。
+ * desktop_act 的审批策略：wait 放行、坐标/前台/敏感窗不吃会话白名单、审批卡文案。
  */
+import {
+  DESKTOP_ACT_ANY_SESSION_KEY,
+  desktopActAppKey,
+  desktopActIsSensitive,
+  desktopActSessionKey
+} from "./desktop-act-app-key.ts"
+
+export {
+  DESKTOP_ACT_ANY_SESSION_KEY,
+  DESKTOP_ACT_SESSION_PREFIX,
+  desktopActAppKey,
+  desktopActIsSensitive,
+  desktopActSessionKey,
+  normalizeDesktopAppName
+} from "./desktop-act-app-key.ts"
 
 /** `wait` 不改界面，不停车。带坐标或要求前台时仍要问。 */
 export function desktopActSkipsApproval(args: unknown): boolean {
@@ -20,13 +35,34 @@ export function desktopActBypassesSessionAllow(args: unknown): boolean {
   return !hasElement && (typeof row.x === "number" || typeof row.y === "number")
 }
 
-/** 审批卡上的一句话。 */
+/** 坐标 / 切前台 / 敏感窗：会话 Allow 与「任意桌面」都盖不住。 */
+export function desktopActAlwaysAsks(args: unknown): boolean {
+  return desktopActBypassesSessionAllow(args) || desktopActIsSensitive(args)
+}
+
+/** 按 appKey 查会话白名单。裸 `desktop_act` 不算放行。 */
+export function sessionAllowsDesktopAct(
+  args: unknown,
+  policy: { sessionApprovedTools?: ReadonlySet<string>; anyDesktopSession?: boolean }
+): boolean {
+  if (desktopActAlwaysAsks(args)) return false
+  if (policy.anyDesktopSession) return true
+  const session = policy.sessionApprovedTools
+  if (!session) return false
+  if (session.has(DESKTOP_ACT_ANY_SESSION_KEY)) return true
+  const key = desktopActSessionKey(desktopActAppKey(args))
+  return Boolean(key && session.has(key))
+}
+
+/** 审批卡上的一句话：应用 · 「控件」 · 动作 · appKey。 */
 export function desktopActApprovalText(args: Record<string, unknown>): string {
   const app = text(args.appName) || "应用"
-  const element = text(args.elementName) || text(args.elementId) || (typeof args.x === "number" ? "坐标" : "目标")
+  const rawElement = text(args.elementName) || text(args.elementId) || (typeof args.x === "number" ? "坐标" : "目标")
+  const element = rawElement ? `「${rawElement}」` : ""
   const action = text(args.action) || "act"
   const foreground = args.allowForeground === true ? "会切到前台" : ""
-  return [app, element, action, foreground].filter(Boolean).join(" · ")
+  const appKey = desktopActAppKey(args)
+  return [app, element, action, foreground, appKey].filter(Boolean).join(" · ")
 }
 
 function text(value: unknown): string {

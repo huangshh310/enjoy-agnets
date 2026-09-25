@@ -13,6 +13,7 @@ import {
   type HostInjectSnapshot,
   type ReasoningEffort
 } from "@enjoy-agents/ipc-contract"
+import { getBuiltinToolsState } from "./builtin-tools/builtin-tools-state"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
 
@@ -55,6 +56,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools: input.sessionApprovedTools,
-    sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes
+    sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
+    anyDesktopSession: getBuiltinToolsState().computerUse.anyDesktopSession === true
   }
 }
