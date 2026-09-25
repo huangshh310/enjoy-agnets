@@ -76,7 +76,7 @@
 | [references/p0-r-remote.md](./references/p0-r-remote.md) | P0-R 远程第一刀：SSH 远程工作区（本机 UI，远端文件/CLI）；不是云 harness / 沙箱上轨 / worktree |
 | [references/dev-plan-p0-h-i-r.md](./references/dev-plan-p0-h-i-r.md) | 执行计划：P0-H 扩展壳 + I2 精选 + I1 换模型 + P0-R SSH；落地以 specs 为准，本文不是当前真相 |
 | [references/computer-use-codex-parity.md](./references/computer-use-codex-parity.md) | P0 Computer Use × Codex 对标短锁（Jojo；§3.2a–e Hard locks：TTL 重拍二次确认 / appKey / doctor=当前 helper / resume / Win·Linux 门；【视觉真源】[`previews/p0-computer-use.html`](./previews/p0-computer-use.html)；对标 tip `86228f9`；不是当前真相，边界见 computer-use spec） |
-| [references/cu-p1-a-always-allow.md](./references/cu-p1-a-always-allow.md) | CU-P1-A Always-allow 短锁（Jojo 全文 + leo/host 已对齐项；write-through 待 host；【视觉真源】[`previews/cu-p1-a-always-allow.html`](./previews/cu-p1-a-always-allow.html)；基线 tip `63e5d8f`；不是当前真相，边界见 computer-use spec） |
+| [references/cu-p1-a-always-allow.md](./references/cu-p1-a-always-allow.md) | CU-P1-A Always-allow 短锁（Jojo；本机按应用持久簿 + Dock「始终允许此应用」；`allow_always` 只写簿、撤销只清簿；【视觉真源】[`previews/cu-p1-a-always-allow.html`](./previews/cu-p1-a-always-allow.html)；基线 tip `63e5d8f`；不是当前真相，边界见 computer-use spec） |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
 | [previews/cli-a-official-login.html](./previews/cli-a-official-login.html) | CLI-A 仅官方四家登录闭环视觉真源（锁 tip `a0ac8f5`；检测中 / 打开授权中 / 已登录 / 失败人话） |
 | [previews/local-cli-dense-p0.html](./previews/local-cli-dense-p0.html) | 本机 CLI 密表唯一视觉真源（锁 tip `8bd7f6e`；预览内容 `add29a4`） |

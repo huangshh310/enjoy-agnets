@@ -1,10 +1,9 @@
 # CU-P1-A · Always-allow 应用簿 — 产品短锁
 
-> 2026-09-25 · jojo 短锁全文 + leo/host 已对齐项  
+> 2026-09-25 · jojo 短锁全文（host 确认：始终允许只写持久簿）  
 > 对照：[`computer-use-codex-parity.md`](./computer-use-codex-parity.md) G2；【视觉真源】[`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)  
 > 基线 tip `63e5d8f`（CU-P1-R Dock 已合）· I3 Registry more-agents 仍停  
-> 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。  
-> **write-through 待 host 拍板**，本文与 HTML 均不把任一侧写成最终 SoT。
+> 落地以 `design/specs/*` 为准；本文不是当前真相。预览锁视觉与文案，不宣称应用已 1:1。
 
 ---
 
@@ -23,7 +22,7 @@ Settings 可撤销的**本机**按应用持久允许簿；审批卡增加「始�
 3. 键 §3.2b：`bundleId` → `exe` / AUMID → 规范化 `appName`；**pid 不得单独作键**。
 4. 覆盖：同 `appKey` 的 click / type / key；`wait` 免批。
 5. 持久：跨会话 / 重启直至撤销；本机 only，禁云同步。
-6. 与 CU-P1-S 分层：见下命中顺序（已锁）与 write-through（未锁）。
+6. 与 CU-P1-S 分层：见下「各写各的」。
 
 ## 不做 / Hard（jojo）
 
@@ -37,6 +36,7 @@ Settings 可撤销的**本机**按应用持久允许簿；审批卡增加「始�
 - pid 当键
 - 无稳 `appKey` 仍露出「始终允许此应用」
 - 与「本会话」糊成一种
+- `allow_always` 同时写会话表；设置「撤销」顺手清会话表
 
 ---
 
@@ -63,26 +63,17 @@ Settings 可撤销的**本机**按应用持久允许簿；审批卡增加「始�
 
 ---
 
-## leo/host 已对齐（与 jojo 不冲突）
+## 各写各的（已锁）
 
-1. 卡上文案「始终允许此应用」映射决策名 **`allow_always`**。
-2. **无稳 `appKey`**（无 bundleId / exe / AUMID / 规范化 appName）时 **隐藏**始终允许；只留允许一次 + 拒绝；本会话按现有规则（无键或 `bypassesSessionAllow` 也藏）。
-3. 命中顺序：硬每次问（坐标 / 前台 / 敏感 / 二次确认）→ 会话表 → 持久簿 `desktopAlwaysAllowAppKeys`。
-4. **禁画**永久 anyDesktop / 「任意桌面永久」进本名单；禁持久 `desktop_act:*`。
-5. 只点「本会话允许此应用」**不写**持久簿（两侧都同意）。
+| 动作 | 只写 / 只清 | 不碰 |
+|------|-------------|------|
+| 卡决策 `allow_always`（文案「始终允许此应用」） | 只把该 `appKey` 写入持久簿 `desktopAlwaysAllowAppKeys` | 不写会话表 |
+| 「本会话允许此应用」 | 只写 `conversationDesktopAllow` / 当前 session 表 | 不升持久簿 |
+| 设置「撤销」 | 只从持久簿删该键 | 不清会话表。若用户另外点过本会话，会话键由 CU-P1-S 单独管理 |
 
----
+无稳 `appKey`（无 bundleId / exe / AUMID / 规范化 appName）：**整项隐藏**始终允许；只留允许一次 + 拒绝；本会话按现有规则（无键或 `bypassesSessionAllow` 也藏）。不要用 pid 凑键。
 
-## 待 host 拍板 · write-through
-
-预览 HTML 黄框并列，**不锁死任一侧**。C 端先画四态 / 贴纸 / 反例 / A1–A6。
-
-| 案 | 主张 |
-|----|------|
-| **jojo 钉** | `allow_always` 写持久簿，并写当前会话表同 `appKey`；设置「撤销」清持久 + 清当前会话同键。 |
-| **leo via host** | `allow_always` **只**写持久簿；撤销只清簿，不管会话表。 |
-
-接线前等 host 一句。未拍板前 kai 不要把双写或「只写簿」写进当前真相。
+命中顺序：**硬每次问**（坐标 / 前台 / 敏感 / 二次确认）→ **会话表** → **持久簿** `desktopAlwaysAllowAppKeys`。当前对话若已有会话命中，不必再靠簿；簿负责跨会话 / 重启。禁持久 `desktop_act:*`。
 
 ---
 
@@ -95,10 +86,10 @@ Settings 可撤销的**本机**按应用持久允许簿；审批卡增加「始�
 
 ## Luna 一句话
 
-Dock 第三项是本机贴纸；设置里能撕（按钮写「撤销」）。有稳 `appKey` 才贴得上。硬每次问的门，簿盖不住。write-through 先空着。
+Dock 第三项是本机贴纸；设置里能撕（按钮写「撤销」）。有稳 `appKey` 才贴得上。始终允许只写簿，本会话只写表，撤销只清簿。硬每次问的门，簿盖不住。
 
-视觉真源：[`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)（四态 / 无键隐藏 / 名单+空态 / 反例划掉 / 黄框待拍板；不宣称应用已 1:1）。
+视觉真源：[`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)（四态 / 无键隐藏 / 名单+空态 / 反例划掉；不宣称应用已 1:1）。
 
 ---
 
-*未落地前：视觉与设置文案以预览为准；write-through 以 host 拍板为准，不以本文任一侧为最终 SoT。落地后以 `design/specs/computer-use.md` 为准。*
+*未落地前：视觉、设置文案与写入规则以预览 + 本文为准。落地后以 `design/specs/computer-use.md` 为准。*
