@@ -109,7 +109,7 @@ test("未找到行主槽含安装中 / 重试，失败有一行人话", () => {
   const actions = readFileSync(join(dir, "../agent-tool-row-actions.tsx"), "utf8")
   const copy = readFileSync(join(dir, "../install-row-copy.ts"), "utf8")
   assert.ok(assistant.includes("installingStatus"))
-  assert.ok(assistant.includes("installingHint"))
+  assert.ok(assistant.includes("AgentToolInstallProgress"))
   assert.ok(assistant.includes("inspectingStatus"))
   assert.ok(assistant.includes("formatInstallFailLine"))
   assert.ok(actions.includes("installing"))
