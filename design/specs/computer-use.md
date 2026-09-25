@@ -63,6 +63,7 @@
 - **二次确认卡 UI**：视觉真源 `design/previews/cu-p1-r-second-confirm.html`（#84）。数据面已在 main `#85`；Dock warn/danger 铬已接线。像素只进审批 args，禁止把 data URL 写进模型可见的工具结果。
 - **二次确认 × 会话 Allow / Always-allow**：stash 或 `needsSecondConfirm` 必须走 `desktopActAlwaysAsks`，盖住 `desktop_act:<appKey>` / `desktop_act:*` **和** 持久簿裸 appKey。主循环 / 活泵仍 **repark**，不把失败只丢给模型。
 - **P1-A 各写各的**：`allow_always` 只写 `desktopAlwaysAllowAppKeys`；`allow_session` 只写会话表；设置「撤销」只清簿。不要把 `approval-always` 绑到 `allow_always`（那是本会话）。禁止把 `desktop_act:*` 写进 prefs。
+- **隐患**：`WaitForSubagentApproval` 含 `allow_always`，ACP `session/request_permission` 仍是三态。根因：Enjoy 持久簿在 `decideApproval` 已写完，ACP 协议没有第四态。正确做法：开流边界把 `allow_always` 映射成 `allow`，不要改 Registry / more-agents。
 - **隐患**：确认 resume 仍带原 `elementId`。`needs_second_confirm` 载荷没有单独的 `nextElementId`；新树上同号控件若已换，执行器应诚实失败，不要假 success。若确认后要点新树里的提示控件，需在载荷补 `nextElementId`，本刀不编造。
 - 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。
 - **H2 write/hit**：审批层按 `desktop_act:<appKey>` 写入、按 `has("desktop_act:"+appKey)` 或 `has("desktop_act:*")` 命中。不要再 `sessionApprovedTools.add("desktop_act")`，也不要按裸工具名放行。

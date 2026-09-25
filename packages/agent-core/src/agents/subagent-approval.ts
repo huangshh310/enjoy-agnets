@@ -2,6 +2,8 @@
  * 子 Agent 与主循环共用 resolveToolApproval；没有等待器时拒绝写盘，不偷偷执行。
  */
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
+import { desktopActAppKey } from "../computer-use/desktop-act-app-key.ts"
+import { isPersistentDesktopAppKey } from "../computer-use/desktop-always-allow.ts"
 import { bashAllowPrefix, commandFromToolInput } from "../policies/bash-prefix.ts"
 import {
   BASH_TOOLS,
@@ -12,7 +14,7 @@ import {
 
 const BASH_SET = new Set<string>(BASH_TOOLS)
 
-export type SubagentUserDecision = "allow" | "deny" | "allow_session"
+export type SubagentUserDecision = "allow" | "deny" | "allow_session" | "allow_always"
 
 export type WaitForSubagentApproval = (input: {
   toolName: string
@@ -27,6 +29,7 @@ export function createSubagentApproval(options: {
 }) {
   const sessionApproved = new Set(options.policy.sessionApprovedTools ?? [])
   const bashPrefixes = [...(options.policy.sessionApprovedBashPrefixes ?? [])]
+  const alwaysKeys = [...(options.policy.desktopAlwaysAllowAppKeys ?? [])]
   return async function decide(toolCall: {
     toolName: string
     toolCallId?: string
@@ -35,7 +38,8 @@ export function createSubagentApproval(options: {
     const policy: ApprovalPolicy = {
       ...options.policy,
       sessionApprovedTools: sessionApproved,
-      sessionApprovedBashPrefixes: bashPrefixes
+      sessionApprovedBashPrefixes: bashPrefixes,
+      desktopAlwaysAllowAppKeys: alwaysKeys
     }
     const decision = resolveToolApproval(toolCall.toolName, options.mode, policy, toolCall.input)
     if (!needsUser(decision)) return decision
@@ -49,6 +53,7 @@ export function createSubagentApproval(options: {
     })
     if (user === "deny") return { type: "denied", reason: "user denied subagent tool." }
     if (user === "allow_session") rememberSessionAllow(toolCall, sessionApproved, bashPrefixes)
+    if (user === "allow_always") rememberAlwaysAllow(toolCall, alwaysKeys)
     return "approved"
   }
 }
@@ -64,6 +69,13 @@ function rememberSessionAllow(
     return
   }
   sessionApproved.add(toolCall.toolName)
+}
+
+/** allow_always 只记裸 appKey，不写会话白名单。 */
+function rememberAlwaysAllow(toolCall: { input?: unknown }, alwaysKeys: string[]): void {
+  const key = desktopActAppKey(toolCall.input)
+  if (!isPersistentDesktopAppKey(key) || alwaysKeys.includes(key)) return
+  alwaysKeys.push(key)
 }
 
 function needsUser(decision: ToolApprovalDecision): boolean {

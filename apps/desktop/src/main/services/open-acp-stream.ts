@@ -3,6 +3,7 @@
  * 绑定 Enjoy 供应商时读 vault Key，只注入子进程 env，不进 renderer。
  * Fast / Enjoy 五档不进 ACP。thoughtLevel 在 session/new 后走 set_config_option。
  */
+import type { WaitForSubagentApproval } from "@enjoy-agents/agent-core"
 import { isAcpHostRuntime, streamAcpTurn } from "@enjoy-agents/agent-harness"
 import { isCustomAgentId, sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract"
 import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
@@ -26,7 +27,7 @@ export async function openAcpStream(input: {
   workspaceId?: string
   messages: Parameters<typeof streamAcpTurn>[0]["messages"]
   abortSignal: AbortSignal
-  waitForSubagentApproval?: Parameters<typeof streamAcpTurn>[0]["waitForApproval"]
+  waitForSubagentApproval?: WaitForSubagentApproval
   /** ACP 思考档：session/new 后 set_config_option，不进 argv。 */
   effort?: string
   thoughtLevel?: string
@@ -92,7 +93,7 @@ export async function openAcpStream(input: {
     },
     env: injectedEnv,
     spawnDirect,
-    waitForApproval: input.waitForSubagentApproval,
+    waitForApproval: toAcpPermissionWait(input.waitForSubagentApproval),
     customInstructions: input.customInstructions,
     mcpServers: extensions.mcpServers,
     skillCatalog: extensions.skillCatalog,
@@ -142,7 +143,7 @@ async function openCustomAcpStream(
       modelId: record.modelId
     },
     env: record.env,
-    waitForApproval: input.waitForSubagentApproval,
+    waitForApproval: toAcpPermissionWait(input.waitForSubagentApproval),
     customInstructions: input.customInstructions,
     mcpServers: extensions.mcpServers,
     skillCatalog: extensions.skillCatalog,
@@ -170,6 +171,22 @@ function resumeIdFor(sessionId: string, runtimeId: string): string | undefined {
   const bind = readAcpSessionBind(sessionId)
   if (!bind || bind.runtimeId !== runtimeId) return undefined
   return bind.acpSessionId
+}
+
+type AcpPermissionDecision = "allow" | "deny" | "allow_session"
+
+/**
+ * ACP session/request_permission 只认三态。
+ * Enjoy 持久簿已在 decideApproval 写完，这里把 allow_always 收成 allow，不碰 Registry。
+ */
+function toAcpPermissionWait(
+  wait?: WaitForSubagentApproval
+): ((input: { toolName: string; toolCallId: string; input: unknown }) => Promise<AcpPermissionDecision>) | undefined {
+  if (!wait) return undefined
+  return async (input) => {
+    const decision = await wait(input)
+    return decision === "allow_always" ? "allow" : decision
+  }
 }
 
 

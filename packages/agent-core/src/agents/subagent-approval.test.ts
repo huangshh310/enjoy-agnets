@@ -59,6 +59,33 @@ test("bash 的 allow_session 只白名单命令前缀", async () => {
   assert.equal(asked, 2)
 })
 
+test("desktop_act 的 allow_always 只记簿，下一击同 appKey 不再问", async () => {
+  let asked = 0
+  const decide = createSubagentApproval({
+    mode: "agent",
+    policy,
+    waitForApproval: async () => {
+      asked += 1
+      return "allow_always"
+    }
+  })
+  const calc = {
+    toolName: "desktop_act",
+    input: { action: "click", elementId: "e1", appKey: "com.apple.calculator" }
+  }
+  assert.equal(await decide(calc), "approved")
+  assert.equal(await decide(calc), "approved")
+  assert.equal(asked, 1)
+  assert.equal(
+    await decide({
+      toolName: "desktop_act",
+      input: { action: "click", elementId: "e1", appKey: "com.apple.notes" }
+    }),
+    "approved"
+  )
+  assert.equal(asked, 2)
+})
+
 test("只读工具不打扰用户", async () => {
   const decide = createSubagentApproval({ mode: "agent", policy })
   assert.equal(await decide({ toolName: "read_file", input: { path: "a.ts" } }), "not-applicable")

@@ -25,7 +25,7 @@ export type ApprovalDecisionInput = {
   runId: string
   toolCallId: string
   approvalId: string
-  decision: "allow" | "deny" | "allow_session"
+  decision: "allow" | "deny" | "allow_session" | "allow_always"
   hmac?: string
 }
 
