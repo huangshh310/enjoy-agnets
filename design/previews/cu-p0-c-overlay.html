@@ -5,6 +5,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>CU-P0-C / CU-P1-O · Overlay · 权限坞里的桌面名片</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -26,7 +29,7 @@ tailwind.config = {
         okSoft: "#DCFAE6",
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "PingFang SC", "sans-serif"],
+        sans: ["Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       boxShadow: {
         dock: "0 8px 28px rgba(15,20,25,0.12)",
@@ -118,6 +121,7 @@ tailwind.config = {
           </div>
         </div>
         <p id="a-caption" class="mt-2 text-center text-[11px] text-mute">冷静蓝边呼吸 · 一键停止 · 不是霓虹绿点 / 英文 Computer Use HUD</p>
+        <p class="mt-1 text-center"><button type="button" id="a-replay" class="hidden text-[11px] font-medium text-accent">再演示 act</button></p>
       </div>
 
       <!-- Enjoy 会话：步骤卡 + 右栏 -->
@@ -352,12 +356,21 @@ tailwind.config = {
     const hud = document.getElementById("a-hud");
     const caption = document.getElementById("a-caption");
     const stop = document.getElementById("a-stop");
-    stop?.addEventListener("click", () => {
-      overlay?.classList.remove("cu-overlay", "border-accent/40");
-      overlay?.classList.add("border-line");
-      if (hud) hud.hidden = true;
-      if (caption) caption.textContent = "已停止 · overlay 熄 · 后续 click / type 不再当作在控态";
-    });
+    const replay = document.getElementById("a-replay");
+    const liveCaption = "冷静蓝边呼吸 · 一键停止 · 不是霓虹绿点 / 英文 Computer Use HUD";
+    const stoppedCaption = "已停止 · overlay 熄 · 后续 click / type 不再当作在控态";
+
+    function setActing(on) {
+      overlay?.classList.toggle("cu-overlay", on);
+      overlay?.classList.toggle("border-accent/40", on);
+      overlay?.classList.toggle("border-line", !on);
+      if (hud) hud.style.display = on ? "" : "none";
+      if (caption) caption.textContent = on ? liveCaption : stoppedCaption;
+      replay?.classList.toggle("hidden", on);
+    }
+
+    stop?.addEventListener("click", () => setActing(false));
+    replay?.addEventListener("click", () => setActing(true));
   </script>
 </body>
 </html>
