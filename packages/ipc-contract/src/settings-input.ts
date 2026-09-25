@@ -162,7 +162,12 @@ export const SettingsSnapshot = z.object({
      * CU-P1-A 本机持久簿。settings.get 可读；禁止经 setPreferences 改写。
      * 条目是 { appKey, displayName }，kai 闸只认 appKey。
      */
-    desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys
+    desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys,
+    /**
+     * CU-P1-36 高级坐标。默认 OFF；裸 x/y 硬拒。
+     * 本刀无设置铬，mike 可经 setPreferences 绑定。
+     */
+    desktopAdvancedCoords: z.boolean().default(false)
   }),
   harness: z
     .object({
@@ -233,7 +238,9 @@ export const SetPreferencesInput = z.object({
   approvalRequiredAlert: z.boolean().optional(),
   accountProfile: AccountProfilePref.optional(),
   agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).optional(),
-  setupGuideCompletedAt: z.string().nullable().optional()
+  setupGuideCompletedAt: z.string().nullable().optional(),
+  /** CU-P1-36 高级坐标逃逸舱。默认关。无铬时也可经 IPC 拨。 */
+  desktopAdvancedCoords: z.boolean().optional()
 })
 export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>
 

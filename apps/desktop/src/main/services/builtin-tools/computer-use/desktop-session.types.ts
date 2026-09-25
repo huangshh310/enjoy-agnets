@@ -50,6 +50,8 @@ export type DesktopSessionHooks = {
   inspectCodesign?: (filePath: string) => CodesignInfo
   identityPlatform?: NodeJS.Platform
   expectedIdentity?: string | null
+  /** CU-P1-36 高级坐标。缺省 / false = 裸 x/y 硬拒。 */
+  advancedCoords?: () => boolean
 }
 
 export type DesktopSession = {

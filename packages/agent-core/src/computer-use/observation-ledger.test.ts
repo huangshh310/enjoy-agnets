@@ -7,6 +7,7 @@ import {
   desktopActAppKeyInfo,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
+  desktopActIsBareCoord,
   desktopActSessionKey,
   desktopActSkipsApproval,
   isStableDesktopAppKey,
@@ -56,6 +57,8 @@ test("wait 不审批，带坐标或前台仍要问", () => {
 })
 
 test("坐标和前台动作不能被会话放行盖掉", () => {
+  assert.equal(desktopActIsBareCoord({ elementId: "e1", action: "click" }), false)
+  assert.equal(desktopActIsBareCoord({ x: 1, y: 2, action: "click" }), true)
   assert.equal(desktopActBypassesSessionAllow({ elementId: "e1", action: "click" }), false)
   assert.equal(desktopActBypassesSessionAllow({ x: 1, y: 2, action: "click" }), true)
   assert.equal(desktopActBypassesSessionAllow({ elementId: "e1", allowForeground: true }), true)

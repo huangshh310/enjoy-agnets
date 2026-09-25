@@ -36,7 +36,9 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   approvalRequiredAlert: true,
   agentDisplayNames: {},
   setupGuideCompletedAt: null,
-  desktopAlwaysAllowAppKeys: []
+  desktopAlwaysAllowAppKeys: [],
+  /** CU-P1-36 高级坐标逃逸舱。出厂关；设置铬由 mike 后绑。 */
+  desktopAdvancedCoords: false
 }
 
 /** 读取持久化偏好；损坏或缺失时回落到安全默认（写盘/命令都要确认）。 */

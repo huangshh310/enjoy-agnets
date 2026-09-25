@@ -87,6 +87,7 @@ test("list_apps 按 appKey 找 pid，对不上才回落原 pid", () => {
 
 test("resume 结果：只有 success===true 才能报成功", () => {
   assert.equal(desktopActMayReportSuccess({ success: true }), true)
+  assert.equal(desktopActMayReportSuccess({ success: true, code: "action_failed" }), false)
   assert.equal(desktopActMayReportSuccess({ success: false, code: DESKTOP_ACT_STALE }), false)
   assert.equal(desktopActMayReportSuccess(null), false)
   assert.equal(desktopActFailureCode({}), DESKTOP_ACT_STALE)

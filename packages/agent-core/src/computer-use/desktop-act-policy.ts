@@ -32,13 +32,19 @@ export function desktopActSkipsApproval(args: unknown): boolean {
   return typeof row.x !== "number" && typeof row.y !== "number"
 }
 
+/** 无 elementId 的裸像素坐标。主路径是 snapshot → act(elementId)。 */
+export function desktopActIsBareCoord(args: unknown): boolean {
+  if (!args || typeof args !== "object") return false
+  const row = args as Record<string, unknown>
+  if (typeof row.elementId === "string" && row.elementId.trim().length > 0) return false
+  return typeof row.x === "number" || typeof row.y === "number"
+}
+
 /** 坐标点击和「允许切到前台」不能被本会话放行盖掉。 */
 export function desktopActBypassesSessionAllow(args: unknown): boolean {
   if (!args || typeof args !== "object") return false
   const row = args as Record<string, unknown>
-  if (row.allowForeground === true) return true
-  const hasElement = typeof row.elementId === "string" && row.elementId.trim().length > 0
-  return !hasElement && (typeof row.x === "number" || typeof row.y === "number")
+  return row.allowForeground === true || desktopActIsBareCoord(row)
 }
 
 /** 坐标 / 切前台 / 敏感窗 / 二次确认：会话 Allow 与「任意桌面」都盖不住。 */
