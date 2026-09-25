@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU overlay 生命周期薄挂点：runId ALS + 执行器硬取消 + Explore 门控；铬仍以 #94 为准）
+> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P1-B Composer `@桌面` / `@应用` 铬；闸仍以 CU-P1-A 为准）
 
 ## 当前真相
 
@@ -14,7 +14,9 @@
 
 **CU-P1-A Always-allow**：`allow_always` **只写**本机 prefs `desktopAlwaysAllowAppKeys`（`{ appKey, displayName }[]`），不写会话表。本会话钮只写 `conversationDesktopAllow`，不升簿。设置「电脑操控」内嵌「始终允许的应用」：名单 +「撤销」只清簿、立即刷新；空态「还没有始终允许的应用…」；说明必须含「坐标/前台/敏感仍每次问」；脚注写明「本会话允许」不在本页。禁持久 `desktop_act:*` / 任意桌面永久。命中顺序：`desktopActAlwaysAsks`（坐标 / 前台 / 敏感 / `needs_second_confirm`）→ `sessionAllowsDesktopAct` → `persistentAlwaysAllowsDesktopAct(args, listDesktopAlwaysAllowAppKeys(...))`。`approvalPolicyFromPrefs` 已把投影后的裸 `appKey[]` 灌进 `ApprovalPolicy.desktopAlwaysAllowAppKeys`。二次确认路径硬拒绝写簿：`rememberDesktopAlwaysAllowFromArgs` 在 `desktopActNeedsSecondConfirm` 时返回 `null`，Dock 不露 `approval-always-app`。视觉真源 [`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)。
 
-设置页：标题「电脑操控」、就绪/未就绪徽章、开通三拍（开关 → 系统权限 → 执行器）、医生行指向**当前 helper**（路径/签名，不把 Electron-only AX 当绿）、动作「检测权限 / 拍一张屏 / 试一下 · 计算器」（试一下只切执行并预填 `@电脑`，不自动开跑）。同一卡内嵌「始终允许的应用」（`desktop-always-allow-list.tsx`）。高级「本会话任意桌面」从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”。main 无 `sessionId` 不写会话表（保持 no-op）。Composer 执行态露出 `@电脑` 与「电脑」芯片；探索态不注册桌面写工具，并出诚实条「探索模式没有桌面操控工具」。
+设置页：标题「电脑操控」、就绪/未就绪徽章、开通三拍（开关 → 系统权限 → 执行器）、医生行指向**当前 helper**（路径/签名，不把 Electron-only AX 当绿）、动作「检测权限 / 拍一张屏 / 试一下 · 计算器」（试一下只切执行并预填 `@桌面`，不自动开跑）。同一卡内嵌「始终允许的应用」（`desktop-always-allow-list.tsx`）。高级「本会话任意桌面」从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”。main 无 `sessionId` 不写会话表（保持 no-op）。
+
+**CU-P1-B Composer 提及**：电脑操控开时，探索/执行都可点 `@桌面` / `@应用名`（产品锁写 **`@桌面`**，不沿用旧预览 `@电脑`）。候选与 `desktop_list_apps` 同源（IPC `builtinTools.desktopListApps`）：行上展示名 + 稳 `appKey`（mono）。Execute 下输入下方可选偏置芯片「桌面」或应用名 + appKey 摘要（CU 提示，不是第二条引擎条）；偏置宿主 `desktop_*` 或点名的 appKey。**提及 ≠ 放行**：Approval Dock / 会话表 / Always-allow / 二次确认 / overlay 闸不变，首次 `desktop_act` 仍进 Dock（除非会话/簿已放行）；点另一个 appKey 仍按 §3.2b 再批。Explore 允许同一枚提及芯片，但**不**注册 `desktop_*`、不点亮 overlay、不把偏置芯片标成已连接；可见人话「桌面控制需切换到执行」。无稳 `appKey`（仅 pid）可进候选，**隐藏**始终允许路径，禁止用 pid 当键。不是插件店，不虚构 NotInstalled.app。视觉真源 [`../previews/cu-p1-b-composer-mention.html`](../previews/cu-p1-b-composer-mention.html)。
 
 执行器是附属进程，换行 JSON。PATH 用 `pathDirs`，Windows 带 `-ExecutionPolicy Bypass` 和 `windowsHide`。打包 `resources/bin/<platform>-<arch>/`（darwin helper 须 codesign，见下）。开发时 darwin 用 `swiftc` 编到 `.build/computer-use`，未签名不得报就绪。
 
@@ -54,6 +56,7 @@
 - 设置：`settings/tools/desktop-tools-card.tsx`；始终允许名单：`desktop/desktop-always-allow-list.tsx`；开通绿：`desktop/desktop-readiness.ts`、`desktop-doctor-panel.tsx`
 - 持久簿：`desktop-always-allow-ledger.ts`（prefs `desktopAlwaysAllowAppKeys`）；命中辅助：`persistentAlwaysAllowsDesktopAct`
 - 右栏：`right-pane/views/desktop-view.tsx`
+- Composer 提及铬：`ai-chat/composer/mentions/desktop/`（`@桌面` / `@应用`、偏置芯片、Explore 诚实）；名单映射 `map-listed-desktop-apps.ts`；IPC `builtinTools.desktopListApps`
 - overlay 窗：`resources/overlay/computer-use-overlay.html` + `overlay-preload.js`；窗本体 `screen-overlay-service.ts`；生命周期 `desktop-overlay-chrome.ts`；停手势纯函数 `desktop-overlay-lifecycle.ts`；Explore 门控 `desktop-tool-gate.ts`；可见性纯函数 `desktop-overlay-visibility.ts`
 - 工具→run：`active-run-id.ts`（ALS）；`currentPumpingRunId` 在 `agent-run-state.ts`；活泵 / 审批续跑包 `runWithActiveRunId`
 
@@ -76,3 +79,5 @@
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。
 - **overlay 生命周期挂点（薄）**：`onAct` 把 ALS / 活泵 runId 传进 `beginDesktopActOverlay`。主进程没有独立 `desktop.act.start` StreamEvent。停手势先熄再 `cancelInFlight` 再 abort **该** runId；未知 runId 才退回活泵 / 全部 ActiveRun。
 - **隐患**：执行器协议没有 cancel RPC。硬取消 = 拒绝在途 Promise + `child.kill`（与超时同一条路）。OS 已落下的 click 无法撤回；该 run 已 abort，不再继续 act。helper 未 dispose 时 `onExit` 仍可能重启一次。kill 后 stdin 可能 EPIPE，必须在 helper stdin 上吞掉，否则会打翻 main。Esc 用 `globalShortcut`，三端均可；注册失败则只靠顶栏「停止」。设置预览走同一套铬，约 2.4s 自熄，不是成功 toast。
+- **CU-P1-B kai 挂点（list / bias 薄）**：Composer 铬已插入 `@桌面` / `@应用` 并读出偏置；**本刀不改** Permission Dock，也不把提及写成会话表 / `desktop_act:*` / 持久簿。Agent 循环尚未按 bias 重排工具或改 system prompt——用户句里的 `@桌面` 是模型可见信号；首次 act 仍走现有闸。`agent.run` 没有 desktopBias 字段；FE `readDesktopMentionBias` 是挂点。win32 / linux `list_apps` 仍多半只有 `name`（回落规范化名）；darwin 已带 `bundleId`。helper 失败时提及只留宿主 `@桌面`，禁止补假应用。
+- **隐患**：把 `@电脑` 预填或芯片写回去会和产品锁打架。正确做法：token 固定 `@桌面`，旧 `@电脑` / `@Desktop` 只当别名解析。

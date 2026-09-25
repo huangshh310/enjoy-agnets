@@ -32,6 +32,7 @@ import {
 } from "./desktop-second-confirm-park"
 import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDesktopView } from "./desktop-thumbs"
 import { startExecutor, type ExecutorHandle } from "./executor-client"
+import { mapListedDesktopApps } from "./map-listed-desktop-apps.ts"
 import { resolveExecutorCommand } from "./executor-command"
 
 const actionSchema = z.enum(["click", "move", "drag", "scroll", "type", "key", "wait"])
@@ -110,6 +111,11 @@ export function releaseParkedDesktopAct(args: Record<string, unknown> | unknown)
 export async function runDesktopDoctor() {
   const report = await sharedSession().doctor()
   return { ...report, line: formatDoctorLine(report) }
+}
+
+/** Composer 提及用：与 desktop_list_apps 同源，失败回空列表。 */
+export async function listDesktopMentionAppsIpc() {
+  return mapListedDesktopApps(await sharedSession().listApps())
 }
 
 export async function captureDesktopPreview() {

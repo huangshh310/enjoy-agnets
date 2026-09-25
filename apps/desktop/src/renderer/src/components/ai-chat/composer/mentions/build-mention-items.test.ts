@@ -89,12 +89,45 @@ test("@ 发现含文件、文档、技能，网页 muted", () => {
   assert.equal(items.some((item) => item.kind === "desktop"), false)
 })
 
-test("执行态可列出 @电脑，探索态不列", () => {
+test("电脑操控开时探索/执行都列 @桌面，关则不列", () => {
   takeComposerSkillChips()
   const withDesktop = buildAtMentionItems("", [], [], [], [], [], true)
-  const without = buildAtMentionItems("电脑", [], [], [], [], [], false)
-  assert.equal(withDesktop.some((item) => item.kind === "desktop" && item.label === "电脑"), true)
+  const without = buildAtMentionItems("桌面", [], [], [], [], [], false)
+  const host = withDesktop.find((item) => item.kind === "desktop" && item.role === "host")
+  assert.equal(host?.token, "桌面")
+  assert.equal(host?.id, "desktop:host")
   assert.equal(without.some((item) => item.kind === "desktop"), false)
+})
+
+test("@ 应用行带来源名单的展示名与稳 appKey，无稳键仍可出现", () => {
+  takeComposerSkillChips()
+  const apps = [
+    {
+      displayName: "计算器",
+      appKey: "com.apple.calculator",
+      appKeySource: "bundleId" as const,
+      stable: true
+    },
+    { displayName: "未识别窗口", appKey: "", stable: false, pid: 18422 }
+  ]
+  const calc = buildAtMentionItems("计算", [], [], [], [], [], true, apps).find(
+    (item) => item.kind === "desktop" && item.role === "app" && item.token === "计算器"
+  )
+  const weak = buildAtMentionItems("未识别", [], [], [], [], [], true, apps).find(
+    (item) => item.kind === "desktop" && item.pid === 18422
+  )
+  assert.equal(calc?.appKey, "com.apple.calculator")
+  assert.equal(calc?.stable, true)
+  assert.equal(weak?.stable, false)
+  assert.equal(weak?.appKey, "")
+})
+
+test("空 @ 不造假应用，查询 NotInstalled 也对不上", () => {
+  takeComposerSkillChips()
+  const empty = buildAtMentionItems("", [], [], [], [], [], true, [])
+  assert.equal(empty.filter((item) => item.kind === "desktop").length, 1)
+  const fake = buildAtMentionItems("NotInstalled", [], [], [], [], [], true, [])
+  assert.equal(fake.some((item) => item.kind === "desktop" && item.role === "app"), false)
 })
 
 test("@ 提及在空查询时列出已连 MCP 服务", () => {

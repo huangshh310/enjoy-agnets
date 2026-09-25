@@ -5,12 +5,16 @@ import Foundation
 
 func listApps() -> [[String: Any]] {
   NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }.map { app in
-    [
+    var row: [String: Any] = [
       "pid": Int(app.processIdentifier),
       "name": app.localizedName ?? "",
       "frontmost": app.isActive,
       "backgroundClick": AXIsProcessTrusted()
     ]
+    if let bundle = app.bundleIdentifier, !bundle.isEmpty {
+      row["bundleId"] = bundle
+    }
+    return row
   }
 }
 

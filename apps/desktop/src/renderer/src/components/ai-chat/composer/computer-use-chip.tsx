@@ -1,5 +1,6 @@
 /**
- * Composer 瘦身铬：执行态且电脑操控开启时画一枚「电脑」芯片。
+ * Composer 瘦身铬：执行态且电脑操控开启时画一枚「桌面」可用性芯片。
+ * 提及偏置芯片在输入下方，见 ComposerDesktopBiasBar；本枚不是第二引擎条。
  */
 import { useComputerUseEnabled } from "@renderer/hooks/use-computer-use-enabled"
 import { useChatStore } from "@renderer/stores/chat-store"

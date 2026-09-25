@@ -37,3 +37,22 @@ test("@ 发现收成一组，网页 muted 垫底，MCP 进发现", () => {
   assert.equal(groups[0]?.items.some((item) => item.kind === "mcp"), true)
   assert.equal(groups[0]?.items.at(-1)?.kind, "web")
 })
+
+test("@ 桌面组单独成 sheet，不和文件混在发现组", () => {
+  const groups = groupMentionItems("at", [
+    {
+      kind: "desktop",
+      id: "desktop:host",
+      role: "host",
+      label: "桌面",
+      displayName: "桌面",
+      token: "桌面",
+      appKey: "",
+      stable: true
+    },
+    { kind: "file", id: "f", path: "a.ts", name: "a.ts", entryKind: "file" }
+  ])
+  assert.equal(groups[0]?.id, "desktop")
+  assert.equal(groups[1]?.id, "discover")
+  assert.equal(groups[0]?.items[0]?.kind, "desktop")
+})

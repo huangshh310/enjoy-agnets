@@ -63,6 +63,7 @@ test("Composer 运行中可 Stop，并可附加 Context", () => {
     "utf8"
   )
   expect(mentions.includes("composer-mention-list")).toBeTruthy()
+  expect(mentions.includes("mention-sheet")).toBeTruthy()
   const attach = readFileSync(
     join(process.cwd(), "src/renderer/src/components/ai-chat/composer/composer-attach-menu.tsx"),
     "utf8"

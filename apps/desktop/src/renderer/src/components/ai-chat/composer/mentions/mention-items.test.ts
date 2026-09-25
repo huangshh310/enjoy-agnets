@@ -22,6 +22,34 @@ test("过滤同时看文件路径和技能名", () => {
   assert.equal(slugSkillName("Deep Research"), "deep-research")
 })
 
+test("桌面提及可按 桌面 / desktop / appKey 过滤", () => {
+  const items = [
+    {
+      kind: "desktop" as const,
+      id: "desktop:host",
+      role: "host" as const,
+      label: "桌面",
+      displayName: "桌面",
+      token: "桌面",
+      appKey: "",
+      stable: true
+    },
+    {
+      kind: "desktop" as const,
+      id: "desktop:app:com.apple.calculator",
+      role: "app" as const,
+      label: "计算器",
+      displayName: "计算器",
+      token: "计算器",
+      appKey: "com.apple.calculator",
+      stable: true
+    }
+  ]
+  assert.equal(filterMentionItems(items, "桌面").length, 1)
+  assert.equal(filterMentionItems(items, "computer").length, 1)
+  assert.equal(filterMentionItems(items, "calculator").length, 1)
+})
+
 test("过滤也看内置命令名", () => {
   const items = [
     {

@@ -72,8 +72,14 @@ export type McpMentionItem = {
 
 export type DesktopMentionItem = {
   kind: "desktop"
-  id: "desktop:computer"
+  id: string
+  role: "host" | "app"
   label: string
+  displayName: string
+  token: string
+  appKey: string
+  stable: boolean
+  pid?: number
 }
 
 export type MentionItem =
@@ -114,7 +120,10 @@ function mentionHaystack(item: MentionItem): string {
   }
   if (item.kind === "command") return `${item.name} ${item.description}`.toLowerCase()
   if (item.kind === "mcp") return `mcp ${item.name} ${item.description ?? ""}`.toLowerCase()
-  if (item.kind === "desktop") return `电脑 computer desktop ${item.label}`.toLowerCase()
+  if (item.kind === "desktop") {
+    if (item.role === "host") return `桌面 电脑 computer desktop ${item.label}`.toLowerCase()
+    return `${item.displayName} ${item.appKey} ${item.token}`.toLowerCase()
+  }
   const skill = item.skill
   return `${skill.slash ?? ""} ${skill.name} ${skill.description ?? ""}`.toLowerCase()
 }
