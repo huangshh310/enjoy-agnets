@@ -50,7 +50,7 @@
 - **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。开通徽章与医生点只读 `helperSigned` + helper AX；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
 - Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过（skip ≠ pass）。§3.2e / H5：设置与文档不得把 Win/Linux 标成可用/available，直至真机 GUI 冒烟。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
-- **二次确认卡 UI**（新旧缩略图并排）仍薄：数据面回 `needs_second_confirm` 载荷，名片尚未并排新旧图。
+- **二次确认卡 UI**（新旧缩略图并排）视觉真源已在 `design/previews/cu-p1-r-second-confirm.html`；UI 接线仍待拍。数据面回 `needs_second_confirm` 载荷，名片尚未并排新旧图。
 - 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。
 - **H2 write/hit**：审批层按 `desktop_act:<appKey>` 写入、按 `has("desktop_act:"+appKey)` 或 `has("desktop_act:*")` 命中。不要再 `sessionApprovedTools.add("desktop_act")`，也不要按裸工具名放行。
 - 执行器快照目前多半只有 `appName`，`appKey` 回落到规范化应用名；有 `bundleId` / `exe` / AUMID 才优先用。`appKeySource` 记录用了哪一档。
