@@ -71,4 +71,4 @@
 - **设置无焦点会话**：开关若仍可拨，UI 看起来已开、main 却因缺 `sessionId` no-op。正确做法：把 `sessionId` 传到 `DesktopAnyDesktopDetails`，无会话则 `disabled` + `anyDesktopNeedSession`。
 - 执行器快照目前多半只有 `appName`，`appKey` 回落到规范化应用名；有 `bundleId` / `exe` / AUMID 才优先用。`appKeySource` 记录用了哪一档。
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。
-- **overlay 铬与预览不一致**：现网 `resources/overlay/computer-use-overlay.html` 仍是霓虹 HUD + 绿点 + 英文 Computer Use + 点击波纹 + 约 3s 自灭。视觉锁是冷静蓝边呼吸 + 中文「正在操控 · {app}」+ 一键「停止」/ Esc；无观察 / idle / Explore 不画在控铬、不画假绿「已连接」。接线前以 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html) 为准，不要把现网霓虹皮当 SoT。
+- **overlay 铬与预览不一致**：现网 `resources/overlay/computer-use-overlay.html` 仍是霓虹 HUD + 绿点 + 英文 Computer Use + 点击波纹 + 约 3s 自灭。jojo 正式锁：Execute 下已批 `desktop_act` 生命周期才亮冷静蓝边；一键/Esc 停后诚实中断；Explore 无 overlay、无 `desktop_*`；勿空成功条、勿 VNC 壳取代 Dock。接线前以 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html) 为准。
