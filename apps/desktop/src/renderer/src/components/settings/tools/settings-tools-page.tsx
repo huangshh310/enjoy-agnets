@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react"
 import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { BrowserToolsCard } from "./browser-tools-card"
 import { DesktopToolsCard } from "./desktop-tools-card"
 
@@ -27,20 +28,21 @@ const DEFAULT_STATE: BuiltinToolsState = {
 }
 
 export function SettingsToolsPage() {
+  const sessionId = useChatStore((store) => store.sessionId)
   const [state, setState] = useState<BuiltinToolsState>(DEFAULT_STATE)
   const [loading, setLoading] = useState(true)
 
   const loadState = useCallback(async () => {
     if (!hasIde()) return
     try {
-      const data = await getIde().builtinTools.getState()
+      const data = await getIde().builtinTools.getState(sessionId ? { sessionId } : undefined)
       setState(data)
     } catch (err) {
       console.error("Failed to load builtin tools state", err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [sessionId])
 
   const refreshPermissions = useCallback(async () => {
     if (!hasIde()) return
@@ -74,7 +76,11 @@ export function SettingsToolsPage() {
   ) => {
     if (!hasIde()) return
     try {
-      const next = await getIde().builtinTools.toggle({ tool, enabled })
+      const next = await getIde().builtinTools.toggle({
+        tool,
+        enabled,
+        sessionId: sessionId ?? undefined
+      })
       setState(next)
     } catch (err) {
       console.error("Failed to toggle builtin tool", err)

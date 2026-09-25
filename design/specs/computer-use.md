@@ -10,7 +10,7 @@
 
 截图由 host `desktopCapturer` 写入 `userData/computer-use-thumbs/`，最多 20 张，不进模型文本。审批卡和右栏「正在看的窗口」可读缩略图。重启后账本为空：`executeStoredTool` → `resumeDesktopAct` 必须显式 `stale_observation`（或随后 `needs_second_confirm`），走同一条重拍路；**禁止假放行 / 报 success**。待批 `parkDesktopActArgs` 冻结 TTL；`enrichDesktopActApprovalArgs` 再补 `appKey` / `appKeySource` / `appName` / `observationId` / `action` / `elementName` / `thumbnailPath?` / `bypassesSessionAllow` / 本观察缩略图。
 
-**§3.2b 会话 Allow 绑 appKey（H2 write/hit）**：决策枚举仍是 `allow` | `deny` | `allow_session`。`allow_session` 写入 `desktop_act:<appKey>`（`sessionApprovedTools.has("desktop_act:"+appKey)`），**禁止**写裸 `desktop_act`。无 appKey 时不写白名单，只当一次允许。appKey 优先级：`bundleId` → `exe` / AUMID → 规范化 `appName`；pid 不是键。坐标 / `allowForeground`（`bypassesSessionAllow`）/ 敏感窗每次问。设置高级「本会话任意桌面」默认关；开了才把 `desktop_act:*` 注入本轮 `sessionApprovedTools`（不是裸工具名）。Permission Dock 桌面名片底栏沿用既有 testid：**允许一次** `approval-allow`→`allow` / **本会话允许此应用** `approval-always`→`allow_session` / **拒绝** `approval-deny`→`deny`。`bypassesSessionAllow` 或无 appKey 时隐藏会话钮。一句话摘要走 `desktopActApprovalText`，副标题可显示 appKey。
+**§3.2b / CU-P1-S 会话 Allow（policy B）**：SoT 是进程内 `conversationDesktopAllow`，按 Enjoy `sessionId`。键只认 `desktop_act:<appKey>` 与 `desktop_act:*`，**禁止**裸 `desktop_act`。`allow_session` write-through 会话表 + 本轮 `sessionApprovedTools`。新 run 从该会话表 **复制** 一份进 ActiveRun；run 结束 **不清** 会话表、**不**升全局。切焦点 / 离开再回来仍记得。清空只在：该对话删除、该对话归档、人手撤销某应用、关掉 anyDesktop、进程退出。设置「本会话任意桌面」默认关，开则写当前会话的 `desktop_act:*`，**禁止**写入 `builtin_tools` / 磁盘偏好。旧盘里的 `anyDesktopSession` 忽略。`approvalPolicyFromPrefs` 只读会话表 ∪ run 副本。无 appKey 不写白名单，只当一次允许。appKey 优先级：`bundleId` → `exe` / AUMID → 规范化 `appName`；pid 不是键。坐标 / `allowForeground`（`bypassesSessionAllow`）/ 敏感窗每次问。Permission Dock 桌面名片底栏沿用既有 testid：**允许一次** `approval-allow`→`allow` / **本会话允许此应用** `approval-always`→`allow_session` / **拒绝** `approval-deny`→`deny`。`bypassesSessionAllow` 或无 appKey 时隐藏会话钮。一句话摘要走 `desktopActApprovalText`，副标题可显示 appKey。
 
 设置页：标题「电脑操控」、就绪/未就绪徽章、开通三拍（开关 → 系统权限 → 执行器）、医生行指向**当前 helper**（路径/签名，不把 Electron-only AX 当绿）、动作「检测权限 / 拍一张屏 / 试一下 · 计算器」（试一下只切执行并预填 `@电脑`，不自动开跑）。Composer 执行态露出 `@电脑` 与「电脑」芯片；探索态不注册桌面写工具，并出诚实条「探索模式没有桌面操控工具」。
 
@@ -32,12 +32,14 @@
 - 不要在 TS 里用 cliclick / AppleScript / xdotool / SendInput。
 - darwin：`desktop_doctor.success` 只在 spawn helper 签名匹配且该进程过 AX 时为真。开通绿必须看 `helperSigned`，禁止用宿主 `signed` / `hostAccessibility` 冒充。
 - 未开「任意桌面」时，禁止裸 `desktop_act` 会话级放行；开了只命中 `desktop_act:*`。
+- 会话 Allow / anyDesktop 只活在 `conversationDesktopAllow`（按 sessionId）。禁止当全局 `builtin_tools` 偏好。归档或删除该对话必须清表。
 
 ## 代码入口
 
 - 工具：`builtin-agent-tools.ts`、`computer-use/desktop-tools.ts`
 - 宿主：`desktop-session.ts`（无 Electron）；act / 重拍：`desktop-session-act.ts`；医生：`doctor-report.ts`
 - helper 身份 / codesign：`executor-identity.ts`；打包签名：`apps/desktop/scripts/codesign-helper.cjs`
+- 会话 Allow 表：`packages/agent-core/src/computer-use/conversation-desktop-allow.ts`；run 复制 / write-through：`agent-run-state.ts` / `agent-runner.ts`；归档删除清表：`session-lifecycle.ts`
 - 账本 / 冻结 / 重拍匹配：`packages/agent-core/src/computer-use/`
 - 协议：`apps/desktop/native/computer-use/protocol.md`
 - 执行器：`native/computer-use/darwin|win32|linux`
@@ -53,5 +55,6 @@
 - **二次确认卡 UI**（新旧缩略图并排）视觉真源已在 `design/previews/cu-p1-r-second-confirm.html`；UI 接线仍待拍。数据面回 `needs_second_confirm` 载荷，名片尚未并排新旧图。
 - 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。
 - **H2 write/hit**：审批层按 `desktop_act:<appKey>` 写入、按 `has("desktop_act:"+appKey)` 或 `has("desktop_act:*")` 命中。不要再 `sessionApprovedTools.add("desktop_act")`，也不要按裸工具名放行。
+- **P1-S 错 SoT**：ActiveRun 空 Set 不能当会话记忆；`builtin_tools.anyDesktopSession` 不能当任意桌面。正确做法：会话表 keyed by `sessionId`，run 只拿副本。切会话不清表（policy B）；归档/删除才清。进程退出表没。
 - 执行器快照目前多半只有 `appName`，`appKey` 回落到规范化应用名；有 `bundleId` / `exe` / AUMID 才优先用。`appKeySource` 记录用了哪一档。
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。

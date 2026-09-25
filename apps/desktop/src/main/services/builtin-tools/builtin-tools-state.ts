@@ -4,8 +4,14 @@
  */
 import { systemPreferences, shell } from "electron"
 import { randomBytes } from "node:crypto"
+import {
+  conversationHasAnyDesktop,
+  setConversationAnyDesktop
+} from "@enjoy-agents/agent-core"
 import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "../database"
+import { syncActiveRunsDesktopAllow } from "../conversation-desktop-allow-sync"
+import { persistableBuiltinTools, type PersistedBuiltinTools } from "./persist-builtin-tools"
 import { displaySession } from "./computer-use/display-session"
 import { resolveExecutorCommand, spawnTargetPath } from "./computer-use/executor-command"
 import {
@@ -17,16 +23,6 @@ import {
 
 const SETTING_KEY_BUILTIN_TOOLS = "builtin_tools_state"
 
-interface PersistedBuiltinTools {
-  builtinBrowserEnabled?: boolean
-  browserBridgeEnabled?: boolean
-  computerUseEnabled?: boolean
-  screenVisualsEnabled?: boolean
-  anyDesktopSession?: boolean
-  bridgePort?: number
-  bridgeToken?: string
-}
-
 let inMemoryToken: string = ""
 let bridgeConnectedClient: string | null = null
 
@@ -34,14 +30,14 @@ function readPersistedState(): PersistedBuiltinTools {
   try {
     const raw = getSetting(SETTING_KEY_BUILTIN_TOOLS)
     if (!raw) return {}
-    return JSON.parse(raw) as PersistedBuiltinTools
+    return persistableBuiltinTools(JSON.parse(raw) as Record<string, unknown>)
   } catch {
     return {}
   }
 }
 
 function writePersistedState(state: PersistedBuiltinTools) {
-  setSetting(SETTING_KEY_BUILTIN_TOOLS, JSON.stringify(state))
+  setSetting(SETTING_KEY_BUILTIN_TOOLS, JSON.stringify(persistableBuiltinTools(state)))
 }
 
 function getOrCreateToken(): string {
@@ -123,7 +119,7 @@ export function openSystemPrivacySettings(type: "accessibility" | "screenCapture
   }
 }
 
-export function getBuiltinToolsState(): BuiltinToolsState {
+export function getBuiltinToolsState(sessionId?: string): BuiltinToolsState {
   const saved = readPersistedState()
   const token = getOrCreateToken()
   const port = saved.bridgePort ?? 47823
@@ -145,7 +141,7 @@ export function getBuiltinToolsState(): BuiltinToolsState {
       accessibilityGranted: permissions.accessibility,
       screenCaptureGranted: permissions.screenCapture,
       screenVisuals: saved.screenVisualsEnabled ?? true,
-      anyDesktopSession: saved.anyDesktopSession ?? false,
+      anyDesktopSession: sessionId ? conversationHasAnyDesktop(sessionId) : false,
       session: displaySession()
     }
   }
@@ -153,16 +149,23 @@ export function getBuiltinToolsState(): BuiltinToolsState {
 
 export function setBuiltinToolEnabled(
   tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals" | "anyDesktopSession",
-  enabled: boolean
+  enabled: boolean,
+  sessionId?: string
 ): BuiltinToolsState {
+  if (tool === "anyDesktopSession") {
+    if (sessionId?.trim()) {
+      setConversationAnyDesktop(sessionId, enabled)
+      syncActiveRunsDesktopAllow(sessionId)
+    }
+    return getBuiltinToolsState(sessionId)
+  }
   const saved = readPersistedState()
   if (tool === "builtinBrowser") saved.builtinBrowserEnabled = enabled
   if (tool === "browserBridge") saved.browserBridgeEnabled = enabled
   if (tool === "computerUse") saved.computerUseEnabled = enabled
   if (tool === "screenVisuals") saved.screenVisualsEnabled = enabled
-  if (tool === "anyDesktopSession") saved.anyDesktopSession = enabled
   writePersistedState(saved)
-  return getBuiltinToolsState()
+  return getBuiltinToolsState(sessionId)
 }
 
 export function regenerateBridgePairingCode(): BuiltinToolsState {

@@ -293,11 +293,12 @@ const ide = {
     }
   },
   builtinTools: {
-    getState: () =>
-      ipcRenderer.invoke("builtinTools.getState") as Promise<BuiltinToolsState>,
+    getState: (input?: { sessionId?: string }) =>
+      ipcRenderer.invoke("builtinTools.getState", input) as Promise<BuiltinToolsState>,
     toggle: (input: {
       tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals" | "anyDesktopSession"
       enabled: boolean
+      sessionId?: string
     }) => ipcRenderer.invoke("builtinTools.toggle", input) as Promise<BuiltinToolsState>,
     regeneratePairingCode: () =>
       ipcRenderer.invoke("builtinTools.regeneratePairingCode") as Promise<BuiltinToolsState>,

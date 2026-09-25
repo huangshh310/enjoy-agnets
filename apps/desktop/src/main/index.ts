@@ -163,6 +163,9 @@ app.on("will-quit", () => {
   void import("./services/automations-scheduler").then(({ stopAutomationScheduler }) => {
     stopAutomationScheduler()
   })
+  void import("@enjoy-agents/agent-core").then(({ clearAllConversationDesktopAllows }) => {
+    clearAllConversationDesktopAllows()
+  })
   flushActiveRuns();
   disposeAllAcpSessions();
   void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {

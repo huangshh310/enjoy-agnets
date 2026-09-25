@@ -3,7 +3,8 @@
  */
 import type { ModelMessage } from "ai"
 import {
-  withAnyDesktopSessionKey,
+  DESKTOP_ACT_ANY_SESSION_KEY,
+  mergeConversationDesktopAllow,
   type ApprovalPolicy,
   type SubagentToolTraceEvent,
   type WaitForSubagentApproval
@@ -14,7 +15,6 @@ import {
   type HostInjectSnapshot,
   type ReasoningEffort
 } from "@enjoy-agents/ipc-contract"
-import { getBuiltinToolsState } from "./builtin-tools/builtin-tools-state"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
 
@@ -50,15 +50,15 @@ export type OpenCodingStreamInput = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined
 }
 
-/** 把偏好和本轮已批工具收成 ApprovalPolicy。任意桌面开时注入 `desktop_act:*`。 */
+/** 审批只读会话表 + 本轮 run 副本。禁止从 builtin_tools 偏好读 anyDesktop。 */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
-  const anyDesktopSession = getBuiltinToolsState().computerUse.anyDesktopSession === true
+  const sessionApprovedTools = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
   return {
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
-    sessionApprovedTools: withAnyDesktopSessionKey(input.sessionApprovedTools, anyDesktopSession),
+    sessionApprovedTools,
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
-    anyDesktopSession
+    anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY)
   }
 }

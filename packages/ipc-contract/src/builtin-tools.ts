@@ -24,7 +24,7 @@ export const DesktopComputerUseState = z.object({
   accessibilityGranted: z.boolean().default(false),
   screenCaptureGranted: z.boolean().default(false),
   screenVisuals: z.boolean().default(true),
-  /** 高级「本会话任意桌面」；默认关。未开时禁止裸 desktop_act 会话级放行。 */
+  /** 当前会话表是否有 desktop_act:*。默认关，不落盘。 */
   anyDesktopSession: z.boolean().default(false),
   session: z.enum(["macos", "windows", "x11", "wayland", "none"]).optional()
 })
@@ -101,9 +101,18 @@ export const BuiltinToolsState = z.object({
 })
 export type BuiltinToolsState = z.infer<typeof BuiltinToolsState>
 
+export const GetBuiltinToolsStateInput = z
+  .object({
+    sessionId: z.string().min(1).optional()
+  })
+  .default({})
+export type GetBuiltinToolsStateInput = z.infer<typeof GetBuiltinToolsStateInput>
+
 export const ToggleBuiltinToolInput = z.object({
   tool: z.enum(["builtinBrowser", "browserBridge", "computerUse", "screenVisuals", "anyDesktopSession"]),
-  enabled: z.boolean()
+  enabled: z.boolean(),
+  /** anyDesktopSession 必须带当前 Enjoy sessionId，写入会话表而不是 prefs。 */
+  sessionId: z.string().min(1).optional()
 })
 export type ToggleBuiltinToolInput = z.infer<typeof ToggleBuiltinToolInput>
 

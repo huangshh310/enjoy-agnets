@@ -37,3 +37,16 @@ export {
   withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
 export type { DesktopActAppKeySource } from "./desktop-act-policy.ts"
+export {
+  clearAllConversationDesktopAllows,
+  clearConversationDesktopAllow,
+  conversationHasAnyDesktop,
+  grantConversationDesktopAllow,
+  isConversationDesktopAllowKey,
+  mergeConversationDesktopAllow,
+  overlayConversationDesktopAllow,
+  revokeConversationDesktopAllow,
+  setConversationAnyDesktop,
+  snapshotConversationDesktopAllow,
+  writeThroughDesktopActSessionAllow
+} from "./conversation-desktop-allow.ts"

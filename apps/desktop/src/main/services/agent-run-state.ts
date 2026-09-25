@@ -3,6 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
+import { snapshotConversationDesktopAllow } from "@enjoy-agents/agent-core"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
@@ -154,7 +155,8 @@ export function holdAgentRun(
     workspaceRoot: patch.workspaceRoot,
     secret: patch.secret,
     pendingApprovals: [],
-    sessionApprovedTools: new Set(),
+    // P1-S：从会话表复制，不是空 Set。run 结束不清表。
+    sessionApprovedTools: snapshotConversationDesktopAllow(patch.input.sessionId),
     sessionApprovedBashPrefixes: new Set(),
     approvalGate: createApprovalGate(),
     pumping: false,
