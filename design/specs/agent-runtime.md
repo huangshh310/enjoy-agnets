@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-25
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-09-25（CU-P1-B `desktopBias` 工具序）
 
 ## 当前真相
 
@@ -35,7 +35,7 @@
 | `delegate` | 否（子循环写盘仍审） | `kind=explore` 强制只读（可用 `fastModelId`）；`general` 跟父模式。子工具带 `parentToolCallId`。聊天画「子智能体 {Explore\|General} · 标题」；同一步最多 4 个并行 `delegate.execute`（闸门挂 `createDelegateTool` 闭包） |
 | `browser_navigate` | 是 | Enjoy Local `extraTools`（`HOST_CONTROL_TOOLS`）。plan/ask 不注册。Bridge 未连接返回 `success: false` |
 | `browser_extract_content` | 否 | 读当前 tab。未连接 `success: false`，禁止占位假正文 |
-| `desktop_doctor` / `desktop_list_apps` / `desktop_snapshot` / `desktop_screenshot` | 否 | Computer Use 开着才注册。观察编号由 main 签发，30 秒、一次有效 |
+| `desktop_doctor` / `desktop_list_apps` / `desktop_snapshot` / `desktop_screenshot` | 否 | Computer Use 开着且非探索才注册。`agent.run.desktopBias` 在 Execute 下把这些工具提前并加一行 Prefer，不改审批。观察编号由 main 签发，30 秒、一次有效 |
 | `desktop_act` | 是（`wait` 否） | `HOST_CONTROL_TOOLS`。坐标或 `allowForeground` / 敏感窗不吃本会话放行。会话 Allow 绑 `desktop_act:<appKey>`，SoT 是按 Enjoy `sessionId` 的进程内表（见 computer-use P1-S），禁止裸工具名。待批冻结观察 TTL。过期 / 重启空账本显式 `stale_observation`，Allow 后重拍一次再匹配，对不上 `needs_second_confirm` 再停 Dock 二次确认卡（确认才对**新**观察 act），不静默点。`needs_foreground` 把观察还回去 |
 
 工具文本超限时留开头和结尾，中间标记 `...[omitted N chars]...`（按 JS 字符串长度，标记本身不占上限）。命令流（`bash` / `code_mode` 的 stdout 与 stderr、`git_status` / `git_log`、`git_commit` / `git_branch` / `git_push` 的 `result`、Agent 路径上的 MCP 文本）约 16_000。文件流（`read_file`、写盘 diff、`git_diff`、超限的 `repo_outline`）约 48_000。`skill` 正文仍约 24_000，同样留头尾。设置页人手 `mcp.call` 不截断。ACP CLI 自己的工具输出不经过这里。写 / bash / commit 集合见 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS`。桌面 / 浏览器控制见 `HOST_CONTROL_TOOLS`。

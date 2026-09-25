@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-26（Computer Use Hub 四段式操控中心、系统保护区与 Midscene 风格感知透视回显）
+> Enjoy Local 操作本机其它应用。最后更新：2026-09-26（设置页四段式与 helper 权限行；CU-P1-B `desktopBias` 薄挂点仍在）
 
 ## 当前真相
 
@@ -20,7 +20,7 @@
 - **第 3 段 (应用授权与安全保护区)**：常驻系统受保护禁区声明（钥匙串/偏好设置/密码/支付硬编码二次审批，绝不自动放行）+「始终允许的应用」名单（撤销只清簿）+ 高级「本会话任意桌面」（从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”；main 无 `sessionId` 不写会话表保持 no-op）；
 - **第 4 段 (感知透视与快速体验)**：动作「检测权限 / 测试屏幕感知 / 试一下 · 计算器」（试一下只切执行并预填 `@桌面`，不自动开跑）+ Midscene.js 风格屏幕感知透视面板（`DesktopPerceptionInspector`：捕获缩略图视口 + 识别目标窗口/Bundle ID/可交互控件列表标签透视）。
 
-**CU-P1-B Composer 提及**：电脑操控开时，探索/执行都可点 `@桌面` / `@应用名`（产品锁写 **`@桌面`**，不沿用旧预览 `@电脑`）。候选与 `desktop_list_apps` 同源（IPC `builtinTools.desktopListApps`）：行上展示名 + 稳 `appKey`（mono）。Execute 下输入下方可选偏置芯片「桌面」或应用名 + appKey 摘要（CU 提示，不是第二条引擎条）；偏置宿主 `desktop_*` 或点名的 appKey。**提及 ≠ 放行**：Approval Dock / 会话表 / Always-allow / 二次确认 / overlay 闸不变，首次 `desktop_act` 仍进 Dock（除非会话/簿已放行）；点另一个 appKey 仍按 §3.2b 再批。Explore 允许同一枚提及芯片，但**不**注册 `desktop_*`、不点亮 overlay、不把偏置芯片标成已连接；可见人话「桌面控制需切换到执行」。无稳 `appKey`（仅 pid）可进候选，**隐藏**始终允许路径，禁止用 pid 当键。不是插件店，不虚构 NotInstalled.app。视觉真源 [`../previews/cu-p1-b-composer-mention.html`](../previews/cu-p1-b-composer-mention.html)。
+**CU-P1-B Composer 提及**：电脑操控开时，探索/执行都可点 `@桌面` / `@应用名`（产品锁写 **`@桌面`**，不沿用旧预览 `@电脑`）。候选与 `desktop_list_apps` 同源（IPC `builtinTools.desktopListApps`）：行上展示名 + 稳 `appKey`（mono）。Execute 下输入下方可选偏置芯片「桌面」或应用名 + appKey 摘要（CU 提示，不是第二条引擎条）。Composer 发送把 `readDesktopMentionBias` 收成 `agent.run.desktopBias`（`host` 或稳 `appKey`）；开流 `createCodingAgent` 把已注册的 `desktop_*` **提前**，并加一行 Prefer 指令，不堆长文、不改 `toolApproval`。helper 失败名单为空，只留宿主 `@桌面`，禁止补假应用。**提及 ≠ 放行**：Approval Dock / 会话表 / Always-allow / 二次确认 / overlay 闸不变，首次 `desktop_act` 仍进 Dock（除非会话/簿已放行）；点另一个 appKey 仍按 §3.2b 再批。Explore 允许同一枚提及芯片，但**不**注册 `desktop_*`（`shouldRegisterDesktopControlTools` 不看 bias）、不点亮 overlay、不把偏置芯片标成已连接；可见人话「桌面控制需切换到执行」。无稳 `appKey`（仅 pid）可进候选，**隐藏**始终允许路径，禁止用 pid 当键，也不写簿。不是插件店，不虚构 NotInstalled.app。视觉真源 [`../previews/cu-p1-b-composer-mention.html`](../previews/cu-p1-b-composer-mention.html)。
 
 执行器是附属进程，换行 JSON。PATH 用 `pathDirs`，Windows 带 `-ExecutionPolicy Bypass` 和 `windowsHide`。打包 `resources/bin/<platform>-<arch>/`（darwin helper 须 codesign，见下）。开发时 darwin 用 `swiftc` 编到 `.build/computer-use`，未签名不得报就绪。
 
@@ -64,6 +64,7 @@
 - 持久簿：`desktop-always-allow-ledger.ts`（prefs `desktopAlwaysAllowAppKeys`）；命中辅助：`persistentAlwaysAllowsDesktopAct`
 - 右栏：`right-pane/views/desktop-view.tsx`
 - Composer 提及铬：`ai-chat/composer/mentions/desktop/`（`@桌面` / `@应用`、偏置芯片、Explore 诚实）；名单映射 `map-listed-desktop-apps.ts`；IPC `builtinTools.desktopListApps`
+- Execute 偏置：`RunAgentInput.desktopBias` → `agent-pump` → `openLocalStream` → `createCodingAgent`；纯函数 `packages/agent-core/src/computer-use/desktop-tool-bias.ts`；发送 `desktopBiasForRun`
 - overlay 窗：`resources/overlay/computer-use-overlay.html` + `overlay-preload.js`；窗本体 `screen-overlay-service.ts`；生命周期 `desktop-overlay-chrome.ts`；停手势纯函数 `desktop-overlay-lifecycle.ts`；Explore 门控 `desktop-tool-gate.ts`；可见性纯函数 `desktop-overlay-visibility.ts`
 - 工具→run：`active-run-id.ts`（ALS）；`currentPumpingRunId` 在 `agent-run-state.ts`；活泵 / 审批续跑包 `runWithActiveRunId`
 
@@ -86,5 +87,5 @@
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。
 - **overlay 生命周期挂点（薄）**：`onAct` 把 ALS / 活泵 runId 传进 `beginDesktopActOverlay`。主进程没有独立 `desktop.act.start` StreamEvent。停手势先熄再 `cancelInFlight` 再 abort **该** runId；未知 runId 才退回活泵 / 全部 ActiveRun。
 - **隐患**：执行器协议没有 cancel RPC。硬取消 = 拒绝在途 Promise + `child.kill`（与超时同一条路）。OS 已落下的 click 无法撤回；该 run 已 abort，不再继续 act。helper 未 dispose 时 `onExit` 仍可能重启一次。kill 后 stdin 可能 EPIPE，必须在 helper stdin 上吞掉，否则会打翻 main。Esc 用 `globalShortcut`，三端均可；注册失败则只靠顶栏「停止」。设置预览走同一套铬，约 2.4s 自熄，不是成功 toast。
-- **CU-P1-B kai 挂点（list / bias 薄）**：Composer 铬已插入 `@桌面` / `@应用` 并读出偏置；**本刀不改** Permission Dock，也不把提及写成会话表 / `desktop_act:*` / 持久簿。Agent 循环尚未按 bias 重排工具或改 system prompt——用户句里的 `@桌面` 是模型可见信号；首次 act 仍走现有闸。`agent.run` 没有 desktopBias 字段；FE `readDesktopMentionBias` 是挂点。win32 / linux `list_apps` 仍多半只有 `name`（回落规范化名）；darwin 已带 `bundleId`。helper 失败时提及只留宿主 `@桌面`，禁止补假应用。
+- **CU-P1-B kai 挂点（list / bias 薄）**：`agent.run.desktopBias` 已接线。Execute 重排已注册的 `desktop_*` + 一行 Prefer；Explore 仍经 `shouldRegisterDesktopControlTools` / `isReadOnlyAgentMode` **不**注册，bias 不能开门。提及 ≠ 放行，不写会话表 / `desktop_act:*` / 持久簿。pid / 空 / 脏键 `sanitizeDesktopMentionBias` 后 `stable=false`，`upsertDesktopAlwaysAllowEntry` 仍拒写。win32 / linux `list_apps` 仍多半只有 `name`（回落规范化名，**不**编造 bundleId）；darwin 已带 `bundleId`。helper 失败时名单空，只留宿主 `@桌面`。
 - **隐患**：把 `@电脑` 预填或芯片写回去会和产品锁打架。正确做法：token 固定 `@桌面`，旧 `@电脑` / `@Desktop` 只当别名解析。

@@ -19,6 +19,7 @@ import { guardComposerSend } from "./send-composer-guard"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
+import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
@@ -163,12 +164,14 @@ async function startComposerRun(
       attachments: assetIds
     })
   }
+  const desktopBias = await desktopBiasForRun(content)
   return getIde().agent.run({
     ...codingAgentRunInput(store),
     messages: outgoingMessages,
     attachments: assetIds,
     executePlan: executePlan || undefined,
-    commandId: crypto.randomUUID()
+    commandId: crypto.randomUUID(),
+    ...(desktopBias ? { desktopBias } : {})
   })
 }
 

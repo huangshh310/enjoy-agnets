@@ -2,7 +2,10 @@
  * 续跑未完成 Todo：不往对话里插新的用户气泡，也不落库用户句。
  */
 import { TODO_CONTINUE_PROMPT } from "@enjoy-agents/ipc-contract"
-import { dropTrailingContinueTurns } from "../components/ai-chat/composer/todo-continue-message"
+import {
+  dropTrailingContinueTurns,
+  isTodoContinueUserMessage
+} from "../components/ai-chat/composer/todo-continue-message"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore, type ChatStore, type ThreadMessage } from "../stores/chat-store"
 import { abortOrphanedRun, claimComposerRun } from "./composer-run-control"
@@ -11,6 +14,7 @@ import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { prefixHostModeForSend } from "./runtime-interact/composer-draft"
+import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 
 export async function continueTodoTurn(): Promise<void> {
   const store = useChatStore.getState()
@@ -46,13 +50,18 @@ async function startContinueRun(
     })),
     { role: "user" as const, content: prefixHostModeForSend(TODO_CONTINUE_PROMPT) }
   ]
+  const lastUser = [...trimmed]
+    .reverse()
+    .find((message) => message.role === "user" && !isTodoContinueUserMessage(message.content))
+  const desktopBias = lastUser ? await desktopBiasForRun(lastUser.content) : undefined
   try {
     const result = (await getIde().agent.run({
       ...codingAgentRunInput(store),
       messages: history,
       attachments: [],
       persistUser: false,
-      commandId: crypto.randomUUID()
+      commandId: crypto.randomUUID(),
+      ...(desktopBias ? { desktopBias } : {})
     })) as { runId: string }
     if (!claimComposerRun(sessionId, result.runId)) abortOrphanedRun(result.runId)
   } catch (error) {

@@ -5,13 +5,19 @@ import { useEffect, useState } from "react"
 import type { DesktopMentionApp } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useComputerUseEnabled } from "@renderer/hooks/use-computer-use-enabled"
+import {
+  mentionAppsFromListResult,
+  peekDesktopMentionApps,
+  rememberDesktopMentionApps
+} from "./mention-apps-from-list.ts"
 
 export function useDesktopMentionApps(): DesktopMentionApp[] {
   const enabled = useComputerUseEnabled()
-  const [apps, setApps] = useState<DesktopMentionApp[]>([])
+  const [apps, setApps] = useState<DesktopMentionApp[]>([...peekDesktopMentionApps()])
 
   useEffect(() => {
     if (!enabled || !hasIde()) {
+      rememberDesktopMentionApps([])
       setApps([])
       return
     }
@@ -19,10 +25,15 @@ export function useDesktopMentionApps(): DesktopMentionApp[] {
     void getIde()
       .builtinTools.desktopListApps()
       .then((result) => {
-        if (!cancelled) setApps(Array.isArray(result?.apps) ? result.apps : [])
+        const next = mentionAppsFromListResult(result)
+        if (cancelled) return
+        rememberDesktopMentionApps(next)
+        setApps(next)
       })
       .catch(() => {
-        if (!cancelled) setApps([])
+        if (cancelled) return
+        rememberDesktopMentionApps([])
+        setApps([])
       })
     return () => {
       cancelled = true
