@@ -1,7 +1,7 @@
 /**
  * 子 Agent 写盘等待主循环同一条 decideApproval，不另开审批通道。
  */
-export type ApprovalUserDecision = "allow" | "deny" | "allow_session"
+export type ApprovalUserDecision = "allow" | "deny" | "allow_session" | "allow_always"
 
 export type ApprovalGate = {
   wait: (approvalId: string) => Promise<ApprovalUserDecision>

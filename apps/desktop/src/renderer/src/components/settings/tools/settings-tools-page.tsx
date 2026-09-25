@@ -23,7 +23,8 @@ const DEFAULT_STATE: BuiltinToolsState = {
     accessibilityGranted: false,
     screenCaptureGranted: false,
     screenVisuals: true,
-    anyDesktopSession: false
+    anyDesktopSession: false,
+    alwaysAllowApps: []
   }
 }
 
@@ -99,6 +100,19 @@ export function SettingsToolsPage() {
     }
   }
 
+  const handleRevokeAlwaysAllow = async (appKey: string) => {
+    if (!hasIde() || !appKey.trim()) return
+    try {
+      const next = await getIde().builtinTools.revokeAlwaysAllow({
+        appKey,
+        sessionId: sessionId ?? undefined
+      })
+      setState(next)
+    } catch (err) {
+      console.error("Failed to revoke always-allow app", err)
+    }
+  }
+
   const handleOpenPermission = async (permission: "accessibility" | "screenCapture") => {
     if (!hasIde()) return
     try {
@@ -132,6 +146,7 @@ export function SettingsToolsPage() {
         onToggleComputerUse={(val) => handleToggle("computerUse", val)}
         onToggleScreenVisuals={(val) => handleToggle("screenVisuals", val)}
         onToggleAnyDesktop={(val) => handleToggle("anyDesktopSession", val)}
+        onRevokeAlwaysAllow={(appKey) => void handleRevokeAlwaysAllow(appKey)}
         onOpenPermission={handleOpenPermission}
       />
     </div>

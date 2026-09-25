@@ -25,6 +25,8 @@ export type ApprovalDecide = {
   onApprove: () => void
   onDeny: () => void
   onAllowSession: () => void
+  /** 桌面卡第四钮：始终允许此应用 → allow_always。非桌面卡可省略。 */
+  onAllowAlways?: () => void
 }
 
 /** 底栏按钮：二次确认可覆盖 deny/allow testid。 */

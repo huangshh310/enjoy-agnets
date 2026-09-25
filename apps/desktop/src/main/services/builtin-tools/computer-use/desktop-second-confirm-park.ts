@@ -5,7 +5,7 @@
 import { DESKTOP_ACT_SECOND_CONFIRM, desktopActAppKey } from "@enjoy-agents/agent-core/computer-use"
 import { attachDesktopApprovalThumbs, mergeSecondConfirmApprovalArgs } from "./desktop-second-confirm.ts"
 
-export type SecondConfirmDecision = "allow" | "deny" | "allow_session"
+export type SecondConfirmDecision = "allow" | "deny" | "allow_session" | "allow_always"
 
 type SecondConfirmWaiter = (args: Record<string, unknown>) => Promise<SecondConfirmDecision>
 

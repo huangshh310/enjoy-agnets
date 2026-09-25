@@ -1,7 +1,8 @@
 /**
- * 审批底栏按钮：拒绝 / 本会话允许 / 主操作。
+ * 审批底栏按钮：拒绝 / 本会话允许 / 始终允许此应用 / 主操作。
+ * 会话钮 testid 是 approval-session；始终允许是 approval-always-app。禁止再用 approval-always。
  */
-import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
+import { RiCheckLine, RiCloseLine, RiShieldCheckLine, RiShieldKeyholeLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
@@ -12,7 +13,9 @@ type ApprovalActionsProps = ApprovalActionIds & {
   approveLabel: string
   denyLabel: string
   alwaysLabel?: string
+  alwaysAppLabel?: string
   showAlways: boolean
+  showAlwaysApp?: boolean
   approveDisabled?: boolean
   approveTitle?: string
   decide: ApprovalDecide
@@ -23,7 +26,9 @@ export function ApprovalActions({
   approveLabel,
   denyLabel,
   alwaysLabel,
+  alwaysAppLabel,
   showAlways,
+  showAlwaysApp = false,
   approveDisabled,
   approveTitle,
   denyTestId = "approval-deny",
@@ -49,13 +54,26 @@ export function ApprovalActions({
         <Button
           size="sm"
           variant="outline"
-          data-testid="approval-always"
+          data-testid="approval-session"
           onClick={decide.onAllowSession}
           title={t("chat.alwaysAllowHint")}
           className="h-8 text-caption-1-medium"
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
           {alwaysLabel ?? t("chat.alwaysAllow")}
+        </Button>
+      ) : null}
+      {showAlwaysApp ? (
+        <Button
+          size="sm"
+          variant="outline"
+          data-testid="approval-always-app"
+          onClick={() => decide.onAllowAlways?.()}
+          title={t("chat.desktopAllowAlwaysHint")}
+          className="h-8 border-accent-500/40 bg-accent-500/5 text-caption-1-medium hover:bg-accent-500/10"
+        >
+          <RiShieldKeyholeLine className="size-3.5 text-accent-500" />
+          {alwaysAppLabel ?? t("chat.desktopAllowAlways")}
         </Button>
       ) : null}
       <Button

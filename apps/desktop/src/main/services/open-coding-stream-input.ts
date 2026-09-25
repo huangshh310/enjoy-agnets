@@ -50,7 +50,10 @@ export type OpenCodingStreamInput = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined
 }
 
-/** 审批只读会话表 + 本轮 run 副本。禁止从 builtin_tools 偏好读 anyDesktop。 */
+/**
+ * 审批只读会话表 + 本轮 run 副本。禁止从 builtin_tools 偏好读 anyDesktop。
+ * kai：再把 prefs.desktopAlwaysAllowAppKeys 的 appKey 灌进闸，查 persistentAlwaysAllowsDesktopAct。
+ */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
   const sessionApprovedTools = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
   return {

@@ -26,19 +26,21 @@ export function ApprovalCard({
   pending,
   onApprove,
   onDeny,
-  onAllowSession
+  onAllowSession,
+  onAllowAlways
 }: {
   pending: StreamEvent & { type: "approval.required" }
   onApprove: (answers?: AskUserAnswers) => void
   onDeny: () => void
   onAllowSession: () => void
+  onAllowAlways?: () => void
 }) {
   const t = useT()
   const workspaceName = useChatStore((state) => state.workspaceName)
   const workspaceRoot = useWorkspaceRootPath()
   const args = asRecord(pending.args)
   const variant = classifyApproval(pending.name, args)
-  const decide: ApprovalDecide = { onApprove: () => onApprove(), onDeny, onAllowSession }
+  const decide: ApprovalDecide = { onApprove: () => onApprove(), onDeny, onAllowSession, onAllowAlways }
   const untitled = t("chat.untitledWorkspace")
   if (pending.name === ASK_USER_QUESTIONS_TOOL) {
     return <AskUserCard args={args} onComplete={(answers) => onApprove(answers)} onSkipAll={onDeny} />
@@ -154,6 +156,7 @@ function QuestionsApproval({
       decide={{
         onDeny: decide.onDeny,
         onAllowSession: decide.onAllowSession,
+        onAllowAlways: decide.onAllowAlways,
         onApprove: () => {
           if (picked === OPTION_SESSION) decide.onAllowSession()
           else decide.onApprove()

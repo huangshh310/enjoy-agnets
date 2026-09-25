@@ -10,13 +10,13 @@ export const ApprovalDecision = z
     runId: z.string(),
     toolCallId: z.string(),
     approvalId: z.string(),
-    decision: z.enum(["allow", "deny", "allow_session"]),
+    decision: z.enum(["allow", "deny", "allow_session", "allow_always"]),
     reason: z.string().optional(),
     answers: AskUserAnswersSchema.optional()
   })
   .strict()
   .superRefine((value, ctx) => {
-    if (value.decision === "allow_session" && value.answers) {
+    if ((value.decision === "allow_session" || value.decision === "allow_always") && value.answers) {
       ctx.addIssue({
         code: "custom",
         message: "ask_user_questions cannot use allow_session"

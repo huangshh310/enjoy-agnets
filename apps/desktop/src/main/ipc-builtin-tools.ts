@@ -8,6 +8,7 @@ import fs from "node:fs"
 import {
   GetBuiltinToolsStateInput,
   OpenSystemPermissionInput,
+  RevokeDesktopAlwaysAllowInput,
   ToggleBuiltinToolInput
 } from "@enjoy-agents/ipc-contract"
 import {
@@ -17,6 +18,7 @@ import {
   regenerateBridgePairingCode,
   setBuiltinToolEnabled
 } from "./services/builtin-tools/builtin-tools-state"
+import { revokeDesktopAlwaysAllowApp } from "./services/builtin-tools/computer-use/desktop-always-allow-ledger"
 import {
   stopBridgeServer,
   syncBridgeServerWithState
@@ -33,7 +35,8 @@ export const BUILTIN_TOOLS_CHANNELS = [
   "builtinTools.previewOverlay",
   "builtinTools.desktopDoctor",
   "builtinTools.desktopView",
-  "builtinTools.desktopCapturePreview"
+  "builtinTools.desktopCapturePreview",
+  "builtinTools.revokeAlwaysAllow"
 ] as const
 
 export function registerBuiltinToolsIpc() {
@@ -102,5 +105,11 @@ export function registerBuiltinToolsIpc() {
   ipcMain.handle("builtinTools.desktopCapturePreview", async () => {
     const { captureDesktopPreview } = await import("./services/builtin-tools/computer-use/desktop-tools")
     return captureDesktopPreview()
+  })
+
+  ipcMain.handle("builtinTools.revokeAlwaysAllow", async (_event, raw: unknown) => {
+    const input = RevokeDesktopAlwaysAllowInput.parse(raw)
+    revokeDesktopAlwaysAllowApp(input.appKey)
+    return getBuiltinToolsState(input.sessionId)
   })
 }

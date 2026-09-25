@@ -20,8 +20,10 @@ export function DesktopApprovalCard({ args, decide }: { args: unknown; decide: A
       title={t("chat.desktopApprovalTitle", { app: view.appName })}
       approveLabel={t("chat.desktopAllowOnce")}
       alwaysLabel={t("chat.desktopAllowSession")}
+      alwaysAppLabel={t("chat.desktopAllowAlways")}
       denyLabel={t("chat.deny")}
       showAlways={view.canSessionAllow}
+      showAlwaysApp={view.canAlwaysAllow}
       decide={decide}
     >
       <div className="flex flex-wrap items-start gap-3" data-testid="desktop-approval-card">
@@ -47,6 +49,7 @@ function SecondConfirmChrome({ args, decide }: { args: unknown; decide: Approval
       approveLabel={t("chat.desktopSecondConfirmAllow")}
       denyLabel={t("chat.desktopSecondConfirmCancel")}
       showAlways={false}
+      showAlwaysApp={false}
       approveDisabled={!confirm.canConfirm}
       approveTitle={confirm.canConfirm ? undefined : t("chat.desktopSecondConfirmBlind")}
       denyTestId="approval-second-confirm-cancel"

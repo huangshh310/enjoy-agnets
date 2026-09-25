@@ -25,6 +25,7 @@ export function PermissionDock() {
         onApprove={(answers) => void decidePendingApproval("allow", answers)}
         onDeny={() => void decidePendingApproval("deny")}
         onAllowSession={() => void decidePendingApproval("allow_session")}
+        onAllowAlways={() => void decidePendingApproval("allow_always")}
       />
     </div>
   )

@@ -3,6 +3,7 @@
  */
 import { z } from "zod"
 import { AccountProfilePref } from "./account-profile"
+import { DesktopAlwaysAllowAppKeys } from "./desktop-always-allow"
 import { AgentToolPublic } from "./agent-tools"
 import { AgentMode } from "./chat"
 import { PermissionMode as PermissionModeSchema } from "./permission-mode"
@@ -156,7 +157,12 @@ export const SettingsSnapshot = z.object({
     /** 引擎级可选显示名，按 runtimeId。空/缺键回退品牌名，不进云身份。 */
     agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).default({}),
     /** 启动引导完成时间。空表示还没走完；已有工作区的旧安装会补上，避免再弹出。 */
-    setupGuideCompletedAt: z.string().nullable().optional()
+    setupGuideCompletedAt: z.string().nullable().optional(),
+    /**
+     * CU-P1-A 本机持久簿。settings.get 可读；禁止经 setPreferences 改写。
+     * 条目是 { appKey, displayName }，kai 闸只认 appKey。
+     */
+    desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys
   }),
   harness: z
     .object({
