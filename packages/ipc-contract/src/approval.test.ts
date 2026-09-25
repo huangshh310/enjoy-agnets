@@ -49,6 +49,28 @@ test("ApprovalDecision 允许无 answers 的 allow_session（写盘工具）", (
   )
 })
 
+test("ApprovalDecision 允许 allow_always，拒绝搭配 answers", () => {
+  assert.equal(
+    ApprovalDecision.safeParse({
+      runId: "r1",
+      toolCallId: "t1",
+      approvalId: "a1",
+      decision: "allow_always"
+    }).success,
+    true
+  )
+  assert.equal(
+    ApprovalDecision.safeParse({
+      runId: "r1",
+      toolCallId: "t1",
+      approvalId: "a1",
+      decision: "allow_always",
+      answers: { "q-1": { questionId: "q-1", selectedIds: ["o-1"] } }
+    }).success,
+    false
+  )
+})
+
 test("ApprovalDecision 允许 ask_user_questions 的 answers", () => {
   assert.equal(
     ApprovalDecision.safeParse({

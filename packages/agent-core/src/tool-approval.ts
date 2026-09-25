@@ -79,6 +79,8 @@ export function resolveToolApproval(
     if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
     if (toolName === "desktop_act" && desktopActAlwaysAsks(input)) return "user-approval"
     if (toolName === "desktop_act") {
+      // kai：会话表之后查 prefs.desktopAlwaysAllowAppKeys（persistentAlwaysAllowsDesktopAct）。
+      // 本刀只写簿 / 投影列表；act 路径跳过 Dock 仍由闸接线。硬每次问必须先于簿。
       return sessionAllowsDesktopAct(input, policy) ? "approved" : "user-approval"
     }
     return sessionAllows(toolName, policy.sessionApprovedTools) ? "approved" : "user-approval"

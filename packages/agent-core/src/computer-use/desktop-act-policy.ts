@@ -5,7 +5,8 @@ import {
   DESKTOP_ACT_ANY_SESSION_KEY,
   desktopActAppKey,
   desktopActIsSensitive,
-  desktopActSessionKey
+  desktopActSessionKey,
+  isStableDesktopAppKey
 } from "./desktop-act-app-key.ts"
 import { desktopActNeedsSecondConfirm } from "./desktop-second-confirm-gate.ts"
 
@@ -16,6 +17,7 @@ export {
   desktopActAppKeyInfo,
   desktopActIsSensitive,
   desktopActSessionKey,
+  isStableDesktopAppKey,
   normalizeDesktopAppName,
   withAnyDesktopSessionKey,
   type DesktopActAppKeySource
@@ -58,6 +60,17 @@ export function sessionAllowsDesktopAct(
   if (policy.anyDesktopSession || session?.has(DESKTOP_ACT_ANY_SESSION_KEY)) return true
   const key = desktopActSessionKey(desktopActAppKey(args))
   return Boolean(key && session?.has(key))
+}
+
+/**
+ * CU-P1-A 持久簿命中。硬每次问仍优先。kai 闸：硬每次问 → 会话表 → 本函数。
+ * keys 是 appKey 数组，禁止把 desktop_act:* 当命中。
+ */
+export function persistentAlwaysAllowsDesktopAct(args: unknown, keys: readonly string[]): boolean {
+  if (desktopActAlwaysAsks(args)) return false
+  const appKey = desktopActAppKey(args)
+  if (!isStableDesktopAppKey(appKey)) return false
+  return keys.includes(appKey)
 }
 
 /** 审批卡上的一句话：应用 · 「控件」 · 动作 · appKey。 */

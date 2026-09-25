@@ -6,6 +6,7 @@ import type { ModelMessage } from "ai"
 import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
 import { desktopActFailureCode, desktopActMayReportSuccess } from "@enjoy-agents/agent-core/computer-use"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
+import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { USER_ABORT_MESSAGE } from "./claim-run-end"
 import { persistActiveRun } from "./flush-agent-run"
@@ -56,7 +57,10 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     throw new Error("No matching tool approval is waiting.")
   }
   // 提问工具没有 Always allow：必须在 HMAC 落库前拒，否则库内行写死、卡片还停着。
-  if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision === "allow_session") {
+  if (
+    pending.name === ASK_USER_QUESTIONS_TOOL &&
+    (decision.decision === "allow_session" || decision.decision === "allow_always")
+  ) {
     throw new Error("ask_user_questions cannot be allow_session")
   }
   assertApprovalHmac({
@@ -147,10 +151,14 @@ function applyApprovalDecision(
     sessionApprovedBashPrefixes: Set<string>
     input: { sessionId: string }
   },
-  decision: "allow" | "deny" | "allow_session",
+  decision: "allow" | "deny" | "allow_session" | "allow_always",
   pending: { name: string; args?: unknown }
 ) {
   if (pending.name === ASK_USER_QUESTIONS_TOOL) return
+  if (decision === "allow_always") {
+    applyDesktopAlwaysAllow(pending)
+    return
+  }
   if (decision !== "allow_session") return
   if (pending.name === "bash" || pending.name === "code_mode") {
     const prefix = bashAllowPrefix(commandFromArgs(pending.args))
@@ -165,6 +173,13 @@ function applyApprovalDecision(
     return
   }
   run.sessionApprovedTools.add(pending.name)
+}
+
+/** allow_always 只写持久簿，不写会话表。二次确认禁止落簿。 */
+function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {
+  if (pending.name !== "desktop_act") return
+  if (isSecondConfirmPending(pending.args)) return
+  rememberDesktopAlwaysAllowFromArgs(pending.args)
 }
 
 function commandFromArgs(args: unknown): string {

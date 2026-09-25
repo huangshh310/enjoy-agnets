@@ -54,6 +54,18 @@ export function desktopActAppKey(args: unknown): string {
   return desktopActAppKeyInfo(args).appKey
 }
 
+/**
+ * 稳 appKey：bundleId / exe / AUMID / 规范化名。pid、裸 desktop_act、desktop_act:* 都不是键。
+ * 无稳键时隐藏「始终允许此应用」，也不写入持久簿。
+ */
+export function isStableDesktopAppKey(appKey: string): boolean {
+  const key = appKey.trim()
+  if (!key) return false
+  if (key === "*" || key === "desktop_act" || key.startsWith(DESKTOP_ACT_SESSION_PREFIX)) return false
+  if (/^\d+$/.test(key)) return false
+  return true
+}
+
 /** 写入 sessionApprovedTools 的键。没有 appKey 时返回 null，禁止退回裸 desktop_act。 */
 export function desktopActSessionKey(appKey: string): string | null {
   const key = appKey.trim()

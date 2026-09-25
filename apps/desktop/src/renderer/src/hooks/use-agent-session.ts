@@ -137,7 +137,7 @@ export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersiste
 export type { WorkspaceRow } from "./workspace-row"
 
 export async function decidePendingApproval(
-  decision: "allow" | "deny" | "allow_session",
+  decision: "allow" | "deny" | "allow_session" | "allow_always",
   answers?: AskUserAnswers
 ) {
   const store = useChatStore.getState()

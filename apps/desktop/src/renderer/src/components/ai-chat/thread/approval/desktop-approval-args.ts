@@ -6,7 +6,8 @@ import {
   desktopActAppKey,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
-  desktopActIsSensitive
+  desktopActIsSensitive,
+  isStableDesktopAppKey
 } from "@enjoy-agents/agent-core/computer-use"
 
 export type DesktopApprovalView = {
@@ -23,6 +24,8 @@ export type DesktopApprovalView = {
   thumbsReady: boolean
   bypassesSessionAllow: boolean
   canSessionAllow: boolean
+  /** 有稳 appKey 才露出始终允许。坐标/前台仍可写簿，闸不会因此跳过硬每次问。 */
+  canAlwaysAllow: boolean
 }
 
 export function desktopApprovalView(args: unknown): DesktopApprovalView {
@@ -50,7 +53,8 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     thumbsReady: !secondConfirm || Boolean(thumbnail && previousThumbnail),
     bypassesSessionAllow,
     canSessionAllow:
-      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !desktopActIsSensitive(row)
+      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !desktopActIsSensitive(row),
+    canAlwaysAllow: isStableDesktopAppKey(appKey)
   }
 }
 

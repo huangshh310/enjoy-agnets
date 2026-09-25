@@ -4,6 +4,7 @@
  * 2. 桌面：三端 Computer Use 与系统权限状态。
  */
 import { z } from "zod"
+import { DesktopAlwaysAllowAppKeys } from "./desktop-always-allow.ts"
 
 export const BuiltinBrowserState = z.object({
   enabled: z.boolean().default(false)
@@ -26,6 +27,8 @@ export const DesktopComputerUseState = z.object({
   screenVisuals: z.boolean().default(true),
   /** 当前会话表是否有 desktop_act:*。默认关，不落盘。 */
   anyDesktopSession: z.boolean().default(false),
+  /** CU-P1-A 持久簿投影。只读列表；写入走 allow_always / revokeAlwaysAllow。 */
+  alwaysAllowApps: DesktopAlwaysAllowAppKeys,
   session: z.enum(["macos", "windows", "x11", "wayland", "none"]).optional()
 })
 export type DesktopComputerUseState = z.infer<typeof DesktopComputerUseState>

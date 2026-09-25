@@ -35,7 +35,8 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   agentCompleteSound: true,
   approvalRequiredAlert: true,
   agentDisplayNames: {},
-  setupGuideCompletedAt: null
+  setupGuideCompletedAt: null,
+  desktopAlwaysAllowAppKeys: []
 }
 
 /** 读取持久化偏好；损坏或缺失时回落到安全默认（写盘/命令都要确认）。 */

@@ -9,6 +9,8 @@ import {
   desktopActBypassesSessionAllow,
   desktopActSessionKey,
   desktopActSkipsApproval,
+  isStableDesktopAppKey,
+  persistentAlwaysAllowsDesktopAct,
   sessionAllowsDesktopAct,
   withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
@@ -103,4 +105,16 @@ test("appKey 优先 bundleId，会话键禁止裸 desktop_act", () => {
   assert.equal(injected.has(DESKTOP_ACT_ANY_SESSION_KEY), true)
   assert.equal(injected.has("desktop_act"), false)
   assert.equal(withAnyDesktopSessionKey(injected, false).has(DESKTOP_ACT_ANY_SESSION_KEY), false)
+})
+
+test("持久簿命中绑稳 appKey，硬每次问与非法键都不放行", () => {
+  const keys = ["com.apple.calculator"]
+  const click = { action: "click", elementId: "e1", appKey: "com.apple.calculator" }
+  assert.equal(isStableDesktopAppKey("com.apple.calculator"), true)
+  assert.equal(isStableDesktopAppKey("18422"), false)
+  assert.equal(isStableDesktopAppKey("desktop_act:*"), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct(click, keys), true)
+  assert.equal(persistentAlwaysAllowsDesktopAct({ ...click, appKey: "com.apple.Notes" }, keys), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct({ ...click, x: 1, y: 2, elementId: undefined }, keys), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct({ ...click, allowForeground: true }, keys), false)
 })

@@ -1,11 +1,12 @@
 /**
- * 审批底栏按钮：拒绝 / 本会话允许 / 主操作。
+ * 审批底栏：command/plan 仍是拒绝 / 本会话 / 主操作。
+ * 桌面首次允许改四选一，底栏只留「继续」。会话钮 testid 是 approval-session。禁止再用 approval-always。
  */
 import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
-import type { ApprovalActionIds, ApprovalDecide, ApprovalVariant } from "./approval.types"
+import type { ApprovalActionIds, ApprovalDecide, ApprovalFooter, ApprovalVariant } from "./approval.types"
 
 type ApprovalActionsProps = ApprovalActionIds & {
   variant: ApprovalVariant
@@ -13,6 +14,7 @@ type ApprovalActionsProps = ApprovalActionIds & {
   denyLabel: string
   alwaysLabel?: string
   showAlways: boolean
+  footer?: ApprovalFooter
   approveDisabled?: boolean
   approveTitle?: string
   decide: ApprovalDecide
@@ -24,6 +26,7 @@ export function ApprovalActions({
   denyLabel,
   alwaysLabel,
   showAlways,
+  footer = "buttons",
   approveDisabled,
   approveTitle,
   denyTestId = "approval-deny",
@@ -31,6 +34,24 @@ export function ApprovalActions({
   decide
 }: ApprovalActionsProps) {
   const t = useT()
+  if (footer === "continue") {
+    return (
+      <div className="ml-auto flex items-center justify-end">
+        <Button
+          size="sm"
+          variant="default"
+          data-testid="approval-continue"
+          disabled={approveDisabled}
+          title={approveTitle}
+          onClick={decide.onApprove}
+          className="h-8 text-caption-1-semibold"
+        >
+          <RiCheckLine className="size-3.5" />
+          {approveLabel}
+        </Button>
+      </div>
+    )
+  }
   const denyTone =
     variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
@@ -49,7 +70,7 @@ export function ApprovalActions({
         <Button
           size="sm"
           variant="outline"
-          data-testid="approval-always"
+          data-testid="approval-session"
           onClick={decide.onAllowSession}
           title={t("chat.alwaysAllowHint")}
           className="h-8 text-caption-1-medium"

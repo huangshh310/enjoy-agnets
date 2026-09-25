@@ -27,6 +27,7 @@ test("BuiltinToolsState validates default structure", () => {
   assert.equal(parsed.browserBridge.connectedBrowser, null)
   assert.equal(parsed.computerUse.screenVisuals, true)
   assert.equal(parsed.computerUse.anyDesktopSession, false)
+  assert.deepEqual(parsed.computerUse.alwaysAllowApps, [])
 })
 
 test("GetBuiltinToolsStateInput 可带 sessionId", () => {

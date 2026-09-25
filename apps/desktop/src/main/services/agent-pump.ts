@@ -22,6 +22,7 @@ import { openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
 import { shouldContinueOpenTodos, TODO_CONTINUE_PROMPT } from "./todo-continue"
 import { readResponseMessages } from "./agent-run-helpers"
+import { toSubagentUserDecision } from "./approval-gate"
 import { readPreferences } from "./preferences"
 import { ensureAssistantReasoning } from "./to-model-messages"
 import { deleteActiveRun, emitEvent, getActiveRun, type ActiveRun } from "./agent-run-state"
@@ -182,7 +183,7 @@ async function openRunStream(
         name: toolName,
         args: parked
       })
-      return run.approvalGate.wait(approvalId)
+      return toSubagentUserDecision(await run.approvalGate.wait(approvalId))
     },
     onSubagentToolEvent: (event) => emitSubagentTool(run, runId, event)
   })

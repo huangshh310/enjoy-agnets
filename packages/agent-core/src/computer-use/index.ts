@@ -32,7 +32,9 @@ export {
   desktopActIsSensitive,
   desktopActSessionKey,
   desktopActSkipsApproval,
+  isStableDesktopAppKey,
   normalizeDesktopAppName,
+  persistentAlwaysAllowsDesktopAct,
   sessionAllowsDesktopAct,
   withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"

@@ -12,6 +12,7 @@ import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "../database"
 import { syncActiveRunsDesktopAllow } from "../conversation-desktop-allow-sync"
 import { persistableBuiltinTools, type PersistedBuiltinTools } from "./persist-builtin-tools"
+import { listDesktopAlwaysAllowApps } from "./computer-use/desktop-always-allow-ledger"
 import { displaySession } from "./computer-use/display-session"
 import { resolveExecutorCommand, spawnTargetPath } from "./computer-use/executor-command"
 import {
@@ -142,6 +143,7 @@ export function getBuiltinToolsState(sessionId?: string): BuiltinToolsState {
       screenCaptureGranted: permissions.screenCapture,
       screenVisuals: saved.screenVisualsEnabled ?? true,
       anyDesktopSession: sessionId ? conversationHasAnyDesktop(sessionId) : false,
+      alwaysAllowApps: listDesktopAlwaysAllowApps(),
       session: displaySession()
     }
   }
