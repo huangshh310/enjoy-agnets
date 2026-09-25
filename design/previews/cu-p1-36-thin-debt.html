@@ -1,0 +1,273 @@
+<!-- 【视觉真源】CU-P1-36 §3.6 薄债 · Luna · jojo 短锁 · base 5febb14 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CU-P1-36 · §3.6 薄债 · 坐标关 + 诚实 action_failed · Enjoy Agents</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Inter", "ui-sans-serif", "system-ui", "PingFang SC", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .fake-screen {
+    background:
+      linear-gradient(180deg, #dbeafe 0%, #eff6ff 42%, #f8fafc 42%),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(43,109,229,.05) 24px, rgba(43,109,229,.05) 25px);
+  }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+  .ghost-thumb {
+    background: repeating-linear-gradient(-45deg, #f3f4f6, #f3f4f6 8px, #e5e7eb 8px, #e5e7eb 16px);
+  }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">CU-P1-36 · §3.6 薄债 · 基 tip <code class="rounded bg-paper px-1.5 py-0.5 text-[15px] font-semibold">5febb14</code> · I3 仍停</h1>
+    <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
+      一句话：裸坐标默认关；<code>action_failed</code> 不附「像成功下一步」的假观察。
+      Luna：「坐标是逃逸舱，失败别塞下一张假地图」。
+      短锁 <a class="font-medium text-accent underline-offset-2 hover:underline" href="../references/cu-p1-36-thin-debt.md">cu-p1-36-thin-debt.md</a>
+      · 对照 §3.6 · <strong class="text-ink">不宣称应用已 1:1</strong>。
+    </p>
+  </header>
+
+  <main class="mx-auto max-w-[1100px] space-y-10 px-6 py-8">
+
+    <aside class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-mute">jojo 正式验收 · S1–S4</p>
+      <ol class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li><strong>S1</strong> 默认设置下发起裸坐标 click → 拒或必 Dock；高级坐标未开时不可静默执行</li>
+        <li><strong>S2</strong> 打开高级坐标后 → 每次 Dock；仍不吃 Always-allow / 会话白名单</li>
+        <li><strong>S3</strong> <code>action_failed</code> 返回体无新观察号、无误导「下一步」缩略；客户端与模型不可据该失败包继续 act</li>
+        <li><strong>S4</strong> 失败后再点 → 必须新一次 snapshot/screenshot 观察链路</li>
+      </ol>
+      <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 坐标通道默认关</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 失败不附新观察</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 像素主路径</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 失败当成功</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 假观察绕二次确认</span>
+        <span class="rounded-full bg-paper px-2.5 py-1 font-medium text-mute ring-1 ring-line">Don’t · I3 / P1-D / P1-C</span>
+      </div>
+    </aside>
+
+    <!-- A 设置 -->
+    <section id="state-a" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">A · 设置 · 高级坐标（默认 OFF）</h2>
+          <p class="mt-1 text-[13px] text-mute">嵌在现有「电脑操控」卡内，与 Always-allow 同轨。出厂关；文案钉逃逸舱，不是主路径。</p>
+        </div>
+        <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] font-medium text-mute ring-1 ring-line">default OFF</span>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5 border-b border-line bg-paper px-4 py-2 text-[11px]">
+          <span class="rounded-lg px-2.5 py-1 text-mute">本机 CLI</span>
+          <span class="rounded-lg bg-card px-2.5 py-1 font-medium shadow-sm ring-1 ring-line">智能体工具</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">默认项</span>
+        </div>
+        <div class="space-y-4 px-4 py-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-[13px] font-semibold">电脑操控</h3>
+                <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok ring-1 ring-ok/20">就绪</span>
+              </div>
+              <p class="mt-0.5 text-[11px] text-mute">本机执行器看屏、点选、打字。不进云端虚拟桌面。</p>
+            </div>
+            <button type="button" class="relative h-6 w-10 shrink-0 rounded-full bg-accent" aria-pressed="true" aria-label="电脑操控">
+              <span class="absolute right-0.5 top-0.5 size-5 rounded-full bg-white shadow"></span>
+            </button>
+          </div>
+
+          <div class="rounded-xl border border-line bg-paper/60 px-3 py-2.5">
+            <h4 class="text-[12px] font-semibold">始终允许的应用</h4>
+            <p class="mt-0.5 text-[11px] text-mute">本机贴纸 · 坐标/前台/敏感仍每次问。本刀不改名单。</p>
+          </div>
+
+          <div class="rounded-xl border border-line bg-card px-3 py-3" data-testid="advanced-coords-row">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h4 class="text-[13px] font-semibold">高级坐标</h4>
+                  <span class="rounded-full bg-warnSoft px-2 py-0.5 text-[10px] font-semibold text-warn">逃逸舱</span>
+                </div>
+                <p class="mt-1 text-[12px] leading-relaxed text-mute">
+                  逃逸舱 · 优先 AX 控件编号（<code class="text-ink">elementId</code>）· 打开后每次仍需审批 · 不吃本会话/始终允许。
+                </p>
+                <p class="mt-1 text-[11px] text-mute">主路径仍是 <code class="text-ink">snapshot</code> → <code class="text-ink">act(elementId)</code>。</p>
+              </div>
+              <button type="button" id="coords-toggle" class="relative h-6 w-10 shrink-0 rounded-full bg-line" aria-pressed="false" data-testid="advanced-coords-toggle" aria-label="高级坐标">
+                <span class="absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B Dock -->
+    <section id="state-b" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">B · 开关 ON · 裸坐标进 Dock（每次）</h2>
+          <p class="mt-1 text-[13px] text-mute">高级坐标打开后，裸 <code>(x, y)</code> click 才可提交。每一次仍进 Permission Dock；<code>bypassesSessionAllow</code> 同坐标族。</p>
+        </div>
+        <span class="rounded-full bg-warnSoft px-2.5 py-1 text-[11px] font-medium text-warn">always ask</span>
+      </div>
+
+      <div class="mx-auto max-w-[440px] rounded-2xl border border-line bg-paper p-3 shadow-dock">
+        <p class="mb-2 px-1 text-[10px] font-medium uppercase tracking-wide text-mute">需要你确认 · Permission Dock</p>
+        <div class="rounded-xl border border-line bg-card p-4">
+          <div class="flex items-start gap-3">
+            <div class="fake-screen relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-line">
+              <span class="absolute left-[42%] top-[38%] size-2 rounded-full bg-accent ring-2 ring-white"></span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[14px] font-semibold leading-snug">允许用裸坐标点击？</p>
+              <p class="mt-0.5 font-mono text-[12px] text-mute">click · x 412 · y 218</p>
+              <p class="mt-1.5 inline-flex rounded-full bg-warnSoft px-2 py-0.5 text-[10px] font-semibold text-warn">本会话 / Always-allow 不适用</p>
+            </div>
+          </div>
+
+          <div class="mt-3 space-y-1.5 text-[12px]">
+            <p class="rounded-lg border border-accent bg-accent/5 px-2.5 py-1.5 ring-1 ring-accent/30">允许一次</p>
+            <p class="strike rounded-lg border border-dashed border-line px-2.5 py-1.5">本会话允许此应用</p>
+            <p class="strike rounded-lg border border-dashed border-line px-2.5 py-1.5">始终允许此应用</p>
+            <p class="rounded-lg border border-line px-2.5 py-1.5">拒绝</p>
+          </div>
+          <div class="mt-4 flex justify-end">
+            <button type="button" class="rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white shadow-sm">继续</button>
+          </div>
+        </div>
+      </div>
+      <p class="mx-auto mt-3 max-w-[440px] text-center text-[11px] text-mute">坐标每次问 · 不吃会话表 · 不吃持久簿。</p>
+    </section>
+
+    <!-- C fail card -->
+    <section id="state-c" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">C · <code>action_failed</code> 诚实失败卡（正例）</h2>
+          <p class="mt-1 text-[13px] text-mute">失败只说失败。无新观察号、无「继续点这里」缩略、无假成功下一步。</p>
+        </div>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 text-[11px] font-medium text-danger">action_failed</span>
+      </div>
+
+      <div class="mx-auto max-w-[520px] rounded-2xl border border-danger/25 bg-card p-4 shadow-sm">
+        <div class="flex items-start gap-2.5">
+          <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dangerSoft text-[13px] font-bold text-danger">×</span>
+          <div class="min-w-0 flex-1">
+            <p class="text-[14px] font-semibold">点击未落到目标</p>
+            <p class="mt-0.5 font-mono text-[11px] text-danger">code · action_failed</p>
+            <p class="mt-2 text-[12px] leading-relaxed text-mute">执行器回报失败。这次结果<strong class="text-ink">不含</strong>新观察，也不能据此继续 act。</p>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+          <div class="rounded-lg border border-dashed border-line bg-paper px-2.5 py-2">
+            <p class="font-semibold text-mute">新观察号</p>
+            <p class="mt-1 text-ok">不附 · 无 obs id</p>
+          </div>
+          <div class="ghost-thumb rounded-lg border border-dashed border-line px-2.5 py-2">
+            <p class="strike font-semibold">继续点这里</p>
+            <p class="mt-1 text-mute">不附下一步缩略</p>
+          </div>
+        </div>
+        <p class="mt-3 rounded-lg bg-paper px-3 py-2 text-[12px] leading-relaxed text-mute">
+          需要新观察请再拍 <code class="text-ink">desktop_snapshot</code> / <code class="text-ink">desktop_screenshot</code>。禁止失败结果里夹带可继续点的观察。
+        </p>
+      </div>
+    </section>
+
+    <!-- D 并排 -->
+    <section id="state-d" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">D · 并排对比</h2>
+      <p class="mt-1 text-[13px] text-mute">左是日常门锁；右是保险箱钥匙。不要把右栏画成主路径。</p>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <article class="rounded-xl border border-accent/30 bg-accent/5 p-4">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">主路径 · AX</p>
+          <p class="mt-2 text-[14px] font-semibold">obs · element</p>
+          <p class="mt-1 font-mono text-[12px] text-mute">obs a1f3… · elementId #3 · 「=」</p>
+          <p class="mt-3 text-[12px] leading-relaxed text-mute"><code class="text-ink">snapshot</code> 签发编号 → <code class="text-ink">act(elementId)</code>。日常点选用控件编号，不写像素。</p>
+        </article>
+        <article class="rounded-xl border border-dashed border-line bg-paper p-4 opacity-80">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">逃逸舱 · 坐标</p>
+          <p class="mt-2 text-[14px] font-semibold text-mute">coords · 次级</p>
+          <p class="mt-1 font-mono text-[12px] text-mute">click · x 412 · y 218</p>
+          <p class="mt-3 text-[12px] leading-relaxed text-mute">仅高级坐标 ON 后可提交；每次 Dock；不吃会话表 / Always-allow。</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- E 反例 -->
+    <section id="state-e" class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-6">
+      <h2 class="text-base font-semibold text-danger">E · 反例划掉</h2>
+      <ul class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li class="strike">默认开坐标 / 像素主路径</li>
+        <li class="strike"><code>action_failed</code> 附带新观察号或「继续点这里」缩略</li>
+        <li class="strike">失败当成功 / 空成功条</li>
+        <li class="strike">坐标吃会话或 Always-allow</li>
+        <li class="strike">用假观察绕过二次确认（§3.2a / CU-P1-R）</li>
+        <li class="strike">本刀开 I3 / P1-D / P1-C / 第二套遥控器 / VNC / Registry</li>
+      </ul>
+    </section>
+
+    <!-- handoff -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">给 kai / mike 的交接</h2>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">kai · 载荷 / 闸</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>prefs：高级坐标默认 <strong class="text-ink">OFF</strong>；未开时裸坐标 click 拒或不得静默执行</li>
+            <li><code>action_failed</code> 不得签发 / 附带下一张观察（无新 obs id、无误导缩略）</li>
+            <li>坐标族 <code>bypassesSessionAllow</code>：开了仍每次问，不吃会话表 / Always-allow</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">mike · 设置铬 + 失败卡</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>「电脑操控」卡嵌「高级坐标」开关，出厂 OFF；说明写逃逸舱 · 优先控件编号</li>
+            <li>失败卡只说失败 + 重拍 <code>desktop_snapshot</code> / <code>desktop_screenshot</code></li>
+            <li>坐标 Dock 隐藏或划掉本会话 / 始终允许；勿画第二套遥控器</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] text-mute">C 端门（luna）：默认关 · 开后每次问 · 失败无假地图 · 需新观察必须重拍。不宣称应用已 1:1。</p>
+    </section>
+  </main>
+
+  <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
+    CU-P1-36 visual source · Luna · tip <code>5febb14</code> · SoT <code>design/references/cu-p1-36-thin-debt.md</code> · <code>design/previews/cu-p1-36-thin-debt.html</code> · I3 仍停
+  </footer>
+</body>
+</html>
