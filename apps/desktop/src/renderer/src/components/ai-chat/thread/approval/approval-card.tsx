@@ -2,12 +2,13 @@
  * 审批入口：按 command / plan / questions 换表面，抄 AICSS 交互、皮走 BoardUI。
  * 禁止 plan 倒计时自动放行。
  */
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ASK_USER_QUESTIONS_TOOL, type AskUserAnswers, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { formatToolName } from "../tool-summary"
 import { useT } from "@renderer/i18n"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { ApprovalChrome } from "./approval-chrome"
 import { ApprovalCommandBody } from "./approval-command-body"
 import { ApprovalPlanBody } from "./approval-plan-body"
@@ -53,7 +54,14 @@ export function ApprovalCard({
   if (variant === "plan") {
     return <PlanApproval name={pending.name} args={args} workspaceName={workspaceName || untitled} decide={decide} />
   }
-  return <QuestionsApproval toolLabel={formatToolName(pending.name)} payload={payloadPreview(args)} decide={decide} />
+  return (
+    <QuestionsApproval
+      toolLabel={formatToolName(pending.name)}
+      payload={payloadPreview(args)}
+      thumbnailPath={typeof args.thumbnailPath === "string" ? args.thumbnailPath : ""}
+      decide={decide}
+    />
+  )
 }
 
 function CommandApproval({ cwd, command, decide }: { cwd: string; command: string; decide: ApprovalDecide }) {
@@ -112,15 +120,25 @@ function PlanApproval({
 function QuestionsApproval({
   toolLabel,
   payload,
+  thumbnailPath,
   decide
 }: {
   toolLabel: string
   payload: string
+  thumbnailPath?: string
   decide: ApprovalDecide
 }) {
   const t = useT()
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [thumb, setThumb] = useState("")
   const picked = answers.allow
+  useEffect(() => {
+    if (!thumbnailPath || !hasIde()) return
+    void getIde()
+      .builtinTools.desktopView()
+      .then((view: { thumbnailDataUrl?: string } | null) => setThumb(view?.thumbnailDataUrl ?? ""))
+      .catch(() => setThumb(""))
+  }, [thumbnailPath])
   return (
     <ApprovalChrome
       variant="questions"
@@ -151,6 +169,7 @@ function QuestionsApproval({
         ]}
         answers={answers}
         payload={payload}
+        thumbnail={thumb}
         onSelect={(id, optionId) => setAnswers((prev) => ({ ...prev, [id]: optionId }))}
       />
     </ApprovalChrome>

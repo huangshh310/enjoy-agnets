@@ -8,18 +8,21 @@ export function ApprovalQuestionsBody({
   questions,
   answers,
   onSelect,
-  payload
+  payload,
+  thumbnail
 }: {
   questions: ApprovalQuestion[]
   answers: Record<string, string>
   onSelect: (questionId: string, optionId: string) => void
   payload?: string
+  thumbnail?: string
 }) {
   const question = questions[0]
   if (!question) return null
   return (
     <div className="flex flex-col gap-2">
       <p className="pl-0.5 text-caption-1-medium text-text-primary">{question.prompt}</p>
+      {thumbnail ? <img src={thumbnail} alt="" className="max-h-28 w-full rounded-lg object-contain" /> : null}
       {payload ? (
         <pre className="m-0 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-background-secondary-default px-3 py-2 font-mono text-caption-2-regular text-text-secondary">
           {payload}

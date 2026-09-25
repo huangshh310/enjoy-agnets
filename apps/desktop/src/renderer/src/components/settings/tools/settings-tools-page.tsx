@@ -1,6 +1,6 @@
 /**
  * 设置中心 - 内置工具页面：
- * 聚合内置浏览器、Browser Bridge（Chrome 扩展）与 macOS 后台 Computer Use 桌面能力。
+ * 聚合内置浏览器、Browser Bridge（Chrome 扩展）与桌面 Computer Use。
  */
 import { useCallback, useEffect, useState } from "react"
 import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"

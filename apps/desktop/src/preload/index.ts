@@ -309,7 +309,9 @@ const ide = {
     revealExtensionDir: () =>
       ipcRenderer.invoke("builtinTools.revealExtensionDir") as Promise<{ ok: boolean }>,
     previewOverlay: () =>
-      ipcRenderer.invoke("builtinTools.previewOverlay") as Promise<{ ok: true }>
+      ipcRenderer.invoke("builtinTools.previewOverlay") as Promise<{ ok: true }>,
+    desktopDoctor: () => ipcRenderer.invoke("builtinTools.desktopDoctor"),
+    desktopView: () => ipcRenderer.invoke("builtinTools.desktopView")
   },
   app: {
     updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),

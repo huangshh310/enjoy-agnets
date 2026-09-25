@@ -68,10 +68,24 @@ test("Ask 模式下写盘、命令、提交一律拒绝", () => {
     type: "denied",
     reason: "ask mode is read-only."
   })
-  assert.deepEqual(resolveToolApproval("desktop_background_click", "plan", EDITS), {
+  assert.deepEqual(resolveToolApproval("desktop_act", "plan", EDITS), {
     type: "denied",
     reason: "plan mode is read-only."
   })
+})
+
+test("desktop_act：wait 不审，会话放行盖不住坐标和前台", () => {
+  const allowed = { ...EDITS, sessionApprovedTools: new Set(["desktop_act"]) }
+  assert.equal(resolveToolApproval("desktop_act", "agent", EDITS, { action: "wait", observationId: "obs" }), "not-applicable")
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", allowed, { action: "click", elementId: "e1" }),
+    "approved"
+  )
+  assert.equal(resolveToolApproval("desktop_act", "agent", allowed, { action: "click", x: 1 }), "user-approval")
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", allowed, { action: "click", elementId: "e1", allowForeground: true }),
+    "user-approval"
+  )
 })
 
 test("三项全开：突变工具全部 user-approval", () => {

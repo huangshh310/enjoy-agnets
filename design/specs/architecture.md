@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-09-21
+> 进程边界与安全基线。最后更新：2026-09-25
 
 ## 当前真相
 
@@ -19,6 +19,7 @@ Main Process（可信）
   terminal          node-pty + renderer xterm
   db                手写 SQL 迁移 + repository 函数 + node:sqlite（未引入 Drizzle ORM）
   secrets           safeStorage / OS keychain（含 SSH 登录密码，按 hostId）
+  computer-use      附属进程：darwin AX / win32 UIA / linux AT-SPI（换行 JSON）
         │  HTTPS（BYOK 直连）
         ▼
 模型供应商
@@ -73,6 +74,7 @@ Main Process（可信）
 - 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`
 - preload：`apps/desktop/src/preload/index.ts`
 - 跨平台 PATH / spawn：`packages/agent-harness/src/agent-tools/detect/probe.ts`（`pathDirs` / `lookupOnPath` / `spawnPathCommand`）
+- Computer Use 执行器：`apps/desktop/native/computer-use/`，main 经 `executor-command.ts` 查找；打包进 `resources/bin/<platform>-<arch>/`。执行器可点其它应用，必须由用户打开设置开关并审批 `desktop_act`。辅助功能授给执行器二进制，不是 renderer。
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
 
 ## 已知坑

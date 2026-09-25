@@ -7,11 +7,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { getBuiltinToolsState } from "./builtin-tools-state"
-import {
-  executeNonDisruptiveClick,
-  executeNonDisruptiveKeyPress,
-  getBackgroundCapturableWindows
-} from "./desktop-computer-use"
+import { desktopControlTools } from "./computer-use/desktop-tools"
 
 import { sendBridgeCommand } from "./bridge-server"
 
@@ -83,40 +79,7 @@ export function createBuiltinAgentTools(mode: AgentMode = "agent") {
     })
   }
 
-  // 2. 桌面后台 Computer Use 工具
-  if (state.computerUse.enabled) {
-    tools.desktop_list_windows = tool({
-      description: "List capturable application windows for non-disruptive background control.",
-      parameters: z.object({}),
-      execute: async () => {
-        const windows = await getBackgroundCapturableWindows()
-        return { windows }
-      }
-    })
-
-    tools.desktop_background_click = tool({
-      description: "Click a button or coordinate inside an application in the background without moving the physical mouse.",
-      parameters: z.object({
-        pid: z.number().optional().describe("Target application process ID"),
-        x: z.number().optional().describe("X coordinate inside the window"),
-        y: z.number().optional().describe("Y coordinate inside the window")
-      }),
-      execute: async (target) => {
-        return executeNonDisruptiveClick(target)
-      }
-    })
-
-    tools.desktop_background_type = tool({
-      description: "Type text into a target application in the background without stealing current window focus.",
-      parameters: z.object({
-        pid: z.number().optional().describe("Target application process ID"),
-        text: z.string().describe("Text to type into the target window")
-      }),
-      execute: async (target) => {
-        return executeNonDisruptiveKeyPress(target)
-      }
-    })
-  }
+  if (state.computerUse.enabled) Object.assign(tools, desktopControlTools())
 
   return tools
 }

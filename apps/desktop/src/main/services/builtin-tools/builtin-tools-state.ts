@@ -1,11 +1,12 @@
 /**
  * 内置工具 (Builtin Tools) 状态与持久化：
- * 包含内置浏览器、Browser Bridge 与 macOS 后台 Computer Use 状态与系统权限管理。
+ * 包含内置浏览器、Browser Bridge 与桌面 Computer Use 状态与系统权限管理。
  */
 import { systemPreferences, shell } from "electron"
 import { randomBytes } from "node:crypto"
 import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "../database"
+import { displaySession } from "./computer-use/display-session"
 
 const SETTING_KEY_BUILTIN_TOOLS = "builtin_tools_state"
 
@@ -106,7 +107,8 @@ export function getBuiltinToolsState(): BuiltinToolsState {
       enabled: saved.computerUseEnabled ?? false,
       accessibilityGranted: permissions.accessibility,
       screenCaptureGranted: permissions.screenCapture,
-      screenVisuals: saved.screenVisualsEnabled ?? true
+      screenVisuals: saved.screenVisualsEnabled ?? true,
+      session: displaySession()
     }
   }
 }

@@ -168,7 +168,7 @@ function ChatThreadBody(props: {
         }}
       />
       {props.empty ? (
-        <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <EmptySessionStart
             workspaceName={props.workspaceName}
             sessionTitle={props.sessionTitle}

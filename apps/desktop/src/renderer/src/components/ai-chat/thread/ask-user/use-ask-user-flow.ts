@@ -40,7 +40,7 @@ export function useAskUserFlow(args: unknown, onComplete: (answers: AskUserAnswe
     otherRef,
     canContinue: question ? canSubmitQuestion(question, current) : false,
     applyToggle,
-    ...questionActions({ question, current, answers, last, setAnswers, setStep, goNext })
+    ...questionActions({ question, current, answers, answersRef, last, setAnswers, setStep, goNext })
   }
 }
 
@@ -62,12 +62,13 @@ function questionActions(input: {
   question: AskUserQuestion | undefined
   current: AskUserAnswers[string] | undefined
   answers: AskUserAnswers
+  answersRef: { current: AskUserAnswers }
   last: number
   setAnswers: (value: AskUserAnswers | ((prev: AskUserAnswers) => AskUserAnswers)) => void
   setStep: (value: number | ((n: number) => number)) => void
   goNext: (snapshot: AskUserAnswers) => void
 }) {
-  const { question, current, answers, last, setAnswers, setStep, goNext } = input
+  const { question, current, answers, answersRef, last, setAnswers, setStep, goNext } = input
   return {
     setOtherText: (text: string) => {
       if (!question) return
@@ -83,7 +84,7 @@ function questionActions(input: {
       setAnswers(next)
       goNext(next)
     },
-    continueFlow: () => goNext(answers),
+    continueFlow: () => goNext(answersRef.current),
     back: () => setStep((n) => Math.max(0, n - 1)),
     next: () => setStep((n) => Math.min(last, n + 1))
   }

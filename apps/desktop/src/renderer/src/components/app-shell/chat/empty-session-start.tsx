@@ -25,8 +25,8 @@ export function EmptySessionStart(props: {
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="flex min-h-full w-full flex-col items-center justify-center px-6 py-8">
         <div className="flex w-full max-w-3xl flex-col items-center gap-6 animate-in fade-in-50 duration-300">
           <AiChatEmptyState
             workspaceName={props.workspaceName}

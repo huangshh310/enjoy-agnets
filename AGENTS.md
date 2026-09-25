@@ -28,6 +28,7 @@
 | 进程边界、包职责、SQLite、安全 | [`design/specs/architecture.md`](./design/specs/architecture.md) |
 | 布局、token、组件从哪装 | [`design/specs/ui.md`](./design/specs/ui.md) → 细节 [`design/references/visual-system.md`](./design/references/visual-system.md) |
 | Agent 循环、工具、审批、流式 | [`design/specs/agent-runtime.md`](./design/specs/agent-runtime.md) |
+| Enjoy Local 操作本机其它应用 | [`design/specs/computer-use.md`](./design/specs/computer-use.md) |
 | 本机 CLI（Cursor / Claude / Codex / Antigravity ACP） | [`design/specs/agent-cli.md`](./design/specs/agent-cli.md) |
 | ACP 协议、思考档、Registry 国产 CLI | [`design/specs/agent-cli.md`](./design/specs/agent-cli.md) → 协议摘录 [`design/references/acp-protocol.md`](./design/references/acp-protocol.md) |
 | 供应商、协议、Key、探测 | [`design/specs/providers.md`](./design/specs/providers.md) |

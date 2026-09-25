@@ -6,17 +6,14 @@ import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
+import { desktopActBypassesSessionAllow, desktopActSkipsApproval } from "./computer-use/desktop-act-policy.ts"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
 export const BASH_TOOLS = ["bash", "code_mode"] as const
 export const COMMIT_TOOLS = ["git_commit", "git_push", "git_branch"] as const
 /** 桌面 / 浏览器控制：默认停车，不跟 Edits 写盘档走。 */
-export const HOST_CONTROL_TOOLS = [
-  "browser_navigate",
-  "desktop_background_click",
-  "desktop_background_type"
-] as const
+export const HOST_CONTROL_TOOLS = ["browser_navigate", "desktop_act"] as const
 export const MUTATING_TOOLS = [
   ...WRITE_TOOLS,
   ...BASH_TOOLS,
@@ -77,6 +74,8 @@ export function resolveToolApproval(
     return { type: "denied", reason: `${mode} mode is read-only.` }
   }
   if (HOST_CONTROL_SET.has(toolName)) {
+    if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
+    if (toolName === "desktop_act" && desktopActBypassesSessionAllow(input)) return "user-approval"
     return sessionAllows(toolName, policy.sessionApprovedTools) ? "approved" : "user-approval"
   }
   // 会话放行不能越过高风险命令；Allow for session 之后 rm -rf 仍要停。

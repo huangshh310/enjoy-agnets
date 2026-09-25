@@ -6,6 +6,7 @@ import {
   RiDashboardLine,
   RiFileList2Line,
   RiGlobalLine,
+  RiComputerLine,
   RiTerminalBoxLine
 } from "@remixicon/react"
 import type { RightPaneKind } from "./right-pane.types"
@@ -27,6 +28,7 @@ const PANE_TOOL_DEFS = [
   { kind: "review" as const, shortcut: `${MOD}+Shift+G`, icon: RiCodeBlock, label: "chat.paneReview", hint: "chat.paneReviewHint" },
   { kind: "terminal" as const, shortcut: `${MOD}+\``, icon: RiTerminalBoxLine, label: "chat.paneTerminal", hint: "chat.paneTerminalHint" },
   { kind: "browser" as const, shortcut: `${MOD}+T`, icon: RiGlobalLine, label: "chat.paneBrowser", hint: "chat.paneBrowserHint" },
+  { kind: "desktop" as const, shortcut: `${MOD}+Shift+D`, icon: RiComputerLine, label: "chat.paneDesktop", hint: "chat.paneDesktopHint" },
   { kind: "files" as const, shortcut: `${MOD}+P`, icon: RiFileList2Line, label: "chat.paneFiles", hint: "chat.paneFilesHint" }
 ]
 

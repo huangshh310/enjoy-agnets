@@ -120,6 +120,14 @@ export default defineConfig({
           find: "@enjoy-agents/agent-core/drainable-queue",
           replacement: resolve(repoRoot, "packages/agent-core/src/drainable-queue.ts")
         },
+        {
+          find: "@enjoy-agents/agent-core/computer-use",
+          replacement: resolve(repoRoot, "packages/agent-core/src/computer-use/index.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-harness/probe",
+          replacement: resolve(repoRoot, "packages/agent-harness/src/agent-tools/detect/probe.ts")
+        },
         ...MAIN_WORKSPACE_PACKAGES.map(workspacePackageAlias)
       ]
     }
@@ -202,6 +210,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/agent-core/drainable-queue",
           replacement: resolve(repoRoot, "packages/agent-core/src/drainable-queue.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/computer-use",
+          replacement: resolve(repoRoot, "packages/agent-core/src/computer-use/index.ts")
         },
         {
           find: "@enjoy-agents/providers/presets",

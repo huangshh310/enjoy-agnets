@@ -33,6 +33,7 @@ export function AskUserNav({
         ) : null}
         {showContinue ? (
           <Button
+            type="button"
             size="sm"
             variant="default"
             disabled={continueDisabled}

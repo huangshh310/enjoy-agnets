@@ -6,6 +6,7 @@
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
 import { mcpAgentToolName } from "@enjoy-agents/mcp"
 import { SET_SESSION_HEARTBEAT_TOOL } from "@enjoy-agents/agent-core"
+import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
@@ -55,8 +56,14 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     await host.gitPush()
     return
   }
+  if (pending.name === ASK_USER_QUESTIONS_TOOL) return
   if (pending.name === SET_SESSION_HEARTBEAT_TOOL) {
     await resumeSessionHeartbeat(run.input.sessionId, args)
+    return
+  }
+  if (pending.name === "desktop_act") {
+    const { resumeDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
+    await resumeDesktopAct(args)
     return
   }
   const mcp = findVisibleMcpTool(pending.name)

@@ -39,6 +39,13 @@ test("commandCwdOf 优先 args.cwd", () => {
   assert.equal(commandCwdOf({}, "/Users/me/proj"), "/Users/me/proj")
 })
 
+test("桌面动作的审批卡是一句话", () => {
+  assert.equal(
+    payloadPreview({ observationId: "obs_1", appName: "计算器", elementName: "等于", action: "click" }),
+    "计算器 · 等于 · click"
+  )
+})
+
 test("payloadPreview 空对象不输出，超长截断", () => {
   assert.equal(payloadPreview({}), "")
   assert.equal(payloadPreview({ url: "https://x" }), '{\n  "url": "https://x"\n}')

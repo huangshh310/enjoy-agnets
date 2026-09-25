@@ -3,6 +3,7 @@
  * 写盘优先 plan；ACP 弱名 / argv 走 command；禁止「有 args.command 就当 shell」。
  * 不引用 @renderer 别名，方便 node:test 直接跑。
  */
+import { desktopActApprovalText } from "@enjoy-agents/agent-core/computer-use"
 import type { ApprovalVariant } from "./approval.types"
 
 const COMMAND_TOOLS = new Set([
@@ -57,8 +58,11 @@ export function filePathOfArgs(args: Record<string, unknown>): string {
   return readArg(args, "path") || readArg(args, "file_path")
 }
 
-/** questions 表面用的参数预览；空对象不展示。 */
+/** questions 表面用的参数预览；桌面动作用一句话，空对象不展示。 */
 export function payloadPreview(args: Record<string, unknown>, limit = PAYLOAD_LIMIT): string {
+  if (typeof args.observationId === "string" && typeof args.action === "string") {
+    return desktopActApprovalText(args).slice(0, limit)
+  }
   if (Object.keys(args).length === 0) return ""
   const text = JSON.stringify(args, null, 2)
   return text.length <= limit ? text : `${text.slice(0, limit)}\n…`

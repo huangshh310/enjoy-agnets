@@ -134,3 +134,11 @@ export {
 export { videoTimeoutMs, VIDEO_POLL_TIMEOUT_MS } from "./media/generate-video";
 export { embedTexts, embedQuery } from "./knowledge/embed-many";
 export * from "./compaction";
+export {
+  createObservationLedger,
+  desktopActApprovalText,
+  desktopActBypassesSessionAllow,
+  desktopActSkipsApproval,
+  OBSERVATION_TTL_MS
+} from "./computer-use";
+export type { Observation, ObservationElement, TakeObservation } from "./computer-use";

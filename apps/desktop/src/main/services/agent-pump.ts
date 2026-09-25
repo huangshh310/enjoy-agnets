@@ -165,8 +165,9 @@ async function openRunStream(
         return "deny"
       }
       const approvalId = createId("apr")
-      run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args })
-      rememberApproval({ runId, approvalId, toolCallId, name: toolName, args })
+      const parked = await parkToolArgs(toolName, asParkArgs(args))
+      run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args: parked })
+      rememberApproval({ runId, approvalId, toolCallId, name: toolName, args: parked })
       checkpointActiveRun(run)
       emitEvent(run.window, {
         type: "approval.required",
@@ -174,7 +175,7 @@ async function openRunStream(
         approvalId,
         toolCallId,
         name: toolName,
-        args
+        args: parked
       })
       return run.approvalGate.wait(approvalId)
     },
@@ -266,6 +267,16 @@ function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type:
 function persistRunningBoundary(run: ActiveRun, runId: string): void {
   persistRunningCheckpoint(run, runId)
   checkpointActiveRun(run)
+}
+
+function asParkArgs(args: unknown): Record<string, unknown> {
+  return args && typeof args === "object" ? (args as Record<string, unknown>) : {}
+}
+
+async function parkToolArgs(toolName: string, args: Record<string, unknown>) {
+  if (toolName !== "desktop_act") return args
+  const { enrichDesktopActArgs } = await import("./builtin-tools/computer-use/desktop-tools")
+  return enrichDesktopActArgs(args)
 }
 
 function parkForApproval(run: ActiveRun): boolean {

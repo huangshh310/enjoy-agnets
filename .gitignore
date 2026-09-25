@@ -15,5 +15,8 @@ apps/desktop/out
 apps/desktop/dist
 apps/desktop/test-results
 apps/desktop/playwright-report
+apps/desktop/native/computer-use/darwin/.build/
+apps/desktop/native/computer-use/pack/
+**/__pycache__/
 test-results
 playwright-report

@@ -4,6 +4,7 @@
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import type { RightPaneTab } from "./right-pane.types"
 import { BrowserView } from "./views/browser-view"
+import { DesktopObservationView } from "./views/desktop-view"
 import { ContextInspectorView } from "./views/context-inspector-view"
 import { FilesView } from "./views/files-view"
 import { ReviewView } from "./views/review-view"
@@ -46,5 +47,6 @@ export function RightPaneTabBody({
   if (tab.kind === "context") return <ContextInspectorView workspaceId={workspaceId} />
   if (tab.kind === "terminal") return <TerminalView workspaceId={workspaceId} />
   if (tab.kind === "browser") return <BrowserView url={tab.url} />
+  if (tab.kind === "desktop") return <DesktopObservationView />
   return <FilesView workspaceId={workspaceId} />
 }

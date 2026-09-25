@@ -21,6 +21,7 @@ import {
   type ChangedFileRow,
   type ModelOption
 } from "../stores/chat-store"
+import { resolveApprovalRunId } from "./resolve-approval-run"
 import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
@@ -141,15 +142,22 @@ export async function decidePendingApproval(
 ) {
   const store = useChatStore.getState()
   const pending = store.pendingApproval
-  const runId = store.runId
-  if (!pending || !runId) return
-  await getIde().agent.decide({
-    runId,
-    toolCallId: pending.toolCallId,
-    approvalId: pending.approvalId,
-    decision,
-    ...(answers ? { answers } : {})
-  })
+  const runId = resolveApprovalRunId(pending, store.runId)
+  if (!pending || !runId) {
+    store.setError("没有等待中的审批。")
+    return
+  }
+  try {
+    await getIde().agent.decide({
+      runId,
+      toolCallId: pending.toolCallId,
+      approvalId: pending.approvalId,
+      decision,
+      ...(answers ? { answers } : {})
+    })
+  } catch (error) {
+    store.setError(error instanceof Error ? error.message : String(error))
+  }
 }
 
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {

@@ -23,6 +23,7 @@ function kindFromEvent(event: KeyboardEvent): RightPaneKind | null {
   if (!mod) return null
   if (event.shiftKey && event.key.toLowerCase() === "c") return "context"
   if (event.shiftKey && event.key.toLowerCase() === "g") return "review"
+  if (event.shiftKey && event.key.toLowerCase() === "d") return "desktop"
   if (!event.shiftKey && event.key === "`") return "terminal"
   if (!event.shiftKey && event.key.toLowerCase() === "t") return "browser"
   if (!event.shiftKey && event.key.toLowerCase() === "p") return "files"

@@ -78,7 +78,13 @@ function applyApprovalEvent(
       assistant.tools ??= []
       foldToolEvent(assistant.tools, event)
     }
-    return { messages: next, thinkingLabel: "Waiting for approval", pendingApproval: event }
+    return {
+      messages: next,
+      thinkingLabel: "Waiting for approval",
+      pendingApproval: event,
+      runId: event.runId,
+      running: true
+    }
   }
   if (event.type !== "approval.resolved") return null
   const next = cloneMessagesForLiveEvent(messages)

@@ -69,6 +69,7 @@ test("Composer 必须从空态拆出；开始面居中，pills 在 Composer 下"
     "utf8"
   )
   const start = readFileSync(join(ROOT, "../../app-shell/chat/empty-session-start.tsx"), "utf8")
+  const stage = readFileSync(join(ROOT, "../../app-shell/chat/chat-stage.tsx"), "utf8")
   const emptyClasses = [...empty.matchAll(/className=\{?cx\(([^)]+)\)|className="([^"]+)"/g)]
     .map((match) => match[1] ?? match[2] ?? "")
     .join("\n")
@@ -86,7 +87,9 @@ test("Composer 必须从空态拆出；开始面居中，pills 在 Composer 下"
   assert.doesNotMatch(ready, /\bjustify-center\b|\bmin-h-\[/)
   assert.match(header, /emptyChangesChip/)
   assert.match(review, /messageCount === 0/)
-  assert.match(start, /min-h-0 flex-1 overflow-y-auto/)
+  assert.match(start, /h-full min-h-0 flex-1/)
+  assert.match(start, /min-h-full w-full flex-col items-center justify-center/)
+  assert.match(stage, /relative flex min-h-0 flex-1 flex-col overflow-hidden/)
   assert.match(start, /ChatComposerCluster/)
   assert.match(start, /EmptyStatePills/)
   assert.doesNotMatch(start, /<\/AiChatEmptyState>/)

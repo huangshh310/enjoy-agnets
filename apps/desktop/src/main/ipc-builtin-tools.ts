@@ -29,7 +29,9 @@ export const BUILTIN_TOOLS_CHANNELS = [
   "builtinTools.getDesktopPermissions",
   "builtinTools.openSystemPermission",
   "builtinTools.revealExtensionDir",
-  "builtinTools.previewOverlay"
+  "builtinTools.previewOverlay",
+  "builtinTools.desktopDoctor",
+  "builtinTools.desktopView"
 ] as const
 
 export function registerBuiltinToolsIpc() {
@@ -82,5 +84,15 @@ export function registerBuiltinToolsIpc() {
   ipcMain.handle("builtinTools.previewOverlay", async () => {
     previewScreenOverlay()
     return { ok: true as const }
+  })
+
+  ipcMain.handle("builtinTools.desktopDoctor", async () => {
+    const { runDesktopDoctor } = await import("./services/builtin-tools/computer-use/desktop-tools")
+    return runDesktopDoctor()
+  })
+
+  ipcMain.handle("builtinTools.desktopView", async () => {
+    const { readDesktopView } = await import("./services/builtin-tools/computer-use/desktop-tools")
+    return readDesktopView()
   })
 }
