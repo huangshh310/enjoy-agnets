@@ -1202,8 +1202,8 @@ export const zhSettings = {
     notGranted: "未授权",
     openSettings: "打开设置",
     screenVisualsTitle: "屏幕视觉反馈",
-    screenVisualsDesc: "在智能体操作桌面时，显示四周安全发光边框、顶部状态指示胶囊与点击波纹光圈。",
-    previewVisuals: "预览动效",
+    screenVisualsDesc: "执行态操控桌面时显示冷静蓝边与「正在操控」顶栏；一键或 Esc 可停止。无观察不装在控。",
+    previewVisuals: "预览铬",
     previewing: "演示中…"
   }
 }

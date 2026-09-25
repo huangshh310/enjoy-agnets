@@ -83,3 +83,26 @@ test("成功动作后签发新观察，并把账本里的控件名交给执行�
   assert.equal(typeof acted.observationId, "string")
   assert.notEqual(acted.observationId, snap.observationId)
 })
+
+test("deliverAct 无论成败都成对调用 onAct / onActEnd", async () => {
+  const marks: string[] = []
+  const session = createDesktopSession(
+    () =>
+      fakeHandle((method) => {
+        if (method === "snapshot") return { observation: sampleObservation() }
+        throw new ExecutorFailure("permission_denied", "AX")
+      }),
+    {
+      onAct: () => marks.push("begin"),
+      onActEnd: () => marks.push("end")
+    }
+  )
+  const snap = await session.snapshot(42)
+  const acted = await session.act({
+    observationId: String(snap.observationId),
+    action: "click",
+    elementId: "0.1"
+  })
+  assert.equal(acted.success, false)
+  assert.deepEqual(marks, ["begin", "end"])
+})

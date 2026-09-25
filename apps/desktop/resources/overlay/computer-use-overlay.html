@@ -3,14 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enjoy Agents - Computer Use Overlay</title>
+  <title>Enjoy Agents · Desktop overlay</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body, html {
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
@@ -18,245 +14,128 @@
       pointer-events: none;
       user-select: none;
       -webkit-user-select: none;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
     }
 
-    /* 1. 屏幕四周发光安全指示边框 */
-    .safety-border {
+    /* 冷静蓝边：对齐 cu-p0-c-overlay.html .cu-overlay，勿霓虹警报色 */
+    .cu-overlay-frame {
+      display: none;
       position: fixed;
-      inset: 4px;
-      border: 2.5px solid rgba(59, 130, 246, 0.75);
-      border-radius: 12px;
-      box-shadow: inset 0 0 28px rgba(59, 130, 246, 0.35), 0 0 20px rgba(59, 130, 246, 0.3);
-      opacity: 0;
-      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      inset: 0;
       pointer-events: none;
     }
-    .safety-border.active {
-      opacity: 1;
-      animation: border-breathe 2.2s infinite ease-in-out;
-    }
+    .cu-overlay-frame.is-on { display: block; }
 
-    @keyframes border-breathe {
-      0%, 100% {
-        box-shadow: inset 0 0 24px rgba(59, 130, 246, 0.3), 0 0 16px rgba(59, 130, 246, 0.25);
-        border-color: rgba(59, 130, 246, 0.65);
-      }
-      50% {
-        box-shadow: inset 0 0 38px rgba(59, 130, 246, 0.5), 0 0 26px rgba(59, 130, 246, 0.45);
-        border-color: rgba(96, 165, 250, 0.95);
-      }
-    }
-
-    /* 2. 顶部操作状态 HUD 胶囊 */
-    .hud-pill {
+    .cu-border {
       position: fixed;
-      top: 24px;
+      inset: 6px;
+      border: 2px solid rgba(43, 109, 229, 0.55);
+      border-radius: 12px;
+      animation: breathe 2.4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes breathe {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(43, 109, 229, 0.55), 0 0 0 6px rgba(43, 109, 229, 0.12); }
+      50% { box-shadow: 0 0 0 3px rgba(43, 109, 229, 0.75), 0 0 0 10px rgba(43, 109, 229, 0.08); }
+    }
+
+    .cu-hud {
+      position: fixed;
+      top: 16px;
       left: 50%;
-      transform: translateX(-50%) translateY(-30px);
-      opacity: 0;
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 9999px;
-      padding: 8px 18px;
+      transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 10px;
-      color: #f8fafc;
-      font-size: 13px;
-      font-weight: 500;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 18px rgba(59, 130, 246, 0.25);
-      pointer-events: none;
-      z-index: 9999;
-    }
-    .hud-pill.active {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .radar-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
-      animation: radar-pulse 1.5s infinite ease-out;
-      flex-shrink: 0;
+      justify-content: space-between;
+      gap: 16px;
+      min-width: 280px;
+      max-width: min(560px, calc(100vw - 48px));
+      padding: 6px 10px 6px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(228, 231, 235, 0.9);
+      background: rgba(238, 243, 252, 0.94);
+      color: #0f1419;
+      pointer-events: auto;
     }
 
-    @keyframes radar-pulse {
-      0% {
-        transform: scale(0.9);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-      }
-      70% {
-        transform: scale(1.1);
-        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
-      }
-      100% {
-        transform: scale(0.9);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-      }
-    }
-
-    .hud-title {
-      color: #60a5fa;
+    .cu-title {
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: -0.2px;
-    }
-    .hud-sep {
-      color: rgba(255, 255, 255, 0.2);
-    }
-    .hud-text {
-      color: #f1f5f9;
-      max-width: 320px;
+      color: #2b6de5;
+      letter-spacing: -0.1px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .hud-hint {
+
+    .cu-hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .cu-esc {
       font-size: 10px;
-      color: #94a3b8;
-      background: rgba(255, 255, 255, 0.08);
-      padding: 2px 7px;
-      border-radius: 9999px;
+      color: #5c6670;
+    }
+
+    .cu-stop {
+      border: 1px solid #e4e7eb;
+      border-radius: 6px;
+      background: #ffffff;
+      color: #0f1419;
+      font-size: 11px;
       font-weight: 500;
+      padding: 3px 10px;
+      cursor: pointer;
+      pointer-events: auto;
     }
-
-    /* 3. 屏幕点击波纹与瞄准光标 */
-    .click-beacon {
-      position: fixed;
-      width: 0;
-      height: 0;
-      pointer-events: none;
-      z-index: 9998;
-    }
-    .beacon-center {
-      position: absolute;
-      top: -4px;
-      left: -4px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #3b82f6;
-      box-shadow: 0 0 10px #3b82f6;
-    }
-    .beacon-ring {
-      position: absolute;
-      top: 0;
-      left: 0;
-      border-radius: 50%;
-      border: 2px solid rgba(96, 165, 250, 0.9);
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
-      transform: translate(-50%, -50%);
-      animation: ripple-expand 0.65s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
-    }
-    .beacon-ring-second {
-      animation-delay: 0.12s;
-      border-color: rgba(147, 197, 253, 0.75);
-    }
-
-    @keyframes ripple-expand {
-      0% {
-        width: 6px;
-        height: 6px;
-        opacity: 1;
-      }
-      100% {
-        width: 68px;
-        height: 68px;
-        opacity: 0;
-      }
-    }
+    .cu-stop:hover { background: #f7f8fa; }
   </style>
 </head>
 <body>
-  <!-- 发光安全边框 -->
-  <div id="safetyBorder" class="safety-border"></div>
-
-  <!-- 顶部状态胶囊 -->
-  <div id="hudPill" class="hud-pill">
-    <div class="radar-dot"></div>
-    <span class="hud-title">✦ Computer Use</span>
-    <span class="hud-sep">·</span>
-    <span id="hudText" class="hud-text">正在执行后台桌面操作...</span>
-    <span class="hud-hint">ESC 中断</span>
+  <div id="frame" class="cu-overlay-frame" data-testid="cu-overlay-frame">
+    <div class="cu-border" aria-hidden="true"></div>
+    <div id="hud" class="cu-hud">
+      <span id="title" class="cu-title">正在操控 · 桌面</span>
+      <div class="cu-hud-actions">
+        <span id="escHint" class="cu-esc">Esc 停一手势</span>
+        <button type="button" id="stop" class="cu-stop" data-testid="cu-overlay-stop">停止</button>
+      </div>
+    </div>
   </div>
-
   <script>
-    const border = document.getElementById("safetyBorder")
-    const hud = document.getElementById("hudPill")
-    const hudText = document.getElementById("hudText")
+    const frame = document.getElementById("frame")
+    const title = document.getElementById("title")
+    const stop = document.getElementById("stop")
+    const escHint = document.getElementById("escHint")
+    const hud = document.getElementById("hud")
 
-    let hideTimer = null
-
-    function triggerRipple(x, y) {
-      if (typeof x !== "number" || typeof y !== "number") return
-
-      const beacon = document.createElement("div")
-      beacon.className = "click-beacon"
-      beacon.style.left = x + "px"
-      beacon.style.top = y + "px"
-
-      const center = document.createElement("div")
-      center.className = "beacon-center"
-
-      const ring1 = document.createElement("div")
-      ring1.className = "beacon-ring"
-
-      const ring2 = document.createElement("div")
-      ring2.className = "beacon-ring beacon-ring-second"
-
-      beacon.appendChild(center)
-      beacon.appendChild(ring1)
-      beacon.appendChild(ring2)
-      document.body.appendChild(beacon)
-
-      setTimeout(() => {
-        beacon.remove()
-      }, 750)
+    function applyChrome(payload) {
+      const visible = Boolean(payload && payload.visible)
+      frame.classList.toggle("is-on", visible)
+      if (!visible) return
+      if (payload.title) title.textContent = payload.title
+      if (payload.stopLabel) stop.textContent = payload.stopLabel
+      if (payload.escHint) escHint.textContent = payload.escHint
+      if (payload.lang) document.documentElement.lang = payload.lang
     }
 
-    function showFeedback(data) {
-      // 1. 设置动作文案
-      let text = "正在后台执行桌面操作..."
-      if (data.action === "click") {
-        text = `点击坐标 (${data.x ?? 0}, ${data.y ?? 0})`
-        if (data.targetName) text += ` · ${data.targetName}`
-      } else if (data.action === "type") {
-        text = data.text ? `输入文本 "${data.text.slice(0, 16)}${data.text.length > 16 ? "..." : ""}"` : "正在输入文本..."
-      } else if (data.action === "observe") {
-        text = "正在感知捕获屏幕窗口..."
-      } else if (data.text) {
-        text = data.text
-      }
-      hudText.textContent = text
+    window.addEventListener("overlay-chrome", (event) => {
+      applyChrome(event.detail || {})
+    })
 
-      // 2. 激活边框与顶部胶囊
-      border.classList.add("active")
-      hud.classList.add("active")
+    stop.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("overlay-stop"))
+    })
 
-      // 3. 若有点击坐标，触发波纹光圈
-      if (data.action === "click" && typeof data.x === "number" && typeof data.y === "number") {
-        triggerRipple(data.x, data.y)
-      }
-
-      // 4. 重置自动淡出计时器（3秒无操作自动隐藏）
-      if (hideTimer) clearTimeout(hideTimer)
-      hideTimer = setTimeout(() => {
-        border.classList.remove("active")
-        hud.classList.remove("active")
-      }, 3000)
-    }
-
-    // 监听来自 Electron 主进程的 IPC 广播
-    window.addEventListener("computer-use-action", (event) => {
-      if (event && event.detail) {
-        showFeedback(event.detail)
-      }
+    hud.addEventListener("mouseenter", () => {
+      window.dispatchEvent(new CustomEvent("overlay-ignore-mouse", { detail: false }))
+    })
+    hud.addEventListener("mouseleave", () => {
+      window.dispatchEvent(new CustomEvent("overlay-ignore-mouse", { detail: true }))
     })
   </script>
 </body>
