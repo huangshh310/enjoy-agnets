@@ -5,8 +5,7 @@ import {
   DESKTOP_ACT_ANY_SESSION_KEY,
   desktopActAppKey,
   desktopActIsSensitive,
-  desktopActSessionKey,
-  withAnyDesktopSessionKey
+  desktopActSessionKey
 } from "./desktop-act-app-key.ts"
 
 export {
@@ -50,10 +49,10 @@ export function sessionAllowsDesktopAct(
   policy: { sessionApprovedTools?: ReadonlySet<string>; anyDesktopSession?: boolean }
 ): boolean {
   if (desktopActAlwaysAsks(args)) return false
-  const session = withAnyDesktopSessionKey(policy.sessionApprovedTools, policy.anyDesktopSession === true)
-  if (session.has(DESKTOP_ACT_ANY_SESSION_KEY)) return true
+  const session = policy.sessionApprovedTools
+  if (policy.anyDesktopSession || session?.has(DESKTOP_ACT_ANY_SESSION_KEY)) return true
   const key = desktopActSessionKey(desktopActAppKey(args))
-  return Boolean(key && session.has(key))
+  return Boolean(key && session?.has(key))
 }
 
 /** 审批卡上的一句话：应用 · 「控件」 · 动作 · appKey。 */

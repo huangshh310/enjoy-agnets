@@ -61,7 +61,10 @@ export function desktopActSessionKey(appKey: string): string | null {
   return `${DESKTOP_ACT_SESSION_PREFIX}${key}`
 }
 
-/** 高级「本会话任意桌面」开时注入 `desktop_act:*`，关时摘掉，禁止裸 `desktop_act`。 */
+/**
+ * 设置「本会话任意桌面」映到白名单：开则注入 `desktop_act:*`，关则摘掉。
+ * 只在组 ApprovalPolicy 时用；命中函数见 `sessionAllowsDesktopAct`，按 Set 里有没有该键。
+ */
 export function withAnyDesktopSessionKey(
   session: ReadonlySet<string> | undefined,
   anyDesktop: boolean
