@@ -4,7 +4,7 @@
 
 ## 当前真相
 
-设置里的 **电脑操控** 打开、且不是探索模式时，Enjoy Local 注册 `desktop_doctor`、`desktop_list_apps`、`desktop_snapshot`、`desktop_screenshot`、`desktop_act`。旧坐标工具已删。
+设置里的 **电脑操控** 打开、且不是探索模式时，Enjoy Local 注册 `desktop_doctor`、`desktop_list_apps`、`desktop_snapshot`、`desktop_screenshot`、`desktop_act`。旧坐标工具已删。**§3.2e / H5**：未做真机 GUI 冒烟前，设置与文档不得把 Windows / Linux 标成「可用」或 available；macOS 是当前支持路径。`ENJOY_CU_GUI=1` 才跑拍树测试，跳过 ≠ 通过。
 
 `desktop_act` 默认审批。`wait` 不审批（上限 5 秒）。坐标或 `allowForeground: true` 每次都问。观察编号由 main 签发，30 秒、用过即废。**待批冻结该观察的 TTL 时钟**（`freeze` / `unfreeze`，不改 `OBSERVATION_TTL_MS`）。Allow：解冻再 `take`；仍 stale（过期或账本无此号）则对同一应用 **重拍一次**，匹配 `appKey` + 控件稳定键（**role+name**；路径 `elementId` 不是跨快照指针，有 role/name 时必须对上）后点**新**观察，旧号作废。身份偏弱（只有路径 id）回 `needs_second_confirm`，不静默点。对不上返回 `needs_second_confirm`（带新旧缩略图路径），**禁止对过期观察静默点击**。Deny：`discard`，不 act。已成功消费的编号再点是 `stale_observation`，不重拍。`needs_foreground` / `integrity_blocked` / `unknown_key` / `no_display` / `executor_missing` / `permission_denied` 会把观察还回去。成功后再拍一张树。未授辅助功能是 `permission_denied`，不要伪装成前台许可。
 
@@ -48,7 +48,7 @@
 ## 已知坑
 
 - **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。开通徽章与医生点只读 `helperSigned` + helper AX；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
-- Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过。Win/Linux 可用性文案门是 H5，不在 §3.2c。
+- Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过（skip ≠ pass）。§3.2e / H5：设置与文档不得把 Win/Linux 标成可用/available，直至真机 GUI 冒烟。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
 - **二次确认卡 UI**（新旧缩略图并排）仍薄：数据面回 `needs_second_confirm` 载荷，名片尚未并排新旧图。
 - 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。

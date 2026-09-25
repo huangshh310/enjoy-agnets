@@ -1,3 +1,6 @@
+/**
+ * darwin 执行器探测。设 `ENJOY_CU_GUI=1` 才跑 GUI 拍树；未设则跳过，跳过 ≠ 通过。
+ */
 import assert from "node:assert/strict"
 import test from "node:test"
 import { startExecutor } from "./executor-client.ts"
