@@ -4,6 +4,7 @@
 // @ts-nocheck — 与 createCodingTools 相同：AI SDK Tool 泛型与 Zod 4 不合。
 import { tool } from "ai"
 import { z } from "zod"
+import { desktopAppKey } from "@enjoy-agents/agent-core/computer-use"
 import { checkDesktopPermissions } from "../builtin-tools-state"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
 import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDesktopView } from "./desktop-thumbs"
@@ -48,7 +49,20 @@ export function desktopControlTools(session = sharedSession()) {
 }
 
 export async function resumeDesktopAct(args: Record<string, unknown>) {
-  return sharedSession().act(args as ActInput)
+  return sharedSession().act(normalizeActInput(args))
+}
+
+/** 待批：冻结 TTL，并把账本里的应用/控件写进审批 args。 */
+export function parkDesktopActArgs(args: Record<string, unknown>): Record<string, unknown> {
+  const id = text(args.observationId)
+  if (id) sharedSession().freeze(id)
+  return enrichDesktopActArgs(args)
+}
+
+/** Deny：丢弃观察，不 act。 */
+export function releaseParkedDesktopAct(args: Record<string, unknown> | unknown) {
+  const id = args && typeof args === "object" ? text((args as Record<string, unknown>).observationId) : ""
+  if (id) sharedSession().release(id)
 }
 
 export async function runDesktopDoctor() {
@@ -75,17 +89,53 @@ function doctorLine(report: Record<string, unknown>): string {
 }
 
 export function enrichDesktopActArgs(args: Record<string, unknown>): Record<string, unknown> {
-  const id = typeof args.observationId === "string" ? args.observationId : ""
-  const observation = sharedSession().peek(id)
+  const id = text(args.observationId)
+  const observation = id ? sharedSession().lookup(id) : null
   if (!observation) return args
   const element = observation.elements.find((item) => item.id === args.elementId)
   return {
     ...args,
     appName: observation.appName,
+    appKey: observation.appKey || desktopAppKey(observation),
+    pid: observation.pid,
     elementName: element?.name ?? (typeof args.x === "number" ? "坐标" : args.elementName),
     elementRole: element?.role,
     thumbnailPath: observation.thumbnailPath
   }
+}
+
+function normalizeActInput(args: Record<string, unknown>): ActInput {
+  return {
+    observationId: text(args.observationId) || "missing",
+    action: text(args.action) || "click",
+    elementId: optionalText(args.elementId),
+    elementName: optionalText(args.elementName),
+    elementRole: optionalText(args.elementRole),
+    appName: optionalText(args.appName),
+    appKey: optionalText(args.appKey),
+    thumbnailPath: optionalText(args.thumbnailPath),
+    pid: typeof args.pid === "number" ? args.pid : undefined,
+    button: args.button === "right" || args.button === "middle" ? args.button : args.button === "left" ? "left" : undefined,
+    count: typeof args.count === "number" ? args.count : undefined,
+    allowForeground: args.allowForeground === true,
+    text: optionalText(args.text),
+    key: optionalText(args.key),
+    x: typeof args.x === "number" ? args.x : undefined,
+    y: typeof args.y === "number" ? args.y : undefined,
+    x2: typeof args.x2 === "number" ? args.x2 : undefined,
+    y2: typeof args.y2 === "number" ? args.y2 : undefined,
+    dy: typeof args.dy === "number" ? args.dy : undefined,
+    waitMs: typeof args.waitMs === "number" ? args.waitMs : undefined
+  }
+}
+
+function text(value: unknown): string {
+  return typeof value === "string" ? value.trim() : ""
+}
+
+function optionalText(value: unknown): string | undefined {
+  const next = text(value)
+  return next || undefined
 }
 
 function readTools(session: DesktopSession) {

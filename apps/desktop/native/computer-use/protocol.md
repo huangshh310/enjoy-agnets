@@ -14,4 +14,4 @@ stdin / stdout 各一行一个 JSON。stderr 只写诊断，main 不解析。
 
 `needs_foreground` 表示这一次什么都没点。宿主会把观察还回去，用户允许前台后带 `allowForeground: true` 再试同一编号。
 
-三端错误码：`executor_missing`、`stale_observation`、`needs_foreground`、`integrity_blocked`、`unknown_key`、`no_display`、`screenshot_unavailable`、`action_failed`、`permission_denied`。未授辅助功能用 `permission_denied`，不要伪装成 `needs_foreground`。
+三端错误码：`executor_missing`、`stale_observation`、`needs_second_confirm`、`needs_foreground`、`integrity_blocked`、`unknown_key`、`no_display`、`screenshot_unavailable`、`action_failed`、`permission_denied`。未授辅助功能用 `permission_denied`，不要伪装成 `needs_foreground`。`needs_second_confirm` 是宿主重拍后校验失败（新旧缩略图），执行器不会发这个码。

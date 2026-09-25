@@ -17,14 +17,23 @@ import { callServerTool, listVisibleMcpTools } from "./mcp-service"
 import type { ActiveRun } from "./agent-run-state"
 import type { PendingApproval } from "./consume-stream"
 
-export async function executeStoredTool(run: ActiveRun, pending: PendingApproval): Promise<void> {
+export type StoredToolOutcome =
+  | { kind: "ok" }
+  | { kind: "desktop_act"; result: Record<string, unknown> }
+
+export async function executeStoredTool(run: ActiveRun, pending: PendingApproval): Promise<StoredToolOutcome> {
   const args = storedToolArgs(pending.approvalId)
-  if (!args) return
+  if (!args) {
+    if (pending.name === "desktop_act") {
+      return { kind: "desktop_act", result: { success: false, code: "stale_observation" } }
+    }
+    return { kind: "ok" }
+  }
   const host = await hostForRun(run)
   const path = typeof args.path === "string" ? args.path : ""
   if (pending.name === "write_file" && path && typeof args.content === "string") {
     await host.writeFile(path, args.content)
-    return
+    return { kind: "ok" }
   }
   if (
     pending.name === "edit_file" &&
@@ -33,43 +42,42 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     typeof args.newText === "string"
   ) {
     await host.editFile(path, args.oldText, args.newText)
-    return
+    return { kind: "ok" }
   }
   if (pending.name === "bash" && typeof args.command === "string") {
     await host.bash(args.command)
-    return
+    return { kind: "ok" }
   }
   if (pending.name === "code_mode" && path) {
     await resumeCodeMode(host, args)
-    return
+    return { kind: "ok" }
   }
   if (pending.name === "git_commit" && typeof args.message === "string") {
     await host.gitCommit(args.message, { stageAll: args.stageAll === true })
-    return
+    return { kind: "ok" }
   }
   if (pending.name === "git_branch" && typeof args.name === "string") {
     if (!host.gitBranch) throw new Error("git_branch is not available.")
     await host.gitBranch(args.name, args.checkout === true)
-    return
+    return { kind: "ok" }
   }
   if (pending.name === "git_push") {
     await host.gitPush()
-    return
+    return { kind: "ok" }
   }
-  if (pending.name === ASK_USER_QUESTIONS_TOOL) return
+  if (pending.name === ASK_USER_QUESTIONS_TOOL) return { kind: "ok" }
   if (pending.name === SET_SESSION_HEARTBEAT_TOOL) {
     await resumeSessionHeartbeat(run.input.sessionId, args)
-    return
+    return { kind: "ok" }
   }
   if (pending.name === "desktop_act") {
     const { resumeDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
-    await resumeDesktopAct(args)
-    return
+    return { kind: "desktop_act", result: await resumeDesktopAct(args) }
   }
   const mcp = findVisibleMcpTool(pending.name)
   if (mcp) {
     await callServerTool(mcp.serverId, mcp.name, args, { fromApprovedAgent: true })
-    return
+    return { kind: "ok" }
   }
   throw new Error(`Approved tool "${pending.name}" cannot be resumed after restart.`)
 }

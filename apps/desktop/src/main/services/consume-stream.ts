@@ -45,25 +45,33 @@ export async function consumeFullStream(input: {
       input.onUsage?.({ inputTokens: event.inputTokens, outputTokens: event.outputTokens })
     }
     if (event.type === "approval.required") {
+      const args = await parkApprovalArgs(event.name, event.args)
       const pending: PendingApproval = {
         approvalId: event.approvalId || createId("apr"),
         toolCallId: event.toolCallId || createId("tool"),
         name: event.name,
-        args: event.args
+        args
       }
       rememberApproval({
         runId: input.runId,
         approvalId: pending.approvalId,
         toolCallId: pending.toolCallId,
         name: pending.name,
-        args: event.args
+        args
       })
       input.onApproval(pending)
-      input.emit({ ...event, approvalId: pending.approvalId, toolCallId: pending.toolCallId })
+      input.emit({ ...event, approvalId: pending.approvalId, toolCallId: pending.toolCallId, args })
       continue
     }
     input.emit(event)
   }
+}
+
+/** 主循环待批也要冻结 desktop_act 观察时钟，并写入 appKey / pid。 */
+async function parkApprovalArgs(name: string, args: unknown): Promise<unknown> {
+  if (name !== "desktop_act" || !args || typeof args !== "object") return args
+  const { parkDesktopActArgs } = await import("./builtin-tools/computer-use/desktop-tools")
+  return parkDesktopActArgs(args as Record<string, unknown>)
 }
 
 function emitCheckpoint(

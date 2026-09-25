@@ -275,8 +275,8 @@ function asParkArgs(args: unknown): Record<string, unknown> {
 
 async function parkToolArgs(toolName: string, args: Record<string, unknown>) {
   if (toolName !== "desktop_act") return args
-  const { enrichDesktopActArgs } = await import("./builtin-tools/computer-use/desktop-tools")
-  return enrichDesktopActArgs(args)
+  const { parkDesktopActArgs } = await import("./builtin-tools/computer-use/desktop-tools")
+  return parkDesktopActArgs(args)
 }
 
 function parkForApproval(run: ActiveRun): boolean {
