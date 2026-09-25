@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P1-A Always-allow Dock/设置叠 `#89` `a0f57b7`）
+> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P1-A 闸：硬每次问 → 会话表 → 持久簿投影）
 
 ## 当前真相
 
@@ -10,9 +10,9 @@
 
 截图由 host `desktopCapturer` 写入 `userData/computer-use-thumbs/`，最多 20 张，不进模型文本。审批卡和右栏「正在看的窗口」可读缩略图。重启后账本为空：`executeStoredTool` → `resumeDesktopAct` 必须显式 `stale_observation`（或随后 `needs_second_confirm`），走同一条重拍路；**禁止假放行 / 报 success**。待批 `parkDesktopActArgs` 冻结 TTL；`enrichDesktopActApprovalArgs` 再补 `appKey` / `appKeySource` / `appName` / `observationId` / `action` / `elementName` / `thumbnailPath?` / `bypassesSessionAllow` / 本观察缩略图。`needs_second_confirm` 记住批准时那张图（stash 键 = 新观察号）；主循环 / 活泵 **repark** 时 `enrichSecondConfirmApprovalArgs` 再补 `previousThumbnailPath` / `previousThumbnailDataUrl` 与 `thumbnailPath` / `thumbnailDataUrl`。Permission Dock 二次确认走同一张 `desktop-approval-card.tsx` 的 warn/danger 变体（左「批准时 · 批前观察」| 右「重拍后 · 新观察」），真源 #84。二次确认底栏 testid `approval-second-confirm-cancel` / `approval-second-confirm-allow`；缺任一 data URL 时主允许禁用。首次允许仍是单缩略图 + 摘要 + 四选一（选项 +「继续」，见 CU-P1-A）。二次确认 args 带 `bypassesSessionAllow`，不写 P1-S 会话表，也不写持久簿；底栏仍是确认/取消两钮，不露始终允许。
 
-**§3.2b / CU-P1-S 会话 Allow（policy B）**：SoT 是进程内 `conversationDesktopAllow`，按 Enjoy `sessionId`。键只认 `desktop_act:<appKey>` 与 `desktop_act:*`，**禁止**裸 `desktop_act`。`allow_session` write-through 会话表 + 本轮 `sessionApprovedTools`。新 run 从该会话表 **复制** 一份进 ActiveRun；run 结束 **不清** 会话表、**不**升全局。切焦点 / 离开再回来仍记得。清空只在：该对话删除、该对话归档、人手撤销某应用、关掉 anyDesktop、进程退出。设置「本会话任意桌面」默认关，开则写当前会话的 `desktop_act:*`，**禁止**写入 `builtin_tools` / 磁盘偏好。旧盘里的 `anyDesktopSession` 忽略。`approvalPolicyFromPrefs` 只读会话表 ∪ run 副本。无 appKey 不写白名单，只当一次允许。appKey 优先级：`bundleId` → `exe` / AUMID → 规范化 `appName`；pid 不是键。坐标 / `allowForeground`（`bypassesSessionAllow`）/ 敏感窗 / **二次确认**（stash 命中该 `observationId`，或 args.`needsSecondConfirm` / `code=needs_second_confirm` / 已有 previous 缩略图）每次问。`desktopActAlwaysAsks` 为真时 `sessionAllowsDesktopAct` 必须 false，**禁止**因会话表已有 `desktop_act:<appKey>` / `desktop_act:*` 而跳过二次确认卡、直接 act。Permission Dock 桌面名片四选一（同一张卡，不是新壳）：**允许一次** `approval-allow`→`allow` / **本会话允许此应用** `approval-session`→`allow_session` / **始终允许此应用** `approval-always-app`→`allow_always` / **拒绝** `approval-deny`→`deny`；testid 在选项上，底栏只有「继续」才落决策。有稳 `appKey` 时默认高亮第三项（预览锁定）。禁止再把 `approval-always` 接到持久路径。`bypassesSessionAllow` 或无 appKey 时隐藏会话项。无稳 `appKey`（无 bundleId / exe / AUMID / 规范化 appName；pid 不是键）时隐藏始终允许。一句话摘要走 `desktopActApprovalText`，副标题可显示 appKey。
+**§3.2b / CU-P1-S 会话 Allow（policy B）**：SoT 是进程内 `conversationDesktopAllow`，按 Enjoy `sessionId`。键只认 `desktop_act:<appKey>` 与 `desktop_act:*`，**禁止**裸 `desktop_act`。`allow_session` write-through 会话表 + 本轮 `sessionApprovedTools`。新 run 从该会话表 **复制** 一份进 ActiveRun；run 结束 **不清** 会话表、**不**升全局。切焦点 / 离开再回来仍记得。清空只在：该对话删除、该对话归档、人手撤销某应用、关掉 anyDesktop、进程退出。设置「本会话任意桌面」默认关，开则写当前会话的 `desktop_act:*`，**禁止**写入 `builtin_tools` / 磁盘偏好。旧盘里的 `anyDesktopSession` 忽略。`approvalPolicyFromPrefs` 读会话表 ∪ run 副本，并用 `listDesktopAlwaysAllowAppKeys` 把 prefs `desktopAlwaysAllowAppKeys` 投影成裸 `appKey[]`（读侧兼容旧 `string[]`）。无 appKey 不写白名单，只当一次允许。appKey 优先级：`bundleId` → `exe` / AUMID → 规范化 `appName`；pid 不是键。坐标 / `allowForeground`（`bypassesSessionAllow`）/ 敏感窗 / **二次确认**（stash 命中该 `observationId`，或 args.`needsSecondConfirm` / `code=needs_second_confirm` / 已有 previous 缩略图）每次问。`desktopActAlwaysAsks` 为真时 `sessionAllowsDesktopAct` 必须 false，**禁止**因会话表已有 `desktop_act:<appKey>` / `desktop_act:*` 而跳过二次确认卡、直接 act。Permission Dock 桌面名片四选一（同一张卡，不是新壳）：**允许一次** `approval-allow`→`allow` / **本会话允许此应用** `approval-session`→`allow_session` / **始终允许此应用** `approval-always-app`→`allow_always` / **拒绝** `approval-deny`→`deny`；testid 在选项上，底栏只有「继续」才落决策。有稳 `appKey` 时默认高亮第三项（预览锁定）。禁止再把 `approval-always` 接到持久路径。`bypassesSessionAllow` 或无 appKey 时隐藏会话项。无稳 `appKey`（无 bundleId / exe / AUMID / 规范化 appName；pid 不是键）时隐藏始终允许。一句话摘要走 `desktopActApprovalText`，副标题可显示 appKey。
 
-**CU-P1-A Always-allow**：`allow_always` **只写**本机 prefs `desktopAlwaysAllowAppKeys`（`{ appKey, displayName }[]`），不写会话表。本会话钮只写 `conversationDesktopAllow`，不升簿。设置「电脑操控」内嵌「始终允许的应用」：名单 +「撤销」只清簿、立即刷新；空态「还没有始终允许的应用…」；说明必须含「坐标/前台/敏感仍每次问」；脚注写明「本会话允许」不在本页。禁持久 `desktop_act:*` / 任意桌面永久。命中顺序（kai 闸）：硬每次问 → 会话表 → `persistentAlwaysAllowsDesktopAct`；本刀已写簿 / 投影 `getState.computerUse.alwaysAllowApps` / `builtinTools.revokeAlwaysAllow`，act 路径跳过 Dock 仍待 kai 把簿键灌进 `approvalPolicyFromPrefs`。视觉真源 [`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)。
+**CU-P1-A Always-allow**：`allow_always` **只写**本机 prefs `desktopAlwaysAllowAppKeys`（`{ appKey, displayName }[]`），不写会话表。本会话钮只写 `conversationDesktopAllow`，不升簿。设置「电脑操控」内嵌「始终允许的应用」：名单 +「撤销」只清簿、立即刷新；空态「还没有始终允许的应用…」；说明必须含「坐标/前台/敏感仍每次问」；脚注写明「本会话允许」不在本页。禁持久 `desktop_act:*` / 任意桌面永久。命中顺序：`desktopActAlwaysAsks`（坐标 / 前台 / 敏感 / `needs_second_confirm`）→ `sessionAllowsDesktopAct` → `persistentAlwaysAllowsDesktopAct(args, listDesktopAlwaysAllowAppKeys(...))`。`approvalPolicyFromPrefs` 已把投影后的裸 `appKey[]` 灌进 `ApprovalPolicy.desktopAlwaysAllowAppKeys`。二次确认路径硬拒绝写簿：`rememberDesktopAlwaysAllowFromArgs` 在 `desktopActNeedsSecondConfirm` 时返回 `null`，Dock 不露 `approval-always-app`。视觉真源 [`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)。
 
 设置页：标题「电脑操控」、就绪/未就绪徽章、开通三拍（开关 → 系统权限 → 执行器）、医生行指向**当前 helper**（路径/签名，不把 Electron-only AX 当绿）、动作「检测权限 / 拍一张屏 / 试一下 · 计算器」（试一下只切执行并预填 `@电脑`，不自动开跑）。同一卡内嵌「始终允许的应用」（`desktop-always-allow-list.tsx`）。高级「本会话任意桌面」从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”。main 无 `sessionId` 不写会话表（保持 no-op）。Composer 执行态露出 `@电脑` 与「电脑」芯片；探索态不注册桌面写工具，并出诚实条「探索模式没有桌面操控工具」。
 
@@ -32,7 +32,7 @@
 - 控件编号只在这一张观察里有效。
 - 待批冻结 TTL，禁止只靠加长 30s；过期观察禁止静默点击。
 - 不要在 TS 里用 cliclick / AppleScript / xdotool / SendInput。
-- 二次确认闸盖住会话白名单：stash / `needsSecondConfirm` 时禁止 `sessionAllowsDesktopAct` 自动放行。
+- 二次确认闸盖住会话白名单与持久簿：stash / `needsSecondConfirm` 时禁止 `sessionAllowsDesktopAct` / `persistentAlwaysAllowsDesktopAct` 自动放行，也禁止 `rememberDesktopAlwaysAllowFromArgs` 写簿。
 - darwin：`desktop_doctor.success` 只在 spawn helper 签名匹配且该进程过 AX 时为真。开通绿必须看 `helperSigned`，禁止用宿主 `signed` / `hostAccessibility` 冒充。
 - 未开「任意桌面」时，禁止裸 `desktop_act` 会话级放行；开了只命中 `desktop_act:*`。
 - 会话 Allow / anyDesktop 只活在 `conversationDesktopAllow`（按 sessionId）。禁止当全局 `builtin_tools` 偏好。归档或删除该对话必须清表。
@@ -60,10 +60,10 @@
 - Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过（skip ≠ pass）。§3.2e / H5：设置与文档不得把 Win/Linux 标成可用/available，直至真机 GUI 冒烟。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
 - **二次确认卡 UI**：视觉真源 `design/previews/cu-p1-r-second-confirm.html`（#84）。数据面已在 main `#85`；Dock warn/danger 铬已接线。像素只进审批 args，禁止把 data URL 写进模型可见的工具结果。
-- **二次确认 × 会话 Allow**：stash 或 `needsSecondConfirm` 必须走 `desktopActAlwaysAsks`，盖住 `desktop_act:<appKey>` / `desktop_act:*`。主循环 / 活泵仍 **repark**，不把失败只丢给模型。
+- **二次确认 × 会话 Allow / 持久簿**：stash 或 `needsSecondConfirm` 必须走 `desktopActAlwaysAsks`，盖住 `desktop_act:<appKey>` / `desktop_act:*` 与簿投影 appKey。主循环 / 活泵仍 **repark**，不把失败只丢给模型。二次确认禁止 `allow_always` 落簿。
 - **隐患**：确认 resume 仍带原 `elementId`。`needs_second_confirm` 载荷没有单独的 `nextElementId`；新树上同号控件若已换，执行器应诚实失败，不要假 success。若确认后要点新树里的提示控件，需在载荷补 `nextElementId`，本刀不编造。
 - 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。
-- **CU-P1-A 闸未接**：`allow_always` 已写 prefs 簿，设置撤销已清簿，但 `resolveToolApproval` 还只看会话表。kai 必须在硬每次问之后、返回 `user-approval` 之前查 `persistentAlwaysAllowsDesktopAct(args, keys)`。禁止把 `desktop_act:*` 写入簿，禁止 Always-allow 跳过二次确认。
+- **CU-P1-A 闸命中**：`resolveToolApproval` 顺序是硬每次问 → 会话表 → `persistentAlwaysAllowsDesktopAct`。投影只认裸 appKey；`*` / `desktop_act:*` / pid 丢掉。二次确认禁止写簿、禁止簿跳过 Dock。撤销只清簿，不清会话表。
 - **子循环不认 allow_always**：`WaitForSubagentApproval` 仍是 `allow | deny | allow_session`。父路径 `applyApprovalDecision` 已写簿后，`toSubagentUserDecision` 把 `allow_always` 折成 `allow`，禁止再写会话表。
 - **testid 拆分**：旧 `approval-always` 曾指本会话。现在本会话是 `approval-session`，持久是 `approval-always-app`。testid 在四选一选项上，不要挂到「继续」。不要把旧 testid 接到 `allow_always`。
 - **H2 write/hit**：审批层按 `desktop_act:<appKey>` 写入、按 `has("desktop_act:"+appKey)` 或 `has("desktop_act:*")` 命中。不要再 `sessionApprovedTools.add("desktop_act")`，也不要按裸工具名放行。

@@ -1,9 +1,9 @@
 /**
  * CU-P1-A 持久簿：只读写 preferences.desktopAlwaysAllowAppKeys。
  * allow_always 只写簿；设置撤销只清簿；禁止 desktop_act:* / 裸 desktop_act / pid。
- * 隐患：act 路径跳过审批仍由 kai 接闸（硬每次问 → 会话表 → persistentAlwaysAllowsDesktopAct）。
+ * 闸投影：listDesktopAlwaysAllowAppKeys → 裸 appKey[]。二次确认路径硬拒绝写簿。
  */
-import { desktopActAppKey } from "@enjoy-agents/agent-core/computer-use"
+import { desktopActAppKey, desktopActNeedsSecondConfirm } from "@enjoy-agents/agent-core/computer-use"
 import type { DesktopAlwaysAllowApp } from "@enjoy-agents/ipc-contract"
 import { readPreferences, writePreferences } from "../../preferences"
 import {
@@ -13,6 +13,7 @@ import {
 } from "./desktop-always-allow-entries.ts"
 
 export {
+  listDesktopAlwaysAllowAppKeys,
   normalizeDesktopAlwaysAllowEntries,
   removeDesktopAlwaysAllowEntry,
   upsertDesktopAlwaysAllowEntry
@@ -22,12 +23,9 @@ export function listDesktopAlwaysAllowApps(): DesktopAlwaysAllowApp[] {
   return normalizeDesktopAlwaysAllowEntries(readPreferences().desktopAlwaysAllowAppKeys)
 }
 
-export function listDesktopAlwaysAllowAppKeys(): string[] {
-  return listDesktopAlwaysAllowApps().map((row) => row.appKey)
-}
-
-/** allow_always：只写簿。无稳键或二次确认调用方应先拦。 */
+/** allow_always：只写簿。二次确认 / needs_second_confirm 硬拒绝，禁止落簿。 */
 export function rememberDesktopAlwaysAllowFromArgs(args: unknown): DesktopAlwaysAllowApp[] | null {
+  if (desktopActNeedsSecondConfirm(args)) return null
   const appKey = desktopActAppKey(args)
   const displayName = displayNameFromArgs(args, appKey)
   const next = upsertDesktopAlwaysAllowEntry(listDesktopAlwaysAllowApps(), { appKey, displayName })

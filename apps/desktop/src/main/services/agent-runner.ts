@@ -4,7 +4,11 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
-import { desktopActFailureCode, desktopActMayReportSuccess } from "@enjoy-agents/agent-core/computer-use"
+import {
+  desktopActFailureCode,
+  desktopActMayReportSuccess,
+  desktopActNeedsSecondConfirm
+} from "@enjoy-agents/agent-core/computer-use"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
@@ -139,12 +143,6 @@ async function maybeReparkSecondConfirm(
   return true
 }
 
-function isSecondConfirmPending(args: unknown): boolean {
-  if (!args || typeof args !== "object") return false
-  const row = args as Record<string, unknown>
-  return row.code === "needs_second_confirm" || row.needsSecondConfirm === true
-}
-
 function applyApprovalDecision(
   run: {
     sessionApprovedTools: Set<string>
@@ -167,7 +165,7 @@ function applyApprovalDecision(
   }
   if (pending.name === "desktop_act") {
     // CU-P1-R 二次确认不是 H2 / P1-S 会话放行；确认只当一次 allow。
-    if (isSecondConfirmPending(pending.args)) return
+    if (desktopActNeedsSecondConfirm(pending.args)) return
     // §3.2b / P1-S：write-through 会话表 + run 副本。禁止裸 desktop_act。
     writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, pending.args)
     return
@@ -178,7 +176,7 @@ function applyApprovalDecision(
 /** allow_always 只写持久簿，不写会话表。二次确认禁止落簿。 */
 function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {
   if (pending.name !== "desktop_act") return
-  if (isSecondConfirmPending(pending.args)) return
+  if (desktopActNeedsSecondConfirm(pending.args)) return
   rememberDesktopAlwaysAllowFromArgs(pending.args)
 }
 

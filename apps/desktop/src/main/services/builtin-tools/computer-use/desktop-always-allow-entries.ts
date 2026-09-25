@@ -17,6 +17,11 @@ export function normalizeDesktopAlwaysAllowEntries(raw: unknown): DesktopAlwaysA
   return out
 }
 
+/** 闸命中用：把 SoT `{ appKey, displayName }[]`（读侧兼容旧 string[]）投影成裸 appKey[]。 */
+export function listDesktopAlwaysAllowAppKeys(raw: unknown): string[] {
+  return normalizeDesktopAlwaysAllowEntries(raw).map((row) => row.appKey)
+}
+
 export function upsertDesktopAlwaysAllowEntry(
   entries: DesktopAlwaysAllowApp[],
   candidate: { appKey: string; displayName?: string }
