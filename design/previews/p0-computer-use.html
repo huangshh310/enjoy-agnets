@@ -1,0 +1,417 @@
+<!-- 【视觉真源】P0 Computer Use · Luna · jojo 短锁 §3 Hard locks H1–H5 / tip 86228f9 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>P0 · Computer Use · Luna</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#1A1612', mute: '#6B645C', line: '#E8E4DE', paper: '#F7F5F2',
+        card: '#FFFFFF', accent: '#2563EB', soft: '#EFF4FF', ok: '#16A34A',
+        danger: '#DC2626', warn: '#C2410C'
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .fake-screen {
+    background:
+      linear-gradient(180deg, #dbeafe 0%, #eff6ff 40%, #f8fafc 40%),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(37,99,235,.04) 24px, rgba(37,99,235,.04) 25px);
+  }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(37,99,235,.55), 0 0 0 6px rgba(37,99,235,.12); }
+    50% { box-shadow: 0 0 0 3px rgba(37,99,235,.75), 0 0 0 10px rgba(37,99,235,.08); }
+  }
+  .cu-overlay { animation: breathe 2.4s ease-in-out infinite; border-radius: 12px; }
+</style>
+</head>
+<body class="bg-paper text-ink antialiased">
+  <div class="mx-auto max-w-[1100px] space-y-8 border-x border-line bg-card px-6 py-6">
+    <header>
+      <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">design/previews/p0-computer-use.html · 【视觉真源】P0 Computer Use · Luna</p>
+      <h1 class="mt-1 text-[17px] font-semibold">电脑操控 · 权限坞里的桌面名片</h1>
+      <p class="mt-1 text-[12px] text-mute">短锁 <span class="font-medium text-ink">computer-use-codex-parity</span> §3 Hard locks · tip <code class="rounded bg-paper px-1">86228f9</code> · specs <code class="rounded bg-paper px-1">computer-use.md</code>。CU-P0-A/B/C 视觉。反例：无第二套遥控器、无脚注墙、无双引擎条、无空「已连接」、无裸「允许桌面工具」。</p>
+    </header>
+
+    <aside class="rounded-xl border border-line bg-paper px-4 py-3 text-[11px] text-mute">
+      <p class="font-semibold text-ink">Hard locks · 画面必须体现</p>
+      <ul class="mt-1 list-disc space-y-1 pl-4">
+        <li><strong class="text-ink">§3.2a</strong> 待批冻结 TTL；过期/重启 → 重拍→校验→二次确认；禁假装点原编号</li>
+        <li><strong class="text-ink">§3.2b</strong> 审批：允许一次 / <strong class="text-ink">本会话允许此应用</strong> / 拒绝；绑 appKey；点错 App 再批</li>
+        <li><strong class="text-ink">§3.2c</strong> doctor 指向<strong class="text-ink">当前执行器</strong>权限/签名，禁 Electron 假绿</li>
+        <li>开通三拍 · Explore 无 desktop 写工具 · act 时蓝边 overlay + 右栏名片</li>
+        <li>高级「本会话任意桌面」默认关 + 警示；折叠</li>
+      </ul>
+    </aside>
+
+    <!-- CU-P0-A 开通三拍 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">CU-P0-A · 开通三拍 + doctor（就绪）</h2>
+      <p class="text-[11px] text-mute">设置开 → OS 权限 → doctor 校验<strong class="text-ink">当前 helper</strong> → 「试一下」。成功才标就绪。</p>
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5 border-b border-line bg-paper px-4 py-2 text-[11px]">
+          <span class="rounded-lg px-2.5 py-1 text-mute">本机 CLI</span>
+          <span class="rounded-lg bg-card px-2.5 py-1 font-medium shadow-sm ring-1 ring-line">智能体工具</span>
+          <span class="rounded-lg px-2.5 py-1 text-mute">默认项</span>
+        </div>
+        <div class="space-y-3 px-4 py-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-[13px] font-semibold">电脑操控</h3>
+                <span class="rounded-full bg-ok/10 px-2 py-0.5 text-[10px] font-semibold text-ok ring-1 ring-ok/20">就绪</span>
+              </div>
+              <p class="mt-0.5 text-[11px] text-mute">本机执行器看屏、点选、打字。不进云端虚拟桌面，不是 Registry 插件。</p>
+            </div>
+            <button type="button" class="relative h-6 w-10 shrink-0 rounded-full bg-accent" aria-pressed="true">
+              <span class="absolute right-0.5 top-0.5 size-5 rounded-full bg-white shadow"></span>
+            </button>
+          </div>
+
+          <ol class="grid gap-2 sm:grid-cols-3 text-[11px]">
+            <li class="rounded-xl border border-ok/25 bg-ok/5 px-3 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-ok">1 · 开关</p>
+              <p class="mt-0.5 font-medium">已开启</p>
+            </li>
+            <li class="rounded-xl border border-ok/25 bg-ok/5 px-3 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-ok">2 · 系统权限</p>
+              <p class="mt-0.5 font-medium">录屏 + 辅助功能</p>
+            </li>
+            <li class="rounded-xl border border-ok/25 bg-ok/5 px-3 py-2">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-ok">3 · 执行器</p>
+              <p class="mt-0.5 font-medium">helper 已签名</p>
+            </li>
+          </ol>
+
+          <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+            <p class="text-[11px] font-semibold">权限医生 · 当前执行器</p>
+            <p class="mt-1 text-[11px] text-mute">路径 <code class="text-[10px]">…/Enjoy Computer Use.helper</code> · 签名一致 · 辅助功能已授给此进程（不是只查 Enjoy.app）</p>
+            <ul class="mt-1.5 space-y-1 text-[11px]">
+              <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-ok"></span>屏幕录制 · 已允许</li>
+              <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-ok"></span>辅助功能 · 已允许（helper）</li>
+            </ul>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="h-8 rounded-lg border border-line bg-card px-3 text-[11px] font-medium">检测权限</button>
+            <button type="button" class="h-8 rounded-lg border border-line bg-card px-3 text-[11px] font-medium">拍一张屏</button>
+            <button type="button" class="h-8 rounded-lg bg-accent px-3 text-[11px] font-semibold text-white">试一下 · 计算器</button>
+          </div>
+
+          <details class="rounded-xl border border-line">
+            <summary class="cursor-pointer px-3 py-2 text-[11px] font-medium">高级 · 本会话任意桌面</summary>
+            <div class="space-y-2 border-t border-line px-3 py-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-[12px] font-semibold">本会话允许任意桌面点击</p>
+                  <p class="mt-0.5 text-[11px] text-mute">将跳过按应用确认，可点击当前屏幕上任意窗口。敏感窗（系统设置 / 钥匙串 / 支付）仍每次问。</p>
+                </div>
+                <button type="button" class="relative h-6 w-10 shrink-0 rounded-full bg-line" aria-pressed="false" title="默认关">
+                  <span class="absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow"></span>
+                </button>
+              </div>
+              <p class="rounded-lg border border-warn/30 bg-warn/5 px-2.5 py-1.5 text-[11px] text-warn">默认关闭。未开时禁止裸 <code class="text-[10px]">desktop_act</code> 会话级全屏放行。</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- 缺权限 / 假绿反例 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">CU-P0-A · 缺权限 / 签名错位（§3.2c）</h2>
+      <p class="text-[11px] text-mute">医生不得只因 Electron 有 AX 就绿。人话指向 helper。</p>
+      <div class="grid gap-3 lg:grid-cols-2">
+        <div class="rounded-2xl border border-line p-4 shadow-sm">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="text-[13px] font-semibold">电脑操控</h3>
+            <span class="rounded-full bg-warn/10 px-2 py-0.5 text-[10px] font-semibold text-warn ring-1 ring-warn/20">未就绪</span>
+          </div>
+          <div class="mt-3 rounded-xl border border-warn/30 bg-warn/5 px-3 py-2.5 text-[11px]">
+            <p class="font-semibold text-warn">权限医生 · 当前执行器</p>
+            <ul class="mt-1.5 space-y-1.5">
+              <li class="flex flex-wrap items-center justify-between gap-2">
+                <span class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-danger"></span>辅助功能未授给 helper</span>
+                <a href="#" class="font-medium text-accent">打开系统设置 →</a>
+              </li>
+              <li class="flex items-center gap-2"><span class="size-1.5 rounded-full bg-danger"></span>屏幕录制 · 未允许</li>
+            </ul>
+            <p class="mt-2 text-mute">未授辅助功能是「权限不足」，不要伪装成「窗口不在前台」。</p>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button type="button" class="h-8 rounded-lg border border-line px-3 text-[11px]">检测权限</button>
+            <button type="button" class="h-8 rounded-lg border border-line bg-paper px-3 text-[11px] text-mute" disabled>拍一张屏</button>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-dashed border-warn/40 bg-warn/5 p-4 text-[11px]">
+          <p class="font-semibold text-warn line-through">反例 · Electron 假绿</p>
+          <p class="mt-1 text-mute">医生只查 Enjoy.app 辅助功能 → 显示就绪，点击仍 <code class="text-[10px]">permission_denied</code>。开发 <code class="text-[10px]">swiftc</code> 无签名包不得冒充已就绪。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Composer -->
+    <section class="space-y-2">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <h2 class="text-[14px] font-semibold">Composer · @电脑 + 工具芯片</h2>
+        <span class="rounded-full bg-soft px-2.5 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/20">slim · 单引擎</span>
+      </div>
+      <div class="rounded-2xl border border-line bg-card p-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</button>
+            <button type="button" class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</button>
+          </div>
+          <span class="min-w-[1rem] flex-1"></span>
+          <button type="button" class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30">
+            <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">G</span>
+            <span class="text-mute">Grok</span><span class="text-mute">·</span><span class="font-semibold">4.6</span>
+            <span class="text-mute">▾</span>
+          </button>
+        </div>
+        <div class="mt-2 min-h-[64px] rounded-xl border border-line bg-paper px-3 py-2 text-[12px]">
+          <span class="mr-1 inline-flex items-center gap-1 rounded-md bg-soft px-1.5 py-0.5 text-[11px] font-medium text-accent ring-1 ring-accent/20">@电脑</span>
+          打开计算器，点 1 + 1 =
+        </div>
+        <div class="mt-2 flex flex-wrap items-center gap-1.5">
+          <span class="inline-flex items-center gap-1 rounded-full bg-soft px-2 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/25">🖥 电脑</span>
+          <span class="rounded-full bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">扩展 · MCP 1</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CU-P0-C overlay + 步骤 + 右栏 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">CU-P0-C · 步骤卡 + act 蓝边 overlay + 右栏名片</h2>
+      <p class="text-[11px] text-mute">像 Codex「它在用电脑」，但仍是 Enjoy Approval Dock + 右栏，不是第二套遥控器。</p>
+
+      <div class="relative overflow-hidden rounded-2xl border border-line bg-paper p-3">
+        <div class="cu-overlay relative mx-auto max-w-[720px] overflow-hidden rounded-xl border border-accent/40 bg-card">
+          <div class="flex items-center justify-between border-b border-line bg-soft/80 px-3 py-1.5 text-[10px]">
+            <span class="font-semibold text-accent">正在操控 · 计算器</span>
+            <button type="button" class="rounded-md bg-card px-2 py-0.5 font-medium text-ink ring-1 ring-line">停止</button>
+          </div>
+          <div class="fake-screen flex h-36 items-center justify-center">
+            <div class="w-40 rounded-lg bg-white p-2 shadow-md ring-1 ring-line">
+              <p class="text-center font-mono text-[18px] font-semibold tabular-nums">1</p>
+              <div class="mt-2 grid grid-cols-4 gap-1">
+                <span class="rounded bg-paper py-1 text-center text-[9px] ring-2 ring-accent">1</span>
+                <span class="rounded bg-paper py-1 text-center text-[9px]">2</span>
+                <span class="rounded bg-paper py-1 text-center text-[9px]">+</span>
+                <span class="rounded bg-soft py-1 text-center text-[9px] text-accent">=</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 text-center text-[10px] text-mute">示意：本机目标窗一圈冷静蓝边呼吸 · Esc / 停止打断后续 click/type</p>
+      </div>
+
+      <div class="grid gap-3 lg:grid-cols-[1fr_220px]">
+        <div class="space-y-2 rounded-2xl border border-line p-3 shadow-sm">
+          <div class="overflow-hidden rounded-xl border border-line">
+            <div class="flex items-center gap-2 border-b border-line bg-paper px-3 py-1.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wide text-mute">电脑</span>
+              <span class="rounded-full bg-card px-1.5 py-0.5 text-[10px] ring-1 ring-line">截图</span>
+            </div>
+            <div class="flex gap-3 p-3">
+              <div class="fake-screen h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-line">
+                <div class="m-2 rounded bg-white/90 p-1.5 shadow-sm">
+                  <p class="text-center font-mono text-[14px] font-semibold">0</p>
+                </div>
+              </div>
+              <div class="min-w-0 flex-1 text-[11px]">
+                <p class="font-semibold">计算器</p>
+                <p class="mt-0.5 text-mute">观察 <code class="text-[10px]">obs_8f2a</code> · 12 个可点控件</p>
+                <button type="button" class="mt-2 text-[11px] font-medium text-accent">查看大图 →</button>
+              </div>
+            </div>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-line">
+            <div class="flex items-center gap-2 border-b border-line bg-paper px-3 py-1.5">
+              <span class="text-[10px] font-semibold uppercase tracking-wide text-mute">电脑</span>
+              <span class="rounded-full bg-card px-1.5 py-0.5 text-[10px] ring-1 ring-line">点击</span>
+            </div>
+            <div class="px-3 py-2.5 text-[11px]">
+              <p class="font-semibold">计算器 · 「1」 · click</p>
+              <p class="mt-0.5 text-mute">已执行 · 新观察已拍</p>
+            </div>
+          </div>
+        </div>
+
+        <aside class="flex flex-col rounded-2xl border border-line shadow-sm">
+          <p class="border-b border-line bg-paper px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">正在看的窗口</p>
+          <div class="flex flex-1 flex-col gap-2 p-3">
+            <p class="text-[12px] font-semibold">计算器</p>
+            <p class="text-[10px] text-mute">appKey · com.apple.calculator</p>
+            <div class="fake-screen h-24 w-full overflow-hidden rounded-lg border border-line">
+              <div class="m-2 rounded bg-white/90 p-1.5 shadow-sm">
+                <p class="text-center font-mono text-[16px] font-semibold">1</p>
+              </div>
+            </div>
+            <ul class="space-y-1 text-[10px] text-mute">
+              <li class="truncate"><span class="text-ink">1</span> · button</li>
+              <li class="truncate"><span class="text-ink">+</span> · button</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- CU-P0-B 审批名片 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">CU-P0-B · 审批名片（§3.2b）</h2>
+      <p class="text-[11px] text-mute">左：缩略图 + 应用名 + 控件名。右：允许一次 / <strong class="text-ink">本会话允许此应用</strong> / 拒绝。勿画裸「允许桌面工具」。</p>
+
+      <div class="overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="border-b border-line bg-paper px-4 py-2 text-[10px] text-mute">会话 · 步骤卡…</div>
+        <div class="border-t border-line bg-card/95 px-4 py-3">
+          <p class="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-mute">需要你确认 · Permission Dock</p>
+          <div class="rounded-xl border border-line bg-card p-3 shadow-sm">
+            <div class="flex flex-wrap items-start gap-3">
+              <div class="fake-screen h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-line">
+                <div class="m-1.5 rounded bg-white/90 p-1 text-center font-mono text-[12px] font-semibold">1</div>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[12px] font-semibold">允许操控「计算器」？</p>
+                <p class="mt-0.5 text-[11px] text-mute">计算器 · 「1」 · click · <code class="text-[10px]">com.apple.calculator</code></p>
+                <p class="mt-1 text-[10px] text-mute">待批中 · 本观察 TTL 已冻结（§3.2a）</p>
+                <div class="mt-2 space-y-1.5">
+                  <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-accent bg-soft px-2.5 py-1.5 text-[11px] ring-1 ring-accent/30">
+                    <span class="size-3.5 rounded-full border-2 border-accent bg-accent"></span>
+                    允许一次
+                  </label>
+                  <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[11px]">
+                    <span class="size-3.5 rounded-full border border-line"></span>
+                    本会话允许「计算器」
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 flex flex-wrap justify-end gap-2">
+              <button type="button" class="h-8 rounded-lg border border-line px-3 text-[11px]">拒绝</button>
+              <button type="button" class="h-8 rounded-lg bg-accent px-3 text-[11px] font-semibold text-white">继续</button>
+            </div>
+          </div>
+          <p class="mt-2 text-[11px] text-mute">允许 A 后点 App B → 必须再批（未开「任意桌面」时）。坐标 / 切前台每次问。</p>
+        </div>
+        <div class="border-t border-line bg-paper px-4 py-2 text-[10px] text-mute">Composer…</div>
+      </div>
+    </section>
+
+    <!-- stale → 重拍 → 二次确认 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">§3.2a · 过期 / 重启后 · 重拍二次确认</h2>
+      <p class="text-[11px] text-mute">放行后仍 stale（&gt;30s 边界、resume、重启）：自动重拍 → 校验同 appKey → 失败则二次确认。禁对过期编号直接点。</p>
+      <div class="rounded-xl border border-warn/30 bg-warn/5 p-3">
+        <p class="text-[11px] font-semibold text-warn">观察已失效 · 请确认是否仍是同一目标</p>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div class="rounded-lg border border-line bg-card p-2">
+            <p class="text-[10px] font-medium text-mute">批准时</p>
+            <div class="fake-screen mt-1 h-14 overflow-hidden rounded border border-line">
+              <p class="p-2 font-mono text-[12px] font-semibold">1</p>
+            </div>
+            <p class="mt-1 text-[10px] text-mute">计算器 · 「1」</p>
+          </div>
+          <div class="rounded-lg border border-line bg-card p-2">
+            <p class="text-[10px] font-medium text-mute">重拍后</p>
+            <div class="fake-screen mt-1 h-14 overflow-hidden rounded border border-line">
+              <p class="p-2 font-mono text-[12px] font-semibold">2</p>
+            </div>
+            <p class="mt-1 text-[10px] text-mute">计算器 · 控件变更</p>
+          </div>
+        </div>
+        <div class="mt-3 flex flex-wrap justify-end gap-2">
+          <button type="button" class="h-8 rounded-lg border border-line bg-card px-3 text-[11px]">取消</button>
+          <button type="button" class="h-8 rounded-lg bg-accent px-3 text-[11px] font-semibold text-white">确认对新观察点击</button>
+        </div>
+        <p class="mt-2 text-[10px] text-mute">继续按钮在「编号仍有效」前禁用；不得显示空成功。</p>
+      </div>
+    </section>
+
+    <!-- Explore -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">Explore · 无 desktop 写工具</h2>
+      <div class="rounded-2xl border border-line p-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <button type="button" class="rounded-full bg-soft px-2.5 py-0.5 text-[11px] font-semibold text-accent">探索</button>
+            <button type="button" class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">执行</button>
+          </div>
+        </div>
+        <div class="mt-2 min-h-[48px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">
+          用电脑点一下偏好设置里的开关…
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] text-mute ring-1 ring-line">可读 · 截图（若暴露）</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">desktop_act</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">点击 / 打字</span>
+        </div>
+      </div>
+      <div class="flex max-w-lg items-start gap-2 rounded-xl border border-line p-3 shadow-sm">
+        <span class="mt-0.5 size-2 shrink-0 rounded-full bg-warn"></span>
+        <div class="min-w-0 text-[11px]">
+          <p class="font-semibold">探索模式没有桌面操控工具</p>
+          <p class="mt-0.5 text-mute">桌面控制需切换到<strong class="text-ink">执行</strong>，并按应用确认。不会静默注册 click/type。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 失败诚实 -->
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold">失败诚实态</h2>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <div class="rounded-xl border border-line p-3 text-[11px]">
+          <p class="font-semibold text-danger">permission_denied</p>
+          <p class="mt-0.5 text-mute">helper 未获辅助功能。设置 → 电脑操控 → 为当前执行器授权。</p>
+        </div>
+        <div class="rounded-xl border border-line p-3 text-[11px]">
+          <p class="font-semibold text-danger">needs_foreground</p>
+          <p class="mt-0.5 text-mute">窗口不在前台。允许切前台后重试；勿与权限不足混写。</p>
+        </div>
+        <div class="rounded-xl border border-line p-3 text-[11px]">
+          <p class="font-semibold text-danger">stale_observation</p>
+          <p class="mt-0.5 text-mute">观察过期或重启。重拍→校验；禁假放行。</p>
+        </div>
+        <div class="rounded-xl border border-line p-3 text-[11px]">
+          <p class="font-semibold text-danger">integrity_blocked</p>
+          <p class="mt-0.5 text-mute">提权窗不能代点。请你自己确认。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-[14px] font-semibold text-warn">反例 · 不要画</h2>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <div class="rounded-xl border border-dashed border-warn/40 bg-warn/5 p-3 text-[11px]">
+          <p class="font-semibold line-through">第二套遥控器</p>
+          <p class="mt-0.5 text-mute">独立 VNC 面板 / 漂浮工具条重复 Dock。</p>
+        </div>
+        <div class="rounded-xl border border-dashed border-warn/40 bg-warn/5 p-3 text-[11px]">
+          <p class="font-semibold line-through">允许桌面工具</p>
+          <p class="mt-0.5 text-mute">裸 tool 名放行；必须带此应用 / appKey。</p>
+        </div>
+        <div class="rounded-xl border border-dashed border-warn/40 bg-warn/5 p-3 text-[11px]">
+          <p class="font-semibold line-through">脚注墙 / 双引擎条</p>
+          <p class="mt-0.5 text-mute">Composer slim 已禁。</p>
+        </div>
+        <div class="rounded-xl border border-dashed border-warn/40 bg-warn/5 p-3 text-[11px]">
+          <p class="font-semibold line-through">已连接 · 假绿</p>
+          <p class="mt-0.5 text-mute">无观察、doctor 未过 helper 仍绿点。</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="border-t border-line pt-4 text-[11px] text-mute">
+      <p>切片：CU-P0-A 开通诚实 · B 审批名片 · C 可见操控态 · D TTL×resume（实现偏 kai）。短锁入库 <code>design/references/computer-use-codex-parity.md</code>。下一刀：点头 → host 合预览 → mike 接线。</p>
+    </footer>
+  </div>
+</body>
+</html>
