@@ -75,6 +75,8 @@ export function SettingsToolsPage() {
     enabled: boolean
   ) => {
     if (!hasIde()) return
+    // anyDesktop 只写当前对话会话表；无焦点 sessionId 时 main 本就会 no-op，这里也不发 IPC。
+    if (tool === "anyDesktopSession" && !sessionId?.trim()) return
     try {
       const next = await getIde().builtinTools.toggle({
         tool,
@@ -126,6 +128,7 @@ export function SettingsToolsPage() {
 
       <DesktopToolsCard
         desktop={state.computerUse}
+        sessionId={sessionId}
         onToggleComputerUse={(val) => handleToggle("computerUse", val)}
         onToggleScreenVisuals={(val) => handleToggle("screenVisuals", val)}
         onToggleAnyDesktop={(val) => handleToggle("anyDesktopSession", val)}
