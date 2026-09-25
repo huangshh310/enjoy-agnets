@@ -17,11 +17,11 @@ export function DesktopAnyDesktopDetails({
   const t = useT()
   const hasFocusedSession = Boolean(sessionId?.trim())
   return (
-    <details className="rounded-xl border border-border-button-default">
-      <summary className="cursor-pointer px-3 py-2 text-caption-1-medium text-text-primary">
+    <details className="group rounded-xl border border-border-button-default bg-background-secondary-default/30 transition-colors">
+      <summary className="cursor-pointer select-none px-3.5 py-2.5 text-caption-1-medium font-medium text-text-primary hover:text-text-primary">
         {t("settings.builtinTools.anyDesktopSummary")}
       </summary>
-      <div className="space-y-2 border-t border-border-button-default px-3 py-3">
+      <div className="space-y-3 border-t border-border-button-default/60 px-3.5 py-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-body-medium text-text-primary">{t("settings.builtinTools.anyDesktopTitle")}</p>
@@ -37,7 +37,7 @@ export function DesktopAnyDesktopDetails({
         {hasFocusedSession ? null : (
           <p className="text-caption-1-medium text-text-tertiary">{t("settings.builtinTools.anyDesktopNeedSession")}</p>
         )}
-        <p className="rounded-lg border border-text-warning-primary/30 bg-text-warning-primary/5 px-2.5 py-1.5 text-caption-1-medium text-text-warning-primary">
+        <p className="rounded-lg border border-border-button-default bg-background-primary-default px-3 py-2 text-caption-1-medium leading-relaxed text-text-secondary">
           {t("settings.builtinTools.anyDesktopWarn")}
         </p>
       </div>

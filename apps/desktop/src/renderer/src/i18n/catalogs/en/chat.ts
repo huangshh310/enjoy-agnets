@@ -160,7 +160,6 @@ export const enChat = {
   desktopBiasHostHint: "Bias host desktop_* · not a second engine bar",
   desktopBiasAppKey: "appKey · {key}",
   desktopBiasExploreHonesty: "Desktop control needs Execute",
-  desktopBiasExploreHint: "Explore does not register desktop_*. No silent fail, no fake connected.",
   insertAtMentionHint: "Type @ to discover files, docs, or skills",
   removeSkill: "Remove {name}",
   hostModePlan: "Exploring",

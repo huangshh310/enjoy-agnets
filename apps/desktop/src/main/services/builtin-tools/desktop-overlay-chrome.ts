@@ -66,10 +66,6 @@ function paintOverlay(appName: string): void {
   bindEscStop()
 }
 
-export function isDesktopOverlayVisible(): boolean {
-  return overlayOn
-}
-
 /** 已批目标开始 click/type/key/… 时点亮。wait / 关开关不亮。 */
 export function beginDesktopActOverlay(input: { action: string; appName?: string; runId?: string }): void {
   const state = getBuiltinToolsState()

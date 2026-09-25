@@ -158,7 +158,6 @@ export const zhChat = {
   desktopBiasHostHint: "偏置宿主 desktop_* 总入口 · 不是第二引擎条",
   desktopBiasAppKey: "appKey · {key}",
   desktopBiasExploreHonesty: "桌面控制需切换到执行",
-  desktopBiasExploreHint: "探索模式不注册 desktop_*。不会静默失败，也不会假装已连接。",
   insertAtMentionHint: "输入 @ 发现文件、文档或技能",
   removeSkill: "移除 {name}",
   hostModePlan: "探索中",

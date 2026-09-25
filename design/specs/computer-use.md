@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P1-B Composer `@桌面` / `@应用` 铬；闸仍以 CU-P1-A 为准）
+> Enjoy Local 操作本机其它应用。最后更新：2026-09-26（Computer Use Hub 四段式操控中心、系统保护区与 Midscene 风格感知透视回显）
 
 ## 当前真相
 
@@ -14,13 +14,17 @@
 
 **CU-P1-A Always-allow**：`allow_always` **只写**本机 prefs `desktopAlwaysAllowAppKeys`（`{ appKey, displayName }[]`），不写会话表。本会话钮只写 `conversationDesktopAllow`，不升簿。设置「电脑操控」内嵌「始终允许的应用」：名单 +「撤销」只清簿、立即刷新；空态「还没有始终允许的应用…」；说明必须含「坐标/前台/敏感仍每次问」；脚注写明「本会话允许」不在本页。禁持久 `desktop_act:*` / 任意桌面永久。命中顺序：`desktopActAlwaysAsks`（坐标 / 前台 / 敏感 / `needs_second_confirm`）→ `sessionAllowsDesktopAct` → `persistentAlwaysAllowsDesktopAct(args, listDesktopAlwaysAllowAppKeys(...))`。`approvalPolicyFromPrefs` 已把投影后的裸 `appKey[]` 灌进 `ApprovalPolicy.desktopAlwaysAllowAppKeys`。二次确认路径硬拒绝写簿：`rememberDesktopAlwaysAllowFromArgs` 在 `desktopActNeedsSecondConfirm` 时返回 `null`，Dock 不露 `approval-always-app`。视觉真源 [`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)。
 
-设置页：标题「电脑操控」、就绪/未就绪徽章、开通三拍（开关 → 系统权限 → 执行器）、医生行指向**当前 helper**（路径/签名，不把 Electron-only AX 当绿）、动作「检测权限 / 拍一张屏 / 试一下 · 计算器」（试一下只切执行并预填 `@桌面`，不自动开跑）。同一卡内嵌「始终允许的应用」（`desktop-always-allow-list.tsx`）。高级「本会话任意桌面」从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”。main 无 `sessionId` 不写会话表（保持 no-op）。
+设置页是一张卡（Computer Use Hub 本地桌面智能操控中心，四段式）：标题「电脑操控」、就绪/未就绪徽章。未就绪时只出一句人话（没有执行器 / 请安装带签名的版本 / 请打开仍未授权的那一项 / 没有图形会话 / 医生没回来请再检测）。**不展示**二进制路径、签名身份、开通三拍。绿仍只认 `helperSigned` + helper AX，禁止宿主 Electron AX / 遗留 `signed` 假绿。内部按平滑分割线划分四段：
+- **第 1 段 (驱动与权限)**：macOS 辅助功能与屏幕录制权限行（认 helper，说明带后台静默交互原则）；未签名或没有执行器时不把权限行显示成「未授权 · 打开设置」；没有图形会话只留这一句，不另加平台提示；Windows / X11 / Wayland 只出平台提示（尚未标为可用），不再叠一条权限阻断；
+- **第 2 段 (视觉反馈与安全制动)**：冷静蓝边 + 「正在操控」顶栏 + 100ms Esc 应急刹车 + 预览铬演示；
+- **第 3 段 (应用授权与安全保护区)**：常驻系统受保护禁区声明（钥匙串/偏好设置/密码/支付硬编码二次审批，绝不自动放行）+「始终允许的应用」名单（撤销只清簿）+ 高级「本会话任意桌面」（从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”；main 无 `sessionId` 不写会话表保持 no-op）；
+- **第 4 段 (感知透视与快速体验)**：动作「检测权限 / 测试屏幕感知 / 试一下 · 计算器」（试一下只切执行并预填 `@桌面`，不自动开跑）+ Midscene.js 风格屏幕感知透视面板（`DesktopPerceptionInspector`：捕获缩略图视口 + 识别目标窗口/Bundle ID/可交互控件列表标签透视）。
 
 **CU-P1-B Composer 提及**：电脑操控开时，探索/执行都可点 `@桌面` / `@应用名`（产品锁写 **`@桌面`**，不沿用旧预览 `@电脑`）。候选与 `desktop_list_apps` 同源（IPC `builtinTools.desktopListApps`）：行上展示名 + 稳 `appKey`（mono）。Execute 下输入下方可选偏置芯片「桌面」或应用名 + appKey 摘要（CU 提示，不是第二条引擎条）；偏置宿主 `desktop_*` 或点名的 appKey。**提及 ≠ 放行**：Approval Dock / 会话表 / Always-allow / 二次确认 / overlay 闸不变，首次 `desktop_act` 仍进 Dock（除非会话/簿已放行）；点另一个 appKey 仍按 §3.2b 再批。Explore 允许同一枚提及芯片，但**不**注册 `desktop_*`、不点亮 overlay、不把偏置芯片标成已连接；可见人话「桌面控制需切换到执行」。无稳 `appKey`（仅 pid）可进候选，**隐藏**始终允许路径，禁止用 pid 当键。不是插件店，不虚构 NotInstalled.app。视觉真源 [`../previews/cu-p1-b-composer-mention.html`](../previews/cu-p1-b-composer-mention.html)。
 
 执行器是附属进程，换行 JSON。PATH 用 `pathDirs`，Windows 带 `-ExecutionPolicy Bypass` 和 `windowsHide`。打包 `resources/bin/<platform>-<arch>/`（darwin helper 须 codesign，见下）。开发时 darwin 用 `swiftc` 编到 `.build/computer-use`，未签名不得报就绪。
 
-设置开关下调用 `desktopDoctor` 写一句缺什么。**医生绿当且仅当即将 spawn 的 helper 路径一致、具备有效团队签名（`helperSigned`，非 ad-hoc / 未签名），且该 helper 进程自己也能过 AX。** 宿主 Electron `systemPreferences.isTrustedAccessibilityClient` / `hostAccessibility` / 遗留 `signed` 不能单独报绿。未签名或身份错位返回 `executor_unsigned` / `executor_identity_mismatch`，开通徽章与医生点不得当就绪。人话指向为 Enjoy Computer Use helper 开辅助功能或重装签名包。
+设置开关下调用 `desktopDoctor`。`line` 与设置页中文阻断句同一套。**医生绿当且仅当即将 spawn 的 helper 路径一致、具备有效团队签名（`helperSigned`，非 ad-hoc / 未签名），且该 helper 进程自己也能过 AX。** 宿主 Electron `systemPreferences.isTrustedAccessibilityClient` / `hostAccessibility` / 遗留 `signed` 不能单独报绿。未签名或身份错位返回 `executor_unsigned` / `executor_identity_mismatch`，开通徽章不得当就绪。医生请求失败时徽章保持未就绪，并提示再检测一次，不假装没有执行器。
 
 打包 `beforePack`：`scripts/stage-computer-use.cjs` 编出 `native/computer-use/pack/<platform>-<arch>/`。darwin 在有 `CU_CODESIGN_IDENTITY` / `CSC_NAME` / `APPLE_CODESIGN_IDENTITY` 时 `codesign` 真实 helper，并写 `computer-use.identity.json`；没有身份不假装已签名。开发 `swiftc` → `.build/computer-use` 未签名不得报「已就绪」。
 
@@ -40,6 +44,8 @@
 - 未开「任意桌面」时，禁止裸 `desktop_act` 会话级放行；开了只命中 `desktop_act:*`。
 - 会话 Allow / anyDesktop 只活在 `conversationDesktopAllow`（按 sessionId）。禁止当全局 `builtin_tools` 偏好。归档或删除该对话必须清表。
 - 设置页无焦点 `sessionId` 时，「本会话任意桌面」开关必须禁用并提示先打开对话；禁止看起来能开、main 却 no-op。
+- 系统受保护禁区（钥匙串、系统偏好设置、密码管理器、支付窗口）由底层驱动硬编码保护，任何桌面动作强制人工二次审批，白名单或会话允许一律不得跳过。
+- 视觉感知透视回显仅在前端测试或设置中按需预览，截屏缩略图不进大模型文本上下文。
 
 ## 代码入口
 
@@ -53,7 +59,8 @@
 - 二次确认数据面：`computer-use/desktop-second-confirm.ts`（#85：记住批准时图 → 审批 args 路径 / data URL；缺图诚实失败）；闸：`packages/agent-core/.../desktop-second-confirm-gate.ts`（stash 同步进 `desktopActAlwaysAsks`，盖住会话白名单）
 - 二次确认停靠：`desktop-second-confirm-park.ts`、`repark-desktop-second-confirm.ts`（主循环 / 活泵再停卡，不把码只丢给模型）
 - 审批卡：`thread/approval/desktop-approval-card.tsx`（二次确认 reshape 同一张卡 + `desktop-second-confirm-body.tsx`；#84 SoT warn/danger）
-- 设置：`settings/tools/desktop-tools-card.tsx`；始终允许名单：`desktop/desktop-always-allow-list.tsx`；开通绿：`desktop/desktop-readiness.ts`、`desktop-doctor-panel.tsx`
+- 设置：`settings/tools/desktop-tools-card.tsx`；始终允许名单：`desktop/desktop-always-allow-list.tsx`；就绪与一句阻断：`desktop/desktop-readiness.ts`
+- 视觉感知透视：`settings/tools/desktop/desktop-perception-inspector.tsx`
 - 持久簿：`desktop-always-allow-ledger.ts`（prefs `desktopAlwaysAllowAppKeys`）；命中辅助：`persistentAlwaysAllowsDesktopAct`
 - 右栏：`right-pane/views/desktop-view.tsx`
 - Composer 提及铬：`ai-chat/composer/mentions/desktop/`（`@桌面` / `@应用`、偏置芯片、Explore 诚实）；名单映射 `map-listed-desktop-apps.ts`；IPC `builtinTools.desktopListApps`
@@ -62,7 +69,7 @@
 
 ## 已知坑
 
-- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。开通徽章与医生点只读 `helperSigned` + helper AX；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
+- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时设置**不得**绿，只显示「请安装带签名的版本后再试」，并且**不**把辅助功能行显示成「未授权」。真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。徽章和权限行只读 helper；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
 - Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过（skip ≠ pass）。§3.2e / H5：设置与文档不得把 Win/Linux 标成可用/available，直至真机 GUI 冒烟。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
 - **二次确认卡 UI**：视觉真源 `design/previews/cu-p1-r-second-confirm.html`（#84）。数据面已在 main `#85`；Dock warn/danger 铬已接线。像素只进审批 args，禁止把 data URL 写进模型可见的工具结果。

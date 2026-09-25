@@ -33,8 +33,6 @@ test("Explore 诚实主句是「需切换到执行」", () => {
   assert.equal(zhChat.surfaceDesktopInterceptTitle, "桌面控制需切换到执行")
   assert.equal(enChat.desktopBiasExploreHonesty, "Desktop control needs Execute")
   assert.equal(enChat.surfaceDesktopInterceptTitle, "Desktop control needs Execute")
-  assert.match(zhChat.desktopBiasExploreHint, /不注册 desktop_\*/)
-  assert.match(zhChat.desktopBiasExploreHint, /不会假装已连接/)
 })
 
 test("无稳键隐藏始终允许，不写 pid 当键", () => {

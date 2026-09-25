@@ -80,7 +80,7 @@ export function buildAtMentionItems(
 
 /** 空 @ 每类最多 4 条，避免一排刷满。桌面宿主 + 有限应用。 */
 function capEmptyAtMentions(items: readonly MentionItem[]): MentionItem[] {
-  const desktop = capDesktopMentions(items, false)
+  const desktop = capDesktopMentions(items)
   const files = items.filter((item) => item.kind === "file").slice(0, AT_KIND_LIMIT)
   const docs = items.filter((item) => item.kind === "doc").slice(0, AT_KIND_LIMIT)
   const skills = items.filter((item) => item.kind === "skill").slice(0, AT_KIND_LIMIT)
@@ -120,10 +120,9 @@ function desktopAppItem(app: DesktopMentionApp): DesktopMentionItem {
   }
 }
 
-/** 空 @ 桌面组：宿主 + 有限应用，避免刷满。查询时不过滤条数。 */
-function capDesktopMentions(items: readonly MentionItem[], querying: boolean): MentionItem[] {
+/** 空 @ 桌面组：宿主 + 有限应用，避免刷满。 */
+function capDesktopMentions(items: readonly MentionItem[]): MentionItem[] {
   const desktop = items.filter((item) => item.kind === "desktop")
-  if (querying) return desktop
   const host = desktop.filter((item) => item.kind === "desktop" && item.role === "host")
   const apps = desktop.filter((item) => item.kind === "desktop" && item.role === "app").slice(0, EMPTY_APP_LIMIT)
   return [...host, ...apps]

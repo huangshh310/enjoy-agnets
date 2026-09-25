@@ -1,5 +1,6 @@
 /**
- * 设置「电脑操控」：开通三拍 + 当前 helper 医生 + 试一下。不是第二套遥控器。
+ * 设置「电脑操控中心 (Computer Use Hub)」：四段式应用级受控委派控制台。
+ * 权限行与徽章都只认医生报告里的 helper，不认宿主 Electron。
  */
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
@@ -11,10 +12,16 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { DesktopMacPermissions } from "./desktop-mac-permissions"
 import { DesktopAlwaysAllowList } from "./desktop/desktop-always-allow-list"
 import { DesktopAnyDesktopDetails } from "./desktop/desktop-any-desktop-details"
-import { DesktopDoctorPanel } from "./desktop/desktop-doctor-panel"
 import { DesktopOnboardingActions } from "./desktop/desktop-onboarding-actions"
-import { desktopReadiness } from "./desktop/desktop-readiness"
-import { DesktopReadinessStrip } from "./desktop/desktop-readiness-strip"
+import {
+  type DesktopView
+} from "./desktop/desktop-perception-inspector"
+import {
+  desktopBlock,
+  desktopPermissionFlags,
+  desktopReadiness,
+  type DesktopBlock
+} from "./desktop/desktop-readiness"
 import { startCalculatorTryFlow } from "./desktop/start-calculator-try"
 
 export function DesktopToolsCard({
@@ -40,9 +47,14 @@ export function DesktopToolsCard({
   const [checking, setChecking] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const [thumb, setThumb] = useState("")
+  const [view, setView] = useState<DesktopView | null>(null)
+  const [inspectorOpen, setInspectorOpen] = useState(false)
   const [doctor, setDoctor] = useState<DesktopDoctorReport | null>(null)
-  const hint = platformHintKey(desktop.session)
+  const [doctorError, setDoctorError] = useState(false)
   const readiness = desktopReadiness(desktop, doctor)
+  const block = !desktop.enabled ? null : doctorError ? "unavailable" : desktopBlock(doctor)
+  const permissions = desktopPermissionFlags(doctorError ? null : doctor)
+  const hint = block === "no-display" ? null : platformHintKey(desktop.session)
 
   const refreshDoctor = useCallback(async () => {
     if (!desktop.enabled || !hasIde()) return
@@ -50,8 +62,10 @@ export function DesktopToolsCard({
     try {
       const report = (await getIde().builtinTools.desktopDoctor()) as DesktopDoctorReport
       setDoctor(report)
+      setDoctorError(false)
     } catch {
       setDoctor(null)
+      setDoctorError(true)
     } finally {
       setChecking(false)
     }
@@ -64,15 +78,19 @@ export function DesktopToolsCard({
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-body-medium font-semibold text-text-primary">{t("settings.builtinTools.desktopSection")}</h3>
-      <div className="rounded-2xl border border-border-button-default bg-background-primary-default p-5">
+      <div className="rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-2xs">
         <div className="flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-body-medium text-text-primary">{t("settings.builtinTools.computerUseTitle")}</p>
+                <p className="text-body-medium font-semibold text-text-primary">
+                  {t("settings.builtinTools.computerUseTitle")}
+                </p>
                 <ReadinessBadge ready={readiness.ready} />
               </div>
-              <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("settings.builtinTools.computerUseDesc")}</p>
+              <p className="mt-1 text-caption-1-medium leading-relaxed text-text-secondary">
+                {t("settings.builtinTools.computerUseDesc")}
+              </p>
             </div>
             <Switch
               checked={desktop.enabled}
@@ -80,42 +98,82 @@ export function DesktopToolsCard({
               aria-label={t("settings.builtinTools.computerUseTitle")}
             />
           </div>
-          <DesktopReadinessStrip readiness={readiness} />
+
           {desktop.enabled ? (
-            <div className="flex flex-col gap-3.5">
-              <DesktopDoctorPanel doctor={doctor} ready={readiness.ready} />
-              {hint ? <p className="text-caption-1-medium leading-relaxed text-text-secondary">{t(hint)}</p> : null}
-              <DesktopOnboardingActions
-                checking={checking}
-                capturing={capturing}
-                preview={thumb}
-                onCheck={() => void refreshDoctor()}
-                onCapture={() => void capturePreview(setCapturing, setThumb)}
-                onTryCalculator={() => void startCalculatorTryFlow(() => navigate({ to: "/" }))}
-              />
-              <DesktopMacPermissions desktop={desktop} onOpenPermission={onOpenPermission} />
-              <VisualsRow
-                previewing={previewing}
-                checked={desktop.screenVisuals ?? true}
-                onPreview={() => void previewOverlay(setPreviewing)}
-                onToggle={onToggleScreenVisuals}
-              />
-              <DesktopAlwaysAllowList
-                apps={desktop.alwaysAllowApps ?? []}
-                onRevoke={(appKey) => onRevokeAlwaysAllow?.(appKey)}
-              />
-              <DesktopAnyDesktopDetails
-                sessionId={sessionId}
-                enabled={desktop.anyDesktopSession === true}
-                onToggle={(value) => onToggleAnyDesktop?.(value)}
-              />
-              <p className="text-caption-1-medium leading-relaxed text-text-tertiary">{t("settings.builtinTools.desktopTip")}</p>
+            <div className="flex flex-col divide-y divide-separator-border/50">
+              {/* 未就绪原因与跨平台提示 */}
+              {(block || hint) ? (
+                <div className="pb-4">
+                  {block ? <p className="text-caption-1-medium text-text-secondary">{t(BLOCK_COPY[block])}</p> : null}
+                  {hint ? <p className="mt-1 text-caption-1-medium leading-relaxed text-text-secondary">{t(hint)}</p> : null}
+                </div>
+              ) : null}
+
+              {/* 第 1 段：驱动环境与系统权限 */}
+              {permissions.show ? (
+                <div className="py-4 first:pt-0">
+                  <DesktopMacPermissions
+                    session={desktop.session}
+                    show={permissions.show}
+                    accessibilityGranted={permissions.accessibility}
+                    screenCaptureGranted={permissions.screenCapture}
+                    onOpenPermission={onOpenPermission}
+                  />
+                </div>
+              ) : null}
+
+              {/* 第 2 段：交互反馈与安全制动 */}
+              <div className="py-4 first:pt-0">
+                <VisualsRow
+                  previewing={previewing}
+                  checked={desktop.screenVisuals ?? true}
+                  onPreview={() => void previewOverlay(setPreviewing)}
+                  onToggle={onToggleScreenVisuals}
+                />
+              </div>
+
+              {/* 第 3 段：应用授权与受保护禁区 */}
+              <div className="flex flex-col gap-4 py-4 first:pt-0">
+                <DesktopAlwaysAllowList
+                  apps={desktop.alwaysAllowApps ?? []}
+                  onRevoke={(appKey) => onRevokeAlwaysAllow?.(appKey)}
+                />
+
+                <DesktopAnyDesktopDetails
+                  sessionId={sessionId}
+                  enabled={desktop.anyDesktopSession === true}
+                  onToggle={(value) => onToggleAnyDesktop?.(value)}
+                />
+              </div>
+
+              {/* 第 4 段：屏幕感知透视与快速体验 */}
+              <div className="pt-4 first:pt-0">
+                <DesktopOnboardingActions
+                  checking={checking}
+                  capturing={capturing}
+                  inspectorOpen={inspectorOpen}
+                  preview={thumb}
+                  view={view}
+                  onCheck={() => void refreshDoctor()}
+                  onInspect={() => void inspectPerception(setCapturing, setThumb, setView, setInspectorOpen)}
+                  onCloseInspector={() => setInspectorOpen(false)}
+                  onTryCalculator={() => void startCalculatorTryFlow(() => navigate({ to: "/" }))}
+                />
+              </div>
             </div>
           ) : null}
         </div>
       </div>
     </div>
   )
+}
+
+const BLOCK_COPY: Record<DesktopBlock, string> = {
+  missing: "settings.builtinTools.blockMissing",
+  unsigned: "settings.builtinTools.blockUnsigned",
+  permissions: "settings.builtinTools.blockPermissions",
+  "no-display": "settings.builtinTools.blockNoDisplay",
+  unavailable: "settings.builtinTools.blockUnavailable"
 }
 
 function ReadinessBadge({ ready }: { ready: boolean }) {
@@ -152,10 +210,20 @@ function VisualsRow({
         <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("settings.builtinTools.screenVisualsDesc")}</p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <Button variant="outline" size="sm" onClick={onPreview} disabled={previewing} className="h-8 rounded-lg px-3 text-caption-1-medium text-text-secondary hover:text-text-primary">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPreview}
+          disabled={previewing}
+          className="h-8 rounded-lg px-3 text-caption-1-medium text-text-secondary hover:text-text-primary"
+        >
           {previewing ? t("settings.builtinTools.previewing") : t("settings.builtinTools.previewVisuals")}
         </Button>
-        <Switch checked={checked} onCheckedChange={onToggle} aria-label={t("settings.builtinTools.screenVisualsTitle")} />
+        <Switch
+          checked={checked}
+          onCheckedChange={onToggle}
+          aria-label={t("settings.builtinTools.screenVisualsTitle")}
+        />
       </div>
     </div>
   )
@@ -171,14 +239,33 @@ async function previewOverlay(setPreviewing: (value: boolean) => void) {
   }
 }
 
-async function capturePreview(setCapturing: (value: boolean) => void, setThumb: (value: string) => void) {
+async function inspectPerception(
+  setCapturing: (value: boolean) => void,
+  setThumb: (value: string) => void,
+  setView: (value: DesktopView | null) => void,
+  setInspectorOpen: (value: boolean) => void
+) {
   if (!hasIde()) return
   setCapturing(true)
+  setInspectorOpen(true)
   try {
-    const result = (await getIde().builtinTools.desktopCapturePreview()) as { thumbnailDataUrl?: string }
-    setThumb(result.thumbnailDataUrl ?? "")
+    const [captureResult, viewResult] = await Promise.allSettled([
+      getIde().builtinTools.desktopCapturePreview() as Promise<{ thumbnailDataUrl?: string }>,
+      getIde().builtinTools.desktopView() as Promise<DesktopView | null>
+    ])
+    if (captureResult.status === "fulfilled") {
+      setThumb(captureResult.value?.thumbnailDataUrl ?? "")
+    } else {
+      setThumb("")
+    }
+    if (viewResult.status === "fulfilled") {
+      setView(viewResult.value ?? null)
+    } else {
+      setView(null)
+    }
   } catch {
     setThumb("")
+    setView(null)
   } finally {
     setCapturing(false)
   }
