@@ -19,6 +19,7 @@ import { SessionMeter } from "../usage/session-meter"
 import type { ComposerProps } from "./composer.types"
 import { formatComposerRemoteFootnote } from "@renderer/components/settings/workspace/parse-remote-label"
 import { ModelSwitchFootnoteSlot } from "./model-switch/model-switch-footnote-slot"
+import { ComputerUseChip } from "./computer-use-chip"
 import { HostInjectBar } from "./host-inject/host-inject-bar"
 import { useT } from "@renderer/i18n"
 
@@ -84,6 +85,7 @@ export function ComposerFooter({
           onModelChange={onModelChange}
         />
         <ComposerThinkingChrome compact modelId={modelId} modelLabel={modelLabel} models={models} />
+        <ComputerUseChip />
         <HostInjectBar />
         <SessionMeter />
       </div>

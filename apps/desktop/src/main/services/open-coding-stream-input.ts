@@ -2,10 +2,11 @@
  * 开流入参与审批策略。从 open-coding-stream 抽出，避免调度函数超 50 行。
  */
 import type { ModelMessage } from "ai"
-import type {
-  ApprovalPolicy,
-  SubagentToolTraceEvent,
-  WaitForSubagentApproval
+import {
+  withAnyDesktopSessionKey,
+  type ApprovalPolicy,
+  type SubagentToolTraceEvent,
+  type WaitForSubagentApproval
 } from "@enjoy-agents/agent-core"
 import {
   type AgentMode,
@@ -13,6 +14,7 @@ import {
   type HostInjectSnapshot,
   type ReasoningEffort
 } from "@enjoy-agents/ipc-contract"
+import { getBuiltinToolsState } from "./builtin-tools/builtin-tools-state"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
 
@@ -48,13 +50,15 @@ export type OpenCodingStreamInput = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined
 }
 
-/** 把偏好和本轮已批工具收成 ApprovalPolicy。 */
+/** 把偏好和本轮已批工具收成 ApprovalPolicy。任意桌面开时注入 `desktop_act:*`。 */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
+  const anyDesktopSession = getBuiltinToolsState().computerUse.anyDesktopSession === true
   return {
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
-    sessionApprovedTools: input.sessionApprovedTools,
-    sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes
+    sessionApprovedTools: withAnyDesktopSessionKey(input.sessionApprovedTools, anyDesktopSession),
+    sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
+    anyDesktopSession
   }
 }

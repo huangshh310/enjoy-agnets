@@ -70,6 +70,12 @@ export type McpMentionItem = {
   description?: string
 }
 
+export type DesktopMentionItem = {
+  kind: "desktop"
+  id: "desktop:computer"
+  label: string
+}
+
 export type MentionItem =
   | FileMentionItem
   | DocMentionItem
@@ -78,6 +84,7 @@ export type MentionItem =
   | SkillMentionItem
   | CommandMentionItem
   | McpMentionItem
+  | DesktopMentionItem
 
 const SLASH_SAFE = /^[A-Za-z][\w.-]*$/
 
@@ -107,6 +114,7 @@ function mentionHaystack(item: MentionItem): string {
   }
   if (item.kind === "command") return `${item.name} ${item.description}`.toLowerCase()
   if (item.kind === "mcp") return `mcp ${item.name} ${item.description ?? ""}`.toLowerCase()
+  if (item.kind === "desktop") return `电脑 computer desktop ${item.label}`.toLowerCase()
   const skill = item.skill
   return `${skill.slash ?? ""} ${skill.name} ${skill.description ?? ""}`.toLowerCase()
 }

@@ -13,6 +13,8 @@ import { addComposerSkillChip } from "./composer-skill-chips.ts"
 import { useMentionSources } from "./use-mention-sources.ts"
 import { mentionKeyAction } from "./mention-key.ts"
 import type { MentionItem } from "./mention-items.ts"
+import { useComputerUseEnabled } from "@renderer/hooks/use-computer-use-enabled"
+import { surfaceForMode } from "../composer-mode"
 import { useMentionPanel } from "./use-mention-panel.ts"
 
 export function useComposerMentions(
@@ -23,6 +25,9 @@ export function useComposerMentions(
   builtinCopy: SlashBuiltinCopy
 ) {
   const workspaceId = useChatStore((state) => state.workspaceId)
+  const mode = useChatStore((state) => state.mode)
+  const computerUse = useComputerUseEnabled()
+  const desktopMentions = computerUse && surfaceForMode(mode) === "execute"
   const { roots, files, docs, mcps } = useMentionSources(workspaceId, true)
   const panel = useMentionPanel(
     value,
@@ -33,7 +38,8 @@ export function useComposerMentions(
     docs,
     modeCopy,
     builtinCopy,
-    mcps
+    mcps,
+    desktopMentions
   )
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
@@ -60,6 +66,10 @@ export function useComposerMentions(
         snippet: `Knowledge document ${item.path}`
       })
       applyReplace(token, "")
+      return
+    }
+    if (item.kind === "desktop") {
+      applyReplace(token, "@电脑 ")
       return
     }
     if (item.kind === "mcp") {

@@ -11,6 +11,7 @@ import { ComposerContextChips } from "./composer/composer-context-chips"
 import { ComposerQuoteChips } from "./composer/runtime-interact/composer-quote-chips"
 import { ComposerHostModeChip } from "./composer/composer-host-mode-chip"
 import { ExploreCapabilityRail } from "./composer/explore-execute/explore-capability-rail"
+import { ExploreDesktopBanner } from "./composer/explore-execute/explore-desktop-banner"
 import { ExploreInterceptBanner } from "./composer/explore-execute/explore-intercept-banner"
 import { ComposerSkillChipBar } from "./composer/mentions/composer-skill-chip-bar"
 import { ComposerInput } from "./composer/mentions/composer-input"
@@ -123,6 +124,7 @@ export function AiChatComposer({
     <div className={cx("relative flex flex-col w-full min-w-0 px-6 pb-2", className)}>
       <EngineHandoffDock />
       <ComposerQueue />
+      <ExploreDesktopBanner />
       <ExploreInterceptBanner />
       <ComposerBranchMismatch />
       <ModelSwitchNotice />

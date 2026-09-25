@@ -2,10 +2,16 @@
  * Enjoy Local 的 Computer Use 工具。执行在 main，观察用过即废。
  */
 // @ts-nocheck — 与 createCodingTools 相同：AI SDK Tool 泛型与 Zod 4 不合。
+import {
+  desktopActAppKeyInfo,
+  desktopActBypassesSessionAllow,
+  desktopAppKey,
+  type Observation
+} from "@enjoy-agents/agent-core/computer-use"
 import { tool } from "ai"
 import { z } from "zod"
-import { desktopAppKey } from "@enjoy-agents/agent-core/computer-use"
 import { checkDesktopPermissions } from "../builtin-tools-state"
+import { triggerScreenAction } from "../screen-overlay-service"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
 import { formatDoctorLine } from "./doctor-report"
 import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDesktopView } from "./desktop-thumbs"
@@ -40,7 +46,14 @@ function sharedSession(): DesktopSession {
     permissions: checkDesktopPermissions,
     captureThumb: () => captureDesktopThumb(),
     onView: setLastDesktopView,
-    resolveCommand: () => resolveExecutorCommand()
+    resolveCommand: () => resolveExecutorCommand(),
+    onAct: (input, observation) => {
+      triggerScreenAction({
+        action: input.action === "type" || input.action === "key" ? "type" : "click",
+        targetName: observation.appName,
+        text: typeof input.elementName === "string" ? input.elementName : input.action
+      })
+    }
   })
   return singleton
 }
@@ -72,6 +85,15 @@ export async function runDesktopDoctor() {
   return { ...report, line: formatDoctorLine(report) }
 }
 
+export async function captureDesktopPreview() {
+  const path = await captureDesktopThumb()
+  if (!path) return { ok: false as const, code: "screenshot_unavailable" }
+  const thumbnailDataUrl = await readThumbDataUrl(path)
+  return thumbnailDataUrl
+    ? { ok: true as const, thumbnailDataUrl }
+    : { ok: false as const, code: "screenshot_unavailable" }
+}
+
 export async function readDesktopView() {
   const view = getLastDesktopView()
   if (!view) return null
@@ -82,17 +104,41 @@ export async function readDesktopView() {
 export function enrichDesktopActArgs(args: Record<string, unknown>): Record<string, unknown> {
   const id = text(args.observationId)
   const observation = id ? sharedSession().lookup(id) : null
-  if (!observation) return args
+  const merged = observation ? mergeObservationIntoActArgs(args, observation) : args
+  const info = desktopActAppKeyInfo({
+    ...merged,
+    appKey: observation?.appKey || desktopAppKey(observation ?? {}) || merged.appKey
+  })
+  return {
+    ...merged,
+    ...(info.appKey ? { appKey: info.appKey } : {}),
+    ...(info.appKeySource ? { appKeySource: info.appKeySource } : {}),
+    bypassesSessionAllow: desktopActBypassesSessionAllow(merged)
+  }
+}
+
+function mergeObservationIntoActArgs(args: Record<string, unknown>, observation: Observation): Record<string, unknown> {
   const element = observation.elements.find((item) => item.id === args.elementId)
   return {
     ...args,
     appName: observation.appName,
-    appKey: observation.appKey || desktopAppKey(observation),
+    bundleId: observation.bundleId,
+    exe: observation.exe,
+    aumid: observation.aumid,
     pid: observation.pid,
     elementName: element?.name ?? (typeof args.x === "number" ? "坐标" : args.elementName),
     elementRole: element?.role,
     thumbnailPath: observation.thumbnailPath
   }
+}
+
+/** 审批卡用：同步账本字段后再读本观察缩略图，不拿全局 last view 顶替。 */
+export async function enrichDesktopActApprovalArgs(args: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const enriched = enrichDesktopActArgs(args)
+  const path = typeof enriched.thumbnailPath === "string" ? enriched.thumbnailPath : ""
+  if (!path) return enriched
+  const thumbnailDataUrl = await readThumbDataUrl(path)
+  return thumbnailDataUrl ? { ...enriched, thumbnailDataUrl } : enriched
 }
 
 function normalizeActInput(args: Record<string, unknown>): ActInput {

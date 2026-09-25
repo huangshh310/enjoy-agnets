@@ -21,7 +21,8 @@ const DEFAULT_STATE: BuiltinToolsState = {
     enabled: false,
     accessibilityGranted: false,
     screenCaptureGranted: false,
-    screenVisuals: true
+    screenVisuals: true,
+    anyDesktopSession: false
   }
 }
 
@@ -68,7 +69,7 @@ export function SettingsToolsPage() {
   }, [refreshPermissions])
 
   const handleToggle = async (
-    tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals",
+    tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals" | "anyDesktopSession",
     enabled: boolean
   ) => {
     if (!hasIde()) return
@@ -121,6 +122,7 @@ export function SettingsToolsPage() {
         desktop={state.computerUse}
         onToggleComputerUse={(val) => handleToggle("computerUse", val)}
         onToggleScreenVisuals={(val) => handleToggle("screenVisuals", val)}
+        onToggleAnyDesktop={(val) => handleToggle("anyDesktopSession", val)}
         onOpenPermission={handleOpenPermission}
       />
     </div>

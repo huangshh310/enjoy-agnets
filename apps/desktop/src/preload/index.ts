@@ -295,8 +295,10 @@ const ide = {
   builtinTools: {
     getState: () =>
       ipcRenderer.invoke("builtinTools.getState") as Promise<BuiltinToolsState>,
-    toggle: (input: { tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals"; enabled: boolean }) =>
-      ipcRenderer.invoke("builtinTools.toggle", input) as Promise<BuiltinToolsState>,
+    toggle: (input: {
+      tool: "builtinBrowser" | "browserBridge" | "computerUse" | "screenVisuals" | "anyDesktopSession"
+      enabled: boolean
+    }) => ipcRenderer.invoke("builtinTools.toggle", input) as Promise<BuiltinToolsState>,
     regeneratePairingCode: () =>
       ipcRenderer.invoke("builtinTools.regeneratePairingCode") as Promise<BuiltinToolsState>,
     getDesktopPermissions: () =>
@@ -311,7 +313,8 @@ const ide = {
     previewOverlay: () =>
       ipcRenderer.invoke("builtinTools.previewOverlay") as Promise<{ ok: true }>,
     desktopDoctor: () => ipcRenderer.invoke("builtinTools.desktopDoctor"),
-    desktopView: () => ipcRenderer.invoke("builtinTools.desktopView")
+    desktopView: () => ipcRenderer.invoke("builtinTools.desktopView"),
+    desktopCapturePreview: () => ipcRenderer.invoke("builtinTools.desktopCapturePreview")
   },
   app: {
     updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),

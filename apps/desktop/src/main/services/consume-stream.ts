@@ -67,11 +67,13 @@ export async function consumeFullStream(input: {
   }
 }
 
-/** 主循环待批也要冻结 desktop_act 观察时钟，并写入 appKey / pid。 */
+/** 主循环待批：冻结 TTL，并补 appKey / 本观察缩略图。 */
 async function parkApprovalArgs(name: string, args: unknown): Promise<unknown> {
   if (name !== "desktop_act" || !args || typeof args !== "object") return args
-  const { parkDesktopActArgs } = await import("./builtin-tools/computer-use/desktop-tools")
-  return parkDesktopActArgs(args as Record<string, unknown>)
+  const { enrichDesktopActApprovalArgs, parkDesktopActArgs } = await import(
+    "./builtin-tools/computer-use/desktop-tools"
+  )
+  return enrichDesktopActApprovalArgs(parkDesktopActArgs(args as Record<string, unknown>))
 }
 
 function emitCheckpoint(

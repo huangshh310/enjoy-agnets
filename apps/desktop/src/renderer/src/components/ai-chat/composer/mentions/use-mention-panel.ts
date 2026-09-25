@@ -31,7 +31,8 @@ export function useMentionPanel(
   docs: readonly MentionDoc[],
   modeCopy: SurfaceCopy,
   builtinCopy: SlashBuiltinCopy,
-  mcps: readonly McpMentionItem[] = []
+  mcps: readonly McpMentionItem[] = [],
+  desktopEnabled = false
 ) {
   const [cursor, setCursor] = useState(value.length)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -40,8 +41,8 @@ export function useMentionPanel(
   const mention = useMemo(() => detectActiveMention(value, cursor), [value, cursor])
   const open = Boolean(mention && !dismissed)
   const items = useMemo(
-    () => listItems(mention?.kind, mention?.query ?? "", roots, files, docs, modeCopy, builtinCopy, mcps),
-    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy, mcps]
+    () => listItems(mention?.kind, mention?.query ?? "", roots, files, docs, modeCopy, builtinCopy, mcps, desktopEnabled),
+    [mention?.kind, mention?.query, roots, files, docs, modeCopy, builtinCopy, mcps, desktopEnabled]
   )
 
   useLayoutEffect(() => {
@@ -109,9 +110,10 @@ function listItems(
   docs: readonly MentionDoc[],
   modeCopy: SurfaceCopy,
   builtinCopy: SlashBuiltinCopy,
-  mcps: readonly McpMentionItem[]
+  mcps: readonly McpMentionItem[],
+  desktopEnabled: boolean
 ): MentionItem[] {
-  if (kind === "at") return buildAtMentionItems(query, roots, files, docs, mcps)
+  if (kind === "at") return buildAtMentionItems(query, roots, files, docs, mcps, undefined, desktopEnabled)
   if (kind === "slash") return buildSlashMentionItems(query, modeCopy, builtinCopy)
   return []
 }

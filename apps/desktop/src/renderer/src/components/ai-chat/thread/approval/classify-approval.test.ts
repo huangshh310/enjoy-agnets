@@ -28,6 +28,10 @@ test("其余工具走 questions，MCP 带 command 字段不算 shell", () => {
   assert.equal(classifyApproval("browser_open", { command: "https://x" }), "questions")
 })
 
+test("desktop_act 走桌面名片，不走通用 questions", () => {
+  assert.equal(classifyApproval("desktop_act", { observationId: "obs_1", action: "click" }), "desktop")
+})
+
 test("commandTextOf 优先 args.command，否则 argv", () => {
   assert.equal(commandTextOf("bash", { command: "pnpm test" }), "pnpm test")
   assert.equal(commandTextOf("command", { argv: ["ls", "-la"] }), "ls -la")
@@ -42,7 +46,7 @@ test("commandCwdOf 优先 args.cwd", () => {
 test("桌面动作的审批卡是一句话", () => {
   assert.equal(
     payloadPreview({ observationId: "obs_1", appName: "计算器", elementName: "等于", action: "click" }),
-    "计算器 · 等于 · click"
+    "计算器 · 「等于」 · click · 计算器"
   )
 })
 

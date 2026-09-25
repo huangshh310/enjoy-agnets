@@ -19,15 +19,15 @@ export type Observation = {
   pid: number
   windowId: string
   appName: string
-  elements: ObservationElement[]
-  createdAt: number
-  platform: string
-  thumbnailPath?: string
-  /** bundleId → exe/AUMID → appName；执行器没给时由宿主回落。 */
+  /** 会话 Allow 键；bundleId → exe/AUMID → 规范化 appName。pid 不是键。 */
   appKey?: string
   bundleId?: string
   exe?: string
   aumid?: string
+  elements: ObservationElement[]
+  createdAt: number
+  platform: string
+  thumbnailPath?: string
 }
 
 export type StaleCause = "missing" | "spent" | "expired"

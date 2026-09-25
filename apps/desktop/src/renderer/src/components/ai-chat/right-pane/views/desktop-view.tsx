@@ -8,6 +8,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 type View = {
   observationId: string
   appName: string
+  appKey?: string
   elements: Array<{ id: string; role: string; name: string; clickable: boolean }>
   thumbnailDataUrl?: string
 }
@@ -36,6 +37,9 @@ export function DesktopObservationView() {
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto p-3">
       <p className="text-body-medium text-text-primary">{view.appName}</p>
+      {view.appKey ? (
+        <p className="text-caption-2-medium text-text-tertiary">{t("chat.paneDesktopAppKey", { appKey: view.appKey })}</p>
+      ) : null}
       {view.thumbnailDataUrl ? (
         <img src={view.thumbnailDataUrl} alt={view.appName} className="max-h-40 w-full rounded-lg object-contain" />
       ) : null}

@@ -33,7 +33,14 @@ export type ActInput = {
 export type DesktopSessionHooks = {
   permissions?: () => DesktopPermissions
   captureThumb?: (pid?: number) => Promise<string | null>
-  onView?: (view: { observationId: string; appName: string; elements: Observation["elements"]; thumbnailPath?: string }) => void
+  onView?: (view: {
+    observationId: string
+    appName: string
+    appKey?: string
+    elements: Observation["elements"]
+    thumbnailPath?: string
+  }) => void
+  onAct?: (input: ActInput, observation: Observation) => void
   now?: () => number
   ttlMs?: number
   /** 与真实 spawn 同一条 resolve；单测可塞假路径。 */

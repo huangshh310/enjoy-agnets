@@ -12,13 +12,15 @@ import type { ApprovalDecide, ApprovalVariant } from "./approval.types"
 const ICON = {
   command: RiTerminalBoxLine,
   plan: RiListCheck3,
-  questions: RiQuestionAnswerLine
+  questions: RiQuestionAnswerLine,
+  desktop: RiQuestionAnswerLine
 } as const
 
 const ICON_TONE = {
   command: "border-border-error-default/30 bg-background-tertiary-error text-text-error-primary",
   plan: "border-state-success-text/20 bg-state-success-base/40 text-state-success-text",
-  questions: "border-accent-500/20 bg-accent-500/10 text-accent-500"
+  questions: "border-accent-500/20 bg-accent-500/10 text-accent-500",
+  desktop: "border-accent-500/20 bg-accent-500/10 text-accent-500"
 } as const
 
 export function ApprovalChrome({
@@ -27,6 +29,7 @@ export function ApprovalChrome({
   children,
   approveLabel,
   denyLabel,
+  alwaysLabel,
   showAlways = true,
   approveDisabled,
   decide
@@ -36,6 +39,7 @@ export function ApprovalChrome({
   children: ReactNode
   approveLabel: string
   denyLabel: string
+  alwaysLabel?: string
   showAlways?: boolean
   approveDisabled?: boolean
   decide: ApprovalDecide
@@ -63,6 +67,7 @@ export function ApprovalChrome({
           variant={variant}
           approveLabel={approveLabel}
           denyLabel={denyLabel}
+          alwaysLabel={alwaysLabel}
           showAlways={showAlways}
           approveDisabled={approveDisabled}
           decide={decide}

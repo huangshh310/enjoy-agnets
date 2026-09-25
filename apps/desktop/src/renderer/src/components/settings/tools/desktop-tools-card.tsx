@@ -1,50 +1,93 @@
-import { useEffect, useState } from "react"
-import type { DesktopComputerUseState } from "@enjoy-agents/ipc-contract"
+/**
+ * 设置「电脑操控」：开通三拍 + 当前 helper 医生 + 试一下。不是第二套遥控器。
+ */
+import { useCallback, useEffect, useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
+import type { DesktopComputerUseState, DesktopDoctorReport } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DesktopMacPermissions } from "./desktop-mac-permissions"
+import { DesktopAnyDesktopDetails } from "./desktop/desktop-any-desktop-details"
+import { DesktopDoctorPanel } from "./desktop/desktop-doctor-panel"
+import { DesktopOnboardingActions } from "./desktop/desktop-onboarding-actions"
+import { desktopReadiness } from "./desktop/desktop-readiness"
+import { DesktopReadinessStrip } from "./desktop/desktop-readiness-strip"
+import { startCalculatorTryFlow } from "./desktop/start-calculator-try"
 
 export function DesktopToolsCard({
   desktop,
   onToggleComputerUse,
   onToggleScreenVisuals,
+  onToggleAnyDesktop,
   onOpenPermission
 }: {
   desktop: DesktopComputerUseState
   onToggleComputerUse: (enabled: boolean) => void
   onToggleScreenVisuals?: (enabled: boolean) => void
+  onToggleAnyDesktop?: (enabled: boolean) => void
   onOpenPermission: (permission: "accessibility" | "screenCapture") => void
 }) {
   const t = useT()
+  const navigate = useNavigate()
   const [previewing, setPreviewing] = useState(false)
-  const [doctorLine, setDoctorLine] = useState("")
+  const [checking, setChecking] = useState(false)
+  const [capturing, setCapturing] = useState(false)
+  const [thumb, setThumb] = useState("")
+  const [doctor, setDoctor] = useState<DesktopDoctorReport | null>(null)
   const hint = platformHintKey(desktop.session)
+  const readiness = desktopReadiness(desktop, doctor)
+
+  const refreshDoctor = useCallback(async () => {
+    if (!desktop.enabled || !hasIde()) return
+    setChecking(true)
+    try {
+      const report = (await getIde().builtinTools.desktopDoctor()) as DesktopDoctorReport
+      setDoctor(report)
+    } catch {
+      setDoctor(null)
+    } finally {
+      setChecking(false)
+    }
+  }, [desktop.enabled])
 
   useEffect(() => {
-    if (!desktop.enabled || !hasIde()) return
-    void getIde()
-      .builtinTools.desktopDoctor()
-      .then((report: { line?: string }) => setDoctorLine(report.line ?? ""))
-      .catch(() => setDoctorLine(""))
-  }, [desktop.enabled])
+    void refreshDoctor()
+  }, [refreshDoctor])
 
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-body-medium font-semibold text-text-primary">{t("settings.builtinTools.desktopSection")}</h3>
       <div className="rounded-2xl border border-border-button-default bg-background-primary-default p-5">
         <div className="flex flex-col gap-4">
-          <SwitchRow
-            title={t("settings.builtinTools.computerUseTitle")}
-            desc={t("settings.builtinTools.computerUseDesc")}
-            checked={desktop.enabled}
-            onChange={onToggleComputerUse}
-          />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-body-medium text-text-primary">{t("settings.builtinTools.computerUseTitle")}</p>
+                <ReadinessBadge ready={readiness.ready} />
+              </div>
+              <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("settings.builtinTools.computerUseDesc")}</p>
+            </div>
+            <Switch
+              checked={desktop.enabled}
+              onCheckedChange={onToggleComputerUse}
+              aria-label={t("settings.builtinTools.computerUseTitle")}
+            />
+          </div>
+          <DesktopReadinessStrip readiness={readiness} />
           {desktop.enabled ? (
-            <div className="flex flex-col gap-3.5 pt-1">
-              {doctorLine ? <p className="text-caption-1-medium text-text-secondary leading-relaxed">{doctorLine}</p> : null}
-              {hint ? <p className="text-caption-1-medium text-text-secondary leading-relaxed">{t(hint)}</p> : null}
+            <div className="flex flex-col gap-3.5">
+              <DesktopDoctorPanel doctor={doctor} ready={readiness.ready} />
+              {hint ? <p className="text-caption-1-medium leading-relaxed text-text-secondary">{t(hint)}</p> : null}
+              <DesktopOnboardingActions
+                checking={checking}
+                capturing={capturing}
+                preview={thumb}
+                onCheck={() => void refreshDoctor()}
+                onCapture={() => void capturePreview(setCapturing, setThumb)}
+                onTryCalculator={() => void startCalculatorTryFlow(() => navigate({ to: "/" }))}
+              />
               <DesktopMacPermissions desktop={desktop} onOpenPermission={onOpenPermission} />
               <VisualsRow
                 previewing={previewing}
@@ -52,7 +95,11 @@ export function DesktopToolsCard({
                 onPreview={() => void previewOverlay(setPreviewing)}
                 onToggle={onToggleScreenVisuals}
               />
-              <p className="pt-1 text-caption-1-medium leading-relaxed text-text-tertiary">{t("settings.builtinTools.desktopTip")}</p>
+              <DesktopAnyDesktopDetails
+                enabled={desktop.anyDesktopSession === true}
+                onToggle={(value) => onToggleAnyDesktop?.(value)}
+              />
+              <p className="text-caption-1-medium leading-relaxed text-text-tertiary">{t("settings.builtinTools.desktopTip")}</p>
             </div>
           ) : null}
         </div>
@@ -61,25 +108,18 @@ export function DesktopToolsCard({
   )
 }
 
-function SwitchRow({
-  title,
-  desc,
-  checked,
-  onChange
-}: {
-  title: string
-  desc: string
-  checked: boolean
-  onChange: (enabled: boolean) => void
-}) {
+function ReadinessBadge({ ready }: { ready: boolean }) {
+  const t = useT()
   return (
-    <div className="flex items-center justify-between gap-6">
-      <div className="min-w-0 flex-1">
-        <p className="text-body-medium text-text-primary">{title}</p>
-        <p className="mt-1 text-caption-1-medium text-text-secondary">{desc}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} aria-label={title} />
-    </div>
+    <span
+      className={
+        ready
+          ? "rounded-full bg-state-success-base px-2 py-0.5 text-caption-2-semibold text-state-success-text ring-1 ring-state-success-text/20"
+          : "rounded-full bg-text-warning-primary/10 px-2 py-0.5 text-caption-2-semibold text-text-warning-primary ring-1 ring-text-warning-primary/20"
+      }
+    >
+      {ready ? t("settings.builtinTools.ready") : t("settings.builtinTools.notReady")}
+    </span>
   )
 }
 
@@ -118,6 +158,19 @@ async function previewOverlay(setPreviewing: (value: boolean) => void) {
     await getIde().builtinTools.previewOverlay()
   } finally {
     setTimeout(() => setPreviewing(false), 3000)
+  }
+}
+
+async function capturePreview(setCapturing: (value: boolean) => void, setThumb: (value: string) => void) {
+  if (!hasIde()) return
+  setCapturing(true)
+  try {
+    const result = (await getIde().builtinTools.desktopCapturePreview()) as { thumbnailDataUrl?: string }
+    setThumb(result.thumbnailDataUrl ?? "")
+  } catch {
+    setThumb("")
+  } finally {
+    setCapturing(false)
   }
 }
 

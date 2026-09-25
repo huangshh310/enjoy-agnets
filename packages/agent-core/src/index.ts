@@ -136,14 +136,30 @@ export { embedTexts, embedQuery } from "./knowledge/embed-many";
 export * from "./compaction";
 export {
   createObservationLedger,
+  DESKTOP_ACT_ANY_SESSION_KEY,
+  DESKTOP_ACT_SESSION_PREFIX,
+  desktopActAlwaysAsks,
+  desktopActAppKey,
+  desktopActAppKeyInfo,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
   desktopActFailureCode,
+  desktopActIsSensitive,
   desktopActMayReportSuccess,
+  desktopActSessionKey,
   desktopActSkipsApproval,
   desktopAppKey,
   DESKTOP_ACT_SECOND_CONFIRM,
   DESKTOP_ACT_STALE,
-  OBSERVATION_TTL_MS
+  normalizeDesktopAppName,
+  OBSERVATION_TTL_MS,
+  sessionAllowsDesktopAct,
+  withAnyDesktopSessionKey
 } from "./computer-use";
-export type { Observation, ObservationElement, ObservationLedger, TakeObservation } from "./computer-use";
+export type {
+  DesktopActAppKeySource,
+  Observation,
+  ObservationElement,
+  ObservationLedger,
+  TakeObservation
+} from "./computer-use";

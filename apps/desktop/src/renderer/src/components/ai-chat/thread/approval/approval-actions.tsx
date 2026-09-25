@@ -11,6 +11,7 @@ export function ApprovalActions({
   variant,
   approveLabel,
   denyLabel,
+  alwaysLabel,
   showAlways,
   approveDisabled,
   decide
@@ -18,13 +19,14 @@ export function ApprovalActions({
   variant: ApprovalVariant
   approveLabel: string
   denyLabel: string
+  alwaysLabel?: string
   showAlways: boolean
   approveDisabled?: boolean
   decide: ApprovalDecide
 }) {
   const t = useT()
   const denyTone =
-    variant === "questions" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
+    variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
     <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
       <Button
@@ -47,7 +49,7 @@ export function ApprovalActions({
           className="h-8 text-caption-1-medium"
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
-          {t("chat.alwaysAllow")}
+          {alwaysLabel ?? t("chat.alwaysAllow")}
         </Button>
       ) : null}
       <Button

@@ -86,6 +86,15 @@ test("@ 发现含文件、文档、技能，网页 muted", () => {
   assert.equal(items.some((item) => item.kind === "doc" && item.name === "登录流程说明"), true)
   assert.equal(items.some((item) => item.kind === "skill"), true)
   assert.equal(items.some((item) => item.kind === "web" && item.muted), true)
+  assert.equal(items.some((item) => item.kind === "desktop"), false)
+})
+
+test("执行态可列出 @电脑，探索态不列", () => {
+  takeComposerSkillChips()
+  const withDesktop = buildAtMentionItems("", [], [], [], [], [], true)
+  const without = buildAtMentionItems("电脑", [], [], [], [], [], false)
+  assert.equal(withDesktop.some((item) => item.kind === "desktop" && item.label === "电脑"), true)
+  assert.equal(without.some((item) => item.kind === "desktop"), false)
 })
 
 test("@ 提及在空查询时列出已连 MCP 服务", () => {
