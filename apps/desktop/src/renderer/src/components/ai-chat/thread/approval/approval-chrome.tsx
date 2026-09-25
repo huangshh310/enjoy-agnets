@@ -29,6 +29,7 @@ export function ApprovalChrome({
   children,
   approveLabel,
   denyLabel,
+  alwaysLabel,
   showAlways = true,
   approveDisabled,
   decide
@@ -38,6 +39,7 @@ export function ApprovalChrome({
   children: ReactNode
   approveLabel: string
   denyLabel: string
+  alwaysLabel?: string
   showAlways?: boolean
   approveDisabled?: boolean
   decide: ApprovalDecide
@@ -65,6 +67,7 @@ export function ApprovalChrome({
           variant={variant}
           approveLabel={approveLabel}
           denyLabel={denyLabel}
+          alwaysLabel={alwaysLabel}
           showAlways={showAlways}
           approveDisabled={approveDisabled}
           decide={decide}

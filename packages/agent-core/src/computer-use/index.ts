@@ -26,11 +26,14 @@ export {
   DESKTOP_ACT_SESSION_PREFIX,
   desktopActAlwaysAsks,
   desktopActAppKey,
+  desktopActAppKeyInfo,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
   desktopActIsSensitive,
   desktopActSessionKey,
   desktopActSkipsApproval,
   normalizeDesktopAppName,
-  sessionAllowsDesktopAct
+  sessionAllowsDesktopAct,
+  withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
+export type { DesktopActAppKeySource } from "./desktop-act-policy.ts"

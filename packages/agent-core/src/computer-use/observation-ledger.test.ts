@@ -2,12 +2,15 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { createObservationLedger, type Observation } from "./observation-ledger.ts"
 import {
+  DESKTOP_ACT_ANY_SESSION_KEY,
   desktopActAppKey,
+  desktopActAppKeyInfo,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
   desktopActSessionKey,
   desktopActSkipsApproval,
-  sessionAllowsDesktopAct
+  sessionAllowsDesktopAct,
+  withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
 
 function sample(id: string, createdAt: number): Observation {
@@ -71,8 +74,11 @@ test("审批文案带应用、控件、前台和 appKey", () => {
 
 test("appKey 优先 bundleId，会话键禁止裸 desktop_act", () => {
   assert.equal(desktopActAppKey({ bundleId: "com.apple.calculator", appName: "计算器" }), "com.apple.calculator")
+  assert.equal(desktopActAppKeyInfo({ bundleId: "com.apple.calculator" }).appKeySource, "bundleId")
   assert.equal(desktopActAppKey({ exe: "notepad.exe", appName: "记事本" }), "notepad.exe")
+  assert.equal(desktopActAppKeyInfo({ aumid: "Microsoft.Notepad_8wekyb3d8bbwe" }).appKeySource, "aumid")
   assert.equal(desktopActAppKey({ appName: "Calculator.app" }), "calculator")
+  assert.equal(desktopActAppKeyInfo({ appName: "Calculator.app" }).appKeySource, "appName")
   assert.equal(desktopActSessionKey(""), null)
   assert.equal(desktopActSessionKey("com.apple.calculator"), "desktop_act:com.apple.calculator")
   assert.equal(
@@ -86,4 +92,15 @@ test("appKey 优先 bundleId，会话键禁止裸 desktop_act", () => {
     ),
     true
   )
+  assert.equal(
+    sessionAllowsDesktopAct(
+      { appKey: "com.apple.notes", elementId: "e1" },
+      { sessionApprovedTools: new Set([DESKTOP_ACT_ANY_SESSION_KEY]) }
+    ),
+    true
+  )
+  const injected = withAnyDesktopSessionKey(new Set(["desktop_act:com.apple.calculator"]), true)
+  assert.equal(injected.has(DESKTOP_ACT_ANY_SESSION_KEY), true)
+  assert.equal(injected.has("desktop_act"), false)
+  assert.equal(withAnyDesktopSessionKey(injected, false).has(DESKTOP_ACT_ANY_SESSION_KEY), false)
 })

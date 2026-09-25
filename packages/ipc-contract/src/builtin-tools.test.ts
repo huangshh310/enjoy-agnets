@@ -2,6 +2,7 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import {
   BuiltinToolsState,
+  DesktopActApprovalArgs,
   ToggleBuiltinToolInput,
   OpenSystemPermissionInput
 } from "./builtin-tools.ts"
@@ -35,6 +36,18 @@ test("ToggleBuiltinToolInput validates tools enum", () => {
   assert.throws(() => {
     ToggleBuiltinToolInput.parse({ tool: "unknownTool", enabled: true })
   })
+})
+
+test("DesktopActApprovalArgs 收 appKeySource 与 bypassesSessionAllow", () => {
+  const parsed = DesktopActApprovalArgs.parse({
+    observationId: "obs",
+    action: "click",
+    appKey: "com.apple.calculator",
+    appKeySource: "bundleId",
+    bypassesSessionAllow: false
+  })
+  assert.equal(parsed.appKeySource, "bundleId")
+  assert.equal(parsed.bypassesSessionAllow, false)
 })
 
 test("OpenSystemPermissionInput validates permission enum", () => {

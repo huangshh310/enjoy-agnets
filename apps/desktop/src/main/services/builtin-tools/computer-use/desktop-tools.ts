@@ -2,7 +2,12 @@
  * Enjoy Local 的 Computer Use 工具。执行在 main，观察用过即废。
  */
 // @ts-nocheck — 与 createCodingTools 相同：AI SDK Tool 泛型与 Zod 4 不合。
-import { desktopActAppKey, desktopAppKey } from "@enjoy-agents/agent-core/computer-use"
+import {
+  desktopActAppKeyInfo,
+  desktopActBypassesSessionAllow,
+  desktopAppKey,
+  type Observation
+} from "@enjoy-agents/agent-core/computer-use"
 import { tool } from "ai"
 import { z } from "zod"
 import { checkDesktopPermissions } from "../builtin-tools-state"
@@ -99,12 +104,22 @@ export async function readDesktopView() {
 export function enrichDesktopActArgs(args: Record<string, unknown>): Record<string, unknown> {
   const id = text(args.observationId)
   const observation = id ? sharedSession().lookup(id) : null
-  if (!observation) {
-    const appKey = desktopActAppKey(args)
-    return appKey ? { ...args, appKey } : args
+  const merged = observation ? mergeObservationIntoActArgs(args, observation) : args
+  const info = desktopActAppKeyInfo({
+    ...merged,
+    appKey: observation?.appKey || desktopAppKey(observation ?? {}) || merged.appKey
+  })
+  return {
+    ...merged,
+    ...(info.appKey ? { appKey: info.appKey } : {}),
+    ...(info.appKeySource ? { appKeySource: info.appKeySource } : {}),
+    bypassesSessionAllow: desktopActBypassesSessionAllow(merged)
   }
+}
+
+function mergeObservationIntoActArgs(args: Record<string, unknown>, observation: Observation): Record<string, unknown> {
   const element = observation.elements.find((item) => item.id === args.elementId)
-  const merged = {
+  return {
     ...args,
     appName: observation.appName,
     bundleId: observation.bundleId,
@@ -115,8 +130,6 @@ export function enrichDesktopActArgs(args: Record<string, unknown>): Record<stri
     elementRole: element?.role,
     thumbnailPath: observation.thumbnailPath
   }
-  const appKey = desktopActAppKey({ ...merged, appKey: observation.appKey || desktopAppKey(observation) })
-  return appKey ? { ...merged, appKey } : merged
 }
 
 /** 审批卡用：同步账本字段后再读本观察缩略图，不拿全局 last view 顶替。 */

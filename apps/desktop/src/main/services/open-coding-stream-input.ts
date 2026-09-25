@@ -2,10 +2,11 @@
  * 开流入参与审批策略。从 open-coding-stream 抽出，避免调度函数超 50 行。
  */
 import type { ModelMessage } from "ai"
-import type {
-  ApprovalPolicy,
-  SubagentToolTraceEvent,
-  WaitForSubagentApproval
+import {
+  withAnyDesktopSessionKey,
+  type ApprovalPolicy,
+  type SubagentToolTraceEvent,
+  type WaitForSubagentApproval
 } from "@enjoy-agents/agent-core"
 import {
   type AgentMode,
@@ -49,14 +50,15 @@ export type OpenCodingStreamInput = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined
 }
 
-/** 把偏好和本轮已批工具收成 ApprovalPolicy。 */
+/** 把偏好和本轮已批工具收成 ApprovalPolicy。任意桌面开时注入 `desktop_act:*`。 */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
+  const anyDesktopSession = getBuiltinToolsState().computerUse.anyDesktopSession === true
   return {
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
-    sessionApprovedTools: input.sessionApprovedTools,
+    sessionApprovedTools: withAnyDesktopSessionKey(input.sessionApprovedTools, anyDesktopSession),
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
-    anyDesktopSession: getBuiltinToolsState().computerUse.anyDesktopSession === true
+    anyDesktopSession
   }
 }

@@ -140,6 +140,7 @@ export {
   DESKTOP_ACT_SESSION_PREFIX,
   desktopActAlwaysAsks,
   desktopActAppKey,
+  desktopActAppKeyInfo,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
   desktopActFailureCode,
@@ -152,6 +153,13 @@ export {
   DESKTOP_ACT_STALE,
   normalizeDesktopAppName,
   OBSERVATION_TTL_MS,
-  sessionAllowsDesktopAct
+  sessionAllowsDesktopAct,
+  withAnyDesktopSessionKey
 } from "./computer-use";
-export type { Observation, ObservationElement, ObservationLedger, TakeObservation } from "./computer-use";
+export type {
+  DesktopActAppKeySource,
+  Observation,
+  ObservationElement,
+  ObservationLedger,
+  TakeObservation
+} from "./computer-use";

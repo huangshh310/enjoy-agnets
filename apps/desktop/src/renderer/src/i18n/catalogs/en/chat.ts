@@ -709,6 +709,7 @@ export const enChat = {
   desktopApprovalTitle: "Allow control of “{app}”?",
   desktopApprovalTtlFrozen: "Pending · this observation TTL is frozen (§3.2a)",
   desktopAllowOnce: "Allow once",
+  desktopAllowSession: "Allow this app this session",
   desktopAllowSessionApp: "Allow “{app}” this session",
   desktopChip: "Computer",
   alwaysInWorkspace: "Always in workspace",

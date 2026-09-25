@@ -701,6 +701,7 @@ export const zhChat = {
   desktopApprovalTitle: "允许操控「{app}」？",
   desktopApprovalTtlFrozen: "待批中 · 本观察 TTL 已冻结（§3.2a）",
   desktopAllowOnce: "允许一次",
+  desktopAllowSession: "本会话允许此应用",
   desktopAllowSessionApp: "本会话允许「{app}」",
   desktopChip: "电脑",
   alwaysInWorkspace: "本工作区始终允许",

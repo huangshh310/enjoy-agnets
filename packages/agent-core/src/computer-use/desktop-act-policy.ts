@@ -5,16 +5,20 @@ import {
   DESKTOP_ACT_ANY_SESSION_KEY,
   desktopActAppKey,
   desktopActIsSensitive,
-  desktopActSessionKey
+  desktopActSessionKey,
+  withAnyDesktopSessionKey
 } from "./desktop-act-app-key.ts"
 
 export {
   DESKTOP_ACT_ANY_SESSION_KEY,
   DESKTOP_ACT_SESSION_PREFIX,
   desktopActAppKey,
+  desktopActAppKeyInfo,
   desktopActIsSensitive,
   desktopActSessionKey,
-  normalizeDesktopAppName
+  normalizeDesktopAppName,
+  withAnyDesktopSessionKey,
+  type DesktopActAppKeySource
 } from "./desktop-act-app-key.ts"
 
 /** `wait` 不改界面，不停车。带坐标或要求前台时仍要问。 */
@@ -40,15 +44,13 @@ export function desktopActAlwaysAsks(args: unknown): boolean {
   return desktopActBypassesSessionAllow(args) || desktopActIsSensitive(args)
 }
 
-/** 按 appKey 查会话白名单。裸 `desktop_act` 不算放行。 */
+/** 按 `desktop_act:<appKey>` 或 `desktop_act:*` 查白名单。裸 `desktop_act` 不算放行。 */
 export function sessionAllowsDesktopAct(
   args: unknown,
   policy: { sessionApprovedTools?: ReadonlySet<string>; anyDesktopSession?: boolean }
 ): boolean {
   if (desktopActAlwaysAsks(args)) return false
-  if (policy.anyDesktopSession) return true
-  const session = policy.sessionApprovedTools
-  if (!session) return false
+  const session = withAnyDesktopSessionKey(policy.sessionApprovedTools, policy.anyDesktopSession === true)
   if (session.has(DESKTOP_ACT_ANY_SESSION_KEY)) return true
   const key = desktopActSessionKey(desktopActAppKey(args))
   return Boolean(key && session.has(key))

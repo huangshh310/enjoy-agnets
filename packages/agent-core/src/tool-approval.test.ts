@@ -120,6 +120,19 @@ test("desktop_act：wait 不审，会话放行绑 appKey，裸工具名不放行
   )
 })
 
+test("desktop_act：desktop_act:* 与任意桌面开关等价，仍拦坐标和敏感窗", () => {
+  const starred = { ...EDITS, sessionApprovedTools: new Set(["desktop_act:*"]) }
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", starred, {
+      action: "click",
+      elementId: "e1",
+      appKey: "com.apple.notes"
+    }),
+    "approved"
+  )
+  assert.equal(resolveToolApproval("desktop_act", "agent", starred, { action: "click", x: 1 }), "user-approval")
+})
+
 test("desktop_act：任意桌面开关放行元素点击，仍拦坐标和敏感窗", () => {
   const any = { ...EDITS, anyDesktopSession: true }
   assert.equal(

@@ -11,6 +11,7 @@ export function ApprovalActions({
   variant,
   approveLabel,
   denyLabel,
+  alwaysLabel,
   showAlways,
   approveDisabled,
   decide
@@ -18,6 +19,7 @@ export function ApprovalActions({
   variant: ApprovalVariant
   approveLabel: string
   denyLabel: string
+  alwaysLabel?: string
   showAlways: boolean
   approveDisabled?: boolean
   decide: ApprovalDecide
@@ -47,7 +49,7 @@ export function ApprovalActions({
           className="h-8 text-caption-1-medium"
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
-          {t("chat.alwaysAllow")}
+          {alwaysLabel ?? t("chat.alwaysAllow")}
         </Button>
       ) : null}
       <Button

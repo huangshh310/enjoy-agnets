@@ -73,11 +73,14 @@ export const DesktopActApprovalArgs = z
     elementId: z.string().optional(),
     appName: z.string().optional(),
     appKey: z.string().optional(),
+    appKeySource: z.enum(["bundleId", "exe", "aumid", "appName"]).optional(),
     elementName: z.string().optional(),
     elementRole: z.string().optional(),
     thumbnailPath: z.string().optional(),
     thumbnailDataUrl: z.string().optional(),
     allowForeground: z.boolean().optional(),
+    /** 坐标 / 切前台：为 true 时卡片隐藏「本会话允许此应用」。 */
+    bypassesSessionAllow: z.boolean().optional(),
     x: z.number().optional(),
     y: z.number().optional()
   })

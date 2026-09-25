@@ -6,6 +6,10 @@
 export const DESKTOP_ACT_ANY_SESSION_KEY = "desktop_act:*"
 export const DESKTOP_ACT_SESSION_PREFIX = "desktop_act:"
 
+export type DesktopActAppKeySource = "bundleId" | "exe" | "aumid" | "appName"
+
+const KEY_SOURCES: readonly DesktopActAppKeySource[] = ["bundleId", "exe", "aumid", "appName"]
+
 const SENSITIVE = [
   "system settings",
   "system preferences",
@@ -32,17 +36,22 @@ export function normalizeDesktopAppName(name: string): string {
     .replace(/\s+/g, " ")
 }
 
+/** 从审批 args / 观察字段抽出 appKey 与来源。kai 已写 appKey 时尊重，来源可另给。 */
+export function desktopActAppKeyInfo(args: unknown): {
+  appKey: string
+  appKeySource: DesktopActAppKeySource | ""
+} {
+  if (!args || typeof args !== "object") return { appKey: "", appKeySource: "" }
+  const row = args as Record<string, unknown>
+  const inferred = inferDesktopActAppKey(row)
+  const explicit = text(row.appKey)
+  if (!explicit) return inferred
+  return { appKey: explicit, appKeySource: asAppKeySource(row.appKeySource) || inferred.appKeySource }
+}
+
 /** 从审批 args / 观察字段抽出 appKey。缺字段时用规范化 appName，仍空则不能会话放行。 */
 export function desktopActAppKey(args: unknown): string {
-  if (!args || typeof args !== "object") return ""
-  const row = args as Record<string, unknown>
-  return (
-    text(row.appKey) ||
-    text(row.bundleId) ||
-    text(row.exe) ||
-    text(row.aumid) ||
-    normalizeDesktopAppName(text(row.appName))
-  )
+  return desktopActAppKeyInfo(args).appKey
 }
 
 /** 写入 sessionApprovedTools 的键。没有 appKey 时返回 null，禁止退回裸 desktop_act。 */
@@ -52,12 +61,42 @@ export function desktopActSessionKey(appKey: string): string | null {
   return `${DESKTOP_ACT_SESSION_PREFIX}${key}`
 }
 
+/** 高级「本会话任意桌面」开时注入 `desktop_act:*`，关时摘掉，禁止裸 `desktop_act`。 */
+export function withAnyDesktopSessionKey(
+  session: ReadonlySet<string> | undefined,
+  anyDesktop: boolean
+): Set<string> {
+  const next = new Set(session)
+  if (anyDesktop) next.add(DESKTOP_ACT_ANY_SESSION_KEY)
+  else next.delete(DESKTOP_ACT_ANY_SESSION_KEY)
+  return next
+}
+
 /** 系统设置 / 钥匙串 / 支付等敏感窗：即使开了任意桌面也每次问。 */
 export function desktopActIsSensitive(args: unknown): boolean {
   const key = desktopActAppKey(args)
   const name = args && typeof args === "object" ? text((args as Record<string, unknown>).appName) : ""
   const hay = `${key} ${normalizeDesktopAppName(name)}`.toLowerCase()
   return SENSITIVE.some((item) => hay.includes(item))
+}
+
+function inferDesktopActAppKey(row: Record<string, unknown>): {
+  appKey: string
+  appKeySource: DesktopActAppKeySource | ""
+} {
+  const bundleId = text(row.bundleId)
+  if (bundleId) return { appKey: bundleId, appKeySource: "bundleId" }
+  const exe = text(row.exe)
+  if (exe) return { appKey: exe, appKeySource: "exe" }
+  const aumid = text(row.aumid)
+  if (aumid) return { appKey: aumid, appKeySource: "aumid" }
+  const appName = normalizeDesktopAppName(text(row.appName))
+  if (appName) return { appKey: appName, appKeySource: "appName" }
+  return { appKey: "", appKeySource: "" }
+}
+
+function asAppKeySource(value: unknown): DesktopActAppKeySource | "" {
+  return KEY_SOURCES.includes(value as DesktopActAppKeySource) ? (value as DesktopActAppKeySource) : ""
 }
 
 function text(value: unknown): string {

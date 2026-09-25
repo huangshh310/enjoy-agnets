@@ -120,6 +120,7 @@ function applyApprovalDecision(
     return
   }
   if (pending.name === "desktop_act") {
+    // §3.2b：只写 desktop_act:<appKey>。无 key 当一次允许；禁止裸 desktop_act。
     const key = desktopActSessionKey(desktopActAppKey(pending.args))
     if (key) run.sessionApprovedTools.add(key)
     return
