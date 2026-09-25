@@ -1183,7 +1183,7 @@ export const zhSettings = {
     anyDesktopSummary: "高级 · 本会话任意桌面",
     anyDesktopTitle: "本会话任意桌面",
     anyDesktopDesc: "将跳过按应用确认，可点击当前屏幕上任意窗口。敏感窗（系统设置 / 钥匙串 / 支付）仍每次问。",
-    anyDesktopWarn: "默认关闭。未开时禁止裸 desktop_act。开启后本会话命中 desktop_act:*，不是裸工具名。",
+    anyDesktopWarn: "默认关闭，只记当前对话内存，不写设置。未开时禁止裸 desktop_act。开启后本会话命中 desktop_act:*，不是裸工具名。",
     desktopTip: "辅助功能必须授给即将点击的 Enjoy Computer Use helper。打包二进制要有团队签名；开发机 swiftc / .build 未签名时医生不会报绿。",
     platformHintWindows: "Windows 尚未标为可用，须等真机 GUI 冒烟。实现上走 UI Automation 后台 Invoke；目标窗口若以更高完整性运行，动作会返回 integrity_blocked，两边需要同一级别。",
     platformHintX11: "X11 尚未标为可用，须等真机 GUI 冒烟。实现上走 AT-SPI。缺库时请安装 at-spi2-core 与 python3-pyatspi。",

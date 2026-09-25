@@ -6,6 +6,7 @@ import { app, ipcMain, shell } from "electron"
 import path from "node:path"
 import fs from "node:fs"
 import {
+  GetBuiltinToolsStateInput,
   OpenSystemPermissionInput,
   ToggleBuiltinToolInput
 } from "@enjoy-agents/ipc-contract"
@@ -36,13 +37,14 @@ export const BUILTIN_TOOLS_CHANNELS = [
 ] as const
 
 export function registerBuiltinToolsIpc() {
-  ipcMain.handle("builtinTools.getState", async () => {
-    return getBuiltinToolsState()
+  ipcMain.handle("builtinTools.getState", async (_event, raw: unknown) => {
+    const input = GetBuiltinToolsStateInput.parse(raw ?? {})
+    return getBuiltinToolsState(input.sessionId)
   })
 
   ipcMain.handle("builtinTools.toggle", async (_event, raw: unknown) => {
     const input = ToggleBuiltinToolInput.parse(raw)
-    const updated = setBuiltinToolEnabled(input.tool, input.enabled)
+    const updated = setBuiltinToolEnabled(input.tool, input.enabled, input.sessionId)
     if (input.tool === "browserBridge") {
       await syncBridgeServerWithState()
     }

@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { bashAllowPrefix, desktopActAppKey, desktopActSessionKey } from "@enjoy-agents/agent-core"
+import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
 import { desktopActFailureCode, desktopActMayReportSuccess } from "@enjoy-agents/agent-core/computer-use"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
@@ -108,7 +108,11 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
 }
 
 function applyApprovalDecision(
-  run: { sessionApprovedTools: Set<string>; sessionApprovedBashPrefixes: Set<string> },
+  run: {
+    sessionApprovedTools: Set<string>
+    sessionApprovedBashPrefixes: Set<string>
+    input: { sessionId: string }
+  },
   decision: "allow" | "deny" | "allow_session",
   pending: { name: string; args?: unknown }
 ) {
@@ -120,9 +124,8 @@ function applyApprovalDecision(
     return
   }
   if (pending.name === "desktop_act") {
-    // §3.2b：只写 desktop_act:<appKey>。无 key 当一次允许；禁止裸 desktop_act。
-    const key = desktopActSessionKey(desktopActAppKey(pending.args))
-    if (key) run.sessionApprovedTools.add(key)
+    // §3.2b / P1-S：write-through 会话表 + run 副本。禁止裸 desktop_act。
+    writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, pending.args)
     return
   }
   run.sessionApprovedTools.add(pending.name)

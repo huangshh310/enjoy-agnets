@@ -1,7 +1,9 @@
 /**
  * 会话归档 / 恢复 / 永久删除。只动 SQLite，不删工作区磁盘文件。
  */
+import { clearConversationDesktopAllow } from "@enjoy-agents/agent-core"
 import { deleteAcpRemoteIfLive, disposeAcpSession } from "@enjoy-agents/agent-harness"
+import { syncActiveRunsDesktopAllow } from "./conversation-desktop-allow-sync"
 import { getDatabase } from "./database"
 
 export function listArchivedSessions() {
@@ -23,6 +25,7 @@ export function archiveSession(sessionId: string) {
     .prepare("UPDATE sessions SET archived_at = ?, updated_at = ? WHERE id = ? AND archived_at IS NULL")
     .run(now, now, sessionId)
   if (result.changes === 0) throw new Error("Unknown or already archived session.")
+  forgetConversationDesktopAllow(sessionId)
   return { id: sessionId, archivedAt: now }
 }
 
@@ -53,7 +56,13 @@ export function deleteSession(sessionId: string) {
     db.exec("ROLLBACK")
     throw error
   }
+  forgetConversationDesktopAllow(sessionId)
   return { id: sessionId }
+}
+
+function forgetConversationDesktopAllow(sessionId: string): void {
+  clearConversationDesktopAllow(sessionId)
+  syncActiveRunsDesktopAllow(sessionId)
 }
 
 export function deleteAllArchivedSessions() {

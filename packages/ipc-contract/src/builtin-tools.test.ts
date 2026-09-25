@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import {
   BuiltinToolsState,
   DesktopActApprovalArgs,
+  GetBuiltinToolsStateInput,
   ToggleBuiltinToolInput,
   OpenSystemPermissionInput
 } from "./builtin-tools.ts"
@@ -28,10 +29,22 @@ test("BuiltinToolsState validates default structure", () => {
   assert.equal(parsed.computerUse.anyDesktopSession, false)
 })
 
+test("GetBuiltinToolsStateInput 可带 sessionId", () => {
+  assert.equal(GetBuiltinToolsStateInput.parse({}).sessionId, undefined)
+  assert.equal(GetBuiltinToolsStateInput.parse({ sessionId: "sess_a" }).sessionId, "sess_a")
+})
+
 test("ToggleBuiltinToolInput validates tools enum", () => {
   const valid = ToggleBuiltinToolInput.parse({ tool: "browserBridge", enabled: true })
   assert.equal(valid.tool, "browserBridge")
   assert.equal(valid.enabled, true)
+
+  const anyDesktop = ToggleBuiltinToolInput.parse({
+    tool: "anyDesktopSession",
+    enabled: true,
+    sessionId: "sess_a"
+  })
+  assert.equal(anyDesktop.sessionId, "sess_a")
 
   assert.throws(() => {
     ToggleBuiltinToolInput.parse({ tool: "unknownTool", enabled: true })

@@ -135,6 +135,9 @@ export { videoTimeoutMs, VIDEO_POLL_TIMEOUT_MS } from "./media/generate-video";
 export { embedTexts, embedQuery } from "./knowledge/embed-many";
 export * from "./compaction";
 export {
+  clearAllConversationDesktopAllows,
+  clearConversationDesktopAllow,
+  conversationHasAnyDesktop,
   createObservationLedger,
   DESKTOP_ACT_ANY_SESSION_KEY,
   DESKTOP_ACT_SESSION_PREFIX,
@@ -149,12 +152,19 @@ export {
   desktopActSessionKey,
   desktopActSkipsApproval,
   desktopAppKey,
+  grantConversationDesktopAllow,
+  mergeConversationDesktopAllow,
   DESKTOP_ACT_SECOND_CONFIRM,
   DESKTOP_ACT_STALE,
   normalizeDesktopAppName,
   OBSERVATION_TTL_MS,
+  overlayConversationDesktopAllow,
+  revokeConversationDesktopAllow,
   sessionAllowsDesktopAct,
-  withAnyDesktopSessionKey
+  setConversationAnyDesktop,
+  snapshotConversationDesktopAllow,
+  withAnyDesktopSessionKey,
+  writeThroughDesktopActSessionAllow
 } from "./computer-use";
 export type {
   DesktopActAppKeySource,
