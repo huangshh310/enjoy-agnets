@@ -24,3 +24,15 @@ export const DesktopMentionAppsResult = z.object({
   code: z.string().optional()
 })
 export type DesktopMentionAppsResult = z.infer<typeof DesktopMentionAppsResult>
+
+/** agent.run 偏置：宿主 desktop_* 或点名稳 appKey。提及 ≠ 放行。 */
+export const DesktopMentionBias = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("host") }),
+  z.object({
+    kind: z.literal("app"),
+    displayName: z.string().min(1),
+    appKey: z.string(),
+    stable: z.boolean()
+  })
+])
+export type DesktopMentionBias = z.infer<typeof DesktopMentionBias>

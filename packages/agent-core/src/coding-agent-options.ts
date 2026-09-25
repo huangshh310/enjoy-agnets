@@ -2,7 +2,7 @@
  * 编码 Agent 与开流共用的选项袋，避免两处各写一长串字段。
  */
 import type { LanguageModel, ModelMessage } from "ai"
-import type { AgentMode, ReasoningEffort } from "@enjoy-agents/ipc-contract"
+import type { AgentMode, DesktopMentionBias, ReasoningEffort } from "@enjoy-agents/ipc-contract"
 import type { WaitForSubagentApproval } from "./agents/subagent-approval.ts"
 import type { SubagentToolTraceEvent } from "./agents/subagent-tool-trace.ts"
 import type { AgentRuntimeContext } from "./runtime-context.ts"
@@ -36,6 +36,8 @@ export type CodingAgentOptions = {
   pullInstructionUpdates?: () => ModelMessage[]
   /** 自定义说明 + 常驻规则 + 技能索引，接在 systemPromptFor 后面。 */
   extraInstructions?: string
+  /** CU-P1-B：Execute 偏置 desktop_*。Explore 忽略。提及 ≠ 放行。 */
+  desktopBias?: DesktopMentionBias
 }
 
 /** 开流：在创建选项上再带模型、消息与中止。 */

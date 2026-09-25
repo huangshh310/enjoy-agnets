@@ -113,9 +113,13 @@ export async function runDesktopDoctor() {
   return { ...report, line: formatDoctorLine(report) }
 }
 
-/** Composer 提及用：与 desktop_list_apps 同源，失败回空列表。 */
+/** Composer 提及用：与 desktop_list_apps 同源。抛错 / 失败都回空列表，不造假应用。 */
 export async function listDesktopMentionAppsIpc() {
-  return mapListedDesktopApps(await sharedSession().listApps())
+  try {
+    return mapListedDesktopApps(await sharedSession().listApps())
+  } catch {
+    return mapListedDesktopApps({ success: false, code: "executor_missing" })
+  }
 }
 
 export async function captureDesktopPreview() {

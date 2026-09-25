@@ -2,6 +2,7 @@
  * Agent 会话消息与跑循环入参。
  */
 import { z } from "zod"
+import { DesktopMentionBias } from "./desktop-mention-apps"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 
 export const AgentMode = z.enum(["agent", "plan", "ask", "debug", "workflow", "tdd", "code_mode"])
@@ -37,7 +38,9 @@ export const RunAgentInput = z.object({
   /** 「按此执行」：计划走 hidden/system，不进用户气泡。 */
   executePlan: z.boolean().optional(),
   /** 幂等收据。同一 commandId 重试返回第一次的 runId，不双开 turn。 */
-  commandId: z.string().min(1).optional()
+  commandId: z.string().min(1).optional(),
+  /** CU-P1-B：Composer `@桌面` / `@应用` 偏置。缺省不偏。提及 ≠ 放行。 */
+  desktopBias: DesktopMentionBias.optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 

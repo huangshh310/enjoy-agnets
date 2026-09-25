@@ -97,6 +97,7 @@ function localStreamOptions(
     pullSteeringMessages: input.pullSteeringMessages,
     pullInstructionUpdates: extras.pullInstructionUpdates,
     extraInstructions: extras.extraInstructions,
+    desktopBias: input.desktopBias,
     skills: extras.skills,
     exploreModel: extras.exploreModel,
     runtimeContext: {

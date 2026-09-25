@@ -1,12 +1,10 @@
 /**
  * 从 Composer 正文读出 @桌面 / @应用 偏置。提及 ≠ 放行。
  */
-import type { DesktopMentionApp } from "@enjoy-agents/ipc-contract"
+import type { DesktopMentionApp, DesktopMentionBias } from "@enjoy-agents/ipc-contract"
 import { DESKTOP_HOST_TOKEN, isDesktopHostToken } from "./constants.ts"
 
-export type DesktopMentionBias =
-  | { kind: "host" }
-  | { kind: "app"; displayName: string; appKey: string; stable: boolean }
+export type { DesktopMentionBias }
 
 const TOKEN_RE = /@([^\s@]+)/g
 

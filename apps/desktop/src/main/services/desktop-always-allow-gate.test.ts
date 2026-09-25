@@ -30,6 +30,20 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 
+test("无稳 key / pid 不得写入持久簿", () => {
+  const entries = readFileSync(
+    new URL("./builtin-tools/computer-use/desktop-always-allow-entries.ts", import.meta.url),
+    "utf8"
+  )
+  assert.match(entries, /if \(!isStableDesktopAppKey\(appKey\)\) return null/)
+  const ledger = readFileSync(
+    new URL("./builtin-tools/computer-use/desktop-always-allow-ledger.ts", import.meta.url),
+    "utf8"
+  )
+  assert.match(ledger, /upsertDesktopAlwaysAllowEntry/)
+  assert.doesNotMatch(ledger, /args\.pid|row\.pid/)
+})
+
 test("二次确认路径硬拒绝写簿，不调用落盘", () => {
   const ledger = readFileSync(
     new URL("./builtin-tools/computer-use/desktop-always-allow-ledger.ts", import.meta.url),

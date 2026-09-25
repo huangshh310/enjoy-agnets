@@ -26,4 +26,5 @@ test("createBuiltinAgentTools 用门控，探索态不调 desktopControlTools", 
   assert.match(src, /shouldRegisterDesktopControlTools/)
   assert.match(src, /desktopControlTools\(\)/)
   assert.doesNotMatch(src, /if \(state\.computerUse\.enabled\) Object\.assign\(tools, desktopControlTools\(\)\)/)
+  assert.doesNotMatch(src, /desktopBias/)
 })

@@ -156,6 +156,7 @@ async function openRunStream(
     sessionApprovedTools: run.sessionApprovedTools,
     sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes],
     executePlan: run.input.executePlan,
+    desktopBias: run.input.desktopBias,
     runtimeId: run.input.runtimeId,
     pullSteeringMessages: () => absorbSteeringMessages(run),
     takeQuestionAnswers: () => {
