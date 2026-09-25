@@ -87,8 +87,8 @@ tailwind.config = {
           <p class="mt-1 text-mute">标题「始终允许的应用」· 行按钮「撤销」· 空态「还没有始终允许的应用…」· 说明必须含「坐标/前台/敏感仍每次问」</p>
         </div>
         <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
-          <p class="font-semibold">分层 · 各写各的</p>
-          <p class="mt-1 text-mute">硬每次问（坐标/前台/敏感/二次确认）→ 会话表 → 持久簿 <code>desktopAlwaysAllowAppKeys</code>。始终允许只写簿；本会话只写表；撤销只清簿。</p>
+          <p class="font-semibold">分层（已锁 · leo/host）</p>
+          <p class="mt-1 text-mute">硬每次问（坐标/前台/敏感/二次确认）→ 会话表 → 持久簿 <code>desktopAlwaysAllowAppKeys</code>。文案「始终允许此应用」→ 决策 <code>allow_always</code>。无稳 appKey 隐藏该项。</p>
         </div>
       </div>
     </aside>
@@ -98,7 +98,7 @@ tailwind.config = {
       <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 class="text-base font-semibold">1 · Permission Dock 四态（非新壳）</h2>
-          <p class="mt-1 text-[13px] text-mute">复用 CU-P0-B / CU-P1-R 桌面名片铬。突出第三项。主键 <code>appKey</code>，pid 不是键。</p>
+          <p class="mt-1 text-[13px] text-mute">复用 CU-P0-B / CU-P1-R 桌面名片铬。突出第三项：「始终允许此应用」→ <code>allow_always</code>。主键 <code>appKey</code>，pid 不是键。</p>
         </div>
         <span class="rounded-full bg-okSoft px-2.5 py-1 text-[11px] font-medium text-ok">allow_always</span>
       </div>
@@ -159,7 +159,7 @@ tailwind.config = {
       <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 class="text-base font-semibold">1b · 无稳 appKey：始终允许钮隐藏</h2>
-          <p class="mt-1 text-[13px] text-mute">没有稳定键就只剩一次 / 本会话（若可） / 拒绝。禁止用 pid 顶替。</p>
+          <p class="mt-1 text-[13px] text-mute">无 bundleId / exe / AUMID / 规范化 appName 时隐藏始终允许。只留一次 + 拒绝；本会话按现有规则（无稳键或 bypass 也不出）。禁止用 pid 顶替。</p>
         </div>
         <span class="rounded-full bg-warnSoft px-2.5 py-1 text-[11px] font-medium text-warn">hide always-allow</span>
       </div>
@@ -169,7 +169,7 @@ tailwind.config = {
           <p class="mt-1 text-[12px] text-mute">控件 · click · 仅 pid <code>18422</code> · 无 bundleId / exe / AUMID / 规范化名</p>
           <div class="mt-3 space-y-1.5 text-[12px]">
             <p class="rounded-lg border border-line px-2.5 py-1.5">允许一次</p>
-            <p class="rounded-lg border border-dashed border-line/80 px-2.5 py-1.5 text-mute">本会话允许此应用 · 无键则同样不写表</p>
+            <p class="rounded-lg border border-dashed border-line/80 px-2.5 py-1.5 text-mute">本会话允许此应用 · 无稳键时按现有规则隐藏</p>
             <p class="rounded-lg border border-dashed border-line/70 bg-paper px-2.5 py-1.5 text-mute line-through">始终允许此应用</p>
             <p class="rounded-lg border border-line px-2.5 py-1.5">拒绝</p>
           </div>
@@ -242,7 +242,7 @@ tailwind.config = {
             <p class="mt-1 text-[12px] text-mute">在审批卡选「始终允许此应用」后会出现在这里</p>
           </div>
 
-          <p class="text-[11px] leading-relaxed text-mute">「本会话允许」只活在当前对话，不在本页。若用户另外点过本会话，会话键由 CU-P1-S 单独管理。</p>
+          <p class="text-[11px] leading-relaxed text-mute">「本会话允许」只活在当前对话，不在本页。禁画「任意桌面永久」进本名单。</p>
         </div>
       </div>
     </section>
@@ -264,7 +264,7 @@ tailwind.config = {
           <li>跨会话 / 重启直至撤销；本机 only，禁云同步</li>
           <li>同 appKey 的 click / type / key 可跳普通 Dock</li>
           <li><code>wait</code> 免批（已有）</li>
-          <li>始终允许只写 <code>desktopAlwaysAllowAppKeys</code>；本会话只写 <code>conversationDesktopAllow</code></li>
+          <li>命中：硬每次问 → 会话表 → 持久簿。本会话不升持久（已锁）</li>
         </ul>
       </div>
     </section>
@@ -278,7 +278,7 @@ tailwind.config = {
         <li class="strike">敏感窗因始终允许跳过</li>
         <li class="strike">Always-allow 跳过 CU-P1-R <code>needs_second_confirm</code> 并排卡</li>
         <li class="strike">pid 当键；无稳 appKey 仍露出始终允许</li>
-        <li class="strike">与「本会话」糊成一种；会话升持久 / 持久改会话表</li>
+        <li class="strike">与「本会话」糊成一种；只点本会话却写入持久簿</li>
         <li class="strike">云同步名单 / Registry 策略 / Explore 注册 desktop_act</li>
         <li class="strike">第二套遥控器 · 脚注墙 · 空「已连接」假绿 · 行按钮写撕掉/移除/删除/Forget</li>
       </ul>
@@ -287,31 +287,40 @@ tailwind.config = {
     <!-- handoff -->
     <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <h2 class="text-base font-semibold">给 mike / kai 的交接</h2>
-      <div class="mt-3 grid gap-4 md:grid-cols-2">
+
+      <div class="mt-3 rounded-xl border border-amber-300 bg-warnSoft/80 px-4 py-3 text-[13px] leading-relaxed">
+        <p class="font-semibold text-warn">待 host 拍板 · write-through（本预览不锁死任一侧）</p>
+        <ul class="mt-2 list-disc space-y-1.5 pl-4 text-ink">
+          <li><strong>jojo</strong>：<code>allow_always</code> 写持久簿，并写当前会话表同 <code>appKey</code>；设置「撤销」清持久 + 清当前会话同键。</li>
+          <li><strong>leo via host</strong>：<code>allow_always</code> <em>只</em>写持久簿；撤销只清簿，不管会话表。</li>
+        </ul>
+        <p class="mt-2 text-[12px] text-mute">两侧都同意：只点「本会话」不写持久；无稳 appKey 隐藏始终允许；禁持久 <code>desktop_act:*</code> / 任意桌面永久。C 端先锁皮，数据面等拍板再接线。</p>
+      </div>
+
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
         <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
           <p class="font-semibold">mike · 名片与设置</p>
           <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
             <li>沿用 Permission Dock，不是新壳；四态齐全时突出「始终允许此应用」</li>
-            <li>决策：<code>allow</code> / <code>allow_session</code> / <code>allow_always</code> / <code>deny</code></li>
-            <li>testid：<code>approval-allow</code> · <code>approval-session</code>（今日代码或仍叫 <code>approval-always</code>，本会话 ≠ 持久，请改名）· <code>approval-always-app</code> · <code>approval-deny</code></li>
-            <li>无稳 appKey：隐藏始终允许；不要用 pid 凑一项</li>
-            <li>设置嵌「电脑操控」卡：标题 / 含坐标前台敏感的说明 / 「撤销」/ 空态原文；撤销后列表立即更新</li>
-            <li>勿画第二套遥控器、勿脚注墙、勿云同步开关</li>
+            <li>决策名：文案「始终允许此应用」→ <code>allow_always</code>（与 <code>allow</code> / <code>allow_session</code> / <code>deny</code> 并列）</li>
+            <li>testid：<code>approval-allow</code> · <code>approval-session</code>（今日或仍叫 <code>approval-always</code>，本会话 ≠ 持久，请改名）· <code>approval-always-app</code> · <code>approval-deny</code></li>
+            <li>无稳 appKey（无 bundleId / exe / AUMID / 规范化名）：<strong>隐藏</strong>始终允许；一次 + 拒绝必在；本会话按现有规则（无键或 bypass 也藏）</li>
+            <li>设置嵌「电脑操控」卡：标题 / 含坐标前台敏感的说明 / 「撤销」/ 空态原文</li>
+            <li>勿画第二套遥控器、勿脚注墙、勿「任意桌面永久」进本名单</li>
           </ul>
         </div>
         <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
           <p class="font-semibold">kai · 簿与闸</p>
           <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
-            <li>持久键数组：<code>desktopAlwaysAllowAppKeys</code>（本机 prefs，不进 <code>conversationDesktopAllow</code>）</li>
-            <li><code>allow_always</code> 只把该 <code>appKey</code> 写入持久簿</li>
-            <li>「本会话允许此应用」只写会话表；不升簿</li>
-            <li>设置「撤销」只从簿删该键；不管会话表（本会话仍由 CU-P1-S 管）</li>
-            <li>命中顺序：<code>desktopActAlwaysAsks</code>（坐标/前台/敏感/二次确认）→ 会话表 → 持久簿</li>
-            <li>禁持久 <code>desktop_act:*</code>；Explore 不注册；禁云策略</li>
+            <li>持久键数组：<code>desktopAlwaysAllowAppKeys</code>（本机 prefs）</li>
+            <li>命中顺序（已锁）：硬每次问（坐标/前台/敏感/二次确认）→ 会话表 → 持久簿</li>
+            <li>「本会话允许此应用」只写会话表，不升簿（已锁）</li>
+            <li><code>allow_always</code> / 「撤销」是否同时动会话表 → 见上条黄框，待 host</li>
+            <li>禁持久 <code>desktop_act:*</code> / 任意桌面永久；Explore 不注册；禁云策略</li>
           </ul>
         </div>
       </div>
-      <p class="mt-4 text-[12px] text-mute">C 端门（luna）：四态非新壳 · 设置名单可撤销 · 无稳键隐藏第三项 · 硬每次问不被簿盖住 · 本会话与始终允许各写各的。</p>
+      <p class="mt-4 text-[12px] text-mute">C 端门（luna）：四态非新壳 · 设置名单可撤销 · 无稳键隐藏第三项 · 硬每次问不被簿盖住 · 禁永久 anyDesktop。write-through 不在本门。</p>
     </section>
   </main>
 
