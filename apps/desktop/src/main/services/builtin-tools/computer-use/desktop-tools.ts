@@ -11,7 +11,10 @@ import {
 import { tool } from "ai"
 import { z } from "zod"
 import { checkDesktopPermissions } from "../builtin-tools-state"
+import { currentToolRunId } from "../../active-run-id"
+import { currentPumpingRunId } from "../../agent-run-state"
 import { beginDesktopActOverlay, endDesktopActOverlay } from "../desktop-overlay-chrome"
+import { resolveDesktopActRunId } from "../desktop-overlay-lifecycle"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
 import { formatDoctorLine } from "./doctor-report"
 import {
@@ -61,7 +64,11 @@ function sharedSession(): DesktopSession {
     onView: setLastDesktopView,
     resolveCommand: () => resolveExecutorCommand(),
     onAct: (input, observation) => {
-      beginDesktopActOverlay({ action: input.action, appName: observation.appName })
+      beginDesktopActOverlay({
+        action: input.action,
+        appName: observation.appName,
+        runId: resolveDesktopActRunId(undefined, currentToolRunId(), currentPumpingRunId())
+      })
     },
     onActEnd: () => {
       endDesktopActOverlay()
@@ -70,9 +77,14 @@ function sharedSession(): DesktopSession {
   return singleton
 }
 
-/** 开关打开时注册的五只工具。探索模式不走到这里。 */
+/** 开关打开且非探索态才注册。Explore 走 desktop-tool-gate，不要调这里。 */
 export function desktopControlTools(session = sharedSession()) {
   return { ...readTools(session), desktop_act: actTool(session) }
+}
+
+/** 用户停：拒绝在途 act。协议无 cancel RPC，执行器侧 kill 在途请求。 */
+export function cancelInFlightDesktopAct(): void {
+  singleton?.cancelInFlight()
 }
 
 export async function resumeDesktopAct(args: Record<string, unknown>) {

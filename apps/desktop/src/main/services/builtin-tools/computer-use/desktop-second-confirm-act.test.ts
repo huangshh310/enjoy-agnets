@@ -28,7 +28,8 @@ function sampleObservation(overrides: Record<string, unknown> = {}) {
 function fakeHandle(onCall: (method: string, params: Record<string, unknown>) => unknown): ExecutorHandle {
   return {
     request: async (method, params) => onCall(method, params),
-    dispose() {}
+    dispose() {},
+    cancelInFlight() {}
   }
 }
 

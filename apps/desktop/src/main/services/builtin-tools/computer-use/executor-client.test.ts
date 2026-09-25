@@ -11,6 +11,22 @@ function writeScript(name: string, source: string): string {
   return file
 }
 
+test("cancelInFlight 拒绝在途请求，不 dispose 整只 helper", async () => {
+  const handle = startExecutor(process.execPath, ["-e", "process.stdin.resume()"], 5_000)
+  try {
+    const pending = handle.request("act", { action: "click" })
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    handle.cancelInFlight()
+    await assert.rejects(
+      () => pending,
+      (error: unknown) => error instanceof ExecutorFailure && error.code === "executor_cancelled"
+    )
+    handle.cancelInFlight()
+  } finally {
+    handle.dispose()
+  }
+})
+
 test("超时以 executor_timeout 失败", async () => {
   const handle = startExecutor(process.execPath, ["-e", "process.stdin.resume()"], 200)
   try {

@@ -3,11 +3,16 @@
  * 不发空成功条。Esc / 一键停走同一条 abort。
  */
 import { app, globalShortcut } from "electron"
+import { currentToolRunId } from "../active-run-id"
+import { currentPumpingRunId, listActiveRuns } from "../agent-run-state"
+import { readPreferences } from "../preferences"
 import { getBuiltinToolsState } from "./builtin-tools-state"
 import { overlayChromeCopy, shouldShowDesktopOverlay } from "./desktop-overlay-visibility"
+import {
+  resolveDesktopActRunId,
+  runDesktopOverlayStop
+} from "./desktop-overlay-lifecycle"
 import { sendOverlayChrome } from "./screen-overlay-service"
-import { listActiveRuns } from "../agent-run-state"
-import { readPreferences } from "../preferences"
 
 let overlayOn = false
 let previewTimer: ReturnType<typeof setTimeout> | null = null
@@ -79,12 +84,8 @@ export function beginDesktopActOverlay(input: { action: string; appName?: string
   }
   clearPreviewTimer()
   previewOnly = false
-  controllingRunId = input.runId ?? inferPumpingRunId()
+  controllingRunId = resolveDesktopActRunId(input.runId, currentToolRunId(), currentPumpingRunId())
   paintOverlay(input.appName ?? "")
-}
-
-function inferPumpingRunId(): string | undefined {
-  return listActiveRuns().find((item) => item.run.pumping)?.runId
 }
 
 /** 结束 / 失败 / 二次确认停卡：立刻熄，不画成功条。 */
@@ -111,24 +112,22 @@ export function resetDesktopOverlayChrome(): void {
 }
 
 /**
- * 一键停 / Esc：先熄铬，再中止在跑的 Enjoy 循环。
- * 执行器中途的 click 可能仍会落下（kai 薄挂点）。
+ * 一键停 / Esc：先熄铬，再硬取消在途 act，再 abort 该 runId。
+ * 协议没有 cancel RPC；OS 已落下的 click 无法撤回。
  */
 export async function stopDesktopActOverlay(): Promise<void> {
   const runId = controllingRunId
   const wasPreview = previewOnly
-  endDesktopActOverlay()
-  if (wasPreview) return
   const { abortAgent } = await import("../agent-runner")
-  if (runId) {
-    await abortAgent({ runId })
-    return
-  }
-  const targets = listActiveRuns()
-  const pumping = targets.filter((item) => item.run.pumping)
-  for (const item of pumping.length ? pumping : targets) {
-    await abortAgent({ runId: item.runId })
-  }
+  const { cancelInFlightDesktopAct } = await import("./computer-use/desktop-tools")
+  await runDesktopOverlayStop({
+    controllingRunId: runId,
+    previewOnly: wasPreview,
+    runs: listActiveRuns().map((item) => ({ runId: item.runId, pumping: item.run.pumping })),
+    endOverlay: endDesktopActOverlay,
+    cancelInFlight: cancelInFlightDesktopAct,
+    abortAgent: (id) => abortAgent({ runId: id })
+  })
 }
 
 /** 设置页预览冷静铬，约一个呼吸周期后熄；不是成功 toast。 */

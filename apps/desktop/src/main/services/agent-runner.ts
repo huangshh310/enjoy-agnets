@@ -17,6 +17,7 @@ import { persistActiveRun } from "./flush-agent-run"
 import { cancelCodingStream } from "./open-coding-stream"
 import { pumpStream } from "./agent-pump"
 import { clearSteer } from "./runtime-interact/steering-queue"
+import { runWithActiveRunId } from "./active-run-id"
 import {
   deleteActiveRun,
   emitEvent,
@@ -48,7 +49,9 @@ export async function abortAgent(rawInput: unknown) {
   deleteActiveRun(runId)
   await cancelCodingStream(runId)
   const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
+  const { cancelInFlightDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
   endDesktopActOverlay()
+  cancelInFlightDesktopAct()
   return { ok: true }
 }
 
@@ -90,7 +93,7 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   let desktopResume: Record<string, unknown> | undefined
   if (!hadWaiter && decision.decision !== "deny") {
     const { executeStoredTool } = await import("./execute-stored-tool")
-    const outcome = await executeStoredTool(run, pending)
+    const outcome = await runWithActiveRunId(decision.runId, () => executeStoredTool(run, pending))
     if (outcome.kind === "desktop_act") desktopResume = outcome.result
   }
   emitEvent(window, {

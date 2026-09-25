@@ -32,7 +32,8 @@ export function createDesktopSession(
     peek: (observationId) => ledger.peek(observationId),
     lookup: (observationId) => ledger.lookup(observationId),
     freeze: (observationId) => ledger.freeze(observationId),
-    release: (observationId) => ledger.discard(observationId)
+    release: (observationId) => ledger.discard(observationId),
+    cancelInFlight: () => executor?.cancelInFlight()
   }
 }
 
