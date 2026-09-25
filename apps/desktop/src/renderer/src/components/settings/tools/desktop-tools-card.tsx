@@ -18,12 +18,14 @@ import { startCalculatorTryFlow } from "./desktop/start-calculator-try"
 
 export function DesktopToolsCard({
   desktop,
+  sessionId,
   onToggleComputerUse,
   onToggleScreenVisuals,
   onToggleAnyDesktop,
   onOpenPermission
 }: {
   desktop: DesktopComputerUseState
+  sessionId?: string | null
   onToggleComputerUse: (enabled: boolean) => void
   onToggleScreenVisuals?: (enabled: boolean) => void
   onToggleAnyDesktop?: (enabled: boolean) => void
@@ -96,6 +98,7 @@ export function DesktopToolsCard({
                 onToggle={onToggleScreenVisuals}
               />
               <DesktopAnyDesktopDetails
+                sessionId={sessionId}
                 enabled={desktop.anyDesktopSession === true}
                 onToggle={(value) => onToggleAnyDesktop?.(value)}
               />

@@ -1191,6 +1191,7 @@ export const enSettings = {
     anyDesktopTitle: "Any desktop this session",
     anyDesktopDesc: "Skips per-app confirmation and can click any window on the current screen. Sensitive windows (System Settings / Keychain / payments) still ask every time.",
     anyDesktopWarn: "Off by default. Remembered only in this conversation's memory, never written to settings. When off, a bare desktop_act session allow is forbidden. When on, this session hits desktop_act:*, never a naked tool name.",
+    anyDesktopNeedSession: "Open a chat first",
     desktopTip: "Grant Accessibility to the Enjoy Computer Use helper that will click. Packaged binaries must be team-signed; an unsigned swiftc / .build helper will not make doctor green.",
     platformHintWindows: "Windows is not marked available until real-machine GUI smoke. The implementation uses UI Automation Invoke in the background. If the target window runs at a higher integrity level, the action returns integrity_blocked until both sides match.",
     platformHintX11: "X11 is not marked available until real-machine GUI smoke. The implementation uses AT-SPI. If the library is missing, install at-spi2-core and python3-pyatspi.",
