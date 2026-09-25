@@ -29,16 +29,48 @@ test("appKey 优先 bundleId，再 exe，最后规范化 appName", () => {
   assert.equal(desktopAppKey({ appName: "  Calculator  " }), "calculator")
 })
 
-test("重拍匹配：同 appKey + 控件 id 或 role+name", () => {
+test("重拍匹配：同 appKey + role+name，路径 id 只作辅证", () => {
   const next = observation()
-  assert.equal(matchResnapElement(next, { appName: "Calculator", elementId: "0.1" })?.id, "0.1")
+  assert.equal(
+    matchResnapElement(next, {
+      appName: "Calculator",
+      elementId: "0.1",
+      elementRole: "AXButton",
+      elementName: "等于"
+    })?.id,
+    "0.1"
+  )
   assert.equal(
     matchResnapElement(next, { appName: "Calculator", elementId: "gone", elementRole: "AXButton", elementName: "等于" })
       ?.id,
     "0.1"
   )
-  assert.equal(matchResnapElement(next, { appName: "Notes", elementId: "0.1" }), null)
-  assert.equal(matchResnapElement(next, { appName: "Calculator", elementId: "9.9" }), null)
+  assert.equal(matchResnapElement(next, { appName: "Notes", elementId: "0.1", elementName: "等于" }), null)
+  assert.equal(
+    matchResnapElement(next, { appName: "Calculator", elementId: "9.9", elementRole: "AXButton", elementName: "清除" }),
+    null
+  )
+})
+
+test("同路径 id 但 name/role 变了不得匹配", () => {
+  const next = observation()
+  assert.equal(
+    matchResnapElement(next, {
+      appName: "Calculator",
+      elementId: "0.1",
+      elementRole: "AXButton",
+      elementName: "清除"
+    }),
+    null
+  )
+  assert.equal(
+    matchResnapElement(next, { appName: "Calculator", elementId: "0.1", elementRole: "AXStaticText", elementName: "等于" }),
+    null
+  )
+})
+
+test("只有路径 id、没有 role/name 视为弱身份，不静默匹配", () => {
+  assert.equal(matchResnapElement(observation(), { appName: "Calculator", elementId: "0.1" }), null)
 })
 
 test("空 appKey 或没有控件稳定键不得匹配", () => {

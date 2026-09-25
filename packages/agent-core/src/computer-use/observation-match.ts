@@ -1,5 +1,6 @@
 /**
- * 重拍校验：同 appKey + 控件稳定键（id / role+name）。
+ * 重拍校验：同 appKey + 控件稳定键（role+name）。
+ * elementId 只是当次快照路径下标，不能当跨树指针。
  * 只做匹配，不实现 H2 会话 Allow。
  */
 import type { Observation, ObservationElement } from "./observation-ledger.ts"
@@ -37,19 +38,27 @@ export function elementStableKey(element: { id?: string; role?: string; name?: s
   return norm(element.id)
 }
 
-/** 重拍树上找原目标。appKey 对不上或两边都空 → 不匹配。 */
+/** 重拍树上找原目标。有 role/name 必须对上；只有路径 id 则不静默匹配。 */
 export function matchResnapElement(next: Observation, target: ResnapTarget): ObservationElement | null {
   const wanted = desktopAppKey(target)
   const got = desktopAppKey(next)
   if (!wanted || !got || wanted !== got) return null
-  const byId = target.elementId
-    ? next.elements.find((item) => item.id === target.elementId)
-    : undefined
-  if (byId) return byId
   const role = norm(target.elementRole)
   const name = norm(target.elementName)
   if (!role && !name) return null
-  return next.elements.find((item) => elementStableKey(item) === `${role}\u0000${name}`) ?? null
+  const identity = next.elements.filter((item) => identityMatches(item, role, name))
+  if (identity.length === 0) return null
+  if (target.elementId) {
+    const samePath = identity.find((item) => item.id === target.elementId)
+    if (samePath) return samePath
+  }
+  return identity[0] ?? null
+}
+
+function identityMatches(item: ObservationElement, role: string, name: string): boolean {
+  if (role && norm(item.role) !== role) return false
+  if (name && norm(item.name) !== name) return false
+  return true
 }
 
 /** 从 list_apps 结果解析同应用 pid；对不上再回落 target.pid。 */

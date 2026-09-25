@@ -110,6 +110,8 @@ test("stale 后重拍匹配同一 appKey+控件则点新观察", async () => {
     observationId: id,
     action: "click",
     elementId: "0.1",
+    elementName: "等于",
+    elementRole: "AXButton",
     appName: "Calculator",
     appKey: "calculator",
     pid: 42
@@ -156,5 +158,40 @@ test("重拍控件对不上则二次确认，绝不静默点", async () => {
   assert.equal(typeof result.observationId, "string")
   assert.notEqual(result.observationId, id)
   assert.equal(result.previousObservationId, id)
+  assert.equal(methods.includes("act"), false)
+})
+
+test("同路径 elementId 但名称变了则二次确认，绝不自动点", async () => {
+  let now = 1_000
+  let trees = 0
+  const methods: string[] = []
+  const session = createDesktopSession(
+    () =>
+      fakeHandle((method) => {
+        methods.push(method)
+        if (method === "list_apps") return { apps: [{ pid: 42, name: "Calculator" }] }
+        if (method === "snapshot") {
+          trees += 1
+          const name = trees === 1 ? "等于" : "清除"
+          return { observation: sampleObservation({ elements: [{ id: "0.1", role: "AXButton", name, clickable: true }] }) }
+        }
+        return { delivery: "background" }
+      }),
+    { now: () => now, ttlMs: 50 }
+  )
+  const snap = await session.snapshot(42)
+  const id = String(snap.observationId)
+  now = 1_080
+  const result = await session.act({
+    observationId: id,
+    action: "click",
+    elementId: "0.1",
+    elementName: "等于",
+    elementRole: "AXButton",
+    appName: "Calculator",
+    pid: 42
+  })
+  assert.equal(result.success, false)
+  assert.equal(result.code, "needs_second_confirm")
   assert.equal(methods.includes("act"), false)
 })
