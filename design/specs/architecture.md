@@ -74,7 +74,7 @@ Main Process（可信）
 - 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`
 - preload：`apps/desktop/src/preload/index.ts`
 - 跨平台 PATH / spawn：`packages/agent-harness/src/agent-tools/detect/probe.ts`（`pathDirs` / `lookupOnPath` / `spawnPathCommand`）
-- Computer Use 执行器：`apps/desktop/native/computer-use/`，main 经 `executor-command.ts` 查找；打包进 `resources/bin/<platform>-<arch>/`。执行器可点其它应用，必须由用户打开设置开关并审批 `desktop_act`。辅助功能授给执行器二进制，不是 renderer。
+- Computer Use 执行器：`apps/desktop/native/computer-use/`，main 经 `executor-command.ts` 查找；打包进 `resources/bin/<platform>-<arch>/`。darwin helper 在有 `CSC_NAME` / `CU_CODESIGN_IDENTITY` 时由 `stage-computer-use.cjs` codesign；`desktop_doctor` 验即将 spawn 的路径与签名，未签名不得报绿。执行器可点其它应用，必须由用户打开设置开关并审批 `desktop_act`。辅助功能授给 **Enjoy Computer Use helper**，不是 renderer，也不是只授给 Electron 宿主。
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
 
 ## 已知坑
