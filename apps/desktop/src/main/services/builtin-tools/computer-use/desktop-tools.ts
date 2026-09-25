@@ -7,6 +7,7 @@ import { z } from "zod"
 import { desktopAppKey } from "@enjoy-agents/agent-core/computer-use"
 import { checkDesktopPermissions } from "../builtin-tools-state"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
+import { formatDoctorLine } from "./doctor-report"
 import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDesktopView } from "./desktop-thumbs"
 import { startExecutor, type ExecutorHandle } from "./executor-client"
 import { resolveExecutorCommand } from "./executor-command"
@@ -38,7 +39,8 @@ function sharedSession(): DesktopSession {
   singleton ??= createDesktopSession(openExecutor, {
     permissions: checkDesktopPermissions,
     captureThumb: () => captureDesktopThumb(),
-    onView: setLastDesktopView
+    onView: setLastDesktopView,
+    resolveCommand: () => resolveExecutorCommand()
   })
   return singleton
 }
@@ -67,7 +69,7 @@ export function releaseParkedDesktopAct(args: Record<string, unknown> | unknown)
 
 export async function runDesktopDoctor() {
   const report = await sharedSession().doctor()
-  return { ...report, line: doctorLine(report) }
+  return { ...report, line: formatDoctorLine(report) }
 }
 
 export async function readDesktopView() {
@@ -75,17 +77,6 @@ export async function readDesktopView() {
   if (!view) return null
   const thumbnailDataUrl = await readThumbDataUrl(view.thumbnailPath)
   return { ...view, thumbnailDataUrl }
-}
-
-function doctorLine(report: Record<string, unknown>): string {
-  if (report.code === "executor_missing") return "找不到桌面执行器。开发机需要 swiftc / python3 / PowerShell；安装包应带 bin/<platform>-<arch>/computer-use。"
-  if (report.code === "no_display") return "没有图形会话（没有 DISPLAY / WAYLAND_DISPLAY）。"
-  if (report.code === "permission_denied" || report.trusted === false || report.accessibility === false) {
-    return "辅助功能还没授给执行器进程。"
-  }
-  if (report.session === "wayland") return "Wayland 没有后台点击，动作会先停在审批卡。"
-  if (report.backgroundClick === true) return "后台点击可用。"
-  return typeof report.message === "string" ? report.message : "桌面执行器已连接。"
 }
 
 export function enrichDesktopActArgs(args: Record<string, unknown>): Record<string, unknown> {

@@ -1171,7 +1171,7 @@ export const enSettings = {
     desktopSection: "Desktop",
     computerUseTitle: "Computer Use",
     computerUseDesc: "Let Enjoy Local operate other apps on this machine. macOS uses Accessibility for background clicks; Windows uses UI Automation and needs the same integrity level for elevated windows; Linux can click in the background on X11, and needs a foreground grant on Wayland. Takes effect on new sessions.",
-    desktopTip: "Permissions are granted to Enjoy Agents itself. In development on macOS they are granted to the computer-use binary, not an interpreted swift process.",
+    desktopTip: "Grant Accessibility to the Enjoy Computer Use helper that will click. Packaged binaries must be team-signed; an unsigned swiftc / .build helper will not make doctor green.",
     platformHintWindows: "Windows uses UI Automation Invoke in the background. If the target window runs at a higher integrity level, the action returns integrity_blocked until both sides match.",
     platformHintX11: "X11 uses AT-SPI. If the library is missing, install at-spi2-core and python3-pyatspi.",
     platformHintWayland: "Wayland has no background click. The action waits on the approval card until you allow bringing the app forward.",

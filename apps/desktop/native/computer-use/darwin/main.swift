@@ -15,7 +15,11 @@ func dispatch(id: String, method: String, params: [String: Any]) {
   switch method {
   case "doctor":
     let trusted = AXIsProcessTrusted()
-    emit(["id": id, "result": ["trusted": trusted, "backgroundClick": trusted]])
+    emit(["id": id, "result": [
+      "trusted": trusted,
+      "backgroundClick": trusted,
+      "executablePath": CommandLine.arguments[0]
+    ]])
   case "list_apps":
     emit(["id": id, "result": ["apps": listApps()]])
   case "snapshot":

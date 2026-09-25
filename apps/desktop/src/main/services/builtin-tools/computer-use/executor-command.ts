@@ -8,12 +8,26 @@ import fs from "node:fs"
 import path from "node:path"
 import { pathDirs } from "@enjoy-agents/agent-harness/probe"
 
+export type ExecutorCommand = { command: string; args: string[] }
+
 export function resolveExecutorCommand(
-  platform = process.platform,
+  platform: string = process.platform,
   resourcesPath = process.resourcesPath,
-  arch = process.arch
-): { command: string; args: string[] } | null {
-  return bundledCommand(platform, resourcesPath, arch) ?? sourceCommand(platform)
+  arch = process.arch,
+  options: { compile?: boolean } = {}
+): ExecutorCommand | null {
+  return bundledCommand(platform, resourcesPath, arch) ?? sourceCommand(platform, options.compile !== false)
+}
+
+/** 真正要点击的那份文件：darwin 是 helper 二进制，脚本平台是 .ps1 / .py。 */
+export function spawnTargetPath(resolved: ExecutorCommand, platform: string = process.platform): string {
+  if (platform === "darwin") return resolved.command
+  if (platform === "win32") {
+    const fileAt = resolved.args.lastIndexOf("-File")
+    const script = fileAt >= 0 ? resolved.args[fileAt + 1] : undefined
+    if (script) return script
+  }
+  return resolved.args[0] ?? resolved.command
 }
 
 function bundledCommand(platform: string, resourcesPath: string, arch: string) {
@@ -29,10 +43,10 @@ function bundledCommand(platform: string, resourcesPath: string, arch: string) {
   return null
 }
 
-function sourceCommand(platform: string) {
+function sourceCommand(platform: string, compile: boolean) {
   const source = devEntry(platform)
   if (!source || !fs.existsSync(source)) return null
-  if (platform === "darwin") return darwinCommand(source)
+  if (platform === "darwin") return darwinCommand(source, compile)
   if (platform === "win32") return powershellCommand(source)
   return pythonCommand(source)
 }
@@ -47,10 +61,11 @@ function pythonCommand(script: string) {
   return { command: bin, args: [script] }
 }
 
-function darwinCommand(source: string): { command: string; args: string[] } | null {
+function darwinCommand(source: string, compile: boolean): ExecutorCommand | null {
+  const out = path.join(path.dirname(source), ".build", "computer-use")
+  if (!compile) return fs.existsSync(out) ? { command: out, args: [] } : null
   const binary = compileDarwin(path.dirname(source))
-  if (!binary) return null
-  return { command: binary, args: [] }
+  return binary ? { command: binary, args: [] } : null
 }
 
 function compileDarwin(dir: string): string | null {

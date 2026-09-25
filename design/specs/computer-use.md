@@ -10,9 +10,11 @@
 
 截图由 host `desktopCapturer` 写入 `userData/computer-use-thumbs/`，最多 20 张，不进模型文本。审批卡和右栏「正在看的窗口」可读缩略图。重启后账本为空：`executeStoredTool` → `resumeDesktopAct` 必须显式 `stale_observation`（或随后 `needs_second_confirm`），走同一条重拍路；**禁止假放行 / 报 success**。审批 `approval.required` 的 args 用账本里的应用名 / 控件名 / `appKey` / `pid`。
 
-执行器是附属进程，换行 JSON。PATH 用 `pathDirs`，Windows 带 `-ExecutionPolicy Bypass` 和 `windowsHide`。打包 `resources/bin/<platform>-<arch>/`。开发时 darwin 用 `swiftc` 编到 `.build/computer-use`。
+执行器是附属进程，换行 JSON。PATH 用 `pathDirs`，Windows 带 `-ExecutionPolicy Bypass` 和 `windowsHide`。打包 `resources/bin/<platform>-<arch>/`（darwin helper 须 codesign，见下）。开发时 darwin 用 `swiftc` 编到 `.build/computer-use`，未签名不得报就绪。
 
-设置开关下调用 `desktopDoctor` 写一句缺什么。右栏 Desktop 只读最近观察。
+设置开关下调用 `desktopDoctor` 写一句缺什么。**医生绿当且仅当即将 spawn 的 helper 路径一致、具备有效团队签名（非 ad-hoc / 未签名），且该 helper 进程自己也能过 AX。** 宿主 Electron `systemPreferences.isTrustedAccessibilityClient` 不能单独报绿。未签名或身份错位返回 `executor_unsigned` / `executor_identity_mismatch`，人话指向为 Enjoy Computer Use helper 开辅助功能或重装签名包。右栏 Desktop 只读最近观察。
+
+打包 `beforePack`：`scripts/stage-computer-use.cjs` 编出 `native/computer-use/pack/<platform>-<arch>/`。darwin 在有 `CU_CODESIGN_IDENTITY` / `CSC_NAME` / `APPLE_CODESIGN_IDENTITY` 时 `codesign` 真实 helper，并写 `computer-use.identity.json`；没有身份不假装已签名。开发 `swiftc` → `.build/computer-use` 未签名不得报「已就绪」。
 
 ## 不变量
 
@@ -22,11 +24,13 @@
 - 控件编号只在这一张观察里有效。
 - 待批冻结 TTL，禁止只靠加长 30s；过期观察禁止静默点击。
 - 不要在 TS 里用 cliclick / AppleScript / xdotool / SendInput。
+- darwin：`desktop_doctor.success` 只在 spawn helper 签名匹配且该进程过 AX 时为真。
 
 ## 代码入口
 
 - 工具：`builtin-agent-tools.ts`、`computer-use/desktop-tools.ts`
-- 宿主：`desktop-session.ts`（无 Electron）；act / 重拍：`desktop-session-act.ts`
+- 宿主：`desktop-session.ts`（无 Electron）；act / 重拍：`desktop-session-act.ts`；医生：`doctor-report.ts`
+- helper 身份 / codesign：`executor-identity.ts`；打包签名：`apps/desktop/scripts/codesign-helper.cjs`
 - 账本 / 冻结 / 重拍匹配：`packages/agent-core/src/computer-use/`
 - 协议：`apps/desktop/native/computer-use/protocol.md`
 - 执行器：`native/computer-use/darwin|win32|linux`
@@ -34,9 +38,10 @@
 
 ## 已知坑
 
-- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。打包必须带签名二进制，否则医生以为开了权限，点击仍失败。
-- Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过。
+- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。
+- Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过。Win/Linux 可用性文案门是 H5，不在 §3.2c。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
-- **二次确认卡 UI**（新旧缩略图并排）仍是 P0-B；数据面只回 `needs_second_confirm` 载荷。H2 会话 Allow 绑 `{tool, appKey}` 未做。§3.2c doctor=helper codesign 未做。
+- **二次确认卡 UI**（新旧缩略图并排）仍是 P0-B；数据面只回 `needs_second_confirm` 载荷。H2 会话 Allow 绑 `{tool, appKey}` 未做。
+- 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。
 - 执行器快照目前多半只有 `appName`，`appKey` 回落到规范化应用名；有 `bundleId` / `exe` / AUMID 才优先用。
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。

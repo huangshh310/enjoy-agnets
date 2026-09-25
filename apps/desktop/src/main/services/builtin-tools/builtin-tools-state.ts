@@ -7,6 +7,13 @@ import { randomBytes } from "node:crypto"
 import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
 import { getSetting, setSetting } from "../database"
 import { displaySession } from "./computer-use/display-session"
+import { resolveExecutorCommand, spawnTargetPath } from "./computer-use/executor-command"
+import {
+  evaluateHelperIdentity,
+  inspectDarwinCodesign,
+  readHelperSidecar,
+  resolveExpectedIdentity
+} from "./computer-use/executor-identity"
 
 const SETTING_KEY_BUILTIN_TOOLS = "builtin_tools_state"
 
@@ -49,28 +56,57 @@ function getOrCreateToken(): string {
 }
 
 export function checkDesktopPermissions(): { accessibility: boolean; screenCapture: boolean } {
+  const host = checkHostDesktopPermissions()
+  if (process.platform !== "darwin") return host
+  // 未签名 / 错位 helper 不得把宿主 AX 显示成「已授权可点」。
+  return {
+    accessibility: host.accessibility && peekHelperIdentityReady(),
+    screenCapture: host.screenCapture
+  }
+}
+
+/** 只 peek 已有二进制，禁止 getState 触发 swiftc。 */
+function peekHelperIdentityReady(): boolean {
+  const command = resolveExecutorCommand(process.platform, process.resourcesPath, process.arch, { compile: false })
+  const spawnPath = command ? spawnTargetPath(command, process.platform) : null
+  const sidecar = spawnPath ? readHelperSidecar(spawnPath) : null
+  return evaluateHelperIdentity({
+    platform: process.platform,
+    spawnPath,
+    codesign: spawnPath ? inspectDarwinCodesign(spawnPath) : null,
+    sidecar,
+    expectedIdentity: resolveExpectedIdentity(process.env, sidecar)
+  }).ready
+}
+
+function checkHostDesktopPermissions(): { accessibility: boolean; screenCapture: boolean } {
   if (process.platform !== "darwin") {
     return { accessibility: true, screenCapture: true }
   }
-  let accessibility = false
-  let screenCapture = false
-  try {
-    accessibility =
-      typeof systemPreferences.isTrustedAccessibilityClient === "function"
-        ? systemPreferences.isTrustedAccessibilityClient(false)
-        : false
-  } catch {
-    accessibility = false
+  return {
+    accessibility: readHostAccessibility(),
+    screenCapture: readHostScreenCapture()
   }
+}
+
+function readHostAccessibility(): boolean {
   try {
-    screenCapture =
-      typeof systemPreferences.getMediaAccessStatus === "function"
-        ? systemPreferences.getMediaAccessStatus("screen") === "granted"
-        : false
+    return typeof systemPreferences.isTrustedAccessibilityClient === "function"
+      ? systemPreferences.isTrustedAccessibilityClient(false)
+      : false
   } catch {
-    screenCapture = false
+    return false
   }
-  return { accessibility, screenCapture }
+}
+
+function readHostScreenCapture(): boolean {
+  try {
+    return typeof systemPreferences.getMediaAccessStatus === "function"
+      ? systemPreferences.getMediaAccessStatus("screen") === "granted"
+      : false
+  } catch {
+    return false
+  }
 }
 
 export function openSystemPrivacySettings(type: "accessibility" | "screenCapture") {

@@ -3,10 +3,10 @@
  * 不 import Electron，单测可以塞一个假执行器。
  */
 import { createObservationLedger } from "@enjoy-agents/agent-core/computer-use"
-import { backgroundClickPossible, displaySession } from "./display-session.ts"
 import { actOnce } from "./desktop-session-act.ts"
+import { doctorReport } from "./doctor-report.ts"
 import { asRecord, failureOf, rememberSnapshot } from "./desktop-session-snapshot.ts"
-import type { DesktopPermissions, DesktopSession, DesktopSessionHooks } from "./desktop-session.types.ts"
+import type { DesktopSession, DesktopSessionHooks } from "./desktop-session.types.ts"
 import type { ExecutorHandle } from "./executor-client.ts"
 
 export type { ActInput, DesktopPermissions, DesktopSession, DesktopSessionHooks } from "./desktop-session.types.ts"
@@ -24,7 +24,7 @@ export function createDesktopSession(
   const client = () => (executor ??= open())
   const call: SessionCall = (method, params) => callExecutor(client, method, params)
   return {
-    doctor: () => doctorReport(client(), permissions()),
+    doctor: () => doctorReport(client(), permissions(), hooks),
     listApps: () => call("list_apps", {}),
     snapshot: (pid) => rememberSnapshot(call, ledger, pid, hooks),
     act: (input) => actOnce(call, ledger, input, hooks),
@@ -33,23 +33,6 @@ export function createDesktopSession(
     lookup: (observationId) => ledger.lookup(observationId),
     freeze: (observationId) => ledger.freeze(observationId),
     release: (observationId) => ledger.discard(observationId)
-  }
-}
-
-async function doctorReport(ready: ExecutorHandle | null, perms: DesktopPermissions) {
-  const session = displaySession()
-  const base = {
-    session,
-    backgroundClick: backgroundClickPossible(session),
-    accessibility: perms.accessibility,
-    screenCapture: perms.screenCapture
-  }
-  if (!ready) return { success: false, code: "executor_missing", ...base }
-  try {
-    const result = await ready.request("doctor", {})
-    return { success: true, ...base, ...asRecord(result) }
-  } catch (error) {
-    return { success: false, ...base, ...failureOf(error) }
   }
 }
 
