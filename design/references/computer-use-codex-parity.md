@@ -92,7 +92,11 @@ Enjoy tip `86228f9` 已具备**宿主侧原生执行器 + AX 观察账本 + `des
 
 ### Hard locks（leo + kai · 必须进验收）
 
-#### H1 · 审批停靠 vs 观察 30s TTL（leo P0）
+> 入库/设计对齐用正式章节号：**§3.2a**（TTL）、**§3.2b**（appKey）、**§3.6**（P1）。H3–H5 为 kai 补充，同属 P0/P1 硬锁。
+
+### 3.2a 审批停靠 vs 观察 30s TTL（leo P0 · 钉死）
+
+> **钉死句**：待批冻结 TTL；放行后仍 stale → 自动重拍一次→校验 app/element→再 act；禁对过期观察直接点；验收覆盖「审批>30s」与「重启后允许 / resumeDesktopAct」。
 
 **锁（组合，禁止只加长 TTL）**：
 
@@ -102,19 +106,22 @@ Enjoy tip `86228f9` 已具备**宿主侧原生执行器 + AX 观察账本 + `des
 
 **验收**：
 
-- H1-A：审批卡停留 **>30s** 再允许 → 动作落到原目标或诚实失败（不得 stale 静默）。  
-- H1-B：**重启 / resumeDesktopAct** 后再允许 → 走「重拍→校验→act 或二次确认」。
+- **3.2a-A**：审批卡停留 **>30s** 再允许 → 动作落到原目标或诚实失败（不得 stale 静默）。  
+- **3.2a-B**：**重启 / resumeDesktopAct** 后再允许 → 走「重拍→校验→act 或二次确认」。
 
-#### H2 · 会话 Allow 绑 App（leo P0）
+### 3.2b 会话 Allow 绑 appKey（leo P0 · 钉死）
 
-1. 白名单键：`bundleId`（mac）→ `exe`/AUMID（win）→ 规范化 `appName`；`pid` 仅辅助，**不得**单独作 Always-allow 键。  
+> **钉死句**：Allow 绑 appKey（`bundleId` → `exe`/AUMID → `appName`）；禁裸 `desktop_act` 全屏放行；「本会话任意桌面」高级开关默认关。
+
+1. 白名单键优先级：`bundleId`（mac）→ `exe` / AUMID（win）→ 规范化 `appName`；`pid` 仅辅助，**不得**单独作 Always-allow 键。  
 2. 会话允许形态：`{ tool: desktop_act|type|key|…, appKey }`。允许 A ≠ 允许 B。  
-3. 「本会话允许任意桌面点击」：**默认关**；高级开关 + 警示文案；未开时禁裸 `desktop_act` 会话级放行。  
-4. 敏感窗（系统设置 / 钥匙串 / 支付）即使开了任意桌面仍每次问（能识别则拦）。
+3. **禁**裸 `desktop_act`（无 appKey）作为会话级全屏自动放行。  
+4. 「本会话允许任意桌面点击」：**默认关**；仅高级开关 + 警示文案（「将跳过按应用确认，可点击当前屏幕上任意窗口」）；未开时禁裸 `desktop_act` 会话级放行。  
+5. 敏感窗（系统设置 / 钥匙串 / 支付）即使开了任意桌面仍每次问（能识别则拦）。
 
-**验收**：允许 App A 后点 App B 必须再批（未开任意桌面时）。
+**验收**：允许 App A 后点 App B 必须再批（未开任意桌面时）；Always-allow 列表可撤销。
 
-#### H3 · darwin 打包 helper codesign（kai P0）
+### 3.2c darwin 打包 helper codesign（kai P0 · 原 H3）
 
 1. **stage / 发布包**必须对**当前真实执行器**做 codesign（及团队既定公证流程）；开发 `swiftc` 临时二进制不得冒充「已就绪」。  
 2. **`desktop_doctor` 校验「当前执行器身份」**（签名/路径/与将要 spawn 的 helper 一致），不得只查 Electron 宿主 AX。  
@@ -122,13 +129,13 @@ Enjoy tip `86228f9` 已具备**宿主侧原生执行器 + AX 观察账本 + `des
 
 **验收**：签名错位场景下医生**不得**绿；或绿了则真实 click 不得再 `permission_denied`（同一权限画像）。
 
-#### H4 · 重启 resume（kai P0）
+### 3.2d 重启 resume（kai P0 · 原 H4）
 
 1. 观察账本若纯内存：重启后任何 `resumeDesktopAct` **必须**显式 `stale_observation`（或等价），走 H1 重拍路径。  
 2. **禁止**假放行（UI 显示已允许但未 act / 静默吞错）。  
 3. 失败文案进入审批卡与会话，模型侧同错误码。
 
-#### H5 · Win/Linux 可用性门（kai · P1 可，发布前硬门）
+### 3.2e Win/Linux 可用性门（kai · P1 / 发布硬门 · 原 H5）
 
 未做真机 GUI 冒烟前，设置/文档不得标该平台「可用」；`ENJOY_CU_GUI=1` 跳过 ≠ 通过。P1 切片 CU-P1-D。
 
@@ -149,14 +156,23 @@ Enjoy tip `86228f9` 已具备**宿主侧原生执行器 + AX 观察账本 + `des
 3. Explore：工具列表无 `desktop_*`；切 Execute 后出现。  
 4. `stale_observation` / 过期编号：不点击并提示重拍。  
 5. `needs_foreground`：观察可还；用户允前台后同号可重试。  
-6. **H3**：打包执行器 codesign；doctor 校验当前执行器身份，与真实点击权限画像一致（修 G7）。  
-7. **H1-A**：审批停留 **>30s** 再允许仍可点或诚实失败。  
-8. **H1-B / H4**：重启后 `resumeDesktopAct` → 显式 stale → 重拍路径；禁假放行。  
-9. **H2**：会话 Allow 绑 `appKey`；允许 A 后点 B 再批。
+6. **§3.2c**：打包执行器 codesign；doctor 校验当前执行器身份，与真实点击权限画像一致（修 G7）。  
+7. **§3.2a-A**：审批停留 **>30s** 再允许仍可点或诚实失败。  
+8. **§3.2a-B / §3.2d**：重启后 `resumeDesktopAct` → 显式 stale → 重拍路径；禁假放行。  
+9. **§3.2b**：会话 Allow 绑 `appKey`；允许 A 后点 B 再批。
 
 ### Luna 一句话视觉方向
 
 > **「权限坞里的桌面名片」**：审批卡左侧是窗缩略图+应用名+控件名，右侧 Allow / 始终允许**此应用** / 拒绝（勿画裸「允许桌面工具」）；可加一态「观察已过期 → 重拍确认」；右栏同名片只读；act 时屏幕一圈冷静蓝边呼吸——像 Codex 的「它在用电脑」，但信息架构仍是 Enjoy 的 Approval Dock，不是第二套遥控器。设置里 doctor 标明**当前 helper 签名状态**。
+
+### 3.6 P1 表态（可下刀 / 记债）
+
+| 项 | 表态 | 处置 |
+|----|------|------|
+| Ledger 分桶 | 按 **session** 分桶（对齐 M-D）；禁全局单桌面永续糊一条 | P1 下刀（宜随 CU-P0-C） |
+| `action_failed` 不还观察 | 失败不得附「像成功下一步」的新观察；需新观察须显式再 `snapshot`/`screenshot` | 写入 specs（P0 文案债 / P1 实现） |
+| 坐标通道 | 默认 **禁**裸坐标 click；优先 AX element；坐标仅高级/调试 | P1 下刀（默认关） |
+| type / key 与 Allow | 与 click 同绑 `appKey`（见 §3.2b）；「任意桌面」同样覆盖并明示 | 行为对齐 §3.2b |
 
 ---
 
@@ -179,10 +195,10 @@ Enjoy tip `86228f9` 已具备**宿主侧原生执行器 + AX 观察账本 + `des
 
 | Slice | Owner 序 | 内容 | 验收锚点 |
 |-------|----------|------|----------|
-| **CU-P0-A 开通与诚实** | luna → mike → kai | 设置页文案 + doctor 人话 + 权限深链；Explore/Execute 能力轨；**H3 codesign / doctor=执行器身份**（G7） | Acceptance 1–2, 6 |
-| **CU-P0-B 审批名片** | luna → mike → kai | Dock 桌面卡；**H2 绑 appKey**；可选「本会话允许此应用」；禁默认裸 `desktop_act` | Acceptance 1, 3–5, 9 |
+| **CU-P0-A 开通与诚实** | luna → mike → kai | 设置页文案 + doctor 人话 + 权限深链；Explore/Execute 能力轨；**§3.2c codesign / doctor=执行器身份**（G7） | Acceptance 1–2, 6 |
+| **CU-P0-B 审批名片** | luna → mike → kai | Dock 桌面卡；**§3.2b 绑 appKey**；可选「本会话允许此应用」；禁默认裸 `desktop_act` | Acceptance 1, 3–5, 9 |
 | **CU-P0-C 可见操控态** | luna → kai（薄） | overlay 在 act 生命周期点亮；右栏 Desktop 与卡同步；空态文案 | 「正在用电脑」可感知 |
-| **CU-P0-D TTL×停靠 / resume** | kai → mike | **H1 冻结 TTL + stale 重拍**；**H4 重启显式 stale、禁假放行** | Acceptance 4, 7–8 |
+| **CU-P0-D TTL×停靠 / resume** | kai → mike | **§3.2a 冻结 TTL + stale 重拍**；**§3.2d 重启显式 stale、禁假放行** | Acceptance 4, 7–8 |
 
 ### P1（对标加深，仍不撞锁）
 
@@ -191,14 +207,14 @@ Enjoy tip `86228f9` 已具备**宿主侧原生执行器 + AX 观察账本 + `des
 | **CU-P1-A Always-allow 应用簿** | Settings 可撤名单；与 `desktopActBypassesSessionAllow` 策略对齐；坐标/前台仍每次问 |
 | **CU-P1-B Composer `@桌面` / `@应用`** | 提及即偏置工具选择；非插件市场 |
 | **CU-P1-C 可选缩略图进多模态** | 显式设置；默认关；声明隐私 |
-| **CU-P1-D Win/Linux 真机 GUI 闸（H5）** | 真机冒烟前不得标「可用」；`ENJOY_CU_GUI=1` 跳过≠通过；进发布门禁 |
+| **CU-P1-D Win/Linux 真机 GUI 闸（§3.2e）** | 真机冒烟前不得标「可用」；`ENJOY_CU_GUI=1` 跳过≠通过；进发布门禁 |
 | **CU-P1-E 外置 ACP 策略声明** | 文档+UI：CU 仅 Enjoy Local builtin / 或经宿主桥只读暴露——二选一写死 |
 
 ### 给三角色的交接一句
 
 - **luna**：先画「开通三拍 + 审批名片 + 蓝边 overlay」，别画第二套远程桌面。  
 - **mike**：锁 G1/G2/G10 的产品句；P0 不接 Always-allow 持久化也可，但要在稿里写「故意延后」。  
-- **kai**：P0 优先 **H3 签名+doctor 身份**、**H1/H4 TTL×resume**、审批卡数据面与观察还码；勿重写执行器协议。
+- **kai**：P0 优先 **§3.2c 签名+doctor 身份**、**§3.2a/§3.2d TTL×resume**、审批卡数据面与观察还码；勿重写执行器协议。
 
 ---
 
