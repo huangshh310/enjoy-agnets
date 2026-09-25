@@ -25,6 +25,7 @@ import { readResponseMessages } from "./agent-run-helpers"
 import { toSubagentUserDecision } from "./approval-gate"
 import { readPreferences } from "./preferences"
 import { ensureAssistantReasoning } from "./to-model-messages"
+import { runWithActiveRunId } from "./active-run-id"
 import { deleteActiveRun, emitEvent, getActiveRun, type ActiveRun } from "./agent-run-state"
 import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
 import { clearSteer } from "./runtime-interact/steering-queue"
@@ -35,6 +36,10 @@ import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 export async function pumpStream(runId: string) {
   const run = getActiveRun(runId)
   if (!run || run.pumping) return
+  return runWithActiveRunId(runId, () => pumpBoundStream(runId, run))
+}
+
+async function pumpBoundStream(runId: string, run: ActiveRun) {
   run.pumping = true
   run.pendingApprovals = []
   const { bindSecondConfirmWaiter, unbindSecondConfirmWaiter } = await import(

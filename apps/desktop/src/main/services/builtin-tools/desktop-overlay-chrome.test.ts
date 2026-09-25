@@ -12,6 +12,23 @@ const html = readFileSync(
   "utf8"
 )
 
+test("act begin 传入 runId；stop 先 cancel 再 abort 该 runId", () => {
+  const tools = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "computer-use/desktop-tools.ts"),
+    "utf8"
+  )
+  assert.match(tools, /resolveDesktopActRunId/)
+  assert.match(tools, /currentToolRunId\(\)/)
+  assert.match(tools, /currentPumpingRunId\(\)/)
+  assert.match(tools, /runId:/)
+  assert.match(tools, /cancelInFlightDesktopAct/)
+  const chrome = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "desktop-overlay-chrome.ts"), "utf8")
+  assert.match(chrome, /runDesktopOverlayStop/)
+  assert.match(chrome, /cancelInFlightDesktopAct/)
+  assert.match(chrome, /resolveDesktopActRunId/)
+  assert.doesNotMatch(chrome, /执行器中途的 click 可能仍会落下/)
+})
+
 test("overlay 窗带 SoT testid，无红警 / 霓虹 / 空成功条", () => {
   assert.match(html, /data-testid="cu-overlay-frame"/)
   assert.match(html, /data-testid="cu-overlay-stop"/)

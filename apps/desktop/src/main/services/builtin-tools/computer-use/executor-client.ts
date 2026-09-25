@@ -19,6 +19,8 @@ export class ExecutorFailure extends Error {
 export type ExecutorHandle = {
   request: (method: string, params: Record<string, unknown>) => Promise<unknown>
   dispose: () => void
+  /** 协议无 cancel RPC：拒绝在途请求并 kill helper。OS 已落下的 click 无法撤回。 */
+  cancelInFlight: () => void
   command?: string
   args?: string[]
 }
@@ -37,6 +39,7 @@ export function startExecutor(command: string, args: string[] = [], timeoutMs = 
   return {
     request: (method, params) => proc.request(method, params),
     dispose: () => proc.dispose(),
+    cancelInFlight: () => proc.cancelInFlight(),
     command,
     args
   }
@@ -73,10 +76,19 @@ class ExecutorProcess {
     this.child.kill()
   }
 
+  /** 用户停：不 dispose 整只 helper，只打断在途 act；onExit 仍可重启一次。 */
+  cancelInFlight(): void {
+    if (this.disposed) return
+    this.failAll(new ExecutorFailure("executor_cancelled"))
+    this.child.kill()
+  }
+
   private launch(): ChildProcessWithoutNullStreams {
     const proc = spawnPathCommand(this.command, this.args, { stdio: ["pipe", "pipe", "pipe"] }) as ChildProcessWithoutNullStreams
     proc.stdout.setEncoding("utf8")
     proc.stdout.on("data", (chunk: string) => this.push(chunk))
+    // kill / cancel 后 stdin 可能 EPIPE，不能打翻主进程。
+    proc.stdin.on("error", () => undefined)
     proc.on("error", (error) => this.failAll(new ExecutorFailure("executor_missing", error.message)))
     proc.on("exit", () => this.onExit(proc))
     return proc

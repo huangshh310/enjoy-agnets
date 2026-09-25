@@ -62,4 +62,6 @@ export type DesktopSession = {
   lookup: (observationId: string) => Observation | null
   freeze: (observationId: string) => boolean
   release: (observationId: string) => void
+  /** 停手势：取消已派出的 act。没有在途请求时是 no-op。 */
+  cancelInFlight: () => void
 }

@@ -105,7 +105,8 @@ function fakeHandle(command: string, result: Record<string, unknown>): ExecutorH
     command,
     args: [],
     request: async () => result,
-    dispose() {}
+    dispose() {},
+    cancelInFlight() {}
   }
 }
 

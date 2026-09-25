@@ -3,10 +3,12 @@
  * 当内置浏览器或后台 Computer Use 开启时，向智能体注入对应的安全受控工具定义。
  */
 // @ts-nocheck — 与 createCodingTools / createMcpAgentTools 相同：AI SDK Tool 泛型与 Zod 4 不合。
+import { isReadOnlyAgentMode } from "@enjoy-agents/agent-core"
 import { tool } from "ai"
 import { z } from "zod"
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
 import { getBuiltinToolsState } from "./builtin-tools-state"
+import { shouldRegisterDesktopControlTools } from "./desktop-tool-gate"
 import { desktopControlTools } from "./computer-use/desktop-tools"
 
 import { sendBridgeCommand } from "./bridge-server"
@@ -17,7 +19,7 @@ const BRIDGE_MISSING = "Browser Bridge is not connected."
  * 构造内置工具集合（根据当前用户的开启配置动态返回）
  */
 export function createBuiltinAgentTools(mode: AgentMode = "agent") {
-  if (mode === "plan" || mode === "ask") return {}
+  if (isReadOnlyAgentMode(mode)) return {}
   const state = getBuiltinToolsState()
   const tools: Record<string, ReturnType<typeof tool>> = {}
 
@@ -79,7 +81,9 @@ export function createBuiltinAgentTools(mode: AgentMode = "agent") {
     })
   }
 
-  if (state.computerUse.enabled) Object.assign(tools, desktopControlTools())
+  if (shouldRegisterDesktopControlTools(mode, state.computerUse.enabled)) {
+    Object.assign(tools, desktopControlTools())
+  }
 
   return tools
 }

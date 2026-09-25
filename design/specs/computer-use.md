@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P0-C / CU-P1-O overlay 冷静铬 O1–O4；闸仍以 CU-P1-A 为准）
+> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU overlay 生命周期薄挂点：runId ALS + 执行器硬取消 + Explore 门控；铬仍以 #94 为准）
 
 ## 当前真相
 
@@ -22,7 +22,7 @@
 
 打包 `beforePack`：`scripts/stage-computer-use.cjs` 编出 `native/computer-use/pack/<platform>-<arch>/`。darwin 在有 `CU_CODESIGN_IDENTITY` / `CSC_NAME` / `APPLE_CODESIGN_IDENTITY` 时 `codesign` 真实 helper，并写 `computer-use.identity.json`；没有身份不假装已签名。开发 `swiftc` → `.build/computer-use` 未签名不得报「已就绪」。
 
-右栏 Desktop 只读最近观察（窗名 / appKey / 缩略若有；testid `desktop-rail-card` / `desktop-rail-empty` / `desktop-rail-thumb`）。无观察写「还没有桌面观察」，禁止假装「正在控制」。Execute 下已批目标的 `desktop_act`（click/type/key/move/drag/scroll，**不含 wait**）进入 `deliverAct` 时点亮已有 overlay 窗冷静蓝边 + 「正在操控 · {app}」+「停止」/ Esc（testid `cu-overlay-frame` / `cu-overlay-stop`）。结束 / 取消 / 失败 / 一键停立刻熄，**不**画空成功条。overlay 是铬，不是第二套遥控器；审批仍走 Permission Dock（含二次确认）。探索态不注册 `desktop_*`、不 ensure overlay；能力轨在电脑操控开启时出「桌面仅执行」。视觉真源 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html)；产品锁 [`../references/cu-p0-c-overlay.md`](../references/cu-p0-c-overlay.md)。不宣称像素 1:1。§3.2a TTL 冻结 / resume / 重拍已由 #80 落地；UI 待批文案写「TTL 已冻结」。
+右栏 Desktop 只读最近观察（窗名 / appKey / 缩略若有；testid `desktop-rail-card` / `desktop-rail-empty` / `desktop-rail-thumb`）。无观察写「还没有桌面观察」，禁止假装「正在控制」。Execute 下已批目标的 `desktop_act`（click/type/key/move/drag/scroll，**不含 wait**）进入 `deliverAct` 时点亮已有 overlay 窗冷静蓝边 + 「正在操控 · {app}」+「停止」/ Esc（testid `cu-overlay-frame` / `cu-overlay-stop`）。`onAct` 把当前 runId 传进 `beginDesktopActOverlay`（ALS `runWithActiveRunId` 绑活泵 / `executeStoredTool`，再退回 `currentPumpingRunId`）。结束 / 取消 / 失败 / 一键停立刻熄，**不**画空成功条。一键停 / Esc：先熄铬，再 `cancelInFlightDesktopAct`（拒绝在途 act + `child.kill`），再 `abortAgent` **该** runId（已知时不扫全部 ActiveRun）。Deny 待批 `desktop_act` 发生在 `deliverAct` 之前，overlay 本来就没亮。overlay 是铬，不是第二套遥控器；审批仍走 Permission Dock（含二次确认）。探索态（`plan`/`ask`）`createBuiltinAgentTools` 经 `isReadOnlyAgentMode` + `shouldRegisterDesktopControlTools` **不**调 `desktopControlTools()`，不 ensure overlay；能力轨在电脑操控开启时出「桌面仅执行」。视觉真源 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html)；产品锁 [`../references/cu-p0-c-overlay.md`](../references/cu-p0-c-overlay.md)。不宣称像素 1:1。§3.2a TTL 冻结 / resume / 重拍已由 #80 落地；UI 待批文案写「TTL 已冻结」。
 
 ## 不变量
 
@@ -54,7 +54,8 @@
 - 设置：`settings/tools/desktop-tools-card.tsx`；始终允许名单：`desktop/desktop-always-allow-list.tsx`；开通绿：`desktop/desktop-readiness.ts`、`desktop-doctor-panel.tsx`
 - 持久簿：`desktop-always-allow-ledger.ts`（prefs `desktopAlwaysAllowAppKeys`）；命中辅助：`persistentAlwaysAllowsDesktopAct`
 - 右栏：`right-pane/views/desktop-view.tsx`
-- overlay 窗：`resources/overlay/computer-use-overlay.html` + `overlay-preload.js`；窗本体 `screen-overlay-service.ts`；生命周期 `desktop-overlay-chrome.ts`；可见性纯函数 `desktop-overlay-visibility.ts`
+- overlay 窗：`resources/overlay/computer-use-overlay.html` + `overlay-preload.js`；窗本体 `screen-overlay-service.ts`；生命周期 `desktop-overlay-chrome.ts`；停手势纯函数 `desktop-overlay-lifecycle.ts`；Explore 门控 `desktop-tool-gate.ts`；可见性纯函数 `desktop-overlay-visibility.ts`
+- 工具→run：`active-run-id.ts`（ALS）；`currentPumpingRunId` 在 `agent-run-state.ts`；活泵 / 审批续跑包 `runWithActiveRunId`
 
 ## 已知坑
 
@@ -73,4 +74,5 @@
 - **设置无焦点会话**：开关若仍可拨，UI 看起来已开、main 却因缺 `sessionId` no-op。正确做法：把 `sessionId` 传到 `DesktopAnyDesktopDetails`，无会话则 `disabled` + `anyDesktopNeedSession`。
 - 执行器快照目前多半只有 `appName`，`appKey` 回落到规范化应用名；有 `bundleId` / `exe` / AUMID 才优先用。`appKeySource` 记录用了哪一档。
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。
-- **overlay 生命周期挂点（薄）**：`onAct` / `onActEnd` 包住执行器 `act` 调用。主进程没有独立 `desktop.act.start` StreamEvent；停手势若没绑到 pumping runId，会 abort 当前活泵（或全部 ActiveRun）。**隐患**：执行器已派出的 click 可能仍落下，kai 若要硬取消须在 helper 侧挂中断。Esc 用 `globalShortcut`，三端均可；注册失败则只靠顶栏「停止」。设置预览走同一套铬，约 2.4s 自熄，不是成功 toast。
+- **overlay 生命周期挂点（薄）**：`onAct` 把 ALS / 活泵 runId 传进 `beginDesktopActOverlay`。主进程没有独立 `desktop.act.start` StreamEvent。停手势先熄再 `cancelInFlight` 再 abort **该** runId；未知 runId 才退回活泵 / 全部 ActiveRun。
+- **隐患**：执行器协议没有 cancel RPC。硬取消 = 拒绝在途 Promise + `child.kill`（与超时同一条路）。OS 已落下的 click 无法撤回；该 run 已 abort，不再继续 act。helper 未 dispose 时 `onExit` 仍可能重启一次。kill 后 stdin 可能 EPIPE，必须在 helper stdin 上吞掉，否则会打翻 main。Esc 用 `globalShortcut`，三端均可；注册失败则只靠顶栏「停止」。设置预览走同一套铬，约 2.4s 自熄，不是成功 toast。

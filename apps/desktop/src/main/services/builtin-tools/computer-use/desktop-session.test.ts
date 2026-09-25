@@ -19,7 +19,8 @@ function sampleObservation(overrides: Record<string, unknown> = {}) {
 function fakeHandle(onCall: (method: string, params: Record<string, unknown>) => unknown): ExecutorHandle {
   return {
     request: async (method, params) => onCall(method, params),
-    dispose() {}
+    dispose() {},
+    cancelInFlight() {}
   }
 }
 
@@ -82,6 +83,25 @@ test("成功动作后签发新观察，并把账本里的控件名交给执行�
   assert.equal(acted.success, true)
   assert.equal(typeof acted.observationId, "string")
   assert.notEqual(acted.observationId, snap.observationId)
+})
+
+test("cancelInFlight 转给当前执行器", async () => {
+  let cancelled = 0
+  const session = createDesktopSession(() => ({
+    request: async (method) => {
+      if (method === "snapshot") return { observation: sampleObservation() }
+      return { delivery: "background" }
+    },
+    dispose() {},
+    cancelInFlight() {
+      cancelled += 1
+    }
+  }))
+  session.cancelInFlight()
+  assert.equal(cancelled, 0)
+  await session.snapshot(42)
+  session.cancelInFlight()
+  assert.equal(cancelled, 1)
 })
 
 test("deliverAct 无论成败都成对调用 onAct / onActEnd", async () => {

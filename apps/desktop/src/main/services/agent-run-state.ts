@@ -134,6 +134,11 @@ export function listActiveRuns(): Array<{ runId: string; run: ActiveRun }> {
   return [...activeRuns.entries()].map(([runId, run]) => ({ runId, run }))
 }
 
+/** Dock / overlay 兜底：当前标了 pumping 的 run。审批续跑优先走 ALS。 */
+export function currentPumpingRunId(): string | undefined {
+  return listActiveRuns().find((item) => item.run.pumping)?.runId
+}
+
 /** 给 agent-run-start 挂内存态；citedSources 补丁复用同一 runId。 */
 export function holdAgentRun(
   patch: Partial<ActiveRun> & { runId: string; window?: BrowserWindow; input?: RunAgentInput }
