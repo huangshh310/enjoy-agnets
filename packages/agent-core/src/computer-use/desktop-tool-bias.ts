@@ -2,8 +2,7 @@
  * CU-P1-B：Execute 下按 Composer 提及偏置 desktop_* 工具序。
  * 短指令一行，不堆 system prompt。提及 ≠ 放行，不写会话表 / 持久簿。
  */
-import type { AgentMode, DesktopMentionBias } from "@enjoy-agents/ipc-contract"
-import { isReadOnlyAgentMode } from "../tools/coding-tool-names.ts"
+import type { DesktopMentionBias } from "@enjoy-agents/ipc-contract"
 import { isStableDesktopAppKey } from "./desktop-act-app-key.ts"
 
 const HOST_LINE = "Prefer desktop_* tools this turn. Mentions do not skip approval."
@@ -54,6 +53,7 @@ export function formatDesktopBiasInstruction(
   return HOST_LINE
 }
 
+/** 与 isReadOnlyAgentMode 同口径，但不拉 read-tools / ai。 */
 function isExecuteMode(mode: string): boolean {
-  return !isReadOnlyAgentMode(mode as AgentMode)
+  return mode !== "plan" && mode !== "ask"
 }
