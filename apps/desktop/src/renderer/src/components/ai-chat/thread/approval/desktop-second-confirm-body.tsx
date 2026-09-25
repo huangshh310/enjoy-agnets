@@ -1,98 +1,36 @@
 /**
- * CU-P1-R Permission Dock warn/danger 二次确认卡。
- * 视觉真源：design/previews/cu-p1-r-second-confirm.html。不是第二套遥控器。
+ * CU-P1-R 二次确认卡身：并排新旧观察 + 摘要。铬与底栏仍走 ApprovalChrome。
+ * 视觉真源：design/previews/cu-p1-r-second-confirm.html。
  */
-import { RiLock2Line } from "@remixicon/react"
-import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
-import type { ApprovalDecide } from "./approval.types"
 import {
-  desktopSecondConfirmView,
   shortObservationId,
   type DesktopSecondConfirmSide,
   type DesktopSecondConfirmView
 } from "./desktop-second-confirm-args"
 
-export function DesktopSecondConfirmCard({
-  args,
-  decide
-}: {
-  args: unknown
-  decide: ApprovalDecide
-}) {
-  const t = useT()
-  const view = desktopSecondConfirmView(args)
+export function DesktopSecondConfirmBody({ view }: { view: DesktopSecondConfirmView }) {
   return (
-    <article
-      data-variant="desktop"
-      data-tone={view.tone}
-      data-testid="desktop-second-confirm-card"
-      className={cx(
-        "flex flex-col gap-3 overflow-hidden rounded-2xl border bg-background-primary-default p-4 shadow-card",
-        view.missingThumb ? "border-border-error-default/40" : "border-chart-warning/40"
-      )}
-    >
-      <SecondConfirmHeader view={view} />
+    <div data-testid="desktop-approval-card" className="flex flex-col gap-3">
+      <SecondConfirmLead view={view} />
       <SecondConfirmThumbs view={view} />
       <SecondConfirmSummary view={view} />
-      <p className="inline-flex items-center justify-center gap-1.5 text-center text-caption-2-regular text-text-tertiary">
-        <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
-        <span className="truncate">{t("chat.hmacBoundNotice")}</span>
-      </p>
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          data-testid="approval-second-confirm-cancel"
-          onClick={decide.onDeny}
-          className="h-9 flex-1 text-caption-1-medium"
-        >
-          {t("chat.desktopSecondConfirmCancel")}
-        </Button>
-        <Button
-          type="button"
-          data-testid="approval-second-confirm-allow"
-          disabled={!view.canConfirm}
-          title={view.canConfirm ? undefined : t("chat.desktopSecondConfirmBlind")}
-          onClick={decide.onApprove}
-          className="h-9 flex-[1.4] text-caption-1-semibold"
-        >
-          {t("chat.desktopSecondConfirmAllow")}
-        </Button>
-      </div>
-    </article>
+    </div>
   )
 }
 
-function SecondConfirmHeader({ view }: { view: DesktopSecondConfirmView }) {
+function SecondConfirmLead({ view }: { view: DesktopSecondConfirmView }) {
   const t = useT()
   const missing = view.missingThumb
   return (
-    <div className="flex items-start gap-2.5">
-      <span
-        className={cx(
-          "mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full text-caption-1-semibold",
-          missing
-            ? "bg-background-tertiary-error text-text-error-primary"
-            : "bg-chart-warning/15 text-chart-warning-text"
-        )}
-      >
-        {missing ? "×" : "!"}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-caption-1-semibold text-text-primary">
-          {missing ? t("chat.desktopSecondConfirmMissingTitle") : t("chat.desktopSecondConfirmTitle")}
-        </p>
-        <p className="mt-1 text-caption-2-regular text-text-secondary">
-          {missing
-            ? t("chat.desktopSecondConfirmMissingBody")
-            : view.weakIdentity
-              ? t("chat.desktopSecondConfirmWeakBody")
-              : t("chat.desktopSecondConfirmBody")}
-        </p>
-      </div>
-    </div>
+    <p className="text-caption-2-regular text-text-secondary">
+      {missing
+        ? t("chat.desktopSecondConfirmMissingBody")
+        : view.weakIdentity
+          ? t("chat.desktopSecondConfirmWeakBody")
+          : t("chat.desktopSecondConfirmBody")}
+    </p>
   )
 }
 
@@ -154,7 +92,7 @@ function ThumbSlot({
             {side.control ? ` · ${side.control}` : ""}
           </div>
         ) : null}
-        <span className="sr-only">{stale ? caption : caption}</span>
+        <span className="sr-only">{caption}</span>
       </div>
       <p className="mt-1.5 truncate text-caption-2-regular text-text-tertiary">
         obs {shortObservationId(side.observationId)}

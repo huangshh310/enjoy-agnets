@@ -1,18 +1,18 @@
 /**
- * CU-P0-B 桌面审批名片。二次确认分发到 #84 SoT warn 卡，不另开遥控器。
+ * CU-P0-B 桌面审批名片。二次确认 reshape 同一张卡：#84 并排新旧观察 + #85 testid。
  */
 import { useT } from "@renderer/i18n"
 import { ApprovalChrome } from "./approval-chrome"
 import type { ApprovalDecide } from "./approval.types"
 import { desktopApprovalView } from "./desktop-approval-args"
-import { isDesktopSecondConfirm } from "./desktop-second-confirm-args"
-import { DesktopSecondConfirmCard } from "./desktop-second-confirm-card"
+import { desktopSecondConfirmView, isDesktopSecondConfirm } from "./desktop-second-confirm-args"
+import { DesktopSecondConfirmBody } from "./desktop-second-confirm-body"
 
 export function DesktopApprovalCard({ args, decide }: { args: unknown; decide: ApprovalDecide }) {
   const t = useT()
   const view = desktopApprovalView(args)
   if (view.secondConfirm || isDesktopSecondConfirm(args)) {
-    return <DesktopSecondConfirmCard args={args} decide={decide} />
+    return <SecondConfirmChrome args={args} decide={decide} />
   }
   return (
     <ApprovalChrome
@@ -28,6 +28,32 @@ export function DesktopApprovalCard({ args, decide }: { args: unknown; decide: A
         <DesktopThumb src={view.thumbnail} alt={view.appName} />
         <DesktopApprovalSummary view={view} ttlLabel={t("chat.desktopApprovalTtlFrozen")} />
       </div>
+    </ApprovalChrome>
+  )
+}
+
+function SecondConfirmChrome({ args, decide }: { args: unknown; decide: ApprovalDecide }) {
+  const t = useT()
+  const confirm = desktopSecondConfirmView(args)
+  return (
+    <ApprovalChrome
+      variant="desktop"
+      tone={confirm.tone}
+      title={
+        confirm.missingThumb
+          ? t("chat.desktopSecondConfirmMissingTitle")
+          : t("chat.desktopSecondConfirmTitle")
+      }
+      approveLabel={t("chat.desktopSecondConfirmAllow")}
+      denyLabel={t("chat.desktopSecondConfirmCancel")}
+      showAlways={false}
+      approveDisabled={!confirm.canConfirm}
+      approveTitle={confirm.canConfirm ? undefined : t("chat.desktopSecondConfirmBlind")}
+      denyTestId="approval-second-confirm-cancel"
+      allowTestId="approval-second-confirm-allow"
+      decide={decide}
+    >
+      <DesktopSecondConfirmBody view={confirm} />
     </ApprovalChrome>
   )
 }

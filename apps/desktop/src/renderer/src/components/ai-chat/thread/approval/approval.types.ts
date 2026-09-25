@@ -32,3 +32,6 @@ export type ApprovalActionIds = {
   denyTestId?: string
   allowTestId?: string
 }
+
+/** Dock 桌面卡二次确认用 warn / 缺图 danger。 */
+export type ApprovalTone = "warn" | "danger"

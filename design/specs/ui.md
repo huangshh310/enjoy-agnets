@@ -82,7 +82,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - Composer 本轮改动条与跳动宠物：`ai-chat/composer/session-review/`；系统浏览器预览：`session-review/preview-open/`
 - 工作区 live 刷新：`hooks/use-workspace-change-invalidation.ts`（选中即 watch；审查跟 `onChanged`）
 - 来源 / 资产 / 生成式 UI：`apps/desktop/src/renderer/src/components/ai-chat/thread/`
-- 审批卡片三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`desktop_act` 二次确认 `desktop-second-confirm-card.tsx`）；停靠：`ai-chat/attention/permission-dock.tsx` + `chat-composer-cluster.tsx`（Composer 上沿）
+- 审批卡片三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`desktop_act` 二次确认仍是 `desktop-approval-card.tsx`）；停靠：`ai-chat/attention/permission-dock.tsx` + `chat-composer-cluster.tsx`（Composer 上沿）
 - Attention 条：`ai-chat/attention/attention-strip.tsx` 挂在 `stage-split.tsx` Stage 顶（空则不渲染）
 - 向用户提问：`apps/desktop/src/renderer/src/components/ai-chat/thread/ask-user/`
 - 对话工具表面：`apps/desktop/.../ai-chat/thread/tool-surfaces/`
