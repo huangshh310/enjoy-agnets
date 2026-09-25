@@ -7,7 +7,7 @@ import { useT } from "@renderer/i18n"
 import type { MentionItem } from "./mention-items.ts"
 import { FileKindMark } from "@renderer/components/ai-chat/file-kind-mark"
 
-type DiscoverMentionItem = Extract<MentionItem, { kind: "file" | "doc" | "skill" | "mcp" | "web" }>
+type DiscoverMentionItem = Extract<MentionItem, { kind: "file" | "doc" | "skill" | "mcp" | "web" | "desktop" }>
 type SlashMentionItem = Extract<MentionItem, { kind: "mode" | "command" | "skill" }>
 
 export function ComposerMentionRow({
@@ -74,8 +74,10 @@ function DiscoverRow({
         ? t("chat.mentionKindDoc")
         : item.kind === "skill"
           ? t("chat.mentionKindSkill")
-          : item.kind === "mcp"
-            ? t("chat.mentionKindMcp")
+        : item.kind === "mcp"
+          ? t("chat.mentionKindMcp")
+          : item.kind === "desktop"
+            ? t("chat.mentionKindDesktop")
             : t("chat.mentionKindWeb")
   const name = item.kind === "web" ? t("chat.mentionWebMuted") : discoverName(item)
   return (
@@ -90,7 +92,9 @@ function DiscoverRow({
           ? t("chat.mentionWebDisabled")
           : item.kind === "doc"
             ? t("chat.mentionScopeKnowledge")
-            : item.kind === "mcp"
+            : item.kind === "desktop"
+              ? t("chat.desktopChip")
+              : item.kind === "mcp"
               ? (item.status ?? t("chat.mentionMcpGroup"))
               : item.kind === "skill" && item.skill.scope !== "workspace"
                 ? t("chat.mentionScopeInstalled")
@@ -104,6 +108,7 @@ function discoverName(item: DiscoverMentionItem): string {
   if (item.kind === "file") return item.path || item.name
   if (item.kind === "doc") return item.name
   if (item.kind === "mcp") return item.name
+  if (item.kind === "desktop") return item.label
   if (item.kind === "skill") return item.skill.name
   return ""
 }
@@ -116,6 +121,7 @@ function discoverScope(
   if (item.kind === "file") return scopeWorkspace
   if (item.kind === "doc") return "knowledge"
   if (item.kind === "mcp") return item.status ?? ""
+  if (item.kind === "desktop") return ""
   if (item.kind === "skill") return item.skill.scope === "workspace" ? scopeWorkspace : scopePersonal
   return ""
 }

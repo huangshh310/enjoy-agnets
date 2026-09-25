@@ -7,7 +7,7 @@ import { addComposerSkillChip } from "./composer-skill-chips.ts"
 import type { MentionItem } from "./mention-items.ts"
 
 export function applySlashPick(
-  item: Exclude<MentionItem, { kind: "file" | "mcp" | "web" | "doc" }>
+  item: Exclude<MentionItem, { kind: "file" | "mcp" | "web" | "doc" | "desktop" }>
 ): void {
   if (item.kind === "command") {
     if (item.name === "compact") compactFromSlash()

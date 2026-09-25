@@ -15,6 +15,7 @@ import { ApprovalPlanBody } from "./approval-plan-body"
 import { ApprovalQuestionsBody } from "./approval-questions-body"
 import { AskUserCard } from "../ask-user/ask-user-card"
 import { classifyApproval, commandCwdOf, commandTextOf, payloadPreview } from "./classify-approval"
+import { DesktopApprovalCard } from "./desktop-approval-card"
 import { planFromPending } from "./plan-from-pending"
 import type { ApprovalDecide } from "./approval.types"
 
@@ -53,6 +54,9 @@ export function ApprovalCard({
   }
   if (variant === "plan") {
     return <PlanApproval name={pending.name} args={args} workspaceName={workspaceName || untitled} decide={decide} />
+  }
+  if (variant === "desktop") {
+    return <DesktopApprovalCard args={args} decide={decide} />
   }
   return (
     <QuestionsApproval

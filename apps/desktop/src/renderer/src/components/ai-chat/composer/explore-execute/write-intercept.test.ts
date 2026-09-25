@@ -6,6 +6,7 @@ test("只拦探索态被拒或待审的写工具", () => {
   assert.equal(isWriteLikeTool({ name: "write_file" }), true)
   assert.equal(isWriteLikeTool({ name: "str_replace" }), true)
   assert.equal(isWriteLikeTool({ name: "read_file" }), false)
+  assert.equal(isWriteLikeTool({ name: "desktop_act" }), true)
   const hit = findExploreWriteIntercept([
     {
       id: "t1",

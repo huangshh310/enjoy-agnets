@@ -24,7 +24,7 @@ export function ApprovalActions({
 }) {
   const t = useT()
   const denyTone =
-    variant === "questions" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
+    variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
   return (
     <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
       <Button

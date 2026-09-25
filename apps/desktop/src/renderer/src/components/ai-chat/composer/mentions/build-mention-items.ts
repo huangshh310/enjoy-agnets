@@ -36,7 +36,8 @@ export function buildAtMentionItems(
   files: readonly MentionDirEntry[],
   docs: readonly MentionDoc[] = [],
   mcps: readonly McpMentionItem[] = [],
-  skills: readonly SkillMention[] = listKnownSkills()
+  skills: readonly SkillMention[] = listKnownSkills(),
+  desktopEnabled = false
 ): MentionItem[] {
   const fileSource = query.trim() ? files : roots
   const fileItems: MentionItem[] = fileSource.map((entry) => ({
@@ -65,7 +66,10 @@ export function buildAtMentionItems(
     status: mcp.status,
     description: mcp.description
   }))
-  const live = filterMentionItems([...fileItems, ...docItems, ...skillItems, ...mcpItems], query)
+  const desktopItems: MentionItem[] = desktopEnabled
+    ? [{ kind: "desktop", id: "desktop:computer", label: "电脑" }]
+    : []
+  const live = filterMentionItems([...desktopItems, ...fileItems, ...docItems, ...skillItems, ...mcpItems], query)
   const capped = query.trim() ? live.slice(0, VISIBLE_LIMIT) : capEmptyAtMentions(live)
   const web = filterMentionItems([MUTED_WEB], query)
   return [...capped, ...web]
@@ -73,11 +77,12 @@ export function buildAtMentionItems(
 
 /** 空 @ 每类最多 4 条，避免一排刷满。 */
 function capEmptyAtMentions(items: readonly MentionItem[]): MentionItem[] {
+  const desktop = items.filter((item) => item.kind === "desktop")
   const files = items.filter((item) => item.kind === "file").slice(0, AT_KIND_LIMIT)
   const docs = items.filter((item) => item.kind === "doc").slice(0, AT_KIND_LIMIT)
   const skills = items.filter((item) => item.kind === "skill").slice(0, AT_KIND_LIMIT)
   const mcps = items.filter((item) => item.kind === "mcp").slice(0, AT_KIND_LIMIT)
-  return [...files, ...docs, ...skills, ...mcps]
+  return [...desktop, ...files, ...docs, ...skills, ...mcps]
 }
 
 const SLASH_SURFACES: ComposerSurface[] = ["explore", "execute"]

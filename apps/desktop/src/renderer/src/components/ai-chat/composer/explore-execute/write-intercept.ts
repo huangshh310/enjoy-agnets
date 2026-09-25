@@ -19,7 +19,8 @@ const WRITE_LIKE = new Set([
   "git_branch",
   "git_push",
   "str_replace",
-  "apply_patch"
+  "apply_patch",
+  "desktop_act"
 ])
 
 const INTERCEPT_STATES = new Set(["output-denied", "approval-requested", "output-error"])

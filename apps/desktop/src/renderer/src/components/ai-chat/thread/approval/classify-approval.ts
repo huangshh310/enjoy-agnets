@@ -28,6 +28,7 @@ export function readArg(args: Record<string, unknown>, key: string): string {
 
 export function classifyApproval(name: string, args: Record<string, unknown>): ApprovalVariant {
   const tool = name.toLowerCase()
+  if (tool === "desktop_act") return "desktop"
   if (COMMAND_TOOLS.has(tool)) return "command"
   if (PLAN_TOOLS.has(tool)) return "plan"
   if (looksLikeShell(name, args)) return "command"

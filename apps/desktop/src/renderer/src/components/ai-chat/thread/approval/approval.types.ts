@@ -1,7 +1,7 @@
 /**
  * 审批卡片三种表面与计划步骤。
  */
-export type ApprovalVariant = "command" | "plan" | "questions"
+export type ApprovalVariant = "command" | "plan" | "questions" | "desktop"
 
 /** 选项用稳定 id 决策，label 只给人看。 */
 export type ApprovalQuestionOption = {
