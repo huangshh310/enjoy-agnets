@@ -2,19 +2,15 @@
  * 开流入参与审批策略。从 open-coding-stream 抽出，避免调度函数超 50 行。
  */
 import type { ModelMessage } from "ai"
-import {
-  DESKTOP_ACT_ANY_SESSION_KEY,
-  mergeConversationDesktopAllow,
-  type ApprovalPolicy,
-  type SubagentToolTraceEvent,
-  type WaitForSubagentApproval
-} from "@enjoy-agents/agent-core"
+import type { ApprovalPolicy, SubagentToolTraceEvent, WaitForSubagentApproval } from "@enjoy-agents/agent-core"
+import { DESKTOP_ACT_ANY_SESSION_KEY, mergeConversationDesktopAllow } from "@enjoy-agents/agent-core/computer-use"
 import {
   type AgentMode,
   type AskUserAnswers,
   type HostInjectSnapshot,
   type ReasoningEffort
 } from "@enjoy-agents/ipc-contract"
+import { listDesktopAlwaysAllowAppKeys } from "./builtin-tools/computer-use/desktop-always-allow-entries"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
 
@@ -51,8 +47,8 @@ export type OpenCodingStreamInput = {
 }
 
 /**
- * 审批只读会话表 + 本轮 run 副本。禁止从 builtin_tools 偏好读 anyDesktop。
- * kai：再把 prefs.desktopAlwaysAllowAppKeys 的 appKey 灌进闸，查 persistentAlwaysAllowsDesktopAct。
+ * 审批只读会话表 ∪ 本轮 run 副本，再投影持久簿 appKey[]。
+ * 禁止从 builtin_tools 偏好读 anyDesktop。写 SoT 仍是 `{ appKey, displayName }[]`。
  */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
   const sessionApprovedTools = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
@@ -62,6 +58,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools,
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
-    anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY)
+    anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
+    desktopAlwaysAllowAppKeys: listDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys)
   }
 }

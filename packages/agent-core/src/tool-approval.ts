@@ -6,7 +6,12 @@ import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
-import { desktopActAlwaysAsks, desktopActSkipsApproval, sessionAllowsDesktopAct } from "./computer-use/desktop-act-policy.ts"
+import {
+  desktopActAlwaysAsks,
+  desktopActSkipsApproval,
+  persistentAlwaysAllowsDesktopAct,
+  sessionAllowsDesktopAct
+} from "./computer-use/desktop-act-policy.ts"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
@@ -30,6 +35,11 @@ export type ApprovalPolicy = {
   sessionApprovedBashPrefixes?: readonly string[]
   /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗 / 二次确认仍每次问。 */
   anyDesktopSession?: boolean
+  /**
+   * CU-P1-A 持久簿投影出的裸 appKey[]，只用于命中。
+   * 写 SoT 仍是 prefs.desktopAlwaysAllowAppKeys 的 `{ appKey, displayName }[]`。
+   */
+  desktopAlwaysAllowAppKeys?: readonly string[]
 }
 
 export type ToolApprovalDecision =
@@ -79,9 +89,12 @@ export function resolveToolApproval(
     if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
     if (toolName === "desktop_act" && desktopActAlwaysAsks(input)) return "user-approval"
     if (toolName === "desktop_act") {
-      // kai：会话表之后查 prefs.desktopAlwaysAllowAppKeys（persistentAlwaysAllowsDesktopAct）。
-      // 本刀只写簿 / 投影列表；act 路径跳过 Dock 仍由闸接线。硬每次问必须先于簿。
-      return sessionAllowsDesktopAct(input, policy) ? "approved" : "user-approval"
+      // 命中顺序：硬每次问（上一行）→ 会话表 → 持久簿投影 appKey[]。
+      if (sessionAllowsDesktopAct(input, policy)) return "approved"
+      if (persistentAlwaysAllowsDesktopAct(input, policy.desktopAlwaysAllowAppKeys ?? [])) {
+        return "approved"
+      }
+      return "user-approval"
     }
     return sessionAllows(toolName, policy.sessionApprovedTools) ? "approved" : "user-approval"
   }

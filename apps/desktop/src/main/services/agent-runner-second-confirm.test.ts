@@ -7,7 +7,7 @@ test("主循环 Allow 后 needs_second_confirm 必须再停卡，不能只丢 to
   assert.match(src, /maybeReparkSecondConfirm/)
   assert.match(src, /reparkDesktopSecondConfirm/)
   assert.match(src, /isDesktopSecondConfirmResult/)
-  assert.match(src, /isSecondConfirmPending/)
+  assert.match(src, /desktopActNeedsSecondConfirm/)
 })
 
 test("活泵二次确认 waiter 挂在 pump，确认后才对新观察 act", () => {

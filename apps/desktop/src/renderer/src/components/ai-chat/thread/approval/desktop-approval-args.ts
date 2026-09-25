@@ -24,7 +24,7 @@ export type DesktopApprovalView = {
   thumbsReady: boolean
   bypassesSessionAllow: boolean
   canSessionAllow: boolean
-  /** 有稳 appKey 才露出始终允许。坐标/前台仍可写簿，闸不会因此跳过硬每次问。 */
+  /** 有稳 appKey 且非二次确认才露出始终允许。二次确认硬拒绝写簿。 */
   canAlwaysAllow: boolean
 }
 
@@ -54,7 +54,7 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     bypassesSessionAllow,
     canSessionAllow:
       Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !desktopActIsSensitive(row),
-    canAlwaysAllow: isStableDesktopAppKey(appKey)
+    canAlwaysAllow: !secondConfirm && isStableDesktopAppKey(appKey)
   }
 }
 

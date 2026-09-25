@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  listDesktopAlwaysAllowAppKeys,
   normalizeDesktopAlwaysAllowEntries,
   removeDesktopAlwaysAllowEntry,
   upsertDesktopAlwaysAllowEntry
@@ -38,15 +39,17 @@ test("撤销只删该键，不影响其它条目", () => {
 })
 
 test("读簿时丢掉非法键，兼容旧 string[]", () => {
-  const rows = normalizeDesktopAlwaysAllowEntries([
+  const raw = [
     "com.apple.Safari",
     "desktop_act:*",
     "18422",
     { appKey: "com.apple.Notes", displayName: "Notes" },
     { appKey: "com.apple.Safari", displayName: "dup" }
-  ])
+  ]
+  const rows = normalizeDesktopAlwaysAllowEntries(raw)
   assert.deepEqual(rows, [
     { appKey: "com.apple.Safari", displayName: "com.apple.Safari" },
     { appKey: "com.apple.Notes", displayName: "Notes" }
   ])
+  assert.deepEqual(listDesktopAlwaysAllowAppKeys(raw), ["com.apple.Safari", "com.apple.Notes"])
 })

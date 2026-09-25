@@ -47,6 +47,7 @@ test("二次确认 args 暴露批准时与重拍后两张图", () => {
   assert.equal(view.thumbnailPath, "/thumbs/after-resnap.png")
   assert.equal(view.thumbsReady, true)
   assert.equal(view.canSessionAllow, true)
+  assert.equal(view.canAlwaysAllow, false)
 })
 
 test("二次确认缺任一缩略图则 thumbsReady 为假", () => {

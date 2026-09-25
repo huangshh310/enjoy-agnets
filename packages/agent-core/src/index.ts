@@ -149,6 +149,7 @@ export {
   desktopActFailureCode,
   desktopActIsSensitive,
   desktopActMayReportSuccess,
+  desktopActNeedsSecondConfirm,
   desktopActSessionKey,
   desktopActSkipsApproval,
   desktopAppKey,

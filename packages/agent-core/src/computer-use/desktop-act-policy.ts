@@ -63,14 +63,14 @@ export function sessionAllowsDesktopAct(
 }
 
 /**
- * CU-P1-A 持久簿命中。硬每次问仍优先。kai 闸：硬每次问 → 会话表 → 本函数。
- * keys 是 appKey 数组，禁止把 desktop_act:* 当命中。
+ * CU-P1-A 持久簿命中。硬每次问仍优先：硬每次问 → 会话表 → 本函数。
+ * keys 是 listDesktopAlwaysAllowAppKeys 投影出的裸 appKey[]；丢掉脏键，禁止把 * / desktop_act:* 当命中。
  */
 export function persistentAlwaysAllowsDesktopAct(args: unknown, keys: readonly string[]): boolean {
   if (desktopActAlwaysAsks(args)) return false
   const appKey = desktopActAppKey(args)
   if (!isStableDesktopAppKey(appKey)) return false
-  return keys.includes(appKey)
+  return keys.some((key) => isStableDesktopAppKey(key) && key === appKey)
 }
 
 /** 审批卡上的一句话：应用 · 「控件」 · 动作 · appKey。 */
