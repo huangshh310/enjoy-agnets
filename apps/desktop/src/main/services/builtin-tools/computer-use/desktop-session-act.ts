@@ -13,6 +13,7 @@ import {
   type ResnapTarget
 } from "@enjoy-agents/agent-core/computer-use"
 import type { ActInput, DesktopSessionHooks } from "./desktop-session.types.ts"
+import { forgetSecondConfirm, refuseSecondConfirmAct, rememberSecondConfirm } from "./desktop-second-confirm.ts"
 import { rememberSnapshot, type SessionCall } from "./desktop-session-snapshot.ts"
 
 const RESTORE_CODES = new Set([
@@ -30,6 +31,8 @@ export async function actOnce(
   input: ActInput,
   hooks: DesktopSessionHooks
 ) {
+  const blocked = refuseSecondConfirmAct(input, ledger.lookup(input.observationId)?.thumbnailPath)
+  if (blocked) return blocked
   ledger.unfreeze(input.observationId)
   const taken = ledger.take(input.observationId)
   if (taken.ok) return deliverAct(call, ledger, taken.observation, input, hooks)
@@ -44,6 +47,8 @@ async function deliverAct(
   input: ActInput,
   hooks: DesktopSessionHooks
 ) {
+  forgetSecondConfirm(input.observationId)
+  forgetSecondConfirm(observation.id)
   hooks.onAct?.(input, observation)
   const acted = await call("act", actParams(observation, input))
   if (acted.success !== true) {
@@ -137,12 +142,20 @@ function staleResult(input: ActInput, snapped?: Record<string, unknown>) {
 }
 
 function secondConfirmResult(previous: Observation | null, next: Observation, input: ActInput) {
+  const previousThumbnailPath = previous?.thumbnailPath ?? input.thumbnailPath
+  rememberSecondConfirm({
+    observationId: next.id,
+    previousObservationId: previous?.id ?? input.observationId,
+    previousThumbnailPath,
+    previousAppName: previous?.appName ?? input.appName,
+    previousElementName: input.elementName
+  })
   return {
     success: false,
     code: DESKTOP_ACT_SECOND_CONFIRM,
     observationId: next.id,
     previousObservationId: previous?.id ?? input.observationId,
-    previousThumbnailPath: previous?.thumbnailPath ?? input.thumbnailPath,
+    previousThumbnailPath,
     thumbnailPath: next.thumbnailPath,
     appName: next.appName,
     previousAppName: previous?.appName ?? input.appName,

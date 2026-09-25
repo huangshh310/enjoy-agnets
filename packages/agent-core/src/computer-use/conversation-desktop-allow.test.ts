@@ -18,6 +18,10 @@ import {
   writeThroughDesktopActSessionAllow
 } from "./conversation-desktop-allow.ts"
 import { DESKTOP_ACT_ANY_SESSION_KEY, sessionAllowsDesktopAct } from "./desktop-act-policy.ts"
+import {
+  clearDesktopSecondConfirmGate,
+  rememberDesktopSecondConfirmGate
+} from "./desktop-second-confirm-gate.ts"
 
 const EDITS = {
   requireWriteApproval: true,
@@ -31,6 +35,7 @@ const CLICK_CALC = { action: "click", elementId: "e1", appKey: "com.apple.calcul
 
 test.beforeEach(() => {
   clearAllConversationDesktopAllows()
+  clearDesktopSecondConfirmGate()
 })
 
 test("只认 desktop_act:<appKey> 与 desktop_act:*，拒绝裸 desktop_act", () => {
@@ -129,6 +134,36 @@ test("无 appKey 的 write-through 不写表", () => {
   assert.equal(writeThroughDesktopActSessionAllow("sess_a", run, { action: "click", elementId: "e1" }), null)
   assert.equal(run.size, 0)
   assert.equal(snapshotConversationDesktopAllow("sess_a").size, 0)
+})
+
+test("会话已允许 appKey 或任意桌面时二次确认仍要审批，禁止直接 act", () => {
+  const click = { ...CLICK_CALC, observationId: "obs_new" }
+  const appKeyPolicy = { ...EDITS, sessionApprovedTools: new Set([CALC]) }
+  const anyPolicy = { ...EDITS, sessionApprovedTools: new Set([DESKTOP_ACT_ANY_SESSION_KEY]) }
+  assert.equal(sessionAllowsDesktopAct(click, appKeyPolicy), true)
+  assert.equal(resolveToolApproval("desktop_act", "agent", appKeyPolicy, click), "approved")
+
+  rememberDesktopSecondConfirmGate("obs_new")
+  assert.equal(sessionAllowsDesktopAct(click, appKeyPolicy), false)
+  assert.equal(resolveToolApproval("desktop_act", "agent", appKeyPolicy, click), "user-approval")
+  assert.equal(sessionAllowsDesktopAct(click, anyPolicy), false)
+  assert.equal(resolveToolApproval("desktop_act", "agent", anyPolicy, click), "user-approval")
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", { ...EDITS, anyDesktopSession: true }, click),
+    "user-approval"
+  )
+
+  clearDesktopSecondConfirmGate()
+  assert.equal(
+    resolveToolApproval(
+      "desktop_act",
+      "agent",
+      appKeyPolicy,
+      { ...click, needsSecondConfirm: true }
+    ),
+    "user-approval"
+  )
+  assert.equal(sessionAllowsDesktopAct({ ...click, needsSecondConfirm: true }, anyPolicy), false)
 })
 
 test("merge 只读会话表 ∪ run 副本，丢掉裸 desktop_act，不造全局开关", () => {

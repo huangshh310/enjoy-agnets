@@ -14,6 +14,11 @@ import { checkDesktopPermissions } from "../builtin-tools-state"
 import { triggerScreenAction } from "../screen-overlay-service"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
 import { formatDoctorLine } from "./doctor-report"
+import {
+  attachDesktopApprovalThumbs,
+  forgetSecondConfirm,
+  mergeSecondConfirmApprovalArgs
+} from "./desktop-second-confirm"
 import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDesktopView } from "./desktop-thumbs"
 import { startExecutor, type ExecutorHandle } from "./executor-client"
 import { resolveExecutorCommand } from "./executor-command"
@@ -77,7 +82,10 @@ export function parkDesktopActArgs(args: Record<string, unknown>): Record<string
 /** Deny：丢弃观察，不 act。 */
 export function releaseParkedDesktopAct(args: Record<string, unknown> | unknown) {
   const id = args && typeof args === "object" ? text((args as Record<string, unknown>).observationId) : ""
-  if (id) sharedSession().release(id)
+  if (id) {
+    sharedSession().release(id)
+    forgetSecondConfirm(id)
+  }
 }
 
 export async function runDesktopDoctor() {
@@ -132,13 +140,10 @@ function mergeObservationIntoActArgs(args: Record<string, unknown>, observation:
   }
 }
 
-/** 审批卡用：同步账本字段后再读本观察缩略图，不拿全局 last view 顶替。 */
+/** 审批卡用：同步账本字段，再补二次确认的批准时图，并转 data URL。 */
 export async function enrichDesktopActApprovalArgs(args: Record<string, unknown>): Promise<Record<string, unknown>> {
-  const enriched = enrichDesktopActArgs(args)
-  const path = typeof enriched.thumbnailPath === "string" ? enriched.thumbnailPath : ""
-  if (!path) return enriched
-  const thumbnailDataUrl = await readThumbDataUrl(path)
-  return thumbnailDataUrl ? { ...enriched, thumbnailDataUrl } : enriched
+  const enriched = mergeSecondConfirmApprovalArgs(enrichDesktopActArgs(args))
+  return attachDesktopApprovalThumbs(enriched, readThumbDataUrl)
 }
 
 function normalizeActInput(args: Record<string, unknown>): ActInput {

@@ -63,6 +63,21 @@ test("DesktopActApprovalArgs 收 appKeySource 与 bypassesSessionAllow", () => {
   assert.equal(parsed.bypassesSessionAllow, false)
 })
 
+test("DesktopActApprovalArgs 收二次确认新旧缩略图", () => {
+  const parsed = DesktopActApprovalArgs.parse({
+    observationId: "obs_new",
+    action: "click",
+    needsSecondConfirm: true,
+    previousThumbnailPath: "/thumbs/at-allow.png",
+    previousThumbnailDataUrl: "data:image/png;base64,OLD",
+    thumbnailPath: "/thumbs/after-resnap.png",
+    thumbnailDataUrl: "data:image/png;base64,NEW"
+  })
+  assert.equal(parsed.needsSecondConfirm, true)
+  assert.equal(parsed.previousThumbnailDataUrl, "data:image/png;base64,OLD")
+  assert.equal(parsed.thumbnailDataUrl, "data:image/png;base64,NEW")
+})
+
 test("OpenSystemPermissionInput validates permission enum", () => {
   const valid = OpenSystemPermissionInput.parse({ permission: "accessibility" })
   assert.equal(valid.permission, "accessibility")

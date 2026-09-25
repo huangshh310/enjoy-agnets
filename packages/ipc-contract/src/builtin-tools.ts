@@ -78,6 +78,13 @@ export const DesktopActApprovalArgs = z
     elementRole: z.string().optional(),
     thumbnailPath: z.string().optional(),
     thumbnailDataUrl: z.string().optional(),
+    previousObservationId: z.string().optional(),
+    previousThumbnailPath: z.string().optional(),
+    previousThumbnailDataUrl: z.string().optional(),
+    previousAppName: z.string().optional(),
+    previousElementName: z.string().optional(),
+    /** 重拍对不上：审批 args 带 previousThumbnailPath + thumbnailPath。 */
+    needsSecondConfirm: z.boolean().optional(),
     allowForeground: z.boolean().optional(),
     /** 坐标 / 切前台：为 true 时卡片隐藏「本会话允许此应用」。 */
     bypassesSessionAllow: z.boolean().optional(),

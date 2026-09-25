@@ -26,3 +26,9 @@ export type ApprovalDecide = {
   onDeny: () => void
   onAllowSession: () => void
 }
+
+/** 底栏按钮：二次确认可覆盖 deny/allow testid。 */
+export type ApprovalActionIds = {
+  denyTestId?: string
+  allowTestId?: string
+}

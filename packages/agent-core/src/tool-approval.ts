@@ -28,7 +28,7 @@ export type ApprovalPolicy = {
   sessionApprovedTools?: ReadonlySet<string>
   /** 本会话放行的 bash 命令前缀（如 `git status`），不是整个 bash 工具。 */
   sessionApprovedBashPrefixes?: readonly string[]
-  /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗仍每次问。 */
+  /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗 / 二次确认仍每次问。 */
   anyDesktopSession?: boolean
 }
 

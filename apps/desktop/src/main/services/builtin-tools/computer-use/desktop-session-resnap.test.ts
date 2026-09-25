@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
-import test from "node:test"
+import { beforeEach, test } from "node:test"
 import { createDesktopSession } from "./desktop-session.ts"
+import { clearSecondConfirmMemory, mergeSecondConfirmApprovalArgs } from "./desktop-second-confirm.ts"
 import type { ExecutorHandle } from "./executor-client.ts"
+
+beforeEach(() => {
+  clearSecondConfirmMemory()
+})
 
 function sampleObservation(overrides: Record<string, unknown> = {}) {
   return {
@@ -135,7 +140,13 @@ test("重拍控件对不上则二次确认，绝不静默点", async () => {
           trees += 1
           const name = trees === 1 ? "等于" : "清除"
           const id = trees === 1 ? "0.1" : "0.9"
-          return { observation: sampleObservation({ elements: [{ id, role: "AXButton", name, clickable: true }] }) }
+          const thumbnailPath = trees === 1 ? "/thumbs/at-allow.png" : "/thumbs/after-resnap.png"
+          return {
+            observation: sampleObservation({
+              elements: [{ id, role: "AXButton", name, clickable: true }],
+              thumbnailPath
+            })
+          }
         }
         return { delivery: "background" }
       }),
@@ -158,7 +169,16 @@ test("重拍控件对不上则二次确认，绝不静默点", async () => {
   assert.equal(typeof result.observationId, "string")
   assert.notEqual(result.observationId, id)
   assert.equal(result.previousObservationId, id)
+  assert.equal(result.previousThumbnailPath, "/thumbs/at-allow.png")
+  assert.equal(result.thumbnailPath, "/thumbs/after-resnap.png")
   assert.equal(methods.includes("act"), false)
+  const nextArgs = mergeSecondConfirmApprovalArgs({
+    observationId: String(result.observationId),
+    action: "click",
+    thumbnailPath: result.thumbnailPath
+  })
+  assert.equal(nextArgs.needsSecondConfirm, true)
+  assert.equal(nextArgs.previousThumbnailPath, "/thumbs/at-allow.png")
 })
 
 test("同路径 elementId 但名称变了则二次确认，绝不自动点", async () => {
