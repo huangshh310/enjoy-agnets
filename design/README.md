@@ -55,7 +55,7 @@
 | [references/vercel-ai-sdk-7-feature-matrix.md](./references/vercel-ai-sdk-7-feature-matrix.md) | AI SDK 7 能力对照 + Enjoy Agents 落地状态 |
 | [references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md](./references/Enjoy Agents：Vercel AI SDK 7 全能力落地计划.md) | 全能力落地计划 |
 | [references/acp-protocol.md](./references/acp-protocol.md) | ACP 官方协议摘录（stdio、configOptions / thought_level、Registry 国产 CLI）；落地以 agent-cli 为准 |
-| [references/computer-use-codex-parity.md](./references/computer-use-codex-parity.md) | Computer Use Codex 对照与 Enjoy P0 短锁（Jojo；实现真源仍以 [`specs/computer-use.md`](./specs/computer-use.md) 为准；native CU 基线 tip `86228f9`；本文不是当前真相） |
+| [references/computer-use-codex-parity.md](./references/computer-use-codex-parity.md) | Enjoy Computer Use × Codex 对标缺口（产品短稿；实现真源仍以 [`specs/computer-use.md`](./specs/computer-use.md) 为准；native CU 基线 tip `86228f9`；本文不是当前真相） |
 | [references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md](./references/Enjoy Agents：ACP 多引擎宿主开发实现计划.md) | ACP 多引擎宿主分期；落地以 specs 为准 |
 | [references/gap-audit-vs-github-agents.md](./references/gap-audit-vs-github-agents.md) | 对照 Orca / Cline / OpenHands / Goose / Hermes：假实现、半成品、该重设计的点 |
 | [references/oss-agent-landscape-2026.md](./references/oss-agent-landscape-2026.md) | 2026 高星 Agent 星数榜与设计课；Enjoy 该加深的 seam（不是空壳清单） |
