@@ -4,6 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { bashAllowPrefix } from "@enjoy-agents/agent-core"
+import { desktopActFailureCode, desktopActMayReportSuccess } from "@enjoy-agents/agent-core/computer-use"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { USER_ABORT_MESSAGE } from "./claim-run-end"
@@ -66,15 +67,33 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision !== "deny") {
     run.questionAnswers = decision.answers ?? {}
   }
+  if (pending.name === "desktop_act" && decision.decision === "deny") {
+    const { releaseParkedDesktopAct } = await import("./builtin-tools/computer-use/desktop-tools")
+    releaseParkedDesktopAct(pending.args)
+  }
   run.pendingApprovals = run.pendingApprovals.filter(
     (item) => item.approvalId !== decision.approvalId
   )
   const hadWaiter = run.approvalGate.resolve(decision.approvalId, decision.decision)
+  let desktopResume: Record<string, unknown> | undefined
   if (!hadWaiter && decision.decision !== "deny") {
     const { executeStoredTool } = await import("./execute-stored-tool")
-    await executeStoredTool(run, pending)
+    const outcome = await executeStoredTool(run, pending)
+    if (outcome.kind === "desktop_act") desktopResume = outcome.result
   }
-  run.messages.push(approvalResponseMessage(decision, pending.name))
+  const resumeCode = desktopActFailureCode(desktopResume)
+  run.messages.push(approvalResponseMessage(decision, pending.name, resumeCode || undefined))
+  if (desktopResume && !desktopActMayReportSuccess(desktopResume)) {
+    emitEvent(window, {
+      type: "tool.result",
+      runId: decision.runId,
+      toolCallId: decision.toolCallId,
+      name: pending.name,
+      args: pending.args,
+      result: desktopResume,
+      error: resumeCode
+    })
+  }
   emitEvent(window, {
     type: "approval.resolved",
     runId: decision.runId,
@@ -112,7 +131,11 @@ function commandFromArgs(args: unknown): string {
   return ""
 }
 
-function approvalResponseMessage(decision: ApprovalDecision, toolName: string): ModelMessage {
+function approvalResponseMessage(
+  decision: ApprovalDecision,
+  toolName: string,
+  resumeError?: string
+): ModelMessage {
   const skipped = toolName === ASK_USER_QUESTIONS_TOOL && decision.decision === "deny"
   return {
     role: "tool",
@@ -120,8 +143,8 @@ function approvalResponseMessage(decision: ApprovalDecision, toolName: string): 
       {
         type: "tool-approval-response",
         approvalId: decision.approvalId,
-        approved: decision.decision !== "deny",
-        reason: skipped ? "User skipped questions." : decision.reason
+        approved: decision.decision !== "deny" && !resumeError,
+        reason: skipped ? "User skipped questions." : resumeError || decision.reason
       }
     ]
   } as ModelMessage

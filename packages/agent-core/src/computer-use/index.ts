@@ -6,8 +6,21 @@ export {
   OBSERVATION_TTL_MS,
   type Observation,
   type ObservationElement,
+  type ObservationLedger,
+  type StaleCause,
   type TakeObservation
 } from "./observation-ledger.ts"
+export {
+  DESKTOP_ACT_SECOND_CONFIRM,
+  DESKTOP_ACT_STALE,
+  desktopActFailureCode,
+  desktopActMayReportSuccess,
+  desktopAppKey,
+  elementStableKey,
+  matchResnapElement,
+  resolveListedAppPid,
+  type ResnapTarget
+} from "./observation-match.ts"
 export {
   desktopActApprovalText,
   desktopActBypassesSessionAllow,

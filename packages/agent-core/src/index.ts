@@ -138,7 +138,12 @@ export {
   createObservationLedger,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
+  desktopActFailureCode,
+  desktopActMayReportSuccess,
   desktopActSkipsApproval,
+  desktopAppKey,
+  DESKTOP_ACT_SECOND_CONFIRM,
+  DESKTOP_ACT_STALE,
   OBSERVATION_TTL_MS
 } from "./computer-use";
-export type { Observation, ObservationElement, TakeObservation } from "./computer-use";
+export type { Observation, ObservationElement, ObservationLedger, TakeObservation } from "./computer-use";
