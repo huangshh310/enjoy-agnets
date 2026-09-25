@@ -3,10 +3,10 @@
  * 二次确认：previousThumbnailPath = 批准时，thumbnailPath = 重拍后；缺图则 thumbsReady=false。
  */
 import {
-  desktopActAlwaysAsks,
   desktopActAppKey,
   desktopActApprovalText,
-  desktopActBypassesSessionAllow
+  desktopActBypassesSessionAllow,
+  desktopActIsSensitive
 } from "@enjoy-agents/agent-core/computer-use"
 
 export type DesktopApprovalView = {
@@ -49,7 +49,8 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     secondConfirm,
     thumbsReady: !secondConfirm || Boolean(thumbnail && previousThumbnail),
     bypassesSessionAllow,
-    canSessionAllow: Boolean(appKey) && !bypassesSessionAllow && !desktopActAlwaysAsks(row)
+    canSessionAllow:
+      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !desktopActIsSensitive(row)
   }
 }
 

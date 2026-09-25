@@ -1,5 +1,5 @@
 /**
- * desktop_act 的审批策略：wait 放行、坐标/前台/敏感窗不吃会话白名单、审批卡文案。
+ * desktop_act 的审批策略：wait 放行、坐标/前台/敏感窗/二次确认不吃会话白名单、审批卡文案。
  */
 import {
   DESKTOP_ACT_ANY_SESSION_KEY,
@@ -7,6 +7,7 @@ import {
   desktopActIsSensitive,
   desktopActSessionKey
 } from "./desktop-act-app-key.ts"
+import { desktopActNeedsSecondConfirm } from "./desktop-second-confirm-gate.ts"
 
 export {
   DESKTOP_ACT_ANY_SESSION_KEY,
@@ -38,9 +39,13 @@ export function desktopActBypassesSessionAllow(args: unknown): boolean {
   return !hasElement && (typeof row.x === "number" || typeof row.y === "number")
 }
 
-/** 坐标 / 切前台 / 敏感窗：会话 Allow 与「任意桌面」都盖不住。 */
+/** 坐标 / 切前台 / 敏感窗 / 二次确认：会话 Allow 与「任意桌面」都盖不住。 */
 export function desktopActAlwaysAsks(args: unknown): boolean {
-  return desktopActBypassesSessionAllow(args) || desktopActIsSensitive(args)
+  return (
+    desktopActBypassesSessionAllow(args) ||
+    desktopActIsSensitive(args) ||
+    desktopActNeedsSecondConfirm(args)
+  )
 }
 
 /** 按 `desktop_act:<appKey>` 或 `desktop_act:*` 查白名单。裸 `desktop_act` 不算放行。 */

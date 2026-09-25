@@ -3,6 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { beforeEach, test } from "node:test"
+import { sessionAllowsDesktopAct } from "@enjoy-agents/agent-core/computer-use"
 import { createDesktopSession } from "./desktop-session.ts"
 import { clearSecondConfirmMemory } from "./desktop-second-confirm.ts"
 import type { ExecutorHandle } from "./executor-client.ts"
@@ -112,5 +113,49 @@ test("二次确认缺缩略图则诚实失败，不静默点", async () => {
   const refused = await session.act(clickTarget(String(confirm.observationId), "0.9", "清除"))
   assert.equal(refused.success, false)
   assert.equal(refused.code, "screenshot_unavailable")
+  assert.equal(methods.includes("act"), false)
+})
+
+test("会话已允许 appKey 时二次确认仍停车，禁止直接 act", async () => {
+  let now = 1_000
+  let trees = 0
+  const methods: string[] = []
+  const session = createDesktopSession(
+    () =>
+      fakeHandle((method, params) => {
+        methods.push(method)
+        if (method === "list_apps") return { apps: [{ pid: 42, name: "Calculator" }] }
+        if (method === "snapshot") {
+          trees += 1
+          const name = trees === 1 ? "等于" : "清除"
+          const id = trees === 1 ? "0.1" : "0.9"
+          return {
+            observation: sampleObservation({
+              elements: [{ id, role: "AXButton", name, clickable: true }],
+              thumbnailPath: trees === 1 ? "/thumbs/at-allow.png" : "/thumbs/after-resnap.png"
+            })
+          }
+        }
+        return { delivery: "background", clicked: params.elementId }
+      }),
+    { now: () => now, ttlMs: 50 }
+  )
+  const snap = await session.snapshot(42)
+  now = 1_080
+  const confirm = await session.act(clickTarget(String(snap.observationId), "0.1", "等于"))
+  assert.equal(confirm.code, "needs_second_confirm")
+  assert.equal(methods.includes("act"), false)
+
+  const nextInput = {
+    ...clickTarget(String(confirm.observationId), "0.9", "清除"),
+    appKey: "com.apple.calculator"
+  }
+  const allowed = {
+    requireWriteApproval: true,
+    requireBashApproval: true,
+    requireCommitApproval: true,
+    sessionApprovedTools: new Set(["desktop_act:com.apple.calculator", "desktop_act:*"])
+  }
+  assert.equal(sessionAllowsDesktopAct(nextInput, allowed), false)
   assert.equal(methods.includes("act"), false)
 })

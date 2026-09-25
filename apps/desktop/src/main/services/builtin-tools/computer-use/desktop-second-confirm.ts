@@ -1,7 +1,14 @@
 /**
  * 二次确认数据面：把「批准时」缩略图绑到重拍后的新观察，审批 enrich 再转 data URL。
  * 工具结果只带路径；像素不进模型文本。铬 / 标签归 Mike。
+ * stash 同步 agent-core 闸，会话白名单盖不住二次确认。
  */
+import {
+  clearDesktopSecondConfirmGate,
+  forgetDesktopSecondConfirmGate,
+  rememberDesktopSecondConfirmGate
+} from "@enjoy-agents/agent-core/computer-use"
+
 export type SecondConfirmContext = {
   observationId: string
   previousObservationId?: string
@@ -17,6 +24,7 @@ export function rememberSecondConfirm(ctx: SecondConfirmContext): void {
   const id = text(ctx.observationId)
   if (!id) return
   byObservation.set(id, { ...ctx, observationId: id })
+  rememberDesktopSecondConfirmGate(id)
 }
 
 export function secondConfirmFor(observationId: string): SecondConfirmContext | undefined {
@@ -24,11 +32,14 @@ export function secondConfirmFor(observationId: string): SecondConfirmContext | 
 }
 
 export function forgetSecondConfirm(observationId: string): void {
-  byObservation.delete(text(observationId))
+  const id = text(observationId)
+  byObservation.delete(id)
+  forgetDesktopSecondConfirmGate(id)
 }
 
 export function clearSecondConfirmMemory(): void {
   byObservation.clear()
+  clearDesktopSecondConfirmGate()
 }
 
 /** 审批 args 补 previous*；已有 previousThumbnailPath 或账本命中即二次确认。 */

@@ -36,6 +36,12 @@ export {
   sessionAllowsDesktopAct,
   withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
+export {
+  clearDesktopSecondConfirmGate,
+  desktopActNeedsSecondConfirm,
+  forgetDesktopSecondConfirmGate,
+  rememberDesktopSecondConfirmGate
+} from "./desktop-second-confirm-gate.ts"
 export type { DesktopActAppKeySource } from "./desktop-act-policy.ts"
 export {
   clearAllConversationDesktopAllows,
