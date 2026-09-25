@@ -101,6 +101,7 @@
 | [previews/i4-automations.html](./previews/i4-automations.html) | I4 本机 Automations：紧凑列表 / 380px 抽屉 / 运行中 / 失败进 Inbox（【视觉真源】；加深现有壳，不宣称应用 1:1） |
 | [previews/i4-p1-webhook-onsave.html](./previews/i4-p1-webhook-onsave.html) | I4-P1 webhook + 保存后：列表徽章 / 本机端口 :8765 / 脚注非公网 / 反例划掉（【视觉真源】；沿 I4 壳，不宣称应用 1:1） |
 | [previews/p0-computer-use.html](./previews/p0-computer-use.html) | P0 Computer Use：doctor=当前 helper · 本会话任意桌面默认关折叠 · 允许一次/本会话允许此应用/拒绝 · §3.2a stale→重拍→二次确认 · act 蓝边 + 右栏名片 · Explore 无 desktop_act（【视觉真源】P0 · Luna；反例：无第二套遥控器、无脚注墙、无双引擎条、无空「已连接」） |
+| [previews/cu-p1-r-second-confirm.html](./previews/cu-p1-r-second-confirm.html) | CU-P1-R `needs_second_confirm` 并排二次确认：批前观察\|重拍后缩略图 · 缺图诚实失败禁静默 click · 人为换窗进此卡（【视觉真源】CU-P1-R · Luna；补厚 p0 §3.2a；基线 tip `ac12110`） |
 
 ---
 

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CU-P1-R · needs_second_confirm 并排二次确认 · Enjoy Agents</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Inter", "ui-sans-serif", "system-ui", "PingFang SC", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .thumb-frame {
+    aspect-ratio: 16 / 10;
+    background:
+      linear-gradient(145deg, #dfe6ef 0%, #c8d2de 48%, #b8c4d4 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .thumb-frame::after {
+    content: "";
+    position: absolute;
+    inset: 12% 18% 28% 18%;
+    border-radius: 6px;
+    border: 1.5px solid rgba(15,20,25,0.35);
+    box-shadow: 0 0 0 999px rgba(43,109,229,0.12);
+    pointer-events: none;
+  }
+  .thumb-frame.stale::after {
+    border-color: rgba(180,83,9,0.55);
+    box-shadow: 0 0 0 999px rgba(180,83,9,0.10);
+  }
+  .thumb-frame.fresh::after {
+    border-color: rgba(6,118,71,0.55);
+    box-shadow: 0 0 0 999px rgba(6,118,71,0.10);
+  }
+  .thumb-frame.missing {
+    background: repeating-linear-gradient(
+      -45deg,
+      #f3f4f6,
+      #f3f4f6 8px,
+      #e5e7eb 8px,
+      #e5e7eb 16px
+    );
+  }
+  .thumb-frame.missing::after { display: none; }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">CU-P1-R · <code class="rounded bg-paper px-1.5 py-0.5 text-[15px] font-semibold">needs_second_confirm</code> 并排二次确认</h1>
+    <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
+      钉死（jojo）：重拍后 <code>appKey</code> / element 校验失败 → 出二次确认卡，两图并排可读；缺图诚实失败，禁静默 click；用户再允许才 act。人为换窗/换控件放行必须进此卡。
+      基线 tip <code>ac12110</code> · 补厚 <code>p0-computer-use.html</code> §3.2a 与 spec 已知坑「二次确认卡 UI 仍薄」。
+    </p>
+    <p class="mt-2 text-[12px] text-mute">I3 Registry more-agents 仍停 · 非第二套遥控器 · 假成功禁出</p>
+  </header>
+
+  <main class="mx-auto max-w-[1100px] space-y-10 px-6 py-8">
+
+    <!-- A: primary happy path -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">A · 校验失败 → 并排二次确认（主态）</h2>
+          <p class="mt-1 text-[13px] text-mute">放行后观察仍 stale → 自动重拍 → <code>appKey</code>/控件对不上 → Permission Dock 出 warn 卡，禁止静默点。</p>
+        </div>
+        <span class="rounded-full bg-warnSoft px-2.5 py-1 text-[11px] font-medium text-warn">needs_second_confirm</span>
+      </div>
+
+      <!-- faux dock -->
+      <div class="mx-auto max-w-[420px] rounded-2xl border border-line bg-paper p-3 shadow-dock">
+        <div class="rounded-xl border border-amber-200/80 bg-card p-4">
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-warnSoft text-[13px] font-bold text-warn">!</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-[14px] font-semibold leading-snug">观察已失效 · 请确认是否仍是同一目标</p>
+              <p class="mt-1 text-[12px] leading-relaxed text-mute">
+                重拍后控件对不上（或应用已换）。对照下方两图后再决定；确认后才对<strong>新</strong>观察执行点击。
+              </p>
+            </div>
+          </div>
+
+          <!-- side-by-side thumbs -->
+          <div class="mt-4 grid grid-cols-2 gap-2.5">
+            <div>
+              <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-mute">批准时 · 批前观察</p>
+              <div class="thumb-frame stale rounded-lg border border-line">
+                <div class="absolute bottom-2 left-2 right-2 rounded bg-black/55 px-2 py-1 text-[10px] text-white">
+                  Calculator · 按钮「=」
+                </div>
+              </div>
+              <p class="mt-1.5 truncate text-[11px] text-mute">obs <code class="text-[10px]">a1f3…</code> · 已过期</p>
+            </div>
+            <div>
+              <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-mute">重拍后 · 新观察</p>
+              <div class="thumb-frame fresh rounded-lg border border-line">
+                <div class="absolute bottom-2 left-2 right-2 rounded bg-black/55 px-2 py-1 text-[10px] text-white">
+                  Notes · 文本区
+                </div>
+              </div>
+              <p class="mt-1.5 truncate text-[11px] text-mute">obs <code class="text-[10px]">c9e2…</code> · 刚拍</p>
+            </div>
+          </div>
+
+          <!-- control summary -->
+          <div class="mt-3 rounded-lg border border-line bg-paper px-3 py-2 text-[12px]">
+            <div class="flex justify-between gap-2"><span class="text-mute">应用</span><span class="font-medium text-warn">Calculator → Notes</span></div>
+            <div class="mt-1 flex justify-between gap-2"><span class="text-mute">控件</span><span class="font-medium">按钮「=」 → 文本区</span></div>
+            <div class="mt-1 flex justify-between gap-2"><span class="text-mute">动作</span><span class="font-medium">click</span></div>
+            <p class="mt-2 text-[11px] leading-relaxed text-mute">人为换窗 / 换控件后放行，必须停在此卡，不得静默 act。</p>
+          </div>
+
+          <div class="mt-4 flex gap-2">
+            <button type="button" class="flex-1 rounded-lg border border-line bg-card px-3 py-2 text-[13px] font-medium text-ink hover:bg-paper">取消</button>
+            <button type="button" class="flex-[1.4] rounded-lg bg-accent px-3 py-2 text-[13px] font-medium text-white shadow-sm">确认对新观察点击</button>
+          </div>
+          <p class="mt-2 text-center text-[10px] text-mute">testid 建议：<code>approval-second-confirm-cancel</code> / <code>approval-second-confirm-allow</code></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- B: missing thumb -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">B · 缺图诚实失败（禁静默 click）</h2>
+          <p class="mt-1 text-[13px] text-mute">任一缩略图路径缺失 / 读失败 → 主按钮禁用；文案说清「看不清就不能点」。</p>
+        </div>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 text-[11px] font-medium text-danger">honest fail</span>
+      </div>
+
+      <div class="mx-auto max-w-[420px] rounded-2xl border border-line bg-paper p-3 shadow-dock">
+        <div class="rounded-xl border border-red-200/80 bg-card p-4">
+          <div class="flex items-start gap-2.5">
+            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dangerSoft text-[13px] font-bold text-danger">×</span>
+            <div class="min-w-0 flex-1">
+              <p class="text-[14px] font-semibold leading-snug">无法对照新旧观察</p>
+              <p class="mt-1 text-[12px] leading-relaxed text-mute">
+                重拍后缺少可用缩略图（或批前图已丢）。不会替你点击；请取消后重新 <code>snapshot</code>，或修好截图后再批。
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-2.5">
+            <div>
+              <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-mute">批准时</p>
+              <div class="thumb-frame stale rounded-lg border border-line"></div>
+            </div>
+            <div>
+              <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-mute">重拍后</p>
+              <div class="thumb-frame missing flex items-center justify-center rounded-lg border border-dashed border-mute/40">
+                <span class="px-2 text-center text-[11px] font-medium text-mute">缩略图不可用</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 rounded-lg border border-danger/20 bg-dangerSoft/40 px-3 py-2 text-[12px] text-danger">
+            错误码可露：<code class="text-[11px]">screenshot_unavailable</code> / 缺 <code class="text-[11px]">thumbnailPath</code> · 主按钮保持禁用
+          </div>
+
+          <div class="mt-4 flex gap-2">
+            <button type="button" class="flex-1 rounded-lg border border-line bg-card px-3 py-2 text-[13px] font-medium">取消</button>
+            <button type="button" disabled class="flex-[1.4] cursor-not-allowed rounded-lg bg-line px-3 py-2 text-[13px] font-medium text-mute">确认对新观察点击</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- C: same app weak identity -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold">C · 同应用 · 身份偏弱（仅路径 id）</h2>
+        <p class="mt-1 text-[13px] text-mute">有 role/name 必须对上；只有路径 <code>elementId</code> 时仍进本卡，不得当稳定指针静默点。</p>
+      </div>
+      <div class="mx-auto max-w-[420px] rounded-2xl border border-line bg-paper p-3 shadow-dock">
+        <div class="rounded-xl border border-amber-200/80 bg-card p-4">
+          <p class="text-[14px] font-semibold">观察已失效 · 请确认是否仍是同一目标</p>
+          <p class="mt-1 text-[12px] text-mute">应用仍是 Safari，但控件只能靠路径 id 对齐——不够稳，需你眼确认。</p>
+          <div class="mt-3 grid grid-cols-2 gap-2.5">
+            <div>
+              <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-mute">批准时</p>
+              <div class="thumb-frame stale rounded-lg border border-line">
+                <div class="absolute bottom-2 left-2 right-2 rounded bg-black/55 px-2 py-1 text-[10px] text-white">Safari · AXPath #3</div>
+              </div>
+            </div>
+            <div>
+              <p class="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-mute">重拍后</p>
+              <div class="thumb-frame fresh rounded-lg border border-line">
+                <div class="absolute bottom-2 left-2 right-2 rounded bg-black/55 px-2 py-1 text-[10px] text-white">Safari · AXPath #3?</div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 rounded-lg border border-line bg-paper px-3 py-2 text-[12px]">
+            <div class="flex justify-between"><span class="text-mute">appKey</span><span class="font-medium">com.apple.Safari</span></div>
+            <div class="mt-1 flex justify-between"><span class="text-mute">稳定键</span><span class="font-medium text-warn">仅 elementId（弱）</span></div>
+          </div>
+          <div class="mt-4 flex gap-2">
+            <button type="button" class="flex-1 rounded-lg border border-line bg-card px-3 py-2 text-[13px] font-medium">取消</button>
+            <button type="button" class="flex-[1.4] rounded-lg bg-accent px-3 py-2 text-[13px] font-medium text-white">确认对新观察点击</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Anti -->
+    <section class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-6">
+      <h2 class="text-base font-semibold text-danger">反例 · 禁止画出 / 禁止接线</h2>
+      <ul class="mt-3 space-y-2 text-[13px] leading-relaxed text-ink">
+        <li class="strike">校验失败仍对旧观察静默 <code>click</code>，不弹卡</li>
+        <li class="strike">缺图时假装「已允许」或空成功条</li>
+        <li class="strike">单图 / 上下叠放看不清新旧对照（本刀要求并排可读）</li>
+        <li class="strike">第二套远程桌面全屏预览取代 Permission Dock</li>
+        <li class="strike">脚注墙解释 TTL / 账本实现细节</li>
+        <li class="strike">「已连接」「操作成功」空态冒充二次确认完成</li>
+      </ul>
+    </section>
+
+    <!-- Hand-off -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">给 mike / kai 的交接</h2>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">mike · 名片</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>沿用 Permission Dock；本态是 warn/danger 变体，不是新壳</li>
+            <li>两列缩略图：左批前 / 右重拍后；标签固定中文</li>
+            <li>主钮文案「确认对新观察点击」；缺图时 disabled</li>
+            <li>取消 = deny / discard，不 act</li>
+            <li>勿画第二套遥控器、勿脚注墙</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">kai · 载荷</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>码：<code>needs_second_confirm</code></li>
+            <li>带新旧 <code>thumbnailPath</code>（或等价）；缺则 UI 走 B 态，禁静默</li>
+            <li>摘要：旧/新 <code>appKey</code>、<code>elementName</code>/role、action、observationId</li>
+            <li>用户确认后才对<strong>新</strong>观察号 act；旧号作废</li>
+            <li>人为换窗/换控件必须落到本卡</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] text-mute">C 端门（luna）：并排可读 · 缺图诚实 · 无静默 click · 非第二远程 · 无空成功。</p>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
+    CU-P1-R visual source · Luna · base <code>ac12110</code> · complements <code>design/previews/p0-computer-use.html</code> §3.2a
+  </footer>
+</body>
+</html>
