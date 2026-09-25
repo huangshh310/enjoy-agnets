@@ -7,7 +7,7 @@ import { RiListCheck3, RiLock2Line, RiQuestionAnswerLine, RiTerminalBoxLine } fr
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { ApprovalActions } from "./approval-actions"
-import type { ApprovalDecide, ApprovalVariant } from "./approval.types"
+import type { ApprovalActionIds, ApprovalDecide, ApprovalVariant } from "./approval.types"
 
 const ICON = {
   command: RiTerminalBoxLine,
@@ -23,17 +23,7 @@ const ICON_TONE = {
   desktop: "border-accent-500/20 bg-accent-500/10 text-accent-500"
 } as const
 
-export function ApprovalChrome({
-  variant,
-  title,
-  children,
-  approveLabel,
-  denyLabel,
-  alwaysLabel,
-  showAlways = true,
-  approveDisabled,
-  decide
-}: {
+type ApprovalChromeProps = ApprovalActionIds & {
   variant: ApprovalVariant
   title: string
   children: ReactNode
@@ -43,7 +33,21 @@ export function ApprovalChrome({
   showAlways?: boolean
   approveDisabled?: boolean
   decide: ApprovalDecide
-}) {
+}
+
+export function ApprovalChrome({
+  variant,
+  title,
+  children,
+  approveLabel,
+  denyLabel,
+  alwaysLabel,
+  showAlways = true,
+  approveDisabled,
+  denyTestId,
+  allowTestId,
+  decide
+}: ApprovalChromeProps) {
   const t = useT()
   const Icon = ICON[variant]
   return (
@@ -70,6 +74,8 @@ export function ApprovalChrome({
           alwaysLabel={alwaysLabel}
           showAlways={showAlways}
           approveDisabled={approveDisabled}
+          denyTestId={denyTestId}
+          allowTestId={allowTestId}
           decide={decide}
         />
       </footer>

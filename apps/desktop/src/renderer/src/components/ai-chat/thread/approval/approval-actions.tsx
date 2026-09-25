@@ -5,7 +5,17 @@ import { RiCheckLine, RiCloseLine, RiShieldCheckLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
-import type { ApprovalDecide, ApprovalVariant } from "./approval.types"
+import type { ApprovalActionIds, ApprovalDecide, ApprovalVariant } from "./approval.types"
+
+type ApprovalActionsProps = ApprovalActionIds & {
+  variant: ApprovalVariant
+  approveLabel: string
+  denyLabel: string
+  alwaysLabel?: string
+  showAlways: boolean
+  approveDisabled?: boolean
+  decide: ApprovalDecide
+}
 
 export function ApprovalActions({
   variant,
@@ -14,16 +24,10 @@ export function ApprovalActions({
   alwaysLabel,
   showAlways,
   approveDisabled,
+  denyTestId = "approval-deny",
+  allowTestId = "approval-allow",
   decide
-}: {
-  variant: ApprovalVariant
-  approveLabel: string
-  denyLabel: string
-  alwaysLabel?: string
-  showAlways: boolean
-  approveDisabled?: boolean
-  decide: ApprovalDecide
-}) {
+}: ApprovalActionsProps) {
   const t = useT()
   const denyTone =
     variant === "questions" || variant === "desktop" ? "" : "text-text-error-primary hover:bg-text-error-primary/10"
@@ -32,7 +36,7 @@ export function ApprovalActions({
       <Button
         size="sm"
         variant="ghost"
-        data-testid="approval-deny"
+        data-testid={denyTestId}
         onClick={decide.onDeny}
         className={cx("h-8 text-caption-1-medium", denyTone)}
       >
@@ -55,7 +59,7 @@ export function ApprovalActions({
       <Button
         size="sm"
         variant="default"
-        data-testid="approval-allow"
+        data-testid={allowTestId}
         disabled={approveDisabled}
         onClick={decide.onApprove}
         className="h-8 text-caption-1-semibold"
