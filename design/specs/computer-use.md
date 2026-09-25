@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P1-A 闸：硬每次问 → 会话表 → 持久簿投影）
+> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P0-C overlay 视觉真源挂预览；闸仍以 CU-P1-A 为准）
 
 ## 当前真相
 
@@ -22,7 +22,7 @@
 
 打包 `beforePack`：`scripts/stage-computer-use.cjs` 编出 `native/computer-use/pack/<platform>-<arch>/`。darwin 在有 `CU_CODESIGN_IDENTITY` / `CSC_NAME` / `APPLE_CODESIGN_IDENTITY` 时 `codesign` 真实 helper，并写 `computer-use.identity.json`；没有身份不假装已签名。开发 `swiftc` → `.build/computer-use` 未签名不得报「已就绪」。
 
-右栏 Desktop 只读最近观察（可带 appKey）。`desktop_act` 成功路径会点亮已有 overlay（不是第二套遥控器）。§3.2a TTL 冻结 / resume / 重拍已由 #80 落地；UI 待批文案写「TTL 已冻结」。
+右栏 Desktop 只读最近观察（可带 appKey）。`desktop_act` 成功路径会点亮已有 overlay（不是第二套遥控器）。overlay **视觉真源** [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html)（补厚 `p0-computer-use.html` CU-P0-C 薄块；产品锁 [`../references/cu-p0-c-overlay.md`](../references/cu-p0-c-overlay.md)）；预览锁 O1–O4，不宣称现网 overlay 已 1:1。§3.2a TTL 冻结 / resume / 重拍已由 #80 落地；UI 待批文案写「TTL 已冻结」。
 
 ## 不变量
 
@@ -71,3 +71,4 @@
 - **设置无焦点会话**：开关若仍可拨，UI 看起来已开、main 却因缺 `sessionId` no-op。正确做法：把 `sessionId` 传到 `DesktopAnyDesktopDetails`，无会话则 `disabled` + `anyDesktopNeedSession`。
 - 执行器快照目前多半只有 `appName`，`appKey` 回落到规范化应用名；有 `bundleId` / `exe` / AUMID 才优先用。`appKeySource` 记录用了哪一档。
 - 控件 `elementId` 是当次 AX 路径下标，不是稳定指针。重拍不得只靠同号 id 自动点；有审批 enrich 的 role/name 时必须对上，否则 `needs_second_confirm`。
+- **overlay 铬与预览不一致**：现网 `resources/overlay/computer-use-overlay.html` 仍是霓虹 HUD + 绿点 + 英文 Computer Use + 点击波纹 + 约 3s 自灭。jojo 正式锁：Execute 下已批 `desktop_act` 生命周期才亮冷静蓝边；一键/Esc 停后诚实中断；Explore 无 overlay、无 `desktop_*`；勿空成功条、勿 VNC 壳取代 Dock。接线前以 [`../previews/cu-p0-c-overlay.html`](../previews/cu-p0-c-overlay.html) 为准。

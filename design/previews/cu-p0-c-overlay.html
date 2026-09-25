@@ -1,0 +1,433 @@
+<!-- 【视觉真源】CU-P0-C / CU-P1-O Overlay · Luna · jojo 正式短锁 · 补厚 p0-computer-use 薄块 · base e7cdeb0 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CU-P0-C / CU-P1-O · Overlay · 正在用电脑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        soft: "#EEF3FC",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .fake-screen {
+    background:
+      linear-gradient(180deg, #dbeafe 0%, #eff6ff 42%, #f8fafc 42%),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(43,109,229,.05) 24px, rgba(43,109,229,.05) 25px);
+  }
+  /* 与 p0-computer-use.html 同构：冷静呼吸，不是霓虹闪 */
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(43,109,229,.55), 0 0 0 6px rgba(43,109,229,.12); }
+    50% { box-shadow: 0 0 0 3px rgba(43,109,229,.75), 0 0 0 10px rgba(43,109,229,.08); }
+  }
+  .cu-overlay { animation: breathe 2.4s ease-in-out infinite; border-radius: 12px; }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+  .calc-key { border-radius: 4px; background: #F7F8FA; text-align: center; }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">CU-P0-C / CU-P1-O · Overlay · 正在用电脑</h1>
+    <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
+      <code class="rounded bg-paper px-1">desktop_act</code> 进行中点亮冷静蓝边 overlay + 右栏与当前观察窗同步 + 一键/Esc 停；无观察不装在控。对标 Codex「正在用电脑」，不是第二套遥控器。
+      补厚 <a class="font-medium text-accent underline-offset-2 hover:underline" href="./p0-computer-use.html">p0-computer-use.html</a> CU-P0-C 薄块；<strong class="text-ink">本文件才是 overlay 视觉真源</strong>。Owner：luna 预览 → mike 铬 → kai 生命周期挂点（薄）。基线 tip <code>e7cdeb0</code> · I3 仍停 · 不宣称应用已 1:1。
+    </p>
+  </header>
+
+  <main class="mx-auto max-w-[1100px] space-y-10 px-6 py-8">
+
+    <aside class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-mute">jojo 正式验收 · O1–O4</p>
+      <ol class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li><strong>O1</strong> Execute 下对已批目标 act 进行中 → overlay 可见；结束/取消/失败 → 熄灭</li>
+        <li><strong>O2</strong> 右栏缩略或窗名与当前观察一致（或诚实空）</li>
+        <li><strong>O3</strong> 用户停一手势后不再继续 click（诚实中断）</li>
+        <li><strong>O4</strong> Explore 无 overlay、无 <code>desktop_*</code></li>
+      </ol>
+      <div class="mt-4 grid gap-3 text-[12px] leading-relaxed md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="font-semibold">做</p>
+          <ol class="mt-1 list-decimal space-y-1 pl-4 text-mute">
+            <li><strong class="text-ink">冷静蓝边</strong>：Execute 下 <code>desktop_act</code>（click/type/key/…）生命周期内，冷静蓝边呼吸/点亮（对齐 p0 名片，勿刺眼红警）</li>
+            <li><strong class="text-ink">右栏 Desktop</strong>：与当前观察窗同步（窗名 / app / 缩略若有）；无观察诚实空，不假装在控</li>
+            <li><strong class="text-ink">停一手势</strong>：一键停 + Esc（系统可接则接）；停下后不再继续 click，诚实中断</li>
+            <li><strong class="text-ink">与 Approval Dock 同宇宙</strong>：overlay 是铬，不是新壳；审批仍走 Permission Dock（含二次确认卡）</li>
+          </ol>
+        </div>
+        <div class="rounded-xl border border-line bg-paper px-3 py-2.5">
+          <p class="font-semibold">不做</p>
+          <ul class="mt-1 list-disc space-y-1 pl-4 text-mute">
+            <li>第二套远程桌面全屏壳 / VNC 式预览取代 Dock</li>
+            <li>脚注墙解释 TTL/账本实现</li>
+            <li>Explore 下点亮 overlay 或注册 <code>desktop_*</code></li>
+            <li>无观察 / 未在 act 时假装「正在控制」</li>
+            <li>空成功条冒充操控完成</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- A · act 进行中 -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm" id="state-a">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">A · 主态 · act 中蓝边 + 右栏同步名片</h2>
+          <p class="mt-1 text-[13px] text-mute">Execute 下对已批目标执行 <code>desktop_act</code>。蓝边框住<strong class="text-ink">本机目标窗</strong>；overlay 是铬，不是新壳。右栏窗名 / app / 缩略与当前观察一致。</p>
+        </div>
+        <span class="rounded-full bg-soft px-2.5 py-1 text-[11px] font-medium text-accent ring-1 ring-accent/20">O1 亮 · O2 同步</span>
+      </div>
+
+      <!-- 本机目标窗示意 -->
+      <div class="rounded-2xl border border-line bg-paper p-4">
+        <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-mute">本机桌面 · 目标窗</p>
+        <div id="a-overlay" class="cu-overlay relative mx-auto max-w-[640px] overflow-hidden rounded-xl border border-accent/40 bg-card" data-testid="cu-overlay-frame">
+          <div id="a-hud" class="flex items-center justify-between border-b border-line bg-soft/90 px-3 py-1.5 text-[11px]">
+            <span class="font-semibold text-accent">正在操控 · 计算器</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-mute">Esc 停一手势</span>
+              <button type="button" id="a-stop" data-testid="cu-overlay-stop" class="rounded-md bg-card px-2.5 py-0.5 text-[11px] font-medium text-ink ring-1 ring-line">停止</button>
+            </div>
+          </div>
+          <div class="fake-screen flex h-40 items-center justify-center">
+            <div class="w-44 rounded-lg bg-white p-2.5 shadow-md ring-1 ring-line">
+              <p class="text-center font-mono text-[20px] font-semibold tabular-nums">1</p>
+              <div class="mt-2 grid grid-cols-4 gap-1 text-[10px]">
+                <span class="calc-key py-1 ring-2 ring-accent">1</span>
+                <span class="calc-key py-1">2</span>
+                <span class="calc-key py-1">+</span>
+                <span class="calc-key bg-soft py-1 text-accent">=</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p id="a-caption" class="mt-2 text-center text-[11px] text-mute">冷静蓝边呼吸/点亮 · 一键停 + Esc · 结束/取消/失败同样熄 · 勿刺眼红警</p>
+        <p class="mt-1 text-center"><button type="button" id="a-replay" class="hidden text-[11px] font-medium text-accent">再演示 act</button></p>
+      </div>
+
+      <!-- Enjoy 会话：步骤卡 + 右栏 -->
+      <div class="mt-4 overflow-hidden rounded-2xl border border-line shadow-sm">
+        <div class="flex items-center justify-between border-b border-line bg-paper px-3 py-1.5 text-[10px] text-mute">
+          <span>Enjoy Agents · 执行</span>
+          <span>overlay 是铬 · 审批仍走 Permission Dock</span>
+        </div>
+        <div class="grid lg:grid-cols-[1fr_220px]">
+          <div class="space-y-2 p-3">
+            <p class="rounded-xl bg-paper px-3 py-2 text-[12px]">打开计算器，点 1 + 1 =</p>
+            <div class="rounded-xl border border-line bg-card p-3 shadow-dock" data-testid="permission-dock-same-universe">
+              <p class="mb-1.5 text-[10px] font-medium uppercase tracking-wide text-mute">需要你确认 · Permission Dock</p>
+              <div class="flex items-start gap-2">
+                <div class="fake-screen h-12 w-16 shrink-0 overflow-hidden rounded-md border border-line">
+                  <p class="p-1 text-center font-mono text-[11px] font-semibold">1</p>
+                </div>
+                <div class="min-w-0 text-[11px]">
+                  <p class="font-semibold">允许操控「计算器」？</p>
+                  <p class="mt-0.5 text-mute">已允许一次 · 二次确认仍走这张卡，不在 overlay 里批</p>
+                </div>
+              </div>
+            </div>
+            <article class="overflow-hidden rounded-xl border border-line" data-testid="step-obs-card">
+              <div class="flex items-center gap-2 border-b border-line bg-paper px-3 py-1.5">
+                <span class="text-[10px] font-semibold uppercase tracking-wide text-mute">电脑</span>
+                <span class="rounded-full bg-card px-1.5 py-0.5 text-[10px] ring-1 ring-line">点击</span>
+                <span class="ml-auto font-mono text-[10px] text-mute">obs_8f2a</span>
+              </div>
+              <div class="flex gap-3 p-3">
+                <div class="fake-screen h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-line" data-testid="step-obs-thumb">
+                  <div class="m-2 rounded bg-white/90 p-1.5 shadow-sm">
+                    <p class="text-center font-mono text-[14px] font-semibold">1</p>
+                  </div>
+                </div>
+                <div class="min-w-0 flex-1 text-[11px]">
+                  <p class="font-semibold">计算器 · 「1」 · click</p>
+                  <p class="mt-0.5 text-mute">appKey · com.apple.calculator</p>
+                  <p class="mt-0.5 text-mute">与右栏、目标窗同一观察</p>
+                </div>
+              </div>
+            </article>
+            <div class="rounded-xl border border-line p-2.5">
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                  <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+                  <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+                </div>
+                <span class="min-w-[1rem] flex-1"></span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30">
+                  <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">G</span>
+                  Grok · 4.6
+                </span>
+              </div>
+              <div class="mt-2 min-h-[44px] rounded-xl border border-line bg-paper px-3 py-2 text-[12px]">
+                <span class="mr-1 inline-flex items-center gap-1 rounded-md bg-soft px-1.5 py-0.5 text-[11px] font-medium text-accent ring-1 ring-accent/20">@电脑</span>
+              </div>
+              <div class="mt-2"><span class="inline-flex items-center gap-1 rounded-full bg-soft px-2 py-0.5 text-[10px] font-semibold text-accent ring-1 ring-accent/25">🖥 电脑</span></div>
+            </div>
+          </div>
+          <aside class="border-t border-line lg:border-l lg:border-t-0" data-testid="desktop-rail-card">
+            <p class="border-b border-line bg-paper px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">正在看的窗口</p>
+            <div id="a-rail" class="flex flex-col gap-2 p-3">
+              <p class="text-[12px] font-semibold">计算器</p>
+              <p class="font-mono text-[10px] text-mute">appKey · com.apple.calculator</p>
+              <div class="fake-screen h-24 w-full overflow-hidden rounded-lg border border-line">
+                <div class="m-2 rounded bg-white/90 p-1.5 shadow-sm">
+                  <p class="text-center font-mono text-[16px] font-semibold">1</p>
+                </div>
+              </div>
+              <p class="font-mono text-[10px] text-mute">obs_8f2a · 与步骤卡同一张</p>
+              <ul class="space-y-1 text-[10px] text-mute">
+                <li><span class="text-ink">1</span> · button</li>
+                <li><span class="text-ink">+</span> · button</li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- 停 · 一键 / Esc -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm" id="state-stop">
+      <div class="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">停 · 一键 / Esc 后熄灭</h2>
+          <p class="mt-1 text-[13px] text-mute">停一手势（顶栏「停止」或 Esc，系统可接则接）。诚实中断：不再继续 click。结束 / 取消 / 失败同样熄，不画空成功条。</p>
+        </div>
+        <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] font-medium text-mute ring-1 ring-line">O1 熄 · O3 中断</span>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 text-[12px]">
+        <div class="rounded-xl border border-accent/30 bg-soft/60 p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">进行中</p>
+          <p class="mt-1 font-semibold">正在操控 · 计算器</p>
+          <p class="mt-0.5 text-mute">蓝边呼吸 · 「停止」+ Esc</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-3">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">停后 / 结束 / 取消 / 失败</p>
+          <p class="mt-1 font-semibold">overlay 熄</p>
+          <p class="mt-0.5 text-mute">无「正在操控」· 后续 click 不再当在控</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 空态 -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm" id="state-b">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">空态 · 无观察不装在控</h2>
+          <p class="mt-1 text-[13px] text-mute">无观察 / 未在 act：无蓝边、无「正在操控」。右栏诚实空「还没有桌面观察」——<strong class="text-ink">禁止</strong>假装「正在控制」。</p>
+        </div>
+        <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] font-medium text-mute ring-1 ring-line">O2 诚实空</span>
+      </div>
+
+      <div class="rounded-2xl border border-dashed border-line bg-paper p-4">
+        <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-mute">本机桌面 · 目标窗（不在控）</p>
+        <div class="relative mx-auto max-w-[640px] overflow-hidden rounded-xl border border-line bg-card" data-testid="cu-idle-frame">
+          <div class="fake-screen flex h-32 items-center justify-center">
+            <div class="w-44 rounded-lg bg-white p-2.5 shadow-sm ring-1 ring-line">
+              <p class="text-center font-mono text-[18px] font-semibold tabular-nums">0</p>
+              <div class="mt-2 grid grid-cols-4 gap-1 text-[10px] text-mute">
+                <span class="calc-key py-1">1</span>
+                <span class="calc-key py-1">2</span>
+                <span class="calc-key py-1">+</span>
+                <span class="calc-key py-1">=</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-2 text-center text-[11px] text-mute">无呼吸边 · 无顶栏「正在操控」· 计算器只是本机普通窗</p>
+      </div>
+
+      <div class="mt-4 overflow-hidden rounded-2xl border border-line">
+        <div class="grid lg:grid-cols-[1fr_220px]">
+          <div class="space-y-2 p-3">
+            <p class="text-[12px] text-mute">无观察、未在 act。不要假装「正在控制」。</p>
+            <div class="rounded-xl border border-line p-2.5">
+              <div class="flex flex-wrap items-center gap-x-2">
+                <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                  <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+                  <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+                </div>
+                <span class="min-w-[1rem] flex-1"></span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30">Grok · 4.6</span>
+              </div>
+              <div class="mt-2 min-h-[44px] rounded-xl border border-line bg-paper px-3 py-2 text-[12px] text-mute">接着帮我看一下这个文件…</div>
+            </div>
+          </div>
+          <aside class="border-t border-line lg:border-l lg:border-t-0" data-testid="desktop-rail-empty">
+            <p class="border-b border-line bg-paper px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">正在看的窗口</p>
+            <p class="px-3 py-6 text-center text-[12px] text-mute">还没有桌面观察</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- C · Explore -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm" id="state-c">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">Explore · 桌面仅执行</h2>
+          <p class="mt-1 text-[13px] text-mute">能力轨提示桌面仅 Execute。探索模式<strong class="text-ink">不注册</strong> <code>desktop_*</code>，画面上不许出现蓝边或「正在操控」。</p>
+        </div>
+        <span class="rounded-full bg-warnSoft px-2.5 py-1 text-[11px] font-medium text-warn">O4 无 overlay</span>
+      </div>
+      <div class="rounded-2xl border border-line p-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-x-2">
+          <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+            <span class="rounded-full bg-soft px-2.5 py-0.5 text-[11px] font-semibold text-accent">探索</span>
+            <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">执行</span>
+          </div>
+          <span class="min-w-[1rem] flex-1"></span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">Grok · 4.6</span>
+        </div>
+        <div class="mt-2 min-h-[48px] rounded-xl border border-dashed border-line bg-paper px-3 py-2 text-[12px] text-mute">
+          用电脑点一下偏好设置里的开关…
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="rounded-md bg-paper px-2 py-0.5 text-[10px] font-medium text-warn ring-1 ring-warn/25">桌面仅执行</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">desktop_*</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">desktop_act</span>
+          <span class="rounded-md bg-paper/80 px-2 py-0.5 text-[10px] text-mute/50 ring-1 ring-line line-through">desktop_snapshot</span>
+        </div>
+      </div>
+      <div class="mt-3 flex max-w-lg items-start gap-2 rounded-xl border border-line p-3">
+        <span class="mt-0.5 size-2 shrink-0 rounded-full bg-warn"></span>
+        <div class="min-w-0 text-[11px]">
+          <p class="font-semibold">探索模式没有桌面操控工具</p>
+          <p class="mt-0.5 text-mute">桌面仅 Execute。不会注册 <code>desktop_*</code>，也不会点亮 overlay。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 反例 -->
+    <section class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-6">
+      <h2 class="text-base font-semibold text-danger">反例 · 禁止画出 / 禁止接线</h2>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <article class="rounded-xl border border-dashed border-danger/30 bg-card p-3 text-[12px]">
+          <p class="font-semibold strike">全屏远程壳 / VNC 式预览取代 Dock</p>
+          <div class="mt-2 rounded-lg border border-line bg-ink/90 p-2 text-[10px] text-white/80">
+            <p class="flex justify-between"><span>Remote Desktop</span><span>🖱 ⌨️ ⏹</span></p>
+            <p class="mt-1 h-10 rounded bg-white/10"></p>
+          </div>
+          <p class="mt-2 text-mute">overlay 是铬。审批仍走 Permission Dock，不要开第二套远程壳。</p>
+        </article>
+        <article class="rounded-xl border border-dashed border-danger/30 bg-card p-3 text-[12px]">
+          <p class="font-semibold strike">脚注墙解释 TTL/账本实现</p>
+          <div class="mt-2 space-y-1 rounded-lg border border-line bg-paper p-2 text-[10px] text-mute">
+            <p>TTL 30s · freeze/unfreeze · 账本编号 · stale_observation…</p>
+            <p>第二引擎条 · 目标阶段 · 用量 74%</p>
+          </div>
+          <p class="mt-2 text-mute">实现细节不进 Composer。打断只写 overlay 顶栏。</p>
+        </article>
+        <article class="rounded-xl border border-dashed border-danger/30 bg-card p-3 text-[12px]">
+          <p class="font-semibold strike">Explore 点亮 overlay / 注册 desktop_*</p>
+          <div class="mt-2 rounded-lg border-2 border-accent p-2 text-[10px]">
+            <p class="font-semibold text-accent">正在操控 · 探索？</p>
+            <p class="mt-1 rounded bg-soft px-1.5 py-0.5 text-accent">desktop_act · desktop_snapshot</p>
+          </div>
+          <p class="mt-2 text-mute">探索态无蓝边、无 desktop_*。</p>
+        </article>
+        <article class="rounded-xl border border-dashed border-danger/30 bg-card p-3 text-[12px]">
+          <p class="font-semibold strike">无观察装在控 / 未在 act 假装正在控制</p>
+          <div class="mt-2 flex items-center justify-between rounded-lg border border-line bg-paper px-2 py-2 text-[10px]">
+            <span class="text-mute">还没有桌面观察</span>
+            <span class="rounded-full bg-okSoft px-2 py-0.5 font-semibold text-ok">正在控制</span>
+          </div>
+          <p class="mt-2 text-mute">空态只写「还没有桌面观察」。无「在控」铬。</p>
+        </article>
+        <article class="rounded-xl border border-dashed border-danger/30 bg-card p-3 text-[12px] sm:col-span-2">
+          <p class="font-semibold strike">空成功条冒充操控完成</p>
+          <div class="mt-2 flex items-center justify-between rounded-lg border border-ok/30 bg-okSoft px-3 py-2 text-[11px] text-ok">
+            <span>操控完成</span>
+            <span>✓</span>
+          </div>
+          <p class="mt-2 text-mute">结束/取消/失败只熄 overlay，诚实中断；不要空成功条假装点过。</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- handoff -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">给 mike / kai 的交接</h2>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">mike · 铬</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>沿用已有 overlay 窗换成冷静蓝边 + 「正在操控 · {app}」+「停止」；禁红警 / 霓虹 HUD</li>
+            <li>右栏与当前观察窗同步（窗名 / app / 缩略若有）；无观察诚实空</li>
+            <li>overlay 是铬，不是新壳；审批仍走 Permission Dock（含二次确认）</li>
+            <li>Explore：能力轨「桌面仅执行」，不画 overlay，不露 <code>desktop_*</code></li>
+            <li>勿全屏远程壳、勿 TTL/账本脚注墙、勿空成功条、勿 Registry</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">kai · 生命周期挂点（薄）</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>Execute 下已批目标 <code>desktop_act</code>（click/type/key/…）进行中才亮；结束/取消/失败熄</li>
+            <li>一键停 + Esc（系统可接则接）同一条停路径；停后不再继续 click，诚实中断</li>
+            <li>Explore 不注册 <code>desktop_*</code> ⇒ 主进程不 ensure overlay</li>
+            <li>本刀只锁视觉；产品 TS 另刀。I3 仍停</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] text-mute">Owner：luna 预览 → mike 铬 → kai 生命周期挂点（薄）。C 端门：act 才亮边 · 右栏跟观察 · 停一手势诚实中断 · Explore 零 overlay / 零 desktop_*。</p>
+    </section>
+  </main>
+
+  <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
+    CU-P0-C / CU-P1-O visual source · luna 预览 → mike 铬 → kai 生命周期挂点（薄） · base <code>e7cdeb0</code> · SoT <code>design/references/cu-p0-c-overlay.md</code> · I3 仍停
+  </footer>
+
+  <script>
+    const overlay = document.getElementById("a-overlay");
+    const hud = document.getElementById("a-hud");
+    const caption = document.getElementById("a-caption");
+    const stop = document.getElementById("a-stop");
+    const replay = document.getElementById("a-replay");
+    const liveCaption = "冷静蓝边呼吸/点亮 · 一键停 + Esc · 结束/取消/失败同样熄 · 勿刺眼红警";
+    const stoppedCaption = "已停止 · overlay 熄 · 诚实中断 · 不再继续 click";
+
+    function setActing(on) {
+      overlay?.classList.toggle("cu-overlay", on);
+      overlay?.classList.toggle("border-accent/40", on);
+      overlay?.classList.toggle("border-line", !on);
+      if (hud) hud.style.display = on ? "" : "none";
+      if (caption) caption.textContent = on ? liveCaption : stoppedCaption;
+      replay?.classList.toggle("hidden", on);
+    }
+
+    stop?.addEventListener("click", () => setActing(false));
+    replay?.addEventListener("click", () => setActing(true));
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setActing(false);
+    });
+  </script>
+</body>
+</html>
