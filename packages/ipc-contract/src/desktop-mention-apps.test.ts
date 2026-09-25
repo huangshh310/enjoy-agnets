@@ -1,6 +1,11 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { DesktopMentionApp, DesktopMentionAppsResult } from "./desktop-mention-apps.ts"
+import { readFileSync } from "node:fs"
+import {
+  DesktopMentionApp,
+  DesktopMentionAppsResult,
+  DesktopMentionBias
+} from "./desktop-mention-apps.ts"
 
 test("稳应用行收 displayName + appKey，pid 只可选", () => {
   const row = DesktopMentionApp.parse({
@@ -31,4 +36,31 @@ test("列表失败仍是空 apps，不造假应用", () => {
     code: "executor_missing"
   })
   assert.equal(parsed.apps.length, 0)
+})
+
+test("DesktopMentionBias 宿主 / 稳应用 / 无稳键", () => {
+  assert.deepEqual(DesktopMentionBias.parse({ kind: "host" }), { kind: "host" })
+  assert.deepEqual(
+    DesktopMentionBias.parse({
+      kind: "app",
+      displayName: "计算器",
+      appKey: "com.apple.calculator",
+      stable: true
+    }),
+    { kind: "app", displayName: "计算器", appKey: "com.apple.calculator", stable: true }
+  )
+  assert.equal(
+    DesktopMentionBias.parse({
+      kind: "app",
+      displayName: "未识别窗口",
+      appKey: "",
+      stable: false
+    }).stable,
+    false
+  )
+})
+
+test("RunAgentInput 声明可选 desktopBias（node:test 不 value-import chat.ts）", () => {
+  const src = readFileSync(new URL("./chat.ts", import.meta.url), "utf8")
+  assert.match(src, /desktopBias: DesktopMentionBias\.optional/)
 })

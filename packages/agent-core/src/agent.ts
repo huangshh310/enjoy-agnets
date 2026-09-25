@@ -22,6 +22,10 @@ import {
   pullPrepareStepUserMessages
 } from "./policies/prepare-step.ts"
 import { resolveToolApproval } from "./tool-approval.ts"
+import {
+  applyDesktopToolOrder,
+  formatDesktopBiasInstruction
+} from "./computer-use/desktop-tool-bias.ts"
 
 export type { CodingAgentOptions, StreamCodingAgentOptions } from "./coding-agent-options.ts"
 
@@ -38,7 +42,10 @@ export function createCodingAgent(
   })
   return new ToolLoopAgent({
     model,
-    instructions: joinInstructions(systemPromptFor(mode), options.extraInstructions),
+    instructions: joinInstructions(
+      systemPromptFor(mode),
+      joinInstructions(options.extraInstructions ?? "", formatDesktopBiasInstruction(options.desktopBias, mode))
+    ),
     tools: codingAgentTools(model, mode, policy, options),
     runtimeContext: options.runtimeContext,
     ...(options.providerOptions ? { providerOptions: options.providerOptions } : {}),
@@ -71,7 +78,7 @@ function codingAgentTools(
   policy: ApprovalPolicy,
   options: CodingAgentOptions
 ) {
-  return {
+  const tools = {
     ...createCodingTools(options.runtimeContext.host, { mode, skills: options.skills }),
     ...createSessionHeartbeatTool(
       options.runtimeContext.sessionId,
@@ -94,6 +101,7 @@ function codingAgentTools(
     ),
     ...options.extraTools
   }
+  return applyDesktopToolOrder(tools, options.desktopBias, mode)
 }
 
 function codingPrepareStep(

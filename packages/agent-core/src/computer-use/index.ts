@@ -46,6 +46,11 @@ export {
 } from "./desktop-second-confirm-gate.ts"
 export type { DesktopActAppKeySource } from "./desktop-act-policy.ts"
 export {
+  applyDesktopToolOrder,
+  formatDesktopBiasInstruction,
+  sanitizeDesktopMentionBias
+} from "./desktop-tool-bias.ts"
+export {
   clearAllConversationDesktopAllows,
   clearConversationDesktopAllow,
   conversationHasAnyDesktop,

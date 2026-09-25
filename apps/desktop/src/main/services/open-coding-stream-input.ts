@@ -7,6 +7,7 @@ import { DESKTOP_ACT_ANY_SESSION_KEY, mergeConversationDesktopAllow } from "@enj
 import {
   type AgentMode,
   type AskUserAnswers,
+  type DesktopMentionBias,
   type HostInjectSnapshot,
   type ReasoningEffort
 } from "@enjoy-agents/ipc-contract"
@@ -39,6 +40,8 @@ export type OpenCodingStreamInput = {
   sessionApprovedTools: ReadonlySet<string>
   sessionApprovedBashPrefixes?: readonly string[]
   executePlan?: boolean
+  /** Composer `@桌面` / `@应用` 偏置。Explore 开流仍不注册 desktop_*。 */
+  desktopBias?: DesktopMentionBias
   waitForSubagentApproval?: WaitForSubagentApproval
   onSubagentToolEvent?: (event: SubagentToolTraceEvent) => void
   runtimeId?: string

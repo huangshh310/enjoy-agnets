@@ -14,6 +14,7 @@ import { continueTodoTurn } from "./continue-todo-turn"
 import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
+import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -165,7 +166,7 @@ export async function editAndResendUserTurn(
   }
 }
 
-function startTurnIpc(
+async function startTurnIpc(
   store: ChatStore,
   runKind: ReturnType<typeof composerRunKind>,
   prompt: string,
@@ -183,11 +184,13 @@ function startTurnIpc(
       attachments: assetIds
     })
   }
+  const desktopBias = await desktopBiasForRun(prompt)
   return getIde().agent.run({
     ...codingAgentRunInput(store),
     messages: history,
     attachments: assetIds,
-    commandId: crypto.randomUUID()
+    commandId: crypto.randomUUID(),
+    ...(desktopBias ? { desktopBias } : {})
   })
 }
 
