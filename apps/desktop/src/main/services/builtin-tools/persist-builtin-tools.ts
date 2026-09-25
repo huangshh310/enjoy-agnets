@@ -1,5 +1,5 @@
 /**
- * builtin_tools 落盘形状。禁止写入会话 Allow / anyDesktop。
+ * builtin_tools 落盘形状。禁止写入会话 Allow / anyDesktop / Always-allow 簿。
  */
 export type PersistedBuiltinTools = {
   builtinBrowserEnabled?: boolean

@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DesktopMacPermissions } from "./desktop-mac-permissions"
+import { DesktopAlwaysAllowBook } from "./desktop/desktop-always-allow-book"
 import { DesktopAnyDesktopDetails } from "./desktop/desktop-any-desktop-details"
 import { DesktopDoctorPanel } from "./desktop/desktop-doctor-panel"
 import { DesktopOnboardingActions } from "./desktop/desktop-onboarding-actions"
@@ -22,6 +23,7 @@ export function DesktopToolsCard({
   onToggleComputerUse,
   onToggleScreenVisuals,
   onToggleAnyDesktop,
+  onRevokeAlwaysAllow,
   onOpenPermission
 }: {
   desktop: DesktopComputerUseState
@@ -29,6 +31,7 @@ export function DesktopToolsCard({
   onToggleComputerUse: (enabled: boolean) => void
   onToggleScreenVisuals?: (enabled: boolean) => void
   onToggleAnyDesktop?: (enabled: boolean) => void
+  onRevokeAlwaysAllow?: (appKey: string) => void
   onOpenPermission: (permission: "accessibility" | "screenCapture") => void
 }) {
   const t = useT()
@@ -105,6 +108,10 @@ export function DesktopToolsCard({
               <p className="text-caption-1-medium leading-relaxed text-text-tertiary">{t("settings.builtinTools.desktopTip")}</p>
             </div>
           ) : null}
+          <DesktopAlwaysAllowBook
+            appKeys={desktop.alwaysAllowAppKeys ?? []}
+            onRevoke={(appKey) => onRevokeAlwaysAllow?.(appKey)}
+          />
         </div>
       </div>
     </div>

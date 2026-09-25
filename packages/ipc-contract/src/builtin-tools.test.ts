@@ -5,7 +5,8 @@ import {
   DesktopActApprovalArgs,
   GetBuiltinToolsStateInput,
   ToggleBuiltinToolInput,
-  OpenSystemPermissionInput
+  OpenSystemPermissionInput,
+  RevokeAlwaysAllowAppInput
 } from "./builtin-tools.ts"
 
 test("BuiltinToolsState validates default structure", () => {
@@ -27,6 +28,7 @@ test("BuiltinToolsState validates default structure", () => {
   assert.equal(parsed.browserBridge.connectedBrowser, null)
   assert.equal(parsed.computerUse.screenVisuals, true)
   assert.equal(parsed.computerUse.anyDesktopSession, false)
+  assert.deepEqual(parsed.computerUse.alwaysAllowAppKeys, [])
 })
 
 test("GetBuiltinToolsStateInput 可带 sessionId", () => {
@@ -76,6 +78,11 @@ test("DesktopActApprovalArgs 收二次确认新旧缩略图", () => {
   assert.equal(parsed.needsSecondConfirm, true)
   assert.equal(parsed.previousThumbnailDataUrl, "data:image/png;base64,OLD")
   assert.equal(parsed.thumbnailDataUrl, "data:image/png;base64,NEW")
+})
+
+test("RevokeAlwaysAllowAppInput 只要裸 appKey", () => {
+  assert.equal(RevokeAlwaysAllowAppInput.parse({ appKey: "com.apple.calculator" }).appKey, "com.apple.calculator")
+  assert.throws(() => RevokeAlwaysAllowAppInput.parse({ appKey: "" }))
 })
 
 test("OpenSystemPermissionInput validates permission enum", () => {

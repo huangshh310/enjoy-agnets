@@ -37,6 +37,17 @@ export {
   withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
 export {
+  DESKTOP_ALWAYS_ALLOW_PREFS_KEY,
+  desktopActDecisionWrite,
+  grantPersistentDesktopAlwaysAllow,
+  grantPersistentDesktopAppKey,
+  isPersistentDesktopAppKey,
+  persistentBookAllowsDesktopAct,
+  policyAllowsDesktopAct,
+  revokePersistentDesktopAlwaysAllow,
+  sanitizeDesktopAlwaysAllowAppKeys
+} from "./desktop-always-allow.ts"
+export {
   clearDesktopSecondConfirmGate,
   desktopActNeedsSecondConfirm,
   forgetDesktopSecondConfirmGate,

@@ -711,6 +711,8 @@ export const enChat = {
   desktopAllowOnce: "Allow once",
   desktopAllowSession: "Allow this app this session",
   desktopAllowSessionApp: "Allow “{app}” this session",
+  desktopAllowAlways: "Always allow this app",
+  desktopAllowAlwaysHint: "Remembered on this machine until you revoke it in Settings. Coordinate / foreground / sensitive still ask every time.",
   desktopSecondConfirmTitle: "Observation expired · confirm it is still the same target",
   desktopSecondConfirmBody:
     "The resnapshot did not match the approved control (or the app changed). Compare the two images, then confirm before we click the new observation.",

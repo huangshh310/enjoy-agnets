@@ -703,6 +703,8 @@ export const zhChat = {
   desktopAllowOnce: "允许一次",
   desktopAllowSession: "本会话允许此应用",
   desktopAllowSessionApp: "本会话允许「{app}」",
+  desktopAllowAlways: "始终允许此应用",
+  desktopAllowAlwaysHint: "本机记住此应用，直到在设置里撤销。坐标 / 前台 / 敏感仍每次问。",
   desktopSecondConfirmTitle: "观察已失效 · 请确认是否仍是同一目标",
   desktopSecondConfirmBody: "重拍后控件对不上（或应用已换）。对照下方两图后再决定；确认后才对新观察执行点击。",
   desktopSecondConfirmWeakBody: "应用可能没换，但控件只能靠路径 id 对齐——不够稳，需你眼确认。",

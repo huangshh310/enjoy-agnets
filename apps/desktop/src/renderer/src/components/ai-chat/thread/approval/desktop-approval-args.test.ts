@@ -18,6 +18,7 @@ test("普通 allow 只有单缩略图，不是二次确认", () => {
   assert.equal(view.previousThumbnail, "")
   assert.equal(view.thumbsReady, true)
   assert.equal(view.canSessionAllow, true)
+  assert.equal(view.canAlwaysAllow, true)
 })
 
 test("二次确认 args 暴露批准时与重拍后两张图", () => {
@@ -41,6 +42,7 @@ test("二次确认 args 暴露批准时与重拍后两张图", () => {
   assert.equal(view.thumbnailPath, "/thumbs/after-resnap.png")
   assert.equal(view.thumbsReady, true)
   assert.equal(view.canSessionAllow, true)
+  assert.equal(view.canAlwaysAllow, false)
 })
 
 test("二次确认缺任一缩略图则 thumbsReady 为假", () => {
@@ -68,28 +70,35 @@ test("有 appKey 且非 bypass 才能本会话允许此应用", () => {
     elementName: "7"
   })
   assert.equal(ok.canSessionAllow, true)
+  assert.equal(ok.canAlwaysAllow, true)
   assert.equal(ok.bypassesSessionAllow, false)
   assert.match(ok.summary, /计算器/)
 })
 
-test("无 appKey、坐标或切前台时隐藏会话允许", () => {
-  assert.equal(desktopApprovalView({ action: "click", elementId: "e1" }).canSessionAllow, false)
-  assert.equal(
-    desktopApprovalView({
-      action: "click",
-      x: 12,
-      y: 8,
-      appKey: "com.apple.calculator"
-    }).canSessionAllow,
-    false
-  )
-  assert.equal(
-    desktopApprovalView({
-      action: "click",
-      elementId: "e1",
-      appKey: "com.apple.calculator",
-      bypassesSessionAllow: true
-    }).canSessionAllow,
-    false
-  )
+test("无 appKey、坐标或切前台时隐藏会话允许与始终允许", () => {
+  const noKey = desktopApprovalView({ action: "click", elementId: "e1" })
+  assert.equal(noKey.canSessionAllow, false)
+  assert.equal(noKey.canAlwaysAllow, false)
+  const coord = desktopApprovalView({
+    action: "click",
+    x: 12,
+    y: 8,
+    appKey: "com.apple.calculator"
+  })
+  assert.equal(coord.canSessionAllow, false)
+  assert.equal(coord.canAlwaysAllow, false)
+  const bypass = desktopApprovalView({
+    action: "click",
+    elementId: "e1",
+    appKey: "com.apple.calculator",
+    bypassesSessionAllow: true
+  })
+  assert.equal(bypass.canSessionAllow, false)
+  assert.equal(bypass.canAlwaysAllow, false)
+  const pidKey = desktopApprovalView({
+    action: "click",
+    elementId: "e1",
+    appKey: "4242"
+  })
+  assert.equal(pidKey.canAlwaysAllow, false)
 })

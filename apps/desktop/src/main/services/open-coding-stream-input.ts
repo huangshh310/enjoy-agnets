@@ -5,6 +5,7 @@ import type { ModelMessage } from "ai"
 import {
   DESKTOP_ACT_ANY_SESSION_KEY,
   mergeConversationDesktopAllow,
+  sanitizeDesktopAlwaysAllowAppKeys,
   type ApprovalPolicy,
   type SubagentToolTraceEvent,
   type WaitForSubagentApproval
@@ -50,7 +51,7 @@ export type OpenCodingStreamInput = {
   takeQuestionAnswers?: () => AskUserAnswers | undefined
 }
 
-/** 审批只读会话表 + 本轮 run 副本。禁止从 builtin_tools 偏好读 anyDesktop。 */
+/** 审批读会话表 ∪ run 副本，再读持久簿。禁止从 builtin_tools 读 anyDesktop / Always-allow。 */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
   const sessionApprovedTools = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
   return {
@@ -59,6 +60,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools,
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
-    anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY)
+    anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
+    desktopAlwaysAllowAppKeys: sanitizeDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys)
   }
 }

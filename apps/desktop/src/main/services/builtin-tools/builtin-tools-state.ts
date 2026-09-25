@@ -9,6 +9,7 @@ import {
   setConversationAnyDesktop
 } from "@enjoy-agents/agent-core"
 import type { BuiltinToolsState } from "@enjoy-agents/ipc-contract"
+import { readDesktopAlwaysAllowAppKeys, revokeDesktopAlwaysAllowFromPrefs } from "../desktop-always-allow-prefs"
 import { getSetting, setSetting } from "../database"
 import { syncActiveRunsDesktopAllow } from "../conversation-desktop-allow-sync"
 import { persistableBuiltinTools, type PersistedBuiltinTools } from "./persist-builtin-tools"
@@ -142,9 +143,16 @@ export function getBuiltinToolsState(sessionId?: string): BuiltinToolsState {
       screenCaptureGranted: permissions.screenCapture,
       screenVisuals: saved.screenVisualsEnabled ?? true,
       anyDesktopSession: sessionId ? conversationHasAnyDesktop(sessionId) : false,
+      alwaysAllowAppKeys: readDesktopAlwaysAllowAppKeys(),
       session: displaySession()
     }
   }
+}
+
+/** 设置撤销：只清持久簿，不清会话表 / anyDesktop。 */
+export function revokeAlwaysAllowApp(appKey: string, sessionId?: string): BuiltinToolsState {
+  revokeDesktopAlwaysAllowFromPrefs(appKey)
+  return getBuiltinToolsState(sessionId)
 }
 
 export function setBuiltinToolEnabled(

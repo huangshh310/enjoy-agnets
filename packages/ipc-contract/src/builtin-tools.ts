@@ -26,6 +26,8 @@ export const DesktopComputerUseState = z.object({
   screenVisuals: z.boolean().default(true),
   /** 当前会话表是否有 desktop_act:*。默认关，不落盘。 */
   anyDesktopSession: z.boolean().default(false),
+  /** 本机持久簿裸 appKey。来自 preferences，不进 builtin_tools 落盘。 */
+  alwaysAllowAppKeys: z.array(z.string()).default([]),
   session: z.enum(["macos", "windows", "x11", "wayland", "none"]).optional()
 })
 export type DesktopComputerUseState = z.infer<typeof DesktopComputerUseState>
@@ -127,3 +129,9 @@ export const OpenSystemPermissionInput = z.object({
   permission: z.enum(["accessibility", "screenCapture"])
 })
 export type OpenSystemPermissionInput = z.infer<typeof OpenSystemPermissionInput>
+
+/** 设置「撤销」只删持久簿该裸 appKey，不清会话表。 */
+export const RevokeAlwaysAllowAppInput = z.object({
+  appKey: z.string().min(1)
+})
+export type RevokeAlwaysAllowAppInput = z.infer<typeof RevokeAlwaysAllowAppInput>

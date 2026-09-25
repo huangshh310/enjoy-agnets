@@ -3,7 +3,12 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
+import {
+  bashAllowPrefix,
+  desktopActDecisionWrite,
+  writeThroughDesktopActSessionAllow
+} from "@enjoy-agents/agent-core"
+import { persistDesktopAlwaysAllowFromArgs } from "./desktop-always-allow-prefs"
 import { desktopActFailureCode, desktopActMayReportSuccess } from "@enjoy-agents/agent-core/computer-use"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
@@ -56,7 +61,10 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     throw new Error("No matching tool approval is waiting.")
   }
   // 提问工具没有 Always allow：必须在 HMAC 落库前拒，否则库内行写死、卡片还停着。
-  if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision === "allow_session") {
+  if (
+    pending.name === ASK_USER_QUESTIONS_TOOL &&
+    (decision.decision === "allow_session" || decision.decision === "allow_always")
+  ) {
     throw new Error("ask_user_questions cannot be allow_session")
   }
   assertApprovalHmac({
@@ -135,7 +143,8 @@ async function maybeReparkSecondConfirm(
   return true
 }
 
-function isSecondConfirmPending(args: unknown): boolean {
+/** CU-P1-R 源守门：二次确认不是会话/持久放行。决策分流见 desktopActDecisionWrite。 */
+export function isSecondConfirmPending(args: unknown): boolean {
   if (!args || typeof args !== "object") return false
   const row = args as Record<string, unknown>
   return row.code === "needs_second_confirm" || row.needsSecondConfirm === true
@@ -147,24 +156,34 @@ function applyApprovalDecision(
     sessionApprovedBashPrefixes: Set<string>
     input: { sessionId: string }
   },
-  decision: "allow" | "deny" | "allow_session",
+  decision: "allow" | "deny" | "allow_session" | "allow_always",
   pending: { name: string; args?: unknown }
 ) {
   if (pending.name === ASK_USER_QUESTIONS_TOOL) return
+  if (pending.name === "desktop_act") {
+    applyDesktopActAllowDecision(run, decision, pending.args)
+    return
+  }
   if (decision !== "allow_session") return
   if (pending.name === "bash" || pending.name === "code_mode") {
     const prefix = bashAllowPrefix(commandFromArgs(pending.args))
     if (prefix) run.sessionApprovedBashPrefixes.add(prefix)
     return
   }
-  if (pending.name === "desktop_act") {
-    // CU-P1-R 二次确认不是 H2 / P1-S 会话放行；确认只当一次 allow。
-    if (isSecondConfirmPending(pending.args)) return
-    // §3.2b / P1-S：write-through 会话表 + run 副本。禁止裸 desktop_act。
-    writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, pending.args)
-    return
-  }
   run.sessionApprovedTools.add(pending.name)
+}
+
+/** 各写各的：allow_always 只写 prefs 簿；allow_session 只写会话表。 */
+function applyDesktopActAllowDecision(
+  run: { sessionApprovedTools: Set<string>; input: { sessionId: string } },
+  decision: "allow" | "deny" | "allow_session" | "allow_always",
+  args: unknown
+) {
+  const write = desktopActDecisionWrite(decision, args)
+  if (write.sessionKey) {
+    writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, args)
+  }
+  if (write.alwaysAppKey) persistDesktopAlwaysAllowFromArgs(args)
 }
 
 function commandFromArgs(args: unknown): string {

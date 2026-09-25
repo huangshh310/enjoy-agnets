@@ -12,7 +12,9 @@ type ApprovalActionsProps = ApprovalActionIds & {
   approveLabel: string
   denyLabel: string
   alwaysLabel?: string
+  alwaysAppLabel?: string
   showAlways: boolean
+  showAlwaysApp?: boolean
   approveDisabled?: boolean
   approveTitle?: string
   decide: ApprovalDecide
@@ -23,7 +25,9 @@ export function ApprovalActions({
   approveLabel,
   denyLabel,
   alwaysLabel,
+  alwaysAppLabel,
   showAlways,
+  showAlwaysApp = false,
   approveDisabled,
   approveTitle,
   denyTestId = "approval-deny",
@@ -56,6 +60,19 @@ export function ApprovalActions({
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />
           {alwaysLabel ?? t("chat.alwaysAllow")}
+        </Button>
+      ) : null}
+      {showAlwaysApp && decide.onAllowAlways ? (
+        <Button
+          size="sm"
+          variant="outline"
+          data-testid="approval-always-app"
+          onClick={decide.onAllowAlways}
+          title={t("chat.desktopAllowAlwaysHint")}
+          className="h-8 text-caption-1-medium"
+        >
+          <RiShieldCheckLine className="size-3.5 text-accent-500" />
+          {alwaysAppLabel ?? t("chat.desktopAllowAlways")}
         </Button>
       ) : null}
       <Button

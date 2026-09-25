@@ -25,6 +25,8 @@ export type ApprovalDecide = {
   onApprove: () => void
   onDeny: () => void
   onAllowSession: () => void
+  /** 持久 Always-allow；禁止绑到 approval-always（那是本会话）。 */
+  onAllowAlways?: () => void
 }
 
 /** 底栏按钮：二次确认可覆盖 deny/allow testid。 */

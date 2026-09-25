@@ -156,7 +156,9 @@ export const SettingsSnapshot = z.object({
     /** 引擎级可选显示名，按 runtimeId。空/缺键回退品牌名，不进云身份。 */
     agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).default({}),
     /** 启动引导完成时间。空表示还没走完；已有工作区的旧安装会补上，避免再弹出。 */
-    setupGuideCompletedAt: z.string().nullable().optional()
+    setupGuideCompletedAt: z.string().nullable().optional(),
+    /** CU-P1-A 本机按应用持久允许簿。裸 appKey，禁止 desktop_act:*。 */
+    desktopAlwaysAllowAppKeys: z.array(z.string()).default([])
   }),
   harness: z
     .object({
@@ -227,7 +229,8 @@ export const SetPreferencesInput = z.object({
   approvalRequiredAlert: z.boolean().optional(),
   accountProfile: AccountProfilePref.optional(),
   agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).optional(),
-  setupGuideCompletedAt: z.string().nullable().optional()
+  setupGuideCompletedAt: z.string().nullable().optional(),
+  desktopAlwaysAllowAppKeys: z.array(z.string()).optional()
 })
 export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>
 

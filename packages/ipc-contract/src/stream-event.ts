@@ -64,7 +64,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("approval.resolved"),
     runId: z.string(),
     toolCallId: z.string(),
-    decision: z.enum(["allow", "deny", "allow_session"]),
+    decision: z.enum(["allow", "deny", "allow_session", "allow_always"]),
     ...Envelope
   }),
   z.object({

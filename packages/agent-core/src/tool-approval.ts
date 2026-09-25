@@ -6,7 +6,8 @@ import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
-import { desktopActAlwaysAsks, desktopActSkipsApproval, sessionAllowsDesktopAct } from "./computer-use/desktop-act-policy.ts"
+import { desktopActAlwaysAsks, desktopActSkipsApproval } from "./computer-use/desktop-act-policy.ts"
+import { policyAllowsDesktopAct } from "./computer-use/desktop-always-allow.ts"
 
 /** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
 export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
@@ -30,6 +31,8 @@ export type ApprovalPolicy = {
   sessionApprovedBashPrefixes?: readonly string[]
   /** 高级「本会话任意桌面」；默认关。坐标 / 前台 / 敏感窗 / 二次确认仍每次问。 */
   anyDesktopSession?: boolean
+  /** 本机持久簿裸 appKey。命中在会话表之后，盖不住硬每次问。 */
+  desktopAlwaysAllowAppKeys?: readonly string[]
 }
 
 export type ToolApprovalDecision =
@@ -79,7 +82,7 @@ export function resolveToolApproval(
     if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
     if (toolName === "desktop_act" && desktopActAlwaysAsks(input)) return "user-approval"
     if (toolName === "desktop_act") {
-      return sessionAllowsDesktopAct(input, policy) ? "approved" : "user-approval"
+      return policyAllowsDesktopAct(input, policy) ? "approved" : "user-approval"
     }
     return sessionAllows(toolName, policy.sessionApprovedTools) ? "approved" : "user-approval"
   }

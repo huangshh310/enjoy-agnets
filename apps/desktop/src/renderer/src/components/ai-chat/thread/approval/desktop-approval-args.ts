@@ -6,7 +6,8 @@ import {
   desktopActAppKey,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
-  desktopActIsSensitive
+  desktopActIsSensitive,
+  isPersistentDesktopAppKey
 } from "@enjoy-agents/agent-core/computer-use"
 
 export type DesktopApprovalView = {
@@ -23,6 +24,7 @@ export type DesktopApprovalView = {
   thumbsReady: boolean
   bypassesSessionAllow: boolean
   canSessionAllow: boolean
+  canAlwaysAllow: boolean
 }
 
 export function desktopApprovalView(args: unknown): DesktopApprovalView {
@@ -50,7 +52,14 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     thumbsReady: !secondConfirm || Boolean(thumbnail && previousThumbnail),
     bypassesSessionAllow,
     canSessionAllow:
-      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !desktopActIsSensitive(row)
+      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !desktopActIsSensitive(row),
+    canAlwaysAllow:
+      !secondConfirm &&
+      Boolean(appKey) &&
+      isPersistentDesktopAppKey(appKey) &&
+      !bypassesSessionAllow &&
+      !desktopActBypassesSessionAllow(row) &&
+      !desktopActIsSensitive(row)
   }
 }
 

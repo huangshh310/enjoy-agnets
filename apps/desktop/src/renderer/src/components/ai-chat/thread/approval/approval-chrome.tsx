@@ -30,7 +30,9 @@ type ApprovalChromeProps = ApprovalActionIds & {
   approveLabel: string
   denyLabel: string
   alwaysLabel?: string
+  alwaysAppLabel?: string
   showAlways?: boolean
+  showAlwaysApp?: boolean
   approveDisabled?: boolean
   approveTitle?: string
   tone?: ApprovalTone
@@ -44,7 +46,9 @@ export function ApprovalChrome({
   approveLabel,
   denyLabel,
   alwaysLabel,
+  alwaysAppLabel,
   showAlways = true,
+  showAlwaysApp = false,
   approveDisabled,
   approveTitle,
   tone,
@@ -93,7 +97,9 @@ export function ApprovalChrome({
           approveLabel={approveLabel}
           denyLabel={denyLabel}
           alwaysLabel={alwaysLabel}
+          alwaysAppLabel={alwaysAppLabel}
           showAlways={showAlways}
+          showAlwaysApp={showAlwaysApp}
           approveDisabled={approveDisabled}
           approveTitle={approveTitle}
           denyTestId={denyTestId}

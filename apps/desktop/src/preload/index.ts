@@ -315,7 +315,9 @@ const ide = {
       ipcRenderer.invoke("builtinTools.previewOverlay") as Promise<{ ok: true }>,
     desktopDoctor: () => ipcRenderer.invoke("builtinTools.desktopDoctor"),
     desktopView: () => ipcRenderer.invoke("builtinTools.desktopView"),
-    desktopCapturePreview: () => ipcRenderer.invoke("builtinTools.desktopCapturePreview")
+    desktopCapturePreview: () => ipcRenderer.invoke("builtinTools.desktopCapturePreview"),
+    revokeAlwaysAllowApp: (input: { appKey: string }) =>
+      ipcRenderer.invoke("builtinTools.revokeAlwaysAllowApp", input) as Promise<BuiltinToolsState>
   },
   app: {
     updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),
