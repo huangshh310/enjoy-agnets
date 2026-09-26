@@ -91,13 +91,13 @@ export function SkillDocInspector({
               {skill.name}
             </h3>
             {skill.trigger ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-2 py-0.5 text-[11px] font-mono font-medium text-accent-700 dark:text-accent-300 border border-accent-500/20">
+              <span className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-2 py-0.5 text-caption-2-medium font-mono font-medium text-accent-700 dark:text-accent-300 border border-accent-500/20">
                 <RiTerminalBoxLine className="size-3" />
                 {skill.trigger}
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 text-[11px] font-mono text-text-tertiary truncate">
+          <p className="mt-0.5 text-caption-2-regular font-mono text-text-tertiary truncate">
             {skill.skillFilePath || skill.relativeDir}
           </p>
         </div>
@@ -123,7 +123,7 @@ export function SkillDocInspector({
           >
             {copied ? (
               <>
-                <RiCheckLine className="size-3.5 text-emerald-500" />
+                <RiCheckLine className="size-3.5 text-state-success-text" />
                 <span>{t("pages.skills.docInspector.copied")}</span>
               </>
             ) : (
@@ -138,7 +138,7 @@ export function SkillDocInspector({
 
       {/* Frontmatter 结构化参数属性条 */}
       {frontmatter ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-separator-border/50 bg-background-secondary-default/20 px-5 py-2.5 text-[11px]">
+        <div className="flex flex-wrap items-center gap-2 border-b border-separator-border/50 bg-background-secondary-default/20 px-5 py-2.5 text-caption-2-regular">
           {frontmatter.version ? (
             <span className="inline-flex items-center gap-1 rounded bg-background-primary-default px-2 py-0.5 font-mono text-text-secondary border border-separator-border/40">
               <span className="text-text-tertiary">v</span>
@@ -146,7 +146,7 @@ export function SkillDocInspector({
             </span>
           ) : null}
           {frontmatter["user-invocable"] ? (
-            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1 rounded bg-state-success-text/10 px-2 py-0.5 font-mono text-state-success-text dark:text-state-success-text border border-state-success-text/20">
               {t("pages.skills.docInspector.userInvocable")}
             </span>
           ) : null}
@@ -162,14 +162,14 @@ export function SkillDocInspector({
       {/* 技能主要职责描述 */}
       {skill.description ? (
         <div className="border-b border-separator-border/50 bg-background-secondary-default/10 px-5 py-3">
-          <p className="text-[12.5px] text-text-secondary leading-relaxed">
+          <p className="text-caption-1-regular text-text-secondary leading-relaxed">
             {skill.description}
           </p>
         </div>
       ) : null}
 
       {/* 正文 Markdown 检视视口 */}
-      <div className="flex-1 p-5 overflow-y-auto bg-background-secondary-default/15 font-mono text-[11.5px] leading-relaxed">
+      <div className="flex-1 p-5 overflow-y-auto bg-background-secondary-default/15 font-mono text-caption-2-regular leading-relaxed">
         <pre className="text-text-primary whitespace-pre-wrap select-text">
           {markdownBody || skill.content}
         </pre>

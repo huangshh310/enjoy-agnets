@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { existsSync, realpathSync } from "node:fs"
 import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -12,14 +13,15 @@ import {
 test("html 必须在工作区内且真实存在，打开 file URL", async () => {
   const root = await mkdtemp(join(tmpdir(), "enjoy-preview-"))
   await writeFile(join(root, "index.html"), "<html></html>")
+  const htmlAbs = realpathSync(join(root, "index.html"))
   const planned = await planWorkspacePreviewHref(
     { workspaceId: "ws_1", path: "index.html" },
     {
       resolveRoot: async () => root,
-      fileExists: async (abs) => abs === join(root, "index.html")
+      fileExists: async (abs) => existsSync(abs)
     }
   )
-  assert.deepEqual(planned, { href: pathToFileURL(join(root, "index.html")).href })
+  assert.deepEqual(planned, { href: pathToFileURL(htmlAbs).href })
 })
 
 test("缺文件 / 逃逸 / 非 html 都拒绝，不编造 URL", async () => {

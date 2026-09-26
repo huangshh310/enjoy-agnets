@@ -78,7 +78,7 @@ export function ImageAttachmentItem({
         type="button"
         title={t("chat.previewImage", { name: item.name })}
         onClick={() => src && onOpenPreview(src)}
-        className="size-full overflow-hidden rounded-[10px] focus:outline-none cursor-pointer"
+        className="size-full overflow-hidden rounded-xl focus:outline-none cursor-pointer"
       >
         {src ? (
           <img
@@ -96,7 +96,7 @@ export function ImageAttachmentItem({
       {src ? (
         <div
           onClick={() => onOpenPreview(src)}
-          className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[10px] bg-black/25 opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/25 opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer"
         >
           <RiExpandDiagonalLine className="size-3.5 text-white/90" />
         </div>

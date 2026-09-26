@@ -137,7 +137,7 @@ export function BrowserView({ url }: { url?: string }) {
       {src ? (
         loadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center animate-in fade-in-50 duration-200">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-status-yellow-background/10 text-status-yellow-text">
               <RiWifiOffLine className="size-6" />
             </div>
             <div className="max-w-xs">

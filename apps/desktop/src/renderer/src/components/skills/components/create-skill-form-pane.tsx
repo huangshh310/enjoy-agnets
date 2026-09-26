@@ -40,7 +40,7 @@ export function CreateSkillFormPane({
   return (
     <div className="md:col-span-7 flex flex-col gap-4 p-6 overflow-y-auto border-r border-separator-border/60">
       {error ? (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
+        <div className="rounded-xl border border-border-error-default/30 bg-background-tertiary-error/10 px-4 py-2.5 text-caption-2-medium text-text-error-primary dark:text-text-error-primary">
           {error}
         </div>
       ) : null}
@@ -135,7 +135,7 @@ export function CreateSkillFormPane({
               "flex flex-col rounded-2xl border p-2.5 text-left transition-all cursor-pointer",
               !hasWorkspace && "opacity-50 cursor-not-allowed",
               scope === "workspace"
-                ? "border-purple-500/50 bg-purple-500/5 shadow-2xs"
+                ? "border-chart-5/50 bg-chart-5/5 shadow-2xs"
                 : "border-separator-border/60 bg-background-secondary-default/30 hover:border-separator-border text-text-tertiary"
             )}
           >

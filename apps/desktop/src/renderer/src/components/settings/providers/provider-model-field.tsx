@@ -120,7 +120,7 @@ function ModelCombobox({
             </div>
             <span
               className={cx(
-                "truncate font-mono text-[13px]",
+                "truncate font-mono text-body-2-regular",
                 value ? "text-text-primary" : "text-text-placeholder"
               )}
             >
@@ -210,7 +210,7 @@ function ModelOptions({
                 size={15}
               />
             </div>
-            <span className="min-w-0 truncate font-mono text-[13px]">{model.id}</span>
+            <span className="min-w-0 truncate font-mono text-body-2-regular">{model.id}</span>
           </div>
           {model.label && model.label !== model.id ? (
             <span className="shrink-0 truncate text-caption-1-medium text-text-tertiary ml-2">

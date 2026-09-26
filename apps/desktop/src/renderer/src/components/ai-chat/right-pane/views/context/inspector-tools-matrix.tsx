@@ -82,19 +82,19 @@ function PolicyGrid({
     {
       id: "write",
       icon: RiEditLine,
-      iconClass: "text-amber-500",
+      iconClass: "text-status-yellow-text",
       title: t("chat.inspectorWriteGroup"),
       policy: t("chat.inspectorPolicyAsk"),
-      policyClass: "text-amber-500",
+      policyClass: "text-status-yellow-text",
       detail: "write_file / edit_file"
     },
     {
       id: "exec",
       icon: RiTerminalBoxLine,
-      iconClass: "text-amber-500",
+      iconClass: "text-status-yellow-text",
       title: t("chat.inspectorExecGroup"),
       policy: t("chat.inspectorPolicyAsk"),
-      policyClass: "text-amber-500",
+      policyClass: "text-status-yellow-text",
       detail: "bash / git_commit / git_push"
     },
     {
@@ -144,7 +144,7 @@ function McpSchemaList({
     <div className="flex flex-col gap-1 border-t border-separator-border/40 pt-2 font-mono text-caption-2-regular">
       <div className="flex items-center justify-between text-text-tertiary">
         <span className="font-semibold uppercase tracking-wider">{t("chat.inspectorMcpSchema")}</span>
-        <span className="font-semibold text-amber-500">~{formatTokens(totalTokens)}</span>
+        <span className="font-semibold text-status-yellow-text">~{formatTokens(totalTokens)}</span>
       </div>
       {servers.map((server) => {
         const cost = estimateMcpSchemaTokens(server)

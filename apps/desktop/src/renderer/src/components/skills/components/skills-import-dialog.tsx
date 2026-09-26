@@ -98,7 +98,7 @@ export function ImportDialog({
 
         <div className="flex max-h-[75vh] flex-col gap-5 overflow-y-auto p-6">
           {error ? (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3.5 py-2 text-caption-2-medium text-rose-600 dark:text-rose-400">
+            <div className="rounded-xl border border-border-error-default/30 bg-background-tertiary-error/10 px-3.5 py-2 text-caption-2-medium text-text-error-primary dark:text-text-error-primary">
               {error}
             </div>
           ) : null}
@@ -138,7 +138,7 @@ export function ImportDialog({
                 <h4 className="text-caption-1-medium font-semibold text-text-primary">
                   {t("pages.skills.importDialog.localTitle")}
                 </h4>
-                <p className="text-[11px] text-text-tertiary">
+                <p className="text-caption-2-regular text-text-tertiary">
                   {t("pages.skills.importDialog.localDesc")}
                 </p>
               </div>
@@ -172,7 +172,7 @@ export function ImportDialog({
                       <span className="text-caption-2-medium font-semibold text-text-primary block truncate">
                         {preset.name}
                       </span>
-                      <p className="text-[11px] text-text-tertiary truncate">
+                      <p className="text-caption-2-regular text-text-tertiary truncate">
                         {preset.description}
                       </p>
                     </div>
@@ -182,7 +182,7 @@ export function ImportDialog({
                         variant="outline"
                         disabled={Boolean(busy)}
                         onClick={() => void installPreset(preset, "global")}
-                        className="h-7 px-2 text-[11px]"
+                        className="h-7 px-2 text-caption-2-regular"
                       >
                         {isCurrentBusy ? <RiLoader4Line className="size-3 animate-spin" /> : null}
                         <span>{t("pages.skills.importDialog.installGlobal")}</span>
@@ -191,7 +191,7 @@ export function ImportDialog({
                         size="sm"
                         disabled={Boolean(busy)}
                         onClick={() => void installPreset(preset, "workspace")}
-                        className="h-7 px-2 text-[11px] shadow-2xs"
+                        className="h-7 px-2 text-caption-2-regular shadow-2xs"
                       >
                         <span>{t("pages.skills.importDialog.installWorkspace")}</span>
                       </Button>

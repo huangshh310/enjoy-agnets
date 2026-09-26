@@ -87,7 +87,7 @@ function ModelSwitchFailure({
   return (
     <div className="w-[min(18rem,calc(100vw-2rem))] px-3 py-3" data-testid={`model-switch-fail-${kind}`}>
       <div className="flex items-start gap-2">
-        <span className="mt-1 size-2 shrink-0 rounded-full bg-text-warning-primary" />
+        <span className="mt-1 size-2 shrink-0 rounded-full bg-status-yellow-text" />
         <div>
           <p className="text-caption-1-medium text-text-primary">
             {kind === "needs_login" ? t("chat.modelSwitch.notLoggedIn") : t("chat.modelSwitch.empty")}

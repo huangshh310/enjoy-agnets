@@ -57,7 +57,7 @@ export function DesktopPerceptionInspector({
               <span>{t("settings.builtinTools.perceptionTargetWindow")}:</span>
               <span className="font-semibold">{view.appName}</span>
               {view.appKey ? (
-                <span className="font-mono text-caption-2 text-text-tertiary">({view.appKey})</span>
+                <span className="font-mono text-caption-2-medium text-text-tertiary">({view.appKey})</span>
               ) : null}
             </div>
           ) : null}
@@ -121,7 +121,7 @@ export function DesktopPerceptionInspector({
             <span className="text-caption-2-semibold text-text-primary">
               {t("settings.builtinTools.perceptionDetected", { count })}
             </span>
-            <span className="text-caption-2 text-text-tertiary font-mono">
+            <span className="text-caption-2-medium text-text-tertiary font-mono">
               {elements.length > 12 ? `展示前 12 / ${elements.length}` : `共 ${elements.length}`}
             </span>
           </div>
@@ -131,12 +131,12 @@ export function DesktopPerceptionInspector({
               {elements.slice(0, 12).map((elem) => (
                 <div
                   key={elem.id}
-                  className="flex items-center gap-1 rounded border border-border-button-default/80 bg-background-secondary-default/50 px-2 py-0.5 text-caption-2 text-text-secondary"
+                  className="flex items-center gap-1 rounded border border-border-button-default/80 bg-background-secondary-default/50 px-2 py-0.5 text-caption-2-medium text-text-secondary"
                 >
                   <span className="max-w-[120px] truncate font-medium text-text-primary" title={elem.name}>
                     {elem.name || `#${elem.id}`}
                   </span>
-                  <span className="rounded bg-background-tertiary-default px-1 py-0.2 font-mono text-[10px] text-text-tertiary">
+                  <span className="rounded bg-background-tertiary-default px-1 py-0.2 font-mono text-caption-2-regular text-text-tertiary">
                     {elem.role}
                   </span>
                   {elem.clickable ? (
@@ -150,7 +150,7 @@ export function DesktopPerceptionInspector({
               <p className="text-caption-2-medium text-text-tertiary">
                 尚未提取到独立控件元素
               </p>
-              <p className="text-caption-2 text-text-tertiary/70">
+              <p className="text-caption-2-medium text-text-tertiary/70">
                 运行 @桌面 任务时，智能体将在此实时呈现视觉定位锚点
               </p>
             </div>

@@ -36,7 +36,7 @@ export function CanvasZoomControls({
         <button
           type="button"
           title={t("pages.workflows.minimapToggle")}
-          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           style={isMiniMapOpen ? activeStyle : { color: theme.toolbar.item }}
           onClick={onToggleMiniMap}
         >
@@ -45,7 +45,7 @@ export function CanvasZoomControls({
         <button
           type="button"
           title={t("pages.workflows.zoomFit")}
-          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={onReset}
         >
           <RiFocus3Line className="size-4" />
@@ -59,17 +59,17 @@ export function CanvasZoomControls({
           max="500"
           step="1"
           value={Math.round(scale * 100)}
-          className="w-20 cursor-pointer accent-blue-500"
+          className="w-20 cursor-pointer accent-accent-500"
           onChange={(event) => onScaleChange(Number(event.target.value) / 100)}
         />
-        <span className="w-11 text-right font-mono text-[11px] tabular-nums opacity-80" style={{ color: theme.node.text }}>
+        <span className="w-11 text-right font-mono text-caption-2-regular tabular-nums opacity-80" style={{ color: theme.node.text }}>
           {Math.round(scale * 100)}%
         </span>
 
         <button
           type="button"
           title={t("pages.workflows.canvasShortcuts")}
-          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg transition-colors hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={() => setShortcutsOpen(true)}
         >
           <RiQuestionLine className="size-4" />
@@ -85,18 +85,18 @@ export function CanvasZoomControls({
             <span>{t("pages.workflows.canvasShortcuts")}</span>
             <button
               type="button"
-              className="flex size-5 items-center justify-center rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+              className="flex size-5 items-center justify-center rounded hover:bg-background-secondary-default dark:hover:bg-background-secondary-default text-text-secondary hover:text-text-secondary dark:hover:text-text-secondary"
               onClick={() => setShortcutsOpen(false)}
             >
               ✕
             </button>
           </div>
-          <div className="space-y-1.5 text-zinc-600 dark:text-zinc-400">
-            <div className="flex items-center justify-between"><kbd className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px]">Space / Ctrl + 拖拽</kbd><span>{t("pages.workflows.canvasPan")}</span></div>
-            <div className="flex items-center justify-between"><kbd className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px]">鼠标滚轮</kbd><span>{t("pages.workflows.zoomIn")}</span></div>
-            <div className="flex items-center justify-between"><kbd className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px]">⌘ / Ctrl + C / V</kbd><span>复制 / 粘贴</span></div>
-            <div className="flex items-center justify-between"><kbd className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px]">⌘ / Ctrl + Z</kbd><span>{t("pages.workflows.undo")}</span></div>
-            <div className="flex items-center justify-between"><kbd className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px]">Delete / Backspace</kbd><span>{t("pages.workflows.canvasDelete")}</span></div>
+          <div className="space-y-1.5 text-text-secondary dark:text-text-secondary">
+            <div className="flex items-center justify-between"><kbd className="rounded bg-background-secondary-default dark:bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular">Space / Ctrl + 拖拽</kbd><span>{t("pages.workflows.canvasPan")}</span></div>
+            <div className="flex items-center justify-between"><kbd className="rounded bg-background-secondary-default dark:bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular">鼠标滚轮</kbd><span>{t("pages.workflows.zoomIn")}</span></div>
+            <div className="flex items-center justify-between"><kbd className="rounded bg-background-secondary-default dark:bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular">⌘ / Ctrl + C / V</kbd><span>复制 / 粘贴</span></div>
+            <div className="flex items-center justify-between"><kbd className="rounded bg-background-secondary-default dark:bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular">⌘ / Ctrl + Z</kbd><span>{t("pages.workflows.undo")}</span></div>
+            <div className="flex items-center justify-between"><kbd className="rounded bg-background-secondary-default dark:bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular">Delete / Backspace</kbd><span>{t("pages.workflows.canvasDelete")}</span></div>
           </div>
         </div>
       ) : null}

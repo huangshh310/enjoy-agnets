@@ -85,7 +85,7 @@ export function ProviderConfiguredTab({
         <div className="flex items-center gap-4 text-caption-1-medium text-text-secondary">
           <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-accent-500" />
-            <span className="font-semibold text-text-primary text-[13px]">
+            <span className="font-semibold text-text-primary text-body-2-semibold">
               {providers.length}
             </span>
             <span>{t("settings.providers.configured")}</span>

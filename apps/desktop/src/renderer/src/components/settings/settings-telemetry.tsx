@@ -249,7 +249,7 @@ export function TelemetrySettings() {
           )}
 
           <SettingsRow title={t("settings.telemetry.redaction")} description={t("settings.telemetry.redactionDesc")}>
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1 rounded-full border border-state-success-text/20 bg-state-success-text/10 px-2.5 py-0.5 text-caption-2-medium text-state-success-text dark:text-state-success-text">
               <RiLockLine className="size-3" />
               <span>{t("settings.telemetry.redactionActive")}</span>
             </span>

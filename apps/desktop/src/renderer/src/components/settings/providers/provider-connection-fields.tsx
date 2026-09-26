@@ -106,7 +106,7 @@ export function ProviderConnectionFields({
               ? "https://api.anthropic.com"
               : "https://api.example.com/v1"
           }
-          className="h-9 font-mono text-[13px]"
+          className="h-9 font-mono text-body-2-regular"
         />
         <CatalogUrlHint baseURL={editor.baseURL} apiStyle={editor.apiStyle} />
       </Field>

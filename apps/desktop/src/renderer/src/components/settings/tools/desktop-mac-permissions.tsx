@@ -68,8 +68,8 @@ function PermissionRow({
         <span
           className={
             granted
-              ? "inline-flex items-center rounded-md bg-state-success-base px-2.5 py-0.5 text-caption-2 font-medium text-state-success-text ring-1 ring-state-success-text/20"
-              : "inline-flex items-center rounded-md bg-background-tertiary-default px-2.5 py-0.5 text-caption-2 font-medium text-text-tertiary ring-1 ring-border-button-default"
+              ? "inline-flex items-center rounded-md bg-state-success-base px-2.5 py-0.5 text-caption-2-medium text-state-success-text ring-1 ring-state-success-text/20"
+              : "inline-flex items-center rounded-md bg-background-tertiary-default px-2.5 py-0.5 text-caption-2-medium text-text-tertiary ring-1 ring-border-button-default"
           }
         >
           {t(granted ? "settings.builtinTools.granted" : "settings.builtinTools.notGranted")}

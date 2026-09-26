@@ -13,9 +13,9 @@ import type { ContextWindowData, TokenBucketItem } from "./agent-limits.types"
 
 const BUCKET_STYLE: Record<string, { category: TokenBucketItem["category"]; colorClass: string }> = {
   messages: { category: "messages", colorClass: "bg-accent-500 text-accent-500" },
-  system: { category: "system_prompt", colorClass: "bg-emerald-500 text-emerald-500" },
+  system: { category: "system_prompt", colorClass: "bg-state-success-base text-state-success-text" },
   mcp: { category: "mcp_tools", colorClass: "bg-chart-3 text-chart-3" },
-  skills: { category: "skills", colorClass: "bg-amber-500 text-amber-500" },
+  skills: { category: "skills", colorClass: "bg-status-yellow-background text-status-yellow-text" },
   memory: { category: "memory_files", colorClass: "bg-chart-4 text-chart-4" }
 }
 

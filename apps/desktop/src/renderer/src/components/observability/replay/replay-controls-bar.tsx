@@ -147,8 +147,8 @@ export function ReplayControlsBar({
             className={cx(
               "rounded-md px-2 py-0.5 font-medium transition-colors cursor-pointer",
               typeFilter === "tool"
-                ? "bg-background-primary-default text-purple-600 dark:text-purple-400 shadow-2xs font-semibold"
-                : "text-text-tertiary hover:text-purple-500"
+                ? "bg-background-primary-default text-chart-5 dark:text-chart-5 shadow-2xs font-semibold"
+                : "text-text-tertiary hover:text-chart-5"
             )}
           >
             工具
@@ -159,8 +159,8 @@ export function ReplayControlsBar({
             className={cx(
               "rounded-md px-2 py-0.5 font-medium transition-colors cursor-pointer",
               typeFilter === "approval"
-                ? "bg-background-primary-default text-amber-600 dark:text-amber-400 shadow-2xs font-semibold"
-                : "text-text-tertiary hover:text-amber-500"
+                ? "bg-background-primary-default text-status-yellow-text dark:text-status-yellow-text shadow-2xs font-semibold"
+                : "text-text-tertiary hover:text-status-yellow-text"
             )}
           >
             审批

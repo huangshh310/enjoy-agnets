@@ -38,7 +38,7 @@ export function CommitsTimeline(props: {
       {/* devl.dev 风格标头 */}
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-separator-border bg-background-primary-default px-3.5 py-2.5">
         <div className="min-w-0">
-          <p className="truncate font-mono text-[11px] text-text-tertiary">
+          <p className="truncate font-mono text-caption-2-regular text-text-tertiary">
             {t("chat.reviewRepository")} · {repoLabel}
           </p>
           <h2 className="mt-0.5 truncate text-title-3-semibold text-text-primary">

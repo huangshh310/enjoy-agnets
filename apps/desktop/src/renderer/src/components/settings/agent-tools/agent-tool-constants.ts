@@ -27,16 +27,16 @@ export const AGENT_BRAND_METAS: Record<string, AgentBrandMeta> = {
     isTerminalCli: false
   },
   claude: {
-    accentColor: "text-amber-500",
-    borderColor: "border-amber-500/30 hover:border-amber-500/60",
-    haloBg: "bg-amber-500/5",
+    accentColor: "text-status-yellow-text",
+    borderColor: "border-status-yellow-text/30 hover:border-status-yellow-text/60",
+    haloBg: "bg-status-yellow-background/5",
     badgeText: "Anthropic",
     isTerminalCli: true
   },
   cursor: {
-    accentColor: "text-violet-500",
-    borderColor: "border-violet-500/30 hover:border-violet-500/60",
-    haloBg: "bg-violet-500/5",
+    accentColor: "text-chart-5",
+    borderColor: "border-chart-5/30 hover:border-chart-5/60",
+    haloBg: "bg-chart-5/5",
     badgeText: "Anysphere",
     isTerminalCli: true
   },
@@ -48,65 +48,65 @@ export const AGENT_BRAND_METAS: Record<string, AgentBrandMeta> = {
     isTerminalCli: true
   },
   codex: {
-    accentColor: "text-emerald-500",
-    borderColor: "border-emerald-500/30 hover:border-emerald-500/60",
-    haloBg: "bg-emerald-500/5",
+    accentColor: "text-state-success-text",
+    borderColor: "border-state-success-text/30 hover:border-state-success-text/60",
+    haloBg: "bg-state-success-text/5",
     badgeText: "OpenAI",
     isTerminalCli: true
   },
   antigravity: {
-    accentColor: "text-blue-500",
-    borderColor: "border-blue-500/30 hover:border-blue-500/60",
-    haloBg: "bg-blue-500/5",
+    accentColor: "text-accent-500",
+    borderColor: "border-accent-500/30 hover:border-accent-500/60",
+    haloBg: "bg-accent-500/5",
     badgeText: "Google",
     isTerminalCli: true
   },
   gemini: {
-    accentColor: "text-sky-500",
-    borderColor: "border-sky-500/20 hover:border-sky-500/40",
-    haloBg: "bg-sky-500/5",
+    accentColor: "text-accent-500",
+    borderColor: "border-accent-500/20 hover:border-accent-500/40",
+    haloBg: "bg-accent-500/5",
     badgeText: "Google",
     isTerminalCli: true
   },
   opencode: {
-    accentColor: "text-orange-500",
-    borderColor: "border-orange-500/20 hover:border-orange-500/40",
-    haloBg: "bg-orange-500/5",
+    accentColor: "text-status-yellow-text",
+    borderColor: "border-status-yellow-text/20 hover:border-status-yellow-text/40",
+    haloBg: "bg-status-yellow-background/5",
     badgeText: "SST",
     isTerminalCli: true
   },
   pi: {
-    accentColor: "text-rose-500",
-    borderColor: "border-rose-500/20 hover:border-rose-500/40",
-    haloBg: "bg-rose-500/5",
+    accentColor: "text-text-error-primary",
+    borderColor: "border-border-error-default/20 hover:border-border-error-default/40",
+    haloBg: "bg-background-tertiary-error/5",
     badgeText: "Pi",
     isTerminalCli: true
   },
   omp: {
-    accentColor: "text-purple-500",
-    borderColor: "border-purple-500/20 hover:border-purple-500/40",
-    haloBg: "bg-purple-500/5",
+    accentColor: "text-chart-5",
+    borderColor: "border-chart-5/20 hover:border-chart-5/40",
+    haloBg: "bg-chart-5/5",
     badgeText: "Oh My Pi",
     isTerminalCli: true
   },
   hermes: {
-    accentColor: "text-teal-500",
-    borderColor: "border-teal-500/20 hover:border-teal-500/40",
-    haloBg: "bg-teal-500/5",
+    accentColor: "text-chart-1",
+    borderColor: "border-chart-1/20 hover:border-chart-1/40",
+    haloBg: "bg-chart-1/5",
     badgeText: "Nous",
     isTerminalCli: true
   },
   amp: {
-    accentColor: "text-yellow-500",
-    borderColor: "border-yellow-500/20 hover:border-yellow-500/40",
-    haloBg: "bg-yellow-500/5",
+    accentColor: "text-status-yellow-text",
+    borderColor: "border-status-yellow-text/20 hover:border-status-yellow-text/40",
+    haloBg: "bg-status-yellow-background/5",
     badgeText: "Sourcegraph",
     isTerminalCli: true
   },
   deepseek: {
-    accentColor: "text-blue-600",
-    borderColor: "border-blue-600/20 hover:border-blue-600/40",
-    haloBg: "bg-blue-600/5",
+    accentColor: "text-accent-500",
+    borderColor: "border-accent-500/20 hover:border-accent-500/40",
+    haloBg: "bg-accent-500/5",
     badgeText: "DeepSeek",
     isTerminalCli: true
   }

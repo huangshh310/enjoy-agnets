@@ -75,11 +75,11 @@ export function TraceFlameChart(props: {
   }, [maxTime])
 
   return (
-    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default shadow-2xs font-mono text-[11px] overflow-hidden min-h-[360px] h-full">
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default shadow-2xs font-mono text-caption-2-regular overflow-hidden min-h-[360px] h-full">
       {/* 1. 图例与模式说明栏 */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-separator-border/60 bg-background-secondary-default/30 px-3.5 py-2 text-[10.5px]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-separator-border/60 bg-background-secondary-default/30 px-3.5 py-2 text-caption-2-regular">
         <div className="flex items-center gap-2">
-          <RiFireLine className="size-3.5 text-amber-500 shrink-0" />
+          <RiFireLine className="size-3.5 text-status-yellow-text shrink-0" />
           <span className="font-semibold text-text-primary">Flame Chart 时间线</span>
           <span className="text-text-tertiary">· X 轴时间 · Y 轴调用深度 ({maxDepth + 1} 层)</span>
         </div>
@@ -103,7 +103,7 @@ export function TraceFlameChart(props: {
             className="absolute top-0 flex flex-col items-center -translate-x-1/2 select-none"
           >
             <div className="h-1.5 w-px bg-separator-border" />
-            <span className="text-[9.5px] text-text-tertiary">{tick.label}</span>
+            <span className="text-caption-2-regular text-text-tertiary">{tick.label}</span>
           </div>
         ))}
       </div>
@@ -124,7 +124,7 @@ export function TraceFlameChart(props: {
         {layers.map(({ depth, frames }) => (
           <div key={depth} className="relative h-7 w-full">
             {/* 深度标签 */}
-            <span className="absolute -left-2.5 top-1 font-mono text-[9px] text-text-tertiary select-none">
+            <span className="absolute -left-2.5 top-1 font-mono text-caption-2-regular text-text-tertiary select-none">
               D{depth}
             </span>
 
@@ -140,7 +140,7 @@ export function TraceFlameChart(props: {
                   key={node.id}
                   className={cx(
                     "absolute top-0 h-6.5 rounded-md px-1.5 py-0.5 transition-all cursor-pointer select-none",
-                    "flex items-center justify-between overflow-hidden shadow-2xs border text-[10px]",
+                    "flex items-center justify-between overflow-hidden shadow-2xs border text-caption-2-regular",
                     isSelected
                       ? "ring-2 ring-accent-500 ring-offset-1 border-white/40 z-20"
                       : isHovered
@@ -161,7 +161,7 @@ export function TraceFlameChart(props: {
                   </div>
 
                   {widthPercent > 8 ? (
-                    <span className="text-[9px] font-mono text-white/90 tabular-nums shrink-0 ml-1">
+                    <span className="text-caption-2-regular font-mono text-white/90 tabular-nums shrink-0 ml-1">
                       {node.durationMs}ms
                     </span>
                   ) : null}
@@ -174,7 +174,7 @@ export function TraceFlameChart(props: {
 
       {/* 4. 底部当前悬停/选中帧概览信息条 */}
       {hoveredNode ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-separator-border/60 bg-background-secondary-default/40 px-3.5 py-1.5 text-[10.5px]">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-separator-border/60 bg-background-secondary-default/40 px-3.5 py-1.5 text-caption-2-regular">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-text-primary">{hoveredNode.name}</span>
             <span className="text-text-tertiary">·</span>

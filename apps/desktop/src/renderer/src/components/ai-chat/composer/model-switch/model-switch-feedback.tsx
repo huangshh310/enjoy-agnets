@@ -46,7 +46,7 @@ export function ModelSwitchFootnote({
   if (kind === "unsupported") {
     return (
       <div className="px-3 pb-1">
-        <p className="text-caption-2-medium text-text-warning-primary">{t("chat.modelSwitch.unsupported")}</p>
+        <p className="text-caption-2-medium text-status-yellow-text">{t("chat.modelSwitch.unsupported")}</p>
         <p className="text-caption-2-regular text-text-tertiary">{t("chat.modelSwitch.unsupportedHint")}</p>
       </div>
     )

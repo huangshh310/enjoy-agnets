@@ -38,7 +38,7 @@ export function CanvasContextMenu({
           {t("pages.workflows.canvasDuplicate")}
         </button>
       ) : null}
-      <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-400" onClick={onDelete}>
+      <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-text-error-primary" onClick={onDelete}>
         <RiDeleteBinLine className="size-4" />
         {t("pages.workflows.canvasDelete")}
       </button>

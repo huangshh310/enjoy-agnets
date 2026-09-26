@@ -133,7 +133,7 @@ export function InboxReader(props: {
         <div className="flex items-center gap-2 min-w-0">
           <span
             className={cx(
-              "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border shrink-0",
+              "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-caption-2-medium font-medium border shrink-0",
               theme.badgeBg,
               theme.badgeText,
               theme.badgeBorder
@@ -144,9 +144,9 @@ export function InboxReader(props: {
           </span>
           {displayWorkspace ? (
             <>
-              <span className="text-text-quaternary">·</span>
+              <span className="text-text-tertiary">·</span>
               <span
-                className="inline-flex items-center gap-1 text-[11.5px] text-text-tertiary truncate max-w-[220px]"
+                className="inline-flex items-center gap-1 text-caption-2-regular text-text-tertiary truncate max-w-[220px]"
                 title={displayWorkspace}
               >
                 <RiFolderLine className="size-3 shrink-0" />
@@ -154,9 +154,9 @@ export function InboxReader(props: {
               </span>
             </>
           ) : null}
-          <span className="text-text-quaternary">·</span>
+          <span className="text-text-tertiary">·</span>
           <time
-            className="text-[12px] text-text-tertiary font-mono truncate"
+            className="text-caption-1-regular text-text-tertiary font-mono truncate"
             dateTime={new Date(item.occurredAt).toISOString()}
           >
             {fullTime} ({relativeTime})
@@ -203,7 +203,7 @@ export function InboxReader(props: {
               {displayTitle}
             </h2>
             <div className="flex items-center gap-2 text-caption-2-regular text-text-tertiary font-mono">
-              <RiTerminalBoxLine className="size-3.5 text-text-quaternary" />
+              <RiTerminalBoxLine className="size-3.5 text-text-tertiary" />
               <span>{item.sessionId}</span>
               <button
                 type="button"
@@ -213,8 +213,8 @@ export function InboxReader(props: {
               >
                 {copiedId ? (
                   <>
-                    <RiCheckLine className="size-3 text-emerald-500" />
-                    <span className="text-emerald-500">{t("pages.inbox.copiedSessionId")}</span>
+                    <RiCheckLine className="size-3 text-state-success-text" />
+                    <span className="text-state-success-text">{t("pages.inbox.copiedSessionId")}</span>
                   </>
                 ) : (
                   <>
@@ -228,14 +228,14 @@ export function InboxReader(props: {
 
           {/* 待审批提示卡 */}
           {item.copyKey === "pending_approval" || item.copyKey === "ask_user" ? (
-            <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 shadow-xs">
+            <div className="flex flex-col gap-3 rounded-2xl border border-status-yellow-text/30 bg-status-yellow-background/10 p-5 shadow-xs">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-semibold text-caption-1-medium">
+                <div className="flex items-center gap-2 text-status-yellow-text dark:text-status-yellow-text font-semibold text-caption-1-medium">
                   <RiShieldCheckFill className="size-4 shrink-0" />
                   <span>{t("pages.inbox.approvalCardTitle")}</span>
                 </div>
                 {item.toolName ? (
-                  <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-900 dark:text-amber-100">
+                  <span className="font-mono text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
                     {item.toolName}
                   </span>
                 ) : null}
@@ -247,7 +247,7 @@ export function InboxReader(props: {
                 <Button
                   size="sm"
                   onClick={() => onOpenAction(item)}
-                  className="gap-2 h-9 px-4 bg-amber-600 hover:bg-amber-700 text-white shadow-sm text-caption-1-medium cursor-pointer"
+                  className="gap-2 h-9 px-4 bg-status-yellow-background hover:bg-status-yellow-background text-white shadow-sm text-caption-1-medium cursor-pointer"
                 >
                   <RiShieldCheckLine className="size-4" />
                   <span>{t("pages.inbox.openApprovalAction")}</span>
@@ -272,12 +272,12 @@ export function InboxReader(props: {
 
           {/* 失败提示卡 */}
           {item.copyKey === "error" ? (
-            <div className="flex flex-col gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/5 p-5">
-              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold text-caption-1-medium">
+            <div className="flex flex-col gap-3 rounded-2xl border border-border-error-default/25 bg-background-tertiary-error/5 p-5">
+              <div className="flex items-center gap-2 text-text-error-primary dark:text-text-error-primary font-semibold text-caption-1-medium">
                 <RiErrorWarningFill className="size-4 shrink-0" />
                 <span>{t("pages.inbox.errorCardTitle")}</span>
               </div>
-              <pre className="font-mono text-[12px] bg-background-primary-default/90 p-3.5 rounded-xl border border-rose-500/20 text-rose-700 dark:text-rose-300 whitespace-pre-wrap select-all leading-relaxed">
+              <pre className="font-mono text-caption-1-regular bg-background-primary-default/90 p-3.5 rounded-xl border border-border-error-default/20 text-text-error-primary dark:text-text-error-primary whitespace-pre-wrap select-all leading-relaxed">
                 {item.errorMessage || item.summary}
               </pre>
             </div>
@@ -301,7 +301,7 @@ export function InboxReader(props: {
             <div className="flex items-center gap-3 text-caption-2-medium text-text-tertiary px-1">
               {toolsSummary ? (
                 <span className="inline-flex items-center gap-1">
-                  <RiToolsLine className="size-3.5 text-text-quaternary" />
+                  <RiToolsLine className="size-3.5 text-text-tertiary" />
                   <span>工具调用：{toolsSummary}</span>
                 </span>
               ) : null}

@@ -54,7 +54,7 @@ export function SidebarSessionRow({
         {changesSummary && (changesSummary.additions > 0 || changesSummary.deletions > 0) ? (
           <span
             title="工作区未提交"
-            className="flex shrink-0 items-center gap-0.5 font-mono text-[10px] tabular-nums"
+            className="flex shrink-0 items-center gap-0.5 font-mono text-caption-2-regular tabular-nums"
           >
             {changesSummary.additions > 0 ? (
               <span className="text-state-success-text">+{changesSummary.additions}</span>

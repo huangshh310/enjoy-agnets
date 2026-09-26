@@ -51,7 +51,7 @@ export function AgentToolBoundExtras({
       <ModelPicker modelId={modelId} models={models} profile={profile} actions={actions} />
       <BindHostHint profile={profile} />
       {showCodexHint ? (
-        <p className="text-caption-2-regular text-state-warning-text">{t("settings.agentTools.codexChatWireHint")}</p>
+        <p className="text-caption-2-regular text-status-yellow-text">{t("settings.agentTools.codexChatWireHint")}</p>
       ) : null}
       <ApplyToOthers tool={tool} profile={profile} modelId={modelId} />
       {providerBindCanSyncHome(tool.id) ? <SyncFold actions={actions} /> : null}

@@ -43,7 +43,7 @@ Main Process（可信）
 | `packages/editor` | Monaco 封装；Files 预览可写，不是完整 IDE |
 | `packages/config` | 共享 tsconfig |
 
-包管理：pnpm workspaces + Turborepo。语言：TypeScript strict。Node `>=22.12.0`。
+包管理：pnpm workspaces + Turborepo。语言：TypeScript strict。Node `>=22.12.0`。UI `className` 走仓库根 `pnpm lint`（oxlint + `@shadcn/lint`，BoardUI 契约）；ESLint 未接线。
 
 ### 数据
 
@@ -76,8 +76,11 @@ Main Process（可信）
 - 跨平台 PATH / spawn：`packages/agent-harness/src/agent-tools/detect/probe.ts`（`pathDirs` / `lookupOnPath` / `spawnPathCommand`）
 - Computer Use 执行器：`apps/desktop/native/computer-use/`，main 经 `executor-command.ts` 查找；打包进 `resources/bin/<platform>-<arch>/`。darwin helper 在有 `CSC_NAME` / `CU_CODESIGN_IDENTITY` 时由 `stage-computer-use.cjs` codesign；`desktop_doctor` 验即将 spawn 的路径与签名，未签名不得报绿。执行器可点其它应用，必须由用户打开设置开关并审批 `desktop_act`。辅助功能授给 **Enjoy Computer Use helper**，不是 renderer，也不是只授给 Electron 宿主。
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
+- 设计系统 lint：仓库根 `.oxlintrc.json`；命令 `pnpm lint`
 
 ## 已知坑
+
+- **隐患**：`no-inline-styles` / `no-unknown-classes` / `require-static-classes` 尚未打开。玻璃皮肤指针、mascot 与动态 className 会刷屏；先不要开。
 
 - Workflow 子 agent：`persistChildRun` 在步骤 `running` checkpoint 之后把 `child_run_id` 写入当前 `run_steps` 行，`getWorkflow` 投影 `childRunId`。`cancelWorkflow` 先看内存 `childRuns`，没有再读库。崩溃发生在 persist running 与 `onChildRun` 之间仍可能漏绑。
 - `settings` KV 表曾是 JSON 垃圾场：vault / harness 密钥 / automations / overrides / runtimes / 压缩状态全塞一张表。2026-09 收敛：vault 与 harness 密钥迁到 `secrets_vault` 专表（惰性迁移旧键）；automations / overrides / session.runtimes 读取统一走 Zod 校验（坏条目丢弃）；压缩状态读侧已有 `SessionCompaction.parse`。仍在 settings 里的 JSON 是小对象（preferences 等），可接受。

@@ -14,8 +14,8 @@ export function TransportBadge({ transport }: { transport: McpServer["transport"
         transport === "stdio"
           ? "bg-accent-500/10 text-accent-500"
           : transport === "sse"
-            ? "bg-emerald-500/10 text-state-success-text"
-            : "bg-amber-500/10 text-amber-500"
+            ? "bg-state-success-text/10 text-state-success-text"
+            : "bg-status-yellow-background/10 text-status-yellow-text"
       )}
     >
       {transport}
@@ -44,11 +44,11 @@ export function ConnectionBadge({
       className={cx(
         "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-caption-2-medium",
         connected
-          ? "bg-emerald-500/10 text-state-success-text"
+          ? "bg-state-success-text/10 text-state-success-text"
           : "bg-background-secondary-default text-text-tertiary"
       )}
     >
-      <span className={cx("size-1.5 rounded-full", connected ? "bg-emerald-500" : "bg-text-tertiary")} />
+      <span className={cx("size-1.5 rounded-full", connected ? "bg-state-success-base" : "bg-text-tertiary")} />
       {connected ? t("pages.mcp.connected") : t("pages.mcp.disconnected")}
     </span>
   )
@@ -61,8 +61,8 @@ export function TrustBadge({ trusted }: { trusted: boolean }) {
       className={cx(
         "inline-flex select-none items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-caption-2-medium shadow-2xs",
         trusted
-          ? "border-emerald-500/40 bg-emerald-500/10 text-state-success-text"
-          : "border-dashed border-amber-500/50 bg-amber-500/10 text-amber-500"
+          ? "border-state-success-text/40 bg-state-success-text/10 text-state-success-text"
+          : "border-dashed border-status-yellow-text/50 bg-status-yellow-background/10 text-status-yellow-text"
       )}
     >
       {trusted ? <RiCheckLine className="size-2.5" /> : <RiCloseLine className="size-2.5" />}

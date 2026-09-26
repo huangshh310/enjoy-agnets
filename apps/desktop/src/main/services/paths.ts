@@ -17,7 +17,9 @@ export function resolveInsideWorkspace(workspaceRoot: string, candidate: string)
 
 export function toWorkspaceRelative(workspaceRoot: string, absolutePath: string): string {
   const root = existsSync(workspaceRoot) ? realpathSync(workspaceRoot) : workspaceRoot
-  return relative(root, absolutePath).split(sep).join("/")
+  // 两边都跟已存在前缀的 realpath：macOS `/tmp` → `/private/tmp`，只解析根会算出 `../../../tmp/...`
+  const abs = followExisting(absolutePath)
+  return relative(root, abs).split(sep).join("/")
 }
 
 export function joinWorkspace(workspaceRoot: string, relativePath: string): string {

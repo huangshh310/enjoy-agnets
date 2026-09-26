@@ -32,7 +32,7 @@ export function ConnectionCreateMenu({
   const t = useT()
   return (
     <div
-      className="absolute z-[120] w-[300px] rounded-[18px] border p-3 shadow-2xl backdrop-blur"
+      className="absolute z-50 w-72 rounded-2xl border p-3 shadow-2xl backdrop-blur"
       data-connection-create-menu
       style={{ left: pending.position.x, top: pending.position.y, background: theme.node.panel, borderColor: theme.node.stroke, color: theme.node.text }}
       onMouseDown={(event) => event.stopPropagation()}
@@ -79,7 +79,7 @@ export function NodeCreateMenu({
   const t = useT()
   return (
     <div
-      className="absolute z-[120] w-[260px] rounded-[18px] border p-2 shadow-2xl"
+      className="absolute z-50 w-64 rounded-2xl border p-2 shadow-2xl"
       style={{ left: position.x, top: position.y, background: theme.node.panel, borderColor: theme.node.stroke }}
       onMouseDown={(event) => event.stopPropagation()}
     >

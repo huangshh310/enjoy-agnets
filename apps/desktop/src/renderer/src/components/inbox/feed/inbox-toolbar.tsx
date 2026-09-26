@@ -26,13 +26,13 @@ export function InboxToolbar(props: {
         </span>
         {approvalCount > 0 ? (
           <span
-            className="inline-flex items-center rounded-full bg-accent-500 px-1.5 py-px text-[10px] font-semibold text-text-white"
+            className="inline-flex items-center rounded-full bg-accent-500 px-1.5 py-px text-caption-2-semibold font-semibold text-text-white"
             title={t("pages.inbox.approvalBadgeTitle")}
           >
             {approvalCount}
           </span>
         ) : null}
-        <span className="text-[10px] text-text-tertiary">{t("pages.inbox.quietHint")}</span>
+        <span className="text-caption-2-regular text-text-tertiary">{t("pages.inbox.quietHint")}</span>
       </div>
 
       <div className="flex shrink-0 items-center gap-1">

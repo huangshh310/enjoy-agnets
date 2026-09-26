@@ -101,7 +101,7 @@ export function ProviderOverridesTab({
               <span className="text-caption-1-semibold text-text-primary block leading-tight">
                 {t("settings.providers.headers")}
               </span>
-              <span className="text-[11px] text-text-tertiary">
+              <span className="text-caption-2-regular text-text-tertiary">
                 {t("settings.providers.headersHint")}
               </span>
             </div>
@@ -111,7 +111,7 @@ export function ProviderOverridesTab({
             <button
               type="button"
               onClick={() => insertHeaderTemplate("X-Title", "Enjoy Agents")}
-              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-caption-2-medium font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
             >
               + X-Title
             </button>
@@ -120,7 +120,7 @@ export function ProviderOverridesTab({
               onClick={() =>
                 insertHeaderTemplate("HTTP-Referer", "https://enjoy-agents.ai")
               }
-              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-caption-2-medium font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
             >
               + OpenRouter Referer
             </button>
@@ -130,7 +130,7 @@ export function ProviderOverridesTab({
               variant="outline"
               onClick={() => formatJson("customHeaders")}
               disabled={!editor.customHeaders?.trim()}
-              className="h-6 gap-1 rounded-md px-2 text-[11px] font-medium"
+              className="h-6 gap-1 rounded-md px-2 text-caption-2-medium font-medium"
             >
               {t("settings.providers.format")}
             </Button>
@@ -147,13 +147,13 @@ export function ProviderOverridesTab({
             }}
             placeholder={'{\n  "X-Custom-Provider": "custom-gateway",\n  "User-Agent": "EnjoyAgents/1.0"\n}'}
             rows={4}
-            className="font-mono text-[12px] leading-relaxed resize-none border-0 bg-transparent p-1 focus-visible:ring-0 shadow-none text-text-primary placeholder:text-text-placeholder"
+            className="font-mono text-caption-1-regular leading-relaxed resize-none border-0 bg-transparent p-1 focus-visible:ring-0 shadow-none text-text-primary placeholder:text-text-placeholder"
           />
         </div>
 
         {/* 错误提示栏 */}
         {headerError ? (
-          <div className="flex items-center gap-1.5 border-t border-state-error-text/20 bg-state-error-text/5 px-3 py-1.5 text-caption-1-medium text-text-error-primary">
+          <div className="flex items-center gap-1.5 border-t border-border-error-default/20 bg-text-error-primary/5 px-3 py-1.5 text-caption-1-medium text-text-error-primary">
             <RiErrorWarningLine className="size-3.5 shrink-0" />
             <span className="truncate">{headerError}</span>
           </div>
@@ -170,7 +170,7 @@ export function ProviderOverridesTab({
               <span className="text-caption-1-semibold text-text-primary block leading-tight">
                 {t("settings.providers.body")}
               </span>
-              <span className="text-[11px] text-text-tertiary">
+              <span className="text-caption-2-regular text-text-tertiary">
                 {t("settings.providers.bodyHint")}
               </span>
             </div>
@@ -180,14 +180,14 @@ export function ProviderOverridesTab({
             <button
               type="button"
               onClick={() => insertBodyTemplate("top_p", 0.9)}
-              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-caption-2-medium font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
             >
               + top_p
             </button>
             <button
               type="button"
               onClick={() => insertBodyTemplate("frequency_penalty", 0.2)}
-              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-[11px] font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
+              className="rounded-md border border-border-button-default/80 bg-background-primary-default px-2 py-0.5 text-caption-2-medium font-medium text-accent-600 hover:border-accent-500/50 hover:bg-accent-50 transition-colors"
             >
               + penalty
             </button>
@@ -197,7 +197,7 @@ export function ProviderOverridesTab({
               variant="outline"
               onClick={() => formatJson("customBody")}
               disabled={!editor.customBody?.trim()}
-              className="h-6 gap-1 rounded-md px-2 text-[11px] font-medium"
+              className="h-6 gap-1 rounded-md px-2 text-caption-2-medium font-medium"
             >
               {t("settings.providers.format")}
             </Button>
@@ -214,13 +214,13 @@ export function ProviderOverridesTab({
             }}
             placeholder={'{\n  "top_p": 0.9,\n  "frequency_penalty": 0.2\n}'}
             rows={3}
-            className="font-mono text-[12px] leading-relaxed resize-none border-0 bg-transparent p-1 focus-visible:ring-0 shadow-none text-text-primary placeholder:text-text-placeholder"
+            className="font-mono text-caption-1-regular leading-relaxed resize-none border-0 bg-transparent p-1 focus-visible:ring-0 shadow-none text-text-primary placeholder:text-text-placeholder"
           />
         </div>
 
         {/* 错误提示栏 */}
         {bodyError ? (
-          <div className="flex items-center gap-1.5 border-t border-state-error-text/20 bg-state-error-text/5 px-3 py-1.5 text-caption-1-medium text-text-error-primary">
+          <div className="flex items-center gap-1.5 border-t border-border-error-default/20 bg-text-error-primary/5 px-3 py-1.5 text-caption-1-medium text-text-error-primary">
             <RiErrorWarningLine className="size-3.5 shrink-0" />
             <span className="truncate">{bodyError}</span>
           </div>
@@ -236,7 +236,7 @@ export function ProviderOverridesTab({
               {t("settings.providers.presetRef")}
             </span>
           </div>
-          <span className="text-[11px] text-text-tertiary">
+          <span className="text-caption-2-regular text-text-tertiary">
             {t("settings.providers.presetHint")}
           </span>
         </div>
@@ -245,7 +245,7 @@ export function ProviderOverridesTab({
           value={editor.kind}
           onValueChange={(value) => onChangeKind(value as ProviderKind)}
         >
-          <SelectTrigger className="h-9 w-full rounded-xl bg-background-primary-default text-[13px]">
+          <SelectTrigger className="h-9 w-full rounded-xl bg-background-primary-default text-body-2-regular">
             <SelectValue>
               <div className="flex items-center gap-2">
                 <ProviderIcon
@@ -272,7 +272,7 @@ export function ProviderOverridesTab({
           </SelectContent>
         </Select>
 
-        <p className="text-[11px] text-text-tertiary flex items-center gap-1">
+        <p className="text-caption-2-regular text-text-tertiary flex items-center gap-1">
           <RiInformationLine className="size-3 text-text-tertiary shrink-0" />
           <span>{t("settings.providers.presetDesc")}</span>
         </p>

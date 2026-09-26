@@ -138,7 +138,7 @@ export const ReviewCommitDock = forwardRef<
                   prev ? `${item.prefix}${prev.replace(/^[a-z]+:\s*/i, "")}` : item.prefix
                 )
               }
-              className="cursor-pointer rounded border border-separator-border/60 bg-background-secondary-default/50 px-1.5 py-0.5 font-mono text-[10.5px] text-text-tertiary hover:border-accent-500/40 hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
+              className="cursor-pointer rounded border border-separator-border/60 bg-background-secondary-default/50 px-1.5 py-0.5 font-mono text-caption-2-regular text-text-tertiary hover:border-accent-500/40 hover:bg-accent-500/10 hover:text-accent-500 transition-colors"
             >
               {item.label}
             </button>
@@ -169,7 +169,7 @@ export const ReviewCommitDock = forwardRef<
         </Button>
       </div>
 
-      {error ? <p className="text-[11px] text-text-error-primary">{error}</p> : null}
+      {error ? <p className="text-caption-2-regular text-text-error-primary">{error}</p> : null}
 
       <ConfirmDialog
         open={confirmOpen}

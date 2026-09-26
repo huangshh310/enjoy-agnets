@@ -45,7 +45,7 @@ export function InboxRow(props: {
             ) : null}
             <span
               className={cx(
-                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium border shrink-0",
+                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-caption-2-medium font-medium border shrink-0",
                 theme.badgeBg,
                 theme.badgeText,
                 theme.badgeBorder
@@ -56,7 +56,7 @@ export function InboxRow(props: {
             </span>
             {item.workspaceName ? (
               <span
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] text-text-quaternary bg-background-secondary-default/70 border border-separator-border/30 truncate max-w-[110px]"
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-caption-2-regular text-text-tertiary bg-background-secondary-default/70 border border-separator-border/30 truncate max-w-[110px]"
                 title={item.workspaceName}
               >
                 <RiFolderLine className="size-2.5 shrink-0" />
@@ -66,7 +66,7 @@ export function InboxRow(props: {
           </div>
 
           <time
-            className="shrink-0 text-[11px] text-text-tertiary font-mono"
+            className="shrink-0 text-caption-2-regular text-text-tertiary font-mono"
             dateTime={new Date(item.occurredAt).toISOString()}
           >
             {time}
@@ -87,7 +87,7 @@ export function InboxRow(props: {
 
         {/* 底部：摘要或错误片段 */}
         {snippet ? (
-          <p className="line-clamp-2 text-[12px] text-text-tertiary leading-relaxed">
+          <p className="line-clamp-2 text-caption-1-regular text-text-tertiary leading-relaxed">
             {snippet}
           </p>
         ) : null}

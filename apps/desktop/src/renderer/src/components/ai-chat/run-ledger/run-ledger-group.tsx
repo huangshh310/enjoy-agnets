@@ -46,7 +46,7 @@ export function RunLedgerGroup({
         <span
           className={cx(
             "ml-auto font-mono text-caption-2-regular tabular-nums",
-            kind === "error" || failed > 0 ? "text-text-warning-primary" : "text-text-secondary"
+            kind === "error" || failed > 0 ? "text-status-yellow-text" : "text-text-secondary"
           )}
         >
           {failed > 0 && kind === "command" ? `${failed}/${entries.length}` : entries.length}

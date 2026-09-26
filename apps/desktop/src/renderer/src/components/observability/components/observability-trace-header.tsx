@@ -63,10 +63,10 @@ export function ObservabilityTraceHeader({
                 className={cx(
                   "rounded px-2 py-0.5 font-mono text-caption-2-medium uppercase",
                   isSuccess
-                    ? "bg-emerald-500/10 text-state-success-text"
+                    ? "bg-state-success-text/10 text-state-success-text"
                     : isRunning
                       ? "bg-accent-500/10 text-accent-500"
-                      : "bg-rose-500/10 text-text-error-primary"
+                      : "bg-background-tertiary-error/10 text-text-error-primary"
                 )}
               >
                 {metric.status}
@@ -95,7 +95,7 @@ export function ObservabilityTraceHeader({
             {t("pages.observability.backToChat")}
           </button>
           <Button size="sm" variant="outline" onClick={onCopyJson} className="h-7 gap-1 text-caption-2-medium">
-            {copied ? <RiCheckLine className="size-3 text-emerald-500" /> : <RiClipboardLine className="size-3" />}
+            {copied ? <RiCheckLine className="size-3 text-state-success-text" /> : <RiClipboardLine className="size-3" />}
             <span>{copied ? t("pages.observability.copiedJson") : t("pages.observability.copyJson")}</span>
           </Button>
           <Button
@@ -120,10 +120,10 @@ function StatusMark({ success, running }: { success: boolean; running: boolean }
       className={cx(
         "flex size-8 shrink-0 items-center justify-center rounded-lg border shadow-2xs",
         success
-          ? "border-emerald-500/20 bg-emerald-500/10 text-state-success-text"
+          ? "border-state-success-text/20 bg-state-success-text/10 text-state-success-text"
           : running
             ? "border-accent-500/20 bg-accent-500/10 text-accent-500"
-            : "border-rose-500/20 bg-rose-500/10 text-text-error-primary"
+            : "border-border-error-default/20 bg-background-tertiary-error/10 text-text-error-primary"
       )}
     >
       {success ? <RiCheckLine className="size-4" /> : running ? <RiPulseLine className="size-4 animate-pulse" /> : <RiCloseLine className="size-4" />}

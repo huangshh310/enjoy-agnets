@@ -72,7 +72,7 @@ function BashResult({
 
   return (
     <div className="overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default font-mono shadow-2xs">
-      <header className="flex items-center gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-[12px]">
+      <header className="flex items-center gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-caption-1-regular">
         <RiTerminalBoxLine className="size-3.5 shrink-0 text-text-tertiary" />
         <span className="min-w-0 truncate text-caption-1-medium text-text-primary">{command}</span>
         {exitCode !== undefined ? (

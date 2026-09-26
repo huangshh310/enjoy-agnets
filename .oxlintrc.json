@@ -1,0 +1,95 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [],
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "off"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/out/**",
+    "**/.turbo/**",
+    "**/coverage/**",
+    "apps/desktop/native/**",
+    "design/**"
+  ],
+  "settings": {
+    "shadcn": {
+      "ui": "@/components",
+      "componentImports": ["^@enjoy-agents/ui(/|$)"],
+      "note": "视觉语言只走 BoardUI 语义 token。见 design/specs/ui.md 与 packages/ui/AGENTS.md。"
+    }
+  },
+  "rules": {
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout", "color", "typography", "spacing", "shape", "effects", "motion"],
+        "contracts": [
+          {
+            "pattern": "^Button$",
+            "allow": [
+              "layout",
+              "color",
+              "typography",
+              "effects",
+              "motion",
+              "w-full",
+              "mt-*",
+              "mb-*",
+              "ml-*",
+              "mr-*",
+              "mx-*",
+              "my-*",
+              "gap-*",
+              "size-*",
+              "h-6",
+              "h-7",
+              "h-7.5",
+              "h-8",
+              "h-9",
+              "h-10",
+              "h-11",
+              "p-0",
+              "px-*",
+              "py-*",
+              "rounded-*",
+              "shadow-*",
+              "cursor-pointer",
+              "shrink-0",
+              "inline-flex",
+              "items-center"
+            ],
+            "message": {
+              "spacing": "用 Button size（{{sizes}}）或父级 gap，不要另写 padding。",
+              "default": "不要 restyle Button。用 variant（{{variants}}）和 BoardUI token。"
+            }
+          }
+        ]
+      }
+    ],
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "message": "不要 raw palette（{{className}}）。用 BoardUI 语义 token，主题在 packages/ui/styles/（{{file}}）。建议：{{suggestions}}"
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": ["layout", "motion", "effects", "z-*", "min-h-*", "max-h-*", "min-w-*", "max-w-*"],
+        "message": "不要任意值（{{className}}）。字号走 text-caption-* / text-body-*；其它走刻度。建议：{{suggestions}}"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["packages/ui/components/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off"
+      }
+    }
+  ]
+}

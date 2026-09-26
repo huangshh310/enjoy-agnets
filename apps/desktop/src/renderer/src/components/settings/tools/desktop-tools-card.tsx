@@ -183,7 +183,7 @@ function ReadinessBadge({ ready }: { ready: boolean }) {
       className={
         ready
           ? "rounded-full bg-state-success-base px-2 py-0.5 text-caption-2-semibold text-state-success-text ring-1 ring-state-success-text/20"
-          : "rounded-full bg-text-warning-primary/10 px-2 py-0.5 text-caption-2-semibold text-text-warning-primary ring-1 ring-text-warning-primary/20"
+          : "rounded-full bg-status-yellow-text/10 px-2 py-0.5 text-caption-2-semibold text-status-yellow-text ring-1 ring-status-yellow-text/20"
       }
     >
       {ready ? t("settings.builtinTools.ready") : t("settings.builtinTools.notReady")}

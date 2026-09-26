@@ -146,7 +146,7 @@ export function AiChatComposer({
           onDrop={handleDrop}
           data-frost="chip"
           className={cx(
-            "@container relative flex min-w-0 flex-col overflow-visible rounded-[22px] pt-2",
+            "@container relative flex min-w-0 flex-col overflow-visible rounded-3xl pt-2",
             "border border-border-button-default bg-background-secondary-default dark:bg-background-tertiary-default",
             "shadow-card backdrop-blur-md transition-all duration-300 ease-out",
             "hover:border-border-button-hover hover:shadow-dropdown",
@@ -155,7 +155,7 @@ export function AiChatComposer({
           )}
         >
           {isDragging ? (
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-[22px] border-2 border-dashed border-accent-500 bg-background-primary-default/90 backdrop-blur-xs animate-in fade-in-50 zoom-in-95 duration-200">
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-3xl border-2 border-dashed border-accent-500 bg-background-primary-default/90 backdrop-blur-xs animate-in fade-in-50 zoom-in-95 duration-200">
               <p className="text-body-medium font-medium text-accent-500">{t("chat.dropAttach")}</p>
             </div>
           ) : null}

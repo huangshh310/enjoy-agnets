@@ -18,9 +18,9 @@ export type { ApprovalPrefFlags }
 export const APPROVAL_PRESETS = [
   {
     id: "allow-reads" as const,
-    colorClass: "text-sky-600 dark:text-sky-300",
-    bgClass: "bg-sky-500/10 border-sky-500/25 hover:bg-sky-500/15 dark:bg-sky-500/15 dark:border-sky-500/30",
-    iconColor: "text-sky-500 dark:text-sky-400"
+    colorClass: "text-accent-500 dark:text-accent-500",
+    bgClass: "bg-accent-500/10 border-accent-500/25 hover:bg-accent-500/15 dark:bg-accent-500/15 dark:border-accent-500/30",
+    iconColor: "text-accent-500 dark:text-accent-500"
   },
   {
     id: "allow-edits" as const,
@@ -30,9 +30,9 @@ export const APPROVAL_PRESETS = [
   },
   {
     id: "allow-all" as const,
-    colorClass: "text-amber-600 dark:text-amber-400",
-    bgClass: "bg-amber-500/10 border-amber-500/25 hover:bg-amber-500/15 dark:bg-amber-500/15 dark:border-amber-500/30",
-    iconColor: "text-amber-500 dark:text-amber-400"
+    colorClass: "text-status-yellow-text dark:text-status-yellow-text",
+    bgClass: "bg-status-yellow-background/10 border-status-yellow-text/25 hover:bg-status-yellow-background/15 dark:bg-status-yellow-background/15 dark:border-status-yellow-text/30",
+    iconColor: "text-status-yellow-text dark:text-status-yellow-text"
   }
 ]
 

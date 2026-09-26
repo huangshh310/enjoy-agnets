@@ -47,7 +47,7 @@ export function WebhookFields({
           autoComplete="off"
         />
       </label>
-      <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-[10px] text-text-tertiary">
+      <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-tertiary">
         {t("studio.automations.webhookListenHint", { port: draft.webhookPort.trim() || "8765" })}
       </p>
     </div>

@@ -124,7 +124,7 @@ export function KnowledgeAddModal({
               <DialogTitle className="text-body-medium font-semibold text-text-primary">
                 {t("pages.knowledge.addTitle")}
               </DialogTitle>
-              <DialogDescription className="text-[12px] text-text-secondary">
+              <DialogDescription className="text-caption-1-regular text-text-secondary">
                 {t("pages.knowledge.addDesc")}
               </DialogDescription>
             </div>
@@ -137,7 +137,7 @@ export function KnowledgeAddModal({
             type="button"
             onClick={() => setActiveTab("folder")}
             className={cx(
-              "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-caption-1-semibold font-semibold transition-all",
               activeTab === "folder"
                 ? "bg-background-primary-default text-text-primary shadow-xs"
                 : "text-text-tertiary hover:text-text-primary"
@@ -150,7 +150,7 @@ export function KnowledgeAddModal({
             type="button"
             onClick={() => setActiveTab("file")}
             className={cx(
-              "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-caption-1-semibold font-semibold transition-all",
               activeTab === "file"
                 ? "bg-background-primary-default text-text-primary shadow-xs"
                 : "text-text-tertiary hover:text-text-primary"
@@ -229,7 +229,7 @@ export function KnowledgeAddModal({
                 : t("pages.knowledge.fileHint")}
             </span>
             {formError ? (
-              <span className="text-caption-2-medium text-rose-600 dark:text-rose-400">{formError}</span>
+              <span className="text-caption-2-medium text-text-error-primary dark:text-text-error-primary">{formError}</span>
             ) : null}
           </div>
 

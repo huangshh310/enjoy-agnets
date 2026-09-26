@@ -37,7 +37,7 @@ export function ProfileAgentsBarChart({
     <div className="flex select-none flex-col gap-2.5 rounded-2xl border border-separator-border/80 bg-background-primary-default p-4 shadow-card">
       <div className="flex items-start justify-between">
         <div className="flex flex-col">
-          <span className="text-[11px] font-medium text-text-tertiary">{t("pages.account.charts.agents")}</span>
+          <span className="text-caption-2-medium font-medium text-text-tertiary">{t("pages.account.charts.agents")}</span>
           <div className="mt-0.5 flex items-baseline gap-2">
             <h3 className="text-title-3-semibold text-text-primary">{totalAgentsCount} {t("pages.account.charts.runsUnit")}</h3>
             {hoveredPoint ? (
@@ -56,7 +56,7 @@ export function ProfileAgentsBarChart({
           >
             <RiArrowLeftSLine className="size-3.5" />
           </button>
-          <span className="px-0.5 text-[11px] font-medium text-text-primary">{currentMonthLabel}</span>
+          <span className="px-0.5 text-caption-2-medium font-medium text-text-primary">{currentMonthLabel}</span>
           <button
             type="button"
             onClick={onNextMonth}

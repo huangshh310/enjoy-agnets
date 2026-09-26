@@ -73,15 +73,15 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
                 className={cx(
                   "min-w-36 rounded-xl border p-3 transition-all shadow-xs",
                   step.status === "completed" &&
-                    "border-emerald-500/20 bg-emerald-500/[0.04] text-text-primary",
+                    "border-state-success-text/20 bg-state-success-text/[0.04] text-text-primary",
                   step.status === "running" &&
                     "border-accent-500/40 bg-accent-500/[0.06] ring-2 ring-accent-500/20 shadow-sm",
                   step.status === "paused" &&
-                    "border-amber-500/20 bg-amber-500/[0.04] text-text-primary",
+                    "border-status-yellow-text/20 bg-status-yellow-background/[0.04] text-text-primary",
                   step.status === "waiting_review" &&
-                    "border-amber-500/30 bg-amber-500/[0.08] text-amber-700 dark:text-amber-300",
+                    "border-status-yellow-text/30 bg-status-yellow-background/[0.08] text-status-yellow-text dark:text-status-yellow-text",
                   step.status === "failed" &&
-                    "border-rose-500/20 bg-rose-500/[0.04] text-rose-700 dark:text-rose-300",
+                    "border-border-error-default/20 bg-background-tertiary-error/[0.04] text-text-error-primary dark:text-text-error-primary",
                   step.status !== "completed" &&
                     step.status !== "running" &&
                     step.status !== "paused" &&
@@ -91,7 +91,7 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[10px] text-text-tertiary">
+                  <span className="font-mono text-caption-2-regular text-text-tertiary">
                     {t("pages.workflows.stepN", { n: step.index + 1 })}
                   </span>
                   <StepIcon status={step.status} />
@@ -99,14 +99,14 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
 
                 <p className="mt-1 font-semibold text-body-medium truncate">{step.label}</p>
 
-                <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px]">
+                <div className="mt-1.5 flex items-center justify-between gap-2 text-caption-2-regular">
                   <span
                     className={cx(
                       "font-medium capitalize",
-                      step.status === "completed" && "text-emerald-600 dark:text-emerald-400",
+                      step.status === "completed" && "text-state-success-text dark:text-state-success-text",
                       step.status === "running" && "text-accent-600 dark:text-accent-400 font-semibold",
-                      step.status === "paused" && "text-amber-600 dark:text-amber-400",
-                      step.status === "failed" && "text-rose-600 dark:text-rose-400",
+                      step.status === "paused" && "text-status-yellow-text dark:text-status-yellow-text",
+                      step.status === "failed" && "text-text-error-primary dark:text-text-error-primary",
                       step.status !== "completed" &&
                         step.status !== "running" &&
                         step.status !== "paused" &&
@@ -118,7 +118,7 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
                   </span>
 
                   {step.durationMs ? (
-                    <span className="font-mono text-[10px] text-text-tertiary">
+                    <span className="font-mono text-caption-2-regular text-text-tertiary">
                       {step.durationMs > 1000
                         ? `${(step.durationMs / 1000).toFixed(1)}s`
                         : `${step.durationMs}ms`}
@@ -127,7 +127,7 @@ export function WorkflowDag({ steps }: { steps: WorkflowStep[] }) {
                 </div>
 
                 {step.dependsOn?.length ? (
-                  <p className="mt-1 text-[10px] text-text-tertiary truncate">
+                  <p className="mt-1 text-caption-2-regular text-text-tertiary truncate">
                     {t("pages.workflows.afterDeps", { deps: step.dependsOn.join(", ") })}
                   </p>
                 ) : null}
@@ -150,19 +150,19 @@ function stepStatusLabel(status: string, t: TranslateFn): string {
 
 function StepIcon({ status }: { status: string }) {
   if (status === "completed") {
-    return <RiCheckLine className="size-3.5 text-emerald-500" />
+    return <RiCheckLine className="size-3.5 text-state-success-text" />
   }
   if (status === "running") {
     return <RiLoader4Line className="size-3.5 text-accent-500 animate-spin" />
   }
   if (status === "waiting_review") {
-    return <RiShieldCheckLine className="size-3.5 text-amber-500" />
+    return <RiShieldCheckLine className="size-3.5 text-status-yellow-text" />
   }
   if (status === "paused") {
-    return <RiPauseCircleLine className="size-3.5 text-amber-500" />
+    return <RiPauseCircleLine className="size-3.5 text-status-yellow-text" />
   }
   if (status === "failed") {
-    return <RiCloseLine className="size-3.5 text-rose-500" />
+    return <RiCloseLine className="size-3.5 text-text-error-primary" />
   }
   return <RiTimeLine className="size-3.5 text-text-tertiary" />
 }

@@ -90,7 +90,7 @@ export function ProviderSettings() {
               <span>{t("settings.providers.configured")}</span>
               <span
                 className={cx(
-                  "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                  "rounded-full px-1.5 py-0.2 text-caption-2-bold font-bold",
                   activeTab === "configured"
                     ? "bg-accent-50 text-accent-600 dark:bg-accent-950 dark:text-accent-300"
                     : "bg-background-secondary-default text-text-tertiary"
@@ -114,7 +114,7 @@ export function ProviderSettings() {
               <span>{t("settings.providers.explore")}</span>
               <span
                 className={cx(
-                  "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                  "rounded-full px-1.5 py-0.2 text-caption-2-bold font-bold",
                   activeTab === "presets"
                     ? "bg-accent-50 text-accent-600 dark:bg-accent-950 dark:text-accent-300"
                     : "bg-background-secondary-default text-text-tertiary"

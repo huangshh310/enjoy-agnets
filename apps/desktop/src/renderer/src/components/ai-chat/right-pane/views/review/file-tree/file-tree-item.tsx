@@ -73,7 +73,7 @@ export function FileTreeItem(props: {
             <RiFolderLine className="size-4 text-text-tertiary group-hover:text-accent-500" />
           )}
 
-          <span className="truncate font-medium text-text-primary text-[12.5px]">
+          <span className="truncate font-medium text-text-primary text-caption-1-medium">
             {node.name}
           </span>
         </button>
@@ -102,7 +102,7 @@ export function FileTreeItem(props: {
       type="button"
       onClick={() => onSelectFile(node.path)}
       style={{ paddingLeft: `${depth * 14 + 14}px` }}
-      className={`group flex h-7 w-full items-center justify-between gap-2 pr-2.5 text-left text-[12px] cursor-pointer transition-colors ${
+      className={`group flex h-7 w-full items-center justify-between gap-2 pr-2.5 text-left text-caption-1-regular cursor-pointer transition-colors ${
         isSelected
           ? "bg-accent-500/12 text-accent-500 font-semibold"
           : "text-text-secondary hover:bg-background-secondary-hover"
@@ -115,7 +115,7 @@ export function FileTreeItem(props: {
         </span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 font-mono text-[11px]">
+      <div className="flex shrink-0 items-center gap-1 font-mono text-caption-2-regular">
         <StageToggle node={node} onStage={props.onStage} />
         {statusConfig ? (
           <span
@@ -149,7 +149,7 @@ function StageToggle(props: {
           event.stopPropagation()
           onStage(node.path, "unstage")
         }}
-        className="rounded px-1 text-[10px] text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
+        className="rounded px-1 text-caption-2-regular text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary"
       >
         −
       </span>
@@ -165,7 +165,7 @@ function StageToggle(props: {
         event.stopPropagation()
         onStage(node.path, "add")
       }}
-      className="rounded px-1 text-[10px] text-text-tertiary hover:bg-accent-500/15 hover:text-accent-500"
+      className="rounded px-1 text-caption-2-regular text-text-tertiary hover:bg-accent-500/15 hover:text-accent-500"
     >
       +
     </span>

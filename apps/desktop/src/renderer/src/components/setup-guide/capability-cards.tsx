@@ -81,7 +81,7 @@ function TourTab({
       aria-selected={selected}
       onClick={onSelect}
       className={cx(
-        "flex h-[34px] cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px]",
+        "flex h-[34px] cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-left text-headline-regular",
         selected ? "bg-text-primary/5 text-text-primary" : "text-text-primary/70 hover:bg-text-primary/[0.03]"
       )}
     >
@@ -94,11 +94,11 @@ function TourTab({
 function TourPanel({ title, body, points }: { title: string; body: string; points: string[] }) {
   return (
     <div className="flex min-w-0 flex-col gap-3.5 pt-1.5" role="tabpanel">
-      <h3 className="text-base font-medium tracking-[-0.005em] text-text-primary">{title}</h3>
-      <p className="text-[15px] leading-relaxed text-text-secondary">{body}</p>
+      <h3 className="text-base font-medium text-text-primary">{title}</h3>
+      <p className="text-headline-regular leading-relaxed text-text-secondary">{body}</p>
       <ul className="mt-1 flex flex-col gap-2">
         {points.map((point) => (
-          <li key={point} className="flex items-center gap-2.5 text-[15px] text-text-primary/85">
+          <li key={point} className="flex items-center gap-2.5 text-headline-regular text-text-primary/85">
             <span aria-hidden className="size-1 shrink-0 rounded-full bg-text-primary/40" />
             {point}
           </li>

@@ -179,18 +179,18 @@ export function McpServerToolsModal(props: {
                         </span>
                         <span
                           className={cx(
-                            "rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase",
+                            "rounded-full px-2 py-0.5 text-caption-2-semibold font-semibold uppercase",
                             perm === "allow"
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              ? "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
                               : perm === "ask"
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                ? "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
+                                : "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
                           )}
                         >
                           {perm}
                         </span>
                       </div>
-                      <p className="line-clamp-2 text-[11px] text-text-secondary">
+                      <p className="line-clamp-2 text-caption-2-regular text-text-secondary">
                         {tool.description || t("pages.mcp.noDetailDesc")}
                       </p>
                     </button>
@@ -230,18 +230,18 @@ export function McpServerToolsModal(props: {
                           type="button"
                           onClick={() => void handleSetPermission(activeToolObj.name, level)}
                           className={cx(
-                            "flex flex-col items-center justify-center rounded-xl p-2 text-center text-[11px] font-medium border transition-all cursor-pointer",
+                            "flex flex-col items-center justify-center rounded-xl p-2 text-center text-caption-2-medium font-medium border transition-all cursor-pointer",
                             isActive
                               ? level === "allow"
-                                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                                ? "border-state-success-text/40 bg-state-success-text/10 text-state-success-text dark:text-state-success-text font-semibold"
                                 : level === "ask"
-                                  ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold"
-                                  : "border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold"
+                                  ? "border-status-yellow-text/40 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text font-semibold"
+                                  : "border-border-error-default/40 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary font-semibold"
                               : "border-separator-border/60 bg-background-primary-default text-text-secondary hover:text-text-primary"
                           )}
                         >
                           <span className="capitalize">{level}</span>
-                          <span className="text-[9px] text-text-tertiary mt-0.5">
+                          <span className="text-caption-2-regular text-text-tertiary mt-0.5">
                             {level === "allow"
                               ? t("pages.mcp.alwaysAllow")
                               : level === "ask"
@@ -279,25 +279,25 @@ export function McpServerToolsModal(props: {
                     value={testArgsJson}
                     onChange={(e) => setTestArgsJson(e.target.value)}
                     rows={4}
-                    className="w-full font-mono text-[12px] rounded-xl border border-separator-border/80 bg-background-secondary-default p-2.5 text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
+                    className="w-full font-mono text-caption-1-regular rounded-xl border border-separator-border/80 bg-background-secondary-default p-2.5 text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-500"
                     placeholder='{ "key": "value" }'
                   />
                 </div>
 
                 {/* 执行结果或错误回显 */}
                 {callError ? (
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-3 text-[11px] text-rose-600 dark:text-rose-400">
+                  <div className="rounded-xl border border-border-error-default/20 bg-background-tertiary-error/5 p-3 text-caption-2-regular text-text-error-primary dark:text-text-error-primary">
                     <div className="font-semibold mb-0.5">{t("pages.mcp.callError")}</div>
                     <div className="font-mono">{callError}</div>
                   </div>
                 ) : null}
 
                 {testOutput ? (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-[11px] text-text-primary">
-                    <div className="font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                  <div className="rounded-xl border border-state-success-text/20 bg-state-success-text/5 p-3 text-caption-2-semibold text-text-primary">
+                    <div className="font-semibold text-state-success-text dark:text-state-success-text mb-0.5">
                       {t("pages.mcp.callResult")}
                     </div>
-                    <pre className="font-mono text-[11px] max-h-36 overflow-auto whitespace-pre-wrap">
+                    <pre className="font-mono text-caption-2-regular max-h-36 overflow-auto whitespace-pre-wrap">
                       {testOutput}
                     </pre>
                   </div>

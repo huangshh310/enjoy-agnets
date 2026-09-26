@@ -75,10 +75,10 @@ export function ProfileSharePosterDialog({
           <div className="w-full rounded-2xl border border-separator-border/80 bg-linear-to-b from-background-secondary-default/80 via-background-primary-default to-background-secondary-default/50 p-5 shadow-card flex flex-col gap-4">
             {/* 顶部品牌 */}
             <div className="flex items-center justify-between border-b border-separator-border/60 pb-3">
-              <span className="font-mono text-[11px] font-bold tracking-wider text-accent-600 dark:text-accent-400 uppercase">
+              <span className="font-mono text-caption-2-bold font-bold tracking-wider text-accent-600 dark:text-accent-400 uppercase">
                 Enjoy Agents · Dev Profile
               </span>
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="rounded-full bg-state-success-text/10 px-2 py-0.5 font-mono text-caption-2-semibold font-semibold text-state-success-text dark:text-state-success-text">
                 VERIFIED AGENT IDE
               </span>
             </div>
@@ -90,9 +90,9 @@ export function ProfileSharePosterDialog({
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-body-large-semibold text-text-primary truncate">{profile.name}</span>
+                  <span className="text-title-3-semibold text-text-primary truncate">{profile.name}</span>
                   {profile.badgeText ? (
-                    <span className="rounded bg-accent-500/10 px-1.5 py-0.2 text-[10px] font-semibold text-accent-600 dark:text-accent-400">
+                    <span className="rounded bg-accent-500/10 px-1.5 py-0.2 text-caption-2-semibold font-semibold text-accent-600 dark:text-accent-400">
                       {profile.badgeText}
                     </span>
                   ) : null}
@@ -107,7 +107,7 @@ export function ProfileSharePosterDialog({
             {/* 核心指标九宫格 */}
             <div className="grid grid-cols-2 gap-2 pt-1">
               <div className="flex flex-col rounded-xl border border-border-button-default/80 bg-background-primary-default/80 p-2.5">
-                <div className="flex items-center gap-1.5 text-text-tertiary text-[11px]">
+                <div className="flex items-center gap-1.5 text-text-tertiary text-caption-2-regular">
                   <RiRobot2Line className="size-3 text-accent-500" />
                   <span>自主引擎</span>
                 </div>
@@ -117,7 +117,7 @@ export function ProfileSharePosterDialog({
               </div>
 
               <div className="flex flex-col rounded-xl border border-border-button-default/80 bg-background-primary-default/80 p-2.5">
-                <div className="flex items-center gap-1.5 text-text-tertiary text-[11px]">
+                <div className="flex items-center gap-1.5 text-text-tertiary text-caption-2-regular">
                   <RiCpuLine className="size-3 text-accent-500" />
                   <span>主力模型</span>
                 </div>
@@ -127,17 +127,17 @@ export function ProfileSharePosterDialog({
               </div>
 
               <div className="flex flex-col rounded-xl border border-border-button-default/80 bg-background-primary-default/80 p-2.5">
-                <div className="flex items-center gap-1.5 text-text-tertiary text-[11px]">
-                  <RiShieldCheckLine className="size-3 text-emerald-500" />
+                <div className="flex items-center gap-1.5 text-text-tertiary text-caption-2-regular">
+                  <RiShieldCheckLine className="size-3 text-state-success-text" />
                   <span>安全存储</span>
                 </div>
-                <span className="mt-1 text-caption-1-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="mt-1 text-caption-1-semibold text-state-success-text dark:text-state-success-text">
                   硬件 Key 隔离
                 </span>
               </div>
 
               <div className="flex flex-col rounded-xl border border-border-button-default/80 bg-background-primary-default/80 p-2.5">
-                <div className="flex items-center gap-1.5 text-text-tertiary text-[11px]">
+                <div className="flex items-center gap-1.5 text-text-tertiary text-caption-2-regular">
                   <RiComputerLine className="size-3 text-accent-500" />
                   <span>运行环境</span>
                 </div>
@@ -148,7 +148,7 @@ export function ProfileSharePosterDialog({
             </div>
 
             {/* 底部注脚 */}
-            <div className="pt-2 text-center text-[10.5px] font-mono text-text-tertiary">
+            <div className="pt-2 text-center text-caption-2-regular font-mono text-text-tertiary">
               Built with Enjoy Agents · Local-First Autonomous AI IDE
             </div>
           </div>
@@ -164,7 +164,7 @@ export function ProfileSharePosterDialog({
           >
             {copied ? (
               <>
-                <RiCheckLine className="size-3.5 text-emerald-500" />
+                <RiCheckLine className="size-3.5 text-state-success-text" />
                 <span>已复制战报</span>
               </>
             ) : (

@@ -82,7 +82,7 @@ export function AcpSessionImport({ runtimeId }: { runtimeId: string }) {
         {busy ? t("chat.agentInspecting") : t("chat.importAcpSessions")}
       </button>
       {error ? (
-        <p className="mt-1 text-caption-2-regular text-text-warning-primary">
+        <p className="mt-1 text-caption-2-regular text-status-yellow-text">
           {error.startsWith("导入") || error.startsWith("Import")
             ? error
             : t("chat.importAcpListFailed", { message: error })}

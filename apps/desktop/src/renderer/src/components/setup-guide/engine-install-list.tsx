@@ -44,7 +44,7 @@ export function EngineInstallList() {
           />
         ))}
       </ul>
-      <div className="flex items-center justify-between text-[13px] text-text-secondary">
+      <div className="flex items-center justify-between text-body-2-regular text-text-secondary">
         <span>{t("settings.setupGuide.engineSummary", { ready, missing })}</span>
         <button
           type="button"
@@ -84,8 +84,8 @@ function EngineInstallRow({
     <li className={cx("flex h-[60px] items-center gap-3 px-3.5", GUIDE_TILE_CLASS, tool.comingSoon && "opacity-50")}>
       <AgentBrandIcon id={tool.id} size={20} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[15px] font-medium text-text-primary">{tool.label}</span>
-        <span className="flex items-center gap-1.5 text-[12px] text-text-secondary">
+        <span className="truncate text-headline-medium font-medium text-text-primary">{tool.label}</span>
+        <span className="flex items-center gap-1.5 text-caption-1-regular text-text-secondary">
           <span aria-hidden className={cx("size-1.5 shrink-0 rounded-full", dot)} />
           {status}
           {ready || tool.comingSoon ? null : (
@@ -93,7 +93,7 @@ function EngineInstallRow({
               type="button"
               disabled={phase === "busy"}
               onClick={onAction}
-              className="ml-1 cursor-pointer text-text-primary underline decoration-text-primary/40 underline-offset-[3px] disabled:opacity-40"
+              className="ml-1 cursor-pointer text-text-primary underline decoration-text-primary/40 underline-offset-2 disabled:opacity-40"
             >
               {actionLabel}
             </button>

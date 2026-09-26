@@ -56,7 +56,7 @@ export function McpStoreSection(props: {
                 type="button"
                 onClick={() => setSelectedCategory(cat.id as McpPluginCategory)}
                 className={cx(
-                  "rounded-md px-2.5 py-1 text-[11.5px] font-medium transition-all shrink-0",
+                  "rounded-md px-2.5 py-1 text-caption-2-medium font-medium transition-all shrink-0",
                   isSelected
                     ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
                     : "text-text-secondary hover:text-text-primary"
@@ -105,19 +105,19 @@ export function McpStoreSection(props: {
                       <h4 className="text-caption-1-medium font-semibold text-text-primary">
                         {plugin.name}
                       </h4>
-                      <span className="text-[10px] font-mono text-text-tertiary">
+                      <span className="text-caption-2-regular font-mono text-text-tertiary">
                         {plugin.categoryLabel}
                       </span>
                     </div>
                   </div>
 
-                  <span className="rounded px-1.5 py-0.5 text-[9px] font-mono uppercase bg-background-secondary-default text-text-secondary">
+                  <span className="rounded px-1.5 py-0.5 text-caption-2-regular font-mono uppercase bg-background-secondary-default text-text-secondary">
                     {plugin.transport}
                   </span>
                 </div>
 
                 {/* 描述 */}
-                <p className="mt-2.5 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2">
+                <p className="mt-2.5 text-caption-2-regular text-text-secondary leading-relaxed line-clamp-2">
                   {plugin.description}
                 </p>
 
@@ -127,7 +127,7 @@ export function McpStoreSection(props: {
                     <span
                       key={idx}
                       className={cx(
-                        "inline-flex items-center rounded-md border px-2 py-0.5 text-[10.5px] font-medium transition-colors",
+                        "inline-flex items-center rounded-md border px-2 py-0.5 text-caption-2-medium font-medium transition-colors",
                         plugin.badgeColorClass
                           ? `${plugin.badgeColorClass} border-current/20`
                           : "bg-background-secondary-default text-text-secondary border-separator-border/70"
@@ -140,7 +140,7 @@ export function McpStoreSection(props: {
 
                 {/* 环境变量提示 */}
                 {plugin.envTemplates && plugin.envTemplates.length > 0 ? (
-                  <div className="mt-2.5 flex items-center gap-1 rounded bg-amber-500/5 px-2 py-1 text-[10.5px] text-amber-600 dark:text-amber-400">
+                  <div className="mt-2.5 flex items-center gap-1 rounded bg-status-yellow-background/5 px-2 py-1 text-caption-2-regular text-status-yellow-text dark:text-status-yellow-text">
                     <RiKey2Line className="size-3 shrink-0" />
                     <span className="truncate">
                       {t("pages.mcp.needsConfig", { keys: plugin.envTemplates.map((item) => item.key).join(", ") })}
@@ -152,7 +152,7 @@ export function McpStoreSection(props: {
               {/* 底部命令与操作 */}
               <div className="mt-3.5 flex items-center justify-between border-t border-separator-border/40 pt-2.5 gap-2">
                 <div className="flex items-center gap-1 min-w-0">
-                  <span className="font-mono text-[10px] text-text-tertiary truncate max-w-[120px]">
+                  <span className="font-mono text-caption-2-regular text-text-tertiary truncate max-w-[120px]">
                     {plugin.command || plugin.url}
                   </span>
                   {plugin.docsUrl ? (
@@ -179,11 +179,11 @@ export function McpStoreSection(props: {
                       void onQuickConnect(plugin)
                     }
                   }}
-                  className="gap-1 h-6.5 px-2 text-[11px] shrink-0"
+                  className="gap-1 h-6.5 px-2 text-caption-2-regular shrink-0"
                 >
                   {isConfigured ? (
                     <>
-                      <RiCheckLine className="size-3 text-emerald-500" />
+                      <RiCheckLine className="size-3 text-state-success-text" />
                       <span>{t("pages.mcp.configured")}</span>
                     </>
                   ) : (

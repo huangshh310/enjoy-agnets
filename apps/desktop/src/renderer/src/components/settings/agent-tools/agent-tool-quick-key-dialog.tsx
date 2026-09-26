@@ -217,11 +217,11 @@ export function AgentToolQuickKeyDialog({
         if (!next) resetState()
       }}
     >
-      <DialogContent className="z-[90] max-w-md rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-dropdown select-none">
+      <DialogContent className="z-50 max-w-md rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-dropdown select-none">
         <DialogHeader className="gap-1.5">
           <div className="flex items-center gap-2">
             <AgentBrandIcon id={tool.id} size={24} />
-            <DialogTitle className="text-title-3 font-semibold text-text-primary">
+            <DialogTitle className="text-title-3-semibold text-text-primary">
               {t("settings.agentTools.quickKeyModalTitle", { agent: tool.label })}
             </DialogTitle>
           </div>

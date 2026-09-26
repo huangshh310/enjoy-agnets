@@ -33,11 +33,11 @@ export const EFFORT_LEVELS: EffortMeta[] = [
     desc: "AI SDK provider-default, mapped per model",
     percentage: 12,
     themeColor: "var(--color-sky-400)",
-    barGradient: "bg-linear-to-r from-sky-400 to-blue-500",
+    barGradient: "bg-linear-to-r from-accent-500 to-accent-500",
     glowClass: "shadow-[0_0_12px] shadow-sky-400/40",
-    badgeClass: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
-    activeBgClass: "bg-sky-500/10 text-sky-600 dark:text-sky-300 font-semibold border-sky-500/30",
-    iconColorClass: "text-sky-500"
+    badgeClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500 border-accent-500/20",
+    activeBgClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500 font-semibold border-accent-500/30",
+    iconColorClass: "text-accent-500"
   },
   {
     value: "low",
@@ -48,11 +48,11 @@ export const EFFORT_LEVELS: EffortMeta[] = [
     desc: "Fast & lightweight concise thinking",
     percentage: 34,
     themeColor: "var(--color-emerald-500)",
-    barGradient: "bg-linear-to-r from-emerald-400 to-teal-500",
-    glowClass: "shadow-[0_0_12px] shadow-emerald-400/40",
-    badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-    activeBgClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 font-semibold border-emerald-500/30",
-    iconColorClass: "text-emerald-500"
+    barGradient: "bg-linear-to-r from-state-success-text to-chart-1",
+    glowClass: "shadow-[0_0_12px] shadow-state-success-text/40",
+    badgeClass: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text border-state-success-text/20",
+    activeBgClass: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text font-semibold border-state-success-text/30",
+    iconColorClass: "text-state-success-text"
   },
   {
     value: "medium",
@@ -63,11 +63,11 @@ export const EFFORT_LEVELS: EffortMeta[] = [
     desc: "Balanced thinking depth & speed",
     percentage: 56,
     themeColor: "var(--color-amber-500)",
-    barGradient: "bg-linear-to-r from-amber-400 to-yellow-500",
+    barGradient: "bg-linear-to-r from-status-yellow-text to-status-yellow-text",
     glowClass: "shadow-[0_0_12px] shadow-amber-400/40",
-    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    activeBgClass: "bg-amber-500/10 text-amber-600 dark:text-amber-300 font-semibold border-amber-500/30",
-    iconColorClass: "text-amber-500"
+    badgeClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text border-status-yellow-text/20",
+    activeBgClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text font-semibold border-status-yellow-text/30",
+    iconColorClass: "text-status-yellow-text"
   },
   {
     value: "high",
@@ -78,11 +78,11 @@ export const EFFORT_LEVELS: EffortMeta[] = [
     desc: "Thorough multi-step deep reasoning",
     percentage: 78,
     themeColor: "var(--color-orange-500)",
-    barGradient: "bg-linear-to-r from-orange-400 to-rose-500",
+    barGradient: "bg-linear-to-r from-status-yellow-text to-text-error-primary",
     glowClass: "shadow-[0_0_14px] shadow-orange-400/45",
-    badgeClass: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
-    activeBgClass: "bg-orange-500/10 text-orange-600 dark:text-orange-300 font-semibold border-orange-500/30",
-    iconColorClass: "text-orange-500"
+    badgeClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text border-status-yellow-text/20",
+    activeBgClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text font-semibold border-status-yellow-text/30",
+    iconColorClass: "text-status-yellow-text"
   },
   {
     value: "xhigh",
@@ -93,11 +93,11 @@ export const EFFORT_LEVELS: EffortMeta[] = [
     desc: "Exhaustive deep thinking for complex architectures",
     percentage: 100,
     themeColor: "var(--color-purple-500)",
-    barGradient: "bg-linear-to-r from-purple-500 via-fuchsia-500 to-indigo-500",
+    barGradient: "bg-linear-to-r from-chart-5 via-chart-5 to-accent-500",
     glowClass: "shadow-[0_0_16px] shadow-purple-400/50",
-    badgeClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-    activeBgClass: "bg-purple-500/10 text-purple-600 dark:text-purple-300 font-semibold border-purple-500/30",
-    iconColorClass: "text-purple-500"
+    badgeClass: "bg-chart-5/10 text-chart-5 dark:text-chart-5 border-chart-5/20",
+    activeBgClass: "bg-chart-5/10 text-chart-5 dark:text-chart-5 font-semibold border-chart-5/30",
+    iconColorClass: "text-chart-5"
   }
 ]
 

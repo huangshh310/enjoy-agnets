@@ -8,13 +8,15 @@
     "dev": "turbo run dev --filter=@enjoy-agents/desktop",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint",
+    "lint": "oxlint",
     "test": "turbo run test"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "devDependencies": {
+    "@shadcn/lint": "catalog:",
+    "oxlint": "catalog:",
     "prettier": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:"

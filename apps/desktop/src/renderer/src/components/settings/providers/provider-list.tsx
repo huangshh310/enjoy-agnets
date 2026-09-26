@@ -124,7 +124,7 @@ function ProviderItemRow({
           </span>
 
           {modelCount > 1 ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+            <span className="inline-flex items-center gap-1 rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
               <RiStackLine className="size-3" />
               {t("settings.providers.modelCount", { count: modelCount })}
             </span>
@@ -134,24 +134,24 @@ function ProviderItemRow({
           {pingState?.status === "ok" && typeof pingState.latencyMs === "number" ? (
             <span
               className={cx(
-                "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-mono font-medium",
+                "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-caption-2-medium font-mono font-medium",
                 pingState.latencyMs < 500
                   ? "bg-state-success-text/10 text-state-success-text"
                   : pingState.latencyMs < 1500
-                    ? "bg-state-warning-text/10 text-state-warning-text"
-                    : "bg-state-error-text/10 text-state-error-text"
+                    ? "bg-status-yellow-text/10 text-status-yellow-text"
+                    : "bg-text-error-primary/10 text-text-error-primary"
               )}
             >
               <RiFlashlightLine className="size-3 shrink-0" />
               <span>{pingState.latencyMs}ms</span>
               <span className="opacity-75">·</span>
-              <span className="text-[10px]">
+              <span className="text-caption-2-regular">
                 {pingState.latencyMs < 500 ? "极佳" : pingState.latencyMs < 1500 ? "良好" : "偏慢"}
               </span>
             </span>
           ) : pingState?.status === "error" ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-state-error-text/10 px-2 py-0.5 text-[11px] font-medium text-state-error-text">
-              <span className="size-1.5 rounded-full bg-state-error-text" />
+            <span className="inline-flex items-center gap-1 rounded-md bg-text-error-primary/10 px-2 py-0.5 text-caption-2-medium font-medium text-text-error-primary">
+              <span className="size-1.5 rounded-full bg-text-error-primary" />
               {pingState.message || t("settings.providers.failed")}
             </span>
           ) : null}
@@ -260,7 +260,7 @@ function ProviderItemRow({
           variant="ghost"
           size="sm"
           onClick={onRemove}
-          className="h-8 w-8 rounded-xl p-0 text-text-tertiary hover:bg-background-negative-hover/20 hover:text-state-error-text"
+          className="h-8 w-8 rounded-xl p-0 text-text-tertiary hover:bg-background-tertiary-error hover:text-text-error-primary"
           aria-label={t("settings.providers.deleteAria", { name: profile.name })}
         >
           <RiDeleteBinLine className="size-4" />

@@ -76,16 +76,16 @@ export function ProfileActivityHeatmap({
       ) : null}
 
       <div className="w-full overflow-x-auto pb-1">
-        <div className="flex w-full min-w-[640px] items-stretch justify-between gap-[3px]">
+        <div className="flex w-full min-w-2xl items-stretch justify-between gap-0.5">
           {columns.map((week, colIdx) => (
-            <div key={week[0]?.date ?? colIdx} className="flex flex-1 flex-col gap-[3px]">
+            <div key={week[0]?.date ?? colIdx} className="flex flex-1 flex-col gap-0.5">
               {week.map((cell) => (
                 <div
                   key={cell.date}
                   onMouseEnter={() => setHoveredCell(cell)}
                   onMouseLeave={() => setHoveredCell(null)}
                   className={cx(
-                    "aspect-square w-full cursor-pointer rounded-[2.5px] transition-all",
+                    "aspect-square w-full cursor-pointer rounded-sm transition-all",
                     HEATMAP_LEVEL_CLASSES[cell.level]
                   )}
                   title={t("pages.account.heatmap.tooltip", { date: cell.date, n: cell.count })}
@@ -108,11 +108,11 @@ export function ProfileActivityHeatmap({
         </span>
         <div className="flex items-center gap-1.5">
           <span>{t("pages.account.heatmap.less")}</span>
-          <div className="flex items-center gap-[2.5px]">
+          <div className="flex items-center gap-0.5">
             {([0, 1, 2, 3, 4] as const).map((level) => (
               <span
                 key={level}
-                className={cx("size-2.5 rounded-[2px]", HEATMAP_LEVEL_CLASSES[level])}
+                className={cx("size-2.5 rounded-sm", HEATMAP_LEVEL_CLASSES[level])}
               />
             ))}
           </div>

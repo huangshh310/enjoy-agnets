@@ -46,7 +46,7 @@ export const STATUS_CONFIG: Record<
   added: {
     mark: "A",
     tone: "text-state-success-text",
-    bgTone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    bgTone: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text border-state-success-text/20",
     label: "新增"
   },
   modified: {
@@ -58,13 +58,13 @@ export const STATUS_CONFIG: Record<
   deleted: {
     mark: "D",
     tone: "text-text-error-primary",
-    bgTone: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    bgTone: "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary border-border-error-default/20",
     label: "删除"
   },
   untracked: {
     mark: "U",
-    tone: "text-amber-500",
-    bgTone: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    tone: "text-status-yellow-text",
+    bgTone: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text border-status-yellow-text/20",
     label: "未跟踪"
   }
 }
@@ -81,12 +81,12 @@ export const BRANCH_LANE_COLORS = [
 
 /** 根据名字字符串确定性计算作者微标背景色 */
 export const AUTHOR_COLOR_PALETTES = [
-  "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/25",
-  "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/25",
-  "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/25",
-  "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25",
-  "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/25",
-  "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25"
+  "bg-accent-500/15 text-accent-500 dark:text-accent-500 border-accent-500/25",
+  "bg-chart-1/15 text-chart-1 dark:text-chart-1 border-chart-1/25",
+  "bg-background-tertiary-error/15 text-text-error-primary dark:text-text-error-primary border-border-error-default/25",
+  "bg-status-yellow-background/15 text-status-yellow-text dark:text-status-yellow-text border-status-yellow-text/25",
+  "bg-accent-500/15 text-accent-500 dark:text-accent-500 border-accent-500/25",
+  "bg-chart-5/15 text-chart-5 dark:text-chart-5 border-chart-5/25"
 ] as const
 
 /** 常用 Conventional Commit 规范前缀推荐芯片 */

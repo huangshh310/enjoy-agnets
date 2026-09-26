@@ -29,7 +29,7 @@ export function ProfileActivityCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <span className="text-[11px] font-medium text-text-tertiary">
+            <span className="text-caption-2-medium font-medium text-text-tertiary">
               {t("pages.account.hero.contributions")}
             </span>
             <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export function ProfileActivityCard({
               </span>
               <span
                 className={cx(
-                  "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-[11px] font-semibold",
+                  "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
                   growthBadgeClass(summary.contributionsGrowth, "success")
                 )}
               >

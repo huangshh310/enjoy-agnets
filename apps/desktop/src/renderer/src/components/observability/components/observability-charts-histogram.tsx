@@ -13,32 +13,32 @@ function getLatencyBuckets(t: TranslateFn) {
     {
       id: "fast",
       label: t("pages.observability.bucketLt200"),
-      color: "bg-emerald-500",
-      textColor: "text-emerald-600 dark:text-emerald-400"
+      color: "bg-state-success-base",
+      textColor: "text-state-success-text dark:text-state-success-text"
     },
     {
       id: "smooth",
       label: t("pages.observability.bucket200to1s"),
-      color: "bg-blue-500",
-      textColor: "text-blue-600 dark:text-blue-400"
+      color: "bg-accent-500",
+      textColor: "text-accent-500 dark:text-accent-500"
     },
     {
       id: "normal",
       label: t("pages.observability.bucket1to3s"),
-      color: "bg-cyan-500",
-      textColor: "text-cyan-600 dark:text-cyan-400"
+      color: "bg-chart-1",
+      textColor: "text-chart-1 dark:text-chart-1"
     },
     {
       id: "slow",
       label: t("pages.observability.bucket3to10s"),
-      color: "bg-amber-500",
-      textColor: "text-amber-600 dark:text-amber-400"
+      color: "bg-status-yellow-background",
+      textColor: "text-status-yellow-text dark:text-status-yellow-text"
     },
     {
       id: "long",
       label: t("pages.observability.bucketGt10s"),
-      color: "bg-rose-500",
-      textColor: "text-rose-600 dark:text-rose-400"
+      color: "bg-background-tertiary-error",
+      textColor: "text-text-error-primary dark:text-text-error-primary"
     }
   ]
 }
@@ -88,17 +88,17 @@ export function ObservabilityHistogramChart(props: { metrics: TelemetryMetric[] 
     <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
       <div className="flex items-center justify-between border-b border-separator-border/50 pb-2.5">
         <div className="flex items-center gap-2">
-          <RiBarChartHorizontalLine className="size-4 text-cyan-500" />
+          <RiBarChartHorizontalLine className="size-4 text-chart-1" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.observability.histogramTitle")}
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-text-tertiary">
+        <span className="text-caption-2-regular font-mono text-text-tertiary">
           {t("pages.observability.fiveBuckets")}
         </span>
       </div>
 
-      <div className="flex flex-col gap-2 font-mono text-[11px]">
+      <div className="flex flex-col gap-2 font-mono text-caption-2-regular">
         {bucketStats.map((bucket) => (
           <div key={bucket.id} className="flex flex-col gap-1">
             <div className="flex items-center justify-between">

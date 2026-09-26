@@ -102,7 +102,7 @@ export function ObservabilityThroughputChart(props: { metrics: TelemetryMetric[]
             <span className="text-text-secondary">{t("pages.observability.rateToks")}</span>
           </div>
           {maxTps > 0 ? (
-            <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 font-mono text-[10px] text-text-tertiary">
+            <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular text-text-tertiary">
               Peak: {maxTps} t/s
             </span>
           ) : null}
@@ -212,11 +212,11 @@ function ThroughputTooltip({
   if (!data) return null
 
   return (
-    <div className="flex min-w-[11rem] flex-col gap-1.5 rounded-xl border border-separator-border/80 bg-background-primary-default p-2.5 font-mono text-[11px] shadow-lg">
+    <div className="flex min-w-[11rem] flex-col gap-1.5 rounded-xl border border-separator-border/80 bg-background-primary-default p-2.5 font-mono text-caption-2-regular shadow-lg">
       <div className="flex items-center justify-between gap-2 border-b border-separator-border/50 pb-1.5">
         <span className="font-semibold text-text-primary">{data.fullTime}</span>
         {data.tokensPerSecond > 0 ? (
-          <span className="rounded bg-chart-success/15 px-1 py-0.5 text-[9.5px] font-bold text-chart-success-text">
+          <span className="rounded bg-chart-success/15 px-1 py-0.5 text-caption-2-bold font-bold text-chart-success-text">
             {data.tokensPerSecond} t/s
           </span>
         ) : null}

@@ -76,13 +76,13 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
         <div className="flex items-center justify-between px-1 pt-0.5 pb-2">
           <div className="flex items-center gap-1.5">
             <RiBrainLine className={cx("size-4", currentMeta.iconColorClass)} />
-            <span className="text-[12px] font-semibold text-text-primary">
+            <span className="text-caption-1-semibold font-semibold text-text-primary">
               {t("chat.effortEnergy")}
             </span>
           </div>
           <span
             className={cx(
-              "rounded-full px-2 py-0.5 text-[10px] font-bold border transition-colors",
+              "rounded-full px-2 py-0.5 text-caption-2-bold font-bold border transition-colors",
               currentMeta.badgeClass
             )}
           >
@@ -98,7 +98,7 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
             size="sm"
             showLabels={false}
           />
-          <div className="flex items-center justify-between px-0.5 text-[10px] text-text-tertiary">
+          <div className="flex items-center justify-between px-0.5 text-caption-2-regular text-text-tertiary">
             <span>{t("chat.effortFast")}</span>
             <span>{t("chat.effortBalanced")}</span>
             <span>{t("chat.effortDeep")}</span>
@@ -131,10 +131,10 @@ export function ReasoningEffortToggle({ compact = false }: { compact?: boolean }
                     )}
                   />
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[12px] font-medium leading-tight text-text-primary">
+                    <span className="text-caption-1-medium font-medium leading-tight text-text-primary">
                       {opt.label} ({opt.shortLabel})
                     </span>
-                    <span className="text-[10px] text-text-tertiary truncate mt-0.5">
+                    <span className="text-caption-2-regular text-text-tertiary truncate mt-0.5">
                       {opt.desc}
                     </span>
                   </div>

@@ -1,6 +1,6 @@
 # spec/ui
 
-> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-25（空会话开始面铺满剩余高度后垂直居中）
+> 三张浮在 Mist 画布上的卡片，不是营销落地页。最后更新：2026-09-26（接入 `@shadcn/lint` / oxlint，调用侧 className 为 error）
 
 视觉真源（P0 探索/执行 + Sources）：[`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)（锁 tip `80faf22`）。完成条「在浏览器打开」：[`../previews/p0-f-preview-open.html`](../previews/p0-f-preview-open.html)（锁 tip `9a1a4ca`）。本轮来源详情：[`../previews/p0-g-sources-detail.html`](../previews/p0-g-sources-detail.html)（锁 tip `76b5ecd`）。会话作业三件套：[`../previews/m-cbd-session-ops.html`](../previews/m-cbd-session-ops.html)（【视觉真源】M-CBD；账本+来源列密日志观感已被下一份取代）。账本/来源可读性：[`../previews/m-d-g-ledger-sources.html`](../previews/m-d-g-ledger-sources.html)（【视觉真源】M-D + P0-G，锁 tip `b1721a7`；M-CBD 产品锁其余不变，F1 不在范围）。I1 同引擎中途换模型（设计锁，不宣称应用 1:1）：[`../previews/i1-mid-model-switch.html`](../previews/i1-mid-model-switch.html)。P0 Composer 铬条回归（C1 全引擎探索\|执行 · 思考按能力 · I1 图标）：[`../previews/p0-composer-chrome.html`](../previews/p0-composer-chrome.html)（锁 tip `4dc2ac4`）。P0 Composer 输入区瘦身（密度与布局压过 chrome；C1 / I1 / P0-S 能力不砍；预览 tip `64d26b6` / blob `c545aeb`，不宣称像素 1:1）：[`../previews/p0-composer-slim.html`](../previews/p0-composer-slim.html)；产品锁 [`../references/p0-composer-slim.md`](../references/p0-composer-slim.md)。P0-S Skills/MCP 宿主透传（Composer 一行芯片；预览仍是视觉锁，不宣称像素 1:1）：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)。I4 本机 Automations（`#/settings/automations` 已接线列表/抽屉/本机 cron；预览仍是视觉锁，不宣称像素 1:1）：[`../previews/i4-automations.html`](../previews/i4-automations.html)。I4-P1 保存后 / 本机 webhook（产品短锁未落地；视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)，不宣称像素 1:1）：[`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md)。P2 命名身份（引擎可选显示名已接线：设置字段 / Picker「重命名」；芯片/Inbox 人话；侧栏会话行主行是会话题；空回退品牌名+模型；预览仍是视觉锁，不宣称像素 1:1）：[`../previews/p2-agent-display-name.html`](../previews/p2-agent-display-name.html)；产品锁 [`../references/p2-agent-display-name.md`](../references/p2-agent-display-name.md)。
 
@@ -32,7 +32,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
  ## 不变量
 
- - 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。
+ - 视觉语言只走 BoardUI **语义 token**。禁止生造第二套灰阶，禁止 `text-sm font-medium` 拼字号。调用侧 `className` 由仓库根 `pnpm lint`（oxlint + `@shadcn/lint`，error）检查；`packages/ui/components/**` 关闭 `no-restyle` / `no-arbitrary-values`（控件自己管皮）。
 - 严格遵守根目录 `DESIGN.md` 定义的 **8 大命名 Anti-Patterns 禁令**（`Centered-Marketing-Hero`、`Generic-SaaS-Card`、`Invented-Raw-Styles`、`Cramped-Evidence-Table`、`Deconstructed-Typography`、`Viewport-Trapped-Layout`、`Fake-Status-Chrome`、`Unsafe-Native-Dialog`）。
  - 运行时组件：shadcn/ui + AI Elements。不要再装 BoardUI `components/base/*` 做新控件。
 - 保留 **ThemeToggle**（点击原点圆形揭示）和 **ComposerLoader**（composer 虹彩描边）。昼/夜与多语言采用标题栏 24px 原生微控件（`h-6`），严格水平对齐窗口控制按钮，禁止在现代标题栏上使用粗糙错位的手绘卡通开关破坏质感。侧栏底栏用户卡片保持轻量 Ghost / 次级态，长邮箱收进弹出面板，严禁在侧栏狭窄区域产生破相硬截断。
@@ -48,6 +48,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 | 基础控件 | `packages/ui/components/ui/` | Button、Dialog、Tabs… |
 | Agent 铬 | `packages/ui/components/ai-elements/` | Conversation、Message、PromptInput、Reasoning、Tool、Image Generation、Loading State、Tool Chips |
 | 产品屏 | `apps/desktop/.../ai-chat/` | Shell、sidebar、workspace 接线 |
+| Lint | 根 `.oxlintrc.json` | `@shadcn/lint` 经 oxlint 检查调用侧 className；`no-raw-colors` / `no-arbitrary-values` / `no-restyle` 为 error |
 
 类名合并：`cn()` 或 `cx()`。全屏高度用 `min-h-[100dvh]` / `h-full`，不用 `h-screen`。
 
@@ -59,7 +60,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 权威设计规约与 Anti-Patterns：[../../DESIGN.md](../../DESIGN.md)
  - BoardUI 短规则：`packages/ui/AGENTS.md`、`apps/desktop/.cursor/rules/boardui.mdc`
 - 皮肤 CSS：`packages/ui/styles/skins/`；`globals.css` 依次引 `glass.css` + `glass-canvas.css`；滤镜 `layout/liquid-glass-filters.tsx`；挂载 `use-theme-skin.ts` + `index.html` 内联 `data-skin`
-- 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`
+- 静态设计检查：`apps/desktop/src/renderer/src/lib/design-rules.ts`（Anti-Patterns / `h-screen`）
+- 设计系统 lint：仓库根 `.oxlintrc.json`（oxlint + `@shadcn/lint`）；命令 `pnpm lint`
 - 工作区壳：`apps/desktop/src/renderer/src/components/app-shell/app-shell.tsx`（轨道、情境、Chat 工作台、Inspector）
 - Chat 工作台：`app-shell/chat-stage.tsx`；会话树：`ai-chat-sidebar.tsx`；动作 / 仓库树 / 用户与团队卡片：`ai-chat/sidebar/`（会话行 `sidebar-session-row.tsx` + `session-agent-mark.tsx` + `session-activity.ts` / `sidebar-active-sessions.tsx`）。P2 显示名：`lib/agent-display-name.ts` + `hooks/use-engine-display-name.ts`；设置字段 `settings/agent-tools/display-name/`；Picker `agent-picker/engine-rename-action.tsx`
 - Composer 底栏显隐：`composer/composer-footer.tsx` 读 `composerChromeFor`；模型选择器 `AgentPicker` 与思考小档下沉至底栏左侧工具条（与附件、`ComputerUseChip`（电脑操控开启且执行态）、`HostInjectBar`、用量并列），对齐 Cursor / Windsurf / Claude 等主流 AI IDE 底部操作流；顶栏 `composer-top-chrome.tsx` 仅保留轻量探索/执行分段。目标/阶段：`composer-overflow-menu.tsx`；I1 换模逻辑：`composer/model-switch/` + `requestModelSwitch`；思考铬：`composer/thinking/` 读 `composerThinkingChrome`。铬条**能力**仍认 chrome / I1 / C1；**密度/布局**认 slim 锁与本页当前真相
@@ -95,6 +97,8 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - UI 包语言：`packages/ui/i18n/ui-locale.ts`
 
 ## 已知坑
+
+- **隐患**：`no-inline-styles` / `no-unknown-classes` / `require-static-classes` 尚未打开（玻璃皮肤指针、mascot、动态 className 会刷屏）。桌面 `components.json` 的 `@/components/ui` 必须能经 `apps/desktop/tsconfig.json` paths 落到 `packages/ui`，否则 variant/size 建议是空的。本机若在用户目录装了旧 `cn@0.2.6`，oxlint 会提示改用捆绑的 0.3.2 语法，不影响本次检查。调用侧可以给控件加 BoardUI token（layout/color/typography/spacing/shape）；不要再写 raw palette 或 `text-[11px]`。
 
 - **隐患**：看板/自动化若仍画会话顶栏 + Composer，用户会以为还在当前对话。正确做法：`#/kanban` / `#/automations` 只画各自表面；⌘F 只在 `data-chat-surface=thread` 时打开。无工作区也要进这两页，不要被 `#/` 的「打开工作区」挡住。「新对话」是动作不是地点，不要 `pathname==="/"` 时一直高亮。
 - **隐患**：待审查把验收闸做成第二张 `shadow-card`，不能折叠、和叠轨「n 个文件已改」两套皮。正确做法：待验收也走 `ComposerStackedRow`（默认收起，点行展开文件）；打回/通过钉在行右，不要另做圆角大卡。

@@ -53,9 +53,9 @@ export function TraceWaterfallTree(props: {
   })
 
   return (
-    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px] min-h-[360px] h-full">
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-caption-2-regular min-h-[360px] h-full">
       {/* 1. 图例标签栏 (Legend) */}
-      <div className="flex items-center justify-between gap-3 bg-background-secondary-default/40 px-4 py-2 border-b border-separator-border/60 overflow-x-auto whitespace-nowrap text-[10.5px]">
+      <div className="flex items-center justify-between gap-3 bg-background-secondary-default/40 px-4 py-2 border-b border-separator-border/60 overflow-x-auto whitespace-nowrap text-caption-2-regular">
         <div className="flex items-center gap-3">
           {Object.entries(kinds).map(([k, cfg]) => (
             <div key={k} className="flex items-center gap-1.5 shrink-0">
@@ -65,7 +65,7 @@ export function TraceWaterfallTree(props: {
           ))}
         </div>
         <div className="flex items-center gap-2 text-text-tertiary">
-          <span className="size-2 rounded-full bg-amber-500" />
+          <span className="size-2 rounded-full bg-status-yellow-background" />
           <span>TTFO 首字</span>
           <span className="size-2 rounded-full bg-accent-500" />
           <span>流式生成</span>
@@ -82,7 +82,7 @@ export function TraceWaterfallTree(props: {
             <span
               key={idx}
               style={{ left: `${tick.ratio * 92 + 2}%` }}
-              className="absolute text-[9.5px] text-text-tertiary -translate-x-1/2 select-none"
+              className="absolute text-caption-2-regular text-text-tertiary -translate-x-1/2 select-none"
             >
               {tick.label}
             </span>
@@ -152,7 +152,7 @@ export function TraceWaterfallTree(props: {
                 <span className="truncate text-text-primary">{node.name}</span>
 
                 {node.status === "error" ? (
-                  <span className="rounded bg-rose-500/10 px-1 py-0.2 text-[8.5px] font-bold text-rose-600 dark:text-rose-400 shrink-0">
+                  <span className="rounded bg-background-tertiary-error/10 px-1 py-0.2 text-caption-2-bold font-bold text-text-error-primary dark:text-text-error-primary shrink-0">
                     ERR
                   </span>
                 ) : null}
@@ -163,7 +163,7 @@ export function TraceWaterfallTree(props: {
                 {node.model ? (
                   <ModelBrandIcon modelId={node.model} size={12} className="shrink-0" />
                 ) : null}
-                <span className="text-[10px] text-text-tertiary truncate">
+                <span className="text-caption-2-regular text-text-tertiary truncate">
                   {node.operation} {node.model ? `· ${node.model}` : ""}
                 </span>
               </div>
@@ -186,17 +186,17 @@ export function TraceWaterfallTree(props: {
                     width: `${widthPercent}%`,
                     backgroundColor: node.status === "error" ? "var(--color-chart-danger)" : cfg.color
                   }}
-                  className="relative h-4 rounded-sm flex items-center justify-end px-1 text-[9.5px] font-bold text-white shadow-2xs transition-all select-none overflow-hidden"
+                  className="relative h-4 rounded-sm flex items-center justify-end px-1 text-caption-2-bold font-bold text-white shadow-2xs transition-all select-none overflow-hidden"
                   title={`${node.name}: ${node.durationMs}ms (offset: ${node.startOffsetMs}ms)`}
                 >
                   {/* TTFO 阶段微观内切色块 */}
                   {hasTtfoSplit ? (
                     <div
                       style={{ width: `${ttfoWidthRatio}%` }}
-                      className="absolute inset-y-0 left-0 bg-amber-500/90 border-r border-white/20 flex items-center px-0.5 overflow-hidden"
+                      className="absolute inset-y-0 left-0 bg-status-yellow-background/90 border-r border-white/20 flex items-center px-0.5 overflow-hidden"
                       title={`TTFO: ${node.ttfoMs}ms`}
                     >
-                      <span className="text-[8px] text-amber-950 font-bold truncate">T</span>
+                      <span className="text-caption-2-bold text-status-yellow-text font-bold truncate">T</span>
                     </div>
                   ) : null}
 
@@ -209,7 +209,7 @@ export function TraceWaterfallTree(props: {
       </div>
 
       {/* 底部运行摘要 */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-separator-border/40 bg-background-secondary-default/20 text-[10.5px] text-text-tertiary mt-auto">
+      <div className="flex items-center justify-between px-4 py-2 border-t border-separator-border/40 bg-background-secondary-default/20 text-caption-2-regular text-text-tertiary mt-auto">
         <span>已还原 {allRows.length} 个 Span 阶段</span>
         <span>端到端总时延: {totalDurationMs}ms</span>
       </div>

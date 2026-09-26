@@ -14,9 +14,9 @@ export function McpTrustConfirm({
 }) {
   const t = useT()
   return (
-    <div className="mt-2.5 flex flex-col gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 p-3">
+    <div className="mt-2.5 flex flex-col gap-2 rounded-xl border border-status-yellow-text/40 bg-status-yellow-background/5 p-3">
       <div className="flex items-start gap-2.5">
-        <RiShieldCheckLine className="mt-0.5 size-4 shrink-0 text-amber-500" />
+        <RiShieldCheckLine className="mt-0.5 size-4 shrink-0 text-status-yellow-text" />
         <div className="min-w-0 flex-1">
           <h5 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.mcp.trustSentence")}

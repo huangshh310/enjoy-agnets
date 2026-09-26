@@ -77,7 +77,7 @@ export function ProviderPresetCard({
                     }
                   }}
                   className={cx(
-                    "rounded-md border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap shrink-0 transition-all",
+                    "rounded-md border px-2 py-0.5 text-caption-2-medium font-medium whitespace-nowrap shrink-0 transition-all",
                     isHighlighted
                       ? "border-accent-500/50 bg-accent-500/10 text-accent-600 font-semibold shadow-2xs"
                       : "border-border-button-default bg-background-secondary-default text-text-tertiary",
@@ -104,7 +104,7 @@ export function ProviderPresetCard({
 
       {/* 底部：内置模型与快捷添加按钮 */}
       <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3">
-        <span className="truncate font-mono text-[11px] text-text-tertiary max-w-[160px]">
+        <span className="truncate font-mono text-caption-2-regular text-text-tertiary max-w-[160px]">
           {preset.models[0]?.label || preset.models[0]?.id || t("settings.providers.customFallback")}
         </span>
 

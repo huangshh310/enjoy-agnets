@@ -130,7 +130,7 @@ export function SshHostFields({
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
-        <p className="text-[11px] text-text-tertiary leading-normal">{t("settings.workspace.sshPasswordHint")}</p>
+        <p className="text-caption-2-regular text-text-tertiary leading-normal">{t("settings.workspace.sshPasswordHint")}</p>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -139,7 +139,7 @@ export function SshHostFields({
             <RiKey2Line className="size-3.5 text-text-tertiary" />
             <span>{t("settings.workspace.sshKeyPath")}</span>
           </Label>
-          <span className="text-[11px] text-text-tertiary">{t("settings.workspace.sshAgentDefault")}</span>
+          <span className="text-caption-2-regular text-text-tertiary">{t("settings.workspace.sshAgentDefault")}</span>
         </div>
         <div className="flex items-center gap-2">
           <Input
@@ -159,7 +159,7 @@ export function SshHostFields({
             <span>{t("settings.workspace.sshPickKey")}</span>
           </Button>
         </div>
-        <p className="text-[11px] text-text-tertiary leading-normal">
+        <p className="text-caption-2-regular text-text-tertiary leading-normal">
           {t("settings.workspace.sshKeyPathHint")}
         </p>
       </div>

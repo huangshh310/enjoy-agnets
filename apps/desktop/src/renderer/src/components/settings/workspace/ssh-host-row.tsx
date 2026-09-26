@@ -82,10 +82,10 @@ export function SshHostRow({
               <span className="text-body-medium font-semibold text-text-primary truncate">
                 {host.alias}
               </span>
-              <span className="rounded-md border border-separator-border bg-background-primary-default px-1.5 py-0.5 text-[10px] font-medium text-text-tertiary">
+              <span className="rounded-md border border-separator-border bg-background-primary-default px-1.5 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
                 {sourceLabel}
               </span>
-              <span className="rounded-md bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-medium text-accent-600 dark:text-accent-400">
+              <span className="rounded-md bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-medium text-accent-600 dark:text-accent-400">
                 {t("settings.workspace.sshProjectCount", { count: host.workspaceCount })}
               </span>
             </div>
@@ -96,7 +96,7 @@ export function SshHostRow({
                   type="button"
                   onClick={onOpenKey}
                   title="在系统文件管理器中定位密钥文件"
-                  className="inline-flex items-center gap-1 font-mono text-[11px] text-text-tertiary hover:text-accent-500 bg-background-primary-default hover:bg-background-secondary-default px-1.5 py-0.5 rounded border border-separator-border/60 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 font-mono text-caption-2-regular text-text-tertiary hover:text-accent-500 bg-background-primary-default hover:bg-background-secondary-default px-1.5 py-0.5 rounded border border-separator-border/60 transition-colors cursor-pointer"
                 >
                   <RiKey2Line className="size-3 text-accent-500" />
                   <span className="truncate max-w-[140px]">{keyBasename}</span>
@@ -116,18 +116,18 @@ export function SshHostRow({
             onClick={() => void handleProbe()}
             className={`h-8 gap-1.5 text-caption-2-medium cursor-pointer transition-colors ${
               probeStatus === "success"
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                ? "border-state-success-text/40 bg-state-success-text/10 text-state-success-text dark:text-state-success-text hover:bg-state-success-text/20"
                 : probeStatus === "failed"
-                  ? "border-rose-500/40 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20"
+                  ? "border-border-error-default/40 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary hover:bg-background-tertiary-error/20"
                   : ""
             }`}
           >
             {probeStatus === "probing" ? (
               <RiLoader4Line className="size-3.5 animate-spin text-accent-500" />
             ) : probeStatus === "success" ? (
-              <RiCheckLine className="size-3.5 text-emerald-500" />
+              <RiCheckLine className="size-3.5 text-state-success-text" />
             ) : probeStatus === "failed" ? (
-              <RiAlertLine className="size-3.5 text-rose-500" />
+              <RiAlertLine className="size-3.5 text-text-error-primary" />
             ) : (
               <RiRadarLine className="size-3.5 text-text-secondary" />
             )}
@@ -158,7 +158,7 @@ export function SshHostRow({
             type="button"
             disabled={busy}
             onClick={onRemove}
-            className="h-8 gap-1.5 text-caption-2-medium text-text-tertiary hover:text-state-danger-text hover:bg-state-danger-text/10 cursor-pointer"
+            className="h-8 gap-1.5 text-caption-2-medium text-text-tertiary hover:text-text-error-primary hover:bg-text-error-primary/10 cursor-pointer"
           >
             <RiDeleteBinLine className="size-3.5" />
             <span>{t("settings.workspace.sshRemoveHost")}</span>
@@ -168,16 +168,16 @@ export function SshHostRow({
 
       {/* ─── 探测状态反馈条 ────────────────────────────────────── */}
       {probeStatus === "success" ? (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
-          <RiCheckLine className="size-3.5 shrink-0 text-emerald-500" />
+        <div className="flex items-center gap-2 rounded-lg border border-state-success-text/20 bg-state-success-text/10 px-3 py-1.5 text-caption-2-regular text-state-success-text dark:text-state-success-text">
+          <RiCheckLine className="size-3.5 shrink-0 text-state-success-text" />
           <span>网络连通正常，SSH 握手与端口访问成功。</span>
         </div>
       ) : probeStatus === "failed" && probeMessage ? (
-        <div className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 p-2.5 text-[11px] text-rose-600 dark:text-rose-400">
-          <RiAlertLine className="size-3.5 shrink-0 mt-0.5 text-rose-500" />
+        <div className="flex items-start gap-2 rounded-lg border border-border-error-default/20 bg-background-tertiary-error/10 p-2.5 text-caption-2-regular text-text-error-primary dark:text-text-error-primary">
+          <RiAlertLine className="size-3.5 shrink-0 mt-0.5 text-text-error-primary" />
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-semibold">探测失败</span>
-            <span className="font-mono text-[10.5px] break-all leading-normal opacity-90">
+            <span className="font-mono text-caption-2-semibold break-all leading-normal opacity-90">
               {probeMessage}
             </span>
           </div>

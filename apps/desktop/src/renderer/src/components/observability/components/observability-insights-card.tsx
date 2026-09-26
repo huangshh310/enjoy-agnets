@@ -109,7 +109,7 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
           <span className="text-caption-1-medium font-semibold text-text-primary">
             AI APM 智能性能洞察与优化建议
           </span>
-          <span className="rounded-full bg-accent-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent-600 dark:text-accent-400">
+          <span className="rounded-full bg-accent-500/10 px-2 py-0.5 font-mono text-caption-2-semibold font-semibold text-accent-600 dark:text-accent-400">
             基于 {insights.total} 条采样实时生成
           </span>
         </div>
@@ -117,7 +117,7 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-caption-2-regular text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
         >
           <span>{collapsed ? "展开诊断" : "收起"}</span>
           {collapsed ? <RiArrowDownSLine className="size-3.5" /> : <RiArrowUpSLine className="size-3.5" />}
@@ -125,14 +125,14 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
       </div>
 
       {!collapsed && (
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 font-mono text-[11px]">
+        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 font-mono text-caption-2-regular">
           {/* 洞察 1: 延迟与长尾 */}
           <div className="flex flex-col justify-between rounded-lg border border-separator-border/60 bg-background-primary-default/80 p-2.5 shadow-3xs">
-            <div className="flex items-center gap-1.5 text-blue-500">
+            <div className="flex items-center gap-1.5 text-accent-500">
               <RiTimerLine className="size-3.5 shrink-0" />
               <span className="font-semibold text-text-primary">P95 长尾延迟</span>
             </div>
-            <p className="mt-1.5 text-[10.5px] leading-relaxed text-text-secondary">
+            <p className="mt-1.5 text-caption-2-regular leading-relaxed text-text-secondary">
               P95 延迟为{" "}
               <strong className="text-text-primary">{formatLatency(insights.p95Duration)}</strong>
               {insights.slowestModel ? (
@@ -148,13 +148,13 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
 
           {/* 洞察 2: 异常溯源 */}
           <div className="flex flex-col justify-between rounded-lg border border-separator-border/60 bg-background-primary-default/80 p-2.5 shadow-3xs">
-            <div className="flex items-center gap-1.5 text-rose-500">
+            <div className="flex items-center gap-1.5 text-text-error-primary">
               <RiAlertLine className="size-3.5 shrink-0" />
               <span className="font-semibold text-text-primary">运行稳定性</span>
             </div>
-            <p className="mt-1.5 text-[10.5px] leading-relaxed text-text-secondary">
+            <p className="mt-1.5 text-caption-2-regular leading-relaxed text-text-secondary">
               {insights.failedCount === 0 ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="text-state-success-text dark:text-state-success-text font-medium">
                   全部调用均正常完成，当前窗口未捕获任何异常。
                 </span>
               ) : (
@@ -162,13 +162,13 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
                   成功率{" "}
                   <strong
                     className={
-                      insights.successRate >= 80 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600"
+                      insights.successRate >= 80 ? "text-state-success-text dark:text-state-success-text" : "text-text-error-primary"
                     }
                   >
                     {insights.successRate.toFixed(1)}%
                   </strong>
                   ，主要异常归因于{" "}
-                  <span className="font-semibold text-rose-500">
+                  <span className="font-semibold text-text-error-primary">
                     {insights.topError?.type ?? "未知"}
                   </span>
                   （{insights.topError?.count} 次）。
@@ -179,17 +179,17 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
 
           {/* 洞察 3: 首字响应与流式效率 */}
           <div className="flex flex-col justify-between rounded-lg border border-separator-border/60 bg-background-primary-default/80 p-2.5 shadow-3xs">
-            <div className="flex items-center gap-1.5 text-amber-500">
+            <div className="flex items-center gap-1.5 text-status-yellow-text">
               <RiFlashlightLine className="size-3.5 shrink-0" />
               <span className="font-semibold text-text-primary">流式首字与吞吐</span>
             </div>
-            <p className="mt-1.5 text-[10.5px] leading-relaxed text-text-secondary">
+            <p className="mt-1.5 text-caption-2-regular leading-relaxed text-text-secondary">
               首字平均延时{" "}
               <strong className="text-text-primary">
                 {insights.avgTtfo > 0 ? formatLatency(insights.avgTtfo) : "—"}
               </strong>
               ，包含思考推理首包；吞吐峰值达{" "}
-              <strong className="text-emerald-600 dark:text-emerald-400">{insights.peakTps} tok/s</strong>。
+              <strong className="text-state-success-text dark:text-state-success-text">{insights.peakTps} tok/s</strong>。
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export function ObservabilityInsightsCard(props: { metrics: TelemetryMetric[] })
               <RiLightbulbLine className="size-3.5 shrink-0" />
               <span className="font-semibold text-text-primary">场景特征与建议</span>
             </div>
-            <p className="mt-1.5 text-[10.5px] leading-relaxed text-text-secondary">
+            <p className="mt-1.5 text-caption-2-regular leading-relaxed text-text-secondary">
               <strong className="text-text-primary">{insights.agentPercent}%</strong> 请求为 Agent 多轮调度；
               {insights.failedCount > 0 ? "建议为高频 Provider 配置短超时熔断与退避重试。" : "建议开启流式思考块提前渲染体验。"}
             </p>

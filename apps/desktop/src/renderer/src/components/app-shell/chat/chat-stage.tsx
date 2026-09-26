@@ -186,7 +186,7 @@ function ChatThreadBody(props: {
             <div
               className={cx(
                 "flex min-h-0 min-w-0 flex-1 flex-col",
-                environmentOpen && "min-[900px]:pr-[18.75rem]"
+                environmentOpen && "min-[900px]:pr-72"
               )}
             >
               <AiChatThread

@@ -50,7 +50,7 @@ export function InlineCitations({
               return (
                 <span
                   key={i}
-                  className="inline-flex size-3.5 items-center justify-center rounded bg-background-secondary-default text-[9px] font-bold text-text-tertiary mx-0.5 align-super select-none"
+                  className="inline-flex size-3.5 items-center justify-center rounded bg-background-secondary-default text-caption-2-bold font-bold text-text-tertiary mx-0.5 align-super select-none"
                 >
                   {match[1]}
                 </span>
@@ -67,7 +67,7 @@ export function InlineCitations({
                 <button
                   type="button"
                   onClick={() => onSelectRef?.(ref)}
-                  className="inline-flex size-3.5 items-center justify-center rounded bg-background-secondary-default text-[9px] font-bold text-text-secondary hover:bg-accent-500/15 hover:text-accent-600 dark:hover:text-accent-400 transition-colors cursor-pointer select-none"
+                  className="inline-flex size-3.5 items-center justify-center rounded bg-background-secondary-default text-caption-2-bold font-bold text-text-secondary hover:bg-accent-500/15 hover:text-accent-600 dark:hover:text-accent-400 transition-colors cursor-pointer select-none"
                 >
                   {ref.n}
                 </button>
@@ -76,7 +76,7 @@ export function InlineCitations({
                 <span
                   role="tooltip"
                   className={cx(
-                    "pointer-events-none absolute left-1/2 -top-7 -translate-x-1/2 rounded-md bg-background-primary-default/90 backdrop-blur-md px-2 py-1 text-[10.5px] font-medium text-text-primary shadow-md border border-separator-border/80 whitespace-nowrap transition-all duration-150 z-50",
+                    "pointer-events-none absolute left-1/2 -top-7 -translate-x-1/2 rounded-md bg-background-primary-default/90 backdrop-blur-md px-2 py-1 text-caption-2-medium font-medium text-text-primary shadow-md border border-separator-border/80 whitespace-nowrap transition-all duration-150 z-50",
                     hoveredN === num ? "opacity-100 scale-100" : "opacity-0 scale-95"
                   )}
                 >
@@ -101,11 +101,11 @@ export function InlineCitations({
                 onMouseEnter={() => setHoveredN(ref.n)}
                 onMouseLeave={() => setHoveredN(null)}
                 className={cx(
-                  "group/ref flex items-center gap-2 text-[12px] text-text-secondary hover:text-text-primary transition-colors cursor-pointer rounded-lg px-1.5 py-1",
+                  "group/ref flex items-center gap-2 text-caption-1-regular text-text-secondary hover:text-text-primary transition-colors cursor-pointer rounded-lg px-1.5 py-1",
                   isHovered && "bg-background-secondary-default/50 text-text-primary"
                 )}
               >
-                <span className="inline-flex size-3.5 items-center justify-center rounded bg-background-secondary-default text-[9px] font-bold text-text-tertiary group-hover/ref:bg-accent-500/10 group-hover/ref:text-accent-500 transition-colors shrink-0">
+                <span className="inline-flex size-3.5 items-center justify-center rounded bg-background-secondary-default text-caption-2-bold font-bold text-text-tertiary group-hover/ref:bg-accent-500/10 group-hover/ref:text-accent-500 transition-colors shrink-0">
                   {ref.n}
                 </span>
 
@@ -116,7 +116,7 @@ export function InlineCitations({
                 {ref.host || ref.path ? (
                   <>
                     <span className="text-text-tertiary">·</span>
-                    <span className="text-[11px] font-mono text-text-tertiary truncate">
+                    <span className="text-caption-2-regular font-mono text-text-tertiary truncate">
                       {ref.host || ref.path}
                     </span>
                   </>

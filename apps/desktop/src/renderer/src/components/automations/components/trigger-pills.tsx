@@ -34,7 +34,7 @@ export function TriggerPills({
           />
         ))}
       </div>
-      <p className="mt-1 text-[10px] text-text-tertiary">{t("studio.automations.triggerHint")}</p>
+      <p className="mt-1 text-caption-2-regular text-text-tertiary">{t("studio.automations.triggerHint")}</p>
     </div>
   )
 }

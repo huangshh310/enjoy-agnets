@@ -72,7 +72,7 @@ export function WorkspaceExclusionsCard({ workspaceId }: { workspaceId?: string 
           {DEFAULT_IGNORE_PATTERNS.map((pat) => (
             <span
               key={pat}
-              className="font-mono rounded-md border border-separator-border/80 bg-background-secondary-default/60 px-2 py-0.5 text-[11px] text-text-secondary"
+              className="font-mono rounded-md border border-separator-border/80 bg-background-secondary-default/60 px-2 py-0.5 text-caption-2-regular text-text-secondary"
             >
               {pat}
             </span>
@@ -117,7 +117,7 @@ export function WorkspaceExclusionsCard({ workspaceId }: { workspaceId?: string 
             {customPatterns.map((pat) => (
               <span
                 key={pat}
-                className="group inline-flex items-center gap-1 font-mono rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-[11px] text-accent-600 dark:text-accent-400"
+                className="group inline-flex items-center gap-1 font-mono rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 text-caption-2-regular text-accent-600 dark:text-accent-400"
               >
                 <span>{pat}</span>
                 <button

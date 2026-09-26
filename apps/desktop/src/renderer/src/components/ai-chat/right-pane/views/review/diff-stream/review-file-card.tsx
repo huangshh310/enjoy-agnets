@@ -105,7 +105,7 @@ export function ReviewFileCard(props: {
           <RiFileCodeLine className="size-3.5 shrink-0 text-accent-500" />
 
           {/* 路径展示 */}
-          <div className="flex min-w-0 items-center font-mono text-[11.5px]">
+          <div className="flex min-w-0 items-center font-mono text-caption-2-regular">
             {dir ? (
               <span className="truncate text-text-tertiary max-w-[180px]">
                 {dir}/
@@ -116,7 +116,7 @@ export function ReviewFileCard(props: {
 
           {/* Git 状态字母 */}
           <span
-            className={`inline-flex items-center justify-center rounded px-1 text-[10px] font-mono font-bold border ${statusConfig.bgTone}`}
+            className={`inline-flex items-center justify-center rounded px-1 text-caption-2-bold font-mono font-bold border ${statusConfig.bgTone}`}
           >
             {statusConfig.mark}
           </span>
@@ -124,7 +124,7 @@ export function ReviewFileCard(props: {
 
         {/* 右侧统计与复制 */}
         <div className="flex shrink-0 items-center gap-2">
-          <div className="flex items-center gap-1 font-mono text-[11px]">
+          <div className="flex items-center gap-1 font-mono text-caption-2-regular">
             <span className="text-state-success-text">+{file.additions}</span>
             <span className="text-text-error-primary">-{file.deletions}</span>
           </div>

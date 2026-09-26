@@ -129,7 +129,7 @@ export function KnowledgeDocumentList({
                     className={cx(
                       "inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-caption-2-medium",
                       doc.chunkCount > 0
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        ? "border-state-success-text/30 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
                         : doc.status === "indexing"
                           ? "border-accent-500/30 bg-accent-500/10 text-accent-700 dark:text-accent-300"
                           : "border-separator-border/60 bg-background-secondary-default text-text-tertiary"

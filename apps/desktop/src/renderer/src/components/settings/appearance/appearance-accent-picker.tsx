@@ -32,12 +32,12 @@ export function AppearanceAccentPicker() {
               style={{ backgroundColor: item.color }}
             >
               {isSelected ? (
-                <RiCheckLine className="size-3 text-white stroke-[2.5]" />
+                <RiCheckLine className="size-3 text-white stroke-2" />
               ) : null}
             </span>
             <span
               className={cx(
-                "text-body-small-medium transition-colors",
+                "text-caption-1-medium transition-colors",
                 isSelected ? "font-semibold text-text-primary" : "text-text-secondary group-hover:text-text-primary"
               )}
             >

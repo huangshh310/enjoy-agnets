@@ -95,7 +95,7 @@ export function ReplayEventInspector({
             >
               {copied ? (
                 <>
-                  <RiCheckLine className="size-3 text-status-success-foreground" />
+                  <RiCheckLine className="size-3 text-state-success-text" />
                   <span>已复制</span>
                 </>
               ) : (

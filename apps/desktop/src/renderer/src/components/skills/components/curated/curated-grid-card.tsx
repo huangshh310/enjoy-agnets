@@ -59,7 +59,7 @@ export function CuratedGridCard({
               <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary">
                 <span className="truncate">{item.author}</span>
                 <span>·</span>
-                <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="inline-flex items-center gap-0.5 text-state-success-text dark:text-state-success-text font-medium">
                   <RiShieldCheckLine className="size-3" />
                   <span>{t("pages.skills.states.curated")}</span>
                 </span>
@@ -68,15 +68,15 @@ export function CuratedGridCard({
           </div>
 
           {item.stars ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10.5px] font-mono font-medium text-amber-600 dark:text-amber-400 shrink-0 border border-amber-500/20">
-              <RiStarFill className="size-2.5 text-amber-500" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-status-yellow-background/10 px-2 py-0.5 text-caption-2-medium font-mono font-medium text-status-yellow-text dark:text-status-yellow-text shrink-0 border border-status-yellow-text/20">
+              <RiStarFill className="size-2.5 text-status-yellow-text" />
               {item.stars.toLocaleString()}
             </span>
           ) : null}
         </div>
 
         {/* 价值陈述描述 */}
-        <p className="text-[12.5px] text-text-secondary leading-relaxed line-clamp-2 min-h-[38px]">
+        <p className="text-caption-1-regular text-text-secondary leading-relaxed line-clamp-2 min-h-[38px]">
           {item.description}
         </p>
 
@@ -85,14 +85,14 @@ export function CuratedGridCard({
           {item.featuredSkills.slice(0, 3).map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center gap-0.5 rounded-md border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[10.5px] font-mono font-medium text-purple-700 dark:text-purple-300"
+              className="inline-flex items-center gap-0.5 rounded-md border border-chart-5/20 bg-chart-5/10 px-2 py-0.5 text-caption-2-medium font-mono font-medium text-chart-5 dark:text-chart-5"
             >
               <span className="opacity-50 font-semibold">/</span>
               <span>{skill}</span>
             </span>
           ))}
           {item.featuredSkills.length > 3 ? (
-            <span className="inline-flex items-center rounded-md border border-separator-border/60 bg-background-secondary-default px-1.5 py-0.5 text-[10px] font-mono font-medium text-text-secondary">
+            <span className="inline-flex items-center rounded-md border border-separator-border/60 bg-background-secondary-default px-1.5 py-0.5 text-caption-2-medium font-mono font-medium text-text-secondary">
               +{item.featuredSkills.length - 3}
             </span>
           ) : null}
@@ -101,12 +101,12 @@ export function CuratedGridCard({
 
       {/* 底部动作栏：能力数量与安装按钮 */}
       <div className="mt-4 pt-3.5 border-t border-separator-border/50 flex items-center justify-between">
-        <span className="text-[11.5px] text-text-tertiary">
+        <span className="text-caption-2-regular text-text-tertiary">
           {t("pages.skills.gridCard.countSkills", { n: item.skillCount ?? "" })}
         </span>
 
         {isInstalled ? (
-          <div className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+          <div className="inline-flex items-center gap-1 text-caption-2-semibold font-semibold text-state-success-text dark:text-state-success-text">
             <RiCheckLine className="size-3.5" />
             <span>{t("pages.skills.states.equipped")}</span>
           </div>

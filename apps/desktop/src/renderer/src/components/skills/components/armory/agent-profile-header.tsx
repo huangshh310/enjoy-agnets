@@ -70,17 +70,17 @@ export function AgentProfileHeader({
                   <RiShieldCheckLine className="size-3" />
                   <span>{profile.badgeText}</span>
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-2.5 py-0.5 text-[11px] font-mono text-text-tertiary border border-separator-border/50">
+                <span className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-2.5 py-0.5 text-caption-2-regular font-mono text-text-tertiary border border-separator-border/50">
                   <span
                     className={cx(
                       "size-1.5 rounded-full",
-                      activeCount > 0 ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                      activeCount > 0 ? "bg-state-success-base animate-pulse" : "bg-status-yellow-background"
                     )}
                   />
                   <span>{activeCount > 0 ? t("pages.skills.armoryHeader.activeBadge", { n: activeCount }) : t("pages.skills.armoryHeader.standbyBadge")}</span>
                 </span>
               </div>
-              <p className="max-w-2xl text-[13px] leading-relaxed text-text-secondary">
+              <p className="max-w-2xl text-body-2-regular leading-relaxed text-text-secondary">
                 {profile.description}
               </p>
             </div>
@@ -112,8 +112,8 @@ export function AgentProfileHeader({
           <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/50 px-3 py-2 border border-separator-border/40">
             <RiCpuLine className="size-4 text-text-tertiary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10.5px] text-text-tertiary">{t("pages.skills.armoryHeader.protocolLabel")}</span>
-              <span className="font-mono text-text-primary text-[11.5px] truncate">
+              <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.armoryHeader.protocolLabel")}</span>
+              <span className="font-mono text-text-primary text-caption-2-regular truncate">
                 {profile.protocol}
               </span>
             </div>
@@ -122,8 +122,8 @@ export function AgentProfileHeader({
           <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/50 px-3 py-2 border border-separator-border/40">
             <RiFolderOpenLine className="size-4 text-text-tertiary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10.5px] text-text-tertiary">{t("pages.skills.armoryHeader.projectDirLabel")}</span>
-              <span className="font-mono text-text-primary text-[11.5px] truncate">
+              <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.armoryHeader.projectDirLabel")}</span>
+              <span className="font-mono text-text-primary text-caption-2-regular truncate">
                 {profile.runtimeEnv}
               </span>
             </div>
@@ -132,12 +132,12 @@ export function AgentProfileHeader({
           <div className="flex items-center gap-2 rounded-xl bg-background-secondary-default/50 px-3 py-2 border border-separator-border/40">
             <RiInformationLine className="size-4 text-text-tertiary shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10.5px] text-text-tertiary">{t("pages.skills.armoryHeader.tagsLabel")}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{t("pages.skills.armoryHeader.tagsLabel")}</span>
               <div className="flex items-center gap-1 overflow-hidden">
                 {profile.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded bg-background-primary-default px-1.5 py-0.2 text-[10px] text-text-secondary border border-separator-border/40 shrink-0"
+                    className="rounded bg-background-primary-default px-1.5 py-0.2 text-caption-2-regular text-text-secondary border border-separator-border/40 shrink-0"
                   >
                     {tag}
                   </span>

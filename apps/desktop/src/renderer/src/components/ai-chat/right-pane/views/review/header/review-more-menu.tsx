@@ -148,7 +148,7 @@ export function ReviewMoreMenu(props: {
             <RiTerminalBoxLine className="size-4 text-text-tertiary" />
             <span>{t("chat.reviewCopyGitApply")}</span>
           </div>
-          {copiedApply ? <span className="text-[11px] text-state-success-text">{t("chat.reviewCopied")}</span> : null}
+          {copiedApply ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
         </DropdownMenuItem>
 
         <DropdownMenuItem
@@ -159,7 +159,7 @@ export function ReviewMoreMenu(props: {
             <RiFileCopyLine className="size-4 text-text-tertiary" />
             <span>{t("chat.reviewCopyUnifiedDiff")}</span>
           </div>
-          {copiedDiff ? <span className="text-[11px] text-state-success-text">{t("chat.reviewCopied")}</span> : null}
+          {copiedDiff ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

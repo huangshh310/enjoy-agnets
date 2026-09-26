@@ -82,19 +82,19 @@ function PermissionModeRow({
           <SelectItem value="allow-reads">
             <div className="flex flex-col">
               <span>{t("common.permissionReads")}</span>
-              <span className="text-[10px] text-text-tertiary">{t("settings.permissions.readsHint")}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{t("settings.permissions.readsHint")}</span>
             </div>
           </SelectItem>
           <SelectItem value="allow-edits">
             <div className="flex flex-col">
               <span>{t("common.permissionEdits")}</span>
-              <span className="text-[10px] text-text-tertiary">{t("settings.permissions.editsHint")}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{t("settings.permissions.editsHint")}</span>
             </div>
           </SelectItem>
           <SelectItem value="allow-all">
             <div className="flex flex-col">
               <span>{t("common.permissionAll")}</span>
-              <span className="text-[10px] text-text-tertiary">{t("settings.permissions.allHint")}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{t("settings.permissions.allHint")}</span>
             </div>
           </SelectItem>
         </SelectContent>

@@ -42,10 +42,10 @@ const PRESET_DEFS: Array<
     descKey: "pages.knowledge.presetRootDesc",
     icon: RiFolder6Line,
     colorTheme: {
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/25 hover:border-blue-500/50",
-      text: "text-blue-500",
-      folderColor: "from-blue-600 to-indigo-600",
+      bg: "bg-accent-500/10",
+      border: "border-accent-500/25 hover:border-accent-500/50",
+      text: "text-accent-500",
+      folderColor: "from-accent-500 to-accent-500",
       glow: "rgba(59, 130, 246, 0.15)"
     },
     isRecommended: true
@@ -58,10 +58,10 @@ const PRESET_DEFS: Array<
     descKey: "pages.knowledge.presetSrcDesc",
     icon: RiCodeSSlashLine,
     colorTheme: {
-      bg: "bg-purple-500/10",
-      border: "border-purple-500/25 hover:border-purple-500/50",
-      text: "text-purple-500",
-      folderColor: "from-purple-600 to-violet-700",
+      bg: "bg-chart-5/10",
+      border: "border-chart-5/25 hover:border-chart-5/50",
+      text: "text-chart-5",
+      folderColor: "from-chart-5 to-chart-5",
       glow: "rgba(168, 85, 247, 0.15)"
     }
   },
@@ -73,10 +73,10 @@ const PRESET_DEFS: Array<
     descKey: "pages.knowledge.presetDocsDesc",
     icon: RiBookOpenLine,
     colorTheme: {
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/25 hover:border-emerald-500/50",
-      text: "text-emerald-500",
-      folderColor: "from-emerald-600 to-teal-700",
+      bg: "bg-state-success-text/10",
+      border: "border-state-success-text/25 hover:border-state-success-text/50",
+      text: "text-state-success-text",
+      folderColor: "from-state-success-text to-chart-1",
       glow: "rgba(16, 185, 129, 0.15)"
     }
   },
@@ -88,10 +88,10 @@ const PRESET_DEFS: Array<
     descKey: "pages.knowledge.presetDesignDesc",
     icon: RiSparklingLine,
     colorTheme: {
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/25 hover:border-amber-500/50",
-      text: "text-amber-500",
-      folderColor: "from-amber-500 to-orange-600",
+      bg: "bg-status-yellow-background/10",
+      border: "border-status-yellow-text/25 hover:border-status-yellow-text/50",
+      text: "text-status-yellow-text",
+      folderColor: "from-status-yellow-text to-status-yellow-text",
       glow: "rgba(245, 158, 11, 0.15)"
     }
   }
@@ -111,22 +111,22 @@ export function getKnowledgePresetFolders(t: TranslateFn): KnowledgePresetFolder
 }
 
 const FORMAT_DEFS = [
-  { ext: ".pptx", labelKey: "pages.knowledge.formatPptx", color: "text-orange-600 bg-orange-500/10 border-orange-500/20" },
-  { ext: ".ppt", labelKey: "pages.knowledge.formatPpt", color: "text-orange-500 bg-orange-500/10 border-orange-500/20" },
-  { ext: ".docx", labelKey: "pages.knowledge.formatDocx", color: "text-blue-600 bg-blue-500/10 border-blue-500/20" },
-  { ext: ".doc", labelKey: "pages.knowledge.formatDoc", color: "text-blue-500 bg-blue-500/10 border-blue-500/20" },
-  { ext: ".xlsx", labelKey: "pages.knowledge.formatXlsx", color: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
-  { ext: ".pdf", labelKey: "pages.knowledge.formatPdf", color: "text-rose-600 bg-rose-500/10 border-rose-500/20" },
-  { ext: ".csv", labelKey: "pages.knowledge.formatCsv", color: "text-teal-600 bg-teal-500/10 border-teal-500/20" },
-  { ext: ".md", labelKey: "pages.knowledge.formatMd", color: "text-blue-500 bg-blue-500/10 border-blue-500/20" },
-  { ext: ".ts", labelKey: "pages.knowledge.formatTs", color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20" },
-  { ext: ".tsx", labelKey: "pages.knowledge.formatTsx", color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20" },
-  { ext: ".js", labelKey: "pages.knowledge.formatJs", color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
-  { ext: ".py", labelKey: "pages.knowledge.formatPy", color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
-  { ext: ".json", labelKey: "pages.knowledge.formatJson", color: "text-purple-500 bg-purple-500/10 border-purple-500/20" },
-  { ext: ".yaml", labelKey: "pages.knowledge.formatYaml", color: "text-amber-600 bg-amber-500/10 border-amber-500/20" },
-  { ext: ".sql", labelKey: "pages.knowledge.formatSql", color: "text-pink-500 bg-pink-500/10 border-pink-500/20" },
-  { ext: ".txt", labelKey: "pages.knowledge.formatTxt", color: "text-zinc-500 bg-zinc-500/10 border-zinc-500/20" }
+  { ext: ".pptx", labelKey: "pages.knowledge.formatPptx", color: "text-status-yellow-text bg-status-yellow-background/10 border-status-yellow-text/20" },
+  { ext: ".ppt", labelKey: "pages.knowledge.formatPpt", color: "text-status-yellow-text bg-status-yellow-background/10 border-status-yellow-text/20" },
+  { ext: ".docx", labelKey: "pages.knowledge.formatDocx", color: "text-accent-500 bg-accent-500/10 border-accent-500/20" },
+  { ext: ".doc", labelKey: "pages.knowledge.formatDoc", color: "text-accent-500 bg-accent-500/10 border-accent-500/20" },
+  { ext: ".xlsx", labelKey: "pages.knowledge.formatXlsx", color: "text-state-success-text bg-state-success-text/10 border-state-success-text/20" },
+  { ext: ".pdf", labelKey: "pages.knowledge.formatPdf", color: "text-text-error-primary bg-background-tertiary-error/10 border-border-error-default/20" },
+  { ext: ".csv", labelKey: "pages.knowledge.formatCsv", color: "text-chart-1 bg-chart-1/10 border-chart-1/20" },
+  { ext: ".md", labelKey: "pages.knowledge.formatMd", color: "text-accent-500 bg-accent-500/10 border-accent-500/20" },
+  { ext: ".ts", labelKey: "pages.knowledge.formatTs", color: "text-accent-500 bg-accent-500/10 border-accent-500/20" },
+  { ext: ".tsx", labelKey: "pages.knowledge.formatTsx", color: "text-chart-1 bg-chart-1/10 border-chart-1/20" },
+  { ext: ".js", labelKey: "pages.knowledge.formatJs", color: "text-status-yellow-text bg-status-yellow-background/10 border-status-yellow-text/20" },
+  { ext: ".py", labelKey: "pages.knowledge.formatPy", color: "text-state-success-text bg-state-success-text/10 border-state-success-text/20" },
+  { ext: ".json", labelKey: "pages.knowledge.formatJson", color: "text-chart-5 bg-chart-5/10 border-chart-5/20" },
+  { ext: ".yaml", labelKey: "pages.knowledge.formatYaml", color: "text-status-yellow-text bg-status-yellow-background/10 border-status-yellow-text/20" },
+  { ext: ".sql", labelKey: "pages.knowledge.formatSql", color: "text-text-error-primary bg-background-tertiary-error/10 border-border-error-default/20" },
+  { ext: ".txt", labelKey: "pages.knowledge.formatTxt", color: "text-text-secondary bg-background-secondary-default/10 border-separator-border/20" }
 ] as const
 
 export function getSupportedFileFormats(t: TranslateFn) {

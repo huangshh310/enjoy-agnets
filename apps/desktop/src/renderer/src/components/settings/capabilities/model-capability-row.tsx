@@ -57,7 +57,7 @@ export function ModelCapabilityRow({
       {/* 设为默认操作 */}
       <div className="flex items-center gap-2 shrink-0">
         {isDefault ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-status-success-border bg-status-success-background px-2.5 py-1 text-caption-2-medium text-status-success-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full border border-state-success-text/30 bg-state-success-base px-2.5 py-1 text-caption-2-medium text-state-success-text">
             <RiCheckLine className="size-3.5" />
             <span>{t("settings.capabilities.activeDefault")}</span>
           </span>

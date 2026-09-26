@@ -31,7 +31,7 @@ export function ExploreExecuteToggle({ className }: { className?: string } = {})
       {locked ? (
         <span
           data-testid="composer-surface-disabled-reason"
-          className="max-w-[14rem] text-caption-2-regular text-text-warning-primary"
+          className="max-w-[14rem] text-caption-2-regular text-status-yellow-text"
         >
           {t("chat.surfaceExploreDisabled")}
         </span>

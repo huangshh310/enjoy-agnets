@@ -33,7 +33,7 @@ export function UsageBlocksHeatmap({
         <div className="flex gap-1.5">
           <div className="w-4 shrink-0" />
           <div
-            className="grid min-w-0 flex-1 text-[10px] text-text-tertiary"
+            className="grid min-w-0 flex-1 text-caption-2-regular text-text-tertiary"
             style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
           >
             {monthMarks.map((label, index) => (
@@ -44,7 +44,7 @@ export function UsageBlocksHeatmap({
           </div>
         </div>
         <div className="flex items-stretch gap-1.5">
-          <div className="grid w-4 shrink-0 grid-rows-7 text-[10px] leading-none text-text-tertiary">
+          <div className="grid w-4 shrink-0 grid-rows-7 text-caption-2-regular leading-none text-text-tertiary">
             {WEEKDAY_MARKS.map((label, index) => (
               <span key={`d-${index}`} className="flex items-center">
                 {label}
@@ -52,7 +52,7 @@ export function UsageBlocksHeatmap({
             ))}
           </div>
           <div
-            className="grid min-w-0 flex-1 gap-[3px]"
+            className="grid min-w-0 flex-1 gap-0.5"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               gridTemplateRows: "repeat(7, minmax(0, 1fr))",
@@ -64,7 +64,7 @@ export function UsageBlocksHeatmap({
               <button
                 key={cell.key}
                 type="button"
-                className="min-h-0 min-w-0 rounded-[2px]"
+                className="min-h-0 min-w-0 rounded-sm"
                 style={{ background: cellFill(cell.total, peak) }}
                 onMouseEnter={() => setHover(cell)}
                 onMouseLeave={() => setHover(null)}
@@ -81,7 +81,7 @@ export function UsageBlocksHeatmap({
           <span className="flex items-center gap-1">
             少
             {[0, 0.25, 0.5, 0.75, 1].map((level) => (
-              <span key={level} className="size-2.5 rounded-[2px]" style={{ background: levelFill(level) }} />
+              <span key={level} className="size-2.5 rounded-sm" style={{ background: levelFill(level) }} />
             ))}
             多
           </span>

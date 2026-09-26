@@ -83,8 +83,8 @@ function SettingsPulseStat({ label, value, tone = "default" }: SettingsPulse) {
 }
 
 function pulseToneClass(tone: SettingsPulse["tone"]) {
-  if (tone === "success") return "text-emerald-600 dark:text-emerald-400"
-  if (tone === "warning") return "text-amber-600 dark:text-amber-400"
-  if (tone === "danger") return "text-rose-600 dark:text-rose-400"
+  if (tone === "success") return "text-state-success-text dark:text-state-success-text"
+  if (tone === "warning") return "text-status-yellow-text dark:text-status-yellow-text"
+  if (tone === "danger") return "text-text-error-primary dark:text-text-error-primary"
   return "text-text-primary"
 }

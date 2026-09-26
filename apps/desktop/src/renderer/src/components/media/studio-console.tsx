@@ -196,7 +196,7 @@ function StudioHints({
         </p>
       ) : null}
       {capabilityHint ? (
-        <div className="flex items-center gap-1.5 text-caption-2-medium text-state-warning-text">
+        <div className="flex items-center gap-1.5 text-caption-2-medium text-status-yellow-text">
           <RiAlertLine className="size-3.5 shrink-0" />
           <span>{capabilityHint}</span>
         </div>

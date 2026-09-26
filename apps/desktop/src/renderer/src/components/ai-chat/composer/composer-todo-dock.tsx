@@ -69,7 +69,7 @@ export function ComposerTodoDock() {
       className="inline-flex h-6.5 cursor-pointer items-center gap-1.5 rounded-full border border-border-button-default bg-background-primary-default/90 px-2.5 text-caption-2-medium text-text-primary transition-all hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-400 disabled:opacity-50 select-none shadow-2xs"
     >
       <RiGlobeLine className="size-3 text-accent-500 shrink-0" />
-      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+      <span className="size-1.5 rounded-full bg-state-success-base animate-pulse shrink-0" />
       <span className="max-w-[140px] truncate font-mono text-caption-2-medium text-text-primary">
         {previewTargetLabel(reviewModel.slimTarget!)}
       </span>

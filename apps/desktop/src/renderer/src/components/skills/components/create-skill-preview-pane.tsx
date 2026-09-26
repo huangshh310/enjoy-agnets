@@ -23,7 +23,7 @@ export function CreateSkillPreviewPane({
           <span>{t("pages.skills.previewPane.title")}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("pages.skills.previewPane.liveCompile")}</span>
+          <span className="text-state-success-text dark:text-state-success-text font-medium">{t("pages.skills.previewPane.liveCompile")}</span>
           <button
             type="button"
             onClick={onCopy}
@@ -31,7 +31,7 @@ export function CreateSkillPreviewPane({
             title={t("pages.skills.previewPane.copyTitle")}
           >
             {copied ? (
-              <RiCheckLine className="size-3 text-emerald-500" />
+              <RiCheckLine className="size-3 text-state-success-text" />
             ) : (
               <RiClipboardLine className="size-3" />
             )}

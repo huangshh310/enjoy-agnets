@@ -52,7 +52,7 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
   if (totalItems === 0) return null
 
   return (
-    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-separator-border/40 font-mono text-[11px] text-text-tertiary">
+    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-separator-border/40 font-mono text-caption-2-regular text-text-tertiary">
       {/* 左侧：条数信息与每页条数切换 */}
       <div className="flex items-center gap-3">
         <span>
@@ -72,7 +72,7 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
                   key={opt}
                   type="button"
                   onClick={() => onPageSizeChange(opt)}
-                  className={`rounded px-1.5 py-0.5 text-[10px] transition-all ${
+                  className={`rounded px-1.5 py-0.5 text-caption-2-regular transition-all ${
                     pageSize === opt
                       ? "bg-background-primary-default font-bold text-text-primary shadow-2xs"
                       : "text-text-secondary hover:text-text-primary"
@@ -103,7 +103,7 @@ export function ObservabilityPagination(props: ObservabilityPaginationProps) {
           typeof p === "string" ? (
             <span
               key={`${p}-${idx}`}
-              className="flex size-7 items-center justify-center text-[10px] text-text-tertiary select-none"
+              className="flex size-7 items-center justify-center text-caption-2-regular text-text-tertiary select-none"
             >
               …
             </span>

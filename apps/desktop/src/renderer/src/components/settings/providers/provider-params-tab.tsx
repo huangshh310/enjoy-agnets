@@ -40,7 +40,7 @@ export function ProviderParamsTab({
               onChange({ contextWindow: next ? Number(next) || undefined : undefined })
             }}
             placeholder={t("settings.providers.contextAuto")}
-            className="h-9 font-mono text-[13px]"
+            className="h-9 font-mono text-body-2-regular"
           />
           <div className="flex flex-wrap gap-1.5">
             <button
@@ -77,7 +77,7 @@ export function ProviderParamsTab({
       {/* 推理强度 (针对 o1 / o3 / DeepSeek-R1 等) */}
       <Field label={t("settings.providers.effort")} hint={t("settings.providers.effortHint")}>
         <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-caption-2-medium">
             <span className="font-medium text-text-primary">
               {t("settings.providers.level", {
                 index: getEffortMeta(editor.reasoningEffort).index,
@@ -104,7 +104,7 @@ export function ProviderParamsTab({
             value={editor.maxTokens ?? 4096}
             onChange={(e) => onChange({ maxTokens: Number(e.target.value) || 0 })}
             placeholder="4096"
-            className="h-9 font-mono text-[13px]"
+            className="h-9 font-mono text-body-2-regular"
           />
         </Field>
         <Field label={t("settings.providers.temperature")} hint={t("settings.providers.temperatureHint")}>
@@ -116,7 +116,7 @@ export function ProviderParamsTab({
             value={editor.temperature ?? 0.7}
             onChange={(e) => onChange({ temperature: Number(e.target.value) })}
             placeholder="0.7"
-            className="h-9 font-mono text-[13px]"
+            className="h-9 font-mono text-body-2-regular"
           />
         </Field>
       </div>

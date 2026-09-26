@@ -71,7 +71,7 @@ function TurnBar({ durationMs, ttfoMs }: { durationMs: number; ttfoMs: number })
     <div className="flex flex-col gap-1 pt-0.5">
       <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-background-secondary-default">
         {ttfoRatio > 0 ? (
-          <div style={{ width: `${ttfoRatio}%` }} className="h-full bg-amber-500" />
+          <div style={{ width: `${ttfoRatio}%` }} className="h-full bg-status-yellow-background" />
         ) : null}
         <div style={{ width: `${streamRatio}%` }} className="h-full bg-accent-500" />
       </div>

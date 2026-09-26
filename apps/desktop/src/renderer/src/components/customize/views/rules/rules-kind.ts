@@ -7,21 +7,21 @@ import type { TranslateFn } from "@renderer/i18n"
 const KIND_BADGE: Record<string, { short: string; className: string }> = {
   cursor_mdc: {
     short: "MDC",
-    className: "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+    className: "bg-accent-500/10 text-accent-500 dark:text-accent-500"
   },
   claude_md: {
     short: "CLD",
-    className: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+    className: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
   },
   copilot: {
     short: "COP",
-    className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+    className: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
   }
 }
 
 const FALLBACK_BADGE = {
   short: "AGT",
-  className: "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+  className: "bg-chart-5/10 text-chart-5 dark:text-chart-5"
 }
 
 const CREATE_KIND_LABEL: Record<string, string> = {

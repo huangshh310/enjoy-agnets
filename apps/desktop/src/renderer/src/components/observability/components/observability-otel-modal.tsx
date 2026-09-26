@@ -68,7 +68,7 @@ export function ObservabilityOtelModal(props: {
           <DialogTitle className="text-body-medium font-semibold text-text-primary">
             {t("pages.observability.otelModalTitle")}
           </DialogTitle>
-          <p className="text-[11.5px] text-text-tertiary">
+          <p className="text-caption-2-regular text-text-tertiary">
             {t("pages.observability.otelModalHint")}
           </p>
         </div>
@@ -76,7 +76,7 @@ export function ObservabilityOtelModal(props: {
         <div className="flex flex-col gap-4 p-5">
           {/* 遥测策略模式单选 */}
           <div className="flex flex-col gap-1.5">
-            <Label className="text-[11.5px] font-medium text-text-secondary">
+            <Label className="text-caption-2-medium font-medium text-text-secondary">
               {t("pages.observability.telemetryPolicy")}
             </Label>
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-background-secondary-default/60 p-0.5">
@@ -86,7 +86,7 @@ export function ObservabilityOtelModal(props: {
                   type="button"
                   onClick={() => setPolicy(item.id)}
                   className={cx(
-                    "rounded py-1 text-[11px] font-medium transition-all flex items-center justify-center",
+                    "rounded py-1 text-caption-2-medium font-medium transition-all flex items-center justify-center",
                     policy === item.id
                       ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
                       : "text-text-secondary hover:text-text-primary"
@@ -101,7 +101,7 @@ export function ObservabilityOtelModal(props: {
           {/* 远程端点配置 */}
           {policy === "otel" ? (
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[11.5px] font-medium text-text-secondary">
+              <Label className="text-caption-2-medium font-medium text-text-secondary">
                 {t("pages.observability.otlpEndpoint")}
               </Label>
               <Input
@@ -110,15 +110,15 @@ export function ObservabilityOtelModal(props: {
                 placeholder={t("pages.observability.otlpPlaceholder")}
                 className="font-mono text-caption-2-medium h-8 bg-background-secondary-default/40"
               />
-              <div className="flex items-center gap-1.5 text-[10.5px] text-text-tertiary">
+              <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary">
                 <span>{t("pages.observability.otlpHint")}</span>
               </div>
             </div>
           ) : null}
 
           {/* 脱敏安全说明 */}
-          <div className="flex items-start gap-2.5 rounded-lg border border-separator-border/60 bg-background-secondary-default/30 p-3 text-[11px] text-text-secondary">
-            <RiShieldCheckLine className="size-4 text-emerald-500 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 rounded-lg border border-separator-border/60 bg-background-secondary-default/30 p-3 text-caption-2-regular text-text-secondary">
+            <RiShieldCheckLine className="size-4 text-state-success-text shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               <strong>{t("pages.observability.privacyTitle")}</strong>
               {t("pages.observability.privacyBefore")}
@@ -148,7 +148,7 @@ export function ObservabilityOtelModal(props: {
             {isSaving ? (
               <RiLoader4Line className="size-3 animate-spin" />
             ) : saveSuccess ? (
-              <RiCheckLine className="size-3 text-emerald-400" />
+              <RiCheckLine className="size-3 text-state-success-text" />
             ) : (
               <RiCheckLine className="size-3" />
             )}

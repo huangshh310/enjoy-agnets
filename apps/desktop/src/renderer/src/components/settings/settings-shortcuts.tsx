@@ -51,11 +51,11 @@ function ShortcutKeys({ keys }: { keys: string[] }) {
       {keys.map((key, index) => (
         <span key={`${key}-${index}`} className="inline-flex items-center gap-1.5">
           {index > 0 && (
-            <span className="text-[11px] font-semibold text-text-tertiary select-none" aria-hidden>
+            <span className="text-caption-2-semibold font-semibold text-text-tertiary select-none" aria-hidden>
               +
             </span>
           )}
-          <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-border-button-default bg-background-secondary-default px-2 font-mono text-[11px] font-semibold text-text-primary shadow-2xs select-none">
+          <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-lg border border-border-button-default bg-background-secondary-default px-2 font-mono text-caption-2-semibold font-semibold text-text-primary shadow-2xs select-none">
             {shortcutGlyph(key)}
           </kbd>
         </span>
@@ -96,10 +96,10 @@ export function ShortcutSettings() {
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-body-large-semibold text-text-primary">
+                <span className="text-title-3-semibold text-text-primary">
                   {t("settings.shortcuts.hubTitle")}
                 </span>
-                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
                   {isMac ? t("settings.shortcuts.layoutMac") : t("settings.shortcuts.layoutWin")}
                 </span>
               </div>

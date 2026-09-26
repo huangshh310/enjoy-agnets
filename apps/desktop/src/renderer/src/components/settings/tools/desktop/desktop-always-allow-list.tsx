@@ -80,7 +80,7 @@ function AlwaysAllowRows({
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-caption-1-medium text-text-primary">{app.displayName}</p>
-            <p className="truncate font-mono text-caption-2 text-text-tertiary">{app.appKey}</p>
+            <p className="truncate font-mono text-caption-2-medium text-text-tertiary">{app.appKey}</p>
           </div>
           <Button
             size="sm"

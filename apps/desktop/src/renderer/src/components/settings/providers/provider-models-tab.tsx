@@ -99,7 +99,7 @@ export function ProviderModelsTab({
           </div>
           <span
             className={cx(
-              "rounded-full px-2 py-0.5 text-[11px] font-semibold border transition-colors",
+              "rounded-full px-2 py-0.5 text-caption-2-semibold font-semibold border transition-colors",
               currentEffortMeta.badgeClass
             )}
           >
@@ -132,7 +132,7 @@ export function ProviderModelsTab({
                 type="button"
                 onClick={() => onChange({ reasoningEffort: opt.effortValue })}
                 className={cx(
-                  "flex h-7.5 items-center justify-center rounded-lg text-[12px] transition-all outline-none",
+                  "flex h-7.5 items-center justify-center rounded-lg text-caption-1-regular transition-all outline-none",
                   isSelected
                     ? "bg-background-primary-default text-text-primary font-semibold shadow-xs border border-border-button-default/60"
                     : "text-text-secondary hover:text-text-primary hover:bg-background-secondary-hover/50"
@@ -145,7 +145,7 @@ export function ProviderModelsTab({
         </div>
 
         {/* 当前档位描述文字 */}
-        <div className="flex items-center justify-between px-0.5 text-[11px]">
+        <div className="flex items-center justify-between px-0.5 text-caption-2-regular">
           <span className="text-text-secondary">
             {t("settings.providers.thinkingDepth")}{" "}
             <span className="font-medium text-text-primary">{currentEffortMeta.label}</span>
@@ -169,7 +169,7 @@ export function ProviderModelsTab({
               value={editor.fastModelId ?? ""}
               onChange={(e) => onChange({ fastModelId: e.target.value })}
               placeholder="e.g. gpt-4o-mini, haiku"
-              className="h-8.5 font-mono text-[12px]"
+              className="h-8.5 font-mono text-caption-1-regular"
             />
           </div>
 
@@ -181,7 +181,7 @@ export function ProviderModelsTab({
               value={editor.reasoningModelId ?? ""}
               onChange={(e) => onChange({ reasoningModelId: e.target.value })}
               placeholder="e.g. o1, deepseek-reasoner"
-              className="h-8.5 font-mono text-[12px]"
+              className="h-8.5 font-mono text-caption-1-regular"
             />
           </div>
         </div>
@@ -207,13 +207,13 @@ export function ProviderModelsTab({
             value={newModelId}
             onChange={(e) => setNewModelId(e.target.value)}
             placeholder="Model ID (e.g. qwen-max-latest)"
-            className="h-8.5 flex-1 font-mono text-[12px]"
+            className="h-8.5 flex-1 font-mono text-caption-1-regular"
           />
           <Input
             value={newModelLabel}
             onChange={(e) => setNewModelLabel(e.target.value)}
             placeholder="Display Name (Optional)"
-            className="h-8.5 flex-1 text-[12px]"
+            className="h-8.5 flex-1 text-caption-1-regular"
           />
           <Button
             type="button"
@@ -254,16 +254,16 @@ export function ProviderModelsTab({
                   <button
                     type="button"
                     onClick={() => onChange({ modelId: m.id })}
-                    className="font-mono text-[11px] font-medium text-left hover:underline cursor-pointer"
+                    className="font-mono text-caption-2-medium font-medium text-left hover:underline cursor-pointer"
                     title={isPrimary ? "Current Primary Model" : "Click to set as Primary Model"}
                   >
                     {m.id}
                   </button>
                   {m.label && m.label !== m.id ? (
-                    <span className="text-text-tertiary text-[11px]">({m.label})</span>
+                    <span className="text-text-tertiary text-caption-2-regular">({m.label})</span>
                   ) : null}
                   {isPrimary ? (
-                    <span className="inline-flex items-center gap-0.5 rounded bg-accent-500/15 px-1 py-0.2 text-[9px] font-bold text-accent-600 dark:text-accent-300">
+                    <span className="inline-flex items-center gap-0.5 rounded bg-accent-500/15 px-1 py-0.2 text-caption-2-bold font-bold text-accent-600 dark:text-accent-300">
                       <RiCheckLine className="size-2.5" />
                       Primary
                     </span>

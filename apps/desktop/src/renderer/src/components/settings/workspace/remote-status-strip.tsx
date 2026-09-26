@@ -67,11 +67,11 @@ export function RemoteStatusStrip() {
         : t("settings.workspace.sshDisconnectedReadOnly")
 
   const containerToneClass = isConnected
-    ? "border-emerald-500/35 bg-gradient-to-r from-emerald-500/[0.10] via-teal-500/[0.06] to-accent-500/[0.08] dark:from-emerald-500/[0.15] dark:via-teal-500/[0.09] dark:to-accent-500/[0.12] dark:border-emerald-500/40 shadow-xs shadow-emerald-500/5"
+    ? "border-state-success-text/35 bg-gradient-to-r from-state-success-text/10 via-chart-1/10 to-accent-500/10 dark:from-state-success-text/15 dark:via-chart-1/10 dark:to-accent-500/10 dark:border-state-success-text/40 shadow-xs shadow-state-success-text/5"
     : connecting
-      ? "border-accent-500/35 bg-accent-500/[0.08] dark:bg-accent-500/[0.12] dark:border-accent-500/40 animate-pulse"
+      ? "border-accent-500/35 bg-accent-500/10 dark:bg-accent-500/10 dark:border-accent-500/40 animate-pulse"
       : isFailed
-        ? "border-notification-error-foreground/35 bg-notification-error-foreground/[0.08] dark:bg-notification-error-foreground/[0.12]"
+        ? "border-notification-error-foreground/35 bg-notification-error-foreground/10 dark:bg-notification-error-foreground/10"
         : "border-border-button-default/60 bg-background-primary-default/90"
 
   return (
@@ -85,7 +85,7 @@ export function RemoteStatusStrip() {
         <div
           className={`flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded-full border ${
             isConnected
-              ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+              ? "bg-state-success-text/15 border-state-success-text/30 text-state-success-text dark:text-state-success-text"
               : "bg-background-secondary-default/80 border-separator-border text-text-secondary"
           }`}
         >
@@ -107,7 +107,7 @@ export function RemoteStatusStrip() {
           <div
             className={`hidden md:flex items-center gap-1.5 min-w-0 max-w-sm rounded-lg border px-2.5 py-1 group transition-colors ${
               isConnected
-                ? "border-emerald-500/25 bg-background-primary-default/85 text-text-secondary hover:border-emerald-500/50"
+                ? "border-state-success-text/25 bg-background-primary-default/85 text-text-secondary hover:border-state-success-text/50"
                 : "border-border-button-default/60 bg-background-secondary-default/50 text-text-tertiary hover:border-border-button-default hover:text-text-secondary"
             }`}
             title={path}

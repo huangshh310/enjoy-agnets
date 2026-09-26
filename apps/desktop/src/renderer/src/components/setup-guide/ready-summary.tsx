@@ -17,7 +17,7 @@ export function ReadySummary({ workspaceName }: { workspaceName: string }) {
     ? t("settings.setupGuide.readyWorkspace", { name: workspaceName })
     : t("settings.setupGuide.readyNoWorkspace")
   return (
-    <p className="text-center text-[15px] leading-normal text-text-secondary">
+    <p className="text-center text-headline-regular leading-normal text-text-secondary">
       {[t("settings.setupGuide.readyEngines", { count: ready }), themeLabel, workspace].join(" · ")}
     </p>
   )
@@ -33,17 +33,17 @@ export function ReadyShortcuts() {
   const t = useT()
   const mod = navigator.platform.includes("Mac") ? "⌘" : "Ctrl"
   return (
-    <div className="flex flex-col gap-3.5 px-[120px]">
-      <p className="text-[12px] font-medium tracking-[0.04em] text-text-tertiary uppercase">
+    <div className="flex flex-col gap-3.5 px-28">
+      <p className="text-caption-1-medium font-medium text-text-tertiary uppercase">
         {t("settings.setupGuide.shortcutsToday")}
       </p>
       <dl className="grid grid-cols-1 gap-x-10 gap-y-2.5 sm:grid-cols-2">
         {SHORTCUTS.map((item) => (
           <div key={item.label} className="flex items-center justify-between gap-3">
-            <dt className="text-[15px] text-text-primary/85">{t(item.label)}</dt>
+            <dt className="text-headline-regular text-text-primary/85">{t(item.label)}</dt>
             <dd className="flex items-center gap-1">
               {item.keys.map((key) => (
-                <kbd key={key} className="rounded-md border border-text-primary/15 px-1.5 py-0.5 text-[12px] text-text-primary">
+                <kbd key={key} className="rounded-md border border-text-primary/15 px-1.5 py-0.5 text-caption-1-regular text-text-primary">
                   {key === "⌘" ? mod : key}
                 </kbd>
               ))}

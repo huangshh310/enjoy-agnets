@@ -76,14 +76,14 @@ export function ChangesFileDiff({
   const effectiveContent = fallbackContent || fileContentQuery.data || ""
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background-primary-default">
-      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 text-[12px] select-none">
+      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 text-caption-1-regular select-none">
         <div className="flex items-center gap-2 min-w-0">
           <RiCodeSSlashLine className="size-4 shrink-0 text-text-tertiary" />
           <span className="min-w-0 truncate font-mono font-semibold text-text-primary">
             {path}
           </span>
         </div>
-        <span className="shrink-0 rounded border border-border-button-default bg-background-primary-default px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-text-tertiary">
+        <span className="shrink-0 rounded border border-border-button-default bg-background-primary-default px-1.5 py-0.5 font-mono text-caption-2-medium font-medium text-text-tertiary">
           Read-only
         </span>
       </header>

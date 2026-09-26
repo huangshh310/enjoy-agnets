@@ -61,7 +61,7 @@ function FileRow({
           </span>
         ) : null}
         {entry.kind === "error" && entry.detail ? (
-          <span className="mt-px block truncate text-caption-2-regular text-text-warning-primary">
+          <span className="mt-px block truncate text-caption-2-regular text-status-yellow-text">
             {entry.detail}
           </span>
         ) : null}
@@ -103,7 +103,7 @@ function CommandRow({
         <span
           className={cx(
             "shrink-0 text-caption-2-regular",
-            entry.failed ? "text-text-warning-primary" : "text-state-success-text"
+            entry.failed ? "text-status-yellow-text" : "text-state-success-text"
           )}
         >
           {outcome}

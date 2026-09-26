@@ -62,7 +62,7 @@ function HostInjectChip({
           >
             <span className="truncate">{label}</span>
             {unsupported ? (
-              <RiErrorWarningLine className="size-3 shrink-0 text-text-warning-primary" aria-hidden />
+              <RiErrorWarningLine className="size-3 shrink-0 text-status-yellow-text" aria-hidden />
             ) : null}
           </button>
         </PopoverTrigger>

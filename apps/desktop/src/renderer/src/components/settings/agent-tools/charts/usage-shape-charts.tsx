@@ -79,7 +79,7 @@ export function UsageShapeGallery({ model, view }: { model: UsageChartModel; vie
   if (view === "reliability") {
     return (
       <UsageChartCard title={t("pages.observability.usageShape.reliabilityTitle")} hint={t("pages.observability.usageShape.reliabilityHint")}>
-        <div className="relative mx-auto h-[200px] w-full max-w-[260px]">
+        <div className="relative mx-auto h-[200px] w-full max-w-64">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

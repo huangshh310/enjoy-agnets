@@ -16,7 +16,7 @@ export function ExploreDesktopBanner() {
       data-testid="explore-desktop-intercept"
       className="mx-6 mb-2 flex items-start gap-2 rounded-xl border border-border-button-default bg-background-primary-default p-3 shadow-card"
     >
-      <span className="mt-1 size-2 shrink-0 rounded-full bg-text-warning-primary" aria-hidden />
+      <span className="mt-1 size-2 shrink-0 rounded-full bg-status-yellow-text" aria-hidden />
       <div className="min-w-0 text-caption-1-medium">
         <p className="text-text-primary">{t("chat.surfaceDesktopInterceptTitle")}</p>
         <p className="mt-0.5 text-text-secondary">{t("chat.surfaceDesktopInterceptBody")}</p>

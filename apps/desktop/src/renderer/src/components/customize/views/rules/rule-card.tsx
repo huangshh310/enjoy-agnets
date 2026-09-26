@@ -23,7 +23,7 @@ export function RuleCard(props: {
           <div className="flex items-center gap-2 min-w-0">
             <div
               className={cx(
-                "flex size-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold font-mono",
+                "flex size-7 shrink-0 items-center justify-center rounded-lg text-caption-2-bold font-bold font-mono",
                 badge.className
               )}
             >
@@ -31,24 +31,24 @@ export function RuleCard(props: {
             </div>
             <div className="min-w-0">
               <h4 className="text-caption-1-medium font-semibold text-text-primary truncate">{rule.name}</h4>
-              <span className="text-[10px] font-mono text-text-tertiary truncate block">{rule.filePath}</span>
+              <span className="text-caption-2-regular font-mono text-text-tertiary truncate block">{rule.filePath}</span>
             </div>
           </div>
-          <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-[9.5px] font-mono uppercase text-text-secondary shrink-0">
+          <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-caption-2-regular font-mono uppercase text-text-secondary shrink-0">
             {rule.agentKindLabel}
           </span>
         </div>
-        <p className="mt-2 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2">{rule.description}</p>
+        <p className="mt-2 text-caption-2-regular text-text-secondary leading-relaxed line-clamp-2">{rule.description}</p>
         {rule.globs ? (
           <div className="mt-2 flex items-center gap-1.5">
-            <span className="text-[10.5px] text-text-tertiary">{t("studio.rules.match")}</span>
-            <code className="rounded bg-background-secondary-default px-1.5 py-0.5 font-mono text-[10px] text-accent-600 dark:text-accent-400">
+            <span className="text-caption-2-regular text-text-tertiary">{t("studio.rules.match")}</span>
+            <code className="rounded bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular text-accent-600 dark:text-accent-400">
               {rule.globs}
             </code>
           </div>
         ) : null}
       </div>
-      <div className="mt-3 flex items-center justify-between border-t border-separator-border/40 pt-2 text-[11px]">
+      <div className="mt-3 flex items-center justify-between border-t border-separator-border/40 pt-2 text-caption-2-regular">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -72,7 +72,7 @@ export function RuleCard(props: {
         <button
           type="button"
           onClick={() => props.onDelete(rule)}
-          className="p-1 text-text-tertiary hover:text-rose-500 transition-colors"
+          className="p-1 text-text-tertiary hover:text-text-error-primary transition-colors"
           title={t("studio.rules.deleteTitle")}
         >
           <RiDeleteBinLine className="size-3.5" />

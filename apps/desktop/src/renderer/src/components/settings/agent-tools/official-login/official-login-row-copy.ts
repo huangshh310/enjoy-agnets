@@ -33,8 +33,8 @@ export function officialLoginAssistantStatus(
   if (phase === "out") {
     return {
       label: t("settings.agentTools.statusPending"),
-      dotClass: "bg-state-warning-text",
-      textClass: "text-state-warning-text"
+      dotClass: "bg-status-yellow-text",
+      textClass: "text-status-yellow-text"
     }
   }
   return null

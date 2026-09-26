@@ -35,7 +35,7 @@ export function SessionRecapButton({
         <span className="text-caption-2-medium">{t("chat.generateRecap")}</span>
       </button>
       {error ? (
-        <p className="px-2 text-caption-2-regular text-text-warning-primary">{error}</p>
+        <p className="px-2 text-caption-2-regular text-status-yellow-text">{error}</p>
       ) : recap ? (
         <p className="line-clamp-3 px-2 text-caption-2-regular text-text-tertiary" title={recap}>
           {heuristic ? `${t("chat.recapHeuristic")} · ${recap}` : recap}

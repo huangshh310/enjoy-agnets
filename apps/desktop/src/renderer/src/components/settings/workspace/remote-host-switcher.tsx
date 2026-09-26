@@ -109,7 +109,7 @@ export function RemoteHostSwitcher({
           type="button"
           className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-caption-1-medium text-text-primary shadow-2xs transition-colors cursor-pointer select-none ${
             isConnected
-              ? "border-emerald-500/30 bg-background-primary-default/95 hover:bg-background-primary-default hover:border-emerald-500/60"
+              ? "border-state-success-text/30 bg-background-primary-default/95 hover:bg-background-primary-default hover:border-state-success-text/60"
               : "border-border-button-default bg-background-primary-default hover:bg-background-secondary-hover hover:border-accent-500/40"
           }`}
           title="点击切换或管理远程服务主机"

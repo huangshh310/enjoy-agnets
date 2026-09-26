@@ -21,8 +21,8 @@ import type {
 const BUCKET_BARS: Record<TokenSpectrumBucket["id"], string> = {
   messages: "bg-accent-500",
   system: "bg-accent-500/40",
-  mcp: "bg-amber-500",
-  skills: "bg-emerald-500",
+  mcp: "bg-status-yellow-background",
+  skills: "bg-state-success-base",
   memory: "bg-chart-2"
 }
 

@@ -20,8 +20,8 @@ export function ExtensionsColumn({ column }: { column: ExtensionsColumnModel }) 
             className={cx(
               "flex size-10 shrink-0 items-center justify-center rounded-xl border",
               isMcp
-                ? "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                : "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                ? "border-chart-5/20 bg-chart-5/10 text-chart-5 dark:text-chart-5"
+                : "border-status-yellow-text/20 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
             )}
           >
             {isMcp ? <McpIcon className="size-5" /> : <RiSparklingLine className="size-5" />}

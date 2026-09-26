@@ -26,7 +26,7 @@ export function ProviderSidebar({
     <aside className="flex w-[190px] shrink-0 flex-col border-r border-separator-border bg-background-secondary-default/30">
       {/* 顶部供应商标题栏 */}
       <div className="flex h-10 items-center justify-between border-b border-separator-border px-3">
-        <span className="text-[11px] font-semibold tracking-wider text-text-tertiary uppercase">
+        <span className="text-caption-2-semibold font-semibold tracking-wider text-text-tertiary uppercase">
           {t("chat.providersCount", { count: groups.length })}
         </span>
       </div>
@@ -47,8 +47,8 @@ export function ProviderSidebar({
           <div className="flex size-5 shrink-0 items-center justify-center rounded-md bg-background-secondary-default text-text-secondary">
             <RiApps2Line className="size-3.5" />
           </div>
-          <span className="flex-1 truncate text-[12px]">{t("chat.allModels")}</span>
-          <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] font-medium text-text-tertiary">
+          <span className="flex-1 truncate text-caption-1-regular">{t("chat.allModels")}</span>
+          <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-caption-2-medium font-medium text-text-tertiary">
             {totalModelsCount}
           </span>
         </button>
@@ -78,7 +78,7 @@ export function ProviderSidebar({
               </div>
 
               <div className="flex min-w-0 flex-1 items-center gap-1">
-                <span className="truncate text-[12px] font-medium leading-tight">
+                <span className="truncate text-caption-1-medium font-medium leading-tight">
                   {group.providerName}
                 </span>
                 {group.active ? (
@@ -89,7 +89,7 @@ export function ProviderSidebar({
                 ) : null}
               </div>
 
-              <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] font-medium text-text-tertiary">
+              <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-caption-2-medium font-medium text-text-tertiary">
                 {group.models.length}
               </span>
             </button>
@@ -102,7 +102,7 @@ export function ProviderSidebar({
         <button
           type="button"
           onClick={onManageProviders}
-          className="flex w-full items-center gap-1.5 rounded-xl px-2 py-1.5 text-[11px] font-medium text-text-secondary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
+          className="flex w-full items-center gap-1.5 rounded-xl px-2 py-1.5 text-caption-2-medium font-medium text-text-secondary transition-colors hover:bg-background-secondary-hover hover:text-text-primary"
         >
           <RiSettings3Line className="size-3.5 text-accent-500" />
           <span className="truncate">{t("chat.manageProviders")}</span>

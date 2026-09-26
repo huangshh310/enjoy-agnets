@@ -42,7 +42,7 @@ export function ReviewScopeDropdown(props: {
             >
               <div className="flex flex-col">
                 <span className="font-medium text-text-primary">{item.label}</span>
-                <span className="text-[11px] text-text-tertiary">{item.desc}</span>
+                <span className="text-caption-2-regular text-text-tertiary">{item.desc}</span>
               </div>
               {isSelected ? (
                 <RiCheckLine className="size-4 shrink-0 text-accent-500" />

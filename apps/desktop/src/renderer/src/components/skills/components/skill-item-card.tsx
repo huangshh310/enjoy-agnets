@@ -55,14 +55,14 @@ export function SkillItemCard({
               <h4 className="truncate text-body-medium font-semibold text-text-primary tracking-tight">
                 {skill.name}
               </h4>
-              <p className="truncate text-[11px] font-mono text-text-tertiary">
+              <p className="truncate text-caption-2-regular font-mono text-text-tertiary">
                 {skill.sourceName}
               </p>
             </div>
           </div>
 
           {trigger ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400 shrink-0 border border-accent-500/20">
+            <span className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-mono font-medium text-accent-600 dark:text-accent-400 shrink-0 border border-accent-500/20">
               <RiTerminalBoxLine className="size-3" />
               <span>{trigger}</span>
             </span>
@@ -70,24 +70,24 @@ export function SkillItemCard({
         </div>
 
         {/* 技能描述 */}
-        <p className="text-[11.5px] text-text-secondary leading-relaxed line-clamp-2 min-h-[32px]">
+        <p className="text-caption-2-regular text-text-secondary leading-relaxed line-clamp-2 min-h-[32px]">
           {displaySkillDescription(skill.description, SKILLS_UI_COPY.emptySkillDesc)}
         </p>
       </div>
 
       {/* 底栏：已生效的 Agent 徽标 */}
-      <div className="mt-3.5 pt-2.5 border-t border-separator-border/40 flex items-center justify-between gap-2 text-[10.5px]">
+      <div className="mt-3.5 pt-2.5 border-t border-separator-border/40 flex items-center justify-between gap-2 text-caption-2-regular">
         <div className="flex items-center gap-1 min-w-0 overflow-hidden">
           {enabledCount === 0 ? (
-            <span className="text-text-tertiary italic text-[10px]">{t("pages.skills.states.noneActive")}</span>
+            <span className="text-text-tertiary italic text-caption-2-regular">{t("pages.skills.states.noneActive")}</span>
           ) : (
             <div className="flex items-center gap-1 flex-wrap">
               {hostTargets.map((targetId) => (
                 <span
                   key={targetId}
-                  className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 bg-background-secondary-default text-text-secondary font-medium text-[10px]"
+                  className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 bg-background-secondary-default text-text-secondary font-medium text-caption-2-medium"
                 >
-                  <RiCheckLine className="size-2.5 text-emerald-500" />
+                  <RiCheckLine className="size-2.5 text-state-success-text" />
                   {TARGET_SHORT_LABELS[targetId]}
                 </span>
               ))}
@@ -95,7 +95,7 @@ export function SkillItemCard({
           )}
         </div>
 
-        <span className="font-medium text-accent-600 dark:text-accent-400 shrink-0 group-hover:translate-x-0.5 transition-transform text-[11px]">
+        <span className="font-medium text-accent-600 dark:text-accent-400 shrink-0 group-hover:translate-x-0.5 transition-transform text-caption-2-regular">
           {t("pages.skills.itemCard.details")}
         </span>
       </div>

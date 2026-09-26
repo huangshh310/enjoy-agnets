@@ -137,7 +137,7 @@ function LedgerSummaryLine({
       {segments.map((segment, index) => (
         <span key={segment.text}>
           {index > 0 ? join : null}
-          <span className={segment.warn ? "text-text-warning-primary" : undefined}>{segment.text}</span>
+          <span className={segment.warn ? "text-status-yellow-text" : undefined}>{segment.text}</span>
         </span>
       ))}
     </p>

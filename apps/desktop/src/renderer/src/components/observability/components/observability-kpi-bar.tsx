@@ -131,7 +131,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-accent-500/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
-            <span className="text-[11px] font-medium">{t("pages.observability.kpiVolume")}</span>
+            <span className="text-caption-2-medium font-medium">{t("pages.observability.kpiVolume")}</span>
             <div className="flex size-6 items-center justify-center rounded-lg bg-accent-500/10 text-accent-500">
               <RiPulseLine className="size-3.5" />
             </div>
@@ -142,7 +142,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
             </span>
             <span
               className={cx(
-                "rounded px-1.5 py-0.5 font-mono text-[10.5px] font-semibold",
+                "rounded px-1.5 py-0.5 font-mono text-caption-2-semibold font-semibold",
                 stats.successRatePercent >= 90
                   ? "bg-chart-success/15 text-chart-success-text"
                   : stats.successRatePercent >= 70
@@ -153,7 +153,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
               {stats.successRatePercent.toFixed(1)}% 成功
             </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-text-tertiary font-mono">
+          <div className="mt-1.5 flex items-center gap-1.5 text-caption-2-regular text-text-tertiary font-mono">
             <span className="text-chart-success-text font-medium">
               ✓ {stats.successCount} 成功
             </span>
@@ -177,7 +177,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-chart-6/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
-            <span className="text-[11px] font-medium">{t("pages.observability.kpiDuration")}</span>
+            <span className="text-caption-2-medium font-medium">{t("pages.observability.kpiDuration")}</span>
             <div className="flex size-6 items-center justify-center rounded-lg bg-chart-6/15 text-chart-6">
               <RiTimeLine className="size-3.5" />
             </div>
@@ -188,11 +188,11 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
                 ? `${(stats.avgDurationMs / 1000).toFixed(2)}s`
                 : `${stats.avgDurationMs}ms`}
             </span>
-            <span className="font-mono text-[10.5px] text-text-tertiary">
+            <span className="font-mono text-caption-2-regular text-text-tertiary">
               {t("pages.observability.kpiAvg")}
             </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-text-tertiary font-mono">
+          <div className="mt-1.5 flex items-center gap-1.5 text-caption-2-regular text-text-tertiary font-mono">
             <span>P50:</span>
             <span className="text-text-secondary font-medium">
               {formatLatency(stats.p50DurationMs)}
@@ -218,7 +218,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-chart-warning/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
-            <span className="text-[11px] font-medium">{t("pages.observability.kpiTtfo")}</span>
+            <span className="text-caption-2-medium font-medium">{t("pages.observability.kpiTtfo")}</span>
             <div className="flex size-6 items-center justify-center rounded-lg bg-chart-warning/15 text-chart-warning-text">
               <RiFlashlightLine className="size-3.5" />
             </div>
@@ -227,11 +227,11 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
             <span className="font-mono text-title-3-semibold font-bold text-chart-warning-text">
               {stats.avgTtfoMs > 0 ? formatLatency(stats.avgTtfoMs) : "—"}
             </span>
-            <span className="font-mono text-[10.5px] text-text-tertiary">
+            <span className="font-mono text-caption-2-regular text-text-tertiary">
               均值
             </span>
           </div>
-          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-text-tertiary font-mono">
+          <div className="mt-1.5 flex items-center gap-1.5 text-caption-2-regular text-text-tertiary font-mono">
             {stats.p95TtfoMs > 0 ? (
               <>
                 <span>P95:</span>
@@ -256,7 +256,7 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
       <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs transition-all hover:border-chart-success/40">
         <div>
           <div className="flex items-center justify-between text-text-tertiary">
-            <span className="text-[11px] font-medium">{t("pages.observability.kpiThroughput")}</span>
+            <span className="text-caption-2-medium font-medium">{t("pages.observability.kpiThroughput")}</span>
             <div className="flex size-6 items-center justify-center rounded-lg bg-chart-success/15 text-chart-success-text">
               <RiSpeedUpLine className="size-3.5" />
             </div>
@@ -265,17 +265,17 @@ export function ObservabilityKpiBar(props: { metrics: TelemetryMetric[] }) {
             <span className="font-mono text-title-3-semibold font-bold text-chart-success-text">
               {stats.avgTokensPerSec > 0 ? `${stats.avgTokensPerSec}` : "—"}
             </span>
-            <span className="font-mono text-[10.5px] text-text-tertiary">
+            <span className="font-mono text-caption-2-regular text-text-tertiary">
               tok/s
             </span>
             {stats.peakTokensPerSec > 0 ? (
-              <span className="rounded bg-chart-success/15 px-1 py-0.5 font-mono text-[9.5px] text-chart-success-text">
+              <span className="rounded bg-chart-success/15 px-1 py-0.5 font-mono text-caption-2-regular text-chart-success-text">
                 峰值 {stats.peakTokensPerSec}
               </span>
             ) : null}
           </div>
           <div
-            className="mt-1.5 text-[10px] text-text-tertiary font-mono truncate"
+            className="mt-1.5 text-caption-2-regular text-text-tertiary font-mono truncate"
             title={`总计 ${stats.totalTokens.toLocaleString()} (入: ${formatTokens(stats.totalPromptTokens)} / 出: ${formatTokens(stats.totalCompletionTokens)})`}
           >
             总计 {formatTokens(stats.totalTokens)} (入 {formatTokens(stats.totalPromptTokens)} / 出 {formatTokens(stats.totalCompletionTokens)})
@@ -308,7 +308,7 @@ function Sparkline({
 }) {
   if (data.length < 2) {
     return (
-      <div style={{ height }} className="flex items-center justify-center text-[9.5px] text-text-tertiary/40">
+      <div style={{ height }} className="flex items-center justify-center text-caption-2-regular text-text-tertiary/40">
         • • •
       </div>
     )

@@ -11,6 +11,7 @@ This project uses BoardUI **tokens** (Tailwind CSS v4, `styles/`) with shadcn/ui
 - Keep BoardUI **ThemeToggle** and **ComposerLoader**. Do not add new BoardUI `components/base/*` primitives.
 - Import primitives from `@/components/ui/button` (etc). Merge classes with `cn()` from `@/lib/utils` or `cx()` from `@/utils/cx`.
 - See `design/specs/ui.md` and `design/references/visual-system.md` for the full stack, sourcing table, and look rules.
+- After UI changes, run `pnpm lint` from the repo root. `@shadcn/lint` (oxlint, `.oxlintrc.json`) checks caller `className` against BoardUI contracts.
 
 ## Color: semantic tokens only
 

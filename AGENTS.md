@@ -85,7 +85,7 @@
 - IPC 入参 Zod parse，失败即拒。新频道顺序：contract → main → preload → renderer。
 - `write_file` / `edit_file` / `bash` / `git_commit` 默认审批，执行只在 main。
 - 路由用 Hash History。设置是路由不是 modal。
-- UI：BoardUI 语义 token + 复合字号；控件先 shadcn / AI Elements 再 restyle。品牌标用 Lobe Icons。
+- UI：BoardUI 语义 token + 复合字号；控件先 shadcn / AI Elements 再 restyle。品牌标用 Lobe Icons。改 UI 后跑 `pnpm lint`。
 - 密钥进 `safeStorage`，不进 Git，不进 renderer。
 - 桌面是三端：路径分隔、PATH、spawn、安装配方、快捷键（⌘ vs Ctrl）、文件监视都要过 Win / macOS / Linux。一种系统上的 Homebrew / `npm` 裸 spawn 不能当成全平台。
 
@@ -114,7 +114,10 @@ pnpm install
 pnpm dev
 pnpm test
 pnpm typecheck
+pnpm lint
 ```
+
+改渲染层 UI 后必须跑 `pnpm lint`（`@shadcn/lint` via oxlint），按 findings 改 className：用 BoardUI token / 已有 variant，不要 raw palette 或 restyle 控件皮。
 
 发版（契约 `design/specs/updates.md`；version 来自 `apps/desktop/package.json`，失败不涨号）：
 

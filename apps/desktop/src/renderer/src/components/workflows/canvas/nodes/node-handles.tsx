@@ -25,7 +25,7 @@ export function ConnectionHandleDot({
       <button
         type="button"
         title={side === "left" ? "输入端口" : "输出端口"}
-        className="group relative size-4 rounded-full border-2 border-white dark:border-zinc-900 bg-blue-500 shadow-md transition-transform hover:scale-125 active:scale-95"
+        className="group relative size-4 rounded-full border-2 border-white dark:border-separator-border bg-accent-500 shadow-md transition-transform hover:scale-125 active:scale-95"
         style={{
           boxShadow: "0 0 0 1px rgba(59,130,246,0.3), 0 2px 6px rgba(0,0,0,0.15)"
         }}
@@ -34,7 +34,7 @@ export function ConnectionHandleDot({
           onMouseDown(event)
         }}
       >
-        <span className="absolute inset-0 rounded-full bg-blue-400 opacity-0 group-hover:opacity-40 transition-opacity" />
+        <span className="absolute inset-0 rounded-full bg-accent-500 opacity-0 group-hover:opacity-40 transition-opacity" />
       </button>
     </div>
   )
@@ -58,7 +58,7 @@ export function ResizeHandle({
 
   return (
     <div
-      className={`absolute z-30 size-3 rounded-[3px] border-[1.5px] border-blue-500 bg-white dark:bg-zinc-900 shadow-sm transition-transform hover:scale-125 active:scale-95 ${pos}`}
+      className={`absolute z-30 size-3 rounded-sm border border-accent-500 bg-background-primary-default dark:bg-background-secondary-default shadow-sm transition-transform hover:scale-125 active:scale-95 ${pos}`}
       style={{
         boxShadow: "0 1px 3px rgba(0,0,0,0.18)"
       }}

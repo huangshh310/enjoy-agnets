@@ -66,7 +66,7 @@ export function SidebarUserCard({
           <Collapsible collapsed={collapsed}>
             <span className="flex min-w-0 flex-col items-start justify-center text-left">
               <span className="truncate text-caption-1-semibold text-text-primary leading-tight">{userName}</span>
-              <span className="truncate text-[10.5px] font-mono text-text-tertiary leading-tight">
+              <span className="truncate text-caption-2-regular font-mono text-text-tertiary leading-tight">
                 {userEmail}
               </span>
             </span>
@@ -76,7 +76,7 @@ export function SidebarUserCard({
           <span className="flex size-4 shrink-0 items-center justify-center">
             <ChevronDownSmall
               className={cx(
-                "size-3.5 text-text-tertiary transition-transform duration-200 ease group-hover:text-text-secondary",
+                "size-3.5 text-text-tertiary transition-transform duration-200 ease-out group-hover:text-text-secondary",
                 isOpen && "rotate-180"
               )}
             />
