@@ -106,7 +106,7 @@ export function McpCreateModal(props: {
     setIsSaving(true)
     setErrorMsg(null)
     try {
-      let envRef: string | undefined
+      let envRef = "{}"
       const validEnv = envPairs.filter((p) => p.key.trim() !== "")
       if (validEnv.length > 0) {
         const envObj: Record<string, string> = {}

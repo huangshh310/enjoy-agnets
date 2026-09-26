@@ -528,7 +528,7 @@ export const zhSettings = {
     customCommandHint: "填写支持的助手程序名，或指向该程序的完整路径。不支持 shell、Node 或包管理器命令。",
     customArgs: "参数",
     customEnv: "环境变量",
-    customEnvHint: "密钥值在表单里掩码，不会画「已连接」绿灯。",
+    customEnvHint: "留空保留已存密钥，重新输入才会覆盖。密钥不会回传到界面。",
     customCwd: "工作目录",
     cwdWorkspace: "工作区根目录",
     cwdCustom: "自定义路径",

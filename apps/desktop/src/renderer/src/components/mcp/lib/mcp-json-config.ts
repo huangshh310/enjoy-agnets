@@ -30,7 +30,8 @@ export function buildMcpConfigJson(serverList: McpServer[]): string {
       let env: Record<string, string> | undefined
       if (server.envRef) {
         try {
-          env = JSON.parse(server.envRef) as Record<string, string>
+          const parsed = JSON.parse(server.envRef) as Record<string, string>
+          env = Object.fromEntries(Object.keys(parsed).map((key) => [key, ""]))
         } catch {
           // ignore malformed envRef
         }

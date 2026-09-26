@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-24
+> 工作区是 Agent 的磁盘边界。最后更新：2026-09-26
 
 ## 当前真相
 
@@ -59,7 +59,8 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 - Files 预览已接 `WorkspaceEditor`（本地 monaco，不走 CDN）+ `workspace.writeFile`。⌘/Ctrl+S 与顶栏保存同一条路径。这是单文件编辑，不是多标签 LSP IDE。`workspace.watch` 用 `fs.watch` recursive；Windows 另开指纹轮询（最多 200 条）补漏事件，不要假装 inotify。
 - Files 树拖拽走 `workspace.move`（`workspace-move.ts` / `workspace-rename.ts` + `workspace-move-plan.ts`）。renderer 不 `fs.rename`。不要和 Review 改宽分隔条、也不要和 Composer 附件 drop 搞混。
-- Agent `git_log`（`workspace-git-agent-log.ts`）是线性 porcelain 文本，limit 默认 20、上限 100，path jail。不要和 Review `workspace.gitLog` 的 structured `commits[]` 混用。
+- Agent `git_log`（`workspace-git-agent-log.ts`）是线性 porcelain 文本，limit 默认 20、上限 100，path jail。`git_diff` 的 path 同样走 `resolveInsideWorkspace`。不要和 Review `workspace.gitLog` 的 structured `commits[]` 混用。
+- **隐患**：路径 jail 只做字符串相对检查时，工作区内指向外部的符号链接会跟着写出去。正确做法：`resolveInsideWorkspace` 对已存在前缀 `realpath`。
 - PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。

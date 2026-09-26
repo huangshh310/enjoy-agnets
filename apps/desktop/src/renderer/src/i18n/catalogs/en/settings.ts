@@ -528,7 +528,7 @@ export const enSettings = {
     customCommandHint: "Enter a supported assistant name, or the full path to that program. Shell, Node, and package-manager commands are not supported.",
     customArgs: "Arguments",
     customEnv: "Environment",
-    customEnvHint: "Secret-looking values are masked. There is no fake connected light.",
+    customEnvHint: "Leave blank to keep the saved secret. Type a new value to replace it.",
     customCwd: "Working directory",
     cwdWorkspace: "Workspace root",
     cwdCustom: "Custom path",

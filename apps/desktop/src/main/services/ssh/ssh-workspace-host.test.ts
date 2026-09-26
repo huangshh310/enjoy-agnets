@@ -62,3 +62,25 @@ test("未连接/断开时写抛可识别断开错误而非 ok", async () => {
   })
   assert.notEqual(REMOTE_DISCONNECTED, "{ok:true}")
 })
+
+test("SSH bash 把命令拆成 quote 后的 argv，不把分号交给远端 shell", async () => {
+  const conn = fakeConn()
+  const ran: string[] = []
+  conn.exec = async (command) => {
+    ran.push(command)
+    return { stdout: "", stderr: "", exitCode: 0 }
+  }
+  const host = createSshWorkspaceHost(conn, "/home/alice/app")
+  await host.bash("ls -la")
+  assert.match(ran[0] ?? "", /cd '\/home\/alice\/app' && exec 'ls' '-la'/)
+  await host.bash("ls; rm -rf /")
+  assert.match(ran[1] ?? "", /exec 'ls;' 'rm' '-rf' '\/'/)
+  assert.equal((ran[1] ?? "").includes("&& ls;"), false)
+  await assert.rejects(() => host.bash("bash -c 'rm -rf /'"), /Shell wrappers/)
+})
+
+test("SSH gitDiff / gitLog 路径必须 jail", async () => {
+  const host = createSshWorkspaceHost(fakeConn(), "/home/alice/app")
+  await assert.rejects(() => host.gitDiff("../secret"), /escapes/)
+  await assert.rejects(() => host.gitLog?.({ path: "../../etc/passwd" }), /escapes/)
+})

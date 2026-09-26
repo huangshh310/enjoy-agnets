@@ -15,6 +15,7 @@ import {
 } from "@enjoy-agents/providers"
 import { deleteSetting, getDatabase, getSetting } from "./database"
 import { createId } from "./ids"
+import { redactJsonSecrets } from "./secret-map"
 
 const LEGACY_SECRET_KEY = "provider.secret"
 const VAULT_KEY = "provider.vault"
@@ -101,8 +102,8 @@ export function toPublic(profile: ProviderProfile, activeId: string | null): Pro
     maxTokens: profile.maxTokens,
     temperature: profile.temperature,
     reasoningEffort: profile.reasoningEffort,
-    customHeaders: profile.customHeaders,
-    customBody: profile.customBody,
+    customHeaders: redactJsonSecrets(profile.customHeaders),
+    customBody: redactJsonSecrets(profile.customBody),
     models: profile.models,
     hasKey: Boolean(profile.apiKey),
     keyHint: keyHint(profile.apiKey),

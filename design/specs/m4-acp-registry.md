@@ -1,6 +1,6 @@
 # spec/m4-acp-registry
 
-> M4 ACP 扩展与 Registry。最后更新：2026-09-21
+> M4 ACP 扩展与 Registry。最后更新：2026-09-26
 > 产品锁：做 M2–M4；**砍** M4 PTY 兜底、M5 worktree、M6 摩擦/digest/团队 MCP。
 > M5 会话状态灯与 ACP 进程收尸已落地。M6 skill-sources 可选 pull 已薄层落地（见 `skills` spec），不含摩擦/digest/团队 MCP。
 > BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
@@ -106,7 +106,7 @@ UI：仅硬条件全过才移出「即将推出」；禁止手动假升。
 
 - 自定义 command 若不走 basename 白名单，用户能把 `bash`/`npx` 写进 vault。保存与 spawn 都必须 `assertCustomAllowedCommand`。UI 必须用 C 端口吻（支持的助手程序），禁止 basename / stdio 行话。`setError` 必须映射 `Refusing to spawn`，不要把 main 英文 throw 直接摊给用户。
 - `custom:<slug>` 必须进 `AgentToolId` union，否则 `setSessionRuntime` / Composer persist 会拒。
-- 列表不要回显 env 值；编辑走 `agentTools.getCustom`。密钥型 key 用 password 掩码。
+- 列表不要回显 env 值；编辑走 `agentTools.getCustom`，只回键、值留空，空值保存保留已存。密钥型 key 用 password 掩码。
 - comingSoon 假升：只信 `canPromoteComingSoon`，不要手改 preset.available 绕过 OpenCode→Gemini→Pi。该函数是 catalog/caps/preset 硬接线检查，不要写成「已实测 initialize」。现场 handshake 只发生在开流，不决定 comingSoon 升级。
 - 能力矩阵自定义行必须画用户 label（显示名），不要露出 `custom:<slug>`。
 - 空态不得嵌 Registry 列表或 `AgentCliInstall` 整卡。新会话 checklist 只给单行安装/复制；深链 `?tab=registry` 才打开本页。

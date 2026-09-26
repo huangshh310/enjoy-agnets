@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-09-24
+> 协议工厂，不是品牌锁定。最后更新：2026-09-26
 
 ## 当前真相
 
@@ -12,7 +12,7 @@
 | `anthropic` | Messages | `/v1/messages` |
 | `openai-responses` | Responses | `/v1/responses` |
 
-密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic` 给 UI：`hasKey`、`keyHint`（`••••` + 后四位，短 Key / 非可见字符退回纯掩码）、Base URL，**从不回说明文 Key**。`models.list` 只返回 vault 里**已配置档案**的目录；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器空态引导去设置页，composer 默认不预填 `deepseek-chat`。
+密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic` 给 UI：`hasKey`、`keyHint`（`••••` + 后四位，短 Key / 非可见字符退回纯掩码）、Base URL，**从不回说明文 Key**。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只返回 vault 里**已配置档案**的目录；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器空态引导去设置页，composer 默认不预填 `deepseek-chat`。
 
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 
@@ -43,6 +43,7 @@
 ## 已知坑
 
 - **隐患**：列表直接渲染 IPC `keyHint`（`••••`+后四位）。正确做法：列表走 i18n「密钥已保存」；`keyHint` 只给编辑框 placeholder。
+- **隐患**：`customHeaders` / `customBody` 曾随 `ProviderPublic` 全文回 renderer。正确做法：只回键的占位 JSON；保存时空值保留已存，与 apiKey 空则保留同一套。
 - 空 vault 曾在 `listAllPublicModels` 硬塞 DeepSeek 静态目录（`providerId: "default"`）。设置页「已配置 0」但选择器仍显示 4 个模型。目录必须跟档案走，空档案返回 `[]`。
 - 自定义 `/v1` 上 MiniMax / GLM / Kimi 报 `No output generated`：不是这些模型不思考，也不是该藏思考档。官方 `createOpenAI` 会丢掉 `reasoning_content`，必须 `createOpenAICompatible`。MiniMax-M3 要 `thinking`；`reasoning_split` 只给官方域名。GLM 要 `thinking` + `reasoning_effort`；Kimi K3 走顶层 `reasoning`。不要把 `reasoning: xhigh` 一刀切发给 MiniMax。
 - 中转 MiniMax 报 `Unsupported parameter(s): 'reasoning_split'`：这是 MiniMax 官方拆思考字段，严格 OpenAI 网关会拒。思考栏空转「本轮没有推理轨迹」是请求已失败、没有 token。中转只发 `thinking.adaptive`。

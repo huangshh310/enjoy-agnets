@@ -122,18 +122,21 @@ export function resolveToolApproval(
 }
 
 const MCP_WRITE_LEAF = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
+/** 叶子名精确匹配：不要用含子串 `command`，否则 list_commands 会被误伤。 */
+const MCP_SHELL_LEAF = /^(bash|shell|sh|zsh|cmd|command|run_command|run-command|terminal)$/i
 
 export function mcpToolLeafName(toolName: string): string {
   return toolName.includes("__") ? toolName.slice(toolName.indexOf("__") + 2) : toolName
 }
 
 export function isMcpWriteToolName(toolName: string): boolean {
-  return MCP_WRITE_LEAF.test(mcpToolLeafName(toolName))
+  const leaf = mcpToolLeafName(toolName).trim()
+  return MCP_WRITE_LEAF.test(leaf) || MCP_SHELL_LEAF.test(leaf)
 }
 
-/** ACP 弱名：command / shell 也算探索态要拦的写。 */
+/** ACP 弱名：command / shell / 终端也算探索态要拦的写。 */
 const EXPLORE_BLOCK_NAMES =
-  /^(write|edit|bash|shell|command|cmd|git_commit|git_push|git_branch|code_mode|str_replace|apply_patch|create|update)$/i
+  /^(write|edit|bash|shell|command|cmd|run_command|run-command|terminal|git_commit|git_push|git_branch|code_mode|str_replace|apply_patch|create|update)$/i
 
 /** 探索态宿主拦截：写盘 / 命令 / 提交 / MCP 写名直接 deny，不进审批停靠。 */
 export function isExploreMutatingDeny(mode: AgentMode, toolName: string): boolean {

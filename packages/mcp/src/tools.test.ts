@@ -20,6 +20,9 @@ test("写类工具名视为 mutating", () => {
   assert.equal(isMutatingToolName("read_resource"), false)
   assert.equal(isMutatingToolName("write_file"), true)
   assert.equal(isMutatingToolName("delete_record"), true)
+  assert.equal(isMutatingToolName("bash"), true)
+  assert.equal(isMutatingToolName("run_command"), true)
+  assert.equal(isMutatingToolName("list_commands"), false)
 })
 
 test("Agent 工具名用双下划线分隔", () => {

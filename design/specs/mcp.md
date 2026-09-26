@@ -1,12 +1,12 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-20
+> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-09-26
 
 ## 当前真相
 
 包：`packages/mcp`。stdio / SSE / HTTP 配置入库 `mcp_servers`。本机会话句柄走 `createMcpHandleRegistry`。新 Server 默认 `trusted=false`。写操作即使 allow 也再 ask。`sanitizeAppMessage` 限制 JSON-RPC 方法与资源 URI 白名单。CSP 常量 `MCP_APP_CSP`（`connect-src 'none'`；srcDoc 允许 `script-src 'unsafe-inline'`）。
 
-`createMCPClient` 只在 main；`ai@7.0.84` 无该导出时 stdio / HTTP 走本机 JSON-RPC 会话：initialize 后 `tools/list`，`tools/call` 走 `mcp.call`。stdio `command` 必须是白名单裸二进制（`npx` / `npm` / `pnpm` / `yarn` / `bun` / `node` / `uvx` / `uv` / `python` / `python3`），禁止路径和 shell 元字符。写类工具名即使 allow 也再 ask；`mcp.call` 对 `ask` 直接拒，必须经 Agent ToolLoop 的 `user-approval` + `decideApproval` 后再执行（`fromApprovedAgent`）。已连接且 `trusted`（或写在 `modelVisibleTools`）的工具注入 ToolLoopAgent，名为 `mcp_<serverId>__<tool>`。`tools/list` 的 `inputSchema` 经 `jsonSchemaToZod` 交给模型（object / array / enum / anyOf / oneOf）；`$ref` 与无法识别的结构回落 `z.unknown()`，没有 schema 才回落 `z.record(unknown)`。`openApp` 的 `allowedResourceUris` 只信库内配置，不把调用方 `resourceUri` 塞进白名单。
+`createMCPClient` 只在 main；`ai@7.0.84` 无该导出时 stdio / HTTP 走本机 JSON-RPC 会话：initialize 后 `tools/list`，`tools/call` 走 `mcp.call`。stdio `command` 必须是白名单裸二进制（`npx` / `npm` / `pnpm` / `yarn` / `bun` / `node` / `uvx` / `uv` / `python` / `python3`），禁止路径和 shell 元字符。stdio spawn 剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`（含 UI `envRef` 覆盖），`cwd` 锁家目录，Windows 上 `.cmd` / `.bat` 才 `shell: true`。写类工具名与 **命令类叶子名**（`bash` / `shell` / `run_command` / `terminal` 等精确匹配，不含 `list_commands`）即使 allow 也再 ask；`mcp.call` 对 `ask` 直接拒，必须经 Agent ToolLoop 的 `user-approval` + `decideApproval` 后再执行（`fromApprovedAgent` 只给写/命令类 execute）。探索态不注册这些 MCP 工具；主 ToolLoop `toolApproval` 接 `isExploreMutatingDeny`。已连接且 `trusted`（或写在 `modelVisibleTools`）的工具注入 ToolLoopAgent，名为 `mcp_<serverId>__<tool>`。`tools/list` 的 `inputSchema` 经 `jsonSchemaToZod` 交给模型（object / array / enum / anyOf / oneOf）；`$ref` 与无法识别的结构回落 `z.unknown()`，没有 schema 才回落 `z.record(unknown)`。`openApp` 的 `allowedResourceUris` 只信库内配置，不把调用方 `resourceUri` 塞进白名单。
 
 设置 `#/settings/extensions` 是 P0-H 发现壳：两列 MCP \| Skills，已配置数 +「添加」深链 `#/mcp` / `#/skills`，H 列只列本机 SoT 名。I2 同页精选「添加到 MCP」走现有 `mcp.upsert`（`trusted: true`，已有同行则带 `id` 更新），不新开存储、不弹第二套表单。catalog 失败只空精选区 + 重试。视觉锁 [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)。P0-S 开流注入诚实态已落地：Composer `HostInjectBar` 一行芯片 + `host.inject` 快照（`HostInjectSnapshot`），不是第二发现壳。视觉真源 [`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)，产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。已启用 = 信任且服务器级未 deny；能力 `hostMcp=none` 时 `injected=[]` 并标 `unsupported`。Enjoy Local 未 Connect 的信任行记 `not-connected`，禁止空绿「已同步到助手」。
 
@@ -33,7 +33,7 @@ ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny*
 - `apps/desktop/src/renderer/src/components/mcp/lib/mcp-json-config.ts`
 - `apps/desktop/src/renderer/src/components/mcp/mcp-app-frame.tsx`
 
-- `envRef`（`{KEY: value}` JSON 串）连接时解析并与主进程 env 合并注入 stdio spawn（曾只落库不生效）；坏 JSON 回空 env 不阻断连接。
+- `envRef`（`{KEY: value}` JSON 串）连接时解析并与主进程 env 合并注入 stdio spawn（曾只落库不生效）；坏 JSON 回空 env 不阻断连接。`list` / `toPublic` 只回键的占位 JSON，不回明文；upsert 时空值保留已存密钥。
 
 ## 已知坑
 
@@ -51,7 +51,8 @@ ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny*
 - srcDoc iframe 的 `'self'` 对不上任何脚本文件；demo 按钮依赖 `script-src 'unsafe-inline'`。安全边界靠 sandbox + `connect-src 'none'` + main 消毒，不要再开 `allow-same-origin`。
 - 未信任 Server 调用 `mcp.openApp` 直接拒。E2E 必须先 Trust 再 Open App。
 - `jsonSchemaToZod` 不展开 `$ref`。复杂 MCP schema 宁可 `z.unknown()`，不要假装已经校验。
-- `decideMcpCall === "ask"` 时 `callServerTool` 不得执行。renderer `mcp.call` 会抛 `requires Agent approval`；只有 ToolLoop `execute` 可带 `fromApprovedAgent`。
+- **隐患**：MCP 叶子名是 `bash` / `shell` / `run_command` 时旧启发式不含 write 子串，`resolveToolApproval` 给 `not-applicable`，`createMcpAgentTools` 还带 `fromApprovedAgent: true`，ToolLoop 不弹卡就执行。正确做法：命令类叶子名精确匹配走 `user-approval`；探索态 deny 且不注册；`fromApprovedAgent` 只给写/命令类 execute。
+- **隐患**：stdio spawn `{...process.env, ...envRef}` 把 `NODE_OPTIONS` 带进 `node`/`npx` 子进程。正确做法：与 ACP 一样剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`；`cwd` 用家目录，禁止默认 `process.cwd()`。
 - stdio 命令在 `spawn` 前走 `parseStdioCommand`。不要把 `powershell` / `cmd` / 绝对路径放进白名单。
 - **官方 MCP 矢量图标与 Node ESM 测试兼容**：主界面活动轨道（Activity Rail）、情境侧栏导航、页面状态胶囊、空态插图、快速检索命令面板与 Inspector 工具策略均统一采用官方 Model Context Protocol 矢量标志（`McpIcon`），替代通用电插头图标（`RiPlugLine`）。预设大集市包含 Docker、PostgreSQL、SQLite、MySQL、Redis、GitLab、Slack、Linear、Sentry、Puppeteer、Playwright、Git、GitHub、Brave、Notion、MCP 等 20 款官方图标。Node.js 22 内置 `--experimental-strip-types` 跑单元测试时不支持 `.tsx` 文件与带相对路径的无扩展名引入，且三方依赖若含内部无扩展名导入（如 `@lobehub/icons` 的 barrel 导出）会导致 `ERR_UNSUPPORTED_DIR_IMPORT`。因此被单元测试直接或间接引入的组件（如 `mcp-brand-icons.ts`）必须为纯 `.ts` 且使用 `React.createElement` 实现，矢量 paths 需内联且带明确 `.ts` 文件扩展名。
 

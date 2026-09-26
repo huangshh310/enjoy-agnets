@@ -13,6 +13,7 @@ import {
 import { unbindProviderFromAgentTools } from "./agent-tools-vault"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
+import { mergeJsonSecrets } from "./secret-map"
 import {
   readVault,
   resolvedStyle,
@@ -88,8 +89,8 @@ export async function upsertProfile(input: {
     maxTokens: input.maxTokens ?? existing?.maxTokens,
     temperature: input.temperature ?? existing?.temperature,
     reasoningEffort: input.reasoningEffort ?? existing?.reasoningEffort,
-    customHeaders: input.customHeaders ?? existing?.customHeaders,
-    customBody: input.customBody ?? existing?.customBody,
+    customHeaders: mergeJsonSecrets(input.customHeaders, existing?.customHeaders),
+    customBody: mergeJsonSecrets(input.customBody, existing?.customBody),
     models: input.models ?? existing?.models
   }
   vault.profiles = existing

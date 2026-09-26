@@ -24,8 +24,13 @@ export function parseToolsList(result: unknown): McpToolInfo[] {
   return out
 }
 
+const MUTATING_NAME = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
+/** 与 agent-core `MCP_SHELL_LEAF` 对齐：bash/shell 也要走审批，不能只靠 write 子串。 */
+const SHELL_NAME = /^(bash|shell|sh|zsh|cmd|command|run_command|run-command|terminal)$/i
+
 export function isMutatingToolName(name: string): boolean {
-  return /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i.test(name)
+  const leaf = name.trim()
+  return MUTATING_NAME.test(leaf) || SHELL_NAME.test(leaf)
 }
 
 export function mcpAgentToolName(serverId: string, toolName: string): string {

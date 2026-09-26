@@ -269,16 +269,34 @@ test("MCP 写名按 leaf 判断，与注册过滤同一规则", () => {
   assert.equal(isMcpWriteToolName("mcp_s1__read_file"), false)
   assert.equal(isMcpWriteToolName("mcp_s1__write_file"), true)
   assert.equal(isMcpWriteToolName("mcp_s1__delete_record"), true)
+  assert.equal(isMcpWriteToolName("mcp_s1__bash"), true)
+  assert.equal(isMcpWriteToolName("mcp_s1__run_command"), true)
+  assert.equal(isMcpWriteToolName("mcp_s1__list_commands"), false)
 })
 
 test("MCP 写工具要审批，读工具直接过", () => {
   assert.equal(resolveToolApproval("mcp_s1__read_file", "agent", REQUIRE_ALL), "not-applicable")
   assert.equal(resolveToolApproval("mcp_s1__write_file", "agent", REQUIRE_ALL), "user-approval")
+  assert.equal(resolveToolApproval("mcp_s1__bash", "agent", REQUIRE_ALL), "user-approval")
+  assert.equal(resolveToolApproval("mcp_s1__shell", "agent", REQUIRE_ALL), "user-approval")
+  assert.equal(resolveToolApproval("mcp_s1__run_command", "agent", REQUIRE_ALL), "user-approval")
   assert.deepEqual(resolveToolApproval("mcp_s1__write_file", "ask", REQUIRE_ALL), {
     type: "denied",
     reason: "ask mode is read-only."
   })
+  assert.deepEqual(resolveToolApproval("mcp_s1__bash", "plan", REQUIRE_ALL), {
+    type: "denied",
+    reason: "plan mode is read-only."
+  })
   assert.equal(resolveToolApproval("mcp_s1__read_file", "plan", REQUIRE_ALL), "not-applicable")
+})
+
+test("探索态拦截 MCP 命令名与 ACP 弱名", () => {
+  assert.equal(isExploreMutatingDeny("plan", "mcp_s1__bash"), true)
+  assert.equal(isExploreMutatingDeny("ask", "mcp_s1__run_command"), true)
+  assert.equal(isExploreMutatingDeny("plan", "mcp_s1__read_file"), false)
+  assert.equal(isExploreMutatingDeny("plan", "command"), true)
+  assert.equal(isExploreMutatingDeny("plan", "terminal"), true)
 })
 
 test("Harness 静态表不登记 ask_user_questions", () => {
