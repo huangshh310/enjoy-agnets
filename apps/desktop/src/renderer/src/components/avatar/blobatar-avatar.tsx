@@ -50,6 +50,8 @@ export function BlobatarAvatar({
   const resolvedAnimate = animate ?? config?.animate ?? DEFAULT_BLOBATAR_CONFIG.animate ?? "always"
   const bgProp: boolean | "square" | "circle" | "squircle" =
     resolvedBg === "none" ? false : resolvedBg
+  // blobatar 把每个表情挂在同名 namespace 导出上，只能按名取。
+  // eslint-disable-next-line import/namespace
   const expressionObj = expressions[resolvedExpression as keyof typeof expressions]
   const expr = typeof expressionObj === "object" ? (expressionObj as expressions.Expression) : undefined
   const live = resolvedAnimate === "always" || resolvedAnimate === "hover"

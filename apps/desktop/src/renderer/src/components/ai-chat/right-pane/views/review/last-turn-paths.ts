@@ -3,6 +3,7 @@
  */
 
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
 import type { ThreadMessage } from "../../../../../stores/chat-store.types"
 
 const CONTINUE_MARKERS = [
@@ -14,17 +15,18 @@ const CONTINUE_MARKERS = [
   "Continue the in_progress Todo List"
 ]
 
-const WRITE_TOOLS: Record<string, true> = {
-  write_file: true,
-  edit_file: true,
-  write: true,
-  edit: true,
-  delete_file: true,
-  delete: true,
-  apply_patch: true,
-  str_replace: true,
-  strreplace: true
-}
+/** 带 path 入参的写类工具：Enjoy 名走契约，后 5 个是外部引擎的写 / 删别名。 */
+const PATH_WRITE_TOOLS = new Set<string>([
+  TOOL_NAMES.writeFile,
+  TOOL_NAMES.editFile,
+  "write",
+  "edit",
+  "delete_file",
+  "delete",
+  "apply_patch",
+  "str_replace",
+  "strreplace"
+])
 
 export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
   let lastUser = -1
@@ -87,7 +89,7 @@ function pathFromTool(tool: ThreadToolCall): string | null {
 /** Enjoy 本地工具 + CLI/ACP 常见写盘名（Write / StrReplace / apply_patch）。 */
 function isWriteTool(name: string): boolean {
   const n = name.toLowerCase().replace(/[\s-]/g, "_")
-  if (WRITE_TOOLS[n] || WRITE_TOOLS[name]) return true
+  if (PATH_WRITE_TOOLS.has(n) || PATH_WRITE_TOOLS.has(name)) return true
   if (/(^|_)(read|search|glob|grep|list|fetch)(_|$)/.test(n) || n.includes("read")) return false
   return n.includes("write") || n.includes("edit") || n.includes("patch") || n.includes("strreplace")
 }

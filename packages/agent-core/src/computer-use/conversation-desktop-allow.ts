@@ -83,6 +83,8 @@ export function writeThroughDesktopActSessionAllow(
 
 /** 用会话表覆盖 run 里的 desktop_act:* 键，其它工具白名单不动。 */
 export function overlayConversationDesktopAllow(sessionId: string, runApprovedTools: Set<string>): void {
+  // 边遍历边 delete，必须先快照一份；去掉展开会漏删剩余键。
+  // eslint-disable-next-line unicorn/no-useless-spread
   for (const key of [...runApprovedTools]) {
     if (key === "desktop_act" || key.startsWith(DESKTOP_ACT_SESSION_PREFIX)) {
       runApprovedTools.delete(key)

@@ -1,9 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [],
+  "plugins": ["typescript", "import", "unicorn"],
   "jsPlugins": ["@shadcn/lint"],
   "categories": {
-    "correctness": "off"
+    "correctness": "error"
   },
   "ignorePatterns": [
     "**/node_modules/**",
@@ -89,6 +89,83 @@
       "rules": {
         "shadcn/no-restyle": "off",
         "shadcn/no-arbitrary-values": "off"
+      }
+    },
+    {
+      "files": ["packages/ui/components/ai-elements/**"],
+      "rules": {
+        "no-unused-vars": [
+          "error",
+          {
+            "args": "none"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.d.ts"],
+      "rules": {
+        "typescript/triple-slash-reference": "off"
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@enjoy-agents/agent-core",
+                "message": "renderer 禁止打 agent-core 主入口（会带进 node:）。用 electron.vite.config.ts 里已别名的子路径，新子路径先写进 design/specs/architecture.md。"
+              },
+              {
+                "name": "@enjoy-agents/agent-harness",
+                "message": "renderer 禁止导入 agent-harness：它在 main 侧 spawn 子进程。"
+              },
+              {
+                "name": "@enjoy-agents/db",
+                "message": "renderer 禁止导入 db：SQLite 只在 main。"
+              },
+              {
+                "name": "@enjoy-agents/knowledge",
+                "message": "renderer 禁止导入 knowledge：分块与检索只在 main。"
+              },
+              {
+                "name": "@enjoy-agents/providers",
+                "message": "renderer 只允许 presets / capabilities / context-window 子路径，主入口会创建模型客户端。"
+              },
+              {
+                "name": "ai",
+                "message": "renderer 不调模型：AI SDK 只在 main（design/specs/agent-runtime.md）。"
+              },
+              {
+                "name": "electron",
+                "message": "renderer 不直接用 electron，走 preload 暴露的 window.ide。"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["node:*", "fs", "path", "os", "child_process", "net", "http", "https"],
+                "message": "renderer 不碰 Node API：文件系统与进程只在 main（AGENTS.md 工程红线）。"
+              },
+              {
+                "group": ["@ai-sdk/*"],
+                "message": "renderer 不装模型 provider。"
+              },
+              {
+                "group": ["@enjoy-agents/db/*", "@enjoy-agents/knowledge/*", "@enjoy-agents/agent-harness/*"],
+                "message": "这些包整体属于 main 侧，没有 renderer 安全的子路径。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
       }
     }
   ]

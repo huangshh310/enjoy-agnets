@@ -18,9 +18,13 @@ test("sanitizeModelMessages omits file bytes", () => {
       ]
     }
   ])
-  const filePart = (rows[0]?.content as Array<Record<string, unknown>>)[1]
-  assert.equal(filePart?.data, "[omitted]")
-  assert.equal(filePart?.mediaType, "image/png")
+  const first = rows[0]
+  assert.ok(first, "sanitizeModelMessages 要保留这条用户消息")
+  const content = first.content as Array<Record<string, unknown>>
+  const filePart = content[1]
+  assert.ok(filePart, "file part 要跟在 text part 之后")
+  assert.equal(filePart.data, "[omitted]")
+  assert.equal(filePart.mediaType, "image/png")
 })
 
 test("rememberInspectPrompt is keyed by session", () => {

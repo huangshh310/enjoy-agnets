@@ -4,8 +4,6 @@
  */
 import { z } from "zod"
 
-export const ASK_USER_QUESTIONS_TOOL = "ask_user_questions"
-
 export const AskUserOptionSchema = z.union([
   z.string().min(1),
   z.object({

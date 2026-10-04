@@ -9,7 +9,7 @@ export function assertGitBranchName(name: string): string {
   if (trimmed.startsWith("-") || trimmed.includes("..") || trimmed.includes("\\")) {
     throw new Error("Invalid branch name.")
   }
-  if (!/^[A-Za-z0-9._/\-]+$/.test(trimmed)) throw new Error("Invalid branch name.")
+  if (!/^[A-Za-z0-9._/-]+$/.test(trimmed)) throw new Error("Invalid branch name.")
   return trimmed
 }
 

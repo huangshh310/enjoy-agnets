@@ -4,21 +4,30 @@
  * 不引用 @renderer 别名，方便 node:test 直接跑。
  */
 import { desktopActApprovalText } from "@enjoy-agents/agent-core/computer-use"
+import { TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
 import type { ApprovalVariant } from "./approval.types"
 
+/** Enjoy 名走契约；其余是 ACP / CLI 的弱名与动词，只有 UI 分类需要它们。 */
 const COMMAND_TOOLS = new Set([
-  "bash",
+  TOOL_NAMES.bash,
+  TOOL_NAMES.codeMode,
   "sh",
   "execute_command",
   "run_command",
-  "code_mode",
   "command",
   "cmd",
   "execute",
   "exec",
   "terminal"
 ])
-const PLAN_TOOLS = new Set(["write_file", "write", "edit_file", "edit", "git_commit", "git_push"])
+const PLAN_TOOLS = new Set([
+  TOOL_NAMES.writeFile,
+  "write",
+  TOOL_NAMES.editFile,
+  "edit",
+  TOOL_NAMES.gitCommit,
+  TOOL_NAMES.gitPush
+])
 const PAYLOAD_LIMIT = 600
 
 export function readArg(args: Record<string, unknown>, key: string): string {
@@ -28,7 +37,7 @@ export function readArg(args: Record<string, unknown>, key: string): string {
 
 export function classifyApproval(name: string, args: Record<string, unknown>): ApprovalVariant {
   const tool = name.toLowerCase()
-  if (tool === "desktop_act") return "desktop"
+  if (tool === TOOL_NAMES.desktopAct) return "desktop"
   if (COMMAND_TOOLS.has(tool)) return "command"
   if (PLAN_TOOLS.has(tool)) return "plan"
   if (looksLikeShell(name, args)) return "command"

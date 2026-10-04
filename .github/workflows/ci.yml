@@ -7,7 +7,12 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # 桌面是三端产品（design/specs/architecture.md 不变量）：spawn / PATH / 路径分隔的回归必须在三台 runner 上各验一次。
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -22,3 +27,21 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # 打包期的解析错误（无后缀导入、workspace 包别名）typecheck 抓不到，见 architecture.md 已知坑。
+      - run: pnpm build
+
+  contracts:
+    # e2e 里的 Electron 窗口流需要显示环境与 Electron 系统库，CI 不假装跑通；只跑纯 Node 的 IPC 合约 spec。
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts contracts.spec.ts

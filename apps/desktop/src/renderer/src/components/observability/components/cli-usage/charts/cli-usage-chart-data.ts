@@ -4,11 +4,11 @@
  */
 import type { CliTranscriptUsage, CliUsageSourceId } from "@enjoy-agents/ipc-contract"
 import type { SpendSlice } from "@renderer/components/settings/agent-tools/charts/spend-chart-colors"
-import { formatTokens } from "@renderer/components/settings/agent-tools/format-spend"
+import { formatTokens } from "../../../../settings/agent-tools/format-spend.ts"
 import type { TranslateFn } from "@renderer/i18n"
-import { filterBuckets } from "../lib/filter"
-import { formatBucketLabel } from "../lib/format"
-import { sourceNameKey } from "../lib/source-chip-copy"
+import { filterBuckets } from "../lib/filter.ts"
+import { formatBucketLabel } from "../lib/format.ts"
+import { sourceNameKey } from "../lib/source-chip-copy.ts"
 
 export type CliUsageDayPoint = {
   day: string

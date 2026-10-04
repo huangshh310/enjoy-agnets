@@ -80,7 +80,7 @@ function countModelsByProvider(models: AgentCliModel[]): Map<string, number> {
 
 function parseJsonArrayOrModels(raw: string): unknown[] {
   const trimmed = raw.trim()
-  const start = trimmed.search(/[\[{]/)
+  const start = trimmed.search(/[[{]/)
   const slice = start >= 0 ? trimmed.slice(start) : trimmed
   if (slice.startsWith("[")) {
     try {

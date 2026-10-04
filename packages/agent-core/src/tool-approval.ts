@@ -3,8 +3,15 @@
  * 本机路径用函数看 bash 命令；Harness 的 toolApproval 是静态表，内置 write/edit/bash 走 permissionMode。
  */
 import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
+import {
+  ASK_USER_QUESTIONS_TOOL,
+  BASH_TOOLS,
+  COMMIT_TOOLS,
+  HOST_CONTROL_TOOLS,
+  MUTATING_TOOLS,
+  WRITE_TOOLS
+} from "@enjoy-agents/ipc-contract/tool-names"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
-import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
 import {
   desktopActAlwaysAsks,
@@ -12,19 +19,6 @@ import {
   persistentAlwaysAllowsDesktopAct,
   sessionAllowsDesktopAct
 } from "./computer-use/desktop-act-policy.ts"
-
-/** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
-export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
-export const BASH_TOOLS = ["bash", "code_mode"] as const
-export const COMMIT_TOOLS = ["git_commit", "git_push", "git_branch"] as const
-/** 桌面 / 浏览器控制：默认停车，不跟 Edits 写盘档走。 */
-export const HOST_CONTROL_TOOLS = ["browser_navigate", "desktop_act"] as const
-export const MUTATING_TOOLS = [
-  ...WRITE_TOOLS,
-  ...BASH_TOOLS,
-  ...COMMIT_TOOLS,
-  ...HOST_CONTROL_TOOLS
-] as const
 
 export type ApprovalPolicy = {
   requireWriteApproval: boolean

@@ -2,6 +2,7 @@
  * IPC 合约桶：领域 schema 拆到独立文件，这里只做再导出。
  */
 export type { ReasoningEffort } from "./reasoning-effort"
+export * from "./tool-names"
 export * from "./permission-mode"
 export * from "./chat"
 export * from "./quoted-context"

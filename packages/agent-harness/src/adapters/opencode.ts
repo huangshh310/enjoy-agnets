@@ -14,9 +14,9 @@ export function createOpenCodeAgent(input: CreateHarnessCodingAgentInput) {
   const key = input.credentials.providerApiKey.trim()
   return new HarnessAgent({
     // OpenCode 1.0.95 钉 provider-utils 5.0.33，与 harness 1.0.94 的 5.0.34 Schema 品牌不兼容，运行时同形。
-    harness: createOpenCode({
-      ...(key ? { auth: { OPENAI_API_KEY: key, ANTHROPIC_API_KEY: key } } : {})
-    }) as never,
+    harness: createOpenCode(
+      key ? { auth: { OPENAI_API_KEY: key, ANTHROPIC_API_KEY: key } } : {}
+    ) as never,
     sandbox: createAdapterSandbox(adapter, input),
     id: "enjoy-agents-opencode",
     ...sharedHarnessSettings(input),

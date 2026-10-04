@@ -22,7 +22,7 @@ export function mergeKeptSecrets(
   incoming: Record<string, string> | undefined,
   existing: Record<string, string> | undefined
 ): Record<string, string> {
-  if (!incoming) return { ...(existing ?? {}) }
+  if (!incoming) return { ...existing }
   const out: Record<string, string> = {}
   for (const [key, value] of Object.entries(incoming)) {
     if (value.trim()) {

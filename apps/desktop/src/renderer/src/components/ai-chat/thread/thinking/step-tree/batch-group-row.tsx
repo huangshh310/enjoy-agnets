@@ -10,7 +10,7 @@ import { openChangedFile } from "@renderer/hooks/use-agent-session"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { DomainPills } from "./domain-pills"
-import { formatDisplayPath } from "./tool-step-row"
+import { formatDisplayPath } from "./format-display-path"
 
 export function BatchEditingGroupRow({ node }: { node: AgentStepNode }) {
   const [open, setOpen] = useState(false)

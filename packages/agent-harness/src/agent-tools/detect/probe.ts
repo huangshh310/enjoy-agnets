@@ -36,8 +36,9 @@ export function spawnPathCommand(command: string, args: readonly string[], extra
   const file = winScript && /\s/.test(command) ? `"${command}"` : command
   return spawn(file, [...args], {
     windowsHide: true,
-    shell: winScript,
-    ...extra
+    ...extra,
+    // 放在展开之后：调用方不能用 extra.shell 绕过「仅 win32 + 脚本后缀」这道闸。
+    shell: winScript
   })
 }
 

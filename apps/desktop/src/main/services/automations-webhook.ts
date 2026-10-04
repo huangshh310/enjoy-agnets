@@ -54,6 +54,8 @@ async function applyWebhookListeners(items: Automation[]): Promise<void> {
     }
     await listenPort(port, routes, byId)
   }
+  // closePort 会从 listeners 里删键，必须先快照，否则迭代期间漏端口。
+  // eslint-disable-next-line unicorn/no-useless-spread
   for (const port of [...listeners.keys()]) {
     if (!wanted.has(port)) await closePort(port)
   }

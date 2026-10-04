@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-09-26
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-03（记入 `resolveInsideWorkspace` 对不存在根的行为）
 
 ## 当前真相
 
@@ -61,6 +61,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - Files 树拖拽走 `workspace.move`（`workspace-move.ts` / `workspace-rename.ts` + `workspace-move-plan.ts`）。renderer 不 `fs.rename`。不要和 Review 改宽分隔条、也不要和 Composer 附件 drop 搞混。
 - Agent `git_log`（`workspace-git-agent-log.ts`）是线性 porcelain 文本，limit 默认 20、上限 100，path jail。`git_diff` 的 path 同样走 `resolveInsideWorkspace`。不要和 Review `workspace.gitLog` 的 structured `commits[]` 混用。
 - **隐患**：路径 jail 只做字符串相对检查时，工作区内指向外部的符号链接会跟着写出去。正确做法：`resolveInsideWorkspace` 对已存在前缀 `realpath`。`toWorkspaceRelative` 必须 **两边** 都跟 realpath：macOS `/tmp` → `/private/tmp`，只解析根会把工作区文件显示成 `../../../tmp/...`。
+- **隐患**：`resolveInsideWorkspace` 对**根**是无条件 `realpathSync`，根不存在直接抛 `ENOENT`。`toWorkspaceRelative` 已经用 `existsSync` 包了一层，这里没有。后果不是越界（抛错即拒绝，fail-closed），而是错误码被降级：`workspace.openPreview` 打开一个确实不存在的 html 时，调用方拿到 `PREVIEW_NOT_ALLOWED` 而不是 `PREVIEW_NOT_FOUND`。生产里根恒为已登记的真实目录，所以只在单测里露出来——测这条链路必须用 `mkdtemp` 的真根，别用 `/tmp/ws` 这种假想路径。
 - PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。

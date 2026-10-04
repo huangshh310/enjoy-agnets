@@ -25,10 +25,12 @@ test("html 必须在工作区内且真实存在，打开 file URL", async () => 
 })
 
 test("缺文件 / 逃逸 / 非 html 都拒绝，不编造 URL", async () => {
+  // resolveInsideWorkspace 会对根做 realpathSync，假想根会抛错被降级成 NOT_ALLOWED。
+  const root = await mkdtemp(join(tmpdir(), "enjoy-preview-missing-"))
   const missing = await planWorkspacePreviewHref(
     { workspaceId: "ws_1", path: "gone.html" },
     {
-      resolveRoot: async () => "/tmp/ws",
+      resolveRoot: async () => root,
       fileExists: async () => false
     }
   )

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { afterEach, beforeEach, test } from "node:test"
+import { test } from "node:test"
 import { checkDeepSeekAuth, probeDeepseek } from "./deepseek.ts"
 
 test("DeepSeek 账号探测与模型映射", async (t) => {
