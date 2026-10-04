@@ -8,7 +8,8 @@ import {
   TerminalOpenInput,
   TerminalResizeInput,
   TerminalWriteInput,
-  WindowForceQuitInput
+  WindowForceQuitInput,
+  WindowSetTaskbarTitleInput
 } from "@enjoy-agents/ipc-contract"
 import {
   abortAgent,
@@ -74,7 +75,8 @@ export const SHELL_CHANNELS = [
   "window.toggleMaximize",
   "window.isMaximized",
   "window.close",
-  "window.forceQuit"
+  "window.forceQuit",
+  "window.setTaskbarTitle"
 ] as const
 
 export function windowFromEvent(event: IpcMainInvokeEvent): BrowserWindow {
@@ -152,6 +154,11 @@ function registerWindowIpc() {
     WindowForceQuitInput.parse(raw ?? {})
     markQuitAllowed()
     app.quit()
+    return { ok: true }
+  })
+  ipcMain.handle("window.setTaskbarTitle", async (event, raw) => {
+    const { label } = WindowSetTaskbarTitleInput.parse(raw)
+    windowFromEvent(event).setTitle(label ? `${label} — Enjoy Agents` : "Enjoy Agents")
     return { ok: true }
   })
 }

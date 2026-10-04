@@ -43,6 +43,8 @@ mac:
   artifactName: enjoy-agents-${version}-mac.${ext}
   entitlements: build/entitlements.mac.plist
   extendInfo:
+    CFBundleName: Enjoy Agents
+    CFBundleDisplayName: Enjoy Agents
     NSAppleEventsUsageDescription: Enjoy Agents 用辅助功能操作其它应用上的控件。
     NSScreenCaptureUsageDescription: Enjoy Agents 截取窗口缩略图给 Computer Use 审批卡和右栏。
   target:

@@ -16,3 +16,16 @@ export type WindowActionResult = z.infer<typeof WindowActionResult>;
 /** 空闲或用户确认后放行退出；无字段。 */
 export const WindowForceQuitInput = z.object({}).strict();
 export type WindowForceQuitInput = z.infer<typeof WindowForceQuitInput>;
+
+/** 任务栏标签最长 80，换行去掉。空串由 main 恢复品牌标题。 */
+export const TASKBAR_LABEL_MAX = 80;
+
+export const WindowSetTaskbarTitleInput = z
+  .object({
+    label: z.string()
+  })
+  .strict()
+  .transform((input) => ({
+    label: input.label.replace(/[\r\n]+/g, " ").trim().slice(0, TASKBAR_LABEL_MAX)
+  }));
+export type WindowSetTaskbarTitleInput = z.infer<typeof WindowSetTaskbarTitleInput>;

@@ -281,6 +281,8 @@ const ide = {
       ipcRenderer.invoke("window.isMaximized") as Promise<WindowState>,
     close: () => ipcRenderer.invoke("window.close") as Promise<WindowActionResult>,
     forceQuit: () => ipcRenderer.invoke("window.forceQuit", {}) as Promise<WindowActionResult>,
+    setTaskbarTitle: (label: string) =>
+      ipcRenderer.invoke("window.setTaskbarTitle", { label }) as Promise<WindowActionResult>,
     onMaximizedChange: (callback: (isMaximized: boolean) => void) => {
       const listener = (_event: unknown, payload: WindowState) =>
         callback(payload.isMaximized)

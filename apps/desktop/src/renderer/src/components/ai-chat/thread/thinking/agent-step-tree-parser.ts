@@ -6,6 +6,7 @@ import { asRecord } from "../../../../lib/record.ts"
 import { formatToolName, summarizeToolArgs } from "../tool-summary.ts"
 import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
+import { commandStreamText } from "./command-stream-text.ts"
 import { splitReasoningAroundTools } from "./split-reasoning-around-tools.ts"
 import { groupConsecutiveSteps } from "./agent-step-group.ts"
 import { nestChildSteps } from "./agent-step-nest.ts"
@@ -193,13 +194,15 @@ function fallbackNode(
 }
 
 function ioFields(tool: ThreadToolCall, command: string | undefined, result: Record<string, unknown>) {
+  const stdout = commandStreamText(result, "stdout")
+  const stderr = commandStreamText(result, "stderr")
   const output =
     typeof result.output === "string"
       ? result.output
-      : typeof result.stdout === "string"
-        ? result.stdout
-        : typeof result.stderr === "string"
-          ? result.stderr
+      : stdout
+        ? stdout
+        : stderr
+          ? stderr
           : undefined
   return {
     command,

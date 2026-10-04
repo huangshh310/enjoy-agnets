@@ -7,6 +7,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { CodeBlock } from "@/components/ai-elements/code-block"
 import { cx } from "@/utils/cx"
 import { asRecord, readString } from "@renderer/lib/record"
+import { commandStreamText } from "../thread/thinking/command-stream-text"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
 
@@ -65,8 +66,8 @@ function BashResult({
   const t = useT()
   const command =
     readString(result, "command") || readString(asRecord(tool.args), "command") || tool.name
-  const stdout = readString(result, "stdout")
-  const stderr = readString(result, "stderr")
+  const stdout = commandStreamText(result, "stdout")
+  const stderr = commandStreamText(result, "stderr")
   const exitCode = result.exitCode
   const ok = exitCode === 0 || exitCode === undefined
 

@@ -7,6 +7,7 @@ import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { cx } from "@/utils/cx"
 import { barWidth, formatQuotaPercent, pickQuotaPercent, pickQuotaWindow } from "../../settings/agent-tools/agent-tool-quota"
+import { shownQuotaPercent } from "./quota-hint-text"
 import { usagePillTone } from "./usage-pill-tone"
 
 const BAR_TONE = {
@@ -31,6 +32,7 @@ export function UsagePill({ runtimeId }: { runtimeId: string }) {
 
   const reset = tool?.quotaInfo?.resetsIn || pickQuotaWindow(tool?.quotaInfo, tool?.selectedModel)
   const tone = usagePillTone(percent, emptyThread)
+  const shown = shownQuotaPercent(percent, snapshot.data?.preferences.usageNumber ?? "used")
 
   return (
     <span
@@ -46,7 +48,7 @@ export function UsagePill({ runtimeId }: { runtimeId: string }) {
           tone === "alert" ? "text-text-error-primary" : tone === "mid" ? "text-status-yellow-text" : tone === "quiet" ? "text-text-tertiary" : "text-text-secondary"
         )}
       >
-        {formatQuotaPercent(percent)}
+        {formatQuotaPercent(shown)}
       </span>
     </span>
   )

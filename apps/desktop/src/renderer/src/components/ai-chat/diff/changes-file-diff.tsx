@@ -10,6 +10,7 @@ import { getIde } from "@renderer/lib/ide"
 import { AiChatCodePane } from "../ai-chat-code-pane"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
+import type { DiffPalette } from "./diff-palette"
 import type { ReviewOptions } from "../right-pane/views/review/types/review.types"
 import { commentDiffLine } from "./comment-diff-line"
 
@@ -17,12 +18,14 @@ export function ChangesFileDiff({
   workspaceId,
   path,
   fallbackContent,
-  options
+  options,
+  palette = "default"
 }: {
   workspaceId: string
   path: string
   fallbackContent: string
   options?: ReviewOptions
+  palette?: DiffPalette
 }) {
   const t = useT()
   const hideWhitespace = options?.hideWhitespace ?? false
@@ -67,6 +70,7 @@ export function ChangesFileDiff({
           wordDiff={options?.wordDiff}
           hideWhitespace={hideWhitespace}
           foldLargeFiles={options?.foldLargeFiles}
+          palette={palette}
           onCommentLine={(line) => commentDiffLine(path, line)}
         />
       </div>

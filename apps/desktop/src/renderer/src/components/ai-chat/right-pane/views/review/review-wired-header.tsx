@@ -14,6 +14,8 @@ export function ReviewWiredHeader({ vm }: { vm: ReviewViewModel }) {
       additions={vm.scope === "uncommitted" ? vm.additions : vm.scopedAdds}
       deletions={vm.scope === "uncommitted" ? vm.deletions : vm.scopedDels}
       options={vm.options}
+      palette={vm.palette}
+      onPalette={vm.setPalette}
       onToggleOption={vm.toggleOption}
       allExpanded={vm.allExpanded}
       onToggleAllExpanded={vm.toggleAllExpanded}

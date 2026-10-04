@@ -153,6 +153,8 @@ export const SettingsSnapshot = z.object({
     desktopPush: z.boolean().default(true),
     agentCompleteSound: z.boolean().default(true),
     approvalRequiredAlert: z.boolean().default(true),
+    /** Composer 与设置行额度数字：已用或剩余。条宽仍是已用百分比。 */
+    usageNumber: z.enum(["used", "remaining"]).default("used"),
     accountProfile: AccountProfilePref.optional(),
     /** 引擎级可选显示名，按 runtimeId。空/缺键回退品牌名，不进云身份。 */
     agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).default({}),
@@ -231,6 +233,7 @@ export const SetPreferencesInput = z.object({
   desktopPush: z.boolean().optional(),
   agentCompleteSound: z.boolean().optional(),
   approvalRequiredAlert: z.boolean().optional(),
+  usageNumber: z.enum(["used", "remaining"]).optional(),
   accountProfile: AccountProfilePref.optional(),
   agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).optional(),
   setupGuideCompletedAt: z.string().nullable().optional()

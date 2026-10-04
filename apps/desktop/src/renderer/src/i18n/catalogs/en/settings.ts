@@ -2,6 +2,10 @@
 export const enSettings = {
   language: "Language",
   languageDesc: "Application UI language. Auto follows this machine; unrecognized locales use Chinese.",
+  usageNumber: "Usage number",
+  usageNumberDesc: "Changes the Composer pill and the settings-row capsule only. Bar width stays the used percent.",
+  usageNumberUsed: "Used",
+  usageNumberRemaining: "Remaining",
   detectAuto: "Detect automatically",
 
   general: {

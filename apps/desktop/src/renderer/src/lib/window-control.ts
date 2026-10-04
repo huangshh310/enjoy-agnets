@@ -47,6 +47,14 @@ export function onQuitRequested(callback: () => void): () => void {
   return () => {}
 }
 
+/** 只传标签。主进程负责拼上品牌名，或在空串时恢复 Enjoy Agents。 */
+export async function setTaskbarTitle(label: string): Promise<void> {
+  const win = windowBridge()
+  if (win?.setTaskbarTitle) {
+    await win.setTaskbarTitle(label)
+  }
+}
+
 export async function checkIsMaximized(): Promise<boolean> {
   const win = windowBridge()
   if (win) {

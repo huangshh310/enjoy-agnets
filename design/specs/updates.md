@@ -1,6 +1,6 @@
 # spec/updates
 
-> 打包应用从 GitHub Releases 检查更新、展示发行说明、下载后重启安装。最后更新：2026-09-15
+> 打包应用从 GitHub Releases 检查更新、展示发行说明、下载后重启安装。最后更新：2026-10-04（下载中标题栏芯片显示整数百分比）
 
 ## 当前真相
 
@@ -9,7 +9,7 @@
 用户路径：
 
 1. 打包启动约 12s 后 `checkForUpdates`（`autoDownload: false`）。窗口挂载只走 `app.update.status` 拉快照，**禁止**一挂载就 check。开发态（`!app.isPackaged`）不打 GitHub，状态为 `dev`。
-2. 有新版本：标题栏出现「有更新」芯片（按钮自身 `no-drag`）。
+2. 有新版本：标题栏出现「有更新」芯片（按钮自身 `no-drag`，高度不变，标题栏不加第二条进度条）。`status === "downloading"` 时文案改为现有下载文案加整数百分比（`snapshot.percent ?? 0`）。其它状态仍是「有更新」。点芯片打开同一个说明对话框；对话框里的进度条保留。开发态不联网时芯片不出现。
 3. 点芯片打开应用内 Dialog，展示版本号与 Release body（更新内容）。禁止 `window.confirm`。
 4. 点「立即更新」：下载（进度条）→ `update-downloaded` 后 main `quitAndInstall` 重启。UI 在 `ready` 再调 `install` 是幂等兜底。不要第三次确认。
 5. 设置 → 通用：当前版本（说明里带状态）+「检查更新」。有新版本同一行变成打开说明。

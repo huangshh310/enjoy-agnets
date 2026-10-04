@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-03（记入 `resolveInsideWorkspace` 对不存在根的行为）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-04（审查树可按已展开目录暂存，Git 用字面 pathspec）
 
 ## 当前真相
 
@@ -12,7 +12,7 @@
 - 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
-- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
+- 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件或按已展开目录暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
 - 底栏项目选择：已打开工作区列表 + 添加项目（`workspace.list` / `open` / `pickFolder`），对标 Synara ProjectPicker，不扫整个家目录
 - Agent host 只读 `gitStatus` / `gitDiff` / `gitLog`（porcelain 文本，默认 20 条、上限 100，path jail）；写 `gitCommit`（默认不 `add -A`）/ `gitBranch` / `gitPush` 走 Git 审批。Agent `git_log` **不是** Review 栏 structured `commits[]`
 - Agent `bash`：cwd 锁工作区、禁 shell 包装器、默认禁网二进制。macOS 再套 Seatbelt（写盘限工作区 + tmp）。不要把字符串过滤写成「沙箱已隔离」。
@@ -23,7 +23,7 @@
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，模型侧输出按头尾截断（见 [agent-runtime](./agent-runtime.md)），Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
 
 右侧栏视图（Inspector 检查器）：Context / Review / Files / Terminal / Browser。Review 栏对齐 Codex 审查工作台，提交历史是线性 log 不是拓扑图：
-- 顶层控制栏：7 个审查作用域（上一轮 `last-turn`、未提交 `uncommitted`、未暂存 `unstaged`、已暂存 `staged`、已提交 `commits`、分支 `branch`、检查点 `checkpoints`）；全局 `+N -M`；分支对比副行（**真实上游** `@{upstream}` → 当前分支，上游失败显示「无上游」，禁止写死 `main`）；`...` 更多（自动换行、隐藏空白、文字级差异、折叠大文件、复制完整 patch）；展开/折叠全部差异；Ctrl+P / ⌘P 跳文件；文件树开关；「提交或推送」只在改动作用域（检查点 / 提交历史不画这颗主 CTA）。`checkpoints` 只列 `refs/enjoy/checkpoints/*`，不走 diff 流。空态贴顶短文，禁止居中大图标。还原先 `previewCheckpoint` 列出快照外未跟踪文件，ConfirmDialog 写明**不移动 HEAD / 不是分支回退**，有未跟踪删除必须显式确认；真正还原用临时 `GIT_INDEX_FILE` + `checkout-index`，不改用户暂存区。成功后**留在检查点时间线**，禁止偷切「未提交」。未暂存 / 已暂存文件树可按文件 `+` 暂存 / `−` 取消暂存（`workspace.gitStage`）。Review 底栏提交默认 `stageAll: false`，只提交已暂存；无已暂存则禁用，文案「提交已暂存」。Agent `git_commit` 同样默认 staged-only，`stageAll: true` 才 `add -A`。
+- 顶层控制栏：7 个审查作用域（上一轮 `last-turn`、未提交 `uncommitted`、未暂存 `unstaged`、已暂存 `staged`、已提交 `commits`、分支 `branch`、检查点 `checkpoints`）；全局 `+N -M`；分支对比副行（**真实上游** `@{upstream}` → 当前分支，上游失败显示「无上游」，禁止写死 `main`）；`...` 更多（自动换行、隐藏空白、文字级差异、折叠大文件、复制完整 patch）；展开/折叠全部差异；Ctrl+P / ⌘P 跳文件；文件树开关；「提交或推送」只在改动作用域（检查点 / 提交历史不画这颗主 CTA）。`checkpoints` 只列 `refs/enjoy/checkpoints/*`，不走 diff 流。空态贴顶短文，禁止居中大图标。还原先 `previewCheckpoint` 列出快照外未跟踪文件，ConfirmDialog 写明**不移动 HEAD / 不是分支回退**，有未跟踪删除必须显式确认；真正还原用临时 `GIT_INDEX_FILE` + `checkout-index`，不改用户暂存区。成功后**留在检查点时间线**，禁止偷切「未提交」。未暂存 / 已暂存文件树可按文件 `+` 暂存 / `−` 取消暂存，已展开目录行可暂存或取消暂存该前缀下当前列出的变更（`workspace.gitStage`，字面 pathspec）。Review 底栏提交默认 `stageAll: false`，只提交已暂存；无已暂存则禁用，文案「提交已暂存」。Agent `git_commit` 同样默认 staged-only，`stageAll: true` 才 `add -A`。
 - 变更工作台：默认 **左当前文件满高 FileDiff、右文件树**（对齐 Codex）。树宽可拖（`enjoy-agents-review-tree-split`，最小 140px，默认 200px，最大 50%）。无选中自动打开第一项。提交底栏贴底：输入框右上角 sparkle 用当前模型 `ai.generate` kind=`completion` 根据 patch 填 Conventional Commit 说明（renderer 不碰密钥）；提交/推送收到芯片行，推送用 ghost，禁止再竖排两颗大按钮。「展开全部差异」才用 compact 卡片叠放（禁止 `fill`）。`FileDiff` 的 `fill` 只给单文件主区。
 - 提交历史：`git log` 线性列表 + 单轨竖线。没有 parent 图，禁止用 index 伪装多色车道。没有远程 PR / CI。空仓库空态，禁止 mock 提交。
 Context 双模式：仪表盘 / 原始载荷。仪表盘画 Token 视窗（用量：消息字符、常驻规则拼装、已连 MCP 的 name+description、技能索引（`formatSkillCatalog`，不含 SKILL.md 正文）、启用芯片的 snippet，按 3.8 字/token 折算；**上限**取当前模型 `contextWindow`：ACP `usage_update.size` > 探测目录 > Gateway `/v1/models` > 档案手填 > 厂商价目表家族（`deepseek-flash` 为 1M），价目表没有的 id 不猜，未知则「— / 窗口未知」）。Limits 卡 / SessionMeter / Context **共用** `estimateContextWindowStats`，按当前 `runtimeId` 投影：ACP / 沙箱不计 Enjoy 常驻规则；`hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板。会话压缩卡片（展示压缩状态、**压缩前/后 Tokens**、节省量、事实摘要与再次压缩/清除；未压缩态不编造预计节省）、有遥测或 `thoughtSeconds` 才画的单轮耗时、挂载芯片（可临时排除）、本轮 sources/tools、模型底栏。输入框底栏状态栏配备手动压缩按钮，支持一键触发当前会话上下文压缩并即时联动看板。原始载荷走 `agent.inspectPrompt`：已压缩会话将较早历史替换为一条 `[CONVERSATION SUMMARY]`（不插虚构助手句）；有本会话泵时快照且 `capturedAt >= compactedAt` 则标「本轮实发」；压缩后快照过期则回落 preview。preview 为库内消息 `toModelMessages` + 当前模式系统提示词，不落库。`captureOpenStreamPrompt` 只在开流**成功**后写入，失败不得留下假 last-run。
@@ -47,7 +47,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 
 - 工作区档案：`apps/desktop/src/main/services/workspace.ts`
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-plan.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
-- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
+- Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件或目录暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
 - 底栏选择器：`ai-chat/status-bar/status-project-picker.tsx`、`status-branch-picker.tsx`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`
@@ -70,7 +70,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。
 - `workspace.openPreview` 点了若走 `openBrowserUrl` 会进右栏 `<webview>`，不是系统浏览器。必须 main `shell.openExternal`。html 必须 jail + 后缀校验 + 文件存在；URL 只认环回。禁止远程、禁止自动 `vite` / dev server。探索态不禁用。由 `preview-open-invariants` 守门。
 - 审查栏 `gitCommit` 成功后必须 invalidate `["changes", workspaceId]`（改动条和 Review 共用这一份）。不要写成 `workspace-changes`，那条 query 不存在，提交后改动条会继续挂着已进 HEAD 的文件。
-- 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出**已暂存**数量与说明，再调 `workspace.gitCommit`（默认 `stageAll: false`，禁止再默认 `git add -A`）。Agent `git_commit` 仍走 HMAC，并可 `add -A`。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。按文件暂存走 `workspace.gitStage`，成功后 invalidate `["changes", workspaceId]`。
+- 用户点 Review 提交：`requireCommitApproval`（默认开）时弹 `ConfirmDialog` 列出**已暂存**数量与说明，再调 `workspace.gitCommit`（默认 `stageAll: false`，禁止再默认 `git add -A`）。Agent `git_commit` 仍走 HMAC，并可 `add -A`。空工作树 main 直接拒。推送走 `workspace.gitPush`，无上游即拒。按文件或已展开目录暂存走 `workspace.gitStage`，成功后 invalidate `["changes", workspaceId]`。目录只把当前 porcelain 里该前缀下的**文件**交给 Git（展开用 `status --porcelain --untracked-files=all`，避免未跟踪目录被收成 `dir/` 后再整目录 add）。调用带 `--literal-pathspecs`（文件名里的 `*` `?` `[` 不当通配符）；不 `git add -A`，不把目录路径本身交给 git，不碰前缀外的文件。没有文件行抛 `STAGE_NOTHING_MATCHED`。SSH 暂存同一套参数。审查树「暂存此文件夹」包含工作区仍有改动的叶子，含索引和工作区都脏的文件。
 - Review 主区出现横向空条纹：把全部 changed files 展开成 `FileDiff` 卡片流，且组件用 `flex-1` + `max-h-full`。滚动列给不出确定高度，diff 行塌成发丝。默认只渲染当前文件并 `fill`；叠放时必须 `compact`，禁止 `fill`。
 - 右栏 tab 用 `hidden` 保活，不卸载。审查栏若订整份 `messages`、绑全局 `Ctrl+P`/`Ctrl+Enter`、或每次渲染 `parseUnifiedDiff`，流式输出会拖死整窗。隐藏时 `active=false`：不订 messages、不听快捷键、不发 `gitLog`。`Ctrl+P` 仍是打开 Files，不要截走。分支对比才拉 `upstream...HEAD`。
 - 移除项目不是删文件夹。归档不是删除；永久删除走 `session.delete` / `session.deleteArchived`。

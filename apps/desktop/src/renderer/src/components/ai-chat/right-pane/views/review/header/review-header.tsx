@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
+import type { DiffPalette } from "../../../../diff/diff-palette"
 import type { ReviewOptions, ReviewScope } from "../types/review.types"
 import { ReviewScopeDropdown } from "./review-scope-dropdown"
 import { ReviewMoreMenu } from "./review-more-menu"
@@ -36,6 +37,8 @@ export function ReviewHeader(props: {
   additions: number
   deletions: number
   options: ReviewOptions
+  palette: DiffPalette
+  onPalette: (palette: DiffPalette) => void
   onToggleOption: (key: keyof ReviewOptions) => void
   allExpanded: boolean
   onToggleAllExpanded: () => void
@@ -56,6 +59,8 @@ export function ReviewHeader(props: {
     additions,
     deletions,
     options,
+    palette,
+    onPalette,
     onToggleOption,
     allExpanded,
     onToggleAllExpanded,
@@ -91,6 +96,8 @@ export function ReviewHeader(props: {
           {/* 更多菜单 ... */}
           <ReviewMoreMenu
             options={options}
+            palette={palette}
+            onPalette={onPalette}
             onToggleOption={onToggleOption}
             onRefresh={onRefresh}
             isRefreshing={isRefreshing}

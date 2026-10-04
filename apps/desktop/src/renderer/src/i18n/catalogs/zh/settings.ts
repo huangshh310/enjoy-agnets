@@ -2,6 +2,10 @@
 export const zhSettings = {
   language: "语言",
   languageDesc: "应用界面语言。自动跟随本机；未识别时使用中文。",
+  usageNumber: "额度数字",
+  usageNumberDesc: "只改 Composer 额度胶囊和设置列表上的数字。条的宽度仍是已用百分比。",
+  usageNumberUsed: "已用",
+  usageNumberRemaining: "剩余",
   detectAuto: "自动检测",
 
   general: {

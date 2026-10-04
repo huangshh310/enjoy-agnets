@@ -3,8 +3,11 @@
  * 按 JS 字符串长度计，不引入 tokenizer。标记本身不占上限。
  */
 
-/** bash、git 状态/日志、MCP 文本。 */
+/** bash、git 状态/日志、MCP 文本。模型侧。 */
 export const CLIP_COMMAND_CHARS = 16_000
+
+/** bash / code_mode 界面侧。不进模型消息。 */
+export const CLIP_COMMAND_UI_CHARS = 120_000
 
 /** 读文件、diff、大纲。 */
 export const CLIP_FILE_CHARS = 48_000

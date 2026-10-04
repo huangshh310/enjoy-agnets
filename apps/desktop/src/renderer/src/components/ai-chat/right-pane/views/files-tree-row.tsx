@@ -46,7 +46,9 @@ export function FilesTreeRow(props: RowProps) {
         <span className="w-3.5 shrink-0" />
       )}
       <FileKindIcon name={entry.name} kind={entry.kind} open={open} />
-      <span className="truncate text-caption-1-medium">{entry.name}</span>
+      <span title={entry.name} className="min-w-0 truncate text-caption-1-medium leading-5 py-px">
+        {entry.name}
+      </span>
     </button>
   )
 }

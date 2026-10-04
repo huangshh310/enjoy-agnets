@@ -18,6 +18,7 @@ import {
 import { parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
 import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
+import type { DiffPalette } from "../../../../diff/diff-palette"
 import { FileDiff } from "../../../../diff/file-diff"
 import { splitReviewPath } from "../path-label"
 import type { ReviewOptions } from "../types/review.types"
@@ -28,6 +29,7 @@ export function ReviewFileCard(props: {
   workspaceId: string
   file: ChangedFileRow
   options: ReviewOptions
+  palette?: DiffPalette
   isExpanded: boolean
   onToggleExpand: () => void
   onSelectFile: (path: string) => void
@@ -37,6 +39,7 @@ export function ReviewFileCard(props: {
     workspaceId,
     file,
     options,
+    palette = "default",
     isExpanded,
     onToggleExpand,
     onSelectFile,
@@ -160,6 +163,7 @@ export function ReviewFileCard(props: {
               wordDiff={options.wordDiff}
               hideWhitespace={options.hideWhitespace}
               foldLargeFiles={options.foldLargeFiles}
+              palette={palette}
             />
           ) : (
             <div className="flex h-16 items-center justify-center font-mono text-caption-2-medium text-text-tertiary">

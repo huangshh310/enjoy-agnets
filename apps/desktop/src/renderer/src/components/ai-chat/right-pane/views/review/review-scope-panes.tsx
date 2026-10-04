@@ -54,7 +54,7 @@ export function ReviewChangesPane({ vm }: { vm: ReviewViewModel }) {
               changes={vm.scoped}
               selectedFilePath={vm.selectedFilePath}
               onSelectFile={vm.onSelectFile}
-              onStage={(path, action) => void vm.git.stagePaths([path], action)}
+              onStage={(paths, action) => void vm.git.stagePaths(paths, action)}
             />
           }
         >
@@ -84,6 +84,7 @@ function ReviewChangesStream({ vm }: { vm: ReviewViewModel }) {
           selectedFileContent={vm.selectedFileContent}
           onSelectFile={vm.onSelectFile}
           options={vm.options}
+          palette={vm.palette}
           allExpanded={vm.allExpanded}
         />
       </div>

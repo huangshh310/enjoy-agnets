@@ -7,7 +7,8 @@ import { tool } from "ai"
 import { z } from "zod"
 import { diffTexts, toUnifiedDiff } from "../diff.ts"
 import type { AgentWorkspaceHost } from "../runtime-context.ts"
-import { CLIP_COMMAND_CHARS, CLIP_FILE_CHARS, clipToolText } from "./clip-tool-text.ts"
+import { CLIP_FILE_CHARS, clipToolText } from "./clip-tool-text.ts"
+import { modelCommandText } from "./command-display.ts"
 import { createCodeModeTool } from "./code-mode.ts"
 import { createGitWriteTools } from "./git-write-tools.ts"
 
@@ -69,14 +70,10 @@ function bashTool(host: AgentWorkspaceHost) {
     inputSchema: z.object({
       command: z.string()
     }),
-    execute: async ({ command }) => {
+    execute: async ({ command }, options: { toolCallId?: string }) => {
       const result = await host.bash(command)
-      return {
-        command,
-        exitCode: result.exitCode,
-        stdout: clipToolText(result.stdout, CLIP_COMMAND_CHARS),
-        stderr: clipToolText(result.stderr, CLIP_COMMAND_CHARS)
-      }
+      const model = modelCommandText(options?.toolCallId, result.stdout, result.stderr)
+      return { command, exitCode: result.exitCode, stdout: model.stdout, stderr: model.stderr }
     }
   })
 }

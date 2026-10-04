@@ -34,6 +34,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   desktopPush: true,
   agentCompleteSound: true,
   approvalRequiredAlert: true,
+  usageNumber: "used",
   agentDisplayNames: {},
   setupGuideCompletedAt: null,
   desktopAlwaysAllowAppKeys: []

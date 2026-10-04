@@ -9,6 +9,7 @@ import type { DiffLine, FileDiffModel } from "@enjoy-agents/agent-core/diff"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { applyDiffViewOptions, splitWordDiff } from "./file-diff-options"
+import { diffTone, type DiffPalette } from "./diff-palette"
 export function FileDiff({
   model,
   compact = false,
@@ -19,6 +20,7 @@ export function FileDiff({
   wordDiff = false,
   hideWhitespace = false,
   foldLargeFiles = false,
+  palette = "default",
   onCommentLine,
   className
 }: {
@@ -31,10 +33,12 @@ export function FileDiff({
   wordDiff?: boolean
   hideWhitespace?: boolean
   foldLargeFiles?: boolean
+  palette?: DiffPalette
   onCommentLine?: (line: DiffLine) => void
   className?: string
 }) {
   const t = useT()
+  const tone = diffTone(palette)
   const view = useMemo(
     () => applyDiffViewOptions(model, { hideWhitespace, foldLargeFiles }),
     [model, hideWhitespace, foldLargeFiles]
@@ -73,10 +77,10 @@ export function FileDiff({
             </span>
           </div>
           <div className="flex items-center gap-2 font-mono text-caption-2-bold font-bold shrink-0">
-            <span className="inline-flex items-center text-state-success-text dark:text-state-success-text">
+            <span className={cx("inline-flex items-center", tone.addStat)}>
               +{model.additions}
             </span>
-            <span className="inline-flex items-center text-text-error-primary dark:text-text-error-primary">
+            <span className={cx("inline-flex items-center", tone.delStat)}>
               -{model.deletions}
             </span>
           </div>
@@ -105,6 +109,7 @@ export function FileDiff({
                   prev={hunk.lines[index - 1]}
                   wordWrap={wordWrap}
                   wordDiff={wordDiff}
+                  tone={tone}
                   onComment={onCommentLine}
                 />
               ))}
@@ -121,12 +126,14 @@ function DiffRow({
   prev,
   wordWrap,
   wordDiff,
+  tone,
   onComment
 }: {
   line: DiffLine
   prev?: DiffLine
   wordWrap: boolean
   wordDiff: boolean
+  tone: ReturnType<typeof diffTone>
   onComment?: (line: DiffLine) => void
 }) {
   const t = useT()
@@ -138,15 +145,15 @@ function DiffRow({
     <div
       className={cx(
         "group/diff relative grid grid-cols-[32px_32px_18px_1fr] items-stretch text-caption-2-regular transition-colors",
-        isAdd && "bg-state-success-text/10 text-state-success-text dark:text-state-success-text",
-        isDel && "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary",
+        isAdd && tone.addRow,
+        isDel && tone.delRow,
         !isAdd && !isDel && "text-text-secondary hover:bg-background-secondary-hover/30"
       )}
     >
       {isAdd ? (
-        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-state-success-base" />
+        <span className={cx("absolute left-0 top-0 bottom-0 w-[3px]", tone.addBar)} />
       ) : isDel ? (
-        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-background-tertiary-error" />
+        <span className={cx("absolute left-0 top-0 bottom-0 w-[3px]", tone.delBar)} />
       ) : null}
       <span className="select-none text-right pr-2 text-text-tertiary text-caption-2-regular py-0.5">
         {line.oldNo ?? ""}
@@ -157,7 +164,7 @@ function DiffRow({
       <span
         className={cx(
           "select-none text-center font-bold py-0.5",
-          isAdd ? "text-state-success-text dark:text-state-success-text" : isDel ? "text-text-error-primary dark:text-text-error-primary" : "text-text-tertiary"
+          isAdd ? tone.addMark : isDel ? tone.delMark : "text-text-tertiary"
         )}
       >
         {isAdd ? "+" : isDel ? "-" : " "}
@@ -171,7 +178,7 @@ function DiffRow({
         {pair ? (
           <>
             {pair.prefix}
-            <span className="bg-state-success-text/30">{pair.added}</span>
+            <span className={tone.addWord}>{pair.added}</span>
             {pair.suffix}
           </>
         ) : (

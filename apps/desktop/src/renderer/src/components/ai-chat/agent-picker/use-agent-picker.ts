@@ -10,7 +10,7 @@ import { useEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { engineTrueNameTitle } from "@renderer/lib/agent-display-name"
 import { useT, type TranslateFn } from "@renderer/i18n"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
-import { quotaHintText } from "../usage/quota-hint-text"
+import { quotaHintText, shownQuotaPercent } from "../usage/quota-hint-text"
 import { useQuotaHint } from "../usage/use-quota-hint"
 import { isAgentToolId } from "./agent-brand-icon"
 import { composerRailSections } from "./composer-agents"
@@ -108,7 +108,15 @@ function useAgentPickerFace(
     chipIconId: pickerLocked && pendingToId ? pendingToId : runtimeId,
     chipTitle: [
       pickerLocked ? modelFace.chip.title : engineTrueNameTitle(currentAgentName, t("chat.engineRealName")),
-      quotaHintText(quota.percent, quota.reset, (percent) => t("chat.usage.usedPercent", { percent }))
+      quotaHintText(
+        quota.percent == null ? null : shownQuotaPercent(quota.percent, quota.usageNumber),
+        quota.reset,
+        (percent) =>
+          t(
+            quota.usageNumber === "remaining" ? "chat.usage.remainingPercent" : "chat.usage.usedPercent",
+            { percent }
+          )
+      )
     ].filter(Boolean).join(" · "),
     quota
   }
