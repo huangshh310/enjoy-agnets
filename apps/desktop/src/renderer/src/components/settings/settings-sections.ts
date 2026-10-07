@@ -8,6 +8,8 @@ export const SETTINGS_SECTIONS = [
   "providers",
   "agent",
   "tools",
+  "computer-use",
+  "appsnap",
   "instructions",
   "skills",
   "rules",

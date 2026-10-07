@@ -313,7 +313,7 @@ const ide = {
         accessibility: boolean
         screenCapture: boolean
       }>,
-    openSystemPermission: (input: { permission: "accessibility" | "screenCapture" }) =>
+    openSystemPermission: (input: { permission: "accessibility" | "screenCapture" | "inputMonitoring" }) =>
       ipcRenderer.invoke("builtinTools.openSystemPermission", input) as Promise<{ ok: true }>,
     revealExtensionDir: () =>
       ipcRenderer.invoke("builtinTools.revealExtensionDir") as Promise<{ ok: boolean }>,
@@ -326,6 +326,16 @@ const ide = {
       ipcRenderer.invoke("builtinTools.desktopListApps") as Promise<DesktopMentionAppsResult>,
     revokeAlwaysAllow: (input: { appKey: string; sessionId?: string }) =>
       ipcRenderer.invoke("builtinTools.revokeAlwaysAllow", input) as Promise<BuiltinToolsState>
+  },
+  appsnap: {
+    doctor: () => ipcRenderer.invoke("appsnap.doctor"),
+    listWindows: () => ipcRenderer.invoke("appsnap.listWindows"),
+    capture: (input?: { windowId?: number }) => ipcRenderer.invoke("appsnap.capture", input ?? {}),
+    onCaptured: (callback: (payload: { pngBase64: string }) => void) => {
+      const listener = (_event: unknown, payload: { pngBase64: string }) => callback(payload)
+      ipcRenderer.on("appsnap.captured", listener)
+      return () => ipcRenderer.off("appsnap.captured", listener)
+    }
   },
   app: {
     updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),

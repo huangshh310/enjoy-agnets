@@ -26,7 +26,7 @@ import {
 import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
 import { getSetting, setSetting } from "./services/database"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
-import { readPreferences, writePreferences } from "./services/preferences"
+import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
@@ -88,6 +88,7 @@ async function settingsSnapshot() {
     lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
     providers: await listPublicProviders(),
     preferences: readPreferences(),
+    keybindingIssues: readKeybindingIssues(),
     harness: await harnessPublicStatus(readPreferences().harnessId),
     agentTools: await listAgentTools(),
     sessionRuntimes: readSessionRuntimes(),
@@ -123,7 +124,14 @@ function registerCoreSettingsIpc() {
     return { ok: true }
   })
   ipcMain.handle("settings.setPreferences", async (_event, raw) => {
-    return { ok: true, preferences: writePreferences(SetPreferencesInput.parse(raw)) }
+    const preferences = writePreferences(SetPreferencesInput.parse(raw))
+    const { syncAppsnapHotkey } = await import("./services/appsnap/appsnap-hotkey")
+    syncAppsnapHotkey({
+      appsnapEnabled: preferences.appsnapEnabled,
+      appsnapChord: preferences.appsnapChord,
+      keybindings: preferences.keybindings
+    })
+    return { ok: true, preferences }
   })
   ipcMain.handle("settings.setHarness", async (_event, raw) => {
     writeHarnessSecret(SetHarnessInput.parse(raw))

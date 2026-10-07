@@ -20,6 +20,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { QuickSearchAcpCommands } from "./quick-search-acp-commands"
 import { QuickSearchMessages } from "./quick-search-messages"
 import { QuickSearchNav } from "./quick-search-nav"
+import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
 import { QuickSearchShortcuts } from "./quick-search-shortcuts"
 
 export function openQuickSearch() {
@@ -34,25 +35,18 @@ export function QuickSearchDialog() {
   const repositories = useChatStore((state) => state.repositories)
   const sessionNodes = repositories.filter((item) => item.kind === "session")
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      const modifier = event.metaKey || event.ctrlKey
-      if (modifier && (event.key.toLowerCase() === "l" || event.key.toLowerCase() === "k")) {
-        event.preventDefault()
-        setOpen((prev) => !prev)
-      }
-    }
+  useKeybindingCommand("search.quick", () => {
+    setOpen((prev) => !prev)
+    return true
+  })
 
+  useEffect(() => {
     function onCustomOpen() {
       setOpen(true)
     }
 
-    window.addEventListener("keydown", onKeyDown)
     window.addEventListener("enjoy:open-quick-search", onCustomOpen)
-    return () => {
-      window.removeEventListener("keydown", onKeyDown)
-      window.removeEventListener("enjoy:open-quick-search", onCustomOpen)
-    }
+    return () => window.removeEventListener("enjoy:open-quick-search", onCustomOpen)
   }, [])
 
   function handleSelect(action: () => void) {

@@ -1,6 +1,7 @@
 /// macOS Computer Use 执行器入口：stdin 换行 JSON，stdout 一行一条响应。
 import AppKit
 import ApplicationServices
+import CoreGraphics
 import Foundation
 
 while let line = readLine(strippingNewline: true) {
@@ -18,6 +19,7 @@ func dispatch(id: String, method: String, params: [String: Any]) {
     emit(["id": id, "result": [
       "trusted": trusted,
       "backgroundClick": trusted,
+      "inputMonitoring": CGPreflightListenEventAccess(),
       "executablePath": CommandLine.arguments[0]
     ]])
   case "list_apps":

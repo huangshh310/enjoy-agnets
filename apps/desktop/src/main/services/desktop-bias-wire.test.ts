@@ -10,13 +10,13 @@ test("agent.run 字段经泵进开流，不改审批闸", () => {
   assert.match(pump, /desktopBias: run\.input\.desktopBias/)
   const local = readFileSync(new URL("./open-coding-stream-local.ts", import.meta.url), "utf8")
   assert.match(local, /desktopBias: input\.desktopBias/)
-  assert.match(local, /createBuiltinAgentTools\(input\.mode\)/)
+  assert.match(local, /createBuiltinAgentTools\(input\.mode, input\.computerUseOnce === true\)/)
   assert.doesNotMatch(local, /createBuiltinAgentTools\(input\.mode,\s*input\.desktopBias\)/)
 })
 
 test("Explore 注册门不看 mention / desktopBias", () => {
   const tools = readFileSync(new URL("./builtin-tools/builtin-agent-tools.ts", import.meta.url), "utf8")
-  assert.match(tools, /shouldRegisterDesktopControlTools\(mode, state\.computerUse\.enabled\)/)
+  assert.match(tools, /shouldRegisterDesktopControlTools\(mode, state\.computerUse\.enabled, once\)/)
   assert.doesNotMatch(tools, /desktopBias/)
   const gate = readFileSync(new URL("./builtin-tools/desktop-tool-gate.ts", import.meta.url), "utf8")
   assert.doesNotMatch(gate, /desktopBias/)

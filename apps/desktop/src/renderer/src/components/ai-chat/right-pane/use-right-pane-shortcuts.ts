@@ -1,31 +1,20 @@
 /**
- * 右栏快捷键：与选项列表上的 hint 对齐，收起时先展开再打开。
+ * 右栏命令：键由调度器决定，这里只负责展开对应面板。
  */
-import { useEffect } from "react"
+import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
 import { revealRightPane } from "./open-pane"
 import type { RightPaneKind } from "./right-pane.types"
 
 export function useRightPaneShortcuts() {
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      const kind = kindFromEvent(event)
-      if (!kind) return
-      event.preventDefault()
-      revealRightPane(kind)
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [])
+  useKeybindingCommand("pane.context", () => openPane("context"))
+  useKeybindingCommand("pane.review", () => openPane("review"))
+  useKeybindingCommand("pane.desktop", () => openPane("desktop"))
+  useKeybindingCommand("pane.terminal", () => openPane("terminal"))
+  useKeybindingCommand("pane.browser", () => openPane("browser"))
+  useKeybindingCommand("pane.files", () => openPane("files"))
 }
 
-function kindFromEvent(event: KeyboardEvent): RightPaneKind | null {
-  const mod = event.metaKey || event.ctrlKey
-  if (!mod) return null
-  if (event.shiftKey && event.key.toLowerCase() === "c") return "context"
-  if (event.shiftKey && event.key.toLowerCase() === "g") return "review"
-  if (event.shiftKey && event.key.toLowerCase() === "d") return "desktop"
-  if (!event.shiftKey && event.key === "`") return "terminal"
-  if (!event.shiftKey && event.key.toLowerCase() === "t") return "browser"
-  if (!event.shiftKey && event.key.toLowerCase() === "p") return "files"
-  return null
+function openPane(kind: RightPaneKind): boolean {
+  revealRightPane(kind)
+  return true
 }

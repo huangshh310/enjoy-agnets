@@ -48,7 +48,9 @@ export const DesktopDoctorReport = z.object({
   trusted: z.boolean().optional(),
   accessibility: z.boolean().optional(),
   hostAccessibility: z.boolean().optional(),
-  screenCapture: z.boolean().optional()
+  screenCapture: z.boolean().optional(),
+  /** helper 自己的输入监听，不是宿主 Electron。未签名时不得当成已授权。 */
+  inputMonitoring: z.boolean().optional()
 })
 export type DesktopDoctorReport = z.infer<typeof DesktopDoctorReport>
 
@@ -127,6 +129,6 @@ export const ToggleBuiltinToolInput = z.object({
 export type ToggleBuiltinToolInput = z.infer<typeof ToggleBuiltinToolInput>
 
 export const OpenSystemPermissionInput = z.object({
-  permission: z.enum(["accessibility", "screenCapture"])
+  permission: z.enum(["accessibility", "screenCapture", "inputMonitoring"])
 })
 export type OpenSystemPermissionInput = z.infer<typeof OpenSystemPermissionInput>

@@ -64,7 +64,9 @@ async function finishDoctorRpc(
     if (!checked.ready) {
       return { success: false, ...base, ...identityFields(checked), code: checked.code ?? "executor_identity_mismatch" }
     }
-    if (platform === "darwin" && rpc.trusted !== true) return deniedHelper(base, checked)
+    if (platform === "darwin" && rpc.trusted !== true) {
+      return { ...deniedHelper(base, checked), inputMonitoring: rpc.inputMonitoring === true }
+    }
     return { ...base, ...rpc, ...identityFields(checked), success: true, ...greenFlags(platform, perms, rpc) }
   } catch (error) {
     return { success: false, ...base, ...failureOf(error), backgroundClick: false }

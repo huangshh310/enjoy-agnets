@@ -19,6 +19,7 @@ import { guardComposerSend } from "./send-composer-guard"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./composer-draft"
+import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
 
@@ -30,6 +31,8 @@ type SendPayload = {
   assetIds: string[]
   messageAssets: Array<{ assetId: string; mediaType: string; name: string; url?: string }>
   executePlan?: boolean
+  /** 句首 /computer-use。只作用于这一发，不把总开关写成开。 */
+  computerUseOnce?: boolean
 }
 
 /** 先 setRunning 占位，避免双击连发两轮。 */
@@ -55,7 +58,9 @@ async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload 
   const fromDraft = !prepared
   const raw = prepared?.content ?? (await takeComposerText())
   if (!raw.trim()) return null
-  const content = prefixHostModeForSend(raw)
+  const slash = takeComputerUseSlash(raw)
+  const body = slash.once ? slash.text || raw.trim() : raw
+  const content = prefixHostModeForSend(body)
   if (fromDraft) clearComposerDraft()
   const queuedAssets = prepared?.assets ?? takeComposerAssetDetails()
   return {
@@ -67,7 +72,8 @@ async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload 
       name: item.name,
       url: item.url
     })),
-    executePlan: prepared?.executePlan
+    executePlan: prepared?.executePlan,
+    computerUseOnce: slash.once || undefined
   }
 }
 
@@ -109,7 +115,8 @@ async function launchComposerRun(
       payload.content,
       messages,
       payload.assetIds,
-      payload.executePlan
+      payload.executePlan,
+      payload.computerUseOnce
     )) as {
       runId: string
     }
@@ -135,7 +142,8 @@ async function startComposerRun(
   content: string,
   messages: ChatState["messages"],
   assetIds: string[],
-  executePlan?: boolean
+  executePlan?: boolean,
+  computerUseOnce?: boolean
 ) {
   const kind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -165,13 +173,17 @@ async function startComposerRun(
     })
   }
   const desktopBias = await desktopBiasForRun(content)
+  const base = codingAgentRunInput(store)
+  const once = computerUseOnce === true && !isAcpComposerRuntime(store.runtimeId)
   return getIde().agent.run({
-    ...codingAgentRunInput(store),
+    ...base,
+    mode: once ? "agent" : base.mode,
     messages: outgoingMessages,
     attachments: assetIds,
     executePlan: executePlan || undefined,
     commandId: crypto.randomUUID(),
-    ...(desktopBias ? { desktopBias } : {})
+    ...(desktopBias ? { desktopBias } : {}),
+    ...(once ? { computerUseOnce: true } : {})
   })
 }
 

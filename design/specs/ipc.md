@@ -79,7 +79,7 @@
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session` / `allow_always`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止这两种：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。`allow_always` 只写 prefs 簿，不写会话表。
 - `message.part.delta` 已从 StreamEvent v2 删除：从未有过生产者（文本增量走 v1 `text.delta`），留着只会让消费端空等。
-- Hash 路由与 IPC 无关，但设置页快捷键（`Ctrl+,` / Escape）在 `router.tsx`，不要做到 main 全局快捷键里抢焦点。
+- Hash 路由与 IPC 无关。命令快捷键在渲染进程调度器里，不要做到 main 全局快捷键里抢焦点。AppSnap 的全局快捷键例外：只在 macOS 且开关打开时由 main 登记（`appsnap.doctor` / `appsnap.listWindows` / `appsnap.capture`）。
 - harness / desktop 的 node:test 若 value-import `@enjoy-agents/ipc-contract` 入口，会因 index 无后缀 re-export 报 `ERR_MODULE_NOT_FOUND`。能力表走子路径 `@enjoy-agents/ipc-contract/runtime-capabilities`；自定义 id 走 `@enjoy-agents/ipc-contract/custom-agent`；预览打开走 `@enjoy-agents/ipc-contract/workspace-preview`；注入快照走 `@enjoy-agents/ipc-contract/host-inject`；技能索引走 `@enjoy-agents/ipc-contract/skills-catalog`。renderer Vite 别名必须精确匹配包名，并单独写这些子路径；字符串前缀会拼成 `index.ts/runtime-capabilities`。
 - `workspace.openPreview` 必须进 `SHELL_CHANNELS` 与 preload。点完成条若走 `openBrowserUrl` 会进右栏 webview。html / URL 校验在 main，失败只回稳定码，禁止把绝对路径摊给 renderer。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。

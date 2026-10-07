@@ -183,6 +183,7 @@ export const enChat = {
   thinkingFollowModelShort: "Think",
   thinkingFollowModelHint: "Thinking comes from the model you pick. Current {model}.",
   composerOverflow: "Session goal & recap",
+  appsnapPick: "Pick a window",
   composerOverflowHint: "Sent to the assistant on the next run, not shown in the chat bubble.",
   surfaceExploreDesc: "Read and think first. Does not change the project.",
   surfaceExecuteDesc: "Can edit files and run commands. Risky actions still need approval.",

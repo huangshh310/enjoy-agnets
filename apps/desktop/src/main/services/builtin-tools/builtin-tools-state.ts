@@ -84,18 +84,17 @@ function readHostScreenCapture(): boolean {
   }
 }
 
-export function openSystemPrivacySettings(type: "accessibility" | "screenCapture") {
+export function openSystemPrivacySettings(type: "accessibility" | "screenCapture" | "inputMonitoring") {
   if (process.platform !== "darwin") return
-  if (type === "accessibility") {
-    void shell.openExternal(
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-    )
-  } else {
-    void shell.openExternal(
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-    )
-  }
+  const pane = PRIVACY_PANE[type]
+  void shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${pane}`)
 }
+
+const PRIVACY_PANE = {
+  accessibility: "Privacy_Accessibility",
+  screenCapture: "Privacy_ScreenCapture",
+  inputMonitoring: "Privacy_ListenEvent"
+} as const
 
 export function getBuiltinToolsState(sessionId?: string): BuiltinToolsState {
   const saved = readPersistedState()

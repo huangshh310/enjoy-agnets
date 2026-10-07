@@ -181,6 +181,7 @@ export const zhChat = {
   thinkingFollowModelShort: "思考",
   thinkingFollowModelHint: "思考由所选模型决定。当前 {model}。",
   composerOverflow: "会话目标与总结",
+  appsnapPick: "选取窗口",
   composerOverflowHint: "下一轮发给助手，不会写进对话气泡。",
   surfaceExploreDesc: "先读后想，不改项目。适合摸清问题。",
   surfaceExecuteDesc: "可以改文件、跑命令。危险操作仍走审批。",

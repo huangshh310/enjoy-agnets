@@ -95,7 +95,7 @@ function localStreamOptions(
     policy,
     extraTools: {
       ...createMcpAgentTools({ mode: input.mode }),
-      ...createBuiltinAgentTools(input.mode)
+      ...createBuiltinAgentTools(input.mode, input.computerUseOnce === true)
     },
     waitForSubagentApproval: input.waitForSubagentApproval,
     onSubagentToolEvent: input.onSubagentToolEvent,

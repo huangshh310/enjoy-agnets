@@ -27,6 +27,8 @@ import {
   RiSparkling2Line,
   RiSparklingLine,
   RiTerminalBoxLine,
+  RiCursorLine,
+  RiScreenshot2Line,
   RiToolsLine
 } from "@remixicon/react"
 import { McpIcon } from "../mcp/components/mcp-brand-icons.ts"
@@ -47,7 +49,8 @@ export function getSettingsNav(t: TranslateFn): SettingsNavGroup[] {
       id: item.id,
       label: t(item.labelKey),
       icon: item.icon,
-      keywords: item.keywords
+      keywords: item.keywords,
+      meta: item.metaKey ? t(item.metaKey) : undefined
     }))
   }))
 }
@@ -64,6 +67,8 @@ const ALL_SECTION_META: Record<SettingsSectionId, { labelKey: string; icon: Sett
   providers: { labelKey: "nav.providers", icon: RiShieldKeyholeLine },
   agent: { labelKey: "nav.agent", icon: RiEqualizer3Line },
   tools: { labelKey: "nav.tools", icon: RiToolsLine },
+  "computer-use": { labelKey: "nav.computerUse", icon: RiCursorLine },
+  appsnap: { labelKey: "nav.appsnap", icon: RiScreenshot2Line },
   instructions: { labelKey: "nav.instructions", icon: RiFileTextLine },
   skills: { labelKey: "nav.skills", icon: RiSparklingLine },
   rules: { labelKey: "nav.rules", icon: RiBookOpenLine },

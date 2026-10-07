@@ -3,15 +3,18 @@
  */
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { PANE_FOCUS, getRightPaneTools } from "./constants"
 import type { RightPaneKind } from "./right-pane.types"
 
 export function RightPanePicker({ onPick }: { onPick: (kind: RightPaneKind) => void }) {
   const t = useT()
+  const { data } = useSettingsSnapshot()
+  const tools = getRightPaneTools(t, data?.preferences.keybindings ?? [])
   return (
     <div className="flex flex-1 flex-col justify-center px-8">
       <ul className="mx-auto flex w-full max-w-[280px] flex-col gap-0.5">
-        {getRightPaneTools(t).map((tool) => {
+        {tools.map((tool) => {
           const Icon = tool.icon
           return (
             <li key={tool.kind}>

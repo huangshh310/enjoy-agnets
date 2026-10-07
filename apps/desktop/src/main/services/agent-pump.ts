@@ -32,6 +32,7 @@ import { clearSteer } from "./runtime-interact/steering-queue"
 import { takeSessionHandoff } from "./session-handoff"
 import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
+import { setDesktopOverlayOnce } from "./builtin-tools/desktop-overlay-once"
 
 export async function pumpStream(runId: string) {
   const run = getActiveRun(runId)
@@ -53,11 +54,13 @@ async function pumpBoundStream(runId: string, run: ActiveRun) {
   const clearTimer = armTimeout(run.abort, totalMs, () => {
     timedOut = true
   })
+  setDesktopOverlayOnce(run.input.computerUseOnce === true)
   try {
     await runOnePump(runId, run, prefs, () => timedOut)
   } catch (error) {
     await failAgentPump(runId, run, error)
   } finally {
+    setDesktopOverlayOnce(false)
     clearTimer()
     await unbindSecondConfirmWaiter()
     resumeIfNeeded(runId)
@@ -157,6 +160,7 @@ async function openRunStream(
     sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes],
     executePlan: run.input.executePlan,
     desktopBias: run.input.desktopBias,
+    computerUseOnce: run.input.computerUseOnce,
     runtimeId: run.input.runtimeId,
     pullSteeringMessages: () => absorbSteeringMessages(run),
     takeQuestionAnswers: () => {

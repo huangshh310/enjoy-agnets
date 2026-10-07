@@ -18,7 +18,11 @@ extraResources:
     to: bin
     filter:
       - "**/*"
-beforePack: scripts/stage-computer-use.cjs
+  - from: native/appsnap/pack
+    to: bin
+    filter:
+      - "**/*"
+beforePack: scripts/stage-native.cjs
 npmRebuild: true
 publish:
   provider: github

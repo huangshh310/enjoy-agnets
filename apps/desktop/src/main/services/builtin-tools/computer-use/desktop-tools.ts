@@ -14,6 +14,7 @@ import { checkDesktopPermissions } from "../builtin-tools-state"
 import { currentToolRunId } from "../../active-run-id"
 import { currentPumpingRunId } from "../../agent-run-state"
 import { beginDesktopActOverlay, endDesktopActOverlay } from "../desktop-overlay-chrome"
+import { rememberInputMonitoring } from "../desktop-input-watch"
 import { resolveDesktopActRunId } from "../desktop-overlay-lifecycle"
 import { createDesktopSession, type ActInput, type DesktopSession } from "./desktop-session"
 import { formatDoctorLine } from "./doctor-report"
@@ -110,6 +111,7 @@ export function releaseParkedDesktopAct(args: Record<string, unknown> | unknown)
 
 export async function runDesktopDoctor() {
   const report = await sharedSession().doctor()
+  rememberInputMonitoring(report)
   return { ...report, line: formatDoctorLine(report) }
 }
 
@@ -214,7 +216,11 @@ function readTools(session: DesktopSession) {
     desktop_doctor: tool({
       description: "Check desktop control permissions, the executor, and whether background clicks work on this OS.",
       inputSchema: z.object({}),
-      execute: async () => session.doctor()
+      execute: async () => {
+        const report = await session.doctor()
+        rememberInputMonitoring(report)
+        return report
+      }
     }),
     desktop_list_apps: tool({
       description: "List running apps that can be controlled. Does not click.",

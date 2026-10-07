@@ -16,6 +16,7 @@ import {
 } from "./desktop-approval-choice"
 import { desktopSecondConfirmView, isDesktopSecondConfirm } from "./desktop-second-confirm-args"
 import { DesktopSecondConfirmBody } from "./desktop-second-confirm-body"
+import { useDesktopPreviewFrame } from "./desktop-preview-frame"
 
 export function DesktopApprovalCard({ args, decide }: { args: unknown; decide: ApprovalDecide }) {
   const t = useT()
@@ -121,8 +122,16 @@ function DesktopApprovalSummary({
 }
 
 function DesktopThumb({ src, alt }: { src: string; alt: string }) {
+  const frame = useDesktopPreviewFrame()
+  if (!frame.show) return null
   return (
-    <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border-button-default bg-background-secondary-default">
+    <div
+      className={
+        frame.large
+          ? "h-40 w-full shrink-0 overflow-hidden rounded-lg border border-border-button-default bg-background-secondary-default"
+          : "h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-border-button-default bg-background-secondary-default"
+      }
+    >
       {src ? <img src={src} alt={alt} className="size-full object-cover" /> : null}
     </div>
   )

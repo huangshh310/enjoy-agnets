@@ -17,9 +17,11 @@ test("无会话时开关禁用，并提示先打开对话", () => {
   const details = readFileSync(join(dir, "desktop-any-desktop-details.tsx"), "utf8")
   assert.match(details, /disabled=\{!hasFocusedSession\}/)
   assert.match(details, /anyDesktopNeedSession/)
-  const card = readFileSync(join(dir, "../desktop-tools-card.tsx"), "utf8")
-  assert.match(card, /sessionId=\{sessionId\}/)
-  const page = readFileSync(join(dir, "../settings-tools-page.tsx"), "utf8")
-  assert.match(page, /sessionId=\{sessionId\}/)
+  const operations = readFileSync(
+    join(dir, "../../computer-use/computer-use-operations.tsx"),
+    "utf8"
+  )
+  assert.match(operations, /sessionId=\{sessionId\}/)
+  const page = readFileSync(join(dir, "../../computer-use/use-computer-use-page.ts"), "utf8")
   assert.match(page, /anyDesktopSession.*!sessionId\?\.trim\(\)/)
 })

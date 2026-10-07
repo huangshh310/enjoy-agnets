@@ -17,6 +17,7 @@ export type SettingsNavItem = {
   icon: SettingsNavIcon
   keywords: string[]
   soon?: boolean
+  meta?: string
 }
 
 export type SettingsNavGroup = {
@@ -30,6 +31,7 @@ export type SettingsNavItemDef = {
   labelKey: string
   icon: SettingsNavIcon
   keywords: string[]
+  metaKey?: string
 }
 
 export type SettingsNavGroupDef = {

@@ -14,6 +14,7 @@ import {
   ReasoningFamilyInput,
   WireApiStyle
 } from "./provider-profile"
+import { KeybindingRuleList } from "./keybindings"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 
 export {
@@ -166,8 +167,22 @@ export const SettingsSnapshot = z.object({
      * CU-P1-A 本机持久簿。settings.get 可读；禁止经 setPreferences 改写。
      * 条目是 { appKey, displayName }，kai 闸只认 appKey。
      */
-    desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys
+    desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys,
+    /** 用户快捷键规则。空数组表示全部走默认。删光写成 unassigned，避免下次启动回到默认。 */
+    keybindings: KeybindingRuleList.default([]),
+    /** 蓝边指针色。只影响 overlay，不注入系统光标。 */
+    computerUsePointer: z.enum(["stock", "custom"]).default("stock"),
+    /** 关掉预览只隐藏画面，不停当前 run。 */
+    computerUsePreview: z.boolean().default(true),
+    computerUsePreviewSize: z.enum(["compact", "large"]).default("compact"),
+    /** AppSnap 总开关。非 macOS 即使为 true 也不注册全局热键。 */
+    appsnapEnabled: z.boolean().default(false),
+    /** 正好两键，其中一键是修饰键。默认左 Option + 右 Option。 */
+    appsnapChord: z.string().min(1).max(64).default("alt.left+alt.right"),
+    appsnapSound: z.boolean().default(true)
   }),
+  /** 读盘时丢掉的快捷键规则名。不写回 preferences。 */
+  keybindingIssues: z.array(z.string()).default([]),
   harness: z
     .object({
       adapterId: z.string().nullable(),
@@ -238,7 +253,14 @@ export const SetPreferencesInput = z.object({
   usageNumber: z.enum(["used", "remaining"]).optional(),
   accountProfile: AccountProfilePref.optional(),
   agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).optional(),
-  setupGuideCompletedAt: z.string().nullable().optional()
+  setupGuideCompletedAt: z.string().nullable().optional(),
+  keybindings: KeybindingRuleList.optional(),
+  computerUsePointer: z.enum(["stock", "custom"]).optional(),
+  computerUsePreview: z.boolean().optional(),
+  computerUsePreviewSize: z.enum(["compact", "large"]).optional(),
+  appsnapEnabled: z.boolean().optional(),
+  appsnapChord: z.string().min(1).max(64).optional(),
+  appsnapSound: z.boolean().optional()
 })
 export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>
 

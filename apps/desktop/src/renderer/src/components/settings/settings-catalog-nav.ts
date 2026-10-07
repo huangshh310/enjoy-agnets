@@ -13,6 +13,8 @@ import {
   RiSettings4Line,
   RiShieldKeyholeLine,
   RiSparklingLine,
+  RiCursorLine,
+  RiScreenshot2Line,
   RiToolsLine,
   RiUser3Line
 } from "@remixicon/react"
@@ -65,6 +67,20 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         labelKey: "nav.tools",
         icon: RiToolsLine,
         keywords: ["tools", "browser", "bridge", "computer use", "accessibility", "screen recording", "chrome", "内置工具", "浏览器", "桌面", "权限", "屏幕录制", "辅助功能"]
+      },
+      {
+        id: "computer-use",
+        labelKey: "nav.computerUse",
+        icon: RiCursorLine,
+        metaKey: "nav.beta",
+        keywords: ["computer use", "desktop", "accessibility", "电脑操控", "桌面", "指针"]
+      },
+      {
+        id: "appsnap",
+        labelKey: "nav.appsnap",
+        icon: RiScreenshot2Line,
+        metaKey: "nav.beta",
+        keywords: ["appsnap", "screenshot", "window", "截图", "窗口"]
       },
       {
         id: "instructions",

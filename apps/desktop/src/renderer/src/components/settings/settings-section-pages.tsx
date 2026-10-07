@@ -23,6 +23,8 @@ import { GeneralSettings } from "./settings-general"
 import { GitSettings } from "./settings-git"
 import { SettingsComingSoon } from "./settings-row"
 import { ShortcutSettings } from "./settings-shortcuts"
+import { ComputerUseSettings } from "./computer-use/computer-use-settings"
+import { AppsnapSettings } from "./appsnap/appsnap-settings"
 import { WorkspaceSettings } from "./settings-workspace"
 import { ExtensionsPage } from "./extensions/extensions-page"
 import {
@@ -58,6 +60,8 @@ const SECTION_PAGES: Partial<Record<SettingsSectionId, ComponentType>> = {
   providers: ProviderSettings,
   agent: AgentSettings,
   tools: SettingsToolsPage,
+  "computer-use": ComputerUseSettings,
+  appsnap: AppsnapSettings,
   instructions: InstructionsSection,
   rules: RulesSection,
   workspace: WorkspaceSection,

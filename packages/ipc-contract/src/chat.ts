@@ -40,7 +40,9 @@ export const RunAgentInput = z.object({
   /** 幂等收据。同一 commandId 重试返回第一次的 runId，不双开 turn。 */
   commandId: z.string().min(1).optional(),
   /** CU-P1-B：Composer `@桌面` / `@应用` 偏置。缺省不偏。提及 ≠ 放行。 */
-  desktopBias: DesktopMentionBias.optional()
+  desktopBias: DesktopMentionBias.optional(),
+  /** 句首 `/computer-use`：这一发注册 desktop_*，不把总开关写成开。 */
+  computerUseOnce: z.boolean().optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 

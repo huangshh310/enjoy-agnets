@@ -20,6 +20,7 @@
 | `ui` | [specs/ui.md](./specs/ui.md) | 三卡片布局、token、组件来源 | `apps/desktop/.../ai-chat`、`packages/ui` |
 | `agent-runtime` | [specs/agent-runtime.md](./specs/agent-runtime.md) | Agent 循环、工具、审批、模式 | `packages/agent-core`、`main/services/agent-runner.ts` |
 | `computer-use` | [specs/computer-use.md](./specs/computer-use.md) | Enjoy Local 本机其它应用：观察账本、三端执行器、审批 | `builtin-tools/computer-use/`、`native/computer-use/` |
+| `appsnap` | [specs/appsnap.md](./specs/appsnap.md) | macOS 独立窗口截图，贴进 Composer，不操控 | `native/appsnap/`、`services/appsnap/`、`settings/appsnap/` |
 | `agent-cli` | [specs/agent-cli.md](./specs/agent-cli.md) | 本机 CLI 工具箱、ACP、探测 | `packages/agent-harness/src/agent-tools`、`acp/` |
 | `providers` | [specs/providers.md](./specs/providers.md) | 协议工厂、vault、探测 | `packages/providers`、`main/services/secrets.ts` |
 | `ipc` | [specs/ipc.md](./specs/ipc.md) | Zod 合约、频道、流事件 | `packages/ipc-contract`、`main/ipc.ts`、`preload` |
