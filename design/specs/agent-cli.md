@@ -35,7 +35,7 @@ ACP 会话：`initialize` 发 `protocolVersion: 2`（失败回落 v1）。`sessi
 
 Enjoy 只有一份 Providers vault。智能体只引用档案，不在智能体页做供应商 CRUD，也不做 `127.0.0.1` 协议代理。
 
-`providerBind`：`claude=anthropic`、`codex=openai`、`deepseek=deepseek`、`gemini=google`、`opencode=opencode`。Cursor / Grok / Antigravity / Amp / 自定义 ACP = `none`（列表仍画「官方登录 · 已登录/未登录」，抽屉只读官方态，**禁止假 BYOK**）。OMP 也是 `none`，但动力源槽文案是「OMP 供应商」，不是 Enjoy vault。兼容过滤走 `providersCompatibleWith`：DeepSeek 放宽支持所有 OpenAI 兼容供应商（`kind=deepseek`、`style=openai`、`kind=openai`、`kind=siliconflow` 等，因 dsh 原生使用 OpenAI 协议）；Claude 仅 Anthropic；Codex 仅 OpenAI；Gemini 仅 Google。分类见 `classifyPowerSource`，不要按品牌特判 Cursor/Grok。
+`providerBind`：`claude=anthropic`、`codex=openai`、`deepseek=deepseek`、`gemini=google`、`opencode=opencode`。Cursor / Grok / Antigravity / Amp / 自定义 ACP = `none`（列表仍画「官方登录 · 已登录/未登录」，抽屉只读官方态，**禁止假 BYOK**）。OMP 也是 `none`，但动力源槽文案是「OMP 供应商」，不是 Enjoy vault。兼容过滤走 `providersCompatibleWith`。有 `endpoints` 时看对应根是否非空，且档案必须 `enabled`：Claude 只用 `endpoints.anthropic`（不退回 Chat 根）；Codex 有 `openai-responses` 就用它做 `OPENAI_BASE_URL`，否则用 `openai`，两者都没有则不兼容，`kind === "google"` 仍拒绝；DeepSeek CLI 用 Chat，没有则用派生 `baseURL`；Gemini 仍只收 `kind === "google"`；OpenCode 按它实际要的协议取端点，npm 包选择规则不变。没有 `endpoints` 的旧对象仍按 `apiStyle` / `kind`。注入的 Key 用该 CLI 协议的 `keyFor`。CLI 进程中途不换 Key。子进程代理只改这一次的 env（`direct` 清空六个代理变量，http(s) URL 写进同一组变量），不写进家目录。分类见 `classifyPowerSource`，不要按品牌特判 Cursor/Grok。
 
 - **应用（默认）**：打开 `useCustomProvider` 后，Enjoy 开该 ACP 注入子进程 env + `--model`。不点同步，系统终端里的同名 CLI 仍用自己的登录。绑定档案没 Key 时开流失败（「先在供应商里保存密钥」），禁止静默退回官方登录。env 键：Claude `ANTHROPIC_*`（含 `ANTHROPIC_MODEL`）、Codex `OPENAI_*`、DeepSeek `DEEPSEEK_*`、Gemini `GEMINI_*`、OpenCode `ENJOY_OPENCODE_KEY` 外加协议对应键。
 - **同步到本机**：用户点击才写家目录，先 `*.enjoy.bak`，文件 `0o600`，恢复只还原备份。不读不写 `auth.json` / Claude credentials。

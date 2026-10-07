@@ -3,6 +3,7 @@
  */
 import {
   fallbackKindsFor,
+  languageConfigFromProfile,
   pickMediaFallbackConfig,
   presetFor,
   type ProviderConfig
@@ -20,10 +21,8 @@ export async function resolveMediaFallback(
     alternateModelId,
     profile
       ? {
-          kind: profile.kind,
-          apiKey: profile.apiKey,
-          modelId: profile.modelId || presetFor(profile.kind).models[0]?.id,
-          baseURL: profile.baseURL
+          ...languageConfigFromProfile(profile, profile.modelId || presetFor(profile.kind).models[0]?.id),
+          kind: profile.kind
         }
       : undefined
   )

@@ -10,6 +10,7 @@ import { createGateway } from "@ai-sdk/gateway"
 import { createGoogle } from "@ai-sdk/google"
 import type { LanguageModel } from "ai"
 import { parseHeaders, resolvedBaseURL } from "./config"
+import { fetchForProxy } from "./proxy-fetch"
 import { languageModelFactoryKind } from "./model-factory"
 import { wrapWithDefaults } from "./middleware"
 import { isMediaOnlyKind, presetFor } from "./presets"
@@ -31,19 +32,36 @@ function createRawLanguageModel(config: ProviderConfig): LanguageModel {
   const baseURL = resolvedBaseURL(config)
   const apiKey = config.apiKey || (preset.requiresKey ? "" : "ollama")
   const headers = parseHeaders(config.customHeaders)
-  const connection = { apiKey, baseURL: baseURL || undefined, headers }
+  const fetchImpl = config.fetch ?? fetchForProxy(config.proxy)
+  const connection = {
+    apiKey,
+    baseURL: baseURL || undefined,
+    headers,
+    ...(fetchImpl ? { fetch: fetchImpl } : {})
+  }
   const kind = languageModelFactoryKind({
     provider: config.provider,
     modelId: config.modelId,
     baseURL: config.baseURL,
-    apiStyle: config.apiStyle ?? preset.apiStyle
+    apiStyle: config.apiStyle ?? preset.apiStyle,
+    reasoningFamily: config.reasoningFamily
   })
 
   if (kind === "gateway") {
-    return createGateway({ apiKey, baseURL: baseURL || undefined, headers }).languageModel(config.modelId) as LanguageModel
+    return createGateway({
+      apiKey,
+      baseURL: baseURL || undefined,
+      headers,
+      ...(fetchImpl ? { fetch: fetchImpl } : {})
+    }).languageModel(config.modelId) as LanguageModel
   }
   if (kind === "google") {
-    return createGoogle({ apiKey, baseURL: baseURL || undefined, headers })(config.modelId)
+    return createGoogle({
+      apiKey,
+      baseURL: baseURL || undefined,
+      headers,
+      ...(fetchImpl ? { fetch: fetchImpl } : {})
+    })(config.modelId)
   }
   if (kind === "anthropic") {
     return createAnthropic(connection)(config.modelId)
@@ -57,7 +75,8 @@ function createRawLanguageModel(config: ProviderConfig): LanguageModel {
       apiKey,
       baseURL: baseURL || "https://api.openai.com/v1",
       headers,
-      includeUsage: true
+      includeUsage: true,
+      ...(fetchImpl ? { fetch: fetchImpl } : {})
     }).chatModel(config.modelId)
   }
 

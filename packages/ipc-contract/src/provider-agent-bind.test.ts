@@ -33,6 +33,33 @@ test("Claude 不收 openai custom；Codex 不收 anthropic", () => {
   assert.equal(providersCompatibleWith("cursor", { apiStyle: "openai", kind: "openai" }), false)
 })
 
+test("官方 DeepSeek 三端点可绑 Claude；只有 Chat 的中转不行；Codex 仍拒绝 Google", () => {
+  const deepseek = {
+    kind: "deepseek",
+    apiStyle: "openai",
+    endpoints: {
+      openai: "https://api.deepseek.com/v1",
+      "openai-responses": "https://api.deepseek.com/v1",
+      anthropic: "https://api.deepseek.com/anthropic"
+    }
+  }
+  const relay = {
+    kind: "custom",
+    apiStyle: "openai",
+    endpoints: { openai: "https://relay.example/v1" }
+  }
+  assert.equal(providersCompatibleWith("claude", deepseek), true)
+  assert.equal(providersCompatibleWith("claude", relay), false)
+  assert.equal(
+    providersCompatibleWith("codex", {
+      kind: "google",
+      apiStyle: "openai",
+      endpoints: { openai: "https://generativelanguage.googleapis.com/v1beta" }
+    }),
+    false
+  )
+})
+
 test("Gemini 只收 google 档案；Google 的 openai apiStyle 不进 Codex", () => {
   assert.equal(providersCompatibleWith("gemini", { apiStyle: "openai", kind: "google" }), true)
   assert.equal(providersCompatibleWith("gemini", { apiStyle: "openai", kind: "custom" }), false)

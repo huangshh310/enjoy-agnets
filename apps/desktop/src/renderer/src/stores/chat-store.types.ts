@@ -120,6 +120,7 @@ export type ModelOption = {
   providerId?: string
   providerName?: string
   apiStyle?: string
+  wireStyles?: string[]
   active?: boolean
   isFast?: boolean
   isReasoning?: boolean

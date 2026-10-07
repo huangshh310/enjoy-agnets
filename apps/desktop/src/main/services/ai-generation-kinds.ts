@@ -9,7 +9,7 @@ import {
   toZodSchema
 } from "@enjoy-agents/agent-core"
 import { AiGenerateInput } from "@enjoy-agents/ipc-contract"
-import { createLanguageModel, wrapWithDefaults, type ProviderConfig } from "@enjoy-agents/providers"
+import { createLanguageModel, languageConfigFromProfile, wrapWithDefaults, type ProviderConfig } from "@enjoy-agents/providers"
 import { stampAndSend } from "./event-bus"
 import { runEmbeddingKind, runRerankKind } from "./generation-embed"
 import { runMediaKind } from "./media-generation"
@@ -130,12 +130,7 @@ async function runStructured(
 async function requireProviderConfig(modelId: string, providerId?: string): Promise<ProviderConfig> {
   const profile = pickGenerateProfile(await readVault(), providerId)
   if (!profile) throw new Error("No provider key configured.")
-  return {
-    provider: profile.kind as ProviderConfig["provider"],
-    apiKey: profile.apiKey,
-    modelId,
-    baseURL: profile.baseURL
-  }
+  return languageConfigFromProfile(profile, modelId)
 }
 
 function languageModel(config: ProviderConfig) {

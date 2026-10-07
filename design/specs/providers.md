@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-09-26
+> 协议工厂，不是品牌锁定。最后更新：2026-10-07
 
 ## 当前真相
 
@@ -12,7 +12,23 @@
 | `anthropic` | Messages | `/v1/messages` |
 | `openai-responses` | Responses | `/v1/responses` |
 
-密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic` 给 UI：`hasKey`、`keyHint`（`••••` + 后四位，短 Key / 非可见字符退回纯掩码）、Base URL，**从不回说明文 Key**。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只返回 vault 里**已配置档案**的目录；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器空态引导去设置页，composer 默认不预填 `deepseek-chat`。
+一张档案可以同时有 Chat、Responses、Anthropic 三条端点（`endpoints`），多把 Key（`keys[]`），以及 `baseAPI`（编辑器主 URL 展示哪一条）。请求以端点里实际有值为准，**不是协议互译**。`apiKey` / `baseURL` / `apiStyle` 每次保存重算：`apiKey` 是第一把启用且未锁协议的 Key，否则第一把对 `baseAPI` 启用的 Key；`baseURL` 是 `endpoints[baseAPI]`，空则第一条有值的端点；`apiStyle` 等于 `baseAPI`。派生字段只给旧调用点和列表展示。Google 官方主机仍走 `createGoogle`，不改成 OpenAI 兼容根。
+
+`enabled` 是关闭但保留。关掉的档案不进选择器、不进 CLI 绑定。`activeId` 仍是新会话 Enjoy Local 的默认档案，和 `enabled` 是两件事。关掉当前默认档案时，`activeId` 改到下一张仍开启的档案。设置页「当前」只显示仍开启的默认档案；一张都没开就写「未在使用」，不把已关闭的名字当成当前。关掉的行主按钮是「开启」。页头模型数是收录，含已关闭档案，文案不是「此刻可选」。复制档案在主进程完成，Key 不进 renderer。
+
+密钥只存在主进程 vault（`safeStorage`）。`ProviderPublic.keys` 只给 `{ id, name, hasKey, keyHint, apiStyle, enabled }`。列表文案是「密钥已保存」；`keyHint` 只做编辑框 placeholder。`customHeaders` / `customBody` 只回键的占位 JSON，空值保存保留已存。`models.list` 只列出**开启档案**上 `enabled !== false` 的模型；空 vault 返回 `[]`，禁止回退 DeepSeek 预设假装已接通。选择器左栏副文案是端点缩写（Chat · Responses · Messages）。composer 默认不预填 `deepseek-chat`。
+
+旧档案没有 `endpoints` 时，`readVault` 做一次迁移：`endpoints[apiStyle] = baseURL`；URL 等于该预设同一区域的官方地址时才补兄弟端点，改过的中转地址不补。已保存的 MiniMax / 智谱 / 豆包 URL 不改去套餐主机。读档失败不当成空 vault 覆盖。
+
+目录 URL：`modelsURL` 优先，否则 Chat，再 Responses，再把 Anthropic 根去掉 `/anthropic`。`resolvedBaseURL` 禁止把档案里的 Anthropic 根改写成 Chat 根。拉取只追加远程新增（`source: "remote"`、`enabled: true`），不打开用户关掉的，不删远程消失的，不改手填。窗口：行上 `contextWindow`，否则档案手填，再 Gateway，再 `publishedContextWindow`。
+
+`settings.detectProvider` 对三条协议各发一次最小 POST，10 秒超时。成功必须是 JSON 且不是 HTML。编辑器把成功的根写入对应端点；用户改过且不同的保留，并提示「检测结果与当前不同」。不自动保存。失败文案是 i18n code。
+
+Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 429 / 529 / 5xx 按顺序换下一把匹配且启用的 Key。已经吐过 token 就停。CLI 进程不换 Key。
+
+代理：空跟随系统；`direct` 去掉这次 `fetch` 和该 CLI 子进程的 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`（及小写）；其它必须是 `http:` / `https:`。没有 SOCKS 依赖，`socks5` 拒绝。没装 undici 时 URL 代理失败；`direct` 退回全局 fetch，Chromium 系统代理仍可能生效。Windows / macOS / Linux 同一套，不读本机代理软件的私有配置。
+
+`reasoningFamily: "auto"` 跟 `kind`；`custom` 再看模型 id 前缀（`minimax` / `glm` / `kimi` / `deepseek` / `moonshot`）。显式家族覆盖 kind。中转即使模型名带 deepseek，也不进 `@ai-sdk/deepseek`。
 
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 
@@ -20,14 +36,14 @@
 
 能力：`ProviderCapability`（text/streaming/reasoning/tools/structured/vision/files/skills/image/embedding/rerank/speech/transcription/realtime/video）。静态目录在 `packages/providers/src/capabilities/catalog.ts`；Fal/Replicate/ElevenLabs/Deepgram/Cohere 只声明媒体能力，不能当聊天 LanguageModel。`grok-imagine-*` / dall-e / gpt-image 也只声明 `image`（或 video），不要因为 id 含 `grok` 就加 vision/tools。`createLanguageModel` 会套 `wrapLanguageModel`。`createEnjoyRegistry` 用 SDK `createProviderRegistry`。`createRerankModel` 只给 Cohere / 模型名含 rerank 的档案建 `reranking` 工厂。`createTranslationModel` 走 OpenAI 兼容 `translation()`。`uploadFile` / `uploadSkill` 在 main 调，引用按 hash 缓存。媒体官方 Provider 与语言 Provider 共用设置 UI，不复制一套页面。`resolveModelAlias` 解析 `provider/model`。
 
-推理强度：`ReasoningEffort` + composer Energy Bar，按模型族都要发，禁止因中转就藏思考条。AI SDK 7 顶层 `reasoning` 对 OpenAI-compatible 会映成 `reasoning_effort`。MiniMax-M3 发 `thinking: adaptive`；`reasoning_split` **只给官方 MiniMax 域名**（`api.minimax.io` / `.chat` / `.com`）。中转 `/v1` 发 `reasoning_split` 会 `Unsupported parameter`，思考栏空转后报错。不拆时思考进 `content` 的 `<think>`，UI `absorbTextDelta` 再切开。GLM 发 `thinking.enabled` + `reasoningEffort`。Kimi K3 官方没有 `thinking` 字段，走顶层 `reasoning`。DeepSeek 另走 `usesDeepSeekReasoningApi`。未选档 = 供应商默认，不强制 `disabled`。
+推理强度：`ReasoningEffort` + composer Energy Bar，按模型族都要发，禁止因中转就藏思考条。AI SDK 7 顶层 `reasoning` 对 OpenAI-compatible 会映成 `reasoning_effort`。MiniMax-M3 发 `thinking: adaptive`；`reasoning_split` **只给官方 MiniMax 域名**（`api.minimax.io`、`api.minimax.chat`、`api.minimax.com`、`api.minimaxi.com`）。中转主机只发 `thinking`，不要放宽。中转 `/v1` 发 `reasoning_split` 会 `Unsupported parameter`，思考栏空转后报错。不拆时思考进 `content` 的 `<think>`，UI `absorbTextDelta` 再切开。GLM 发 `thinking.enabled` + `reasoningEffort`。Kimi K3 官方没有 `thinking` 字段，走顶层 `reasoning`。DeepSeek 另走 `usesDeepSeekReasoningApi`。未选档 = 供应商默认，不强制 `disabled`。
 
 设置页交互（Configured / Explore Presets、Dialog 四页签）以 [../references/visual-system.md](../references/visual-system.md) §14 为准；本 spec 只锁协议与密钥边界。Explore 预设分类标题是 **AI SDK 兼容**，不要「Vercel AI SDK」英雄卡，也不要假「Vercel 沙箱」供应商。Gateway 预设是可选云网关，不是沙箱。
 
 ## 不变量
 
 - renderer 永不 `readSecret` 明文。编辑对话框提交 Key 只走 `settings.upsertProvider` / `settings.saveSecret`。
-- Custom Endpoint（OpenAI `/v1`、Anthropic Messages）必须在 Explore 顶部，不能埋在页底。
+- 自定义端点只有一扇门：Explore 顶部横幅「添加自定义端点」，已配置空态同一条。页头不再放「+ 自定义 /v1」，横幅不再拆成 Anthropic / OpenAI 两颗按钮。协议在抽屉里用主 API 选。不能埋在页底。
 - 新增供应商：先加 `packages/providers` preset，再接线；不要在 UI 里手写一套 `createOpenAI`。
 - 未知协议 / `kind === "custom"` 的图标用 `RiServerLine` / `RiPlugLine`，不用假品牌标。
 
@@ -50,10 +66,17 @@
 - 添加 Anthropic 时把 Base URL 填成 `https://platform.deepseek.com`，点「拉取」会打到控制台网页。那是控制台不是接口。正确做法：识别已知控制台 / 官方主机；DeepSeek 官方 Messages 在 `https://api.deepseek.com/anthropic`（Chat Completions 才是 `/v1`），控制台或 Chat 根 + Anthropic 改写成 `/anthropic`，不要按主机名拒。`api.openai.com` 没有 Messages 线才拒。拉 `/models` 要剥 `/anthropic` 打根上的目录，但禁止把档案 Base URL 覆盖成 Chat 根（否则 Claude 的 `ANTHROPIC_BASE_URL` 会坏）。
 - DeepSeek 双入口：Chat / Codex 走 `https://api.deepseek.com/v1`；Claude 走 `https://api.deepseek.com/anthropic`。不是独立 SDK，也不要抄 cc-switch 的本机协议代理。
 - 国内中转只改 `baseURL` + 透传模型 ID。preset 不是唯一合法供应商。
+- 拉模型目录的 URL 优先 Chat，再 Responses。`baseAPI` 是 Anthropic 且 Chat 有值时，`/models` 仍走 OpenAI 目录格式。不要按 `baseAPI` 去打 Anthropic Messages 目录。只有没落到 Chat / Responses 根上时才用 Anthropic 目录。
 - 上下文窗口：不要写一张覆盖全部 id 的 `MODEL_CONTEXT_LIMITS`。官方 `/models` 常不带 `context_window`，优先 Gateway 目录或用户手填。都没有时，UI 只用 `publishedContextWindow` 里厂商价目表写明的家族（Claude 200k、grok-4.6 为 2M、`deepseek-flash` / V4 为 1M）。Gateway 没有 `deepseek/deepseek-flash` 这一行，短 id 要对到 `deepseek-v4.1-flash`。价目表没写的 id 仍显示「窗口未知」，不要猜 128k。旧档案若曾被表单默认写成 128000，用户需在参数页点「自动 / 未知」并保存才能清掉。
 - 删除仍被 CLI 引用的档案必须先解绑（`unbindProviderFromAgentTools`），否则智能体卡还显示已删档案名，开流会找不到 Key。UI 先列出助手名再 Confirm。
-- 不要把 `kind===custom` 当成「什么协议都能绑」。Claude 只收 anthropic；Codex 不收 google/anthropic；Gemini 只收 `kind===google`（即使 apiStyle 是 openai）。
+- 不要把 `kind===custom` 当成「什么协议都能绑」。有 `endpoints` 时按非空 URL 判断：Claude 只收 `endpoints.anthropic`；Codex 收 `openai-responses` 或 `openai`，`kind === "google"` 仍拒绝；Gemini 仍只收 `kind === "google"`；DeepSeek CLI 用 Chat，没有则用派生 `baseURL`。没有 `endpoints` 的旧对象仍按 `apiStyle` / `kind`。官方 DeepSeek URL 会补上 Anthropic，从而出现在 Claude 绑定里；URL 改过的中转不会。Claude 行显示端点主机，方便认出「官方 URL + 只开通 Chat 的 Key」。
+- 关闭不等于删除。配置还在，选择器和 CLI 绑定里消失；再打开就恢复。派生 `baseURL` 不是第二条协议。
+- SOCKS 代理不可用。不要为 `socks5` 加一套未接线的代理栈。没装 undici 时，自定义 http(s) 代理会失败；`direct` 退回全局 fetch，系统代理仍可能作用在 Chromium 上。
 - 绑定下拉里「+ 添加 {品牌} 供应商」既像选项又像入口，还会在智能体抽屉就地 CRUD。正确做法：下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外跳转本页。仅官方槽不要画这条链。
+- 页头「+ 自定义 /v1」再加横幅上的 Anthropic / OpenAI 两颗按钮，是旧的单协议入口。一条档案已经能装三条线。正确做法：Explore 顶部只留一颗「添加自定义端点」，协议在抽屉的主 API 里选。预设卡和已配置行的协议芯片用 Chat / Responses / Messages，单独换行，不要把「OpenAI /v1」挤成「Respons…」。
+- 关掉的档案仍是默认档案时，行上不要同时画「使用中」和「已关闭」。页头「当前」必须再看 `enabled`，只认 `active` 会把已关闭档案写成当前。关掉的行主按钮是「开启」，不要留一颗灰掉的「使用」，也不要把整行 `opacity` 盖住这颗按钮。模型数是收录口径，关掉也计入，文案不要写成此刻能选的数量。
+- 预设说明如果直接渲染 `preset.description`，中文设置页会整段英文。卡片和抽屉副文案走 `settings.providers.blurb.<kind>`，缺键才退回原文。新建自定义档案的显示名用当前语言的「自定义端点」，不要用预设里的 Custom endpoint。已保存的名字不改。覆盖页请求头图标用钥匙，不要用花括号，空态已经是「还没有请求头」。参数页 1M 芯片用 `ctx1m`。
+- 模型页思考能量若直接读 `EFFORT_LEVELS` 的英文字面量，会和参数页的中文档名不一致。两页都走 `getEffortMeta(value, t)` / `getEffortLevels(t)`。
 - Explore 若再写「Vercel AI SDK」英雄卡或「Vercel 沙箱」供应商，C 端会把运行时实现当成要买的云产品。分类用「AI SDK 兼容」；Gateway 只是可选网关，不是沙箱。
 - Ollama 等 `requiresKey === false` 的探测可塞占位 key，避免 SDK 因空 key 直接拒绝。
 - Fal / Replicate / ElevenLabs / Deepgram / Cohere 没有 OpenAI `/models`。`probeProvider` 只校验 Key 已填，真正建连发生在 generate。把它们设成当前聊天 Provider 会抛「media provider」而不是假装能对话。

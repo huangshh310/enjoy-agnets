@@ -18,15 +18,18 @@ export type MediaModelPrefs = {
 }
 
 /** 优先用请求里的 providerId，找不到再回落当前激活档案。 */
-export function pickGenerateProfile<T extends { id: string }>(
+export function pickGenerateProfile<T extends { id: string; enabled?: boolean }>(
   vault: GenerateVault<T>,
   providerId?: string
 ): T | undefined {
   if (providerId) {
     const match = vault.profiles.find((profile) => profile.id === providerId)
-    if (match) return match
+    if (!match || match.enabled === false) return undefined
+    return match
   }
-  return vault.profiles.find((profile) => profile.id === vault.activeId) ?? vault.profiles[0]
+  const active = vault.profiles.find((profile) => profile.id === vault.activeId && profile.enabled !== false)
+  if (active) return active
+  return vault.profiles.find((profile) => profile.enabled !== false)
 }
 
 /**

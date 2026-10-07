@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-26
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-07
 
 ## 当前真相
 
@@ -34,7 +34,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
 快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。Chat：Shift+Tab 循环审批档 `allow-reads → allow-edits → allow-all`（`use-permission-cycle-hotkey`；输入框 / contentEditable 内不触发；custom 档从 `allow-reads` 起算）。设置 shortcuts 已登记。对话里焦点不在输入框时按 `?` 打开同一份 `SHORTCUT_DEFS`，不新开路由。
 
-Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。
+Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets。自定义端点只从 Explore 横幅或已配置空态进入，页头不再放第二扇门。添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。页头「当前」只在默认档案仍开启时出现，否则写「未在使用」。关掉的行主操作是「开启」。模型数字是收录，不是此刻可选。预设说明和新建自定义档案的显示名走界面语言。已配置行大约两行，预设卡说明只留一行，网格间距收紧。
 
 `#/skills` 是唯一 Skills 工作模块（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。`#/settings/agent?tab=defaults` 另有一行**可选拉取**卡片（`SettingsSkillSources`），只调用 `skills.sources.updateAll`，不复制整页 Skills UI。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。M6 可选更新：无 Git 源则**不渲染**更新按钮；点了才快进，不自动同步。空会话禁止挂更新条。
 

@@ -8,6 +8,13 @@ export type ProviderBindHint = {
   apiStyle?: string
   kind?: string
   hasKey?: boolean
+  enabled?: boolean
+  /** 有这个字段就按端点判断；没有则维持 apiStyle / kind。 */
+  endpoints?: {
+    openai?: string
+    anthropic?: string
+    "openai-responses"?: string
+  }
 }
 
 export type AgentBindRef = {
@@ -19,16 +26,8 @@ export type AgentBindRef = {
 export function providersCompatibleWith(runtimeId: string, provider: ProviderBindHint): boolean {
   const bind = capabilitiesFor(runtimeId).providerBind
   if (bind === "none") return false
-  const style = provider.apiStyle?.trim() ?? ""
-  const kind = provider.kind?.trim() ?? ""
-  if (bind === "anthropic") return style === "anthropic" || kind === "anthropic"
-  if (bind === "openai") return isOpenAiCompat(style, kind)
-  if (bind === "deepseek") return kind === "deepseek" || isOpenAiCompat(style, kind)
-  if (bind === "google") return kind === "google"
-  if (bind === "opencode") {
-    return isOpenAiCompat(style, kind) || style === "anthropic" || kind === "anthropic" || kind === "google"
-  }
-  return false
+  if (provider.endpoints) return compatibleByEndpoints(bind, provider)
+  return compatibleByStyle(bind, provider)
 }
 
 /** 空态给人看的协议名，不是内部 enum。 */
@@ -63,6 +62,7 @@ export function providersSelectableFor<
   T extends ProviderBindHint & { id: string; hasKey?: boolean; requiresKey?: boolean }
 >(runtimeId: string, providers: ReadonlyArray<T>): T[] {
   return providers.filter((item) => {
+    if (item.enabled === false) return false
     if (!providersCompatibleWith(runtimeId, item)) return false
     if (item.requiresKey === false) return true
     return item.hasKey !== false
@@ -123,6 +123,11 @@ const OPENAI_COMPAT_KINDS = new Set([
   "baichuan",
   "spark",
   "ollama",
+  "lmstudio",
+  "zai",
+  "xiaomi",
+  "modelscope",
+  "aihubmix",
   "custom"
 ])
 
@@ -160,6 +165,45 @@ export function groupProvidersForBind<T extends ProviderBindHint & { id: string 
   })
 }
 
+type BindSlot = ReturnType<typeof capabilitiesFor>["providerBind"]
+
+function filled(provider: ProviderBindHint, style: "openai" | "anthropic" | "openai-responses"): boolean {
+  return Boolean(provider.endpoints?.[style]?.trim())
+}
+
+/** 端点非空才算会说这门协议。Google 官方仍然只看 kind。 */
+function compatibleByEndpoints(bind: BindSlot, provider: ProviderBindHint): boolean {
+  const kind = provider.kind?.trim() ?? ""
+  if (bind === "anthropic") return filled(provider, "anthropic")
+  if (bind === "google") return kind === "google"
+  if (bind === "openai") {
+    if (kind === "google") return false
+    return filled(provider, "openai-responses") || filled(provider, "openai")
+  }
+  if (bind === "deepseek") {
+    if (kind === "google") return false
+    return filled(provider, "openai") || filled(provider, "openai-responses")
+  }
+  if (bind === "opencode") {
+    if (kind === "google") return true
+    return filled(provider, "openai") || filled(provider, "openai-responses") || filled(provider, "anthropic")
+  }
+  return false
+}
+
+function compatibleByStyle(bind: BindSlot, provider: ProviderBindHint): boolean {
+  const style = provider.apiStyle?.trim() ?? ""
+  const kind = provider.kind?.trim() ?? ""
+  if (bind === "anthropic") return style === "anthropic" || kind === "anthropic"
+  if (bind === "openai") return isOpenAiCompat(style, kind)
+  if (bind === "deepseek") return kind === "deepseek" || isOpenAiCompat(style, kind)
+  if (bind === "google") return kind === "google"
+  if (bind === "opencode") {
+    return isOpenAiCompat(style, kind) || style === "anthropic" || kind === "anthropic" || kind === "google"
+  }
+  return false
+}
+
 function isOpenAiCompat(style: string, kind: string): boolean {
   if (kind === "google" || kind === "anthropic" || kind === "deepseek") return false
   if (style === "openai" || style === "openai-responses" || kind === "openai") return true
@@ -171,10 +215,10 @@ function isOpenAiCompat(style: string, kind: string): boolean {
  * 禁止把 CLI 静态目录或 inspect 官方表混进去。
  */
 export function composeBoundAgentModels(
-  vaultModels: ReadonlyArray<{ id: string; label?: string }> | undefined
+  vaultModels: ReadonlyArray<{ id: string; label?: string; enabled?: boolean }> | undefined
 ): Array<{ id: string; label: string }> {
   return (vaultModels ?? [])
-    .filter((item) => item.id.trim())
+    .filter((item) => item.id.trim() && item.enabled !== false)
     .map((item) => ({ id: item.id, label: item.label?.trim() || item.id }))
 }
 

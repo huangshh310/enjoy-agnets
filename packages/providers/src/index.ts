@@ -29,6 +29,32 @@ export {
   type ProviderPreset
 } from "./presets"
 
+export {
+  migrateStoredProfile,
+  normalizeVault,
+  withDerived,
+  type LooseProfile,
+  type NormalizedProfile,
+  type ProfileKey,
+  type ProfileUpsertInput,
+  type ReasoningFamilyName
+} from "./profile-migrate"
+export { applyProfileUpsert } from "./profile-upsert"
+export {
+  catalogRequestURL,
+  cleanEndpoints,
+  derivedApiKey,
+  derivedBaseURL,
+  detectBase,
+  endpointFor,
+  filledStyles,
+  keyFor,
+  keysFor,
+  speakStyle,
+  type ProviderEndpoints,
+  type ProviderKeyRecord
+} from "./endpoints"
+export { fetchForProxy, parseProxy, proxyEnvOverlay, type ProxyMode } from "./proxy-fetch"
 export { publishedContextWindow } from "./published-context-window"
 export { pingProviderEndpoint, type PingResult } from "./discover"
 export {
@@ -54,6 +80,8 @@ export {
   type GatewayCatalogEntry
 } from "./gateway-catalog"
 export { createLanguageModel } from "./create-model"
+export { detectProtocols, type ProtocolProbe } from "./detect-protocol"
+export { languageConfigFromProfile, spokenCall, type CallableProfile } from "./profile-call"
 export { languageModelFactoryKind, type LanguageModelFactoryKind } from "./model-factory"
 export { usesOfficialGoogle } from "./google"
 export {
@@ -67,8 +95,10 @@ export {
   isOfficialMiniMaxHost,
   miniMaxThinkingOptions,
   reasoningCallOptions,
+  resolveReasoningFamily,
   usesDeepSeekReasoningApi,
-  type ReasoningEffort
+  type ReasoningEffort,
+  type ReasoningFamilyName as ReasoningFamily
 } from "./reasoning"
 export type { ProviderConfig } from "./types"
 export {
@@ -128,9 +158,9 @@ export function modelsForProvider(
   savedModels?: CatalogModel[]
 ): CatalogModel[] {
   const base = savedModels && savedModels.length > 0 ? savedModels : presetFor(kind).models
-  const models = [...base]
-  if (extraModelId && !models.some((model) => model.id === extraModelId)) {
-    models.unshift({ id: extraModelId, label: extraModelId })
+  const models = base.filter((model) => model.enabled !== false)
+  if (extraModelId && !base.some((model) => model.id === extraModelId)) {
+    models.unshift({ id: extraModelId, label: extraModelId, enabled: true, source: "manual" })
   }
   return models
 }

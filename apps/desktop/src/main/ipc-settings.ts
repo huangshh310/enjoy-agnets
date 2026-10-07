@@ -15,7 +15,14 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers"
 import { registerAutomationIpc } from "./ipc-automations"
-import { asKind, pingStoredProvider, probeStoredProvider } from "./ipc-provider-probe"
+import {
+  asKind,
+  detectStoredProvider,
+  duplicateStoredProvider,
+  pingStoredProvider,
+  probeStoredProvider,
+  setStoredProviderEnabled
+} from "./ipc-provider-probe"
 import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
 import { getSetting, setSetting } from "./services/database"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
@@ -48,6 +55,9 @@ export const SETTINGS_CHANNELS = [
   "settings.setActiveModel",
   "settings.probeProvider",
   "settings.pingProvider",
+  "settings.detectProvider",
+  "settings.duplicateProvider",
+  "settings.setProviderEnabled",
   "settings.presets",
   "settings.composerPresets",
   "settings.saveComposerPreset",
@@ -150,7 +160,15 @@ function registerProviderIpc() {
       customHeaders: input.customHeaders,
       customBody: input.customBody,
       models: input.models,
-      activate: input.activate
+      activate: input.activate,
+      endpoints: input.endpoints,
+      baseAPI: input.baseAPI,
+      regionId: input.regionId,
+      keys: input.keys,
+      enabled: input.enabled,
+      modelsURL: input.modelsURL,
+      reasoningFamily: input.reasoningFamily,
+      proxy: input.proxy
     })
     return settingsSnapshot()
   })
@@ -168,6 +186,15 @@ function registerProviderIpc() {
   })
   ipcMain.handle("settings.probeProvider", async (_event, raw) => probeStoredProvider(raw))
   ipcMain.handle("settings.pingProvider", async (_event, raw) => pingStoredProvider(raw))
+  ipcMain.handle("settings.detectProvider", async (_event, raw) => detectStoredProvider(raw))
+  ipcMain.handle("settings.duplicateProvider", async (_event, raw) => {
+    await duplicateStoredProvider(raw)
+    return settingsSnapshot()
+  })
+  ipcMain.handle("settings.setProviderEnabled", async (_event, raw) => {
+    await setStoredProviderEnabled(raw)
+    return settingsSnapshot()
+  })
 }
 
 function registerModelsIpc() {

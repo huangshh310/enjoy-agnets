@@ -1,76 +1,46 @@
 /**
- * Providers 页的数据与写操作：列表查询、弹层编辑、拉模型、启用与删除。
+ * Providers 页的数据与写操作：列表、抽屉编辑、拉模型、检测、开关与复制。
  */
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query"
 import type { ProviderPublic, SettingsSnapshot } from "@enjoy-agents/ipc-contract"
-import { isApiStyle, presetFor, type ApiStyle, type ProviderKind } from "@enjoy-agents/providers/presets"
-import { applySettingsSnapshot } from "@renderer/hooks/use-agent-session"
+import { presetFor, type ApiStyle, type ProviderKind } from "@enjoy-agents/providers/presets"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
+import {
+  persistSnapshot,
+  refreshProviderList,
+  runProtocolDetect,
+  runProviderProbe,
+  saveEditor
+} from "./provider-editor-writes"
+import { canSaveEditor, editorFromProfile, emptyEditor, IDLE_PROBE, type EditorState, type ProbeState } from "./providers.types"
 import { useT } from "@renderer/i18n"
 
 export type PingStateMap = Record<
   string,
   { status: "idle" | "pending" | "ok" | "error"; latencyMs?: number; message?: string }
 >
+
 export function useProviderSettings() {
   const t = useT()
   const queryClient = useQueryClient()
   const [pingStates, setPingStates] = useState<PingStateMap>({})
+  const [detecting, setDetecting] = useState(false)
   const settingsQuery = useQuery({
     queryKey: ["settings"],
     enabled: hasIde(),
     queryFn: () => getIde().settings.get() as Promise<SettingsSnapshot>
   })
-  const session = useEditorSession()
-  const writes = useProviderWrites(queryClient, session)
+  const session = useEditorSession(t("settings.providers.customName"))
+  const writes = useProviderWrites(queryClient, session, setDetecting)
   const providers = settingsQuery.data?.providers ?? []
   const preset = session.editor ? presetFor(session.editor.kind) : null
   const modelChoices = useMemo(
-    () => mergeModelChoices(session.editor, session.probe.models),
-    [session.editor, session.probe.models]
+    () => (session.editor?.models ?? []).filter((model) => model.enabled),
+    [session.editor]
   )
 
   useAutoFetchModels(session.editor, writes.fetchModels)
-
-  const testProviderPing = async (profile: ProviderPublic) => {
-    if (!hasIde()) return
-    setPingStates((prev) => ({
-      ...prev,
-      [profile.id]: { status: "pending", message: t("settings.providers.testingSpeed") }
-    }))
-    try {
-      const res = (await getIde().settings.pingProvider({
-        id: profile.id,
-        kind: profile.kind,
-        baseURL: profile.baseURL,
-        apiStyle: profile.apiStyle
-      })) as { ok: boolean; latencyMs: number; message: string }
-      setPingStates((prev) => ({
-        ...prev,
-        [profile.id]: {
-          status: res.ok ? "ok" : "error",
-          latencyMs: res.latencyMs,
-          message: res.message
-        }
-      }))
-    } catch (err) {
-      setPingStates((prev) => ({
-        ...prev,
-        [profile.id]: {
-          status: "error",
-          message: err instanceof Error ? err.message : String(err)
-        }
-      }))
-    }
-  }
-
-  const pingAllProviders = async () => {
-    for (const p of providers) {
-      void testProviderPing(p)
-    }
-  }
 
   return {
     providers,
@@ -79,83 +49,60 @@ export function useProviderSettings() {
     preset,
     modelChoices,
     pingStates,
-    testProviderPing,
-    pingAllProviders,
+    detecting,
+    testProviderPing: (profile: ProviderPublic) => void pingOne(profile, t, setPingStates),
+    pingAllProviders: () => {
+      for (const profile of providers) void pingOne(profile, t, setPingStates)
+    },
     canSave: canSaveEditor(session.editor, preset?.requiresKey ?? true),
     openCreate: session.openCreate,
     openEdit: session.openEdit,
     closeEditor: session.closeEditor,
-    changeKind: session.changeKind,
     updateEditor: session.updateEditor,
     ...writes
   }
 }
 
-function useEditorSession() {
+function useEditorSession(customName: string) {
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [probe, setProbe] = useState<ProbeState>(IDLE_PROBE)
-
   return {
     editor,
     probe,
     setProbe,
     openCreate: (kind: ProviderKind, apiStyle?: ApiStyle) => {
       setProbe(IDLE_PROBE)
-      setEditor(emptyEditor(kind, apiStyle))
+      const draft = emptyEditor(kind, apiStyle)
+      // 预设名是英文 Custom endpoint。新建时改成当前语言的显示名。已有档案不改。
+      setEditor(kind === "custom" ? { ...draft, name: customName } : draft)
     },
     openEdit: (profile: ProviderPublic) => {
       setProbe(IDLE_PROBE)
-      const preset = presetFor(profile.kind as ProviderKind)
-      setEditor({
-        id: profile.id,
-        kind: profile.kind as ProviderKind,
-        name: profile.name,
-        apiKey: "",
-        baseURL: profile.baseURL,
-        modelId: profile.modelId,
-        apiStyle: isApiStyle(profile.apiStyle)
-          ? profile.apiStyle
-          : preset.apiStyle,
-        fastModelId: profile.fastModelId || "",
-        reasoningModelId: profile.reasoningModelId || "",
-        contextWindow: profile.contextWindow,
-        maxTokens: profile.maxTokens ?? 4096,
-        temperature: profile.temperature ?? 0.7,
-        reasoningEffort: profile.reasoningEffort,
-        customHeaders: profile.customHeaders || "",
-        customBody: profile.customBody || "",
-        models: profile.models && profile.models.length > 0 ? profile.models : [...preset.models]
-      })
+      setEditor(editorFromProfile(profile))
     },
     closeEditor: () => {
       setEditor(null)
       setProbe(IDLE_PROBE)
     },
-    changeKind: (kind: ProviderKind) => {
-      const next = emptyEditor(kind)
-      setEditor((current) => (current ? { ...next, id: current.id, apiKey: current.apiKey } : next))
-      setProbe(IDLE_PROBE)
-    },
     updateEditor: (patch: Partial<EditorState>) => {
       setEditor((current) => (current ? { ...current, ...patch } : current))
-      if (patch.apiStyle) setProbe(IDLE_PROBE)
     }
   }
 }
 
 type EditorSession = ReturnType<typeof useEditorSession>
 
-function useProviderWrites(queryClient: QueryClient, session: EditorSession) {
-  const { editor, probe, setProbe, closeEditor, updateEditor } = session
-
+function useProviderWrites(
+  queryClient: QueryClient,
+  session: EditorSession,
+  setDetecting: (value: boolean) => void
+) {
+  const t = useT()
+  const { editor, setProbe, closeEditor, updateEditor } = session
   return {
     save: async (activate: boolean) => {
       if (!editor || !hasIde()) return
-      await persistSnapshot(queryClient, await getIde().settings.upsertProvider({
-        ...editor,
-        contextWindow: editor.contextWindow ?? null,
-        activate
-      }) as SettingsSnapshot)
+      await saveEditor(queryClient, editor, activate)
       closeEditor()
     },
     activate: async (id: string) => {
@@ -167,132 +114,73 @@ function useProviderWrites(queryClient: QueryClient, session: EditorSession) {
       await persistSnapshot(queryClient, (await getIde().settings.removeProvider({ id })) as SettingsSnapshot)
       if (editor?.id === id) closeEditor()
     },
+    duplicate: async (profile: ProviderPublic) => {
+      if (!hasIde()) return
+      const name = `${profile.name} ${t("settings.providers.copySuffix")}`.trim()
+      await persistSnapshot(
+        queryClient,
+        (await getIde().settings.duplicateProvider({ id: profile.id, name })) as SettingsSnapshot
+      )
+    },
+    setEnabled: async (id: string, enabled: boolean) => {
+      if (!hasIde()) return
+      await persistSnapshot(
+        queryClient,
+        (await getIde().settings.setProviderEnabled({ id, enabled })) as SettingsSnapshot
+      )
+    },
     fetchModels: async () => {
       if (!editor || !hasIde()) return
-      await runProviderProbe(editor, probe.models, setProbe, updateEditor)
-      if (editor.id) {
-        const providers = (await getIde().settings.listProviders()) as ProviderPublic[]
-        queryClient.setQueryData(["settings"], (prev: SettingsSnapshot | undefined) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            providers
-          }
-        })
+      await runProviderProbe(editor, setProbe, updateEditor)
+      if (editor.id) await refreshProviderList(queryClient)
+    },
+    detect: async () => {
+      if (!editor || !hasIde()) return
+      setDetecting(true)
+      try {
+        await runProtocolDetect(editor, updateEditor)
+      } finally {
+        setDetecting(false)
       }
     }
   }
 }
 
-async function persistSnapshot(queryClient: QueryClient, snapshot: SettingsSnapshot) {
-  queryClient.setQueryData(["settings"], snapshot)
-  await applySettingsSnapshot(snapshot)
-}
-
-async function runProviderProbe(
-  editor: EditorState,
-  currentModels: ProbeState["models"],
-  setProbe: (probe: ProbeState) => void,
-  updateEditor: (patch: Partial<EditorState>) => void
+async function pingOne(
+  profile: ProviderPublic,
+  t: ReturnType<typeof useT>,
+  setPingStates: (value: PingStateMap | ((prev: PingStateMap) => PingStateMap)) => void
 ) {
-  setProbe({ status: "pending", message: "", code: "catalogPending", models: currentModels })
+  if (!hasIde()) return
+  setPingStates((prev) => ({
+    ...prev,
+    [profile.id]: { status: "pending", message: t("settings.providers.testingSpeed") }
+  }))
   try {
-    const result = (await getIde().settings.probeProvider({
-      id: editor.id,
-      kind: editor.kind,
-      apiKey: editor.apiKey,
-      baseURL: editor.baseURL,
-      modelId: editor.modelId,
-      apiStyle: editor.apiStyle
-    })) as {
-      ok: boolean
-      message: string
-      models: Array<{ id: string; label: string }>
-      resolvedBaseURL?: string
-      code?: string
-      vars?: Record<string, string>
-    }
-    setProbe({
-      status: result.ok ? "ok" : "error",
-      message: result.message,
-      code: result.code,
-      vars: result.vars,
-      models: result.models
-    })
-    applyProbeToEditor(editor, result, updateEditor)
-  } catch (error) {
-    setProbe({
-      status: "error",
-      message: error instanceof Error ? error.message : String(error),
-      models: []
-    })
+    const res = (await getIde().settings.pingProvider({
+      id: profile.id,
+      kind: profile.kind,
+      baseURL: profile.baseURL,
+      apiStyle: profile.apiStyle
+    })) as { ok: boolean; latencyMs: number; message: string }
+    setPingStates((prev) => ({
+      ...prev,
+      [profile.id]: { status: res.ok ? "ok" : "error", latencyMs: res.latencyMs, message: res.message }
+    }))
+  } catch (err) {
+    setPingStates((prev) => ({
+      ...prev,
+      [profile.id]: { status: "error", message: err instanceof Error ? err.message : String(err) }
+    }))
   }
 }
 
-function applyProbeToEditor(
-  editor: EditorState,
-  result: { ok: boolean; models: Array<{ id: string; label: string }>; resolvedBaseURL?: string },
-  updateEditor: (patch: Partial<EditorState>) => void
-) {
-  if (!result.ok) return
-  const patch: Partial<EditorState> = {}
-  if (result.resolvedBaseURL && result.resolvedBaseURL !== normalizeInputUrl(editor.baseURL)) {
-    patch.baseURL = result.resolvedBaseURL
-  }
-  if (result.models && result.models.length > 0) {
-    patch.models = result.models
-    // 如果当前选中的模型不在已拉取的真实模型列表中，则自动切换为第一个真实模型
-    if (!editor.modelId || !result.models.some((m) => m.id === editor.modelId)) {
-      patch.modelId = result.models[0].id
-    }
-  }
-  if (Object.keys(patch).length > 0) updateEditor(patch)
-}
-
-function normalizeInputUrl(value: string) {
-  return value.trim().replace(/\/+$/, "")
-}
-
-function mergeModelChoices(editor: EditorState | null, discovered: Array<{ id: string; label: string }>) {
-  const customModels = editor?.models ?? []
-  const presetModels = presetFor(editor?.kind ?? "custom").models
-  const merged: Array<{ id: string; label: string }> = []
-
-  const addModel = (model: { id: string; label: string }) => {
-    if (!merged.some((item) => item.id === model.id)) {
-      merged.push(model)
-    }
-  }
-
-  // 优先使用远端拉取或用户自定义的模型目录
-  for (const m of discovered) addModel(m)
-  for (const m of customModels) addModel(m)
-
-  // 仅在完全没有拉取到或自定义任何模型时，才使用预设备选模型
-  if (merged.length === 0) {
-    for (const m of presetModels) addModel(m)
-  }
-
-  if (editor?.modelId && !merged.some((item) => item.id === editor.modelId)) {
-    merged.unshift({ id: editor.modelId, label: editor.modelId })
-  }
-  return merged
-}
-
-/** 编辑已有配置（或无需 Key 的本地端点）时自动拉一次模型目录。 */
 function useAutoFetchModels(editor: EditorState | null, fetchModels: () => Promise<void>) {
   const fetchRef = useRef(fetchModels)
   fetchRef.current = fetchModels
-
   useEffect(() => {
     if (!editor) return
     if (!editor.id && presetFor(editor.kind).requiresKey) return
     void fetchRef.current()
-  }, [editor?.id, editor?.kind, editor?.apiStyle])
-}
-
-function canSaveEditor(editor: EditorState | null, requiresKey: boolean) {
-  if (!editor?.name.trim() || !editor.modelId.trim()) return false
-  if (!requiresKey) return true
-  return Boolean(editor.id || editor.apiKey.trim())
+  }, [editor?.id, editor?.kind, editor?.baseAPI])
 }

@@ -1,159 +1,100 @@
 /**
- * 供应商基础连接配置：显示名称、协议选择、API Key 凭据以及端点 Base URL。
+ * 供应商连接：名称、端点、Key 列表、代理。
+ * 协议检测和区域切换在端点字段里完成，这里只把结果写回表单。
  */
-import type { ReactNode } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
-import {
-  adviseCatalogUrl,
-  API_STYLE_OPTIONS,
-  defaultBaseURLFor,
-  type ApiStyle,
-  type ProviderPreset
-} from "@enjoy-agents/providers/presets"
-import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
-import { SecretInput } from "../secret-input"
-import type { EditorState } from "./providers.types"
-import { useT, type TranslateFn } from "@renderer/i18n"
+import { cx } from "@/utils/cx"
+import type { ProviderPreset } from "@enjoy-agents/providers/presets"
+import { ProviderEndpointFields } from "./provider-endpoint-fields"
+import { ProviderKeyList } from "./provider-key-list"
+import { proxyBlocksSave, type EditorState } from "./providers.types"
+import { useT } from "@renderer/i18n"
 
 export function ProviderConnectionFields({
   editor,
   preset,
-  keyHint,
-  onChange
+  detecting,
+  onChange,
+  onDetect
 }: {
   editor: EditorState
   preset: ProviderPreset
-  keyHint?: string
+  detecting: boolean
   onChange: (patch: Partial<EditorState>) => void
+  onDetect: () => void
 }) {
   const t = useT()
-
-  const handleApiStyleChange = (value: string) => {
-    const nextStyle = value as ApiStyle
-    const knownUrls = new Set<string>(
-      [
-        preset.defaultBaseURL?.trim(),
-        ...(preset.baseURLForStyle ? Object.values(preset.baseURLForStyle).map((u) => u?.trim() || "") : [])
-      ].filter(Boolean)
-    )
-
-    const currentBase = editor.baseURL.trim()
-    const isDefaultOrKnown = !currentBase || knownUrls.has(currentBase)
-    const nextBase = isDefaultOrKnown ? defaultBaseURLFor(preset, nextStyle) : editor.baseURL
-
-    onChange({ apiStyle: nextStyle, baseURL: nextBase })
-  }
-
+  const proxyMode = editor.proxy === "direct" ? "direct" : editor.proxy.trim() ? "custom" : "system"
   return (
     <div className="flex flex-col gap-4 py-1">
-      {/* 基础信息行：显示名称与协议 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <Field label={t("settings.providers.displayName")} hint={t("settings.providers.displayHint")}>
-          <Input
-            value={editor.name}
-            onChange={(event) => onChange({ name: event.target.value })}
-            placeholder={t("settings.providers.namePlaceholder")}
-            className="h-9"
-          />
-        </Field>
-
-        <Field label={t("settings.providers.protocol")} hint={t("settings.providers.protocolHint")}>
-          <Select
-            value={editor.apiStyle}
-            onValueChange={handleApiStyleChange}
-          >
-            <SelectTrigger className="h-9 w-full rounded-2lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className={SETTINGS_DRAWER_Z_CLASS.float}>
-              {API_STYLE_OPTIONS.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
-
-      {/* 密钥与端点 */}
-      <Field
-        label={t("settings.providers.apiKey")}
-        hint={preset.requiresKey ? t("settings.providers.keychain") : t("settings.providers.optionalLocal")}
-      >
-        <SecretInput
-          autoFocus={!editor.id && preset.requiresKey}
-          value={editor.apiKey}
-          onChange={(value) => onChange({ apiKey: value })}
-          placeholder={resolveKeyPlaceholder(editor, preset, keyHint, t)}
-        />
-      </Field>
-
-      <Field label={t("settings.providers.baseUrl")} hint={t("settings.providers.serverAddress")}>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.displayName")}</Label>
         <Input
-          value={editor.baseURL}
-          onChange={(event) => onChange({ baseURL: event.target.value })}
-          placeholder={
-            editor.apiStyle === "anthropic"
-              ? "https://api.anthropic.com"
-              : "https://api.example.com/v1"
-          }
-          className="h-9 font-mono text-body-2-regular"
+          value={editor.name}
+          onChange={(event) => onChange({ name: event.target.value })}
+          placeholder={t("settings.providers.namePlaceholder")}
+          className="h-9"
         />
-        <CatalogUrlHint baseURL={editor.baseURL} apiStyle={editor.apiStyle} />
-      </Field>
-    </div>
-  )
-}
-
-/** 填了控制台网页或协议对不上时，不用等点「拉取」才知道。 */
-function CatalogUrlHint({ baseURL, apiStyle }: { baseURL: string; apiStyle: ApiStyle }) {
-  const t = useT()
-  const advice = adviseCatalogUrl(baseURL, apiStyle)
-  if (advice.action !== "reject") return null
-  return (
-    <p className="text-pretty text-caption-2-medium text-text-error-primary">
-      {t(`settings.providers.${advice.code}`, advice.vars)}
-    </p>
-  )
-}
-
-function Field({
-  label,
-  hint,
-  children
-}: {
-  label: string
-  hint?: string
-  children: ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between">
-        <Label className="text-caption-1-medium text-text-secondary">{label}</Label>
-        {hint ? (
-          <span className="text-caption-1-medium text-text-tertiary">{hint}</span>
-        ) : null}
       </div>
-      {children}
+      <ProviderEndpointFields
+        editor={editor}
+        preset={preset}
+        detecting={detecting}
+        onChange={onChange}
+        onDetect={onDetect}
+      />
+      <ProviderKeyList editor={editor} onChange={onChange} />
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-caption-1-medium text-text-secondary">{t("settings.providers.proxy")}</Label>
+        <div className="flex flex-wrap gap-1 rounded-xl bg-background-tertiary-default p-1">
+          <ProxyChoice
+            label={t("settings.providers.proxySystem")}
+            active={proxyMode === "system"}
+            onClick={() => onChange({ proxy: "" })}
+          />
+          <ProxyChoice
+            label={t("settings.providers.proxyDirect")}
+            active={proxyMode === "direct"}
+            onClick={() => onChange({ proxy: "direct" })}
+          />
+          <ProxyChoice
+            label={t("settings.providers.proxyCustom")}
+            active={proxyMode === "custom"}
+            onClick={() => {
+              if (proxyMode !== "custom") onChange({ proxy: "https://" })
+            }}
+          />
+        </div>
+        {proxyMode === "custom" ? (
+          <Input
+            value={editor.proxy}
+            onChange={(event) => onChange({ proxy: event.target.value })}
+            placeholder="https://proxy.example:8080"
+            className="h-9 font-mono text-body-2-regular"
+          />
+        ) : null}
+        {proxyBlocksSave(editor.proxy) ? (
+          <p className="text-caption-2-medium text-text-error-primary">{t("settings.providers.proxySocks")}</p>
+        ) : (
+          <p className="text-caption-2-regular text-text-tertiary">{t("settings.providers.proxySocks")}</p>
+        )}
+      </div>
     </div>
   )
 }
 
-function resolveKeyPlaceholder(
-  editor: EditorState,
-  preset: ProviderPreset,
-  keyHint: string | undefined,
-  t: TranslateFn
-) {
-  if (editor.id) return keyHint || t("settings.providers.keepKey")
-  return preset.requiresKey ? "sk-..." : t("settings.providers.optionalOllama")
+function ProxyChoice({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "rounded-lg px-3 py-1 text-caption-1-medium",
+        active ? "bg-background-primary-default text-text-primary shadow-xs" : "text-text-secondary hover:text-text-primary"
+      )}
+    >
+      {label}
+    </button>
+  )
 }

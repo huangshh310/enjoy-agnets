@@ -7,7 +7,29 @@ import { DesktopAlwaysAllowAppKeys } from "./desktop-always-allow"
 import { AgentToolPublic } from "./agent-tools"
 import { AgentMode } from "./chat"
 import { PermissionMode as PermissionModeSchema } from "./permission-mode"
+import {
+  ProviderEndpointsInput,
+  ProviderKeyPublic,
+  ProviderModelItem,
+  ReasoningFamilyInput,
+  WireApiStyle
+} from "./provider-profile"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
+
+export {
+  CatalogModelSource,
+  DetectProviderInput,
+  DetectProviderProbe,
+  DuplicateProviderInput,
+  ProviderEndpointsInput,
+  ProviderKeyInput,
+  ProviderKeyPublic,
+  ProviderModelItem,
+  ReasoningFamilyInput,
+  SetProviderEnabledInput,
+  UpsertProviderInput,
+  WireApiStyle
+} from "./provider-profile"
 
 export const PingProviderInput = z.object({
   id: z.string().optional(),
@@ -33,35 +55,6 @@ export const SaveSecretInput = z.object({
   name: z.string().optional()
 })
 export type SaveSecretInput = z.infer<typeof SaveSecretInput>
-
-export const ProviderModelItem = z.object({
-  id: z.string(),
-  label: z.string(),
-  contextWindow: z.number().int().positive().optional(),
-  maxOutputTokens: z.number().int().positive().optional()
-})
-export type ProviderModelItem = z.infer<typeof ProviderModelItem>
-
-export const UpsertProviderInput = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1),
-  kind: z.string().min(1),
-  apiKey: z.string().optional(),
-  baseURL: z.string().optional(),
-  modelId: z.string().optional(),
-  apiStyle: z.string().optional(),
-  fastModelId: z.string().optional(),
-  reasoningModelId: z.string().optional(),
-  contextWindow: z.number().int().positive().nullable().optional(),
-  maxTokens: z.number().optional(),
-  temperature: z.number().optional(),
-  reasoningEffort: ReasoningEffortSchema.optional(),
-  customHeaders: z.string().optional(),
-  customBody: z.string().optional(),
-  models: z.array(ProviderModelItem).optional(),
-  activate: z.boolean().optional()
-})
-export type UpsertProviderInput = z.infer<typeof UpsertProviderInput>
 
 export const ProbeProviderInput = z.object({
   id: z.string().optional(),
@@ -93,7 +86,15 @@ export const ProviderPublic = z.object({
   hasKey: z.boolean(),
   keyHint: z.string(),
   active: z.boolean(),
-  requiresKey: z.boolean()
+  requiresKey: z.boolean(),
+  enabled: z.boolean().default(true),
+  endpoints: ProviderEndpointsInput.default({}),
+  baseAPI: WireApiStyle.default("openai"),
+  regionId: z.string().optional(),
+  keys: z.array(ProviderKeyPublic).default([]),
+  modelsURL: z.string().optional(),
+  reasoningFamily: ReasoningFamilyInput.default("auto"),
+  proxy: z.string().optional()
 })
 export type ProviderPublic = z.infer<typeof ProviderPublic>
 
@@ -114,7 +115,8 @@ export const ModelOption = z.object({
   probedCaps: z.array(z.string()).optional(),
   probedAt: z.number().int().optional(),
   contextWindow: z.number().int().positive().optional(),
-  maxTokens: z.number().int().positive().optional()
+  maxTokens: z.number().int().positive().optional(),
+  wireStyles: z.array(WireApiStyle).optional()
 })
 export type ModelOption = z.infer<typeof ModelOption>
 

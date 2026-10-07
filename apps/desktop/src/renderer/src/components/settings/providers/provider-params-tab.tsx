@@ -8,16 +8,28 @@ import { Label } from "@/components/ui/label"
 import { cx } from "@/utils/cx"
 import { ReasoningEnergyBar } from "@renderer/components/ai-chat/reasoning-energy-bar"
 import { getEffortMeta } from "@renderer/components/ai-chat/reasoning-effort-config"
-import type { EditorState } from "./providers.types"
-import { useT } from "@renderer/i18n"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
+import { SETTINGS_DRAWER_Z_CLASS } from "../settings-overlay"
+import { inferredFamily } from "./provider-editor-form"
+import type { EditorState, ReasoningFamily } from "./providers.types"
+import { useT, type TranslateFn } from "@renderer/i18n"
 
-const CONTEXT_PRESETS = [
-  { label: "128K", value: 128000 },
-  { label: "200K", value: 200000 },
-  { label: "256K", value: 256000 },
-  { label: "1M (Claude / Gemini)", value: 1000000 },
-  { label: "2M", value: 2000000 }
-]
+/** 1M 文案走 ctx1m，中英文括号不同。 */
+function contextPresets(t: TranslateFn): { label: string; value: number }[] {
+  return [
+    { label: "128K", value: 128000 },
+    { label: "200K", value: 200000 },
+    { label: "256K", value: 256000 },
+    { label: t("settings.providers.ctx1m"), value: 1000000 },
+    { label: "2M", value: 2000000 }
+  ]
+}
 
 export function ProviderParamsTab({
   editor,
@@ -27,8 +39,25 @@ export function ProviderParamsTab({
   onChange: (patch: Partial<EditorState>) => void
 }) {
   const t = useT()
+  const effort = getEffortMeta(editor.reasoningEffort, t)
+  const inferred = inferredFamily(editor.kind, editor.modelId)
+  const families: ReasoningFamily[] = ["auto", "minimax", "glm", "kimi", "deepseek", "default"]
   return (
     <div className="flex flex-col gap-4 py-1">
+      <Field label={t("settings.providers.reasoningFamily")} hint={t("settings.providers.familyInferred", { family: t(`settings.providers.family_${inferred}`) })}>
+        <Select value={editor.reasoningFamily} onValueChange={(value) => onChange({ reasoningFamily: value as ReasoningFamily })}>
+          <SelectTrigger className="h-9 w-full rounded-2lg">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className={SETTINGS_DRAWER_Z_CLASS.float}>
+            {families.map((family) => (
+              <SelectItem key={family} value={family}>
+                {t(`settings.providers.family_${family}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
       {/* 上下文窗口限制 */}
       <Field label={t("settings.providers.context")} hint={t("settings.providers.contextHint")}>
         <div className="flex flex-col gap-2">
@@ -55,7 +84,7 @@ export function ProviderParamsTab({
             >
               {t("settings.providers.contextAuto")}
             </button>
-            {CONTEXT_PRESETS.map((item) => (
+            {contextPresets(t).map((item) => (
               <button
                 key={item.value}
                 type="button"
@@ -79,13 +108,10 @@ export function ProviderParamsTab({
         <div className="rounded-xl border border-border-button-default/80 bg-background-secondary-default/30 p-3 flex flex-col gap-2.5">
           <div className="flex items-center justify-between text-caption-2-medium">
             <span className="font-medium text-text-primary">
-              {t("settings.providers.level", {
-                index: getEffortMeta(editor.reasoningEffort).index,
-                label: getEffortMeta(editor.reasoningEffort).label
-              })}
+              {t("settings.providers.level", { index: effort.index, label: effort.label })}
             </span>
             <span className="text-text-tertiary">
-              {getEffortMeta(editor.reasoningEffort).desc}
+              {effort.desc}
             </span>
           </div>
           <ReasoningEnergyBar

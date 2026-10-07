@@ -29,6 +29,21 @@ export function archiveBrandName(kind: string): string | undefined {
 
 /** 账号行副标题：有品牌且不等于档案名时写「DeepSeek 档案」，否则写密钥态。 */
 export function archiveSubtitle(
+  profile: {
+    kind: string
+    name: string
+    hasKey: boolean
+    baseURL?: string
+    endpoints?: { openai?: string; anthropic?: string; "openai-responses"?: string }
+  },
+  t: TranslateFn
+): string {
+  const text = archiveText(profile, t)
+  const host = endpointHost(profile)
+  return host ? `${text} · ${host}` : text
+}
+
+function archiveText(
   profile: { kind: string; name: string; hasKey: boolean },
   t: TranslateFn
 ): string {
@@ -39,4 +54,21 @@ export function archiveSubtitle(
     return t("settings.agentTools.bindAccountBrandArchive", { brand })
   }
   return t("settings.agentTools.bindAccountKeySaved")
+}
+
+/** Claude 行靠主机认出「官方 URL + 只开通 Chat 的 Key」。 */
+function endpointHost(profile: {
+  baseURL?: string
+  endpoints?: { openai?: string; anthropic?: string; "openai-responses"?: string }
+}): string | undefined {
+  const url = profile.endpoints?.anthropic
+    || profile.endpoints?.["openai-responses"]
+    || profile.endpoints?.openai
+    || profile.baseURL
+  if (!url?.trim()) return undefined
+  try {
+    return new URL(url).host
+  } catch {
+    return undefined
+  }
 }

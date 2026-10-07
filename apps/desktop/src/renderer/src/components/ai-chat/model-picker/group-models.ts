@@ -19,6 +19,7 @@ export function groupModelsByProvider(models: ModelOption[]): ProviderGroup[] {
       providerId: model.providerId,
       providerName: model.providerName || formatProviderTitle(model.provider),
       apiStyle: model.apiStyle,
+      wireStyles: model.wireStyles,
       active: model.active,
       models: [model]
     })

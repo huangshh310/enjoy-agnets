@@ -13,7 +13,7 @@ import {
   RiRobot2Line
 } from "@remixicon/react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { ProviderKind, ProviderPreset } from "@enjoy-agents/providers/presets"
+import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { ProviderConnectionFields } from "./provider-connection-fields"
 import { ProviderModelsTab } from "./provider-models-tab"
 import { ProviderOverridesTab } from "./provider-overrides-tab"
@@ -24,21 +24,21 @@ import { useT } from "@renderer/i18n"
 export function ProviderEditorFields({
   editor,
   preset,
-  keyHint,
   modelChoices,
   probe,
-  onChangeKind,
+  detecting,
   onChange,
-  onFetchModels
+  onFetchModels,
+  onDetect
 }: {
   editor: EditorState
   preset: ProviderPreset
-  keyHint?: string
   modelChoices: Array<{ id: string; label: string }>
   probe: ProbeState
-  onChangeKind: (kind: ProviderKind) => void
+  detecting: boolean
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
+  onDetect: () => void
 }) {
   const t = useT()
   return (
@@ -83,8 +83,9 @@ export function ProviderEditorFields({
         <ProviderConnectionFields
           editor={editor}
           preset={preset}
-          keyHint={keyHint}
+          detecting={detecting}
           onChange={onChange}
+          onDetect={onDetect}
         />
       </TabsContent>
 
@@ -108,7 +109,7 @@ export function ProviderEditorFields({
       <TabsContent value="overrides" className="focus-visible:outline-none">
         <ProviderOverridesTab
           editor={editor}
-          onChangeKind={onChangeKind}
+          preset={preset}
           onChange={onChange}
         />
       </TabsContent>

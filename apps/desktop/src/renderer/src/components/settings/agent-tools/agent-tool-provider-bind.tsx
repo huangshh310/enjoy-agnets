@@ -43,7 +43,7 @@ export function AgentToolBoundExtras({
   profile: ProviderPublic
 }) {
   const t = useT()
-  const models = profile.models ?? []
+  const models = (profile.models ?? []).filter((model) => model.enabled !== false)
   const modelId = tool.selectedModel || profile.modelId || models[0]?.id || ""
   const showCodexHint = tool.id === "codex" && profile.apiStyle === "openai"
   return (

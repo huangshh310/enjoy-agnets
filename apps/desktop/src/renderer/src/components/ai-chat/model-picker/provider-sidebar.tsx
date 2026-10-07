@@ -77,16 +77,19 @@ export function ProviderSidebar({
                 />
               </div>
 
-              <div className="flex min-w-0 flex-1 items-center gap-1">
-                <span className="truncate text-caption-1-medium font-medium leading-tight">
-                  {group.providerName}
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="flex min-w-0 items-center gap-1">
+                  <span className="truncate text-caption-1-medium font-medium leading-tight">
+                    {group.providerName}
+                  </span>
+                  {group.active ? (
+                    <span
+                      title={t("chat.activeProvider")}
+                      className="size-1.5 shrink-0 rounded-full bg-state-success-text"
+                    />
+                  ) : null}
                 </span>
-                {group.active ? (
-                  <span
-                    title={t("chat.activeProvider")}
-                    className="size-1.5 shrink-0 rounded-full bg-state-success-text"
-                  />
-                ) : null}
+                <WireCaption styles={group.wireStyles} />
               </div>
 
               <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-caption-2-medium font-medium text-text-tertiary">
@@ -110,4 +113,18 @@ export function ProviderSidebar({
       </div>
     </aside>
   )
+}
+
+function WireCaption({ styles }: { styles?: string[] }) {
+  const t = useT()
+  const labels = (styles ?? [])
+    .map((style) => {
+      if (style === "openai") return t("settings.providers.styleChat")
+      if (style === "openai-responses") return t("settings.providers.styleResponses")
+      if (style === "anthropic") return t("settings.providers.styleMessages")
+      return ""
+    })
+    .filter(Boolean)
+  if (labels.length === 0) return null
+  return <span className="truncate text-caption-2-regular text-text-tertiary">{labels.join(" · ")}</span>
 }

@@ -3,7 +3,7 @@
  */
 import type { ApiStyle } from "./api-styles"
 import type { CatalogModel, ProviderKind } from "./presets"
-import type { ReasoningEffort } from "./reasoning"
+import type { ReasoningEffort, ReasoningFamilyName } from "./reasoning"
 
 export type ProviderConfig = {
   provider: ProviderKind
@@ -17,7 +17,11 @@ export type ProviderConfig = {
   maxTokens?: number
   temperature?: number
   reasoningEffort?: ReasoningEffort
+  reasoningFamily?: ReasoningFamilyName
   customHeaders?: Record<string, string> | string
   customBody?: Record<string, unknown> | string
   models?: CatalogModel[]
+  /** 这次上游请求的 fetch。空则用全局 fetch。 */
+  fetch?: typeof fetch
+  proxy?: string
 }

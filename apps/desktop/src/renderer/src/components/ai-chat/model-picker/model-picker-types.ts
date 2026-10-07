@@ -9,6 +9,7 @@ export type ProviderGroup = {
   providerId?: string
   providerName: string
   apiStyle?: string
+  wireStyles?: string[]
   active?: boolean
   models: ModelOption[]
 }

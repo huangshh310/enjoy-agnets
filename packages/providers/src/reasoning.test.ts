@@ -40,18 +40,25 @@ test("official DeepSeek provider always uses DeepSeek reasoning API", () => {
   )
 })
 
-test("OpenRouter / siliconflow DeepSeek models use DeepSeek reasoning API", () => {
+test("中转上的 DeepSeek 模型名不进 DeepSeek 官方工厂", () => {
   assert.equal(
     usesDeepSeekReasoningApi({
       provider: "openrouter",
       modelId: "deepseek/deepseek-chat"
     }),
-    true
+    false
   )
   assert.equal(
     usesDeepSeekReasoningApi({
       provider: "siliconflow",
       modelId: "deepseek-ai/DeepSeek-V4-Flash"
+    }),
+    false
+  )
+  assert.equal(
+    usesDeepSeekReasoningApi({
+      provider: "custom",
+      modelId: "deepseek-v4-flash"
     }),
     true
   )

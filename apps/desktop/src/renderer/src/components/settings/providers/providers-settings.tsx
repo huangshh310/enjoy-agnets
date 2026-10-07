@@ -5,9 +5,8 @@
  */
 import { useMemo, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { RiCompass3Line, RiServerLine, RiStackLine } from "@remixicon/react"
+import { RiCompass3Line, RiStackLine } from "@remixicon/react"
 import { agentRefsForProvider } from "@enjoy-agents/ipc-contract"
-import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
@@ -41,8 +40,6 @@ export function ProviderSettings() {
     () => new Set(settings.providers.map((profile) => profile.kind)),
     [settings.providers]
   )
-  const editingHint = settings.providers.find((item) => item.id === settings.editor?.id)?.keyHint
-
   const totalPresetsCount = useMemo(
     () => PROVIDER_PRESETS.filter((p) => p.kind !== "custom").length,
     []
@@ -124,18 +121,6 @@ export function ProviderSettings() {
               </span>
             </button>
           </div>
-
-          {/* 快捷添加自定义端点 */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleSelectPreset("custom", "openai")}
-            className="rounded-xl border-border-button-default bg-background-primary-default hidden md:inline-flex"
-          >
-            <RiServerLine className="size-3.5 mr-1 text-accent-500" />
-            {t("settings.providers.customV1")}
-          </Button>
         </div>
       </div>
 
@@ -149,6 +134,8 @@ export function ProviderSettings() {
             onPingAll={settings.pingAllProviders}
             onEdit={settings.openEdit}
             onActivate={(id) => void settings.activate(id)}
+            onDuplicate={(profile) => void settings.duplicate(profile)}
+            onSetEnabled={(id, enabled) => void settings.setEnabled(id, enabled)}
             onRemove={(id) => {
               const profile = settings.providers.find((item) => item.id === id)
               const refs = refsByProvider[id] ?? []
@@ -180,13 +167,13 @@ export function ProviderSettings() {
         preset={settings.preset}
         probe={settings.probe}
         modelChoices={settings.modelChoices}
-        keyHint={editingHint}
         refs={settings.editor?.id ? refsByProvider[settings.editor.id] : undefined}
         canSave={settings.canSave}
+        detecting={settings.detecting}
         onClose={settings.closeEditor}
-        onChangeKind={settings.changeKind}
         onChange={settings.updateEditor}
         onFetchModels={() => void settings.fetchModels()}
+        onDetect={() => void settings.detect()}
         onSave={() => void settings.save(true)}
         onOpenAgent={openAgent}
       />

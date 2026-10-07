@@ -5,7 +5,7 @@
 import { existsSync } from "node:fs"
 import { chmod, copyFile, mkdir, readFile, unlink, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
-import type { AgentToolId, SyncCliConfigResult } from "@enjoy-agents/ipc-contract"
+import { providersCompatibleWith, type AgentToolId, type SyncCliConfigResult } from "@enjoy-agents/ipc-contract"
 import { homeConfigPathFor } from "./agent-tools-home-sync"
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import {
@@ -14,18 +14,15 @@ import {
   mergeGeminiEnv,
   mergeOpenCodeJson
 } from "./cli-config-format"
-import { codexWireApiFor, openCodeNpmFor } from "./provider-bind-env"
+import { codexWireApiFor, openCodeNpmFor, providerEnvFor, type BindProfile } from "./provider-bind-env"
 import { readVault } from "./secrets-vault"
 
 const FILE_MODE = 0o600
 
-type SyncProfile = {
+type SyncProfile = BindProfile & {
   name: string
-  baseURL?: string
-  apiKey: string
-  kind?: string
-  apiStyle?: string
   modelId?: string
+  enabled?: boolean
 }
 
 export async function syncCliConfig(id: AgentToolId): Promise<SyncCliConfigResult> {
@@ -80,15 +77,23 @@ async function resolveSyncProfile(id: AgentToolId): Promise<SyncProfile | null> 
   if (!override?.useCustomProvider || !override.providerId) return null
   const vault = await readVault()
   const profile = vault.profiles.find((item) => item.id === override.providerId)
-  if (!profile?.apiKey.trim()) return null
-  return {
+  if (!profile?.enabled) return null
+  const hasKey = Boolean(profile.apiKey.trim()) || profile.keys.some((key) => key.enabled && key.apiKey.trim())
+  if (!hasKey) return null
+  const syncProfile: SyncProfile = {
     name: profile.name,
     baseURL: profile.baseURL,
     apiKey: profile.apiKey,
     kind: profile.kind,
     apiStyle: profile.apiStyle,
+    baseAPI: profile.baseAPI,
+    endpoints: profile.endpoints,
+    keys: profile.keys,
+    enabled: profile.enabled,
     modelId: override.modelId || profile.modelId
   }
+  if (!providersCompatibleWith(id, syncProfile)) return null
+  return syncProfile
 }
 
 async function syncClaudeSettings(id: AgentToolId, profile: SyncProfile): Promise<SyncCliConfigResult> {
@@ -100,11 +105,8 @@ async function syncClaudeSettings(id: AgentToolId, profile: SyncProfile): Promis
     existing.env && typeof existing.env === "object" ? (existing.env as Record<string, string>) : {}
   const env: Record<string, string> = {
     ...existingEnv,
-    ANTHROPIC_BASE_URL: profile.baseURL || "https://api.anthropic.com",
-    ANTHROPIC_API_KEY: profile.apiKey,
-    ANTHROPIC_AUTH_TOKEN: profile.apiKey
+    ...providerEnvFor("claude", profile, profile.modelId)
   }
-  if (profile.modelId?.trim()) env.ANTHROPIC_MODEL = profile.modelId.trim()
   existing.env = env
   await writePrivate(configPath, `${JSON.stringify(existing, null, 2)}\n`)
   return okResult(id, profile.name, "Claude settings", configPath)
@@ -115,8 +117,9 @@ async function syncCodexTomlFile(id: AgentToolId, profile: SyncProfile): Promise
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = existsSync(configPath) ? await readFile(configPath, "utf-8") : ""
+  const env = providerEnvFor("codex", profile, profile.modelId)
   const next = mergeCodexToml(existing, {
-    baseUrl: profile.baseURL || "https://api.openai.com/v1",
+    baseUrl: env.OPENAI_BASE_URL || profile.baseURL || "https://api.openai.com/v1",
     profileName: profile.name,
     model: profile.modelId,
     wireApi: codexWireApiFor(profile)
@@ -130,9 +133,10 @@ async function syncOpenCodeJsonFile(id: AgentToolId, profile: SyncProfile): Prom
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = existsSync(configPath) ? await readFile(configPath, "utf-8") : ""
+  const env = providerEnvFor("opencode", profile, profile.modelId)
   const next = mergeOpenCodeJson(existing, {
     name: profile.name,
-    baseUrl: profile.baseURL || "https://api.openai.com/v1",
+    baseUrl: env.OPENAI_BASE_URL || env.ANTHROPIC_BASE_URL || env.GEMINI_BASE_URL || profile.baseURL || "https://api.openai.com/v1",
     model: profile.modelId,
     npm: openCodeNpmFor(profile)
   })
@@ -145,9 +149,10 @@ async function syncGeminiEnvFile(id: AgentToolId, profile: SyncProfile): Promise
   await mkdir(dirname(configPath), { recursive: true })
   await ensureBackup(configPath)
   const existing = existsSync(configPath) ? await readFile(configPath, "utf-8") : ""
+  const env = providerEnvFor("gemini", profile, profile.modelId)
   const next = mergeGeminiEnv(existing, {
-    apiKey: profile.apiKey,
-    baseUrl: profile.baseURL,
+    apiKey: env.GEMINI_API_KEY || profile.apiKey,
+    baseUrl: env.GEMINI_BASE_URL || profile.baseURL,
     model: profile.modelId
   })
   await writePrivate(configPath, next)

@@ -3,10 +3,11 @@
  */
 import { RiCloseLine, RiExternalLinkLine } from "@remixicon/react"
 import type { AgentBindRef } from "@enjoy-agents/ipc-contract"
-import type { ProviderKind, ProviderPreset } from "@enjoy-agents/providers/presets"
+import type { ProviderPreset } from "@enjoy-agents/providers/presets"
 import { Button } from "@/components/ui/button"
 import { useT } from "@renderer/i18n"
 import { SettingsSideDrawer } from "../settings-side-drawer"
+import { presetBlurb } from "./provider-blurb"
 import { ProviderEditorFields } from "./provider-editor-fields"
 import { ProviderIcon } from "./provider-icons"
 import type { EditorState, ProbeState } from "./providers.types"
@@ -16,13 +17,13 @@ export function ProviderEditorDrawer({
   preset,
   probe,
   modelChoices,
-  keyHint,
   refs,
   canSave,
+  detecting,
   onClose,
-  onChangeKind,
   onChange,
   onFetchModels,
+  onDetect,
   onSave,
   onOpenAgent,
   saveLabel,
@@ -32,13 +33,13 @@ export function ProviderEditorDrawer({
   preset: ProviderPreset | null
   probe: ProbeState
   modelChoices: Array<{ id: string; label: string }>
-  keyHint?: string
   refs?: AgentBindRef[]
   canSave: boolean
+  detecting: boolean
   onClose: () => void
-  onChangeKind: (kind: ProviderKind) => void
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
+  onDetect: () => void
   onSave: () => void
   onOpenAgent?: (runtimeId: string) => void
   saveLabel?: string
@@ -60,13 +61,13 @@ export function ProviderEditorDrawer({
           preset={preset}
           probe={probe}
           modelChoices={modelChoices}
-          keyHint={keyHint}
           refs={refs ?? []}
           canSave={canSave}
+          detecting={detecting}
           onClose={onClose}
-          onChangeKind={onChangeKind}
           onChange={onChange}
           onFetchModels={onFetchModels}
+          onDetect={onDetect}
           onSave={onSave}
           onOpenAgent={onOpenAgent}
           saveLabel={saveLabel}
@@ -81,13 +82,13 @@ function EditorDrawerForm({
   preset,
   probe,
   modelChoices,
-  keyHint,
   refs,
   canSave,
+  detecting,
   onClose,
-  onChangeKind,
   onChange,
   onFetchModels,
+  onDetect,
   onSave,
   onOpenAgent,
   saveLabel
@@ -96,13 +97,13 @@ function EditorDrawerForm({
   preset: ProviderPreset
   probe: ProbeState
   modelChoices: Array<{ id: string; label: string }>
-  keyHint?: string
   refs: AgentBindRef[]
   canSave: boolean
+  detecting: boolean
   onClose: () => void
-  onChangeKind: (kind: ProviderKind) => void
   onChange: (patch: Partial<EditorState>) => void
   onFetchModels: () => void
+  onDetect: () => void
   onSave: () => void
   onOpenAgent?: (runtimeId: string) => void
   saveLabel?: string
@@ -120,12 +121,12 @@ function EditorDrawerForm({
         <ProviderEditorFields
           editor={editor}
           preset={preset}
-          keyHint={keyHint}
           modelChoices={modelChoices}
           probe={probe}
-          onChangeKind={onChangeKind}
+          detecting={detecting}
           onChange={onChange}
           onFetchModels={onFetchModels}
+          onDetect={onDetect}
         />
       </div>
       <EditorDrawerFooter docsURL={preset.docsURL} canSave={canSave} saveLabel={saveLabel} onClose={onClose} />
@@ -147,19 +148,23 @@ function EditorDrawerHeader({
   onOpenAgent?: (runtimeId: string) => void
 }) {
   const t = useT()
+  const titleName = preset.kind === "custom" ? t("settings.providers.customName") : preset.name
+  const description = preset.kind === "custom"
+    ? t("settings.providers.customDesc")
+    : presetBlurb(preset.kind, preset.description, t)
   return (
     <header className="flex shrink-0 items-start justify-between gap-3 border-b border-separator-border/60 bg-background-secondary-default/30 px-6 py-4">
       <div className="flex min-w-0 items-start gap-3">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border-button-default bg-background-primary-default shadow-2xs">
-          <ProviderIcon kind={preset.kind} name={editor.name || preset.name} apiStyle={editor.apiStyle} size={22} />
+          <ProviderIcon kind={preset.kind} name={editor.name || preset.name} apiStyle={editor.baseAPI} size={22} />
         </div>
         <div className="min-w-0">
           <h3 id="provider-editor-title" className="truncate text-title-3-semibold text-text-primary">
             {editor.id
-              ? t("settings.providers.editTitle", { name: preset.name })
-              : t("settings.providers.addTitle", { name: preset.name })}
+              ? t("settings.providers.editTitle", { name: titleName })
+              : t("settings.providers.addTitle", { name: titleName })}
           </h3>
-          <p className="mt-0.5 text-caption-1-medium text-text-secondary">{preset.description}</p>
+          <p className="mt-0.5 text-caption-1-medium text-text-secondary">{description}</p>
           <EditorBoundAgents refs={refs} onOpenAgent={onOpenAgent} />
         </div>
       </div>

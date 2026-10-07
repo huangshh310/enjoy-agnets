@@ -149,7 +149,10 @@ const ide = {
     setActiveModel: (input: { providerId?: string; modelId: string }) =>
       ipcRenderer.invoke("settings.setActiveModel", input),
     probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input),
-    pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input)
+    pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input),
+    detectProvider: (input: unknown) => ipcRenderer.invoke("settings.detectProvider", input),
+    duplicateProvider: (input: unknown) => ipcRenderer.invoke("settings.duplicateProvider", input),
+    setProviderEnabled: (input: unknown) => ipcRenderer.invoke("settings.setProviderEnabled", input)
   },
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),

@@ -20,10 +20,14 @@ export async function assertAndClampBind(input: {
   const vault = await readVault()
   const profile = vault.profiles.find((item) => item.id === input.providerId)
   if (!profile) throw new Error("That provider profile was not found.")
+  if (!profile.enabled) throw new Error("Enable the provider before binding it.")
   const style = resolvedStyle(profile)
   if (!providersCompatibleWith(input.id, { ...profile, apiStyle: style })) {
     throw new Error("This provider protocol cannot bind to this CLI.")
   }
   const models = composeBoundAgentModels(profile.models)
+  if (profile.models?.length && models.length === 0) {
+    throw new Error("Enable at least one model on this provider.")
+  }
   return { modelId: pickBoundModelId(input.modelId, models) ?? input.modelId }
 }

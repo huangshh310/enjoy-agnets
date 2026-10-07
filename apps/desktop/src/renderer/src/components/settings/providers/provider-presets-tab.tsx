@@ -15,6 +15,7 @@ import {
 import { SettingsCard } from "../settings-row"
 import { ProviderCustomBanner } from "./provider-custom-banner"
 import { ProviderPresetCard } from "./provider-preset-card"
+import { WIRE_LABEL } from "./provider-wire-lines"
 import { useT } from "@renderer/i18n"
 
 export function ProviderPresetsTab({
@@ -51,13 +52,13 @@ export function ProviderPresetsTab({
   }, [selectedProtocol, searchQuery])
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       {/* 顶部醒目的自定义 API 端点接入 Banner */}
       <ProviderCustomBanner onSelect={onSelect} />
 
       {/* 主流大模型官方预设卡片库 */}
-      <SettingsCard title={t("settings.providers.official")}>
-        <div className="p-5 flex flex-col gap-4">
+      <SettingsCard dense title={t("settings.providers.official")}>
+        <div className="flex flex-col gap-3 p-3">
           {/* 工具栏：协议过滤与搜索框 */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* 协议筛选药丸 */}
@@ -76,7 +77,7 @@ export function ProviderPresetsTab({
                 return (
                   <FilterPill
                     key={opt.id}
-                    label={`${opt.name.replace("OpenAI ", "").replace("Anthropic ", "")} (${count})`}
+                    label={`${t(`settings.providers.${WIRE_LABEL[opt.id]}`)} (${count})`}
                     active={selectedProtocol === opt.id}
                     onClick={() => setSelectedProtocol(opt.id)}
                   />
@@ -99,22 +100,35 @@ export function ProviderPresetsTab({
 
           {/* 预设卡片网格 */}
           {filteredPresets.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pt-1">
-              {filteredPresets.map((preset) => {
-                const styles = supportedApiStylesFor(preset)
-                const targetStyle =
-                  selectedProtocol !== "all" && styles.includes(selectedProtocol as ApiStyle)
-                    ? (selectedProtocol as ApiStyle)
-                    : preset.apiStyle
+            <div className="flex flex-col gap-4 pt-1">
+              {PRESET_GROUPS.map((group) => {
+                const items = filteredPresets.filter((preset) => preset.group === group)
+                if (items.length === 0) return null
                 return (
-                  <ProviderPresetCard
-                    key={preset.kind}
-                    preset={preset}
-                    activeProtocol={selectedProtocol !== "all" ? (selectedProtocol as ApiStyle) : undefined}
-                    isConfigured={configuredKinds.has(preset.kind)}
-                    onClick={() => onSelect(preset.kind, targetStyle)}
-                    onSelectProtocol={(style) => onSelect(preset.kind, style)}
-                  />
+                  <section key={group} className="flex flex-col gap-1.5">
+                    <h3 className="text-caption-1-semibold text-text-secondary">
+                      {t(`settings.providers.group_${group}`)}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5">
+                      {items.map((preset) => {
+                        const styles = supportedApiStylesFor(preset)
+                        const targetStyle =
+                          selectedProtocol !== "all" && styles.includes(selectedProtocol as ApiStyle)
+                            ? (selectedProtocol as ApiStyle)
+                            : preset.apiStyle
+                        return (
+                          <ProviderPresetCard
+                            key={preset.kind}
+                            preset={preset}
+                            activeProtocol={selectedProtocol !== "all" ? (selectedProtocol as ApiStyle) : undefined}
+                            isConfigured={configuredKinds.has(preset.kind)}
+                            onClick={() => onSelect(preset.kind, targetStyle)}
+                            onSelectProtocol={(style) => onSelect(preset.kind, style)}
+                          />
+                        )
+                      })}
+                    </div>
+                  </section>
                 )
               })}
             </div>
@@ -131,6 +145,8 @@ export function ProviderPresetsTab({
     </div>
   )
 }
+
+const PRESET_GROUPS = ["vendor", "relay", "local", "media"] as const
 
 function FilterPill({
   label,
