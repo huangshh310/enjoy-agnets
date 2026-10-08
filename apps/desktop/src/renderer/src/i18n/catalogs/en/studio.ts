@@ -13,6 +13,9 @@ export const enStudio = {
     restoreDown: "Restore down",
     restoreWindow: "Restore window",
     closeWindow: "Close window",
+    history: "Page history",
+    back: "Back",
+    forward: "Forward",
     quitBusyTitle: "Sessions are still active",
     quitBusyDesc: "An assistant is still running, or a review is waiting. Quitting stops that work.",
     quitAnyway: "Quit"

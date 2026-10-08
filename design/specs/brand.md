@@ -1,6 +1,6 @@
 # spec/brand
 
-> 产品主标来自 `apps/desktop/public/enjoy-ui-kit`。最后更新：2026-10-04（macOS 菜单栏应用名开发态也写成 Enjoy Agents）
+> 产品主标来自 `apps/desktop/public/enjoy-ui-kit`。最后更新：2026-10-08（窗口标题栏不再挂组合字锁）
 
 ## 当前真相
 
@@ -8,9 +8,9 @@
 
 | 用途 | 资源 | 接线 |
 |---|---|---|
-| 标题栏 / 侧栏 ≤32px 标 | `svg/icon-small.svg` | `AppMark` |
+| 侧栏与引擎标 ≤32px | `svg/icon-small.svg` | `AppMark` |
 | 界面标 >32px | 浅色 `icon-light` / 暗色 `icon-dark` | `AppMark` + `useThemeMode` |
-| 组合字锁 | 铬上拼 `enjoy` + `AGENT IDE`，不用 lockup SVG | `AppWordmark` |
+| 组合字锁 | 组件仍是 `enjoy` + `AGENT IDE`，不用 lockup SVG。窗口标题栏不再挂字锁 | `AppWordmark` |
 | 任务栏 / Alt+Tab / 最小化 | Windows `resources/icon.ico`，其它 `resources/icon.png`（512） | `BrowserWindow.icon` |
 | macOS Dock / Cmd+Tab（含 `pnpm dev`） | 同上 PNG | `app.dock.setIcon`（`applyMacDockIcon`） |
 | macOS 菜单栏应用名 | 开发态改本仓库 `Electron.app` 的显示名；打包写 `CFBundleName` 与 `CFBundleDisplayName` | `scripts/ensure-mac-menu-name.mjs`、`electron-builder.yml` `mac.extendInfo` |

@@ -1,7 +1,6 @@
 /**
- * 第一张卡左侧图标轨道。选中态只用 token。
+ * 第一张卡左侧图标轨道。折叠开关在窗口标题栏，不在轨道顶。
  */
-import { RiSideBarFill } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { AppModuleId } from "../app-shell.types"
@@ -15,13 +14,11 @@ export function ActivityBar({
   activeModule,
   collapsed,
   running,
-  onToggleCollapsed,
   onSelect
 }: {
   activeModule: AppModuleId
   collapsed: boolean
   running: boolean
-  onToggleCollapsed: () => void
   onSelect: (moduleId: AppModuleId, to: string) => void
 }) {
   const t = useT()
@@ -35,14 +32,6 @@ export function ActivityBar({
         !collapsed && "border-r border-separator-border/60"
       )}
     >
-      <button
-        type="button"
-        aria-label={collapsed ? t("chat.expandSidebar") : t("chat.collapseSidebar")}
-        onClick={onToggleCollapsed}
-        className="mb-1 flex size-9 cursor-pointer items-center justify-center rounded-2lg text-foreground-icon-secondary outline-none hover:bg-background-secondary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
-      >
-        <RiSideBarFill className={cx("size-5", collapsed ? "" : "-scale-x-100")} aria-hidden />
-      </button>
       {WORK_RAIL_ITEMS.map((item) => (
         <RailButton
           key={item.id}

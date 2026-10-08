@@ -1,26 +1,22 @@
 /**
- * 项目移除与会话归档：刷新侧栏，并在当前项被拿掉时切到下一份。
+ * 项目移除与会话归档：刷新侧栏。当前页被拿掉时交给历史栈。
  */
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
 import { useChatStore } from "../stores/chat-store"
-import {
-  createAndOpenSession,
-  loadSession,
-  loadWorkspace,
-  refreshAllWorkspaces
-} from "./use-agent-session"
+import { loadWorkspace, refreshAllWorkspaces } from "./use-agent-session"
+import { releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
+import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
+import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
 
 type WorkspaceRow = { id: string; name: string; rootPath: string }
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
   await getIde().session.archive({ sessionId })
-  const store = useChatStore.getState()
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
-  if (store.sessionId !== sessionId) return
-  await openFallbackSession(store.workspaceId)
+  await releaseHistoryPages([historySessionId(sessionId)])
 }
 
 export async function unarchiveSession(sessionId: string) {
@@ -35,45 +31,39 @@ export async function deleteArchivedSession(sessionId: string) {
   await getIde().session.delete({ sessionId })
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
+  await releaseHistoryPages([historySessionId(sessionId)])
 }
 
 export async function deleteAllArchivedSessions() {
   if (!hasIde()) return
+  const rows = (await getIde().session.listArchived()) as Array<{ id: string }>
   await getIde().session.deleteArchived()
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
+  await releaseHistoryPages(rows.map((row) => historySessionId(row.id)))
 }
 
-/** 移除应用档案中的项目，不删磁盘文件夹。 */
+/** 移除应用档案中的项目，不删磁盘文件夹。当前页被拿掉时走历史，而不是跳到下一个项目。 */
 export async function removeProject(workspaceId: string) {
   if (!hasIde()) return
+  const ids = await collectProjectPageIds(workspaceId)
   const store = useChatStore.getState()
-  const wasCurrent = store.workspaceId === workspaceId
+  const wasActive = store.workspaceId === workspaceId
   await getIde().workspace.remove({ workspaceId })
-  if (store.pinnedWorkspaceIds.includes(workspaceId)) {
-    store.togglePinWorkspace(workspaceId)
-  }
+  if (store.pinnedWorkspaceIds.includes(workspaceId)) store.togglePinWorkspace(workspaceId)
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
-  if (!wasCurrent) return
+  const removedCurrent = await releaseHistoryPages(ids)
+  if (removedCurrent || !wasActive) return
+  await restoreAnotherWorkspace(store)
+}
+
+async function restoreAnotherWorkspace(store: ReturnType<typeof useChatStore.getState>) {
   const remaining = (await getIde().workspace.list()) as WorkspaceRow[]
   if (remaining[0]) {
     await loadWorkspace(remaining[0])
     return
   }
   store.setWorkspace(null)
-}
-
-async function openFallbackSession(workspaceId: string | null) {
-  if (!workspaceId) return
-  const sessions = (await getIde().session.list({ workspaceId })) as Array<{
-    id: string
-    title: string
-  }>
-  if (sessions[0]) {
-    await loadSession(sessions[0].id, sessions[0].title)
-    return
-  }
-  await createAndOpenSession(workspaceId, "新对话")
 }

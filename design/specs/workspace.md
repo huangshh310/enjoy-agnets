@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-04（审查树可按已展开目录暂存，Git 用字面 pathspec）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-08（历史落到空的新聊天时不创建会话）
 
 ## 当前真相
 
@@ -9,7 +9,7 @@
 当前能力：
 
 - 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹。
-- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
+- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目同样走历史，不自动切到下一个项目。人在设置等其它页时，活动项目被移除仍会补一个剩下的工作区，避免档案悬空。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件或按已展开目录暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
