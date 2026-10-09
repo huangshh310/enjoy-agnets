@@ -45,7 +45,7 @@ tailwind.config = {
   .tip {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(6px);
+    transform: translateY(-4px);
     transition: opacity .15s ease, transform .15s ease;
   }
   .tip-host:hover .tip,
@@ -111,7 +111,7 @@ tailwind.config = {
       </div>
 
       <div class="grid items-start gap-4 lg:grid-cols-2">
-        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <article class="rounded-2xl border border-line bg-paper shadow-sm">
           <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C1 · 快照命中</p>
           <div class="bg-card">
             <header class="border-b border-line px-3 py-2.5">
@@ -140,7 +140,7 @@ tailwind.config = {
                   <span>本轮 12.4k tokens</span>
                   <span class="shrink-0 text-ink"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>$0.42</span>
                 </p>
-                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                <div class="tip absolute left-3 right-3 top-full z-20 mt-1 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
                   <p class="font-medium text-ink">models.dev 快照 · 2026-10-01</p>
                   <ul class="mt-2 space-y-0.5 font-mono text-[10px] text-mute">
                     <li>输入 80k × $3.00 / 百万 = $0.24</li>
@@ -156,7 +156,7 @@ tailwind.config = {
           </div>
         </article>
 
-        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <article class="rounded-2xl border border-line bg-paper shadow-sm">
           <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C2 · 你填的单价</p>
           <div class="bg-card">
             <header class="border-b border-line px-3 py-2.5">
@@ -169,7 +169,7 @@ tailwind.config = {
                   <span>本轮 12.4k tokens</span>
                   <span class="shrink-0 text-ink"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>$0.18</span>
                 </p>
-                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                <div class="tip absolute left-3 right-3 top-full z-20 mt-1 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
                   <p class="font-medium text-ink">你填的单价</p>
                   <ul class="mt-2 space-y-0.5 font-mono text-[10px] text-mute">
                     <li>输入 80k × $1.50 / 百万 = $0.12</li>
@@ -183,7 +183,7 @@ tailwind.config = {
           </div>
         </article>
 
-        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <article class="rounded-2xl border border-line bg-paper shadow-sm">
           <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C3 · 价格未知</p>
           <div class="bg-card">
             <div class="relative border-t border-line">
@@ -192,7 +192,7 @@ tailwind.config = {
                   <span>本轮 8.1k tokens</span>
                   <span class="shrink-0 text-[13px] tracking-wide text-ink">—</span>
                 </p>
-                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                <div class="tip absolute left-3 right-3 top-full z-20 mt-1 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
                   <p class="font-medium text-ink">价格未知，可在供应商设置里填写</p>
                   <p class="mt-1 text-mute">自定义端点 · 快照未命中 · 你也还没填单价。不猜、不写 $0.00。</p>
                   <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
@@ -202,7 +202,7 @@ tailwind.config = {
           </div>
         </article>
 
-        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <article class="rounded-2xl border border-line bg-paper shadow-sm">
           <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C4 · 缺项整次不估</p>
           <div class="bg-card">
             <div class="relative border-t border-line">
@@ -211,7 +211,7 @@ tailwind.config = {
                   <span>本轮 18.6k tokens</span>
                   <span class="shrink-0 text-[13px] tracking-wide text-ink">—</span>
                 </p>
-                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                <div class="tip absolute left-3 right-3 top-full z-20 mt-1 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
                   <p class="font-medium text-ink">缺「缓存写」单价，整次不估算</p>
                   <ul class="mt-2 space-y-0.5 font-mono text-[10px] text-mute">
                     <li>输入 12k · 有单价</li>
@@ -225,7 +225,7 @@ tailwind.config = {
           </div>
         </article>
 
-        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <article class="rounded-2xl border border-line bg-paper shadow-sm">
           <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C5 · 本地 · 不计费</p>
           <div class="bg-card">
             <div class="border-t border-line px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
@@ -237,7 +237,7 @@ tailwind.config = {
           </div>
         </article>
 
-        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+        <article class="rounded-2xl border border-line bg-paper shadow-sm">
           <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C6 · 外置引擎两态</p>
           <div class="space-y-px bg-card">
             <div class="relative border-t border-line">
@@ -246,7 +246,7 @@ tailwind.config = {
                   <span>本轮 41k tokens</span>
                   <span class="shrink-0 font-sans text-[11px] text-ink">$1.20 · Claude Code 上报</span>
                 </p>
-                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                <div class="tip absolute left-3 right-3 top-full z-20 mt-1 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
                   <p class="font-medium text-ink">Claude Code 上报</p>
                   <p class="mt-1 text-mute">引擎自己报的数字，原样显示。不是 Enjoy 按单价估算，也不折算订阅额度。</p>
                 </div>
@@ -307,7 +307,7 @@ tailwind.config = {
         <span class="rounded-full bg-soft px-2.5 py-1 text-[11px] font-medium text-accent">请 jojo 复审「另有引擎上报」</span>
       </div>
 
-      <div class="overflow-hidden rounded-2xl border border-line bg-paper p-3 shadow-dock">
+      <div class="rounded-2xl border border-line bg-paper p-3 shadow-dock">
         <p class="mb-2 px-1 text-[10px] font-medium uppercase tracking-wide text-mute">Composer 底栏 · 现网铬</p>
         <div class="rounded-xl border border-line bg-card px-3 py-2.5">
           <div class="flex flex-wrap items-center gap-1.5">
@@ -317,17 +317,15 @@ tailwind.config = {
               Enjoy 本地 · deepseek-chat
             </span>
             <span class="rounded-md px-1.5 py-1 text-[11px] text-mute">思考 · 中</span>
-            <span class="relative tip-host is-open inline-flex" tabindex="0">
-              <span class="hidden font-mono text-[11px] font-medium tabular-nums text-mute sm:inline-flex">12.4k tok</span>
-              <span class="tip absolute bottom-[calc(100%+8px)] left-0 z-20 w-72 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
-                <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">本会话花费</p>
-                <p class="mt-1 text-[13px] font-medium text-ink">已知部分 <span class="font-sans text-[11px] font-normal text-mute">估算</span> $0.60 · 2 次价格未知</p>
-                <p class="mt-2 text-mute">3 次可估已加总；2 次未命中或缺项，不拿 $0 凑进去。</p>
-                <p class="mt-2 text-mute">另有引擎上报 $1.20</p>
-                <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
-              </span>
-            </span>
+            <span class="font-mono text-[11px] font-medium tabular-nums text-mute">12.4k tok</span>
             <span class="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white">发送</span>
+          </div>
+          <div class="mt-3 max-w-sm rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">悬停 · 本会话花费</p>
+            <p class="mt-1 text-[13px] font-medium text-ink">已知部分 <span class="font-sans text-[11px] font-normal text-mute">估算</span> $0.60 · 2 次价格未知</p>
+            <p class="mt-2 text-mute">3 次可估已加总；2 次未命中或缺项，不拿 $0 凑进去。</p>
+            <p class="mt-2 text-mute">另有引擎上报 $1.20</p>
+            <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
           </div>
         </div>
       </div>
@@ -475,13 +473,10 @@ tailwind.config = {
           <div><p class="text-[10px] uppercase text-mute">Duration</p><p class="text-[13px] font-semibold">2.41s</p></div>
           <div><p class="text-[10px] uppercase text-mute">TTFO</p><p class="text-[13px] font-semibold text-warn">180ms</p></div>
           <div><p class="text-[10px] uppercase text-mute">Tokens</p><p class="text-[13px] font-semibold">80k → 12k</p></div>
-          <div class="relative tip-host" tabindex="0">
+          <div>
             <p class="text-[10px] uppercase text-mute">花费</p>
             <p class="text-[13px] font-semibold"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>$0.42</p>
-            <div class="tip absolute left-0 top-full z-20 mt-1 w-64 rounded-xl border border-line bg-card p-3 font-sans text-[11px] leading-relaxed shadow-toast">
-              <p class="font-medium">models.dev 快照 · 2026-10-01</p>
-              <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
-            </div>
+            <p class="mt-1 font-sans text-[10px] text-mute">models.dev 快照 · 2026-10-01</p>
           </div>
           <div><p class="text-[10px] uppercase text-mute">Model</p><p class="text-[13px] font-semibold">deepseek-chat</p></div>
           <div><p class="text-[10px] uppercase text-mute">Spans</p><p class="text-[13px] font-semibold">4 阶段</p></div>
