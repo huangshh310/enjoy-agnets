@@ -3,7 +3,7 @@
  */
 import type { Automation, AutomationMissedRecord, AutomationSkipReason } from "@enjoy-agents/ipc-contract"
 import { formatLastRunWhen } from "./last-run-label"
-import { errorCodeCopy, isNeutralErrorCode, skipReasonCopy, skipReasonTip } from "./missed-copy"
+import { errorCodeCopy, errorCodeTip, isNeutralErrorCode, skipReasonCopy, skipReasonTip } from "./missed-copy"
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -40,7 +40,13 @@ export function lastRunLine(input: {
   const { automation, records, now, locale, t } = input
   const neutral = errorCodeCopy(automation.lastRunErrorCode, t)
   if (neutral && isNeutralErrorCode(automation.lastRunErrorCode)) {
-    return { kind: "neutral", text: neutral, testId: "automation-row-neutral" }
+    const when = formatLastRunWhen(automation.lastRunAt ?? now, now, locale)
+    return {
+      kind: "neutral",
+      text: `${neutral} · ${when}`,
+      tip: errorCodeTip(automation.lastRunErrorCode, t),
+      testId: "automation-row-neutral"
+    }
   }
   if (automation.lastRunStatus === "running") {
     return { kind: "running", text: t("studio.automations.roundOpened"), testId: "automation-row-running" }
@@ -84,4 +90,31 @@ function skippedLine(
     tip,
     testId: "automation-row-skipped"
   }
+}
+
+/** 抽屉折叠条：预览 B 组摘要，不是固定「展开错过记录」。 */
+export function missedGroupSummary(input: {
+  records: AutomationMissedRecord[]
+  now: number
+  locale: string
+  t: Translate
+}): string {
+  const { records, now, locale, t } = input
+  const streak = consecutiveSkipStreak(records)
+  const when = streak.scheduledAt != null ? formatLastRunWhen(streak.scheduledAt, now, locale) : ""
+  if (streak.count >= 2) {
+    return t("studio.automations.missedMany", {
+      n: streak.count,
+      reason: skipReasonCopy(streak.reason, t),
+      when
+    })
+  }
+  if (streak.count === 1) {
+    return t("studio.automations.skippedLine", {
+      reason: skipReasonCopy(streak.reason, t),
+      when
+    })
+  }
+  if (records.length === 0) return t("studio.automations.missedEmpty")
+  return t("studio.automations.missedCount", { n: records.length })
 }

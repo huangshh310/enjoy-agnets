@@ -87,10 +87,29 @@ test("补跑来源句不泄输入，仍走 #105 红action", () => {
     },
     true
   )
-  assert.match(copy?.body ?? "", /晨间待办整理/)
-  assert.match(copy?.body ?? "", /补跑/)
+  assert.equal(copy?.body, "Enjoy 的自动化「晨间待办整理」在补跑，需要你回 Enjoy 审批")
+  assert.equal(copy?.body.includes("有工具在等你决定"), false)
   assertDoesNotLeak(copy?.body ?? "")
   assert.equal(copy?.body.includes("允许"), false)
+  const en = noticeForAgentEvent(
+    {
+      type: "approval.required",
+      name: "desktop_act",
+      args: DIRTY_ARGS,
+      automationSource: {
+        automationId: "auto_1",
+        automationName: "Morning inbox",
+        scheduledAt: 1,
+        isCatchUp: true
+      }
+    },
+    false
+  )
+  assert.equal(
+    en?.body,
+    "Enjoy automation “Morning inbox” is catching up and needs you back in Enjoy to approve."
+  )
+  assertDoesNotLeak(en?.body ?? "")
 })
 
 test("非 desktop_act 或未知动作走泛工具句", () => {

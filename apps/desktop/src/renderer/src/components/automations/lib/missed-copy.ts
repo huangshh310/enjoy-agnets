@@ -1,7 +1,11 @@
 /**
  * AUTO-P2 人话：跳过原因与稳定错误码只走这里，禁止把 code 摊到 C 端。
  */
-import type { AutomationErrorCode, AutomationSkipReason } from "@enjoy-agents/ipc-contract"
+import {
+  CATCH_UP_APPROVAL_TIMEOUT_MS,
+  type AutomationErrorCode,
+  type AutomationSkipReason
+} from "@enjoy-agents/ipc-contract"
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string
 
@@ -45,6 +49,50 @@ export function skipReasonTip(reason: string | undefined, t: Translate): string 
 export function errorCodeCopy(code: string | undefined, t: Translate): string | null {
   if (!isNeutralErrorCode(code)) return null
   return t(ERROR_LABEL[code])
+}
+
+export function catchUpApprovalTimeoutMinutes(): number {
+  return Math.round(CATCH_UP_APPROVAL_TIMEOUT_MS / 60_000)
+}
+
+export function errorCodeTip(code: string | undefined, t: Translate): string | undefined {
+  if (code === "catch_up_approval_timeout") {
+    return t("studio.automations.catchUpTimeoutTip", { minutes: catchUpApprovalTimeoutMinutes() })
+  }
+  if (code === "interrupted_by_restart") {
+    return t("studio.automations.catchUpInterruptedTip")
+  }
+  return undefined
+}
+
+export function catchUpNeverRan(code: string | undefined): boolean {
+  return isNeutralErrorCode(code)
+}
+
+export function catchUpWhenCopy(input: {
+  code?: string
+  scheduled: string
+  actual: string
+  hasCancelTime: boolean
+  t: Translate
+}): string {
+  if (catchUpNeverRan(input.code)) {
+    if (input.hasCancelTime) {
+      return input.t("studio.automations.catchUpWhenCancelled", {
+        scheduled: input.scheduled,
+        cancelled: input.actual
+      })
+    }
+    return input.t("studio.automations.catchUpWhenScheduled", { scheduled: input.scheduled })
+  }
+  return input.t("studio.automations.catchUpWhen", {
+    scheduled: input.scheduled,
+    actual: input.actual
+  })
+}
+
+export function missedExpandLabel(open: boolean, t: Translate): string {
+  return open ? t("studio.automations.missedCollapse") : t("studio.automations.missedExpandAction")
 }
 
 export function automationSourceCopy(

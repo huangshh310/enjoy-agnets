@@ -127,10 +127,12 @@ export function AutomationDrawer({
           />
         </label>
         <ModePills mode={draft.mode} onChange={(mode) => onChange({ mode })} />
-        <CatchUpToggle
-          checked={draft.catchUpMissed}
-          onChange={(catchUpMissed) => onChange({ catchUpMissed })}
-        />
+        {draft.triggers.includes("cron") ? (
+          <CatchUpToggle
+            checked={draft.catchUpMissed}
+            onChange={(catchUpMissed) => onChange({ catchUpMissed })}
+          />
+        ) : null}
         {draft.id ? <MissedRecordsList records={records} locale={locale} now={now} /> : null}
         <label className="block">
           <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.promptLabel")}</span>

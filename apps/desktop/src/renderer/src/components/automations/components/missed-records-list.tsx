@@ -1,11 +1,13 @@
 /**
- * 抽屉轻量错过/补跑列表。不是完整运行历史页。
+ * 抽屉轻量错过/补跑列表。折叠条是组摘要，不是固定「展开错过记录」。
  */
+import { useState } from "react"
 import type { AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { missedGroupSummary } from "../lib/last-run-line"
 import { formatLastRunWhen } from "../lib/last-run-label"
-import { errorCodeCopy, isNeutralErrorCode, skipReasonCopy } from "../lib/missed-copy"
+import { catchUpWhenCopy, errorCodeCopy, isNeutralErrorCode, missedExpandLabel, skipReasonCopy } from "../lib/missed-copy"
 
 export function MissedRecordsList({
   records,
@@ -17,33 +19,35 @@ export function MissedRecordsList({
   now: number
 }) {
   const t = useT()
+  const [open, setOpen] = useState(false)
   const ordered = [...records].sort((left, right) => right.scheduledAt - left.scheduledAt)
+  const summary = missedGroupSummary({ records, now, locale, t })
   return (
-    <div>
-      <p className="text-caption-1-medium text-text-tertiary">{t("studio.automations.missedExpand")}</p>
-      <details
-        className="mt-1 rounded-lg border border-border-button-default bg-background-secondary-default open:bg-background-primary-default"
-        data-testid="automation-missed-expand"
-      >
-        <summary className="cursor-pointer list-none px-2.5 py-2 text-caption-1-medium text-text-primary [&::-webkit-details-marker]:hidden">
-          <span className="flex items-center justify-between gap-2">
-            <span>{t("studio.automations.missedExpand")}</span>
-            <span className="text-caption-2-regular text-text-tertiary">{t("studio.automations.missedCollapse")}</span>
+    <details
+      className="rounded-lg border border-border-button-default bg-background-secondary-default open:bg-background-primary-default"
+      data-testid="automation-missed-expand"
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="cursor-pointer list-none px-2.5 py-2 text-caption-1-medium text-text-primary [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center justify-between gap-2">
+          <span data-testid="automation-missed-summary">{summary}</span>
+          <span className="text-caption-2-regular text-text-tertiary" data-testid="automation-missed-toggle">
+            {missedExpandLabel(open, t)}
           </span>
-        </summary>
-        {ordered.length === 0 ? (
-          <p className="border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-tertiary">
-            {t("studio.automations.missedEmpty")}
-          </p>
-        ) : (
-          <ul className="space-y-1 border-t border-separator-border px-2.5 py-2">
-            {ordered.map((row) => (
-              <MissedRecordRow key={`${row.kind}:${row.scheduledAt}`} row={row} locale={locale} now={now} />
-            ))}
-          </ul>
-        )}
-      </details>
-    </div>
+        </span>
+      </summary>
+      {ordered.length === 0 ? (
+        <p className="border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-tertiary">
+          {t("studio.automations.missedEmpty")}
+        </p>
+      ) : (
+        <ul className="space-y-1 border-t border-separator-border px-2.5 py-2">
+          {ordered.map((row) => (
+            <MissedRecordRow key={`${row.kind}:${row.scheduledAt}`} row={row} locale={locale} now={now} />
+          ))}
+        </ul>
+      )}
+    </details>
   )
 }
 
@@ -61,6 +65,15 @@ function MissedRecordRow({
   const actual = formatLastRunWhen(row.recordedAt, now, locale)
   const timeout = errorCodeCopy(row.code, t)
   const catchUp = row.kind === "catch_up" || row.isCatchUp === true
+  const when = catchUp
+    ? catchUpWhenCopy({
+        code: row.code,
+        scheduled,
+        actual,
+        hasCancelTime: row.recordedAt !== row.scheduledAt,
+        t
+      })
+    : scheduled
   return (
     <li
       className="flex flex-wrap items-center justify-between gap-2 text-caption-2-regular text-text-tertiary"
@@ -72,9 +85,7 @@ function MissedRecordRow({
             {t("studio.automations.catchUpMarker")}
           </span>
         ) : null}
-        <span>
-          {catchUp ? t("studio.automations.catchUpWhen", { scheduled, actual }) : scheduled}
-        </span>
+        <span>{when}</span>
       </span>
       <RecordStatus row={row} timeout={timeout} />
     </li>

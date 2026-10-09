@@ -29,8 +29,8 @@ test("补跑通知只加自动化名与补跑，无允许钮，仍走 #105 红ac
     },
     true
   )
-  assert.match(copy?.body ?? "", /晨间待办整理/)
-  assert.match(copy?.body ?? "", /补跑/)
+  assert.equal(copy?.body, "Enjoy 的自动化「晨间待办整理」在补跑，需要你回 Enjoy 审批")
+  assert.equal(copy?.body.includes("有工具在等你决定"), false)
   assert.equal(copy?.body.includes("允许"), false)
   assert.equal(copy?.body.includes("hunter2"), false)
   assert.equal(copy?.body.includes("密码"), false)

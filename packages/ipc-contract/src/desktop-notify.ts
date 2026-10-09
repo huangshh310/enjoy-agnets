@@ -115,7 +115,7 @@ export function noticeForAgentEvent(
   return runNotifyCopy(kind, zh)
 }
 
-/** 来源句只写自动化名 + 是否补跑，不抄 scheduledAt / args。 */
+/** 补跑通知整句替换，只写自动化名；准点才拼在泛工具句后。不抄 scheduledAt / args。 */
 export function withAutomationNotifySource(
   copy: DesktopNotifyCopy,
   source: { automationName?: string; isCatchUp?: boolean } | undefined,
@@ -123,13 +123,15 @@ export function withAutomationNotifySource(
 ): DesktopNotifyCopy {
   const name = source?.automationName?.trim()
   if (!name) return copy
-  const extra = source?.isCatchUp
-    ? zh
-      ? `自动化「${name}」补跑。`
-      : `Catch-up for automation “${name}”.`
-    : zh
-      ? `自动化「${name}」。`
-      : `Automation “${name}”.`
+  if (source?.isCatchUp) {
+    return zh
+      ? { title: copy.title, body: `Enjoy 的自动化「${name}」在补跑，需要你回 Enjoy 审批` }
+      : {
+          title: copy.title,
+          body: `Enjoy automation “${name}” is catching up and needs you back in Enjoy to approve.`
+        }
+  }
+  const extra = zh ? `自动化「${name}」。` : `Automation “${name}”.`
   return { title: copy.title, body: `${copy.body} ${extra}` }
 }
 

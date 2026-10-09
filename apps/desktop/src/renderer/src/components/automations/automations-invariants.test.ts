@@ -23,6 +23,7 @@ const uiFiles = [
   "components/webhook-fields.tsx",
   "components/catch-up-toggle.tsx",
   "components/missed-records-list.tsx",
+  "components/last-run-explain.tsx",
   "lib/missed-copy.ts",
   "lib/last-run-line.ts"
 ]
@@ -104,7 +105,23 @@ test("超时次行不走失败红，名称旁不挂已跳过小标", () => {
 
 test("设置能力句钉死默认不补跑", () => {
   assert.equal(zhStudio.automations.catchUpToggle, "错过后补跑最近一次")
+  assert.match(enStudio.automations.catchUpToggleDefault, /Once on,/)
   const settings = readFileSync(join(dir, "../../i18n/catalogs/zh/settings.ts"), "utf8")
   assert.match(settings, /默认不补跑，可在单条自动化里开启补跑最近一次/)
   assert.doesNotMatch(settings, /关掉应用不会补跑/)
+})
+
+test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际", () => {
+  const list = readFileSync(join(dir, "components/missed-records-list.tsx"), "utf8")
+  assert.match(list, /missedGroupSummary/)
+  assert.match(list, /missedExpandLabel/)
+  assert.match(list, /catchUpWhenCopy/)
+  assert.doesNotMatch(list, /studio\.automations\.missedExpand"/)
+  const drawer = readFileSync(join(dir, "components/automation-drawer.tsx"), "utf8")
+  assert.match(drawer, /triggers\.includes\("cron"\)/)
+  const row = readFileSync(join(dir, "components/automation-row.tsx"), "utf8")
+  assert.match(row, /LastRunExplain/)
+  const explain = readFileSync(join(dir, "components/last-run-explain.tsx"), "utf8")
+  assert.match(explain, /aria-describedby/)
+  assert.match(explain, /PopoverTrigger/)
 })

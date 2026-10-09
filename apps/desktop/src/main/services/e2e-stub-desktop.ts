@@ -9,6 +9,14 @@ export function isE2eCuReady(): boolean {
 
 /** 仅 stub：给补跑 Dock 挂上来源句，不改生产审批闸。 */
 export function e2eAutomationSourceFromPrompt(prompt: string) {
+  if (/desktop catchup terminal/i.test(prompt)) {
+    return {
+      automationId: "auto_term",
+      automationName: "晨间类型检查",
+      scheduledAt: Date.now() - 3_600_000,
+      isCatchUp: true
+    }
+  }
   if (!/desktop catchup/i.test(prompt)) return undefined
   return {
     automationId: "auto_sleep",
@@ -29,6 +37,19 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
         appKeySource: "bundleId",
         elementName: "今天",
         sensitive: false
+      })
+    ]
+  }
+  if (/desktop catchup terminal/i.test(prompt)) {
+    return [
+      desktopApproval("apr_catchup_term", "tool_catchup_term", {
+        observationId: "obs_term_cu",
+        action: "click",
+        appName: "终端",
+        appKey: "com.apple.Terminal",
+        appKeySource: "bundleId",
+        elementName: "提示符",
+        sensitive: true
       })
     ]
   }

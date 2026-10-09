@@ -8,6 +8,7 @@ import { useT } from "@renderer/i18n"
 import { lastRunLine } from "../lib/last-run-line"
 import { automationRowStatus } from "../lib/row-status"
 import { listTriggerChips } from "../lib/trigger-chips"
+import { LastRunExplain } from "./last-run-explain"
 
 export function AutomationRow({
   automation,
@@ -42,30 +43,26 @@ export function AutomationRow({
       data-testid="automation-row"
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
-        <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
-            {chips.map((chip) => (
-              <span
-                key={`${chip.kind}:${chip.text}`}
-                className={cx(
-                  "rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default",
-                  chip.mono && "font-mono"
-                )}
-              >
-                {chipLabel(chip.kind, chip.text, t)}
-              </span>
-            ))}
-            <StatusChip status={status} t={t} />
-          </div>
-          <p
-            className="mt-0.5 text-caption-1-medium text-text-tertiary"
-            title={line.tip}
-            data-testid={line.testId}
-          >
-            {line.text}
-          </p>
-        </button>
+        <div className="min-w-0 flex-1">
+          <button type="button" onClick={onOpen} className="w-full text-left">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
+              {chips.map((chip) => (
+                <span
+                  key={`${chip.kind}:${chip.text}`}
+                  className={cx(
+                    "rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default",
+                    chip.mono && "font-mono"
+                  )}
+                >
+                  {chipLabel(chip.kind, chip.text, t)}
+                </span>
+              ))}
+              <StatusChip status={status} t={t} />
+            </div>
+          </button>
+          <LastRunExplain text={line.text} tip={line.tip} testId={line.testId} />
+        </div>
         <Switch
           checked={automation.enabled}
           onCheckedChange={onToggle}

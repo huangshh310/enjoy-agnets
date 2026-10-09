@@ -6,7 +6,7 @@ import { test } from "node:test"
 import type { Automation, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { zh } from "../../../i18n/catalogs/zh/index.ts"
 import { translate } from "../../../i18n/lookup.ts"
-import { consecutiveSkipStreak, lastRunLine } from "./last-run-line.ts"
+import { consecutiveSkipStreak, lastRunLine, missedGroupSummary } from "./last-run-line.ts"
 
 const t = (path: string, vars?: Record<string, string | number>) => translate(zh, path, vars)
 const noon = new Date(2026, 9, 9, 12, 0, 0).getTime()
@@ -103,7 +103,20 @@ test("超时码走人话中性句，不看 lastError", () => {
     t
   })
   assert.equal(line.kind, "neutral")
-  assert.equal(line.text, "补跑等待确认超时，未运行")
+  assert.equal(line.text, "补跑等待确认超时，未运行 · 今天 12:00")
+  assert.match(line.tip ?? "", /30 分钟/)
   assert.equal(line.text.includes("catch_up"), false)
   assert.equal(line.text.includes("exploded"), false)
+})
+
+test("抽屉折叠条收成错过 N 次组摘要", () => {
+  const records = [skip(today8), skip(yest8), skip(ere8)]
+  assert.equal(
+    missedGroupSummary({ records, now: noon, locale: "zh", t }),
+    "错过 3 次 · 电脑睡眠 · 最近 今天 08:00"
+  )
+  assert.equal(
+    missedGroupSummary({ records: [skip(today8)], now: noon, locale: "zh", t }),
+    "已跳过 · 电脑睡眠 · 今天 08:00"
+  )
 })
