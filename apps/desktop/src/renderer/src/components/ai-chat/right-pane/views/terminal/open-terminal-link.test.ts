@@ -24,6 +24,11 @@ test("http(s) 交给 openExternal，非法协议丢掉", () => {
   assert.deepEqual(opened, ["https://example.com/docs"])
 })
 
+test("Unicode11 必须开 allowProposedApi，否则终端白屏", () => {
+  const mount = readFileSync(join(dir, "mount-workspace-terminal.ts"), "utf8")
+  assert.ok(mount.includes("allowProposedApi: true"))
+})
+
 test("源码不写 window.open，接线走 window.openExternal", () => {
   const src = readFileSync(join(dir, "open-terminal-link.ts"), "utf8")
   const attach = readFileSync(join(dir, "attach-xterm-addons.ts"), "utf8")

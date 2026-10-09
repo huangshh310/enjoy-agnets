@@ -7,6 +7,8 @@ import { attachXtermAddons, attachXtermRenderer, type TerminalSearchApi } from "
 
 export function createWorkspaceXterm(): Terminal {
   return new Terminal({
+    // Unicode11Addon 读 proposed unicode API；不设会抛错并把整棵 React 打成白屏。
+    allowProposedApi: true,
     cursorBlink: true,
     fontFamily: "JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
     fontSize: 13,
