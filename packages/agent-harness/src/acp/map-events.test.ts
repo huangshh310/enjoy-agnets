@@ -220,6 +220,39 @@ test("usage_update 带上窗口 size", () => {
   if (events[0]?.type === "usage.updated") {
     assert.equal(events[0].inputTokens, 2200)
     assert.equal(events[0].contextWindow, 200000)
+    assert.equal(events[0].reportedCostUsd, undefined)
+  }
+})
+
+test("usage_update 上报花费原样带上，没上报不编造", () => {
+  const reported = mapAcpUpdate(
+    { sessionUpdate: "usage_update", used: 10, costUsd: 1.2 },
+    "run_1"
+  )
+  assert.equal(reported[0]?.type, "usage.updated")
+  if (reported[0]?.type === "usage.updated") {
+    assert.equal(reported[0].reportedCostUsd, 1.2)
+  }
+  const hidden = mapAcpUpdate({ sessionUpdate: "usage_update", used: 10 }, "run_1")
+  if (hidden[0]?.type === "usage.updated") {
+    assert.equal(hidden[0].reportedCostUsd, undefined)
+  }
+})
+
+test("usage_update 拒绝负数花费和非 USD", () => {
+  const negative = mapAcpUpdate(
+    { sessionUpdate: "usage_update", used: 10, costUsd: -1.2 },
+    "run_1"
+  )
+  if (negative[0]?.type === "usage.updated") {
+    assert.equal(negative[0].reportedCostUsd, undefined)
+  }
+  const euro = mapAcpUpdate(
+    { sessionUpdate: "usage_update", used: 10, cost: { amount: 2, currency: "EUR" } },
+    "run_1"
+  )
+  if (euro[0]?.type === "usage.updated") {
+    assert.equal(euro[0].reportedCostUsd, undefined)
   }
 })
 

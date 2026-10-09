@@ -23,6 +23,7 @@ import { claimRestoreRunningOnce } from "./restore-once"
 import { getWorkspace } from "./workspace"
 import { isE2eStub } from "./e2e-stub"
 import { prepareAndPump } from "./agent-run-prepare"
+import { hydrateActiveRunUsage } from "./run-usage"
 
 export async function restoreRunningRuns(window: BrowserWindow): Promise<void> {
   if (isE2eStub()) return
@@ -115,6 +116,7 @@ async function holdAndPump(
     secret,
     messages: extras.modelMessages as ModelMessage[]
   })
+  hydrateActiveRunUsage(row.id)
   emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId })
   void prepareAndPump(row.id)
   return true

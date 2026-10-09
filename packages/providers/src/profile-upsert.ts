@@ -21,7 +21,8 @@ import {
   type NormalizedProfile,
   type ProfileKey,
   type ProfileUpsertInput,
-  type ReasoningFamilyName
+  type ReasoningFamilyName,
+  copyUserPrices
 } from "./profile-migrate.ts"
 
 /** 部分更新保留端点、Key 和目录。只有显式传来的字段才覆盖。 */
@@ -132,7 +133,8 @@ function resolveModels(
     enabled: model.enabled !== false,
     source: knownSource(model.source) ?? (presetIds.has(model.id ?? "") ? "preset" : "manual"),
     contextWindow: model.contextWindow,
-    maxOutputTokens: model.maxOutputTokens
+    maxOutputTokens: model.maxOutputTokens,
+    ...copyUserPrices(model)
   }))
 }
 

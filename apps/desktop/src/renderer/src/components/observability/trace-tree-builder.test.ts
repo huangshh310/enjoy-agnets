@@ -25,7 +25,7 @@ test("有 TTFO 时画 send → ttfo → done，不捏 MCP", () => {
   assert.equal(trace.status, "success")
   assert.equal(trace.totalDurationMs, 2600)
   assert.equal(trace.firstTokenMs, 130)
-  assert.equal(trace.estimatedCost, 0)
+  assert.equal(trace.estimatedCost, undefined)
   assert.equal(trace.inputTokens, 14100)
   const names = (trace.rootSpan.children ?? []).map((child) => child.name)
   assert.deepEqual(names, ["run.send", "run.ttfo", "run.done"])
@@ -53,6 +53,24 @@ test("有回放事件时追加 tool/approval span，仍不带 args", () => {
   assert.ok(names.includes("approval.write_file"))
   assert.ok(names.includes("approval.allow"))
   assert.equal(JSON.stringify(trace).includes("secret"), false)
+})
+
+test("trace 从指标接估算，未知不写 0", () => {
+  const unknown: TelemetryMetric = {
+    id: "met_cost_unknown",
+    runId: "run_cost_unknown",
+    kind: "agent",
+    status: "completed",
+    createdAt: Date.now()
+  }
+  assert.equal(buildTraceDataFromMetric(unknown).estimatedCost, undefined)
+  const priced: TelemetryMetric = {
+    ...unknown,
+    id: "met_cost_ok",
+    estimatedCostUsd: 0.42,
+    costStatus: "estimated"
+  }
+  assert.equal(buildTraceDataFromMetric(priced).estimatedCost, 0.42)
 })
 
 test("缺 duration 与 token 时不填 1000ms / 850 token", () => {

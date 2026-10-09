@@ -61,6 +61,7 @@ export { redactMetric, redactString, redactValue } from "./observability/redact"
 export { ttfoMs, tokensPerSecond, markFirstVisible } from "./observability/timing";
 export { toOtlpJson, otelEndpointAllowed } from "./observability/otel";
 export { mapStreamPart } from "./streams/map-part";
+export { mapUsageTokens } from "./streams/map-usage";
 export { generatePlainText, streamPlainText } from "./generation/text";
 export { generateStructuredObject, generateStructuredArray, jsonSchemaToZod } from "./generation/structured";
 export { toZodSchema, valibotShapeToZod, isValibotShape } from "./generation/structured-valibot";

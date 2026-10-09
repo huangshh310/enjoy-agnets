@@ -85,7 +85,13 @@ export const ProviderModelItem = z.object({
   contextWindow: z.number().int().positive().optional(),
   maxOutputTokens: z.number().int().positive().optional(),
   enabled: z.boolean().optional(),
-  source: CatalogModelSource.optional()
+  source: CatalogModelSource.optional(),
+  /** 用户填的每百万 token USD 单价；缺项未知，不要当 0。 */
+  inputPricePerMillion: z.number().nonnegative().optional(),
+  outputPricePerMillion: z.number().nonnegative().optional(),
+  cacheReadPricePerMillion: z.number().nonnegative().optional(),
+  cacheWritePricePerMillion: z.number().nonnegative().optional(),
+  reasoningPricePerMillion: z.number().nonnegative().optional()
 })
 export type ProviderModelItem = z.infer<typeof ProviderModelItem>
 

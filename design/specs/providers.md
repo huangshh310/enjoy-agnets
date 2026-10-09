@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-09
+> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 准备失败不进 unknown）
 
 ## 当前真相
 
@@ -30,6 +30,8 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 
 `reasoningFamily: "auto"` 跟 `kind`；`custom` 再看模型 id 前缀（`minimax` / `glm` / `kimi` / `deepseek` / `moonshot`）。显式家族覆盖 kind。中转即使模型名带 deepseek，也不进 `@ai-sdk/deepseek`。
 
+COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date` / 可选 `sourceEtag` / `sourceSha256`，每百万 token USD：输入/输出/缓存读/缓存写/推理；可选 `tierContext` 为分档最低上下文阈值）。匹配是 **单一官方按量 catalog + modelId 精确命中**。有国内/国际两份价或按量/套餐两套主机的映射先撤，不按 region 猜 catalog：`alibaba`/`alibaba-cn`→qwen、`moonshotai`/`moonshotai-cn`→kimi、`volcengine`→doubao、`zhipuai`→zhipu 都不收录。快照只收能确定是单一官方按量、且与 preset 同站的目录：openai / anthropic / google / deepseek / groq / mistral / xai / perplexity / togetherai→together，以及单端点中转 openrouter / siliconflow-cn→siliconflow / modelscope / aihubmix。媒体-only kind（`cohere` / fal / replicate / elevenlabs / deepgram）显式排除，不靠 custom 兜底 + 空 baseURL 当成官方端点。models.dev 国际站 `siliconflow`（`.com`）与本仓国内 preset（`.cn`）不是同一站点，不收录。有多区域或套餐的 kind（qwen / kimi / doubao / zhipu / zai / wenxin / stepfun / xiaomi / minimax）官方端点没用户价 → `unknown`（显示「—」），用户自填 `*PricePerMillion` 仍估算。套餐端点（qwen `token-plan`、kimi `code-*` 等）没有用户价一律 unknown。带区域的定价以后另开一刀。别名只留一对一且真实存在、价目相同的 dated id；家族名 / 一对多丢掉。不含 `gateway`。`userRates` 与 `snapshotVersion` 首次写入 `usage_json` 后固定；会话重算仍用当前内置快照，`snapshotVersion` 只做落档标记、不拿来换旧价。baseURL 不是官方按量地址、又没填用户单价 → `unknown`。分档看单步 `maxStepInputTokens`（来自 `finish-step`），不是泵的 totalUsage 合计。任一单步 input 超过该模型 `tierContext`，或模型有分档但拿不到单步值，或 `stepInputIncomplete`（部分步骤没报 input）→ 整次 `unknown`，`missing: ["tier"]`，不得标 `estimated`。计费金额仍用合计 token。没有 token 字段的空 `usage_json` 按 unknown，明确写了 0 token 才跳过。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`（可加 `--expect-sha=`）。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
+
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 
 探测：`probeProvider` / `pingProvider` / `discoverRemoteModels`。Fetch `/models` 合并进用户目录后 `rememberProbedModels`；`models.list` 带 `staticCaps` / `probedCaps` / `probedAt`，以及按模型解析的 `contextWindow`。窗口优先级：探测目录字段（`context_window` / `max_model_len` 等）> AI Gateway 公开目录 `GET https://ai-gateway.vercel.sh/v1/models`（启动缓存）> 档案**手填** `contextWindow`。设置页 128k 等只是快捷芯片，默认「自动 / 未知」，未手填不写入档案、不进解析链。SDK 7 的 `LanguageModel` **没有** `contextWindow`，禁止在 `models.list` 里按 modelId 写死窗口。未探测时 UI 用静态目录（id/label），窗口仍走 Gateway / 手填。都没有则省略 `contextWindow`；检查器再落到 `publishedContextWindow`（价目表写明的家族），其余仍显示「窗口未知」。拉模型前先 `adviseCatalogUrl`：按路径认协议。DeepSeek `https://api.deepseek.com/anthropic` 是官方 Messages（cc-switch Claude 预设同款），放行；控制台或 Chat 根 + Anthropic 改写成该路径，不要去打 HTML。`/models` 候选会剥 `/anthropic`，但 `resolvedBaseURL` 不得把档案基址改成 Chat 根。没有 Messages 线的官方主机（如 `api.openai.com`）仍拒。HTML 当 JSON 走 `catalogHtml` 中英文案。
@@ -55,6 +57,8 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 - vault：`apps/desktop/src/main/services/secrets-vault.ts`（加解密 / 迁移）；档案 CRUD：`secrets.ts`（删除时解绑 CLI）
 - 设置 UI：`apps/desktop/src/renderer/src/components/settings/providers/`
 - 合约：`packages/ipc-contract` 的 `UpsertProviderInput` / `ProviderPublic`；CLI 兼容与引用派生 `provider-agent-bind.ts`
+- 单价与估算：`packages/providers/src/pricing/`（子路径 `@enjoy-agents/providers/pricing`，只给 main；根入口不导出，renderer 不要别名这份快照）
+- 快照重建：`packages/providers/scripts/refresh-price-snapshot.ts`
 
 ## 已知坑
 
@@ -82,4 +86,9 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 - Fal / Replicate / ElevenLabs / Deepgram / Cohere 没有 OpenAI `/models`。`probeProvider` 只校验 Key 已填，真正建连发生在 generate。把它们设成当前聊天 Provider 会抛「media provider」而不是假装能对话。
 - xAI 官方生图是 `@ai-sdk/xai` 的 `xai.image('grok-imagine-image-2.0')` + `generateImage`。语言模型已有 `xai` preset 走 OpenAI `/v1` 兼容端点；挂在兼容端点时生图走 `createOpenAI().image()`，对准 `images/generations`。不要用 `streamText` 调 imagine 模型。
 - xAI 视频必须 `createXai().video('grok-imagine-video')` + `experimental_generateVideo`。不要用 `image()` 冒充。档案即使 kind=openai，只要模型 id 是 imagine-video 也走这条。Base URL 跟生图同一主机；只有空或 `api.openai.com` 才改打 `https://api.x.ai/v1`。国内中转能出图却强行打官方 x.ai 会 Connect Timeout。
+- 估算成本不要按模型家族前缀猜价，也不要把供应商没返回的缓存/推理 token 写成 0。没命中快照且用户没填 → `unknown`。有缓存 token 但缺缓存单价 → 整次 `unknown`。推理默认含在 output 里；只有快照写了独立推理单价才拆开。`inputTokens` 已含缓存，输入价只乘 `noCacheTokens`（没有则 `input − cacheRead − cacheWrite`）。models.dev 的 `family` 不是别名，禁止写进快照。
+- **隐患**：把 `alibaba` / `alibaba-cn` 都映射成 `qwen` 再按 kind `seen` 去重，国际价会盖住国内价。按 region 猜 catalog 也不稳。正确做法：有国内/国际或套餐歧义的映射先撤，显示 unknown；用户自填单价仍估算。带区域的定价以后另开一刀。`officialSiblingEndpoints` 仍不能当估价官方门（会把套餐主机算进去）。
+- models.dev `cost.tiers` 是按上下文长度分档。SDK `finish` 的 inputTokens 是各步总和，拿它判断会把「10 步 × 30K」误判超档。正确做法：从 `finish-step` 记 `maxStepInputTokens`，超过 `tierContext`、拿不到单步值、或 `stepInputIncomplete`（部分步骤没报 input）才 `unknown`（`missing: ["tier"]`）。合计仍按 totalUsage 计价。
+- **隐患**：`cohere` 没有聊天 preset 时 `presetFor` 会落到 custom，空 baseURL 会被当成官方端点。正确做法：`kindAllowsSnapshot` 显式排除 `cohere` 与其它媒体-only kind。
+- models.dev `siliconflow` 是国际站 `.com`，本仓 preset 是国内站 `.cn`，共有模型里有不同价。正确做法：收录 `siliconflow-cn`。目录带 `api` 时必须和 preset 同站，对不上就撤。
 - Node `--experimental-strip-types` 加载 `@enjoy-agents/providers` 入口时，无后缀 `./capabilities/probe` 会 `ERR_MODULE_NOT_FOUND`（文件是 `probe.ts`）；`from "./presets"` 在 Unix 会撞上 `presets/` 目录。正确做法：相对导入带 `.ts`。`capabilities/probe.ts` 只是内存缓存桩，不发网络请求。

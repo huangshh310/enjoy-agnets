@@ -17,8 +17,10 @@ import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
 import { resolveAcpSpawnDirect } from "./ssh/resolve-acp-spawn.ts"
 import { hostExtensionsFor } from "./host-extensions/host-extensions.ts"
 import { getWorkspace } from "./workspace"
-import { readAcpSessionBind, writeAcpSessionBind } from "./acp-session-bind.ts"
+import { readAcpSessionBind } from "./acp-session-bind.ts"
+import { rememberAcpSessionId } from "./run-usage.ts"
 import { sessionWasForked } from "./session-fork.ts"
+
 export async function openAcpStream(input: {
   runId: string
   sessionId: string
@@ -166,7 +168,7 @@ function acpSessionAttach(sessionId: string, runtimeId: string) {
   return {
     resumeSessionId: resumeIdFor(sessionId, runtimeId),
     forkSeed: sessionWasForked(sessionId),
-    onSessionBound: (acpSessionId: string) => writeAcpSessionBind(sessionId, runtimeId, acpSessionId)
+    onSessionBound: (acpSessionId: string) => rememberAcpSessionId(sessionId, runtimeId, acpSessionId)
   }
 }
 

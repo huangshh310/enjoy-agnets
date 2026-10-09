@@ -5,20 +5,12 @@
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { streamPayloadForDeniedToolPart } from "../computer-use/desktop-act-honesty.ts"
 import { withCommandDisplay } from "../tools/command-display.ts"
-
-const ENJOY_TYPES = new Set([
-  "text.delta",
-  "reasoning.delta",
-  "tool.start",
-  "tool.args.delta",
-  "tool.result",
-  "file.changed",
-  "approval.required"
-])
+import { mapUsageTokens } from "./map-usage.ts"
 
 export function mapStreamPart(part: Record<string, unknown>, runId: string): StreamEvent | null {
   const type = String(part.type ?? "")
-  if (ENJOY_TYPES.has(type)) return part as StreamEvent
+  // Enjoy / ACP 已经是 StreamEvent（点号）；SDK 部件是连字符。
+  if (type.includes(".")) return part as StreamEvent
   const text = readPartText(part)
 
   if (type === "text-delta") {
@@ -44,15 +36,19 @@ function mapLifecyclePart(part: Record<string, unknown>, runId: string): StreamE
     return { type: "step.start", runId, stepId: String(part.id ?? part.stepId ?? "step") }
   }
   if (type === "finish-step" || type === "step-finish") {
-    return { type: "step.end", runId, stepId: String(part.id ?? part.stepId ?? "step") }
+    const usage = mapUsageTokens(asRecord(part.usage ?? part))
+    return {
+      type: "step.end",
+      runId,
+      stepId: String(part.id ?? part.stepId ?? "step"),
+      ...(usage?.inputTokens != null ? { inputTokens: usage.inputTokens } : {})
+    }
   }
   if (type === "finish" || type === "usage") {
-    const usage = asRecord(part.usage ?? part.totalUsage ?? part)
-    const inputTokens = numberOf(usage.inputTokens ?? usage.promptTokens)
-    const outputTokens = numberOf(usage.outputTokens ?? usage.completionTokens)
-    const totalTokens = numberOf(usage.totalTokens) ?? sumTokens(inputTokens, outputTokens)
-    if (inputTokens == null && outputTokens == null && totalTokens == null) return null
-    return { type: "usage.updated", runId, inputTokens, outputTokens, totalTokens }
+    const raw = type === "finish" ? (part.totalUsage ?? part.usage ?? part) : (part.usage ?? part.totalUsage ?? part)
+    const usage = mapUsageTokens(asRecord(raw))
+    if (!usage) return null
+    return { type: "usage.updated", runId, ...usage }
   }
   return null
 }
@@ -122,15 +118,6 @@ function mapToolPart(part: Record<string, unknown>, runId: string): StreamEvent 
     }
   }
   return null
-}
-
-function numberOf(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined
-}
-
-function sumTokens(input?: number, output?: number): number | undefined {
-  if (input == null && output == null) return undefined
-  return (input ?? 0) + (output ?? 0)
 }
 
 function readPartText(part: Record<string, unknown>): string {

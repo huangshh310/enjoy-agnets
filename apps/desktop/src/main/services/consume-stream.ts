@@ -25,7 +25,18 @@ export async function consumeFullStream(input: {
   transcript: RunTranscript
   onApproval: (pending: PendingApproval) => void
   onFirstToken?: () => void
-  onUsage?: (usage: { inputTokens?: number; outputTokens?: number }) => void
+  onUsage?: (usage: {
+    inputTokens?: number
+    outputTokens?: number
+    noCacheTokens?: number
+    cacheReadTokens?: number
+    cacheWriteTokens?: number
+    reasoningTokens?: number
+    reportedCostUsd?: number
+    maxStepInputTokens?: number
+    stepInputIncomplete?: boolean
+    fromTotalUsage?: boolean
+  }) => void
   /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
   onCheckpoint?: () => void
   emit: (event: StreamEvent) => void
@@ -41,8 +52,24 @@ export async function consumeFullStream(input: {
     persistFromEvent(input.tools, event, input.transcript)
     lastCheckpointAt = emitCheckpoint(event.type, lastCheckpointAt, input.onCheckpoint)
     if (event.type === "text.delta") input.onFirstToken?.()
+    if (event.type === "step.end") {
+      if (typeof event.inputTokens === "number") {
+        input.onUsage?.({ maxStepInputTokens: event.inputTokens })
+      } else {
+        input.onUsage?.({ stepInputIncomplete: true })
+      }
+    }
     if (event.type === "usage.updated") {
-      input.onUsage?.({ inputTokens: event.inputTokens, outputTokens: event.outputTokens })
+      input.onUsage?.({
+        inputTokens: event.inputTokens,
+        outputTokens: event.outputTokens,
+        noCacheTokens: event.noCacheTokens,
+        cacheReadTokens: event.cacheReadTokens,
+        cacheWriteTokens: event.cacheWriteTokens,
+        reasoningTokens: event.reasoningTokens,
+        reportedCostUsd: event.reportedCostUsd,
+        fromTotalUsage: true
+      })
     }
     if (event.type === "approval.required") {
       const args = await parkApprovalArgs(event.name, event.args)

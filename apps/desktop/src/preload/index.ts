@@ -86,7 +86,8 @@ const ide = {
     fork: (input: unknown) => ipcRenderer.invoke("session.fork", input),
     heartbeatGet: (input: unknown) => ipcRenderer.invoke("session.heartbeat.get", input),
     heartbeatPut: (input: unknown) => ipcRenderer.invoke("session.heartbeat.put", input),
-    heartbeatClear: (input: unknown) => ipcRenderer.invoke("session.heartbeat.clear", input)
+    heartbeatClear: (input: unknown) => ipcRenderer.invoke("session.heartbeat.clear", input),
+    estimatedCost: (input: unknown) => ipcRenderer.invoke("session.estimatedCost", input)
   },
   agent: {
     run: (input: unknown) => ipcRenderer.invoke("agent.run", input),
