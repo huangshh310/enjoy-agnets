@@ -23,7 +23,8 @@ test("sshClientCwd 不用 process.cwd", async () => {
 
 test("expandLocalPath 展开 ~", () => {
   assert.equal(expandLocalPath("~", "/home/alice"), "/home/alice")
-  assert.equal(expandLocalPath("~/.ssh/id_ed25519", "/home/alice"), "/home/alice/.ssh/id_ed25519")
+  const unix = expandLocalPath("~/.ssh/id_ed25519", "/home/alice").replaceAll("\\", "/")
+  assert.equal(unix, "/home/alice/.ssh/id_ed25519")
   const win = expandLocalPath("~\\.ssh\\id_ed25519", "C:\\Users\\a").replaceAll("\\", "/")
   assert.equal(win.endsWith("id_ed25519"), true)
   assert.ok(win.startsWith("C:/Users/a"))

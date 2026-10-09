@@ -88,6 +88,7 @@ Devin CLI：二进制 `devin`，ACP 为 `devin acp`，登录 `devin auth login`�
 - **隐患**：获取最新版曾在已装 CLI 上不进「更新中」、失败不显示；Windows `spawn("npm")` 打不到 `npm.cmd`。正确做法：已装也走 installing；PATH 用 `lookupOnPath`；Win 脚本用 `spawnPathCommand`；brew 在 Win 降 copy。
 - **隐患**：`npm i -g` 成功但胶囊仍是旧版。根因：PATH 上的 `claude` 常是官方安装器，不是 npm 全局包。正确做法：已装优先对探测到的二进制跑 `selfUpdateArgs`（Claude：`claude update`），失败再 npm/brew；版本以磁盘 `--version` 为准。禁止把「去终端复制命令」当主路径。
 - 自定义 ACP 单测不要 `spawn` 无扩展名的 node 脚本。Windows 会 ENOENT；`resolveCustomSpawn` 仍断言 `opencode` basename，真正跑桩用 `process.execPath` + `.mjs` fixture。
+- 远端 ACP spawn 单测不要断言裸 `ssh`：Windows 计划命令是 OpenSSH `ssh.exe`。见 [`remote`](./remote.md)。
 - ACP 审批只走 `waitForSubagentApproval` → `approval.required` + HMAC。`mapAcpUpdate` 不要再 yield 一份 approval，否则泵会误 park。
 - renderer 不要 import `@enjoy-agents/agent-harness`（会把 `child_process` 打进渲染包）。用 `isAcpHostRuntimeId`（ipc-contract）或 `agentTools` 快照。
 - 输入框不要拆「运行时 + 模型」两个控件。已安装 CLI 点左栏即切，右栏选该 CLI 模型；未安装给一键安装 / 复制命令，不要强制先去设置打勾。
