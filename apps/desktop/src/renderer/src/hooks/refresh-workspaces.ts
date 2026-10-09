@@ -13,12 +13,24 @@ type SessionRow = {
 }
 
 let refreshGeneration = 0
+let appliedGeneration = 0
+const inFlight = new Set<number>()
+type HydrateItems = Array<{
+  workspace: WorkspaceRow
+  sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }>
+}>
+let lastSuccess: { generation: number; items: HydrateItems } | null = null
+
+/** 测试之间清代数，避免并行用例互相踩。 */
+export function resetRefreshWorkspacesForTest() {
+  refreshGeneration = 0
+  appliedGeneration = 0
+  inFlight.clear()
+  lastSuccess = null
+}
 
 export type WorkspaceHydrateSink = {
-  hydrate: (
-    items: Array<{ workspace: WorkspaceRow; sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }> }>,
-    activeWorkspaceId?: string | null
-  ) => void
+  hydrate: (items: HydrateItems, activeWorkspaceId?: string | null) => void
   activeWorkspaceId: () => string | null
 }
 
@@ -35,13 +47,27 @@ export async function refreshAllWorkspaces() {
 /** 生产灌入路径；测试用内存 sink，避免测试直接依赖 chat-store。 */
 export async function refreshWorkspacesInto(sink: WorkspaceHydrateSink) {
   const generation = ++refreshGeneration
+  inFlight.add(generation)
   try {
     const items = await collectWorkspaceHydrateItems()
-    if (generation !== refreshGeneration) return
-    sink.hydrate(items, sink.activeWorkspaceId())
+    if (!lastSuccess || generation >= lastSuccess.generation) {
+      lastSuccess = { generation, items }
+    }
   } catch {
-    // ignore refresh errors
+    // 最新一次失败时保留最近成功的名单，finally 里决定是否灌入
+  } finally {
+    inFlight.delete(generation)
+    applyLatestSuccess(sink)
   }
+}
+
+function applyLatestSuccess(sink: WorkspaceHydrateSink) {
+  if (!lastSuccess) return
+  const newestInFlight = inFlight.size ? Math.max(...inFlight) : 0
+  if (lastSuccess.generation < newestInFlight) return
+  if (lastSuccess.generation <= appliedGeneration) return
+  sink.hydrate(lastSuccess.items, sink.activeWorkspaceId())
+  appliedGeneration = lastSuccess.generation
 }
 
 async function collectWorkspaceHydrateItems() {

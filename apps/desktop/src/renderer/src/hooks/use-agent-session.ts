@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { StreamEvent, type AskUserAnswers, type SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
-import { syncBootWorkspace } from "./plan-boot-workspace"
+import { rememberOpenedWorkspace } from "./remember-opened-workspace"
+import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
@@ -81,13 +82,14 @@ export function useAgentSession() {
     void applySettingsSnapshot(snapshot)
   }, [settingsQuery.data])
 
-  // 创建项目会先写 store；query 可能仍是启动时的空名单。旧空快照不得 setWorkspace(null)。
-  useEffect(() => {
-    if (!settingsQuery.data) return
-    syncBootWorkspace(workspacesQuery.data, settingsQuery.data.lastWorkspaceId, (workspace) => {
+  useBootWorkspace(
+    Boolean(settingsQuery.data),
+    settingsQuery.data?.lastWorkspaceId,
+    workspacesQuery.data,
+    (workspace) => {
       void loadWorkspace(workspace)
-    })
-  }, [workspacesQuery.data, settingsQuery.data])
+    }
+  )
 
   const workspaceId = useChatStore((state) => state.workspaceId)
   useWorkspaceChangeInvalidation(workspaceId)
@@ -109,6 +111,7 @@ export function useAgentSession() {
 }
 
 export async function loadWorkspace(workspace: WorkspaceRow) {
+  rememberOpenedWorkspace(workspace)
   const store = useChatStore.getState()
   await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
   store.setWorkspace(workspace)

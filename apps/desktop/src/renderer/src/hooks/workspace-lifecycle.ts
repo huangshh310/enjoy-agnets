@@ -5,11 +5,11 @@ import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
 import { useChatStore } from "../stores/chat-store"
 import { loadWorkspace, refreshAllWorkspaces } from "./use-agent-session"
+import { settleWorkspaceAfterRemove } from "./workspace-pointer"
 import { releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
-
-type WorkspaceRow = { id: string; name: string; rootPath: string }
+import type { WorkspaceRow } from "./workspace-row"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
@@ -43,7 +43,7 @@ export async function deleteAllArchivedSessions() {
   await releaseHistoryPages(rows.map((row) => historySessionId(row.id)))
 }
 
-/** 移除应用档案中的项目，不删磁盘文件夹。当前页被拿掉时走历史，而不是跳到下一个项目。 */
+/** 移除应用档案中的项目，不删磁盘文件夹。当前页被拿掉时走历史，指针按剩余名单收口。 */
 export async function removeProject(workspaceId: string) {
   if (!hasIde()) return
   const ids = await collectProjectPageIds(workspaceId)
@@ -52,18 +52,12 @@ export async function removeProject(workspaceId: string) {
   await getIde().workspace.remove({ workspaceId })
   if (store.pinnedWorkspaceIds.includes(workspaceId)) store.togglePinWorkspace(workspaceId)
   await refreshAllWorkspaces()
+  const remaining = (await getIde().workspace.list()) as WorkspaceRow[]
+  queryClient.setQueryData(["workspaces"], remaining)
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
   const removedCurrent = await releaseHistoryPages(ids)
-  if (removedCurrent || !wasActive) return
-  await restoreAnotherWorkspace(store)
-}
-
-async function restoreAnotherWorkspace(store: ReturnType<typeof useChatStore.getState>) {
-  const remaining = (await getIde().workspace.list()) as WorkspaceRow[]
-  if (remaining[0]) {
-    await loadWorkspace(remaining[0])
-    return
-  }
-  store.setWorkspace(null)
+  if (!wasActive && !removedCurrent) return
+  const next = settleWorkspaceAfterRemove(remaining)
+  if (next) await loadWorkspace(next)
 }
