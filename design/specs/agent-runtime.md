@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（CU-P1-P Dock 默认本会话；坐标划掉会话/始终允许，敏感不画这两项）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（desktop_act 闸先 peek 观察身份；Dock 仅 `sensitive === false` 才给本会话）
 
 ## 当前真相
 
@@ -36,7 +36,7 @@
 | `browser_navigate` | 是 | Enjoy Local `extraTools`（`HOST_CONTROL_TOOLS`）。plan/ask 不注册。Bridge 未连接返回 `success: false` |
 | `browser_extract_content` | 否 | 读当前 tab。未连接 `success: false`，禁止占位假正文 |
 | `desktop_doctor` / `desktop_list_apps` / `desktop_snapshot` / `desktop_screenshot` | 否 | Computer Use 开着且非探索才注册。`agent.run.desktopBias` 在 Execute 下把这些工具提前并加一行 Prefer，不改审批。观察编号由 main 签发，30 秒、一次有效 |
-| `desktop_act` | 是（`wait` 否） | `HOST_CONTROL_TOOLS`。**CU-P1-36**：prefs `desktopAdvancedCoords` 默认关，任一 `x`/`y`/`x2`/`y2`（即使带 elementId）硬拒 `bare_coords_disabled`；打开后每次 Dock 且 `bypassesSessionAllow`，不吃会话表 / Always-allow。`allowForeground` / 敏感窗仍每次问。`action_failed` 不附新观察号/缩略，再点须重拍。会话 Allow 绑 `desktop_act:<appKey>`，SoT 是按 Enjoy `sessionId` 的进程内表（见 computer-use P1-S），禁止裸工具名。待批冻结观察 TTL。过期 / 重启空账本显式 `stale_observation`，Allow 后重拍一次再匹配，对不上 `needs_second_confirm` 再停 Dock 二次确认卡（确认才对**新**观察 act），不静默点。`needs_foreground` 把观察还回去 |
+| `desktop_act` | 是（`wait` 否） | `HOST_CONTROL_TOOLS`。闸判断前 peek 账本并入观察身份（覆盖模型字段）。**CU-P1-36**：prefs `desktopAdvancedCoords` 默认关，任一 `x`/`y`/`x2`/`y2`（即使带 elementId）硬拒 `bare_coords_disabled`；打开后每次 Dock 且 `bypassesSessionAllow`，不吃会话表 / Always-allow。`allowForeground` / 敏感窗 / 未解析观察仍每次问。`action_failed` 不附新观察号/缩略，再点须重拍。会话 Allow 绑 `desktop_act:<appKey>`，SoT 是按 Enjoy `sessionId` 的进程内表（见 computer-use P1-S），禁止裸工具名。待批冻结观察 TTL。过期 / 重启空账本显式 `stale_observation`，Allow 后重拍一次再匹配，对不上 `needs_second_confirm` 再停 Dock 二次确认卡（确认才对**新**观察 act），不静默点。`needs_foreground` 把观察还回去 |
 
 工具文本超限时留开头和结尾，中间标记 `...[omitted N chars]...`（按 JS 字符串长度，标记本身不占上限）。命令流（`git_status` / `git_log`、`git_commit` / `git_branch` / `git_push` 的 `result`、Agent 路径上的 MCP 文本）约 16_000。`bash` / `code_mode` 的 stdout 与 stderr 模型侧仍是 16_000，并且只放在 `execute` 返回值里。界面另存 `displayStdout` / `displayStderr`，上限 120_000，同样头尾截断；这份按 `toolCallId` 暂存，流事件取走后才挂上，不进模型消息。没有界面份时回落模型份。ACP CLI 自己的工具输出不经过这里。读文件、diff、grep 不另存界面全文。文件流（`read_file`、写盘 diff、`git_diff`、超限的 `repo_outline`）约 48_000。`skill` 正文仍约 24_000，同样留头尾。设置页人手 `mcp.call` 不截断。写 / bash / commit 集合见 `packages/ipc-contract/src/tool-names.ts` 的 `WRITE_TOOLS` / `BASH_TOOLS` / `COMMIT_TOOLS` / `HOST_CONTROL_TOOLS` / `MUTATING_TOOLS`，单个名字用 `TOOL_NAMES`。该文件是**叶子（零 import）**：main 审批与 renderer 显示分类都从 `@enjoy-agents/ipc-contract/tool-names` 子路径 value-import，**不要**从合约入口取（入口是无后缀 re-export，`node --test` 加载不到；见 `ipc` spec）。`code_mode` 有意同时属于 `WRITE_TOOLS` 与 `BASH_TOOLS`（先写脚本再执行，两道审批都要过），不是笔误。桌面 / 浏览器控制见 `HOST_CONTROL_TOOLS`。
 

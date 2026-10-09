@@ -8,6 +8,7 @@ import {
   desktopActSessionKey,
   isStableDesktopAppKey
 } from "./desktop-act-app-key.ts"
+import { desktopActHasUnresolvedObservation } from "./desktop-act-observation-gate.ts"
 import { desktopActNeedsSecondConfirm } from "./desktop-second-confirm-gate.ts"
 
 export {
@@ -52,9 +53,10 @@ export function desktopActBypassesSessionAllow(args: unknown): boolean {
   return row.allowForeground === true || desktopActIsBareCoord(row)
 }
 
-/** 坐标 / 切前台 / 敏感窗（含终端类） / 二次确认：会话 Allow 与「任意桌面」都盖不住。 */
+/** 坐标 / 切前台 / 敏感窗（含终端类） / 二次确认 / 未解析观察：会话 Allow 与「任意桌面」都盖不住。 */
 export function desktopActAlwaysAsks(args: unknown): boolean {
   return (
+    desktopActHasUnresolvedObservation(args) ||
     desktopActBypassesSessionAllow(args) ||
     desktopActIsSensitive(args) ||
     desktopActNeedsSecondConfirm(args)

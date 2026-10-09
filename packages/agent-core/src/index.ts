@@ -148,8 +148,11 @@ export {
   desktopActCanContinueFromFailure,
   desktopActFailureCode,
   desktopActIsBareCoord,
+  desktopActHasUnresolvedObservation,
   desktopActIsSensitive,
   stampDesktopActSensitiveFlag,
+  bindObservationIdentityToDesktopActInput,
+  prepareDesktopActGateInput,
   desktopActMayReportSuccess,
   refuseBareDesktopCoord,
   sanitizeDesktopActFailure,
@@ -175,6 +178,7 @@ export {
 } from "./computer-use";
 export type {
   DesktopActAppKeySource,
+  LookupDesktopObservation,
   Observation,
   ObservationElement,
   ObservationLedger,

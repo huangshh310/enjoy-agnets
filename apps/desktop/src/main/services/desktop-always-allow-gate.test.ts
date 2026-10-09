@@ -28,6 +28,7 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   assert.match(src, /listDesktopAlwaysAllowAppKeys\(input\.prefs\.desktopAlwaysAllowAppKeys\)/)
   assert.match(src, /desktopAlwaysAllowAppKeys:/)
   assert.match(src, /desktopAdvancedCoords: input\.prefs\.desktopAdvancedCoords === true/)
+  assert.match(src, /lookupDesktopObservation: peekDesktopObservation/)
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 
