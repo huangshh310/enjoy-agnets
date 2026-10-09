@@ -19,6 +19,9 @@ export type PriceSnapshot = {
   version: string
   date: string
   source: string
+  sourceUrl?: string
+  sourceEtag?: string
+  sourceSha256?: string
   models: SnapshotModelRate[]
 }
 

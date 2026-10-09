@@ -1,5 +1,6 @@
 /**
  * 多泵用量累加（无 db / 合约入口，可供 node:test 静态相对 import）。
+ * 每泵先归一 noCache，再累加。ACP 的 token / 花费取最新快照，不累加。
  */
 
 export type UsageAccumulator = {
@@ -13,24 +14,77 @@ export type UsageAccumulator = {
   usageIncomplete?: boolean
 }
 
-/** 流式 usage 按泵累加。ACP 上报花费取最新一次，不当累计再加。 */
+/** 流式 usage 按泵累加。可选分项先在本泵归一，缺关键输入就标不完整。 */
 export function accumulateRunUsage(run: UsageAccumulator, usage: UsageAccumulator): void {
-  run.inputTokens = addTokens(run.inputTokens, usage.inputTokens)
-  run.outputTokens = addTokens(run.outputTokens, usage.outputTokens)
-  run.noCacheTokens = addTokens(run.noCacheTokens, usage.noCacheTokens)
-  run.cacheReadTokens = addTokens(run.cacheReadTokens, usage.cacheReadTokens)
-  run.cacheWriteTokens = addTokens(run.cacheWriteTokens, usage.cacheWriteTokens)
-  run.reasoningTokens = addTokens(run.reasoningTokens, usage.reasoningTokens)
+  const pump = normalizePumpUsage(usage)
+  if (pump.usageIncomplete) run.usageIncomplete = true
+  run.inputTokens = addTokens(run.inputTokens, pump.inputTokens)
+  run.outputTokens = addTokens(run.outputTokens, pump.outputTokens)
+  run.noCacheTokens = addTokens(run.noCacheTokens, pump.noCacheTokens)
+  run.cacheReadTokens = addTokens(run.cacheReadTokens, pump.cacheReadTokens)
+  run.cacheWriteTokens = addTokens(run.cacheWriteTokens, pump.cacheWriteTokens)
+  run.reasoningTokens = addTokens(run.reasoningTokens, pump.reasoningTokens)
+  if (typeof pump.reportedCostUsd === "number" && Number.isFinite(pump.reportedCostUsd)) {
+    run.reportedCostUsd = pump.reportedCostUsd
+  }
+}
+
+/** ACP usage_update.used / cost 是会话快照，覆盖为最新一次。 */
+export function replaceRunUsage(run: UsageAccumulator, usage: UsageAccumulator): void {
+  copyToken(run, usage, "inputTokens")
+  copyToken(run, usage, "outputTokens")
+  copyToken(run, usage, "noCacheTokens")
+  copyToken(run, usage, "cacheReadTokens")
+  copyToken(run, usage, "cacheWriteTokens")
+  copyToken(run, usage, "reasoningTokens")
   if (typeof usage.reportedCostUsd === "number" && Number.isFinite(usage.reportedCostUsd)) {
     run.reportedCostUsd = usage.reportedCostUsd
   }
+  if (usage.usageIncomplete) run.usageIncomplete = true
 }
 
 export function markPumpMissingUsage(run: UsageAccumulator): void {
   run.usageIncomplete = true
 }
 
+export function normalizePumpUsage(usage: UsageAccumulator): UsageAccumulator {
+  const next = { ...usage }
+  const noCache = noCacheOf(usage)
+  if (noCache !== undefined) next.noCacheTokens = noCache
+  else if (hasFinite(usage.inputTokens)) next.usageIncomplete = true
+  const reasoning = reasoningOf(usage)
+  if (reasoning !== undefined) next.reasoningTokens = reasoning
+  return next
+}
+
+function noCacheOf(usage: UsageAccumulator): number | undefined {
+  if (hasFinite(usage.noCacheTokens)) return Math.max(0, usage.noCacheTokens as number)
+  if (!hasFinite(usage.inputTokens)) return undefined
+  return Math.max(0, (usage.inputTokens as number) - cachePart(usage.cacheReadTokens) - cachePart(usage.cacheWriteTokens))
+}
+
+function reasoningOf(usage: UsageAccumulator): number | undefined {
+  if (hasFinite(usage.reasoningTokens)) return Math.max(0, usage.reasoningTokens as number)
+  if (!hasFinite(usage.outputTokens)) return undefined
+  return 0
+}
+
+function cachePart(value: number | undefined): number {
+  return hasFinite(value) && (value as number) > 0 ? (value as number) : 0
+}
+
 function addTokens(prev: number | undefined, next: number | undefined): number | undefined {
   if (prev === undefined && next === undefined) return undefined
   return (prev ?? 0) + (next ?? 0)
+}
+
+function copyToken(run: UsageAccumulator, usage: UsageAccumulator, key: keyof UsageAccumulator): void {
+  const value = usage[key]
+  if (typeof value === "number" && Number.isFinite(value)) {
+    ;(run as Record<string, unknown>)[key] = value
+  }
+}
+
+function hasFinite(value: number | undefined): boolean {
+  return typeof value === "number" && Number.isFinite(value)
 }

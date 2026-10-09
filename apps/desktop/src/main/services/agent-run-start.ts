@@ -28,6 +28,7 @@ import {
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eStub } from "./e2e-stub"
+import { hydrateActiveRunUsage } from "./run-usage"
 
 export async function runAgent(
   window: BrowserWindow,
@@ -121,6 +122,7 @@ async function beginAgentRun(
     secret,
     messages: modelMessages
   })
+  if (options.runId) hydrateActiveRunUsage(runId)
   if (input.commandId) rememberCommandReceipt(input.commandId, runId)
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })

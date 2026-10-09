@@ -1,14 +1,20 @@
 /**
  * 把本轮 usage 分项落到 runs.usage_json，供会话合计重算。
- * 多泵累加；有一轮缺用量则整次 unknown。
+ * 恢复 / 续跑先预填累加器；本地 SDK 按泵累加，ACP 取最新快照。
  */
 import { getRun, updateRun } from "@enjoy-agents/db"
+import { isAcpHostRuntimeId } from "@enjoy-agents/ipc-contract/agent-tools"
 import { userRatesFrom, type TokenUsage, type UserModelRates } from "@enjoy-agents/providers/pricing"
-import type { ActiveRun } from "./agent-run-state"
+import { getActiveRun, type ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
-import { accumulateRunUsage } from "./run-usage-accumulate"
+import { accumulateRunUsage, markPumpMissingUsage, replaceRunUsage } from "./run-usage-accumulate"
 
-export { accumulateRunUsage, markPumpMissingUsage, type UsageAccumulator } from "./run-usage-accumulate"
+export {
+  accumulateRunUsage,
+  markPumpMissingUsage,
+  replaceRunUsage,
+  type UsageAccumulator
+} from "./run-usage-accumulate"
 
 export type RunUsageRecord = TokenUsage & {
   runtimeId?: string
@@ -53,11 +59,43 @@ export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
   })
 }
 
+/** 恢复 / 续跑：用已有 usage_json 预填空累加器；读不到就标不完整。 */
+export function hydrateActiveRunUsage(runId: string): void {
+  const run = getActiveRun(runId)
+  if (!run || runHasUsage(run)) return
+  const row = getRun(getDatabase(), runId)
+  if (!row) return
+  const usage = parseRunUsage(row.usageJson)
+  if (!usage) {
+    markPumpMissingUsage(run)
+    return
+  }
+  replaceRunUsage(run, usage)
+  if (usage.usageIncomplete) markPumpMissingUsage(run)
+}
+
 export function applyActiveRunUsage(
   runId: string,
   run: ActiveRun,
   usage: Omit<RunUsageRecord, "runtimeId" | "providerKind" | "modelId">
 ): void {
-  accumulateRunUsage(run, usage)
+  if (isAcpHostRuntimeId(run.input.runtimeId)) replaceRunUsage(run, usage)
+  else accumulateRunUsage(run, usage)
   persistRunUsageFromActive(runId, run)
+}
+
+export function finalizePumpUsage(runId: string, run: ActiveRun, sawUsage: boolean): void {
+  if (sawUsage) return
+  markPumpMissingUsage(run)
+  persistRunUsageFromActive(runId, run)
+}
+
+function runHasUsage(run: ActiveRun): boolean {
+  return (
+    run.inputTokens != null ||
+    run.outputTokens != null ||
+    run.noCacheTokens != null ||
+    run.reportedCostUsd != null ||
+    run.usageIncomplete === true
+  )
 }

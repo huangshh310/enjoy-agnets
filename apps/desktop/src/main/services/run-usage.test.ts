@@ -33,6 +33,32 @@ test("两次泵的用量正确相加", () => {
   assert.ok(typeof cost.usd === "number")
 })
 
+test("某字段只在部分泵出现时先归一再累加，两泵输入都计价", () => {
+  const run: UsageAccumulator = {}
+  accumulateRunUsage(run, { noCacheTokens: 80, inputTokens: 100, cacheReadTokens: 20 })
+  accumulateRunUsage(run, { inputTokens: 50 })
+  assert.equal(run.inputTokens, 150)
+  assert.equal(run.noCacheTokens, 130)
+  const missed = estimateRunCost({
+    usage: { inputTokens: 150, noCacheTokens: 80, cacheReadTokens: 20 },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5"
+  })
+  const cost = estimateRunCost({
+    usage: run,
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5"
+  })
+  assert.equal(cost.status, "estimated")
+  assert.notEqual(cost.usd, missed.usd)
+  const expected = estimateRunCost({
+    usage: { inputTokens: 150, noCacheTokens: 130, cacheReadTokens: 20 },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5"
+  })
+  assert.equal(cost.usd, expected.usd)
+})
+
 test("其中一轮缺用量时为 unknown", () => {
   const run: UsageAccumulator = {}
   accumulateRunUsage(run, { inputTokens: 100, outputTokens: 10 })

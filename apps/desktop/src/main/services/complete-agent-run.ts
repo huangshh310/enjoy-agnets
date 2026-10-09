@@ -53,7 +53,7 @@ function recordCompletedRunMetric(runId: string, run: ActiveRun): void {
     cacheReadTokens: run.cacheReadTokens,
     cacheWriteTokens: run.cacheWriteTokens,
     reasoningTokens: run.reasoningTokens,
-    estimatedCostUsd: estimate?.usd,
+    estimatedCostUsd: estimate?.status === "estimated" ? estimate.usd : undefined,
     costStatus: estimate?.status,
     durationMs,
     ttfoMs: ttfoMs(run.startedAt, run.firstTokenAt),

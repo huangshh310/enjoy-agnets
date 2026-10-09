@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 别名一对一 + 官方端点才套快照）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 models.dev kind 精确映射 + ETag）
 
 ## 当前真相
 
@@ -30,7 +30,7 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 
 `reasoningFamily: "auto"` 跟 `kind`；`custom` 再看模型 id 前缀（`minimax` / `glm` / `kimi` / `deepseek` / `moonshot`）。显式家族覆盖 kind。中转即使模型名带 deepseek，也不进 `@ai-sdk/deepseek`。
 
-COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date`，每百万 token USD：输入/输出/缓存读/缓存写/推理）。匹配是 **provider kind + modelId 精确命中**。别名只留一对一且真实存在的 modelId（如带日期的 id）；家族名 / 一对多丢掉。不含 `gateway`。用户在档案模型行填的 `*PricePerMillion` 逐项覆盖快照。baseURL 不是官方默认地址、又没填用户单价 → `unknown`，不套官方价。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
+COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date` / 可选 `sourceEtag` / `sourceSha256`，每百万 token USD：输入/输出/缓存读/缓存写/推理）。匹配是 **provider kind + modelId 精确命中**。别名只留一对一且真实存在、价目相同的 dated id；家族名 / 一对多丢掉。不含 `gateway`。models.dev 供应商 id 经 `models-dev-kind.ts` 精确映射到本仓 kind（`alibaba`→`qwen`、`moonshotai`→`kimi`、`volcengine`→`doubao`、`zhipuai`→`zhipu`、`togetherai`→`together`），不猜家族、不收编码套餐目录。用户在档案模型行填的 `*PricePerMillion` 逐项覆盖快照。baseURL 不是官方默认地址、又没填用户单价 → `unknown`，不套官方价（零用量也先过这道门）。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
 
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 

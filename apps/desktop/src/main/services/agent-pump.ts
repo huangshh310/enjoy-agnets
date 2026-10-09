@@ -10,7 +10,7 @@ import {
 import { foldToolEvent, type HostInjectSnapshot } from "@enjoy-agents/ipc-contract"
 import { consumeFullStream } from "./consume-stream"
 import { billingContextOf, enrichUsageEvent } from "./enrich-usage-cost"
-import { applyActiveRunUsage, markPumpMissingUsage, persistRunUsageFromActive } from "./run-usage"
+import { applyActiveRunUsage, finalizePumpUsage } from "./run-usage"
 import { shouldEmitRunEnd } from "./claim-run-end"
 import { completeAgentRun } from "./complete-agent-run"
 import { failAgentPump } from "./fail-agent-pump"
@@ -217,34 +217,34 @@ async function consumeRun(
 ) {
   // 不要重置 transcript/tools：审批后再泵一轮要叠在同一份上，失败才能整段落库。
   let sawUsage = false
-  await consumeFullStream({
-    stream,
-    runId,
-    window: run.window,
-    tools: run.tools,
-    transcript: run.transcript,
-    onApproval: (pending) => {
-      run.pendingApprovals.push(pending)
-    },
-    onFirstToken: () => {
-      run.firstTokenAt = run.firstTokenAt ?? Date.now()
-    },
-    onUsage: (usage) => {
-      sawUsage = true
-      applyActiveRunUsage(runId, run, usage)
-    },
-    onCheckpoint: () => {
-      checkpointActiveRun(run)
-    },
-    emit: (event) => {
-      const next = event.type === "usage.updated" ? enrichUsageEvent(event, billingContextOf(run)) : event
-      emitEvent(run.window, next)
-      noteFileChangedCheckpoint(run, runId, event)
-    }
-  })
-  if (!sawUsage) {
-    markPumpMissingUsage(run)
-    persistRunUsageFromActive(runId, run)
+  try {
+    await consumeFullStream({
+      stream,
+      runId,
+      window: run.window,
+      tools: run.tools,
+      transcript: run.transcript,
+      onApproval: (pending) => {
+        run.pendingApprovals.push(pending)
+      },
+      onFirstToken: () => {
+        run.firstTokenAt = run.firstTokenAt ?? Date.now()
+      },
+      onUsage: (usage) => {
+        sawUsage = true
+        applyActiveRunUsage(runId, run, usage)
+      },
+      onCheckpoint: () => {
+        checkpointActiveRun(run)
+      },
+      emit: (event) => {
+        const next = event.type === "usage.updated" ? enrichUsageEvent(event, billingContextOf(run)) : event
+        emitEvent(run.window, next)
+        noteFileChangedCheckpoint(run, runId, event)
+      }
+    })
+  } finally {
+    finalizePumpUsage(runId, run, sawUsage)
   }
   checkpointActiveRun(run)
 }

@@ -4,19 +4,23 @@
  * 用法（仓库根）：
  *   node --experimental-strip-types packages/providers/scripts/refresh-price-snapshot.ts
  *
- * 规则：跳过 gateway / vercel；别名只留一对一且真实存在的 dated id；不写 family。
+ * 规则：跳过 gateway / vercel / 本地；别名只留一对一且价目相同的 dated id；
+ * models.dev id 经 `models-dev-kind.ts` 精确映射到本仓 kind，不猜家族。
+ * 响应 ETag 与正文 SHA-256 写入快照，方便下次对照。
  */
+import { createHash } from "node:crypto"
 import { writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { PROVIDER_KINDS } from "../src/presets/kinds.ts"
 import { datedIdAliases, uniqueExistingAliases } from "../src/pricing/alias-policy.ts"
+import { kindFromModelsDevProvider } from "../src/pricing/models-dev-kind.ts"
 import type { SnapshotModelRate } from "../src/pricing/types.ts"
 
 const MODELS_DEV = "https://models.dev/api.json"
-const SKIP_PROVIDERS = new Set(["gateway", "vercel", "ollama", "lmstudio", "custom"])
+const SKIP_KINDS = new Set(["gateway", "vercel", "ollama", "lmstudio", "custom"])
 
-const allowed = new Set<string>(PROVIDER_KINDS.filter((kind) => !SKIP_PROVIDERS.has(kind)))
+const allowed = new Set<string>(PROVIDER_KINDS.filter((kind) => !SKIP_KINDS.has(kind)))
 
 type DevModel = {
   id?: string
@@ -29,13 +33,25 @@ type DevModel = {
   }
 }
 
-const raw = (await (await fetch(MODELS_DEV)).json()) as Record<string, { models?: Record<string, DevModel> }>
+const response = await fetch(MODELS_DEV)
+if (!response.ok) throw new Error(`models.dev ${response.status}`)
+const body = await response.text()
+const etag = response.headers.get("etag")?.replaceAll('"', "") ?? undefined
+const sourceSha256 = createHash("sha256").update(body).digest("hex")
+const raw = JSON.parse(body) as Record<string, { models?: Record<string, DevModel> }>
+
 const models: SnapshotModelRate[] = []
+const seen = new Set<string>()
 for (const [provider, pack] of Object.entries(raw)) {
-  if (!allowed.has(provider) || provider.includes("gateway")) continue
+  const kind = resolveKind(provider)
+  if (!kind) continue
   for (const [modelId, model] of Object.entries(pack.models ?? {})) {
-    const rate = toRate(provider, modelId, model)
-    if (rate) models.push(rate)
+    const rate = toRate(kind, modelId, model)
+    if (!rate) continue
+    const key = `${kind}\0${rate.modelId}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    models.push(rate)
   }
 }
 
@@ -45,12 +61,22 @@ const snapshot = {
   version: today,
   date: today,
   source: "models.dev",
+  sourceUrl: MODELS_DEV,
+  ...(etag ? { sourceEtag: etag } : {}),
+  sourceSha256,
   models: dated
 }
 
 const out = resolve(dirname(fileURLToPath(import.meta.url)), "../src/pricing/models-dev-snapshot.json")
 writeFileSync(out, `${JSON.stringify(snapshot)}\n`)
-console.log(`wrote ${snapshot.models.length} models → ${out}`)
+console.log(`wrote ${snapshot.models.length} models etag=${etag ?? "—"} → ${out}`)
+
+function resolveKind(modelsDevId: string): string | undefined {
+  if (modelsDevId.includes("gateway")) return undefined
+  if (allowed.has(modelsDevId)) return modelsDevId
+  const mapped = kindFromModelsDevProvider(modelsDevId)
+  return mapped && allowed.has(mapped) ? mapped : undefined
+}
 
 function toRate(provider: string, modelId: string, model: DevModel): SnapshotModelRate | undefined {
   const cost = model.cost

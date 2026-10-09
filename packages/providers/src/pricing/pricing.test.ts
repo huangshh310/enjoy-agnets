@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { uniqueExistingAliases } from "./alias-policy.ts"
+import { datedIdAliases, uniqueExistingAliases } from "./alias-policy.ts"
+import { kindFromModelsDevProvider } from "./models-dev-kind.ts"
 import { estimateRunCost } from "./estimate.ts"
 import { matchModelRate } from "./match.ts"
 import { buildSessionEstimatedCost } from "./session-cost.ts"
@@ -221,6 +222,50 @@ test("会话合计与未知次数；缺 usage_json 计入未知；零用量不�
   assert.equal(sum.runs?.some((run) => run.runId === "r6"), false)
 })
 
+test("workflow / 生图 / 还在跑 / 准备失败 / 无用量 ACP 与本地模型都不计入 unknownCount", () => {
+  const sum = buildSessionEstimatedCost({
+    sessionId: "ses_filter",
+    snapshot: TABLE,
+    runs: [
+      { runId: "wf", kind: "workflow", status: "completed" },
+      { runId: "img", kind: "image", status: "completed" },
+      { runId: "vid", kind: "video", status: "completed" },
+      { runId: "live", kind: "agent", status: "running" },
+      { runId: "wait", kind: "agent", status: "waiting_review" },
+      { runId: "prep", kind: "agent", status: "failed" },
+      { runId: "acp", kind: "agent", status: "completed", runtimeId: "claude" },
+      { runId: "local", kind: "agent", status: "completed", providerKind: "ollama" },
+      {
+        runId: "ok",
+        kind: "agent",
+        status: "completed",
+        providerKind: "anthropic",
+        modelId: "claude-sonnet-4-5",
+        usage: { inputTokens: 1_000_000, outputTokens: 0 }
+      }
+    ]
+  })
+  assert.equal(sum.unknownCount, 0)
+  assert.equal(sum.knownUsd, 3)
+  assert.equal(sum.runs?.some((run) => run.runId === "acp" && run.status === "not_reported"), true)
+  assert.equal(sum.runs?.some((run) => run.runId === "local" && run.status === "local_unbilled"), true)
+  assert.equal(sum.runs?.some((run) => run.runId === "wf"), false)
+  assert.equal(sum.runs?.some((run) => run.runId === "live"), false)
+  assert.equal(sum.runs?.some((run) => run.runId === "prep"), false)
+})
+
+test("零用量在非官方端点先判未知，不套官方价", () => {
+  const result = estimateRunCost({
+    usage: { inputTokens: 0, outputTokens: 0 },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5",
+    baseURL: "https://relay.example/v1",
+    snapshot: TABLE
+  })
+  assert.equal(result.status, "unknown")
+  assert.deepEqual(result.missing, ["price"])
+})
+
 test("一轮缺用量则整次未知", () => {
   const result = estimateRunCost({
     usage: { inputTokens: 100, outputTokens: 10, usageIncomplete: true },
@@ -243,6 +288,32 @@ test("非官方 baseURL 且没填用户单价 → 未知，不套官方价", () 
   })
   assert.equal(result.status, "unknown")
   assert.deepEqual(result.missing, ["price"])
+})
+
+test("models.dev 供应商 id 只做精确映射", () => {
+  assert.equal(kindFromModelsDevProvider("alibaba"), "qwen")
+  assert.equal(kindFromModelsDevProvider("moonshotai"), "kimi")
+  assert.equal(kindFromModelsDevProvider("volcengine"), "doubao")
+  assert.equal(kindFromModelsDevProvider("zhipuai"), "zhipu")
+  assert.equal(kindFromModelsDevProvider("togetherai"), "together")
+  assert.equal(kindFromModelsDevProvider("alibaba-coding-plan"), undefined)
+})
+
+test("datedIdAliases 只收价目相同的日期后缀", () => {
+  const aliased = datedIdAliases([
+    { provider: "openai", modelId: "gpt-x", input: 2, output: 8 },
+    { provider: "openai", modelId: "gpt-x-20240101", input: 2, output: 8 },
+    { provider: "openai", modelId: "gpt-x-20240202", input: 9, output: 9 }
+  ])
+  const canonical = aliased.find((model) => model.modelId === "gpt-x")
+  assert.deepEqual(canonical?.aliases, ["gpt-x-20240101"])
+})
+
+test("快照含精确映射的 qwen / kimi / doubao / zhipu / together", () => {
+  const kinds = new Set(PRICE_SNAPSHOT.models.map((model) => model.provider))
+  for (const kind of ["qwen", "kimi", "doubao", "zhipu", "together"]) {
+    assert.equal(kinds.has(kind), true, `missing ${kind}`)
+  }
 })
 
 test("真实快照没有一对多别名；家族名匹配不到", () => {

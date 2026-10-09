@@ -53,10 +53,21 @@ export function datedIdAliases(models: SnapshotModelRate[]): SnapshotModelRate[]
     for (const other of siblings) {
       if (other.modelId === model.modelId) continue
       if (!isDatedChild(model.modelId, other.modelId)) continue
+      if (!sameRate(model, other)) continue
       aliases.add(other.modelId)
     }
     return aliases.size > 0 ? { ...model, aliases: [...aliases] } : model
   })
+}
+
+function sameRate(left: SnapshotModelRate, right: SnapshotModelRate): boolean {
+  return (
+    left.input === right.input &&
+    left.output === right.output &&
+    left.cacheRead === right.cacheRead &&
+    left.cacheWrite === right.cacheWrite &&
+    left.reasoning === right.reasoning
+  )
 }
 
 function isDatedChild(canonical: string, candidate: string): boolean {

@@ -10,6 +10,9 @@ export const PRICE_SNAPSHOT: PriceSnapshot = Object.freeze({
   version: String(loaded.version ?? ""),
   date: String(loaded.date ?? ""),
   source: String(loaded.source ?? "models.dev"),
+  sourceUrl: typeof loaded.sourceUrl === "string" ? loaded.sourceUrl : undefined,
+  sourceEtag: typeof loaded.sourceEtag === "string" ? loaded.sourceEtag : undefined,
+  sourceSha256: typeof loaded.sourceSha256 === "string" ? loaded.sourceSha256 : undefined,
   models: uniqueExistingAliases(Array.isArray(loaded.models) ? loaded.models : [])
 })
 

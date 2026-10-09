@@ -34,12 +34,12 @@ export function estimateRunCost(input: {
   if (input.usage.usageIncomplete) {
     return { status: "unknown", missing: ["usage"] }
   }
-  if (!hasPositiveTokens(input.usage)) {
-    return { status: "estimated", usd: 0 }
-  }
   const official = isOfficialProviderEndpoint(input.providerKind ?? "", input.baseURL)
   if (!official && !hasUserRates(input.userRates)) {
     return { status: "unknown", missing: ["price"] }
+  }
+  if (!hasPositiveTokens(input.usage)) {
+    return { status: "estimated", usd: 0 }
   }
   const matched = matchModelRate({
     providerKind: input.providerKind ?? "",

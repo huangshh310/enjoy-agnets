@@ -1,6 +1,8 @@
 /**
  * 从 AI SDK / 供应商 usage 抽出分项 token。没返回的字段保持未知，不要写成 0。
  * AI SDK v7：inputTokens 含缓存，outputTokens 含推理；细项在 inputTokenDetails / outputTokenDetails。
+ * 不读 Anthropic 原始 `input_tokens` / `cache_read_input_tokens`：那份 input 不含缓存，
+ * 下游按 SDK 形状做 input−cache 会少算。
  */
 export type MappedTokenUsage = {
   inputTokens?: number
@@ -27,22 +29,17 @@ export function mapUsageTokens(usage: Record<string, unknown>): MappedTokenUsage
     details.cacheReadTokens,
     usage.cacheReadTokens,
     usage.cachedInputTokens,
-    usage.cache_read_input_tokens,
-    nested(usage, "promptTokensDetails", "cachedTokens"),
-    nested(usage, "prompt_tokens_details", "cached_tokens")
+    nested(usage, "promptTokensDetails", "cachedTokens")
   )
   const cacheWriteTokens = firstNumber(
     details.cacheWriteTokens,
     usage.cacheWriteTokens,
-    usage.cacheCreationInputTokens,
-    usage.cache_creation_input_tokens
+    usage.cacheCreationInputTokens
   )
   const reasoningTokens = firstNumber(
     outDetails.reasoningTokens,
     usage.reasoningTokens,
-    usage.reasoning_tokens,
-    nested(usage, "completionTokensDetails", "reasoningTokens"),
-    nested(usage, "completion_tokens_details", "reasoning_tokens")
+    nested(usage, "completionTokensDetails", "reasoningTokens")
   )
   if (
     inputTokens == null &&
