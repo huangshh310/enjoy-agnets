@@ -443,13 +443,79 @@ tailwind.config = {
       </article>
     </section>
 
-    <!-- Current faithful -->
+    <!-- Current: live + source-restored -->
     <section class="space-y-2" id="current-faithful">
-      <h2 class="text-[14px] font-semibold">C · 现状忠实还原 <span class="text-[11px] font-normal text-warn">按源码还原，待 Luna 实拍替换</span></h2>
-      <p class="text-[11px] text-mute">本环境无 <code>node_modules</code>、无 <code>dev:auto-p2</code> 脚本，Electron stub 未能拉起。下列按 <code>assistant-turn</code> / <code>ThinkingTrace</code> / <code>TaskListDock</code> / <code>FileDiff</code> / <code>MarkdownFence</code> / slim Composer <strong class="text-ink">对照源码还原</strong>，不作美化。图注统一写「按源码还原，待 Luna 实拍替换」。</p>
+      <h2 class="text-[14px] font-semibold">C · 现状对照 <span class="text-[11px] font-normal text-ok">4 块实拍</span> <span class="text-[11px] font-normal text-warn">5 块按源码还原</span></h2>
+      <p class="text-[11px] text-mute">线程 / 工具 / 差异 / Composer 为应用窗口实拍：<strong class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</strong>，1920×1200 原图裁到组件区，未修图。思考 / 代码 / 流式 Markdown / 任务 / 产物：stub 模型只回显文本，触发不了，仍为<strong class="text-ink">按源码还原 · stub 模型无法触发，接真实模型后补实拍</strong>。</p>
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="rounded-xl border border-line p-3 ">
+          <p class="text-[10px] font-semibold text-mute">现状 · 对话线程<span class="ml-1 font-normal text-ok">实拍</span></p>
+          <div class="mt-2 space-y-3">
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/thread-light.webp" alt="现状实拍 线程 浅" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 浅：用户右灰泡 + 编辑/重试/复制；助手左无泡，附件 chip + 「Enjoy 本地 · E2E Stub」+ 赞踩/重试/复制/分叉。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/thread-dark.webp" alt="现状实拍 线程 深" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 深：<strong class="text-danger">用户泡丢底色</strong>，「desktop catchup notes」只剩白字贴在底上。</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="rounded-xl border border-line p-3 ">
+          <p class="text-[10px] font-semibold text-mute">现状 · 工具行<span class="ml-1 font-normal text-ok">实拍</span></p>
+          <div class="mt-2 space-y-3">
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/tool-running-approval-light.webp" alt="现状实拍 工具运行中与审批卡" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 运行中「正在运行工具 7.6秒」+ <code>desktop act</code> 转圈；审批卡另起在 Composer 上，主表面露 bundle id / TTL / HMAC。右上浮层是环境面板，不属本组件。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/tool-group-collapsed-light.webp" alt="现状实拍 工具组折叠" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 折叠后只剩一行「正在运行工具 11.5秒」。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/tool-done-denied-error-light.webp" alt="现状实拍 工具拒绝后" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 拒绝后行写「✕ 失败」不写「拒绝」。红色横幅「UNIQUE constraint failed: approvals.id」是<strong class="text-ink">已知 bug（已转 kai），不属本 PR</strong>，保留原样不美化。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/tool-done-dark.webp" alt="现状实拍 工具完成 深" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 深：「已运行 1 个工具」+「✕ 失败」。</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="rounded-xl border border-line p-3 ">
+          <p class="text-[10px] font-semibold text-mute">现状 · 差异审查<span class="ml-1 font-normal text-ok">实拍</span></p>
+          <div class="mt-2 space-y-3">
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/diff-strip-light.webp" alt="现状实拍 改动条 空闲" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · Composer 上沿改动条：「未自动提交 改动 · 打回 / 通过」。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/diff-strip-running-light.webp" alt="现状实拍 改动条 跑动中" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 跑动中：「改动 · 全部撤销 / 全部保留 / 审查」。仍无每文件留下/丢掉。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/review-pane-empty-dark.webp" alt="现状实拍 审查右栏空态 深" loading="lazy" class="mx-auto block w-full rounded-lg border border-line" style="max-width:240px" />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 右栏「审查」空态 · 深。stub 无真实改动，有 diff 的态与浅色右栏未拍到。</figcaption>
+            </figure>
+          </div>
+        </div>
+        <div class="rounded-xl border border-line p-3 ">
+          <p class="text-[10px] font-semibold text-mute">现状 · Composer（本锁不改，仅对照）<span class="ml-1 font-normal text-ok">实拍</span></p>
+          <div class="mt-2 space-y-3">
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/composer-empty-light.webp" alt="现状实拍 Composer 空态" loading="lazy" class="mx-auto block w-full rounded-lg border border-line" style="max-width:480px" />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 空态：探索|执行、「Enjoy 本地 · E2E Stub」/默认/桌面、读取/Fast、盒下 pill。</figcaption>
+            </figure>
+            <figure class="space-y-1">
+              <img src="assets/ai-blocks/live/composer-thread-queue-light.webp" alt="现状实拍 Composer 线程内" loading="lazy" class="w-full rounded-lg border border-line " />
+              <figcaption class="text-[10px] text-mute"><span class="text-ink">实拍 · main 61570f4 · dev:auto-p2（stub 模型）</span> · 线程内：上沿是「将在当前任务完成后执行」排队条（不是改动条）。</figcaption>
+            </figure>
+          </div>
+        </div>
+      </div>
       <div class="grid gap-3 md:grid-cols-2">
         <div class="rounded-xl border border-dashed border-line p-3">
-          <p class="text-[10px] font-semibold text-mute">现状 · 思考头</p>
+          <p class="text-[10px] font-semibold text-mute">现状 · 思考头<span class="ml-1 font-normal text-warn">按源码还原 · stub 模型无法触发，接真实模型后补实拍</span></p>
           <button type="button" class="-ml-1 mt-2 flex items-center gap-2 rounded-lg px-1.5 py-1 text-[12px]">
             <span class="drive"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
             <span class="text-mute">正在思考</span>
@@ -458,14 +524,14 @@ tailwind.config = {
           <p class="mt-2 text-[10px] text-mute">折叠头可把摘要挤成两行；工具埋进树，折上就看不见。</p>
         </div>
         <div class="rounded-xl border border-dashed border-line p-3">
-          <p class="text-[10px] font-semibold text-mute">现状 · 任务坞</p>
+          <p class="text-[10px] font-semibold text-mute">现状 · 任务坞<span class="ml-1 font-normal text-warn">按源码还原 · stub 模型无法触发，接真实模型后补实拍</span></p>
           <div class="mt-2 rounded-xl border border-line bg-card">
             <div class="flex items-center gap-2 px-3 py-2 text-[12px]"><span>☰</span><span class="font-semibold">任务 补登录</span><span class="ml-auto text-[10px] text-mute">2/4 完成</span><span class="h-1 w-12 rounded-full bg-line"></span></div>
           </div>
           <p class="mt-2 text-[10px] text-mute">皮已接近 T3；缺失败/取消行，停跑后 <code>in_progress</code> 易假转圈。</p>
         </div>
         <div class="rounded-xl border border-dashed border-line p-3">
-          <p class="text-[10px] font-semibold text-mute">现状 · 代码块</p>
+          <p class="text-[10px] font-semibold text-mute">现状 · 代码块<span class="ml-1 font-normal text-warn">按源码还原 · stub 模型无法触发，接真实模型后补实拍</span></p>
           <div class="mt-2 overflow-hidden rounded-2xl border border-line">
             <div class="flex gap-2 border-b border-line px-3 py-2 text-[11px]"><span class="rounded-md bg-paper px-1.5">ts</span><span class="text-mute">login.ts</span><span class="ml-auto text-ok">+2</span><span class="text-danger">-1</span></div>
             <pre class="overflow-x-auto p-3 font-mono text-[11px]">function focusRing() { return "..." }</pre>
@@ -473,39 +539,13 @@ tailwind.config = {
           <p class="mt-2 text-[10px] text-mute">浅卡 + 行号；无换行钮，长行横滑。围栏走 Streamdown，附件块另皮。</p>
         </div>
         <div class="rounded-xl border border-dashed border-line p-3">
-          <p class="text-[10px] font-semibold text-mute">现状 · 工具 / 差异</p>
-          <p class="mt-2 text-[11px]">ACP 弱名曾五行 <code class="text-danger">$ command</code>。现已按 kind 拆，但主行仍偏路径/命令，不像句子。差异在思考外 Tab，无每文件留下/丢掉。</p>
+          <p class="text-[10px] font-semibold text-mute">现状 · 流式 Markdown<span class="ml-1 font-normal text-warn">按源码还原 · stub 模型无法触发，接真实模型后补实拍</span></p>
+          <div class="mt-2 text-[12px] leading-relaxed">改了 <strong>登录页</strong> 的焦点环，<code class="rounded bg-paper px-1">focus-visible</code> 已加</div>
+          <p class="mt-2 text-[10px] text-mute">走 Streamdown（<code>MessageResponse</code>）；已接 copy，无独立 pacing 光标。</p>
         </div>
-        <div class="rounded-xl border border-dashed border-line p-3 md:col-span-2">
-          <p class="text-[10px] font-semibold text-mute">现状 · Composer（按源码还原，待 Luna 实拍替换）</p>
-          <div class="mt-2 space-y-2">
-            <div class="rounded-[22px] border border-line bg-card pt-2">
-              <div class="flex items-center px-3 pt-1 pb-0.5">
-                <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
-                  <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
-                  <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
-                </div>
-              </div>
-              <div class="min-h-[44px] px-3 py-2 text-[13px] text-mute">对照登录页补无障碍…</div>
-              <div class="flex min-w-0 flex-wrap items-center justify-between gap-1.5 px-3 pt-1 pb-2.5">
-                <div class="flex min-w-0 flex-wrap items-center gap-1.5">
-                  <span class="flex size-6 items-center justify-center rounded-full bg-paper text-[12px] ring-1 ring-line">+</span>
-                  <span class="inline-flex h-6 items-center gap-1 rounded-full border border-line bg-accent/10 px-2 text-[10px] ring-1 ring-accent/20">
-                    <span class="flex size-3.5 items-center justify-center rounded-[3px] bg-ink text-[7px] font-bold text-white">E</span>
-                    <span class="text-mute">Enjoy 本地</span><span class="text-mute">·</span><span class="font-semibold">已连模型</span><span class="text-mute">▾</span>
-                  </span>
-                  <span class="inline-flex h-6 items-center rounded-full px-2 text-[10px] font-semibold text-accent ring-1 ring-line/80">✦ 默认</span>
-                  <span class="inline-flex h-6 items-center rounded-full bg-accent/10 px-2 text-[10px] font-semibold text-accent ring-1 ring-accent/25">桌面</span>
-                </div>
-                <span class="inline-flex h-7 items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2 text-[10px] font-medium text-accent">🛡 默认</span>
-              </div>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <span class="rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">审查改动</span>
-              <span class="rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">编写单测</span>
-              <span class="rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">优化重构</span>
-            </div>
-          </div>
+        <div class="rounded-xl border border-dashed border-line p-3">
+          <p class="text-[10px] font-semibold text-mute">现状 · 产物<span class="ml-1 font-normal text-warn">按源码还原 · stub 模型无法触发，接真实模型后补实拍</span></p>
+          <p class="mt-2 text-[11px]">无独立 Artifact 卡。生图/视频走 Image Generation；网页预览走右栏 Browser / <code>openPreview</code>，不是版本化产物。</p>
         </div>
       </div>
     </section>

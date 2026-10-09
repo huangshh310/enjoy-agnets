@@ -59,7 +59,7 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 | 产物 | 无独立 Artifact 面板 | 生图/视频走 Image Generation；预览走右栏 Browser / `openPreview`，不是版本化产物 |
 | Composer | `ai-chat-composer.tsx` **本锁不改** | 圆角 22、`BorderBeam` ocean、顶探索\|执行；底栏 `AgentPicker`「Enjoy 本地 · {模型}」、思考档「默认」、CU 就绪「桌面」、审批盾「默认」；盒下空态 pill 审查改动 / 编写单测 / 优化重构。预览不编模型名，写「已连模型」。 |
 
-**按源码还原，待 Luna 实拍替换**：环境无 `node_modules`、仓库无 `dev:auto-p2`。预览 C 节与对比表现状列按源码还原，不冒充应用窗口实拍。
+**现状图来源（2026-10-10 更新）**：线程 / 工具 / 差异 / Composer 已换成应用窗口实拍（实拍 · main 61570f4 · dev:auto-p2（stub 模型），1920×1200 原图裁到组件区，`../previews/assets/ai-blocks/live/`）。思考 / 代码 / Markdown 流式 / 任务 / 产物：stub 模型只回显文本，触发不了这些块，仍为按源码还原 · stub 模型无法触发，接真实模型后补实拍。
 
 ## 视觉语言（Enjoy，不抄 HextaUI 皮）
 
@@ -137,18 +137,19 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 
 ## 现状 vs 新版
 
-> 现状列与下图均为 **按源码还原，待 Luna 实拍替换**。Luna 会从真机跑补应用窗口图。Hexta 参考图是站点 iframe 实拍，不是 Enjoy 窗口。
+> 现状列分两种来源，图注逐条写明：**实拍**＝实拍 · main 61570f4 · dev:auto-p2（stub 模型）；**按源码还原**＝按源码还原 · stub 模型无法触发，接真实模型后补实拍。Hexta 参考图是站点 iframe 实拍，不是 Enjoy 窗口。
 
-| 块 | 现状（按源码还原，待 Luna 实拍替换） | 新版 | 图 |
-|---|---|---|---|
-| 任务 | T3 坞已有；缺失败/停跑诚实 | 补「已停止」「继续」；仍贴 Composer | 预览 B1；Hexta 参考 `assets/ai-blocks/ref-hextaui-agent-todos-light.webp` |
-| 产物 | 无独立卡，预览散落右栏 | 一张卡 → 右栏；写入中不给假预览；默认无版本号 | `ref-hextaui-artifact-light.webp` |
-| 线程 | Message 已有，滚动自管 | 皮统一；**不换 I3** | `ref-hextaui-chat-thread-light.webp` |
-| 代码 | 浅卡附件 + Streamdown 围栏两套皮 | 统一墨底代码卡 + 换行 + 复制 | `ref-hextaui-code-block-light.webp` |
-| 差异 | 自研 FileDiff，无每文件决 | Tab + 留下/丢掉 | `ref-hextaui-diff-review-light.webp` |
-| Markdown | Streamdown，无光标 | 保留库，加流式光标 | `ref-hextaui-markdown-light.webp` / `streaming-*.webp` |
-| 思考 | Drive 已对；折头易挤 | 单行 +「想了 n 秒」 | `ref-hextaui-thinking-light.webp` |
-| 工具 | kind 已拆，主行不像句子 | 句子化 + 四态 | `ref-hextaui-tool-calls-light.webp` |
+| 块 | 现状 | 现状来源 | 新版 | 图 |
+|---|---|---|---|---|
+| 任务 | T3 坞已有；缺失败/停跑诚实 | 按源码还原 · stub 模型无法触发，接真实模型后补实拍 | 补「已停止」「继续」；仍贴 Composer | 预览 B1；Hexta 参考 `assets/ai-blocks/ref-hextaui-agent-todos-light.webp` |
+| 产物 | 无独立卡，预览散落右栏 | 按源码还原 · stub 模型无法触发，接真实模型后补实拍 | 一张卡 → 右栏；写入中不给假预览；默认无版本号 | `ref-hextaui-artifact-light.webp` |
+| 线程 | 用户右灰泡 + 编辑/重试/复制；助手左无泡 + 附件 chip + 「Enjoy 本地 · 模型」+ 赞踩/重试/复制/分叉。**深色用户泡丢底色**，只剩白字 | 实拍 · main 61570f4 · dev:auto-p2（stub 模型） | 皮统一；**不换 I3**；深色补用户泡底 | 现状 `live/thread-light.webp` / `live/thread-dark.webp`；参考 `ref-hextaui-chat-thread-light.webp` |
+| 代码 | 浅卡附件 + Streamdown 围栏两套皮 | 按源码还原 · stub 模型无法触发，接真实模型后补实拍 | 统一墨底代码卡 + 换行 + 复制 | `ref-hextaui-code-block-light.webp` |
+| 差异 | Composer 上沿改动条（「未自动提交 改动 · 打回 / 通过」；跑动中「改动 · 全部撤销 / 全部保留 / 审查」）；右栏「审查」空态「工作区没有未提交改动。」。无每文件决（stub 无真实改动，有 diff 的态未拍到） | 实拍 · main 61570f4 · dev:auto-p2（stub 模型） | Tab + 留下/丢掉 | 现状 `live/diff-strip-light.webp` / `live/diff-strip-running-light.webp` / `live/review-pane-empty-dark.webp`；参考 `ref-hextaui-diff-review-light.webp` |
+| Markdown | Streamdown，无光标 | 按源码还原 · stub 模型无法触发，接真实模型后补实拍 | 保留库，加流式光标 | `ref-hextaui-markdown-light.webp` / `streaming-*.webp` |
+| 思考 | Drive 已对；折头易挤 | 按源码还原 · stub 模型无法触发，接真实模型后补实拍 | 单行 +「想了 n 秒」 | `ref-hextaui-thinking-light.webp` |
+| 工具 | 「正在运行工具 7.6秒」+ 行 `desktop act` 转圈；审批卡另起在 Composer 上（主表面露 bundle id / TTL / HMAC）；折后只剩一行；拒绝后行显示「✕ 失败」而非「拒绝」 | 实拍 · main 61570f4 · dev:auto-p2（stub 模型） | 句子化 + 四态；黑话进展开 | 现状 `live/tool-running-approval-light.webp` / `live/tool-group-collapsed-light.webp` / `live/tool-done-denied-error-light.webp` / `live/tool-done-dark.webp`；参考 `ref-hextaui-tool-calls-light.webp` |
+| Composer | 空态：标题 + 未安装 pill + 探索\|执行 + 「Enjoy 本地 · E2E Stub」/默认/桌面 + 读取/Fast + 盒下 pill；线程内同皮，上沿可叠排队/改动条 | 实拍 · main 61570f4 · dev:auto-p2（stub 模型） | **本锁不改**，仅同屏对照 | 现状 `live/composer-empty-light.webp` / `live/composer-thread-queue-light.webp` |
 
 新版浅：
 
@@ -158,9 +159,53 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 
 <img alt="同屏和谐深" src="../previews/assets/ai-blocks/preview-harmony-dark.webp" />
 
-现状（按源码还原，待 Luna 实拍替换）：
+### 现状实拍（实拍 · main 61570f4 · dev:auto-p2（stub 模型））
 
-<img alt="现状按源码还原，待 Luna 实拍替换" src="../previews/assets/ai-blocks/preview-current-faithful.webp" />
+原图 1920×1200，裁到组件区。仅本 PR 设计对照用，不改应用代码。
+
+线程 · 浅：
+
+<img alt="现状实拍 线程 浅" src="../previews/assets/ai-blocks/live/thread-light.webp" />
+
+线程 · 深（注意：用户消息「desktop catchup notes」「写一段 TypeScript 代码」**没有泡底色**，只剩白字）：
+
+<img alt="现状实拍 线程 深 用户泡丢底色" src="../previews/assets/ai-blocks/live/thread-dark.webp" />
+
+工具 · 运行中 + 审批卡（右上角浮层是环境面板，不属本组件；审批卡主表面露 `com.apple.notes` / TTL / HMAC，正是新版要收进展开的黑话）：
+
+<img alt="现状实拍 工具运行中与审批卡" src="../previews/assets/ai-blocks/live/tool-running-approval-light.webp" />
+
+工具 · 组折叠：
+
+<img alt="现状实拍 工具组折叠" src="../previews/assets/ai-blocks/live/tool-group-collapsed-light.webp" />
+
+工具 · 拒绝后展开（行写「✕ 失败」不写「拒绝」）。下方红色横幅「UNIQUE constraint failed: approvals.id」是**已知 bug，已转 kai，不属本 PR**，保留原样以免美化现状：
+
+<img alt="现状实拍 工具拒绝后 含已知错误横幅" src="../previews/assets/ai-blocks/live/tool-done-denied-error-light.webp" />
+
+工具 · 完成 · 深：
+
+<img alt="现状实拍 工具完成 深" src="../previews/assets/ai-blocks/live/tool-done-dark.webp" />
+
+差异 · Composer 上沿改动条（空闲 / 跑动中）：
+
+<img alt="现状实拍 改动条 空闲" src="../previews/assets/ai-blocks/live/diff-strip-light.webp" />
+
+<img alt="现状实拍 改动条 跑动中" src="../previews/assets/ai-blocks/live/diff-strip-running-light.webp" />
+
+差异 · 右栏审查空态 · 深（stub 无真实改动，只拍到空态；浅色右栏未拍到）：
+
+<img alt="现状实拍 审查右栏空态 深" src="../previews/assets/ai-blocks/live/review-pane-empty-dark.webp" width="320" />
+
+Composer · 空态 / 线程内（线程内上沿是「将在当前任务完成后执行」排队条，不是改动条）：
+
+<img alt="现状实拍 Composer 空态" src="../previews/assets/ai-blocks/live/composer-empty-light.webp" />
+
+<img alt="现状实拍 Composer 线程内 排队条" src="../previews/assets/ai-blocks/live/composer-thread-queue-light.webp" />
+
+思考 / 代码 / Markdown 流式 / 任务 / 产物：按源码还原 · stub 模型无法触发，接真实模型后补实拍。下图为预览 C 节整屏截图：上半 4 块实拍，下半这 5 块源码还原，图注逐块标来源：
+
+<img alt="预览 C 节：4 块实拍 + 5 块按源码还原" src="../previews/assets/ai-blocks/preview-current-faithful.webp" />
 
 ## 实现路径（mike 填）
 
