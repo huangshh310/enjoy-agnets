@@ -1,7 +1,7 @@
 # AI 应用趋势 × 小而美开源 × Enjoy 可实现清单
 
 > 基线：main tip `1893fa5`（2026-10-09 复核 main 仍为此 sha）· 日期：2026-10-09（Asia/Shanghai）· **待用户拍板 · 不开刀 · I3 仍停**
-> 输入：PM 调研（本稿）＋ leo（架构契合/风险/闸）＋ kai（后端事实与候选）＋ luna（交互候选）。凡标注「leo / kai / luna」处为其输入，本稿已抽查路径。
+> 输入：PM 调研（本稿）＋ leo（架构契合/风险/闸）＋ kai（后端事实与候选）＋ luna（交互候选）＋ mike（前端库候选，§2.1）。凡标注「leo / kai / luna」处为其输入，本稿已抽查路径。
 > 开放项：PR #100（CU-P1-36 裸坐标默认关）仍 draft，CI 在 `2b2f7ea` 绿，但对 `1893fa5` `mergeStateStatus=DIRTY`，需 rebase；`desktopAdvancedCoords` 尚未进 main（`rg` 在 `1893fa5` 无命中）。
 > 星数 / push 日期为 2026-10-09 `gh api repos/...` 实测（`pushed_at` 为 UTC，此处只取日期）。
 
@@ -41,7 +41,7 @@
 
 ---
 
-## 2. 小而美开源（15 个，均已 `gh api` 核实存在且近 6 个月有 push）
+## 2. 小而美开源（15 个 + 前端 7 个见 §2.1，均已 `gh api` / `npm view` 核实存在且近 6 个月有 push）
 
 | 名字 | 链接 | stars · 最近 push | 一句亮点 | 对 Enjoy 的启发 |
 |---|---|---|---|---|
@@ -63,6 +63,29 @@
 
 参照（非小而美，leo 提名，已核实）：Cline https://github.com/cline/cline（70.1k · 10-09，checkpoints 文档 https://docs.cline.bot/core-workflows/checkpoints）· Aider https://github.com/Aider-AI/aider（49.4k · **2026-05-22**，活跃度偏低；repo map https://aider.chat/docs/repomap.html）· Goose https://github.com/aaif-goose/goose（55.1k · 10-09；recipes https://goose-docs.ai/docs/guides/recipes/）· AGENTS.md https://github.com/agentsmd/agents.md（24.8k · 09-10）· MCP servers https://github.com/modelcontextprotocol/servers（91.1k · 10-07）。
 未入表：`coder/agentapi`（已 archived）；tokenlens https://github.com/xn1cklas/tokenlens（266⭐ · 07-02，kai 的轻量备选，license 未核）；mem0 https://github.com/mem0ai/mem0（66.9k，非小而美，待产品决策）；node-llama-cpp https://github.com/withcatai/node-llama-cpp（2.2k，kai 不推荐）。
+
+### 2.1 前端小而美（mike）
+
+mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-to-bottom、react-resizable-panels、xterm、mermaid、monaco、ai-elements（因此 assistant-ui / prompt-kit / markstream 与现有重叠，跳过）。Cherry Studio / LobeChat / Jan 仅作交互参照，不引代码。下表 license / 版本经 `npm view` 核实，stars / push 经 `gh api` 核实（2026-10-09）；抽查结论附在「Enjoy 启发」里。
+
+| 名字 | 链接 | license · stars · 最近 push | 亮点 | Enjoy 启发（含抽查） | 投入 | ICE |
+|---|---|---|---|---|---|---|
+| virtua | https://github.com/inokawa/virtua | MIT · 3.7k · 2026-10-09（npm 0.53.3） | 零配置虚拟列表，支持动态行高、反向滚动 | 会话列表未虚拟化（renderer 内 `rg virtual` 无命中），长会话卡；只换 `ai-chat-thread.tsx` 的 `ConversationContent` 层 | M，3–4 人日 | 7/7/6＝**20** |
+| @pierre/diffs | https://github.com/pierrecomputer/pierre | Apache-2.0 · 6.3k · 2026-10-08（npm 1.5.2） | 基于 shiki 的高质量 diff 渲染 | `ai-chat/diff/` 手写、无语法高亮（目录内无 shiki）；`file-diff-options.ts` `LARGE_FILE_LINES = 400`，开「折叠大文件」时 >400 行只留第一块 hunk；复用现有 shiki，先上 Review 面板 | M，3–5 人日 | 6/6/6＝18 |
+| sonner | https://github.com/emilkowalski/sonner | MIT · 13.0k · 2026-08-10（npm 2.0.8） | 简洁、可堆叠的 toast | 至少 3 套手写 toast：`skills/.../skill-source-toast*`、`settings/extensions/curated/curated-toast.tsx`、`session-review/preview-open/session-preview-toast.tsx`，统一一处 | S，1–1.5 人日 | 并入「前端收口」 |
+| xterm 官方 addon（webgl / search / web-links / unicode11） | https://github.com/xtermjs/xterm.js | MIT · 21.3k · 2026-09-13 | GPU 渲染、⌘F 搜索、可点链接、CJK 宽度 | 现仅装 `@xterm/addon-fit`（`apps/desktop/package.json`），catalog 为 `@xterm/xterm ^5.5.0`。**须钉 xterm 5 兼容版**：webgl 0.18 / search 0.15 / web-links 0.11 / unicode11 0.8（peer `^5.0.0`）；npm latest（0.19/0.16/0.12/0.9）对应 xterm 6 | S，0.5–1 人日 | 并入「前端收口」 |
+| tinykeys | https://github.com/jamiebuilds/tinykeys | MIT · 4.1k · 2026-09-25（npm 4.0.1） | 约 650B 的快捷键绑定 | 约 41 个 renderer 文件各自处理 keydown；但已有 `packages/ipc-contract/src/keybinding-resolve.ts` 解析层，需先确认缺的是「统一派发」而不是「解析」 | S–M，1.5–2 人日 | 4/6/7＝17 |
+| @headless-tree/react | https://github.com/lukasbach/headless-tree | MIT · 0.9k · 2026-07-20（npm 1.7.0） | 无样式树组件，键盘导航 + 多选 | 替换 Review 自写文件树；可选 | S–M，约 2 人日 | 3/7/7＝17 |
+| Tiptap Mention | https://github.com/ueberdosis/tiptap | MIT · 38.7k · 2026-10-09（npm `@tiptap/extension-mention` 3.31.4） | 富文本 @ 提及节点 | Composer 是纯 textarea，`@桌面/@应用` 无法成为富 token；回归面大，**观察不做** | L，6–8 人日 | 6/5/2＝13 |
+
+**建议打包**：sonner + xterm addon 合为一个 S 项「**前端收口**」（mike），约 2 人日，ICE 5/9/9＝**23**。mike 自排 Top 3：virtua → @pierre/diffs → sonner；xterm addon 作为半天顺手项。I3 不动。
+
+**架构契合 / 风险 / 闸与真源（leo 口径）**：全部为 renderer 库，不碰 ToolLoop、Zod 合约、StreamEvent，契合度均为**高**。风险与闸：
+- virtua：中风险。thread-find 改为按 index 滚动；流式行高变化时校验抖动；`permission-dock.tsx` 也引用 `ConversationContent`，**待审批卡不得被虚拟化卸载**（钉住可见），否则等同把审批藏起来。
+- @pierre/diffs：中低。新依赖，与现有 shiki 4 版本对齐；只读渲染，不触闸。
+- 前端收口：低。web-links 打开链接必须走 main 现有的外链打开路径，不在 renderer 直接开。
+- tinykeys：低。不得改变审批相关快捷键（如 `use-permission-cycle-hotkey.ts`）的语义。
+- Tiptap Mention：高风险。即便做成富 token，**mention≠allow** 不变，token 不能携带授权。
 
 ---
 
@@ -112,6 +135,12 @@
 | 12 | 右栏步骤胶片（luna ③） | 部分 | 5 | 7 | 5 | 17 | M |
 | 13 | 离线语音输入（whisper.cpp / sherpa-onnx） | 部分 | 5 | 6 | 4 | 15 | L |
 | 14 | 长期记忆（mem0 / basic-memory 式） | 缺 | 6 | 4 | 3 | 13 | M–L（需产品决策） |
+| 15 | 前端收口（sonner + xterm addon，mike） | 部分 | 5 | 9 | 9 | **23** | S |
+| 16 | 会话列表虚拟化（virtua，mike） | 缺 | 7 | 7 | 6 | 20 | M |
+| 17 | Diff 渲染升级（@pierre/diffs，mike） | 部分 | 6 | 6 | 6 | 18 | M |
+| 18 | 快捷键统一派发（tinykeys，mike） | 部分 | 4 | 6 | 7 | 17 | S–M |
+| 19 | Review 文件树（@headless-tree/react，mike） | 部分 | 3 | 7 | 7 | 17 | S–M |
+| 20 | Composer 富 mention（Tiptap，mike） | 缺 | 6 | 5 | 2 | 13 | L（观察） |
 
 **Top 5 取舍说明**：按 ICE 前五会是 4 个体验项 + 1 个成本项；为平衡「用户可见 × 地基」，Top 5 取 #1/#2/#3 + 地基 #6（leo）与 #8（kai），#4 Recipe、#5 Skills 校验作为下一批 S 项（体量小，可插空）。
 
@@ -164,6 +193,12 @@
 - ICE 9/6/5＝20。
 - 架构契合：中高（包一层 spawn，不动 ToolLoop）。风险：中（npm 0.x、Ubuntu userns/AppArmor 限制、平台漂移）。闸与真源：`resolveToolApproval` 先行，沙箱后包；策略存本机设置。
 
+> **备选替换（mike 输入后追加；Top 5 已送用户拍板，未改动）**
+> 「前端收口」（sonner + xterm addon）ICE **23**，高于 Top 5 ⑤「统一 OS 沙箱」（20）。若纯按分数，它会替换 **⑤**。建议**不替换**：⑤ 是 kai 的安全地基，换掉后 Top 5 只剩一个地基项；前端收口约 2 人日，可作为插空项与 Top 5 并行。由用户决定。
+> virtua（20）与 ⑤ 同分，不触发替换，列入次批首位。
+>
+> **次批（前端，按 ICE）**：virtua 20 → @pierre/diffs 18 → tinykeys 17 / @headless-tree 17 → Tiptap Mention 13（观察不做）。另：#4 Recipe、#5 Skills 校验仍为后端/产品侧次批 S 项。
+
 ### 3.4 明确拒绝（与锁/红线冲突）
 
 1. **手机遥控经厂商云中继（Remote Control 式）**：转录上云、远端驱动本机桌面，冲突「local-first / 不让云端操作用户桌面」。
@@ -175,4 +210,5 @@
 ### 3.5 未能核实 / 注意
 - Aider 最近 push 为 2026-05-22，活跃度低于其余项。tokenlens 的 license 未核。
 - kai 的「HTTP 通知 no-op、无 OAuth」「OTel 只导单 span」「Ollama/LM Studio 预设」为其仓内结论，本稿只抽查了 `client.ts`、`otel.ts`、`estimatedCost`、`policies/sandbox.ts`、`os-sandbox.ts`。
+- mike 的「virtua ~3.7k⭐、@pierre/diffs ~6.3k⭐、sonner ~13k⭐」已核实；「tinykeys ~650B」指包体积，其仓库 stars 为 4.1k。mike 说 diff「截断 >400 行」，实为开启「折叠大文件」选项时只留第一块 hunk。@pierre/diffs 的 npm 元数据没有 repository 字段，仓库是按 GitHub 代码搜索在 `pierrecomputer/pierre` 的 `apps/diffshub` 等处找到的。
 - 趋势 T4 的 Chronicle 细节引自 9to5Mac 转载的 OpenAI 原话，未直接打开 OpenAI 文档页。
