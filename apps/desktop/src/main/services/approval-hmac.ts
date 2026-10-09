@@ -9,7 +9,7 @@ import {
   approvalPayload,
   getApproval,
   insertApproval,
-  nextApprovalId,
+  planRememberApproval,
   setApprovalDecision,
   signApproval,
   verifyApproval
@@ -59,24 +59,25 @@ export function rememberApproval(input: {
   toolCallId: string
   name: string
   args: unknown
-}): string {
+}) {
   const db = getDatabase()
   const incoming = {
     id: input.approvalId,
     runId: input.runId,
-    toolCallId: input.toolCallId
+    toolCallId: input.toolCallId,
+    args: input.args
   }
-  const allocated = nextApprovalId(getApproval(db, incoming.id), incoming, () => createId("apr"))
-  if (allocated.action === "reuse") return allocated.id
+  const plan = planRememberApproval(getApproval(db, incoming.id), incoming, () => createId("apr"))
+  if (plan.action !== "insert") return plan
   const payload = approvalPayload({
     runId: input.runId,
     toolCallId: input.toolCallId,
-    approvalId: allocated.id,
+    approvalId: plan.id,
     name: input.name,
     args: input.args
   })
   insertApproval(db, {
-    id: allocated.id,
+    id: plan.id,
     runId: input.runId,
     toolCallId: input.toolCallId,
     name: input.name,
@@ -85,7 +86,7 @@ export function rememberApproval(input: {
     decision: null,
     createdAt: Date.now()
   })
-  return allocated.id
+  return plan
 }
 
 export function assertApprovalHmac(input: {

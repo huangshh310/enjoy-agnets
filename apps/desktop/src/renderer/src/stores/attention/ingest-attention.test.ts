@@ -62,6 +62,23 @@ test("同会话同 kind 只占一槽，后到覆盖并保留 workspaceId", () =>
   assert.equal(second[0]?.workspaceId, "ws_1")
 })
 
+test("新审批进场时只收 complete，未处理的 error 保留", () => {
+  const failed = ingestAttentionEvent([], {
+    event: { type: "run.error", runId: "run_old", message: "boom" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const waiting = ingestAttentionEvent(failed, {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(waiting.find((item) => item.kind === "error")?.status, "active")
+  assert.equal(waiting.find((item) => item.kind === "pending_approval")?.status, "active")
+})
+
 test("新审批进场时收掉已完成，需处理与已完成不叠出", () => {
   const done = ingestAttentionEvent([], {
     event: { type: "run.end", runId: "run_old" },

@@ -12,10 +12,15 @@ export async function waitSecondConfirmApproval(
   run: ActiveRun,
   args: unknown
 ): Promise<"allow" | "deny" | "allow_session" | "allow_always"> {
-  const approvalId = createId("apr")
   const toolCallId = run.tools.at(-1)?.id || createId("tool")
+  const approvalId = rememberApproval({
+    runId,
+    approvalId: createId("apr"),
+    toolCallId,
+    name: "desktop_act",
+    args
+  }).id
   run.pendingApprovals.push({ approvalId, toolCallId, name: "desktop_act", args })
-  rememberApproval({ runId, approvalId, toolCallId, name: "desktop_act", args })
   checkpointActiveRun(run)
   emitEvent(run.window, {
     type: "approval.required",

@@ -4,22 +4,28 @@
 import { migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../stores/chat-store"
 import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
-import { pickHydratedMessages } from "./pick-hydrated-messages"
+import { finishSessionHydrate } from "./session-hydrate-finish"
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]
   sameSession: boolean
-}): void {
+  generation: number
+  sessionId: string
+}): boolean {
   const latest = useChatStore.getState()
+  const next = finishSessionHydrate({
+    generation: input.generation,
+    sessionId: input.sessionId,
+    currentSessionId: latest.sessionId,
+    dbMessages: threadFromRows(input.dbRows),
+    liveMessages: latest.messages,
+    sameSession: input.sameSession,
+    running: latest.running
+  })
+  if (next === undefined) return false
   restoreUiMessages(input.dbRows)
-  latest.setMessages(
-    pickHydratedMessages({
-      dbMessages: threadFromRows(input.dbRows),
-      liveMessages: latest.messages,
-      sameSession: input.sameSession,
-      running: latest.running
-    })
-  )
+  latest.setMessages(next)
+  return true
 }
 
 function restoreUiMessages(rows: SessionMessageRow[]) {

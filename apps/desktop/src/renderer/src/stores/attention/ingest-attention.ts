@@ -82,11 +82,11 @@ export function dismissAttentionSlot(items: AttentionItem[], id: string): Attent
   return items.map((item) => (item.id === id ? { ...item, status: "dismissed" } : item))
 }
 
-/** 新审批进场时收掉同会话的已完成 / 出错，避免「需处理」和「已完成刚刚」叠在一起。 */
+/** 新审批进场时只收同会话已完成，未处理的 error 保留。 */
 export function resolveTerminalSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
   return items.map((item) => {
     if (item.sessionId !== sessionId) return item
-    if (item.kind !== "complete" && item.kind !== "error") return item
+    if (item.kind !== "complete") return item
     if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
       return item
     }

@@ -4,6 +4,8 @@
  */
 import { mergeUserAssets, type AssetBearingMessage } from "./merge-user-assets.ts"
 
+export type { AssetBearingMessage }
+
 export function pickHydratedMessages<T extends AssetBearingMessage>(input: {
   dbMessages: T[]
   liveMessages: T[]

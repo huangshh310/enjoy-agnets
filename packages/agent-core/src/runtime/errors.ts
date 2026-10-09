@@ -55,9 +55,18 @@ export function classifyError(error: unknown): RuntimeError {
     return new RuntimeError("capability", message, false)
   }
   if (isInternalStoreError(message)) {
-    return new RuntimeError("tool", INTERNAL_STORE_ERROR, true)
+    return new RuntimeError("tool", INTERNAL_STORE_ERROR, false)
   }
   return new RuntimeError("provider", message, true)
+}
+
+/** 分类前先记下原始存储报错；对话只走人话码。 */
+export function logAndClassifyError(scope: string, error: unknown): RuntimeError {
+  const message = unwrapErrorMessage(error)
+  if (isInternalStoreError(message)) {
+    console.error(`${scope} store error`, error)
+  }
+  return classifyError(error)
 }
 
 /** 对话禁止摊 SQL / constraint；只进日志。 */

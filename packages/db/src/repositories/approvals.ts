@@ -14,21 +14,57 @@ export type ApprovalRow = {
   createdAt: number
 }
 
-/** 同一未决行幂等复用；已决或身份不同则换新 id，禁止把真冲突当成功。 */
+export type NextApprovalId =
+  | { id: string; action: "insert" }
+  | { id: string; action: "reuse" }
+  | { id: string; action: "decided" }
+
+export type RememberApprovalPlan =
+  | { id: string; action: "insert" }
+  | { id: string; action: "reuse" }
+  | { id: string; action: "replay"; decision: string }
+  | { id: string; action: "fail_closed"; decision: string }
+
+/** 同一未决行幂等复用；已决且身份相同保留原 id；身份不同才换新。 */
 export function nextApprovalId(
   existing: Pick<ApprovalRow, "id" | "runId" | "toolCallId" | "decision"> | undefined,
   incoming: Pick<ApprovalRow, "id" | "runId" | "toolCallId">,
   allocate: () => string
-): { id: string; action: "insert" | "reuse" } {
+): NextApprovalId {
   if (!existing) return { id: incoming.id, action: "insert" }
-  if (
-    existing.decision == null &&
-    existing.runId === incoming.runId &&
-    existing.toolCallId === incoming.toolCallId
-  ) {
-    return { id: existing.id, action: "reuse" }
+  if (existing.runId !== incoming.runId || existing.toolCallId !== incoming.toolCallId) {
+    return { id: allocate(), action: "insert" }
   }
-  return { id: allocate(), action: "insert" }
+  if (existing.decision == null) return { id: existing.id, action: "reuse" }
+  return { id: existing.id, action: "decided" }
+}
+
+export function approvalArgsMatch(stored: string, incoming: unknown): boolean {
+  const next = incoming ?? {}
+  try {
+    return canonicalizeJson(JSON.parse(stored)) === canonicalizeJson(next)
+  } catch {
+    return stored === JSON.stringify(next)
+  }
+}
+
+function canonicalizeJson(value: unknown): string {
+  return JSON.stringify(value)
+}
+
+/** 已决 id：args 哈希一致回放；不一致 fail closed。 */
+export function planRememberApproval(
+  existing: ApprovalRow | undefined,
+  incoming: Pick<ApprovalRow, "id" | "runId" | "toolCallId"> & { args: unknown },
+  allocate: () => string
+): RememberApprovalPlan {
+  const next = nextApprovalId(existing, incoming, allocate)
+  if (next.action === "insert" || next.action === "reuse") return next
+  const decision = existing?.decision ?? "deny"
+  if (existing && approvalArgsMatch(existing.args, incoming.args)) {
+    return { id: existing.id, action: "replay", decision }
+  }
+  return { id: existing?.id ?? incoming.id, action: "fail_closed", decision }
 }
 
 export function insertApproval(db: AppDatabase, row: ApprovalRow): void {

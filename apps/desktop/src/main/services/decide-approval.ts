@@ -2,7 +2,6 @@
  * 审批决定：HMAC、清/挂补跑计时器、续泵。
  */
 import type { BrowserWindow } from "electron"
-import type { ModelMessage } from "ai"
 import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
 import {
   desktopActFailureCode,
@@ -13,6 +12,7 @@ import {
 import { ASK_USER_QUESTIONS_TOOL, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
+import { approvalResponseMessage } from "./approval-response-message"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { armCatchUpPark } from "./park-catch-up-approval"
@@ -76,7 +76,14 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     return { ok: true }
   }
   const resumeCode = desktopActFailureCode(desktopResume)
-  run.messages.push(approvalResponseMessage(decision, pending.name, resumeCode || undefined))
+  const skipped = pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision === "deny"
+  run.messages.push(
+    approvalResponseMessage({
+      approvalId: decision.approvalId,
+      approved: decision.decision !== "deny" && !resumeCode,
+      reason: skipped ? "User skipped questions." : resumeCode || decision.reason
+    })
+  )
   if (desktopResume && !desktopActMayReportSuccess(desktopResume)) {
     emitEvent(window, {
       type: "tool.result",
@@ -165,21 +172,3 @@ function commandFromArgs(args: unknown): string {
   return ""
 }
 
-function approvalResponseMessage(
-  decision: ApprovalDecision,
-  toolName: string,
-  resumeError?: string
-): ModelMessage {
-  const skipped = toolName === ASK_USER_QUESTIONS_TOOL && decision.decision === "deny"
-  return {
-    role: "tool",
-    content: [
-      {
-        type: "tool-approval-response",
-        approvalId: decision.approvalId,
-        approved: decision.decision !== "deny" && !resumeError,
-        reason: skipped ? "User skipped questions." : resumeError || decision.reason
-      }
-    ]
-  } as ModelMessage
-}

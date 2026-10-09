@@ -18,7 +18,8 @@ import {
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
 import { applySessionHydrate } from "./session-hydrate"
-import { bumpSessionHydrateGeneration, isSessionHydrateCurrent } from "./session-hydrate-generation"
+import { bumpSessionHydrateGeneration } from "./session-hydrate-generation"
+import { messagesAfterSessionSwitch } from "./session-hydrate-finish"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
@@ -66,7 +67,11 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
   const store = useChatStore.getState()
-  const sameSession = store.sessionId === sessionId
+  const { sameSession } = messagesAfterSessionSwitch({
+    currentSessionId: store.sessionId,
+    nextSessionId: sessionId,
+    liveMessages: store.messages
+  })
   const generation = bumpSessionHydrateGeneration()
   if (!sameSession) {
     if (store.sessionId) {
@@ -84,9 +89,8 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     store.setSession(sessionId, title)
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
-  if (stale?.() || !isSessionHydrateCurrent(generation)) return
-  if (useChatStore.getState().sessionId !== sessionId) return
-  applySessionHydrate({ dbRows: rows, sameSession })
+  if (stale?.()) return
+  applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {

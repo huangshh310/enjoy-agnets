@@ -2,11 +2,14 @@
  * 消费 Agent fullStream：映射事件、累积 transcript、处理审批。
  */
 import type { BrowserWindow } from "electron"
+import type { ModelMessage } from "ai"
 import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { logAndClassifyError } from "@enjoy-agents/agent-core"
 import { createId } from "./ids"
 import { persistFromEvent, type RunTranscript } from "./persist-session"
 import { rememberApproval } from "./approval-hmac"
-import { classifyError } from "@enjoy-agents/agent-core"
+import { approvalResponseMessage } from "./approval-response-message"
+import { applyRememberedApproval } from "./consume-approval"
 import { shouldCheckpointPersist } from "./agent-run-flush"
 import { mapStreamPart, withToolId } from "./stream-parts"
 
@@ -24,6 +27,7 @@ export async function consumeFullStream(input: {
   tools: ThreadToolCall[]
   transcript: RunTranscript
   onApproval: (pending: PendingApproval) => void
+  onDecidedReplay?: (message: ModelMessage) => void
   onFirstToken?: () => void
   onUsage?: (usage: {
     inputTokens?: number
@@ -44,11 +48,15 @@ export async function consumeFullStream(input: {
   let lastCheckpointAt = 0
   for await (const part of input.stream) {
     if (String(part.type ?? "") === "error") {
-      throw classifyError(part.error ?? part)
+      throw logAndClassifyError("consume-stream", part.error ?? part)
     }
     const mapped = mapStreamPart(part, input.runId)
     if (!mapped) continue
     const event = withToolId(mapped, createId("tool"))
+    if (event.type === "approval.required") {
+      lastCheckpointAt = await consumeApprovalRequired(event, input, lastCheckpointAt)
+      continue
+    }
     persistFromEvent(input.tools, event, input.transcript)
     lastCheckpointAt = emitCheckpoint(event.type, lastCheckpointAt, input.onCheckpoint)
     if (event.type === "text.delta") input.onFirstToken?.()
@@ -71,28 +79,84 @@ export async function consumeFullStream(input: {
         fromTotalUsage: true
       })
     }
-    if (event.type === "approval.required") {
-      const args = await parkApprovalArgs(event.name, event.args)
-      const toolCallId = event.toolCallId || createId("tool")
-      const approvalId = rememberApproval({
-        runId: input.runId,
-        approvalId: event.approvalId || createId("apr"),
-        toolCallId,
-        name: event.name,
-        args
-      })
-      const pending: PendingApproval = {
-        approvalId,
-        toolCallId,
-        name: event.name,
-        args
-      }
-      input.onApproval(pending)
-      input.emit({ ...event, approvalId: pending.approvalId, toolCallId: pending.toolCallId, args })
-      continue
-    }
     input.emit(event)
   }
+}
+
+async function consumeApprovalRequired(
+  event: StreamEvent & { type: "approval.required" },
+  input: {
+    runId: string
+    tools: ThreadToolCall[]
+    transcript: RunTranscript
+    onApproval: (pending: PendingApproval) => void
+    onDecidedReplay?: (message: ModelMessage) => void
+    onCheckpoint?: () => void
+    emit: (event: StreamEvent) => void
+  },
+  lastCheckpointAt: number
+): Promise<number> {
+  const args = await parkApprovalArgs(event.name, event.args)
+  const toolCallId = event.toolCallId || createId("tool")
+  const applied = applyRememberedApproval(
+    rememberApproval({
+      runId: input.runId,
+      approvalId: event.approvalId || createId("apr"),
+      toolCallId,
+      name: event.name,
+      args
+    }),
+    { toolCallId, name: event.name, args }
+  )
+  if (applied.kind === "open_card") {
+    persistFromEvent(input.tools, event, input.transcript)
+    input.onApproval(applied.pending)
+    input.emit({ ...event, approvalId: applied.pending.approvalId, toolCallId, args })
+    return emitCheckpoint("approval.required", lastCheckpointAt, input.onCheckpoint)
+  }
+  replayDecidedApproval(applied, { event, toolCallId, args, input })
+  return emitCheckpoint("tool.result", lastCheckpointAt, input.onCheckpoint)
+}
+
+function replayDecidedApproval(
+  applied: Exclude<ReturnType<typeof applyRememberedApproval>, { kind: "open_card" }>,
+  ctx: {
+    event: StreamEvent & { type: "approval.required" }
+    toolCallId: string
+    args: unknown
+    input: {
+      runId: string
+      tools: ThreadToolCall[]
+      transcript: RunTranscript
+      onDecidedReplay?: (message: ModelMessage) => void
+      emit: (event: StreamEvent) => void
+    }
+  }
+) {
+  const approved = applied.kind === "replay" ? applied.approved : false
+  const reason = applied.kind === "fail_closed" ? applied.code : undefined
+  ctx.input.onDecidedReplay?.(
+    approvalResponseMessage({ approvalId: applied.approvalId, approved, reason })
+  )
+  const follow: StreamEvent =
+    applied.kind === "replay"
+      ? {
+          type: "approval.resolved",
+          runId: ctx.input.runId,
+          toolCallId: ctx.toolCallId,
+          decision: applied.decision
+        }
+      : {
+          type: "tool.result",
+          runId: ctx.input.runId,
+          toolCallId: ctx.toolCallId,
+          name: ctx.event.name,
+          args: ctx.args,
+          result: { code: applied.code },
+          error: applied.message
+        }
+  persistFromEvent(ctx.input.tools, follow, ctx.input.transcript)
+  ctx.input.emit(follow)
 }
 
 /** 主循环待批：冻结 TTL，并补 appKey / 本观察缩略图。 */

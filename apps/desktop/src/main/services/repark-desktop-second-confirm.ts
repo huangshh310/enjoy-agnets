@@ -21,7 +21,13 @@ export async function reparkDesktopSecondConfirm(input: {
   )
   const original = asRecord(input.pending.args)
   const parked = await enrichSecondConfirmApprovalArgs(mergeSecondConfirmArgs(original, input.result))
-  const approvalId = createId("apr")
+  const approvalId = rememberApproval({
+    runId: input.runId,
+    approvalId: createId("apr"),
+    toolCallId: input.pending.toolCallId,
+    name: "desktop_act",
+    args: parked
+  }).id
   const next: PendingApproval = {
     approvalId,
     toolCallId: input.pending.toolCallId,
@@ -29,13 +35,6 @@ export async function reparkDesktopSecondConfirm(input: {
     args: parked
   }
   input.run.pendingApprovals.push(next)
-  rememberApproval({
-    runId: input.runId,
-    approvalId,
-    toolCallId: next.toolCallId,
-    name: next.name,
-    args: parked
-  })
   persistWaitingRun(input.run, input.runId)
   emitEvent(input.window, {
     type: "approval.required",
