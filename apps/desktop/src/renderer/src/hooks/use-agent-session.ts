@@ -112,6 +112,7 @@ export function useAgentSession() {
 
 export async function loadWorkspace(workspace: WorkspaceRow) {
   rememberOpenedWorkspace(workspace)
+  if (hasIde()) await getIde().workspace.remember({ workspaceId: workspace.id })
   const store = useChatStore.getState()
   await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, workspace.id)
   store.setWorkspace(workspace)

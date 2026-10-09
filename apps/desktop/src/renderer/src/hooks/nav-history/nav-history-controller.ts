@@ -40,6 +40,11 @@ export async function jumpHistoryTo(side: HistorySide, recentIndex: number): Pro
   await showCurrent()
 }
 
+/** 删光项目后回到主区空态，不要停在设置等路由页。 */
+export async function landEmptyHome(): Promise<void> {
+  await showHistoryEntry(defaultEntry())
+}
+
 /** 页面被删。当前页被删时落到 past 末尾，没有则开新聊天。 */
 export async function releaseHistoryPages(ids: readonly string[]): Promise<boolean> {
   const removed = useNavHistoryStore.getState().forget(ids, defaultEntry())

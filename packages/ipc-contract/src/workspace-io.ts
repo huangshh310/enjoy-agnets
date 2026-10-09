@@ -25,7 +25,7 @@ export const RemoveWorkspaceInput = z
   .strict()
 export type RemoveWorkspaceInput = z.infer<typeof RemoveWorkspaceInput>
 
-/** 删除后带回已写库的 lastWorkspaceId，避免 renderer 读到旧 settings 缓存。 */
+/** 删除后带回按 MRU 收口的 lastWorkspaceId，避免 renderer 读到旧 settings 缓存。 */
 export const RemoveWorkspaceResult = z
   .object({
     id: z.string().min(1),

@@ -5,7 +5,7 @@ import { promises as fs } from "node:fs"
 import { join } from "node:path"
 import { dialog } from "electron"
 import { resolveKnowledgePath } from "@enjoy-agents/db"
-import { getDatabase, getSetting, setSetting } from "./database"
+import { getDatabase } from "./database"
 import { deleteSession } from "./session-lifecycle"
 import { createId } from "./ids"
 import { createWorkspaceHost } from "./workspace-host"
@@ -13,6 +13,7 @@ import { resolveWorkspaceHost as resolveHost } from "./workspace-host-factory.ts
 import { readFileDiff } from "./workspace-git"
 import { resolveWorkspaceName } from "./workspace-name"
 import { dropSshPool } from "./ssh/ssh-pool.ts"
+import { pickWorkspaceAfterRemoveInMain } from "./workspace-remember.ts"
 import { normalizeWorkspaceRow, WORKSPACE_SELECT, type WorkspaceRecord } from "./workspace-record.ts"
 
 export type { WorkspaceRecord } from "./workspace-record.ts"
@@ -135,13 +136,12 @@ export async function removeWorkspace(
     .all(workspaceId) as Array<{ id: string }>
   for (const session of sessions) deleteSession(session.id)
   getDatabase().prepare("DELETE FROM workspaces WHERE id = ?").run(workspaceId)
-  let lastWorkspaceId = getSetting("lastWorkspaceId") ?? ""
-  if (lastWorkspaceId === workspaceId) {
-    const next = (await listWorkspaces())[0]
-    lastWorkspaceId = next?.id ?? ""
-    setSetting("lastWorkspaceId", lastWorkspaceId)
-  }
-  return { id: workspaceId, lastWorkspaceId: lastWorkspaceId || null }
+  const remaining = await listWorkspaces()
+  const lastWorkspaceId = pickWorkspaceAfterRemoveInMain(
+    workspaceId,
+    remaining.map((row) => row.id)
+  )
+  return { id: workspaceId, lastWorkspaceId }
 }
 
 export async function readWorkspaceFile(workspaceId: string, relativePath: string) {

@@ -74,6 +74,8 @@ function fakeRemoveIo(input: {
   createdSessions: string[]
   disconnected: string[]
   connected: string[]
+  landedHome: string[]
+  switched: string[]
   order: string[]
 }): RemoveProjectIo & { stack: HistoryStack } {
   let workspaces = [...input.workspaces]
@@ -90,6 +92,14 @@ function fakeRemoveIo(input: {
     connectSsh: async (workspace) => {
       input.order.push("connect")
       input.connected.push(workspace.id)
+    },
+    landEmptyHome: async () => {
+      input.order.push("home")
+      input.landedHome.push("home")
+    },
+    notifySwitched: (workspace) => {
+      input.order.push("toast")
+      input.switched.push(workspace.name)
     },
     refreshWorkspaces: async () => {
       seedWorkspacePointer({ repositories: workspaces })
@@ -115,27 +125,30 @@ function fakeRemoveIo(input: {
   return io
 }
 
-test("删除当前 SSH 且名单删空时会断开", async () => {
+test("删光最后一个项目时回到主区空态，不落设置页", async () => {
   resetPointer(sshCurrent, [sshCurrent])
   const disconnected: string[] = []
-  const createdSessions: string[] = []
-  const connected: string[] = []
+  const landedHome: string[] = []
+  const switched: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [sshCurrent],
     stack: seededStack(sessionPage(sshCurrent.id, `sess-${sshCurrent.id}`)),
     lastWorkspaceId: null,
-    createdSessions,
+    createdSessions: [],
     disconnected,
-    connected,
+    connected: [],
+    landedHome,
+    switched,
     order
   })
   await runRemoveProject(sshCurrent.id, io)
   assert.deepEqual(disconnected, [sshCurrent.id])
-  assert.deepEqual(connected, [])
-  assert.ok(order.indexOf("remove") < order.indexOf("history"))
+  assert.deepEqual(landedHome, ["home"])
+  assert.deepEqual(switched, [])
+  assert.ok(order.includes("home"))
+  assert.ok(!order.includes("toast"))
   assert.equal(peekWorkspacePointer().workspaceId, null)
-  assert.equal(createdSessions.length, 0)
 })
 
 test("删除当前 SSH 并切到别的项目时会断开", async () => {
@@ -143,6 +156,7 @@ test("删除当前 SSH 并切到别的项目时会断开", async () => {
   const disconnected: string[] = []
   const createdSessions: string[] = []
   const connected: string[] = []
+  const switched: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [sshCurrent, leftover],
@@ -151,11 +165,14 @@ test("删除当前 SSH 并切到别的项目时会断开", async () => {
     createdSessions,
     disconnected,
     connected,
+    landedHome: [],
+    switched,
     order
   })
   await runRemoveProject(sshCurrent.id, io)
   assert.deepEqual(disconnected, [sshCurrent.id])
   assert.deepEqual(connected, [])
+  assert.deepEqual(switched, [leftover.name])
   assert.equal(peekWorkspacePointer().workspaceId, leftover.id)
   assert.equal(peekWorkspacePointer().workspaceName, leftover.name)
   assert.equal(createdSessions.length, 0)
@@ -174,6 +191,8 @@ test("删除非当前 SSH 项目也会断开", async () => {
     createdSessions,
     disconnected,
     connected,
+    landedHome: [],
+    switched: [],
     order
   })
   await runRemoveProject(otherSsh.id, io)
@@ -195,6 +214,8 @@ test("历史落到设置页时只切指针，不创建空会话", async () => {
     createdSessions,
     disconnected,
     connected,
+    landedHome: [],
+    switched: [],
     order
   })
   await runRemoveProject(sshCurrent.id, io)
@@ -219,6 +240,8 @@ test("切到剩余 SSH 项目时只建立连接，不新建会话", async () => 
     createdSessions,
     disconnected,
     connected,
+    landedHome: [],
+    switched: [],
     order
   })
   await runRemoveProject(localCurrent.id, io)
@@ -240,6 +263,8 @@ test("lastWorkspaceId 用 main 删除返回值，不读旧 settings 缓存", asy
     createdSessions: [],
     disconnected,
     connected: [],
+    landedHome: [],
+    switched: [],
     order: []
   })
   await runRemoveProject(sshCurrent.id, io)
@@ -256,4 +281,11 @@ test("runRemoveProject 不 loadWorkspace、不静默建会话", () => {
   )
   assert.doesNotMatch(lifecycle, /loadWorkspace/)
   assert.match(lifecycle, /\["settings"\]/)
+  assert.match(lifecycle, /landEmptyHome/)
+  assert.match(lifecycle, /notifySwitchedProject/)
+})
+
+test("切换项目走 workspace.remember 写入 MRU", () => {
+  const load = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "use-agent-session.ts"), "utf8")
+  assert.match(load, /workspace\.remember/)
 })

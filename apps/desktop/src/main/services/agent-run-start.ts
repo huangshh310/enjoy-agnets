@@ -5,7 +5,8 @@ import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import type { GenerationRequest } from "@enjoy-agents/agent-core"
 import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
-import { getDatabase, setSetting } from "./database"
+import { getDatabase } from "./database"
+import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { createId } from "./ids"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
@@ -97,7 +98,7 @@ async function beginAgentRun(
   }
 
   const workspace = await getWorkspace(input.workspaceId)
-  setSetting("lastWorkspaceId", workspace.id)
+  rememberWorkspaceOpened(workspace.id)
   const session = getDatabase()
     .prepare("SELECT id FROM sessions WHERE id = ? AND workspace_id = ?")
     .get(input.sessionId, input.workspaceId) as { id: string } | undefined

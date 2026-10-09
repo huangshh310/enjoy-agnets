@@ -7,7 +7,8 @@ import { useChatStore } from "../stores/chat-store"
 import { refreshAllWorkspaces } from "./use-agent-session"
 import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
 import { connectSshIfNeeded } from "./ssh-session-switch"
-import { releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
+import { notifySwitchedProject } from "./switched-project-toast"
+import { landEmptyHome, releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
 import type { WorkspaceRow } from "./workspace-row"
@@ -67,6 +68,8 @@ export async function removeProject(workspaceId: string) {
     },
     collectPageIds: collectProjectPageIds,
     releaseHistory: releaseHistoryPages,
-    connectSsh: connectSshIfNeeded
+    connectSsh: connectSshIfNeeded,
+    landEmptyHome,
+    notifySwitched: notifySwitchedProject
   })
 }

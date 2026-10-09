@@ -25,7 +25,7 @@ import {
   WorkspaceIdInput,
   WriteFileInput
 } from "@enjoy-agents/ipc-contract"
-import { setSetting } from "./services/database"
+import { rememberWorkspaceOpened } from "./services/workspace-remember.ts"
 import { disconnectedError } from "./services/ssh/ssh-errors.ts"
 import { getSshPoolEntry } from "./services/ssh/ssh-pool.ts"
 import { connectWorkspace, disconnectWorkspace, openSshWorkspace, retryWorkspace } from "./services/workspace-ssh"
@@ -70,13 +70,19 @@ function registerWorkspaceOpenIpc() {
   ipcMain.handle("workspace.open", async (_event, raw) => {
     const input = OpenWorkspaceInput.parse(raw ?? {})
     const workspace = await openWorkspace(input.path, input.name)
-    setSetting("lastWorkspaceId", workspace.id)
+    rememberWorkspaceOpened(workspace.id)
     return workspace
   })
   ipcMain.handle("workspace.openSsh", async (_event, raw) => {
     const workspace = await openSshWorkspace(OpenSshWorkspaceInput.parse(raw))
-    setSetting("lastWorkspaceId", workspace.id)
+    rememberWorkspaceOpened(workspace.id)
     return workspace
+  })
+  ipcMain.handle("workspace.remember", async (_event, raw) => {
+    const workspaceId = WorkspaceIdInput.parse(raw).workspaceId
+    await getWorkspace(workspaceId)
+    rememberWorkspaceOpened(workspaceId)
+    return { ok: true as const }
   })
   ipcMain.handle("workspace.connect", async (_event, raw) => {
     return connectWorkspace(WorkspaceConnectInput.parse(raw).workspaceId)

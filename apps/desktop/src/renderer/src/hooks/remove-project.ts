@@ -22,6 +22,8 @@ export type RemoveProjectIo = {
   releaseHistory: (ids: readonly string[]) => Promise<boolean>
   /** 切到 SSH next 时只建连，不灌会话。 */
   connectSsh?: (workspace: WorkspaceRow) => Promise<void>
+  landEmptyHome?: () => Promise<void>
+  notifySwitched?: (workspace: WorkspaceRow) => void
 }
 
 /** 先 remove（main 断开），再历史回落，最后按返回的 lastWorkspaceId 收口指针。 */
@@ -37,6 +39,11 @@ export async function runRemoveProject(workspaceId: string, io: RemoveProjectIo)
   const removedCurrent = await io.releaseHistory(ids)
   if (!wasActive && !removedCurrent) return remaining
   const next = settleWorkspaceAfterRemove(remaining, removed.lastWorkspaceId)
+  if (remaining.length === 0) {
+    await io.landEmptyHome?.()
+    return remaining
+  }
   if (next?.kind === "ssh") await io.connectSsh?.(next)
+  if (next) io.notifySwitched?.(next)
   return remaining
 }

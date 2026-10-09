@@ -16,4 +16,5 @@ test("removeWorkspace 先 dropSshPool 再删行", () => {
   assert.ok(dropAt >= 0, "删除 SSH 项目必须由 main dropSshPool")
   assert.ok(deleteAt > dropAt, "必须先断开连接再删档案行")
   assert.match(removeFn, /lastWorkspaceId/)
+  assert.match(removeFn, /pickWorkspaceAfterRemoveInMain/)
 })

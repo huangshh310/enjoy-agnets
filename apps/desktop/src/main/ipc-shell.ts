@@ -37,6 +37,7 @@ export const SHELL_CHANNELS = [
   "workspace.pickFile",
   "workspace.pickSshKey",
   "workspace.remove",
+  "workspace.remember",
   "workspace.list",
   "workspace.files",
   "workspace.readFile",
