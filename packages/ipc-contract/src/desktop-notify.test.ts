@@ -53,7 +53,7 @@ test("isUserAbortMessage 只认整句，不靠 abort 子串", () => {
   assert.equal(isUserAbortMessage(undefined), false)
 })
 
-test("待审批通知只含应用名 + 粗动作，红action 输入/控件/坐标/截图", () => {
+test("待审批通知只含应用名 + 粗动作，脱敏输入/控件/坐标/截图", () => {
   const payload = redactDesktopApprovalNotify({ name: "desktop_act", args: DIRTY_ARGS })
   assert.deepEqual(payload, { appName: "备忘录", actionKind: "type" })
   const copy = desktopApprovalNotifyCopy(payload!, true)
