@@ -44,7 +44,19 @@ test("开发者文案白名单短且都在词表里", () => {
 test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
   const z = zh as {
     chat: Record<string, string>
-    studio: { automations: Record<string, string>; instructions: Record<string, string> }
+    nav: Record<string, string>
+    settings: {
+      usageNumberDesc: string
+      setupGuide: { replayDesc: string }
+      update: { devSkip: string }
+      builtinTools: { browserBridgeTitle: string }
+    }
+    studio: {
+      automations: Record<string, string>
+      instructions: Record<string, string>
+      instructionPresets: { minimalDiffs: { tag: string } }
+    }
+    pages: { knowledge: { sourcesHealthy: string } }
   }
   assert.equal(z.chat.desktopApprovalTtlFrozen, "等你决定，画面已定格在提问那一刻")
   assert.equal(z.chat.mentionDesktopSheetHint, "这台电脑上能操控的应用")
@@ -52,6 +64,19 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.waitingForApp, "等待应用…")
   assert.equal(z.chat.desktopApprovalVerbClick, "点击")
   assert.equal(z.chat.declined, "已拒绝")
+  assert.equal(z.chat.newAgent, "新对话")
+  assert.equal(z.chat.flagSession, "加星标")
+  assert.equal(z.chat.desktopBiasHostHint, "让助手在这个应用里操作")
+  assert.equal(z.chat.mentionScopeWorkspace, "项目")
+  assert.equal(z.chat.fastMode, "快速")
+  assert.equal(z.chat.thinkingSources, "来源")
+  assert.equal(z.chat.tokenUnit, "tok")
+  assert.equal(z.nav.workspace, "项目")
+  assert.equal(z.nav.groupWorkspace, "项目与扩展")
+  assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
+  assert.equal(z.settings.setupGuide.replayDesc, "再走一遍引擎安装、外观和打开项目。")
+  assert.equal(z.settings.update.devSkip, "开发版本不检查更新。")
+  assert.equal(z.settings.builtinTools.browserBridgeTitle, "浏览器桥接")
   assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")
   assert.equal(z.studio.automations.workspaceHint, "在当前项目里运行")
   assert.equal(z.studio.automations.triggerHint, "选择什么时候运行")
@@ -60,6 +85,10 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.runningBar, "正在运行")
   assert.equal(z.studio.automations.cronDaily, "每天 {time}")
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
+  assert.equal(z.studio.automations.scheduleDaily, "每天")
+  assert.equal(z.studio.automations.projectLabel, "项目")
+  assert.equal(z.studio.instructionPresets.minimalDiffs.tag, "最小改动")
+  assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
 })

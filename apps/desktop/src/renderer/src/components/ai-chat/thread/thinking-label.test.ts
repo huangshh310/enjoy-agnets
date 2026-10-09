@@ -5,7 +5,8 @@ import { displayThinkingLabel } from "./thinking-label.ts"
 const zh: Record<string, string> = {
   "chat.working": "工作中",
   "chat.waitingForApp": "等待应用…",
-  "chat.toolDesktop": "操作桌面"
+  "chat.toolDesktop": "操作桌面",
+  "chat.thinkingSources": "来源"
 }
 
 function t(key: string) {
@@ -19,4 +20,8 @@ test("审批等待用人话，不露 Waiting for approval", () => {
 test("desktop act 默认显示操作桌面", () => {
   assert.equal(displayThinkingLabel("desktop act", t), "操作桌面")
   assert.equal(displayThinkingLabel("desktop_act", t), "操作桌面")
+})
+
+test("Sources 默认显示来源", () => {
+  assert.equal(displayThinkingLabel("Sources", t), "来源")
 })

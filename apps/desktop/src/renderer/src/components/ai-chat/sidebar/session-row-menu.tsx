@@ -1,6 +1,8 @@
 /**
- * 会话行操作菜单：旗标置顶、状态切换 (Todo / In Progress / Needs Review / Done)、重命名与归档。
+ * 会话行操作菜单：星标、状态切换、归档。
+ * 触发钮必须始终占位：`hidden` 在开菜单后失悬停会丢掉 bbox，Radix 会把菜单钉到窗口左上。
  */
+import { useState } from "react"
 import {
   RiBookmarkFill,
   RiBookmarkLine,
@@ -47,6 +49,7 @@ export function SessionRowMenu({
   className
 }: SessionRowMenuProps) {
   const t = useT()
+  const [open, setOpen] = useState(false)
   const patchSessionNode = useChatStore((state) => state.patchSessionNode)
 
   const handleToggleFlag = async (e: React.MouseEvent) => {
@@ -77,15 +80,17 @@ export function SessionRowMenu({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-testid="session-row-menu"
           onClick={(e) => e.stopPropagation()}
           aria-label="Session actions"
           className={cx(
-            "hidden size-5.5 shrink-0 items-center justify-center rounded-md text-text-tertiary",
-            "hover:bg-background-primary-default hover:text-text-primary group-hover/session:flex",
+            "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary",
+            "hover:bg-background-primary-default hover:text-text-primary",
+            open ? "opacity-100" : "opacity-0 group-hover/session:opacity-100 group-focus-within/session:opacity-100",
             className
           )}
         >
@@ -93,8 +98,11 @@ export function SessionRowMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="end"
-        side="bottom"
+        data-testid="session-row-menu-content"
+        align="start"
+        side="right"
+        sideOffset={6}
+        collisionPadding={{ top: 44, right: 12, bottom: 12, left: 12 }}
         className="w-48 rounded-xl bg-background-primary-default p-1 shadow-card border border-border-button-default"
       >
         {/* 1. 旗标置顶 */}

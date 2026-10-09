@@ -8,6 +8,8 @@ import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-a
 import { SessionRowMenu } from "./session-row-menu"
 import { getWorkflowStatusMeta } from "./session-workflow"
 import { WorkflowStatusGlyph } from "./workflow-status-glyph"
+import { useT } from "@renderer/i18n"
+import { displaySessionTitle } from "@renderer/lib/session-title"
 import type { SidebarSessionRowProps } from "./sidebar-session-row.types"
 import { useSessionActivity } from "./use-session-activity"
 
@@ -91,9 +93,11 @@ function SessionRowIdentity({
   name: string
   nameClassName?: string
 }) {
+  const t = useT()
+  const label = displaySessionTitle(name, t("chat.newAgent"))
   return (
-    <span className={cx("min-w-0 flex-1 truncate", nameClassName)} title={name}>
-      {name}
+    <span className={cx("min-w-0 flex-1 truncate", nameClassName)} title={label}>
+      {label}
     </span>
   )
 }

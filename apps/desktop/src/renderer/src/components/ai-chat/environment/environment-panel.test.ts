@@ -16,8 +16,9 @@ test("Environment 点行打开已有审查栏，不造 GitHub PR", () => {
   assert.equal(panel.includes("worktree"), false)
 })
 
-test("对话舞台挂 Environment，默认开、与账本互斥", () => {
+test("对话舞台挂 Environment，默认收起、审批时让位、与账本互斥", () => {
   assert.ok(stage.includes("<EnvironmentPanel"))
-  assert.ok(stage.includes("useState(true)"))
+  assert.ok(stage.includes("useState(false)"))
+  assert.ok(stage.includes("if (pendingApproval) setEnvironmentOpen(false)"))
   assert.ok(stage.includes("if (next) setEnvironmentOpen(false)"))
 })

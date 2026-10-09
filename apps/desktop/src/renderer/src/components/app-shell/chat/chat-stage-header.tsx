@@ -14,6 +14,7 @@ import { QuietIconButton } from "@/components/base/buttons/quiet-icon-button"
 import { ReviewGateHeader } from "@renderer/components/ai-chat/review-gate/review-gate-header"
 import type { ReviewGatePhase } from "@renderer/components/ai-chat/review-gate/review-gate.types"
 import { useT } from "@renderer/i18n"
+import { displaySessionTitle } from "@renderer/lib/session-title"
 
 export function ChatStageHeader({
   workspaceName,
@@ -39,6 +40,7 @@ export function ChatStageHeader({
   onToggleEnvironment?: () => void
 }) {
   const t = useT()
+  const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 px-5">
       <RiFolder6Line className="size-4 text-foreground-icon-secondary" aria-hidden />
@@ -49,7 +51,7 @@ export function ChatStageHeader({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage className="text-body-medium text-text-primary">{sessionTitle}</BreadcrumbPage>
+            <BreadcrumbPage className="text-body-medium text-text-primary">{title}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>

@@ -111,6 +111,18 @@ test("设置能力句钉死默认不补跑", () => {
   assert.doesNotMatch(settings, /关掉应用不会补跑/)
 })
 
+test("定时用可读预设，删除要确认，项目选择器只高亮一项", () => {
+  const drawer = readFileSync(join(dir, "components/automation-drawer.tsx"), "utf8")
+  assert.match(drawer, /ScheduleFields/)
+  assert.match(drawer, /AutomationProjectField/)
+  assert.doesNotMatch(drawer, /font-mono/)
+  const page = readFileSync(join(dir, "automations-page.tsx"), "utf8")
+  assert.match(page, /ConfirmDialog/)
+  const picker = readFileSync(join(dir, "components/project-field.tsx"), "utf8")
+  assert.match(picker, /aria-pressed=\{selected\}/)
+  assert.match(picker, /uniqueWorkspaces/)
+})
+
 test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际或取消时间", () => {
   const list = readFileSync(join(dir, "components/missed-records-list.tsx"), "utf8")
   assert.match(list, /missedGroupSummary/)

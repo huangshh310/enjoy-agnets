@@ -1,10 +1,12 @@
 /**
- * L1 胶囊：runtime 标 · 会话名 · kind · 相对时间。当前会话 Dock 已开时收成微点。
+ * L1 胶囊：runtime 标 · 中文 kind · 相对时间。当前会话 Dock 已开时收成微点。
+ * 窄宽以 kind 为主标签并保底宽度，禁止英文会话题把「待审批」挤成「s」。
  */
 import { RiCloseLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { SessionAgentMark } from "@renderer/components/ai-chat/sidebar/session-agent-mark"
 import { useT } from "@renderer/i18n"
+import { displaySessionTitle } from "@renderer/lib/session-title"
 import type { AttentionItem, AttentionKind } from "@renderer/stores/attention/attention.types"
 import { attentionTimeLabel } from "./attention-time"
 
@@ -37,28 +39,27 @@ export function AttentionChip(props: {
     )
   }
 
+  const kindLabel = t(`attention.kind.${item.kind}`)
+  const title = displaySessionTitle(item.sessionTitle, t("chat.newAgent"))
+
   return (
     <div
       className={cx(
-        "group flex h-7 max-w-[280px] animate-in fade-in items-center gap-1.5 rounded-full border border-border-button-default/70",
+        "group flex h-7 min-w-32 max-w-56 shrink-0 animate-in fade-in items-center gap-1.5 rounded-full border border-border-button-default/70",
         "bg-background-secondary-default/80 pl-2.5 pr-1.5 shadow-2xs outline-none duration-200 transition-all",
         "hover:bg-background-secondary-hover hover:border-border-button-hover"
       )}
     >
       <button
         type="button"
+        title={`${title} · ${kindLabel}`}
         onClick={() => onOpen(item)}
         className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden text-left focus-visible:outline-none"
       >
         <SessionAgentMark sessionId={item.sessionId} size={14} />
-        <span className="min-w-0 truncate text-caption-2-medium text-text-primary">
-          {item.sessionTitle}
-        </span>
         <KindMark kind={item.kind} />
-        <span className="shrink-0 text-caption-2-medium text-text-tertiary">
-          {t(`attention.kind.${item.kind}`)}
-        </span>
-        <span className="shrink-0 text-caption-2-regular text-text-tertiary">
+        <span className="min-w-16 truncate text-caption-2-medium text-text-primary">{kindLabel}</span>
+        <span className="shrink-0 text-caption-2-regular text-text-secondary">
           {attentionTimeLabel(item.occurredAt, now, t)}
         </span>
       </button>
@@ -71,7 +72,7 @@ export function AttentionChip(props: {
           }}
           title={t("attention.dismiss")}
           aria-label={t("attention.dismiss")}
-          className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-tertiary opacity-50 transition-all hover:bg-background-tertiary-default hover:text-text-primary hover:opacity-100"
+          className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-secondary opacity-70 transition-all hover:bg-background-tertiary-default hover:text-text-primary hover:opacity-100"
         >
           <RiCloseLine className="size-3" />
         </button>

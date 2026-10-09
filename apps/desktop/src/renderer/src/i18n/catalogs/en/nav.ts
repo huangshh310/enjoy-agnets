@@ -2,7 +2,7 @@
 export const enNav = {
   groupApp: "App",
   groupAgent: "Agent",
-  groupWorkspace: "Workspace & extensions",
+  groupWorkspace: "Project & extensions",
   groupIntegrations: "Integrations",
   groupArchived: "Archived",
   groupOrg: "Organization",
@@ -24,7 +24,7 @@ export const enNav = {
   capabilities: "Model capabilities",
   workflow: "Workflow recovery",
   sandbox: "Sandbox",
-  workspace: "Workspace",
+  workspace: "Project",
   extensions: "Extensions",
   knowledge: "Knowledge indexing",
   media: "Media & assets",
