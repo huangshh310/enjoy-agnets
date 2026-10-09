@@ -1,6 +1,6 @@
 # spec/remote
 
-> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-10-09
+> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-10-09（删除项目由 main 先 drop pool）
 
 ## 当前真相
 
@@ -8,7 +8,7 @@
 
 连接态：`idle | connecting | connected | failed | disconnected`。事件 `workspace.remote`（失败带 `error` 人话）。`connecting` / `failed` / `disconnected` / `idle` 时 Composer 发送闸禁发，横幅「远程已断开，先重新连接才能发送」。已连接时文件 / bash / git / 终端 cwd / ACP spawn 走 `AgentWorkspaceHost` 的 SSH 适配器，路径 jail **必须**是 `remote_path`（禁止回落 `root_path` / 本机 cwd）。`bash` 先在本机 `parseExecutableCommand` 拆 argv 再 `quoteRemote` + `exec`，禁止把用户字符串直接拼进远端 shell；`gitDiff` / `gitLog` 的 path 同样 jail。断线写操作与 catalog ACP spawn 抛 `REMOTE_DISCONNECTED`，不得 `{ok:true}`，不得 `createWorkspaceHost(user@host:path)`。自定义 ACP 在 SSH 上诚实拒绝，不拿远端标签当本机 cwd。Knowledge / 资产导出 / Customize 规则扫描对 `kind=ssh` 拒绝本机盘。Composer 脚注是 `远程 · host:path`（不要 `user@`，不要再叠「远程 ≠ 引擎」）。开项目文案：本机文件夹 / 远程 SSH…。远程第二步弹窗 380px。视觉真源锁 tip `3a3e00b`。
 
-入口：`#/settings/workspace` 远程连接名册（添加 / 编辑 / 删除 / 从 `~/.ssh/config` 发现具体 Host / 探测 / 一键打开配置文件）；创建项目弹窗可选远程，填已有远端路径后 `openSsh` + `connect`（不是 `mkdir`）；侧栏 SSH 项目带「远程」微标，切换会 `connect`（切走上一台 ssh 先 `disconnect`）；顶条重构为高质感远程环境控制台（Remote Environment Bar）：包含连接状态脉冲发光圆点、当前主机快速切换下拉面板（`RemoteHostSwitcher`，支持直观查看名册中各主机、工作区数、认证类型与一键切换）、远端工作区路径胶囊（带一键复制与反馈）以及消除歧义的「远程环境 · 本地驱动」架构微标（带 Tooltip 解释说明：远端执行、本地调度），并提供带图标的高质感重试与断开操作按钮。右栏不加「远程连接」项。ACP `session/new.mcpServers` 的 stdio 在 SSH 工作区经已连接 pool 跑远端 `command -v`，换成远端绝对路径；找不到则跳过。Grok `--plugin-dir` 是本机路径，SSH 不传。
+入口：`#/settings/workspace` 远程连接名册（添加 / 编辑 / 删除 / 从 `~/.ssh/config` 发现具体 Host / 探测 / 一键打开配置文件）；创建项目弹窗可选远程，填已有远端路径后 `openSsh` + `connect`（不是 `mkdir`）；侧栏 SSH 项目带「远程」微标，切换会 `connect`（切走上一台 ssh 先 `disconnect`）；**删除**走 main `removeWorkspace`：先 `dropSshPool`（幂等）再删行，不依赖 renderer `loadWorkspace` 的切走 disconnect。顶条重构为高质感远程环境控制台（Remote Environment Bar）：包含连接状态脉冲发光圆点、当前主机快速切换下拉面板（`RemoteHostSwitcher`，支持直观查看名册中各主机、工作区数、认证类型与一键切换）、远端工作区路径胶囊（带一键复制与反馈）以及消除歧义的「远程环境 · 本地驱动」架构微标（带 Tooltip 解释说明：远端执行、本地调度），并提供带图标的高质感重试与断开操作按钮。右栏不加「远程连接」项。ACP `session/new.mcpServers` 的 stdio 在 SSH 工作区经已连接 pool 跑远端 `command -v`，换成远端绝对路径；找不到则跳过。Grok `--plugin-dir` 是本机路径，SSH 不传。
 
 IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.sshProbe`、`workspace.openSsh`（可带 `hostId`）/ `connect` / `disconnect` / `retry`。编辑主机时 `upsert` 传入已有 `id`，自动同步更新已有关联工作区的连接列。`openConfig`（即 `workspace.openSshConfig`）支持一键使用系统默认应用打开 `~/.ssh/config`（文件不存在时自动安全创建）或在系统文件管理器中一键定位私钥文件（`shell.showItemInFolder`）。删主机若仍有项目抛 `HOST_IN_USE`。导轨无「远程引擎」，`runtimeId` 不加 `ssh`。ACP 远程 spawn 经本机 `ssh` 跑远端 catalog basename，stdio 回 main；失败人话「远端未找到 {bin}」，会话横幅智能分类为 `remote_cli_missing` 并提供「一键切换为 Enjoy 本地运行」和「复制远端安装命令」。本机不装远端 CLI 假路径，不读远端 `auth.json`。
 
@@ -49,6 +49,7 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - **隐患**：侧栏 `refreshAllWorkspaces` / `buildWorkspaceTree` 丢掉 `kind` 后，点远程项目会当成本机且不 `connect`。正确做法：hydrate 必须带 `locationKind` 与 ssh 字段；`loadWorkspace` 一律走 `workspaceRowFromNode`（含 ProjectPopover），禁止只传 `{id,name,rootPath}`。
 - **隐患**：`getWorkspace` 失败或缺 `workspaceId` 时 `createWorkspaceHost(run.workspaceRoot)`，SSH 的 `user@host:path` 会当成本机盘。正确做法：SSH 只问 host 工厂 + pool；缺 `remote_path` 或未接通就抛 `REMOTE_DISCONNECTED`，自定义 ACP 直接拒绝。
 - **隐患**：重启后 SQLite `ssh_status` 仍可能是 `connected`，但 pool 已空。若工厂把该状态传给断开 stub，会抛 `REMOTE_NOT_READY` 而不是断开。正确做法：没有 live layer 时把 `connected` 当成 `disconnected`。
+- **隐患**：删除 SSH 项目后连接还在。根因：新的删除收口先改指针再 `loadWorkspace`，`disconnectPreviousSsh` 看到 previous === next 直接 return；删空也不走切走 disconnect。正确做法：`removeWorkspace` 先 `dropSshPool` 再 `DELETE`，renderer 不要对已删 id 再 `disconnect`（行没了会 `Unknown workspace`）。
 - **隐患**：`workspace.watch` / `openPreview` / checkpoint restore 若用 `workspaces.root_path`（`user@host:path`）当本机目录，会假成功或监视错盘。正确做法：SSH 跳过 `fs.watch`、preview 拒本机根、checkpoint 已连也诚实不可用（restore 抛错，不得 `{ok:true}`）。
 - **隐患**：探测用 `BatchMode=yes` 且不处理 host key / 密码，新云主机报 `Host key verification failed`，账号密码用户永远连不上。正确做法：`accept-new`；密码走应用内表单 + `SSH_ASKPASS`；指纹变更仍拒绝并说人话。
 - **隐患**：主机行探测按钮 `onProbe` 传入被 `void` 丢弃且前端用固定 600ms 定时器假重置，导致真实 SSH 探测（如超时 10s）在后台跑但前端看起来「毫无反应」，且成功态完全缺失反馈。正确做法：保持 Promise 链路真实 await；按钮提供完整的探测中（spinner）、连通正常（绿徽标）与连接失败（红徽标）三态转换，并在卡片内就近展开具体错误详情。

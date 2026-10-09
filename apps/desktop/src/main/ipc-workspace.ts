@@ -18,6 +18,7 @@ import {
   PreviewCheckpointInput,
   ReadFileInput,
   RemoveWorkspaceInput,
+  RemoveWorkspaceResult,
   RestoreCheckpointInput,
   WatchWorkspaceInput,
   WorkspaceConnectInput,
@@ -90,7 +91,9 @@ function registerWorkspaceOpenIpc() {
   ipcMain.handle("workspace.pickFile", async () => pickFile())
   ipcMain.handle("workspace.pickSshKey", async () => pickSshKeyPath())
   ipcMain.handle("workspace.remove", async (_event, raw) => {
-    return removeWorkspace(RemoveWorkspaceInput.parse(raw).workspaceId)
+    return RemoveWorkspaceResult.parse(
+      await removeWorkspace(RemoveWorkspaceInput.parse(raw).workspaceId)
+    )
   })
   ipcMain.handle("workspace.list", async () => listWorkspaces())
 }

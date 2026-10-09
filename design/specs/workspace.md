@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（启动对齐只跑一次；删除当前项目按剩余名单收口；Unicode11 必须 `allowProposedApi`；Win 扫描路径用 posix）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（删除 SSH 由 main 先 drop pool；删除后不 loadWorkspace）
 
 ## 当前真相
 
@@ -8,8 +8,8 @@
 
 当前能力：
 
-- 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹。`workspace.open` / `openSsh` 成功后 `loadWorkspace` 立刻 `setQueryData(["workspaces"])`。启动对齐只在启动时跑一次，且只在 `workspaceId == null` 时发生，不得用过期名单推断「有没有项目」。
-- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目走历史回落页面，但指针按刚刷新的剩余名单收口：有则切到 `lastWorkspaceId`（仍在名单里、排除刚删的），没有记录则名单第一个；一个不剩则 `setWorkspace(null)`，不自动新建。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
+- 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹；SSH 由 main 先 `dropSshPool` 再删行，回 `{ id, lastWorkspaceId }`，不依赖 renderer 切走 disconnect。`workspace.open` / `openSsh` 成功后 `loadWorkspace` 立刻 `setQueryData(["workspaces"])`。启动对齐只在启动时跑一次，且只在 `workspaceId == null` 时发生，不得用过期名单推断「有没有项目」。
+- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目走历史回落页面，但指针按 main 返回的 `lastWorkspaceId`（仍在剩余名单里）或名单第一个收口；一个不剩则 `setWorkspace(null)`，不自动新建。历史落到路由页（如设置）只切指针和侧栏，不 `loadWorkspace` / `loadSession(sessions[0])`；剩下的项目一个会话都没有时也不 `createAndOpenSession`。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件或按已展开目录暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
@@ -49,7 +49,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-plan.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
 - Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件或目录暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
 - 底栏选择器：`ai-chat/status-bar/status-project-picker.tsx`、`status-branch-picker.tsx`
-- 创建后侧栏名单：`hooks/plan-boot-workspace.ts`（启动对齐，只跑一次 / 只在无当前工作区时）、`hooks/workspace-pointer.ts`（删除收口：`lastWorkspaceId` 或名单第一个，空则清空）、`hooks/refresh-workspaces.ts`（全量灌入；最新一次失败时保留最近成功的名单）；`loadWorkspace` 立刻 `setQueryData(["workspaces"])` 并 invalidate
+- 创建后侧栏名单：`hooks/plan-boot-workspace.ts`（启动对齐，只跑一次 / 只在无当前工作区时）、`hooks/workspace-pointer.ts`（删除收口：`lastWorkspaceId` 或名单第一个，空则清空）、`hooks/remove-project.ts`（假 IDE 可驱动；不 `loadWorkspace`）、`hooks/refresh-workspaces.ts`（全量灌入；最新一次失败时保留最近成功的名单）；`loadWorkspace` 立刻 `setQueryData(["workspaces"])` 并 invalidate
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`；renderer `right-pane/views/workspace-terminal.tsx` + `views/terminal/`（addons / WebGL 回落 / 查找 / 外链）
 - 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
@@ -68,7 +68,8 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - **隐患**：`resolveInsideWorkspace` 对**根**是无条件 `realpathSync`，根不存在直接抛 `ENOENT`。`toWorkspaceRelative` 已经用 `existsSync` 包了一层，这里没有。后果不是越界（抛错即拒绝，fail-closed），而是错误码被降级：`workspace.openPreview` 打开一个确实不存在的 html 时，调用方拿到 `PREVIEW_NOT_ALLOWED` 而不是 `PREVIEW_NOT_FOUND`。生产里根恒为已登记的真实目录，所以只在单测里露出来——测这条链路必须用 `mkdtemp` 的真根，别用 `/tmp/ws` 这种假想路径。
 - PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
-- **隐患**：新建项目在侧栏闪一下就没了。根因：创建走 `workspace.open` + `loadWorkspace` hydrate store，但 `["workspaces"]` query 常仍是启动时的 `[]`；随后 `settings` refetch 重跑启动对齐，把空名单当成「没有项目」并 `setWorkspace(null)`，而 null 会清空 `repositories`。用「store 里已有项目」启发式（`hasLiveWorkspace`）挡这次清空，会让删除后的真·空名单也被当成 noop，指针停在已删除的 id 上。正确做法：启动对齐只跑一次、且只在 `workspaceId == null` 时发生；打开成功立刻 `setQueryData(["workspaces"])`；删除当前项目按 `lastWorkspaceId`（仍在剩余名单里）或名单第一个收口，一个不剩则 `setWorkspace(null)`，不自动新建；`navigateEntry` 丢掉悬空指针；刷新代数在最新一次失败时保留最近成功的名单。
+- **隐患**：新建项目在侧栏闪一下就没了。根因：创建走 `workspace.open` + `loadWorkspace` hydrate store，但 `["workspaces"]` query 常仍是启动时的 `[]`；随后 `settings` refetch 重跑启动对齐，把空名单当成「没有项目」并 `setWorkspace(null)`，而 null 会清空 `repositories`。用「store 里已有项目」启发式（`hasLiveWorkspace`）挡这次清空，会让删除后的真·空名单也被当成 noop，指针停在已删除的 id 上。正确做法：启动对齐只跑一次、且只在 `workspaceId == null` 时发生；打开成功立刻 `setQueryData(["workspaces"])`；删除当前项目按 main 返回的 `lastWorkspaceId`（仍在剩余名单里）或名单第一个收口，一个不剩则 `setWorkspace(null)`，不自动新建、不 `loadWorkspace`；`navigateEntry` 丢掉悬空指针；刷新代数在最新一次失败时保留最近成功的名单。
+- **隐患**：删除 SSH 项目后远端连接还挂着。根因：`settleWorkspaceAfterRemove` 先 `setWorkspace(next)`，随后 `loadWorkspace` 的 `disconnectPreviousSsh` 读到的「上一个」已经是 next，删空 / drop 路径也根本不走 disconnect；main 旧 `removeWorkspace` 本身不断开。正确做法：main `removeWorkspace` 先 `dropSshPool` 再删行，回新的 `lastWorkspaceId`；renderer 只收口指针，不要再靠切走 disconnect，也不要读旧 `["settings"]` 缓存。别的窗口删项目或外部删 DB 行导致指针悬空仍是原问题，这次不收。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。底栏曾经写死 `Main`，现走 `gitBranches.current`。`gitSwitch` 遇未提交改动返回 `GIT_SWITCH_DIRTY`，禁止 `switch -f`。
 - 会话上次发送时的分支记在 renderer（`session-cwd-branch`，可 localStorage），不迁 SQLite。切走且该会话已有用户轮时，Composer 上画横幅「发送后这条会话会跟到当前分支」+ `旧 → 新`。记录只在 `agent.run` 认领成功后更新；开流失败横幅仍在。空会话 / 非 git / 脏树拒切 不画横幅。

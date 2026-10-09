@@ -4,8 +4,8 @@
 import { getIde, hasIde } from "../lib/ide"
 import { queryClient } from "../lib/query-client"
 import { useChatStore } from "../stores/chat-store"
-import { loadWorkspace, refreshAllWorkspaces } from "./use-agent-session"
-import { settleWorkspaceAfterRemove } from "./workspace-pointer"
+import { refreshAllWorkspaces } from "./use-agent-session"
+import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
 import { releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
@@ -46,21 +46,25 @@ export async function deleteAllArchivedSessions() {
 /** 移除应用档案中的项目，不删磁盘文件夹。当前页被拿掉时走历史，指针按剩余名单收口。 */
 export async function removeProject(workspaceId: string) {
   if (!hasIde()) return
-  const ids = await collectProjectPageIds(workspaceId)
-  const store = useChatStore.getState()
-  const wasActive = store.workspaceId === workspaceId
-  await getIde().workspace.remove({ workspaceId })
-  if (store.pinnedWorkspaceIds.includes(workspaceId)) store.togglePinWorkspace(workspaceId)
-  await refreshAllWorkspaces()
-  const remaining = (await getIde().workspace.list()) as WorkspaceRow[]
-  queryClient.setQueryData(["workspaces"], remaining)
-  await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
-  await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
-  const removedCurrent = await releaseHistoryPages(ids)
-  if (!wasActive && !removedCurrent) return
-  const lastWorkspaceId = (
-    queryClient.getQueryData(["settings"]) as { lastWorkspaceId?: string | null } | undefined
-  )?.lastWorkspaceId
-  const next = settleWorkspaceAfterRemove(remaining, lastWorkspaceId)
-  if (next) await loadWorkspace(next)
+  await runRemoveProject(workspaceId, {
+    currentWorkspaceId: () => useChatStore.getState().workspaceId,
+    unpinIfPinned: (id) => {
+      const store = useChatStore.getState()
+      if (store.pinnedWorkspaceIds.includes(id)) store.togglePinWorkspace(id)
+    },
+    remove: async (id) =>
+      (await getIde().workspace.remove({ workspaceId: id })) as RemovedWorkspace,
+    refreshWorkspaces: refreshAllWorkspaces,
+    listWorkspaces: async () => (await getIde().workspace.list()) as WorkspaceRow[],
+    setWorkspacesCache: (rows) => {
+      queryClient.setQueryData(["workspaces"], rows)
+    },
+    invalidateCaches: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+      await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
+      await queryClient.invalidateQueries({ queryKey: ["settings"] })
+    },
+    collectPageIds: collectProjectPageIds,
+    releaseHistory: releaseHistoryPages
+  })
 }

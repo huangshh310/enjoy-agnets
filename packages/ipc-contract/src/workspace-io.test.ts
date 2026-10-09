@@ -12,12 +12,23 @@ import {
   RestoreCheckpointInput,
   RestoreCheckpointResult,
   OpenWorkspaceInput,
-  PickFolderResult
+  PickFolderResult,
+  RemoveWorkspaceResult
 } from "./workspace-io.ts"
 
 test("OpenWorkspaceInput 允许只带 path 或只带 name", () => {
   assert.equal(OpenWorkspaceInput.parse({}).path, undefined)
   assert.equal(OpenWorkspaceInput.parse({ path: "C:/repo", name: "demo" }).name, "demo")
+})
+
+test("RemoveWorkspaceResult 带回 lastWorkspaceId，空则 null", () => {
+  assert.equal(
+    RemoveWorkspaceResult.parse({ id: "ws_1", lastWorkspaceId: "ws_2" }).lastWorkspaceId,
+    "ws_2"
+  )
+  assert.equal(RemoveWorkspaceResult.parse({ id: "ws_1", lastWorkspaceId: null }).lastWorkspaceId, null)
+  assert.throws(() => RemoveWorkspaceResult.parse({ id: "ws_1" }))
+  assert.throws(() => RemoveWorkspaceResult.parse({ id: "ws_1", lastWorkspaceId: "" }))
 })
 
 test("PickFolderResult 需要 path 与 name", () => {

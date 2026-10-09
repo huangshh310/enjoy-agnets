@@ -12,6 +12,7 @@ import { createWorkspaceHost } from "./workspace-host"
 import { resolveWorkspaceHost as resolveHost } from "./workspace-host-factory.ts"
 import { readFileDiff } from "./workspace-git"
 import { resolveWorkspaceName } from "./workspace-name"
+import { dropSshPool } from "./ssh/ssh-pool.ts"
 import { normalizeWorkspaceRow, WORKSPACE_SELECT, type WorkspaceRecord } from "./workspace-record.ts"
 
 export type { WorkspaceRecord } from "./workspace-record.ts"
@@ -122,19 +123,25 @@ export async function getWorkspace(workspaceId: string): Promise<WorkspaceRecord
 
 /**
  * 从应用档案移除项目：删会话与消息，不删磁盘文件夹。
+ * SSH 必须先 drop pool（断开并清资源），再删行；删完后再 disconnect 会 Unknown workspace。
  */
-export async function removeWorkspace(workspaceId: string): Promise<{ id: string }> {
+export async function removeWorkspace(
+  workspaceId: string
+): Promise<{ id: string; lastWorkspaceId: string | null }> {
   await getWorkspace(workspaceId)
+  dropSshPool(workspaceId)
   const sessions = getDatabase()
     .prepare("SELECT id FROM sessions WHERE workspace_id = ?")
     .all(workspaceId) as Array<{ id: string }>
   for (const session of sessions) deleteSession(session.id)
   getDatabase().prepare("DELETE FROM workspaces WHERE id = ?").run(workspaceId)
-  if (getSetting("lastWorkspaceId") === workspaceId) {
+  let lastWorkspaceId = getSetting("lastWorkspaceId") ?? ""
+  if (lastWorkspaceId === workspaceId) {
     const next = (await listWorkspaces())[0]
-    setSetting("lastWorkspaceId", next?.id ?? "")
+    lastWorkspaceId = next?.id ?? ""
+    setSetting("lastWorkspaceId", lastWorkspaceId)
   }
-  return { id: workspaceId }
+  return { id: workspaceId, lastWorkspaceId: lastWorkspaceId || null }
 }
 
 export async function readWorkspaceFile(workspaceId: string, relativePath: string) {
