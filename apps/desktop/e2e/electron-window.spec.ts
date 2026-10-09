@@ -2,7 +2,8 @@
  * Electron 窗口冒烟：有 desktop build 且 playwright 带 _electron 才启动。
  * 不连真实 Provider；验主界面与计划里的 Hash 路由能打开。
  */
-import { existsSync } from "node:fs"
+import { existsSync, mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
 
@@ -24,11 +25,12 @@ test("Electron 窗口能打开主界面并进入 Knowledge / Workflows / Media /
     test.skip(true, "playwright electron launcher unavailable")
     return
   }
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-win-"))
   const app = await electron.launch({
     args: [mainEntry],
     cwd: process.cwd(),
     timeout: 45_000,
-    env: { ...process.env, ENJOY_E2E_LANG: "en" }
+    env: { ...process.env, ENJOY_E2E_LANG: "en", ENJOY_E2E_USERDATA: userData }
   })
   try {
     const window = await app.firstWindow()

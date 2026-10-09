@@ -23,6 +23,12 @@ export function restoreWaitingCatchUpAction(source?: unknown): "fail_interrupted
   return (source as { isCatchUp?: boolean }).isCatchUp === true ? "fail_interrupted" : "restore"
 }
 
+/** 本进程已挂上的补跑 waiting 不是重启残留，窗口重建不得再标 failed。 */
+export function shouldFailWaitingCatchUp(source: unknown, live: boolean): boolean {
+  if (live) return false
+  return restoreWaitingCatchUpAction(source) === "fail_interrupted"
+}
+
 /** 重启恢复补跑 waiting：只收当前 runId，不误伤 restoreRunning 还在跑的补跑。 */
 export function failCatchUpWaiting(
   io: SettingsIo,

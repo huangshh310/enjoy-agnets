@@ -13,12 +13,20 @@ import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { trustedAutomationFlags } from "./agent-run-trust"
 import { parseAgentCheckpointExtras, canResumeRunningOrphan } from "./running-orphan-plan"
+import {
+  attachRestoredCatchUp,
+  markRestoredCatchUpIdle,
+  markRestoredCatchUpRunning,
+  stampUnrestoredCatchUp
+} from "./restore-catchup"
+import { claimRestoreRunningOnce } from "./restore-once"
 import { getWorkspace } from "./workspace"
 import { isE2eStub } from "./e2e-stub"
 import { prepareAndPump } from "./agent-run-prepare"
 
 export async function restoreRunningRuns(window: BrowserWindow): Promise<void> {
   if (isE2eStub()) return
+  if (!claimRestoreRunningOnce()) return
   const db = getDatabase()
   const prefs = readPreferences()
   for (const row of listRuns(db, {}).filter((item) => canResumeRunningOrphan(item))) {
@@ -33,25 +41,36 @@ async function restoreOne(
 ): Promise<void> {
   const extras = parseAgentCheckpointExtras(row.checkpoint)
   if (shouldCancelAcp(extras.runtimeId)) {
-    updateRun(getDatabase(), row.id, {
-      status: "cancelled",
-      error: "ACP host cannot resume after restart."
-    })
+    cancelRestoredRun(row.id, "ACP host cannot resume after restart.", extras.automationSource)
     return
   }
   const checkpoint = parseGenerationCheckpoint(row.checkpoint)
   if (!checkpoint?.request || !row.workspaceId) {
-    updateRun(getDatabase(), row.id, { status: "cancelled", error: "Missing generation checkpoint." })
+    cancelRestoredRun(row.id, "Missing generation checkpoint.", extras.automationSource)
     return
   }
+  markRestoredCatchUpRunning(extras.automationSource)
   try {
-    await holdAndPump(window, row, extras, checkpoint.request, prefs)
+    const restored = await holdAndPump(window, row, extras, checkpoint.request, prefs)
+    if (!restored) {
+      markRestoredCatchUpIdle(extras.automationSource)
+      stampUnrestoredCatchUp(row.id, extras.automationSource)
+      return
+    }
+    attachRestoredCatchUp(row.id, extras.automationSource)
   } catch (error) {
-    updateRun(getDatabase(), row.id, {
-      status: "cancelled",
-      error: error instanceof Error ? error.message : "Failed to restore running run."
-    })
+    markRestoredCatchUpIdle(extras.automationSource)
+    cancelRestoredRun(
+      row.id,
+      error instanceof Error ? error.message : "Failed to restore running run.",
+      extras.automationSource
+    )
   }
+}
+
+function cancelRestoredRun(runId: string, error: string, source: unknown): void {
+  updateRun(getDatabase(), runId, { status: "cancelled", error })
+  stampUnrestoredCatchUp(runId, source)
 }
 
 function shouldCancelAcp(runtimeId: string | undefined): boolean {
@@ -64,7 +83,7 @@ async function holdAndPump(
   extras: ReturnType<typeof parseAgentCheckpointExtras>,
   request: { modelId?: string; messages?: Array<{ role: string; content: unknown }> },
   prefs: ReturnType<typeof readPreferences>
-): Promise<void> {
+): Promise<boolean> {
   const workspace = await getWorkspace(row.workspaceId as string)
   const flags = trustedAutomationFlags(extras)
   const input = RunAgentInput.parse({
@@ -85,7 +104,7 @@ async function holdAndPump(
       status: "cancelled",
       error: "ACP host cannot resume after restart."
     })
-    return
+    return false
   }
   const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
   holdAgentRun({
@@ -98,4 +117,5 @@ async function holdAndPump(
   })
   emitEvent(window, { type: "run.start", runId: row.id, sessionId: input.sessionId })
   void prepareAndPump(row.id)
+  return true
 }
