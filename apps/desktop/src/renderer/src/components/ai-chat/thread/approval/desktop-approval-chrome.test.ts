@@ -23,8 +23,11 @@ test("始终允许不再 featured：无加粗、无蓝环默认", () => {
 
 test("敏感警示钉 SoT 文案，不是已拦截", () => {
   const card = readFileSync(join(ROOT, "desktop-approval-card.tsx"), "utf8")
+  const args = readFileSync(join(ROOT, "desktop-approval-args.ts"), "utf8")
   assert.match(card, /desktop-approval-sensitive/)
   assert.match(card, /desktopSensitiveWarn/)
+  assert.match(args, /flag !== false/)
+  assert.doesNotMatch(args, /row\.sensitive === true/)
   assert.equal(zhChat.desktopSensitiveWarn, "这是敏感应用，每次都会问你")
   assert.doesNotMatch(zhChat.desktopSensitiveWarn, /已拦截/)
   assert.doesNotMatch(enChat.desktopSensitiveWarn, /blocked|intercepted|已拦截/i)

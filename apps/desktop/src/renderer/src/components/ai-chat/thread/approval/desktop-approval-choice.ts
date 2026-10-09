@@ -30,7 +30,7 @@ export function resolveDesktopApprovalChoice(
   return available.includes(choice) ? choice : defaultDesktopApprovalChoice(available)
 }
 
-/** CU-P1-P：有稳键时默认「本会话允许」；敏感 / 坐标没有该项时回落到允许一次。 */
+/** CU-P1-P：仅 `sensitive === false` 且有稳键时默认「本会话允许」；否则回落到允许一次。 */
 export function defaultDesktopApprovalChoice(
   available: readonly DesktopApprovalChoice[]
 ): DesktopApprovalChoice {
