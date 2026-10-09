@@ -21,6 +21,21 @@ export function desktopActFailureKind(value: unknown): DesktopActFailureKind | n
   return null
 }
 
+/** 任何带码 / errorText 的硬拒都走人话，禁止把工程码交给 UI。 */
+export function desktopActSafeErrorText(value: unknown, t: TranslateFn): string | undefined {
+  const kind = desktopActFailureKind(value)
+  if (!kind) return undefined
+  return desktopActFailedCopy(kind, t).body
+}
+
+export function desktopActUserErrorText(
+  value: unknown,
+  raw: string | undefined,
+  t: TranslateFn
+): string | undefined {
+  return desktopActSafeErrorText(value, t) ?? desktopActSafeErrorText(raw, t) ?? raw
+}
+
 export function desktopActFailedCopy(
   kind: DesktopActFailureKind,
   t: TranslateFn

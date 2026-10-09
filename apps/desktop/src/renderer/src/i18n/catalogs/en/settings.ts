@@ -1327,7 +1327,7 @@ export const enSettings = {
     advancedCoordsTitle: "Advanced coordinates",
     advancedCoordsBadge: "Rarely needed",
     advancedCoordsDesc: "You usually won’t need this. When on, every screen-coordinate action still asks first.",
-    advancedCoordsTip: "Prefer control ids (elementId). The main path remains snapshot → act(elementId). Session and always-allow still do not apply.",
+    advancedCoordsTip: "You usually won’t need this. Turning it on still asks every time you use screen coordinates. If it fails, let me look at the window first.",
     platformHintWindows: "Windows is not marked available until real-machine GUI smoke. The implementation uses UI Automation Invoke in the background. If the target window runs at a higher integrity level, the action returns integrity_blocked until both sides match.",
     platformHintX11: "X11 is not marked available until real-machine GUI smoke. The implementation uses AT-SPI. If the library is missing, install at-spi2-core and python3-pyatspi.",
     platformHintWayland: "Wayland is not marked available until real-machine GUI smoke. There is no background click. The action waits on the approval card until you allow bringing the app forward.",

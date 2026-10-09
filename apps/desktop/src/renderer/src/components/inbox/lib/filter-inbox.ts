@@ -3,9 +3,15 @@
  */
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
+import { desktopActSafeErrorText } from "../../ai-chat/thread/desktop-act-failed-copy.ts"
 import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
+
+function humanizeInboxError(text: string | undefined, t: Translate): string {
+  if (!text) return ""
+  return desktopActSafeErrorText(text, t) ?? text
+}
 
 export function isApprovalItem(item: InboxNotification): boolean {
   return item.copyKey === "pending_approval" || item.copyKey === "ask_user"
@@ -48,9 +54,11 @@ export function inboxFromAttention(
         id: item.id,
         copyKey,
         title: isAborted ? input.t("pages.inbox.badgeAborted") : input.t(`attention.kind.${item.kind}`),
-        summary: isAborted ? input.t("pages.inbox.statusAborted") : item.summary,
+        summary: isAborted ? input.t("pages.inbox.statusAborted") : humanizeInboxError(item.summary, input.t),
         sessionTitle: item.sessionTitle,
-        errorMessage: isAborted ? input.t("pages.inbox.statusAborted") : item.errorMessage,
+        errorMessage: isAborted
+          ? input.t("pages.inbox.statusAborted")
+          : humanizeInboxError(item.errorMessage, input.t),
         toolName: item.approval?.name,
         category: (item.kind === "error" && !isAborted ? "system" : "agent") as InboxKind,
         read: item.kind === "complete" || input.readIds.has(item.id),

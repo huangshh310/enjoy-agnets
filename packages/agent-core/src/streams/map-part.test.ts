@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON } from "../computer-use/desktop-act-honesty.ts"
 import { mapStreamPart } from "./map-part.ts"
 
 test("maps AI SDK 7 reasoning-delta text", () => {
@@ -106,4 +107,36 @@ test("tool-output-denied 裸坐标：tool.result.result.code 给 renderer", () =
   assert.ok(event)
   assert.equal(event.type, "tool.result")
   assert.equal((event.result as { code?: string } | undefined)?.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
+})
+
+test("tool-output-denied 仅 reason 也折成合约码", () => {
+  const event = mapStreamPart(
+    {
+      type: "tool-output-denied",
+      toolCallId: "tool_coord",
+      toolName: "desktop_act",
+      reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON
+    },
+    "run_1"
+  )
+  assert.ok(event)
+  assert.equal(event.type, "tool.result")
+  assert.deepEqual(event.result, { success: false, code: DESKTOP_ACT_BARE_COORDS_DISABLED })
+  assert.equal(event.error, DESKTOP_ACT_BARE_COORDS_DISABLED)
+})
+
+test("tool-output-denied 仅坐标 args 也折成合约码", () => {
+  const event = mapStreamPart(
+    {
+      type: "tool-output-denied",
+      toolCallId: "tool_coord",
+      toolName: "desktop_act",
+      args: { action: "click", x: 12, y: 34 }
+    },
+    "run_1"
+  )
+  assert.ok(event)
+  assert.equal(event.type, "tool.result")
+  assert.deepEqual(event.result, { success: false, code: DESKTOP_ACT_BARE_COORDS_DISABLED })
+  assert.equal(event.error, DESKTOP_ACT_BARE_COORDS_DISABLED)
 })

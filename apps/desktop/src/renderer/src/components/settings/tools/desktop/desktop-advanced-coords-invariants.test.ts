@@ -13,14 +13,19 @@ const ROOT = dirname(fileURLToPath(import.meta.url))
 const zh = zhSettings.builtinTools
 const en = enSettings.builtinTools
 
-test("高级坐标正文是人话，工程词只在 tip", () => {
+test("高级坐标正文和 tip 都是人话，不露工程词", () => {
   assert.equal(zh.advancedCoordsTitle, "高级坐标")
   assert.equal(zh.advancedCoordsDesc, "一般用不到。打开后每次用屏幕坐标都会先问你。")
+  assert.equal(
+    zh.advancedCoordsTip,
+    "一般用不到。打开后每次用屏幕坐标都会先问你，失败时请让我先看一眼窗口。"
+  )
   assert.doesNotMatch(zh.advancedCoordsDesc, /逃逸舱|elementId|snapshot|不吃/)
+  assert.doesNotMatch(zh.advancedCoordsTip, /逃逸舱|elementId|snapshot|不吃|act\(/)
   assert.doesNotMatch(en.advancedCoordsDesc, /escape hatch|elementId|snapshot/i)
-  assert.match(zh.advancedCoordsTip, /elementId/)
-  assert.match(zh.advancedCoordsTip, /snapshot/)
-  assert.match(en.advancedCoordsTip, /elementId/)
+  assert.doesNotMatch(en.advancedCoordsTip, /escape hatch|elementId|snapshot|act\(/i)
+  assert.match(zh.advancedCoordsTip, /先看一眼窗口/)
+  assert.match(en.advancedCoordsTip, /look at the window/i)
 })
 
 test("产品页嵌开关，默认读 prefs 不当 true", () => {

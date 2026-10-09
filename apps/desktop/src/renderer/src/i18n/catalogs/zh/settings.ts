@@ -1320,7 +1320,7 @@ export const zhSettings = {
     advancedCoordsTitle: "高级坐标",
     advancedCoordsBadge: "少用",
     advancedCoordsDesc: "一般用不到。打开后每次用屏幕坐标都会先问你。",
-    advancedCoordsTip: "优先用控件编号（elementId）。主路径仍是 snapshot → act(elementId)。打开后不吃本会话/始终允许。",
+    advancedCoordsTip: "一般用不到。打开后每次用屏幕坐标都会先问你，失败时请让我先看一眼窗口。",
     platformHintWindows: "Windows 尚未标为可用，须等真机 GUI 冒烟。实现上走 UI Automation 后台 Invoke；目标窗口若以更高完整性运行，动作会返回 integrity_blocked，两边需要同一级别。",
     platformHintX11: "X11 尚未标为可用，须等真机 GUI 冒烟。实现上走 AT-SPI。缺库时请安装 at-spi2-core 与 python3-pyatspi。",
     platformHintWayland: "Wayland 尚未标为可用，须等真机 GUI 冒烟。没有后台点击。动作会先停在审批卡，允许切到前台后再点。",

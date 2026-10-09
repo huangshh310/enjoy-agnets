@@ -14,7 +14,11 @@ import { extractDomainPills } from "./extract-domain-pills.ts"
 import { isBashTool, isDelegateToolName, isEditTool, isReadTool, isSearchTool, isWeakCommandName } from "./agent-step-kind.ts"
 import { mapDelegateToStepNode } from "./delegate-step.ts"
 import { isGenericVerb } from "./is-generic-verb.ts"
-import { desktopActFailedCopy, desktopActFailureKind } from "../desktop-act-failed-copy.ts"
+import {
+  desktopActFailedCopy,
+  desktopActFailureKind,
+  desktopActUserErrorText
+} from "../desktop-act-failed-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -81,7 +85,7 @@ function commandNode(
     id: tool.id,
     kind: "command",
     title: display,
-    ...ioFields(tool, shell, result),
+    ...ioFields(tool, shell, result, t),
     domainPills: pills.length > 0 ? pills : undefined,
     status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state)
   }
@@ -136,7 +140,7 @@ function editNode(
     fileName: fileName || "",
     fileDir: fileDir || undefined,
     actionVerb: writing ? t("chat.verbWrite") : t("chat.verbEdit"),
-    ...ioFields(tool, command, result),
+    ...ioFields(tool, command, result, t),
     additions: typeof result.additions === "number" ? result.additions : undefined,
     deletions: typeof result.deletions === "number" ? result.deletions : undefined,
     status: mapToolStatus(tool.state)
@@ -166,7 +170,7 @@ function readNode(
     fileName: leafName || undefined,
     fileDir: fileDir || undefined,
     actionVerb: t("chat.verbRead"),
-    ...ioFields(tool, command, result),
+    ...ioFields(tool, command, result, t),
     exploredPages: exploredPages.length > 1 ? exploredPages : undefined,
     exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
     domainPills: pills.length > 0 ? pills : undefined,
@@ -181,7 +185,7 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
-  const failed = desktopActFailureKind(result)
+  const failed = desktopActFailureKind(tool) ?? desktopActFailureKind(result)
   if (failed) {
     const copy = desktopActFailedCopy(failed, t)
     return {
@@ -206,7 +210,12 @@ function fallbackNode(
   }
 }
 
-function ioFields(tool: ThreadToolCall, command: string | undefined, result: Record<string, unknown>) {
+function ioFields(
+  tool: ThreadToolCall,
+  command: string | undefined,
+  result: Record<string, unknown>,
+  t: TranslateFn
+) {
   const stdout = commandStreamText(result, "stdout")
   const stderr = commandStreamText(result, "stderr")
   const output =
@@ -217,11 +226,12 @@ function ioFields(tool: ThreadToolCall, command: string | undefined, result: Rec
         : stderr
           ? stderr
           : undefined
+  const raw = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
   return {
     command,
     output,
     exitCode: typeof result.exitCode === "number" ? result.exitCode : undefined,
-    errorText: tool.errorText || (typeof result.error === "string" ? result.error : undefined)
+    errorText: desktopActUserErrorText(tool, raw, t)
   }
 }
 

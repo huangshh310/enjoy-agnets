@@ -12,6 +12,7 @@ import {
   isTodoWriteName
 } from "../thread/thinking/agent-step-kind.ts"
 import { extractCommandString, extractShellCommand, extractToolPath } from "../thread/thinking/extract-step-fields.ts"
+import { desktopActFailureKind } from "../thread/desktop-act-failed-copy.ts"
 import type { LedgerGroupKind, RunLedgerEntry, RunLedgerKind } from "./run-ledger.types"
 
 const FILE_SOURCE_NAMES =
@@ -49,7 +50,7 @@ export function entryFromTool(tool: ThreadToolCall): RunLedgerEntry | null {
     fileName,
     path: path || undefined,
     pathHint: path ? pathHint(path) : undefined,
-    detail: kind === "error" ? firstLine(tool.errorText) : undefined,
+    detail: kind === "error" ? ledgerErrorDetail(tool) : undefined,
     sourceChipId: path ? `file:${path}` : undefined,
     failed
   }
@@ -137,6 +138,11 @@ function pathHint(path: string): string | undefined {
   const parts = path.replaceAll("\\", "/").split("/").filter(Boolean)
   if (parts.length <= 1) return undefined
   return `${parts.slice(0, -1).join("/")}/…`
+}
+
+function ledgerErrorDetail(tool: ThreadToolCall): string | undefined {
+  if (desktopActFailureKind(tool) || desktopActFailureKind(tool.errorText)) return undefined
+  return firstLine(tool.errorText)
 }
 
 function firstLine(text?: string): string | undefined {
