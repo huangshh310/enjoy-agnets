@@ -12,7 +12,11 @@ import {
   DESKTOP_ACT_BARE_COORDS_DISABLED,
   desktopActBareCoordsDeniedResult
 } from "@enjoy-agents/ipc-contract/desktop-act-codes"
-import { desktopActFailedCopy, desktopActFailureKind } from "./desktop-act-failed-copy.ts"
+import {
+  desktopActFailedCopy,
+  desktopActFailureKind,
+  desktopActUserErrorText
+} from "./desktop-act-failed-copy.ts"
 import { desktopActFailedSurfaces } from "./tool-surfaces/select-turn-tool-surfaces.ts"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import { enChat } from "../../../i18n/catalogs/en/chat.ts"
@@ -44,19 +48,24 @@ test("tool.result 事件带合约码走人话卡，不吃英文 reason", () => {
   assert.doesNotMatch(copy.title, /裸坐标|逃逸舱/)
 })
 
-test("折叠后 ThreadToolCall.result.code 同一张人话卡", () => {
+test("折叠后 ThreadToolCall 是 output-error，人话盖住 errorText 工程码", () => {
   const folded: ThreadToolCall = {
     id: "t1",
     name: "desktop_act",
     result: desktopActBareCoordsDeniedResult(),
-    state: "output-available"
+    errorText: DESKTOP_ACT_BARE_COORDS_DISABLED,
+    state: "output-error"
   }
   const result = folded.result as { success?: boolean; code?: string }
+  assert.equal(folded.state, "output-error")
   assert.equal(result.success, false)
   assert.equal(result.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
   assert.equal(desktopActFailureKind(folded), DESKTOP_ACT_BARE_COORDS_DISABLED)
   assert.equal(desktopActFailureKind(folded.result), DESKTOP_ACT_BARE_COORDS_DISABLED)
   assert.equal(desktopActFailedSurfaces([folded]).length, 1)
+  const shown = desktopActUserErrorText(folded, folded.errorText, tZh)
+  assert.equal(shown, PLAIN_ZH_BODY)
+  assert.doesNotMatch(shown ?? "", /bare_coords_disabled/)
   const copy = desktopActFailedCopy(DESKTOP_ACT_BARE_COORDS_DISABLED, tZh)
   assert.equal(copy.body, PLAIN_ZH_BODY)
   assert.equal(copy.body, zhChat.desktopCoordsDisabledBody)

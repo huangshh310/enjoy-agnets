@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { desktopActBareCoordsDeniedResult } from "./desktop-act-codes.ts"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED, desktopActBareCoordsDeniedResult } from "./desktop-act-codes.ts"
 import { foldToolEvent } from "./fold-tool-event.ts"
 import type { ThreadToolCall } from "./assistant-payload.ts"
 
@@ -26,12 +26,14 @@ test("审批硬拒 tool.result 折进 ThreadToolCall.result.code", () => {
     runId: "r1",
     toolCallId: "t1",
     name: "desktop_act",
-    result
+    result,
+    error: DESKTOP_ACT_BARE_COORDS_DISABLED
   })
   const folded = tools[0]
   assert.ok(folded)
   assert.equal(folded.name, "desktop_act")
-  assert.equal(folded.state, "output-available")
+  assert.equal(folded.state, "output-error")
+  assert.equal(folded.errorText, DESKTOP_ACT_BARE_COORDS_DISABLED)
   assert.deepEqual(folded.result, result)
   assert.equal((folded.result as { code?: string }).code, result.code)
 })

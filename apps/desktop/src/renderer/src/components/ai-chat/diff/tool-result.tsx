@@ -10,6 +10,11 @@ import { asRecord, readString } from "@renderer/lib/record"
 import { commandStreamText } from "../thread/thinking/command-stream-text"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
+import {
+  desktopActFailedCopy,
+  desktopActFailureKind,
+  desktopActUserErrorText
+} from "../thread/desktop-act-failed-copy"
 
 export function ToolResultView({
   tool,
@@ -18,9 +23,19 @@ export function ToolResultView({
   tool: ThreadToolCall
   embedded?: boolean
 }) {
-  if (tool.errorText) {
+  const t = useT()
+  const failed = desktopActFailureKind(tool)
+  if (failed) {
     return (
-      <p className="px-1 py-2 text-caption-1-medium text-text-error-primary">{tool.errorText}</p>
+      <p className="px-1 py-2 text-caption-1-medium text-text-error-primary">
+        {desktopActFailedCopy(failed, t).body}
+      </p>
+    )
+  }
+  const errorText = desktopActUserErrorText(tool, tool.errorText, t)
+  if (errorText) {
+    return (
+      <p className="px-1 py-2 text-caption-1-medium text-text-error-primary">{errorText}</p>
     )
   }
 
