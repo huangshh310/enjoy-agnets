@@ -9,7 +9,7 @@ import {
 } from "../components/ai-chat/composer/composer-mode"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { DEFAULT_RUNTIME_ID } from "../lib/session-runtime"
-import { getIde, hasIde } from "../lib/ide"
+import { getIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
 import {
   captureParkedRun,
@@ -28,8 +28,10 @@ import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
 import { workspaceRowFromNode, type WorkspaceRow } from "./workspace-row"
 import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
 import { discardCreatedSession } from "./discard-created-session"
+import { refreshAllWorkspaces } from "./refresh-workspaces"
 
 export type { WorkspaceRow } from "./workspace-row"
+export { refreshAllWorkspaces } from "./refresh-workspaces"
 type SessionRow = {
   id: string
   workspaceId: string
@@ -104,56 +106,6 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "æ
   await bindSessionRuntime(session.id, runtimeId)
   if (await discardCreatedSession(session.id, stale)) return
   await refreshAllWorkspaces()
-}
-
-export async function refreshAllWorkspaces() {
-  if (!hasIde()) return
-  try {
-    const workspaces = (await getIde().workspace.list()) as WorkspaceRow[]
-    const activeWorkspaceId = useChatStore.getState().workspaceId
-    const items = await Promise.all(
-      workspaces.map(async (ws) => {
-        try {
-          const sessions = (await getIde().session.list({ workspaceId: ws.id })) as SessionRow[]
-          return {
-            workspace: {
-              id: ws.id,
-              name: ws.name,
-              rootPath: ws.rootPath,
-              kind: ws.kind,
-              sshStatus: ws.sshStatus,
-              sshHost: ws.sshHost,
-              sshUser: ws.sshUser,
-              remotePath: ws.remotePath
-            },
-            sessions: sessions.map((s) => ({
-              id: s.id,
-              title: s.title,
-              updatedAt: s.updatedAt,
-              workspaceId: s.workspaceId
-            }))
-          }
-        } catch {
-          return {
-            workspace: {
-              id: ws.id,
-              name: ws.name,
-              rootPath: ws.rootPath,
-              kind: ws.kind,
-              sshStatus: ws.sshStatus,
-              sshHost: ws.sshHost,
-              sshUser: ws.sshUser,
-              remotePath: ws.remotePath
-            },
-            sessions: []
-          }
-        }
-      })
-    )
-    useChatStore.getState().hydrateWorkspacesAndSessions(items, activeWorkspaceId)
-  } catch {
-    // ignore refresh errors
-  }
 }
 
 export async function selectPersistedSession(
