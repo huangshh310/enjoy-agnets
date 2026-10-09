@@ -8,7 +8,7 @@ import {
 test("识别中英续跑提示，不当成新任务", () => {
   assert.equal(
     isTodoContinueUserMessage(
-      "继续完成 Todo List 里未完成的项。直接用 write_file / edit_file，不要再只写计划。"
+      "继续完成 Todo List 里未完成的项。直接改文件，不要再只写计划。"
     ),
     true
   )

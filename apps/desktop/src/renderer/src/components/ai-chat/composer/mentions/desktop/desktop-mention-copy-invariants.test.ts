@@ -37,7 +37,7 @@ test("Explore 诚实主句是「需切换到执行」", () => {
 
 test("无稳键隐藏始终允许，不写 pid 当键", () => {
   assert.equal(zhChat.mentionDesktopAlwaysHidden, "始终允许 · 隐藏")
-  assert.match(zhChat.mentionDesktopUnstableHint, /仅 pid/)
-  assert.match(zhChat.mentionDesktopSheetHint, /不是插件店/)
-  assert.doesNotMatch(zhChat.mentionDesktopSheetHint, /NotInstalled|Registry/)
+  assert.match(zhChat.mentionDesktopUnstableHint, /仅进程号/)
+  assert.match(zhChat.mentionDesktopSheetHint, /本机正在运行的应用/)
+  assert.doesNotMatch(zhChat.mentionDesktopSheetHint, /desktop_|不是插件店|NotInstalled|Registry/)
 })

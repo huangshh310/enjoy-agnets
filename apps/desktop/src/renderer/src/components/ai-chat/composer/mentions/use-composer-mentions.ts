@@ -117,6 +117,7 @@ export function useComposerMentions(
     syncCursor,
     setCursor: panel.setCursor,
     listRef: panel.listRef,
-    desktopApps
+    desktopApps,
+    desktopEnabled: computerUse
   }
 }

@@ -27,7 +27,7 @@ export const enAccountPages = {
     vaultProtected: "Key in vault",
     vaultEmpty: "No key stored",
     vaultTitle: "Main-process vault · no plaintext",
-    vaultDesc: "The renderer only reads hasKey / keyHint. Provider keys live in the main-process vault; OS encryption is not probed on this page.",
+    vaultDesc: "Keys stay on this machine. This page only shows whether one is saved, never the secret itself.",
     endpointLabel: "Current endpoint",
     currentDevice: "This device"
   },

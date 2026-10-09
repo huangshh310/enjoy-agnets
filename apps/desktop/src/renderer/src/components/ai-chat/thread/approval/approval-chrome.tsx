@@ -6,6 +6,7 @@ import type { ReactNode } from "react"
 import { RiListCheck3, RiLock2Line, RiQuestionAnswerLine, RiTerminalBoxLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { ApprovalActions } from "./approval-actions"
 import type { ApprovalActionIds, ApprovalDecide, ApprovalFooter, ApprovalTone, ApprovalVariant } from "./approval.types"
 
@@ -88,7 +89,9 @@ export function ApprovalChrome({
       <footer className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
         <p className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-regular text-text-tertiary">
           <RiLock2Line className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{t("chat.hmacBoundNotice")}</span>
+          <span className="truncate">
+            {t(isDevCopyEnabled() ? "chat.hmacBoundNotice" : "chat.approvalConfirmNotice")}
+          </span>
         </p>
         <ApprovalActions
           variant={variant}

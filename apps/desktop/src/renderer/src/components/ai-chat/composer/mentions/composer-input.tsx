@@ -57,6 +57,7 @@ export function ComposerInput({
             activeIndex={mentions.activeIndex}
             onPick={(item) => void mentions.pick(item)}
             listRef={mentions.listRef}
+            desktopEnabled={mentions.desktopEnabled}
           />
         </ComposerMentionPopover>
       ) : null}
