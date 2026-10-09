@@ -84,13 +84,13 @@ function FirstAllowChrome({
         {view.sensitive ? (
           <p
             data-testid="desktop-approval-sensitive"
-            className="mt-3 rounded-lg border border-status-yellow-text/25 bg-status-yellow-text/10 px-2.5 py-1.5 text-caption-1-medium leading-snug text-status-yellow-text"
+            className="mt-1.5 rounded-lg border border-status-yellow-text/25 bg-status-yellow-text/10 px-2.5 py-1 text-caption-1-medium leading-snug text-status-yellow-text"
           >
             {t("chat.desktopSensitiveWarn")}
           </p>
         ) : null}
         {view.bypassesSessionAllow && !view.sensitive ? (
-          <p className="mt-3 inline-flex rounded-full bg-status-yellow-text/10 px-2 py-0.5 text-caption-2-semibold text-status-yellow-text">
+          <p className="mt-1.5 inline-flex rounded-full bg-status-yellow-text/10 px-2 py-0.5 text-caption-2-semibold text-status-yellow-text">
             {t("chat.desktopCoordsBypassHint")}
           </p>
         ) : null}
@@ -172,7 +172,8 @@ function DesktopApprovalDevDetails({ view }: { view: ReturnType<typeof desktopAp
 
 function DesktopThumb({ src, alt }: { src: string; alt: string }) {
   const frame = useDesktopPreviewFrame()
-  if (!frame.show) return null
+  // 没有真实截图时不要占一块空盒子，否则普通审批卡会被撑出内滚。
+  if (!src || !frame.show) return null
   return (
     <div
       className={

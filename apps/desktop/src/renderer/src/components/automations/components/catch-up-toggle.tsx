@@ -20,7 +20,7 @@ export function CatchUpToggle({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-caption-1-medium text-text-primary">{t("studio.automations.catchUpToggle")}</p>
-          <p className="mt-1 text-caption-2-regular leading-relaxed text-text-tertiary">
+          <p className="mt-1 text-caption-2-regular leading-relaxed text-text-secondary">
             {t("studio.automations.catchUpToggleHint")}
           </p>
         </div>
@@ -30,10 +30,10 @@ export function CatchUpToggle({
           aria-label={t("studio.automations.catchUpToggle")}
         />
       </div>
-      <p className="mt-2 text-caption-2-regular leading-relaxed text-text-tertiary">
+      <p className="mt-2 text-caption-2-regular leading-relaxed text-text-secondary">
         {t("studio.automations.catchUpToggleLocal")}
       </p>
-      <p className="mt-1 text-caption-2-regular text-text-tertiary">{t("studio.automations.catchUpToggleDefault")}</p>
+      <p className="mt-1 text-caption-2-regular text-text-secondary">{t("studio.automations.catchUpToggleDefault")}</p>
     </div>
   )
 }

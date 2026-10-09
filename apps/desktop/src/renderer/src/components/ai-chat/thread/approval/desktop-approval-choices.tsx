@@ -33,7 +33,7 @@ export function DesktopApprovalChoices({
   const ids = desktopApprovalChoiceIds({ canSessionAllow, canAlwaysAllow })
   const selected = resolveDesktopApprovalChoice(value, ids)
   return (
-    <div role="radiogroup" aria-label={t("chat.desktopApprovalTitle", { app: appName })} className="mt-3 flex flex-col gap-1.5">
+    <div role="radiogroup" aria-label={t("chat.desktopApprovalTitle", { app: appName })} className="mt-1.5 flex flex-col gap-1">
       <ChoiceRow
         choice="allow"
         selected={selected === "allow"}
@@ -92,7 +92,7 @@ function ChoiceRow({
       data-testid={desktopApprovalChoiceTestId(choice)}
       onClick={onSelect}
       className={cx(
-        "flex cursor-pointer items-start gap-2 rounded-lg border px-2.5 py-1.5 text-left text-caption-1-medium transition-colors",
+        "flex cursor-pointer items-start gap-2 rounded-lg border px-2 py-1 text-left text-caption-1-medium transition-colors",
         selected
           ? "border-accent-500 bg-accent-500/5"
           : "border-border-button-default hover:bg-background-secondary-hover"

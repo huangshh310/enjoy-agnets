@@ -43,7 +43,7 @@ export function ChatStage() {
   const workspaceName = useChatStore((state) => state.workspaceName)
   const workspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)
   const sessionTitle = useChatStore((state) => state.sessionTitle)
-  useTaskbarTitle(sessionTitle, workspaceName)
+  useTaskbarTitle(sessionTitle)
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const changes = useChatStore((state) => state.changes)
@@ -191,10 +191,11 @@ function ChatThreadBody(props: {
         <>
           <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
             <div
+              data-testid="chat-conversation"
               className={cx(
                 "flex min-h-0 min-w-0 flex-1 flex-col",
                 environmentOpen && "min-[900px]:pr-72",
-                pendingApproval && "min-h-[min(240px,40%)]"
+                pendingApproval && "min-h-52"
               )}
             >
               <AiChatThread
@@ -208,7 +209,11 @@ function ChatThreadBody(props: {
             <RunLedgerRail open={ledgerOpen} onClose={() => setLedgerOpen(false)} />
           </div>
           <SourcesSheetHost />
-          <ChatComposerCluster className="shrink-0" onModelChange={props.onModelChange} onSend={props.onSend} />
+          <ChatComposerCluster
+            className={pendingApproval ? "min-h-0 overflow-y-auto" : "shrink-0"}
+            onModelChange={props.onModelChange}
+            onSend={props.onSend}
+          />
         </>
       )}
       <AiChatStatusBar workspaceRootLabel={props.workspaceRootLabel} />

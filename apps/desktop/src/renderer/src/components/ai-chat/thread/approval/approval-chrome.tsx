@@ -62,7 +62,7 @@ export function ApprovalChrome({
       data-variant={variant}
       data-tone={tone}
       className={cx(
-        "flex flex-col gap-2 overflow-hidden rounded-2xl border bg-background-primary-default p-2.5 shadow-card",
+        "flex flex-col gap-1.5 overflow-hidden rounded-2xl border bg-background-primary-default p-2 shadow-card",
         tone === "danger"
           ? "border-border-error-default/40"
           : tone === "warn"

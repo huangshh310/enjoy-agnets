@@ -29,9 +29,7 @@ export function ComposerDesktopBiasBar({
       ? t("chat.desktopBiasHostHint")
       : isDevCopyEnabled() && bias.appKey
         ? t("chat.desktopBiasAppKey", { key: bias.appKey })
-        : bias.appKey
-          ? ""
-          : t("chat.mentionDesktopAlwaysHidden")
+        : t("chat.desktopBiasHostHint")
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 pb-1">
@@ -43,19 +41,17 @@ export function ComposerDesktopBiasBar({
           "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption-2-semibold ring-1",
           execute
             ? "bg-accent-500/10 text-accent-600 ring-accent-500/25"
-            : "bg-background-secondary-default text-text-tertiary/60 ring-border-button-default line-through"
+            : "bg-background-secondary-default text-text-secondary ring-border-button-default line-through"
         )}
       >
         🖥 {label}
       </span>
-      {execute && !caption ? null : (
-        <span
-          data-testid={execute ? "desktop-bias-caption" : "desktop-bias-explore-honesty"}
-          className="text-caption-2-medium text-text-tertiary"
-        >
-          {execute ? caption : t("chat.desktopBiasExploreHonesty")}
-        </span>
-      )}
+      <span
+        data-testid={execute ? "desktop-bias-caption" : "desktop-bias-explore-honesty"}
+        className="text-caption-2-medium text-text-secondary"
+      >
+        {execute ? caption : t("chat.desktopBiasExploreHonesty")}
+      </span>
     </div>
   )
 }

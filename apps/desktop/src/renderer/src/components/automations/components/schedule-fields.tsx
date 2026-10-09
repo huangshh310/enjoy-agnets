@@ -62,7 +62,7 @@ export function ScheduleFields({
             }}
             className={cx(
               "rounded-full px-2 py-1 text-caption-1-medium ring-1",
-              !advanced && parsed.preset === preset
+              parsed.preset === preset
                 ? "bg-accent-500/10 text-text-primary ring-accent-500/30"
                 : "bg-background-secondary-default text-text-secondary ring-border-button-default"
             )}
