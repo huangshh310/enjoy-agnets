@@ -2,7 +2,7 @@
  * 按协议拉模型目录。站点根常返回 HTML，会补 /v1；`/anthropic` 会剥到根上打 /models。
  * 成功候选若只是剥兼容路径，不得写回档案 Base URL。Anthropic 走 x-api-key。
  */
-import type { ApiStyle } from "./api-styles"
+import type { ApiStyle } from "./api-styles.ts"
 import {
   catalogBaseCandidates,
   catalogPersistBase,
@@ -10,7 +10,7 @@ import {
   resolveCatalogBaseURL
 } from "./catalog-url.ts"
 import { parseCatalogContextWindow, parseCatalogMaxOutput } from "./context-window.ts"
-import { normalizeBaseURL, presetFor, type CatalogModel, type ProviderKind } from "./presets"
+import { normalizeBaseURL, presetFor, type CatalogModel, type ProviderKind } from "./presets.ts"
 
 export type DiscoverResult = {
   models: CatalogModel[]

@@ -1,7 +1,7 @@
 /**
  * 供应商连接参数：Base URL 归一化、自定义 Header 解析。
  */
-import { normalizeBaseURL, presetFor, type ProviderKind } from "./presets"
+import { normalizeBaseURL, presetFor, type ProviderKind } from "./presets.ts"
 
 export function resolvedBaseURL(config: { provider: ProviderKind; baseURL?: string }): string {
   const fallback = presetFor(config.provider).defaultBaseURL

@@ -1,6 +1,6 @@
 # spec/remote
 
-> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-09-26
+> SSH 远程工作区：工作区在哪台机器，不是第三种引擎。最后更新：2026-10-09
 
 ## 当前真相
 
@@ -53,4 +53,6 @@ IPC：`workspace.sshHosts.list|upsert|remove|discover|openConfig`、`workspace.s
 - **隐患**：探测用 `BatchMode=yes` 且不处理 host key / 密码，新云主机报 `Host key verification failed`，账号密码用户永远连不上。正确做法：`accept-new`；密码走应用内表单 + `SSH_ASKPASS`；指纹变更仍拒绝并说人话。
 - **隐患**：主机行探测按钮 `onProbe` 传入被 `void` 丢弃且前端用固定 600ms 定时器假重置，导致真实 SSH 探测（如超时 10s）在后台跑但前端看起来「毫无反应」，且成功态完全缺失反馈。正确做法：保持 Promise 链路真实 await；按钮提供完整的探测中（spinner）、连通正常（绿徽标）与连接失败（红徽标）三态转换，并在卡片内就近展开具体错误详情。
 - **隐患**：SSH `bash` 曾 `cd remote && ${command}` 把用户字符串交给远端 shell。正确做法：本机 `parseExecutableCommand` 拆 argv，`quoteRemote` 后 `exec`；`gitDiff` / `gitLog` 的 path 走 `resolveRemoteJail`。
+- Windows 远端 ACP 单测不要断言 `plan.command === "ssh"`。本机客户端是 `System32\\OpenSSH\\ssh.exe`（`resolveSshExecutable`），不是 PATH 上的裸 `ssh`。这不是真 spawn；断言写成 `ssh` 或 `*.ssh.exe`，与 WSL 测例认 `wsl.exe` 同一套。
+- `expandLocalPath` 用 `path.join`。单测若把 POSIX home（`/home/alice`）喂给 Win runner，`join` 会把后半段换成 `\`。比内容时先把 `\\` 归一成 `/`，不要把实现改成永远 POSIX。
 
