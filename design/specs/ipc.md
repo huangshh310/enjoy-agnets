@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-09（`DesktopActApprovalArgs.sensitive` 必填，缺省当敏感）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-09（`DesktopActApprovalArgs.sensitive` 必填，缺省当敏感是 MUST）
 
 ## 当前真相
 

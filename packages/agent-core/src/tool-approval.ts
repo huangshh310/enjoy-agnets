@@ -41,7 +41,8 @@ export type ApprovalPolicy = {
   desktopAlwaysAllowAppKeys?: readonly string[]
   /**
    * 闸判断前按 observationId peek 账本。观察身份覆盖模型字段。
-   * 未命中不得当会话/簿放行。主循环与子 Agent 共用同一份 policy。
+   * 未知或过期标 unresolved，直接 Dock；不得当会话/簿放行，也不指望后续 stale_observation。
+   * 主循环与子 Agent 共用同一份 policy。
    */
   lookupDesktopObservation?: LookupDesktopObservation
   /**

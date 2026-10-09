@@ -7,7 +7,7 @@ import { createSubagentApproval } from "../agents/subagent-approval.ts"
 import { resolveToolApproval, type ApprovalPolicy } from "../tool-approval.ts"
 import { createObservationLedger, type Observation } from "./observation-ledger.ts"
 import { DESKTOP_ACT_ANY_SESSION_KEY } from "./desktop-act-app-key.ts"
-import { persistentAlwaysAllowsDesktopAct } from "./desktop-act-policy.ts"
+import { persistentAlwaysAllowsDesktopAct, sessionAllowsDesktopAct } from "./desktop-act-policy.ts"
 import {
   clearAllConversationDesktopAllows,
   snapshotConversationDesktopAllow,
@@ -100,14 +100,30 @@ test("观察身份覆盖模型自报：备忘录字段不能把 Terminal 降级"
   assert.equal(decide(spoofed, policy), "user-approval")
 })
 
-test("未知或过期观察号：任意桌面不得当已放行，交给 stale 路径", () => {
+test("任意桌面开着：未知 observationId 直接 Dock", () => {
+  const ledger = createObservationLedger({ now: () => 1_000 })
+  const unknown = { action: "click", observationId: "obs_unknown", elementId: "e1" }
+  const anyDesktop = policyWith(ledger, { anyDesktopSession: true })
+  const book = policyWith(ledger, { desktopAlwaysAllowAppKeys: ["com.apple.notes"] })
+  assert.equal(decide(unknown, anyDesktop), "user-approval")
+  assert.equal(decide(unknown, book), "user-approval")
+  const prepared = prepareDesktopActGateInput(unknown, (id) => ledger.peek(id))
+  assert.equal(sessionAllowsDesktopAct(prepared, anyDesktop), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct(prepared, ["com.apple.notes"]), false)
+  assert.equal(desktopGrantShouldPersist(unknown, (id) => ledger.peek(id)), false)
+})
+
+test("任意桌面开着：过期 observationId 同样直接 Dock", () => {
   let now = 1_000
   const ledger = createObservationLedger({ now: () => now, ttlMs: 50 })
   ledger.put(sample({ id: "obs_old", appName: "终端", appKey: "com.apple.Terminal" }))
   now = 1_100
   const policy = policyWith(ledger, { anyDesktopSession: true })
-  assert.equal(decide({ action: "click", observationId: "obs_gone", elementId: "e1" }, policy), "user-approval")
-  assert.equal(decide({ action: "click", observationId: "obs_old", elementId: "e1" }, policy), "user-approval")
+  const expired = { action: "click", observationId: "obs_old", elementId: "e1" }
+  assert.equal(decide(expired, policy), "user-approval")
+  const prepared = prepareDesktopActGateInput(expired, (id) => ledger.peek(id))
+  assert.equal(sessionAllowsDesktopAct(prepared, policy), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct(prepared, ["com.apple.Terminal"]), false)
 })
 
 test("非敏感观察 + 任意桌面：只给观察号仍可会话放行", () => {
