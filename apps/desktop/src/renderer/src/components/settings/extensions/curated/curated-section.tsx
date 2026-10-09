@@ -6,7 +6,6 @@ import { EXTENSIONS_COPY } from "../extensions-copy.ts"
 import { isMcpWritten, isSkillWritten } from "../extensions-written.ts"
 import { CuratedCard } from "./curated-card.tsx"
 import { CuratedEmpty } from "./curated-empty.tsx"
-import { CuratedToast } from "./curated-toast.tsx"
 import { useCuratedAdd } from "./use-curated-add.ts"
 import { useCuratedCatalog } from "./use-curated-catalog.ts"
 import type { ExtensionCuratedCard } from "../extensions.types.ts"
@@ -20,11 +19,10 @@ export function CuratedSection({
 }) {
   const t = useT()
   const catalog = useCuratedCatalog()
-  const { add, addingId, toastOpen, error } = useCuratedAdd()
+  const { add, addingId, error } = useCuratedAdd()
 
   return (
     <section data-testid="extensions-curated" className="relative space-y-3">
-      <CuratedToast open={toastOpen} />
       <div>
         <h2 className="text-body-medium text-text-primary">{t(EXTENSIONS_COPY.curatedTitle)}</h2>
         <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t(EXTENSIONS_COPY.curatedDesc)}</p>

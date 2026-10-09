@@ -5,6 +5,7 @@ import { useEffect, useMemo } from "react"
 import { resolveKeybindings, type KeybindingWhen } from "@enjoy-agents/ipc-contract"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { matchAppModule } from "@renderer/components/app-shell/routing/match-module"
+import { isTerminalKeyTarget } from "@renderer/components/ai-chat/right-pane/views/terminal/terminal-focus"
 import { chordFromKeyboardEvent } from "./keybinding-format"
 import { dispatchKeybindingCommand, isKeybindingRecording } from "./keybinding-handlers"
 
@@ -52,7 +53,7 @@ function readKeyContext(): KeyContext {
   const moduleId = matchAppModule(hash)
   const active = document.activeElement
   const element = active instanceof HTMLElement ? active : null
-  const terminalFocus = Boolean(element?.closest(".xterm"))
+  const terminalFocus = isTerminalKeyTarget(element)
   const composerFocus = Boolean(element?.closest("[data-composer]"))
   const inputFocus = Boolean(
     active instanceof HTMLInputElement ||

@@ -12,6 +12,7 @@ import {
   pullToastKind,
   SKILL_SOURCES_OVERVIEW_QUERY_KEY
 } from "../lib/git-skill-sources"
+import { useT } from "@renderer/i18n"
 import { showSkillSourceToast } from "../lib/skill-source-toast"
 
 export type SkillSourcePullState = {
@@ -22,6 +23,7 @@ export type SkillSourcePullState = {
 }
 
 export function useSkillSourcePull(): SkillSourcePullState {
+  const t = useT()
   const queryClient = useQueryClient()
   const [busy, setBusy] = useState(false)
 
@@ -41,9 +43,9 @@ export function useSkillSourcePull(): SkillSourcePullState {
       const parsed = parseUpdateAll(await getIde().skills.sources.updateAll())
       await queryClient.invalidateQueries({ queryKey: SKILL_SOURCES_OVERVIEW_QUERY_KEY })
       const kind = pullToastKind(parsed)
-      showSkillSourceToast(kind, parsed?.updatedCount ?? 0)
+      showSkillSourceToast(kind, parsed?.updatedCount ?? 0, t)
     } catch {
-      showSkillSourceToast("missed")
+      showSkillSourceToast("missed", 0, t)
     } finally {
       setBusy(false)
     }

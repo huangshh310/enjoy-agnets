@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { I18nProvider } from "@renderer/i18n"
 import { queryClient } from "@renderer/lib/query-client"
 import { router } from "@renderer/router"
-import { SkillSourceToastHost } from "@renderer/components/skills/components/skill-source-toast-host"
+import { Toaster } from "@/components/ui/sonner"
 import { initThemeSkin } from "@renderer/hooks/use-theme-skin"
 
 initThemeSkin()
@@ -14,7 +14,7 @@ export default function App() {
       <I18nProvider>
         <TooltipProvider>
           <RouterProvider router={router} />
-          <SkillSourceToastHost />
+          <Toaster />
         </TooltipProvider>
       </I18nProvider>
     </QueryClientProvider>
