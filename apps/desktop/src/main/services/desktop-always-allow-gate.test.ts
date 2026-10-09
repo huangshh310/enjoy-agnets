@@ -64,6 +64,7 @@ test("allow_always 不写会话表；子循环折成 allow", () => {
   const src = readFileSync(new URL("./agent-runner.ts", import.meta.url), "utf8")
   assert.match(src, /if \(decision === "allow_always"\) \{\s*applyDesktopAlwaysAllow\(pending\)\s*return/)
   assert.match(src, /desktopActNeedsSecondConfirm\(pending\.args\)/)
+  assert.match(src, /desktopGrantShouldPersist\(pending\.args, peekDesktopObservation\)/)
   assert.match(src, /rememberDesktopAlwaysAllowFromArgs/)
   assert.match(src, /allow_always 只写持久簿，不写会话表/)
   assert.equal(toSubagentUserDecision("allow_always"), "allow")

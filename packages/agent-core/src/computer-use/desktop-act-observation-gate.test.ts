@@ -7,8 +7,17 @@ import { createSubagentApproval } from "../agents/subagent-approval.ts"
 import { resolveToolApproval, type ApprovalPolicy } from "../tool-approval.ts"
 import { createObservationLedger, type Observation } from "./observation-ledger.ts"
 import { DESKTOP_ACT_ANY_SESSION_KEY } from "./desktop-act-app-key.ts"
-import { bindObservationIdentityToDesktopActInput } from "./desktop-act-observation-gate.ts"
 import { persistentAlwaysAllowsDesktopAct } from "./desktop-act-policy.ts"
+import {
+  clearAllConversationDesktopAllows,
+  snapshotConversationDesktopAllow,
+  writeThroughDesktopActSessionAllow
+} from "./conversation-desktop-allow.ts"
+import {
+  bindObservationIdentityToDesktopActInput,
+  desktopGrantShouldPersist,
+  prepareDesktopActGateInput
+} from "./desktop-act-observation-gate.ts"
 
 const EDITS: ApprovalPolicy = {
   requireWriteApproval: true,
@@ -128,3 +137,46 @@ test("子 Agent 走同一条闸：Terminal 观察不得因任意桌面自动放�
   assert.equal(asked, 1)
   assert.deepEqual(decision, { type: "denied", reason: "user denied subagent tool." })
 })
+
+test("allow_session / allow_always 敏感 act 只当一次允许，会话表与簿都不写", () => {
+  clearAllConversationDesktopAllows()
+  const ledger = createObservationLedger({ now: () => 1_000 })
+  ledger.put(sample({ id: "obs_term", appName: "终端", appKey: "com.apple.Terminal" }))
+  ledger.put(sample({ id: "obs_settings", appName: "系统设置", appKey: "com.apple.systempreferences" }))
+  const lookup = (id: string) => ledger.peek(id)
+  const rawTerm = { action: "click", observationId: "obs_term", elementId: "e1" }
+  const rawSettings = { action: "click", observationId: "obs_settings", elementId: "e1" }
+  assert.equal(desktopGrantShouldPersist(rawTerm, lookup), false)
+  assert.equal(desktopGrantShouldPersist(rawSettings, lookup), false)
+
+  const sessionTools = new Set<string>()
+  if (desktopGrantShouldPersist(rawTerm, lookup)) {
+    writeThroughDesktopActSessionAllow("sess_a", sessionTools, rawTerm)
+  }
+  if (desktopGrantShouldPersist(rawSettings, lookup)) {
+    writeThroughDesktopActSessionAllow("sess_a", sessionTools, rawSettings)
+  }
+  assert.equal(sessionTools.size, 0)
+  assert.equal(snapshotConversationDesktopAllow("sess_a").size, 0)
+  assert.equal(persistentAlwaysAllowsDesktopAct(prepareForBook(rawTerm, lookup), ["com.apple.Terminal"]), false)
+})
+
+test("allow_session 普通观察仍可写会话表", () => {
+  clearAllConversationDesktopAllows()
+  const ledger = createObservationLedger({ now: () => 1_000 })
+  ledger.put(sample({ id: "obs_notes", appName: "备忘录", appKey: "com.apple.notes" }))
+  const lookup = (id: string) => ledger.peek(id)
+  const raw = { action: "click", observationId: "obs_notes", elementId: "e1" }
+  assert.equal(desktopGrantShouldPersist(raw, lookup), true)
+  const sessionTools = new Set<string>()
+  writeThroughDesktopActSessionAllow("sess_a", sessionTools, prepareForBook(raw, lookup))
+  assert.equal(sessionTools.has("desktop_act:com.apple.notes"), true)
+  assert.equal(snapshotConversationDesktopAllow("sess_a").has("desktop_act:com.apple.notes"), true)
+})
+
+function prepareForBook(
+  args: Record<string, unknown>,
+  lookup: (id: string) => Observation | null
+) {
+  return prepareDesktopActGateInput(args, lookup)
+}

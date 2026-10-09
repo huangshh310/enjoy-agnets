@@ -1,7 +1,7 @@
 /**
  * 从 approval.required.args 抽出桌面名片字段。无 appKey 或 bypass 时不提供会话放行。
  * 二次确认：previousThumbnailPath = 批准时，thumbnailPath = 重拍后；缺图则 thumbsReady=false。
- * 敏感只信 main 下发的 `sensitive`，禁止再调 desktopActIsSensitive。
+ * 敏感只信 main 下发的 `sensitive`；缺省 / 非 false 当敏感。禁止再调 desktopActIsSensitive。
  */
 import {
   desktopActAppKey,
@@ -24,9 +24,9 @@ export type DesktopApprovalView = {
   thumbsReady: boolean
   bypassesSessionAllow: boolean
   canSessionAllow: boolean
-  /** 有稳 appKey、非二次确认、且 main 未标敏感才露出始终允许。 */
+  /** 有稳 appKey、非二次确认、且 `sensitive === false` 才露出始终允许。 */
   canAlwaysAllow: boolean
-  /** 主进程 `desktopActIsSensitive` 下发；缺省按不敏感。 */
+  /** 主进程下发；缺省 / 非 false 当敏感（fail closed）。 */
   sensitive: boolean
 }
 
@@ -41,7 +41,7 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
   const thumbnailPath = text(row.thumbnailPath)
   const previousThumbnailPath = text(row.previousThumbnailPath)
   const secondConfirm = isSecondConfirm(row, previousThumbnail, previousThumbnailPath)
-  const sensitive = row.sensitive === true
+  const sensitive = row.sensitive !== false
   return {
     appName,
     appKey,
@@ -57,8 +57,11 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     bypassesSessionAllow,
     sensitive,
     canSessionAllow:
-      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !sensitive,
-    canAlwaysAllow: !secondConfirm && isStableDesktopAppKey(appKey) && !sensitive
+      Boolean(appKey) &&
+      !bypassesSessionAllow &&
+      !desktopActBypassesSessionAllow(row) &&
+      row.sensitive === false,
+    canAlwaysAllow: !secondConfirm && isStableDesktopAppKey(appKey) && row.sensitive === false
   }
 }
 

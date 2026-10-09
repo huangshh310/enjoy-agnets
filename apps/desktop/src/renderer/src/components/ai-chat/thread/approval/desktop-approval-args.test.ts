@@ -15,6 +15,7 @@ test("普通 allow 只有单缩略图，不是二次确认", () => {
     appName: "计算器",
     appKey: "com.apple.calculator",
     elementName: "7",
+    sensitive: false,
     thumbnailPath: "/thumbs/only.png",
     thumbnailDataUrl: "data:image/png;base64,ONE"
   })
@@ -34,6 +35,7 @@ test("二次确认 args 暴露批准时与重拍后两张图", () => {
     appName: "计算器",
     appKey: "com.apple.calculator",
     elementName: "7",
+    sensitive: false,
     needsSecondConfirm: true,
     previousThumbnailPath: "/thumbs/at-allow.png",
     thumbnailPath: "/thumbs/after-resnap.png",
@@ -72,7 +74,8 @@ test("有 appKey 且非 bypass 才能本会话允许此应用", () => {
     appName: "计算器",
     appKey: "com.apple.calculator",
     appKeySource: "bundleId",
-    elementName: "7"
+    elementName: "7",
+    sensitive: false
   })
   assert.equal(ok.canSessionAllow, true)
   assert.equal(ok.canAlwaysAllow, true)
@@ -97,7 +100,8 @@ test("无 appKey、坐标或切前台时隐藏会话允许", () => {
       action: "click",
       x: 12,
       y: 8,
-      appKey: "com.apple.calculator"
+      appKey: "com.apple.calculator",
+      sensitive: false
     }).canAlwaysAllow,
     true
   )
@@ -112,17 +116,29 @@ test("无 appKey、坐标或切前台时隐藏会话允许", () => {
   )
 })
 
-test("敏感只信 main 下发的 sensitive，不按应用名自判", () => {
-  const settings = desktopApprovalView({
+test("缺省 / undefined / true 都当敏感，只有 sensitive===false 才露会话与始终允许", () => {
+  const missing = desktopApprovalView({
     observationId: "obs",
     action: "click",
     elementId: "e1",
-    appName: "系统设置",
-    appKey: "com.apple.systempreferences"
+    appName: "计算器",
+    appKey: "com.apple.calculator"
   })
-  assert.equal(settings.sensitive, false)
-  assert.equal(settings.canSessionAllow, true)
-  assert.equal(settings.canAlwaysAllow, true)
+  assert.equal(missing.sensitive, true)
+  assert.equal(missing.canSessionAllow, false)
+  assert.equal(missing.canAlwaysAllow, false)
+
+  const ordinary = desktopApprovalView({
+    observationId: "obs",
+    action: "click",
+    elementId: "e1",
+    appName: "计算器",
+    appKey: "com.apple.calculator",
+    sensitive: false
+  })
+  assert.equal(ordinary.sensitive, false)
+  assert.equal(ordinary.canSessionAllow, true)
+  assert.equal(ordinary.canAlwaysAllow, true)
 
   const flagged = desktopApprovalView({
     observationId: "obs",
@@ -144,7 +160,8 @@ test("pid 或无稳 appKey 时隐藏始终允许此应用", () => {
     desktopApprovalView({
       action: "click",
       elementId: "e1",
-      appKey: "com.apple.calculator"
+      appKey: "com.apple.calculator",
+      sensitive: false
     }).canAlwaysAllow,
     true
   )

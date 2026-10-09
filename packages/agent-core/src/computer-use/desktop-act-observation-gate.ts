@@ -3,7 +3,7 @@
  * 观察字段覆盖模型自报，禁止把敏感应用降级成普通应用。
  */
 import type { Observation } from "./observation-ledger.ts"
-import { desktopActAppKey } from "./desktop-act-app-key.ts"
+import { desktopActAppKey, desktopActIsSensitive } from "./desktop-act-app-key.ts"
 
 export const DESKTOP_ACT_UNRESOLVED_OBSERVATION = "unresolvedObservation"
 
@@ -55,4 +55,17 @@ export function desktopActHasUnresolvedObservation(args: unknown): boolean {
       typeof args === "object" &&
       (args as Record<string, unknown>)[DESKTOP_ACT_UNRESOLVED_OBSERVATION] === true
   )
+}
+
+/**
+ * allow_session / allow_always 落盘前再算一次。
+ * 观察并入后敏感，或观察号未解析：只当一次允许，不写会话表 / 簿。
+ */
+export function desktopGrantShouldPersist(
+  args: unknown,
+  lookup?: LookupDesktopObservation
+): boolean {
+  const judged = prepareDesktopActGateInput(args, lookup)
+  if (desktopActHasUnresolvedObservation(judged)) return false
+  return !desktopActIsSensitive(judged)
 }

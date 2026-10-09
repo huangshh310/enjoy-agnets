@@ -148,6 +148,7 @@ export {
   desktopActCanContinueFromFailure,
   desktopActFailureCode,
   desktopActHasUnresolvedObservation,
+  desktopGrantShouldPersist,
   desktopActIsBareCoord,
   desktopActIsSensitive,
   stampDesktopActSensitiveFlag,

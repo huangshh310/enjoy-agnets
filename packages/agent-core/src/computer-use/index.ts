@@ -44,6 +44,7 @@ export {
   DESKTOP_ACT_UNRESOLVED_OBSERVATION,
   bindObservationIdentityToDesktopActInput,
   desktopActHasUnresolvedObservation,
+  desktopGrantShouldPersist,
   observationIdFromDesktopActInput,
   prepareDesktopActGateInput,
   type LookupDesktopObservation
