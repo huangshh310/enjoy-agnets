@@ -57,7 +57,8 @@ test("二次确认路径硬拒绝写簿，不调用落盘", () => {
     new URL("../../renderer/src/components/ai-chat/thread/approval/desktop-approval-args.ts", import.meta.url),
     "utf8"
   )
-  assert.match(args, /canAlwaysAllow: !secondConfirm && isStableDesktopAppKey\(appKey\)/)
+  assert.match(args, /wouldAlwaysAllow = !secondConfirm && isStableDesktopAppKey\(appKey\)/)
+  assert.match(args, /canAlwaysAllow: wouldAlwaysAllow && !bypassesSessionAllow/)
 })
 
 test("allow_always 不写会话表；子循环折成 allow", () => {

@@ -14,6 +14,7 @@ import { extractDomainPills } from "./extract-domain-pills.ts"
 import { isBashTool, isDelegateToolName, isEditTool, isReadTool, isSearchTool, isWeakCommandName } from "./agent-step-kind.ts"
 import { mapDelegateToStepNode } from "./delegate-step.ts"
 import { isGenericVerb } from "./is-generic-verb.ts"
+import { desktopActFailedCopy, desktopActFailureKind } from "../desktop-act-failed-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -63,7 +64,7 @@ function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode 
   if (isBashTool(name, shell)) return commandNode(tool, shell, args, result, t)
   if (isEditTool(name, args, result)) return editNode(tool, args, result, command, t)
   if (isReadTool(name, args, tool.name)) return readNode(tool, args, result, command, t)
-  return fallbackNode(tool, shell, args, t)
+  return fallbackNode(tool, shell, args, result, t)
 }
 
 function commandNode(
@@ -177,8 +178,20 @@ function fallbackNode(
   tool: ThreadToolCall,
   shell: string | undefined,
   args: Record<string, unknown>,
+  result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
+  const failed = desktopActFailureKind(result)
+  if (failed) {
+    const copy = desktopActFailedCopy(failed, t)
+    return {
+      id: tool.id,
+      kind: "command",
+      title: copy.title,
+      errorText: copy.body,
+      status: "error"
+    }
+  }
   const rawPath = extractToolPath(args, tool.name) || String(args.url || "")
   let title = formatToolName(tool.name)
   if (isWeakCommandName(title) || !title) {

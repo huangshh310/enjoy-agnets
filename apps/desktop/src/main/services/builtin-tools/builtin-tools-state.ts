@@ -14,6 +14,7 @@ import { syncActiveRunsDesktopAllow } from "../conversation-desktop-allow-sync"
 import { persistableBuiltinTools, type PersistedBuiltinTools } from "./persist-builtin-tools"
 import { listDesktopAlwaysAllowApps } from "./computer-use/desktop-always-allow-ledger"
 import { displaySession } from "./computer-use/display-session"
+import { isE2eCuReady } from "../e2e-stub-desktop.ts"
 
 const SETTING_KEY_BUILTIN_TOOLS = "builtin_tools_state"
 
@@ -114,9 +115,9 @@ export function getBuiltinToolsState(sessionId?: string): BuiltinToolsState {
       extensionInstalled: Boolean(bridgeConnectedClient)
     },
     computerUse: {
-      enabled: saved.computerUseEnabled ?? false,
-      accessibilityGranted: permissions.accessibility,
-      screenCaptureGranted: permissions.screenCapture,
+      enabled: (saved.computerUseEnabled ?? false) || isE2eCuReady(),
+      accessibilityGranted: permissions.accessibility || isE2eCuReady(),
+      screenCaptureGranted: permissions.screenCapture || isE2eCuReady(),
       screenVisuals: saved.screenVisualsEnabled ?? true,
       anyDesktopSession: sessionId ? conversationHasAnyDesktop(sessionId) : false,
       alwaysAllowApps: listDesktopAlwaysAllowApps(),

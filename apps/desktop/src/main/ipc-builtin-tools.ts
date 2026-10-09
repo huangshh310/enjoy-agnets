@@ -25,6 +25,7 @@ import {
   syncBridgeServerWithState
 } from "./services/builtin-tools/bridge-server"
 import { previewScreenOverlay } from "./services/builtin-tools/desktop-overlay-chrome"
+import { isE2eCuReady } from "./services/e2e-stub-desktop.ts"
 
 export const BUILTIN_TOOLS_CHANNELS = [
   "builtinTools.getState",
@@ -110,6 +111,19 @@ export function registerBuiltinToolsIpc() {
   })
 
   ipcMain.handle("builtinTools.desktopListApps", async () => {
+    if (isE2eCuReady()) {
+      return DesktopMentionAppsResult.parse({
+        ok: true,
+        apps: [
+          {
+            displayName: "日历",
+            appKey: "com.apple.iCal",
+            appKeySource: "bundleId",
+            stable: true
+          }
+        ]
+      })
+    }
     const { listDesktopMentionAppsIpc } = await import("./services/builtin-tools/computer-use/desktop-tools")
     return DesktopMentionAppsResult.parse(await listDesktopMentionAppsIpc())
   })

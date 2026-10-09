@@ -1,0 +1,22 @@
+/**
+ * 桌面动作诚实失败卡：只说人话，不露工程码、不附下一步缩略或假成功。
+ */
+import { useT } from "@renderer/i18n"
+import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { desktopActFailedCopy, desktopActFailureKind } from "./desktop-act-failed-copy"
+
+export function DesktopActFailedCard({ tool }: { tool: ThreadToolCall }) {
+  const t = useT()
+  const kind = desktopActFailureKind(tool)
+  if (!kind) return null
+  const copy = desktopActFailedCopy(kind, t)
+  return (
+    <div
+      data-testid="desktop-act-failed"
+      className="rounded-2xl border border-border-error-default/25 bg-background-primary-default p-4"
+    >
+      <p className="text-body-medium text-text-primary">{copy.title}</p>
+      <p className="mt-2 text-caption-1-medium leading-relaxed text-text-secondary">{copy.body}</p>
+    </div>
+  )
+}

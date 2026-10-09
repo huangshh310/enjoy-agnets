@@ -65,7 +65,12 @@ export function useComputerUsePage() {
   const restore = useCallback(async () => {
     const seq = ++writes.current
     await applyToolToggle("computerUse", false, sessionId, setDesktop, () => claimWrite(writes, seq))
-    await savePrefs({ computerUsePointer: "stock", computerUsePreview: true, computerUsePreviewSize: "compact" })
+    await savePrefs({
+      computerUsePointer: "stock",
+      computerUsePreview: true,
+      computerUsePreviewSize: "compact",
+      desktopAdvancedCoords: false
+    })
   }, [savePrefs, sessionId])
 
   const revoke = useCallback((appKey: string) => {

@@ -5,6 +5,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import {
+  desktopActFailedSurfaces,
   hasTurnToolSurfaces,
   latestSessionTodoList,
   latestTodoList,
@@ -94,6 +95,17 @@ test("hasTurnToolSurfaces 仅有 todo 时为假，diff 才进气泡", () => {
     ]),
     true
   )
+})
+
+test("desktop_act action_failed 进失败表面，不当 diff", () => {
+  const failed = tool({
+    id: "act",
+    name: "desktop_act",
+    result: { success: false, code: "action_failed" }
+  })
+  assert.equal(hasTurnToolSurfaces([failed]), true)
+  assert.equal(desktopActFailedSurfaces([failed]).length, 1)
+  assert.equal(toolResultSurfaces([failed]).length, 0)
 })
 
 test("latestSessionTodoList 取会话最后一份非空任务表", () => {

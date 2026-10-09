@@ -7,6 +7,7 @@ import { getSetting, setSetting } from "./database"
 export type AppPreferences = SettingsSnapshot["preferences"]
 
 function e2eLanguage(): "zh" | "en" {
+  if (process.env.ENJOY_E2E_LANG === "zh") return "zh"
   if (process.env.ENJOY_E2E_LANG === "en") return "en"
   if (process.env.ENJOY_E2E_STUB === "1") return "en"
   return "zh"
@@ -38,7 +39,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   agentDisplayNames: {},
   setupGuideCompletedAt: null,
   desktopAlwaysAllowAppKeys: [],
-  /** CU-P1-36 高级坐标逃逸舱。出厂关；产品页尚未绑铬。 */
+  /** CU-P1-36 高级坐标逃逸舱。出厂关；产品页已绑铬。 */
   desktopAdvancedCoords: false,
   keybindings: [],
   computerUsePointer: "stock",

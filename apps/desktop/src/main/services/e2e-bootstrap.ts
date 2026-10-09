@@ -19,13 +19,17 @@ export async function bootstrapE2eStub(): Promise<void> {
   const workspace = await openWorkspace(root)
   setSetting("lastWorkspaceId", workspace.id)
   setSetting("defaultModelId", "stub-e2e")
-  await upsertProfile({
-    name: "E2E Stub",
-    kind: "ollama",
-    modelId: "stub-e2e",
-    models: [{ id: "stub-e2e", label: "E2E Stub" }],
-    activate: true
-  })
+  try {
+    await upsertProfile({
+      name: "E2E Stub",
+      kind: "ollama",
+      modelId: "stub-e2e",
+      models: [{ id: "stub-e2e", label: "E2E Stub" }],
+      activate: true
+    })
+  } catch (error) {
+    console.warn("e2e stub profile skipped", error)
+  }
   await createSession(workspace.id, "New agent")
   const source = await addKnowledgeSource(workspace.id, ".")
   await indexKnowledgeSource(source.id, true)

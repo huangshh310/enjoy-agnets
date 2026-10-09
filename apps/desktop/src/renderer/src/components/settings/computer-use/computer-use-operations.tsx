@@ -1,11 +1,12 @@
 /**
- * 始终允许、本会话任意桌面、感知试用。画面和权限不在这里再画。
+ * 始终允许、高级坐标、本会话任意桌面、感知试用。画面和权限不在这里再画。
  */
 import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import type { DesktopComputerUseState } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { SettingsCard } from "../settings-row"
+import { DesktopAdvancedCoordsRow } from "../tools/desktop/desktop-advanced-coords-row"
 import { DesktopAlwaysAllowList } from "../tools/desktop/desktop-always-allow-list"
 import { DesktopAnyDesktopDetails } from "../tools/desktop/desktop-any-desktop-details"
 import { DesktopOnboardingActions } from "../tools/desktop/desktop-onboarding-actions"
@@ -15,13 +16,17 @@ import { startCalculatorTryFlow } from "../tools/desktop/start-calculator-try"
 export function ComputerUseOperations({
   desktop,
   sessionId,
+  advancedCoords,
   onToggleAnyDesktop,
+  onToggleAdvancedCoords,
   onRevoke,
   onRecheck
 }: {
   desktop: DesktopComputerUseState
   sessionId?: string | null
+  advancedCoords: boolean
   onToggleAnyDesktop: (enabled: boolean) => void
+  onToggleAdvancedCoords: (enabled: boolean) => void
   onRevoke: (appKey: string) => void
   onRecheck: () => Promise<void>
 }) {
@@ -30,6 +35,7 @@ export function ComputerUseOperations({
     <SettingsCard>
       <div className="flex flex-col gap-4 px-5 py-4">
         <DesktopAlwaysAllowList apps={desktop.alwaysAllowApps ?? []} onRevoke={onRevoke} />
+        <DesktopAdvancedCoordsRow enabled={advancedCoords} onToggle={onToggleAdvancedCoords} />
         <DesktopAnyDesktopDetails
           sessionId={sessionId}
           enabled={desktop.anyDesktopSession === true}

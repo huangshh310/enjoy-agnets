@@ -729,6 +729,16 @@ export const enChat = {
   desktopAllowAlways: "Always allow this app",
   desktopAllowAlwaysApp: "Always allow “{app}”",
   desktopAllowAlwaysHint: "Saved on this machine · revoke anytime in Settings",
+  desktopSensitiveWarn: "This is a sensitive app. We will ask every time.",
+  desktopCoordsBypassHint: "Coordinate actions will ask every time",
+  intentDesktopShort: "@{app} help me in {app}…",
+  intentDesktopPrompt: "@{app} help me in {app}…",
+  intentDesktopDesc: "Start computer use with a ready local app",
+  desktopActFailedTitle: "The action did not land",
+  desktopActFailedBody: "It failed, and this result has no new observation. Take a snapshot again if you need a fresh view.",
+  desktopCoordsDisabledTitle: "Screen coordinates stay off",
+  desktopCoordsDisabledBody:
+    "This step uses screen coordinates, which stay off by default. Let me look at the window first, then click. If you really need it, turn on “Advanced coordinates” in Settings › Computer use.",
   desktopSecondConfirmTitle: "Observation expired · confirm it is still the same target",
   desktopSecondConfirmBody:
     "The resnapshot did not match the approved control (or the app changed). Compare the two images, then confirm before we click the new observation.",

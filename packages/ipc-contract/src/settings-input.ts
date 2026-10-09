@@ -170,7 +170,7 @@ export const SettingsSnapshot = z.object({
     desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys,
     /**
      * CU-P1-36 高级坐标。默认 OFF；裸 x/y 硬拒。
-     * `#/settings/computer-use` 产品页尚未绑此开关，可经 setPreferences 拨。
+     * `#/settings/computer-use` 产品页「高级坐标」开关绑定此键。
      */
     desktopAdvancedCoords: z.boolean().default(false),
     /** 用户快捷键规则。空数组表示全部走默认。删光写成 unassigned，避免下次启动回到默认。 */
@@ -259,7 +259,7 @@ export const SetPreferencesInput = z.object({
   accountProfile: AccountProfilePref.optional(),
   agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).optional(),
   setupGuideCompletedAt: z.string().nullable().optional(),
-  /** CU-P1-36 高级坐标逃逸舱。默认关。产品页尚未绑铬。 */
+  /** CU-P1-36 高级坐标逃逸舱。默认关。产品页已绑铬。 */
   desktopAdvancedCoords: z.boolean().optional(),
   keybindings: KeybindingRuleList.optional(),
   computerUsePointer: z.enum(["stock", "custom"]).optional(),

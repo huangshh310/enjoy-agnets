@@ -30,15 +30,21 @@ export function resolveDesktopApprovalChoice(
   return available.includes(choice) ? choice : defaultDesktopApprovalChoice(available)
 }
 
-/** 预览锁定：有稳键时默认高亮第三项「始终允许此应用」。 */
+/** CU-P1-P：仅 `sensitive === false` 且有稳键时默认「本会话允许」；否则回落到允许一次。 */
 export function defaultDesktopApprovalChoice(
   available: readonly DesktopApprovalChoice[]
 ): DesktopApprovalChoice {
-  return available.includes("allow_always") ? "allow_always" : "allow"
+  if (available.includes("allow_session")) return "allow_session"
+  if (available.includes("allow")) return "allow"
+  return available[0] ?? "allow"
 }
 
 export function desktopApprovalChoiceTestId(choice: DesktopApprovalChoice): string {
   return TEST_ID[choice]
+}
+
+export function desktopApprovalStruckTestId(choice: DesktopApprovalChoice): string {
+  return `${TEST_ID[choice]}-struck`
 }
 
 export function applyDesktopApprovalChoice(choice: DesktopApprovalChoice, decide: ApprovalDecide) {

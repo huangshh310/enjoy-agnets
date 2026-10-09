@@ -2,6 +2,7 @@
  * 从 approval.required.args 抽出桌面名片字段。无 appKey 或 bypass 时不提供会话放行。
  * 二次确认：previousThumbnailPath = 批准时，thumbnailPath = 重拍后；缺图则 thumbsReady=false。
  * 敏感只信 main 下发的 `sensitive`；缺省 / 非 false 当敏感。禁止再调 desktopActIsSensitive。
+ * fail-closed：只有严格 `false` 才给本会话/始终允许；缺字段一律当敏感。
  */
 import {
   desktopActAppKey,
@@ -24,10 +25,18 @@ export type DesktopApprovalView = {
   thumbsReady: boolean
   bypassesSessionAllow: boolean
   canSessionAllow: boolean
-  /** 有稳 appKey、非二次确认、且 `sensitive === false` 才露出始终允许。 */
+  /** 有稳 appKey、非二次确认、非坐标/前台、且 `sensitive === false` 才可选始终允许。 */
   canAlwaysAllow: boolean
-  /** 主进程下发；缺省 / 非 false 当敏感（fail closed）。 */
+  /** 坐标 / 前台：本会话、始终允许划掉而不是可选。 */
+  strikeSessionAllow: boolean
+  strikeAlwaysAllow: boolean
+  /** 主进程下发；只有严格 `false` 才是不敏感。缺字段 / true / 其它值一律敏感。 */
   sensitive: boolean
+}
+
+/** 铬 fail-closed：本会话/始终允许只在 `args.sensitive === false` 时出现。 */
+export function desktopApprovalSensitive(flag: unknown): boolean {
+  return flag !== false
 }
 
 export function desktopApprovalView(args: unknown): DesktopApprovalView {
@@ -41,7 +50,9 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
   const thumbnailPath = text(row.thumbnailPath)
   const previousThumbnailPath = text(row.previousThumbnailPath)
   const secondConfirm = isSecondConfirm(row, previousThumbnail, previousThumbnailPath)
-  const sensitive = row.sensitive !== false
+  const sensitive = desktopApprovalSensitive(row.sensitive)
+  const wouldSessionAllow = Boolean(appKey) && !sensitive
+  const wouldAlwaysAllow = !secondConfirm && isStableDesktopAppKey(appKey) && !sensitive
   return {
     appName,
     appKey,
@@ -56,12 +67,10 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     thumbsReady: !secondConfirm || Boolean(thumbnail && previousThumbnail),
     bypassesSessionAllow,
     sensitive,
-    canSessionAllow:
-      Boolean(appKey) &&
-      !bypassesSessionAllow &&
-      !desktopActBypassesSessionAllow(row) &&
-      row.sensitive === false,
-    canAlwaysAllow: !secondConfirm && isStableDesktopAppKey(appKey) && row.sensitive === false
+    canSessionAllow: wouldSessionAllow && !bypassesSessionAllow,
+    canAlwaysAllow: wouldAlwaysAllow && !bypassesSessionAllow,
+    strikeSessionAllow: wouldSessionAllow && bypassesSessionAllow,
+    strikeAlwaysAllow: wouldAlwaysAllow && bypassesSessionAllow
   }
 }
 

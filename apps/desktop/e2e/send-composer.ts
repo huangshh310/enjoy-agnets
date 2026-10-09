@@ -9,7 +9,10 @@ export async function sendComposer(window: Page, composer: Locator, text: string
   const send = window.locator('[data-testid="composer-send"]')
   await send.waitFor({ timeout: 15_000 })
   await window.waitForFunction(
-    () => document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") === "Send",
+    () => {
+      const label = document.querySelector('[data-testid="composer-send"]')?.getAttribute("aria-label") ?? ""
+      return label === "Send" || label === "发送"
+    },
     undefined,
     { timeout: 15_000 }
   )

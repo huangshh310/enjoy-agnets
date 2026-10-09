@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { createE2eStubStream, lastUserText, stubApprovedWrite } from "./e2e-stub.ts"
+import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 
 test("lastUserText 取最后一条用户字", () => {
   assert.equal(
@@ -120,6 +121,25 @@ test("附件文件名会出现在 stub 回复里", async () => {
     if (part.type === "text-delta") text += String(part.text ?? "")
   }
   assert.match(text, /attached:note.txt/)
+})
+
+test("桌面 stub 吐日历审批、终端审批、坐标硬拒", async () => {
+  const calendar = stubDesktopStreamParts("desktop calendar click") ?? []
+  assert.equal(calendar[0]?.toolName, "desktop_act")
+  assert.equal((calendar[0]?.input as { sensitive?: boolean } | undefined)?.sensitive, false)
+  const term = stubDesktopStreamParts("desktop terminal click") ?? []
+  assert.equal((term[0]?.input as { sensitive?: boolean } | undefined)?.sensitive, true)
+  const coords = stubDesktopStreamParts("desktop coords deny") ?? []
+  assert.equal(coords[1]?.type, "tool-output-denied")
+  assert.equal((coords[1]?.output as { code?: string } | undefined)?.code, "bare_coords_disabled")
+  const parts: string[] = []
+  for await (const part of createE2eStubStream(
+    [{ role: "user", content: "desktop calendar click" }],
+    new AbortController().signal
+  )) {
+    parts.push(String(part.type))
+  }
+  assert.deepEqual(parts, ["tool-approval-request"])
 })
 
 test("stubApprovedWrite 识别 tool-approval-response", () => {
