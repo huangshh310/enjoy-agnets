@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（CU-P1-P 铬：默认本会话、敏感警示、空态 pill、通知接 desktop-notify；CU-P1-36 高级坐标开关 + 诚实 action_failed）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（CU-P1-P：`sensitive` 下发、终端类入名单、通知推导结束态；铬默认本会话 / 敏感警示 / 空态 pill；CU-P1-36 高级坐标开关 + 诚实 action_failed）
 
 ## 当前真相
 
