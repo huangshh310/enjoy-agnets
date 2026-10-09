@@ -28,8 +28,10 @@ test("审批硬拒 tool.result 折进 ThreadToolCall.result.code", () => {
     name: "desktop_act",
     result
   })
-  assert.equal(tools[0]?.name, "desktop_act")
-  assert.equal(tools[0]?.state, "output-available")
-  assert.deepEqual(tools[0]?.result, result)
-  assert.equal((tools[0]?.result as { code?: string }).code, result.code)
+  const folded = tools[0]
+  assert.ok(folded)
+  assert.equal(folded.name, "desktop_act")
+  assert.equal(folded.state, "output-available")
+  assert.deepEqual(folded.result, result)
+  assert.equal((folded.result as { code?: string }).code, result.code)
 })
