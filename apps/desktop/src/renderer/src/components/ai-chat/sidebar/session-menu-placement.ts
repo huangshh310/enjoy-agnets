@@ -36,13 +36,15 @@ export function sessionMenuMaxHeight(
   return Math.max(96, Math.floor(available))
 }
 
-/** 指针打开后 Esc 回焦：拦住 Radix 默认回焦，避免当成键盘 :focus-visible。 */
+/** 指针打开后 Esc 回焦：拦住 Radix 默认回焦，并打标记以便 CSS 压掉可见环。 */
 export function applySessionMenuCloseFocus(
   event: { preventDefault: () => void },
   openedByPointer: boolean,
-  trigger: { focus: (options?: FocusOptions) => void } | null
+  trigger: (HTMLElement & { focus: (options?: FocusOptions) => void }) | null
 ): void {
   if (!openedByPointer) return
   event.preventDefault()
-  trigger?.focus({ preventScroll: true, focusVisible: false })
+  if (!trigger) return
+  trigger.dataset.pointerReturn = ""
+  trigger.focus({ preventScroll: true })
 }

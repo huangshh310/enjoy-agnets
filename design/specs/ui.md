@@ -101,7 +101,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 - 会话行 `…` 若用 `hidden` + `group-hover:flex`，开菜单后失悬停会 `display:none`，Radix 锚点变成 (0,0)，菜单飞到标题栏。正确做法：始终 `flex` + `opacity-0`，打开时 `opacity-100`。
 - 靠底会话行 `side="right"` `align="start"` 只会向左翻，不会向上长，底边被窗口裁掉，「归档会话」点不到。正确做法：`sessionMenuAlign` 靠底用 `align="end"`，`collisionPadding.top=44`，`sessionMenuMaxHeight` 限高 + `overflow-y-auto`。种满侧栏：`ENJOY_E2E_SESSION_COUNT=30`（`pnpm --filter @enjoy-agents/desktop dev:auto-p2` 已带）。
-- 指针点开「…」再 Esc，浏览器把回焦当成键盘 `:focus-visible`，橙环一直挂着。正确做法：记下 `openedByPointer`，`onCloseAutoFocus` 里 `applySessionMenuCloseFocus`（`preventDefault` + `focus({ focusVisible: false })`）；触发钮只用 `focus-visible:ring`，不要裸 `:focus` 环。
+- 指针点开「…」再 Esc，浏览器把回焦当成键盘 `:focus-visible`，橙环一直挂着。正确做法：记下 `openedByPointer`，`onCloseAutoFocus` 里 `preventDefault` 后打 `data-pointer-return` 再回焦，CSS `data-[pointer-return]:focus-visible:ring-0` 压掉可见环。不要在触发钮任意 `keydown` 上清掉指针标记，Esc 也会打到按钮；只在 Enter/Space 打开时清。触发钮只用 `focus-visible:ring`，不要裸 `:focus` 环。
 - 审查栏终端可点 https 链接：stub（`ENJOY_E2E_STUB=1`）打开 Terminal 会自动 `echo https://example.com/docs`；非 stub 开发在终端输入同一条即可验 WebLinks 悬停。常量 `STUB_TERMINAL_LINK_URL`。
 - [open] `no-inline-styles` / `no-unknown-classes` / `require-static-classes` 仍未打开（玻璃皮肤指针、mascot、动态 className 会刷屏）。规则组的整体状态以 [`architecture`](./architecture.md) 的 Lint 段为准，不要在这里再维护一份。
 - 桌面 `components.json` 的 `@/components/ui` 必须能经 `apps/desktop/tsconfig.json` paths 落到 `packages/ui`，否则 variant/size 建议是空的。

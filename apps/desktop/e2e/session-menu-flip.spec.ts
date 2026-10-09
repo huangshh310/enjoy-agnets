@@ -98,9 +98,13 @@ async function assertFocusRing(window: Page) {
   await window.keyboard.press("Escape")
   await expect(window.locator('[data-testid="session-row-menu-content"]')).toBeHidden()
   await expect.poll(() => trigger.evaluate((el) => el === document.activeElement)).toBe(true)
-  expect(await trigger.evaluate((el) => el.matches(":focus-visible"))).toBe(false)
+  expect(await trigger.evaluate((el) => (el as HTMLElement).hasAttribute("data-pointer-return"))).toBe(true)
+  expect(await trigger.evaluate(hasVisibleFocusRing)).toBe(false)
   await window.screenshot({ path: join(shots, "session-menu-focus-pointer-esc.png") })
 
+  await trigger.evaluate((el) => {
+    delete (el as HTMLElement).dataset.pointerReturn
+  })
   await trigger.focus()
   await window.keyboard.press("Enter")
   await window.locator('[data-testid="session-row-menu-content"]').waitFor({ timeout: 8_000 })
@@ -108,7 +112,18 @@ async function assertFocusRing(window: Page) {
   await expect(window.locator('[data-testid="session-row-menu-content"]')).toBeHidden()
   await expect.poll(() => trigger.evaluate((el) => el === document.activeElement)).toBe(true)
   expect(await trigger.evaluate((el) => el.matches(":focus-visible"))).toBe(true)
+  expect(await trigger.evaluate(hasVisibleFocusRing)).toBe(true)
   await window.screenshot({ path: join(shots, "session-menu-focus-keyboard-esc.png") })
+}
+
+function hasVisibleFocusRing(el: Element) {
+  const style = getComputedStyle(el)
+  if (style.outlineStyle !== "none" && Number.parseFloat(style.outlineWidth) > 0) return true
+  const shadows = style.boxShadow
+  if (!shadows || shadows === "none") return false
+  return [...shadows.matchAll(/(-?\d+(?:\.\d+)?)px/g)]
+    .map((match) => Number(match[1]))
+    .some((value) => Math.abs(value) > 0.1)
 }
 
 async function lastVisibleSessionMenu(window: Page): Promise<Locator> {

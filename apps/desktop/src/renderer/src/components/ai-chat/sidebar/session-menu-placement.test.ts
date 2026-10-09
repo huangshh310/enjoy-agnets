@@ -33,13 +33,16 @@ test("可用空间再小也保底 96px 以便滚动", () => {
 test("指针关闭时拦住默认回焦并可编程回焦", () => {
   let prevented = false
   let focused = false
-  applySessionMenuCloseFocus(
-    { preventDefault: () => { prevented = true } },
-    true,
-    { focus: () => { focused = true } }
-  )
+  const trigger = {
+    dataset: {} as DOMStringMap,
+    focus: () => {
+      focused = true
+    }
+  }
+  applySessionMenuCloseFocus({ preventDefault: () => { prevented = true } }, true, trigger as never)
   assert.equal(prevented, true)
   assert.equal(focused, true)
+  assert.equal("pointerReturn" in trigger.dataset, true)
 })
 
 test("键盘关闭时不拦回焦", () => {

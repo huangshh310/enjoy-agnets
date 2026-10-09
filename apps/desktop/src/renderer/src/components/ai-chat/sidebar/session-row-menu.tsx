@@ -113,14 +113,20 @@ export function SessionRowMenu({
           onPointerDown={() => {
             openedByPointer.current = true
           }}
-          onKeyDown={() => {
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return
             openedByPointer.current = false
+            delete triggerRef.current?.dataset.pointerReturn
+          }}
+          onBlur={() => {
+            delete triggerRef.current?.dataset.pointerReturn
           }}
           aria-label="Session actions"
           className={cx(
             "flex size-5.5 shrink-0 items-center justify-center rounded-md text-text-secondary outline-none",
             "hover:bg-background-primary-default hover:text-text-primary",
             "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+            "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0",
             open ? "opacity-100" : "opacity-0 group-hover/session:opacity-100 group-focus-within/session:opacity-100",
             className
           )}
