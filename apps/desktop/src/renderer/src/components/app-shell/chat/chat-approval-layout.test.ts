@@ -36,8 +36,8 @@ test("Dock 不再限高内滚，空截图不占位，改动条在审批时让位
 
 test("会话行菜单保持占位并锚到触发钮，文案是加星标", () => {
   const menu = read("ai-chat/sidebar/session-row-menu.tsx")
-  const zh = read("i18n/catalogs/zh/chat.ts")
-  const en = read("i18n/catalogs/en/chat.ts")
+  const zh = read("../i18n/catalogs/zh/chat.ts")
+  const en = read("../i18n/catalogs/en/chat.ts")
   assert.match(menu, /data-testid="session-row-menu"/)
   assert.match(menu, /data-testid="session-row-menu-content"/)
   assert.doesNotMatch(menu, /hidden size-5\.5/)
