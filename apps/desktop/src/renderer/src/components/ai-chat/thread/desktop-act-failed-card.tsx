@@ -1,5 +1,5 @@
 /**
- * 桌面动作诚实失败卡：只说失败 + 重拍，不附下一步缩略或假成功。
+ * 桌面动作诚实失败卡：只说人话，不露工程码、不附下一步缩略或假成功。
  */
 import { asRecord } from "@renderer/lib/record"
 import { useT } from "@renderer/i18n"
@@ -17,7 +17,6 @@ export function DesktopActFailedCard({ tool }: { tool: ThreadToolCall }) {
       className="rounded-2xl border border-border-error-default/25 bg-background-primary-default p-4"
     >
       <p className="text-body-medium text-text-primary">{copy.title}</p>
-      <p className="mt-0.5 font-mono text-caption-2-medium text-text-error-primary">code · {copy.code}</p>
       <p className="mt-2 text-caption-1-medium leading-relaxed text-text-secondary">{copy.body}</p>
     </div>
   )

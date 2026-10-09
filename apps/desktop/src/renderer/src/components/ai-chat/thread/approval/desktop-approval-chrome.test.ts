@@ -42,4 +42,6 @@ test("testid 仍挂在四选一选项上", () => {
   assert.match(choice, /approval-always-app/)
   assert.match(choice, /approval-deny/)
   assert.match(choices, /desktopApprovalChoiceTestId/)
+  assert.match(choices, /desktopApprovalStruckTestId/)
+  assert.match(choice, /-struck/)
 })

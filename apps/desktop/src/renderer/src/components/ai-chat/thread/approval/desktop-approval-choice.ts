@@ -43,6 +43,10 @@ export function desktopApprovalChoiceTestId(choice: DesktopApprovalChoice): stri
   return TEST_ID[choice]
 }
 
+export function desktopApprovalStruckTestId(choice: DesktopApprovalChoice): string {
+  return `${TEST_ID[choice]}-struck`
+}
+
 export function applyDesktopApprovalChoice(choice: DesktopApprovalChoice, decide: ApprovalDecide) {
   if (choice === "deny") {
     decide.onDeny()

@@ -1,5 +1,5 @@
 /**
- * 电脑操控卡内嵌的高级坐标逃逸舱。出厂 OFF，打开后每次仍进 Dock。
+ * 电脑操控卡内嵌的高级坐标。出厂 OFF，打开后每次仍进 Dock。
  */
 import { Switch } from "@/components/ui/switch"
 import { useT } from "@renderer/i18n"
@@ -25,11 +25,11 @@ export function DesktopAdvancedCoordsRow({
               {t("settings.builtinTools.advancedCoordsBadge")}
             </span>
           </div>
-          <p className="mt-1 text-caption-1-medium leading-relaxed text-text-secondary">
+          <p
+            className="mt-1 text-caption-1-medium leading-relaxed text-text-secondary"
+            title={t("settings.builtinTools.advancedCoordsTip")}
+          >
             {t("settings.builtinTools.advancedCoordsDesc")}
-          </p>
-          <p className="mt-1 text-caption-2-medium text-text-tertiary">
-            {t("settings.builtinTools.advancedCoordsFoot")}
           </p>
         </div>
         <Switch

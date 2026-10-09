@@ -7,6 +7,7 @@ import { useT, type TranslateFn } from "@renderer/i18n"
 import {
   desktopApprovalChoiceIds,
   desktopApprovalChoiceTestId,
+  desktopApprovalStruckTestId,
   resolveDesktopApprovalChoice,
   type DesktopApprovalChoice
 } from "./desktop-approval-choice"
@@ -114,7 +115,7 @@ function ChoiceRow({
 function StruckRow({ choice, label }: { choice: DesktopApprovalChoice; label: string }) {
   return (
     <p
-      data-testid={desktopApprovalChoiceTestId(choice)}
+      data-testid={desktopApprovalStruckTestId(choice)}
       aria-disabled="true"
       className="rounded-lg border border-dashed border-border-button-default px-2.5 py-1.5 text-caption-1-medium text-text-tertiary line-through opacity-60"
     >
