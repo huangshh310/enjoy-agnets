@@ -28,6 +28,7 @@ export async function consumeFullStream(input: {
   onUsage?: (usage: {
     inputTokens?: number
     outputTokens?: number
+    noCacheTokens?: number
     cacheReadTokens?: number
     cacheWriteTokens?: number
     reasoningTokens?: number
@@ -52,6 +53,7 @@ export async function consumeFullStream(input: {
       input.onUsage?.({
         inputTokens: event.inputTokens,
         outputTokens: event.outputTokens,
+        noCacheTokens: event.noCacheTokens,
         cacheReadTokens: event.cacheReadTokens,
         cacheWriteTokens: event.cacheWriteTokens,
         reasoningTokens: event.reasoningTokens,

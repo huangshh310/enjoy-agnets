@@ -33,9 +33,12 @@ export type UserModelRates = {
 export type TokenUsage = {
   inputTokens?: number
   outputTokens?: number
+  noCacheTokens?: number
   cacheReadTokens?: number
   cacheWriteTokens?: number
   reasoningTokens?: number
+  /** 多泵里有一轮没上报用量：整次未知。 */
+  usageIncomplete?: boolean
 }
 
 export type MatchedRate = {

@@ -1,5 +1,6 @@
 /**
- * 会话级估算合计。读 runs.usage_json + 当前 vault 用户单价，再走生产计价。
+ * 会话级估算合计。读 runs.usage_json + 当时存下的用户单价，再走生产计价。
+ * 找不到档案不要退回同 kind 的第一个档案。
  */
 import { listRuns } from "@enjoy-agents/db"
 import {
@@ -18,9 +19,7 @@ export async function loadSessionEstimatedCost(raw: unknown): Promise<SessionEst
   const runs = listRuns(getDatabase(), { sessionId }).map((row) => {
     const usage = parseRunUsage(row.usageJson)
     const modelId = usage?.modelId ?? row.modelId ?? undefined
-    const profile =
-      vault.profiles.find((item) => item.id === row.providerId) ??
-      vault.profiles.find((item) => item.kind === (usage?.providerKind ?? ""))
+    const profile = vault.profiles.find((item) => item.id === row.providerId)
     const model = profile?.models?.find((item) => item.id === modelId)
     return {
       runId: row.id,
@@ -28,7 +27,8 @@ export async function loadSessionEstimatedCost(raw: unknown): Promise<SessionEst
       runtimeId: usage?.runtimeId,
       providerKind: usage?.providerKind ?? profile?.kind,
       modelId,
-      userRates: userRatesFrom(model)
+      userRates: usage?.userRates ?? userRatesFrom(model),
+      baseURL: usage?.baseURL ?? profile?.baseURL
     }
   })
   return SessionEstimatedCost.parse(buildSessionEstimatedCost({ sessionId, runs }))

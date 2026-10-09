@@ -3,7 +3,7 @@
  */
 export { PRICE_SNAPSHOT, lookupSnapshotRate, buildSnapshotIndex } from "./snapshot.ts"
 export { matchModelRate } from "./match.ts"
-export { estimateRunCost, isLocalUnbilledKind } from "./estimate.ts"
+export { estimateRunCost, isLocalUnbilledKind, hasPositiveTokens } from "./estimate.ts"
 export { buildSessionEstimatedCost, type SessionCostRunInput } from "./session-cost.ts"
 export { userRatesFrom, userRatesToModelRate, finitePrice } from "./user-rates.ts"
 export type {

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { uniqueExistingAliases } from "./alias-policy.ts"
 import { estimateRunCost } from "./estimate.ts"
 import { matchModelRate } from "./match.ts"
 import { buildSessionEstimatedCost } from "./session-cost.ts"
@@ -14,7 +15,15 @@ const TABLE: PriceSnapshot = {
     {
       provider: "anthropic",
       modelId: "claude-sonnet-4-5",
-      aliases: ["claude-sonnet-4-5-alias"],
+      aliases: ["claude-sonnet-4-5-20250929"],
+      input: 3,
+      output: 15,
+      cacheRead: 0.3,
+      cacheWrite: 3.75
+    },
+    {
+      provider: "anthropic",
+      modelId: "claude-sonnet-4-5-20250929",
       input: 3,
       output: 15,
       cacheRead: 0.3,
@@ -44,12 +53,12 @@ test("精确匹配命中；前缀与未命中是未知", () => {
     snapshot: TABLE
   })
   assert.equal(wrongProvider, undefined)
-  const alias = matchModelRate({
+  const dated = matchModelRate({
     providerKind: "anthropic",
-    modelId: "claude-sonnet-4-5-alias",
+    modelId: "claude-sonnet-4-5-20250929",
     snapshot: TABLE
   })
-  assert.equal(alias?.rate.output, 15)
+  assert.equal(dated?.rate.output, 15)
 })
 
 test("用户单价优先，未填的项回落快照", () => {
@@ -65,7 +74,7 @@ test("用户单价优先，未填的项回落快照", () => {
   assert.equal(matched?.rate.cacheRead, 0.3)
 })
 
-test("有缓存或推理 token 但缺单价 → 整次未知，不是 0", () => {
+test("有缓存 token 但缺单价 → 整次未知，不是 0", () => {
   const cache = estimateRunCost({
     usage: { inputTokens: 1000, outputTokens: 100, cacheReadTokens: 200 },
     providerKind: "openai",
@@ -76,16 +85,47 @@ test("有缓存或推理 token 但缺单价 → 整次未知，不是 0", () => 
   assert.equal(cache.status, "unknown")
   assert.equal(cache.usd, undefined)
   assert.deepEqual(cache.missing, ["cacheRead"])
+})
 
-  const reasoning = estimateRunCost({
-    usage: { inputTokens: 100, outputTokens: 50, reasoningTokens: 20 },
+test("缓存和推理同时存在时不重复计费；缺推理价仍能估算", () => {
+  const both = estimateRunCost({
+    usage: {
+      inputTokens: 200_000,
+      noCacheTokens: 100_000,
+      cacheReadTokens: 100_000,
+      outputTokens: 50_000,
+      reasoningTokens: 20_000
+    },
     providerKind: "anthropic",
     modelId: "claude-sonnet-4-5",
     snapshot: TABLE
   })
-  assert.equal(reasoning.status, "unknown")
-  assert.equal(reasoning.usd, undefined)
-  assert.deepEqual(reasoning.missing, ["reasoning"])
+  assert.equal(both.status, "estimated")
+  assert.equal(both.usd, 1.08)
+
+  const cacheOnly = estimateRunCost({
+    usage: {
+      inputTokens: 100_000,
+      noCacheTokens: 0,
+      cacheReadTokens: 100_000,
+      outputTokens: 0
+    },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5",
+    snapshot: TABLE
+  })
+  assert.equal(cacheOnly.status, "estimated")
+  assert.equal(cacheOnly.usd, 0.03)
+
+  const reasoning = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 1_000_000, reasoningTokens: 200_000 },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5",
+    snapshot: TABLE
+  })
+  assert.equal(reasoning.status, "estimated")
+  assert.equal(reasoning.usd, 18)
+  assert.equal(reasoning.missing, undefined)
 })
 
 test("缓存与推理缺失（undefined）不当成 0，仍可按已知分项估算", () => {
@@ -137,7 +177,7 @@ test("本地模型不计费；ACP 没有上报就不显示", () => {
   assert.equal(reported.source, "engine")
 })
 
-test("会话合计与未知次数；本地和未上报不加进未知", () => {
+test("会话合计与未知次数；缺 usage_json 计入未知；零用量不计入", () => {
   const sum = buildSessionEstimatedCost({
     sessionId: "ses_1",
     snapshot: TABLE,
@@ -164,13 +204,69 @@ test("会话合计与未知次数；本地和未上报不加进未知", () => {
         runId: "r4",
         runtimeId: "codex",
         usage: { inputTokens: 9, runtimeId: "codex" }
+      },
+      { runId: "r5" },
+      {
+        runId: "r6",
+        providerKind: "anthropic",
+        modelId: "claude-sonnet-4-5",
+        usage: { inputTokens: 0, outputTokens: 0 }
       }
     ]
   })
   assert.equal(sum.knownUsd, 3)
-  assert.equal(sum.unknownCount, 1)
+  assert.equal(sum.unknownCount, 2)
   assert.equal(sum.reportedUsd, undefined)
-  assert.equal(sum.runs?.length, 4)
+  assert.equal(sum.runs?.some((run) => run.runId === "r5" && run.status === "unknown"), true)
+  assert.equal(sum.runs?.some((run) => run.runId === "r6"), false)
+})
+
+test("一轮缺用量则整次未知", () => {
+  const result = estimateRunCost({
+    usage: { inputTokens: 100, outputTokens: 10, usageIncomplete: true },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5",
+    snapshot: TABLE
+  })
+  assert.equal(result.status, "unknown")
+  assert.deepEqual(result.missing, ["usage"])
+  assert.equal(result.usd, undefined)
+})
+
+test("非官方 baseURL 且没填用户单价 → 未知，不套官方价", () => {
+  const result = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 0 },
+    providerKind: "anthropic",
+    modelId: "claude-sonnet-4-5",
+    baseURL: "https://relay.example/v1",
+    snapshot: TABLE
+  })
+  assert.equal(result.status, "unknown")
+  assert.deepEqual(result.missing, ["price"])
+})
+
+test("真实快照没有一对多别名；家族名匹配不到", () => {
+  assert.equal(
+    PRICE_SNAPSHOT.models.some((model) => model.provider === "gateway"),
+    false
+  )
+  const seen = new Map<string, string>()
+  for (const model of uniqueExistingAliases(PRICE_SNAPSHOT.models)) {
+    for (const alias of model.aliases ?? []) {
+      const key = `${model.provider}\0${alias}`
+      const prev = seen.get(key)
+      assert.equal(prev, undefined, `alias ${alias} maps to more than one model`)
+      seen.set(key, model.modelId)
+    }
+  }
+  assert.equal(
+    matchModelRate({ providerKind: "openai", modelId: "gpt" }),
+    undefined
+  )
+  assert.equal(
+    matchModelRate({ providerKind: "anthropic", modelId: "claude-opus" }),
+    undefined
+  )
 })
 
 test("主路径估价不调用 fetch", async () => {

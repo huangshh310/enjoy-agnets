@@ -239,6 +239,23 @@ test("usage_update 上报花费原样带上，没上报不编造", () => {
   }
 })
 
+test("usage_update 拒绝负数花费和非 USD", () => {
+  const negative = mapAcpUpdate(
+    { sessionUpdate: "usage_update", used: 10, costUsd: -1.2 },
+    "run_1"
+  )
+  if (negative[0]?.type === "usage.updated") {
+    assert.equal(negative[0].reportedCostUsd, undefined)
+  }
+  const euro = mapAcpUpdate(
+    { sessionUpdate: "usage_update", used: 10, cost: { amount: 2, currency: "EUR" } },
+    "run_1"
+  )
+  if (euro[0]?.type === "usage.updated") {
+    assert.equal(euro[0].reportedCostUsd, undefined)
+  }
+})
+
 test("session_info_update 进 session.title", () => {
   const events = mapAcpUpdate(
     { sessionUpdate: "session_info_update", title: "Implement session list" },

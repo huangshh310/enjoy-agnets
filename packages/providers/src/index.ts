@@ -116,17 +116,6 @@ export {
   clearProbedCapabilities
 } from "./capabilities/probe.ts"
 export { resolveModelAlias, createEnjoyRegistry, type ModelAlias } from "./registry.ts"
-export {
-  PRICE_SNAPSHOT,
-  matchModelRate,
-  estimateRunCost,
-  isLocalUnbilledKind,
-  buildSessionEstimatedCost,
-  userRatesFrom,
-  type TokenUsage,
-  type UserModelRates,
-  type SessionCostRunInput
-} from "./pricing/index.ts"
 export { mergeModelSettings, wrapWithDefaults, type MiddlewareDefaults } from "./middleware.ts"
 export { createFilesApi, createSkillsApi } from "./provider-api.ts"
 export {

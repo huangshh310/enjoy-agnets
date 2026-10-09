@@ -9,6 +9,8 @@ export type UsageBillingContext = {
   providerKind?: string
   modelId?: string
   userRates?: UserModelRates
+  baseURL?: string
+  usageIncomplete?: boolean
 }
 
 export function enrichUsageEvent(
@@ -19,29 +21,35 @@ export function enrichUsageEvent(
     usage: {
       inputTokens: event.inputTokens,
       outputTokens: event.outputTokens,
+      noCacheTokens: event.noCacheTokens,
       cacheReadTokens: event.cacheReadTokens,
       cacheWriteTokens: event.cacheWriteTokens,
-      reasoningTokens: event.reasoningTokens
+      reasoningTokens: event.reasoningTokens,
+      usageIncomplete: context.usageIncomplete
     },
     runtimeId: context.runtimeId,
     providerKind: context.providerKind,
     modelId: context.modelId,
     userRates: context.userRates,
-    reportedCostUsd: event.reportedCostUsd
+    reportedCostUsd: event.reportedCostUsd,
+    baseURL: context.baseURL
   })
   return { ...event, estimatedCost }
 }
 
 export function billingContextOf(run: {
   input: { runtimeId?: string; modelId?: string }
-  secret?: { provider?: string; modelId?: string; models?: unknown[] }
+  secret?: { provider?: string; modelId?: string; models?: unknown[]; baseURL?: string }
+  usageIncomplete?: boolean
 }): UsageBillingContext {
   const modelId = run.input.modelId ?? run.secret?.modelId
   return {
     runtimeId: run.input.runtimeId,
     providerKind: run.secret?.provider,
     modelId,
-    userRates: userRatesForModel(run.secret?.models, modelId)
+    userRates: userRatesForModel(run.secret?.models, modelId),
+    baseURL: run.secret?.baseURL,
+    usageIncomplete: run.usageIncomplete
   }
 }
 

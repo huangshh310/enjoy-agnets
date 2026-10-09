@@ -36,6 +36,12 @@ test("会话合计：已知部分 + 未知次数；本地与未上报不计入",
   assert.equal(SessionEstimatedCost.parse(sum).sessionId, "ses_1")
 })
 
+test("缺用量枚举可解析，不丢整行", () => {
+  const parsed = EstimatedCost.parse({ status: "unknown", missing: ["usage"] })
+  assert.equal(parsed.status, "unknown")
+  assert.deepEqual(parsed.missing, ["usage"])
+})
+
 test("全是本地或未上报时没有假总额", () => {
   const sum = summarizeSessionCosts("ses_2", [
     { runId: "a", status: "local_unbilled" },

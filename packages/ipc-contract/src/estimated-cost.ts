@@ -22,7 +22,8 @@ export const CostMissingItem = z.enum([
   "cacheRead",
   "cacheWrite",
   "reasoning",
-  "price"
+  "price",
+  "usage"
 ])
 export type CostMissingItem = z.infer<typeof CostMissingItem>
 

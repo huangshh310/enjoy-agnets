@@ -10,27 +10,29 @@ test("缓存和推理没返回时是未知而不是 0", () => {
     totalTokens: 8
   })
   assert.equal(mapped && "cacheReadTokens" in mapped, false)
+  assert.equal(mapped && "noCacheTokens" in mapped, false)
   assert.equal(mapped && "reasoningTokens" in mapped, false)
 })
 
-test("Anthropic cache_creation / cache_read 与 OpenAI cached / reasoning", () => {
-  const anthropic = mapUsageTokens({
-    inputTokens: 100,
-    outputTokens: 20,
-    cache_creation_input_tokens: 40,
-    cache_read_input_tokens: 15
+test("AI SDK v7 inputTokenDetails / outputTokenDetails 能拿到 noCache 与分项", () => {
+  const mapped = mapUsageTokens({
+    inputTokens: 200_000,
+    outputTokens: 50_000,
+    totalTokens: 250_000,
+    inputTokenDetails: {
+      noCacheTokens: 100_000,
+      cacheReadTokens: 100_000,
+      cacheWriteTokens: 0
+    },
+    outputTokenDetails: {
+      textTokens: 30_000,
+      reasoningTokens: 20_000
+    }
   })
-  assert.equal(anthropic?.cacheWriteTokens, 40)
-  assert.equal(anthropic?.cacheReadTokens, 15)
-  assert.equal(anthropic?.reasoningTokens, undefined)
-
-  const openai = mapUsageTokens({
-    promptTokens: 80,
-    completionTokens: 30,
-    prompt_tokens_details: { cached_tokens: 12 },
-    completion_tokens_details: { reasoning_tokens: 7 }
-  })
-  assert.equal(openai?.inputTokens, 80)
-  assert.equal(openai?.cacheReadTokens, 12)
-  assert.equal(openai?.reasoningTokens, 7)
+  assert.equal(mapped?.inputTokens, 200_000)
+  assert.equal(mapped?.noCacheTokens, 100_000)
+  assert.equal(mapped?.cacheReadTokens, 100_000)
+  assert.equal(mapped?.cacheWriteTokens, 0)
+  assert.equal(mapped?.reasoningTokens, 20_000)
+  assert.equal(mapped?.outputTokens, 50_000)
 })

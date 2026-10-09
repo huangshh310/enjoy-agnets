@@ -1,25 +1,24 @@
 /**
  * models.dev 离线快照。主路径只读这份本地表，不发网络请求。
+ * 别名在建索引时再滤一遍一对多 / 非真实 id。
  */
 import type { PriceSnapshot, SnapshotModelRate } from "./types.ts"
+import { snapshotLookupKey, uniqueExistingAliases } from "./alias-policy.ts"
 import loaded from "./models-dev-snapshot.json" with { type: "json" }
 
 export const PRICE_SNAPSHOT: PriceSnapshot = Object.freeze({
   version: String(loaded.version ?? ""),
   date: String(loaded.date ?? ""),
   source: String(loaded.source ?? "models.dev"),
-  models: Array.isArray(loaded.models) ? loaded.models : []
+  models: uniqueExistingAliases(Array.isArray(loaded.models) ? loaded.models : [])
 })
-
-export function snapshotLookupKey(provider: string, modelId: string): string {
-  return `${provider}\0${modelId}`
-}
 
 export function buildSnapshotIndex(
   snapshot: PriceSnapshot = PRICE_SNAPSHOT
 ): Map<string, SnapshotModelRate> {
+  const models = uniqueExistingAliases(snapshot.models)
   const index = new Map<string, SnapshotModelRate>()
-  for (const model of snapshot.models) {
+  for (const model of models) {
     const provider = model.provider.trim()
     const modelId = model.modelId.trim()
     if (!provider || !modelId) continue
@@ -44,3 +43,5 @@ export function lookupSnapshotRate(
   const index = snapshot ? buildSnapshotIndex(snapshot) : DEFAULT_INDEX
   return index.get(snapshotLookupKey(provider.trim(), modelId.trim()))
 }
+
+export { snapshotLookupKey } from "./alias-policy.ts"

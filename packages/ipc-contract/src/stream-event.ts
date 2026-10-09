@@ -128,6 +128,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     inputTokens: z.number().int().optional(),
     outputTokens: z.number().int().optional(),
     totalTokens: z.number().int().optional(),
+    noCacheTokens: z.number().int().optional(),
     cacheReadTokens: z.number().int().optional(),
     cacheWriteTokens: z.number().int().optional(),
     reasoningTokens: z.number().int().optional(),

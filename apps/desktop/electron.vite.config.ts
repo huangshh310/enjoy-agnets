@@ -280,10 +280,6 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/providers/src/published-context-window.ts")
         },
         {
-          find: "@enjoy-agents/providers/pricing",
-          replacement: resolve(repoRoot, "packages/providers/src/pricing/index.ts")
-        },
-        {
           find: "@enjoy-agents/assets/playback-url",
           replacement: resolve(repoRoot, "packages/assets/src/playback-url.ts")
         },

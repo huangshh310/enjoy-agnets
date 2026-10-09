@@ -35,6 +35,7 @@ function recordCompletedRunMetric(runId: string, run: ActiveRun): void {
       runId,
       inputTokens: run.inputTokens,
       outputTokens: run.outputTokens,
+      noCacheTokens: run.noCacheTokens,
       cacheReadTokens: run.cacheReadTokens,
       cacheWriteTokens: run.cacheWriteTokens,
       reasoningTokens: run.reasoningTokens,
