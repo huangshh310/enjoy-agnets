@@ -29,6 +29,7 @@ export {
   desktopActAppKeyInfo,
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
+  desktopActIsBareCoord,
   desktopActIsSensitive,
   stampDesktopActSensitiveFlag,
   desktopActSessionKey,
@@ -47,6 +48,14 @@ export {
   prepareDesktopActGateInput,
   type LookupDesktopObservation
 } from "./desktop-act-observation-gate.ts"
+export {
+  DESKTOP_ACT_ACTION_FAILED,
+  DESKTOP_ACT_BARE_COORDS_DISABLED,
+  DESKTOP_ACT_BARE_COORDS_DISABLED_REASON,
+  desktopActCanContinueFromFailure,
+  refuseBareDesktopCoord,
+  sanitizeDesktopActFailure
+} from "./desktop-act-honesty.ts"
 export {
   clearDesktopSecondConfirmGate,
   desktopActNeedsSecondConfirm,
