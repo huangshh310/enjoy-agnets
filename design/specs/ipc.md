@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-09（`sensitive` 缺省当敏感是 MUST；`openExternal` 仅用户手势）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-09（`tool.result.result.code=bare_coords_disabled`；`sensitive` 缺省当敏感是 MUST）
 
 ## 当前真相
 
@@ -37,7 +37,7 @@
 
 | 频道 | 载荷 |
 |---|---|
-| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`session.config`（ACP `configOptions` / `config_option_update`，思考档认 `thought_level`）；`usage.updated` 可带 `contextWindow`（ACP `usage_update.size`，没有则省略）；`host.inject`（本轮 Enjoy SoT Skills/MCP 快照 `HostInjectSnapshot`，开流即发，不落库）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
+| `agent.event` | `StreamEvent` v1+v2（见 `ai-capabilities`）；含 `commands.update`（ACP `available_commands_update`，进 ⌘L 不是 Composer 斜杠条）；`session.config`（ACP `configOptions` / `config_option_update`，思考档认 `thought_level`）；`usage.updated` 可带 `contextWindow`（ACP `usage_update.size`，没有则省略）；`host.inject`（本轮 Enjoy SoT Skills/MCP 快照 `HostInjectSnapshot`，开流即发，不落库）；`tool.start` / `tool.result` 可带 `parentToolCallId`（子 Agent 工具树）；CU-P1-36 审批层裸坐标硬拒走现有 `tool.result`：`result.code === "bare_coords_disabled"`（与 actOnce 同一常量 `@enjoy-agents/ipc-contract/desktop-act-codes`），无新频道、无中文文案；`emitEvent` 经 `stampAndSend` 补 `sequence` / `sessionId`（事件自带或 `ActiveRun.input.sessionId`）再推窗口 |
 | `window.quit-requested` | 空载荷。`before-quit` 未放行时推到窗口，renderer 确认或空闲后 `window.forceQuit` |
 | `window.maximized-changed` | `{ isMaximized: boolean }` |
 | `app.update` | `AppUpdateSnapshot`（status / version / releaseNotes / percent / error） |
@@ -58,7 +58,7 @@
 
 ## 代码入口
 
-- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、预览打开 `workspace-preview.ts`（子路径 `@enjoy-agents/ipc-contract/workspace-preview`）、移动规划 `workspace-move-plan.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window（含 `WindowOpenExternalInput`）/ terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts`、本机 CLI `agent-tools.ts` + 静态保真 `runtime-capabilities.ts` + 供应商引用 `provider-agent-bind.ts`（不是 IPC 频道）、AGENTS.md 链 `agents-md-chain.ts`（不是 IPC 频道）、宿主注入快照 `host-inject.ts`（子路径 `@enjoy-agents/ipc-contract/host-inject`，不是 invoke 频道）、CU-P1-P 通知推导 `desktop-notify.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-notify`：`DesktopActApprovalArgs.sensitive` 在 `builtin-tools.ts`，结束态 / 待审批红action 纯函数在此，不是新 invoke 频道）各自独立
+- schema：`packages/ipc-contract/src/index.ts` 只再导出；聊天 `chat.ts`、引用/纠偏 `quoted-context.ts`（`QuotedContext` 规范类型 `file|diff|terminal_output|task_step`，兼容旧四类；正文 `content ?? snippet`）、工作区 `workspace-io.ts`、预览打开 `workspace-preview.ts`（子路径 `@enjoy-agents/ipc-contract/workspace-preview`）、移动规划 `workspace-move-plan.ts`、设置 `settings-input.ts`、审批 `approval.ts`、提问 `ask-user-questions.ts`、会话 `session.ts`、window（含 `WindowOpenExternalInput`）/ terminal / AI 能力、技能来源 `skill-sources.ts`、自动更新 `app-update.ts`、本机 CLI `agent-tools.ts` + 静态保真 `runtime-capabilities.ts` + 供应商引用 `provider-agent-bind.ts`（不是 IPC 频道）、AGENTS.md 链 `agents-md-chain.ts`（不是 IPC 频道）、宿主注入快照 `host-inject.ts`（子路径 `@enjoy-agents/ipc-contract/host-inject`，不是 invoke 频道）、CU-P1-P 通知推导 `desktop-notify.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-notify`：`DesktopActApprovalArgs.sensitive` 在 `builtin-tools.ts`，结束态 / 待审批红action 纯函数在此，不是新 invoke 频道）、CU-P1-36 硬拒码 `desktop-act-codes.ts`（子路径 `@enjoy-agents/ipc-contract/desktop-act-codes`：`bare_coords_disabled` 审批与 actOnce 共用，不是新 invoke 频道）各自独立
 - 注册胶水：`apps/desktop/src/main/ipc.ts`（拼 `CHANNELS`，卸载必须成对）
 - 会话：`ipc-session.ts`（`SESSION_CHANNELS` 必须进 `CHANNELS`，含 `patch` / `recap`）
 - 壳频道：`ipc-shell.ts`（workspace / agent / terminal / window / inbox.state；**无** session）
@@ -75,12 +75,12 @@
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`SESSION_CHANNELS`（含 `session.patch` / `session.recap` / `session.rename`）必须进 `CHANNELS`，否则卸载会留下 handler。
 - `patchSession` 不碰 `updated_at`；`rename` / 归档才会 bump。
 - Zod `AutomationTrigger` 含 `cron` / `on_save` / `webhook`。cron 走 `automations-scheduler` 20s 滴答；保存后走 `fireOnSaveAutomations` 防抖；webhook 只绑 `127.0.0.1`。关应用不补跑、停听。`stopOnFailCount` 已按缺省 3 停用；路径/glob 仍未做。I4-P1 短锁 [`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md)；视觉真源 [`../previews/i4-p1-webhook-onsave.html`](../previews/i4-p1-webhook-onsave.html)。禁止把云隧道写成已做。
-- node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；通知推导走 `ipc-contract/desktop-notify`；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
+- node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；通知推导走 `ipc-contract/desktop-notify`；硬拒码走 `ipc-contract/desktop-act-codes`；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session` / `allow_always`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止这两种：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。`allow_always` 只写 prefs 簿，不写会话表。
 - `message.part.delta` 已从 StreamEvent v2 删除：从未有过生产者（文本增量走 v1 `text.delta`），留着只会让消费端空等。
 - Hash 路由与 IPC 无关。命令快捷键在渲染进程调度器里，不要做到 main 全局快捷键里抢焦点。AppSnap 的全局快捷键例外：只在 macOS 且开关打开时由 main 登记（`appsnap.doctor` / `appsnap.listWindows` / `appsnap.capture`）。
-- harness / desktop 的 node:test 若 value-import `@enjoy-agents/ipc-contract` 入口，会因 index 无后缀 re-export 报 `ERR_MODULE_NOT_FOUND`。能力表走子路径 `@enjoy-agents/ipc-contract/runtime-capabilities`；自定义 id 走 `@enjoy-agents/ipc-contract/custom-agent`；预览打开走 `@enjoy-agents/ipc-contract/workspace-preview`；注入快照走 `@enjoy-agents/ipc-contract/host-inject`；技能索引走 `@enjoy-agents/ipc-contract/skills-catalog`；通知推导走 `@enjoy-agents/ipc-contract/desktop-notify`。renderer Vite 别名必须精确匹配包名，并单独写这些子路径；字符串前缀会拼成 `index.ts/runtime-capabilities`。
+- harness / desktop 的 node:test 若 value-import `@enjoy-agents/ipc-contract` 入口，会因 index 无后缀 re-export 报 `ERR_MODULE_NOT_FOUND`。能力表走子路径 `@enjoy-agents/ipc-contract/runtime-capabilities`；自定义 id 走 `@enjoy-agents/ipc-contract/custom-agent`；预览打开走 `@enjoy-agents/ipc-contract/workspace-preview`；注入快照走 `@enjoy-agents/ipc-contract/host-inject`；技能索引走 `@enjoy-agents/ipc-contract/skills-catalog`；通知推导走 `@enjoy-agents/ipc-contract/desktop-notify`；硬拒码走 `@enjoy-agents/ipc-contract/desktop-act-codes`。renderer Vite 别名必须精确匹配包名，并单独写这些子路径；字符串前缀会拼成 `index.ts/runtime-capabilities`。
 - `workspace.openPreview` 必须进 `SHELL_CHANNELS` 与 preload。点完成条若走 `openBrowserUrl` 会进右栏 webview。html / URL 校验在 main，失败只回稳定码，禁止把绝对路径摊给 renderer。
 - `window.openExternal` 必须进 `SHELL_CHANNELS` 与 preload。合约 `WindowOpenExternalInput` + `parseWindowOpenExternalInput`（Zod `.strict()`，scheme / userinfo 复验）。`window.openExternal` **只能**从用户手势回调调用（目前是终端 WebLinks 点击：`onTerminalLinkActivate` → `requestOpenExternalQuiet`）；禁止程序化 / 自动打开。不是 `openBrowserUrl`（右栏 webview），也不是 renderer `window.open`。main 再 `URL` 验一遍：只放行 `http:` / `https:`；`file:` / `javascript:` / `data:` / 带 `user:pass@` 或任意 username/password / 其它自定义协议即拒。失败只回 `{ ok: false, code }`，禁止 throw（renderer `void` 了 promise，抛会变成 unhandled rejection）。renderer 吞掉结果，不 toast。leo 已过此频道。
 - `workspace.changes` / `session.list` / `session.create` / `session.messages` / `settings.setDefaultModel` / `removeProvider` / `activateProvider` / `automations.remove` 必须对象入参 Zod parse。不要再传裸 string。

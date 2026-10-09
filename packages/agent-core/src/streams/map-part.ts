@@ -3,6 +3,7 @@
  * 兼容 reasoning / reasoning-delta，以及 text / delta / reasoning_content。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { streamPayloadForDeniedToolPart } from "../computer-use/desktop-act-honesty.ts"
 import { withCommandDisplay } from "../tools/command-display.ts"
 
 const ENJOY_TYPES = new Set([
@@ -97,7 +98,16 @@ function mapToolPart(part: Record<string, unknown>, runId: string): StreamEvent 
     }
   }
   if (type === "tool-output-denied") {
-    return { type: "tool.result", runId, toolCallId, name, args, error: "Denied" }
+    const denied = streamPayloadForDeniedToolPart(part)
+    return {
+      type: "tool.result",
+      runId,
+      toolCallId,
+      name,
+      args,
+      ...(denied.result ? { result: denied.result } : {}),
+      error: denied.error
+    }
   }
   if (type === "tool-approval-request") {
     // allow-all / 自动放行：SDK 仍会发 request，带 isAutomatic。再当 user-approval 会弹卡并在收工后再泵，grok 报 No output generated。

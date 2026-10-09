@@ -53,9 +53,12 @@ export {
   DESKTOP_ACT_ACTION_FAILED,
   DESKTOP_ACT_BARE_COORDS_DISABLED,
   DESKTOP_ACT_BARE_COORDS_DISABLED_REASON,
+  desktopActBareCoordsDeniedResult,
   desktopActCanContinueFromFailure,
+  denyBareDesktopCoordApproval,
   refuseBareDesktopCoord,
-  sanitizeDesktopActFailure
+  sanitizeDesktopActFailure,
+  streamPayloadForDeniedToolPart
 } from "./desktop-act-honesty.ts"
 export {
   clearDesktopSecondConfirmGate,

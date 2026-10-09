@@ -107,7 +107,11 @@ test("desktop_act：wait 不审，会话放行绑 appKey，裸工具名不放行
   )
   assert.deepEqual(
     resolveToolApproval("desktop_act", "agent", calc, { action: "click", x: 1, appKey: "com.apple.calculator" }),
-    { type: "denied", reason: "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off)." }
+    {
+      type: "denied",
+      reason: "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off).",
+      code: "bare_coords_disabled"
+    }
   )
   assert.equal(
     resolveToolApproval(
@@ -142,7 +146,8 @@ test("desktop_act：desktop_act:* 与任意桌面开关等价，仍拦坐标和�
   assert.deepEqual(resolveToolApproval("desktop_act", "agent", starred, { action: "click", x: 1 }), {
     type: "denied",
     reason:
-      "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off)."
+      "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off).",
+    code: "bare_coords_disabled"
   })
   assert.equal(
     resolveToolApproval("desktop_act", "agent", { ...starred, desktopAdvancedCoords: true }, { action: "click", x: 1 }),
@@ -163,7 +168,8 @@ test("desktop_act：任意桌面开关放行元素点击，仍拦坐标和敏感
   assert.deepEqual(resolveToolApproval("desktop_act", "agent", any, { action: "click", x: 1 }), {
     type: "denied",
     reason:
-      "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off)."
+      "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off).",
+    code: "bare_coords_disabled"
   })
   assert.equal(
     resolveToolApproval("desktop_act", "agent", { ...any, desktopAdvancedCoords: true }, { action: "click", x: 1 }),
