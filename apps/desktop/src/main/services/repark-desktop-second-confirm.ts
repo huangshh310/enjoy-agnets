@@ -26,7 +26,8 @@ export async function reparkDesktopSecondConfirm(input: {
     approvalId: createId("apr"),
     toolCallId: input.pending.toolCallId,
     name: "desktop_act",
-    args: parked
+    args: parked,
+    requestArgs: original
   }).id
   const next: PendingApproval = {
     approvalId,

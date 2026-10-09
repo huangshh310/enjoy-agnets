@@ -4,7 +4,7 @@
 import { migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../stores/chat-store"
 import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
-import { finishSessionHydrate } from "./session-hydrate-finish"
+import { applyFinishedHydrate } from "./session-hydrate-finish"
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]
@@ -13,19 +13,21 @@ export function applySessionHydrate(input: {
   sessionId: string
 }): boolean {
   const latest = useChatStore.getState()
-  const next = finishSessionHydrate({
-    generation: input.generation,
-    sessionId: input.sessionId,
-    currentSessionId: latest.sessionId,
-    dbMessages: threadFromRows(input.dbRows),
-    liveMessages: latest.messages,
-    sameSession: input.sameSession,
-    running: latest.running
-  })
-  if (next === undefined) return false
-  restoreUiMessages(input.dbRows)
-  latest.setMessages(next)
-  return true
+  return applyFinishedHydrate(
+    {
+      generation: input.generation,
+      sessionId: input.sessionId,
+      currentSessionId: latest.sessionId,
+      dbMessages: threadFromRows(input.dbRows),
+      liveMessages: latest.messages,
+      sameSession: input.sameSession,
+      running: latest.running
+    },
+    (next) => {
+      restoreUiMessages(input.dbRows)
+      latest.setMessages(next)
+    }
+  )
 }
 
 function restoreUiMessages(rows: SessionMessageRow[]) {

@@ -1,5 +1,5 @@
 /**
- * 会话回灌世代。发送时加一代，仍在 await 的 loadSession 必须丢掉结果。
+ * 会话回灌世代。发送时加一代：过期回灌不得覆盖乐观消息，历史行仍合并。
  */
 
 let hydrateGeneration = 0

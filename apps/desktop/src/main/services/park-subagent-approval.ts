@@ -32,7 +32,8 @@ export async function waitForSubagentApproval(
     approvalId: createId("apr"),
     toolCallId,
     name: toolName,
-    args: parked
+    args: parked,
+    requestArgs: args
   }).id
   run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args: parked })
   checkpointActiveRun(run)

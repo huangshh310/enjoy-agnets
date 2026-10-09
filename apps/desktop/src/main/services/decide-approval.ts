@@ -13,7 +13,7 @@ import { ASK_USER_QUESTIONS_TOOL, ApprovalDecision } from "@enjoy-agents/ipc-con
 import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
 import { approvalResponseMessage } from "./approval-response-message"
-import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
+import { assertApprovalHmac, recordApprovalDecision, recordSdkApprovalResponse } from "./approval-hmac"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { armCatchUpPark } from "./park-catch-up-approval"
 import { runWithActiveRunId } from "./active-run-id"
@@ -75,13 +75,16 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   if (await maybeReparkSecondConfirm(window, run, decision.runId, pending, desktopResume)) {
     return { ok: true }
   }
-  const resumeCode = desktopActFailureCode(desktopResume)
+  const resumeCode = desktopResume ? desktopActFailureCode(desktopResume) : ""
   const skipped = pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision === "deny"
+  const approved = decision.decision !== "deny" && !resumeCode
+  const reason = skipped ? "User skipped questions." : resumeCode || decision.reason
+  recordSdkApprovalResponse(decision.approvalId, { approved, reason, resumeCode })
   run.messages.push(
     approvalResponseMessage({
       approvalId: decision.approvalId,
-      approved: decision.decision !== "deny" && !resumeCode,
-      reason: skipped ? "User skipped questions." : resumeCode || decision.reason
+      approved,
+      reason
     })
   )
   if (desktopResume && !desktopActMayReportSuccess(desktopResume)) {

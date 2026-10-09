@@ -96,7 +96,8 @@ async function consumeApprovalRequired(
   },
   lastCheckpointAt: number
 ): Promise<number> {
-  const args = await parkApprovalArgs(event.name, event.args)
+  const rawArgs = event.args
+  const args = await parkApprovalArgs(event.name, rawArgs)
   const toolCallId = event.toolCallId || createId("tool")
   const applied = applyRememberedApproval(
     rememberApproval({
@@ -104,7 +105,8 @@ async function consumeApprovalRequired(
       approvalId: event.approvalId || createId("apr"),
       toolCallId,
       name: event.name,
-      args
+      args,
+      requestArgs: rawArgs
     }),
     { toolCallId, name: event.name, args }
   )
@@ -134,7 +136,7 @@ function replayDecidedApproval(
   }
 ) {
   const approved = applied.kind === "replay" ? applied.approved : false
-  const reason = applied.kind === "fail_closed" ? applied.code : undefined
+  const reason = applied.kind === "fail_closed" ? applied.code : applied.reason
   ctx.input.onDecidedReplay?.(
     approvalResponseMessage({ approvalId: applied.approvalId, approved, reason })
   )

@@ -11,11 +11,11 @@ import {
   insertApproval,
   planRememberApproval,
   setApprovalDecision,
+  setApprovalSdkResponse,
   signApproval,
   verifyApproval
 } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
-import { createId } from "./ids"
 
 let processSecret: string | undefined
 
@@ -59,15 +59,17 @@ export function rememberApproval(input: {
   toolCallId: string
   name: string
   args: unknown
+  requestArgs?: unknown
 }) {
   const db = getDatabase()
+  const requestArgs = input.requestArgs ?? input.args
   const incoming = {
     id: input.approvalId,
     runId: input.runId,
     toolCallId: input.toolCallId,
-    args: input.args
+    args: requestArgs
   }
-  const plan = planRememberApproval(getApproval(db, incoming.id), incoming, () => createId("apr"))
+  const plan = planRememberApproval(getApproval(db, incoming.id), incoming)
   if (plan.action !== "insert") return plan
   const payload = approvalPayload({
     runId: input.runId,
@@ -82,6 +84,7 @@ export function rememberApproval(input: {
     toolCallId: input.toolCallId,
     name: input.name,
     args: JSON.stringify(input.args ?? {}),
+    requestArgs: JSON.stringify(requestArgs ?? {}),
     hmac: signApproval(approvalSecret(), payload),
     decision: null,
     createdAt: Date.now()
@@ -119,4 +122,11 @@ export function assertApprovalHmac(input: {
 
 export function recordApprovalDecision(approvalId: string, decision: string): void {
   setApprovalDecision(getDatabase(), approvalId, decision)
+}
+
+export function recordSdkApprovalResponse(
+  approvalId: string,
+  response: { approved: boolean; reason?: string; resumeCode?: string }
+): void {
+  setApprovalSdkResponse(getDatabase(), approvalId, response)
 }

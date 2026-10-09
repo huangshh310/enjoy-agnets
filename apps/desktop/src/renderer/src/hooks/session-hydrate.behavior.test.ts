@@ -6,7 +6,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { create } from "zustand"
 import { bumpSessionHydrateGeneration } from "./session-hydrate-generation.ts"
-import { finishSessionHydrate, messagesAfterSessionSwitch } from "./session-hydrate-finish.ts"
+import { applyFinishedHydrate, messagesAfterSessionSwitch } from "./session-hydrate-finish.ts"
 
 type LiveMessage = {
   id: string
@@ -64,16 +64,18 @@ function applyProductionHydrate(
   sameSession: boolean
 ) {
   const latest = useStore.getState()
-  const next = finishSessionHydrate({
-    generation,
-    sessionId,
-    currentSessionId: latest.sessionId,
-    dbMessages,
-    liveMessages: latest.messages,
-    sameSession,
-    running: latest.running
-  })
-  if (next) latest.setMessages(next)
+  applyFinishedHydrate(
+    {
+      generation,
+      sessionId,
+      currentSessionId: latest.sessionId,
+      dbMessages,
+      liveMessages: latest.messages,
+      sameSession,
+      running: latest.running
+    },
+    (next) => latest.setMessages(next)
+  )
 }
 
 function beginLoad(sessionId: string) {
@@ -136,6 +138,29 @@ test("切走再切回：库里的消息仍回到主区", () => {
   assert.equal(restored.length, 2)
   assert.equal(restored[0]?.content, "hello stub")
   assert.equal(restored[1]?.content, "stub-ok hello stub")
+})
+
+test("发送加世代后，迟到的历史回灌仍合并进乐观轮", () => {
+  resetStore()
+  useStore.getState().setSession("ses_a")
+  const history: LiveMessage[] = [
+    { id: "msg_old_user", role: "user", content: "old turn" },
+    { id: "msg_old_asst", role: "assistant", content: "old reply" }
+  ]
+  const load = beginLoad("ses_a")
+  useStore.setState({
+    messages: optimisticTurn("hello stub"),
+    running: true,
+    pendingApproval: { approvalId: "apr_live", name: "write_file" }
+  })
+  bumpSessionHydrateGeneration()
+  applyProductionHydrate(load.generation, "ses_a", history, load.sameSession)
+  const next = useStore.getState()
+  assert.equal(next.messages.some((message) => message.id === "msg_old_user"), true)
+  assert.equal(next.messages.some((message) => message.id === "msg_old_asst"), true)
+  assert.equal(next.messages.some((message) => message.id === "msg_user_live"), true)
+  assert.equal(next.messages.some((message) => message.id === "msg_pending_live"), true)
+  assert.equal(next.pendingApproval?.approvalId, "apr_live")
 })
 
 test("从有消息的会话 A 切到空会话 B：B 不得留下 A 的消息和附件", () => {

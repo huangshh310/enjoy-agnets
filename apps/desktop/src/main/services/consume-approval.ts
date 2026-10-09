@@ -1,10 +1,12 @@
 /**
- * 消费审批：已决 id 回放或 fail closed，不开新卡、不换 id。
+ * 消费审批：已决 id 回放当时发给 SDK 的 response，或 fail closed。
  */
 import type { RememberApprovalPlan } from "@enjoy-agents/db"
 
 export const APPROVAL_ARGS_MISMATCH = "APPROVAL_ARGS_MISMATCH"
 export const APPROVAL_ARGS_MISMATCH_COPY = "审批参数已变化，本次未执行。"
+export const APPROVAL_REPLAY_DENIED = "APPROVAL_REPLAY_DENIED"
+export const APPROVAL_REPLAY_DENIED_COPY = "本次未执行。"
 
 export type ApprovalDecisionName = "allow" | "deny" | "allow_session" | "allow_always"
 
@@ -18,13 +20,14 @@ export type ConsumedApproval =
       approvalId: string
       approved: boolean
       decision: ApprovalDecisionName
+      reason?: string
     }
   | {
       kind: "fail_closed"
       approvalId: string
       approved: false
-      code: typeof APPROVAL_ARGS_MISMATCH
-      message: typeof APPROVAL_ARGS_MISMATCH_COPY
+      code: typeof APPROVAL_ARGS_MISMATCH | typeof APPROVAL_REPLAY_DENIED
+      message: typeof APPROVAL_ARGS_MISMATCH_COPY | typeof APPROVAL_REPLAY_DENIED_COPY
     }
 
 export function asApprovalDecision(value: string | undefined): ApprovalDecisionName {
@@ -48,19 +51,20 @@ export function applyRememberedApproval(
     }
   }
   if (plan.action === "fail_closed") {
+    const argsMismatch = plan.cause === "args_mismatch"
     return {
       kind: "fail_closed",
       approvalId: plan.id,
       approved: false,
-      code: APPROVAL_ARGS_MISMATCH,
-      message: APPROVAL_ARGS_MISMATCH_COPY
+      code: argsMismatch ? APPROVAL_ARGS_MISMATCH : APPROVAL_REPLAY_DENIED,
+      message: argsMismatch ? APPROVAL_ARGS_MISMATCH_COPY : APPROVAL_REPLAY_DENIED_COPY
     }
   }
-  const decision = asApprovalDecision(plan.decision)
   return {
     kind: "replay",
     approvalId: plan.id,
-    approved: decision !== "deny",
-    decision
+    approved: plan.approved,
+    decision: asApprovalDecision(plan.decision),
+    reason: plan.reason
   }
 }
