@@ -21,6 +21,7 @@ import {
 import { readSessionRuntimes, writeSessionRuntime } from "./agent-tools-vault"
 import { getSetting, setSetting } from "./database"
 import { readPreferences, writePreferences } from "./preferences"
+import { mergeKeptSecrets, redactSecretMap } from "./secret-map"
 
 const KEY = "agentTools.customAgents"
 const BLOCKED_ENV = new Set(["NODE_OPTIONS", "ELECTRON_RUN_AS_NODE"])
@@ -51,13 +52,18 @@ export function getCustomAgent(id: string): CustomAgentRecord | undefined {
   return readCustomAgents().find((item) => item.id === id)
 }
 
+/** 给 renderer 的编辑态：只回键，值留空。 */
+export function toEditableCustomAgent(record: CustomAgentRecord): CustomAgentRecord {
+  return { ...record, env: redactSecretMap(record.env) }
+}
+
 export function upsertCustomAgent(input: UpsertCustomAgentInput): CustomAgentRecord {
   assertCustomAllowedCommand(input.command)
   const cwdMode = input.cwdMode ?? "workspace"
   const cwd = sanitizeCustomCwd(cwdMode, input.cwd)
-  const env = sanitizeEnv(input.env)
   const rows = readCustomAgents()
   const existing = input.id ? rows.find((item) => item.id === input.id) : undefined
+  const env = mergeKeptSecrets(sanitizeEnv(input.env), existing?.env)
   const id = existing?.id ?? nextCustomAgentId(input.label, new Set(rows.map((item) => item.id)))
   const next: CustomAgentRecord = {
     id,

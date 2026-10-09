@@ -136,7 +136,7 @@ export function CreateProjectRemoteStep({
             <span>{t("pages.workspaces.createProject.browseRemote")}</span>
           </Button>
         </div>
-        <p className="text-[11px] text-text-tertiary">
+        <p className="text-caption-2-regular text-text-tertiary">
           {t("pages.workspaces.createProject.remotePathHint")}
         </p>
       </div>
@@ -175,19 +175,19 @@ export function CreateProjectRemoteStep({
         {remote.probeNote ? (
           <div className="flex items-center gap-1.5 text-caption-2-medium truncate">
             {isProbeSuccess ? (
-              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="inline-flex items-center gap-1 text-state-success-text dark:text-state-success-text font-medium">
                 <RiCheckLine className="size-3.5" />
                 <span>{remote.probeNote}</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium truncate">
+              <span className="inline-flex items-center gap-1 text-text-error-primary dark:text-text-error-primary font-medium truncate">
                 <RiAlertLine className="size-3.5 shrink-0" />
                 <span className="truncate">{remote.probeNote}</span>
               </span>
             )}
           </div>
         ) : (
-          <span className="text-[11px] text-text-tertiary">
+          <span className="text-caption-2-regular text-text-tertiary">
             {remote.hostReady
               ? t("pages.workspaces.createProject.hostReady")
               : t("pages.workspaces.createProject.pickHostFirst")}
@@ -197,7 +197,7 @@ export function CreateProjectRemoteStep({
 
       {/* 全局错误提示 */}
       {error ? (
-        <div className="flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-caption-1-regular text-rose-600 dark:text-rose-400">
+        <div className="flex items-start gap-2 rounded-xl border border-border-error-default/20 bg-background-tertiary-error/10 p-3 text-caption-1-regular text-text-error-primary dark:text-text-error-primary">
           <RiAlertLine className="size-4 shrink-0 mt-0.5" />
           <span className="font-mono text-caption-2-regular break-all leading-relaxed">
             {error}

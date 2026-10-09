@@ -87,10 +87,10 @@ export function ModelListPane({
               ? t("chat.searchInProvider", { name: currentGroup.providerName })
               : t("chat.searchModels")
           }
-          className="flex-1 bg-transparent text-[12px] text-text-primary outline-none placeholder:text-text-placeholder"
+          className="flex-1 bg-transparent text-caption-1-regular text-text-primary outline-none placeholder:text-text-placeholder"
         />
         {searchQuery ? (
-          <span className="text-[10px] text-text-tertiary">
+          <span className="text-caption-2-regular text-text-tertiary">
             {t("chat.modelsFound", { count: filteredModels.length })}
           </span>
         ) : null}
@@ -163,19 +163,19 @@ export function ModelListPane({
                       {model.label}
                     </span>
                     {model.isFast ? (
-                      <span className="inline-flex items-center gap-0.5 rounded bg-accent-50 px-1 py-0.2 text-[9px] font-semibold text-accent-600 dark:bg-accent-950/60 dark:text-accent-300">
+                      <span className="inline-flex items-center gap-0.5 rounded bg-accent-50 px-1 py-0.2 text-caption-2-semibold font-semibold text-accent-600 dark:bg-accent-950/60 dark:text-accent-300">
                         <RiFlashlightLine className="size-2.5" />
                         {t("chat.badgeFast")}
                       </span>
                     ) : null}
                     {model.isReasoning ? (
-                      <span className="inline-flex items-center gap-0.5 rounded bg-state-success-text/10 px-1 py-0.2 text-[9px] font-semibold text-state-success-text">
+                      <span className="inline-flex items-center gap-0.5 rounded bg-state-success-text/10 px-1 py-0.2 text-caption-2-semibold font-semibold text-state-success-text">
                         <RiBrainLine className="size-2.5" />
                         {t("chat.badgeThinking")}
                       </span>
                     ) : null}
                     {videoLocked ? (
-                      <span className="rounded bg-background-secondary-default px-1 py-0.2 text-[9px] font-semibold text-text-tertiary">
+                      <span className="rounded bg-background-secondary-default px-1 py-0.2 text-caption-2-semibold font-semibold text-text-tertiary">
                         {t("chat.badgeExp")}
                       </span>
                     ) : null}

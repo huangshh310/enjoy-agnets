@@ -4,8 +4,11 @@
  */
 import { RiFireLine, RiFlashlightLine } from "@remixicon/react"
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
+import { shownQuotaPercent } from "@renderer/components/ai-chat/usage/quota-hint-text"
 
 export function AgentToolMiniQuota({ tool }: { tool: AgentToolPublic }) {
+  const usageNumber = useSettingsSnapshot().data?.preferences.usageNumber ?? "used"
   const quota = tool.quotaInfo
   if (!quota) return null
 
@@ -34,7 +37,7 @@ export function AgentToolMiniQuota({ tool }: { tool: AgentToolPublic }) {
           {status === "danger" || status === "exhausted" ? (
             <RiFireLine className="size-3 text-text-error-primary" />
           ) : null}
-          <span>{Math.round(used)}%</span>
+          <span>{shownQuotaPercent(used, usageNumber)}%</span>
           {resetsIn ? <span className="opacity-70">· {resetsIn}</span> : null}
           {primaryWindow?.pacing?.cushionPercent != null && status === "safe" && used > 0 ? (
             <span className="text-caption-2-medium opacity-60">~{primaryWindow.pacing.cushionPercent}%</span>

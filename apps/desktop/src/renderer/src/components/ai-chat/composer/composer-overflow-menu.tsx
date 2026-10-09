@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useT } from "@renderer/i18n"
 import { SessionGoalChip } from "./session-goal-chip"
 import { SessionHeartbeatForm } from "./session-heartbeat-form"
+import { AppsnapWindowPicker } from "./appsnap-window-picker"
 
 export function ComposerOverflowMenu() {
   const t = useT()
@@ -34,6 +35,7 @@ export function ComposerOverflowMenu() {
         </div>
         <SessionGoalChip layout="menu" />
         <SessionHeartbeatForm />
+        <AppsnapWindowPicker />
       </PopoverContent>
     </Popover>
   )

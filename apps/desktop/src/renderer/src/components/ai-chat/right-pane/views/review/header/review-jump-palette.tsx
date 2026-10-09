@@ -81,7 +81,7 @@ export function ReviewJumpPalette(props: {
                           {name}
                         </span>
                         {dir ? (
-                          <span className="truncate font-mono text-[11px] text-text-tertiary">
+                          <span className="truncate font-mono text-caption-2-regular text-text-tertiary">
                             {dir}
                           </span>
                         ) : null}
@@ -89,7 +89,7 @@ export function ReviewJumpPalette(props: {
 
                       <div className="flex shrink-0 items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center justify-center rounded px-1 text-[10px] font-mono font-bold border ${status.bgTone}`}
+                          className={`inline-flex items-center justify-center rounded px-1 text-caption-2-bold font-mono font-bold border ${status.bgTone}`}
                         >
                           {status.mark}
                         </span>

@@ -62,13 +62,13 @@ export function SkillListPane({
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.skills.listPane.listTitle", { n: skills.length })}
           </h4>
-          <p className="text-[11px] text-text-tertiary">
+          <p className="text-caption-2-regular text-text-tertiary">
             {t("pages.skills.listPane.selectedSummary", { enabled: enabledCount, total: skills.length })}
           </p>
         </div>
 
         {/* 快速筛选标签 */}
-        <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default/60 p-0.5 border border-separator-border/50 text-[11px]">
+        <div className="flex items-center gap-1 rounded-xl bg-background-secondary-default/60 p-0.5 border border-separator-border/50 text-caption-2-regular">
           <button
             type="button"
             onClick={() => setFilterMode("all")}
@@ -87,7 +87,7 @@ export function SkillListPane({
             className={cx(
               "rounded-lg px-2 py-0.5 transition-colors cursor-pointer",
               filterMode === "enabled"
-                ? "bg-background-primary-default text-emerald-600 font-medium shadow-2xs"
+                ? "bg-background-primary-default text-state-success-text font-medium shadow-2xs"
                 : "text-text-tertiary hover:text-text-secondary"
             )}
           >
@@ -169,12 +169,12 @@ export function SkillListPane({
                         {skill.name}
                       </span>
                       {trigger ? (
-                        <span className="rounded bg-background-secondary-default/80 px-1.5 py-0.2 font-mono text-[9.5px] text-text-secondary border border-separator-border/50">
+                        <span className="rounded bg-background-secondary-default/80 px-1.5 py-0.2 font-mono text-caption-2-regular text-text-secondary border border-separator-border/50">
                           {trigger}
                         </span>
                       ) : null}
                     </div>
-                    <p className="truncate text-[11px] text-text-tertiary">
+                    <p className="truncate text-caption-2-regular text-text-tertiary">
                       {skill.description || skill.relativeDir}
                     </p>
                   </div>
@@ -183,9 +183,9 @@ export function SkillListPane({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span
                     className={cx(
-                      "text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md",
+                      "text-caption-2-medium font-mono font-medium px-1.5 py-0.5 rounded-md",
                       isSelected
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        ? "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
                         : "bg-background-secondary-default text-text-tertiary"
                     )}
                   >
@@ -199,7 +199,7 @@ export function SkillListPane({
                       e.stopPropagation()
                       onDeleteSkill(skill.id)
                     }}
-                    className="opacity-0 group-hover:opacity-100 rounded-md p-1 text-text-tertiary hover:bg-rose-500/10 hover:text-rose-600 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 rounded-md p-1 text-text-tertiary hover:bg-background-tertiary-error/10 hover:text-text-error-primary transition-opacity"
                     aria-label={t("pages.skills.listPane.deleteAria")}
                     title={t("pages.skills.listPane.deleteTitle")}
                   >

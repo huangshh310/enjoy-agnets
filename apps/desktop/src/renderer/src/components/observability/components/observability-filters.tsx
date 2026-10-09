@@ -59,7 +59,7 @@ export function ObservabilityFilters(props: {
                 type="button"
                 onClick={() => onStatusFilterChange(opt.id)}
                 className={cx(
-                  "rounded-md px-2.5 py-1 text-[11.5px] font-medium transition-all shrink-0",
+                  "rounded-md px-2.5 py-1 text-caption-2-medium font-medium transition-all shrink-0",
                   isSelected
                     ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
                     : "text-text-secondary hover:text-text-primary"
@@ -84,7 +84,7 @@ export function ObservabilityFilters(props: {
       </div>
 
       {/* 第二行：Kind 细分类型过滤 */}
-      <div className="flex items-center gap-1 overflow-x-auto text-[11px] text-text-tertiary">
+      <div className="flex items-center gap-1 overflow-x-auto text-caption-2-medium text-text-tertiary">
         <span className="font-medium mr-1 text-text-secondary">
           {t("pages.observability.kindBreakdown")}
         </span>

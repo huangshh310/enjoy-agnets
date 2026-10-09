@@ -22,7 +22,7 @@ export function RulesTemplates(props: {
           <RiSparklingLine className="size-3.5 text-accent-500" />
           <span>{t("studio.rules.templatesTitle")}</span>
         </div>
-        <span className="text-[10.5px] text-text-tertiary">{t("studio.rules.templatesHint")}</span>
+        <span className="text-caption-2-regular text-text-tertiary">{t("studio.rules.templatesHint")}</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {presets.map((preset) => (
@@ -56,14 +56,14 @@ function RuleTemplateCard(props: {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h4 className="text-caption-1-medium font-semibold text-text-primary">{preset.title}</h4>
-            <span className="text-[10px] font-mono text-text-tertiary">{preset.category}</span>
+            <span className="text-caption-2-regular font-mono text-text-tertiary">{preset.category}</span>
           </div>
-          <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-[9.5px] font-mono text-text-secondary">
+          <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-caption-2-regular font-mono text-text-secondary">
             {preset.badge}
           </span>
         </div>
-        <p className="mt-2 text-[11.5px] text-text-secondary leading-relaxed line-clamp-2">{preset.description}</p>
-        <div className="mt-2 rounded bg-background-secondary-default/60 p-2 font-mono text-[10.5px] text-text-secondary whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto">
+        <p className="mt-2 text-caption-2-regular text-text-secondary leading-relaxed line-clamp-2">{preset.description}</p>
+        <div className="mt-2 rounded bg-background-secondary-default/60 p-2 font-mono text-caption-2-regular text-text-secondary whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto">
           {preset.content}
         </div>
       </div>
@@ -97,11 +97,11 @@ function RuleTemplateActions(props: {
         size="sm"
         variant="ghost"
         onClick={() => props.onCopy(preset.id, preset.content)}
-        className="h-6.5 px-2 text-[11px] text-text-secondary"
+        className="h-6.5 px-2 text-caption-2-regular text-text-secondary"
       >
         {props.copiedId === preset.id ? (
           <>
-            <RiCheckLine className="size-3 text-emerald-500" />
+            <RiCheckLine className="size-3 text-state-success-text" />
             <span>{t("common.copied")}</span>
           </>
         ) : (
@@ -117,7 +117,7 @@ function RuleTemplateActions(props: {
           variant="outline"
           disabled={Boolean(props.isWriting)}
           onClick={() => props.onWrite(preset, "cursor_mdc")}
-          className="gap-1 h-6.5 px-2 text-[10.5px]"
+          className="gap-1 h-6.5 px-2 text-caption-2-regular"
         >
           {props.writingMdc ? <RiLoader4Line className="size-3 animate-spin" /> : <RiAddLine className="size-3" />}
           <span>{t("studio.rules.writeMdc")}</span>
@@ -126,7 +126,7 @@ function RuleTemplateActions(props: {
           size="sm"
           disabled={Boolean(props.isWriting)}
           onClick={() => props.onWrite(preset, "agents_md")}
-          className="gap-1 h-6.5 px-2 text-[10.5px] shadow-xs"
+          className="gap-1 h-6.5 px-2 text-caption-2-regular shadow-xs"
         >
           {props.writingAgents ? <RiLoader4Line className="size-3 animate-spin" /> : <RiCheckLine className="size-3" />}
           <span>{t("studio.rules.writeAgents")}</span>

@@ -99,10 +99,10 @@ export function ObservabilityDashboardView(props: {
       <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-separator-border/70 bg-background-primary-default px-3.5 py-2">
         {/* 左侧：探针状态徽章与采样计数 */}
         <div className="flex flex-wrap items-center gap-2 text-caption-2-medium">
-          <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 font-mono text-[10.5px] font-semibold text-emerald-600 dark:text-emerald-400">
-            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="inline-flex items-center gap-1.5 rounded-md bg-state-success-text/10 px-2 py-1 font-mono text-caption-2-semibold font-semibold text-state-success-text dark:text-state-success-text">
+            <span className="size-1.5 rounded-full bg-state-success-base animate-pulse" />
             <span>本地探针活跃</span>
-            <span className="text-emerald-500/50">·</span>
+            <span className="text-state-success-text">·</span>
             <span>100% 采样</span>
           </div>
 
@@ -118,7 +118,7 @@ export function ObservabilityDashboardView(props: {
             <button
               type="button"
               onClick={() => setSelectedModel(null)}
-              className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-2 py-0.5 font-mono text-[10.5px] font-medium text-accent-600 dark:text-accent-400 hover:bg-accent-500/20 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-accent-500/10 px-2 py-0.5 font-mono text-caption-2-medium font-medium text-accent-600 dark:text-accent-400 hover:bg-accent-500/20 transition-colors"
               title="点击清除该模型筛选"
             >
               <span>模型: {selectedModel}</span>
@@ -130,7 +130,7 @@ export function ObservabilityDashboardView(props: {
         {/* 中右侧：状态快捷过滤胶囊 + 时间窗口分段器 */}
         <div className="flex flex-wrap items-center gap-2">
           {/* 状态过滤 */}
-          <div className="flex items-center gap-1 rounded-lg bg-background-secondary-default p-0.5 font-mono text-[10.5px]">
+          <div className="flex items-center gap-1 rounded-lg bg-background-secondary-default p-0.5 font-mono text-caption-2-regular">
             <button
               type="button"
               onClick={() => setStatusFilter("all")}
@@ -149,8 +149,8 @@ export function ObservabilityDashboardView(props: {
               className={cx(
                 "rounded-md px-2 py-1 transition-colors",
                 statusFilter === "success"
-                  ? "bg-background-primary-default text-emerald-600 dark:text-emerald-400 shadow-2xs font-semibold"
-                  : "text-text-tertiary hover:text-emerald-600"
+                  ? "bg-background-primary-default text-state-success-text dark:text-state-success-text shadow-2xs font-semibold"
+                  : "text-text-tertiary hover:text-state-success-text"
               )}
             >
               成功 ({statusCounts.success})
@@ -161,8 +161,8 @@ export function ObservabilityDashboardView(props: {
               className={cx(
                 "rounded-md px-2 py-1 transition-colors",
                 statusFilter === "failed"
-                  ? "bg-background-primary-default text-rose-600 dark:text-rose-400 shadow-2xs font-semibold"
-                  : "text-text-tertiary hover:text-rose-600"
+                  ? "bg-background-primary-default text-text-error-primary dark:text-text-error-primary shadow-2xs font-semibold"
+                  : "text-text-tertiary hover:text-text-error-primary"
               )}
             >
               异常 ({statusCounts.failed})
@@ -173,8 +173,8 @@ export function ObservabilityDashboardView(props: {
               className={cx(
                 "rounded-md px-2 py-1 transition-colors",
                 statusFilter === "slow"
-                  ? "bg-background-primary-default text-amber-600 dark:text-amber-400 shadow-2xs font-semibold"
-                  : "text-text-tertiary hover:text-amber-600"
+                  ? "bg-background-primary-default text-status-yellow-text dark:text-status-yellow-text shadow-2xs font-semibold"
+                  : "text-text-tertiary hover:text-status-yellow-text"
               )}
             >
               慢调用 ({statusCounts.slow})

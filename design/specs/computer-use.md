@@ -1,12 +1,14 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-09-25（CU-P1-36 kai：裸坐标默认关 + `action_failed` 诚实载荷）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（合入产品页 + CU-P1-36 裸坐标默认关）
 
 ## 当前真相
 
-设置里的 **电脑操控** 打开、且不是探索模式时，Enjoy Local 注册 `desktop_doctor`、`desktop_list_apps`、`desktop_snapshot`、`desktop_screenshot`、`desktop_act`。旧坐标工具已删。**§3.2e / H5**：未做真机 GUI 冒烟前，设置与文档不得把 Windows / Linux 标成「可用」或 available；macOS 是当前支持路径。`ENJOY_CU_GUI=1` 才跑拍树测试，跳过 ≠ 通过。
+产品页是 `#/settings/computer-use`（设置「智能体与模型」，导航 Beta）。总开关默认关。关掉时普通轮次没有 `desktop_*`。消息开头的 `/computer-use`（大小写和首尾空白忽略；引号、代码块、引用开头不算）只让这一发按执行模式注册这些工具，并带上已有 `desktopBias`，不把偏好写成开。探索模式这一发改为执行，只限这一发。`#/settings/tools` 不再放电脑操控。蓝边、始终允许、本会话任意桌面、感知试用和计算器只在产品页，不和导航各做一套。指针、线程预览和蓝边在同一张「画面」卡。指针「跟随系统 / 自定义」只改 overlay 边缘颜色。预览开/关和紧凑/大只影响线程里的图，关掉预览时尺寸不可点，也不停 run。预览铬要总开关和蓝边都开着。恢复默认只重置开关、指针和预览尺寸，不清始终允许簿。macOS 权限行是辅助功能、屏幕录制、输入监听，只认即将启动的 helper；未签名仍是「请安装带签名的版本」。输入监听授权后，别的应用在前台时物理 Esc 能打断当前动作；未授权时 Esc 只在 Enjoy 窗口里生效。Windows / Linux 只写「尚未在真机上验收」，不画 Grant。
 
-`desktop_act` 默认审批。`wait` 不审批（上限 5 秒）。**CU-P1-36 / §3.6**：prefs `desktopAdvancedCoords` 默认 **OFF**。主路径是 `desktop_snapshot` → `desktop_act(elementId)`。无 `elementId` 的裸 `x`/`y`：未开时硬拒 `bare_coords_disabled`（审批 `denied` + 执行面拦截，**禁止静默执行、也不进 Dock**）；打开后**每次**进 Dock，且 `bypassesSessionAllow`，**不吃**会话表 / Always-allow / `desktopAlwaysAllowAppKeys`。`allowForeground: true` / 敏感窗仍每次问。设置铬未绑（mike 后接 `setPreferences`）。`action_failed` 只保留失败事实：禁止附带新 `observationId` / 缩略 / 「继续点这里」；`code=action_failed` 即使带 `success: true` 也不得报成功。失败不还观察、不签发下一张树；再点必须显式 `desktop_snapshot` / `desktop_screenshot`。观察编号由 main 签发，30 秒、用过即废。**待批冻结该观察的 TTL 时钟**（`freeze` / `unfreeze`，不改 `OBSERVATION_TTL_MS`）。Allow：解冻再 `take`；仍 stale（过期或账本无此号）则对同一应用 **重拍一次**，匹配 `appKey` + 控件稳定键（**role+name**；路径 `elementId` 不是跨快照指针，有 role/name 时必须对上）后点**新**观察，旧号作废。身份偏弱（只有路径 id）回 `needs_second_confirm`，不静默点。对不上返回 `needs_second_confirm`（带 `previousThumbnailPath` + `thumbnailPath`），**禁止对过期观察静默点击**。主循环 `executeStoredTool` / 活泵 `desktop_act.execute` 看到该码时 **再停一张 Permission Dock warn 卡**（SoT [`../previews/cu-p1-r-second-confirm.html`](../previews/cu-p1-r-second-confirm.html)），不是只把字符串丢给模型。确认（`allow`，testid `approval-second-confirm-allow`）只对**新**观察号 resume；取消（`deny`，`approval-second-confirm-cancel`）discard 新号，不 act。缺任一缩略图主按钮禁用；确认后若仍缺图则 `screenshot_unavailable`，绝不静默 click。不新开决策枚举。Deny：`discard`，不 act。已成功消费的编号再点是 `stale_observation`，不重拍。`needs_foreground` / `integrity_blocked` / `unknown_key` / `no_display` / `executor_missing` / `permission_denied` 会把观察还回去。成功后再拍一张树。未授辅助功能是 `permission_denied`，不要伪装成前台许可。
+设置里的 **电脑操控** 打开、且不是探索模式时，Enjoy Local 注册 `desktop_doctor`、`desktop_list_apps`、`desktop_snapshot`、`desktop_screenshot`、`desktop_act`。单次口令即使总开关关着也注册，但仍不是 `plan` / `ask`。旧坐标工具已删。**§3.2e / H5**：未做真机 GUI 冒烟前，设置与文档不得把 Windows / Linux 标成「可用」或 available；macOS 是当前支持路径。`ENJOY_CU_GUI=1` 才跑拍树测试，跳过 ≠ 通过。
+
+`desktop_act` 默认审批。`wait` 不审批（上限 5 秒）。**CU-P1-36 / §3.6**：prefs `desktopAdvancedCoords` 默认 **OFF**。主路径是 `desktop_snapshot` → `desktop_act(elementId)`。无 `elementId` 的裸 `x`/`y`：未开时硬拒 `bare_coords_disabled`（审批 `denied` + 执行面拦截，**禁止静默执行、也不进 Dock**）；打开后**每次**进 Dock，且 `bypassesSessionAllow`，**不吃**会话表 / Always-allow / `desktopAlwaysAllowAppKeys`。`allowForeground: true` / 敏感窗仍每次问。`#/settings/computer-use` 产品页已有指针/预览/蓝边，**尚未**绑高级坐标开关（`setPreferences` 可拨，默认 OFF）。`action_failed` 只保留失败事实：禁止附带新 `observationId` / 缩略 / 「继续点这里」；`code=action_failed` 即使带 `success: true` 也不得报成功。失败不还观察、不签发下一张树；再点必须显式 `desktop_snapshot` / `desktop_screenshot`。观察编号由 main 签发，30 秒、用过即废。**待批冻结该观察的 TTL 时钟**（`freeze` / `unfreeze`，不改 `OBSERVATION_TTL_MS`）。Allow：解冻再 `take`；仍 stale（过期或账本无此号）则对同一应用 **重拍一次**，匹配 `appKey` + 控件稳定键（**role+name**；路径 `elementId` 不是跨快照指针，有 role/name 时必须对上）后点**新**观察，旧号作废。身份偏弱（只有路径 id）回 `needs_second_confirm`，不静默点。对不上返回 `needs_second_confirm`（带 `previousThumbnailPath` + `thumbnailPath`），**禁止对过期观察静默点击**。主循环 `executeStoredTool` / 活泵 `desktop_act.execute` 看到该码时 **再停一张 Permission Dock warn 卡**（SoT [`../previews/cu-p1-r-second-confirm.html`](../previews/cu-p1-r-second-confirm.html)），不是只把字符串丢给模型。确认（`allow`，testid `approval-second-confirm-allow`）只对**新**观察号 resume；取消（`deny`，`approval-second-confirm-cancel`）discard 新号，不 act。缺任一缩略图主按钮禁用；确认后若仍缺图则 `screenshot_unavailable`，绝不静默 click。不新开决策枚举。Deny：`discard`，不 act。已成功消费的编号再点是 `stale_observation`，不重拍。`needs_foreground` / `integrity_blocked` / `unknown_key` / `no_display` / `executor_missing` / `permission_denied` 会把观察还回去。成功后再拍一张树。未授辅助功能是 `permission_denied`，不要伪装成前台许可。
 
 截图由 host `desktopCapturer` 写入 `userData/computer-use-thumbs/`，最多 20 张，不进模型文本。审批卡和右栏「正在看的窗口」可读缩略图。重启后账本为空：`executeStoredTool` → `resumeDesktopAct` 必须显式 `stale_observation`（或随后 `needs_second_confirm`），走同一条重拍路；**禁止假放行 / 报 success**。待批 `parkDesktopActArgs` 冻结 TTL；`enrichDesktopActApprovalArgs` 再补 `appKey` / `appKeySource` / `appName` / `observationId` / `action` / `elementName` / `thumbnailPath?` / `bypassesSessionAllow` / 本观察缩略图。`needs_second_confirm` 记住批准时那张图（stash 键 = 新观察号）；主循环 / 活泵 **repark** 时 `enrichSecondConfirmApprovalArgs` 再补 `previousThumbnailPath` / `previousThumbnailDataUrl` 与 `thumbnailPath` / `thumbnailDataUrl`。Permission Dock 二次确认走同一张 `desktop-approval-card.tsx` 的 warn/danger 变体（左「批准时 · 批前观察」| 右「重拍后 · 新观察」），真源 #84。二次确认底栏 testid `approval-second-confirm-cancel` / `approval-second-confirm-allow`；缺任一 data URL 时主允许禁用。首次允许仍是单缩略图 + 摘要 + 四选一（选项 +「继续」，见 CU-P1-A）。二次确认 args 带 `bypassesSessionAllow`，不写 P1-S 会话表，也不写持久簿；底栏仍是确认/取消两钮，不露始终允许。
 
@@ -14,13 +16,17 @@
 
 **CU-P1-A Always-allow**：`allow_always` **只写**本机 prefs `desktopAlwaysAllowAppKeys`（`{ appKey, displayName }[]`），不写会话表。本会话钮只写 `conversationDesktopAllow`，不升簿。设置「电脑操控」内嵌「始终允许的应用」：名单 +「撤销」只清簿、立即刷新；空态「还没有始终允许的应用…」；说明必须含「坐标/前台/敏感仍每次问」；脚注写明「本会话允许」不在本页。禁持久 `desktop_act:*` / 任意桌面永久。命中顺序：`desktopActAlwaysAsks`（坐标 / 前台 / 敏感 / `needs_second_confirm`）→ `sessionAllowsDesktopAct` → `persistentAlwaysAllowsDesktopAct(args, listDesktopAlwaysAllowAppKeys(...))`。`approvalPolicyFromPrefs` 已把投影后的裸 `appKey[]` 灌进 `ApprovalPolicy.desktopAlwaysAllowAppKeys`。二次确认路径硬拒绝写簿：`rememberDesktopAlwaysAllowFromArgs` 在 `desktopActNeedsSecondConfirm` 时返回 `null`，Dock 不露 `approval-always-app`。视觉真源 [`../previews/cu-p1-a-always-allow.html`](../previews/cu-p1-a-always-allow.html)。
 
-设置页：标题「电脑操控」、就绪/未就绪徽章、开通三拍（开关 → 系统权限 → 执行器）、医生行指向**当前 helper**（路径/签名，不把 Electron-only AX 当绿）、动作「检测权限 / 拍一张屏 / 试一下 · 计算器」（试一下只切执行并预填 `@桌面`，不自动开跑）。同一卡内嵌「始终允许的应用」（`desktop-always-allow-list.tsx`）。高级「本会话任意桌面」从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”。main 无 `sessionId` 不写会话表（保持 no-op）。
+产品页才是电脑操控中心，不在内置工具再挂一张。总开关打开后，标题旁才画徽章：能点写「就绪」，未签名写「未签名」，缺授权写「未授权」。开关关掉不画「未就绪」，避免看起来像开关没生效。绿仍不是开关本身。未就绪时权限区只出一句人话（没有执行器 / 请安装带签名的版本 / 请打开仍未授权的那一项 / 没有图形会话 / 医生没回来请再检测）。**不展示**二进制路径、签名身份、开通三拍。绿仍只认 `helperSigned` + helper AX，禁止宿主 Electron AX / 遗留 `signed` 假绿。页内按卡片划分：
+- **第 1 段 (驱动与权限)**：macOS 辅助功能、屏幕录制、输入监听（认 helper，说明带后台静默交互原则）；未签名或没有执行器时不把权限行显示成「未授权 · 打开设置」；没有图形会话只留这一句，不另加平台提示；Windows / X11 / Wayland 只出平台提示（尚未标为可用），不再叠一条权限阻断；
+- **第 2 段 (视觉反馈与安全制动)**：冷静蓝边 + 「正在操控」顶栏 + 100ms Esc 应急刹车 + 预览铬演示；
+- **第 3 段 (应用授权与安全保护区)**：常驻系统受保护禁区声明（钥匙串/偏好设置/密码/支付硬编码二次审批，绝不自动放行）+「始终允许的应用」名单（撤销只清簿）+ 高级「本会话任意桌面」（从设置页把当前焦点 `sessionId` 传到 `DesktopAnyDesktopDetails`；**无焦点会话时开关禁用**，提示「请先打开对话」/ “Open a chat first”；main 无 `sessionId` 不写会话表保持 no-op）；
+- **第 4 段 (感知透视与快速体验)**：动作「检测权限 / 测试屏幕感知 / 试一下 · 计算器」（试一下只切执行并预填 `@桌面`，不自动开跑）+ Midscene.js 风格屏幕感知透视面板（`DesktopPerceptionInspector`：捕获缩略图视口 + 识别目标窗口/Bundle ID/可交互控件列表标签透视）。
 
 **CU-P1-B Composer 提及**：电脑操控开时，探索/执行都可点 `@桌面` / `@应用名`（产品锁写 **`@桌面`**，不沿用旧预览 `@电脑`）。候选与 `desktop_list_apps` 同源（IPC `builtinTools.desktopListApps`）：行上展示名 + 稳 `appKey`（mono）。Execute 下输入下方可选偏置芯片「桌面」或应用名 + appKey 摘要（CU 提示，不是第二条引擎条）。Composer 发送把 `readDesktopMentionBias` 收成 `agent.run.desktopBias`（`host` 或稳 `appKey`）；开流 `createCodingAgent` 把已注册的 `desktop_*` **提前**，并加一行 Prefer 指令，不堆长文、不改 `toolApproval`。helper 失败名单为空，只留宿主 `@桌面`，禁止补假应用。**提及 ≠ 放行**：Approval Dock / 会话表 / Always-allow / 二次确认 / overlay 闸不变，首次 `desktop_act` 仍进 Dock（除非会话/簿已放行）；点另一个 appKey 仍按 §3.2b 再批。Explore 允许同一枚提及芯片，但**不**注册 `desktop_*`（`shouldRegisterDesktopControlTools` 不看 bias）、不点亮 overlay、不把偏置芯片标成已连接；可见人话「桌面控制需切换到执行」。无稳 `appKey`（仅 pid）可进候选，**隐藏**始终允许路径，禁止用 pid 当键，也不写簿。不是插件店，不虚构 NotInstalled.app。视觉真源 [`../previews/cu-p1-b-composer-mention.html`](../previews/cu-p1-b-composer-mention.html)。
 
 执行器是附属进程，换行 JSON。PATH 用 `pathDirs`，Windows 带 `-ExecutionPolicy Bypass` 和 `windowsHide`。打包 `resources/bin/<platform>-<arch>/`（darwin helper 须 codesign，见下）。开发时 darwin 用 `swiftc` 编到 `.build/computer-use`，未签名不得报就绪。
 
-设置开关下调用 `desktopDoctor` 写一句缺什么。**医生绿当且仅当即将 spawn 的 helper 路径一致、具备有效团队签名（`helperSigned`，非 ad-hoc / 未签名），且该 helper 进程自己也能过 AX。** 宿主 Electron `systemPreferences.isTrustedAccessibilityClient` / `hostAccessibility` / 遗留 `signed` 不能单独报绿。未签名或身份错位返回 `executor_unsigned` / `executor_identity_mismatch`，开通徽章与医生点不得当就绪。人话指向为 Enjoy Computer Use helper 开辅助功能或重装签名包。
+设置开关下调用 `desktopDoctor`。`line` 与设置页中文阻断句同一套。**医生绿当且仅当即将 spawn 的 helper 路径一致、具备有效团队签名（`helperSigned`，非 ad-hoc / 未签名），且该 helper 进程自己也能过 AX。** 宿主 Electron `systemPreferences.isTrustedAccessibilityClient` / `hostAccessibility` / 遗留 `signed` 不能单独报绿。未签名或身份错位返回 `executor_unsigned` / `executor_identity_mismatch`，开通徽章不得当就绪。医生请求失败且总开关开着时，徽章写「未确认」，并提示再检测一次，不假装没有执行器。开关关掉不画徽章。
 
 打包 `beforePack`：`scripts/stage-computer-use.cjs` 编出 `native/computer-use/pack/<platform>-<arch>/`。darwin 在有 `CU_CODESIGN_IDENTITY` / `CSC_NAME` / `APPLE_CODESIGN_IDENTITY` 时 `codesign` 真实 helper，并写 `computer-use.identity.json`；没有身份不假装已签名。开发 `swiftc` → `.build/computer-use` 未签名不得报「已就绪」。
 
@@ -42,6 +48,8 @@
 - 未开「任意桌面」时，禁止裸 `desktop_act` 会话级放行；开了只命中 `desktop_act:*`。
 - 会话 Allow / anyDesktop 只活在 `conversationDesktopAllow`（按 sessionId）。禁止当全局 `builtin_tools` 偏好。归档或删除该对话必须清表。
 - 设置页无焦点 `sessionId` 时，「本会话任意桌面」开关必须禁用并提示先打开对话；禁止看起来能开、main 却 no-op。
+- 系统受保护禁区（钥匙串、系统偏好设置、密码管理器、支付窗口）由底层驱动硬编码保护，任何桌面动作强制人工二次审批，白名单或会话允许一律不得跳过。
+- 视觉感知透视回显仅在前端测试或设置中按需预览，截屏缩略图不进大模型文本上下文。
 
 ## 代码入口
 
@@ -56,7 +64,9 @@
 - 二次确认数据面：`computer-use/desktop-second-confirm.ts`（#85：记住批准时图 → 审批 args 路径 / data URL；缺图诚实失败）；闸：`packages/agent-core/.../desktop-second-confirm-gate.ts`（stash 同步进 `desktopActAlwaysAsks`，盖住会话白名单）
 - 二次确认停靠：`desktop-second-confirm-park.ts`、`repark-desktop-second-confirm.ts`（主循环 / 活泵再停卡，不把码只丢给模型）
 - 审批卡：`thread/approval/desktop-approval-card.tsx`（二次确认 reshape 同一张卡 + `desktop-second-confirm-body.tsx`；#84 SoT warn/danger）
-- 设置：`settings/tools/desktop-tools-card.tsx`；始终允许名单：`desktop/desktop-always-allow-list.tsx`；开通绿：`desktop/desktop-readiness.ts`、`desktop-doctor-panel.tsx`
+- 设置：产品页 `settings/computer-use/`（开关、权限、指针、预览、蓝边、始终允许、试用都在这里）；始终允许名单：`tools/desktop/desktop-always-allow-list.tsx`；就绪与一句阻断：`tools/desktop/desktop-readiness.ts`
+- 单次口令：`packages/ipc-contract/src/computer-use-slash.ts`；发送 `send-composer-run.ts` 的 `computerUseOnce`
+- 视觉感知透视：`settings/tools/desktop/desktop-perception-inspector.tsx`
 - 持久簿：`desktop-always-allow-ledger.ts`（prefs `desktopAlwaysAllowAppKeys`）；命中辅助：`persistentAlwaysAllowsDesktopAct`
 - 右栏：`right-pane/views/desktop-view.tsx`
 - Composer 提及铬：`ai-chat/composer/mentions/desktop/`（`@桌面` / `@应用`、偏置芯片、Explore 诚实）；名单映射 `map-listed-desktop-apps.ts`；IPC `builtinTools.desktopListApps`
@@ -66,7 +76,8 @@
 
 ## 已知坑
 
-- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时医生**不得**绿；真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。开通徽章与医生点只读 `helperSigned` + helper AX；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
+- Chat 用 `hidden` 保活，不会因为打开设置而卸载。电脑操控总开关不能只在 Composer 挂载时读一次。设置页写入后要广播 `enjoy:computer-use-changed`，`useComputerUseEnabled` 据此更新「桌面」芯片和 `@桌面`。工具是否注册仍看 main 当时的 `computerUseEnabled`。
+- **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时设置**不得**绿，只显示「请安装带签名的版本后再试」，并且**不**把辅助功能行显示成「未授权」。真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。徽章和权限行只读 helper；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
 - Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过（skip ≠ pass）。§3.2e / H5：设置与文档不得把 Win/Linux 标成可用/available，直至真机 GUI 冒烟。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
 - **二次确认卡 UI**：视觉真源 `design/previews/cu-p1-r-second-confirm.html`（#84）。数据面已在 main `#85`；Dock warn/danger 铬已接线。像素只进审批 args，禁止把 data URL 写进模型可见的工具结果。
@@ -75,7 +86,7 @@
 - 发版 CI 若没有 `CSC_LINK` / `CSC_NAME`，stage 会留下未签名 sidecar，医生保持不绿。不要把「编过 swiftc」写成已就绪。
 - **CU-P1-A 闸命中**：`resolveToolApproval` 顺序是硬每次问 → 会话表 → `persistentAlwaysAllowsDesktopAct`。投影只认裸 appKey；`*` / `desktop_act:*` / pid 丢掉。二次确认禁止写簿、禁止簿跳过 Dock。撤销只清簿，不清会话表。
 - **CU-P1-36 坐标通道**：缺省 `desktopAdvancedCoords !== true` 时裸坐标是 `denied` / `bare_coords_disabled`，不是「未开也进 Dock」。打开后仍走 `desktopActAlwaysAsks` + `bypassesSessionAllow`。不要把坐标画成主路径，也不要用失败包里的假观察绕 §3.2a 二次确认。
-- **隐患**：设置页「高级坐标」铬尚未接线。正确做法：数据面读 `preferences.desktopAdvancedCoords`（`setPreferences` 可写，默认 false）；mike 在「电脑操控」卡嵌开关，出厂 OFF，文案写逃逸舱。
+- **隐患**：`#/settings/computer-use` 产品页没有「高级坐标」开关。正确做法：数据面读 `preferences.desktopAdvancedCoords`（`setPreferences` 可写，默认 false）；mike 在该页嵌开关，出厂 OFF，文案写逃逸舱。不要另开第二套遥控器。
 - **子循环不认 allow_always**：`WaitForSubagentApproval` 仍是 `allow | deny | allow_session`。父路径 `applyApprovalDecision` 已写簿后，`toSubagentUserDecision` 把 `allow_always` 折成 `allow`，禁止再写会话表。
 - **testid 拆分**：旧 `approval-always` 曾指本会话。现在本会话是 `approval-session`，持久是 `approval-always-app`。testid 在四选一选项上，不要挂到「继续」。不要把旧 testid 接到 `allow_always`。
 - **H2 write/hit**：审批层按 `desktop_act:<appKey>` 写入、按 `has("desktop_act:"+appKey)` 或 `has("desktop_act:*")` 命中。不要再 `sessionApprovedTools.add("desktop_act")`，也不要按裸工具名放行。

@@ -7,6 +7,7 @@ import { join, resolve } from "node:path"
 import { ipcMain, shell } from "electron"
 import { pathIsInsideRoot } from "@enjoy-agents/db"
 import {
+  OpenSshConfigInput,
   SshBrowseInput,
   SshHostRemoveInput,
   SshHostUpsertInput,
@@ -51,8 +52,8 @@ export function registerSshHostIpc() {
     const input = SshBrowseInput.parse(raw)
     return browseSsh(await specFromProbe(input), input.path)
   })
-  ipcMain.handle("workspace.openSshConfig", async (_event, raw?: { path?: string }) => {
-    return openSshConfigFile(raw?.path)
+  ipcMain.handle("workspace.openSshConfig", async (_event, raw) => {
+    return openSshConfigFile(OpenSshConfigInput.parse(raw ?? {}).path)
   })
 }
 

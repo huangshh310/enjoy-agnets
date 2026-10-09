@@ -19,15 +19,15 @@ export function SandboxSettings() {
       {/* ─── 沙箱执行概览 ───────────────────────────────── */}
       <div className="flex flex-col gap-4 rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-card">
         <div className="flex items-center gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-chart-5/20 bg-chart-5/10 text-chart-5 dark:text-chart-5">
             <RiTerminalBoxLine className="size-6" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-body-large-semibold text-text-primary">
+              <span className="text-title-3-semibold text-text-primary">
                 {t("settings.sandbox.hubTitle")}
               </span>
-              <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+              <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
                 {t("settings.sandbox.hubBadge")}
               </span>
             </div>

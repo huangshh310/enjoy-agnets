@@ -8,7 +8,7 @@ import {
   normalizeAskUserQuestions
 } from "@enjoy-agents/ipc-contract"
 import type { AgentWorkspaceHost } from "../runtime-context"
-import { ASK_USER_QUESTIONS_TOOL } from "./ask-user-questions-name.ts"
+import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 
 export function createAskUserQuestionsTool(host: AgentWorkspaceHost) {
   return {

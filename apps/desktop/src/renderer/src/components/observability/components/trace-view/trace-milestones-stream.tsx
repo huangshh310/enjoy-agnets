@@ -50,7 +50,7 @@ export function TraceMilestonesStream(props: {
       title: "任务调度与请求发起",
       desc: `向上游 Provider 发起推理，注入提示词上下文与 ${formatTokens(inTok)} 输入 Tokens`,
       icon: RiSendPlaneLine,
-      colorClass: "text-blue-500 bg-blue-500/10",
+      colorClass: "text-accent-500 bg-accent-500/10",
       tag: "REQ_INIT"
     })
 
@@ -62,7 +62,7 @@ export function TraceMilestonesStream(props: {
           title: `工具调用: ${ev.toolName}`,
           desc: ev.decision ? `审批决策: ${ev.decision}` : "执行本地或远程工具动作",
           icon: RiNodeTree,
-          colorClass: "text-purple-500 bg-purple-500/10",
+          colorClass: "text-chart-5 bg-chart-5/10",
           tag: "TOOL_CALL"
         })
       }
@@ -75,7 +75,7 @@ export function TraceMilestonesStream(props: {
         title: "首字响应送达 (First Chunk / TTFO)",
         desc: `等待 ${ttfo}ms 接收到第一个思考或流式响应块，模型准备进入吐字生成阶段`,
         icon: RiFlashlightLine,
-        colorClass: "text-amber-500 bg-amber-500/10",
+        colorClass: "text-status-yellow-text bg-status-yellow-background/10",
         tag: "TTFO_CHUNK"
       })
     }
@@ -97,7 +97,7 @@ export function TraceMilestonesStream(props: {
       title: isSuccess ? "链路执行成功并归档" : `链路发生异常 (${metric.errorClass ?? "failed"})`,
       desc: `总耗时 ${formatLatency(duration)}，指标已脱敏存入本地 SQLite 数据库`,
       icon: RiCheckDoubleLine,
-      colorClass: isSuccess ? "text-emerald-500 bg-emerald-500/10" : "text-rose-500 bg-rose-500/10",
+      colorClass: isSuccess ? "text-state-success-text bg-state-success-text/10" : "text-text-error-primary bg-background-tertiary-error/10",
       tag: isSuccess ? "STATUS_OK" : "STATUS_ERR"
     })
 
@@ -123,7 +123,7 @@ export function TraceMilestonesStream(props: {
   }, [allMetrics, metric.modelId, metric.id])
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start font-mono text-[11px]">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start font-mono text-caption-2-regular">
       {/* 左侧 7 列：生命周期关键里程碑流 */}
       <div className="lg:col-span-7 flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
         <div className="flex items-center justify-between border-b border-separator-border/50 pb-2.5">
@@ -133,7 +133,7 @@ export function TraceMilestonesStream(props: {
               执行阶段时序里程碑 (Lifecycle Milestones)
             </h4>
           </div>
-          <span className="text-[10px] text-text-tertiary">
+          <span className="text-caption-2-regular text-text-tertiary">
             共 {milestones.length} 个关键节点
           </span>
         </div>
@@ -161,19 +161,19 @@ export function TraceMilestonesStream(props: {
                 {/* 步骤描述 */}
                 <div className="flex flex-1 flex-col gap-0.5 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-text-primary text-[11.5px] truncate">
+                    <span className="font-semibold text-text-primary text-caption-2-semibold truncate">
                       {m.title}
                     </span>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-[9.5px] text-text-tertiary">
+                      <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-caption-2-regular text-text-tertiary">
                         {m.tag}
                       </span>
-                      <span className="font-bold text-text-secondary text-[10.5px]">
+                      <span className="font-bold text-text-secondary text-caption-2-bold">
                         {m.timeOffset}
                       </span>
                     </div>
                   </div>
-                  <p className="text-[10.5px] text-text-secondary leading-relaxed">
+                  <p className="text-caption-2-regular text-text-secondary leading-relaxed">
                     {m.desc}
                   </p>
                 </div>
@@ -192,25 +192,25 @@ export function TraceMilestonesStream(props: {
               {metric.modelId ?? "default"} 性能基准
             </h4>
           </div>
-          <span className="text-[10px] text-text-tertiary shrink-0">
+          <span className="text-caption-2-regular text-text-tertiary shrink-0">
             采样库共 {modelCallsCount} 次
           </span>
         </div>
 
         {/* 性能偏离对比小卡 */}
         <div className="flex flex-col gap-1.5 rounded-lg bg-background-secondary-default/50 p-2.5 border border-separator-border/40">
-          <div className="flex items-center justify-between text-[10.5px]">
+          <div className="flex items-center justify-between text-caption-2-regular">
             <span className="text-text-tertiary">同模型基准均值:</span>
             <span className="font-bold text-text-primary">{formatLatency(modelAvgDuration)}</span>
           </div>
-          <div className="flex items-center justify-between text-[10.5px]">
+          <div className="flex items-center justify-between text-caption-2-regular">
             <span className="text-text-tertiary">当前链路相对表现:</span>
             <span
               className={cx(
                 "font-semibold",
                 duration <= modelAvgDuration
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-amber-600 dark:text-amber-400"
+                  ? "text-state-success-text dark:text-state-success-text"
+                  : "text-status-yellow-text dark:text-status-yellow-text"
               )}
             >
               {duration <= modelAvgDuration
@@ -222,12 +222,12 @@ export function TraceMilestonesStream(props: {
 
         {/* 同模型相邻执行列表 */}
         <div className="flex flex-col gap-1.5 pt-1">
-          <span className="text-[10px] text-text-tertiary uppercase">
+          <span className="text-caption-2-regular text-text-tertiary uppercase">
             同架构其他执行记录 (点击即刻切换诊断)
           </span>
 
           {siblingTraces.length === 0 ? (
-            <div className="py-4 text-center text-text-tertiary text-[10.5px]">
+            <div className="py-4 text-center text-text-tertiary text-caption-2-regular">
               暂无同模型的其他执行样本
             </div>
           ) : (
@@ -246,20 +246,20 @@ export function TraceMilestonesStream(props: {
                       <span
                         className={cx(
                           "size-1.5 rounded-full shrink-0",
-                          sSuccess ? "bg-emerald-500" : "bg-rose-500"
+                          sSuccess ? "bg-state-success-base" : "bg-background-tertiary-error"
                         )}
                       />
-                      <span className="text-text-secondary truncate max-w-[140px] text-[10.5px]">
+                      <span className="text-text-secondary truncate max-w-[140px] text-caption-2-regular">
                         run_{s.id.slice(0, 8)}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 text-[10.5px]">
+                    <div className="flex items-center gap-2 shrink-0 text-caption-2-bold">
                       <span className="font-bold text-text-primary">
                         {formatLatency(sDuration)}
                       </span>
                       {s.ttfoMs ? (
-                        <span className="text-amber-500 text-[9.5px]">
+                        <span className="text-status-yellow-text text-caption-2-regular">
                           T: {s.ttfoMs}ms
                         </span>
                       ) : null}

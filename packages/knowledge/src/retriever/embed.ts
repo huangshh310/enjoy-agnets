@@ -5,7 +5,7 @@
 const DEFAULT_DIMS = 32
 
 export function hashedEmbedding(text: string, dims = DEFAULT_DIMS): number[] {
-  const vector = new Array<number>(dims).fill(0)
+  const vector = Array.from({ length: dims }, () => 0)
   const tokens = text.toLowerCase().split(/\W+/).filter(Boolean)
   if (tokens.length === 0) return vector
   for (const token of tokens) {

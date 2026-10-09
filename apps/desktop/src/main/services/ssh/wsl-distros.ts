@@ -32,6 +32,8 @@ export function decodeWslList(buffer: Buffer): string {
 export function parseWslDistroNames(text: string): string[] {
   return text
     .split(/\r?\n/)
+    // wsl.exe 输出 UTF-16LE，字符之间夹 NUL，必须按码位剥掉。
+    // eslint-disable-next-line no-control-regex
     .map((line) => line.replace(/\u0000/g, "").replace(/^\*\s*/, "").trim())
     .filter((name) => name.length > 0 && !SKIP.has(name.toLowerCase()))
 }

@@ -3,6 +3,7 @@
  * 兼容 reasoning / reasoning-delta，以及 text / delta / reasoning_content。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { withCommandDisplay } from "../tools/command-display.ts"
 
 const ENJOY_TYPES = new Set([
   "text.delta",
@@ -76,7 +77,14 @@ function mapToolPart(part: Record<string, unknown>, runId: string): StreamEvent 
     return { type: "tool.start", runId, toolCallId, name, args }
   }
   if (type === "tool-result") {
-    return { type: "tool.result", runId, toolCallId, name, result: part.output ?? part.result, args }
+    return {
+      type: "tool.result",
+      runId,
+      toolCallId,
+      name,
+      result: withCommandDisplay(part.output ?? part.result, toolCallId),
+      args
+    }
   }
   if (type === "tool-error" || type === "tool-output-error") {
     return {

@@ -10,12 +10,13 @@ import { useT } from "@renderer/i18n"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { buildFileTree } from "./build-file-tree"
 import { FileTreeItem } from "./file-tree-item"
+import { listedStagePaths } from "./listed-stage-paths"
 
 export function ReviewFileTree(props: {
   changes: ChangedFileRow[]
   selectedFilePath: string | null
   onSelectFile: (path: string) => void
-  onStage?: (path: string, action: "add" | "unstage") => void
+  onStage?: (paths: string[], action: "add" | "unstage") => void
 }) {
   const { changes, selectedFilePath, onSelectFile } = props
   const t = useT()
@@ -62,7 +63,11 @@ export function ReviewFileTree(props: {
               node={node}
               selectedFilePath={selectedFilePath}
               onSelectFile={onSelectFile}
-              onStage={props.onStage}
+              onStage={(path, action) => {
+                const paths = listedStagePaths(tree, path, action)
+                if (paths.length === 0 || !props.onStage) return
+                props.onStage(paths, action)
+              }}
             />
           ))
         )}

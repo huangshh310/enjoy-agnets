@@ -3,8 +3,15 @@
  * 本机路径用函数看 bash 命令；Harness 的 toolApproval 是静态表，内置 write/edit/bash 走 permissionMode。
  */
 import type { AgentMode, PermissionMode } from "@enjoy-agents/ipc-contract"
+import {
+  ASK_USER_QUESTIONS_TOOL,
+  BASH_TOOLS,
+  COMMIT_TOOLS,
+  HOST_CONTROL_TOOLS,
+  MUTATING_TOOLS,
+  WRITE_TOOLS
+} from "@enjoy-agents/ipc-contract/tool-names"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
-import { ASK_USER_QUESTIONS_TOOL } from "./tools/ask-user-questions-name.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
 import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON, refuseBareDesktopCoord } from "./computer-use/desktop-act-honesty.ts"
 import {
@@ -13,19 +20,6 @@ import {
   persistentAlwaysAllowsDesktopAct,
   sessionAllowsDesktopAct
 } from "./computer-use/desktop-act-policy.ts"
-
-/** 本机工具名 + Claude Code 内置别名，Files 开关同时管两边。 */
-export const WRITE_TOOLS = ["edit_file", "write_file", "write", "edit", "code_mode"] as const
-export const BASH_TOOLS = ["bash", "code_mode"] as const
-export const COMMIT_TOOLS = ["git_commit", "git_push", "git_branch"] as const
-/** 桌面 / 浏览器控制：默认停车，不跟 Edits 写盘档走。 */
-export const HOST_CONTROL_TOOLS = ["browser_navigate", "desktop_act"] as const
-export const MUTATING_TOOLS = [
-  ...WRITE_TOOLS,
-  ...BASH_TOOLS,
-  ...COMMIT_TOOLS,
-  ...HOST_CONTROL_TOOLS
-] as const
 
 export type ApprovalPolicy = {
   requireWriteApproval: boolean
@@ -132,18 +126,21 @@ export function resolveToolApproval(
 }
 
 const MCP_WRITE_LEAF = /(write|delete|create|update|remove|put|patch|insert|drop|exec|kill|send)/i
+/** 叶子名精确匹配：不要用含子串 `command`，否则 list_commands 会被误伤。 */
+const MCP_SHELL_LEAF = /^(bash|shell|sh|zsh|cmd|command|run_command|run-command|terminal)$/i
 
 export function mcpToolLeafName(toolName: string): string {
   return toolName.includes("__") ? toolName.slice(toolName.indexOf("__") + 2) : toolName
 }
 
 export function isMcpWriteToolName(toolName: string): boolean {
-  return MCP_WRITE_LEAF.test(mcpToolLeafName(toolName))
+  const leaf = mcpToolLeafName(toolName).trim()
+  return MCP_WRITE_LEAF.test(leaf) || MCP_SHELL_LEAF.test(leaf)
 }
 
-/** ACP 弱名：command / shell 也算探索态要拦的写。 */
+/** ACP 弱名：command / shell / 终端也算探索态要拦的写。 */
 const EXPLORE_BLOCK_NAMES =
-  /^(write|edit|bash|shell|command|cmd|git_commit|git_push|git_branch|code_mode|str_replace|apply_patch|create|update)$/i
+  /^(write|edit|bash|shell|command|cmd|run_command|run-command|terminal|git_commit|git_push|git_branch|code_mode|str_replace|apply_patch|create|update)$/i
 
 /** 探索态宿主拦截：写盘 / 命令 / 提交 / MCP 写名直接 deny，不进审批停靠。 */
 export function isExploreMutatingDeny(mode: AgentMode, toolName: string): boolean {

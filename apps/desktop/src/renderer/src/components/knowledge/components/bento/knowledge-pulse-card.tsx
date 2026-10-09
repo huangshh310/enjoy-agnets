@@ -33,14 +33,14 @@ export function KnowledgePulseCard({
             className={cx(
               "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption-2-medium",
               isReady
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                ? "border-state-success-text/30 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
+                : "border-status-yellow-text/30 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
             )}
           >
             <span
               className={cx(
                 "size-1.5 rounded-full",
-                isReady ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                isReady ? "bg-state-success-base animate-pulse" : "bg-status-yellow-background"
               )}
             />
             <span>{isReady ? t("pages.knowledge.readyToAsk") : t("pages.knowledge.memoryPending")}</span>
@@ -61,19 +61,19 @@ export function KnowledgePulseCard({
         </div>
         <div className="grid grid-cols-3 gap-2.5 border-t border-separator-border/40 pt-2 text-caption-2-regular">
           <PulseMetric
-            icon={<RiFileList3Line className="size-4 shrink-0 text-emerald-600" />}
+            icon={<RiFileList3Line className="size-4 shrink-0 text-state-success-text" />}
             label={t("pages.knowledge.indexedDocs")}
             value={t("pages.knowledge.docsCount", { n: stats.askableFiles })}
           />
           <PulseMetric
-            icon={<RiToolsLine className="size-4 shrink-0 text-amber-500" />}
+            icon={<RiToolsLine className="size-4 shrink-0 text-status-yellow-text" />}
             label={t("pages.knowledge.scannedOnlyDocs")}
             value={t("pages.knowledge.docsCount", { n: unindexedCount })}
           />
           <PulseMetric
             icon={
               <RiFolderWarningLine
-                className={cx("size-4 shrink-0", stats.unavailable.length > 0 ? "text-rose-500" : "text-text-tertiary")}
+                className={cx("size-4 shrink-0", stats.unavailable.length > 0 ? "text-text-error-primary" : "text-text-tertiary")}
               />
             }
             label={t("pages.knowledge.faultySources")}

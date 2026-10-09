@@ -92,7 +92,7 @@ export function ObservabilityModelsChart(props: {
             {t("pages.observability.modelsTitle")}
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-text-tertiary">
+        <span className="text-caption-2-regular font-mono text-text-tertiary">
           共 {modelStats.length} 个模型架构
         </span>
       </div>
@@ -107,7 +107,7 @@ export function ObservabilityModelsChart(props: {
               key={stat.modelId}
               onClick={() => onSelectModel?.(isSelected ? null : stat.modelId)}
               className={cx(
-                "flex flex-col gap-1.5 font-mono text-[11px] rounded-lg p-1.5 transition-colors cursor-pointer",
+                "flex flex-col gap-1.5 font-mono text-caption-2-regular rounded-lg p-1.5 transition-colors cursor-pointer",
                 isSelected
                   ? "bg-accent-500/10 ring-1 ring-accent-500/30"
                   : "hover:bg-background-secondary-hover/50"
@@ -124,7 +124,7 @@ export function ObservabilityModelsChart(props: {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap text-[10.5px]">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap text-caption-2-regular">
                   {/* Token 消耗总计 */}
                   {stat.totalTokens > 0 ? (
                     <span

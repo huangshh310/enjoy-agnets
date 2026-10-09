@@ -21,8 +21,8 @@ export function IntroPoints() {
         return (
           <li key={point.title} className={cx("flex h-full flex-col gap-2.5 p-5", GUIDE_TILE_CLASS)}>
             <Icon className="size-[18px] text-text-primary/80" aria-hidden />
-            <span className="text-[15px] font-medium text-text-primary">{t(point.title)}</span>
-            <span className="text-[13px] leading-normal text-text-secondary">{t(point.body)}</span>
+            <span className="text-headline-medium font-medium text-text-primary">{t(point.title)}</span>
+            <span className="text-body-2-regular leading-normal text-text-secondary">{t(point.body)}</span>
           </li>
         )
       })}

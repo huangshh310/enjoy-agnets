@@ -124,7 +124,7 @@ export function CanvasMinimap({
           return (
             <div
               key={node.id}
-              className="absolute rounded-[1px]"
+              className="absolute rounded-sm"
               style={{
                 left: pos.x,
                 top: pos.y,

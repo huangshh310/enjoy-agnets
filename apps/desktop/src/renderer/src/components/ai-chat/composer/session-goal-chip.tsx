@@ -101,7 +101,7 @@ export function SessionGoalChip({
         onKeyDown={handleKeyDown}
       />
       {goalError ? (
-        <p className="px-2 text-caption-2-regular text-text-warning-primary">{goalError}</p>
+        <p className="px-2 text-caption-2-regular text-status-yellow-text">{goalError}</p>
       ) : null}
       <SessionRecapButton
         recap={layout === "menu" ? currentRecap : ""}

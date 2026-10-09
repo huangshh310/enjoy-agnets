@@ -17,6 +17,7 @@ export {
   type McpConnectionState
 } from "./client"
 export { parseStdioCommand } from "./stdio-command"
+export { filteredStdioEnv, spawnStdioProcess, stdioSpawnCwd } from "./stdio-spawn"
 export { encodeMessage, decodeMessages, initializeRequest } from "./stdio-rpc"
 export { handshakeHttp, handshakeSse, parseSseData, rpcPost } from "./http-rpc"
 export { createMcpHandleRegistry, type McpHandleRegistry } from "./registry"

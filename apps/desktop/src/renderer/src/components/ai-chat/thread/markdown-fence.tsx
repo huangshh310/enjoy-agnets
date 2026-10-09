@@ -79,7 +79,7 @@ function CommandFence({ code }: { code: string }) {
   return (
     <div className="my-2 flex min-w-0 items-center gap-2">
       <span className="shrink-0 text-caption-1-semibold text-text-tertiary">{t("chat.run")}</span>
-      <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-[13px] leading-6 text-text-primary">
+      <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-body-2-regular leading-6 text-text-primary">
         <code className="whitespace-pre">{highlightLine(code)}</code>
       </pre>
       <FenceCopyButton code={code} />
@@ -117,7 +117,7 @@ function SnippetFence({
         )}
         <FenceCopyButton code={code} />
       </div>
-      <pre className="overflow-x-auto p-3 font-mono text-[13px] leading-6 text-text-primary">
+      <pre className="overflow-x-auto p-3 font-mono text-body-2-regular leading-6 text-text-primary">
         {lines.map((line, index) => (
           <div key={`${index}-${line.slice(0, 24)}`} className="flex gap-4">
             {showLines ? (

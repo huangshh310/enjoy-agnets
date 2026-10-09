@@ -28,7 +28,7 @@ export function AgentToolConfigSource({
       <div className="flex items-center justify-between gap-2">
         <span className="text-caption-1-medium text-text-primary">{t("settings.agentTools.execSource")}</span>
         <span
-          className="max-w-[260px] truncate font-mono text-caption-2-medium text-text-secondary"
+          className="max-w-64 truncate font-mono text-caption-2-medium text-text-secondary"
           title={tool.detectedPath || t("settings.agentTools.globalPath")}
         >
           {tool.detectedPath || t("settings.agentTools.globalPath")}
@@ -60,7 +60,7 @@ function ModelPicker({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-8 max-w-[260px] min-w-0 items-center gap-2 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-left shadow-2xs outline-none transition-colors hover:border-border-button-hover hover:bg-background-secondary-hover focus:ring-1 focus:ring-accent-500"
+          className="flex h-8 max-w-64 min-w-0 items-center gap-2 rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1 text-left shadow-2xs outline-none transition-colors hover:border-border-button-hover hover:bg-background-secondary-hover focus:ring-1 focus:ring-accent-500"
         >
           <span className="flex size-4 shrink-0 items-center justify-center">
             <AgentBrandIcon id={tool.id} size={15} />

@@ -27,7 +27,7 @@ export function ObservabilityRunRuler({
       <div className="flex h-2 w-full overflow-hidden rounded-full bg-border-button-default/60">
         <div
           style={{ width: `${Math.max(ttfo > 0 ? 8 : 0, Math.min(92, ttfoRatio))}%` }}
-          className="h-full bg-amber-500/80"
+          className="h-full bg-status-yellow-background/80"
         />
         <div
           style={{ width: `${Math.max(8, Math.min(92, restRatio))}%` }}

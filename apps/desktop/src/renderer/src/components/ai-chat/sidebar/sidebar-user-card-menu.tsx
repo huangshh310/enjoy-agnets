@@ -69,7 +69,7 @@ function UserCardMenuGroupView({
       {showDivider ? <div className="my-1.5 h-px w-full bg-separator-border/60" /> : null}
       <div className={cx("flex w-full flex-col gap-0.5", group.label && "gap-1 pt-0.5")}>
         {group.label ? (
-          <span className="px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-text-tertiary/90 select-none">
+          <span className="px-2 py-0.5 text-caption-2-bold font-bold uppercase tracking-wider text-text-tertiary/90 select-none">
             {group.label}
           </span>
         ) : null}

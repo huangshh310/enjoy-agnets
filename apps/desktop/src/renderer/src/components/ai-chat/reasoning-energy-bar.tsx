@@ -175,7 +175,7 @@ function EnergyTicks({ size, activeIndex }: { size: "sm" | "md"; activeIndex: nu
           className={cx(
             "rounded-full",
             size === "sm" ? "size-1" : "size-1.5",
-            level.index <= activeIndex ? "bg-white/80 shadow-2xs dark:bg-white/90" : "bg-border-button-default/70"
+            level.index <= activeIndex ? "bg-background-primary-default/80 shadow-2xs dark:bg-background-primary-default/90" : "bg-border-button-default/70"
           )}
         />
       ))}
@@ -228,7 +228,7 @@ function EnergyLabels({
           type="button"
           onClick={() => onChange(level.effortValue)}
           className={cx(
-            "cursor-pointer rounded px-1 text-[11px] font-medium outline-none",
+            "cursor-pointer rounded px-1 text-caption-2-medium font-medium outline-none",
             level.value === value ? cx("scale-105 font-semibold", level.iconColorClass) : "text-text-tertiary hover:text-text-primary"
           )}
         >

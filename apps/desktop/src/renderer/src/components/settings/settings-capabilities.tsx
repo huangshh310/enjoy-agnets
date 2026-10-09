@@ -123,14 +123,14 @@ export function CapabilitySettings() {
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-body-large-semibold text-text-primary">
+                <span className="text-title-3-semibold text-text-primary">
                   {activeModel.label || activeModel.id}
                 </span>
-                <span className="rounded-md border border-accent-500/20 bg-accent-500/10 px-2 py-0.5 text-[11px] font-semibold text-accent-600 dark:text-accent-400">
+                <span className="rounded-md border border-accent-500/20 bg-accent-500/10 px-2 py-0.5 text-caption-2-semibold font-semibold text-accent-600 dark:text-accent-400">
                   {t("settings.capabilities.activeMain")}
                 </span>
                 {activeModel.providerName ? (
-                  <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+                  <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
                     {activeModel.providerName}
                   </span>
                 ) : null}

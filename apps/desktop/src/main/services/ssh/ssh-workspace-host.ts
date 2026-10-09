@@ -1,7 +1,9 @@
 /**
  * SSH AgentWorkspaceHost：文件 / bash / git 经连接层，路径 jail 在 remote_path。
+ * bash 先在本机拆成 argv 再 quote，禁止把用户字符串直接拼进远端 shell。
  */
 import type { AgentWorkspaceHost } from "@enjoy-agents/agent-core"
+import { parseExecutableCommand } from "../command.ts"
 import { quoteRemote, resolveRemoteJail, toRemoteRelative } from "./ssh-path.ts"
 import { disconnectedError } from "./ssh-errors.ts"
 import type { SshConnectionLayer } from "./ssh.types.ts"
@@ -52,7 +54,7 @@ function fileOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "readFile" | "writeFile
     },
     bash: async (command) => {
       ctx.requireLive()
-      const result = await ctx.conn.exec(`cd ${quoteRemote(ctx.remotePath)} && ${command}`)
+      const result = await ctx.conn.exec(remoteArgvCommand(ctx.remotePath, command))
       return { stdout: result.stdout, stderr: result.stderr, exitCode: result.exitCode }
     }
   }
@@ -107,13 +109,12 @@ function gitOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "gitStatus" | "gitDiff" 
     },
     gitDiff: async (filePath) => {
       ctx.requireLive()
-      return (await run(filePath ? ["diff", "--", filePath] : ["diff"])).stdout
+      return (await run(remoteGitDiffArgs(ctx, filePath))).stdout
     },
     gitLog: async (options) => {
       ctx.requireLive()
       const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100)
-      const args = ["log", `-${limit}`, "--oneline"]
-      if (options?.path) args.push("--", options.path)
+      const args = ["log", `-${limit}`, "--oneline", ...remoteGitPathArgs(ctx, options?.path)]
       return (await run(args)).stdout
     },
     gitCommit: async (message, options) => {
@@ -141,6 +142,22 @@ function gitOps(ctx: HostCtx): Pick<AgentWorkspaceHost, "gitStatus" | "gitDiff" 
 async function git(conn: SshConnectionLayer, remotePath: string, args: string[]) {
   const quoted = args.map((part) => quoteRemote(part)).join(" ")
   return conn.exec(`git -C ${quoteRemote(remotePath)} ${quoted}`)
+}
+
+function remoteArgvCommand(remotePath: string, command: string): string {
+  const parsed = parseExecutableCommand(command)
+  const argv = [parsed.executable, ...parsed.args].map((part) => quoteRemote(part)).join(" ")
+  return `cd ${quoteRemote(remotePath)} && exec ${argv}`
+}
+
+function remoteGitDiffArgs(ctx: HostCtx, filePath?: string): string[] {
+  return ["diff", ...remoteGitPathArgs(ctx, filePath)]
+}
+
+function remoteGitPathArgs(ctx: HostCtx, filePath?: string): string[] {
+  const raw = filePath?.trim()
+  if (!raw) return []
+  return ["--", toRemoteRelative(ctx.remotePath, ctx.jail(raw))]
 }
 
 function disconnectedOrGit(stderr: string): Error {

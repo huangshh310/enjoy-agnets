@@ -21,7 +21,7 @@ export function MediaNotice({
       className={cx(
         "flex items-center gap-2.5 rounded-xl border px-3.5 py-2 text-caption-2-medium shadow-2xs",
         warning
-          ? "border-state-warning-text/30 bg-state-warning-text/10 text-state-warning-text"
+          ? "border-status-yellow-text/30 bg-status-yellow-text/10 text-status-yellow-text"
           : "border-border-button-default bg-background-secondary-default text-text-secondary"
       )}
     >

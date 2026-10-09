@@ -113,6 +113,7 @@
     const escHint = document.getElementById("escHint")
     const hud = document.getElementById("hud")
 
+    const border = document.querySelector(".cu-border")
     function applyChrome(payload) {
       const visible = Boolean(payload && payload.visible)
       frame.classList.toggle("is-on", visible)
@@ -121,6 +122,10 @@
       if (payload.stopLabel) stop.textContent = payload.stopLabel
       if (payload.escHint) escHint.textContent = payload.escHint
       if (payload.lang) document.documentElement.lang = payload.lang
+      if (border) {
+        border.style.borderColor = payload.pointerColor || ""
+        border.style.boxShadow = payload.pointerColor ? "0 0 0 6px " + payload.pointerColor : ""
+      }
     }
 
     window.addEventListener("overlay-chrome", (event) => {

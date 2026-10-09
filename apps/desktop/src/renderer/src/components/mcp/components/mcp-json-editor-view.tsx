@@ -121,7 +121,7 @@ export function McpJsonEditorView(props: {
             <div className="text-caption-1-medium font-semibold text-text-primary">
               {t("pages.mcp.jsonEditorTitle")}
             </div>
-            <div className="text-[11px] text-text-tertiary">
+            <div className="text-caption-2-regular text-text-tertiary">
               {t("pages.mcp.jsonEditorHint")}
             </div>
           </div>
@@ -155,7 +155,7 @@ export function McpJsonEditorView(props: {
             className="gap-1 h-7 text-caption-2-medium text-text-secondary"
           >
             {copied ? (
-              <RiCheckLine className="size-3 text-emerald-500" />
+              <RiCheckLine className="size-3 text-state-success-text" />
             ) : (
               <RiClipboardLine className="size-3" />
             )}
@@ -191,10 +191,10 @@ export function McpJsonEditorView(props: {
           className={cx(
             "flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-caption-2-medium",
             statusMessage.type === "success"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              ? "border-state-success-text/20 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
               : statusMessage.type === "error"
-                ? "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                : "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                ? "border-border-error-default/20 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
+                : "border-accent-500/20 bg-accent-500/10 text-accent-500 dark:text-accent-500"
           )}
         >
           <RiInformationLine className="size-3.5 shrink-0" />

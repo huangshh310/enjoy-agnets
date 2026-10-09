@@ -5,7 +5,6 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { currentToolRunId, runWithActiveRunId } from "../active-run-id.ts"
 import {
-  inferPumpingRunId,
   resolveDesktopActRunId,
   runDesktopOverlayStop,
   stopOverlayAbortRunIds
@@ -36,11 +35,10 @@ test("已知 controllingRunId 时 stop 只 abort 那一条，不扫全部", () =
   assert.deepEqual(stopOverlayAbortRunIds("  ", [{ runId: "run_idle", pumping: false }]), ["run_idle"])
 })
 
-test("没有活泵时 infer 为空，stop 才退回全部 ActiveRun", () => {
+test("没有活泵时 stop 退回全部 ActiveRun", () => {
   const idle = [{ runId: "run_idle", pumping: false }]
-  assert.equal(inferPumpingRunId(idle), undefined)
   assert.deepEqual(stopOverlayAbortRunIds(undefined, idle), ["run_idle"])
-  assert.equal(inferPumpingRunId([{ runId: "run_p", pumping: true }]), "run_p")
+  assert.deepEqual(stopOverlayAbortRunIds(undefined, [{ runId: "run_p", pumping: true }]), ["run_p"])
 })
 
 test("stop：先 end overlay，再 executor cancel，再 abort 该 runId", async () => {

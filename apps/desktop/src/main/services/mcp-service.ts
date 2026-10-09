@@ -24,6 +24,7 @@ import {
 import { getDatabase } from "./database"
 import { stampAndBroadcast } from "./event-bus"
 import { createId } from "./ids"
+import { mergeKeptSecrets, parseStringMap, redactJsonSecrets } from "./secret-map"
 
 const handles = createMcpHandleRegistry()
 
@@ -67,7 +68,7 @@ export function upsertServer(input: {
     transport: input.transport,
     command: input.command ?? null,
     url: input.url ?? null,
-    envRef: input.envRef ?? null,
+    envRef: nextEnvRef(input.envRef, existing?.envRef),
     allowedResourceUris: JSON.stringify(input.allowedResourceUris),
     modelVisibleTools: JSON.stringify(input.modelVisibleTools),
     appOnlyTools: JSON.stringify(input.appOnlyTools),
@@ -104,20 +105,15 @@ export async function connectServerIfNeeded(id: string) {
   await connectServer(id)
 }
 
-/** envRef 是 UI 存的 `{KEY: value}` JSON 串；坏 JSON 不阻断连接，只当空 env。 */
+/** envRef 是 `{KEY: value}` JSON 串；坏 JSON 回空 env 不阻断连接。 */
 function parseEnvRef(raw: string | null): Record<string, string> | undefined {
-  if (!raw) return undefined
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined
-    const env: Record<string, string> = {}
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof value === "string") env[key] = value
-    }
-    return Object.keys(env).length > 0 ? env : undefined
-  } catch {
-    return undefined
-  }
+  return parseStringMap(raw)
+}
+
+function nextEnvRef(incoming: string | undefined, existing: string | null | undefined): string | null {
+  if (incoming == null) return existing ?? null
+  const merged = mergeKeptSecrets(parseStringMap(incoming) ?? {}, parseStringMap(existing))
+  return Object.keys(merged).length > 0 ? JSON.stringify(merged) : null
 }
 
 export async function disconnectServer(id: string) {
@@ -257,7 +253,7 @@ function toPublic(row: McpServerRow) {
     transport: row.transport,
     command: row.command ?? undefined,
     url: row.url ?? undefined,
-    envRef: row.envRef ?? undefined,
+    envRef: redactJsonSecrets(row.envRef ?? undefined),
     allowedResourceUris: JSON.parse(row.allowedResourceUris) as string[],
     modelVisibleTools: JSON.parse(row.modelVisibleTools) as string[],
     appOnlyTools: JSON.parse(row.appOnlyTools) as string[],

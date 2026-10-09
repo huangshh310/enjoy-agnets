@@ -78,7 +78,7 @@ export function AgentQuickSlotMatrix({
 
       {/* 来源组导入宿主条：独立换行排布，杜绝并排推挤 */}
       <div className="flex flex-wrap items-center gap-2 p-2.5 rounded-2xl bg-background-secondary-default/40 border border-separator-border/40">
-        <span className="text-[11px] font-semibold text-text-tertiary shrink-0 mr-1">
+        <span className="text-caption-2-semibold font-semibold text-text-tertiary shrink-0 mr-1">
           {t("pages.skills.quickMatrix.quickMountLabel")}
         </span>
         {sources.map((source) => {
@@ -93,7 +93,7 @@ export function AgentQuickSlotMatrix({
                 "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-caption-2-medium transition-all cursor-pointer border",
                 "active:scale-[0.98]",
                 isEnabled
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold shadow-2xs"
+                  ? "border-state-success-text/40 bg-state-success-text/10 text-state-success-text dark:text-state-success-text font-semibold shadow-2xs"
                   : "border-separator-border/60 bg-background-primary-default text-text-secondary hover:border-separator-border hover:text-text-primary"
               )}
               title={t("pages.skills.quickMatrix.toggleTitle", {
@@ -110,9 +110,9 @@ export function AgentQuickSlotMatrix({
               )}
               <span className="max-w-[160px] truncate">{source.name}</span>
               {isEnabled ? (
-                <RiCheckLine className="size-3 text-emerald-600 dark:text-emerald-400" />
+                <RiCheckLine className="size-3 text-state-success-text dark:text-state-success-text" />
               ) : (
-                <span className="text-[10px] text-text-tertiary">+{source.skillCount}</span>
+                <span className="text-caption-2-regular text-text-tertiary">+{source.skillCount}</span>
               )}
             </button>
           )
@@ -139,7 +139,7 @@ export function AgentQuickSlotMatrix({
               key={name}
               type="button"
               onClick={() => setSearchQuery(name)}
-              className="rounded-md border border-separator-border/60 bg-background-secondary-default/40 px-2 py-0.5 font-mono text-[10.5px] hover:border-separator-border hover:text-text-primary transition-colors cursor-pointer"
+              className="rounded-md border border-separator-border/60 bg-background-secondary-default/40 px-2 py-0.5 font-mono text-caption-2-regular hover:border-separator-border hover:text-text-primary transition-colors cursor-pointer"
             >
               {name}
             </button>
@@ -148,7 +148,7 @@ export function AgentQuickSlotMatrix({
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="text-[11px] text-accent-600 hover:underline"
+              className="text-caption-2-regular text-accent-600 hover:underline"
             >
               {t("pages.skills.quickMatrix.clear")}
             </button>
@@ -202,7 +202,7 @@ export function AgentQuickSlotMatrix({
                 className={cx(
                   "text-caption-2-regular font-mono px-2 py-0.5 rounded-md border",
                   isEnabled
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold"
+                    ? "border-state-success-text/30 bg-state-success-text/10 text-state-success-text dark:text-state-success-text font-semibold"
                     : "border-separator-border/50 bg-background-primary-default text-text-tertiary"
                 )}
                 title={t("pages.skills.quickMatrix.slotTitle")}

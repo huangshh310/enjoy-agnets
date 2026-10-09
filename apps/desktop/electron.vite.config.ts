@@ -53,6 +53,10 @@ export default defineConfig({
       // 必须精确匹配包名。别名到 index.ts 文件时，`@pkg/sub` 会被拼成 `index.ts/sub`。
       alias: [
         {
+          find: "@enjoy-agents/ipc-contract/tool-names",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/tool-names.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/runtime-capabilities",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/runtime-capabilities.ts")
         },
@@ -190,6 +194,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/skills-catalog",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/skills-catalog.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/tool-names",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/tool-names.ts")
         },
         {
           find: /^@enjoy-agents\/ipc-contract$/,

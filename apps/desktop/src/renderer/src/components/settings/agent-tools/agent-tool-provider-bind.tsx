@@ -43,7 +43,7 @@ export function AgentToolBoundExtras({
   profile: ProviderPublic
 }) {
   const t = useT()
-  const models = profile.models ?? []
+  const models = (profile.models ?? []).filter((model) => model.enabled !== false)
   const modelId = tool.selectedModel || profile.modelId || models[0]?.id || ""
   const showCodexHint = tool.id === "codex" && profile.apiStyle === "openai"
   return (
@@ -51,7 +51,7 @@ export function AgentToolBoundExtras({
       <ModelPicker modelId={modelId} models={models} profile={profile} actions={actions} />
       <BindHostHint profile={profile} />
       {showCodexHint ? (
-        <p className="text-caption-2-regular text-state-warning-text">{t("settings.agentTools.codexChatWireHint")}</p>
+        <p className="text-caption-2-regular text-status-yellow-text">{t("settings.agentTools.codexChatWireHint")}</p>
       ) : null}
       <ApplyToOthers tool={tool} profile={profile} modelId={modelId} />
       {providerBindCanSyncHome(tool.id) ? <SyncFold actions={actions} /> : null}

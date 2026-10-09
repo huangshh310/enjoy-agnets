@@ -7,6 +7,7 @@ import { planWorkspaceMove } from "@enjoy-agents/ipc-contract/workspace-move-pla
 import { assertGitBranchName } from "./workspace-git-branch.ts"
 import { parseBranchList } from "./workspace-git-branches.ts"
 import { parseGitLogStdout } from "./workspace-git-log.ts"
+import { expandStageTargets, stageGitArgs } from "./workspace-git-stage.ts"
 import { parsePorcelainLine, type ChangeRow } from "./workspace-git-status.ts"
 import { quoteRemote, resolveRemoteJail, toRemoteRelative } from "./ssh/ssh-path.ts"
 
@@ -65,11 +66,14 @@ export async function sshWorkspaceStage(
   action: "add" | "unstage"
 ): Promise<{ ok: true; count: number }> {
   const jailed = paths.map((path) => toRemoteRelative(remoteRoot, resolveRemoteJail(remoteRoot, path)))
-  const args =
-    action === "add" ? ["add", "--", ...jailed] : ["restore", "--staged", "--", ...jailed]
-  const res = await sshGit(host, args)
+  const status = await sshGit(host, ["status", "--porcelain", "--untracked-files=all"])
+  if (status.exitCode !== 0) throw new Error(status.stderr || "git stage failed")
+  const rows = changesFromGitStatus(status.stdout).map((row) => ({ path: row.path, staged: row.staged }))
+  const targets = expandStageTargets(jailed, rows, action)
+  if (targets.length === 0) throw new Error("STAGE_NOTHING_MATCHED")
+  const res = await sshGit(host, stageGitArgs(action, targets))
   if (res.exitCode !== 0) throw new Error(res.stderr || "git stage failed")
-  return { ok: true, count: jailed.length }
+  return { ok: true, count: targets.length }
 }
 
 export async function sshWorkspaceRestore(

@@ -83,7 +83,7 @@ export function CanvasSelectionToolbar({
 
       {/* 浮动操作栏 */}
       <div
-        className={`pointer-events-auto absolute z-[75] flex -translate-x-1/2 items-center gap-1 rounded-2xl border p-1 shadow-xl backdrop-blur-md transition-all ${
+        className={`pointer-events-auto absolute z-50 flex -translate-x-1/2 items-center gap-1 rounded-2xl border p-1 shadow-xl backdrop-blur-md transition-all ${
           isFlipped ? "translate-y-0" : "-translate-y-full"
         }`}
         style={{
@@ -99,11 +99,11 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="将选中节点编组 (⌘G)"
-          className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-medium transition hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           style={{ color: theme.node.text }}
           onClick={onGroup}
         >
-          <RiStackLine className="size-3.5 text-blue-500" />
+          <RiStackLine className="size-3.5 text-accent-500" />
           <span>{t("pages.workflows.canvasGroup")} ({nodes.length})</span>
         </button>
 
@@ -113,7 +113,7 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="左对齐"
-          className="flex size-7 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={() => onAlign("left")}
         >
           <RiAlignLeft className="size-3.5" />
@@ -121,7 +121,7 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="水平居中对齐"
-          className="flex size-7 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={() => onAlign("center-x")}
         >
           <RiAlignCenter className="size-3.5" />
@@ -129,7 +129,7 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="右对齐"
-          className="flex size-7 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={() => onAlign("right")}
         >
           <RiAlignRight className="size-3.5" />
@@ -137,7 +137,7 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="顶部对齐"
-          className="flex size-7 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={() => onAlign("top")}
         >
           <RiAlignTop className="size-3.5" />
@@ -145,7 +145,7 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="底部对齐"
-          className="flex size-7 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          className="flex size-7 items-center justify-center rounded-lg hover:bg-background-secondary-default dark:hover:bg-background-secondary-default"
           onClick={() => onAlign("bottom")}
         >
           <RiAlignBottom className="size-3.5" />
@@ -157,7 +157,7 @@ export function CanvasSelectionToolbar({
         <button
           type="button"
           title="删除所选节点"
-          className="flex size-7 items-center justify-center rounded-lg text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10"
+          className="flex size-7 items-center justify-center rounded-lg text-text-secondary hover:text-text-error-primary hover:bg-background-tertiary-error/10"
           onClick={onDelete}
         >
           <RiDeleteBinLine className="size-3.5" />

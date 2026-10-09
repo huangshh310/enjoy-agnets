@@ -46,7 +46,7 @@ export function McpServersView(props: {
             {t("pages.mcp.registeredCount", { n: filteredServers.length })}
           </span>
           {servers.length > 0 ? (
-            <span className="rounded-md border border-border-button-default/80 bg-background-secondary-default/50 px-2 py-0.5 font-mono text-[10.5px] text-text-tertiary">
+            <span className="rounded-md border border-border-button-default/80 bg-background-secondary-default/50 px-2 py-0.5 font-mono text-caption-2-regular text-text-tertiary">
               {t("pages.mcp.trustStats", { total: servers.length, trusted: trustedCount, untrusted: untrustedCount })}
             </span>
           ) : null}

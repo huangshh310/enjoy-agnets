@@ -104,7 +104,7 @@ export function FullTraceWorkbench(props: {
               <button
                 key={mode.id}
                 type="button"
-                className={`flex items-center gap-1.5 h-6 rounded-md px-2.5 font-mono text-[11px] transition-colors ${
+                className={`flex items-center gap-1.5 h-6 rounded-md px-2.5 font-mono text-caption-2-regular transition-colors ${
                   isActive
                     ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
                     : "text-text-tertiary hover:text-text-primary"
@@ -118,7 +118,7 @@ export function FullTraceWorkbench(props: {
           })}
         </div>
 
-        <span className="font-mono text-[10.5px] text-text-tertiary">
+        <span className="font-mono text-caption-2-regular text-text-tertiary">
           {traceData.totalSpans} 个 Span 阶段 · Run {metric.runId.slice(0, 14)}
         </span>
       </div>

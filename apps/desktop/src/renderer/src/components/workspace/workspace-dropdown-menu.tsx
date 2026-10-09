@@ -139,23 +139,23 @@ export function WorkspaceDropdownMenu({
             {/* 1. 当前工作区卡片 */}
             <div className="flex flex-col gap-1.5 pb-1">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10.5px] font-semibold tracking-wider text-text-tertiary uppercase">
+                <span className="text-caption-2-semibold font-semibold tracking-wider text-text-tertiary uppercase">
                   当前工作区
                 </span>
                 {workspaceKind === "ssh" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-state-success-text/10 px-2 py-0.5 text-caption-2-medium font-medium text-state-success-text dark:text-state-success-text">
                     <span
                       className={cx(
                         "size-1.5 rounded-full",
                         remoteStatus === "connected"
-                          ? "bg-emerald-500"
-                          : "bg-amber-500 animate-pulse"
+                          ? "bg-state-success-base"
+                          : "bg-status-yellow-background animate-pulse"
                       )}
                     />
                     SSH 远程
                   </span>
                 ) : (
-                  <span className="rounded-full bg-background-secondary-default px-2 py-0.5 text-[10px] font-medium text-text-secondary">
+                  <span className="rounded-full bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-secondary">
                     本机环境
                   </span>
                 )}
@@ -165,7 +165,7 @@ export function WorkspaceDropdownMenu({
                 <div className="flex items-center gap-2">
                   <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-background-primary-default border border-separator-border/60">
                     {workspaceKind === "ssh" ? (
-                      <RiServerLine className="size-3.5 text-purple-600 dark:text-purple-400" />
+                      <RiServerLine className="size-3.5 text-chart-5 dark:text-chart-5" />
                     ) : (
                       <RiFolderLine className="size-3.5 text-accent-500" />
                     )}
@@ -178,7 +178,7 @@ export function WorkspaceDropdownMenu({
                 {workspaceRootPath ? (
                   <div className="flex items-center justify-between gap-1 pt-0.5">
                     <span
-                      className="truncate font-mono text-[10.5px] text-text-tertiary"
+                      className="truncate font-mono text-caption-2-regular text-text-tertiary"
                       title={workspaceRootPath}
                     >
                       {workspaceRootPath}
@@ -191,7 +191,7 @@ export function WorkspaceDropdownMenu({
                       className="shrink-0 p-1 rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
                     >
                       {copied ? (
-                        <RiCheckLine className="size-3.5 text-emerald-500" />
+                        <RiCheckLine className="size-3.5 text-state-success-text" />
                       ) : (
                         <RiFileCopyLine className="size-3.5" />
                       )}
@@ -207,7 +207,7 @@ export function WorkspaceDropdownMenu({
             {/* 2. 最近工作区 */}
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10.5px] font-semibold tracking-wider text-text-tertiary uppercase">
+                <span className="text-caption-2-semibold font-semibold tracking-wider text-text-tertiary uppercase">
                   最近工作区
                 </span>
                 <button
@@ -216,7 +216,7 @@ export function WorkspaceDropdownMenu({
                     setIsOpen(false)
                     void navigate({ to: "/settings/workspace" as "/" })
                   }}
-                  className="text-[11px] text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
+                  className="text-caption-2-regular text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
                 >
                   管理
                 </button>
@@ -235,7 +235,7 @@ export function WorkspaceDropdownMenu({
                       className="group flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-background-secondary-default cursor-pointer"
                     >
                       {w.kind === "ssh" ? (
-                        <RiServerLine className="size-3.5 text-purple-500 shrink-0" />
+                        <RiServerLine className="size-3.5 text-chart-5 shrink-0" />
                       ) : (
                         <RiFolderLine className="size-3.5 text-text-tertiary group-hover:text-text-primary shrink-0 transition-colors" />
                       )}
@@ -243,7 +243,7 @@ export function WorkspaceDropdownMenu({
                         <span className="truncate text-caption-2-medium text-text-primary">
                           {w.name}
                         </span>
-                        <span className="truncate font-mono text-[10px] text-text-tertiary">
+                        <span className="truncate font-mono text-caption-2-regular text-text-tertiary">
                           {w.rootPath}
                         </span>
                       </span>
@@ -251,7 +251,7 @@ export function WorkspaceDropdownMenu({
                   ))}
                 </div>
               ) : (
-                <span className="px-1 py-1 text-[11px] text-text-tertiary">
+                <span className="px-1 py-1 text-caption-2-regular text-text-tertiary">
                   暂无其他工作区记录
                 </span>
               )}
@@ -268,7 +268,7 @@ export function WorkspaceDropdownMenu({
                   setIsOpen(false)
                   void openFolder()
                 }}
-                className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-medium text-text-primary transition-colors hover:bg-background-secondary-default cursor-pointer"
+                className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-caption-1-medium font-medium text-text-primary transition-colors hover:bg-background-secondary-default cursor-pointer"
               >
                 <RiFolderOpenLine className="size-3.5 text-text-tertiary" />
                 <span>打开本地目录…</span>
@@ -279,7 +279,7 @@ export function WorkspaceDropdownMenu({
                   setIsOpen(false)
                   setCreateDialogOpen(true)
                 }}
-                className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-[12px] font-medium text-text-primary transition-colors hover:bg-background-secondary-default cursor-pointer"
+                className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-caption-1-medium font-medium text-text-primary transition-colors hover:bg-background-secondary-default cursor-pointer"
               >
                 <RiAddLine className="size-3.5 text-text-tertiary" />
                 <span>新建 / 连接项目…</span>
@@ -297,12 +297,12 @@ export function WorkspaceDropdownMenu({
                   setIsOpen(false)
                   void navigate({ to: "/settings/general" as "/" })
                 }}
-                className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11px] font-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-caption-2-medium font-medium text-text-secondary hover:text-text-primary hover:bg-background-secondary-default transition-colors cursor-pointer"
               >
                 <RiSettings3Line className="size-3.5 text-text-tertiary" />
                 <span>{t("common.settings") || "偏好设置"} (⌘,)</span>
               </button>
-              <span className="text-[10px] font-mono text-text-tertiary">
+              <span className="text-caption-2-regular font-mono text-text-tertiary">
                 v0.1.6
               </span>
             </div>

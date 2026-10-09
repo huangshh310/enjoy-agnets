@@ -1,6 +1,6 @@
 # spec/m1-usage-and-capabilities
 
-> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-09-24
+> M0/M1 宿主可感知：三路命名、Usage L1–L4、能力矩阵与配置边界。最后更新：2026-10-04（额度数字可显示剩余，条宽仍是已用）
 
 ## 当前真相
 
@@ -20,7 +20,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 | 层 | 含义 | 数据源 | UI |
 |---|---|---|---|
-| L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 模型浮层顶 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）；设置账号区 |
+| L1 | 账户已用 % + reset | `agentTools.inspect`，且 `capabilities.quota===true` | 模型浮层顶 `UsagePill`（空会话一律 `quiet`，含 ≥85%；**有消息后**才走 M1 警报阶；100% 必须是 inspect 数字）。`preferences.usageNumber` 默认 `used`；`remaining` 时 Composer `UsagePill`、设置行 `AgentToolMiniQuota`、以及引擎胶囊悬停文案的数字是 `100 - 已用`（悬停跟同一数字，避免药丸写剩余、提示仍写已用）。没有官方数字不显示，也不编剩余值。条宽、色阶、`quiet` 和订阅页的条仍按已用百分比，不倒过来。设置 → 通用可切换。不遮邮箱 |
 | L2 | 自营积分 | 无真实 API | 账单页诚实空态；不画假条、不挂演示套餐 |
 | L3 | 本轮 token / 上下文 % | 与 Context 共用 `estimateContextWindowStats`（按当前 runtime 投影） | Composer 底 `SessionMeter` + Limits 卡；无用量则隐藏。ACP 不计 Enjoy 常驻规则，但 `hostMcp` / `hostSkills` 为透传或索引时计入宿主 MCP 与技能桶。禁止 720 / 260 假地板 |
 | L4 | 额度耗尽 / 402 | 结构化 402 / credit / spend | `QuotaExhaustedCard`（ThreadErrorBanner 变体）+ 账单 / **切引擎打开 Composer AgentPicker**（禁止跳设置） |
@@ -63,7 +63,7 @@ C 端 Rail / 胶囊**禁止**常驻协议/路径微标：`ACP · 订阅登录`�
 
 - Claude / Codex 现已接通 OpenUsage 机制的官方额度 probe（quota=true），但若用户未登录 CLI 或凭据过期，probe 应优雅回退至 quota=false / no-quota 状态，UI 保持诚实空态，不得回退伪造数据。
 - 官方额度窗口（如 Claude 5 小时会话与 7 天周度、Codex 会话与周度）包含动态重置时间与 pacing 计算（当前消耗速率 vs 剩余时间匀速 burn rate），当重置时间到达时需以官方窗口重置为准；消耗速率高于匀速 1.3 倍标记 warning/danger，避免误判为封号。
-- `barWidth` 在设置订阅页等于 **已用%**，禁止为「看得见」把 1% 撑到 4%。数字可切剩余/已用，条不跟着倒。空会话 `UsagePill` 必须 `quiet`（含 ≥85%），有消息才用 alert/mid/low。
+- `barWidth` 在设置订阅页等于 **已用%**，禁止为「看得见」把 1% 撑到 4%。`usageNumber=remaining` 只换 `UsagePill`、`AgentToolMiniQuota` 和引擎胶囊悬停的数字（`100 - round(已用)`），订阅页条和数字不倒。空会话 `UsagePill` 必须 `quiet`（含 ≥85%），有消息才用 alert/mid/low。
 - 订阅页铺满 `wide` 舞台：Hub + 双列卡。禁止 `max-w-md` 贴左。无窗口助手禁止占一张空卡。
 - 订阅页要像 OpenUsage 一样先出缓存：main 磁盘+内存 5 分钟；renderer **禁止**默认 `refresh: true`；进「智能体」页 **禁止** `invalidateQueries(inspect)`。右上角刷新才 `refresh: true`。过期缓存先返回旧值再后台刷新。
 - `officialOrEmpty`：Cursor Dashboard token 仍可读用量时，**不得**因 CLI `loggedIn === false` 丢掉官方窗口。订阅页卡片认 `windows.length` 或 `hasQuota`。

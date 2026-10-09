@@ -108,7 +108,7 @@ export function SkillsPage(props?: { embedded?: boolean }) {
   const content = (
     <div className="flex h-full min-h-0 flex-col gap-6 px-8 pt-5 pb-6">
       {page.actionError ? (
-        <div className="shrink-0 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
+        <div className="shrink-0 rounded-xl border border-border-error-default/30 bg-background-tertiary-error/10 px-4 py-2.5 text-caption-2-medium text-text-error-primary dark:text-text-error-primary">
           {page.actionError}
         </div>
       ) : null}

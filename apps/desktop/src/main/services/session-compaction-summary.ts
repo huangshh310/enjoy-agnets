@@ -2,7 +2,7 @@
  * 压缩摘要：优先用当前档案的 fast/主模型 generateText，失败回落 undefined。
  */
 import { generateText } from "ai"
-import { createLanguageModel } from "@enjoy-agents/providers"
+import { createLanguageModel, languageConfigFromProfile } from "@enjoy-agents/providers"
 import type { MessageLike } from "@enjoy-agents/agent-core/compaction"
 import { getActiveProfile } from "./secrets"
 
@@ -12,13 +12,7 @@ export async function generateAiSummary(olderMessages: MessageLike[]): Promise<s
     const profile = await getActiveProfile()
     if (!profile?.apiKey?.trim()) return undefined
 
-    const model = createLanguageModel({
-      provider: profile.kind,
-      apiKey: profile.apiKey,
-      baseURL: profile.baseURL,
-      modelId: profile.fastModelId || profile.modelId,
-      apiStyle: profile.apiStyle
-    })
+    const model = createLanguageModel(languageConfigFromProfile(profile, profile.fastModelId || profile.modelId))
 
     const textToSummarize = olderMessages
       .map((m) => `[${m.role.toUpperCase()}]: ${m.content}`)

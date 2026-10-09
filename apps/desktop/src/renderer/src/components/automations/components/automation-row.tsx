@@ -45,7 +45,7 @@ export function AutomationRow({
               <span
                 key={`${chip.kind}:${chip.text}`}
                 className={cx(
-                  "rounded-full bg-background-secondary-default px-1.5 py-px text-[10px] text-text-primary ring-1 ring-border-button-default",
+                  "rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default",
                   chip.mono && "font-mono"
                 )}
               >
@@ -97,20 +97,20 @@ function StatusChip({
 }) {
   if (status === "idle") {
     return (
-      <span className="rounded-full bg-background-secondary-default px-1.5 py-px text-[10px] text-text-tertiary ring-1 ring-border-button-default">
+      <span className="rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-tertiary ring-1 ring-border-button-default">
         {t("studio.automations.statusIdle")}
       </span>
     )
   }
   if (status === "running") {
     return (
-      <span className="rounded-full bg-accent-500/10 px-1.5 py-px text-[10px] font-medium text-accent-600 ring-1 ring-accent-500/20">
+      <span className="rounded-full bg-accent-500/10 px-1.5 py-px text-caption-2-medium font-medium text-accent-600 ring-1 ring-accent-500/20">
         {t("studio.automations.statusRunning")}
       </span>
     )
   }
   return (
-    <span className="rounded-full bg-background-secondary-default px-1.5 py-px text-[10px] font-medium text-text-error-primary ring-1 ring-border-error-default/25">
+    <span className="rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-medium font-medium text-text-error-primary ring-1 ring-border-error-default/25">
       {t("studio.automations.statusFailed")}
     </span>
   )

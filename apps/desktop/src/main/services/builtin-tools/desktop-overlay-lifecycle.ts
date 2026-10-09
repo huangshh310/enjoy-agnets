@@ -14,10 +14,6 @@ export function resolveDesktopActRunId(
   return firstId(explicit, bound, pumping)
 }
 
-export function inferPumpingRunId(runs: OverlayStopRun[]): string | undefined {
-  return runs.find((item) => item.pumping)?.runId
-}
-
 /**
  * 停手势要 abort 的 run。已知 controllingRunId 时只打那一条，禁止扫全部 ActiveRun。
  * 未知时退回活泵；再没有才退回全部（Dock 推断兜底）。

@@ -40,7 +40,7 @@ export function RemoteFolderPicker({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 gap-1 px-2 text-[11px] text-text-secondary hover:text-text-primary shrink-0 cursor-pointer"
+            className="h-7 gap-1 px-2 text-caption-2-regular text-text-secondary hover:text-text-primary shrink-0 cursor-pointer"
             disabled={busy}
             onClick={() => onOpen(listing.parent!)}
           >
@@ -74,7 +74,7 @@ export function RemoteFolderPicker({
                 <RiFolder6Line className="size-3.5 text-accent-500/80 shrink-0" />
                 <span className="font-mono text-caption-2-regular truncate">{item.name}</span>
               </div>
-              <span className="text-[10px] text-text-tertiary">{t("pages.workspaces.createProject.dirKind")}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{t("pages.workspaces.createProject.dirKind")}</span>
             </button>
           ))
         )}

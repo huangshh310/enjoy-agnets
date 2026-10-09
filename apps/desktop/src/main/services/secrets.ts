@@ -2,17 +2,20 @@
  * 供应商档案：增删改、激活模型、对外模型目录。密钥只在 main。
  */
 import {
+  applyProfileUpsert,
+  filledStyles,
   gatewayContextWindowFor,
-  isApiStyle,
   modelsForProvider,
   presetFor,
+  publishedContextWindow,
   resolveModelContextWindow,
-  type CatalogModel,
+  type ProfileUpsertInput,
   type ProviderKind
 } from "@enjoy-agents/providers"
 import { unbindProviderFromAgentTools } from "./agent-tools-vault"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
+import { mergeJsonSecrets } from "./secret-map"
 import {
   readVault,
   resolvedStyle,
@@ -34,68 +37,73 @@ export async function listPublicProviders(): Promise<ProviderPublic[]> {
 
 export async function getActiveProfile(): Promise<ProviderProfile | undefined> {
   const vault = await readVault()
-  return vault.profiles.find((profile) => profile.id === vault.activeId) ?? vault.profiles[0]
+  const active = vault.profiles.find((profile) => profile.id === vault.activeId && profile.enabled)
+  if (active) return active
+  return vault.profiles.find((profile) => profile.enabled)
 }
 
 export async function findProfileByKinds(kinds: readonly string[]): Promise<ProviderProfile | undefined> {
   const vault = await readVault()
-  const matches = vault.profiles.filter((profile) => kinds.includes(profile.kind))
+  const matches = vault.profiles.filter((profile) => profile.enabled && kinds.includes(profile.kind))
   const active = matches.find((profile) => profile.id === vault.activeId && profile.apiKey.trim())
   if (active) return active
   return matches.find((profile) => profile.apiKey.trim())
 }
 
-export async function upsertProfile(input: {
-  id?: string
-  name: string
-  kind: ProviderKind
-  apiKey?: string
-  baseURL?: string
-  modelId?: string
-  apiStyle?: string
-  fastModelId?: string
-  reasoningModelId?: string
-  contextWindow?: number | null
-  maxTokens?: number
-  temperature?: number
-  reasoningEffort?: "low" | "medium" | "high" | "xhigh"
-  customHeaders?: string
-  customBody?: string
-  models?: CatalogModel[]
-  activate?: boolean
-}): Promise<ProviderPublic> {
+export async function upsertProfile(input: ProfileUpsertInput & { activate?: boolean }): Promise<ProviderPublic> {
   const vault = await readVault()
-  const preset = presetFor(input.kind)
   const existing = input.id ? vault.profiles.find((profile) => profile.id === input.id) : undefined
   const id = existing?.id ?? createId("prv")
-  const apiKey = input.apiKey?.trim() ? input.apiKey.trim() : (existing?.apiKey ?? "")
-  if (preset.requiresKey && !apiKey) {
+  const preset = presetFor(input.kind as ProviderKind)
+  const profile = applyProfileUpsert(
+    existing,
+    {
+      ...input,
+      customHeaders: mergeJsonSecrets(input.customHeaders, existing?.customHeaders),
+      customBody: mergeJsonSecrets(input.customBody, existing?.customBody)
+    },
+    id
+  )
+  if (preset.requiresKey && !profile.apiKey.trim()) {
     throw new Error("API key is required for this provider.")
-  }
-  const profile: ProviderProfile = {
-    id,
-    name: input.name.trim() || preset.name,
-    kind: input.kind,
-    apiKey,
-    baseURL: (input.baseURL ?? existing?.baseURL ?? preset.defaultBaseURL).trim(),
-    modelId: (input.modelId ?? existing?.modelId ?? preset.models[0]?.id ?? "").trim(),
-    apiStyle: isApiStyle(input.apiStyle)
-      ? input.apiStyle
-      : resolvedStyle({ kind: input.kind, apiStyle: existing?.apiStyle ?? preset.apiStyle }),
-    fastModelId: input.fastModelId ?? existing?.fastModelId,
-    reasoningModelId: input.reasoningModelId ?? existing?.reasoningModelId,
-    contextWindow: normalizeOptionalWindow(input.contextWindow, existing?.contextWindow),
-    maxTokens: input.maxTokens ?? existing?.maxTokens,
-    temperature: input.temperature ?? existing?.temperature,
-    reasoningEffort: input.reasoningEffort ?? existing?.reasoningEffort,
-    customHeaders: input.customHeaders ?? existing?.customHeaders,
-    customBody: input.customBody ?? existing?.customBody,
-    models: input.models ?? existing?.models
   }
   vault.profiles = existing
     ? vault.profiles.map((item) => (item.id === id ? profile : item))
     : [profile, ...vault.profiles]
-  if (input.activate !== false || !vault.activeId) vault.activeId = id
+  pointActive(vault, profile, input.activate)
+  await writeVault(vault)
+  return toPublic(profile, vault.activeId)
+}
+
+export async function duplicateProfile(id: string, name: string): Promise<ProviderPublic> {
+  const vault = await readVault()
+  const source = vault.profiles.find((profile) => profile.id === id)
+  if (!source) throw new Error("Unknown provider.")
+  const copy = applyProfileUpsert(
+    undefined,
+    {
+      ...source,
+      name,
+      keys: source.keys.map((key) => ({ ...key, id: createId("key") })),
+      endpoints: { ...source.endpoints },
+      models: source.models?.map((model) => ({ ...model }))
+    },
+    createId("prv")
+  )
+  vault.profiles = [copy, ...vault.profiles]
+  await writeVault(vault)
+  return toPublic(copy, vault.activeId)
+}
+
+export async function setProfileEnabled(id: string, enabled: boolean): Promise<ProviderPublic> {
+  const vault = await readVault()
+  const current = vault.profiles.find((profile) => profile.id === id)
+  if (!current) throw new Error("Unknown provider.")
+  const profile = { ...current, enabled }
+  vault.profiles = vault.profiles.map((item) => (item.id === id ? profile : item))
+  if (!enabled && vault.activeId === id) {
+    vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
+  }
   await writeVault(vault)
   return toPublic(profile, vault.activeId)
 }
@@ -104,7 +112,9 @@ export async function removeProfile(id: string): Promise<void> {
   unbindProviderFromAgentTools(id)
   const vault = await readVault()
   vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
-  if (vault.activeId === id) vault.activeId = vault.profiles[0]?.id ?? null
+  if (vault.activeId === id) {
+    vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
+  }
   await writeVault(vault)
 }
 
@@ -112,6 +122,7 @@ export async function activateProfile(id: string): Promise<ProviderPublic> {
   const vault = await readVault()
   const profile = vault.profiles.find((item) => item.id === id)
   if (!profile) throw new Error("Unknown provider.")
+  if (!profile.enabled) throw new Error("Enable the provider before using it.")
   vault.activeId = id
   await writeVault(vault)
   return toPublic(profile, id)
@@ -124,8 +135,9 @@ export async function setActiveModel(input: {
   const vault = await readVault()
   let target = input.providerId ? vault.profiles.find((item) => item.id === input.providerId) : undefined
   if (!target && vault.activeId) target = vault.profiles.find((item) => item.id === vault.activeId)
-  if (!target) target = vault.profiles[0]
-  if (!target) return undefined
+  if (!target) target = vault.profiles.find((item) => item.enabled)
+  // 关闭的档案不能被选成 Enjoy Local 默认，否则会把 activeId 又指回去。
+  if (!target?.enabled) return undefined
   target.modelId = input.modelId.trim()
   vault.activeId = target.id
   await writeVault(vault)
@@ -161,7 +173,13 @@ export async function readSecret(): Promise<StoredSecret | undefined> {
     reasoningEffort: profile.reasoningEffort,
     customHeaders: profile.customHeaders,
     customBody: profile.customBody,
-    models: profile.models
+    models: profile.models,
+    endpoints: profile.endpoints,
+    keys: profile.keys,
+    baseAPI: profile.baseAPI,
+    reasoningFamily: profile.reasoningFamily,
+    proxy: profile.proxy,
+    enabled: profile.enabled
   }
 }
 
@@ -172,7 +190,7 @@ export async function hasSecret(): Promise<boolean> {
 }
 
 export function publicModelsFor(profile: ProviderProfile | undefined, isActive = true) {
-  if (!profile) return []
+  if (!profile?.enabled) return []
   return modelsForProvider(profile.kind, profile.modelId, profile.models).map((model) => ({
     id: model.id,
     label: model.label,
@@ -180,12 +198,13 @@ export function publicModelsFor(profile: ProviderProfile | undefined, isActive =
     providerId: profile.id,
     providerName: profile.name,
     apiStyle: resolvedStyle(profile),
+    wireStyles: filledStyles(profile.endpoints),
     active: isActive,
     isFast: Boolean(profile.fastModelId && profile.fastModelId === model.id),
     isReasoning: Boolean(profile.reasoningModelId && profile.reasoningModelId === model.id),
     supportsReasoning: true,
     reasoningEffort: profile.reasoningEffort,
-    contextWindow: profile.contextWindow ?? model.contextWindow,
+    contextWindow: model.contextWindow ?? profile.contextWindow,
     maxTokens: model.maxOutputTokens ?? profile.maxTokens
   }))
 }
@@ -197,40 +216,40 @@ export async function listAllPublicModels() {
   return Promise.all(
     listed.map(async (model) => {
       const profile = vault.profiles.find((item) => item.id === model.providerId)
+      const row = profile?.models?.find((item) => item.id === model.id)
       return {
         ...model,
-        contextWindow: await resolveListedWindow(
-          model.id,
-          model.provider,
-          model.contextWindow,
-          profile?.contextWindow
-        )
+        contextWindow: await resolveListedWindow(model.id, model.provider, row?.contextWindow, profile?.contextWindow)
       }
     })
   )
 }
 
-/** null / 0 表示用户清空手填窗口；undefined 表示沿用旧值。 */
-function normalizeOptionalWindow(
-  incoming: number | null | undefined,
-  existing?: number
-): number | undefined {
-  if (incoming === null || incoming === 0) return undefined
-  return incoming ?? existing
-}
-
-/** 用户档案手填优先 > 探测目录 > Gateway 公开目录兜底。都不知道就留空，不按 id 猜。 */
+/** 行上的窗口优先，空则档案手填，再 Gateway，再厂商公开窗口。 */
 async function resolveListedWindow(
   modelId: string,
   provider?: string,
-  catalogWindow?: number,
+  rowWindow?: number,
   profileWindow?: number
 ) {
-  return resolveModelContextWindow({
-    modelId,
-    provider,
-    catalogWindow,
-    profileWindow,
-    gatewayWindow: await gatewayContextWindowFor(modelId, provider)
-  })
+  return (
+    resolveModelContextWindow({
+      modelId,
+      provider,
+      profileWindow: rowWindow ?? profileWindow,
+      gatewayWindow: await gatewayContextWindowFor(modelId, provider)
+    }) ?? publishedContextWindow(modelId)
+  )
+}
+
+function pointActive(
+  vault: { activeId: string | null; profiles: ProviderProfile[] },
+  profile: ProviderProfile,
+  activate: boolean | undefined
+): void {
+  if (!profile.enabled && vault.activeId === profile.id) {
+    vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
+    return
+  }
+  if (profile.enabled && (activate !== false || !vault.activeId)) vault.activeId = profile.id
 }

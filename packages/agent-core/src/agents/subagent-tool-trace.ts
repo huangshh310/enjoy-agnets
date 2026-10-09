@@ -2,6 +2,8 @@
  * 给子 Agent 工具包一层追踪：执行时上报 start/result，挂到父 delegate。
  */
 
+import { withCommandDisplay } from "../tools/command-display.ts"
+
 export type SubagentToolTraceEvent = {
   type: "tool.start" | "tool.result"
   toolCallId: string
@@ -62,7 +64,7 @@ async function runTraced(
       name,
       parentToolCallId: trace.parentToolCallId,
       args,
-      result
+      result: withCommandDisplay(result, toolCallId)
     })
     return result
   } catch (error) {

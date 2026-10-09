@@ -39,7 +39,7 @@ export function TargetDeploymentsCard({
               {SKILLS_UI_COPY.targetDeployments}
             </h3>
           </div>
-          <p className="text-[11.5px] text-text-secondary">
+          <p className="text-caption-2-regular text-text-secondary">
             {t("pages.skills.targets.hostDesc")}
           </p>
         </div>
@@ -79,7 +79,7 @@ export function TargetDeploymentsCard({
 
                 <span
                   className={cx(
-                    "flex size-4.5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-all",
+                    "flex size-4.5 shrink-0 items-center justify-center rounded-full text-caption-2-bold font-bold transition-all",
                     isEnabled
                       ? "bg-accent-500 text-text-white shadow-xs scale-105"
                       : "border border-separator-border/80 bg-background-primary-default text-text-tertiary"
@@ -95,9 +95,9 @@ export function TargetDeploymentsCard({
                 </span>
                 <span
                   className={cx(
-                    "text-[10.5px] font-mono",
+                    "text-caption-2-regular font-mono",
                     isEnabled
-                      ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                      ? "text-state-success-text dark:text-state-success-text font-medium"
                       : "text-text-tertiary"
                   )}
                 >

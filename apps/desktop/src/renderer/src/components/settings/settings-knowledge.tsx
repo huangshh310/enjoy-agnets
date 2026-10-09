@@ -48,15 +48,15 @@ export function KnowledgeSettings() {
       <div className="flex flex-col gap-4 rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-teal-500/20 bg-teal-500/10 text-teal-600 dark:text-teal-400">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-chart-1/20 bg-chart-1/10 text-chart-1 dark:text-chart-1">
               <RiBookOpenLine className="size-6" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-body-large-semibold text-text-primary">
+                <span className="text-title-3-semibold text-text-primary">
                   {t("settings.knowledge.hubTitle")}
                 </span>
-                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
                   {t("settings.knowledge.hubBadge")}
                 </span>
               </div>
@@ -72,7 +72,7 @@ export function KnowledgeSettings() {
             onClick={() => void navigate({ to: "/knowledge" })}
             className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium shrink-0"
           >
-            <RiFolder6Line className="size-3.5 text-teal-500" />
+            <RiFolder6Line className="size-3.5 text-chart-1" />
             <span>{t("settings.knowledge.openStudio")}</span>
             <RiArrowRightLine className="size-3.5 opacity-60 ml-0.5" />
           </Button>
@@ -98,7 +98,7 @@ export function KnowledgeSettings() {
         </SettingsRow>
 
         <SettingsRow title={t("settings.knowledge.hybrid")} description={t("settings.knowledge.hybridDesc")}>
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 rounded-full border border-state-success-text/20 bg-state-success-text/10 px-2.5 py-0.5 text-caption-2-medium text-state-success-text dark:text-state-success-text">
             <span>{t("settings.knowledge.hybridOn")}</span>
           </span>
         </SettingsRow>

@@ -11,6 +11,7 @@ import {
 } from "@enjoy-agents/agent-harness";
 import { flushActiveRuns } from "./services/flush-agent-run";
 import { isQuitAllowed, markQuitAllowed } from "./services/window-quit";
+import { blockNativeHistoryNavigation } from "./services/block-native-history";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import { startAppUpdate } from "./services/app-update";
@@ -91,6 +92,7 @@ function createWindow(): void {
     })
   });
 
+  blockNativeHistoryNavigation(mainWindow);
   lockPreviewWebview(mainWindow.webContents);
 
   mainWindow.webContents.setWindowOpenHandler((details) => {

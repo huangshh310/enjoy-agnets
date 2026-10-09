@@ -30,24 +30,24 @@ export async function doctorReport(
   return finishDoctorRpc(ready, platform, perms, identity, hooks, base)
 }
 
-/** 人话：未签名 / 错位指向 helper 与重装签名包，禁止假绿。 */
+/**
+ * 与设置页中文阻断句同一套。不写编译器、路径或签名身份。
+ * Wayland / Windows / X11 用平台提示，不说成缺系统权限。
+ */
 export function formatDoctorLine(report: Record<string, unknown>): string {
-  if (report.code === "executor_missing") {
-    return "找不到桌面执行器。开发机需要 swiftc / python3 / PowerShell；安装包应带 bin/<platform>-<arch>/computer-use。"
+  if (report.code === "doctor_unavailable") return "还不能确认能不能点击。请再检测一次权限。"
+  if (report.code === "executor_missing") return "还不能点击。本机还没有桌面执行器。"
+  if (report.code === "no_display" || report.session === "none") return "当前没有图形会话，桌面动作不可用。"
+  if (report.code === "executor_unsigned" || report.code === "executor_identity_mismatch") {
+    return "还不能点击。请安装带签名的版本后再试。"
   }
-  if (report.code === "executor_unsigned") {
-    return "当前 Enjoy Computer Use helper 没有有效签名，不能当作已就绪。请重装签名安装包；开发机 swiftc / .build 未签名二进制不会报绿。"
+  if (report.session === "wayland") return "Wayland 尚未标为可用，须等真机 GUI 冒烟。没有后台点击。"
+  if (report.session === "windows" || report.session === "x11") return "这个桌面会话尚未标为可用，须等真机 GUI 冒烟。"
+  if (helperNeedsAccessibility(report) || report.screenCapture === false) {
+    return "还不能点击。请打开下面仍是未授权的那一项。"
   }
-  if (report.code === "executor_identity_mismatch") {
-    return "即将点击的 helper 与医生看到的路径或签名不一致。请重装签名包，不要混用 .build 与打包二进制。"
-  }
-  if (report.code === "no_display") return "没有图形会话（没有 DISPLAY / WAYLAND_DISPLAY）。"
-  if (helperNeedsAccessibility(report)) {
-    return "请为 Enjoy Computer Use helper 打开辅助功能，不要只授权给 Enjoy Agents 窗口进程。未签名开发包请重装签名安装包。"
-  }
-  if (report.session === "wayland") return "Wayland 没有后台点击，动作会先停在审批卡。"
-  if (report.backgroundClick === true) return "后台点击可用。"
-  return typeof report.message === "string" ? report.message : "桌面执行器已连接。"
+  if (report.backgroundClick === true || report.success === true) return "可以点击。"
+  return typeof report.message === "string" ? report.message : "还不能点击。请打开下面仍是未授权的那一项。"
 }
 
 async function finishDoctorRpc(
@@ -64,7 +64,9 @@ async function finishDoctorRpc(
     if (!checked.ready) {
       return { success: false, ...base, ...identityFields(checked), code: checked.code ?? "executor_identity_mismatch" }
     }
-    if (platform === "darwin" && rpc.trusted !== true) return deniedHelper(base, checked)
+    if (platform === "darwin" && rpc.trusted !== true) {
+      return { ...deniedHelper(base, checked), inputMonitoring: rpc.inputMonitoring === true }
+    }
     return { ...base, ...rpc, ...identityFields(checked), success: true, ...greenFlags(platform, perms, rpc) }
   } catch (error) {
     return { success: false, ...base, ...failureOf(error), backgroundClick: false }

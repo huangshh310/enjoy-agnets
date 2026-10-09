@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-09-25（CU-P1-36 prefs `desktopAdvancedCoords` 已入合约，铬未绑）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-09（合入电脑操控产品页；`desktopAdvancedCoords` 合约已入、铬未绑）
 
 ## 当前真相
 
@@ -22,7 +22,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/workspace` | 工作区管理 + **远程连接名册**（SSH 主机） | 工作区状态、远程名册、动态排除规则（默认/自定义 glob）与项目技术栈侦测（`WorkspaceExclusionsCard`） |
 | `#/settings/providers` | 模型供应商 | 协议工厂、测速评分徽章（极佳/良好/偏慢评级）、四页签抽屉编辑 |
 | `#/settings/telemetry` | 运行观测与遥测 | 本地 APM 监控仪表盘、调用追踪审计、模型路由统计与脱敏上报配置（旧 `#/observability` 自动重定向至此） |
-| `#/settings/tools` | 内置工具 | 内置浏览器开关、Browser Bridge（Chrome 扩展配对码、47823 端口本地环回 WebSocket 通信与连接状态）与**电脑操控**（`DesktopToolsCard`：就绪/未就绪、开通三拍、医生=当前 helper 的 `helperSigned` + helper AX，禁止宿主 Electron AX / 遗留 `signed` 假绿；检测权限 / 拍一张屏 / 试一下·计算器、内嵌「始终允许的应用」名单（`alwaysAllowApps` +「撤销」只清 prefs `desktopAlwaysAllowAppKeys`，不清会话表；空态「还没有始终允许的应用…」；说明含「坐标/前台/敏感仍每次问」）、高级「本会话任意桌面」默认关折叠，开则写入**当前对话**会话表 `desktop_act:*`，不进 `builtin_tools` 落盘；**无焦点会话时开关禁用**并提示「请先打开对话」；prefs `desktopAdvancedCoords` 默认关（CU-P1-36 数据面已闸，**设置铬未绑**，mike 后接开关）；**仅 macOS 为当前支持路径**（辅助功能/屏幕录制）；Windows / Linux 文案不得标可用，须等真机 GUI 冒烟；完整性 / AT-SPI / Wayland 前台事实仍写明）。试一下只切执行并预填 `@桌面`，不自动 `agent.run`。视觉锁 [`../previews/p0-computer-use.html`](../previews/p0-computer-use.html) |
+| `#/settings/tools` | 内置工具 | 只放内置浏览器开关和 Browser Bridge（Chrome 扩展配对码、47823 端口本地环回 WebSocket 通信与连接状态）。电脑操控不在本页。 |
 | `#/settings/extensions` | 扩展发现壳（P0-H）+ 同页精选（I2） | 设置「工作区与扩展」一页两列 MCP \| Skills；已配置数 +「添加」深链 `#/mcp` / `#/skills`；H 列只列本机 SoT 名。同页下方 I2 精选：只读 curated，「添加到 MCP / 添加到技能」走现有 `mcp.upsert`（trusted）与 `skills.sources.add` + `deploy`；写后「已写入 Enjoy · 下一轮可注入」。catalog 失败只空精选区 + 重试，H 计数仍在。视觉锁 [`../previews/p0-h-extensions-hub.html`](../previews/p0-h-extensions-hub.html) + [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)。开流注入仍是 Composer `HostInjectBar`（P0-S），本页不改注入协议：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)。 |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
@@ -32,9 +32,9 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 
 设置分段 ID 含 `telemetry`。侧栏情境栏 4 大板块核心项（应用偏好：通用/外观/快捷键；智能体与模型：供应商/智能体/说明/技能/运行遥测；工作区与扩展：工作区/扩展/MCP；组织：**个人资料** `#/settings/account`）。`#/settings/telemetry` 承接原可观测性看板：指标概览、模型路由、调用审计、本机 CLI 与隐私上报模式。`#/settings/extensions` 是 P0-H 发现壳（不上第 8 轨、不新开存储、不混 Registry）。`#/settings/skills` 跳 `#/skills`，`#/settings/mcp` 跳 `#/mcp`。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` / `archived` → `account`）。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。
-快捷键：`Ctrl+,` / `Cmd+,` → General；在 Settings / Inbox 上按 Escape → 进入前的工作模块（记住 last work module，不要永远回 `#/`）。Chat：Shift+Tab 循环审批档 `allow-reads → allow-edits → allow-all`（`use-permission-cycle-hotkey`；输入框 / contentEditable 内不触发；custom 档从 `allow-reads` 起算）。设置 shortcuts 已登记。对话里焦点不在输入框时按 `?` 打开同一份 `SHORTCUT_DEFS`，不新开路由。
+快捷键存在 `preferences.keybindings`。`#/settings/shortcuts` 可以搜索、录制、加一条、删除和恢复默认。用户规则盖住同名命令，缺的命令回默认，非法规则在设置页点名。渲染进程一个调度器读解析后的表。`?` 面板和快速搜索读同一份结果。Enter 发送、Shift+Enter 换行、粘贴不在这张表里。默认仍是 ⌘L / ⌘K 快速搜索、⌘, 打开设置、设置或 Inbox 里 Escape 返回进入前的工作模块、⌘P 文件、⌘⇧G 审阅、⌘` 终端、⌘T 浏览器、⌘⇧C 上下文、⌘⇧D 桌面、⌘F 本会话查找（终端聚焦时不抢）、焦点不在输入框时 Shift+Tab 循环审批、`?` 打开快捷键表。`#/settings/computer-use` 与 `#/settings/appsnap` 在智能体分组，导航带 Beta。电脑操控的总开关、权限、蓝边、始终允许、本会话任意桌面和试用只在 `#/settings/computer-use`，内置工具不再重复。prefs `desktopAdvancedCoords` 默认关（CU-P1-36 数据面已闸）；产品页**尚未**绑高级坐标开关。
 
-Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets，添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。
+Providers 页是协议工厂（见 `providers` spec + visual-system §14）：顶部分段 Configured / Explore Presets。自定义端点只从 Explore 横幅或已配置空态进入，页头不再放第二扇门。添加 / 编辑走右侧抽屉（与智能体配置同一套 `SettingsSideDrawer`），四页签 Connection / Models / Parameters / Overrides，不是居中 Dialog、不是页脚堆表单。本页自带标题与分段控件，壳层不要再叠 `h1`。空态虚线框用 `flex-1 min-h-0` 铺满 `wide` 剩余高度。Configured 行显示引用该档案的本机 CLI 芯片（无引用不画「0 个智能体」）；点芯片 `navigate` 到 `#/settings/agent?tool=<runtimeId>`，本机 CLI 卡闪一下（`agent-tool-anchor`）。删除仍被引用的档案先 Confirm 列出助手名。页头「当前」只在默认档案仍开启时出现，否则写「未在使用」。关掉的行主操作是「开启」。模型数字是收录，不是此刻可选。预设说明和新建自定义档案的显示名走界面语言。已配置行大约两行，预设卡说明只留一行，网格间距收紧。
 
 `#/skills` 是唯一 Skills 工作模块（总览 / 精选发现 / 来源详情 / doctor）。`#/settings/skills`、`#/customize/skills` redirect 到它。`#/settings/agent?tab=defaults` 另有一行**可选拉取**卡片（`SettingsSkillSources`），只调用 `skills.sources.updateAll`，不复制整页 Skills UI。权威状态在 `~/.enjoy-agents/skill-sources/`（`manifest.json` / `lock.json`）。打开总览时会把本机 Agent 技能根（`~/.agents/skills`、`~/.claude/skills` 等）写入 manifest，之后才能 `configure` / `deploy`。Git 只接受 HTTPS GitHub/GitLab；`git@` / SSH / `clawhub:` 抛 `UNSUPPORTED_SOURCE`。现有 `skills.list|create|delete|reveal` 仍给 Context 检查器与模版安装。M6 可选更新：无 Git 源则**不渲染**更新按钮；点了才快进，不自动同步。空会话禁止挂更新条。
 

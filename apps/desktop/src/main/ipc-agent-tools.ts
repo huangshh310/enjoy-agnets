@@ -21,7 +21,7 @@ import {
 import { ipcMain, shell } from "electron"
 import { inspectAgentTool } from "./services/agent-tools-account/inspect"
 import { installAgentTool, loginAgentTool, uninstallAgentTool } from "./services/agent-tools-install"
-import { getCustomAgent, removeCustomAgent, upsertCustomAgent } from "./services/agent-tools-custom"
+import { getCustomAgent, removeCustomAgent, toEditableCustomAgent, upsertCustomAgent } from "./services/agent-tools-custom"
 import { writeSessionHandoff } from "./services/session-handoff"
 import { importAcpSession, listImportableAcpSessions } from "./services/acp-session-import"
 import {
@@ -126,7 +126,7 @@ export function registerAgentToolsIpc() {
     const input = RemoveCustomAgentInput.parse(raw)
     const record = getCustomAgent(input.id)
     if (!record) throw new Error(`Unknown custom agent '${input.id}'.`)
-    return record
+    return toEditableCustomAgent(record)
   })
   ipcMain.handle("agentTools.setConfigOption", async (_event, raw: unknown) => {
     const input = SetConfigOptionInput.parse(raw)

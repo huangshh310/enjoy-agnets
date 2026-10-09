@@ -9,6 +9,7 @@ import { useT } from "@renderer/i18n"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
 import { ChangesFileDiff } from "../../../../diff/changes-file-diff"
 import { sameReviewPath } from "../same-review-path"
+import type { DiffPalette } from "../../../../diff/diff-palette"
 import type { ReviewOptions } from "../types/review.types"
 
 export function ReviewDiffPane(props: {
@@ -18,8 +19,9 @@ export function ReviewDiffPane(props: {
   selectedFileContent: string
   onSelectFile: (path: string) => void
   options?: ReviewOptions
+  palette?: DiffPalette
 }) {
-  const { workspaceId, changes, selectedFilePath, selectedFileContent, onSelectFile, options } = props
+  const { workspaceId, changes, selectedFilePath, selectedFileContent, onSelectFile, options, palette } = props
   const t = useT()
 
   const matched = selectedFilePath
@@ -35,7 +37,7 @@ export function ReviewDiffPane(props: {
   if (changes.length === 0 && !activePath) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-text-tertiary">
-        <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+        <div className="flex size-10 items-center justify-center rounded-full bg-state-success-text/10 text-state-success-text">
           <RiCheckLine className="size-5" />
         </div>
         <p className="text-body-medium font-medium text-text-secondary">{t("chat.treeClean")}</p>
@@ -60,6 +62,7 @@ export function ReviewDiffPane(props: {
           path={activePath}
           fallbackContent={selectedFileContent}
           options={options}
+          palette={palette}
         />
       </div>
     </div>

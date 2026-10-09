@@ -84,7 +84,7 @@ export function SkillsCard({
                   {source.name}
                 </h3>
                 {theme.verified ? (
-                  <span className="shrink-0 rounded-full bg-blue-500/10 px-1.5 py-0.2 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                  <span className="shrink-0 rounded-full bg-accent-500/10 px-1.5 py-0.2 text-caption-2-medium font-medium text-accent-500 dark:text-accent-500">
                     {t("pages.skills.card.verified")}
                   </span>
                 ) : null}
@@ -98,7 +98,7 @@ export function SkillsCard({
           <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             <span
               className={cx(
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-caption-2-medium font-medium",
                 health.badgeClass
               )}
             >
@@ -135,7 +135,7 @@ export function SkillsCard({
         </div>
 
         {/* 激活助手状态行 */}
-        <div className="flex flex-wrap items-center gap-1 rounded-xl bg-background-secondary-default/50 p-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-1 rounded-xl bg-background-secondary-default/50 p-2 text-caption-2-medium">
           <span className="text-text-tertiary font-medium mr-1">{t("pages.skills.card.activatedAgents")}</span>
           {enabledCount === 0 ? (
             <span className="text-text-tertiary italic">{t("pages.skills.states.noneActive")}</span>
@@ -143,9 +143,9 @@ export function SkillsCard({
             hostTargets.map((targetId) => (
               <span
                 key={targetId}
-                className="inline-flex items-center gap-1 rounded-md bg-background-primary-default px-1.5 py-0.5 text-[10.5px] font-medium text-text-primary border border-separator-border/40 shadow-2xs"
+                className="inline-flex items-center gap-1 rounded-md bg-background-primary-default px-1.5 py-0.5 text-caption-2-medium font-medium text-text-primary border border-separator-border/40 shadow-2xs"
               >
-                <RiCheckLine className="size-2.5 text-emerald-500" />
+                <RiCheckLine className="size-2.5 text-state-success-text" />
                 {TARGET_SHORT_LABELS[targetId]}
               </span>
             ))
@@ -165,7 +165,7 @@ export function SkillsCard({
                 return (
                   <span
                     key={skillId}
-                    className="rounded-md border border-separator-border/60 bg-background-primary-default px-2 py-0.5 text-[10.5px] font-mono text-text-secondary"
+                    className="rounded-md border border-separator-border/60 bg-background-primary-default px-2 py-0.5 text-caption-2-regular font-mono text-text-secondary"
                   >
                     {cleanName}
                   </span>
@@ -173,7 +173,7 @@ export function SkillsCard({
               })
             )}
             {source.selectedSkillIds.length > 4 ? (
-              <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 text-[10px] text-text-tertiary">
+              <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-2-regular text-text-tertiary">
                 +{source.selectedSkillIds.length - 4}
               </span>
             ) : null}
@@ -182,7 +182,7 @@ export function SkillsCard({
       </div>
 
       {/* 底栏详情引导 */}
-      <div className="mt-3.5 flex items-center justify-between border-t border-separator-border/40 pt-2.5 text-[11px]">
+      <div className="mt-3.5 flex items-center justify-between border-t border-separator-border/40 pt-2.5 text-caption-2-regular">
         <span className="font-mono text-text-tertiary">
           {t("pages.skills.card.countPrefix")}
           <b className="text-text-primary font-medium">{source.skillCount}</b>

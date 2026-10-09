@@ -33,10 +33,10 @@ export function ReplayTimelineTable({
           const typeColor = row.type.startsWith("run.")
             ? "bg-accent-500/10 text-accent-500 border-accent-500/20"
             : row.type.startsWith("tool.")
-              ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+              ? "bg-chart-5/10 text-chart-5 dark:text-chart-5 border-chart-5/20"
               : row.type.startsWith("approval.")
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                : "bg-status-success-background text-status-success-foreground border-status-success-border"
+                ? "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text border-status-yellow-text/20"
+                : "bg-state-success-base text-state-success-text border-state-success-text/30"
 
           return (
             <div
@@ -64,13 +64,13 @@ export function ReplayTimelineTable({
                 </span>
 
                 {row.toolName ? (
-                  <span className="rounded bg-purple-500/10 px-1.5 py-0.5 text-caption-2-medium text-purple-600 dark:text-purple-400 font-semibold truncate">
+                  <span className="rounded bg-chart-5/10 px-1.5 py-0.5 text-caption-2-medium text-chart-5 dark:text-chart-5 font-semibold truncate">
                     tool: {row.toolName}
                   </span>
                 ) : null}
 
                 {row.decision ? (
-                  <span className="rounded bg-status-success-background px-1.5 py-0.5 text-caption-2-medium text-status-success-foreground font-semibold truncate">
+                  <span className="rounded bg-state-success-base px-1.5 py-0.5 text-caption-2-medium text-state-success-text font-semibold truncate">
                     decision: {row.decision}
                   </span>
                 ) : null}

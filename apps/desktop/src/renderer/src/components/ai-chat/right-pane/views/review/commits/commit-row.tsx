@@ -58,7 +58,7 @@ export function CommitRow(props: {
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         {/* 作者彩色圆形头像 */}
         <span
-          className={`flex size-6 shrink-0 items-center justify-center rounded-full font-mono text-[10.5px] font-bold border ${avatarClass}`}
+          className={`flex size-6 shrink-0 items-center justify-center rounded-full font-mono text-caption-2-bold font-bold border ${avatarClass}`}
         >
           {commit.authorInitials}
         </span>
@@ -86,7 +86,7 @@ export function CommitRow(props: {
 
             {/* Head 分支或 Tag 徽标 */}
             {isHead && branch ? (
-              <span className="inline-flex max-w-[110px] shrink-0 truncate items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-[10.5px] font-medium text-accent-500" title={branch}>
+              <span className="inline-flex max-w-[110px] shrink-0 truncate items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-caption-2-medium font-medium text-accent-500" title={branch}>
                 {branch}
               </span>
             ) : null}
@@ -95,7 +95,7 @@ export function CommitRow(props: {
               <span
                 key={tag}
                 title={tag}
-                className="inline-flex max-w-[110px] shrink-0 truncate items-center gap-0.5 rounded bg-background-secondary-default px-1.5 py-0.2 font-mono text-[10px] text-text-secondary border border-separator-border/60"
+                className="inline-flex max-w-[110px] shrink-0 truncate items-center gap-0.5 rounded bg-background-secondary-default px-1.5 py-0.2 font-mono text-caption-2-regular text-text-secondary border border-separator-border/60"
               >
                 <RiPriceTag3Line className="size-2.5 shrink-0" />
                 <span className="truncate">{tag}</span>
@@ -104,7 +104,7 @@ export function CommitRow(props: {
           </div>
 
           {/* 副标题：作者 · 作用域 · 相对时间 · N 文件 +N -M */}
-          <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-tertiary">
+          <div className="flex items-center gap-1.5 font-mono text-caption-2-regular text-text-tertiary">
             <span className="max-w-[110px] truncate" title={commit.authorName}>{commit.authorName}</span>
             <span aria-hidden>·</span>
             <span className="shrink-0">{commit.relativeTime}</span>
@@ -125,7 +125,7 @@ export function CommitRow(props: {
         type="button"
         onClick={handleCopy}
         title="复制完整 Commit SHA"
-        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-separator-border/60 bg-background-secondary-default/50 px-2 py-1 font-mono text-[11px] text-text-tertiary hover:border-separator-border hover:bg-background-secondary-hover hover:text-text-primary transition-all"
+        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-separator-border/60 bg-background-secondary-default/50 px-2 py-1 font-mono text-caption-2-regular text-text-tertiary hover:border-separator-border hover:bg-background-secondary-hover hover:text-text-primary transition-all"
       >
         {copied ? (
           <RiCheckLine className="size-3 text-state-success-text" />

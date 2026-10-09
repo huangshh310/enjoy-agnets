@@ -7,6 +7,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { CodeBlock } from "@/components/ai-elements/code-block"
 import { cx } from "@/utils/cx"
 import { asRecord, readString } from "@renderer/lib/record"
+import { commandStreamText } from "../thread/thinking/command-stream-text"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
 
@@ -65,14 +66,14 @@ function BashResult({
   const t = useT()
   const command =
     readString(result, "command") || readString(asRecord(tool.args), "command") || tool.name
-  const stdout = readString(result, "stdout")
-  const stderr = readString(result, "stderr")
+  const stdout = commandStreamText(result, "stdout")
+  const stderr = commandStreamText(result, "stderr")
   const exitCode = result.exitCode
   const ok = exitCode === 0 || exitCode === undefined
 
   return (
     <div className="overflow-hidden rounded-xl border border-separator-border/80 bg-background-primary-default font-mono shadow-2xs">
-      <header className="flex items-center gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-[12px]">
+      <header className="flex items-center gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-caption-1-regular">
         <RiTerminalBoxLine className="size-3.5 shrink-0 text-text-tertiary" />
         <span className="min-w-0 truncate text-caption-1-medium text-text-primary">{command}</span>
         {exitCode !== undefined ? (

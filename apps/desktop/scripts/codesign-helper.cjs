@@ -23,19 +23,19 @@ function shouldNotarizeStyle(identity, env = process.env) {
   return /developer id/i.test(identity)
 }
 
-function buildCodesignArgs(identity, binary, env = process.env) {
-  const args = ["--force", "--sign", identity, "--identifier", HELPER_IDENTIFIER]
+function buildCodesignArgs(identity, binary, env = process.env, identifier = HELPER_IDENTIFIER) {
+  const args = ["--force", "--sign", identity, "--identifier", identifier]
   if (shouldNotarizeStyle(identity, env)) args.push("--timestamp", "--options", "runtime")
   args.push(binary)
   return args
 }
 
-function sidecarPath(binary) {
-  return path.join(path.dirname(binary), "computer-use.identity.json")
+function sidecarPath(binary, name = "computer-use.identity.json") {
+  return path.join(path.dirname(binary), name)
 }
 
-function writeSidecar(binary, sidecar) {
-  fs.writeFileSync(sidecarPath(binary), `${JSON.stringify(sidecar, null, 2)}\n`)
+function writeSidecar(binary, sidecar, name) {
+  fs.writeFileSync(sidecarPath(binary, name), `${JSON.stringify(sidecar, null, 2)}\n`)
 }
 
 function unsignedSidecar(source, reason) {
@@ -43,24 +43,26 @@ function unsignedSidecar(source, reason) {
 }
 
 /** 身份缺失：写未签名 sidecar，不抛。身份在但 codesign 失败：抛错，禁止静默当成功。 */
-function signDarwinHelper(binary, env = process.env, run = runCodesign) {
+function signDarwinHelper(binary, env = process.env, run = runCodesign, options = {}) {
+  const identifier = options.identifier || HELPER_IDENTIFIER
+  const sidecarName = options.sidecarName || "computer-use.identity.json"
   const resolved = resolveCodesignIdentity(env)
   if (!resolved) {
     const sidecar = unsignedSidecar(null, "no_identity_env")
-    writeSidecar(binary, sidecar)
+    writeSidecar(binary, sidecar, sidecarName)
     return sidecar
   }
-  const args = buildCodesignArgs(resolved.identity, binary, env)
+  const args = buildCodesignArgs(resolved.identity, binary, env, identifier)
   const result = run(args)
   if (result.status !== 0) {
     const reason = String(result.stderr || result.stdout || "codesign_failed").trim()
-    writeSidecar(binary, unsignedSidecar(resolved.source, reason))
+    writeSidecar(binary, unsignedSidecar(resolved.source, reason), sidecarName)
     const error = new Error(`codesign helper failed: ${reason}`)
     error.code = "codesign_failed"
     throw error
   }
   const sidecar = { signed: true, identity: resolved.identity, source: resolved.source, reason: null }
-  writeSidecar(binary, sidecar)
+  writeSidecar(binary, sidecar, sidecarName)
   return sidecar
 }
 

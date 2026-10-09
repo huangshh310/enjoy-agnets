@@ -58,7 +58,7 @@ export function GitCommitCard({ info }: { info: GitCommitInfo }) {
             {t("chat.gitCommitCardTitle")}
           </span>
           {info.branch ? (
-            <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-[10.5px] font-medium text-accent-500">
+            <span className="inline-flex items-center gap-1 rounded bg-accent-500/10 px-1.5 py-0.2 font-mono text-caption-2-medium font-medium text-accent-500">
               <RiGitBranchLine className="size-2.5" />
               <span>{info.branch}</span>
             </span>

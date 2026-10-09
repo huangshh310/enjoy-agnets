@@ -102,7 +102,7 @@ function MultiFileDiffTabs({ tools }: { tools: ThreadToolCall[] }) {
                   e.currentTarget.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" })
                 }}
                 className={cx(
-                  "flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 font-mono text-[11.5px] transition-all cursor-pointer",
+                  "flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 font-mono text-caption-2-regular transition-all cursor-pointer",
                   isSelected
                     ? "border border-separator-border/80 bg-background-primary-default font-semibold text-text-primary shadow-2xs"
                     : "text-text-tertiary hover:bg-background-secondary-hover/60 hover:text-text-primary"
@@ -111,10 +111,10 @@ function MultiFileDiffTabs({ tools }: { tools: ThreadToolCall[] }) {
                 <RiCodeSSlashLine className="size-3 text-accent-500" />
                 <span className="max-w-[140px] truncate">{fileName}</span>
                 {additions != null ? (
-                  <span className="text-[10px] text-state-success-text">+{additions}</span>
+                  <span className="text-caption-2-regular text-state-success-text">+{additions}</span>
                 ) : null}
                 {deletions != null ? (
-                  <span className="text-[10px] text-text-error-primary">-{deletions}</span>
+                  <span className="text-caption-2-regular text-text-error-primary">-{deletions}</span>
                 ) : null}
               </button>
             )

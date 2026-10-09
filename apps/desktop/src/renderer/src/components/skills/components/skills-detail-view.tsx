@@ -101,7 +101,7 @@ export function SkillsDetailView({
             </h2>
             <span
               className={cx(
-                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium",
+                "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-caption-2-medium font-medium",
                 health.badgeClass
               )}
             >

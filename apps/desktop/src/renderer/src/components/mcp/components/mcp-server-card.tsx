@@ -77,7 +77,7 @@ export function McpServerCard(props: {
         />
       ) : null}
       {server.error ? (
-        <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/5 px-2.5 py-1 text-caption-2-regular text-text-error-primary">
+        <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-border-error-default/20 bg-background-tertiary-error/5 px-2.5 py-1 text-caption-2-regular text-text-error-primary">
           <RiInformationLine className="size-3.5 shrink-0" />
           <span className="truncate">{server.error}</span>
         </div>
@@ -115,7 +115,7 @@ function McpServerIdentity({
         className={cx(
           "flex size-8 shrink-0 items-center justify-center rounded-lg border shadow-2xs",
           server.connected
-            ? "border-emerald-500/20 bg-emerald-500/10 text-state-success-text"
+            ? "border-state-success-text/20 bg-state-success-text/10 text-state-success-text"
             : "border-separator-border bg-background-secondary-default text-text-tertiary"
         )}
       >
@@ -136,7 +136,7 @@ function McpServerIdentity({
           <span>{server.id.slice(0, 14)}</span>
           {server.envRef ? (
             <span className="inline-flex items-center gap-1 text-text-secondary">
-              <RiKey2Line className="size-3 text-amber-500" />
+              <RiKey2Line className="size-3 text-status-yellow-text" />
               <span>{t("pages.mcp.envBadge")}</span>
             </span>
           ) : null}
@@ -168,7 +168,7 @@ function EndpointRow({
         onClick={onCopy}
         className="inline-flex shrink-0 items-center rounded p-1 text-text-tertiary hover:text-text-primary"
       >
-        {copied ? <RiCheckLine className="size-3 text-emerald-500" /> : <RiClipboardLine className="size-3" />}
+        {copied ? <RiCheckLine className="size-3 text-state-success-text" /> : <RiClipboardLine className="size-3" />}
       </button>
     </div>
   )

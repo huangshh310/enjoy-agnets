@@ -24,15 +24,15 @@ export function McpSettings() {
       <div className="flex flex-col gap-4 rounded-2xl border border-border-button-default bg-background-primary-default p-5 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-chart-5/20 bg-chart-5/10 text-chart-5 dark:text-chart-5">
               <McpIcon className="size-6" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-body-large-semibold text-text-primary">
+                <span className="text-title-3-semibold text-text-primary">
                   {t("settings.mcp.hubTitle")}
                 </span>
-                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary">
+                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary">
                   {t("settings.mcp.hubBadge")}
                 </span>
               </div>
@@ -48,7 +48,7 @@ export function McpSettings() {
             onClick={() => void navigate({ to: "/mcp" })}
             className="inline-flex items-center gap-1.5 cursor-pointer h-8 text-caption-2-medium shrink-0"
           >
-            <McpIcon className="size-3.5 text-purple-500" />
+            <McpIcon className="size-3.5 text-chart-5" />
             <span>{t("settings.mcp.openHub")}</span>
             <RiArrowRightLine className="size-3.5 opacity-60 ml-0.5" />
           </Button>
@@ -58,7 +58,7 @@ export function McpSettings() {
       {/* ─── 安全与工具审批策略 ───────────────────────────── */}
       <SettingsCard title={t("settings.mcp.policies")}>
         <SettingsRow title={t("settings.mcp.untrusted")} description={t("settings.mcp.untrustedDesc")}>
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-caption-2-medium text-emerald-600 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 rounded-full border border-state-success-text/20 bg-state-success-text/10 px-2.5 py-0.5 text-caption-2-medium text-state-success-text dark:text-state-success-text">
             <RiShieldCheckLine className="size-3.5" />
             <span>{t("settings.mcp.enforced")}</span>
           </span>
@@ -69,7 +69,7 @@ export function McpSettings() {
             {STDIO_WHITELIST.map((bin) => (
               <span
                 key={bin}
-                className="font-mono rounded-md border border-border-button-default bg-background-secondary-default px-1.5 py-0.2 text-[10px] text-text-secondary"
+                className="font-mono rounded-md border border-border-button-default bg-background-secondary-default px-1.5 py-0.2 text-caption-2-regular text-text-secondary"
               >
                 {bin}
               </span>

@@ -48,7 +48,7 @@ export function RailButton({
         aria-hidden
       />
       {badge ? (
-        <span className="absolute -right-0.5 -top-0.5 min-w-3.5 rounded-full bg-background-tertiary-error px-1 text-center font-mono text-[10px] leading-4 text-text-error-primary">
+        <span className="absolute -right-0.5 -top-0.5 min-w-3.5 rounded-full bg-background-tertiary-error px-1 text-center font-mono text-caption-2-regular leading-4 text-text-error-primary">
           {badge}
         </span>
       ) : null}

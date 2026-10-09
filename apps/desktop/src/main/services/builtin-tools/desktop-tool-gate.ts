@@ -11,7 +11,10 @@ export const DESKTOP_CONTROL_TOOL_NAMES = [
   "desktop_act"
 ] as const
 
-/** 电脑操控开 + 非探索态才注入 desktopControlTools()。 */
-export function shouldRegisterDesktopControlTools(mode: string, enabled: boolean): boolean {
-  return enabled && mode !== "plan" && mode !== "ask"
+/**
+ * 总开关开，或这一发带了 `/computer-use`。探索态（plan/ask）仍然不注册。
+ * 口令不把偏好写成开；探索那一发要先改成执行再进来。
+ */
+export function shouldRegisterDesktopControlTools(mode: string, enabled: boolean, once = false): boolean {
+  return (enabled || once) && mode !== "plan" && mode !== "ask"
 }

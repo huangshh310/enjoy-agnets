@@ -14,13 +14,6 @@ import { syncActiveRunsDesktopAllow } from "../conversation-desktop-allow-sync"
 import { persistableBuiltinTools, type PersistedBuiltinTools } from "./persist-builtin-tools"
 import { listDesktopAlwaysAllowApps } from "./computer-use/desktop-always-allow-ledger"
 import { displaySession } from "./computer-use/display-session"
-import { resolveExecutorCommand, spawnTargetPath } from "./computer-use/executor-command"
-import {
-  evaluateHelperIdentity,
-  inspectDarwinCodesign,
-  readHelperSidecar,
-  resolveExpectedIdentity
-} from "./computer-use/executor-identity"
 
 const SETTING_KEY_BUILTIN_TOOLS = "builtin_tools_state"
 
@@ -53,28 +46,12 @@ function getOrCreateToken(): string {
   return inMemoryToken
 }
 
+/**
+ * 宿主进程自己的辅助功能 / 屏幕录制。
+ * 不是即将点击的 helper。设置行不得拿这个字段显示「已授权」。
+ */
 export function checkDesktopPermissions(): { accessibility: boolean; screenCapture: boolean } {
-  const host = checkHostDesktopPermissions()
-  if (process.platform !== "darwin") return host
-  // 未签名 / 错位 helper 不得把宿主 AX 显示成「已授权可点」。
-  return {
-    accessibility: host.accessibility && peekHelperIdentityReady(),
-    screenCapture: host.screenCapture
-  }
-}
-
-/** 只 peek 已有二进制，禁止 getState 触发 swiftc。 */
-function peekHelperIdentityReady(): boolean {
-  const command = resolveExecutorCommand(process.platform, process.resourcesPath, process.arch, { compile: false })
-  const spawnPath = command ? spawnTargetPath(command, process.platform) : null
-  const sidecar = spawnPath ? readHelperSidecar(spawnPath) : null
-  return evaluateHelperIdentity({
-    platform: process.platform,
-    spawnPath,
-    codesign: spawnPath ? inspectDarwinCodesign(spawnPath) : null,
-    sidecar,
-    expectedIdentity: resolveExpectedIdentity(process.env, sidecar)
-  }).ready
+  return checkHostDesktopPermissions()
 }
 
 function checkHostDesktopPermissions(): { accessibility: boolean; screenCapture: boolean } {
@@ -107,18 +84,17 @@ function readHostScreenCapture(): boolean {
   }
 }
 
-export function openSystemPrivacySettings(type: "accessibility" | "screenCapture") {
+export function openSystemPrivacySettings(type: "accessibility" | "screenCapture" | "inputMonitoring") {
   if (process.platform !== "darwin") return
-  if (type === "accessibility") {
-    void shell.openExternal(
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-    )
-  } else {
-    void shell.openExternal(
-      "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-    )
-  }
+  const pane = PRIVACY_PANE[type]
+  void shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${pane}`)
 }
+
+const PRIVACY_PANE = {
+  accessibility: "Privacy_Accessibility",
+  screenCapture: "Privacy_ScreenCapture",
+  inputMonitoring: "Privacy_ListenEvent"
+} as const
 
 export function getBuiltinToolsState(sessionId?: string): BuiltinToolsState {
   const saved = readPersistedState()

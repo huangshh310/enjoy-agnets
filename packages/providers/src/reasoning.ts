@@ -9,7 +9,9 @@
 import type { ApiStyle } from "./api-styles"
 import type { ProviderKind } from "./presets"
 
-const MINIMAX_PRESET_URL = "https://api.minimax.chat/v1"
+const MINIMAX_PRESET_URL = "https://api.minimax.io/v1"
+
+export type ReasoningFamilyName = "auto" | "minimax" | "glm" | "kimi" | "deepseek" | "default"
 
 export type ReasoningEffort = "low" | "medium" | "high" | "xhigh"
 
@@ -49,17 +51,33 @@ export function isKimiModelId(modelId: string): boolean {
   return id.includes("kimi") || id.includes("moonshot")
 }
 
+/**
+ * auto 跟 kind。custom 才看模型 id 前缀。
+ * 硅基流动这类中转即使模型名带 deepseek，也不进 @ai-sdk/deepseek。
+ */
+export function resolveReasoningFamily(config: {
+  provider: ProviderKind | string
+  modelId: string
+  reasoningFamily?: ReasoningFamilyName | string
+}): Exclude<ReasoningFamilyName, "auto"> {
+  const explicit = config.reasoningFamily
+  if (explicit && explicit !== "auto" && isFamilyName(explicit)) return explicit
+  if (config.provider === "minimax") return "minimax"
+  if (config.provider === "zhipu" || config.provider === "zai") return "glm"
+  if (config.provider === "kimi") return "kimi"
+  if (config.provider === "deepseek") return "deepseek"
+  if (config.provider === "custom") return familyFromModelId(config.modelId)
+  return "default"
+}
+
 export function usesDeepSeekReasoningApi(config: {
   provider: ProviderKind | string
   modelId: string
   apiStyle?: ApiStyle | string
+  reasoningFamily?: ReasoningFamilyName | string
 }): boolean {
-  if (config.apiStyle === "anthropic" || config.apiStyle === "openai-responses") {
-    return false
-  }
-  if (config.provider === "openai") return false
-  if (config.provider === "deepseek") return true
-  return isDeepSeekModelId(config.modelId)
+  if (config.apiStyle === "anthropic" || config.apiStyle === "openai-responses") return false
+  return resolveReasoningFamily(config) === "deepseek"
 }
 
 /** @ai-sdk/deepseek 2.x 只读 providerOptions.deepseek，不读顶层 reasoning。 */
@@ -109,22 +127,37 @@ export function reasoningCallOptions(config: {
   apiStyle?: ApiStyle | string
   effort?: ReasoningEffort
   baseURL?: string
+  reasoningFamily?: ReasoningFamilyName | string
 }): {
   reasoning?: ReasoningEffort
   providerOptions?: ProviderOptions
 } {
-  if (usesDeepSeekReasoningApi(config)) {
+  const family = resolveReasoningFamily(config)
+  if (family === "deepseek" && config.apiStyle !== "anthropic" && config.apiStyle !== "openai-responses") {
     return { reasoning: config.effort, providerOptions: deepseekCallOptions(config.effort) }
   }
-  if (isMiniMaxModelId(config.modelId) || config.provider === "minimax") {
+  if (family === "minimax") {
     const providerOptions = miniMaxThinkingOptions(config.effort, hostFor(config))
     return providerOptions ? { providerOptions } : {}
   }
-  if (isGlmModelId(config.modelId) || config.provider === "zhipu") {
+  if (family === "glm") {
     const providerOptions = glmThinkingOptions(config.effort)
     return providerOptions ? { providerOptions } : {}
   }
   return { reasoning: config.effort }
+}
+
+function familyFromModelId(modelId: string): Exclude<ReasoningFamilyName, "auto"> {
+  const id = modelId.toLowerCase()
+  if (id.startsWith("minimax")) return "minimax"
+  if (id.startsWith("glm")) return "glm"
+  if (id.startsWith("kimi") || id.startsWith("moonshot")) return "kimi"
+  if (id.startsWith("deepseek")) return "deepseek"
+  return "default"
+}
+
+function isFamilyName(value: string): value is Exclude<ReasoningFamilyName, "auto"> {
+  return value === "minimax" || value === "glm" || value === "kimi" || value === "deepseek" || value === "default"
 }
 
 function hostFor(config: { provider: string; baseURL?: string }): string {

@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-09-21
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-08（侧键只走应用内历史；流式页面不做位移）
 
 ## 当前真相
 
@@ -16,12 +16,17 @@
 标题栏：
 
 - 整条 `-webkit-app-region: drag`，双击切换最大化
-- 品牌区、辅助开关、窗口按钮 `no-drag`
-- 品牌区：`AppMark`（16px `icon-small`）+ `AppWordmark`（enjoy / AGENT IDE），不是字母「E」圆或 lockup SVG
-- 右侧：有更新时先画「有更新」芯片（`no-drag`，点开发行说明），再接小号昼/夜与语言胶囊（`--toggle-size: 10px`），最后最小化 / 最大化·还原 / 关闭
+- 侧栏折叠、页面后退/前进、辅助开关、窗口按钮 `no-drag`
+- 左侧不再放 `AppMark` / `AppWordmark`。紧跟 macOS 红绿灯（Win / Linux 无红绿灯，从左边距起）是侧栏折叠和后退/前进。不改 `titleBarStyle`，也不加原生 `hiddenInset` 的约 78px：自绘红绿灯已经占着左上角，再留一段空白会把按钮推离红绿灯
+- 后退/前进是应用内页面历史，不是 `webContents.goBack()`。每个窗口一份栈，不持久化、不跨窗口共享。新窗口的渲染进程只 seed 当前页，不复制来源窗口的 past/future。拖出标签成新窗口这条路径没有做
+- 鼠标侧键在 `mouseup` 上走应用内栈；`mousedown` 只 `preventDefault`。Windows 另在主进程 `app-command` 上拦住 `browser-backward` / `browser-forward`，避免 Chromium 再 `history.back()`。内容区 150ms 位移：后退向右，前进向左。是否位移在改栈的同一刻决定：当前页 `running`，或目标会话的 parked run 仍在输出，或系统减少动效时，不做位移
+- 删除当前页落到 past 末尾。past 空则回到空的新聊天（不 `session.create`）。空项目页同样只切工作区并清前台会话，不打开第一条会话，也不新建
+- 窗口标题走 `BrowserWindow.setTitle`（Win 任务栏、macOS 程序坞窗口列表和调度中心、Linux 同一套）。Chat 有会话标题时用会话标题，否则用当前工作区名；设置、知识库等模块恢复 `Enjoy Agents`。renderer 只传 `label`（去掉换行，最长 80），main 写成 `{label} — Enjoy Agents`；空串恢复品牌名。renderer 不能传入完整标题。macOS 屏幕左上角菜单栏里的应用名不走 `setTitle`，那是 bundle 名，见 `brand` spec
+- 右侧：有更新时先画「有更新」芯片（`no-drag`，点开发行说明），再接小号昼/夜与语言胶囊（`--toggle-size: 10px`）。Win / Linux 最后才是最小化 / 最大化·还原 / 关闭，线标，顺序从左到右是最小化、缩放、关闭
+- macOS 不画这三颗线标。窗口按钮在左上角，侧栏折叠和历史按钮跟在后面：三颗 12px 圆点，顺序是关闭（红）、最小化（黄）、缩放（绿）。悬停才露出符号；窗口失焦时三颗变灰。renderer 用 `navigator.platform` 判断，不读 `process.platform`。仍然是自绘按钮，不改 `frame: false`，也不开原生标题栏 overlay
 - 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。macOS Dock / Cmd+Tab 另走 `app.dock.setIcon`，窗标选项在 Darwin 上无效。详见 `brand` spec。
 
-IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQuit`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。
+IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQuit` | `setTaskbarTitle`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。
 
 关窗 / ⌘Q：有 `running`、当前或后台 `pendingApproval` / Attention 审批时弹出 ConfirmDialog，确认才 `forceQuit`（`markQuitAllowed` 后 `app.quit`）。空闲标题栏关闭仍走 `window.close`（macOS 可留 Dock）。`before-quit` 未放行时 `preventDefault` 并推 `window.quit-requested`；清理改到 `will-quit`。Win / macOS / Linux 同一套。
 
@@ -37,7 +42,9 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 - 创建窗口：`apps/desktop/src/main/index.ts`
 - IPC：`apps/desktop/src/main/ipc.ts`、`packages/ipc-contract/src/window.ts`
 - 放大/还原：`apps/desktop/src/main/services/window-maximize.ts`
-- UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`、`title-bar-toggles.tsx`
+- UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`、`window-chrome.ts`、`mac-traffic-lights.tsx`、`window-glyph-controls.tsx`、`title-bar-toggles.tsx`
+- 页面历史逻辑：`apps/desktop/src/renderer/src/hooks/nav-history/`（纯栈 `nav-history.ts`，观察与恢复 `nav-history-controller.ts`）。标题栏按钮和位移在 `components/layout/nav-history/`
+- 拦住 Windows 原生侧键：`apps/desktop/src/main/services/block-native-history.ts`
 - 调用：`apps/desktop/src/renderer/src/lib/window-control.ts`
 - 退出确认：`main/services/window-quit.ts`、`layout/window-quit-guard.tsx`
 
@@ -49,3 +56,6 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 - macOS `activate` 会在无窗时重建窗口；IPC 必须能重新 `registerIpc`（先 `unregister` 或靠守卫）。
 - `before-quit` 里 `preventDefault` 必须同步。放行旗 `isQuitAllowed` 未立时不要跑 `flushActiveRuns`；确认后走 `forceQuit`。空闲关最后一扇窗会再进 `before-quit`：窗口已毁则直接放行，不要对着 destroyed `webContents` 推事件。
 - `autoUpdater.quitAndInstall` 也会进 `before-quit`。安装前必须 `markQuitAllowed()`，否则更新会被退出确认卡住。非 darwin 最后一扇窗 `window-all-closed` 里同样要先放行再 `app.quit()`。
+- 页面历史在渲染进程内存里。刷新或新开窗口不会带回 past/future。删除当前会话或项目时落到 past 末尾；past 空则回到空的新聊天，不创建会话。项目已不在时只清工作区指针。不要把滚动、草稿、流式半截写进条目。
+- 侧键不要只绑 `mousedown`。Chromium 在 `mouseup` 上后退；只在按下时 `preventDefault` 拦不住，应用内 `navigate` 推上去的条目会被原生 `history.back()` 弹掉。
+- 内容区位移不要等恢复完成再看 `running`。`loadSession` 会把前台 run 停进 park，effect 里再读已经是 false，正在输出的页面仍会滑。要在 `back` / `forward` / `jump` 改栈时决定，结果放在 `slide`。

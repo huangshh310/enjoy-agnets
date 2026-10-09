@@ -43,8 +43,8 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
   return (
     <div className="flex flex-col gap-2.5 rounded-xl border border-separator-border/70 bg-background-secondary-default/30 p-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-[11.5px] text-text-secondary">
-          <RiShieldCheckLine className="size-4 text-emerald-500 shrink-0" />
+        <div className="flex items-center gap-2 text-caption-2-regular text-text-secondary">
+          <RiShieldCheckLine className="size-4 text-state-success-text shrink-0" />
           <span>{t("pages.observability.policyNotice")}</span>
         </div>
 
@@ -88,7 +88,7 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
       {exported ? (
         <div className="mt-1 rounded-lg border border-separator-border/70 bg-background-primary-default p-2.5 flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] font-mono uppercase text-text-tertiary">
+            <span className="text-caption-2-regular font-mono uppercase text-text-tertiary">
               {t("pages.observability.exportPayload", {
                 format: exportFormat ?? "json",
                 n: exported.length
@@ -97,11 +97,11 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
             <button
               type="button"
               onClick={handleCopyExport}
-              className="inline-flex items-center gap-1 text-[11px] text-accent-600 dark:text-accent-400 hover:underline"
+              className="inline-flex items-center gap-1 text-caption-2-regular text-accent-600 dark:text-accent-400 hover:underline"
             >
               {copied ? (
                 <>
-                  <RiCheckLine className="size-3 text-emerald-500" />
+                  <RiCheckLine className="size-3 text-state-success-text" />
                   <span>{t("common.copied")}</span>
                 </>
               ) : (
@@ -112,7 +112,7 @@ export function ObservabilityPolicyBar(props?: { onPolicyChanged?: () => void })
               )}
             </button>
           </div>
-          <pre className="font-mono text-[10.5px] text-text-secondary max-h-36 overflow-auto leading-relaxed whitespace-pre-wrap">
+          <pre className="font-mono text-caption-2-regular text-text-secondary max-h-36 overflow-auto leading-relaxed whitespace-pre-wrap">
             {exported}
           </pre>
         </div>

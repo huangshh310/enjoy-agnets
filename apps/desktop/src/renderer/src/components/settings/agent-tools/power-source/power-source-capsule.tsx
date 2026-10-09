@@ -48,7 +48,7 @@ export function PowerSourceCell({
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
       <PowerSourceCapsule parts={parts} accent={accent} />
       {outdated ? (
-        <span className="shrink-0 rounded-full bg-state-warning-text/10 px-1.5 py-px text-caption-2-medium text-state-warning-text ring-1 ring-state-warning-text/25">
+        <span className="shrink-0 rounded-full bg-status-yellow-text/10 px-1.5 py-px text-caption-2-medium text-status-yellow-text ring-1 ring-status-yellow-text/25">
           {t("settings.agentTools.listOutdatedBadge")}
         </span>
       ) : null}

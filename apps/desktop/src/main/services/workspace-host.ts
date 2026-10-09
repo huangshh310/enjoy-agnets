@@ -118,11 +118,18 @@ export async function saveHostHeartbeat(input: import("@enjoy-agents/agent-core"
   }
 }
 
+function gitPathArgs(workspaceRoot: string, filePath?: string): string[] {
+  const raw = filePath?.trim()
+  if (!raw) return []
+  const rel = toWorkspaceRelative(workspaceRoot, resolveInsideWorkspace(workspaceRoot, raw))
+  return ["--", rel]
+}
+
 function workspaceGitOps(workspaceRoot: string) {
   return {
     gitStatus: async () => (await runGit(workspaceRoot, ["status", "--porcelain"])).stdout,
     gitDiff: async (filePath?: string) => {
-      const args = filePath ? ["diff", "--", filePath] : ["diff"]
+      const args = ["diff", ...gitPathArgs(workspaceRoot, filePath)]
       return (await runGit(workspaceRoot, args)).stdout
     },
     gitLog: async (options?: { limit?: number; path?: string }) => {

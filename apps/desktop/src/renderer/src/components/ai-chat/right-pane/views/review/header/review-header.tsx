@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
+import type { DiffPalette } from "../../../../diff/diff-palette"
 import type { ReviewOptions, ReviewScope } from "../types/review.types"
 import { ReviewScopeDropdown } from "./review-scope-dropdown"
 import { ReviewMoreMenu } from "./review-more-menu"
@@ -36,6 +37,8 @@ export function ReviewHeader(props: {
   additions: number
   deletions: number
   options: ReviewOptions
+  palette: DiffPalette
+  onPalette: (palette: DiffPalette) => void
   onToggleOption: (key: keyof ReviewOptions) => void
   allExpanded: boolean
   onToggleAllExpanded: () => void
@@ -56,6 +59,8 @@ export function ReviewHeader(props: {
     additions,
     deletions,
     options,
+    palette,
+    onPalette,
     onToggleOption,
     allExpanded,
     onToggleAllExpanded,
@@ -80,7 +85,7 @@ export function ReviewHeader(props: {
         <div className="flex items-center gap-2">
           <ReviewScopeDropdown scope={scope} onSelectScope={onSelectScope} />
 
-          <div className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-[11px] font-semibold">
+          <div className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-semibold font-semibold">
             <span className="text-state-success-text">+{additions.toLocaleString()}</span>
             <span className="text-text-error-primary">-{deletions.toLocaleString()}</span>
           </div>
@@ -91,6 +96,8 @@ export function ReviewHeader(props: {
           {/* 更多菜单 ... */}
           <ReviewMoreMenu
             options={options}
+            palette={palette}
+            onPalette={onPalette}
             onToggleOption={onToggleOption}
             onRefresh={onRefresh}
             isRefreshing={isRefreshing}
@@ -170,7 +177,7 @@ export function ReviewHeader(props: {
       </div>
 
       {/* 第二行：分支对比行 (main → origin/main ▾) */}
-      <div className="flex h-7 items-center gap-1.5 px-3.5 font-mono text-[11px] text-text-tertiary border-t border-separator-border/40 bg-background-secondary-default/30">
+      <div className="flex h-7 items-center gap-1.5 px-3.5 font-mono text-caption-2-regular text-text-tertiary border-t border-separator-border/40 bg-background-secondary-default/30">
         <RiGitBranchLine className="size-3 text-accent-500 shrink-0" />
         <span className="font-medium text-text-secondary">
           {baseBranch || t("chat.reviewNoUpstream")}

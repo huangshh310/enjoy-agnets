@@ -8,13 +8,18 @@ import {
 } from "@enjoy-agents/db"
 import {
   isApiStyle,
+  migrateStoredProfile,
+  normalizeVault,
   presetFor,
   type ApiStyle,
   type CatalogModel,
-  type ProviderKind
+  type NormalizedProfile,
+  type ProviderKind,
+  type ReasoningFamilyName
 } from "@enjoy-agents/providers"
 import { deleteSetting, getDatabase, getSetting } from "./database"
 import { createId } from "./ids"
+import { redactJsonSecrets } from "./secret-map"
 
 const LEGACY_SECRET_KEY = "provider.secret"
 const VAULT_KEY = "provider.vault"
@@ -34,25 +39,24 @@ export type StoredSecret = {
   customHeaders?: string
   customBody?: string
   models?: CatalogModel[]
+  endpoints?: ProviderProfile["endpoints"]
+  keys?: ProviderProfile["keys"]
+  baseAPI?: ApiStyle
+  reasoningFamily?: ReasoningFamilyName
+  proxy?: string
+  enabled?: boolean
 }
 
-export type ProviderProfile = {
+/** 落盘档案。apiKey / baseURL / apiStyle 是派生字段，请求以 endpoints 和 keys 为准。 */
+export type ProviderProfile = NormalizedProfile
+
+export type ProviderKeyPublic = {
   id: string
   name: string
-  kind: ProviderKind
-  apiKey: string
-  baseURL: string
-  modelId: string
-  apiStyle: ApiStyle
-  fastModelId?: string
-  reasoningModelId?: string
-  contextWindow?: number
-  maxTokens?: number
-  temperature?: number
-  reasoningEffort?: "low" | "medium" | "high" | "xhigh"
-  customHeaders?: string
-  customBody?: string
-  models?: CatalogModel[]
+  hasKey: boolean
+  keyHint: string
+  apiStyle?: ApiStyle
+  enabled: boolean
 }
 
 export type ProviderPublic = {
@@ -75,6 +79,14 @@ export type ProviderPublic = {
   keyHint: string
   active: boolean
   requiresKey: boolean
+  enabled: boolean
+  endpoints: ProviderProfile["endpoints"]
+  baseAPI: ApiStyle
+  regionId?: string
+  keys: ProviderKeyPublic[]
+  modelsURL?: string
+  reasoningFamily: ReasoningFamilyName
+  proxy?: string
 }
 
 export type Vault = {
@@ -101,19 +113,43 @@ export function toPublic(profile: ProviderProfile, activeId: string | null): Pro
     maxTokens: profile.maxTokens,
     temperature: profile.temperature,
     reasoningEffort: profile.reasoningEffort,
-    customHeaders: profile.customHeaders,
-    customBody: profile.customBody,
+    customHeaders: redactJsonSecrets(profile.customHeaders),
+    customBody: redactJsonSecrets(profile.customBody),
     models: profile.models,
     hasKey: Boolean(profile.apiKey),
     keyHint: keyHint(profile.apiKey),
     active: profile.id === activeId,
-    requiresKey: preset.requiresKey
+    requiresKey: preset.requiresKey,
+    enabled: profile.enabled,
+    endpoints: profile.endpoints,
+    baseAPI: profile.baseAPI,
+    regionId: profile.regionId,
+    keys: profile.keys.map((key) => ({
+      id: key.id,
+      name: key.name,
+      hasKey: Boolean(key.apiKey.trim()),
+      keyHint: keyHint(key.apiKey),
+      apiStyle: key.apiStyle,
+      enabled: key.enabled
+    })),
+    modelsURL: profile.modelsURL,
+    reasoningFamily: profile.reasoningFamily,
+    proxy: profile.proxy
   }
 }
 
 export async function readVault(): Promise<Vault> {
   const stored = readVaultBlob()
-  if (stored) return decryptJson<Vault>(stored) ?? emptyVault()
+  if (stored) {
+    const decoded = decryptJson<{ activeId: string | null; profiles: unknown[] }>(stored)
+    if (!decoded || !Array.isArray(decoded.profiles)) return emptyVault()
+    const normalized = normalizeVault({
+      activeId: decoded.activeId,
+      profiles: decoded.profiles as Parameters<typeof normalizeVault>[0]["profiles"]
+    })
+    if (normalized.changed) await writeVault(normalized.vault)
+    return normalized.vault
+  }
   const migrated = migrateLegacySecret()
   if (migrated) {
     await writeVault(migrated)
@@ -174,7 +210,7 @@ function migrateLegacySecret(): Vault | undefined {
   const legacy = decryptJson<StoredSecret>(stored)
   if (!legacy?.apiKey) return undefined
   const preset = presetFor(legacy.provider)
-  const profile: ProviderProfile = {
+  const profile = migrateStoredProfile({
     id: createId("prv"),
     name: preset.name,
     kind: legacy.provider,
@@ -182,6 +218,6 @@ function migrateLegacySecret(): Vault | undefined {
     baseURL: legacy.baseURL ?? preset.defaultBaseURL,
     modelId: legacy.modelId ?? preset.models[0]?.id ?? "",
     apiStyle: preset.apiStyle
-  }
+  }).profile
   return { activeId: profile.id, profiles: [profile] }
 }

@@ -25,6 +25,9 @@ import { SkillsPage } from "@renderer/components/skills/skills-page"
 import { parseSkillsSearch } from "@renderer/components/skills/lib/skills-route-search"
 import { QuickSearchDialog } from "@renderer/components/search/quick-search-dialog"
 import { WindowFrame } from "@renderer/components/layout/window-frame"
+import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
+import { useKeybindingDispatcher } from "@renderer/components/settings/keybindings/use-keybinding-dispatcher"
+import { useAppsnapInbox } from "@renderer/components/settings/appsnap/use-appsnap-inbox"
 import { useAgentSession } from "@renderer/hooks/use-agent-session"
 import { startAttentionPersistence } from "@renderer/stores/attention/persist-attention"
 import { InboxPage } from "@renderer/components/inbox/inbox-page"
@@ -38,19 +41,13 @@ import { parseSettingsSectionSearch } from "@renderer/components/settings/settin
 function RootLayout() {
   useAgentSession()
   useEffect(() => startAttentionPersistence(), [])
+  useKeybindingDispatcher()
+  useAppsnapInbox()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      const modifier = event.metaKey || event.ctrlKey
-      if (modifier && event.key === ",") {
-        event.preventDefault()
-        void navigate({ to: "/settings/$section", params: { section: "general" } })
-      }
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [navigate])
+  useKeybindingCommand("settings.open", () => {
+    void navigate({ to: "/settings/$section", params: { section: "general" } })
+    return true
+  })
 
   return (
     <WindowFrame>

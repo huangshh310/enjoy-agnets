@@ -41,7 +41,7 @@ export function KnowledgePage() {
         />
 
         {page.actionError ? (
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-caption-2-medium text-rose-600 dark:text-rose-400">
+          <div className="rounded-xl border border-border-error-default/30 bg-background-tertiary-error/10 px-4 py-2.5 text-caption-2-medium text-text-error-primary dark:text-text-error-primary">
             {page.actionError}
           </div>
         ) : null}

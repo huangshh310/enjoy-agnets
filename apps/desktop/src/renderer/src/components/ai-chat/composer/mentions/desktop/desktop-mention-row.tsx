@@ -34,7 +34,7 @@ export function DesktopMentionRow({ item, active }: { item: DesktopMentionItem; 
       </span>
       <span className="shrink-0 text-right">
         {unstable ? (
-          <span className="block text-caption-2-semibold text-text-warning-primary">
+          <span className="block text-caption-2-semibold text-status-yellow-text">
             {t("chat.mentionDesktopAlwaysHidden")}
           </span>
         ) : (

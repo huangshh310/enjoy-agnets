@@ -112,7 +112,7 @@ export function AgentRecommendedPacks({
                       <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary">
                         <span className="truncate">{item.author}</span>
                         <span>·</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                        <span className="text-state-success-text dark:text-state-success-text font-medium">
                           {t("pages.skills.states.curated")}
                         </span>
                       </div>
@@ -120,15 +120,15 @@ export function AgentRecommendedPacks({
                   </div>
 
                   {item.stars ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10.5px] font-mono font-medium text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                      <RiStarFill className="size-2.5 text-amber-500" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-status-yellow-background/10 px-2 py-0.5 text-caption-2-medium font-mono font-medium text-status-yellow-text dark:text-status-yellow-text border border-status-yellow-text/20 shrink-0">
+                      <RiStarFill className="size-2.5 text-status-yellow-text" />
                       {item.stars.toLocaleString()}
                     </span>
                   ) : null}
                 </div>
 
                 {/* 描述 */}
-                <p className="text-[12px] leading-relaxed text-text-secondary line-clamp-2 min-h-[36px]">
+                <p className="text-caption-1-regular leading-relaxed text-text-secondary line-clamp-2 min-h-[36px]">
                   {item.description}
                 </p>
 
@@ -137,13 +137,13 @@ export function AgentRecommendedPacks({
                   {item.featuredSkills.slice(0, 3).map((skillName) => (
                     <span
                       key={skillName}
-                      className="rounded-md border border-separator-border/60 bg-background-secondary-default/50 px-2 py-0.5 text-[10.5px] font-mono text-text-secondary"
+                      className="rounded-md border border-separator-border/60 bg-background-secondary-default/50 px-2 py-0.5 text-caption-2-regular font-mono text-text-secondary"
                     >
                       {skillName}
                     </span>
                   ))}
                   {item.featuredSkills.length > 3 ? (
-                    <span className="rounded-md bg-background-secondary-default/30 px-1.5 py-0.5 text-[10px] text-text-tertiary">
+                    <span className="rounded-md bg-background-secondary-default/30 px-1.5 py-0.5 text-caption-2-regular text-text-tertiary">
                       +{item.featuredSkills.length - 3}
                     </span>
                   ) : null}
@@ -152,12 +152,12 @@ export function AgentRecommendedPacks({
 
               {/* 底部装备按钮 */}
               <div className="mt-4 pt-3 border-t border-separator-border/50 flex items-center justify-between">
-                <span className="text-[11px] text-text-tertiary">
+                <span className="text-caption-2-regular text-text-tertiary">
                   {t("pages.skills.recommendedPacks.countSkills", { n: item.skillCount ?? "" })}
                 </span>
 
                 {isTargetEnabled ? (
-                  <div className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <div className="inline-flex items-center gap-1 text-caption-2-semibold font-semibold text-state-success-text dark:text-state-success-text">
                     <RiCheckLine className="size-3.5" />
                     <span>{t("pages.skills.recommendedPacks.equippedTo")}</span>
                   </div>

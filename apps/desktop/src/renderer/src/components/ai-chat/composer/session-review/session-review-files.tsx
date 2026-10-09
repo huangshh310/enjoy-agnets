@@ -66,7 +66,7 @@ function DiffCounts({ additions, deletions }: { additions: number; deletions: nu
   const t = useT()
   if (additions <= 0 && deletions <= 0) {
     return (
-      <span className="shrink-0 text-caption-2-medium text-state-warning-text">{t("chat.sessionReviewNoDiff")}</span>
+      <span className="shrink-0 text-caption-2-medium text-status-yellow-text">{t("chat.sessionReviewNoDiff")}</span>
     )
   }
   return (

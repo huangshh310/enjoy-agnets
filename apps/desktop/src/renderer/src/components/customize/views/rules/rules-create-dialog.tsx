@@ -35,7 +35,7 @@ export function RulesCreateDialog(props: {
           <DialogTitle className="text-body-medium font-semibold text-text-primary">
             {t("studio.rules.createTitle")}
           </DialogTitle>
-          <p className="text-[11.5px] text-text-tertiary">{t("studio.rules.createDesc")}</p>
+          <p className="text-caption-2-regular text-text-tertiary">{t("studio.rules.createDesc")}</p>
         </div>
         <CreateRuleFields {...props} />
         <div className="flex items-center justify-end gap-2 border-t border-separator-border/70 px-5 py-3 bg-background-secondary-default/30">
@@ -79,7 +79,7 @@ function CreateRuleFields(props: {
   return (
     <div className="flex flex-col gap-3.5 p-5">
       <div className="flex flex-col gap-1">
-        <Label className="text-[11.5px] font-medium text-text-secondary">{t("studio.rules.targetKind")}</Label>
+        <Label className="text-caption-2-medium font-medium text-text-secondary">{t("studio.rules.targetKind")}</Label>
         <div className="grid grid-cols-3 gap-1 rounded-lg bg-background-secondary-default/60 p-0.5">
           {CREATE_RULE_KINDS.map((kind) => (
             <button
@@ -87,7 +87,7 @@ function CreateRuleFields(props: {
               type="button"
               onClick={() => props.onKind(kind)}
               className={cx(
-                "rounded py-1 text-[10.5px] font-mono transition-all flex items-center justify-center font-medium",
+                "rounded py-1 text-caption-2-medium font-mono transition-all flex items-center justify-center font-medium",
                 props.kind === kind
                   ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-secondary hover:text-text-primary"
@@ -121,13 +121,13 @@ function CreateRuleFields(props: {
         placeholder={t("studio.rules.descPlaceholder")}
       />
       <div className="flex flex-col gap-1">
-        <Label className="text-[11.5px] font-medium text-text-secondary">{t("studio.rules.bodyLabel")}</Label>
+        <Label className="text-caption-2-medium font-medium text-text-secondary">{t("studio.rules.bodyLabel")}</Label>
         <textarea
           value={props.content}
           onChange={(e) => props.onContent(e.target.value)}
           rows={4}
           placeholder={t("studio.rules.bodyPlaceholder")}
-          className="w-full font-mono text-[11.5px] rounded-lg border border-separator-border/80 bg-background-secondary-default/40 p-2.5 text-text-primary focus-visible:outline-none"
+          className="w-full font-mono text-caption-2-regular rounded-lg border border-separator-border/80 bg-background-secondary-default/40 p-2.5 text-text-primary focus-visible:outline-none"
         />
       </div>
     </div>
@@ -143,7 +143,7 @@ function LabeledInput(props: {
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <Label className="text-[11.5px] font-medium text-text-secondary">{props.label}</Label>
+      <Label className="text-caption-2-medium font-medium text-text-secondary">{props.label}</Label>
       <Input
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}

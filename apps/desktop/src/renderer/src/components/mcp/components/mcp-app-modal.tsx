@@ -49,7 +49,7 @@ export function McpAppModal(props: {
         {/* 顶部工具栏 */}
         <header className="flex items-center justify-between border-b border-separator-border/80 px-6 py-4 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-chart-5/10 text-chart-5 dark:text-chart-5">
               <RiCpuLine className="size-5" />
             </div>
             <div className="min-w-0">

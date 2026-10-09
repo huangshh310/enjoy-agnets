@@ -57,12 +57,12 @@ export function ObservabilityTraceOverview({ metric }: { metric: TelemetryMetric
           </span>
         </div>
         <div className="flex h-3 w-full overflow-hidden rounded-full bg-background-secondary-default shadow-inner">
-          {ttfo > 0 ? <div style={{ width: `${ttfoRatio}%` }} className="h-full bg-amber-500" /> : null}
+          {ttfo > 0 ? <div style={{ width: `${ttfoRatio}%` }} className="h-full bg-status-yellow-background" /> : null}
           {streamDuration > 0 ? <div style={{ width: `${streamRatio}%` }} className="h-full bg-accent-500" /> : null}
         </div>
         <div className="mt-1 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <PhaseRow
-            color="bg-amber-500"
+            color="bg-status-yellow-background"
             label={t("pages.observability.phaseTtfo")}
             value={ttfo > 0 ? `${ttfo}ms (${ttfoRatio.toFixed(0)}%)` : "—"}
           />
@@ -74,7 +74,7 @@ export function ObservabilityTraceOverview({ metric }: { metric: TelemetryMetric
         </div>
       </div>
       {metric.errorClass && metric.errorClass !== "ok" ? (
-        <div className="flex flex-col gap-1.5 rounded-xl border border-rose-500/25 bg-rose-500/5 p-4 text-caption-2-regular">
+        <div className="flex flex-col gap-1.5 rounded-xl border border-border-error-default/25 bg-background-tertiary-error/5 p-4 text-caption-2-regular">
           <div className="flex items-center gap-1.5 font-bold text-text-error-primary">
             <RiInformationLine className="size-4 shrink-0" />
             <span>{t("pages.observability.errorClass", { errorClass: metric.errorClass })}</span>
@@ -100,7 +100,7 @@ function Kpi({
   return (
     <div className="rounded-xl border border-separator-border/70 bg-background-secondary-default/30 p-3.5 shadow-2xs">
       <div className="text-caption-2-regular text-text-tertiary">{label}</div>
-      <div className={`mt-1 text-title-3-semibold ${accent ? "text-amber-500" : "text-text-primary"}`}>{value}</div>
+      <div className={`mt-1 text-title-3-semibold ${accent ? "text-status-yellow-text" : "text-text-primary"}`}>{value}</div>
       <div className="mt-0.5 text-caption-2-regular text-text-tertiary">{hint}</div>
     </div>
   )

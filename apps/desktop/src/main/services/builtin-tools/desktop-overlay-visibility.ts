@@ -17,13 +17,17 @@ export function isDesktopActOverlayAction(action: string): boolean {
   return (OVERLAY_ACT_ACTIONS as readonly string[]).includes(action)
 }
 
-/** 设置关、视觉关、或非在控动作 → 不 ensure overlay。 */
+/**
+ * 设置关、视觉关、或非在控动作 → 不 ensure overlay。
+ * `/computer-use` 这一发即使总开关关着也亮，停手势仍走这块铬。
+ */
 export function shouldShowDesktopOverlay(input: {
   action: string
   enabled: boolean
   screenVisuals: boolean
+  once?: boolean
 }): boolean {
-  return input.enabled && input.screenVisuals && isDesktopActOverlayAction(input.action)
+  return (input.enabled || input.once === true) && input.screenVisuals && isDesktopActOverlayAction(input.action)
 }
 
 /** 与 renderer `chat.overlay*` 同句，供独立 overlay 窗使用。 */

@@ -4,7 +4,7 @@
 import { generateText } from "ai"
 import { storeSessionRecap } from "@enjoy-agents/ipc-contract/session-recap-kind"
 import { stripTitleSource } from "@enjoy-agents/ipc-contract/session-title"
-import { createLanguageModel } from "@enjoy-agents/providers"
+import { createLanguageModel, languageConfigFromProfile } from "@enjoy-agents/providers"
 import { getActiveProfile } from "./secrets"
 import { heuristicRecap } from "./session-recap-heuristic"
 import { listMessages, patchSession } from "./session-queries"
@@ -45,13 +45,7 @@ async function tryModelRecap(promptText: string): Promise<string> {
   try {
     const profile = await getActiveProfile()
     if (!profile?.apiKey?.trim()) return ""
-    const model = createLanguageModel({
-      provider: profile.kind,
-      apiKey: profile.apiKey,
-      baseURL: profile.baseURL,
-      modelId: profile.fastModelId || profile.modelId,
-      apiStyle: profile.apiStyle
-    })
+    const model = createLanguageModel(languageConfigFromProfile(profile, profile.fastModelId || profile.modelId))
     const res = await generateText({
       model,
       abortSignal: AbortSignal.timeout(10_000),

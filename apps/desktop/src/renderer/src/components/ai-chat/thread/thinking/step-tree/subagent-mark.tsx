@@ -16,6 +16,8 @@ export function SubagentMark({
   persona: SubagentPersona
   running?: boolean
 }) {
+  // blobatar 把每个表情挂在同名 namespace 导出上，只能按名取。
+  // eslint-disable-next-line import/namespace
   const expressionObj = expressions[persona.expression as keyof typeof expressions]
   const expr = typeof expressionObj === "object" ? (expressionObj as expressions.Expression) : undefined
 

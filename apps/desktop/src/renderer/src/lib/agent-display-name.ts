@@ -49,7 +49,7 @@ export function nextDisplayNameMap(
   runtimeId: string,
   raw: string
 ): Record<string, string> {
-  const next = { ...(current ?? {}) }
+  const next = { ...current }
   const face = normalizeDisplayName(raw)
   if (face && !isBannedFace(face)) next[runtimeId] = face
   else delete next[runtimeId]

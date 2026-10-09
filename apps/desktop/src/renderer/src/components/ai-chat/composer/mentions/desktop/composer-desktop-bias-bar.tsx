@@ -23,13 +23,12 @@ export function ComposerDesktopBiasBar({
 
   const execute = surfaceForMode(mode) === "execute"
   const label = bias.kind === "host" ? t("chat.desktopBiasHost") : bias.displayName
-  const caption = execute
-    ? bias.kind === "host"
+  const caption =
+    bias.kind === "host"
       ? t("chat.desktopBiasHostHint")
       : bias.appKey
         ? t("chat.desktopBiasAppKey", { key: bias.appKey })
         : t("chat.mentionDesktopAlwaysHidden")
-    : t("chat.desktopBiasExploreHint")
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 pb-1">

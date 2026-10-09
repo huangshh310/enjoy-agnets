@@ -1,0 +1,172 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import", "unicorn"],
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/out/**",
+    "**/.turbo/**",
+    "**/coverage/**",
+    "apps/desktop/native/**",
+    "design/**"
+  ],
+  "settings": {
+    "shadcn": {
+      "ui": "@/components",
+      "componentImports": ["^@enjoy-agents/ui(/|$)"],
+      "note": "视觉语言只走 BoardUI 语义 token。见 design/specs/ui.md 与 packages/ui/AGENTS.md。"
+    }
+  },
+  "rules": {
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout", "color", "typography", "spacing", "shape", "effects", "motion"],
+        "contracts": [
+          {
+            "pattern": "^Button$",
+            "allow": [
+              "layout",
+              "color",
+              "typography",
+              "effects",
+              "motion",
+              "w-full",
+              "mt-*",
+              "mb-*",
+              "ml-*",
+              "mr-*",
+              "mx-*",
+              "my-*",
+              "gap-*",
+              "size-*",
+              "h-6",
+              "h-7",
+              "h-7.5",
+              "h-8",
+              "h-9",
+              "h-10",
+              "h-11",
+              "p-0",
+              "px-*",
+              "py-*",
+              "rounded-*",
+              "shadow-*",
+              "cursor-pointer",
+              "shrink-0",
+              "inline-flex",
+              "items-center"
+            ],
+            "message": {
+              "spacing": "用 Button size（{{sizes}}）或父级 gap，不要另写 padding。",
+              "default": "不要 restyle Button。用 variant（{{variants}}）和 BoardUI token。"
+            }
+          }
+        ]
+      }
+    ],
+    "shadcn/no-raw-colors": [
+      "error",
+      {
+        "message": "不要 raw palette（{{className}}）。用 BoardUI 语义 token，主题在 packages/ui/styles/（{{file}}）。建议：{{suggestions}}"
+      }
+    ],
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        "allow": ["layout", "motion", "effects", "z-*", "min-h-*", "max-h-*", "min-w-*", "max-w-*"],
+        "message": "不要任意值（{{className}}）。字号走 text-caption-* / text-body-*；其它走刻度。建议：{{suggestions}}"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["packages/ui/components/**"],
+      "rules": {
+        "shadcn/no-restyle": "off",
+        "shadcn/no-arbitrary-values": "off"
+      }
+    },
+    {
+      "files": ["packages/ui/components/ai-elements/**"],
+      "rules": {
+        "no-unused-vars": [
+          "error",
+          {
+            "args": "none"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.d.ts"],
+      "rules": {
+        "typescript/triple-slash-reference": "off"
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@enjoy-agents/agent-core",
+                "message": "renderer 禁止打 agent-core 主入口（会带进 node:）。用 electron.vite.config.ts 里已别名的子路径，新子路径先写进 design/specs/architecture.md。"
+              },
+              {
+                "name": "@enjoy-agents/agent-harness",
+                "message": "renderer 禁止导入 agent-harness：它在 main 侧 spawn 子进程。"
+              },
+              {
+                "name": "@enjoy-agents/db",
+                "message": "renderer 禁止导入 db：SQLite 只在 main。"
+              },
+              {
+                "name": "@enjoy-agents/knowledge",
+                "message": "renderer 禁止导入 knowledge：分块与检索只在 main。"
+              },
+              {
+                "name": "@enjoy-agents/providers",
+                "message": "renderer 只允许 presets / capabilities / context-window 子路径，主入口会创建模型客户端。"
+              },
+              {
+                "name": "ai",
+                "message": "renderer 不调模型：AI SDK 只在 main（design/specs/agent-runtime.md）。"
+              },
+              {
+                "name": "electron",
+                "message": "renderer 不直接用 electron，走 preload 暴露的 window.ide。"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["node:*", "fs", "path", "os", "child_process", "net", "http", "https"],
+                "message": "renderer 不碰 Node API：文件系统与进程只在 main（AGENTS.md 工程红线）。"
+              },
+              {
+                "group": ["@ai-sdk/*"],
+                "message": "renderer 不装模型 provider。"
+              },
+              {
+                "group": ["@enjoy-agents/db/*", "@enjoy-agents/knowledge/*", "@enjoy-agents/agent-harness/*"],
+                "message": "这些包整体属于 main 侧，没有 renderer 安全的子路径。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["apps/desktop/src/renderer/**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
+}

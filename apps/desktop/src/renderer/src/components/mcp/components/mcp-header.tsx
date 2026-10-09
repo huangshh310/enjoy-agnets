@@ -32,8 +32,8 @@ export function McpHeader(props: {
             <h1 data-testid="page-mcp" className="text-title-3-semibold text-text-primary tracking-tight">
               {t("pages.mcp.title")}
             </h1>
-            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
+            <span className="inline-flex items-center gap-1 rounded-md border border-state-success-text/25 bg-state-success-text/10 px-2 py-0.5 text-caption-2-medium font-medium text-state-success-text dark:text-state-success-text">
+              <span className="size-1.5 rounded-full bg-state-success-base" />
               {t("pages.mcp.sandboxed")}
             </span>
           </div>
@@ -45,9 +45,9 @@ export function McpHeader(props: {
         {/* 右侧快捷动作与精简指标 */}
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {/* 精简状态胶囊组 */}
-          <div className="hidden lg:flex items-center gap-3 rounded-lg border border-separator-border/60 bg-background-secondary-default/40 px-3 py-1 text-[11px] text-text-secondary mr-1 font-mono">
+          <div className="hidden lg:flex items-center gap-3 rounded-lg border border-separator-border/60 bg-background-secondary-default/40 px-3 py-1 text-caption-2-regular text-text-secondary mr-1 font-mono">
             <span className="flex items-center gap-1.5">
-              <McpIcon className="size-3 text-emerald-500" />
+              <McpIcon className="size-3 text-state-success-text" />
               <span className="text-text-primary font-semibold">{stats.connected}</span>
               <span className="text-text-tertiary">{t("pages.mcp.runningOf", { total: stats.total })}</span>
             </span>
@@ -59,7 +59,7 @@ export function McpHeader(props: {
             </span>
             <span className="h-3 w-px bg-separator-border" />
             <span className="flex items-center gap-1.5">
-              <RiShieldCheckLine className="size-3 text-purple-500" />
+              <RiShieldCheckLine className="size-3 text-chart-5" />
               <span className="text-text-primary font-semibold">{stats.trusted}</span>
               <span className="text-text-tertiary">{t("pages.mcp.trustedCount")}</span>
             </span>

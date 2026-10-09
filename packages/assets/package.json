@@ -10,7 +10,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/hash.test.ts src/export-policy.test.ts src/provider-refs.test.ts src/import-limit.test.ts src/media-type.test.ts src/playback-url.test.ts"
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@enjoy-agents/db": "workspace:*"

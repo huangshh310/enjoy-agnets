@@ -18,7 +18,7 @@ const BRIDGE_MISSING = "Browser Bridge is not connected."
 /**
  * 构造内置工具集合（根据当前用户的开启配置动态返回）
  */
-export function createBuiltinAgentTools(mode: AgentMode = "agent") {
+export function createBuiltinAgentTools(mode: AgentMode = "agent", once = false) {
   if (isReadOnlyAgentMode(mode)) return {}
   const state = getBuiltinToolsState()
   const tools: Record<string, ReturnType<typeof tool>> = {}
@@ -81,7 +81,7 @@ export function createBuiltinAgentTools(mode: AgentMode = "agent") {
     })
   }
 
-  if (shouldRegisterDesktopControlTools(mode, state.computerUse.enabled)) {
+  if (shouldRegisterDesktopControlTools(mode, state.computerUse.enabled, once)) {
     Object.assign(tools, desktopControlTools())
   }
 

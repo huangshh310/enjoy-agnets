@@ -18,6 +18,7 @@ import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
 import type { AgentStepNode } from "../agent-step-tree.types"
 import { DomainPills } from "./domain-pills"
+import { formatDisplayPath } from "./format-display-path"
 import { ExploredPagesBranch } from "./explored-pages-branch"
 import { QuoteStepButton } from "@renderer/components/ai-chat/composer/runtime-interact/quote-step-button"
 
@@ -153,29 +154,6 @@ function renderPathDisplay(display: string) {
       <span>{file}</span>
     </>
   )
-}
-
-export function formatDisplayPath(
-  filePath?: string,
-  fileName?: string,
-  workspaceRoot?: string | null
-): string {
-  if (!filePath) return fileName || ""
-  const norm = (s: string) => s.replace(/\\/g, "/").replace(/\/+$/, "")
-  const normFile = norm(filePath)
-  if (workspaceRoot) {
-    const normRoot = norm(workspaceRoot)
-    if (normFile.toLowerCase().startsWith(`${normRoot.toLowerCase()}/`)) {
-      return normFile.slice(normRoot.length + 1)
-    }
-  }
-  if (fileName && normFile !== fileName && normFile.includes("/")) {
-    const segments = normFile.split("/").filter(Boolean)
-    if (segments.length > 3) {
-      return segments.slice(-2).join("/")
-    }
-  }
-  return fileName || filePath
 }
 
 function LineDelta({ additions, deletions }: { additions?: number; deletions?: number }) {

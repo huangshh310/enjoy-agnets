@@ -35,8 +35,8 @@ export function KnowledgeHealthCard({
               className={cx(
                 "flex size-7 items-center justify-center rounded-xl border",
                 isHealthy
-                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  ? "border-state-success-text/20 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
+                  : "border-status-yellow-text/20 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
               )}
             >
               <RiHeartPulseLine className="size-4" />
@@ -51,7 +51,7 @@ export function KnowledgeHealthCard({
         </div>
         {isHealthy ? (
           <div className="flex flex-col gap-2 py-2">
-            <div className="flex items-center gap-2 text-caption-1-medium text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-2 text-caption-1-medium text-state-success-text dark:text-state-success-text">
               <RiCheckDoubleLine className="size-4 shrink-0" />
               <span>{t("pages.knowledge.sourcesHealthy")}</span>
             </div>
@@ -59,7 +59,7 @@ export function KnowledgeHealthCard({
           </div>
         ) : (
           <div className="flex flex-col gap-2 py-1">
-            <div className="flex items-center gap-1.5 text-caption-1-medium text-amber-600 dark:text-amber-400">
+            <div className="flex items-center gap-1.5 text-caption-1-medium text-status-yellow-text dark:text-status-yellow-text">
               <RiAlertLine className="size-4 shrink-0" />
               <span>{t("pages.knowledge.unavailableSummary", { n: unavailable.length })}</span>
             </div>
@@ -112,7 +112,7 @@ function FaultyRow({
     >
       <div className="min-w-0">
         <span className="block truncate font-mono text-caption-2-medium text-text-primary">{item.path}</span>
-        <span className="text-caption-2-regular text-amber-600 dark:text-amber-400">{reason}</span>
+        <span className="text-caption-2-regular text-status-yellow-text dark:text-status-yellow-text">{reason}</span>
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {source && onEditSource ? (
@@ -129,7 +129,7 @@ function FaultyRow({
           <button
             type="button"
             onClick={() => onRemoveSource(item.id!)}
-            className="cursor-pointer rounded p-1 text-text-tertiary hover:text-rose-600"
+            className="cursor-pointer rounded p-1 text-text-tertiary hover:text-text-error-primary"
             title={t("pages.knowledge.removeSource")}
           >
             <RiDeleteBinLine className="size-3.5" />

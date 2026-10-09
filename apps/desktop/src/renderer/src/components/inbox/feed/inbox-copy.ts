@@ -44,19 +44,19 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
   switch (copyKey) {
     case "complete":
       return {
-        badgeBg: "bg-emerald-500/10 dark:bg-emerald-500/15",
-        badgeText: "text-emerald-600 dark:text-emerald-400",
-        badgeBorder: "border-emerald-500/25",
-        badgeDot: "bg-emerald-500",
+        badgeBg: "bg-state-success-text/10 dark:bg-state-success-text/15",
+        badgeText: "text-state-success-text dark:text-state-success-text",
+        badgeBorder: "border-state-success-text/25",
+        badgeDot: "bg-state-success-base",
         badgeLabel: t("pages.inbox.navComplete") || "已完成",
         icon: RiCheckboxCircleLine
       }
     case "error":
       return {
-        badgeBg: "bg-rose-500/10 dark:bg-rose-500/15",
-        badgeText: "text-rose-600 dark:text-rose-400",
-        badgeBorder: "border-rose-500/25",
-        badgeDot: "bg-rose-500",
+        badgeBg: "bg-background-tertiary-error/10 dark:bg-background-tertiary-error/15",
+        badgeText: "text-text-error-primary dark:text-text-error-primary",
+        badgeBorder: "border-border-error-default/25",
+        badgeDot: "bg-background-tertiary-error",
         badgeLabel: t("pages.inbox.navFailed") || "失败",
         icon: RiErrorWarningLine
       }
@@ -80,10 +80,10 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
       }
     case "ask_user":
       return {
-        badgeBg: "bg-amber-500/10 dark:bg-amber-500/15",
-        badgeText: "text-amber-600 dark:text-amber-400",
-        badgeBorder: "border-amber-500/25",
-        badgeDot: "bg-amber-500",
+        badgeBg: "bg-status-yellow-background/10 dark:bg-status-yellow-background/15",
+        badgeText: "text-status-yellow-text dark:text-status-yellow-text",
+        badgeBorder: "border-status-yellow-text/25",
+        badgeDot: "bg-status-yellow-background",
         badgeLabel: t("attention.kind.ask_user") || "待回答",
         icon: RiQuestionLine
       }
@@ -98,10 +98,10 @@ export function getInboxTheme(copyKey: string, t: Translate): InboxTheme {
       }
     case "aborted":
       return {
-        badgeBg: "bg-neutral-500/10 dark:bg-neutral-500/15",
+        badgeBg: "bg-background-secondary-default/10 dark:bg-background-secondary-default/15",
         badgeText: "text-text-secondary",
-        badgeBorder: "border-neutral-500/25",
-        badgeDot: "bg-neutral-400",
+        badgeBorder: "border-separator-border/25",
+        badgeDot: "bg-background-secondary-default",
         badgeLabel: t("pages.inbox.badgeAborted") || "已取消",
         icon: RiStopCircleLine
       }

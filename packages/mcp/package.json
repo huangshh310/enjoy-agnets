@@ -10,7 +10,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/permissions.test.ts src/app-host.test.ts src/stdio-rpc.test.ts src/http-rpc.test.ts src/tools.test.ts src/registry.test.ts src/stdio-command.test.ts"
+    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "ai": "catalog:",

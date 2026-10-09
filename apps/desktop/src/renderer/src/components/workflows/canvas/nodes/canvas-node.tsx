@@ -234,7 +234,7 @@ export function CanvasNode({
                   autoFocus
                   value={titleDraft}
                   maxLength={48}
-                  className="h-5 w-full rounded bg-transparent px-1 font-medium outline-none ring-1 ring-blue-500"
+                  className="h-5 w-full rounded bg-transparent px-1 font-medium outline-none ring-1 ring-accent-500"
                   style={{ color: theme.node.text }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onChange={(e) => setTitleDraft(e.target.value)}
@@ -263,43 +263,43 @@ export function CanvasNode({
             </div>
             <div className="flex items-center gap-1.5">
               {isCycle && (
-                <span className="flex items-center gap-1 rounded-full bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:text-rose-400 animate-pulse" title="该节点在工作流中存在依赖回路环">
+                <span className="flex items-center gap-1 rounded-full bg-background-tertiary-error/15 px-1.5 py-0.5 text-caption-2-medium font-medium text-text-error-primary dark:text-text-error-primary animate-pulse" title="该节点在工作流中存在依赖回路环">
                   <RiAlertLine className="size-3" />
                   <span>回路异常</span>
                 </span>
               )}
               {stepStatus === "running" && (
-                <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 animate-pulse">
+                <span className="flex items-center gap-1 rounded-full bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-medium text-accent-500 dark:text-accent-500 animate-pulse">
                   <RiLoader4Line className="size-3 animate-spin" />
                   <span>执行中</span>
                 </span>
               )}
               {stepStatus === "waiting_review" && (
-                <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                <span className="flex items-center gap-1 rounded-full bg-status-yellow-background/10 px-1.5 py-0.5 text-caption-2-medium font-medium text-status-yellow-text dark:text-status-yellow-text">
                   <RiShieldCheckLine className="size-3" />
                   <span>待审批</span>
                 </span>
               )}
               {stepStatus === "completed" && (
-                <span className="flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="flex items-center gap-0.5 rounded-full bg-state-success-text/10 px-1.5 py-0.5 text-caption-2-medium font-medium text-state-success-text dark:text-state-success-text">
                   <RiCheckLine className="size-3" />
                   <span>完成</span>
                 </span>
               )}
               {stepStatus === "failed" && (
-                <span className="flex items-center gap-0.5 rounded-full bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:text-rose-400">
+                <span className="flex items-center gap-0.5 rounded-full bg-background-tertiary-error/10 px-1.5 py-0.5 text-caption-2-medium font-medium text-text-error-primary dark:text-text-error-primary">
                   <RiCloseLine className="size-3" />
                   <span>失败</span>
                 </span>
               )}
 
               {!stepStatus && data.metadata?.status === "loading" && (
-                <span className="size-2 animate-ping rounded-full bg-blue-500" />
+                <span className="size-2 animate-ping rounded-full bg-accent-500" />
               )}
               {!stepStatus && data.metadata?.status === "error" && (
-                <span className="size-2 rounded-full bg-rose-500" title={data.metadata?.errorDetails} />
+                <span className="size-2 rounded-full bg-background-tertiary-error" title={data.metadata?.errorDetails} />
               )}
-              <span className="text-[10px] uppercase font-mono opacity-40">
+              <span className="text-caption-2-regular uppercase font-mono opacity-40">
                 {getNodeTypeLabel(data.type)}
               </span>
             </div>

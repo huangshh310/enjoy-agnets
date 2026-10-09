@@ -99,7 +99,7 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">
                 <h2 className="text-title-3-semibold text-text-primary">{t("pages.workspaces.list.pageTitle")}</h2>
-                <span className="rounded-full bg-state-success-text/10 text-state-success-text border border-state-success-text/20 px-2 py-0.2 text-[11px] font-mono font-semibold">
+                <span className="rounded-full bg-state-success-text/10 text-state-success-text border border-state-success-text/20 px-2 py-0.2 text-caption-2-semibold font-mono font-semibold">
                   {t("pages.workspaces.list.activeBadge")}
                 </span>
               </div>
@@ -133,7 +133,7 @@ export function WorkspacesPage({ embed = false }: { embed?: boolean }) {
         {/* 工作区项目表格 */}
         <div className="flex flex-col overflow-hidden rounded-2xl border border-separator-border/80 bg-background-primary-default shadow-2xs">
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-left border-collapse text-[12.5px]">
+            <table className="w-full text-left border-collapse text-caption-1-regular">
               <thead>
                 <tr className="border-b border-separator-border/70 bg-background-secondary-default/50 text-text-tertiary font-medium">
                   <th className="py-2.5 px-4">{t("pages.workspaces.list.colName")}</th>

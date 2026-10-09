@@ -66,7 +66,7 @@ export function AttentionStrip() {
       >
         {needs > 0 ? (
           <span className="flex shrink-0 items-center gap-1.5 text-caption-2-medium text-text-secondary">
-            <span className="size-1.5 rounded-full bg-state-warning-solid animate-pulse" />
+            <span className="size-1.5 rounded-full bg-status-yellow-text animate-pulse" />
             {t("attention.stripCount", { n: needs })}
           </span>
         ) : null}

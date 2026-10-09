@@ -14,6 +14,12 @@ export type OverlayChromePayload = {
   stopLabel?: string
   escHint?: string
   lang?: "zh-CN" | "en"
+  /** 自定义指针只改蓝边颜色，不注入系统光标。 */
+  pointerColor?: string
+}
+
+export function isOverlayWindow(win: BrowserWindow): boolean {
+  return overlayWindow !== null && win === overlayWindow
 }
 
 function resolveOverlayFile(fileName: string): string {

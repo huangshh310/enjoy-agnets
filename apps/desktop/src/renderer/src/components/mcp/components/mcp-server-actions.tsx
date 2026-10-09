@@ -55,7 +55,7 @@ export function McpServerActions({
         {server.trusted ? (
           <RiShieldLine className="size-3 text-text-tertiary" />
         ) : (
-          <RiShieldCheckLine className="size-3 text-emerald-500" />
+          <RiShieldCheckLine className="size-3 text-state-success-text" />
         )}
         <span>{server.trusted ? t("pages.mcp.untrust") : t("pages.mcp.trust")}</span>
       </Button>

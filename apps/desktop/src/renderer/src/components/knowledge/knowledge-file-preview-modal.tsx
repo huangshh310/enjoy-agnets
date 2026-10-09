@@ -134,7 +134,7 @@ export function KnowledgeFilePreviewModal({
               title={t("pages.knowledge.copyFileText")}
             >
               {copied ? (
-                <RiCheckLine className="size-3.5 text-emerald-500" />
+                <RiCheckLine className="size-3.5 text-state-success-text" />
               ) : (
                 <RiClipboardLine className="size-3.5" />
               )}

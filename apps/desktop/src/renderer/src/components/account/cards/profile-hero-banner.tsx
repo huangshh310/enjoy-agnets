@@ -75,7 +75,7 @@ export function ProfileHeroBanner({
               <div className="flex items-center gap-2">
                 <h2 className="text-title-1-semibold text-text-primary">{profile.name}</h2>
                 {profile.badgeText ? (
-                  <span className="inline-flex items-center rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-accent-600 dark:text-accent-400">
+                  <span className="inline-flex items-center rounded-md border border-accent-500/30 bg-accent-500/10 px-2 py-0.5 font-mono text-caption-2-semibold font-semibold text-accent-600 dark:text-accent-400">
                     {profile.badgeText}
                   </span>
                 ) : null}
@@ -120,7 +120,7 @@ export function ProfileHeroBanner({
         {/* 底部实时状态胶囊徽标行 */}
         <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-separator-border/60 pt-3">
           {/* 主力引擎 */}
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
             <RiRobot2Line className="size-3.5 text-accent-500" />
             <span>引擎:</span>
             <span className="font-semibold text-text-primary">{activeEngineLabel}</span>
@@ -128,7 +128,7 @@ export function ProfileHeroBanner({
 
           {/* 活跃模型 */}
           {activeModelLabel ? (
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
               <RiCpuLine className="size-3.5 text-accent-500" />
               <span>模型:</span>
               <span className="font-semibold text-text-primary">{activeModelLabel}</span>
@@ -136,25 +136,25 @@ export function ProfileHeroBanner({
           ) : null}
 
           {/* 硬件安全存储状态 */}
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
             {protectedVault ? (
-              <RiShieldCheckLine className="size-3.5 text-emerald-500" />
+              <RiShieldCheckLine className="size-3.5 text-state-success-text" />
             ) : (
               <RiShieldLine className="size-3.5 text-text-tertiary" />
             )}
             <span>硬件安全:</span>
-            <span className={cx("font-semibold", protectedVault ? "text-emerald-600 dark:text-emerald-400" : "text-text-tertiary")}>
+            <span className={cx("font-semibold", protectedVault ? "text-state-success-text dark:text-state-success-text" : "text-text-tertiary")}>
               {protectedVault ? t("pages.account.security.vaultProtected") : t("pages.account.security.vaultEmpty")}
             </span>
           </div>
 
           {/* 当前运行节点 */}
           {currentDevice ? (
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-[11px] font-medium text-text-secondary">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
               <RiComputerLine className="size-3.5 text-accent-500" />
               <span>终端:</span>
               <span className="font-semibold text-text-primary">{currentDevice.name}</span>
-              <span className="text-[10px] text-text-tertiary">({currentDevice.os})</span>
+              <span className="text-caption-2-regular text-text-tertiary">({currentDevice.os})</span>
             </div>
           ) : null}
         </div>

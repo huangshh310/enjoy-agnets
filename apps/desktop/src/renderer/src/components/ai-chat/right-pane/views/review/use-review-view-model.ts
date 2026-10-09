@@ -9,6 +9,7 @@ import type { ReviewScope } from "./types/review.types"
 import { pathsFromLastTurn } from "./last-turn-paths"
 import type { ReviewCommitDockHandle } from "./pr-hero/review-commit-dock"
 import type { ReviewViewProps } from "./review-view-props"
+import { useDiffPalette } from "./hooks/use-diff-palette"
 import { useReviewOptions } from "./hooks/use-review-options"
 import { useReviewHotkeys } from "./use-review-hotkeys"
 import { useWorkspaceCheckpoints } from "./use-workspace-checkpoints"
@@ -21,6 +22,7 @@ export function useReviewViewModel(props: ReviewViewProps) {
   const setScope = useRightPaneStore((state) => state.setReviewScope)
   const { options, toggleOption, allExpanded, toggleAllExpanded, jumpOpen, setJumpOpen } =
     useReviewOptions()
+  const { palette, setPalette } = useDiffPalette()
   const git = useWorkspaceGit(props.workspaceId, {
     enabled: active,
     includeBranchFiles: active && scope === "branch"
@@ -53,6 +55,8 @@ export function useReviewViewModel(props: ReviewViewProps) {
     scopedAdds: scoped.reduce((sum, file) => sum + file.additions, 0),
     scopedDels: scoped.reduce((sum, file) => sum + file.deletions, 0),
     options,
+    palette,
+    setPalette,
     toggleOption,
     allExpanded,
     toggleAllExpanded,

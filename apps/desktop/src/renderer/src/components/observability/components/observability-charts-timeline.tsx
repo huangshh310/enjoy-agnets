@@ -84,11 +84,11 @@ export function ObservabilityTimelineChart(props: { metrics: TelemetryMetric[] }
             <span className="text-text-secondary">{t("pages.observability.legendDuration")}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-amber-500" />
+            <span className="size-2 rounded-full bg-status-yellow-background" />
             <span className="text-text-secondary">{t("pages.observability.legendTtfo")}</span>
           </div>
           {p95Duration > 0 ? (
-            <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 font-mono text-[10px] text-text-tertiary">
+            <span className="rounded-md bg-background-secondary-default px-1.5 py-0.5 font-mono text-caption-2-regular text-text-tertiary">
               P95: {formatLatency(p95Duration)}
             </span>
           ) : null}
@@ -191,15 +191,15 @@ function TimelineTooltip({
   const isSuccess = data.status === "success" || data.status === "completed" || data.status === "ok"
 
   return (
-    <div className="flex min-w-[11rem] flex-col gap-1.5 rounded-xl border border-separator-border/80 bg-background-primary-default p-2.5 font-mono text-[11px] shadow-lg">
+    <div className="flex min-w-[11rem] flex-col gap-1.5 rounded-xl border border-separator-border/80 bg-background-primary-default p-2.5 font-mono text-caption-2-regular shadow-lg">
       <div className="flex items-center justify-between gap-2 border-b border-separator-border/50 pb-1.5">
         <span className="font-semibold text-text-primary">{data.fullTime}</span>
         <span
           className={cx(
-            "rounded px-1 py-0.5 text-[9.5px] uppercase font-bold",
+            "rounded px-1 py-0.5 text-caption-2-bold uppercase font-bold",
             isSuccess
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+              ? "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
+              : "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
           )}
         >
           {data.status}
@@ -223,7 +223,7 @@ function TimelineTooltip({
         {data.ttfo > 0 ? (
           <div className="flex items-center justify-between gap-2">
             <span className="text-text-tertiary">{t("pages.observability.tooltipTtfo")}</span>
-            <span className="font-semibold text-amber-500 tabular-nums">
+            <span className="font-semibold text-status-yellow-text tabular-nums">
               {formatLatency(data.ttfo)}
             </span>
           </div>

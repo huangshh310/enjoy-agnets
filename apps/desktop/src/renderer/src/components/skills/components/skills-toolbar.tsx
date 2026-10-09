@@ -72,14 +72,14 @@ export function SkillsToolbar({
               className={cx(
                 "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption-2-medium transition-colors",
                 hasIssues
-                  ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                  : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                  ? "border-status-yellow-text/20 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
+                  : "border-state-success-text/20 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
               )}
             >
               <span
                 className={cx(
                   "size-1.5 rounded-full",
-                  hasIssues ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
+                  hasIssues ? "bg-status-yellow-background animate-pulse" : "bg-state-success-base"
                 )}
               />
               {hasIssues
@@ -173,7 +173,7 @@ export function SkillsToolbar({
           >
             <RiCompass3Line className="size-3.5" />
             <span>{t("pages.skills.toolbar.tabCurated")}</span>
-            <span className="rounded-full bg-accent-500/10 px-1.5 py-0.2 text-[10px] text-accent-600 dark:text-accent-400 font-mono">
+            <span className="rounded-full bg-accent-500/10 px-1.5 py-0.2 text-caption-2-regular text-accent-600 dark:text-accent-400 font-mono">
               Store
             </span>
           </button>
@@ -190,7 +190,7 @@ export function SkillsToolbar({
           >
             <RiSparklingLine className="size-3.5" />
             <span>{t("pages.skills.toolbar.tabAll")}</span>
-            <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] text-text-secondary font-mono">
+            <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-caption-2-regular text-text-secondary font-mono">
               {deployedCount}
             </span>
           </button>
@@ -207,7 +207,7 @@ export function SkillsToolbar({
           >
             <RiFolderLine className="size-3.5" />
             <span>{t("pages.skills.toolbar.tabPacks")}</span>
-            <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-[10px] text-text-secondary font-mono">
+            <span className="rounded-full bg-background-secondary-default px-1.5 py-0.2 text-caption-2-regular text-text-secondary font-mono">
               {sourceCount}
             </span>
           </button>

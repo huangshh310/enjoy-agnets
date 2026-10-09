@@ -93,7 +93,7 @@ export function KnowledgeSourcesTable({
                       <div
                         className={cx(
                           "max-w-[220px] truncate text-caption-2-medium",
-                          source.error ? "text-amber-600 dark:text-amber-400 font-medium" : "text-text-tertiary"
+                          source.error ? "text-status-yellow-text dark:text-status-yellow-text font-medium" : "text-text-tertiary"
                         )}
                         title={source.error || undefined}
                       >

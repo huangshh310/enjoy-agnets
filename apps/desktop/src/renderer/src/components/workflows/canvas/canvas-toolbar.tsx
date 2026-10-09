@@ -102,7 +102,7 @@ export function CanvasToolbar({
       <div className="relative pointer-events-auto">
         {tipLabel && (
           <div
-            className="pointer-events-none absolute -top-8 z-50 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-medium text-white shadow-md transition-all duration-150"
+            className="pointer-events-none absolute -top-8 z-50 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-0.5 text-caption-2-medium font-medium text-white shadow-md transition-all duration-150"
             style={{
               left: tipX,
               background: "rgba(15, 23, 42, 0.9)",
@@ -216,7 +216,7 @@ export function CanvasToolbar({
                   color: theme.node.text
                 }}
               >
-                <div className="mb-2 px-1 text-[11px] font-semibold tracking-wide text-zinc-500">
+                <div className="mb-2 px-1 text-caption-2-semibold font-semibold tracking-wide text-text-secondary">
                   {t("pages.workflows.canvasAppearance")}
                 </div>
                 <div className="flex flex-col gap-1">
@@ -225,7 +225,7 @@ export function CanvasToolbar({
                       key={mode}
                       type="button"
                       className={`flex h-8 items-center justify-between rounded-lg px-2.5 text-xs font-medium transition ${
-                        backgroundMode === mode ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" : "hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+                        backgroundMode === mode ? "bg-accent-500/10 text-accent-500 dark:text-accent-500" : "hover:bg-background-secondary-default dark:hover:bg-background-secondary-default/60"
                       }`}
                       onClick={() => {
                         onBackgroundModeChange(mode)
@@ -239,7 +239,7 @@ export function CanvasToolbar({
                             ? t("pages.workflows.canvasBackgroundLines")
                             : t("pages.workflows.canvasBackgroundBlank")}
                       </span>
-                      {backgroundMode === mode && <span className="size-1.5 rounded-full bg-blue-500" />}
+                      {backgroundMode === mode && <span className="size-1.5 rounded-full bg-accent-500" />}
                     </button>
                   ))}
                 </div>
@@ -248,7 +248,7 @@ export function CanvasToolbar({
 
                 <button
                   type="button"
-                  className="flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-rose-500 transition hover:bg-rose-500/10"
+                  className="flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-xs font-medium text-text-error-primary transition hover:bg-background-tertiary-error/10"
                   onClick={() => {
                     if (window.confirm("确定要清空当前画布上的所有节点和连线吗？")) {
                       onClear()
@@ -272,7 +272,7 @@ export function CanvasToolbar({
               onHover={handleButtonHover}
               onClick={onDelete}
             >
-              <RiDeleteBinLine className="size-4 text-rose-500" />
+              <RiDeleteBinLine className="size-4 text-text-error-primary" />
             </ToolBtn>
           )}
         </div>

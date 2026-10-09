@@ -25,8 +25,8 @@ export function WorkspaceChoice({
     <div className="flex h-full min-h-0 flex-1 flex-col gap-4">
       <FolderDrop busy={busy} over={over} setOver={setOver} onOpen={open} hint={t("settings.setupGuide.dropHint")} browse={t("settings.setupGuide.browse")} opening={t("settings.setupGuide.opening")} />
       <PathRow path={path} busy={busy} onPath={setPath} onAdd={() => open(path.trim())} label={t("settings.setupGuide.pathLabel")} placeholder={folderPathHint()} add={t("settings.setupGuide.add")} />
-      {name ? <p className="text-[13px] text-text-secondary">{t("settings.setupGuide.opened", { name })}</p> : null}
-      {failed ? <p className="text-[13px] text-state-error-text">{t("settings.setupGuide.openFailed")}</p> : null}
+      {name ? <p className="text-body-2-regular text-text-secondary">{t("settings.setupGuide.opened", { name })}</p> : null}
+      {failed ? <p className="text-body-2-regular text-text-error-primary">{t("settings.setupGuide.openFailed")}</p> : null}
     </div>
   )
 }
@@ -61,14 +61,14 @@ function FolderDrop({
         if (dropped) onOpen(dropped)
       }}
       className={cx(
-        "flex min-h-[168px] w-full flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-text-primary/20 text-[15px] text-text-primary hover:bg-text-primary/[0.03] disabled:opacity-50",
+        "flex min-h-[168px] w-full flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-text-primary/20 text-headline-regular text-text-primary hover:bg-text-primary/[0.03] disabled:opacity-50",
         over && "border-solid border-accent-500 bg-text-primary/5"
       )}
     >
       <RiFolderAddLine className="size-[22px] text-text-primary/70" aria-hidden />
       <span>
         {busy ? opening : hint}{" "}
-        {busy ? null : <span className="underline decoration-dotted decoration-[1.5px] underline-offset-[5px]">{browse}</span>}
+        {busy ? null : <span className="underline decoration-dotted decoration-2 underline-offset-4">{browse}</span>}
       </span>
     </button>
   )
@@ -109,13 +109,13 @@ function PathRow({
           placeholder={placeholder}
           aria-label={label}
           spellCheck={false}
-          className="h-full min-w-0 flex-1 bg-transparent px-2 text-[14px] text-text-primary outline-none"
+          className="h-full min-w-0 flex-1 bg-transparent px-2 text-body-regular text-text-primary outline-none"
         />
       </label>
       <button
         type="submit"
         disabled={busy || path.trim().length === 0}
-        className="h-9 shrink-0 cursor-pointer rounded-lg border border-text-primary/15 px-4 text-[14px] text-text-primary disabled:opacity-40"
+        className="h-9 shrink-0 cursor-pointer rounded-lg border border-text-primary/15 px-4 text-body-regular text-text-primary disabled:opacity-40"
       >
         {add}
       </button>

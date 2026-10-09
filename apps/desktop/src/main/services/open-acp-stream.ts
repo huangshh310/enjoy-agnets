@@ -9,6 +9,7 @@ import { getCustomAgent, resolveCustomCwd } from "./agent-tools-custom"
 import { listAgentTools } from "./agent-tools-service"
 import { assertAndClampBind } from "./agent-tools-bind-assert"
 import { readAgentToolOverrides, readSessionModels } from "./agent-tools-vault"
+import { proxyEnvOverlay } from "@enjoy-agents/providers"
 import { providerEnvFor, requireBindProfile } from "./provider-bind-env"
 import { readVault } from "./secrets-vault"
 import type { OpenedCodingStream } from "./open-coding-stream"
@@ -62,7 +63,10 @@ export async function openAcpStream(input: {
     boundModel = clamped.modelId
     const vault = await readVault()
     const profile = requireBindProfile(vault.profiles.find((item) => item.id === override.providerId))
-    injectedEnv = providerEnvFor(input.runtimeId, profile, boundModel)
+    injectedEnv = {
+      ...providerEnvFor(input.runtimeId, profile, boundModel),
+      ...proxyEnvOverlay(profile.proxy)
+    }
   }
 
   const spawnDirect = await resolveAcpSpawnDirect({

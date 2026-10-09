@@ -2,10 +2,8 @@
  * Attention 纯函数：事件 → 槽位 upsert / 收束。一槽一位。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
-
-/** 与 ipc-contract 同值；node:test 不要 value-import 合约入口。 */
-const ASK_USER_QUESTIONS_TOOL = "ask_user_questions"
 
 /** complete 短时展示后自消，不计入红点。 */
 export const COMPLETE_TTL_MS = 10_000

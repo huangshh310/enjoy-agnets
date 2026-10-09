@@ -56,10 +56,10 @@ export function WorkspaceSettings() {
             </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-body-large-semibold text-text-primary truncate">
+                <span className="text-title-3-semibold text-text-primary truncate">
                   {workspaceName || t("common.untitledProject")}
                 </span>
-                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-[11px] font-medium text-text-tertiary shrink-0">
+                <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-medium font-medium text-text-tertiary shrink-0">
                   {workspaceKind === "ssh" ? t("settings.workspace.remoteFootnote") : t("settings.workspace.localBadge")}
                 </span>
               </div>
@@ -73,7 +73,7 @@ export function WorkspaceSettings() {
                   aria-label={t("settings.workspace.copyPath")}
                   className="text-text-tertiary hover:text-text-primary transition-colors p-0.5 cursor-pointer shrink-0"
                 >
-                  {copied ? <RiCheckLine className="size-3 text-emerald-500" /> : <RiClipboardLine className="size-3" />}
+                  {copied ? <RiCheckLine className="size-3 text-state-success-text" /> : <RiClipboardLine className="size-3" />}
                 </button>
               </div>
             </div>
@@ -93,18 +93,18 @@ export function WorkspaceSettings() {
         {/* 关键统计指标 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-separator-border">
           <div className="flex flex-col rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-            <span className="text-[11px] font-medium text-text-tertiary">{t("settings.workspace.sessions")}</span>
+            <span className="text-caption-2-medium font-medium text-text-tertiary">{t("settings.workspace.sessions")}</span>
             <span className="text-title-3-semibold text-text-primary mt-0.5">{sessionCount}</span>
           </div>
           <div className="flex flex-col rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-            <span className="text-[11px] font-medium text-text-tertiary">{t("settings.workspace.jail")}</span>
-            <span className="text-caption-1-semibold text-emerald-600 dark:text-emerald-400 mt-1 inline-flex items-center gap-1">
+            <span className="text-caption-2-medium font-medium text-text-tertiary">{t("settings.workspace.jail")}</span>
+            <span className="text-caption-1-semibold text-state-success-text dark:text-state-success-text mt-1 inline-flex items-center gap-1">
               <RiShieldCheckLine className="size-3.5" />
               <span>{t("settings.workspace.strictlyJailed")}</span>
             </span>
           </div>
           <div className="flex flex-col rounded-xl border border-border-button-default bg-background-secondary-default/50 p-3">
-            <span className="text-[11px] font-medium text-text-tertiary">{t("settings.workspace.gitBoundary")}</span>
+            <span className="text-caption-2-medium font-medium text-text-tertiary">{t("settings.workspace.gitBoundary")}</span>
             <span className="text-caption-1-semibold text-text-primary mt-1 inline-flex items-center gap-1">
               <RiGitBranchLine className="size-3.5 text-accent-500" />
               <span>{t("settings.workspace.workspaceRoot")}</span>
@@ -123,7 +123,7 @@ export function WorkspaceSettings() {
       <SettingsCard title={t("settings.workspace.securityTitle")}>
         <div className="flex flex-col gap-2 p-3 rounded-xl border border-border-button-default bg-background-secondary-default/40">
           <div className="flex items-center gap-2 text-caption-1-semibold text-text-primary">
-            <RiShieldCheckLine className="size-4 text-emerald-500" />
+            <RiShieldCheckLine className="size-4 text-state-success-text" />
             <span>{t("settings.workspace.jailTitle")}</span>
           </div>
           <p className="text-caption-2-regular text-text-tertiary leading-relaxed">{t("settings.workspace.jailBody")}</p>

@@ -23,10 +23,14 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { useT } from "@renderer/i18n"
+import type { DiffPalette } from "../../../../diff/diff-palette"
 import type { ReviewOptions } from "../types/review.types"
+import { ReviewDiffPaletteMenu } from "./review-diff-palette-menu"
 
 export function ReviewMoreMenu(props: {
   options: ReviewOptions
+  palette: DiffPalette
+  onPalette: (palette: DiffPalette) => void
   onToggleOption: (key: keyof ReviewOptions) => void
   onRefresh?: () => void
   isRefreshing?: boolean
@@ -35,6 +39,8 @@ export function ReviewMoreMenu(props: {
 }) {
   const {
     options,
+    palette,
+    onPalette,
     onToggleOption,
     onRefresh,
     isRefreshing,
@@ -138,6 +144,8 @@ export function ReviewMoreMenu(props: {
           {options.hideWhitespace ? <RiCheckLine className="size-4 text-accent-500" /> : null}
         </DropdownMenuItem>
 
+        <ReviewDiffPaletteMenu palette={palette} onPalette={onPalette} />
+
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
@@ -148,7 +156,7 @@ export function ReviewMoreMenu(props: {
             <RiTerminalBoxLine className="size-4 text-text-tertiary" />
             <span>{t("chat.reviewCopyGitApply")}</span>
           </div>
-          {copiedApply ? <span className="text-[11px] text-state-success-text">{t("chat.reviewCopied")}</span> : null}
+          {copiedApply ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
         </DropdownMenuItem>
 
         <DropdownMenuItem
@@ -159,7 +167,7 @@ export function ReviewMoreMenu(props: {
             <RiFileCopyLine className="size-4 text-text-tertiary" />
             <span>{t("chat.reviewCopyUnifiedDiff")}</span>
           </div>
-          {copiedDiff ? <span className="text-[11px] text-state-success-text">{t("chat.reviewCopied")}</span> : null}
+          {copiedDiff ? <span className="text-caption-2-regular text-state-success-text">{t("chat.reviewCopied")}</span> : null}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

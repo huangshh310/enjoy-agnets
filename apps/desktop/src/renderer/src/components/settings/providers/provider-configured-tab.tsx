@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import type { AgentBindRef, ProviderPublic } from "@enjoy-agents/ipc-contract"
 import type { ApiStyle, ProviderKind } from "@enjoy-agents/providers/presets"
 import { SettingsCard } from "../settings-row"
+import { ProviderConfiguredMetrics } from "./provider-configured-metrics"
 import { ProviderIcon } from "./provider-icons"
 import { ProviderList } from "./provider-list"
 import type { PingStateMap } from "./use-provider-settings"
@@ -26,6 +27,8 @@ export function ProviderConfiguredTab({
   onEdit,
   onActivate,
   onRemove,
+  onDuplicate,
+  onSetEnabled,
   onAddCustom,
   onExplorePresets,
   refsByProvider,
@@ -38,6 +41,8 @@ export function ProviderConfiguredTab({
   onEdit: (profile: ProviderPublic) => void
   onActivate: (id: string) => void
   onRemove: (id: string) => void
+  onDuplicate: (profile: ProviderPublic) => void
+  onSetEnabled: (id: string, enabled: boolean) => void
   onAddCustom: (kind: ProviderKind, apiStyle: ApiStyle) => void
   onExplorePresets: () => void
   refsByProvider?: Record<string, AgentBindRef[]>
@@ -45,15 +50,6 @@ export function ProviderConfiguredTab({
 }) {
   const t = useT()
   const [searchQuery, setSearchQuery] = useState("")
-
-  const activeProvider = useMemo(
-    () => providers.find((p) => p.active),
-    [providers]
-  )
-
-  const totalModels = useMemo(() => {
-    return providers.reduce((acc, p) => acc + (p.models?.length || 1), 0)
-  }, [providers])
 
   const filteredProviders = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
@@ -78,38 +74,10 @@ export function ProviderConfiguredTab({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       {/* 顶部概览指标与快捷过滤栏 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border-button-default bg-background-primary-default p-4 shadow-xs">
-        {/* 左侧指标徽标 */}
-        <div className="flex items-center gap-4 text-caption-1-medium text-text-secondary">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-accent-500" />
-            <span className="font-semibold text-text-primary text-[13px]">
-              {providers.length}
-            </span>
-            <span>{t("settings.providers.configured")}</span>
-          </div>
-
-          <div className="h-3 w-px bg-separator-border" />
-
-          {activeProvider ? (
-            <div className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-state-success-text" />
-              <span>{t("settings.providers.activePrefix")}</span>
-              <span className="font-medium text-text-primary">
-                {activeProvider.name}
-              </span>
-            </div>
-          ) : null}
-
-          <div className="h-3 w-px bg-separator-border" />
-
-          <div>
-            <span className="font-medium text-text-primary">{totalModels}</span>{" "}
-            <span>{t("settings.providers.totalModels")}</span>
-          </div>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border-button-default bg-background-primary-default px-3 py-2.5 shadow-xs">
+        <ProviderConfiguredMetrics providers={providers} />
 
         {/* 右侧搜索框与快速添加 */}
         <div className="flex items-center gap-2">
@@ -151,7 +119,7 @@ export function ProviderConfiguredTab({
       </div>
 
       {/* 已配置 Provider 列表 */}
-      <SettingsCard title={t("settings.providers.configuredCount", { count: filteredProviders.length })}>
+      <SettingsCard dense title={t("settings.providers.configuredCount", { count: filteredProviders.length })}>
         <ProviderList
           providers={filteredProviders}
           pingStates={pingStates}
@@ -160,6 +128,8 @@ export function ProviderConfiguredTab({
           onEdit={onEdit}
           onActivate={onActivate}
           onRemove={onRemove}
+          onDuplicate={onDuplicate}
+          onSetEnabled={onSetEnabled}
           onOpenAgent={onOpenAgent}
         />
       </SettingsCard>

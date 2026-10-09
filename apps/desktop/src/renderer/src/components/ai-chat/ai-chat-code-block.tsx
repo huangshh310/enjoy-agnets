@@ -31,7 +31,7 @@ export function AiChatCodeBlock({ attachment }: { attachment: CodeAttachment }) 
           onClick={() => navigator.clipboard.writeText(attachment.code)}
         />
       </div>
-      <pre className="overflow-x-auto p-3 font-mono text-[13px] leading-6 text-text-primary">
+      <pre className="overflow-x-auto p-3 font-mono text-body-2-regular leading-6 text-text-primary">
         {lines.map((line, index) => (
           <div key={`${attachment.filename}-${index}`} className="flex gap-4">
             <span className="w-4 shrink-0 text-right tabular-nums text-text-tertiary">

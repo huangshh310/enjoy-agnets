@@ -7,7 +7,30 @@ import { DesktopAlwaysAllowAppKeys } from "./desktop-always-allow"
 import { AgentToolPublic } from "./agent-tools"
 import { AgentMode } from "./chat"
 import { PermissionMode as PermissionModeSchema } from "./permission-mode"
+import {
+  ProviderEndpointsInput,
+  ProviderKeyPublic,
+  ProviderModelItem,
+  ReasoningFamilyInput,
+  WireApiStyle
+} from "./provider-profile"
+import { KeybindingRuleList } from "./keybindings"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
+
+export {
+  CatalogModelSource,
+  DetectProviderInput,
+  DetectProviderProbe,
+  DuplicateProviderInput,
+  ProviderEndpointsInput,
+  ProviderKeyInput,
+  ProviderKeyPublic,
+  ProviderModelItem,
+  ReasoningFamilyInput,
+  SetProviderEnabledInput,
+  UpsertProviderInput,
+  WireApiStyle
+} from "./provider-profile"
 
 export const PingProviderInput = z.object({
   id: z.string().optional(),
@@ -33,35 +56,6 @@ export const SaveSecretInput = z.object({
   name: z.string().optional()
 })
 export type SaveSecretInput = z.infer<typeof SaveSecretInput>
-
-export const ProviderModelItem = z.object({
-  id: z.string(),
-  label: z.string(),
-  contextWindow: z.number().int().positive().optional(),
-  maxOutputTokens: z.number().int().positive().optional()
-})
-export type ProviderModelItem = z.infer<typeof ProviderModelItem>
-
-export const UpsertProviderInput = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1),
-  kind: z.string().min(1),
-  apiKey: z.string().optional(),
-  baseURL: z.string().optional(),
-  modelId: z.string().optional(),
-  apiStyle: z.string().optional(),
-  fastModelId: z.string().optional(),
-  reasoningModelId: z.string().optional(),
-  contextWindow: z.number().int().positive().nullable().optional(),
-  maxTokens: z.number().optional(),
-  temperature: z.number().optional(),
-  reasoningEffort: ReasoningEffortSchema.optional(),
-  customHeaders: z.string().optional(),
-  customBody: z.string().optional(),
-  models: z.array(ProviderModelItem).optional(),
-  activate: z.boolean().optional()
-})
-export type UpsertProviderInput = z.infer<typeof UpsertProviderInput>
 
 export const ProbeProviderInput = z.object({
   id: z.string().optional(),
@@ -93,7 +87,15 @@ export const ProviderPublic = z.object({
   hasKey: z.boolean(),
   keyHint: z.string(),
   active: z.boolean(),
-  requiresKey: z.boolean()
+  requiresKey: z.boolean(),
+  enabled: z.boolean().default(true),
+  endpoints: ProviderEndpointsInput.default({}),
+  baseAPI: WireApiStyle.default("openai"),
+  regionId: z.string().optional(),
+  keys: z.array(ProviderKeyPublic).default([]),
+  modelsURL: z.string().optional(),
+  reasoningFamily: ReasoningFamilyInput.default("auto"),
+  proxy: z.string().optional()
 })
 export type ProviderPublic = z.infer<typeof ProviderPublic>
 
@@ -114,7 +116,8 @@ export const ModelOption = z.object({
   probedCaps: z.array(z.string()).optional(),
   probedAt: z.number().int().optional(),
   contextWindow: z.number().int().positive().optional(),
-  maxTokens: z.number().int().positive().optional()
+  maxTokens: z.number().int().positive().optional(),
+  wireStyles: z.array(WireApiStyle).optional()
 })
 export type ModelOption = z.infer<typeof ModelOption>
 
@@ -153,6 +156,8 @@ export const SettingsSnapshot = z.object({
     desktopPush: z.boolean().default(true),
     agentCompleteSound: z.boolean().default(true),
     approvalRequiredAlert: z.boolean().default(true),
+    /** Composer 与设置行额度数字：已用或剩余。条宽仍是已用百分比。 */
+    usageNumber: z.enum(["used", "remaining"]).default("used"),
     accountProfile: AccountProfilePref.optional(),
     /** 引擎级可选显示名，按 runtimeId。空/缺键回退品牌名，不进云身份。 */
     agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).default({}),
@@ -165,10 +170,24 @@ export const SettingsSnapshot = z.object({
     desktopAlwaysAllowAppKeys: DesktopAlwaysAllowAppKeys,
     /**
      * CU-P1-36 高级坐标。默认 OFF；裸 x/y 硬拒。
-     * 本刀无设置铬，mike 可经 setPreferences 绑定。
+     * `#/settings/computer-use` 产品页尚未绑此开关，可经 setPreferences 拨。
      */
-    desktopAdvancedCoords: z.boolean().default(false)
+    desktopAdvancedCoords: z.boolean().default(false),
+    /** 用户快捷键规则。空数组表示全部走默认。删光写成 unassigned，避免下次启动回到默认。 */
+    keybindings: KeybindingRuleList.default([]),
+    /** 蓝边指针色。只影响 overlay，不注入系统光标。 */
+    computerUsePointer: z.enum(["stock", "custom"]).default("stock"),
+    /** 关掉预览只隐藏画面，不停当前 run。 */
+    computerUsePreview: z.boolean().default(true),
+    computerUsePreviewSize: z.enum(["compact", "large"]).default("compact"),
+    /** AppSnap 总开关。非 macOS 即使为 true 也不注册全局热键。 */
+    appsnapEnabled: z.boolean().default(false),
+    /** 正好两键，其中一键是修饰键。默认左 Option + 右 Option。 */
+    appsnapChord: z.string().min(1).max(64).default("alt.left+alt.right"),
+    appsnapSound: z.boolean().default(true)
   }),
+  /** 读盘时丢掉的快捷键规则名。不写回 preferences。 */
+  keybindingIssues: z.array(z.string()).default([]),
   harness: z
     .object({
       adapterId: z.string().nullable(),
@@ -236,11 +255,19 @@ export const SetPreferencesInput = z.object({
   desktopPush: z.boolean().optional(),
   agentCompleteSound: z.boolean().optional(),
   approvalRequiredAlert: z.boolean().optional(),
+  usageNumber: z.enum(["used", "remaining"]).optional(),
   accountProfile: AccountProfilePref.optional(),
   agentDisplayNames: z.record(z.string().min(1), z.string().max(40)).optional(),
   setupGuideCompletedAt: z.string().nullable().optional(),
-  /** CU-P1-36 高级坐标逃逸舱。默认关。无铬时也可经 IPC 拨。 */
-  desktopAdvancedCoords: z.boolean().optional()
+  /** CU-P1-36 高级坐标逃逸舱。默认关。产品页尚未绑铬。 */
+  desktopAdvancedCoords: z.boolean().optional(),
+  keybindings: KeybindingRuleList.optional(),
+  computerUsePointer: z.enum(["stock", "custom"]).optional(),
+  computerUsePreview: z.boolean().optional(),
+  computerUsePreviewSize: z.enum(["compact", "large"]).optional(),
+  appsnapEnabled: z.boolean().optional(),
+  appsnapChord: z.string().min(1).max(64).optional(),
+  appsnapSound: z.boolean().optional()
 })
 export type SetPreferencesInput = z.infer<typeof SetPreferencesInput>
 

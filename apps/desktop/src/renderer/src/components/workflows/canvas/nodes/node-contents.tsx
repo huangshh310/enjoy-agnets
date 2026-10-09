@@ -28,14 +28,14 @@ export function NodeContents({
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-3" style={{ color: theme.node.activeStroke }}>
         <RiLoader4Line className="size-10 animate-spin" />
-        <span className="text-[10px] tracking-[0.2em]">{t("pages.workflows.canvasGenerating")}</span>
+        <span className="text-caption-2-regular tracking-widest">{t("pages.workflows.canvasGenerating")}</span>
       </div>
     )
   }
   if (node.metadata?.status === "error") {
     return (
-      <div className="flex max-w-[260px] flex-col items-center gap-3 px-5 text-center">
-        <div className="break-words text-xs leading-5 text-red-400" title={node.metadata?.errorDetails}>
+      <div className="flex max-w-64 flex-col items-center gap-3 px-5 text-center">
+        <div className="break-words text-xs leading-5 text-text-error-primary" title={node.metadata?.errorDetails}>
           {node.metadata?.errorDetails || t("pages.workflows.canvasFailed")}
         </div>
         <button
@@ -78,7 +78,7 @@ export function NodeContents({
   }
   if (node.type === CanvasNodeType.Video) {
     if (!node.metadata?.content) return <EmptySlot theme={theme} icon={<RiPlayCircleLine className="size-7 opacity-35" />} label={t("pages.workflows.canvasEmptyVideo")} />
-    return <video src={node.metadata.content} controls className="h-full w-full rounded-[18px] bg-black object-contain" data-canvas-no-zoom />
+    return <video src={node.metadata.content} controls className="h-full w-full rounded-2xl bg-black object-contain" data-canvas-no-zoom />
   }
   if (node.type === CanvasNodeType.Audio) {
     if (!node.metadata?.content) return <EmptySlot theme={theme} icon={<RiMusic2Line className="size-7 opacity-35" />} label={t("pages.workflows.canvasEmptyAudio")} />
@@ -120,7 +120,7 @@ function EmptySlot({ theme, icon, label }: { theme: CanvasTheme; icon: React.Rea
       >
         {icon}
       </div>
-      <span className="text-[11px] font-medium tracking-wide opacity-70">{label}</span>
+      <span className="text-caption-2-medium font-medium tracking-wide opacity-70">{label}</span>
     </div>
   )
 }
@@ -155,7 +155,7 @@ function TextBody({
         <textarea
           ref={textareaRef}
           data-canvas-no-zoom
-          className="thin-scrollbar block h-full w-full resize-none overflow-y-auto whitespace-pre-wrap break-words border-none bg-transparent font-sans text-left outline-none selection:bg-blue-500/20"
+          className="thin-scrollbar block h-full w-full resize-none overflow-y-auto whitespace-pre-wrap break-words border-none bg-transparent font-sans text-left outline-none selection:bg-accent-500/20"
           style={textStyle}
           value={content}
           placeholder={t("pages.workflows.canvasEditText")}
@@ -188,7 +188,7 @@ function TextBody({
       <p className="text-xs leading-relaxed opacity-60">
         {t("pages.workflows.canvasEditText")}
       </p>
-      <span className="mt-2 text-[10px] opacity-40">双击输入文本、提示词或说明</span>
+      <span className="mt-2 text-caption-2-regular opacity-40">双击输入文本、提示词或说明</span>
     </div>
   )
 }

@@ -9,6 +9,7 @@ import {
   type DesktopSecondConfirmSide,
   type DesktopSecondConfirmView
 } from "./desktop-second-confirm-args"
+import { useDesktopPreviewFrame } from "./desktop-preview-frame"
 
 export function DesktopSecondConfirmBody({ view }: { view: DesktopSecondConfirmView }) {
   return (
@@ -36,6 +37,8 @@ function SecondConfirmLead({ view }: { view: DesktopSecondConfirmView }) {
 
 function SecondConfirmThumbs({ view }: { view: DesktopSecondConfirmView }) {
   const t = useT()
+  const frame = useDesktopPreviewFrame()
+  if (!frame.show) return null
   return (
     <div className="grid grid-cols-2 gap-2.5">
       <ThumbSlot
@@ -43,6 +46,7 @@ function SecondConfirmThumbs({ view }: { view: DesktopSecondConfirmView }) {
         side={view.previous}
         stale
         caption={t("chat.desktopSecondConfirmStale")}
+        large={frame.large}
       />
       <ThumbSlot
         label={t("chat.desktopSecondConfirmNext")}
@@ -50,6 +54,7 @@ function SecondConfirmThumbs({ view }: { view: DesktopSecondConfirmView }) {
         stale={false}
         caption={t("chat.desktopSecondConfirmFresh")}
         missing={view.missingThumb && !view.next.thumbnail}
+        large={frame.large}
       />
     </div>
   )
@@ -60,13 +65,15 @@ function ThumbSlot({
   side,
   stale,
   caption,
-  missing
+  missing,
+  large
 }: {
   label: string
   side: DesktopSecondConfirmSide
   stale: boolean
   caption: string
   missing?: boolean
+  large: boolean
 }) {
   const t = useT()
   return (
@@ -75,7 +82,9 @@ function ThumbSlot({
       <div
         data-stale={stale ? "true" : "false"}
         className={cx(
-          "relative aspect-[16/10] overflow-hidden rounded-lg border border-border-button-default bg-background-secondary-default",
+          large
+            ? "relative aspect-[16/10] overflow-hidden rounded-lg border border-border-button-default bg-background-secondary-default"
+            : "relative h-16 overflow-hidden rounded-lg border border-border-button-default bg-background-secondary-default",
           missing && "border-dashed"
         )}
       >

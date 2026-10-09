@@ -36,18 +36,18 @@ export function HostInjectPopover({
         ) : null}
         {view.kind === "unsupported" ? <UnsupportedLines view={view} /> : null}
         {view.kind === "failed" ? (
-          <p className="text-caption-2-regular text-text-warning-primary">
+          <p className="text-caption-2-regular text-status-yellow-text">
             {t("chat.hostInjectSkipped", { names: view.skipped.map((item) => item.name).join(" · ") })}
           </p>
         ) : null}
         {view.kind === "injected" && view.skipped.length > 0 ? (
-          <p className="text-caption-2-regular text-text-warning-primary">
+          <p className="text-caption-2-regular text-status-yellow-text">
             {t("chat.hostInjectSkipped", { names: view.skipped.map((item) => item.name).join(" · ") })}
           </p>
         ) : null}
         {view.kind !== "unsupported" && view.kind !== "failed" ? (
           <div className="flex items-center gap-1.5 pt-0.5 text-caption-2-regular text-text-secondary">
-            <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden />
+            <span className="size-1.5 rounded-full bg-state-success-base shrink-0" aria-hidden />
             <span>{t("chat.hostInjectEngineSupported")}</span>
           </div>
         ) : null}
@@ -72,10 +72,10 @@ function UnsupportedLines({ view }: { view: Extract<HostInjectBarView, { kind: "
   return (
     <>
       {view.mcp ? (
-        <p className="text-caption-2-regular text-text-warning-primary">{t("chat.hostInjectMcpUnsupported")}</p>
+        <p className="text-caption-2-regular text-status-yellow-text">{t("chat.hostInjectMcpUnsupported")}</p>
       ) : null}
       {view.skills ? (
-        <p className="text-caption-2-regular text-text-warning-primary">{t("chat.hostInjectSkillsUnsupported")}</p>
+        <p className="text-caption-2-regular text-status-yellow-text">{t("chat.hostInjectSkillsUnsupported")}</p>
       ) : null}
     </>
   )

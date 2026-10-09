@@ -37,8 +37,8 @@ export function KnowledgePageHeader({
               className={cx(
                 "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-caption-2-medium",
                 isReady
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  ? "border-state-success-text/30 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
+                  : "border-status-yellow-text/30 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
               )}
             >
               {isReady
@@ -55,7 +55,7 @@ export function KnowledgePageHeader({
               type="button"
               className={cx(
                 "cursor-pointer",
-                hasFaulty && "text-amber-600 dark:text-amber-400"
+                hasFaulty && "text-status-yellow-text dark:text-status-yellow-text"
               )}
               onClick={hasFaulty ? onUnavailableClick : undefined}
             >

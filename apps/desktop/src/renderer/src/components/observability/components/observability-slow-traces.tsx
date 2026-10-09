@@ -68,7 +68,7 @@ export function ObservabilitySlowTraces(props: {
   if (metrics.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs font-mono text-[11px] min-w-0">
+    <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs font-mono text-caption-2-regular min-w-0">
       {/* 顶栏视图切换与筛选 */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-separator-border/50 pb-3">
         {/* 左侧 Tab 切换 */}
@@ -77,15 +77,15 @@ export function ObservabilitySlowTraces(props: {
             type="button"
             onClick={() => setViewMode("outliers")}
             className={cx(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-caption-2-medium font-medium transition-colors",
               viewMode === "outliers"
                 ? "bg-background-primary-default text-text-primary shadow-2xs"
                 : "text-text-tertiary hover:text-text-primary"
             )}
           >
-            <RiTimerFlashLine className="size-3.5 text-amber-500" />
+            <RiTimerFlashLine className="size-3.5 text-status-yellow-text" />
             <span>慢调用与异常聚焦</span>
-            <span className="rounded bg-amber-500/10 px-1 py-0.2 text-[9.5px] text-amber-600 dark:text-amber-400">
+            <span className="rounded bg-status-yellow-background/10 px-1 py-0.2 text-caption-2-regular text-status-yellow-text dark:text-status-yellow-text">
               {outlierTraces.length}
             </span>
           </button>
@@ -94,7 +94,7 @@ export function ObservabilitySlowTraces(props: {
             type="button"
             onClick={() => setViewMode("recent")}
             className={cx(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-caption-2-medium font-medium transition-colors",
               viewMode === "recent"
                 ? "bg-background-primary-default text-text-primary shadow-2xs"
                 : "text-text-tertiary hover:text-text-primary"
@@ -102,7 +102,7 @@ export function ObservabilitySlowTraces(props: {
           >
             <RiPulseLine className="size-3.5 text-accent-500" />
             <span>最近执行流</span>
-            <span className="rounded bg-accent-500/10 px-1 py-0.2 text-[9.5px] text-accent-600 dark:text-accent-400">
+            <span className="rounded bg-accent-500/10 px-1 py-0.2 text-caption-2-regular text-accent-600 dark:text-accent-400">
               {recentTraces.length}
             </span>
           </button>
@@ -110,7 +110,7 @@ export function ObservabilitySlowTraces(props: {
 
         {/* 右侧微调过滤器 */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-[10.5px]">
+          <div className="flex items-center gap-1 text-caption-2-regular">
             <RiFilterLine className="size-3 text-text-tertiary" />
             <button
               type="button"
@@ -130,8 +130,8 @@ export function ObservabilitySlowTraces(props: {
               className={cx(
                 "rounded px-2 py-0.5 transition-colors",
                 filter === "errors"
-                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-semibold"
-                  : "text-text-tertiary hover:text-rose-500"
+                  ? "bg-background-tertiary-error/15 text-text-error-primary dark:text-text-error-primary font-semibold"
+                  : "text-text-tertiary hover:text-text-error-primary"
               )}
             >
               仅异常
@@ -142,8 +142,8 @@ export function ObservabilitySlowTraces(props: {
               className={cx(
                 "rounded px-2 py-0.5 transition-colors",
                 filter === "slow5s"
-                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold"
-                  : "text-text-tertiary hover:text-amber-500"
+                  ? "bg-status-yellow-background/15 text-status-yellow-text dark:text-status-yellow-text font-semibold"
+                  : "text-text-tertiary hover:text-status-yellow-text"
               )}
             >
               &gt;5s 慢调用
@@ -159,7 +159,7 @@ export function ObservabilitySlowTraces(props: {
       {/* 表格区 */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[50rem] text-left">
-          <thead className="text-[10px] uppercase text-text-tertiary border-b border-separator-border/40">
+          <thead className="text-caption-2-regular uppercase text-text-tertiary border-b border-separator-border/40">
             <tr>
               <th className="px-3 py-2 font-medium w-10">序号</th>
               <th className="px-3 py-2 font-medium">状态</th>
@@ -175,7 +175,7 @@ export function ObservabilitySlowTraces(props: {
           <tbody className="divide-y divide-separator-border/30">
             {displayedList.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-text-tertiary text-[11px]">
+                <td colSpan={9} className="py-6 text-center text-text-tertiary text-caption-2-regular">
                   没有匹配的执行链路
                 </td>
               </tr>
@@ -201,7 +201,7 @@ export function ObservabilitySlowTraces(props: {
                     className="group hover:bg-background-secondary-hover/40 transition-colors cursor-pointer"
                   >
                     {/* 序号 */}
-                    <td className="px-3 py-2.5 text-text-tertiary text-[10px]">
+                    <td className="px-3 py-2.5 text-text-tertiary text-caption-2-regular">
                       #{idx + 1}
                     </td>
 
@@ -209,16 +209,16 @@ export function ObservabilitySlowTraces(props: {
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <span
                         className={cx(
-                          "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9.5px] uppercase font-bold",
+                          "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-caption-2-bold uppercase font-bold",
                           isSuccess
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                            ? "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
+                            : "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
                         )}
                       >
                         <span
                           className={cx(
                             "size-1.5 rounded-full",
-                            isSuccess ? "bg-emerald-500" : "bg-rose-500"
+                            isSuccess ? "bg-state-success-base" : "bg-background-tertiary-error"
                           )}
                         />
                         {item.status}
@@ -241,9 +241,9 @@ export function ObservabilitySlowTraces(props: {
                         className={cx(
                           "font-bold tabular-nums",
                           duration >= 10000
-                            ? "text-rose-600 dark:text-rose-400"
+                            ? "text-text-error-primary dark:text-text-error-primary"
                             : duration >= 3000
-                              ? "text-amber-600 dark:text-amber-400"
+                              ? "text-status-yellow-text dark:text-status-yellow-text"
                               : "text-text-primary"
                         )}
                       >
@@ -254,7 +254,7 @@ export function ObservabilitySlowTraces(props: {
                     {/* 首字 TTFO */}
                     <td className="px-3 py-2.5 text-right whitespace-nowrap tabular-nums text-text-secondary">
                       {ttfo > 0 ? (
-                        <span className="text-amber-600 dark:text-amber-400 font-medium">
+                        <span className="text-status-yellow-text dark:text-status-yellow-text font-medium">
                           {formatLatency(ttfo)}
                         </span>
                       ) : (
@@ -267,7 +267,7 @@ export function ObservabilitySlowTraces(props: {
                       {totalTok > 0 ? (
                         <span title={`输入: ${inTok} · 输出: ${outTok}`}>
                           <strong className="text-text-primary">{formatTokens(totalTok)}</strong>
-                          <span className="text-[9.5px] text-text-tertiary ml-1">
+                          <span className="text-caption-2-regular text-text-tertiary ml-1">
                             ({formatTokens(inTok)}/{formatTokens(outTok)})
                           </span>
                         </span>
@@ -279,11 +279,11 @@ export function ObservabilitySlowTraces(props: {
                     {/* 类型与异常 */}
                     <td className="px-3 py-2.5 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-[9.5px] uppercase text-text-tertiary">
+                        <span className="rounded bg-background-secondary-default px-1.5 py-0.5 text-caption-2-regular uppercase text-text-tertiary">
                           {item.kind}
                         </span>
                         {item.errorClass && item.errorClass !== "ok" ? (
-                          <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-600 dark:text-rose-400">
+                          <span className="rounded bg-background-tertiary-error/10 px-1.5 py-0.5 text-caption-2-bold font-bold text-text-error-primary dark:text-text-error-primary">
                             {item.errorClass}
                           </span>
                         ) : null}
@@ -303,7 +303,7 @@ export function ObservabilitySlowTraces(props: {
                           e.stopPropagation()
                           onInspect?.(item)
                         }}
-                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-semibold text-accent-500 hover:bg-accent-500/10 transition-colors"
+                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-caption-2-semibold font-semibold text-accent-500 hover:bg-accent-500/10 transition-colors"
                       >
                         <span>🔥 火焰图诊断</span>
                         <RiArrowRightLine className="size-3" />

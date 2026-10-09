@@ -167,6 +167,14 @@ export const WorkspaceRemoteEvent = z.object({
 })
 export type WorkspaceRemoteEvent = z.infer<typeof WorkspaceRemoteEvent>
 
+/** 打开 ~/.ssh/config；path 只允许指向 ~/.ssh 内，越界由 main 拒绝。 */
+export const OpenSshConfigInput = z
+  .object({
+    path: z.string().min(1).max(1024).optional()
+  })
+  .strict()
+export type OpenSshConfigInput = z.infer<typeof OpenSshConfigInput>
+
 export const OpenSshConfigResult = z
   .object({
     ok: z.boolean(),

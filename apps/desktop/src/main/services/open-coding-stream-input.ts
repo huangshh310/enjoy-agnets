@@ -42,6 +42,8 @@ export type OpenCodingStreamInput = {
   executePlan?: boolean
   /** Composer `@桌面` / `@应用` 偏置。Explore 开流仍不注册 desktop_*。 */
   desktopBias?: DesktopMentionBias
+  /** 句首口令。只这一发注册 desktop_*，不改 computerUse.enabled。 */
+  computerUseOnce?: boolean
   waitForSubagentApproval?: WaitForSubagentApproval
   onSubagentToolEvent?: (event: SubagentToolTraceEvent) => void
   runtimeId?: string

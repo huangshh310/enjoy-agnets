@@ -62,7 +62,7 @@ function ModeCard({
       <span
         className={cx(
           "mt-0.5 size-3.5 shrink-0 rounded-full border",
-          selected ? "border-[5px] border-accent-500" : "border-border-button-default"
+          selected ? "border-4 border-accent-500" : "border-border-button-default"
         )}
         aria-hidden
       />

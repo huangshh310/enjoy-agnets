@@ -26,7 +26,7 @@ export function RulesToolbar(props: {
               type="button"
               onClick={() => props.onSelectKind(cat.id)}
               className={cx(
-                "rounded-md px-2.5 py-1 text-[11.5px] font-medium transition-all shrink-0",
+                "rounded-md px-2.5 py-1 text-caption-2-medium font-medium transition-all shrink-0",
                 isSelected
                   ? "bg-background-secondary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-secondary hover:text-text-primary"

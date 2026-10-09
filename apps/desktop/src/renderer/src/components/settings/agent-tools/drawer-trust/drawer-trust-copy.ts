@@ -27,8 +27,8 @@ export function resolveTrustHealth(input: TrustHealthInput): TrustHealthView {
     return healthView(
       "outdated",
       input.outdatedLabel,
-      "bg-state-warning-text",
-      "text-state-warning-text",
+      "bg-status-yellow-text",
+      "text-status-yellow-text",
       true
     )
   }

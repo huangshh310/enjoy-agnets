@@ -196,7 +196,7 @@ export function ObservabilityReplay() {
                 事件流回放缓冲
               </h3>
               {isDemo && (
-                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-caption-2-medium font-semibold text-amber-600 dark:text-amber-400">
+                <span className="rounded-full border border-status-yellow-text/30 bg-status-yellow-background/10 px-2 py-0.5 text-caption-2-medium font-semibold text-status-yellow-text dark:text-status-yellow-text">
                   模拟演示数据
                 </span>
               )}

@@ -9,8 +9,13 @@ import { showsUpdateChip } from "./update-prompt"
 export function AppUpdateChip() {
   const t = useT()
   const status = useAppUpdateStore((state) => state.snapshot.status)
+  const percent = useAppUpdateStore((state) => state.snapshot.percent)
   const setDialogOpen = useAppUpdateStore((state) => state.setDialogOpen)
   if (!showsUpdateChip(status)) return null
+  const label =
+    status === "downloading"
+      ? t("settings.update.downloading", { percent: Math.round(percent ?? 0) })
+      : t("settings.update.availableChip")
   return (
     <button
       type="button"
@@ -18,10 +23,10 @@ export function AppUpdateChip() {
         event.stopPropagation()
         setDialogOpen(true)
       }}
-      className={`mr-1 flex h-6 cursor-pointer items-center rounded-md px-2 text-caption-2-medium transition-colors ${UPDATE_CTA_CLASS}`}
+      className={`mr-1 flex h-6 cursor-pointer items-center whitespace-nowrap rounded-md px-2 text-caption-2-medium transition-colors ${UPDATE_CTA_CLASS}`}
       style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
     >
-      {t("settings.update.availableChip")}
+      {label}
     </button>
   )
 }

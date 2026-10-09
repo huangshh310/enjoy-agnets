@@ -149,7 +149,10 @@ const ide = {
     setActiveModel: (input: { providerId?: string; modelId: string }) =>
       ipcRenderer.invoke("settings.setActiveModel", input),
     probeProvider: (input: unknown) => ipcRenderer.invoke("settings.probeProvider", input),
-    pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input)
+    pingProvider: (input: unknown) => ipcRenderer.invoke("settings.pingProvider", input),
+    detectProvider: (input: unknown) => ipcRenderer.invoke("settings.detectProvider", input),
+    duplicateProvider: (input: unknown) => ipcRenderer.invoke("settings.duplicateProvider", input),
+    setProviderEnabled: (input: unknown) => ipcRenderer.invoke("settings.setProviderEnabled", input)
   },
   automations: {
     list: () => ipcRenderer.invoke("automations.list"),
@@ -281,6 +284,8 @@ const ide = {
       ipcRenderer.invoke("window.isMaximized") as Promise<WindowState>,
     close: () => ipcRenderer.invoke("window.close") as Promise<WindowActionResult>,
     forceQuit: () => ipcRenderer.invoke("window.forceQuit", {}) as Promise<WindowActionResult>,
+    setTaskbarTitle: (label: string) =>
+      ipcRenderer.invoke("window.setTaskbarTitle", { label }) as Promise<WindowActionResult>,
     onMaximizedChange: (callback: (isMaximized: boolean) => void) => {
       const listener = (_event: unknown, payload: WindowState) =>
         callback(payload.isMaximized)
@@ -308,7 +313,7 @@ const ide = {
         accessibility: boolean
         screenCapture: boolean
       }>,
-    openSystemPermission: (input: { permission: "accessibility" | "screenCapture" }) =>
+    openSystemPermission: (input: { permission: "accessibility" | "screenCapture" | "inputMonitoring" }) =>
       ipcRenderer.invoke("builtinTools.openSystemPermission", input) as Promise<{ ok: true }>,
     revealExtensionDir: () =>
       ipcRenderer.invoke("builtinTools.revealExtensionDir") as Promise<{ ok: boolean }>,
@@ -321,6 +326,16 @@ const ide = {
       ipcRenderer.invoke("builtinTools.desktopListApps") as Promise<DesktopMentionAppsResult>,
     revokeAlwaysAllow: (input: { appKey: string; sessionId?: string }) =>
       ipcRenderer.invoke("builtinTools.revokeAlwaysAllow", input) as Promise<BuiltinToolsState>
+  },
+  appsnap: {
+    doctor: () => ipcRenderer.invoke("appsnap.doctor"),
+    listWindows: () => ipcRenderer.invoke("appsnap.listWindows"),
+    capture: (input?: { windowId?: number }) => ipcRenderer.invoke("appsnap.capture", input ?? {}),
+    onCaptured: (callback: (payload: { pngBase64: string }) => void) => {
+      const listener = (_event: unknown, payload: { pngBase64: string }) => callback(payload)
+      ipcRenderer.on("appsnap.captured", listener)
+      return () => ipcRenderer.off("appsnap.captured", listener)
+    }
   },
   app: {
     updateStatus: (input?: unknown) => ipcRenderer.invoke("app.update.status", input ?? {}),

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { PANE_FOCUS, getRightPaneTools, toolDef } from "./constants"
 import { PaneWidthToggle } from "./pane-width-toggle"
 import type { RightPaneKind, RightPaneTab } from "./right-pane.types"
@@ -35,6 +36,8 @@ export function RightPaneChrome({
   onToggleWidth: () => void
 }) {
   const t = useT()
+  const { data } = useSettingsSnapshot()
+  const tools = getRightPaneTools(t, data?.preferences.keybindings ?? [])
   return (
     <div className="flex h-11 shrink-0 items-center gap-1 border-b border-separator-border px-3">
       <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none]">
@@ -79,7 +82,7 @@ export function RightPaneChrome({
             <QuietIconButton icon={RiAddLine} aria-label={t("chat.openPane")} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            {getRightPaneTools(t).map((tool) => {
+            {tools.map((tool) => {
               const Icon = tool.icon
               return (
                 <DropdownMenuItem key={tool.kind} onClick={() => onAdd(tool.kind)}>

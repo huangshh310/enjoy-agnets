@@ -32,7 +32,7 @@ export function SessionPreviewStrip({
           <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-500/10 text-accent-600 dark:text-accent-400">
             <RiGlobeLine className="size-3.5" />
           </span>
-          <span className="size-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="size-1.5 shrink-0 rounded-full bg-state-success-base animate-pulse" />
           <span
             title={t("chat.sessionReviewOpenPreview")}
             className="truncate font-mono text-caption-1-medium tracking-tight text-text-primary select-all"

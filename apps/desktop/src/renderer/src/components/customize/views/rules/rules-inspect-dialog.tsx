@@ -22,7 +22,7 @@ export function RulesInspectDialog(props: {
           <div className="border-b border-separator-border/70 px-5 py-3.5 flex items-center justify-between">
             <div>
               <DialogTitle className="text-body-medium font-semibold text-text-primary">{rule.name}</DialogTitle>
-              <p className="text-[11.5px] text-text-tertiary font-mono">{rule.filePath}</p>
+              <p className="text-caption-2-regular text-text-tertiary font-mono">{rule.filePath}</p>
             </div>
             <Button
               size="sm"
@@ -32,7 +32,7 @@ export function RulesInspectDialog(props: {
             >
               {props.copiedId === rule.id ? (
                 <>
-                  <RiCheckLine className="size-3 text-emerald-500" />
+                  <RiCheckLine className="size-3 text-state-success-text" />
                   <span>{t("common.copied")}</span>
                 </>
               ) : (
@@ -44,7 +44,7 @@ export function RulesInspectDialog(props: {
             </Button>
           </div>
           <div className="p-4 max-h-[60vh] overflow-y-auto bg-background-secondary-default/30">
-            <pre className="font-mono text-[11.5px] text-text-primary whitespace-pre-wrap leading-relaxed">
+            <pre className="font-mono text-caption-2-regular text-text-primary whitespace-pre-wrap leading-relaxed">
               {rule.content}
             </pre>
           </div>

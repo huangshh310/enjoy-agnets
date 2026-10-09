@@ -11,6 +11,8 @@ import {
 
 function drainChips() {
   takeSessionContextChips()
+  // removeSessionContextChip 会改队列，先快照再逐个删。
+  // eslint-disable-next-line unicorn/no-useless-spread
   for (const chip of [...listSessionContextChips()]) {
     removeSessionContextChip(chip.id)
   }

@@ -38,7 +38,12 @@ const COMPAT_KINDS = new Set<string>([
   "xai",
   "mistral",
   "together",
-  "perplexity"
+  "perplexity",
+  "zai",
+  "xiaomi",
+  "lmstudio",
+  "modelscope",
+  "aihubmix"
 ])
 
 export function languageModelFactoryKind(config: {
@@ -46,6 +51,7 @@ export function languageModelFactoryKind(config: {
   modelId: string
   baseURL?: string
   apiStyle?: ApiStyle | string
+  reasoningFamily?: string
 }): LanguageModelFactoryKind {
   if (config.provider === "gateway") return "gateway"
   if (usesOfficialGoogle({ provider: config.provider, baseURL: config.baseURL })) return "google"

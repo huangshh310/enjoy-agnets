@@ -25,6 +25,7 @@ import { ChatComposerCluster } from "./chat-composer-cluster"
 import { KanbanBoard } from "@renderer/components/kanban/kanban-board"
 import { AutomationsPage } from "@renderer/components/automations/automations-page"
 import { ChatStageHeader } from "./chat-stage-header"
+import { useTaskbarTitle } from "./use-taskbar-title"
 import { EmptySessionStart } from "./empty-session-start"
 import { useChatModelGate } from "./use-chat-model-gate"
 import { usePermissionCycleHotkey } from "@renderer/components/ai-chat/use-permission-cycle-hotkey"
@@ -42,6 +43,7 @@ export function ChatStage() {
   const workspaceName = useChatStore((state) => state.workspaceName)
   const workspaceRootLabel = useChatStore((state) => state.workspaceRootLabel)
   const sessionTitle = useChatStore((state) => state.sessionTitle)
+  useTaskbarTitle(sessionTitle, workspaceName)
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const changes = useChatStore((state) => state.changes)
@@ -186,7 +188,7 @@ function ChatThreadBody(props: {
             <div
               className={cx(
                 "flex min-h-0 min-w-0 flex-1 flex-col",
-                environmentOpen && "min-[900px]:pr-[18.75rem]"
+                environmentOpen && "min-[900px]:pr-72"
               )}
             >
               <AiChatThread

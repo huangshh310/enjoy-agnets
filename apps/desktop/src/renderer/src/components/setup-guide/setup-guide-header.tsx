@@ -20,13 +20,13 @@ export function SetupGuideHeader({ step, summary }: { step: SetupGuideStep; summ
       {face.mark === "app" ? <AppMark size={44} className="mb-3" /> : null}
       {face.mark === "ready" ? <ReadyMark /> : null}
       {face.hero ? null : (
-        <p className="text-[12px] font-medium tracking-[0.04em] text-text-tertiary uppercase">
+        <p className="text-caption-1-medium font-medium text-text-tertiary uppercase">
           {t("settings.setupGuide.step", { n: index, total: SETUP_GUIDE_STEPS.length })}
         </p>
       )}
-      <DialogTitle className="text-[22px] font-medium tracking-[-0.01em] text-text-primary">{t(face.title)}</DialogTitle>
+      <DialogTitle className="text-title-1-medium font-medium text-text-primary">{t(face.title)}</DialogTitle>
       {summary ?? (body ? (
-        <DialogDescription className="max-w-[560px] text-[15px] leading-normal text-text-secondary">
+        <DialogDescription className="max-w-[560px] text-headline-regular leading-normal text-text-secondary">
           {body}
         </DialogDescription>
       ) : null)}

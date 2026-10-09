@@ -69,7 +69,7 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
             <h2 className="text-title-3-semibold text-text-primary tracking-tight">
               {activeTab === "instructions" ? t("studio.instructions.title") : t("studio.customize.projectRules")}
             </h2>
-            <span className="rounded bg-accent-500/10 px-1.5 py-0.5 text-[10px] font-mono font-medium text-accent-600 dark:text-accent-400">
+            <span className="rounded bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-mono font-medium text-accent-600 dark:text-accent-400">
               {activeTab === "instructions" ? t("studio.instructions.badge") : "Rules"}
             </span>
           </div>
@@ -117,11 +117,11 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
 
       <div className="flex flex-col gap-2 rounded-xl border border-separator-border/60 bg-background-secondary-default/30 p-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-text-secondary">
+          <div className="flex items-center gap-1.5 text-caption-2-medium font-medium text-text-secondary">
             <RiSparklingLine className="size-3 text-accent-500" />
             <span>{t("studio.instructions.presetsHint")}</span>
           </div>
-          <span className="text-[10.5px] text-text-tertiary">{t("studio.instructions.clickToAppend")}</span>
+          <span className="text-caption-2-regular text-text-tertiary">{t("studio.instructions.clickToAppend")}</span>
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -130,12 +130,12 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
               key={preset.id}
               type="button"
               onClick={() => handleApplyPreset(preset)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-separator-border/80 bg-background-primary-default px-2.5 py-1 text-[11.5px] text-text-secondary hover:text-text-primary hover:border-separator-border transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-separator-border/80 bg-background-primary-default px-2.5 py-1 text-caption-2-regular text-text-secondary hover:text-text-primary hover:border-separator-border transition-all shadow-2xs"
             >
               <span className="font-medium text-text-primary">{preset.tag}</span>
-              <span className="text-[10.5px] text-text-tertiary">{preset.label}</span>
+              <span className="text-caption-2-regular text-text-tertiary">{preset.label}</span>
               {copiedPreset === preset.id ? (
-                <RiCheckLine className="size-3 text-emerald-500 ml-0.5" />
+                <RiCheckLine className="size-3 text-state-success-text ml-0.5" />
               ) : null}
             </button>
           ))}
@@ -145,15 +145,15 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-caption-2-medium px-1">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-text-tertiary">
+            <span className="font-mono text-caption-2-regular text-text-tertiary">
               {t("studio.instructions.stats", { chars: characterCount, lines: lineCount })}
             </span>
             {isModified ? (
-              <span className="rounded px-1.5 py-0.2 text-[9.5px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <span className="rounded px-1.5 py-0.2 text-caption-2-medium font-medium bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text">
                 {t("studio.instructions.unsaved")}
               </span>
             ) : (
-              <span className="rounded px-1.5 py-0.2 text-[9.5px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <span className="rounded px-1.5 py-0.2 text-caption-2-medium font-medium bg-state-success-text/10 text-state-success-text dark:text-state-success-text">
                 {t("studio.instructions.synced")}
               </span>
             )}
@@ -185,8 +185,8 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
           </div>
         </div>
 
-        <div className="relative flex rounded-xl border border-separator-border/80 bg-background-secondary-default/40 overflow-hidden font-mono text-[12.5px] leading-relaxed shadow-xs">
-          <div className="select-none border-r border-separator-border/50 bg-background-secondary-default/70 px-2.5 py-3 text-right text-[11px] text-text-tertiary font-mono">
+        <div className="relative flex rounded-xl border border-separator-border/80 bg-background-secondary-default/40 overflow-hidden font-mono text-caption-1-regular leading-relaxed shadow-xs">
+          <div className="select-none border-r border-separator-border/50 bg-background-secondary-default/70 px-2.5 py-3 text-right text-caption-2-regular text-text-tertiary font-mono">
             {Array.from({ length: Math.max(lineCount, 14) }).map((_, i) => (
               <div key={i} className="leading-relaxed">
                 {i + 1}
@@ -203,7 +203,7 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
           />
         </div>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-text-tertiary px-1">
+        <div className="flex items-center gap-1.5 text-caption-2-regular text-text-tertiary px-1">
           <RiInformationLine className="size-3.5 shrink-0" />
           <span>{t("studio.instructions.helper")}</span>
         </div>

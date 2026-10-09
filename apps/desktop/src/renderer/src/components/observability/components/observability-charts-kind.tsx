@@ -9,11 +9,11 @@ import type { TelemetryMetric } from "@enjoy-agents/ipc-contract"
 import { useT, type TranslateFn } from "@renderer/i18n"
 
 const KIND_COLORS: Record<string, string> = {
-  agent: "bg-blue-500 text-blue-600 dark:text-blue-400",
-  stream: "bg-emerald-500 text-emerald-600 dark:text-emerald-400",
-  image: "bg-purple-500 text-purple-600 dark:text-purple-400",
-  video: "bg-rose-500 text-rose-600 dark:text-rose-400",
-  embed: "bg-amber-500 text-amber-600 dark:text-amber-400"
+  agent: "bg-accent-500 text-accent-500 dark:text-accent-500",
+  stream: "bg-state-success-base text-state-success-text dark:text-state-success-text",
+  image: "bg-chart-5 text-chart-5 dark:text-chart-5",
+  video: "bg-background-tertiary-error text-text-error-primary dark:text-text-error-primary",
+  embed: "bg-status-yellow-background text-status-yellow-text dark:text-status-yellow-text"
 }
 
 const KIND_LABEL_KEYS: Record<string, string> = {
@@ -28,7 +28,7 @@ function kindMeta(t: TranslateFn, kind: string) {
   const key = KIND_LABEL_KEYS[kind]
   return {
     label: key ? t(key) : kind.toUpperCase(),
-    color: KIND_COLORS[kind] ?? "bg-blue-500 text-blue-600 dark:text-blue-400"
+    color: KIND_COLORS[kind] ?? "bg-accent-500 text-accent-500 dark:text-accent-500"
   }
 }
 
@@ -90,17 +90,17 @@ export function ObservabilityKindChart(props: { metrics: TelemetryMetric[] }) {
     <div className="flex flex-col gap-3 rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs">
       <div className="flex items-center justify-between border-b border-separator-border/50 pb-2.5">
         <div className="flex items-center gap-2">
-          <RiPieChartLine className="size-4 text-emerald-500" />
+          <RiPieChartLine className="size-4 text-state-success-text" />
           <h3 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.observability.kindTitle")}
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-text-tertiary">
+        <span className="text-caption-2-regular font-mono text-text-tertiary">
           {t("pages.observability.kindCount", { n: kindStats.length })}
         </span>
       </div>
 
-      <div className="flex flex-col gap-2 font-mono text-[11px]">
+      <div className="flex flex-col gap-2 font-mono text-caption-2-regular">
         {kindStats.map((stat) => {
           const meta = kindMeta(t, stat.kind)
 
@@ -111,7 +111,7 @@ export function ObservabilityKindChart(props: { metrics: TelemetryMetric[] }) {
                   <span className="font-semibold text-text-primary uppercase truncate" title={stat.kind}>
                     {stat.kind}
                   </span>
-                  <span className="text-[10px] text-text-tertiary shrink-0">({meta.label})</span>
+                  <span className="text-caption-2-regular text-text-tertiary shrink-0">({meta.label})</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary shrink-0 whitespace-nowrap">

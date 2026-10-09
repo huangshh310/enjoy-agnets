@@ -304,14 +304,14 @@ This is a **desktop-first Electron IDE**. Below 1100px window width, keep the ra
 - No circular spinners. No Monaco CDN “Loading…” holes — code panes are local, line-numbered views.
 - No bordered quiet actions (thumbs/copy must be borderless).
 - No second accent color. No mixing warm stone greys with cool zinc.
-- No API keys or secrets rendered in chrome. Configured-provider rows may show a truncated Base URL and `••••` last-4 key hint — never the raw key.
+- No API keys or secrets rendered in chrome. Configured-provider rows say the key is saved, and show each filled wire’s host — never the raw key or a last-4 hint.
 - No shipping an OSS block in its default shadcn-gray / 21st-neon skin.
 - No installing BoardUI `base` primitives for new work. No hand-rolling a Dialog/Select/Message that shadcn or AI Elements already ships.
 - No Remix / Lucide generic glyphs as AI brand marks. No hand-drawn OpenAI / Claude / Gemini SVGs. Use [Lobe Icons](https://lobehub.com/zh/icons).
 - No brand-only provider catalog that hides protocol. Cards are presets over `openai` / `anthropic` / `openai-responses`, not exclusive vendor lock-in.
-- No burying Custom Endpoint at the bottom of a long page. Custom / OpenAI `/v1` and Anthropic Messages sit in a top banner.
-- No inline provider editor at the page footer. Add / edit opens a Dialog (`sm:max-w-xl`), tabbed, not a stacked form under the catalog.
-- No raw API keys, full secrets, or live endpoints painted into list chrome. Show `••••` + last-4 hint only.
+- No burying Custom Endpoint at the bottom of a long page. One banner action on Explore opens the drawer; do not also put `+ Custom /v1` on the page header, and do not split the banner into Anthropic vs OpenAI buttons.
+- No inline provider editor at the page footer. Add / edit opens the settings side drawer, four tabs, not a stacked form under the catalog.
+- No raw API keys or full secrets in list chrome. The row says the key is saved.
 
 ---
 
@@ -323,7 +323,7 @@ When asking Stitch or an agent for a new screen, describe it in this vocabulary:
 
 For `#/settings/providers`:
 
-> Wide settings card (`max-w-5xl`). Custom Endpoint banner first. Then configured profiles. Then a 3-column preset catalog with protocol filter. Edit in a tabbed Dialog (Connection / Models / Parameters / Overrides). Provider marks via `@lobehub/icons`. No page-bottom form.
+> Wide settings card (`max-w-5xl`). Segmented Configured / Explore. Explore opens with one custom-endpoint banner, then groups inside an “AI SDK compatible” card. Protocol chips are short and wrap. Edit in a tabbed side drawer (Connection / Models / Parameters / Overrides). Provider marks via `@lobehub/icons`. No page-bottom form. No second custom button in the header.
 
 Do not ask Stitch for a landing page, a 3-card feature row, or a centered hero with inline images. Those are a different product.
 
@@ -394,17 +394,17 @@ The page decouples daily management from preset browsing via **top Segmented Vie
 
 1. **Top Bar**:
    - Title `Providers` & subtitle.
-   - **Segmented Control**: `Configured (N)` (active provider dot, model count) and `Explore Presets (M)`.
-   - Quick `+ Custom /v1` action.
+   - **Segmented Control**: `Configured (N)` and `Explore Presets (M)`.
+   - No second custom-entry button on the header. Custom is one door, on the Explore banner (and the configured empty state).
 
 2. **View A: `Configured` Tab**:
-   - **Metrics & Filter Bar**: Total configured count, active provider badge, total models count across all profiles, **Test Speed (测速)** batch trigger, and quick real-time filter input.
-   - **Configured Providers List**: Compact rows with 24px brand icon, active status pill, protocol badge (`OpenAI Chat Completions`, `Messages`, etc.), model count badge (`10 models`), **Speed Test button & multi-state latency badge** (green `<500ms`, yellow `<1500ms`, red `>1500ms`/error), model ID, endpoint, key hint, and `In use`/`Use`, `Edit`, `Delete` actions.
-   - **Empty State**: Elegant onboarding guide with shortcuts to popular providers (`DeepSeek`, `OpenAI`, `Claude`) and Custom Endpoints when no providers exist.
+   - **Metrics & Filter Bar**: Configured count, the current profile only while that profile is still enabled (otherwise a quiet “未在使用” / “Not in use”), and a catalog model total that still counts models on disabled profiles. The label means inventory (“收录模型”), not models you can pick right now. **Test Speed** and the filter stay on the right.
+   - **Configured Providers List**: Dense rows, about two lines. Title row: name, active pill only while the profile is on, disabled pill, in-use model count only while on. The next line wraps each filled wire as `Chat` / `Responses` / `Messages` plus that wire’s host (keep a distinguishing path such as `/anthropic`; drop a bare `/v1`), then the model id and key state. Legacy profiles with no `endpoints` fall back to `apiStyle` + `baseURL`. Agent refs stay a third line only when present. An enabled row’s actions are `Use` (or `In use`) and `Edit`. A disabled row’s primary action is `Enable`, at full contrast; the name and meta are muted, and the action cluster is not. Overflow holds ping, duplicate, delete, and `Disable` only while the profile is on. It does not repeat `Enable`. Duplicate copies endpoints, headers, models, proxy, and vault keys under a new id. The name suffix is localized. Plaintext keys never appear. Delete still lists bound CLIs, confirms, then unbinds.
+   - **Empty State**: Shortcuts to DeepSeek, OpenAI, Claude, and one custom endpoint.
 
 3. **View B: `Explore Presets` Tab**:
-   - **Custom Endpoint Banner**: Top banner with explicit `+ OpenAI /v1` and `+ Anthropic Messages` actions.
-   - **Official Presets Bento Grid**: 3 columns (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`), protocol filter pills (`All`, `Chat Completions`, `Messages`, `Responses`), and search input. Each card features Lobe Icons, model preview, and `Configured` tag.
+   - **Custom Endpoint Banner**: Stays at the top with one action, “添加自定义端点”. It opens the drawer on Chat; the other two wires start empty. Protocol is chosen in the drawer, not as two banner buttons. `custom` is not a market card.
+   - **Groups inside the AI SDK compatible card**: vendor, relay, local, media. Regions and plans are a segment in the drawer, not extra market cards. Protocol filter pills use the short wire names. Preset cards are dense: the mark sits beside the name, the blurb is one line, and `Chat` / `Responses` / `Messages` wrap under that. Blurbs come from `settings.providers.blurb.<kind>`, and fall back to the preset description only when that key is missing. Cards keep Lobe icons. Unknown protocols use `RiServerLine`. Grid gap stays tight so a short card is not stretched open by a taller neighbor.
 
 Settings uses `contentWidth="wide"` so the grid survives both the default Electron window and fullscreen. `article` (760px) is banned on this page.
 
@@ -414,18 +414,18 @@ Settings uses `contentWidth="wide"` so the grid survives both the default Electr
 
 | Tab | Owns |
 |---|---|
-| **Connection** | Display name, protocol / wire API, API key (OS keychain; renderer never re-reads plaintext), Base URL. |
-| **Models** | Primary model (combobox + Fetch remote `/models`), reasoning model auto-detection & effort selector, optional Fast / Reasoning role IDs, editable provider catalog (fetched + preset + user-added). |
-| **Parameters** | Context window (128K / 200K / 256K / 1M / 2M chips), reasoning effort (`low`…`xhigh`), max output tokens, temperature. |
-| **Overrides** | Custom HTTP headers JSON, custom body JSON (Format + template chips), underlying preset reference. |
+| **Connection** | Name. Region or plan segment when the preset has `regions` (switching replaces only URLs that still equal the previous official value). Primary API (`baseAPI`) plus its Base URL. The other two endpoints, empty meaning unused. Placeholders read as hints (`例如 …`), not as filled values. Detect protocols. Key rows: label, secret, optional protocol lock, enabled, add another. Empty secret keeps the stored key. Proxy: system / direct / custom http(s) URL. SOCKS is marked unavailable. New official presets fill that region's endpoints. Custom profiles use a localized title and subtitle. A new custom profile’s display name defaults to that localized name, not the English preset string. Editing keeps the saved name. |
+| **Models** | Primary, Fast, Reasoning, and the Enjoy energy bar. Catalog rows: brand icon, id, enable switch, set primary, delete, context window, max output. Fetch appends unseen remote models as enabled. Disabled rows stay off. Manual ids stay. A missing remote model is not deleted. |
+| **Parameters** | Profile context window, temperature, max tokens. The 1M shortcut uses `settings.providers.ctx1m`. `reasoningFamily`: auto / MiniMax / GLM / Kimi / DeepSeek / generic. Official presets default to auto and show the inferred family. Models and Parameters effort bars share the same localized labels. |
+| **Overrides** | Header key/value rows. The section icon is a key, not braces, so an empty list does not look like `{}`. The empty sentence says there are no headers yet. Preset `headerHints` are chips. Persisted JSON. Body stays JSON. No kind switch. Preset identity is fixed at create. Custom profiles have no preset field. |
 
 Save writes the vault via `settings.upsertProvider` and activates. Fetch / probe errors use `state/error` copy, not success-green. HTML-instead-of-JSON catalog responses surface as a readable endpoint error, not a raw parse dump.
 
 ### Model catalog & Reasoning Mode Selector
 
-- Preset `models[]` is the offline default.
-- Fetch merges remote discovery on top; user can add / remove IDs.
-- **Model Catalog Chips**: Each model chip in the catalog displays its corresponding `ModelBrandIcon`, supports clicking to quickly set as Primary Model with an active badge, and provides a quick delete action.
+- Preset `models[]` is the offline default. Each row has `enabled` and `source` (`preset` / `remote` / `manual`).
+- Fetch appends remote ids the profile does not already have. It does not re-enable a row the user turned off, and it does not drop manual rows.
+- **Catalog rows** show `ModelBrandIcon`, the id, an enable control, set-primary, delete, and optional context / max-output fields. Empty window fields fall through to the profile, then Gateway, then the published window.
 - Combobox (`Command` + `Popover`) uses BoardUI tokens: `bg-background-primary-default`, `border-separator-border` on the search hairline. Both the trigger button and each dropdown list item render the model brand icon (`ModelBrandIcon`). No raw `bg-popover` black rules, no overlapping highlight boxes.
 - **Inference Mode & Thinking Energy Bar (推理模式与思考能量条)**:
   - Models tab automatically detects reasoning models (`DeepSeek-R1`, `o1`, `o3`, `QwQ`, `reasoner`, `thinking`).
@@ -439,16 +439,16 @@ Save writes the vault via `settings.upsertProvider` and activates. Fetch / probe
 
 ### Overrides Tab Design
 
-- **Code Block Editor Cards**: Custom HTTP Headers and Body Overrides are housed in dedicated code block cards with a structured header toolbar (title, explanation, quick template injection chips like `+ X-Title` / `+ OpenRouter Referer` / `+ top_p`, and a `Format` button).
-- **Error Feedback**: Inline syntax validation displays readable error banners at the bottom of the code card.
-- **Underlying Preset Reference**: Rich select dropdown with brand icon previews and baseline configuration inheritance details.
+- **Headers** are key/value rows. Preset `headerHints` are clickable chips. The vault still stores JSON. An empty value keeps the stored secret. Removing a row drops that header.
+- **Body** stays a JSON card with format and template chips.
+- **No kind picker.** Changing 智谱 into custom would drop the region endpoints. Custom profiles do not show a preset identity field.
 
 ### Dual-pane Model Picker (`apps/desktop/src/renderer/src/components/ai-chat/model-picker/`)
 
 The chat composer model selector uses a **dual-pane / multi-column popover** (`w-[540px]`, `h-[380px]`):
 - **Left pane (Provider Sidebar `w-[190px]`)**:
   - `All Models` summary item with total model count badge.
-  - List of configured providers with brand icon (`ProviderIcon` with name inference), provider title, API style subtext, model count pill, and active dot.
+  - List of enabled providers with brand icon, title, endpoint abbreviations (`Chat · Messages`), model count, and active dot. Disabled profiles are absent.
   - Sticky bottom `Manage Providers` action leading directly to `#/settings/providers`.
 - **Right pane (Model Search & List)**:
   - Sticky top search input filtering models by label, ID, or provider name in real time.

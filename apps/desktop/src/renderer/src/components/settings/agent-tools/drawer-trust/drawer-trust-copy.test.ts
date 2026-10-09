@@ -50,7 +50,7 @@ test("过旧健康行替换，不是体检通过绿灯", () => {
   assert.equal(view.kind, "outdated")
   assert.equal(view.label, "版本过旧 · 当前 v1.2 · 需要 ≥1.5")
   assert.ok(!view.dotClass.includes("success"))
-  assert.ok(view.dotClass.includes("warning"))
+  assert.ok(view.dotClass.includes("status-yellow"))
   assert.equal(view.ctaDisabled, true)
 })
 

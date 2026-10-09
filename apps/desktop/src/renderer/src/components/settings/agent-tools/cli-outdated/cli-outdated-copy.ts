@@ -10,8 +10,8 @@ import {
 import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import type { TranslateFn } from "@renderer/i18n"
 
-const WARN_DOT = "bg-state-warning-text"
-const WARN_TEXT = "text-state-warning-text"
+const WARN_DOT = "bg-status-yellow-text"
+const WARN_TEXT = "text-status-yellow-text"
 
 export function cliCompatOf(tool: Pick<AgentToolPublic, "id" | "version" | "requiredVersion" | "authAccount">): CliCompatView {
   return resolveCliCompat({

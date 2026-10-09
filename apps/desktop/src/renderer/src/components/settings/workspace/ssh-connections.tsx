@@ -60,7 +60,7 @@ export function SshConnections() {
             <h3 className="text-title-3-semibold text-text-primary">
               {t("settings.workspace.sshConnections")}
             </h3>
-            <span className="rounded-md bg-accent-500/10 px-2 py-0.5 text-[11px] font-medium text-accent-600 dark:text-accent-400">
+            <span className="rounded-md bg-accent-500/10 px-2 py-0.5 text-caption-2-medium font-medium text-accent-600 dark:text-accent-400">
               SSH
             </span>
           </div>
@@ -120,7 +120,7 @@ export function SshConnections() {
                   ? `编辑主机 · ${model.draft.alias || model.draft.host}`
                   : t("settings.workspace.sshAddHost")}
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1 text-caption-2-regular text-state-success-text dark:text-state-success-text">
                 <RiShieldCheckLine className="size-3" />
                 <span>仅存名册 · 私钥不入库</span>
               </span>
@@ -138,7 +138,7 @@ export function SshConnections() {
 
           {/* 错误告警区 */}
           {model.error ? (
-            <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-caption-1-regular text-rose-600 dark:text-rose-400">
+            <div className="flex items-start gap-2.5 rounded-xl border border-border-error-default/20 bg-background-tertiary-error/10 p-3 text-caption-1-regular text-text-error-primary dark:text-text-error-primary">
               <RiAlertLine className="size-4 shrink-0 mt-0.5" />
               <div className="flex flex-col gap-0.5 min-w-0">
                 <span className="font-semibold">操作失败</span>
@@ -151,8 +151,8 @@ export function SshConnections() {
 
           {/* 测试连接成功提示 */}
           {draftProbeStatus === "success" ? (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-caption-1-regular text-emerald-600 dark:text-emerald-400">
-              <RiCheckLine className="size-4 shrink-0 text-emerald-500" />
+            <div className="flex items-center gap-2 rounded-xl border border-state-success-text/20 bg-state-success-text/10 p-3 text-caption-1-regular text-state-success-text dark:text-state-success-text">
+              <RiCheckLine className="size-4 shrink-0 text-state-success-text" />
               <span className="font-semibold">测试连接成功：主机网络可达且认证通过</span>
             </div>
           ) : null}
@@ -201,7 +201,7 @@ export function SshConnections() {
           </div>
         </div>
       ) : model.error ? (
-        <div className="flex items-start gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-caption-1-regular text-rose-600 dark:text-rose-400">
+        <div className="flex items-start gap-2.5 rounded-xl border border-border-error-default/20 bg-background-tertiary-error/10 p-3 text-caption-1-regular text-text-error-primary dark:text-text-error-primary">
           <RiAlertLine className="size-4 shrink-0 mt-0.5" />
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="font-semibold">操作失败</span>
@@ -289,7 +289,7 @@ function DiscoverList({
         <span className="text-caption-1-medium font-semibold text-text-primary">
           {t("settings.workspace.sshDiscover")}
         </span>
-        <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-[10px] font-mono text-text-tertiary">
+        <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-caption-2-regular font-mono text-text-tertiary">
           {rows.length}
         </span>
       </div>
@@ -304,7 +304,7 @@ function DiscoverList({
               <span className="text-caption-1-medium font-medium text-text-primary truncate">
                 {item.alias}
               </span>
-              <span className="font-mono text-[11px] text-text-tertiary truncate">
+              <span className="font-mono text-caption-2-regular text-text-tertiary truncate">
                 {item.user ? `${item.user}@` : ""}
                 {item.host}:{item.port ?? 22}
               </span>
@@ -324,7 +324,7 @@ function DiscoverList({
                   source: item.source ?? "ssh_config"
                 })
               }
-              className="h-7 gap-1 px-2.5 text-[11px] shrink-0 cursor-pointer"
+              className="h-7 gap-1 px-2.5 text-caption-2-regular shrink-0 cursor-pointer"
             >
               <RiDownloadLine className="size-3 text-text-secondary" />
               <span>导入</span>

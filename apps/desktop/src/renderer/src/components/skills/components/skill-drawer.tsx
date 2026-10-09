@@ -153,7 +153,7 @@ export function SkillDrawer({
               variant="outline"
               disabled={busy}
               onClick={() => setConfirmDelete(true)}
-              className="h-8 gap-1.5 text-caption-2-medium text-rose-600 dark:text-rose-400 hover:border-rose-500/40"
+              className="h-8 gap-1.5 text-caption-2-medium text-text-error-primary dark:text-text-error-primary hover:border-border-error-default/40"
             >
               <RiDeleteBinLine className="size-3.5" />
               <span>{t("pages.skills.drawer.delete")}</span>

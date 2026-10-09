@@ -43,6 +43,27 @@ test("parseMcpServersJson 缺 mcpServers 键时把根对象当映射", () => {
   assert.equal(parsed[0]?.command, "npx -y @modelcontextprotocol/server-github")
 })
 
+test("buildMcpConfigJson 导出 env 只留键", () => {
+  const servers: McpServer[] = [
+    {
+      id: "1",
+      name: "filesystem",
+      transport: "stdio",
+      command: "npx -y @modelcontextprotocol/server-filesystem .",
+      envRef: JSON.stringify({ TOKEN: "should-not-leak" }),
+      allowedResourceUris: [],
+      modelVisibleTools: [],
+      appOnlyTools: [],
+      trusted: false,
+      connected: false
+    }
+  ]
+  const json = JSON.parse(buildMcpConfigJson(servers)) as {
+    mcpServers: Record<string, { env?: Record<string, string> }>
+  }
+  assert.deepEqual(json.mcpServers.filesystem?.env, { TOKEN: "" })
+})
+
 test("buildMcpConfigJson 把 stdio 命令拆成 command + args", () => {
   const servers: McpServer[] = [
     {

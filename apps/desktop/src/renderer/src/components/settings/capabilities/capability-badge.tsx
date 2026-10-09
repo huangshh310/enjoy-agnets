@@ -31,19 +31,19 @@ export function CapabilityBadge({ capability, compact = false }: { capability: s
   const tokenStyles: Record<string, string> = {
     text: "border-border-button-default bg-background-secondary-default text-text-secondary",
     streaming: "border-accent-500/25 bg-accent-500/10 text-accent-500",
-    reasoning: "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    tools: "border-purple-500/25 bg-purple-500/10 text-purple-600 dark:text-purple-400",
-    structured: "border-indigo-500/25 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-    vision: "border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    reasoning: "border-state-success-text/25 bg-state-success-text/10 text-state-success-text dark:text-state-success-text",
+    tools: "border-chart-5/25 bg-chart-5/10 text-chart-5 dark:text-chart-5",
+    structured: "border-accent-500/25 bg-accent-500/10 text-accent-500 dark:text-accent-500",
+    vision: "border-status-yellow-text/25 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text",
     files: "border-accent-500/25 bg-accent-500/10 text-accent-500",
-    skills: "border-teal-500/25 bg-teal-500/10 text-teal-600 dark:text-teal-400",
-    image: "border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-400",
-    video: "border-orange-500/25 bg-orange-500/10 text-orange-600 dark:text-orange-400",
-    speech: "border-pink-500/25 bg-pink-500/10 text-pink-600 dark:text-pink-400",
-    transcription: "border-cyan-500/25 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-    embedding: "border-violet-500/25 bg-violet-500/10 text-violet-600 dark:text-violet-400",
-    rerank: "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400",
-    realtime: "border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400"
+    skills: "border-chart-1/25 bg-chart-1/10 text-chart-1 dark:text-chart-1",
+    image: "border-border-error-default/25 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary",
+    video: "border-status-yellow-text/25 bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text",
+    speech: "border-border-error-default/25 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary",
+    transcription: "border-chart-1/25 bg-chart-1/10 text-chart-1 dark:text-chart-1",
+    embedding: "border-chart-5/25 bg-chart-5/10 text-chart-5 dark:text-chart-5",
+    rerank: "border-chart-5/25 bg-chart-5/10 text-chart-5 dark:text-chart-5",
+    realtime: "border-border-error-default/25 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
   }
 
   const style = tokenStyles[capability] ?? "border-border-button-default bg-background-secondary-default text-text-secondary"

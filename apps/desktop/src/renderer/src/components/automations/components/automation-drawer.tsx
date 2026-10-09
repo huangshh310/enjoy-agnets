@@ -59,7 +59,7 @@ export function AutomationDrawer({
           <p id="automation-editor-title" className="text-body-medium font-semibold text-text-primary">
             {draft.id ? t("studio.automations.editTitle") : t("studio.automations.createTitle")}
           </p>
-          <p className="mt-0.5 text-[10px] text-text-tertiary">{t("studio.automations.workspaceHint")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("studio.automations.workspaceHint")}</p>
         </div>
         <button type="button" onClick={onClose} className="text-caption-1-medium text-text-tertiary" aria-label={t("common.close")}>
           <RiCloseLine className="size-4" />
@@ -100,7 +100,7 @@ export function AutomationDrawer({
           </div>
         ) : null}
         {draft.triggers.includes("on_save") ? (
-          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-[10px] text-text-tertiary">
+          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-tertiary">
             {t("studio.automations.onSaveHint")}
           </p>
         ) : null}
@@ -135,7 +135,7 @@ export function AutomationDrawer({
             {running ? t("studio.automations.running") : t("studio.automations.runNow")}
           </Button>
         ) : (
-          <span className="mr-auto text-[10px] text-text-tertiary">{footerHint(draft.triggers, t)}</span>
+          <span className="mr-auto text-caption-2-regular text-text-tertiary">{footerHint(draft.triggers, t)}</span>
         )}
         {draft.id ? (
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>

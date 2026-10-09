@@ -35,7 +35,7 @@ export function approvalGradientSummaryKey(tone: ApprovalGradientTone): string {
 }
 
 export function approvalGradientStripClass(tone: ApprovalGradientTone): string {
-  if (tone === "yolo") return "border-amber-500/30 bg-amber-500/10"
+  if (tone === "yolo") return "border-status-yellow-text/30 bg-status-yellow-background/10"
   if (tone === "partial") {
     return "border-border-button-default bg-gradient-to-r from-background-secondary-default via-accent-50 to-background-secondary-default"
   }
@@ -43,9 +43,9 @@ export function approvalGradientStripClass(tone: ApprovalGradientTone): string {
 }
 
 export function approvalGradientTextClass(tone: ApprovalGradientTone): string {
-  return tone === "yolo" ? "text-amber-700 dark:text-amber-400" : "text-text-primary"
+  return tone === "yolo" ? "text-status-yellow-text dark:text-status-yellow-text" : "text-text-primary"
 }
 
 export function approvalGradientLinkClass(tone: ApprovalGradientTone): string {
-  return tone === "yolo" ? "text-amber-700 dark:text-amber-400" : "text-accent-600 hover:text-accent-500"
+  return tone === "yolo" ? "text-status-yellow-text dark:text-status-yellow-text" : "text-accent-600 hover:text-accent-500"
 }

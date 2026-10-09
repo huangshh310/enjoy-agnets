@@ -12,7 +12,8 @@
     "./components/*": "./components/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test \"components/**/*.test.ts\""
   },
   "peerDependencies": {
     "react": "catalog:",
@@ -35,6 +36,7 @@
     "react-aria-components": "catalog:",
     "shiki": "catalog:",
     "streamdown": "catalog:",
+    "tailwindcss": "catalog:",
     "tailwind-merge": "catalog:",
     "tw-animate-css": "catalog:",
     "use-stick-to-bottom": "catalog:"

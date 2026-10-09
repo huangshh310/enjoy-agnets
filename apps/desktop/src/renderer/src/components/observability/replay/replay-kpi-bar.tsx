@@ -71,14 +71,14 @@ export function ReplayKpiBar({ stats }: { stats: ReplayStats }) {
       <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs">
         <div className="flex items-center justify-between text-text-tertiary">
           <span className="text-caption-2-medium font-medium">事件类型细分</span>
-          <RiNodeTree className="size-4 text-purple-500" />
+          <RiNodeTree className="size-4 text-chart-5" />
         </div>
         <div className="mt-2 flex items-center gap-2 text-caption-2-medium">
           <span className="text-accent-500 font-semibold">{stats.runEvents} 周期</span>
           <span>·</span>
-          <span className="text-purple-500 font-semibold">{stats.toolEvents} 工具</span>
+          <span className="text-chart-5 font-semibold">{stats.toolEvents} 工具</span>
           <span>·</span>
-          <span className="text-amber-500 font-semibold">{stats.approvalEvents} 审批</span>
+          <span className="text-status-yellow-text font-semibold">{stats.approvalEvents} 审批</span>
         </div>
         <div className="mt-2 text-caption-2-regular text-text-tertiary">
           包含 {stats.textEvents} 个流式输出 Token 增量
@@ -89,10 +89,10 @@ export function ReplayKpiBar({ stats }: { stats: ReplayStats }) {
       <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-3.5 shadow-2xs">
         <div className="flex items-center justify-between text-text-tertiary">
           <span className="text-caption-2-medium font-medium">断线重放机制</span>
-          <RiHistoryLine className="size-4 text-status-success-foreground" />
+          <RiHistoryLine className="size-4 text-state-success-text" />
         </div>
         <div className="mt-2 flex items-baseline gap-1.5">
-          <span className="text-title-3-semibold font-bold text-status-success-foreground">
+          <span className="text-title-3-semibold font-bold text-state-success-text">
             就绪
           </span>
           <span className="text-caption-2-regular text-text-tertiary font-normal">orderReplayEvents</span>

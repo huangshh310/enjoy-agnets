@@ -39,7 +39,7 @@ export function SetupGuideFooter({
           ))}
         </div>
         {face.finishes ? null : (
-          <button type="button" onClick={onSkip} className="cursor-pointer text-[13px] text-text-secondary hover:text-text-primary">
+          <button type="button" onClick={onSkip} className="cursor-pointer text-body-2-regular text-text-secondary hover:text-text-primary">
             {t("settings.setupGuide.skipSetup")}
           </button>
         )}

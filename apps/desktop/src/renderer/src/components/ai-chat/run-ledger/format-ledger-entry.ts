@@ -126,7 +126,7 @@ function commandSummary(tool: ThreadToolCall): string {
 
 function readCommandOutput(result: unknown): string | undefined {
   const rec = asRecord(result)
-  for (const key of ["stdout", "output", "text", "stderr"] as const) {
+  for (const key of ["displayStdout", "stdout", "output", "text", "displayStderr", "stderr"] as const) {
     const value = rec[key]
     if (typeof value === "string" && value.trim()) return value.trim()
   }

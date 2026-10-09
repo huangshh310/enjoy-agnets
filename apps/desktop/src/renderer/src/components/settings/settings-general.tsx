@@ -96,35 +96,70 @@ export function GeneralSettings() {
         agentCompleteSound={preferences?.agentCompleteSound ?? true}
         onChange={(patch) => void update(patch)}
       />
-      <LanguageCard language={language} onChange={(value) => void update({ language: value })} />
+      <GeneralPreferencesCard
+        language={language}
+        usageNumber={preferences?.usageNumber ?? "used"}
+        onLanguage={(value) => void update({ language: value })}
+        onUsageNumber={(value) => void update({ usageNumber: value })}
+      />
       <SetupGuideReplay />
       <SettingsUpdateCard />
     </div>
   )
 }
 
-function LanguageCard({
-  language,
-  onChange
-}: {
+function GeneralPreferencesCard(props: {
+  language: "auto" | "en" | "zh"
+  usageNumber: "used" | "remaining"
+  onLanguage: (value: "auto" | "en" | "zh") => void
+  onUsageNumber: (value: "used" | "remaining") => void
+}) {
+  const t = useT()
+  return (
+    <SettingsCard title={t("nav.general")}>
+      <LanguageRow language={props.language} onChange={props.onLanguage} />
+      <UsageNumberRow usageNumber={props.usageNumber} onChange={props.onUsageNumber} />
+    </SettingsCard>
+  )
+}
+
+function LanguageRow(props: {
   language: "auto" | "en" | "zh"
   onChange: (value: "auto" | "en" | "zh") => void
 }) {
   const t = useT()
   return (
-    <SettingsCard title={t("nav.general")}>
-      <SettingsRow title={t("settings.language")} description={t("settings.languageDesc")}>
-          <Select value={language} onValueChange={(value) => onChange(value as "auto" | "en" | "zh")}>
-            <SelectTrigger className="min-w-[9rem] rounded-2lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="auto">{t("settings.detectAuto")}</SelectItem>
-              <SelectItem value="en">{t("common.english")}</SelectItem>
-              <SelectItem value="zh">{t("common.chinese")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </SettingsRow>
-    </SettingsCard>
+    <SettingsRow title={t("settings.language")} description={t("settings.languageDesc")}>
+      <Select value={props.language} onValueChange={(value) => props.onChange(value as "auto" | "en" | "zh")}>
+        <SelectTrigger className="min-w-[9rem] rounded-2lg">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="auto">{t("settings.detectAuto")}</SelectItem>
+          <SelectItem value="en">{t("common.english")}</SelectItem>
+          <SelectItem value="zh">{t("common.chinese")}</SelectItem>
+        </SelectContent>
+      </Select>
+    </SettingsRow>
+  )
+}
+
+function UsageNumberRow(props: {
+  usageNumber: "used" | "remaining"
+  onChange: (value: "used" | "remaining") => void
+}) {
+  const t = useT()
+  return (
+    <SettingsRow title={t("settings.usageNumber")} description={t("settings.usageNumberDesc")}>
+      <Select value={props.usageNumber} onValueChange={(value) => props.onChange(value as "used" | "remaining")}>
+        <SelectTrigger className="min-w-[9rem] rounded-2lg">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="used">{t("settings.usageNumberUsed")}</SelectItem>
+          <SelectItem value="remaining">{t("settings.usageNumberRemaining")}</SelectItem>
+        </SelectContent>
+      </Select>
+    </SettingsRow>
   )
 }

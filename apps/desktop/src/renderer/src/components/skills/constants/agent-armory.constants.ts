@@ -52,11 +52,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.pi/agent/skills/ & 本地工作区",
     icon: PiTargetIcon,
     themeColor: {
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/30",
-      text: "text-amber-600 dark:text-amber-400",
+      bg: "bg-status-yellow-background/10",
+      border: "border-status-yellow-text/30",
+      text: "text-status-yellow-text dark:text-status-yellow-text",
       glow: "shadow-amber-500/10",
-      pillBg: "bg-amber-500/15"
+      pillBg: "bg-status-yellow-background/15"
     },
     tags: ["极速响应", "TDD 开发", "架构决策", "Shell 自治"],
     recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack", "pbakaus-impeccable"],
@@ -72,11 +72,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.claude/skills/ & .claude/rules/",
     icon: ClaudeTargetIcon,
     themeColor: {
-      bg: "bg-orange-500/10",
-      border: "border-orange-500/30",
-      text: "text-orange-600 dark:text-orange-400",
+      bg: "bg-status-yellow-background/10",
+      border: "border-status-yellow-text/30",
+      text: "text-status-yellow-text dark:text-status-yellow-text",
       glow: "shadow-orange-500/10",
-      pillBg: "bg-orange-500/15"
+      pillBg: "bg-status-yellow-background/15"
     },
     tags: ["深度重构", "多文件治理", "长上下文", "工程规范"],
     recommendedCuratedIds: ["anthropics-skills", "obra-superpowers", "jimliu-baoyu-skills"],
@@ -92,11 +92,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.cursor/skills/ & .cursor/rules/",
     icon: CursorTargetIcon,
     themeColor: {
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/30",
-      text: "text-blue-600 dark:text-blue-400",
+      bg: "bg-accent-500/10",
+      border: "border-accent-500/30",
+      text: "text-accent-500 dark:text-accent-500",
       glow: "shadow-blue-500/10",
-      pillBg: "bg-blue-500/15"
+      pillBg: "bg-accent-500/15"
     },
     tags: ["代码补全", "规则约束", "IDE 协同", "即时 Diff"],
     recommendedCuratedIds: ["nextlevelbuilder-ui-ux-pro-max", "pbakaus-impeccable", "obra-superpowers"],
@@ -112,11 +112,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.codex/skills/ & 运行沙箱",
     icon: CodexTargetIcon,
     themeColor: {
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
-      text: "text-emerald-600 dark:text-emerald-400",
-      glow: "shadow-emerald-500/10",
-      pillBg: "bg-emerald-500/15"
+      bg: "bg-state-success-text/10",
+      border: "border-state-success-text/30",
+      text: "text-state-success-text dark:text-state-success-text",
+      glow: "shadow-state-success-text/10",
+      pillBg: "bg-state-success-text/15"
     },
     tags: ["沙箱执行", "自动化流水线", "API 编排", "确定性输出"],
     recommendedCuratedIds: ["garrytan-gstack", "obra-superpowers", "anthropics-skills"],
@@ -152,11 +152,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.omp/skills/ & 协作网络",
     icon: OmpTargetIcon,
     themeColor: {
-      bg: "bg-cyan-500/10",
-      border: "border-cyan-500/30",
-      text: "text-cyan-600 dark:text-cyan-400",
+      bg: "bg-chart-1/10",
+      border: "border-chart-1/30",
+      text: "text-chart-1 dark:text-chart-1",
       glow: "shadow-cyan-500/10",
-      pillBg: "bg-cyan-500/15"
+      pillBg: "bg-chart-1/15"
     },
     tags: ["多智能体协同", "长任务管理", "分布式中继", "工具编排"],
     recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack", "anthropics-skills"],
@@ -172,11 +172,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.grok/skills/ & 运行沙箱",
     icon: GrokTargetIcon,
     themeColor: {
-      bg: "bg-slate-500/10",
-      border: "border-slate-500/30",
-      text: "text-slate-700 dark:text-slate-300",
+      bg: "bg-background-secondary-default/10",
+      border: "border-separator-border/30",
+      text: "text-text-secondary dark:text-text-secondary",
       glow: "shadow-slate-500/10",
-      pillBg: "bg-slate-500/15"
+      pillBg: "bg-background-secondary-default/15"
     },
     tags: ["高效构建", "任务规划", "自治推理"],
     recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack"],
@@ -192,11 +192,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.gemini/antigravity/skills/ & 本地工作区",
     icon: AntigravityTargetIcon,
     themeColor: {
-      bg: "bg-indigo-500/10",
-      border: "border-indigo-500/30",
-      text: "text-indigo-600 dark:text-indigo-400",
+      bg: "bg-accent-500/10",
+      border: "border-accent-500/30",
+      text: "text-accent-500 dark:text-accent-500",
       glow: "shadow-indigo-500/10",
-      pillBg: "bg-indigo-500/15"
+      pillBg: "bg-accent-500/15"
     },
     tags: ["深度结对", "渐进披露", "MCP 集成", "架构治理"],
     recommendedCuratedIds: ["pbakaus-impeccable", "obra-superpowers", "garrytan-gstack"],
@@ -212,11 +212,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.gemini/skills/ & 系统终端",
     icon: GeminiTargetIcon,
     themeColor: {
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/30",
-      text: "text-blue-600 dark:text-blue-400",
+      bg: "bg-accent-500/10",
+      border: "border-accent-500/30",
+      text: "text-accent-500 dark:text-accent-500",
       glow: "shadow-blue-500/10",
-      pillBg: "bg-blue-500/15"
+      pillBg: "bg-accent-500/15"
     },
     tags: ["多模态理解", "超长上下文", "Google 生态"],
     recommendedCuratedIds: ["anthropics-skills", "obra-superpowers"],
@@ -232,11 +232,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.config/opencode/skills/ & 工作区",
     icon: OpenCodeTargetIcon,
     themeColor: {
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
-      text: "text-emerald-600 dark:text-emerald-400",
-      glow: "shadow-emerald-500/10",
-      pillBg: "bg-emerald-500/15"
+      bg: "bg-state-success-text/10",
+      border: "border-state-success-text/30",
+      text: "text-state-success-text dark:text-state-success-text",
+      glow: "shadow-state-success-text/10",
+      pillBg: "bg-state-success-text/15"
     },
     tags: ["开源生态", "TUI 交互", "安全沙箱"],
     recommendedCuratedIds: ["garrytan-gstack", "obra-superpowers"],
@@ -252,11 +252,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.hermes/skills/ & 运行环境",
     icon: HermesTargetIcon,
     themeColor: {
-      bg: "bg-purple-500/10",
-      border: "border-purple-500/30",
-      text: "text-purple-600 dark:text-purple-400",
+      bg: "bg-chart-5/10",
+      border: "border-chart-5/30",
+      text: "text-chart-5 dark:text-chart-5",
       glow: "shadow-purple-500/10",
-      pillBg: "bg-purple-500/15"
+      pillBg: "bg-chart-5/15"
     },
     tags: ["开源权重", "函数调用", "研究前沿"],
     recommendedCuratedIds: ["obra-superpowers", "pbakaus-impeccable"],
@@ -272,11 +272,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.amp/skills/ & 系统环境",
     icon: AmpTargetIcon,
     themeColor: {
-      bg: "bg-rose-500/10",
-      border: "border-rose-500/30",
-      text: "text-rose-600 dark:text-rose-400",
-      glow: "shadow-rose-500/10",
-      pillBg: "bg-rose-500/15"
+      bg: "bg-background-tertiary-error/10",
+      border: "border-border-error-default/30",
+      text: "text-text-error-primary dark:text-text-error-primary",
+      glow: "shadow-text-error-primary/10",
+      pillBg: "bg-background-tertiary-error/15"
     },
     tags: ["极速迭代", "代码生成", "敏捷开发"],
     recommendedCuratedIds: ["garrytan-gstack", "obra-superpowers"],
@@ -292,11 +292,11 @@ export const AGENT_ARMORY_PROFILES: Partial<Record<SkillTargetId, AgentArmoryPro
     runtimeEnv: "~/.deepseek/skills/ & 运行沙箱",
     icon: DeepSeekTargetIcon,
     themeColor: {
-      bg: "bg-blue-600/10",
-      border: "border-blue-600/30",
-      text: "text-blue-700 dark:text-blue-300",
+      bg: "bg-accent-500/10",
+      border: "border-accent-500/30",
+      text: "text-accent-500 dark:text-accent-500",
       glow: "shadow-blue-600/10",
-      pillBg: "bg-blue-600/15"
+      pillBg: "bg-accent-500/15"
     },
     tags: ["深度思考", "算法攻坚", "形式化论证", "架构设计"],
     recommendedCuratedIds: ["obra-superpowers", "garrytan-gstack", "anthropics-skills"],

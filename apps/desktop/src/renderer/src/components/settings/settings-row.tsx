@@ -1,14 +1,21 @@
 import type { ReactNode } from "react"
 import { cx } from "@/utils/cx"
 
+const CARD_TITLE = "text-text-primary"
+const CARD_TITLE_DENSE = "px-4 pt-2.5 pb-1 text-caption-1-semibold"
+const CARD_TITLE_REGULAR = "px-5 pt-4 pb-1 text-body-medium"
+
 export function SettingsCard({
   title,
   children,
-  id
+  id,
+  dense
 }: {
   title?: string
   children: ReactNode
   id?: string
+  /** 供应商列表用更矮的标题，避免选项行被卡片头撑开。 */
+  dense?: boolean
 }) {
   return (
     <section
@@ -16,7 +23,9 @@ export function SettingsCard({
       className="settings-card overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default"
     >
       {title ? (
-        <h3 className="px-5 pt-4 pb-1 text-body-medium text-text-primary">{title}</h3>
+        <h3 className={cx(CARD_TITLE, dense ? CARD_TITLE_DENSE : CARD_TITLE_REGULAR)}>
+          {title}
+        </h3>
       ) : null}
       <div className="divide-y divide-separator-border">{children}</div>
     </section>

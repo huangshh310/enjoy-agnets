@@ -62,7 +62,7 @@ export function AgentToolRowAssistant({
         </div>
         <p
           className={`truncate font-mono text-caption-2-regular ${
-            outdated ? "text-state-warning-text" : "text-text-tertiary"
+            outdated ? "text-status-yellow-text" : "text-text-tertiary"
           }`}
           title={secondary}
         >
@@ -133,7 +133,7 @@ function assistantStatus(input: {
   }
   return {
     label: t("settings.agentTools.statusMissing"),
-    dotClass: "bg-state-warning-text",
-    textClass: "text-state-warning-text"
+    dotClass: "bg-status-yellow-text",
+    textClass: "text-status-yellow-text"
   }
 }

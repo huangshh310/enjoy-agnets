@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react"
 import type { ChangedFileRow } from "@renderer/stores/chat-store"
+import type { DiffPalette } from "../../../../diff/diff-palette"
 import type { ReviewOptions } from "../types/review.types"
 import { ReviewDiffPane } from "./review-diff-pane"
 import { ReviewFileCard } from "./review-file-card"
@@ -12,6 +13,7 @@ export function ReviewDiffStream(props: {
   workspaceId: string | null
   changes: ChangedFileRow[]
   options: ReviewOptions
+  palette?: DiffPalette
   allExpanded: boolean
   selectedFilePath: string | null
   selectedFileContent: string
@@ -21,6 +23,7 @@ export function ReviewDiffStream(props: {
     workspaceId,
     changes,
     options,
+    palette = "default",
     allExpanded,
     selectedFilePath,
     selectedFileContent,
@@ -43,6 +46,7 @@ export function ReviewDiffStream(props: {
         selectedFileContent={selectedFileContent}
         onSelectFile={onSelectFile}
         options={options}
+        palette={palette}
       />
     )
   }
@@ -56,6 +60,7 @@ export function ReviewDiffStream(props: {
             workspaceId={workspaceId ?? ""}
             file={file}
             options={options}
+            palette={palette}
             isExpanded={expandedMap[file.path] ?? true}
             onToggleExpand={() =>
               setExpandedMap((prev) => ({ ...prev, [file.path]: !prev[file.path] }))

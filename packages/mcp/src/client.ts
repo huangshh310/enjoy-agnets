@@ -2,11 +2,11 @@
  * MCP 客户端：优先 AI SDK createMCPClient；否则 stdio / HTTP 会话可 list+call。
  * 失败隔离为 error，不抛到 renderer。
  */
-import { spawn } from "node:child_process"
 import { handshakeHttp, handshakeSse, rpcPost } from "./http-rpc.ts"
 import { createStdioSession, type McpSession } from "./stdio-session.ts"
 import { initializeRequest } from "./stdio-rpc.ts"
 import { parseStdioCommand } from "./stdio-command.ts"
+import { filteredStdioEnv, spawnStdioProcess } from "./stdio-spawn.ts"
 import { parseToolsList, type McpToolInfo } from "./tools.ts"
 
 export type McpConnectionState = "idle" | "connecting" | "connected" | "error"
@@ -108,7 +108,7 @@ async function tryCreateSdkClient(input: {
   if (typeof create !== "function") return null
   const client = await create(
     input.transport === "stdio"
-      ? { transport: { type: "stdio", command: input.command, env: mergedEnv(input.env) } }
+      ? { transport: { type: "stdio", command: input.command, env: filteredStdioEnv(input.env) } }
       : { transport: { type: input.transport, url: input.url } }
   )
   return {
@@ -121,22 +121,13 @@ async function tryCreateSdkClient(input: {
   }
 }
 
-/** stdio Server 继承主进程 env，再叠加 UI 配置的附加变量。 */
-function mergedEnv(overrides?: Record<string, string>): Record<string, string> {
-  return { ...process.env, ...overrides } as Record<string, string>
-}
-
 async function connectStdio(
   id: string,
   command: string,
   overrides?: Record<string, string>
 ): Promise<McpClientHandle> {
   const parsed = parseStdioCommand(command)
-  const child = spawn(parsed.bin, parsed.args, {
-    stdio: ["pipe", "pipe", "pipe"],
-    windowsHide: true,
-    env: mergedEnv(overrides)
-  })
+  const child = spawnStdioProcess(parsed.bin, parsed.args, filteredStdioEnv(overrides))
   const session = createStdioSession(child, HANDSHAKE_MS)
   return finishSession(id, session, async () => {
     await session.request("initialize", initializeRequest().params)

@@ -13,9 +13,7 @@ export function createPiAgent(input: CreateHarnessCodingAgentInput) {
   if (!adapter) throw new Error("Pi adapter is missing from the catalog.")
   const key = input.credentials.providerApiKey.trim()
   return new HarnessAgent({
-    harness: createPi({
-      ...(key ? { auth: { OPENAI_API_KEY: key, ANTHROPIC_API_KEY: key } } : {})
-    }),
+    harness: createPi(key ? { auth: { OPENAI_API_KEY: key, ANTHROPIC_API_KEY: key } } : {}),
     sandbox: createAdapterSandbox(adapter, input),
     id: "enjoy-agents-pi",
     ...sharedHarnessSettings(input, ["write", "edit", "bash"]),

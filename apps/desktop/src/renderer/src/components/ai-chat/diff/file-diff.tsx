@@ -9,6 +9,7 @@ import type { DiffLine, FileDiffModel } from "@enjoy-agents/agent-core/diff"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { applyDiffViewOptions, splitWordDiff } from "./file-diff-options"
+import { diffTone, type DiffPalette } from "./diff-palette"
 export function FileDiff({
   model,
   compact = false,
@@ -19,6 +20,7 @@ export function FileDiff({
   wordDiff = false,
   hideWhitespace = false,
   foldLargeFiles = false,
+  palette = "default",
   onCommentLine,
   className
 }: {
@@ -31,10 +33,12 @@ export function FileDiff({
   wordDiff?: boolean
   hideWhitespace?: boolean
   foldLargeFiles?: boolean
+  palette?: DiffPalette
   onCommentLine?: (line: DiffLine) => void
   className?: string
 }) {
   const t = useT()
+  const tone = diffTone(palette)
   const view = useMemo(
     () => applyDiffViewOptions(model, { hideWhitespace, foldLargeFiles }),
     [model, hideWhitespace, foldLargeFiles]
@@ -65,18 +69,18 @@ export function FileDiff({
       )}
     >
       {!hideHeader ? (
-        <header className="flex items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-[12px]">
+        <header className="flex items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 py-2 text-caption-1-regular">
           <div className="flex items-center gap-2 min-w-0">
             <RiCodeSSlashLine className="size-4 shrink-0 text-text-tertiary" />
             <span className="min-w-0 truncate font-semibold text-text-primary">
               {model.path}
             </span>
           </div>
-          <div className="flex items-center gap-2 font-mono text-[11px] font-bold shrink-0">
-            <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400">
+          <div className="flex items-center gap-2 font-mono text-caption-2-bold font-bold shrink-0">
+            <span className={cx("inline-flex items-center", tone.addStat)}>
               +{model.additions}
             </span>
-            <span className="inline-flex items-center text-rose-600 dark:text-rose-400">
+            <span className={cx("inline-flex items-center", tone.delStat)}>
               -{model.deletions}
             </span>
           </div>
@@ -86,7 +90,7 @@ export function FileDiff({
       {/* Diff 主体行区域 (4 列等宽网格 + 左侧 3px 状态指示条) */}
       <div
         className={cx(
-          "overflow-auto font-mono text-[11.5px] leading-relaxed relative bg-background-primary-default",
+          "overflow-auto font-mono text-caption-2-regular leading-relaxed relative bg-background-primary-default",
           fill && "min-h-0 flex-1",
           compact && !fill && "max-h-56",
           !fill && !compact && "max-h-[min(32rem,70vh)]"
@@ -94,7 +98,7 @@ export function FileDiff({
       >
         {view.hunks.map((hunk) => (
           <section key={hunk.header}>
-            <div className="sticky top-0 z-10 bg-background-secondary-default/80 backdrop-blur-xs px-3 py-1 font-mono text-[10.5px] text-text-tertiary border-y border-separator-border/40 select-none">
+            <div className="sticky top-0 z-10 bg-background-secondary-default/80 backdrop-blur-xs px-3 py-1 font-mono text-caption-2-regular text-text-tertiary border-y border-separator-border/40 select-none">
               {hunk.header}
             </div>
             <div className="relative">
@@ -105,6 +109,7 @@ export function FileDiff({
                   prev={hunk.lines[index - 1]}
                   wordWrap={wordWrap}
                   wordDiff={wordDiff}
+                  tone={tone}
                   onComment={onCommentLine}
                 />
               ))}
@@ -121,12 +126,14 @@ function DiffRow({
   prev,
   wordWrap,
   wordDiff,
+  tone,
   onComment
 }: {
   line: DiffLine
   prev?: DiffLine
   wordWrap: boolean
   wordDiff: boolean
+  tone: ReturnType<typeof diffTone>
   onComment?: (line: DiffLine) => void
 }) {
   const t = useT()
@@ -137,27 +144,27 @@ function DiffRow({
   return (
     <div
       className={cx(
-        "group/diff relative grid grid-cols-[32px_32px_18px_1fr] items-stretch text-[11.5px] transition-colors",
-        isAdd && "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-        isDel && "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+        "group/diff relative grid grid-cols-[32px_32px_18px_1fr] items-stretch text-caption-2-regular transition-colors",
+        isAdd && tone.addRow,
+        isDel && tone.delRow,
         !isAdd && !isDel && "text-text-secondary hover:bg-background-secondary-hover/30"
       )}
     >
       {isAdd ? (
-        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-500" />
+        <span className={cx("absolute left-0 top-0 bottom-0 w-[3px]", tone.addBar)} />
       ) : isDel ? (
-        <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-rose-500" />
+        <span className={cx("absolute left-0 top-0 bottom-0 w-[3px]", tone.delBar)} />
       ) : null}
-      <span className="select-none text-right pr-2 text-text-tertiary text-[10.5px] py-0.5">
+      <span className="select-none text-right pr-2 text-text-tertiary text-caption-2-regular py-0.5">
         {line.oldNo ?? ""}
       </span>
-      <span className="select-none text-right pr-2 text-text-tertiary text-[10.5px] py-0.5 border-r border-separator-border/40">
+      <span className="select-none text-right pr-2 text-text-tertiary text-caption-2-regular py-0.5 border-r border-separator-border/40">
         {line.newNo ?? ""}
       </span>
       <span
         className={cx(
           "select-none text-center font-bold py-0.5",
-          isAdd ? "text-emerald-600 dark:text-emerald-400" : isDel ? "text-rose-600 dark:text-rose-400" : "text-text-tertiary"
+          isAdd ? tone.addMark : isDel ? tone.delMark : "text-text-tertiary"
         )}
       >
         {isAdd ? "+" : isDel ? "-" : " "}
@@ -171,7 +178,7 @@ function DiffRow({
         {pair ? (
           <>
             {pair.prefix}
-            <span className="bg-emerald-500/30">{pair.added}</span>
+            <span className={tone.addWord}>{pair.added}</span>
             {pair.suffix}
           </>
         ) : (
@@ -181,7 +188,7 @@ function DiffRow({
       {onComment ? (
         <button
           type="button"
-          className="absolute right-1 top-0 hidden rounded px-1 text-[10px] text-accent-500 group-hover/diff:block"
+          className="absolute right-1 top-0 hidden rounded px-1 text-caption-2-regular text-accent-500 group-hover/diff:block"
           onClick={() => onComment(line)}
         >
           {t("chat.commentDiffLine")}

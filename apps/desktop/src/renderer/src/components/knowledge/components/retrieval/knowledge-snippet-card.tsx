@@ -116,7 +116,7 @@ export function KnowledgeSnippetCard({
           onClick={handleCopy}
           className="h-7 gap-1 px-2 text-caption-2-medium text-text-tertiary hover:text-text-primary"
         >
-          {copied ? <RiCheckLine className="size-3 text-emerald-500" /> : <RiClipboardLine className="size-3" />}
+          {copied ? <RiCheckLine className="size-3 text-state-success-text" /> : <RiClipboardLine className="size-3" />}
           <span>{copied ? t("pages.knowledge.copied") : t("pages.knowledge.copySnippet")}</span>
         </Button>
         {onPreviewDoc ? (
@@ -136,11 +136,11 @@ export function KnowledgeSnippetCard({
           onClick={handlePin}
           className={cx(
             "h-7 gap-1 px-2.5 text-caption-2-medium shadow-2xs",
-            pinned && "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            pinned && "border-state-success-text/40 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
           )}
           title={t("pages.knowledge.pinToChat")}
         >
-          {pinned ? <RiCheckLine className="size-3.5 text-emerald-500" /> : <RiPushpinLine className="size-3.5" />}
+          {pinned ? <RiCheckLine className="size-3.5 text-state-success-text" /> : <RiPushpinLine className="size-3.5" />}
           <span>{pinned ? t("pages.knowledge.pinnedToChat") : t("pages.knowledge.pinToChat")}</span>
         </Button>
       </div>

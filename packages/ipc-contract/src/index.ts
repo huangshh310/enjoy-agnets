@@ -2,6 +2,7 @@
  * IPC 合约桶：领域 schema 拆到独立文件，这里只做再导出。
  */
 export type { ReasoningEffort } from "./reasoning-effort"
+export * from "./tool-names"
 export * from "./permission-mode"
 export * from "./chat"
 export * from "./quoted-context"
@@ -42,7 +43,7 @@ export {
   TerminalSession,
   TerminalWriteInput
 } from "./terminal"
-export { WindowState, WindowActionResult, WindowForceQuitInput } from "./window"
+export { WindowState, WindowActionResult, WindowForceQuitInput, WindowSetTaskbarTitleInput } from "./window"
 export * from "./app-update"
 export * from "./generation"
 export * from "./ui-message"
@@ -78,3 +79,7 @@ export * from "./rules-always-on"
 export * from "./agents-md-chain"
 export * from "./inspect-prompt"
 export * from "./builtin-tools"
+export * from "./keybindings"
+export * from "./computer-use-slash"
+export * from "./appsnap"
+export * from "./keybinding-resolve"

@@ -139,7 +139,7 @@ export function ProjectPopover({
 
             {/* Path */}
             {workspace.rootPath ? (
-              <div className="flex items-center justify-between gap-2 rounded-lg bg-background-secondary-default p-1.5 font-mono text-[10px] text-text-tertiary">
+              <div className="flex items-center justify-between gap-2 rounded-lg bg-background-secondary-default p-1.5 font-mono text-caption-2-regular text-text-tertiary">
                 <span className="truncate">{workspace.rootPath}</span>
                 <button
                   type="button"
@@ -148,7 +148,7 @@ export function ProjectPopover({
                   className="shrink-0 text-text-tertiary hover:text-text-primary"
                 >
                   {copied ? (
-                    <RiCheckLine className="size-3 text-emerald-500" />
+                    <RiCheckLine className="size-3 text-state-success-text" />
                   ) : (
                     <RiClipboardLine className="size-3" />
                   )}
@@ -164,7 +164,7 @@ export function ProjectPopover({
               onClick={handleNewChat}
               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-body-medium text-text-primary hover:bg-background-secondary-hover transition-colors cursor-pointer"
             >
-              <RiAddLine className="size-4 text-emerald-500" />
+              <RiAddLine className="size-4 text-state-success-text" />
               <span>{t("chat.newChat")}</span>
             </button>
 

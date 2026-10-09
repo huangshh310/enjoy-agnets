@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-09-25
+> 进程边界与安全基线。最后更新：2026-10-03
 
 ## 当前真相
 
@@ -43,7 +43,29 @@ Main Process（可信）
 | `packages/editor` | Monaco 封装；Files 预览可写，不是完整 IDE |
 | `packages/config` | 共享 tsconfig |
 
-包管理：pnpm workspaces + Turborepo。语言：TypeScript strict。Node `>=22.12.0`。
+包管理：pnpm workspaces + Turborepo。语言：TypeScript strict。Node `>=22.12.0`。ESLint 未接线。
+
+**Lint（`pnpm lint` = 仓库根一条裸 `oxlint`，不走 turbo；`turbo.json` 不再有 `lint` task）**
+
+- `categories.correctness` 为 `error`；`plugins` 为 `["typescript", "import", "unicorn"]`。
+- `react` / `react-hooks` plugin **本轮未开**：`set-state-in-effect` 58 条、`exhaustive-deps` 45 条、`refs` 25 条属架构级改造，与 CU-P1 并行做会大面积撞车。开之前先单列一轮。
+- 三条 shadcn 视觉规则（`no-restyle` / `no-raw-colors` / `no-arbitrary-values`）继续只管 `className`，见 `ui` spec。
+- 有意豁免（不是漏开）：`packages/ui/components/ai-elements/**` 关掉未使用参数检查（registry 原文件形态，重排会与上游更新长期冲突）；`**/*.d.ts` 关 `triple-slash-reference`（`env.d.ts` 靠它接 preload 类型）。
+- **渲染进程边界由 lint 强制**：`apps/desktop/src/renderer/**` 上 `no-restricted-imports` 禁 `@enjoy-agents/agent-core` / `@enjoy-agents/agent-harness` / `@enjoy-agents/db` / `@enjoy-agents/knowledge` / `@enjoy-agents/providers` 主入口、`ai`、`electron`，以及 `node:*` / `fs` / `path` / `os` / `child_process` / `net` / `http(s)` 与 `@ai-sdk/*`。
+- 该豁免的例外只有 renderer 的 `*.test.ts`：它们是 `node:test` 源码扫描器，不进 bundle，所以 override 里关掉边界规则。
+
+**测试（`pnpm test` = `turbo run test`，`test` 依赖 `^typecheck`）**
+
+- 每个工作区的 `test` 脚本只准用 glob 自动发现（`node --experimental-strip-types --test "src/**/*.test.ts"`；`packages/ui` 是 `components/**/*.test.ts`）。禁止回退成手写文件清单。
+- 历史教训：手写 376 项清单里留着一个已删除的 `company/billing/billing.test.ts`，`node --test` 在**收集阶段**就 exit 1，整个 desktop 套件一条都没跑，而 CI 只显示「test 失败」这一行。同批还有 20 个测试文件从未被任何脚本引用。
+- 传目录参数不可用：`node --test src/main` 会把目录当模块加载并报 `MODULE_NOT_FOUND`，只有引号 glob 形态能递归收 `.ts`。
+- 采集守卫在 `apps/desktop/src/main/repo-test-harness-invariants.test.ts`：每个有测试文件的工作区必须有 `test` 脚本、每个 `*.test.ts(x)` 必须被 glob 覆盖、每个 glob 必须至少匹配 1 个文件；它自己还先断言「确实看到了 ≥10 个工作区 / ≥400 个测试文件」，防止路径算错导致守卫空跑通过。
+
+**CI（`.github/workflows/ci.yml`）**
+
+- `check` job 是 `ubuntu-latest` / `macos-latest` / `windows-latest` 三端矩阵，`fail-fast: false`，步骤 `lint → typecheck → test → build`。
+- `build` 是 `electron-vite build`（不含打包签名）；必须有，因为 workspace 包别名与无后缀导入的 `ERR_MODULE_NOT_FOUND` 只在打包期暴露。
+- `contracts` job 只跑 `e2e/contracts.spec.ts`（纯 Node）。`electron-window.spec.ts` / `agent-stub.spec.ts` 要显示环境与 Electron 系统库，**CI 不假装跑通**，留本机。
 
 ### 数据
 
@@ -53,8 +75,14 @@ Main Process（可信）
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。
 - 本机 CLI 账号探测：main 可读 Cursor IDE `state.vscdb` 的 `cursorAuth/accessToken`、Grok `~/.grok/auth.json` 的 `key`，只用于打官方账单接口。token / key **不**进 IPC、**不**进 renderer、**不**写回文件。
+- 读取者集中在 `apps/desktop/src/main/services/agent-tools-account/session-usage.ts`。白名单就是下面这五条，超出即视为新增加密凭据读取面，必须同时改本段与 `cli-usage` spec。
+- Cursor：`state.vscdb` 的 `cursorAuth/accessToken`。以 `{ readOnly: true }` 打开并在 `finally` 关闭。
+- Grok：`~/.grok/auth.json` 的 `key`。
+- Codex：`~/.codex/auth.json` 的 `tokens.access_token`；`CODEX_HOME` 可覆盖目录。
+- Claude：优先 `CLAUDE_CODE_OAUTH_TOKEN` 环境变量，其次 `~/.claude/.credentials.json` 的 `claudeAiOauth.accessToken`；`CLAUDE_CONFIG_DIR` 可覆盖目录。
 - Antigravity：只读 `~/.antigravity_tools/accounts.json` 与 `accounts/<id>.json` 的公开邮箱 / `quota_groups`，不读 Google login / OAuth 文件。
-- 不读 `~/.codex/auth.json` / `~/.claude.json`。Enjoy Local 不走 `inspect`（vault 不是登录型 CLI）。
+- 这五条的凭据只在 main 内存里活一次，用来打对应官方 HTTPS；禁止写进 `InspectAgentToolResult`、`secrets_vault` 或任何 IPC 返回值。`AgentToolAuthAccount` 与 `InspectAgentToolResult` 的字段表就是这条约束的落点。
+- 仍不读：`~/.claude.json`（与 `.credentials.json` 是两个文件）。Enjoy Local 不走 `inspect`（vault 不是登录型 CLI）。
 
 ## 不变量
 
@@ -65,6 +93,7 @@ Main Process（可信）
 - 审批决定可以来自 UI，执行只在 main。
 - 路由必须是 **Hash History**（`file://` / 自定义协议下 Browser History 会断）。
 - `agentTools.inspect` / `login` / ACP 的 spawn：`cwd` = 已登记工作区（没有则家目录），禁止 `process.cwd()`；**编码 CLI / ACP 保持 `shell: false`**；命令必须过 `assertAllowedCommand`。Windows 上 `npm.cmd` / `*.bat` 安装管理器例外：只经 `spawnPathCommand`（仅脚本后缀才 `shell: true`），禁止把 ACP 二进制改成 `shell: true`。
+- `spawnPathCommand` 的 `shell` 在 `...extra` **之后**写死（`packages/agent-harness/src/agent-tools/detect/probe.ts`）：调用方不能用 extra 绕过「仅 win32 + `.cmd`/`.bat`」这道闸。改这个函数顺序等于关掉不变量。
 - 桌面目标是 **Windows / macOS / Linux**。实现路径、PATH 探测、spawn、安装/更新、快捷键、文件监视时必须写清三端差异；不能只在开发者本机一种系统上跑通。macOS Homebrew、Linux linuxbrew、Windows `npm.cmd` + `Program Files/nodejs` 不是同一条 PATH。不支持的平台要降级成复制命令，禁止假一键。
 
 ## 代码入口
@@ -76,8 +105,13 @@ Main Process（可信）
 - 跨平台 PATH / spawn：`packages/agent-harness/src/agent-tools/detect/probe.ts`（`pathDirs` / `lookupOnPath` / `spawnPathCommand`）
 - Computer Use 执行器：`apps/desktop/native/computer-use/`，main 经 `executor-command.ts` 查找；打包进 `resources/bin/<platform>-<arch>/`。darwin helper 在有 `CSC_NAME` / `CU_CODESIGN_IDENTITY` 时由 `stage-computer-use.cjs` codesign；`desktop_doctor` 验即将 spawn 的路径与签名，未签名不得报绿。执行器可点其它应用，必须由用户打开设置开关并审批 `desktop_act`。辅助功能授给 **Enjoy Computer Use helper**，不是 renderer，也不是只授给 Electron 宿主。
 - 选型长文：[../references/tech-stack.md](../references/tech-stack.md)
+- 设计系统 lint：仓库根 `.oxlintrc.json`；命令 `pnpm lint`
 
 ## 已知坑
+
+- [open] `no-inline-styles` / `no-unknown-classes` / `require-static-classes` 仍未打开：玻璃皮肤指针、mascot 与动态 className 会刷屏。2026-10 已开的是 `correctness` 加 `typescript` / `import` / `unicorn`；`react` / `react-hooks`（约 131 条：`set-state-in-effect` 58、`exhaustive-deps` 45、`refs` 25）是架构级改造，留给单独一轮，别和功能 PR 混在一起。
+- `@shadcn/lint` 抱怨项目 `cn`：本仓 `cn` 是 0.2.6，linter 语法要 ≥0.3.2，于是它改用自带 `cn` 0.3.2。lint 校验的 className 合并语义因此与 app 运行时不一致——升 `cn` 之前，三条视觉规则的结论只当参考。详见 `ui` spec。
+- [guard:.oxlintrc.json renderer override] 渲染进程打 `@enjoy-agents/agent-core` 主入口会把 `node:` 打进 bundle：现在 `no-restricted-imports` 直接报错，不再只靠约定。
 
 - Workflow 子 agent：`persistChildRun` 在步骤 `running` checkpoint 之后把 `child_run_id` 写入当前 `run_steps` 行，`getWorkflow` 投影 `childRunId`。`cancelWorkflow` 先看内存 `childRuns`，没有再读库。崩溃发生在 persist running 与 `onChildRun` 之间仍可能漏绑。
 - `settings` KV 表曾是 JSON 垃圾场：vault / harness 密钥 / automations / overrides / runtimes / 压缩状态全塞一张表。2026-09 收敛：vault 与 harness 密钥迁到 `secrets_vault` 专表（惰性迁移旧键）；automations / overrides / session.runtimes 读取统一走 Zod 校验（坏条目丢弃）；压缩状态读侧已有 `SessionCompaction.parse`。仍在 settings 里的 JSON 是小对象（preferences 等），可接受。
@@ -90,7 +124,8 @@ Main Process（可信）
 - 右栏浏览器用 `<webview>`，窗口必须 `webviewTag: true`。guest 走 `partition persist:enjoy-preview`，禁止 nodeIntegration。main `will-attach-webview` 强制这些偏好、剥掉 guest preload，且只放行 http(s) `src`。只加载 `parseHttpUrl` 通过的 http(s)。Windows 上 webview 是独立 HWND，父级 CSS 圆角可能切不掉。
 - 技能来源：renderer 不读 `~/.enjoy-agents/skill-sources/` JSON。git clone / pull 只在 main，且 `shell: false`。部署目的地仅 `customize-roots` 白名单（`globalSkillRoots` ∪ 已登记工作区 `workspaceSkillRoots`）。SSH / `git@` / `clawhub:` 一律 `UNSUPPORTED_SOURCE`，不要半套协议。
 - `path-safe` / Customize 白名单单测不能在 Linux 上用 `C:/...`：POSIX 下不是绝对路径，`join`/`resolve` 会拼进 runner cwd。POSIX 用 `/proj/...`，Windows 用盘符。工作区显示名回退最后一段时要同时切 `/` 与 `\`。
-- **隐患**：在 macOS 终端里 `spawn("npm")` 能跑，Windows Electron 里 `npm.cmd` 无 `shell` 会直接失败；Linux 没有 `/opt/homebrew`。正确做法：PATH 用 `lookupOnPath` / `pathDirs()`（补 linuxbrew、nodejs、Roaming npm、`~/.grok/bin`、`~/.factory/bin`）；安装与探最新版走 `spawnPathCommand`；brew 配方在 Windows 降为 copy。
+- **隐患**：MCP stdio / 自定义 ACP / 供应商 `customHeaders` 曾把明文密钥经 IPC 回 renderer。正确做法：`toPublic` 只回键的占位；编辑态空值保留已存；连接与开流仍只在 main 读明文。MCP spawn 必须剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`。
+- **隐患**：在 macOS 终端里 `spawn("npm")` 能跑，Windows Electron 里 `npm.cmd` 无 `shell` 会直接失败；Linux 没有 `/opt/homebrew`。正确做法：PATH 用 `lookupOnPath` / `pathDirs()`（补 linuxbrew、nodejs、Roaming npm、`~/.grok/bin`、`~/.factory/bin`）；安装与探最新版走 `spawnPathCommand`；MCP stdio 同款 Windows `.cmd` / `.bat` 才 `shell: true`；brew 配方在 Windows 降为 copy。
 - CLI 用量探测会读本机已登录会话（Cursor `state.vscdb`、Grok `auth.json` 的 `key`）。这些密钥只在 main 内存里用一次打官方 HTTPS，禁止写进 `InspectAgentToolResult` 或 vault。Dashboard / billing 失败就空条 + `—`，不要回落 CLI `about`/`status` 里的猜数字段。
 - Agent `bash` 的「沙箱」不是容器。字符串过滤 + cwd jail + macOS Seatbelt。设置文案必须写明，禁止假装 Docker / Vercel Sandbox。
 - `window.open` 只对 `http:` / `https:` 走 `shell.openExternal`，一律 `{ action: "deny" }`。

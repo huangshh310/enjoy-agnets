@@ -91,7 +91,7 @@ export function StatusBranchPicker() {
           />
         </label>
         {error ? (
-          <p className="px-3 py-2 text-caption-2-regular text-text-warning-primary">{error}</p>
+          <p className="px-3 py-2 text-caption-2-regular text-status-yellow-text">{error}</p>
         ) : null}
         <ul className="max-h-56 overflow-y-auto py-1">
           {rows.map((row) => (

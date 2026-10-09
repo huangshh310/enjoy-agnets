@@ -3,6 +3,7 @@
  */
 import { useEffect } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"
 import type { AppModuleId } from "../app-shell.types"
 import { isOverlayModule, isWorkModule, matchAppModule, pathForWorkModule } from "./match-module"
 import { readLastWorkModule, writeLastWorkModule } from "./last-work-module"
@@ -17,15 +18,11 @@ export function useShellNavigation() {
     if (isWorkModule(activeModule)) writeLastWorkModule(activeModule)
   }, [activeModule])
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!shouldReturnToWork(event, activeModule)) return
-      event.preventDefault()
-      void navigate({ to: pathForWorkModule(readLastWorkModule()) as "/" })
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [activeModule, navigate])
+  useKeybindingCommand("nav.back", () => {
+    if (!canLeaveOverlay(activeModule)) return false
+    void navigate({ to: pathForWorkModule(readLastWorkModule()) as "/" })
+    return true
+  })
 
   function selectModule(_id: AppModuleId, to: string) {
     void navigate({ to: to as "/" })
@@ -34,10 +31,9 @@ export function useShellNavigation() {
   return { activeModule, isChat, selectModule }
 }
 
-function shouldReturnToWork(event: KeyboardEvent, activeModule: AppModuleId): boolean {
-  if (event.key !== "Escape" || event.defaultPrevented) return false
+function canLeaveOverlay(activeModule: AppModuleId): boolean {
   if (!isOverlayModule(activeModule)) return false
-  const target = event.target
+  const target = document.activeElement
   if (!(target instanceof HTMLElement)) return true
   if (target.closest('[role="dialog"]')) return false
   if (target.closest("input, textarea, [contenteditable='true']")) return false

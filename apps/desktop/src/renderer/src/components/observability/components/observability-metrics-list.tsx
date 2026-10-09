@@ -39,7 +39,7 @@ export function ObservabilityMetricsList(props: {
   const maxDuration = Math.max(...metrics.map((m) => m.durationMs ?? 0), 1000)
 
   return (
-    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-[11px]">
+    <div className="flex flex-col rounded-xl border border-separator-border/70 bg-background-primary-default overflow-hidden shadow-2xs font-mono text-caption-2-regular">
       {/* 表头 */}
       <div className="hidden md:grid grid-cols-12 gap-2 bg-background-secondary-default/60 px-3.5 py-2 text-text-tertiary font-semibold border-b border-separator-border/60">
         <div className="col-span-3">{t("pages.observability.colWorkload")}</div>
@@ -84,10 +84,10 @@ export function ObservabilityMetricsList(props: {
                   className={cx(
                     "flex size-5 shrink-0 items-center justify-center rounded border",
                     isSuccess
-                      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      ? "border-state-success-text/20 bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
                       : isRunning
-                        ? "border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                        : "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                        ? "border-accent-500/20 bg-accent-500/10 text-accent-500 dark:text-accent-500"
+                        : "border-border-error-default/20 bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
                   )}
                 >
                   {isSuccess ? (
@@ -99,25 +99,25 @@ export function ObservabilityMetricsList(props: {
                   )}
                 </div>
 
-                <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-[9px] font-bold uppercase text-text-secondary">
+                <span className="rounded bg-background-secondary-default px-1.5 py-0.2 text-caption-2-bold font-bold uppercase text-text-secondary">
                   {metric.kind}
                 </span>
 
                 <span
                   className={cx(
-                    "rounded px-1.5 py-0.2 text-[9px] uppercase font-semibold",
+                    "rounded px-1.5 py-0.2 text-caption-2-semibold uppercase font-semibold",
                     isSuccess
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-state-success-text dark:text-state-success-text"
                       : isRunning
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                        ? "text-accent-500 dark:text-accent-500"
+                        : "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
                   )}
                 >
                   {metric.status}
                 </span>
 
                 {metric.errorClass && metric.errorClass !== "ok" ? (
-                  <span className="rounded bg-rose-500/10 px-1 py-0.2 text-[8.5px] font-semibold text-rose-600 dark:text-rose-400 truncate">
+                  <span className="rounded bg-background-tertiary-error/10 px-1 py-0.2 text-caption-2-semibold font-semibold text-text-error-primary dark:text-text-error-primary truncate">
                     {metric.errorClass}
                   </span>
                 ) : null}
@@ -131,7 +131,7 @@ export function ObservabilityMetricsList(props: {
                     {metric.modelId ?? "default-model"}
                   </span>
                 </div>
-                <span className="text-[9.5px] text-text-tertiary truncate">
+                <span className="text-caption-2-regular text-text-tertiary truncate">
                   {t("pages.observability.runId", { id: metric.runId.slice(0, 14) })}
                 </span>
               </div>
@@ -144,7 +144,7 @@ export function ObservabilityMetricsList(props: {
                     style={{ width: `${Math.max(durationRatio, 4)}%` }}
                     className={cx(
                       "h-full rounded-full transition-all",
-                      isSuccess ? "bg-blue-500" : "bg-rose-500"
+                      isSuccess ? "bg-accent-500" : "bg-background-tertiary-error"
                     )}
                   />
                 </div>
@@ -174,7 +174,7 @@ export function ObservabilityMetricsList(props: {
               {/* 6. 速率 */}
               <div className="md:col-span-1">
                 {metric.tokensPerSecond ? (
-                  <span className="text-purple-600 dark:text-purple-400 font-medium">
+                  <span className="text-chart-5 dark:text-chart-5 font-medium">
                     {metric.tokensPerSecond.toFixed(1)}
                   </span>
                 ) : (
@@ -184,7 +184,7 @@ export function ObservabilityMetricsList(props: {
 
               {/* 7. 时间与查看操作 */}
               <div className="md:col-span-1 flex items-center justify-between md:justify-end gap-2 text-text-tertiary">
-                <span className="text-[10px]">{timeFormatted}</span>
+                <span className="text-caption-2-regular">{timeFormatted}</span>
                 <RiEyeLine className="size-3.5 group-hover:text-accent-500 transition-colors" />
               </div>
             </div>

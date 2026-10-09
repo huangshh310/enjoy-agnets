@@ -29,6 +29,7 @@
 | 布局、token、组件从哪装 | [`design/specs/ui.md`](./design/specs/ui.md) → 细节 [`design/references/visual-system.md`](./design/references/visual-system.md) |
 | Agent 循环、工具、审批、流式 | [`design/specs/agent-runtime.md`](./design/specs/agent-runtime.md) |
 | Enjoy Local 操作本机其它应用 | [`design/specs/computer-use.md`](./design/specs/computer-use.md) |
+| AppSnap 窗口截图（不操控） | [`design/specs/appsnap.md`](./design/specs/appsnap.md) |
 | 本机 CLI（Cursor / Claude / Codex / Antigravity ACP） | [`design/specs/agent-cli.md`](./design/specs/agent-cli.md) |
 | ACP 协议、思考档、Registry 国产 CLI | [`design/specs/agent-cli.md`](./design/specs/agent-cli.md) → 协议摘录 [`design/references/acp-protocol.md`](./design/references/acp-protocol.md) |
 | 供应商、协议、Key、探测 | [`design/specs/providers.md`](./design/specs/providers.md) |
@@ -85,7 +86,7 @@
 - IPC 入参 Zod parse，失败即拒。新频道顺序：contract → main → preload → renderer。
 - `write_file` / `edit_file` / `bash` / `git_commit` 默认审批，执行只在 main。
 - 路由用 Hash History。设置是路由不是 modal。
-- UI：BoardUI 语义 token + 复合字号；控件先 shadcn / AI Elements 再 restyle。品牌标用 Lobe Icons。
+- UI：BoardUI 语义 token + 复合字号；控件先 shadcn / AI Elements 再 restyle。品牌标用 Lobe Icons。改 UI 后跑 `pnpm lint`。
 - 密钥进 `safeStorage`，不进 Git，不进 renderer。
 - 桌面是三端：路径分隔、PATH、spawn、安装配方、快捷键（⌘ vs Ctrl）、文件监视都要过 Win / macOS / Linux。一种系统上的 Homebrew / `npm` 裸 spawn 不能当成全平台。
 
@@ -114,7 +115,10 @@ pnpm install
 pnpm dev
 pnpm test
 pnpm typecheck
+pnpm lint
 ```
+
+改渲染层 UI 后必须跑 `pnpm lint`（`@shadcn/lint` via oxlint），按 findings 改 className：用 BoardUI token / 已有 variant，不要 raw palette 或 restyle 控件皮。
 
 发版（契约 `design/specs/updates.md`；version 来自 `apps/desktop/package.json`，失败不涨号）：
 

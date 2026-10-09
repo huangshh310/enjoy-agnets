@@ -34,7 +34,6 @@ export function NavCard({
         activeModule={activeModule}
         collapsed={collapsed}
         running={running}
-        onToggleCollapsed={() => setCollapsed(!collapsed)}
         onSelect={handleSelect}
       />
       {collapsed ? null : (

@@ -2,25 +2,30 @@
  * 探索态写工具拦截：模型仍请求写入时，UI 出条 + 切执行 CTA。
  * 不改审批策略；只认已有 deny / 审批停车。
  */
+import {
+  BASH_TOOLS,
+  COMMIT_TOOLS,
+  TOOL_NAMES,
+  WRITE_TOOLS
+} from "@enjoy-agents/ipc-contract/tool-names"
+
 type InterceptTool = {
   name: string
   state: string
   args?: unknown
 }
 
-const WRITE_LIKE = new Set([
-  "write_file",
-  "edit_file",
-  "write",
-  "edit",
-  "bash",
-  "code_mode",
-  "git_commit",
-  "git_branch",
-  "git_push",
+/**
+ * 探索态要拦的写 / 命令名：Enjoy 侧走契约集合（`browser_navigate` 不属于写盘，故意不拦），
+ * 末尾两个是外部引擎别名。
+ */
+const WRITE_LIKE = new Set<string>([
+  ...WRITE_TOOLS,
+  ...BASH_TOOLS,
+  ...COMMIT_TOOLS,
+  TOOL_NAMES.desktopAct,
   "str_replace",
-  "apply_patch",
-  "desktop_act"
+  "apply_patch"
 ])
 
 const INTERCEPT_STATES = new Set(["output-denied", "approval-requested", "output-error"])

@@ -26,7 +26,7 @@ export function ExploreCapabilityRail() {
         {desktopOn ? (
           <span
             data-testid="explore-desktop-execute-only"
-            className="shrink-0 rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-2-semibold text-text-warning-primary ring-1 ring-border-button-default"
+            className="shrink-0 rounded-md bg-background-secondary-default px-1.5 py-0.5 text-caption-2-semibold text-status-yellow-text ring-1 ring-border-button-default"
           >
             {t("chat.surfaceDesktopExecuteOnly")}
           </span>

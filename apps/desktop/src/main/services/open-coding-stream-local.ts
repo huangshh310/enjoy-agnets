@@ -14,7 +14,9 @@ import {
 } from "@enjoy-agents/agent-core"
 import {
   createLanguageModel,
-  reasoningCallOptions
+  fetchForProxy,
+  reasoningCallOptions,
+  spokenCall
 } from "@enjoy-agents/providers"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
@@ -36,6 +38,7 @@ import { disconnectedError } from "./ssh/ssh-errors.ts"
 import { saveHostHeartbeat } from "./workspace-host"
 import { createWorkspaceHost, getWorkspace } from "./workspace"
 import { resolveWorkspaceHost } from "./workspace-host-factory.ts"
+import { openFailoverStream } from "./open-local-failover"
 
 /** 本机 ToolLoop：需要供应商密钥。Fast 开且配了 fastModelId 才换模型。 */
 export async function openLocalStream(
@@ -44,18 +47,23 @@ export async function openLocalStream(
 ): Promise<OpenedCodingStream> {
   const secret = requireLocalSecret(input.secret)
   const modelId = localFastModelId(input.fast, secret.fastModelId, input.modelId)
+  const spoken = spokenCall(secret, modelId)
   const thinking = reasoningCallOptions({
     provider: secret.provider,
     modelId,
-    apiStyle: secret.apiStyle,
+    apiStyle: spoken.style,
     effort: input.effort,
-    baseURL: secret.baseURL
+    baseURL: spoken.baseURL,
+    reasoningFamily: secret.reasoningFamily
   })
   const extras = await loadLocalStreamExtras(input)
-  const result = await streamCodingAgent(
-    localStreamOptions(input, policy, secret, modelId, thinking, extras)
-  )
-  return openedLocalStream(result, extras.hostInject)
+  const openWith = (apiKey: string) =>
+    streamCodingAgent(localStreamOptions(input, policy, secret, modelId, thinking, extras, apiKey, spoken))
+  if (spoken.keys.length <= 1) {
+    const result = await openWith(spoken.apiKey)
+    return openedLocalStream(result, extras.hostInject)
+  }
+  return openFailoverStream(openWith, spoken.keys, input.abortSignal, extras.hostInject)
 }
 
 type LocalStreamExtras = {
@@ -73,10 +81,12 @@ function localStreamOptions(
   secret: StoredSecret,
   modelId: string,
   thinking: ReturnType<typeof reasoningCallOptions>,
-  extras: LocalStreamExtras
+  extras: LocalStreamExtras,
+  apiKey: string,
+  spoken: ReturnType<typeof spokenCall>
 ) {
   return {
-    model: languageModelFor(secret, modelId, input),
+    model: languageModelFor(secret, modelId, input, apiKey, spoken),
     mode: input.mode,
     messages: input.messages,
     abortSignal: input.abortSignal,
@@ -85,7 +95,7 @@ function localStreamOptions(
     policy,
     extraTools: {
       ...createMcpAgentTools({ mode: input.mode }),
-      ...createBuiltinAgentTools(input.mode)
+      ...createBuiltinAgentTools(input.mode, input.computerUseOnce === true)
     },
     waitForSubagentApproval: input.waitForSubagentApproval,
     onSubagentToolEvent: input.onSubagentToolEvent,
@@ -191,16 +201,25 @@ async function loadAgentsMdStream(input: OpenCodingStreamInput) {
   }
 }
 
-function languageModelFor(secret: StoredSecret, modelId: string, input: OpenCodingStreamInput) {
+function languageModelFor(
+  secret: StoredSecret,
+  modelId: string,
+  input: OpenCodingStreamInput,
+  apiKey: string,
+  spoken: ReturnType<typeof spokenCall>
+) {
   return createLanguageModel({
     provider: secret.provider,
-    apiKey: secret.apiKey,
-    baseURL: secret.baseURL,
+    apiKey,
+    baseURL: spoken.baseURL,
     modelId,
-    apiStyle: secret.apiStyle,
+    apiStyle: spoken.style,
     reasoningEffort: input.effort,
+    reasoningFamily: secret.reasoningFamily,
     customHeaders: secret.customHeaders,
-    customBody: secret.customBody
+    customBody: secret.customBody,
+    proxy: secret.proxy,
+    fetch: fetchForProxy(secret.proxy)
   })
 }
 
@@ -208,7 +227,8 @@ function exploreModelFor(input: OpenCodingStreamInput) {
   const secret = input.secret
   const fastId = secret?.fastModelId?.trim()
   if (!secret || !fastId || fastId === input.modelId) return undefined
-  return languageModelFor(secret, fastId, input)
+  const spoken = spokenCall(secret, fastId)
+  return languageModelFor(secret, fastId, input, spoken.apiKey, spoken)
 }
 
 async function readPlanFile(host: AgentWorkspaceHost): Promise<string | null> {

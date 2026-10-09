@@ -21,7 +21,7 @@ import {
   prepareAgentStep,
   pullPrepareStepUserMessages
 } from "./policies/prepare-step.ts"
-import { resolveToolApproval } from "./tool-approval.ts"
+import { isExploreMutatingDeny, resolveToolApproval } from "./tool-approval.ts"
 import {
   applyDesktopToolOrder,
   formatDesktopBiasInstruction
@@ -58,10 +58,7 @@ export function createCodingAgent(
       codingPrepareStep(step, options.pullSteeringMessages, options.pullInstructionUpdates),
     ...(loopTimeout ? { timeout: loopTimeout } : {}),
     ...(options.onStepFinish ? { onStepFinish: options.onStepFinish } : {}),
-    toolApproval: ({ toolCall }) =>
-      toolCall
-        ? resolveToolApproval(toolCall.toolName, mode, policy, toolCall.input)
-        : "not-applicable"
+    toolApproval: ({ toolCall }) => codingToolApproval(toolCall, mode, policy)
   })
 }
 
@@ -102,6 +99,18 @@ function codingAgentTools(
     ...options.extraTools
   }
   return applyDesktopToolOrder(tools, options.desktopBias, mode)
+}
+
+function codingToolApproval(
+  toolCall: { toolName: string; input?: unknown } | undefined,
+  mode: AgentMode,
+  policy: ApprovalPolicy
+) {
+  if (!toolCall) return "not-applicable" as const
+  if (isExploreMutatingDeny(mode, toolCall.toolName)) {
+    return { type: "denied" as const, reason: `${mode} mode is read-only.` }
+  }
+  return resolveToolApproval(toolCall.toolName, mode, policy, toolCall.input)
 }
 
 function codingPrepareStep(

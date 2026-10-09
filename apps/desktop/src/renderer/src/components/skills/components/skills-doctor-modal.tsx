@@ -61,14 +61,14 @@ export function SkillsDoctorModal({
 
         <div className="my-3 flex flex-col gap-2.5 max-h-[350px] overflow-y-auto pr-1">
           {!hasIssues ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
-              <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-2">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-state-success-text/20 bg-state-success-text/5 p-6 text-center">
+              <div className="flex size-10 items-center justify-center rounded-full bg-state-success-text/10 text-state-success-text dark:text-state-success-text mb-2">
                 <RiCheckDoubleLine className="size-5" />
               </div>
               <h4 className="text-caption-1-medium font-semibold text-text-primary">
                 {SKILLS_UI_COPY.healthyState}
               </h4>
-              <p className="mt-1 text-[11.5px] text-text-tertiary max-w-xs leading-relaxed">
+              <p className="mt-1 text-caption-2-regular text-text-tertiary max-w-xs leading-relaxed">
                 {SKILLS_UI_COPY.noIssues}
               </p>
             </div>
@@ -76,19 +76,19 @@ export function SkillsDoctorModal({
             warnings.map((warn, index) => (
               <div
                 key={`${warn.sourceId}-${warn.code}-${index}`}
-                className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3"
+                className="flex items-start gap-2.5 rounded-xl border border-status-yellow-text/30 bg-status-yellow-background/5 p-3"
               >
-                <RiAlertLine className="size-4 text-amber-500 shrink-0 mt-0.5" />
+                <RiAlertLine className="size-4 text-status-yellow-text shrink-0 mt-0.5" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-caption-2-medium font-semibold text-text-primary">
                       {warn.code}
                     </span>
-                    <span className="font-mono text-[10.5px] text-text-tertiary">
+                    <span className="font-mono text-caption-2-regular text-text-tertiary">
                       ({warn.sourceId})
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[11.5px] text-text-secondary leading-relaxed">
+                  <p className="mt-0.5 text-caption-2-regular text-text-secondary leading-relaxed">
                     {warn.message}
                   </p>
                 </div>

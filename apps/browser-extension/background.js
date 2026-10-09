@@ -5,7 +5,6 @@
 
 let ws = null
 let heartbeatTimer = null
-let currentPairingCode = ""
 
 function parsePairingCode(code) {
   // 格式: enjoy-bridge:47823:<token>
@@ -27,7 +26,6 @@ function connect(pairingCode) {
     return
   }
 
-  currentPairingCode = pairingCode
   const wsUrl = `ws://127.0.0.1:${parsed.port}/?token=${parsed.token}`
 
   try {

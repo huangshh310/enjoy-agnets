@@ -1,0 +1,25 @@
+/* 后退内容向右归位，前进内容向左归位。时长跟 HISTORY_SLIDE_MS。 */
+@keyframes nav-history-back {
+  from { transform: translateX(-28px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes nav-history-forward {
+  from { transform: translateX(28px); }
+  to { transform: translateX(0); }
+}
+
+.nav-history-back {
+  animation: nav-history-back 150ms ease-out;
+}
+
+.nav-history-forward {
+  animation: nav-history-forward 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-history-back,
+  .nav-history-forward {
+    animation: none;
+  }
+}

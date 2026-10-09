@@ -81,7 +81,7 @@ export function CanvasNodeHoverToolbar({
   return (
     <>
       <div
-        className={`pointer-events-auto absolute z-[75] flex h-11 -translate-x-1/2 items-center gap-0.5 rounded-[18px] border border-black/10 dark:border-white/10 bg-white/95 dark:bg-zinc-900/95 px-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)] backdrop-blur-md transition-all ${
+        className={`pointer-events-auto absolute z-50 flex h-11 -translate-x-1/2 items-center gap-0.5 rounded-2xl border border-black/10 dark:border-white/10 bg-background-primary-default/95 dark:bg-background-secondary-default/95 px-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)] backdrop-blur-md transition-all ${
           isFlipped ? "translate-y-0" : "-translate-y-full"
         }`}
         style={{
@@ -110,7 +110,7 @@ export function CanvasNodeHoverToolbar({
 
         {/* 存资产 */}
         <ToolbarItem
-          icon={savedAssetToast ? <RiCheckLine className="size-4 text-emerald-500" /> : <RiFolderAddLine className="size-4 opacity-75" />}
+          icon={savedAssetToast ? <RiCheckLine className="size-4 text-state-success-text" /> : <RiFolderAddLine className="size-4 opacity-75" />}
           label={savedAssetToast ? "已暂存" : "存资产"}
           title="存入资产库"
           onClick={handleSaveAsset}
@@ -119,7 +119,7 @@ export function CanvasNodeHoverToolbar({
         {/* 非 Group 节点：打开/切换生成提示词面板 */}
         {!isGroup && onTogglePanel && (
           <ToolbarItem
-            icon={<RiSparklingLine className="size-4 text-blue-500" />}
+            icon={<RiSparklingLine className="size-4 text-accent-500" />}
             label="生图"
             title="生成提示词与设置"
             onClick={() => onTogglePanel(node)}
@@ -157,7 +157,7 @@ export function CanvasNodeHoverToolbar({
         {/* Group 专属：解散成组 */}
         {isGroup && onUngroup && (
           <ToolbarItem
-            icon={<RiSplitCellsHorizontal className="size-4 text-blue-500" />}
+            icon={<RiSplitCellsHorizontal className="size-4 text-accent-500" />}
             label="解散"
             title="解散编组"
             onClick={() => onUngroup(node)}
@@ -202,15 +202,15 @@ function ToolbarItem({
       title={title}
       aria-label={title}
       className={`group relative flex h-full items-center px-0.5 transition-colors ${
-        danger ? "text-zinc-500 hover:text-rose-500" : "text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white"
+        danger ? "text-text-secondary hover:text-text-error-primary" : "text-text-secondary dark:text-text-secondary hover:text-text-secondary dark:hover:text-white"
       }`}
       onClick={onClick}
     >
       <span className={`flex h-8 items-center gap-1.5 rounded-xl px-2 text-xs font-medium transition ${
-        danger ? "group-hover:bg-rose-500/10" : "group-hover:bg-zinc-100 dark:group-hover:bg-zinc-800"
+        danger ? "group-hover:bg-background-tertiary-error/10" : "group-hover:bg-background-secondary-default dark:group-hover:bg-background-secondary-default"
       }`}>
         {icon}
-        <span className="whitespace-nowrap text-[11px]">{label}</span>
+        <span className="whitespace-nowrap text-caption-2-regular">{label}</span>
       </span>
     </button>
   )
@@ -252,7 +252,7 @@ export function CanvasNodeInfoModal({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
@@ -262,22 +262,22 @@ export function CanvasNodeInfoModal({
         <div className="flex items-center justify-between pb-3 border-b border-border-button-default">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-text-primary">节点信息</h3>
-            <span className="rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary uppercase">
+            <span className="rounded bg-background-secondary-default dark:bg-background-secondary-default px-1.5 py-0.5 text-caption-2-regular font-mono text-text-tertiary uppercase">
               {node.type}
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="flex rounded-lg bg-zinc-100 dark:bg-zinc-800 p-0.5 text-xs font-medium">
+            <div className="flex rounded-lg bg-background-secondary-default dark:bg-background-secondary-default p-0.5 text-xs font-medium">
               <button
                 type="button"
-                className={`rounded-md px-2.5 py-1 transition ${tab === "info" ? "bg-white dark:bg-zinc-700 text-text-primary shadow-xs" : "text-text-tertiary"}`}
+                className={`rounded-md px-2.5 py-1 transition ${tab === "info" ? "bg-background-primary-default dark:bg-background-secondary-default text-text-primary shadow-xs" : "text-text-tertiary"}`}
                 onClick={() => setTab("info")}
               >
                 信息
               </button>
               <button
                 type="button"
-                className={`rounded-md px-2.5 py-1 transition ${tab === "json" ? "bg-white dark:bg-zinc-700 text-text-primary shadow-xs" : "text-text-tertiary"}`}
+                className={`rounded-md px-2.5 py-1 transition ${tab === "json" ? "bg-background-primary-default dark:bg-background-secondary-default text-text-primary shadow-xs" : "text-text-tertiary"}`}
                 onClick={() => setTab("json")}
               >
                 JSON
@@ -286,7 +286,7 @@ export function CanvasNodeInfoModal({
             <button
               type="button"
               onClick={onClose}
-              className="ml-2 rounded-lg p-1 text-text-tertiary hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="ml-2 rounded-lg p-1 text-text-tertiary hover:bg-background-secondary-default dark:hover:bg-background-secondary-default transition"
             >
               <RiCloseLine className="size-4" />
             </button>
@@ -313,13 +313,13 @@ export function CanvasNodeInfoModal({
             <div className="relative">
               <button
                 type="button"
-                className="absolute top-2 right-2 flex items-center gap-1 rounded bg-zinc-200/80 dark:bg-zinc-700 px-2 py-1 text-[11px] font-medium text-text-secondary hover:bg-zinc-300 dark:hover:bg-zinc-600 transition"
+                className="absolute top-2 right-2 flex items-center gap-1 rounded bg-background-secondary-default/80 dark:bg-background-secondary-default px-2 py-1 text-caption-2-medium font-medium text-text-secondary hover:bg-background-secondary-default dark:hover:bg-background-secondary-default transition"
                 onClick={copyJson}
               >
-                {copied ? <RiCheckLine className="size-3 text-emerald-500" /> : <RiFileCopyLine className="size-3" />}
+                {copied ? <RiCheckLine className="size-3 text-state-success-text" /> : <RiFileCopyLine className="size-3" />}
                 <span>{copied ? "已复制" : "复制"}</span>
               </button>
-              <pre className="thin-scrollbar max-h-[380px] overflow-auto rounded-xl bg-zinc-100 dark:bg-zinc-900 p-3 font-mono text-[11px] leading-relaxed text-text-secondary">
+              <pre className="thin-scrollbar max-h-[380px] overflow-auto rounded-xl bg-background-secondary-default dark:bg-background-secondary-default p-3 font-mono text-caption-2-regular leading-relaxed text-text-secondary">
                 {jsonString}
               </pre>
             </div>
@@ -332,7 +332,7 @@ export function CanvasNodeInfoModal({
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[80px_minmax(0,1fr)] gap-2 py-1 border-b border-zinc-100 dark:border-zinc-800/60">
+    <div className="grid grid-cols-[80px_minmax(0,1fr)] gap-2 py-1 border-b border-separator-border dark:border-separator-border/60">
       <span className="text-text-tertiary font-medium">{label}</span>
       <span className="text-text-primary break-all">{value}</span>
     </div>

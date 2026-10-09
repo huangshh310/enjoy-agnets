@@ -25,7 +25,9 @@ import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handof
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import { clearComposerAssets, listComposerAssets, setComposerAssets } from "./composer-assets"
 import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
-import type { WorkspaceRow } from "./workspace-row"
+import { workspaceRowFromNode, type WorkspaceRow } from "./workspace-row"
+import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
+import { discardCreatedSession } from "./discard-created-session"
 
 export type { WorkspaceRow } from "./workspace-row"
 type SessionRow = {
@@ -60,7 +62,9 @@ export function saveCurrentSessionDraft() {
   }
 }
 
-export async function loadSession(sessionId: string, title: string) {
+export async function loadSession(sessionId: string, title: string, stale?: () => boolean) {
+  if (!stale) noteExternalNavigation()
+  if (stale?.()) return
   const store = useChatStore.getState()
   const sameSession = store.sessionId === sessionId
   const previous = sameSession ? store.messages : []
@@ -79,29 +83,26 @@ export async function loadSession(sessionId: string, title: string) {
     store.setSession(sessionId, title)
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
+  if (stale?.()) return
   restoreUiMessages(rows)
   store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
 }
 
-export async function createAndOpenSession(workspaceId: string, customTitle = "新对话") {
+export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
+  if (!stale) noteExternalNavigation()
+  if (stale?.()) return
   parkForegroundRun()
   saveCurrentSessionDraft()
   const session = (await getIde().session.create({
     workspaceId,
     title: customTitle
   })) as SessionRow
+  if (await discardCreatedSession(session.id, stale)) return
   const store = useChatStore.getState()
   const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
-  useChatStore.setState({ ...idleComposerPatch(), composer: "" })
-  clearComposerAssets()
-  setQuotedContexts([])
-  useEngineHandoffStore.getState().resetPending()
-  store.setSession(session.id, session.title)
-  store.setRuntimeId(runtimeId)
-  store.setMessages([])
-  store.setMode(modeForNewSession(readRememberedDefaultMode()))
-  applyComposerModel(store, session.id)
+  publishCreatedSession(store, session, runtimeId)
   await bindSessionRuntime(session.id, runtimeId)
+  if (await discardCreatedSession(session.id, stale)) return
   await refreshAllWorkspaces()
 }
 
@@ -155,32 +156,54 @@ export async function refreshAllWorkspaces() {
   }
 }
 
-export async function selectPersistedSession(sessionId: string, workspaceId?: string) {
+export async function selectPersistedSession(
+  sessionId: string,
+  workspaceId?: string,
+  stale?: () => boolean
+): Promise<boolean> {
+  if (!stale) noteExternalNavigation()
+  if (stale?.()) return false
   const store = useChatStore.getState()
   const node = store.repositories.find((item) => item.id === sessionId)
-  if (!node || node.kind !== "session") return
+  if (!node || node.kind !== "session") return false
+  const switched = await switchSessionWorkspace(store, node, workspaceId, stale)
+  if (!switched || stale?.()) return false
+  await loadSession(node.id, node.name, stale)
+  return !stale?.()
+}
+
+async function switchSessionWorkspace(
+  store: ReturnType<typeof useChatStore.getState>,
+  node: { workspaceId?: string; parentId?: string },
+  workspaceId: string | undefined,
+  stale?: () => boolean
+): Promise<boolean> {
   const targetWorkspaceId = workspaceId ?? node.workspaceId ?? node.parentId
-  if (targetWorkspaceId && store.workspaceId !== targetWorkspaceId) {
-    const workspace = store.repositories.find(
-      (item) => item.id === targetWorkspaceId && item.kind === "workspace"
-    )
-    if (workspace) {
-      const row: WorkspaceRow = {
-        id: workspace.id,
-        name: workspace.name,
-        rootPath: workspace.rootPath || "",
-        kind: workspace.locationKind,
-        sshStatus: workspace.sshStatus,
-        sshHost: workspace.sshHost,
-        sshUser: workspace.sshUser,
-        remotePath: workspace.remotePath
-      }
-      await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, row.id)
-      store.setWorkspace(row)
-      await connectSshIfNeeded(row)
-    }
-  }
-  await loadSession(node.id, node.name)
+  if (!targetWorkspaceId || store.workspaceId === targetWorkspaceId) return true
+  const workspace = store.repositories.find((item) => item.id === targetWorkspaceId && item.kind === "workspace")
+  if (!workspace) return true
+  const row = workspaceRowFromNode(workspace)
+  await disconnectPreviousSsh(store.workspaceId, store.workspaceKind, row.id)
+  if (stale?.()) return false
+  store.setWorkspace(row)
+  await connectSshIfNeeded(row)
+  return !stale?.()
+}
+
+function publishCreatedSession(
+  store: ReturnType<typeof useChatStore.getState>,
+  session: SessionRow,
+  runtimeId: ReturnType<typeof resolveCreateRuntime>
+) {
+  useChatStore.setState({ ...idleComposerPatch(), composer: "" })
+  clearComposerAssets()
+  setQuotedContexts([])
+  useEngineHandoffStore.getState().resetPending()
+  store.setSession(session.id, session.title)
+  store.setRuntimeId(runtimeId)
+  store.setMessages([])
+  store.setMode(modeForNewSession(readRememberedDefaultMode()))
+  applyComposerModel(store, session.id)
 }
 
 export function parkForegroundRun() {

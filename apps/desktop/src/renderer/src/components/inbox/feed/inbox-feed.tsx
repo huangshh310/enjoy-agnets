@@ -33,10 +33,10 @@ export function InboxFeed(props: {
         {groups.map((group) => (
           <section key={group.id} className="flex flex-col">
             <div className="flex items-center justify-between px-3 pt-3 pb-1">
-              <span className="text-[11px] font-semibold tracking-wider text-text-tertiary">
+              <span className="text-caption-2-semibold font-semibold tracking-wider text-text-tertiary">
                 {inboxGroupLabel(group.id, t)}
               </span>
-              <span className="text-[10px] font-mono text-text-quaternary">
+              <span className="text-caption-2-regular font-mono text-text-tertiary">
                 {group.items.length}
               </span>
             </div>

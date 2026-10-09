@@ -58,18 +58,18 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
     <div className="flex flex-col justify-between rounded-xl border border-separator-border/70 bg-background-primary-default p-4 shadow-2xs min-w-0">
       <div className="flex items-center justify-between border-b border-separator-border/50 pb-2.5">
         <div className="flex items-center gap-2">
-          <RiShieldCheckLine className="size-4 text-emerald-500" />
+          <RiShieldCheckLine className="size-4 text-state-success-text" />
           <h4 className="text-caption-1-medium font-semibold text-text-primary">
             {t("pages.observability.healthTitle")}
           </h4>
         </div>
         <span
-          className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+          className={`rounded-md px-1.5 py-0.5 font-mono text-caption-2-semibold font-semibold ${
             stats.successRate >= 90
-              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              ? "bg-state-success-text/10 text-state-success-text dark:text-state-success-text"
               : stats.successRate >= 70
-                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                ? "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text"
+                : "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary"
           }`}
         >
           {stats.successRate >= 90 ? "状态良好" : stats.successRate >= 70 ? "存在关注项" : "稳定性偏低"}
@@ -134,28 +134,28 @@ export function ObservabilityStatusChart(props: { metrics: TelemetryMetric[] }) 
             <span className="text-body-medium font-bold text-text-primary">
               {stats.successRate.toFixed(0)}%
             </span>
-            <span className="text-[9px] text-text-tertiary">
+            <span className="text-caption-2-regular text-text-tertiary">
               {t("pages.observability.successRate")}
             </span>
           </div>
         </div>
 
         {/* 图例列表 */}
-        <div className="flex flex-col gap-1.5 text-[11px] font-mono shrink-0">
+        <div className="flex flex-col gap-1.5 text-caption-2-regular font-mono shrink-0">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="size-2 rounded-full bg-state-success-base shrink-0" />
             <span className="text-text-secondary whitespace-nowrap">
               {t("pages.observability.successN", { n: stats.success })}
             </span>
           </div>
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="size-2 rounded-full bg-amber-500 shrink-0" />
+            <span className="size-2 rounded-full bg-status-yellow-background shrink-0" />
             <span className="text-text-secondary whitespace-nowrap">
               {t("pages.observability.timeoutN", { n: stats.timeout })}
             </span>
           </div>
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="size-2 rounded-full bg-rose-500 shrink-0" />
+            <span className="size-2 rounded-full bg-background-tertiary-error shrink-0" />
             <span className="text-text-secondary whitespace-nowrap">
               {t("pages.observability.errorN", { n: stats.providerErr + stats.otherErr })}
             </span>

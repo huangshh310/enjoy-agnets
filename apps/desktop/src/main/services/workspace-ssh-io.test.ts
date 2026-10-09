@@ -37,6 +37,9 @@ function fakeHost(git: {
       if (command.includes("diff")) {
         return { stdout: git.diff ?? "", stderr: "", exitCode: 0 }
       }
+      if (command.includes("status")) {
+        return { stdout: git.status ?? "", stderr: "", exitCode: 0 }
+      }
       return { stdout: "", stderr: "", exitCode: 0 }
     },
     gitStatus: async () => git.status ?? "",
@@ -63,7 +66,7 @@ test("gitLog 走 host bash git log", async () => {
 })
 
 test("patch/stage/restore/move 经 host，路径 jail", async () => {
-  const host = fakeHost({})
+  const host = fakeHost({ status: " M src/a.ts" })
   const patch = await sshWorkspacePatch(host, ["src/a.ts"])
   assert.equal(typeof patch, "string")
   assert.ok(host.bashLog.some((cmd) => cmd.includes("git") && cmd.includes("diff")))

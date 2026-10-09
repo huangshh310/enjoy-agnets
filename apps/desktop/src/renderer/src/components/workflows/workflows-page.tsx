@@ -154,13 +154,13 @@ export function WorkflowsPage() {
             {selectedId ? (
               <div className="flex items-center gap-1.5">
                 <input
-                  className="h-7 w-56 rounded-md bg-transparent px-2 text-caption-1-semibold text-text-primary outline-none transition hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 focus:bg-zinc-100 dark:focus:bg-zinc-800"
+                  className="h-7 w-56 rounded-md bg-transparent px-2 text-caption-1-semibold text-text-primary outline-none transition hover:bg-background-secondary-default/60 dark:hover:bg-background-secondary-default/40 focus:bg-background-secondary-default dark:focus:bg-background-secondary-default"
                   value={currentProject?.title ?? ""}
                   placeholder={t("pages.workflows.canvasUntitled")}
                   onChange={(event) => renameProject(selectedId, event.target.value)}
                 />
                 {currentProject && (
-                  <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-mono text-text-tertiary">
+                  <span className="rounded-full bg-background-secondary-default dark:bg-background-secondary-default px-2 py-0.5 text-caption-2-regular font-mono text-text-tertiary">
                     {currentProject.nodes.length} 个节点
                   </span>
                 )}
@@ -172,7 +172,7 @@ export function WorkflowsPage() {
               <button
                 type="button"
                 data-testid="workflow-stop"
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 px-3 text-caption-2-medium text-white shadow-sm transition"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-status-yellow-background hover:bg-status-yellow-background px-3 text-caption-2-medium text-white shadow-sm transition"
                 onClick={() => void stopPipeline()}
               >
                 <RiStopCircleLine className="size-3.5" />
@@ -183,7 +183,7 @@ export function WorkflowsPage() {
                 type="button"
                 data-testid="workflow-start"
                 disabled={!sessionId || isStarting}
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 text-caption-2-medium text-white shadow-sm transition disabled:opacity-40"
+                className="flex h-8 items-center gap-1.5 rounded-lg bg-accent-500 hover:bg-accent-500 px-3 text-caption-2-medium text-white shadow-sm transition disabled:opacity-40"
                 onClick={() => void startPipeline()}
               >
                 {isStarting ? (
@@ -198,7 +198,7 @@ export function WorkflowsPage() {
               <button
                 type="button"
                 title={t("pages.workflows.canvasDelete")}
-                className="flex size-8 items-center justify-center rounded-lg text-text-tertiary hover:text-rose-500 hover:bg-rose-500/10 transition"
+                className="flex size-8 items-center justify-center rounded-lg text-text-tertiary hover:text-text-error-primary hover:bg-background-tertiary-error/10 transition"
                 onClick={() => setDeleteConfirmId(selectedId)}
               >
                 <RiDeleteBinLine className="size-4" />
@@ -220,7 +220,7 @@ export function WorkflowsPage() {
         )}
 
         {dagError && (
-          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 rounded-xl bg-rose-600 text-white px-4 py-2 text-xs shadow-lg backdrop-blur">
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 rounded-xl bg-background-tertiary-error text-white px-4 py-2 text-xs shadow-lg backdrop-blur">
             <RiAlertLine className="size-4 shrink-0" />
             <span>{dagError}</span>
             <button
@@ -229,7 +229,7 @@ export function WorkflowsPage() {
                 setDagError(null)
                 setCycleNodeIds([])
               }}
-              className="ml-2 rounded p-0.5 hover:bg-white/20 transition"
+              className="ml-2 rounded p-0.5 hover:bg-background-primary-default/20 transition"
             >
               <RiCloseLine className="size-3.5" />
             </button>
@@ -249,14 +249,14 @@ export function WorkflowsPage() {
               <div className="mt-5 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  className="rounded-lg border border-border-button-default px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  className="rounded-lg border border-border-button-default px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-background-secondary-default dark:hover:bg-background-secondary-default transition"
                   onClick={() => setDeleteConfirmId(null)}
                 >
                   {t("pages.workflows.canvasCancel")}
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-medium text-white shadow-xs hover:bg-rose-700 transition"
+                  className="rounded-lg bg-background-tertiary-error px-3 py-1.5 text-xs font-medium text-white shadow-xs hover:bg-background-tertiary-error transition"
                   onClick={() => {
                     const toDelete = deleteConfirmId
                     setDeleteConfirmId(null)

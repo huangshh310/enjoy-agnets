@@ -2,13 +2,9 @@
  * 子 Agent 与主循环共用 resolveToolApproval；没有等待器时拒绝写盘，不偷偷执行。
  */
 import type { AgentMode } from "@enjoy-agents/ipc-contract"
+import { BASH_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
 import { bashAllowPrefix, commandFromToolInput } from "../policies/bash-prefix.ts"
-import {
-  BASH_TOOLS,
-  resolveToolApproval,
-  type ApprovalPolicy,
-  type ToolApprovalDecision
-} from "../tool-approval.ts"
+import { resolveToolApproval, type ApprovalPolicy, type ToolApprovalDecision } from "../tool-approval.ts"
 
 const BASH_SET = new Set<string>(BASH_TOOLS)
 
