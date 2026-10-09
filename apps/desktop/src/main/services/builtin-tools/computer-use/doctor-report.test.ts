@@ -20,7 +20,8 @@ test("未签名 helper：即使宿主 AX 与 RPC trusted 也不得绿", async ()
   assert.equal(report.success, false)
   assert.equal(report.code, "executor_unsigned")
   assert.equal(report.backgroundClick, false)
-  assert.equal(formatDoctorLine(report), "还不能点击。请安装带签名的版本后再试。")
+  // 人话跟真实 displaySession；darwin 文案必须钉 macos，否则 Linux/Win runner 走 H5。
+  assert.equal(formatDoctorLine({ ...report, session: "macos" }), "还不能点击。请安装带签名的版本后再试。")
 })
 
 test("路径或签名错位：医生不绿", async () => {
@@ -33,7 +34,7 @@ test("路径或签名错位：医生不绿", async () => {
   )
   assert.equal(report.success, false)
   assert.equal(report.code, "executor_identity_mismatch")
-  assert.equal(formatDoctorLine(report), "还不能点击。请安装带签名的版本后再试。")
+  assert.equal(formatDoctorLine({ ...report, session: "macos" }), "还不能点击。请安装带签名的版本后再试。")
 })
 
 test("sidecar 身份与现场签名不一致：不绿", async () => {
@@ -62,7 +63,7 @@ test("签名且路径一致、helper AX 通过：可以绿", async () => {
   assert.equal(report.helperSigned, true)
   assert.equal(report.helperMatchesSpawn, true)
   assert.equal(report.accessibility, true)
-  assert.equal(formatDoctorLine(report), "可以点击。")
+  assert.equal(formatDoctorLine({ ...report, session: "macos" }), "可以点击。")
 })
 
 test("签名匹配但 helper 自己没有 AX：不绿，人话指向 helper", async () => {
@@ -74,7 +75,25 @@ test("签名匹配但 helper 自己没有 AX：不绿，人话指向 helper", as
   )
   assert.equal(report.success, false)
   assert.equal(report.code, "permission_denied")
-  assert.equal(formatDoctorLine(report), "还不能点击。请打开下面仍是未授权的那一项。")
+  assert.equal(formatDoctorLine({ ...report, session: "macos" }), "还不能点击。请打开下面仍是未授权的那一项。")
+})
+
+test("H5：无图形会话只留这一句，不叠签名文案", () => {
+  assert.equal(
+    formatDoctorLine({ session: "none", code: "executor_unsigned" }),
+    "当前没有图形会话，桌面动作不可用。"
+  )
+})
+
+test("H5：Windows / X11 只出尚未标为可用，不叠权限阻断", () => {
+  assert.equal(
+    formatDoctorLine({ session: "windows", success: true, backgroundClick: true }),
+    "这个桌面会话尚未标为可用，须等真机 GUI 冒烟。"
+  )
+  assert.equal(
+    formatDoctorLine({ session: "x11", code: "permission_denied" }),
+    "这个桌面会话尚未标为可用，须等真机 GUI 冒烟。"
+  )
 })
 
 test("会话 doctor 走同一套身份钩子", async () => {

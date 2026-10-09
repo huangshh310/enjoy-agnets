@@ -1,13 +1,13 @@
 /**
  * 供应商对外入口：建连、探测、目录。
  */
-import { rememberProbedModels } from "./capabilities/probe"
-import { CatalogError } from "./catalog-url"
-import { discoverRemoteModels } from "./discover"
-import { resolvedBaseURL } from "./config"
-import { usesOfficialGoogle } from "./google"
-import { presetFor, PROVIDER_PRESETS, type CatalogModel, type ProviderKind } from "./presets"
-import type { ProviderConfig } from "./types"
+import { rememberProbedModels } from "./capabilities/probe.ts"
+import { CatalogError } from "./catalog-url.ts"
+import { discoverRemoteModels } from "./discover.ts"
+import { resolvedBaseURL } from "./config.ts"
+import { usesOfficialGoogle } from "./google.ts"
+import { presetFor, PROVIDER_PRESETS, type CatalogModel, type ProviderKind } from "./presets.ts"
+import type { ProviderConfig } from "./types.ts"
 
 export {
   API_STYLES,
@@ -27,7 +27,7 @@ export {
   type CatalogModel,
   type ProviderKind,
   type ProviderPreset
-} from "./presets"
+} from "./presets.ts"
 
 export {
   migrateStoredProfile,
@@ -38,8 +38,8 @@ export {
   type ProfileKey,
   type ProfileUpsertInput,
   type ReasoningFamilyName
-} from "./profile-migrate"
-export { applyProfileUpsert } from "./profile-upsert"
+} from "./profile-migrate.ts"
+export { applyProfileUpsert } from "./profile-upsert.ts"
 export {
   catalogRequestURL,
   cleanEndpoints,
@@ -53,10 +53,10 @@ export {
   speakStyle,
   type ProviderEndpoints,
   type ProviderKeyRecord
-} from "./endpoints"
-export { fetchForProxy, parseProxy, proxyEnvOverlay, type ProxyMode } from "./proxy-fetch"
-export { publishedContextWindow } from "./published-context-window"
-export { pingProviderEndpoint, type PingResult } from "./discover"
+} from "./endpoints.ts"
+export { fetchForProxy, parseProxy, proxyEnvOverlay, type ProxyMode } from "./proxy-fetch.ts"
+export { publishedContextWindow } from "./published-context-window.ts"
+export { pingProviderEndpoint, type PingResult } from "./discover.ts"
 export {
   adviseCatalogUrl,
   catalogBaseCandidates,
@@ -65,25 +65,25 @@ export {
   resolveCatalogBaseURL,
   type CatalogAdvice,
   type CatalogErrorCode
-} from "./catalog-url"
+} from "./catalog-url.ts"
 export {
   lookupGatewayContextWindow,
   parseCatalogContextWindow,
   parseCatalogMaxOutput,
   resolveModelContextWindow,
   type ContextWindowHints
-} from "./context-window"
+} from "./context-window.ts"
 export {
   GATEWAY_MODELS_URL,
   gatewayContextWindowFor,
   loadGatewayCatalog,
   type GatewayCatalogEntry
-} from "./gateway-catalog"
-export { createLanguageModel } from "./create-model"
-export { detectProtocols, type ProtocolProbe } from "./detect-protocol"
-export { languageConfigFromProfile, spokenCall, type CallableProfile } from "./profile-call"
-export { languageModelFactoryKind, type LanguageModelFactoryKind } from "./model-factory"
-export { usesOfficialGoogle } from "./google"
+} from "./gateway-catalog.ts"
+export { createLanguageModel } from "./create-model.ts"
+export { detectProtocols, type ProtocolProbe } from "./detect-protocol.ts"
+export { languageConfigFromProfile, spokenCall, type CallableProfile } from "./profile-call.ts"
+export { languageModelFactoryKind, type LanguageModelFactoryKind } from "./model-factory.ts"
+export { usesOfficialGoogle } from "./google.ts"
 export {
   OPENAI_COMPAT_NAME,
   deepseekCallOptions,
@@ -99,8 +99,8 @@ export {
   usesDeepSeekReasoningApi,
   type ReasoningEffort,
   type ReasoningFamilyName as ReasoningFamily
-} from "./reasoning"
-export type { ProviderConfig } from "./types"
+} from "./reasoning.ts"
+export type { ProviderConfig } from "./types.ts"
 export {
   ALL_CAPABILITIES,
   staticCapabilitiesFor,
@@ -108,16 +108,16 @@ export {
   isVideoOnlyModelId,
   capabilityLabel,
   unsupportedReason
-} from "./capabilities/catalog"
+} from "./capabilities/catalog.ts"
 export {
   rememberProbedModels,
   probedCapabilitiesFor,
   effectiveCapabilities,
   clearProbedCapabilities
-} from "./capabilities/probe"
-export { resolveModelAlias, createEnjoyRegistry, type ModelAlias } from "./registry"
-export { mergeModelSettings, wrapWithDefaults, type MiddlewareDefaults } from "./middleware"
-export { createFilesApi, createSkillsApi } from "./provider-api"
+} from "./capabilities/probe.ts"
+export { resolveModelAlias, createEnjoyRegistry, type ModelAlias } from "./registry.ts"
+export { mergeModelSettings, wrapWithDefaults, type MiddlewareDefaults } from "./middleware.ts"
+export { createFilesApi, createSkillsApi } from "./provider-api.ts"
 export {
   createImageModel,
   createSpeechModel,
@@ -133,8 +133,8 @@ export {
   alternateTranscriptionModelId,
   defaultEmbeddingModelId,
   mediaFactoryKind
-} from "./media-models"
-export { pickMediaFallbackConfig, fallbackKindsFor, type MediaAltProfile } from "./media/fallback-config"
+} from "./media-models.ts"
+export { pickMediaFallbackConfig, fallbackKindsFor, type MediaAltProfile } from "./media/fallback-config.ts"
 
 /** @deprecated Use ProviderKind. Kept so older call sites compile. */
 export type ProviderId = ProviderKind
@@ -245,4 +245,4 @@ export async function probeProvider(
   }
 }
 
-export { discoverRemoteModels } from "./discover"
+export { discoverRemoteModels } from "./discover.ts"

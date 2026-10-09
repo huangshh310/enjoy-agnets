@@ -1,5 +1,6 @@
 /**
  * 动态能力：probe 成功后按模型 id 缓存 probedCaps。未探测仍用静态目录。
+ * 最小内存桩，不发网络请求；完整探测实现可整体替换本文件。
  */
 import type { ProviderCapability } from "@enjoy-agents/ipc-contract"
 import { staticCapabilitiesFor } from "./catalog.ts"
