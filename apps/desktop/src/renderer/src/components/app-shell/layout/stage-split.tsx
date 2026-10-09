@@ -3,16 +3,20 @@
  * 工作台 Panel 不可 collapse：审查栏加宽最多压到 42%，切模块拉回 62%。
  */
 import { useEffect } from "react"
-import { Outlet } from "@tanstack/react-router"
+import { Outlet, useRouterState } from "@tanstack/react-router"
 import { Group, Panel, useDefaultLayout } from "react-resizable-panels"
 import { cx } from "@/utils/cx"
 import { useRightPaneShortcuts } from "@renderer/components/ai-chat/right-pane/use-right-pane-shortcuts"
 import { useRightPaneWidth } from "@renderer/components/ai-chat/right-pane/use-right-pane-width"
+import { useAttentionStore } from "@renderer/stores/attention/attention-store"
+import { stripVisibleItems } from "@renderer/stores/attention/ingest-attention"
 import { useChatStore } from "@renderer/stores/chat-store"
 import type { AppModuleId } from "../app-shell.types"
 import { AttentionStrip } from "@renderer/components/ai-chat/attention/attention-strip"
 import { ChatStage } from "../chat/chat-stage"
 import { InspectorPane } from "./inspector-pane"
+import { isConversationSurface } from "./inspector-conversation"
+import { useInspectorOnConversation } from "./use-inspector-on-conversation"
 import { HistoryPageSlide } from "@renderer/components/layout/nav-history/history-page-slide"
 import { sanitizeSplitLayout, STAGE_DEFAULT_SIZE, STAGE_MIN_PERCENT } from "./inspector-panel-size"
 
@@ -24,11 +28,15 @@ export function StageSplit({
   activeModule: AppModuleId
 }) {
   const rightPanelCollapsed = useChatStore((state) => state.rightPanelCollapsed)
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isConversation = isConversationSurface(isChat, pathname)
+  const stripVisible = useAttentionStore((state) => stripVisibleItems(state.items).length > 0)
   const { defaultLayout, onLayoutChanged } = useDefaultLayout({
     id: "enjoy-agents-chat-split",
     storage: window.localStorage
   })
-  useRightPaneShortcuts()
+  useInspectorOnConversation(isConversation)
+  useRightPaneShortcuts(isConversation)
   const { groupRef, chatPanelRef, maximized, toggleWidth, resetWidth, restoreStage } =
     useRightPaneWidth()
 
@@ -66,10 +74,22 @@ export function StageSplit({
       >
         <HistoryPageSlide>
         <div className="relative h-full min-h-0 flex-1">
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", !isChat && "hidden")}>
+          <div
+            className={cx(
+              "absolute inset-0 flex min-h-0 flex-col",
+              !isChat && "hidden",
+              stripVisible && "pt-12"
+            )}
+          >
             <ChatStage />
           </div>
-          <div className={cx("absolute inset-0 flex min-h-0 flex-col", isChat && "hidden")}>
+          <div
+            className={cx(
+              "absolute inset-0 flex min-h-0 flex-col",
+              isChat && "hidden",
+              stripVisible && "pt-12"
+            )}
+          >
             <Outlet />
           </div>
           <AttentionStrip />

@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { Automation } from "@enjoy-agents/ipc-contract"
 import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { refreshAllWorkspaces } from "@renderer/hooks/session-lifecycle"
 import { useI18n, useT } from "@renderer/i18n"
@@ -32,6 +33,7 @@ export function AutomationsPage() {
   const [draft, setDraft] = useState<AutomationDraft | null>(null)
   const [saving, setSaving] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [now] = useState(() => Date.now())
 
   const automationsQuery = useQuery({
@@ -101,7 +103,7 @@ export function AutomationsPage() {
       <header className="flex items-center justify-between gap-2 border-b border-separator-border px-4 py-3">
         <div>
           <h1 className="text-title-3-semibold text-text-primary">{t("studio.automations.title")}</h1>
-          <p className="mt-0.5 text-caption-1-medium text-text-tertiary">{t("studio.automations.desc")}</p>
+          <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("studio.automations.desc")}</p>
         </div>
         <Button size="sm" onClick={() => setDraft(emptyAutomationDraft(defaults))}>
           {t("studio.automations.newAutomation")}
@@ -131,7 +133,15 @@ export function AutomationsPage() {
         onChange={(patch) => setDraft((current) => (current ? { ...current, ...patch } : current))}
         onSave={() => draft && void persist(draft)}
         onRun={() => void runDraft()}
-        onRemove={() => void removeDraft()}
+        onRemove={() => setConfirmDelete(true)}
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        title={t("studio.automations.deleteTitle")}
+        description={t("studio.automations.deleteDesc", { name: draft?.name ?? "" })}
+        destructive
+        onOpenChange={setConfirmDelete}
+        onConfirm={() => void removeDraft()}
       />
     </div>
   )

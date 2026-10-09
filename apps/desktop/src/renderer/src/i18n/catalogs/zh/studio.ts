@@ -230,6 +230,15 @@ export const zhStudio = {
     webhook: "本机推送",
     triggerHint: "选择什么时候运行",
     cronLabel: "定时",
+    scheduleDaily: "每天",
+    scheduleWeekdays: "工作日",
+    scheduleWeekly: "每周",
+    scheduleTime: "时间",
+    scheduleAdvanced: "高级 / 自定义",
+    deleteTitle: "删除这条自动化？",
+    deleteDesc: "「{name}」删除后不能恢复。",
+    projectLabel: "项目",
+    projectEmpty: "还没打开项目",
     timeZone: "时区",
     webhookPort: "端口",
     webhookPath: "路径",
@@ -314,22 +323,22 @@ export const zhStudio = {
   instructionPresets: {
     minimalDiffs: {
       label: "极简外科手术式修改",
-      tag: "Minimal Diffs",
+      tag: "最小改动",
       text: "严格优先采用局部精准修改，避免重写完整文件。禁止添加复述代码的无意义注释。在声明任务完成前必须主动执行类型检查和验证命令。"
     },
     tddFirst: {
       label: "测试驱动开发 (TDD)",
-      tag: "Test-Driven",
+      tag: "测试先行",
       text: "在修改核心业务逻辑前，先检查或补齐测试用例。主动运行测试套件并确保 100% 零回退，在输出中清晰汇报验证命令与覆盖情况。"
     },
     cleanArch: {
       label: "高内聚低耦合分层",
-      tag: "Architecture",
+      tag: "分层架构",
       text: "严格遵循模块化分层治理（Anti-Spaghetti），单文件控制在 300 行以内。IPC 与 API 边界强制使用 Zod 严格校验，严禁使用 untyped any 变量。"
     },
     seniorPmUx: {
       label: "产品体验与 UI 设计",
-      tag: "Product & UI",
+      tag: "产品 · 界面",
       text: "以高级 AI 产品经理与资深 UI 设计师视角审视功能。注重流畅的用户动线、克制专业的信息层级与语义设计 Token，拒绝粗糙拼凑。"
     }
   },

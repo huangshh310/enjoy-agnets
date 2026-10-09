@@ -16,6 +16,8 @@ import { CatchUpToggle } from "./catch-up-toggle"
 import { EnginePills } from "./engine-pills"
 import { MissedRecordsList } from "./missed-records-list"
 import { ModePills } from "./mode-pills"
+import { AutomationProjectField } from "./project-field"
+import { ScheduleFields } from "./schedule-fields"
 import { TriggerPills } from "./trigger-pills"
 import { WebhookFields } from "./webhook-fields"
 
@@ -68,7 +70,7 @@ export function AutomationDrawer({
           <p id="automation-editor-title" className="text-body-medium font-semibold text-text-primary">
             {draft.id ? t("studio.automations.editTitle") : t("studio.automations.createTitle")}
           </p>
-          <p className="mt-0.5 text-caption-2-regular text-text-primary">{t("studio.automations.workspaceHint")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-secondary">{t("studio.automations.workspaceHint")}</p>
         </div>
         <button
           type="button"
@@ -92,41 +94,29 @@ export function AutomationDrawer({
             className="mt-1"
           />
         </label>
+        <AutomationProjectField />
         <TriggerPills
           value={draft.triggers}
           onChange={(triggers) => onChange({ triggers, trigger: triggers[0] ?? draft.trigger })}
         />
         {draft.triggers.includes("cron") ? (
-          <div className="grid grid-cols-2 gap-2">
-            <label>
-              <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.cronLabel")}</span>
-              <Input
-                value={draft.cronExpr}
-                onChange={(event) => onChange({ cronExpr: event.target.value })}
-                className="mt-1 font-mono"
-              />
-            </label>
-            <label>
-              <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.timeZone")}</span>
-              <Input
-                value={draft.timeZone}
-                onChange={(event) => onChange({ timeZone: event.target.value })}
-                className="mt-1"
-              />
-            </label>
-          </div>
+          <ScheduleFields
+            cronExpr={draft.cronExpr}
+            timeZone={draft.timeZone}
+            onChange={onChange}
+          />
         ) : null}
         {draft.triggers.includes("on_save") ? (
-          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-tertiary">
+          <p className="rounded-lg bg-background-secondary-default px-2.5 py-2 text-caption-2-regular text-text-secondary">
             {t("studio.automations.onSaveHint")}
           </p>
         ) : null}
         {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
         <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">
+          <span className="text-caption-1-medium text-text-secondary">
             {t("studio.automations.modelLabel")}{" "}
-            <span className="text-text-tertiary/70">{t("studio.automations.modelOptional")}</span>
+            <span className="text-text-secondary">{t("studio.automations.modelOptional")}</span>
           </span>
           <Input
             value={draft.modelId}
@@ -144,7 +134,7 @@ export function AutomationDrawer({
         ) : null}
         {draft.id ? <MissedRecordsList records={records} locale={locale} now={now} /> : null}
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.promptLabel")}</span>
+          <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.promptLabel")}</span>
           <Textarea
             value={draft.prompt}
             onChange={(event) => onChange({ prompt: event.target.value })}
@@ -159,7 +149,7 @@ export function AutomationDrawer({
             {running ? t("studio.automations.running") : t("studio.automations.runNow")}
           </Button>
         ) : (
-          <span className="mr-auto text-caption-2-regular text-text-tertiary">{footerHint(draft.triggers, t)}</span>
+          <span className="mr-auto text-caption-2-regular text-text-secondary">{footerHint(draft.triggers, t)}</span>
         )}
         {draft.id ? (
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>

@@ -50,7 +50,8 @@ export function WorkspaceTerminal({ sessionId }: { sessionId: string }) {
       />
       <div
         ref={hostRef}
-        className="min-h-0 h-full overflow-hidden p-2"
+        title={t("chat.terminalLinkHint")}
+        className="min-h-0 h-full overflow-hidden p-2 [&_.xterm-underline]:cursor-pointer [&_.xterm-underline]:underline"
         aria-label={t("chat.terminalInput")}
       />
     </div>

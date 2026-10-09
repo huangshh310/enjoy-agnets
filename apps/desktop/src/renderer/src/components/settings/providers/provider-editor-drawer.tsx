@@ -148,7 +148,8 @@ function EditorDrawerHeader({
   onOpenAgent?: (runtimeId: string) => void
 }) {
   const t = useT()
-  const titleName = preset.kind === "custom" ? t("settings.providers.customName") : preset.name
+  const titleName =
+    editor.name.trim() || (preset.kind === "custom" ? t("settings.providers.customName") : preset.name)
   const description = preset.kind === "custom"
     ? t("settings.providers.customDesc")
     : presetBlurb(preset.kind, preset.description, t)

@@ -4,7 +4,7 @@
  * 空会话：Header → 居中开始面（问候 + Composer + pills）。Composer 不进 empty-state。
  * 禁止空会话技能源同步条；M6 更新只进 Skills 顶栏与设置默认项。
  */
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouterState } from "@tanstack/react-router"
 import { cx } from "@/utils/cx"
 import { Button } from "@/components/ui/button"
@@ -137,9 +137,14 @@ function ChatThreadBody(props: {
   const repositories = useChatStore((state) => state.repositories)
   const workflowStatus = repositories.find((node) => node.id === sessionId)?.workflowStatus ?? null
   const reviewPhase = reviewGatePhase({ running, workflowStatus })
+  const pendingApproval = useChatStore((state) => state.pendingApproval)
   const [ledgerOpen, setLedgerOpen] = useState(false)
-  const [environmentOpen, setEnvironmentOpen] = useState(true)
+  const [environmentOpen, setEnvironmentOpen] = useState(false)
   const findOpen = useThreadFindOpen()
+
+  useEffect(() => {
+    if (pendingApproval) setEnvironmentOpen(false)
+  }, [pendingApproval])
   const assistant = lastAssistantTurn(messages)
   const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
 
@@ -188,7 +193,8 @@ function ChatThreadBody(props: {
             <div
               className={cx(
                 "flex min-h-0 min-w-0 flex-1 flex-col",
-                environmentOpen && "min-[900px]:pr-72"
+                environmentOpen && "min-[900px]:pr-72",
+                pendingApproval && "min-h-[min(240px,40%)]"
               )}
             >
               <AiChatThread

@@ -17,9 +17,9 @@ export function PermissionDock() {
     <div
       id={PERMISSION_DOCK_ID}
       tabIndex={-1}
-      className="shrink-0 scroll-mt-4 border-t border-separator-border bg-background-primary-default/95 px-8 py-3 outline-none backdrop-blur-sm"
+      className="max-h-[min(60%,22rem)] shrink-0 overflow-y-auto scroll-mt-4 border-t border-separator-border bg-background-primary-default/95 px-8 py-2 outline-none backdrop-blur-sm"
     >
-      <p className="mb-1.5 text-caption-2-medium text-text-tertiary">{t("attention.dockLabel")}</p>
+      <p className="mb-1 text-caption-2-medium text-text-secondary">{t("attention.dockLabel")}</p>
       <ApprovalCard
         pending={pending}
         onApprove={(answers) => void decidePendingApproval("allow", answers)}

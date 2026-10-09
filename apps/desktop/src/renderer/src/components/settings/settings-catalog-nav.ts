@@ -110,7 +110,7 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         id: "workspace",
         labelKey: "nav.workspace",
         icon: RiFolder6Line,
-        keywords: ["folder", "project", "open", "knowledge", "rag", "index", "media", "asset", "工作区", "知识库", "媒体", "资产"]
+        keywords: ["folder", "project", "open", "knowledge", "rag", "index", "media", "asset", "项目", "工作区", "知识库", "媒体", "资产"]
       },
       {
         id: "extensions",

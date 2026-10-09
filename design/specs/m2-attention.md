@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-09（CU-P1-P Dock 默认本会话；坐标划线、敏感不画会话/始终允许）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-09（条可见时 Stage 顶留空；Dock 限高保对话高度）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -44,7 +44,7 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 
 | 项 | 合同 |
 |---|---|
-| 挂载 | Stage 顶浮动居中：标题栏下、主内容上（不占位浮动微胶囊）；Chat 与其它模块均可见 |
+| 挂载 | Stage 顶浮动居中：标题栏下、主内容上；Chat 与其它模块均可见。有可见项时 Stage 内容 `pt-12`，标题不被胶囊盖住 |
 | 布局 | 居中浮动微胶囊（`rounded-full` · `border` · `backdrop-blur-md` · `shadow-card`），内含「需处理 N」脉冲指示、胶囊流及右侧关闭按钮；点击关闭忽略当前可见项 |
 | 胶囊 | `h-7` · `rounded-full` · `border border-border-button-default/70` · `bg-background-secondary-default/80` · 内嵌单项关闭 `X` |
 | 胶囊内 | runtime `SessionAgentMark` 14px · 会话名截断 · kind 短标 · 相对时间 `text-text-tertiary` · 独立关闭 `X` |
@@ -70,7 +70,7 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 | 项 | 合同 |
 |---|---|
 | 挂载 | `Conversation` 与 Composer **之间** sticky：`shrink-0 border-t border-separator-border bg-background-primary-default/95 backdrop-blur-sm` |
-| 内边距 | `px-8 py-3`（与线程左右对齐） |
+| 内边距 | `px-8 py-2`；卡体更紧，自身 `max-h-[min(60%,22rem)]` 滚动。对话列保底 `min-h-[min(240px,40%)]` |
 | 内容 | 现有 `ApprovalCard` 三表面 + ask-user；底栏 HMAC 保留 |
 | plan | 写盘默认 **展开** 真实 diff；禁 30s 倒计时自动放行 |
 | 决策 | `allow` / `deny` / `allow_session` / `allow_always`（ask-user 禁 session/always；桌面卡才露 always）；id 比较，禁译文相等 |

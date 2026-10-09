@@ -93,8 +93,10 @@ export function SessionRowMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="end"
-        side="bottom"
+        align="start"
+        side="right"
+        sideOffset={6}
+        collisionPadding={12}
         className="w-48 rounded-xl bg-background-primary-default p-1 shadow-card border border-border-button-default"
       >
         {/* 1. 旗标置顶 */}
