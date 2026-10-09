@@ -146,8 +146,11 @@ export {
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
   desktopActFailureCode,
+  desktopActHasUnresolvedObservation,
   desktopActIsSensitive,
   stampDesktopActSensitiveFlag,
+  bindObservationIdentityToDesktopActInput,
+  prepareDesktopActGateInput,
   desktopActMayReportSuccess,
   desktopActNeedsSecondConfirm,
   desktopActSessionKey,
@@ -171,6 +174,7 @@ export {
 } from "./computer-use";
 export type {
   DesktopActAppKeySource,
+  LookupDesktopObservation,
   Observation,
   ObservationElement,
   ObservationLedger,

@@ -14,6 +14,10 @@ import {
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
 import {
+  prepareDesktopActGateInput,
+  type LookupDesktopObservation
+} from "./computer-use/desktop-act-observation-gate.ts"
+import {
   desktopActAlwaysAsks,
   desktopActSkipsApproval,
   persistentAlwaysAllowsDesktopAct,
@@ -34,6 +38,11 @@ export type ApprovalPolicy = {
    * 写 SoT 仍是 prefs.desktopAlwaysAllowAppKeys 的 `{ appKey, displayName }[]`。
    */
   desktopAlwaysAllowAppKeys?: readonly string[]
+  /**
+   * 闸判断前按 observationId peek 账本。观察身份覆盖模型字段。
+   * 未命中不得当会话/簿放行。主循环与子 Agent 共用同一份 policy。
+   */
+  lookupDesktopObservation?: LookupDesktopObservation
 }
 
 export type ToolApprovalDecision =
@@ -80,12 +89,16 @@ export function resolveToolApproval(
     return { type: "denied", reason: `${mode} mode is read-only.` }
   }
   if (HOST_CONTROL_SET.has(toolName)) {
-    if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
-    if (toolName === "desktop_act" && desktopActAlwaysAsks(input)) return "user-approval"
+    const desktopInput =
+      toolName === "desktop_act"
+        ? prepareDesktopActGateInput(input, policy.lookupDesktopObservation)
+        : input
+    if (toolName === "desktop_act" && desktopActSkipsApproval(desktopInput)) return "not-applicable"
+    if (toolName === "desktop_act" && desktopActAlwaysAsks(desktopInput)) return "user-approval"
     if (toolName === "desktop_act") {
       // 命中顺序：硬每次问（上一行）→ 会话表 → 持久簿投影 appKey[]。
-      if (sessionAllowsDesktopAct(input, policy)) return "approved"
-      if (persistentAlwaysAllowsDesktopAct(input, policy.desktopAlwaysAllowAppKeys ?? [])) {
+      if (sessionAllowsDesktopAct(desktopInput, policy)) return "approved"
+      if (persistentAlwaysAllowsDesktopAct(desktopInput, policy.desktopAlwaysAllowAppKeys ?? [])) {
         return "approved"
       }
       return "user-approval"

@@ -40,6 +40,14 @@ export {
   withAnyDesktopSessionKey
 } from "./desktop-act-policy.ts"
 export {
+  DESKTOP_ACT_UNRESOLVED_OBSERVATION,
+  bindObservationIdentityToDesktopActInput,
+  desktopActHasUnresolvedObservation,
+  observationIdFromDesktopActInput,
+  prepareDesktopActGateInput,
+  type LookupDesktopObservation
+} from "./desktop-act-observation-gate.ts"
+export {
   clearDesktopSecondConfirmGate,
   desktopActNeedsSecondConfirm,
   forgetDesktopSecondConfirmGate,
