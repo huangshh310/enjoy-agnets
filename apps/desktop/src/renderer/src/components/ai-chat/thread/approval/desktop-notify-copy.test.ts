@@ -14,6 +14,28 @@ import {
 
 const MAIN = join(dirname(fileURLToPath(import.meta.url)), "../../../../../../main/services/desktop-notify.ts")
 
+test("补跑通知只加自动化名与补跑，无允许钮，仍走 #105 红action", () => {
+  const copy = noticeForAgentEvent(
+    {
+      type: "approval.required",
+      name: "desktop_act",
+      args: { action: "type", appName: "备忘录", text: "我的密码是 hunter2", elementName: "密码" },
+      automationSource: {
+        automationId: "auto_1",
+        automationName: "晨间待办整理",
+        scheduledAt: 1,
+        isCatchUp: true
+      }
+    },
+    true
+  )
+  assert.equal(copy?.body, "Enjoy 的自动化「晨间待办整理」在补跑，需要你回 Enjoy 审批")
+  assert.equal(copy?.body.includes("有工具在等你决定"), false)
+  assert.equal(copy?.body.includes("允许"), false)
+  assert.equal(copy?.body.includes("hunter2"), false)
+  assert.equal(copy?.body.includes("密码"), false)
+})
+
 test("四态通知走 kai helpers：待审批脱敏 + 已完成 / 已停止 / 出错", () => {
   const pending = noticeForAgentEvent(
     {

@@ -714,6 +714,8 @@ export const zhChat = {
   alwaysAllow: "本会话总是允许",
   allowOnce: "仅允许本次",
   desktopApprovalTitle: "允许操控「{app}」？",
+  automationSourceCatchUp: "来自自动化「{name}」的补跑",
+  automationSourceOnTime: "来自自动化「{name}」",
   desktopApprovalTtlFrozen: "待批中 · 本观察 TTL 已冻结（§3.2a）",
   desktopAllowOnce: "允许一次",
   desktopAllowSession: "本会话允许此应用",
