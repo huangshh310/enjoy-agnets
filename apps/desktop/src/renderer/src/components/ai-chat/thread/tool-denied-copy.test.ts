@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { foldToolEvent } from "@enjoy-agents/ipc-contract"
-import { zh } from "@renderer/i18n/catalogs/zh/index.ts"
-import { translate } from "@renderer/i18n/lookup.ts"
+import { zh } from "../../../i18n/catalogs/zh/index.ts"
+import { translate } from "../../../i18n/lookup.ts"
 import { mapToolStatus } from "./thinking/extract-step-fields.ts"
 import { isDeniedTool, toolDeniedCopy } from "./tool-denied-copy.ts"
 
