@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
 import { mapStreamPart } from "./map-part.ts"
 
 test("maps AI SDK 7 reasoning-delta text", () => {
@@ -80,4 +81,29 @@ test("passes through Enjoy StreamEvent from ACP", () => {
     runId: "run_1",
     text: "hi"
   })
+})
+
+test("tool-output-denied 裸坐标：tool.result.result.code 给 renderer", () => {
+  const event = mapStreamPart(
+    {
+      type: "tool-output-denied",
+      toolCallId: "tool_coord",
+      toolName: "desktop_act",
+      args: { action: "click", x: 12, y: 34 },
+      code: DESKTOP_ACT_BARE_COORDS_DISABLED
+    },
+    "run_1"
+  )
+  assert.deepEqual(event, {
+    type: "tool.result",
+    runId: "run_1",
+    toolCallId: "tool_coord",
+    name: "desktop_act",
+    args: { action: "click", x: 12, y: 34 },
+    result: { success: false, code: DESKTOP_ACT_BARE_COORDS_DISABLED },
+    error: DESKTOP_ACT_BARE_COORDS_DISABLED
+  })
+  assert.ok(event)
+  assert.equal(event.type, "tool.result")
+  assert.equal((event.result as { code?: string } | undefined)?.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
 })

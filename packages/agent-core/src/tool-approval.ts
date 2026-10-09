@@ -13,7 +13,7 @@ import {
 } from "@enjoy-agents/ipc-contract/tool-names"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
-import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON, refuseBareDesktopCoord } from "./computer-use/desktop-act-honesty.ts"
+import { denyBareDesktopCoordApproval } from "./computer-use/desktop-act-honesty.ts"
 import {
   prepareDesktopActGateInput,
   type LookupDesktopObservation
@@ -60,7 +60,7 @@ export type ToolApprovalDecision =
   | "user-approval"
   | { type: "not-applicable" }
   | { type: "approved"; reason?: string }
-  | { type: "denied"; reason: string }
+  | { type: "denied"; reason: string; code?: string }
   | { type: "user-approval" }
 
 const WRITE_SET = new Set<string>(WRITE_TOOLS)
@@ -102,8 +102,8 @@ export function resolveToolApproval(
         : input
     if (toolName === "desktop_act" && desktopActSkipsApproval(desktopInput)) return "not-applicable"
     if (toolName === "desktop_act") {
-      const refused = refuseBareDesktopCoord(desktopInput, policy.desktopAdvancedCoords === true)
-      if (refused) return { type: "denied", reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON }
+      const denied = denyBareDesktopCoordApproval(desktopInput, policy.desktopAdvancedCoords === true)
+      if (denied) return denied
     }
     if (toolName === "desktop_act" && desktopActAlwaysAsks(desktopInput)) return "user-approval"
     if (toolName === "desktop_act") {
