@@ -11,7 +11,7 @@ const mainEntry = join(process.cwd(), "out/main/index.js")
 const shots = "/opt/cursor/artifacts/screenshots"
 
 test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来源", async () => {
-  test.setTimeout(150_000)
+  test.setTimeout(180_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const playwright = await import("playwright")
   const electron = playwright._electron
@@ -32,7 +32,8 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
       ENJOY_E2E_CU_READY: "1",
       ENJOY_E2E_LANG: "zh",
       ENJOY_E2E_WORKSPACE: workspace,
-      ENJOY_E2E_USERDATA: userData
+      ENJOY_E2E_USERDATA: userData,
+      ENJOY_DEV_SEED_AUTO_P2: "1"
     }
   })
   try {
@@ -46,19 +47,26 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
       location.hash = "#/automations"
     })
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
-    await expect(window.locator('[data-testid="automation-row-missed-many"]')).toContainText("错过 3 次")
-    await expect(window.locator('[data-testid="automation-row-missed-many"]')).toContainText("电脑睡眠")
-    await expect(window.locator('[data-testid="automation-row-skipped"]')).toContainText("已跳过 · 应用未运行")
-    await expect(window.locator('[data-testid="automation-row-neutral"]')).toContainText("补跑等待确认超时，未运行")
-    await expect(window.locator('[data-testid="automation-row-neutral"]')).not.toHaveClass(/error/)
+    await expect(row(window, "晨间待办整理")).toContainText("错过 3 次 · 电脑睡眠")
+    await expect(row(window, "晚间日志归档")).toContainText("已跳过 · 应用未运行")
+    await expect(row(window, "忙时跳过示例")).toContainText("已跳过 · 上次仍在运行")
+    await expect(row(window, "补跑超时示例")).toContainText("补跑等待确认超时，未运行")
+    await expect(row(window, "补跑重启打断示例")).toContainText("补跑被重启打断，未运行")
+    await expect(window.locator('[data-testid="automation-row-neutral"]').first()).not.toHaveClass(/error/)
     await snap(window, "auto-p2-list")
 
     await openRow(window, "晨间待办整理")
     await expect(window.locator('[data-testid="automation-missed-summary"]')).toContainText("错过 3 次 · 电脑睡眠")
     await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("展开")
+    await snap(window, "auto-p2-drawer-group-closed")
     await window.locator('[data-testid="automation-missed-expand"] summary').click()
     await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("收起")
     await snap(window, "auto-p2-drawer-group")
+    await closeDrawer(window)
+
+    await openRow(window, "混因错过示例")
+    await expect(window.locator('[data-testid="automation-missed-summary"]')).toContainText("错过 3 次 · 最近 应用未运行")
+    await snap(window, "auto-p2-drawer-mixed")
     await closeDrawer(window)
 
     await window.locator('[data-testid="page-automations"]').getByRole("button", { name: "新建" }).click()
@@ -90,6 +98,28 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).not.toContainText("实际")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).not.toContainText("取消")
     await snap(window, "auto-p2-drawer-timeout")
+    await closeDrawer(window)
+
+    await openRow(window, "补跑重启打断示例")
+    await window.locator('[data-testid="automation-missed-expand"] summary').click()
+    await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("收起")
+    await expect(window.locator('[data-testid="automation-record-neutral"]')).toContainText("补跑被重启打断，未运行")
+    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("计划")
+    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("未运行")
+    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).not.toContainText("实际")
+    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).not.toContainText("取消")
+    await snap(window, "auto-p2-drawer-interrupt")
+    await closeDrawer(window)
+
+    await window.evaluate(() => {
+      location.hash = "#/settings/general"
+    })
+    await window.getByRole("button", { name: "重新打开" }).click()
+    await window.getByRole("button", { name: "开始" }).click()
+    await window.getByRole("tab", { name: "到点再跑" }).click()
+    await expect(window.getByText("默认不补跑，可在单条自动化里开启补跑最近一次")).toBeVisible()
+    await snap(window, "auto-p2-settings-cap")
+    await window.getByRole("button", { name: "跳过设置" }).click()
 
     await window.evaluate(() => {
       location.hash = "#/"
@@ -119,8 +149,12 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
   }
 })
 
+function row(window: Page, name: string) {
+  return window.locator('[data-testid="automation-row"]').filter({ hasText: name })
+}
+
 async function openRow(window: Page, name: string) {
-  await window.locator('[data-testid="automation-row"]').filter({ hasText: name }).locator("button").first().click()
+  await row(window, name).locator("button").first().click()
 }
 
 async function closeDrawer(window: Page) {

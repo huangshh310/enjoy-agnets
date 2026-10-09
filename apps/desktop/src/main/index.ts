@@ -4,6 +4,7 @@ import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { getDatabase } from "./services/database";
 import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
+import { seedDevAutoP2IfRequested } from "./services/dev-auto-p2-seed";
 import {
   configureAcpChildLedger,
   disposeAllAcpSessions,
@@ -25,8 +26,8 @@ import {
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
 
-if (process.env.ENJOY_E2E_USERDATA) {
-  app.setPath("userData", process.env.ENJOY_E2E_USERDATA);
+if (process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA) {
+  app.setPath("userData", process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA);
 }
 if (process.env.ENJOY_E2E_STUB === "1") {
   app.disableHardwareAcceleration();
@@ -149,6 +150,7 @@ function bootPrimaryInstance(): void {
     reapOrphanAcpChildren()
     abandonOrphanRuns();
     await bootstrapE2eStub();
+    seedDevAutoP2IfRequested();
     void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
       void recoverPausedWorkflows()
     })
