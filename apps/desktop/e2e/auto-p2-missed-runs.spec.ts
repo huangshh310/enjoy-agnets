@@ -155,6 +155,12 @@ function row(window: Page, name: string) {
 
 async function openRow(window: Page, name: string) {
   await row(window, name).locator("button").first().click()
+  await window.locator("#automation-editor-title").waitFor({ timeout: 8_000 })
+  const summary = window.locator('[data-testid="automation-missed-summary"]')
+  if ((await summary.count()) > 0) {
+    await summary.waitFor({ state: "visible", timeout: 8_000 })
+    await summary.scrollIntoViewIfNeeded()
+  }
 }
 
 async function closeDrawer(window: Page) {
