@@ -8,17 +8,21 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { asRecord, readString } from "../../../../lib/record.ts"
 import { ToolResultView } from "../../diff/tool-result"
-import { hasTurnToolSurfaces, toolResultSurfaces } from "./select-turn-tool-surfaces"
+import { DesktopActFailedCard } from "../desktop-act-failed-card"
+import { desktopActFailedSurfaces, hasTurnToolSurfaces, toolResultSurfaces } from "./select-turn-tool-surfaces"
 
 export function TurnToolSurfaces({ tools }: { tools: ThreadToolCall[] }) {
   if (!hasTurnToolSurfaces(tools)) return null
   const diffTools = toolResultSurfaces(tools)
-  if (diffTools.length === 0) return null
+  const failedActs = desktopActFailedSurfaces(tools)
+  if (diffTools.length === 0 && failedActs.length === 0) return null
 
   return (
     <div className="mt-2 flex w-full flex-col gap-2">
-      {/* 仅呈现带有文件代码变更的多文件差异标签切换视图 */}
-      <MultiFileDiffTabs tools={diffTools} />
+      {failedActs.map((tool) => (
+        <DesktopActFailedCard key={tool.id} tool={tool} />
+      ))}
+      {diffTools.length > 0 ? <MultiFileDiffTabs tools={diffTools} /> : null}
     </div>
   )
 }

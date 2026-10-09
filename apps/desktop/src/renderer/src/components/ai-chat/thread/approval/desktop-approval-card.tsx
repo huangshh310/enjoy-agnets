@@ -63,10 +63,25 @@ function FirstAllowChrome({
           <DesktopThumb src={view.thumbnail} alt={view.appName} />
           <DesktopApprovalSummary view={view} ttlLabel={t("chat.desktopApprovalTtlFrozen")} />
         </div>
+        {view.sensitive ? (
+          <p
+            data-testid="desktop-approval-sensitive"
+            className="mt-3 rounded-lg border border-status-yellow-text/25 bg-status-yellow-text/10 px-2.5 py-1.5 text-caption-1-medium leading-snug text-status-yellow-text"
+          >
+            {t("chat.desktopSensitiveWarn")}
+          </p>
+        ) : null}
+        {view.bypassesSessionAllow && !view.sensitive ? (
+          <p className="mt-3 inline-flex rounded-full bg-status-yellow-text/10 px-2 py-0.5 text-caption-2-semibold text-status-yellow-text">
+            {t("chat.desktopCoordsBypassHint")}
+          </p>
+        ) : null}
         <DesktopApprovalChoices
           appName={view.appName}
           canSessionAllow={view.canSessionAllow}
           canAlwaysAllow={view.canAlwaysAllow}
+          strikeSessionAllow={view.strikeSessionAllow}
+          strikeAlwaysAllow={view.strikeAlwaysAllow}
           value={selected}
           onChange={setChoice}
         />

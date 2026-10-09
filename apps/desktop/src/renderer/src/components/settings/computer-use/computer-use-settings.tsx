@@ -51,7 +51,9 @@ export function ComputerUseSettings() {
       <ComputerUseOperations
         desktop={page.desktop}
         sessionId={page.sessionId}
+        advancedCoords={page.prefs?.desktopAdvancedCoords === true}
         onToggleAnyDesktop={(enabled) => page.toggleTool("anyDesktopSession", enabled)}
+        onToggleAdvancedCoords={(enabled) => void page.savePrefs({ desktopAdvancedCoords: enabled })}
         onRevoke={page.revoke}
         onRecheck={page.load}
       />

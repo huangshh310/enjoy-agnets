@@ -24,8 +24,11 @@ export type DesktopApprovalView = {
   thumbsReady: boolean
   bypassesSessionAllow: boolean
   canSessionAllow: boolean
-  /** 有稳 appKey、非二次确认、且 main 未标敏感才露出始终允许。 */
+  /** 有稳 appKey、非二次确认、非坐标/前台、且 main 未标敏感才可选始终允许。 */
   canAlwaysAllow: boolean
+  /** 坐标 / 前台：本会话、始终允许划掉而不是可选。 */
+  strikeSessionAllow: boolean
+  strikeAlwaysAllow: boolean
   /** 主进程 `desktopActIsSensitive` 下发；缺省按不敏感。 */
   sensitive: boolean
 }
@@ -42,6 +45,8 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
   const previousThumbnailPath = text(row.previousThumbnailPath)
   const secondConfirm = isSecondConfirm(row, previousThumbnail, previousThumbnailPath)
   const sensitive = row.sensitive === true
+  const wouldSessionAllow = Boolean(appKey) && !sensitive
+  const wouldAlwaysAllow = !secondConfirm && isStableDesktopAppKey(appKey) && !sensitive
   return {
     appName,
     appKey,
@@ -56,9 +61,10 @@ export function desktopApprovalView(args: unknown): DesktopApprovalView {
     thumbsReady: !secondConfirm || Boolean(thumbnail && previousThumbnail),
     bypassesSessionAllow,
     sensitive,
-    canSessionAllow:
-      Boolean(appKey) && !bypassesSessionAllow && !desktopActBypassesSessionAllow(row) && !sensitive,
-    canAlwaysAllow: !secondConfirm && isStableDesktopAppKey(appKey) && !sensitive
+    canSessionAllow: wouldSessionAllow && !bypassesSessionAllow,
+    canAlwaysAllow: wouldAlwaysAllow && !bypassesSessionAllow,
+    strikeSessionAllow: wouldSessionAllow && bypassesSessionAllow,
+    strikeAlwaysAllow: wouldAlwaysAllow && bypassesSessionAllow
   }
 }
 

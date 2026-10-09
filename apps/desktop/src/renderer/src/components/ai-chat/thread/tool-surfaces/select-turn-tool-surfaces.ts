@@ -5,6 +5,7 @@
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord, readString } from "../../../../lib/record.ts"
 import { isTodoContinueUserMessage } from "../../composer/todo-continue-message.ts"
+import { desktopActFailureKind } from "../desktop-act-failed-copy.ts"
 import { isTodoWriteName } from "../thinking/agent-step-kind.ts"
 
 export type TurnTodoItem = {
@@ -33,8 +34,12 @@ export function toolResultSurfaces(tools: ThreadToolCall[]): ThreadToolCall[] {
   return tools.filter(isRichToolResult)
 }
 
+export function desktopActFailedSurfaces(tools: ThreadToolCall[]): ThreadToolCall[] {
+  return tools.filter((tool) => tool.name === "desktop_act" && desktopActFailureKind(asRecord(tool.result)))
+}
+
 export function hasTurnToolSurfaces(tools: ThreadToolCall[]): boolean {
-  return toolResultSurfaces(tools).length > 0
+  return toolResultSurfaces(tools).length > 0 || desktopActFailedSurfaces(tools).length > 0
 }
 
 /** 只取「最后一条非续跑用户消息之后」的 Todo List，避免新任务还挂旧表、续跑却把表藏掉。 */

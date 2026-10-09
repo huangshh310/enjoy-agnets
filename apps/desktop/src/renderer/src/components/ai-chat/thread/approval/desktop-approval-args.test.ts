@@ -92,15 +92,15 @@ test("无 appKey、坐标或切前台时隐藏会话允许", () => {
     }).canSessionAllow,
     false
   )
-  assert.equal(
-    desktopApprovalView({
-      action: "click",
-      x: 12,
-      y: 8,
-      appKey: "com.apple.calculator"
-    }).canAlwaysAllow,
-    true
-  )
+  const coords = desktopApprovalView({
+    action: "click",
+    x: 12,
+    y: 8,
+    appKey: "com.apple.calculator"
+  })
+  assert.equal(coords.canAlwaysAllow, false)
+  assert.equal(coords.strikeSessionAllow, true)
+  assert.equal(coords.strikeAlwaysAllow, true)
   assert.equal(
     desktopApprovalView({
       action: "click",
@@ -135,6 +135,10 @@ test("敏感只信 main 下发的 sensitive，不按应用名自判", () => {
   assert.equal(flagged.sensitive, true)
   assert.equal(flagged.canSessionAllow, false)
   assert.equal(flagged.canAlwaysAllow, false)
+  assert.equal(flagged.strikeSessionAllow, false)
+  assert.equal(flagged.strikeAlwaysAllow, false)
+  assert.deepEqual(desktopApprovalChoiceIds(flagged), ["allow", "deny"])
+  assert.equal(defaultDesktopApprovalChoice(desktopApprovalChoiceIds(flagged)), "allow")
 })
 
 test("pid 或无稳 appKey 时隐藏始终允许此应用", () => {
@@ -167,10 +171,14 @@ test("四选一：无稳键不出现 allow_always，隐藏项回落到 allow", (
   )
   assert.equal(
     defaultDesktopApprovalChoice(desktopApprovalChoiceIds({ canSessionAllow: true, canAlwaysAllow: true })),
-    "allow_always"
+    "allow_session"
   )
   assert.equal(
     defaultDesktopApprovalChoice(desktopApprovalChoiceIds({ canSessionAllow: false, canAlwaysAllow: false })),
+    "allow"
+  )
+  assert.equal(
+    defaultDesktopApprovalChoice(desktopApprovalChoiceIds({ canSessionAllow: false, canAlwaysAllow: true })),
     "allow"
   )
 })
