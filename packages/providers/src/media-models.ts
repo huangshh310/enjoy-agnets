@@ -3,18 +3,18 @@
  * 官方 kind 走 @ai-sdk/fal 等；其余走 OpenAI 兼容。
  */
 import { createOpenAI } from "@ai-sdk/openai"
-import { parseHeaders, resolvedBaseURL } from "./config"
+import { parseHeaders, resolvedBaseURL } from "./config.ts"
 import {
   createOfficialEmbeddingModel,
   createOfficialImageModel,
   createOfficialSpeechModel,
   createOfficialTranscriptionModel,
-} from "./media/official"
-import { presetFor } from "./presets"
-import type { ProviderConfig } from "./types"
-export { alternateImageModelId, alternateSpeechModelId, alternateTranscriptionModelId } from "./media-alts"
-export { mediaFactoryKind } from "./media/factory-kind"
-export { createRerankModel, defaultRerankModelId } from "./embeddings/rerank-model"
+} from "./media/official.ts"
+import { presetFor } from "./presets.ts"
+import type { ProviderConfig } from "./types.ts"
+export { alternateImageModelId, alternateSpeechModelId, alternateTranscriptionModelId } from "./media-alts.ts"
+export { mediaFactoryKind } from "./media/factory-kind.ts"
+export { createRerankModel, defaultRerankModelId } from "./embeddings/rerank-model.ts"
 
 function openaiConnection(config: ProviderConfig) {
   const preset = presetFor(config.provider)
@@ -44,7 +44,7 @@ export function createEmbeddingModel(config: ProviderConfig): unknown {
   return createOfficialEmbeddingModel(config) ?? openaiConnection(config).embedding(config.modelId)
 }
 
-export { createVideoModel, videoFactoryKind } from "./media/video-factory"
+export { createVideoModel, videoFactoryKind } from "./media/video-factory.ts"
 
 export function createTranslationModel(config: ProviderConfig): unknown {
   return openaiConnection(config).translation(config.modelId)

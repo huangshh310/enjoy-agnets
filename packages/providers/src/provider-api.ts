@@ -3,9 +3,9 @@
  */
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createOpenAI } from "@ai-sdk/openai"
-import { parseHeaders, resolvedBaseURL } from "./config"
-import { presetFor } from "./presets"
-import type { ProviderConfig } from "./types"
+import { parseHeaders, resolvedBaseURL } from "./config.ts"
+import { presetFor } from "./presets.ts"
+import type { ProviderConfig } from "./types.ts"
 
 function connection(config: ProviderConfig) {
   const preset = presetFor(config.provider)

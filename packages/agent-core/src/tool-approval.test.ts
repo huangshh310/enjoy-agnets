@@ -105,8 +105,17 @@ test("desktop_act：wait 不审，会话放行绑 appKey，裸工具名不放行
     }),
     "user-approval"
   )
-  assert.equal(
+  assert.deepEqual(
     resolveToolApproval("desktop_act", "agent", calc, { action: "click", x: 1, appKey: "com.apple.calculator" }),
+    { type: "denied", reason: "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off)." }
+  )
+  assert.equal(
+    resolveToolApproval(
+      "desktop_act",
+      "agent",
+      { ...calc, desktopAdvancedCoords: true },
+      { action: "click", x: 1, appKey: "com.apple.calculator" }
+    ),
     "user-approval"
   )
   assert.equal(
@@ -130,7 +139,15 @@ test("desktop_act：desktop_act:* 与任意桌面开关等价，仍拦坐标和�
     }),
     "approved"
   )
-  assert.equal(resolveToolApproval("desktop_act", "agent", starred, { action: "click", x: 1 }), "user-approval")
+  assert.deepEqual(resolveToolApproval("desktop_act", "agent", starred, { action: "click", x: 1 }), {
+    type: "denied",
+    reason:
+      "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off)."
+  })
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", { ...starred, desktopAdvancedCoords: true }, { action: "click", x: 1 }),
+    "user-approval"
+  )
 })
 
 test("desktop_act：任意桌面开关放行元素点击，仍拦坐标和敏感窗", () => {
@@ -143,7 +160,15 @@ test("desktop_act：任意桌面开关放行元素点击，仍拦坐标和敏感
     }),
     "approved"
   )
-  assert.equal(resolveToolApproval("desktop_act", "agent", any, { action: "click", x: 1 }), "user-approval")
+  assert.deepEqual(resolveToolApproval("desktop_act", "agent", any, { action: "click", x: 1 }), {
+    type: "denied",
+    reason:
+      "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId. Advanced coordinates is an escape hatch (default off)."
+  })
+  assert.equal(
+    resolveToolApproval("desktop_act", "agent", { ...any, desktopAdvancedCoords: true }, { action: "click", x: 1 }),
+    "user-approval"
+  )
   assert.equal(
     resolveToolApproval("desktop_act", "agent", any, {
       action: "click",

@@ -38,6 +38,8 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   agentDisplayNames: {},
   setupGuideCompletedAt: null,
   desktopAlwaysAllowAppKeys: [],
+  /** CU-P1-36 高级坐标逃逸舱。出厂关；产品页尚未绑铬。 */
+  desktopAdvancedCoords: false,
   keybindings: [],
   computerUsePointer: "stock",
   computerUsePreview: true,

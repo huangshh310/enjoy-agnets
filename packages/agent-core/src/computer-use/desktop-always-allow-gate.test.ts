@@ -5,6 +5,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { resolveToolApproval, type ApprovalPolicy } from "../tool-approval.ts"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON } from "./desktop-act-honesty.ts"
 import {
   DESKTOP_ACT_ANY_SESSION_KEY,
   persistentAlwaysAllowsDesktopAct,
@@ -62,9 +63,14 @@ test("A3 撤销 X 后下一次要问", () => {
   assert.equal(persistentAlwaysAllowsDesktopAct(CLICK_CALC, afterRevoke.desktopAlwaysAllowAppKeys ?? []), false)
 })
 
-test("A4 坐标/前台即使簿命中仍要问", () => {
+test("A4 坐标/前台即使簿命中仍要问；高级坐标未开则硬拒", () => {
   const policy = bookPolicy([CALC])
-  assert.equal(decide({ action: "click", x: 1, y: 2, appKey: CALC }, policy), "user-approval")
+  const advanced = { ...policy, desktopAdvancedCoords: true }
+  assert.deepEqual(decide({ action: "click", x: 1, y: 2, appKey: CALC }, policy), {
+    type: "denied",
+    reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON
+  })
+  assert.equal(decide({ action: "click", x: 1, y: 2, appKey: CALC }, advanced), "user-approval")
   assert.equal(
     decide({ action: "click", elementId: "e1", allowForeground: true, appKey: CALC }, policy),
     "user-approval"
@@ -101,6 +107,6 @@ test("回归：会话 Allow 仍放行；簿键 * / desktop_act:* 不当持久允
 test("命中顺序：硬每次问先于会话表与簿", () => {
   const both = bookPolicy([CALC], new Set([`desktop_act:${CALC}`, DESKTOP_ACT_ANY_SESSION_KEY]))
   assert.equal(decide({ ...CLICK_CALC, needsSecondConfirm: true }, both), "user-approval")
-  assert.equal(decide({ action: "click", x: 8, appKey: CALC }, both), "user-approval")
+  assert.equal(decide({ action: "click", x: 8, appKey: CALC }, { ...both, desktopAdvancedCoords: true }), "user-approval")
   assert.equal(decide(CLICK_CALC, both), "approved")
 })

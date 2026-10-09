@@ -27,6 +27,7 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   const src = readFileSync(new URL("./open-coding-stream-input.ts", import.meta.url), "utf8")
   assert.match(src, /listDesktopAlwaysAllowAppKeys\(input\.prefs\.desktopAlwaysAllowAppKeys\)/)
   assert.match(src, /desktopAlwaysAllowAppKeys:/)
+  assert.match(src, /desktopAdvancedCoords: input\.prefs\.desktopAdvancedCoords === true/)
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 

@@ -75,8 +75,9 @@ export function resolveListedAppPid(
   return typeof target.pid === "number" && target.pid > 0 ? target.pid : undefined
 }
 
-/** 重启 resume 不得把非 success 说成成功。 */
+/** 重启 resume 不得把非 success 说成成功。action_failed 即使带 success 也不得报成功。 */
 export function desktopActMayReportSuccess(result: Record<string, unknown> | null | undefined): boolean {
+  if (result?.code === "action_failed") return false
   return result?.success === true
 }
 
