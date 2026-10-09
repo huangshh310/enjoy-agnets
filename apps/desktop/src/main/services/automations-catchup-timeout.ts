@@ -30,16 +30,17 @@ export async function expireCatchUpApproval(runId: string): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
   const run = getActiveRun(runId)
   if (!run?.input.automationSource?.isCatchUp) return
-  for (const pending of [...run.pendingApprovals]) {
-    run.approvalGate.resolve(pending.approvalId, "deny")
+  const pending = run.pendingApprovals
+  run.pendingApprovals = []
+  for (const item of pending) {
+    run.approvalGate.resolve(item.approvalId, "deny")
     emitEvent(run.window, {
       type: "approval.resolved",
       runId,
-      toolCallId: pending.toolCallId,
+      toolCallId: item.toolCallId,
       decision: "deny"
     })
   }
-  run.pendingApprovals = []
   const error = Object.assign(new Error(CATCH_UP_APPROVAL_TIMEOUT), {
     code: CATCH_UP_APPROVAL_TIMEOUT
   })
