@@ -169,7 +169,7 @@ export function listMissedForAutomation(
       automationId: row.automationId,
       scheduledAt: row.scheduledAt,
       recordedAt: row.recordedAt,
-      kind: row.kind,
+      kind: row.kind === "catch_up" ? ("catch_up" as const) : ("skipped" as const),
       reason: row.reason,
       status: row.status,
       runId: row.runId,

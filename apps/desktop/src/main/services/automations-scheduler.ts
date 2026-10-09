@@ -79,7 +79,7 @@ export async function tickAutomations(now: Date): Promise<string[]> {
 }
 
 export function enqueueMissedReconcile(trigger: MissedScanTrigger, sessionStartedAt?: number): Promise<void> {
-  const started = sessionStartedAt ?? automationSessionStartedAt() || markAutomationSessionStarted()
+  const started = sessionStartedAt ?? (automationSessionStartedAt() || markAutomationSessionStarted())
   const next = reconcileChain.then(() => applyMissedReconcile(trigger, started))
   reconcileChain = next.then(
     () => undefined,

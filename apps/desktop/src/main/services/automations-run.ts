@@ -91,13 +91,11 @@ export async function launchAutomationAgent(
     return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: opts.workspaceId ?? "" }
   }
   let openedSessionId = opts.sessionId ?? ""
-  let openedWorkspaceId = opts.workspaceId ?? ""
   markAutomationRunning(item.id)
   emitAutomationsChanged("run", item.id)
   try {
     const opened = await openLaunchedSession(item, opts)
     openedSessionId = opened.sessionId
-    openedWorkspaceId = opened.workspaceId
     const started = await startLaunchedRun(window, item, opened, opts)
     const settled = await waitForRunSettle(started.runId)
     finishAutomationRun(item.id, settled.status === "end" ? "ok" : "failed", settled.summary, opts)
