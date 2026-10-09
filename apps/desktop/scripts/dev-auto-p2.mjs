@@ -15,7 +15,7 @@ const workspace = mkdtempSync(join(tmpdir(), "enjoy-auto-p2-ws-"))
 console.log("AUTO-P2 review seed (dev only, never packaged)")
 console.log(`userData   ${userData}`)
 console.log(`workspace  ${workspace}`)
-console.log("flags      ENJOY_DEV_SEED_AUTO_P2=1 ENJOY_E2E_STUB=1 ENJOY_E2E_CU_READY=1 ENJOY_E2E_LANG=zh")
+console.log("flags      ENJOY_DEV_SEED_AUTO_P2=1 ENJOY_E2E_STUB=1 ENJOY_E2E_CU_READY=1 ENJOY_E2E_LANG=zh ENJOY_E2E_SESSION_COUNT=30")
 
 const child = spawn(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["dev"], {
   cwd: root,
@@ -28,7 +28,8 @@ const child = spawn(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["dev"],
     ENJOY_E2E_WORKSPACE: workspace,
     ENJOY_E2E_STUB: "1",
     ENJOY_E2E_CU_READY: "1",
-    ENJOY_E2E_LANG: "zh"
+    ENJOY_E2E_LANG: "zh",
+    ENJOY_E2E_SESSION_COUNT: "30"
   }
 })
 child.on("exit", (code) => process.exit(code ?? 0))
