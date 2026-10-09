@@ -23,3 +23,18 @@ test("补跑开关默认关，upsert 会带上 catchUpMissed", () => {
   assert.equal(from.catchUpMissed, true)
   assert.equal(draftToUpsert(from).catchUpMissed, true)
 })
+
+test("离开 cron 保存时清掉补跑开关", () => {
+  const cronOn = emptyAutomationDraft(defaults)
+  const withCatchUp = {
+    ...cronOn,
+    name: "晨间",
+    triggers: ["cron"] as const,
+    catchUpMissed: true
+  }
+  assert.equal(draftToUpsert(withCatchUp).catchUpMissed, true)
+  assert.equal(
+    draftToUpsert({ ...withCatchUp, triggers: ["manual"], trigger: "manual" }).catchUpMissed,
+    false
+  )
+})

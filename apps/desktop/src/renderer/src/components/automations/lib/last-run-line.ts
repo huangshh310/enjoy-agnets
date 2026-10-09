@@ -92,7 +92,7 @@ function skippedLine(
   }
 }
 
-/** 抽屉折叠条：预览 B 组摘要，不是固定「展开错过记录」。 */
+/** 抽屉折叠条：同因不写「最近」；混因才标最近原因，条数按整组。 */
 export function missedGroupSummary(input: {
   records: AutomationMissedRecord[]
   now: number
@@ -100,21 +100,22 @@ export function missedGroupSummary(input: {
   t: Translate
 }): string {
   const { records, now, locale, t } = input
-  const streak = consecutiveSkipStreak(records)
-  const when = streak.scheduledAt != null ? formatLastRunWhen(streak.scheduledAt, now, locale) : ""
-  if (streak.count >= 2) {
-    return t("studio.automations.missedMany", {
-      n: streak.count,
-      reason: skipReasonCopy(streak.reason, t),
-      when
-    })
-  }
-  if (streak.count === 1) {
-    return t("studio.automations.skippedLine", {
-      reason: skipReasonCopy(streak.reason, t),
-      when
-    })
-  }
   if (records.length === 0) return t("studio.automations.missedEmpty")
-  return t("studio.automations.missedCount", { n: records.length })
+  const skipped = [...records]
+    .filter((row) => row.kind === "skipped")
+    .sort((left, right) => right.scheduledAt - left.scheduledAt)
+  const latest = skipped[0]
+  if (!latest) return t("studio.automations.missedCount", { n: records.length })
+  const when = formatLastRunWhen(latest.scheduledAt, now, locale)
+  const reason = skipReasonCopy(latest.reason, t)
+  if (records.length === 1) {
+    return t("studio.automations.skippedLine", { reason, when })
+  }
+  const reasons = new Set(skipped.map((row) => row.reason))
+  const same = reasons.size === 1 && skipped.length === records.length
+  return t(same ? "studio.automations.missedGroupSame" : "studio.automations.missedGroupMixed", {
+    n: records.length,
+    reason,
+    when
+  })
 }

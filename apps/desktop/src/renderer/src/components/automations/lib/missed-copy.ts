@@ -69,21 +69,15 @@ export function catchUpNeverRan(code: string | undefined): boolean {
   return isNeutralErrorCode(code)
 }
 
+/** 未跑不读 recordedAt：那是开跑时刻，settle 不会改成取消时间。 */
 export function catchUpWhenCopy(input: {
   code?: string
   scheduled: string
   actual: string
-  hasCancelTime: boolean
   t: Translate
 }): string {
   if (catchUpNeverRan(input.code)) {
-    if (input.hasCancelTime) {
-      return input.t("studio.automations.catchUpWhenCancelled", {
-        scheduled: input.scheduled,
-        cancelled: input.actual
-      })
-    }
-    return input.t("studio.automations.catchUpWhenScheduled", { scheduled: input.scheduled })
+    return input.t("studio.automations.catchUpWhenNeverRan", { scheduled: input.scheduled })
   }
   return input.t("studio.automations.catchUpWhen", {
     scheduled: input.scheduled,

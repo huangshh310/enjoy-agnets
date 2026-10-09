@@ -113,10 +113,22 @@ test("抽屉折叠条收成错过 N 次组摘要", () => {
   const records = [skip(today8), skip(yest8), skip(ere8)]
   assert.equal(
     missedGroupSummary({ records, now: noon, locale: "zh", t }),
-    "错过 3 次 · 电脑睡眠 · 最近 今天 08:00"
+    "错过 3 次 · 电脑睡眠 · 今天 08:00"
   )
   assert.equal(
     missedGroupSummary({ records: [skip(today8)], now: noon, locale: "zh", t }),
     "已跳过 · 电脑睡眠 · 今天 08:00"
+  )
+})
+
+test("折叠条混因写最近原因，条数按整组", () => {
+  const mixed = [
+    skip(today8, "app_not_running"),
+    skip(yest8, "system_sleep"),
+    skip(ere8, "system_sleep")
+  ]
+  assert.equal(
+    missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
+    "错过 3 次 · 最近 应用未运行 · 今天 08:00"
   )
 })

@@ -111,11 +111,13 @@ test("设置能力句钉死默认不补跑", () => {
   assert.doesNotMatch(settings, /关掉应用不会补跑/)
 })
 
-test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际", () => {
+test("折叠条是组摘要，展开/收起跟开合，补跑未跑不写实际或取消时间", () => {
   const list = readFileSync(join(dir, "components/missed-records-list.tsx"), "utf8")
   assert.match(list, /missedGroupSummary/)
   assert.match(list, /missedExpandLabel/)
   assert.match(list, /catchUpWhenCopy/)
+  assert.doesNotMatch(list, /hasCancelTime/)
+  assert.doesNotMatch(list, /catchUpWhenCancelled/)
   assert.doesNotMatch(list, /studio\.automations\.missedExpand"/)
   const drawer = readFileSync(join(dir, "components/automation-drawer.tsx"), "utf8")
   assert.match(drawer, /triggers\.includes\("cron"\)/)

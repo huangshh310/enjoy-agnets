@@ -56,33 +56,41 @@ test("折叠条展开/收起跟开合走两套文案", () => {
   assert.equal(missedExpandLabel(true, enT), "Hide")
 })
 
-test("未跑成的补跑只写计划或取消时间，不写实际", () => {
+test("未跑成的补跑只写计划与未运行，不写实际或取消时间", () => {
   const timeout = catchUpWhenCopy({
     code: "catch_up_approval_timeout",
     scheduled: "今天 08:00",
     actual: "今天 12:00",
-    hasCancelTime: true,
     t: zhT
   })
-  assert.equal(timeout, "计划 今天 08:00 · 今天 12:00 取消")
+  assert.equal(timeout, "计划 今天 08:00 · 未运行")
   assert.equal(timeout.includes("实际"), false)
+  assert.equal(timeout.includes("取消"), false)
   const interrupted = catchUpWhenCopy({
     code: "interrupted_by_restart",
     scheduled: "今天 08:00",
     actual: "今天 08:00",
-    hasCancelTime: false,
     t: zhT
   })
-  assert.equal(interrupted, "计划 今天 08:00")
+  assert.equal(interrupted, "计划 今天 08:00 · 未运行")
   assert.equal(interrupted.includes("实际"), false)
+  assert.equal(interrupted.includes("取消"), false)
   assert.equal(
     catchUpWhenCopy({
       scheduled: "今天 08:00",
       actual: "今天 09:12",
-      hasCancelTime: true,
       t: zhT
     }),
     "计划 今天 08:00 · 实际 今天 09:12"
+  )
+  assert.equal(
+    catchUpWhenCopy({
+      code: "catch_up_approval_timeout",
+      scheduled: "today 08:00",
+      actual: "today 12:00",
+      t: enT
+    }),
+    "Planned today 08:00 · didn't run"
   )
 })
 

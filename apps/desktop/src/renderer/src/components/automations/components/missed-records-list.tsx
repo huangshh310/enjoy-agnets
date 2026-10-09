@@ -70,7 +70,6 @@ function MissedRecordRow({
         code: row.code,
         scheduled,
         actual,
-        hasCancelTime: row.recordedAt !== row.scheduledAt,
         t
       })
     : scheduled

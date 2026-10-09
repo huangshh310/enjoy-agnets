@@ -85,6 +85,6 @@ export function draftToUpsert(draft: AutomationDraft) {
     modelId: draft.modelId.trim() || undefined,
     mode: draft.mode,
     enabled: draft.enabled,
-    catchUpMissed: draft.catchUpMissed === true
+    catchUpMissed: draft.triggers.includes("cron") && draft.catchUpMissed === true
   }
 }

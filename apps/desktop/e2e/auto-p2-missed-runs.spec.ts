@@ -1,5 +1,5 @@
 /**
- * AUTO-P2 窗口冒烟：跳过次行、组摘要开合、默认关、未跑不写实际、Dock 补跑 / 终端敏感。
+ * AUTO-P2 窗口冒烟：跳过次行、组摘要开合、默认关、未跑不写实际/取消时间、Dock 补跑 / 终端敏感。
  */
 import { existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -86,8 +86,9 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("收起")
     await expect(window.locator('[data-testid="automation-record-neutral"]')).toContainText("补跑等待确认超时，未运行")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("计划")
-    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("取消")
+    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("未运行")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).not.toContainText("实际")
+    await expect(window.locator('[data-testid="automation-missed-catch-up"]')).not.toContainText("取消")
     await snap(window, "auto-p2-drawer-timeout")
 
     await window.evaluate(() => {
