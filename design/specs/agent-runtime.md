@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（desktop_act 闸先 peek 观察身份；Dock 仅 `sensitive === false` 才给本会话）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（闸先 peek 观察身份；坐标通道认任一 x/y/x2/y2）
 
 ## 当前真相
 

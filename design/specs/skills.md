@@ -1,6 +1,6 @@
 # spec/skills
 
-> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-09-20
+> 技能生态、Agent 专属整备舱、Bento 集市与同步投影。最后更新：2026-10-09（更新 toast 改走全局 sonner）
 
 ## 当前真相
 
@@ -60,7 +60,7 @@
 - Composer `/` 技能面板：`ai-chat/composer/mentions/`（`formatSkillMention.ts`、`composer-skill-chips.ts`）
 - 设置入口：`components/settings/settings-skill-sources.tsx`
 - 扩展页 I2：「添加到技能」走 `settings/extensions/curated/add-curated-to-sot.ts`（`skills.sources.add` + `deploy`）
-- 更新 toast：`components/skills/components/skill-source-toast-host.tsx`
+- 更新 toast：`components/skills/lib/skill-source-toast.ts` → `lib/app-toast.ts`（全局 sonner，不再挂 Host）
 
 ## 已知坑
 

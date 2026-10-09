@@ -26,7 +26,7 @@ const preview = readPreviewHtml()
 const files = {
   actions: readFileSync(join(dir, "../session-review-actions.tsx"), "utf8"),
   button: readFileSync(join(dir, "session-preview-open-button.tsx"), "utf8"),
-  toast: readFileSync(join(dir, "session-preview-toast.tsx"), "utf8"),
+  hook: readFileSync(join(dir, "use-open-session-preview.ts"), "utf8"),
   open: readFileSync(join(dir, "open-preview-in-browser.ts"), "utf8"),
   pick: readFileSync(join(dir, "pick-preview-target.ts"), "utf8"),
   composer: readFileSync(join(dir, "../composer-session-review.tsx"), "utf8"),
@@ -89,8 +89,9 @@ test("探索态不按 mode 禁用预览；右栏浏览器仍是内嵌通道", ()
   assert.ok(files.pane.includes('revealRightPane("browser"'))
 })
 
-test("成功 toast 短句贴完成条，不进空态", () => {
-  assert.ok(files.toast.includes("sessionReviewOpenPreviewDone"))
-  assert.ok(files.composer.includes("SessionPreviewToast"))
+test("成功 toast 走全局 sonner，不进空态", () => {
+  assert.ok(files.hook.includes("sessionReviewOpenPreviewDone"))
+  assert.ok(files.hook.includes("showAppToast"))
+  assert.ok(!files.composer.includes("SessionPreviewToast"))
   assert.ok(!files.composer.includes("SkillSourcePullStrip"))
 })

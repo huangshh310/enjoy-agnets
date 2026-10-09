@@ -1,0 +1,503 @@
+<!-- 【视觉真源】AUTO-P2 自动化错过运行诚实化 · Luna · jojo 短锁 Top5 ② · base cb882a52 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AUTO-P2 · 错过运行诚实化 · Enjoy Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        soft: "#E8F0FC",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Inter", "PingFang SC", "Noto Sans SC", "WenQuanYi Micro Hei", "Droid Sans Fallback", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+        toast: "0 10px 32px rgba(15,20,25,0.16)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+  .fake-screen {
+    background:
+      linear-gradient(180deg, #dbeafe 0%, #eff6ff 42%, #f8fafc 42%),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(43,109,229,.05) 24px, rgba(43,109,229,.05) 25px);
+  }
+  .notes-thumb {
+    background:
+      linear-gradient(180deg, #fff7d6 0%, #fff1b8 28%, #fffdf5 28%);
+  }
+  .term-thumb {
+    background:
+      linear-gradient(180deg, #1a1f24 0%, #0f1419 100%);
+  }
+  .tip { opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity .15s, transform .15s; }
+  .tip-host:hover .tip, .tip-host:focus-within .tip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .sw[aria-checked="true"] { background: #2B6DE5; }
+  .sw[aria-checked="true"] > span { left: 18px; }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">AUTO-P2 · 自动化错过运行诚实化 · 基 <code class="rounded bg-paper px-1.5 py-0.5 text-[15px] font-semibold">cb882a52</code> · 实现等 ① · I3 仍停</h1>
+    <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
+      电脑睡着、应用没开或上一次还没跑完而错过的定时，不再静默消失：记一条「已跳过」和原因；补跑最近一次默认关。
+      Luna：「错过就说错过」。短锁 <a class="font-medium text-accent underline-offset-2 hover:underline" href="../references/auto-p2-missed-runs.md">auto-p2-missed-runs.md</a>
+      · 沿 I4 列表 / 380px 抽屉铬 · Agents token · <strong class="text-ink">不宣称应用已 1:1</strong>。
+    </p>
+  </header>
+
+  <main class="mx-auto max-w-[1100px] space-y-10 px-6 py-8">
+
+    <aside class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-mute">jojo 正式验收 · M1–M6</p>
+      <ol class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li><strong>M1</strong> 睡过计划点 → 唤醒后「已跳过 · 电脑睡眠 · 时间」；补跑关时不运行</li>
+        <li><strong>M2</strong> 应用关闭期间错过 →「应用未运行」；上一次仍在跑 →「上次仍在运行」</li>
+        <li><strong>M3</strong> 补跑开：只补最近一个，较早点只记跳过；运行记录标「补跑」</li>
+        <li><strong>M4</strong> 多次唤醒/启动，同一点只补一次、只一条记录</li>
+        <li><strong>M5</strong> 补跑要审批时停 Dock 并通知；任意桌面放行对补跑无效</li>
+        <li><strong>M6</strong> 跳过记录仅本机；回看 ≤ 7 天</li>
+      </ol>
+      <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 记跳过 + 原因</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 补跑默认关</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 只补最近一次</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 同审批链</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 默认补跑 / 一次补齐</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 跳过当失败</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 继承任意桌面</span>
+        <span class="rounded-full bg-paper px-2.5 py-1 font-medium text-mute ring-1 ring-line">Don’t · 上云 / 开机自启 / I3</span>
+      </div>
+      <p class="mt-3 text-[12px] leading-relaxed text-mute">
+        今天实码：列表有「上次 · 时分」，胶囊只有空闲 / 运行中 / 失败；错过点静默不发、不落记录；无补跑开关、无运行历史、无 <code>powerMonitor</code> 回看。
+        <code>commandId</code> 只是每轮新随机 id，不是「自动化 + 计划时间」幂等键。本页是设计锁，不是现网截图。
+      </p>
+    </aside>
+
+    <!-- A -->
+    <section id="state-a" class="space-y-2">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">A · 列表行「已跳过」三态</h2>
+          <p class="mt-1 text-[13px] text-mute">沿 I4 紧凑行：名称 · cron 徽章 · 开/停。次行替换「上次 ·」为「已跳过 · 原因 · 时间」，mute 小字，<strong class="text-ink">不是失败红、不是警告黄</strong>。名称旁不再挂重复小标。cron 徽章即下次。悬停或点按次行说清为什么。</p>
+        </div>
+        <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] font-medium text-mute ring-1 ring-line">次行 mute · 非 danger</span>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+        <div class="flex min-h-[420px]">
+          <nav class="hidden w-36 shrink-0 border-r border-line bg-paper p-3 text-[12px] sm:block">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">设置</p>
+            <ul class="mt-2 space-y-1">
+              <li class="rounded-md px-2 py-1 text-mute">通用</li>
+              <li class="rounded-md bg-soft px-2 py-1 font-medium text-accent">自动化</li>
+              <li class="rounded-md px-2 py-1 text-mute">供应商</li>
+            </ul>
+          </nav>
+          <div class="min-w-0 flex-1">
+            <div class="flex h-full flex-col">
+              <div class="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <div>
+                  <h3 class="text-[15px] font-semibold">自动化</h3>
+                  <p class="mt-0.5 text-[11px] text-mute">保存后或本机端口到包，开一轮。关应用就停。</p>
+                </div>
+                <button type="button" class="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white">新建</button>
+              </div>
+              <ul class="divide-y divide-line">
+                <li class="flex items-center gap-3 px-4 py-2.5">
+                  <div class="tip-host relative min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">晨间待办整理</p>
+                      <span class="rounded-full bg-card px-1.5 py-px font-mono text-[10px] text-ink ring-1 ring-line">0 8 * * *</span>
+                    </div>
+                    <button type="button" class="mt-0.5 text-left text-[11px] text-mute" aria-describedby="tip-sleep">已跳过 · 电脑睡眠 · 今天 08:00</button>
+                    <span id="tip-sleep" role="tooltip" class="tip absolute left-40 top-full z-20 mt-1 w-56 rounded-lg border border-line bg-card px-2.5 py-2 text-[11px] leading-relaxed text-ink shadow-dock">电脑当时睡着了，这条 08:00 的定时没跑成。不是失败。</span>
+                  </div>
+                  <button type="button" class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-label="开">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+                <li class="flex items-center gap-3 px-4 py-2.5">
+                  <div class="tip-host relative min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">晚间日志归档</p>
+                      <span class="rounded-full bg-card px-1.5 py-px font-mono text-[10px] text-ink ring-1 ring-line">0 21 * * *</span>
+                    </div>
+                    <button type="button" class="mt-0.5 text-left text-[11px] text-mute" aria-describedby="tip-closed">已跳过 · 应用未运行 · 昨天 21:00</button>
+                    <span id="tip-closed" role="tooltip" class="tip absolute left-0 top-full z-20 mt-1.5 w-56 rounded-lg border border-line bg-card px-2.5 py-2 text-[11px] leading-relaxed text-ink shadow-dock">Enjoy 当时没开，错过的点只记下来，不会偷偷补跑。</span>
+                  </div>
+                  <button type="button" class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-label="开">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+                <li class="flex items-center gap-3 px-4 py-2.5">
+                  <div class="tip-host relative min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">午间 diff 复盘</p>
+                      <span class="rounded-full bg-card px-1.5 py-px font-mono text-[10px] text-ink ring-1 ring-line">30 10 * * *</span>
+                    </div>
+                    <button type="button" class="mt-0.5 text-left text-[11px] text-mute" aria-describedby="tip-busy">已跳过 · 上次仍在运行 · 10:30</button>
+                    <span id="tip-busy" role="tooltip" class="tip absolute left-0 top-full z-20 mt-1.5 w-56 rounded-lg border border-line bg-card px-2.5 py-2 text-[11px] leading-relaxed text-ink shadow-dock">上一轮还没结束，这个点就让过去了。不是出错。</span>
+                  </div>
+                  <button type="button" class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-label="开">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+              </ul>
+              <p class="mt-auto border-t border-line bg-paper px-4 py-2 text-[11px] text-mute">仅在本机运行，关闭应用则暂停 · webhook 仅本机端口，非公网</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section id="state-b" class="space-y-2">
+      <div>
+        <h2 class="text-base font-semibold">B · 合并「错过 N 次」</h2>
+        <p class="mt-1 text-[13px] text-mute">连续同因不刷三行。列表收成一句；抽屉运行记录是一组可展开，不是三条吵行。现网抽屉还没有运行记录——这是本刀要加的铬。</p>
+      </div>
+      <div class="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+        <div class="flex min-h-[440px]">
+          <div class="relative min-w-0 flex-1">
+            <div class="flex h-full flex-col">
+              <div class="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <div>
+                  <h3 class="text-[15px] font-semibold">自动化</h3>
+                  <p class="mt-0.5 text-[11px] text-mute">保存后或本机端口到包，开一轮。关应用就停。</p>
+                </div>
+                <button type="button" class="rounded-md bg-accent px-2.5 py-1 text-[11px] font-medium text-white">新建</button>
+              </div>
+              <ul class="divide-y divide-line">
+                <li class="flex items-center gap-3 bg-soft/70 px-4 py-2.5">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">晨间待办整理</p>
+                      <span class="rounded-full bg-card px-1.5 py-px font-mono text-[10px] text-ink ring-1 ring-line">0 8 * * *</span>
+                    </div>
+                    <p class="mt-0.5 text-[11px] text-mute">错过 3 次 · 电脑睡眠 · 最近 今天 08:00</p>
+                  </div>
+                  <button type="button" class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-hidden="true">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+                <li class="flex items-center gap-3 px-4 py-2.5">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <p class="truncate text-[13px] font-medium">复盘当前 diff</p>
+                      <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-ink ring-1 ring-line">手动</span>
+                      <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">空闲</span>
+                    </div>
+                    <p class="mt-0.5 text-[11px] text-mute">尚未运行</p>
+                  </div>
+                  <button type="button" class="relative h-5 w-9 shrink-0 rounded-full bg-accent" aria-hidden="true">
+                    <span class="absolute top-0.5 right-0.5 size-4 rounded-full bg-card"></span>
+                  </button>
+                </li>
+              </ul>
+              <p class="mt-auto border-t border-line bg-paper px-4 py-2 text-[11px] text-mute">仅在本机运行，关闭应用则暂停 · webhook 仅本机端口，非公网</p>
+            </div>
+            <aside class="absolute inset-y-0 right-0 flex w-[min(380px,100%)] flex-col border-l border-line bg-card shadow-2xl">
+              <header class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
+                <div>
+                  <p class="text-[13px] font-semibold">编辑自动化</p>
+                  <p class="mt-0.5 text-[10px] text-mute">当前工作区 · 走现 Composer</p>
+                </div>
+                <span class="text-[11px] text-mute">×</span>
+              </header>
+              <div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
+                <label class="block">
+                  <span class="text-[11px] text-mute">名称</span>
+                  <input class="mt-1 w-full rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12px]" value="晨间待办整理" readonly />
+                </label>
+                <div>
+                  <p class="text-[11px] text-mute">触发</p>
+                  <div class="mt-1 flex flex-wrap gap-1">
+                    <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] text-mute ring-1 ring-line">手动</span>
+                    <span class="rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-white">cron</span>
+                    <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] text-mute ring-1 ring-line">保存后</span>
+                    <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] text-mute ring-1 ring-line">webhook</span>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-[11px] text-mute">运行记录</p>
+                  <details class="mt-1 rounded-lg border border-line bg-paper open:bg-card" open>
+                    <summary class="cursor-pointer list-none px-2.5 py-2 text-[12px] [&::-webkit-details-marker]:hidden">
+                      <span class="flex items-center justify-between gap-2">
+                        <span>
+                          <span class="font-medium">错过 3 次 · 电脑睡眠</span>
+                          <span class="mt-0.5 block text-[10px] text-mute">最近 今天 08:00 · 点开看三个点</span>
+                        </span>
+                        <span class="text-[10px] text-mute">展开</span>
+                      </span>
+                    </summary>
+                    <ul class="space-y-1 border-t border-line px-2.5 py-2 text-[11px] text-mute">
+                      <li class="flex justify-between gap-2"><span>今天 08:00</span><span>已跳过 · 电脑睡眠</span></li>
+                      <li class="flex justify-between gap-2"><span>昨天 08:00</span><span>已跳过 · 电脑睡眠</span></li>
+                      <li class="flex justify-between gap-2"><span>前天 08:00</span><span>已跳过 · 电脑睡眠</span></li>
+                    </ul>
+                  </details>
+                  <p class="mt-1 text-[10px] text-mute">一组，不是三条并列吵行。</p>
+                </div>
+              </div>
+              <footer class="flex items-center justify-end gap-2 border-t border-line px-4 py-3">
+                <span class="mr-auto text-[10px] text-mute">cron 到点才开 · 无立即运行</span>
+                <button type="button" class="rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-white">保存</button>
+              </footer>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section id="state-c" class="space-y-2">
+      <div>
+        <h2 class="text-base font-semibold">C · 抽屉补跑开关</h2>
+        <p class="mt-1 text-[13px] text-mute">每条自动化一只开关，<strong class="text-ink">出厂关</strong>。说明必须同时说清：只补最近一次、更早只记跳过、补跑要审批、记录本机、回看 7 天。</p>
+      </div>
+      <div class="ml-auto w-full overflow-hidden rounded-2xl border border-line bg-card shadow-sm sm:w-[380px]">
+        <header class="border-b border-line px-4 py-2.5">
+          <p class="text-[13px] font-semibold">编辑自动化</p>
+          <p class="mt-0.5 text-[10px] text-mute">晨间待办整理 · cron</p>
+        </header>
+        <div class="space-y-3 px-4 py-3">
+          <div class="rounded-lg border border-line bg-paper px-3 py-2.5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-[12px] font-medium">错过后补跑最近一次</p>
+                <p class="mt-1 text-[11px] leading-relaxed text-mute">只补最近一次，更早的只记录跳过。补跑和手动运行一样需要审批。</p>
+              </div>
+              <button type="button" id="catchup-sw" class="sw relative h-5 w-9 shrink-0 rounded-full bg-line" role="switch" aria-checked="false" aria-label="错过后补跑最近一次">
+                <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-card transition-all"></span>
+              </button>
+            </div>
+            <p class="mt-2 text-[10px] leading-relaxed text-mute">记录只留在这台电脑，不会同步到云。回看最多 7 天。</p>
+          </div>
+          <p class="text-[11px] text-mute">默认关。打开后下一次唤醒或启动，只补最近那个点。</p>
+        </div>
+        <footer class="flex justify-end gap-2 border-t border-line px-4 py-3">
+          <span class="mr-auto text-[10px] text-mute">cron 到点才开 · 无立即运行</span>
+          <button type="button" class="rounded-md bg-accent px-3 py-1.5 text-[11px] font-medium text-white">保存</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- D -->
+    <section id="state-d" class="space-y-2">
+      <div>
+        <h2 class="text-base font-semibold">D · 补跑运行标记</h2>
+        <p class="mt-1 text-[13px] text-mute">补跑是普通一轮，多一枚安静「补跑」标。结果走现网运行态：已完成 / 出错 / 已停止。较早的点仍是「已跳过」，<strong class="text-ink">不要写成准点成功</strong>。</p>
+      </div>
+      <div class="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+        <div class="border-b border-line px-4 py-3">
+          <p class="text-[13px] font-semibold">晨间待办整理 · 运行记录</p>
+          <p class="mt-0.5 text-[11px] text-mute">补跑开 · 只跑了最近一个点</p>
+        </div>
+        <ul class="divide-y divide-line text-[12px]">
+          <li class="flex flex-wrap items-center gap-2 px-4 py-2.5">
+            <span class="rounded-full bg-paper px-1.5 py-px text-[10px] text-mute ring-1 ring-line">补跑</span>
+            <span class="font-medium">计划 08:00 · 实际 09:12</span>
+            <span class="rounded-full bg-okSoft px-1.5 py-px text-[10px] font-medium text-ok ring-1 ring-ok/20">已完成</span>
+          </li>
+          <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-mute">
+            <span>昨天 08:00</span>
+            <span class="rounded-full bg-paper px-1.5 py-px text-[10px] ring-1 ring-line">已跳过 · 电脑睡眠</span>
+          </li>
+          <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-mute">
+            <span>前天 08:00</span>
+            <span class="rounded-full bg-paper px-1.5 py-px text-[10px] ring-1 ring-line">已跳过 · 电脑睡眠</span>
+          </li>
+        </ul>
+        <p class="border-t border-line bg-paper px-4 py-2 text-[11px] text-mute">结果也可以是「出错」或「已停止」。补跑标保持 mute，不要做成准点成功绿。</p>
+      </div>
+    </section>
+
+    <!-- E -->
+    <section id="state-e" class="space-y-2">
+      <div>
+        <h2 class="text-base font-semibold">E · 补跑停在 Dock</h2>
+        <p class="mt-1 text-[13px] text-mute">同一套 Approval Dock（对照 <a class="font-medium text-accent underline-offset-2 hover:underline" href="./cu-p1-p-polish.html">cu-p1-p-polish.html</a>）。主例用非敏感「备忘录」，默认「本会话允许」；终端已进敏感名单（#105），不能画成普通应用。通知只叫人回 Enjoy，<strong class="text-ink">没有允许按钮</strong>。</p>
+      </div>
+      <div class="grid items-start gap-6 lg:grid-cols-2">
+        <div>
+          <p class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-mute">主例 · 非敏感 · 备忘录</p>
+          <div class="rounded-2xl border border-line bg-paper p-3 shadow-dock">
+            <p class="mb-2 px-1 text-[10px] font-medium uppercase tracking-wide text-mute">等待你的决定 · Permission Dock</p>
+            <div class="rounded-xl border border-line bg-card p-4">
+              <div class="flex items-start gap-3">
+                <div class="notes-thumb h-16 w-24 shrink-0 overflow-hidden rounded-lg border border-line">
+                  <p class="m-1.5 rounded bg-white/90 px-1 py-0.5 text-[10px] font-semibold">备忘录</p>
+                  <p class="px-1.5 font-mono text-[10px] text-mute">今日</p>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[14px] font-semibold leading-snug">允许操控「备忘录」？</p>
+                  <p class="mt-0.5 text-[12px] text-mute">备忘录 · 「今日」 · click</p>
+                  <p class="mt-1 text-[11px] text-mute">来自自动化「晨间待办整理」的补跑</p>
+                  <p class="mt-1 font-mono text-[11px] text-mute">com.apple.notes</p>
+                  <p class="mt-1 text-[10px] text-mute">待批中 · 本观察 TTL 已冻结（§3.2a）</p>
+                </div>
+              </div>
+              <div class="mt-3 space-y-1.5">
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[12px]">
+                  <span class="size-3.5 rounded-full border border-line"></span>
+                  允许一次
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-accent bg-accent/5 px-2.5 py-1.5 text-[12px]">
+                  <span class="size-3.5 rounded-full border-2 border-accent bg-accent"></span>
+                  本会话允许「备忘录」
+                </label>
+                <label class="flex cursor-pointer items-start gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-normal">
+                  <span class="mt-0.5 size-3.5 rounded-full border border-line"></span>
+                  <span>
+                    <span class="font-normal">始终允许「备忘录」</span>
+                    <span class="mt-0.5 block text-[11px] text-mute">本机名单 · 可随时在设置撤销</span>
+                  </span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[12px]">
+                  <span class="size-3.5 rounded-full border border-line"></span>
+                  拒绝
+                </label>
+              </div>
+              <div class="mt-4 flex justify-end">
+                <button type="button" class="rounded-lg bg-accent px-4 py-2 text-[13px] font-medium text-white shadow-sm">继续</button>
+              </div>
+              <p class="mt-2 text-center text-[10px] leading-relaxed text-mute">任意桌面放行不继承；按应用放行和始终允许照常。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <p class="mb-0 text-[11px] font-semibold uppercase tracking-wide text-mute">旁卡 · 敏感 · 终端（#105）</p>
+          <div class="rounded-2xl border border-line bg-paper p-3 shadow-dock">
+            <p class="mb-2 px-1 text-[10px] font-medium uppercase tracking-wide text-mute">等待你的决定 · Permission Dock</p>
+            <div class="rounded-xl border border-line bg-card p-4">
+              <div class="flex items-start gap-3">
+                <div class="term-thumb flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-line">
+                  <p class="font-mono text-[10px] text-okSoft">$</p>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[13px] font-semibold leading-snug">允许操控「终端」？</p>
+                  <p class="mt-0.5 text-[11px] text-mute">终端 · 跑命令 · 补跑</p>
+                  <p class="mt-1 text-[11px] text-mute">来自自动化「晨间类型检查」的补跑</p>
+                  <p class="mt-1 font-mono text-[10px] text-mute">com.apple.Terminal</p>
+                </div>
+              </div>
+              <p class="mt-3 rounded-lg border border-warn/25 bg-warnSoft px-2.5 py-1.5 text-[12px] leading-snug text-warn">
+                这是敏感应用，每次都会问你
+              </p>
+              <div class="mt-3 space-y-1.5 text-[12px]">
+                <p class="flex items-center gap-2 rounded-lg border border-accent bg-accent/5 px-2.5 py-1.5">
+                  <span class="size-3.5 rounded-full border-2 border-accent bg-accent"></span>
+                  允许一次
+                </p>
+                <p class="rounded-lg border border-dashed border-line/80 px-2.5 py-1.5 text-mute">本会话允许此应用 · 敏感时不显示</p>
+                <p class="rounded-lg border border-dashed border-line/70 bg-paper px-2.5 py-1.5 text-mute line-through">始终允许此应用</p>
+                <p class="flex items-center gap-2 rounded-lg border border-line px-2.5 py-1.5">
+                  <span class="size-3.5 rounded-full border border-line"></span>
+                  拒绝
+                </p>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <button type="button" class="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white shadow-sm">继续</button>
+              </div>
+            </div>
+          </div>
+          <p class="text-[11px] leading-relaxed text-mute">与 <a class="font-medium text-accent underline-offset-2 hover:underline" href="./cu-p1-p-polish.html">CU-P1-P 状态 B</a> 同宇宙：警示不是「已拦截」；本会话 / 始终允许都不给。终端单独一条「晨间类型检查」，不跟主例「晨间待办整理」混成普通应用。</p>
+
+          <p class="pt-1 text-[11px] font-semibold uppercase tracking-wide text-mute">系统通知 · 无允许钮</p>
+          <article class="rounded-2xl border border-line bg-card p-3 shadow-toast">
+            <div class="flex items-start gap-3">
+              <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-accent text-[11px] font-bold text-white">E</span>
+              <div class="min-w-0">
+                <p class="text-[11px] font-semibold text-mute">Enjoy <span class="font-normal">· 现在</span></p>
+                <p class="mt-0.5 text-[13px] font-semibold">待审批</p>
+                <p class="mt-0.5 text-[12px] leading-relaxed text-mute">Enjoy 的自动化「晨间待办整理」在补跑，需要你回 Enjoy 审批</p>
+              </div>
+            </div>
+          </article>
+          <p class="text-[11px] leading-relaxed text-mute">通知只叫人回来。不在通知上放「允许」。锁屏也不露命令原文。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- F -->
+    <section id="state-f" class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-6">
+      <h2 class="text-base font-semibold text-danger">F · 反例划掉</h2>
+      <p class="mt-1 text-[13px] text-mute">这些面不要画、不要做、不要写进文案。</p>
+      <ul class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li class="strike">一键「补齐全部」按钮</li>
+        <li class="strike">跳过显示为失败红胶囊</li>
+        <li class="strike">补跑标成准点成功（假装 08:00 准点跑完）</li>
+        <li class="strike">「保持后台运行 / 开机自启以免错过」提示</li>
+        <li class="strike">跳过记录同步云端</li>
+        <li class="strike">补跑自动点允许 / 通知上的允许按钮</li>
+      </ul>
+    </section>
+
+    <!-- handoff -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">给 kai / mike 的交接</h2>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">kai · 检测 / 幂等 / 存储 / 授权</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>启动 + <code class="text-ink">powerMonitor</code> resume 算错过点；回看 7 天</li>
+            <li>幂等键 <code class="text-ink">automationId + scheduledAt</code>（参照现网 <code>commandId</code> 防双开，不是每轮新随机）</li>
+            <li>本机 skipped store；原因三选一：电脑睡眠 / 应用未运行 / 上次仍在运行</li>
+            <li>补跑走现审批链；不继承 <code class="text-ink">desktop_act:*</code> 任意桌面；按应用放行与始终允许簿照常</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">mike · 行 / 抽屉 / Dock / 通知</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>次行「已跳过 · 原因 · 时间」替换「上次 ·」；名称旁不挂重复小标；连续合并「错过 N 次」也只写次行</li>
+            <li>抽屉开关「错过后补跑最近一次」默认关；运行记录可折叠组</li>
+            <li>补跑标 mute；结果用已完成 / 出错 / 已停止</li>
+            <li>Dock 来源句「来自自动化「…」的补跑」；通知无允许钮。主例非敏感默认本会话；终端敏感旁卡只留允许一次</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] text-mute">实现等 ① 合完。I3 / Registry 仍停。落地以 <code>design/specs/*</code> 为准，本文不宣称应用已 1:1。</p>
+    </section>
+  </main>
+
+  <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
+    AUTO-P2 visual source · Luna · base <code>cb882a52</code> · SoT <code>design/references/auto-p2-missed-runs.md</code> · <code>design/previews/auto-p2-missed-runs.html</code> · 实现等 ① · I3 仍停
+  </footer>
+
+  <script>
+    const sw = document.getElementById("catchup-sw");
+    sw?.addEventListener("click", () => {
+      const on = sw.getAttribute("aria-checked") === "true";
+      sw.setAttribute("aria-checked", on ? "false" : "true");
+    });
+  </script>
+</body>
+</html>
