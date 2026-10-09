@@ -15,6 +15,7 @@ const ide = {
     pickFile: () => ipcRenderer.invoke("workspace.pickFile"),
     pickSshKey: () => ipcRenderer.invoke("workspace.pickSshKey"),
     remove: (input: unknown) => ipcRenderer.invoke("workspace.remove", input),
+    remember: (input: unknown) => ipcRenderer.invoke("workspace.remember", input),
     list: () => ipcRenderer.invoke("workspace.list"),
     files: (input: unknown) => ipcRenderer.invoke("workspace.files", input),
     readFile: (input: unknown) => ipcRenderer.invoke("workspace.readFile", input),
