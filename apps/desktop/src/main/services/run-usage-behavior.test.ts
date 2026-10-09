@@ -117,6 +117,7 @@ test("泵抛错走 finally 时标记用量不完整", async () => {
     const run = getActiveRun(runId)
     assert.ok(run)
     async function* boom() {
+      yield { type: "start" }
       throw new Error("stream boom")
     }
     await assert.rejects(() => consumeRun(runId, run, boom()))
