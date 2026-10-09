@@ -45,17 +45,25 @@ tailwind.config = {
     --accent: #2B6DE5; --soft: #E8F0FC; --warn: #B45309; --warnSoft: #FEF3C7;
     --danger: #B42318; --dangerSoft: #FEE4E2; --ok: #067647; --okSoft: #DCFAE6;
     --canvas: #EEF1F4; --mist: #E4E9EF;
+    --kbd-bg: #E4E9EF; --kbd-fg: #0F1419;
   }
   html.dark {
-    --ink: #E8EDF2; --mute: #9AA3AD; --line: #2C343C; --paper: #14181C; --card: #1C2127;
+    --ink: #E8EDF2; --mute: #9AA3AD; --line: #3F4A55; --paper: #14181C; --card: #1C2127;
     --accent: #5B8DEF; --soft: #1E2A3D; --warn: #FBBF24; --warnSoft: #3A2A12;
     --danger: #F97066; --dangerSoft: #3A1C1A; --ok: #6EE7B7; --okSoft: #163326;
     --canvas: #0F1215; --mist: #0B0E11;
+    --kbd-bg: #2A323A; --kbd-fg: #E8EDF2;
   }
   body { background: var(--canvas); }
   .strike { text-decoration: line-through; opacity: 0.55; }
   .sid { font-variant-numeric: tabular-nums; }
-  .focus-ring { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
+  /* 克制焦点：1.5px outline，不要 3px 亮黄/accent 光晕 */
+  .focus-ring { outline: 1.5px solid color-mix(in srgb, var(--ink) 55%, var(--accent)); outline-offset: 2px; box-shadow: none; }
+  .kbd {
+    display: inline-flex; height: 24px; min-width: 24px; align-items: center; justify-content: center;
+    border-radius: 999px; background: var(--kbd-bg); color: var(--kbd-fg);
+    padding: 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0; line-height: 1;
+  }
   .sw { position: relative; width: 36px; height: 20px; border-radius: 999px; background: var(--line); flex-shrink: 0; }
   .sw > i { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: #fff; transition: left .15s; }
   .sw.on { background: var(--accent); }
@@ -123,6 +131,7 @@ tailwind.config = {
       </div>
       <p class="mt-3 text-[12px] leading-relaxed text-mute">
         今天实码：向导 6 步、末屏恒「可以开始了」、无密钥走红卡「供应商密钥」、CU 徽章「无执行器」、新对话立刻落库、会话菜单无删除。
+        巡检续：侧栏已有项目时主区仍满幅「打开工作区」；末屏 kbd 碎裂；向导昼/夜卡通；CU 操作卡等权堆叠；深色边溶掉。
         本页是设计锁，不是现网截图。
       </p>
     </aside>
@@ -255,7 +264,7 @@ tailwind.config = {
     <section id="s1-1-chrome" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4">
         <h2 class="text-base font-semibold">S1-1 附 · 向导铬修正（巡检已观察）</h2>
-        <p class="mt-1 text-[13px] text-mute">三卡空白、强调色英文截断、默认焦点落在「跳过设置」。沿旧壳修，不换皮。</p>
+        <p class="mt-1 text-[13px] text-mute">三卡空白、强调色英文截断、默认焦点落在「跳过设置」、昼/夜卡通开关。沿旧壳修，不换皮。</p>
       </div>
       <div class="grid gap-4 lg:grid-cols-3">
         <div>
@@ -290,18 +299,29 @@ tailwind.config = {
               <span class="flex flex-col items-center gap-1 rounded-lg border border-line bg-card px-1 py-1.5"><i class="size-3.5 rounded-full" style="background:#8b5cf6"></i><span class="text-[9px]">宇宙紫</span></span>
               <span class="flex flex-col items-center gap-1 rounded-lg border border-line bg-card px-1 py-1.5"><i class="size-3.5 rounded-full" style="background:#64748b"></i><span class="text-[9px]">石墨灰</span></span>
             </div>
-            <p class="mt-2 text-[10px] text-mute">现网 <span class="strike">Signal Bl…</span> 截断。中文短名走 i18n。</p>
+            <p class="mt-2 text-[11px] text-mute">浅 / 深 · 皮肤点，对齐强调色格</p>
+            <div class="mt-1.5 grid grid-cols-2 gap-1.5">
+              <span class="flex items-center gap-2 rounded-xl border border-ink bg-card px-2.5 py-1.5 ring-1 ring-ink">
+                <i class="size-[18px] shrink-0 rounded-full border border-line" style="background:#F4E7C5"></i>
+                <span class="text-[11px] font-medium">浅色</span>
+              </span>
+              <span class="flex items-center gap-2 rounded-xl border border-line bg-card px-2.5 py-1.5">
+                <i class="size-[18px] shrink-0 rounded-full border border-line" style="background:#1C2127"></i>
+                <span class="text-[11px]">深色</span>
+              </span>
+            </div>
+            <p class="mt-2 text-[10px] text-mute">现网 <span class="strike">Signal Bl…</span> 截断。中文短名走 i18n。昼/夜走点格或标题栏 24px 太阳/月亮，<span class="strike">不要卡通 DayNightToggle</span>。</p>
           </div>
         </div>
         <div>
-          <p class="compare-cap">默认焦点 · 主钮「开始」</p>
+          <p class="compare-cap">默认焦点 · 主钮「开始」· 克制描边</p>
           <div class="rounded-2xl border border-line bg-paper p-3">
             <div class="flex items-center gap-2 rounded-xl border border-line bg-card px-3 py-2.5">
               <span class="flex gap-1"><i class="dot bg-ink"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i></span>
               <span class="text-[12px] text-mute">跳过设置</span>
               <span class="ml-auto rounded-full bg-accent px-3 py-1 text-[12px] font-medium text-white focus-ring">开始</span>
             </div>
-            <p class="mt-2 text-[10px] text-mute">进窗焦点在胶囊主钮，不在左侧文本「跳过设置」。</p>
+            <p class="mt-2 text-[10px] text-mute">进窗焦点在胶囊主钮，不在左侧文本「跳过设置」。环是 1.5px outline，<span class="strike">不是 3px 亮黄光晕</span>。</p>
           </div>
         </div>
       </div>
@@ -324,9 +344,10 @@ tailwind.config = {
               <h3 class="text-[20px] font-medium">可以开始了</h3>
               <p class="mt-1 text-[13px] text-mute">已连 DeepSeek · 浅色 · 工作区 enjoy-agents</p>
             </div>
-            <dl class="mx-auto mt-4 max-w-sm px-10 text-left text-[12px]">
-              <div class="flex justify-between py-1"><dt>打开设置</dt><dd class="rounded border border-line px-1.5">Ctrl ,</dd></div>
-              <div class="flex justify-between py-1"><dt>切换审批</dt><dd class="rounded border border-line px-1.5">⇧ Tab</dd></div>
+            <dl class="mx-auto mt-4 max-w-sm px-8 text-left text-[12px]">
+              <div class="flex items-center justify-between py-1.5"><dt>打开设置</dt><dd class="flex items-center gap-1"><span class="kbd">Ctrl</span><span class="kbd">,</span></dd></div>
+              <div class="flex items-center justify-between py-1.5"><dt>切换审批</dt><dd class="flex items-center gap-1"><span class="kbd">⇧</span><span class="kbd">Tab</span></dd></div>
+              <div class="flex items-center justify-between py-1.5"><dt>本会话查找</dt><dd class="flex items-center gap-1"><span class="kbd">Ctrl</span><span class="kbd">F</span></dd></div>
             </dl>
             <div class="mt-5 flex items-center justify-end gap-2 border-t border-line bg-card px-6 py-3">
               <span class="rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white focus-ring">开始使用</span>
@@ -390,28 +411,54 @@ tailwind.config = {
       </div>
     </section>
 
-    <!-- S1-5 no project -->
+    <!-- S1-5 no project / honest gate -->
     <section id="s1-5" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4">
-        <h2 class="text-base font-semibold">S1-5 · 无项目主空态 · 新对话不弹系统窗</h2>
-        <p class="mt-1 text-[13px] text-mute">三卡片壳不变。主区文案 + 虚线落区抄 <code>WorkspaceChoice</code>。侧栏「新对话」只回到这里。</p>
+        <h2 class="text-base font-semibold">S1-5 · 诚实的门：无项目 vs 侧栏已有项目</h2>
+        <p class="mt-1 text-[13px] text-mute">现网只认 <code>workspaceId</code>。侧栏已有项目时主区仍满幅「打开工作区」——谎话。有项目指向它；无项目才是锁文案 + 撑满盒子的落区。新对话不弹系统窗。</p>
       </div>
-      <div class="overflow-hidden rounded-2xl border border-line bg-mist p-3">
-        <div class="flex min-h-[340px] gap-3">
-          <aside class="w-[200px] shrink-0 rounded-3xl bg-card p-3 shadow-card">
-            <p class="px-1 text-[11px] font-semibold">Enjoy</p>
-            <button type="button" class="mt-2 flex w-full items-center gap-2 rounded-md bg-paper px-2 py-1.5 text-left text-[12px] font-medium">＋ 新对话</button>
-            <p class="mt-1 px-2 text-[11px] text-mute">看板</p>
-            <p class="mt-4 rounded-lg border border-dashed border-line px-2 py-6 text-center text-[10px] text-mute">还没有项目</p>
-          </aside>
-          <main class="flex min-w-0 flex-1 flex-col items-center justify-center rounded-3xl bg-card px-8 shadow-card">
-            <p class="text-center text-[18px] font-semibold">选一个文件夹开始。</p>
-            <p class="mt-1 max-w-sm text-center text-[13px] text-mute">Enjoy 只在你选的文件夹里读写。</p>
-            <div class="mt-4 flex w-full max-w-md flex-col items-center rounded-xl border border-dashed border-line bg-paper px-6 py-8">
-              <p class="text-[12px] text-mute">把文件夹拖到这里，或</p>
-              <span class="mt-2 rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white">选择文件夹</span>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div>
+          <p class="compare-cap">正例 · 一个项目都没有</p>
+          <div class="overflow-hidden rounded-2xl border border-line bg-mist p-3">
+            <div class="flex min-h-[360px] gap-3">
+              <aside class="flex w-[168px] shrink-0 flex-col rounded-3xl bg-card p-3 shadow-card">
+                <p class="px-1 text-[11px] font-semibold">Enjoy</p>
+                <button type="button" class="mt-2 flex w-full items-center gap-2 rounded-md bg-paper px-2 py-1.5 text-left text-[12px] font-medium">＋ 新对话</button>
+                <p class="mt-1 px-2 text-[11px] text-mute">看板</p>
+                <p class="mt-3 flex flex-1 items-center justify-center rounded-lg border border-dashed border-line px-2 text-center text-[10px] text-mute">还没有项目</p>
+              </aside>
+              <main class="flex min-w-0 min-h-[320px] flex-1 flex-col rounded-3xl bg-card p-5 shadow-card">
+                <p class="text-[16px] font-semibold">选一个文件夹开始。</p>
+                <p class="mt-1 text-[12px] text-mute">Enjoy 只在你选的文件夹里读写。</p>
+                <div class="mt-4 flex flex-1 min-h-[168px] flex-col items-center justify-center rounded-2xl border border-dashed border-line bg-paper">
+                  <p class="text-[12px] text-mute">把文件夹拖到这里</p>
+                  <span class="mt-2 rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white">选择文件夹</span>
+                </div>
+              </main>
             </div>
-          </main>
+          </div>
+          <p class="mt-2 text-[11px] text-mute">落区 <code>flex-1 min-h-[168px]</code> 撑满主区，不是居中一小块虚线药丸。</p>
+        </div>
+        <div>
+          <p class="compare-cap">正例 · 侧栏已有项目</p>
+          <div class="overflow-hidden rounded-2xl border border-line bg-mist p-3">
+            <div class="flex min-h-[360px] gap-3">
+              <aside class="w-[168px] shrink-0 rounded-3xl bg-card p-3 shadow-card">
+                <p class="px-1 text-[11px] font-semibold">Enjoy</p>
+                <button type="button" class="mt-2 flex w-full items-center gap-2 rounded-md bg-paper px-2 py-1.5 text-left text-[12px] font-medium">＋ 新对话</button>
+                <p class="mt-3 px-2 text-[10px] font-semibold uppercase tracking-wide text-mute">项目</p>
+                <p class="mt-1 flex h-7 items-center rounded-md bg-paper px-2 text-[12px] font-medium">enjoy-agents</p>
+                <p class="px-2 text-[10px] text-mute">修登录超时</p>
+              </aside>
+              <main class="flex min-w-0 flex-1 flex-col items-center justify-center rounded-3xl bg-card px-6 text-center shadow-card">
+                <p class="text-[16px] font-semibold">继续在 <span class="text-accent">enjoy-agents</span> 里开始</p>
+                <p class="mt-1 max-w-[240px] text-[12px] text-mute">侧栏已经有这个项目。点继续进开始面，不必再打开工作区。</p>
+                <span class="mt-4 rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white">继续</span>
+              </main>
+            </div>
+          </div>
+          <p class="mt-2 text-[11px] text-mute">有项目就指向它。主区不要再问「打开工作区」。</p>
         </div>
       </div>
     </section>
@@ -495,6 +542,21 @@ tailwind.config = {
           <p class="text-[11px] font-semibold text-danger">✗ 无说明弹系统窗</p>
           <p class="mt-2 rounded-lg border border-line p-2 text-[11px] strike">macOS 打开文件夹面板（点新对话就弹）</p>
         </div>
+        <div class="rounded-xl border border-danger/30 bg-card p-3 md:col-span-2">
+          <p class="text-[11px] font-semibold text-danger">✗ 现网门：侧栏已有项目，主区仍满幅「打开工作区」</p>
+          <div class="mt-2 flex min-h-[168px] gap-2 overflow-hidden rounded-xl border border-line bg-mist p-2">
+            <aside class="w-[132px] shrink-0 rounded-2xl bg-card p-2">
+              <p class="text-[10px] font-semibold">Enjoy</p>
+              <p class="mt-2 text-[10px] text-mute">项目</p>
+              <p class="mt-1 rounded-md bg-paper px-1.5 py-1 text-[11px] font-medium">enjoy-agents</p>
+            </aside>
+            <div class="flex flex-1 flex-col items-center justify-center rounded-2xl bg-card">
+              <p class="text-[13px] font-semibold strike">打开工作区</p>
+              <span class="mt-2 rounded-md bg-accent px-3 py-1 text-[11px] font-medium text-white strike">打开文件夹</span>
+            </div>
+          </div>
+          <p class="mt-2 text-[10px] text-mute">现网 <code>ChatStage</code> 只认 <code>workspaceId</code>：整面白/黑底 + 一颗蓝钮。有项目应写「继续在 enjoy-agents 里开始」。</p>
+        </div>
         <div class="rounded-xl border border-danger/30 bg-card p-3">
           <p class="text-[11px] font-semibold text-danger">✗ 密钥上云</p>
           <p class="mt-2 text-[12px] strike">密钥将同步到 Enjoy 账号</p>
@@ -511,11 +573,11 @@ tailwind.config = {
 
     <section id="s2-1" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4">
-        <h2 class="text-base font-semibold">S2-1 / S2-4 · 设置顶卡四态</h2>
-        <p class="mt-1 text-[13px] text-mute">真源在 main（执行器身份 / <code>desktop_doctor</code>）。renderer 不自写平台名单。开关描述跟态走。</p>
+        <h2 class="text-base font-semibold">S2-1 / S2-4 · 设置主卡四态（有层级）</h2>
+        <p class="mt-1 text-[13px] text-mute">真源在 main（执行器身份 / <code>desktop_doctor</code>）。一张卡：顶状态+总开关 → 检测权限行 → 高级降权。不要把始终允许 / 高级坐标 / 任意桌面 / 检测权限做成等权标题。</p>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
-        <div class="rounded-2xl border border-line p-4">
+        <div class="rounded-2xl border border-line bg-card p-4">
           <p class="compare-cap">可用</p>
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -527,8 +589,20 @@ tailwind.config = {
             </div>
             <span class="sw on" aria-checked="true"><i></i></span>
           </div>
+          <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
+            <div>
+              <p class="text-[12px]">系统权限</p>
+              <p class="text-[10px] text-mute">辅助功能 · 屏幕录制 · 输入监听 · 已授权</p>
+            </div>
+            <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
+          </div>
+          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" style="transform:scale(.8)"><i></i></span></div>
+          </div>
         </div>
-        <div class="rounded-2xl border border-line p-4">
+        <div class="rounded-2xl border border-line bg-card p-4">
           <p class="compare-cap">需要授权</p>
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -540,8 +614,20 @@ tailwind.config = {
             </div>
             <span class="sw on" aria-checked="true"><i></i></span>
           </div>
+          <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
+            <div>
+              <p class="text-[12px]">系统权限</p>
+              <p class="text-[10px] text-mute">辅助功能未授权 · 屏幕录制已授权</p>
+            </div>
+            <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
+          </div>
+          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" style="transform:scale(.8)"><i></i></span></div>
+          </div>
         </div>
-        <div class="rounded-2xl border border-line p-4">
+        <div class="rounded-2xl border border-line bg-card p-4">
           <p class="compare-cap">S2-1 · 这台电脑暂不支持</p>
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -553,8 +639,20 @@ tailwind.config = {
             </div>
             <span class="sw off" aria-disabled="true" aria-checked="false"><i></i></span>
           </div>
+          <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
+            <div>
+              <p class="text-[12px]">系统权限</p>
+              <p class="text-[10px] text-mute">这台电脑暂不支持，检测仍可跑一遍医生。</p>
+            </div>
+            <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
+          </div>
+          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2 opacity-70">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" aria-disabled="true" style="transform:scale(.8)"><i></i></span></div>
+          </div>
         </div>
-        <div class="rounded-2xl border border-line p-4">
+        <div class="rounded-2xl border border-line bg-card p-4">
           <p class="compare-cap">Beta 验证中</p>
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -565,6 +663,18 @@ tailwind.config = {
               <p class="mt-1 text-[12px] leading-relaxed text-mute">Beta：这个平台还在验证中，可能不稳定。</p>
             </div>
             <span class="sw off" aria-disabled="true" aria-checked="false"><i></i></span>
+          </div>
+          <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
+            <div>
+              <p class="text-[12px]">系统权限</p>
+              <p class="text-[10px] text-mute">验证中 · 检测权限仍给医生结果，不假装可用。</p>
+            </div>
+            <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
+          </div>
+          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2 opacity-70">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" aria-disabled="true" style="transform:scale(.8)"><i></i></span></div>
           </div>
         </div>
       </div>
@@ -672,6 +782,8 @@ tailwind.config = {
         <li class="strike">为了能点而放宽审批 / 跳过 Dock</li>
         <li class="strike">@ 菜单划掉「桌面」行（等于还在教它存在）</li>
         <li class="strike">检测权限无限转圈</li>
+        <li class="strike">始终允许 / 高级坐标 / 任意桌面 / 检测权限做成等权标题堆在一张卡</li>
+        <li class="strike">深色模式下卡边溶进底色、看不见描边</li>
       </ul>
     </section>
 
@@ -863,6 +975,7 @@ tailwind.config = {
     <!-- 巡检 -->
     <section id="patrol" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <h2 class="text-base font-semibold">巡检记 · 折进本预览，不另开锁</h2>
+      <p class="mt-1 text-[13px] text-mute">对照 <code>e46d6c72</code>。前三条是首轮；后三条是活体 UI 续巡，已画进 S1-5 / S1-2 / S1-1 附 / S2-1。</p>
       <div class="mt-4 grid gap-4 lg:grid-cols-3">
         <div class="rounded-xl border border-line p-3">
           <p class="text-[12px] font-semibold">环境卡挡住 @</p>
@@ -892,6 +1005,23 @@ tailwind.config = {
           <p class="mt-1 text-[12px]">设置本机 CLI：<span class="rounded bg-paper px-1">未安装 20 个</span></p>
           <p class="mt-2 text-[11px] text-mute">一个真源。向导 <code>composerAgentTabs</code> 与设置全表不要各数各的。</p>
         </div>
+        <div class="rounded-xl border border-line p-3">
+          <p class="text-[12px] font-semibold">无项目门说谎</p>
+          <p class="mt-2 text-[12px] leading-relaxed">侧栏已有 enjoy-agents，主区仍满幅白/黑底 + 蓝钮「打开工作区」。只认 <code>workspaceId</code>。</p>
+          <p class="mt-2 text-[11px] text-mute">有项目写「继续在 {项目} 里开始」。无项目才是锁文案 + 撑满落区。反例见 P0-1 Don’t。</p>
+        </div>
+        <div class="rounded-xl border border-line p-3">
+          <p class="text-[12px] font-semibold">末屏 kbd 碎裂 · 昼/夜卡通 · 焦点过亮</p>
+          <p class="mt-2 text-[12px]">现网裸 <code>rounded-md border</code> kbd 像坏 chip。</p>
+          <p class="mt-1 text-[12px]">向导 <code>DayNightToggle</code> 卡通，和强调色点、标题栏 24px 不是一套。</p>
+          <p class="mt-2 text-[11px] text-mute">Kbd 走胶囊 token；浅/深走皮肤点；主钮 1.5px outline。</p>
+        </div>
+        <div class="rounded-xl border border-line p-3">
+          <p class="text-[12px] font-semibold">CU 等权堆叠 · 深色边溶掉</p>
+          <p class="mt-2 text-[12px]">操作卡：始终允许 / 高级坐标 / 任意桌面 / 检测权限同级标题。</p>
+          <p class="mt-1 text-[12px]">深色 <code>--line #2C343C</code> 贴 <code>--card #1C2127</code>。</p>
+          <p class="mt-2 text-[11px] text-mute">主卡层级：状态+总开关 → 检测权限行 → 高级降权。描边提到 <code>#3F4A55</code>。</p>
+        </div>
       </div>
     </section>
 
@@ -914,7 +1044,8 @@ tailwind.config = {
             <li><code>SETUP_GUIDE_FACE</code> 插入 <code>connect-model</code>；末屏两套标题；主钮 autofocus</li>
             <li>介绍三卡去 <code>h-full</code>；强调色走 i18n 中文名</li>
             <li>通用按钮「重新打开入门向导」；keywords 补向导/入门/引导</li>
-            <li>无密钥改 Notice；CU 顶卡四态；chip/@ 跟可用性；<code>/computer-use</code> 人话</li>
+            <li>门：有项目「继续在 {项目} 里开始」；无项目落区撑满；末屏 <code>Kbd</code>；外观皮肤点；主钮克制 outline</li>
+            <li>无密钥改 Notice；CU 主卡层级（开关→检测→高级）；chip/@ 跟可用性；<code>/computer-use</code> 人话；深色边可见</li>
             <li>SessionRowMenu 加删除；ConfirmDialog 钉锁文；菜单贴行</li>
           </ul>
         </div>
@@ -924,7 +1055,7 @@ tailwind.config = {
 
     <section id="coverage" class="rounded-2xl border border-line bg-paper p-5 text-[12px] leading-relaxed text-mute">
       <p class="font-semibold text-ink">自检 · 每个验收与 Don’t 都有画面</p>
-      <p class="mt-2">S1-1 步+五变体 · S1-2 可以开始了 · S1-3 还差一步 · S1-4 重开+搜索 · S1-5 空态 · S1-6 非红/红 · P0-1 Don’t 六条 · S2-1 四态 · S2-2 chip/@/斜杠 · S2-3 加载 · S2-4 描述写在四态里 · S2-5 macOS · S2-6/Don’t 内部名 · S3-1 草稿 · S3-2 落库 · S3-3 回收 · S3-4 看板取消 · S3-5 确认 · S3-6 贴行 · P0-3 Don’t 八条 · 巡检三条。</p>
+      <p class="mt-2">S1-1 步+五变体 · S1-1 附 三卡/中文色/皮肤点/克制焦点 · S1-2 可以开始了+Kbd token · S1-3 还差一步 · S1-4 重开+搜索 · S1-5 无项目撑满落区 + 有项目「继续在 {项目}」 · S1-6 非红/红 · P0-1 Don’t 含现网满幅门反例 · S2-1 四态主卡层级（开关→检测→高级）· S2-2 chip/@/斜杠 · S2-3 加载 · S2-4 描述写在四态里 · S2-5 macOS · S2-6/Don’t 内部名+等权堆+深色溶边 · S3-1 草稿 · S3-2 落库 · S3-3 回收 · S3-4 看板取消 · S3-5 确认 · S3-6 贴行 · P0-3 Don’t 八条 · 巡检九条。</p>
     </section>
   </main>
 

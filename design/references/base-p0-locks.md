@@ -42,7 +42,11 @@ Don’t：无路线写就绪 · 强制先填密钥 · 自动在家目录建工�
 
 **引擎 ≠ 可以开始。** 现网 `ReadySummary` 写「{count} 个引擎就绪 · 浅/深 · 工作区」——引擎就绪不能当对话就绪。末屏 `ReadyMark` 绿勾只在有可对话路线时画；否则改成 mute 圆点，标题换成「还差一步：连一个模型」，主钮「去连接」（回到本步或供应商表单），次钮「先逛逛」（关向导，不造工作区）。有路线才保留现网「可以开始了」+「开始使用」。
 
-**默认焦点。** 现网底栏「跳过设置」在 DOM 里先于主钮，焦点环会落在跳过上（已观察）。本锁：主钮 `开始` / `继续` / `开始使用` / `去连接` 进窗即 `focus-visible:ring-2 ring-accent`；「跳过设置」保持文本钮，不抢首焦。
+**末屏快捷键。** 现网 `ReadyShortcuts` 用裸 `<kbd class="rounded-md border …">`，巡检里像碎裂描边 chip（`⌘` / `,` 各一块直角边）。本锁走 `packages/ui` 的 `Kbd`：`h-6 min-w-6 rounded-full bg-kbd-background`，一组键用 `KbdGroup` 并排，不要自描边矩形。
+
+**默认焦点。** 现网底栏「跳过设置」在 DOM 里先于主钮，焦点环会落在跳过上（已观察）。本锁：主钮 `开始` / `继续` / `开始使用` / `去连接` 进窗即首焦。「跳过设置」保持文本钮，不抢首焦。焦点环是 **1.5px 克制描边**（`outline` + 2px offset，色走 ink / 淡 accent），**不要** 3px 高亮黄/亮 accent 光晕。
+
+**外观昼/夜。** 现网 `AppearanceChoice` 用 `ThemeToggle appearance="sidebar-segmented"` → 手绘卡通 `DayNightToggle`（云、星、日芒）。`ui` spec 已禁标题栏用这套；向导也不要用。本锁：浅/深两枚 **皮肤点格**（对齐强调色 `AccentCell`：18px 圆点 + 短名 + 选中墨线环），或标题栏那套 24px `RiSunLine` / `RiMoonLine` 微钮。不要大号卡通开关。
 
 **介绍三卡。** `IntroPoints` 现网 `grid-cols-3` + `h-full` 把三张卡拉满剩余高度，图下大块空白。本锁：卡**贴内容**，不要 `h-full` 拉伸；图标 + 标题 + 两行说明即可，中间滚动区不必填满。
 
@@ -50,11 +54,18 @@ Don’t：无路线写就绪 · 强制先填密钥 · 自动在家目录建工�
 
 **设置 → 通用。** 复用 `SetupGuideReplay` + `SettingsCard` / `SettingsRow`。标题仍「启动引导」；按钮与行题改为「重新打开入门向导」（现网按钮只有「重新打开」）。说明改成「再走一遍连模型、装引擎、外观和打开文件夹。」`settings-catalog-nav` 通用 `keywords` 补 `向导` / `入门` / `引导`，情境栏搜索（`filter-module-nav`）才能命中。
 
-**无项目主空态。** 现网 `ChatStage` 无 `workspaceId` 是居中「打开工作区」+「打开文件夹」，侧栏「新对话」走 `startPersistedSession` → 无项目直接 `openFolder()` 弹系统窗。本锁：主区改锁文案 + 主钮「选择文件夹」+ 虚线落区（抄 `WorkspaceChoice` 的 `FolderDrop`，不要新壳）；「新对话」只 `navigate('#/')` 到此空态。
+**无项目 / 有项目门（诚实）。** 现网 `ChatStage` 只看 `workspaceId`：没有当前工作区 id 就整面铺白/黑底 + 一句标题「打开工作区」+ 一颗蓝钮「打开文件夹」。侧栏 `SidebarRepos` 已经列出项目时，主区仍当「没项目」——这是谎话。本锁分两态，不要混：
+
+| 侧栏 | 主区 |
+|---|---|
+| 已有项目 | 指向已有项：「继续在 {项目} 里开始」+ 一句 mute「侧栏已经有这个项目，点继续进开始面。」主钮「继续」。**不要**再问打开工作区。 |
+| 一个项目都没有 | 锁文案「选一个文件夹开始。Enjoy 只在你选的文件夹里读写。」+ 主钮「选择文件夹」+ 虚线落区抄 `FolderDrop`（`flex-1 min-h-[168px]` **撑满主区盒子**，不要居中一小块虚线药丸）。 |
+
+「新对话」无项目只 `navigate('#/')` 到对应空态，不直接弹系统窗。反例必须画：侧栏已有 enjoy-agents，主区仍是满幅画布 + 单蓝钮「打开工作区」。
 
 **无密钥发送。** 现网 `needs_key` 走 `ThreadErrorBanner` 红边 `border-border-error-default` +「还没有可用的供应商密钥」。本锁：改走 `ThreadNoticeBanner` 那路——描边 `line`、黄点或 accent 点、**不是红底**；文案钉锁；动作「去连接」进预设表单；`composer` 不清。密钥无效 / 网络 / 额度仍用红错误卡。用词「连接模型 / API 密钥」，界面与 banner 不再出现「供应商密钥」。
 
-**复用。** `SetupGuideDialog` / Header / Footer / `EngineInstallList` / `AppearanceChoice` / `WorkspaceChoice` / `ReadySummary` / `SetupGuideReplay` / `ThreadNoticeBanner` / `ThreadErrorBanner` / `ChatStage` 无项目空态 / 供应商预设表单。不新开第二套向导、不新 modal。
+**复用。** `SetupGuideDialog` / Header / Footer / `EngineInstallList` / `AppearanceChoice`（昼/夜改皮肤点或 `TitleBarToggles` 24px，不要 `DayNightToggle`）/ `WorkspaceChoice` `FolderDrop` / `ReadySummary` + `Kbd` / `SetupGuideReplay` / `ThreadNoticeBanner` / `ThreadErrorBanner` / `ChatStage` 空态（有项目继续 / 无项目落区）/ 供应商预设表单。不新开第二套向导、不新 modal。
 
 ---
 
@@ -78,7 +89,13 @@ Don’t：无执行器开关保持开 · 先给 @桌面 再在执行时失败 ·
 
 ## Luna 视觉说明（P0-2）
 
-**布局。** 不换设置页。仍是 `#/settings/computer-use`：`ComputerUseSwitch` 顶卡 +「系统权限」卡 + 画面 / 操作 / 入门。四态只改**顶卡徽章 + 开关 disabled + 描述句**，不另起平台专页。
+**布局。** 不换设置页。仍是 `#/settings/computer-use`。现网巡检：`ComputerUseOperations` 一张卡里把「始终允许的应用 / 高级坐标 / 本会话任意桌面 / 检测权限」叠成**等权标题**，顶卡四态看不出主次。本锁四态画在**同一张主卡**里，层级固定：
+
+1. **顶：状态 + 总开关** — 标题「电脑操控」+ 四态徽章 + 主 Switch + 跟态走的描述。这是第一眼。
+2. **中：检测权限行** — 一行次级：权限摘要（辅助功能 / 屏幕录制 / 输入监听，或 Linux 人话）+「检测权限」描边钮。不是第三张等权大卡标题。
+3. **底：高级（视觉降权）** — 小节头写「高级」caption，收「始终允许的应用」名单空态 +「高级坐标」（少用徽章、默认关）。字号/对比低于顶段，不要再跟顶段同级 `text-body-medium` 标题。本会话任意桌面也进这一段，不要跟总开关抢权。
+
+深色：卡描边必须看得见。现网 `--line #2C343C` 贴 `--card #1C2127`，边几乎溶掉。本预览深色 `--line` 提到约 `#3F4A55`，和 card 至少一眼能分开。四态只改徽章 + 开关 disabled + 描述，不另起平台专页。
 
 **四态铬（main 下发，renderer 不写死 darwin/linux）。**
 
@@ -97,7 +114,7 @@ Don’t：无执行器开关保持开 · 先给 @桌面 再在执行时失败 ·
 
 **macOS 已授权（S2-5）。** 预览单独画「可用」+ 权限三行已授权 + 底栏「桌面」芯片 + `@` 仍有桌面组，避免实现时把 macOS 一并禁用。
 
-**复用。** `ComputerUseSwitch` / `ComputerUseAccess` / `ComputerUseChip` / `mentions/desktop` 门闩 / `ThreadNoticeBanner`。不新遥控器、不放宽审批四选一。
+**复用。** `ComputerUseSwitch`（顶：状态+总开关）/ `ComputerUseAccess` 收成检测权限行 / `ComputerUseOperations` 降到「高级」/ `ComputerUseChip` / `mentions/desktop` 门闩 / `ThreadNoticeBanner`。不新遥控器、不放宽审批四选一。不把操作四块做成等权标题。
 
 ---
 
@@ -143,6 +160,12 @@ Owner：Luna 预览 → kai（路线检测 / 可用性真源 / 草稿落库与�
 1. **「环境」卡挡住 @ 菜单。** `EnvironmentPanel` `absolute top-2 right-2 z-20 w-72`，空会话也挂着；`@` 发现面板从 Composer 向上/向下展开会被盖住。建议：mention 打开时先收环境卡，或把环境卡降到不盖面板的 z。**请 jojo 是否并进本刀。**
 2. **「无分支」×「未检出分支」。** 环境卡 `environmentNoBranch` =「无分支」；底栏 `gitNoBranch` =「未检出分支」。同一事实两套词。建议统一「未检出分支」。
 3. **引擎计数两套数。** 向导 `engineSummary`「{ready} 个就绪 · {missing} 个未安装」只数 `composerAgentTabs`；设置本机 CLI 页另有「未安装 N 个」。巡检见「12 个未安装」对「未安装 20 个」。**给 kai：一个真源。**
+4. **无项目门说谎。** 侧栏已列出项目时，`ChatStage` 仍因没有 `workspaceId` 画满幅白/黑底 + 单蓝钮「打开工作区」。诚实门：有项目指向「继续在 {项目} 里开始」；无项目才是锁文案 + 撑满盒子的落区。反例见 S1-5 / P0-1 Don’t。
+5. **向导末屏 kbd 碎裂。** `ReadyShortcuts` 裸边框 `<kbd>` 看起来像坏掉的 chip。改走 `Kbd` 胶囊 token。
+6. **向导昼/夜卡通。** `AppearanceChoice` 的 `DayNightToggle` 与强调色点格、标题栏 24px 太阳/月亮不是一套皮。向导改皮肤点或标题栏微钮。
+7. **主钮焦点过亮。** 现网 / 旧预览 3px accent 光晕发黄发跳。改 1.5px 克制 outline。
+8. **电脑操控等权堆叠。** 操作卡把始终允许 / 高级坐标 / 任意桌面 / 检测权限做成同级标题。四态主卡要：顶状态+总开关 → 检测权限行 → 高级降权。
+9. **深色卡边溶掉。** `--line` 太贴 `--card`。预览加深描边，落地时 token 也要一眼能看见边。
 
 ---
 
@@ -156,9 +179,9 @@ Owner：Luna 预览 → kai（路线检测 / 可用性真源 / 草稿落库与�
 | 介绍三卡 | `IntroPoints` `h-full` 拉满，卡内大块空 |
 | 强调色名 | `THEME_ACCENTS[].name` 英文；`zh/common.ts` 的 `signalBlue` 也是 `"Signal Blue"` |
 | 重开向导 | 通用有 `SetupGuideReplay`，按钮「重新打开」；keywords 无向导/入门/引导 |
-| 无项目 | 「打开工作区」+ `openFolder`；「新对话」无项目会弹系统窗 |
+| 无项目 / 门 | `ChatStage` 只认 `workspaceId`：无 id 就满幅「打开工作区」+ 蓝「打开文件夹」，侧栏已有项目也这样；「新对话」无项目会弹系统窗 |
 | 无密钥 | `ThreadErrorBanner` 红卡 +「供应商密钥」 |
-| CU 顶卡 | 开关不因缺执行器禁用；徽章「无执行器」；Linux 句「尚未在真机上验收」 |
+| CU 页层级 | 顶卡开关不因缺执行器禁用；徽章「无执行器」；Linux「尚未在真机上验收」；操作卡等权堆始终允许 / 高级坐标 / 任意桌面 / 检测权限；深色 `--line` 贴 card |
 | CU chip / @ | chip 只看开关+执行态；`@` 桌面组在 CU 开时挂上 |
 | `/computer-use` | `takeComputerUseSlash` 给这一发注册桌面工具 |
 | 新对话 | `startPersistedSession` 立刻 `createAndOpenSession`，侧栏立刻多一行 |
