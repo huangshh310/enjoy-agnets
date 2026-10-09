@@ -61,6 +61,8 @@ test("AUTO-P2：错过次行 / 补跑抽屉 / 超时非红 / Dock 来源", async
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("补跑")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("计划")
     await snap(window, "auto-p2-drawer-catchup")
+    await window.locator('[aria-label="关闭"]').first().click()
+    await window.locator('[data-testid="automation-catch-up-toggle"]').waitFor({ state: "detached", timeout: 8_000 })
 
     await window.locator('[data-testid="automation-row"]').filter({ hasText: "补跑超时示例" }).click()
     await window.locator('[data-testid="automation-missed-expand"] summary').click()
@@ -78,8 +80,11 @@ test("AUTO-P2：错过次行 / 补跑抽屉 / 超时非红 / Dock 来源", async
       "来自自动化「晨间待办整理」的补跑"
     )
     await snap(window, "auto-p2-dock-catchup")
+    await window.locator('[data-testid="approval-deny"]').click()
+    await window.locator('[data-testid="approval-continue"]').click()
+    await window.locator('[data-testid="desktop-approval-card"]').waitFor({ state: "detached", timeout: 12_000 })
   } finally {
-    await app.close()
+    await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 8_000))])
   }
 })
 
