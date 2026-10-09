@@ -69,10 +69,9 @@ test("持久化行可带 lastRunErrorCode / 补跑开关", () => {
     assert.equal(parsed.data.lastRunStatus, "failed")
     assert.equal(parsed.data.lastRunErrorCode, "catch_up_approval_timeout")
     assert.equal(parsed.data.catchUpMissed, true)
-    assert.equal(
-      Automation.safeParse({ ...parsed.data, lastRunErrorCode: "timeout" }).success,
-      false
-    )
+    const unknown = Automation.safeParse({ ...parsed.data, lastRunErrorCode: "timeout" })
+    assert.equal(unknown.success, true)
+    if (unknown.success) assert.equal(unknown.data.lastRunErrorCode, undefined)
   }
 })
 

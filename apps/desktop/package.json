@@ -15,7 +15,7 @@
     "build": "electron-vite build",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
-    "test": "node --experimental-strip-types --test \"src/**/*.test.ts\"",
+    "test": "node --experimental-strip-types --import ./src/main/services/test-hooks/register.mjs --test \"src/**/*.test.ts\"",
 
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test:e2e": "playwright test -c e2e/playwright.config.ts",

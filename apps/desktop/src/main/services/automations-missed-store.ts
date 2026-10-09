@@ -12,6 +12,7 @@ import type {
   AutomationSkipReason
 } from "@enjoy-agents/ipc-contract"
 import { alignCronMinute } from "./automations-cron-points.ts"
+import { getSetting, setSetting } from "./database.ts"
 
 export const MISSED_STORE_KEY = "automation_missed_local"
 export const SCHEDULER_ALIVE_KEY = "automation_scheduler_alive"
@@ -46,7 +47,6 @@ export type StoredMissed = {
 }
 
 export function defaultSettingsIo(): SettingsIo {
-  const { getSetting, setSetting } = require("./database") as typeof import("./database")
   return { get: getSetting, set: setSetting }
 }
 

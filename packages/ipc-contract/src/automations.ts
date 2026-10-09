@@ -75,7 +75,7 @@ export const Automation = z.object({
    * 列表读这个，不是 lastError。超时仍是 lastRunStatus=failed，
    * 值为 catch_up_approval_timeout 时 UI 不要当红错。
    */
-  lastRunErrorCode: AutomationErrorCode.optional(),
+  lastRunErrorCode: AutomationErrorCode.optional().catch(undefined),
   /** 最近一次动作是补跑（无论 ok / failed / running）。 */
   lastRunCatchUp: z.boolean().optional(),
   lastSkipReason: AutomationSkipReason.optional(),
@@ -107,7 +107,7 @@ export const UpsertAutomationInput = z.object({
   lastRunStatus: AutomationRunStatus.optional(),
   lastSessionId: z.string().optional(),
   lastError: z.string().optional(),
-  lastRunErrorCode: AutomationErrorCode.optional(),
+  lastRunErrorCode: AutomationErrorCode.optional().catch(undefined),
   lastRunCatchUp: z.boolean().optional(),
   lastSkipReason: AutomationSkipReason.optional(),
   catchUpMissed: z.boolean().optional(),

@@ -97,7 +97,7 @@ test("二次确认路径硬拒绝写簿，不调用落盘", () => {
 })
 
 test("allow_always 不写会话表；子循环折成 allow", () => {
-  const src = readFileSync(new URL("./agent-runner.ts", import.meta.url), "utf8")
+  const src = readFileSync(new URL("./decide-approval.ts", import.meta.url), "utf8")
   assert.match(src, /if \(decision === "allow_always"\) \{\s*applyDesktopAlwaysAllow\(pending\)\s*return/)
   assert.match(src, /desktopActNeedsSecondConfirm\(pending\.args\)/)
   assert.match(src, /desktopGrantShouldPersist\(pending\.args, peekDesktopObservation\)/)

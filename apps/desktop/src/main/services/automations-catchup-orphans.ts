@@ -23,19 +23,29 @@ export function restoreWaitingCatchUpAction(source?: unknown): "fail_interrupted
   return (source as { isCatchUp?: boolean }).isCatchUp === true ? "fail_interrupted" : "restore"
 }
 
-/** 重启恢复补跑 waiting：按 waiting_review 收尾错过记录，不续挂计时器。 */
+/** 重启恢复补跑 waiting：只收当前 runId，不误伤 restoreRunning 还在跑的补跑。 */
 export function failCatchUpWaiting(
   io: SettingsIo,
   runId: string,
   now = Date.now(),
   stampAutomation?: (automationId: string) => void
 ): StoredMissed[] {
-  return failInterruptedCatchUps(
-    io,
-    (id) => (id === runId ? "waiting_review" : undefined),
-    now,
-    stampAutomation
-  )
+  const failed: StoredMissed[] = []
+  for (const row of listStoredMissed(io, now)) {
+    if (row.runId !== runId) continue
+    if (!shouldFailInterruptedCatchUp(row, "waiting_review")) continue
+    const next = patchMissedPoint(
+      io,
+      row.automationId,
+      row.scheduledAt,
+      { status: "failed", code: CATCH_UP_INTERRUPTED_BY_RESTART },
+      now
+    )
+    if (!next) continue
+    stampAutomation?.(row.automationId)
+    failed.push(next)
+  }
+  return failed
 }
 
 export function failInterruptedCatchUps(

@@ -1,62 +1,89 @@
 /**
- * 补跑 30min 计时器：挂、清、触发。假时钟，不测纯辅助函数。
+ * 补跑 30min：走 decideApproval / waitForSubagentApproval / failAgentPump。假时钟。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { BrowserWindow } from "electron"
-import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
-import { createApprovalGate } from "./approval-gate.ts"
-import type { ActiveRun } from "./agent-run-state.ts"
+import { getApproval, getRun, insertApproval, insertRun, listPendingApprovals } from "@enjoy-agents/db"
 import {
+  CATCH_UP_APPROVAL_TIMEOUT,
+  CATCH_UP_INTERRUPTED_BY_RESTART
+} from "@enjoy-agents/ipc-contract/automations-missed"
+const {
+  rememberApproval,
+  decideApproval,
+  deleteActiveRun,
+  getActiveRun,
+  holdAgentRun,
+  waitForRunSettle,
+  waitSecondConfirmApproval,
+  completeAgentRun,
+  deleteSetting,
+  getDatabase,
+  getSetting,
+  setSetting,
+  readAutomations,
+  writeAutomations,
+  failAgentPump,
   armCatchUpApprovalTimeout,
   expireCatchUpApproval,
-  installCatchUpRunForTests,
-  setCatchUpFailPumpForTests,
-  uninstallCatchUpRunForTests
-} from "./automations-catchup-timeout.ts"
-import {
   clearCatchUpApprovalTimeout,
-  hasCatchUpApprovalTimeout
-} from "./automations-catchup-timer.ts"
-import { claimCatchUpFail, releaseCatchUpFail } from "./claim-catchup-fail.ts"
-import {
-  beginSecondConfirmCatchUpWait,
-  beginSubagentCatchUpWait
-} from "./park-catch-up-approval.ts"
-import { failCatchUpWaiting, restoreWaitingCatchUpAction } from "./automations-catchup-orphans.ts"
-import { claimMissedPoint, listMissedForAutomation, memorySettingsIo } from "./automations-missed-store.ts"
-import { CATCH_UP_INTERRUPTED_BY_RESTART } from "@enjoy-agents/ipc-contract/automations-missed"
+  hasCatchUpApprovalTimeout,
+  waitForSubagentApproval,
+  failCatchUpWaitingOnRestart,
+  claimMissedPoint,
+  defaultSettingsIo,
+  listMissedForAutomation
+} = await import("./automations-catchup-timeout-behavior.load.ts")
 
 const MIN = 60_000
 
-function stubWindow(): BrowserWindow {
+type SentEvent = { type: string; message?: string; runId?: string }
+
+function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
-    isDestroyed: () => true,
-    webContents: { send() {} }
+    isDestroyed: () => false,
+    webContents: {
+      send(_ch: string, event: SentEvent) {
+        events.push(event)
+      }
+    }
   } as unknown as BrowserWindow
 }
 
-function fakeCatchUpRun(runId: string): ActiveRun {
-  return {
-    abort: new AbortController(),
-    messages: [],
-    window: stubWindow(),
+function seedRun(runId: string, sessionId: string): void {
+  if (getRun(getDatabase(), runId)) return
+  insertRun(getDatabase(), {
+    id: runId,
+    sessionId,
+    workspaceId: "ws_1",
+    kind: "agent",
+    status: "running",
+    modelId: "m",
+    providerId: null,
+    checkpoint: null,
+    error: null
+  })
+}
+
+async function waitUntil(pred: () => boolean, label: string): Promise<void> {
+  for (let i = 0; i < 50; i++) {
+    if (pred()) return
+    await new Promise<void>((resolve) => setImmediate(resolve))
+  }
+  throw new Error(`timed out waiting: ${label}`)
+}
+
+function holdCatchUp(runId: string, events: SentEvent[]) {
+  const sessionId = `ses_${runId}`
+  seedRun(runId, sessionId)
+  holdAgentRun({
+    runId,
+    window: recordWindow(events),
     workspaceRoot: "/tmp",
-    pendingApprovals: [],
-    sessionApprovedTools: new Set(),
-    sessionApprovedBashPrefixes: new Set(),
-    approvalGate: createApprovalGate(),
-    pumping: false,
-    resumeAfterPump: false,
-    continuePump: false,
-    todoContinues: 0,
-    startedAt: 0,
-    citedSources: [],
-    transcript: { visible: "" },
-    tools: [],
-    assistantPersisted: false,
+    messages: [],
     input: {
-      sessionId: `ses_${runId}`,
+      sessionId,
       workspaceId: "ws_1",
       modelId: "m",
       mode: "agent",
@@ -70,133 +97,189 @@ function fakeCatchUpRun(runId: string): ActiveRun {
       },
       messages: [{ role: "user", content: "x" }]
     }
-  } as unknown as ActiveRun
-}
-
-function holdCatchUp(runId: string): ActiveRun {
-  const run = fakeCatchUpRun(runId)
-  installCatchUpRunForTests(runId, run)
+  })
+  const run = getActiveRun(runId)
+  if (!run) throw new Error("holdCatchUp failed")
+  run.pumping = true
   return run
 }
 
-function teardown(runId: string): void {
-  clearCatchUpApprovalTimeout(runId)
-  releaseCatchUpFail(runId)
-  uninstallCatchUpRunForTests(runId)
-  setCatchUpFailPumpForTests(undefined)
-}
+test("同一 runId 失败两次都能完整收尾", async () => {
+  const runId = "run_fail_twice"
+  const events: SentEvent[] = []
+  const first = holdCatchUp(runId, events)
+  await failAgentPump(runId, first, new Error("first boom"))
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.ok(events.some((item) => item.type === "run.error"))
+  assert.equal((await waitForRunSettle(runId)).status, "error")
+  assert.equal(getActiveRun(runId), undefined)
 
-/** decideApproval 批准后：清计时器并卸掉该条待审批。 */
-function decideAllow(runId: string, run: ActiveRun, approvalId: string): void {
-  clearCatchUpApprovalTimeout(runId)
-  run.pendingApprovals = run.pendingApprovals.filter((item) => item.approvalId !== approvalId)
-  run.approvalGate.resolve(approvalId, "allow")
-}
+  events.length = 0
+  const second = holdCatchUp(runId, events)
+  await failAgentPump(runId, second, new Error("second boom"))
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.ok(events.some((item) => item.type === "run.error"))
+  assert.equal((await waitForRunSettle(runId)).status, "error")
+  assert.equal(getActiveRun(runId), undefined)
+})
 
 test("第 5 分钟批准，第 30 分钟不得标成 failed", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   const runId = "run_decide_clear"
-  const ended: string[] = []
-  const run = holdCatchUp(runId)
-  run.pendingApprovals.push({ approvalId: "apr_1", toolCallId: "t1", name: "write_file" })
-  setCatchUpFailPumpForTests(async (_id, _run, error) => {
-    ended.push(error instanceof Error ? error.message : String(error))
-  })
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
+  const pending = { approvalId: "apr_1", toolCallId: "t1", name: "write_file" }
+  run.pendingApprovals.push(pending)
+  rememberApproval({ runId, ...pending, args: {} })
   armCatchUpApprovalTimeout(runId)
   assert.equal(hasCatchUpApprovalTimeout(runId), true)
   t.mock.timers.tick(5 * MIN)
-  decideAllow(runId, run, "apr_1")
+  void run.approvalGate.wait("apr_1")
+  await decideApproval(run.window, {
+    runId,
+    approvalId: "apr_1",
+    toolCallId: "t1",
+    decision: "allow"
+  })
   assert.equal(hasCatchUpApprovalTimeout(runId), false)
   await expireCatchUpApproval(runId)
-  assert.deepEqual(ended, [])
   t.mock.timers.tick(25 * MIN)
-  assert.deepEqual(ended, [])
-  teardown(runId)
+  assert.equal(events.some((item) => item.type === "run.error"), false)
+  assert.ok(getActiveRun(runId))
+  clearCatchUpApprovalTimeout(runId)
+  deleteActiveRun(runId)
 })
 
-test("子 agent 审批超时→拒绝→failed catch_up_approval_timeout", async (t) => {
+test("子 agent 审批超时后不能再调工具，最终 failed 不发 run.end", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   const runId = "run_subagent_timeout"
-  const ended: string[] = []
-  let markFailed!: () => void
-  const failed = new Promise<void>((resolve) => {
-    markFailed = resolve
-  })
-  const run = holdCatchUp(runId)
-  setCatchUpFailPumpForTests(async (_id, _run, error) => {
-    ended.push((error as { code?: string }).code ?? "")
-    markFailed()
-  })
-  const decided = beginSubagentCatchUpWait(run, runId, {
-    approvalId: "apr_sub",
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
+  const decided = waitForSubagentApproval(run, runId, {
+    toolName: "write_file",
     toolCallId: "t_sub",
-    name: "write_file"
+    input: { path: "a.ts" }
   })
-  assert.equal(hasCatchUpApprovalTimeout(runId), true)
+  await waitUntil(() => hasCatchUpApprovalTimeout(runId), "subagent catch-up timer")
+  const settled = waitForRunSettle(runId)
   t.mock.timers.tick(30 * MIN)
   assert.equal(await decided, "deny")
-  await failed
-  assert.deepEqual(ended, [CATCH_UP_APPROVAL_TIMEOUT])
-  teardown(runId)
+  assert.equal(run.abort.signal.aborted, true)
+  assert.equal((await settled).status, "error")
+  assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_APPROVAL_TIMEOUT)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.ok(events.some((item) => item.type === "run.error" && item.message === CATCH_UP_APPROVAL_TIMEOUT))
+  let ended = false
+  completeAgentRun({
+    runId,
+    run,
+    emit: () => {
+      ended = true
+    }
+  })
+  assert.equal(ended, false)
+  assert.ok(!events.some((item) => item.type === "run.end"))
+  assert.equal(getActiveRun(runId), undefined)
 })
 
 test("二次确认超时→拒绝→failed catch_up_approval_timeout", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   const runId = "run_second_timeout"
-  const ended: string[] = []
-  let markFailed!: () => void
-  const failed = new Promise<void>((resolve) => {
-    markFailed = resolve
-  })
-  const run = holdCatchUp(runId)
-  setCatchUpFailPumpForTests(async (_id, _run, error) => {
-    ended.push((error as { code?: string }).code ?? "")
-    markFailed()
-  })
-  const decided = beginSecondConfirmCatchUpWait(run, runId, {
-    approvalId: "apr_sc",
-    toolCallId: "t_sc"
-  })
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
+  const decided = waitSecondConfirmApproval(runId, run, { appKey: "com.apple.notes" })
   assert.equal(hasCatchUpApprovalTimeout(runId), true)
+  const settled = waitForRunSettle(runId)
   t.mock.timers.tick(30 * MIN)
   assert.equal(await decided, "deny")
-  await failed
-  assert.deepEqual(ended, [CATCH_UP_APPROVAL_TIMEOUT])
-  teardown(runId)
+  assert.equal((await settled).summary, CATCH_UP_APPROVAL_TIMEOUT)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.ok(events.some((item) => item.type === "run.error"))
 })
 
 test("超时与 failAgentPump 并发只收尾一次", async () => {
   const runId = "run_once"
-  const ended: string[] = []
-  const run = holdCatchUp(runId)
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
   run.pendingApprovals.push({ approvalId: "apr_x", toolCallId: "tx", name: "write_file" })
-  const fail = async (id: string, _run: ActiveRun, error: unknown) => {
-    if (!claimCatchUpFail(id)) return
-    ended.push((error as { code?: string }).code ?? "")
-  }
+  const error = Object.assign(new Error(CATCH_UP_APPROVAL_TIMEOUT), {
+    code: CATCH_UP_APPROVAL_TIMEOUT
+  })
   await Promise.all([
-    expireCatchUpApproval(runId, fail),
-    expireCatchUpApproval(runId, fail),
-    fail(runId, run, { code: CATCH_UP_APPROVAL_TIMEOUT })
+    expireCatchUpApproval(runId),
+    expireCatchUpApproval(runId),
+    failAgentPump(runId, run, error)
   ])
-  assert.equal(ended.length, 1)
-  assert.equal(ended[0], CATCH_UP_APPROVAL_TIMEOUT)
-  teardown(runId)
+  assert.equal(events.filter((item) => item.type === "run.error").length, 1)
+  assert.equal(getActiveRun(runId), undefined)
+})
+
+test("多条待审批决定一条后计时器仍在，全部处理完才清", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
+  const runId = "run_multi_pending"
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
+  const first = { approvalId: "apr_a", toolCallId: "ta", name: "write_file" }
+  const second = { approvalId: "apr_b", toolCallId: "tb", name: "write_file" }
+  run.pendingApprovals.push(first, second)
+  rememberApproval({ runId, ...first, args: {} })
+  rememberApproval({ runId, ...second, args: {} })
+  armCatchUpApprovalTimeout(runId)
+  void run.approvalGate.wait(first.approvalId)
+  await decideApproval(run.window, {
+    runId,
+    approvalId: first.approvalId,
+    toolCallId: first.toolCallId,
+    decision: "allow"
+  })
+  assert.equal(hasCatchUpApprovalTimeout(runId), true)
+  assert.equal(run.pendingApprovals.length, 1)
+  void run.approvalGate.wait(second.approvalId)
+  await decideApproval(run.window, {
+    runId,
+    approvalId: second.approvalId,
+    toolCallId: second.toolCallId,
+    decision: "allow"
+  })
+  assert.equal(hasCatchUpApprovalTimeout(runId), false)
+  t.mock.timers.tick(30 * MIN)
+  assert.equal(events.some((item) => item.type === "run.error"), false)
+  deleteActiveRun(runId)
 })
 
 test("重启恢复补跑 waiting 必须在有限时间内收尾", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   const runId = "run_wait"
-  assert.equal(
-    restoreWaitingCatchUpAction({
-      automationId: "auto_wait",
-      automationName: "晨间",
-      scheduledAt: 1,
-      isCatchUp: true
+  const sessionId = "ses_wait"
+  insertRun(getDatabase(), {
+    id: runId,
+    sessionId,
+    workspaceId: "ws_1",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: JSON.stringify({
+      automationSource: {
+        automationId: "auto_wait",
+        automationName: "晨间",
+        scheduledAt: 1,
+        isCatchUp: true
+      }
     }),
-    "fail_interrupted"
-  )
-  const io = memorySettingsIo()
+    error: null
+  })
+  insertApproval(getDatabase(), {
+    id: "apr_wait",
+    runId,
+    toolCallId: "tw",
+    name: "write_file",
+    args: "{}",
+    hmac: "x",
+    decision: null,
+    createdAt: 0
+  })
+  const io = defaultSettingsIo()
   claimMissedPoint(io, {
     automationId: "auto_wait",
     scheduledAt: 0,
@@ -206,11 +289,42 @@ test("重启恢复补跑 waiting 必须在有限时间内收尾", async (t) => {
     runId,
     isCatchUp: true
   })
-  const failed = failCatchUpWaiting(io, runId, 0)
-  assert.equal(failed[0]?.status, "failed")
-  assert.equal(failed[0]?.code, CATCH_UP_INTERRUPTED_BY_RESTART)
+  failCatchUpWaitingOnRestart(runId)
+  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+  assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_INTERRUPTED_BY_RESTART)
+  assert.equal(getApproval(getDatabase(), "apr_wait")?.decision, "deny")
+  assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
+  assert.equal(listMissedForAutomation(io, "auto_wait", 0)[0]?.status, "failed")
   assert.equal(hasCatchUpApprovalTimeout(runId), false)
   t.mock.timers.tick(30 * MIN)
   assert.equal(hasCatchUpApprovalTimeout(runId), false)
-  assert.equal(listMissedForAutomation(io, "auto_wait", 0)[0]?.status, "failed")
+})
+
+test("未知 lastRunErrorCode 读成 undefined，整行保留", () => {
+  const prev = getSetting("automations")
+  setSetting(
+    "automations",
+    JSON.stringify([
+      {
+        id: "auto_keep",
+        name: "复盘",
+        prompt: "对照 diff",
+        trigger: "manual",
+        enabled: true,
+        updatedAt: 1,
+        lastRunErrorCode: "timeout"
+      }
+    ])
+  )
+  try {
+    const rows = readAutomations()
+    const row = rows.find((item) => item.id === "auto_keep")
+    assert.ok(row)
+    assert.equal(row.lastRunErrorCode, undefined)
+    writeAutomations(rows)
+    assert.ok(readAutomations().some((item) => item.id === "auto_keep"))
+  } finally {
+    if (prev === undefined) deleteSetting("automations")
+    else setSetting("automations", prev)
+  }
 })

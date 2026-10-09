@@ -62,8 +62,19 @@ test("重启恢复补跑 waiting 必须在有限时间内收尾", () => {
     runId: "run_wait",
     isCatchUp: true
   })
+  claimMissedPoint(io, {
+    automationId: "auto_other",
+    scheduledAt: now + 60_000,
+    recordedAt: now,
+    kind: "catch_up",
+    status: "running",
+    runId: "run_live",
+    isCatchUp: true
+  })
   const failed = failCatchUpWaiting(io, "run_wait", now)
+  assert.equal(failed.length, 1)
   assert.equal(failed[0]?.status, "failed")
   assert.equal(failed[0]?.code, CATCH_UP_INTERRUPTED_BY_RESTART)
   assert.equal(listMissedForAutomation(io, "auto_wait", now)[0]?.status, "failed")
+  assert.equal(listMissedForAutomation(io, "auto_other", now)[0]?.status, "running")
 })

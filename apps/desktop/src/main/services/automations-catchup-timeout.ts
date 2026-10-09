@@ -1,5 +1,5 @@
 /**
- * 补跑停 Dock 超时：仍有待审批才自动拒绝并失败。
+ * 补跑停 Dock 超时：仍有待审批才 abort、自动拒绝并失败。
  */
 import {
   CATCH_UP_APPROVAL_TIMEOUT,
@@ -14,14 +14,6 @@ import {
 
 export { catchUpApprovalTimedOut, clearCatchUpApprovalTimeout }
 
-export type CatchUpFailPump = (runId: string, run: ActiveRun, error: unknown) => Promise<void>
-
-let testFailPump: CatchUpFailPump | undefined
-
-export function setCatchUpFailPumpForTests(fn?: CatchUpFailPump): void {
-  testFailPump = fn
-}
-
 export function armCatchUpApprovalTimeout(
   runId: string,
   timeoutMs = CATCH_UP_APPROVAL_TIMEOUT_MS
@@ -31,35 +23,23 @@ export function armCatchUpApprovalTimeout(
   }, timeoutMs)
 }
 
-const testRuns = new Map<string, ActiveRun>()
-
-export function installCatchUpRunForTests(runId: string, run: ActiveRun): void {
-  testRuns.set(runId, run)
-}
-
-export function uninstallCatchUpRunForTests(runId: string): void {
-  testRuns.delete(runId)
-}
-
 async function lookupCatchUpRun(runId: string): Promise<ActiveRun | undefined> {
-  if (testRuns.has(runId)) return testRuns.get(runId)
   const { getActiveRun } = await import("./agent-run-state.ts")
   return getActiveRun(runId)
 }
 
-export async function expireCatchUpApproval(
-  runId: string,
-  fail?: CatchUpFailPump
-): Promise<void> {
+export async function expireCatchUpApproval(runId: string): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
   const run = await lookupCatchUpRun(runId)
   if (!run || !isCatchUpRun(run.input)) return
   if (run.pendingApprovals.length === 0) return
+  run.abort.abort()
   await denyCatchUpPending(run, runId)
   const error = Object.assign(new Error(CATCH_UP_APPROVAL_TIMEOUT), {
     code: CATCH_UP_APPROVAL_TIMEOUT
   })
-  await (fail ?? testFailPump ?? defaultCatchUpFail)(runId, run, error)
+  const { failAgentPump } = await import("./fail-agent-pump.ts")
+  await failAgentPump(runId, run, error)
 }
 
 async function denyCatchUpPending(run: ActiveRun, runId: string): Promise<void> {
@@ -80,11 +60,6 @@ async function denyCatchUpPending(run: ActiveRun, runId: string): Promise<void> 
       // 已毁窗：闸已 resolve，收尾不依赖推送。
     }
   }
-}
-
-async function defaultCatchUpFail(runId: string, run: ActiveRun, error: unknown): Promise<void> {
-  const { failAgentPump } = await import("./fail-agent-pump.ts")
-  await failAgentPump(runId, run, error)
 }
 
 export function isCatchUpRun(input: { automationSource?: { isCatchUp?: boolean } }): boolean {

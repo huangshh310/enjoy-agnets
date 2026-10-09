@@ -56,7 +56,7 @@ Main Process（可信）
 
 **测试（`pnpm test` = `turbo run test`，`test` 依赖 `^typecheck`）**
 
-- 每个工作区的 `test` 脚本只准用 glob 自动发现（`node --experimental-strip-types --test "src/**/*.test.ts"`；`packages/ui` 是 `components/**/*.test.ts`）。禁止回退成手写文件清单。
+- 每个工作区的 `test` 脚本只准用 glob 自动发现（`node --experimental-strip-types --test "src/**/*.test.ts"`；`packages/ui` 是 `components/**/*.test.ts`）。禁止回退成手写文件清单。desktop 额外 `--import ./src/main/services/test-hooks/register.mjs`：electron 桩 + 无后缀相对 import 补 `.ts`，好让行为测试走 `decideApproval` / `failAgentPump` 等生产路径。
 - 历史教训：手写 376 项清单里留着一个已删除的 `company/billing/billing.test.ts`，`node --test` 在**收集阶段**就 exit 1，整个 desktop 套件一条都没跑，而 CI 只显示「test 失败」这一行。同批还有 20 个测试文件从未被任何脚本引用。
 - 传目录参数不可用：`node --test src/main` 会把目录当模块加载并报 `MODULE_NOT_FOUND`，只有引号 glob 形态能递归收 `.ts`。
 - 采集守卫在 `apps/desktop/src/main/repo-test-harness-invariants.test.ts`：每个有测试文件的工作区必须有 `test` 脚本、每个 `*.test.ts(x)` 必须被 glob 覆盖、每个 glob 必须至少匹配 1 个文件；它自己还先断言「确实看到了 ≥10 个工作区 / ≥400 个测试文件」，防止路径算错导致守卫空跑通过。
@@ -112,6 +112,7 @@ Main Process（可信）
 - [open] `no-inline-styles` / `no-unknown-classes` / `require-static-classes` 仍未打开：玻璃皮肤指针、mascot 与动态 className 会刷屏。2026-10 已开的是 `correctness` 加 `typescript` / `import` / `unicorn`；`react` / `react-hooks`（约 131 条：`set-state-in-effect` 58、`exhaustive-deps` 45、`refs` 25）是架构级改造，留给单独一轮，别和功能 PR 混在一起。
 - `@shadcn/lint` 抱怨项目 `cn`：本仓 `cn` 是 0.2.6，linter 语法要 ≥0.3.2，于是它改用自带 `cn` 0.3.2。lint 校验的 className 合并语义因此与 app 运行时不一致——升 `cn` 之前，三条视觉规则的结论只当参考。详见 `ui` spec。
 - [guard:.oxlintrc.json renderer override] 渲染进程打 `@enjoy-agents/agent-core` 主入口会把 `node:` 打进 bundle：现在 `no-restricted-imports` 直接报错，不再只靠约定。
+- **隐患**：desktop `node:test` 行为测试若静态相对 import 生产模块（`approval-hmac` / `decide-approval` / `fail-agent-pump`），守卫会因这些文件 value-import `@enjoy-agents/db` / 合约入口而红。正确做法：测试里 `await import(...)` 动态加载；ACP 桶仍只能动态 import，`--experimental-strip-types` 会把 `private readonly` 参数属性剥成非法语法。
 
 - Workflow 子 agent：`persistChildRun` 在步骤 `running` checkpoint 之后把 `child_run_id` 写入当前 `run_steps` 行，`getWorkflow` 投影 `childRunId`。`cancelWorkflow` 先看内存 `childRuns`，没有再读库。崩溃发生在 persist running 与 `onChildRun` 之间仍可能漏绑。
 - `settings` KV 表曾是 JSON 垃圾场：vault / harness 密钥 / automations / overrides / runtimes / 压缩状态全塞一张表。2026-09 收敛：vault 与 harness 密钥迁到 `secrets_vault` 专表（惰性迁移旧键）；automations / overrides / session.runtimes 读取统一走 Zod 校验（坏条目丢弃）；压缩状态读侧已有 `SessionCompaction.parse`。仍在 settings 里的 JSON 是小对象（preferences 等），可接受。

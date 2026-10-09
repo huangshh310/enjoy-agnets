@@ -4,12 +4,10 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
-import { listPendingApprovals, listRuns, setApprovalDecision, updateRun } from "@enjoy-agents/db"
-import { CATCH_UP_INTERRUPTED_BY_RESTART } from "@enjoy-agents/ipc-contract/automations-missed"
+import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
-import { failCatchUpWaiting, restoreWaitingCatchUpAction } from "./automations-catchup-orphans"
-import { stampInterruptedAutomation } from "./automations-interrupt-stamp"
-import { defaultSettingsIo } from "./automations-missed-store"
+import { restoreWaitingCatchUpAction } from "./automations-catchup-orphans"
+import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
@@ -109,11 +107,3 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   }
 }
 
-function failCatchUpWaitingOnRestart(runId: string): void {
-  const db = getDatabase()
-  for (const item of listPendingApprovals(db, runId)) {
-    setApprovalDecision(db, item.id, "deny")
-  }
-  updateRun(db, runId, { status: "failed", error: CATCH_UP_INTERRUPTED_BY_RESTART })
-  failCatchUpWaiting(defaultSettingsIo(), runId, Date.now(), stampInterruptedAutomation)
-}

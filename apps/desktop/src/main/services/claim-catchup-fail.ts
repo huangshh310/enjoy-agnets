@@ -1,14 +1,10 @@
 /**
- * 补跑超时 / failAgentPump 并发时只收尾一次。
+ * 同一条 ActiveRun 实例只收尾一次。按实例不按 runId，续跑新实例可再失败。
  */
-const claimed = new Set<string>()
+const claimed = new WeakSet<object>()
 
-export function claimCatchUpFail(runId: string): boolean {
-  if (claimed.has(runId)) return false
-  claimed.add(runId)
+export function claimCatchUpFail(run: object): boolean {
+  if (claimed.has(run)) return false
+  claimed.add(run)
   return true
-}
-
-export function releaseCatchUpFail(runId: string): void {
-  claimed.delete(runId)
 }
