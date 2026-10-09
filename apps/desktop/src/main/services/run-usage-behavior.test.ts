@@ -51,19 +51,21 @@ function seedRun(runId: string, usageJson?: string) {
   })
 }
 
-test("收工写下真实 endedAt，并带上 runtimeId", () => {
+test("收工写下真实 endedAt，并带上 runtimeId 与 acpSessionId", () => {
   const runId = `run_ended_${Date.now()}`
   seedRun(runId)
   try {
     hold(runId, "claude")
     const run = getActiveRun(runId)
     assert.ok(run)
+    run.acpSessionId = "acp_s1"
     applyActiveRunUsage(runId, run, { inputTokens: 12, reportedCostUsd: 0.2 })
     persistActiveRun(run, runId, "completed")
     const stored = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
     assert.equal(typeof stored?.endedAt, "number")
     assert.ok((stored?.endedAt ?? 0) > 0)
     assert.equal(stored?.runtimeId, "claude")
+    assert.equal(stored?.acpSessionId, "acp_s1")
     assert.equal(run.endedAt, stored?.endedAt)
   } finally {
     deleteActiveRun(runId)

@@ -5,7 +5,12 @@ import { kindFromModelsDevProvider, uniqueCatalogForKind } from "./models-dev-ki
 import { PRICE_SNAPSHOT } from "./snapshot.ts"
 import { presetFor } from "../presets.ts"
 
-/** models.dev 带 api 的目录：必须和 preset 同站。没有 api 的用 preset 主机自检。 */
+/**
+ * models.dev 目录 api（2026-10-09 核对）：
+ * 有 api 且同站：siliconflow-cn / openrouter / modelscope / deepseek。
+ * 无 api 字段：togetherai / aihubmix / openai / anthropic / google / groq / mistral / xai / perplexity / cohere。
+ * 国际站 siliconflow（api.siliconflow.com）与国内 preset 不同站，不收录。
+ */
 const CATALOG_API: Record<string, string | undefined> = {
   "siliconflow-cn": "https://api.siliconflow.cn/v1",
   openrouter: "https://openrouter.ai/api/v1",
