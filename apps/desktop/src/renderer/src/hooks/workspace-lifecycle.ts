@@ -58,6 +58,9 @@ export async function removeProject(workspaceId: string) {
   await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
   const removedCurrent = await releaseHistoryPages(ids)
   if (!wasActive && !removedCurrent) return
-  const next = settleWorkspaceAfterRemove(remaining)
+  const lastWorkspaceId = (
+    queryClient.getQueryData(["settings"]) as { lastWorkspaceId?: string | null } | undefined
+  )?.lastWorkspaceId
+  const next = settleWorkspaceAfterRemove(remaining, lastWorkspaceId)
   if (next) await loadWorkspace(next)
 }

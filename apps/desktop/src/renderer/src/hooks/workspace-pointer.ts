@@ -21,6 +21,7 @@ export type WorkspacePointerPeek = {
   workspaceId: string | null
   workspaceName: string
   workspaceRootPath: string | null
+  sessionId: string | null
 }
 
 /** 测试播种：先写指针，再补侧栏节点（setWorkspace(null) 会清空 repositories）。 */
@@ -48,21 +49,29 @@ export function peekWorkspacePointer(): WorkspacePointerPeek {
   return {
     workspaceId: store.workspaceId,
     workspaceName: store.workspaceName,
-    workspaceRootPath: store.workspaceRootPath
+    workspaceRootPath: store.workspaceRootPath,
+    sessionId: store.sessionId
   }
 }
 
-/** 删除后按刚刷新的剩余名单收口：当前已在名单里则不动，否则切一个或清空。 */
-export function settleWorkspaceAfterRemove(remaining: readonly WorkspaceRow[]) {
+/** 排除刚删的之后：先 lastWorkspaceId，没有再名单第一个。 */
+export function pickWorkspaceAfterRemove(
+  remaining: readonly WorkspaceRow[],
+  lastWorkspaceId?: string | null
+) {
+  return remaining.find((row) => row.id === lastWorkspaceId) ?? remaining[0] ?? null
+}
+
+/** 删除后按剩余名单收口：当前已在名单里则不动，否则切到上次用过的或第一个，没有则清空。 */
+export function settleWorkspaceAfterRemove(
+  remaining: readonly WorkspaceRow[],
+  lastWorkspaceId?: string | null
+) {
   const store = useChatStore.getState()
   if (store.workspaceId && remaining.some((row) => row.id === store.workspaceId)) return null
-  const next = remaining[0]
-  if (next) {
-    store.setWorkspace(next)
-    return next
-  }
-  store.setWorkspace(null)
-  return null
+  const next = pickWorkspaceAfterRemove(remaining, lastWorkspaceId)
+  store.setWorkspace(next)
+  return next
 }
 
 /** 历史落到路由页时，当前 id 已不在侧栏则丢掉悬空指针。 */

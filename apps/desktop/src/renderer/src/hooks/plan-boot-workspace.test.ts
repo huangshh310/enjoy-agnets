@@ -14,6 +14,7 @@ import {
 
 const created = { id: "ws-new", name: "Flash", rootPath: "/tmp/flash" }
 const leftover = { id: "ws-keep", name: "Keep", rootPath: "/tmp/keep" }
+const lastUsed = { id: "ws-last", name: "LastUsed", rootPath: "/tmp/last" }
 
 function resetPointer() {
   seedWorkspacePointer({ workspace: null, repositories: [] })
@@ -31,35 +32,44 @@ test("创建后 settings 带着空的旧名单时不得清掉新项目", () => {
   assert.equal(peek.workspaceRootPath, created.rootPath)
 })
 
-test("删除最后一个项目、历史回落到路由页，然后 settings refetch 后 workspaceId 为空", () => {
+test("S1-5 删到一个不剩时切换器和主区回到无项目空态", () => {
   resetPointer()
   seedWorkspacePointer({ workspace: created, repositories: [created] })
   seedWorkspacePointer({ repositories: [] })
   dropDanglingWorkspacePointer()
-  settleWorkspaceAfterRemove([])
+  settleWorkspaceAfterRemove([], created.id)
   syncBootWorkspace([], created.id, () => {
-    throw new Error("空名单且无指针时不得 load")
+    throw new Error("空名单不得自动新建工作区")
   })
   const peek = peekWorkspacePointer()
   assert.equal(peek.workspaceId, null)
   assert.equal(peek.workspaceName, "No workspace")
   assert.equal(peek.workspaceRootPath, null)
+  assert.equal(peek.sessionId, null)
 })
 
-test("删除当前项目、还剩其他项目时不会停在已删除的 id 上", () => {
+test("S1-7 删当前还剩其他时切到 lastWorkspaceId，而不是名单第一个", () => {
+  resetPointer()
+  seedWorkspacePointer({ workspace: created, repositories: [created, leftover, lastUsed] })
+  seedWorkspacePointer({ repositories: [leftover, lastUsed] })
+  dropDanglingWorkspacePointer()
+  settleWorkspaceAfterRemove([leftover, lastUsed], lastUsed.id)
+  const peek = peekWorkspacePointer()
+  assert.equal(peek.workspaceId, lastUsed.id)
+  assert.equal(peek.workspaceName, lastUsed.name)
+  assert.notEqual(peek.workspaceId, leftover.id)
+  assert.notEqual(peek.workspaceId, created.id)
+})
+
+test("S1-7 没有可用 lastWorkspaceId 时切到剩余名单第一个", () => {
   resetPointer()
   seedWorkspacePointer({ workspace: created, repositories: [created, leftover] })
   seedWorkspacePointer({ repositories: [leftover] })
   dropDanglingWorkspacePointer()
-  settleWorkspaceAfterRemove([leftover])
-  syncBootWorkspace([leftover], created.id, () => {
-    throw new Error("已有剩余项目指针时启动对齐不得再切")
-  })
+  settleWorkspaceAfterRemove([leftover], created.id)
   const peek = peekWorkspacePointer()
   assert.equal(peek.workspaceId, leftover.id)
-  assert.notEqual(peek.workspaceId, created.id)
   assert.equal(peek.workspaceName, leftover.name)
-  assert.equal(peek.workspaceRootPath, leftover.rootPath)
 })
 
 test("启动还没有当前工作区时按 lastWorkspaceId 打开", () => {
