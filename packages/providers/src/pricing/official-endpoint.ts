@@ -3,7 +3,7 @@
  * 有国内/国际两份价，或按量/套餐两套主机的 kind，整类不当官方（用户自填单价除外）。
  * 不要用 officialSiblingEndpoints：它会把套餐 region 也当成官方。
  */
-import { presetFor, normalizeBaseURL } from "../presets.ts"
+import { presetFor, normalizeBaseURL, isMediaOnlyKind } from "../presets.ts"
 import { isProviderKind } from "../presets/kinds.ts"
 import type { ProviderPreset } from "../presets/define.ts"
 import { uniqueCatalogForKind } from "./models-dev-kind.ts"
@@ -37,8 +37,9 @@ export function resolveOfficialCatalog(
   return { official: true, catalog }
 }
 
-/** 判断依据是 preset.regions 数量：多于 1 个就有区域或套餐歧义。 */
+/** 判断依据是 preset.regions 数量：多于 1 个就有区域或套餐歧义。cohere / 媒体-only 显式排除。 */
 export function kindAllowsSnapshot(kind: string): boolean {
+  if (kind === "cohere" || isMediaOnlyKind(kind)) return false
   const preset = presetFor(kind)
   if ((preset.regions?.length ?? 0) > 1) return false
   return uniqueCatalogForKind(kind) != null

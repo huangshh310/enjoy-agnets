@@ -38,6 +38,19 @@ test("usage.updated 旧估算枚举不丢掉整条事件", () => {
   }
 })
 
+test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "step.end",
+    runId: "r1",
+    stepId: "s",
+    inputTokens: "nope"
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success && parsed.data.type === "step.end") {
+    assert.equal(parsed.data.inputTokens, undefined)
+  }
+})
+
 test("未知 type 被拒绝", () => {
   const parsed = StreamEvent.safeParse({ type: "not.a.thing", runId: "r1" })
   assert.equal(parsed.success, false)

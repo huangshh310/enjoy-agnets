@@ -41,6 +41,7 @@ export type ActiveRun = {
   usageIncomplete?: boolean
   maxPumpInputTokens?: number
   maxStepInputTokens?: number
+  stepInputIncomplete?: boolean
   endedAt?: number
   acpSessionId?: string
   citedSources: CitedSource[]

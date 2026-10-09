@@ -54,7 +54,8 @@ function mapLifecyclePart(part: Record<string, unknown>, runId: string): StreamE
     }
   }
   if (type === "finish" || type === "usage") {
-    const usage = mapUsageTokens(asRecord(part.usage ?? part.totalUsage ?? part))
+    const raw = type === "finish" ? (part.totalUsage ?? part.usage ?? part) : (part.usage ?? part.totalUsage ?? part)
+    const usage = mapUsageTokens(asRecord(raw))
     if (!usage) return null
     return { type: "usage.updated", runId, ...usage }
   }

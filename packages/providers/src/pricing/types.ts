@@ -48,6 +48,8 @@ export type TokenUsage = {
   maxPumpInputTokens?: number
   /** 各步 input 的最大值。有分档的模型拿不到这个值就标 unknown。 */
   maxStepInputTokens?: number
+  /** 部分 step.end 没报 input：有分档时不得信已记下的最大值。 */
+  stepInputIncomplete?: boolean
 }
 
 export type MatchedRate = {

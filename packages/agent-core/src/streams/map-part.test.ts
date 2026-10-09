@@ -9,6 +9,20 @@ test("maps AI SDK 7 reasoning-delta text", () => {
   assert.deepEqual(event, { type: "reasoning.delta", runId: "run_1", text: "先列约束" })
 })
 
+test("finish 优先用 SDK v7 totalUsage", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "finish",
+        usage: { inputTokens: 1, outputTokens: 1 },
+        totalUsage: { inputTokens: 1200, outputTokens: 40, totalTokens: 1240 }
+      },
+      "run_1"
+    ),
+    { type: "usage.updated", runId: "run_1", inputTokens: 1200, outputTokens: 40, totalTokens: 1240 }
+  )
+})
+
 test("finish-step 带上单步 inputTokens", () => {
   assert.deepEqual(
     mapStreamPart(

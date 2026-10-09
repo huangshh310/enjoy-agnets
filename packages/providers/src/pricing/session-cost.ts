@@ -45,7 +45,7 @@ export function buildSessionEstimatedCost(input: {
   const runs: SessionRunEstimate[] = []
   for (const run of input.runs) {
     if (!isSessionCostCandidate(run)) continue
-    if (!run.usage) {
+    if (!run.usage || isBlankUsage(run.usage)) {
       const empty = classifyEmptyUsage(run)
       if (empty) runs.push(empty)
       continue
@@ -77,6 +77,20 @@ export function isSessionCostCandidate(run: Pick<SessionCostRunInput, "kind" | "
   if (run.kind != null && run.kind !== "agent") return false
   if (run.status != null && !FINISHED.has(run.status)) return false
   return true
+}
+
+/** 只有元数据、没有 token / 上报 / 不完整标记：不是明确的 0 token。 */
+function isBlankUsage(usage: TokenUsage & { reportedCostUsd?: number }): boolean {
+  return (
+    usage.inputTokens == null &&
+    usage.outputTokens == null &&
+    usage.noCacheTokens == null &&
+    usage.cacheReadTokens == null &&
+    usage.cacheWriteTokens == null &&
+    usage.reasoningTokens == null &&
+    usage.reportedCostUsd == null &&
+    usage.usageIncomplete !== true
+  )
 }
 
 function classifyEmptyUsage(run: SessionCostRunInput): SessionRunEstimate | undefined {

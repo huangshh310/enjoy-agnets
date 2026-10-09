@@ -419,6 +419,7 @@ test("有区域或套餐歧义的映射已撤，只留 together", () => {
   }
   assert.equal(kindAllowsSnapshot("together"), true)
   assert.equal(kindAllowsSnapshot("openai"), true)
+  assert.equal(kindAllowsSnapshot("cohere"), false)
 })
 
 test("datedIdAliases 只收价目相同的日期后缀", () => {

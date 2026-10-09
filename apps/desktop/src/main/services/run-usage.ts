@@ -10,8 +10,8 @@ import {
   type TokenUsage,
   type UserModelRates
 } from "@enjoy-agents/providers/pricing"
-import { readAcpSessionBind } from "./acp-session-bind.ts"
-import { getActiveRun, type ActiveRun } from "./agent-run-state"
+import { readAcpSessionBind, writeAcpSessionBind } from "./acp-session-bind.ts"
+import { getActiveRun, listActiveRuns, type ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { accumulateRunUsage, markPumpMissingUsage, replaceRunUsage } from "./run-usage-accumulate"
 
@@ -19,6 +19,7 @@ export {
   accumulateRunUsage,
   markPumpMissingUsage,
   replaceRunUsage,
+  usageNeverRecorded,
   type UsageAccumulator
 } from "./run-usage-accumulate"
 
@@ -52,7 +53,7 @@ export function writeRunUsage(runId: string, usage: RunUsageRecord): void {
 export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
   const modelId = run.input.modelId ?? run.secret?.modelId
   const existing = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
-  const acpSessionId = run.acpSessionId ?? existing?.acpSessionId ?? acpSessionIdOf(run)
+  const acpSessionId = run.acpSessionId ?? acpSessionIdOf(run) ?? existing?.acpSessionId
   if (acpSessionId) run.acpSessionId = acpSessionId
   writeRunUsage(runId, {
     inputTokens: run.inputTokens,
@@ -63,6 +64,7 @@ export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
     reasoningTokens: run.reasoningTokens,
     reportedCostUsd: run.reportedCostUsd,
     usageIncomplete: run.usageIncomplete,
+    stepInputIncomplete: run.stepInputIncomplete,
     maxPumpInputTokens: run.maxPumpInputTokens,
     maxStepInputTokens: run.maxStepInputTokens,
     endedAt: run.endedAt,
@@ -89,6 +91,7 @@ export function hydrateActiveRunUsage(runId: string): void {
   }
   replaceRunUsage(run, usage)
   if (usage.usageIncomplete) markPumpMissingUsage(run)
+  if (usage.stepInputIncomplete) run.stepInputIncomplete = true
 }
 
 export function applyActiveRunUsage(
@@ -105,6 +108,16 @@ export function finalizePumpUsage(runId: string, run: ActiveRun, sawUsage: boole
   if (sawUsage) return
   markPumpMissingUsage(run)
   persistRunUsageFromActive(runId, run)
+}
+
+/** 握手 / fellBack 以最新 ACP 会话为准，覆盖 hydrate 带来的旧 id。 */
+export function rememberAcpSessionId(sessionId: string, runtimeId: string, acpSessionId: string): void {
+  writeAcpSessionBind(sessionId, runtimeId, acpSessionId)
+  for (const { runId, run } of listActiveRuns()) {
+    if (run.input.sessionId !== sessionId || run.input.runtimeId !== runtimeId) continue
+    run.acpSessionId = acpSessionId
+    persistRunUsageFromActive(runId, run)
+  }
 }
 
 function acpSessionIdOf(run: ActiveRun): string | undefined {

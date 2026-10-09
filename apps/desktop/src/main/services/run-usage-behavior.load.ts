@@ -9,7 +9,8 @@ export {
   finalizePumpUsage,
   hydrateActiveRunUsage,
   parseRunUsage,
-  persistRunUsageFromActive
+  persistRunUsageFromActive,
+  rememberAcpSessionId
 } from "./run-usage.ts"
 export { consumeRun } from "./consume-run.ts"
 export { persistActiveRun } from "./flush-agent-run.ts"

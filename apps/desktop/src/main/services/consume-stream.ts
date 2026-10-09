@@ -34,6 +34,8 @@ export async function consumeFullStream(input: {
     reasoningTokens?: number
     reportedCostUsd?: number
     maxStepInputTokens?: number
+    stepInputIncomplete?: boolean
+    fromFinish?: boolean
   }) => void
   /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
   onCheckpoint?: () => void
@@ -50,8 +52,12 @@ export async function consumeFullStream(input: {
     persistFromEvent(input.tools, event, input.transcript)
     lastCheckpointAt = emitCheckpoint(event.type, lastCheckpointAt, input.onCheckpoint)
     if (event.type === "text.delta") input.onFirstToken?.()
-    if (event.type === "step.end" && typeof event.inputTokens === "number") {
-      input.onUsage?.({ maxStepInputTokens: event.inputTokens })
+    if (event.type === "step.end") {
+      if (typeof event.inputTokens === "number") {
+        input.onUsage?.({ maxStepInputTokens: event.inputTokens })
+      } else {
+        input.onUsage?.({ stepInputIncomplete: true })
+      }
     }
     if (event.type === "usage.updated") {
       input.onUsage?.({
@@ -61,7 +67,8 @@ export async function consumeFullStream(input: {
         cacheReadTokens: event.cacheReadTokens,
         cacheWriteTokens: event.cacheWriteTokens,
         reasoningTokens: event.reasoningTokens,
-        reportedCostUsd: event.reportedCostUsd
+        reportedCostUsd: event.reportedCostUsd,
+        fromFinish: true
       })
     }
     if (event.type === "approval.required") {

@@ -74,6 +74,14 @@ test("跨泵记下单步 input 最大值，不把合计当成单步", () => {
   assert.equal(run.maxStepInputTokens, 30_000)
 })
 
+test("部分步骤没报 input 时跨泵保留 stepInputIncomplete", () => {
+  const run: UsageAccumulator = {}
+  accumulateRunUsage(run, { inputTokens: 10, maxStepInputTokens: 10, stepInputIncomplete: true })
+  accumulateRunUsage(run, { inputTokens: 20, maxStepInputTokens: 20 })
+  assert.equal(run.stepInputIncomplete, true)
+  assert.equal(run.maxStepInputTokens, 20)
+})
+
 test("其中一轮缺用量时为 unknown", () => {
   const run: UsageAccumulator = {}
   accumulateRunUsage(run, { inputTokens: 100, outputTokens: 10 })

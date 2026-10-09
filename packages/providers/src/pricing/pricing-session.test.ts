@@ -57,3 +57,28 @@ test("同一 Enjoy 会话里两个 ACP 会话的累计费用按组相加", () =>
   })
   assert.equal(sum.reportedUsd, 0.7)
 })
+
+test("空 usage_json 的已完成本地 run 是 unknown，不是零用量跳过", () => {
+  const sum = buildSessionEstimatedCost({
+    sessionId: "ses_blank",
+    runs: [
+      {
+        runId: "empty",
+        status: "completed",
+        providerKind: "anthropic",
+        modelId: "claude-sonnet-4-5",
+        usage: { runtimeId: "enjoy-local", modelId: "claude-sonnet-4-5" }
+      },
+      {
+        runId: "zero",
+        status: "completed",
+        providerKind: "anthropic",
+        modelId: "claude-sonnet-4-5",
+        usage: { inputTokens: 0, outputTokens: 0 }
+      }
+    ]
+  })
+  assert.equal(sum.unknownCount, 1)
+  assert.equal(sum.runs?.some((run) => run.runId === "empty" && run.status === "unknown"), true)
+  assert.equal(sum.runs?.some((run) => run.runId === "zero"), false)
+})

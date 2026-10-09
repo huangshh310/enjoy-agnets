@@ -15,6 +15,8 @@ export type UsageAccumulator = {
   maxPumpInputTokens?: number
   /** 各步 input 的最大值，用来判断分档。合计仍用 inputTokens。 */
   maxStepInputTokens?: number
+  /** 有 step.end 没带 input 时为真；有分档的模型不得信部分步骤的最大值。 */
+  stepInputIncomplete?: boolean
   endedAt?: number
   acpSessionId?: string
 }
@@ -23,6 +25,7 @@ export type UsageAccumulator = {
 export function accumulateRunUsage(run: UsageAccumulator, usage: UsageAccumulator): void {
   const pump = normalizePumpUsage(usage)
   if (pump.usageIncomplete) run.usageIncomplete = true
+  if (pump.stepInputIncomplete) run.stepInputIncomplete = true
   run.inputTokens = addTokens(run.inputTokens, pump.inputTokens)
   run.outputTokens = addTokens(run.outputTokens, pump.outputTokens)
   run.noCacheTokens = addTokens(run.noCacheTokens, pump.noCacheTokens)
@@ -48,6 +51,7 @@ export function replaceRunUsage(run: UsageAccumulator, usage: UsageAccumulator):
     run.reportedCostUsd = usage.reportedCostUsd
   }
   if (usage.usageIncomplete) run.usageIncomplete = true
+  if (usage.stepInputIncomplete) run.stepInputIncomplete = true
   copyToken(run, usage, "maxPumpInputTokens")
   copyToken(run, usage, "maxStepInputTokens")
   copyToken(run, usage, "endedAt")
@@ -58,6 +62,17 @@ export function replaceRunUsage(run: UsageAccumulator, usage: UsageAccumulator):
 
 export function markPumpMissingUsage(run: UsageAccumulator): void {
   run.usageIncomplete = true
+}
+
+/** 从未收到 finish / 上报，也不是明确的 0 token。 */
+export function usageNeverRecorded(run: UsageAccumulator): boolean {
+  return (
+    run.inputTokens == null &&
+    run.outputTokens == null &&
+    run.noCacheTokens == null &&
+    run.reportedCostUsd == null &&
+    run.usageIncomplete !== true
+  )
 }
 
 export function normalizePumpUsage(usage: UsageAccumulator): UsageAccumulator {

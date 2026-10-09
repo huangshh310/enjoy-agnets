@@ -67,3 +67,19 @@ test("多步合计超档但每步没超档仍是 estimated；某一步超档才 
   assert.equal(noStep.status, "unknown")
   assert.deepEqual(noStep.missing, ["tier"])
 })
+
+test("部分步骤没报 input 时有分档不得信已记下的最大值", () => {
+  const partial = estimateRunCost({
+    usage: {
+      inputTokens: 20_000,
+      outputTokens: 0,
+      maxStepInputTokens: 10_000,
+      stepInputIncomplete: true
+    },
+    providerKind: "anthropic",
+    modelId: "tiered-sonnet",
+    snapshot: TABLE
+  })
+  assert.equal(partial.status, "unknown")
+  assert.deepEqual(partial.missing, ["tier"])
+})
