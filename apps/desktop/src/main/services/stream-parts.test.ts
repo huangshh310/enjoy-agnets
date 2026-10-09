@@ -45,6 +45,10 @@ test("maps usage and step lifecycle to v2 events", () => {
     runId: "run_1",
     stepId: "s1"
   })
+  assert.deepEqual(
+    mapStreamPart({ type: "finish-step", id: "s1", usage: { inputTokens: 30_000 } }, "run_1"),
+    { type: "step.end", runId: "run_1", stepId: "s1", inputTokens: 30_000 }
+  )
 })
 
 test("allow-all 自动放行的 tool-approval-request 不映射成审批卡", () => {

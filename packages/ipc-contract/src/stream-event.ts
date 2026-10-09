@@ -4,6 +4,7 @@
  */
 import { z } from "zod"
 import { AutomationRunSource } from "./automations-missed.ts"
+import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
 
@@ -127,6 +128,12 @@ export const StreamEvent = z.discriminatedUnion("type", [
     inputTokens: z.number().int().optional(),
     outputTokens: z.number().int().optional(),
     totalTokens: z.number().int().optional(),
+    noCacheTokens: z.number().int().optional(),
+    cacheReadTokens: z.number().int().optional(),
+    cacheWriteTokens: z.number().int().optional(),
+    reasoningTokens: z.number().int().optional(),
+    reportedCostUsd: z.number().optional(),
+    estimatedCost: EstimatedCost.optional().catch(undefined),
     durationMs: z.number().int().optional(),
     tokensPerSecond: z.number().optional(),
     contextWindow: z.number().int().positive().optional(),
@@ -144,6 +151,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     runId: z.string(),
     stepId: z.string(),
     durationMs: z.number().int().optional(),
+    /** 单步 inputTokens，用来判断分档；合计仍走 usage.updated。 */
+    inputTokens: z.number().int().optional().catch(undefined),
     ...Envelope
   }),
   z.object({

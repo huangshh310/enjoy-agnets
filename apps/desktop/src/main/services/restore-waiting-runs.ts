@@ -15,6 +15,7 @@ import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
+import { hydrateActiveRunUsage } from "./run-usage"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -74,6 +75,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         secret,
         messages
       })
+      hydrateActiveRunUsage(row.id)
       const run = getActiveRun(row.id)
       if (!run) continue
       run.pendingApprovals = extras.pendingApprovals?.length

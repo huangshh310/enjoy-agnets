@@ -64,6 +64,11 @@ type LooseModel = {
   source?: string
   contextWindow?: number
   maxOutputTokens?: number
+  inputPricePerMillion?: number
+  outputPricePerMillion?: number
+  cacheReadPricePerMillion?: number
+  cacheWritePricePerMillion?: number
+  reasoningPricePerMillion?: number
 }
 
 type LooseKey = {
@@ -247,7 +252,8 @@ function modelsFromLegacy(
       enabled: model.enabled !== false,
       source,
       contextWindow: model.contextWindow,
-      maxOutputTokens: model.maxOutputTokens
+      maxOutputTokens: model.maxOutputTokens,
+      ...copyUserPrices(model)
     }
   })
 }
@@ -264,4 +270,25 @@ export function isFamily(value: string | undefined): value is ReasoningFamilyNam
 
 export function keyRecords(profile: NormalizedProfile): ProviderKeyRecord[] {
   return profile.keys
+}
+
+const USER_PRICE_KEYS = [
+  "inputPricePerMillion",
+  "outputPricePerMillion",
+  "cacheReadPricePerMillion",
+  "cacheWritePricePerMillion",
+  "reasoningPricePerMillion"
+] as const
+
+/** 读档保留用户单价；非法数字丢掉该项，不当 0。 */
+export function copyUserPrices(model: LooseModel): Pick<
+  CatalogModel,
+  (typeof USER_PRICE_KEYS)[number]
+> {
+  const next: Pick<CatalogModel, (typeof USER_PRICE_KEYS)[number]> = {}
+  for (const key of USER_PRICE_KEYS) {
+    const value = model[key]
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) next[key] = value
+  }
+  return next
 }

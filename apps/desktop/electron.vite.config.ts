@@ -113,6 +113,14 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-act-codes.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/estimated-cost",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/estimated-cost.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/agent-tools",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/agent-tools.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/skills-catalog",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/skills-catalog.ts")
         },
@@ -143,6 +151,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/agent-harness/probe",
           replacement: resolve(repoRoot, "packages/agent-harness/src/agent-tools/detect/probe.ts")
+        },
+        {
+          find: "@enjoy-agents/providers/pricing",
+          replacement: resolve(repoRoot, "packages/providers/src/pricing/index.ts")
         },
         ...MAIN_WORKSPACE_PACKAGES.map(workspacePackageAlias)
       ]
@@ -214,6 +226,14 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/desktop-act-codes",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-act-codes.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/estimated-cost",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/estimated-cost.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/agent-tools",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/agent-tools.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/skills-catalog",

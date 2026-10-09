@@ -53,7 +53,8 @@ export interface TraceSummaryData {
   inputTokens: number
   outputTokens: number
   reasoningTokens?: number
-  estimatedCost: number
+  /** 未知省略，不要写 0。 */
+  estimatedCost?: number
   startedAt: string
   framework: string
   environment: string

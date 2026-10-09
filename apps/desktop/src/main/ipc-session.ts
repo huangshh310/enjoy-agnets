@@ -18,6 +18,7 @@ import {
   SessionTruncateFromInput,
   WorkspaceIdInput
 } from "@enjoy-agents/ipc-contract"
+import { loadSessionEstimatedCost } from "./services/session-estimated-cost"
 import {
   createSession,
   listMessages,
@@ -61,7 +62,8 @@ export const SESSION_CHANNELS = [
   "session.fork",
   "session.heartbeat.get",
   "session.heartbeat.put",
-  "session.heartbeat.clear"
+  "session.heartbeat.clear",
+  "session.estimatedCost"
 ] as const
 
 export function registerSessionIpc() {
@@ -83,6 +85,7 @@ function registerSessionCatalogIpc() {
   ipcMain.handle("session.messages", async (_event, raw) =>
     listMessages(SessionIdInput.parse(raw).sessionId)
   )
+  ipcMain.handle("session.estimatedCost", async (_event, raw) => loadSessionEstimatedCost(raw))
 }
 
 function registerSessionEditIpc() {

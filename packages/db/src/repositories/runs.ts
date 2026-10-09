@@ -13,23 +13,28 @@ export type RunRow = {
   providerId: string | null
   checkpoint: string | null
   error: string | null
+  usageJson: string | null
   createdAt: number
   updatedAt: number
 }
 
 export function insertRun(
   db: AppDatabase,
-  row: Omit<RunRow, "createdAt" | "updatedAt"> & { createdAt?: number }
+  row: Omit<RunRow, "createdAt" | "updatedAt" | "usageJson"> & {
+    createdAt?: number
+    usageJson?: string | null
+  }
 ): RunRow {
   const now = row.createdAt ?? Date.now()
   const record: RunRow = {
     ...row,
+    usageJson: row.usageJson ?? null,
     createdAt: now,
     updatedAt: now
   }
   db.prepare(
-    `INSERT INTO runs (id, session_id, workspace_id, kind, status, model_id, provider_id, checkpoint, error, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO runs (id, session_id, workspace_id, kind, status, model_id, provider_id, checkpoint, error, usage_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     record.id,
     record.sessionId,
@@ -40,6 +45,7 @@ export function insertRun(
     record.providerId,
     record.checkpoint,
     record.error,
+    record.usageJson,
     record.createdAt,
     record.updatedAt
   )
@@ -49,16 +55,17 @@ export function insertRun(
 export function updateRun(
   db: AppDatabase,
   id: string,
-  patch: Partial<Pick<RunRow, "status" | "checkpoint" | "error">>
+  patch: Partial<Pick<RunRow, "status" | "checkpoint" | "error" | "usageJson">>
 ): void {
   const current = getRun(db, id)
   if (!current) return
   db.prepare(
-    "UPDATE runs SET status = ?, checkpoint = ?, error = ?, updated_at = ? WHERE id = ?"
+    "UPDATE runs SET status = ?, checkpoint = ?, error = ?, usage_json = ?, updated_at = ? WHERE id = ?"
   ).run(
     patch.status ?? current.status,
     patch.checkpoint === undefined ? current.checkpoint : patch.checkpoint,
     patch.error === undefined ? current.error : patch.error,
+    patch.usageJson === undefined ? current.usageJson : patch.usageJson,
     Date.now(),
     id
   )
@@ -80,6 +87,7 @@ export function getRun(db: AppDatabase, id: string): RunRow | undefined {
     .prepare(
       `SELECT id, session_id as sessionId, workspace_id as workspaceId, kind, status,
               model_id as modelId, provider_id as providerId, checkpoint, error,
+              usage_json as usageJson,
               created_at as createdAt, updated_at as updatedAt
        FROM runs WHERE id = ?`
     )
@@ -110,6 +118,7 @@ export function listRuns(
     .prepare(
       `SELECT id, session_id as sessionId, workspace_id as workspaceId, kind, status,
               model_id as modelId, provider_id as providerId, checkpoint, error,
+              usage_json as usageJson,
               created_at as createdAt, updated_at as updatedAt
        FROM runs ${where} ORDER BY updated_at DESC`
     )

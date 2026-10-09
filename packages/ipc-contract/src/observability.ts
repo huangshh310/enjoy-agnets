@@ -11,6 +11,14 @@ export const TelemetryMetric = z.object({
   status: z.string(),
   inputTokens: z.number().int().optional(),
   outputTokens: z.number().int().optional(),
+  cacheReadTokens: z.number().int().optional(),
+  cacheWriteTokens: z.number().int().optional(),
+  reasoningTokens: z.number().int().optional(),
+  estimatedCostUsd: z.number().optional(),
+  costStatus: z
+    .enum(["estimated", "unknown", "local_unbilled", "not_reported", "reported"])
+    .optional()
+    .catch(undefined),
   durationMs: z.number().int().optional(),
   ttfoMs: z.number().int().optional(),
   tokensPerSecond: z.number().optional(),
