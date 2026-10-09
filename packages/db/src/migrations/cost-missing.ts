@@ -1,12 +1,13 @@
 /**
- * 指标补 cost_missing：把 unknown 的原因透传到 renderer，缺项保持 NULL。
+ * 指标补 cost_missing。列已在就跳过（旧 #119 曾把这列写进 v14）。
  */
+import { addColumnIfMissing } from "./column-guard.ts"
 import type { Migration } from "./types.ts"
 
 export const costMissingMigration: Migration = {
   version: 15,
   name: "cost-missing",
-  sql: `
-    ALTER TABLE telemetry_metrics ADD COLUMN cost_missing TEXT;
-  `
+  apply(sqlite) {
+    addColumnIfMissing(sqlite, "telemetry_metrics", "cost_missing", "TEXT")
+  }
 }
