@@ -1,22 +1,10 @@
 /**
- * 会话回灌世代：过期的 loadSession 不得在发送之后把乐观气泡洗成欢迎页。
+ * 把库行折进前台 store。世代计数在 session-hydrate-generation.ts，避免测试加载合约入口。
  */
 import { migrateContentToParts, safeValidateUIMessages } from "@enjoy-agents/ipc-contract"
 import { useChatStore } from "../stores/chat-store"
 import { threadFromRows, type SessionMessageRow } from "./hydrate-thread"
 import { pickHydratedMessages } from "./pick-hydrated-messages"
-
-let hydrateGeneration = 0
-
-/** 发送或新开回灌时加一代，让仍在 await 的 loadSession 自动作废。 */
-export function bumpSessionHydrateGeneration(): number {
-  hydrateGeneration += 1
-  return hydrateGeneration
-}
-
-export function isSessionHydrateCurrent(generation: number): boolean {
-  return generation === hydrateGeneration
-}
 
 export function applySessionHydrate(input: {
   dbRows: SessionMessageRow[]

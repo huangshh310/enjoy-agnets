@@ -17,11 +17,8 @@ import {
   parkedComposerPatch
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
-import {
-  applySessionHydrate,
-  bumpSessionHydrateGeneration,
-  isSessionHydrateCurrent
-} from "./session-hydrate"
+import { applySessionHydrate } from "./session-hydrate"
+import { bumpSessionHydrateGeneration, isSessionHydrateCurrent } from "./session-hydrate-generation"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"

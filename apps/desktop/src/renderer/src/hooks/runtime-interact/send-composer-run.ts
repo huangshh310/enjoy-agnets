@@ -22,7 +22,7 @@ import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./c
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
-import { bumpSessionHydrateGeneration } from "../session-hydrate"
+import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
 type PreparedSend = { content: string; assets?: QueuedComposerAsset[]; executePlan?: boolean }

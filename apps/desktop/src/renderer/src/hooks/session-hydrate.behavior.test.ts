@@ -1,56 +1,57 @@
 /**
- * 真实 chat-store 上回灌：新建 / 种子首发要出气泡和卡，切走再切回消息还在。
+ * 回灌行为：新建 / 种子首发要出气泡和卡，切走再切回消息还在。
+ * 不用生产 chat-store（它 value-import 合约入口，node:test 加载不到）。
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { useChatStore } from "../stores/chat-store.ts"
-import type { ThreadMessage } from "../stores/chat-store.types.ts"
-import {
-  applySessionHydrate,
-  bumpSessionHydrateGeneration,
-  isSessionHydrateCurrent
-} from "./session-hydrate.ts"
-import type { SessionMessageRow } from "./hydrate-thread.ts"
+import { create } from "zustand"
+import { bumpSessionHydrateGeneration, isSessionHydrateCurrent } from "./session-hydrate-generation.ts"
+import { pickHydratedMessages } from "./pick-hydrated-messages.ts"
 
-const approval = {
-  type: "approval.required" as const,
-  runId: "run_stub",
-  toolCallId: "tool_stub",
-  approvalId: "apr_stub",
-  name: "write_file",
-  args: { path: "e2e-stub.txt", content: "from stub" }
+type LiveMessage = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  streaming?: boolean
+  tools?: Array<{ id: string; name: string; state: string }>
 }
 
+type HydrateStore = {
+  sessionId: string | null
+  messages: LiveMessage[]
+  running: boolean
+  pendingApproval: { approvalId: string; name: string } | null
+  setSession: (sessionId: string) => void
+  setMessages: (messages: LiveMessage[]) => void
+}
+
+const useStore = create<HydrateStore>((set) => ({
+  sessionId: null,
+  messages: [],
+  running: false,
+  pendingApproval: null,
+  setSession: (sessionId) => set({ sessionId }),
+  setMessages: (messages) => set({ messages })
+}))
+
 function resetStore() {
-  useChatStore.setState({
+  useStore.setState({
     sessionId: null,
-    sessionTitle: "新对话",
     messages: [],
     running: false,
-    runId: null,
-    pendingApproval: null,
-    composer: "",
-    error: null
+    pendingApproval: null
   })
 }
 
-function optimisticTurn(content: string): ThreadMessage[] {
+function optimisticTurn(content: string): LiveMessage[] {
   return [
-    { id: "msg_user_live", role: "user", content, createdAt: 1 },
+    { id: "msg_user_live", role: "user", content },
     {
       id: "msg_pending_live",
       role: "assistant",
       content: "",
-      createdAt: 2,
       streaming: true,
-      tools: [
-        {
-          id: "tool_stub",
-          name: "write_file",
-          state: "approval-requested",
-          args: approval.args
-        }
-      ]
+      tools: [{ id: "tool_stub", name: "write_file", state: "approval-requested" }]
     }
   ]
 }
@@ -58,35 +59,40 @@ function optimisticTurn(content: string): ThreadMessage[] {
 function finishHydrate(
   generation: number,
   sessionId: string,
-  dbRows: SessionMessageRow[],
+  dbMessages: LiveMessage[],
   sameSession: boolean
 ) {
   if (!isSessionHydrateCurrent(generation)) return
-  if (useChatStore.getState().sessionId !== sessionId) return
-  applySessionHydrate({ dbRows, sameSession })
+  if (useStore.getState().sessionId !== sessionId) return
+  const latest = useStore.getState()
+  latest.setMessages(
+    pickHydratedMessages({
+      dbMessages,
+      liveMessages: latest.messages,
+      sameSession,
+      running: latest.running
+    })
+  )
 }
 
-function sendFirstTurn(sessionId: string, title: string, sameSessionAtLoad: boolean) {
-  useChatStore.getState().setSession(sessionId, title)
-  if (!sameSessionAtLoad) useChatStore.getState().setMessages([])
+function sendFirstTurn(sessionId: string, sameSessionAtLoad: boolean) {
+  useStore.getState().setSession(sessionId)
+  if (!sameSessionAtLoad) useStore.getState().setMessages([])
   const generation = bumpSessionHydrateGeneration()
-  const live = optimisticTurn("hello stub")
-  useChatStore.setState({
-    messages: live,
+  useStore.setState({
+    messages: optimisticTurn("hello stub"),
     running: true,
-    runId: "run_stub",
-    pendingApproval: approval,
-    composer: ""
+    pendingApproval: { approvalId: "apr_stub", name: "write_file" }
   })
   bumpSessionHydrateGeneration()
   finishHydrate(generation, sessionId, [], sameSessionAtLoad)
-  return useChatStore.getState()
+  return useStore.getState()
 }
 
 test("新建对话首次发送：空库回灌不得洗掉气泡和审批卡", () => {
   resetStore()
-  useChatStore.getState().setSession("ses_seed", "New agent")
-  const next = sendFirstTurn("ses_new", "新对话", false)
+  useStore.getState().setSession("ses_seed")
+  const next = sendFirstTurn("ses_new", false)
   assert.equal(next.messages.length, 2)
   assert.equal(next.messages[0]?.content, "hello stub")
   assert.equal(next.pendingApproval?.approvalId, "apr_stub")
@@ -95,7 +101,7 @@ test("新建对话首次发送：空库回灌不得洗掉气泡和审批卡", ()
 
 test("种子会话首次发送：启动 loadSession 晚到仍保住气泡和卡", () => {
   resetStore()
-  const next = sendFirstTurn("ses_seed", "New agent", true)
+  const next = sendFirstTurn("ses_seed", true)
   assert.equal(next.messages.length, 2)
   assert.equal(next.messages[1]?.tools?.[0]?.state, "approval-requested")
   assert.equal(next.pendingApproval?.name, "write_file")
@@ -103,24 +109,24 @@ test("种子会话首次发送：启动 loadSession 晚到仍保住气泡和卡"
 
 test("切走再切回：库里的消息仍回到主区", () => {
   resetStore()
-  const rows: SessionMessageRow[] = [
-    { id: "msg_user_db", role: "user", content: "hello stub", createdAt: 1 },
-    { id: "msg_asst_db", role: "assistant", content: "stub-ok hello stub", createdAt: 2 }
+  const rows: LiveMessage[] = [
+    { id: "msg_user_db", role: "user", content: "hello stub" },
+    { id: "msg_asst_db", role: "assistant", content: "stub-ok hello stub" }
   ]
-  useChatStore.getState().setSession("ses_a", "新对话")
-  useChatStore.setState({ messages: optimisticTurn("hello stub"), running: false })
+  useStore.getState().setSession("ses_a")
+  useStore.setState({ messages: optimisticTurn("hello stub"), running: false })
 
   const leave = bumpSessionHydrateGeneration()
-  useChatStore.getState().setSession("ses_b", "New agent")
-  useChatStore.getState().setMessages([])
+  useStore.getState().setSession("ses_b")
+  useStore.getState().setMessages([])
   finishHydrate(leave, "ses_b", [], false)
-  assert.equal(useChatStore.getState().messages.length, 0)
+  assert.equal(useStore.getState().messages.length, 0)
 
   const back = bumpSessionHydrateGeneration()
-  useChatStore.getState().setSession("ses_a", "新对话")
-  useChatStore.getState().setMessages([])
+  useStore.getState().setSession("ses_a")
+  useStore.getState().setMessages([])
   finishHydrate(back, "ses_a", rows, false)
-  const restored = useChatStore.getState().messages
+  const restored = useStore.getState().messages
   assert.equal(restored.length, 2)
   assert.equal(restored[0]?.content, "hello stub")
   assert.equal(restored[1]?.content, "stub-ok hello stub")
