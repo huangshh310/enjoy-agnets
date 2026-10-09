@@ -4,7 +4,7 @@
 import type { Migration } from "./types.ts"
 
 export const costMissingMigration: Migration = {
-  version: 14,
+  version: 15,
   name: "cost-missing",
   sql: `
     ALTER TABLE telemetry_metrics ADD COLUMN cost_missing TEXT;
