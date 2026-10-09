@@ -9,17 +9,22 @@ import {
 } from "@enjoy-agents/ipc-contract/automations-missed"
 
 const {
+  getActiveRun,
+  holdAgentRun,
   settleRun,
   waitForRunSettle,
   deleteSetting,
   getSetting,
   setSetting,
+  failCatchUpWaiting,
   failInterruptedCatchUps,
+  shouldFailWaitingCatchUp,
   claimMissedPoint,
   defaultSettingsIo,
   listMissedForAutomation,
   readAutomations,
   writeAutomations,
+  attachRestoredCatchUp,
   stampUnrestoredCatchUp,
   watchCatchUpSettle
 } = await import("./watch-catchup-settle-behavior.load.ts")
@@ -102,6 +107,79 @@ test("续跑补跑失败写 failed，码也正确", async () => {
     assert.equal(missed?.status, "failed")
     assert.equal(missed?.code, CATCH_UP_APPROVAL_TIMEOUT)
     assert.equal((await waitForRunSettle(runId)).summary, CATCH_UP_APPROVAL_TIMEOUT)
+  } finally {
+    restoreAutomations(prev)
+  }
+})
+
+test("窗口重建再次 restore 时 finishAutomationRun 只一次", async () => {
+  const automationId = "auto_restore_twice"
+  const runId = "run_restore_twice"
+  const scheduledAt = Date.now()
+  const prev = seedAutomation(automationId)
+  seedCatchUpMissed(automationId, runId, scheduledAt)
+  const source = {
+    automationId,
+    automationName: "晨间",
+    scheduledAt,
+    isCatchUp: true
+  }
+  try {
+    const first = watchCatchUpSettle(automationId, runId, { scheduledAt })
+    attachRestoredCatchUp(runId, source)
+    attachRestoredCatchUp(runId, source)
+    settleRun(runId, { status: "error", summary: "restore boom" })
+    await first
+    const row = readAutomations().find((item) => item.id === automationId)
+    assert.equal(row?.lastRunStatus, "failed")
+    assert.equal(row?.consecutiveFails, 1)
+    assert.equal(
+      listMissedForAutomation(defaultSettingsIo(), automationId, scheduledAt)[0]?.status,
+      "failed"
+    )
+  } finally {
+    restoreAutomations(prev)
+  }
+})
+
+test("窗口重建时正在等审批的补跑不标 failed", () => {
+  const automationId = "auto_restore_wait_live"
+  const runId = "run_restore_wait_live"
+  const scheduledAt = Date.now()
+  const prev = seedAutomation(automationId)
+  seedCatchUpMissed(automationId, runId, scheduledAt)
+  const source = {
+    automationId,
+    automationName: "晨间",
+    scheduledAt,
+    isCatchUp: true
+  }
+  try {
+    holdAgentRun({
+      runId,
+      window: { isDestroyed: () => false, webContents: { send() {} } } as never,
+      workspaceRoot: "/tmp",
+      messages: [],
+      input: {
+        sessionId: `ses_${runId}`,
+        workspaceId: "ws_1",
+        modelId: "m",
+        mode: "agent",
+        attachments: [],
+        denyAnyDesktop: true,
+        automationSource: source,
+        messages: [{ role: "user", content: "x" }]
+      }
+    })
+    assert.ok(getActiveRun(runId))
+    assert.equal(shouldFailWaitingCatchUp(source, Boolean(getActiveRun(runId))), false)
+    if (shouldFailWaitingCatchUp(source, Boolean(getActiveRun(runId)))) {
+      failCatchUpWaiting(defaultSettingsIo(), runId, scheduledAt)
+    }
+    assert.equal(
+      listMissedForAutomation(defaultSettingsIo(), automationId, scheduledAt)[0]?.status,
+      "running"
+    )
   } finally {
     restoreAutomations(prev)
   }

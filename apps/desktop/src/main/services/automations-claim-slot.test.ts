@@ -21,7 +21,7 @@ test("准点与补跑互斥：已占槽不能再开另一种", () => {
   assert.equal(claimLaunchSlot(other, "auto_2", { scheduledAt: now, isCatchUp: false }), false)
 })
 
-test("同一计划点并发 claim 只有一个成功", async () => {
+test("进程内并发 claim 只有一个成功（防引入 await；跨进程靠单实例锁）", async () => {
   const io = memorySettingsIo()
   const now = Date.now()
   const opts = { scheduledAt: now, isCatchUp: false as const }

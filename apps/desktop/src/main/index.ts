@@ -15,7 +15,12 @@ import { blockNativeHistoryNavigation } from "./services/block-native-history";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import { startAppUpdate } from "./services/app-update";
-import { acquireSingleInstanceLock, focusOrRestoreWindow } from "./services/single-instance";
+import {
+  focusOrRestoreWindow,
+  isPrimaryInstance,
+  runIfPrimaryInstance,
+  startPrimaryOrExit
+} from "./services/single-instance";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
 
@@ -31,16 +36,12 @@ registerAssetScheme();
 function focusOrCreateMainWindow(): void {
   focusOrRestoreWindow(
     () => BrowserWindow.getAllWindows(),
-    createWindow
+    createWindow,
+    () => app.isReady()
   );
 }
 
-if (!acquireSingleInstanceLock(app, focusOrCreateMainWindow)) {
-  markQuitAllowed();
-  app.quit();
-} else {
-  bootPrimaryInstance();
-}
+startPrimaryOrExit(app, focusOrCreateMainWindow, bootPrimaryInstance, markQuitAllowed);
 
 /** 任务栏 / Alt+Tab / 最小化缩略图用的图标路径。Windows 用多帧 ICO，其它平台用 PNG。 */
 function resolveAppIconPath(): string {
@@ -74,7 +75,7 @@ function lockPreviewWebview(contents: WebContents): void {
   });
 }
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -102,12 +103,6 @@ function createWindow(): void {
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
-    void import("./services/restore-waiting-runs").then(({ restoreWaitingRuns }) => {
-      void restoreWaitingRuns(mainWindow)
-    })
-    void import("./services/restore-running-runs").then(({ restoreRunningRuns }) => {
-      void restoreRunningRuns(mainWindow)
-    })
   });
 
   blockNativeHistoryNavigation(mainWindow);
@@ -132,6 +127,16 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
+  return mainWindow;
+}
+
+function restoreOrphansOnce(window: BrowserWindow): void {
+  void import("./services/restore-waiting-runs").then(({ restoreWaitingRuns }) => {
+    void restoreWaitingRuns(window)
+  })
+  void import("./services/restore-running-runs").then(({ restoreRunningRuns }) => {
+    void restoreRunningRuns(window)
+  })
 }
 
 function bootPrimaryInstance(): void {
@@ -153,7 +158,7 @@ function bootPrimaryInstance(): void {
       optimizer.watchWindowShortcuts(window);
     });
     applyMacDockIcon();
-    createWindow();
+    restoreOrphansOnce(createWindow());
     startAppUpdate();
     void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
       startAutomationScheduler()
@@ -165,6 +170,7 @@ function bootPrimaryInstance(): void {
 }
 
 app.on("before-quit", (event) => {
+  if (!isPrimaryInstance()) return
   if (isQuitAllowed()) return
   event.preventDefault()
   const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
@@ -182,23 +188,26 @@ app.on("before-quit", (event) => {
 });
 
 app.on("will-quit", () => {
-  void import("./services/automations-scheduler").then(({ stopAutomationScheduler }) => {
-    stopAutomationScheduler()
-  })
-  void import("@enjoy-agents/agent-core").then(({ clearAllConversationDesktopAllows }) => {
-    clearAllConversationDesktopAllows()
-  })
-  flushActiveRuns();
-  disposeAllAcpSessions();
-  void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {
-    void stopBridgeServer()
-  })
-  void import("./services/builtin-tools/screen-overlay-service").then(({ disposeOverlayWindow }) => {
-    disposeOverlayWindow()
+  runIfPrimaryInstance(() => {
+    void import("./services/automations-scheduler").then(({ stopAutomationScheduler }) => {
+      stopAutomationScheduler()
+    })
+    void import("@enjoy-agents/agent-core").then(({ clearAllConversationDesktopAllows }) => {
+      clearAllConversationDesktopAllows()
+    })
+    flushActiveRuns();
+    disposeAllAcpSessions();
+    void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {
+      void stopBridgeServer()
+    })
+    void import("./services/builtin-tools/screen-overlay-service").then(({ disposeOverlayWindow }) => {
+      disposeOverlayWindow()
+    })
   })
 });
 
 app.on("window-all-closed", () => {
+  if (!isPrimaryInstance()) return
   flushActiveRuns();
   disposeAllAcpSessions();
   unregisterIpc();

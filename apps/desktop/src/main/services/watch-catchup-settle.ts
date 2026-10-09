@@ -6,11 +6,21 @@ import { finishAutomationRun } from "./automations-finish.ts"
 import { emitAutomationsChanged } from "./automations-notify.ts"
 import { markAutomationIdle, markAutomationRunning } from "./automations-store.ts"
 
+const watchedRunIds = new Set<string>()
+
+/** 同一 runId 只挂一个 watcher，窗口重建不得再 finish 一次。 */
+export function claimCatchUpSettleWatch(runId: string): boolean {
+  if (watchedRunIds.has(runId)) return false
+  watchedRunIds.add(runId)
+  return true
+}
+
 export async function watchCatchUpSettle(
   automationId: string,
   runId: string,
   opts: { scheduledAt?: number }
 ): Promise<void> {
+  if (!claimCatchUpSettleWatch(runId)) return
   markAutomationRunning(automationId)
   emitAutomationsChanged("run", automationId)
   try {

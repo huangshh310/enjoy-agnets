@@ -13,13 +13,20 @@ import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { trustedAutomationFlags } from "./agent-run-trust"
 import { parseAgentCheckpointExtras, canResumeRunningOrphan } from "./running-orphan-plan"
-import { attachRestoredCatchUp, stampUnrestoredCatchUp } from "./restore-catchup"
+import {
+  attachRestoredCatchUp,
+  markRestoredCatchUpIdle,
+  markRestoredCatchUpRunning,
+  stampUnrestoredCatchUp
+} from "./restore-catchup"
+import { claimRestoreRunningOnce } from "./restore-once"
 import { getWorkspace } from "./workspace"
 import { isE2eStub } from "./e2e-stub"
 import { prepareAndPump } from "./agent-run-prepare"
 
 export async function restoreRunningRuns(window: BrowserWindow): Promise<void> {
   if (isE2eStub()) return
+  if (!claimRestoreRunningOnce()) return
   const db = getDatabase()
   const prefs = readPreferences()
   for (const row of listRuns(db, {}).filter((item) => canResumeRunningOrphan(item))) {
@@ -42,14 +49,17 @@ async function restoreOne(
     cancelRestoredRun(row.id, "Missing generation checkpoint.", extras.automationSource)
     return
   }
+  markRestoredCatchUpRunning(extras.automationSource)
   try {
     const restored = await holdAndPump(window, row, extras, checkpoint.request, prefs)
     if (!restored) {
+      markRestoredCatchUpIdle(extras.automationSource)
       stampUnrestoredCatchUp(row.id, extras.automationSource)
       return
     }
     attachRestoredCatchUp(row.id, extras.automationSource)
   } catch (error) {
+    markRestoredCatchUpIdle(extras.automationSource)
     cancelRestoredRun(
       row.id,
       error instanceof Error ? error.message : "Failed to restore running run.",

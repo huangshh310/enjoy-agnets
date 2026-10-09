@@ -4,8 +4,21 @@
 import { failCatchUpWaiting } from "./automations-catchup-orphans.ts"
 import { stampInterruptedAutomation } from "./automations-interrupt-stamp.ts"
 import { defaultSettingsIo } from "./automations-missed-store.ts"
+import { markAutomationIdle, markAutomationRunning } from "./automations-store.ts"
 import { catchUpSourceOf } from "./catch-up-source.ts"
 import { watchCatchUpSettle } from "./watch-catchup-settle.ts"
+
+export function markRestoredCatchUpRunning(source: unknown): void {
+  const opts = catchUpSourceOf(source)
+  if (!opts) return
+  markAutomationRunning(opts.automationId)
+}
+
+export function markRestoredCatchUpIdle(source: unknown): void {
+  const opts = catchUpSourceOf(source)
+  if (!opts) return
+  markAutomationIdle(opts.automationId)
+}
 
 export function attachRestoredCatchUp(runId: string, source: unknown): void {
   const opts = catchUpSourceOf(source)

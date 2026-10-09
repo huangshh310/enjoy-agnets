@@ -25,7 +25,7 @@ test("同一计划点只能占一次（启动+唤醒撞车）", () => {
   assert.equal(findMissedPoint(io, "auto_1", now)?.reason, "system_sleep")
 })
 
-test("同一计划点并发 claimMissedPoint 只有一个成功", async () => {
+test("进程内并发 claimMissedPoint 只有一个成功（防引入 await；跨进程靠单实例锁）", async () => {
   const io = memorySettingsIo()
   const now = Date.now()
   const row = {

@@ -5,7 +5,8 @@ import {
   failCatchUpWaiting,
   failInterruptedCatchUps,
   restoreWaitingCatchUpAction,
-  shouldFailInterruptedCatchUp
+  shouldFailInterruptedCatchUp,
+  shouldFailWaitingCatchUp
 } from "./automations-catchup-orphans.ts"
 import { claimMissedPoint, listMissedForAutomation, memorySettingsIo } from "./automations-missed-store.ts"
 
@@ -51,6 +52,9 @@ test("重启恢复补跑 waiting 必须在有限时间内收尾", () => {
     "fail_interrupted"
   )
   assert.equal(restoreWaitingCatchUpAction({ isCatchUp: false }), "restore")
+  assert.equal(shouldFailWaitingCatchUp({ isCatchUp: true }, true), false)
+  assert.equal(shouldFailWaitingCatchUp({ isCatchUp: true }, false), true)
+  assert.equal(shouldFailWaitingCatchUp({ isCatchUp: false }, false), false)
   const io = memorySettingsIo()
   const now = Date.now()
   claimMissedPoint(io, {

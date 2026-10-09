@@ -6,10 +6,11 @@ import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
 import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
-import { restoreWaitingCatchUpAction } from "./automations-catchup-orphans"
+import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
-import { emitEvent, holdAgentRun } from "./agent-run-state"
+import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
+import { claimRestoreWaitingOnce } from "./restore-once"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
@@ -18,12 +19,13 @@ import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
+  if (!claimRestoreWaitingOnce()) return
   const db = getDatabase()
   const waiting = listRuns(db, {}).filter((row) => row.status === "waiting_review")
   const prefs = readPreferences()
   for (const row of waiting) {
     const extras = parseWaitingExtras(row.checkpoint)
-    if (restoreWaitingCatchUpAction(extras.automationSource) === "fail_interrupted") {
+    if (shouldFailWaitingCatchUp(extras.automationSource, Boolean(getActiveRun(row.id)))) {
       failCatchUpWaitingOnRestart(row.id)
       continue
     }
@@ -71,7 +73,6 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         secret,
         messages
       })
-      const { getActiveRun } = await import("./agent-run-state")
       const run = getActiveRun(row.id)
       if (!run) continue
       run.pendingApprovals = extras.pendingApprovals?.length
