@@ -7,7 +7,8 @@ import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
 import { scheduledAutomationCommandId } from "./automations-cron-points"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { claimLaunchSlot } from "./automations-claim-slot"
-import { lastRunErrorCodeOf, nextConsecutiveFails } from "./automations-fails"
+import { reclassifyBlockedCatchUp } from "./automations-reclassify-catchup"
+import { lastRunErrorCodeOf, nextConsecutiveFails, skippedRunPatch } from "./automations-fails"
 import { defaultSettingsIo, patchMissedPoint } from "./automations-missed-store"
 import { listActiveRuns, waitForRunSettle } from "./agent-run-state"
 import {
@@ -83,6 +84,16 @@ export async function launchAutomationAgent(
 ) {
   const opts = launchOpts(sessionIdOrOpts, workspaceId)
   if (isAutomationRunning(item.id)) {
+    if (opts.isCatchUp && opts.scheduledAt != null) {
+      const io = defaultSettingsIo()
+      if (reclassifyBlockedCatchUp(io, item.id, opts.scheduledAt)) {
+        patchStoredAutomation(item.id, {
+          ...skippedRunPatch(item),
+          lastSkipReason: "previous_still_running",
+          lastRunAt: opts.scheduledAt
+        })
+      }
+    }
     return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: opts.workspaceId ?? "" }
   }
   if (!claimLaunchSlot(defaultSettingsIo(), item.id, opts)) {

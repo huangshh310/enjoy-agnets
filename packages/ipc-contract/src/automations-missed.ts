@@ -2,7 +2,12 @@
  * AUTO-P2 错过记录与补跑来源。记录只存本机，不进云同步。
  */
 import { z } from "zod"
-import { AutomationIdInput, AutomationRunStatus, AutomationSkipReason } from "./automations.ts"
+import {
+  AutomationErrorCode,
+  AutomationIdInput,
+  AutomationRunStatus,
+  AutomationSkipReason
+} from "./automations.ts"
 
 /** 抽屉「展开错过记录」只看跳过与补跑，不含准点成功。 */
 export const AutomationMissedKind = z.enum(["skipped", "catch_up"])
@@ -16,8 +21,8 @@ export const CATCH_UP_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 /** 补跑停在 Dock 超过此时长则自动拒绝。只改这一处。 */
 export const CATCH_UP_APPROVAL_TIMEOUT_MS = 30 * 60 * 1000
-export const CATCH_UP_APPROVAL_TIMEOUT = "catch_up_approval_timeout"
-export const CATCH_UP_INTERRUPTED_BY_RESTART = "interrupted_by_restart"
+export const CATCH_UP_APPROVAL_TIMEOUT = AutomationErrorCode.enum.catch_up_approval_timeout
+export const CATCH_UP_INTERRUPTED_BY_RESTART = AutomationErrorCode.enum.interrupted_by_restart
 
 /** 待审批 Dock / 通知用来源句。C 端只写名称与「补跑」。 */
 export const AutomationRunSource = z
@@ -41,7 +46,7 @@ export const AutomationMissedRecord = z
     runId: z.string().min(1).optional(),
     isCatchUp: z.boolean().optional(),
     /** 抽屉读这个：catch_up_approval_timeout / interrupted_by_restart。 */
-    code: z.string().min(1).optional()
+    code: AutomationErrorCode.optional()
   })
   .strict()
 export type AutomationMissedRecord = z.infer<typeof AutomationMissedRecord>

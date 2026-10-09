@@ -4,9 +4,11 @@
 import type { Automation } from "@enjoy-agents/ipc-contract"
 import { shouldFireCron } from "./automations-cron"
 import { alignCronMinute } from "./automations-cron-points"
+import { skippedRunPatch } from "./automations-fails"
 import { skipReasonOf } from "./automations-missed-apply"
 import { listCatchUpLaunches } from "./automations-catchup-launch"
 import { failInterruptedCatchUps } from "./automations-catchup-orphans"
+import { stampInterruptedAutomation } from "./automations-interrupt-stamp"
 import {
   reconcileMissedAutomations,
   type MissedReconcileResult
@@ -96,7 +98,12 @@ async function applyMissedReconcile(trigger: MissedScanTrigger, sessionStartedAt
   const now = Date.now()
   const io = defaultSettingsIo()
   if (trigger === "startup") {
-    failInterruptedCatchUps(io, (runId) => getRun(getDatabase(), runId)?.status)
+    failInterruptedCatchUps(
+      io,
+      (runId) => getRun(getDatabase(), runId)?.status,
+      Date.now(),
+      stampInterruptedAutomation
+    )
   }
   const results = reconcileMissedAutomations({
     trigger,
@@ -119,13 +126,11 @@ function stampMissedRows(results: MissedReconcileResult[], now: number): void {
   for (const result of results) {
     const latestSkip = [...result.actions].reverse().find((row) => row.type === "skip")
     if (!latestSkip || result.actions.some((row) => row.type === "catch_up")) continue
+    const current = readAutomations().find((row) => row.id === result.automationId)
     patchStoredAutomation(result.automationId, {
+      ...skippedRunPatch(current),
       lastRunAt: latestSkip.scheduledAt,
-      lastRunStatus: "skipped",
-      lastRunCatchUp: false,
       lastSkipReason: skipReasonOf(result.actions),
-      lastError: undefined,
-      lastRunErrorCode: undefined,
       updatedAt: now
     })
   }
@@ -175,12 +180,9 @@ function recordBusySkip(item: Automation, now: number): void {
     return
   }
   patchStoredAutomation(item.id, {
-    lastRunStatus: "skipped",
-    lastRunCatchUp: false,
+    ...skippedRunPatch(item),
     lastSkipReason: "previous_still_running",
-    lastRunAt: scheduledAt,
-    lastError: undefined,
-    lastRunErrorCode: undefined
+    lastRunAt: scheduledAt
   })
   emitAutomationsChanged("missed", item.id)
 }

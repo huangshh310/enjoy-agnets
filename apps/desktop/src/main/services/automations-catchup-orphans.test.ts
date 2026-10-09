@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { CATCH_UP_INTERRUPTED_BY_RESTART } from "@enjoy-agents/ipc-contract/automations-missed"
-import { failInterruptedCatchUps, shouldFailInterruptedCatchUp } from "./automations-catchup-orphans.ts"
+import {
+  failCatchUpWaiting,
+  failInterruptedCatchUps,
+  restoreWaitingCatchUpAction,
+  shouldFailInterruptedCatchUp
+} from "./automations-catchup-orphans.ts"
 import { claimMissedPoint, listMissedForAutomation, memorySettingsIo } from "./automations-missed-store.ts"
 
 test("重启未续上的补跑 running 收成 interrupted_by_restart", () => {
@@ -11,7 +16,7 @@ test("重启未续上的补跑 running 收成 interrupted_by_restart", () => {
   )
   assert.equal(
     shouldFailInterruptedCatchUp({ kind: "catch_up", status: "running", runId: "r1" }, "waiting_review"),
-    false
+    true
   )
   assert.equal(
     shouldFailInterruptedCatchUp({ kind: "catch_up", status: "running", runId: "r1" }, "cancelled"),
@@ -33,4 +38,32 @@ test("重启未续上的补跑 running 收成 interrupted_by_restart", () => {
   assert.equal(failed[0]?.status, "failed")
   assert.equal(failed[0]?.code, CATCH_UP_INTERRUPTED_BY_RESTART)
   assert.equal(listMissedForAutomation(io, "auto_1", now)[0]?.code, CATCH_UP_INTERRUPTED_BY_RESTART)
+})
+
+test("重启恢复补跑 waiting 必须在有限时间内收尾", () => {
+  assert.equal(
+    restoreWaitingCatchUpAction({
+      automationId: "auto_1",
+      automationName: "晨间",
+      scheduledAt: 1,
+      isCatchUp: true
+    }),
+    "fail_interrupted"
+  )
+  assert.equal(restoreWaitingCatchUpAction({ isCatchUp: false }), "restore")
+  const io = memorySettingsIo()
+  const now = Date.now()
+  claimMissedPoint(io, {
+    automationId: "auto_wait",
+    scheduledAt: now,
+    recordedAt: now,
+    kind: "catch_up",
+    status: "running",
+    runId: "run_wait",
+    isCatchUp: true
+  })
+  const failed = failCatchUpWaiting(io, "run_wait", now)
+  assert.equal(failed[0]?.status, "failed")
+  assert.equal(failed[0]?.code, CATCH_UP_INTERRUPTED_BY_RESTART)
+  assert.equal(listMissedForAutomation(io, "auto_wait", now)[0]?.status, "failed")
 })

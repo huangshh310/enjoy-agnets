@@ -4,8 +4,14 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { listDesktopAlwaysAllowAppKeys } from "./builtin-tools/computer-use/desktop-always-allow-entries.ts"
+import {
+  clearConversationDesktopAllow,
+  grantConversationDesktopAllow
+} from "../../../../../packages/agent-core/src/computer-use/conversation-desktop-allow.ts"
+import { DESKTOP_ACT_ANY_SESSION_KEY } from "../../../../../packages/agent-core/src/computer-use/desktop-act-policy.ts"
+import { approvalSessionTools } from "./approval-policy-session-tools.ts"
 import { toSubagentUserDecision } from "./approval-gate.ts"
+import { listDesktopAlwaysAllowAppKeys } from "./builtin-tools/computer-use/desktop-always-allow-entries.ts"
 
 const CALC = "com.apple.calculator"
 
@@ -32,14 +38,22 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 
-test("M5 denyAnyDesktop 经 approvalPolicyFromPrefs / holdAgentRun / 泵进子 Agent", () => {
-  const policy = readFileSync(new URL("./open-coding-stream-input.ts", import.meta.url), "utf8")
-  const state = readFileSync(new URL("./agent-run-state.ts", import.meta.url), "utf8")
-  const pump = readFileSync(new URL("./agent-pump.ts", import.meta.url), "utf8")
-  assert.match(policy, /input\.denyAnyDesktop \? stripAnyDesktopSessionAllow/)
-  assert.match(state, /input\.denyAnyDesktop \? stripAnyDesktopSessionAllow/)
-  assert.match(pump, /denyAnyDesktop: run\.input\.denyAnyDesktop === true/)
-  assert.match(pump, /waitForSubagentApproval/)
+test("M5 子 Agent policy 丢掉 desktop_act:*", () => {
+  const sessionId = "ses_m5_catchup"
+  grantConversationDesktopAllow(sessionId, DESKTOP_ACT_ANY_SESSION_KEY)
+  grantConversationDesktopAllow(sessionId, "desktop_act:com.apple.notes")
+  const policy = approvalSessionTools(
+    sessionId,
+    new Set([DESKTOP_ACT_ANY_SESSION_KEY, "desktop_act:com.apple.notes"]),
+    true
+  )
+  assert.equal(policy.anyDesktopSession, false)
+  assert.equal(policy.sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY), false)
+  assert.equal(policy.sessionApprovedTools.has("desktop_act:com.apple.notes"), true)
+  const open = approvalSessionTools(sessionId, new Set(), false)
+  assert.equal(open.anyDesktopSession, true)
+  assert.equal(open.sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY), true)
+  clearConversationDesktopAllow(sessionId)
 })
 
 test("approvalPolicyFromPrefs 必须自带 lookupDesktopObservation，禁止回落模型自报", () => {

@@ -16,6 +16,7 @@ import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
 import { USER_ABORT_MESSAGE } from "./claim-run-end"
 import { persistActiveRun } from "./flush-agent-run"
+import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { cancelCodingStream } from "./open-coding-stream"
 import { pumpStream } from "./agent-pump"
 import { clearSteer } from "./runtime-interact/steering-queue"
@@ -40,6 +41,7 @@ export async function abortAgent(rawInput: unknown) {
     typeof rawInput === "string" ? { runId: rawInput } : rawInput
   )
   const run = getActiveRun(runId)
+  clearCatchUpApprovalTimeout(runId)
   if (run) {
     run.userCancelled = true
     persistActiveRun(run, runId, "cancelled")
@@ -80,6 +82,7 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     toolCallId: decision.toolCallId
   })
   recordApprovalDecision(decision.approvalId, decision.decision)
+  clearCatchUpApprovalTimeout(decision.runId)
   applyApprovalDecision(run, decision.decision, pending)
   if (pending.name === ASK_USER_QUESTIONS_TOOL && decision.decision !== "deny") {
     run.questionAnswers = decision.answers ?? {}

@@ -34,6 +34,16 @@ test("错过记录只要跳过或补跑，7 天帽是常量", () => {
       automationId: "auto_1",
       scheduledAt: 1,
       recordedAt: 2,
+      kind: "skipped",
+      code: "timeout"
+    }).success,
+    false
+  )
+  assert.equal(
+    AutomationMissedRecord.safeParse({
+      automationId: "auto_1",
+      scheduledAt: 1,
+      recordedAt: 2,
       kind: "scheduled"
     }).success,
     false

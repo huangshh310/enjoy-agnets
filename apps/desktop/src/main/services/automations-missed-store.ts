@@ -6,7 +6,11 @@ import {
   type AutomationMissedKind,
   type AutomationMissedRecord as MissedRecord
 } from "@enjoy-agents/ipc-contract/automations-missed"
-import type { AutomationRunStatus, AutomationSkipReason } from "@enjoy-agents/ipc-contract"
+import type {
+  AutomationErrorCode,
+  AutomationRunStatus,
+  AutomationSkipReason
+} from "@enjoy-agents/ipc-contract"
 import { alignCronMinute } from "./automations-cron-points.ts"
 
 export const MISSED_STORE_KEY = "automation_missed_local"
@@ -38,7 +42,7 @@ export type StoredMissed = {
   status?: AutomationRunStatus
   runId?: string
   isCatchUp?: boolean
-  code?: string
+  code?: AutomationErrorCode
 }
 
 export function defaultSettingsIo(): SettingsIo {
@@ -96,7 +100,10 @@ function parseStoredMissed(item: unknown): StoredMissed | null {
         : undefined,
     runId: typeof row.runId === "string" ? row.runId : undefined,
     isCatchUp: row.isCatchUp === true,
-    code: typeof row.code === "string" && row.code.trim() ? row.code : undefined
+    code:
+      row.code === "catch_up_approval_timeout" || row.code === "interrupted_by_restart"
+        ? row.code
+        : undefined
   }
 }
 

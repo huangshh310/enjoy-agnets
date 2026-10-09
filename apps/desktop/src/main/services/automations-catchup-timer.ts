@@ -33,3 +33,7 @@ export function clearCatchUpApprovalTimeout(runId: string): void {
   if (timer) clearTimeout(timer)
   timers.delete(runId)
 }
+
+export function hasCatchUpApprovalTimeout(runId: string): boolean {
+  return timers.has(runId)
+}

@@ -4,8 +4,12 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
-import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
+import { listPendingApprovals, listRuns, setApprovalDecision, updateRun } from "@enjoy-agents/db"
+import { CATCH_UP_INTERRUPTED_BY_RESTART } from "@enjoy-agents/ipc-contract/automations-missed"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { failCatchUpWaiting, restoreWaitingCatchUpAction } from "./automations-catchup-orphans"
+import { stampInterruptedAutomation } from "./automations-interrupt-stamp"
+import { defaultSettingsIo } from "./automations-missed-store"
 import { getDatabase } from "./database"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
@@ -20,6 +24,11 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   const waiting = listRuns(db, {}).filter((row) => row.status === "waiting_review")
   const prefs = readPreferences()
   for (const row of waiting) {
+    const extras = parseWaitingExtras(row.checkpoint)
+    if (restoreWaitingCatchUpAction(extras.automationSource) === "fail_interrupted") {
+      failCatchUpWaitingOnRestart(row.id)
+      continue
+    }
     const pending = listPendingApprovals(db, row.id).filter((item) => {
       try {
         assertApprovalHmac({ runId: row.id, approvalId: item.id, toolCallId: item.toolCallId })
@@ -39,7 +48,6 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
     }
     try {
       const workspace = await getWorkspace(row.workspaceId)
-      const extras = parseWaitingExtras(row.checkpoint)
       const input = RunAgentInput.parse({
         sessionId: row.sessionId,
         workspaceId: row.workspaceId,
@@ -99,4 +107,13 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       })
     }
   }
+}
+
+function failCatchUpWaitingOnRestart(runId: string): void {
+  const db = getDatabase()
+  for (const item of listPendingApprovals(db, runId)) {
+    setApprovalDecision(db, item.id, "deny")
+  }
+  updateRun(db, runId, { status: "failed", error: CATCH_UP_INTERRUPTED_BY_RESTART })
+  failCatchUpWaiting(defaultSettingsIo(), runId, Date.now(), stampInterruptedAutomation)
 }

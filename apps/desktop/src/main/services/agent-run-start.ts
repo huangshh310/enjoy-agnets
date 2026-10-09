@@ -58,6 +58,9 @@ export async function resumeAgentRun(
   if (!request.workspaceId) throw new Error("agent resume requires workspaceId.")
   const existing = getActiveRun(runId)?.input
   const flags = trustedAutomationFlags(extras, existing)
+  const source = flags.automationSource
+    ? { ...flags.automationSource, isCatchUp: false }
+    : undefined
   return beginAgentRun(
     window,
     RunAgentInput.parse({
@@ -67,7 +70,7 @@ export async function resumeAgentRun(
       messages,
       attachments: request.attachments,
       denyAnyDesktop: flags.denyAnyDesktop,
-      automationSource: flags.automationSource
+      automationSource: source
     }),
     { runId, persistUser: false, resumeMessages }
   )

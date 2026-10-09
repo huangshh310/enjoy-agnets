@@ -4,15 +4,19 @@
  */
 import { classifyError } from "@enjoy-agents/agent-core"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { persistActiveRun } from "./flush-agent-run"
 import { cancelCodingStream, disposeCodingStream, acpSessionAlive } from "./open-coding-stream"
 import { recordMetric } from "./telemetry-service"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { deleteActiveRun, emitEvent, settleRun, type ActiveRun } from "./agent-run-state"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
+import { claimCatchUpFail } from "./claim-catchup-fail"
+import { isCatchUpApprovalTimeoutError } from "./automations-catchup-timeout"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
+  if (!claimCatchUpFail(runId)) return
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)
   }
@@ -29,6 +33,10 @@ export async function failAgentPump(runId: string, run: ActiveRun, error: unknow
 }
 
 function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
+  if (isCatchUpApprovalTimeoutError(error)) {
+    emitCatchUpTimeoutFail(runId, run)
+    return
+  }
   const classified = classifyError(error)
   persistActiveRun(run, runId, "failed", classified.message)
   recordMetric({
@@ -48,4 +56,18 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     code: "timeout",
     message: classified.message
   })
+}
+
+function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {
+  persistActiveRun(run, runId, "failed", CATCH_UP_APPROVAL_TIMEOUT)
+  recordMetric({
+    runId,
+    kind: "agent",
+    modelId: run.input.modelId,
+    status: "failed",
+    durationMs: Date.now() - run.startedAt,
+    errorClass: "approval_denied"
+  })
+  settleRun(runId, { status: "error", summary: CATCH_UP_APPROVAL_TIMEOUT })
+  emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT })
 }

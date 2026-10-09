@@ -15,13 +15,34 @@ export function shouldFailInterruptedCatchUp(
 ): boolean {
   if (record.kind !== "catch_up" || record.status !== "running") return false
   if (!record.runId) return true
-  return liveStatus !== "running" && liveStatus !== "waiting_review"
+  return liveStatus !== "running"
+}
+
+export function restoreWaitingCatchUpAction(source?: unknown): "fail_interrupted" | "restore" {
+  if (!source || typeof source !== "object") return "restore"
+  return (source as { isCatchUp?: boolean }).isCatchUp === true ? "fail_interrupted" : "restore"
+}
+
+/** 重启恢复补跑 waiting：按 waiting_review 收尾错过记录，不续挂计时器。 */
+export function failCatchUpWaiting(
+  io: SettingsIo,
+  runId: string,
+  now = Date.now(),
+  stampAutomation?: (automationId: string) => void
+): StoredMissed[] {
+  return failInterruptedCatchUps(
+    io,
+    (id) => (id === runId ? "waiting_review" : undefined),
+    now,
+    stampAutomation
+  )
 }
 
 export function failInterruptedCatchUps(
   io: SettingsIo,
   liveStatusOf: (runId: string) => string | undefined,
-  now = Date.now()
+  now = Date.now(),
+  stampAutomation?: (automationId: string) => void
 ): StoredMissed[] {
   const failed: StoredMissed[] = []
   for (const row of listStoredMissed(io, now)) {
@@ -34,7 +55,9 @@ export function failInterruptedCatchUps(
       { status: "failed", code: CATCH_UP_INTERRUPTED_BY_RESTART },
       now
     )
-    if (next) failed.push(next)
+    if (!next) continue
+    stampAutomation?.(row.automationId)
+    failed.push(next)
   }
   return failed
 }

@@ -3,11 +3,7 @@
  */
 import type { ModelMessage } from "ai"
 import type { ApprovalPolicy, SubagentToolTraceEvent, WaitForSubagentApproval } from "@enjoy-agents/agent-core"
-import {
-  DESKTOP_ACT_ANY_SESSION_KEY,
-  mergeConversationDesktopAllow,
-  stripAnyDesktopSessionAllow
-} from "@enjoy-agents/agent-core/computer-use"
+import { approvalSessionTools } from "./approval-policy-session-tools.ts"
 import {
   type AgentMode,
   type AskUserAnswers,
@@ -63,15 +59,18 @@ export type OpenCodingStreamInput = {
  * 禁止从 builtin_tools 偏好读 anyDesktop。写 SoT 仍是 `{ appKey, displayName }[]`。
  */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
-  const merged = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
-  const sessionApprovedTools = input.denyAnyDesktop ? stripAnyDesktopSessionAllow(merged) : merged
+  const { sessionApprovedTools, anyDesktopSession } = approvalSessionTools(
+    input.sessionId,
+    input.sessionApprovedTools,
+    input.denyAnyDesktop
+  )
   return {
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools,
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
-    anyDesktopSession: !input.denyAnyDesktop && sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
+    anyDesktopSession,
     desktopAlwaysAllowAppKeys: listDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys),
     lookupDesktopObservation: peekDesktopObservation,
     desktopAdvancedCoords: input.prefs.desktopAdvancedCoords === true

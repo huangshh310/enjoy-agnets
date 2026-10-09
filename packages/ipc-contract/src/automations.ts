@@ -42,6 +42,12 @@ export const AutomationSkipReason = z.enum([
 ])
 export type AutomationSkipReason = z.infer<typeof AutomationSkipReason>
 
+export const AutomationErrorCode = z.enum([
+  "catch_up_approval_timeout",
+  "interrupted_by_restart"
+])
+export type AutomationErrorCode = z.infer<typeof AutomationErrorCode>
+
 export const Automation = z.object({
   id: z.string(),
   name: z.string(),
@@ -69,7 +75,7 @@ export const Automation = z.object({
    * 列表读这个，不是 lastError。超时仍是 lastRunStatus=failed，
    * 值为 catch_up_approval_timeout 时 UI 不要当红错。
    */
-  lastRunErrorCode: z.string().min(1).optional(),
+  lastRunErrorCode: AutomationErrorCode.optional(),
   /** 最近一次动作是补跑（无论 ok / failed / running）。 */
   lastRunCatchUp: z.boolean().optional(),
   lastSkipReason: AutomationSkipReason.optional(),
@@ -101,7 +107,7 @@ export const UpsertAutomationInput = z.object({
   lastRunStatus: AutomationRunStatus.optional(),
   lastSessionId: z.string().optional(),
   lastError: z.string().optional(),
-  lastRunErrorCode: z.string().min(1).optional(),
+  lastRunErrorCode: AutomationErrorCode.optional(),
   lastRunCatchUp: z.boolean().optional(),
   lastSkipReason: AutomationSkipReason.optional(),
   catchUpMissed: z.boolean().optional(),
