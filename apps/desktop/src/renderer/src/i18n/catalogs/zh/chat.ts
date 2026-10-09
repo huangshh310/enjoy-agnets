@@ -542,6 +542,7 @@ export const zhChat = {
   removeProject: "移除项目",
   removeProjectHint: "移除「{name}」不会删除磁盘文件夹，该项目下的会话会一并删除。",
   remove: "移除",
+  switchedToProject: "已切换到「{name}」",
 
   usage: {
     enjoyLocal: "Enjoy 本地",

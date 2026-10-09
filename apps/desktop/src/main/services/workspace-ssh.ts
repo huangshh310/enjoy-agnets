@@ -4,7 +4,8 @@
 import { BrowserWindow } from "electron"
 import type { OpenSshWorkspaceInput, SshStatus } from "@enjoy-agents/ipc-contract"
 import { WorkspaceRemoteEvent } from "@enjoy-agents/ipc-contract"
-import { getDatabase, setSetting } from "./database"
+import { getDatabase } from "./database"
+import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { createId } from "./ids"
 import { getSshHost, upsertSshHost } from "./ssh/ssh-hosts.ts"
 import { getSshPassword, setSshPassword } from "./ssh/ssh-password-vault.ts"
@@ -103,7 +104,7 @@ function insertSshWorkspace(name: string, rootPath: string, spec: SshConnSpec, h
       hostId
     )
   rememberSshSpec(record.id, spec, "idle")
-  setSetting("lastWorkspaceId", record.id)
+  rememberWorkspaceOpened(record.id)
   return record
 }
 

@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（历史落到空的新聊天时不创建会话；Unicode11 必须 `allowProposedApi`；Win 扫描路径用 posix）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（删除剪历史不导航；设置情境栏没有项目行）
 
 ## 当前真相
 
@@ -8,8 +8,8 @@
 
 当前能力：
 
-- 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹。
-- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目同样走历史，不自动切到下一个项目。人在设置等其它页时，活动项目被移除仍会补一个剩下的工作区，避免档案悬空。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
+- 打开 / 列出 / 移除工作区。创建弹窗第一步选本地 / 远程。本地：先 `workspace.pickFolder` 只选路径，点「创建项目」才 `workspace.open({ path, name })`。远程：选已存主机或手填 SSH 字段 + **已有**远端路径，点「连接」走 `workspace.openSsh` + `connect`，不 `mkdir`、不调本机 `pickFolder`。`workspace.remove` 只删应用档案与该项目下会话，不删磁盘文件夹；SSH 由 main 先 `dropSshPool` 再删行，回 `{ id, lastWorkspaceId }`（按 `recentWorkspaceIds` MRU 排除已删项，没有再名单第一个），不依赖 renderer 切走 disconnect。真实切换走 `loadWorkspace` → `workspace.remember`；`open` / `openSsh` / 开跑也会写入 MRU。`workspace.open` / `openSsh` 成功后 `loadWorkspace` 立刻 `setQueryData(["workspaces"])`。启动对齐只在启动时跑一次，且只在 `workspaceId == null` 时发生，不得用过期名单推断「有没有项目」。
+- 会话可归档：`session.archive` 后侧栏不再显示，设置 `#/settings/archived` 可恢复或删除。若归档或删除的是历史当前页，落到该窗口 past 末尾；past 空则回到空的新聊天，不 `session.create`。不是当前页只从历史两侧拿掉。移除当前项目**只剪**该项目在历史里的条目（`pruneHistory`），不弹栈、不 `showCurrent`、不落到 past 里的设置页。当前若在对话主区（`#/`）就留在主区，只换指针。一个不剩则 `setWorkspace(null)` 并 `landEmptyHome()` 回 `#/` 主区空态，不自动新建。不 `loadWorkspace` / `loadSession(sessions[0])` / `createAndOpenSession`。切到的 next 若是 SSH，只 `connect`，main 不会按需 lazy 建连。自动切到另一个项目时弹轻 toast「已切换到「A」」（`chat.switchedToProject`，`showAppToast` 默认 2400ms）；删光不弹。`navigateEntry` 落到路由页也要丢掉悬空 `workspaceId`。设置模块下 `ContextColumn` 换成 `ModuleNav`（`SettingsShell` 分段），**没有**项目行；删除入口只在 Chat 模块的 `AiChatSidebar` → `ProjectPopover`。切换器、面包屑、主区都读这份指针；`workspaceId == null` 时主区走无项目空态，Composer 不得再打已删 id。工作区目录管理在 `#/settings/workspace`（旧 `#/workspaces` redirect）。
 - 列目录、读文件（`workspace.readFile` 必须 jail，禁止根外绝对路径直读）
 - Git 变更列表 + 单文件 diff（Review 栏作用域：上一轮 / 未提交 / 未暂存 / 已暂存 / 分支；porcelain 保留 XY）
 - 线性 Git 提交列表 + 用户快捷提交 / 推送 / 复制 patch / 改动条撤销 / 按文件或按已展开目录暂存 / **底栏切分支**（`workspace.gitLog` / `gitCommit` / `gitPush` / `gitPatch` / `gitRestore` / `gitStage` / `gitBranches` / `gitSwitch`）
@@ -49,6 +49,8 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-plan.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
 - Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件或目录暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
 - 底栏选择器：`ai-chat/status-bar/status-project-picker.tsx`、`status-branch-picker.tsx`
+- 创建后侧栏名单：`hooks/plan-boot-workspace.ts`（启动对齐，只跑一次 / 只在无当前工作区时）、`hooks/workspace-pointer.ts`（删除收口：main 返回的 MRU `lastWorkspaceId` 或名单第一个，空则清空）、`hooks/remove-project.ts`（假 IDE 可驱动；不 `loadWorkspace`；剪历史不导航；删光 `landEmptyHome`；切走弹 toast）、`hooks/switched-project-toast.ts`、`hooks/nav-history/nav-history.ts` `pruneHistory`、`nav-history-controller.ts` `pruneHistoryPages` / `landEmptyHome`、`hooks/refresh-workspaces.ts`（全量灌入；最新一次失败时保留最近成功的名单）；`loadWorkspace` 立刻 `setQueryData(["workspaces"])` 并 `workspace.remember`（失败 catch，不挡住切换）；main MRU：`workspace-mru.ts` / `workspace-remember.ts`（开跑只前台用户、且在 session 校验之后）
+- 删除入口布局：`app-shell/chrome/context-column.tsx`（Chat=`AiChatSidebar`，其它=`ModuleNav`）、`activity-bar.tsx` / `module-registry.ts`（对话轨 `#/`，设置轨 `#/settings/general`）、`sidebar/project-popover.tsx`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`；renderer `right-pane/views/workspace-terminal.tsx` + `views/terminal/`（addons / WebGL 回落 / 查找 / 外链）
 - 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
@@ -67,6 +69,11 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - **隐患**：`resolveInsideWorkspace` 对**根**是无条件 `realpathSync`，根不存在直接抛 `ENOENT`。`toWorkspaceRelative` 已经用 `existsSync` 包了一层，这里没有。后果不是越界（抛错即拒绝，fail-closed），而是错误码被降级：`workspace.openPreview` 打开一个确实不存在的 html 时，调用方拿到 `PREVIEW_NOT_ALLOWED` 而不是 `PREVIEW_NOT_FOUND`。生产里根恒为已登记的真实目录，所以只在单测里露出来——测这条链路必须用 `mkdtemp` 的真根，别用 `/tmp/ws` 这种假想路径。
 - PR / 远程 / 提交拓扑图仍是后续。MCP / Knowledge / 资产导出已有路由，sidebar 必须 `navigate`，不能 no-op。
 - 资产导出与知识库路径同样不得逃出 `rootPath`。
+- **隐患**：新建项目在侧栏闪一下就没了。根因：创建走 `workspace.open` + `loadWorkspace` hydrate store，但 `["workspaces"]` query 常仍是启动时的 `[]`；随后 `settings` refetch 重跑启动对齐，把空名单当成「没有项目」并 `setWorkspace(null)`，而 null 会清空 `repositories`。用「store 里已有项目」启发式（`hasLiveWorkspace`）挡这次清空，会让删除后的真·空名单也被当成 noop，指针停在已删除的 id 上。正确做法：启动对齐只跑一次、且只在 `workspaceId == null` 时发生；打开成功立刻 `setQueryData(["workspaces"])`；删除当前项目按 main 返回的 `lastWorkspaceId`（仍在剩余名单里）或名单第一个收口，一个不剩则 `setWorkspace(null)`，不自动新建、不 `loadWorkspace`；`navigateEntry` 丢掉悬空指针；刷新代数在最新一次失败时保留最近成功的名单。
+- **隐患**：删除 SSH 项目后远端连接还挂着。根因：`settleWorkspaceAfterRemove` 先 `setWorkspace(next)`，随后 `loadWorkspace` 的 `disconnectPreviousSsh` 读到的「上一个」已经是 next，删空 / drop 路径也根本不走 disconnect；main 旧 `removeWorkspace` 本身不断开。正确做法：main `removeWorkspace` 先 `dropSshPool` 再删行，回新的 `lastWorkspaceId`；renderer 只收口指针，不要再靠切走 disconnect，也不要读旧 `["settings"]` 缓存。切到 SSH next 时只 `connectSshIfNeeded`，main IO 没有 lazy acquire。别的窗口删项目或外部删 DB 行导致指针悬空仍是原问题，这次不收。
+- **隐患**：删当前项目后落到名单第一个（刚建的 C），而不是上次用过的 A。根因：`lastWorkspaceId` 是当前指针（或最后打开 / 开跑），删掉自己以后不能当「上一个」；`listWorkspaces` 按 `updated_at DESC`，新项目会排第一。正确做法：settings `recentWorkspaceIds` JSON MRU（上限 20），真实切换经 `workspace.remember`（`loadWorkspace`）写入，`open` / `openSsh` / 开跑也会记；`removeWorkspace` 用 `pickRecentWorkspaceAfterRemove` 排除已删项，没有再名单第一个。
+- **隐患**：删光最后一个项目会停在设置页，空指针露出英文 “No workspace” / “open a folder”。根因：历史 past 若有 `#/settings/workspace`，`forgetHistory` 回落到那一页。正确做法：剩余为空时 `landEmptyHome()` 落到 `#/` 主区空态。不要改 `EMPTY_WORKSPACE_POINTER` 那两句英文默认串。
+- **隐患**：主区删除当前项目却跳到「设置 › 工作区」。根因：进过设置会把路由条目推进 past；回到对话后删当前会话页，`forgetHistory` + `showCurrent` 回落到设置。设置模块的情境栏是 `ModuleNav`（`SettingsShell` 分段），**没有** `AiChatSidebar` 项目行，不能在设置页里删项目。正确做法：删除走 `pruneHistory` / `pruneHistoryPages`，只剪已删项目的条目，不弹栈、不导航；当前在 `#/` 就留在主区。真实点击路径：轨道设置图标（`ActivityBar` → `#/settings/general`）→ 轨道对话图标回到 Chat（`#/`，`ContextColumn` 恢复 `AiChatSidebar`）→ 项目行 `ProjectPopover` ⋯ → 移除项目。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。底栏曾经写死 `Main`，现走 `gitBranches.current`。`gitSwitch` 遇未提交改动返回 `GIT_SWITCH_DIRTY`，禁止 `switch -f`。
 - 会话上次发送时的分支记在 renderer（`session-cwd-branch`，可 localStorage），不迁 SQLite。切走且该会话已有用户轮时，Composer 上画横幅「发送后这条会话会跟到当前分支」+ `旧 → 新`。记录只在 `agent.run` 认领成功后更新；开流失败横幅仍在。空会话 / 非 git / 脏树拒切 不画横幅。

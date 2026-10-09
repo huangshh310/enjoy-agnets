@@ -63,6 +63,23 @@ export function jumpHistory(stack: HistoryStack, side: HistorySide, steps: numbe
   }
 }
 
+/** 剪掉已删项目的条目，当前被剪时换成 fallback，不回落到 past（避免跳去设置页）。 */
+export function pruneHistory(
+  stack: HistoryStack,
+  ids: ReadonlySet<string>,
+  fallback: HistoryEntry
+): { stack: HistoryStack; removedCurrent: boolean } {
+  const past = stack.past.filter((entry) => !ids.has(entry.id))
+  const future = stack.future.filter((entry) => !ids.has(entry.id))
+  if (!ids.has(stack.current.id)) {
+    return { removedCurrent: false, stack: { ...stack, past, future } }
+  }
+  return {
+    removedCurrent: true,
+    stack: { ...stack, past, future, current: fallback }
+  }
+}
+
 export function forgetHistory(
   stack: HistoryStack,
   ids: ReadonlySet<string>,

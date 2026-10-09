@@ -549,6 +549,7 @@ export const enChat = {
   removeProjectHint:
     "Removing “{name}” does not delete the folder on disk. Sessions in this project will be deleted.",
   remove: "Remove",
+  switchedToProject: "Switched to “{name}”",
 
   usage: {
     enjoyLocal: "Enjoy Local",

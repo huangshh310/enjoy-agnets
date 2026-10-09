@@ -4,7 +4,15 @@
 import { create } from "zustand"
 import { DEFAULT_HISTORY_ID } from "./constants"
 import { slideForTravel } from "./history-motion"
-import { backHistory, forgetHistory, forwardHistory, jumpHistory, openHistory, retargetHistory } from "./nav-history"
+import {
+  backHistory,
+  forgetHistory,
+  forwardHistory,
+  jumpHistory,
+  openHistory,
+  pruneHistory,
+  retargetHistory
+} from "./nav-history"
 import type { HistorySlide } from "./history-slide"
 import type { HistoryEntry, HistorySide, HistoryStack } from "./nav-history.types"
 
@@ -16,6 +24,7 @@ type NavHistoryState = HistoryStack & {
   forward: () => boolean
   jump: (side: HistorySide, recentIndex: number) => boolean
   forget: (ids: readonly string[], fallback: HistoryEntry) => boolean
+  prune: (ids: readonly string[], fallback: HistoryEntry) => boolean
   retarget: (fromId: string, entry: HistoryEntry) => void
 }
 
@@ -75,6 +84,11 @@ export const useNavHistoryStore = create<NavHistoryState>((set, get) => ({
   },
   forget: (ids, fallback) => {
     const result = forgetHistory(readStack(get()), new Set(ids), fallback)
+    set((state) => writeStack(state, result.stack))
+    return result.removedCurrent
+  },
+  prune: (ids, fallback) => {
+    const result = pruneHistory(readStack(get()), new Set(ids), fallback)
     set((state) => writeStack(state, result.stack))
     return result.removedCurrent
   },
