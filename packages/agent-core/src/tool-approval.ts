@@ -40,15 +40,16 @@ export type ApprovalPolicy = {
    */
   desktopAlwaysAllowAppKeys?: readonly string[]
   /**
+   * 闸判断前按 observationId peek 账本。观察身份覆盖模型字段。
+   * 未知或过期标 unresolved，直接 Dock；不得当会话/簿放行，也不指望后续 stale_observation。
+   * 主循环与子 Agent 共用同一份 policy。
+   */
+  lookupDesktopObservation?: LookupDesktopObservation
+  /**
    * CU-P1-36 高级坐标逃逸舱。缺省 / false = 裸 x/y 硬拒。
    * 打开后每次 Dock，且仍走 bypassesSessionAllow。
    */
   desktopAdvancedCoords?: boolean
-  /**
-   * 闸判断前按 observationId peek 账本。观察身份覆盖模型字段。
-   * 未命中不得当会话/簿放行。主循环与子 Agent 共用同一份 policy。
-   */
-  lookupDesktopObservation?: LookupDesktopObservation
 }
 
 export type ToolApprovalDecision =

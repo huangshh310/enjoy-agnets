@@ -27,8 +27,8 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   const src = readFileSync(new URL("./open-coding-stream-input.ts", import.meta.url), "utf8")
   assert.match(src, /listDesktopAlwaysAllowAppKeys\(input\.prefs\.desktopAlwaysAllowAppKeys\)/)
   assert.match(src, /desktopAlwaysAllowAppKeys:/)
-  assert.match(src, /desktopAdvancedCoords: input\.prefs\.desktopAdvancedCoords === true/)
   assert.match(src, /lookupDesktopObservation: peekDesktopObservation/)
+  assert.match(src, /desktopAdvancedCoords: input\.prefs\.desktopAdvancedCoords === true/)
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 
@@ -65,6 +65,7 @@ test("allow_always 不写会话表；子循环折成 allow", () => {
   const src = readFileSync(new URL("./agent-runner.ts", import.meta.url), "utf8")
   assert.match(src, /if \(decision === "allow_always"\) \{\s*applyDesktopAlwaysAllow\(pending\)\s*return/)
   assert.match(src, /desktopActNeedsSecondConfirm\(pending\.args\)/)
+  assert.match(src, /desktopGrantShouldPersist\(pending\.args, peekDesktopObservation\)/)
   assert.match(src, /rememberDesktopAlwaysAllowFromArgs/)
   assert.match(src, /allow_always 只写持久簿，不写会话表/)
   assert.equal(toSubagentUserDecision("allow_always"), "allow")

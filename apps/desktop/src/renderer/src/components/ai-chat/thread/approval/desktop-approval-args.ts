@@ -1,7 +1,7 @@
 /**
  * 从 approval.required.args 抽出桌面名片字段。无 appKey 或 bypass 时不提供会话放行。
  * 二次确认：previousThumbnailPath = 批准时，thumbnailPath = 重拍后；缺图则 thumbsReady=false。
- * 敏感只信 main 下发的 `sensitive`，禁止再调 desktopActIsSensitive。
+ * 敏感只信 main 下发的 `sensitive`；缺省 / 非 false 当敏感。禁止再调 desktopActIsSensitive。
  * fail-closed：只有严格 `false` 才给本会话/始终允许；缺字段一律当敏感。
  */
 import {

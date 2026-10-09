@@ -66,7 +66,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
     anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
     desktopAlwaysAllowAppKeys: listDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys),
-    desktopAdvancedCoords: input.prefs.desktopAdvancedCoords === true,
-    lookupDesktopObservation: peekDesktopObservation
+    lookupDesktopObservation: peekDesktopObservation,
+    desktopAdvancedCoords: input.prefs.desktopAdvancedCoords === true
   }
 }

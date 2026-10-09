@@ -138,7 +138,7 @@ function sensitiveProcessTokens(key: string, normalizedName: string): string[] {
 }
 
 /**
- * 主进程把敏感判定写进审批 args。renderer 只读 `sensitive`，禁止再算。
+ * 主进程必须写入布尔。renderer 只读；缺省当敏感。
  */
 export function stampDesktopActSensitiveFlag(args: Record<string, unknown>): Record<string, unknown> {
   return { ...args, sensitive: desktopActIsSensitive(args) }

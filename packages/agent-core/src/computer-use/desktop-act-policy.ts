@@ -53,7 +53,7 @@ export function desktopActBypassesSessionAllow(args: unknown): boolean {
   return row.allowForeground === true || desktopActIsBareCoord(row)
 }
 
-/** 坐标 / 切前台 / 敏感窗（含终端类） / 二次确认 / 未解析观察：会话 Allow 与「任意桌面」都盖不住。 */
+/** 坐标 / 切前台 / 敏感窗（含终端类） / 二次确认 / 未解析观察：会话 Allow、任意桌面与持久簿都盖不住。 */
 export function desktopActAlwaysAsks(args: unknown): boolean {
   return (
     desktopActHasUnresolvedObservation(args) ||

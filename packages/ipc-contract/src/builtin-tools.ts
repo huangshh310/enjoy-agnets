@@ -94,10 +94,10 @@ export const DesktopActApprovalArgs = z
     /** 坐标 / 切前台：为 true 时卡片隐藏「本会话允许此应用」。 */
     bypassesSessionAllow: z.boolean().optional(),
     /**
-     * 主进程用 `desktopActIsSensitive` 写入。renderer 只读此旗标，
-     * 禁止自写敏感名单或再算一遍。
+     * 主进程必须写入。缺省 / undefined 当敏感（fail closed）。
+     * renderer 只读此旗标，禁止自写名单或再算。
      */
-    sensitive: z.boolean().optional(),
+    sensitive: z.boolean(),
     x: z.number().optional(),
     y: z.number().optional()
   })
