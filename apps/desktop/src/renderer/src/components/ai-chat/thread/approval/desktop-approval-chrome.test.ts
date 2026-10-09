@@ -34,6 +34,17 @@ test("敏感警示钉 SoT 文案，不是已拦截", () => {
   assert.match(enChat.desktopSensitiveWarn, /sensitive/i)
 })
 
+test("Dock 补跑来源句走共享 helper 与稳定 testid", () => {
+  const card = readFileSync(join(ROOT, "desktop-approval-card.tsx"), "utf8")
+  const approval = readFileSync(join(ROOT, "approval-card.tsx"), "utf8")
+  assert.match(card, /AutomationSourceLine/)
+  assert.match(card, /sourceLine/)
+  assert.match(approval, /automationSourceCopy/)
+  assert.equal(zhChat.automationSourceCatchUp, "来自自动化「{name}」的补跑")
+  assert.equal(zhChat.automationSourceOnTime, "来自自动化「{name}」")
+  assert.doesNotMatch(zhChat.automationSourceCatchUp, /isCatchUp|automationId/)
+})
+
 test("testid 仍挂在四选一选项上", () => {
   const choices = readFileSync(join(ROOT, "desktop-approval-choices.tsx"), "utf8")
   const choice = readFileSync(join(ROOT, "desktop-approval-choice.ts"), "utf8")

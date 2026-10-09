@@ -8,6 +8,7 @@ import { isE2eStub } from "./e2e-stub"
 import { createSession } from "./session-queries"
 import { upsertProfile } from "./secrets"
 import { openWorkspace } from "./workspace"
+import { seedE2eAutomations } from "./e2e-stub-automations"
 import { addKnowledgeSource, indexKnowledgeSource } from "./knowledge-service"
 
 export async function bootstrapE2eStub(): Promise<void> {
@@ -31,6 +32,7 @@ export async function bootstrapE2eStub(): Promise<void> {
     console.warn("e2e stub profile skipped", error)
   }
   await createSession(workspace.id, "New agent")
+  seedE2eAutomations()
   const source = await addKnowledgeSource(workspace.id, ".")
   await indexKnowledgeSource(source.id, true)
 }

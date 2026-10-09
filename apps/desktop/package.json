@@ -11,6 +11,7 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "node scripts/ensure-mac-menu-name.mjs && electron-vite dev",
+    "dev:auto-p2": "node scripts/dev-auto-p2.mjs",
     "start": "node scripts/ensure-mac-menu-name.mjs && electron-vite preview",
     "build": "electron-vite build",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",

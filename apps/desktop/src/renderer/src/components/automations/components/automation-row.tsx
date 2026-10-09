@@ -1,16 +1,18 @@
 /**
- * 紧凑 C 端行：名称 · 触发 · 上次 · 开/停；运行中 / 失败条。
+ * 紧凑 C 端行：名称 · 触发 · 次行（上次 / 已跳过 / 错过 N 次）· 开/停。
  */
+import type { Automation, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { Switch } from "@/components/ui/switch"
 import { cx } from "@/utils/cx"
-import type { Automation } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
-import { formatLastRunWhen } from "../lib/last-run-label"
+import { lastRunLine } from "../lib/last-run-line"
 import { automationRowStatus } from "../lib/row-status"
 import { listTriggerChips } from "../lib/trigger-chips"
+import { LastRunExplain } from "./last-run-explain"
 
 export function AutomationRow({
   automation,
+  records,
   locale,
   now,
   engineLabel,
@@ -19,6 +21,7 @@ export function AutomationRow({
   onOpenFailed
 }: {
   automation: Automation
+  records: AutomationMissedRecord[]
   locale: string
   now: number
   engineLabel: string
@@ -29,6 +32,7 @@ export function AutomationRow({
   const t = useT()
   const status = automationRowStatus(automation)
   const chips = listTriggerChips(automation)
+  const line = lastRunLine({ automation, records, now, locale, t })
 
   return (
     <li
@@ -36,34 +40,29 @@ export function AutomationRow({
         "border-b border-separator-border last:border-b-0",
         !automation.enabled && "opacity-70"
       )}
+      data-testid="automation-row"
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
-        <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
-            {chips.map((chip) => (
-              <span
-                key={`${chip.kind}:${chip.text}`}
-                className={cx(
-                  "rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default",
-                  chip.mono && "font-mono"
-                )}
-              >
-                {chipLabel(chip.kind, chip.text, t)}
-              </span>
-            ))}
-            <StatusChip status={status} t={t} />
-          </div>
-          <p className="mt-0.5 text-caption-1-medium text-text-tertiary">
-            {status === "running"
-              ? t("studio.automations.roundOpened")
-              : automation.lastRunAt
-                ? t("studio.automations.lastRun", {
-                    when: formatLastRunWhen(automation.lastRunAt, now, locale)
-                  })
-                : t("studio.automations.neverRun")}
-          </p>
-        </button>
+        <div className="min-w-0 flex-1">
+          <button type="button" onClick={onOpen} className="w-full text-left">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
+              {chips.map((chip) => (
+                <span
+                  key={`${chip.kind}:${chip.text}`}
+                  className={cx(
+                    "rounded-full bg-background-secondary-default px-1.5 py-px text-caption-2-regular text-text-primary ring-1 ring-border-button-default",
+                    chip.mono && "font-mono"
+                  )}
+                >
+                  {chipLabel(chip.kind, chip.text, t)}
+                </span>
+              ))}
+              <StatusChip status={status} t={t} />
+            </div>
+          </button>
+          <LastRunExplain text={line.text} tip={line.tip} testId={line.testId} />
+        </div>
         <Switch
           checked={automation.enabled}
           onCheckedChange={onToggle}

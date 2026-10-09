@@ -1,12 +1,13 @@
 /**
  * 自动化紧凑列表，不是营销卡。
  */
-import type { AgentToolPublic, Automation } from "@enjoy-agents/ipc-contract"
+import type { AgentToolPublic, Automation, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { useT } from "@renderer/i18n"
 import { AutomationRow } from "./automation-row"
 
 export function AutomationList({
   automations,
+  missedById,
   tools,
   locale,
   now,
@@ -15,6 +16,7 @@ export function AutomationList({
   onOpenFailed
 }: {
   automations: Automation[]
+  missedById: Record<string, AutomationMissedRecord[]>
   tools: AgentToolPublic[]
   locale: string
   now: number
@@ -37,6 +39,7 @@ export function AutomationList({
         <AutomationRow
           key={item.id}
           automation={item}
+          records={missedById[item.id] ?? []}
           locale={locale}
           now={now}
           engineLabel={engineLabel(item.runtimeId, tools, t)}
