@@ -13,6 +13,7 @@ import {
 } from "@enjoy-agents/ipc-contract/tool-names"
 import { commandFromToolInput, sessionAllowsBash } from "./policies/bash-prefix.ts"
 import { SET_SESSION_HEARTBEAT_TOOL } from "./tools/session-heartbeat-name.ts"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON, refuseBareDesktopCoord } from "./computer-use/desktop-act-honesty.ts"
 import {
   desktopActAlwaysAsks,
   desktopActSkipsApproval,
@@ -34,6 +35,11 @@ export type ApprovalPolicy = {
    * 写 SoT 仍是 prefs.desktopAlwaysAllowAppKeys 的 `{ appKey, displayName }[]`。
    */
   desktopAlwaysAllowAppKeys?: readonly string[]
+  /**
+   * CU-P1-36 高级坐标逃逸舱。缺省 / false = 裸 x/y 硬拒。
+   * 打开后每次 Dock，且仍走 bypassesSessionAllow。
+   */
+  desktopAdvancedCoords?: boolean
 }
 
 export type ToolApprovalDecision =
@@ -81,6 +87,10 @@ export function resolveToolApproval(
   }
   if (HOST_CONTROL_SET.has(toolName)) {
     if (toolName === "desktop_act" && desktopActSkipsApproval(input)) return "not-applicable"
+    if (toolName === "desktop_act") {
+      const refused = refuseBareDesktopCoord(input, policy.desktopAdvancedCoords === true)
+      if (refused) return { type: "denied", reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON }
+    }
     if (toolName === "desktop_act" && desktopActAlwaysAsks(input)) return "user-approval"
     if (toolName === "desktop_act") {
       // 命中顺序：硬每次问（上一行）→ 会话表 → 持久簿投影 appKey[]。

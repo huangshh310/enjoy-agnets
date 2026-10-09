@@ -7,7 +7,9 @@ import {
   DESKTOP_ACT_STALE,
   desktopAppKey,
   matchResnapElement,
+  refuseBareDesktopCoord,
   resolveListedAppPid,
+  sanitizeDesktopActFailure,
   type Observation,
   type ObservationLedger,
   type ResnapTarget
@@ -33,6 +35,8 @@ export async function actOnce(
 ) {
   const blocked = refuseSecondConfirmAct(input, ledger.lookup(input.observationId)?.thumbnailPath)
   if (blocked) return blocked
+  const coordsOff = refuseBareDesktopCoord(input, hooks.advancedCoords?.() === true)
+  if (coordsOff) return coordsOff
   ledger.unfreeze(input.observationId)
   const taken = ledger.take(input.observationId)
   if (taken.ok) return deliverAct(call, ledger, taken.observation, input, hooks)
@@ -56,9 +60,9 @@ async function deliverAct(
   } finally {
     hooks.onActEnd?.(input, observation)
   }
-  if (acted.success !== true) {
+  if (acted.success !== true || acted.code === "action_failed") {
     if (RESTORE_CODES.has(String(acted.code))) ledger.put(observation)
-    return acted
+    return sanitizeDesktopActFailure(acted)
   }
   const next = await rememberSnapshot(call, ledger, observation.pid, hooks)
   if (next.success === true) return { ...acted, observationId: next.observationId }

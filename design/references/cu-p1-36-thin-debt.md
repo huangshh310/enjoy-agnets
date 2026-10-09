@@ -43,4 +43,4 @@
 
 ---
 
-*未落地前：视觉与文案以预览 + 本文为准。落地后以 `design/specs/computer-use.md` 为准。本刀不改 `apps/`、不碰 Dock 铬 TS、不碰 I3 / P1-D / P1-C。*
+*kai 数据面已落地（prefs `desktopAdvancedCoords` 默认 OFF、裸坐标硬拒、`action_failed` 不附新观察），当前真相见 `design/specs/computer-use.md`。设置铬仍未绑（mike）。I3 / P1-D / P1-C 仍不开。*
