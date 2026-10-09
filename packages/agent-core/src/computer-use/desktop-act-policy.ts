@@ -42,7 +42,7 @@ export function desktopActBypassesSessionAllow(args: unknown): boolean {
   return !hasElement && (typeof row.x === "number" || typeof row.y === "number")
 }
 
-/** 坐标 / 切前台 / 敏感窗 / 二次确认：会话 Allow 与「任意桌面」都盖不住。 */
+/** 坐标 / 切前台 / 敏感窗（含终端类） / 二次确认：会话 Allow 与「任意桌面」都盖不住。 */
 export function desktopActAlwaysAsks(args: unknown): boolean {
   return (
     desktopActBypassesSessionAllow(args) ||
