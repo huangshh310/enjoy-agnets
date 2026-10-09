@@ -3,7 +3,11 @@
  */
 import type { ModelMessage } from "ai"
 import type { ApprovalPolicy, SubagentToolTraceEvent, WaitForSubagentApproval } from "@enjoy-agents/agent-core"
-import { DESKTOP_ACT_ANY_SESSION_KEY, mergeConversationDesktopAllow } from "@enjoy-agents/agent-core/computer-use"
+import {
+  DESKTOP_ACT_ANY_SESSION_KEY,
+  mergeConversationDesktopAllow,
+  stripAnyDesktopSessionAllow
+} from "@enjoy-agents/agent-core/computer-use"
 import {
   type AgentMode,
   type AskUserAnswers,
@@ -50,6 +54,8 @@ export type OpenCodingStreamInput = {
   runtimeId?: string
   pullSteeringMessages?: () => ModelMessage[]
   takeQuestionAnswers?: () => AskUserAnswers | undefined
+  /** 补跑：丢掉 desktop_act:*，按应用会话放行与簿照常。 */
+  denyAnyDesktop?: boolean
 }
 
 /**
@@ -57,14 +63,15 @@ export type OpenCodingStreamInput = {
  * 禁止从 builtin_tools 偏好读 anyDesktop。写 SoT 仍是 `{ appKey, displayName }[]`。
  */
 export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalPolicy {
-  const sessionApprovedTools = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
+  const merged = mergeConversationDesktopAllow(input.sessionId, input.sessionApprovedTools)
+  const sessionApprovedTools = input.denyAnyDesktop ? stripAnyDesktopSessionAllow(merged) : merged
   return {
     requireWriteApproval: input.prefs.requireWriteApproval,
     requireBashApproval: input.prefs.requireBashApproval,
     requireCommitApproval: input.prefs.requireCommitApproval,
     sessionApprovedTools,
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
-    anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
+    anyDesktopSession: !input.denyAnyDesktop && sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
     desktopAlwaysAllowAppKeys: listDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys),
     lookupDesktopObservation: peekDesktopObservation,
     desktopAdvancedCoords: input.prefs.desktopAdvancedCoords === true

@@ -32,6 +32,17 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 
+test("approvalPolicyFromPrefs 必须自带 lookupDesktopObservation，禁止回落模型自报", () => {
+  const src = readFileSync(new URL("./open-coding-stream-input.ts", import.meta.url), "utf8")
+  const stream = readFileSync(new URL("./open-coding-stream.ts", import.meta.url), "utf8")
+  assert.match(src, /export function approvalPolicyFromPrefs/)
+  assert.match(src, /lookupDesktopObservation:\s*peekDesktopObservation/)
+  assert.doesNotMatch(src, /lookupDesktopObservation:\s*input\./)
+  assert.doesNotMatch(src, /lookupDesktopObservation\s*\?\?/)
+  assert.match(stream, /const policy = approvalPolicyFromPrefs\(input\)/)
+  assert.doesNotMatch(stream, /ApprovalPolicy\s*=\s*\{/)
+})
+
 test("无稳 key / pid 不得写入持久簿", () => {
   const entries = readFileSync(
     new URL("./builtin-tools/computer-use/desktop-always-allow-entries.ts", import.meta.url),

@@ -15,6 +15,8 @@ export type WaitingCheckpoint = {
   modelMessages: unknown
   pendingApprovals: PendingApproval[]
   runtimeId?: string
+  denyAnyDesktop?: boolean
+  automationSource?: unknown
 }
 
 export function persistWaitingRun(run: ActiveRun, runId: string): void {
@@ -24,7 +26,9 @@ export function persistWaitingRun(run: ActiveRun, runId: string): void {
     request,
     modelMessages: run.messages,
     pendingApprovals: run.pendingApprovals,
-    runtimeId: run.input.runtimeId
+    runtimeId: run.input.runtimeId,
+    denyAnyDesktop: run.input.denyAnyDesktop,
+    automationSource: run.input.automationSource
   }
   updateRun(getDatabase(), runId, {
     status: "waiting_review",
@@ -32,7 +36,9 @@ export function persistWaitingRun(run: ActiveRun, runId: string): void {
       ...JSON.parse(snapshotGeneration(request)),
       modelMessages: body.modelMessages,
       pendingApprovals: body.pendingApprovals,
-      runtimeId: body.runtimeId
+      runtimeId: body.runtimeId,
+      denyAnyDesktop: body.denyAnyDesktop,
+      automationSource: body.automationSource
     })
   })
 }
@@ -42,12 +48,16 @@ export function parseWaitingExtras(raw: string | null): {
   pendingApprovals?: PendingApproval[]
   runtimeId?: string
   resumeAt?: string
+  denyAnyDesktop?: boolean
+  automationSource?: unknown
 } {
   const extras = parseAgentCheckpointExtras(raw)
   return {
     modelMessages: extras.modelMessages,
     pendingApprovals: extras.pendingApprovals as PendingApproval[] | undefined,
     runtimeId: extras.runtimeId,
-    resumeAt: extras.resumeAt
+    resumeAt: extras.resumeAt,
+    denyAnyDesktop: extras.denyAnyDesktop,
+    automationSource: extras.automationSource
   }
 }

@@ -72,6 +72,27 @@ test("英文待审批通知同样不泄输入，且不写 type 字段原文", ()
   assert.equal(copy.body.includes("allow"), false)
 })
 
+test("补跑来源句不泄输入，仍走 #105 红action", () => {
+  const copy = noticeForAgentEvent(
+    {
+      type: "approval.required",
+      name: "desktop_act",
+      args: DIRTY_ARGS,
+      automationSource: {
+        automationId: "auto_1",
+        automationName: "晨间待办整理",
+        scheduledAt: 1,
+        isCatchUp: true
+      }
+    },
+    true
+  )
+  assert.match(copy?.body ?? "", /晨间待办整理/)
+  assert.match(copy?.body ?? "", /补跑/)
+  assertDoesNotLeak(copy?.body ?? "")
+  assert.equal(copy?.body.includes("允许"), false)
+})
+
 test("非 desktop_act 或未知动作走泛工具句", () => {
   assert.equal(redactDesktopApprovalNotify({ name: "bash", args: DIRTY_ARGS }), null)
   assert.equal(redactDesktopApprovalNotify({ name: "desktop_act", args: { action: "wait", appName: "备忘录" } }), null)

@@ -36,7 +36,24 @@ test("开关只改 enabled，保留 cron 与上次运行", () => {
   assert.equal(next.runtimeId, "claude")
   assert.equal(next.lastRunAt, 100)
   assert.equal(next.lastRunStatus, "failed")
+  assert.equal(next.catchUpMissed, false)
   assert.equal(next.updatedAt, 200)
+})
+
+test("补跑开关默认关，upsert 可打开", () => {
+  const next = mergeAutomation(
+    existing,
+    {
+      name: existing.name,
+      prompt: existing.prompt,
+      trigger: existing.trigger,
+      catchUpMissed: true,
+      enabled: true
+    },
+    existing.id,
+    200
+  )
+  assert.equal(next.catchUpMissed, true)
 })
 
 test("新建默认执行 mode", () => {

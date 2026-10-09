@@ -174,6 +174,7 @@ export {
   sessionAllowsDesktopAct,
   setConversationAnyDesktop,
   snapshotConversationDesktopAllow,
+  stripAnyDesktopSessionAllow,
   withAnyDesktopSessionKey,
   writeThroughDesktopActSessionAllow
 } from "./computer-use";

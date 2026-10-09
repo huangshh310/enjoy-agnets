@@ -4,6 +4,13 @@
  */
 import type { BrowserWindow } from "electron"
 import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
+import { scheduledAutomationCommandId } from "./automations-cron-points"
+import {
+  claimMissedPoint,
+  defaultSettingsIo,
+  findMissedPoint,
+  patchMissedPoint
+} from "./automations-missed-store"
 import { listActiveRuns, waitForRunSettle } from "./agent-run-state"
 import {
   isAutomationRunning,
@@ -63,45 +70,44 @@ async function runOnSaveJobs(
   }
 }
 
+export type LaunchAutomationOpts = {
+  sessionId?: string
+  workspaceId?: string
+  scheduledAt?: number
+  isCatchUp?: boolean
+}
+
 export async function launchAutomationAgent(
   window: BrowserWindow,
   item: Automation,
-  sessionId?: string,
+  sessionIdOrOpts?: string | LaunchAutomationOpts,
   workspaceId?: string
 ) {
+  const opts = launchOpts(sessionIdOrOpts, workspaceId)
   if (isAutomationRunning(item.id)) {
-    return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: workspaceId ?? "" }
+    return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: opts.workspaceId ?? "" }
   }
-  let openedSessionId = sessionId ?? ""
-  let openedWorkspaceId = workspaceId ?? ""
+  if (!claimLaunchSlot(item.id, opts)) {
+    return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: opts.workspaceId ?? "" }
+  }
+  let openedSessionId = opts.sessionId ?? ""
+  let openedWorkspaceId = opts.workspaceId ?? ""
   markAutomationRunning(item.id)
   emitAutomationsChanged("run", item.id)
   try {
-    openedWorkspaceId = await resolveAutomationWorkspaceId(workspaceId)
-    const opened = await openAutomationSession(item, openedWorkspaceId, sessionId)
+    const opened = await openLaunchedSession(item, opts)
     openedSessionId = opened.sessionId
     openedWorkspaceId = opened.workspaceId
-    patchStoredAutomation(item.id, {
-      lastRunAt: Date.now(),
-      lastSessionId: openedSessionId,
-      lastError: undefined
-    })
-    emitAutomationsChanged("status", item.id)
-    const started = await startAutomationRun(window, item, openedSessionId, openedWorkspaceId)
+    const started = await startLaunchedRun(window, item, opened, opts)
     const settled = await waitForRunSettle(started.runId)
-    finishAutomationRun(item.id, settled.status === "end" ? "ok" : "failed", settled.summary)
-    return {
-      id: item.id,
-      sessionId: openedSessionId,
-      workspaceId: openedWorkspaceId,
-      runId: started.runId
-    }
+    finishAutomationRun(item.id, settled.status === "end" ? "ok" : "failed", settled.summary, opts)
+    return { id: item.id, ...opened, runId: started.runId }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     if (openedSessionId) {
       stampAndSend(window, { type: "run.error", runId: createId("run"), message }, openedSessionId)
     }
-    finishAutomationRun(item.id, "failed", message)
+    finishAutomationRun(item.id, "failed", message, opts)
     throw error
   } finally {
     markAutomationIdle(item.id)
@@ -109,14 +115,85 @@ export async function launchAutomationAgent(
   }
 }
 
-function finishAutomationRun(id: string, status: "ok" | "failed", summary: string): void {
+async function openLaunchedSession(item: Automation, opts: LaunchAutomationOpts) {
+  const workspaceId = await resolveAutomationWorkspaceId(opts.workspaceId)
+  const opened = await openAutomationSession(item, workspaceId, opts.sessionId)
+  patchStoredAutomation(item.id, {
+    lastRunAt: Date.now(),
+    lastSessionId: opened.sessionId,
+    lastError: undefined,
+    lastRunCatchUp: opts.isCatchUp === true
+  })
+  emitAutomationsChanged("status", item.id)
+  return opened
+}
+
+async function startLaunchedRun(
+  window: BrowserWindow,
+  item: Automation,
+  opened: { sessionId: string; workspaceId: string },
+  opts: LaunchAutomationOpts
+) {
+  const started = await startAutomationRun(window, item, opened.sessionId, opened.workspaceId, {
+    commandId:
+      opts.scheduledAt != null ? scheduledAutomationCommandId(item.id, opts.scheduledAt) : undefined,
+    denyAnyDesktop: opts.isCatchUp === true,
+    automationSource:
+      opts.scheduledAt != null
+        ? {
+            automationId: item.id,
+            automationName: item.name,
+            scheduledAt: opts.scheduledAt,
+            isCatchUp: opts.isCatchUp === true
+          }
+        : undefined
+  })
+  if (opts.scheduledAt != null) {
+    patchMissedPoint(defaultSettingsIo(), item.id, opts.scheduledAt, { runId: started.runId })
+  }
+  return started
+}
+
+function launchOpts(sessionIdOrOpts?: string | LaunchAutomationOpts, workspaceId?: string): LaunchAutomationOpts {
+  if (sessionIdOrOpts && typeof sessionIdOrOpts === "object") return sessionIdOrOpts
+  return { sessionId: sessionIdOrOpts, workspaceId }
+}
+
+function claimLaunchSlot(automationId: string, opts: LaunchAutomationOpts): boolean {
+  if (opts.scheduledAt == null) return true
+  const io = defaultSettingsIo()
+  const existing = findMissedPoint(io, automationId, opts.scheduledAt)
+  if (opts.isCatchUp) return existing?.kind === "catch_up"
+  if (existing) return false
+  return claimMissedPoint(io, {
+    automationId,
+    scheduledAt: opts.scheduledAt,
+    recordedAt: Date.now(),
+    kind: "scheduled",
+    status: "running"
+  })
+}
+
+function finishAutomationRun(
+  id: string,
+  status: "ok" | "failed",
+  summary: string,
+  opts: LaunchAutomationOpts = {}
+): void {
   const current = readAutomations().find((row) => row.id === id)
   const fails = status === "failed" ? (current?.consecutiveFails ?? 0) + 1 : 0
   const limit = current?.stopOnFailCount ?? 3
   patchStoredAutomation(id, {
     lastRunStatus: status,
+    lastRunCatchUp: opts.isCatchUp === true,
     lastError: status === "failed" ? summary || "Automation failed." : undefined,
     consecutiveFails: fails,
     ...(status === "failed" && fails >= limit ? { enabled: false } : {})
   })
+  if (opts.scheduledAt != null) {
+    patchMissedPoint(defaultSettingsIo(), id, opts.scheduledAt, {
+      status,
+      isCatchUp: opts.isCatchUp === true
+    })
+  }
 }

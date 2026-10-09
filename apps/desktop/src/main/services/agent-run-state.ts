@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { snapshotConversationDesktopAllow } from "@enjoy-agents/agent-core"
+import { snapshotConversationDesktopAllow, stripAnyDesktopSessionAllow } from "@enjoy-agents/agent-core/computer-use"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
@@ -58,15 +58,22 @@ export type RunSettleResult = { status: "end" | "error"; summary: string }
 const SETTLED_RUNS_CAP = 200
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
-  const sessionId = event.sessionId ?? sessionIdOfRun(event)
+  const next = withAutomationApprovalSource(event)
+  const sessionId = next.sessionId ?? sessionIdOfRun(next)
   if (sessionId) {
-    stampAndSend(window, event, sessionId)
-    settleRunWaiters(event)
+    stampAndSend(window, next, sessionId)
+    settleRunWaiters(next)
     return
   }
   if (window.isDestroyed()) return
-  window.webContents.send("agent.event", event)
-  settleRunWaiters(event)
+  window.webContents.send("agent.event", next)
+  settleRunWaiters(next)
+}
+
+function withAutomationApprovalSource(event: StreamEvent): StreamEvent {
+  if (event.type !== "approval.required" || event.automationSource) return event
+  const source = getActiveRun(event.runId)?.input.automationSource
+  return source ? { ...event, automationSource: source } : event
 }
 
 /** Workflow / Automation 等待同一 run 收工。 */
@@ -161,7 +168,7 @@ export function holdAgentRun(
     secret: patch.secret,
     pendingApprovals: [],
     // P1-S：从会话表复制，不是空 Set。run 结束不清表。
-    sessionApprovedTools: snapshotConversationDesktopAllow(patch.input.sessionId),
+    sessionApprovedTools: initialSessionApprovedTools(patch.input),
     sessionApprovedBashPrefixes: new Set(),
     approvalGate: createApprovalGate(),
     pumping: false,
@@ -174,4 +181,9 @@ export function holdAgentRun(
     tools: [],
     assistantPersisted: false
   })
+}
+
+function initialSessionApprovedTools(input: RunAgentInput): Set<string> {
+  const snapshot = snapshotConversationDesktopAllow(input.sessionId)
+  return input.denyAnyDesktop ? stripAnyDesktopSessionAllow(snapshot) : snapshot
 }

@@ -83,5 +83,6 @@ export {
   revokeConversationDesktopAllow,
   setConversationAnyDesktop,
   snapshotConversationDesktopAllow,
+  stripAnyDesktopSessionAllow,
   writeThroughDesktopActSessionAllow
 } from "./conversation-desktop-allow.ts"

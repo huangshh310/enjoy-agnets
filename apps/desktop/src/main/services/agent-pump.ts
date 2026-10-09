@@ -161,6 +161,7 @@ async function openRunStream(
     executePlan: run.input.executePlan,
     desktopBias: run.input.desktopBias,
     computerUseOnce: run.input.computerUseOnce,
+    denyAnyDesktop: run.input.denyAnyDesktop === true,
     runtimeId: run.input.runtimeId,
     pullSteeringMessages: () => absorbSteeringMessages(run),
     takeQuestionAnswers: () => {

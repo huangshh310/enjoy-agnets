@@ -66,6 +66,7 @@ export const SETTINGS_CHANNELS = [
   "automations.upsert",
   "automations.remove",
   "automations.run",
+  "automations.missed.list",
   "models.list"
 ] as const
 

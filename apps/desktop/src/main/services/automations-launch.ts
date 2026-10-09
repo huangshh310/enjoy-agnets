@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
-import { RunAgentInput, type Automation } from "@enjoy-agents/ipc-contract"
+import { RunAgentInput, type Automation, type AutomationRunSource } from "@enjoy-agents/ipc-contract"
 import { applyAutomationHostMode, resolveAutomationMode } from "./automations-mode"
 import { runAgent } from "./agent-run-start"
 import { writeSessionRuntime } from "./agent-tools-vault"
@@ -46,11 +46,18 @@ export async function openAutomationSession(
   return { sessionId: session.id, workspaceId }
 }
 
+export type StartAutomationRunOpts = {
+  commandId?: string
+  denyAnyDesktop?: boolean
+  automationSource?: AutomationRunSource
+}
+
 export async function startAutomationRun(
   window: BrowserWindow,
   item: Automation,
   sessionId: string,
-  workspaceId: string
+  workspaceId: string,
+  opts: StartAutomationRunOpts = {}
 ) {
   const runtimeId = resolveAutomationRuntimeId(item)
   const mode = resolveAutomationMode(item.mode)
@@ -64,7 +71,9 @@ export async function startAutomationRun(
     runtimeId,
     mode,
     persistUser: true,
-    commandId: createId("auto-run"),
+    commandId: opts.commandId ?? createId("auto-run"),
+    denyAnyDesktop: opts.denyAnyDesktop === true ? true : undefined,
+    automationSource: opts.automationSource,
     messages: [{ role: "user", content: prompt }]
   })
   return runAgent(window, payload)

@@ -29,6 +29,9 @@ export function mergeAutomation(
     lastRunStatus: input.lastRunStatus ?? existing?.lastRunStatus,
     lastSessionId: input.lastSessionId ?? existing?.lastSessionId,
     lastError: input.lastError ?? existing?.lastError,
+    lastRunCatchUp: input.lastRunCatchUp ?? existing?.lastRunCatchUp,
+    lastSkipReason: input.lastSkipReason ?? existing?.lastSkipReason,
+    catchUpMissed: input.catchUpMissed ?? existing?.catchUpMissed ?? false,
     enabled: input.enabled,
     updatedAt: now
   }

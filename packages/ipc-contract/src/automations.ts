@@ -31,8 +31,16 @@ export function automationHasTrigger(
 
 export const AutomationWebhookPort = z.number().int().min(1).max(65535)
 
-export const AutomationRunStatus = z.enum(["ok", "failed", "running"])
+export const AutomationRunStatus = z.enum(["ok", "failed", "running", "skipped"])
 export type AutomationRunStatus = z.infer<typeof AutomationRunStatus>
+
+/** 错过原因；C 端映射电脑睡眠 / 应用未运行 / 上次仍在运行。 */
+export const AutomationSkipReason = z.enum([
+  "system_sleep",
+  "app_not_running",
+  "previous_still_running"
+])
+export type AutomationSkipReason = z.infer<typeof AutomationSkipReason>
 
 export const Automation = z.object({
   id: z.string(),
@@ -57,6 +65,11 @@ export const Automation = z.object({
   lastRunStatus: AutomationRunStatus.optional(),
   lastSessionId: z.string().optional(),
   lastError: z.string().optional(),
+  /** 最近一次动作是补跑（无论 ok / failed / running）。 */
+  lastRunCatchUp: z.boolean().optional(),
+  lastSkipReason: AutomationSkipReason.optional(),
+  /** 错过后补跑最近一次。默认关。 */
+  catchUpMissed: z.boolean().optional(),
   enabled: z.boolean(),
   updatedAt: z.number()
 })
@@ -83,6 +96,9 @@ export const UpsertAutomationInput = z.object({
   lastRunStatus: AutomationRunStatus.optional(),
   lastSessionId: z.string().optional(),
   lastError: z.string().optional(),
+  lastRunCatchUp: z.boolean().optional(),
+  lastSkipReason: AutomationSkipReason.optional(),
+  catchUpMissed: z.boolean().optional(),
   enabled: z.boolean().default(true)
 })
 export type UpsertAutomationInput = z.infer<typeof UpsertAutomationInput>
@@ -119,7 +135,7 @@ export type AutomationRunResult = z.infer<typeof AutomationRunResult>
 
 export const AutomationsChangedEvent = z
   .object({
-    reason: z.enum(["upsert", "remove", "run", "status"]),
+    reason: z.enum(["upsert", "remove", "run", "status", "missed"]),
     id: z.string().optional()
   })
   .strict()

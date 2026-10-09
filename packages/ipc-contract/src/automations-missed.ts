@@ -1,0 +1,46 @@
+/**
+ * AUTO-P2 错过记录与补跑来源。记录只存本机，不进云同步。
+ */
+import { z } from "zod"
+import { AutomationIdInput, AutomationRunStatus, AutomationSkipReason } from "./automations.ts"
+
+/** 抽屉「展开错过记录」只看跳过与补跑，不含准点成功。 */
+export const AutomationMissedKind = z.enum(["skipped", "catch_up"])
+export type AutomationMissedKind = z.infer<typeof AutomationMissedKind>
+
+export const MISSED_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
+
+/** 待审批 Dock / 通知用来源句。C 端只写名称与「补跑」。 */
+export const AutomationRunSource = z
+  .object({
+    automationId: z.string().min(1),
+    automationName: z.string().min(1),
+    scheduledAt: z.number().int(),
+    isCatchUp: z.boolean()
+  })
+  .strict()
+export type AutomationRunSource = z.infer<typeof AutomationRunSource>
+
+export const AutomationMissedRecord = z
+  .object({
+    automationId: z.string().min(1),
+    scheduledAt: z.number().int(),
+    recordedAt: z.number().int(),
+    kind: AutomationMissedKind,
+    reason: AutomationSkipReason.optional(),
+    status: AutomationRunStatus.optional(),
+    runId: z.string().min(1).optional(),
+    isCatchUp: z.boolean().optional()
+  })
+  .strict()
+export type AutomationMissedRecord = z.infer<typeof AutomationMissedRecord>
+
+export const ListAutomationMissedInput = AutomationIdInput
+export type ListAutomationMissedInput = z.infer<typeof ListAutomationMissedInput>
+
+export const ListAutomationMissedResult = z
+  .object({
+    records: z.array(AutomationMissedRecord)
+  })
+  .strict()
+export type ListAutomationMissedResult = z.infer<typeof ListAutomationMissedResult>

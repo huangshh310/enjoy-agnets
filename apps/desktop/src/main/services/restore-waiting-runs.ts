@@ -45,6 +45,8 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         workspaceId: row.workspaceId,
         modelId: row.modelId ?? checkpoint.request.modelId,
         runtimeId: extras.runtimeId,
+        denyAnyDesktop: extras.denyAnyDesktop,
+        automationSource: extras.automationSource,
         messages: (checkpoint.request.messages ?? []).map((message) => ({
           role: message.role,
           content: typeof message.content === "string" ? message.content : ""
