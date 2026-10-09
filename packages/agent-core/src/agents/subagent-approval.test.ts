@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON } from "../computer-use/desktop-act-honesty.ts"
+import {
+  DESKTOP_ACT_BARE_COORDS_DISABLED,
+  DESKTOP_ACT_BARE_COORDS_DISABLED_REASON
+} from "../computer-use/desktop-act-honesty.ts"
 import { createSubagentApproval } from "./subagent-approval.ts"
 
 const policy = {
@@ -71,7 +74,11 @@ test("子 Agent 共用 policy.desktopAdvancedCoords：默认 OFF 硬拒带坐标
     toolName: "desktop_act",
     input: { action: "click", elementId: "0.1", x: 12, y: 34 }
   })
-  assert.deepEqual(result, { type: "denied", reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON })
+  assert.deepEqual(result, {
+    type: "denied",
+    reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON,
+    code: DESKTOP_ACT_BARE_COORDS_DISABLED
+  })
 })
 
 test("子 Agent 打开高级坐标时带坐标的 elementId 仍要父审批，不静默执行", async () => {

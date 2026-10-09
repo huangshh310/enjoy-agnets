@@ -60,7 +60,7 @@
 
 ### 敏感：main 名单，renderer 已引用，但始终允许仍露出
 
-真源 `packages/agent-core/src/computer-use/desktop-act-app-key.ts` → `desktopActIsSensitive`。`SENSITIVE` 子串：`system settings` / `system preferences` / `系统设置` / `系统偏好设置` / `keychain` / `钥匙串` / `wallet` / `password` / `密码` / `payment` / `支付` / `alipay` / `wechat pay`。**「终端 / Terminal」不在名单**。预览敏感态画「系统设置」，不把终端画成已命中。
+真源 `packages/agent-core/src/computer-use/desktop-act-app-key.ts` → `desktopActIsSensitive`。`SENSITIVE` 子串：`system settings` / `system preferences` / `系统设置` / `系统偏好设置` / `keychain` / `钥匙串` / `wallet` / `password` / `密码` / `payment` / `支付` / `alipay` / `wechat pay`，以及终端类（jojo 补锁）：darwin Terminal / iTerm2；win Windows Terminal / PowerShell / cmd；linux GNOME Terminal / Konsole / xterm / Alacritty / kitty / WezTerm。**Finder / Explorer 不在名单**。落地名单以 `design/specs/computer-use.md` 为准。
 
 `desktop-act-policy.ts`：`desktopActAlwaysAsks` = 坐标/前台 **或** 敏感 **或** 二次确认。会话表与持久簿都盖不住。
 

@@ -2,7 +2,11 @@
  * Dock 停靠：二次确认 UI 载荷、活泵 waiter、确认后剥 UI 字段。
  * 缩略图记忆 / 禁静默 click 仍走 kai 数据面 desktop-second-confirm.ts。
  */
-import { DESKTOP_ACT_SECOND_CONFIRM, desktopActAppKey } from "@enjoy-agents/agent-core/computer-use"
+import {
+  DESKTOP_ACT_SECOND_CONFIRM,
+  desktopActAppKey,
+  stampDesktopActSensitiveFlag
+} from "@enjoy-agents/agent-core/computer-use"
 import { attachDesktopApprovalThumbs, mergeSecondConfirmApprovalArgs } from "./desktop-second-confirm.ts"
 
 export type SecondConfirmDecision = "allow" | "deny" | "allow_session" | "allow_always"
@@ -66,10 +70,10 @@ export async function enrichSecondConfirmApprovalArgs(
   const { readThumbDataUrl } = await import("./desktop-thumbs.ts")
   const attached = await attachDesktopApprovalThumbs(args, readThumbDataUrl)
   const missing = !text(attached.previousThumbnailDataUrl) || !text(attached.thumbnailDataUrl)
-  return {
+  return stampDesktopActSensitiveFlag({
     ...attached,
     ...(missing ? { screenshotUnavailable: "screenshot_unavailable" } : {})
-  }
+  })
 }
 
 /** 确认后交给 resume：只留 act 入参，丢掉 UI / 旧观察号。 */

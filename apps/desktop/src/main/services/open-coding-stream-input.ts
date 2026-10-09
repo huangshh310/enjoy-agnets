@@ -12,6 +12,7 @@ import {
   type ReasoningEffort
 } from "@enjoy-agents/ipc-contract"
 import { listDesktopAlwaysAllowAppKeys } from "./builtin-tools/computer-use/desktop-always-allow-entries"
+import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import type { AppPreferences } from "./preferences"
 import type { StoredSecret } from "./secrets"
 
@@ -65,6 +66,7 @@ export function approvalPolicyFromPrefs(input: OpenCodingStreamInput): ApprovalP
     sessionApprovedBashPrefixes: input.sessionApprovedBashPrefixes,
     anyDesktopSession: sessionApprovedTools.has(DESKTOP_ACT_ANY_SESSION_KEY),
     desktopAlwaysAllowAppKeys: listDesktopAlwaysAllowAppKeys(input.prefs.desktopAlwaysAllowAppKeys),
+    lookupDesktopObservation: peekDesktopObservation,
     desktopAdvancedCoords: input.prefs.desktopAdvancedCoords === true
   }
 }

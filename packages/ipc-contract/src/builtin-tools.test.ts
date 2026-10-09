@@ -58,10 +58,36 @@ test("DesktopActApprovalArgs 收 appKeySource 与 bypassesSessionAllow", () => {
     action: "click",
     appKey: "com.apple.calculator",
     appKeySource: "bundleId",
-    bypassesSessionAllow: false
+    bypassesSessionAllow: false,
+    sensitive: false
   })
   assert.equal(parsed.appKeySource, "bundleId")
   assert.equal(parsed.bypassesSessionAllow, false)
+})
+
+test("DesktopActApprovalArgs 要求 sensitive 布尔，缺省拒收", () => {
+  const parsed = DesktopActApprovalArgs.parse({
+    observationId: "obs",
+    action: "click",
+    appName: "系统设置",
+    appKey: "com.apple.systempreferences",
+    sensitive: true
+  })
+  assert.equal(parsed.sensitive, true)
+  assert.equal(
+    DesktopActApprovalArgs.parse({
+      observationId: "obs",
+      action: "click",
+      sensitive: false
+    }).sensitive,
+    false
+  )
+  assert.throws(() => {
+    DesktopActApprovalArgs.parse({
+      observationId: "obs",
+      action: "click"
+    })
+  })
 })
 
 test("DesktopActApprovalArgs 收二次确认新旧缩略图", () => {
@@ -69,6 +95,7 @@ test("DesktopActApprovalArgs 收二次确认新旧缩略图", () => {
     observationId: "obs_new",
     action: "click",
     needsSecondConfirm: true,
+    sensitive: false,
     previousThumbnailPath: "/thumbs/at-allow.png",
     previousThumbnailDataUrl: "data:image/png;base64,OLD",
     thumbnailPath: "/thumbs/after-resnap.png",

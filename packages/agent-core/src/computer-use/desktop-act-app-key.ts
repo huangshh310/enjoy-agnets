@@ -10,6 +10,10 @@ export type DesktopActAppKeySource = "bundleId" | "exe" | "aumid" | "appName"
 
 const KEY_SOURCES: readonly DesktopActAppKeySource[] = ["bundleId", "exe", "aumid", "appName"]
 
+/**
+ * 子串命中：设置 / 钥匙串 / 支付 + 足够独特的终端身份。
+ * 「终端 / Terminal」已入名单（CU-P1-P jojo）。Finder / Explorer 不在此列。
+ */
 const SENSITIVE = [
   "system settings",
   "system preferences",
@@ -23,8 +27,38 @@ const SENSITIVE = [
   "payment",
   "支付",
   "alipay",
-  "wechat pay"
+  "wechat pay",
+  "com.apple.terminal",
+  "com.googlecode.iterm2",
+  "org.gnome.terminal",
+  "org.kde.konsole",
+  "org.wezfurlong.wezterm",
+  "microsoft.windowsterminal",
+  "windows terminal",
+  "windowsterminal",
+  "iterm2",
+  "gnome-terminal",
+  "gnome terminal",
+  "powershell",
+  "command prompt",
+  "命令提示符",
+  "终端",
+  "terminal",
+  "konsole",
+  "alacritty",
+  "wezterm"
 ]
+
+/** 短进程名只做基名 / 规范化名精确匹配，避免 cmdline 一类误伤。 */
+const SENSITIVE_PROCESS = new Set([
+  "cmd",
+  "pwsh",
+  "wt",
+  "xterm",
+  "uxterm",
+  "kitty",
+  "iterm"
+])
 
 /** 规范化应用名：去扩展名、折叠空白。不能当 bundleId 的替代身份时才回落到它。 */
 export function normalizeDesktopAppName(name: string): string {
@@ -87,12 +121,27 @@ export function withAnyDesktopSessionKey(
   return next
 }
 
-/** 系统设置 / 钥匙串 / 支付等敏感窗：即使开了任意桌面也每次问。 */
+/** 系统设置 / 钥匙串 / 支付 / 终端类：即使开了任意桌面也每次问。 */
 export function desktopActIsSensitive(args: unknown): boolean {
   const key = desktopActAppKey(args)
   const name = args && typeof args === "object" ? text((args as Record<string, unknown>).appName) : ""
-  const hay = `${key} ${normalizeDesktopAppName(name)}`.toLowerCase()
-  return SENSITIVE.some((item) => hay.includes(item))
+  const normalizedName = normalizeDesktopAppName(name)
+  const hay = `${key} ${normalizedName}`.toLowerCase()
+  if (SENSITIVE.some((item) => hay.includes(item))) return true
+  return sensitiveProcessTokens(key, normalizedName).some((token) => SENSITIVE_PROCESS.has(token))
+}
+
+/** appKey 基名（去路径 / .exe）+ 规范化显示名，供短进程精确比对。 */
+function sensitiveProcessTokens(key: string, normalizedName: string): string[] {
+  const base = normalizeDesktopAppName(key.split(/[/\\]/).pop() ?? "")
+  return [normalizedName, base].filter(Boolean)
+}
+
+/**
+ * 主进程必须写入布尔。renderer 只读；缺省当敏感。
+ */
+export function stampDesktopActSensitiveFlag(args: Record<string, unknown>): Record<string, unknown> {
+  return { ...args, sensitive: desktopActIsSensitive(args) }
 }
 
 function inferDesktopActAppKey(row: Record<string, unknown>): {

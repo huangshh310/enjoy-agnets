@@ -7,8 +7,10 @@ import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agen
 import {
   desktopActFailureCode,
   desktopActMayReportSuccess,
-  desktopActNeedsSecondConfirm
+  desktopActNeedsSecondConfirm,
+  desktopGrantShouldPersist
 } from "@enjoy-agents/agent-core/computer-use"
+import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import { ASK_USER_QUESTIONS_TOOL, AbortAgentInput, ApprovalDecision } from "@enjoy-agents/ipc-contract"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
 import { assertApprovalHmac, recordApprovalDecision } from "./approval-hmac"
@@ -171,6 +173,7 @@ function applyApprovalDecision(
   if (pending.name === "desktop_act") {
     // CU-P1-R 二次确认不是 H2 / P1-S 会话放行；确认只当一次 allow。
     if (desktopActNeedsSecondConfirm(pending.args)) return
+    if (!desktopGrantShouldPersist(pending.args, peekDesktopObservation)) return
     // §3.2b / P1-S：write-through 会话表 + run 副本。禁止裸 desktop_act。
     writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, pending.args)
     return
@@ -178,10 +181,11 @@ function applyApprovalDecision(
   run.sessionApprovedTools.add(pending.name)
 }
 
-/** allow_always 只写持久簿，不写会话表。二次确认禁止落簿。 */
+/** allow_always 只写持久簿，不写会话表。二次确认 / 敏感禁止落簿。 */
 function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {
   if (pending.name !== "desktop_act") return
   if (desktopActNeedsSecondConfirm(pending.args)) return
+  if (!desktopGrantShouldPersist(pending.args, peekDesktopObservation)) return
   rememberDesktopAlwaysAllowFromArgs(pending.args)
 }
 

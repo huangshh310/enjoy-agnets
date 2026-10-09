@@ -19,6 +19,8 @@
     "./workspace-preview": "./src/workspace-preview.ts",
     "./quoted-context": "./src/quoted-context.ts",
     "./host-inject": "./src/host-inject.ts",
+    "./desktop-notify": "./src/desktop-notify.ts",
+    "./desktop-act-codes": "./src/desktop-act-codes.ts",
     "./session-config": "./src/session-config.ts",
     "./session-title": "./src/session-title.ts",
     "./session-heartbeat": "./src/session-heartbeat.ts",

@@ -6,6 +6,7 @@ import {
   desktopActAppKeyInfo,
   desktopActBypassesSessionAllow,
   desktopAppKey,
+  stampDesktopActSensitiveFlag,
   type Observation
 } from "@enjoy-agents/agent-core/computer-use"
 import { tool } from "ai"
@@ -81,6 +82,11 @@ function sharedSession(): DesktopSession {
   return singleton
 }
 
+/** 闸判断用：只 peek 未过期观察，不消费。未知/过期回 null。 */
+export function peekDesktopObservation(observationId: string) {
+  return sharedSession().peek(observationId)
+}
+
 /** 开关打开且非探索态才注册。Explore 走 desktop-tool-gate，不要调这里。 */
 export function desktopControlTools(session = sharedSession()) {
   return { ...readTools(session), desktop_act: actTool(session) }
@@ -150,12 +156,12 @@ export function enrichDesktopActArgs(args: Record<string, unknown>): Record<stri
     ...merged,
     appKey: observation?.appKey || desktopAppKey(observation ?? {}) || merged.appKey
   })
-  return {
+  return stampDesktopActSensitiveFlag({
     ...merged,
     ...(info.appKey ? { appKey: info.appKey } : {}),
     ...(info.appKeySource ? { appKeySource: info.appKeySource } : {}),
     bypassesSessionAllow: desktopActBypassesSessionAllow(merged)
-  }
+  })
 }
 
 function mergeObservationIntoActArgs(args: Record<string, unknown>, observation: Observation): Record<string, unknown> {

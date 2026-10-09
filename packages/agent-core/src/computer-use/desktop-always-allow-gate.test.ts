@@ -68,7 +68,8 @@ test("A4 坐标/前台即使簿命中仍要问；高级坐标未开则硬拒", (
   const advanced = { ...policy, desktopAdvancedCoords: true }
   assert.deepEqual(decide({ action: "click", x: 1, y: 2, appKey: CALC }, policy), {
     type: "denied",
-    reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON
+    reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON,
+    code: "bare_coords_disabled"
   })
   assert.equal(decide({ action: "click", x: 1, y: 2, appKey: CALC }, advanced), "user-approval")
   assert.equal(
