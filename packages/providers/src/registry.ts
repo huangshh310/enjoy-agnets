@@ -4,10 +4,10 @@
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createProviderRegistry, type LanguageModel } from "ai"
-import { parseHeaders, resolvedBaseURL } from "./config"
-import { wrapWithDefaults } from "./middleware"
-import { presetFor } from "./presets"
-import type { ProviderConfig } from "./types"
+import { parseHeaders, resolvedBaseURL } from "./config.ts"
+import { wrapWithDefaults } from "./middleware.ts"
+import { presetFor } from "./presets.ts"
+import type { ProviderConfig } from "./types.ts"
 
 export type ModelAlias = {
   alias: string

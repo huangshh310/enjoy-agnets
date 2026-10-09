@@ -28,7 +28,10 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       # 打包期的解析错误（无后缀导入、workspace 包别名）typecheck 抓不到，见 architecture.md 已知坑。
+      # macos-latest 默认堆会在 electron-vite 打 main 时 OOM；测试过了才暴露。
       - run: pnpm build
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
 
   contracts:
     # e2e 里的 Electron 窗口流需要显示环境与 Electron 系统库，CI 不假装跑通；只跑纯 Node 的 IPC 合约 spec。

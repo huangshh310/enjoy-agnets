@@ -1,6 +1,6 @@
 # spec/workflow
 
-> Durable Workflow：检查点、暂停、恢复、步级重试。最后更新：2026-09-18
+> Durable Workflow：检查点、暂停、恢复、步级重试。最后更新：2026-10-09
 
 ## 当前真相
 
@@ -48,6 +48,6 @@ UI `#/workflows` 在 `AppShell` 内换轨。工作流编辑器对齐 infinite-ca
 - `WorkflowStartInput.steps` 契约支持上限为 32 个节点；超量画布需拆分或提示。
 - 画布节点拖动与点击对话框唤起：`useCanvasPointer` 在节点单击完成（`wasClick`）时必须主动 `setDialogNodeId(clickedNodeId)`，确保点击节点始终打开下方提示词面板；Node Header 严禁加 `e.stopPropagation()`，保证整卡拖拽连贯；卡片本体禁止加 `transition-all`（改为 `transition-shadow`），避免拖动过程产生 150ms 滞后跳变；拖拽高频计算经 `requestAnimationFrame` 缓冲。
 - 画布节点曾把 `run.error` 收成固定英文 `Generation failed.`，真实原因（错档案、无字节、供应商原文）看不到。正确做法：`applyCanvasGenerationEvent` 把 `event.message` 写进 `errorDetails`。
-- `executeKind` 曾无条件用设置页 `defaultImageModelId` 覆盖请求模型，画布选中 `grok-imagine-image` 也会被换成聊天默认生图模型；`requireProviderConfig` 只读当前激活档案，忽略 `GenerationRequest.providerId`。正确做法：image-only 请求原样使用；按 `providerId` 解析 vault。
+- `executeKind` 曾无条件用设置页 `defaultImageModelId` 覆盖请求模型，画布选中 `grok-imagine-image` 也会被换成聊天默认生图模型；`requireProviderConfig` 只读当前激活档案，忽略 `GenerationRequest.providerId`。正确做法：image-only 请求原样使用；按 `providerId` 解析 vault。`pickGenerateProfile` 找到开启档案就用；未知 id 回落当前激活档案；已关闭档案返回 `undefined`，不要静默改用别的档。
 - `workflow.lastCheckpointId` 是 `cp_<stepIndex>` 形式的 id，不是整份 checkpoint JSON（曾返回整个 JSON 字符串，已修）。
 - 取消发生在步骤中途时，子 run 被 abort → 步骤抛错 → catch 里先看行状态是 `cancelled` 就直接返回，不会把 cancelled 覆写成 failed。

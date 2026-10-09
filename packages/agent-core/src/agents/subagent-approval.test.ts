@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED_REASON } from "../computer-use/desktop-act-honesty.ts"
 import { createSubagentApproval } from "./subagent-approval.ts"
 
 const policy = {
@@ -62,4 +63,28 @@ test("bash 的 allow_session 只白名单命令前缀", async () => {
 test("只读工具不打扰用户", async () => {
   const decide = createSubagentApproval({ mode: "agent", policy })
   assert.equal(await decide({ toolName: "read_file", input: { path: "a.ts" } }), "not-applicable")
+})
+
+test("子 Agent 共用 policy.desktopAdvancedCoords：默认 OFF 硬拒带坐标的 elementId", async () => {
+  const decide = createSubagentApproval({ mode: "agent", policy })
+  const result = await decide({
+    toolName: "desktop_act",
+    input: { action: "click", elementId: "0.1", x: 12, y: 34 }
+  })
+  assert.deepEqual(result, { type: "denied", reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON })
+})
+
+test("子 Agent 打开高级坐标时带坐标的 elementId 仍要父审批，不静默执行", async () => {
+  const decide = createSubagentApproval({
+    mode: "agent",
+    policy: { ...policy, desktopAdvancedCoords: true }
+  })
+  const result = await decide({
+    toolName: "desktop_act",
+    input: { action: "drag", elementId: "0.1", x2: 80, y2: 90 }
+  })
+  assert.deepEqual(result, {
+    type: "denied",
+    reason: "subagent write needs the same parent approval."
+  })
 })

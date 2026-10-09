@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-07
+> 协议工厂，不是品牌锁定。最后更新：2026-10-09
 
 ## 当前真相
 
@@ -82,3 +82,4 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 - Fal / Replicate / ElevenLabs / Deepgram / Cohere 没有 OpenAI `/models`。`probeProvider` 只校验 Key 已填，真正建连发生在 generate。把它们设成当前聊天 Provider 会抛「media provider」而不是假装能对话。
 - xAI 官方生图是 `@ai-sdk/xai` 的 `xai.image('grok-imagine-image-2.0')` + `generateImage`。语言模型已有 `xai` preset 走 OpenAI `/v1` 兼容端点；挂在兼容端点时生图走 `createOpenAI().image()`，对准 `images/generations`。不要用 `streamText` 调 imagine 模型。
 - xAI 视频必须 `createXai().video('grok-imagine-video')` + `experimental_generateVideo`。不要用 `image()` 冒充。档案即使 kind=openai，只要模型 id 是 imagine-video 也走这条。Base URL 跟生图同一主机；只有空或 `api.openai.com` 才改打 `https://api.x.ai/v1`。国内中转能出图却强行打官方 x.ai 会 Connect Timeout。
+- Node `--experimental-strip-types` 加载 `@enjoy-agents/providers` 入口时，无后缀 `./capabilities/probe` 会 `ERR_MODULE_NOT_FOUND`（文件是 `probe.ts`）；`from "./presets"` 在 Unix 会撞上 `presets/` 目录。正确做法：相对导入带 `.ts`。`capabilities/probe.ts` 只是内存缓存桩，不发网络请求。

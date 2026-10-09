@@ -36,6 +36,7 @@ import { captureDesktopThumb, getLastDesktopView, readThumbDataUrl, setLastDeskt
 import { startExecutor, type ExecutorHandle } from "./executor-client"
 import { mapListedDesktopApps } from "./map-listed-desktop-apps.ts"
 import { resolveExecutorCommand } from "./executor-command"
+import { readPreferences } from "../../preferences"
 
 const actionSchema = z.enum(["click", "move", "drag", "scroll", "type", "key", "wait"])
 
@@ -75,7 +76,8 @@ function sharedSession(): DesktopSession {
     },
     onActEnd: () => {
       endDesktopActOverlay()
-    }
+    },
+    advancedCoords: () => readPreferences().desktopAdvancedCoords === true
   })
   return singleton
 }
