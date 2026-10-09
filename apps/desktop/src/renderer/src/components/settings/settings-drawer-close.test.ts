@@ -29,11 +29,13 @@ test("自动化抽屉 X 带 no-drag 且点击关闭", () => {
     join(dir, "../automations/components/automation-drawer.tsx"),
     "utf8"
   )
-  const close = src.slice(src.indexOf("data-testid=\"automation-drawer-close\""))
+  const mark = src.indexOf('data-testid="automation-drawer-close"')
+  assert.ok(mark >= 0)
+  const close = src.slice(Math.max(0, mark - 180), mark + 280)
+  assert.match(close, /onClick=\{onClose\}/)
   assert.match(close, /data-app-region="no-drag"/)
   assert.match(close, /\[app-region:no-drag\]/)
   assert.match(close, /APP_REGION_NO_DRAG_STYLE|WebkitAppRegion/)
-  assert.match(close, /onClick=\{onClose\}/)
 })
 
 test("其它共用抽屉头的关闭钮也标 no-drag", () => {
