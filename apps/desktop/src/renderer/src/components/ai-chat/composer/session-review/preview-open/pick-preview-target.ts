@@ -2,6 +2,7 @@
  * 可开目标：选中 html > 改动条 html > 本会话本机预览 URL。
  * 不编造入口，不启动本地服务。
  */
+import { readDesktopActBareCoordsDeniedCode } from "@enjoy-agents/ipc-contract/desktop-act-codes"
 import { extractLocalPreviewUrl, isWorkspaceHtmlPath } from "@enjoy-agents/ipc-contract/workspace-preview"
 import type { ThreadMessage } from "@renderer/stores/chat-store.types"
 import type { PickPreviewTargetInput, PreviewTarget } from "./preview-open.types"
@@ -40,7 +41,10 @@ function textsFromMessage(message: ThreadMessage | undefined): string[] {
   if (!message) return []
   const texts = [message.content, message.reasoning]
   for (const tool of message.tools ?? []) {
-    texts.push(tool.argsText, tool.errorText)
+    texts.push(tool.argsText)
+    if (tool.errorText && !readDesktopActBareCoordsDeniedCode(tool.errorText)) {
+      texts.push(tool.errorText)
+    }
     texts.push(...textsFromUnknown(tool.args), ...textsFromUnknown(tool.result))
   }
   return texts.filter((item): item is string => Boolean(item))

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types.ts"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types.ts"
+import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import type { InboxNotification } from "../inbox.types.ts"
 import { filterInbox, inboxFromAttention, inboxNavCounts, resolveSelected } from "./filter-inbox.ts"
 import { synthesizeNeedsReviewInbox } from "./synthesize-needs-review-inbox.ts"
@@ -105,6 +107,32 @@ test("失败 / 已取消走失败筛，不进待验收，也不进拍板计数",
   assert.equal(inboxNavCounts(items).approval, 1)
   assert.equal(inboxNavCounts(items).failed, 2)
   assert.equal(inboxNavCounts(items).needs_review, 1)
+})
+
+test("Inbox 失败预览不露 bare_coords_disabled", () => {
+  const tInbox = (path: string) => {
+    const leaf = path.replace(/^chat\./, "") as keyof typeof zhChat
+    return String(zhChat[leaf] ?? path)
+  }
+  const items = inboxFromAttention(
+    [
+      attention({
+        id: "ses_xy:error",
+        sessionId: "ses_xy",
+        kind: "error",
+        summary: DESKTOP_ACT_BARE_COORDS_DISABLED,
+        errorMessage: DESKTOP_ACT_BARE_COORDS_DISABLED
+      })
+    ],
+    { t: tInbox, readIds: new Set(), hiddenIds: new Set() }
+  )
+  const row = items[0]
+  assert.ok(row)
+  assert.equal(row.copyKey, "error")
+  assert.equal(row.summary, zhChat.desktopCoordsDisabledBody)
+  assert.equal(row.errorMessage, zhChat.desktopCoordsDisabledBody)
+  assert.doesNotMatch(row.summary, /bare_coords_disabled/)
+  assert.doesNotMatch(row.errorMessage ?? "", /bare_coords_disabled/)
 })
 
 test("Attention error 含 abort 标已取消，合成待验收只看 workflowStatus", () => {

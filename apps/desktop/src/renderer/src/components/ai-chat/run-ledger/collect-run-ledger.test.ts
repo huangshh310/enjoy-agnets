@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
 import {
   collectRunLedger,
   groupRunLedger,
@@ -63,6 +64,26 @@ test("按 kind 收人话行：读/改/命令/错，不编造耗时，不带 stdo
   assert.equal(rows[2]?.pathHint, "src/auth/…")
   assert.equal(rows[0]?.title.includes("FAIL"), false)
   assert.equal(rows[1]?.detail, "boom")
+})
+
+test("desktop_act 硬拒账本不露工程码", () => {
+  const rows = collectRunLedger({
+    id: "a",
+    tools: [
+      tool({
+        id: "act",
+        name: "desktop_act",
+        state: "output-error",
+        errorText: DESKTOP_ACT_BARE_COORDS_DISABLED,
+        result: { success: false, code: DESKTOP_ACT_BARE_COORDS_DISABLED }
+      })
+    ]
+  })
+  const row = rows[0]
+  assert.ok(row)
+  assert.equal(row.failed, true)
+  assert.doesNotMatch(row.detail ?? "", /bare_coords_disabled/)
+  assert.doesNotMatch(row.title, /bare_coords_disabled/)
 })
 
 test("失败命令留在命令组，摘要是 bash · 命令 · 失败，不是错误组 dump", () => {
