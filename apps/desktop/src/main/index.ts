@@ -21,6 +21,9 @@ import appIconPng from "../../resources/icon.png?asset";
 if (process.env.ENJOY_E2E_USERDATA) {
   app.setPath("userData", process.env.ENJOY_E2E_USERDATA);
 }
+if (process.env.ENJOY_E2E_STUB === "1") {
+  app.disableHardwareAcceleration();
+}
 
 registerAssetScheme();
 

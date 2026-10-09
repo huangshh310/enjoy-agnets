@@ -2,6 +2,7 @@
  * 供应商 vault：safeStorage 加解密、遗留 Key 迁移、对外脱敏。
  */
 import { safeStorage } from "electron"
+import { isE2eStub } from "./e2e-stub.ts"
 import {
   getSecretValue,
   setSecretValue,
@@ -176,7 +177,12 @@ function readVaultBlob(): string | undefined {
   return legacy
 }
 
+const E2E_PLAIN_PREFIX = "e2e-plain:"
+
 function encryptJson(value: unknown): string {
+  if (isE2eStub() && !safeStorage.isEncryptionAvailable()) {
+    return E2E_PLAIN_PREFIX + JSON.stringify(value)
+  }
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error("OS keychain encryption is not available on this machine.")
   }
@@ -184,6 +190,13 @@ function encryptJson(value: unknown): string {
 }
 
 function decryptJson<T>(stored: string): T | undefined {
+  if (isE2eStub() && stored.startsWith(E2E_PLAIN_PREFIX)) {
+    try {
+      return JSON.parse(stored.slice(E2E_PLAIN_PREFIX.length)) as T
+    } catch {
+      return undefined
+    }
+  }
   if (!safeStorage.isEncryptionAvailable()) return undefined
   try {
     return JSON.parse(safeStorage.decryptString(Buffer.from(stored, "base64"))) as T

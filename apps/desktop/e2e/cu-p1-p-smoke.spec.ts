@@ -25,7 +25,7 @@ test("CU 铬：pill / 本会话默认 / 敏感警示 / 硬拒中文卡", async (
   const workspace = mkdtempSync(join(tmpdir(), "enjoy-cu-ws-"))
   const userData = mkdtempSync(join(tmpdir(), "enjoy-cu-ud-"))
   const app = await electron.launch({
-    args: [mainEntry],
+    args: [mainEntry, "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
     cwd: process.cwd(),
     timeout: 45_000,
     env: {
