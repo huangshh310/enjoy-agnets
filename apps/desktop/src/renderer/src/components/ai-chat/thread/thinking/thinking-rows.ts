@@ -3,7 +3,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "@renderer/lib/record"
-import { formatToolName, summarizeToolArgs, toolKind } from "../tool-summary"
+import { formatToolLabel, summarizeToolArgs, toolKind } from "../tool-summary"
 import type { TranslateFn } from "@renderer/i18n"
 
 export type TraceRow = {
@@ -74,7 +74,7 @@ function toolRow(tool: ThreadToolCall, t: TranslateFn): TraceRow {
   return {
     id: tool.id,
     kind: kind === "other" ? "step" : kind,
-    primary: codingVerb(tool.name, t) ?? formatToolName(tool.name),
+    primary: codingVerb(tool.name, t) ?? formatToolLabel(tool.name, t, tool.args),
     secondary: summarizeToolArgs(tool) || undefined,
     mono: kind === "coding",
     add,

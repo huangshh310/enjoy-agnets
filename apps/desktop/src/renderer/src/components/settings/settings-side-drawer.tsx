@@ -5,6 +5,8 @@
 import { useEffect, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { cx } from "@/utils/cx"
+import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
+import { shouldCloseDrawerOnEscape } from "./settings-drawer-close"
 import { SETTINGS_DRAWER_Z_CLASS } from "./settings-overlay"
 
 export function SettingsSideDrawer({
@@ -29,12 +31,7 @@ export function SettingsSideDrawer({
   useEffect(() => {
     if (!open) return
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
-      if (event.defaultPrevented) return
-      const target = event.target
-      if (target instanceof Element && target.closest("[data-slot='popover-content'], [data-slot='dropdown-menu-content'], [role='listbox']")) {
-        return
-      }
+      if (!shouldCloseDrawerOnEscape(event)) return
       event.preventDefault()
       if (nested) event.stopImmediatePropagation()
       onClose()
@@ -46,7 +43,11 @@ export function SettingsSideDrawer({
   if (!open || typeof document === "undefined") return null
 
   return createPortal(
-    <div className={cx("fixed inset-0", nested ? SETTINGS_DRAWER_Z_CLASS.nested : SETTINGS_DRAWER_Z_CLASS.base)}>
+    <div
+      className={cx("fixed inset-0 [app-region:no-drag]", nested ? SETTINGS_DRAWER_Z_CLASS.nested : SETTINGS_DRAWER_Z_CLASS.base)}
+      data-app-region="no-drag"
+      style={APP_REGION_NO_DRAG_STYLE}
+    >
       <button
         type="button"
         onClick={onClose}

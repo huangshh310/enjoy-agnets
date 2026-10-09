@@ -4,6 +4,7 @@
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import { useT } from "@renderer/i18n"
+import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
 import { cx } from "@/utils/cx"
 import type { RunLedgerEntry } from "../../run-ledger/run-ledger.types"
 import { openSourceRow } from "./open-source-row"
@@ -101,7 +102,9 @@ function SheetPanel({
         <button
           type="button"
           onClick={onClose}
-          className="cursor-pointer text-caption-1-regular text-text-tertiary hover:text-text-primary"
+          data-app-region="no-drag"
+          style={APP_REGION_NO_DRAG_STYLE}
+          className="cursor-pointer text-caption-1-regular text-text-tertiary [app-region:no-drag] hover:text-text-primary"
         >
           {t("chat.sourcesSheetClose")}
         </button>

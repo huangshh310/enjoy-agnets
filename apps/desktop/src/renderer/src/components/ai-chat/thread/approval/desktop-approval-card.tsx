@@ -153,6 +153,7 @@ function DesktopApprovalSummary({
   return (
     <div className="min-w-0 flex-1">
       <p className="text-caption-1-medium text-text-secondary">{summary}</p>
+      <p className="mt-0.5 text-caption-2-medium text-text-secondary">{t("chat.desktopApprovalTtlFrozen")}</p>
       <AutomationSourceLine text={sourceLine ?? null} />
       {showDev ? <DesktopApprovalDevDetails view={view} /> : null}
     </div>
@@ -165,7 +166,6 @@ function DesktopApprovalDevDetails({ view }: { view: ReturnType<typeof desktopAp
     <div data-testid="desktop-approval-dev" className="mt-1 flex flex-col gap-0.5 text-caption-2-medium text-text-tertiary">
       {view.appKey ? <p data-testid="desktop-approval-app-key">{view.appKey}</p> : null}
       <p>{t("chat.desktopApprovalDevMeta", { action: view.action || "act", summary: view.summary })}</p>
-      <p>{t("chat.desktopApprovalTtlFrozen")}</p>
     </div>
   )
 }

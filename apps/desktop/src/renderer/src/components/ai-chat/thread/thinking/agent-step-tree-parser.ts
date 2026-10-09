@@ -3,7 +3,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "../../../../lib/record.ts"
-import { formatToolName, summarizeToolArgs } from "../tool-summary.ts"
+import { formatToolLabel, summarizeToolArgs } from "../tool-summary.ts"
 import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { commandStreamText } from "./command-stream-text.ts"
@@ -197,7 +197,7 @@ function fallbackNode(
     }
   }
   const rawPath = extractToolPath(args, tool.name) || String(args.url || "")
-  let title = formatToolName(tool.name)
+  let title = formatToolLabel(tool.name, t, args)
   if (isWeakCommandName(title) || !title) {
     title = shell ? shellTitle(shell, t) : rawPath ? rawPath.split(/[\\/]/).pop() || rawPath : t("chat.ranACommand")
   }

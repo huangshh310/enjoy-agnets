@@ -70,13 +70,13 @@ export function InstructionsSection(props: { defaultTab?: "instructions" | "rule
               {activeTab === "instructions" ? t("studio.instructions.title") : t("studio.customize.projectRules")}
             </h2>
             <span className="rounded bg-accent-500/10 px-1.5 py-0.5 text-caption-2-medium font-mono font-medium text-accent-600 dark:text-accent-400">
-              {activeTab === "instructions" ? t("studio.instructions.badge") : "Rules"}
+              {activeTab === "instructions" ? t("studio.instructions.badge") : t("studio.customize.projectRules")}
             </span>
           </div>
           <p className="text-caption-2-medium text-text-tertiary">
             {activeTab === "instructions"
               ? t("studio.instructions.desc")
-              : "项目规范与工作区指令（如 .cursorrules、.enjoyrules、AGENTS.md）。"}
+              : t("studio.rules.desc")}
           </p>
         </div>
 

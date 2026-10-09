@@ -7,10 +7,9 @@ import { test } from "node:test"
 import { en } from "./catalogs/en/index.ts"
 import { zh } from "./catalogs/zh/index.ts"
 
-/** 仅开发者文案档可留 HMAC / TTL / § / 裸动作模板。 */
+/** 仅开发者文案档可留 HMAC / 裸动作 / bundle 模板。 */
 const DEV_COPY_ALLOWLIST = new Set([
   "chat.hmacBoundNotice",
-  "chat.desktopApprovalTtlFrozen",
   "chat.desktopApprovalDevMeta",
   "chat.desktopBiasAppKey",
   "chat.paneDesktopAppKey"
@@ -40,6 +39,28 @@ test("开发者文案白名单短且都在词表里", () => {
   for (const key of DEV_COPY_ALLOWLIST) {
     assert.ok(keys.has(key), `missing allowlisted key ${key}`)
   }
+})
+
+test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
+  const z = zh as {
+    chat: Record<string, string>
+    studio: { automations: Record<string, string>; instructions: Record<string, string> }
+  }
+  assert.equal(z.chat.desktopApprovalTtlFrozen, "等你决定，画面已定格在提问那一刻")
+  assert.equal(z.chat.mentionDesktopSheetHint, "这台电脑上能操控的应用")
+  assert.equal(z.chat.toolDesktop, "操作桌面")
+  assert.equal(z.chat.waitingForApp, "等待应用…")
+  assert.equal(z.chat.desktopApprovalVerbClick, "点击")
+  assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")
+  assert.equal(z.studio.automations.workspaceHint, "在当前项目里运行")
+  assert.equal(z.studio.automations.triggerHint, "选择什么时候运行")
+  assert.equal(z.studio.automations.onSaveHint, "项目里有文件保存时运行 · 只在这台电脑 · 关掉应用就停")
+  assert.equal(z.studio.automations.mode, "模式")
+  assert.equal(z.studio.automations.runningBar, "正在运行")
+  assert.equal(z.studio.automations.cronDaily, "每天 {time}")
+  assert.equal(z.studio.automations.cronCustom, "自定义时间")
+  assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
+  assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
 })
 
 function buildToolIdPattern(): RegExp {
