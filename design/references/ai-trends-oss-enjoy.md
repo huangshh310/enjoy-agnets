@@ -3,6 +3,8 @@
 > 基线：main tip `1893fa5`（2026-10-09 复核 main 仍为此 sha）· 日期：2026-10-09（Asia/Shanghai）· **待用户拍板 · 不开刀 · I3 仍停**
 > 输入：PM 调研（本稿）＋ leo（架构契合/风险/闸）＋ kai（后端事实与候选）＋ luna（交互候选）＋ mike（前端库候选，§2.1）。凡标注「leo / kai / luna」处为其输入，本稿已抽查路径。
 > 开放项：PR #100（CU-P1-36 裸坐标默认关）仍 draft，CI 在 `2b2f7ea` 绿，但对 `1893fa5` `mergeStateStatus=DIRTY`，需 rebase；`desktopAdvancedCoords` 尚未进 main（`rg` 在 `1893fa5` 无命中）。
+> **单独决策项（改锁项，需用户单独拍板）**：Top 5 ① 中「CU 审批卡默认改为『本会话允许此应用』」**推翻 CU-P1-A 预览锁**（锁定为：有稳定 appKey 时默认高亮 Always-allow）。这是产品锁变更，不是闸变更；若通过，须同步改 `design/references/cu-p1-a-always-allow.md` 与对应测试。（leo 架构评审）
+> leo 架构评审结论：Top 5 无 block，① ⑤ 为**有条件通过**，排序不变；各项「通过条件」见 §3.3。
 > 星数 / push 日期为 2026-10-09 `gh api repos/...` 实测（`pushed_at` 为 UTC，此处只取日期）。
 
 ---
@@ -151,11 +153,12 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 **① CU 体感打磨（审批默认值 + 空态桌面示例 + 人话通知）** — luna
 - 一句话：把 CU 的「工程默认值」改成保守、可懂的产品默认值。
 - 现状：部分。`desktop-approval-choice.ts:37` 默认 `allow_always`；`empty-state-constants.ts` 无桌面示例；`desktop-notify.ts` 文案通用。
-- Do：默认选中「本会话允许此应用」，Always-allow 保留但降权；终端 / Finder / 系统设置加一行提示并隐藏 Always-allow（提示不得读成「被拦」）；CU 开启且权限就绪时空态给「@应用 帮我在 {真实就绪 App} 里…」（数据来自 `use-desktop-mention-apps.ts`），否则隐藏；通知写清 App 与动作（「Enjoy 想在『备忘录』里点击『新建』，回 Enjoy 审批」），结束通知区分完成/停止/出错（`run.end` 加 status 需 kai）。
-- Don't：不加新决策 enum；通知里不放「允许」按钮；不做全局划词条 / 菜单栏小窗；不做 desktop_act「智能自动审批」。①为默认值调整，jojo 认为与 CU-P1-A 锁一致，**待用户拍板**。
+- Do：默认选中「本会话允许此应用」，Always-allow 保留但降权；终端 / Finder / 系统设置加一行提示并隐藏 Always-allow（提示不得读成「被拦」）；CU 开启且权限就绪时空态给「@应用 帮我在 {真实就绪 App} 里…」（数据来自 `use-desktop-mention-apps.ts`），否则隐藏；通知写清 App 与动作（「Enjoy 想在『备忘录』里点击『新建』，回 Enjoy 审批」），结束通知区分完成/停止/出错（由通知层从现有 end / error 推导，见通过条件）。
+- Don't：不加新决策 enum；通知里不放「允许」按钮；不做全局划词条 / 菜单栏小窗；不做 desktop_act「智能自动审批」。**更正**：本稿初版写「jojo 认为与 CU-P1-A 锁一致」不成立。leo 指出默认改为「本会话」**推翻了 CU-P1-A 预览锁**（有稳定 appKey 时默认高亮 Always-allow），属于**改锁项，需用户单独拍板**（见页首单独决策项）。
 - 投入：S，≈3 人日（luna 1、mike 1.5、kai 0.5）。
 - ICE 8/8/8＝24。
-- 架构契合：高（纯 renderer 默认值 + main 通知文案；`run.end` 加字段走 Zod）。风险：低。闸与真源：默认值变更不改 `resolveToolApproval` 顺序；Always-allow 仍只由用户显式选择写入。
+- 架构契合：高（renderer 默认值 + main 通知文案，不动事件合约）。风险：低→低中（改锁带来的文档与测试面）。闸与真源：不改 `resolveToolApproval` 顺序；Always-allow 仍只由用户显式选择写入；敏感应用判定以 main 侧 `desktopActIsSensitive`（`packages/agent-core/src/computer-use/desktop-act-app-key.ts`）为真源。
+- **通过条件（leo · 有条件通过）**：(1) 默认值改动须先经用户单独拍板，并同步改 `cu-p1-a-always-allow.md` 与测试；(2) 敏感应用隐藏 Always-allow 必须复用 `desktopActIsSensitive`，由 main 推给 renderer，renderer 不得自建名单；(3) 不得让中止重发 `run.end`（`claim-run-end.ts`：中止只发 `run.error`），完成 / 停止 / 出错由通知层从现有 end / error 推导，尽量不改事件合约；(4) 通知会显示在锁屏：只写应用名 + 动作类型，不得出现 `type` 的输入文本或敏感窗口里的控件名。
 
 **② 自动化错过运行诚实化**
 - 一句话：电脑睡着错过的定时，不再静默消失。
@@ -164,7 +167,8 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 - Don't：不做「按任务 Always-allow / 自动批准」；不做云端代跑；不补多次。
 - 投入：S，≈3 人日（kai 1.5、mike 1、luna 0.5）。
 - ICE 6/9/8＝23。
-- 架构契合：高（复用 `automations-run.ts` / `automations-notify.ts`）。风险：低（唤醒事件跨平台差异，用 Electron `powerMonitor`）。闸与真源：补跑 run 与手动 run 同审批链；记录存本机 DB。
+- 架构契合：高（复用 `automations-run.ts` / `automations-notify.ts`）。风险：低（唤醒事件跨平台差异，用 Electron `powerMonitor`）。闸与真源：补跑 run 与手动 run 同审批链；跳过记录存本机。
+- **通过条件（leo · 有条件通过）**：(1) 补跑 run 不得继承 `desktop_act:*` 任意桌面会话授权，按应用的会话授权与 Always-allow 列表照常生效；(2) 每个计划时间点带幂等键（类似 `commandId`），多次唤醒事件不重复补跑；(3) 跳过记录仅存本机。
 
 **③ 模型单价 + 估算成本** — kai ★1
 - 一句话：用量页给出「估算」花费，而不是永远 0。
@@ -174,15 +178,17 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 - 投入：S–M，≈4 人日（kai 2.5、mike 1、luna 0.5）。
 - ICE 7/8/7＝22。
 - 架构契合：高（`packages/providers` + `ipc-contract` 字段）。风险：低（快照过期→显示快照日期）。闸与真源：价格表是本机静态数据，不影响任何审批。
+- **通过条件（leo · 通过）**：离线快照放 `packages/providers`，带版本号与日期；用户填写的单价优先；缓存 token 与推理 token 分别计价；未知价格显示「—」；主路径不联网。
 
 **④ 符号级 Repo map** — leo #2
 - 一句话：`repo_outline` 从目录骨架升级为「按相关度排序的符号地图」，Explore 可用。
 - 现状：部分。`packages/agent-core/src/context/repo-outline.ts` 只有目录。
-- Do：用 ast-grep（napi）或 web-tree-sitter wasm 抽 TS/JS/Py/Go/Rust 签名，按引用次数 + 近期 git 改动排序，默认 ~1k token 预算，按 mtime 缓存；作为只读工具注册在 Explore / Execute；Inspect Prompt 显示占用。
+- Do：优先 web-tree-sitter wasm（按语言懒加载 grammar；leo：ast-grep napi 需各平台 prebuild）抽 TS/JS/Py/Go/Rust 签名，按引用次数 + 近期 git 改动排序，默认 ~1k token 预算，按 mtime 缓存；作为只读工具注册在 Explore / Execute；Inspect Prompt 显示占用。
 - Don't：不做 LSP / 多标签编辑器；不每轮强灌全图；不新增 StreamEvent。
 - 投入：M，≈6 人日（leo 1、kai 4、mike 1）。
 - ICE 8/7/6＝21。
-- 架构契合：高（只读工具，ToolLoop 内）。风险：中（native/wasm 体积、各平台 prebuild）。闸与真源：只读、路径 jail 复用 `AgentWorkspaceHost`；SSH 工作区诚实降级为目录骨架。
+- 架构契合：高（只读工具，ToolLoop 内）。风险：中（wasm 体积与 grammar 懒加载）。闸与真源：只读、路径 jail 复用 `AgentWorkspaceHost`；SSH 工作区诚实降级为目录骨架。
+- **通过条件（leo · 通过）**：优先 web-tree-sitter wasm + 按语言懒加载；只读，范围不超出 `AgentWorkspaceHost`；SSH 工作区降级为目录骨架。
 
 **⑤ 统一 OS 沙箱（sandbox-runtime）** — kai ★2
 - 一句话：bash 在 mac 与 Linux 都有真 OS 边界，而不是正则。
@@ -191,7 +197,8 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 - Don't：沙箱不替代审批（审批仍是人边界）；不引入容器/microVM；不在 UI 宣称 Windows 已隔离。
 - 投入：M，≈7 人日（kai 4、leo 2、mike 1）。
 - ICE 9/6/5＝20。
-- 架构契合：中高（包一层 spawn，不动 ToolLoop）。风险：中（npm 0.x、Ubuntu userns/AppArmor 限制、平台漂移）。闸与真源：`resolveToolApproval` 先行，沙箱后包；策略存本机设置。
+- 架构契合：中高（包一层 spawn，不动 ToolLoop）。风险：中高（npm 0.0.x、本地代理与用户代理共存、Ubuntu userns/AppArmor 限制、平台漂移）。闸与真源：`resolveToolApproval` 先行，沙箱是额外一层；策略存本机设置。
+- **通过条件（leo · 有条件通过）**：(1) 红线：**绝不**「已沙箱 ⇒ bash 自动批准」，审批顺序不变；(2) 精确钉版本（0.0.x），放在 `os-sandbox` 适配层之后；正则拦截等能力对齐后才移除；(3) 域名放行经本地代理实现，需测试与用户自有代理共存；(4) Ubuntu userns / AppArmor 失败时显示「未隔离」，**绝不**静默无沙箱运行。
 
 > **备选替换（mike 输入后追加；Top 5 已送用户拍板，未改动）**
 > 「前端收口」（sonner + xterm addon）ICE **23**，高于 Top 5 ⑤「统一 OS 沙箱」（20）。若纯按分数，它会替换 **⑤**。建议**不替换**：⑤ 是 kai 的安全地基，换掉后 Top 5 只剩一个地基项；前端收口约 2 人日，可作为插空项与 Top 5 并行。由用户决定。
@@ -199,7 +206,17 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 >
 > **次批（前端，按 ICE）**：virtua 20 → @pierre/diffs 18 → tinykeys 17 / @headless-tree 17 → Tiptap Mention 13（观察不做）。另：#4 Recipe、#5 Skills 校验仍为后端/产品侧次批 S 项。
 
-### 3.4 明确拒绝（与锁/红线冲突）
+**次批 · leo 架构结论**
+| 项 | 结论 | 条件 / 红线 |
+|---|---|---|
+| Recipe（Composer 预设扩展） | 通过 | 只能携带 prompt / 模式 / `desktopBias`；带任何授权或名单条目即 block |
+| Skills 规范校验 | 通过 | `allowed-tools` 仅展示 |
+| 官方 MCP SDK 替换传输层 | 有条件 | 保持 `packages/mcp` 对外接口；OAuth token 存 main 密钥库；调用仍经 `resolveToolApproval` |
+| MCP Apps 对齐稳定规范 | 有条件 | iframe 的 `ui/message` 与工具请求视为不可信，必须过审批；任何绕过即 block |
+| 右栏步骤胶片 | 有条件 | 帧只存内存、按 run 隔离；敏感窗口不生成缩略图 |
+| promptfoo evals | 通过 | 仅 devDependency |
+
+### 3.4 明确拒绝（与锁/红线冲突；leo 全部同意）
 
 1. **手机遥控经厂商云中继（Remote Control 式）**：转录上云、远端驱动本机桌面，冲突「local-first / 不让云端操作用户桌面」。
 2. **持续屏幕记忆（Chronicle / screenpipe 式后台录屏）**：跨 App 常驻截屏绕开 CU 按应用审批与 mention≠allow；隐私成本高（官方自己提示文件可被他应用读取）。
