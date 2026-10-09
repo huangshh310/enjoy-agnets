@@ -20,6 +20,8 @@ export type RemoveProjectIo = {
   invalidateCaches: () => Promise<void>
   collectPageIds: (workspaceId: string) => Promise<string[]>
   releaseHistory: (ids: readonly string[]) => Promise<boolean>
+  /** 切到 SSH next 时只建连，不灌会话。 */
+  connectSsh?: (workspace: WorkspaceRow) => Promise<void>
 }
 
 /** 先 remove（main 断开），再历史回落，最后按返回的 lastWorkspaceId 收口指针。 */
@@ -34,6 +36,7 @@ export async function runRemoveProject(workspaceId: string, io: RemoveProjectIo)
   await io.invalidateCaches()
   const removedCurrent = await io.releaseHistory(ids)
   if (!wasActive && !removedCurrent) return remaining
-  settleWorkspaceAfterRemove(remaining, removed.lastWorkspaceId)
+  const next = settleWorkspaceAfterRemove(remaining, removed.lastWorkspaceId)
+  if (next?.kind === "ssh") await io.connectSsh?.(next)
   return remaining
 }

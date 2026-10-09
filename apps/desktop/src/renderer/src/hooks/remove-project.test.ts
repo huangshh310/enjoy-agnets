@@ -73,6 +73,7 @@ function fakeRemoveIo(input: {
   lastWorkspaceId: string | null
   createdSessions: string[]
   disconnected: string[]
+  connected: string[]
   order: string[]
 }): RemoveProjectIo & { stack: HistoryStack } {
   let workspaces = [...input.workspaces]
@@ -85,6 +86,10 @@ function fakeRemoveIo(input: {
       input.disconnected.push(workspaceId)
       workspaces = workspaces.filter((row) => row.id !== workspaceId)
       return { id: workspaceId, lastWorkspaceId: input.lastWorkspaceId }
+    },
+    connectSsh: async (workspace) => {
+      input.order.push("connect")
+      input.connected.push(workspace.id)
     },
     refreshWorkspaces: async () => {
       seedWorkspacePointer({ repositories: workspaces })
@@ -114,6 +119,7 @@ test("删除当前 SSH 且名单删空时会断开", async () => {
   resetPointer(sshCurrent, [sshCurrent])
   const disconnected: string[] = []
   const createdSessions: string[] = []
+  const connected: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [sshCurrent],
@@ -121,10 +127,12 @@ test("删除当前 SSH 且名单删空时会断开", async () => {
     lastWorkspaceId: null,
     createdSessions,
     disconnected,
+    connected,
     order
   })
   await runRemoveProject(sshCurrent.id, io)
   assert.deepEqual(disconnected, [sshCurrent.id])
+  assert.deepEqual(connected, [])
   assert.ok(order.indexOf("remove") < order.indexOf("history"))
   assert.equal(peekWorkspacePointer().workspaceId, null)
   assert.equal(createdSessions.length, 0)
@@ -134,6 +142,7 @@ test("删除当前 SSH 并切到别的项目时会断开", async () => {
   resetPointer(sshCurrent, [sshCurrent, leftover])
   const disconnected: string[] = []
   const createdSessions: string[] = []
+  const connected: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [sshCurrent, leftover],
@@ -141,10 +150,12 @@ test("删除当前 SSH 并切到别的项目时会断开", async () => {
     lastWorkspaceId: leftover.id,
     createdSessions,
     disconnected,
+    connected,
     order
   })
   await runRemoveProject(sshCurrent.id, io)
   assert.deepEqual(disconnected, [sshCurrent.id])
+  assert.deepEqual(connected, [])
   assert.equal(peekWorkspacePointer().workspaceId, leftover.id)
   assert.equal(peekWorkspacePointer().workspaceName, leftover.name)
   assert.equal(createdSessions.length, 0)
@@ -154,6 +165,7 @@ test("删除非当前 SSH 项目也会断开", async () => {
   resetPointer(leftover, [otherSsh, leftover])
   const disconnected: string[] = []
   const createdSessions: string[] = []
+  const connected: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [otherSsh, leftover],
@@ -161,6 +173,7 @@ test("删除非当前 SSH 项目也会断开", async () => {
     lastWorkspaceId: leftover.id,
     createdSessions,
     disconnected,
+    connected,
     order
   })
   await runRemoveProject(otherSsh.id, io)
@@ -173,6 +186,7 @@ test("历史落到设置页时只切指针，不创建空会话", async () => {
   resetPointer(sshCurrent, [sshCurrent, leftover])
   const disconnected: string[] = []
   const createdSessions: string[] = []
+  const connected: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [sshCurrent, leftover],
@@ -180,6 +194,7 @@ test("历史落到设置页时只切指针，不创建空会话", async () => {
     lastWorkspaceId: leftover.id,
     createdSessions,
     disconnected,
+    connected,
     order
   })
   await runRemoveProject(sshCurrent.id, io)
@@ -188,6 +203,30 @@ test("历史落到设置页时只切指针，不创建空会话", async () => {
   assert.equal(peekWorkspacePointer().sessionId, null)
   assert.equal(createdSessions.length, 0)
   assert.ok(!order.includes("createSession"))
+})
+
+test("切到剩余 SSH 项目时只建立连接，不新建会话", async () => {
+  const localCurrent: WorkspaceRow = { id: "ws-local", name: "Local", rootPath: "/tmp/local" }
+  resetPointer(localCurrent, [localCurrent, otherSsh])
+  const disconnected: string[] = []
+  const createdSessions: string[] = []
+  const connected: string[] = []
+  const order: string[] = []
+  const io = fakeRemoveIo({
+    workspaces: [localCurrent, otherSsh],
+    stack: seededStack(sessionPage(localCurrent.id, `sess-${localCurrent.id}`)),
+    lastWorkspaceId: otherSsh.id,
+    createdSessions,
+    disconnected,
+    connected,
+    order
+  })
+  await runRemoveProject(localCurrent.id, io)
+  assert.deepEqual(connected, [otherSsh.id])
+  assert.ok(!order.includes("createSession"))
+  assert.equal(createdSessions.length, 0)
+  assert.equal(peekWorkspacePointer().workspaceId, otherSsh.id)
+  assert.equal(peekWorkspacePointer().sessionId, null)
 })
 
 test("lastWorkspaceId 用 main 删除返回值，不读旧 settings 缓存", async () => {
@@ -200,6 +239,7 @@ test("lastWorkspaceId 用 main 删除返回值，不读旧 settings 缓存", asy
     lastWorkspaceId: leftover.id,
     createdSessions: [],
     disconnected,
+    connected: [],
     order: []
   })
   await runRemoveProject(sshCurrent.id, io)
