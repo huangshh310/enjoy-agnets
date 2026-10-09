@@ -120,6 +120,24 @@ test("拒绝审批后需处理清零，不当出错", () => {
   assert.equal(stripApprovalCount(denied), 0)
 })
 
+test("未执行类 run.error 不当出错，徽标清掉", () => {
+  const waiting = ingestAttentionEvent([], {
+    event: approval(),
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const finished = ingestAttentionEvent(waiting, {
+    event: { type: "run.error", runId: "run_b", message: "本次未执行。" },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(finished.find((item) => item.kind === "pending_approval")?.status, "resolved")
+  assert.equal(finished.some((item) => item.kind === "error"), false)
+  assert.equal(stripApprovalCount(finished), 0)
+})
+
 test("approval.resolved 收束该会话未决审批槽", () => {
   const active = ingestAttentionEvent([], {
     event: approval(),

@@ -2,6 +2,7 @@
  * Attention 纯函数：事件 → 槽位 upsert / 收束。一槽一位。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem, AttentionKind, IngestAttentionInput } from "./attention.types"
 
@@ -23,7 +24,9 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "approval.required") {
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
-  if (event.type === "run.error") return "error"
+  if (event.type === "run.error") {
+    return isApprovalNotExecutedMessage(event.message) ? "complete" : "error"
+  }
   if (event.type === "run.end") return "complete"
   return null
 }

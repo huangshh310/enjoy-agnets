@@ -31,6 +31,10 @@ export function isApprovalNotExecutedText(value: unknown): boolean {
   return typeof value === "string" && NOT_EXECUTED_TEXT.has(value)
 }
 
+export function isApprovalNotExecutedMessage(value: unknown): boolean {
+  return isApprovalNotExecutedCode(value) || isApprovalNotExecutedText(value)
+}
+
 export function readApprovalNotExecutedCode(value: unknown): string | undefined {
   if (isApprovalNotExecutedCode(value)) return value
   if (!value || typeof value !== "object") return undefined

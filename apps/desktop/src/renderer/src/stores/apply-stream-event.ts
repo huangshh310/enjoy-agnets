@@ -6,9 +6,11 @@ import {
   absorbTextDelta,
   clampThoughtSeconds,
   foldToolEvent,
+  sealAbandonedTools,
   takeActionChips,
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
+import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
 import { canOpenAssistantTurn, isForeignRunId, shouldFinalizeComposerRun } from "./stream-run-scope"
@@ -61,9 +63,12 @@ function applyTerminalEvent(
   if (event.type !== "run.end" && event.type !== "run.error") return null
   if (!shouldFinalizeComposerRun(event.runId, activeRunId)) return { messages }
   if (event.type === "run.error") {
+    if (isApprovalNotExecutedMessage(event.message)) {
+      return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
+    }
     return { messages: finalizeRun(messages), running: false, error: event.message }
   }
-  return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null }
+  return { messages: finalizeRun(messages), pendingApproval: null, running: false, runId: null, error: null }
 }
 
 function applyApprovalEvent(
@@ -230,10 +235,12 @@ function finalizeRun(messages: ThreadMessage[]): ThreadMessage[] {
       thoughtSeconds: message.streaming
         ? (clampThoughtSeconds(message.createdAt) ?? undefined)
         : message.thoughtSeconds,
-      tools: message.tools?.map((tool) =>
-        tool.state === "input-streaming" || tool.state === "input-available"
-          ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
-          : tool
+      tools: sealAbandonedTools(
+        message.tools?.map((tool) =>
+          tool.state === "input-streaming" || tool.state === "input-available"
+            ? { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
+            : tool
+        )
       )
     }
   })

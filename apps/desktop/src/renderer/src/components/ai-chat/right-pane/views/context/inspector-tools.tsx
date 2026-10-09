@@ -39,7 +39,7 @@ export function InspectorTools({
 
 function ToolRow({ tool }: { tool: ThreadToolCall }) {
   const t = useT()
-  const kind = toolRunKind(tool.state)
+  const kind = toolRunKind(tool.state, tool)
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-border-button-default/60 bg-background-secondary-default/30 px-2.5 py-1.5">
       <div className="flex min-w-0 items-center gap-2">

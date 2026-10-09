@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { DESKTOP_ACT_BARE_COORDS_DISABLED, desktopActBareCoordsDeniedResult } from "./desktop-act-codes.ts"
 import { APPROVAL_REPLAY_DENIED, APPROVAL_REPLAY_DENIED_COPY } from "./approval-not-executed.ts"
-import { foldToolEvent } from "./fold-tool-event.ts"
+import { foldToolEvent, sealAbandonedTools } from "./fold-tool-event.ts"
 import type { ThreadToolCall } from "./assistant-payload.ts"
 
 test("探索 deny 的 tool.result error 折成 output-error", () => {
@@ -63,4 +63,18 @@ test("带 resumeCode 的 tool.result 也折成 output-denied", () => {
     result: { resumeCode: "stale_observation" }
   })
   assert.equal(tools[0]?.state, "output-denied")
+})
+
+test("重新打开：库里 output-error + 拒绝码收成未执行，不是转圈", () => {
+  const sealed = sealAbandonedTools([
+    {
+      id: "tool_1",
+      name: "desktop_act",
+      state: "output-error",
+      result: { code: APPROVAL_REPLAY_DENIED },
+      errorText: APPROVAL_REPLAY_DENIED_COPY
+    }
+  ])
+  assert.equal(sealed?.[0]?.state, "output-denied")
+  assert.equal(sealed?.[0]?.result && typeof sealed[0].result === "object" ? (sealed[0].result as { code?: string }).code : "", APPROVAL_REPLAY_DENIED)
 })

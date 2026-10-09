@@ -185,7 +185,7 @@ function TurnToolTrace({ tools }: { tools: ThreadToolCall[] }) {
             <RiCommandLine className="size-3 shrink-0 text-text-tertiary" />
             <span className="truncate font-medium text-text-primary">{tool.name}</span>
           </div>
-          <ToolStatusPill kind={toolRunKind(tool.state)} />
+          <ToolStatusPill kind={toolRunKind(tool.state, tool)} />
         </div>
       ))}
     </div>
