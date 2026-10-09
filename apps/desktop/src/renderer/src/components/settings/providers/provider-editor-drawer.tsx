@@ -171,7 +171,8 @@ function EditorDrawerHeader({
       <button
         type="button"
         onClick={onClose}
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary hover:bg-background-secondary-default hover:text-text-primary"
+        data-app-region="no-drag"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-text-tertiary [app-region:no-drag] hover:bg-background-secondary-default hover:text-text-primary"
         aria-label={t("common.close")}
       >
         <RiCloseLine className="size-5" />

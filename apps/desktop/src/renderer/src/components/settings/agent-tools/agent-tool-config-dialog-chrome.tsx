@@ -27,7 +27,8 @@ export function AgentToolConfigHeader({
       <button
         type="button"
         onClick={onClose}
-        className="shrink-0 text-caption-1-medium text-text-tertiary hover:text-text-primary"
+        data-app-region="no-drag"
+        className="shrink-0 text-caption-1-medium text-text-tertiary [app-region:no-drag] hover:text-text-primary"
       >
         {t("settings.agentTools.close")}
       </button>

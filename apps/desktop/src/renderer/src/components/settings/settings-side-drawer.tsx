@@ -5,6 +5,8 @@
 import { useEffect, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { cx } from "@/utils/cx"
+import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
+import { markDrawerEscapeHandled, shouldCloseDrawerOnEscape } from "./settings-drawer-close"
 import { SETTINGS_DRAWER_Z_CLASS } from "./settings-overlay"
 
 export function SettingsSideDrawer({
@@ -29,24 +31,23 @@ export function SettingsSideDrawer({
   useEffect(() => {
     if (!open) return
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return
-      if (event.defaultPrevented) return
-      const target = event.target
-      if (target instanceof Element && target.closest("[data-slot='popover-content'], [data-slot='dropdown-menu-content'], [role='listbox']")) {
-        return
-      }
-      event.preventDefault()
-      if (nested) event.stopImmediatePropagation()
+      if (!shouldCloseDrawerOnEscape(event)) return
+      markDrawerEscapeHandled(event)
       onClose()
     }
-    window.addEventListener("keydown", onKeyDown, { capture: nested })
-    return () => window.removeEventListener("keydown", onKeyDown, { capture: nested })
+    window.addEventListener("keydown", onKeyDown, true)
+    return () => window.removeEventListener("keydown", onKeyDown, true)
   }, [open, onClose, nested])
 
   if (!open || typeof document === "undefined") return null
 
   return createPortal(
-    <div className={cx("fixed inset-0", nested ? SETTINGS_DRAWER_Z_CLASS.nested : SETTINGS_DRAWER_Z_CLASS.base)}>
+    <div
+      className={cx("fixed inset-0 [app-region:no-drag]", nested ? SETTINGS_DRAWER_Z_CLASS.nested : SETTINGS_DRAWER_Z_CLASS.base)}
+      data-app-region="no-drag"
+      data-settings-drawer="open"
+      style={APP_REGION_NO_DRAG_STYLE}
+    >
       <button
         type="button"
         onClick={onClose}

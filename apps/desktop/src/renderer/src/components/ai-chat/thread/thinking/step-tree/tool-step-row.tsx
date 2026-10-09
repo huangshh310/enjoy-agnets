@@ -85,12 +85,7 @@ function StepTitleRow({
           <RiCheckLine className="size-2.5" />
         </span>
       ) : null}
-      {node.status === "error" ? (
-        <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-error-primary">
-          <RiCloseLine className="size-3.5" />
-          <span>{t("chat.failed")}</span>
-        </span>
-      ) : null}
+      {node.status === "error" ? <StepOutcomeMark denied={node.denied} t={t} /> : null}
       <LineDelta additions={node.additions} deletions={node.deletions} />
       {hasDetail ? (
         expanded ? (
@@ -101,6 +96,29 @@ function StepTitleRow({
       ) : null}
       <QuoteStepButton node={node} />
     </div>
+  )
+}
+
+function StepOutcomeMark({
+  denied,
+  t
+}: {
+  denied?: boolean
+  t: (key: string) => string
+}) {
+  if (denied) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-secondary">
+        <RiCloseLine className="size-3.5" />
+        <span>{t("chat.declined")}</span>
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-error-primary">
+      <RiCloseLine className="size-3.5" />
+      <span>{t("chat.failed")}</span>
+    </span>
   )
 }
 

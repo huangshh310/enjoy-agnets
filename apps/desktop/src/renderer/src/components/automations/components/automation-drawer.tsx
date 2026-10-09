@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import type { AgentToolPublic, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { SettingsSideDrawer } from "@renderer/components/settings/settings-side-drawer"
 import { useT } from "@renderer/i18n"
+import { APP_REGION_NO_DRAG_STYLE } from "@renderer/lib/app-region"
 import { AUTOMATION_DRAWER_WIDTH_CLASS } from "../constants"
 import type { AutomationDraft } from "../lib/draft"
 import { webhookPortReady } from "../lib/trigger-chips"
@@ -67,15 +68,23 @@ export function AutomationDrawer({
           <p id="automation-editor-title" className="text-body-medium font-semibold text-text-primary">
             {draft.id ? t("studio.automations.editTitle") : t("studio.automations.createTitle")}
           </p>
-          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("studio.automations.workspaceHint")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-primary">{t("studio.automations.workspaceHint")}</p>
         </div>
-        <button type="button" onClick={onClose} className="text-caption-1-medium text-text-tertiary" aria-label={t("common.close")}>
+        <button
+          type="button"
+          onClick={onClose}
+          data-testid="automation-drawer-close"
+          data-app-region="no-drag"
+          style={APP_REGION_NO_DRAG_STYLE}
+          className="text-caption-1-medium text-text-tertiary [app-region:no-drag]"
+          aria-label={t("common.close")}
+        >
           <RiCloseLine className="size-4" />
         </button>
       </header>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.nameLabel")}</span>
+          <span className="text-caption-1-medium text-text-primary">{t("studio.automations.nameLabel")}</span>
           <Input
             value={draft.name}
             onChange={(event) => onChange({ name: event.target.value })}

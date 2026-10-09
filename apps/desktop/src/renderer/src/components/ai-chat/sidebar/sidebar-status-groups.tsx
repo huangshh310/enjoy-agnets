@@ -1,6 +1,6 @@
 /**
  * 侧栏按工作流状态分组视图 (Status Grouping View)。
- * 依次呈现：旗标置顶、进行中、待审查、待办、已完成、其它。
+ * 依次呈现：旗标置顶、进行中、待验收、待办、已完成、其它。
  */
 import { useMemo } from "react"
 import { RiBookmarkFill, RiInboxLine } from "@remixicon/react"

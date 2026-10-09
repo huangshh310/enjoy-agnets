@@ -2,10 +2,34 @@
  * 工具调用展示用的名称、参数摘要与分类。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import type { TranslateFn } from "../../../i18n/use-i18n.ts"
+import { isDevCopyEnabled } from "../../../lib/dev-copy.ts"
 import { asRecord, readString } from "../../../lib/record.ts"
+import {
+  desktopApprovalSummaryKey,
+  desktopApprovalVerb,
+  desktopApprovalVerbKey
+} from "./approval/desktop-approval-summary"
 
 export function formatToolName(name: string) {
   return name.replaceAll("_", " ")
+}
+
+/** 默认面：desktop_* 走人话。开发者档才露裸名。 */
+export function formatToolLabel(name: string, t: TranslateFn, args?: unknown): string {
+  if (isDevCopyEnabled()) return formatToolName(name)
+  if (name.startsWith("desktop_")) return desktopToolLabel(name, t, args)
+  return formatToolName(name)
+}
+
+export function desktopToolLabel(name: string, t: TranslateFn, args?: unknown): string {
+  if (name !== "desktop_act") return t("chat.toolDesktop")
+  const row = asRecord(args)
+  const app = readString(row, "appName")
+  const control = readString(row, "elementName")
+  if (!app) return t("chat.toolDesktop")
+  const action = t(desktopApprovalVerbKey(desktopApprovalVerb(row.action)))
+  return t(desktopApprovalSummaryKey(control ?? ""), { app, action, control: control ?? "" })
 }
 
 export function toolKind(name: string): "search" | "coding" | "other" {

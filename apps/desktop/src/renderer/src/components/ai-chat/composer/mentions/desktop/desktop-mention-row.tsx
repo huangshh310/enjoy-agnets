@@ -1,14 +1,16 @@
 /**
- * @ 发现里的桌面 / 应用行：展示名 + 稳 appKey；无稳键隐藏始终允许。
+ * @ 发现里的桌面 / 应用行：默认只出展示名；bundle id / pid 仅开发者档。
  */
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import type { DesktopMentionItem } from "../mention-items.ts"
 
 export function DesktopMentionRow({ item, active }: { item: DesktopMentionItem; active: boolean }) {
   const t = useT()
   const host = item.role === "host"
   const unstable = item.role === "app" && !item.stable
+  const caption = host ? t("chat.mentionDesktopHostHint") : appCaption(item, t)
   return (
     <span
       className="flex min-w-0 flex-1 items-center gap-2"
@@ -28,9 +30,9 @@ export function DesktopMentionRow({ item, active }: { item: DesktopMentionItem; 
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-body-2-semibold text-text-primary">{item.displayName}</span>
-        <span className="block truncate font-mono text-caption-2-medium text-text-tertiary">
-          {host ? t("chat.mentionDesktopHostHint") : appCaption(item, t)}
-        </span>
+        {caption ? (
+          <span className="block truncate font-mono text-caption-2-medium text-text-tertiary">{caption}</span>
+        ) : null}
       </span>
       <span className="shrink-0 text-right">
         {unstable ? (
@@ -51,9 +53,10 @@ function appCaption(
   item: DesktopMentionItem,
   t: (key: string, vars?: Record<string, string | number>) => string
 ): string {
+  if (!isDevCopyEnabled()) return ""
   if (item.stable && item.appKey) return item.appKey
   if (item.pid) return t("chat.mentionDesktopUnstableHint", { pid: item.pid })
-  return t("chat.mentionDesktopAlwaysHidden")
+  return ""
 }
 
 function initial(name: string): string {

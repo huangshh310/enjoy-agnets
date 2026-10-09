@@ -27,7 +27,7 @@ export const zhAccountPages = {
     vaultProtected: "密钥已托管",
     vaultEmpty: "未写入密钥",
     vaultTitle: "主进程 vault · 不见明文",
-    vaultDesc: "renderer 只读 hasKey / keyHint。供应商密钥由主进程 vault 保管，不在此页探测 OS 加密接口。",
+    vaultDesc: "密钥由本机保管，此页只显示是否已保存，不会露出明文。",
     endpointLabel: "当前终端节点",
     currentDevice: "当前终端"
   },

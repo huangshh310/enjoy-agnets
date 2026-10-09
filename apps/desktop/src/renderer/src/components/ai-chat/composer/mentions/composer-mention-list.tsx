@@ -13,13 +13,15 @@ export function ComposerMentionList({
   items,
   activeIndex,
   onPick,
-  listRef
+  listRef,
+  desktopEnabled = false
 }: {
   kind: "at" | "slash"
   items: MentionItem[]
   activeIndex: number
   onPick: (item: MentionItem) => void
   listRef?: Ref<HTMLDivElement>
+  desktopEnabled?: boolean
 }) {
   const t = useT()
   const groups = groupMentionItems(kind, items)
@@ -36,6 +38,9 @@ export function ComposerMentionList({
           <p className="text-caption-1-medium text-text-tertiary">{t("chat.mentionEmpty")}</p>
           {kind === "slash" ? (
             <p className="pt-1 text-caption-2-medium text-text-tertiary">{t("chat.mentionSlashHint")}</p>
+          ) : null}
+          {kind === "at" && !desktopEnabled ? (
+            <p className="pt-1 text-caption-2-medium text-text-tertiary">{t("chat.mentionDesktopOffHint")}</p>
           ) : null}
         </div>
       ) : (
@@ -68,6 +73,11 @@ export function ComposerMentionList({
           )
         })
       )}
+      {items.length > 0 && kind === "at" && !desktopEnabled ? (
+        <p className="mt-1 border-t border-separator-border px-2.5 pt-1 text-caption-2-medium text-text-tertiary">
+          {t("chat.mentionDesktopOffHint")}
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -13,7 +13,7 @@ test("徽章区分手动 / cron / 保存后 / webhook 端口", () => {
   assert.equal(listTriggerChips({ ...base, id: "3", trigger: "on_save" } as Automation)[0]?.kind, "on_save")
   assert.equal(
     listTriggerChips({ ...base, id: "4", trigger: "webhook", webhookPort: 8765 } as Automation)[0]?.text,
-    "webhook · :8765"
+    "8765"
   )
 })
 
@@ -30,7 +30,7 @@ test("保存后与 webhook 徽章可并存", () => {
   } as Automation)
   assert.deepEqual(
     chips.map((chip) => chip.text),
-    ["on_save", "webhook · :8765"]
+    ["on_save", "8765"]
   )
 })
 

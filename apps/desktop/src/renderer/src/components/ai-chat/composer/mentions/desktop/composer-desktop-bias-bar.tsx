@@ -6,6 +6,7 @@ import type { DesktopMentionApp } from "@enjoy-agents/ipc-contract"
 import { cx } from "@/utils/cx"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { surfaceForMode } from "../../composer-mode"
 import { readDesktopMentionBias } from "./read-desktop-mention-bias.ts"
 
@@ -26,9 +27,11 @@ export function ComposerDesktopBiasBar({
   const caption =
     bias.kind === "host"
       ? t("chat.desktopBiasHostHint")
-      : bias.appKey
+      : isDevCopyEnabled() && bias.appKey
         ? t("chat.desktopBiasAppKey", { key: bias.appKey })
-        : t("chat.mentionDesktopAlwaysHidden")
+        : bias.appKey
+          ? ""
+          : t("chat.mentionDesktopAlwaysHidden")
 
   return (
     <div className="flex flex-wrap items-center gap-1.5 pb-1">
@@ -45,12 +48,14 @@ export function ComposerDesktopBiasBar({
       >
         🖥 {label}
       </span>
-      <span
-        data-testid={execute ? "desktop-bias-caption" : "desktop-bias-explore-honesty"}
-        className="text-caption-2-medium text-text-tertiary"
-      >
-        {execute ? caption : t("chat.desktopBiasExploreHonesty")}
-      </span>
+      {execute && !caption ? null : (
+        <span
+          data-testid={execute ? "desktop-bias-caption" : "desktop-bias-explore-honesty"}
+          className="text-caption-2-medium text-text-tertiary"
+        >
+          {execute ? caption : t("chat.desktopBiasExploreHonesty")}
+        </span>
+      )}
     </div>
   )
 }

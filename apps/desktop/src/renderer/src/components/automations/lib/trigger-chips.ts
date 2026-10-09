@@ -25,10 +25,10 @@ export function listTriggerChips(item: Automation): TriggerChip[] {
 }
 
 function chipFor(item: Automation, kind: AutomationTrigger): TriggerChip {
-  if (kind === "cron") return { kind, text: item.cronExpr?.trim() || "cron", mono: true }
+  if (kind === "cron") return { kind, text: item.cronExpr?.trim() || "", mono: false }
   if (kind === "on_save") return { kind, text: "on_save" }
   if (kind === "webhook") {
-    return { kind, text: `webhook · :${item.webhookPort ?? FALLBACK_WEBHOOK_PORT}`, mono: true }
+    return { kind, text: String(item.webhookPort ?? FALLBACK_WEBHOOK_PORT), mono: false }
   }
   return { kind, text: "manual" }
 }

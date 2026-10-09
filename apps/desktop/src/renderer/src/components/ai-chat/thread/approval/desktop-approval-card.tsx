@@ -3,7 +3,9 @@
  */
 import { useState } from "react"
 import { useT } from "@renderer/i18n"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { ApprovalChrome } from "./approval-chrome"
+import { desktopApprovalSummaryKey, desktopApprovalVerb, desktopApprovalVerbKey } from "./desktop-approval-summary"
 import type { ApprovalDecide } from "./approval.types"
 import { desktopApprovalView } from "./desktop-approval-args"
 import { DesktopApprovalChoices } from "./desktop-approval-choices"
@@ -77,11 +79,7 @@ function FirstAllowChrome({
       <div className="flex flex-col" data-testid="desktop-approval-card">
         <div className="flex flex-wrap items-start gap-3">
           <DesktopThumb src={view.thumbnail} alt={view.appName} />
-          <DesktopApprovalSummary
-            view={view}
-            ttlLabel={t("chat.desktopApprovalTtlFrozen")}
-            sourceLine={sourceLine}
-          />
+          <DesktopApprovalSummary view={view} sourceLine={sourceLine} />
         </div>
         {view.sensitive ? (
           <p
@@ -138,23 +136,36 @@ function SecondConfirmChrome({ args, decide }: { args: unknown; decide: Approval
 
 function DesktopApprovalSummary({
   view,
-  ttlLabel,
   sourceLine
 }: {
   view: ReturnType<typeof desktopApprovalView>
-  ttlLabel: string
   sourceLine?: string | null
 }) {
+  const t = useT()
+  const verb = desktopApprovalVerb(view.action)
+  const actionLabel = t(desktopApprovalVerbKey(verb))
+  const summary = t(desktopApprovalSummaryKey(view.controlName), {
+    app: view.appName,
+    action: actionLabel,
+    control: view.controlName
+  })
+  const showDev = isDevCopyEnabled()
   return (
     <div className="min-w-0 flex-1">
-      <p className="text-caption-1-medium text-text-secondary">{view.summary}</p>
+      <p className="text-caption-1-medium text-text-secondary">{summary}</p>
+      <p className="mt-0.5 text-caption-2-medium text-text-secondary">{t("chat.desktopApprovalTtlFrozen")}</p>
       <AutomationSourceLine text={sourceLine ?? null} />
-      {view.appKey ? (
-        <p className="mt-1 text-caption-2-medium text-text-tertiary" data-testid="desktop-approval-app-key">
-          {view.appKey}
-        </p>
-      ) : null}
-      <p className="mt-1 text-caption-2-medium text-text-tertiary">{ttlLabel}</p>
+      {showDev ? <DesktopApprovalDevDetails view={view} /> : null}
+    </div>
+  )
+}
+
+function DesktopApprovalDevDetails({ view }: { view: ReturnType<typeof desktopApprovalView> }) {
+  const t = useT()
+  return (
+    <div data-testid="desktop-approval-dev" className="mt-1 flex flex-col gap-0.5 text-caption-2-medium text-text-tertiary">
+      {view.appKey ? <p data-testid="desktop-approval-app-key">{view.appKey}</p> : null}
+      <p>{t("chat.desktopApprovalDevMeta", { action: view.action || "act", summary: view.summary })}</p>
     </div>
   )
 }
