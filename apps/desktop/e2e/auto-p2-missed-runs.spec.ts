@@ -74,6 +74,7 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     const toggle = window.locator('[data-testid="automation-catch-up-toggle"] [role="switch"]')
     await expect(toggle).toHaveAttribute("aria-checked", "true")
     await window.locator('[data-testid="automation-missed-expand"] summary').click()
+    await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("收起")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("补跑")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("计划")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("实际")
@@ -82,6 +83,7 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
 
     await openRow(window, "补跑超时示例")
     await window.locator('[data-testid="automation-missed-expand"] summary').click()
+    await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("收起")
     await expect(window.locator('[data-testid="automation-record-neutral"]')).toContainText("补跑等待确认超时，未运行")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("计划")
     await expect(window.locator('[data-testid="automation-missed-catch-up"]')).toContainText("取消")
