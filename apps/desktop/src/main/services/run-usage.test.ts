@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { estimateRunCost } from "@enjoy-agents/providers/pricing"
-import { accumulateRunUsage, markPumpMissingUsage, type UsageAccumulator } from "./run-usage.ts"
+import { accumulateRunUsage, markPumpMissingUsage, type UsageAccumulator } from "./run-usage-accumulate.ts"
 
 test("两次泵的用量正确相加", () => {
   const run: UsageAccumulator = {}
