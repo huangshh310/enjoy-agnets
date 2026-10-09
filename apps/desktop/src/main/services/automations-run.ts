@@ -5,10 +5,10 @@
 import type { BrowserWindow } from "electron"
 import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
 import { scheduledAutomationCommandId } from "./automations-cron-points"
-import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { claimLaunchSlot } from "./automations-claim-slot"
 import { reclassifyBlockedCatchUp } from "./automations-reclassify-catchup"
-import { lastRunErrorCodeOf, nextConsecutiveFails, skippedRunPatch } from "./automations-fails"
+import { skippedRunPatch } from "./automations-fails"
+import { finishAutomationRun } from "./automations-finish"
 import { defaultSettingsIo, patchMissedPoint } from "./automations-missed-store"
 import { listActiveRuns, waitForRunSettle } from "./agent-run-state"
 import {
@@ -167,28 +167,3 @@ function launchOpts(sessionIdOrOpts?: string | LaunchAutomationOpts, workspaceId
   return { sessionId: sessionIdOrOpts, workspaceId }
 }
 
-function finishAutomationRun(
-  id: string,
-  status: "ok" | "failed",
-  summary: string,
-  opts: LaunchAutomationOpts = {}
-): void {
-  const current = readAutomations().find((row) => row.id === id)
-  const fails = nextConsecutiveFails(current?.consecutiveFails, status)
-  const limit = current?.stopOnFailCount ?? 3
-  patchStoredAutomation(id, {
-    lastRunStatus: status,
-    lastRunCatchUp: opts.isCatchUp === true,
-    lastError: status === "failed" ? summary || "Automation failed." : undefined,
-    lastRunErrorCode: lastRunErrorCodeOf(status, summary),
-    consecutiveFails: fails,
-    ...(status === "failed" && fails >= limit ? { enabled: false } : {})
-  })
-  if (opts.scheduledAt != null) {
-    patchMissedPoint(defaultSettingsIo(), id, opts.scheduledAt, {
-      status,
-      isCatchUp: opts.isCatchUp === true,
-      ...(summary === CATCH_UP_APPROVAL_TIMEOUT ? { code: CATCH_UP_APPROVAL_TIMEOUT } : {})
-    })
-  }
-}

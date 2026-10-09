@@ -26,3 +26,4 @@ export {
   defaultSettingsIo,
   listMissedForAutomation
 } from "./automations-missed-store.ts"
+export { finishAutomationRun } from "./automations-finish.ts"

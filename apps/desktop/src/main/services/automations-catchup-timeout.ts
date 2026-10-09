@@ -33,6 +33,7 @@ export async function expireCatchUpApproval(runId: string): Promise<void> {
   const run = await lookupCatchUpRun(runId)
   if (!run || !isCatchUpRun(run.input)) return
   if (run.pendingApprovals.length === 0) return
+  markCatchUpApprovalTimeout(run)
   run.abort.abort()
   await denyCatchUpPending(run, runId)
   const error = Object.assign(new Error(CATCH_UP_APPROVAL_TIMEOUT), {
@@ -64,6 +65,14 @@ async function denyCatchUpPending(run: ActiveRun, runId: string): Promise<void> 
 
 export function isCatchUpRun(input: { automationSource?: { isCatchUp?: boolean } }): boolean {
   return input.automationSource?.isCatchUp === true
+}
+
+export function markCatchUpApprovalTimeout(run: { catchUpApprovalTimedOut?: boolean }): void {
+  run.catchUpApprovalTimedOut = true
+}
+
+export function isCatchUpApprovalTimeout(run: { catchUpApprovalTimedOut?: boolean }, error: unknown): boolean {
+  return run.catchUpApprovalTimedOut === true || isCatchUpApprovalTimeoutError(error)
 }
 
 export function isCatchUpApprovalTimeoutError(error: unknown): boolean {

@@ -33,12 +33,13 @@ const {
   failCatchUpWaitingOnRestart,
   claimMissedPoint,
   defaultSettingsIo,
-  listMissedForAutomation
+  listMissedForAutomation,
+  finishAutomationRun
 } = await import("./automations-catchup-timeout-behavior.load.ts")
 
 const MIN = 60_000
 
-type SentEvent = { type: string; message?: string; runId?: string }
+type SentEvent = { type: string; message?: string; runId?: string; code?: string }
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -214,6 +215,54 @@ test("超时与 failAgentPump 并发只收尾一次", async () => {
   assert.equal(getActiveRun(runId), undefined)
 })
 
+test("泵先抢到 fail 仍写出 catch_up_approval_timeout，不发 warning", async () => {
+  const runId = "run_pump_wins"
+  const events: SentEvent[] = []
+  const prev = getSetting("automations")
+  writeAutomations([
+    {
+      id: "auto_1",
+      name: "晨间",
+      prompt: "x",
+      trigger: "manual",
+      enabled: true,
+      updatedAt: 1
+    }
+  ])
+  const io = defaultSettingsIo()
+  const scheduledAt = Date.now()
+  claimMissedPoint(io, {
+    automationId: "auto_1",
+    scheduledAt,
+    recordedAt: scheduledAt,
+    kind: "catch_up",
+    status: "running",
+    runId,
+    isCatchUp: true
+  })
+  try {
+    const run = holdCatchUp(runId, events)
+    run.pendingApprovals.push({ approvalId: "apr_race", toolCallId: "tr", name: "write_file" })
+    const abortError = Object.assign(new Error("This operation was aborted."), { name: "AbortError" })
+    run.abort.signal.addEventListener("abort", () => {
+      void failAgentPump(runId, run, abortError)
+    })
+    const settled = waitForRunSettle(runId)
+    await expireCatchUpApproval(runId)
+    const result = await settled
+    assert.equal(result.summary, CATCH_UP_APPROVAL_TIMEOUT)
+    assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+    assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_APPROVAL_TIMEOUT)
+    assert.ok(!events.some((item) => item.type === "generation.warning"))
+    finishAutomationRun("auto_1", "failed", result.summary, { scheduledAt, isCatchUp: true })
+    assert.equal(readAutomations().find((item) => item.id === "auto_1")?.lastRunErrorCode, CATCH_UP_APPROVAL_TIMEOUT)
+    assert.equal(listMissedForAutomation(io, "auto_1", scheduledAt)[0]?.code, CATCH_UP_APPROVAL_TIMEOUT)
+  } finally {
+    if (prev === undefined) deleteSetting("automations")
+    else setSetting("automations", prev)
+  }
+})
+
 test("多条待审批决定一条后计时器仍在，全部处理完才清", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"], now: 0 })
   const runId = "run_multi_pending"
@@ -279,6 +328,20 @@ test("重启恢复补跑 waiting 必须在有限时间内收尾", async (t) => {
     decision: null,
     createdAt: 0
   })
+  const prev = getSetting("automations")
+  setSetting(
+    "automations",
+    JSON.stringify([
+      {
+        id: "auto_wait",
+        name: "晨间",
+        prompt: "x",
+        trigger: "cron",
+        enabled: true,
+        updatedAt: 1
+      }
+    ])
+  )
   const io = defaultSettingsIo()
   claimMissedPoint(io, {
     automationId: "auto_wait",
@@ -289,15 +352,25 @@ test("重启恢复补跑 waiting 必须在有限时间内收尾", async (t) => {
     runId,
     isCatchUp: true
   })
-  failCatchUpWaitingOnRestart(runId)
-  assert.equal(getRun(getDatabase(), runId)?.status, "failed")
-  assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_INTERRUPTED_BY_RESTART)
-  assert.equal(getApproval(getDatabase(), "apr_wait")?.decision, "deny")
-  assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
-  assert.equal(listMissedForAutomation(io, "auto_wait", 0)[0]?.status, "failed")
-  assert.equal(hasCatchUpApprovalTimeout(runId), false)
-  t.mock.timers.tick(30 * MIN)
-  assert.equal(hasCatchUpApprovalTimeout(runId), false)
+  try {
+    failCatchUpWaitingOnRestart(runId)
+    assert.equal(getRun(getDatabase(), runId)?.status, "failed")
+    assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_INTERRUPTED_BY_RESTART)
+    assert.equal(getApproval(getDatabase(), "apr_wait")?.decision, "deny")
+    assert.equal(listPendingApprovals(getDatabase(), runId).length, 0)
+    assert.equal(listMissedForAutomation(io, "auto_wait", 0)[0]?.status, "failed")
+    assert.equal(listMissedForAutomation(io, "auto_wait", 0)[0]?.code, CATCH_UP_INTERRUPTED_BY_RESTART)
+    assert.equal(
+      readAutomations().find((item) => item.id === "auto_wait")?.lastRunErrorCode,
+      CATCH_UP_INTERRUPTED_BY_RESTART
+    )
+    assert.equal(hasCatchUpApprovalTimeout(runId), false)
+    t.mock.timers.tick(30 * MIN)
+    assert.equal(hasCatchUpApprovalTimeout(runId), false)
+  } finally {
+    if (prev === undefined) deleteSetting("automations")
+    else setSetting("automations", prev)
+  }
 })
 
 test("未知 lastRunErrorCode 读成 undefined，整行保留", () => {

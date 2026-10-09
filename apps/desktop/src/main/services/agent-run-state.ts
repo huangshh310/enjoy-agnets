@@ -45,6 +45,8 @@ export type ActiveRun = {
   checkpointNoted?: boolean
   /** 用户点 Stop。与超时 abort 共用 AbortController，必须单独记。 */
   userCancelled?: boolean
+  /** 补跑 Dock 超时：abort 前同步打上，谁先 fail 都写超时码。 */
+  catchUpApprovalTimedOut?: boolean
 }
 
 const activeRuns = new Map<string, ActiveRun>()

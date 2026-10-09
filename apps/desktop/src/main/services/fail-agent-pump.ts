@@ -10,7 +10,7 @@ import { clearSteer } from "./runtime-interact/steering-queue"
 import { deleteActiveRun, emitEvent, settleRun, type ActiveRun } from "./agent-run-state"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { claimCatchUpFail } from "./claim-catchup-fail"
-import { isCatchUpApprovalTimeoutError } from "./automations-catchup-timeout"
+import { isCatchUpApprovalTimeout } from "./automations-catchup-timeout"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
@@ -43,7 +43,7 @@ async function disposeFailedStream(runId: string, run: ActiveRun): Promise<void>
 }
 
 function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
-  if (isCatchUpApprovalTimeoutError(error)) {
+  if (isCatchUpApprovalTimeout(run, error)) {
     emitCatchUpTimeoutFail(runId, run)
     return
   }
