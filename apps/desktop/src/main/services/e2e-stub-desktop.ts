@@ -1,6 +1,8 @@
 /**
  * E2E 桌面铬夹具：只在 stub 流里吐 desktop_act 审批 / 硬拒结果，不改审批闸。
  */
+import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
+
 export function isE2eCuReady(): boolean {
   return process.env.ENJOY_E2E_STUB === "1" && process.env.ENJOY_E2E_CU_READY === "1"
 }
@@ -41,12 +43,13 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
         input: { action: "click", x: 12, y: 34, observationId: "obs_xy" }
       },
       {
-        type: "tool-result",
+        type: "tool-output-denied",
         toolCallId: "tool_xy",
         toolName: "desktop_act",
+        input: { action: "click", x: 12, y: 34, observationId: "obs_xy" },
         output: {
           type: "denied",
-          code: "bare_coords_disabled",
+          code: DESKTOP_ACT_BARE_COORDS_DISABLED,
           reason: "Bare pixel coordinates are disabled. Capture desktop_snapshot and act with elementId."
         }
       }

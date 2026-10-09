@@ -130,7 +130,7 @@ test("桌面 stub 吐日历审批、终端审批、坐标硬拒", async () => {
   const term = stubDesktopStreamParts("desktop terminal click") ?? []
   assert.equal((term[0]?.input as { sensitive?: boolean } | undefined)?.sensitive, true)
   const coords = stubDesktopStreamParts("desktop coords deny") ?? []
-  assert.equal(coords[1]?.type, "tool-result")
+  assert.equal(coords[1]?.type, "tool-output-denied")
   assert.equal((coords[1]?.output as { code?: string } | undefined)?.code, "bare_coords_disabled")
   const parts: string[] = []
   for await (const part of createE2eStubStream(
