@@ -5,13 +5,15 @@ import { RiCloseLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import type { AgentToolPublic, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { SettingsSideDrawer } from "@renderer/components/settings/settings-side-drawer"
 import { useT } from "@renderer/i18n"
 import { AUTOMATION_DRAWER_WIDTH_CLASS } from "../constants"
 import type { AutomationDraft } from "../lib/draft"
 import { webhookPortReady } from "../lib/trigger-chips"
+import { CatchUpToggle } from "./catch-up-toggle"
 import { EnginePills } from "./engine-pills"
+import { MissedRecordsList } from "./missed-records-list"
 import { ModePills } from "./mode-pills"
 import { TriggerPills } from "./trigger-pills"
 import { WebhookFields } from "./webhook-fields"
@@ -22,6 +24,9 @@ export function AutomationDrawer({
   tools,
   saving,
   running,
+  records,
+  locale,
+  now,
   onClose,
   onChange,
   onSave,
@@ -33,6 +38,9 @@ export function AutomationDrawer({
   tools: AgentToolPublic[]
   saving: boolean
   running: boolean
+  records: AutomationMissedRecord[]
+  locale: string
+  now: number
   onClose: () => void
   onChange: (patch: Partial<AutomationDraft>) => void
   onSave: () => void
@@ -119,6 +127,11 @@ export function AutomationDrawer({
           />
         </label>
         <ModePills mode={draft.mode} onChange={(mode) => onChange({ mode })} />
+        <CatchUpToggle
+          checked={draft.catchUpMissed}
+          onChange={(catchUpMissed) => onChange({ catchUpMissed })}
+        />
+        {draft.id ? <MissedRecordsList records={records} locale={locale} now={now} /> : null}
         <label className="block">
           <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.promptLabel")}</span>
           <Textarea

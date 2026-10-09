@@ -1,13 +1,14 @@
 /**
- * 列表胶囊：空闲 / 运行中 / 失败。成功也回空闲，不要「待验收」。
+ * 列表胶囊：空闲 / 运行中 / 失败。超时与重启打断不是红失败。
  */
 import type { Automation } from "@enjoy-agents/ipc-contract"
+import { isNeutralErrorCode } from "./missed-copy"
 
 export type AutomationRowStatus = "idle" | "running" | "failed"
 
 export function automationRowStatus(item: Automation): AutomationRowStatus {
   if (item.lastRunStatus === "running") return "running"
-  if (item.lastRunStatus === "failed") return "failed"
+  if (item.lastRunStatus === "failed" && !isNeutralErrorCode(item.lastRunErrorCode)) return "failed"
   return "idle"
 }
 

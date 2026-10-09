@@ -20,7 +20,11 @@ const uiFiles = [
   "components/mode-pills.tsx",
   "components/engine-pills.tsx",
   "components/automation-footer.tsx",
-  "components/webhook-fields.tsx"
+  "components/webhook-fields.tsx",
+  "components/catch-up-toggle.tsx",
+  "components/missed-records-list.tsx",
+  "lib/missed-copy.ts",
+  "lib/last-run-line.ts"
 ]
 
 const banned = ["chat.modeAgent", "chat.modePlan", "chat.modeAsk", "ACP", "ToolLoop", "云端执行中"]
@@ -75,4 +79,32 @@ test("失败条进 Inbox 失败筛，不写待验收闸", () => {
   const page = readFileSync(join(dir, "automations-page.tsx"), "utf8")
   assert.ok(page.includes("requestInboxFilter"))
   assert.ok(page.includes('"failed"'))
+})
+
+test("automations.changed 含 missed 也会 refetch 列表与错过记录", () => {
+  const page = readFileSync(join(dir, "automations-page.tsx"), "utf8")
+  assert.ok(page.includes("onChanged"))
+  assert.ok(page.includes('invalidateQueries({ queryKey: ["automations"] })'))
+  assert.equal(page.includes('reason !== "missed"'), false)
+  assert.ok(page.includes("useAutomationMissed"))
+  const hook = readFileSync(join(dir, "hooks/use-automation-missed.ts"), "utf8")
+  assert.ok(hook.includes('["automations", "missed"]'))
+  assert.ok(hook.includes("listMissed"))
+})
+
+test("超时次行不走失败红，名称旁不挂已跳过小标", () => {
+  const row = readFileSync(join(dir, "components/automation-row.tsx"), "utf8")
+  assert.match(row, /lastRunLine/)
+  assert.match(row, /line\.testId/)
+  assert.doesNotMatch(row, /statusSkipped/)
+  const status = readFileSync(join(dir, "lib/row-status.ts"), "utf8")
+  assert.match(status, /isNeutralErrorCode/)
+  assert.doesNotMatch(status, /lastError/)
+})
+
+test("设置能力句钉死默认不补跑", () => {
+  assert.equal(zhStudio.automations.catchUpToggle, "错过后补跑最近一次")
+  const settings = readFileSync(join(dir, "../../i18n/catalogs/zh/settings.ts"), "utf8")
+  assert.match(settings, /默认不补跑，可在单条自动化里开启补跑最近一次/)
+  assert.doesNotMatch(settings, /关掉应用不会补跑/)
 })

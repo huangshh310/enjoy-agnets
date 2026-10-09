@@ -62,7 +62,7 @@ export const zhSettings = {
     capAutoA: "本机 cron",
     capAutoB: "只打当前会话",
     capAutoC: "正在跑或等审批就跳过",
-    capAutoD: "关掉应用不会补跑",
+    capAutoD: "默认不补跑，可在单条自动化里开启补跑最近一次",
     enginesTitle: "安装本机引擎",
     enginesBody: "已经找到的标成就绪。缺的可以现在装，也可以以后到设置里再装。",
     engineSummary: "{ready} 个就绪 · {missing} 个未安装",

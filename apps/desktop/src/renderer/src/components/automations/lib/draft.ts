@@ -19,6 +19,8 @@ export type AutomationDraft = {
   modelId: string
   mode: AutomationMode
   enabled: boolean
+  /** 错过后补跑最近一次。出厂关。 */
+  catchUpMissed: boolean
 }
 
 export function emptyAutomationDraft(defaults: {
@@ -38,7 +40,8 @@ export function emptyAutomationDraft(defaults: {
     runtimeId: defaults.runtimeId,
     modelId: "",
     mode: "agent",
-    enabled: true
+    enabled: true,
+    catchUpMissed: false
   }
 }
 
@@ -60,7 +63,8 @@ export function draftFromAutomation(
     runtimeId: item.runtimeId ?? defaults.runtimeId,
     modelId: item.modelId ?? "",
     mode: item.mode === "plan" || item.mode === "ask" ? "plan" : "agent",
-    enabled: item.enabled
+    enabled: item.enabled,
+    catchUpMissed: item.catchUpMissed === true
   }
 }
 
@@ -80,6 +84,7 @@ export function draftToUpsert(draft: AutomationDraft) {
     runtimeId: draft.runtimeId.trim() || undefined,
     modelId: draft.modelId.trim() || undefined,
     mode: draft.mode,
-    enabled: draft.enabled
+    enabled: draft.enabled,
+    catchUpMissed: draft.catchUpMissed === true
   }
 }
