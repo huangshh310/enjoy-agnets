@@ -105,3 +105,10 @@ export function mergeConversationDesktopAllow(
   merged.delete("desktop_act")
   return merged
 }
+
+/** 补跑闸：丢掉 desktop_act:*，按应用键留下。 */
+export function stripAnyDesktopSessionAllow(tools: ReadonlySet<string>): Set<string> {
+  const next = new Set(tools)
+  next.delete(DESKTOP_ACT_ANY_SESSION_KEY)
+  return next
+}

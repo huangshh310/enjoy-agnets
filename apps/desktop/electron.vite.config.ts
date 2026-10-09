@@ -105,6 +105,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-notify.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/automations-missed",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/automations-missed.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/desktop-act-codes",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-act-codes.ts")
         },
@@ -202,6 +206,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/desktop-notify",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-notify.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/automations-missed",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/automations-missed.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/desktop-act-codes",

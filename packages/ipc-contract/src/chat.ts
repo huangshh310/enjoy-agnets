@@ -2,6 +2,7 @@
  * Agent 会话消息与跑循环入参。
  */
 import { z } from "zod"
+import { AutomationRunSource } from "./automations-missed.ts"
 import { DesktopMentionBias } from "./desktop-mention-apps"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
 
@@ -42,7 +43,11 @@ export const RunAgentInput = z.object({
   /** CU-P1-B：Composer `@桌面` / `@应用` 偏置。缺省不偏。提及 ≠ 放行。 */
   desktopBias: DesktopMentionBias.optional(),
   /** 句首 `/computer-use`：这一发注册 desktop_*，不把总开关写成开。 */
-  computerUseOnce: z.boolean().optional()
+  computerUseOnce: z.boolean().optional(),
+  /** 补跑：审批闸丢掉 desktop_act:*，按应用会话放行与簿照常。 */
+  denyAnyDesktop: z.boolean().optional(),
+  /** 待审批 Dock / 通知用来源句。补跑必带。 */
+  automationSource: AutomationRunSource.optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>
 

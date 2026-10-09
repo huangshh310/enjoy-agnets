@@ -4,12 +4,15 @@
 import { ipcMain } from "electron"
 import {
   AutomationIdInput,
+  ListAutomationMissedInput,
+  ListAutomationMissedResult,
   RunAutomationInput,
   UpsertAutomationInput
 } from "@enjoy-agents/ipc-contract"
 import { compileCadence } from "./services/automations-cron"
 import { emitAutomationsChanged } from "./services/automations-notify"
 import { runAutomation } from "./services/automations-run"
+import { defaultSettingsIo, listMissedForAutomation } from "./services/automations-missed-store"
 import {
   presentAutomations,
   readAutomations,
@@ -52,5 +55,11 @@ export function registerAutomationIpc() {
   ipcMain.handle("automations.run", async (event, raw) => {
     const input = RunAutomationInput.parse(raw)
     return runAutomation(windowFromEvent(event), input)
+  })
+  ipcMain.handle("automations.missed.list", async (_event, raw) => {
+    const id = ListAutomationMissedInput.parse(raw).id
+    return ListAutomationMissedResult.parse({
+      records: listMissedForAutomation(defaultSettingsIo(), id)
+    })
   })
 }

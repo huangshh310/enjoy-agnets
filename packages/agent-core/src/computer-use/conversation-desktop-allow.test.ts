@@ -15,6 +15,7 @@ import {
   revokeConversationDesktopAllow,
   setConversationAnyDesktop,
   snapshotConversationDesktopAllow,
+  stripAnyDesktopSessionAllow,
   writeThroughDesktopActSessionAllow
 } from "./conversation-desktop-allow.ts"
 import { DESKTOP_ACT_ANY_SESSION_KEY, sessionAllowsDesktopAct } from "./desktop-act-policy.ts"
@@ -164,6 +165,13 @@ test("会话已允许 appKey 或任意桌面时二次确认仍要审批，禁止
     "user-approval"
   )
   assert.equal(sessionAllowsDesktopAct({ ...click, needsSecondConfirm: true }, anyPolicy), false)
+})
+
+test("stripAnyDesktop 只摘 *，按应用键留下", () => {
+  const stripped = stripAnyDesktopSessionAllow(new Set([CALC, DESKTOP_ACT_ANY_SESSION_KEY, "write_file"]))
+  assert.equal(stripped.has(DESKTOP_ACT_ANY_SESSION_KEY), false)
+  assert.equal(stripped.has(CALC), true)
+  assert.equal(stripped.has("write_file"), true)
 })
 
 test("merge 只读会话表 ∪ run 副本，丢掉裸 desktop_act，不造全局开关", () => {

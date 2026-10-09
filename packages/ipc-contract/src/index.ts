@@ -19,6 +19,7 @@ export * from "./workspace-move-plan"
 export * from "./account-profile"
 export * from "./settings-input"
 export * from "./automations"
+export * from "./automations-missed"
 export * from "./stream-event"
 export * from "./host-inject"
 export {

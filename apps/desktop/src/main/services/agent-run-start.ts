@@ -7,7 +7,7 @@ import type { GenerationRequest } from "@enjoy-agents/agent-core"
 import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase, setSetting } from "./database"
 import { createId } from "./ids"
-import { emitEvent, holdAgentRun } from "./agent-run-state"
+import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
@@ -20,12 +20,22 @@ import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { peekCommandReceipt, rememberCommandReceipt } from "./command-receipts"
+import {
+  stripUntrustedAutomationFlags,
+  trustedAutomationFlags,
+  type TrustedRunAgentOptions
+} from "./agent-run-trust"
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eStub } from "./e2e-stub"
 
-export async function runAgent(window: BrowserWindow, rawInput: unknown) {
-  const input = RunAgentInput.parse(rawInput)
+export async function runAgent(
+  window: BrowserWindow,
+  rawInput: unknown,
+  trust: TrustedRunAgentOptions = {}
+) {
+  const parsed = RunAgentInput.parse(rawInput)
+  const input = trust.trustAutomationFlags ? parsed : stripUntrustedAutomationFlags(parsed)
   return beginAgentRun(window, input, { persistUser: input.persistUser !== false })
 }
 
@@ -39,12 +49,18 @@ export async function resumeAgentRun(
   window: BrowserWindow,
   runId: string,
   request: GenerationRequest,
-  resumeMessages?: unknown
+  resumeMessages?: unknown,
+  extras?: { denyAnyDesktop?: boolean; automationSource?: unknown }
 ) {
   const messages = request.messages?.length
     ? request.messages
     : [{ role: "user" as const, content: request.prompt ?? "" }]
   if (!request.workspaceId) throw new Error("agent resume requires workspaceId.")
+  const existing = getActiveRun(runId)?.input
+  const flags = trustedAutomationFlags(extras, existing)
+  const source = flags.automationSource
+    ? { ...flags.automationSource, isCatchUp: false }
+    : undefined
   return beginAgentRun(
     window,
     RunAgentInput.parse({
@@ -52,7 +68,9 @@ export async function resumeAgentRun(
       workspaceId: request.workspaceId,
       modelId: request.modelId,
       messages,
-      attachments: request.attachments
+      attachments: request.attachments,
+      denyAnyDesktop: flags.denyAnyDesktop,
+      automationSource: source
     }),
     { runId, persistUser: false, resumeMessages }
   )

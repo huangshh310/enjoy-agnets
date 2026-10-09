@@ -98,7 +98,8 @@ export async function resumeGeneration(window: BrowserWindow, raw: unknown) {
       window,
       input.runId,
       request,
-      extras.resumeAt === TOOL_BOUNDARY ? extras.modelMessages : undefined
+      extras.resumeAt === TOOL_BOUNDARY ? extras.modelMessages : undefined,
+      { denyAnyDesktop: extras.denyAnyDesktop, automationSource: extras.automationSource }
     )
     return { ok: true, runId: input.runId }
   }

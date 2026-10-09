@@ -3,30 +3,50 @@
  * 用户取消由 abortAgent 先发 abort 事件并标 cancelled，这里不覆盖成 failed。
  */
 import { classifyError } from "@enjoy-agents/agent-core"
-import { isAcpHostRuntime } from "@enjoy-agents/agent-harness"
+import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { persistActiveRun } from "./flush-agent-run"
-import { cancelCodingStream, disposeCodingStream, acpSessionAlive } from "./open-coding-stream"
 import { recordMetric } from "./telemetry-service"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { deleteActiveRun, emitEvent, settleRun, type ActiveRun } from "./agent-run-state"
+import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
+import { claimCatchUpFail } from "./claim-catchup-fail"
+import { isCatchUpApprovalTimeout } from "./automations-catchup-timeout"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
+  clearCatchUpApprovalTimeout(runId)
+  if (!claimCatchUpFail(run)) return
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)
   }
   clearSteer(run.input.sessionId)
   deleteActiveRun(runId)
-  const sessionId = run.input.sessionId
-  if (isAcpHostRuntime(run.input.runtimeId) && acpSessionAlive(sessionId)) {
-    await cancelCodingStream(runId)
-    return
+  await disposeFailedStream(runId, run)
+}
+
+async function disposeFailedStream(runId: string, run: ActiveRun): Promise<void> {
+  try {
+    const { isAcpHostRuntime } = await import("@enjoy-agents/agent-harness")
+    const { cancelCodingStream, disposeCodingStream, acpSessionAlive } = await import(
+      "./open-coding-stream"
+    )
+    const sessionId = run.input.sessionId
+    if (isAcpHostRuntime(run.input.runtimeId) && acpSessionAlive(sessionId)) {
+      await cancelCodingStream(runId)
+      return
+    }
+    await disposeCodingStream(runId)
+    const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
+    endDesktopActOverlay()
+  } catch {
+    // 流或 overlay 已拆：failed / run.error / settle 已经落下。
   }
-  await disposeCodingStream(runId)
-  const { endDesktopActOverlay } = await import("./builtin-tools/desktop-overlay-chrome")
-  endDesktopActOverlay()
 }
 
 function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
+  if (isCatchUpApprovalTimeout(run, error)) {
+    emitCatchUpTimeoutFail(runId, run)
+    return
+  }
   const classified = classifyError(error)
   persistActiveRun(run, runId, "failed", classified.message)
   recordMetric({
@@ -46,4 +66,18 @@ function emitFailedRun(runId: string, run: ActiveRun, error: unknown): void {
     code: "timeout",
     message: classified.message
   })
+}
+
+function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {
+  persistActiveRun(run, runId, "failed", CATCH_UP_APPROVAL_TIMEOUT)
+  recordMetric({
+    runId,
+    kind: "agent",
+    modelId: run.input.modelId,
+    status: "failed",
+    durationMs: Date.now() - run.startedAt,
+    errorClass: "approval_denied"
+  })
+  settleRun(runId, { status: "error", summary: CATCH_UP_APPROVAL_TIMEOUT })
+  emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT })
 }

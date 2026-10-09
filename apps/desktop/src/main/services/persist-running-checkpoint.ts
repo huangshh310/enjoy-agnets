@@ -6,7 +6,7 @@ import { snapshotGeneration } from "@enjoy-agents/agent-core"
 import { updateRun } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { requestFromAgentInput } from "./persist-run"
-import { TOOL_BOUNDARY } from "./running-orphan-plan"
+import { runningCheckpointFlags, TOOL_BOUNDARY } from "./running-orphan-plan"
 import type { ActiveRun } from "./agent-run-state"
 
 export function persistRunningCheckpoint(run: ActiveRun, runId: string): void {
@@ -19,7 +19,8 @@ export function persistRunningCheckpoint(run: ActiveRun, runId: string): void {
       ...JSON.parse(snapshotGeneration(request)),
       modelMessages: run.messages,
       runtimeId: run.input.runtimeId,
-      resumeAt: TOOL_BOUNDARY
+      resumeAt: TOOL_BOUNDARY,
+      ...runningCheckpointFlags(run.input)
     })
   })
 }

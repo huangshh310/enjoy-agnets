@@ -3,6 +3,7 @@
  * v2 为每个事件补 sequence / timestamp / sessionId，旧事件字段保持可解析。
  */
 import { z } from "zod"
+import { AutomationRunSource } from "./automations-missed.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
 
@@ -58,6 +59,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     approvalId: z.string(),
     name: z.string(),
     args: z.unknown(),
+    /** 自动化补跑 / 准点来源；缺省不是自动化。 */
+    automationSource: AutomationRunSource.optional(),
     ...Envelope
   }),
   z.object({

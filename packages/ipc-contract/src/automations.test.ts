@@ -48,6 +48,33 @@ test("upsert 收下 cron / 引擎 / 探索内部 mode", () => {
   }
 })
 
+test("持久化行可带 lastRunErrorCode / 补跑开关", () => {
+  const parsed = Automation.safeParse({
+    id: "auto_1",
+    name: "复盘",
+    prompt: "对照 diff",
+    trigger: "cron",
+    enabled: true,
+    updatedAt: 1,
+    lastRunAt: 2,
+    lastRunStatus: "failed",
+    lastRunErrorCode: "catch_up_approval_timeout",
+    lastSkipReason: "system_sleep",
+    lastRunCatchUp: true,
+    catchUpMissed: true,
+    lastSessionId: "ses_9"
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success) {
+    assert.equal(parsed.data.lastRunStatus, "failed")
+    assert.equal(parsed.data.lastRunErrorCode, "catch_up_approval_timeout")
+    assert.equal(parsed.data.catchUpMissed, true)
+    const unknown = Automation.safeParse({ ...parsed.data, lastRunErrorCode: "timeout" })
+    assert.equal(unknown.success, true)
+    if (unknown.success) assert.equal(unknown.data.lastRunErrorCode, undefined)
+  }
+})
+
 test("持久化行可带 lastRunStatus / lastSessionId", () => {
   const parsed = Automation.safeParse({
     id: "auto_1",
@@ -63,8 +90,9 @@ test("持久化行可带 lastRunStatus / lastSessionId", () => {
   assert.equal(parsed.success, true)
 })
 
-test("changed 事件只要 reason", () => {
+test("changed 事件只要 reason，含 missed", () => {
   assert.equal(AutomationsChangedEvent.safeParse({ reason: "status" }).success, true)
+  assert.equal(AutomationsChangedEvent.safeParse({ reason: "missed" }).success, true)
   assert.equal(AutomationsChangedEvent.safeParse({ reason: "cloud" }).success, false)
 })
 

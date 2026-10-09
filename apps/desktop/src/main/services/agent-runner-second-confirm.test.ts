@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { test } from "node:test"
 
 test("主循环 Allow 后 needs_second_confirm 必须再停卡，不能只丢 tool.result", () => {
-  const src = readFileSync(new URL("./agent-runner.ts", import.meta.url), "utf8")
+  const src = readFileSync(new URL("./decide-approval.ts", import.meta.url), "utf8")
   assert.match(src, /maybeReparkSecondConfirm/)
   assert.match(src, /reparkDesktopSecondConfirm/)
   assert.match(src, /isDesktopSecondConfirmResult/)

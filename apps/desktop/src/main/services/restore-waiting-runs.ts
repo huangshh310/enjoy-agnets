@@ -6,6 +6,8 @@ import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
 import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { restoreWaitingCatchUpAction } from "./automations-catchup-orphans"
+import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
@@ -20,6 +22,11 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   const waiting = listRuns(db, {}).filter((row) => row.status === "waiting_review")
   const prefs = readPreferences()
   for (const row of waiting) {
+    const extras = parseWaitingExtras(row.checkpoint)
+    if (restoreWaitingCatchUpAction(extras.automationSource) === "fail_interrupted") {
+      failCatchUpWaitingOnRestart(row.id)
+      continue
+    }
     const pending = listPendingApprovals(db, row.id).filter((item) => {
       try {
         assertApprovalHmac({ runId: row.id, approvalId: item.id, toolCallId: item.toolCallId })
@@ -39,12 +46,13 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
     }
     try {
       const workspace = await getWorkspace(row.workspaceId)
-      const extras = parseWaitingExtras(row.checkpoint)
       const input = RunAgentInput.parse({
         sessionId: row.sessionId,
         workspaceId: row.workspaceId,
         modelId: row.modelId ?? checkpoint.request.modelId,
         runtimeId: extras.runtimeId,
+        denyAnyDesktop: extras.denyAnyDesktop,
+        automationSource: extras.automationSource,
         messages: (checkpoint.request.messages ?? []).map((message) => ({
           role: message.role,
           content: typeof message.content === "string" ? message.content : ""
@@ -98,3 +106,4 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
     }
   }
 }
+

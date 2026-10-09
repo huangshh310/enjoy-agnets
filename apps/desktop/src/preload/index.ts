@@ -160,6 +160,7 @@ const ide = {
     upsert: (input: unknown) => ipcRenderer.invoke("automations.upsert", input),
     remove: (input: unknown) => ipcRenderer.invoke("automations.remove", input),
     run: (input: unknown) => ipcRenderer.invoke("automations.run", input),
+    listMissed: (input: unknown) => ipcRenderer.invoke("automations.missed.list", input),
     onChanged: (callback: (event: { reason: string; id?: string }) => void) => {
       const listener = (_event: unknown, payload: { reason: string; id?: string }) => callback(payload)
       ipcRenderer.on("automations.changed", listener)

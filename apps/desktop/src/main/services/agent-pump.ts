@@ -3,13 +3,11 @@
  */
 import {
   armTimeout,
-  isExploreMutatingDeny,
   resolveTimeoutMs,
   RuntimeError,
   type SubagentToolTraceEvent
 } from "@enjoy-agents/agent-core"
 import { foldToolEvent, type HostInjectSnapshot } from "@enjoy-agents/ipc-contract"
-import { rememberApproval } from "./approval-hmac"
 import { consumeFullStream } from "./consume-stream"
 import { shouldEmitRunEnd } from "./claim-run-end"
 import { completeAgentRun } from "./complete-agent-run"
@@ -17,12 +15,11 @@ import { failAgentPump } from "./fail-agent-pump"
 import { checkpointActiveRun } from "./flush-agent-run"
 import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { persistWaitingRun } from "./persist-waiting-run"
-import { createId } from "./ids"
 import { openCodingStream } from "./open-coding-stream"
 import { decideAfterConsume } from "./park-for-approval"
 import { shouldContinueOpenTodos, TODO_CONTINUE_PROMPT } from "./todo-continue"
 import { readResponseMessages } from "./agent-run-helpers"
-import { toSubagentUserDecision } from "./approval-gate"
+import { waitForSubagentApproval } from "./park-subagent-approval"
 import { readPreferences } from "./preferences"
 import { ensureAssistantReasoning } from "./to-model-messages"
 import { runWithActiveRunId } from "./active-run-id"
@@ -161,6 +158,7 @@ async function openRunStream(
     executePlan: run.input.executePlan,
     desktopBias: run.input.desktopBias,
     computerUseOnce: run.input.computerUseOnce,
+    denyAnyDesktop: run.input.denyAnyDesktop === true,
     runtimeId: run.input.runtimeId,
     pullSteeringMessages: () => absorbSteeringMessages(run),
     takeQuestionAnswers: () => {
@@ -168,33 +166,7 @@ async function openRunStream(
       run.questionAnswers = undefined
       return answers
     },
-    waitForSubagentApproval: async ({ toolName, toolCallId, input: args }) => {
-      if (isExploreMutatingDeny(run.input.mode, toolName)) {
-        emitEvent(run.window, {
-          type: "tool.result",
-          runId,
-          toolCallId,
-          name: toolName,
-          args,
-          error: "Explore mode is read-only."
-        })
-        return "deny"
-      }
-      const approvalId = createId("apr")
-      const parked = await parkToolArgs(toolName, asParkArgs(args))
-      run.pendingApprovals.push({ approvalId, toolCallId, name: toolName, args: parked })
-      rememberApproval({ runId, approvalId, toolCallId, name: toolName, args: parked })
-      checkpointActiveRun(run)
-      emitEvent(run.window, {
-        type: "approval.required",
-        runId,
-        approvalId,
-        toolCallId,
-        name: toolName,
-        args: parked
-      })
-      return toSubagentUserDecision(await run.approvalGate.wait(approvalId))
-    },
+    waitForSubagentApproval: (request) => waitForSubagentApproval(run, runId, request),
     onSubagentToolEvent: (event) => emitSubagentTool(run, runId, event)
   })
 }
@@ -283,18 +255,6 @@ function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type:
 function persistRunningBoundary(run: ActiveRun, runId: string): void {
   persistRunningCheckpoint(run, runId)
   checkpointActiveRun(run)
-}
-
-function asParkArgs(args: unknown): Record<string, unknown> {
-  return args && typeof args === "object" ? (args as Record<string, unknown>) : {}
-}
-
-async function parkToolArgs(toolName: string, args: Record<string, unknown>) {
-  if (toolName !== "desktop_act") return args
-  const { enrichDesktopActApprovalArgs, parkDesktopActArgs } = await import(
-    "./builtin-tools/computer-use/desktop-tools"
-  )
-  return enrichDesktopActApprovalArgs(parkDesktopActArgs(args))
 }
 
 function parkForApproval(run: ActiveRun): boolean {

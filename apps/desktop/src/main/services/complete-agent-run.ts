@@ -5,6 +5,7 @@ import { tokensPerSecond, ttfoMs } from "@enjoy-agents/agent-core"
 import { persistActiveRun } from "./flush-agent-run"
 import { recordMetric } from "./telemetry-service"
 import { settleRun } from "./agent-run-state"
+import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import type { ActiveRun } from "./agent-run-state"
 
 export function completeAgentRun(input: {
@@ -13,6 +14,7 @@ export function completeAgentRun(input: {
   emit: (event: { type: "run.end"; runId: string }) => void
 }): void {
   const { run, runId } = input
+  clearCatchUpApprovalTimeout(runId)
   // 取消 / abort 后泵可能仍走到这里；禁止覆盖 cancelled、禁止发 run.end。
   if (run.userCancelled || run.abort.signal.aborted) return
   persistActiveRun(run, runId, "completed")

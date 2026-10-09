@@ -8,6 +8,18 @@ export type AgentCheckpointExtras = {
   pendingApprovals?: unknown
   runtimeId?: string
   resumeAt?: string
+  denyAnyDesktop?: boolean
+  automationSource?: unknown
+}
+
+export function runningCheckpointFlags(input: {
+  denyAnyDesktop?: boolean
+  automationSource?: unknown
+}): { denyAnyDesktop?: boolean; automationSource?: unknown } {
+  return {
+    denyAnyDesktop: input.denyAnyDesktop === true ? true : undefined,
+    automationSource: input.automationSource
+  }
 }
 
 export function parseAgentCheckpointExtras(raw: string | null | undefined): AgentCheckpointExtras {
@@ -18,7 +30,9 @@ export function parseAgentCheckpointExtras(raw: string | null | undefined): Agen
       modelMessages: parsed.modelMessages,
       pendingApprovals: parsed.pendingApprovals,
       runtimeId: typeof parsed.runtimeId === "string" ? parsed.runtimeId : undefined,
-      resumeAt: typeof parsed.resumeAt === "string" ? parsed.resumeAt : undefined
+      resumeAt: typeof parsed.resumeAt === "string" ? parsed.resumeAt : undefined,
+      denyAnyDesktop: parsed.denyAnyDesktop === true,
+      automationSource: parsed.automationSource
     }
   } catch {
     return {}
