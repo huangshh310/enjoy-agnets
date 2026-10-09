@@ -12,6 +12,16 @@ export type AgentCheckpointExtras = {
   automationSource?: unknown
 }
 
+export function runningCheckpointFlags(input: {
+  denyAnyDesktop?: boolean
+  automationSource?: unknown
+}): { denyAnyDesktop?: boolean; automationSource?: unknown } {
+  return {
+    denyAnyDesktop: input.denyAnyDesktop === true ? true : undefined,
+    automationSource: input.automationSource
+  }
+}
+
 export function parseAgentCheckpointExtras(raw: string | null | undefined): AgentCheckpointExtras {
   if (!raw) return {}
   try {

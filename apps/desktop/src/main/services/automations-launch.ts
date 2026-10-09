@@ -76,5 +76,5 @@ export async function startAutomationRun(
     automationSource: opts.automationSource,
     messages: [{ role: "user", content: prompt }]
   })
-  return runAgent(window, payload)
+  return runAgent(window, payload, { trustAutomationFlags: true })
 }

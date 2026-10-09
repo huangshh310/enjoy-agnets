@@ -9,8 +9,10 @@ import { cancelCodingStream, disposeCodingStream, acpSessionAlive } from "./open
 import { recordMetric } from "./telemetry-service"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { deleteActiveRun, emitEvent, settleRun, type ActiveRun } from "./agent-run-state"
+import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
+  clearCatchUpApprovalTimeout(runId)
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)
   }

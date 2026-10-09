@@ -5,6 +5,8 @@ import type { Automation } from "@enjoy-agents/ipc-contract"
 import { shouldFireCron } from "./automations-cron"
 import { alignCronMinute } from "./automations-cron-points"
 import { skipReasonOf } from "./automations-missed-apply"
+import { listCatchUpLaunches } from "./automations-catchup-launch"
+import { failInterruptedCatchUps } from "./automations-catchup-orphans"
 import {
   reconcileMissedAutomations,
   type MissedReconcileResult
@@ -16,6 +18,8 @@ import {
   defaultSettingsIo,
   findMissedPoint
 } from "./automations-missed-store"
+import { getDatabase } from "./database"
+import { getRun } from "@enjoy-agents/db"
 import {
   automationSessionStartedAt,
   bindAutomationPowerMonitor,
@@ -90,6 +94,10 @@ export function enqueueMissedReconcile(trigger: MissedScanTrigger, sessionStarte
 
 async function applyMissedReconcile(trigger: MissedScanTrigger, sessionStartedAt: number): Promise<void> {
   const now = Date.now()
+  const io = defaultSettingsIo()
+  if (trigger === "startup") {
+    failInterruptedCatchUps(io, (runId) => getRun(getDatabase(), runId)?.status)
+  }
   const results = reconcileMissedAutomations({
     trigger,
     now,
@@ -98,13 +106,13 @@ async function applyMissedReconcile(trigger: MissedScanTrigger, sessionStartedAt
     runningIds: new Set(readAutomations().filter((row) => isAutomationRunning(row.id)).map((row) => row.id))
   })
   if (results.length === 0) {
-    clearAutomationScanFrom(defaultSettingsIo())
+    clearAutomationScanFrom(io)
     return
   }
   stampMissedRows(results, now)
   emitAutomationsChanged("missed")
-  await launchCatchUps(results)
-  clearAutomationScanFrom(defaultSettingsIo())
+  fireCatchUps(results)
+  clearAutomationScanFrom(io)
 }
 
 function stampMissedRows(results: MissedReconcileResult[], now: number): void {
@@ -122,15 +130,14 @@ function stampMissedRows(results: MissedReconcileResult[], now: number): void {
   }
 }
 
-async function launchCatchUps(results: MissedReconcileResult[]): Promise<void> {
+function fireCatchUps(results: MissedReconcileResult[]): void {
   const window = firstLiveWindow()
   if (!window) return
-  for (const result of results) {
-    const item = readAutomations().find((row) => row.id === result.automationId)
-    const catchUp = result.actions.find((row) => row.type === "catch_up")
-    if (!item || !catchUp) continue
-    await launchAutomationAgent(window, item, {
-      scheduledAt: catchUp.scheduledAt,
+  for (const launch of listCatchUpLaunches(results)) {
+    const item = readAutomations().find((row) => row.id === launch.automationId)
+    if (!item) continue
+    void launchAutomationAgent(window, item, {
+      scheduledAt: launch.scheduledAt,
       isCatchUp: true
     }).catch(() => undefined)
   }

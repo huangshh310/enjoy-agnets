@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（AUTO-P2 补跑 `denyAnyDesktop` + `approval.required.automationSource`；审批硬拒带 bare_coords_disabled；未知观察号 Dock）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（AUTO-P2 补跑闸跨重启；补跑审批 30min 超时自动拒绝；审批硬拒带 bare_coords_disabled）
 
 ## 当前真相
 
@@ -74,7 +74,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
-- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）；ACP Stop：`open-coding-stream.ts` `cancelCodingStream` → `cancelAcpTurn`。`commandId` 收据：`command-receipts.ts`；自动化准点/补跑用确定性 `auto:{automationId}:{scheduledAt}`，本机 missed store 再占一次防启动+唤醒+重启双开。补跑 `RunAgentInput.denyAnyDesktop` 经 `approvalPolicyFromPrefs` 丢掉 `desktop_act:*`（按应用会话放行与簿照常）；`approvalPolicyFromPrefs` **必须**自带 `lookupDesktopObservation: peekDesktopObservation`，新入口不得回落模型自报。待审批可带 `automationSource`。可排干队列：`packages/agent-core/src/drainable-queue.ts`。取消 / 失败不得宣称收工：`claim-run-end.ts`、`fail-agent-pump.ts`。
+- 主进程编排：`apps/desktop/src/main/services/agent-runner.ts`（启动 / 中止 / 纠偏 / 审批）；ACP Stop：`open-coding-stream.ts` `cancelCodingStream` → `cancelAcpTurn`。`commandId` 收据：`command-receipts.ts`；自动化准点/补跑用确定性 `auto:{automationId}:{scheduledAt}`，本机 missed store 再占一次防启动+唤醒+重启双开。补跑 `RunAgentInput.denyAnyDesktop` 经 `approvalPolicyFromPrefs` 丢掉 `desktop_act:*`（按应用会话放行与簿照常）；`approvalPolicyFromPrefs` **必须**自带 `lookupDesktopObservation: peekDesktopObservation`，新入口不得回落模型自报。`denyAnyDesktop` / `automationSource` 只许 main 写：renderer `agent.run` 入口剥掉；running / waiting checkpoint 都持久化，restore / 手动 `resumeAgentRun` 必须带回来。待审批可带 `automationSource`。补跑停 Dock 默认 **30 分钟**（`CATCH_UP_APPROVAL_TIMEOUT_MS`）后自动拒绝并 `failed` + `catch_up_approval_timeout`，不新开跳过原因。可排干队列：`packages/agent-core/src/drainable-queue.ts`。取消 / 失败不得宣称收工：`claim-run-end.ts`、`fail-agent-pump.ts`。
 - ACP plan → Todo Dock：`packages/agent-harness/src/acp/map-acp-plan.ts`
 - ACP `mcpServers`：`apps/desktop/src/main/services/host-extensions/`、`packages/agent-harness/src/acp/acp-mcp.ts`
 - 写盘检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-restore.ts`

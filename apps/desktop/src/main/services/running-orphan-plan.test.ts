@@ -55,3 +55,10 @@ test("parseAgentCheckpointExtras 读 resumeAt", () => {
   assert.equal(extras.resumeAt, TOOL_BOUNDARY)
   assert.equal(parseAgentCheckpointExtras("not-json").resumeAt, undefined)
 })
+
+test("running extras 带 denyAnyDesktop", () => {
+  const extras = parseAgentCheckpointExtras(
+    JSON.stringify({ ...JSON.parse(base.checkpoint), denyAnyDesktop: true })
+  )
+  assert.equal(extras.denyAnyDesktop, true)
+})

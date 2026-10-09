@@ -4,6 +4,9 @@ import { Automation } from "./automations.ts"
 import {
   AutomationMissedRecord,
   AutomationRunSource,
+  CATCH_UP_APPROVAL_TIMEOUT,
+  CATCH_UP_APPROVAL_TIMEOUT_MS,
+  CATCH_UP_INTERRUPTED_BY_RESTART,
   ListAutomationMissedInput,
   ListAutomationMissedResult,
   MISSED_LOOKBACK_MS
@@ -11,13 +14,17 @@ import {
 
 test("错过记录只要跳过或补跑，7 天帽是常量", () => {
   assert.equal(MISSED_LOOKBACK_MS, 7 * 24 * 60 * 60 * 1000)
+  assert.equal(CATCH_UP_APPROVAL_TIMEOUT_MS, 30 * 60 * 1000)
+  assert.equal(CATCH_UP_APPROVAL_TIMEOUT, "catch_up_approval_timeout")
+  assert.equal(CATCH_UP_INTERRUPTED_BY_RESTART, "interrupted_by_restart")
   const skip = AutomationMissedRecord.safeParse({
     automationId: "auto_1",
     scheduledAt: 1,
     recordedAt: 2,
     kind: "skipped",
     reason: "system_sleep",
-    status: "skipped"
+    status: "skipped",
+    code: CATCH_UP_APPROVAL_TIMEOUT
   })
   assert.equal(skip.success, true)
   assert.equal(

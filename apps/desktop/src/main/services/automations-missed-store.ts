@@ -38,6 +38,7 @@ export type StoredMissed = {
   status?: AutomationRunStatus
   runId?: string
   isCatchUp?: boolean
+  code?: string
 }
 
 export function defaultSettingsIo(): SettingsIo {
@@ -94,7 +95,8 @@ function parseStoredMissed(item: unknown): StoredMissed | null {
         ? row.status
         : undefined,
     runId: typeof row.runId === "string" ? row.runId : undefined,
-    isCatchUp: row.isCatchUp === true
+    isCatchUp: row.isCatchUp === true,
+    code: typeof row.code === "string" && row.code.trim() ? row.code : undefined
   }
 }
 
@@ -173,7 +175,8 @@ export function listMissedForAutomation(
       reason: row.reason,
       status: row.status,
       runId: row.runId,
-      isCatchUp: row.isCatchUp
+      isCatchUp: row.isCatchUp,
+      code: row.code
     }))
 }
 

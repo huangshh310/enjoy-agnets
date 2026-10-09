@@ -8,6 +8,7 @@ import { getDatabase } from "./database"
 import { requestFromAgentInput } from "./persist-run"
 import type { ActiveRun } from "./agent-run-state"
 import { parseAgentCheckpointExtras } from "./running-orphan-plan"
+import { armCatchUpApprovalTimeout } from "./automations-catchup-timer"
 
 export type WaitingCheckpoint = {
   version: 1
@@ -41,6 +42,13 @@ export function persistWaitingRun(run: ActiveRun, runId: string): void {
       automationSource: body.automationSource
     })
   })
+  if (run.input.automationSource?.isCatchUp) {
+    armCatchUpApprovalTimeout(runId, (id) => {
+      void import("./automations-catchup-timeout").then((mod) => {
+        void mod.expireCatchUpApproval(id)
+      })
+    })
+  }
 }
 
 export function parseWaitingExtras(raw: string | null): {

@@ -11,6 +11,7 @@ import { getDatabase } from "./database"
 import { emitEvent, holdAgentRun } from "./agent-run-state"
 import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
+import { trustedAutomationFlags } from "./agent-run-trust"
 import { parseAgentCheckpointExtras, canResumeRunningOrphan } from "./running-orphan-plan"
 import { getWorkspace } from "./workspace"
 import { isE2eStub } from "./e2e-stub"
@@ -65,11 +66,14 @@ async function holdAndPump(
   prefs: ReturnType<typeof readPreferences>
 ): Promise<void> {
   const workspace = await getWorkspace(row.workspaceId as string)
+  const flags = trustedAutomationFlags(extras)
   const input = RunAgentInput.parse({
     sessionId: row.sessionId,
     workspaceId: row.workspaceId,
     modelId: row.modelId ?? request.modelId,
     runtimeId: extras.runtimeId,
+    denyAnyDesktop: flags.denyAnyDesktop,
+    automationSource: flags.automationSource,
     messages: (request.messages ?? []).map((message) => ({
       role: message.role,
       content: typeof message.content === "string" ? message.content : ""

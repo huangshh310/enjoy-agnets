@@ -10,6 +10,11 @@ export type AutomationMissedKind = z.infer<typeof AutomationMissedKind>
 
 export const MISSED_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
 
+/** 补跑停在 Dock 超过此时长则自动拒绝。只改这一处。 */
+export const CATCH_UP_APPROVAL_TIMEOUT_MS = 30 * 60 * 1000
+export const CATCH_UP_APPROVAL_TIMEOUT = "catch_up_approval_timeout"
+export const CATCH_UP_INTERRUPTED_BY_RESTART = "interrupted_by_restart"
+
 /** 待审批 Dock / 通知用来源句。C 端只写名称与「补跑」。 */
 export const AutomationRunSource = z
   .object({
@@ -30,7 +35,9 @@ export const AutomationMissedRecord = z
     reason: AutomationSkipReason.optional(),
     status: AutomationRunStatus.optional(),
     runId: z.string().min(1).optional(),
-    isCatchUp: z.boolean().optional()
+    isCatchUp: z.boolean().optional(),
+    /** 失败码：catch_up_approval_timeout / interrupted_by_restart。 */
+    code: z.string().min(1).optional()
   })
   .strict()
 export type AutomationMissedRecord = z.infer<typeof AutomationMissedRecord>

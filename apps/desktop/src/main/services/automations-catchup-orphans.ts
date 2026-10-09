@@ -1,0 +1,40 @@
+/**
+ * 重启后把没续上的补跑 running 收成 failed，不 invent 新跳过原因。
+ */
+import { CATCH_UP_INTERRUPTED_BY_RESTART } from "@enjoy-agents/ipc-contract/automations-missed"
+import {
+  listStoredMissed,
+  patchMissedPoint,
+  type SettingsIo,
+  type StoredMissed
+} from "./automations-missed-store.ts"
+
+export function shouldFailInterruptedCatchUp(
+  record: Pick<StoredMissed, "kind" | "status" | "runId">,
+  liveStatus?: string
+): boolean {
+  if (record.kind !== "catch_up" || record.status !== "running") return false
+  if (!record.runId) return true
+  return liveStatus !== "running" && liveStatus !== "waiting_review"
+}
+
+export function failInterruptedCatchUps(
+  io: SettingsIo,
+  liveStatusOf: (runId: string) => string | undefined,
+  now = Date.now()
+): StoredMissed[] {
+  const failed: StoredMissed[] = []
+  for (const row of listStoredMissed(io, now)) {
+    const live = row.runId ? liveStatusOf(row.runId) : undefined
+    if (!shouldFailInterruptedCatchUp(row, live)) continue
+    const next = patchMissedPoint(
+      io,
+      row.automationId,
+      row.scheduledAt,
+      { status: "failed", code: CATCH_UP_INTERRUPTED_BY_RESTART },
+      now
+    )
+    if (next) failed.push(next)
+  }
+  return failed
+}

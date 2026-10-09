@@ -5,12 +5,10 @@
 import type { BrowserWindow } from "electron"
 import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
 import { scheduledAutomationCommandId } from "./automations-cron-points"
-import {
-  claimMissedPoint,
-  defaultSettingsIo,
-  findMissedPoint,
-  patchMissedPoint
-} from "./automations-missed-store"
+import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
+import { claimLaunchSlot } from "./automations-claim-slot"
+import { nextConsecutiveFails } from "./automations-fails"
+import { defaultSettingsIo, patchMissedPoint } from "./automations-missed-store"
 import { listActiveRuns, waitForRunSettle } from "./agent-run-state"
 import {
   isAutomationRunning,
@@ -87,7 +85,7 @@ export async function launchAutomationAgent(
   if (isAutomationRunning(item.id)) {
     return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: opts.workspaceId ?? "" }
   }
-  if (!claimLaunchSlot(item.id, opts)) {
+  if (!claimLaunchSlot(defaultSettingsIo(), item.id, opts)) {
     return { id: item.id, sessionId: item.lastSessionId ?? "", workspaceId: opts.workspaceId ?? "" }
   }
   let openedSessionId = opts.sessionId ?? ""
@@ -157,21 +155,6 @@ function launchOpts(sessionIdOrOpts?: string | LaunchAutomationOpts, workspaceId
   return { sessionId: sessionIdOrOpts, workspaceId }
 }
 
-function claimLaunchSlot(automationId: string, opts: LaunchAutomationOpts): boolean {
-  if (opts.scheduledAt == null) return true
-  const io = defaultSettingsIo()
-  const existing = findMissedPoint(io, automationId, opts.scheduledAt)
-  if (opts.isCatchUp) return existing?.kind === "catch_up"
-  if (existing) return false
-  return claimMissedPoint(io, {
-    automationId,
-    scheduledAt: opts.scheduledAt,
-    recordedAt: Date.now(),
-    kind: "scheduled",
-    status: "running"
-  })
-}
-
 function finishAutomationRun(
   id: string,
   status: "ok" | "failed",
@@ -179,7 +162,7 @@ function finishAutomationRun(
   opts: LaunchAutomationOpts = {}
 ): void {
   const current = readAutomations().find((row) => row.id === id)
-  const fails = status === "failed" ? (current?.consecutiveFails ?? 0) + 1 : 0
+  const fails = nextConsecutiveFails(current?.consecutiveFails, status)
   const limit = current?.stopOnFailCount ?? 3
   patchStoredAutomation(id, {
     lastRunStatus: status,
@@ -191,7 +174,8 @@ function finishAutomationRun(
   if (opts.scheduledAt != null) {
     patchMissedPoint(defaultSettingsIo(), id, opts.scheduledAt, {
       status,
-      isCatchUp: opts.isCatchUp === true
+      isCatchUp: opts.isCatchUp === true,
+      ...(summary === CATCH_UP_APPROVAL_TIMEOUT ? { code: CATCH_UP_APPROVAL_TIMEOUT } : {})
     })
   }
 }

@@ -32,6 +32,16 @@ test("approvalPolicyFromPrefs 把 SoT 对象数组投影进闸", () => {
   assert.doesNotMatch(src, /sessionApprovedTools\.add/)
 })
 
+test("M5 denyAnyDesktop 经 approvalPolicyFromPrefs / holdAgentRun / 泵进子 Agent", () => {
+  const policy = readFileSync(new URL("./open-coding-stream-input.ts", import.meta.url), "utf8")
+  const state = readFileSync(new URL("./agent-run-state.ts", import.meta.url), "utf8")
+  const pump = readFileSync(new URL("./agent-pump.ts", import.meta.url), "utf8")
+  assert.match(policy, /input\.denyAnyDesktop \? stripAnyDesktopSessionAllow/)
+  assert.match(state, /input\.denyAnyDesktop \? stripAnyDesktopSessionAllow/)
+  assert.match(pump, /denyAnyDesktop: run\.input\.denyAnyDesktop === true/)
+  assert.match(pump, /waitForSubagentApproval/)
+})
+
 test("approvalPolicyFromPrefs 必须自带 lookupDesktopObservation，禁止回落模型自报", () => {
   const src = readFileSync(new URL("./open-coding-stream-input.ts", import.meta.url), "utf8")
   const stream = readFileSync(new URL("./open-coding-stream.ts", import.meta.url), "utf8")
