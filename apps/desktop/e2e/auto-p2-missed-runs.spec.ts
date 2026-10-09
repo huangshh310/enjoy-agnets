@@ -10,7 +10,7 @@ import { sendComposer } from "./send-composer"
 const mainEntry = join(process.cwd(), "out/main/index.js")
 const shots = "/opt/cursor/artifacts/screenshots"
 
-test("AUTO-P2：错过次行 / 补跑抽屉 / 超时非红 / Dock 来源", async () => {
+test("AUTO-P2：错过次行 / 默认关 / 补跑抽屉 / 超时非红 / Dock 来源", async () => {
   test.setTimeout(120_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const playwright = await import("playwright")
@@ -52,6 +52,14 @@ test("AUTO-P2：错过次行 / 补跑抽屉 / 超时非红 / Dock 来源", async
     await expect(window.locator('[data-testid="automation-row-neutral"]')).toContainText("补跑等待确认超时，未运行")
     await expect(window.locator('[data-testid="automation-row-neutral"]')).not.toHaveClass(/error/)
     await snap(window, "auto-p2-list")
+
+    await window.locator('[data-testid="page-automations"]').getByRole("button", { name: "新建" }).click()
+    await window.locator('[data-testid="automation-catch-up-toggle"]').waitFor({ timeout: 8_000 })
+    const createToggle = window.locator('[data-testid="automation-catch-up-toggle"] [role="switch"]')
+    await expect(createToggle).toHaveAttribute("aria-checked", "false")
+    await snap(window, "auto-p2-drawer-default-off")
+    await window.locator('[aria-label="关闭"]').first().click()
+    await window.locator('[data-testid="automation-catch-up-toggle"]').waitFor({ state: "detached", timeout: 8_000 })
 
     await window.locator('[data-testid="automation-row"]').filter({ hasText: "午间 diff 复盘" }).click()
     await window.locator('[data-testid="automation-catch-up-toggle"]').waitFor({ timeout: 8_000 })
