@@ -22,6 +22,7 @@ import { clearComposerDraft, prefixHostModeForSend, takeComposerText } from "./c
 import { takeComputerUseSlash } from "@enjoy-agents/ipc-contract"
 import { desktopBiasForRun } from "./desktop-bias-for-run"
 import { lastSeenCurrentBranch, rememberSessionBranch } from "../../lib/session-cwd-branch"
+import { bumpSessionHydrateGeneration } from "../session-hydrate"
 
 type ChatState = ReturnType<typeof useChatStore.getState>
 type PreparedSend = { content: string; assets?: QueuedComposerAsset[]; executePlan?: boolean }
@@ -100,6 +101,8 @@ function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
       ...pendingAssistantStamp(store)
     }
   ])
+  // 作废仍在 await 的 loadSession，避免空库回灌把首发气泡洗成欢迎页。
+  bumpSessionHydrateGeneration()
   return messages
 }
 

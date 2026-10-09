@@ -123,7 +123,8 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
     id: string
     title: string
   }>
-  const current = sessions.find((session) => session.id === store.sessionId) ?? sessions[0]
+  const currentId = useChatStore.getState().sessionId
+  const current = sessions.find((session) => session.id === currentId) ?? sessions[0]
   if (current) {
     await loadSession(current.id, current.title)
     return

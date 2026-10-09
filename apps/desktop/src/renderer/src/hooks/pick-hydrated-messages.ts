@@ -1,5 +1,6 @@
 /**
- * 会话回灌：空库或过期的 loadSession 不得抹掉进行中的乐观气泡。
+ * 会话回灌。sameSession 必须是 loadSession 开头的值，禁止在 await 后改写成 true：
+ * 切会话只用库行；同会话才在空库 / running 且 live 更长时保住乐观气泡。
  */
 import { mergeUserAssets, type AssetBearingMessage } from "./merge-user-assets.ts"
 

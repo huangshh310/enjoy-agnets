@@ -20,7 +20,7 @@ test("空库回灌保住进行中的乐观气泡", () => {
   assert.equal(next[0]?.content, "hello")
 })
 
-test("切走会话仍用库里的行", () => {
+test("切走会话不得把上一会话的 live 当成当前乐观泡", () => {
   const next = pickHydratedMessages({
     dbMessages: [],
     liveMessages: [user],

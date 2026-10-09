@@ -1,7 +1,7 @@
 /**
  * 打开 / 新建会话：停车当前 run，不 abort 后台轮。
  */
-import { AgentToolId, migrateContentToParts, safeValidateUIMessages, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
+import { AgentToolId, type SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
 import {
   modeForLoadedSession,
   modeForNewSession,
@@ -17,8 +17,11 @@ import {
   parkedComposerPatch
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
-import { threadFromRows } from "./hydrate-thread"
-import { pickHydratedMessages } from "./pick-hydrated-messages"
+import {
+  applySessionHydrate,
+  bumpSessionHydrateGeneration,
+  isSessionHydrateCurrent
+} from "./session-hydrate"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
@@ -67,12 +70,14 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   if (stale?.()) return
   const store = useChatStore.getState()
   const sameSession = store.sessionId === sessionId
+  const generation = bumpSessionHydrateGeneration()
   if (!sameSession) {
     if (store.sessionId) {
       parkForegroundRun()
       saveCurrentSessionDraft()
     }
     store.setSession(sessionId, title)
+    store.setMessages([])
     store.setRuntimeId(pickSessionRuntime(sessionId, store.sessionRuntimes, store.preferredRuntimeId))
     applyComposerModel(store, sessionId)
     useChatStore.setState({ mode: modeForLoadedSession(store.sessionModes[sessionId]) })
@@ -82,18 +87,9 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
     store.setSession(sessionId, title)
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
-  if (stale?.()) return
-  const latest = useChatStore.getState()
-  if (latest.sessionId !== sessionId) return
-  restoreUiMessages(rows)
-  latest.setMessages(
-    pickHydratedMessages({
-      dbMessages: threadFromRows(rows),
-      liveMessages: latest.messages,
-      sameSession: true,
-      running: latest.running
-    })
-  )
+  if (stale?.() || !isSessionHydrateCurrent(generation)) return
+  if (useChatStore.getState().sessionId !== sessionId) return
+  applySessionHydrate({ dbRows: rows, sameSession })
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
@@ -265,17 +261,6 @@ function applyComposerModel(store: ReturnType<typeof useChatStore.getState>, ses
     models: store.models
   })
   store.setModel(patch.modelId, patch.modelLabel, patch.provider)
-}
-
-function restoreUiMessages(rows: MessageRow[]) {
-  safeValidateUIMessages(
-    rows.map((row) => ({
-      id: row.id,
-      role: row.role,
-      parts: row.parts && row.parts.length > 0 ? row.parts : migrateContentToParts(row.content),
-      createdAt: row.createdAt
-    }))
-  )
 }
 
 /** 新建会话跟 Composer 当前引擎；非法 id 再回落偏好。 */

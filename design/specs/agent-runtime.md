@@ -1,10 +1,6 @@
 # spec/agent-runtime
 
-<<<<<<< HEAD
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（COST-P3 准备失败不进 unknown；ACP usage 放行）
-=======
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（拒绝后再泵不得撞 `approvals.id`；SQL 不进对话）
->>>>>>> 307d9f98 (fix(runtime): 修复拒绝审批撞库与种子首发)
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-09（空会话首发回灌不得洗掉乐观气泡；COST-P3 usage 放行）
 
 ## 当前真相
 
