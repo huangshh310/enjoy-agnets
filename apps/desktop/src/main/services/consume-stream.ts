@@ -6,7 +6,7 @@ import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { createId } from "./ids"
 import { persistFromEvent, type RunTranscript } from "./persist-session"
 import { rememberApproval } from "./approval-hmac"
-import { classifyError } from "@enjoy-agents/agent-core"
+import { classifyError } from "@enjoy-agents/agent-core/runtime-errors"
 import { shouldCheckpointPersist } from "./agent-run-flush"
 import { mapStreamPart, withToolId } from "./stream-parts"
 

@@ -26,6 +26,7 @@ export async function loadSessionEstimatedCost(raw: unknown): Promise<SessionEst
       runId: row.id,
       kind: row.kind,
       status: row.status,
+      endedAt: row.updatedAt,
       usage,
       runtimeId: usage?.runtimeId ?? extras.runtimeId ?? runtimeFromModelId(modelId),
       providerKind: usage?.providerKind ?? profile?.kind,

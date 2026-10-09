@@ -24,7 +24,8 @@ export function matchModelRate(input: {
     rate,
     source,
     snapshotDate: snap ? (input.snapshot ?? PRICE_SNAPSHOT).date : undefined,
-    snapshotVersion: snap ? (input.snapshot ?? PRICE_SNAPSHOT).version : undefined
+    snapshotVersion: snap ? (input.snapshot ?? PRICE_SNAPSHOT).version : undefined,
+    tierContext: snap?.tierContext
   }
 }
 

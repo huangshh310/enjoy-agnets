@@ -12,6 +12,7 @@ export type UsageAccumulator = {
   reasoningTokens?: number
   reportedCostUsd?: number
   usageIncomplete?: boolean
+  maxPumpInputTokens?: number
 }
 
 /** 流式 usage 按泵累加。可选分项先在本泵归一，缺关键输入就标不完整。 */
@@ -27,6 +28,7 @@ export function accumulateRunUsage(run: UsageAccumulator, usage: UsageAccumulato
   if (typeof pump.reportedCostUsd === "number" && Number.isFinite(pump.reportedCostUsd)) {
     run.reportedCostUsd = pump.reportedCostUsd
   }
+  noteMaxPumpInput(run, pump)
 }
 
 /** ACP usage_update.used / cost 是会话快照，覆盖为最新一次。 */
@@ -41,6 +43,7 @@ export function replaceRunUsage(run: UsageAccumulator, usage: UsageAccumulator):
     run.reportedCostUsd = usage.reportedCostUsd
   }
   if (usage.usageIncomplete) run.usageIncomplete = true
+  copyToken(run, usage, "maxPumpInputTokens")
 }
 
 export function markPumpMissingUsage(run: UsageAccumulator): void {
@@ -51,10 +54,23 @@ export function normalizePumpUsage(usage: UsageAccumulator): UsageAccumulator {
   const next = { ...usage }
   const noCache = noCacheOf(usage)
   if (noCache !== undefined) next.noCacheTokens = noCache
-  else if (hasFinite(usage.inputTokens)) next.usageIncomplete = true
+  else if (hasFinite(usage.outputTokens) && !hasFinite(usage.inputTokens)) {
+    next.usageIncomplete = true
+  }
   const reasoning = reasoningOf(usage)
   if (reasoning !== undefined) next.reasoningTokens = reasoning
+  if (hasFinite(usage.inputTokens)) next.maxPumpInputTokens = usage.inputTokens
   return next
+}
+
+function noteMaxPumpInput(run: UsageAccumulator, pump: UsageAccumulator): void {
+  const pumpInput = hasFinite(pump.maxPumpInputTokens)
+    ? pump.maxPumpInputTokens
+    : hasFinite(pump.inputTokens)
+      ? pump.inputTokens
+      : undefined
+  if (pumpInput === undefined) return
+  run.maxPumpInputTokens = Math.max(run.maxPumpInputTokens ?? 0, pumpInput)
 }
 
 function noCacheOf(usage: UsageAccumulator): number | undefined {

@@ -4,7 +4,12 @@
  */
 import { getRun, updateRun } from "@enjoy-agents/db"
 import { isAcpHostRuntimeId } from "@enjoy-agents/ipc-contract/agent-tools"
-import { userRatesFrom, type TokenUsage, type UserModelRates } from "@enjoy-agents/providers/pricing"
+import {
+  PRICE_SNAPSHOT,
+  userRatesFrom,
+  type TokenUsage,
+  type UserModelRates
+} from "@enjoy-agents/providers/pricing"
 import { getActiveRun, type ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { accumulateRunUsage, markPumpMissingUsage, replaceRunUsage } from "./run-usage-accumulate"
@@ -23,6 +28,7 @@ export type RunUsageRecord = TokenUsage & {
   reportedCostUsd?: number
   userRates?: UserModelRates
   baseURL?: string
+  snapshotVersion?: string
 }
 
 export function parseRunUsage(json: string | null | undefined): RunUsageRecord | undefined {
@@ -42,6 +48,7 @@ export function writeRunUsage(runId: string, usage: RunUsageRecord): void {
 
 export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
   const modelId = run.input.modelId ?? run.secret?.modelId
+  const existing = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
   writeRunUsage(runId, {
     inputTokens: run.inputTokens,
     outputTokens: run.outputTokens,
@@ -51,11 +58,13 @@ export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
     reasoningTokens: run.reasoningTokens,
     reportedCostUsd: run.reportedCostUsd,
     usageIncomplete: run.usageIncomplete,
+    maxPumpInputTokens: run.maxPumpInputTokens,
     runtimeId: run.input.runtimeId,
     providerKind: run.secret?.provider,
     modelId,
     baseURL: run.secret?.baseURL,
-    userRates: userRatesFrom(run.secret?.models?.find((item) => item.id === modelId))
+    userRates: existing?.userRates ?? userRatesFrom(run.secret?.models?.find((item) => item.id === modelId)),
+    snapshotVersion: existing?.snapshotVersion ?? PRICE_SNAPSHOT.version
   })
 }
 

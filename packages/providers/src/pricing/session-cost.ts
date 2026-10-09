@@ -18,6 +18,7 @@ export type SessionCostRunInput = {
   runId: string
   kind?: string
   status?: string
+  endedAt?: number
   usage?: TokenUsage & {
     runtimeId?: string
     providerKind?: string
@@ -59,7 +60,7 @@ export function buildSessionEstimatedCost(input: {
       baseURL: run.usage.baseURL ?? run.baseURL,
       snapshot: input.snapshot
     })
-    runs.push({ runId: run.runId, ...estimate })
+    runs.push({ runId: run.runId, ...estimate, ...(run.endedAt != null ? { endedAt: run.endedAt } : {}) })
   }
   return summarizeSessionCosts(input.sessionId, runs)
 }
@@ -74,13 +75,17 @@ function classifyEmptyUsage(run: SessionCostRunInput): SessionRunEstimate | unde
   const runtimeId = run.runtimeId ?? run.usage?.runtimeId ?? runtimeFromModelId(run.modelId)
   const providerKind = run.providerKind ?? run.usage?.providerKind
   if (isExternalRuntime(runtimeId)) {
-    return { runId: run.runId, status: "not_reported" }
+    return withEndedAt({ runId: run.runId, status: "not_reported" }, run.endedAt)
   }
   if (isLocalUnbilledKind(providerKind)) {
-    return { runId: run.runId, status: "local_unbilled" }
+    return withEndedAt({ runId: run.runId, status: "local_unbilled" }, run.endedAt)
   }
   if (run.status != null && run.status !== "completed") return undefined
-  return { runId: run.runId, status: "unknown", missing: ["usage"] }
+  return withEndedAt({ runId: run.runId, status: "unknown", missing: ["usage"] }, run.endedAt)
+}
+
+function withEndedAt(row: SessionRunEstimate, endedAt: number | undefined): SessionRunEstimate {
+  return endedAt == null ? row : { ...row, endedAt }
 }
 
 function isExternalRuntime(runtimeId: string | undefined): boolean {

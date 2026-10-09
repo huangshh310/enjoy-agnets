@@ -13,6 +13,8 @@ export type SnapshotModelRate = ModelRate & {
   provider: string
   modelId: string
   aliases?: string[]
+  /** models.dev cost.tiers 里最低一档的上下文阈值；超过则整次 unknown。 */
+  tierContext?: number
 }
 
 export type PriceSnapshot = {
@@ -42,6 +44,8 @@ export type TokenUsage = {
   reasoningTokens?: number
   /** 多泵里有一轮没上报用量：整次未知。 */
   usageIncomplete?: boolean
+  /** 各泵 input 的最大值，用来判断是否跨过 models.dev 分档阈值。 */
+  maxPumpInputTokens?: number
 }
 
 export type MatchedRate = {
@@ -49,4 +53,5 @@ export type MatchedRate = {
   source: "snapshot" | "user" | "mixed"
   snapshotDate?: string
   snapshotVersion?: string
+  tierContext?: number
 }

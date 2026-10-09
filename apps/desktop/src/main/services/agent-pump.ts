@@ -8,9 +8,7 @@ import {
   type SubagentToolTraceEvent
 } from "@enjoy-agents/agent-core"
 import { foldToolEvent, type HostInjectSnapshot } from "@enjoy-agents/ipc-contract"
-import { consumeFullStream } from "./consume-stream"
-import { billingContextOf, enrichUsageEvent } from "./enrich-usage-cost"
-import { applyActiveRunUsage, finalizePumpUsage } from "./run-usage"
+import { consumeRun } from "./consume-run"
 import { shouldEmitRunEnd } from "./claim-run-end"
 import { completeAgentRun } from "./complete-agent-run"
 import { failAgentPump } from "./fail-agent-pump"
@@ -29,8 +27,6 @@ import { deleteActiveRun, emitEvent, getActiveRun, type ActiveRun } from "./agen
 import { absorbSteering, absorbSteeringMessages } from "./runtime-interact/absorb-steering"
 import { clearSteer } from "./runtime-interact/steering-queue"
 import { takeSessionHandoff } from "./session-handoff"
-import { looksLikeSshRoot } from "./ssh/refuse-local-cwd.ts"
-import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
 import { setDesktopOverlayOnce } from "./builtin-tools/desktop-overlay-once"
 
 export async function pumpStream(runId: string) {
@@ -208,56 +204,6 @@ function emitSubagentTool(run: ActiveRun, runId: string, event: SubagentToolTrac
         }
   foldToolEvent(run.tools, payload)
   emitEvent(run.window, payload)
-}
-
-async function consumeRun(
-  runId: string,
-  run: ActiveRun,
-  stream: Awaited<ReturnType<typeof openCodingStream>>["stream"]
-) {
-  // 不要重置 transcript/tools：审批后再泵一轮要叠在同一份上，失败才能整段落库。
-  let sawUsage = false
-  try {
-    await consumeFullStream({
-      stream,
-      runId,
-      window: run.window,
-      tools: run.tools,
-      transcript: run.transcript,
-      onApproval: (pending) => {
-        run.pendingApprovals.push(pending)
-      },
-      onFirstToken: () => {
-        run.firstTokenAt = run.firstTokenAt ?? Date.now()
-      },
-      onUsage: (usage) => {
-        sawUsage = true
-        applyActiveRunUsage(runId, run, usage)
-      },
-      onCheckpoint: () => {
-        checkpointActiveRun(run)
-      },
-      emit: (event) => {
-        const next = event.type === "usage.updated" ? enrichUsageEvent(event, billingContextOf(run)) : event
-        emitEvent(run.window, next)
-        noteFileChangedCheckpoint(run, runId, event)
-      }
-    })
-  } finally {
-    finalizePumpUsage(runId, run, sawUsage)
-  }
-  checkpointActiveRun(run)
-}
-
-function noteFileChangedCheckpoint(run: ActiveRun, runId: string, event: { type: string }): void {
-  if (event.type !== "file.changed" || run.checkpointNoted) return
-  run.checkpointNoted = true
-  if (looksLikeSshRoot(run.workspaceRoot)) return
-  void recordEnjoyCheckpoint(run.workspaceRoot, {
-    sessionId: run.input.sessionId,
-    runId,
-    kind: "turn"
-  }).catch(() => undefined)
 }
 
 function persistRunningBoundary(run: ActiveRun, runId: string): void {

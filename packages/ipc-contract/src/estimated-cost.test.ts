@@ -42,6 +42,34 @@ test("缺用量枚举可解析，不丢整行", () => {
   assert.deepEqual(parsed.missing, ["usage"])
 })
 
+test("分档缺项枚举可解析，未知值不丢整行", () => {
+  const parsed = EstimatedCost.parse({ status: "unknown", missing: ["tier"] })
+  assert.equal(parsed.status, "unknown")
+  assert.deepEqual(parsed.missing, ["tier"])
+  const old = EstimatedCost.safeParse({ status: "unknown", missing: ["warp"] })
+  assert.equal(old.success, true)
+  assert.equal(old.data?.missing, undefined)
+})
+
+test("同一 ACP 会话多个 run 的累计费用只取最后一次", () => {
+  const sum = summarizeSessionCosts("ses_acp", [
+    { runId: "r1", status: "reported", usd: 0.1, source: "engine", endedAt: 10 },
+    { runId: "r2", status: "reported", usd: 0.3, source: "engine", endedAt: 20 },
+    { runId: "r3", status: "reported", usd: 0.6, source: "engine", endedAt: 30 }
+  ])
+  assert.equal(sum.reportedUsd, 0.6)
+  assert.equal(sum.unknownCount, 0)
+})
+
+test("ACP 累计费用按结束时间取最后一次，不按数组顺序相加", () => {
+  const sum = summarizeSessionCosts("ses_acp_order", [
+    { runId: "late", status: "reported", usd: 0.6, source: "engine", endedAt: 30 },
+    { runId: "early", status: "reported", usd: 0.1, source: "engine", endedAt: 10 },
+    { runId: "mid", status: "reported", usd: 0.3, source: "engine", endedAt: 20 }
+  ])
+  assert.equal(sum.reportedUsd, 0.6)
+})
+
 test("全是本地或未上报时没有假总额", () => {
   const sum = summarizeSessionCosts("ses_2", [
     { runId: "a", status: "local_unbilled" },

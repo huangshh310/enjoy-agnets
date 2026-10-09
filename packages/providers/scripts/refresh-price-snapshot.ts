@@ -3,10 +3,12 @@
  *
  * 用法（仓库根）：
  *   node --experimental-strip-types packages/providers/scripts/refresh-price-snapshot.ts
+ *   node --experimental-strip-types packages/providers/scripts/refresh-price-snapshot.ts --expect-sha=<sha256>
  *
  * 规则：跳过 gateway / vercel / 本地；别名只留一对一且价目相同的 dated id；
- * models.dev id 经 `models-dev-kind.ts` 精确映射到本仓 kind，不猜家族。
- * 响应 ETag 与正文 SHA-256 写入快照，方便下次对照。
+ * models.dev id 经 `models-dev-kind.ts` 判断是否收录，快照里保留原 id
+ *（alibaba 与 alibaba-cn 并存，禁止按本仓 kind 先到先得去重）。
+ * 记下 cost.tiers 最低档上下文阈值。响应 ETag 与正文 SHA-256 写入快照。
  */
 import { createHash } from "node:crypto"
 import { writeFileSync } from "node:fs"
@@ -30,25 +32,32 @@ type DevModel = {
     cache_read?: number
     cache_write?: number
     reasoning?: number
+    tiers?: Array<{
+      context?: number
+      input?: number
+      output?: number
+      tier?: { type?: string; size?: number }
+    }>
   }
 }
 
+const expectSha = readExpectSha(process.argv.slice(2))
 const response = await fetch(MODELS_DEV)
 if (!response.ok) throw new Error(`models.dev ${response.status}`)
 const body = await response.text()
 const etag = response.headers.get("etag")?.replaceAll('"', "") ?? undefined
 const sourceSha256 = createHash("sha256").update(body).digest("hex")
+assertExpectedSha(sourceSha256, expectSha)
 const raw = JSON.parse(body) as Record<string, { models?: Record<string, DevModel> }>
 
 const models: SnapshotModelRate[] = []
 const seen = new Set<string>()
 for (const [provider, pack] of Object.entries(raw)) {
-  const kind = resolveKind(provider)
-  if (!kind) continue
+  if (!includeProvider(provider)) continue
   for (const [modelId, model] of Object.entries(pack.models ?? {})) {
-    const rate = toRate(kind, modelId, model)
+    const rate = toRate(provider, modelId, model)
     if (!rate) continue
-    const key = `${kind}\0${rate.modelId}`
+    const key = `${provider}\0${rate.modelId}`
     if (seen.has(key)) continue
     seen.add(key)
     models.push(rate)
@@ -71,11 +80,25 @@ const out = resolve(dirname(fileURLToPath(import.meta.url)), "../src/pricing/mod
 writeFileSync(out, `${JSON.stringify(snapshot)}\n`)
 console.log(`wrote ${snapshot.models.length} models etag=${etag ?? "—"} → ${out}`)
 
-function resolveKind(modelsDevId: string): string | undefined {
-  if (modelsDevId.includes("gateway")) return undefined
-  if (allowed.has(modelsDevId)) return modelsDevId
+export function readExpectSha(argv: string[]): string | undefined {
+  const flag = argv.find((item) => item.startsWith("--expect-sha="))
+  if (!flag) return undefined
+  const value = flag.slice("--expect-sha=".length).trim()
+  return value || undefined
+}
+
+export function assertExpectedSha(actual: string, expected?: string): void {
+  if (!expected) return
+  if (actual !== expected) {
+    throw new Error(`models.dev sha256 ${actual} != --expect-sha ${expected}`)
+  }
+}
+
+function includeProvider(modelsDevId: string): boolean {
+  if (modelsDevId.includes("gateway")) return false
+  if (allowed.has(modelsDevId)) return true
   const mapped = kindFromModelsDevProvider(modelsDevId)
-  return mapped && allowed.has(mapped) ? mapped : undefined
+  return Boolean(mapped && allowed.has(mapped))
 }
 
 function toRate(provider: string, modelId: string, model: DevModel): SnapshotModelRate | undefined {
@@ -86,6 +109,7 @@ function toRate(provider: string, modelId: string, model: DevModel): SnapshotMod
   const cacheRead = finite(cost.cache_read)
   const cacheWrite = finite(cost.cache_write)
   const reasoning = finite(cost.reasoning)
+  const tierContext = lowestTierContext(cost.tiers)
   if (
     input === undefined &&
     output === undefined &&
@@ -102,8 +126,22 @@ function toRate(provider: string, modelId: string, model: DevModel): SnapshotMod
     ...(output !== undefined ? { output } : {}),
     ...(cacheRead !== undefined ? { cacheRead } : {}),
     ...(cacheWrite !== undefined ? { cacheWrite } : {}),
-    ...(reasoning !== undefined ? { reasoning } : {})
+    ...(reasoning !== undefined ? { reasoning } : {}),
+    ...(tierContext !== undefined ? { tierContext } : {})
   }
+}
+
+function lowestTierContext(
+  tiers:
+    | Array<{ context?: number; tier?: { size?: number } }>
+    | undefined
+): number | undefined {
+  if (!tiers?.length) return undefined
+  const thresholds = tiers
+    .map((row) => finite(row.tier?.size) ?? finite(row.context))
+    .filter((value): value is number => value !== undefined && value > 0)
+  if (thresholds.length === 0) return undefined
+  return Math.min(...thresholds)
 }
 
 function finite(value: unknown): number | undefined {

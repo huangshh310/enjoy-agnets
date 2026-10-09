@@ -1,6 +1,12 @@
 /**
  * COST-P3 估算成本合约：未知用 undefined，禁止把缺项当 0。
  * 单次缺量或缺单价就是 unknown；会话合计允许「已知部分 + N 次未知」。
+ *
+ * ACP `cost` 是会话累计值，不是本次 run 增量
+ * （RFD：https://agentclientprotocol.com/rfds/session-usage 「Cumulative session cost」）。
+ * 会话 `reportedUsd` 按结束时间取该 ACP 会话最后一个值，禁止把各 run 的累计值相加。
+ * ACP 的 token（`usage_update.used`）是当前上下文占用，不是本次消耗；
+ * 会话合计和 `runs[]` 都不要把它当成本次 token 消耗来展示。
  */
 import { z } from "zod"
 
@@ -23,7 +29,8 @@ export const CostMissingItem = z.enum([
   "cacheWrite",
   "reasoning",
   "price",
-  "usage"
+  "usage",
+  "tier"
 ])
 export type CostMissingItem = z.infer<typeof CostMissingItem>
 
@@ -39,7 +46,9 @@ export const EstimatedCost = z.object({
 export type EstimatedCost = z.infer<typeof EstimatedCost>
 
 export const SessionRunEstimate = EstimatedCost.extend({
-  runId: z.string().min(1)
+  runId: z.string().min(1),
+  /** 仅用来挑 ACP 会话累计费用的最后一次，不是给 UI 展示的。 */
+  endedAt: z.number().optional()
 })
 export type SessionRunEstimate = z.infer<typeof SessionRunEstimate>
 
@@ -67,28 +76,46 @@ export function summarizeSessionCosts(
   let knownUsd = 0
   let known = 0
   let unknownCount = 0
-  let reportedUsd = 0
-  let reported = 0
-  for (const run of runs) {
+  let latestReported: { usd: number; endedAt: number; index: number } | undefined
+  runs.forEach((run, index) => {
     if (run.status === "estimated" && typeof run.usd === "number") {
       knownUsd += run.usd
       known += 1
-      continue
+      return
     }
     if (run.status === "unknown") {
       unknownCount += 1
-      continue
+      return
     }
     if (run.status === "reported" && typeof run.usd === "number") {
-      reportedUsd += run.usd
-      reported += 1
+      latestReported = pickLatestReported(latestReported, run, index)
     }
-  }
+  })
   return {
     sessionId,
     ...(known > 0 ? { knownUsd } : {}),
     unknownCount,
-    ...(reported > 0 ? { reportedUsd } : {}),
+    ...(latestReported ? { reportedUsd: latestReported.usd } : {}),
     runs
   }
+}
+
+/**
+ * 取最后一个 ACP 累计值（按 endedAt，缺省则按数组顺序）。
+ * 不用差值：usage_json 存的就是会话累计，没有本 run 开始时的基线，恢复后续算也稳。
+ */
+function pickLatestReported(
+  current: { usd: number; endedAt: number; index: number } | undefined,
+  run: SessionRunEstimate,
+  index: number
+): { usd: number; endedAt: number; index: number } {
+  const next = {
+    usd: run.usd as number,
+    endedAt: run.endedAt ?? Number.NEGATIVE_INFINITY,
+    index
+  }
+  if (!current) return next
+  if (next.endedAt > current.endedAt) return next
+  if (next.endedAt === current.endedAt && next.index > current.index) return next
+  return current
 }

@@ -149,6 +149,14 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/agent-core/src/computer-use/index.ts")
         },
         {
+          find: "@enjoy-agents/agent-core/runtime-errors",
+          replacement: resolve(repoRoot, "packages/agent-core/src/runtime/errors.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/streams/map-usage",
+          replacement: resolve(repoRoot, "packages/agent-core/src/streams/map-usage.ts")
+        },
+        {
           find: "@enjoy-agents/agent-harness/probe",
           replacement: resolve(repoRoot, "packages/agent-harness/src/agent-tools/detect/probe.ts")
         },
@@ -266,6 +274,14 @@ export default defineConfig({
         {
           find: "@enjoy-agents/agent-core/computer-use",
           replacement: resolve(repoRoot, "packages/agent-core/src/computer-use/index.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/runtime-errors",
+          replacement: resolve(repoRoot, "packages/agent-core/src/runtime/errors.ts")
+        },
+        {
+          find: "@enjoy-agents/agent-core/streams/map-usage",
+          replacement: resolve(repoRoot, "packages/agent-core/src/streams/map-usage.ts")
         },
         {
           find: "@enjoy-agents/providers/presets",

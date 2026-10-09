@@ -11,3 +11,4 @@ export {
   parseRunUsage,
   persistRunUsageFromActive
 } from "./run-usage.ts"
+export { consumeRun } from "./consume-run.ts"

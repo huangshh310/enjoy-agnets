@@ -12,7 +12,7 @@ const {
   getActiveRun,
   holdAgentRun,
   applyActiveRunUsage,
-  finalizePumpUsage,
+  consumeRun,
   hydrateActiveRunUsage,
   parseRunUsage
 } = await import("./run-usage-behavior.load.ts")
@@ -109,26 +109,49 @@ test("多次 ACP usage_update 之后 token 等于最后一次", () => {
   }
 })
 
-test("泵抛错走 finally 时标记用量不完整", () => {
+test("泵抛错走 finally 时标记用量不完整", async () => {
   const runId = `run_pump_fail_${Date.now()}`
   seedRun(runId)
   try {
     hold(runId)
     const run = getActiveRun(runId)
     assert.ok(run)
-    let threw = false
-    try {
-      try {
-        throw new Error("stream boom")
-      } finally {
-        finalizePumpUsage(runId, run, false)
-      }
-    } catch {
-      threw = true
+    async function* boom() {
+      throw new Error("stream boom")
     }
-    assert.equal(threw, true)
+    await assert.rejects(() => consumeRun(runId, run, boom()))
     assert.equal(run.usageIncomplete, true)
     assert.equal(parseRunUsage(getRun(getDatabase(), runId)?.usageJson)?.usageIncomplete, true)
+  } finally {
+    deleteActiveRun(runId)
+  }
+})
+
+test("userRates 首次写入后固定，并记下 snapshotVersion", () => {
+  const runId = `run_rates_freeze_${Date.now()}`
+  seedRun(runId)
+  try {
+    hold(runId)
+    const run = getActiveRun(runId)
+    assert.ok(run)
+    run.secret = {
+      id: "p1",
+      kind: "anthropic",
+      models: [{ id: "claude-sonnet-4-5", inputPricePerMillion: 9, outputPricePerMillion: 20 }]
+    } as never
+    applyActiveRunUsage(runId, run, { inputTokens: 10, outputTokens: 2 })
+    const first = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
+    assert.equal(first?.userRates?.inputPricePerMillion, 9)
+    assert.equal(typeof first?.snapshotVersion, "string")
+    run.secret = {
+      id: "p1",
+      kind: "anthropic",
+      models: [{ id: "claude-sonnet-4-5", inputPricePerMillion: 99, outputPricePerMillion: 99 }]
+    } as never
+    applyActiveRunUsage(runId, run, { inputTokens: 5, outputTokens: 1 })
+    const second = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
+    assert.equal(second?.userRates?.inputPricePerMillion, 9)
+    assert.equal(second?.snapshotVersion, first?.snapshotVersion)
   } finally {
     deleteActiveRun(runId)
   }

@@ -6,7 +6,7 @@ import type { CostMissingItem, CostSource, EstimatedCost } from "@enjoy-agents/i
 import { isAcpHostRuntimeId } from "@enjoy-agents/ipc-contract/agent-tools"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract/custom-agent"
 import { matchModelRate } from "./match.ts"
-import { hasUserRates, isOfficialProviderEndpoint } from "./official-endpoint.ts"
+import { hasUserRates, resolveOfficialCatalog } from "./official-endpoint.ts"
 import type { ModelRate, PriceSnapshot, TokenUsage, UserModelRates } from "./types.ts"
 
 const LOCAL_UNBILLED = new Set(["ollama", "lmstudio"])
@@ -34,21 +34,30 @@ export function estimateRunCost(input: {
   if (input.usage.usageIncomplete) {
     return { status: "unknown", missing: ["usage"] }
   }
-  const official = isOfficialProviderEndpoint(input.providerKind ?? "", input.baseURL)
-  if (!official && !hasUserRates(input.userRates)) {
+  const official = resolveOfficialCatalog(input.providerKind ?? "", input.baseURL)
+  if (!official.official && !hasUserRates(input.userRates)) {
     return { status: "unknown", missing: ["price"] }
   }
   if (!hasPositiveTokens(input.usage)) {
     return { status: "estimated", usd: 0 }
   }
   const matched = matchModelRate({
-    providerKind: input.providerKind ?? "",
+    providerKind: official.catalog ?? input.providerKind ?? "",
     modelId: input.modelId ?? "",
     userRates: input.userRates,
-    snapshot: official ? input.snapshot : undefined
+    snapshot: official.official ? input.snapshot : undefined
   })
   if (!matched) return { status: "unknown", missing: ["price"] }
+  if (exceedsTier(input.usage, matched.tierContext) && matched.source !== "user") {
+    return { status: "unknown", missing: ["tier"], source: matched.source as CostSource }
+  }
   return billMatched(input.usage, matched.rate, matched)
+}
+
+function exceedsTier(usage: TokenUsage, tierContext: number | undefined): boolean {
+  if (tierContext == null || tierContext <= 0) return false
+  const input = usage.maxPumpInputTokens ?? usage.inputTokens
+  return typeof input === "number" && Number.isFinite(input) && input > tierContext
 }
 
 function billMatched(

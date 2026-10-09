@@ -39,6 +39,7 @@ export type ActiveRun = {
   reportedCostUsd?: number
   /** 多泵里有一轮没 usage.updated，整次估算未知。 */
   usageIncomplete?: boolean
+  maxPumpInputTokens?: number
   citedSources: CitedSource[]
   /** 跨审批泵累积，失败/中止也靠这份落库。 */
   transcript: RunTranscript

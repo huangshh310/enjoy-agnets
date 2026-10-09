@@ -59,6 +59,13 @@ test("某字段只在部分泵出现时先归一再累加，两泵输入都计�
   assert.equal(cost.usd, expected.usd)
 })
 
+test("只有 output、没有 input 的泵标为不完整", () => {
+  const run: UsageAccumulator = {}
+  accumulateRunUsage(run, { outputTokens: 12 })
+  assert.equal(run.usageIncomplete, true)
+  assert.equal(run.outputTokens, 12)
+})
+
 test("其中一轮缺用量时为 unknown", () => {
   const run: UsageAccumulator = {}
   accumulateRunUsage(run, { inputTokens: 100, outputTokens: 10 })

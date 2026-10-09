@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 models.dev kind 精确映射 + ETag）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 按 region 对应 catalog；套餐端点不套按量价；分档超阈值 unknown）
 
 ## 当前真相
 
@@ -30,7 +30,7 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 
 `reasoningFamily: "auto"` 跟 `kind`；`custom` 再看模型 id 前缀（`minimax` / `glm` / `kimi` / `deepseek` / `moonshot`）。显式家族覆盖 kind。中转即使模型名带 deepseek，也不进 `@ai-sdk/deepseek`。
 
-COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date` / 可选 `sourceEtag` / `sourceSha256`，每百万 token USD：输入/输出/缓存读/缓存写/推理）。匹配是 **provider kind + modelId 精确命中**。别名只留一对一且真实存在、价目相同的 dated id；家族名 / 一对多丢掉。不含 `gateway`。models.dev 供应商 id 经 `models-dev-kind.ts` 精确映射到本仓 kind（`alibaba`→`qwen`、`moonshotai`→`kimi`、`volcengine`→`doubao`、`zhipuai`→`zhipu`、`togetherai`→`together`），不猜家族、不收编码套餐目录。用户在档案模型行填的 `*PricePerMillion` 逐项覆盖快照。baseURL 不是官方默认地址、又没填用户单价 → `unknown`，不套官方价（零用量也先过这道门）。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
+COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date` / 可选 `sourceEtag` / `sourceSha256`，每百万 token USD：输入/输出/缓存读/缓存写/推理；可选 `tierContext` 为分档最低上下文阈值）。快照 `provider` 是 **models.dev id**（`alibaba` 与 `alibaba-cn` 并存），禁止按本仓 kind 先到先得去重。匹配是 **catalog + modelId 精确命中**：PAYG region 对到确定的 catalog（qwen `cn`→`alibaba-cn`、`intl`→`alibaba`；kimi `cn`→`moonshotai-cn`、`intl`→`moonshotai`；zhipu `api`→`zhipuai`；doubao `api`→`volcengine`；together 单目录 `togetherai`）。套餐 / 订阅 region（qwen `token-plan`、kimi `code-cn`/`code-intl`、zhipu/zai `coding`、doubao `coding`/`agent` 等）没有用户自填价 → `unknown`，不套按量快照。同一 URL 命中多个 region 且 catalog 不一致（如智谱共享 Anthropic 根）→ 不当官方，不要猜。双目录 kind 缺 baseURL → 不当官方。别名只留一对一且真实存在、价目相同的 dated id；家族名 / 一对多丢掉。不含 `gateway`。不猜家族、不收编码套餐目录。用户在档案模型行填的 `*PricePerMillion` 逐项覆盖快照；`userRates` 与 `snapshotVersion` 首次写入 `usage_json` 后固定，避免历史估算漂移。baseURL 不是官方按量地址、又没填用户单价 → `unknown`，不套官方价（零用量也先过这道门）。任一泵 input 超过该模型 `tierContext` → 整次 `unknown`，`missing: ["tier"]`，不得标 `estimated`。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`（可加 `--expect-sha=`，不一致即拒）。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
 
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 
@@ -87,4 +87,6 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - xAI 官方生图是 `@ai-sdk/xai` 的 `xai.image('grok-imagine-image-2.0')` + `generateImage`。语言模型已有 `xai` preset 走 OpenAI `/v1` 兼容端点；挂在兼容端点时生图走 `createOpenAI().image()`，对准 `images/generations`。不要用 `streamText` 调 imagine 模型。
 - xAI 视频必须 `createXai().video('grok-imagine-video')` + `experimental_generateVideo`。不要用 `image()` 冒充。档案即使 kind=openai，只要模型 id 是 imagine-video 也走这条。Base URL 跟生图同一主机；只有空或 `api.openai.com` 才改打 `https://api.x.ai/v1`。国内中转能出图却强行打官方 x.ai 会 Connect Timeout。
 - 估算成本不要按模型家族前缀猜价，也不要把供应商没返回的缓存/推理 token 写成 0。没命中快照且用户没填 → `unknown`。有缓存 token 但缺缓存单价 → 整次 `unknown`。推理默认含在 output 里；只有快照写了独立推理单价才拆开。`inputTokens` 已含缓存，输入价只乘 `noCacheTokens`（没有则 `input − cacheRead − cacheWrite`）。models.dev 的 `family` 不是别名，禁止写进快照。
+- **隐患**：把 `alibaba` / `alibaba-cn` 都映射成 `qwen` 再按 kind `seen` 去重，国际价会盖住国内价（共有模型里绝大多数单价不同）。`officialSiblingEndpoints` 会把 kimi Code、qwen Token Plan 等套餐主机也当成官方按量。正确做法：快照按 models.dev id 并存；估价只认核对过的 PAYG region；套餐或对不上的地域显示 unknown，不要猜。
+- models.dev `cost.tiers` 是按上下文长度分档。忽略分档仍标「估算」会少算。正确做法：快照记下最低档 `tierContext`，任一泵 input 超过阈值整次 `unknown`（`missing: ["tier"]`）。
 - Node `--experimental-strip-types` 加载 `@enjoy-agents/providers` 入口时，无后缀 `./capabilities/probe` 会 `ERR_MODULE_NOT_FOUND`（文件是 `probe.ts`）；`from "./presets"` 在 Unix 会撞上 `presets/` 目录。正确做法：相对导入带 `.ts`。`capabilities/probe.ts` 只是内存缓存桩，不发网络请求。

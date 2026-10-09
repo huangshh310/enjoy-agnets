@@ -4,6 +4,7 @@
  */
 import type { PriceSnapshot, SnapshotModelRate } from "./types.ts"
 import { snapshotLookupKey, uniqueExistingAliases } from "./alias-policy.ts"
+import { uniqueCatalogForKind } from "./models-dev-kind.ts"
 import loaded from "./models-dev-snapshot.json" with { type: "json" }
 
 export const PRICE_SNAPSHOT: PriceSnapshot = Object.freeze({
@@ -44,7 +45,12 @@ export function lookupSnapshotRate(
   snapshot?: PriceSnapshot
 ): SnapshotModelRate | undefined {
   const index = snapshot ? buildSnapshotIndex(snapshot) : DEFAULT_INDEX
-  return index.get(snapshotLookupKey(provider.trim(), modelId.trim()))
+  const id = modelId.trim()
+  const direct = index.get(snapshotLookupKey(provider.trim(), id))
+  if (direct) return direct
+  const catalog = uniqueCatalogForKind(provider.trim())
+  if (!catalog || catalog === provider.trim()) return undefined
+  return index.get(snapshotLookupKey(catalog, id))
 }
 
 export { snapshotLookupKey } from "./alias-policy.ts"

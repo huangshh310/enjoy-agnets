@@ -30,7 +30,26 @@ const TABLE: PriceSnapshot = {
       cacheRead: 0.3,
       cacheWrite: 3.75
     },
-    { provider: "openai", modelId: "gpt-4o", input: 2.5, output: 10, cacheRead: 1.25 }
+    { provider: "openai", modelId: "gpt-4o", input: 2.5, output: 10, cacheRead: 1.25 },
+    {
+      provider: "alibaba",
+      modelId: "qwen3-coder-480b",
+      input: 1.5,
+      output: 7.5
+    },
+    {
+      provider: "alibaba-cn",
+      modelId: "qwen3-coder-480b",
+      input: 0.861,
+      output: 3.441
+    },
+    {
+      provider: "anthropic",
+      modelId: "tiered-sonnet",
+      input: 3,
+      output: 15,
+      tierContext: 32_000
+    }
   ]
 }
 
@@ -290,9 +309,106 @@ test("非官方 baseURL 且没填用户单价 → 未知，不套官方价", () 
   assert.deepEqual(result.missing, ["price"])
 })
 
+test("中国区与国际区各用对应 catalog 的价；套餐端点没有用户价就是未知", () => {
+  const cn = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 0 },
+    providerKind: "qwen",
+    modelId: "qwen3-coder-480b",
+    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    snapshot: TABLE
+  })
+  assert.equal(cn.status, "estimated")
+  assert.equal(cn.usd, 0.861)
+
+  const intl = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 0 },
+    providerKind: "qwen",
+    modelId: "qwen3-coder-480b",
+    baseURL: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    snapshot: TABLE
+  })
+  assert.equal(intl.status, "estimated")
+  assert.equal(intl.usd, 1.5)
+
+  const plan = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 0 },
+    providerKind: "qwen",
+    modelId: "qwen3-coder-480b",
+    baseURL: "https://token-plan.maas.qianwenaiapi.com/compatible-mode/v1",
+    snapshot: TABLE
+  })
+  assert.equal(plan.status, "unknown")
+  assert.deepEqual(plan.missing, ["price"])
+
+  const kimiPlan = estimateRunCost({
+    usage: { inputTokens: 1_000_000, outputTokens: 0 },
+    providerKind: "kimi",
+    modelId: "kimi-k2.6",
+    baseURL: "https://api.kimi.com/coding/v1",
+    snapshot: TABLE
+  })
+  assert.equal(kimiPlan.status, "unknown")
+  assert.deepEqual(kimiPlan.missing, ["price"])
+})
+
+test("有分档的模型，input 超过最低档阈值不得标为 estimated", () => {
+  const over = estimateRunCost({
+    usage: { inputTokens: 32_001, outputTokens: 0 },
+    providerKind: "anthropic",
+    modelId: "tiered-sonnet",
+    snapshot: TABLE
+  })
+  assert.equal(over.status, "unknown")
+  assert.deepEqual(over.missing, ["tier"])
+  assert.equal(over.usd, undefined)
+
+  const under = estimateRunCost({
+    usage: { inputTokens: 32_000, outputTokens: 0 },
+    providerKind: "anthropic",
+    modelId: "tiered-sonnet",
+    snapshot: TABLE
+  })
+  assert.equal(under.status, "estimated")
+  assert.equal(under.usd, 0.096)
+})
+
+test("同一 ACP 会话 3 个 run 的累计费用只取最后一次", () => {
+  const sum = buildSessionEstimatedCost({
+    sessionId: "ses_acp_cost",
+    snapshot: TABLE,
+    runs: [
+      {
+        runId: "r1",
+        status: "completed",
+        runtimeId: "claude",
+        endedAt: 10,
+        usage: { reportedCostUsd: 0.1, runtimeId: "claude" }
+      },
+      {
+        runId: "r2",
+        status: "completed",
+        runtimeId: "claude",
+        endedAt: 20,
+        usage: { reportedCostUsd: 0.3, runtimeId: "claude" }
+      },
+      {
+        runId: "r3",
+        status: "completed",
+        runtimeId: "claude",
+        endedAt: 30,
+        usage: { reportedCostUsd: 0.6, runtimeId: "claude" }
+      }
+    ]
+  })
+  assert.equal(sum.reportedUsd, 0.6)
+  assert.equal(sum.knownUsd, undefined)
+})
+
 test("models.dev 供应商 id 只做精确映射", () => {
   assert.equal(kindFromModelsDevProvider("alibaba"), "qwen")
+  assert.equal(kindFromModelsDevProvider("alibaba-cn"), "qwen")
   assert.equal(kindFromModelsDevProvider("moonshotai"), "kimi")
+  assert.equal(kindFromModelsDevProvider("moonshotai-cn"), "kimi")
   assert.equal(kindFromModelsDevProvider("volcengine"), "doubao")
   assert.equal(kindFromModelsDevProvider("zhipuai"), "zhipu")
   assert.equal(kindFromModelsDevProvider("togetherai"), "together")
@@ -309,11 +425,17 @@ test("datedIdAliases 只收价目相同的日期后缀", () => {
   assert.deepEqual(canonical?.aliases, ["gpt-x-20240101"])
 })
 
-test("快照含精确映射的 qwen / kimi / doubao / zhipu / together", () => {
-  const kinds = new Set(PRICE_SNAPSHOT.models.map((model) => model.provider))
-  for (const kind of ["qwen", "kimi", "doubao", "zhipu", "together"]) {
-    assert.equal(kinds.has(kind), true, `missing ${kind}`)
+test("快照同时保留国内和国际 catalog，不按 kind 去重", () => {
+  const catalogs = new Set(PRICE_SNAPSHOT.models.map((model) => model.provider))
+  for (const id of ["alibaba", "alibaba-cn", "moonshotai", "moonshotai-cn", "volcengine", "zhipuai", "togetherai"]) {
+    assert.equal(catalogs.has(id), true, `missing ${id}`)
   }
+  assert.equal(catalogs.has("qwen"), false)
+  assert.equal(catalogs.has("kimi"), false)
+  assert.equal(
+    PRICE_SNAPSHOT.models.some((model) => typeof model.tierContext === "number" && model.tierContext > 0),
+    true
+  )
 })
 
 test("真实快照没有一对多别名；家族名匹配不到", () => {
