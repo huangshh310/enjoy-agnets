@@ -3,22 +3,24 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { getRun, insertRun } from "@enjoy-agents/db"
 import {
   CATCH_UP_APPROVAL_TIMEOUT,
   CATCH_UP_INTERRUPTED_BY_RESTART
 } from "@enjoy-agents/ipc-contract/automations-missed"
 
 const {
+  deleteActiveRun,
   getActiveRun,
   holdAgentRun,
   settleRun,
   waitForRunSettle,
   deleteSetting,
+  getDatabase,
   getSetting,
   setSetting,
-  failCatchUpWaiting,
   failInterruptedCatchUps,
-  shouldFailWaitingCatchUp,
+  restoreWaitingRuns,
   claimMissedPoint,
   defaultSettingsIo,
   listMissedForAutomation,
@@ -142,7 +144,7 @@ test("窗口重建再次 restore 时 finishAutomationRun 只一次", async () =>
   }
 })
 
-test("窗口重建时正在等审批的补跑不标 failed", () => {
+test("窗口重建时正在等审批的补跑不标 failed", async () => {
   const automationId = "auto_restore_wait_live"
   const runId = "run_restore_wait_live"
   const scheduledAt = Date.now()
@@ -154,6 +156,17 @@ test("窗口重建时正在等审批的补跑不标 failed", () => {
     scheduledAt,
     isCatchUp: true
   }
+  insertRun(getDatabase(), {
+    id: runId,
+    sessionId: `ses_${runId}`,
+    workspaceId: "ws_1",
+    kind: "agent",
+    status: "waiting_review",
+    modelId: "m",
+    providerId: null,
+    checkpoint: JSON.stringify({ automationSource: source }),
+    error: null
+  })
   try {
     holdAgentRun({
       runId,
@@ -171,16 +184,15 @@ test("窗口重建时正在等审批的补跑不标 failed", () => {
         messages: [{ role: "user", content: "x" }]
       }
     })
+    await restoreWaitingRuns({ isDestroyed: () => false, webContents: { send() {} } } as never)
     assert.ok(getActiveRun(runId))
-    assert.equal(shouldFailWaitingCatchUp(source, Boolean(getActiveRun(runId))), false)
-    if (shouldFailWaitingCatchUp(source, Boolean(getActiveRun(runId)))) {
-      failCatchUpWaiting(defaultSettingsIo(), runId, scheduledAt)
-    }
+    assert.equal(getRun(getDatabase(), runId)?.status, "waiting_review")
     assert.equal(
       listMissedForAutomation(defaultSettingsIo(), automationId, scheduledAt)[0]?.status,
       "running"
     )
   } finally {
+    deleteActiveRun(runId)
     restoreAutomations(prev)
   }
 })

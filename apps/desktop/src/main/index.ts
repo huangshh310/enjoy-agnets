@@ -15,6 +15,7 @@ import { blockNativeHistoryNavigation } from "./services/block-native-history";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import { startAppUpdate } from "./services/app-update";
+import { scheduleOrphanRestoreAfterLoad } from "./services/restore-after-load";
 import {
   focusOrRestoreWindow,
   isPrimaryInstance,
@@ -158,7 +159,8 @@ function bootPrimaryInstance(): void {
       optimizer.watchWindowShortcuts(window);
     });
     applyMacDockIcon();
-    restoreOrphansOnce(createWindow());
+    const win = createWindow();
+    scheduleOrphanRestoreAfterLoad(win.webContents, () => restoreOrphansOnce(win));
     startAppUpdate();
     void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
       startAutomationScheduler()

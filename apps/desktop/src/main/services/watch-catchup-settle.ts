@@ -38,6 +38,7 @@ export async function watchCatchUpSettle(
       isCatchUp: true
     })
   } finally {
+    watchedRunIds.delete(runId)
     markAutomationIdle(automationId)
     emitAutomationsChanged("status", automationId)
   }

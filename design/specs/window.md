@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（单实例锁：失败者 exit，二次启动先看 ready）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（孤儿续跑等 did-finish-load；单实例失败者 exit）
 
 ## 当前真相
 
@@ -30,7 +30,7 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 
 关窗 / ⌘Q：有 `running`、当前或后台 `pendingApproval` / Attention 审批时弹出 ConfirmDialog，确认才 `forceQuit`（`markQuitAllowed` 后 `app.quit`）。空闲标题栏关闭仍走 `window.close`（macOS 可留 Dock）。`before-quit` 未放行时 `preventDefault` 并推 `window.quit-requested`；清理改到 `will-quit`。Win / macOS / Linux 同一套。
 
-单实例：`registerAssetScheme` 之后立刻 `app.requestSingleInstanceLock()`（`single-instance.ts`）。拿不到锁的进程 `markQuitAllowed()` 后 `app.exit(0)`（不是 `quit()`，避免再进 `will-quit` 碰共享库）。`will-quit` / `before-quit` / `window-all-closed` 都先看 `isPrimaryInstance()`。拿到锁的实例听 `second-instance`：已有窗则 `restore` + `show` + `focus`；无窗且 `app.isReady()` 才 `createWindow`。孤儿续跑在 `whenReady` 里对第一扇窗做一次，不挂 `ready-to-show`。三端差异：Windows / Linux 二次启动走 `second-instance`；macOS 点 Dock 重开已在跑的应用走 `activate`（无窗才重建），命令行再拉起第二份进程才走 `second-instance`。E2E 仍拿锁，并给独立 `ENJOY_E2E_USERDATA`。
+单实例：`registerAssetScheme` 之后立刻 `app.requestSingleInstanceLock()`（`single-instance.ts`）。拿不到锁的进程 `markQuitAllowed()` 后 `app.exit(0)`（不是 `quit()`，避免再进 `will-quit` 碰共享库）。`will-quit` / `before-quit` / `window-all-closed` 都先看 `isPrimaryInstance()`。拿到锁的实例听 `second-instance`：已有窗则 `restore` + `show` + `focus`；无窗且 `app.isReady()` 才 `createWindow`。孤儿续跑挂第一扇窗的 `webContents.once("did-finish-load")`（`restore-after-load.ts`），每个进程一次；`createWindow` 当下和窗口重建都不再跑。三端差异：Windows / Linux 二次启动走 `second-instance`；macOS 点 Dock 重开已在跑的应用走 `activate`（无窗才重建），命令行再拉起第二份进程才走 `second-instance`。E2E 仍拿锁，并给独立 `ENJOY_E2E_USERDATA`。
 
 ## 不变量
 
@@ -43,6 +43,7 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 
 - 创建窗口：`apps/desktop/src/main/index.ts`
 - 单实例锁：`apps/desktop/src/main/services/single-instance.ts`（`index.ts` 在 `whenReady` 之前调用）
+- 孤儿续跑时机：`apps/desktop/src/main/services/restore-after-load.ts`（首窗 `did-finish-load`）
 - IPC：`apps/desktop/src/main/ipc.ts`、`packages/ipc-contract/src/window.ts`；外链 `main/services/window-open-external.ts`
 - 放大/还原：`apps/desktop/src/main/services/window-maximize.ts`
 - UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`、`window-chrome.ts`、`mac-traffic-lights.tsx`、`window-glyph-controls.tsx`、`title-bar-toggles.tsx`

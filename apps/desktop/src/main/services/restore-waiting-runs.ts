@@ -11,10 +11,8 @@ import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { claimRestoreWaitingOnce } from "./restore-once"
-import { resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
 import { readPreferences } from "./preferences"
 import { parseWaitingExtras } from "./persist-waiting-run"
-import { getWorkspace } from "./workspace"
 import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
 
@@ -25,7 +23,8 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   const prefs = readPreferences()
   for (const row of waiting) {
     const extras = parseWaitingExtras(row.checkpoint)
-    if (shouldFailWaitingCatchUp(extras.automationSource, Boolean(getActiveRun(row.id)))) {
+    if (getActiveRun(row.id)) continue
+    if (shouldFailWaitingCatchUp(extras.automationSource, false)) {
       failCatchUpWaitingOnRestart(row.id)
       continue
     }
@@ -47,6 +46,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       continue
     }
     try {
+      const { getWorkspace } = await import("./workspace")
       const workspace = await getWorkspace(row.workspaceId)
       const input = RunAgentInput.parse({
         sessionId: row.sessionId,
@@ -60,6 +60,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
           content: typeof message.content === "string" ? message.content : ""
         }))
       })
+      const { resolveRunSecret, resolveRuntimeId } = await import("./agent-run-helpers")
       const runtimeId = resolveRuntimeId(input, prefs)
       const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
       const messages = Array.isArray(extras.modelMessages)
