@@ -17,6 +17,11 @@ export type CatalogModel = {
   source?: CatalogSource
   contextWindow?: number
   maxOutputTokens?: number
+  inputPricePerMillion?: number
+  outputPricePerMillion?: number
+  cacheReadPricePerMillion?: number
+  cacheWritePricePerMillion?: number
+  reasoningPricePerMillion?: number
 }
 
 export type PresetRegion = {

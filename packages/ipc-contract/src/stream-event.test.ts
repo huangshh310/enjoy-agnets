@@ -23,6 +23,21 @@ test("v2 事件带 sequence 并可 stamp", () => {
   }
 })
 
+test("usage.updated 旧估算枚举不丢掉整条事件", () => {
+  const parsed = StreamEvent.safeParse({
+    type: "usage.updated",
+    runId: "r1",
+    inputTokens: 3,
+    estimatedCost: { status: "legacy-status", usd: 0.2, source: "ancient" }
+  })
+  assert.equal(parsed.success, true)
+  if (parsed.success && parsed.data.type === "usage.updated") {
+    assert.equal(parsed.data.estimatedCost?.usd, 0.2)
+    assert.equal(parsed.data.estimatedCost?.status, undefined)
+    assert.equal(parsed.data.estimatedCost?.source, undefined)
+  }
+})
+
 test("未知 type 被拒绝", () => {
   const parsed = StreamEvent.safeParse({ type: "not.a.thing", runId: "r1" })
   assert.equal(parsed.success, false)
@@ -35,6 +50,12 @@ test("v2 事件全集可 safeParse", () => {
     { type: "structured.delta", runId: "r1", partial: { a: 1 } },
     { type: "asset.created", runId: "r1", assetId: "a", mediaType: "image/png", name: "n", size: 1 },
     { type: "usage.updated", runId: "r1", totalTokens: 8 },
+    {
+      type: "usage.updated",
+      runId: "r1",
+      cacheReadTokens: 2,
+      estimatedCost: { status: "legacy-status", usd: 0.2 }
+    },
     { type: "step.start", runId: "r1", stepId: "s" },
     { type: "step.end", runId: "r1", stepId: "s" },
     { type: "workflow.checkpoint", runId: "r1", checkpointId: "c", stepIndex: 0 },

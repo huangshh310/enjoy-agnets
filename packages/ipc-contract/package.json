@@ -22,13 +22,15 @@
     "./desktop-notify": "./src/desktop-notify.ts",
     "./automations-missed": "./src/automations-missed.ts",
     "./desktop-act-codes": "./src/desktop-act-codes.ts",
+    "./estimated-cost": "./src/estimated-cost.ts",
     "./session-config": "./src/session-config.ts",
     "./session-title": "./src/session-title.ts",
     "./session-heartbeat": "./src/session-heartbeat.ts",
     "./session-recap-kind": "./src/session-recap-kind.ts",
     "./session-overlay": "./src/session-overlay.ts",
     "./workspace-io": "./src/workspace-io.ts",
-    "./checkpoint-pick": "./src/checkpoint-pick.ts"
+    "./checkpoint-pick": "./src/checkpoint-pick.ts",
+    "./agent-tools": "./src/agent-tools.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

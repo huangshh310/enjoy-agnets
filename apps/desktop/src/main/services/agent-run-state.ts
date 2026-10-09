@@ -32,6 +32,10 @@ export type ActiveRun = {
   firstTokenAt?: number
   inputTokens?: number
   outputTokens?: number
+  cacheReadTokens?: number
+  cacheWriteTokens?: number
+  reasoningTokens?: number
+  reportedCostUsd?: number
   citedSources: CitedSource[]
   /** 跨审批泵累积，失败/中止也靠这份落库。 */
   transcript: RunTranscript

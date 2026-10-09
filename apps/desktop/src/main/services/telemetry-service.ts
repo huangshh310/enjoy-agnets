@@ -25,6 +25,11 @@ export function recordMetric(input: {
   status: string
   inputTokens?: number
   outputTokens?: number
+  cacheReadTokens?: number
+  cacheWriteTokens?: number
+  reasoningTokens?: number
+  estimatedCostUsd?: number
+  costStatus?: string
   durationMs?: number
   ttfoMs?: number
   tokensPerSecond?: number
@@ -40,6 +45,11 @@ export function recordMetric(input: {
     status: input.status,
     inputTokens: input.inputTokens ?? null,
     outputTokens: input.outputTokens ?? null,
+    cacheReadTokens: input.cacheReadTokens ?? null,
+    cacheWriteTokens: input.cacheWriteTokens ?? null,
+    reasoningTokens: input.reasoningTokens ?? null,
+    estimatedCostUsd: input.estimatedCostUsd ?? null,
+    costStatus: input.costStatus ?? null,
     durationMs: input.durationMs ?? null,
     ttfoMs: input.ttfoMs ?? null,
     tokensPerSecond: input.tokensPerSecond ?? null,

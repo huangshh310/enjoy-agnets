@@ -9,6 +9,8 @@ import {
 } from "@enjoy-agents/agent-core"
 import { foldToolEvent, type HostInjectSnapshot } from "@enjoy-agents/ipc-contract"
 import { consumeFullStream } from "./consume-stream"
+import { billingContextOf, enrichUsageEvent } from "./enrich-usage-cost"
+import { applyActiveRunUsage } from "./run-usage"
 import { shouldEmitRunEnd } from "./claim-run-end"
 import { completeAgentRun } from "./complete-agent-run"
 import { failAgentPump } from "./fail-agent-pump"
@@ -226,15 +228,13 @@ async function consumeRun(
     onFirstToken: () => {
       run.firstTokenAt = run.firstTokenAt ?? Date.now()
     },
-    onUsage: (usage) => {
-      run.inputTokens = usage.inputTokens ?? run.inputTokens
-      run.outputTokens = usage.outputTokens ?? run.outputTokens
-    },
+    onUsage: (usage) => applyActiveRunUsage(runId, run, usage),
     onCheckpoint: () => {
       checkpointActiveRun(run)
     },
     emit: (event) => {
-      emitEvent(run.window, event)
+      const next = event.type === "usage.updated" ? enrichUsageEvent(event, billingContextOf(run)) : event
+      emitEvent(run.window, next)
       noteFileChangedCheckpoint(run, runId, event)
     }
   })

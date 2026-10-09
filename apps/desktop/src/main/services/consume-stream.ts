@@ -25,7 +25,14 @@ export async function consumeFullStream(input: {
   transcript: RunTranscript
   onApproval: (pending: PendingApproval) => void
   onFirstToken?: () => void
-  onUsage?: (usage: { inputTokens?: number; outputTokens?: number }) => void
+  onUsage?: (usage: {
+    inputTokens?: number
+    outputTokens?: number
+    cacheReadTokens?: number
+    cacheWriteTokens?: number
+    reasoningTokens?: number
+    reportedCostUsd?: number
+  }) => void
   /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
   onCheckpoint?: () => void
   emit: (event: StreamEvent) => void
@@ -42,7 +49,14 @@ export async function consumeFullStream(input: {
     lastCheckpointAt = emitCheckpoint(event.type, lastCheckpointAt, input.onCheckpoint)
     if (event.type === "text.delta") input.onFirstToken?.()
     if (event.type === "usage.updated") {
-      input.onUsage?.({ inputTokens: event.inputTokens, outputTokens: event.outputTokens })
+      input.onUsage?.({
+        inputTokens: event.inputTokens,
+        outputTokens: event.outputTokens,
+        cacheReadTokens: event.cacheReadTokens,
+        cacheWriteTokens: event.cacheWriteTokens,
+        reasoningTokens: event.reasoningTokens,
+        reportedCostUsd: event.reportedCostUsd
+      })
     }
     if (event.type === "approval.required") {
       const args = await parkApprovalArgs(event.name, event.args)

@@ -220,6 +220,22 @@ test("usage_update 带上窗口 size", () => {
   if (events[0]?.type === "usage.updated") {
     assert.equal(events[0].inputTokens, 2200)
     assert.equal(events[0].contextWindow, 200000)
+    assert.equal(events[0].reportedCostUsd, undefined)
+  }
+})
+
+test("usage_update 上报花费原样带上，没上报不编造", () => {
+  const reported = mapAcpUpdate(
+    { sessionUpdate: "usage_update", used: 10, costUsd: 1.2 },
+    "run_1"
+  )
+  assert.equal(reported[0]?.type, "usage.updated")
+  if (reported[0]?.type === "usage.updated") {
+    assert.equal(reported[0].reportedCostUsd, 1.2)
+  }
+  const hidden = mapAcpUpdate({ sessionUpdate: "usage_update", used: 10 }, "run_1")
+  if (hidden[0]?.type === "usage.updated") {
+    assert.equal(hidden[0].reportedCostUsd, undefined)
   }
 })
 

@@ -122,6 +122,7 @@ function createWindow(): BrowserWindow {
   });
 
   registerIpc(mainWindow);
+  scheduleOrphanRestoreAfterLoad(mainWindow, (win) => restoreOrphansOnce(win));
 
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
@@ -159,8 +160,7 @@ function bootPrimaryInstance(): void {
       optimizer.watchWindowShortcuts(window);
     });
     applyMacDockIcon();
-    const win = createWindow();
-    scheduleOrphanRestoreAfterLoad(win.webContents, () => restoreOrphansOnce(win));
+    createWindow();
     startAppUpdate();
     void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
       startAutomationScheduler()

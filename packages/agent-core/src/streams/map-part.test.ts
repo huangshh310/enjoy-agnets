@@ -20,6 +20,31 @@ test("maps usage and step lifecycle to v2 events", () => {
     mapStreamPart({ type: "finish", usage: { inputTokens: 3, outputTokens: 5, totalTokens: 8 } }, "run_1"),
     { type: "usage.updated", runId: "run_1", inputTokens: 3, outputTokens: 5, totalTokens: 8 }
   )
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "finish",
+        usage: {
+          inputTokens: 10,
+          outputTokens: 4,
+          cachedInputTokens: 2,
+          cacheCreationInputTokens: 3,
+          reasoningTokens: 1
+        }
+      },
+      "run_1"
+    ),
+    {
+      type: "usage.updated",
+      runId: "run_1",
+      inputTokens: 10,
+      outputTokens: 4,
+      totalTokens: 14,
+      cacheReadTokens: 2,
+      cacheWriteTokens: 3,
+      reasoningTokens: 1
+    }
+  )
 })
 
 test("人工审批 request 才映射为 approval.required", () => {
