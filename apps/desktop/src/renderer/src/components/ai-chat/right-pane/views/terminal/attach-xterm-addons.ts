@@ -27,9 +27,17 @@ export type AttachedXtermAddons = {
  * leo 复核此频道：renderer 唯一 `window.openExternal` 出口。
  */
 export function onTerminalLinkActivate(_event: MouseEvent, uri: string): void {
-  openTerminalLink(uri, (url) => {
-    void getIde().window.openExternal({ url })
-  })
+  openTerminalLink(uri, requestOpenExternalQuiet)
+}
+
+/** 失败回 `{ ok: false, code }` 或 reject 都吞掉，不 toast。 */
+export function requestOpenExternalQuiet(url: string): void {
+  void getIde()
+    .window.openExternal({ url })
+    .then(
+      () => undefined,
+      () => undefined
+    )
 }
 
 export function attachXtermAddons(term: Terminal): AttachedXtermAddons {

@@ -9,7 +9,7 @@ import {
   TerminalResizeInput,
   TerminalWriteInput,
   WindowForceQuitInput,
-  WindowOpenExternalInput,
+  parseWindowOpenExternalInput,
   WindowSetTaskbarTitleInput
 } from "@enjoy-agents/ipc-contract"
 import {
@@ -165,8 +165,9 @@ function registerWindowIpc() {
     return { ok: true }
   })
   ipcMain.handle("window.openExternal", async (_event, raw) => {
-    const { url } = WindowOpenExternalInput.parse(raw)
-    return openExternalHttpUrl(url, (href) => shell.openExternal(href))
+    const parsed = parseWindowOpenExternalInput(raw)
+    if (!parsed.ok) return parsed
+    return openExternalHttpUrl(parsed.url, (href) => shell.openExternal(href))
   })
 }
 

@@ -4,6 +4,7 @@ import type {
   BuiltinToolsState,
   DesktopMentionAppsResult,
   WindowActionResult,
+  WindowOpenExternalResult,
   WindowState
 } from "@enjoy-agents/ipc-contract";
 
@@ -287,7 +288,7 @@ const ide = {
     setTaskbarTitle: (label: string) =>
       ipcRenderer.invoke("window.setTaskbarTitle", { label }) as Promise<WindowActionResult>,
     openExternal: (input: { url: string }) =>
-      ipcRenderer.invoke("window.openExternal", input) as Promise<WindowActionResult>,
+      ipcRenderer.invoke("window.openExternal", input) as Promise<WindowOpenExternalResult>,
     onMaximizedChange: (callback: (isMaximized: boolean) => void) => {
       const listener = (_event: unknown, payload: WindowState) =>
         callback(payload.isMaximized)

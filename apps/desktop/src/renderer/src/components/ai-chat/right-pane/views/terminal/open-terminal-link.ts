@@ -7,6 +7,15 @@ export type OpenExternalHttp = (url: string) => void
 
 export function openTerminalLink(raw: string, openExternal: OpenExternalHttp): void {
   const url = parseHttpUrl(raw)
-  if (!url) return
+  if (!url || urlHasUserinfo(url)) return
   openExternal(url)
+}
+
+function urlHasUserinfo(href: string): boolean {
+  try {
+    const parsed = new URL(href)
+    return Boolean(parsed.username || parsed.password)
+  } catch {
+    return true
+  }
 }

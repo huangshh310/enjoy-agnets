@@ -24,6 +24,17 @@ test("http(s) 交给 openExternal，非法协议丢掉", () => {
   assert.deepEqual(opened, ["https://example.com/docs"])
 })
 
+test("带 userinfo 凭据的链接丢掉，不调 openExternal", () => {
+  const opened: string[] = []
+  openTerminalLink("https://user:pass@example.com/docs", (url) => {
+    opened.push(url)
+  })
+  openTerminalLink("http://alice@example.com", (url) => {
+    opened.push(url)
+  })
+  assert.deepEqual(opened, [])
+})
+
 test("Unicode11 必须开 allowProposedApi，否则终端白屏", () => {
   const mount = readFileSync(join(dir, "mount-workspace-terminal.ts"), "utf8")
   assert.ok(mount.includes("allowProposedApi: true"))
@@ -35,9 +46,12 @@ test("源码不写 window.open，接线走 window.openExternal", () => {
   assert.doesNotMatch(src, /window\.open\s*\(/)
   assert.doesNotMatch(attach, /window\.open\s*\(/)
   assert.ok(attach.includes("window.openExternal"))
+  assert.ok(attach.includes("requestOpenExternalQuiet"))
   assert.ok(attach.includes("openTerminalLink("))
   assert.ok(attach.includes("onTerminalLinkActivate"))
   assert.ok(attach.includes("new WebLinksAddon(onTerminalLinkActivate)"))
+  assert.ok(attach.includes(".then("))
+  assert.ok(!attach.includes("showAppToast"))
 })
 
 test("renderer 只有终端点击回调调用 window.openExternal", () => {
