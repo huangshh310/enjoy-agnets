@@ -27,8 +27,8 @@ test("http(s) 交给 openExternal，非法协议丢掉", () => {
 test("源码不写 window.open，接线走 window.openExternal", () => {
   const src = readFileSync(join(dir, "open-terminal-link.ts"), "utf8")
   const attach = readFileSync(join(dir, "attach-xterm-addons.ts"), "utf8")
-  assert.ok(!src.includes("window.open"))
-  assert.ok(!attach.includes("window.open"))
-  assert.ok(src.includes("window.openExternal"))
-  assert.ok(attach.includes("openTerminalLinkViaIde"))
+  assert.doesNotMatch(src, /window\.open\s*\(/)
+  assert.doesNotMatch(attach, /window\.open\s*\(/)
+  assert.ok(attach.includes("window.openExternal"))
+  assert.ok(attach.includes("openTerminalLink("))
 })

@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { skillSourceToastMessage } from "./skill-source-toast.ts"
+import { skillSourceToastMessage } from "./skill-source-toast-copy.ts"
 
 test("showSkillSourceToast 文案只含 kind 与 count", () => {
   const t = (path: string, vars?: Record<string, string | number>) =>

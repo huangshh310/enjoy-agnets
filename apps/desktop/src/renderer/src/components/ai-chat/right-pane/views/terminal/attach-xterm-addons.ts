@@ -7,7 +7,8 @@ import { Unicode11Addon } from "@xterm/addon-unicode11"
 import { WebLinksAddon } from "@xterm/addon-web-links"
 import { WebglAddon } from "@xterm/addon-webgl"
 import type { Terminal } from "@xterm/xterm"
-import { openTerminalLinkViaIde } from "./open-terminal-link"
+import { getIde } from "@renderer/lib/ide"
+import { openTerminalLink } from "./open-terminal-link"
 import { attachWebglOrDom } from "./xterm-webgl"
 
 export type TerminalSearchApi = {
@@ -29,7 +30,9 @@ export function attachXtermAddons(term: Terminal): AttachedXtermAddons {
   term.unicode.activeVersion = "11"
   term.loadAddon(search)
   term.loadAddon(new WebLinksAddon((_event, uri) => {
-    openTerminalLinkViaIde(uri)
+    openTerminalLink(uri, (url) => {
+      void getIde().window.openExternal({ url })
+    })
   }))
   return {
     fit,

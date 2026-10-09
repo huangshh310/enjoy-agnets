@@ -1,8 +1,7 @@
 /**
- * 终端链接：只走 main window.openExternal，禁止 renderer window.open。
+ * 终端链接：只走注入的 openExternal，禁止渲染进程自己开窗。
  */
-import { parseHttpUrl } from "@renderer/lib/http-url"
-import { getIde } from "@renderer/lib/ide"
+import { parseHttpUrl } from "../../../../../lib/http-url.ts"
 
 export type OpenExternalHttp = (url: string) => void
 
@@ -10,10 +9,4 @@ export function openTerminalLink(raw: string, openExternal: OpenExternalHttp): v
   const url = parseHttpUrl(raw)
   if (!url) return
   openExternal(url)
-}
-
-export function openTerminalLinkViaIde(raw: string): void {
-  openTerminalLink(raw, (url) => {
-    void getIde().window.openExternal({ url })
-  })
 }
