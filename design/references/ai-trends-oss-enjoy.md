@@ -1,9 +1,14 @@
 # AI 应用趋势 × 小而美开源 × Enjoy 可实现清单
 
-> 基线：main tip `1893fa5`（2026-10-09 复核 main 仍为此 sha）· 日期：2026-10-09（Asia/Shanghai）· **待用户拍板 · 不开刀 · I3 仍停**
+> 基线：main tip `1893fa5`（2026-10-09 复核 main 仍为此 sha）· 日期：2026-10-09（Asia/Shanghai）· **用户已拍板 2026-10-09 · I3 仍停**
 > 输入：PM 调研（本稿）＋ leo（架构契合/风险/闸）＋ kai（后端事实与候选）＋ luna（交互候选）＋ mike（前端库候选，§2.1）。凡标注「leo / kai / luna」处为其输入，本稿已抽查路径。
 > 开放项：PR #100（CU-P1-36 裸坐标默认关）仍 draft，CI 在 `2b2f7ea` 绿，但对 `1893fa5` `mergeStateStatus=DIRTY`，需 rebase；`desktopAdvancedCoords` 尚未进 main（`rg` 在 `1893fa5` 无命中）。
-> **单独决策项（改锁项，需用户单独拍板）**：Top 5 ① 中「CU 审批卡默认改为『本会话允许此应用』」**推翻 CU-P1-A 预览锁**（锁定为：有稳定 appKey 时默认高亮 Always-allow）。这是产品锁变更，不是闸变更；若通过，须同步改 `design/references/cu-p1-a-always-allow.md` 与对应测试。（leo 架构评审）
+> **用户决定（2026-10-09）**
+> - Top 5 按序全做：① CU 体感打磨 → ② 自动化错过运行诚实化 → ③ 模型单价 + 估算成本 → ④ 符号级 Repo map → ⑤ 统一 OS 沙箱。
+> - ① 改锁项**通过**：审批卡默认「本会话允许此应用」，Always-allow 保留但不再突出（推翻 CU-P1-A 预览锁中「有稳定 appKey 时默认高亮 Always-allow」）。按 leo 条件执行：敏感判定复用 main `desktopActIsSensitive`；通知不露输入文本 / 敏感控件名；不动 `run.end` 契约。需同步改 `design/references/cu-p1-a-always-allow.md` 与测试。
+> - 前端收口（sonner + xterm 5.x 插件）并行顺带；virtua 领衔次批。
+> - ⑤ 不替换（备选替换未采纳）。
+> - I3 仍停；#100 由 kai rebase 收尾。
 > leo 架构评审结论：Top 5 无 block，① ⑤ 为**有条件通过**，排序不变；各项「通过条件」见 §3.3。
 > 星数 / push 日期为 2026-10-09 `gh api repos/...` 实测（`pushed_at` 为 UTC，此处只取日期）。
 
@@ -154,11 +159,11 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 - 一句话：把 CU 的「工程默认值」改成保守、可懂的产品默认值。
 - 现状：部分。`desktop-approval-choice.ts:37` 默认 `allow_always`；`empty-state-constants.ts` 无桌面示例；`desktop-notify.ts` 文案通用。
 - Do：默认选中「本会话允许此应用」，Always-allow 保留但降权；终端 / Finder / 系统设置加一行提示并隐藏 Always-allow（提示不得读成「被拦」）；CU 开启且权限就绪时空态给「@应用 帮我在 {真实就绪 App} 里…」（数据来自 `use-desktop-mention-apps.ts`），否则隐藏；通知写清 App 与动作（「Enjoy 想在『备忘录』里点击『新建』，回 Enjoy 审批」），结束通知区分完成/停止/出错（由通知层从现有 end / error 推导，见通过条件）。
-- Don't：不加新决策 enum；通知里不放「允许」按钮；不做全局划词条 / 菜单栏小窗；不做 desktop_act「智能自动审批」。**更正**：本稿初版写「jojo 认为与 CU-P1-A 锁一致」不成立。leo 指出默认改为「本会话」**推翻了 CU-P1-A 预览锁**（有稳定 appKey 时默认高亮 Always-allow），属于**改锁项，需用户单独拍板**（见页首单独决策项）。
+- Don't：不加新决策 enum；通知里不放「允许」按钮；不做全局划词条 / 菜单栏小窗；不做 desktop_act「智能自动审批」。**更正**：本稿初版写「jojo 认为与 CU-P1-A 锁一致」不成立。leo 指出默认改为「本会话」**推翻了 CU-P1-A 预览锁**（有稳定 appKey 时默认高亮 Always-allow），属于**改锁项**；**用户已于 2026-10-09 拍板通过**（见页首用户决定）。
 - 投入：S，≈3 人日（luna 1、mike 1.5、kai 0.5）。
 - ICE 8/8/8＝24。
 - 架构契合：高（renderer 默认值 + main 通知文案，不动事件合约）。风险：低→低中（改锁带来的文档与测试面）。闸与真源：不改 `resolveToolApproval` 顺序；Always-allow 仍只由用户显式选择写入；敏感应用判定以 main 侧 `desktopActIsSensitive`（`packages/agent-core/src/computer-use/desktop-act-app-key.ts`）为真源。
-- **通过条件（leo · 有条件通过）**：(1) 默认值改动须先经用户单独拍板，并同步改 `cu-p1-a-always-allow.md` 与测试；(2) 敏感应用隐藏 Always-allow 必须复用 `desktopActIsSensitive`，由 main 推给 renderer，renderer 不得自建名单；(3) 不得让中止重发 `run.end`（`claim-run-end.ts`：中止只发 `run.error`），完成 / 停止 / 出错由通知层从现有 end / error 推导，尽量不改事件合约；(4) 通知会显示在锁屏：只写应用名 + 动作类型，不得出现 `type` 的输入文本或敏感窗口里的控件名。
+- **通过条件（leo · 有条件通过）**：(1) 默认值改动已获用户拍板（2026-10-09），须同步改 `cu-p1-a-always-allow.md` 与测试；(2) 敏感应用隐藏 Always-allow 必须复用 `desktopActIsSensitive`，由 main 推给 renderer，renderer 不得自建名单；(3) 不得让中止重发 `run.end`（`claim-run-end.ts`：中止只发 `run.error`），完成 / 停止 / 出错由通知层从现有 end / error 推导，尽量不改事件合约；(4) 通知会显示在锁屏：只写应用名 + 动作类型，不得出现 `type` 的输入文本或敏感窗口里的控件名。
 
 **② 自动化错过运行诚实化**
 - 一句话：电脑睡着错过的定时，不再静默消失。
@@ -200,8 +205,8 @@ mike 已确认在用、**不再引入**：streamdown、shiki、cmdk、use-stick-
 - 架构契合：中高（包一层 spawn，不动 ToolLoop）。风险：中高（npm 0.0.x、本地代理与用户代理共存、Ubuntu userns/AppArmor 限制、平台漂移）。闸与真源：`resolveToolApproval` 先行，沙箱是额外一层；策略存本机设置。
 - **通过条件（leo · 有条件通过）**：(1) 红线：**绝不**「已沙箱 ⇒ bash 自动批准」，审批顺序不变；(2) 精确钉版本（0.0.x），放在 `os-sandbox` 适配层之后；正则拦截等能力对齐后才移除；(3) 域名放行经本地代理实现，需测试与用户自有代理共存；(4) Ubuntu userns / AppArmor 失败时显示「未隔离」，**绝不**静默无沙箱运行。
 
-> **备选替换（mike 输入后追加；Top 5 已送用户拍板，未改动）**
-> 「前端收口」（sonner + xterm addon）ICE **23**，高于 Top 5 ⑤「统一 OS 沙箱」（20）。若纯按分数，它会替换 **⑤**。建议**不替换**：⑤ 是 kai 的安全地基，换掉后 Top 5 只剩一个地基项；前端收口约 2 人日，可作为插空项与 Top 5 并行。由用户决定。
+> **备选替换（mike 输入后追加；Top 5 未改动）· 结论：用户选择不替换，前端收口并行**
+> 「前端收口」（sonner + xterm addon）ICE **23**，高于 Top 5 ⑤「统一 OS 沙箱」（20）。若纯按分数，它会替换 **⑤**。**用户选择不替换，前端收口并行**（与建议一致）：⑤ 是 kai 的安全地基，换掉后 Top 5 只剩一个地基项；前端收口约 2 人日，与 Top 5 并行顺带。
 > virtua（20）与 ⑤ 同分，不触发替换，列入次批首位。
 >
 > **次批（前端，按 ICE）**：virtua 20 → @pierre/diffs 18 → tinykeys 17 / @headless-tree 17 → Tiptap Mention 13（观察不做）。另：#4 Recipe、#5 Skills 校验仍为后端/产品侧次批 S 项。
