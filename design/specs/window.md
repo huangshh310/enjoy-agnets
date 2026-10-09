@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（`window.openExternal` 只放行 http(s)）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（`openExternal` Zod + 仅终端点击）
 
 ## 当前真相
 
@@ -26,7 +26,7 @@
 - macOS 不画这三颗线标。窗口按钮在左上角，侧栏折叠和历史按钮跟在后面：三颗 12px 圆点，顺序是关闭（红）、最小化（黄）、缩放（绿）。悬停才露出符号；窗口失焦时三颗变灰。renderer 用 `navigator.platform` 判断，不读 `process.platform`。仍然是自绘按钮，不改 `frame: false`，也不开原生标题栏 overlay
 - 任务栏 / 最小化缩略图走 `BrowserWindow.icon`（Windows 用 `resources/icon.ico`）。macOS Dock / Cmd+Tab 另走 `app.dock.setIcon`，窗标选项在 Darwin 上无效。详见 `brand` spec。
 
-IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQuit` | `setTaskbarTitle` | `openExternal`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。`openExternal` 只收 http(s)，main `shell.openExternal`；终端链接走这里。
+IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQuit` | `setTaskbarTitle` | `openExternal`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。`openExternal` 入参 Zod `WindowOpenExternalInput`，只收 http(s)，main `URL` 复验后 `shell.openExternal`；**仅终端链接用户点击**走这里，禁止程序化调用。
 
 关窗 / ⌘Q：有 `running`、当前或后台 `pendingApproval` / Attention 审批时弹出 ConfirmDialog，确认才 `forceQuit`（`markQuitAllowed` 后 `app.quit`）。空闲标题栏关闭仍走 `window.close`（macOS 可留 Dock）。`before-quit` 未放行时 `preventDefault` 并推 `window.quit-requested`；清理改到 `will-quit`。Win / macOS / Linux 同一套。
 

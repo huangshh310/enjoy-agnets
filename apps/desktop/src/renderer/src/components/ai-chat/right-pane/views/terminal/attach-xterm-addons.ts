@@ -22,6 +22,16 @@ export type AttachedXtermAddons = {
   search: TerminalSearchApi
 }
 
+/**
+ * 只给 WebLinksAddon 的用户点击回调。不要从 effect / 定时器 / 自动扫描调用。
+ * leo 复核此频道：renderer 唯一 `window.openExternal` 出口。
+ */
+export function onTerminalLinkActivate(_event: MouseEvent, uri: string): void {
+  openTerminalLink(uri, (url) => {
+    void getIde().window.openExternal({ url })
+  })
+}
+
 export function attachXtermAddons(term: Terminal): AttachedXtermAddons {
   const fit = new FitAddon()
   const search = new SearchAddon()
@@ -29,11 +39,7 @@ export function attachXtermAddons(term: Terminal): AttachedXtermAddons {
   term.loadAddon(new Unicode11Addon())
   term.unicode.activeVersion = "11"
   term.loadAddon(search)
-  term.loadAddon(new WebLinksAddon((_event, uri) => {
-    openTerminalLink(uri, (url) => {
-      void getIde().window.openExternal({ url })
-    })
-  }))
+  term.loadAddon(new WebLinksAddon(onTerminalLinkActivate))
   return {
     fit,
     search: {
@@ -44,10 +50,14 @@ export function attachXtermAddons(term: Terminal): AttachedXtermAddons {
   }
 }
 
-/** 必须在 term.open 之后调用：WebGL 需要 canvas。失败回落 DOM。 */
-export function attachXtermRenderer(term: Terminal): "webgl" | "dom" {
+/** 必须在 term.open 之后调用：WebGL 需要 canvas。失败 / context loss 回落 DOM。 */
+export function attachXtermRenderer(
+  term: Terminal,
+  onMode?: (mode: "webgl" | "dom") => void
+): "webgl" | "dom" {
   return attachWebglOrDom(
     (addon) => term.loadAddon(addon as never),
-    () => new WebglAddon()
+    () => new WebglAddon(),
+    onMode
   )
 }

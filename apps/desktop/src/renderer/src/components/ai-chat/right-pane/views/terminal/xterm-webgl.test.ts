@@ -32,18 +32,22 @@ test("加载成功记 webgl；create 抛错回落 dom", () => {
   assert.equal(failed, "dom")
 })
 
-test("context loss 会 dispose addon，不再白屏占位", () => {
+test("context loss 会 dispose addon，并回报 DOM 回落", () => {
   let lost: (() => void) | undefined
+  const modes: Array<"webgl" | "dom"> = []
   const addon = fakeAddon((cb) => {
     lost = cb
   }) as WebglAddonLike & { disposed: boolean }
   attachWebglOrDom(
     () => undefined,
-    () => addon
+    () => addon,
+    (mode) => modes.push(mode)
   )
   assert.equal(addon.disposed, false)
+  assert.deepEqual(modes, ["webgl"])
   lost?.()
   assert.equal(addon.disposed, true)
+  assert.deepEqual(modes, ["webgl", "dom"])
 })
 
 test("loadAddon 抛错也回落 DOM", () => {

@@ -8,16 +8,20 @@ export type WebglAddonLike = {
 
 export function attachWebglOrDom(
   loadAddon: (addon: WebglAddonLike) => void,
-  createAddon: () => WebglAddonLike
+  createAddon: () => WebglAddonLike,
+  onMode?: (mode: "webgl" | "dom") => void
 ): "webgl" | "dom" {
   try {
     const addon = createAddon()
     addon.onContextLoss(() => {
       addon.dispose()
+      onMode?.("dom")
     })
     loadAddon(addon)
+    onMode?.("webgl")
     return "webgl"
   } catch {
+    onMode?.("dom")
     return "dom"
   }
 }

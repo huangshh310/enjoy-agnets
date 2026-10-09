@@ -48,7 +48,9 @@ export {
   WindowActionResult,
   WindowForceQuitInput,
   WindowSetTaskbarTitleInput,
-  WindowOpenExternalInput
+  WindowOpenExternalInput,
+  externalUrlScheme,
+  isAllowedExternalHttpScheme
 } from "./window"
 export * from "./app-update"
 export * from "./generation"

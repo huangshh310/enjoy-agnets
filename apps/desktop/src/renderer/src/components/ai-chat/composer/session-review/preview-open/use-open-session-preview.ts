@@ -1,9 +1,9 @@
 /**
- * 点「在浏览器打开」：调 main openExternal，成功再亮全局 toast。
+ * 点「在浏览器打开」：走 workspace.openPreview，成功再亮全局 toast。
  */
 import { useCallback, useState } from "react"
 import { useT } from "@renderer/i18n"
-import { showAppToast, APP_TOAST_MS } from "@renderer/lib/app-toast"
+import { showAppToast } from "@renderer/lib/app-toast"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { openPreviewInBrowser } from "./open-preview-in-browser"
 import type { PreviewTarget } from "./preview-open.types"
@@ -21,7 +21,7 @@ export function useOpenSessionPreview() {
       if (!ok) return
       showAppToast(t("chat.sessionReviewOpenPreviewDone"), {
         id: "session-preview-toast",
-        duration: APP_TOAST_MS
+        tone: "success"
       })
     } finally {
       setBusy(false)

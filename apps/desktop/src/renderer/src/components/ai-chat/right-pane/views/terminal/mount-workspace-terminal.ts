@@ -27,7 +27,9 @@ export function mountWorkspaceTerminal(input: {
   const term = createWorkspaceXterm()
   const addons = attachXtermAddons(term)
   term.open(input.host)
-  attachXtermRenderer(term)
+  attachXtermRenderer(term, (mode) => {
+    input.host.dataset.xtermRenderer = mode
+  })
   addons.fit.fit()
   input.onSearch(addons.search)
   const unbind = bindPty(term, input.sessionId, input.exitedLabel)

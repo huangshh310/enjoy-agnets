@@ -24,7 +24,11 @@ export function Toaster() {
           actionButton:
             "rounded-md px-2 py-0.5 text-caption-2-medium text-accent-500 hover:bg-background-secondary-hover",
           cancelButton: "rounded-md px-2 py-0.5 text-caption-2-medium text-text-secondary",
-          closeButton: "text-text-secondary hover:text-text-primary"
+          closeButton: cn(
+            "absolute -left-1.5 -top-1.5 flex size-5 items-center justify-center",
+            "rounded-full border border-border-button-default bg-background-primary-default",
+            "text-text-secondary shadow-xs hover:bg-background-primary-hover hover:text-text-primary"
+          )
         }
       }}
     />

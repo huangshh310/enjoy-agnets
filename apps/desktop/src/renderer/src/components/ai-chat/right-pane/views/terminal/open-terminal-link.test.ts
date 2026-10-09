@@ -2,8 +2,8 @@
  * 终端链接只走注入的 IPC，不 window.open。
  */
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { readdirSync, readFileSync, statSync } from "node:fs"
+import { dirname, join, relative } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import { openTerminalLink } from "./open-terminal-link.ts"
@@ -31,4 +31,27 @@ test("源码不写 window.open，接线走 window.openExternal", () => {
   assert.doesNotMatch(attach, /window\.open\s*\(/)
   assert.ok(attach.includes("window.openExternal"))
   assert.ok(attach.includes("openTerminalLink("))
+  assert.ok(attach.includes("onTerminalLinkActivate"))
+  assert.ok(attach.includes("new WebLinksAddon(onTerminalLinkActivate)"))
+})
+
+test("renderer 只有终端点击回调调用 window.openExternal", () => {
+  const rendererRoot = join(dir, "../../../../..")
+  const hits: string[] = []
+  function walk(folder: string): void {
+    for (const name of readdirSync(folder)) {
+      const full = join(folder, name)
+      if (statSync(full).isDirectory()) {
+        if (name === "node_modules") continue
+        walk(full)
+        continue
+      }
+      if (!name.endsWith(".ts") && !name.endsWith(".tsx")) continue
+      if (name.endsWith(".test.ts") || name.endsWith(".test.tsx")) continue
+      const src = readFileSync(full, "utf8")
+      if (src.includes(".window.openExternal(")) hits.push(relative(rendererRoot, full))
+    }
+  }
+  walk(rendererRoot)
+  assert.deepEqual(hits, ["components/ai-chat/right-pane/views/terminal/attach-xterm-addons.ts"])
 })

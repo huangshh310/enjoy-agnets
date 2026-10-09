@@ -30,10 +30,28 @@ export const WindowSetTaskbarTitleInput = z
   }));
 export type WindowSetTaskbarTitleInput = z.infer<typeof WindowSetTaskbarTitleInput>;
 
-/** 终端链接等：只收 http(s)，协议在 main 再验一遍。 */
+/** 取 URL scheme（不含冒号）。无 scheme 或空串返回 null。不用 URL：本包 types 为空。 */
+export function externalUrlScheme(raw: string): string | null {
+  const match = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(raw.trim());
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+export function isAllowedExternalHttpScheme(scheme: string | null): boolean {
+  return scheme === "http" || scheme === "https";
+}
+
+/** 终端链接等：Zod 先拒非 http(s)；main 再用 URL 复验。 */
 export const WindowOpenExternalInput = z
   .object({
     url: z.string().trim().min(1).max(2048)
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (isAllowedExternalHttpScheme(externalUrlScheme(value.url))) return;
+    ctx.addIssue({
+      code: "custom",
+      message: "OPEN_EXTERNAL_NOT_ALLOWED",
+      path: ["url"]
+    });
+  });
 export type WindowOpenExternalInput = z.infer<typeof WindowOpenExternalInput>;
