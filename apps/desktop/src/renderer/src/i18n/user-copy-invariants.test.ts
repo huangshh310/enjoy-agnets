@@ -50,6 +50,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       setupGuide: { replayDesc: string }
       update: { devSkip: string }
       builtinTools: { browserBridgeTitle: string }
+      providers: Record<string, string>
     }
     studio: {
       automations: Record<string, string>
@@ -69,7 +70,12 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.desktopBiasHostHint, "让助手在这个应用里操作")
   assert.equal(z.chat.mentionScopeWorkspace, "项目")
   assert.equal(z.chat.fastMode, "快速")
+  assert.equal(z.chat.fastModeHint, "优先更快出结果。")
+  assert.doesNotMatch(z.chat.fastModeHint, /--fast/)
+  assert.equal(z.chat.thinking, "思考中")
   assert.equal(z.chat.thinkingSources, "来源")
+  assert.equal(z.chat.paneTerminalHint, "项目 Shell")
+  assert.equal(z.chat.paneFilesHint, "项目目录与文件预览")
   assert.equal(z.chat.tokenUnit, "tok")
   assert.equal(z.nav.workspace, "项目")
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
@@ -87,6 +93,14 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
+  assert.equal(z.studio.automations.deleteTitle, "删除这条自动化？")
+  assert.equal(z.studio.automations.discardTitle, "放弃未保存的修改？")
+  assert.equal(z.studio.automations.discardConfirm, "放弃")
+  assert.equal(z.studio.automations.keepEditing, "继续编辑")
+  assert.equal(z.settings.providers.customDesc, "填好地址和密钥即可。用不到的协议留空。")
+  assert.equal(z.settings.providers.addKey, "再添加一个密钥")
+  assert.equal(z.settings.providers.addCustom, "添加自定义端点")
+  assert.equal(z.settings.providers.baseUrl, "接口地址")
   assert.equal(z.studio.instructionPresets.minimalDiffs.tag, "最小改动")
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)

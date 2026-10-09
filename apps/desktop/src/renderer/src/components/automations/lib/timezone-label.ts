@@ -23,3 +23,9 @@ export function formatTimezoneLabel(timeZone: string, locale: string): string {
   }
   return zone.replaceAll("_", " ")
 }
+
+export function formatTimezoneAdvanced(timeZone: string, locale: string): string {
+  const zone = timeZone.trim() || "UTC"
+  const label = formatTimezoneLabel(zone, locale)
+  return locale.startsWith("zh") ? `${label}（${zone}）` : `${label} (${zone})`
+}

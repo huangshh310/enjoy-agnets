@@ -16,9 +16,9 @@ export function ModuleNavList({
 }) {
   const t = useT()
   return (
-    <nav className="flex flex-col gap-4 pr-1">
+    <nav className="flex flex-col gap-2.5 pr-1">
       {groups.map((group) => (
-        <div key={group.id} className="flex flex-col gap-1">
+        <div key={group.id} data-nav-group={group.id} className="flex flex-col gap-0.5">
           <p className="px-2.5 text-caption-2-semibold uppercase tracking-wider text-text-tertiary">
             {group.label}
           </p>
@@ -68,7 +68,7 @@ function NavRow({
       type="button"
       onClick={onClick}
       className={cx(
-        "group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all duration-200 ease-out active:scale-[0.98]",
+        "group relative flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition-all duration-200 ease-out active:scale-[0.98]",
         selected
           ? "border border-border-button-default/90 bg-background-primary-default text-text-primary shadow-xs"
           : "text-text-secondary hover:bg-background-secondary-hover/80 hover:text-text-primary hover:translate-x-0.5"

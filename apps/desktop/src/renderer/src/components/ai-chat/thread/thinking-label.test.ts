@@ -4,6 +4,7 @@ import { displayThinkingLabel } from "./thinking-label.ts"
 
 const zh: Record<string, string> = {
   "chat.working": "工作中",
+  "chat.thinking": "思考中",
   "chat.waitingForApp": "等待应用…",
   "chat.toolDesktop": "操作桌面",
   "chat.thinkingSources": "来源"
@@ -24,4 +25,8 @@ test("desktop act 默认显示操作桌面", () => {
 
 test("Sources 默认显示来源", () => {
   assert.equal(displayThinkingLabel("Sources", t), "来源")
+})
+
+test("Thinking 默认显示思考中", () => {
+  assert.equal(displayThinkingLabel("Thinking", t), "思考中")
 })

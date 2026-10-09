@@ -13,7 +13,7 @@ import {
   scheduleFromCron,
   type SchedulePreset
 } from "../lib/schedule-preset"
-import { formatTimezoneLabel } from "../lib/timezone-label"
+import { formatTimezoneAdvanced, formatTimezoneLabel } from "../lib/timezone-label"
 
 const PRESETS: SchedulePreset[] = ["daily", "weekdays", "weekly"]
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const
@@ -131,6 +131,12 @@ export function ScheduleFields({
           </label>
           <label>
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.timeZone")}</span>
+            <p
+              data-testid="automation-timezone-advanced"
+              className="mt-1 text-caption-1-medium text-text-primary"
+            >
+              {formatTimezoneAdvanced(timeZone, locale)}
+            </p>
             <Input
               value={timeZone}
               onChange={(event) => onChange({ timeZone: event.target.value })}

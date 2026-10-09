@@ -7,6 +7,7 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import {
+  isAppDialogOpen,
   isSettingsDrawerOpen,
   markDrawerEscapeHandled,
   shouldCloseDrawerOnEscape,
@@ -25,11 +26,20 @@ test("Esc 关闭：未 preventDefault 就关，其它键不关", () => {
 test("SettingsSideDrawer 整层 no-drag，Esc 捕获并停冒泡", () => {
   const src = readFileSync(join(dir, "settings-side-drawer.tsx"), "utf8")
   assert.match(src, /shouldCloseDrawerOnEscape/)
+  assert.match(src, /isAppDialogOpen/)
   assert.match(src, /markDrawerEscapeHandled/)
   assert.match(src, /addEventListener\("keydown", onKeyDown, true\)/)
   assert.match(src, /data-settings-drawer="open"/)
   assert.match(src, /data-app-region="no-drag"/)
   assert.match(src, /onClose\(\)/)
+})
+
+test("确认框开着时抽屉不抢 Esc", () => {
+  assert.equal(
+    isAppDialogOpen({ querySelector: (sel) => (sel.includes("dialog-content") ? {} : null) }),
+    true
+  )
+  assert.equal(isAppDialogOpen({ querySelector: () => null }), false)
 })
 
 test("Esc 在供应商抽屉只关抽屉，不离开设置", () => {

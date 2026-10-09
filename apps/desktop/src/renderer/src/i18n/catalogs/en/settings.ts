@@ -1040,7 +1040,7 @@ export const enSettings = {
     anthropicMessages: "Anthropic Messages",
     openaiEndpoint: "OpenAI /v1 Endpoint",
     customName: "Custom endpoint",
-    customDesc: "Any third-party host. Pick the protocol in this drawer. An empty line stays unused.",
+    customDesc: "Fill in the address and key. Leave unused protocols empty.",
     endpointHint: "e.g. https://api.example.com/v1",
     endpointRootHint: "e.g. https://api.example.com",
     fastPlaceholder: "e.g. gpt-4o-mini, haiku",

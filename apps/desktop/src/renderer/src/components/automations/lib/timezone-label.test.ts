@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { formatTimezoneLabel, isBeijingTimezone } from "./timezone-label.ts"
+import { formatTimezoneAdvanced, formatTimezoneLabel, isBeijingTimezone } from "./timezone-label.ts"
 
 test("上海时区写成北京时间", () => {
   assert.equal(isBeijingTimezone("Asia/Shanghai"), true)
@@ -19,4 +19,9 @@ test("其它时区用人话，不摊 IANA 下划线", () => {
 
 test("非法时区回落原文", () => {
   assert.equal(formatTimezoneLabel("Not/A_Zone", "zh"), "Not/A Zone")
+})
+
+test("高级时区带上 IANA", () => {
+  assert.equal(formatTimezoneAdvanced("Asia/Shanghai", "zh"), "北京时间（Asia/Shanghai）")
+  assert.equal(formatTimezoneAdvanced("Asia/Shanghai", "en"), "Beijing time (Asia/Shanghai)")
 })

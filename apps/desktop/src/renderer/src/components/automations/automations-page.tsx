@@ -1,7 +1,7 @@
 /**
  * 本机 Automations：列表 + 380px 抽屉。Chat `#/automations` 与设置段共用。
  */
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import type { Automation } from "@enjoy-agents/ipc-contract"
@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@renderer/components/app-pages/confirm-dialog"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { refreshAllWorkspaces } from "@renderer/hooks/session-lifecycle"
 import { useI18n, useT } from "@renderer/i18n"
+import { showAppToast } from "@renderer/lib/app-toast"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/session-runtime"
 import { requestInboxFilter } from "@renderer/components/inbox/lib/pending-inbox-filter"
@@ -17,7 +18,13 @@ import { AutomationDrawer } from "./components/automation-drawer"
 import { AutomationFooter } from "./components/automation-footer"
 import { AutomationList } from "./components/automation-list"
 import { useAutomationMissed } from "./hooks/use-automation-missed"
-import { draftFromAutomation, draftToUpsert, emptyAutomationDraft, type AutomationDraft } from "./lib/draft"
+import {
+  draftFromAutomation,
+  draftToUpsert,
+  emptyAutomationDraft,
+  isDraftDirty,
+  type AutomationDraft
+} from "./lib/draft"
 
 export function AutomationsPage() {
   const t = useT()
@@ -31,10 +38,32 @@ export function AutomationsPage() {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
   }
   const [draft, setDraft] = useState<AutomationDraft | null>(null)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const baselineRef = useRef<AutomationDraft | null>(null)
   const [saving, setSaving] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [now] = useState(() => Date.now())
+
+  function openDraft(next: AutomationDraft) {
+    baselineRef.current = next
+    setConfirmDiscard(false)
+    setDraft(next)
+  }
+
+  function closeDraft() {
+    baselineRef.current = null
+    setConfirmDiscard(false)
+    setDraft(null)
+  }
+
+  function requestClose() {
+    if (draft && baselineRef.current && isDraftDirty(draft, baselineRef.current)) {
+      setConfirmDiscard(true)
+      return
+    }
+    closeDraft()
+  }
 
   const automationsQuery = useQuery({
     queryKey: ["automations"],
@@ -60,8 +89,9 @@ export function AutomationsPage() {
     if (!hasIde() || !next.name.trim()) return
     setSaving(true)
     try {
-      const saved = (await getIde().automations.upsert(draftToUpsert(next))) as Automation
-      setDraft(draftFromAutomation(saved, defaults))
+      await getIde().automations.upsert(draftToUpsert(next))
+      closeDraft()
+      showAppToast(t("common.saved"))
       await automationsQuery.refetch()
     } finally {
       setSaving(false)
@@ -89,7 +119,7 @@ export function AutomationsPage() {
   async function removeDraft() {
     if (!hasIde() || !draft?.id) return
     await getIde().automations.remove({ id: draft.id })
-    setDraft(null)
+    closeDraft()
     await automationsQuery.refetch()
   }
 
@@ -105,7 +135,7 @@ export function AutomationsPage() {
           <h1 className="text-title-3-semibold text-text-primary">{t("studio.automations.title")}</h1>
           <p className="mt-0.5 text-caption-1-medium text-text-secondary">{t("studio.automations.desc")}</p>
         </div>
-        <Button size="sm" onClick={() => setDraft(emptyAutomationDraft(defaults))}>
+        <Button size="sm" onClick={() => openDraft(emptyAutomationDraft(defaults))}>
           {t("studio.automations.newAutomation")}
         </Button>
       </header>
@@ -115,7 +145,7 @@ export function AutomationsPage() {
         tools={tools}
         locale={locale}
         now={now}
-        onOpen={(item) => setDraft(draftFromAutomation(item, defaults))}
+        onOpen={(item) => openDraft(draftFromAutomation(item, defaults))}
         onToggle={(item, enabled) => void toggleEnabled(item, enabled)}
         onOpenFailed={openFailedInbox}
       />
@@ -129,7 +159,7 @@ export function AutomationsPage() {
         records={draft?.id ? (missedById[draft.id] ?? []) : []}
         locale={locale}
         now={now}
-        onClose={() => setDraft(null)}
+        onClose={requestClose}
         onChange={(patch) => setDraft((current) => (current ? { ...current, ...patch } : current))}
         onSave={() => draft && void persist(draft)}
         onRun={() => void runDraft()}
@@ -139,9 +169,20 @@ export function AutomationsPage() {
         open={confirmDelete}
         title={t("studio.automations.deleteTitle")}
         description={t("studio.automations.deleteDesc", { name: draft?.name ?? "" })}
+        confirmLabel={t("common.delete")}
         destructive
         onOpenChange={setConfirmDelete}
         onConfirm={() => void removeDraft()}
+      />
+      <ConfirmDialog
+        open={confirmDiscard}
+        title={t("studio.automations.discardTitle")}
+        description=""
+        confirmLabel={t("studio.automations.discardConfirm")}
+        cancelLabel={t("studio.automations.keepEditing")}
+        destructive
+        onOpenChange={setConfirmDiscard}
+        onConfirm={closeDraft}
       />
     </div>
   )

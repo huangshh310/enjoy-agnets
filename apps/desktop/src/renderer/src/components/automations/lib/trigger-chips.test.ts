@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import type { Automation } from "@enjoy-agents/ipc-contract"
-import { listTriggerChips, webhookPortReady } from "./trigger-chips.ts"
+import { listTriggerChips, toggleTrigger, webhookPortReady } from "./trigger-chips.ts"
 
 test("徽章区分手动 / cron / 保存后 / webhook 端口", () => {
   const base = { name: "x", prompt: "y", enabled: true, updatedAt: 1 }
@@ -32,6 +32,12 @@ test("保存后与 webhook 徽章可并存", () => {
     chips.map((chip) => chip.text),
     ["on_save", "8765"]
   )
+})
+
+test("新建默认只选手动时，点定时替换而不是叠高亮", () => {
+  assert.deepEqual(toggleTrigger(["manual"], "cron"), ["cron"])
+  assert.deepEqual(toggleTrigger(["cron"], "manual"), ["manual", "cron"])
+  assert.deepEqual(toggleTrigger(["manual", "cron"], "manual"), ["cron"])
 })
 
 test("webhook 端口必须是 1–65535", () => {

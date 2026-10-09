@@ -163,7 +163,9 @@ function EditorDrawerHeader({
           <h3 id="provider-editor-title" className="truncate text-title-3-semibold text-text-primary">
             {editor.id
               ? t("settings.providers.editTitle", { name: titleName })
-              : t("settings.providers.addTitle", { name: titleName })}
+              : preset.kind === "custom"
+                ? t("settings.providers.addCustom")
+                : t("settings.providers.addTitle", { name: titleName })}
           </h3>
           <p className="mt-0.5 text-caption-1-medium text-text-secondary">{description}</p>
           <EditorBoundAgents refs={refs} onOpenAgent={onOpenAgent} />
