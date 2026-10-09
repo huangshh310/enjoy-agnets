@@ -6,8 +6,8 @@ import { createReplicate } from "@ai-sdk/replicate"
 import { createElevenLabs } from "@ai-sdk/elevenlabs"
 import { createDeepgram } from "@ai-sdk/deepgram"
 import { createCohere } from "@ai-sdk/cohere"
-import type { ProviderConfig } from "../types"
-import { mediaFactoryKind } from "./factory-kind"
+import type { ProviderConfig } from "../types.ts"
+import { mediaFactoryKind } from "./factory-kind.ts"
 
 function keyOf(config: ProviderConfig): string {
   return config.apiKey || ""

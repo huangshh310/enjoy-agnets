@@ -13,18 +13,23 @@ test("目录前缀暂存、越界拒绝、星号文件名不展开", async () =>
     await mkdir(join(root, "dir"))
     await writeFile(join(root, "dir", "a.txt"), "inside\n", "utf8")
     await writeFile(join(root, "out.txt"), "outside\n", "utf8")
-    await writeFile(join(root, "wild*.txt"), "star\n", "utf8")
     await writeFile(join(root, "wildX.txt"), "other\n", "utf8")
+    // Windows 文件名不能含 *；字面星号只在 POSIX 上落盘验证。
+    if (process.platform !== "win32") {
+      await writeFile(join(root, "wild*.txt"), "star\n", "utf8")
+    }
 
     const stagedDir = await stageWorkspacePaths(root, ["dir"], "add")
     assert.equal(stagedDir.count, 1)
     assert.deepEqual(await stagedNames(root), ["dir/a.txt"])
 
-    await stageWorkspacePaths(root, ["wild*.txt"], "add")
-    const afterStar = await stagedNames(root)
-    assert.ok(afterStar.includes("wild*.txt"))
-    assert.equal(afterStar.includes("wildX.txt"), false)
-    assert.equal(afterStar.includes("out.txt"), false)
+    if (process.platform !== "win32") {
+      await stageWorkspacePaths(root, ["wild*.txt"], "add")
+      const afterStar = await stagedNames(root)
+      assert.ok(afterStar.includes("wild*.txt"))
+      assert.equal(afterStar.includes("wildX.txt"), false)
+      assert.equal(afterStar.includes("out.txt"), false)
+    }
 
     await stageWorkspacePaths(root, ["dir"], "unstage")
     assert.equal((await stagedNames(root)).includes("dir/a.txt"), false)
@@ -81,6 +86,8 @@ async function withRepo(run: (root: string) => Promise<void>): Promise<void> {
     assert.equal(init.exitCode, 0, init.stderr)
     await runGit(root, ["config", "user.email", "test@enjoy.local"])
     await runGit(root, ["config", "user.name", "Enjoy Test"])
+    await runGit(root, ["config", "core.autocrlf", "false"])
+    await runGit(root, ["config", "core.eol", "lf"])
     await writeFile(join(root, "seed.txt"), "seed\n", "utf8")
     assert.equal((await runGit(root, ["add", "seed.txt"])).exitCode, 0)
     assert.equal((await runGit(root, ["commit", "-m", "seed"])).exitCode, 0)

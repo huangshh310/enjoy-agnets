@@ -111,6 +111,8 @@ async function withRepo(run: (root: string) => Promise<void>): Promise<void> {
     assert.equal(init.exitCode, 0, init.stderr)
     await runGit(root, ["config", "user.email", "test@enjoy.local"])
     await runGit(root, ["config", "user.name", "Enjoy Test"])
+    await runGit(root, ["config", "core.autocrlf", "false"])
+    await runGit(root, ["config", "core.eol", "lf"])
     await writeFile(join(root, "seed.txt"), "seed\n", "utf8")
     assert.equal((await runGit(root, ["add", "seed.txt"])).exitCode, 0)
     assert.equal((await runGit(root, ["commit", "-m", "seed"])).exitCode, 0)
