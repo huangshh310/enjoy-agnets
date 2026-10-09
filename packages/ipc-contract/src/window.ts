@@ -78,7 +78,7 @@ export type WindowOpenExternalInput = z.infer<typeof WindowOpenExternalInput>;
 
 export function parseWindowOpenExternalInput(
   raw: unknown
-): { ok: true; url: string } | WindowOpenExternalResult {
+): { ok: true; url: string } | { ok: false; code: OpenExternalCode } {
   const parsed = WindowOpenExternalInput.safeParse(raw);
   if (parsed.success) return { ok: true, url: parsed.data.url };
   const notAllowed = parsed.error.issues.some((issue) => issue.message === "OPEN_EXTERNAL_NOT_ALLOWED");
