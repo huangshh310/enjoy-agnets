@@ -65,7 +65,7 @@ test("带 resumeCode 的 tool.result 也折成 output-denied", () => {
   assert.equal(tools[0]?.state, "output-denied")
 })
 
-test("重新打开：库里 output-error + 拒绝码收成未执行，不是转圈", () => {
+test("重新打开：库里 output-error + 拒绝码保持原态，不改写成 output-denied", () => {
   const sealed = sealAbandonedTools([
     {
       id: "tool_1",
@@ -75,6 +75,6 @@ test("重新打开：库里 output-error + 拒绝码收成未执行，不是转�
       errorText: APPROVAL_REPLAY_DENIED_COPY
     }
   ])
-  assert.equal(sealed?.[0]?.state, "output-denied")
+  assert.equal(sealed?.[0]?.state, "output-error")
   assert.equal(sealed?.[0]?.result && typeof sealed[0].result === "object" ? (sealed[0].result as { code?: string }).code : "", APPROVAL_REPLAY_DENIED)
 })

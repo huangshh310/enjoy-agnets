@@ -8,9 +8,13 @@ import { app, safeStorage } from "electron"
 import {
   approvalPayload,
   getApproval,
+  getApprovalByRunAndSdkId,
   getApprovalBySdkIdentity,
   insertApproval,
   planRememberApproval,
+  planSameRunSdkCollision,
+  resetApprovalForRepark,
+  resolvedSdkApprovalId,
   setApprovalDecision,
   setApprovalSdkResponse,
   signApproval,
@@ -66,12 +70,25 @@ export function rememberApproval(input: {
   const db = getDatabase()
   const requestArgs = input.requestArgs ?? input.args
   const sdkApprovalId = input.approvalId
+  const existing = getApprovalBySdkIdentity(db, {
+    sdkApprovalId,
+    runId: input.runId,
+    toolCallId: input.toolCallId
+  })
+  if (!existing) {
+    const colliding = getApprovalByRunAndSdkId(db, { runId: input.runId, sdkApprovalId })
+    if (colliding && colliding.toolCallId !== input.toolCallId) {
+      logSameRunSdkCollision({
+        runId: input.runId,
+        sdkApprovalId,
+        existingToolCallId: colliding.toolCallId,
+        incomingToolCallId: input.toolCallId
+      })
+      return planSameRunSdkCollision(sdkApprovalId)
+    }
+  }
   const plan = planRememberApproval(
-    getApprovalBySdkIdentity(db, {
-      sdkApprovalId,
-      runId: input.runId,
-      toolCallId: input.toolCallId
-    }),
+    existing,
     { sdkApprovalId, args: requestArgs },
     // 主键空闲时内部 id 用 SDK id；已被别的 run 占用才新开一行。
     () => (getApproval(db, sdkApprovalId) ? createId("apr") : sdkApprovalId)
@@ -99,8 +116,59 @@ export function rememberApproval(input: {
   return plan
 }
 
+/** 二次确认：复用原行，HMAC / 卡片仍用内部 id，sdk_approval_id 不动。 */
+export function rememberReparkApproval(input: {
+  existingApprovalId: string
+  runId: string
+  toolCallId: string
+  name: string
+  args: unknown
+  requestArgs?: unknown
+}) {
+  const db = getDatabase()
+  const row = getApproval(db, input.existingApprovalId)
+  if (!row) {
+    return rememberApproval({
+      runId: input.runId,
+      approvalId: createId("apr"),
+      toolCallId: input.toolCallId,
+      name: input.name,
+      args: input.args,
+      requestArgs: input.requestArgs
+    })
+  }
+  const payload = approvalPayload({
+    runId: input.runId,
+    toolCallId: input.toolCallId,
+    approvalId: row.id,
+    name: input.name,
+    args: input.args
+  })
+  resetApprovalForRepark(db, row.id, {
+    args: JSON.stringify(input.args ?? {}),
+    hmac: signApproval(approvalSecret(), payload),
+    requestArgs: input.requestArgs === undefined ? undefined : JSON.stringify(input.requestArgs)
+  })
+  return { id: row.id, action: "reuse" as const, sdkApprovalId: resolvedSdkApprovalId(row) }
+}
+
 export function sdkApprovalIdFor(approvalId: string): string {
-  return getApproval(getDatabase(), approvalId)?.sdkApprovalId || approvalId
+  const row = getApproval(getDatabase(), approvalId)
+  return row ? resolvedSdkApprovalId(row) : approvalId
+}
+
+function logSameRunSdkCollision(input: {
+  runId: string
+  sdkApprovalId: string
+  existingToolCallId: string
+  incomingToolCallId: string
+}): void {
+  console.warn("approval sdk id collision", {
+    runId: input.runId,
+    sdkApprovalId: input.sdkApprovalId,
+    existingToolCallId: input.existingToolCallId,
+    incomingToolCallId: input.incomingToolCallId
+  })
 }
 
 export function assertApprovalHmac(input: {

@@ -28,7 +28,7 @@ function assistantWithDeniedTool(): ThreadMessage[] {
   ]
 }
 
-test("未执行类 run.error 不写红条，工具收成 output-denied", () => {
+test("未执行类 run.error 不写红条，库里 output-error 不改写", () => {
   const patch = reduceStreamEvent(assistantWithDeniedTool(), {
     type: "run.error",
     runId: "run_1",
@@ -36,14 +36,14 @@ test("未执行类 run.error 不写红条，工具收成 output-denied", () => {
   }, "run_1")
   assert.equal(patch.error, null)
   assert.equal(patch.running, false)
-  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-denied")
+  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-error")
 })
 
-test("run.end 清掉红条，拒绝工具保持未执行", () => {
+test("run.end 清掉红条，拒绝工具保持库里的 output-error", () => {
   const patch = reduceStreamEvent(assistantWithDeniedTool(), {
     type: "run.end",
     runId: "run_1"
   }, "run_1")
   assert.equal(patch.error, null)
-  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-denied")
+  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-error")
 })

@@ -6,10 +6,13 @@ import {
   approvalArgsMatch,
   canonicalizeJson,
   getApproval,
+  getApprovalByRunAndSdkId,
   getApprovalBySdkIdentity,
   insertApproval,
   nextApprovalId,
   planRememberApproval,
+  planSameRunSdkCollision,
+  resolvedSdkApprovalId,
   setApprovalDecision,
   setApprovalSdkResponse
 } from "./approvals.ts"
@@ -157,6 +160,45 @@ test("desktop_act 回放 allow：fail closed", () => {
   )
   assert.equal(plan.action, "fail_closed")
   if (plan.action === "fail_closed") assert.equal(plan.cause, "desktop_act_allow")
+})
+
+test("旧行 sdk_approval_id 为 NULL：按内部 id 当作 SDK id", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  insertApproval(db, decidedRow({ id: "apr_legacy", sdkApprovalId: "apr_legacy" }))
+  db.prepare("UPDATE approvals SET sdk_approval_id = NULL WHERE id = ?").run("apr_legacy")
+  const row = getApproval(db, "apr_legacy")
+  assert.equal(row?.sdkApprovalId, null)
+  assert.equal(resolvedSdkApprovalId(row!), "apr_legacy")
+  assert.equal(
+    getApprovalBySdkIdentity(db, {
+      sdkApprovalId: "apr_legacy",
+      runId: "run_1",
+      toolCallId: "tool_stub"
+    })?.id,
+    "apr_legacy"
+  )
+})
+
+test("同一 run、同一 toolCall、同一 SDK id：UNIQUE 拒绝第二行", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  insertApproval(db, decidedRow())
+  assert.throws(() => {
+    insertApproval(db, decidedRow({ id: "apr_other" }))
+  })
+})
+
+test("同一 run 内 SDK id 对应不同 toolCall：碰撞计划是 fail closed", () => {
+  const db = new DatabaseSync(":memory:")
+  applyMigrations(db)
+  insertApproval(db, decidedRow())
+  const colliding = getApprovalByRunAndSdkId(db, { runId: "run_1", sdkApprovalId: "apr_stub" })
+  assert.equal(colliding?.toolCallId, "tool_stub")
+  const plan = planSameRunSdkCollision("apr_stub")
+  assert.equal(plan.action, "fail_closed")
+  if (plan.action === "fail_closed") assert.equal(plan.cause, "sdk_id_collision")
+  assert.equal(plan.sdkApprovalId, "apr_stub")
 })
 
 test("落库 SDK response 后带 resumeCode 不得回放 true", () => {

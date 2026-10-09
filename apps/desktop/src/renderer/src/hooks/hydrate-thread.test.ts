@@ -81,7 +81,7 @@ test("重新打开后：库里 output-error + 拒绝码仍是未执行，不是�
   ])
   const tool = message?.tools?.[0]
   assert.ok(tool)
-  assert.equal(tool.state, "output-denied")
+  assert.equal(tool.state, "output-error")
   assert.equal(isToolNotExecuted(tool), true)
   assert.equal(mapToolStatus(tool.state, tool), "denied")
   assert.notEqual(mapToolStatus(tool.state, tool), "running")

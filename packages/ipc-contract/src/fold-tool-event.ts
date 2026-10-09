@@ -60,13 +60,10 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   }
 }
 
-/** 加载历史时：只收口卡死的 Pending，保留审批中与已完成。拒绝类 output-error 收成未执行。 */
+/** 加载历史时：只收口卡死的 Pending。库里的 output-error 原样保留，未执行由渲染层映射。 */
 export function sealAbandonedTools(tools: ThreadToolCall[] | undefined): ThreadToolCall[] | undefined {
   if (!tools) return tools
   return tools.map((tool) => {
-    if (isToolNotExecuted(tool)) {
-      return tool.state === "output-denied" ? tool : { ...tool, state: "output-denied" as const }
-    }
     if (tool.state === "input-streaming") {
       return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
     }

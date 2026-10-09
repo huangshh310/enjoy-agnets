@@ -37,6 +37,7 @@ export type RememberApprovalFailCause =
   | "unsent"
   | "resume_code"
   | "desktop_act_allow"
+  | "sdk_id_collision"
 
 export type RememberApprovalPlan =
   | { id: string; action: "insert"; sdkApprovalId: string }
@@ -58,13 +59,28 @@ export function nextApprovalId(
   return { id: existing.id, action: "decided" }
 }
 
+/** 旧行 `sdk_approval_id` 为 NULL 时，内部 id 当作 SDK id。 */
+export function resolvedSdkApprovalId(row: Pick<ApprovalRow, "id" | "sdkApprovalId">): string {
+  return row.sdkApprovalId || row.id
+}
+
+export function planSameRunSdkCollision(sdkApprovalId: string): RememberApprovalPlan {
+  return {
+    id: sdkApprovalId,
+    action: "fail_closed",
+    sdkApprovalId,
+    decision: "deny",
+    cause: "sdk_id_collision"
+  }
+}
+
 export function planRememberApproval(
   existing: ApprovalRow | undefined,
   incoming: { sdkApprovalId: string; args: unknown },
   allocate: () => string
 ): RememberApprovalPlan {
   const next = nextApprovalId(existing, allocate)
-  const sdkApprovalId = existing?.sdkApprovalId || incoming.sdkApprovalId
+  const sdkApprovalId = existing ? resolvedSdkApprovalId(existing) : incoming.sdkApprovalId
   if (next.action === "insert" || next.action === "reuse") {
     return { id: next.id, action: next.action, sdkApprovalId }
   }
@@ -141,6 +157,45 @@ export function getApprovalBySdkIdentity(
        WHERE run_id = ? AND tool_call_id = ? AND COALESCE(sdk_approval_id, id) = ?`
     )
     .get(input.runId, input.toolCallId, input.sdkApprovalId) as ApprovalRow | undefined
+}
+
+/** 同一 run 内按 SDK id 找行，用来拦不同 toolCall 的碰撞。 */
+export function getApprovalByRunAndSdkId(
+  db: AppDatabase,
+  input: { runId: string; sdkApprovalId: string }
+): ApprovalRow | undefined {
+  return db
+    .prepare(
+      `SELECT ${APPROVAL_COLUMNS} FROM approvals
+       WHERE run_id = ? AND COALESCE(sdk_approval_id, id) = ?`
+    )
+    .get(input.runId, input.sdkApprovalId) as ApprovalRow | undefined
+}
+
+export function getApprovalByRunAndToolCall(
+  db: AppDatabase,
+  input: { runId: string; toolCallId: string }
+): ApprovalRow | undefined {
+  return db
+    .prepare(
+      `SELECT ${APPROVAL_COLUMNS} FROM approvals
+       WHERE run_id = ? AND tool_call_id = ?
+       ORDER BY created_at DESC`
+    )
+    .get(input.runId, input.toolCallId) as ApprovalRow | undefined
+}
+
+/** 二次确认 / repark：复用同一行，保留 sdk_approval_id，清掉已决以免 UNIQUE 再插一行。 */
+export function resetApprovalForRepark(
+  db: AppDatabase,
+  id: string,
+  patch: { args: string; hmac: string; requestArgs?: string }
+): void {
+  db.prepare(
+    `UPDATE approvals SET args = ?, hmac = ?, request_args = COALESCE(?, request_args),
+       decision = NULL, sdk_approved = NULL, sdk_reason = NULL, resume_code = NULL
+     WHERE id = ?`
+  ).run(patch.args, patch.hmac, patch.requestArgs ?? null, id)
 }
 
 export function setApprovalDecision(db: AppDatabase, id: string, decision: string): void {
