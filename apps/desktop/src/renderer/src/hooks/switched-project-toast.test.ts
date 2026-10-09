@@ -15,6 +15,11 @@ test("切换 toast 中英文都带项目名", () => {
   assert.equal(interpolate(enChat.switchedToProject, { name: "A" }), "Switched to “A”")
 })
 
+test("删除确认中文用全角逗号", () => {
+  assert.match(zhChat.removeProjectHint, /磁盘文件夹，该项目下/)
+  assert.doesNotMatch(zhChat.removeProjectHint, /磁盘文件夹,该项目下/)
+})
+
 test("切换 toast 走统一 showAppToast，不改时长", () => {
   const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "switched-project-toast.ts"), "utf8")
   assert.match(src, /showAppToast/)

@@ -20,6 +20,15 @@ export function rememberRecentWorkspace(recent: readonly string[], workspaceId: 
   return [workspaceId, ...recent.filter((id) => id !== workspaceId)].slice(0, RECENT_WORKSPACE_CAP)
 }
 
+/** 只有前台用户开跑才写 MRU；心跳 / 续跑 / 自动化不写。 */
+export function shouldRememberWorkspaceOnRun(input: {
+  automationSource?: unknown
+  isResume?: boolean
+  isHeartbeat?: boolean
+}): boolean {
+  return !input.automationSource && !input.isResume && !input.isHeartbeat
+}
+
 /** 删除后取排除被删项的最近一个；都没有再名单第一个。 */
 export function pickRecentWorkspaceAfterRemove(
   recent: readonly string[],

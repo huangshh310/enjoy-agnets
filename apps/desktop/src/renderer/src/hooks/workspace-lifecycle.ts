@@ -8,7 +8,8 @@ import { refreshAllWorkspaces } from "./use-agent-session"
 import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
 import { connectSshIfNeeded } from "./ssh-session-switch"
 import { notifySwitchedProject } from "./switched-project-toast"
-import { landEmptyHome, releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
+import { landEmptyHome, pruneHistoryPages, releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
+import { showEmptyHistoryChat } from "@renderer/hooks/nav-history/show-empty-chat"
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
 import type { WorkspaceRow } from "./workspace-row"
@@ -45,7 +46,7 @@ export async function deleteAllArchivedSessions() {
   await releaseHistoryPages(rows.map((row) => historySessionId(row.id)))
 }
 
-/** 移除应用档案中的项目，不删磁盘文件夹。当前页被拿掉时走历史，指针按剩余名单收口。 */
+/** 移除应用档案中的项目，不删磁盘文件夹。剪掉该项目历史条目但不导航，指针按剩余名单收口。 */
 export async function removeProject(workspaceId: string) {
   if (!hasIde()) return
   await runRemoveProject(workspaceId, {
@@ -67,9 +68,10 @@ export async function removeProject(workspaceId: string) {
       await queryClient.invalidateQueries({ queryKey: ["settings"] })
     },
     collectPageIds: collectProjectPageIds,
-    releaseHistory: releaseHistoryPages,
+    pruneHistory: pruneHistoryPages,
     connectSsh: connectSshIfNeeded,
     landEmptyHome,
+    clearForegroundChat: showEmptyHistoryChat,
     notifySwitched: notifySwitchedProject
   })
 }

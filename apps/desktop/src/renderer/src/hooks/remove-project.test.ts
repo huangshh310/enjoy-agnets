@@ -6,15 +6,12 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { forgetHistory } from "./nav-history/nav-history.ts"
+import { DEFAULT_HISTORY_ID } from "./nav-history/constants.ts"
+import { pruneHistory } from "./nav-history/nav-history.ts"
 import { historyIdsForProject, historySessionId } from "./nav-history/page-ids.ts"
 import type { HistoryEntry, HistoryStack } from "./nav-history/nav-history.types.ts"
 import { runRemoveProject, type RemoveProjectIo } from "./remove-project.ts"
-import {
-  dropDanglingWorkspacePointer,
-  peekWorkspacePointer,
-  seedWorkspacePointer
-} from "./workspace-pointer.ts"
+import { peekWorkspacePointer, seedWorkspacePointer } from "./workspace-pointer.ts"
 import type { WorkspaceRow } from "./workspace-row.ts"
 
 const sshCurrent: WorkspaceRow = {
@@ -110,15 +107,17 @@ function fakeRemoveIo(input: {
       input.order.push("invalidate")
     },
     collectPageIds: async (workspaceId) => historyIdsForProject(workspaceId, [`sess-${workspaceId}`]),
-    releaseHistory: async (ids) => {
-      input.order.push("history")
-      const fallback = settingsPage()
-      const result = forgetHistory(io.stack, new Set(ids), fallback)
-      io.stack = result.stack
-      if (result.removedCurrent && result.stack.current.params?.kind === "route") {
-        dropDanglingWorkspacePointer()
+    pruneHistory: (ids) => {
+      input.order.push("prune")
+      const fallback = {
+        id: DEFAULT_HISTORY_ID,
+        title: "新对话",
+        params: { kind: "route" as const, to: "/" }
       }
-      return result.removedCurrent
+      io.stack = pruneHistory(io.stack, new Set(ids), fallback).stack
+    },
+    clearForegroundChat: () => {
+      input.order.push("clearChat")
     }
   }
   void input.createdSessions
@@ -201,11 +200,12 @@ test("删除非当前 SSH 项目也会断开", async () => {
   assert.equal(createdSessions.length, 0)
 })
 
-test("历史落到设置页时只切指针，不创建空会话", async () => {
+test("历史里有设置页、当前在对话主区时删除当前项目，路由仍在主区并切到 MRU", async () => {
   resetPointer(sshCurrent, [sshCurrent, leftover])
   const disconnected: string[] = []
   const createdSessions: string[] = []
   const connected: string[] = []
+  const switched: string[] = []
   const order: string[] = []
   const io = fakeRemoveIo({
     workspaces: [sshCurrent, leftover],
@@ -215,13 +215,17 @@ test("历史落到设置页时只切指针，不创建空会话", async () => {
     disconnected,
     connected,
     landedHome: [],
-    switched: [],
+    switched,
     order
   })
   await runRemoveProject(sshCurrent.id, io)
-  assert.equal(io.stack.current.id, "route:settings")
+  assert.equal(io.stack.current.params?.to, "/")
+  assert.notEqual(io.stack.current.id, "route:settings")
+  assert.deepEqual(io.stack.past.map((entry) => entry.id), ["route:settings"])
   assert.equal(peekWorkspacePointer().workspaceId, leftover.id)
-  assert.equal(peekWorkspacePointer().sessionId, null)
+  assert.equal(peekWorkspacePointer().workspaceName, leftover.name)
+  assert.deepEqual(switched, [leftover.name])
+  assert.ok(!order.includes("home"))
   assert.equal(createdSessions.length, 0)
   assert.ok(!order.includes("createSession"))
 })
@@ -282,10 +286,12 @@ test("runRemoveProject 不 loadWorkspace、不静默建会话", () => {
   assert.doesNotMatch(lifecycle, /loadWorkspace/)
   assert.match(lifecycle, /\["settings"\]/)
   assert.match(lifecycle, /landEmptyHome/)
+  assert.match(lifecycle, /pruneHistoryPages/)
   assert.match(lifecycle, /notifySwitchedProject/)
 })
 
-test("切换项目走 workspace.remember 写入 MRU", () => {
+test("切换项目走 workspace.remember 写入 MRU，失败不挡住切换", () => {
   const load = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "use-agent-session.ts"), "utf8")
   assert.match(load, /workspace\.remember/)
+  assert.match(load, /remember 失败不得挡住切换/)
 })

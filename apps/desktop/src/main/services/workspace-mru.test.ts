@@ -6,6 +6,7 @@ import { test } from "node:test"
 import {
   nextWorkspaceIdAfterRemove,
   rememberWorkspaceUse,
+  shouldRememberWorkspaceOnRun,
   RECENT_WORKSPACE_SETTING
 } from "./workspace-mru.ts"
 
@@ -37,4 +38,11 @@ test("MRU 都没有时才回落名单第一个", () => {
   const store = memoryStore()
   const next = nextWorkspaceIdAfterRemove("ws-b", ["ws-c", "ws-a"], store)
   assert.equal(next, "ws-c")
+})
+
+test("只有前台用户开跑才写 MRU", () => {
+  assert.equal(shouldRememberWorkspaceOnRun({}), true)
+  assert.equal(shouldRememberWorkspaceOnRun({ automationSource: { id: "auto" } }), false)
+  assert.equal(shouldRememberWorkspaceOnRun({ isResume: true }), false)
+  assert.equal(shouldRememberWorkspaceOnRun({ isHeartbeat: true }), false)
 })

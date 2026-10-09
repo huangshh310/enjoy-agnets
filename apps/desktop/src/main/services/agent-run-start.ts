@@ -7,6 +7,7 @@ import type { GenerationRequest } from "@enjoy-agents/agent-core"
 import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { rememberWorkspaceOpened } from "./workspace-remember.ts"
+import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
 import { createId } from "./ids"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
@@ -104,11 +105,19 @@ async function beginAgentRun(
   }
 
   const workspace = await getWorkspace(input.workspaceId)
-  rememberWorkspaceOpened(workspace.id)
   const session = getDatabase()
     .prepare("SELECT id FROM sessions WHERE id = ? AND workspace_id = ?")
     .get(input.sessionId, input.workspaceId) as { id: string } | undefined
   if (!session) throw new Error("Unknown session for this workspace.")
+  if (
+    shouldRememberWorkspaceOnRun({
+      automationSource: input.automationSource,
+      isResume: Boolean(options.runId),
+      isHeartbeat: Boolean(options.promptEcho)
+    })
+  ) {
+    rememberWorkspaceOpened(workspace.id)
+  }
 
   if (input.commandId && !options.runId) {
     const existing = peekCommandReceipt(input.commandId)

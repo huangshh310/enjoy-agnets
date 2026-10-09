@@ -19,14 +19,16 @@ export type RemoveProjectIo = {
   setWorkspacesCache: (rows: WorkspaceRow[]) => void
   invalidateCaches: () => Promise<void>
   collectPageIds: (workspaceId: string) => Promise<string[]>
-  releaseHistory: (ids: readonly string[]) => Promise<boolean>
+  /** 剪掉已删项目的历史条目，禁止因此导航。 */
+  pruneHistory: (ids: readonly string[]) => void
   /** 切到 SSH next 时只建连，不灌会话。 */
   connectSsh?: (workspace: WorkspaceRow) => Promise<void>
   landEmptyHome?: () => Promise<void>
+  clearForegroundChat?: () => void
   notifySwitched?: (workspace: WorkspaceRow) => void
 }
 
-/** 先 remove（main 断开），再历史回落，最后按返回的 lastWorkspaceId 收口指针。 */
+/** 先 remove（main 断开），再剪历史（不导航），最后按返回的 lastWorkspaceId 收口指针。 */
 export async function runRemoveProject(workspaceId: string, io: RemoveProjectIo) {
   const ids = await io.collectPageIds(workspaceId)
   const wasActive = io.currentWorkspaceId() === workspaceId
@@ -36,14 +38,17 @@ export async function runRemoveProject(workspaceId: string, io: RemoveProjectIo)
   const remaining = await io.listWorkspaces()
   io.setWorkspacesCache(remaining)
   await io.invalidateCaches()
-  const removedCurrent = await io.releaseHistory(ids)
-  if (!wasActive && !removedCurrent) return remaining
+  io.pruneHistory(ids)
+  if (!wasActive) return remaining
   const next = settleWorkspaceAfterRemove(remaining, removed.lastWorkspaceId)
   if (remaining.length === 0) {
     await io.landEmptyHome?.()
     return remaining
   }
   if (next?.kind === "ssh") await io.connectSsh?.(next)
-  if (next) io.notifySwitched?.(next)
+  if (next) {
+    io.clearForegroundChat?.()
+    io.notifySwitched?.(next)
+  }
   return remaining
 }

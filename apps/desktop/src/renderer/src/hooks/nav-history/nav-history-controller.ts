@@ -53,6 +53,11 @@ export async function releaseHistoryPages(ids: readonly string[]): Promise<boole
   return true
 }
 
+/** 删除项目：剪掉该项目的历史条目，不弹栈、不导航。 */
+export function pruneHistoryPages(ids: readonly string[]): void {
+  useNavHistoryStore.getState().prune(ids, defaultEntry())
+}
+
 async function showCurrent(): Promise<void> {
   await showHistoryEntry(useNavHistoryStore.getState().current)
 }
