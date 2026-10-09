@@ -7,6 +7,7 @@ import { getSetting, setSetting } from "./database"
 export type AppPreferences = SettingsSnapshot["preferences"]
 
 function e2eLanguage(): "zh" | "en" {
+  if (process.env.ENJOY_E2E_LANG === "zh") return "zh"
   if (process.env.ENJOY_E2E_LANG === "en") return "en"
   if (process.env.ENJOY_E2E_STUB === "1") return "en"
   return "zh"

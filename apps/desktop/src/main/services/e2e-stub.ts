@@ -2,10 +2,13 @@
  * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  */
 import type { ModelMessage } from "ai"
+import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 
 export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
 }
+
+export { isE2eCuReady } from "./e2e-stub-desktop.ts"
 
 function userText(message: ModelMessage | undefined): string {
   if (!message) return ""
@@ -56,6 +59,11 @@ export async function* createE2eStubStream(
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  const desktop = stubDesktopStreamParts(prompt)
+  if (desktop) {
+    for (const part of desktop) yield part
+    return
+  }
   if (stubApprovedWrite(messages)) {
     yield* emitText("stub-ok allowed write", signal)
     return
