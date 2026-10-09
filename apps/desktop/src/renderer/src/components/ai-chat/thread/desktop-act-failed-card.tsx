@@ -1,14 +1,13 @@
 /**
  * 桌面动作诚实失败卡：只说人话，不露工程码、不附下一步缩略或假成功。
  */
-import { asRecord } from "@renderer/lib/record"
 import { useT } from "@renderer/i18n"
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { desktopActFailedCopy, desktopActFailureKind } from "./desktop-act-failed-copy"
 
 export function DesktopActFailedCard({ tool }: { tool: ThreadToolCall }) {
   const t = useT()
-  const kind = desktopActFailureKind(asRecord(tool.result))
+  const kind = desktopActFailureKind(tool)
   if (!kind) return null
   const copy = desktopActFailedCopy(kind, t)
   return (

@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（审批硬拒带 `bare_coords_disabled`；未知观察号 Dock；铬 fail-closed 仅 `sensitive === false` 才给本会话/始终允许；CU-P1-36 高级坐标已绑）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（硬拒卡认 `@enjoy-agents/ipc-contract/desktop-act-codes`；`tool.result` 与折叠后 ThreadToolCall 同一张人话）
 
 ## 当前真相
 

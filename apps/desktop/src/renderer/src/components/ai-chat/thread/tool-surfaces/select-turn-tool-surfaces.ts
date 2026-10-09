@@ -35,7 +35,7 @@ export function toolResultSurfaces(tools: ThreadToolCall[]): ThreadToolCall[] {
 }
 
 export function desktopActFailedSurfaces(tools: ThreadToolCall[]): ThreadToolCall[] {
-  return tools.filter((tool) => tool.name === "desktop_act" && desktopActFailureKind(asRecord(tool.result)))
+  return tools.filter((tool) => tool.name === "desktop_act" && desktopActFailureKind(tool))
 }
 
 export function hasTurnToolSurfaces(tools: ThreadToolCall[]): boolean {
