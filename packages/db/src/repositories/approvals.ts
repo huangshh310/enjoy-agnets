@@ -14,6 +14,23 @@ export type ApprovalRow = {
   createdAt: number
 }
 
+/** 同一未决行幂等复用；已决或身份不同则换新 id，禁止把真冲突当成功。 */
+export function nextApprovalId(
+  existing: Pick<ApprovalRow, "id" | "runId" | "toolCallId" | "decision"> | undefined,
+  incoming: Pick<ApprovalRow, "id" | "runId" | "toolCallId">,
+  allocate: () => string
+): { id: string; action: "insert" | "reuse" } {
+  if (!existing) return { id: incoming.id, action: "insert" }
+  if (
+    existing.decision == null &&
+    existing.runId === incoming.runId &&
+    existing.toolCallId === incoming.toolCallId
+  ) {
+    return { id: existing.id, action: "reuse" }
+  }
+  return { id: allocate(), action: "insert" }
+}
+
 export function insertApproval(db: AppDatabase, row: ApprovalRow): void {
   db.prepare(
     `INSERT INTO approvals (id, run_id, tool_call_id, name, args, hmac, decision, created_at)

@@ -43,12 +43,21 @@ export function lastUserText(messages: ModelMessage[]): string {
 }
 
 export function stubApprovedWrite(messages: ModelMessage[]): boolean {
+  return hasApprovalResponse(messages, true)
+}
+
+/** 拒绝后不得再吐同一张审批卡，否则会撞 approvals.id。 */
+export function stubDeniedApproval(messages: ModelMessage[]): boolean {
+  return hasApprovalResponse(messages, false)
+}
+
+function hasApprovalResponse(messages: ModelMessage[], approved: boolean): boolean {
   return messages.some((message) => {
     if (message.role !== "tool" || !Array.isArray(message.content)) return false
     return message.content.some((part) => {
       if (!part || typeof part !== "object") return false
       const rec = part as { type?: string; approved?: boolean }
-      return rec.type === "tool-approval-response" && rec.approved === true
+      return rec.type === "tool-approval-response" && rec.approved === approved
     })
   })
 }
@@ -59,6 +68,10 @@ export async function* createE2eStubStream(
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
+  if (stubDeniedApproval(messages)) {
+    yield { type: "finish", usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } }
+    return
+  }
   const desktop = stubDesktopStreamParts(prompt)
   if (desktop) {
     for (const part of desktop) yield part

@@ -143,7 +143,7 @@ export function extractFilePaths(
 }
 
 export function mapToolStatus(state: ThreadToolCall["state"]): "pending" | "running" | "completed" | "error" {
-  if (state === "output-error" || state === "output-denied") return "error"
+  if (state === "output-error") return "error"
   if (state === "input-streaming" || state === "input-available" || state === "approval-requested") {
     return "running"
   }

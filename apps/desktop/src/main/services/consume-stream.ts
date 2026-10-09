@@ -73,19 +73,20 @@ export async function consumeFullStream(input: {
     }
     if (event.type === "approval.required") {
       const args = await parkApprovalArgs(event.name, event.args)
-      const pending: PendingApproval = {
+      const toolCallId = event.toolCallId || createId("tool")
+      const approvalId = rememberApproval({
+        runId: input.runId,
         approvalId: event.approvalId || createId("apr"),
-        toolCallId: event.toolCallId || createId("tool"),
+        toolCallId,
+        name: event.name,
+        args
+      })
+      const pending: PendingApproval = {
+        approvalId,
+        toolCallId,
         name: event.name,
         args
       }
-      rememberApproval({
-        runId: input.runId,
-        approvalId: pending.approvalId,
-        toolCallId: pending.toolCallId,
-        name: pending.name,
-        args
-      })
       input.onApproval(pending)
       input.emit({ ...event, approvalId: pending.approvalId, toolCallId: pending.toolCallId, args })
       continue

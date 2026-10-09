@@ -5,8 +5,17 @@ import { randomBytes } from "node:crypto"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { app, safeStorage } from "electron"
-import { approvalPayload, getApproval, insertApproval, setApprovalDecision, signApproval, verifyApproval } from "@enjoy-agents/db"
+import {
+  approvalPayload,
+  getApproval,
+  insertApproval,
+  nextApprovalId,
+  setApprovalDecision,
+  signApproval,
+  verifyApproval
+} from "@enjoy-agents/db"
 import { getDatabase } from "./database"
+import { createId } from "./ids"
 
 let processSecret: string | undefined
 
@@ -50,16 +59,24 @@ export function rememberApproval(input: {
   toolCallId: string
   name: string
   args: unknown
-}): void {
+}): string {
+  const db = getDatabase()
+  const incoming = {
+    id: input.approvalId,
+    runId: input.runId,
+    toolCallId: input.toolCallId
+  }
+  const allocated = nextApprovalId(getApproval(db, incoming.id), incoming, () => createId("apr"))
+  if (allocated.action === "reuse") return allocated.id
   const payload = approvalPayload({
     runId: input.runId,
     toolCallId: input.toolCallId,
-    approvalId: input.approvalId,
+    approvalId: allocated.id,
     name: input.name,
     args: input.args
   })
-  insertApproval(getDatabase(), {
-    id: input.approvalId,
+  insertApproval(db, {
+    id: allocated.id,
     runId: input.runId,
     toolCallId: input.toolCallId,
     name: input.name,
@@ -68,6 +85,7 @@ export function rememberApproval(input: {
     decision: null,
     createdAt: Date.now()
   })
+  return allocated.id
 }
 
 export function assertApprovalHmac(input: {

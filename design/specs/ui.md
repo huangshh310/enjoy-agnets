@@ -169,6 +169,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 不要 `npx shadcn add` Fluid `ask-user-questions.json`：会带进 `@base-ui/react`、`framer-motion`、Lucide、`bg-card`。只抄步进/数字键/其它输入，皮走 BoardUI。`ask_user_questions` 与审批 questions 不是同一张皮：前者是产品选择题，后者是允许本次/本会话。提问卡片绕开 `ApprovalChrome`，必须自己画 HMAC；数字键把「其它」当下一号并聚焦输入，不要只绑 `options[]`。
 - 审批卡片不要原样上架 AICSS registry：禁止 CSS module hex 皮、Lucide、plan 30s Auto Approve。三种表面只抄交互；HMAC 与 `allow_session` 是本产品契约，registry 里没有也要留。
 - 用户气泡附件「发过又没了」：模型能描述图片，说明 `attachments` 到了 main；气泡只看 `message.assets`。旧 persist 只写 text，点会话 / 刷新走 `loadSession` 后缩略图消失。列出消息时按导入时间窗补 file part；同会话重灌用内存附件兜底。
+- **隐患**：种子会话「New agent」首发：Composer 清空、侧栏转、欢迎页还在。根因是启动 `loadSession` 在 await 前截了空 `previous`，用户句乐观进 store 后被空库回灌洗掉。正确做法：await 后再读 live，`pickHydratedMessages` 在空库或 running 且 live 更长时保住乐观气泡。这不是 BASE-P0-3 草稿会话。
 - 附件黑框：写了 `border` 却配不存在的 token（如 `border-border-card`）。宽度生效、颜色回落 `currentColor`（正文近黑）。边框只用 `border-border-button-default` / `border-separator-border`。图片外包 `button` 必须 `border-0`，否则 Electron 原生按钮描边也会是黑圈。
 - 助手生图预览不要再包一层描边卡片。BeUI 表面本身是 `rounded-2xl` + `bg-background-secondary-default`，再加 `border` 会回到黑框坑。`MessageContent` 是 `w-fit`，生图画布必须给明确宽度（如 `w-80`），否则 `w-full` + `aspect-ratio` 会塌成一条缝。
 - 生图轮出现空 Thinking：`ThinkingTrace` 在 `streaming` 时默认展开。imagine 走 `generateImage`，没有 `reasoning.delta` / `tool.*`，时间线就是「No reasoning trace」。有推理或工具才挂 Thinking；媒体轮只挂 Image Generation。不要伪造一条 generateImage 工具调用。

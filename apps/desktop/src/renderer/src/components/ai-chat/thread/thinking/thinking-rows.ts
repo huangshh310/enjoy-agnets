@@ -81,7 +81,7 @@ function toolRow(tool: ThreadToolCall, t: TranslateFn): TraceRow {
     del,
     done: tool.state === "output-available",
     working: tool.state === "input-streaming" || tool.state === "input-available",
-    failed: tool.state === "output-error" || tool.state === "output-denied"
+    failed: tool.state === "output-error"
   }
 }
 

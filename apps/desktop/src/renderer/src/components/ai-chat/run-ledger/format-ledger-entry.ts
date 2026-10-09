@@ -99,7 +99,8 @@ function isCommandLike(name: string, shell?: string): boolean {
 }
 
 function toolFailed(tool: ThreadToolCall): boolean {
-  if (tool.state === "output-error" || tool.state === "output-denied") return true
+  if (tool.state === "output-denied") return false
+  if (tool.state === "output-error") return true
   if (tool.errorText?.trim()) return true
   const exit = asRecord(tool.result).exitCode
   return typeof exit === "number" && exit !== 0

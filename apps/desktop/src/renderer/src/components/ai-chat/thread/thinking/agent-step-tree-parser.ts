@@ -19,6 +19,7 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
+import { toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -226,6 +227,9 @@ function ioFields(
         : stderr
           ? stderr
           : undefined
+  if (tool.state === "output-denied") {
+    return { command, output, exitCode: undefined, errorText: toolDeniedCopy(t) }
+  }
   const raw = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
   return {
     command,

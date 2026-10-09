@@ -32,7 +32,7 @@ export {
 } from "./diff";
 export type { AgentRuntimeContext, AgentWorkspaceHost } from "./runtime-context";
 export type { AiRuntime, GenerationRequest, RuntimeAdapters, RuntimeEvent } from "./runtime/types";
-export { RuntimeError, classifyError } from "./runtime/errors";
+export { RuntimeError, classifyError, INTERNAL_STORE_ERROR, isInternalStoreError } from "./runtime/errors";
 export { createEventStamper } from "./runtime/envelope";
 export { createBufferedRuntime, type RuntimeExecute } from "./runtime/create-runtime";
 export { createEventBuffer, type EventBuffer } from "./runtime/event-buffer";

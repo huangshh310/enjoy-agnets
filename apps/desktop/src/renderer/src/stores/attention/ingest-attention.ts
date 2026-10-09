@@ -47,7 +47,9 @@ export function ingestAttentionEvent(
   const cleared =
     kind === "complete" || kind === "error"
       ? resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
-      : aged
+      : kind === "pending_approval" || kind === "ask_user"
+        ? resolveTerminalSlots(aged, input.sessionId)
+        : aged
   const next = upsertSlot(cleared, {
     sessionId: input.sessionId,
     workspaceId: input.workspaceId,
@@ -78,6 +80,18 @@ export function focusAttentionSlot(
 
 export function dismissAttentionSlot(items: AttentionItem[], id: string): AttentionItem[] {
   return items.map((item) => (item.id === id ? { ...item, status: "dismissed" } : item))
+}
+
+/** 新审批进场时收掉同会话的已完成 / 出错，避免「需处理」和「已完成刚刚」叠在一起。 */
+export function resolveTerminalSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
+  return items.map((item) => {
+    if (item.sessionId !== sessionId) return item
+    if (item.kind !== "complete" && item.kind !== "error") return item
+    if (item.status === "resolved" || item.status === "dismissed" || item.status === "expired") {
+      return item
+    }
+    return { ...item, status: "resolved" }
+  })
 }
 
 export function resolveDecisionSlots(

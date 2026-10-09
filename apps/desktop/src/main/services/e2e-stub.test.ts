@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { createE2eStubStream, lastUserText, stubApprovedWrite } from "./e2e-stub.ts"
+import { createE2eStubStream, lastUserText, stubApprovedWrite, stubDeniedApproval } from "./e2e-stub.ts"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 
 test("lastUserText 取最后一条用户字", () => {
@@ -152,4 +152,21 @@ test("stubApprovedWrite 识别 tool-approval-response", () => {
     ]),
     true
   )
+})
+
+test("拒绝后继续不再重放同一张审批", async () => {
+  const denied = [
+    { role: "user" as const, content: "desktop catchup notes" },
+    {
+      role: "tool" as const,
+      content: [{ type: "tool-approval-response", approvalId: "apr_catchup", approved: false }]
+    } as never
+  ]
+  assert.equal(stubDeniedApproval(denied), true)
+  const parts: string[] = []
+  for await (const part of createE2eStubStream(denied, new AbortController().signal)) {
+    parts.push(String(part.type))
+  }
+  assert.equal(parts.includes("tool-approval-request"), false)
+  assert.deepEqual(parts, ["finish"])
 })

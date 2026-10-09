@@ -18,7 +18,7 @@ import {
 } from "../stores/attention/session-run-park"
 import { useChatStore } from "../stores/chat-store"
 import { threadFromRows } from "./hydrate-thread"
-import { mergeUserAssets } from "./merge-user-assets"
+import { pickHydratedMessages } from "./pick-hydrated-messages"
 import { composerModelPatch } from "../lib/session-model.ts"
 import { bindSessionRuntime } from "./persist-runtime"
 import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handoff/engine-handoff-store"
@@ -67,7 +67,6 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   if (stale?.()) return
   const store = useChatStore.getState()
   const sameSession = store.sessionId === sessionId
-  const previous = sameSession ? store.messages : []
   if (!sameSession) {
     if (store.sessionId) {
       parkForegroundRun()
@@ -84,8 +83,17 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   }
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
+  const latest = useChatStore.getState()
+  if (latest.sessionId !== sessionId) return
   restoreUiMessages(rows)
-  store.setMessages(mergeUserAssets(threadFromRows(rows), previous))
+  latest.setMessages(
+    pickHydratedMessages({
+      dbMessages: threadFromRows(rows),
+      liveMessages: latest.messages,
+      sameSession: true,
+      running: latest.running
+    })
+  )
 }
 
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
