@@ -29,6 +29,7 @@ import {
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
 import { isE2eStub } from "./e2e-stub"
+import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 
 export async function runAgent(
   window: BrowserWindow,
@@ -93,6 +94,10 @@ async function beginAgentRun(
   }
   const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
   if (isE2eStub() && !input.modelId) input.modelId = "stub-e2e"
+  if (isE2eStub()) {
+    const source = e2eAutomationSourceFromPrompt(lastUserContent(input))
+    if (source) input.automationSource = source
+  }
   if (!isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }

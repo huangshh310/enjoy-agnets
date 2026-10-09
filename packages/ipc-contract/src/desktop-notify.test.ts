@@ -7,6 +7,7 @@ import {
   deriveRunNotifyKind,
   desktopApprovalNotifyCopy,
   isUserAbortMessage,
+  formatCatchUpApprovalNotice,
   noticeForAgentEvent,
   redactDesktopApprovalNotify
 } from "./desktop-notify.ts"
@@ -72,6 +73,20 @@ test("英文待审批通知同样不泄输入，且不写 type 字段原文", ()
   assert.equal(copy.body.includes("allow"), false)
 })
 
+test("formatCatchUpApprovalNotice 只吃名称与 isCatchUp", () => {
+  assert.deepEqual(formatCatchUpApprovalNotice({ automationName: "晨间待办整理", isCatchUp: true }, true), {
+    title: "待审批",
+    body: "Enjoy 的自动化「晨间待办整理」在补跑，需要你回 Enjoy 审批"
+  })
+  assert.deepEqual(formatCatchUpApprovalNotice({ automationName: "Morning inbox", isCatchUp: true }, false), {
+    title: "Approval needed",
+    body: "Enjoy automation “Morning inbox” is catching up and needs you back in Enjoy to approve."
+  })
+  assert.equal(formatCatchUpApprovalNotice({ automationName: "晨间待办整理", isCatchUp: false }, true), null)
+  assert.equal(formatCatchUpApprovalNotice({ automationName: "  ", isCatchUp: true }, true), null)
+  assert.equal(formatCatchUpApprovalNotice(undefined, true), null)
+})
+
 test("补跑来源句不泄输入，仍走 #105 红action", () => {
   const copy = noticeForAgentEvent(
     {
@@ -87,10 +102,29 @@ test("补跑来源句不泄输入，仍走 #105 红action", () => {
     },
     true
   )
-  assert.match(copy?.body ?? "", /晨间待办整理/)
-  assert.match(copy?.body ?? "", /补跑/)
+  assert.equal(copy?.body, "Enjoy 的自动化「晨间待办整理」在补跑，需要你回 Enjoy 审批")
+  assert.equal(copy?.body.includes("有工具在等你决定"), false)
   assertDoesNotLeak(copy?.body ?? "")
   assert.equal(copy?.body.includes("允许"), false)
+  const en = noticeForAgentEvent(
+    {
+      type: "approval.required",
+      name: "desktop_act",
+      args: DIRTY_ARGS,
+      automationSource: {
+        automationId: "auto_1",
+        automationName: "Morning inbox",
+        scheduledAt: 1,
+        isCatchUp: true
+      }
+    },
+    false
+  )
+  assert.equal(
+    en?.body,
+    "Enjoy automation “Morning inbox” is catching up and needs you back in Enjoy to approve."
+  )
+  assertDoesNotLeak(en?.body ?? "")
 })
 
 test("非 desktop_act 或未知动作走泛工具句", () => {

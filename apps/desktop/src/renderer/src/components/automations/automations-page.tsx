@@ -15,6 +15,7 @@ import { requestInboxFilter } from "@renderer/components/inbox/lib/pending-inbox
 import { AutomationDrawer } from "./components/automation-drawer"
 import { AutomationFooter } from "./components/automation-footer"
 import { AutomationList } from "./components/automation-list"
+import { useAutomationMissed } from "./hooks/use-automation-missed"
 import { draftFromAutomation, draftToUpsert, emptyAutomationDraft, type AutomationDraft } from "./lib/draft"
 
 export function AutomationsPage() {
@@ -39,6 +40,8 @@ export function AutomationsPage() {
     queryFn: () => getIde().automations.list() as Promise<Automation[]>
   })
   const automations = automationsQuery.data ?? []
+  const missedQuery = useAutomationMissed(automations.map((item) => item.id))
+  const missedById = missedQuery.data ?? {}
 
   useEffect(() => {
     if (!hasIde()) return
@@ -94,7 +97,7 @@ export function AutomationsPage() {
   }
 
   const body = (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col" data-testid="page-automations">
       <header className="flex items-center justify-between gap-2 border-b border-separator-border px-4 py-3">
         <div>
           <h1 className="text-title-3-semibold text-text-primary">{t("studio.automations.title")}</h1>
@@ -106,6 +109,7 @@ export function AutomationsPage() {
       </header>
       <AutomationList
         automations={automations}
+        missedById={missedById}
         tools={tools}
         locale={locale}
         now={now}
@@ -120,6 +124,9 @@ export function AutomationsPage() {
         tools={tools}
         saving={saving}
         running={Boolean(draft?.id && runningId === draft.id)}
+        records={draft?.id ? (missedById[draft.id] ?? []) : []}
+        locale={locale}
+        now={now}
         onClose={() => setDraft(null)}
         onChange={(patch) => setDraft((current) => (current ? { ...current, ...patch } : current))}
         onSave={() => draft && void persist(draft)}

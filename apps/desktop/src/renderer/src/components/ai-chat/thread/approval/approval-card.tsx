@@ -15,6 +15,8 @@ import { ApprovalPlanBody } from "./approval-plan-body"
 import { ApprovalQuestionsBody } from "./approval-questions-body"
 import { AskUserCard } from "../ask-user/ask-user-card"
 import { classifyApproval, commandCwdOf, commandTextOf, payloadPreview } from "./classify-approval"
+import { AutomationSourceLine } from "@renderer/components/automations/components/automation-source-line"
+import { automationSourceCopy } from "@renderer/components/automations/lib/missed-copy"
 import { DesktopApprovalCard } from "./desktop-approval-card"
 import { planFromPending } from "./plan-from-pending"
 import type { ApprovalDecide } from "./approval.types"
@@ -41,6 +43,7 @@ export function ApprovalCard({
   const args = asRecord(pending.args)
   const variant = classifyApproval(pending.name, args)
   const decide: ApprovalDecide = { onApprove: () => onApprove(), onDeny, onAllowSession, onAllowAlways }
+  const sourceLine = automationSourceCopy(pending.automationSource, t)
   const untitled = t("chat.untitledWorkspace")
   if (pending.name === ASK_USER_QUESTIONS_TOOL) {
     return <AskUserCard args={args} onComplete={(answers) => onApprove(answers)} onSkipAll={onDeny} />
@@ -50,27 +53,47 @@ export function ApprovalCard({
       <CommandApproval
         cwd={commandCwdOf(args, workspaceRoot || untitled)}
         command={commandTextOf(pending.name, args)}
+        sourceLine={sourceLine}
         decide={decide}
       />
     )
   }
   if (variant === "plan") {
-    return <PlanApproval name={pending.name} args={args} workspaceName={workspaceName || untitled} decide={decide} />
+    return (
+      <PlanApproval
+        name={pending.name}
+        args={args}
+        workspaceName={workspaceName || untitled}
+        sourceLine={sourceLine}
+        decide={decide}
+      />
+    )
   }
   if (variant === "desktop") {
-    return <DesktopApprovalCard args={args} decide={decide} />
+    return <DesktopApprovalCard args={args} decide={decide} sourceLine={sourceLine} />
   }
   return (
     <QuestionsApproval
       toolLabel={formatToolName(pending.name)}
       payload={payloadPreview(args)}
       thumbnailPath={typeof args.thumbnailPath === "string" ? args.thumbnailPath : ""}
+      sourceLine={sourceLine}
       decide={decide}
     />
   )
 }
 
-function CommandApproval({ cwd, command, decide }: { cwd: string; command: string; decide: ApprovalDecide }) {
+function CommandApproval({
+  cwd,
+  command,
+  sourceLine,
+  decide
+}: {
+  cwd: string
+  command: string
+  sourceLine: string | null
+  decide: ApprovalDecide
+}) {
   const t = useT()
   return (
     <ApprovalChrome
@@ -80,6 +103,7 @@ function CommandApproval({ cwd, command, decide }: { cwd: string; command: strin
       denyLabel={t("chat.deny")}
       decide={decide}
     >
+      <AutomationSourceLine text={sourceLine} />
       <ApprovalCommandBody cwd={cwd} command={command} />
     </ApprovalChrome>
   )
@@ -89,11 +113,13 @@ function PlanApproval({
   name,
   args,
   workspaceName,
+  sourceLine,
   decide
 }: {
   name: string
   args: Record<string, unknown>
   workspaceName: string
+  sourceLine: string | null
   decide: ApprovalDecide
 }) {
   const t = useT()
@@ -111,6 +137,7 @@ function PlanApproval({
       denyLabel={t("chat.deny")}
       decide={decide}
     >
+      <AutomationSourceLine text={sourceLine} />
       <ApprovalPlanBody
         headline={plan.headline}
         summary={workspaceName}
@@ -127,11 +154,13 @@ function QuestionsApproval({
   toolLabel,
   payload,
   thumbnailPath,
+  sourceLine,
   decide
 }: {
   toolLabel: string
   payload: string
   thumbnailPath?: string
+  sourceLine: string | null
   decide: ApprovalDecide
 }) {
   const t = useT()
@@ -163,6 +192,7 @@ function QuestionsApproval({
         }
       }}
     >
+      <AutomationSourceLine text={sourceLine} />
       <ApprovalQuestionsBody
         questions={[
           {

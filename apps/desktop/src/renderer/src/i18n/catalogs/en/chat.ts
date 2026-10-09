@@ -723,6 +723,8 @@ export const enChat = {
   alwaysAllow: "Always allow this session",
   allowOnce: "Allow once",
   desktopApprovalTitle: "Allow control of “{app}”?",
+  automationSourceCatchUp: "Catch-up from automation “{name}”",
+  automationSourceOnTime: "From automation “{name}”",
   desktopApprovalTtlFrozen: "Pending · this observation TTL is frozen (§3.2a)",
   desktopAllowOnce: "Allow once",
   desktopAllowSession: "Allow this app this session",

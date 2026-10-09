@@ -7,6 +7,25 @@ export function isE2eCuReady(): boolean {
   return process.env.ENJOY_E2E_STUB === "1" && process.env.ENJOY_E2E_CU_READY === "1"
 }
 
+/** 仅 stub：给补跑 Dock 挂上来源句，不改生产审批闸。 */
+export function e2eAutomationSourceFromPrompt(prompt: string) {
+  if (/desktop catchup terminal/i.test(prompt)) {
+    return {
+      automationId: "auto_term",
+      automationName: "晨间类型检查",
+      scheduledAt: Date.now() - 3_600_000,
+      isCatchUp: true
+    }
+  }
+  if (!/desktop catchup/i.test(prompt)) return undefined
+  return {
+    automationId: "auto_sleep",
+    automationName: "晨间待办整理",
+    scheduledAt: Date.now() - 3_600_000,
+    isCatchUp: true
+  }
+}
+
 export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[] | null {
   if (/desktop calendar/i.test(prompt)) {
     return [
@@ -17,6 +36,32 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
         appKey: "com.apple.iCal",
         appKeySource: "bundleId",
         elementName: "今天",
+        sensitive: false
+      })
+    ]
+  }
+  if (/desktop catchup terminal/i.test(prompt)) {
+    return [
+      desktopApproval("apr_catchup_term", "tool_catchup_term", {
+        observationId: "obs_term_cu",
+        action: "click",
+        appName: "终端",
+        appKey: "com.apple.Terminal",
+        appKeySource: "bundleId",
+        elementName: "提示符",
+        sensitive: true
+      })
+    ]
+  }
+  if (/desktop catchup/i.test(prompt)) {
+    return [
+      desktopApproval("apr_catchup", "tool_catchup", {
+        observationId: "obs_notes",
+        action: "click",
+        appName: "备忘录",
+        appKey: "com.apple.notes",
+        appKeySource: "bundleId",
+        elementName: "今日",
         sensitive: false
       })
     ]

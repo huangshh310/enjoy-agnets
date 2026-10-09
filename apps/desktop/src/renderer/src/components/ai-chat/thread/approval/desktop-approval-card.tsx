@@ -16,27 +16,43 @@ import {
 } from "./desktop-approval-choice"
 import { desktopSecondConfirmView, isDesktopSecondConfirm } from "./desktop-second-confirm-args"
 import { DesktopSecondConfirmBody } from "./desktop-second-confirm-body"
+import { AutomationSourceLine } from "@renderer/components/automations/components/automation-source-line"
 import { useDesktopPreviewFrame } from "./desktop-preview-frame"
 
-export function DesktopApprovalCard({ args, decide }: { args: unknown; decide: ApprovalDecide }) {
+export function DesktopApprovalCard({
+  args,
+  decide,
+  sourceLine
+}: {
+  args: unknown
+  decide: ApprovalDecide
+  sourceLine?: string | null
+}) {
   const t = useT()
   const view = desktopApprovalView(args)
   if (view.secondConfirm || isDesktopSecondConfirm(args)) {
     return <SecondConfirmChrome args={args} decide={decide} />
   }
   return (
-    <FirstAllowChrome view={view} decide={decide} title={t("chat.desktopApprovalTitle", { app: view.appName })} />
+    <FirstAllowChrome
+      view={view}
+      decide={decide}
+      title={t("chat.desktopApprovalTitle", { app: view.appName })}
+      sourceLine={sourceLine}
+    />
   )
 }
 
 function FirstAllowChrome({
   view,
   decide,
-  title
+  title,
+  sourceLine
 }: {
   view: ReturnType<typeof desktopApprovalView>
   decide: ApprovalDecide
   title: string
+  sourceLine?: string | null
 }) {
   const t = useT()
   const available = desktopApprovalChoiceIds({
@@ -61,7 +77,11 @@ function FirstAllowChrome({
       <div className="flex flex-col" data-testid="desktop-approval-card">
         <div className="flex flex-wrap items-start gap-3">
           <DesktopThumb src={view.thumbnail} alt={view.appName} />
-          <DesktopApprovalSummary view={view} ttlLabel={t("chat.desktopApprovalTtlFrozen")} />
+          <DesktopApprovalSummary
+            view={view}
+            ttlLabel={t("chat.desktopApprovalTtlFrozen")}
+            sourceLine={sourceLine}
+          />
         </div>
         {view.sensitive ? (
           <p
@@ -118,14 +138,17 @@ function SecondConfirmChrome({ args, decide }: { args: unknown; decide: Approval
 
 function DesktopApprovalSummary({
   view,
-  ttlLabel
+  ttlLabel,
+  sourceLine
 }: {
   view: ReturnType<typeof desktopApprovalView>
   ttlLabel: string
+  sourceLine?: string | null
 }) {
   return (
     <div className="min-w-0 flex-1">
       <p className="text-caption-1-medium text-text-secondary">{view.summary}</p>
+      <AutomationSourceLine text={sourceLine ?? null} />
       {view.appKey ? (
         <p className="mt-1 text-caption-2-medium text-text-tertiary" data-testid="desktop-approval-app-key">
           {view.appKey}

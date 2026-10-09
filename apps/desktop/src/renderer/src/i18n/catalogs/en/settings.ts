@@ -62,7 +62,7 @@ export const enSettings = {
     capAutoA: "Local cron",
     capAutoB: "Same session only",
     capAutoC: "Skip a tick while busy or waiting",
-    capAutoD: "Closing the app does not catch up",
+    capAutoD: "Does not catch up by default; turn on latest-miss catch-up per automation",
     enginesTitle: "Install local engines",
     enginesBody: "Ones already found are marked ready. Install the rest now, or later in Settings.",
     engineSummary: "{ready} ready · {missing} not installed",
