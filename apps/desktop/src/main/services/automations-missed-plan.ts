@@ -1,7 +1,10 @@
 /**
  * 计算一条 cron 自动化在回看窗里要记跳过还是补跑。纯函数，方便对 M1–M6。
  */
-import { MISSED_LOOKBACK_MS } from "@enjoy-agents/ipc-contract/automations-missed"
+import {
+  CATCH_UP_MAX_AGE_MS,
+  MISSED_LOOKBACK_MS
+} from "@enjoy-agents/ipc-contract/automations-missed"
 import type { AutomationSkipReason } from "@enjoy-agents/ipc-contract"
 import { alignCronMinute, listCronPoints } from "./automations-cron-points.ts"
 import { classifyMissedReason, type ClassifyMissedInput, type MissedScanTrigger } from "./automations-missed-reason.ts"
@@ -68,7 +71,7 @@ export function planMissedActions(
         currentlyRunning: item.currentlyRunning
       })
     }))
-  return assignCatchUp(actions, item.catchUpMissed === true)
+  return assignCatchUp(actions, item.catchUpMissed === true, item.now)
 }
 
 function missedLookbackWindow(item: PlanMissedInput): { fromMs: number; toMs: number } | null {
@@ -82,12 +85,14 @@ function missedLookbackWindow(item: PlanMissedInput): { fromMs: number; toMs: nu
 
 function assignCatchUp(
   actions: { scheduledAt: number; reason: AutomationSkipReason }[],
-  catchUp: boolean
+  catchUp: boolean,
+  now: number
 ): PlannedMissedAction[] {
   const latest = actions.at(-1)?.scheduledAt
   if (latest == null) return []
+  const latestFresh = catchUp && now - latest <= CATCH_UP_MAX_AGE_MS
   return actions.map((row) =>
-    catchUp && row.scheduledAt === latest
+    latestFresh && row.scheduledAt === latest
       ? { type: "catch_up" as const, ...row }
       : { type: "skip" as const, ...row }
   )

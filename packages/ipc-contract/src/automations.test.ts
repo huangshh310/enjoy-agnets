@@ -48,7 +48,7 @@ test("upsert 收下 cron / 引擎 / 探索内部 mode", () => {
   }
 })
 
-test("持久化行可带 skipped / 补跑开关", () => {
+test("持久化行可带 lastRunErrorCode / 补跑开关", () => {
   const parsed = Automation.safeParse({
     id: "auto_1",
     name: "复盘",
@@ -57,15 +57,17 @@ test("持久化行可带 skipped / 补跑开关", () => {
     enabled: true,
     updatedAt: 1,
     lastRunAt: 2,
-    lastRunStatus: "skipped",
+    lastRunStatus: "failed",
+    lastRunErrorCode: "catch_up_approval_timeout",
     lastSkipReason: "system_sleep",
-    lastRunCatchUp: false,
+    lastRunCatchUp: true,
     catchUpMissed: true,
     lastSessionId: "ses_9"
   })
   assert.equal(parsed.success, true)
   if (parsed.success) {
-    assert.equal(parsed.data.lastRunStatus, "skipped")
+    assert.equal(parsed.data.lastRunStatus, "failed")
+    assert.equal(parsed.data.lastRunErrorCode, "catch_up_approval_timeout")
     assert.equal(parsed.data.catchUpMissed, true)
   }
 })

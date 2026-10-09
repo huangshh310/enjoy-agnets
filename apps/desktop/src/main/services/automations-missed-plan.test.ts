@@ -108,6 +108,38 @@ test("跳过落 skipped；补跑点带 catch_up 标", () => {
   assert.equal(catchUp?.status, "running")
 })
 
+test("最近一次 23 小时内补跑；25 小时只记跳过；更早点仍跳过", () => {
+  const freshSlot = Date.parse("2026-10-08T03:00:00.000Z")
+  const olderFresh = Date.parse("2026-10-07T03:00:00.000Z")
+  const fresh = planMissedActions({
+    ...BASE,
+    cronExpr: "0 11 * * *",
+    lastAliveAt: Date.parse("2026-10-06T16:00:00.000Z"),
+    trigger: "startup",
+    catchUpMissed: true
+  })
+  assert.equal(now - freshSlot, 23 * 60 * 60 * 1000)
+  assert.deepEqual(
+    fresh.filter((row) => row.type === "catch_up").map((row) => row.scheduledAt),
+    [freshSlot]
+  )
+  assert.ok(fresh.some((row) => row.type === "skip" && row.scheduledAt === olderFresh))
+
+  const staleLatest = Date.parse("2026-10-08T01:00:00.000Z")
+  const stale = planMissedActions({
+    ...BASE,
+    cronExpr: "0 9 7,8 10 *",
+    lastAliveAt: Date.parse("2026-10-06T16:00:00.000Z"),
+    trigger: "startup",
+    catchUpMissed: true
+  })
+  assert.equal(now - staleLatest, 25 * 60 * 60 * 1000)
+  assert.ok(stale.length >= 2)
+  assert.ok(stale.every((row) => row.type === "skip"))
+  assert.ok(stale.every((row) => row.reason === "app_not_running"))
+  assert.equal(stale.at(-1)?.scheduledAt, staleLatest)
+})
+
 test("M6 回看不超过 7 天；没有 lastAlive 不编造历史", () => {
   const tenDaysAgo = now - 10 * 24 * 60 * 60 * 1000
   const capped = planMissedActions({

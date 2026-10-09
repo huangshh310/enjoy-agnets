@@ -8,7 +8,11 @@ import { AutomationIdInput, AutomationRunStatus, AutomationSkipReason } from "./
 export const AutomationMissedKind = z.enum(["skipped", "catch_up"])
 export type AutomationMissedKind = z.infer<typeof AutomationMissedKind>
 
+/** 错过记录回看窗。只记记录，不决定能不能补。 */
 export const MISSED_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
+
+/** 最近一次错过点超过此时长只记跳过，不补跑。 */
+export const CATCH_UP_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 /** 补跑停在 Dock 超过此时长则自动拒绝。只改这一处。 */
 export const CATCH_UP_APPROVAL_TIMEOUT_MS = 30 * 60 * 1000
@@ -36,7 +40,7 @@ export const AutomationMissedRecord = z
     status: AutomationRunStatus.optional(),
     runId: z.string().min(1).optional(),
     isCatchUp: z.boolean().optional(),
-    /** 失败码：catch_up_approval_timeout / interrupted_by_restart。 */
+    /** 抽屉读这个：catch_up_approval_timeout / interrupted_by_restart。 */
     code: z.string().min(1).optional()
   })
   .strict()

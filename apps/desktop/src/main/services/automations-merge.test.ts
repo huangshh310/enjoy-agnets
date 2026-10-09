@@ -14,6 +14,7 @@ const existing = {
   mode: "agent",
   lastRunAt: 100,
   lastRunStatus: "failed",
+  lastRunErrorCode: "catch_up_approval_timeout",
   lastSessionId: "ses_1",
   enabled: true,
   updatedAt: 1
@@ -36,6 +37,7 @@ test("开关只改 enabled，保留 cron 与上次运行", () => {
   assert.equal(next.runtimeId, "claude")
   assert.equal(next.lastRunAt, 100)
   assert.equal(next.lastRunStatus, "failed")
+  assert.equal(next.lastRunErrorCode, "catch_up_approval_timeout")
   assert.equal(next.catchUpMissed, false)
   assert.equal(next.updatedAt, 200)
 })

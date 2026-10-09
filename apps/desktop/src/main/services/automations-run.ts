@@ -7,7 +7,7 @@ import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
 import { scheduledAutomationCommandId } from "./automations-cron-points"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { claimLaunchSlot } from "./automations-claim-slot"
-import { nextConsecutiveFails } from "./automations-fails"
+import { lastRunErrorCodeOf, nextConsecutiveFails } from "./automations-fails"
 import { defaultSettingsIo, patchMissedPoint } from "./automations-missed-store"
 import { listActiveRuns, waitForRunSettle } from "./agent-run-state"
 import {
@@ -118,6 +118,7 @@ async function openLaunchedSession(item: Automation, opts: LaunchAutomationOpts)
     lastRunAt: Date.now(),
     lastSessionId: opened.sessionId,
     lastError: undefined,
+    lastRunErrorCode: undefined,
     lastRunCatchUp: opts.isCatchUp === true
   })
   emitAutomationsChanged("status", item.id)
@@ -168,6 +169,7 @@ function finishAutomationRun(
     lastRunStatus: status,
     lastRunCatchUp: opts.isCatchUp === true,
     lastError: status === "failed" ? summary || "Automation failed." : undefined,
+    lastRunErrorCode: lastRunErrorCodeOf(status, summary),
     consecutiveFails: fails,
     ...(status === "failed" && fails >= limit ? { enabled: false } : {})
   })

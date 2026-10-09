@@ -125,6 +125,7 @@ function stampMissedRows(results: MissedReconcileResult[], now: number): void {
       lastRunCatchUp: false,
       lastSkipReason: skipReasonOf(result.actions),
       lastError: undefined,
+      lastRunErrorCode: undefined,
       updatedAt: now
     })
   }
@@ -178,7 +179,8 @@ function recordBusySkip(item: Automation, now: number): void {
     lastRunCatchUp: false,
     lastSkipReason: "previous_still_running",
     lastRunAt: scheduledAt,
-    lastError: undefined
+    lastError: undefined,
+    lastRunErrorCode: undefined
   })
   emitAutomationsChanged("missed", item.id)
 }

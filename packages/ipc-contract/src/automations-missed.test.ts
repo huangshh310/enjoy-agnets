@@ -7,6 +7,7 @@ import {
   CATCH_UP_APPROVAL_TIMEOUT,
   CATCH_UP_APPROVAL_TIMEOUT_MS,
   CATCH_UP_INTERRUPTED_BY_RESTART,
+  CATCH_UP_MAX_AGE_MS,
   ListAutomationMissedInput,
   ListAutomationMissedResult,
   MISSED_LOOKBACK_MS
@@ -14,6 +15,7 @@ import {
 
 test("错过记录只要跳过或补跑，7 天帽是常量", () => {
   assert.equal(MISSED_LOOKBACK_MS, 7 * 24 * 60 * 60 * 1000)
+  assert.equal(CATCH_UP_MAX_AGE_MS, 24 * 60 * 60 * 1000)
   assert.equal(CATCH_UP_APPROVAL_TIMEOUT_MS, 30 * 60 * 1000)
   assert.equal(CATCH_UP_APPROVAL_TIMEOUT, "catch_up_approval_timeout")
   assert.equal(CATCH_UP_INTERRUPTED_BY_RESTART, "interrupted_by_restart")
