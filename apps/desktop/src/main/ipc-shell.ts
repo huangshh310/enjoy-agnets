@@ -1,7 +1,7 @@
 /**
  * 工作区 / 会话 / Agent / 终端 / 窗口 IPC。
  */
-import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
+import { app, BrowserWindow, ipcMain, shell, type IpcMainInvokeEvent } from "electron"
 import { markQuitAllowed } from "./services/window-quit"
 import {
   TerminalCloseInput,
@@ -9,6 +9,7 @@ import {
   TerminalResizeInput,
   TerminalWriteInput,
   WindowForceQuitInput,
+  parseWindowOpenExternalInput,
   WindowSetTaskbarTitleInput
 } from "@enjoy-agents/ipc-contract"
 import {
@@ -25,6 +26,7 @@ import {
   writeWorkspaceTerminal
 } from "./services/terminal"
 import { queryIsMaximized, toggleMaximize } from "./services/window-maximize"
+import { openExternalHttpUrl } from "./services/window-open-external"
 import { SSH_HOST_CHANNELS, registerSshHostIpc } from "./ipc-ssh-hosts.ts"
 import { registerWorkspaceIpc } from "./ipc-workspace.ts"
 import { listInboxStateRows, putInboxStates } from "./services/inbox-state-service"
@@ -76,7 +78,8 @@ export const SHELL_CHANNELS = [
   "window.isMaximized",
   "window.close",
   "window.forceQuit",
-  "window.setTaskbarTitle"
+  "window.setTaskbarTitle",
+  "window.openExternal"
 ] as const
 
 export function windowFromEvent(event: IpcMainInvokeEvent): BrowserWindow {
@@ -160,6 +163,11 @@ function registerWindowIpc() {
     const { label } = WindowSetTaskbarTitleInput.parse(raw)
     windowFromEvent(event).setTitle(label ? `${label} — Enjoy Agents` : "Enjoy Agents")
     return { ok: true }
+  })
+  ipcMain.handle("window.openExternal", async (_event, raw) => {
+    const parsed = parseWindowOpenExternalInput(raw)
+    if (!parsed.ok) return parsed
+    return openExternalHttpUrl(parsed.url, (href) => shell.openExternal(href))
   })
 }
 

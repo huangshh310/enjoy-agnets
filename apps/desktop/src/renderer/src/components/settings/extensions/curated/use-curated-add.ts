@@ -5,15 +5,18 @@ import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { SKILL_SOURCES_OVERVIEW_QUERY_KEY } from "@renderer/components/skills/lib/git-skill-sources"
 import { ipcErrorMessage } from "@renderer/components/skills/lib/ipc-error-message"
+import { useT } from "@renderer/i18n"
+import { showAppToast } from "@renderer/lib/app-toast"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import type { ExtensionCuratedCard } from "../extensions.types.ts"
+import { EXTENSIONS_COPY } from "../extensions-copy.ts"
 import { addCuratedToSot } from "./add-curated-to-sot.ts"
 import type { CuratedSotIde } from "./curated.types.ts"
 
 export function useCuratedAdd() {
+  const t = useT()
   const queryClient = useQueryClient()
   const [addingId, setAddingId] = useState<string | null>(null)
-  const [toastOpen, setToastOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function add(card: ExtensionCuratedCard) {
@@ -29,7 +32,11 @@ export function useCuratedAdd() {
         queryClient.invalidateQueries({ queryKey: ["mcp"] }),
         queryClient.invalidateQueries({ queryKey: SKILL_SOURCES_OVERVIEW_QUERY_KEY })
       ])
-      setToastOpen(true)
+      showAppToast(t(EXTENSIONS_COPY.written), {
+        id: "extensions-curated-toast",
+        testId: "extensions-curated-toast",
+        tone: "success"
+      })
     } catch (err) {
       setError(ipcErrorMessage(err))
     } finally {
@@ -37,5 +44,5 @@ export function useCuratedAdd() {
     }
   }
 
-  return { add, addingId, toastOpen, error }
+  return { add, addingId, error }
 }

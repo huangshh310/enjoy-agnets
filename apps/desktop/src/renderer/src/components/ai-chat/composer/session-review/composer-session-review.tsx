@@ -12,7 +12,6 @@ import { useComposerActiveModelLabel } from "@renderer/components/ai-chat/agent-
 import { useChatStore } from "@renderer/stores/chat-store"
 import { openSessionReview } from "./open-session-review"
 import { SessionPreviewStrip } from "./preview-open/session-preview-strip"
-import { SessionPreviewToast } from "./preview-open/session-preview-toast"
 import { useOpenSessionPreview } from "./preview-open/use-open-session-preview"
 import { SessionMascotRunner } from "./session-mascot-runner"
 import { SessionReviewBar } from "./session-review-bar"
@@ -61,7 +60,6 @@ export function ComposerSessionReview() {
 
   return (
     <div className="relative w-full min-w-0">
-      <SessionPreviewToast visible={preview.opened} />
       {showGate ? (
         <ReviewGateCard
           files={model.files}
