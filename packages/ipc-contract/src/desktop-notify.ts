@@ -108,29 +108,39 @@ export function noticeForAgentEvent(
       : zh
         ? { title: "待审批", body: "有工具在等你决定。" }
         : { title: "Approval needed", body: "A tool is waiting for you." }
-    return withAutomationNotifySource(base, event.automationSource, zh)
+    const catchUp = formatCatchUpApprovalNotice(event.automationSource, zh)
+    return catchUp ?? withAutomationNotifySource(base, event.automationSource, zh)
   }
   const kind = deriveRunNotifyKind(event)
   if (!kind) return null
   return runNotifyCopy(kind, zh)
 }
 
-/** 补跑通知整句替换，只写自动化名；准点才拼在泛工具句后。不抄 scheduledAt / args。 */
+/** 补跑审批通知整句。只吃 automationName + isCatchUp，不抄 scheduledAt / args。 */
+export function formatCatchUpApprovalNotice(
+  source: { automationName?: string; isCatchUp?: boolean } | undefined,
+  zh: boolean
+): DesktopNotifyCopy | null {
+  const name = source?.automationName?.trim()
+  if (!name || source?.isCatchUp !== true) return null
+  return zh
+    ? { title: "待审批", body: `Enjoy 的自动化「${name}」在补跑，需要你回 Enjoy 审批` }
+    : {
+        title: "Approval needed",
+        body: `Enjoy automation “${name}” is catching up and needs you back in Enjoy to approve.`
+      }
+}
+
+/** 准点来源才拼在泛工具句后。补跑走 formatCatchUpApprovalNotice。 */
 export function withAutomationNotifySource(
   copy: DesktopNotifyCopy,
   source: { automationName?: string; isCatchUp?: boolean } | undefined,
   zh: boolean
 ): DesktopNotifyCopy {
+  const catchUp = formatCatchUpApprovalNotice(source, zh)
+  if (catchUp) return { title: copy.title, body: catchUp.body }
   const name = source?.automationName?.trim()
   if (!name) return copy
-  if (source?.isCatchUp) {
-    return zh
-      ? { title: copy.title, body: `Enjoy 的自动化「${name}」在补跑，需要你回 Enjoy 审批` }
-      : {
-          title: copy.title,
-          body: `Enjoy automation “${name}” is catching up and needs you back in Enjoy to approve.`
-        }
-  }
   const extra = zh ? `自动化「${name}」。` : `Automation “${name}”.`
   return { title: copy.title, body: `${copy.body} ${extra}` }
 }
