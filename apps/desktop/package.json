@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "node scripts/ensure-mac-menu-name.mjs && electron-vite dev",
     "dev:auto-p2": "node scripts/dev-auto-p2.mjs",
+    "dev:cost": "node scripts/dev-cost.mjs",
     "start": "node scripts/ensure-mac-menu-name.mjs && electron-vite preview",
     "build": "electron-vite build",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",

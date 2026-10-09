@@ -60,6 +60,8 @@ export const SessionEstimatedCost = z.object({
   knownUsd: z.number().optional(),
   unknownCount: z.number().int().nonnegative(),
   reportedUsd: z.number().optional(),
+  /** 未知 run 的 missing 去重合计；没有未知就省略。 */
+  missing: z.array(CostMissingItem).optional().catch(undefined),
   runs: z.array(SessionRunEstimate).optional()
 })
 export type SessionEstimatedCost = z.infer<typeof SessionEstimatedCost>
@@ -101,13 +103,24 @@ export function summarizeSessionCosts(
     reportedUsd += row.usd
     reported += 1
   }
+  const missing = uniqueMissing(runs)
   return {
     sessionId,
     ...(known > 0 ? { knownUsd } : {}),
     unknownCount,
     ...(reported > 0 ? { reportedUsd } : {}),
+    ...(missing.length > 0 ? { missing } : {}),
     runs
   }
+}
+
+function uniqueMissing(runs: SessionRunEstimate[]): CostMissingItem[] {
+  const seen = new Set<CostMissingItem>()
+  for (const run of runs) {
+    if (run.status !== "unknown" || !run.missing) continue
+    for (const item of run.missing) seen.add(item)
+  }
+  return [...seen]
 }
 
 /** 有 runtime + ACP 会话 id 就按组切；缺一则进旧行桶，保持「整段取最后一次」。 */

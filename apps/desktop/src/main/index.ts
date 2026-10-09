@@ -5,6 +5,7 @@ import { getDatabase } from "./services/database";
 import { abandonOrphanRuns } from "./services/abandon-orphan-runs";
 import { bootstrapE2eStub } from "./services/e2e-bootstrap";
 import { seedDevAutoP2IfRequested } from "./services/dev-auto-p2-seed";
+import { seedDevCostIfRequested } from "./services/dev-cost-seed";
 import {
   configureAcpChildLedger,
   disposeAllAcpSessions,
@@ -153,6 +154,7 @@ function bootPrimaryInstance(): void {
     abandonOrphanRuns();
     await bootstrapE2eStub();
     seedDevAutoP2IfRequested();
+    await seedDevCostIfRequested();
     void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
       void recoverPausedWorkflows()
     })

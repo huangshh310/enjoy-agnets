@@ -142,6 +142,8 @@ export function buildTraceDataFromMetric(
     inputTokens: metric.inputTokens ?? 0,
     outputTokens: metric.outputTokens ?? 0,
     estimatedCost: typeof metric.estimatedCostUsd === "number" ? metric.estimatedCostUsd : undefined,
+    costStatus: metric.costStatus,
+    ...(metric.costMissing?.length ? { costMissing: metric.costMissing } : {}),
     startedAt: new Date(metric.createdAt).toLocaleString([], {
       month: "short",
       day: "2-digit",

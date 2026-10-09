@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-09（COST-P3 `runs.usage_json` + 指标估算列）
+> 进程边界与安全基线。最后更新：2026-10-09（指标 `cost_missing`）
 
 ## 当前真相
 
@@ -70,7 +70,7 @@ Main Process（可信）
 ### 数据
 
 - 库文件：`app.getPath("userData")` 下的 SQLite（`node:sqlite` + WAL）。
-- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。向量存在 SQLite，检索在本机。
+- 表：基线四张 + `schema_migrations` 与 AI Runtime 表（runs、run_steps、message_parts、approvals、assets、provider_file_refs、knowledge_*、mcp_*、telemetry_metrics），另有 `secrets_vault`（004）、`inbox_state`（005）、`sessions` 工作流列 `flagged` / `workflow_status` / `goal` / `recap`（006）、`run_steps.child_run_id`（007）。COST-P3（013）：`runs.usage_json` 存本轮分项 token / 上报花费；`telemetry_metrics` 增 `cache_read_tokens` / `cache_write_tokens` / `reasoning_tokens` / `estimated_cost_usd` / `cost_status`（缺项 NULL，不要回填 0）。014：`telemetry_metrics.cost_missing` 存未知原因 JSON 数组，非法枚举经合约 `.catch` 丢掉本字段。向量存在 SQLite，检索在本机。
 - 供应商密钥：主进程 vault + `safeStorage`（密文存 `secrets_vault` 专表，不再挤 settings KV），renderer 只见 `hasKey` / `keyHint`（掩码，从不回明文）。C 端列表只写「密钥已保存」，不要把后四位摊成列表副文案。
 - 资产文件：`userData/assets`。视频回放走自定义协议 `enjoy-asset://local/<id>`（`registerSchemesAsPrivileged` 必须在 `app.ready` 之前）。Realtime 只在 main 代理 WebSocket。
 - Knowledge 向量与 MCP 会话、Workflow checkpoint 都只信 SQLite / main 内存，不信 renderer。

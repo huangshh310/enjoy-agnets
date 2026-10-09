@@ -4,6 +4,7 @@
 import { BrowserWindow } from "electron"
 import { createEventBuffer, createEventStamper, summarizeReplayEvents } from "@enjoy-agents/agent-core"
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { acceptStreamEvent } from "./accept-stream-event"
 import { notifyAgentEvent } from "./desktop-notify"
 
 const stampers = new Map<string, ReturnType<typeof createEventStamper>>()
@@ -32,17 +33,21 @@ function getStamper(sessionId: string) {
 
 /** 没有窗口时仍写入回放缓冲，供 Observability / workflow 恢复。 */
 export function stampAndBroadcast(event: StreamEvent, sessionId: string): StreamEvent {
+  const accepted = acceptStreamEvent(event)
+  if (!accepted) return event
   const window = BrowserWindow.getAllWindows().find((item) => !item.isDestroyed())
-  if (window) return stampAndSend(window, event, sessionId)
+  if (window) return stampAndSend(window, accepted, sessionId)
   const stamper = getStamper(sessionId)
-  const stamped = stamper({ ...event, sessionId: event.sessionId ?? sessionId })
+  const stamped = stamper({ ...accepted, sessionId: accepted.sessionId ?? sessionId })
   replayBuffer.push(stamped)
   return stamped
 }
 
 export function stampAndSend(window: BrowserWindow, event: StreamEvent, sessionId: string): StreamEvent {
+  const accepted = acceptStreamEvent(event)
+  if (!accepted) return event
   const stamper = getStamper(sessionId)
-  const stamped = stamper({ ...event, sessionId: event.sessionId ?? sessionId })
+  const stamped = stamper({ ...accepted, sessionId: accepted.sessionId ?? sessionId })
   replayBuffer.push(stamped)
   notifyAgentEvent(stamped)
   if (!window.isDestroyed()) {

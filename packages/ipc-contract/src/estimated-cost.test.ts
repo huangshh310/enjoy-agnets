@@ -33,6 +33,7 @@ test("会话合计：已知部分 + 未知次数；本地与未上报不计入",
   assert.equal(sum.knownUsd, 0.2)
   assert.equal(sum.unknownCount, 1)
   assert.equal(sum.reportedUsd, 1.2)
+  assert.deepEqual(sum.missing, ["cacheRead"])
   assert.equal(SessionEstimatedCost.parse(sum).sessionId, "ses_1")
 })
 

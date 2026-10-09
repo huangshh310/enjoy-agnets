@@ -27,7 +27,8 @@ import {
 } from "./agent-run-trust"
 import { getActiveCompactedHistory, maybeAutoCompact } from "./session-compaction-service"
 import { peekSessionHandoff, prependHandoffHistory } from "./session-handoff"
-import { isE2eStub } from "./e2e-stub"
+import { isE2eCostSeed, isE2eStub } from "./e2e-stub"
+import { COST_LIVE_MODEL_ID } from "./cost-seed"
 import { e2eAutomationSourceFromPrompt } from "./e2e-stub-desktop"
 import { hydrateActiveRunUsage } from "./run-usage"
 
@@ -93,7 +94,11 @@ async function beginAgentRun(
     input.modelId = `cli:${runtimeId}`
   }
   const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
-  if (isE2eStub() && !input.modelId) input.modelId = "stub-e2e"
+  if (isE2eCostSeed() && (!input.modelId || input.modelId === "stub-e2e")) {
+    input.modelId = COST_LIVE_MODEL_ID
+  } else if (isE2eStub() && !input.modelId) {
+    input.modelId = "stub-e2e"
+  }
   if (isE2eStub()) {
     const source = e2eAutomationSourceFromPrompt(lastUserContent(input))
     if (source) input.automationSource = source

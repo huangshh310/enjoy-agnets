@@ -15,6 +15,7 @@ import { coreIndexesMigration } from "./core-indexes.ts"
 import { acpSessionBindMigration } from "./acp-session-bind.ts"
 import { sessionForkHeartbeatMigration } from "./session-fork-heartbeat.ts"
 import { runUsageCostMigration } from "./run-usage-cost.ts"
+import { costMissingMigration } from "./cost-missing.ts"
 import type { Migration } from "./types.ts"
 
 // 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
@@ -31,7 +32,8 @@ export const MIGRATIONS: Migration[] = [
   coreIndexesMigration,
   acpSessionBindMigration,
   sessionForkHeartbeatMigration,
-  runUsageCostMigration
+  runUsageCostMigration,
+  costMissingMigration
 ]
 
 function tableExists(sqlite: DatabaseSync, name: string): boolean {

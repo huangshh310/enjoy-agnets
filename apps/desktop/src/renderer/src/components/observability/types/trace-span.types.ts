@@ -55,6 +55,11 @@ export interface TraceSummaryData {
   reasoningTokens?: number
   /** 未知省略，不要写 0。 */
   estimatedCost?: number
+  /** 数据面：estimated / unknown / local_unbilled / not_reported / reported。铬条由 mike 接。 */
+  costStatus?: "estimated" | "unknown" | "local_unbilled" | "not_reported" | "reported"
+  costMissing?: Array<
+    "input" | "output" | "cacheRead" | "cacheWrite" | "reasoning" | "price" | "usage" | "tier"
+  >
   startedAt: string
   framework: string
   environment: string

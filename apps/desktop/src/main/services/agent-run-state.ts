@@ -10,6 +10,7 @@ import { createApprovalGate, type ApprovalGate } from "./approval-gate"
 import type { CitedSource } from "./cite-knowledge"
 import { emptyTranscript, type RunTranscript } from "./persist-session"
 import type { StoredSecret } from "./secrets"
+import { acceptStreamEvent } from "./accept-stream-event"
 import { stampAndSend } from "./event-bus"
 
 export type ActiveRun = {
@@ -72,7 +73,8 @@ export type RunSettleResult = { status: "end" | "error"; summary: string }
 const SETTLED_RUNS_CAP = 200
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
-  const next = withAutomationApprovalSource(event)
+  const next = acceptStreamEvent(withAutomationApprovalSource(event))
+  if (!next) return
   const sessionId = next.sessionId ?? sessionIdOfRun(next)
   if (sessionId) {
     stampAndSend(window, next, sessionId)

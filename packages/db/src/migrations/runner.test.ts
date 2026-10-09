@@ -3,11 +3,11 @@ import { test } from "node:test"
 import { DatabaseSync } from "node:sqlite"
 import { applyMigrations, appliedVersions } from "./runner.ts"
 
-test("空库依次跑全部迁移至 13（含 run usage 估算）", () => {
+test("空库依次跑全部迁移至 14（含 cost_missing）", () => {
   const db = new DatabaseSync(":memory:")
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+  assert.deepEqual(applied, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .all() as Array<{ name: string }>
@@ -64,10 +64,12 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
     );
   `)
   const applied = applyMigrations(db)
-  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
-  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+  assert.deepEqual(applied, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+  assert.deepEqual(appliedVersions(db), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
   const runCols = db.prepare("PRAGMA table_info(runs)").all() as Array<{ name: string }>
   assert.ok(runCols.some((col) => col.name === "usage_json"))
+  const metricCols = db.prepare("PRAGMA table_info(telemetry_metrics)").all() as Array<{ name: string }>
+  assert.ok(metricCols.some((col) => col.name === "cost_missing"))
 })
 
 test("重复 apply 不再执行", () => {

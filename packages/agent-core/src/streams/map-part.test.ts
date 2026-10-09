@@ -125,6 +125,11 @@ test("SDK 嵌套 toolCall + isAutomatic 也不弹卡", () => {
   )
 })
 
+test("未知的点号类型会被丢弃", () => {
+  assert.equal(mapStreamPart({ type: "not.a.thing", runId: "run_1", text: "nope" }, "run_1"), null)
+  assert.equal(mapStreamPart({ type: "evil.inject", runId: "run_1" }, "run_1"), null)
+})
+
 test("passes through Enjoy StreamEvent from ACP", () => {
   assert.deepEqual(mapStreamPart({ type: "text.delta", runId: "run_1", text: "hi" }, "run_1"), {
     type: "text.delta",
