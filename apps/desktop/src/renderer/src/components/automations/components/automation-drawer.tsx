@@ -68,7 +68,7 @@ export function AutomationDrawer({
           <p id="automation-editor-title" className="text-body-medium font-semibold text-text-primary">
             {draft.id ? t("studio.automations.editTitle") : t("studio.automations.createTitle")}
           </p>
-          <p className="mt-0.5 text-caption-2-regular text-text-tertiary">{t("studio.automations.workspaceHint")}</p>
+          <p className="mt-0.5 text-caption-2-regular text-text-primary">{t("studio.automations.workspaceHint")}</p>
         </div>
         <button
           type="button"
@@ -84,7 +84,7 @@ export function AutomationDrawer({
       </header>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
         <label className="block">
-          <span className="text-caption-1-medium text-text-tertiary">{t("studio.automations.nameLabel")}</span>
+          <span className="text-caption-1-medium text-text-primary">{t("studio.automations.nameLabel")}</span>
           <Input
             value={draft.name}
             onChange={(event) => onChange({ name: event.target.value })}

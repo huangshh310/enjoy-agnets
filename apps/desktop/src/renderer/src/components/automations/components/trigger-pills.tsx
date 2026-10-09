@@ -23,7 +23,7 @@ export function TriggerPills({
   const t = useT()
   return (
     <div>
-      <p className="text-caption-1-medium text-text-tertiary">{t("studio.automations.trigger")}</p>
+      <p className="text-caption-1-medium text-text-primary">{t("studio.automations.trigger")}</p>
       <div className="mt-1 flex flex-wrap gap-1">
         {TRIGGERS.map((item) => (
           <TriggerChip

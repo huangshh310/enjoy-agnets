@@ -650,6 +650,7 @@ export const zhChat = {
   readingResources: "正在阅读资源",
   exploredPages: "已浏览 {count} 个页面",
   failed: "失败",
+  declined: "已拒绝",
   subagentKind: "{kind}",
   subagentLead: "子智能体",
   subagentTitle: "子智能体 {kind} · {title}",

@@ -658,6 +658,7 @@ export const enChat = {
   readingResources: "Reading resources",
   exploredPages: "Explored {count} pages",
   failed: "failed",
+  declined: "Declined",
   subagentKind: "{kind}",
   subagentLead: "Subagent",
   subagentTitle: "Subagent {kind} · {title}",

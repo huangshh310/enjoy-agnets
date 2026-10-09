@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { useT } from "@renderer/i18n"
 import { useEngineDisplayNames, useSaveEngineDisplayName } from "@renderer/hooks/use-engine-display-name"
 import { DISPLAY_NAME_MAX, normalizeDisplayName } from "@renderer/lib/agent-display-name"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 
 export function EngineDisplayNameField({
   runtimeId,
@@ -53,9 +54,11 @@ export function EngineDisplayNameField({
         }}
       />
       <p className="text-caption-2-regular text-text-tertiary">{t("settings.agentTools.engineDisplayNameHint")}</p>
-      <p className="rounded-lg border border-dashed border-border-button-default bg-background-secondary-default/40 px-2.5 py-2 text-caption-2-regular text-text-tertiary">
-        {t("settings.agentTools.engineDisplayNameNote", { id: runtimeId })}
-      </p>
+      {isDevCopyEnabled() ? (
+        <p className="rounded-lg border border-dashed border-border-button-default bg-background-secondary-default/40 px-2.5 py-2 text-caption-2-regular text-text-tertiary">
+          {t("settings.agentTools.engineDisplayNameNote", { id: runtimeId })}
+        </p>
+      ) : null}
     </label>
   )
 }

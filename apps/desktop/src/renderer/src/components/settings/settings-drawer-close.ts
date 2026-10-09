@@ -1,10 +1,40 @@
 /**
- * 抽屉 Esc：只要没被内部层 preventDefault，就关。
- * 不要因 listbox / 输入框焦点而吞掉关闭。
+ * 抽屉 Esc 与设置回工位：抽屉先吃掉按键，设置页只在无抽屉时回退。
  */
+export const SETTINGS_DRAWER_OPEN_SEL = '[data-settings-drawer="open"]'
+
 export function shouldCloseDrawerOnEscape(event: {
   key: string
   defaultPrevented: boolean
 }): boolean {
   return event.key === "Escape" && !event.defaultPrevented
+}
+
+export function markDrawerEscapeHandled(event: {
+  preventDefault: () => void
+  stopPropagation: () => void
+  stopImmediatePropagation: () => void
+}): void {
+  event.preventDefault()
+  event.stopPropagation()
+  event.stopImmediatePropagation()
+}
+
+export function isSettingsDrawerOpen(
+  root: { querySelector: (sel: string) => unknown } | null = typeof document === "undefined" ? null : document
+): boolean {
+  return Boolean(root?.querySelector(SETTINGS_DRAWER_OPEN_SEL))
+}
+
+/** 设置 / Inbox 的 Esc 回工位：已处理、或抽屉开着，都不离开。 */
+export function shouldLeaveSettingsOnEscape(input: {
+  key?: string
+  defaultPrevented: boolean
+  drawerOpen: boolean
+  overlayModule: boolean
+}): boolean {
+  if (!input.overlayModule) return false
+  if (input.key != null && input.key !== "Escape") return false
+  if (input.defaultPrevented || input.drawerOpen) return false
+  return true
 }

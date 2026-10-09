@@ -51,10 +51,14 @@ export function parseAgentStepNodes(
       continue
     }
     const node = mapToolToStepNode(item.tool, t)
-    if (node) nodes.push(node)
+    if (node) nodes.push(stampDenied(node, item.tool))
   }
 
   return groupConsecutiveSteps(nestChildSteps(nodes, tools), t)
+}
+
+function stampDenied(node: AgentStepNode, tool: ThreadToolCall): AgentStepNode {
+  return tool.state === "output-denied" ? { ...node, denied: true } : node
 }
 
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {

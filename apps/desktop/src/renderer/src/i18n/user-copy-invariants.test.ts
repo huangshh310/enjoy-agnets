@@ -51,6 +51,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.toolDesktop, "操作桌面")
   assert.equal(z.chat.waitingForApp, "等待应用…")
   assert.equal(z.chat.desktopApprovalVerbClick, "点击")
+  assert.equal(z.chat.declined, "已拒绝")
   assert.equal(z.studio.automations.desc, "到点、保存文件或收到本机请求时，自动跑一轮。关掉应用就暂停。")
   assert.equal(z.studio.automations.workspaceHint, "在当前项目里运行")
   assert.equal(z.studio.automations.triggerHint, "选择什么时候运行")

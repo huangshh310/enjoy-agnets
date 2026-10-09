@@ -49,6 +49,8 @@ export interface AgentStepNode {
   exitCode?: number
   errorText?: string
   status: "pending" | "running" | "completed" | "error"
+  /** 用户拒绝审批：渲染「已拒绝」，不要红失败。 */
+  denied?: boolean
   domainPills?: DomainPill[]
   exploredPages?: SubPageItem[]
   exploredTitle?: string

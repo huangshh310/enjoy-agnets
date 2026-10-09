@@ -28,6 +28,7 @@ test("nested Escape 尊重 defaultPrevented，不因弹出层吞掉关闭", () =
     "utf8"
   )
   assert.ok(src.includes("shouldCloseDrawerOnEscape"))
+  assert.ok(src.includes("markDrawerEscapeHandled"))
   assert.ok(!src.includes("popover-content"))
 })
 

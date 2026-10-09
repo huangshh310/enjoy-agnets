@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-09（自动化抽屉 no-drag；cron 人话；说明页走人话）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-09（抽屉 Esc 不离开设置；暗色标签 AA）
 
 ## 当前真相
 
@@ -86,6 +86,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 ## 已知坑
 
 - **隐患**：无边框窗标题栏是 `-webkit-app-region: drag`，抽屉 `inset-y-3` 与 `h-9` 标题栏重叠。关闭钮若不标 `no-drag`，点 X 会拖走窗口。正确做法：`SettingsSideDrawer` 整层与各抽屉关闭钮都带 `data-app-region="no-drag"`；Esc 用 `shouldCloseDrawerOnEscape`（未 preventDefault 即关）。
+- **隐患**：抽屉 Esc 会连设置页一起关掉，掉回新对话。根因：共享抽屉只 `preventDefault`，冒泡到 `nav.back`。正确做法：捕获阶段 `markDrawerEscapeHandled`；`nav.back` 见抽屉开着或 `defaultPrevented` 就不离开。无抽屉时 Esc 仍回工位。
 - **隐患**：空显示名回落「未命名」/「未命名助手」当引擎身份。根因：通用 `untitled` 词条容易被误用。正确做法：trim 空则品牌名+模型；「未命名」只禁作身份，不进 `agentDisplayNames`。
 - **隐患**：把云 webhook / 公网隧道 /「关闭应用仍收包」写成 I4-P1 已做。根因：合约现在有 `webhook` 与 `on_save`，执行面是本机。正确做法：P1 只绑 `127.0.0.1` + 保存后防抖；连续失败停跑已按 `stopOnFailCount`（缺省 3）落地；路径/glob 仍未做。AUTO-P2 默认仍不补跑，只记本机跳过；`catchUpMissed` 开才补最近一次且须在 24h 内。禁止把跳过写成失败、禁止上云、禁止开机自启。产品锁 [`../references/i4-p1-webhook-onsave.md`](../references/i4-p1-webhook-onsave.md) + [`../references/auto-p2-missed-runs.md`](../references/auto-p2-missed-runs.md)。
 - **隐患**：补跑超时/重启打断行若写「{时间} 取消」，时间会早约 30 分钟。根因：`recordedAt` 在 catch-up 开跑时写入，settle（`automations-finish` / `catchup-orphans` / `missed-store`）不改。正确做法：前端未跑补跑只写「计划 X · 未运行」，不读 `recordedAt` 当取消时间。不要为了这句去改 IPC。

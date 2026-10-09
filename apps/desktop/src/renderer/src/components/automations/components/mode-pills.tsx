@@ -17,7 +17,7 @@ export function ModePills({
   const surface = surfaceForMode(mode)
   return (
     <div>
-      <p className="text-caption-1-medium text-text-tertiary">{t("studio.automations.mode")}</p>
+      <p className="text-caption-1-medium text-text-primary">{t("studio.automations.mode")}</p>
       <div className="mt-1 inline-flex rounded-full bg-background-secondary-default p-0.5 ring-1 ring-border-button-default">
         <button
           type="button"

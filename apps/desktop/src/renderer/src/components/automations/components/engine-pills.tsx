@@ -21,7 +21,7 @@ export function EnginePills({
   const options = [...local, ...cli]
   return (
     <div>
-      <p className="text-caption-1-medium text-text-tertiary">{t("studio.automations.engine")}</p>
+      <p className="text-caption-1-medium text-text-primary">{t("studio.automations.engine")}</p>
       <div className="mt-1 flex flex-wrap gap-1">
         {options.map((tool) => {
           const selected = value === tool.id
