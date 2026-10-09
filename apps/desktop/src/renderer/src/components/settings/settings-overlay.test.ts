@@ -22,13 +22,13 @@ test("模型 Combobox 用 float 层，不用 z-60", () => {
   assert.ok(!src.includes("z-60"))
 })
 
-test("nested Escape 尊重 defaultPrevented 与弹出层", () => {
+test("nested Escape 尊重 defaultPrevented，不因弹出层吞掉关闭", () => {
   const src = readFileSync(
     join(dirname(fileURLToPath(import.meta.url)), "settings-side-drawer.tsx"),
     "utf8"
   )
-  assert.ok(src.includes("event.defaultPrevented"))
-  assert.ok(src.includes("popover-content"))
+  assert.ok(src.includes("shouldCloseDrawerOnEscape"))
+  assert.ok(!src.includes("popover-content"))
 })
 
 test("侧栏抽屉用同一套叠层常量", () => {
