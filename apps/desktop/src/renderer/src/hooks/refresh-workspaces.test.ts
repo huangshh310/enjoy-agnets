@@ -1,10 +1,9 @@
 /**
- * refreshAllWorkspaces 走真实 hydrate。旧 list 晚到不得盖住刚创建的项目。
+ * refreshWorkspacesInto 走真实灌入路径。旧 list 晚到不得盖住刚创建的项目。
  */
 import test from "node:test"
 import assert from "node:assert/strict"
-import { refreshAllWorkspaces } from "./refresh-workspaces.ts"
-import { useChatStore } from "../stores/chat-store.ts"
+import { refreshWorkspacesInto } from "./refresh-workspaces.ts"
 
 type WorkspaceRow = { id: string; name: string; rootPath: string }
 
@@ -17,11 +16,6 @@ function installIde(list: () => Promise<WorkspaceRow[]>) {
 }
 
 test("重叠刷新：旧名单晚到后列表里仍有刚创建的项目", async () => {
-  useChatStore.setState({
-    workspaceId: "ws-new",
-    repositories: [],
-    expandedIds: []
-  })
   let releaseOld!: () => void
   const oldGate = new Promise<void>((resolve) => {
     releaseOld = resolve
@@ -39,16 +33,19 @@ test("重叠刷新：旧名单晚到后列表里仍有刚创建的项目", async
     ]
   })
 
-  const stale = refreshAllWorkspaces()
-  const fresh = refreshAllWorkspaces()
+  let ids: string[] = []
+  const sink = {
+    activeWorkspaceId: () => "ws-new",
+    hydrate: (items: Array<{ workspace: { id: string } }>) => {
+      ids = items.map((item) => item.workspace.id)
+    }
+  }
+  const stale = refreshWorkspacesInto(sink)
+  const fresh = refreshWorkspacesInto(sink)
   await fresh
   releaseOld()
   await stale
 
-  const ids = useChatStore
-    .getState()
-    .repositories.filter((node) => node.kind === "workspace")
-    .map((node) => node.id)
   assert.ok(ids.includes("ws-new"), `expected ws-new in ${ids.join(",")}`)
   assert.ok(ids.includes("ws-old"), `expected ws-old in ${ids.join(",")}`)
 })

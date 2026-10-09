@@ -14,14 +14,31 @@ type SessionRow = {
 
 let refreshGeneration = 0
 
+export type WorkspaceHydrateSink = {
+  hydrate: (
+    items: Array<{ workspace: WorkspaceRow; sessions: Array<{ id: string; title: string; updatedAt: number; workspaceId: string }> }>,
+    activeWorkspaceId?: string | null
+  ) => void
+  activeWorkspaceId: () => string | null
+}
+
 export async function refreshAllWorkspaces() {
   if (!hasIde()) return
+  await refreshWorkspacesInto({
+    hydrate: (items, activeId) => {
+      useChatStore.getState().hydrateWorkspacesAndSessions(items, activeId)
+    },
+    activeWorkspaceId: () => useChatStore.getState().workspaceId
+  })
+}
+
+/** 生产灌入路径；测试用内存 sink，避免测试直接依赖 chat-store。 */
+export async function refreshWorkspacesInto(sink: WorkspaceHydrateSink) {
   const generation = ++refreshGeneration
   try {
     const items = await collectWorkspaceHydrateItems()
     if (generation !== refreshGeneration) return
-    const activeWorkspaceId = useChatStore.getState().workspaceId
-    useChatStore.getState().hydrateWorkspacesAndSessions(items, activeWorkspaceId)
+    sink.hydrate(items, sink.activeWorkspaceId())
   } catch {
     // ignore refresh errors
   }
