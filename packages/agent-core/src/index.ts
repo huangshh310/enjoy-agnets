@@ -147,6 +147,7 @@ export {
   desktopActBypassesSessionAllow,
   desktopActFailureCode,
   desktopActIsSensitive,
+  stampDesktopActSensitiveFlag,
   desktopActMayReportSuccess,
   desktopActNeedsSecondConfirm,
   desktopActSessionKey,

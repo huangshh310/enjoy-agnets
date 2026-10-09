@@ -101,6 +101,10 @@ export default defineConfig({
           replacement: resolve(repoRoot, "packages/ipc-contract/src/host-inject.ts")
         },
         {
+          find: "@enjoy-agents/ipc-contract/desktop-notify",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-notify.ts")
+        },
+        {
           find: "@enjoy-agents/ipc-contract/skills-catalog",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/skills-catalog.ts")
         },
@@ -190,6 +194,10 @@ export default defineConfig({
         {
           find: "@enjoy-agents/ipc-contract/host-inject",
           replacement: resolve(repoRoot, "packages/ipc-contract/src/host-inject.ts")
+        },
+        {
+          find: "@enjoy-agents/ipc-contract/desktop-notify",
+          replacement: resolve(repoRoot, "packages/ipc-contract/src/desktop-notify.ts")
         },
         {
           find: "@enjoy-agents/ipc-contract/skills-catalog",

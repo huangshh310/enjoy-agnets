@@ -6,6 +6,7 @@ import {
   desktopActAppKeyInfo,
   desktopActBypassesSessionAllow,
   desktopAppKey,
+  stampDesktopActSensitiveFlag,
   type Observation
 } from "@enjoy-agents/agent-core/computer-use"
 import { tool } from "ai"
@@ -148,12 +149,12 @@ export function enrichDesktopActArgs(args: Record<string, unknown>): Record<stri
     ...merged,
     appKey: observation?.appKey || desktopAppKey(observation ?? {}) || merged.appKey
   })
-  return {
+  return stampDesktopActSensitiveFlag({
     ...merged,
     ...(info.appKey ? { appKey: info.appKey } : {}),
     ...(info.appKeySource ? { appKeySource: info.appKeySource } : {}),
     bypassesSessionAllow: desktopActBypassesSessionAllow(merged)
-  }
+  })
 }
 
 function mergeObservationIntoActArgs(args: Record<string, unknown>, observation: Observation): Record<string, unknown> {

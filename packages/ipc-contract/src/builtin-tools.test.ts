@@ -64,6 +64,22 @@ test("DesktopActApprovalArgs 收 appKeySource 与 bypassesSessionAllow", () => {
   assert.equal(parsed.bypassesSessionAllow, false)
 })
 
+test("DesktopActApprovalArgs 收 main 下发的 sensitive 旗标", () => {
+  const parsed = DesktopActApprovalArgs.parse({
+    observationId: "obs",
+    action: "click",
+    appName: "系统设置",
+    appKey: "com.apple.systempreferences",
+    sensitive: true
+  })
+  assert.equal(parsed.sensitive, true)
+  const omitted = DesktopActApprovalArgs.parse({
+    observationId: "obs",
+    action: "click"
+  })
+  assert.equal(omitted.sensitive, undefined)
+})
+
 test("DesktopActApprovalArgs 收二次确认新旧缩略图", () => {
   const parsed = DesktopActApprovalArgs.parse({
     observationId: "obs_new",

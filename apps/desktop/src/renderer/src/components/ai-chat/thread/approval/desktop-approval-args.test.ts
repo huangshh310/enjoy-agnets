@@ -112,6 +112,31 @@ test("无 appKey、坐标或切前台时隐藏会话允许", () => {
   )
 })
 
+test("敏感只信 main 下发的 sensitive，不按应用名自判", () => {
+  const settings = desktopApprovalView({
+    observationId: "obs",
+    action: "click",
+    elementId: "e1",
+    appName: "系统设置",
+    appKey: "com.apple.systempreferences"
+  })
+  assert.equal(settings.sensitive, false)
+  assert.equal(settings.canSessionAllow, true)
+  assert.equal(settings.canAlwaysAllow, true)
+
+  const flagged = desktopApprovalView({
+    observationId: "obs",
+    action: "click",
+    elementId: "e1",
+    appName: "系统设置",
+    appKey: "com.apple.systempreferences",
+    sensitive: true
+  })
+  assert.equal(flagged.sensitive, true)
+  assert.equal(flagged.canSessionAllow, false)
+  assert.equal(flagged.canAlwaysAllow, false)
+})
+
 test("pid 或无稳 appKey 时隐藏始终允许此应用", () => {
   assert.equal(desktopApprovalView({ action: "click", appKey: "18422" }).canAlwaysAllow, false)
   assert.equal(desktopApprovalView({ action: "click", appKey: "desktop_act:*" }).canAlwaysAllow, false)

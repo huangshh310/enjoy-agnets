@@ -30,6 +30,7 @@ export {
   desktopActApprovalText,
   desktopActBypassesSessionAllow,
   desktopActIsSensitive,
+  stampDesktopActSensitiveFlag,
   desktopActSessionKey,
   desktopActSkipsApproval,
   isStableDesktopAppKey,

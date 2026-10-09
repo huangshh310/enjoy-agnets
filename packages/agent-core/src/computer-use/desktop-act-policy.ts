@@ -16,6 +16,7 @@ export {
   desktopActAppKey,
   desktopActAppKeyInfo,
   desktopActIsSensitive,
+  stampDesktopActSensitiveFlag,
   desktopActSessionKey,
   isStableDesktopAppKey,
   normalizeDesktopAppName,

@@ -22,6 +22,7 @@ test("超时不得发 run.end", () => {
 })
 
 test("取消文案含 abort，供 Inbox 失败筛标已取消", () => {
+  assert.equal(USER_ABORT_MESSAGE, "Aborted by user.")
   assert.ok(USER_ABORT_MESSAGE.toLowerCase().includes("abort"))
 })
 
