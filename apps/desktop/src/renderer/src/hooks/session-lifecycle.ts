@@ -25,7 +25,7 @@ import { useEngineHandoffStore } from "../components/ai-chat/agent-picker/handof
 import { connectSshIfNeeded, disconnectPreviousSsh } from "./ssh-session-switch"
 import { clearComposerAssets, listComposerAssets, setComposerAssets } from "./composer-assets"
 import { listQuotedContexts, setQuotedContexts } from "./quoted-context"
-import { workspaceRowFromNode, type WorkspaceRow } from "./workspace-row"
+import { workspaceRowFromNode } from "./workspace-row"
 import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
 import { discardCreatedSession } from "./discard-created-session"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
