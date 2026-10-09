@@ -1,28 +1,15 @@
 /**
- * models.dev 供应商 id → 本仓 provider kind。只写核对过的精确对照，禁止按家族猜。
- * 编码套餐 / 中转目录（*-coding-plan、alibaba-token-plan 等）不映射。
- * 快照按 models.dev id 存两份目录（alibaba 与 alibaba-cn），不要按 kind 去重。
+ * models.dev 供应商 id → 本仓 provider kind。
+ * 只收能确定是单一官方按量价的目录。有国内/国际两份价，或按量/套餐两套主机的，先不映射
+ *（带区域的定价以后另开一刀）。套餐目录（*-coding-plan、alibaba-token-plan）不映射。
  */
 export const MODELS_DEV_KIND = {
-  alibaba: "qwen",
-  "alibaba-cn": "qwen",
-  moonshotai: "kimi",
-  "moonshotai-cn": "kimi",
-  zhipuai: "zhipu",
-  togetherai: "together",
-  volcengine: "doubao"
+  togetherai: "together"
 } as const
 
 export type ModelsDevProviderId = keyof typeof MODELS_DEV_KIND
 
-/** 核对过的 PAYG region → models.dev catalog。null = 套餐，不用快照。 */
-export const REGION_SNAPSHOT_CATALOG: Record<string, Record<string, string | null>> = {
-  qwen: { cn: "alibaba-cn", intl: "alibaba", "token-plan": null },
-  kimi: { cn: "moonshotai-cn", intl: "moonshotai", "code-cn": null, "code-intl": null },
-  zhipu: { api: "zhipuai", coding: null },
-  doubao: { api: "volcengine", coding: null, agent: null }
-}
-
+/** 有套餐或订阅 region 的 kind：整类不用快照，除非用户自填单价。 */
 const PLAN_REGION_IDS: Record<string, readonly string[]> = {
   qwen: ["token-plan"],
   kimi: ["code-cn", "code-intl"],
@@ -52,14 +39,6 @@ export function uniqueCatalogForKind(kind: string): string | undefined {
   return catalogs.length === 1 ? catalogs[0] : undefined
 }
 
-export function kindNeedsExplicitRegion(kind: string): boolean {
-  return catalogsForKind(kind).length > 1 || Boolean(PLAN_REGION_IDS[kind]?.length)
-}
-
-export function catalogForRegion(kind: string, regionId: string): string | null | undefined {
-  if (PLAN_REGION_IDS[kind]?.includes(regionId)) return null
-  const mapped = REGION_SNAPSHOT_CATALOG[kind]?.[regionId]
-  if (mapped !== undefined) return mapped
-  if (catalogsForKind(kind).length > 1) return undefined
-  return uniqueCatalogForKind(kind)
+export function kindHasPlanRegions(kind: string): boolean {
+  return Boolean(PLAN_REGION_IDS[kind]?.length)
 }

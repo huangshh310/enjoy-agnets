@@ -1,16 +1,12 @@
 /**
- * 只有核对过的官方按量端点才套快照价。
- * 套餐 / 订阅主机、共享到多个 region 的 URL、对不上的地域，一律不当官方。
- * 不要用 officialSiblingEndpoints：它会把同一 preset 下的套餐 region 也当成官方。
+ * 只有能确定是单一官方按量价的端点才套快照。
+ * 有国内/国际两份价，或按量/套餐两套主机的 kind，整类不当官方（用户自填单价除外）。
+ * 不要用 officialSiblingEndpoints：它会把套餐 region 也当成官方。
  */
 import { presetFor, normalizeBaseURL } from "../presets.ts"
 import { isProviderKind } from "../presets/kinds.ts"
-import type { PresetRegion, ProviderPreset } from "../presets/define.ts"
-import {
-  catalogForRegion,
-  kindNeedsExplicitRegion,
-  uniqueCatalogForKind
-} from "./models-dev-kind.ts"
+import type { ProviderPreset } from "../presets/define.ts"
+import { kindHasPlanRegions, uniqueCatalogForKind } from "./models-dev-kind.ts"
 import { userRatesToModelRate } from "./user-rates.ts"
 import type { UserModelRates } from "./types.ts"
 
@@ -32,28 +28,25 @@ export function resolveOfficialCatalog(
   baseURL?: string
 ): { official: boolean; catalog?: string } {
   if (!kind || kind === "custom" || !isProviderKind(kind)) return { official: false }
-  const preset = presetFor(kind)
-  const url = baseURL?.trim()
-  if (!url) {
-    if (kindNeedsExplicitRegion(kind)) return { official: false }
-    const catalog = uniqueCatalogForKind(kind)
-    return catalog ? { official: true, catalog } : { official: false }
-  }
-  const hits = matchingRegions(preset, url)
-  if (hits.length === 0) return { official: false }
-  const catalogs = new Set(hits.map((region) => catalogForRegion(kind, region.id)))
-  if (catalogs.size !== 1) return { official: false }
-  const catalog = [...catalogs][0]
+  if (!kindAllowsSnapshot(kind)) return { official: false }
+  const catalog = uniqueCatalogForKind(kind)
   if (!catalog) return { official: false }
+  const url = baseURL?.trim()
+  if (!url) return { official: true, catalog }
+  if (!isSinglePaygUrl(presetFor(kind), url)) return { official: false }
   return { official: true, catalog }
 }
 
-function matchingRegions(preset: ProviderPreset, baseURL: string): PresetRegion[] {
+export function kindAllowsSnapshot(kind: string): boolean {
+  if (kindHasPlanRegions(kind)) return false
+  const preset = presetFor(kind)
+  if ((preset.regions?.length ?? 0) > 1) return false
+  return uniqueCatalogForKind(kind) != null
+}
+
+function isSinglePaygUrl(preset: ProviderPreset, baseURL: string): boolean {
   const url = normalizeBaseURL(baseURL)
-  const regions = preset.regions?.length
-    ? preset.regions
-    : [{ id: "default", name: "Default", endpoints: preset.endpoints }]
-  return regions.filter((region) =>
-    Object.values(region.endpoints).some((value) => value && normalizeBaseURL(value) === url)
-  )
+  const endpoints = preset.regions?.length === 1 ? preset.regions[0].endpoints : preset.endpoints
+  if (Object.values(endpoints).some((value) => value && normalizeBaseURL(value) === url)) return true
+  return normalizeBaseURL(preset.defaultBaseURL) === url
 }

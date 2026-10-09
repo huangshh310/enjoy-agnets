@@ -6,8 +6,8 @@
  *   node --experimental-strip-types packages/providers/scripts/refresh-price-snapshot.ts --expect-sha=<sha256>
  *
  * 规则：跳过 gateway / vercel / 本地；别名只留一对一且价目相同的 dated id；
- * models.dev id 经 `models-dev-kind.ts` 判断是否收录，快照里保留原 id
- *（alibaba 与 alibaba-cn 并存，禁止按本仓 kind 先到先得去重）。
+ * models.dev id 经 `models-dev-kind.ts` 判断是否收录：只收单一官方按量目录
+ *（togetherai→together）。有国内/国际或套餐歧义的映射不收录。
  * 记下 cost.tiers 最低档上下文阈值。响应 ETag 与正文 SHA-256 写入快照。
  */
 import { createHash } from "node:crypto"
@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url"
 import { PROVIDER_KINDS } from "../src/presets/kinds.ts"
 import { datedIdAliases, uniqueExistingAliases } from "../src/pricing/alias-policy.ts"
 import { kindFromModelsDevProvider } from "../src/pricing/models-dev-kind.ts"
+import { kindAllowsSnapshot } from "../src/pricing/official-endpoint.ts"
 import type { SnapshotModelRate } from "../src/pricing/types.ts"
 
 const MODELS_DEV = "https://models.dev/api.json"
@@ -96,9 +97,8 @@ export function assertExpectedSha(actual: string, expected?: string): void {
 
 function includeProvider(modelsDevId: string): boolean {
   if (modelsDevId.includes("gateway")) return false
-  if (allowed.has(modelsDevId)) return true
-  const mapped = kindFromModelsDevProvider(modelsDevId)
-  return Boolean(mapped && allowed.has(mapped))
+  const kind = kindFromModelsDevProvider(modelsDevId) ?? (allowed.has(modelsDevId) ? modelsDevId : undefined)
+  return Boolean(kind && allowed.has(kind) && kindAllowsSnapshot(kind))
 }
 
 function toRate(provider: string, modelId: string, model: DevModel): SnapshotModelRate | undefined {
