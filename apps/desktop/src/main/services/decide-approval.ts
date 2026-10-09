@@ -9,11 +9,12 @@ import {
   desktopActNeedsSecondConfirm,
   desktopGrantShouldPersist
 } from "@enjoy-agents/agent-core/computer-use"
-import { ASK_USER_QUESTIONS_TOOL, ApprovalDecision } from "@enjoy-agents/ipc-contract"
+import { ASK_USER_QUESTIONS_TOOL, ApprovalDecision, foldToolEvent } from "@enjoy-agents/ipc-contract"
 import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
 import { approvalResponseMessage } from "./approval-response-message"
-import { assertApprovalHmac, recordApprovalDecision, recordSdkApprovalResponse } from "./approval-hmac"
+import { assertApprovalHmac, recordApprovalDecision, recordSdkApprovalResponse, sdkApprovalIdFor } from "./approval-hmac"
+import { persistActiveRun } from "./flush-agent-run"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
 import { armCatchUpPark } from "./park-catch-up-approval"
 import { runWithActiveRunId } from "./active-run-id"
@@ -66,12 +67,15 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
     const outcome = await runWithActiveRunId(decision.runId, () => executeStoredTool(run, pending))
     if (outcome.kind === "desktop_act") desktopResume = outcome.result
   }
-  emitEvent(window, {
-    type: "approval.resolved",
+  const resolved = {
+    type: "approval.resolved" as const,
     runId: decision.runId,
     toolCallId: decision.toolCallId,
     decision: decision.decision
-  })
+  }
+  foldToolEvent(run.tools, resolved)
+  persistActiveRun(run, decision.runId, run.pendingApprovals.length > 0 ? "waiting_review" : "running")
+  emitEvent(window, resolved)
   if (await maybeReparkSecondConfirm(window, run, decision.runId, pending, desktopResume)) {
     return { ok: true }
   }
@@ -82,7 +86,7 @@ export async function decideApproval(window: BrowserWindow, rawInput: unknown) {
   recordSdkApprovalResponse(decision.approvalId, { approved, reason, resumeCode })
   run.messages.push(
     approvalResponseMessage({
-      approvalId: decision.approvalId,
+      approvalId: sdkApprovalIdFor(decision.approvalId),
       approved,
       reason
     })

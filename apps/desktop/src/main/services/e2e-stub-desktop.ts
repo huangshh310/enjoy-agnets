@@ -1,7 +1,15 @@
 /**
  * E2E 桌面铬夹具：只在 stub 流里吐 desktop_act 审批 / 硬拒结果，不改审批闸。
+ * 每个 run 换新 approvalId / toolCallId，贴近真实 SDK；闸门不得依赖这点。
  */
 import { DESKTOP_ACT_BARE_COORDS_DISABLED } from "@enjoy-agents/ipc-contract/desktop-act-codes"
+
+let stubDesktopSeq = 0
+
+function nextStubIds(kind: string): { approvalId: string; toolCallId: string } {
+  stubDesktopSeq += 1
+  return { approvalId: `apr_${kind}_${stubDesktopSeq}`, toolCallId: `tool_${kind}_${stubDesktopSeq}` }
+}
 
 export function isE2eCuReady(): boolean {
   return process.env.ENJOY_E2E_STUB === "1" && process.env.ENJOY_E2E_CU_READY === "1"
@@ -28,8 +36,9 @@ export function e2eAutomationSourceFromPrompt(prompt: string) {
 
 export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[] | null {
   if (/desktop calendar/i.test(prompt)) {
+    const ids = nextStubIds("cal")
     return [
-      desktopApproval("apr_cal", "tool_cal", {
+      desktopApproval(ids, {
         observationId: "obs_cal",
         action: "click",
         appName: "日历",
@@ -42,7 +51,7 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
   }
   if (/desktop catchup terminal/i.test(prompt)) {
     return [
-      desktopApproval("apr_catchup_term", "tool_catchup_term", {
+      desktopApproval(nextStubIds("catchup_term"), {
         observationId: "obs_term_cu",
         action: "click",
         appName: "终端",
@@ -55,7 +64,7 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
   }
   if (/desktop catchup/i.test(prompt)) {
     return [
-      desktopApproval("apr_catchup", "tool_catchup", {
+      desktopApproval(nextStubIds("catchup"), {
         observationId: "obs_notes",
         action: "click",
         appName: "备忘录",
@@ -68,7 +77,7 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
   }
   if (/desktop terminal/i.test(prompt)) {
     return [
-      desktopApproval("apr_term", "tool_term", {
+      desktopApproval(nextStubIds("term"), {
         observationId: "obs_term",
         action: "click",
         appName: "终端",
@@ -104,14 +113,13 @@ export function stubDesktopStreamParts(prompt: string): Record<string, unknown>[
 }
 
 function desktopApproval(
-  approvalId: string,
-  toolCallId: string,
+  ids: { approvalId: string; toolCallId: string },
   input: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: "tool-approval-request",
-    approvalId,
-    toolCallId,
+    approvalId: ids.approvalId,
+    toolCallId: ids.toolCallId,
     toolName: "desktop_act",
     input
   }

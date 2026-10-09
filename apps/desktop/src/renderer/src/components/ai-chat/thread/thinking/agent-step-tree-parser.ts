@@ -19,7 +19,7 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
-import { toolDeniedCopy } from "../tool-denied-copy.ts"
+import { isDeniedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
   extractFilePaths,
@@ -88,7 +88,7 @@ function commandNode(
     title: display,
     ...ioFields(tool, shell, result, t),
     domainPills: pills.length > 0 ? pills : undefined,
-    status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state)
+    status: exitCode !== undefined && exitCode !== 0 ? "error" : mapToolStatus(tool.state, tool)
   }
 }
 
@@ -114,7 +114,7 @@ function searchNode(
     id: tool.id,
     kind: "search",
     title,
-    status: mapToolStatus(tool.state),
+    status: mapToolStatus(tool.state, tool),
     domainPills: pills.length > 0 ? pills : undefined
   }
 }
@@ -144,7 +144,7 @@ function editNode(
     ...ioFields(tool, command, result, t),
     additions: typeof result.additions === "number" ? result.additions : undefined,
     deletions: typeof result.deletions === "number" ? result.deletions : undefined,
-    status: mapToolStatus(tool.state)
+    status: mapToolStatus(tool.state, tool)
   }
 }
 
@@ -175,7 +175,7 @@ function readNode(
     exploredPages: exploredPages.length > 1 ? exploredPages : undefined,
     exploredTitle: exploredPages.length > 1 ? t("chat.exploredPages", { count: exploredPages.length }) : undefined,
     domainPills: pills.length > 0 ? pills : undefined,
-    status: mapToolStatus(tool.state)
+    status: mapToolStatus(tool.state, tool)
   }
 }
 
@@ -186,6 +186,15 @@ function fallbackNode(
   result: Record<string, unknown>,
   t: TranslateFn
 ): AgentStepNode {
+  if (isDeniedTool(tool)) {
+    return {
+      id: tool.id,
+      kind: "command",
+      title: formatToolName(tool.name),
+      errorText: toolDeniedCopy(t, tool),
+      status: "denied"
+    }
+  }
   const failed = desktopActFailureKind(tool) ?? desktopActFailureKind(result)
   if (failed) {
     const copy = desktopActFailedCopy(failed, t)
@@ -207,7 +216,7 @@ function fallbackNode(
     kind: "command",
     title,
     detail: shell && shell.length > 80 ? `${shell.slice(0, 80)}...` : shell,
-    status: mapToolStatus(tool.state)
+    status: mapToolStatus(tool.state, tool)
   }
 }
 
@@ -227,8 +236,8 @@ function ioFields(
         : stderr
           ? stderr
           : undefined
-  if (tool.state === "output-denied") {
-    return { command, output, exitCode: undefined, errorText: toolDeniedCopy(t) }
+  if (isDeniedTool(tool)) {
+    return { command, output, exitCode: undefined, errorText: toolDeniedCopy(t, tool) }
   }
   const raw = tool.errorText || (typeof result.error === "string" ? result.error : undefined)
   return {

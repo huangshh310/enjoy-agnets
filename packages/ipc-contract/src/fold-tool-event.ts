@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "./index"
 import type { ThreadToolCall } from "./assistant-payload"
+import { isToolNotExecuted } from "./approval-not-executed.ts"
 
 export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void {
   if (event.type === "tool.start") {
@@ -27,6 +28,10 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
     return
   }
   if (event.type === "tool.result") {
+    const notExecuted = isToolNotExecuted({
+      result: event.result,
+      errorText: event.error
+    })
     upsertTool(tools, {
       id: event.toolCallId,
       name: event.name,
@@ -34,7 +39,7 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
       ...(event.parentToolCallId ? { parentToolCallId: event.parentToolCallId } : {}),
       result: event.result,
       errorText: event.error,
-      state: event.error ? "output-error" : "output-available"
+      state: notExecuted ? "output-denied" : event.error ? "output-error" : "output-available"
     })
     return
   }

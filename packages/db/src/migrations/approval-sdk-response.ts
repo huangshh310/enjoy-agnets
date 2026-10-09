@@ -1,5 +1,5 @@
 /**
- * 审批行记下当时发给 SDK 的 response，以及 SDK 原始入参。
+ * 审批行记下当时发给 SDK 的 response、原始入参，以及 SDK 侧 approval id。
  */
 import type { Migration } from "./types.ts"
 
@@ -11,5 +11,7 @@ export const approvalSdkResponseMigration: Migration = {
     ALTER TABLE approvals ADD COLUMN sdk_approved INTEGER;
     ALTER TABLE approvals ADD COLUMN sdk_reason TEXT;
     ALTER TABLE approvals ADD COLUMN resume_code TEXT;
+    ALTER TABLE approvals ADD COLUMN sdk_approval_id TEXT;
+    UPDATE approvals SET sdk_approval_id = id WHERE sdk_approval_id IS NULL;
   `
 }

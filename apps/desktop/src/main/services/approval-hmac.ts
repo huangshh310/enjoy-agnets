@@ -8,6 +8,7 @@ import { app, safeStorage } from "electron"
 import {
   approvalPayload,
   getApproval,
+  getApprovalBySdkIdentity,
   insertApproval,
   planRememberApproval,
   setApprovalDecision,
@@ -16,6 +17,7 @@ import {
   verifyApproval
 } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
+import { createId } from "./ids"
 
 let processSecret: string | undefined
 
@@ -63,13 +65,17 @@ export function rememberApproval(input: {
 }) {
   const db = getDatabase()
   const requestArgs = input.requestArgs ?? input.args
-  const incoming = {
-    id: input.approvalId,
-    runId: input.runId,
-    toolCallId: input.toolCallId,
-    args: requestArgs
-  }
-  const plan = planRememberApproval(getApproval(db, incoming.id), incoming)
+  const sdkApprovalId = input.approvalId
+  const plan = planRememberApproval(
+    getApprovalBySdkIdentity(db, {
+      sdkApprovalId,
+      runId: input.runId,
+      toolCallId: input.toolCallId
+    }),
+    { sdkApprovalId, args: requestArgs },
+    // 主键空闲时内部 id 用 SDK id；已被别的 run 占用才新开一行。
+    () => (getApproval(db, sdkApprovalId) ? createId("apr") : sdkApprovalId)
+  )
   if (plan.action !== "insert") return plan
   const payload = approvalPayload({
     runId: input.runId,
@@ -87,9 +93,14 @@ export function rememberApproval(input: {
     requestArgs: JSON.stringify(requestArgs ?? {}),
     hmac: signApproval(approvalSecret(), payload),
     decision: null,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    sdkApprovalId: plan.sdkApprovalId
   })
   return plan
+}
+
+export function sdkApprovalIdFor(approvalId: string): string {
+  return getApproval(getDatabase(), approvalId)?.sdkApprovalId || approvalId
 }
 
 export function assertApprovalHmac(input: {

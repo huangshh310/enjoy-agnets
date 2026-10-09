@@ -10,7 +10,7 @@ import {
 import { approvalResponseMessage } from "./approval-response-message.ts"
 
 const deniedRow = {
-  id: "apr_stub",
+  id: "apr_internal",
   runId: "run_1",
   toolCallId: "tool_stub",
   name: "write_file",
@@ -21,16 +21,16 @@ const deniedRow = {
   requestArgs: JSON.stringify({ path: "e2e-stub.txt", content: "from stub" }),
   sdkApproved: 0,
   sdkReason: undefined,
-  resumeCode: null
+  resumeCode: null,
+  sdkApprovalId: "apr_stub"
 }
 
-test("SDK 重发已拒绝 id：不开新卡，带原 id 回应 deny", () => {
-  const plan = planRememberApproval(deniedRow, {
-    id: "apr_stub",
-    runId: "run_1",
-    toolCallId: "tool_stub",
-    args: { path: "e2e-stub.txt", content: "from stub" }
-  })
+test("SDK 重发已拒绝 id：不开新卡，带原 SDK id 回应 deny", () => {
+  const plan = planRememberApproval(
+    deniedRow,
+    { sdkApprovalId: "apr_stub", args: { path: "e2e-stub.txt", content: "from stub" } },
+    () => "apr_new"
+  )
   const applied = applyRememberedApproval(plan, {
     toolCallId: "tool_stub",
     name: "write_file",
@@ -54,15 +54,32 @@ test("SDK 重发已拒绝 id：不开新卡，带原 id 回应 deny", () => {
   })
 })
 
-test("SDK 重发已决 id 但 args 不同：按 fail closed 处理", () => {
+test("两个不同会话用同一个 SDK id：第二个仍弹卡，回应带原 id", () => {
+  const plan = planRememberApproval(undefined, { sdkApprovalId: "apr_stub", args: { path: "e2e-stub.txt" } }, () => "apr_new")
+  assert.equal(plan.action, "insert")
+  assert.equal(plan.id, "apr_new")
+  assert.equal(plan.sdkApprovalId, "apr_stub")
+  const applied = applyRememberedApproval(plan, {
+    toolCallId: "tool_other",
+    name: "write_file",
+    args: { path: "e2e-stub.txt" }
+  })
+  assert.equal(applied.kind, "open_card")
+  if (applied.kind !== "open_card") return
+  assert.equal(applied.pending.approvalId, "apr_new")
+  const message = approvalResponseMessage({
+    approvalId: plan.sdkApprovalId,
+    approved: false
+  })
+  const part = Array.isArray(message.content) ? message.content[0] : undefined
+  assert.equal((part as { approvalId?: string }).approvalId, "apr_stub")
+})
+
+test("SDK 重发已决 id 但 args 不同：按 fail closed 处理，仍带原 SDK id", () => {
   const plan = planRememberApproval(
     { ...deniedRow, decision: "allow", sdkApproved: 1 },
-    {
-      id: "apr_stub",
-      runId: "run_1",
-      toolCallId: "tool_stub",
-      args: { path: "changed.txt", content: "nope" }
-    }
+    { sdkApprovalId: "apr_stub", args: { path: "changed.txt", content: "nope" } },
+    () => "apr_new"
   )
   const applied = applyRememberedApproval(plan, {
     toolCallId: "tool_stub",
@@ -88,12 +105,8 @@ test("SDK 重发已决 id 但 args 不同：按 fail closed 处理", () => {
 test("用户允许但没发过 SDK response：fail closed，approved 不得为 true", () => {
   const plan = planRememberApproval(
     { ...deniedRow, decision: "allow", sdkApproved: null },
-    {
-      id: "apr_stub",
-      runId: "run_1",
-      toolCallId: "tool_stub",
-      args: { path: "e2e-stub.txt", content: "from stub" }
-    }
+    { sdkApprovalId: "apr_stub", args: { path: "e2e-stub.txt", content: "from stub" } },
+    () => "apr_new"
   )
   const applied = applyRememberedApproval(plan, {
     toolCallId: "tool_stub",
@@ -104,4 +117,5 @@ test("用户允许但没发过 SDK response：fail closed，approved 不得为 t
   if (applied.kind !== "fail_closed") return
   assert.equal(applied.approved, false)
   assert.equal(applied.code, APPROVAL_REPLAY_DENIED)
+  assert.equal(applied.approvalId, "apr_stub")
 })

@@ -8,6 +8,8 @@ export function isE2eStub(): boolean {
   return process.env.ENJOY_E2E_STUB === "1"
 }
 
+let stubWriteSeq = 0
+
 export { isE2eCuReady } from "./e2e-stub-desktop.ts"
 
 function userText(message: ModelMessage | undefined): string {
@@ -82,10 +84,11 @@ export async function* createE2eStubStream(
     return
   }
   if (/\bwrite\b/i.test(prompt)) {
+    stubWriteSeq += 1
     yield {
       type: "tool-approval-request",
-      toolCallId: "tool_stub",
-      approvalId: "apr_stub",
+      toolCallId: `tool_stub_${stubWriteSeq}`,
+      approvalId: `apr_stub_${stubWriteSeq}`,
       toolName: "write_file",
       input: { path: "e2e-stub.txt", content: "from stub" }
     }

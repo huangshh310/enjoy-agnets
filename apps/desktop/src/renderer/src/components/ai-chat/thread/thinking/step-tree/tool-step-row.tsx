@@ -85,6 +85,14 @@ function StepTitleRow({
           <RiCheckLine className="size-2.5" />
         </span>
       ) : null}
+      {node.status === "denied" ? (
+        <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+          <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
+            <RiCloseLine className="size-2.5 text-text-tertiary" />
+          </span>
+          <span>{t("chat.inspectorToolDenied")}</span>
+        </span>
+      ) : null}
       {node.status === "error" ? (
         <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-error-primary">
           <RiCloseLine className="size-3.5" />

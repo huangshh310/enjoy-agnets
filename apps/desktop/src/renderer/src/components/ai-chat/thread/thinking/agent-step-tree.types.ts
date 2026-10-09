@@ -48,7 +48,7 @@ export interface AgentStepNode {
   output?: string
   exitCode?: number
   errorText?: string
-  status: "pending" | "running" | "completed" | "error"
+  status: "pending" | "running" | "completed" | "error" | "denied"
   domainPills?: DomainPill[]
   exploredPages?: SubPageItem[]
   exploredTitle?: string

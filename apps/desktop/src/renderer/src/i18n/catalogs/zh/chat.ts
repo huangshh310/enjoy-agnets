@@ -577,6 +577,7 @@ export const zhChat = {
   errorTitle: "执行异常 / 模型响应中断",
   errorGenericHint: "这次没执行成功，请再试一次。",
   toolDenied: "已拒绝，本次未执行",
+  toolArgsMismatch: "审批参数已变化，本次未执行。",
   dismissError: "忽略并关闭错误提示",
   switchModelKey: "切换模型 / 检查密钥",
   editPlaceholder: "编辑你的消息…",

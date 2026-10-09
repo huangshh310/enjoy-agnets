@@ -24,6 +24,7 @@ import {
   type ChangedFileRow,
   type ModelOption
 } from "../stores/chat-store"
+import { pickForegroundSession } from "./pick-foreground-session"
 import { resolveApprovalRunId } from "./resolve-approval-run"
 import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
@@ -130,12 +131,13 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
     title: string
   }>
   const currentId = useChatStore.getState().sessionId
-  const current = sessions.find((session) => session.id === currentId) ?? sessions[0]
-  if (current) {
-    await loadSession(current.id, current.title)
+  const picked = pickForegroundSession(sessions, currentId)
+  if (picked === "keep") return
+  if (picked === "create") {
+    await createAndOpenSession(workspace.id, "新对话")
     return
   }
-  await createAndOpenSession(workspace.id, "新对话")
+  await loadSession(picked.id, picked.title)
 }
 
 export { abortComposerRun }

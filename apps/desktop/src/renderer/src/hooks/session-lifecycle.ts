@@ -99,15 +99,21 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "æ
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
   parkForegroundRun()
+  const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
+  bumpSessionHydrateGeneration()
   const session = (await getIde().session.create({
     workspaceId,
     title: customTitle
   })) as SessionRow
   if (await discardCreatedSession(session.id, stale)) return
   const store = useChatStore.getState()
+  const typedDuringCreate = store.composer
   const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
   publishCreatedSession(store, session, runtimeId)
+  if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
+    useChatStore.setState({ composer: typedDuringCreate })
+  }
   await bindSessionRuntime(session.id, runtimeId)
   if (await discardCreatedSession(session.id, stale)) return
   await refreshAllWorkspaces()

@@ -72,6 +72,7 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
   const approvalNames = approvalCols.map((col) => col.name)
   assert.ok(approvalNames.includes("sdk_approved"))
   assert.ok(approvalNames.includes("request_args"))
+  assert.ok(approvalNames.includes("sdk_approval_id"))
 })
 
 test("重复 apply 不再执行", () => {
