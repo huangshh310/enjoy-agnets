@@ -27,7 +27,7 @@ const FAILURE_MAP_KEYS = [
   "continueHint"
 ] as const
 
-/** 高级坐标未开时，裸 x/y 硬拒，禁止静默执行、也不进 Dock。 */
+/** 高级坐标未开时，任一 x/y/x2/y2 硬拒（即使带 elementId）。 */
 export function refuseBareDesktopCoord(
   args: unknown,
   advancedOn: boolean

@@ -23,21 +23,25 @@ export {
   type DesktopActAppKeySource
 } from "./desktop-act-app-key.ts"
 
+const COORD_FIELDS = ["x", "y", "x2", "y2"] as const
+
 /** `wait` 不改界面，不停车。带坐标或要求前台时仍要问。 */
 export function desktopActSkipsApproval(args: unknown): boolean {
   if (!args || typeof args !== "object") return false
   const row = args as Record<string, unknown>
   if (row.action !== "wait") return false
   if (row.allowForeground === true) return false
-  return typeof row.x !== "number" && typeof row.y !== "number"
+  return !desktopActIsBareCoord(row)
 }
 
-/** 无 elementId 的裸像素坐标。主路径是 snapshot → act(elementId)。 */
+/**
+ * 任一坐标字段即坐标通道（含 drag 的 x2/y2），不管有没有 elementId。
+ * 审批闸与执行面 refuse 共用此谓词，禁止各写一套。
+ */
 export function desktopActIsBareCoord(args: unknown): boolean {
   if (!args || typeof args !== "object") return false
   const row = args as Record<string, unknown>
-  if (typeof row.elementId === "string" && row.elementId.trim().length > 0) return false
-  return typeof row.x === "number" || typeof row.y === "number"
+  return COORD_FIELDS.some((key) => typeof row[key] === "number")
 }
 
 /** 坐标点击和「允许切到前台」不能被本会话放行盖掉。 */

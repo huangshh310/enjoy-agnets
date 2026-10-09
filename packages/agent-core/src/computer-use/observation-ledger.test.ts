@@ -53,14 +53,18 @@ test("peek 不消费，过期 peek 为空", () => {
 test("wait 不审批，带坐标或前台仍要问", () => {
   assert.equal(desktopActSkipsApproval({ action: "wait", observationId: "obs" }), true)
   assert.equal(desktopActSkipsApproval({ action: "wait", x: 1 }), false)
+  assert.equal(desktopActSkipsApproval({ action: "wait", x2: 8, y2: 9 }), false)
   assert.equal(desktopActSkipsApproval({ action: "click", elementId: "e1" }), false)
 })
 
 test("坐标和前台动作不能被会话放行盖掉", () => {
   assert.equal(desktopActIsBareCoord({ elementId: "e1", action: "click" }), false)
   assert.equal(desktopActIsBareCoord({ x: 1, y: 2, action: "click" }), true)
+  assert.equal(desktopActIsBareCoord({ elementId: "e1", x: 1, y: 2, action: "click" }), true)
+  assert.equal(desktopActIsBareCoord({ elementId: "e1", x2: 8, y2: 9, action: "drag" }), true)
   assert.equal(desktopActBypassesSessionAllow({ elementId: "e1", action: "click" }), false)
   assert.equal(desktopActBypassesSessionAllow({ x: 1, y: 2, action: "click" }), true)
+  assert.equal(desktopActBypassesSessionAllow({ elementId: "e1", x: 1, y: 2 }), true)
   assert.equal(desktopActBypassesSessionAllow({ elementId: "e1", allowForeground: true }), true)
 })
 

@@ -61,6 +61,75 @@ test("S1 高级坐标 OFF：裸坐标 click 硬拒，执行器收不到 act", as
   assert.equal(ok.success, true)
 })
 
+test("elementId + x/y 与 drag x2/y2：OFF 执行器收不到 act，ON 会送到执行器", async () => {
+  const methods: string[] = []
+  const off = createDesktopSession(() =>
+    fakeHandle((method) => {
+      methods.push(method)
+      if (method === "snapshot") return { observation: sampleObservation() }
+      return { delivery: "background" }
+    })
+  )
+  const snapOff = await off.snapshot(42)
+  const mixedOff = await off.act({
+    observationId: String(snapOff.observationId),
+    action: "click",
+    elementId: "0.1",
+    x: 12,
+    y: 34
+  })
+  assert.equal(mixedOff.success, false)
+  assert.equal(mixedOff.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
+  const dragOff = await off.act({
+    observationId: String(snapOff.observationId),
+    action: "drag",
+    elementId: "0.1",
+    x2: 80,
+    y2: 90
+  })
+  assert.equal(dragOff.success, false)
+  assert.equal(dragOff.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
+  assert.equal(methods.includes("act"), false)
+
+  const onMethods: string[] = []
+  const on = createDesktopSession(
+    () =>
+      fakeHandle((method) => {
+        onMethods.push(method)
+        if (method === "snapshot") return { observation: sampleObservation() }
+        return { delivery: "background" }
+      }),
+    { advancedCoords: () => true }
+  )
+  const snapOn = await on.snapshot(42)
+  const mixedOn = await on.act({
+    observationId: String(snapOn.observationId),
+    action: "click",
+    elementId: "0.1",
+    x: 12,
+    y: 34
+  })
+  assert.equal(mixedOn.success, true)
+  const dragOn = await on.act({
+    observationId: String(snapOn.observationId),
+    action: "drag",
+    elementId: "0.1",
+    x2: 80,
+    y2: 90
+  })
+  assert.equal(dragOn.code, "stale_observation")
+  const snapDrag = await on.snapshot(42)
+  const dragOk = await on.act({
+    observationId: String(snapDrag.observationId),
+    action: "drag",
+    elementId: "0.1",
+    x2: 80,
+    y2: 90
+  })
+  assert.equal(dragOk.success, true)
+  assert.equal(onMethods.includes("act"), true)
+})
+
 test("S2 高级坐标 ON：裸坐标会送到执行器（审批仍每次 Dock）", async () => {
   const methods: string[] = []
   const session = createDesktopSession(

@@ -40,6 +40,44 @@ test("S1 高级坐标默认 OFF：裸坐标硬拒，不可静默执行", () => {
   assert.equal(decide(ELEMENT, EDITS), "user-approval")
 })
 
+test("elementId + x/y 仍是坐标通道：OFF 硬拒，ON 每次 Dock 不吃会话/簿", () => {
+  const mixed = { action: "click", elementId: "0.1", x: 12, y: 34, appKey: CALC }
+  assert.deepEqual(decide(mixed, EDITS), {
+    type: "denied",
+    reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON
+  })
+  assert.equal(refuseBareDesktopCoord(mixed, false)?.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
+  const on: ApprovalPolicy = {
+    ...EDITS,
+    desktopAdvancedCoords: true,
+    desktopAlwaysAllowAppKeys: [CALC],
+    sessionApprovedTools: new Set([`desktop_act:${CALC}`, "desktop_act:*"])
+  }
+  assert.equal(decide(mixed, on), "user-approval")
+  assert.equal(desktopActAlwaysAsks(mixed), true)
+  assert.equal(sessionAllowsDesktopAct(mixed, on), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct(mixed, on.desktopAlwaysAllowAppKeys ?? []), false)
+})
+
+test("elementId + x2/y2 drag 仍是坐标通道：OFF 硬拒，ON 每次 Dock 不吃会话/簿", () => {
+  const drag = { action: "drag", elementId: "0.1", x2: 80, y2: 90, appKey: CALC }
+  assert.deepEqual(decide(drag, EDITS), {
+    type: "denied",
+    reason: DESKTOP_ACT_BARE_COORDS_DISABLED_REASON
+  })
+  assert.equal(refuseBareDesktopCoord(drag, false)?.code, DESKTOP_ACT_BARE_COORDS_DISABLED)
+  const on: ApprovalPolicy = {
+    ...EDITS,
+    desktopAdvancedCoords: true,
+    desktopAlwaysAllowAppKeys: [CALC],
+    sessionApprovedTools: new Set([`desktop_act:${CALC}`, "desktop_act:*"])
+  }
+  assert.equal(decide(drag, on), "user-approval")
+  assert.equal(desktopActAlwaysAsks(drag), true)
+  assert.equal(sessionAllowsDesktopAct(drag, on), false)
+  assert.equal(persistentAlwaysAllowsDesktopAct(drag, on.desktopAlwaysAllowAppKeys ?? []), false)
+})
+
 test("S2 高级坐标 ON：每次 Dock，不吃会话表 / Always-allow", () => {
   const on: ApprovalPolicy = {
     ...EDITS,
