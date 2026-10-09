@@ -134,7 +134,7 @@ export function findMissedPoint(
   )
 }
 
-/** 同一计划点只能占一次。已有则 false。 */
+/** 同一计划点只能占一次。查+写同步、中间不能 await，进程内并发只有一个成功。 */
 export function claimMissedPoint(io: SettingsIo, record: StoredMissed, now = Date.now()): boolean {
   const current = pruneMissedRecords(readRows(io), now)
   const slot = alignCronMinute(record.scheduledAt)

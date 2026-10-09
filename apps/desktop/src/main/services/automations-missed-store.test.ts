@@ -25,6 +25,25 @@ test("同一计划点只能占一次（启动+唤醒撞车）", () => {
   assert.equal(findMissedPoint(io, "auto_1", now)?.reason, "system_sleep")
 })
 
+test("同一计划点并发 claimMissedPoint 只有一个成功", async () => {
+  const io = memorySettingsIo()
+  const now = Date.now()
+  const row = {
+    automationId: "auto_race",
+    scheduledAt: now,
+    recordedAt: now,
+    kind: "scheduled" as const,
+    status: "running" as const
+  }
+  const results = await Promise.all([
+    Promise.resolve().then(() => claimMissedPoint(io, row, now)),
+    Promise.resolve().then(() => claimMissedPoint(io, { ...row }, now)),
+    Promise.resolve().then(() => claimMissedPoint(io, { ...row }, now))
+  ])
+  assert.equal(results.filter(Boolean).length, 1)
+  assert.equal(findMissedPoint(io, "auto_race", now)?.kind, "scheduled")
+})
+
 test("重启后 store 仍认已占点，列表不含准点 scheduled", () => {
   const io = memorySettingsIo()
   const now = Date.now()

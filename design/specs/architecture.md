@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-09
+> 进程边界与安全基线。最后更新：2026-10-09（主进程单实例锁）
 
 ## 当前真相
 
@@ -98,7 +98,7 @@ Main Process（可信）
 
 ## 代码入口
 
-- 窗口与生命周期：`apps/desktop/src/main/index.ts`
+- 窗口与生命周期：`apps/desktop/src/main/index.ts`。`requestSingleInstanceLock` 在 `whenReady` 之前；失败者立刻退出，不启动 automations 调度 / 回看 / 补跑。`second-instance` 聚焦已有窗（macOS Dock 仍走 `activate`）。
 - IPC 注册：`apps/desktop/src/main/ipc.ts`（胶水）+ `ipc-session.ts` / `ipc-shell.ts` / `ipc-settings.ts` / `ipc-ai.ts`
 - 密钥 vault：`apps/desktop/src/main/services/secrets-vault.ts`；档案 CRUD：`secrets.ts`
 - preload：`apps/desktop/src/preload/index.ts`

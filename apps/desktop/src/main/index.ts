@@ -15,6 +15,7 @@ import { blockNativeHistoryNavigation } from "./services/block-native-history";
 import { handleAssetProtocol, registerAssetScheme } from "./services/asset-protocol";
 import { registerIpc, unregisterIpc } from "./ipc";
 import { startAppUpdate } from "./services/app-update";
+import { acquireSingleInstanceLock, focusOrRestoreWindow } from "./services/single-instance";
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
 
@@ -26,6 +27,20 @@ if (process.env.ENJOY_E2E_STUB === "1") {
 }
 
 registerAssetScheme();
+
+function focusOrCreateMainWindow(): void {
+  focusOrRestoreWindow(
+    () => BrowserWindow.getAllWindows(),
+    createWindow
+  );
+}
+
+if (!acquireSingleInstanceLock(app, focusOrCreateMainWindow)) {
+  markQuitAllowed();
+  app.quit();
+} else {
+  bootPrimaryInstance();
+}
 
 /** 任务栏 / Alt+Tab / 最小化缩略图用的图标路径。Windows 用多帧 ICO，其它平台用 PNG。 */
 function resolveAppIconPath(): string {
@@ -119,33 +134,35 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(async () => {
-  electronApp.setAppUserModelId("com.enjoyagents.desktop");
-  handleAssetProtocol();
-  getDatabase();
-  configureAcpChildLedger(join(app.getPath("userData"), "acp-children.json"))
-  reapOrphanAcpChildren()
-  abandonOrphanRuns();
-  await bootstrapE2eStub();
-  void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
-    void recoverPausedWorkflows()
-  })
-  void import("./services/builtin-tools/bridge-server").then(({ syncBridgeServerWithState }) => {
-    void syncBridgeServerWithState()
-  })
-  app.on("browser-window-created", (_event, window) => {
-    optimizer.watchWindowShortcuts(window);
+function bootPrimaryInstance(): void {
+  app.whenReady().then(async () => {
+    electronApp.setAppUserModelId("com.enjoyagents.desktop");
+    handleAssetProtocol();
+    getDatabase();
+    configureAcpChildLedger(join(app.getPath("userData"), "acp-children.json"))
+    reapOrphanAcpChildren()
+    abandonOrphanRuns();
+    await bootstrapE2eStub();
+    void import("./services/workflow-runner").then(({ recoverPausedWorkflows }) => {
+      void recoverPausedWorkflows()
+    })
+    void import("./services/builtin-tools/bridge-server").then(({ syncBridgeServerWithState }) => {
+      void syncBridgeServerWithState()
+    })
+    app.on("browser-window-created", (_event, window) => {
+      optimizer.watchWindowShortcuts(window);
+    });
+    applyMacDockIcon();
+    createWindow();
+    startAppUpdate();
+    void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
+      startAutomationScheduler()
+    })
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
   });
-  applyMacDockIcon();
-  createWindow();
-  startAppUpdate();
-  void import("./services/automations-scheduler").then(({ startAutomationScheduler }) => {
-    startAutomationScheduler()
-  })
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+}
 
 app.on("before-quit", (event) => {
   if (isQuitAllowed()) return

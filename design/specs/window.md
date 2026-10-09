@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（`openExternal` 仅用户手势）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-09（单实例锁 + 二次启动聚焦）
 
 ## 当前真相
 
@@ -30,6 +30,8 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 
 关窗 / ⌘Q：有 `running`、当前或后台 `pendingApproval` / Attention 审批时弹出 ConfirmDialog，确认才 `forceQuit`（`markQuitAllowed` 后 `app.quit`）。空闲标题栏关闭仍走 `window.close`（macOS 可留 Dock）。`before-quit` 未放行时 `preventDefault` 并推 `window.quit-requested`；清理改到 `will-quit`。Win / macOS / Linux 同一套。
 
+单实例：`registerAssetScheme` 之后立刻 `app.requestSingleInstanceLock()`（`single-instance.ts`）。拿不到锁的进程 `markQuitAllowed()` 后 `app.quit()`，不进 `whenReady`，因此不启动调度、回看、补跑。拿到锁的实例听 `second-instance`：已有窗则 `restore` + `show` + `focus`；无窗则 `createWindow`。三端差异：Windows / Linux 二次启动走 `second-instance`；macOS 点 Dock 重开已在跑的应用走 `activate`（无窗才重建），命令行再拉起第二份进程才走 `second-instance`。E2E 仍拿锁（一份实例）。
+
 ## 不变量
 
 - 窗口控制不经过业务 agent 频道。preload 的 `ide.window` 是唯一入口。
@@ -40,6 +42,7 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 ## 代码入口
 
 - 创建窗口：`apps/desktop/src/main/index.ts`
+- 单实例锁：`apps/desktop/src/main/services/single-instance.ts`（`index.ts` 在 `whenReady` 之前调用）
 - IPC：`apps/desktop/src/main/ipc.ts`、`packages/ipc-contract/src/window.ts`；外链 `main/services/window-open-external.ts`
 - 放大/还原：`apps/desktop/src/main/services/window-maximize.ts`
 - UI：`apps/desktop/src/renderer/src/components/layout/window-frame.tsx`、`window-title-bar.tsx`、`window-chrome.ts`、`mac-traffic-lights.tsx`、`window-glyph-controls.tsx`、`title-bar-toggles.tsx`
@@ -53,7 +56,8 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 - `transparent: true` + 无阴影时，圆角靠 `WindowFrame` 的 `overflow-hidden` + `rounded-2xl` 裁切。`html`/`body` 若再铺 `background-full`，四角会露出方块。Windows 不要开 acrylic 抢 HWND。
 - Windows 透明无边框上 `isMaximized()` 常为 false，`unmaximize()` 空操作，标题栏 drag 双击也不会还原。按钮仍显示 □。切换必须按 workArea 记忆 bounds，不要只调用 `maximize()`/`unmaximize()`。
 - 在 drag 区域里放输入框 / 下拉必须单独标 `no-drag`，否则无法聚焦。
-- macOS `activate` 会在无窗时重建窗口；IPC 必须能重新 `registerIpc`（先 `unregister` 或靠守卫）。
+- macOS `activate` 会在无窗时重建窗口；IPC 必须能重新 `registerIpc`（先 `unregister` 或靠守卫）。Dock 重开不是 `second-instance`，不要把两件事写成一条路径。
+- 第二实例若先注册 `before-quit` 再 `quit()`，退出确认会 `preventDefault` 把失败者卡住。必须先 `markQuitAllowed()`，且不要给失败者挂 `whenReady` 调度。
 - `before-quit` 里 `preventDefault` 必须同步。放行旗 `isQuitAllowed` 未立时不要跑 `flushActiveRuns`；确认后走 `forceQuit`。空闲关最后一扇窗会再进 `before-quit`：窗口已毁则直接放行，不要对着 destroyed `webContents` 推事件。
 - `autoUpdater.quitAndInstall` 也会进 `before-quit`。安装前必须 `markQuitAllowed()`，否则更新会被退出确认卡住。非 darwin 最后一扇窗 `window-all-closed` 里同样要先放行再 `app.quit()`。
 - 页面历史在渲染进程内存里。刷新或新开窗口不会带回 past/future。删除当前会话或项目时落到 past 末尾；past 空则回到空的新聊天，不创建会话。项目已不在时只清工作区指针。不要把滚动、草稿、流式半截写进条目。
