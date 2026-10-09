@@ -46,7 +46,8 @@ export function kindAllowsSnapshot(kind: string): boolean {
 
 function isSinglePaygUrl(preset: ProviderPreset, baseURL: string): boolean {
   const url = normalizeBaseURL(baseURL)
-  const endpoints = preset.regions?.length === 1 ? preset.regions[0].endpoints : preset.endpoints
+  const onlyRegion = preset.regions?.length === 1 ? preset.regions[0] : undefined
+  const endpoints = onlyRegion?.endpoints ?? preset.endpoints
   if (Object.values(endpoints).some((value) => value && normalizeBaseURL(value) === url)) return true
   return normalizeBaseURL(preset.defaultBaseURL) === url
 }
