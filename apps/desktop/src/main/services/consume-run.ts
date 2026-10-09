@@ -30,9 +30,9 @@ export async function consumeRun(
         run.firstTokenAt = run.firstTokenAt ?? Date.now()
       },
       onUsage: (usage) => {
-        if (usage.fromFinish) sawUsage = true
-        const { fromFinish: _fromFinish, ...rest } = usage
-        applyActiveRunUsage(runId, run, rest)
+        if (usage.fromTotalUsage) sawUsage = true
+        const { fromTotalUsage: _fromTotalUsage, ...rest } = usage
+        applyActiveRunUsage(runId, run, rest, false)
       },
       onCheckpoint: () => {
         checkpointActiveRun(run)

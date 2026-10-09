@@ -175,6 +175,50 @@ test("一个泵都没跑的 completed run 仍是 unknown", () => {
   }
 })
 
+test("泵开始前失败或取消的 run 不计入 unknownCount", () => {
+  const failedId = `run_prep_fail_${Date.now()}`
+  const cancelledId = `run_prep_cancel_${Date.now()}`
+  seedRun(failedId)
+  seedRun(cancelledId)
+  try {
+    hold(failedId)
+    hold(cancelledId)
+    const failed = getActiveRun(failedId)
+    const cancelled = getActiveRun(cancelledId)
+    assert.ok(failed)
+    assert.ok(cancelled)
+    persistActiveRun(failed, failedId, "failed", "401")
+    persistActiveRun(cancelled, cancelledId, "cancelled")
+    assert.notEqual(parseRunUsage(getRun(getDatabase(), failedId)?.usageJson)?.usageIncomplete, true)
+    assert.notEqual(parseRunUsage(getRun(getDatabase(), cancelledId)?.usageJson)?.usageIncomplete, true)
+    const sum = buildSessionEstimatedCost({
+      sessionId: "ses_prep",
+      runs: [
+        {
+          runId: failedId,
+          status: "failed",
+          providerKind: "anthropic",
+          modelId: "claude-sonnet-4-5",
+          usage: parseRunUsage(getRun(getDatabase(), failedId)?.usageJson)
+        },
+        {
+          runId: cancelledId,
+          status: "cancelled",
+          providerKind: "anthropic",
+          modelId: "claude-sonnet-4-5",
+          usage: parseRunUsage(getRun(getDatabase(), cancelledId)?.usageJson)
+        }
+      ]
+    })
+    assert.equal(sum.unknownCount, 0)
+    assert.equal(sum.runs?.some((run) => run.runId === failedId), false)
+    assert.equal(sum.runs?.some((run) => run.runId === cancelledId), false)
+  } finally {
+    deleteActiveRun(failedId)
+    deleteActiveRun(cancelledId)
+  }
+})
+
 test("ACP 会话 id 以最新一次绑定为准", () => {
   const runId = `run_acp_bind_${Date.now()}`
   seedRun(

@@ -26,7 +26,9 @@ export function persistActiveRun(
   updateRun(getDatabase(), runId, { status, error: error ?? null })
   if (FINISHED.has(status)) {
     run.endedAt = run.endedAt ?? Date.now()
-    if (usageNeverRecorded(run)) markPumpMissingUsage(run)
+    // 只给 completed 补 incomplete。failed/cancelled 且没泵过不得算 unknown；
+    // 泵已开始但没 usage.updated 时，consumeRun.finally 已经标过。
+    if (status === "completed" && usageNeverRecorded(run)) markPumpMissingUsage(run)
     persistRunUsageFromActive(runId, run)
   }
   return wrote

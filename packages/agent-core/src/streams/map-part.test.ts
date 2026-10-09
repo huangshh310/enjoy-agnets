@@ -131,6 +131,20 @@ test("passes through Enjoy StreamEvent from ACP", () => {
     runId: "run_1",
     text: "hi"
   })
+  assert.deepEqual(
+    mapStreamPart(
+      { type: "usage.updated", runId: "run_1", inputTokens: 12, reportedCostUsd: 0.4 },
+      "run_1"
+    ),
+    { type: "usage.updated", runId: "run_1", inputTokens: 12, reportedCostUsd: 0.4 }
+  )
+  assert.deepEqual(
+    mapStreamPart(
+      { type: "generation.warning", runId: "run_1", code: "acp_resume_fallback", message: "fell back" },
+      "run_1"
+    ),
+    { type: "generation.warning", runId: "run_1", code: "acp_resume_fallback", message: "fell back" }
+  )
 })
 
 test("tool-output-denied 裸坐标：tool.result.result.code 给 renderer", () => {

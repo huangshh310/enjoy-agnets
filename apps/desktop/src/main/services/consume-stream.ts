@@ -35,7 +35,7 @@ export async function consumeFullStream(input: {
     reportedCostUsd?: number
     maxStepInputTokens?: number
     stepInputIncomplete?: boolean
-    fromFinish?: boolean
+    fromTotalUsage?: boolean
   }) => void
   /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
   onCheckpoint?: () => void
@@ -68,7 +68,7 @@ export async function consumeFullStream(input: {
         cacheWriteTokens: event.cacheWriteTokens,
         reasoningTokens: event.reasoningTokens,
         reportedCostUsd: event.reportedCostUsd,
-        fromFinish: true
+        fromTotalUsage: true
       })
     }
     if (event.type === "approval.required") {

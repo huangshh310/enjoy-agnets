@@ -97,16 +97,16 @@ export function hydrateActiveRunUsage(runId: string): void {
 export function applyActiveRunUsage(
   runId: string,
   run: ActiveRun,
-  usage: Omit<RunUsageRecord, "runtimeId" | "providerKind" | "modelId">
+  usage: Omit<RunUsageRecord, "runtimeId" | "providerKind" | "modelId">,
+  persist = true
 ): void {
   if (isAcpHostRuntimeId(run.input.runtimeId)) replaceRunUsage(run, usage)
   else accumulateRunUsage(run, usage)
-  persistRunUsageFromActive(runId, run)
+  if (persist) persistRunUsageFromActive(runId, run)
 }
 
 export function finalizePumpUsage(runId: string, run: ActiveRun, sawUsage: boolean): void {
-  if (sawUsage) return
-  markPumpMissingUsage(run)
+  if (!sawUsage) markPumpMissingUsage(run)
   persistRunUsageFromActive(runId, run)
 }
 
