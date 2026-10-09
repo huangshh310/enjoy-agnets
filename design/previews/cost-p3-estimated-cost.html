@@ -1,0 +1,544 @@
+<!-- 【视觉真源】COST-P3 模型单价 + 估算成本 · Luna · jojo 短锁 Top5 ③ · 基 main cd48767d -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>COST-P3 · 模型单价 + 估算成本 · Enjoy Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0F1419",
+        mute: "#5C6670",
+        line: "#E4E7EB",
+        paper: "#F7F8FA",
+        card: "#FFFFFF",
+        accent: "#2B6DE5",
+        soft: "#E8F0FC",
+        warn: "#B45309",
+        warnSoft: "#FEF3C7",
+        danger: "#B42318",
+        dangerSoft: "#FEE4E2",
+        ok: "#067647",
+        okSoft: "#DCFAE6",
+      },
+      fontFamily: {
+        sans: ["Inter", "PingFang SC", "Noto Sans SC", "WenQuanYi Micro Hei", "Droid Sans Fallback", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        dock: "0 8px 28px rgba(15,20,25,0.12)",
+        toast: "0 10px 32px rgba(15,20,25,0.16)",
+      },
+    },
+  },
+};
+</script>
+<style>
+  body { background: #EEF1F4; }
+  .strike { text-decoration: line-through; opacity: 0.55; }
+  .tip {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity .15s ease, transform .15s ease;
+  }
+  .tip-host:hover .tip,
+  .tip-host:focus-within .tip,
+  .tip-host.is-open .tip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  details.price > summary { list-style: none; cursor: pointer; }
+  details.price > summary::-webkit-details-marker { display: none; }
+  details.price[open] .chev { transform: rotate(90deg); }
+</style>
+</head>
+<body class="font-sans text-ink antialiased">
+  <header class="border-b border-line bg-card px-8 py-5">
+    <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
+    <h1 class="mt-1 text-xl font-semibold tracking-tight">COST-P3 · 模型单价 + 估算成本 · 基 <code class="rounded bg-paper px-1.5 py-0.5 text-[15px] font-semibold">cd48767d</code> · I3 仍停</h1>
+    <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
+      Enjoy Local 按单价算出<strong class="text-ink">估算</strong>花费；不知道就画「—」，不写 $0.00、不猜。
+      Luna：「价签上写着估算」。短锁
+      <a class="font-medium text-accent underline-offset-2 hover:underline" href="../references/cost-p3-estimated-cost.md">cost-p3-estimated-cost.md</a>
+      · Agents token · <strong class="text-ink">不宣称应用已 1:1</strong>。
+    </p>
+  </header>
+
+  <main class="mx-auto max-w-[1100px] space-y-10 px-6 py-8">
+
+    <aside class="rounded-2xl border border-line bg-card p-5 shadow-sm">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-mute">jojo 正式验收 · C1–C7</p>
+      <ol class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li><strong>C1</strong> 快照命中 →「估算 $x.xx」，悬停 models.dev 快照与日期</li>
+        <li><strong>C2</strong> 用户填单价 → 用填的价，悬停「你填的单价」</li>
+        <li><strong>C3</strong> 未命中且没填 →「—」+「价格未知…」，无 $0.00</li>
+        <li><strong>C4</strong> 有缓存/推理 token 但缺单价 → 整次「—」，悬停写缺项</li>
+        <li><strong>C5</strong> Ollama / LM Studio →「本地 · 不计费」</li>
+        <li><strong>C6</strong> 外置引擎：上报原样+来源；没上报不显示；不折算订阅</li>
+        <li class="md:col-span-2"><strong>C7</strong> 断网照常估算；trace <code>estimatedCost</code> 不再恒为 0</li>
+      </ol>
+      <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 离线快照</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 用户单价优先</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 精确命中</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 缺项整次 —</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 金额旁「估算」</span>
+        <span class="rounded-full bg-okSoft px-2.5 py-1 font-medium text-ok">Do · 主路径不联网</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 自称账单</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 按家族猜价</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 运行路径联网</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 订阅折算美元</span>
+        <span class="rounded-full bg-dangerSoft px-2.5 py-1 font-medium text-danger">Don’t · 未知 $0.00</span>
+        <span class="rounded-full bg-paper px-2.5 py-1 font-medium text-mute ring-1 ring-line">Don’t · 预算 / 超额 / I3</span>
+      </div>
+      <p class="mt-3 rounded-xl bg-paper px-3 py-2 text-[12px] leading-relaxed text-mute">
+        <strong class="text-ink">示例数字</strong>：本页 $0.42 / $0.18 / $1.20 / &lt;$0.01、快照日期 2026-10-01、每百万单价，都是示意，<strong class="text-ink">不是</strong> models.dev 真价，也不是现网数据。产品短锁原文对照基线 <code>cc718fb</code>；本预览从当前 main <code>cd48767d</code> 起笔。
+      </p>
+    </aside>
+
+    <!-- A -->
+    <section id="state-a" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">A · 用量行六态（本轮账本底边）</h2>
+          <p class="mt-1 text-[13px] text-mute">沿现网 rail：约 292px、「本轮账本」、摘要人话、组头 caption-2、底边 <code>border-t</code> 钉用量。Token 保持「本轮 {n} tokens」。「估算」是 mute 小字，不是徽章。悬停看 B。</p>
+        </div>
+        <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] font-medium text-mute ring-1 ring-line">现网 rail 还没把 usage 传进来</span>
+      </div>
+
+      <div class="grid items-start gap-4 lg:grid-cols-2">
+        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+          <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C1 · 快照命中</p>
+          <div class="bg-card">
+            <header class="border-b border-line px-3 py-2.5">
+              <h3 class="text-[12px] font-semibold">本轮账本</h3>
+              <p class="mt-1 text-[11px] text-mute">改了 2 个文件，跑过 1 条命令</p>
+            </header>
+            <div class="py-1">
+              <p class="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium text-mute">
+                <span class="text-[10px]">▾</span> 改文件 <span class="ml-auto font-mono">2</span>
+              </p>
+              <p class="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium">
+                <span class="grid size-3.5 place-items-center rounded bg-soft text-[8px] text-accent">TS</span>
+                LoginForm.tsx
+              </p>
+              <p class="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium">
+                <span class="grid size-3.5 place-items-center rounded bg-paper text-[8px] text-mute">TS</span>
+                auth.ts
+              </p>
+              <p class="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium text-mute">
+                <span class="text-[10px]">▸</span> 命令 <span class="ml-auto font-mono">1</span>
+              </p>
+            </div>
+            <div class="relative border-t border-line">
+              <div class="tip-host" tabindex="0">
+                <p class="flex items-baseline justify-between gap-2 px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+                  <span>本轮 12.4k tokens</span>
+                  <span class="shrink-0 text-ink"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>$0.42</span>
+                </p>
+                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                  <p class="font-medium text-ink">models.dev 快照 · 2026-10-01</p>
+                  <ul class="mt-2 space-y-0.5 font-mono text-[10px] text-mute">
+                    <li>输入 80k × $3.00 / 百万 = $0.24</li>
+                    <li>输出 12k × $15.00 / 百万 = $0.18</li>
+                    <li>缓存读 —</li>
+                    <li>缓存写 —</li>
+                    <li>推理 —</li>
+                  </ul>
+                  <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+          <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C2 · 你填的单价</p>
+          <div class="bg-card">
+            <header class="border-b border-line px-3 py-2.5">
+              <h3 class="text-[12px] font-semibold">本轮账本</h3>
+              <p class="mt-1 text-[11px] text-mute">改了 1 个文件</p>
+            </header>
+            <div class="relative border-t border-line">
+              <div class="tip-host" tabindex="0">
+                <p class="flex items-baseline justify-between gap-2 px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+                  <span>本轮 12.4k tokens</span>
+                  <span class="shrink-0 text-ink"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>$0.18</span>
+                </p>
+                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                  <p class="font-medium text-ink">你填的单价</p>
+                  <ul class="mt-2 space-y-0.5 font-mono text-[10px] text-mute">
+                    <li>输入 80k × $1.50 / 百万 = $0.12</li>
+                    <li>输出 12k × $5.00 / 百万 = $0.06</li>
+                    <li>缓存读 — · 缓存写 — · 推理 —</li>
+                  </ul>
+                  <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+          <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C3 · 价格未知</p>
+          <div class="bg-card">
+            <div class="relative border-t border-line">
+              <div class="tip-host" tabindex="0">
+                <p class="flex items-baseline justify-between gap-2 px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+                  <span>本轮 8.1k tokens</span>
+                  <span class="shrink-0 text-[13px] tracking-wide text-ink">—</span>
+                </p>
+                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                  <p class="font-medium text-ink">价格未知，可在供应商设置里填写</p>
+                  <p class="mt-1 text-mute">自定义端点 · 快照未命中 · 你也还没填单价。不猜、不写 $0.00。</p>
+                  <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+          <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C4 · 缺项整次不估</p>
+          <div class="bg-card">
+            <div class="relative border-t border-line">
+              <div class="tip-host" tabindex="0">
+                <p class="flex items-baseline justify-between gap-2 px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+                  <span>本轮 18.6k tokens</span>
+                  <span class="shrink-0 text-[13px] tracking-wide text-ink">—</span>
+                </p>
+                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                  <p class="font-medium text-ink">缺「缓存写」单价，整次不估算</p>
+                  <ul class="mt-2 space-y-0.5 font-mono text-[10px] text-mute">
+                    <li>输入 12k · 有单价</li>
+                    <li>输出 2.4k · 有单价</li>
+                    <li>缓存写 4.2k · <span class="text-warn">缺单价</span></li>
+                  </ul>
+                  <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+          <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C5 · 本地 · 不计费</p>
+          <div class="bg-card">
+            <div class="border-t border-line px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+              <p class="flex items-baseline justify-between gap-2">
+                <span>本轮 6.2k tokens</span>
+                <span class="font-sans text-[11px] text-mute">本地 · 不计费</span>
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article class="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+          <p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">C6 · 外置引擎两态</p>
+          <div class="space-y-px bg-card">
+            <div class="relative border-t border-line">
+              <div class="tip-host" tabindex="0">
+                <p class="flex items-baseline justify-between gap-2 px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+                  <span>本轮 41k tokens</span>
+                  <span class="shrink-0 font-sans text-[11px] text-ink">$1.20 · Claude Code 上报</span>
+                </p>
+                <div class="tip absolute bottom-[calc(100%-4px)] left-3 right-3 z-20 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                  <p class="font-medium text-ink">Claude Code 上报</p>
+                  <p class="mt-1 text-mute">引擎自己报的数字，原样显示。不是 Enjoy 按单价估算，也不折算订阅额度。</p>
+                </div>
+              </div>
+            </div>
+            <div class="border-t border-line px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+              <p>本轮 9.7k tokens</p>
+              <p class="mt-1 font-sans text-[10px] text-mute">Codex CLI · 没上报花费 · 不留花费位</p>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="mt-4 overflow-hidden rounded-2xl border border-line bg-card">
+        <p class="border-b border-line bg-paper px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-mute">另 · 小于一分</p>
+        <p class="flex items-baseline justify-between gap-2 px-3 py-2 font-mono text-[11px] tabular-nums text-mute">
+          <span>本轮 240 tokens</span>
+          <span class="text-ink"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>&lt;$0.01</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- B -->
+    <section id="state-b" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold">B · 用量行悬停（钉文案）</h2>
+        <p class="mt-1 text-[13px] text-mute">上面各卡可悬停。这里再摊开，方便对照。分项是「tokens × 单价」，脚注永远同一句。C 端不出现枚举名。</p>
+      </div>
+      <div class="grid gap-3 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-3 text-[12px] leading-relaxed">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">来源 · 快照</p>
+          <p class="mt-1 font-medium">models.dev 快照 · 2026-10-01</p>
+          <p class="mt-2 font-mono text-[11px] text-mute">输入 / 输出 / 缓存读 / 缓存写 / 推理</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-3 text-[12px] leading-relaxed">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">来源 · 手填</p>
+          <p class="mt-1 font-medium">你填的单价</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-3 text-[12px] leading-relaxed">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">未知</p>
+          <p class="mt-1 font-medium">价格未知，可在供应商设置里填写</p>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-3 text-[12px] leading-relaxed">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">缺项</p>
+          <p class="mt-1 font-medium">缺「缓存写」单价，整次不估算</p>
+        </div>
+      </div>
+      <p class="mt-3 text-[12px] text-mute">脚注钉死：<span class="text-ink">这是按单价算的估算，不是账单</span></p>
+    </section>
+
+    <!-- C -->
+    <section id="state-c" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold">C · session-meter 悬停</h2>
+          <p class="mt-1 text-[13px] text-mute">可见铬条仍是现网「12.4k tok」，不改成美元药丸。花费只进悬停。Luna 钉：有未知就不凑假总额。</p>
+        </div>
+        <span class="rounded-full bg-soft px-2.5 py-1 text-[11px] font-medium text-accent">请 jojo 复审「另有引擎上报」</span>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-line bg-paper p-3 shadow-dock">
+        <p class="mb-2 px-1 text-[10px] font-medium uppercase tracking-wide text-mute">Composer 底栏 · 现网铬</p>
+        <div class="rounded-xl border border-line bg-card px-3 py-2.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="grid size-7 place-items-center rounded-lg border border-line text-[14px] text-mute">+</span>
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-paper px-2 py-1 text-[12px] font-medium">
+              <span class="grid size-4 place-items-center rounded bg-accent text-[8px] font-bold text-white">E</span>
+              Enjoy 本地 · deepseek-chat
+            </span>
+            <span class="rounded-md px-1.5 py-1 text-[11px] text-mute">思考 · 中</span>
+            <span class="relative tip-host is-open inline-flex" tabindex="0">
+              <span class="hidden font-mono text-[11px] font-medium tabular-nums text-mute sm:inline-flex">12.4k tok</span>
+              <span class="tip absolute bottom-[calc(100%+8px)] left-0 z-20 w-72 rounded-xl border border-line bg-card p-3 text-[11px] leading-relaxed shadow-toast">
+                <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">本会话花费</p>
+                <p class="mt-1 text-[13px] font-medium text-ink">已知部分 <span class="font-sans text-[11px] font-normal text-mute">估算</span> $0.60 · 2 次价格未知</p>
+                <p class="mt-2 text-mute">3 次可估已加总；2 次未命中或缺项，不拿 $0 凑进去。</p>
+                <p class="mt-2 text-mute">另有引擎上报 $1.20</p>
+                <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
+              </span>
+            </span>
+            <span class="ml-auto rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white">发送</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-3 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-3 text-[12px] leading-relaxed">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">全都能估</p>
+          <p class="mt-1"><span class="text-[11px] text-mute">估算</span> <span class="font-medium">$0.60</span></p>
+        </div>
+        <div class="rounded-xl border border-accent/30 bg-soft p-3 text-[12px] leading-relaxed">
+          <p class="text-[10px] font-semibold uppercase tracking-wide text-accent">有未知 · 主钉</p>
+          <p class="mt-1 font-medium">已知部分 估算 $0.60 · 2 次价格未知</p>
+          <p class="mt-1 text-[11px] text-mute">本地不计费、外置没上报，都不算「价格未知」。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- D -->
+    <section id="state-d" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold">D · 供应商设置 · 单价（可选）</h2>
+        <p class="mt-1 text-[13px] text-mute">沿现网抽屉：32rem、页签「连接 / 模型 / 参数 / 覆盖」、模型行品牌标 + id + 启用 + 主力 + 上下文 / 最大输出。单价是行内可展开，不是新页签。</p>
+      </div>
+
+      <div class="overflow-hidden rounded-2xl border border-line bg-paper shadow-dock">
+        <div class="flex min-h-[520px]">
+          <nav class="hidden w-36 shrink-0 border-r border-line bg-paper p-3 text-[12px] sm:block">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">设置</p>
+            <ul class="mt-2 space-y-1">
+              <li class="rounded-md px-2 py-1 text-mute">通用</li>
+              <li class="rounded-md bg-soft px-2 py-1 font-medium text-accent">模型供应商</li>
+              <li class="rounded-md px-2 py-1 text-mute">智能体</li>
+            </ul>
+          </nav>
+          <div class="min-w-0 flex-1 bg-[#0b0b0c]/20 p-3">
+            <div class="ml-auto flex h-full max-w-[32rem] flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-2xl">
+              <header class="flex items-start justify-between gap-3 border-b border-line bg-paper/80 px-5 py-4">
+                <div class="flex items-start gap-3">
+                  <span class="grid size-10 place-items-center rounded-2xl border border-line bg-card text-[11px] font-bold text-accent">DS</span>
+                  <div>
+                    <h3 class="text-[15px] font-semibold">编辑 DeepSeek</h3>
+                    <p class="mt-0.5 text-[12px] text-mute">官方 API · 密钥已保存</p>
+                  </div>
+                </div>
+                <span class="text-[12px] text-mute">关闭</span>
+              </header>
+              <div class="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                <div class="grid grid-cols-4 gap-1 rounded-xl bg-paper p-1 text-center text-[11px]">
+                  <span class="rounded-lg px-1 py-1.5 text-mute">连接</span>
+                  <span class="rounded-lg bg-card py-1.5 font-medium shadow-sm">模型</span>
+                  <span class="rounded-lg px-1 py-1.5 text-mute">参数</span>
+                  <span class="rounded-lg px-1 py-1.5 text-mute">覆盖</span>
+                </div>
+
+                <p class="text-[13px] font-medium">供应商模型目录（3）</p>
+
+                <div class="space-y-2">
+                  <div class="rounded-xl border border-accent/40 bg-soft/40 px-2.5 py-2">
+                    <div class="flex items-center gap-2">
+                      <span class="grid size-4 place-items-center rounded bg-accent text-[7px] font-bold text-white">DS</span>
+                      <span class="min-w-0 flex-1 truncate font-mono text-[12px] font-medium">deepseek-chat</span>
+                      <span class="rounded-lg border border-line px-2 py-0.5 text-[10px] text-mute">启用</span>
+                      <span class="text-[10px] font-medium text-accent">主力</span>
+                    </div>
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      <span class="rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute">上下文 128000</span>
+                      <span class="rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute">最大输出 8192</span>
+                    </div>
+                    <details class="price mt-2" open>
+                      <summary class="flex items-center gap-1 text-[12px] font-medium">
+                        <span class="chev inline-block text-[10px] text-mute transition-transform">▸</span>
+                        单价（可选）
+                      </summary>
+                      <p class="mt-1 text-[11px] text-mute">填了就用你的单价，留空用 models.dev 快照</p>
+                      <div class="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                        <label>输入 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px]" placeholder="快照 $3.00" /></label>
+                        <label>输出 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px]" placeholder="快照 $15.00" /></label>
+                        <label>缓存读 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px]" placeholder="快照 $0.30" /></label>
+                        <label>缓存写 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px]" placeholder="快照 $3.75" /></label>
+                        <label class="col-span-2">推理 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px]" placeholder="快照 $15.00" /></label>
+                      </div>
+                    </details>
+                  </div>
+
+                  <div class="rounded-xl border border-line px-2.5 py-2">
+                    <div class="flex items-center gap-2">
+                      <span class="grid size-4 place-items-center rounded bg-paper text-[8px] text-mute">/</span>
+                      <span class="min-w-0 flex-1 truncate font-mono text-[12px] font-medium">acme-router/custom-7b</span>
+                      <span class="rounded-lg border border-line px-2 py-0.5 text-[10px] text-mute">启用</span>
+                    </div>
+                    <details class="price mt-2" open>
+                      <summary class="flex items-center gap-1 text-[12px] font-medium">
+                        <span class="chev inline-block text-[10px] text-mute transition-transform">▸</span>
+                        单价（可选）
+                      </summary>
+                      <p class="mt-1 text-[11px] text-mute">自定义端点默认全部未知。填了才估。</p>
+                      <div class="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+                        <label>输入 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute" placeholder="未知" /></label>
+                        <label>输出 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute" placeholder="未知" /></label>
+                        <label>缓存读 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute" placeholder="未知" /></label>
+                        <label>缓存写 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute" placeholder="未知" /></label>
+                        <label class="col-span-2">推理 / 百万 USD<input class="mt-1 w-full rounded-md border border-line bg-card px-2 py-1 font-mono text-[11px] text-mute" placeholder="未知" /></label>
+                      </div>
+                    </details>
+                  </div>
+
+                  <div class="rounded-xl border border-line px-2.5 py-2">
+                    <div class="flex items-center gap-2">
+                      <span class="grid size-4 place-items-center rounded bg-paper text-[8px] text-mute">OL</span>
+                      <span class="min-w-0 flex-1 truncate font-mono text-[12px] font-medium">llama3.1</span>
+                      <span class="rounded-lg border border-line px-2 py-0.5 text-[10px] text-mute">启用</span>
+                    </div>
+                    <p class="mt-2 rounded-lg bg-paper px-2.5 py-1.5 text-[12px] text-mute">本地模型不计费 · 不显示单价栏</p>
+                  </div>
+                </div>
+              </div>
+              <footer class="flex items-center justify-between border-t border-line px-5 py-3">
+                <span class="text-[11px] text-mute">API 文档</span>
+                <div class="flex gap-2">
+                  <button type="button" class="rounded-lg px-3 py-1.5 text-[12px] text-mute">取消</button>
+                  <button type="button" class="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-white">保存并启用</button>
+                </div>
+              </footer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- E -->
+    <section id="state-e" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold">E · trace estimatedCost</h2>
+        <p class="mt-1 text-[13px] text-mute">沿现网全景标头六格，多一格花费。未知画「—」，禁止再写 0。金额旁「估算」，悬停看来源。</p>
+      </div>
+
+      <div class="space-y-3 rounded-xl border border-line bg-card p-4 shadow-sm">
+        <div class="flex flex-wrap items-center gap-2 border-b border-line pb-3">
+          <span class="rounded-lg border border-line px-2 py-1 text-[11px]">← 返回日志列表</span>
+          <span class="font-mono text-[14px] font-semibold">run.agent</span>
+          <span class="rounded-md bg-paper px-2 py-0.5 font-mono text-[11px]">deepseek-chat</span>
+          <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-bold uppercase text-ok">success</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 font-mono text-[11px] sm:grid-cols-4 lg:grid-cols-7">
+          <div><p class="text-[10px] uppercase text-mute">Duration</p><p class="text-[13px] font-semibold">2.41s</p></div>
+          <div><p class="text-[10px] uppercase text-mute">TTFO</p><p class="text-[13px] font-semibold text-warn">180ms</p></div>
+          <div><p class="text-[10px] uppercase text-mute">Tokens</p><p class="text-[13px] font-semibold">80k → 12k</p></div>
+          <div class="relative tip-host" tabindex="0">
+            <p class="text-[10px] uppercase text-mute">花费</p>
+            <p class="text-[13px] font-semibold"><span class="mr-1 font-sans text-[10px] font-normal text-mute">估算</span>$0.42</p>
+            <div class="tip absolute left-0 top-full z-20 mt-1 w-64 rounded-xl border border-line bg-card p-3 font-sans text-[11px] leading-relaxed shadow-toast">
+              <p class="font-medium">models.dev 快照 · 2026-10-01</p>
+              <p class="mt-2 text-[10px] text-mute">这是按单价算的估算，不是账单</p>
+            </div>
+          </div>
+          <div><p class="text-[10px] uppercase text-mute">Model</p><p class="text-[13px] font-semibold">deepseek-chat</p></div>
+          <div><p class="text-[10px] uppercase text-mute">Spans</p><p class="text-[13px] font-semibold">4 阶段</p></div>
+          <div><p class="text-[10px] uppercase text-mute">Trace ID</p><p class="truncate text-[12px] text-mute">run_4f2a…</p></div>
+        </div>
+      </div>
+
+      <div class="mt-3 rounded-xl border border-dashed border-line bg-paper px-4 py-3 text-[12px]">
+        <p class="font-medium">未知时</p>
+        <p class="mt-1 font-mono text-[13px]"><span class="font-sans text-[11px] text-mute">估算</span> — <span class="ml-2 font-sans text-mute">不是 0，也不是 $0.00</span></p>
+      </div>
+    </section>
+
+    <!-- F -->
+    <section id="state-f" class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-6">
+      <h2 class="text-base font-semibold text-danger">F · 反例划掉</h2>
+      <p class="mt-1 text-[13px] text-mute">这些面不要画、不要做、不要写进文案。</p>
+      <ul class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
+        <li class="strike">未知显示 $0.00</li>
+        <li class="strike">金额旁边没有「估算」字样</li>
+        <li class="strike">「本月账单」式标题</li>
+        <li class="strike">把 Claude Code / Codex 订阅折算成美元</li>
+        <li class="strike">按模型家族猜价（deepseek-* 一律套官方价）</li>
+        <li class="strike">预算条 / 超额提醒 / 月度上限 / 汇率换算</li>
+      </ul>
+    </section>
+
+    <!-- handoff -->
+    <section class="rounded-2xl border border-line bg-card p-6 shadow-sm">
+      <h2 class="text-base font-semibold">给 kai / mike 的交接</h2>
+      <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">kai · 快照 / 匹配 / 计算 / 档案 / IPC</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>models.dev 离线快照进 <code class="text-ink">packages/providers</code>，带版本和日期；五项每百万 USD</li>
+            <li>档案模型可选手填单价，覆盖快照；自定义端点默认未知</li>
+            <li>provider + modelId 精确命中；别名只认快照写明的</li>
+            <li>分项计价；有 token 无单价 → 整次未知。主路径不联网</li>
+            <li><code class="text-ink">estimatedCost</code> 要能表示未知（不要再写死 0）；缓存/推理分项按需补进 usage / metric</li>
+          </ul>
+        </div>
+        <div class="rounded-xl border border-line bg-paper p-4 text-[13px] leading-relaxed">
+          <p class="font-semibold">mike · 用量行 / meter / trace / 设置栏</p>
+          <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
+            <li>rail 要真的传入本轮 token；花费跟在「本轮 {n} tokens」旁，估算是 mute 小字</li>
+            <li>meter 可见仍是 tok；悬停加花费。有未知：已知部分 · N 次价格未知</li>
+            <li>trace 标头画出花费；未知「—」，不再恒 0</li>
+            <li>模型行展开「单价（可选）」五格；占位「快照 $x」或「未知」；本地只留一句不计费</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] text-mute">I3 / Registry 仍停。落地以 <code>design/specs/*</code> 为准，本文不宣称应用已 1:1。页上数字均为示例数字。</p>
+    </section>
+  </main>
+
+  <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
+    COST-P3 visual source · Luna · base <code>cd48767d</code> · SoT <code>design/references/cost-p3-estimated-cost.md</code> · <code>design/previews/cost-p3-estimated-cost.html</code> · I3 仍停 · 示例数字
+  </footer>
+</body>
+</html>
