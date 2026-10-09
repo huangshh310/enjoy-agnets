@@ -26,8 +26,9 @@ import {
 import appIconIco from "../../resources/icon.ico?asset";
 import appIconPng from "../../resources/icon.png?asset";
 
-if (process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA) {
-  app.setPath("userData", process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA);
+const isolatedUserData = process.env.ENJOY_DEV_USERDATA || process.env.ENJOY_E2E_USERDATA
+if (isolatedUserData) {
+  app.setPath("userData", isolatedUserData);
 }
 if (process.env.ENJOY_E2E_STUB === "1") {
   app.disableHardwareAcceleration();
