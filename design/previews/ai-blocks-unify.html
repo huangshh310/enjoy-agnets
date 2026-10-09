@@ -60,7 +60,7 @@ tailwind.config = {
       <p class="font-semibold text-ink">锁 · 8 块重做 · 输入盒原样</p>
       <ul class="mt-1 list-disc space-y-1 pl-4">
         <li>重做：任务 / 产物卡 / 对话线程 / 代码块 / 差异审查 / 流式 Markdown / 思考 / 工具行</li>
-        <li>Composer 铬条 1:1 现网：圆角 22、探索\|执行顶栏、底栏引擎芯片 + 思考小档 + 发送。禁止改输入盒。</li>
+        <li>Composer 铬条 1:1 现网：圆角 22、探索\|执行顶栏；底栏按 <code>composer-footer.tsx</code>：<strong class="text-ink">Enjoy 本地 · 已连模型</strong>、思考档「默认」、CU 就绪「桌面」、审批盾；盒下空态 pill（审查改动 / 编写单测 / 优化重构）。禁止编 Grok / 模型号。禁止改输入盒。</li>
         <li>C 端：无人话表面摊 <code>desktop_act</code> / bundle id / TTL / HMAC；假进度%、假「已完成 100%」一律划掉</li>
         <li>HextaUI Pro 块<strong class="text-ink">仅参考，不可取用源码</strong>（Pro License）。抄交互再 restyle。</li>
       </ul>
@@ -155,7 +155,7 @@ tailwind.config = {
             <span class="flex size-8 items-center justify-center rounded-lg bg-soft text-[12px] text-accent">▣</span>
             <span class="min-w-0 flex-1">
               <span class="block text-[12px] font-medium">登录页预览</span>
-              <span class="block text-[10px] text-mute">网页 · 第 2 版 · 在右侧打开</span>
+              <span class="block text-[10px] text-mute">网页 · 在右侧打开</span>
             </span>
             <span class="text-[10px] text-accent">打开</span>
           </button>
@@ -177,29 +177,42 @@ tailwind.config = {
             </ul>
           </div>
 
-          <!-- CURRENT COMPOSER — do not restyle -->
-          <div class="rounded-[22px] border border-line bg-card p-2 shadow-sm" data-composer="current">
-            <div class="flex items-center px-1 pt-0.5">
-              <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
-                <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
-                <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+          <!-- CURRENT COMPOSER — source-faithful; do not restyle -->
+          <div class="space-y-2" data-composer="current">
+            <div class="rounded-[22px] border border-line bg-card pt-2 shadow-sm">
+              <div class="flex items-center px-3 pt-1 pb-0.5">
+                <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                  <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+                  <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+                </div>
+              </div>
+              <div class="min-h-[52px] px-3 py-2 text-[13px] text-mute">对照登录页补无障碍…</div>
+              <div class="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
+                <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <span class="flex size-6 items-center justify-center rounded-full bg-paper text-[12px] ring-1 ring-line">+</span>
+                  <span class="inline-flex h-6 max-w-[16rem] items-center gap-1 overflow-hidden rounded-full border border-line bg-accent/10 px-2 text-[10px] ring-1 ring-accent/20">
+                    <span class="flex size-3.5 shrink-0 items-center justify-center rounded-[3px] bg-ink text-[7px] font-bold text-white">E</span>
+                    <span class="shrink-0 text-mute">Enjoy 本地</span>
+                    <span class="text-mute">·</span>
+                    <span class="min-w-0 truncate font-semibold">已连模型</span>
+                    <span class="text-mute">▾</span>
+                  </span>
+                  <span class="inline-flex h-6 items-center gap-1 rounded-full px-2 text-[10px] font-semibold text-accent ring-1 ring-line/80">✦ 默认</span>
+                  <span class="inline-flex h-6 items-center rounded-full bg-accent/10 px-2 text-[10px] font-semibold text-accent ring-1 ring-accent/25">桌面</span>
+                </div>
+                <div class="ml-auto flex items-center gap-1">
+                  <span class="inline-flex h-7 items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2 text-[10px] font-medium text-accent">🛡 默认</span>
+                  <span class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</span>
+                </div>
               </div>
             </div>
-            <div class="mt-1.5 min-h-[52px] rounded-xl px-3 py-2 text-[13px] text-mute">对照登录页补无障碍…</div>
-            <div class="mt-1 flex items-center justify-between px-1 pb-1">
-              <div class="flex items-center gap-1.5">
-                <span class="flex size-6 items-center justify-center rounded-full bg-paper text-[12px] ring-1 ring-line">+</span>
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-soft px-2 py-0.5 text-[10px] ring-1 ring-accent/30">
-                  <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-ink text-[8px] font-bold text-white">G</span>
-                  <span class="text-mute">Grok</span><span class="text-mute">·</span><span class="font-semibold">4.6</span>
-                </span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-paper px-2 py-0.5 text-[10px] ring-1 ring-line">✦ 中</span>
-                <span class="flex size-6 items-center justify-center rounded-full bg-paper text-[11px] ring-1 ring-line">🛡</span>
-              </div>
-              <span class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</span>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <span class="inline-flex items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">审查改动</span>
+              <span class="inline-flex items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">编写单测</span>
+              <span class="inline-flex items-center gap-2 rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">优化重构</span>
             </div>
           </div>
-          <p class="text-center text-[10px] text-mute">↑ 现网 Composer 忠实还原（slim 锁）。8 块必须贴得上，不许另起一套铬。</p>
+          <p class="text-center text-[10px] text-mute">↑ 现网 Composer 按源码还原：引擎胶囊 <code>Enjoy 本地 · 已连模型</code>（不编模型名）、思考/审批「默认」、CU 就绪「桌面」、盒下空态 pill。8 块必须贴得上。</p>
         </div>
       </div>
     </section>
@@ -235,18 +248,38 @@ tailwind.config = {
               <button type="button" class="rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-semibold text-white">留下</button>
             </div>
           </div>
-          <div class="rounded-[22px] border border-night-line bg-night-card p-2">
-            <div class="inline-flex rounded-full bg-night-paper p-0.5 ring-1 ring-night-line">
-              <span class="rounded-full px-2.5 py-0.5 text-[11px] text-night-mute">探索</span>
-              <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+          <div class="space-y-2" data-composer="current">
+            <div class="rounded-[22px] border border-night-line bg-night-card pt-2">
+              <div class="flex items-center px-3 pt-1 pb-0.5">
+                <div class="inline-flex rounded-full bg-night-paper p-0.5 ring-1 ring-night-line">
+                  <span class="rounded-full px-2.5 py-0.5 text-[11px] text-night-mute">探索</span>
+                  <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+                </div>
+              </div>
+              <div class="min-h-[48px] px-3 py-2 text-[13px] text-night-mute">按文件留下或丢掉…</div>
+              <div class="flex min-w-0 flex-wrap items-center justify-between gap-x-1 gap-y-1.5 px-3 pt-1 pb-2.5">
+                <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <span class="flex size-6 items-center justify-center rounded-full bg-night-paper text-[12px] ring-1 ring-night-line">+</span>
+                  <span class="inline-flex h-6 max-w-[16rem] items-center gap-1 overflow-hidden rounded-full border border-night-line bg-accent/10 px-2 text-[10px] ring-1 ring-accent/20">
+                    <span class="flex size-3.5 shrink-0 items-center justify-center rounded-[3px] bg-night-ink text-[7px] font-bold text-night-paper">E</span>
+                    <span class="shrink-0 text-night-mute">Enjoy 本地</span>
+                    <span class="text-night-mute">·</span>
+                    <span class="min-w-0 truncate font-semibold">已连模型</span>
+                    <span class="text-night-mute">▾</span>
+                  </span>
+                  <span class="inline-flex h-6 items-center gap-1 rounded-full px-2 text-[10px] font-semibold text-accent ring-1 ring-night-line">✦ 默认</span>
+                  <span class="inline-flex h-6 items-center rounded-full bg-accent/10 px-2 text-[10px] font-semibold text-accent ring-1 ring-accent/25">桌面</span>
+                </div>
+                <div class="ml-auto flex items-center gap-1">
+                  <span class="inline-flex h-7 items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2 text-[10px] font-medium text-accent">🛡 默认</span>
+                  <span class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</span>
+                </div>
+              </div>
             </div>
-            <div class="mt-1.5 min-h-[48px] px-3 py-2 text-[13px] text-night-mute">按文件留下或丢掉…</div>
-            <div class="flex items-center justify-between px-1 pb-1">
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] ring-1 ring-accent/30">
-                <span class="inline-flex size-[14px] items-center justify-center rounded-[4px] bg-night-ink text-[8px] font-bold text-night-paper">G</span>
-                Grok · 4.6
-              </span>
-              <span class="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">↑</span>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              <span class="inline-flex items-center gap-2 rounded-full bg-night-paper px-3 py-1.5 text-[12px] text-night-mute">审查改动</span>
+              <span class="inline-flex items-center gap-2 rounded-full bg-night-paper px-3 py-1.5 text-[12px] text-night-mute">编写单测</span>
+              <span class="inline-flex items-center gap-2 rounded-full bg-night-paper px-3 py-1.5 text-[12px] text-night-mute">优化重构</span>
             </div>
           </div>
         </div>
@@ -289,15 +322,30 @@ tailwind.config = {
       <!-- Artifact -->
       <article class="space-y-2">
         <h3 class="text-[13px] font-semibold">2 · 产物（Artifact）</h3>
-        <p class="text-[11px] text-mute">对话里只留一张卡；预览进右侧审查栏，不在气泡里嵌整页。流式写代码，写完才切预览。版本在展开后。</p>
+        <p class="text-[11px] text-mute">对话里只留一张卡；预览进右侧审查栏，不在气泡里嵌整页。流式写代码，写完才切预览。<strong class="text-ink">默认卡不写版本号</strong>——「第 N 版」暗示时间线，还是开放问题。</p>
         <div class="grid gap-3 md:grid-cols-2">
+          <div class="rounded-xl border border-line p-3">
+            <p class="mb-2 text-[10px] font-semibold text-mute">浅 · 默认（无版本）</p>
+            <div class="flex items-center gap-3 rounded-xl border border-line bg-card px-3 py-2">
+              <span class="flex size-8 items-center justify-center rounded-lg bg-soft text-accent">▣</span>
+              <div class="min-w-0"><p class="text-[12px] font-medium">价格页</p><p class="text-[10px] text-mute">正在写入 · 还不能预览</p></div>
+            </div>
+          </div>
+          <div class="night rounded-xl border border-night-line p-3">
+            <p class="mb-2 text-[10px] font-semibold text-night-mute">深 · 默认（无版本）</p>
+            <div class="flex items-center gap-3 rounded-xl border border-night-line bg-night-card px-3 py-2">
+              <span class="flex size-8 items-center justify-center rounded-lg bg-accent/20 text-accent">▣</span>
+              <div class="min-w-0"><p class="text-[12px] font-medium">价格页</p><p class="text-[10px] text-night-mute">网页 · 在右侧打开</p></div>
+              <span class="ml-auto text-[10px] text-accent">打开</span>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl border border-dashed border-line bg-paper p-3">
+          <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-warn">待定变体 · 不进默认</p>
+          <p class="mb-2 text-[11px] text-mute">版本时间线仍是开放问题。若 jojo 确认要版本，才用这张副行；默认卡禁止「第 2 版」。</p>
           <div class="flex items-center gap-3 rounded-xl border border-line bg-card px-3 py-2">
             <span class="flex size-8 items-center justify-center rounded-lg bg-soft text-accent">▣</span>
-            <div class="min-w-0"><p class="text-[12px] font-medium">价格页</p><p class="text-[10px] text-mute">正在写入 · 还不能预览</p></div>
-          </div>
-          <div class="night flex items-center gap-3 rounded-xl border border-night-line bg-night-card px-3 py-2">
-            <span class="flex size-8 items-center justify-center rounded-lg bg-accent/20 text-accent">▣</span>
-            <div class="min-w-0"><p class="text-[12px] font-medium">价格页</p><p class="text-[10px] text-night-mute">第 2 版 · 打开在右侧</p></div>
+            <div class="min-w-0"><p class="text-[12px] font-medium">价格页</p><p class="text-[10px] text-mute">网页 · 第 2 版 · 在右侧打开</p></div>
             <span class="ml-auto text-[10px] text-accent">打开</span>
           </div>
         </div>
@@ -397,8 +445,8 @@ tailwind.config = {
 
     <!-- Current faithful -->
     <section class="space-y-2" id="current-faithful">
-      <h2 class="text-[14px] font-semibold">C · 现状忠实还原 <span class="text-[11px] font-normal text-warn">未能实拍应用窗口</span></h2>
-      <p class="text-[11px] text-mute">本环境无 <code>node_modules</code>、无 <code>dev:auto-p2</code> 脚本，Electron stub 未能拉起。下列按 <code>assistant-turn</code> / <code>ThinkingTrace</code> / <code>TaskListDock</code> / <code>FileDiff</code> / <code>MarkdownFence</code> / slim Composer <strong class="text-ink">对照源码还原</strong>，不作美化。</p>
+      <h2 class="text-[14px] font-semibold">C · 现状忠实还原 <span class="text-[11px] font-normal text-warn">按源码还原，待 Luna 实拍替换</span></h2>
+      <p class="text-[11px] text-mute">本环境无 <code>node_modules</code>、无 <code>dev:auto-p2</code> 脚本，Electron stub 未能拉起。下列按 <code>assistant-turn</code> / <code>ThinkingTrace</code> / <code>TaskListDock</code> / <code>FileDiff</code> / <code>MarkdownFence</code> / slim Composer <strong class="text-ink">对照源码还原</strong>，不作美化。图注统一写「按源码还原，待 Luna 实拍替换」。</p>
       <div class="grid gap-3 md:grid-cols-2">
         <div class="rounded-xl border border-dashed border-line p-3">
           <p class="text-[10px] font-semibold text-mute">现状 · 思考头</p>
@@ -427,6 +475,37 @@ tailwind.config = {
         <div class="rounded-xl border border-dashed border-line p-3">
           <p class="text-[10px] font-semibold text-mute">现状 · 工具 / 差异</p>
           <p class="mt-2 text-[11px]">ACP 弱名曾五行 <code class="text-danger">$ command</code>。现已按 kind 拆，但主行仍偏路径/命令，不像句子。差异在思考外 Tab，无每文件留下/丢掉。</p>
+        </div>
+        <div class="rounded-xl border border-dashed border-line p-3 md:col-span-2">
+          <p class="text-[10px] font-semibold text-mute">现状 · Composer（按源码还原，待 Luna 实拍替换）</p>
+          <div class="mt-2 space-y-2">
+            <div class="rounded-[22px] border border-line bg-card pt-2">
+              <div class="flex items-center px-3 pt-1 pb-0.5">
+                <div class="inline-flex rounded-full bg-paper p-0.5 ring-1 ring-line">
+                  <span class="rounded-full px-2.5 py-0.5 text-[11px] text-mute">探索</span>
+                  <span class="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-white">执行</span>
+                </div>
+              </div>
+              <div class="min-h-[44px] px-3 py-2 text-[13px] text-mute">对照登录页补无障碍…</div>
+              <div class="flex min-w-0 flex-wrap items-center justify-between gap-1.5 px-3 pt-1 pb-2.5">
+                <div class="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <span class="flex size-6 items-center justify-center rounded-full bg-paper text-[12px] ring-1 ring-line">+</span>
+                  <span class="inline-flex h-6 items-center gap-1 rounded-full border border-line bg-accent/10 px-2 text-[10px] ring-1 ring-accent/20">
+                    <span class="flex size-3.5 items-center justify-center rounded-[3px] bg-ink text-[7px] font-bold text-white">E</span>
+                    <span class="text-mute">Enjoy 本地</span><span class="text-mute">·</span><span class="font-semibold">已连模型</span><span class="text-mute">▾</span>
+                  </span>
+                  <span class="inline-flex h-6 items-center rounded-full px-2 text-[10px] font-semibold text-accent ring-1 ring-line/80">✦ 默认</span>
+                  <span class="inline-flex h-6 items-center rounded-full bg-accent/10 px-2 text-[10px] font-semibold text-accent ring-1 ring-accent/25">桌面</span>
+                </div>
+                <span class="inline-flex h-7 items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2 text-[10px] font-medium text-accent">🛡 默认</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">审查改动</span>
+              <span class="rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">编写单测</span>
+              <span class="rounded-full bg-paper px-3 py-1.5 text-[12px] text-mute">优化重构</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

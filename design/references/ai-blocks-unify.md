@@ -57,9 +57,9 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 | Markdown | `thread/markdown-response.tsx` → `MessageResponse` = **Streamdown** | 已接 copy；无独立 pacing 光标 |
 | 任务 | `composer/composer-todo-dock.tsx` + `packages/ui/.../task-list-dock.tsx` | T3 坞、n/m、圆点；停跑应「已停止」；无 failed/cancelled 行 |
 | 产物 | 无独立 Artifact 面板 | 生图/视频走 Image Generation；预览走右栏 Browser / `openPreview`，不是版本化产物 |
-| Composer | `ai-chat-composer.tsx` **本锁不改** | 圆角 22、`BorderBeam` ocean、顶探索\|执行、底引擎芯片+思考小档+发送 |
+| Composer | `ai-chat-composer.tsx` **本锁不改** | 圆角 22、`BorderBeam` ocean、顶探索\|执行；底栏 `AgentPicker`「Enjoy 本地 · {模型}」、思考档「默认」、CU 就绪「桌面」、审批盾「默认」；盒下空态 pill 审查改动 / 编写单测 / 优化重构。预览不编模型名，写「已连模型」。 |
 
-**未能实拍**：环境无 `node_modules`、仓库无 `dev:auto-p2`。预览 C 节按源码还原，标「未能实拍应用窗口」。
+**按源码还原，待 Luna 实拍替换**：环境无 `node_modules`、仓库无 `dev:auto-p2`。预览 C 节与对比表现状列按源码还原，不冒充应用窗口实拍。
 
 ## 视觉语言（Enjoy，不抄 HextaUI 皮）
 
@@ -87,7 +87,8 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 ### 产物
 - **在哪**：助手轮一张卡；打开 = 右栏已有 Browser / Files，不新造第三栏。
 - **态**：正在写入（不给预览）/ 可打开 / 预览失败（「修一下」回对话）。版本点开才见。
-- **文案**：`{人话标题}` · `网页 · 第 2 版`。禁止 `create_artifact`。
+- **文案（默认）**：`{人话标题}` · `网页` · `在右侧打开`。禁止 `create_artifact`。
+- **待定变体**：`网页 · 第 2 版` 只画在标明「待定变体」的稿里。版本时间线仍是开放问题，默认卡不写「第 N 版」。
 
 ### 对话线程
 - 用户右、accent 泡；助手左、无灰底大泡。
@@ -136,18 +137,18 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 
 ## 现状 vs 新版
 
-| 块 | 现状 | 新版 | 图 |
+> 现状列与下图均为 **按源码还原，待 Luna 实拍替换**。Luna 会从真机跑补应用窗口图。Hexta 参考图是站点 iframe 实拍，不是 Enjoy 窗口。
+
+| 块 | 现状（按源码还原，待 Luna 实拍替换） | 新版 | 图 |
 |---|---|---|---|
 | 任务 | T3 坞已有；缺失败/停跑诚实 | 补「已停止」「继续」；仍贴 Composer | 预览 B1；Hexta 参考 `assets/ai-blocks/ref-hextaui-agent-todos-light.webp` |
-| 产物 | 无独立卡，预览散落右栏 | 一张卡 → 右栏；写入中不给假预览 | `ref-hextaui-artifact-light.webp` |
+| 产物 | 无独立卡，预览散落右栏 | 一张卡 → 右栏；写入中不给假预览；默认无版本号 | `ref-hextaui-artifact-light.webp` |
 | 线程 | Message 已有，滚动自管 | 皮统一；**不换 I3** | `ref-hextaui-chat-thread-light.webp` |
 | 代码 | 浅卡附件 + Streamdown 围栏两套皮 | 统一墨底代码卡 + 换行 + 复制 | `ref-hextaui-code-block-light.webp` |
 | 差异 | 自研 FileDiff，无每文件决 | Tab + 留下/丢掉 | `ref-hextaui-diff-review-light.webp` |
 | Markdown | Streamdown，无光标 | 保留库，加流式光标 | `ref-hextaui-markdown-light.webp` / `streaming-*.webp` |
 | 思考 | Drive 已对；折头易挤 | 单行 +「想了 n 秒」 | `ref-hextaui-thinking-light.webp` |
 | 工具 | kind 已拆，主行不像句子 | 句子化 + 四态 | `ref-hextaui-tool-calls-light.webp` |
-
-应用窗口：**未能实拍**。预览 C 节按源码还原。
 
 新版浅：
 
@@ -157,9 +158,9 @@ HextaUI 可学：**句子化主行、只读合并、流式完自动折、状态�
 
 <img alt="同屏和谐深" src="../previews/assets/ai-blocks/preview-harmony-dark.webp" />
 
-现状还原（未能实拍窗口）：
+现状（按源码还原，待 Luna 实拍替换）：
 
-<img alt="现状按代码还原" src="../previews/assets/ai-blocks/preview-current-faithful.webp" />
+<img alt="现状按源码还原，待 Luna 实拍替换" src="../previews/assets/ai-blocks/preview-current-faithful.webp" />
 
 ## 实现路径（mike 填）
 
