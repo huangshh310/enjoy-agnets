@@ -14,7 +14,8 @@ const {
   applyActiveRunUsage,
   consumeRun,
   hydrateActiveRunUsage,
-  parseRunUsage
+  parseRunUsage,
+  persistActiveRun
 } = await import("./run-usage-behavior.load.ts")
 
 function hold(runId: string, runtimeId = "enjoy-local") {
@@ -49,6 +50,25 @@ function seedRun(runId: string, usageJson?: string) {
     usageJson: usageJson ?? null
   })
 }
+
+test("收工写下真实 endedAt，并带上 runtimeId", () => {
+  const runId = `run_ended_${Date.now()}`
+  seedRun(runId)
+  try {
+    hold(runId, "claude")
+    const run = getActiveRun(runId)
+    assert.ok(run)
+    applyActiveRunUsage(runId, run, { inputTokens: 12, reportedCostUsd: 0.2 })
+    persistActiveRun(run, runId, "completed")
+    const stored = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
+    assert.equal(typeof stored?.endedAt, "number")
+    assert.ok((stored?.endedAt ?? 0) > 0)
+    assert.equal(stored?.runtimeId, "claude")
+    assert.equal(run.endedAt, stored?.endedAt)
+  } finally {
+    deleteActiveRun(runId)
+  }
+})
 
 test("第 1 泵写库后 restore 再跑第 2 泵，usage_json 为两泵之和", () => {
   const runId = `run_hydrate_${Date.now()}`
@@ -104,6 +124,28 @@ test("多次 ACP usage_update 之后 token 等于最后一次", () => {
     const stored = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
     assert.equal(stored?.inputTokens, 53000)
     assert.equal(stored?.reportedCostUsd, 0.9)
+    assert.equal(stored?.runtimeId, "claude")
+  } finally {
+    deleteActiveRun(runId)
+  }
+})
+
+test("finish-step 记下单步 input，合计超档仍按单步判断", async () => {
+  const runId = `run_step_tier_${Date.now()}`
+  seedRun(runId)
+  try {
+    hold(runId)
+    const run = getActiveRun(runId)
+    assert.ok(run)
+    await consumeRun(runId, run, (async function* () {
+      yield { type: "finish-step", id: "s1", usage: { inputTokens: 30_000, outputTokens: 1 } }
+      yield { type: "finish-step", id: "s2", usage: { inputTokens: 29_000, outputTokens: 1 } }
+      yield { type: "finish", usage: { inputTokens: 59_000, outputTokens: 2 } }
+    })())
+    assert.equal(run.maxStepInputTokens, 30_000)
+    assert.equal(run.inputTokens, 59_000)
+    const stored = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
+    assert.equal(stored?.maxStepInputTokens, 30_000)
   } finally {
     deleteActiveRun(runId)
   }

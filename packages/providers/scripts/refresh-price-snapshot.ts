@@ -7,7 +7,8 @@
  *
  * 规则：跳过 gateway / vercel / 本地；别名只留一对一且价目相同的 dated id；
  * models.dev id 经 `models-dev-kind.ts` 判断是否收录：只收单一官方按量目录
- *（togetherai→together）。有国内/国际或套餐歧义的映射不收录。
+ *（togetherai→together、siliconflow-cn→siliconflow）。有国内/国际或套餐歧义的不收录。
+ * 目录带 api 时必须和 preset 同站，否则撤掉。
  * 记下 cost.tiers 最低档上下文阈值。响应 ETag 与正文 SHA-256 写入快照。
  */
 import { createHash } from "node:crypto"
@@ -16,7 +17,8 @@ import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { PROVIDER_KINDS } from "../src/presets/kinds.ts"
 import { datedIdAliases, uniqueExistingAliases } from "../src/pricing/alias-policy.ts"
-import { kindFromModelsDevProvider } from "../src/pricing/models-dev-kind.ts"
+import { catalogApiMatchesPreset } from "../src/pricing/catalog-site.ts"
+import { kindFromModelsDevProvider, uniqueCatalogForKind } from "../src/pricing/models-dev-kind.ts"
 import { kindAllowsSnapshot } from "../src/pricing/official-endpoint.ts"
 import type { SnapshotModelRate } from "../src/pricing/types.ts"
 
@@ -49,12 +51,12 @@ const body = await response.text()
 const etag = response.headers.get("etag")?.replaceAll('"', "") ?? undefined
 const sourceSha256 = createHash("sha256").update(body).digest("hex")
 assertExpectedSha(sourceSha256, expectSha)
-const raw = JSON.parse(body) as Record<string, { models?: Record<string, DevModel> }>
+const raw = JSON.parse(body) as Record<string, { api?: string; models?: Record<string, DevModel> }>
 
 const models: SnapshotModelRate[] = []
 const seen = new Set<string>()
 for (const [provider, pack] of Object.entries(raw)) {
-  if (!includeProvider(provider)) continue
+  if (!includeProvider(provider, pack)) continue
   for (const [modelId, model] of Object.entries(pack.models ?? {})) {
     const rate = toRate(provider, modelId, model)
     if (!rate) continue
@@ -95,10 +97,14 @@ export function assertExpectedSha(actual: string, expected?: string): void {
   }
 }
 
-function includeProvider(modelsDevId: string): boolean {
+function includeProvider(modelsDevId: string, pack: { api?: string }): boolean {
   if (modelsDevId.includes("gateway")) return false
-  const kind = kindFromModelsDevProvider(modelsDevId) ?? (allowed.has(modelsDevId) ? modelsDevId : undefined)
-  return Boolean(kind && allowed.has(kind) && kindAllowsSnapshot(kind))
+  const mapped = kindFromModelsDevProvider(modelsDevId)
+  const kind = mapped ?? (allowed.has(modelsDevId) ? modelsDevId : undefined)
+  if (!kind || !allowed.has(kind) || !kindAllowsSnapshot(kind)) return false
+  if (!mapped && uniqueCatalogForKind(kind) !== modelsDevId) return false
+  if (!catalogApiMatchesPreset(kind, pack.api)) return false
+  return true
 }
 
 function toRate(provider: string, modelId: string, model: DevModel): SnapshotModelRate | undefined {

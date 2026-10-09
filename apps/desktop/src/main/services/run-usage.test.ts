@@ -66,6 +66,14 @@ test("只有 output、没有 input 的泵标为不完整", () => {
   assert.equal(run.outputTokens, 12)
 })
 
+test("跨泵记下单步 input 最大值，不把合计当成单步", () => {
+  const run: UsageAccumulator = {}
+  accumulateRunUsage(run, { inputTokens: 30_000, outputTokens: 2, maxStepInputTokens: 30_000 })
+  accumulateRunUsage(run, { inputTokens: 30_000, outputTokens: 2, maxStepInputTokens: 28_000 })
+  assert.equal(run.inputTokens, 60_000)
+  assert.equal(run.maxStepInputTokens, 30_000)
+})
+
 test("其中一轮缺用量时为 unknown", () => {
   const run: UsageAccumulator = {}
   accumulateRunUsage(run, { inputTokens: 100, outputTokens: 10 })

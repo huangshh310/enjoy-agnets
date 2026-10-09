@@ -6,7 +6,7 @@ import type { StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { createId } from "./ids"
 import { persistFromEvent, type RunTranscript } from "./persist-session"
 import { rememberApproval } from "./approval-hmac"
-import { classifyError } from "@enjoy-agents/agent-core/runtime-errors"
+import { classifyError } from "@enjoy-agents/agent-core"
 import { shouldCheckpointPersist } from "./agent-run-flush"
 import { mapStreamPart, withToolId } from "./stream-parts"
 
@@ -33,6 +33,7 @@ export async function consumeFullStream(input: {
     cacheWriteTokens?: number
     reasoningTokens?: number
     reportedCostUsd?: number
+    maxStepInputTokens?: number
   }) => void
   /** 流式过程中刷同一条助手消息，避免硬杀后只剩用户气泡。 */
   onCheckpoint?: () => void
@@ -49,6 +50,9 @@ export async function consumeFullStream(input: {
     persistFromEvent(input.tools, event, input.transcript)
     lastCheckpointAt = emitCheckpoint(event.type, lastCheckpointAt, input.onCheckpoint)
     if (event.type === "text.delta") input.onFirstToken?.()
+    if (event.type === "step.end" && typeof event.inputTokens === "number") {
+      input.onUsage?.({ maxStepInputTokens: event.inputTokens })
+    }
     if (event.type === "usage.updated") {
       input.onUsage?.({
         inputTokens: event.inputTokens,

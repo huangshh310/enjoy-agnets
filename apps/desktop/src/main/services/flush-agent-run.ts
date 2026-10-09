@@ -8,7 +8,10 @@ import { flushPayloadFromRun } from "./agent-run-flush"
 import { getDatabase } from "./database"
 import { persistRunningCheckpoint } from "./persist-running-checkpoint"
 import { persistWaitingRun } from "./persist-waiting-run"
+import { persistRunUsageFromActive } from "./run-usage"
 import { listActiveRuns, type ActiveRun } from "./agent-run-state"
+
+const FINISHED = new Set(["completed", "failed", "cancelled"])
 
 export type RunFlushStatus = "completed" | "failed" | "cancelled" | "waiting_review" | "running"
 
@@ -21,6 +24,10 @@ export function persistActiveRun(
   const wrote = writeAssistantRow(run)
   if (wrote) run.assistantPersisted = true
   updateRun(getDatabase(), runId, { status, error: error ?? null })
+  if (FINISHED.has(status)) {
+    run.endedAt = run.endedAt ?? Date.now()
+    persistRunUsageFromActive(runId, run)
+  }
   return wrote
 }
 

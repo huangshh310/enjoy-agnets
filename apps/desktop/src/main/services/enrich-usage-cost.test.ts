@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { mapUsageTokens } from "@enjoy-agents/agent-core/streams/map-usage"
+import { mapUsageTokens } from "@enjoy-agents/agent-core"
 import { estimateRunCost } from "@enjoy-agents/providers/pricing"
 import { enrichUsageEvent } from "./enrich-usage-cost.ts"
 

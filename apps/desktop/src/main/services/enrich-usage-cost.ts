@@ -11,6 +11,7 @@ export type UsageBillingContext = {
   userRates?: UserModelRates
   baseURL?: string
   usageIncomplete?: boolean
+  maxStepInputTokens?: number
 }
 
 export function enrichUsageEvent(
@@ -25,7 +26,8 @@ export function enrichUsageEvent(
       cacheReadTokens: event.cacheReadTokens,
       cacheWriteTokens: event.cacheWriteTokens,
       reasoningTokens: event.reasoningTokens,
-      usageIncomplete: context.usageIncomplete
+      usageIncomplete: context.usageIncomplete,
+      maxStepInputTokens: context.maxStepInputTokens
     },
     runtimeId: context.runtimeId,
     providerKind: context.providerKind,
@@ -41,6 +43,7 @@ export function billingContextOf(run: {
   input: { runtimeId?: string; modelId?: string }
   secret?: { provider?: string; modelId?: string; models?: unknown[]; baseURL?: string }
   usageIncomplete?: boolean
+  maxStepInputTokens?: number
 }): UsageBillingContext {
   const modelId = run.input.modelId ?? run.secret?.modelId
   return {
@@ -49,7 +52,8 @@ export function billingContextOf(run: {
     modelId,
     userRates: userRatesForModel(run.secret?.models, modelId),
     baseURL: run.secret?.baseURL,
-    usageIncomplete: run.usageIncomplete
+    usageIncomplete: run.usageIncomplete,
+    maxStepInputTokens: run.maxStepInputTokens
   }
 }
 

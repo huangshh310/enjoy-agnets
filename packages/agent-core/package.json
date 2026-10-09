@@ -9,9 +9,7 @@
     "./compaction": "./src/compaction/index.ts",
     "./prompts": "./src/prompts.ts",
     "./drainable-queue": "./src/drainable-queue.ts",
-    "./computer-use": "./src/computer-use/index.ts",
-    "./streams/map-usage": "./src/streams/map-usage.ts",
-    "./runtime-errors": "./src/runtime/errors.ts"
+    "./computer-use": "./src/computer-use/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

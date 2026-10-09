@@ -44,8 +44,10 @@ export type TokenUsage = {
   reasoningTokens?: number
   /** 多泵里有一轮没上报用量：整次未知。 */
   usageIncomplete?: boolean
-  /** 各泵 input 的最大值，用来判断是否跨过 models.dev 分档阈值。 */
+  /** 各泵 totalUsage.input 的最大值；分档不要用这个，SDK finish 给的是各步总和。 */
   maxPumpInputTokens?: number
+  /** 各步 input 的最大值。有分档的模型拿不到这个值就标 unknown。 */
+  maxStepInputTokens?: number
 }
 
 export type MatchedRate = {

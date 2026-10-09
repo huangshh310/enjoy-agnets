@@ -151,6 +151,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     runId: z.string(),
     stepId: z.string(),
     durationMs: z.number().int().optional(),
+    /** 单步 inputTokens，用来判断分档；合计仍走 usage.updated。 */
+    inputTokens: z.number().int().optional(),
     ...Envelope
   }),
   z.object({

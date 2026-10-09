@@ -1,6 +1,6 @@
 # spec/providers
 
-> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 撤掉有地域/套餐歧义的映射；分档超阈值 unknown）
+> 协议工厂，不是品牌锁定。最后更新：2026-10-09（COST-P3 分档看单步 input；siliconflow 用国内站）
 
 ## 当前真相
 
@@ -30,7 +30,7 @@ Enjoy Local 多 Key 只在**还没有任何 token** 时，对 401 / 403 / 408 / 
 
 `reasoningFamily: "auto"` 跟 `kind`；`custom` 再看模型 id 前缀（`minimax` / `glm` / `kimi` / `deepseek` / `moonshot`）。显式家族覆盖 kind。中转即使模型名带 deepseek，也不进 `@ai-sdk/deepseek`。
 
-COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date` / 可选 `sourceEtag` / `sourceSha256`，每百万 token USD：输入/输出/缓存读/缓存写/推理；可选 `tierContext` 为分档最低上下文阈值）。匹配是 **单一官方按量 catalog + modelId 精确命中**。有国内/国际两份价或按量/套餐两套主机的映射先撤，不按 region 猜 catalog：`alibaba`/`alibaba-cn`→qwen、`moonshotai`/`moonshotai-cn`→kimi、`volcengine`→doubao、`zhipuai`→zhipu 都不收录。快照只收能确定是单一官方按量的目录：openai / anthropic / google / deepseek / groq / mistral / xai / perplexity / togetherai→together，以及单端点中转 openrouter / siliconflow / modelscope / aihubmix 与媒体 cohere。有多区域或套餐的 kind（qwen / kimi / doubao / zhipu / zai / wenxin / stepfun / xiaomi / minimax）官方端点没用户价 → `unknown`（显示「—」），用户自填 `*PricePerMillion` 仍估算。套餐端点（qwen `token-plan`、kimi `code-*` 等）没有用户价一律 unknown。带区域的定价以后另开一刀。别名只留一对一且真实存在、价目相同的 dated id；家族名 / 一对多丢掉。不含 `gateway`。`userRates` 与 `snapshotVersion` 首次写入 `usage_json` 后固定。baseURL 不是官方按量地址、又没填用户单价 → `unknown`。任一泵 input 超过该模型 `tierContext` → 整次 `unknown`，`missing: ["tier"]`，不得标 `estimated`。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`（可加 `--expect-sha=`）。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
+COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快照（`version` / `date` / 可选 `sourceEtag` / `sourceSha256`，每百万 token USD：输入/输出/缓存读/缓存写/推理；可选 `tierContext` 为分档最低上下文阈值）。匹配是 **单一官方按量 catalog + modelId 精确命中**。有国内/国际两份价或按量/套餐两套主机的映射先撤，不按 region 猜 catalog：`alibaba`/`alibaba-cn`→qwen、`moonshotai`/`moonshotai-cn`→kimi、`volcengine`→doubao、`zhipuai`→zhipu 都不收录。快照只收能确定是单一官方按量、且与 preset 同站的目录：openai / anthropic / google / deepseek / groq / mistral / xai / perplexity / togetherai→together，以及单端点中转 openrouter / siliconflow-cn→siliconflow / modelscope / aihubmix 与媒体 cohere。models.dev 国际站 `siliconflow`（`.com`）与本仓国内 preset（`.cn`）不是同一站点，不收录。有多区域或套餐的 kind（qwen / kimi / doubao / zhipu / zai / wenxin / stepfun / xiaomi / minimax）官方端点没用户价 → `unknown`（显示「—」），用户自填 `*PricePerMillion` 仍估算。套餐端点（qwen `token-plan`、kimi `code-*` 等）没有用户价一律 unknown。带区域的定价以后另开一刀。别名只留一对一且真实存在、价目相同的 dated id；家族名 / 一对多丢掉。不含 `gateway`。`userRates` 与 `snapshotVersion` 首次写入 `usage_json` 后固定；会话重算仍用当前内置快照，`snapshotVersion` 只做落档标记、不拿来换旧价。baseURL 不是官方按量地址、又没填用户单价 → `unknown`。分档看单步 `maxStepInputTokens`（来自 `finish-step`），不是泵的 totalUsage 合计。任一单步 input 超过该模型 `tierContext`，或模型有分档但拿不到单步值 → 整次 `unknown`，`missing: ["tier"]`，不得标 `estimated`。计费金额仍用合计 token。Ollama / LM Studio 是「本地 · 不计费」。主路径估价不联网；刷新快照用 `packages/providers/scripts/refresh-price-snapshot.ts`（可加 `--expect-sha=`）。有缓存 token 但缺缓存单价 → 整次 `unknown`；推理缺独立单价仍按 output 计，不算未知。
 
 档案是一等公民：智能体只引用，不在智能体页再造一套 CRUD。可绑抽屉下拉只列官方登录 + 已有档案；「添加供应商档案」在菜单外，跳转本页。Configured 行用 `agentRefsForProvider`（`settings.get` 的 `agentTools[]` × `providers[]`）派生「被哪些 CLI 引用」芯片，无引用不画。编辑抽屉只读列出引用。`settings.removeProvider` 先 `unbindProviderFromAgentTools`（清 `providerId` / `useCustomProvider`），仍被引用时 UI 先 Confirm 列出助手名。协议不匹配的档案不会出现在该 CLI 下拉里。
 
@@ -88,5 +88,6 @@ COST-P3 单价：`packages/providers/src/pricing/` 内置 models.dev 离线快�
 - xAI 视频必须 `createXai().video('grok-imagine-video')` + `experimental_generateVideo`。不要用 `image()` 冒充。档案即使 kind=openai，只要模型 id 是 imagine-video 也走这条。Base URL 跟生图同一主机；只有空或 `api.openai.com` 才改打 `https://api.x.ai/v1`。国内中转能出图却强行打官方 x.ai 会 Connect Timeout。
 - 估算成本不要按模型家族前缀猜价，也不要把供应商没返回的缓存/推理 token 写成 0。没命中快照且用户没填 → `unknown`。有缓存 token 但缺缓存单价 → 整次 `unknown`。推理默认含在 output 里；只有快照写了独立推理单价才拆开。`inputTokens` 已含缓存，输入价只乘 `noCacheTokens`（没有则 `input − cacheRead − cacheWrite`）。models.dev 的 `family` 不是别名，禁止写进快照。
 - **隐患**：把 `alibaba` / `alibaba-cn` 都映射成 `qwen` 再按 kind `seen` 去重，国际价会盖住国内价。按 region 猜 catalog 也不稳。正确做法：有国内/国际或套餐歧义的映射先撤，显示 unknown；用户自填单价仍估算。带区域的定价以后另开一刀。`officialSiblingEndpoints` 仍不能当估价官方门（会把套餐主机算进去）。
-- models.dev `cost.tiers` 是按上下文长度分档。忽略分档仍标「估算」会少算。正确做法：快照记下最低档 `tierContext`，任一泵 input 超过阈值整次 `unknown`（`missing: ["tier"]`）。
+- models.dev `cost.tiers` 是按上下文长度分档。SDK `finish` 的 inputTokens 是各步总和，拿它判断会把「10 步 × 30K」误判超档。正确做法：从 `finish-step` 记 `maxStepInputTokens`，超过 `tierContext` 或拿不到单步值才 `unknown`（`missing: ["tier"]`）。合计仍按 totalUsage 计价。
+- models.dev `siliconflow` 是国际站 `.com`，本仓 preset 是国内站 `.cn`，共有模型里有不同价。正确做法：收录 `siliconflow-cn`。目录带 `api` 时必须和 preset 同站，对不上就撤。
 - Node `--experimental-strip-types` 加载 `@enjoy-agents/providers` 入口时，无后缀 `./capabilities/probe` 会 `ERR_MODULE_NOT_FOUND`（文件是 `probe.ts`）；`from "./presets"` 在 Unix 会撞上 `presets/` 目录。正确做法：相对导入带 `.ts`。`capabilities/probe.ts` 只是内存缓存桩，不发网络请求。

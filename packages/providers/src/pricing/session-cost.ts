@@ -21,6 +21,8 @@ export type SessionCostRunInput = {
   endedAt?: number
   usage?: TokenUsage & {
     runtimeId?: string
+    acpSessionId?: string
+    endedAt?: number
     providerKind?: string
     modelId?: string
     reportedCostUsd?: number
@@ -31,6 +33,7 @@ export type SessionCostRunInput = {
   modelId?: string
   userRates?: UserModelRates
   runtimeId?: string
+  acpSessionId?: string
   baseURL?: string
 }
 
@@ -60,7 +63,12 @@ export function buildSessionEstimatedCost(input: {
       baseURL: run.usage.baseURL ?? run.baseURL,
       snapshot: input.snapshot
     })
-    runs.push({ runId: run.runId, ...estimate, ...(run.endedAt != null ? { endedAt: run.endedAt } : {}) })
+    runs.push(
+      withCostIds(
+        { runId: run.runId, ...estimate, ...(endedAtOf(run) != null ? { endedAt: endedAtOf(run) } : {}) },
+        run
+      )
+    )
   }
   return summarizeSessionCosts(input.sessionId, runs)
 }
@@ -75,17 +83,31 @@ function classifyEmptyUsage(run: SessionCostRunInput): SessionRunEstimate | unde
   const runtimeId = run.runtimeId ?? run.usage?.runtimeId ?? runtimeFromModelId(run.modelId)
   const providerKind = run.providerKind ?? run.usage?.providerKind
   if (isExternalRuntime(runtimeId)) {
-    return withEndedAt({ runId: run.runId, status: "not_reported" }, run.endedAt)
+    return withCostIds(withEndedAt({ runId: run.runId, status: "not_reported" }, endedAtOf(run)), run)
   }
   if (isLocalUnbilledKind(providerKind)) {
-    return withEndedAt({ runId: run.runId, status: "local_unbilled" }, run.endedAt)
+    return withCostIds(withEndedAt({ runId: run.runId, status: "local_unbilled" }, endedAtOf(run)), run)
   }
   if (run.status != null && run.status !== "completed") return undefined
-  return withEndedAt({ runId: run.runId, status: "unknown", missing: ["usage"] }, run.endedAt)
+  return withCostIds(withEndedAt({ runId: run.runId, status: "unknown", missing: ["usage"] }, endedAtOf(run)), run)
+}
+
+function endedAtOf(run: SessionCostRunInput): number | undefined {
+  return run.usage?.endedAt ?? run.endedAt
 }
 
 function withEndedAt(row: SessionRunEstimate, endedAt: number | undefined): SessionRunEstimate {
   return endedAt == null ? row : { ...row, endedAt }
+}
+
+function withCostIds(row: SessionRunEstimate, run: SessionCostRunInput): SessionRunEstimate {
+  const runtimeId = run.usage?.runtimeId ?? run.runtimeId
+  const acpSessionId = run.usage?.acpSessionId ?? run.acpSessionId
+  return {
+    ...row,
+    ...(runtimeId ? { runtimeId } : {}),
+    ...(acpSessionId ? { acpSessionId } : {})
+  }
 }
 
 function isExternalRuntime(runtimeId: string | undefined): boolean {

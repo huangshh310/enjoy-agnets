@@ -10,6 +10,7 @@ import {
   type TokenUsage,
   type UserModelRates
 } from "@enjoy-agents/providers/pricing"
+import { readAcpSessionBind } from "./acp-session-bind.ts"
 import { getActiveRun, type ActiveRun } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { accumulateRunUsage, markPumpMissingUsage, replaceRunUsage } from "./run-usage-accumulate"
@@ -23,6 +24,8 @@ export {
 
 export type RunUsageRecord = TokenUsage & {
   runtimeId?: string
+  acpSessionId?: string
+  endedAt?: number
   providerKind?: string
   modelId?: string
   reportedCostUsd?: number
@@ -49,6 +52,8 @@ export function writeRunUsage(runId: string, usage: RunUsageRecord): void {
 export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
   const modelId = run.input.modelId ?? run.secret?.modelId
   const existing = parseRunUsage(getRun(getDatabase(), runId)?.usageJson)
+  const acpSessionId = run.acpSessionId ?? existing?.acpSessionId ?? acpSessionIdOf(run)
+  if (acpSessionId) run.acpSessionId = acpSessionId
   writeRunUsage(runId, {
     inputTokens: run.inputTokens,
     outputTokens: run.outputTokens,
@@ -59,7 +64,10 @@ export function persistRunUsageFromActive(runId: string, run: ActiveRun): void {
     reportedCostUsd: run.reportedCostUsd,
     usageIncomplete: run.usageIncomplete,
     maxPumpInputTokens: run.maxPumpInputTokens,
+    maxStepInputTokens: run.maxStepInputTokens,
+    endedAt: run.endedAt,
     runtimeId: run.input.runtimeId,
+    acpSessionId,
     providerKind: run.secret?.provider,
     modelId,
     baseURL: run.secret?.baseURL,
@@ -97,6 +105,12 @@ export function finalizePumpUsage(runId: string, run: ActiveRun, sawUsage: boole
   if (sawUsage) return
   markPumpMissingUsage(run)
   persistRunUsageFromActive(runId, run)
+}
+
+function acpSessionIdOf(run: ActiveRun): string | undefined {
+  const bind = readAcpSessionBind(run.input.sessionId)
+  if (!bind || bind.runtimeId !== run.input.runtimeId) return undefined
+  return bind.acpSessionId
 }
 
 function runHasUsage(run: ActiveRun): boolean {

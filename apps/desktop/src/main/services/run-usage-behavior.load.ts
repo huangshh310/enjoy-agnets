@@ -12,3 +12,4 @@ export {
   persistRunUsageFromActive
 } from "./run-usage.ts"
 export { consumeRun } from "./consume-run.ts"
+export { persistActiveRun } from "./flush-agent-run.ts"

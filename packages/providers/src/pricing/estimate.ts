@@ -56,8 +56,9 @@ export function estimateRunCost(input: {
 
 function exceedsTier(usage: TokenUsage, tierContext: number | undefined): boolean {
   if (tierContext == null || tierContext <= 0) return false
-  const input = usage.maxPumpInputTokens ?? usage.inputTokens
-  return typeof input === "number" && Number.isFinite(input) && input > tierContext
+  const step = usage.maxStepInputTokens
+  if (typeof step !== "number" || !Number.isFinite(step)) return true
+  return step > tierContext
 }
 
 function billMatched(

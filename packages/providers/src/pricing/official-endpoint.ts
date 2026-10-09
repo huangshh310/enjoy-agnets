@@ -6,7 +6,7 @@
 import { presetFor, normalizeBaseURL } from "../presets.ts"
 import { isProviderKind } from "../presets/kinds.ts"
 import type { ProviderPreset } from "../presets/define.ts"
-import { kindHasPlanRegions, uniqueCatalogForKind } from "./models-dev-kind.ts"
+import { uniqueCatalogForKind } from "./models-dev-kind.ts"
 import { userRatesToModelRate } from "./user-rates.ts"
 import type { UserModelRates } from "./types.ts"
 
@@ -37,8 +37,8 @@ export function resolveOfficialCatalog(
   return { official: true, catalog }
 }
 
+/** 判断依据是 preset.regions 数量：多于 1 个就有区域或套餐歧义。 */
 export function kindAllowsSnapshot(kind: string): boolean {
-  if (kindHasPlanRegions(kind)) return false
   const preset = presetFor(kind)
   if ((preset.regions?.length ?? 0) > 1) return false
   return uniqueCatalogForKind(kind) != null

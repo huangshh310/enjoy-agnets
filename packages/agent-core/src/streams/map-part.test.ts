@@ -9,6 +9,16 @@ test("maps AI SDK 7 reasoning-delta text", () => {
   assert.deepEqual(event, { type: "reasoning.delta", runId: "run_1", text: "先列约束" })
 })
 
+test("finish-step 带上单步 inputTokens", () => {
+  assert.deepEqual(
+    mapStreamPart(
+      { type: "finish-step", id: "s1", usage: { inputTokens: 30_000, outputTokens: 12 } },
+      "run_1"
+    ),
+    { type: "step.end", runId: "run_1", stepId: "s1", inputTokens: 30_000 }
+  )
+})
+
 test("maps usage and step lifecycle to v2 events", () => {
   assert.deepEqual(mapStreamPart({ type: "text-start", id: "t1" }, "run_1"), {
     type: "message.part.start",

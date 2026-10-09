@@ -45,7 +45,13 @@ function mapLifecyclePart(part: Record<string, unknown>, runId: string): StreamE
     return { type: "step.start", runId, stepId: String(part.id ?? part.stepId ?? "step") }
   }
   if (type === "finish-step" || type === "step-finish") {
-    return { type: "step.end", runId, stepId: String(part.id ?? part.stepId ?? "step") }
+    const usage = mapUsageTokens(asRecord(part.usage ?? part))
+    return {
+      type: "step.end",
+      runId,
+      stepId: String(part.id ?? part.stepId ?? "step"),
+      ...(usage?.inputTokens != null ? { inputTokens: usage.inputTokens } : {})
+    }
   }
   if (type === "finish" || type === "usage") {
     const usage = mapUsageTokens(asRecord(part.usage ?? part.totalUsage ?? part))

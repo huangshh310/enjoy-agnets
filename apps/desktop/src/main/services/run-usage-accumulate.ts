@@ -13,6 +13,10 @@ export type UsageAccumulator = {
   reportedCostUsd?: number
   usageIncomplete?: boolean
   maxPumpInputTokens?: number
+  /** 各步 input 的最大值，用来判断分档。合计仍用 inputTokens。 */
+  maxStepInputTokens?: number
+  endedAt?: number
+  acpSessionId?: string
 }
 
 /** 流式 usage 按泵累加。可选分项先在本泵归一，缺关键输入就标不完整。 */
@@ -29,6 +33,7 @@ export function accumulateRunUsage(run: UsageAccumulator, usage: UsageAccumulato
     run.reportedCostUsd = pump.reportedCostUsd
   }
   noteMaxPumpInput(run, pump)
+  noteMaxStepInput(run, pump)
 }
 
 /** ACP usage_update.used / cost 是会话快照，覆盖为最新一次。 */
@@ -44,6 +49,11 @@ export function replaceRunUsage(run: UsageAccumulator, usage: UsageAccumulator):
   }
   if (usage.usageIncomplete) run.usageIncomplete = true
   copyToken(run, usage, "maxPumpInputTokens")
+  copyToken(run, usage, "maxStepInputTokens")
+  copyToken(run, usage, "endedAt")
+  if (typeof usage.acpSessionId === "string" && usage.acpSessionId.trim()) {
+    run.acpSessionId = usage.acpSessionId.trim()
+  }
 }
 
 export function markPumpMissingUsage(run: UsageAccumulator): void {
@@ -71,6 +81,11 @@ function noteMaxPumpInput(run: UsageAccumulator, pump: UsageAccumulator): void {
       : undefined
   if (pumpInput === undefined) return
   run.maxPumpInputTokens = Math.max(run.maxPumpInputTokens ?? 0, pumpInput)
+}
+
+function noteMaxStepInput(run: UsageAccumulator, pump: UsageAccumulator): void {
+  if (!hasFinite(pump.maxStepInputTokens)) return
+  run.maxStepInputTokens = Math.max(run.maxStepInputTokens ?? 0, pump.maxStepInputTokens as number)
 }
 
 function noCacheOf(usage: UsageAccumulator): number | undefined {

@@ -4,7 +4,8 @@
  *
  * ACP `cost` 是会话累计值，不是本次 run 增量
  * （RFD：https://agentclientprotocol.com/rfds/session-usage 「Cumulative session cost」）。
- * 会话 `reportedUsd` 按结束时间取该 ACP 会话最后一个值，禁止把各 run 的累计值相加。
+ * 会话 `reportedUsd` 按 `(runtimeId, acpSessionId)` 分组，每组取最后一个累计值再相加。
+ * 缺这两个 id 的旧行仍按整段 Enjoy 会话取最后一个值。
  * ACP 的 token（`usage_update.used`）是当前上下文占用，不是本次消耗；
  * 会话合计和 `runs[]` 都不要把它当成本次 token 消耗来展示。
  */
@@ -47,8 +48,10 @@ export type EstimatedCost = z.infer<typeof EstimatedCost>
 
 export const SessionRunEstimate = EstimatedCost.extend({
   runId: z.string().min(1),
-  /** 仅用来挑 ACP 会话累计费用的最后一次，不是给 UI 展示的。 */
-  endedAt: z.number().optional()
+  /** 真实结束时间；只为挑 ACP 累计费用的最后一次，不是给 UI 展示的。 */
+  endedAt: z.number().optional().catch(undefined),
+  runtimeId: z.string().optional().catch(undefined),
+  acpSessionId: z.string().optional().catch(undefined)
 })
 export type SessionRunEstimate = z.infer<typeof SessionRunEstimate>
 
@@ -76,7 +79,7 @@ export function summarizeSessionCosts(
   let knownUsd = 0
   let known = 0
   let unknownCount = 0
-  let latestReported: { usd: number; endedAt: number; index: number } | undefined
+  const latestByGroup = new Map<string, { usd: number; endedAt: number; index: number }>()
   runs.forEach((run, index) => {
     if (run.status === "estimated" && typeof run.usd === "number") {
       knownUsd += run.usd
@@ -88,20 +91,35 @@ export function summarizeSessionCosts(
       return
     }
     if (run.status === "reported" && typeof run.usd === "number") {
-      latestReported = pickLatestReported(latestReported, run, index)
+      const key = reportedGroupKey(run)
+      latestByGroup.set(key, pickLatestReported(latestByGroup.get(key), run, index))
     }
   })
+  let reportedUsd = 0
+  let reported = 0
+  for (const row of latestByGroup.values()) {
+    reportedUsd += row.usd
+    reported += 1
+  }
   return {
     sessionId,
     ...(known > 0 ? { knownUsd } : {}),
     unknownCount,
-    ...(latestReported ? { reportedUsd: latestReported.usd } : {}),
+    ...(reported > 0 ? { reportedUsd } : {}),
     runs
   }
 }
 
+/** 有 runtime + ACP 会话 id 就按组切；缺一则进旧行桶，保持「整段取最后一次」。 */
+function reportedGroupKey(run: SessionRunEstimate): string {
+  const runtimeId = run.runtimeId?.trim()
+  const acpSessionId = run.acpSessionId?.trim()
+  if (!runtimeId || !acpSessionId) return ""
+  return `${runtimeId}\0${acpSessionId}`
+}
+
 /**
- * 取最后一个 ACP 累计值（按 endedAt，缺省则按数组顺序）。
+ * 取该组最后一个 ACP 累计值（按 endedAt，缺省则按数组顺序）。
  * 不用差值：usage_json 存的就是会话累计，没有本 run 开始时的基线，恢复后续算也稳。
  */
 function pickLatestReported(

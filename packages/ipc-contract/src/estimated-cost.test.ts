@@ -61,6 +61,27 @@ test("同一 ACP 会话多个 run 的累计费用只取最后一次", () => {
   assert.equal(sum.unknownCount, 0)
 })
 
+test("endedAt 非法值 catch 掉，不丢整行", () => {
+  const parsed = SessionRunEstimate.safeParse({
+    runId: "r1",
+    status: "reported",
+    usd: 0.2,
+    source: "engine",
+    endedAt: "later"
+  })
+  assert.equal(parsed.success, true)
+  assert.equal(parsed.data?.usd, 0.2)
+  assert.equal(parsed.data?.endedAt, undefined)
+})
+
+test("两个 ACP 会话的累计费用按组相加", () => {
+  const sum = summarizeSessionCosts("ses_groups", [
+    { runId: "a1", status: "reported", usd: 0.2, source: "engine", runtimeId: "claude", acpSessionId: "s1" },
+    { runId: "b1", status: "reported", usd: 0.5, source: "engine", runtimeId: "claude", acpSessionId: "s2" }
+  ])
+  assert.equal(sum.reportedUsd, 0.7)
+})
+
 test("ACP 累计费用按结束时间取最后一次，不按数组顺序相加", () => {
   const sum = summarizeSessionCosts("ses_acp_order", [
     { runId: "late", status: "reported", usd: 0.6, source: "engine", endedAt: 30 },

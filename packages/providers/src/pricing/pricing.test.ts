@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { datedIdAliases, uniqueExistingAliases } from "./alias-policy.ts"
+import { catalogApiMatchesPreset } from "./catalog-site.ts"
 import { kindFromModelsDevProvider, uniqueCatalogForKind } from "./models-dev-kind.ts"
 import { kindAllowsSnapshot } from "./official-endpoint.ts"
 import { estimateRunCost } from "./estimate.ts"
@@ -37,13 +38,6 @@ const TABLE: PriceSnapshot = {
       modelId: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
       input: 1.04,
       output: 1.04
-    },
-    {
-      provider: "anthropic",
-      modelId: "tiered-sonnet",
-      input: 3,
-      output: 15,
-      tierContext: 32_000
     }
   ]
 }
@@ -407,59 +401,6 @@ test("together 是单一官方按量，官方端点可用快照", () => {
   assert.equal(result.usd, 1.04)
 })
 
-test("有分档的模型，input 超过最低档阈值不得标为 estimated", () => {
-  const over = estimateRunCost({
-    usage: { inputTokens: 32_001, outputTokens: 0 },
-    providerKind: "anthropic",
-    modelId: "tiered-sonnet",
-    snapshot: TABLE
-  })
-  assert.equal(over.status, "unknown")
-  assert.deepEqual(over.missing, ["tier"])
-  assert.equal(over.usd, undefined)
-
-  const under = estimateRunCost({
-    usage: { inputTokens: 32_000, outputTokens: 0 },
-    providerKind: "anthropic",
-    modelId: "tiered-sonnet",
-    snapshot: TABLE
-  })
-  assert.equal(under.status, "estimated")
-  assert.equal(under.usd, 0.096)
-})
-
-test("同一 ACP 会话 3 个 run 的累计费用只取最后一次", () => {
-  const sum = buildSessionEstimatedCost({
-    sessionId: "ses_acp_cost",
-    snapshot: TABLE,
-    runs: [
-      {
-        runId: "r1",
-        status: "completed",
-        runtimeId: "claude",
-        endedAt: 10,
-        usage: { reportedCostUsd: 0.1, runtimeId: "claude" }
-      },
-      {
-        runId: "r2",
-        status: "completed",
-        runtimeId: "claude",
-        endedAt: 20,
-        usage: { reportedCostUsd: 0.3, runtimeId: "claude" }
-      },
-      {
-        runId: "r3",
-        status: "completed",
-        runtimeId: "claude",
-        endedAt: 30,
-        usage: { reportedCostUsd: 0.6, runtimeId: "claude" }
-      }
-    ]
-  })
-  assert.equal(sum.reportedUsd, 0.6)
-  assert.equal(sum.knownUsd, undefined)
-})
-
 test("有区域或套餐歧义的映射已撤，只留 together", () => {
   assert.equal(kindFromModelsDevProvider("alibaba"), undefined)
   assert.equal(kindFromModelsDevProvider("alibaba-cn"), undefined)
@@ -469,6 +410,9 @@ test("有区域或套餐歧义的映射已撤，只留 together", () => {
   assert.equal(kindFromModelsDevProvider("zhipuai"), undefined)
   assert.equal(kindFromModelsDevProvider("togetherai"), "together")
   assert.equal(uniqueCatalogForKind("together"), "togetherai")
+  assert.equal(kindFromModelsDevProvider("siliconflow-cn"), "siliconflow")
+  assert.equal(uniqueCatalogForKind("siliconflow"), "siliconflow-cn")
+  assert.equal(kindFromModelsDevProvider("siliconflow"), undefined)
   assert.equal(kindFromModelsDevProvider("alibaba-coding-plan"), undefined)
   for (const kind of ["qwen", "kimi", "doubao", "zhipu", "zai", "wenxin", "stepfun", "xiaomi", "minimax"]) {
     assert.equal(kindAllowsSnapshot(kind), false, kind)
@@ -502,10 +446,20 @@ test("快照只收单一按量 catalog；分档阈值仍在", () => {
     "zai",
     "xiaomi",
     "stepfun",
-    "minimax"
+    "minimax",
+    "siliconflow"
   ]) {
     assert.equal(catalogs.has(id), false, `should have withdrawn ${id}`)
   }
+  assert.equal(catalogs.has("siliconflow-cn"), true)
+  assert.equal(
+    catalogApiMatchesPreset("siliconflow", "https://api.siliconflow.cn/v1"),
+    true
+  )
+  assert.equal(
+    catalogApiMatchesPreset("siliconflow", "https://api.siliconflow.com/v1"),
+    false
+  )
   assert.equal(
     PRICE_SNAPSHOT.models.some((model) => typeof model.tierContext === "number" && model.tierContext > 0),
     true
