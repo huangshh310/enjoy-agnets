@@ -66,6 +66,9 @@ tailwind.config = {
   .spin { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 999px; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .compare-cap { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--mute); margin-bottom: 8px; }
+  /* 深色「高级」盒描边比权限行更淡一档 */
+  .cu-adv { border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+  html.dark .cu-adv { border-color: #2A3138; }
 </style>
 </head>
 <body class="font-sans text-ink antialiased">
@@ -73,9 +76,9 @@ tailwind.config = {
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-mute">Enjoy Agents · design/previews</p>
-        <h1 class="mt-1 text-xl font-semibold tracking-tight">BASE-P0 · 首启 / CU Linux / 空对话 · 基 <code class="rounded bg-paper px-1.5 py-0.5 text-[15px] font-semibold">e46d6c72</code> · I3 仍停</h1>
+        <h1 class="mt-1 text-xl font-semibold tracking-tight">BASE-P0 · 首启 / CU Linux / 空对话 · 基 <code class="rounded bg-paper px-1.5 py-0.5 text-[15px] font-semibold">e46d6c72</code> · 2026-10-10 · I3 仍停</h1>
         <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-mute">
-          三把产品短锁的视觉真源。沿现网向导壳 / 设置卡 / Composer 瘦身铬 / 侧栏行 / 看板列，<strong class="text-ink">是增量不是重设计</strong>。
+          三把产品短锁的视觉真源。用户已拍板插队（在 Top5 ④⑤ 前）。沿现网向导壳 / 设置卡 / Composer 瘦身铬 / 侧栏行 / 看板列，<strong class="text-ink">是增量不是重设计</strong>。
           Luna：「能说第一句，或知道还差哪一步；不能用就不装能用；没说过话的对话不占列表。」
           短锁 <a class="font-medium text-accent underline-offset-2 hover:underline" href="../references/base-p0-locks.md">base-p0-locks.md</a>
           · <strong class="text-ink">不宣称应用已 1:1</strong>。
@@ -90,7 +93,7 @@ tailwind.config = {
     <aside class="rounded-2xl border border-line bg-card p-5 shadow-sm">
       <p class="text-[11px] font-semibold uppercase tracking-wide text-mute">jojo 正式验收 · S1-1 … S3-6 · 含 S1-7</p>
       <ol class="mt-3 grid gap-2 text-[13px] leading-relaxed md:grid-cols-2">
-        <li><strong class="sid">S1-1</strong> 全新安装出现「连一个模型」，选项按真实检测</li>
+        <li><strong class="sid">S1-1</strong> 全新安装出现「连一个模型」，选项按真实检测（什么都没有则只两行等权）</li>
         <li><strong class="sid">S1-2</strong> 向导里加密钥后显示已连上，末屏可以开始、首条能发</li>
         <li><strong class="sid">S1-3</strong> 以后再连 → 末屏「还差一步」</li>
         <li><strong class="sid">S1-4</strong> 设置可重开向导、搜索命中</li>
@@ -99,15 +102,15 @@ tailwind.config = {
         <li><strong class="sid">S1-6</strong> 无密钥非红引导、草稿保留、直达表单</li>
         <li><strong class="sid">S2-1</strong> 无执行器开关禁用 + 人话</li>
         <li><strong class="sid">S2-2</strong> 无 chip、@ 无桌面项、<code>/computer-use</code> 有说明</li>
-        <li><strong class="sid">S2-3</strong> 检测 2 秒出结果</li>
-        <li><strong class="sid">S2-4</strong> 开/关描述正确</li>
+        <li><strong class="sid">S2-3</strong> 检测 2 秒出结果（通过/失败+原因）</li>
+        <li><strong class="sid">S2-4</strong> 开/关描述各自正确</li>
         <li><strong class="sid">S2-5</strong> macOS 已授权行为不回退</li>
         <li><strong class="sid">S2-6</strong> 无内部名 / 开发备注</li>
         <li><strong class="sid">S3-1</strong> 连点 5 次新对话不增会话</li>
         <li><strong class="sid">S3-2</strong> 发一条后出现在侧栏与看板待办</li>
         <li><strong class="sid">S3-3</strong> 升级后存量空会话消失、有内容/标记的保留</li>
         <li><strong class="sid">S3-4</strong> 看板新建可取消</li>
-        <li><strong class="sid">S3-5</strong> 删除有二次确认且三处同步消失</li>
+        <li><strong class="sid">S3-5</strong> 删除二次确认；确认后侧栏、最近、看板一起消失（若正在看则回草稿空态）；取消则不变</li>
         <li><strong class="sid">S3-6</strong> 菜单贴行</li>
       </ol>
       <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
@@ -137,11 +140,47 @@ tailwind.config = {
       <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 class="text-base font-semibold">S1-1 · 向导新步「连一个模型」</h2>
-          <p class="mt-1 text-[13px] text-mute">插在「安装本机引擎」之后。800×540 旧壳、淡描边行、按真实检测露出。不是营销大卡。</p>
+          <p class="mt-1 text-[13px] text-mute">插在「安装本机引擎」之后。800×540 旧壳、淡描边行、按真实检测露出。什么都没探测到只画两行等权，不要把「添加 API 密钥」做成唯一主钮。</p>
         </div>
         <span class="rounded-full bg-soft px-2.5 py-1 text-[11px] font-medium text-accent">第 4 步 · 共 7 步</span>
       </div>
       <div class="grid gap-4 lg:grid-cols-2">
+        <!-- nothing detected — base -->
+        <div>
+          <p class="compare-cap">基线 · 什么都没探测到</p>
+          <div class="overflow-hidden rounded-2xl border border-line bg-paper shadow-card">
+            <div class="bg-card px-6 pt-6 pb-3">
+              <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">第 4 步，共 7 步</p>
+              <h3 class="mt-1 text-[18px] font-medium">连一个模型</h3>
+              <p class="mt-1 text-[13px] text-mute">Enjoy 本地是引擎。没连模型还不能对话。</p>
+            </div>
+            <div class="space-y-2 px-6 pb-4">
+              <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-card px-3 py-2.5">
+                <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-paper text-[11px] font-semibold ring-1 ring-line">+</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-[13px] font-medium">添加 API 密钥</span>
+                  <span class="block text-[11px] text-mute">进官方预设表单，保存后回到这里</span>
+                </span>
+                <span class="mt-1 size-3.5 rounded-full border border-line"></span>
+              </label>
+              <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-card px-3 py-2.5">
+                <span class="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-paper text-[11px] font-semibold ring-1 ring-line">…</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-[13px] font-medium">以后再连</span>
+                  <span class="block text-[11px] text-mute">先看界面，末屏会说还差一步</span>
+                </span>
+                <span class="mt-1 size-3.5 rounded-full border border-line"></span>
+              </label>
+            </div>
+            <div class="flex items-center gap-2 border-t border-line bg-card px-6 py-3">
+              <span class="flex gap-1"><i class="dot bg-ink/40"></i><i class="dot bg-ink/40"></i><i class="dot bg-ink/40"></i><i class="dot bg-ink"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i></span>
+              <span class="text-[12px] text-mute">跳过设置</span>
+              <span class="ml-auto text-[12px] text-mute">返回</span>
+              <span class="rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white">继续</span>
+            </div>
+          </div>
+          <p class="mt-2 text-[11px] text-mute">两行等权。不要把「添加 API 密钥」做成唯一主钮。</p>
+        </div>
         <!-- engine logged in -->
         <div>
           <p class="compare-cap">变体 · 已登录外置引擎</p>
@@ -206,7 +245,10 @@ tailwind.config = {
               </label>
               <button type="button" class="w-full text-left text-[12px] text-mute">以后再连</button>
             </div>
-            <div class="flex items-center justify-end gap-2 border-t border-line bg-card px-6 py-3">
+            <div class="flex items-center gap-2 border-t border-line bg-card px-6 py-3">
+              <span class="flex gap-1"><i class="dot bg-ink/40"></i><i class="dot bg-ink/40"></i><i class="dot bg-ink/40"></i><i class="dot bg-ink"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i></span>
+              <span class="text-[12px] text-mute">跳过设置</span>
+              <span class="ml-auto text-[12px] text-mute">返回</span>
               <span class="rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white">继续</span>
             </div>
           </div>
@@ -234,7 +276,7 @@ tailwind.config = {
         </div>
         <!-- connected -->
         <div>
-          <p class="compare-cap">变体 · 已连上 / 以后再连</p>
+          <p class="compare-cap">变体 · 已连上</p>
           <div class="overflow-hidden rounded-2xl border border-line bg-paper shadow-card">
             <div class="bg-card px-6 pt-5 pb-3">
               <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">第 4 步，共 7 步</p>
@@ -245,10 +287,15 @@ tailwind.config = {
                 <span class="dot bg-ok"></span>
                 <span class="text-[13px] font-medium">已连上 · DeepSeek</span>
               </div>
-              <p class="text-[11px] text-mute">或点「以后再连」——末屏会诚实说还差一步，不会写「可以开始了」。</p>
-              <button type="button" class="text-[12px] text-mute">以后再连</button>
+            </div>
+            <div class="flex items-center gap-2 border-t border-line bg-card px-6 py-3">
+              <span class="flex gap-1"><i class="dot bg-ink/40"></i><i class="dot bg-ink/40"></i><i class="dot bg-ink/40"></i><i class="dot bg-ink"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i><i class="dot bg-ink/20"></i></span>
+              <span class="text-[12px] text-mute">跳过设置</span>
+              <span class="ml-auto text-[12px] text-mute">返回</span>
+              <span class="rounded-full bg-accent px-4 py-1.5 text-[12px] font-medium text-white">继续</span>
             </div>
           </div>
+          <p class="mt-2 text-[11px] text-mute">保存后回到本步，该行改绿点「已连上」。点「以后再连」则末屏诚实说还差一步，不写「可以开始了」。</p>
         </div>
       </div>
     </section>
@@ -324,7 +371,7 @@ tailwind.config = {
             <div class="px-8 pt-8">
               <span class="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-okSoft text-ok">✓</span>
               <h3 class="text-[20px] font-medium">可以开始了</h3>
-              <p class="mt-1 text-[13px] text-mute">已连 DeepSeek · 浅色 · 工作区 enjoy-agents</p>
+              <p class="mt-1 text-[13px] text-mute">已连 DeepSeek · 浅色 · 项目 enjoy-agents</p>
             </div>
             <dl class="mx-auto mt-4 max-w-sm px-10 text-left text-[12px]">
               <div class="flex justify-between py-1"><dt>打开设置</dt><dd class="rounded border border-line px-1.5">Ctrl ,</dd></div>
@@ -341,7 +388,7 @@ tailwind.config = {
             <div class="px-8 pt-8">
               <span class="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-paper text-mute ring-1 ring-line">·</span>
               <h3 class="text-[20px] font-medium">还差一步：连一个模型</h3>
-              <p class="mt-1 text-[13px] text-mute">2 个引擎就绪 · 还不能发消息</p>
+              <p class="mt-1 text-[13px] text-mute">已装 2 个引擎 · 还没连模型</p>
             </div>
             <p class="mx-auto mt-4 max-w-sm px-8 text-[12px] text-mute">引擎装好了，不等于已经能对话。先连一条路线，草稿会留着。</p>
             <div class="mt-5 flex items-center justify-end gap-2 border-t border-line bg-card px-6 py-3">
@@ -569,18 +616,18 @@ tailwind.config = {
     <section id="s2-1" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4">
         <h2 class="text-base font-semibold">S2-1 / S2-4 · 设置主卡四态（有层级）</h2>
-        <p class="mt-1 text-[13px] text-mute">真源在 main（执行器身份 / <code>desktop_doctor</code>）。一张卡：顶状态+总开关 → 检测权限行 → 高级降权。不要把始终允许 / 高级坐标 / 任意桌面 / 检测权限做成等权标题。</p>
+        <p class="mt-1 text-[13px] text-mute">真源在 main（执行器身份 / <code>desktop_doctor</code>）。一张卡：顶状态+总开关 → 检测权限行 → 高级降权。可用拆成开/关两张卡。Beta 开关可开；只有「暂不支持」禁用。</p>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
         <div class="rounded-2xl border border-line bg-card p-4">
-          <p class="compare-cap">可用</p>
+          <p class="compare-cap">可用 · 开</p>
           <div class="flex items-start justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
                 <p class="text-[13px] font-medium">电脑操控</p>
                 <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok ring-1 ring-ok/20">可用</span>
               </div>
-              <p class="mt-1 text-[12px] leading-relaxed text-mute">本机看屏、点选、打字。关掉时普通发送不带桌面工具。</p>
+              <p class="mt-1 text-[12px] leading-relaxed text-mute">本机看屏、点选、打字。</p>
             </div>
             <span class="sw on" aria-checked="true"><i></i></span>
           </div>
@@ -591,7 +638,32 @@ tailwind.config = {
             </div>
             <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
           </div>
-          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2">
+          <div class="cu-adv mt-3 rounded-xl bg-paper px-3 py-2">
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" style="transform:scale(.8)"><i></i></span></div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line bg-card p-4">
+          <p class="compare-cap">可用 · 关</p>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <p class="text-[13px] font-medium">电脑操控</p>
+                <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok ring-1 ring-ok/20">可用</span>
+              </div>
+              <p class="mt-1 text-[12px] leading-relaxed text-mute">已关闭。普通发送不带桌面操控。</p>
+            </div>
+            <span class="sw off" aria-checked="false"><i></i></span>
+          </div>
+          <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
+            <div>
+              <p class="text-[12px]">系统权限</p>
+              <p class="text-[10px] text-mute">辅助功能 · 屏幕录制 · 输入监听 · 已授权</p>
+            </div>
+            <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
+          </div>
+          <div class="cu-adv mt-3 rounded-xl bg-paper px-3 py-2">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" style="transform:scale(.8)"><i></i></span></div>
@@ -605,18 +677,16 @@ tailwind.config = {
                 <p class="text-[13px] font-medium">电脑操控</p>
                 <span class="rounded-full bg-warnSoft px-2 py-0.5 text-[10px] font-semibold text-warn">需要授权</span>
               </div>
-              <p class="mt-1 text-[12px] leading-relaxed text-mute">还差系统权限。点「检测权限」或打开下面未授权的那一项。</p>
+              <p class="mt-1 text-[12px] leading-relaxed text-mute">还差系统权限。下列三项未齐。</p>
             </div>
             <span class="sw on" aria-checked="true"><i></i></span>
           </div>
-          <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
-            <div>
-              <p class="text-[12px]">系统权限</p>
-              <p class="text-[10px] text-mute">辅助功能未授权 · 屏幕录制已授权</p>
-            </div>
-            <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
-          </div>
-          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2">
+          <ul class="mt-3 space-y-1.5 rounded-xl border border-line bg-paper px-3 py-2 text-[12px]">
+            <li class="flex items-center justify-between gap-2"><span>辅助功能 · 未授权</span><span class="rounded-lg border border-line bg-card px-2 py-0.5 text-[11px]">打开系统设置</span></li>
+            <li class="flex items-center justify-between gap-2"><span>屏幕录制 · 已授权</span><span class="text-[10px] text-ok">✓</span></li>
+            <li class="flex items-center justify-between gap-2"><span>输入监听 · 未授权</span><span class="rounded-lg border border-line bg-card px-2 py-0.5 text-[11px]">打开系统设置</span></li>
+          </ul>
+          <div class="cu-adv mt-3 rounded-xl bg-paper px-3 py-2">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" style="transform:scale(.8)"><i></i></span></div>
@@ -637,18 +707,18 @@ tailwind.config = {
           <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
             <div>
               <p class="text-[12px]">系统权限</p>
-              <p class="text-[10px] text-mute">这台电脑暂不支持，检测仍可跑一遍医生。</p>
+              <p class="text-[10px] text-mute">点「检测权限」可以看缺了什么。</p>
             </div>
             <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
           </div>
-          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2 opacity-70">
+          <div class="cu-adv mt-3 rounded-xl bg-paper px-3 py-2 opacity-70">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" aria-disabled="true" style="transform:scale(.8)"><i></i></span></div>
           </div>
         </div>
         <div class="rounded-2xl border border-line bg-card p-4">
-          <p class="compare-cap">Beta 验证中</p>
+          <p class="compare-cap">Beta 验证中 · 开关可开</p>
           <div class="flex items-start justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
@@ -657,20 +727,34 @@ tailwind.config = {
               </div>
               <p class="mt-1 text-[12px] leading-relaxed text-mute">Beta：这个平台还在验证中，可能不稳定。</p>
             </div>
-            <span class="sw off" aria-disabled="true" aria-checked="false"><i></i></span>
+            <span class="sw on" aria-checked="true"><i></i></span>
           </div>
           <div class="mt-3 flex items-center justify-between rounded-xl border border-line bg-paper px-3 py-2">
             <div>
               <p class="text-[12px]">系统权限</p>
-              <p class="text-[10px] text-mute">验证中 · 检测权限仍给医生结果，不假装可用。</p>
+              <p class="text-[10px] text-mute">验证中。点「检测权限」查看结果。</p>
             </div>
             <span class="rounded-lg border border-line px-2 py-1 text-[11px]">检测权限</span>
           </div>
-          <div class="mt-3 rounded-xl border border-line/80 bg-paper px-3 py-2 opacity-70">
+          <div class="cu-adv mt-3 rounded-xl bg-paper px-3 py-2">
             <p class="text-[10px] font-semibold uppercase tracking-wide text-mute">高级</p>
             <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>始终允许的应用</span><span>还没有…</span></div>
-            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" aria-disabled="true" style="transform:scale(.8)"><i></i></span></div>
+            <div class="mt-1.5 flex items-center justify-between text-[11px] text-mute"><span>高级坐标 · 少用</span><span class="sw off" style="transform:scale(.8)"><i></i></span></div>
           </div>
+        </div>
+        <div class="rounded-2xl border border-dashed border-danger/40 bg-dangerSoft/20 p-4">
+          <p class="compare-cap text-danger">反例</p>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <p class="text-[13px] font-medium">电脑操控</p>
+                <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok">可用</span>
+              </div>
+              <p class="mt-1 text-[12px] leading-relaxed text-mute strike">关闭时普通发送不带桌面工具。</p>
+            </div>
+            <span class="sw on" aria-checked="true"><i></i></span>
+          </div>
+          <p class="mt-3 text-[11px] font-semibold text-danger">✗ 开着却写「关闭时…」</p>
         </div>
       </div>
     </section>
@@ -678,18 +762,38 @@ tailwind.config = {
     <section id="s2-3" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h2 class="text-base font-semibold">S2-3 · 检测权限加载态</h2>
-          <p class="mt-1 text-[13px] text-mute">2 秒内出结果。复用系统权限卡，不新开进度页。</p>
+          <h2 class="text-base font-semibold">S2-3 · 检测权限：加载 + 通过 / 失败</h2>
+          <p class="mt-1 text-[13px] text-mute">2 秒内出结果。复用系统权限卡，不新开进度页。不要无限转圈。</p>
         </div>
         <span class="rounded-full bg-paper px-2.5 py-1 text-[11px] font-medium text-mute ring-1 ring-line">≤ 2s</span>
       </div>
-      <div class="max-w-xl rounded-2xl border border-line p-4">
-        <p class="text-[13px] font-medium">系统权限</p>
-        <div class="mt-3 flex items-center gap-2 text-[12px] text-mute">
-          <i class="spin" aria-hidden></i>
-          正在检测权限…
+      <div class="grid gap-3 md:grid-cols-3">
+        <div>
+          <p class="compare-cap">进行中</p>
+          <div class="rounded-2xl border border-line p-4">
+            <p class="text-[13px] font-medium">系统权限</p>
+            <div class="mt-3 flex items-center gap-2 text-[12px] text-mute">
+              <i class="spin" aria-hidden></i>
+              正在检测权限…
+            </div>
+          </div>
         </div>
-        <p class="mt-3 text-[11px] text-mute">结束后换成四态之一。不要停在「检测中」。</p>
+        <div>
+          <p class="compare-cap">通过</p>
+          <div class="rounded-2xl border border-line p-4">
+            <p class="text-[13px] font-medium">系统权限</p>
+            <p class="mt-3 text-[13px] font-medium text-ok">通过：三项权限已授权</p>
+            <p class="mt-1 text-[11px] text-mute">辅助功能、屏幕录制、输入监听都已打开。</p>
+          </div>
+        </div>
+        <div>
+          <p class="compare-cap">失败</p>
+          <div class="rounded-2xl border border-line p-4">
+            <p class="text-[13px] font-medium">系统权限</p>
+            <p class="mt-3 text-[13px] font-medium text-danger">失败：缺少操控组件</p>
+            <p class="mt-1 text-[11px] text-mute">这台电脑没有桌面执行器，检测无法完成授权。</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -722,7 +826,7 @@ tailwind.config = {
               <p class="rounded-lg px-2.5 py-1.5"><span class="mr-2 text-[11px] text-mute">文档</span>架构说明</p>
               <p class="rounded-lg px-2.5 py-1.5"><span class="mr-2 text-[11px] text-mute">技能</span>code-review</p>
               <p class="rounded-lg px-2.5 py-1.5"><span class="mr-2 text-[11px] text-mute">MCP</span>github</p>
-              <p class="rounded-lg px-2.5 py-1.5 text-mute/50">本轮不做内置浏览器</p>
+              <p class="rounded-lg px-2.5 py-1.5 text-mute"><span class="mr-2 text-[11px] text-mute">网页</span>网页</p>
             </div>
             <p class="mt-2 text-[10px] text-mute">没有「桌面」「应用」行。不要画成划掉的桌面行。</p>
           </div>
@@ -741,13 +845,19 @@ tailwind.config = {
     <section id="s2-5" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4">
         <h2 class="text-base font-semibold">S2-5 · macOS 已授权不回退</h2>
-        <p class="mt-1 text-[13px] text-mute">本锁只诚实 Linux / 无执行器。macOS 绿路径保持：芯片在、@ 有桌面组、开关可拨。</p>
+        <p class="mt-1 text-[13px] text-mute">开关开着 + 权限三行已授权 + Composer 底栏「桌面」芯片 + @ 仍有桌面组。本锁不放宽审批。</p>
       </div>
       <div class="grid gap-4 md:grid-cols-2">
         <div class="rounded-2xl border border-line p-4">
-          <div class="flex items-center gap-2">
-            <p class="text-[13px] font-medium">电脑操控</p>
-            <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok">可用</span>
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <p class="text-[13px] font-medium">电脑操控</p>
+                <span class="rounded-full bg-okSoft px-2 py-0.5 text-[10px] font-semibold text-ok">可用</span>
+              </div>
+              <p class="mt-1 text-[12px] text-mute">本机看屏、点选、打字。</p>
+            </div>
+            <span class="sw on" aria-checked="true"><i></i></span>
           </div>
           <ul class="mt-3 space-y-1.5 text-[12px] text-mute">
             <li>辅助功能 · 已授权</li>
@@ -756,12 +866,21 @@ tailwind.config = {
           </ul>
         </div>
         <div class="rounded-2xl border border-line bg-paper p-3">
-          <div class="rounded-xl border border-line bg-card p-2 text-[12px]">
+          <div class="rounded-2xl border border-line bg-card p-3">
+            <p class="min-h-[32px] text-[13px] text-mute">描述要做的改动，或直接提问…</p>
+            <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-mute">
+              <span class="rounded-md ring-1 ring-line px-1.5 py-0.5">+</span>
+              <span class="rounded-full ring-1 ring-line px-2 py-0.5">Cursor · opus</span>
+              <span class="rounded-full bg-soft px-2 py-0.5 font-medium text-accent ring-1 ring-accent/30">桌面</span>
+              <span class="ml-auto rounded-full bg-line px-2.5 py-1">发送</span>
+            </div>
+          </div>
+          <div class="mt-3 rounded-xl border border-line bg-card p-2 text-[12px]">
             <p class="rounded-lg bg-soft px-2.5 py-1.5 font-medium">桌面 · 当前屏幕</p>
             <p class="px-2.5 py-1.5">备忘录</p>
             <p class="px-2.5 py-1.5">计算器</p>
           </div>
-          <p class="mt-2 text-[10px] text-mute">底栏仍可画「桌面」芯片。Explore 仍要切执行，本锁不放宽。</p>
+          <p class="mt-2 text-[10px] text-mute">底栏「桌面」芯片 + @ 桌面组。Explore 仍要切执行。</p>
         </div>
       </div>
     </section>
@@ -777,8 +896,11 @@ tailwind.config = {
         <li class="strike">为了能点而放宽审批 / 跳过 Dock</li>
         <li class="strike">@ 菜单划掉「桌面」行（等于还在教它存在）</li>
         <li class="strike">检测权限无限转圈</li>
+        <li class="strike">开着却写「关闭时…」</li>
         <li class="strike">始终允许 / 高级坐标 / 任意桌面 / 检测权限做成等权标题堆在一张卡</li>
         <li class="strike">深色模式下卡边溶进底色、看不见描边</li>
+        <li class="strike">界面出现「医生」</li>
+        <li class="strike">Beta 有执行器却禁用开关（只有「暂不支持」才禁用）</li>
       </ul>
     </section>
 
@@ -854,7 +976,7 @@ tailwind.config = {
     <section id="s3-3" class="rounded-2xl border border-line bg-card p-6 shadow-sm">
       <div class="mb-4">
         <h2 class="text-base font-semibold">S3-3 · 升级回收存量空会话</h2>
-        <p class="mt-1 text-[13px] text-mute">只收「0 条用户消息、无旗标、未改工作流状态」。有内容或标记一律留。自动化会话按内容判断，不按用户有没有发过消息。</p>
+        <p class="mt-1 text-[13px] text-mute">只收「0 条用户消息、无旗标、未改工作流状态」。fork、heartbeat、自动化会话不进回收名单，只按内容判断。</p>
       </div>
       <div class="grid gap-4 md:grid-cols-2">
         <div>
@@ -949,7 +1071,7 @@ tailwind.config = {
                 <span class="rounded-lg bg-danger px-3 py-1.5 text-[12px] font-medium text-white">删除</span>
               </div>
             </div>
-            <p class="mt-3 text-center text-[11px] text-mute">确认后：侧栏行、看板卡、若正在看则回草稿空态，三处一起消失。</p>
+            <p class="mt-3 text-center text-[11px] text-mute">确认后侧栏、最近、看板一起消失（若正在看则回草稿空态）；取消则不变。</p>
           </div>
         </div>
       </div>
@@ -1029,7 +1151,7 @@ tailwind.config = {
           <p class="font-semibold">kai · 路线 / 可用性 / 草稿 / 删除</p>
           <ul class="mt-2 list-disc space-y-1 pl-4 text-mute">
             <li>可对话路线：已登录外置引擎 / 本机 Ollama·LM Studio / vault 里有密钥。引擎就绪单独算</li>
-            <li>CU 四态只认 main doctor，不让 renderer 写平台名单</li>
+            <li>CU 四态只认 main doctor；Beta=有执行器未真机验收，开关可开带黄线；只有暂不支持（无执行器）禁用</li>
             <li>新对话草稿不落库；首条消息或附件才 <code>createAndOpenSession</code>；启动回收空会话</li>
             <li>删除走现 session API；三处同步；不动 fork/heartbeat</li>
             <li>自动化会话按内容判断，不按用户有没有发过消息</li>
@@ -1054,12 +1176,12 @@ tailwind.config = {
 
     <section id="coverage" class="rounded-2xl border border-line bg-paper p-5 text-[12px] leading-relaxed text-mute">
       <p class="font-semibold text-ink">自检 · 每个验收与 Don’t 都有画面</p>
-      <p class="mt-2">S1-1 步+五变体 · S1-1 附 三卡/中文色/首焦在开始 · S1-2 可以开始了 · S1-3 还差一步 · S1-4 重开+搜索 · S1-5 无项目说明+中等选择文件夹+撑满落区 · S1-7 有项目启动直接进会话（亮/暗） · S1-6 非红/红 · P0-1 Don’t 含现网满幅门反例 · S2-1 四态主卡层级（开关→检测→高级）· S2-2 chip/@/斜杠 · S2-3 加载 · S2-4 描述写在四态里 · S2-5 macOS · S2-6/Don’t 内部名+等权堆+深色溶边 · S3-1 草稿 · S3-2 落库 · S3-3 回收（自动化按内容留） · S3-4 看板取消 · S3-5 确认 · S3-6 贴行 · P0-3 Don’t 含自动化按内容判断。</p>
+      <p class="mt-2">S1-1 步+基线两行等权+四变体 · S1-1 附 三卡/中文色/首焦在开始 · S1-2 可以开始了（摘要「项目」） · S1-3 还差一步「已装 2 个引擎 · 还没连模型」 · S1-4 重开+搜索 · S1-5 无项目说明+中等选择文件夹+撑满落区 · S1-7 有项目启动直接进会话（亮/暗） · S1-6 非红/红 · P0-1 Don’t 含现网满幅门反例 · S2-1 可用开/关拆卡 + 需要授权三项+打开系统设置 + 暂不支持禁用 + Beta 可开黄线 · S2-2 chip/@（中性「网页」）/斜杠 · S2-3 加载+通过+失败 · S2-4 开/关描述各卡 · S2-5 macOS 开关开+桌面芯片 · S2-6/Don’t 内部名+医生+开着写关闭时+等权堆+深色溶边 · S3-1 草稿 · S3-2 落库 · S3-3 回收（fork/heartbeat/自动化不进回收名单，只按内容） · S3-4 看板取消 · S3-5 确认后侧栏/最近/看板一起消失 · S3-6 贴行 · P0-3 Don’t 含自动化按内容判断。</p>
     </section>
   </main>
 
   <footer class="border-t border-line px-8 py-5 text-[11px] text-mute">
-    BASE-P0 visual source · Luna · base <code>e46d6c72</code> · SoT <code>design/references/base-p0-locks.md</code> · <code>design/previews/base-p0-locks.html</code> · I3 仍停
+    BASE-P0 视觉真源 · Luna · 基 <code>e46d6c72</code> · 锁文 <code>design/references/base-p0-locks.md</code> · 预览 <code>design/previews/base-p0-locks.html</code> · I3 仍停
   </footer>
 
   <script>
