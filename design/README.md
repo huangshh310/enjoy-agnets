@@ -81,6 +81,7 @@
 | [references/computer-use-codex-parity.md](./references/computer-use-codex-parity.md) | P0 Computer Use × Codex 对标短锁（Jojo；§3.2a–e Hard locks：TTL 重拍二次确认 / appKey / doctor=当前 helper / resume / Win·Linux 门；【视觉真源】[`previews/p0-computer-use.html`](./previews/p0-computer-use.html)；对标 tip `86228f9`；不是当前真相，边界见 computer-use spec） |
 | [references/cu-p1-a-always-allow.md](./references/cu-p1-a-always-allow.md) | CU-P1-A Always-allow 短锁（Jojo；本机按应用持久簿 + Dock「始终允许此应用」；`allow_always` 只写簿、撤销只清簿；**2026-10-09 默认值改本会话**，见 [`cu-p1-p-polish.md`](./references/cu-p1-p-polish.md)；【视觉真源·写入规则】[`previews/cu-p1-a-always-allow.html`](./previews/cu-p1-a-always-allow.html)；默认高亮以 P 预览为准；基线 tip `63e5d8f`；不是当前真相，边界见 computer-use spec） |
 | [references/cu-p1-p-polish.md](./references/cu-p1-p-polish.md) | CU-P1-P 体感打磨短锁（Jojo；审批默认收紧本会话 · 敏感警示+藏始终允许 · 空态真实应用示例 · 人话通知不泄输入；【视觉真源】[`previews/cu-p1-p-polish.html`](./previews/cu-p1-p-polish.html)；基 main `1893fa5`；不是当前真相，边界见 computer-use spec） |
+| [references/ai-blocks-unify.md](./references/ai-blocks-unify.md) | 对话侧 8 块统一视觉（HextaUI 拆解 + 参考表 + token + mike 实现草稿）；Composer 不动；I3 暂停；【视觉真源】[`previews/ai-blocks-unify.html`](./previews/ai-blocks-unify.html)；不是当前真相，边界见 ui |
 | [references/cu-p0-c-overlay.md](./references/cu-p0-c-overlay.md) | CU-P0-C / CU-P1-O Overlay 短锁（Jojo 正式全文；冷静蓝边 + 右栏跟观察 + 一键/Esc 停；Dock 同宇宙；Explore 无 desktop_*；【视觉真源】[`previews/cu-p0-c-overlay.html`](./previews/cu-p0-c-overlay.html)；基线 tip `e7cdeb0`；不是当前真相，边界见 computer-use spec） |
 | [references/cu-p1-b-composer-mention.md](./references/cu-p1-b-composer-mention.md) | CU-P1-B Composer `@桌面` / `@应用` 短锁（Jojo；偏置宿主 `desktop_*`，非插件店，不跳过审批；【视觉真源】[`previews/cu-p1-b-composer-mention.html`](./previews/cu-p1-b-composer-mention.html)；不是当前真相，边界见 computer-use spec） |
 | [previews/explore-execute-p0.html](./previews/explore-execute-p0.html) | P0 探索/执行 + Sources 视觉真源（锁 tip `80faf22`） |
@@ -114,6 +115,8 @@
 | [previews/cu-p1-a-always-allow.html](./previews/cu-p1-a-always-allow.html) | CU-P1-A Always-allow：Dock 四态 + 无稳 appKey 隐藏第三项 · 设置「始终允许的应用」撤销/空态 · 硬每次问不被簿盖住（【视觉真源】CU-P1-A 写入规则 · Luna；默认高亮已过时，见 [`cu-p1-p-polish.html`](./previews/cu-p1-p-polish.html)；基线 tip `63e5d8f`；产品锁见 [`references/cu-p1-a-always-allow.md`](./references/cu-p1-a-always-allow.md)） |
 | [previews/cu-p1-p-polish.html](./previews/cu-p1-p-polish.html) | CU-P1-P 体感打磨：本会话默认 · 敏感警示 · 空态真实 `@应用` · 人话通知四态 · 反例划掉（【视觉真源】CU-P1-P · Luna；基 main `1893fa5`；产品锁见 [`references/cu-p1-p-polish.md`](./references/cu-p1-p-polish.md)；不宣称应用 1:1） |
 | [previews/cu-p0-c-overlay.html](./previews/cu-p0-c-overlay.html) | CU-P0-C / CU-P1-O Overlay：A 主态蓝边+右栏同步 · 停/Esc 熄 · 空态不装在控 · Explore 桌面仅执行 · 反例含空成功条（【视觉真源】overlay SoT · Luna；jojo 正式短锁；基线 tip `e7cdeb0`；产品锁见 [`references/cu-p0-c-overlay.md`](./references/cu-p0-c-overlay.md)） |
+| [references/ai-blocks-unify.md](./references/ai-blocks-unify.md) | 对话侧 8 块统一视觉（HextaUI 拆解 + 参考表 + token + mike 草稿）；Composer 不动；I3 暂停；不是当前真相 |
+| [previews/ai-blocks-unify.html](./previews/ai-blocks-unify.html) | 对话侧 8 块浅/深 + 现网 Composer 对照 + 反例（【视觉真源】AI blocks · Luna；设计锁，不宣称应用 1:1） |
 
 ---
 
