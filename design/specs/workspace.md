@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（历史落到空的新聊天时不创建会话；Unicode11 必须 `allowProposedApi`）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（历史落到空的新聊天时不创建会话；Unicode11 必须 `allowProposedApi`；Win 扫描路径用 posix）
 
 ## 当前真相
 
@@ -85,3 +85,4 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - Windows 文件名不能含 `*`。`gitStage`「字面 pathspec 不展开」只在 POSIX 上落盘 `wild*.txt`；Win 上跳过创建与暂存该文件，产品仍走 `--literal-pathspecs`。
 - `restoreCheckpoint` 不是 `git reset --hard`，也不 `git clean -fd`（会扫到 ignored）。校验 `^refs/enjoy/checkpoints/\\d+$`，否则 `CHECKPOINT_REF_INVALID`。记账与还原都用临时 `GIT_INDEX_FILE`：`read-tree <sha>` + `checkout-index -a -f` **不得**写用户 `.git/index`，暂存区保持还原前状态。先 `previewCheckpoint` 列出快照外已跟踪 / 未跟踪路径。`restoreCheckpoint` 未带 `confirmDeleteUntracked: true` 且有未跟踪删除时**不改盘**，返回 `{ ok:false, code:CHECKPOINT_CONFIRM_REQUIRED, untrackedToDelete }`。确认后才删「当时 git 知道、但不在快照树里」的路径（`resolveInsideWorkspace` jail）。HEAD / 当前分支不动，文案禁止写成分支回退。找不到 `.git` 或 ref 抛 `CHECKPOINT_NOT_FOUND`。成功后 UI 必须 invalidate `["changes", workspaceId]`，**留在检查点作用域**看时间线，禁止偷切「未提交」。ACP 写盘不走 host，靠 `file.changed` / `run.end` 记账（每 run 最多一条），并 invalidate `["checkpoints", workspaceId]`。
 - `@xterm/addon-unicode11` 会读 `term.unicode`（xterm 5 proposed API）。`new Terminal()` 不设 `allowProposedApi: true` 时 `loadAddon(Unicode11Addon)` 抛错，React effect 把整窗打成「Something went wrong」白屏。不要只在 addon 调用处 try/catch 当修复；构造终端时就要开旗。
+- `open-terminal-link`「唯一 `window.openExternal` 调用点」扫描用 `path.relative`。Windows 产出反斜杠，和 posix 期望对不上，CI `check (windows-latest)` 会红。比较前必须 `split(sep).join("/")`，与 `repo-test-harness-invariants` 同一写法。

@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { readdirSync, readFileSync, statSync } from "node:fs"
-import { dirname, join, relative } from "node:path"
+import { dirname, join, relative, sep } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import { openTerminalLink } from "./open-terminal-link.ts"
@@ -68,7 +68,9 @@ test("renderer 只有终端点击回调调用 window.openExternal", () => {
       if (!name.endsWith(".ts") && !name.endsWith(".tsx")) continue
       if (name.endsWith(".test.ts") || name.endsWith(".test.tsx")) continue
       const src = readFileSync(full, "utf8")
-      if (src.includes(".window.openExternal(")) hits.push(relative(rendererRoot, full))
+      if (src.includes(".window.openExternal(")) {
+        hits.push(relative(rendererRoot, full).split(sep).join("/"))
+      }
     }
   }
   walk(rendererRoot)
