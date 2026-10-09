@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-08（历史落到空的新聊天时不创建会话）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-09（终端 xterm 5.x 官方 addon：WebGL / 查找 / 外链 / Unicode 11）
 
 ## 当前真相
 
@@ -17,7 +17,7 @@
 - Agent host 只读 `gitStatus` / `gitDiff` / `gitLog`（porcelain 文本，默认 20 条、上限 100，path jail）；写 `gitCommit`（默认不 `add -A`）/ `gitBranch` / `gitPush` 走 Git 审批。Agent `git_log` **不是** Review 栏 structured `commits[]`
 - Agent `bash`：cwd 锁工作区、禁 shell 包装器、默认禁网二进制。macOS 再套 Seatbelt（写盘限工作区 + tmp）。不要把字符串过滤写成「沙箱已隔离」。
 - 写盘检查点列表与还原（`workspace.listCheckpoints` / `previewCheckpoint` / `restoreCheckpoint`）：Review 第 7 个作用域 `checkpoints`。每轮开流记 `kind=baseline`（commit subject 带 session/run）。Enjoy Local 写盘与 ACP `file.changed` 记 `kind=turn`。列表项可带 `sessionId` / `runId` / `kind`；旧检查点没有这些字段。助手气泡下「本轮改动」按目录两级树，点开审查。用户气泡「从这里重来」只给 Enjoy Local：先还原该轮 baseline（失败则停），再截对话；不移动 HEAD。ACP 不能 rewind CLI 上下文，按钮禁用。
-- 工作区绑定的 pty 终端（`terminal.open` / `write` / `resize` / `close`）：main `node-pty`，renderer `@xterm/xterm` + FitAddon。原始按键进 PTY，不按行补 `\n`。这是工作区壳，不是 M4 ACP PTY 登录兜底。
+- 工作区绑定的 pty 终端（`terminal.open` / `write` / `resize` / `close`）：main `node-pty`，renderer `@xterm/xterm` ^5.5 + FitAddon，以及精确钉版本的 `@xterm/addon-webgl@0.18.0`（失败 / context loss 回落 DOM，禁止白屏）、`@xterm/addon-search@0.15.0`（终端聚焦 ⌘/Ctrl+F，查找条 `data-terminal-pane`，不抢本会话查找）、`@xterm/addon-web-links@0.11.0`（点击只走 `window.openExternal` → main `shell.openExternal`，禁止 renderer `window.open`）、`@xterm/addon-unicode11@0.8.0`（`unicode.activeVersion = "11"`）。原始按键进 PTY，不按行补 `\n`。这是工作区壳，不是 M4 ACP PTY 登录兜底。禁止装 xterm 6 系 addon。
 - 完成条「在浏览器打开」（`workspace.openPreview`）：工作区 `*.html` 转 `file://`，或本会话本机预览 URL，经 `shell.openExternal` 打开系统浏览器。不嵌右栏 Browser，不起 dev server。
 
 Agent 写盘与 bash 不走 renderer：审批通过后由 workspace host / `command.ts` 在 main 执行。bash 的 cwd 锁在工作区，模型侧输出按头尾截断（见 [agent-runtime](./agent-runtime.md)），Windows 下 `windowsHide: true`。`writeFile` / `editFile` 成功后记 `refs/enjoy/checkpoints/<stamp>`（临时 `GIT_INDEX_FILE` + `commit-tree`，含未跟踪新文件），**不**改用户当前分支、不碰工作区 index、不自动 `git commit`。非仓库、或 `.git` 落在工作区外（嵌在别人的仓库里）则跳过。
@@ -50,12 +50,15 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件或目录暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
 - 底栏选择器：`ai-chat/status-bar/status-project-picker.tsx`、`status-branch-picker.tsx`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
-- 终端：`apps/desktop/src/main/services/terminal.ts`
+- 终端：`apps/desktop/src/main/services/terminal.ts`；renderer `right-pane/views/workspace-terminal.tsx` + `views/terminal/`（addons / WebGL 回落 / 查找 / 外链）
 - 文件监视：`workspace-watch.ts` + Windows 指纹 `workspace-watch-fingerprint.ts`
 - 右侧栏：`apps/desktop/src/renderer/src/components/ai-chat/right-pane/`
 - 系统浏览器预览：`workspace-open-preview.ts`、`composer/session-review/preview-open/`
 
 ## 已知坑
+
+- **隐患**：终端 WebGL context loss 不解掉 addon 会留下白画布。正确做法：`onContextLoss` 立刻 `dispose`，回落 xterm DOM renderer；`loadAddon` 抛错同样回落，不要重试死循环。
+- **隐患**：终端查找条聚焦后 `activeElement` 不再是 `.xterm`，⌘F 会被 `chat.find`（`!terminalFocus`）抢走，甚至冒出 Chromium 页内查找。正确做法：`data-terminal-pane` 也算终端焦点；查找热键 capture + `preventDefault`。
 
 - Files 预览已接 `WorkspaceEditor`（本地 monaco，不走 CDN）+ `workspace.writeFile`。⌘/Ctrl+S 与顶栏保存同一条路径。这是单文件编辑，不是多标签 LSP IDE。`workspace.watch` 用 `fs.watch` recursive；Windows 另开指纹轮询（最多 200 条）补漏事件，不要假装 inotify。
 - Files 树拖拽走 `workspace.move`（`workspace-move.ts` / `workspace-rename.ts` + `workspace-move-plan.ts`）。renderer 不 `fs.rename`。不要和 Review 改宽分隔条、也不要和 Composer 附件 drop 搞混。

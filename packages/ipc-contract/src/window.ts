@@ -29,3 +29,11 @@ export const WindowSetTaskbarTitleInput = z
     label: input.label.replace(/[\r\n]+/g, " ").trim().slice(0, TASKBAR_LABEL_MAX)
   }));
 export type WindowSetTaskbarTitleInput = z.infer<typeof WindowSetTaskbarTitleInput>;
+
+/** 终端链接等：只收 http(s)，协议在 main 再验一遍。 */
+export const WindowOpenExternalInput = z
+  .object({
+    url: z.string().trim().min(1).max(2048)
+  })
+  .strict();
+export type WindowOpenExternalInput = z.infer<typeof WindowOpenExternalInput>;

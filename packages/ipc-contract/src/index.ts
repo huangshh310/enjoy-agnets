@@ -43,7 +43,13 @@ export {
   TerminalSession,
   TerminalWriteInput
 } from "./terminal"
-export { WindowState, WindowActionResult, WindowForceQuitInput, WindowSetTaskbarTitleInput } from "./window"
+export {
+  WindowState,
+  WindowActionResult,
+  WindowForceQuitInput,
+  WindowSetTaskbarTitleInput,
+  WindowOpenExternalInput
+} from "./window"
 export * from "./app-update"
 export * from "./generation"
 export * from "./ui-message"
