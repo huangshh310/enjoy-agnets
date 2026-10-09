@@ -28,7 +28,7 @@
 | 运行记录 | **没有**抽屉内历史列表。持久化只有 `lastRunAt` / `lastRunStatus` / 可选 `lastSessionId` |
 | 补跑开关 | **没有**。「立即运行」只在触发=仅手动时出现 |
 | 幂等 | `runAgent` 带 `commandId: createId("auto-run")`（`automations-launch.ts`）——**每次开一轮新随机 id**，用来防同一 turn 双开，**不是**「自动化 id + 计划时间」的错过点键。无 `powerMonitor` 唤醒回看 |
-| Approval Dock | 现网 `permission-dock.tsx` 标题「等待你的决定」；桌面卡四选一：允许一次 / 本会话允许此应用 / 始终允许此应用 / 拒绝。现码默认仍高亮「始终允许」（`defaultDesktopApprovalChoice` → `allow_always`）。① CU-P1-P 将默认改成「本会话允许此应用」；本预览按 ① 已合后的 Dock 宇宙画。仓库里 **没有** `cu-p1-p-polish.html`，Dock 铬对照现网卡 + CU-P1-A 预览 |
+| Approval Dock | 现网 `permission-dock.tsx` 标题「等待你的决定」；桌面卡四选一：允许一次 / 本会话允许此应用 / 始终允许此应用 / 拒绝。现码默认仍高亮「始终允许」（`defaultDesktopApprovalChoice` → `allow_always`）。① 视觉真源 [`cu-p1-p-polish.html`](../previews/cu-p1-p-polish.html) 已把默认改成「本会话允许此应用」；本预览按那套 Dock 宇宙画（实现仍等 ① 合完） |
 | 通知 | `desktop-notify.ts` 审批通称「待审批 / 有工具在等你决定。」**无**自动化补跑来源句，通知上 **无**允许按钮（现网也没有） |
 | Token | 本预览用 Agents ink `#0F1419` / mute `#5C6670` / line `#E4E7EB` / paper `#F7F8FA` / card `#FFFFFF` / accent `#2B6DE5`。I4 / I4-P1 预览仍是旅行纸色 Paper/Clay，**不要**把那套色抄回来 |
 
