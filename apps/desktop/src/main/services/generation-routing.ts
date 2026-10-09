@@ -24,8 +24,8 @@ export function pickGenerateProfile<T extends { id: string; enabled?: boolean }>
 ): T | undefined {
   if (providerId) {
     const match = vault.profiles.find((profile) => profile.id === providerId)
-    if (!match || match.enabled === false) return undefined
-    return match
+    if (match?.enabled === false) return undefined
+    if (match) return match
   }
   const active = vault.profiles.find((profile) => profile.id === vault.activeId && profile.enabled !== false)
   if (active) return active

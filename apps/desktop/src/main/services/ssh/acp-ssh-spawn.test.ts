@@ -18,7 +18,8 @@ test("远端 ACP spawn 用 catalog basename 与远端 cwd，失败人话含远�
     }
   })
   assert.equal(plan.mode, "ssh")
-  assert.equal(plan.command, "ssh")
+  // Windows 本机客户端是 OpenSSH ssh.exe，不是 PATH 上的裸 ssh。
+  assert.ok(plan.command === "ssh" || plan.command.endsWith("ssh.exe"))
   assert.ok(plan.args.includes("alice@dev.internal"))
   assert.ok(plan.args.some((arg) => arg.includes("/home/alice/app")))
   assert.ok(plan.args.some((arg) => arg.includes("claude")))

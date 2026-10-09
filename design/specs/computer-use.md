@@ -1,6 +1,6 @@
 # spec/computer-use
 
-> Enjoy Local 操作本机其它应用。最后更新：2026-10-07（产品页收齐开关与诊断；内置工具不再重复电脑操控）
+> Enjoy Local 操作本机其它应用。最后更新：2026-10-09（产品页收齐开关与诊断；内置工具不再重复电脑操控）
 
 ## 当前真相
 
@@ -76,6 +76,7 @@
 - Chat 用 `hidden` 保活，不会因为打开设置而卸载。电脑操控总开关不能只在 Composer 挂载时读一次。设置页写入后要广播 `enjoy:computer-use-changed`，`useComputerUseEnabled` 据此更新「桌面」芯片和 `@桌面`。工具是否注册仍看 main 当时的 `computerUseEnabled`。
 - **隐患**：开发时 macOS 辅助功能授给 `.build/computer-use`。该二进制未签名时设置**不得**绿，只显示「请安装带签名的版本后再试」，并且**不**把辅助功能行显示成「未授权」。真要点击仍须给这份 helper 开辅助功能，或改用签名安装包。徽章和权限行只读 helper；`executor_unsigned` / `executor_identity_mismatch` / 宿主 `hostAccessibility` 不得绿。
 - Windows / Linux 真实 GUI 点击没有在本机 macOS 上跑验收。设 `ENJOY_CU_GUI=1` 才跑拍树测试；跳过不等于通过（skip ≠ pass）。§3.2e / H5：设置与文档不得把 Win/Linux 标成可用/available，直至真机 GUI 冒烟。
+- `doctor-report` 单测注入 darwin 身份钩子，但 `displaySession()` / `formatDoctorLine` 仍读真实 runner。Ubuntu 无图形会话返回「当前没有图形会话」；Windows / X11 / Wayland 返回「尚未标为可用」。这是 H5 文案，不要改优先级去迁就 darwin 断言。断言 macOS helper 人话时把 `session` 钉成 `macos`。
 - Windows `move`/`drag` 仍要前台许可；`key` 用 `PostMessage`，不用 `SendInput`。
 - **二次确认卡 UI**：视觉真源 `design/previews/cu-p1-r-second-confirm.html`（#84）。数据面已在 main `#85`；Dock warn/danger 铬已接线。像素只进审批 args，禁止把 data URL 写进模型可见的工具结果。
 - **二次确认 × 会话 Allow / 持久簿**：stash 或 `needsSecondConfirm` 必须走 `desktopActAlwaysAsks`，盖住 `desktop_act:<appKey>` / `desktop_act:*` 与簿投影 appKey。主循环 / 活泵仍 **repark**，不把失败只丢给模型。二次确认禁止 `allow_always` 落簿。

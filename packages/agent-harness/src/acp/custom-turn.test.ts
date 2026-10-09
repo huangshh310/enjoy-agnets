@@ -22,7 +22,8 @@ test("自定义 opencode：spawn + initialize + session/new + 审批 + 文本", 
   const resolved = resolveCustomSpawn(command, [])
   assert.equal(resolved.command, command)
 
-  const child = spawn(resolved.command, resolved.args, {
+  // 桩是 .mjs；Windows 不能 spawn 无扩展名脚本，用当前 node 跑 fixture。
+  const child = spawn(process.execPath, [fixture], {
     cwd: dir,
     shell: false,
     stdio: ["pipe", "pipe", "pipe"]
