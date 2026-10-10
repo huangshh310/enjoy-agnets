@@ -25,6 +25,7 @@ import type { TurnSourceChip } from "../../thread/sources/source-chip"
 import { reviewBannerPeek } from "../session-review/review-banner-peek"
 import { reviewPlaceholderKey, reviewPlaceholderKind } from "../session-review/review-placeholder-kind"
 import type { SessionReviewFile } from "../session-review/session-review.types"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 
 export function ComposerLiveChanges() {
@@ -54,15 +55,16 @@ export function ComposerLiveChanges() {
   const stopped =
     !running &&
     (classifyThreadError(notice ?? "") === "stopped" || classifyThreadError(error ?? "") === "stopped")
+  const interrupted = stopped || isRestoreFamilyCode(notice)
   const placeholderKey = reviewPlaceholderKey(
-    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [], stopped)
+    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [], interrupted)
   )
   const peek = reviewBannerPeek(
     files,
     {
       stopped,
       placeholder: showGate,
-      maybeChanged: stopped && files.length === 0,
+      maybeChanged: interrupted && files.length === 0,
       placeholderKey,
       wroteThisTurnOnly: model.pick.wroteThisTurnOnly
     },

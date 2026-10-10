@@ -23,6 +23,7 @@ import { latestSessionTodoList } from "../../thread/tool-surfaces/select-turn-to
 import { ReviewGateCard, chipsFromLastAssistant } from "../../review-gate/review-gate-card"
 import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-gate-actions"
 import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { reviewPlaceholderKey, reviewPlaceholderKind } from "./review-placeholder-kind"
 
 export function ComposerSessionReview() {
@@ -43,8 +44,9 @@ export function ComposerSessionReview() {
   const todos = latestSessionTodoList(messages)
   const hasTodos = Boolean(todos && todos.tasks.length > 0)
   const showGate = model.needsReview && !running
+  const notice = useChatStore((state) => state.notice)
   const placeholderKey = reviewPlaceholderKey(
-    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [])
+    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [], isRestoreFamilyCode(notice))
   )
 
   const previewUrl = model.previewTarget?.kind === "url" ? model.previewTarget.url : null

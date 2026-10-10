@@ -2,6 +2,7 @@
  * 无 path 待验收占位：先从落库 / run.tools 认工具种类，认不出才走未知回退。
  * 未知回退禁止说「运行了命令」。中途中断不说「已改」。
  */
+import { RESTART_ABANDONED_CODE, toolHasResultCode } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { BASH_TOOLS, TOOL_NAMES } from "@enjoy-agents/ipc-contract/tool-names"
 import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 
@@ -29,7 +30,7 @@ export function reviewPlaceholderKey(kind: ReviewPlaceholderKind): string {
 }
 
 export function reviewPlaceholderKind(
-  tools: ReadonlyArray<{ name: string; state?: string; errorText?: string }>,
+  tools: ReadonlyArray<{ name: string; state?: string; errorText?: string; result?: unknown }>,
   interrupted = false
 ): ReviewPlaceholderKind {
   if (interrupted || tools.some(isInterruptedTool)) return "maybe"
@@ -38,8 +39,9 @@ export function reviewPlaceholderKind(
   return "unknown"
 }
 
-function isInterruptedTool(tool: { state?: string; errorText?: string }): boolean {
+function isInterruptedTool(tool: { state?: string; errorText?: string; result?: unknown }): boolean {
   if (tool.state === "approval-requested") return true
+  if (toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return true
   const text = tool.errorText ?? ""
-  return text === "restart_abandoned" || isRestoreFamilyCode(text)
+  return isRestoreFamilyCode(text)
 }

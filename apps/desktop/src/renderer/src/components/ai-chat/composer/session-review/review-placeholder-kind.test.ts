@@ -31,6 +31,16 @@ test("中途中断走可能改了文件", () => {
     "maybe"
   )
   assert.equal(
+    reviewPlaceholderKind([
+      {
+        name: "write_file",
+        state: "output-error",
+        result: { code: "restart_abandoned", decision: "cancelled" }
+      }
+    ]),
+    "maybe"
+  )
+  assert.equal(
     reviewPlaceholderKind([{ name: "write_file", state: "output-available" }], true),
     "maybe"
   )
