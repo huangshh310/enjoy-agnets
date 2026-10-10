@@ -66,6 +66,7 @@ export function AssistantActions({
       {canForkTurn(message) ? <ForkTurnButton messageId={message.id} /> : null}
       <MessageMoreMenu>
         <DropdownMenuItem
+          data-testid="extract-object"
           disabled={extracting}
           onClick={() => {
             setExtracting(true)

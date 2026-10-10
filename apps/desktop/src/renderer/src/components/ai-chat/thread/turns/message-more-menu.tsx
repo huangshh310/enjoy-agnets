@@ -16,7 +16,11 @@ export function MessageMoreMenu({ children }: { children: ReactNode }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <MessageAction tooltip={t("chat.moreActions")} label={t("chat.moreActions")}>
+        <MessageAction
+          tooltip={t("chat.moreActions")}
+          label={t("chat.moreActions")}
+          data-testid="message-more"
+        >
           <RiMoreLine className="size-4" />
         </MessageAction>
       </DropdownMenuTrigger>

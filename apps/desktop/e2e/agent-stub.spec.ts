@@ -12,7 +12,7 @@ import { sendComposer } from "./send-composer"
 const mainEntry = join(process.cwd(), "out/main/index.js")
 
 test("stub Agent：发送、停止、恢复、审批、知识、工作流、导入", async () => {
-  const app = await launchStubApp("# e2e workspace\nhello knowledge\n")
+  const app = await launchStubApp("# e2e workspace\nhello knowledge\n", 180_000)
   if (!app) return
   try {
     const window = await readyWindow(app)
@@ -50,7 +50,8 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
       timeout: 20_000
     })
 
-    await window.getByRole("button", { name: "Extract object" }).first().click({ timeout: 8_000 })
+    await window.locator('[data-testid="message-more"]').first().click({ timeout: 8_000 })
+    await window.locator('[data-testid="extract-object"]').click({ timeout: 8_000 })
     await window.waitForFunction(() => document.body.innerText.includes("stub-card"), undefined, {
       timeout: 12_000
     })
@@ -108,13 +109,17 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     const card = window.locator("article").filter({ hasText: "e2e.txt" }).first()
     await card.click()
     await card.getByTestId("asset-export").click({ force: true })
-    await window.waitForFunction(() => document.body.innerText.includes("Exported to"), undefined, {
-      timeout: 12_000
-    })
-    await window.getByRole("button", { name: "STT & Audio" }).click()
-    await window.waitForFunction(() => document.body.innerText.includes("Translate"), undefined, {
-      timeout: 8_000
-    })
+    await window.waitForFunction(
+      () => document.body.innerText.includes("Exported to") || document.body.innerText.includes("已导出到"),
+      undefined,
+      { timeout: 12_000 }
+    )
+    await window.getByRole("button", { name: /STT & Audio|语音转写/ }).click()
+    await window.waitForFunction(
+      () => document.body.innerText.includes("Translate") || document.body.innerText.includes("翻译"),
+      undefined,
+      { timeout: 8_000 }
+    )
 
     await window.evaluate(() => {
       location.hash = "#/mcp"
@@ -134,7 +139,7 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await window.waitForSelector('[data-testid="mcp-app-log-text"]', { timeout: 8_000 })
     await expect(window.locator('[data-testid="mcp-app-log-text"]')).toContainText("app-log-ok")
   } finally {
-    await app.close()
+    await closeApp(app)
   }
 })
 
@@ -158,6 +163,7 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
     await window.locator('[data-testid="approval-deny"]').click({ timeout: 8_000, force: true })
     await expect(window.locator('[data-testid="approval-session"]')).toHaveCount(0, { timeout: 12_000 })
 
+    // 新会话先关卡再归档：归档必须清掉第一会话的 allow，恢复后再问。
     await archiveSessionNamed(window, firstName)
     await window.evaluate(() => {
       location.hash = "#/settings/archived"

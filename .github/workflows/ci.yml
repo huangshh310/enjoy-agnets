@@ -51,7 +51,7 @@ jobs:
       - run: pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts contracts.spec.ts
 
   e2e-window:
-    # xvfb + Electron 系统库：只跑「本会话总是允许」窗口用例。整页 stub 冒烟仍留本机。
+    # xvfb + Electron 系统库：跑完整 agent-stub.spec.ts（既有 stub 冒烟 + 本会话允许跨轮）。其它窗口 spec 仍留本机。
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -69,5 +69,5 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
       - run: sudo apt-get update
       - run: sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libasound2t64 libgbm1 libxtst6 libatk-bridge2.0-0 libdrm2
-      - name: Run session-allow window e2e
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts -g "本会话总是允许"
+      - name: Run agent-stub window e2e
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts
