@@ -3,6 +3,7 @@
  * 供应商仅进 title / Picker 左栏，禁止第三段，禁止协议词。
  */
 import { sessionOverlayOnEngine } from "@enjoy-agents/ipc-contract/session-overlay"
+import { joinSegments } from "../../../lib/join-segments"
 
 const ENJOY_LOCAL = "enjoy-local"
 
@@ -14,12 +15,12 @@ export function composerChipParts(input: {
   const engine = input.engineLabel.trim()
   const model = input.modelLabel.trim()
   const provider = input.providerLabel?.trim() ?? ""
-  const title = [engine, provider, model].filter(Boolean).join(" · ")
+  const title = joinSegments(engine, provider, model)
   return { engine, model, title }
 }
 
 export function composerChipText(parts: { engine: string; model: string }): string {
-  return [parts.engine, parts.model].filter(Boolean).join(" · ")
+  return joinSegments(parts.engine, parts.model)
 }
 
 export type ComposerActiveModelInput = {

@@ -230,6 +230,7 @@ export const zhStudio = {
     webhook: "本机推送",
     triggerHint: "选择什么时候运行",
     cronLabel: "定时",
+    cronExprCustom: "自定义表达式",
     scheduleDaily: "每天",
     scheduleWeekdays: "工作日",
     scheduleWeekly: "每周",

@@ -164,7 +164,7 @@ function Field({
       <div className="flex items-center justify-between">
         <Label className="text-caption-1-medium text-text-secondary">{label}</Label>
         {hint ? (
-          <span className="text-caption-1-medium text-text-tertiary">{hint}</span>
+          <span className="text-caption-1-medium text-text-secondary">{hint}</span>
         ) : null}
       </div>
       {children}
