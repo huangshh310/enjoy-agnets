@@ -141,6 +141,13 @@ export function toPublic(profile: ProviderProfile, activeId: string | null): Pro
   }
 }
 
+/** 库里有密文但解不开：钥匙串挂了时删档案必须拒绝，不能当成空 vault 成功。 */
+export function vaultCipherUnreadable(): boolean {
+  const stored = readVaultBlob()
+  if (!stored) return false
+  return decryptJson(stored) === undefined
+}
+
 export async function readVault(): Promise<Vault> {
   const stored = readVaultBlob()
   if (stored) {
@@ -167,7 +174,7 @@ export async function writeVault(vault: Vault): Promise<void> {
   deleteSetting(VAULT_KEY)
 }
 
-/** 整行清掉，不重加密。钥匙串挂掉时删最后一把带密钥档案走这条。 */
+/** 整行清掉，不重加密。钥匙串挂掉时只在删完一张都不剩才走这条。 */
 export function clearVault(): void {
   deleteSecretValue(getDatabase(), VAULT_KEY)
   deleteSetting(VAULT_KEY)

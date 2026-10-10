@@ -26,7 +26,7 @@ import {
   setStoredProviderEnabled
 } from "./ipc-provider-probe"
 import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
-import { getSetting, setSetting } from "./services/database"
+import { getSetting } from "./services/database"
 import { parseRecentWorkspaceIds, RECENT_WORKSPACE_SETTING } from "./services/workspace-mru.ts"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
@@ -34,7 +34,10 @@ import { SecretWriteFailure } from "./services/secret-storage.ts"
 import { runSecretWrite } from "./services/secret-write-guard.ts"
 import { listAgentTools } from "./services/agent-tools-service"
 import { scheduleChatReadinessPush } from "./services/chat-readiness"
-import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
+import {
+  markDefaultChatRouteExplicit,
+  persistDefaultModelAfterSecret
+} from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
@@ -129,10 +132,9 @@ function registerCoreSettingsIpc() {
   ipcMain.handle("settings.setDefaultModel", async (_event, raw) => {
     const modelId = SetDefaultModelInput.parse(raw).modelId
     return runSecretWrite(async () => {
-      markDefaultChatRouteExplicit()
-      setSetting("defaultModelId", modelId)
-      const active = await getActiveProfile()
-      if (active) {
+      await persistDefaultModelAfterSecret(modelId, async () => {
+        const active = await getActiveProfile()
+        if (!active) return
         await upsertProfile({
           id: active.id,
           name: active.name,
@@ -140,16 +142,18 @@ function registerCoreSettingsIpc() {
           modelId,
           activate: true
         })
-      }
+      })
       scheduleChatReadinessPush()
       return {}
     })
   })
   ipcMain.handle("settings.setPreferences", async (_event, raw) => {
     const input = SetPreferencesInput.parse(raw)
-    if (input.runtimeId) markDefaultChatRouteExplicit()
     const preferences = writePreferences(input)
-    if (input.runtimeId) scheduleChatReadinessPush()
+    if (input.runtimeId) {
+      markDefaultChatRouteExplicit()
+      scheduleChatReadinessPush()
+    }
     const { syncAppsnapHotkey } = await import("./services/appsnap/appsnap-hotkey")
     syncAppsnapHotkey({
       appsnapEnabled: preferences.appsnapEnabled,
@@ -210,7 +214,7 @@ function registerProviderIpc() {
     })
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
-    // 不走 runSecretWrite 预检：最后一把带密钥档案在钥匙串挂掉时仍要整行清掉。
+    // 不走 runSecretWrite 预检：删完一张都不剩才整行清掉；还剩档案则 KEYCHAIN_UNAVAILABLE。
     try {
       await removeProfile(ProviderIdInput.parse(raw).id)
     } catch (error) {

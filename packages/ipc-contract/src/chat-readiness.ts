@@ -158,8 +158,8 @@ export type ResolveDefaultChatRouteInput = {
   apiKeys: readonly ChatApiKeyRoute[]
   /** 路由 hasSecret()：当前档案，不是「任意档案有密钥」。 */
   hasEnjoySecret?: boolean
-  /** 当前档案若是带密钥的，才写 defaultRoute.profileId。 */
-  activeKeyProfileId?: string | null
+  /** 当前档案若是带密钥的，才写 defaultRoute.profileId。调用方必须显式传，禁止省略回落第一把。 */
+  activeKeyProfileId: string | null
 }
 
 function chatDefaultRouteOf(
@@ -240,7 +240,7 @@ export function chatReadyFromRoutes(input: {
   explicit?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
-  activeKeyProfileId?: string | null
+  activeKeyProfileId: string | null
 }): boolean {
   const route = resolveDefaultChatRoute(input)
   return defaultRouteReady(route, input)
@@ -255,7 +255,7 @@ export function buildChatReadiness(input: {
   explicit?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
-  activeKeyProfileId?: string | null
+  activeKeyProfileId: string | null
   adoptedHint?: { name: string }
   secretStorageAvailable?: boolean
 }): ChatReadiness {

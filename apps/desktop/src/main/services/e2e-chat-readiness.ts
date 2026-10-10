@@ -68,7 +68,8 @@ export function e2eChatReadiness(env: NodeJS.ProcessEnv, packaged: boolean): Cha
       apiKeys: [],
       engineCount: 1,
       preferredRuntimeId: E2E_CHAT_READY_ENGINE_ID,
-      hasEnjoySecret: false
+      hasEnjoySecret: false,
+      activeKeyProfileId: null
     })
   }
   if (kind === "none") {
@@ -77,7 +78,8 @@ export function e2eChatReadiness(env: NodeJS.ProcessEnv, packaged: boolean): Cha
       localModels: [],
       apiKeys: [],
       engineCount: 1,
-      hasEnjoySecret: false
+      hasEnjoySecret: false,
+      activeKeyProfileId: null
     })
   }
   if (kind === "unverified") {
@@ -86,7 +88,8 @@ export function e2eChatReadiness(env: NodeJS.ProcessEnv, packaged: boolean): Cha
       localModels: [{ kind: "local_model", service: "ollama", verified: false }],
       apiKeys: [],
       engineCount: 1,
-      hasEnjoySecret: true
+      hasEnjoySecret: true,
+      activeKeyProfileId: null
     })
   }
   return null

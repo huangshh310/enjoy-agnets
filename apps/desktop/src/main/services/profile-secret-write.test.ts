@@ -1,49 +1,33 @@
 /**
- * 删档案：多把时钥匙串挂了拒绝且不写明文；最后一把整行清掉。
- * vault 读写动态 import secrets-vault（避免一跳撞 ACP / providers 桶）。
+ * 删档案：生产加密路径 + 直接 removeProfile。
+ * probe C / 解不开密文 / customHeaders 凭证；basic_text 只在删空才 clear。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { afterEach, test } from "node:test"
 import { fileURLToPath } from "node:url"
-import { isSecretStorageAvailable } from "./secret-storage.ts"
-import { planVaultDelete, type VaultDeleteState } from "./vault-delete.ts"
+import { safeStorage } from "electron"
+import { SecretWriteFailure } from "./secret-storage.ts"
+import { planVaultDelete, profileHasSecret } from "./vault-delete.ts"
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const KEY_A = "sk-AAAA-secret"
-const KEY_B = "sk-BBBB-secret"
-const PREV = {
-  stub: process.env.ENJOY_E2E_STUB,
-  userdata: process.env.ENJOY_E2E_USERDATA,
-  keychain: process.env.ENJOY_E2E_KEYCHAIN
+const HEADER_TOKEN = "gw-header-token"
+const root = join(dirname(fileURLToPath(import.meta.url)), "..")
+
+type StubStorage = {
+  setEncryptionAvailable?: (next: boolean) => void
+  setSelectedStorageBackend?: (next: string) => void
+  resetForTest?: () => void
 }
 
-afterEach(() => {
-  restoreEnv("ENJOY_E2E_STUB", PREV.stub)
-  restoreEnv("ENJOY_E2E_USERDATA", PREV.userdata)
-  restoreEnv("ENJOY_E2E_KEYCHAIN", PREV.keychain)
-})
+const stub = safeStorage as typeof safeStorage & StubStorage
 
-test("removeProvider 不走钥匙串预检；activate / enable 先看是否要写", () => {
-  const settings = readFileSync(join(root, "ipc-settings.ts"), "utf8")
-  const secrets = readFileSync(join(root, "services/secrets.ts"), "utf8")
-  const vault = readFileSync(join(root, "services/secrets-vault.ts"), "utf8")
-  const probe = readFileSync(join(root, "ipc-provider-probe.ts"), "utf8")
-  assert.match(settings, /SecretWriteFailure/)
-  assert.match(settings, /removeProfile/)
-  assert.match(settings, /不走 runSecretWrite 预检/)
-  assert.match(settings, /active\?\.id === id/)
-  assert.match(settings, /\(current\.enabled !== false\) === input\.enabled/)
-  assert.match(settings, /scheduleChatReadinessPush/)
-  assert.doesNotMatch(settings, /pushChatReadinessNow/)
-  assert.doesNotMatch(secrets, /allowInsecure/)
-  assert.match(secrets, /planVaultDelete/)
-  assert.doesNotMatch(vault, /allowInsecure/)
-  assert.match(vault, /clearVault/)
-  assert.match(vault, /writeVaultQuiet/)
-  assert.match(vault, /读路径不得因钥匙串抛/)
-  assert.match(probe, /saved: false/)
+afterEach(() => {
+  stub.resetForTest?.()
+  delete process.env.ENJOY_E2E_STUB
+  delete process.env.ENJOY_E2E_USERDATA
+  delete process.env.ENJOY_E2E_KEYCHAIN
 })
 
 test("probe / upsert 进写密钥通道", () => {
@@ -53,59 +37,168 @@ test("probe / upsert 进写密钥通道", () => {
   assert.match(tools, /agentTools\.upsert[\s\S]*runSecretWrite/)
 })
 
-test("钥匙串挂了：多把拒绝且不写明文，恢复后都在；最后一把整行清掉", async () => {
-  process.env.ENJOY_E2E_STUB = "1"
-  process.env.ENJOY_E2E_USERDATA = "/tmp/e2e-ud"
-  delete process.env.ENJOY_E2E_KEYCHAIN
+test("profileHasSecret 认 customHeaders / customBody / proxy", () => {
+  assert.equal(profileHasSecret({ id: "ollama" }), false)
+  assert.equal(profileHasSecret({ id: "gw", customHeaders: '{"Authorization":"Bearer x"}' }), true)
+  assert.equal(profileHasSecret({ id: "gw", customBody: '{"token":"abc"}' }), true)
+  assert.equal(profileHasSecret({ id: "gw", customHeaders: "{}" }), false)
+  assert.equal(profileHasSecret({ id: "px", proxy: "http://user:pass@127.0.0.1:8080" }), true)
+  assert.equal(
+    planVaultDelete(
+      {
+        activeId: "prv_key",
+        profiles: [{ id: "prv_key", apiKey: "sk" }, { id: "prv_gw", customHeaders: '{"x":"t"}' }]
+      },
+      "prv_key",
+      false
+    ).kind,
+    "refuse"
+  )
+})
+
+test("probe C：basic_text 下还有 Ollama / 网关 header 时删 Key 档案必须拒绝", async () => {
+  enableProductionKeychain()
   const { writeVault, readVault, clearVault } = await import("./secrets-vault.ts")
+  const { removeProfile } = await import("./profile-remove.ts")
+  const { getDatabase, setSetting } = await import("./database.ts")
+  const db = getDatabase()
+  clearVault()
+  await writeVault(probeCVault())
+  const before = readBlob(db)
+  assert.ok(before)
+  assert.equal(String(before).includes("e2e-plain:"), false)
+  const decoded = Buffer.from(String(before), "base64").toString("utf8")
+  assert.equal(decoded.includes(KEY_A), true)
+  setSetting(
+    "agentTools.overrides",
+    JSON.stringify({
+      claude: { providerId: "prv_gw" },
+      cursor: { providerId: "prv_ollama" }
+    })
+  )
+
+  hangWriteKeepReadable()
+  await assert.rejects(() => removeProfile("prv_key"), (error: unknown) => {
+    assert.ok(error instanceof SecretWriteFailure)
+    assert.equal(error.code, "KEYCHAIN_UNAVAILABLE")
+    return true
+  })
+  assert.equal(readBlob(db), before)
+  assert.match(
+    String(db.prepare("SELECT value FROM settings WHERE key = ?").get("agentTools.overrides")?.value),
+    /prv_gw/
+  )
+
+  enableProductionKeychain()
+  const recovered = await readVault()
+  assert.equal(recovered.profiles.length, 3)
+  assert.ok(recovered.profiles.some((row) => row.id === "prv_key" && row.apiKey === KEY_A))
+  assert.ok(recovered.profiles.some((row) => row.id === "prv_ollama"))
+  assert.ok(recovered.profiles.some((row) => row.id === "prv_gw" && String(row.customHeaders).includes(HEADER_TOKEN)))
+})
+
+test("密文解不开且钥匙串挂了：removeProfile 回 KEYCHAIN_UNAVAILABLE，不当成功", async () => {
+  enableProductionKeychain()
+  const { writeVault, clearVault } = await import("./secrets-vault.ts")
+  const { removeProfile } = await import("./profile-remove.ts")
   const { getDatabase } = await import("./database.ts")
   const db = getDatabase()
-  const seeded = twoProfileVault()
   clearVault()
-  await writeVault(seeded)
+  await writeVault({
+    activeId: "prv_key",
+    profiles: [keyedProfile("prv_key", "A", KEY_A)]
+  })
   const before = readBlob(db)
-  assert.ok(before, "seed vault")
-  assert.ok(String(before).includes(KEY_A) || String(before).includes("e2e-plain:"))
+  assert.ok(before)
+  hangDecrypt()
+  await assert.rejects(() => removeProfile("prv_key"), (error: unknown) => {
+    assert.ok(error instanceof SecretWriteFailure)
+    assert.equal(error.code, "KEYCHAIN_UNAVAILABLE")
+    return true
+  })
+  assert.equal(readBlob(db), before)
+})
 
-  process.env.ENJOY_E2E_KEYCHAIN = "unavailable"
-  const refused = planVaultDelete(seeded, "prv_a", isSecretStorageAvailable())
-  assert.equal(refused.kind, "refuse")
-  assert.equal(readBlob(db), before, "refuse must leave the existing vault untouched")
-
-  delete process.env.ENJOY_E2E_KEYCHAIN
+test("customHeaders 凭证算秘密：basic_text 不得 clear 整行", async () => {
+  enableProductionKeychain()
+  const { writeVault, readVault, clearVault } = await import("./secrets-vault.ts")
+  const { removeProfile } = await import("./profile-remove.ts")
+  clearVault()
+  await writeVault({
+    activeId: "prv_key",
+    profiles: [
+      keyedProfile("prv_key", "A", KEY_A),
+      {
+        ...keyedProfile("prv_gw", "Gateway", ""),
+        kind: "gateway" as const,
+        apiKey: "",
+        keys: [],
+        customHeaders: JSON.stringify({ Authorization: `Bearer ${HEADER_TOKEN}` })
+      }
+    ]
+  })
+  hangWriteKeepReadable()
+  await assert.rejects(() => removeProfile("prv_key"), (error: unknown) => {
+    assert.ok(error instanceof SecretWriteFailure)
+    assert.equal(error.code, "KEYCHAIN_UNAVAILABLE")
+    return true
+  })
+  enableProductionKeychain()
   const recovered = await readVault()
   assert.equal(recovered.profiles.length, 2)
-  assert.ok(recovered.profiles.some((row) => row.apiKey === KEY_A))
-  assert.ok(recovered.profiles.some((row) => row.apiKey === KEY_B))
+})
 
-  const lastOnly = { activeId: "prv_a", profiles: seeded.profiles.filter((row) => row.id === "prv_a") }
-  await writeVault(lastOnly)
-  process.env.ENJOY_E2E_KEYCHAIN = "unavailable"
-  const last = planVaultDelete(lastOnly, "prv_a", isSecretStorageAvailable())
-  assert.equal(last.kind, "clear")
+test("basic_text 删完一张都不剩才 clear；恢复后没有档案", async () => {
+  enableProductionKeychain()
+  const { writeVault, readVault, clearVault } = await import("./secrets-vault.ts")
+  const { removeProfile } = await import("./profile-remove.ts")
+  const { getDatabase } = await import("./database.ts")
+  const db = getDatabase()
   clearVault()
+  await writeVault({
+    activeId: "prv_key",
+    profiles: [keyedProfile("prv_key", "A", KEY_A)]
+  })
+  hangWriteKeepReadable()
+  await removeProfile("prv_key")
   assert.equal(readBlob(db), undefined)
-  assert.equal(dbText(db).includes(KEY_A), false)
-  assert.equal(dbText(db).includes(KEY_B), false)
-  delete process.env.ENJOY_E2E_KEYCHAIN
+  enableProductionKeychain()
   assert.deepEqual((await readVault()).profiles, [])
 })
 
-function twoProfileVault(): VaultDeleteState<{
-  id: string
-  name: string
-  kind: "openai"
-  apiKey: string
-  baseURL: string
-  modelId: string
-  enabled: boolean
-  keys: Array<{ id: string; name: string; apiKey: string; enabled: boolean }>
-}> {
+function enableProductionKeychain() {
+  stub.setEncryptionAvailable?.(true)
+  stub.setSelectedStorageBackend?.("gnome_libsecret")
+}
+
+function hangWriteKeepReadable() {
+  stub.setEncryptionAvailable?.(true)
+  stub.setSelectedStorageBackend?.("basic_text")
+}
+
+function hangDecrypt() {
+  stub.setEncryptionAvailable?.(false)
+}
+
+function probeCVault() {
   return {
-    activeId: "prv_a",
+    activeId: "prv_key",
     profiles: [
-      keyedProfile("prv_a", "A", KEY_A),
-      keyedProfile("prv_b", "B", KEY_B)
+      keyedProfile("prv_key", "OpenAI", KEY_A),
+      {
+        ...keyedProfile("prv_ollama", "Ollama", ""),
+        kind: "ollama" as const,
+        apiKey: "",
+        keys: [],
+        baseURL: "http://127.0.0.1:11434"
+      },
+      {
+        ...keyedProfile("prv_gw", "Gateway", ""),
+        kind: "gateway" as const,
+        apiKey: "",
+        keys: [],
+        customHeaders: JSON.stringify({ Authorization: `Bearer ${HEADER_TOKEN}` })
+      }
     ]
   }
 }
@@ -119,21 +212,10 @@ function keyedProfile(id: string, name: string, apiKey: string) {
     baseURL: "https://api.openai.com/v1",
     modelId: "gpt-4o",
     enabled: true,
-    keys: [{ id: `${id}-key`, name: "default", apiKey, enabled: true }]
+    keys: apiKey ? [{ id: `${id}-key`, name: "default", apiKey, enabled: true }] : []
   }
 }
 
 function readBlob(db: { prepare: (sql: string) => { get: (key: string) => { value?: string } | undefined } }) {
   return db.prepare("SELECT value FROM secrets_vault WHERE key = ?").get("provider.vault")?.value
-}
-
-function dbText(db: { prepare: (sql: string) => { all: () => Array<{ value?: string }> } }) {
-  const vault = db.prepare("SELECT value FROM secrets_vault").all()
-  const settings = db.prepare("SELECT value FROM settings").all()
-  return [...vault, ...settings].map((row) => String(row.value ?? "")).join("\n")
-}
-
-function restoreEnv(key: string, value: string | undefined) {
-  if (value === undefined) delete process.env[key]
-  else process.env[key] = value
 }

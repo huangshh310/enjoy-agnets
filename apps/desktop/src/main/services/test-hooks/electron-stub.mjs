@@ -14,11 +14,27 @@ export const app = {
   }
 }
 
+let encryptionAvailable = false
+let linuxBackend = "basic_text"
+
 export const safeStorage = {
-  isEncryptionAvailable: () => false,
-  getSelectedStorageBackend: () => "basic_text",
+  isEncryptionAvailable: () => encryptionAvailable,
+  getSelectedStorageBackend: () => linuxBackend,
   encryptString: (text) => Buffer.from(String(text), "utf8"),
-  decryptString: (buf) => Buffer.from(buf).toString("utf8")
+  decryptString: (buf) => {
+    if (!encryptionAvailable) throw new Error("Encryption is not available.")
+    return Buffer.from(buf).toString("utf8")
+  },
+  setEncryptionAvailable(next) {
+    encryptionAvailable = Boolean(next)
+  },
+  setSelectedStorageBackend(next) {
+    linuxBackend = String(next)
+  },
+  resetForTest() {
+    encryptionAvailable = false
+    linuxBackend = "basic_text"
+  }
 }
 
 export class BrowserWindow {

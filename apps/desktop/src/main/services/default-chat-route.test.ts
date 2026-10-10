@@ -8,7 +8,9 @@ import {
   DEFAULT_CHAT_ROUTE_EXPLICIT_KEY,
   adoptedRouteLabel,
   formatAdoptedRouteFace,
+  isDefaultChatRouteExplicit,
   persistAdoptedDefaultRoute,
+  persistDefaultModelAfterSecret,
   planAdoptedDefaultRoute,
   SEEN_NO_USABLE_CHAT_ROUTE_KEY,
   shouldNoteSeenNoUsableRoute,
@@ -133,6 +135,35 @@ test("adopt 只打一次偏好与盖章", () => {
   const second = persistAdoptedDefaultRoute(snap, { store, probesSettled: true })
   assert.equal(second.adopted, false)
   assert.deepEqual(writes, [])
+})
+
+test("设主引擎密钥写失败不盖显式旗，之后仍能 auto-adopt", async () => {
+  const { deleteSetting } = await import("./database.ts")
+  deleteSetting(DEFAULT_CHAT_ROUTE_EXPLICIT_KEY)
+  await assert.rejects(() =>
+    persistDefaultModelAfterSecret("gpt-4o", async () => {
+      throw new Error("KEYCHAIN_UNAVAILABLE")
+    })
+  )
+  assert.equal(isDefaultChatRouteExplicit(), false)
+  const kv = new Map<string, string>([[SEEN_NO_USABLE_CHAT_ROUTE_KEY, "1"]])
+  const store: AdoptRouteStore = {
+    get: (key) => kv.get(key),
+    set: (key, value) => {
+      kv.set(key, value)
+    },
+    readRuntimeId: () => "enjoy-local",
+    writeRuntimeId: () => undefined
+  }
+  const snap = buildChatReadiness({
+    engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],
+    localModels: [],
+    apiKeys: [],
+    engineCount: 1,
+    activeKeyProfileId: null
+  })
+  const result = persistAdoptedDefaultRoute(snap, { store, probesSettled: true })
+  assert.equal(result.adopted, true)
 })
 
 test("设为主引擎显式后自动 adopt 不再改写", () => {
