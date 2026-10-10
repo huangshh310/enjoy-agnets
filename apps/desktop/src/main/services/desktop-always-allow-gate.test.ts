@@ -103,7 +103,7 @@ test("allow_always 不写会话表；子循环折成 allow", () => {
   assert.match(src, /desktopGrantShouldPersist\(pending\.args, peekDesktopObservation\)/)
   assert.match(src, /rememberDesktopAlwaysAllowFromArgs/)
   assert.match(src, /allow_always 只写持久簿，不写会话表/)
-  assert.match(src, /applySessionAllowDecision\(run\.input\.sessionId, run, pending, peekDesktopObservation\)/)
+  assert.match(src, /applySessionAllowDecision\(run\.input\.sessionId, run, pending, peekDesktopObservation, run\.input\.runtimeId\)/)
   const sessionAllow = readFileSync(new URL("./conversation-session-allow.ts", import.meta.url), "utf8")
   assert.match(sessionAllow, /desktopActNeedsSecondConfirm\(args\)/)
   assert.match(sessionAllow, /desktopGrantShouldPersist\(args, lookup\)/)

@@ -14,6 +14,7 @@ import { ApprovalPlanBody } from "./approval-plan-body"
 import { ApprovalQuestionsBody } from "./approval-questions-body"
 import { AskUserCard } from "../ask-user/ask-user-card"
 import { classifyApproval, commandCwdOf, commandTextOf, payloadPreview } from "./classify-approval"
+import { sessionAllowCardState } from "./session-allow-hint"
 import { AutomationSourceLine } from "@renderer/components/automations/components/automation-source-line"
 import { automationSourceCopy } from "@renderer/components/automations/lib/missed-copy"
 import { DesktopApprovalCard } from "./desktop-approval-card"
@@ -50,6 +51,7 @@ export function ApprovalCard({
   if (variant === "command") {
     return (
       <CommandApproval
+        name={pending.name}
         cwd={commandCwdOf(args, workspaceRoot || untitled)}
         command={commandTextOf(pending.name, args)}
         sourceLine={sourceLine}
@@ -73,6 +75,7 @@ export function ApprovalCard({
   }
   return (
     <QuestionsApproval
+      name={pending.name}
       payload={payloadPreview(args)}
       thumbnailPath={typeof args.thumbnailPath === "string" ? args.thumbnailPath : ""}
       sourceLine={sourceLine}
@@ -82,23 +85,31 @@ export function ApprovalCard({
 }
 
 function CommandApproval({
+  name,
   cwd,
   command,
   sourceLine,
   decide
 }: {
+  name: string
   cwd: string
   command: string
   sourceLine: string | null
   decide: ApprovalDecide
 }) {
   const t = useT()
+  const allow = sessionAllowCardState(name, command)
+  const sessionHint = allow.onceOnly
+    ? t("chat.alwaysAllowOnceHint")
+    : t("chat.alwaysAllowHint", { target: allow.target })
   return (
     <ApprovalChrome
       variant="command"
       title={t("chat.approvalCommand")}
       approveLabel={t("chat.approvalRun")}
       denyLabel={t("chat.deny")}
+      showAlways={allow.showSession}
+      sessionHint={sessionHint}
       decide={decide}
     >
       <AutomationSourceLine text={sourceLine} />
@@ -121,6 +132,8 @@ function PlanApproval({
   decide: ApprovalDecide
 }) {
   const t = useT()
+  const allow = sessionAllowCardState(name, "")
+  const sessionHint = t("chat.alwaysAllowHint", { target: allow.target || name })
   const plan = planFromPending(name, args, t("chat.emptyValue"), {
     write: t("chat.verbWrite"),
     edit: t("chat.verbEdit"),
@@ -133,6 +146,7 @@ function PlanApproval({
       title={t("chat.approvalPlan")}
       approveLabel={t("chat.approvalApprove")}
       denyLabel={t("chat.deny")}
+      sessionHint={sessionHint}
       decide={decide}
     >
       <AutomationSourceLine text={sourceLine} />
@@ -149,11 +163,13 @@ function PlanApproval({
 }
 
 function QuestionsApproval({
+  name,
   payload,
   thumbnailPath,
   sourceLine,
   decide
 }: {
+  name: string
   payload: string
   thumbnailPath?: string
   sourceLine: string | null
@@ -176,6 +192,7 @@ function QuestionsApproval({
       title={t("chat.approvalQuestions")}
       approveLabel={t("chat.approvalContinue")}
       denyLabel={t("chat.approvalSkip")}
+      sessionHint={t("chat.alwaysAllowHint", { target: name })}
       showAlways={false}
       approveDisabled={!picked}
       decide={{

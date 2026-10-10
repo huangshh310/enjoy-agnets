@@ -35,6 +35,7 @@ type ApprovalChromeProps = ApprovalActionIds & {
   footer?: ApprovalFooter
   approveDisabled?: boolean
   approveTitle?: string
+  sessionHint?: string
   tone?: ApprovalTone
   decide: ApprovalDecide
 }
@@ -50,6 +51,7 @@ export function ApprovalChrome({
   footer = "buttons",
   approveDisabled,
   approveTitle,
+  sessionHint,
   tone,
   denyTestId,
   allowTestId,
@@ -86,6 +88,9 @@ export function ApprovalChrome({
         <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto">
           <h3 className="text-caption-1-semibold leading-6 text-text-primary">{title}</h3>
           {children}
+          {sessionHint ? (
+            <p className="text-caption-2-regular text-text-tertiary">{sessionHint}</p>
+          ) : null}
         </div>
       </div>
       <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 pt-0.5">
@@ -100,6 +105,7 @@ export function ApprovalChrome({
           approveLabel={approveLabel}
           denyLabel={denyLabel}
           alwaysLabel={alwaysLabel}
+          alwaysHint={sessionHint}
           showAlways={showAlways}
           footer={footer}
           approveDisabled={approveDisabled}

@@ -13,6 +13,7 @@ type ApprovalActionsProps = ApprovalActionIds & {
   approveLabel: string
   denyLabel: string
   alwaysLabel?: string
+  alwaysHint?: string
   showAlways: boolean
   footer?: ApprovalFooter
   approveDisabled?: boolean
@@ -25,6 +26,7 @@ export function ApprovalActions({
   approveLabel,
   denyLabel,
   alwaysLabel,
+  alwaysHint,
   showAlways,
   footer = "buttons",
   approveDisabled,
@@ -72,7 +74,7 @@ export function ApprovalActions({
           variant="outline"
           data-testid="approval-session"
           onClick={decide.onAllowSession}
-          title={t("chat.alwaysAllowHint")}
+          title={alwaysHint ?? t("chat.alwaysAllowHint")}
           className="h-8 text-caption-1-medium"
         >
           <RiShieldCheckLine className="size-3.5 text-accent-500" />

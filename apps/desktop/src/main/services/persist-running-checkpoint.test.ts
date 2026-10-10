@@ -13,7 +13,7 @@ const source = {
 }
 
 test("running checkpoint 带上 denyAnyDesktop，恢复后仍丢掉 *", () => {
-  const flags = runningCheckpointFlags({ denyAnyDesktop: true, automationSource: source })
+  const flags = runningCheckpointFlags({ denyAnyDesktop: true, automationSource: source, origin: "catch_up" })
   const extras = parseAgentCheckpointExtras(JSON.stringify(flags))
   const restored = trustedAutomationFlags(extras)
   assert.equal(restored.denyAnyDesktop, true)
