@@ -86,6 +86,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
   initFixtureGit(workspace)
   const { app, window } = await launchEnjoy({
     ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key",
     ENJOY_E2E_KNOWLEDGE: "1",
     ENJOY_E2E_WORKSPACE: workspace
   })
@@ -261,6 +262,7 @@ test("渲染崩溃回退面是中文短句，不摊英文堆栈", async () => {
   writeFileSync(join(workspace, "readme.md"), "# e2e workspace\nhello knowledge\n")
   const { app, window } = await launchEnjoy({
     ENJOY_E2E_STUB: "1",
+    ENJOY_E2E_CHAT_READY: "key",
     ENJOY_E2E_KNOWLEDGE: "1",
     ENJOY_E2E_WORKSPACE: workspace
   })

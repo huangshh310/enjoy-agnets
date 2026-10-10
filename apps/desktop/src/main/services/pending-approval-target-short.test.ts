@@ -5,6 +5,8 @@ import { pendingApprovalTargetShort } from "./pending-approval-target-short.ts"
 test("write_file 只取 basename，不含目录", () => {
   assert.equal(pendingApprovalTargetShort("write_file", { path: "src/foo/bar.ts" }), "bar.ts")
   assert.equal(pendingApprovalTargetShort("edit_file", { file_path: "C:\\\\tmp\\\\note.txt" }), "note.txt")
+  assert.equal(pendingApprovalTargetShort("write_file", { file: "docs/note.txt" }), "note.txt")
+  assert.equal(pendingApprovalTargetShort("write_file", { target_file: "src/app.tsx" }), "app.tsx")
 })
 
 test("desktop_act 用 appName，缺则省略", () => {
@@ -16,5 +18,6 @@ test("超长截到 64；无 path 省略；不抄 content", () => {
   const long = `${"a".repeat(80)}.md`
   assert.equal(pendingApprovalTargetShort("write_file", { path: `docs/${long}` })?.length, 64)
   assert.equal(pendingApprovalTargetShort("write_file", { content: "huge" }), undefined)
+  assert.equal(pendingApprovalTargetShort("write_file", { file: `${"secret ".repeat(80)}\nbody` }), undefined)
   assert.equal(pendingApprovalTargetShort("write_file", undefined), undefined)
 })

@@ -28,6 +28,38 @@ test("args 超上限当缺参，条目其它字段仍可解析", () => {
   assert.equal(parseInboxPendingItems([{ ...item, args: huge }])[0]?.id, "apr_1")
 })
 
+test("缺参仍保留 targetShortName，超 64 只省略短名", () => {
+  const item = parsePendingApprovalItem({
+    id: "apr_2",
+    runId: "run_2",
+    sessionId: "ses_2",
+    workspaceId: "ws",
+    sessionTitle: "Note",
+    name: "write_file",
+    toolCallId: "tool_2",
+    createdAt: 2,
+    targetShortName: "note.txt",
+    args: { blob: "x".repeat(PENDING_APPROVAL_ARGS_MAX_BYTES + 8) }
+  })
+  assert.ok(item)
+  assert.equal(item?.targetShortName, "note.txt")
+  assert.equal("args" in (item ?? {}), false)
+  const tooLong = parsePendingApprovalItem({
+    id: "apr_3",
+    runId: "run_3",
+    sessionId: "ses_3",
+    workspaceId: null,
+    sessionTitle: "Note",
+    name: "write_file",
+    toolCallId: "tool_3",
+    createdAt: 3,
+    targetShortName: `${"a".repeat(65)}.md`
+  })
+  assert.ok(tooLong)
+  assert.equal(tooLong?.id, "apr_3")
+  assert.equal("targetShortName" in (tooLong ?? {}), false)
+})
+
 test("二次确认卡超上限只剥缩略图，保留 sensitive / hints", () => {
   const args = {
     action: "click",

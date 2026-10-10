@@ -69,7 +69,10 @@ export function parsePendingApprovalItem(value: unknown): PendingApprovalItem | 
   const withoutArgs = { ...(value as Record<string, unknown>) }
   delete withoutArgs.args
   const fallback = PendingApprovalItem.safeParse(withoutArgs)
-  return fallback.success ? fallback.data : undefined
+  if (fallback.success) return fallback.data
+  delete withoutArgs.targetShortName
+  const withoutName = PendingApprovalItem.safeParse(withoutArgs)
+  return withoutName.success ? withoutName.data : undefined
 }
 
 function jsonByteLength(value: unknown): number {

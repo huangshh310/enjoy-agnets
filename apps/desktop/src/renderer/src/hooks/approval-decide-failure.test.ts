@@ -29,5 +29,6 @@ test("reattach 前点允许安静，其它失败走人话键", () => {
     approvalDecideUiError(new Error("No matching tool approval is waiting.")),
     "chat.approvalDecideNoMatching"
   )
+  assert.equal(approvalDecideUiError(new Error(APPROVAL_NO_MATCHING)), "chat.approvalDecideNoMatching")
   assert.equal(approvalDecideUiError(new Error("boom")), "chat.approvalDecideFailed")
 })
