@@ -75,6 +75,19 @@ test("收工封口：input-available 也封成 output-error，approval-requested
   assert.equal(sealed?.[1]?.state, "approval-requested")
 })
 
+test("用户停封口：input-available 标 user_aborted，审批中折成未执行", () => {
+  const sealed = sealAbandonedTools(
+    [
+      { id: "t1", name: "write_file", state: "input-available", args: { path: "e2e-stub.txt" } },
+      { id: "t2", name: "write_file", state: "approval-requested", args: { path: "later.txt" } }
+    ],
+    { aborted: true }
+  )
+  assert.equal(sealed?.[0]?.state, "output-error")
+  assert.deepEqual(sealed?.[0]?.result, { code: "user_aborted" })
+  assert.equal(sealed?.[1]?.state, "output-denied")
+})
+
 test("delegate 子工具带 parentToolCallId 折进同一份 tools", () => {
   const tools: ThreadToolCall[] = []
   foldToolEvent(tools, {

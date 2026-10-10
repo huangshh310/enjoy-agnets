@@ -10,6 +10,9 @@ import { z } from "zod"
  */
 export const USER_ABORT_MESSAGE = "Aborted by user."
 
+/** 用户停 / 归档 abort 的结构化码。UI 只认这码，禁止把 message 摊进界面。 */
+export const USER_ABORTED_CODE = "user_aborted"
+
 /** 通知层结束态。从现有 `run.end` / `run.error` 推导，不改事件契约。 */
 export const DesktopNotifyRunKind = z.enum(["completed", "stopped", "errored"])
 export type DesktopNotifyRunKind = z.infer<typeof DesktopNotifyRunKind>
@@ -52,18 +55,27 @@ const ACTION_VERBS_EN: Record<DesktopNotifyActionKind, string> = {
  */
 export function isUserAbortMessage(message: string | undefined | null): boolean {
   if (typeof message !== "string") return false
+  if (message === USER_ABORTED_CODE) return true
   const normalized = message.trim().replace(/\.+$/, "").toLowerCase()
   return normalized === "aborted by user"
+}
+
+export function isUserAbortEvent(event: {
+  code?: string
+  message?: string
+}): boolean {
+  return event.code === USER_ABORTED_CODE || isUserAbortMessage(event.message)
 }
 
 /** `run.end` → 已完成；用户停 `run.error` → 已停止；其它 `run.error` → 出错。 */
 export function deriveRunNotifyKind(event: {
   type: string
   message?: string
+  code?: string
 }): DesktopNotifyRunKind | null {
   if (event.type === "run.end") return "completed"
   if (event.type === "run.error") {
-    return isUserAbortMessage(event.message) ? "stopped" : "errored"
+    return isUserAbortEvent(event) ? "stopped" : "errored"
   }
   return null
 }

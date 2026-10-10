@@ -90,6 +90,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     type: z.literal("run.error"),
     runId: z.string(),
     message: z.string(),
+    /** 用户停 / 归档：`user_aborted`。renderer 只认这码走中性已停止。 */
+    code: z.string().optional(),
     turn: TurnOutcome.optional(),
     ...Envelope
   }),

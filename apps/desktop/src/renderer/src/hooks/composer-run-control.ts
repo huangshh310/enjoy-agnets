@@ -2,6 +2,9 @@
  * Composer 运行控制：Stop、认领 runId。切会话只停车，不 abort。
  * agent.run 返回前 runId 为空，Stop 也必须先松 UI，不能空 return。
  */
+import { sealAbandonedTools } from "@enjoy-agents/ipc-contract"
+import { decideTurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
+import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { applyLocalSessionWorkflow } from "../components/ai-chat/review-gate/patch-session-workflow"
 import { getIde, hasIde } from "../lib/ide"
 import { useAttentionStore } from "../stores/attention/attention-store"
@@ -41,13 +44,16 @@ export async function abortComposerRun() {
   const runId = store.runId
   const sessionId = store.sessionId
   dropEmptyPendingAssistant()
-  finalizeStreamingAssistant()
+  finalizeStreamingAssistant({ aborted: true })
   store.setPendingApproval(null)
   store.setRunning(false)
+  store.setError(null)
+  store.setNotice(USER_ABORTED_CODE)
   if (sessionId) {
     useAttentionStore.getState().resolveSessionDecisions(sessionId, runId ?? undefined)
-    // 取消不得残留待验收；主进程随后发 run.error 再确认一次。
-    applyLocalSessionWorkflow(sessionId, "in_progress")
+    const tools = useChatStore.getState().messages.at(-1)?.tools ?? []
+    const turn = decideTurnOutcome({ ended: "abort", tools })
+    applyLocalSessionWorkflow(sessionId, turn.workflow)
   }
   if (runId) abortOrphanedRun(runId)
 }
@@ -59,11 +65,19 @@ export function dropEmptyPendingAssistant() {
   store.setMessages(store.messages.slice(0, -1))
 }
 
-function finalizeStreamingAssistant() {
+function finalizeStreamingAssistant(opts?: { aborted?: boolean }) {
   const store = useChatStore.getState()
   const last = store.messages.at(-1)
-  if (last?.role !== "assistant" || !last.streaming) return
+  if (last?.role !== "assistant") return
   store.setMessages(
-    store.messages.map((message) => (message.streaming ? { ...message, streaming: false } : message))
+    store.messages.map((message) =>
+      message.role === "assistant"
+        ? {
+            ...message,
+            streaming: false,
+            tools: sealAbandonedTools(message.tools, { aborted: opts?.aborted })
+          }
+        : message
+    )
   )
 }

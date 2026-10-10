@@ -374,6 +374,39 @@ test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () 
   assert.equal(expired.find((item) => item.kind === "complete")?.status, "expired")
 })
 
+test("用户停 run.error 只信 turn.neutral：不当出错，不进需处理", () => {
+  const stopped = ingestAttentionEvent([], {
+    event: {
+      type: "run.error",
+      runId: "run_stop",
+      message: "Aborted by user.",
+      code: "user_aborted",
+      turn: { workflow: "in_progress", attention: "neutral" }
+    },
+    sessionId: "ses_stop",
+    sessionTitle: "停",
+    now: 1
+  })
+  assert.equal(stopped.some((item) => item.kind === "error" && item.status === "active"), false)
+  assert.equal(stripNeedsCount(stopped), 0)
+})
+
+test("本会话开跑收掉已完成，不留下已完成胶囊", () => {
+  const done = ingestAttentionEvent([], {
+    event: { type: "run.end", runId: "run_old", turn: { workflow: "todo", attention: "complete" } },
+    sessionId: "ses_a",
+    sessionTitle: "A",
+    now: 1
+  })
+  const next = ingestAttentionEvent(done, {
+    event: { type: "run.start", runId: "run_new", sessionId: "ses_a" },
+    sessionId: "ses_a",
+    sessionTitle: "A",
+    now: 2
+  })
+  assert.equal(next.find((item) => item.kind === "complete")?.status, "resolved")
+})
+
 test("归档中止 run.error 中性：不当出错，审批槽收掉", () => {
   const waiting = ingestAttentionEvent([], {
     event: approval("write_file"),

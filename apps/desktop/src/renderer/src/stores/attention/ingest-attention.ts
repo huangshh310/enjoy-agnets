@@ -24,9 +24,13 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "approval.required") {
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
-  // 出错轮禁止出已完成：即便 turn 误写成 complete，也只出 error。
+  if (event.type === "run.start") return null
+  // 用户停 / 归档只信 turn.neutral。真出错只信 turn.error；没有 turn 才回落 event 类型。
   if (event.type === "run.error") {
     if (isApprovalNotExecutedMessage(event.message)) return "complete"
+    if (event.turn?.attention === "neutral") return null
+    if (event.turn?.attention === "error") return "error"
+    if (event.turn) return null
     return "error"
   }
   if (event.type === "run.end" && event.turn) {
@@ -49,6 +53,9 @@ export function ingestAttentionEvent(
 ): AttentionItem[] {
   const now = input.now ?? Date.now()
   const aged = expireStaleCompletes(items, now)
+  if (input.event.type === "run.start") {
+    return resolveTerminalSlots(aged, input.sessionId)
+  }
   if (input.event.type === "approval.resolved") {
     return resolveDecisionSlots(aged, input.sessionId, eventRunId(input.event))
   }

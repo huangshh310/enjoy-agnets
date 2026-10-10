@@ -1,8 +1,10 @@
 /**
  * 内存泵中止：归档与 abortAgent 共用，避免两份拷贝。
  * 不在这里静态拉 open-coding-stream，测试 strip-types 才不会进 ACP。
- * 用户归档中止不是出错：Attention 中性，不写 error 槽。
+ * 用户 Stop / 归档都不是出错：Attention 中性，码 user_aborted，不写 error 槽。
  */
+import { sealAbandonedTools } from "@enjoy-agents/ipc-contract"
+import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { USER_ABORT_MESSAGE } from "./claim-run-end"
 import { persistActiveRun } from "./flush-agent-run"
 import { clearCatchUpApprovalTimeout } from "./automations-catchup-timer"
@@ -18,6 +20,7 @@ export function abortActiveRunMemory(
   clearCatchUpApprovalTimeout(runId)
   if (run) {
     run.userCancelled = true
+    run.tools = sealAbandonedTools(run.tools, { aborted: true }) ?? run.tools
     persistActiveRun(run, runId, "cancelled")
     clearSteer(run.input.sessionId)
     const archived = opts?.reason === "archive"
@@ -25,14 +28,13 @@ export function abortActiveRunMemory(
       status: "error",
       summary: archived ? "archived" : USER_ABORT_MESSAGE
     })
-    const turn = archived
-      ? { ...turnOutcomeForRun(run, "abort"), attention: "neutral" as const }
-      : turnOutcomeForRun(run, "abort")
+    const turn = turnOutcomeForRun(run, "abort")
     if (!archived) persistTurnWorkflow(run.input.sessionId, turn)
     emitEvent(run.window, {
       type: "run.error",
       runId,
       message: USER_ABORT_MESSAGE,
+      code: USER_ABORTED_CODE,
       turn,
       sessionId: run.input.sessionId
     })

@@ -9,7 +9,7 @@ import { isWriteTypeToolName } from "./tool-names.ts"
 export const TurnWorkflow = z.enum(["todo", "in_progress", "needs_review"])
 export type TurnWorkflow = z.infer<typeof TurnWorkflow>
 
-/** complete=已完成；error=出错/已停止；neutral=全未执行，不弹完成。 */
+/** complete=已完成；error=真出错；neutral=用户停 / 归档 / 全未执行，不弹完成也不弹出错。 */
 export const TurnAttention = z.enum(["complete", "error", "neutral"])
 export type TurnAttention = z.infer<typeof TurnAttention>
 
@@ -33,25 +33,38 @@ export type DecideTurnInput = {
 
 const SEALED_ERROR = "No result received."
 
-/** 与 renderer `finalizeRun` 对齐：未发出结果的 input-* 封成 output-error。 */
-export function sealTurnTools<T extends TurnToolSnapshot>(tools: readonly T[]): T[] {
+/** 与 renderer `finalizeRun` 对齐：未发出结果的 input-* 封成 output-error。用户停另标 stopped。 */
+export function sealTurnTools<T extends TurnToolSnapshot>(
+  tools: readonly T[],
+  opts?: { aborted?: boolean }
+): T[] {
   return tools.map((tool) => {
+    if (opts?.aborted && tool.state === "approval-requested") {
+      return { ...tool, state: "output-denied" }
+    }
     if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
+    if (opts?.aborted) {
+      return { ...tool, state: "output-error", errorText: undefined, result: { code: "user_aborted" } }
+    }
     return { ...tool, state: "output-error", errorText: tool.errorText ?? SEALED_ERROR }
   })
 }
 
 /**
- * 出错 / 用户停：Attention 仍是出错/已停止；若写类已开始执行则工单进待验收。
+ * 真出错：Attention=error；写类已开始则工单进待验收。
+ * 用户停 / 归档：Attention=neutral（已停止），写类已开始仍进待验收。
  * 全拒绝或从未发出：回待办、Attention 中性。
  * 只读轮：回待办，Attention 仍可完成。
- * 写类已执行或执行中被掐（封成 output-error）：待验收 + 完成。
+ * 写类已执行或执行中被掐：待验收 + 完成。
  */
 export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
-  const tools = sealTurnTools(input.tools)
+  const tools = sealTurnTools(input.tools, { aborted: input.ended === "abort" })
   const acted = tools.filter((tool) => tool.state !== "approval-requested" && !isToolNotExecuted(tool))
   const wrote = acted.some((tool) => isWriteTypeToolName(tool.name))
-  if (input.ended === "error" || input.ended === "abort") {
+  if (input.ended === "abort") {
+    return { workflow: wrote ? "needs_review" : "in_progress", attention: "neutral" }
+  }
+  if (input.ended === "error") {
     return { workflow: wrote ? "needs_review" : "in_progress", attention: "error" }
   }
   if (tools.length === 0) return { workflow: "todo", attention: "complete" }

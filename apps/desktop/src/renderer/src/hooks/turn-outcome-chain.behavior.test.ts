@@ -82,5 +82,5 @@ test("用户停：写类已开始则待验收，已停止不是完成", () => {
     message: "Aborted by user.",
     turn
   })
-  assert.deepEqual(result, { workflow: "needs_review", complete: false, error: true })
+  assert.deepEqual(result, { workflow: "needs_review", complete: false, error: false })
 })

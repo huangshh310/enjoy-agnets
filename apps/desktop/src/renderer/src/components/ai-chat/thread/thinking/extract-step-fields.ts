@@ -146,12 +146,27 @@ export function extractFilePaths(
   })
 }
 
-export type ToolRenderStatus = "pending" | "running" | "completed" | "error" | "denied" | "skipped"
+export type ToolRenderStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "error"
+  | "denied"
+  | "skipped"
+  | "stopped"
+
+function isUserAbortedTool(tool?: Pick<ThreadToolCall, "result" | "errorText">): boolean {
+  if (!tool) return false
+  if (tool.errorText === "user_aborted") return true
+  const result = tool.result
+  return Boolean(result && typeof result === "object" && (result as { code?: string }).code === "user_aborted")
+}
 
 export function mapToolStatus(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
 ): ToolRenderStatus {
+  if (isUserAbortedTool(tool)) return "stopped"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-error") return "error"

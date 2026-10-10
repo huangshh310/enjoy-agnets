@@ -2,6 +2,7 @@
  * 切会话时停车 / 还原 Composer run 字段，不 abort 后台轮。
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
 import type { ChatStore } from "../chat-store.types"
 import type { ParkedRun } from "./attention.types"
 
@@ -70,6 +71,9 @@ export function applyEventToPark(park: ParkedRun, event: StreamEvent): ParkedRun
     return { ...park, running: false, runId: null, pendingApproval: null }
   }
   if (event.type === "run.error") {
+    if (isUserAbortEvent(event)) {
+      return { ...park, running: false, error: null, pendingApproval: null }
+    }
     return { ...park, running: false, error: event.message, pendingApproval: null }
   }
   return park
