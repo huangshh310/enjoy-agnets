@@ -31,6 +31,10 @@ test("设置技能与 MCP 内联，返回仍落在原分段", async () => {
     await window.getByTestId("return-to-settings").click()
     await expect.poll(() => window.evaluate(() => location.hash)).toBe("#/settings/skills")
     await expect(window.getByRole("button", { name: "通用" })).toBeVisible()
+    await window.getByTestId("settings-open-hub").click()
+    await expect.poll(() => window.evaluate(() => location.hash)).toMatch(/#\/skills/)
+    await window.getByTestId("rail-settings").click()
+    await expect.poll(() => window.evaluate(() => location.hash)).toBe("#/settings/skills")
 
     await openSettingsSection(window, "mcp")
     await expect.poll(() => window.evaluate(() => location.hash)).toBe("#/settings/mcp")

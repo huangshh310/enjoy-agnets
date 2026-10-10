@@ -6,6 +6,7 @@ export type McpRouteSearch = {
   tab?: "servers" | "marketplace" | "json"
   preset?: string
   from?: "settings"
+  section?: string
 }
 
 function asTab(value: unknown): McpRouteSearch["tab"] {
@@ -21,6 +22,7 @@ export function parseMcpSearch(search: Record<string, unknown>): McpRouteSearch 
   return {
     tab: asTab(search.tab),
     preset: asOptionalString(search.preset),
-    from: search.from === "settings" ? "settings" : undefined
+    from: search.from === "settings" ? "settings" : undefined,
+    section: asOptionalString(search.section)
   }
 }

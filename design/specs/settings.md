@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（技能 / MCP 停在设置壳）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（侧栏只高亮当前分段 / 中心回原分段）
 
 ## 当前真相
 
@@ -30,7 +30,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 
 `#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（`skill` 工具）与 ACP（`composeAcpPrompt`），不灌 SKILL.md。ACP 不重复灌 AGENTS.md（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置默认项 C 端只露「探索 / 执行」人话卡片（视觉锁 [`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)）：探索写入内部 `plan`，执行写入 `agent`。**禁止**把 `ask|plan|agent`、ACP、协议微标写进默认项文案。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
-设置分段 ID 含 `telemetry`。侧栏情境栏 4 大板块核心项（应用：通用/外观/快捷键/**已归档**；智能体：供应商/智能体/工具/电脑操控/AppSnap/说明/技能/遥测；项目与扩展：项目/扩展/MCP；组织：**个人资料** `#/settings/account`）。1100×700 侧栏必须能滚到每一组，见 `ui` spec。`#/settings/telemetry` 承接原可观测性看板：指标概览、模型路由、调用审计、本机 CLI 与隐私上报模式。`#/settings/extensions` 是 P0-H 发现壳（不上第 8 轨、不新开存储、不混 Registry）。`#/settings/skills` / `#/settings/mcp` 停在设置壳，正文内嵌 `SkillsPage` / `McpPage`（`embedded`），右上「打开技能中心 ↗」/「打开 MCP 中心 ↗」才进 `#/skills?from=settings` / `#/mcp?from=settings`；中心顶栏「返回设置」回原分段。旧 `#/customize/skills` / `#/customize/mcp` 仍 redirect 工作模块。`#/settings/archived` 高亮「已归档的聊天」自己。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` → `account`）。
+设置分段 ID 含 `telemetry`。侧栏情境栏 4 大板块核心项（应用：通用/外观/快捷键/**已归档**；智能体：供应商/智能体/工具/电脑操控/AppSnap/说明/技能/遥测；项目与扩展：项目/扩展/MCP；组织：**个人资料** `#/settings/account`）。1100×700 侧栏必须能滚到每一组，见 `ui` spec。`#/settings/telemetry` 承接原可观测性看板：指标概览、模型路由、调用审计、本机 CLI 与隐私上报模式。`#/settings/extensions` 是 P0-H 发现壳（不上第 8 轨、不新开存储、不混 Registry）。`#/settings/skills` / `#/settings/mcp` 停在设置壳，正文内嵌 `SkillsPage` / `McpPage`（`embedded`），右上「打开技能中心 ↗」/「打开 MCP 中心 ↗」才进 `#/skills?from=settings&section=skills` / `#/mcp?from=settings&section=mcp`。扩展「添加」同样带 `from=settings&section=extensions`。中心顶栏「返回设置」与轨道齿轮都回**离开时的分段**（`last-settings-section`），不要落到「通用」。侧栏每一级入口只高亮自己：`telemetry` / `skills` / `mcp` / `archived` 都是自己，禁止再把遥测并进 MCP。旧 `#/customize/skills` / `#/customize/mcp` 仍 redirect 工作模块。其余子分段仍通过 `resolveActiveNavSectionId` 高亮所属一级条目（`team` / `members` / `billing` / `organization` / `integrations` / `notifications` → `account`）。
 底栏用户卡片是本机工作区（邮箱占位 `local`），菜单到工作区 / **个人资料** / Inbox / 通用设置。**没有**退出登录、没有聊天菜单里的「订阅与账单」。`#/settings/team` / `members` / `organization` / `integrations` / `billing` 都是诚实空态（本地单机，无组织同步、无假套餐升级）；团队页提供「打开个人资料」CTA，不要让用户停在空白「本地单机」卡上找不到画像。归档聊天是真页面（`ArchivedChatsPage`），不是 Coming Soon。标题旁有「← 返回对话」回 `#/`。整理侧栏「查看已归档」进 `#/settings/archived`。归档会话后 toast「已归档「X」」+「撤销」5s；撤销走 `undoArchivedSession`（等待 IPC，禁止 `void`）。失败 toast「撤销失败，可在「已归档的聊天」里恢复」，动作进本页。归档**当前**会话改选相邻会话或空会话，不路由到本页。会话还有未决审批时先确认「拒绝并归档」，走 Dock 同一条 deny 再归档。恢复按钮写「恢复」，与撤销共用 `restoreUnarchivedSession`（同一刷新顺序，不 bump `updated_at`），成功 toast「已恢复到侧栏」，侧栏下标与撤销相同。`session.archive` / `unarchive` 不 bump `updated_at`。全部删除是次级按钮，离开行内「恢复」；确认写明条数且不可恢复（已有 `ConfirmDialog`）。行内垃圾桶同样先确认。撤销走已有 `session.unarchive` / `session.listArchived`。
 快捷键存在 `preferences.keybindings`。`#/settings/shortcuts` 可以搜索、录制、加一条、删除和恢复默认。用户规则盖住同名命令，缺的命令回默认，非法规则在设置页点名。渲染进程一个调度器读解析后的表。`?` 面板和快速搜索读同一份结果。Enter 发送、Shift+Enter 换行、粘贴不在这张表里。默认仍是 ⌘L 快速搜索、⌘K 命令面板（同一窗口，设置页分两行）、⌘, 打开设置、设置或 Inbox 里 Escape 返回进入前的工作模块、⌘P 文件、⌘⇧G 审查、⌘` 终端、⌘T 浏览器、⌘⇧C 上下文、⌘⇧D 桌面、⌘F 本会话查找（终端聚焦时不抢）、Shift+Tab 只在读取和编辑两档之间切换（全部只能下手选；当前是全部则回到读取。输入框为空或焦点不在其它输入框；输入框有字则让出焦点后退）、`?` 打开快捷键表。`#/settings/computer-use` 与 `#/settings/appsnap` 在智能体分组，导航带 Beta。电脑操控的总开关、权限、蓝边、始终允许、本会话任意桌面和试用只在 `#/settings/computer-use`，内置工具不再重复。prefs `desktopAdvancedCoords` 默认关（CU-P1-36 数据面已闸）；产品页「电脑操控」卡已嵌「高级坐标」开关（testid `advanced-coords-toggle`）。
 
@@ -71,7 +71,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 收件箱：`apps/desktop/src/renderer/src/components/inbox/`（`inbox-page.tsx` 壳，`feed/` 时间线，`lib/` 过滤与分组）
 - 已归档：`settings/archived-chats-page.tsx`；侧栏入口 `ai-chat/sidebar/sidebar-organize-menu.tsx` + 应用组 `settings-catalog-nav.ts`；toast `hooks/archive-session-toast.ts`；SQL `session-archive-stamp.ts`（IPC `session.archive` / `session.unarchive` / `session.listArchived`）
 - 路由：`apps/desktop/src/renderer/src/router.tsx`（`#/settings/skills` / `#/settings/mcp` 不再 redirect；旧 `#/customize/skills|mcp` 仍跳工作模块）
-- 技能 / MCP 内嵌：`settings-skills.tsx` / `settings-mcp.tsx` + `settings-hub-embed.tsx`；独立中心回跳 `app-pages/module-return-bar.tsx`
+- 技能 / MCP 内嵌：`settings-skills.tsx` / `settings-mcp.tsx` + `settings-hub-embed.tsx`；独立中心回跳 `app-pages/module-return-bar.tsx` + `last-settings-section.ts`
 - 分段目录：`apps/desktop/src/renderer/src/components/settings/settings-catalog.ts`
 - 壳：`settings-shell.tsx`（登记情境栏）；应用铬 `app-shell/`
 - 抽屉叠层：`settings-overlay.ts`（base 50 / nested 70 / float 80）
@@ -124,6 +124,8 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 「这个助手用」若两只无标签下拉都写 `deep · deepseek-flash`，用户分不清在选账号还是模型。账号行只写档案名 + 品牌/密钥副行；模型单独标签。抽屉 576px（`36rem`），给后续字段留宽。同步是次级折叠，不要做成第三只下拉。
 - Appearance 支持手动亮/暗，以及皮肤 `classic` / `glass` / `ink`（彩绘墨线）/ `sketch`（素描铅笔纸），不跟随 OS。
 - 设置侧栏严禁无脑平铺全部分段。`skills` 是一级入口（智能体分组），点它停在 `#/settings/skills` 内嵌技能页，不要再并进「说明」，也不要整页踢到 `#/skills`。`extensions` 是工作区组一级入口（P0-H 发现壳，停在 `#/settings/extensions`）。组织一级入口必须是 `account`（个人资料），禁止用空的 `team` 顶掉画像。其余子分段（`rules` / `billing` / `team` 等）仍通过 `resolveActiveNavSectionId` 高亮父级。
+- **隐患**：设置侧栏无论点哪一项都亮着「MCP」。根因：`resolveActiveNavSectionId` 把已是一级入口的 `telemetry`（以及隐藏的 `automations` / `git`）并进 `mcp`。正确做法：侧栏已有的 id 必须高亮自己；验收 `settings-catalog.test.ts` 遍历每一级入口。
+- **隐患**：从「扩展」进技能中心后点轨道齿轮落到「通用」。根因：`OVERLAY_RAIL_ITEMS` 写死 `/settings/general`，扩展深链也不带原分段。正确做法：`SettingsShell` 写入 `last-settings-section`，离开时查询带 `from=settings&section=`；齿轮与「返回设置」都读原分段。验收：`settings-nav-origin.spec.ts`。
 - **隐患**：把扩展发现壳做成第 8 轨工作模块或 MCP+Skills 集市内核。根因：H 只做入口。正确做法：两列 +「添加」深链现有 `#/mcp` / `#/skills`；不弹第二套表单、不新 IPC、不混 Registry、不假 Grok 店。
 - **隐患**：精选「添加」另开一套 Plugins 存储，或失败时用假已装卡填满。根因：I2 只是 H 上的只读 catalog。正确做法：写入现有 `mcp.upsert` / `skills.sources.add`+`deploy`；catalog 抛错只空精选区 + 重试；写后只报「已写入 Enjoy · 下一轮可注入」，禁止「已同步到助手」。
 - **隐患**：不变量测试 `import` 轨道 registry 时若 `McpIcon` 走 `@renderer` 别名，Node `--experimental-strip-types` 会 `ERR_MODULE_NOT_FOUND`。正确做法：`module-registry` 对 `mcp-brand-icons.ts` 用相对路径。

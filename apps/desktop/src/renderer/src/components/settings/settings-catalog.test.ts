@@ -47,3 +47,15 @@ test("组织一级入口是个人资料，团队空态不高亮自己", () => {
   assert.equal(resolveActiveNavSectionId("account"), "account")
   assert.equal(resolveActiveNavSectionId("team"), "account")
 })
+
+test("侧栏每一级入口只高亮自己，遥测不再并进 MCP", () => {
+  const ids = SETTINGS_NAV_DEF.flatMap((group) => group.items.map((item) => item.id))
+  assert.ok(ids.includes("telemetry"))
+  assert.ok(ids.includes("mcp"))
+  for (const id of ids) {
+    assert.equal(resolveActiveNavSectionId(id), id, `${id} 应高亮自己`)
+  }
+  assert.equal(resolveActiveNavSectionId("telemetry"), "telemetry")
+  assert.notEqual(resolveActiveNavSectionId("automations"), "mcp")
+  assert.notEqual(resolveActiveNavSectionId("git"), "mcp")
+})

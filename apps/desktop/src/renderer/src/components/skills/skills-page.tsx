@@ -24,7 +24,7 @@ import { countGitSkillSources } from "./lib/git-skill-sources"
 import { skillVisibleForTarget } from "./lib/skill-visible-for-target"
 
 export function SkillsPage(props?: { embedded?: boolean }) {
-  const search = useSearch({ strict: false }) as { from?: string }
+  const search = useSearch({ strict: false }) as { from?: string; section?: string }
   const page = useSkillsPage()
   const pullState = useSkillSourcePull()
   const [searchQuery, setSearchQuery] = useState("")
@@ -271,7 +271,7 @@ export function SkillsPage(props?: { embedded?: boolean }) {
       contentWidth="fill"
       hideChrome
     >
-      <ModuleReturnBar from={search.from} section="skills" />
+      <ModuleReturnBar from={search.from} origin={search.section} fallback="skills" />
       {content}
     </SecondaryPageShell>
   )

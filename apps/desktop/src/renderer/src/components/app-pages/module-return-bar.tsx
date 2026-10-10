@@ -3,19 +3,23 @@
  */
 import { useNavigate } from "@tanstack/react-router"
 import { RiArrowLeftLine } from "@remixicon/react"
-import { useT } from "@renderer/i18n"
+import { settingsReturnSection } from "@renderer/components/settings/last-settings-section"
 import type { SettingsSectionId } from "@renderer/components/settings/settings-catalog"
+import { useT } from "@renderer/i18n"
 
 export function ModuleReturnBar({
   from,
-  section
+  origin,
+  fallback
 }: {
   from?: string
-  section: Extract<SettingsSectionId, "skills" | "mcp">
+  origin?: string
+  fallback: Extract<SettingsSectionId, "skills" | "mcp">
 }) {
   const t = useT()
   const navigate = useNavigate()
-  if (from !== "settings") return null
+  const section = settingsReturnSection(from, origin, fallback)
+  if (!section) return null
   return (
     <div className="flex shrink-0 items-center px-8 pt-3">
       <button

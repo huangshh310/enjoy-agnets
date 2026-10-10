@@ -12,7 +12,9 @@ export function SkillsSettings() {
   return (
     <SettingsHubEmbed
       openLabel={t("settings.skills.openHub")}
-      onOpenHub={() => void navigate({ to: "/skills", search: { from: "settings" } })}
+      onOpenHub={() =>
+        void navigate({ to: "/skills", search: { from: "settings", section: "skills" } })
+      }
     >
       <SkillsPage embedded />
     </SettingsHubEmbed>

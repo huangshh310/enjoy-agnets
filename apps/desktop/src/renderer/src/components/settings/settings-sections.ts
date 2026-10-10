@@ -35,3 +35,7 @@ export const SETTINGS_SECTIONS = [
 ] as const
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]
+
+export function isSettingsSectionId(value: string): value is SettingsSectionId {
+  return (SETTINGS_SECTIONS as readonly string[]).includes(value)
+}

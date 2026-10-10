@@ -32,10 +32,13 @@ test("工作区组含 extensions，且 MCP 仍在", () => {
 })
 
 test("添加深链仍指向现有 #/mcp / #/skills，精选卡不再靠 href 当 CRUD", () => {
-  assert.equal(mcpHubHref(), MCP_HUB_HREF)
-  assert.equal(skillsHubHref(), `${SKILLS_HUB_HREF}?tab=curated`)
-  assert.equal(mcpPresetHref("filesystem"), "#/mcp?preset=filesystem")
-  assert.equal(skillsInstallHref("obra-superpowers"), "#/skills?tab=curated&install=obra-superpowers")
+  assert.equal(mcpHubHref(), `${MCP_HUB_HREF}?from=settings&section=extensions`)
+  assert.equal(skillsHubHref(), `${SKILLS_HUB_HREF}?tab=curated&from=settings&section=extensions`)
+  assert.equal(mcpPresetHref("filesystem"), "#/mcp?preset=filesystem&from=settings&section=extensions")
+  assert.equal(
+    skillsInstallHref("obra-superpowers"),
+    "#/skills?tab=curated&install=obra-superpowers&from=settings&section=extensions"
+  )
   const hubMcp = projectMcpCurated(pickByIds(FEATURED_MCP_PRESETS, EXTENSIONS_HUB_MCP_IDS))
   const hubSkills = projectSkillsCurated(pickByIds(CURATED_SKILL_SOURCES, EXTENSIONS_HUB_SKILL_IDS))
   assert.deepEqual(hubMcp.map((card) => card.id), [...EXTENSIONS_HUB_MCP_IDS])

@@ -12,7 +12,7 @@ export function McpSettings() {
   return (
     <SettingsHubEmbed
       openLabel={t("settings.mcp.openHub")}
-      onOpenHub={() => void navigate({ to: "/mcp", search: { from: "settings" } })}
+      onOpenHub={() => void navigate({ to: "/mcp", search: { from: "settings", section: "mcp" } })}
     >
       <McpPage embedded />
     </SettingsHubEmbed>

@@ -20,7 +20,7 @@ export function McpPage(props?: {
   onBrowseMarketplace?: () => void
 }) {
   const t = useT()
-  const search = useSearch({ strict: false }) as { from?: string }
+  const search = useSearch({ strict: false }) as { from?: string; section?: string }
   const page = useMcpPage()
 
   const content = (
@@ -102,7 +102,7 @@ export function McpPage(props?: {
       contentWidth="fill"
       hideChrome
     >
-      <ModuleReturnBar from={search.from} section="mcp" />
+      <ModuleReturnBar from={search.from} origin={search.section} fallback="mcp" />
       {content}
     </SecondaryPageShell>
   )
