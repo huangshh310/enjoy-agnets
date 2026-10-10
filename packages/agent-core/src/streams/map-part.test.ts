@@ -233,6 +233,36 @@ test("passes through Enjoy StreamEvent from ACP", () => {
     ),
     { type: "generation.warning", runId: "run_1", code: "acp_resume_fallback", message: "fell back" }
   )
+  assert.deepEqual(
+    mapStreamPart({ type: "session.title", runId: "run_1", title: "Implement list" }, "run_1"),
+    { type: "session.title", runId: "run_1", title: "Implement list" }
+  )
+  assert.deepEqual(
+    mapStreamPart(
+      { type: "commands.update", runId: "run_1", commands: [{ name: "plan" }] },
+      "run_1"
+    ),
+    { type: "commands.update", runId: "run_1", commands: [{ name: "plan" }] }
+  )
+  assert.deepEqual(
+    mapStreamPart(
+      {
+        type: "mcp.app",
+        runId: "run_1",
+        serverId: "acp",
+        resourceUri: "ui://dash",
+        phase: "open"
+      },
+      "run_1"
+    ),
+    {
+      type: "mcp.app",
+      runId: "run_1",
+      serverId: "acp",
+      resourceUri: "ui://dash",
+      phase: "open"
+    }
+  )
 })
 
 test("tool-output-denied 裸坐标：tool.result.result.code 给 renderer", () => {

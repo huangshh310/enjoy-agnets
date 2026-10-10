@@ -12,6 +12,7 @@ import { emptyTranscript, type RunTranscript } from "./persist-session"
 import type { StoredSecret } from "./secrets"
 import { acceptStreamEvent } from "./accept-stream-event"
 import { stampAndSend } from "./event-bus"
+import { droppedTerminalSettle } from "./settle-dropped-terminal"
 
 export type ActiveRun = {
   abort: AbortController
@@ -74,7 +75,11 @@ const SETTLED_RUNS_CAP = 200
 
 export function emitEvent(window: BrowserWindow, event: StreamEvent) {
   const next = acceptStreamEvent(withAutomationApprovalSource(event))
-  if (!next) return
+  if (!next) {
+    const fallback = droppedTerminalSettle(event)
+    if (fallback) settleRun(fallback.runId, { status: fallback.status, summary: fallback.summary })
+    return
+  }
   const sessionId = next.sessionId ?? sessionIdOfRun(next)
   if (sessionId) {
     stampAndSend(window, next, sessionId)

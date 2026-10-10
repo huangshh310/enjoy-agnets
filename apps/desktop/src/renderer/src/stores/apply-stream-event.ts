@@ -14,7 +14,12 @@ import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approva
 import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { applyV2Part } from "./apply-v2-parts"
 import type { ThreadMessage } from "./chat-store"
-import { canOpenAssistantTurn, isForeignRunId, shouldFinalizeComposerRun } from "./stream-run-scope"
+import {
+  canOpenAssistantTurn,
+  isComposerRunStart,
+  isForeignRunId,
+  shouldFinalizeComposerRun
+} from "./stream-run-scope"
 
 export type StreamPatch = {
   messages: ThreadMessage[]
@@ -35,6 +40,7 @@ export function reduceStreamEvent(
 ): StreamPatch {
   if (event.type === "run.start") {
     if (isForeignRunId(event.runId, activeRunId)) return { messages }
+    if (activeRunId !== event.runId && !isComposerRunStart(event)) return { messages }
     return {
       messages: event.prompt ? appendPromptTurn(messages, event.prompt, event.runId) : messages,
       running: true,

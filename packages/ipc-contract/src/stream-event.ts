@@ -15,6 +15,11 @@ const Envelope = {
   sessionId: z.string().optional()
 }
 
+/** 与 mcp.app / session.title 出站上限对齐，映射层先截断再过闸。 */
+export const MCP_APP_TITLE_MAX = 200
+export const MCP_APP_SRC_DOC_MAX = 200_000
+export const SESSION_TITLE_MAX = 200
+
 export const StreamEvent = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("run.start"),
@@ -22,6 +27,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     sessionId: z.string(),
     /** 主进程代发的用户句。前台线程还没有这条时才补进气泡。 */
     prompt: z.string().optional(),
+    /** Composer / Agent 为 `agent`；标题补全等旁路带自己的 generation kind。 */
+    kind: z.string().max(40).optional(),
     sequence: z.number().int().optional(),
     timestamp: z.number().int().optional()
   }),
@@ -127,7 +134,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
     startLine: z.number().int().optional(),
     endLine: z.number().int().optional(),
     snippet: z.string().optional(),
-    score: z.number().optional(),
+    score: z.number().finite().optional().catch(undefined),
     ...Envelope
   }),
   z.object({
@@ -206,8 +213,8 @@ export const StreamEvent = z.discriminatedUnion("type", [
     serverId: z.string(),
     resourceUri: z.string(),
     phase: z.enum(["open", "update", "close", "error"]),
-    srcDoc: z.string().max(200_000).optional(),
-    title: z.string().max(200).optional(),
+    srcDoc: z.string().max(MCP_APP_SRC_DOC_MAX).optional(),
+    title: z.string().max(MCP_APP_TITLE_MAX).optional(),
     ...Envelope
   }),
   z.object({
@@ -264,7 +271,7 @@ export const StreamEvent = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("session.title"),
     runId: z.string(),
-    title: z.string().min(1).max(200),
+    title: z.string().min(1).max(SESSION_TITLE_MAX),
     ...Envelope
   })
 ])
