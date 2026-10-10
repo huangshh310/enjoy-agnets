@@ -92,6 +92,16 @@ export function resetQueuedComposerSendForTest(): void {
   queueSeq = 0
 }
 
+/** 点「新对话」取消上一窗未发出的队列，禁止创建完成时误发正在打的字。 */
+export function cancelQueuedComposerSend(): void {
+  queuedSend = null
+  queueSeq += 1
+}
+
+export function hasQueuedComposerSend(): boolean {
+  return queuedSend !== null
+}
+
 export async function waitThenSendAfterCreate(
   text: string,
   sendReady: (prepared: PreparedComposerSend) => Promise<void>,

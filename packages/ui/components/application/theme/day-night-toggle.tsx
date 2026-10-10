@@ -1,5 +1,5 @@
 /**
- * 昼/夜开关：日芒 + 夜空特效。不用位移滤镜，Linux/Xvfb 上会画成黄蓝乱线。
+ * 昼/夜开关：干净的日/夜预览。不要斜纹、错位描边或位移滤镜。
  */
 import type { MouseEvent } from "react"
 import { cx } from "@/utils/cx"
@@ -44,31 +44,8 @@ export function DayNightToggle({
             </div>
           </div>
         </div>
-        <NightDecor />
       </div>
     </label>
-  )
-}
-
-function NightDecor() {
-  return (
-    <>
-      <div className="theme-switch__shooting-star" />
-      <div className="theme-switch__shooting-star-2" />
-      <div className="theme-switch__meteor" />
-      <div className="theme-switch__stars-cluster">
-        <div className="star" />
-        <div className="star" />
-        <div className="star" />
-        <div className="star" />
-        <div className="star" />
-      </div>
-      <div className="theme-switch__aurora" />
-      <div className="theme-switch__comets">
-        <div className="comet" />
-        <div className="comet" />
-      </div>
-    </>
   )
 }
 

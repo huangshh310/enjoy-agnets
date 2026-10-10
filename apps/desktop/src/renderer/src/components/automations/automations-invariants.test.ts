@@ -151,6 +151,8 @@ test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {
   const row = readFileSync(join(dir, "components/automation-row.tsx"), "utf8")
   assert.match(row, /data-testid="automation-row-open"/)
   assert.match(row, /absolute inset-0/)
+  assert.match(row, /onClick=\{\(event\) => \{/)
+  assert.match(row, /data-automation-row-stop/)
   assert.match(row, /onCheckedChange=\{onToggle\}/)
   assert.match(row, /onClick=\{onOpenFailed\}/)
   assert.match(row, /pointer-events-auto/)

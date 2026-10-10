@@ -13,10 +13,10 @@ import {
   waitForNewSessionCreate
 } from "./new-session-create.ts"
 
-test("创建窗内没有 sessionId 也要入队，不能当发送成功", () => {
+test("只有创建窗未结束才入队，sessionId 为空不得自动发", () => {
   assert.equal(shouldQueueComposerSend(null, true), true)
   assert.equal(shouldQueueComposerSend("ses_old", true), true)
-  assert.equal(shouldQueueComposerSend(null, false), true)
+  assert.equal(shouldQueueComposerSend(null, false), false)
   assert.equal(shouldQueueComposerSend("ses_ready", false), false)
 })
 

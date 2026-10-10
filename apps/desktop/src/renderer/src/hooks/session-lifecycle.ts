@@ -41,7 +41,8 @@ import {
   isCurrentCreateToken,
   shouldPublishCreatedSession
 } from "./new-session-create"
-import { absorbAssetsIntoQueuedSend } from "./queue-composer-send"
+import { absorbAssetsIntoQueuedSend, cancelQueuedComposerSend } from "./queue-composer-send"
+import { flushComposerDomToStore } from "./runtime-interact/composer-draft"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -113,13 +114,14 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "æ
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
   if (isDefaultSessionTitle(customTitle) && isReusableEmptySession(useChatStore.getState(), workspaceId)) {
+    cancelQueuedComposerSend()
     useAttentionStore.getState().clearCompletes()
     focusComposerAfterNewSession()
     return
   }
+  cancelQueuedComposerSend()
   const { token } = beginNewSessionCreate()
   parkForegroundRun()
-  const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
   bumpSessionHydrateGeneration()
   detachForegroundForCreate()
@@ -148,13 +150,11 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "æ
       await getIde().session.delete({ sessionId: session.id }).catch(() => undefined)
       return
     }
-    const typedDuringCreate = store.composer
+    const typedDuringCreate = flushComposerDomToStore()
     const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
     absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
-    if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
-      useChatStore.setState({ composer: typedDuringCreate })
-    }
+    if (typedDuringCreate) useChatStore.setState({ composer: typedDuringCreate })
     finishNewSessionCreate(token, session.id)
     await bindSessionRuntime(session.id, runtimeId)
     if (await discardCreatedSession(session.id, stale)) return
@@ -221,7 +221,7 @@ function publishCreatedSession(
   session: SessionRow,
   runtimeId: ReturnType<typeof resolveCreateRuntime>
 ) {
-  useChatStore.setState({ ...idleComposerPatch(), composer: "" })
+  useChatStore.setState({ ...idleComposerPatch() })
   clearComposerAssets()
   setQuotedContexts([])
   useEngineHandoffStore.getState().resetPending()

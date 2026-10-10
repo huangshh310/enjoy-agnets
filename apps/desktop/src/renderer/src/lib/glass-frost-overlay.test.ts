@@ -66,8 +66,14 @@ test("审查空态组件不挂 data-frost，不靠装饰类名", () => {
   const fileListEmpty = readFirst([
     join(dir, "../components/ai-chat/right-pane/views/review/file-tree/review-file-tree.tsx")
   ])
-  assert.doesNotMatch(reviewEmpty, /data-frost/)
-  assert.doesNotMatch(fileListEmpty, /data-frost/)
+  const changesEmpty = readFirst([
+    join(dir, "../components/ai-chat/right-pane/views/review/changes-list.tsx")
+  ])
+  for (const src of [reviewEmpty, fileListEmpty, changesEmpty]) {
+    assert.doesNotMatch(src, /data-frost/)
+    assert.doesNotMatch(src, /data-pane-shell-deco/)
+    assert.doesNotMatch(src, /skin-glass-orb|skin-liquid-glass/)
+  }
   assert.match(reviewEmpty, /chat\.treeClean/)
   assert.match(fileListEmpty, /review-file-list-empty/)
 })

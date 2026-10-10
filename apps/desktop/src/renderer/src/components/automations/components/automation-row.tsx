@@ -44,10 +44,19 @@ export function AutomationRow({
       )}
       data-testid="automation-row"
     >
-      <div className="relative flex items-center gap-3 px-4 py-2.5">
+      <div
+        className="relative flex items-center gap-3 px-4 py-2.5"
+        onClick={(event) => {
+          if ((event.target as HTMLElement).closest("[data-automation-row-stop]")) return
+          onOpen()
+        }}
+      >
         <button
           type="button"
-          onClick={onOpen}
+          onClick={(event) => {
+            event.stopPropagation()
+            onOpen()
+          }}
           data-testid="automation-row-open"
           aria-label={automation.name}
           onPointerDown={(event) => {
@@ -62,12 +71,12 @@ export function AutomationRow({
             delete event.currentTarget.dataset.pointerReturn
           }}
           className={cx(
-            "absolute inset-0 cursor-pointer outline-none",
+            "absolute inset-0 z-[1] cursor-pointer outline-none",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focus-ring",
             "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0"
           )}
         />
-        <div className="pointer-events-none relative z-10 min-w-0 flex-1">
+        <div className="pointer-events-none relative z-[2] min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="truncate text-body-medium text-text-primary">{automation.name}</p>
             {chips.map((chip) => {
@@ -91,7 +100,7 @@ export function AutomationRow({
             <LastRunExplain text={line.text} tip={line.tip} testId={line.testId} />
           </div>
         </div>
-        <div className="relative z-10">
+        <div data-automation-row-stop className="relative z-[3]" onClick={(event) => event.stopPropagation()}>
           <Switch
             checked={automation.enabled}
             onCheckedChange={onToggle}
@@ -107,6 +116,7 @@ export function AutomationRow({
       {status === "failed" ? (
         <button
           type="button"
+          data-automation-row-stop
           onClick={onOpenFailed}
           className="w-full border-t border-border-error-default/15 bg-background-secondary-default px-4 py-1.5 text-left text-caption-1-medium text-text-error-primary"
         >

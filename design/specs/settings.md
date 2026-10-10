@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（抽屉常驻「上次：…」；24h 时分；颜色模式去掉 displacement）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（颜色模式干净日/夜预览；整行点开自动化抽屉）
 
 ## 当前真相
 
@@ -12,7 +12,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/knowledge` `#/workflows` `#/media` `#/mcp` `#/skills` | 工作模块 | AppShell 内换轨，不弹出第二套壳。旧 `#/extensions` 按 tab 拆回 `#/mcp` / `#/skills`，其余进 `#/settings/extensions` |
 | `#/inbox` | 消息 | 轨道底部 Inbox；`fill` 时间线+阅读器 |
 | `#/settings/general` | 通用偏好 | 主题、语言、快捷键、自动更新、桌面系统通知与提示音偏好（`SettingsNotificationsCard`） |
-| `#/settings/appearance` | 外观与视觉 | 亮暗主题（`DayNightToggle` 日芒/夜空，**禁止** `feDisplacementMap` / `url(#theme-switch-sketchy)`，Linux/Xvfb 上会画成黄蓝乱线）、5款主题强调色（Signal Blue/Terminal Green/Claude Amber/Cosmic Purple/Graphite Slate）、4款界面材质皮肤、UI 全局缩放（85%~120%）与代码/终端字号（12px~16px） |
+| `#/settings/appearance` | 外观与视觉 | 亮暗主题（`DayNightToggle` 干净日/夜预览，**禁止** `feDisplacementMap` / 斜纹 / 错位描边 / `url(#theme-switch-sketchy)`）、5款主题强调色（Signal Blue/Terminal Green/Claude Amber/Cosmic Purple/Graphite Slate）、4款界面材质皮肤、UI 全局缩放（85%~120%）与代码/终端字号（12px~16px） |
 | `#/settings/archived` | 已归档的聊天 | Settings |
 | `#/settings/automations` | 自动化 | Settings。Chat 侧栏走 `#/automations`（同一套 AutomationsPage，不算 Settings 轨；无工作区也能打开） |
 | `#/settings/instructions` `#/settings/rules` | 说明 / 规则 | Settings 具备顶部双 Tab 导航（全局 Persona 指令与项目规则 `RulesSection`）；旧 `#/customize/*` redirect。`#/settings/skills` 与 `#/customize/skills` 重定向 `#/skills` |
@@ -90,7 +90,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 
 - 已归档页「恢复」有时把会话送到侧栏顶。根因：设置页 `unarchiveSession` 与 toast 撤销刷新顺序不一致。正确做法：共用 `restoreUnarchivedSession`。
 - 抽屉原生 `type="time"` 在 zh 仍画出「08:00 AM」。根因：Chromium 不认 `lang="en-GB"`。正确做法：自绘 24h 时/分 `<select>`（`TimePicker24`），不要再挂原生 time。
-- 外观「颜色模式」插图是黄蓝乱线。根因：`feDisplacementMap` + `filter: url(#theme-switch-sketchy)` 在 Linux/Xvfb 上位移失败。正确做法：去掉这套滤镜，只留日芒/夜空几何。
+- 外观「颜色模式」插图是黄蓝乱线或斜纹毛边。根因：`feDisplacementMap` / 容器 `repeating-linear-gradient` / `rotate(-0.7deg)` / 日芒 `conic-gradient` 在 Linux/Xvfb 上画脏。正确做法：干净胶囊日/夜预览，禁止斜纹与错位描边。
 - **隐患**：1100×700 设置侧栏看不到「项目与扩展」。根因：情境栏父级不裁剪高度，Radix ScrollArea 失效。正确做法：见 `ui` spec；e2e `settings-nav-scroll.spec.ts`。
 - **隐患**：自动化抽屉 X / Esc / 遮罩静默丢改动。正确做法：`isDraftDirty` 对照打开快照；脏则 Confirm「放弃未保存的修改？」；确认框开着抽屉不抢 Esc（`isAppDialogOpen`）。
 - **隐患**：抽屉 X 要点两下才关。根因：焦点在输入框时，第一次 click 先触发 blur → 重渲，这次 click 被吞；不是脏表单守卫（脏表单应立刻出确认框）。正确做法：关闭钮 `onPointerDown` 走 `handleDrawerClosePointer`（主键 `preventDefault` 再 `onClose`），aside 抬到 `z-10` 避免遮罩抢点。
@@ -99,7 +99,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 抽屉挡住标题栏月亮。根因：遮罩 `inset-0 z-50` 盖过 `h-9` 标题栏。正确做法：遮罩 `top-9`。
 - **隐患**：删除确认 `z-50` 与抽屉同层，框落在抽屉左半、不像全窗模态。正确做法：`ConfirmDialog` overlay/content 走 `SETTINGS_DRAWER_Z_CLASS.modal`（`z-[90]`），确认钮用「删除」。
 - **隐患**：新建自动化点「定时」会短暂（或一直）连「手动」一起高亮。根因：空草稿 `triggers:["manual"]`，`toggleTrigger` 是多选叠加。正确做法：当前只有手动时改点其它触发则替换。保存成功关抽屉 + toast「已保存」，不要留在编辑态。
-- **隐患**：自动化列表只有名称那一行是按钮，点空白打不开抽屉。正确做法：`automation-row-open` 铺满行盒；开关 / 失败条 / 次行 tip 用更高 z 并 `pointer-events-auto`，不要包成套娃 button。
+- **隐患**：自动化列表点行打不开抽屉，只有「新建」能开。根因：铺满遮罩被 `z-10` 子层拦截，Playwright/C 端点到名称也点不穿。正确做法：行盒 `onClick` 打开；`automation-row-open` `z-[1]`；开关 / 失败条 `data-automation-row-stop` + `stopPropagation`。
 - **隐患**：无边框窗标题栏是 `-webkit-app-region: drag`，抽屉 `inset-y-3` 与 `h-9` 标题栏重叠。关闭钮若不标 `no-drag`，点 X 会拖走窗口。正确做法：`SettingsSideDrawer` 整层与各抽屉关闭钮都带 `data-app-region="no-drag"`；Esc 用 `shouldCloseDrawerOnEscape`（未 preventDefault 即关）。
 - **隐患**：抽屉 Esc 会连设置页一起关掉，掉回新对话。根因：共享抽屉只 `preventDefault`，冒泡到 `nav.back`。正确做法：捕获阶段 `markDrawerEscapeHandled`；`nav.back` 见抽屉开着或 `defaultPrevented` 就不离开。无抽屉时 Esc 仍回工位。
 - **隐患**：空显示名回落「未命名」/「未命名助手」当引擎身份。根因：通用 `untitled` 词条容易被误用。正确做法：trim 空则品牌名+模型；「未命名」只禁作身份，不进 `agentDisplayNames`。

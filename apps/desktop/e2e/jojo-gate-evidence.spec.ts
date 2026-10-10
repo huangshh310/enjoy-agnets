@@ -97,6 +97,35 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     })
     await expect(reviewPane).toHaveAttribute("data-pane-shell-deco", "off")
     await expect(reviewPane).not.toHaveAttribute("data-frost", "shell")
+    await expect(reviewPane.locator("[data-frost]")).toHaveCount(0)
+    await window.evaluate(() => {
+      document.documentElement.classList.remove("dark")
+      document.documentElement.setAttribute("data-skin", "glass")
+    })
+    const deco = await reviewPane.evaluate((node) => {
+      if (node.getAttribute("data-frost") === "shell") return "frost-shell"
+      if (node.getAttribute("data-pane-shell-deco") !== "off") return "deco-on"
+      if (node.querySelector("[data-frost], .skin-glass-orb, [class*='frost']")) return "nested-deco"
+      const after = getComputedStyle(node, "::after").content
+      if (after && after !== "none") return `after:${after}`
+      const before = getComputedStyle(node, "::before").content
+      if (before && before !== "none") return `before:${before}`
+      return "ok"
+    })
+    expect(deco).toBe("ok")
+    const fileList = window.locator('[data-testid="review-file-list-empty"]')
+    const box = await fileList.boundingBox()
+    if (box) {
+      await window.screenshot({
+        path: join(shots, "luna_review_divider_light_zoom.png"),
+        clip: {
+          x: Math.max(0, box.x - 48),
+          y: Math.max(0, box.y),
+          width: 96,
+          height: Math.min(box.height + 80, 360)
+        }
+      })
+    }
     await expect(window.locator('[data-testid="chat-breadcrumb-project"]')).toBeVisible()
     const crumb = ((await window.locator('[data-testid="chat-breadcrumb"]').innerText()) ?? "").replace(/\s+/g, " ")
     expect(crumb).not.toMatch(/^..\s*>\s*.\.$/)
@@ -109,7 +138,7 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     })
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
     const noon = window.locator('[data-testid="automation-row"]').filter({ hasText: "午间改动复盘" })
-    await noon.locator("button").first().click({ force: true })
+    await noon.getByText("午间改动复盘").click()
     await window.locator("#automation-editor-title").waitFor({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-time"]')).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-hour"]')).toBeVisible()

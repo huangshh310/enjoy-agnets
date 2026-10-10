@@ -59,13 +59,13 @@ type SendPayload = {
 export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
-  if (!prepared) flushComposerDomToStore()
+  const flushed = prepared ? null : flushComposerDomToStore()
   if (prepared?.sessionId && store.sessionId !== prepared.sessionId) {
     restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     return
   }
   if (composerNeedsSessionReady() && !prepared) {
-    const text = useChatStore.getState().composer
+    const text = flushed ?? useChatStore.getState().composer
     if (!text.trim()) {
       restoreComposerAfterFailedSend(text, SESSION_NOT_READY)
       return

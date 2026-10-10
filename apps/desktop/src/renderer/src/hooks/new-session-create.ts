@@ -85,6 +85,7 @@ export function shouldPublishCreatedSession(input: {
   return true
 }
 
-export function shouldQueueComposerSend(sessionId: string | null, createPending: boolean): boolean {
-  return createPending || !sessionId
+/** 只在创建窗未结束时入队。禁止只因 sessionId 为空就自动发。 */
+export function shouldQueueComposerSend(_sessionId: string | null, createPending: boolean): boolean {
+  return createPending
 }

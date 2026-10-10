@@ -43,7 +43,7 @@ export function ChatStageHeader({
   const t = useT()
   const title = displaySessionTitle(sessionTitle, t("chat.newAgent"))
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 overflow-hidden px-5">
+    <header className="flex h-12 shrink-0 items-center gap-2 px-5">
       <RiFolder6Line className="size-4 shrink-0 text-text-secondary" aria-hidden />
       <Breadcrumb
         data-testid="chat-breadcrumb"

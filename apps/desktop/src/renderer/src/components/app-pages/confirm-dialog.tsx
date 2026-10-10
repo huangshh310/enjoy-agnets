@@ -60,11 +60,12 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        data-testid="confirm-dialog"
         showCloseButton={false}
-        overlayClassName={SETTINGS_DRAWER_Z_CLASS.modal}
+        overlayClassName={cx(SETTINGS_DRAWER_Z_CLASS.modal, "fixed inset-0")}
         className={cx(
           SETTINGS_DRAWER_Z_CLASS.modal,
-          "max-w-sm rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
+          "fixed top-1/2 left-1/2 max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-border-button-default bg-background-primary-default p-6 shadow-card"
         )}
       >
         <form onSubmit={(event) => void submitConfirm(event)}>

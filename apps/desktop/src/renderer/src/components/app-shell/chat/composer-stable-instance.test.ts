@@ -18,7 +18,7 @@ test("ChatThreadBody 单实例 Composer，发送先 flush 再 setRunning", () =>
   assert.doesNotMatch(stage, /key=\{sessionId\}/)
   assert.doesNotMatch(start, /ChatComposerCluster/)
   assert.match(draft, /flushComposerDomToStore/)
-  assert.match(send, /if \(!prepared\) flushComposerDomToStore\(\)/)
+  assert.match(send, /flushComposerDomToStore\(\)/)
   const flushAt = send.indexOf("flushComposerDomToStore()")
   const runningAt = send.indexOf("store.setRunning(true)")
   assert.ok(flushAt >= 0 && runningAt > flushAt, "flush 必须在 setRunning 之前")

@@ -9,7 +9,6 @@
 @import "./skins/ink.css";
 @import "./skins/sketch.css";
 @import "../components/application/theme/day-night-toggle.css";
-@import "../components/application/theme/day-night-toggle-fx.css";
 
 
 @source "../components/**/*.{ts,tsx}";

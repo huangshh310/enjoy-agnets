@@ -31,3 +31,13 @@ test("已完成进顶栏状态区，需处理占标题栏下一行，不盖标�
   assert.match(header, /chat-breadcrumb-title/)
   assert.match(header, /min-w-\[4\.5rem\] max-w-\[60%\] shrink-0/)
 })
+
+test("待验收闸不缩，先裁会话题", () => {
+  const gate = readFileSync(
+    join(dir, "../../ai-chat/review-gate/review-gate-header.tsx"),
+    "utf8"
+  )
+  assert.match(gate, /shrink-0 whitespace-nowrap/)
+  assert.match(header, /chat-breadcrumb-title/)
+  assert.match(header, /block truncate/)
+})
