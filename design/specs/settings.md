@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#136：关「改密钥」抽屉必须清掉 `edit`/`focus`/`from`；`from=chat` 回原会话带草稿）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（#136：`openedEdit` 只在 `!editor && !search.edit` 时清；discarded-run 单测不进 chat-store）
 
 ## 当前真相
 
@@ -90,7 +90,8 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - 视觉细节：[../references/visual-system.md](../references/visual-system.md) §6 / §14
 ## 已知坑
 
-- **隐患**：「改密钥」抽屉取消 / × / Esc 关不掉。根因：`closeEditor` 只清本地 `editor`，`#/settings/providers?edit=…&focus=key` 还在，`openedEdit` 被重置后又按 `search.edit` 再打开；`from=chat` 的 `leaveOrigin` 也不回会话。正确做法：关上时清掉 `edit` / `focus` / `from`；`from=chat` 取消与保存都 `navigate` 回 `#/`，草稿留在 Composer。e2e `e2e/base-p0-1-provider-editor-close.spec.ts`（两条入口 × 取消 / × / Esc，关上后再开）。
+- **隐患**：「改密钥」抽屉取消 / × / Esc 关不掉。根因：`closeEditor` 只清本地 `editor`，`#/settings/providers?edit=…&focus=key` 还在，`openedEdit` 被重置后又按 `search.edit` 再打开；`from=chat` 的 `leaveOrigin` 也不回会话。正确做法：关上时清掉 `edit` / `focus` / `from`；`openedEdit` 只在 `!editor && !search.edit` 时清（源码断言必须带上 `&& !search.edit`，否则三端 test 挂）；`from=chat` 取消与保存都 `navigate` 回 `#/`，草稿留在 Composer。e2e `e2e/base-p0-1-provider-editor-close.spec.ts`（两条入口 × 取消 / × / Esc，关上后再开）。
+- **隐患**：`discarded-pre-output-runs.test.ts` 若 value-import `chat-store`，`repo-test-harness-invariants` 会拒（`chat-store` 走合约桶入口，node:test 加载不到）。正确做法：只测 `remember` / `isDiscarded`；撕泡与迟到 `run.start` 走 `apply-stream-event` / e2e。
 - **隐患**：`CHAT_READY=none` 冻结空快照时，向导存密钥后 `hasEnjoySecret` 已 true 但 `ready` 仍 false、`apiKeys` 空，adopt toast 要重启才出。正确做法：`none` 只种起始无路线，之后从真 vault 组装。`ENJOY_E2E_CREDENTIAL=ok` 时同会话 UI 存钥即可 `ready` + `adoptedHint`（toast 只出一次）。未设 `CHAT_READY` 不要注入 live ollama，否则首张已 ready 只盖章不 toast。信息 toast 2.4s 自熄，e2e 须在同会话拍屏/focus 前断言可见，之后只断言没有第二条。e2e `e2e/base-p0-1-adopt-toast.spec.ts`。
 - **隐患**：去添加密钥时 `pauseAt` 把向导 `open` 设成 false，Radix Dialog `onOpenChange(false)` 会当成用户关掉并 `finish()`，向导被标完成、resume 清掉。正确做法：`onOpenChange` 见 `paused` 不要 finish。
 - **隐患**：1100×700 设置侧栏看不到「项目与扩展」。根因：情境栏父级不裁剪高度，Radix ScrollArea 失效。正确做法：见 `ui` spec；e2e `settings-nav-scroll.spec.ts`。
