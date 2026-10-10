@@ -18,7 +18,7 @@ export const enMcpPages = {
   registerServer: "Add service",
   registeredCount: "Registered servers ({n})",
   searchServers: "Search server name...",
-  emptyTitle: "No MCP servers configured yet",
+  emptyTitle: "No services added yet",
   emptyHint:
     "Connect filesystems, databases, or external APIs through Model Context Protocol so the Agent can call them in chat.",
   browseMarketplace: "Browse extensions",
