@@ -111,49 +111,46 @@ export function ScheduleFields({
           </label>
         </div>
       )}
-      <p
-        className="inline-flex items-center gap-1.5 text-caption-2-regular text-text-secondary"
-        data-testid="automation-schedule-preview"
-      >
-        <RiCalendarScheduleLine className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
-        <span>{preview}</span>
-      </p>
-      <button
-        type="button"
-        data-testid="automation-schedule-advanced"
-        onClick={() => setAdvanced((open) => !open)}
-        className="text-caption-2-medium text-text-secondary hover:text-text-primary"
-      >
-        {t("studio.automations.scheduleAdvanced")}
-      </button>
+      <div className="flex flex-col gap-2">
+        <p
+          className="flex items-start gap-1.5 text-caption-2-regular text-text-secondary"
+          data-testid="automation-schedule-preview"
+        >
+          <RiCalendarScheduleLine className="mt-0.5 size-3.5 shrink-0 text-text-secondary" aria-hidden />
+          <span className="min-w-0 break-words">{preview}</span>
+        </p>
+        <button
+          type="button"
+          data-testid="automation-schedule-advanced"
+          onClick={() => setAdvanced((open) => !open)}
+          className="w-fit text-caption-2-medium text-text-secondary hover:text-text-primary"
+        >
+          {t("studio.automations.scheduleAdvanced")}
+        </button>
+      </div>
       {advanced ? (
-        <div className="grid grid-cols-2 gap-2">
-          <label>
+        <div className="flex flex-col gap-3">
+          <label className="block space-y-1">
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.cronExprCustom")}</span>
             <Input
               value={cronExpr}
               onChange={(event) => onChange({ cronExpr: event.target.value })}
-              className="mt-1 font-mono"
+              className="font-mono"
               data-testid="automation-cron-expr"
             />
-            <span className="mt-1 block text-caption-2-regular text-text-secondary" data-testid="automation-cron-readable">
+            <span className="block text-caption-2-regular text-text-secondary" data-testid="automation-cron-readable">
               {readable.label}
             </span>
           </label>
-          <label>
+          <div className="space-y-1" data-testid="automation-timezone-field">
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.timeZone")}</span>
             <p
               data-testid="automation-timezone-advanced"
-              className="mt-1 text-caption-1-medium text-text-primary"
+              className="text-caption-1-medium text-text-primary"
             >
               {formatTimezoneAdvanced(timeZone, locale)}
             </p>
-            <Input
-              value={timeZone}
-              onChange={(event) => onChange({ timeZone: event.target.value })}
-              className="mt-1"
-            />
-          </label>
+          </div>
         </div>
       ) : null}
     </div>

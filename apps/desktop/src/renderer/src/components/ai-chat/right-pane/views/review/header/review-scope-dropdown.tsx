@@ -25,9 +25,9 @@ export function ReviewScopeDropdown(props: {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-body-medium font-semibold text-text-primary hover:bg-background-secondary-hover cursor-pointer transition-colors"
+          className="group inline-flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-body-medium font-semibold text-text-primary hover:bg-background-secondary-hover cursor-pointer transition-colors"
         >
-          <span>{currentScopeItem.label}</span>
+          <span className="min-w-0 truncate whitespace-nowrap">{currentScopeItem.label}</span>
           <RiArrowDownSLine className="size-4 text-text-tertiary group-hover:text-text-primary transition-transform" />
         </button>
       </DropdownMenuTrigger>

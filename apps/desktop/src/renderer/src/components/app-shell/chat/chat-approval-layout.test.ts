@@ -59,6 +59,15 @@ test("会话行菜单保持占位并锚到触发钮，文案是加星标", () =>
   assert.match(row, /title=\{label\}/)
   const policy = read("ai-chat/approval-policy-toggle.tsx")
   assert.match(policy, /chat\.approvalCycleHint/)
+  assert.match(policy, /titleCase\(kind, t\)/)
+  const header = read("ai-chat/right-pane/views/review/header/review-header.tsx")
+  const scope = read("ai-chat/right-pane/views/review/header/review-scope-dropdown.tsx")
+  assert.match(header, /whitespace-nowrap/)
+  assert.match(header, /shrink-0/)
+  assert.match(scope, /truncate whitespace-nowrap/)
+  const drawer = read("settings/settings-side-drawer.tsx")
+  assert.match(drawer, /top-9/)
+  assert.doesNotMatch(drawer, /fixed inset-0 /)
 })
 
 test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {
@@ -67,6 +76,9 @@ test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {
   assert.match(chrome, /flex min-w-0 flex-1 flex-col gap-1\.5/)
   assert.match(chrome, /leading-6 text-text-primary/)
   assert.match(stacked, /flex w-full min-w-0 flex-col/)
+  assert.match(stacked, /mb-2/)
+  assert.doesNotMatch(stacked, /-mb-px/)
+  assert.doesNotMatch(stacked, /border-b-0/)
   assert.doesNotMatch(stacked, /calc\(100%-1\.25rem\)/)
 })
 

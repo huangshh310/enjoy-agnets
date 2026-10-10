@@ -139,6 +139,12 @@ test("高级先给人话，原始 cron 只作自定义表达式", () => {
   assert.match(schedule, /data-testid="automation-cron-readable"/)
   assert.doesNotMatch(schedule, /t\("studio\.automations\.cronLabel"\)/)
   assert.doesNotMatch(schedule, /previewLine/)
+  assert.doesNotMatch(schedule, /grid-cols-2/)
+  assert.doesNotMatch(schedule, /inline-flex/)
+  assert.match(schedule, /flex flex-col gap-2/)
+  assert.match(schedule, /formatTimezoneAdvanced/)
+  assert.match(schedule, /data-testid="automation-timezone-advanced"/)
+  assert.equal((schedule.match(/formatTimezoneAdvanced/g) ?? []).length, 2)
 })
 
 test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {

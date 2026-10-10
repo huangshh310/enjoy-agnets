@@ -61,11 +61,9 @@ function PolicyTrigger({
       {...props}
     >
       <Icon className={cx("size-3.5 shrink-0", tone.iconColor)} />
-      {kind === "allow-all" ? null : (
-        <span className="whitespace-nowrap font-medium">
-          {kind === "custom" ? t("common.permissionCustom") : titleCase(kind, t)}
-        </span>
-      )}
+      <span className="whitespace-nowrap font-medium">
+        {kind === "custom" ? t("common.permissionCustom") : titleCase(kind, t)}
+      </span>
     </button>
   )
 }

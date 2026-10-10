@@ -44,7 +44,10 @@ export function SettingsSideDrawer({
 
   return createPortal(
     <div
-      className={cx("fixed inset-0 [app-region:no-drag]", nested ? SETTINGS_DRAWER_Z_CLASS.nested : SETTINGS_DRAWER_Z_CLASS.base)}
+      className={cx(
+        "fixed inset-x-0 bottom-0 top-9 [app-region:no-drag]",
+        nested ? SETTINGS_DRAWER_Z_CLASS.nested : SETTINGS_DRAWER_Z_CLASS.base
+      )}
       data-app-region="no-drag"
       data-settings-drawer="open"
       style={APP_REGION_NO_DRAG_STYLE}

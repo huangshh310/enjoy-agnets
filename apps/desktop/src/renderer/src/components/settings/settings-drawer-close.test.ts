@@ -34,6 +34,8 @@ test("SettingsSideDrawer 整层 no-drag，Esc 捕获并停冒泡", () => {
   assert.match(src, /data-app-region="no-drag"/)
   assert.match(src, /onClose\(\)/)
   assert.match(src, /aside[\s\S]*z-10/)
+  assert.match(src, /top-9/)
+  assert.doesNotMatch(src, /fixed inset-0 /)
 })
 
 test("确认框开着时抽屉不抢 Esc", () => {

@@ -289,7 +289,7 @@ export const enChat = {
 
   approvalSection: "Permission mode",
   approvalAria: "Tool approval policy",
-  approvalCycleHint: "Tool approval policy · Shift+Tab when the composer is empty",
+  approvalCycleHint: "Tool approval policy · Shift+Tab switches between Reads and Edits when the composer is empty",
   approvalReads: "Reads",
   approvalReadsDesc: "Pause before edits, commits, and shell",
   approvalEdits: "Edits",

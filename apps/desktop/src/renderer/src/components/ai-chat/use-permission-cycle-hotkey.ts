@@ -1,6 +1,6 @@
 /**
- * 循环审批风险档：allow-reads → allow-edits → allow-all。
- * Shift+Tab：空 Composer 或焦点不在其它输入框时切档；Composer 有字则让出焦点后退。
+ * Shift+Tab 只在读取 / 编辑之间切；全部只能下手选，从全部回到读取。
+ * 空 Composer 或焦点不在其它输入框时切档；Composer 有字则让出焦点后退。
  */
 import { isTerminalKeyTarget } from "@renderer/components/ai-chat/right-pane/views/terminal/terminal-focus"
 import { useKeybindingCommand } from "@renderer/components/settings/keybindings/keybinding-handlers"

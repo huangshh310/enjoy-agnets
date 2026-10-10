@@ -3,8 +3,8 @@
  * 不透明、裁切溢出，避免展开列表透到下一行。
  */
 export const STACKED_FRAME_CLASS_NAME = [
-  "-mb-px flex w-full min-w-0 flex-col overflow-hidden empty:hidden",
-  "rounded-t-[18px] border border-b-0 border-border-button-default bg-background-primary-default"
+  "mb-2 flex w-full min-w-0 flex-col overflow-hidden empty:hidden",
+  "rounded-[18px] border border-border-button-default bg-background-primary-default"
 ].join(" ")
 
 export const STACKED_PANEL_CLASS_NAME = [
