@@ -108,11 +108,12 @@ test("stub + none 引擎数不能冒充可以开始", () => {
   )
 })
 
-test("stub + unverified 露出远端本机模型；hasSecret 为真则 ready，闸放行", () => {
+test("stub + unverified 露出远端本机模型；有密钥则 ready，闸放行", () => {
   const snap = e2eChatReadiness({ ENJOY_E2E_STUB: "1", ENJOY_E2E_CHAT_READY: "unverified" })
   assert.equal(snap?.ready, true)
   assert.deepEqual(snap?.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
   assert.equal(snap?.hasEnjoySecret, true)
+  assert.equal(snap?.credentialCheck?.state, "unverified")
   assert.equal(
     chatRouteAllowsSend({
       runtimeId: "enjoy-local",

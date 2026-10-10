@@ -78,9 +78,12 @@ export function e2eChatReadiness(
     return buildChatReadiness({
       engines: [],
       localModels: [{ kind: "local_model", service: "ollama", verified: false }],
-      apiKeys: [],
+      apiKeys: [{ kind: "api_key", providerId: E2E_CHAT_READY_KEY_PROFILE_ID, presetId: "openai" }],
       engineCount: 1,
-      hasEnjoySecret: true
+      preferredRuntimeId: "enjoy-local",
+      modelId: E2E_CHAT_READY_MODEL_ID,
+      hasEnjoySecret: true,
+      credentialCheck: e2eCredentialFixture(env, packaged) ?? { state: "unverified" }
     })
   }
   return null
