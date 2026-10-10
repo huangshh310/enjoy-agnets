@@ -37,6 +37,7 @@ import {
   settingsBeforeLoad
 } from "@renderer/components/app-shell/routing/redirect-settings"
 import { parseSettingsSectionSearch } from "@renderer/components/settings/settings-section-search"
+import { CrashFallbackHost } from "@renderer/components/layout/crash-fallback/renderer-error-boundary"
 
 function RootLayout() {
   useAgentSession()
@@ -58,7 +59,18 @@ function RootLayout() {
 }
 
 const rootRoute = createRootRoute({
-  component: RootLayout
+  component: RootLayout,
+  errorComponent: function RouteCrashFallback({ error, reset }) {
+    return (
+      <CrashFallbackHost
+        error={error}
+        onReload={() => {
+          reset()
+          window.location.reload()
+        }}
+      />
+    )
+  }
 })
 
 const shellRoute = createRoute({

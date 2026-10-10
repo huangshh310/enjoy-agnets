@@ -54,12 +54,20 @@ test("行列：名称是短名，出处是 path 或服务器", () => {
   assert.equal(sourceRowProvenance(mcpChip, mcp), "服务器 · filesystem")
 })
 
-test("只有带 path 的文件行可聚焦，技能 / MCP 不跳转", () => {
+test("只有带 path 的文件行可聚焦，技能 / MCP / 知识库不跳转", () => {
+  const knowledgeChip: TurnSourceChip = {
+    id: "k1",
+    kind: "knowledge",
+    label: "readme.md",
+    path: "readme.md",
+    title: "readme.md"
+  }
   assert.equal(canFocusSourceRow(fileChip), true)
   assert.equal(canFocusSourceRow(docChip), true)
   assert.equal(canFocusSourceRow({ ...fileChip, path: undefined }), false)
   assert.equal(canFocusSourceRow(skillChip), false)
   assert.equal(canFocusSourceRow(mcpChip), false)
+  assert.equal(canFocusSourceRow(knowledgeChip), false)
 })
 
 function mcp(name: string): string {
