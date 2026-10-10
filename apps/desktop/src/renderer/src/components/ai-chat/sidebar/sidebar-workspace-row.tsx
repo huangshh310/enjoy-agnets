@@ -27,7 +27,8 @@ export function SidebarWorkspaceRow({
   isPinned,
   onToggleExpanded,
   onSelectSession,
-  formatTime
+  formatTime,
+  isRowActive
 }: {
   workspace: RepositoryNode
   sessions: RepositoryNode[]
@@ -38,6 +39,7 @@ export function SidebarWorkspaceRow({
   onToggleExpanded: (id: string) => void
   onSelectSession: (id: string) => void
   formatTime: (timestamp: number) => string
+  isRowActive?: (id: string) => boolean
 }) {
   const isExpanded = isWorkspaceRowExpanded(workspace.id, expandedIds)
   const isActive = workspace.id === currentWorkspaceId
@@ -68,6 +70,7 @@ export function SidebarWorkspaceRow({
           currentWorkspaceId={currentWorkspaceId}
           sessionId={sessionId}
           onSelectSession={onSelectSession}
+          isRowActive={isRowActive}
           formatTime={formatTime}
         />
       ) : null}
@@ -145,6 +148,7 @@ function SessionList({
   currentWorkspaceId,
   sessionId,
   onSelectSession,
+  isRowActive,
   formatTime
 }: {
   workspace: RepositoryNode
@@ -152,6 +156,7 @@ function SessionList({
   currentWorkspaceId: string | null
   sessionId: string | null
   onSelectSession: (id: string) => void
+  isRowActive?: (id: string) => boolean
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
@@ -188,7 +193,8 @@ function SessionList({
               key={session.id}
               sessionId={session.id}
               name={session.name}
-              active={session.id === sessionId}
+              active={isRowActive ? isRowActive(session.id) : session.id === sessionId}
+              surface="tree"
               updatedAt={session.updatedAt}
               formatTime={formatTime}
               flagged={session.flagged}

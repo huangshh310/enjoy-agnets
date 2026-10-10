@@ -2,6 +2,7 @@
  * 侧栏项目与会话列表：按项目 / 单列表 / 状态组。按项目不复用「最近」。
  */
 import { useMemo, useState } from "react"
+import { isSessionRowActive, type SessionRowClick } from "@renderer/components/ai-chat/sidebar/session-row-highlight"
 import { RiAddLine, RiFolder6Line } from "@remixicon/react"
 import { SidebarActiveSessions } from "@renderer/components/ai-chat/sidebar/sidebar-active-sessions"
 import { SidebarOrganizeMenu } from "@renderer/components/ai-chat/sidebar/sidebar-organize-menu"
@@ -36,6 +37,7 @@ export function SidebarRepos({
   formatTime: (timestamp: number) => string
 }) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [clickedRow, setClickedRow] = useState<SessionRowClick | null>(null)
   const t = useT()
   const currentWorkspaceId = useChatStore((state) => state.workspaceId)
   const grouping = useChatStore((state) => state.sidebarGrouping)
@@ -82,7 +84,11 @@ export function SidebarRepos({
       <SidebarActiveSessions
         sessions={allSessions}
         sessionId={sessionId}
-        onSelectSession={onSelectSession}
+        clickedRow={clickedRow}
+        onSelectSession={(id) => {
+          setClickedRow({ id, surface: "active" })
+          onSelectSession(id)
+        }}
         formatTime={formatTime}
       />
 
@@ -92,7 +98,10 @@ export function SidebarRepos({
         <SidebarStatusGroups
           sessions={allSessions}
           sessionId={sessionId}
-          onSelectSession={onSelectSession}
+          onSelectSession={(id) => {
+            setClickedRow({ id, surface: "tree" })
+            onSelectSession(id)
+          }}
           formatTime={formatTime}
         />
       ) : grouping === "flat" ? (
@@ -102,14 +111,18 @@ export function SidebarRepos({
               key={session.id}
               sessionId={session.id}
               name={session.name}
-              active={session.id === sessionId}
+              active={isSessionRowActive(session.id, sessionId, clickedRow, "tree")}
               updatedAt={session.updatedAt}
               formatTime={formatTime}
               flagged={session.flagged}
               workflowStatus={session.workflowStatus}
               className="rounded-xl"
               nameClassName="text-body-medium"
-              onSelect={() => onSelectSession(session.id)}
+              surface="tree"
+              onSelect={() => {
+                setClickedRow({ id: session.id, surface: "tree" })
+                onSelectSession(session.id)
+              }}
             />
           ))}
         </div>
@@ -123,7 +136,11 @@ export function SidebarRepos({
           sessionId={sessionId}
           pinnedIds={pinnedIds}
           onToggleExpanded={onToggleExpanded}
-          onSelectSession={onSelectSession}
+          onSelectSession={(id) => {
+            setClickedRow({ id, surface: "tree" })
+            onSelectSession(id)
+          }}
+          isRowActive={(id) => isSessionRowActive(id, sessionId, clickedRow, "tree")}
           formatTime={formatTime}
         />
       )}
@@ -160,6 +177,7 @@ function ProjectSessionTree({
   pinnedIds,
   onToggleExpanded,
   onSelectSession,
+  isRowActive,
   formatTime
 }: {
   workspaces: RepositoryNode[]
@@ -171,6 +189,7 @@ function ProjectSessionTree({
   pinnedIds: string[]
   onToggleExpanded: (id: string) => void
   onSelectSession: (id: string) => void
+  isRowActive: (id: string) => boolean
   formatTime: (timestamp: number) => string
 }) {
   const t = useT()
@@ -187,6 +206,7 @@ function ProjectSessionTree({
           isPinned={pinnedIds.includes(workspace.id)}
           onToggleExpanded={onToggleExpanded}
           onSelectSession={onSelectSession}
+          isRowActive={isRowActive}
           formatTime={formatTime}
         />
       ))}
@@ -203,12 +223,13 @@ function ProjectSessionTree({
               key={session.id}
               sessionId={session.id}
               name={session.name}
-              active={session.id === sessionId}
+              active={isRowActive(session.id)}
               updatedAt={session.updatedAt}
               formatTime={formatTime}
               flagged={session.flagged}
               workflowStatus={session.workflowStatus}
               className="rounded-xl"
+              surface="tree"
               onSelect={() => onSelectSession(session.id)}
               onArchive={() => void archiveCurrentSession(session.id)}
             />

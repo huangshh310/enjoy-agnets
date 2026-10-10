@@ -288,5 +288,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 }))
 
 export function formatNodeTime(timestamp: number): string {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return ""
   return relativeTime(timestamp)
 }
