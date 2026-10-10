@@ -53,19 +53,19 @@ test("点行名打开抽屉，Esc 后鼠标回焦无环", async () => {
     await window.locator('[data-testid="page-automations"]').waitFor({ timeout: 15_000 })
     const noon = window.locator('[data-testid="automation-row"]').filter({ hasText: "午间改动复盘" })
     await expect(noon).toBeVisible({ timeout: 12_000 })
-    await noon.getByText("午间改动复盘").click()
+    const rowBox = await noon.boundingBox()
+    expect(rowBox).toBeTruthy()
+    // 点行左侧空白，不是标题文字；overlay 必须接到整行点击。
+    await window.mouse.click(rowBox!.x + 12, rowBox!.y + rowBox!.height / 2)
     await expect(window.locator("#automation-editor-title")).toBeVisible({ timeout: 12_000 })
     await window.screenshot({ path: join(shots, "p2_automation_row_click.png"), fullPage: true })
     await window.keyboard.press("Escape")
     await expect(window.locator("#automation-editor-title")).toHaveCount(0, { timeout: 8_000 })
     const openBtn = noon.locator('[data-testid="automation-row-open"]')
     await expect(openBtn).toHaveAttribute("data-pointer-return", "")
-    const ring = await openBtn.evaluate((node) => {
-      const style = getComputedStyle(node)
-      return { shadow: style.boxShadow, outline: style.outlineStyle }
-    })
-    expect(ring.shadow === "none" || ring.shadow === "").toBeTruthy()
-    expect(ring.outline === "none" || ring.outline === "").toBeTruthy()
+    await expect.poll(() => openBtn.evaluate((el) => el === document.activeElement)).toBe(true)
+    // Esc 仍是键盘 modality，:focus-visible 可能为真；可见环必须被 pointer-return 压掉。
+    expect(await openBtn.evaluate(hasVisibleFocusRing)).toBe(false)
     await window.screenshot({ path: join(shots, "p2_automation_esc_no_ring.png"), fullPage: true })
   } finally {
     const proc = app.process()
@@ -77,3 +77,13 @@ test("点行名打开抽屉，Esc 后鼠标回焦无环", async () => {
     }
   }
 })
+
+function hasVisibleFocusRing(el: Element) {
+  const style = getComputedStyle(el)
+  if (style.outlineStyle !== "none" && Number.parseFloat(style.outlineWidth) > 0) return true
+  const shadows = style.boxShadow
+  if (!shadows || shadows === "none") return false
+  return [...shadows.matchAll(/(-?\d+(?:\.\d+)?)px/g)]
+    .map((match) => Number(match[1]))
+    .some((value) => Math.abs(value) > 0.1)
+}

@@ -10,14 +10,17 @@ test("指针打开后回焦打 pointer-return", () => {
   const el = {
     dataset: {} as Record<string, string>,
     focused: false,
-    focus() {
+    focusVisible: true as boolean | undefined,
+    focus(options?: FocusOptions) {
       this.focused = true
+      this.focusVisible = (options as { focusVisible?: boolean } | undefined)?.focusVisible
     }
   }
   markAutomationRowPointer(el as unknown as HTMLButtonElement)
   assert.equal(el.dataset.pointerReturn, "")
   applyAutomationDrawerCloseFocus()
   assert.equal(el.focused, true)
+  assert.equal(el.focusVisible, false)
   assert.equal(el.dataset.pointerReturn, "")
   clearAutomationRowPointerMark()
 })

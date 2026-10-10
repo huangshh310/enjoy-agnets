@@ -100,7 +100,7 @@ Automations 存 `settings` 表的 `automations` JSON。I4 P0+P1 + AUTO-P2 列表
 - **隐患**：删除确认 `z-50` 与抽屉同层，框落在抽屉左半、不像全窗模态。正确做法：`ConfirmDialog` overlay/content 走 `SETTINGS_DRAWER_Z_CLASS.modal`（`z-[90]`），确认钮用「删除」。
 - **隐患**：新建自动化点「定时」会短暂（或一直）连「手动」一起高亮。根因：空草稿 `triggers:["manual"]`，`toggleTrigger` 是多选叠加。正确做法：当前只有手动时改点其它触发则替换。保存成功关抽屉 + toast「已保存」，不要留在编辑态。
 - **隐患**：自动化列表点行打不开抽屉，只有「新建」能开。根因：铺满遮罩被 `z-10` 子层拦截，Playwright/C 端点到名称也点不穿。正确做法：行盒 `onClick` 打开；`automation-row-open` `z-[1]`；开关 / 失败条 `data-automation-row-stop` + `stopPropagation`。
-- **隐患**：鼠标点开自动化行再 Esc，行上留下橙焦点环。根因：`onBlur` 清掉 `data-pointer-return`，Esc 被当成键盘回焦。正确做法：指针 `markAutomationRowPointer`，关抽屉 `applyAutomationDrawerCloseFocus`；只走 `:focus-visible`。验收：`e2e/automation-row-focus.spec.ts`。
+- **隐患**：鼠标点开自动化行再 Esc，行上留下橙焦点环。根因：`onBlur` 清掉 `data-pointer-return`，Esc 被当成键盘回焦。正确做法：指针 `markAutomationRowPointer`，关抽屉 `applyAutomationDrawerCloseFocus`（`focus({ focusVisible: false })` + `data-pointer-return` 压环）；只走 `:focus-visible`。验收：`e2e/automation-row-focus.spec.ts`。
 - **隐患**：无边框窗标题栏是 `-webkit-app-region: drag`，抽屉 `inset-y-3` 与 `h-9` 标题栏重叠。关闭钮若不标 `no-drag`，点 X 会拖走窗口。正确做法：`SettingsSideDrawer` 整层与各抽屉关闭钮都带 `data-app-region="no-drag"`；Esc 用 `shouldCloseDrawerOnEscape`（未 preventDefault 即关）。
 - **隐患**：抽屉 Esc 会连设置页一起关掉，掉回新对话。根因：共享抽屉只 `preventDefault`，冒泡到 `nav.back`。正确做法：捕获阶段 `markDrawerEscapeHandled`；`nav.back` 见抽屉开着或 `defaultPrevented` 就不离开。无抽屉时 Esc 仍回工位。
 - **隐患**：空显示名回落「未命名」/「未命名助手」当引擎身份。根因：通用 `untitled` 词条容易被误用。正确做法：trim 空则品牌名+模型；「未命名」只禁作身份，不进 `agentDisplayNames`。

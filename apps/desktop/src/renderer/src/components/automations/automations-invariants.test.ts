@@ -160,6 +160,7 @@ test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {
   assert.match(row, /RiCalendarScheduleLine/)
   assert.match(row, /focus-visible:ring-border-focus-ring/)
   assert.match(row, /data-\[pointer-return\]:focus-visible:ring-0/)
+  assert.match(row, /data-\[pointer-return\]:focus-visible:shadow-none/)
   assert.match(row, /markAutomationRowPointer/)
   assert.doesNotMatch(row, /onBlur/)
   const page = readFileSync(join(dir, "automations-page.tsx"), "utf8")

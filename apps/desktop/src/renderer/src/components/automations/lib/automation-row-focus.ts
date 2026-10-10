@@ -18,5 +18,6 @@ export function applyAutomationDrawerCloseFocus(): void {
   const trigger = lastPointerTrigger
   if (!trigger) return
   trigger.dataset.pointerReturn = ""
-  trigger.focus({ preventScroll: true })
+  // Esc 是键盘事件，默认 :focus-visible；鼠标打开要压掉橙环（#121 同款）。
+  trigger.focus({ preventScroll: true, focusVisible: false } as FocusOptions)
 }

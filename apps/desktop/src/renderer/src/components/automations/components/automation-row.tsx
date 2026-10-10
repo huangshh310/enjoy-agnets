@@ -81,7 +81,8 @@ export function AutomationRow({
           className={cx(
             "absolute inset-0 z-[1] cursor-pointer outline-none",
             "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-focus-ring",
-            "data-[pointer-return]:ring-0 data-[pointer-return]:focus-visible:ring-0"
+            "data-[pointer-return]:ring-0 data-[pointer-return]:shadow-none",
+            "data-[pointer-return]:focus-visible:ring-0 data-[pointer-return]:focus-visible:shadow-none"
           )}
         />
         <div className="pointer-events-none relative z-[2] min-w-0 flex-1">
