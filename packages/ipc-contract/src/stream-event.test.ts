@@ -51,7 +51,7 @@ test("step.end 非法 inputTokens 丢掉字段不拒整条", () => {
   }
 })
 
-test("approval.resolved.code 只认 user_aborted / run_failed", () => {
+test("approval.resolved.code 认 user_aborted / run_failed / catch_up_approval_timeout", () => {
   const aborted = StreamEvent.safeParse({
     type: "approval.resolved",
     runId: "r1",
@@ -66,6 +66,13 @@ test("approval.resolved.code 只认 user_aborted / run_failed", () => {
     decision: "cancelled",
     code: "run_failed"
   })
+  const catchUp = StreamEvent.safeParse({
+    type: "approval.resolved",
+    runId: "r1",
+    toolCallId: "t1",
+    decision: "cancelled",
+    code: "catch_up_approval_timeout"
+  })
   const other = StreamEvent.safeParse({
     type: "approval.resolved",
     runId: "r1",
@@ -75,6 +82,7 @@ test("approval.resolved.code 只认 user_aborted / run_failed", () => {
   })
   assert.equal(aborted.success, true)
   assert.equal(failed.success, true)
+  assert.equal(catchUp.success, true)
   assert.equal(other.success, false)
 })
 
@@ -91,17 +99,17 @@ test("approval.resolved 认 cancelled，与用户 deny 分开", () => {
   }
 })
 
-test("未知 attention 回落 neutral，不丢掉整条终态事件", () => {
+test("未知 attention / workflow 回落，不丢掉整条终态事件", () => {
   const parsed = StreamEvent.safeParse({
     type: "run.error",
     runId: "r1",
     message: "boom",
-    turn: { workflow: "in_progress", attention: "weird" }
+    turn: { workflow: "legacy_done", attention: "weird" }
   })
   assert.equal(parsed.success, true)
   if (parsed.success && parsed.data.type === "run.error") {
     assert.equal(parsed.data.turn?.attention, "neutral")
-    assert.equal(parsed.data.turn?.workflow, "in_progress")
+    assert.equal(parsed.data.turn?.workflow, "todo")
   }
 })
 

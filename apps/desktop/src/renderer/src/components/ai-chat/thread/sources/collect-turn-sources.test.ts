@@ -31,10 +31,30 @@ test("cited + read_file + edit_file + skill 收成芯片并去重", () => {
     },
     (name) => `技能 · ${name}`
   )
-  assert.equal(chips.some((chip) => chip.kind === "file" && chip.label.includes("login.ts")), true)
+  assert.equal(chips.some((chip) => chip.kind === "knowledge" && chip.label.includes("login.ts")), true)
   assert.equal(chips.some((chip) => chip.kind === "skill" && chip.label.includes("读代码")), true)
   assert.equal(chips.filter((chip) => chip.path === "src/auth/login.ts").length, 1)
   assert.equal(chips.some((chip) => chip.path === "src/auth/LoginForm.tsx"), true)
+})
+
+test("同一 path 既是知识库 cite 又被工具碰过，只留知识库标", () => {
+  const chips = collectTurnSources(
+    {
+      sources: [{ sourceId: "k1", title: "login.ts", path: "src/auth/login.ts", startLine: 10 }],
+      tools: [
+        {
+          id: "t1",
+          name: "read_file",
+          state: "output-available",
+          args: { path: "src/auth/login.ts" }
+        }
+      ]
+    },
+    (name) => `技能 · ${name}`
+  )
+  const login = chips.filter((chip) => chip.path === "src/auth/login.ts")
+  assert.equal(login.length, 1)
+  assert.equal(login[0]?.kind, "knowledge")
 })
 
 test("MCP 工具收成服务器芯片，同服务器去重；网页 URL 丢掉", () => {

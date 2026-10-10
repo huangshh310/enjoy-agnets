@@ -15,7 +15,7 @@ export const TurnAttention = z.enum(["complete", "error", "neutral", "stopped"])
 export type TurnAttention = z.infer<typeof TurnAttention>
 
 export const TurnOutcome = z.object({
-  workflow: TurnWorkflow,
+  workflow: TurnWorkflow.catch("todo"),
   attention: TurnAttention.catch("neutral")
 })
 export type TurnOutcome = z.infer<typeof TurnOutcome>

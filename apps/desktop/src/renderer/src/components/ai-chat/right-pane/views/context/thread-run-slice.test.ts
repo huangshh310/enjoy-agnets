@@ -58,4 +58,11 @@ test("toolRunKind maps SDK states", () => {
     }),
     "denied"
   )
+  assert.equal(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { code: "catch_up_approval_timeout", decision: "cancelled" }
+    }),
+    "catch_up"
+  )
 })

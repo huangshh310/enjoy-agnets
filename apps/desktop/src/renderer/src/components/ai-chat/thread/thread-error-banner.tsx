@@ -45,14 +45,14 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const t = useT()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const kind = classifyThreadError(error)
-  if (kind === "stopped" || kind === "catch_up_timeout") return null
   const runtimeId = useChatStore((state) => state.runtimeId)
   const loginLoop = useCliLoginLoop(runtimeId)
   const messages = useChatStore((state) => state.messages)
   const running = useChatStore((state) => state.running)
   const setError = useChatStore((state) => state.setError)
   const [copiedInstall, setCopiedInstall] = useState(false)
+  const kind = classifyThreadError(error)
+  if (kind === "stopped" || kind === "catch_up_timeout") return null
   if (kind === "no_chat_route") {
     return <ThreadNoChatRouteNotice onDismiss={() => setError(null)} className={className} />
   }

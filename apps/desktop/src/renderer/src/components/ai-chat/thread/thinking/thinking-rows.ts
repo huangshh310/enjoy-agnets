@@ -57,6 +57,9 @@ export function thinkingHeadline(
   if (tools.length > 0) {
     if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
     if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
+    if (tools.some((tool) => toolAbortKind(tool) === "neutral")) {
+      return t("studio.automations.catchUpTimeout")
+    }
     return t("chat.toolDenied")
   }
   if (seconds) return t("chat.thoughtSeconds", { seconds })

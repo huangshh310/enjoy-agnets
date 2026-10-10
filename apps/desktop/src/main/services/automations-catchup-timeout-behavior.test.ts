@@ -141,6 +141,7 @@ test("补跑超时同一工具只发一条 approval.resolved", async () => {
     (event) => event.type === "approval.resolved" && event.toolCallId === "tool_one"
   )
   assert.equal(resolved.length, 1)
+  assert.equal(resolved[0]?.code, CATCH_UP_APPROVAL_TIMEOUT)
   deleteActiveRun(runId)
 })
 

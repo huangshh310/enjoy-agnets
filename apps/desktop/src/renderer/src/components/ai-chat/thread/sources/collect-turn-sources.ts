@@ -109,17 +109,22 @@ function asRecord(value: unknown): Record<string, unknown> {
 function dedupeChips(chips: readonly TurnSourceChip[]): TurnSourceChip[] {
   const byKey = new Map<string, TurnSourceChip>()
   for (const chip of chips) {
-    const key = chip.path ?? chip.title ?? chip.id
+    const key = `${chip.kind}:${chip.path ?? chip.title ?? chip.id}`
     const prev = byKey.get(key)
-    if (!prev) {
-      byKey.set(key, chip)
-      continue
-    }
-    if (prev.kind === "knowledge" && chip.kind !== "knowledge") {
-      byKey.set(key, { ...chip, startLine: chip.startLine ?? prev.startLine })
-      continue
-    }
-    if (prev.startLine == null && chip.startLine != null) byKey.set(key, chip)
+    if (!prev || (prev.startLine == null && chip.startLine != null)) byKey.set(key, chip)
   }
-  return [...byKey.values()]
+  return preferKnowledgeOverFile([...byKey.values()])
+}
+
+/** 同一 path 既是知识库 cite 又被工具碰过：只留知识库标。 */
+function preferKnowledgeOverFile(chips: readonly TurnSourceChip[]): TurnSourceChip[] {
+  const knowledgePaths = new Set(
+    chips.filter((chip) => chip.kind === "knowledge" && chip.path).map((chip) => chip.path as string)
+  )
+  return chips.filter((chip) => {
+    if (!chip.path || chip.kind === "knowledge" || chip.kind === "skill" || chip.kind === "mcp") {
+      return true
+    }
+    return !knowledgePaths.has(chip.path)
+  })
 }
