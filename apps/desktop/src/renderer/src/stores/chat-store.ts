@@ -299,7 +299,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       sessionId,
       sessionTitle,
-      notice: null,
+      ...(state.sessionId === sessionId ? {} : { notice: null }),
       repositories: state.repositories.map((node: RepositoryNode) =>
         node.id === sessionId ? { ...node, name: sessionTitle } : node
       )

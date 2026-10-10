@@ -31,7 +31,8 @@ function clearDiscardedForeground(keepComposer = false) {
     messages: [],
     sessionTitle: "新对话",
     composer: keepComposer ? current.composer : "",
-    error: keepComposer ? current.error : null
+    error: keepComposer ? current.error : null,
+    notice: keepComposer ? current.notice : null
   })
   if (keepComposer) return
   clearComposerAssets()

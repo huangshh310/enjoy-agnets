@@ -12,6 +12,7 @@ const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "e2e-boot
 test("stub 启动默认不自动 addKnowledgeSource 工作区根", () => {
   assert.match(src, /ENJOY_E2E_KNOWLEDGE/)
   assert.match(src, /addKnowledgeSource/)
+  assert.match(src, /indexKnowledgeSource/)
   assert.match(src, /process\.env\.ENJOY_E2E_KNOWLEDGE !== "1"/)
   assert.match(src, /isE2eStub\(app\.isPackaged\)/)
 })

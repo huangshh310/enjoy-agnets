@@ -17,6 +17,7 @@ function park(partial: Partial<ParkedRun> = {}): ParkedRun {
     runStartedAt: 10,
     pendingApproval: null,
     error: null,
+    notice: null,
     thinkingLabel: "Thinking",
     pendingStreamEvents: [],
     ...partial
@@ -114,6 +115,7 @@ test("没有 park 时回挂对不上落停车，running 收回且不写 error", 
   })
   assert.equal(next?.ses_wait?.running, false)
   assert.equal(next?.ses_wait?.error, null)
+  assert.equal(next?.ses_wait?.notice, "restore_no_matching_approval")
 })
 
 test("切走后才返回的 runId 认领进停车，不 idle", () => {

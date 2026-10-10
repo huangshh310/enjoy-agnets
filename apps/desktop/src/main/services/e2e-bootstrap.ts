@@ -46,8 +46,9 @@ export async function bootstrapE2eStub(): Promise<void> {
 
 async function seedE2eKnowledge(workspaceId: string): Promise<void> {
   if (process.env.ENJOY_E2E_KNOWLEDGE !== "1" || !isE2eStub(app.isPackaged)) return
-  const { addKnowledgeSource } = await import("./knowledge-service")
-  await addKnowledgeSource(workspaceId, ".")
+  const { addKnowledgeSource, indexKnowledgeSource } = await import("./knowledge-service")
+  const source = await addKnowledgeSource(workspaceId, ".")
+  await indexKnowledgeSource(source.id)
 }
 
 async function seedE2eWorkspace(root: string, heading: string) {

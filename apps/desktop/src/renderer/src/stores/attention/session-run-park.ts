@@ -3,6 +3,7 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
+import { restoreFamilyCodeOf } from "@enjoy-agents/ipc-contract/restore-codes"
 import { RESTORE_NO_MATCHING } from "../../lib/usage/classify-thread-error"
 import { isComposerRunStart, isNonAgentRunKind, isRestoreFamilyEvent } from "../stream-run-scope"
 import type { ChatStore } from "../chat-store.types"
@@ -15,11 +16,14 @@ export function captureParkedRun(store: {
   runStartedAt: number | null
   pendingApproval: ChatStore["pendingApproval"]
   error: string | null
+  notice?: string | null
   thinkingLabel: string
   pendingStreamEvents: StreamEvent[]
 }): ParkedRun | null {
   if (!store.sessionId) return null
-  if (!store.running && !store.pendingApproval && !store.error && !store.runId) return null
+  if (!store.running && !store.pendingApproval && !store.error && !store.runId && !store.notice) {
+    return null
+  }
   return {
     sessionId: store.sessionId,
     runId: store.runId,
@@ -27,6 +31,7 @@ export function captureParkedRun(store: {
     runStartedAt: store.runStartedAt,
     pendingApproval: store.pendingApproval,
     error: store.error,
+    notice: store.notice ?? null,
     thinkingLabel: store.thinkingLabel,
     pendingStreamEvents: store.pendingStreamEvents
   }
@@ -40,6 +45,7 @@ export function seedParkFromRunStart(sessionId: string, runId: string, now = Dat
     runStartedAt: now,
     pendingApproval: null,
     error: null,
+    notice: null,
     thinkingLabel: "Thinking",
     pendingStreamEvents: []
   }
@@ -86,7 +92,16 @@ export function applyEventToPark(park: ParkedRun, event: StreamEvent): ParkedRun
     return { ...park, running: false, runId: null, pendingApproval: null }
   }
   if (event.type === "run.error") {
-    if (isUserAbortEvent(event) || isRestoreFamilyEvent(event) || event.message === RESTORE_NO_MATCHING) {
+    if (isRestoreFamilyEvent(event) || event.message === RESTORE_NO_MATCHING) {
+      return {
+        ...park,
+        running: false,
+        error: null,
+        pendingApproval: null,
+        notice: restoreFamilyCodeOf(event) ?? RESTORE_NO_MATCHING
+      }
+    }
+    if (isUserAbortEvent(event)) {
       return { ...park, running: false, error: null, pendingApproval: null }
     }
     return { ...park, running: false, error: event.message, pendingApproval: null }
@@ -106,6 +121,7 @@ export function idleComposerPatch(): Pick<
   | "runStartedAt"
   | "pendingApproval"
   | "error"
+  | "notice"
   | "preparingHint"
   | "pendingStreamEvents"
   | "thinkingLabel"
@@ -117,6 +133,7 @@ export function idleComposerPatch(): Pick<
     runStartedAt: null,
     pendingApproval: null,
     error: null,
+    notice: null,
     preparingHint: false,
     pendingStreamEvents: [],
     thinkingLabel: "Thinking"
@@ -131,6 +148,7 @@ export function parkedComposerPatch(park: ParkedRun): ReturnType<typeof idleComp
     runStartedAt: park.runStartedAt,
     pendingApproval: park.pendingApproval,
     error: park.error,
+    notice: park.notice,
     preparingHint: false,
     pendingStreamEvents: park.pendingStreamEvents,
     thinkingLabel: park.thinkingLabel

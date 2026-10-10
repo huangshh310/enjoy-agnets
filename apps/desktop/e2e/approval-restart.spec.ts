@@ -6,6 +6,7 @@ import { existsSync } from "node:fs"
 import { expect, test, type ElectronApplication } from "@playwright/test"
 import {
   bootPendingApproval,
+  closeForRelaunch,
   crashKill,
   expectApprovalInboxCleared,
   expectDecidableCard,
@@ -164,7 +165,7 @@ async function relaunchAndAllow(input: {
   app?: ElectronApplication
 }): Promise<void> {
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
-  if (input.app) await input.app.close()
+  if (input.app) await closeForRelaunch(input.app)
   expect(existsSync(stubPath(input.workspace))).toBe(false)
   const second = await relaunchElectron(input.env)
   try {
