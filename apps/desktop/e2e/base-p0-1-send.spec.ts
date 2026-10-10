@@ -99,6 +99,8 @@ test("有密钥没选模型时中性提示先选一个模型并留下草稿", as
     await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
     await expect(composer).toHaveValue("先选模型也要留下草稿")
     await expect(window.getByTestId("need-model-pick")).toHaveText("选择模型")
+    await window.keyboard.press("Escape")
+    await expect(window.getByTestId("composer-engine-chip")).not.toHaveAttribute("data-state", "open")
     await snap(window, "s1-need-model-notice")
     await window.getByTestId("need-model-pick").click()
     await expect(window.getByTestId("composer-engine-chip")).toHaveAttribute("data-state", "open")
