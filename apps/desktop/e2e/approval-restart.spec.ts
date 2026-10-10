@@ -13,6 +13,7 @@ import {
   expectDecidableCard,
   expectFinishedRunsSettled,
   expectSettledFinishedTurns,
+  expectComposerFocusedAtEnd,
   firstWindow,
   mainEntry,
   readStub,
@@ -107,7 +108,8 @@ test("kill-9 且检查点没刷上：结清停止，Inbox 空，重新发送回�
     await expect(window.locator("body")).toContainText("重启后对不上原来的审批，这一轮已结束。")
     await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
     await window.locator('[data-testid="thread-resend"]').click()
-    await expect(composer).toHaveValue("please write a note")
+    await expectComposerFocusedAtEnd(composer, "please write a note")
+    await expect(window.locator("[data-thread-message]").filter({ hasText: "重启后已中断" })).toBeVisible()
     await expect(window.locator('[data-testid="attention-strip"]')).toHaveCount(0)
     await expectApprovalInboxCleared(window)
   } finally {
@@ -131,7 +133,8 @@ test("kill-9 后删 HMAC：放回输入框再发，旧行不抢本轮改动", as
     await expect(resend).toBeVisible()
     await expect(resend).toContainText("放回输入框")
     await resend.click()
-    await expect(composer).toHaveValue("please write a note")
+    await expectComposerFocusedAtEnd(composer, "please write a note")
+    await expect(window.locator("[data-thread-message]").filter({ hasText: "重启后已中断" })).toBeVisible()
     await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
     await sendComposer(window, composer, "please write a note")
     await window.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })

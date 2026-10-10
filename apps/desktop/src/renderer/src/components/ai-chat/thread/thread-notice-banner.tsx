@@ -4,6 +4,7 @@
  */
 import { RiCloseLine, RiRefreshLine } from "@remixicon/react"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { focusComposerEndAfterPaint } from "@renderer/hooks/composer-focus"
 import { useT } from "@renderer/i18n"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { cx } from "@/utils/cx"
@@ -42,6 +43,7 @@ export function ThreadNoticeBanner() {
     const lastUser = [...messages].reverse().find((row) => row.role === "user")
     if (lastUser?.content) useChatStore.getState().setComposer(lastUser.content)
     setNotice(null)
+    focusComposerEndAfterPaint()
   }
 
   return (

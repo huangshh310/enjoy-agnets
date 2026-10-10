@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { DatabaseSync } from "node:sqlite"
-import { expect, type ElectronApplication, type Page } from "@playwright/test"
+import { expect, type ElectronApplication, type Locator, type Page } from "@playwright/test"
 import { sendComposer } from "./send-composer"
 
 export const mainEntry = join(process.cwd(), "out/main/index.js")
@@ -86,6 +86,19 @@ export async function expectDecidableCard(window: Page): Promise<void> {
   await expect(window.locator("body")).toContainText("e2e-stub.txt")
   await expect(window.locator('[data-testid="thread-error-banner"]')).toHaveCount(0)
   await expect(window.locator("body")).not.toContainText("重启后对不上原来的审批")
+}
+
+export async function expectComposerFocusedAtEnd(composer: Locator, value: string): Promise<void> {
+  await expect(composer).toHaveValue(value)
+  await expect(composer).toBeFocused()
+  await expect
+    .poll(() =>
+      composer.evaluate((el) => {
+        const box = el as HTMLTextAreaElement
+        return box.selectionStart === box.value.length && box.selectionEnd === box.value.length
+      })
+    )
+    .toBe(true)
 }
 
 export async function expectApprovalInboxCleared(window: Page): Promise<void> {

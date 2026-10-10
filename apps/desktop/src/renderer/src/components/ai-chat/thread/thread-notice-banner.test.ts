@@ -19,6 +19,7 @@ test("回挂对不上：中性条 + 放回输入框，不自动发送", () => {
   assert.match(src, /chat\.resendLastPrompt/)
   assert.match(src, /data-testid="thread-resend"/)
   assert.match(src, /setComposer\(lastUser\.content\)/)
+  assert.match(src, /focusComposerEndAfterPaint/)
   assert.doesNotMatch(src, /border-border-error-default/)
   assert.equal(zhChat.restoreNoMatching, "重启后对不上原来的审批，这一轮已结束。")
   assert.equal(zhChat.restoreInterrupted, "重启时这一步还没做完，为了安全没有自动继续。")
