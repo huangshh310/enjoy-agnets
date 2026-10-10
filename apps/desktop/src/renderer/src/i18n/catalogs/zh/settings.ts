@@ -98,6 +98,7 @@ export const zhSettings = {
     readyEngines: "{count} 个引擎就绪",
     readyWorkspace: "工作区 {name}",
     readyNoWorkspace: "还没打开工作区",
+    configuredUnverified: "已配置·未验证",
     shortcutsToday: "今天值得记住的快捷键",
     shortcutSettings: "打开设置",
     shortcutApproval: "切换审批",

@@ -1,6 +1,7 @@
 /**
  * 可对话路线真源：向导末屏、默认路线与发送闸。
- * ready = 新对话默认路线已验证可发；闸更宽（ready ⇒ 放行）。
+ * ready = 新对话默认路线已验证可发（无密钥本机要 ping；远端未验证不算）。
+ * 闸更宽（ready ⇒ 放行；未 ready 仍可能放行）。
  */
 import { z } from "zod"
 import { chatRouteAllowsSend, NO_CHAT_ROUTE } from "./chat-route-gate.ts"
@@ -204,6 +205,16 @@ function defaultRouteUsable(
   })
 }
 
+/** ready 比闸严：无密钥本机要 ping 过；远端未验证不算。闸仍可放行。 */
+function defaultRouteReady(
+  route: ChatDefaultRoute,
+  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels" | "hasEnjoySecret">
+): boolean {
+  if (route.runtimeId !== "enjoy-local") return true
+  if (input.apiKeys.length > 0 && enjoySecretOf(input)) return true
+  return input.localModels.some(isVerifiedLocalModel)
+}
+
 function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute | null {
   const modelId = input.modelId?.trim() || undefined
   const keyProfile = activeKeyProfileIdOf(input)
@@ -229,7 +240,7 @@ export function chatReadyFromRoutes(input: {
   activeKeyProfileId?: string | null
 }): boolean {
   const route = resolveDefaultChatRoute(input)
-  return defaultRouteUsable(route, input)
+  return defaultRouteReady(route, input)
 }
 
 export function buildChatReadiness(input: {
@@ -259,7 +270,7 @@ export function buildChatReadiness(input: {
     activeKeyProfileId: input.activeKeyProfileId
   })
   return ChatReadiness.parse({
-    ready: defaultRouteUsable(defaultRoute, {
+    ready: defaultRouteReady(defaultRoute, {
       apiKeys,
       localModels,
       hasEnjoySecret: input.hasEnjoySecret

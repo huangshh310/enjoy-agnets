@@ -327,7 +327,7 @@ test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸�
   )
 })
 
-test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
+test("远端 / 未 ping 的无密钥本机：不 ready，闸仍放行", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [REMOTE],
@@ -335,7 +335,7 @@ test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
     engineCount: 1,
     hasEnjoySecret: true
   })
-  assert.equal(snap.ready, true)
+  assert.equal(snap.ready, false)
   assert.equal(
     chatRouteAllowsSend({
       runtimeId: "enjoy-local",
@@ -344,4 +344,12 @@ test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
     }),
     true
   )
+  const pinged = buildChatReadiness({
+    engines: [],
+    localModels: [LOCAL_OK],
+    apiKeys: [],
+    engineCount: 1,
+    hasEnjoySecret: true
+  })
+  assert.equal(pinged.ready, true)
 })

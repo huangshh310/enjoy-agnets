@@ -100,6 +100,7 @@ export const enSettings = {
     readyEngines: "{count} engines ready",
     readyWorkspace: "Workspace {name}",
     readyNoWorkspace: "No workspace yet",
+    configuredUnverified: "Configured · unverified",
     shortcutsToday: "Shortcuts worth learning today",
     shortcutSettings: "Open settings",
     shortcutApproval: "Cycle approval",
