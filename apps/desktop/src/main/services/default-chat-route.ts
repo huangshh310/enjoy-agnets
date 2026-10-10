@@ -27,12 +27,14 @@ export function adoptedDefaultRouteAt(): string | undefined {
 export function defaultChatRouteAssembleInput(): {
   preferredRuntimeId?: string
   explicit?: boolean
+  adopted?: boolean
   modelId?: string
 } {
   const prefs = readPreferences()
   return {
     preferredRuntimeId: prefs.runtimeId,
     explicit: isDefaultChatRouteExplicit(),
+    adopted: Boolean(adoptedDefaultRouteAt()),
     modelId: getSetting("defaultModelId") || undefined
   }
 }
@@ -106,7 +108,12 @@ export function adoptedRouteLabel(snapshot: ChatReadiness): string {
   })
 }
 
-export type PersistAdoptedResult = { adopted: boolean; hint?: { name: string } }
+export type PersistAdoptedResult = {
+  adopted: boolean
+  hint?: { name: string }
+  /** adopt 挑中的档案，调用方走 activateProfile 切成当前。 */
+  profileId?: string
+}
 
 function noteSeenNoUsableRoute(ready: boolean): void {
   if (ready || adoptedDefaultRouteAt()) return
@@ -142,5 +149,9 @@ export function persistAdoptedDefaultRoute(snapshot: ChatReadiness): PersistAdop
   if (route.modelId && route.modelId !== modelId) {
     setSetting("defaultModelId", route.modelId)
   }
-  return { adopted: true, hint: { name: adoptedRouteLabel(snapshot) } }
+  return {
+    adopted: true,
+    hint: { name: adoptedRouteLabel(snapshot) },
+    profileId: route.profileId
+  }
 }

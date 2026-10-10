@@ -71,16 +71,22 @@ test("首发 401/403 → credential_invalid 且要落盘 invalid", () => {
     code: CREDENTIAL_INVALID,
     persistInvalid: true
   })
-  assert.deepEqual(classifyChatSendFailure({ errorClass: "auth" }), {
-    code: CREDENTIAL_INVALID,
-    persistInvalid: true
-  })
   const at = "2026-10-10T00:00:00.000Z"
   assert.deepEqual(credentialCheckAfterAuthRejected(at), {
     state: "invalid",
     code: "auth_rejected",
     checkedAt: at
   })
+})
+
+test("正文里的 401 字样 / errorClass auth 不得落盘 invalid", () => {
+  assert.equal(classifyChatSendFailure({ message: "This request used 140100 tokens" }), null)
+  assert.equal(
+    classifyChatSendFailure({ message: "API key does not have access to model" }),
+    null
+  )
+  assert.equal(classifyChatSendFailure({ errorClass: "auth" }), null)
+  assert.equal(classifyChatSendFailure({ message: "401 Unauthorized" }), null)
 })
 
 test("网络 / 超时 → provider_unreachable，不改落盘", () => {

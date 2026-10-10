@@ -1,6 +1,6 @@
 /**
- * 存密钥后的一次轻量校验：优先 GET /models；没有目录再 1 token POST。
- * 6s 超时，不重试，不回传 HTTP 原文。
+ * 存密钥后的一次轻量校验：只 GET /models。404/405 直接 unverified，不发 1 token。
+ * 6s 超时，不重试，不回传 HTTP 原文。redirect:manual，避免 x-api-key 跟到别的主机。
  */
 import {
   catalogMissingStatus,
@@ -12,6 +12,7 @@ import {
 } from "@enjoy-agents/ipc-contract/credential-check"
 import { catalogRequestURL, isApiStyle, presetFor, type ApiStyle } from "@enjoy-agents/providers"
 import { app } from "electron"
+import { sameOriginUrl } from "./credential-fingerprint.ts"
 import type { ProviderProfile } from "./secrets-vault.ts"
 
 export const CREDENTIAL_CHECK_TIMEOUT_MS = 6_000
@@ -26,13 +27,14 @@ export function e2eCredentialFixture(
   packaged = false
 ): CredentialCheck | undefined {
   if (env.ENJOY_E2E_STUB !== "1" || packaged) return undefined
+  if (!env.ENJOY_E2E_USERDATA && !env.ENJOY_DEV_USERDATA) return undefined
   const flag = env.ENJOY_E2E_CREDENTIAL
   if (flag === "invalid") return { state: "invalid", code: "auth_rejected" }
   if (flag === "ok") return { state: "ok" }
   if (flag === "unverified" || flag?.startsWith("unverified:")) {
     return { state: "unverified", code: unverifiedFixtureCode(flag) }
   }
-  return { state: "ok" }
+  return undefined
 }
 
 function unverifiedFixtureCode(flag: string): "network" | "timeout" | "unknown" {
@@ -55,15 +57,17 @@ export async function runCredentialCheck(
   if (!profile.apiKey.trim()) return stamp({ state: "unverified", code: "unknown" }, now())
 
   const style = isApiStyle(profile.apiStyle) ? profile.apiStyle : preset.apiStyle
+  const url = catalogUrlForCheck(profile)
+  if (!url) return stamp({ state: "unverified", code: "unknown" }, now())
   try {
-    const listed = await fetchCatalogStatus(profile, style, fetchImpl)
-    if (listed !== undefined) {
-      if (catalogMissingStatus(listed)) {
-        return stamp(await probeOneToken(profile, style, fetchImpl), now())
-      }
-      return stamp(classifyCredentialStatus(listed), now())
+    const status = await fetchCatalogStatus(url, style, profile.apiKey, fetchImpl)
+    if (status >= 300 && status < 400) {
+      return stamp({ state: "unverified", code: "unknown" }, now())
     }
-    return stamp(await probeOneToken(profile, style, fetchImpl), now())
+    if (catalogMissingStatus(status)) {
+      return stamp({ state: "unverified", code: "unknown" }, now())
+    }
+    return stamp(classifyCredentialStatus(status), now())
   } catch (error) {
     return stamp(classifyCredentialFailure(failureKind(error)), now())
   }
@@ -73,41 +77,38 @@ function stamp(check: CredentialCheck, at: string): CredentialCheck {
   return parseCredentialCheck(withCredentialCheckedAt(check, at))
 }
 
+export function catalogUrlForCheck(profile: CredentialCheckProfile): string | undefined {
+  const models = profile.modelsURL?.trim()
+  const base = profile.baseURL?.trim()
+  if (models && base && !sameOriginUrl(base, models)) {
+    return catalogUrlOrUndefined({ ...profile, modelsURL: undefined })
+  }
+  return catalogUrlOrUndefined(profile)
+}
+
+function catalogUrlOrUndefined(profile: CredentialCheckProfile): string | undefined {
+  const base = catalogRequestURL(profile).trim()
+  return base || undefined
+}
+
 async function fetchCatalogStatus(
-  profile: CredentialCheckProfile,
+  base: string,
   style: ApiStyle,
+  apiKey: string,
   fetchImpl: typeof fetch
-): Promise<number | undefined> {
-  const base = catalogRequestURL(profile)
-  if (!base) return undefined
+): Promise<number> {
   const url = base.endsWith("/models") ? base : `${base.replace(/\/+$/, "")}/models`
   const response = await fetchImpl(url, {
     method: "GET",
-    headers: catalogHeaders(style, profile.apiKey),
+    headers: catalogHeaders(style, apiKey),
+    redirect: "manual",
     signal: AbortSignal.timeout(CREDENTIAL_CHECK_TIMEOUT_MS)
   })
-  return response.status
-}
-
-async function probeOneToken(
-  profile: CredentialCheckProfile,
-  style: ApiStyle,
-  fetchImpl: typeof fetch
-): Promise<CredentialCheck> {
-  const base = catalogRequestURL(profile) || profile.baseURL.trim()
-  if (!base) return { state: "unverified", code: "unknown" }
-  const url = probeUrl(base.replace(/\/+$/, ""), style)
-  const response = await fetchImpl(url, {
-    method: "POST",
-    headers: {
-      ...catalogHeaders(style, profile.apiKey),
-      accept: "application/json",
-      "content-type": "application/json"
-    },
-    body: probeBody(style, profile.modelId.trim() || "detect"),
-    signal: AbortSignal.timeout(CREDENTIAL_CHECK_TIMEOUT_MS)
-  })
-  return classifyCredentialStatus(response.status)
+  try {
+    return response.status
+  } finally {
+    void response.body?.cancel?.()
+  }
 }
 
 function catalogHeaders(style: ApiStyle, apiKey: string): Record<string, string> {
@@ -119,28 +120,6 @@ function catalogHeaders(style: ApiStyle, apiKey: string): Record<string, string>
   }
   headers.Authorization = `Bearer ${apiKey}`
   return headers
-}
-
-function probeUrl(base: string, style: ApiStyle): string {
-  if (style === "openai-responses") return `${base}/responses`
-  if (style === "anthropic") {
-    return base.endsWith("/v1") ? `${base}/messages` : `${base}/v1/messages`
-  }
-  return `${base}/chat/completions`
-}
-
-function probeBody(style: ApiStyle, model: string): string {
-  if (style === "openai-responses") {
-    return JSON.stringify({
-      model,
-      input: [{ type: "message", role: "user", content: [{ type: "input_text", text: "hi" }] }],
-      max_output_tokens: 1
-    })
-  }
-  if (style === "anthropic") {
-    return JSON.stringify({ model, max_tokens: 1, messages: [{ role: "user", content: "hi" }] })
-  }
-  return JSON.stringify({ model, messages: [{ role: "user", content: "hi" }], max_tokens: 1 })
 }
 
 function failureKind(error: unknown): "timeout" | "network" | "unknown" {

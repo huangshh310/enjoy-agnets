@@ -80,29 +80,23 @@ export function credentialCheckAfterAuthRejected(at: string): CredentialCheck {
 }
 
 /**
- * 首发失败：401/403 → invalid + credential_invalid；
+ * 首发失败：只有结构化 401/403 才落盘 invalid。
+ * 不信 message 正则，也不信 errorClass==="auth"（"140100 tokens" / 模型无权会误伤）。
  * 网络 / 超时 → provider_unreachable 且不改落盘态。
- * 只认稳定码，不回传 HTTP 原文。
  */
 export function classifyChatSendFailure(input: {
   status?: number
   errorClass?: string
   message?: string
 }): { code: ChatSendErrorCode; persistInvalid: boolean } | null {
-  const status = input.status ?? statusFromMessage(input.message)
-  if (status === 401 || status === 403 || input.errorClass === "auth") {
+  const status = input.status
+  if (status === 401 || status === 403) {
     return { code: CREDENTIAL_INVALID, persistInvalid: true }
   }
   if (input.errorClass === "timeout" || isUnreachableFailure(input)) {
     return { code: PROVIDER_UNREACHABLE, persistInvalid: false }
   }
   return null
-}
-
-function statusFromMessage(message: string | undefined): number | undefined {
-  if (!message) return undefined
-  const match = /\b(401|403)\b/.exec(message)
-  return match ? Number(match[1]) : undefined
 }
 
 function isUnreachableFailure(input: { errorClass?: string; message?: string }): boolean {
@@ -126,7 +120,7 @@ function looksUnreachable(message: string | undefined): boolean {
   )
 }
 
-/** 404/405：没有目录，应改走 1 token probe。 */
+/** 404/405：没有目录。直接 unverified，禁止 1 token 回落以免扣费。 */
 export function catalogMissingStatus(status: number): boolean {
   return status === 404 || status === 405
 }

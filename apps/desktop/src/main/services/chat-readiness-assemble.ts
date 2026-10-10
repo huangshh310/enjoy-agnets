@@ -17,6 +17,7 @@ import {
 export type AssembleChatReadinessRoute = {
   preferredRuntimeId?: string
   explicit?: boolean
+  adopted?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
 }
@@ -49,6 +50,7 @@ export function assembleChatReadiness(
     engineCount: countAvailableEngines(tools),
     preferredRuntimeId: route.preferredRuntimeId,
     explicit: route.explicit,
+    adopted: route.adopted,
     modelId: route.modelId,
     hasEnjoySecret,
     activeKeyProfileId,

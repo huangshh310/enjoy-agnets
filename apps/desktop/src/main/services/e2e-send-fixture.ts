@@ -8,11 +8,12 @@ export type E2eSendFixture = "unreachable" | "rejected"
 
 export function e2eSendFixture(
   env: NodeJS.ProcessEnv = process.env,
-  packaged = false
+  packaged = false,
+  userData?: string
 ): E2eSendFixture | undefined {
   const flag = env.ENJOY_E2E_SEND
   if (flag !== "unreachable" && flag !== "rejected") return undefined
-  if (!e2eChatReadySeedAllowed({ env, packaged })) return undefined
+  if (!e2eChatReadySeedAllowed({ env, packaged, userData })) return undefined
   return flag
 }
 

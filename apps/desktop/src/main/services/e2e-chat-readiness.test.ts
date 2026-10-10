@@ -63,24 +63,22 @@ test("stub + key 带可发默认路线，不含秘密", () => {
 })
 
 test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
+  const isolated = { ENJOY_E2E_STUB: "1", ENJOY_E2E_USERDATA: "/tmp/e2e-ud", ENJOY_E2E_CHAT_READY: "key" }
   const ok = e2eChatReadiness({
-    ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_CHAT_READY: "key",
+    ...isolated,
     ENJOY_E2E_CREDENTIAL: "ok"
   })
   assert.equal(ok?.ready, true)
   assert.equal(ok?.credentialCheck?.state, "ok")
   const invalid = e2eChatReadiness({
-    ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_CHAT_READY: "key",
+    ...isolated,
     ENJOY_E2E_CREDENTIAL: "invalid"
   })
   assert.equal(invalid?.ready, false)
   assert.equal(invalid?.credentialCheck?.state, "invalid")
   assert.equal(invalid?.credentialCheck?.code, "auth_rejected")
   const unverified = e2eChatReadiness({
-    ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_CHAT_READY: "key",
+    ...isolated,
     ENJOY_E2E_CREDENTIAL: "unverified"
   })
   assert.equal(unverified?.ready, true)
@@ -88,8 +86,7 @@ test("ENJOY_E2E_CREDENTIAL 三态挂到 key 夹具；invalid 不 ready", () => {
   assert.equal(unverified?.credentialCheck?.code, "unknown")
   assert.equal(unverified?.defaultRoute?.profileId, "e2e")
   const timed = e2eChatReadiness({
-    ENJOY_E2E_STUB: "1",
-    ENJOY_E2E_CHAT_READY: "key",
+    ...isolated,
     ENJOY_E2E_CREDENTIAL: "unverified:timeout"
   })
   assert.equal(timed?.ready, true)

@@ -46,9 +46,14 @@ export function enjoySecretOf(
 export function resolveDefaultChatRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute {
   const preferred = input.preferredRuntimeId?.trim() || "enjoy-local"
   const modelId = input.modelId?.trim() || undefined
+  const followActive = Boolean(input.explicit || input.adopted)
   const keyProfile =
-    preferred === "enjoy-local" ? pickKeyedProfileId(input) ?? activeKeyProfileIdOf(input) : undefined
-  if (input.explicit) return chatDefaultRouteOf(preferred, modelId, activeKeyProfileIdOf(input))
+    preferred === "enjoy-local"
+      ? followActive
+        ? activeKeyProfileIdOf(input)
+        : pickKeyedProfileId(input) ?? activeKeyProfileIdOf(input)
+      : undefined
+  if (followActive) return chatDefaultRouteOf(preferred, modelId, activeKeyProfileIdOf(input))
   const keep = chatDefaultRouteOf(preferred, modelId, keyProfile)
   if (preferred === "enjoy-local" && keyProfile && keyedStateOf(input, keyProfile) !== "invalid") {
     return keep
@@ -141,6 +146,7 @@ export function chatReadyFromRoutes(input: {
   apiKeys: readonly ChatApiKeyRoute[]
   preferredRuntimeId?: string
   explicit?: boolean
+  adopted?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
   activeKeyProfileId?: string | null

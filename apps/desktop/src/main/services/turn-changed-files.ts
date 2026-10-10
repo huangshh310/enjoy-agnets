@@ -4,6 +4,7 @@
 import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import type { ReviewChangedFiles } from "@enjoy-agents/ipc-contract/credential-check"
 import { isWriteTypeToolName } from "@enjoy-agents/ipc-contract/tool-names"
+import { clipReviewFileName } from "./session-review-persist.ts"
 import type { TurnToolSnapshot } from "@enjoy-agents/ipc-contract/turn-outcome"
 
 export function reviewFilesFromTools(
@@ -34,5 +35,5 @@ function pathOf(value: unknown): string | undefined {
 
 function fileNameOf(path: string): string {
   const parts = path.replace(/\\/g, "/").split("/")
-  return parts[parts.length - 1] || path
+  return clipReviewFileName(parts[parts.length - 1] || path)
 }

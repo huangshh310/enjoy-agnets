@@ -92,7 +92,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       })
       const { resolveRunSecret, resolveRuntimeId } = await import("./agent-run-helpers")
       const runtimeId = resolveRuntimeId(input, prefs)
-      const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+      const resolved = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
       const messages = Array.isArray(extras.modelMessages)
         ? (extras.modelMessages as ModelMessage[])
         : toModelMessages(input.messages)
@@ -101,7 +101,9 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         window,
         input,
         workspaceRoot: workspace.rootPath,
-        secret,
+        secret: resolved?.secret,
+        profileId: resolved?.profileId,
+        credentialFingerprint: resolved?.fingerprint,
         messages
       })
       hydrateActiveRunUsage(row.id)

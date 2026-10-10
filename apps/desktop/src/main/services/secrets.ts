@@ -13,7 +13,8 @@ import {
   type ProviderKind
 } from "@enjoy-agents/providers"
 import { unbindProviderFromAgentTools } from "./agent-tools-vault"
-import { clearCredentialCheck, readCredentialChecks } from "./credential-check-store.ts"
+import { credentialFingerprint } from "./credential-fingerprint.ts"
+import { clearCredentialCheck, publicCredentialCheck, readCredentialChecks } from "./credential-check-store.ts"
 import { listedModelsFromProfiles } from "./listed-models"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
@@ -36,8 +37,12 @@ export async function listPublicProviders(): Promise<ProviderPublic[]> {
   const checks = readCredentialChecks()
   return vault.profiles.map((profile) => {
     const pub = toPublic(profile, vault.activeId)
-    const check = checks[profile.id]
-    return check ? { ...pub, credentialCheck: check } : pub
+    const stored = checks[profile.id]
+    if (!stored) return pub
+    return {
+      ...pub,
+      credentialCheck: publicCredentialCheck(stored, credentialFingerprint(profile))
+    }
   })
 }
 

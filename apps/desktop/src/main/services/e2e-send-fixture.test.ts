@@ -17,14 +17,15 @@ const isolated = {
   ENJOY_E2E_SEND: "rejected"
 }
 
-test("ENJOY_E2E_SEND 要 stub + 未打包 + 隔离 userData", () => {
-  assert.equal(e2eSendFixture({ ...isolated }, false), "rejected")
-  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "unreachable" }, false), "unreachable")
-  assert.equal(e2eSendFixture({ ...isolated }, true), undefined)
+test("ENJOY_E2E_SEND 要 stub + 未打包 + 隔离 userData 路径对得上", () => {
+  assert.equal(e2eSendFixture({ ...isolated }, false, "/tmp/e2e-ud"), "rejected")
+  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "unreachable" }, false, "/tmp/e2e-ud"), "unreachable")
+  assert.equal(e2eSendFixture({ ...isolated }, false, "/tmp/other"), undefined)
+  assert.equal(e2eSendFixture({ ...isolated }, true, "/tmp/e2e-ud"), undefined)
   assert.equal(e2eSendFixture({ ENJOY_E2E_STUB: "1", ENJOY_E2E_SEND: "rejected" }, false), undefined)
-  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_STUB: "0" }, false), undefined)
-  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "nope" }, false), undefined)
-  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: undefined }, false), undefined)
+  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_STUB: "0" }, false, "/tmp/e2e-ud"), undefined)
+  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: "nope" }, false, "/tmp/e2e-ud"), undefined)
+  assert.equal(e2eSendFixture({ ...isolated, ENJOY_E2E_SEND: undefined }, false, "/tmp/e2e-ud"), undefined)
 })
 
 test("夹具错误走真实分类：rejected → invalid；unreachable 不改态", () => {

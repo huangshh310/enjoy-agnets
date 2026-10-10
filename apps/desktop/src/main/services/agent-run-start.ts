@@ -13,7 +13,12 @@ import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
-import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import {
+  activeProfileCredentialState,
+  resolveBoundRunModelId,
+  resolveRunSecret,
+  resolveRuntimeId
+} from "./agent-run-helpers"
 import { peekCachedChatReadiness, peekVerifiedLocalModel } from "./chat-readiness"
 import { hasSecret } from "./secrets"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
@@ -113,7 +118,8 @@ async function beginAgentRun(
     codingRuntime: prefs.codingRuntime,
     hasEnjoySecret: await hasSecret().catch(() => "unknown" as const),
     verifiedLocal: peekVerifiedLocalModel(),
-    credentialState: peekCachedChatReadiness()?.credentialCheck?.state
+    credentialState:
+      (await activeProfileCredentialState()) ?? peekCachedChatReadiness()?.credentialCheck?.state
   })
   if (blocked) return { ok: false, code: blocked }
   writeSessionRuntime(input.sessionId, runtimeId)
@@ -123,7 +129,8 @@ async function beginAgentRun(
   if (isAcpHostRuntime(runtimeId) && !input.modelId) {
     input.modelId = `cli:${runtimeId}`
   }
-  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  const resolved = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  const secret = resolved?.secret
   if (isE2eCostSeed() && (!input.modelId || input.modelId === "stub-e2e")) {
     input.modelId = COST_LIVE_MODEL_ID
   } else if (isE2eStub() && !input.modelId) {
@@ -169,6 +176,8 @@ async function beginAgentRun(
     input,
     workspaceRoot: workspace.rootPath,
     secret,
+    profileId: resolved?.profileId,
+    credentialFingerprint: resolved?.fingerprint,
     messages: modelMessages
   })
   if (options.runId) hydrateActiveRunUsage(runId)

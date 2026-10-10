@@ -12,7 +12,7 @@ import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./def
 import { e2eChatReadiness } from "./e2e-chat-readiness"
 import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { isE2eStub } from "./e2e-stub"
-import { hasSecret, listPublicProviders } from "./secrets"
+import { activateProfile, hasSecret, listPublicProviders } from "./secrets"
 
 export { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
 
@@ -45,7 +45,7 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
   const enjoySecret = await hasSecret().catch(() => undefined)
   const fixture = e2eChatReadiness(process.env, packaged)
   if (fixture) {
-    return rememberSnapshot(withSecretAndAdopt(fixture, enjoySecret))
+    return rememberSnapshot(await withSecretAndAdopt(fixture, enjoySecret))
   }
   const [tools, providers, live] = await Promise.all([
     listAgentTools(),
@@ -66,13 +66,16 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
     loggedInToolIds(listed),
     { ...defaultChatRouteAssembleInput(), hasEnjoySecret: enjoySecret }
   )
-  return rememberSnapshot(withSecretAndAdopt(snapshot, enjoySecret))
+  return rememberSnapshot(await withSecretAndAdopt(snapshot, enjoySecret))
 }
 
-function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): ChatReadiness {
+async function withSecretAndAdopt(snapshot: ChatReadiness, enjoySecret?: boolean): Promise<ChatReadiness> {
   const withSecret =
     enjoySecret === undefined ? snapshot : { ...snapshot, hasEnjoySecret: enjoySecret }
   const adopted = persistAdoptedDefaultRoute(withSecret)
+  if (adopted.adopted && adopted.profileId) {
+    await activateProfile(adopted.profileId).catch(() => undefined)
+  }
   return adopted.hint ? { ...withSecret, adoptedHint: adopted.hint } : withSecret
 }
 

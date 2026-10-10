@@ -21,6 +21,10 @@ export type ActiveRun = {
   input: RunAgentInput
   workspaceRoot: string
   secret?: StoredSecret
+  /** 本轮实际用的档案；回写 credentialCheck 只认这个 id。 */
+  profileId?: string
+  /** 开跑时的密钥/端点指纹，回写对不上则丢掉。 */
+  credentialFingerprint?: string
   pendingApprovals: PendingApproval[]
   sessionApprovedTools: Set<string>
   sessionApprovedBashPrefixes: Set<string>
@@ -187,6 +191,8 @@ export function holdAgentRun(
     input: patch.input,
     workspaceRoot: patch.workspaceRoot,
     secret: patch.secret,
+    profileId: patch.profileId,
+    credentialFingerprint: patch.credentialFingerprint,
     pendingApprovals: [],
     // P1-S：从会话表复制，不是空 Set。run 结束不清表。
     sessionApprovedTools: initialSessionApprovedTools(patch.input),

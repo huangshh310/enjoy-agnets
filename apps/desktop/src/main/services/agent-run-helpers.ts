@@ -8,7 +8,10 @@ import { readSessionModels, readSessionRuntimes } from "./agent-tools-vault"
 import { listAgentTools } from "./agent-tools-service"
 import { harnessPublicStatus } from "./harness-secrets"
 import type { AppPreferences } from "./preferences"
-import { hasSecret, readSecret, type StoredSecret } from "./secrets"
+import type { CredentialCheckState } from "@enjoy-agents/ipc-contract/credential-check"
+import { readCredentialCheck } from "./credential-check-store.ts"
+import { credentialFingerprint } from "./credential-fingerprint.ts"
+import { getActiveProfile, hasSecret, readSecret, type StoredSecret } from "./secrets"
 
 /** 会话覆盖 > 入参 > 偏好 > Enjoy Local。 */
 export function resolveRuntimeId(
@@ -67,26 +70,48 @@ async function modelIdsForRuntime(runtimeId: string): Promise<readonly string[]>
   return listed.find((item) => item.id === runtimeId)?.models.map((item) => item.id) ?? []
 }
 
+export type ResolvedRunSecret = {
+  secret: StoredSecret
+  profileId?: string
+  fingerprint?: string
+}
+
 /** ACP 不读 Providers Key；Harness 查沙箱就绪；本机 ToolLoop 必须有 API key。 */
 export async function resolveRunSecret(
   runtimeId: string,
   codingRuntime: "local" | "harness",
   harnessId?: string
-): Promise<StoredSecret | undefined> {
+): Promise<ResolvedRunSecret | undefined> {
   if (isAcpHostRuntime(runtimeId)) return undefined
   if (codingRuntime === "harness") {
     const status = await harnessPublicStatus(harnessId)
     if (!status.ready) {
       throw new Error(status.blockedReason ?? "Harness is not ready for this provider.")
     }
-    return readSecret()
+    return withActiveProfile(await readSecret())
   }
   const ready = await hasSecret()
   const secret = await readSecret()
   if (!ready || !secret) {
     throw new Error("Add an API key in Settings before running an agent.")
   }
-  return secret
+  return withActiveProfile(secret)
+}
+
+export async function activeProfileCredentialState(): Promise<CredentialCheckState | undefined> {
+  const profile = await getActiveProfile()
+  if (!profile) return undefined
+  return readCredentialCheck(profile.id, credentialFingerprint(profile))?.state
+}
+
+async function withActiveProfile(secret: StoredSecret | undefined): Promise<ResolvedRunSecret | undefined> {
+  if (!secret) return undefined
+  const profile = await getActiveProfile()
+  return {
+    secret,
+    profileId: profile?.id,
+    fingerprint: profile ? credentialFingerprint(profile) : undefined
+  }
 }
 
 export async function readResponseMessages(result: unknown): Promise<ModelMessage[]> {

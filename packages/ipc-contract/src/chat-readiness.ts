@@ -4,7 +4,12 @@
  * 闸更宽：ready ⇒ 放行。
  */
 import { z } from "zod"
-import { CredentialCheck, CREDENTIAL_INVALID, type CredentialCheckState } from "./credential-check.ts"
+import {
+  CredentialCheck,
+  CREDENTIAL_INVALID,
+  PROVIDER_UNREACHABLE,
+  type CredentialCheckState
+} from "./credential-check.ts"
 import { NO_CHAT_ROUTE } from "./chat-route-gate.ts"
 import {
   defaultRouteReady,
@@ -57,7 +62,7 @@ export const ChatLocalModelRoute = z
 export type ChatLocalModelRoute = z.infer<typeof ChatLocalModelRoute>
 
 /** 发送闸稳定码。main `agent.run` 失败回 `{ ok:false, code }`，不要 throw 以免 IPC 加前缀。 */
-export const SendGateCode = z.enum([NO_CHAT_ROUTE, CREDENTIAL_INVALID])
+export const SendGateCode = z.enum([NO_CHAT_ROUTE, CREDENTIAL_INVALID, PROVIDER_UNREACHABLE])
 export type SendGateCode = z.infer<typeof SendGateCode>
 
 export const AgentRunOk = z.object({ ok: z.literal(true), runId: z.string().min(1) }).strict()
@@ -171,6 +176,8 @@ export function isVerifiedLocalModel(route: ChatLocalModelRoute): boolean {
 export type ResolveDefaultChatRouteInput = {
   /** 用户亲手选过默认（设为主引擎 / setDefaultModel / setPreferences.runtimeId）。 */
   explicit?: boolean
+  /** 已经 adopt 过：默认路线跟当前档案，不再另挑 ok。 */
+  adopted?: boolean
   preferredRuntimeId?: string
   modelId?: string
   engines: readonly ChatEngineRoute[]
@@ -198,6 +205,7 @@ export function buildChatReadiness(input: {
   engineCount: number
   preferredRuntimeId?: string
   explicit?: boolean
+  adopted?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
   activeKeyProfileId?: string | null
@@ -213,6 +221,7 @@ export function buildChatReadiness(input: {
   const credentialState = input.credentialCheck?.state
   const defaultRoute = resolveDefaultChatRoute({
     explicit: input.explicit,
+    adopted: input.adopted,
     preferredRuntimeId: input.preferredRuntimeId,
     modelId: input.modelId,
     engines,

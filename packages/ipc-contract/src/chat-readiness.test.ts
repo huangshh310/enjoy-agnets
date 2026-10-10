@@ -212,6 +212,10 @@ test("agent.run 结果是 { ok, runId|code }；发送闸码在枚举里", () => 
     ok: false,
     code: NO_CHAT_ROUTE
   })
+  assert.deepEqual(AgentRunResult.parse({ ok: false, code: "provider_unreachable" }), {
+    ok: false,
+    code: "provider_unreachable"
+  })
   assert.equal(requireAgentRunId({ ok: true, runId: "run_1" }), "run_1")
   assert.throws(() => requireAgentRunId({ ok: false, code: NO_CHAT_ROUTE }), /no_chat_route/)
 })
@@ -463,9 +467,13 @@ test("带密钥档案缺 credentialCheck 当 unverified：ready 且快照露出 
   )
 })
 
-test("ok 与 unverified 混排时 adopt ok 档案", () => {
+test("未 adopt 时混排挑 ok 档案；adopt 后跟当前档案，ready/闸一致", () => {
   const other: ChatApiKeyRoute = { kind: "api_key", providerId: "prov_ok", presetId: "anthropic" }
-  const snap = buildChatReadiness({
+  const keyChecks = {
+    prov_1: { state: "unverified" as const, code: "network" as const },
+    prov_ok: { state: "ok" as const }
+  }
+  const picked = buildChatReadiness({
     engines: [],
     localModels: [],
     apiKeys: [KEY, other],
@@ -473,14 +481,42 @@ test("ok 与 unverified 混排时 adopt ok 档案", () => {
     hasEnjoySecret: true,
     activeKeyProfileId: "prov_1",
     credentialCheck: { state: "unverified", code: "network" },
+    keyChecks
+  })
+  assert.equal(picked.ready, true)
+  assert.equal(picked.defaultRoute?.profileId, "prov_ok")
+  assert.equal(picked.credentialCheck?.state, "ok")
+  const adopted = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY, other],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    adopted: true,
+    activeKeyProfileId: "prov_ok",
+    credentialCheck: { state: "ok" },
+    keyChecks
+  })
+  assert.equal(adopted.ready, true)
+  assert.equal(adopted.defaultRoute?.profileId, "prov_ok")
+  assert.equal(adopted.credentialCheck?.state, "ok")
+  const stuck = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY, other],
+    engineCount: 1,
+    hasEnjoySecret: true,
+    adopted: true,
+    activeKeyProfileId: "prov_1",
+    credentialCheck: { state: "invalid", code: "auth_rejected" },
     keyChecks: {
-      prov_1: { state: "unverified", code: "network" },
+      prov_1: { state: "invalid", code: "auth_rejected" },
       prov_ok: { state: "ok" }
     }
   })
-  assert.equal(snap.ready, true)
-  assert.equal(snap.defaultRoute?.profileId, "prov_ok")
-  assert.equal(snap.credentialCheck?.state, "ok")
+  assert.equal(stuck.ready, false)
+  assert.equal(stuck.defaultRoute?.profileId, "prov_1")
+  assert.equal(stuck.credentialCheck?.state, "invalid")
 })
 
 test("全 invalid 不 ready，向导还差一步", () => {

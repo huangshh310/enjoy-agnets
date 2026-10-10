@@ -35,10 +35,12 @@ import {
   recheckProviderCredential,
   scheduleCredentialCheck
 } from "./services/credential-check-schedule.ts"
+import { credentialProbeNeeded } from "./services/credential-fingerprint.ts"
 import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
+  findProfileById,
   getActiveProfile,
   hasSecret,
   listAllPublicModels,
@@ -171,6 +173,7 @@ function registerProviderIpc() {
   ipcMain.handle("settings.presets", async () => PROVIDER_PRESETS)
   ipcMain.handle("settings.upsertProvider", async (_event, raw) => {
     const input = UpsertProviderInput.parse(raw)
+    const existing = input.id ? await findProfileById(input.id) : undefined
     const saved = await upsertProfile({
       id: input.id,
       name: input.name,
@@ -198,7 +201,7 @@ function registerProviderIpc() {
       reasoningFamily: input.reasoningFamily,
       proxy: input.proxy
     })
-    scheduleCredentialCheck(saved.id)
+    if (credentialProbeNeeded(existing, input)) scheduleCredentialCheck(saved.id)
     scheduleChatReadinessPush()
     return settingsSnapshot()
   })
