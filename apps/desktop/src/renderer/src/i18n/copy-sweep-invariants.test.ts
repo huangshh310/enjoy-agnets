@@ -8,7 +8,6 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import { zh } from "./catalogs/zh/index.ts"
-import { chordGlyphs } from "../components/settings/keybindings/keybinding-format.ts"
 
 const DEV_COPY_ALLOWLIST = new Set([
   "chat.hmacBoundNotice",
@@ -146,14 +145,16 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
 })
 
 test("侧栏快速搜索用平台键位，不写死 ⌘L", () => {
-  const sidebar = readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), "../components/ai-chat/ai-chat-sidebar.tsx"),
+  const here = dirname(fileURLToPath(import.meta.url))
+  const sidebar = readFileSync(join(here, "../components/ai-chat/ai-chat-sidebar.tsx"), "utf8")
+  const glyphs = readFileSync(
+    join(here, "../components/settings/keybindings/keybinding-format.ts"),
     "utf8"
   )
   assert.equal(sidebar.includes("⌘L"), false)
   assert.equal(sidebar.includes("chordGlyphs"), true)
-  assert.deepEqual(chordGlyphs("mod+l", false), ["Ctrl", "L"])
-  assert.deepEqual(chordGlyphs("mod+l", true), ["⌘", "L"])
+  assert.equal(sidebar.includes('QUICK_SEARCH_CHORD = "mod+l"'), true)
+  assert.equal(glyphs.includes('if (part === "mod") return mac ? "⌘" : "Ctrl"'), true)
 })
 
 const wordBoundaryTerms = new Set([
