@@ -117,7 +117,9 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect(preview).not.toContainText("@@")
     await expect(preview).not.toContainText("+")
     await expect(window.locator('[data-testid="source-file-diff"]')).toHaveCount(0)
-    await expect(window.locator('[data-source-highlight="true"]')).toBeVisible()
+    const highlighted = window.locator('[data-source-highlight="true"]').first()
+    await expect(highlighted).toBeVisible()
+    await expect(highlighted).toHaveAttribute("data-source-line", "1")
     await expect
       .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.view ?? ""), { timeout: 4_000 })
       .toBe("preview")
