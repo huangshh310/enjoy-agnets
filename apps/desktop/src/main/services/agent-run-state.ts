@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { sessionTableAllowsTool } from "@enjoy-agents/agent-core"
+import { sessionAllowScopeFor, sessionTableAllowsTool } from "@enjoy-agents/agent-core"
 import { seedRunSessionAllow } from "./conversation-session-allow"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
@@ -105,26 +105,27 @@ function withSessionAllowMarks(event: StreamEvent): StreamEvent {
     return event
   }
   const run = getActiveRun(event.runId)
+  const policy = run
+    ? {
+        requireWriteApproval: true,
+        requireBashApproval: true,
+        requireCommitApproval: true,
+        sessionApprovedTools: run.sessionApprovedTools,
+        sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes]
+      }
+    : undefined
   const allowedBySession =
     event.allowedBySession ??
-    (run
-      ? sessionTableAllowsTool(
-          event.name,
-          {
-            requireWriteApproval: true,
-            requireBashApproval: true,
-            requireCommitApproval: true,
-            sessionApprovedTools: run.sessionApprovedTools,
-            sessionApprovedBashPrefixes: [...run.sessionApprovedBashPrefixes]
-          },
-          event.args
-        )
-      : false)
+    (policy ? sessionTableAllowsTool(event.name, policy, event.args) : false)
+  const sessionAllowScope =
+    event.sessionAllowScope ??
+    (allowedBySession && policy ? sessionAllowScopeFor(event.name, policy, event.args) : undefined)
   const reaskReason =
     event.reaskReason ?? (event.type === "approval.required" ? run?.reaskReason : undefined)
   return {
     ...event,
     allowedBySession,
+    ...(sessionAllowScope ? { sessionAllowScope } : {}),
     ...(reaskReason ? { reaskReason } : {})
   }
 }

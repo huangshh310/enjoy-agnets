@@ -122,10 +122,12 @@ function mergeToolArgs(prev: unknown, next: unknown): unknown {
 
 function sessionAllowPatch(event: {
   allowedBySession?: boolean
+  sessionAllowScope?: ThreadToolCall["sessionAllowScope"]
   reaskReason?: "restart" | "restore"
-}): Pick<ThreadToolCall, "allowedBySession" | "reaskReason"> {
+}): Pick<ThreadToolCall, "allowedBySession" | "sessionAllowScope" | "reaskReason"> {
   return {
     ...(event.allowedBySession !== undefined ? { allowedBySession: event.allowedBySession } : {}),
+    ...(event.sessionAllowScope ? { sessionAllowScope: event.sessionAllowScope } : {}),
     ...(event.reaskReason ? { reaskReason: event.reaskReason } : {})
   }
 }
@@ -156,6 +158,7 @@ function upsertTool(tools: ThreadToolCall[], patch: Partial<ThreadToolCall> & { 
     errorText: patch.errorText,
     parentToolCallId: patch.parentToolCallId,
     allowedBySession: patch.allowedBySession,
+    sessionAllowScope: patch.sessionAllowScope,
     reaskReason: patch.reaskReason
   })
 }

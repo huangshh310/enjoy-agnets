@@ -158,7 +158,8 @@ test("本会话允许标记折进 ThreadToolCall", () => {
     toolCallId: "t1",
     name: "write_file",
     args: { path: "a.ts" },
-    allowedBySession: true
+    allowedBySession: true,
+    sessionAllowScope: { kind: "tool", toolName: "write_file" }
   })
   foldToolEvent(tools, {
     type: "approval.required",
@@ -171,6 +172,7 @@ test("本会话允许标记折进 ThreadToolCall", () => {
     reaskReason: "restart"
   })
   assert.equal(tools[0]?.allowedBySession, true)
+  assert.deepEqual(tools[0]?.sessionAllowScope, { kind: "tool", toolName: "write_file" })
   assert.equal(tools[1]?.allowedBySession, false)
   assert.equal(tools[1]?.reaskReason, "restart")
 })

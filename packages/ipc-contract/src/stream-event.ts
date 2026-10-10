@@ -8,6 +8,7 @@ import { APPROVAL_RESOLVED_CODES } from "./desktop-notify.ts"
 import { EstimatedCost } from "./estimated-cost.ts"
 import { HostInjectSnapshot } from "./host-inject.ts"
 import { SessionConfigOption } from "./session-config.ts"
+import { SessionAllowScope } from "./session-allow.ts"
 import { TurnOutcome } from "./turn-outcome.ts"
 
 const Envelope = {
@@ -25,9 +26,10 @@ export const SESSION_TITLE_MAX = 200
 export const ApprovalReaskReason = z.enum(["restart", "restore"])
 export type ApprovalReaskReason = z.infer<typeof ApprovalReaskReason>
 
-/** 本会话允许标记：是否靠会话表跳过卡片；为何再问。缺省当 false / 不标。 */
+/** 本会话允许标记：是否靠会话表跳过卡片、命中的范围、为何再问。 */
 const SessionAllowMarks = {
   allowedBySession: z.boolean().optional(),
+  sessionAllowScope: SessionAllowScope.optional(),
   reaskReason: ApprovalReaskReason.optional()
 }
 

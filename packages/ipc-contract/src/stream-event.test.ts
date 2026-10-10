@@ -159,7 +159,8 @@ test("tool / approval 事件可带 allowedBySession 与 reaskReason", () => {
     runId: "r1",
     toolCallId: "t1",
     name: "write_file",
-    allowedBySession: true
+    allowedBySession: true,
+    sessionAllowScope: { kind: "tool", toolName: "write_file" }
   })
   const result = StreamEvent.safeParse({
     type: "tool.result",
@@ -192,6 +193,7 @@ test("tool / approval 事件可带 allowedBySession 与 reaskReason", () => {
   assert.equal(resume.success, true)
   if (start.success && start.data.type === "tool.start") {
     assert.equal(start.data.allowedBySession, true)
+    assert.deepEqual(start.data.sessionAllowScope, { kind: "tool", toolName: "write_file" })
   }
   if (card.success && card.data.type === "approval.required") {
     assert.equal(card.data.reaskReason, "restart")

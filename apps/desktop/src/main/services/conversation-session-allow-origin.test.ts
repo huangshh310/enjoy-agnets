@@ -17,6 +17,8 @@ import {
   grantConversationBashPrefix,
   grantConversationMcpAllow,
   grantConversationToolAllow,
+  listConversationSessionAllows,
+  revokeConversationSessionAllow,
   seedRunSessionAllow,
   SESSION_ALLOW_MAX_PREFIXES,
   SESSION_ALLOW_MAX_SESSIONS,
@@ -194,9 +196,32 @@ test("会话放行的 tool.start 带 allowedBySession，回挂卡带 reaskReason
   const start = events.find((event) => event.type === "tool.start")
   const card = events.find((event) => event.type === "approval.required")
   assert.equal(start?.allowedBySession, true)
+  assert.deepEqual(start?.sessionAllowScope, { kind: "tool", toolName: "write_file" })
   assert.equal(card?.allowedBySession, false)
   assert.equal(card?.reaskReason, "restore")
   deleteActiveRun("run_mark")
+})
+
+test("list / revoke 本会话允许：只影响下一轮，MCP 用全名", () => {
+  grantConversationToolAllow("ses_rev", "write_file")
+  grantConversationToolAllow("ses_rev", "mcp_demo__edit")
+  grantConversationBashPrefix("ses_rev", "git push")
+  const listed = listConversationSessionAllows("ses_rev")
+  assert.equal(listed.some((item) => item.scope.kind === "tool" && item.scope.toolName === "write_file"), true)
+  assert.equal(listed.some((item) => item.scope.kind === "tool" && item.scope.toolName === "mcp_demo__edit"), true)
+  assert.equal(listed.some((item) => item.scope.kind === "bash_prefix" && item.scope.prefix === "git push"), true)
+  const run = hold("run_rev", "ses_rev", "user")
+  assert.ok(run)
+  assert.equal(run.sessionApprovedTools.has("write_file"), true)
+  const remaining = revokeConversationSessionAllow("ses_rev", { kind: "tool", toolName: "write_file" })
+  assert.equal(remaining.some((item) => item.scope.kind === "tool" && item.scope.toolName === "write_file"), false)
+  assert.equal(remaining.some((item) => item.scope.kind === "tool" && item.scope.toolName === "mcp_demo__edit"), true)
+  assert.equal(run.sessionApprovedTools.has("write_file"), true)
+  const next = seedRunSessionAllow("ses_rev", { origin: "user" })
+  assert.equal(next.sessionApprovedTools.has("write_file"), false)
+  assert.equal(next.sessionApprovedTools.has("mcp_demo__edit"), true)
+  assert.equal(next.sessionApprovedBashPrefixes.has("git push"), true)
+  deleteActiveRun("run_rev")
 })
 
 test("解释器式 bash 本会话不记前缀，也不吃已记前缀", () => {
