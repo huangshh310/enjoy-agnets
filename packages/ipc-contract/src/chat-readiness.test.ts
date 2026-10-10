@@ -8,6 +8,7 @@ import {
   PROVIDER_BILLING,
   PROVIDER_FORBIDDEN,
   PROVIDER_UNREACHABLE,
+  SendGateCode,
   apiKeyRoutes,
   buildChatReadiness,
   chatRouteAllowsSend,
@@ -26,6 +27,14 @@ import {
   type ChatEngineRoute,
   type ChatLocalModelRoute
 } from "./chat-readiness.ts"
+
+test("发送闸枚举含 kai 钉死的 unreachable / forbidden / billing", () => {
+  assert.equal(SendGateCode.enum.provider_unreachable, PROVIDER_UNREACHABLE)
+  assert.equal(SendGateCode.enum.provider_forbidden, PROVIDER_FORBIDDEN)
+  assert.equal(SendGateCode.enum.provider_billing, PROVIDER_BILLING)
+  assert.equal(SendGateCode.enum.credential_invalid, CREDENTIAL_INVALID)
+  assert.equal(SendGateCode.enum.no_chat_route, NO_CHAT_ROUTE)
+})
 
 const KEY: ChatApiKeyRoute = { kind: "api_key", providerId: "prov_1", presetId: "openai" }
 const CLAUDE: ChatEngineRoute = { kind: "engine", runtimeId: "claude", name: "Claude Code" }
