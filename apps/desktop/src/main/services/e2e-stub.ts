@@ -173,11 +173,11 @@ export async function writeStubApprovedFile(
 export async function* createE2eStubStream(
   messages: ModelMessage[],
   signal: AbortSignal,
-  opts?: { packaged?: boolean }
+  opts?: { packaged?: boolean; env?: NodeJS.ProcessEnv }
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
-  const sendFail = e2eSendFixture(process.env, opts?.packaged === true)
+  const sendFail = e2eSendFixture(opts?.env ?? process.env, opts?.packaged === true)
   if (sendFail) throw e2eSendFixtureError(sendFail)
   if (shouldFailStubStore(prompt, opts?.packaged === true)) {
     throw new Error("INTERNAL_STORE_ERROR")
