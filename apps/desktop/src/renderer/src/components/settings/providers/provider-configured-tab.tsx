@@ -172,6 +172,7 @@ function EmptyConfiguredState({
         <Button
           type="button"
           variant="outline"
+          data-testid="provider-add-custom"
           onClick={() => onAddCustom("custom", "openai")}
           className="rounded-xl px-4 py-2.5"
         >
