@@ -166,7 +166,7 @@ test("成功补跑不算错过；最新成功时折叠条不写错过", () => {
   const mixed = [skip(today8), catchUp(yest8), skip(ere8)]
   assert.equal(
     missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
-    "错过 2 次 · 电脑睡眠 · 今天 08:00"
+    "因电脑睡眠错过 2 次 · 今天 08:00"
   )
   const mixedLine = lastRunLine({
     automation: auto({ lastRunStatus: "skipped", lastSkipReason: "system_sleep", lastRunAt: today8 }),
@@ -175,7 +175,7 @@ test("成功补跑不算错过；最新成功时折叠条不写错过", () => {
     locale: "zh",
     t
   })
-  assert.equal(mixedLine.text, "错过 2 次 · 电脑睡眠 · 今天 08:00")
+  assert.equal(mixedLine.text, "因电脑睡眠错过 2 次 · 今天 08:00")
   const latestOk = [catchUp(noon), skip(yest8)]
   assert.equal(
     missedGroupSummary({ records: latestOk, now: noon, locale: "zh", t }),

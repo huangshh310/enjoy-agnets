@@ -8,7 +8,8 @@ test("新建会话复用当前空会话并回焦 Composer", () => {
   assert.match(src, /isReusableEmptySession/)
   assert.match(src, /focusComposerAfterNewSession/)
   assert.match(src, /preparingHint: true/)
-  assert.doesNotMatch(src, /session\.delete/)
+  assert.match(src, /discardCreatedSession/)
+  assert.doesNotMatch(src, /listEmpty|purgeEmpty|recycleEmpty/)
 })
 
 test("归档调用容忍可选 deniedApprovals，不改 IPC", () => {
