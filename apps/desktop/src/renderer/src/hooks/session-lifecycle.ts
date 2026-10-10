@@ -103,6 +103,7 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
   const rows = (await getIde().session.messages({ sessionId })) as MessageRow[]
   if (stale?.()) return
   applySessionHydrate({ dbRows: rows, sameSession, generation, sessionId })
+  useAttentionStore.getState().clearCompleteIfErrored(sessionId)
   queueComposerFocus()
 }
 

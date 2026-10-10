@@ -24,13 +24,15 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
   if (event.type === "approval.required") {
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
-  if ((event.type === "run.end" || event.type === "run.error") && event.turn) {
+  // 出错轮禁止出已完成：即便 turn 误写成 complete，也只出 error。
+  if (event.type === "run.error") {
+    if (isApprovalNotExecutedMessage(event.message)) return "complete"
+    return "error"
+  }
+  if (event.type === "run.end" && event.turn) {
     if (event.turn.attention === "complete") return "complete"
     if (event.turn.attention === "error") return "error"
     return null
-  }
-  if (event.type === "run.error") {
-    return isApprovalNotExecutedMessage(event.message) ? "complete" : "error"
   }
   if (event.type === "run.end") return "complete"
   return null
@@ -97,6 +99,21 @@ export function dismissAttentionSlot(items: AttentionItem[], id: string): Attent
 }
 
 /** 新审批进场时只收同会话已完成，未处理的 error 保留。 */
+/** 切到已出错会话 / 新 error 进场：收掉该会话旧的已完成，禁止两粒并排。 */
+export function clearCompleteIfSessionErrored(
+  items: AttentionItem[],
+  sessionId: string
+): AttentionItem[] {
+  const errored = items.some(
+    (item) =>
+      item.sessionId === sessionId &&
+      item.kind === "error" &&
+      (item.status === "active" || item.status === "focused")
+  )
+  if (!errored) return items
+  return resolveTerminalSlots(items, sessionId)
+}
+
 export function resolveTerminalSlots(items: AttentionItem[], sessionId: string): AttentionItem[] {
   return items.map((item) => {
     if (item.sessionId !== sessionId) return item
@@ -126,8 +143,20 @@ export function resolveDecisionSlots(
 
 /** Strip 画 active/focused；当前会话决策面在 Dock，胶囊收成微点。 */
 export function stripVisibleItems(items: AttentionItem[]): AttentionItem[] {
+  const errored = new Set(
+    items
+      .filter(
+        (item) =>
+          item.kind === "error" && (item.status === "active" || item.status === "focused")
+      )
+      .map((item) => item.sessionId)
+  )
   return sortByPriority(
-    items.filter((item) => item.status === "active" || item.status === "focused")
+    items.filter((item) => {
+      if (item.status !== "active" && item.status !== "focused") return false
+      if (item.kind === "complete" && errored.has(item.sessionId)) return false
+      return true
+    })
   )
 }
 

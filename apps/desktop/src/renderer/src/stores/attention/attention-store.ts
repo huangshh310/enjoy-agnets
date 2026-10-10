@@ -8,6 +8,7 @@ import {
   dismissAttentionSlot,
   expireStaleCompletes,
   focusAttentionSlot,
+  clearCompleteIfSessionErrored,
   ingestAttentionEvent,
   resolveDecisionSlots
 } from "./ingest-attention"
@@ -30,6 +31,7 @@ type AttentionStore = {
   dismiss: (id: string) => void
   expireStale: (now?: number) => void
   resolveSessionDecisions: (sessionId: string, runId?: string) => void
+  clearCompleteIfErrored: (sessionId: string) => void
   putPark: (park: ParkedRun) => void
   takePark: (sessionId: string) => ParkedRun | undefined
   applyParkEvent: (sessionId: string, event: StreamEvent) => void
@@ -66,6 +68,8 @@ export const useAttentionStore = create<AttentionStore>((set, get) => ({
     set((state) => ({ items: expireStaleCompletes(state.items, now ?? Date.now()) })),
   resolveSessionDecisions: (sessionId, runId) =>
     set((state) => ({ items: resolveDecisionSlots(state.items, sessionId, runId) })),
+  clearCompleteIfErrored: (sessionId) =>
+    set((state) => ({ items: clearCompleteIfSessionErrored(state.items, sessionId) })),
   putPark: (park) => set((state) => ({ parks: { ...state.parks, [park.sessionId]: park } })),
   takePark: (sessionId) => {
     const park = get().parks[sessionId]

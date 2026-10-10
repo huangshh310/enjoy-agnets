@@ -5,6 +5,7 @@ import {
   COMPLETE_TTL_MS,
   attentionKindFromEvent,
   attentionSlotId,
+  clearCompleteIfSessionErrored,
   dismissAttentionSlot,
   focusAttentionSlot,
   ingestAttentionEvent,
@@ -187,6 +188,92 @@ test("本轮工具全未执行：run.end 收束审批但不弹已完成", () => 
   assert.equal(quiet.find((item) => item.kind === "pending_approval")?.status, "resolved")
   assert.equal(
     quiet.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
+})
+
+test("Strip 同会话已有出错时不画已完成残渣", () => {
+  const leftover: AttentionItem[] = [
+    slot({
+      id: attentionSlotId("ses_err", "complete"),
+      sessionId: "ses_err",
+      kind: "complete",
+      status: "active",
+      occurredAt: 1
+    }),
+    slot({
+      id: attentionSlotId("ses_err", "error"),
+      sessionId: "ses_err",
+      kind: "error",
+      status: "active",
+      occurredAt: 2,
+      summary: "INTERNAL_STORE_ERROR"
+    })
+  ]
+  assert.deepEqual(
+    stripVisibleItems(leftover).map((item) => item.kind),
+    ["error"]
+  )
+})
+
+test("切到已出错会话：残留下的已完成必须收掉，不当本轮又发了已完成", () => {
+  const leftover: AttentionItem[] = [
+    slot({
+      id: attentionSlotId("ses_err", "complete"),
+      sessionId: "ses_err",
+      kind: "complete",
+      status: "active",
+      occurredAt: 1
+    }),
+    slot({
+      id: attentionSlotId("ses_err", "error"),
+      sessionId: "ses_err",
+      kind: "error",
+      status: "active",
+      occurredAt: 2,
+      summary: "INTERNAL_STORE_ERROR"
+    })
+  ]
+  const next = clearCompleteIfSessionErrored(leftover, "ses_err")
+  assert.equal(next.find((item) => item.kind === "error")?.status, "active")
+  assert.equal(next.find((item) => item.kind === "complete")?.status, "resolved")
+  assert.equal(
+    stripVisibleItems(next).some((item) => item.kind === "complete"),
+    false
+  )
+})
+
+test("run.error 即使 turn 写成 complete 也只出出错，不当本轮又发了已完成", () => {
+  const badError = {
+    type: "run.error" as const,
+    runId: "run_err",
+    message: "INTERNAL_STORE_ERROR",
+    turn: { workflow: "todo" as const, attention: "complete" as const }
+  }
+  assert.equal(attentionKindFromEvent(badError), "error")
+  const done = ingestAttentionEvent([], {
+    event: {
+      type: "run.end",
+      runId: "run_old",
+      turn: { workflow: "todo", attention: "complete" }
+    },
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 1
+  })
+  const failed = ingestAttentionEvent(done, {
+    event: badError,
+    sessionId: "ses_b",
+    sessionTitle: "B",
+    now: 2
+  })
+  assert.equal(failed.find((item) => item.kind === "error")?.status, "active")
+  assert.equal(
+    failed.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
+  assert.equal(
+    stripVisibleItems(failed).some((item) => item.kind === "complete"),
     false
   )
 })
