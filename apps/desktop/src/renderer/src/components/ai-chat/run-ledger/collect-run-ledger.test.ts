@@ -9,6 +9,7 @@ import {
   visibleLedgerEntries
 } from "./collect-run-ledger.ts"
 import { ledgerGroupDefaultOpen, ledgerOpensSources } from "./format-ledger-entry.ts"
+import { ledgerFixtureTools } from "../../../../../main/services/e2e-stub-ledger-data.ts"
 
 function tool(partial: Partial<ThreadToolCall> & Pick<ThreadToolCall, "id" | "name">): ThreadToolCall {
   return { state: "output-available", ...partial }
@@ -107,6 +108,13 @@ test("失败命令留在命令组，摘要是 bash · 命令 · 失败，不是�
     grouped.groups.map((group) => [group.kind, group.entries.length]),
     [["command", 1]]
   )
+})
+
+test("stub 本轮账本夹具能收成命令与文件行", () => {
+  const rows = collectRunLedger({ id: "a", tools: ledgerFixtureTools() })
+  assert.ok(rows.filter((row) => row.kind === "command").length >= 3)
+  assert.ok(rows.some((row) => row.kind === "read"))
+  assert.ok(rows.some((row) => row.kind === "edit"))
 })
 
 test("没有真实 token 就不画用量行", () => {

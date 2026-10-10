@@ -4,6 +4,9 @@
 import { Toaster as SonnerToaster } from "sonner"
 import { cn } from "@/lib/utils"
 
+/** 底中抬高，避开状态栏 / 自动化页脚。归档撤销条同一条规则。 */
+export const APP_TOAST_BOTTOM_OFFSET = 56
+
 const toastClass = cn(
   "flex items-center gap-1.5 rounded-full border border-border-button-default",
   "bg-background-primary-default px-4 py-2 text-caption-1-medium text-text-primary shadow-card"
@@ -13,7 +16,7 @@ export function Toaster() {
   return (
     <SonnerToaster
       position="bottom-center"
-      offset={{ bottom: 56 }}
+      offset={{ bottom: APP_TOAST_BOTTOM_OFFSET }}
       visibleToasts={3}
       duration={2400}
       toastOptions={{
