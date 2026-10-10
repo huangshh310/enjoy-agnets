@@ -203,7 +203,6 @@ function ChatThreadBody(props: {
               data-testid="chat-conversation"
               className={cx(
                 "flex min-h-0 min-w-0 flex-1 flex-col",
-                environmentOpen && "min-[900px]:pr-72",
                 pendingApproval && "min-h-52"
               )}
             >

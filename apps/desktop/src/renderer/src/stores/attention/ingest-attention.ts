@@ -131,6 +131,23 @@ export function stripApprovalCount(items: AttentionItem[]): number {
   ).length
 }
 
+/** 胶囊不得指向已隐藏（归档）会话。 */
+export function stripVisibleForOpenSessions(
+  items: AttentionItem[],
+  openSessionIds: ReadonlySet<string>
+): AttentionItem[] {
+  return stripVisibleItems(items).filter((item) => openSessionIds.has(item.sessionId))
+}
+
+export function stripApprovalCountForOpenSessions(
+  items: AttentionItem[],
+  openSessionIds: ReadonlySet<string>
+): number {
+  return stripVisibleForOpenSessions(items, openSessionIds).filter(
+    (item) => item.kind === "pending_approval" || item.kind === "ask_user"
+  ).length
+}
+
 export function isStripCompact(
   item: AttentionItem,
   currentSessionId: string | null,

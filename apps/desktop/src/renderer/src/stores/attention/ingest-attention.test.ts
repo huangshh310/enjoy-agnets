@@ -11,6 +11,7 @@ import {
   isStripCompact,
   stripNeedsCount,
   stripApprovalCount,
+  stripVisibleForOpenSessions,
   stripVisibleItems
 } from "./ingest-attention.ts"
 import type { AttentionItem } from "./attention.types.ts"
@@ -185,6 +186,15 @@ test("Strip 按优先级排序，当前会话仍可见", () => {
   assert.equal(stripNeedsCount(items), 3)
   assert.equal(stripApprovalCount(items), 2)
   assert.equal(stripVisibleItems([]).length, 0)
+})
+
+test("胶囊不指向已隐藏会话", () => {
+  const items: AttentionItem[] = [
+    slot({ id: "gone:pending_approval", sessionId: "gone", kind: "pending_approval" }),
+    slot({ id: "live:ask_user", sessionId: "live", kind: "ask_user" })
+  ]
+  const visible = stripVisibleForOpenSessions(items, new Set(["live"]))
+  assert.deepEqual(visible.map((item) => item.sessionId), ["live"])
 })
 
 test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", () => {

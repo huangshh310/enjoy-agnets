@@ -82,7 +82,7 @@ test("列表混因与抽屉同一句", () => {
   })
   const drawer = missedGroupSummary({ records, now: noon, locale: "zh", t })
   assert.equal(line.text, drawer)
-  assert.equal(line.text, "错过 3 次 · 最近 应用未运行 · 今天 08:00")
+  assert.equal(line.text, "错过 3 次 · 最近一次应用未运行 · 今天 08:00")
 })
 
 test("不同原因或补跑会打断连续计数", () => {
@@ -147,6 +147,6 @@ test("折叠条混因写最近原因，条数按整组", () => {
   ]
   assert.equal(
     missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
-    "错过 3 次 · 最近 应用未运行 · 今天 08:00"
+    "错过 3 次 · 最近一次应用未运行 · 今天 08:00"
   )
 })

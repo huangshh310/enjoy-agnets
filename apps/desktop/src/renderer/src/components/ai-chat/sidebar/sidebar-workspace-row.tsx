@@ -9,7 +9,7 @@ import {
   shouldSwitchWorkspaceOnFolderClick
 } from "@renderer/components/ai-chat/sidebar/sidebar-expand"
 import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
-import { archiveCurrentSession } from "@renderer/hooks/workspace-lifecycle"
+import { requestArchiveSession } from "@renderer/hooks/deny-then-archive"
 import {
   createAndOpenSession,
   loadWorkspace
@@ -97,7 +97,7 @@ function FolderHeader({
       className={cx(
         "group flex items-center justify-between rounded-xl px-2 py-1.5 transition-colors cursor-pointer",
         isActive
-          ? "bg-background-tertiary-default/70 text-text-primary font-medium"
+          ? "text-text-primary font-medium"
           : "hover:bg-background-secondary-hover text-text-secondary"
       )}
       onClick={onFolderClick}
@@ -164,7 +164,7 @@ function SessionList({
   const deletions = useChatStore((state) => state.deletions)
 
   return (
-    <div className="relative my-0.5 ml-4 flex flex-col gap-0.5 border-l border-separator-border/60 pl-2">
+    <div className="relative my-0.5 ml-2 flex flex-col gap-0.5 border-l border-separator-border/60 pl-1.5">
       {sessions.length === 0 ? (
         <div className="flex items-center justify-between px-2 py-1 text-caption-2-medium text-text-tertiary">
           <span>{t("chat.noChats")}</span>
@@ -212,7 +212,7 @@ function SessionList({
                 }
                 onSelectSession(session.id)
               }}
-              onArchive={() => void archiveCurrentSession(session.id)}
+              onArchive={() => requestArchiveSession(session.id)}
             />
           ))
       )}

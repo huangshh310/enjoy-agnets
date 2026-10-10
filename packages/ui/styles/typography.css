@@ -255,3 +255,18 @@
   --text-caption-2-bold--letter-spacing: 0.2px;
   --text-caption-2-bold--font-weight: 700;
 }
+
+/*
+ * Inter / 部分 Linux CJK 回退会开 palt（比例标点），把全角「？」挤窄。
+ * 标题档关掉 palt / pkna / pwid，kern/liga 留下。
+ */
+[class*="text-title-"],
+[class*="text-headline-"],
+[class*="text-display-"],
+[class*="text-large-title-"],
+h1,
+h2,
+h3,
+h4 {
+  font-feature-settings: "kern" 1, "liga" 1, "palt" 0, "pkna" 0, "pwid" 0;
+}

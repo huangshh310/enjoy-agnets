@@ -9,9 +9,11 @@ import {
   startPersistedSession
 } from "@renderer/hooks/use-agent-session"
 import { formatNodeTime, useChatStore } from "@renderer/stores/chat-store"
+import { useT } from "@renderer/i18n"
 import { ModuleNav } from "./module-nav"
 
 export function ContextColumn({ isChat }: { isChat: boolean }) {
+  const t = useT()
   const userName = useChatStore((state) => state.userName)
   const repositories = useChatStore((state) => state.repositories)
   const expandedIds = useChatStore((state) => state.expandedIds)
@@ -30,7 +32,7 @@ export function ContextColumn({ isChat }: { isChat: boolean }) {
         onSelectSession={(id) => void selectPersistedSession(id)}
         onNewSession={() => void startPersistedSession()}
         onOpenWorkspace={() => void openFolder()}
-        formatTime={formatNodeTime}
+        formatTime={(timestamp) => formatNodeTime(timestamp, t)}
       />
     )
   }

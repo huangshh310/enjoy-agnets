@@ -33,7 +33,7 @@ export function AutomationList({
     )
   }
   return (
-    <ul className="min-h-0 flex-1 overflow-y-auto">
+    <ul className="min-h-0 flex-1 overflow-y-auto pb-16">
       {automations.map((item) => (
         <AutomationRow
           key={item.id}

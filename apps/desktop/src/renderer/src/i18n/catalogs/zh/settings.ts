@@ -972,7 +972,8 @@ export const zhSettings = {
     deleteSession: "删除会话",
     deleteConfirm: "确定永久删除这条会话？此操作不可恢复。",
     chatCount: "{count} 条会话",
-    unarchive: "恢复"
+    unarchive: "恢复",
+    backToChat: "← 返回对话"
   },
 
   secret: {

@@ -21,7 +21,7 @@ test("默认时长对齐旧手写条 2400ms", () => {
 
 test("App 只挂全局 Toaster，不再挂手写 Host", () => {
   const app = read("apps/desktop/src/renderer/src/App.tsx")
-  assert.ok(app.includes("<Toaster"))
+  assert.ok(app.includes("<AppToaster"))
   assert.ok(!app.includes("SkillSourceToastHost"))
 })
 
@@ -55,7 +55,9 @@ test("三处入口遵守停留规则：成功 2400，漏更是错误驻留", () 
   assert.ok(toaster.includes("border-border-button-default"))
   assert.ok(toaster.includes("bg-background-primary-default"))
   assert.ok(toaster.includes("APP_TOAST_BOTTOM_OFFSET = 56"))
-  assert.ok(toaster.includes("offset={{ bottom: APP_TOAST_BOTTOM_OFFSET }}"))
+  assert.ok(toaster.includes("offset={{ bottom: APP_TOAST_BOTTOM_OFFSET"))
+  assert.ok(toaster.includes("h-10 min-h-10"))
+  assert.ok(toaster.includes("expand={false}"))
 })
 
 test("三处入口走 showAppToast，手写实现已删", () => {

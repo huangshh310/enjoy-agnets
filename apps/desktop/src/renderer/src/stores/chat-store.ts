@@ -3,7 +3,7 @@
  */
 import { create } from "zustand"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
-import { relativeTime } from "../lib/time"
+import { formatSidebarTime } from "../lib/sidebar-time"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
@@ -292,7 +292,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setMessages: (messages) => set({ messages })
 }))
 
-export function formatNodeTime(timestamp: number): string {
-  if (!Number.isFinite(timestamp) || timestamp <= 0) return ""
-  return relativeTime(timestamp)
+export function formatNodeTime(
+  timestamp: number,
+  t: (path: string, vars?: Record<string, string | number>) => string = (path) => path
+): string {
+  return formatSidebarTime(timestamp, t)
 }

@@ -12,7 +12,7 @@ import {
   hasLiveComplete,
   isStripCompact,
   stripNeedsCount,
-  stripVisibleItems
+  stripVisibleForOpenSessions
 } from "@renderer/stores/attention/ingest-attention"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { matchAppModule } from "@renderer/components/app-shell/routing/match-module"
@@ -26,10 +26,16 @@ export function AttentionStrip() {
     select: (state) => matchAppModule(state.location.pathname) === "chat"
   })
   const sessionId = useChatStore((state) => state.sessionId)
+  const repositories = useChatStore((state) => state.repositories)
   const dockOpen = useChatStore((state) => Boolean(state.pendingApproval))
   const items = useAttentionStore((state) => state.items)
   const [now, setNow] = useState(() => Date.now())
-  const visible = useMemo(() => stripVisibleItems(items), [items])
+  const visible = useMemo(() => {
+    const openSessionIds = new Set(
+      repositories.filter((node) => node.kind === "session").map((node) => node.id)
+    )
+    return stripVisibleForOpenSessions(items, openSessionIds)
+  }, [items, repositories])
   const needs = stripNeedsCount(items)
 
   useEffect(() => {
@@ -54,7 +60,7 @@ export function AttentionStrip() {
   }
 
   return (
-    <div className="pointer-events-none absolute top-3 inset-x-0 z-30 flex justify-center px-4">
+    <div className="pointer-events-none absolute top-14 inset-x-0 z-30 flex justify-center px-4">
       <div
         role="region"
         aria-label={t("attention.stripLabel")}

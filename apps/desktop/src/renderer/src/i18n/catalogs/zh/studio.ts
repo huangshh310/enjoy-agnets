@@ -290,7 +290,7 @@ export const zhStudio = {
     missedEmpty: "最近 7 天没有错过记录",
     missedCount: "错过记录 · {n} 条",
     missedGroupSame: "错过 {n} 次 · {reason} · {when}",
-    missedGroupMixed: "错过 {n} 次 · 最近 {reason} · {when}",
+    missedGroupMixed: "错过 {n} 次 · 最近一次{reason} · {when}",
     missedSkipped: "已跳过 · {reason}",
     catchUpMarker: "补跑",
     catchUpWhen: "计划 {scheduled} · 实际 {actual}",

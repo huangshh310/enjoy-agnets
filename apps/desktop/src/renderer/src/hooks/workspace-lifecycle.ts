@@ -11,6 +11,7 @@ import { connectSshIfNeeded } from "./ssh-session-switch"
 import { sessionTitleFromStore } from "./archive-session-copy"
 import { notifySessionArchived, notifySessionRestored } from "./archive-session-toast"
 import { undoArchivedSession } from "./archive-session-undo"
+import { restoreUnarchivedSession } from "./restore-unarchived-session"
 import { notifySwitchedProject } from "./switched-project-toast"
 import { pickAdjacentSessionId, visibleSessionIdsForArchive } from "./adjacent-session"
 import { selectPersistedSession } from "./session-lifecycle"
@@ -51,9 +52,7 @@ async function landAfterArchive(adjacentId: string | null) {
 
 export async function unarchiveSession(sessionId: string) {
   if (!hasIde()) return
-  await getIde().session.unarchive({ sessionId })
-  await refreshAllWorkspaces()
-  await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
+  await restoreUnarchivedSession(sessionId)
   notifySessionRestored()
 }
 

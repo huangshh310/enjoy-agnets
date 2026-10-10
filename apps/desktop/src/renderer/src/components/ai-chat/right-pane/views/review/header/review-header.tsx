@@ -82,18 +82,17 @@ export function ReviewHeader(props: {
       {/* 第一行主工具条 */}
       <div className="flex min-h-11 min-w-0 items-center justify-between gap-2 px-3">
         {/* 左侧：作用域下拉 + 全局增减行统计徽标 */}
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
           <ReviewScopeDropdown scope={scope} onSelectScope={onSelectScope} />
 
-          <div className="inline-flex items-center gap-1 rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-semibold font-semibold">
+          <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background-secondary-default px-2 py-0.5 font-mono text-caption-2-semibold font-semibold">
             <span className="text-state-success-text">+{additions.toLocaleString()}</span>
             <span className="text-text-error-primary">-{deletions.toLocaleString()}</span>
           </div>
         </div>
 
         {/* 右侧：操作按钮群 */}
-        <div className="flex shrink-0 items-center gap-1 text-text-secondary">
-          {/* 更多菜单 ... */}
+        <div className="flex min-w-0 shrink items-center justify-end gap-1 text-text-secondary">
           <ReviewMoreMenu
             options={options}
             palette={palette}
@@ -104,43 +103,40 @@ export function ReviewHeader(props: {
             onCopyApplyCmd={onCopyApplyCmd}
             onCopyUnifiedDiff={onCopyUnifiedDiff}
           />
+          <div className="hidden min-[1280px]:flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onOpenJumpPalette}
+              title={t("chat.reviewJumpToFile")}
+              className="cursor-pointer rounded-md p-1.5 hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
+            >
+              <RiSearchLine className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggleOption("fileTreeVisible")}
+              title={t("chat.reviewToggleFileTree")}
+              className={`cursor-pointer rounded-md p-1.5 transition-colors ${
+                options.fileTreeVisible
+                  ? "bg-accent-500/10 text-accent-500"
+                  : "hover:bg-background-secondary-hover hover:text-text-primary"
+              }`}
+            >
+              <RiFolder6Line className="size-4" />
+            </button>
+          </div>
 
-          {/* 展开 / 折叠全部差异 */}
           <button
             type="button"
             onClick={onToggleAllExpanded}
             title={allExpanded ? t("chat.reviewCollapseAllDiffs") : t("chat.reviewExpandAllDiffs")}
-            className="cursor-pointer rounded-md p-1.5 hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
+            className="shrink-0 cursor-pointer rounded-md p-1.5 hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
           >
             {allExpanded ? (
               <RiCollapseDiagonalLine className="size-4" />
             ) : (
               <RiExpandDiagonalLine className="size-4" />
             )}
-          </button>
-
-          {/* 跳转到文件 ⌘P */}
-          <button
-            type="button"
-            onClick={onOpenJumpPalette}
-            title={t("chat.reviewJumpToFile")}
-            className="cursor-pointer rounded-md p-1.5 hover:bg-background-secondary-hover hover:text-text-primary transition-colors"
-          >
-            <RiSearchLine className="size-4" />
-          </button>
-
-          {/* 文件树侧栏开关 */}
-          <button
-            type="button"
-            onClick={() => onToggleOption("fileTreeVisible")}
-            title={t("chat.reviewToggleFileTree")}
-            className={`cursor-pointer rounded-md p-1.5 transition-colors ${
-              options.fileTreeVisible
-                ? "bg-accent-500/10 text-accent-500"
-                : "hover:bg-background-secondary-hover hover:text-text-primary"
-            }`}
-          >
-            <RiFolder6Line className="size-4" />
           </button>
 
           {showCommitPush ? (

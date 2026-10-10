@@ -4,17 +4,11 @@
  */
 import { selectPersistedSession } from "./session-lifecycle"
 import { notifyUndoArchiveFailed, notifySessionRestored } from "./archive-session-toast"
-import { getIde, hasIde } from "../lib/ide"
-import { queryClient } from "../lib/query-client"
-import { refreshAllWorkspaces } from "./refresh-workspaces"
+import { restoreUnarchivedSession } from "./restore-unarchived-session"
 
 export async function undoArchivedSession(sessionId: string, reselect: boolean): Promise<boolean> {
   try {
-    if (!hasIde()) throw new Error("Enjoy Agents IPC bridge is not available.")
-    await getIde().session.unarchive({ sessionId })
-    await refreshAllWorkspaces()
-    await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
-    await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+    await restoreUnarchivedSession(sessionId)
     notifySessionRestored()
     if (reselect) await selectPersistedSession(sessionId)
     return true

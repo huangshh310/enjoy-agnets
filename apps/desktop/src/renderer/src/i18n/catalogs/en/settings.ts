@@ -976,7 +976,8 @@ export const enSettings = {
     deleteSession: "Delete session",
     deleteConfirm: "Permanently delete this session? This cannot be undone.",
     chatCount: "{count} chats",
-    unarchive: "Restore"
+    unarchive: "Restore",
+    backToChat: "← Back to chat"
   },
 
   secret: {

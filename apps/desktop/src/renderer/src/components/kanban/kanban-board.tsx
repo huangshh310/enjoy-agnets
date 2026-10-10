@@ -79,7 +79,7 @@ export function KanbanBoard() {
               key={column}
               column={column}
               cards={cardsInColumn(cards, column)}
-              formatTime={formatNodeTime}
+              formatTime={(timestamp) => formatNodeTime(timestamp, t)}
               canCreate={Boolean(workspaceId)}
               onOpen={(id) => {
                 void selectPersistedSession(id)
