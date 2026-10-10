@@ -1,12 +1,16 @@
 /**
- * 可对话路线真源：向导末屏与提示共用。发送闸不走这里，也不同步等 ping。
+ * 可对话路线真源：向导末屏、默认路线与发送闸共用同一套判断。
+ * 发送闸读缓存的分路结果，不同步等 ping。
  */
-import { BrowserWindow } from "electron"
+import { app, BrowserWindow } from "electron"
 import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { isVerifiedLocalModel } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { listAgentTools } from "./agent-tools-service"
 import { readInspectCache } from "./agent-tools-account/inspect-store"
 import { assembleChatReadiness, pingLocalModelServices } from "./chat-readiness-assemble"
+import { defaultChatRouteAssembleInput, persistAdoptedDefaultRoute } from "./default-chat-route"
+import { e2eChatReadiness } from "./e2e-chat-readiness"
+import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { isE2eStub } from "./e2e-stub"
 import { listPublicProviders } from "./secrets"
 
@@ -28,7 +32,25 @@ export function peekVerifiedLocalModel(): boolean | "unknown" {
   return cached.localModels.some(isVerifiedLocalModel)
 }
 
+/** 发送闸读缓存：有 requiresKey 的已存密钥。不是 hasSecret（ollama 无密钥也是 true）。 */
+export function peekHasEnjoyApiKey(): boolean | "unknown" {
+  if (!cached) return "unknown"
+  return cached.apiKeys.length > 0
+}
+
 export async function computeChatReadiness(): Promise<ChatReadiness> {
+  const packaged = app.isPackaged
+  try {
+    await seedE2eChatReadyRoute(packaged)
+  } catch {
+    // 夹具种档案失败仍走快照，避免向导空白。
+  }
+  const fixture = e2eChatReadiness(process.env, packaged)
+  if (fixture) {
+    persistAdoptedDefaultRoute(fixture)
+    cached = fixture
+    return fixture
+  }
   const [tools, providers, live] = await Promise.all([
     listAgentTools(),
     listPublicProviders(),
@@ -42,7 +64,14 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
     skillOnly: tool.skillOnly,
     comingSoon: tool.comingSoon
   }))
-  const snapshot = assembleChatReadiness(listed, providers, live, loggedInToolIds(listed))
+  const snapshot = assembleChatReadiness(
+    listed,
+    providers,
+    live,
+    loggedInToolIds(listed),
+    defaultChatRouteAssembleInput()
+  )
+  persistAdoptedDefaultRoute(snapshot)
   cached = snapshot
   return snapshot
 }

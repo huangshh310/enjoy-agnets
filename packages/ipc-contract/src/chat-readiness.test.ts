@@ -6,51 +6,65 @@ import {
   NO_CHAT_ROUTE,
   apiKeyRoutes,
   buildChatReadiness,
+  chatRouteAllowsSend,
   countAvailableEngines,
   isLoopbackModelBaseUrl,
+  isVerifiedLocalModel,
   localModelRoutes,
   missingChatRouteCode,
   requireAgentRunId,
+  resolveDefaultChatRoute,
   showsAvailableEngine,
-  signedInEngineRoutes
+  signedInEngineRoutes,
+  type ChatApiKeyRoute,
+  type ChatEngineRoute,
+  type ChatLocalModelRoute
 } from "./chat-readiness.ts"
 
-test("只有已登录外置引擎时 ready", () => {
+const KEY: ChatApiKeyRoute = { kind: "api_key", providerId: "prov_1", presetId: "openai" }
+const CLAUDE: ChatEngineRoute = { kind: "engine", runtimeId: "claude", name: "Claude Code" }
+const LOCAL_OK: ChatLocalModelRoute = { kind: "local_model", service: "ollama", verified: true }
+const REMOTE: ChatLocalModelRoute = { kind: "local_model", service: "ollama", verified: false }
+
+test("只有已登录外置引擎时 ready，默认路线是该引擎", () => {
   const snap = buildChatReadiness({
-    engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],
+    engines: [CLAUDE],
     localModels: [],
     apiKeys: [],
     engineCount: 2
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.engineCount, 2)
-  assert.equal(snap.engines[0]?.runtimeId, "claude")
+  assert.equal(snap.defaultRoute?.runtimeId, "claude")
 })
 
 test("只有探测到的本机模型时 ready", () => {
   const snap = buildChatReadiness({
     engines: [],
-    localModels: [{ kind: "local_model", service: "ollama", verified: true }],
+    localModels: [LOCAL_OK],
     apiKeys: [],
     engineCount: 1
   })
   assert.equal(snap.ready, true)
-  assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: true }])
+  assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
+  assert.deepEqual(snap.localModels, [LOCAL_OK])
 })
 
-test("只有已存 API 密钥时 ready，载荷不含密钥", () => {
+test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不含密钥", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [],
-    apiKeys: [{ kind: "api_key", providerId: "prov_1", presetId: "openai" }],
+    apiKeys: [KEY],
     engineCount: 1
   })
   assert.equal(snap.ready, true)
-  assert.deepEqual(snap.apiKeys, [{ kind: "api_key", providerId: "prov_1", presetId: "openai" }])
+  assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
+  assert.equal(snap.defaultRoute?.profileId, "prov_1")
+  assert.deepEqual(snap.apiKeys, [KEY])
   assert.equal(JSON.stringify(snap).includes("sk-"), false)
 })
 
-test("一条路线都没有时不 ready", () => {
+test("一条路线都没有时不 ready，默认仍是出厂 enjoy-local", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [],
@@ -58,6 +72,7 @@ test("一条路线都没有时不 ready", () => {
     engineCount: 3
   })
   assert.equal(snap.ready, false)
+  assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
   assert.equal(snap.engineCount, 3)
 })
 
@@ -86,9 +101,17 @@ test("comingSoon / skillOnly 不计入引擎数", () => {
   )
 })
 
-test("ChatReadiness 拒未知字段；稳定码是 no_chat_route", () => {
+test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 可选", () => {
   assert.equal(NO_CHAT_ROUTE, "no_chat_route")
   assert.throws(() => ChatReadiness.parse({ ready: true, engineCount: 0, extra: 1 }))
+  const parsed = ChatReadiness.parse({
+    ready: false,
+    engineCount: 0,
+    engines: [],
+    localModels: [],
+    apiKeys: []
+  })
+  assert.equal(parsed.defaultRoute, undefined)
 })
 
 test("已登录外置引擎单独构成路线；enjoy-local 即使 loggedIn 也不进 engines", () => {
@@ -100,7 +123,7 @@ test("已登录外置引擎单独构成路线；enjoy-local 即使 loggedIn 也�
     ],
     new Set(["enjoy-local", "claude", "codex"])
   )
-  assert.deepEqual(routes, [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }])
+  assert.deepEqual(routes, [CLAUDE])
 })
 
 test("API 密钥路线只要存在与预设 id，不含密钥", () => {
@@ -120,7 +143,7 @@ test("本机模型：只认 ping 通过；远端档案 verified:false 不算 rea
   ])
   const remoteOnly = buildChatReadiness({
     engines: [],
-    localModels: [{ kind: "local_model", service: "ollama", verified: false }],
+    localModels: [REMOTE],
     apiKeys: [],
     engineCount: 1
   })
@@ -142,4 +165,84 @@ test("agent.run 结果是 { ok, runId|code }；发送闸码在枚举里", () => 
 test("missingChatRouteCode 只在没有任何路线时给出 no_chat_route", () => {
   assert.equal(missingChatRouteCode(false), NO_CHAT_ROUTE)
   assert.equal(missingChatRouteCode(true), null)
+})
+
+test("未显式选择时第一次连上的可用路线盖过出厂 enjoy-local", () => {
+  assert.equal(
+    resolveDefaultChatRoute({
+      engines: [CLAUDE],
+      localModels: [],
+      apiKeys: []
+    }).runtimeId,
+    "claude"
+  )
+  assert.deepEqual(
+    resolveDefaultChatRoute({
+      engines: [CLAUDE],
+      localModels: [],
+      apiKeys: [KEY]
+    }),
+    { runtimeId: "enjoy-local", profileId: "prov_1" }
+  )
+  assert.equal(
+    resolveDefaultChatRoute({
+      explicit: true,
+      preferredRuntimeId: "enjoy-local",
+      engines: [CLAUDE],
+      localModels: [],
+      apiKeys: []
+    }).runtimeId,
+    "enjoy-local"
+  )
+})
+
+test("ready === 默认路线发送闸放行（key / CLI / 本机 ping / 远端未验证 / 全无）", () => {
+  const cases: Array<{
+    name: string
+    explicit?: boolean
+    preferredRuntimeId?: string
+    engines: ChatEngineRoute[]
+    localModels: ChatLocalModelRoute[]
+    apiKeys: ChatApiKeyRoute[]
+  }> = []
+  for (const key of [false, true]) {
+    for (const cli of [false, true]) {
+      for (const localPing of [false, true]) {
+        for (const remote of [false, true]) {
+          const localModels: ChatLocalModelRoute[] = []
+          if (localPing) localModels.push(LOCAL_OK)
+          else if (remote) localModels.push(REMOTE)
+          cases.push({
+            name: `key=${key} cli=${cli} ping=${localPing} remote=${remote}`,
+            engines: cli ? [CLAUDE] : [],
+            localModels,
+            apiKeys: key ? [KEY] : []
+          })
+        }
+      }
+    }
+  }
+  cases.push({
+    name: "explicit enjoy-local + only CLI",
+    explicit: true,
+    preferredRuntimeId: "enjoy-local",
+    engines: [CLAUDE],
+    localModels: [],
+    apiKeys: []
+  })
+  cases.push({
+    name: "nothing at all",
+    engines: [],
+    localModels: [],
+    apiKeys: []
+  })
+  for (const input of cases) {
+    const snap = buildChatReadiness({ ...input, engineCount: 1 })
+    const allows = chatRouteAllowsSend({
+      runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
+      hasEnjoySecret: input.apiKeys.length > 0,
+      verifiedLocal: input.localModels.some(isVerifiedLocalModel)
+    })
+    assert.equal(snap.ready, allows, input.name)
+  }
 })

@@ -30,6 +30,7 @@ import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secr
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
 import { scheduleChatReadinessPush } from "./services/chat-readiness"
+import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
@@ -115,7 +116,9 @@ function registerCoreSettingsIpc() {
   })
   ipcMain.handle("settings.setDefaultModel", async (_event, raw) => {
     const modelId = SetDefaultModelInput.parse(raw).modelId
+    markDefaultChatRouteExplicit()
     setSetting("defaultModelId", modelId)
+    scheduleChatReadinessPush()
     const active = await getActiveProfile()
     if (active) {
       await upsertProfile({
@@ -129,7 +132,10 @@ function registerCoreSettingsIpc() {
     return { ok: true }
   })
   ipcMain.handle("settings.setPreferences", async (_event, raw) => {
-    const preferences = writePreferences(SetPreferencesInput.parse(raw))
+    const input = SetPreferencesInput.parse(raw)
+    if (input.runtimeId) markDefaultChatRouteExplicit()
+    const preferences = writePreferences(input)
+    if (input.runtimeId) scheduleChatReadinessPush()
     const { syncAppsnapHotkey } = await import("./services/appsnap/appsnap-hotkey")
     syncAppsnapHotkey({
       appsnapEnabled: preferences.appsnapEnabled,

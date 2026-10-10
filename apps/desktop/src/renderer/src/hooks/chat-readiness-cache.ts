@@ -13,6 +13,14 @@ export function peekChatReady(): boolean | undefined {
   return last?.ready
 }
 
+export function peekChatReadiness(): ChatReadiness | undefined {
+  return last
+}
+
+export function peekDefaultChatRoute(): ChatReadiness["defaultRoute"] {
+  return last?.defaultRoute
+}
+
 export function peekEngineCount(): number | undefined {
   return last?.engineCount
 }

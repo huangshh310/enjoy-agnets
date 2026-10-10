@@ -13,14 +13,13 @@ import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
 import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
-import { peekVerifiedLocalModel } from "./chat-readiness"
+import { peekHasEnjoyApiKey, peekVerifiedLocalModel } from "./chat-readiness"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
 import { writeSessionRuntime } from "./agent-tools-vault"
 import { formatHandoffContext, isAcpHostRuntime } from "@enjoy-agents/agent-harness"
 import { metasFromAssetIds, persistUserTurn } from "./persist-user-attachments"
 import { rememberGenerationRun, requestFromAgentInput } from "./persist-run"
 import { readPreferences } from "./preferences"
-import { hasSecret } from "./secrets"
 import { toModelMessages } from "./to-model-messages"
 import { getWorkspace } from "./workspace"
 import { recordEnjoyCheckpoint } from "./workspace-git-checkpoint"
@@ -111,7 +110,7 @@ async function beginAgentRun(
     }),
     runtimeId,
     codingRuntime: prefs.codingRuntime,
-    hasEnjoySecret: await hasEnjoySecretForGate(runtimeId, prefs.codingRuntime),
+    hasEnjoySecret: peekHasEnjoyApiKey(),
     verifiedLocal: peekVerifiedLocalModel()
   })
   if (blocked) return { ok: false, code: NO_CHAT_ROUTE }
@@ -186,15 +185,6 @@ async function beginAgentRun(
   }
   void prepareAndPump(runId)
   return { ok: true, runId }
-}
-
-/** 闸门与 resolveRunSecret 同源：ACP / Harness 不读 Key；enjoy-local 看 hasSecret。 */
-async function hasEnjoySecretForGate(
-  runtimeId: string,
-  codingRuntime: "local" | "harness"
-): Promise<boolean> {
-  if (isAcpHostRuntime(runtimeId) || codingRuntime === "harness") return false
-  return hasSecret()
 }
 
 function emitRunStart(

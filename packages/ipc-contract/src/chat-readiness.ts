@@ -1,6 +1,6 @@
 /**
- * 可对话路线真源：向导末屏与提示共用。发送闸看本轮选中路线，不读全局 ready。
- * 引擎就绪 ≠ 可以开始；本机模型必须 ping 通过（verified:true）才算 ready。
+ * 可对话路线真源：向导末屏、默认路线与发送闸共用同一套判断。
+ * ready = 新对话默认路线可发；引擎就绪 ≠ 可以开始。
  */
 import { z } from "zod"
 
@@ -68,13 +68,24 @@ export const ChatApiKeyRoute = z
   .strict()
 export type ChatApiKeyRoute = z.infer<typeof ChatApiKeyRoute>
 
+/** 新对话将使用的默认路线。renderer 只消费，不自己猜 hasKey。 */
+export const ChatDefaultRoute = z
+  .object({
+    runtimeId: z.string().min(1),
+    modelId: z.string().min(1).optional(),
+    profileId: z.string().min(1).optional()
+  })
+  .strict()
+export type ChatDefaultRoute = z.infer<typeof ChatDefaultRoute>
+
 export const ChatReadiness = z
   .object({
     ready: z.boolean(),
     engineCount: z.number().int().nonnegative(),
     engines: z.array(ChatEngineRoute),
     localModels: z.array(ChatLocalModelRoute),
-    apiKeys: z.array(ChatApiKeyRoute)
+    apiKeys: z.array(ChatApiKeyRoute),
+    defaultRoute: ChatDefaultRoute.optional()
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>
@@ -112,16 +123,100 @@ export function countAvailableEngines(tools: readonly AvailableEngineTool[]): nu
 }
 
 export function isVerifiedLocalModel(route: ChatLocalModelRoute): boolean {
-  return route.verified !== false
+  return route.verified === true
+}
+
+/** 发送闸与 ready 同一套：只拦确定不可用的 enjoy-local。 */
+export function chatRouteGateCode(input: {
+  skip?: boolean
+  runtimeId: string
+  codingRuntime?: "local" | "harness"
+  hasEnjoySecret: boolean | "unknown"
+  verifiedLocal: boolean | "unknown"
+}): typeof NO_CHAT_ROUTE | null {
+  if (input.skip) return null
+  if (input.codingRuntime === "harness") return null
+  if (input.runtimeId !== "enjoy-local") return null
+  if (input.hasEnjoySecret === true || input.hasEnjoySecret === "unknown") return null
+  if (input.verifiedLocal === "unknown" || input.verifiedLocal === true) return null
+  return NO_CHAT_ROUTE
+}
+
+export function chatRouteAllowsSend(input: Parameters<typeof chatRouteGateCode>[0]): boolean {
+  return chatRouteGateCode(input) === null
+}
+
+export type ResolveDefaultChatRouteInput = {
+  /** 用户亲手选过默认（设为主引擎 / setDefaultModel / setPreferences.runtimeId）。 */
+  explicit?: boolean
+  preferredRuntimeId?: string
+  modelId?: string
+  engines: readonly ChatEngineRoute[]
+  localModels: readonly ChatLocalModelRoute[]
+  apiKeys: readonly ChatApiKeyRoute[]
+}
+
+function chatDefaultRouteOf(
+  runtimeId: string,
+  modelId?: string,
+  profileId?: string
+): ChatDefaultRoute {
+  return {
+    runtimeId,
+    ...(modelId ? { modelId } : {}),
+    ...(profileId ? { profileId } : {})
+  }
+}
+
+/** 新对话默认路线。未显式选择时，第一次连上的可用路线优先于出厂 enjoy-local。 */
+export function resolveDefaultChatRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute {
+  const preferred = input.preferredRuntimeId?.trim() || "enjoy-local"
+  const modelId = input.modelId?.trim() || undefined
+  const keyProfile = preferred === "enjoy-local" ? input.apiKeys[0]?.providerId : undefined
+  if (input.explicit) return chatDefaultRouteOf(preferred, modelId, keyProfile)
+  const keep = chatDefaultRouteOf(preferred, modelId, keyProfile)
+  if (defaultRouteUsable(keep, input)) return keep
+  return firstUsableDefaultRoute(input) ?? chatDefaultRouteOf("enjoy-local", modelId)
+}
+
+function defaultRouteUsable(
+  route: ChatDefaultRoute,
+  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels">
+): boolean {
+  return chatRouteAllowsSend({
+    runtimeId: route.runtimeId,
+    hasEnjoySecret: input.apiKeys.length > 0,
+    verifiedLocal: input.localModels.some(isVerifiedLocalModel)
+  })
+}
+
+function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute | null {
+  const modelId = input.modelId?.trim() || undefined
+  if (input.apiKeys[0]) {
+    return {
+      runtimeId: "enjoy-local",
+      ...(modelId ? { modelId } : {}),
+      profileId: input.apiKeys[0].providerId
+    }
+  }
+  if (input.localModels.some(isVerifiedLocalModel)) {
+    return { runtimeId: "enjoy-local", ...(modelId ? { modelId } : {}) }
+  }
+  const engine = input.engines[0]
+  if (engine) return { runtimeId: engine.runtimeId }
+  return null
 }
 
 export function chatReadyFromRoutes(input: {
   engines: readonly ChatEngineRoute[]
   localModels: readonly ChatLocalModelRoute[]
   apiKeys: readonly ChatApiKeyRoute[]
+  preferredRuntimeId?: string
+  explicit?: boolean
+  modelId?: string
 }): boolean {
-  const locals = input.localModels.filter(isVerifiedLocalModel)
-  return input.engines.length + locals.length + input.apiKeys.length > 0
+  const route = resolveDefaultChatRoute(input)
+  return defaultRouteUsable(route, input)
 }
 
 export function buildChatReadiness(input: {
@@ -129,16 +224,28 @@ export function buildChatReadiness(input: {
   localModels: readonly ChatLocalModelRoute[]
   apiKeys: readonly ChatApiKeyRoute[]
   engineCount: number
+  preferredRuntimeId?: string
+  explicit?: boolean
+  modelId?: string
 }): ChatReadiness {
   const engines = [...input.engines]
   const localModels = [...input.localModels]
   const apiKeys = [...input.apiKeys]
-  return ChatReadiness.parse({
-    ready: chatReadyFromRoutes({ engines, localModels, apiKeys }),
-    engineCount: input.engineCount,
+  const defaultRoute = resolveDefaultChatRoute({
+    explicit: input.explicit,
+    preferredRuntimeId: input.preferredRuntimeId,
+    modelId: input.modelId,
     engines,
     localModels,
     apiKeys
+  })
+  return ChatReadiness.parse({
+    ready: defaultRouteUsable(defaultRoute, { apiKeys, localModels }),
+    engineCount: input.engineCount,
+    engines,
+    localModels,
+    apiKeys,
+    defaultRoute
   })
 }
 

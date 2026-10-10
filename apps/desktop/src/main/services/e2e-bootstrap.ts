@@ -4,6 +4,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { setSetting } from "./database"
+import { seedE2eChatReadyRoute } from "./e2e-chat-ready-seed"
 import { isE2eStub } from "./e2e-stub"
 import { createSession } from "./session-queries"
 import { upsertProfile } from "./secrets"
@@ -23,6 +24,22 @@ export async function bootstrapE2eStub(): Promise<void> {
   const workspace = await openWorkspace(root)
   setSetting("lastWorkspaceId", workspace.id)
   setSetting("defaultModelId", "stub-e2e")
+  await seedE2eProfile()
+  try {
+    await seedE2eChatReadyRoute()
+  } catch (error) {
+    console.warn("e2e chat-ready key route skipped", error)
+  }
+  await seedE2eSessions(workspace.id)
+  if (shouldSeedE2eLedger()) await seedE2eLedgerSession(workspace.id)
+  seedE2eAutomations()
+  const source = await addKnowledgeSource(workspace.id, ".")
+  await indexKnowledgeSource(source.id, true)
+}
+
+/** ENJOY_E2E_SKIP_PROFILE=1：有项目但没有可对话路线，用来拍无密钥发送。 */
+async function seedE2eProfile(): Promise<void> {
+  if (process.env.ENJOY_E2E_SKIP_PROFILE === "1") return
   try {
     await upsertProfile({
       name: "E2E Stub",
@@ -34,11 +51,6 @@ export async function bootstrapE2eStub(): Promise<void> {
   } catch (error) {
     console.warn("e2e stub profile skipped", error)
   }
-  await seedE2eSessions(workspace.id)
-  if (shouldSeedE2eLedger()) await seedE2eLedgerSession(workspace.id)
-  seedE2eAutomations()
-  const source = await addKnowledgeSource(workspace.id, ".")
-  await indexKnowledgeSource(source.id, true)
 }
 
 async function seedE2eSessions(workspaceId: string): Promise<void> {

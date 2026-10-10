@@ -1,7 +1,9 @@
 /**
- * 发送前置：无密钥 / 未登录先拦，不要跳设置或打出 ACP 英文堆栈。
+ * 发送前置：Enjoy Local 只信 main 分路快照，不信 hasKey。
  */
+import { isVerifiedLocalModel } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { rememberedAgentTool } from "../agent-tools-cache.ts"
+import { peekChatReadiness } from "../chat-readiness-cache.ts"
 import { canBindEngine, engineReadiness } from "../../components/ai-chat/agent-picker/engine-readiness.ts"
 import { readinessInputOf } from "../../components/ai-chat/agent-picker/engine-readiness-input.ts"
 import { hasIde } from "../../lib/ide.ts"
@@ -28,7 +30,15 @@ type ComposerGuardStore = {
   setAgentPickerOpen: (open: boolean) => void
 }
 
-/** 发送盘是否亮成可发：与闸门同一套 ready。 */
+/** Enjoy Local：只看 main 快照的 apiKeys / 已验证本机，不看 hasKey。 */
+export function enjoyLocalRouteReady(): boolean {
+  const snap = peekChatReadiness()
+  if (!snap) return false
+  if (snap.apiKeys.length > 0) return true
+  return snap.localModels.some(isVerifiedLocalModel)
+}
+
+/** 发送盘是否亮成可发：Enjoy Local 信快照；CLI 仍看登录 / 检测。 */
 export function composerSendReady(
   store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">
 ): boolean {
@@ -36,7 +46,7 @@ export function composerSendReady(
     const status = store.remoteStatus ?? "disconnected"
     if (status !== "connected") return false
   }
-  if (store.runtimeId === "enjoy-local") return Boolean(store.hasKey && store.modelId)
+  if (store.runtimeId === "enjoy-local") return enjoyLocalRouteReady()
   const tool = rememberedAgentTool(store.runtimeId)
   if (!tool) return false
   const input = readinessInputOf(tool)
@@ -64,7 +74,7 @@ export function guardComposerSend(
     }
   }
   if (store.runtimeId === "enjoy-local") {
-    if (!store.hasKey || !store.modelId) {
+    if (!enjoyLocalRouteReady()) {
       store.setError(NO_CHAT_ROUTE)
       return false
     }

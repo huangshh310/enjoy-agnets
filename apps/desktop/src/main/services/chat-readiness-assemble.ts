@@ -13,11 +13,18 @@ import {
   type PublicKeyProvider
 } from "@enjoy-agents/ipc-contract/chat-readiness"
 
+export type AssembleChatReadinessRoute = {
+  preferredRuntimeId?: string
+  explicit?: boolean
+  modelId?: string
+}
+
 export function assembleChatReadiness(
   tools: readonly AvailableEngineTool[],
   providers: readonly PublicKeyProvider[],
   live: readonly ("ollama" | "lmstudio")[],
-  loggedInIds: ReadonlySet<string> = new Set()
+  loggedInIds: ReadonlySet<string> = new Set(),
+  route: AssembleChatReadinessRoute = {}
 ): ChatReadiness {
   const remoteUnverified = providers
     .filter(
@@ -31,7 +38,10 @@ export function assembleChatReadiness(
     engines: signedInEngineRoutes(tools, loggedInIds),
     localModels: localModelRoutes(live, remoteUnverified),
     apiKeys: apiKeyRoutes(providers),
-    engineCount: countAvailableEngines(tools)
+    engineCount: countAvailableEngines(tools),
+    preferredRuntimeId: route.preferredRuntimeId,
+    explicit: route.explicit,
+    modelId: route.modelId
   })
 }
 

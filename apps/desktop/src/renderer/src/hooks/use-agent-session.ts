@@ -6,6 +6,8 @@ import { queryClient } from "../lib/query-client"
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
 import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
+import { applyDefaultChatRoute } from "./apply-default-chat-route"
+import { peekChatReadiness } from "./chat-readiness-cache"
 import { pickSessionRuntime } from "../lib/agent-runtime"
 import { abortComposerRun } from "./composer-run-control"
 import { composerModelPatch } from "../lib/session-model.ts"
@@ -186,7 +188,10 @@ export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   store.setProvider(snapshot.provider)
   rememberDefaultMode(snapshot.preferences?.defaultMode)
   // 会话 mode 由 Composer / 句首斜杠决定。默认项只在设置页写入，refetch 不得打回 agent。
-  const preferred = snapshot.preferences?.runtimeId ?? "enjoy-local"
+  const readySnap = peekChatReadiness()
+  if (readySnap?.defaultRoute) applyDefaultChatRoute(readySnap)
+  const preferred =
+    readySnap?.defaultRoute?.runtimeId ?? snapshot.preferences?.runtimeId ?? "enjoy-local"
   store.setPreferredRuntimeId(preferred)
   store.setSessionRuntimes(snapshot.sessionRuntimes ?? {})
   store.setSessionModels(snapshot.sessionModels ?? {})
