@@ -58,7 +58,7 @@ export const RunAgentInput = z.object({
   denyAnyDesktop: z.boolean().optional(),
   /** 待审批 Dock / 通知用来源句。补跑必带。 */
   automationSource: AutomationRunSource.optional(),
-  /** regenerate / edit-and-resend：main 清本会话允许表后再种子。 */
+  /** 加紧信号。截断真源是 main 水位对库；漏旗标仍应清表。 */
   clearSessionAllow: z.boolean().optional()
 })
 export type RunAgentInput = z.infer<typeof RunAgentInput>

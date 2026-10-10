@@ -14,6 +14,7 @@ import { formatOptimisticTitle, isDefaultSessionTitle } from "@enjoy-agents/ipc-
 import { deleteMessageParts, insertMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
 import { createId } from "./ids"
+import { advanceSessionAllowWatermark } from "./conversation-session-allow-history.ts"
 
 export type RunTranscript = ThinkBuffer
 
@@ -87,6 +88,7 @@ export function persistMessage(
     )
     db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
     db.exec("COMMIT;")
+    advanceSessionAllowWatermark(sessionId)
     return id
   } catch (err) {
     db.exec("ROLLBACK;")

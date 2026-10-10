@@ -4,10 +4,15 @@
 export { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state.ts"
 export { getDatabase } from "./database.ts"
 export { archiveSession } from "./session-lifecycle.ts"
-export { truncateSessionFrom } from "./session-truncate.ts"
+export { persistMessage } from "./persist-session.ts"
+export {
+  maybeTruncateSessionToIncomingHistory,
+  truncateSessionFrom
+} from "./session-truncate.ts"
 export {
   applyAgentRunSessionAllowReset,
   clearAllConversationSessionAllows,
   grantConversationToolAllow,
   snapshotConversationSessionAllow
 } from "./conversation-session-allow.ts"
+export { peekSessionAllowWatermark } from "./conversation-session-allow-history.ts"
