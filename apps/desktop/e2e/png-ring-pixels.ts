@@ -11,6 +11,32 @@ export function countGreyRingPixels(png: Buffer): number {
   return countRingPixels(png, "grey")
 }
 
+/** 平坦底板的亮度标准差应接近 0；同心环会把 range / stddev 拉高。 */
+export function luminanceStats(png: Buffer): { mean: number; stddev: number; range: number; n: number } {
+  const rows = decodePngRows(png)
+  if (!rows) return { mean: 0, stddev: -1, range: -1, n: 0 }
+  let n = 0
+  let sum = 0
+  let sumSq = 0
+  let min = 255
+  let max = 0
+  for (const row of rows.pixels) {
+    for (let x = 0; x < rows.width; x++) {
+      const i = x * rows.bpp
+      const lum = 0.2126 * (row[i] ?? 0) + 0.7152 * (row[i + 1] ?? 0) + 0.0722 * (row[i + 2] ?? 0)
+      n += 1
+      sum += lum
+      sumSq += lum * lum
+      if (lum < min) min = lum
+      if (lum > max) max = lum
+    }
+  }
+  if (n === 0) return { mean: 0, stddev: -1, range: -1, n: 0 }
+  const mean = sum / n
+  const variance = Math.max(0, sumSq / n - mean * mean)
+  return { mean, stddev: Math.sqrt(variance), range: max - min, n }
+}
+
 export function countRingPixels(png: Buffer, kind: "yellow" | "grey"): number {
   const rows = decodePngRows(png)
   if (!rows) return -1

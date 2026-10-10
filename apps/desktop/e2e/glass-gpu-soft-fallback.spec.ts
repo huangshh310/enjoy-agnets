@@ -1,11 +1,12 @@
 /**
  * jojo / luna：Xvfb 无 --disable-gpu（SwiftShader 软件 GL）。
- * 审查栏空态不得画黄环，不看 data-gpu-compositing。
+ * 审查栏、主栏、侧栏空态都不得画环。orb / mesh / 追光在软件 GL 下 display:none。
  */
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
+import { assertSoftwareLayersHidden, sampleColumnPatches } from "./glass-gpu-soft-sample"
 import { countGreyRingPixels, countHotYellowPixels } from "./png-ring-pixels"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
@@ -51,18 +52,22 @@ test("SwiftShader 非 git 审查空态：浅/暗下右无环（不传 --disable-
     await expect(review).toHaveAttribute("data-pane-shell-deco", "off")
     await expect(review).not.toHaveAttribute("data-frost", "shell")
     await assertReviewHasNoPrism(window)
-    const lightDump = await dumpReviewChain(window)
-    writeFileSync(join(shots, "review-elements-from-point-light.json"), JSON.stringify(lightDump, null, 2))
+    const lightLayers = await assertSoftwareLayersHidden(window)
+    writeFileSync(join(shots, "review-elements-from-point-light.json"), JSON.stringify(await dumpReviewChain(window), null, 2))
+    writeFileSync(join(shots, "main-sidebar-elements-from-point.json"), JSON.stringify(lightLayers, null, 2))
     await sampleReviewLowerRight(window, "light")
+    await sampleColumnPatches(window, "light")
     await window.screenshot({ path: join(shots, "p1_gpu_soft_light_review_nongit.png"), fullPage: true })
     await window.evaluate(() => {
       document.documentElement.classList.add("dark")
       document.documentElement.setAttribute("data-skin", "glass")
     })
     await assertReviewHasNoPrism(window)
-    const darkDump = await dumpReviewChain(window)
-    writeFileSync(join(shots, "review-elements-from-point-dark.json"), JSON.stringify(darkDump, null, 2))
+    const darkLayers = await assertSoftwareLayersHidden(window)
+    writeFileSync(join(shots, "review-elements-from-point-dark.json"), JSON.stringify(await dumpReviewChain(window), null, 2))
+    writeFileSync(join(shots, "main-sidebar-elements-from-point-dark.json"), JSON.stringify(darkLayers, null, 2))
     await sampleReviewLowerRight(window, "dark")
+    await sampleColumnPatches(window, "dark")
     await window.screenshot({ path: join(shots, "p1_gpu_soft_dark_review_nongit.png"), fullPage: true })
   } finally {
     const proc = app.process()

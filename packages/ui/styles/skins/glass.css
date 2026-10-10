@@ -144,10 +144,10 @@ html[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"]) >
   z-index: 1;
 }
 
-/* 局部追光：圆心走百分比，禁止 deg×px */
-html[data-skin="glass"] aside.rounded-3xl::before,
-html[data-skin="glass"] main::before,
-html[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::before {
+/* 局部追光：只在确认硬件合成时画。软件 GL 下 radial-gradient 会栅成灰环。 */
+html[data-skin="glass"][data-gpu-compositing="on"] aside.rounded-3xl::before,
+html[data-skin="glass"][data-gpu-compositing="on"] main::before,
+html[data-skin="glass"][data-gpu-compositing="on"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -162,9 +162,9 @@ html[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::
   opacity: 0.45;
 }
 
-html.dark[data-skin="glass"] aside.rounded-3xl::before,
-html.dark[data-skin="glass"] main::before,
-html.dark[data-skin="glass"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::before {
+html.dark[data-skin="glass"][data-gpu-compositing="on"] aside.rounded-3xl::before,
+html.dark[data-skin="glass"][data-gpu-compositing="on"] main::before,
+html.dark[data-skin="glass"][data-gpu-compositing="on"] [data-frost="shell"]:not([data-pane-shell-deco="off"])::before {
   opacity: 0.22;
 }
 

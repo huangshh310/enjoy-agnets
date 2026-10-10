@@ -968,12 +968,48 @@ html[data-gpu-compositing="off"] *::after {
 }
 
 html[data-gpu-compositing="off"] .skin-glass-orbs,
-html:not([data-gpu-compositing="on"]) .skin-glass-orbs {
-  display: none !important;
-}
-
 html[data-gpu-compositing="off"] .skin-glass-orb,
 html[data-gpu-compositing="off"] .skin-glass-mesh-gradient,
+html[data-gpu-compositing="off"] .skin-glass-preview-orb,
+html:not([data-gpu-compositing="on"]) .skin-glass-orbs,
+html:not([data-gpu-compositing="on"]) .skin-glass-orb,
+html:not([data-gpu-compositing="on"]) .skin-glass-mesh-gradient,
+html:not([data-gpu-compositing="on"]) .skin-glass-preview-orb {
+  display: none !important;
+  filter: none !important;
+  background-image: none !important;
+}
+
+html[data-gpu-compositing="off"] aside.rounded-3xl,
+html[data-gpu-compositing="off"] main,
+html:not([data-gpu-compositing="on"]) aside.rounded-3xl,
+html:not([data-gpu-compositing="on"]) main {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+html.dark[data-gpu-compositing="off"] aside.rounded-3xl,
+html.dark[data-gpu-compositing="off"] main,
+html.dark:not([data-gpu-compositing="on"]) aside.rounded-3xl,
+html.dark:not([data-gpu-compositing="on"]) main {
+  background-color: var(--color-neutral-900) !important;
+}
+
+html[data-gpu-compositing="off"] aside.rounded-3xl::before,
+html[data-gpu-compositing="off"] main::before,
+html[data-gpu-compositing="off"] [data-frost]::before,
+html:not([data-gpu-compositing="on"]) aside.rounded-3xl::before,
+html:not([data-gpu-compositing="on"]) main::before,
+html:not([data-gpu-compositing="on"]) [data-frost]::before {
+  content: none !important;
+  display: none !important;
+  filter: none !important;
+  background-image: none !important;
+}
+
 html[data-gpu-compositing="off"] [class*="locale-switch"] {
   filter: none !important;
 }
