@@ -19,7 +19,7 @@ export async function reparkDesktopSecondConfirm(input: {
   window: BrowserWindow
   pending: PendingApproval
   result: Record<string, unknown>
-}): Promise<void> {
+}): Promise<boolean> {
   const { enrichSecondConfirmApprovalArgs, mergeSecondConfirmArgs } = await import(
     "./builtin-tools/computer-use/desktop-second-confirm-park"
   )
@@ -33,7 +33,7 @@ export async function reparkDesktopSecondConfirm(input: {
       result: { code: APPROVAL_ARGS_MISSING },
       error: APPROVAL_ARGS_MISSING_MESSAGE
     })
-    return
+    return false
   }
   const original = asRecord(input.pending.args)
   const parked = await enrichSecondConfirmApprovalArgs(mergeSecondConfirmArgs(original, input.result))
@@ -61,6 +61,7 @@ export async function reparkDesktopSecondConfirm(input: {
     name: next.name,
     args: parked
   })
+  return true
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

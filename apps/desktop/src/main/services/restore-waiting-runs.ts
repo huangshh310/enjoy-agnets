@@ -18,6 +18,8 @@ import { assertApprovalHmac, recordSdkApprovalResponse } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
 import { parseStoredApprovalArgs } from "./restore-approval-args"
 import { APPROVAL_ARGS_MISSING, APPROVAL_ARGS_MISSING_MESSAGE } from "./resolve-approval-args"
+import { approvalResponseMessage } from "./approval-response-message"
+import { resolvedSdkApprovalId } from "@enjoy-agents/db"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -99,6 +101,21 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
               reason: APPROVAL_ARGS_MISSING_MESSAGE,
               resumeCode: APPROVAL_ARGS_MISSING
             })
+            run.messages.push(
+              approvalResponseMessage({
+                approvalId: resolvedSdkApprovalId(rowArgs),
+                approved: false,
+                reason: APPROVAL_ARGS_MISSING_MESSAGE
+              })
+            )
+            emitEvent(window, {
+              type: "tool.result",
+              runId: row.id,
+              toolCallId: item.toolCallId,
+              name: item.name,
+              result: { code: APPROVAL_ARGS_MISSING },
+              error: APPROVAL_ARGS_MISSING_MESSAGE
+            })
           }
           continue
         }
@@ -113,6 +130,13 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         })
       }
       run.pendingApprovals = keep
+      if (keep.length === 0) {
+        run.resumeAfterPump = true
+        if (!run.pumping) {
+          const { pumpStream } = await import("./agent-pump.ts")
+          void pumpStream(row.id)
+        }
+      }
     } catch (error) {
       updateRun(db, row.id, {
         status: "cancelled",
