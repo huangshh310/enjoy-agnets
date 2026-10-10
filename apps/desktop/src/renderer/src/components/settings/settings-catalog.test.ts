@@ -1,5 +1,5 @@
 /**
- * 设置侧栏智能体分组必须露出 skills 入口；点它会 redirect 到 `#/skills`，不能并进「说明」。
+ * 设置侧栏智能体分组必须露出 skills 入口；点它停在设置壳，不能并进「说明」。
  */
 import test from "node:test"
 import assert from "node:assert/strict"

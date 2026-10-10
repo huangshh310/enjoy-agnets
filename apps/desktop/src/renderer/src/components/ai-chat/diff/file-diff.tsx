@@ -71,7 +71,7 @@ export function FileDiff({
       className={cx(
         "overflow-hidden font-mono",
         fill && "flex h-full min-h-0 flex-1 flex-col",
-        compact && !fill && "max-h-72",
+        compact && !fill && "min-h-40 max-h-72",
         !fill && !compact && "min-h-0",
         !embedded && "rounded-xl border border-separator-border/80 bg-background-primary-default shadow-2xs",
         className
@@ -105,7 +105,7 @@ export function FileDiff({
         className={cx(
           "overflow-auto font-mono text-caption-2-regular leading-relaxed relative bg-background-primary-default",
           fill && "min-h-0 flex-1",
-          compact && !fill && "max-h-56",
+          compact && !fill && "min-h-32 max-h-56",
           !fill && !compact && "max-h-[min(32rem,70vh)]"
         )}
       >

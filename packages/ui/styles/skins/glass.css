@@ -216,9 +216,9 @@ html[data-skin="glass"]:not([data-gpu-compositing="on"]) {
 }
 
 html[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
-  --color-background-primary-default: #ffffff;
+  --color-background-primary-default: #fafafa;
   --color-background-primary-hover: var(--color-neutral-100);
-  --color-background-secondary-default: #ffffff;
+  --color-background-secondary-default: #fafafa;
   --color-background-secondary-hover: var(--color-neutral-100);
   --color-background-tertiary-default: var(--color-neutral-100);
   --color-border-button-white: var(--color-neutral-200);
@@ -229,6 +229,11 @@ html[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
 
 html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) {
   --color-background-full: var(--color-neutral-900);
+}
+
+html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) aside.rounded-3xl {
+  --color-background-primary-default: #1c1c1c;
+  --color-background-secondary-default: #1c1c1c;
 }
 
 html[data-skin="glass"][data-gpu-compositing="off"] aside.rounded-3xl::after,

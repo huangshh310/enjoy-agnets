@@ -4,6 +4,8 @@
  */
 import { useMemo, useState } from "react"
 import type { InstalledSkillItem, SkillTargetId } from "@enjoy-agents/ipc-contract"
+import { useSearch } from "@tanstack/react-router"
+import { ModuleReturnBar } from "@renderer/components/app-pages/module-return-bar"
 import { SecondaryPageShell } from "@renderer/components/app-pages/secondary-page-shell"
 import { ImportDialog } from "./components/skills-import-dialog"
 import { CreateSkillDialog } from "./components/create-skill-dialog"
@@ -22,6 +24,7 @@ import { countGitSkillSources } from "./lib/git-skill-sources"
 import { skillVisibleForTarget } from "./lib/skill-visible-for-target"
 
 export function SkillsPage(props?: { embedded?: boolean }) {
+  const search = useSearch({ strict: false }) as { from?: string }
   const page = useSkillsPage()
   const pullState = useSkillSourcePull()
   const [searchQuery, setSearchQuery] = useState("")
@@ -268,6 +271,7 @@ export function SkillsPage(props?: { embedded?: boolean }) {
       contentWidth="fill"
       hideChrome
     >
+      <ModuleReturnBar from={search.from} section="skills" />
       {content}
     </SecondaryPageShell>
   )

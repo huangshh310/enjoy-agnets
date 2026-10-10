@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`approvals.pending` + `sessions.needsReview`：Inbox 拍板/待验收 SoT；`approval.resolved.code`；`secretStorageAvailable` `.catch(true)`）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（`readFile` 必须带 workspaceId；漏传是 renderer 坑）
 
 ## 当前真相
 
@@ -80,6 +80,7 @@
 
 ## 已知坑
 
+- renderer 调 `workspace.readFile` 漏 `workspaceId` 会被 Zod 拒，审批预览曾只传 `{ path }`。不是合约缺口。正确做法：统一走 `readWorkspaceFile`，空 id 在渲染层抛 `MissingWorkspaceIdError`，禁止把 `undefined` 丢给 IPC。
 - Inbox 拍板若信 Attention 槽，已决/归档仍涨徽标，空 `repositories` 还会放行全部。正确做法：`approvals.pending` 只列 `decision IS NULL` 且未归档；renderer 空会话列表 fail-closed。
 - Inbox 待验收若信 renderer `repositories` / git dirty / 裸 `run.end`，非 git 仓写后 Stop 顶栏和横幅已是「待验收」，Inbox 列却空。根因：`persistSessionWorkflow` 曾 `void patchSession().catch()`，Stop 后立刻读库看不到；Inbox 又自己合成。正确做法：main 同步 `UPDATE sessions.workflow_status`；Inbox 只读 `sessions.needsReview`。
 - 重复 `registerIpc` 会叠 handle。`ipc.ts` 用 `ipcRegistered` 守卫，卸载时 `unregisterIpc` 必须成对。`SESSION_CHANNELS`（含 `session.patch` / `session.recap` / `session.rename`）必须进 `CHANNELS`，否则卸载会留下 handler。

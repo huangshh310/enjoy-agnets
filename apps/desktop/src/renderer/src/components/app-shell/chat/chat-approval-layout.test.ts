@@ -32,6 +32,8 @@ test("Dock 不再限高内滚，空截图不占位，改动条在审批时让位
   assert.match(thumb, /if \(!src \|\| !frame\.show\) return null/)
   assert.match(frame, /pendingApproval \? null : <ComposerLiveChanges/)
   assert.match(plan, /useState\(false\)/)
+  assert.match(plan, /data-testid="approval-diff"/)
+  assert.match(plan, /min-h-40/)
 })
 
 test("会话行菜单保持占位并锚到触发钮，文案是加星标", () => {

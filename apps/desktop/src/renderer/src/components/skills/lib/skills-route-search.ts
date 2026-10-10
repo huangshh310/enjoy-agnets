@@ -5,6 +5,7 @@
 export type SkillsRouteSearch = {
   tab?: "curated" | "skills" | "packs"
   install?: string
+  from?: "settings"
 }
 
 function asTab(value: unknown): SkillsRouteSearch["tab"] {
@@ -19,6 +20,7 @@ function asOptionalString(value: unknown): string | undefined {
 export function parseSkillsSearch(search: Record<string, unknown>): SkillsRouteSearch {
   return {
     tab: asTab(search.tab),
-    install: asOptionalString(search.install)
+    install: asOptionalString(search.install),
+    from: search.from === "settings" ? "settings" : undefined
   }
 }

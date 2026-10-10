@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import { parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
 import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
+import { readWorkspaceFile } from "@renderer/lib/read-workspace-file"
 import { SourceFilePreview } from "../source-file-preview"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
@@ -44,11 +45,7 @@ export function ChangesFileDiff({
   })
   const fileContentQuery = useQuery({
     queryKey: ["workspace-file-content", workspaceId, path],
-    queryFn: () =>
-      getIde().workspace.readFile({
-        workspaceId,
-        path
-      }) as Promise<string>,
+    queryFn: () => readWorkspaceFile(workspaceId, path),
     enabled: Boolean(workspaceId && path && !fallbackContent)
   })
   const diffText = query.data?.diff

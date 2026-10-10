@@ -64,7 +64,7 @@ export function ObservabilityErrorChart(props: { metrics: TelemetryMetric[] }) {
             {t("pages.observability.allHealthy")}
           </span>
           <span className="text-caption-2-regular text-text-tertiary">
-            当前时间窗口内所有请求均正常执行
+            {t("pages.observability.allHealthyHint")}
           </span>
         </div>
       ) : (
