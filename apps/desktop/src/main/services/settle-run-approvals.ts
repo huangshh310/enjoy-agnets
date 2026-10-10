@@ -5,7 +5,11 @@
 import type { BrowserWindow } from "electron"
 import { listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
 import { foldToolEvent } from "@enjoy-agents/ipc-contract"
-import { RUN_FAILED_CODE, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RUN_FAILED_CODE,
+  USER_ABORTED_CODE,
+  type ApprovalResolvedCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import { emitEvent, getActiveRun, listActiveRuns } from "./agent-run-state"
 import { getDatabase } from "./database"
 import { recordSdkApprovalResponse } from "./approval-hmac"
@@ -96,7 +100,7 @@ function settleOne(item: PendingSettle, window?: BrowserWindow, cause: SettleApp
   const inMemory = run?.pendingApprovals.some((pending) => pending.approvalId === item.approvalId)
   const inDb = listPendingApprovals(db, item.runId).some((row) => row.id === item.approvalId)
   if (!inMemory && !inDb) return false
-  const code = cause === "failed" ? RUN_FAILED_CODE : USER_ABORTED_CODE
+  const code: ApprovalResolvedCode = cause === "failed" ? RUN_FAILED_CODE : USER_ABORTED_CODE
   const reason = cause === "failed" ? RUN_FAILED_CODE : RUN_STOPPED_REASON
   setApprovalDecision(db, item.approvalId, APPROVAL_CANCELLED)
   recordSdkApprovalResponse(item.approvalId, { approved: false, reason })

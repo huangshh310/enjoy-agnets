@@ -3,6 +3,7 @@
  * 不解档时不得再弹出一张死卡。
  */
 import { foldToolEvent, parseAssistantPayload, serializeAssistantPayload } from "@enjoy-agents/ipc-contract"
+import type { ApprovalResolvedCode } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { getDatabase } from "./database"
 import { persistMessage } from "./persist-session"
 
@@ -11,7 +12,7 @@ export function foldDeniedAssistantTool(input: {
   runId: string
   toolCallId: string
   decision?: "deny" | "cancelled"
-  code?: string
+  code?: ApprovalResolvedCode
 }): boolean {
   const db = getDatabase()
   const rows = db
