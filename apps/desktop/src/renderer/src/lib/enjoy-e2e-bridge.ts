@@ -5,6 +5,7 @@ import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { resumeSetupGuide, replaySetupGuide, useSetupGuideStore } from "@renderer/components/setup-guide/setup-guide-store"
 import { useCreateProjectStore } from "@renderer/components/workspace/create-project-open"
 import { rememberChatReadiness } from "@renderer/hooks/chat-readiness-cache"
+import { bindSessionRuntime } from "@renderer/hooks/persist-runtime"
 import { CHAT_READINESS_QUERY_KEY } from "@renderer/hooks/use-chat-readiness"
 import { queryClient } from "@renderer/lib/query-client"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -15,6 +16,13 @@ export type EnjoyE2eBridge = {
   setError: (message: string | null) => void
   /** 本会话已选引擎但清空模型，模拟 NEED_MODEL；绑定后 defaultRoute 不得回填。 */
   clearSelectedModel: () => void
+  getComposerGate: () => {
+    sessionId: string | null
+    runtimeId: string
+    modelId: string
+    error: string | null
+    bound: boolean
+  }
   replayGuide: () => void
   resumeGuide: () => void
   hideGuide: () => void
@@ -43,10 +51,22 @@ export function installEnjoyE2eBridge(): void {
     clearSelectedModel() {
       const store = useChatStore.getState()
       const sessionId = store.sessionId
-      if (sessionId) {
-        store.setSessionRuntimes({ ...store.sessionRuntimes, [sessionId]: store.runtimeId })
-      }
       store.setModel("", "")
+      if (sessionId) {
+        store.setSessionModels({ ...store.sessionModels, [sessionId]: "" })
+        void bindSessionRuntime(sessionId, store.runtimeId as never)
+      }
+    },
+    getComposerGate() {
+      const store = useChatStore.getState()
+      const sessionId = store.sessionId
+      return {
+        sessionId,
+        runtimeId: store.runtimeId,
+        modelId: store.modelId,
+        error: store.error,
+        bound: Boolean(sessionId && store.sessionRuntimes[sessionId])
+      }
     },
     replayGuide: replaySetupGuide,
     resumeGuide: resumeSetupGuide,

@@ -77,11 +77,21 @@ test("有密钥没选模型时中性提示先选一个模型并留下草稿", as
     await skipGuideIfOpen(window)
     await hideOverlays(window)
     await window.getByTestId("composer-input").waitFor({ timeout: 20_000 })
+    await expect
+      .poll(async () => window.evaluate(() => window.__enjoyE2e?.getComposerGate?.().sessionId ?? null), {
+        timeout: 12_000
+      })
+      .toBeTruthy()
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.fill("先选模型也要留下草稿")
     await window.evaluate(() => {
       window.__enjoyE2e?.clearSelectedModel()
     })
-    const composer = window.locator('[data-testid="composer-input"]')
-    await composer.fill("先选模型也要留下草稿")
+    await expect
+      .poll(async () => window.evaluate(() => window.__enjoyE2e?.getComposerGate?.().modelId ?? "x"), {
+        timeout: 4_000
+      })
+      .toBe("")
     await composer.press("Enter")
     const notice = window.locator('[data-testid="thread-need-model-notice"][data-kind="needs_model"]')
     await notice.waitFor({ timeout: 8_000 })

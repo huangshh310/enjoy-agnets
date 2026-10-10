@@ -52,6 +52,14 @@ function enjoyLocalAllowsSend(): boolean {
   return enjoyLocalGateCode() === null
 }
 
+/** 有密钥（hasEnjoySecret 或 apiKeys）但没选模型，单独走 NEED_MODEL。 */
+function enjoyLocalNeedsModel(modelId: string): boolean {
+  const snap = peekChatReadiness()
+  if (!snap) return false
+  const keyed = snap.hasEnjoySecret === true || snap.apiKeys.length > 0
+  return keyed && !modelId.trim()
+}
+
 /** 发送盘是否亮成可发：Enjoy Local 信共享闸；CLI 仍看登录 / 检测。 */
 export function composerSendReady(
   store: Pick<ComposerGuardStore, "runtimeId" | "hasKey" | "modelId" | "workspaceKind" | "remoteStatus">
