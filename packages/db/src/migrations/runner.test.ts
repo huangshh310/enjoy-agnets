@@ -73,6 +73,10 @@ test("已有 sessions 的旧库补跑后续迁移", () => {
   assert.ok(approvalNames.includes("sdk_approved"))
   assert.ok(approvalNames.includes("request_args"))
   assert.ok(approvalNames.includes("sdk_approval_id"))
+  const indexes = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'approvals_sdk_identity'")
+    .all() as Array<{ name: string }>
+  assert.equal(indexes.length, 1)
 })
 
 test("重复 apply 不再执行", () => {

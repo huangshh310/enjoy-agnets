@@ -16,6 +16,7 @@ import { acpSessionBindMigration } from "./acp-session-bind.ts"
 import { sessionForkHeartbeatMigration } from "./session-fork-heartbeat.ts"
 import { runUsageCostMigration } from "./run-usage-cost.ts"
 import { approvalSdkResponseMigration } from "./approval-sdk-response.ts"
+import { repairClaimedV14, tableExists } from "./column-guard.ts"
 import type { Migration } from "./types.ts"
 
 // 顺序即应用顺序；版本号在各自 migration 的 version 字段里（记入 schema_migrations），文件名不带数字。
@@ -35,13 +36,6 @@ export const MIGRATIONS: Migration[] = [
   runUsageCostMigration,
   approvalSdkResponseMigration
 ]
-
-function tableExists(sqlite: DatabaseSync, name: string): boolean {
-  const row = sqlite
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
-    .get(name) as { name?: string } | undefined
-  return Boolean(row?.name)
-}
 
 function ensureMigrationTable(sqlite: DatabaseSync): void {
   sqlite.exec(`
@@ -82,7 +76,7 @@ export function applyMigrations(sqlite: DatabaseSync, migrations = MIGRATIONS): 
     if (done.has(migration.version)) continue
     sqlite.exec("BEGIN")
     try {
-      sqlite.exec(migration.sql)
+      runMigration(sqlite, migration)
       sqlite
         .prepare(
           "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)"
@@ -95,5 +89,14 @@ export function applyMigrations(sqlite: DatabaseSync, migrations = MIGRATIONS): 
       throw error
     }
   }
+  repairClaimedV14(sqlite)
   return applied
+}
+
+function runMigration(sqlite: DatabaseSync, migration: Migration): void {
+  if (migration.apply) {
+    migration.apply(sqlite)
+    return
+  }
+  if (migration.sql) sqlite.exec(migration.sql)
 }
