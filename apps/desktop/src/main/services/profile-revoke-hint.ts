@@ -1,6 +1,6 @@
 /**
- * 删档案拒绝时的作废链接：只取精选 preset 的 keysURL / 文档首页。
- * 禁止用户 baseURL；custom 一律没有；非 https 丢掉。
+ * 删档案拒绝时的作废链接：只取精选 preset 的 keysURL。
+ * 禁止文档首页 / 用户 baseURL；custom 一律没有；非 https 丢掉。
  */
 export type CuratedRevokePreset = {
   kind: string
@@ -26,11 +26,7 @@ export function profileRevokeHint(
   const region = profile.regionId
     ? preset.regions?.find((row) => row.id === profile.regionId)
     : undefined
-  const revokeUrl =
-    httpsOnly(region?.keysURL) ??
-    httpsOnly(preset.keysURL) ??
-    httpsOnly(region?.docsURL) ??
-    httpsOnly(preset.docsURL)
+  const revokeUrl = httpsOnly(region?.keysURL) ?? httpsOnly(preset.keysURL)
   return {
     ...(revokeUrl ? { revokeUrl } : {}),
     providerLabel: preset.name

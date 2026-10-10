@@ -38,6 +38,8 @@ export function ProviderConfiguredRow({
   const muted = !profile.enabled
   return (
     <article
+      data-testid={`provider-row-${profile.id}`}
+      data-kind={profile.kind}
       className={cx(
         "flex items-center gap-3 px-4 py-2 transition-colors",
         profile.active && profile.enabled ? "bg-background-secondary-default/40" : "hover:bg-background-secondary-hover/30"
@@ -130,7 +132,12 @@ function RowMeta({ profile, hasKeyIssue }: { profile: ProviderPublic; hasKeyIssu
     <span className="inline-flex min-w-0 items-center gap-1.5 text-caption-2-medium text-text-tertiary">
       <span className="font-mono font-medium text-text-secondary">{profile.modelId || t("settings.providers.noModel")}</span>
       <span>·</span>
-      <span className={hasKeyIssue ? "font-medium text-text-error-primary" : "text-text-tertiary"}>{key}</span>
+      <span
+        data-testid={`provider-row-key-${profile.id}`}
+        className={hasKeyIssue ? "font-medium text-text-error-primary" : "text-text-tertiary"}
+      >
+        {key}
+      </span>
     </span>
   )
 }

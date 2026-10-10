@@ -23,8 +23,7 @@ import {
 } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { showAppToast } from "@renderer/lib/app-toast"
-import { deleteBlockedToastModel } from "@renderer/lib/delete-blocked-toast"
-import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
+import type { DeleteKeychainNoticeHint } from "@renderer/lib/delete-keychain-notice"
 
 export type PingStateMap = Record<
   string,
@@ -136,13 +135,18 @@ function useProviderWrites(
       if (!hasIde()) return
       await writeProviderSnapshot(() => getIde().settings.activateProvider({ id }), queryClient, t)
     },
-    remove: async (id: string) => {
-      if (!hasIde()) return
+    remove: async (id: string): Promise<ProviderRemoveResult> => {
+      if (!hasIde()) return { ok: false, kind: "other" }
       try {
         await persistSnapshot(queryClient, unwrapSettingsWrite(await getIde().settings.removeProvider({ id })))
         if (editor?.id === id) closeEditor()
+        return { ok: true }
       } catch (error) {
-        showDeleteBlockedToast(error, t)
+        if (error instanceof SecretWriteUiError && error.code === "KEYCHAIN_UNAVAILABLE") {
+          return { ok: false, kind: "keychain", hint: { revokeUrl: error.revokeUrl, providerLabel: error.providerLabel } }
+        }
+        showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
+        return { ok: false, kind: "other" }
       }
     },
     duplicate: async (profile: ProviderPublic) => {
@@ -179,21 +183,10 @@ function useProviderWrites(
   }
 }
 
-function showDeleteBlockedToast(error: unknown, t: ReturnType<typeof useT>): void {
-  if (!(error instanceof SecretWriteUiError)) {
-    showAppToast(secretWriteErrorMessage(error, t), { tone: "error" })
-    return
-  }
-  const model = deleteBlockedToastModel(t, error.revokeUrl)
-  const revokeUrl = model.revokeUrl
-  showAppToast(model.message, {
-    tone: "error",
-    action:
-      revokeUrl && model.actionLabel
-        ? { label: model.actionLabel, onClick: () => requestOpenExternalQuiet(revokeUrl) }
-        : undefined
-  })
-}
+export type ProviderRemoveResult =
+  | { ok: true }
+  | { ok: false; kind: "keychain"; hint: DeleteKeychainNoticeHint }
+  | { ok: false; kind: "other" }
 
 async function writeProviderSnapshot(
   write: () => Promise<unknown>,

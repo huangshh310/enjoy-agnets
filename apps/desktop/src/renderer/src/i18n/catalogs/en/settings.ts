@@ -15,11 +15,6 @@ export const enSettings = {
       "Could not save: the system keychain is not usable right now. The key will not be stored in plaintext. Unlock the keychain, then save again.",
     failed: "Could not save. Please try again.",
     notSaved: "Not saved",
-    deleteBlockedKeychain:
-      "The keychain is unavailable, so this key cannot be deleted right now. Your other keys are unchanged.",
-    deleteBlockedRevokeHint:
-      "If you are worried this key leaked, revoke it on the provider site first.",
-    deleteBlockedRevokeAction: "Revoke",
     saving: "Saving…"
   },
 
@@ -1066,6 +1061,11 @@ export const enSettings = {
     usedBy: "Used by",
     removeBoundTitle: "Delete {name}?",
     removeBoundDesc: "These assistants will go back to official login: {agents}. Enjoy keys for other profiles stay.",
+    deleteKeychainUnavailable:
+      "Couldn't delete: the system keychain is not usable right now, so this key cannot be removed yet. Your other keys are unchanged. Unlock the keychain, then try again.",
+    deleteRevokeHint: "If you are worried this key leaked, revoke it on the {provider} site first.",
+    deleteRevokeLink: "Revoke",
+    deleteRevokeHintGeneric: "If you are worried this key leaked, revoke it on the provider site first.",
     use: "Use",
     edit: "Edit",
     deleteAria: "Delete {name}",
