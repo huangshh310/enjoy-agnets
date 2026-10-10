@@ -5,6 +5,7 @@ import { useState } from "react"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { growthBadgeClass } from "../constants"
+import { hasGrowthBase } from "../lib/profile-face-copy"
 import type { TokenTrendPoint } from "../types/profile.types"
 
 interface ProfileTokensAreaChartProps {
@@ -54,14 +55,16 @@ export function ProfileTokensAreaChart({
           <span className="text-caption-2-medium font-medium text-text-tertiary">{t("pages.account.charts.tokens")}</span>
           <div className="mt-0.5 flex items-center gap-2">
             <h3 className="text-title-3-semibold text-text-primary">{totalTokensFormatted}</h3>
-            <span
-              className={cx(
-                "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
-                growthBadgeClass(growthRate, "accent")
-              )}
-            >
-              {growthRate}
-            </span>
+            {hasGrowthBase(growthRate) ? (
+              <span
+                className={cx(
+                  "inline-flex items-center rounded-md px-1.5 py-0.2 font-mono text-caption-2-semibold font-semibold",
+                  growthBadgeClass(growthRate, "accent")
+                )}
+              >
+                {growthRate}
+              </span>
+            ) : null}
           </div>
         </div>
         {activePoint ? (

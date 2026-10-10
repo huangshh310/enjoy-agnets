@@ -3,8 +3,10 @@
  */
 import { RiComputerLine, RiShieldCheckLine, RiShieldLine } from "@remixicon/react"
 import { cx } from "@/utils/cx"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
+import { profileOsName, vaultCopyKey, vaultFace } from "../lib/profile-face-copy"
 import type { ExtendedUserProfile } from "../types/profile.types"
 
 interface ProfileSecurityCardProps {
@@ -14,7 +16,9 @@ interface ProfileSecurityCardProps {
 export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
   const t = useT()
   const hasKey = useChatStore((state) => state.hasKey)
-  const protectedVault = hasKey || profile.safeStorageActive
+  const storageOk = useChatReadiness().data?.secretStorageAvailable
+  const face = vaultFace({ hasKey, secretStorageAvailable: storageOk })
+  const protectedVault = face === "keychain"
 
   return (
     <div className="flex select-none flex-col gap-4 rounded-2xl border border-separator-border/80 bg-background-primary-default p-5 shadow-2xs">
@@ -34,7 +38,7 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
               protectedVault ? "bg-accent-500" : "bg-text-tertiary"
             )}
           />
-          {protectedVault ? t("pages.account.security.vaultProtected") : t("pages.account.security.vaultEmpty")}
+          {t(vaultCopyKey(face))}
         </span>
       </div>
 
@@ -65,17 +69,20 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
               <RiComputerLine className="size-4 shrink-0 text-accent-500" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-caption-1-medium text-text-primary">{device.name}</span>
+                  <span className="text-caption-1-medium text-text-primary">
+                    {profileOsName(device.os)
+                      ? t("pages.account.security.thisComputer", { os: profileOsName(device.os) ?? "" })
+                      : t("pages.account.security.thisComputerOnly")}
+                  </span>
                   {device.isCurrent ? (
                     <span className="rounded bg-accent-500/10 px-1.5 font-mono text-caption-2-medium text-accent-500">
                       {t("pages.account.security.currentDevice")}
                     </span>
                   ) : null}
                 </div>
-                <span className="font-mono text-caption-2-medium text-text-tertiary">
-                  {device.os}
-                  {device.ip ? ` · ${device.ip}` : ""}
-                </span>
+                {device.ip ? (
+                  <span className="font-mono text-caption-2-medium text-text-tertiary">{device.ip}</span>
+                ) : null}
               </div>
             </div>
           </div>

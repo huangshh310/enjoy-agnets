@@ -31,7 +31,17 @@ const CEND_JARGON = [
   "Registry",
   "Composer",
   "Local APM",
-  "curated"
+  "curated",
+  "年度贡献",
+  "高负载深度推理",
+  "保持开发节奏",
+  "硬件安全",
+  "密钥已托管",
+  "Enjoy Agents Desktop",
+  "Linux x86_64",
+  "Weekly",
+  "Monthly",
+  "Yearly"
 ]
 
 test("C 端词表不含本轮清扫掉的行话；开发者指标档豁免", () => {
@@ -53,7 +63,11 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   const pages = zh as {
     pages: {
       inbox: Record<string, string>
-      account: { security: { vaultTitle: string }; heatmap: Record<string, string> }
+      account: {
+        security: { vaultTitle: string; vaultProtected: string; thisComputer: string }
+        heatmap: Record<string, string>
+        hero: { contributions: string; yearSpend: string }
+      }
       mcp: { registerServer: string }
     }
     settings: {
@@ -84,9 +98,13 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   assert.equal(pages.settings.extensions.openMcp, "打开 MCP")
   assert.equal(pages.settings.extensions.openSkills, "打开技能")
   assert.equal(pages.pages.account.security.vaultTitle, "本机加密存储")
-  assert.equal(pages.pages.account.heatmap.weekly, "每周")
-  assert.equal(pages.pages.account.heatmap.monthly, "每月")
-  assert.equal(pages.pages.account.heatmap.yearly, "每年")
+  assert.equal(pages.pages.account.security.vaultProtected, "密钥存在系统钥匙串")
+  assert.equal(pages.pages.account.security.thisComputer, "这台电脑 · {os}")
+  assert.equal(pages.pages.account.hero.contributions, "本年花费约")
+  assert.equal(pages.pages.account.hero.yearSpend, "本年花费约 {amount}")
+  assert.equal(pages.pages.account.heatmap.weekly, "周")
+  assert.equal(pages.pages.account.heatmap.monthly, "月")
+  assert.equal(pages.pages.account.heatmap.yearly, "年")
   assert.equal(pages.settings.shortcuts.terminalDesc.includes("终端"), true)
   assert.equal(pages.settings.shortcuts.send, "发送消息 / 运行助手")
   assert.equal(pages.settings.computerUse.guideStart.includes("/computer-use"), false)
@@ -97,7 +115,16 @@ test("luna 清扫钉死 Inbox / 遥测 / 项目 / 助手目录等人话", () => 
   assert.equal(pages.pages.mcp.registerServer, "添加服务")
 })
 
-const wordBoundaryTerms = new Set(["curated", "Composer", "Registry", "Inbox", "PTY"])
+const wordBoundaryTerms = new Set([
+  "curated",
+  "Composer",
+  "Registry",
+  "Inbox",
+  "PTY",
+  "Weekly",
+  "Monthly",
+  "Yearly"
+])
 
 function flattenEntries(node: unknown, prefix = ""): Array<{ key: string; value: string }> {
   if (typeof node === "string") return prefix ? [{ key: prefix, value: node }] : []

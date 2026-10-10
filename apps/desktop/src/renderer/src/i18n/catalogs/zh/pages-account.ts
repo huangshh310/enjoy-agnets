@@ -24,12 +24,15 @@ export const zhAccountPages = {
 
   security: {
     title: "密钥与本机保护",
-    vaultProtected: "密钥已托管",
+    vaultProtected: "密钥存在系统钥匙串",
+    vaultNeutral: "密钥由本机保管",
     vaultEmpty: "未写入密钥",
     vaultTitle: "本机加密存储",
     vaultDesc: "密钥由本机保管，此页只显示是否已保存，不会露出明文。",
     endpointLabel: "当前设备",
-    currentDevice: "当前设备"
+    currentDevice: "当前设备",
+    thisComputer: "这台电脑 · {os}",
+    thisComputerOnly: "这台电脑"
   },
 
   hero: {
@@ -37,11 +40,18 @@ export const zhAccountPages = {
     copied: "已复制",
     edit: "编辑",
     avatarHint: "点击定制头像",
-    contributions: "年度贡献",
+    contributions: "本年花费约",
+    yearSpend: "本年花费约 {amount}",
     lifetimeTokens: "累计用量",
     peakTokens: "峰值用量",
     longestTask: "最长任务",
-    topStreak: "最长连续"
+    topStreak: "最长连续",
+    peakHint: "单轮最高用量",
+    streakHint: "连续有活动的天数",
+    spendHint: "按本机记录估算",
+    tokensHint: "累计对话用量",
+    agentsHint: "助手调度次数",
+    longestHint: "单次任务时长"
   },
 
   heatmap: {
@@ -49,9 +59,9 @@ export const zhAccountPages = {
     count: "{n} 次",
     tooltip: "{date}: {n} 次活动",
     periodHintSuffix: "活动",
-    weekly: "每周",
-    monthly: "每月",
-    yearly: "每年",
+    weekly: "周",
+    monthly: "月",
+    yearly: "年",
     start: "开始",
     today: "今天",
     less: "少",

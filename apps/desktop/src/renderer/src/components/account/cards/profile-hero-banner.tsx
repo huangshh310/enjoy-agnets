@@ -14,7 +14,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { profileOsName, vaultCopyKey, vaultFace } from "../lib/profile-face-copy"
 import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { GlassCover } from "../glass/glass-cover"
 import { ProfileSharePosterDialog } from "./profile-share-poster-dialog"
@@ -40,8 +42,14 @@ export function ProfileHeroBanner({
   const t = useT()
   const [posterOpen, setPosterOpen] = useState(false)
   const hasKey = useChatStore((state) => state.hasKey)
-  const protectedVault = hasKey || profile.safeStorageActive
+  const storageOk = useChatReadiness().data?.secretStorageAvailable
+  const face = vaultFace({ hasKey, secretStorageAvailable: storageOk })
+  const protectedVault = face === "keychain"
   const currentDevice = profile.activeDevices.find((d) => d.isCurrent) ?? profile.activeDevices[0]
+  const osName = profileOsName(currentDevice?.os)
+  const computerLabel = osName
+    ? t("pages.account.security.thisComputer", { os: osName })
+    : t("pages.account.security.thisComputerOnly")
 
   return (
     <>
@@ -135,28 +143,21 @@ export function ProfileHeroBanner({
             </div>
           ) : null}
 
-          {/* 硬件安全存储状态 */}
           <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
             {protectedVault ? (
               <RiShieldCheckLine className="size-3.5 text-state-success-text" />
             ) : (
               <RiShieldLine className="size-3.5 text-text-tertiary" />
             )}
-            <span>硬件安全:</span>
             <span className={cx("font-semibold", protectedVault ? "text-state-success-text dark:text-state-success-text" : "text-text-tertiary")}>
-              {protectedVault ? t("pages.account.security.vaultProtected") : t("pages.account.security.vaultEmpty")}
+              {t(vaultCopyKey(face))}
             </span>
           </div>
 
-          {/* 当前运行节点 */}
-          {currentDevice ? (
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
-              <RiComputerLine className="size-3.5 text-accent-500" />
-              <span>终端:</span>
-              <span className="font-semibold text-text-primary">{currentDevice.name}</span>
-              <span className="text-caption-2-regular text-text-tertiary">({currentDevice.os})</span>
-            </div>
-          ) : null}
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-border-button-default bg-background-secondary-default/50 px-2.5 py-1 text-caption-2-medium font-medium text-text-secondary">
+            <RiComputerLine className="size-3.5 text-accent-500" />
+            <span className="font-semibold text-text-primary">{computerLabel}</span>
+          </div>
         </div>
       </div>
     </div>

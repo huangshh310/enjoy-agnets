@@ -10,6 +10,7 @@ import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { ProfileActivityHeatmap } from "../charts/profile-activity-heatmap"
 import { growthBadgeClass } from "../constants"
 import { GlassCover } from "../glass/glass-cover"
+import { hasGrowthBase } from "../lib/profile-face-copy"
 import { formatContributionUsd } from "../lib/profile-metrics"
 import type {
   ExtendedUserProfile,
@@ -137,14 +138,16 @@ export function ProfileHeroCard({
             <span className="text-title-1-semibold tracking-tight text-text-primary">
               {formatContributionUsd(summary.contributionsCount)}
             </span>
-            <span
-              className={cx(
-                "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-caption-2-medium",
-                growthBadgeClass(summary.contributionsGrowth, "success")
-              )}
-            >
-              {summary.contributionsGrowth}
-            </span>
+            {hasGrowthBase(summary.contributionsGrowth) ? (
+              <span
+                className={cx(
+                  "inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-caption-2-medium",
+                  growthBadgeClass(summary.contributionsGrowth, "success")
+                )}
+              >
+                {summary.contributionsGrowth}
+              </span>
+            ) : null}
           </div>
         </div>
 

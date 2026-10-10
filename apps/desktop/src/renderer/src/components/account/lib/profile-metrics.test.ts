@@ -54,10 +54,10 @@ test("formatDurationMs: 无耗时显示破折号", () => {
   assert.equal(formatDurationMs(46_440_000), "12h 54m")
 })
 
-test("buildSummary: 空 metrics 全部为零或破折号，环比为 0%", () => {
+test("buildSummary: 空 metrics 全部为零或破折号，无上年基数不写环比", () => {
   const summary = buildSummary([], new Date("2026-09-04T12:00:00"))
   assert.equal(summary.contributionsCount, 0)
-  assert.equal(summary.contributionsGrowth, "0%")
+  assert.equal(summary.contributionsGrowth, "")
   assert.equal(summary.lifetimeTokens, "0")
   assert.equal(summary.peakTokens, "0")
   assert.equal(summary.longestTaskDuration, "—")
@@ -86,7 +86,7 @@ test("buildSummary: 只统计真实 token / 次数 / 最长任务", () => {
     now
   )
   assert.equal(summary.contributionsCount, 2)
-  assert.equal(summary.contributionsGrowth, "+100%")
+  assert.equal(summary.contributionsGrowth, "")
   assert.equal(summary.lifetimeTokens, "4k")
   assert.equal(summary.peakTokens, "2k")
   assert.equal(summary.longestTaskDuration, "1m 30s")
@@ -112,8 +112,8 @@ test("computeTopStreak: 连续活跃天数在 0 处断开", () => {
 test("formatContributionUsd / growthLabel / tokenGrowthLabel: 对齐 BoardUI 价格与环比胶囊", () => {
   assert.equal(formatContributionUsd(7462), "$7,462")
   assert.equal(formatContributionUsd(51), "$51")
-  assert.equal(growthLabel(0, 0), "0%")
-  assert.equal(growthLabel(51, 0), "+100%")
+  assert.equal(growthLabel(0, 0), "")
+  assert.equal(growthLabel(51, 0), "")
   assert.equal(growthLabel(10, 8), "+25.0%")
   assert.equal(growthLabel(8, 10), "-20.0%")
 
@@ -132,12 +132,12 @@ test("formatContributionUsd / growthLabel / tokenGrowthLabel: 对齐 BoardUI 价
   const day4 = points.find((point) => point.id.endsWith("-04"))
   assert.equal(day4?.count, 1)
   assert.equal(day4?.isToday, true)
-  assert.equal(tokenGrowthLabel([], month), "0%")
+  assert.equal(tokenGrowthLabel([], month), "")
   assert.equal(
     tokenGrowthLabel(
       [metric({ id: "a", createdAt: new Date(2026, 8, 4, 10).getTime(), inputTokens: 100 })],
       month
     ),
-    "+100%"
+    ""
   )
 })

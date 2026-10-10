@@ -123,9 +123,9 @@ function yearBounds(now: Date, yearOffset: number): { start: number; end: number
   }
 }
 
-/** 环比胶囊文案。双 0 为 0%；基数为 0 且当期 > 0 为 +100%。 */
+/** 环比胶囊。没有上年/上月基数时不编 +100%。 */
 export function growthLabel(current: number, previous: number): string {
-  if (previous <= 0) return current <= 0 ? "0%" : "+100%"
+  if (previous <= 0) return ""
   const percent = ((current - previous) / previous) * 100
   const sign = percent >= 0 ? "+" : ""
   return `${sign}${percent.toFixed(1)}%`
