@@ -208,7 +208,8 @@ test("adopt 提示用引擎显示名，不是 id", () => {
     localModels: [],
     apiKeys: [{ kind: "api_key", providerId: "e2e", presetId: "openai" }],
     engineCount: 1,
-    modelId: "gpt-4o"
+    modelId: "gpt-4o",
+    activeKeyProfileId: "e2e"
   })
   assert.match(adoptedRouteLabel(keyed), /OpenAI/)
   assert.doesNotMatch(adoptedRouteLabel(keyed), /^openai$/)

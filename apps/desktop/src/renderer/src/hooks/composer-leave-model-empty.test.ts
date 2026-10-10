@@ -56,7 +56,8 @@ test("设置快照有密钥没模型时不拿目录第一项顶上", () => {
       localModels: [],
       apiKeys: [{ kind: "api_key", providerId: "e2e", presetId: "openai" }],
       engineCount: 1,
-      hasEnjoySecret: true
+      hasEnjoySecret: true,
+      activeKeyProfileId: "e2e"
     }),
     models: [{ id: "stub-e2e", label: "E2E Stub" }],
     setModel: (id) => {
