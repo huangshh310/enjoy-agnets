@@ -40,9 +40,11 @@ test("source.added 折进当前助手消息", () => {
     title: "readme",
     path: "README.md",
     startLine: 3,
+    endLine: 5,
     snippet: "local first"
   })
   assert.equal(patch?.messages[0]?.sources?.[0]?.path, "README.md")
+  assert.equal(patch?.messages[0]?.sources?.[0]?.endLine, 5)
   assert.equal(patch?.thinkingLabel, "Sources")
 })
 

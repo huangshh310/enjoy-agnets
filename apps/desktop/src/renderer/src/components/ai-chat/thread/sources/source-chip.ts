@@ -1,6 +1,7 @@
 /**
  * 本轮来源芯片：file / doc / skill / mcp 人话标签。密度锁 3–4 +N。
  */
+import { citedLineRange, formatCitedLines } from "./source-cite-range.ts"
 import { displayBaseName, shortenSourcePath } from "./source-path.ts"
 
 export type SourceKind = "file" | "doc" | "skill" | "mcp" | "knowledge"
@@ -11,7 +12,9 @@ export type TurnSourceChip = {
   label: string
   path?: string
   startLine?: number
+  endLine?: number
   title?: string
+  snippet?: string
   /** Enjoy SoT 注入的本轮源，不是家目录 / dsh plugin add。 */
   fromEnjoy?: boolean
 }
@@ -47,7 +50,7 @@ export function parseMcpServerId(toolName: string): string | null {
 }
 
 export function formatSourceChipLabel(
-  chip: Pick<TurnSourceChip, "kind" | "path" | "startLine" | "title">,
+  chip: Pick<TurnSourceChip, "kind" | "path" | "startLine" | "endLine" | "snippet" | "title">,
   skillPrefix: (name: string) => string
 ): string {
   if (chip.kind === "mcp") return chip.title?.trim() || displayBaseName(chip.path) || "mcp"
@@ -60,7 +63,8 @@ export function formatSourceChipLabel(
   }
   const file = chip.path || chip.title || ""
   const short = shortenSourcePath(file)
-  return chip.startLine != null ? `${short} · L${chip.startLine}` : short
+  const range = citedLineRange(chip)
+  return range ? `${short} · ${formatCitedLines(range)}` : short
 }
 
 export function splitVisibleSourceChips<T>(chips: readonly T[], visible = SOURCE_CHIP_VISIBLE): {

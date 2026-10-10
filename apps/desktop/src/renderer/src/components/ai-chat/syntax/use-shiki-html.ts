@@ -8,6 +8,7 @@ import type { SyntaxLanguage } from "./language"
 const lineNumbers: ShikiTransformer = {
   name: "line-numbers",
   line(node, line) {
+    node.properties = { ...node.properties, "data-source-line": String(line) }
     node.children.unshift({
       type: "element",
       tagName: "span",

@@ -11,6 +11,10 @@ import { forceSecretWriteForE2e, type SecretWriteErrorCode } from "@renderer/lib
 import { queryClient } from "@renderer/lib/query-client"
 import { useCrashProbeStore } from "@renderer/components/layout/crash-fallback/crash-probe"
 import { useChatStore } from "@renderer/stores/chat-store"
+import { useSourceFileReveal } from "@renderer/components/ai-chat/thread/sources/source-file-reveal"
+import type { TurnSourceChip } from "@renderer/components/ai-chat/thread/sources/source-chip"
+import { useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
+import { useRightPaneStore } from "@renderer/stores/right-pane-store"
 
 export type EnjoyE2eBridge = {
   setChatReadiness: (snap: ChatReadiness) => void
@@ -32,6 +36,15 @@ export type EnjoyE2eBridge = {
   forceSecretWrite: (code: SecretWriteErrorCode | null) => void
   /** 故意触发根错误边界，用来拍「这里出了点问题。」回退面。 */
   crashRenderer: () => void
+  getSelectedFile: () => {
+    path: string | null
+    line: number | null
+    view: "diff" | "preview" | null
+    paneKind: string | null
+    rightPanelCollapsed: boolean
+  }
+  injectSheetChip: (chip: TurnSourceChip) => void
+  injectThisTurnWrite: (path: string) => void
 }
 
 declare global {
@@ -78,6 +91,48 @@ export function installEnjoyE2eBridge(): void {
     hideGuide: () => useSetupGuideStore.getState().hide(),
     hideCreateProject: () => useCreateProjectStore.getState().hide(),
     forceSecretWrite: forceSecretWriteForE2e,
-    crashRenderer: () => useCrashProbeStore.getState().arm()
+    crashRenderer: () => useCrashProbeStore.getState().arm(),
+    getSelectedFile() {
+      const chat = useChatStore.getState()
+      const reveal = useSourceFileReveal.getState().reveal
+      const pane = useRightPaneStore.getState()
+      const tab = pane.tabs.find((item) => item.id === pane.activeId)
+      return {
+        path: chat.selectedFilePath,
+        line: reveal?.line ?? null,
+        view: reveal?.view ?? null,
+        paneKind: tab?.kind ?? null,
+        rightPanelCollapsed: chat.rightPanelCollapsed
+      }
+    },
+    injectSheetChip(chip) {
+      const sheet = useSourcesSheetStore.getState()
+      sheet.openSheet({
+        chips: [...sheet.chips, chip],
+        activeId: sheet.activeId,
+        ledgerEntry: sheet.ledgerEntry
+      })
+    },
+    injectThisTurnWrite(path) {
+      const store = useChatStore.getState()
+      const messages = store.messages
+      const last = messages.at(-1)
+      if (!last || last.role !== "assistant") return
+      store.setMessages([
+        ...messages.slice(0, -1),
+        {
+          ...last,
+          tools: [
+            ...(last.tools ?? []),
+            {
+              id: `e2e-write-${path}`,
+              name: "write_file",
+              state: "output-available",
+              args: { path }
+            }
+          ]
+        }
+      ])
+    }
   }
 }

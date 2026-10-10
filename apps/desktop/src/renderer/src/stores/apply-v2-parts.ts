@@ -19,6 +19,7 @@ export function applyV2Part(
         title: event.title,
         path: event.path,
         startLine: event.startLine,
+        endLine: event.endLine,
         snippet: event.snippet
       }
     ]

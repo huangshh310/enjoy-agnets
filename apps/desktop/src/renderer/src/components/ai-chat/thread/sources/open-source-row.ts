@@ -1,11 +1,44 @@
 /**
- * 点 sheet 文件行：有 path 才聚焦审查。技能 / MCP 不编造跳转。
+ * 点 sheet 行：只读 / 知识库打开文件栏查看文件；本轮写过且 git 才走审查差异。找不到则展开片段。
  */
+import { getIde } from "@renderer/lib/ide"
 import { openChangedFile } from "@renderer/hooks/use-agent-session"
-import { canFocusSourceRow } from "./source-detail.ts"
+import { useChatStore } from "@renderer/stores/chat-store"
+import { pathsFromLastTurn } from "../../right-pane/views/review/last-turn-paths.ts"
+import { citedLineRange } from "./source-cite-range.ts"
+import { planSourceRowClick, resolveSourceOpenView } from "./source-row-action.ts"
+import { useSourceFileReveal } from "./source-file-reveal.ts"
 import type { TurnSourceChip } from "./source-chip.ts"
 
-export function openSourceRow(chip: TurnSourceChip): void {
-  if (!canFocusSourceRow(chip) || !chip.path) return
-  void openChangedFile(chip.path)
+export type OpenSourceRowResult = "opened" | "expand" | "none"
+
+export async function openSourceRow(chip: TurnSourceChip): Promise<OpenSourceRowResult> {
+  const exists = await workspaceFileExists(chip.path)
+  const thisTurn = pathsFromLastTurn(useChatStore.getState().messages)
+  const plan = planSourceRowClick(chip, exists, thisTurn)
+  if (plan.action === "open") {
+    const view = resolveSourceOpenView(plan.view, useChatStore.getState().gitRepo)
+    const range = citedLineRange(chip)
+    useSourceFileReveal.getState().setReveal({
+      path: plan.path,
+      line: range?.start ?? plan.startLine ?? 1,
+      endLine: range?.end,
+      view
+    })
+    await openChangedFile(plan.path, { reveal: view === "preview" ? "files" : "review" })
+    return "opened"
+  }
+  return plan.action
+}
+
+async function workspaceFileExists(path?: string): Promise<boolean> {
+  const workspaceId = useChatStore.getState().workspaceId
+  const rel = path?.trim()
+  if (!workspaceId || !rel) return false
+  try {
+    const res = (await getIde().workspace.readFile({ workspaceId, path: rel })) as string
+    return typeof res === "string"
+  } catch {
+    return false
+  }
 }

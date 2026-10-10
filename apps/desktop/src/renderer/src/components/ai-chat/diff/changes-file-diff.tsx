@@ -4,12 +4,13 @@
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { parseUnifiedDiff } from "@enjoy-agents/agent-core/diff"
-import { RiCodeSSlashLine } from "@remixicon/react"
 import type { FileDiffResult } from "@enjoy-agents/ipc-contract"
 import { getIde } from "@renderer/lib/ide"
-import { AiChatCodePane } from "../ai-chat-code-pane"
+import { SourceFilePreview } from "../source-file-preview"
 import { FileDiff } from "./file-diff"
 import { useT } from "@renderer/i18n"
+import { sameReviewPath } from "../right-pane/views/review/same-review-path"
+import { useSourceFileReveal } from "../thread/sources/source-file-reveal"
 import type { DiffPalette } from "./diff-palette"
 import type { ReviewOptions } from "../right-pane/views/review/types/review.types"
 import { commentDiffLine } from "./comment-diff-line"
@@ -29,6 +30,8 @@ export function ChangesFileDiff({
 }) {
   const t = useT()
   const hideWhitespace = options?.hideWhitespace ?? false
+  const reveal = useSourceFileReveal((state) => state.reveal)
+  const forcePreview = reveal?.view === "preview" && sameReviewPath(reveal.path, path)
   const query = useQuery({
     queryKey: ["workspace-diff", workspaceId, path, hideWhitespace],
     queryFn: () =>
@@ -36,7 +39,8 @@ export function ChangesFileDiff({
         workspaceId,
         path,
         ignoreWhitespace: hideWhitespace
-      }) as Promise<FileDiffResult>
+      }) as Promise<FileDiffResult>,
+    enabled: !forcePreview
   })
   const fileContentQuery = useQuery({
     queryKey: ["workspace-file-content", workspaceId, path],
@@ -52,7 +56,7 @@ export function ChangesFileDiff({
     if (!diffText?.trim()) return null
     return parseUnifiedDiff(diffText, path)
   }, [diffText, path])
-  if (query.isPending) {
+  if (!forcePreview && query.isPending) {
     return (
       <p className="flex flex-1 items-center justify-center text-caption-1-medium text-text-tertiary">
         {t("chat.loadingDiff")}
@@ -60,7 +64,7 @@ export function ChangesFileDiff({
     )
   }
 
-  if (model && model.hunks.length > 0) {
+  if (!forcePreview && model && model.hunks.length > 0) {
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col">
         <FileDiff
@@ -78,22 +82,5 @@ export function ChangesFileDiff({
   }
 
   const effectiveContent = fallbackContent || fileContentQuery.data || ""
-  return (
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-background-primary-default">
-      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-separator-border/70 bg-background-secondary-default/50 px-3.5 text-caption-1-regular select-none">
-        <div className="flex items-center gap-2 min-w-0">
-          <RiCodeSSlashLine className="size-4 shrink-0 text-text-tertiary" />
-          <span className="min-w-0 truncate font-mono font-semibold text-text-primary">
-            {path}
-          </span>
-        </div>
-        <span className="shrink-0 rounded border border-border-button-default bg-background-primary-default px-1.5 py-0.5 font-mono text-caption-2-medium font-medium text-text-tertiary">
-          Read-only
-        </span>
-      </header>
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <AiChatCodePane path={path} value={effectiveContent} />
-      </div>
-    </div>
-  )
+  return <SourceFilePreview path={path} content={effectiveContent} />
 }

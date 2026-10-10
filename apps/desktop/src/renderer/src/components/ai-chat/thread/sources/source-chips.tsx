@@ -9,6 +9,7 @@ import type { ThreadMessage } from "@renderer/stores/chat-store"
 import { openSourcesSheet, useSourcesSheetStore } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import { cx } from "@/utils/cx"
 import { collectTurnSources } from "./collect-turn-sources"
+import { openSourceChipOnPointer } from "./open-source-chip"
 import { splitVisibleSourceChips, type TurnSourceChip } from "./source-chip"
 
 export function SourceChips({
@@ -52,12 +53,13 @@ export function SourceChips({
           <button
             type="button"
             data-testid="turn-source-chip-more"
+            onPointerDown={(event) => openSourceChipOnPointer(event, () => openSheet(null))}
             onClick={() => openSheet(null)}
             className={cx(
               "cursor-pointer rounded-md px-2 py-0.5 text-caption-2-medium ring-1 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
               open && activeId == null
-                ? "bg-accent-50 text-accent-500 ring-accent-500/30"
-                : "bg-background-tertiary-default text-text-tertiary ring-border-button-default hover:bg-background-secondary-hover"
+                ? "bg-accent-500/10 text-accent-500 ring-accent-500/30"
+                : "bg-background-tertiary-default text-text-secondary ring-border-button-default hover:bg-background-secondary-hover"
             )}
           >
             {t("chat.sourceChipMore", { count: rest })}
@@ -84,16 +86,18 @@ function SourceChipButton({
       type="button"
       data-testid={knowledge ? "turn-source-chip-knowledge" : "turn-source-chip"}
       data-source-kind={chip.kind}
+      data-source-path={chip.path ?? ""}
+      onPointerDown={(event) => openSourceChipOnPointer(event, onOpen)}
       onClick={onOpen}
       className={cx(
         "inline-flex max-w-full cursor-pointer items-center gap-1 truncate rounded-md px-2 py-0.5 text-caption-2-medium ring-1 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         selected
-          ? "bg-accent-50 text-accent-500 ring-accent-500/30"
+          ? "bg-accent-500/10 text-accent-500 ring-accent-500/30"
           : "bg-background-tertiary-default text-text-primary ring-border-button-default hover:bg-background-secondary-hover"
       )}
     >
       {knowledge ? (
-        <span className="inline-flex items-center gap-0.5 text-caption-2-regular text-text-tertiary">
+        <span className="inline-flex items-center gap-0.5 text-caption-2-regular text-text-secondary">
           <RiBookOpenLine className="size-3 shrink-0" aria-hidden />
           {t("chat.sourceKnowledgeLabel")}
         </span>

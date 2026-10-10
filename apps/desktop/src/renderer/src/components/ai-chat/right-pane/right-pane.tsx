@@ -87,7 +87,9 @@ export function RightPane({
           <div
             key={tab.id}
             hidden={tab.id !== activeId}
-            className="flex min-h-0 flex-1 flex-col"
+            className={
+              tab.id === activeId ? "flex min-h-0 flex-1 flex-col" : "hidden min-h-0 flex-1 flex-col"
+            }
           >
             <RightPaneTabBody
               tab={tab}

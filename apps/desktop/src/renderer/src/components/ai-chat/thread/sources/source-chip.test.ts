@@ -19,6 +19,13 @@ test("三例形态：文件行号、文档名、技能短名", () => {
     "src/auth/login.ts · L42"
   )
   assert.equal(
+    formatSourceChipLabel(
+      { kind: "file", path: "readme.md", startLine: 1, endLine: 3, snippet: "a\nb\nc" },
+      (n) => n
+    ),
+    "readme.md · L1–3"
+  )
+  assert.equal(
     formatSourceChipLabel({ kind: "doc", title: "登录流程说明", path: "docs/login.md" }, (n) => n),
     "登录流程说明"
   )

@@ -4,6 +4,9 @@
  * ReviewDiffPane / ReviewNotGitEmpty 的真实订阅方式模拟 useSyncExternalStore。
  */
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { test } from "node:test"
 import { create } from "zustand"
 import { pathsFromLastTurn } from "./last-turn-paths.ts"
@@ -64,6 +67,14 @@ function mountReviewPanel(store: ReturnType<typeof createReviewPanelStore>) {
   }
   throw new Error("Maximum update depth exceeded")
 }
+
+test("非 git 空态文件名可点开查看文件", () => {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "review-not-git-empty.tsx"), "utf8")
+  assert.ok(src.includes("review-not-git-file"))
+  assert.ok(src.includes('reveal: "files"'))
+  assert.ok(src.includes("openChangedFile"))
+  assert.ok(src.includes('view: "preview"'))
+})
 
 test("非 git 审查栏挂载：空态列出 e2e-stub.txt，同引用不炸", () => {
   const store = createReviewPanelStore()

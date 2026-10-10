@@ -1,6 +1,6 @@
 # spec/knowledge
 
-> 用户显式选择的本地 RAG。最后更新：2026-10-10（聊天来源芯片 knowledge 书标）
+> 用户显式选择的本地 RAG。最后更新：2026-10-10（命中行映射；抽屉遮罩避开标题栏）
 
 ## 当前真相
 
@@ -13,7 +13,7 @@
 2. **记忆层 Bento (Memory Layer Bento)**：非对称 2:1:1。脉冲 0 块主文案「还不能问」；透镜开关决定本次检索范围，星标写入工作区 `localStorage` 默认范围；健康卡折叠不可用源，缺失源禁用 Index Now。
 3. **索引管理面板**：默认收起，在舞台与 Bento **下方页内**展开（`rounded-3xl shadow-card`），不是遮罩 overlay。面板 `min-h-[28rem]` / `max-h-[min(40rem,75vh)]`，工具栏固定，文件空态与列表吃剩余高度并内部滚动。来源 Rebuild 在 Indexing 卡住时仍可点。预览 / View Files 先写 `selectedPath`。
 4. 区域组件：`components/retrieval/`、`components/bento/`、`components/drawer/`、`components/table/`、`knowledge-add-modal.tsx`、`knowledge-file-preview-modal.tsx`。
-5. 聊天 `SourceList` 点引用导航 `#/knowledge`（`path` / `q` / `snippet` / `startLine`），命中卡 `data-testid=knowledge-cited-hit`。助手气泡底脚知识库 cite 是独立 `knowledge` 芯片（书标 +「知识库」），点开「本轮来源」选中该行，不跳审查。图标表在 `thread/sources/source-badge.ts`，缺 kind 回落问号，禁止 undefined 白屏。
+5. 聊天 `SourceList` 点引用导航 `#/knowledge`（`path` / `q` / `snippet` / `startLine`），命中卡 `data-testid=knowledge-cited-hit`。助手气泡底脚知识库 cite 是独立 `knowledge` 芯片（书标 +「知识库」），点开「本轮来源」选中该行。工作区里还在的文件点行打开右侧**文件栏**只读「查看文件」（`AiChatCodePane`，无 `+` / `@@`），滚到**命中行**并只高亮该行（`mapHitLineRange` / `pinHitToQuery`：query 对上的行，不是整个 chunk）。出处、滚动目标、高亮必须同一组行号；跨行才标 `L1–3`。末尾空行不着。**禁止**打开审查栏（有 git 也不走 DIFF，非 git 更不得停在「这个文件夹没有用 Git 管理」）。找不到或不在工作区则就地展开片段，抽屉保持打开。本轮写过的 `file` 芯片且工作区是 git 才走审查差异。图标表在 `thread/sources/source-badge.ts`，缺 kind 回落问号，禁止 undefined 白屏。
 
 ## 不变量
 
@@ -28,7 +28,7 @@
 - 路径 jail：`packages/db/src/path-safe.ts`（`resolveKnowledgePath`）
 - 服务：`apps/desktop/src/main/services/knowledge-service.ts`（索引）；检索 `knowledge-search.ts`
 - UI：`apps/desktop/src/renderer/src/components/knowledge/`
-- 聊天来源芯片 / 本轮来源行：`apps/desktop/src/renderer/src/components/ai-chat/thread/sources/`（`source-badge.ts` 图标表）
+- 聊天来源芯片 / 本轮来源行：`apps/desktop/src/renderer/src/components/ai-chat/thread/sources/`（`source-badge.ts` 图标表；点击计划 `source-row-action.ts`；打开/展开 `open-source-row.ts`；滚到行 `source-file-reveal.ts`）
 
 ## 已知坑
 
@@ -41,7 +41,12 @@
 - `knowledge.documents` 失败时 UI 必须显示错误，不能把 `data ?? []` 画成「还没有文件」。View Files 若只切 tab 不设 `selectedPath`，看起来像点了没打开该目录。
 - 编辑来源弹窗不要用「路径没变」禁用保存。同一路径点 Rebuild 走 `knowledge.index rebuild`；改路径才删旧建新。卡住 Indexing 时也要能点。
 - 相对路径相对**当前打开的工作区根**，不是仓库自己的 `design/`。工作区是 `Desktop/img` 时，`design` 会变成 `Desktop/img/design`，不存在就 ENOENT。索引失败要把 `status=error` 和可读 `error` 写回来源，UI 必须显示；预设卡若磁盘上没有该目录，禁用 Index Now。
-- 添加来源弹窗的「整个项目」芯片不能藏在 `workspaceDirs.length > 0` 后面：只有 `readme.md`、没有子目录的工作区否则没法点根。`ENJOY_E2E_STUB` 启动时索引 `.`，否则 `citeKnowledge` 没有命中，聊天里看不到 `readme.md`。文档路径在索引面板里，检索首页要搜才会在命中卡出现 `readme.md`。窗口验收：发 `hello knowledge` → `turn-source-chip-knowledge` → 点开 sheet，`data-kind=knowledge` 行 `data-selected=true`（`e2e/knowledge-source-chip.spec.ts`）。
+- 添加来源弹窗的「整个项目」芯片不能藏在 `workspaceDirs.length > 0` 后面：只有 `readme.md`、没有子目录的工作区否则没法点根。`ENJOY_E2E_STUB` 启动时索引 `.`，否则 `citeKnowledge` 没有命中，聊天里看不到 `readme.md`。文档路径在索引面板里，检索首页要搜才会在命中卡出现 `readme.md`。窗口验收：发 `hello knowledge` → 一次点芯片开抽屉 → 点 `readme.md` 行打开文件栏「查看文件」并滚到行（git / 非 git 都一样）；缺失文件就地展开片段且抽屉不关；`data-selected=true` 只能一行（`e2e/knowledge-source-chip.spec.ts` + `e2e/knowledge-source-nongit.spec.ts`）。git 夹具：`git init -b main` 并提交 `readme.md`，才能验本轮写过的 `file` 芯片走审查 DIFF。非 git：不要 `git init`，点知识库行不得出现「这个文件夹没有用 Git 管理」。
+- `citeKnowledge` 的 `sourceId` 是知识库来源（整个 `.`），不是文件。芯片 id 若写成 `source.sourceId || path`，多文件会撞 id、两行一起亮。正确做法：`sourceChipStableId` = `path:startLine`。
+- 出处写 L1，高亮却盖住 `# e2e workspace` 到空行 3。根因：chunk `startLine` 是块首，snippet / endLine 是整块；query `hello knowledge` 实际命中 L2。正确做法：`mapHitLineRange` 按词袋把 startLine/endLine/snippet 钉到命中行；标签、滚动、高亮共用这组行号。禁止把整段 snippet 当成高亮。
+- 本轮来源知识库行点了没反应、页脚却写「点文件可以在右侧打开」。根因：旧逻辑只让 `file`+path 聚焦审查。正确做法：工作区相对路径且 `workspace.readFile` 成功则打开；找不到 / `..` / 盘符 / URL 就地展开 `snippet`。页脚必须跟真实行为：「点文件可以在右侧打开；找不到的文件会就地展开片段。」
+- 点已提交、本轮没改的 `readme.md` 却出现 `+3 -0` / `@@ -1,0 +1,3 @@`。根因：一律 `openChangedFile` → `workspace.diff` 把整文件当新增。正确做法：`planSourceOpenView` 看 kind + 本轮写盘 path；知识库永远 `preview`；只读走文件栏「查看文件」，禁止把未改行画成绿 `+`。
+- 非 git 工作区点知识库行，抽屉关掉、审查栏只剩「这个文件夹没有用 Git 管理」，没有文件。根因：`openChangedFile` 默认 `revealRightPane("review")`，`ReviewView` 在 `gitRepo === false` 只画空态。正确做法：只读 / 知识库 `reveal: "files"` + `SourceFilePreview`；缺失文件 `expand` 且不关抽屉。非 git 审查空态列出的本轮 path 必须可点，同样打开查看文件。
 - 聊天来源行若只给 file/skill/mcp 画图标，点知识库芯片会 `Element type is invalid`（`SourceRowBody`）。图标 / 词条必须是 `Record<SourceBadgeKind, …>`，并留运行时回落。
 - 分块 / 余弦排序有吞吐单测（约 8000 行 / 500 向量）。Agent / generate 会写 `ttfoMs`；用真实 Key 才能解释成模型 TTFO，stub 只证明字段被写入。
 - Cohere 以外没有官方 rerank 工厂时 `createRerankModel` 返回 undefined，必须走本地融合，不要空排。
