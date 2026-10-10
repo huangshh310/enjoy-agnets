@@ -93,8 +93,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
-  assert.equal(z.studio.automations.deleteTitle, "删除这条自动化？")
-  assert.equal(z.studio.automations.discardTitle, "放弃未保存的修改？")
+  assert.equal(z.studio.automations.deleteTitle, "删除这条自动化\uFF1F")
+  assert.equal(z.studio.automations.discardTitle, "放弃未保存的修改\uFF1F")
   assert.equal(z.studio.automations.discardConfirm, "放弃")
   assert.equal(z.studio.automations.keepEditing, "继续编辑")
   assert.equal(z.settings.providers.customDesc, "填好地址和密钥即可。用不到的协议留空。")
@@ -105,6 +105,19 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.pages.knowledge.sourcesHealthy, "来源均在项目内")
   assert.equal(z.studio.instructions.desc.includes("系统提示"), false)
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
+})
+
+test("中文词条不用半角 ? !，确认问句走全角问号", () => {
+  const halfWidth = /[?!]/
+  const cjk = /[\u4e00-\u9fff]/
+  for (const { key, value } of flattenEntries(zh)) {
+    if (!cjk.test(value)) continue
+    assert.doesNotMatch(value, halfWidth, `zh ${key} uses half-width punct: ${value}`)
+  }
+  const automations = (zh as { studio: { automations: { deleteTitle: string; discardTitle: string } } })
+    .studio.automations
+  assert.equal(automations.deleteTitle.endsWith("\uFF1F"), true)
+  assert.equal(automations.discardTitle.endsWith("\uFF1F"), true)
 })
 
 function buildToolIdPattern(): RegExp {

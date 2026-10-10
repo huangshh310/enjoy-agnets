@@ -59,6 +59,7 @@ export function ChatStageHeader({
         {onToggleEnvironment ? (
           <QuietIconButton
             icon={RiDashboard3Line}
+            data-testid="environment-toggle"
             aria-label={t("chat.environmentToggle")}
             aria-pressed={Boolean(environmentOpen)}
             onClick={onToggleEnvironment}

@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-09（Dock 压高度：对话 ≥200px，无空截图，改动条让位）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（需处理条浮层不顶开主区）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -12,7 +12,7 @@
 
 | 表面 | 现状 |
 |---|---|
-| L1 AttentionStrip | `ai-chat/attention/attention-strip.tsx` 浮动居中于 Stage 顶（`stage-split.tsx`），不占位、不推挤下方页面布局，支持一键关闭及单项关闭。无 active/focused 则整条 `null`。胶囊按优先级排序；当前会话 Dock 已开时收成微点。主标签是界面语言的 kind（待审批 / 待回答…），`min-w-32`，会话题只进 `title`。`complete` 约 10s 自消，不计入「需处理 N」。 |
+| L1 AttentionStrip | `ai-chat/attention/attention-strip.tsx` 浮动居中于 Stage 顶（`stage-split.tsx`），绝对定位叠在内容上，**不**给主区加 `pt-12`，出现/消失不把工作台顶下约 32px。支持一键关闭及单项关闭。无 active/focused 则整条 `null`。胶囊按优先级排序；当前会话 Dock 已开时收成微点。主标签是界面语言的 kind（待审批 / 待回答…），`min-w-32`，会话题只进 `title`。`complete` 约 10s 自消，不计入「需处理 N」。 |
 | L0 PermissionDock | `ai-chat/attention/permission-dock.tsx` 夹在 Conversation 与 Composer 之间（`chat-composer-cluster.tsx`），贴 Composer 上沿。`ApprovalCard` 已离开 `ConversationContent`。`desktop_act` 走桌面名片（`desktop-approval-card.tsx`：缩略图 + `desktopActApprovalText` + 可选 appKey 副标题；四选一 `approval-allow` / `approval-session` / `approval-always-app` / `approval-deny` 映射 `allow` / `allow_session` / `allow_always` / `deny`，底栏「继续」才落决策），不是裸「允许桌面工具」。`needs_second_confirm` 走同一张 `desktop-approval-card.tsx` 的 warn/danger 变体（并排新旧缩略图；`approval-second-confirm-allow` / `approval-second-confirm-cancel` 仍映射 `allow` / `deny`；缺图禁用主钮；不露始终允许）。仅 `args.sensitive === false` 且有稳键时默认「本会话允许」，始终允许不再 featured。`bypassesSessionAllow` 划掉本会话/始终允许（无稳键不画始终允许）；敏感（缺字段也算）或缺 appKey 则不画这两项并默认「允许一次」；敏感警示「这是敏感应用，每次都会问你」。无 pending 则 `null`。 |
 | L2 Inbox `#/inbox` | live Attention 档案 + SQLite 归档；无假种子。分栏采用 IDE 级双栏同步基线（左栏 384~416px 列表带专属快速已读/清理工具栏，右栏卡片流阅读器带状态徽标、会话ID快速复制、状态详情与「打开会话」跳转按钮；`SecondaryPageShell` 使用 `hideChrome` 杜绝多重顶栏）。行卡片包含状态 pill、未读指示点、`{显示名或品牌} · {会话题}`（P2，悬停引擎真名）、摘要/错误预览与时间。**M-C 安静 Inbox**：侧栏筛选只有 **`approval`（拍板） / `needs_review`（待验收） / `failed`（失败）**，默认 `approval`。拍板 = `pending_approval` + `ask_user`。待验收行由会话 `workflowStatus === "needs_review"` 合成，不是 Attention kind；**只有宣称收工的 `run.end` 才标 `needs_review`**。`run.error` / 用户取消保持 `in_progress`，走失败筛（取消文案含 abort →「已取消」），不进待验收、不进拍板角标。完成 / 运行中 / 读文件刷屏不进默认列；运行中仍只在侧栏「进行中」。轨徽标与页内数字徽标 = **拍板数**（`stripApprovalCount`），不计待验收 / 失败 / 完成 / 运行中。`openSession` 必须带 `sessionId`。阅读器只有摘要 + 跳回；失败阅读器无通过/打回。**耐久层**：`inbox_state`（migration 005）；renderer `persist-attention.ts` 写穿；实况优先、归档补位；隐藏超 30 天 list 时清理。 |
 | 状态机 | `stores/attention/`：一槽一位 `(sessionId, kind)`；`active → focused → resolved\|dismissed\|expired`。切会话停车，不 abort。点胶囊：pending/ask → `#permission-dock`；error → `#thread-error-banner`；complete → `#thread-turn-end`。 |
@@ -44,7 +44,7 @@ L2 Inbox（耐久归档）— 摘要 + 跳回；禁止内嵌审批按钮
 
 | 项 | 合同 |
 |---|---|
-| 挂载 | Stage 顶浮动居中：标题栏下、主内容上；Chat 与其它模块均可见。有可见项时 Stage 内容 `pt-12`，标题不被胶囊盖住 |
+| 挂载 | Stage 顶浮动居中：标题栏下、主内容上；Chat 与其它模块均可见。浮层不占位，主区不因条出现而加 `pt-12` |
 | 布局 | 居中浮动微胶囊（`rounded-full` · `border` · `backdrop-blur-md` · `shadow-card`），内含「需处理 N」脉冲指示、胶囊流及右侧关闭按钮；点击关闭忽略当前可见项 |
 | 胶囊 | `h-7` · `rounded-full` · `border border-border-button-default/70` · `bg-background-secondary-default/80` · 内嵌单项关闭 `X` |
 | 胶囊内 | runtime `SessionAgentMark` 14px · 会话名截断 · kind 短标 · 相对时间 `text-text-tertiary` · 独立关闭 `X` |
@@ -169,6 +169,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 
 ## 已知坑
 
+- 需处理条出现时主区往下跳。根因：`stage-split` 曾用 `pt-12` 给条留空。正确做法：条 `absolute` 浮层，主区不加垫，出现/消失不改布局高度。
 - **隐患**：Inbox「未读」出现大量「运行中」→ 合成 running 被标成未读。正确做法：`synthesize-running-inbox.ts` 固定 `read: true`；`inboxNavCounts.unread` 只计 `!read`。running 不得加成 Attention kind。
 - **隐患**：导航仍按「智能体 / 系统」或「全部 / 运行中」筛 → 旧 IA 残留。正确做法：筛 `InboxCategory` 的 approval / needs_review / failed。
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。

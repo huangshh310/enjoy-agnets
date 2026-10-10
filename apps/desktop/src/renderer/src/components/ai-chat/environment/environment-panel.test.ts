@@ -21,4 +21,5 @@ test("对话舞台挂 Environment，默认收起、审批时让位、与账本�
   assert.ok(stage.includes("useState(false)"))
   assert.ok(stage.includes("if (pendingApproval) setEnvironmentOpen(false)"))
   assert.ok(stage.includes("if (next) setEnvironmentOpen(false)"))
+  assert.ok(stage.includes("useEnvironmentDismiss"))
 })
