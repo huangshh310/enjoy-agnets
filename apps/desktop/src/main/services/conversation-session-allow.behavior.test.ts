@@ -112,6 +112,27 @@ test("连续多轮普通发送仍继承本会话允许", () => {
   })
 })
 
+test("普通发送助手 id 对不上时不截尾巴，本会话允许仍继承", async () => {
+  const sessionId = "ses_allow_ordinary_send"
+  seedSession(sessionId)
+  persistTurn(sessionId, "msg_ord_u", "msg_ord_ua")
+  grantConversationToolAllow(sessionId, "write_file")
+  await maybeTruncateSessionToIncomingHistory(sessionId, [
+    { id: "msg_ord_u", role: "user" },
+    { id: "msg_pending_asst", role: "assistant" },
+    { id: "msg_ord_u2", role: "user" }
+  ])
+  applyAgentRunSessionAllowReset({ sessionId })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  const rows = getDatabase()
+    .prepare("SELECT id FROM messages WHERE session_id = ? ORDER BY created_at ASC, id ASC")
+    .all(sessionId) as Array<{ id: string }>
+  assert.deepEqual(
+    rows.map((row) => row.id),
+    ["msg_ord_u", "msg_ord_ua"]
+  )
+})
+
 test("edit-and-resend 不带 clearSessionAllow 仍清表", async () => {
   const sessionId = "ses_allow_edit_noflag"
   seedSession(sessionId)

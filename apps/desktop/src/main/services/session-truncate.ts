@@ -48,7 +48,8 @@ export async function truncateSessionAfter(
 
 /**
  * regenerate / edit-and-resend：入参最后一条仍在库里的消息之后若有尾巴，截掉。
- * 没有对得上的 id 不动库（普通发送漏 id 仍靠水位继承）。续跑不要走这条。
+ * 没有对得上的 id 不动库。命中之后还有入参（普通发送带了新 user / 对不上的助手 id）
+ * 也不截，水位自己对账。续跑不要走这条。
  */
 export async function maybeTruncateSessionToIncomingHistory(
   sessionId: string,
@@ -63,13 +64,15 @@ export async function maybeTruncateSessionToIncomingHistory(
   if (rows.length === 0) return { deleted: 0 }
   const dbIds = new Set(rows.map((row) => row.id))
   let keep: string | undefined
+  let keepIncomingIndex = -1
   for (let i = incoming.length - 1; i >= 0; i -= 1) {
     const id = incoming[i]?.id?.trim()
     if (id && dbIds.has(id)) {
       keep = id
+      keepIncomingIndex = i
       break
     }
   }
-  if (!keep) return { deleted: 0 }
+  if (!keep || keepIncomingIndex < incoming.length - 1) return { deleted: 0 }
   return truncateSessionAfter(sessionId, keep)
 }
