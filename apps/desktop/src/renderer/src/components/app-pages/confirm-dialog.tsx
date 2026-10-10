@@ -25,6 +25,8 @@ export function ConfirmDialog({
   cancelLabel,
   destructive = false,
   children,
+  closeOnConfirm = true,
+  testId,
   onOpenChange,
   onConfirm
 }: {
@@ -35,6 +37,8 @@ export function ConfirmDialog({
   cancelLabel?: string
   destructive?: boolean
   children?: ReactNode
+  closeOnConfirm?: boolean
+  testId?: string
   onOpenChange: (open: boolean) => void
   onConfirm: () => void | Promise<void>
 }) {
@@ -49,7 +53,8 @@ export function ConfirmDialog({
     setBusy(true)
     try {
       await Promise.resolve(onConfirm())
-      onOpenChange(false)
+      // closeOnConfirm=false：调用方自己决定何时关（如钥匙串拒绝时提示留在框内）。
+      if (closeOnConfirm) onOpenChange(false)
     } catch {
       // 调用方 toast；框留着
     } finally {
@@ -60,7 +65,7 @@ export function ConfirmDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        data-testid="confirm-dialog"
+        data-testid={testId ?? "confirm-dialog"}
         showCloseButton={false}
         overlayClassName={cx(SETTINGS_DRAWER_Z_CLASS.modal, "fixed inset-0")}
         style={{

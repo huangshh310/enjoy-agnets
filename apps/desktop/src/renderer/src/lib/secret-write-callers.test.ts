@@ -53,8 +53,11 @@ test("设默认模型 / persistRuntime 认 union，不把 {ok:false} 当快照",
   assert.match(actions, /SecretWriteUiError/)
   assert.match(actions, /secretWriteCopyKey/)
   const hook = src("components/settings/providers/use-provider-settings.ts")
-  assert.match(hook, /deleteBlockedToastModel/)
-  assert.match(hook, /requestOpenExternalQuiet/)
+  const dialog = src("components/settings/providers/provider-remove-dialog.tsx")
+  assert.match(hook, /KEYCHAIN_UNAVAILABLE/)
+  assert.doesNotMatch(hook, /deleteBlockedToastModel|showDeleteBlockedToast/)
+  assert.match(dialog, /DeleteKeychainNotice/)
+  assert.match(dialog, /closeOnConfirm=\{false\}/)
 })
 
 test("失败不关抽屉、不吞掉、不把钥匙串英文写进 setError", () => {

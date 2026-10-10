@@ -1,5 +1,5 @@
 /**
- * 精选 preset 才有 revokeUrl；自定义端点没有。禁止用用户 baseURL。
+ * 精选 preset 才有 revokeUrl；自定义端点没有。禁止用用户 baseURL / 文档首页。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -31,7 +31,7 @@ test("精选供应商有 revokeUrl 与 providerLabel", () => {
   assert.equal(hint.providerLabel, "OpenAI")
 })
 
-test("自定义端点没有 revokeUrl", () => {
+test("自定义端点没有 revokeUrl 也没有 providerLabel", () => {
   const hint = profileRevokeHint(
     { kind: "custom", baseURL: "https://evil.example/v1" },
     PRESETS
@@ -39,7 +39,7 @@ test("自定义端点没有 revokeUrl", () => {
   assert.deepEqual(hint, {})
 })
 
-test("用户 baseURL 即使是 https 也不当 revokeUrl；http 文档丢掉", () => {
+test("用户 baseURL 即使是 https 也不当 revokeUrl；http 密钥页丢掉", () => {
   assert.equal(
     profileRevokeHint({ kind: "openai", baseURL: "https://stolen.keys.example" }, PRESETS).revokeUrl,
     "https://platform.openai.com/api-keys"
@@ -48,7 +48,7 @@ test("用户 baseURL 即使是 https 也不当 revokeUrl；http 文档丢掉", (
     kind: "openai",
     name: "OpenAI",
     keysURL: "http://platform.openai.com/api-keys",
-    docsURL: "http://platform.openai.com/docs"
+    docsURL: "https://platform.openai.com/docs"
   }
   assert.deepEqual(profileRevokeHint({ kind: "openai" }, [httpOnly]), {
     providerLabel: "OpenAI"
@@ -61,7 +61,7 @@ test("removeProvider 拒绝回执带精选 revokeUrl", () => {
   assert.match(ipc, /secretWriteBlocked\(error\.code, await revokeHintForProfileId/)
 })
 
-test("区域 keysURL 优先；没有密钥页回落文档首页", () => {
+test("区域 keysURL 优先；没有密钥页只留 providerLabel，不回落文档首页", () => {
   const regional: CuratedRevokePreset = {
     kind: "kimi",
     name: "Kimi",
@@ -80,5 +80,7 @@ test("区域 keysURL 优先；没有密钥页回落文档首页", () => {
     name: "Ollama",
     docsURL: "https://ollama.com/"
   }
-  assert.equal(profileRevokeHint({ kind: "ollama" }, [homepageOnly]).revokeUrl, "https://ollama.com/")
+  assert.deepEqual(profileRevokeHint({ kind: "ollama" }, [homepageOnly]), {
+    providerLabel: "Ollama"
+  })
 })

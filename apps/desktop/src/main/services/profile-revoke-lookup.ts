@@ -1,5 +1,5 @@
 /**
- * 删档案拒绝：按档案 kind 查精选 preset。解不开密文就省略链接。
+ * 删档案拒绝：按档案 kind 查精选 preset keysURL。解不开密文就省略链接。
  */
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers/presets"
 import { profileRevokeHint, type ProfileRevokeHint } from "./profile-revoke-hint.ts"
