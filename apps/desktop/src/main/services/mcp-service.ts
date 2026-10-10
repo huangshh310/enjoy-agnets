@@ -15,8 +15,9 @@ import {
   createMcpHandleRegistry,
   decideMcpCall,
   disconnectMcpServer,
-  isMutatingToolName,
+  isCuratedMcpServerName,
   mcpCallAction,
+  mcpToolRequiresWriteApproval,
   readMcpResource,
   type McpToolInfo,
   type PermissionLevel
@@ -141,7 +142,12 @@ export async function callServerTool(
   const row = requireServer(id)
   const handle = handles.get(id)
   if (!handle || handle.state !== "connected") throw new Error("MCP server is not connected.")
-  const mutating = isMutatingToolName(name)
+  const tool = handle.tools?.find((item) => item.name === name)
+  const mutating = mcpToolRequiresWriteApproval({
+    readOnlyHint: tool?.readOnlyHint,
+    trusted: row.trusted === 1,
+    curated: isCuratedMcpServerName(row.name)
+  })
   const decision = decideMcpCall({
     trusted: row.trusted === 1,
     level: permissionLevel(id, name),
@@ -216,7 +222,13 @@ export function listVisibleMcpTools(): Array<{
     for (const tool of handle.tools ?? []) {
       if (visible.length > 0 && !visible.includes(tool.name)) continue
       if (visible.length === 0 && row.trusted !== 1) continue
-      const mutating = tool.readOnlyHint === true ? false : isMutatingToolName(tool.name)
+      const hintTrusted =
+        row.trusted === 1 || isCuratedMcpServerName(row.name)
+      const mutating = mcpToolRequiresWriteApproval({
+        readOnlyHint: tool.readOnlyHint,
+        trusted: row.trusted === 1,
+        curated: isCuratedMcpServerName(row.name)
+      })
       const level = permissionLevel(row.id, tool.name)
       if (decideMcpCall({ trusted: row.trusted === 1, level, mutating }) === "deny") continue
       out.push({
@@ -227,7 +239,7 @@ export function listVisibleMcpTools(): Array<{
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
-        ...(tool.readOnlyHint === true ? { readOnlyHint: true } : {})
+        ...(hintTrusted && tool.readOnlyHint === true ? { readOnlyHint: true } : {})
       })
     }
   }
