@@ -15,6 +15,13 @@ export function turnOutcomeForRun(
 
 /** 后台会话也靠库里的 workflow，不依赖前台 renderer 再算一遍。 */
 export function persistTurnWorkflow(sessionId: string | undefined, turn: TurnOutcome): void {
+  persistSessionWorkflow(sessionId, turn.workflow)
+}
+
+export function persistSessionWorkflow(
+  sessionId: string | undefined,
+  workflow: TurnOutcome["workflow"]
+): void {
   if (!sessionId) return
-  void patchSession({ id: sessionId, workflowStatus: turn.workflow }).catch(() => undefined)
+  void patchSession({ id: sessionId, workflowStatus: workflow }).catch(() => undefined)
 }

@@ -19,7 +19,7 @@ export function applySessionHydrate(input: {
       generation: input.generation,
       sessionId: input.sessionId,
       currentSessionId: latest.sessionId,
-      dbMessages: threadFromRows(input.dbRows),
+      dbMessages: threadFromRows(input.dbRows, { sealAbandoned: !latest.running }),
       liveMessages: latest.messages,
       sameSession: input.sameSession,
       running: latest.running

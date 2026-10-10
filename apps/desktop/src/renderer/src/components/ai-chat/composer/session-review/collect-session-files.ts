@@ -1,7 +1,8 @@
 /**
  * 把上一轮写盘 path 与 Git 行统计对齐，供改动条 / 打回通过横幅展示。
  * 只列本轮已执行（或可能已改盘）的写盘 path。禁止把整仓未提交回落进来。
- * 运行中没有 Git 命中时仍列出本轮文件，增减为 0；停跑后只留本轮仍 dirty 的。
+ * 运行中没有 Git 命中时仍列出本轮文件，增减为 0；git 仓停跑后只留本轮仍 dirty 的。
+ * 非 git 仓停跑后直接列本轮 path。
  */
 import type { ChangedFileRow } from "@renderer/stores/chat-store.types"
 import type { SessionReviewFile } from "./session-review.types"
@@ -48,16 +49,18 @@ export type ReviewFilePick = {
 }
 
 /**
- * 运行中先列本轮写盘；停跑后只留本轮仍 dirty 的。
+ * 运行中先列本轮写盘；停跑后 git 仓只留本轮仍 dirty 的。
+ * 非 git 仓停跑后仍列本轮 path，禁止再和空 git 表求交。
  * 没有本轮写盘、或本轮都已提交：空列表。审查栏才看整仓 git。
  */
 export function describeReviewFiles(
   lastTurnPaths: string[],
   changes: ChangedFileRow[],
-  running: boolean
+  running: boolean,
+  gitRepo?: boolean | null
 ): ReviewFilePick {
   if (lastTurnPaths.length === 0) return { files: [], fromLastTurn: false }
-  if (running) {
+  if (running || gitRepo === false) {
     return { files: collectSessionFiles(lastTurnPaths, changes), fromLastTurn: true }
   }
   return { files: collectDirtySessionFiles(lastTurnPaths, changes), fromLastTurn: true }
@@ -66,9 +69,10 @@ export function describeReviewFiles(
 export function pickReviewFiles(
   lastTurnPaths: string[],
   changes: ChangedFileRow[],
-  running: boolean
+  running: boolean,
+  gitRepo?: boolean | null
 ): SessionReviewFile[] {
-  return describeReviewFiles(lastTurnPaths, changes, running).files
+  return describeReviewFiles(lastTurnPaths, changes, running, gitRepo).files
 }
 
 function normalizePath(path: string): string {

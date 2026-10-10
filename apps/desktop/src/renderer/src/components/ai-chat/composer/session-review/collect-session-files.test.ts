@@ -87,6 +87,15 @@ test("无扩展名且无行统计的未跟踪目录画文件夹", () => {
   assert.equal(sessionEntryKind("Dockerfile", "Dockerfile", 0, 0), "file")
 })
 
+test("非 git 停跑后仍列本轮 path，不和空 git 表求交", () => {
+  const pick = describeReviewFiles(["notes.md"], [], false, false)
+  assert.equal(pick.fromLastTurn, true)
+  assert.deepEqual(
+    pick.files.map((file) => file.path),
+    ["notes.md"]
+  )
+})
+
 test("相对路径后缀也能对上 Git 行", () => {
   const files = collectSessionFiles(
     ["b.ts"],

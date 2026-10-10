@@ -9,6 +9,7 @@ import { getDatabase } from "./database"
 import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
 import { createId } from "./ids"
+import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
@@ -167,6 +168,7 @@ function emitRunStart(
   promptEcho?: boolean
 ): void {
   const echoed = promptEcho ? lastUserContent(input) : ""
+  persistSessionWorkflow(input.sessionId, "in_progress")
   emitEvent(window, {
     type: "run.start",
     runId,

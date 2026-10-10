@@ -23,13 +23,20 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   const sessionId = resolveEventSessionId(event)
   const runId = eventRunId(event)
   if (sessionId && runId) useAttentionStore.getState().rememberRun(runId, sessionId)
+  const storeEarly = useChatStore.getState()
+  const foreground = belongsToForeground(
+    event,
+    storeEarly.sessionId,
+    storeEarly.runId,
+    storeEarly.running,
+    sessionId
+  )
   if (sessionId) {
     const meta = sessionMetaOf(sessionId)
-    const chat = useChatStore.getState()
     useAttentionStore.getState().ingest(event, sessionId, meta.title, meta.workspaceId, {
       omitComplete: omitCompleteFromTurn(
         event,
-        event.type === "run.end" && lastTurnDeniedOnly(chat.messages)
+        foreground && event.type === "run.end" && lastTurnDeniedOnly(storeEarly.messages)
       )
     })
   }
@@ -59,7 +66,7 @@ export function dispatchAgentEvent(event: StreamEvent): void {
   }
 
   const store = useChatStore.getState()
-  if (belongsToForeground(event, store.sessionId, store.runId, store.running, sessionId)) {
+  if (foreground) {
     store.applyStreamEvent(event)
     syncReviewGateAfterEvent(event, sessionId, true)
     return
