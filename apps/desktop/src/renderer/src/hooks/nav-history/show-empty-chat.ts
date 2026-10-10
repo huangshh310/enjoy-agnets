@@ -4,6 +4,7 @@
 import { useEngineHandoffStore } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { clearComposerAssets } from "@renderer/hooks/composer-assets"
 import { setQuotedContexts } from "@renderer/hooks/quoted-context"
+import { queueComposerFocus } from "@renderer/hooks/composer-focus"
 import { parkForegroundRun, saveCurrentSessionDraft } from "@renderer/hooks/session-lifecycle"
 import { idleComposerPatch } from "@renderer/stores/attention/session-run-park"
 import { useChatStore } from "@renderer/stores/chat-store"
@@ -24,4 +25,5 @@ export function showEmptyHistoryChat(): void {
   })
   clearComposerAssets()
   setQuotedContexts([])
+  queueComposerFocus()
 }

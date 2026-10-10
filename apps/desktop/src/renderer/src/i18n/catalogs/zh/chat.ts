@@ -593,6 +593,7 @@ export const zhChat = {
 
   errorTitle: "执行异常 / 模型响应中断",
   errorGenericHint: "这次没执行成功，请再试一次。",
+  sendFailedRestore: "这次没发出去，文字已放回输入框。",
   toolDenied: "已拒绝，本次未执行",
   toolArgsMismatch: "审批参数已变化，本次未执行。",
   toolStaleObservation: "画面已经变了，这次没有执行，请重新确认",

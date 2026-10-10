@@ -600,6 +600,7 @@ export const enChat = {
 
   errorTitle: "Run failed / model response interrupted",
   errorGenericHint: "That didn't go through. Please try again.",
+  sendFailedRestore: "That message didn't send. It's back in the input.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",
   toolStaleObservation: "The screen has changed, so this action was not run. Please confirm again.",

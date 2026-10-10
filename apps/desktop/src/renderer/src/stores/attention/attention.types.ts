@@ -56,4 +56,6 @@ export type IngestAttentionInput = {
   sessionTitle: string
   workspaceId?: string
   now?: number
+  /** 本轮工具全未执行：run.end 不弹「已完成」。 */
+  omitComplete?: boolean
 }

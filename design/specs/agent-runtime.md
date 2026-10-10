@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（repark 换新内部 id 并迁走 sdk_approval_id；hadWaiter 不再二次 push；sdkApprovalIdFor fail closed）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（stub 允许写盘后先吐 tool-result；repark 换新内部 id 并迁走 sdk_approval_id）
 
 ## 当前真相
 
@@ -140,6 +140,9 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 用户气泡附件消失：模型仍能读图，是因为 `attachments` 当时交给了 main，但旧 persist 只写 `messages.content` / text part。点会话或刷新走 `loadSession` → `threadFromRows`，没有 file part 就画不出缩略图。补救：发送按资产 id 写 file part；列出时按导入时间窗（上一轮之后、本轮前 2 分钟内、`source=import`）回挂孤儿资产。
 - **隐患**：空会话首次发送不出气泡/审批卡（新建「新对话」和种子「New agent」都中，`61570f4` 上新建能出卡）。`loadSession` 的 `sameSession` 必须用函数开头的值；await 后把 `sameSession` 改成 `true` 再用过期的 `latest.messages` 回灌，会把正在跑的乐观轮洗成 `[]`。run 事件若此时 `running` 已被 idle patch 清掉，会进 park 而不是主区，侧栏灯和欢迎页对不上。正确做法：发送时 `bumpSessionHydrateGeneration` 只丢掉过期回灌对乐观消息的覆盖，历史行仍合并；切会话立刻 `setMessages([])` 再灌库。详情见 `ui` 已知坑。
 - Enjoy Local 发送盘：`settings.get` 的 `hasKey` 会先于 `models.list` 写入 store。旧逻辑只看 `hasKey`，Composer 已显示 Send，`agent.run` 却带着空 `modelId` 被主进程拒绝（`Choose a model in Settings → Providers`）。必须 `composerSendReady` 同时要 `modelId`；`applySettingsSnapshot` 先 `setModel` 再 `setHasKey`。`ENJOY_E2E_STUB` 缺 `modelId` 时回落 `stub-e2e`，不要在窗口 E2E 里假装已经发过真实模型。
+- **隐患**：验存储失败红条没有开发夹具。正确做法：仅 `ENJOY_E2E_STUB=1` 且未打包时，发送 `stub store error` / `夹具：存储失败` 让 stub 抛 `INTERNAL_STORE_ERROR`，分类 `store` →「这次没执行成功，请再试一次。」。`app.isPackaged` 或非 stub 当普通句，禁止进生产。`pnpm --filter @enjoy-agents/desktop dev:auto-p2` 已带 stub 旗标。
+- **隐患**：stub 上一轮允许写盘后，下一句复读 `stub-ok allowed write`。根因：`stubApprovedWrite` 扫整段历史。正确做法：只认本轮（最后一条非 cite 用户句之后）的审批响应。stub **不**在允许前写 `e2e-stub.txt`。
+- **隐患**：`dev:auto-p2`「本轮账本」里发 `please write a note` 并允许后，线程写「stub-ok allowed write」和「本轮改动 e2e-stub.txt」，账本却是「1 个失败 · 错误 / No result received.」。根因：活泵允许后有 waiter，`decideApproval` **不会** `executeStoredTool`（那条路只给重启无 wait）；真实 SDK 允许后自己 execute 并吐 `tool-result`，旧 stub 只吐正文，工具停在 `input-available`，`finalizeRun` 封成 `output-error`。正确做法：允许后先吐匹配审批 `toolCallId`（`apr_stub_N` → `tool_stub_N`）的 `tool-result`（output-available），再写入 `ENJOY_E2E_WORKSPACE/e2e-stub.txt`（路径 jail 同 `resolveInsideWorkspace`），最后才发正文。断言落盘路径时跟 jail 的 realpath 比，不要和 `mkdtemp` 字面路径比（macOS `/tmp` → `/private/tmp`）。真路径链（SDK part → `mapStreamPart` → fold → `run.end`）本身会把允许后的 write 收成成功；问题只在旧 stub。测试：`e2e-stub-approved-write.test.ts`、`approved-write-chain.test.ts`。
 - `agent.run` 以前在返回 `{ runId }` 之前 await `citeKnowledge` / 附件。Provider embed 一超时，renderer 一直 `running && !runId`：空 Thinking、Stop 点了没反应。现在 IPC 先 `run.start` + `{ runId }`，附件和检索放到 `prepareAndPump`；embed 查询 8s 封顶，失败回落词袋。
 - 助手回复关应用后消失：用户轮发送时已写 SQLite，助手旧逻辑只在 `completeAgentRun` 落库。`write_file` 审批后 `sawApproval` 会立刻再泵 2～3 圈，grok 429，`failPump` 不写库，UI 里已有的流式正文重启即丢。现：`ActiveRun` 累积 transcript，失败 / 中止 / 退出都 `persistActiveRun`；工具已 `output-available` 不再自动再泵。仍会丢：electron-vite / 强杀没有 `before-quit`，`runs.status` 停在 `running`（本机库里出现过连续两条「重新优化一下当前太丑了」用户行、中间没有助手行）。补救：流式 `checkpointActiveRun` 覆盖同一 `msg_*`；启动 `abandonOrphanRuns` 丢掉无边界的 running，`restoreRunningRuns` 只接回 `tool-boundary`。用户连发两条相同问句是重试，不是 hydrate 合并重复。ACP 工具 result 不可 JSON 化时剥掉 args/result 再写，避免整轮抛掉。
 - 「全部」仍弹 write_file 审批：偏好已是 `requireWriteApproval: false`，SDK 对 `approved` 仍发 `tool-approval-request`（`isAutomatic: true`）再自己回 response。旧映射一律变成 `approval.required`，pending 卡住、点允许后再泵一轮，grok 报 `No output generated`。`isAutomatic` 必须丢掉，不要进 pending。

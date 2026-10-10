@@ -35,6 +35,7 @@ import {
   useThreadFindOpen
 } from "@renderer/components/ai-chat/thread/thread-find/use-thread-find-hotkey"
 import { ThreadFindBar } from "@renderer/components/ai-chat/thread/thread-find/thread-find-bar"
+import { queueComposerFocus } from "@renderer/hooks/composer-focus"
 
 export function ChatStage() {
   const t = useT()
@@ -154,6 +155,9 @@ function ChatThreadBody(props: {
     pathname,
     findOpen
   })
+  useEffect(() => {
+    queueComposerFocus()
+  }, [sessionId, pathname])
   const assistant = lastAssistantTurn(messages)
   const hasLedger = useMemo(() => Boolean(assistant && collectRunLedger(assistant).length > 0), [assistant])
 
