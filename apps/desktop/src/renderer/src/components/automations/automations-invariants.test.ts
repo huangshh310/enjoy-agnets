@@ -130,6 +130,17 @@ test("定时用可读预设，删除要确认，项目选择器只高亮一项",
   assert.match(picker, /uniqueWorkspaces/)
 })
 
+test("高级先给人话，原始 cron 只作自定义表达式", () => {
+  const schedule = readFileSync(join(dir, "components/schedule-fields.tsx"), "utf8")
+  assert.equal(zhStudio.automations.cronExprCustom, "自定义表达式")
+  assert.equal(enStudio.automations.cronExprCustom, "Custom expression")
+  assert.match(schedule, /cronChipLabel/)
+  assert.match(schedule, /cronExprCustom/)
+  assert.match(schedule, /data-testid="automation-cron-readable"/)
+  assert.doesNotMatch(schedule, /t\("studio\.automations\.cronLabel"\)/)
+  assert.doesNotMatch(schedule, /previewLine/)
+})
+
 test("整行空白打开抽屉，开关和失败条仍走各自动作", () => {
   const row = readFileSync(join(dir, "components/automation-row.tsx"), "utf8")
   assert.match(row, /data-testid="automation-row-open"/)

@@ -60,7 +60,7 @@ export function SettingsSideDrawer({
         aria-modal="true"
         aria-labelledby={labelledBy}
         className={cx(
-          "absolute inset-y-3 right-3 flex flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card animate-in slide-in-from-right duration-250",
+          "absolute inset-y-3 right-3 z-10 flex flex-col overflow-hidden rounded-3xl border border-separator-border/80 bg-background-primary-default shadow-card animate-in slide-in-from-right duration-250",
           widthClass
         )}
       >

@@ -64,6 +64,27 @@ test("审批标题与正文同列对齐，改动条与 Composer 同宽", () => {
   assert.doesNotMatch(stacked, /calc\(100%-1\.25rem\)/)
 })
 
+test("审查提交底栏类型芯片与推送分行，不共挤一行", () => {
+  const dock = read("ai-chat/right-pane/views/review/pr-hero/review-commit-dock.tsx")
+  assert.match(dock, /flex min-w-0 flex-col gap-1/)
+  assert.match(dock, /CONVENTIONAL_PREFIXES\.map/)
+  assert.match(dock, /chat\.reviewPushAction/)
+  assert.match(dock, /justify-end gap-1/)
+  const chips = dock.indexOf("CONVENTIONAL_PREFIXES.map")
+  const actions = dock.indexOf("justify-end gap-1")
+  const push = dock.indexOf("chat.reviewPushAction")
+  assert.ok(chips >= 0 && actions > chips && push > actions)
+})
+
+test("个人资料里程碑标题可折行，不截成省略号", () => {
+  const bento = read("account/cards/profile-ecosystem-bento.tsx")
+  assert.match(bento, /活跃先锋/)
+  assert.match(bento, /百万吞吐/)
+  const block = bento.slice(bento.indexOf("活跃先锋") - 120, bento.indexOf("全能调度") + 160)
+  assert.match(block, /text-pretty/)
+  assert.doesNotMatch(block, /truncate/)
+})
+
 test("任务栏标题走 displaySessionTitle，选中应用仍画操作提示", () => {
   const title = read("app-shell/chat/use-taskbar-title.ts")
   const bias = read("ai-chat/composer/mentions/desktop/composer-desktop-bias-bar.tsx")

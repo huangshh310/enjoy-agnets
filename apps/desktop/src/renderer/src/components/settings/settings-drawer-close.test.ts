@@ -7,6 +7,7 @@ import { dirname, join } from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 import {
+  handleDrawerClosePointer,
   isAppDialogOpen,
   isSettingsDrawerOpen,
   markDrawerEscapeHandled,
@@ -32,6 +33,7 @@ test("SettingsSideDrawer 整层 no-drag，Esc 捕获并停冒泡", () => {
   assert.match(src, /data-settings-drawer="open"/)
   assert.match(src, /data-app-region="no-drag"/)
   assert.match(src, /onClose\(\)/)
+  assert.match(src, /aside[\s\S]*z-10/)
 })
 
 test("确认框开着时抽屉不抢 Esc", () => {
@@ -99,6 +101,21 @@ test("抽屉吃掉 Esc 后设置页不再回工位", () => {
   )
 })
 
+test("关闭钮 pointerdown 先 preventDefault 再关，右键不关", () => {
+  const calls: string[] = []
+  handleDrawerClosePointer(
+    { button: 0, preventDefault: () => calls.push("prevent") },
+    () => calls.push("close")
+  )
+  assert.deepEqual(calls, ["prevent", "close"])
+  const ignored: string[] = []
+  handleDrawerClosePointer(
+    { button: 2, preventDefault: () => ignored.push("prevent") },
+    () => ignored.push("close")
+  )
+  assert.deepEqual(ignored, [])
+})
+
 test("自动化抽屉 X 带 no-drag 且点击关闭", () => {
   const src = readFileSync(
     join(dir, "../automations/components/automation-drawer.tsx"),
@@ -106,11 +123,20 @@ test("自动化抽屉 X 带 no-drag 且点击关闭", () => {
   )
   const mark = src.indexOf('data-testid="automation-drawer-close"')
   assert.ok(mark >= 0)
-  const close = src.slice(Math.max(0, mark - 180), mark + 280)
+  const close = src.slice(Math.max(0, mark - 280), mark + 320)
+  assert.match(close, /onPointerDown=\{/)
+  assert.match(close, /handleDrawerClosePointer/)
   assert.match(close, /onClick=\{onClose\}/)
   assert.match(close, /data-app-region="no-drag"/)
   assert.match(close, /\[app-region:no-drag\]/)
   assert.match(close, /APP_REGION_NO_DRAG_STYLE|WebkitAppRegion/)
+})
+
+test("供应商抽屉 X 同样 pointerdown 关闭，避免失焦吞第一次 click", () => {
+  const src = readFileSync(join(dir, "providers/provider-editor-drawer.tsx"), "utf8")
+  assert.match(src, /onPointerDown=\{/)
+  assert.match(src, /handleDrawerClosePointer/)
+  assert.match(src, /onClick=\{onClose\}/)
 })
 
 test("其它共用抽屉头的关闭钮也标 no-drag", () => {

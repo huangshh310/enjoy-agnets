@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { cx } from "@/utils/cx"
 import { useI18n, useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
-import { formatClock } from "../lib/format-cron"
+import { cronChipLabel } from "../lib/cron-chip-label"
 import {
   clockValue,
   cronFromSchedule,
@@ -49,7 +49,8 @@ export function ScheduleFields({
   const { locale } = useI18n()
   const parsed = scheduleFromCron(cronExpr)
   const [advanced, setAdvanced] = useState(parsed.preset === "advanced")
-  const preview = previewLine(parsed.preset === "advanced" && advanced ? "advanced" : parsed.preset, parsed, t)
+  const readable = cronChipLabel(cronExpr, t)
+  const preview = joinSegments(readable.label, formatTimezoneLabel(timeZone, locale))
 
   return (
     <div className="space-y-2" data-testid="automation-schedule">
@@ -115,7 +116,7 @@ export function ScheduleFields({
         data-testid="automation-schedule-preview"
       >
         <RiCalendarScheduleLine className="size-3.5 shrink-0 text-text-secondary" aria-hidden />
-        <span>{joinSegments(preview, formatTimezoneLabel(timeZone, locale))}</span>
+        <span>{preview}</span>
       </p>
       <button
         type="button"
@@ -128,12 +129,16 @@ export function ScheduleFields({
       {advanced ? (
         <div className="grid grid-cols-2 gap-2">
           <label>
-            <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.cronLabel")}</span>
+            <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.cronExprCustom")}</span>
             <Input
               value={cronExpr}
               onChange={(event) => onChange({ cronExpr: event.target.value })}
               className="mt-1 font-mono"
+              data-testid="automation-cron-expr"
             />
+            <span className="mt-1 block text-caption-2-regular text-text-secondary" data-testid="automation-cron-readable">
+              {readable.label}
+            </span>
           </label>
           <label>
             <span className="text-caption-1-medium text-text-secondary">{t("studio.automations.timeZone")}</span>
@@ -153,18 +158,4 @@ export function ScheduleFields({
       ) : null}
     </div>
   )
-}
-
-function previewLine(
-  preset: SchedulePreset,
-  parsed: ReturnType<typeof scheduleFromCron>,
-  t: (key: string, vars?: Record<string, string | number>) => string
-): string {
-  const time = formatClock(parsed.hour, parsed.minute)
-  if (preset === "daily") return t("studio.automations.cronDaily", { time })
-  if (preset === "weekdays") return t("studio.automations.cronWeekdays", { time })
-  if (preset === "weekly") {
-    return t("studio.automations.cronWeekly", { day: t(DAY_KEYS[parsed.dow] ?? DAY_KEYS[1]), time })
-  }
-  return t("studio.automations.cronCustom")
 }
