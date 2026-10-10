@@ -69,7 +69,8 @@ export function rememberApproval(input: {
   requestArgs?: unknown
 }) {
   const db = getDatabase()
-  const requestArgs = input.requestArgs ?? input.args
+  const args = input.args ?? {}
+  const requestArgs = input.requestArgs ?? args
   const sdkApprovalId = input.approvalId
   const existing = getApprovalBySdkIdentity(db, {
     sdkApprovalId,
@@ -90,7 +91,7 @@ export function rememberApproval(input: {
   }
   const plan = planRememberApproval(
     existing,
-    { sdkApprovalId, args: requestArgs },
+    { sdkApprovalId, args: requestArgs ?? args },
     // 主键空闲时内部 id 用 SDK id；已被别的 run 占用才新开一行。
     () => (getApproval(db, sdkApprovalId) ? createId("apr") : sdkApprovalId)
   )
@@ -100,14 +101,14 @@ export function rememberApproval(input: {
     toolCallId: input.toolCallId,
     approvalId: plan.id,
     name: input.name,
-    args: input.args
+    args
   })
   insertApproval(db, {
     id: plan.id,
     runId: input.runId,
     toolCallId: input.toolCallId,
     name: input.name,
-    args: JSON.stringify(input.args ?? {}),
+    args: JSON.stringify(args),
     requestArgs: JSON.stringify(requestArgs ?? {}),
     hmac: signApproval(approvalSecret(), payload),
     decision: null,
@@ -134,23 +135,24 @@ export function rememberReparkApproval(input: {
       approvalId: createId("apr"),
       toolCallId: input.toolCallId,
       name: input.name,
-      args: input.args,
+      args: input.args ?? {},
       requestArgs: input.requestArgs
     })
   }
   const nextId = createId("apr")
+  const args = input.args ?? {}
   const payload = approvalPayload({
     runId: input.runId,
     toolCallId: input.toolCallId,
     approvalId: nextId,
     name: input.name,
-    args: input.args
+    args
   })
   const migrated = migrateApprovalForRepark(db, {
     existingId: row.id,
     nextId,
     name: input.name,
-    args: JSON.stringify(input.args ?? {}),
+    args: JSON.stringify(args),
     hmac: signApproval(approvalSecret(), payload),
     requestArgs: input.requestArgs === undefined ? undefined : JSON.stringify(input.requestArgs),
     createdAt: Date.now()

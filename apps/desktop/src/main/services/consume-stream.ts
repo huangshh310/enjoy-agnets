@@ -96,8 +96,7 @@ async function consumeApprovalRequired(
   },
   lastCheckpointAt: number
 ): Promise<number> {
-  const rawArgs = event.args
-  const args = await parkApprovalArgs(event.name, rawArgs)
+  const args = await parkApprovalArgs(event.name, event.args ?? {})
   const toolCallId = event.toolCallId || createId("tool")
   const applied = applyRememberedApproval(
     rememberApproval({
@@ -105,8 +104,7 @@ async function consumeApprovalRequired(
       approvalId: event.approvalId || createId("apr"),
       toolCallId,
       name: event.name,
-      args,
-      requestArgs: rawArgs
+      args
     }),
     { toolCallId, name: event.name, args }
   )

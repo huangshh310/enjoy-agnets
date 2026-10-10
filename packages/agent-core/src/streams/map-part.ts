@@ -26,7 +26,13 @@ const ENJOY_TYPES = new Set([
 
 export function mapStreamPart(part: Record<string, unknown>, runId: string): StreamEvent | null {
   const type = String(part.type ?? "")
-  if (ENJOY_TYPES.has(type)) return part as StreamEvent
+  if (ENJOY_TYPES.has(type)) {
+    if (type === "approval.required") {
+      const event = part as StreamEvent & { type: "approval.required" }
+      return { ...event, args: event.args ?? {} }
+    }
+    return part as StreamEvent
+  }
   const text = readPartText(part)
 
   if (type === "text-delta") {
