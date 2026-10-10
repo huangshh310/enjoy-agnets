@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { readFileSync } from "node:fs"
 import {
   createE2eStubStream,
   isE2eStub,
@@ -129,6 +130,36 @@ test("write 提示发出审批 part", async () => {
     parts.push(String(part.type))
   }
   assert.deepEqual(parts, ["tool-approval-request"])
+})
+
+test("openCodingStream 把审批策略谓词传给 stub", () => {
+  const src = readFileSync(new URL("./open-coding-stream.ts", import.meta.url), "utf8")
+  assert.match(src, /openedE2eStub\(input, policy\)/)
+  assert.match(src, /isToolApproved:/)
+  assert.match(src, /resolveToolApproval\(toolName, input\.mode, policy, toolInput\) === "approved"/)
+})
+
+test("策略已放行 write_file 时直接写盘，不弹卡", async () => {
+  const previous = process.env.ENJOY_E2E_STUB
+  process.env.ENJOY_E2E_STUB = "1"
+  try {
+    const parts: string[] = []
+    let text = ""
+    for await (const part of createE2eStubStream(
+      [{ role: "user", content: "please write a note" }],
+      new AbortController().signal,
+      { isToolApproved: (toolName) => toolName === "write_file" }
+    )) {
+      parts.push(String(part.type))
+      if (part.type === "text-delta") text += String(part.text ?? "")
+    }
+    assert.equal(parts.includes("tool-approval-request"), false)
+    assert.equal(parts.includes("tool-call"), true)
+    assert.equal(parts.includes("tool-result"), true)
+    assert.match(text, /stub-ok allowed write/)
+  } finally {
+    process.env.ENJOY_E2E_STUB = previous
+  }
 })
 
 test("已批准写盘后回 stub-ok allowed write", async () => {

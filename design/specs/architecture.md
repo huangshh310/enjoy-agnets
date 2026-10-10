@@ -1,6 +1,6 @@
 # spec/architecture
 
-> 进程边界与安全基线。最后更新：2026-10-10（合入 main #125–#127；014/015 列守卫仍幂等；UNIQUE 建失败不卡启动）
+> 进程边界与安全基线。最后更新：2026-10-10（e2e-window：ubuntu + xvfb 跑 agent-stub）
 
 ## 当前真相
 
@@ -65,7 +65,8 @@ Main Process（可信）
 
 - `check` job 是 `ubuntu-latest` / `macos-latest` / `windows-latest` 三端矩阵，`fail-fast: false`，步骤 `lint → typecheck → test → build`。
 - `build` 是 `electron-vite build`（不含打包签名）；必须有，因为 workspace 包别名与无后缀导入的 `ERR_MODULE_NOT_FOUND` 只在打包期暴露。
-- `contracts` job 只跑 `e2e/contracts.spec.ts`（纯 Node）。`electron-window.spec.ts` / `agent-stub.spec.ts` 要显示环境与 Electron 系统库，**CI 不假装跑通**，留本机。
+- `contracts` job 只跑 `e2e/contracts.spec.ts`（纯 Node）。
+- `e2e-window` job 在 `ubuntu-latest` + xvfb 跑 `agent-stub.spec.ts`（含本会话允许跨轮）。`electron-window.spec.ts` 与其余窗口 spec 仍要显示环境，留本机。
 
 ### 数据
 

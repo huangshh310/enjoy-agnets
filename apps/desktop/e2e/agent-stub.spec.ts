@@ -5,40 +5,17 @@ import { mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { existsSync } from "node:fs"
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
+import type { ElectronApplication } from "playwright"
 import { sendComposer } from "./send-composer"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
 
 test("stub Agent：发送、停止、恢复、审批、知识、工作流、导入", async () => {
-  test.setTimeout(90_000)
-  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
-  const playwright = await import("playwright")
-  const electron = playwright._electron
-  if (!electron?.launch) {
-    test.skip(true, "playwright electron launcher unavailable")
-    return
-  }
-  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-ws-"))
-  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-ud-"))
-  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\nhello knowledge\n")
-  const app = await electron.launch({
-    args: [mainEntry],
-    cwd: process.cwd(),
-    timeout: 45_000,
-    env: {
-      ...process.env,
-      ENJOY_E2E_STUB: "1",
-      ENJOY_E2E_WORKSPACE: workspace,
-      ENJOY_E2E_USERDATA: userData
-    }
-  })
+  const app = await launchStubApp("# e2e workspace\nhello knowledge\n")
+  if (!app) return
   try {
-    const window = await app.firstWindow()
-    await window.waitForSelector("#root", { timeout: 20_000 })
-    await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
-      timeout: 20_000
-    })
+    const window = await readyWindow(app)
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.waitFor({ timeout: 20_000 })
     await sendComposer(window, composer, "hello stub")
@@ -160,3 +137,119 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
     await app.close()
   }
 })
+
+test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后仍要问", async () => {
+  const app = await launchStubApp("# e2e session allow\n", 120_000)
+  if (!app) return
+  try {
+    const window = await readyWindow(app)
+    const composer = window.locator('[data-testid="composer-input"]')
+    await sendWriteAndAllowSession(window, composer)
+    const firstName = await firstSessionName(window)
+    expect(firstName.length).toBeGreaterThan(0)
+
+    await sendWriteExpectExecuted(window, composer)
+    await sendWriteExpectExecuted(window, composer)
+
+    await window.locator('[data-testid="sidebar-new-session"]').click()
+    await sendComposer(window, composer, "please write a note")
+    await expect(window.locator('[data-testid="approval-session"]')).toBeVisible({ timeout: 20_000 })
+
+    await archiveSessionNamed(window, firstName)
+    await window.evaluate(() => {
+      location.hash = "#/settings/archived"
+    })
+    await window.locator('[data-testid="archived-row-restore"]').click({ timeout: 8_000 })
+    await window.evaluate(() => {
+      location.hash = "#/"
+    })
+    await sessionRow(window, firstName).click()
+    await sendComposer(window, composer, "please write a note")
+    await expect(window.locator('[data-testid="approval-session"]')).toBeVisible({ timeout: 20_000 })
+  } finally {
+    await app.close()
+  }
+})
+
+async function launchStubApp(readme: string, timeoutMs = 90_000): Promise<ElectronApplication | null> {
+  test.setTimeout(timeoutMs)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const playwright = await import("playwright")
+  const electron = playwright._electron
+  if (!electron?.launch) {
+    test.skip(true, "playwright electron launcher unavailable")
+    return null
+  }
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-ws-"))
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-ud-"))
+  writeFileSync(join(workspace, "readme.md"), readme)
+  return electron.launch({
+    args: [mainEntry, "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+    cwd: process.cwd(),
+    timeout: 45_000,
+    env: {
+      ...process.env,
+      ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_WORKSPACE: workspace,
+      ENJOY_E2E_USERDATA: userData
+    }
+  })
+}
+
+async function readyWindow(app: ElectronApplication): Promise<Page> {
+  const window = await app.firstWindow()
+  await window.waitForSelector("#root", { timeout: 20_000 })
+  await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
+    timeout: 20_000
+  })
+  await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
+  const skipGuide = window.getByRole("button", { name: /跳过设置|Skip setup/ })
+  if ((await skipGuide.count()) > 0) await skipGuide.click()
+  return window
+}
+
+async function sendWriteAndAllowSession(window: Page, composer: ReturnType<Page["locator"]>) {
+  await sendComposer(window, composer, "please write a note")
+  await window.locator('[data-testid="approval-session"]').click({ timeout: 15_000, force: true })
+  await window.waitForFunction(() => document.body.innerText.includes("allowed write"), undefined, {
+    timeout: 15_000
+  })
+}
+
+async function sendWriteExpectExecuted(window: Page, composer: ReturnType<Page["locator"]>) {
+  const before = await countAllowedWrite(window)
+  await sendComposer(window, composer, "please write a note")
+  await window.waitForFunction(
+    (prev) => (document.body.innerText.match(/stub-ok allowed write/g)?.length ?? 0) > prev,
+    before,
+    { timeout: 15_000 }
+  )
+  await expect(window.locator('[data-testid="approval-allow"]')).toHaveCount(0)
+  await expect(window.locator('[data-testid="approval-session"]')).toHaveCount(0)
+}
+
+async function countAllowedWrite(window: Page): Promise<number> {
+  return window.evaluate(() => document.body.innerText.match(/stub-ok allowed write/g)?.length ?? 0)
+}
+
+async function firstSessionName(window: Page): Promise<string> {
+  const row = window.locator('[data-testid="sidebar-session-row"][data-session-surface="tree"]').first()
+  await expect(row).toBeVisible({ timeout: 8_000 })
+  return (await row.getAttribute("data-session-name")) ?? ""
+}
+
+function sessionRow(window: Page, title: string) {
+  return window.locator('[data-testid="sidebar-session-row"][data-session-surface="tree"]').filter({
+    hasText: title
+  })
+}
+
+async function archiveSessionNamed(window: Page, title: string) {
+  const row = sessionRow(window, title)
+  await row.hover()
+  await row.locator('[data-testid="session-row-menu"]').click()
+  await window.locator('[data-testid="session-row-menu-archive"]').click()
+  const confirm = window.locator('[data-testid="confirm-dialog-confirm"]')
+  if ((await confirm.count()) > 0) await confirm.click()
+  await expect(window.locator('[data-testid="session-archived-toast"]')).toBeVisible({ timeout: 12_000 })
+}

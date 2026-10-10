@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
-import { snapshotConversationDesktopAllow, stripAnyDesktopSessionAllow } from "@enjoy-agents/agent-core/computer-use"
+import { seedRunSessionAllow } from "./conversation-session-allow"
 import type { AskUserAnswers, RunAgentInput, StreamEvent, ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import type { PendingApproval } from "./consume-stream"
 import { createApprovalGate, type ApprovalGate } from "./approval-gate"
@@ -188,9 +188,8 @@ export function holdAgentRun(
     workspaceRoot: patch.workspaceRoot,
     secret: patch.secret,
     pendingApprovals: [],
-    // P1-S：从会话表复制，不是空 Set。run 结束不清表。
-    sessionApprovedTools: initialSessionApprovedTools(patch.input),
-    sessionApprovedBashPrefixes: new Set(),
+    // 本会话允许：desktop 表 ∪ 工具名 / bash 前缀。run 结束不清表。
+    ...seedRunSessionAllow(patch.input.sessionId, patch.input.denyAnyDesktop),
     approvalGate: createApprovalGate(),
     pumping: false,
     resumeAfterPump: false,
@@ -204,7 +203,3 @@ export function holdAgentRun(
   })
 }
 
-function initialSessionApprovedTools(input: RunAgentInput): Set<string> {
-  const snapshot = snapshotConversationDesktopAllow(input.sessionId)
-  return input.denyAnyDesktop ? stripAnyDesktopSessionAllow(snapshot) : snapshot
-}

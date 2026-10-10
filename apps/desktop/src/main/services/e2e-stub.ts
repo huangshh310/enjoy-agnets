@@ -1,7 +1,8 @@
 /**
  * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  *
- * 写盘：本文件只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
+ * 写盘：未放行时只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
+ * 会话策略已放行（`isToolApproved`）时直接 tool-call + 落盘 +「stub-ok allowed write」，不弹卡。
  * 活泵允许后有 waiter，`executeStoredTool` 不会跑（那条路只给重启无 wait）。
  * 允许后必须先吐匹配 `toolCallId` 的 `tool-result`，再写 `ENJOY_E2E_WORKSPACE/e2e-stub.txt`，
  * 最后才发正文；否则工具停在 input-available，`finalizeRun` 会封成
@@ -13,8 +14,6 @@
  * - 非 stub 开发也可在终端输入 `echo https://example.com/docs`
  */
 import type { ModelMessage } from "ai"
-import { mkdir, writeFile } from "node:fs/promises"
-import { dirname } from "node:path"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
 import {
   isVerySlowPrompt,
@@ -24,15 +23,32 @@ import {
   verySlowHead,
   verySlowTail
 } from "./e2e-stub-slow.ts"
-import { resolveInsideWorkspace } from "./paths.ts"
+import {
+  stubApprovedWriteResult,
+  stubPolicyAllowedWriteParts,
+  stubWriteApprovalPart,
+  STUB_WRITE_INPUT,
+  writeStubApprovedFile
+} from "./e2e-stub-write.ts"
+
+export {
+  stubApprovedWriteResult,
+  STUB_WRITE_CONTENT,
+  STUB_WRITE_PATH,
+  writeStubApprovedFile
+} from "./e2e-stub-write.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
 export const STUB_TERMINAL_LINK_ECHO = `echo ${STUB_TERMINAL_LINK_URL}`
 /** 开发 / e2e 夹具：发送这句让本轮以存储失败收口，验红条。打包态不生效。 */
 export const STUB_STORE_ERROR_PROMPT = "stub store error"
 export const STUB_STORE_ERROR_PROMPT_ZH = "夹具：存储失败"
-export const STUB_WRITE_PATH = "e2e-stub.txt"
-export const STUB_WRITE_CONTENT = "from stub"
+
+export type E2eStubStreamOpts = {
+  packaged?: boolean
+  /** 会话策略已放行写盘时为真，stub 直接执行、不弹卡。 */
+  isToolApproved?: (toolName: string, input: unknown) => boolean
+}
 
 export function isE2eStub(packaged = false): boolean {
   return process.env.ENJOY_E2E_STUB === "1" && packaged !== true
@@ -142,34 +158,10 @@ function currentTurnApprovedId(messages: ModelMessage[]): string {
   return ""
 }
 
-export function stubApprovedWriteResult(toolCallId: string): Record<string, unknown> {
-  return {
-    type: "tool-result",
-    toolCallId,
-    toolName: "write_file",
-    input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT },
-    output: { ok: true, path: STUB_WRITE_PATH }
-  }
-}
-
-/** 活泵允许后补写盘；无工作区根则只吐 tool-result，不假装已经落盘。 */
-export async function writeStubApprovedFile(
-  root = process.env.ENJOY_E2E_WORKSPACE,
-  packaged = false
-): Promise<string | null> {
-  if (!isE2eStub(packaged)) return null
-  const workspace = root?.trim()
-  if (!workspace) return null
-  const abs = resolveInsideWorkspace(workspace, STUB_WRITE_PATH)
-  await mkdir(dirname(abs), { recursive: true })
-  await writeFile(abs, STUB_WRITE_CONTENT, "utf8")
-  return abs
-}
-
 export async function* createE2eStubStream(
   messages: ModelMessage[],
   signal: AbortSignal,
-  opts?: { packaged?: boolean }
+  opts?: E2eStubStreamOpts
 ): AsyncGenerator<Record<string, unknown>> {
   const real = lastRealUser(messages)
   const prompt = userText(real)
@@ -206,25 +198,11 @@ export async function* createE2eStubStream(
   }
   if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
     yield* emitText(verySlowHead(), signal, verySlowDelayMs())
-    stubWriteSeq += 1
-    yield {
-      type: "tool-approval-request",
-      toolCallId: `tool_stub_${stubWriteSeq}`,
-      approvalId: `apr_stub_${stubWriteSeq}`,
-      toolName: "write_file",
-      input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT }
-    }
+    yield* emitStubWriteTurn(signal, opts)
     return
   }
   if (/\bwrite\b/i.test(prompt)) {
-    stubWriteSeq += 1
-    yield {
-      type: "tool-approval-request",
-      toolCallId: `tool_stub_${stubWriteSeq}`,
-      approvalId: `apr_stub_${stubWriteSeq}`,
-      toolName: "write_file",
-      input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT }
-    }
+    yield* emitStubWriteTurn(signal, opts)
     return
   }
   const attached = attachmentNames(real ? [real] : [])
@@ -235,6 +213,22 @@ export async function* createE2eStubStream(
   const body = `stub-ok ${prompt.slice(0, 48)}`.trim()
   const slow = /\bslow\b/i.test(prompt)
   yield* emitText(body, signal, slow ? 400 : 0)
+}
+
+async function* emitStubWriteTurn(
+  signal: AbortSignal,
+  opts?: E2eStubStreamOpts
+): AsyncGenerator<Record<string, unknown>> {
+  stubWriteSeq += 1
+  const packaged = opts?.packaged === true
+  if (opts?.isToolApproved?.("write_file", STUB_WRITE_INPUT)) {
+    for (const part of await stubPolicyAllowedWriteParts(`tool_stub_${stubWriteSeq}`, packaged)) {
+      yield part
+    }
+    yield* emitText("stub-ok allowed write", signal)
+    return
+  }
+  yield stubWriteApprovalPart(stubWriteSeq)
 }
 
 async function* emitText(
