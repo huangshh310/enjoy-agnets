@@ -62,6 +62,9 @@ for (const method of CLOSES) {
         .poll(() => window.evaluate(() => location.hash.replace(/\?.*$/, "")), { timeout: 8_000 })
         .toBe("#/")
       await expect(window.getByTestId("composer-input")).toHaveValue("hello close drawer")
+      await expect(window.getByTestId("thread-credential-invalid-notice")).toBeVisible({
+        timeout: 8_000
+      })
       await snap(window, `p0-1-editor-closed-chat-${method.name}`)
       await window.getByTestId("thread-credential-invalid-notice-action").click()
       await expect(window.getByTestId("provider-key-input")).toBeVisible({ timeout: 12_000 })

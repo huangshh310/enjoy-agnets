@@ -33,7 +33,6 @@ export function ThreadCredentialInvalidNotice({
       actionLabel={t("chat.goFixKey")}
       actionIcon={<RiKey2Line className="size-3" />}
       onAction={() => {
-        onDismiss()
         if (!providerId) return
         void navigate({
           to: "/settings/$section",
