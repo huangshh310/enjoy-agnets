@@ -19,7 +19,7 @@ test("1100×700 设置侧栏能滚到项目与扩展", async () => {
     await page.evaluate(() => {
       location.hash = "#/settings/general"
     })
-    await page.getByRole("heading", { name: "通用" }).waitFor({ timeout: 20_000 })
+    await page.locator("h1").filter({ hasText: "通用" }).waitFor({ timeout: 20_000 })
     const scroll = page.locator('[data-testid="module-nav-scroll"]')
     await expect(scroll).toBeVisible()
     const workspace = page.locator('[data-nav-group="workspace"]')
