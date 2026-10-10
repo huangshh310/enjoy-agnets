@@ -45,6 +45,8 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
   const host = await hostForRun(run)
   const path = typeof args.path === "string" ? args.path : ""
   if (pending.name === "write_file" && path && typeof args.content === "string") {
+    // 活泵 stub 常无 waiter：立刻写盘会让 SLOW_TOOL 的 kill-9 打不中 running。
+    if (shouldDeferE2eSlowWrite()) return { kind: "ok" }
     await host.writeFile(path, args.content)
     return { kind: "ok" }
   }
@@ -90,6 +92,11 @@ export async function executeStoredTool(run: ActiveRun, pending: PendingApproval
     return { kind: "ok" }
   }
   throw new Error(`Approved tool "${pending.name}" cannot be resumed after restart.`)
+}
+
+/** ENJOY_E2E_SLOW_TOOL：不在 decide 里写盘，留给 stub 泵的 8s 延迟。 */
+function shouldDeferE2eSlowWrite(): boolean {
+  return process.env.ENJOY_E2E_STUB === "1" && process.env.ENJOY_E2E_SLOW_TOOL === "1"
 }
 
 /** 库里的 args 解析失败或行已不在，就当这次恢复没有发生。 */

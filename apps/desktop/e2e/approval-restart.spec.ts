@@ -61,11 +61,14 @@ test("SLOW_TOOL 允许后立刻 kill-9：不重跑，中性中断 + 横幅，不
   test.setTimeout(180_000)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const env = await bootPendingApproval({ slowTool: true })
-  const first = await firstWindow(env.app)
-  await first.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
-  await first.waitForTimeout(500)
-  expect(existsSync(stubPath(env.workspace))).toBe(false)
-  await crashKill(env.app)
+  try {
+    const first = await firstWindow(env.app)
+    await first.locator('[data-testid="approval-allow"]').click({ timeout: 15_000, force: true })
+    await first.waitForTimeout(500)
+    expect(existsSync(stubPath(env.workspace))).toBe(false)
+  } finally {
+    await crashKill(env.app)
+  }
   const second = await relaunchElectron(env.env)
   try {
     const window = await firstWindow(second)
