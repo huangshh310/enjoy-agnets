@@ -39,7 +39,7 @@ const {
 
 const MIN = 60_000
 
-type SentEvent = { type: string; message?: string; runId?: string; code?: string }
+type SentEvent = { type: string; message?: string; runId?: string; code?: string; toolCallId?: string }
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -104,6 +104,38 @@ function holdCatchUp(runId: string, events: SentEvent[]) {
   run.pumping = true
   return run
 }
+
+test("补跑超时同一工具只发一条 approval.resolved", async () => {
+  const runId = "run_catchup_one_resolved"
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
+  rememberApproval({
+    runId,
+    approvalId: "apr_one",
+    toolCallId: "tool_one",
+    name: "write_file",
+    args: { path: "one.txt" }
+  })
+  run.pendingApprovals.push({
+    approvalId: "apr_one",
+    toolCallId: "tool_one",
+    name: "write_file"
+  })
+  run.tools = [
+    {
+      id: "tool_one",
+      name: "write_file",
+      state: "approval-requested",
+      args: { path: "one.txt" }
+    }
+  ]
+  await expireCatchUpApproval(runId)
+  const resolved = events.filter(
+    (event) => event.type === "approval.resolved" && event.toolCallId === "tool_one"
+  )
+  assert.equal(resolved.length, 1)
+  deleteActiveRun(runId)
+})
 
 test("同一 runId 失败两次都能完整收尾", async () => {
   const runId = "run_fail_twice"

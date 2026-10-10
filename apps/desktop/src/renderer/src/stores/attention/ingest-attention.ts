@@ -25,18 +25,18 @@ export function attentionKindFromEvent(event: StreamEvent): AttentionKind | null
     return event.name === ASK_USER_QUESTIONS_TOOL ? "ask_user" : "pending_approval"
   }
   if (event.type === "run.start") return null
-  // 只信 turn.neutral 不当出错（Stop / 归档）。其余一律 error，禁止把 run.error 折成 complete。
+  // 只信 turn：Stop=stopped、归档=neutral 不当出错。禁止把缺 turn 的 run.end 折成 complete。
   if (event.type === "run.error") {
-    if (event.turn?.attention === "neutral") return null
+    if (isQuietTurn(event.turn?.attention)) return null
     if (isApprovalNotExecutedMessage(event.message)) return "complete"
     return "error"
   }
-  if (event.type === "run.end" && event.turn) {
+  if (event.type === "run.end") {
+    if (!event.turn) return null
     if (event.turn.attention === "complete") return "complete"
     if (event.turn.attention === "error") return "error"
     return null
   }
-  if (event.type === "run.end") return "complete"
   return null
 }
 
@@ -228,9 +228,13 @@ function upsertSlot(
   return items.map((item, i) => (i === index ? { ...next, workspaceId: next.workspaceId ?? item.workspaceId } : item))
 }
 
+function isQuietTurn(attention: string | undefined): boolean {
+  return attention === "neutral" || attention === "stopped"
+}
+
 function isNeutralTurn(input: IngestAttentionInput): boolean {
   const event = input.event
-  return (event.type === "run.end" || event.type === "run.error") && event.turn?.attention === "neutral"
+  return (event.type === "run.end" || event.type === "run.error") && isQuietTurn(event.turn?.attention)
 }
 
 function summaryFor(kind: AttentionKind, input: IngestAttentionInput): string {

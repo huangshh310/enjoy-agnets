@@ -73,6 +73,30 @@ test("弱名 command 带 path 进文件芯片；todo_write 与纯 bash 不进", 
   assert.equal(chips[0]?.path, "src/app.css")
 })
 
+test("cite 里开跑前就有的文件不进本轮标签，只留本轮工具碰过的", () => {
+  const chips = collectTurnSources(
+    {
+      sources: [
+        { sourceId: "old1", title: "readme.md", path: "readme.md" },
+        { sourceId: "old2", title: "untracked.txt", path: "untracked.txt" },
+        { sourceId: "now", title: "note.txt", path: "note.txt" }
+      ],
+      tools: [
+        {
+          id: "t1",
+          name: "write_file",
+          state: "output-available",
+          args: { path: "note.txt" }
+        }
+      ]
+    },
+    (name) => `技能 · ${name}`
+  )
+  assert.equal(chips.some((chip) => chip.path === "note.txt"), true)
+  assert.equal(chips.some((chip) => chip.path === "readme.md"), false)
+  assert.equal(chips.some((chip) => chip.path === "untracked.txt"), false)
+})
+
 test("Enjoy 注入行标 fromEnjoy；空注入不造假行", () => {
   const empty = collectTurnSources({ hostInject: { mcp: [], skills: [] } }, (name) => `技能 · ${name}`)
   assert.equal(empty.length, 0)

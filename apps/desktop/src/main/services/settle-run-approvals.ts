@@ -3,7 +3,7 @@
  * 与用户 deny 分开，工具行走已停止。
  */
 import type { BrowserWindow } from "electron"
-import { listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
+import { getApproval, listPendingApprovals, listRuns, setApprovalDecision } from "@enjoy-agents/db"
 import { foldToolEvent } from "@enjoy-agents/ipc-contract"
 import {
   RUN_FAILED_CODE,
@@ -97,6 +97,13 @@ function collectPendingForSession(sessionId: string): PendingSettle[] {
 function settleOne(item: PendingSettle, window?: BrowserWindow, cause: SettleApprovalCause = "aborted"): boolean {
   const db = getDatabase()
   const run = getActiveRun(item.runId)
+  const stored = getApproval(db, item.approvalId)
+  if (stored?.decision != null) {
+    if (run) {
+      run.pendingApprovals = run.pendingApprovals.filter((pending) => pending.approvalId !== item.approvalId)
+    }
+    return false
+  }
   const inMemory = run?.pendingApprovals.some((pending) => pending.approvalId === item.approvalId)
   const inDb = listPendingApprovals(db, item.runId).some((row) => row.id === item.approvalId)
   if (!inMemory && !inDb) return false

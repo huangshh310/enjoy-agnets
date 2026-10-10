@@ -2,7 +2,12 @@
  * 重启回挂：先处理孤儿 / fail closed，活下来才发卡。
  */
 import type { BrowserWindow } from "electron"
-import { resolvedSdkApprovalId, setApprovalDecision, type ApprovalRow } from "@enjoy-agents/db"
+import {
+  isSupersededSdkApprovalId,
+  resolvedSdkApprovalId,
+  setApprovalDecision,
+  type ApprovalRow
+} from "@enjoy-agents/db"
 import { emitEvent, getActiveRun } from "./agent-run-state"
 import { approvalResponseMessage } from "./approval-response-message"
 import { recordSdkApprovalResponse } from "./approval-hmac"
@@ -26,8 +31,9 @@ export function restoreHeldWaitingApprovals(input: {
   })
   if (orphaned.ended) return { ended: true, keep: [] }
   denyMissingArgApprovals(input.runId, classified.missingArgs, input.window)
-  emitRestoredApprovalCards(input.runId, classified.keep, input.window)
-  return { ended: false, keep: classified.keep }
+  const keep = mergeHmacPendingIntoKeep(input.hmacPending, classified.keep)
+  emitRestoredApprovalCards(input.runId, keep, input.window)
+  return { ended: false, keep }
 }
 
 function classifyWaitingApprovals(
@@ -43,12 +49,39 @@ function classifyWaitingApprovals(
   const orphans: PendingApproval[] = []
   for (const item of items) {
     const row = hmacPending.find((approval) => approval.id === item.approvalId)
+    if (row && isSupersededSdkApprovalId(row.sdkApprovalId)) {
+      orphans.push(item)
+      continue
+    }
     const args = parseStoredApprovalArgs(row)
     if (args != null) keep.push({ ...item, args })
     else if (row) missingArgs.push({ item, row })
     else orphans.push(item)
   }
   return { keep, missingArgs, orphans }
+}
+
+/** repark 已落库、检查点还没有的未决，以及 superseded 跳过后的替换行，都并进 keep。 */
+function mergeHmacPendingIntoKeep(
+  hmacPending: ApprovalRow[],
+  keep: PendingApproval[]
+): PendingApproval[] {
+  const seen = new Set(keep.map((item) => item.approvalId))
+  const merged = [...keep]
+  for (const row of hmacPending) {
+    if (seen.has(row.id)) continue
+    if (isSupersededSdkApprovalId(row.sdkApprovalId)) continue
+    const args = parseStoredApprovalArgs(row)
+    if (args == null) continue
+    merged.push({
+      approvalId: row.id,
+      toolCallId: row.toolCallId,
+      name: row.name,
+      args
+    })
+    seen.add(row.id)
+  }
+  return merged
 }
 
 function denyMissingArgApprovals(

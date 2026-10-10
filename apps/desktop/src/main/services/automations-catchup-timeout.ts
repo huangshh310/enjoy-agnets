@@ -35,7 +35,7 @@ export async function expireCatchUpApproval(runId: string): Promise<void> {
   if (run.pendingApprovals.length === 0) return
   markCatchUpApprovalTimeout(run)
   run.abort.abort()
-  await denyCatchUpPending(run, runId)
+  denyCatchUpPending(run)
   const error = Object.assign(new Error(CATCH_UP_APPROVAL_TIMEOUT), {
     code: CATCH_UP_APPROVAL_TIMEOUT
   })
@@ -43,23 +43,10 @@ export async function expireCatchUpApproval(runId: string): Promise<void> {
   await failAgentPump(runId, run, error)
 }
 
-async function denyCatchUpPending(run: ActiveRun, runId: string): Promise<void> {
-  const pending = run.pendingApprovals
-  run.pendingApprovals = []
-  for (const item of pending) {
+/** 只放开闸；approval.resolved 留给 failAgentPump settle 发一次，禁止同一工具两条事件。 */
+function denyCatchUpPending(run: ActiveRun): void {
+  for (const item of run.pendingApprovals) {
     run.approvalGate.resolve(item.approvalId, "deny")
-    if (run.window.isDestroyed()) continue
-    try {
-      const { emitEvent } = await import("./agent-run-state.ts")
-      emitEvent(run.window, {
-        type: "approval.resolved",
-        runId,
-        toolCallId: item.toolCallId,
-        decision: "deny"
-      })
-    } catch {
-      // 已毁窗：闸已 resolve，收尾不依赖推送。
-    }
   }
 }
 

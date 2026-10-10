@@ -99,7 +99,7 @@ test("新审批进场时只收 complete，未处理的 error 保留", () => {
 
 test("新审批进场时收掉已完成，需处理与已完成不叠出", () => {
   const done = ingestAttentionEvent([], {
-    event: { type: "run.end", runId: "run_old" },
+    event: { type: "run.end", runId: "run_old", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_b",
     sessionTitle: "B",
     now: 1
@@ -334,7 +334,7 @@ test("run.end 收束审批并 upsert complete", () => {
     now: 1
   })
   const done = ingestAttentionEvent(waiting, {
-    event: { type: "run.end", runId: "run_b" },
+    event: { type: "run.end", runId: "run_b", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_b",
     sessionTitle: "B",
     now: 2
@@ -373,7 +373,7 @@ test("当前会话 Dock 已开时胶囊收成微点，不要第二套按钮", ()
 
 test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () => {
   const done = ingestAttentionEvent([], {
-    event: { type: "run.end", runId: "run_b" },
+    event: { type: "run.end", runId: "run_b", turn: { workflow: "todo", attention: "complete" } },
     sessionId: "ses_b",
     sessionTitle: "B",
     now: 10
@@ -389,6 +389,36 @@ test("点 complete 直接 resolved；dismiss 写 dismissed；10s 后过期", () 
     now: 10 + COMPLETE_TTL_MS + 1
   })
   assert.equal(expired.find((item) => item.kind === "complete")?.status, "expired")
+})
+
+test("run.end 没有 turn 不得折成已完成", () => {
+  const done = ingestAttentionEvent([], {
+    event: { type: "run.end", runId: "run_bare" },
+    sessionId: "ses_bare",
+    sessionTitle: "裸",
+    now: 1
+  })
+  assert.equal(
+    done.some((item) => item.kind === "complete" && item.status === "active"),
+    false
+  )
+})
+
+test("用户 Stop 只信 turn.stopped：不当出错，不进需处理", () => {
+  const stopped = ingestAttentionEvent([], {
+    event: {
+      type: "run.error",
+      runId: "run_stop_attn",
+      message: "Aborted by user.",
+      code: "user_aborted",
+      turn: { workflow: "in_progress", attention: "stopped" }
+    },
+    sessionId: "ses_stop_attn",
+    sessionTitle: "停",
+    now: 1
+  })
+  assert.equal(stopped.some((item) => item.kind === "error" && item.status === "active"), false)
+  assert.equal(stripNeedsCount(stopped), 0)
 })
 
 test("用户停 run.error 只信 turn.neutral：不当出错，不进需处理", () => {

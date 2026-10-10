@@ -9,6 +9,7 @@ import {
   RiGlobalLine,
   RiSparklingLine
 } from "@remixicon/react"
+import { CURATED_MCP_FINGERPRINTS } from "@enjoy-agents/ipc-contract/mcp-curated"
 import type { TranslateFn } from "@renderer/i18n"
 import {
   BraveIcon,
@@ -533,6 +534,19 @@ const PRESET_DEFS: PresetDef[] = [
   }
 ]
 
+const FINGERPRINT_BY_ID = new Map(CURATED_MCP_FINGERPRINTS.map((item) => [item.id, item]))
+
+function withSharedFingerprint(def: PresetDef): PresetDef {
+  const fingerprint = FINGERPRINT_BY_ID.get(def.id)
+  if (!fingerprint) return def
+  return {
+    ...def,
+    transport: fingerprint.transport,
+    command: fingerprint.command,
+    url: "url" in fingerprint ? fingerprint.url : def.url
+  }
+}
+
 function localizePreset(def: PresetDef, t: TranslateFn): McpPluginPreset {
   return {
     id: def.id,
@@ -557,7 +571,7 @@ function localizePreset(def: PresetDef, t: TranslateFn): McpPluginPreset {
 }
 
 export function getFeaturedMcpPresets(t: TranslateFn): McpPluginPreset[] {
-  return PRESET_DEFS.map((def) => localizePreset(def, t))
+  return PRESET_DEFS.map((def) => localizePreset(withSharedFingerprint(def), t))
 }
 
 /** 测试用结构数据：名称回落为键路径，协议与命令仍可用。 */

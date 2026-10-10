@@ -612,6 +612,9 @@ export const enChat = {
 
   errorTitle: "Run failed / model response interrupted",
   errorGenericHint: "That didn't go through. Please try again.",
+  restoreNoMatching: "This run could not match the original approval after restart, so it ended.",
+  runFailed: "This run did not finish.",
+  catchUpApprovalTimeout: "Catch-up timed out waiting for approval and ended.",
   sendFailedRestore: "That message didn't send. It's back in the input.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",

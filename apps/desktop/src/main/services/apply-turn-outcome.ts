@@ -13,7 +13,7 @@ export { shouldWriteSessionWorkflow, stickyTurnOutcome }
 
 export function turnOutcomeForRun(
   run: Pick<ActiveRun, "tools" | "input">,
-  ended: "end" | "error" | "abort"
+  ended: "end" | "error" | "abort" | "archive"
 ): TurnOutcome {
   return stickyTurnOutcome(
     decideTurnOutcome({ ended, tools: run.tools }),

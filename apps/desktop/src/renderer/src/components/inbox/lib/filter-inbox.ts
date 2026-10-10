@@ -1,16 +1,19 @@
 /**
  * 收件箱纯函数：Attention → 档案行。安静筛只要拍板 / 待验收 / 失败。
  */
+import type { PendingApprovalItem } from "@enjoy-agents/ipc-contract"
+import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import { desktopActSafeErrorText } from "../../ai-chat/thread/desktop-act-failed-copy.ts"
+import { humanizeThreadError } from "@renderer/lib/usage/classify-thread-error.ts"
 import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string
 
 function humanizeInboxError(text: string | undefined, t: Translate): string {
   if (!text) return ""
-  return desktopActSafeErrorText(text, t) ?? text
+  return desktopActSafeErrorText(text, t) ?? humanizeThreadError(text, t)
 }
 
 export function isApprovalItem(item: InboxNotification): boolean {
@@ -25,9 +28,14 @@ function isLiveInboxAttention(
   if (item.kind === "pending_approval" || item.kind === "ask_user") {
     if (item.status !== "active" && item.status !== "focused") return false
   }
-  const liveSessions = repositories?.filter((row) => row.kind === "session") ?? []
-  if (liveSessions.length === 0) return true
-  return liveSessions.some((row) => row.id === item.sessionId)
+  return isLiveSession(item.sessionId, repositories)
+}
+
+function isLiveSession(sessionId: string, repositories?: RepositoryNode[]): boolean {
+  if (!repositories) return true
+  const liveSessions = repositories.filter((row) => row.kind === "session")
+  if (liveSessions.length === 0) return false
+  return liveSessions.some((row) => row.id === sessionId)
 }
 
 export function isFailedItem(item: InboxNotification): boolean {
@@ -38,8 +46,8 @@ export function isQuietInboxItem(item: InboxNotification): boolean {
   return isApprovalItem(item) || isFailedItem(item) || item.copyKey === "needs_review"
 }
 
-export function inboxFromAttention(
-  items: AttentionItem[],
+export function inboxFromPendingApprovals(
+  rows: PendingApprovalItem[],
   input: {
     t: Translate
     readIds: ReadonlySet<string>
@@ -47,8 +55,53 @@ export function inboxFromAttention(
     repositories?: RepositoryNode[]
   }
 ): InboxNotification[] {
+  return rows
+    .filter((row) => isLiveSession(row.sessionId, input.repositories))
+    .map((row) => {
+      const ask = row.name === ASK_USER_QUESTIONS_TOOL
+      const copyKey = ask ? ("ask_user" as const) : ("pending_approval" as const)
+      const id = `apr:${row.id}`
+      return {
+        id,
+        copyKey,
+        title: input.t(`attention.kind.${copyKey}`),
+        summary: `${row.sessionTitle} · ${row.name}`,
+        sessionTitle: row.sessionTitle,
+        toolName: row.name,
+        category: "agent" as InboxKind,
+        read: input.readIds.has(id),
+        occurredAt: row.createdAt,
+        sessionId: row.sessionId,
+        workspaceId: row.workspaceId ?? undefined,
+        actionKey: "openSession" as const,
+        actionLabel: input.t("pages.inbox.actions.openSession"),
+        status: "active" as const
+      }
+    })
+    .filter((item) => !input.hiddenIds.has(item.id))
+}
+
+export function inboxFromAttention(
+  items: AttentionItem[],
+  input: {
+    t: Translate
+    readIds: ReadonlySet<string>
+    hiddenIds: ReadonlySet<string>
+    repositories?: RepositoryNode[]
+    omitAttentionApprovals?: boolean
+  }
+): InboxNotification[] {
   return items
     .filter((item) => !input.hiddenIds.has(item.id))
+    .filter((item) => {
+      if (
+        input.omitAttentionApprovals &&
+        (item.kind === "pending_approval" || item.kind === "ask_user")
+      ) {
+        return false
+      }
+      return true
+    })
     .filter((item) => isLiveInboxAttention(item, input.repositories))
     .map((item) => {
       const isAborted =

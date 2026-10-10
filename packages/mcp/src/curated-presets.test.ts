@@ -86,4 +86,13 @@ test("改名也丢掉精选身份", () => {
     }),
     null
   )
+  assert.equal(
+    resolveCuratedPresetId({
+      curatedPresetId: "github",
+      name: "my-github",
+      transport: "stdio",
+      command: "npx -y @modelcontextprotocol/server-github"
+    }),
+    null
+  )
 })

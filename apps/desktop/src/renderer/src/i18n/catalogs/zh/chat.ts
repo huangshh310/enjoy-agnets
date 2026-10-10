@@ -605,6 +605,9 @@ export const zhChat = {
 
   errorTitle: "执行异常 / 模型响应中断",
   errorGenericHint: "这次没执行成功，请再试一次。",
+  restoreNoMatching: "重启后对不上原来的审批，这一轮已结束。",
+  runFailed: "这一轮没有执行完。",
+  catchUpApprovalTimeout: "补跑等审批超时，已经自动结束。",
   sendFailedRestore: "这次没发出去，文字已放回输入框。",
   toolDenied: "已拒绝，本次未执行",
   toolArgsMismatch: "审批参数已变化，本次未执行。",

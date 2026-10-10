@@ -233,7 +233,8 @@ const ide = {
   },
   inbox: {
     listStates: () => ipcRenderer.invoke("inbox.state.list", {}),
-    putStates: (input: unknown) => ipcRenderer.invoke("inbox.state.put", input)
+    putStates: (input: unknown) => ipcRenderer.invoke("inbox.state.put", input),
+    listPendingApprovals: () => ipcRenderer.invoke("approvals.pending", {})
   },
   mcp: {
     servers: () => ipcRenderer.invoke("mcp.servers"),

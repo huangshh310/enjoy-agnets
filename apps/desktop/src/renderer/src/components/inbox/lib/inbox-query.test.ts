@@ -5,7 +5,13 @@ import type { AttentionItem } from "@renderer/stores/attention/attention.types.t
 import type { RepositoryNode } from "@renderer/stores/chat-store.types.ts"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import type { InboxNotification } from "../inbox.types.ts"
-import { filterInbox, inboxFromAttention, inboxNavCounts, resolveSelected } from "./filter-inbox.ts"
+import {
+  filterInbox,
+  inboxFromAttention,
+  inboxFromPendingApprovals,
+  inboxNavCounts,
+  resolveSelected
+} from "./filter-inbox.ts"
 import { synthesizeNeedsReviewInbox } from "./synthesize-needs-review-inbox.ts"
 import { groupInbox, inboxGroupId, inboxTimeParts, startOfLocalDay } from "./inbox-time.ts"
 
@@ -71,6 +77,73 @@ test("已决审批与已归档会话不进拍板", () => {
   assert.equal(items.length, 1)
   assert.equal(items[0]?.sessionId, "ses_live")
   assert.equal(inboxNavCounts(items).approval, 1)
+})
+
+test("空会话列表不得把所有 Attention 当成活着", () => {
+  const items = inboxFromAttention(
+    [
+      attention({
+        id: "ses_ghost:pending_approval",
+        sessionId: "ses_ghost",
+        kind: "pending_approval",
+        status: "active",
+        summary: "幽灵 · write_file"
+      })
+    ],
+    { t, readIds: new Set(), hiddenIds: new Set(), repositories: [] }
+  )
+  assert.equal(items.length, 0)
+  assert.equal(inboxNavCounts(items).approval, 0)
+})
+
+test("拍板行来自 main 未决，不靠 Attention 槽", () => {
+  const rows = inboxFromPendingApprovals(
+    [
+      {
+        id: "apr_main",
+        runId: "run_1",
+        sessionId: "ses_live",
+        workspaceId: "ws",
+        sessionTitle: "活着",
+        name: "write_file",
+        toolCallId: "tool_1",
+        createdAt: 2
+      }
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  const fromAttention = inboxFromAttention(
+    [
+      attention({
+        id: "ses_live:pending_approval",
+        sessionId: "ses_live",
+        kind: "pending_approval",
+        status: "active",
+        summary: "活着 · write_file"
+      })
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      omitAttentionApprovals: true,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.id, "apr:apr_main")
+  assert.equal(fromAttention.length, 0)
 })
 
 test("complete 不进安静 Inbox，不占拍板徽标", () => {

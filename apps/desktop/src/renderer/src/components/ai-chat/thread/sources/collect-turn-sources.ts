@@ -19,8 +19,11 @@ export function collectTurnSources(
   skillPrefix: (name: string) => string
 ): TurnSourceChip[] {
   const chips: TurnSourceChip[] = []
+  const toolPaths = thisRoundToolPaths(message.tools ?? [])
   for (const source of message.sources ?? []) {
     if (isHttpSource(source.path) || isHttpSource(source.title)) continue
+    const cited = source.path || source.title
+    if (cited && !toolPaths.has(normalizeSourcePath(cited))) continue
     chips.push(
       toChip(
         {
@@ -96,6 +99,19 @@ function skillTitle(tool: ThreadToolCall): string {
   const args = asRecord(tool.args)
   const raw = args.name ?? args.skill ?? args.title
   return typeof raw === "string" && raw.trim() ? raw.trim() : tool.name
+}
+
+function thisRoundToolPaths(tools: readonly ThreadToolCall[]): Set<string> {
+  const paths = new Set<string>()
+  for (const tool of tools) {
+    const path = extractToolPath(asRecord(tool.args), tool.name, asRecord(tool.result))
+    if (path) paths.add(normalizeSourcePath(path))
+  }
+  return paths
+}
+
+function normalizeSourcePath(path: string): string {
+  return path.trim().replace(/\\/g, "/").replace(/^\.\//, "")
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

@@ -20,7 +20,7 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import { rememberedAgentTool } from "@renderer/hooks/agent-tools-cache"
 import { requiredVersionFor, resolveCliCompat } from "@enjoy-agents/ipc-contract/cli-compat"
-import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
+import { classifyThreadError, humanizeThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
@@ -163,7 +163,13 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
                 ? t("chat.errorGenericHint")
                 : kind === "send_restore"
                   ? t("chat.sendFailedRestore")
-                  : error)
+                  : kind === "restore_no_matching"
+                    ? t("chat.restoreNoMatching")
+                    : kind === "run_failed"
+                      ? t("chat.runFailed")
+                      : kind === "catch_up_timeout"
+                        ? t("chat.catchUpApprovalTimeout")
+                        : humanizeThreadError(error, t))
 
   return (
     <div

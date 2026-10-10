@@ -11,9 +11,11 @@ import type { InboxCategory, InboxNotification } from "./inbox.types"
 import {
   filterInbox,
   inboxFromAttention,
+  inboxFromPendingApprovals,
   inboxNavCounts,
   resolveSelected
 } from "./lib/filter-inbox"
+import { useLivePendingApprovals } from "./use-live-pending-approvals"
 import { synthesizeNeedsReviewInbox } from "./lib/synthesize-needs-review-inbox"
 import { groupInbox } from "./lib/inbox-time"
 import { takeInboxFilter } from "./lib/pending-inbox-filter"
@@ -29,6 +31,7 @@ export function useInbox() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const attentionItems = useAttentionStore((state) => state.items)
   const repositories = useChatStore((state) => state.repositories)
+  const pendingApprovals = useLivePendingApprovals()
 
   // 挂载时加载耐久层：已读 / 隐藏状态 + error/complete 归档条目。
   useEffect(() => {
@@ -57,10 +60,22 @@ export function useInbox() {
     // 实况优先；归档条目只在实况没有同 id 时补位（error/complete 重启后的历史）。
     const liveIds = new Set(attentionItems.map((item) => item.id))
     const merged = [...attentionItems, ...archivedItems.filter((item) => !liveIds.has(item.id))]
-    const attentionList = inboxFromAttention(merged, { t, readIds, hiddenIds, repositories })
+    const attentionList = inboxFromAttention(merged, {
+      t,
+      readIds,
+      hiddenIds,
+      repositories,
+      omitAttentionApprovals: true
+    })
+    const pendingList = inboxFromPendingApprovals(pendingApprovals, {
+      t,
+      readIds,
+      hiddenIds,
+      repositories
+    })
     const reviewList = synthesizeNeedsReviewInbox({ repositories, t, now })
-    return [...reviewList, ...attentionList]
-  }, [attentionItems, archivedItems, hiddenIds, readIds, repositories, t, now])
+    return [...reviewList, ...pendingList, ...attentionList]
+  }, [attentionItems, archivedItems, hiddenIds, pendingApprovals, readIds, repositories, t, now])
   const filteredItems = useMemo(
     () => filterInbox(items, filter, search),
     [filter, items, search]

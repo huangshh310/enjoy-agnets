@@ -6,6 +6,7 @@ import {
   isStaleObservationAfterAllow,
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { asRecord } from "@renderer/lib/record"
 import { formatToolLabel, summarizeToolArgs, toolKind } from "../tool-summary"
 import type { TranslateFn } from "@renderer/i18n"
@@ -55,6 +56,7 @@ export function thinkingHeadline(
   if (executed.length > 0) return t("chat.ranTools", { count: executed.length })
   if (tools.length > 0) {
     if (tools.every((tool) => isStaleObservationAfterAllow(tool))) return t("chat.toolStaleObservation")
+    if (tools.some((tool) => toolAbortKind(tool) === "stopped")) return t("chat.toolStopped")
     return t("chat.toolDenied")
   }
   if (seconds) return t("chat.thoughtSeconds", { seconds })
