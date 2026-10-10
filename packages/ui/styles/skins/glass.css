@@ -211,6 +211,14 @@ html[data-skin="glass"] [data-testid="right-pane-shell"]::after {
   mask: none;
 }
 
+html[data-skin="glass"]:not([data-gpu-compositing="on"]) {
+  --color-background-full: #ffffff;
+}
+
+html.dark[data-skin="glass"]:not([data-gpu-compositing="on"]) {
+  --color-background-full: var(--color-neutral-900);
+}
+
 html[data-skin="glass"][data-gpu-compositing="off"] aside.rounded-3xl::after,
 html[data-skin="glass"][data-gpu-compositing="off"] main::after,
 html[data-skin="glass"][data-gpu-compositing="off"] [data-frost]::after {

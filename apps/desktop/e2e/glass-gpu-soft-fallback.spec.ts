@@ -6,6 +6,13 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
+import {
+  assertAmbientHidden,
+  dumpSidebarEdgeStrip,
+  edgeClip,
+  sampleSidebarEdgeStrip,
+  sendStubMessage
+} from "./glass-gpu-soft-edge"
 import { assertSoftwareLayersHidden, sampleColumnPatches } from "./glass-gpu-soft-sample"
 import { countGreyRingPixels, countHotYellowPixels } from "./png-ring-pixels"
 
@@ -55,8 +62,25 @@ test("SwiftShader 非 git 审查空态：浅/暗下右无环（不传 --disable-
     const lightLayers = await assertSoftwareLayersHidden(window)
     writeFileSync(join(shots, "review-elements-from-point-light.json"), JSON.stringify(await dumpReviewChain(window), null, 2))
     writeFileSync(join(shots, "main-sidebar-elements-from-point.json"), JSON.stringify(lightLayers, null, 2))
+    const lightEdge = await assertAmbientHidden(window)
+    writeFileSync(join(shots, "sidebar-edge-elements-from-point.json"), JSON.stringify(lightEdge, null, 2))
     await sampleReviewLowerRight(window, "light")
     await sampleColumnPatches(window, "light")
+    await sampleSidebarEdgeStrip(window, "light-before-send")
+    await window.screenshot({ path: join(shots, "p1_sidebar_edge_before.png"), clip: await edgeClip(window) })
+    await window.evaluate(() => {
+      document.documentElement.classList.add("dark")
+      document.documentElement.setAttribute("data-skin", "glass")
+    })
+    await sampleSidebarEdgeStrip(window, "dark-before-send")
+    await window.evaluate(() => document.documentElement.classList.remove("dark"))
+    await sendStubMessage(window)
+    writeFileSync(
+      join(shots, "sidebar-edge-elements-from-point-after-send.json"),
+      JSON.stringify(await dumpSidebarEdgeStrip(window), null, 2)
+    )
+    await sampleSidebarEdgeStrip(window, "light-after-send")
+    await window.screenshot({ path: join(shots, "p1_sidebar_edge_after.png"), clip: await edgeClip(window) })
     await window.screenshot({ path: join(shots, "p1_gpu_soft_light_review_nongit.png"), fullPage: true })
     await window.evaluate(() => {
       document.documentElement.classList.add("dark")
@@ -66,8 +90,10 @@ test("SwiftShader 非 git 审查空态：浅/暗下右无环（不传 --disable-
     const darkLayers = await assertSoftwareLayersHidden(window)
     writeFileSync(join(shots, "review-elements-from-point-dark.json"), JSON.stringify(await dumpReviewChain(window), null, 2))
     writeFileSync(join(shots, "main-sidebar-elements-from-point-dark.json"), JSON.stringify(darkLayers, null, 2))
+    await assertAmbientHidden(window)
     await sampleReviewLowerRight(window, "dark")
     await sampleColumnPatches(window, "dark")
+    await sampleSidebarEdgeStrip(window, "dark-after-send")
     await window.screenshot({ path: join(shots, "p1_gpu_soft_dark_review_nongit.png"), fullPage: true })
   } finally {
     const proc = app.process()

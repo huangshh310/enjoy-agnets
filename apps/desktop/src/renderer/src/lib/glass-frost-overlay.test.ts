@@ -53,6 +53,10 @@ test("审查与右栏外壳任何状态都不挂装饰，不看 GPU", () => {
   const inspector = readFirst([join(dir, "../components/app-shell/layout/inspector-pane.tsx")])
   assert.match(inspector, /right-pane-panel/)
   assert.doesNotMatch(inspector, /className="min-h-0 bg-transparent"/)
+  const shell = readFirst([join(dir, "../components/app-shell/app-shell.tsx")])
+  assert.match(shell, /data-shell-canvas/)
+  assert.match(shell, /skin-ambient-glow/)
+  assert.match(shell, /skin-ambient-orb/)
 })
 
 test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰", () => {
@@ -68,6 +72,9 @@ test("皮肤 CSS 必须识别 data-pane-shell-deco=off 并去掉伪元素装饰"
   assert.match(globals, /\.skin-glass-orbs[\s\S]*display:\s*none\s*!important/)
   assert.match(globals, /\.skin-glass-orb[\s\S]*display:\s*none\s*!important/)
   assert.match(globals, /\.skin-glass-mesh-gradient[\s\S]*display:\s*none\s*!important/)
+  assert.match(globals, /\.skin-ambient-glow[\s\S]*display:\s*none\s*!important/)
+  assert.match(globals, /\[data-shell-canvas\][\s\S]*background-color:\s*#ffffff\s*!important/)
+  assert.match(globals, /html:not\(\[data-gpu-compositing="on"\]\) aside\.rounded-3xl[\s\S]*box-shadow:\s*none\s*!important/)
   assert.match(globals, /html:not\(\[data-gpu-compositing="on"\]\) aside\.rounded-3xl[\s\S]*background-color:\s*#ffffff\s*!important/)
   assert.match(globals, /html:not\(\[data-gpu-compositing="on"\]\) main::before[\s\S]*content:\s*none\s*!important/)
   const canvas = readSkin("glass-canvas.css")
@@ -96,6 +103,7 @@ test("无 GPU 旗标关掉棱镜 ::after 和 liquid-glass 滤镜", () => {
   assert.match(glass, /@supports\s*\(mask-composite:\s*exclude\)/)
   assert.match(glass, /\[data-gpu-compositing="on"\][\s\S]*::after/)
   assert.match(glass, /\[data-gpu-compositing="on"\][\s\S]*aside\.rounded-3xl::before/)
+  assert.match(glass, /:not\(\[data-gpu-compositing="on"\]\)[\s\S]*--color-background-full:\s*#ffffff/)
   assert.doesNotMatch(glass, /html\[data-skin="glass"\] aside\.rounded-3xl::before/)
   assert.doesNotMatch(glass, /:not\(\[data-gpu-compositing="off"\]\)[\s\S]*mask-composite/)
   assert.match(glass, /\[data-gpu-compositing="off"\][\s\S]*::after[\s\S]*content:\s*none/)
