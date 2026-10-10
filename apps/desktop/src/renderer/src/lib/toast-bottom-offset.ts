@@ -10,7 +10,10 @@ export type ToastClearanceRect = {
   bottom: number
 }
 
-/** 贴底才按顶边抬高；否则回落 fallback（状态栏 / 自动化页脚）。 */
+/**
+ * 顶边落在视口下半才算贴底（Composer 在状态栏上方仍算）。
+ * 空会话居中 Composer 在上半，忽略，避免 toast 飞到中间。
+ */
 export function toastBottomOffsetFromClearance(input: {
   viewportHeight: number
   rects: ToastClearanceRect[]
@@ -18,9 +21,10 @@ export function toastBottomOffsetFromClearance(input: {
   gap?: number
 }): number {
   const gap = input.gap ?? APP_TOAST_CLEARANCE_GAP
+  const mid = input.viewportHeight / 2
   let top: number | null = null
   for (const rect of input.rects) {
-    if (input.viewportHeight - rect.bottom > input.fallback + gap) continue
+    if (rect.top < mid) continue
     if (top == null || rect.top < top) top = rect.top
   }
   if (top == null) return input.fallback

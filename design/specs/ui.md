@@ -102,7 +102,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 
 ## 已知坑
 
-- 自动化「已保存」toast 盖住页脚「仅在本机运行…」，对话里还会盖住 Composer「桌面」芯片。根因：sonner 底中贴窗口底，写死 `56` 只够页脚不够 Composer。正确做法：一条规则 `toastBottomOffsetFromClearance`，量贴底 `[data-toast-clearance]`（Composer / 状态栏 / 自动化页脚）顶边再加 8；居中空会话不抬；没有 clearance 才回落 56。不要再写第二套 bottom。
+- 自动化「已保存」toast 盖住页脚「仅在本机运行…」，对话里还会盖住 Composer「桌面」芯片。根因：sonner 底中贴窗口底，写死 `56` 只够页脚不够 Composer。正确做法：一条规则 `toastBottomOffsetFromClearance`，量顶边落在视口下半的 `[data-toast-clearance]`（Composer / 状态栏 / 自动化页脚）再加 8——Composer 在状态栏上方仍算贴底；居中空会话在上半不抬；没有 clearance 才回落 56。不要再写第二套 bottom。
 - toast 悬停不停、约 8s 仍自熄。根因：sonner 2 已去掉 `pauseOnHover` 入参，靠 ol `mouseenter` 把 `expanded` 置真才停表；unstyled 皮若点不到 ol/toast，计时不暂停。正确做法：Toaster `className` 与 toast class 都加 `pointer-events-auto`，由 `toast-hover-pause.test.ts` 守门。
 - 顶栏「需处理/出错」条出现时主区往下跳约 32px。根因：`stage-split` 在条可见时给主区加 `pt-12`。正确做法：条本身 `absolute` 浮层，主区不加垫。
 - Environment 浮层 Esc 不关，新建对话后仍挂着。根因：自定义 aside 不是 Radix Popover，状态停在 `ChatThreadBody`。正确做法：`useEnvironmentDismiss` 听 Esc；`sessionId` / 路由变了也关。

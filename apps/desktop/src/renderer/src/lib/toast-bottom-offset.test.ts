@@ -48,6 +48,20 @@ test("贴底页脚矮于 fallback 时仍用 fallback", () => {
   )
 })
 
+test("Composer 在状态栏上方仍算贴底，取更高顶边", () => {
+  assert.equal(
+    toastBottomOffsetFromClearance({
+      viewportHeight: 920,
+      rects: [
+        { top: 710, bottom: 850 },
+        { top: 850, bottom: 896 }
+      ],
+      fallback: FALLBACK
+    }),
+    920 - 710 + APP_TOAST_CLEARANCE_GAP
+  )
+})
+
 test("多个贴底节点取最高顶边，居中节点忽略", () => {
   assert.equal(
     toastBottomOffsetFromClearance({

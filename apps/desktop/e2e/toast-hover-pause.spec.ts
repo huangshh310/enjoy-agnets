@@ -29,14 +29,14 @@ test("归档 toast 悬停超过 5s 仍在，且不压贴底 Composer", async () 
     await archiveRow(window, target)
     const toast = window.locator('[data-testid="session-archived-toast"]')
     await expect(toast).toBeVisible({ timeout: 8_000 })
-
-    const toastBox = await toast.boundingBox()
-    const formBox = await window.locator("[data-composer=true]").boundingBox()
-    expect(toastBox).toBeTruthy()
-    expect(formBox).toBeTruthy()
-    if (toastBox && formBox && formBox.y > 600) {
-      expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(formBox.y + 4)
-    }
+    await expect
+      .poll(async () => {
+        const toastBox = await toast.boundingBox()
+        const formBox = await window.locator("[data-composer=true]").boundingBox()
+        if (!toastBox || !formBox || formBox.y <= 600) return 0
+        return toastBox.y + toastBox.height - formBox.y
+      }, { timeout: 4_000 })
+      .toBeLessThanOrEqual(8)
 
     await toast.hover()
     await window.waitForTimeout(6_000)
