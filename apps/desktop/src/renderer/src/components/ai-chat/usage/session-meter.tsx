@@ -1,5 +1,5 @@
 /**
- * L3 本轮上下文用量：有真实 token 才显示，无用量隐藏。
+ * L3 本轮上下文用量：有实测用实测，没有才估算；无用量隐藏。
  */
 import { formatTokens } from "../agent-limits/format-tokens"
 import { useContextInspectorData } from "../right-pane/views/context/use-context-inspector-data"

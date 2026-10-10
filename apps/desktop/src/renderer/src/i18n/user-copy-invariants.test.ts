@@ -59,7 +59,7 @@ test("zh 默认词表不含 Diff/diff，高级 git apply 可留", () => {
 
 test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 人话", () => {
   const z = zh as {
-    chat: Record<string, string>
+    chat: Record<string, string> & { usage: { sessionMeterHint: string } }
     nav: Record<string, string>
     settings: {
       usageNumberDesc: string
@@ -102,7 +102,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.chat.thinkingSources, "来源")
   assert.equal(z.chat.paneTerminalHint, "项目 Shell")
   assert.equal(z.chat.paneFilesHint, "项目目录与文件预览")
-  assert.equal(z.chat.tokenUnit, "tok")
+  assert.equal(z.chat.tokenUnit, "词元")
+  assert.equal(z.chat.usage.sessionMeterHint, "本轮用量 · 上下文占用")
   assert.equal(z.nav.workspace, "项目")
   assert.equal(z.nav.groupWorkspace, "项目与扩展")
   assert.equal(z.settings.usageNumberDesc.includes("Composer"), false)
@@ -172,6 +173,13 @@ test("默认词表不写死修饰键符号，运行态快捷键走平台修饰�
   assert.match(z.chat.placeholderRunning, /\{mod\}/)
   assert.match(z.chat.runtimeSteer, /\{mod\}/)
   assert.match(z.chat.mentionSlashHint, /\{mod\}/)
+})
+
+test("zh 默认词表不含 tok 缩写", () => {
+  const tok = /\btok\b/
+  for (const { key, value } of flattenEntries(zh)) {
+    assert.doesNotMatch(value, tok, `zh ${key} leaks tok: ${value}`)
+  }
 })
 
 test("中文词条不用半角 ? !，确认问句走全角问号", () => {

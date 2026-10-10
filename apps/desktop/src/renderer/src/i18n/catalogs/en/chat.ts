@@ -583,7 +583,7 @@ export const enChat = {
 
   usage: {
     enjoyLocal: "Enjoy Local",
-    sessionMeterHint: "Turn tok · context used",
+    sessionMeterHint: "Turn usage · context used",
     accountTitle: "Usage · this account",
     usedPercent: "Used {percent}",
     remainingPercent: "Remaining {percent}",

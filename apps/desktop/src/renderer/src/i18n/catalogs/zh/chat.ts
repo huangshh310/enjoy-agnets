@@ -124,7 +124,7 @@ export const zhChat = {
   thinkingAsset: "资产",
   thinkingStructured: "结构化",
   thinkingMcpApp: "扩展界面",
-  tokenUnit: "tok",
+  tokenUnit: "词元",
   terminalLinkHint: "点击打开链接",
   send: "发送",
   sendNotReady: "引擎未就绪",
@@ -576,7 +576,7 @@ export const zhChat = {
 
   usage: {
     enjoyLocal: "Enjoy 本地",
-    sessionMeterHint: "本轮 tok · 上下文占用",
+    sessionMeterHint: "本轮用量 · 上下文占用",
     accountTitle: "用量 · 本账户",
     usedPercent: "已用 {percent}",
     remainingPercent: "剩余 {percent}",
@@ -878,7 +878,7 @@ export const zhChat = {
   inspectorRawCopy: "复制 JSON",
   inspectorRawSearch: "搜索消息",
   inspectorRawClear: "清空",
-  inspectorRawCount: "{n} 条 · ~{tokens} tok",
+  inspectorRawCount: "{n} 条 · ~{tokens} 词元",
   inspectorBucketMessages: "对话历史",
   inspectorBucketSystem: "工作区规则",
   inspectorBucketMcp: "MCP Schema",
