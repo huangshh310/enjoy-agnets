@@ -13,12 +13,16 @@ export type BootWorkspacePlan =
 export function planBootWorkspace(input: {
   workspaces: readonly WorkspaceRow[]
   lastWorkspaceId: string | null | undefined
+  recentWorkspaceIds?: readonly string[]
   currentWorkspaceId: string | null
 }): BootWorkspacePlan {
   if (input.currentWorkspaceId) return { action: "noop" }
   if (input.workspaces.length === 0) return { action: "clear" }
+  const byId = new Map(input.workspaces.map((row) => [row.id, row]))
   const selected =
-    input.workspaces.find((row) => row.id === input.lastWorkspaceId) ?? input.workspaces[0]
+    byId.get(input.lastWorkspaceId ?? "") ??
+    (input.recentWorkspaceIds ?? []).map((id) => byId.get(id)).find(Boolean) ??
+    input.workspaces[0]
   return { action: "load", workspace: selected }
 }
 
@@ -26,13 +30,15 @@ export function planBootWorkspace(input: {
 export function syncBootWorkspace(
   workspaces: readonly WorkspaceRow[] | undefined,
   lastWorkspaceId: string | null | undefined,
-  load: (workspace: WorkspaceRow) => void
+  load: (workspace: WorkspaceRow) => void,
+  recentWorkspaceIds?: readonly string[]
 ) {
   if (!workspaces) return
   const store = useChatStore.getState()
   const plan = planBootWorkspace({
     workspaces,
     lastWorkspaceId,
+    recentWorkspaceIds,
     currentWorkspaceId: store.workspaceId
   })
   if (plan.action === "clear") store.setWorkspace(null)

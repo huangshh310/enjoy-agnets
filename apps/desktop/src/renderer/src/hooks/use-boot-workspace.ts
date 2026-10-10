@@ -9,6 +9,7 @@ import type { WorkspaceRow } from "./workspace-row"
 export function useBootWorkspace(
   settingsReady: boolean,
   lastWorkspaceId: string | null | undefined,
+  recentWorkspaceIds: readonly string[] | undefined,
   workspaces: readonly WorkspaceRow[] | undefined,
   load: (workspace: WorkspaceRow) => void
 ) {
@@ -21,6 +22,6 @@ export function useBootWorkspace(
     }
     if (!workspaces) return
     bootAligned.current = true
-    syncBootWorkspace(workspaces, lastWorkspaceId, load)
-  }, [settingsReady, lastWorkspaceId, workspaces, load])
+    syncBootWorkspace(workspaces, lastWorkspaceId, load, recentWorkspaceIds)
+  }, [settingsReady, lastWorkspaceId, recentWorkspaceIds, workspaces, load])
 }

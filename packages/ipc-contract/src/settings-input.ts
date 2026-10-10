@@ -127,6 +127,7 @@ export const SettingsSnapshot = z.object({
   baseURL: z.string().nullable(),
   defaultModelId: z.string(),
   lastWorkspaceId: z.string().nullable(),
+  recentWorkspaceIds: z.array(z.string().min(1)).default([]),
   providers: z.array(ProviderPublic).default([]),
   preferences: z.object({
     requireWriteApproval: z.boolean(),

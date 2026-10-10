@@ -2,6 +2,7 @@
  * 续跑未完成 Todo：不往对话里插新的用户气泡，也不落库用户句。
  */
 import { TODO_CONTINUE_PROMPT } from "@enjoy-agents/ipc-contract"
+import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import {
   dropTrailingContinueTurns,
   isTodoContinueUserMessage
@@ -62,8 +63,9 @@ async function startContinueRun(
       persistUser: false,
       commandId: crypto.randomUUID(),
       ...(desktopBias ? { desktopBias } : {})
-    })) as { runId: string }
-    if (!claimComposerRun(sessionId, result.runId)) abortOrphanedRun(result.runId)
+    }))
+    const runId = requireAgentRunId(result)
+    if (!claimComposerRun(sessionId, runId)) abortOrphanedRun(runId)
   } catch (error) {
     store.setRunning(false)
     store.setError(error instanceof Error ? error.message : String(error))

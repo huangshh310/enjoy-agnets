@@ -22,6 +22,7 @@
       "@enjoy-agents/providers/presets": ["../../packages/providers/src/presets.ts"],
       "@enjoy-agents/providers/capabilities": ["../../packages/providers/src/capabilities/catalog.ts"],
       "@enjoy-agents/ipc-contract/estimated-cost": ["../../packages/ipc-contract/src/estimated-cost.ts"],
+      "@enjoy-agents/ipc-contract/chat-readiness": ["../../packages/ipc-contract/src/chat-readiness.ts"],
       "@enjoy-agents/ipc-contract/agent-tools": ["../../packages/ipc-contract/src/agent-tools.ts"],
       "@enjoy-agents/assets/media-type": ["../../packages/assets/src/media-type.ts"],
       "@enjoy-agents/assets/playback-url": ["../../packages/assets/src/playback-url.ts"],

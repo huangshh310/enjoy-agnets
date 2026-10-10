@@ -7,6 +7,7 @@ import type { SettingsSnapshot } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 import { useChatStore } from "../stores/chat-store"
 import { rememberAgentTools } from "./agent-tools-cache"
+import { rememberCodingRuntime } from "./chat-readiness-cache"
 import { applyInspect } from "./merge-agent-tool-inspect"
 import { useAgentToolsInspect } from "./use-agent-tools-inspect"
 
@@ -22,6 +23,9 @@ export function useSettingsSnapshot() {
     ? applyInspect(settings.data.agentTools, inspect.data, settings.data.providers)
     : undefined
   if (tools) rememberAgentTools(tools)
+  if (settings.data?.preferences.codingRuntime) {
+    rememberCodingRuntime(settings.data.preferences.codingRuntime)
+  }
   const data = settings.data && tools ? { ...settings.data, agentTools: tools } : undefined
   return { ...settings, data, isInspectingAccounts: inspect.isFetching }
 }

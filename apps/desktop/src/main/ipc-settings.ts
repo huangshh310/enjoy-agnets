@@ -25,9 +25,12 @@ import {
 } from "./ipc-provider-probe"
 import { listComposerPresets, removeComposerPreset, saveComposerPreset } from "./services/composer-presets"
 import { getSetting, setSetting } from "./services/database"
+import { parseRecentWorkspaceIds, RECENT_WORKSPACE_SETTING } from "./services/workspace-mru.ts"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
 import { listAgentTools } from "./services/agent-tools-service"
+import { scheduleChatReadinessPush } from "./services/chat-readiness"
+import { markDefaultChatRouteExplicit } from "./services/default-chat-route"
 import { readSessionModels, readSessionRuntimes } from "./services/agent-tools-vault"
 import {
   activateProfile,
@@ -87,6 +90,7 @@ async function settingsSnapshot() {
     baseURL: secret?.baseURL ?? null,
     defaultModelId: active?.modelId || getSetting("defaultModelId") || "",
     lastWorkspaceId: getSetting("lastWorkspaceId") ?? null,
+    recentWorkspaceIds: parseRecentWorkspaceIds(getSetting(RECENT_WORKSPACE_SETTING)),
     providers: await listPublicProviders(),
     preferences: readPreferences(),
     keybindingIssues: readKeybindingIssues(),
@@ -107,11 +111,14 @@ function registerCoreSettingsIpc() {
       baseURL: input.baseURL,
       modelId: input.modelId
     })
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.setDefaultModel", async (_event, raw) => {
     const modelId = SetDefaultModelInput.parse(raw).modelId
+    markDefaultChatRouteExplicit()
     setSetting("defaultModelId", modelId)
+    scheduleChatReadinessPush()
     const active = await getActiveProfile()
     if (active) {
       await upsertProfile({
@@ -125,7 +132,10 @@ function registerCoreSettingsIpc() {
     return { ok: true }
   })
   ipcMain.handle("settings.setPreferences", async (_event, raw) => {
-    const preferences = writePreferences(SetPreferencesInput.parse(raw))
+    const input = SetPreferencesInput.parse(raw)
+    if (input.runtimeId) markDefaultChatRouteExplicit()
+    const preferences = writePreferences(input)
+    if (input.runtimeId) scheduleChatReadinessPush()
     const { syncAppsnapHotkey } = await import("./services/appsnap/appsnap-hotkey")
     syncAppsnapHotkey({
       appsnapEnabled: preferences.appsnapEnabled,
@@ -136,6 +146,7 @@ function registerCoreSettingsIpc() {
   })
   ipcMain.handle("settings.setHarness", async (_event, raw) => {
     writeHarnessSecret(SetHarnessInput.parse(raw))
+    scheduleChatReadinessPush()
     return { ok: true, harness: await harnessPublicStatus(readPreferences().harnessId) }
   })
   ipcMain.handle("settings.composerPresets", async () => listComposerPresets())
@@ -179,14 +190,17 @@ function registerProviderIpc() {
       reasoningFamily: input.reasoningFamily,
       proxy: input.proxy
     })
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
     await removeProfile(ProviderIdInput.parse(raw).id)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.activateProvider", async (_event, raw) => {
     await activateProfile(ProviderIdInput.parse(raw).id)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
   ipcMain.handle("settings.setActiveModel", async (_event, raw) => {
@@ -202,6 +216,7 @@ function registerProviderIpc() {
   })
   ipcMain.handle("settings.setProviderEnabled", async (_event, raw) => {
     await setStoredProviderEnabled(raw)
+    scheduleChatReadinessPush()
     return settingsSnapshot()
   })
 }

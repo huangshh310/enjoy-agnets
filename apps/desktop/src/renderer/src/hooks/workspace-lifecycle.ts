@@ -74,7 +74,7 @@ export async function deleteAllArchivedSessions() {
   await releaseHistoryPages(rows.map((row) => historySessionId(row.id)))
 }
 
-/** 移除应用档案中的项目，不删磁盘文件夹。剪掉该项目历史条目但不导航，指针按剩余名单收口。 */
+/** 移除应用档案中的项目，不删磁盘文件夹。剪历史；当前条目被剪时落到 fallback。指针按剩余名单收口。 */
 export async function removeProject(workspaceId: string) {
   if (!hasIde()) return
   await runRemoveProject(workspaceId, {

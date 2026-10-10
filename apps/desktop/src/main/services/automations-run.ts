@@ -4,6 +4,7 @@
  */
 import type { BrowserWindow } from "electron"
 import type { Automation, RunAutomationInput } from "@enjoy-agents/ipc-contract"
+import { requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
 import { scheduledAutomationCommandId } from "./automations-cron-points"
 import { claimLaunchSlot } from "./automations-claim-slot"
 import { reclassifyBlockedCatchUp } from "./automations-reclassify-catchup"
@@ -156,10 +157,11 @@ async function startLaunchedRun(
           }
         : undefined
   })
+  const runId = requireAgentRunId(started)
   if (opts.scheduledAt != null) {
-    patchMissedPoint(defaultSettingsIo(), item.id, opts.scheduledAt, { runId: started.runId })
+    patchMissedPoint(defaultSettingsIo(), item.id, opts.scheduledAt, { runId })
   }
-  return started
+  return { runId }
 }
 
 function launchOpts(sessionIdOrOpts?: string | LaunchAutomationOpts, workspaceId?: string): LaunchAutomationOpts {

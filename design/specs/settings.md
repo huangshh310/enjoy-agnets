@@ -1,6 +1,6 @@
 # spec/settings
 
-> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（错过 N 只数 skipped；最新成功补跑写「上次」；人话日期按日历周；保存 toast 抬高避开自动化页脚）
+> 设置是路由，不是弹层。加载器页与设置同构。最后更新：2026-10-10（BASE-P0-1：`ready` 看当前档案 `hasEnjoySecret`；从无到有才 toast）
 
 ## 当前真相
 
@@ -26,7 +26,7 @@ TanStack Router + **Hash History**。根布局包 `WindowFrame`。
 | `#/settings/extensions` | 扩展发现壳（P0-H）+ 同页精选（I2） | 设置「工作区与扩展」一页两列 MCP \| Skills；已配置数 +「添加」深链 `#/mcp` / `#/skills`；H 列只列本机 SoT 名。同页下方 I2 精选：只读 curated，「添加到 MCP / 添加到技能」走现有 `mcp.upsert`（trusted）与 `skills.sources.add` + `deploy`；写后「已写入 Enjoy · 下一轮可注入」。catalog 失败只空精选区 + 重试，H 计数仍在。视觉锁 [`../previews/p0-h-extensions-hub.html`](../previews/p0-h-extensions-hub.html) + [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)。开流注入仍是 Composer `HostInjectBar`（P0-S），本页不改注入协议：[`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)。 |
 | `#/studio` | （已废止） | 重定向 `#/` |
 
-`#/settings/general` 有「重新打开」启动引导。引导本身不是设置路由：无工作区的首次启动在应用壳上弹出；已有工作区只写入 `preferences.setupGuideCompletedAt`，不再弹出。
+`#/settings/general` 有「重新打开」启动引导。引导本身不是设置路由：无工作区的首次启动在应用壳上弹出；已有工作区只写入 `preferences.setupGuideCompletedAt`，不再弹出。向导末屏「可以开始了」vs「还差一步：连一个模型」只读 `chat.readiness.ready`（见 `ipc`），不要用引擎数冒充可对话。`ready` 为真时，用快照 `defaultRoute` 发送不会得到 `no_chat_route`（`ready` ⇒ 放行；未 ready 的远端 / 未验证本机仍可能发）。第一次从无到有才自动收默认并 toast「之后的新对话默认用「X」，可在设置里改。」（`chat.adoptedDefaultRouteToast`，显示名不是 id）。升级时首次计算已有可用路线只盖章，不 toast。当前档案有密钥没模型走中性条「还差一步：选一个模型，才能发消息。草稿会留着。」+「去选择」。引擎数也只读 `chat.readiness.engineCount`。本轮若用户改了引擎，发送闸仍看本轮路线，不读全局 `ready` 挡。renderer 不信 `hasKey`，无快照放行。`settings.get` 带 `lastWorkspaceId` 与 `recentWorkspaceIds`（启动对齐 stale last 用后者）。
 
 `#/settings/instructions` 写入 `preferences.customInstructions`：Enjoy Local 拼进 ToolLoop 系统提示；本机 CLI 垫 `session/prompt` 前缀（`[Enjoy custom instructions]`）。工作区 / 全局 `AGENTS.md` 走独立链（`formatAgentsMdChain`，32KiB），不再只靠 always-on 整份 dump。`#/settings/rules` 扫描到的其余常驻规则（无 globs 或 `alwaysApply: true`，预算 24k）注入 Enjoy Local；带 globs 的 contextual 不自动塞每一轮。`#/skills` 已装技能以索引注入 Enjoy Local（`skill` 工具）与 ACP（`composeAcpPrompt`），不灌 SKILL.md。ACP 不重复灌 AGENTS.md（CLI 读盘）。新建会话才 `modeForNewSession(rememberedDefaultMode)`（由 settings 快照记住，禁止再打 `settings.get` 扫 PATH）。设置默认项 C 端只露「探索 / 执行」人话卡片（视觉锁 [`../previews/explore-execute-p0.html`](../previews/explore-execute-p0.html)）：探索写入内部 `plan`，执行写入 `agent`。**禁止**把 `ask|plan|agent`、ACP、协议微标写进默认项文案。设置页改默认模式只 `rememberDefaultMode` + `preferences.defaultMode`，**禁止** `setMode` 当前会话。切回已有会话用 `sessionModes[sessionId]`，缺记录回落 `agent`，不用默认项。settings refetch 不得覆盖当前会话 mode。
 
