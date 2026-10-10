@@ -69,6 +69,7 @@ export function ChatStageHeader({
         {hasLedger && onToggleLedger ? (
           <button
             type="button"
+            data-testid="run-ledger-toggle"
             onClick={onToggleLedger}
             title={ledgerOpen ? t("chat.collapsePane") : t("sessionOps.ledgerTitle")}
             aria-pressed={ledgerOpen}
