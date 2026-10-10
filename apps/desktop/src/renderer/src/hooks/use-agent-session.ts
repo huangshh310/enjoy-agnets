@@ -7,10 +7,14 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { readWorkspaceFile } from "../lib/read-workspace-file"
 import { queryClient } from "../lib/query-client"
 =======
 >>>>>>> b4b0452a (fix: 回挂四条 must：待验收收窄回退、reattach 静默、历史 desktop_act 不毒死、助手行只认本轮)
+=======
+import { queryClient } from "../lib/query-client"
+>>>>>>> be494056 (fix: 补回 loadWorkspace 的 queryClient，审批测试不直接依赖 chat-store)
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
 import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"

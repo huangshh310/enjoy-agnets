@@ -59,3 +59,31 @@ function translateDecideError(path: string): string {
   const messages = resolveLocale(language) === "en" ? en : zh
   return translate(messages, path)
 }
+
+/** 行为测试用：禁止测试文件直接 value-import chat-store（合约入口）。 */
+export function seedPendingApprovalForTest(input: {
+  runId: string
+  toolCallId: string
+  approvalId: string
+}): void {
+  useChatStore.setState({
+    pendingApproval: {
+      type: "approval.required",
+      runId: input.runId,
+      toolCallId: input.toolCallId,
+      approvalId: input.approvalId,
+      name: "write_file",
+      args: { path: "a.ts" }
+    },
+    runId: input.runId,
+    error: null
+  })
+}
+
+export function pendingApprovalErrorForTest(): string | null {
+  return useChatStore.getState().error
+}
+
+export function resetPendingApprovalForTest(): void {
+  useChatStore.setState({ pendingApproval: null, runId: null, error: null })
+}
