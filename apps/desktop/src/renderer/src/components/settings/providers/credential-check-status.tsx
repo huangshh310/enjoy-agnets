@@ -1,5 +1,5 @@
 /**
- * 向导步 4 / 供应商列表共用的密钥三态。还没验证的次行在状态下方，不进 tooltip。
+ * 向导步 4 / 供应商列表共用的密钥状态。还没验证的次行在状态下方，不进 tooltip。
  */
 import { RiLoader4Line } from "@remixicon/react"
 import type { CredentialCheck } from "@enjoy-agents/ipc-contract/credential-check"
@@ -8,87 +8,102 @@ import { useT } from "@renderer/i18n"
 import {
   credentialStatusLabelKey,
   credentialUiState,
-  credentialUnverifiedHintKey
+  credentialUiTone
 } from "@renderer/lib/credential-check-ui"
+import { presetConsoleUrl } from "@renderer/lib/preset-console-url"
+import { CredentialUnverifiedHint } from "./credential-unverified-hint"
+
+const TONE_DOT = {
+  success: "bg-state-success-text",
+  danger: "bg-text-error-primary",
+  warning: "bg-status-yellow-text",
+  muted: "bg-text-tertiary"
+} as const
+
+const TONE_TEXT = {
+  success: "text-state-success-text",
+  danger: "text-text-error-primary",
+  warning: "text-status-yellow-text",
+  muted: "text-text-tertiary"
+} as const
 
 export function CredentialCheckStatus({
   check,
   hasKey,
   pending,
+  providerKind,
+  providerName,
   onFixKey,
   onRecheck
 }: {
   check?: CredentialCheck
   hasKey?: boolean
   pending?: boolean
+  providerKind?: string
+  providerName?: string
   onFixKey?: () => void
   onRecheck?: () => void
 }) {
   const t = useT()
   const state = credentialUiState(check, { hasKey, pending })
   if (state === "none") return null
-  const tone =
-    state === "ok" ? "success" : state === "invalid" ? "danger" : "muted"
+  const tone = credentialUiTone(state, check?.code)
   return (
-    <div data-testid="credential-check-status" data-state={state} className="flex flex-col items-end gap-0.5">
+    <div
+      data-testid="credential-check-status"
+      data-state={state}
+      data-code={check?.code ?? ""}
+      data-tone={tone}
+      className="flex flex-col items-end gap-0.5"
+    >
       <div className="flex items-center gap-1.5">
         {state === "pending" ? (
           <RiLoader4Line className="size-3.5 animate-spin text-text-tertiary" aria-hidden />
         ) : (
-          <span
-            className={cx(
-              "size-1.5 rounded-full",
-              tone === "success" && "bg-state-success-text",
-              tone === "danger" && "bg-text-error-primary",
-              tone === "muted" && "bg-text-tertiary"
-            )}
-            aria-hidden
-          />
+          <span className={cx("size-1.5 rounded-full", TONE_DOT[tone])} aria-hidden />
         )}
-        <span
-          className={cx(
-            "text-caption-2-medium",
-            tone === "success" && "text-state-success-text",
-            tone === "danger" && "text-text-error-primary",
-            tone === "muted" && "text-text-tertiary"
-          )}
-        >
-          {t(credentialStatusLabelKey(state))}
+        <span className={cx("text-caption-2-medium", TONE_TEXT[tone])}>
+          {t(credentialStatusLabelKey(state, check?.code))}
         </span>
         {state === "invalid" && onFixKey ? (
-          <button
-            type="button"
-            data-testid="credential-fix-key"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onFixKey()
-            }}
-            className="cursor-pointer text-caption-2-medium text-accent-600 hover:underline"
-          >
-            {t("settings.setupGuide.credentialFixKey")}
-          </button>
+          <StatusAction testId="credential-fix-key" label={t("settings.setupGuide.credentialFixKey")} onClick={onFixKey} />
         ) : null}
         {state === "unverified" && onRecheck ? (
-          <button
-            type="button"
-            data-testid="credential-recheck"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-              onRecheck()
-            }}
-            className="cursor-pointer text-caption-2-medium text-accent-600 hover:underline"
-          >
-            {t("settings.setupGuide.credentialRecheck")}
-          </button>
+          <StatusAction testId="credential-recheck" label={t("settings.setupGuide.credentialRecheck")} onClick={onRecheck} />
         ) : null}
       </div>
       {state === "unverified" ? (
-        <p className="max-w-56 text-right text-caption-2-regular text-text-tertiary">
-          {t(credentialUnverifiedHintKey(check?.code))}
-        </p>
+        <CredentialUnverifiedHint
+          code={check?.code}
+          providerName={providerName}
+          consoleUrl={presetConsoleUrl(providerKind)}
+        />
       ) : null}
     </div>
+  )
+}
+
+function StatusAction({
+  testId,
+  label,
+  onClick
+}: {
+  testId: string
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        onClick()
+      }}
+      className="cursor-pointer text-caption-2-medium text-accent-600 hover:underline"
+    >
+      {label}
+    </button>
   )
 }

@@ -50,7 +50,11 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       adoptedDefaultRouteToast: string
       credentialInvalidNotice: string
       credentialNetworkNotice: string
+      credentialForbiddenNotice: string
+      credentialBillingNotice: string
       goFixKey: string
+      switchModel: string
+      retryDraft: string
       resendDraft: string
       resendingDraft: string
       toolName: { writeFile: string }
@@ -76,10 +80,16 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
         moreEngines: string
         credentialInvalid: string
         credentialUnverified: string
+        credentialRestricted: string
         credentialUnverifiedNetwork: string
         credentialUnverifiedTimeout: string
         credentialUnverifiedUnknown: string
+        credentialUnverifiedForbidden: string
+        credentialUnverifiedBillingBefore: string
+        credentialConsole: string
+        credentialUnverifiedBillingAfter: string
         readyUnverifiedHint: string
+        readyRestrictedHint: string
       }
       agentTools: { manageProviders: string }
       update: { devSkip: string }
@@ -147,23 +157,45 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
     z.chat.credentialNetworkNotice,
     "连不上 {name}，消息没发出去。草稿会留着，检查网络后再试。"
   )
+  assert.equal(
+    z.chat.credentialForbiddenNotice,
+    "{name} 拒绝了这次请求，消息没发出去。草稿会留着，可以换个模型，或稍后再试。"
+  )
+  assert.equal(
+    z.chat.credentialBillingNotice,
+    "{name} 说额度或账单有问题，消息没发出去。草稿会留着，可以先换个模型，处理好后再试。"
+  )
   assert.equal(z.chat.goFixKey, "改密钥")
+  assert.equal(z.chat.switchModel, "换个模型")
+  assert.equal(z.chat.retryDraft, "再试一次")
   assert.equal(z.chat.resendDraft, "再发一次")
   assert.equal(z.chat.resendingDraft, "正在发送…")
   assert.equal(z.chat.needModelNotice, "还差一步：选一个模型，才能发消息。草稿会留着。")
   assert.equal(z.settings.setupGuide.credentialInvalid, "密钥无效")
   assert.equal(z.settings.setupGuide.credentialUnverified, "已保存 · 还没验证")
+  assert.equal(z.settings.setupGuide.credentialRestricted, "已保存 · 暂时用不了")
   assert.equal(z.settings.setupGuide.credentialUnverifiedNetwork, "连不上服务，检查网络后再试。")
   assert.equal(z.settings.setupGuide.credentialUnverifiedTimeout, "服务半天没回应，稍后再试。")
   assert.equal(
     z.settings.setupGuide.credentialUnverifiedUnknown,
     "暂时没法验证，可以先用，发消息时会再检查。"
   )
+  assert.equal(
+    z.settings.setupGuide.credentialUnverifiedForbidden,
+    "服务拒绝了这把密钥的请求，可能是权限或地区限制。"
+  )
+  assert.equal(
+    `${z.settings.setupGuide.credentialUnverifiedBillingBefore.replace("{name}", "X")}${z.settings.setupGuide.credentialConsole}${z.settings.setupGuide.credentialUnverifiedBillingAfter}`,
+    "额度或账单有问题，到 X 官网处理好后再试。"
+  )
   assert.equal(z.settings.setupGuide.readyUnverifiedHint, "密钥还没验证，第一次发消息时会检查。")
+  assert.equal(z.settings.setupGuide.readyRestrictedHint, "{name} 暂时用不了，可以再连一家备用。")
   assert.equal(z.chat.toolName.writeFile, "写入文件")
   assert.equal(z.pages.inbox.emptyHint.includes("Inbox"), false)
   assert.doesNotMatch(z.chat.credentialInvalidNotice, /401|403|ECONNREFUSED/)
   assert.doesNotMatch(z.chat.credentialNetworkNotice, /401|403|ECONNREFUSED|status/)
+  assert.doesNotMatch(z.chat.credentialForbiddenNotice, /401|402|403|Forbidden|Payment Required/i)
+  assert.doesNotMatch(z.chat.credentialBillingNotice, /401|402|403|Forbidden|Payment Required/i)
   assert.equal(z.chat.adoptedDefaultRouteToast, "之后的新对话默认用「{name}」，可在设置里改。")
   assert.equal(z.chat.goConnect, "去连接")
   assert.equal(z.settings.setupGuide.connectLocalUnverified, "未验证")

@@ -77,6 +77,8 @@ export function ProviderConfiguredRow({
           check={check}
           hasKey
           pending={recheck.pendingId === profile.id}
+          providerKind={profile.kind}
+          providerName={profile.name}
           onFixKey={() => {
             void navigate({
               to: "/settings/$section",

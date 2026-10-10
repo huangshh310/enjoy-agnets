@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（#135：`CHAT_READY=none` 不冻结；未设不注入 ollama）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（#135：`CHAT_READY=none` 不冻结；`SendGateCode` 含 forbidden/billing）
 
 ## 当前真相
 

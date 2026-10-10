@@ -27,6 +27,7 @@ import { getIde, hasIde } from "@renderer/lib/ide"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
 import { ThreadCredentialInvalidNotice } from "./thread-credential-invalid-notice"
 import { ThreadCredentialNetworkNotice } from "./thread-credential-network-notice"
+import { ThreadCredentialRestrictedNotice } from "./thread-credential-restricted-notice"
 import { ThreadNeedModelNotice } from "./thread-need-model-notice"
 import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
 
@@ -64,35 +65,10 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   if (kind === "provider_unreachable") {
     return <ThreadCredentialNetworkNotice onDismiss={() => setError(null)} className={className} />
   }
-  if (kind === "provider_forbidden") {
+  if (kind === "provider_forbidden" || kind === "provider_billing") {
     return (
-      <ThreadSendGateNotice
-        testId="thread-provider-forbidden-notice"
-        kind="provider_forbidden"
-        message={t("chat.providerForbiddenNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
-        onDismiss={() => setError(null)}
-        className={className}
-      />
-    )
-  }
-  if (kind === "provider_billing") {
-    return (
-      <ThreadSendGateNotice
-        testId="thread-provider-billing-notice"
-        kind="provider_billing"
-        message={t("chat.providerBillingNotice")}
-        actionLabel={t("chat.changeKey")}
-        actionIcon={<RiKey2Line className="size-3" />}
-        onAction={() => {
-          setError(null)
-          void navigate({ to: "/settings/$section", params: { section: "providers" } })
-        }}
+      <ThreadCredentialRestrictedNotice
+        code={kind}
         onDismiss={() => setError(null)}
         className={className}
       />

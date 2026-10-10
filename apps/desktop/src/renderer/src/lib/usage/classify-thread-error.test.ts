@@ -92,6 +92,11 @@ test("ACP 未登录不是可重试供应商错误", () => {
   assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "no_chat_route")
   assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "credential_invalid")
   assert.notEqual(classifyThreadError(PROVIDER_UNREACHABLE), "generic")
+  assert.equal(classifyThreadError("provider_forbidden"), "provider_forbidden")
+  assert.equal(classifyThreadError("provider_billing"), "provider_billing")
+  assert.notEqual(classifyThreadError("provider_forbidden"), "credential_invalid")
+  assert.notEqual(classifyThreadError("provider_billing"), "credit")
+  assert.notEqual(classifyThreadError("provider_billing"), "generic")
   assert.equal(
     classifyThreadError("Error invoking remote method 'agent.run': Error: no_chat_route"),
     "no_chat_route"

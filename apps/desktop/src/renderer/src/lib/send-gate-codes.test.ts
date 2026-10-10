@@ -12,8 +12,12 @@ import {
 import {
   isCredentialInvalid,
   isDraftKeepingSendGate,
+  isProviderBilling,
+  isProviderForbidden,
   isProviderUnreachable,
   NO_CHAT_ROUTE,
+  providerBillingCode,
+  providerForbiddenCode,
   providerUnreachableCode
 } from "./send-gate-codes.ts"
 
@@ -32,4 +36,22 @@ test("provider_unreachable 从合约 ChatSendErrorCode 读", () => {
   assert.equal(isProviderUnreachable(pinned), true)
   assert.equal(isDraftKeepingSendGate(pinned), true)
   assert.equal("provider_unreachable" in SendGateCode.enum, false)
+})
+
+test("forbidden / billing 合约有则读枚举，没有则回落字面量，不扩 Zod", () => {
+  const forbidden = providerForbiddenCode()
+  const billing = providerBillingCode()
+  const enums = ChatSendErrorCode.enum as Record<string, string>
+  if ("provider_forbidden" in enums) assert.equal(forbidden, enums.provider_forbidden)
+  else assert.equal(forbidden, "provider_forbidden")
+  if ("provider_billing" in enums) assert.equal(billing, enums.provider_billing)
+  else assert.equal(billing, "provider_billing")
+  assert.equal(isProviderForbidden(forbidden), true)
+  assert.equal(isProviderBilling(billing), true)
+  assert.equal(isDraftKeepingSendGate(forbidden), true)
+  assert.equal(isDraftKeepingSendGate(billing), true)
+  assert.equal(isCredentialInvalid(forbidden), false)
+  assert.equal(isProviderUnreachable(billing), false)
+  assert.equal("provider_forbidden" in SendGateCode.enum, false)
+  assert.equal("provider_billing" in SendGateCode.enum, false)
 })

@@ -4,7 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { showReadyUnverifiedHint } from "../../lib/credential-check-ui.ts"
+import { showReadyRestrictedHint, showReadyUnverifiedHint } from "../../lib/credential-check-ui.ts"
 import { readyGuideFinishes, readyGuidePrimaryKey, readyGuideTitleKey } from "./ready-face.ts"
 
 test("有可对话路线才写可以开始了", () => {
@@ -39,6 +39,15 @@ test("末屏副标题只在 ready 且默认路线 unverified 时出现，不重�
   assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "unverified" }), true)
   assert.equal(showReadyUnverifiedHint({ ready: false, credentialState: "unverified" }), false)
   assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "ok" }), false)
+  assert.equal(
+    showReadyRestrictedHint({
+      ready: true,
+      credentialState: "unverified",
+      credentialCode: "forbidden"
+    }),
+    true
+  )
+  assert.equal(readyGuideTitleKey(true), "settings.setupGuide.readyTitle")
 })
 
 test("未验证本机模型不把末屏写成可以开始了，只认 ready", () => {

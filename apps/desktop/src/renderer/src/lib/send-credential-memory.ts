@@ -4,7 +4,11 @@
  */
 import { useSyncExternalStore } from "react"
 import type { CredentialCheck } from "@enjoy-agents/ipc-contract/credential-check"
-import { isCredentialInvalid } from "./send-gate-codes"
+import {
+  credentialBillingCode,
+  credentialForbiddenCode
+} from "./credential-check-ui"
+import { isCredentialInvalid, isProviderBilling, isProviderForbidden } from "./send-gate-codes"
 
 let remembered: CredentialCheck | undefined
 const listeners = new Set<() => void>()
@@ -17,13 +21,21 @@ export function rememberedSendCredential(): CredentialCheck | undefined {
   return remembered
 }
 
-export function noteSendCredentialOutcome(outcome: "ok" | "invalid" | "unchanged"): void {
+export function noteSendCredentialOutcome(
+  outcome: "ok" | "invalid" | "forbidden" | "billing" | "unchanged"
+): void {
   if (outcome === "unchanged") return
-  remembered = outcome === "ok" ? { state: "ok" } : { state: "invalid", code: "auth_rejected" }
+  if (outcome === "ok") remembered = { state: "ok" }
+  else if (outcome === "invalid") remembered = { state: "invalid", code: "auth_rejected" }
+  else if (outcome === "forbidden") {
+    remembered = { state: "unverified", code: credentialForbiddenCode() as CredentialCheck["code"] }
+  } else {
+    remembered = { state: "unverified", code: credentialBillingCode() as CredentialCheck["code"] }
+  }
   emit()
 }
 
-/** run.end 记 ok；credential_invalid 记 invalid；网络失败不改。 */
+/** run.end 记 ok；credential_invalid 记 invalid；forbidden/billing 记 unverified；网络不改。 */
 export function noteSendCredentialFromStream(
   event: { type: string },
   patch: { error?: string | null },
@@ -33,9 +45,16 @@ export function noteSendCredentialFromStream(
     noteSendCredentialOutcome("ok")
     return
   }
-  if (event.type === "run.error" && patch.error && isCredentialInvalid(patch.error)) {
+  if (event.type !== "run.error" || !patch.error) return
+  if (isCredentialInvalid(patch.error)) {
     noteSendCredentialOutcome("invalid")
+    return
   }
+  if (isProviderForbidden(patch.error)) {
+    noteSendCredentialOutcome("forbidden")
+    return
+  }
+  if (isProviderBilling(patch.error)) noteSendCredentialOutcome("billing")
 }
 
 export function subscribeSendCredential(listener: () => void): () => void {

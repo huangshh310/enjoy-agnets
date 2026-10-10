@@ -1,9 +1,13 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  credentialBillingCode,
+  credentialForbiddenCode,
   credentialStatusLabelKey,
   credentialUiState,
+  credentialUiTone,
   credentialUnverifiedHintKey,
+  showReadyRestrictedHint,
   showReadyUnverifiedHint
 } from "./credential-check-ui.ts"
 
@@ -24,11 +28,40 @@ test("三态：ok / invalid / unverified / pending", () => {
   assert.equal(credentialUiState(undefined), "none")
 })
 
-test("词条：绿已连上 / 红密钥无效 / 灰还没验证 / 正在验证", () => {
+test("forbidden / billing 仍是 unverified，不当 invalid", () => {
+  assert.equal(
+    credentialUiState({ state: "unverified", code: credentialForbiddenCode() as "unknown" }, { hasKey: true }),
+    "unverified"
+  )
+  assert.equal(
+    credentialUiState({ state: "unverified", code: credentialBillingCode() as "unknown" }, { hasKey: true }),
+    "unverified"
+  )
+})
+
+test("词条：绿已连上 / 红密钥无效 / 灰还没验证 / 琥珀暂时用不了 / 正在验证", () => {
   assert.equal(credentialStatusLabelKey("ok"), "settings.setupGuide.connectApiKeyConnected")
   assert.equal(credentialStatusLabelKey("invalid"), "settings.setupGuide.credentialInvalid")
   assert.equal(credentialStatusLabelKey("unverified"), "settings.setupGuide.credentialUnverified")
+  assert.equal(
+    credentialStatusLabelKey("unverified", credentialForbiddenCode()),
+    "settings.setupGuide.credentialRestricted"
+  )
+  assert.equal(
+    credentialStatusLabelKey("unverified", credentialBillingCode()),
+    "settings.setupGuide.credentialRestricted"
+  )
   assert.equal(credentialStatusLabelKey("pending"), "settings.setupGuide.verifyPending")
+})
+
+test("点色：红只给密钥无效，琥珀只给 forbidden/billing，其余中性", () => {
+  assert.equal(credentialUiTone("ok"), "success")
+  assert.equal(credentialUiTone("invalid"), "danger")
+  assert.equal(credentialUiTone("pending"), "muted")
+  assert.equal(credentialUiTone("unverified"), "muted")
+  assert.equal(credentialUiTone("unverified", "network"), "muted")
+  assert.equal(credentialUiTone("unverified", credentialForbiddenCode()), "warning")
+  assert.equal(credentialUiTone("unverified", credentialBillingCode()), "warning")
 })
 
 test("还没验证次行按 code，不进 tooltip", () => {
@@ -36,11 +69,48 @@ test("还没验证次行按 code，不进 tooltip", () => {
   assert.equal(credentialUnverifiedHintKey("timeout"), "settings.setupGuide.credentialUnverifiedTimeout")
   assert.equal(credentialUnverifiedHintKey("unknown"), "settings.setupGuide.credentialUnverifiedUnknown")
   assert.equal(credentialUnverifiedHintKey(undefined), "settings.setupGuide.credentialUnverifiedUnknown")
+  assert.equal(
+    credentialUnverifiedHintKey(credentialForbiddenCode()),
+    "settings.setupGuide.credentialUnverifiedForbidden"
+  )
+  assert.equal(
+    credentialUnverifiedHintKey(credentialBillingCode()),
+    "settings.setupGuide.credentialUnverifiedBilling"
+  )
 })
 
-test("末屏副标题只看 ready && unverified，不重算 ready", () => {
+test("末屏副标题只看 ready && unverified，restricted 不回落还差一步也不走灰提示", () => {
   assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "unverified" }), true)
   assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "ok" }), false)
   assert.equal(showReadyUnverifiedHint({ ready: false, credentialState: "unverified" }), false)
   assert.equal(showReadyUnverifiedHint({ ready: true, credentialState: "invalid" }), false)
+  assert.equal(
+    showReadyUnverifiedHint({
+      ready: true,
+      credentialState: "unverified",
+      credentialCode: credentialForbiddenCode()
+    }),
+    false
+  )
+  assert.equal(
+    showReadyRestrictedHint({
+      ready: true,
+      credentialState: "unverified",
+      credentialCode: credentialForbiddenCode()
+    }),
+    true
+  )
+  assert.equal(
+    showReadyRestrictedHint({
+      ready: true,
+      credentialState: "unverified",
+      credentialCode: credentialBillingCode()
+    }),
+    true
+  )
+  assert.equal(showReadyRestrictedHint({ ready: true, credentialState: "unverified" }), false)
+  assert.equal(
+    showReadyRestrictedHint({ ready: false, credentialState: "unverified", credentialCode: "forbidden" }),
+    false
+  )
 })

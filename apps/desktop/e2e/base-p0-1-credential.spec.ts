@@ -240,3 +240,119 @@ test("末屏 ready + unverified 只挂副标题", async () => {
     await app.close()
   }
 })
+
+const PENDING_KAI_RESTRICTED =
+  "pending-kai: ENJOY_E2E_CREDENTIAL=unverified:forbidden|unverified:billing 与 ENJOY_E2E_SEND=forbidden|billing 等 #135 新 tip"
+
+const RESTRICTED = {
+  forbidden: {
+    send: "forbidden",
+    credential: "unverified:forbidden",
+    kind: "provider_forbidden",
+    notice: "{name} 拒绝了这次请求，消息没发出去。草稿会留着，可以换个模型，或稍后再试。",
+    hint: "服务拒绝了这把密钥的请求，可能是权限或地区限制。",
+    snapList: "p0-1-credential-forbidden-row",
+    snapSend: "p0-1-credential-forbidden-notice",
+    snapReady: "p0-1-ready-restricted-forbidden"
+  },
+  billing: {
+    send: "billing",
+    credential: "unverified:billing",
+    kind: "provider_billing",
+    notice: "{name} 说额度或账单有问题，消息没发出去。草稿会留着，可以先换个模型，处理好后再试。",
+    hint: "额度或账单有问题，到",
+    snapList: "p0-1-credential-billing-row",
+    snapSend: "p0-1-credential-billing-notice",
+    snapReady: "p0-1-ready-restricted-billing"
+  }
+} as const
+
+for (const [code, fixture] of Object.entries(RESTRICTED)) {
+  test(`pending-kai 列表 ${code}：琥珀暂时用不了 + 再试一次 + 次行`, async () => {
+    test.setTimeout(180_000)
+    test.skip(true, PENDING_KAI_RESTRICTED)
+    const blocked = canLaunchElectron()
+    test.skip(Boolean(blocked), blocked ?? "")
+    const { app, window } = await launchEnjoy(keyEnv({ ENJOY_E2E_CREDENTIAL: fixture.credential }))
+    try {
+      await openChat(window)
+      await openProviders(window)
+      const status = listStatus(window)
+      await expect(status).toHaveAttribute("data-state", "unverified")
+      await expect(status).toHaveAttribute("data-code", code)
+      await expect(status).toHaveAttribute("data-tone", "warning")
+      await expect(status).toContainText("已保存 · 暂时用不了")
+      await expect(window.getByTestId("credential-recheck")).toHaveText("再试一次")
+      await expect(status).toContainText(fixture.hint)
+      await expect(status).not.toContainText(/401|402|403|Forbidden|Payment Required/i)
+      await expect(status).not.toContainText("密钥无效")
+      await expect(status).not.toContainText("还没验证")
+      if (code === "billing") {
+        const link = window.getByTestId("credential-billing-console")
+        const plain = window.getByTestId("credential-billing-console-text")
+        await expect(link.or(plain)).toHaveText("官网")
+      }
+      await snap(window, fixture.snapList)
+    } finally {
+      await app.close()
+    }
+  })
+
+  test(`pending-kai 发送 ${code}：琥珀白卡 + 换个模型 / 再试一次，草稿留下`, async () => {
+    test.setTimeout(180_000)
+    test.skip(true, PENDING_KAI_RESTRICTED)
+    const blocked = canLaunchElectron()
+    test.skip(Boolean(blocked), blocked ?? "")
+    const { app, window } = await launchEnjoy(keyEnv({ ENJOY_E2E_SEND: fixture.send }))
+    try {
+      await openChat(window)
+      await sendDraft(window, `hello ${code}`)
+      const notice = window.getByTestId("thread-credential-restricted-notice")
+      await expect(notice).toBeVisible({ timeout: 12_000 })
+      await expect(notice).toHaveAttribute("data-kind", fixture.kind)
+      await expect(notice).toHaveAttribute("data-tone", "warning")
+      await expect(notice).toContainText("E2E Stub Key")
+      await expect(notice).toContainText(fixture.notice.replace("{name}", "E2E Stub Key"))
+      await expect(notice).not.toContainText(/401|402|403|Forbidden|Payment Required|ECONNREFUSED/i)
+      await expect(notice.getByTestId("thread-credential-restricted-notice-action")).toHaveText("换个模型")
+      await expect(notice.getByTestId("thread-credential-restricted-notice-retry")).toHaveText("再试一次")
+      await expect(window.getByTestId("composer-input")).toHaveValue(`hello ${code}`)
+      await expect(window.getByTestId("thread-no-chat-route-notice")).toHaveCount(0)
+      await expect(window.getByTestId("thread-credential-invalid-notice")).toHaveCount(0)
+      await snap(window, fixture.snapSend)
+      await notice.getByTestId("thread-credential-restricted-notice-action").click()
+      await expect(window.getByTestId("composer-engine-chip")).toHaveAttribute("data-state", "open", {
+        timeout: 8_000
+      })
+    } finally {
+      await app.close()
+    }
+  })
+
+  test(`pending-kai 末屏 ${code}：标题可以开始了 + 琥珀副标题`, async () => {
+    test.setTimeout(180_000)
+    test.skip(true, PENDING_KAI_RESTRICTED)
+    const blocked = canLaunchElectron()
+    test.skip(Boolean(blocked), blocked ?? "")
+    const { app, window } = await launchEnjoy({
+      ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_CHAT_READY: "key",
+      ENJOY_E2E_CREDENTIAL: fixture.credential
+    })
+    try {
+      await window.getByRole("heading", { name: "欢迎使用 Enjoy Agents" }).waitFor({ timeout: 20_000 })
+      for (let i = 0; i < 8; i += 1) {
+        if (await window.getByTestId("ready-restricted-hint").count()) break
+        const primary = window.getByTestId("setup-guide-primary")
+        if (await primary.count()) await clickGuidePrimary(window)
+      }
+      await expect(window.getByRole("heading", { name: "可以开始了" })).toBeVisible()
+      await expect(window.getByTestId("ready-restricted-hint")).toContainText("暂时用不了，可以再连一家备用")
+      await expect(window.getByTestId("ready-unverified-hint")).toHaveCount(0)
+      await expect(window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
+      await snap(window, fixture.snapReady)
+    } finally {
+      await app.close()
+    }
+  })
+}

@@ -39,6 +39,7 @@ export function ConnectModelStep({
   const recheck = useRecheckProvider()
   const providers = useSettingsSnapshot().data?.providers ?? []
   const keyId = resolveDefaultProviderId(readiness, providers)
+  const keyProfile = providers.find((row) => row.id === keyId)
   const options = connectModelOptions(readiness)
   return (
     <div className="flex flex-col gap-2">
@@ -63,6 +64,8 @@ export function ConnectModelStep({
                   check={readiness?.credentialCheck}
                   hasKey
                   pending={Boolean(keyId && recheck.pendingId === keyId)}
+                  providerKind={keyProfile?.kind}
+                  providerName={keyProfile?.name}
                   onFixKey={
                     keyId
                       ? () => {
