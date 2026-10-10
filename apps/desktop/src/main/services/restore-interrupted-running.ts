@@ -11,7 +11,11 @@ import {
 } from "@enjoy-agents/ipc-contract"
 import { decideTurnOutcome, type TurnOutcome } from "@enjoy-agents/ipc-contract/turn-outcome"
 import { RESTART_ABANDONED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
-import { RESTORE_INTERRUPTED_RUNNING } from "@enjoy-agents/ipc-contract/restore-codes"
+import {
+  isRestoreFamilyCode,
+  RESTORE_INTERRUPTED_RUNNING,
+  type RestoreFamilyCode
+} from "@enjoy-agents/ipc-contract/restore-codes"
 import { getRun, updateRun, type RunRow } from "@enjoy-agents/db"
 import { emitEvent } from "./agent-run-state"
 import { getDatabase } from "./database"
@@ -24,7 +28,10 @@ const pendingEmit = new Map<string, TurnOutcome>()
 
 export function queueInterruptedRunningSettle(row: RunRow): void {
   settlePendingApprovalsForRun(row.id, undefined, "restart")
-  const original = persistSealedAssistantTools(row.sessionId, { runCreatedAt: row.createdAt })
+  const original = persistSealedAssistantTools(row.sessionId, {
+    runCreatedAt: row.createdAt,
+    restartNotice: RESTORE_INTERRUPTED_RUNNING
+  })
   writeCancelledRestoreError(row.id, RESTORE_INTERRUPTED_RUNNING)
   const turn = decideTurnOutcome({ ended: "archive", tools: original })
   persistSessionWorkflow(row.sessionId, turn.workflow)
@@ -67,7 +74,7 @@ export function writeCancelledRestoreError(runId: string, restoreCode: string): 
 /** waiting 放弃与 running 中途共用：只封本轮助手行，返回封口前的工具给收工判定。 */
 export function persistSealedAssistantTools(
   sessionId: string,
-  opts?: { runCreatedAt?: number }
+  opts?: { runCreatedAt?: number; restartNotice?: RestoreFamilyCode }
 ): Array<{ name: string; state?: string; result?: unknown; errorText?: string }> {
   const db = getDatabase()
   const latestUser = db
@@ -87,14 +94,14 @@ export function persistSealedAssistantTools(
     const tools = payload.tools ?? []
     if (original.length === 0) original = tools
     const sealed = sealAbandonedTools(tools, { code: RESTART_ABANDONED_CODE }) ?? tools
-    if (JSON.stringify(sealed) === JSON.stringify(tools)) continue
-    persistMessage(
-      sessionId,
-      "assistant",
-      serializeAssistantPayload({ ...payload, tools: sealed }),
-      undefined,
-      row.id
-    )
+    const restartNotice = isRestoreFamilyCode(opts?.restartNotice)
+      ? opts.restartNotice
+      : isRestoreFamilyCode(payload.restartNotice)
+        ? payload.restartNotice
+        : undefined
+    const next = { ...payload, tools: sealed, restartNotice }
+    if (JSON.stringify(next) === JSON.stringify(payload)) continue
+    persistMessage(sessionId, "assistant", serializeAssistantPayload(next), undefined, row.id)
   }
   return original
 }

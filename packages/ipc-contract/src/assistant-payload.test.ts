@@ -64,3 +64,14 @@ test("agent runKind 即使纯文本也走信封", () => {
   assert.equal(parseAssistantPayload(raw).runKind, "agent")
   assert.equal(parseAssistantPayload(raw).content, "hello")
 })
+
+test("restartNotice 走信封并回读，假码丢掉", () => {
+  const raw = serializeAssistantPayload({
+    content: "",
+    restartNotice: "restore_interrupted_running"
+  })
+  assert.notEqual(raw, "")
+  assert.equal(parseAssistantPayload(raw).restartNotice, "restore_interrupted_running")
+  const forged = JSON.stringify({ v: 1, content: "", restartNotice: "invented_interrupted" })
+  assert.equal(parseAssistantPayload(forged).restartNotice, undefined)
+})

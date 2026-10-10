@@ -1,6 +1,6 @@
 /**
  * 冷启动回灌：最新助手行已封 restart_abandoned 时补回挂 notice。
- * 只用已记住的真实码，禁止每次冷启动都发明 restore_interrupted_running。
+ * 只用已记住或信封 `restartNotice` 的真实码，禁止每次发明 restore_interrupted_running。
  * 第一次展示后记成 consumed，关掉或下次启动不再弹。
  */
 import { RESTART_ABANDONED_CODE, toolHasResultCode } from "@enjoy-agents/ipc-contract/desktop-notify"
@@ -13,6 +13,7 @@ import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 type HydrateNoticeMessage = {
   role?: string
   tools?: ThreadToolCall[]
+  restartNotice?: string
 }
 
 const memory = new Map<string, { code: RestoreFamilyCode; consumed: boolean }>()
@@ -81,8 +82,17 @@ export function resetRestartNoticeForTest(): void {
 }
 
 export function latestAssistantRestartAbandoned(messages: HydrateNoticeMessage[]): boolean {
-  const last = [...messages].reverse().find((message) => message.role === "assistant")
+  const last = latestAssistant(messages)
   return Boolean(last?.tools?.some((tool) => toolHasResultCode(tool, RESTART_ABANDONED_CODE)))
+}
+
+export function latestAssistantRestartNotice(messages: HydrateNoticeMessage[]): RestoreFamilyCode | undefined {
+  const code = latestAssistant(messages)?.restartNotice
+  return isRestoreFamilyCode(code) ? code : undefined
+}
+
+function latestAssistant(messages: HydrateNoticeMessage[]): HydrateNoticeMessage | undefined {
+  return [...messages].reverse().find((message) => message.role === "assistant")
 }
 
 export function noticeAfterRestartHydrate(input: {
@@ -103,8 +113,9 @@ export function noticeAfterRestartHydrate(input: {
   }
   if (!sessionId || isRestartNoticeConsumed(sessionId)) return input.notice
   if (!latestAssistantRestartAbandoned(input.messages)) return input.notice
-  const code = lastRestartNotice(sessionId)
+  const code = lastRestartNotice(sessionId) ?? latestAssistantRestartNotice(input.messages)
   if (!isRestoreFamilyCode(code)) return input.notice
+  rememberRestartNotice(sessionId, code)
   consumeRestartNotice(sessionId)
   return code
 }

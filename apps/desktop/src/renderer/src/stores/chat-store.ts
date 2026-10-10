@@ -150,6 +150,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
     const patch = reduceStreamEvent(get().messages, event, get().runId)
     const sessionId = get().sessionId
+    const noticeSessionId = sessionId ?? event.sessionId
+    if (patch.notice !== undefined && noticeSessionId && isRestoreFamilyCode(patch.notice)) {
+      rememberRestartNotice(noticeSessionId, patch.notice)
+    }
     if (patch.heldResolved && sessionId) {
       holdApprovalResolved(sessionId, patch.heldResolved)
     }

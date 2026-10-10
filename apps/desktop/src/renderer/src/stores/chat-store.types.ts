@@ -9,6 +9,7 @@ import type {
   StreamEvent,
   ThreadToolCall
 } from "@enjoy-agents/ipc-contract"
+import type { RestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import type { ComposerRunKind } from "../hooks/composer-run-kind"
 
 export type ChatRole = "user" | "assistant"
@@ -76,6 +77,8 @@ export type ThreadMessage = {
   runtimeId?: string
   /** 本轮 run。新一轮禁止折进上一轮终态行。 */
   runId?: string
+  /** 落库的真实回挂码，冷启动横幅用这个，不发明 interrupted。 */
+  restartNotice?: RestoreFamilyCode
   modelLabel?: string
   /** 轮末静态引导词；未点击不得自动发送 */
   actionChips?: ActionChip[]

@@ -41,6 +41,7 @@ export function mapAssistantThreadMessage(
     modelId: payload.modelId,
     runtimeId: payload.runtimeId,
     runId: payload.runId,
+    restartNotice: payload.restartNotice,
     actionChips: payload.actionChips
   }
 }

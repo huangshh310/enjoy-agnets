@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { test } from "node:test"
 import { RESTART_ABANDONED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import {
@@ -9,6 +10,7 @@ import {
   consumeRestartNotice,
   keepRestoreFamilyNotice,
   latestAssistantRestartAbandoned,
+  latestAssistantRestartNotice,
   noticeAfterRestartHydrate,
   rememberRestartNotice,
   resetRestartNoticeForTest
@@ -102,6 +104,41 @@ test("已有 notice / 同会话 / 仍在跑 不覆盖", () => {
   )
 })
 
+test("信封落了真实码：冷启动补这个，不发明 interrupted", () => {
+  const noMatching = {
+    role: "assistant" as const,
+    restartNotice: RESTORE_NO_MATCHING_CODE,
+    tools: abandoned.tools
+  }
+  assert.equal(latestAssistantRestartNotice([noMatching]), RESTORE_NO_MATCHING_CODE)
+  assert.equal(
+    noticeAfterRestartHydrate({
+      sessionId: "ses_env",
+      sameSession: false,
+      running: false,
+      notice: null,
+      messages: [noMatching]
+    }),
+    RESTORE_NO_MATCHING_CODE
+  )
+  assert.equal(
+    noticeAfterRestartHydrate({
+      sessionId: "ses_env2",
+      sameSession: false,
+      running: false,
+      notice: null,
+      messages: [
+        {
+          role: "assistant",
+          restartNotice: RESTORE_INTERRUPTED_RUNNING,
+          tools: abandoned.tools
+        }
+      ]
+    }),
+    RESTORE_INTERRUPTED_RUNNING
+  )
+})
+
 test("最新助手行不是重启放弃则不补", () => {
   rememberRestartNotice("ses_4", RESTORE_INTERRUPTED_RUNNING)
   assert.equal(latestAssistantRestartAbandoned([{ role: "assistant", tools: [] }]), false)
@@ -115,6 +152,12 @@ test("最新助手行不是重启放弃则不补", () => {
     }),
     null
   )
+})
+
+test("applyStreamEvent 写入回挂 notice 时按事件 sessionId 记住", () => {
+  const store = readFileSync(new URL("../stores/chat-store.ts", import.meta.url), "utf8")
+  assert.match(store, /noticeSessionId = sessionId \?\? event.sessionId/)
+  assert.match(store, /rememberRestartNotice\(noticeSessionId, patch.notice\)/)
 })
 
 test("idle 只保住回挂家族 notice", () => {

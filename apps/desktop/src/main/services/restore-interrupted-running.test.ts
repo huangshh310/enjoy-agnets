@@ -90,6 +90,7 @@ test("写类已开始：中途结清进待验收，工具行 restart_abandoned�
   const tool = parseAssistantPayload(assistant.content).tools?.[0]
   assert.equal(tool?.state, "output-error")
   assert.equal((tool?.result as { code?: string } | undefined)?.code, RESTART_ABANDONED_CODE)
+  assert.equal(parseAssistantPayload(assistant.content).restartNotice, RESTORE_INTERRUPTED_RUNNING)
   assert.ok(
     events.some(
       (event) =>

@@ -117,6 +117,24 @@ test("仍在跑的会话回灌：不把 input-available 封成出错", () => {
   assert.equal(live?.tools?.[0]?.state, "input-available")
 })
 
+test("hydrate 恢复信封上的真实回挂码", () => {
+  const content = JSON.stringify({
+    v: 1,
+    content: "",
+    restartNotice: "restore_interrupted_running",
+    tools: [
+      {
+        id: "tool_int",
+        name: "write_file",
+        state: "output-error",
+        result: { code: "restart_abandoned", decision: "cancelled" }
+      }
+    ]
+  })
+  const [message] = threadFromRows([{ id: "msg_notice", role: "assistant", content, createdAt: 1 }])
+  assert.equal(message?.restartNotice, "restore_interrupted_running")
+})
+
 test("hydrate 恢复本轮 runId，旧泡不跟新一轮", () => {
   const message = mapAssistantThreadMessage(
     { id: "msg_run", content: "ok", createdAt: 1 },

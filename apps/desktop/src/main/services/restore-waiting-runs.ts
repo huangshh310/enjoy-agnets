@@ -8,7 +8,6 @@ import {
   getRun,
   isSupersededSdkApprovalId,
   listApprovalsForRun,
-  listPendingApprovals,
   listRuns,
   planSdkReplay,
   resolvedSdkApprovalId,

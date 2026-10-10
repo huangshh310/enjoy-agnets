@@ -149,7 +149,10 @@ export function endRestoredRunWithoutSdkReply(
   settlePendingApprovalsForRun(runId, target, "restart")
   if (sid) {
     const createdAt = getRun(getDatabase(), runId)?.createdAt
-    persistSealedAssistantTools(sid, createdAt != null ? { runCreatedAt: createdAt } : undefined)
+    persistSealedAssistantTools(sid, {
+      ...(createdAt != null ? { runCreatedAt: createdAt } : {}),
+      restartNotice: RESTORE_NO_MATCHING_CODE
+    })
   }
   writeCancelledRestoreError(runId, RESTORE_NO_MATCHING_CODE)
   if (target) {
