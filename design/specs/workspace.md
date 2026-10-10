@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档结清 cancelled；启动 stale last 按 MRU）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档结清 cancelled；无项目空态；stale last 按 MRU）
 
 ## 当前真相
 
@@ -76,6 +76,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - **隐患**：主区删除当前项目却跳到「设置 › 工作区」。根因：进过设置会把路由条目推进 past；回到对话后删当前会话页，`forgetHistory` + `showCurrent` 回落到设置。设置模块的情境栏是 `ModuleNav`（`SettingsShell` 分段），**没有** `AiChatSidebar` 项目行，不能在设置页里删项目。正确做法：删除走 `pruneHistory` / `pruneHistoryPages`，只剪已删项目的条目，不弹栈、不落到 past 设置页；fallback 是空对话 `#/`。当前条目被剪时才 `showCurrent`。真实点击路径：轨道设置图标（`ActivityBar` → `#/settings/general`）→ 轨道对话图标回到 Chat（`#/`，`ContextColumn` 恢复 `AiChatSidebar`）→ 项目行 `ProjectPopover` ⋯ → 移除项目。
 - **隐患**：`loadWorkspace` 对已删项目继续灌会话。根因：`workspace.remember` 抛 `Unknown workspace` 被一律 catch。正确做法：这条错误刷新名单并中止，不要 `setWorkspace`。
 - 创建项目弹窗选文件夹必须走 `workspace.pickFolder`，不要 `workspace.open`，否则未点创建也会写入 `workspaces`。换目录时项目名称按「未手改则跟随新 basename」更新；创建时把 `projectName` 传给 `open.name`。
+- **隐患**：侧栏「创建项目」第一次点击没反应。根因不是 IPC 丢结果，而是 Dialog 把这次 pointer 当成外点立刻关上，或侧栏重挂把本地 `open` 状态清掉。正确做法：`requestCreateProject` 在 pointerdown 先 `preventDefault`，再微任务打开；窗只挂 `CreateProjectHost`（应用壳一份），不要跟 `SidebarRepos` 一起卸。
 - Git 当前分支来自 `git branch --show-current`。上游来自 `rev-parse --abbrev-ref @{upstream}`。失败返回空串，UI 显示「未检出分支」/「无上游」，禁止回落 `main`。底栏曾经写死 `Main`，现走 `gitBranches.current`。`gitSwitch` 遇未提交改动返回 `GIT_SWITCH_DIRTY`，禁止 `switch -f`。
 - 会话上次发送时的分支记在 renderer（`session-cwd-branch`，可 localStorage），不迁 SQLite。切走且该会话已有用户轮时，Composer 上画横幅「发送后这条会话会跟到当前分支」+ `旧 → 新`。记录只在 `agent.run` 认领成功后更新；开流失败横幅仍在。空会话 / 非 git / 脏树拒切 不画横幅。
 - `workspace.gitRestore` 按 porcelain 拆已跟踪 / 未跟踪。对不上任何 path 抛 `RESTORE_NOTHING_MATCHED`，禁止 `{ok:true, restored:0}` 后让改动条藏掉。路径 jail 走 `resolveInsideWorkspace`。

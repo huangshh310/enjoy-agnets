@@ -21,7 +21,6 @@ import {
   McpIdInput,
   McpOpenAppInput,
   McpSetPermissionInput,
-  McpUpsertInput,
   ObservabilityCliUsageInput,
   ObservabilityExportInput,
   ObservabilityMetricsInput,
@@ -64,7 +63,7 @@ import {
   removeServer,
   setPermission,
   testServer,
-  upsertServer
+  handleMcpUpsert
 } from "./services/mcp-service"
 import { disposeAllAcpSessions } from "@enjoy-agents/agent-harness"
 import { handleMcpAppMessage, openMcpApp } from "./services/mcp-app"
@@ -204,7 +203,7 @@ export function registerAiIpc() {
 
   ipcMain.handle("mcp.servers", () => listServers())
   ipcMain.handle("mcp.upsert", (_event, raw) => {
-    const result = upsertServer(McpUpsertInput.parse(raw))
+    const result = handleMcpUpsert(raw)
     disposeAllAcpSessions()
     return result
   })

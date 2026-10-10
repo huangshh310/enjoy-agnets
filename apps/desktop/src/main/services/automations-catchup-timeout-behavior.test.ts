@@ -39,7 +39,14 @@ const {
 
 const MIN = 60_000
 
-type SentEvent = { type: string; message?: string; runId?: string; code?: string }
+type SentEvent = {
+  type: string
+  message?: string
+  runId?: string
+  code?: string
+  toolCallId?: string
+  turn?: { workflow?: string; attention?: string }
+}
 
 function recordWindow(events: SentEvent[]): BrowserWindow {
   return {
@@ -105,6 +112,39 @@ function holdCatchUp(runId: string, events: SentEvent[]) {
   return run
 }
 
+test("补跑超时同一工具只发一条 approval.resolved", async () => {
+  const runId = "run_catchup_one_resolved"
+  const events: SentEvent[] = []
+  const run = holdCatchUp(runId, events)
+  rememberApproval({
+    runId,
+    approvalId: "apr_one",
+    toolCallId: "tool_one",
+    name: "write_file",
+    args: { path: "one.txt" }
+  })
+  run.pendingApprovals.push({
+    approvalId: "apr_one",
+    toolCallId: "tool_one",
+    name: "write_file"
+  })
+  run.tools = [
+    {
+      id: "tool_one",
+      name: "write_file",
+      state: "approval-requested",
+      args: { path: "one.txt" }
+    }
+  ]
+  await expireCatchUpApproval(runId)
+  const resolved = events.filter(
+    (event) => event.type === "approval.resolved" && event.toolCallId === "tool_one"
+  )
+  assert.equal(resolved.length, 1)
+  assert.equal(resolved[0]?.code, CATCH_UP_APPROVAL_TIMEOUT)
+  deleteActiveRun(runId)
+})
+
 test("同一 runId 失败两次都能完整收尾", async () => {
   const runId = "run_fail_twice"
   const events: SentEvent[] = []
@@ -169,7 +209,14 @@ test("子 agent 审批超时后不能再调工具，最终 failed 不发 run.end
   assert.equal((await settled).status, "error")
   assert.equal(getRun(getDatabase(), runId)?.error, CATCH_UP_APPROVAL_TIMEOUT)
   assert.equal(getRun(getDatabase(), runId)?.status, "failed")
-  assert.ok(events.some((item) => item.type === "run.error" && item.message === CATCH_UP_APPROVAL_TIMEOUT))
+  assert.ok(
+    events.some(
+      (item) =>
+        item.type === "run.error" &&
+        item.message === CATCH_UP_APPROVAL_TIMEOUT &&
+        item.turn?.attention === "neutral"
+    )
+  )
   let ended = false
   completeAgentRun({
     runId,

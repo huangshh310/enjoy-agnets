@@ -1,30 +1,33 @@
 /**
- * 完成页：标题下的一行摘要，正文是今天用得上的快捷键。
+ * 完成页摘要：只认 ready；引擎数只读 engineCount，不把引擎就绪写成可以开始。
  */
 import { useThemeMode } from "@/components/application/theme/theme-toggle"
-import { composerAgentTabs } from "@renderer/components/ai-chat/agent-picker/composer-agents"
-import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
-import { countAvailableEngines } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 export function ReadySummary({ workspaceName }: { workspaceName: string }) {
   const t = useT()
   const theme = useThemeMode()
-  const tools = composerAgentTabs(useSettingsSnapshot().data?.agentTools ?? [])
   const readiness = useChatReadiness().data
-  const ready = readiness?.engineCount ?? countAvailableEngines(tools)
+  const ready = readiness?.ready === true
+  const engineCount = readiness?.engineCount ?? 0
+  if (!ready) {
+    return (
+      <p data-testid="ready-need-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
+        {t("settings.setupGuide.readyNeedSummary", { count: engineCount })}
+      </p>
+    )
+  }
   const themeLabel = theme === "dark" ? t("common.dark") : t("common.light")
   const workspace = workspaceName
     ? t("settings.setupGuide.readyWorkspace", { name: workspaceName })
     : t("settings.setupGuide.readyNoWorkspace")
-  const unverified =
-    readiness?.ready === false && (readiness.localModels ?? []).some((row) => row.verified === false)
+  const unverified = (readiness.localModels ?? []).some((row) => row.verified === false)
   return (
-    <p className="text-center text-headline-regular leading-normal text-text-secondary">
+    <p data-testid="ready-ok-summary" className="text-center text-headline-regular leading-normal text-text-secondary">
       {joinSegments(
-        t("settings.setupGuide.readyEngines", { count: ready }),
+        t("settings.setupGuide.readyEngines", { count: engineCount }),
         unverified ? t("settings.setupGuide.configuredUnverified") : undefined,
         themeLabel,
         workspace

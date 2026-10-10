@@ -17,6 +17,7 @@ export function ThreadNeedModelNotice({
   return (
     <ThreadSendGateNotice
       testId="thread-need-model-notice"
+      kind="needs_model"
       message={t("chat.needModelNotice")}
       actionLabel={t("chat.goPickModel")}
       actionIcon={<RiCpuLine className="size-3" />}

@@ -5,8 +5,8 @@ import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
 import type { AppModuleId } from "../app-shell.types"
 import { ACTIVITY_BAR_PX, NAV_CARD_COLLAPSED_PX } from "../constants"
-import { useAttentionStore } from "@renderer/stores/attention/attention-store"
-import { stripApprovalCount } from "@renderer/stores/attention/ingest-attention"
+import { useLivePendingApprovals } from "@renderer/components/inbox/use-live-pending-approvals"
+import { useChatStore } from "@renderer/stores/chat-store"
 import { ACTIVITY_ICONS, OVERLAY_RAIL_ITEMS, WORK_RAIL_ITEMS } from "./module-registry"
 import { RailButton } from "./rail-button"
 
@@ -22,7 +22,15 @@ export function ActivityBar({
   onSelect: (moduleId: AppModuleId, to: string) => void
 }) {
   const t = useT()
-  const attentionCount = useAttentionStore((state) => stripApprovalCount(state.items))
+  const pendingApprovals = useLivePendingApprovals()
+  const repositories = useChatStore((state) => state.repositories)
+  const liveSessionIds = new Set(
+    repositories.filter((row) => row.kind === "session").map((row) => row.id)
+  )
+  const attentionCount =
+    repositories.filter((row) => row.kind === "session").length === 0
+      ? 0
+      : pendingApprovals.filter((row) => liveSessionIds.has(row.sessionId)).length
   return (
     <nav
       aria-label={t("nav.modules")}

@@ -8,6 +8,7 @@ import { cx } from "@/utils/cx"
 
 export function ThreadSendGateNotice({
   testId,
+  kind,
   message,
   actionLabel,
   actionIcon,
@@ -16,6 +17,7 @@ export function ThreadSendGateNotice({
   className
 }: {
   testId: string
+  kind?: string
   message: string
   actionLabel: string
   actionIcon: ReactNode
@@ -28,6 +30,7 @@ export function ThreadSendGateNotice({
     <div
       id="thread-error-banner"
       data-testid={testId}
+      data-kind={kind}
       className={cx(
         "my-2 flex w-full max-w-[40rem] items-start gap-2 rounded-xl border border-border-button-default",
         "bg-background-primary-default p-3 shadow-card",

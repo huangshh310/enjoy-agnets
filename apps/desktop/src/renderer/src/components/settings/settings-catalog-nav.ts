@@ -31,7 +31,7 @@ export const SETTINGS_NAV_DEF: SettingsNavGroupDef[] = [
         id: "general",
         labelKey: "nav.general",
         icon: RiSettings4Line,
-        keywords: ["permissions", "approval", "language", "defaults", "权限", "语言", "通用", "自动放行"]
+        keywords: ["permissions", "approval", "language", "defaults", "权限", "语言", "通用", "自动放行", "向导", "入门", "引导"]
       },
       {
         id: "appearance",

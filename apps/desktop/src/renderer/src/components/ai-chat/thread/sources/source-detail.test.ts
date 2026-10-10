@@ -40,6 +40,7 @@ test("类型标只有文件 / 技能 / MCP，文档并进文件", () => {
   assert.equal(sourceBadgeKind("doc"), "file")
   assert.equal(sourceBadgeKind("skill"), "skill")
   assert.equal(sourceBadgeKind("mcp"), "mcp")
+  assert.equal(sourceBadgeKind("knowledge"), "knowledge")
 })
 
 test("行列：名称是短名，出处是 path 或服务器", () => {

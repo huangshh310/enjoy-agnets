@@ -108,7 +108,8 @@ function replayStoredSdkResponse(
   })
 }
 
-function endRestoredRunWithoutSdkReply(db: AppDatabase, runId: string, window?: BrowserWindow): void {
+/** HMAC 失败 / 无匹配：结束 run，禁止拿该行回 SDK。 */
+export function endRestoredRunWithoutSdkReply(db: AppDatabase, runId: string, window?: BrowserWindow): void {
   const run = getActiveRun(runId)
   const target = window ?? run?.window
   settlePendingApprovalsForRun(runId, target, "failed")

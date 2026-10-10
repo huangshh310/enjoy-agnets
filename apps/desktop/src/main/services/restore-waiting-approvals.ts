@@ -2,7 +2,12 @@
  * 重启回挂：先处理孤儿 / fail closed，活下来才发卡。
  */
 import type { BrowserWindow } from "electron"
-import { resolvedSdkApprovalId, setApprovalDecision, type ApprovalRow } from "@enjoy-agents/db"
+import {
+  isSupersededSdkApprovalId,
+  resolvedSdkApprovalId,
+  setApprovalDecision,
+  type ApprovalRow
+} from "@enjoy-agents/db"
 import { emitEvent, getActiveRun } from "./agent-run-state"
 import { approvalResponseMessage } from "./approval-response-message"
 import { recordSdkApprovalResponse } from "./approval-hmac"
@@ -18,16 +23,26 @@ export function restoreHeldWaitingApprovals(input: {
   items: PendingApproval[]
   window: BrowserWindow
 }): { ended: boolean; keep: PendingApproval[] } {
-  const classified = classifyWaitingApprovals(input.hmacPending, input.items)
+  const hmacPending = liveHmacRows(input.runId, input.hmacPending)
+  const classified = classifyWaitingApprovals(hmacPending, input.items)
   const orphaned = applyRestoredOrphanApprovals({
     runId: input.runId,
     items: classified.orphans,
     window: input.window
   })
   if (orphaned.ended) return { ended: true, keep: [] }
-  denyMissingArgApprovals(input.runId, classified.missingArgs, input.window)
-  emitRestoredApprovalCards(input.runId, classified.keep, input.window)
-  return { ended: false, keep: classified.keep }
+  const merged = mergeHmacPendingIntoKeep(hmacPending, classified.keep)
+  denyMissingArgApprovals(input.runId, [...classified.missingArgs, ...merged.missingArgs], input.window)
+  emitRestoredApprovalCards(input.runId, merged.keep, input.window)
+  return { ended: false, keep: merged.keep }
+}
+
+/** HMAC 通过的活行：本 run、未决、未 superseded。别的 run / 已决不进。 */
+function liveHmacRows(runId: string, hmacPending: ApprovalRow[]): ApprovalRow[] {
+  return hmacPending.filter(
+    (row) =>
+      row.runId === runId && row.decision == null && !isSupersededSdkApprovalId(row.sdkApprovalId)
+  )
 }
 
 function classifyWaitingApprovals(
@@ -49,6 +64,31 @@ function classifyWaitingApprovals(
     else orphans.push(item)
   }
   return { keep, missingArgs, orphans }
+}
+
+/** repark 已落库、检查点还没有的未决并进 keep；缺参走 deny，不跳过。 */
+function mergeHmacPendingIntoKeep(
+  hmacPending: ApprovalRow[],
+  keep: PendingApproval[]
+): {
+  keep: PendingApproval[]
+  missingArgs: Array<{ item: PendingApproval; row: ApprovalRow }>
+} {
+  const seen = new Set(keep.map((item) => item.approvalId))
+  const merged = [...keep]
+  const missingArgs: Array<{ item: PendingApproval; row: ApprovalRow }> = []
+  for (const row of hmacPending) {
+    if (seen.has(row.id)) continue
+    const args = parseStoredApprovalArgs(row)
+    const item = { approvalId: row.id, toolCallId: row.toolCallId, name: row.name }
+    if (args == null) {
+      missingArgs.push({ item, row })
+      continue
+    }
+    merged.push({ ...item, args })
+    seen.add(row.id)
+  }
+  return { keep: merged, missingArgs }
 }
 
 function denyMissingArgApprovals(

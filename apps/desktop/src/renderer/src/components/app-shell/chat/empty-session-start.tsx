@@ -5,6 +5,7 @@ import { AiChatEmptyState } from "@renderer/components/ai-chat/empty-state/ai-ch
 import { EmptyStatePills } from "@renderer/components/ai-chat/empty-state/empty-state-pills"
 import { focusComposerEnd } from "@renderer/components/ai-chat/empty-state/focus-composer"
 import { ThreadErrorBanner } from "@renderer/components/ai-chat/thread/thread-error-banner"
+import { ThreadNoticeBanner } from "@renderer/components/ai-chat/thread/thread-notice-banner"
 import { useChatStore, type ModelOption } from "@renderer/stores/chat-store"
 import { ChatComposerCluster } from "./chat-composer-cluster"
 
@@ -35,6 +36,7 @@ export function EmptySessionStart(props: {
             changesCount={props.changesCount}
           />
           <div className="flex w-full flex-col items-center gap-4">
+            <ThreadNoticeBanner />
             {error ? <ThreadErrorBanner error={error} className="my-0 w-full max-w-none" /> : null}
             <ChatComposerCluster
               className="w-full shrink-0"

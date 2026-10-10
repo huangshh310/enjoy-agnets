@@ -20,14 +20,16 @@ import {
   DialogTitle
 } from "@/components/ui/dialog"
 import { useQueryClient } from "@tanstack/react-query"
-import type { AgentToolPublic } from "@enjoy-agents/ipc-contract"
+import { SettingsSnapshot, type AgentToolPublic } from "@enjoy-agents/ipc-contract"
 import { createTargetForBind } from "@enjoy-agents/ipc-contract"
+import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "@renderer/components/settings/secret-write-notice"
+import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { runSecretWrite, type SecretWriteErrorCode } from "@renderer/lib/secret-write"
 import { useT } from "@renderer/i18n"
 import { AgentBrandIcon } from "@renderer/components/ai-chat/agent-picker/agent-brand-icon"
 import { SecretStorageWarning } from "../secret-storage-warning"
 import { persistSnapshot } from "../providers/provider-editor-writes"
-import { secretWriteErrorMessage, unwrapSettingsWrite } from "@renderer/lib/secret-write"
 
 type QuickPresetMeta = {
   kind: string
@@ -125,6 +127,8 @@ export function AgentToolQuickKeyDialog({
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [writeCode, setWriteCode] = useState<SecretWriteErrorCode | null>(null)
+  const secretBlocked = useChatReadiness().data?.secretStorageAvailable === false
 
   function resetState() {
     setApiKey("")
@@ -135,6 +139,7 @@ export function AgentToolQuickKeyDialog({
     setTestResult(null)
     setSaving(false)
     setErrorMsg(null)
+    setWriteCode(null)
   }
 
   async function handleTestPing() {
@@ -185,32 +190,36 @@ export function AgentToolQuickKeyDialog({
     if (!hasIde()) return
     setSaving(true)
     setErrorMsg(null)
-    try {
-      const effectiveBaseURL = baseURL.trim() || (preset.defaultBaseURL || undefined)
-      const profileName = name.trim() || preset.defaultName
-      const snapshot = unwrapSettingsWrite(
-        await getIde().settings.upsertProvider({
-          name: profileName,
-          kind: preset.kind,
-          apiKey: key,
-          baseURL: effectiveBaseURL,
-          apiStyle: preset.apiStyle,
-          models: preset.models,
-          modelId: preset.defaultModel
-        })
-      )
-      await persistSnapshot(queryClient, snapshot)
-      const created = snapshot.providers.find((p: { name: string; id: string }) => p.name === profileName) ?? snapshot.providers.at(-1)
-      if (created) {
-        await onSaved(created.id, preset.defaultModel)
-      }
-      onOpenChange(false)
-      resetState()
-    } catch (err) {
-      setErrorMsg(secretWriteErrorMessage(err, t))
-    } finally {
-      setSaving(false)
+    setWriteCode(null)
+    const effectiveBaseURL = baseURL.trim() || (preset.defaultBaseURL || undefined)
+    const profileName = name.trim() || preset.defaultName
+    const outcome = await runSecretWrite(() =>
+      getIde().settings.upsertProvider({
+        name: profileName,
+        kind: preset.kind,
+        apiKey: key,
+        baseURL: effectiveBaseURL,
+        apiStyle: preset.apiStyle,
+        models: preset.models,
+        modelId: preset.defaultModel
+      }) as Promise<SettingsSnapshot>
+    )
+    setSaving(false)
+    if (!outcome.ok) {
+      setWriteCode(outcome.code)
+      return
     }
+    const snap = SettingsSnapshot.safeParse(outcome.value)
+    if (!snap.success) {
+      setWriteCode("UNKNOWN")
+      return
+    }
+    await persistSnapshot(queryClient, snap.data)
+    const created =
+      snap.data.providers.find((p) => p.name === profileName) ?? snap.data.providers.at(-1)
+    if (created) await onSaved(created.id, preset.defaultModel)
+    onOpenChange(false)
+    resetState()
   }
 
   return (
@@ -232,6 +241,7 @@ export function AgentToolQuickKeyDialog({
           <DialogDescription className="text-caption-2-regular text-text-tertiary">
             {t("settings.agentTools.quickKeyModalDesc")}
           </DialogDescription>
+          {secretBlocked ? <SecretWritePreflight /> : null}
         </DialogHeader>
         <SecretStorageWarning />
 
@@ -332,19 +342,24 @@ export function AgentToolQuickKeyDialog({
             >
               {t("common.cancel")}
             </button>
-            <button
-              type="button"
-              disabled={saving || !apiKey.trim()}
-              onClick={() => void handleSaveAndBind()}
-              className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-accent-500 px-3.5 py-1.5 text-caption-2-medium font-semibold text-text-white shadow-2xs transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {saving ? (
-                <RiLoader4Line className="size-3.5 animate-spin" />
-              ) : (
-                <RiKey2Line className="size-3.5" />
-              )}
-              <span>{t("settings.agentTools.quickKeySaveBtn")}</span>
-            </button>
+            <div className="flex flex-col items-end gap-1.5">
+              {!secretBlocked && writeCode ? <SecretWriteError code={writeCode} /> : null}
+              <SecretWriteSaveTip blocked={secretBlocked}>
+                <button
+                  type="button"
+                  disabled={saving || secretBlocked || !apiKey.trim()}
+                  onClick={() => void handleSaveAndBind()}
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-xl bg-accent-500 px-3.5 py-1.5 text-caption-2-medium font-semibold text-text-white shadow-2xs transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving ? (
+                    <RiLoader4Line className="size-3.5 animate-spin" />
+                  ) : (
+                    <RiKey2Line className="size-3.5" />
+                  )}
+                  <span>{saving ? t("settings.secretWrite.saving") : t("settings.agentTools.quickKeySaveBtn")}</span>
+                </button>
+              </SecretWriteSaveTip>
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

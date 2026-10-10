@@ -11,6 +11,7 @@ import {
   type StreamEvent
 } from "@enjoy-agents/ipc-contract"
 import { isApprovalNotExecutedMessage } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import { isUserAbortEvent, USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
 import { markMcpAppTooLarge } from "../lib/mcp-app-surface"
 import { applyV2Part } from "./apply-v2-parts"
@@ -105,6 +106,16 @@ function applyTerminalEvent(
         runId: null,
         error: null,
         notice: USER_ABORTED_CODE
+      }
+    }
+    if (event.message === CATCH_UP_APPROVAL_TIMEOUT) {
+      return {
+        messages: finalizeRun(messages),
+        pendingApproval: null,
+        running: false,
+        runId: null,
+        error: null,
+        notice: CATCH_UP_APPROVAL_TIMEOUT
       }
     }
     return { messages: finalizeRun(messages), running: false, error: event.message }

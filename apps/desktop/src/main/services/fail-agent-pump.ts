@@ -16,7 +16,11 @@ import { settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export async function failAgentPump(runId: string, run: ActiveRun, error: unknown): Promise<void> {
   clearCatchUpApprovalTimeout(runId)
-  settlePendingApprovalsForRun(runId, run.window, run.userCancelled ? "aborted" : "failed")
+  settlePendingApprovalsForRun(
+    runId,
+    run.window,
+    run.userCancelled ? "aborted" : isCatchUpApprovalTimeout(run, error) ? "catch_up_timeout" : "failed"
+  )
   if (!claimCatchUpFail(run)) return
   if (!run.userCancelled) {
     emitFailedRun(runId, run, error)
@@ -87,7 +91,7 @@ function emitCatchUpTimeoutFail(runId: string, run: ActiveRun): void {
     errorClass: "approval_denied"
   })
   settleRun(runId, { status: "error", summary: CATCH_UP_APPROVAL_TIMEOUT })
-  const turn = turnOutcomeForRun(run, "error")
+  const turn = { ...turnOutcomeForRun(run, "error"), attention: "neutral" as const }
   persistTurnWorkflow(run.input.sessionId, turn)
   emitEvent(run.window, { type: "run.error", runId, message: CATCH_UP_APPROVAL_TIMEOUT, turn })
 }

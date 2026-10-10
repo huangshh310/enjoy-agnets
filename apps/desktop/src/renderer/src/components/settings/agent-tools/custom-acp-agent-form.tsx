@@ -6,12 +6,13 @@ import { RiAddLine, RiDeleteBinLine } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { useSecretWriteGate } from "@renderer/hooks/use-secret-write-gate"
 import { useT } from "@renderer/i18n"
 import type { CustomAgentRecord, UpsertCustomAgentInput } from "@enjoy-agents/ipc-contract"
 import { isCustomAgentId } from "@enjoy-agents/ipc-contract"
-import { mapCustomAgentFormError } from "./map-custom-agent-error"
-import { SecretStorageWarning } from "../secret-storage-warning"
-import { secretWriteErrorMessage, unwrapSecretWrite } from "@renderer/lib/secret-write"
+import type { SecretWriteErrorCode } from "@renderer/lib/secret-write"
+import { SecretWriteError, SecretWritePreflight, SecretWriteSaveTip } from "../secret-write-notice"
+import { submitCustomAgentWrite } from "./custom-acp-agent-submit"
 
 export type CustomAgentDraft = {
   id?: string
@@ -37,6 +38,7 @@ export function CustomAcpAgentForm({
   onCancel?: () => void
 }) {
   const t = useT()
+  const gate = useSecretWriteGate()
   const [draft, setDraft] = useState<CustomAgentDraft>(emptyCustomDraft)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -54,10 +56,10 @@ export function CustomAcpAgentForm({
       className="flex flex-col gap-3"
       onSubmit={(event) => {
         event.preventDefault()
-        void submitCustomAgent(draft, setBusy, setError, onSaved, t)
+        void submitCustomAgent(draft, setBusy, setError, gate.setWriteCode, onSaved, t)
       }}
     >
-      <SecretStorageWarning />
+      {gate.preflight ? <SecretWritePreflight /> : null}
       <p className="text-caption-2-medium text-text-tertiary">{t("settings.registry.customBasenamePolicy")}</p>
       <Field label={t("settings.registry.customLabel")}>
         <Input
@@ -78,11 +80,14 @@ export function CustomAcpAgentForm({
       <ArgsEditor args={draft.args} onChange={(args) => setDraft({ ...draft, args })} />
       <EnvEditor env={draft.env} onChange={(env) => setDraft({ ...draft, env })} />
       <CwdFields draft={draft} onChange={setDraft} />
+      {gate.errorCode ? <SecretWriteError code={gate.errorCode} /> : null}
       {error ? <p className="text-caption-1-medium text-text-error-primary">{error}</p> : null}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="sm" disabled={busy} className="text-caption-1-medium">
-          {busy ? t("settings.registry.saving") : t("settings.registry.saveCustom")}
-        </Button>
+        <SecretWriteSaveTip blocked={gate.blocked}>
+          <Button type="submit" size="sm" disabled={busy || gate.blocked} className="text-caption-1-medium">
+            {busy ? t("settings.secretWrite.saving") : t("settings.registry.saveCustom")}
+          </Button>
+        </SecretWriteSaveTip>
         {onCancel ? (
           <Button type="button" size="sm" variant="ghost" onClick={onCancel} className="text-caption-1-medium">
             {t("settings.agentTools.close")}
@@ -228,21 +233,22 @@ async function submitCustomAgent(
   draft: CustomAgentDraft,
   setBusy: (value: boolean) => void,
   setError: (value: string | null) => void,
+  setWriteCode: (code: SecretWriteErrorCode | null) => void,
   onSaved: () => void,
   t: (path: string, vars?: Record<string, string | number>) => string
 ) {
   if (!hasIde()) return
   setBusy(true)
   setError(null)
-  try {
-    unwrapSecretWrite(await getIde().agentTools.upsertCustom(toInput(draft)))
+  setWriteCode(null)
+  const result = await submitCustomAgentWrite(toInput(draft), t, draft.command)
+  setBusy(false)
+  if (result.ok) {
     onSaved()
-  } catch (error) {
-    const raw = secretWriteErrorMessage(error, t)
-    setError(mapCustomAgentFormError(raw, t, draft.command))
-  } finally {
-    setBusy(false)
+    return
   }
+  if ("writeCode" in result) setWriteCode(result.writeCode)
+  else setError(result.error)
 }
 
 function toInput(draft: CustomAgentDraft): UpsertCustomAgentInput {

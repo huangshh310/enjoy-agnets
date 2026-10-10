@@ -4,18 +4,21 @@
 import type { SourceKind, TurnSourceChip } from "./source-chip.ts"
 import { displayBaseName, shortenSourcePath } from "./source-path.ts"
 
-export type SourceBadgeKind = "file" | "skill" | "mcp"
+export type SourceBadgeKind = "file" | "skill" | "mcp" | "knowledge"
 
 export function sourceBadgeKind(kind: SourceKind): SourceBadgeKind {
   if (kind === "skill") return "skill"
   if (kind === "mcp") return "mcp"
+  if (kind === "knowledge") return "knowledge"
   return "file"
 }
 
 export function sourceRowName(chip: TurnSourceChip): string {
   if (chip.kind === "mcp") return chip.title?.trim() || displayBaseName(chip.path) || chip.label
   if (chip.kind === "skill") return skillRowName(chip)
-  if (chip.kind === "doc") return chip.title?.trim() || displayBaseName(chip.path) || chip.label
+  if (chip.kind === "doc" || chip.kind === "knowledge") {
+    return chip.title?.trim() || displayBaseName(chip.path) || chip.label
+  }
   return displayBaseName(chip.path) || chip.title?.trim() || chip.label
 }
 

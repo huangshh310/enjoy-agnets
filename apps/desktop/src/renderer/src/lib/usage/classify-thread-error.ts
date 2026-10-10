@@ -22,6 +22,9 @@ export type ThreadErrorKind =
   | "store"
   | "send_restore"
   | "stopped"
+  | "restore_no_matching"
+  | "run_failed"
+  | "catch_up_timeout"
   | "generic"
 
 export const NEED_PROVIDER_KEY = "NEED_PROVIDER_KEY"
@@ -39,6 +42,9 @@ export const SEND_FAILED_RESTORE = "SEND_FAILED_RESTORE"
 export const SESSION_CREATE_TIMEOUT = "SESSION_CREATE_TIMEOUT"
 export const SESSION_NOT_READY = "SESSION_NOT_READY"
 export const USER_STOPPED = "user_aborted"
+export const RESTORE_NO_MATCHING = "restore_no_matching_approval"
+export const RUN_FAILED = "run_failed"
+export const CATCH_UP_APPROVAL_TIMEOUT = "catch_up_approval_timeout"
 
 const CREDIT_MARKERS = [
   "402",
@@ -60,6 +66,9 @@ export function classifyThreadError(message: string): ThreadErrorKind {
   ) {
     return "stopped"
   }
+  if (message === RESTORE_NO_MATCHING) return "restore_no_matching"
+  if (message === RUN_FAILED) return "run_failed"
+  if (message === CATCH_UP_APPROVAL_TIMEOUT) return "catch_up_timeout"
   if (
     message === INTERNAL_STORE_ERROR ||
     lower.includes("unique constraint") ||
@@ -112,4 +121,30 @@ export function classifyThreadError(message: string): ThreadErrorKind {
     return "rate_limit"
   }
   return "generic"
+}
+
+type Translate = (path: string, vars?: Record<string, string | number>) => string
+
+/** 机器码走人话键；禁止把 restore_no_matching_approval / run_failed 等原文摊进横幅。 */
+export function threadErrorDetailKey(kind: ThreadErrorKind): string | undefined {
+  if (kind === "restore_no_matching") return "chat.restoreNoMatching"
+  if (kind === "run_failed") return "chat.runFailed"
+  if (kind === "catch_up_timeout") return "studio.automations.catchUpTimeout"
+  if (kind === "store") return "chat.errorGenericHint"
+  if (kind === "send_restore") return "chat.sendFailedRestore"
+  if (kind === "stopped") return "chat.runStopped"
+  return undefined
+}
+
+export function humanizeThreadError(text: string | undefined, t: Translate): string {
+  if (!text) return ""
+  const kind = classifyThreadError(text)
+  const key = threadErrorDetailKey(kind)
+  if (key) return t(key)
+  if (looksLikeMachineCode(text)) return t("chat.errorGenericHint")
+  return text
+}
+
+function looksLikeMachineCode(text: string): boolean {
+  return /^[a-z][a-z0-9_]{2,}$/.test(text.trim())
 }

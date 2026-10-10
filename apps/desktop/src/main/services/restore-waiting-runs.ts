@@ -4,7 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
-import { listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
+import { isSupersededSdkApprovalId, listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
 import { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
@@ -16,7 +16,9 @@ import { parseWaitingExtras } from "./persist-waiting-run"
 import { toModelMessages } from "./to-model-messages"
 import { assertApprovalHmac } from "./approval-hmac"
 import { hydrateActiveRunUsage } from "./run-usage"
+import { endRestoredRunWithoutSdkReply } from "./restore-checkpoint-approval"
 import { restoreHeldWaitingApprovals } from "./restore-waiting-approvals"
+import { settleListedApprovals, settlePendingApprovalsForRun } from "./settle-run-approvals"
 
 export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
   if (!claimRestoreWaitingOnce()) return
@@ -30,26 +32,47 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
       failCatchUpWaitingOnRestart(row.id)
       continue
     }
-    const pending = listPendingApprovals(db, row.id).filter((item) => {
-      try {
-        assertApprovalHmac({ runId: row.id, approvalId: item.id, toolCallId: item.toolCallId })
-        return true
-      } catch {
-        return false
-      }
-    })
+    const checkpointPendings = extras.pendingApprovals ?? []
+    const { passed: pending, hmacFailed } = partitionHmacPending(row.id, listPendingApprovals(db, row.id))
+    if (hmacFailed.length > 0) {
+      settleListedApprovals(
+        hmacFailed.map((item) => ({
+          runId: row.id,
+          approvalId: item.id,
+          toolCallId: item.toolCallId
+        })),
+        window,
+        "failed",
+        { writeSdkResponse: false }
+      )
+    }
+    if (hmacFailed.some((item) => checkpointPendings.some((pending) => pending.approvalId === item.id))) {
+      endRestoredRunWithoutSdkReply(db, row.id, window)
+      continue
+    }
     if (!row.workspaceId) {
-      updateRun(db, row.id, { status: "cancelled", error: "No pending approval after restart." })
+      abandonWaitingRestore(row.id, window, {
+        status: "cancelled",
+        error: "No pending approval after restart.",
+        cause: "failed"
+      })
       continue
     }
     const checkpoint = parseGenerationCheckpoint(row.checkpoint)
     if (!checkpoint?.request) {
-      updateRun(db, row.id, { status: "cancelled", error: "Missing generation checkpoint." })
+      abandonWaitingRestore(row.id, window, {
+        status: "cancelled",
+        error: "Missing generation checkpoint.",
+        cause: "failed"
+      })
       continue
     }
-    const checkpointPendings = extras.pendingApprovals ?? []
     if (pending.length === 0 && checkpointPendings.length === 0) {
-      updateRun(db, row.id, { status: "cancelled", error: "No pending approval after restart." })
+      abandonWaitingRestore(row.id, window, {
+        status: "cancelled",
+        error: "No pending approval after restart.",
+        cause: "failed"
+      })
       continue
     }
     try {
@@ -107,11 +130,43 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         }
       }
     } catch (error) {
-      updateRun(db, row.id, {
+      abandonWaitingRestore(row.id, window, {
         status: "cancelled",
-        error: error instanceof Error ? error.message : "Failed to restore waiting run."
+        error: error instanceof Error ? error.message : "Failed to restore waiting run.",
+        cause: "failed"
       })
     }
   }
+}
+
+function partitionHmacPending(
+  runId: string,
+  rows: ReturnType<typeof listPendingApprovals>
+): {
+  passed: ReturnType<typeof listPendingApprovals>
+  hmacFailed: ReturnType<typeof listPendingApprovals>
+} {
+  const passed: ReturnType<typeof listPendingApprovals> = []
+  const hmacFailed: ReturnType<typeof listPendingApprovals> = []
+  for (const item of rows) {
+    if (isSupersededSdkApprovalId(item.sdkApprovalId)) continue
+    try {
+      assertApprovalHmac({ runId, approvalId: item.id, toolCallId: item.toolCallId })
+      passed.push(item)
+    } catch {
+      hmacFailed.push(item)
+    }
+  }
+  return { passed, hmacFailed }
+}
+
+/** 回挂取消：先结清未决（已决不覆盖），再改 run 终态。 */
+export function abandonWaitingRestore(
+  runId: string,
+  window: BrowserWindow,
+  input: { status: "cancelled" | "failed"; error: string; cause: "failed" }
+): void {
+  settlePendingApprovalsForRun(runId, window, input.cause)
+  updateRun(getDatabase(), runId, { status: input.status, error: input.error })
 }
 

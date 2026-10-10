@@ -273,3 +273,32 @@ export function listPendingApprovals(db: AppDatabase, runId?: string): ApprovalR
     .all() as ApprovalRow[]
   return runId ? rows.filter((row) => row.runId === runId) : rows
 }
+
+export type LivePendingApproval = {
+  id: string
+  runId: string
+  sessionId: string
+  workspaceId: string | null
+  sessionTitle: string
+  name: string
+  toolCallId: string
+  createdAt: number
+}
+
+/** Inbox 拍板真源：未决、未 superseded、会话未归档，且 run 仍活着（等审批 / 在跑）。 */
+export function listLivePendingApprovals(db: AppDatabase): LivePendingApproval[] {
+  return db
+    .prepare(
+      `SELECT a.id as id, a.run_id as runId, a.tool_call_id as toolCallId, a.name as name,
+              a.created_at as createdAt, r.session_id as sessionId, r.workspace_id as workspaceId,
+              COALESCE(s.title, '') as sessionTitle
+       FROM approvals a
+       JOIN runs r ON r.id = a.run_id
+       JOIN sessions s ON s.id = r.session_id
+       WHERE a.decision IS NULL AND s.archived_at IS NULL
+         AND r.status IN ('waiting_review', 'running')
+         AND ${ACTIVE_SDK_IDENTITY_SQL.replaceAll("sdk_approval_id", "a.sdk_approval_id")}
+       ORDER BY a.created_at DESC`
+    )
+    .all() as LivePendingApproval[]
+}

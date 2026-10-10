@@ -109,5 +109,6 @@ function SourceRowBody({
 function badgeLabel(kind: SourceBadgeKind, t: TranslateFn): string {
   if (kind === "skill") return t("chat.sourcesSheetKindSkill")
   if (kind === "mcp") return t("chat.sourcesSheetKindMcp")
+  if (kind === "knowledge") return t("chat.sourceKnowledgeLabel")
   return t("chat.sourcesSheetKindFile")
 }

@@ -31,10 +31,11 @@ export function toolsFromMessages(messages: SliceMessage[], limit = 8): ThreadTo
 export function toolRunKind(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
-): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" {
+): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" | "catch_up" {
   const abort = toolAbortKind(tool)
   if (abort === "stopped") return "stopped"
   if (abort === "error") return "error"
+  if (abort === "neutral") return "catch_up"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-available") return "ok"

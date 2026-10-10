@@ -1,12 +1,12 @@
 # spec/mcp
 
-> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-10-10（超大 srcDoc 中性提示；curated_preset_id 幂等补列）
+> MCP Server、分级审批、隔离 App 与本地预设。最后更新：2026-10-10（超大 srcDoc 中性提示；curated_preset_id 幂等补列；指纹表与 renderer 共用 ipc-contract 叶子）
 
 ## 当前真相
 
 包：`packages/mcp`。stdio / SSE / HTTP 配置入库 `mcp_servers`。本机会话句柄走 `createMcpHandleRegistry`。新 Server 默认 `trusted=false`。写操作即使 allow 也再 ask。`sanitizeAppMessage` 限制 JSON-RPC 方法与资源 URI 白名单。CSP 常量 `MCP_APP_CSP`（`connect-src 'none'`；srcDoc 允许 `script-src 'unsafe-inline'`）。
 
-`createMCPClient` 只在 main；`ai@7.0.84` 无该导出时 stdio / HTTP 走本机 JSON-RPC 会话：initialize 后 `tools/list`，`tools/call` 走 `mcp.call`。stdio `command` 必须是白名单裸二进制（`npx` / `npm` / `pnpm` / `yarn` / `bun` / `node` / `uvx` / `uv` / `python` / `python3`），禁止路径和 shell 元字符。stdio spawn 剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`（含 UI `envRef` 覆盖），`cwd` 锁家目录，Windows 上 `.cmd` / `.bat` 才 `shell: true`。MCP 工具默认全是写：`isWriteTypeToolName` / `isMcpWriteToolName` **不按叶子名**（`mcp_x__snapshot` / `mcp_jira__task` 都是写）。`annotations.readOnlyHint: true` **只对带 `curated_preset_id` 且 command/url 仍对官方指纹、或用户已标 `trusted` 的服务器生效**（`isCuratedMcpIdentity` / `mcpReadOnlyHintApplies`）。用户自建或导入即使名叫 github/filesystem 也不认 hint。精选安装经 `mcp.upsert` 写 `curatedPresetId`；改名 / 改 command/url / 导入会清掉 marker。`applyMigrations` 跑完后 `ensureCuratedPresetIdColumn` 再 `addColumnIfMissing`，v16 已记账但缺列也能补上。未信任服务器的 hint 一律当写，走审批。未声明可信 hint 的工具即使叫 `read_file` 也走 `user-approval`。`mcp.call` 对 `ask` 直接拒，必须经 Agent ToolLoop 的 `user-approval` + `decideApproval` 后再执行（`fromApprovedAgent` 只给写/命令类 execute）。探索态不注册未声明可信 hint 的 MCP；主 ToolLoop `toolApproval` 接 `isExploreMutatingDeny`。已连接且 `trusted`（或写在 `modelVisibleTools`）的工具注入 ToolLoopAgent，名为 `mcp_<serverId>__<tool>`。`tools/list` 的 `inputSchema` 经 `jsonSchemaToZod` 交给模型（object / array / enum / anyOf / oneOf）；`$ref` 与无法识别的结构回落 `z.unknown()`，没有 schema 才回落 `z.record(unknown)`。`openApp` 的 `allowedResourceUris` 只信库内配置，不把调用方 `resourceUri` 塞进白名单。
+`createMCPClient` 只在 main；`ai@7.0.84` 无该导出时 stdio / HTTP 走本机 JSON-RPC 会话：initialize 后 `tools/list`，`tools/call` 走 `mcp.call`。stdio `command` 必须是白名单裸二进制（`npx` / `npm` / `pnpm` / `yarn` / `bun` / `node` / `uvx` / `uv` / `python` / `python3`），禁止路径和 shell 元字符。stdio spawn 剥离 `NODE_OPTIONS` / `ELECTRON_RUN_AS_NODE`（含 UI `envRef` 覆盖），`cwd` 锁家目录，Windows 上 `.cmd` / `.bat` 才 `shell: true`。MCP 工具默认全是写：`isWriteTypeToolName` / `isMcpWriteToolName` **不按叶子名**（`mcp_x__snapshot` / `mcp_jira__task` 都是写）。`annotations.readOnlyHint: true` **只对带 `curated_preset_id` 且 command/url 仍对官方指纹、或用户已标 `trusted` 的服务器生效**（`isCuratedMcpIdentity` / `mcpReadOnlyHintApplies`）。用户自建或导入即使名叫 github/filesystem 也不认 hint。精选安装经 `mcp.upsert` 写 `curatedPresetId`；`resolveCuratedPresetId` 核 id + **显示名** + 官方指纹。指纹表只在 `@enjoy-agents/ipc-contract/mcp-curated`，renderer `mcp-presets.ts` 与 `packages/mcp` 共用，禁止再抄 command。改名 / 改 command/url / 导入会清掉 marker（IPC 反例：github id + 错名/错命令 → marker 空）。`applyMigrations` 跑完后 `ensureCuratedPresetIdColumn` 再 `addColumnIfMissing`，v16 已记账但缺列也能补上。未信任服务器的 hint 一律当写，走审批。未声明可信 hint 的工具即使叫 `read_file` 也走 `user-approval`。`mcp.call` 对 `ask` 直接拒，必须经 Agent ToolLoop 的 `user-approval` + `decideApproval` 后再执行（`fromApprovedAgent` 只给写/命令类 execute）。探索态不注册未声明可信 hint 的 MCP；主 ToolLoop `toolApproval` 接 `isExploreMutatingDeny`。已连接且 `trusted`（或写在 `modelVisibleTools`）的工具注入 ToolLoopAgent，名为 `mcp_<serverId>__<tool>`。`tools/list` 的 `inputSchema` 经 `jsonSchemaToZod` 交给模型（object / array / enum / anyOf / oneOf）；`$ref` 与无法识别的结构回落 `z.unknown()`，没有 schema 才回落 `z.record(unknown)`。`openApp` 的 `allowedResourceUris` 只信库内配置，不把调用方 `resourceUri` 塞进白名单。
 
 设置 `#/settings/extensions` 是 P0-H 发现壳：两列 MCP \| Skills，已配置数 +「添加」深链 `#/mcp` / `#/skills`，H 列只列本机 SoT 名。I2 同页精选「添加到 MCP」走现有 `mcp.upsert`（`trusted: true`，已有同行则带 `id` 更新），不新开存储、不弹第二套表单。catalog 失败只空精选区 + 重试。视觉锁 [`../previews/i2-extensions-curated.html`](../previews/i2-extensions-curated.html)。P0-S 开流注入诚实态已落地：Composer `HostInjectBar` 一行芯片 + `host.inject` 快照（`HostInjectSnapshot`），不是第二发现壳。视觉真源 [`../previews/p0-s-skills-mcp-inject.html`](../previews/p0-s-skills-mcp-inject.html)，产品锁 [`../references/p0-s-skills-mcp-inject.md`](../references/p0-s-skills-mcp-inject.md)。已启用 = 信任且服务器级未 deny；能力 `hostMcp=none` 时 `injected=[]` 并标 `unsupported`。Enjoy Local 未 Connect 的信任行记 `not-connected`，禁止空绿「已同步到助手」。
 
@@ -22,6 +22,7 @@ ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny*
 
 ## 代码入口
 
+- 精选指纹叶子：`packages/ipc-contract/src/mcp-curated.ts`（`@enjoy-agents/ipc-contract/mcp-curated`）
 - `packages/mcp`
 - `apps/desktop/src/main/services/mcp-service.ts`
 - `apps/desktop/src/main/services/host-extensions/`（ACP `session/new` 投影、SSH 远端 which、Grok plugin-dir、`assembleHostInject` / `reportHostMcp` / `reportLocalHostMcp`）
@@ -37,7 +38,7 @@ ACP 开流（`hostMcp=acp-passthrough`）把 **已信任且服务器级未 deny*
 
 ## 已知坑
 
-- **隐患**：用户自建或导入名叫 github/filesystem 的服务器被当成精选，readOnlyHint 跳过审批。根因：`isCuratedMcpServerName(row.name)` 只比对显示名。正确做法：`curated_preset_id` + 官方 command/url 指纹（`isCuratedMcpIdentity`）；改名/改命令/导入清 marker。迁移跑完后仍 `addColumnIfMissing`，避免 v16 已记账却缺列。
+- **隐患**：用户自建或导入名叫 github/filesystem 的服务器被当成精选，readOnlyHint 跳过审批。根因：`isCuratedMcpServerName(row.name)` 只比对显示名。正确做法：`resolveCuratedPresetId` 核 **显示名与 id 一致** + 官方指纹；指纹只在 `@enjoy-agents/ipc-contract/mcp-curated`，renderer `mcp-presets.ts` 共用，禁止再抄 command。改名/改命令/导入清 marker。迁移跑完后仍 `addColumnIfMissing`，避免 v16 已记账却缺列。
 - **隐患**：`@` 提到 MCP 就以为已授权调用。根因：mention 只是发现层。正确做法：Local 执行仍走 ToolLoop + `decideMcpCall`；ACP 只透传已信任行，审批走 `session/request_permission`。未信任默认不注入、不透传。
 - **隐患**：把「已配置」或空名单画成「已同步到助手」。根因：P0-H 发现壳数字 ≠ 本轮注入。正确做法：Composer 只画已启用 / 已注入本轮；能力 none 或 0 注入走警告或藏条，禁止空绿成功。
 - **隐患**：I2 添加到 MCP 后以为本轮已注入。根因：upsert 只写入 SoT 且 `trusted=true`，不自动 Connect。正确做法：写后文案「已写入 Enjoy · 下一轮可注入」；Enjoy Local 未 Connect 仍是 `not-connected`。
