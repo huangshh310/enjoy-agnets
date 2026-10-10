@@ -194,7 +194,8 @@ function restartStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode {
   return {
     id: tool.id,
     kind: "command",
-    title: formatToolName(tool.name),
+    // 必须用已 import 的 formatToolLabel；formatToolName 未引入，ThinkingTrace 同步 parse 会白屏。
+    title: formatToolLabel(tool.name, t, tool.args),
     errorText: t("chat.restartAbandoned"),
     status: "restart"
   }
