@@ -6,15 +6,8 @@ import {
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
-<<<<<<< HEAD
-<<<<<<< HEAD
 import { readWorkspaceFile } from "../lib/read-workspace-file"
 import { queryClient } from "../lib/query-client"
-=======
->>>>>>> b4b0452a (fix: 回挂四条 must：待验收收窄回退、reattach 静默、历史 desktop_act 不毒死、助手行只认本轮)
-=======
-import { queryClient } from "../lib/query-client"
->>>>>>> be494056 (fix: 补回 loadWorkspace 的 queryClient，审批测试不直接依赖 chat-store)
 import { rememberOpenedWorkspace } from "./remember-opened-workspace"
 import { useBootWorkspace } from "./use-boot-workspace"
 import { rememberDefaultMode } from "../components/ai-chat/composer/composer-mode"
@@ -168,46 +161,6 @@ export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersiste
 export { decidePendingApproval, decidePendingApprovalOrThrow } from "./decide-pending-approval"
 export type { WorkspaceRow } from "./workspace-row"
 
-<<<<<<< HEAD
-export async function decidePendingApproval(
-  decision: "allow" | "deny" | "allow_session" | "allow_always",
-  answers?: AskUserAnswers
-) {
-  try {
-    await decidePendingApprovalOrThrow(decision, answers)
-  } catch (error) {
-    const store = useChatStore.getState()
-    store.setError(error instanceof Error ? error.message : String(error))
-  }
-}
-
-/** Dock 与「拒绝并归档」同一条 decide；归档路径要抛错，不能吞。 */
-export async function decidePendingApprovalOrThrow(
-  decision: "allow" | "deny" | "allow_session" | "allow_always",
-  answers?: AskUserAnswers
-) {
-  const store = useChatStore.getState()
-  const pending = store.pendingApproval
-  const runId = resolveApprovalRunId(pending, store.runId)
-  if (!pending || !runId) {
-    throw new Error("没有等待中的审批。")
-  }
-  try {
-    await getIde().agent.decide({
-      runId,
-      toolCallId: pending.toolCallId,
-      approvalId: pending.approvalId,
-      decision,
-      ...(answers ? { answers } : {})
-    })
-  } catch (error) {
-    const shown = approvalDecideUiError(error)
-    if (shown) store.setError(translateDecideError(shown))
-  }
-}
-
-=======
->>>>>>> b4b0452a (fix: 回挂四条 must：待验收收窄回退、reattach 静默、历史 desktop_act 不毒死、助手行只认本轮)
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()
   const profileName = snapshot.preferences.accountProfile?.name?.trim()

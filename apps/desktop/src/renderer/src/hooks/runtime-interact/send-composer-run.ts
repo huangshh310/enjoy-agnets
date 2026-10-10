@@ -84,7 +84,6 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   store.setRunning(true)
   if (!guardComposerSend(store)) {
     const blocked = useChatStore.getState().error
-    // 创建回来的 prepared 发送：闸拦也要还文 + notice + 清空转圈会话，禁止只 setError 就 return。
     if (prepared) {
       failComposerSend({
         text: prepared.content,
@@ -109,7 +108,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     }
     const messages = beginOptimisticTurn(store, payload)
     clearSentComposerText(payload.content)
-    await launchComposerRun(store, payload, messages)
+    await launchComposerRun(store, payload, messages, prepared?.sessionId)
   } catch (error) {
     store.setRunning(false)
     store.setPreparingHint(false)
@@ -118,7 +117,6 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
       restoreComposerAfterFailedSend(prepared.content, SEND_FAILED_RESTORE, prepared.assets)
     }
   }
-<<<<<<< HEAD
 }
 
 /** 闸拦发送：还全文草稿，中性条 error 不改写成失败 toast。 */
@@ -131,11 +129,6 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
   if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
   else if (!store.sessionId) store.setError(SESSION_NOT_READY)
-=======
-  const messages = beginOptimisticTurn(store, payload)
-  if (prepared) clearSentComposerText(prepared.content)
-  await launchComposerRun(store, payload, messages, prepared?.sessionId)
->>>>>>> 52e56564 (fix: unsent 重启 fail closed，去掉直接执行与桌面重拍)
 }
 
 async function resolveSendPayload(prepared?: PreparedSend): Promise<SendPayload | null> {
