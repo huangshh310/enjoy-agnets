@@ -53,7 +53,8 @@ test("设默认模型 / persistRuntime 认 union，不把 {ok:false} 当快照",
   assert.match(actions, /SecretWriteUiError/)
   assert.match(actions, /secretWriteCopyKey/)
   const hook = src("components/settings/providers/use-provider-settings.ts")
-  assert.match(hook, /deleteBlockedKeychain/)
+  assert.match(hook, /deleteBlockedToastModel/)
+  assert.match(hook, /requestOpenExternalQuiet/)
 })
 
 test("失败不关抽屉、不吞掉、不把钥匙串英文写进 setError", () => {

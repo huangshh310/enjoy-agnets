@@ -17,6 +17,9 @@ export const enSettings = {
     notSaved: "Not saved",
     deleteBlockedKeychain:
       "The keychain is unavailable, so this key cannot be deleted right now. Your other keys are unchanged.",
+    deleteBlockedRevokeHint:
+      "If you are worried this key leaked, revoke it on the provider site first.",
+    deleteBlockedRevokeAction: "Revoke",
     saving: "Saving…"
   },
 

@@ -17,12 +17,27 @@ test("SecretWriteErrorCode 只有 KEYCHAIN_UNAVAILABLE，不加 LOCKED", () => {
   assert.equal(SecretWriteErrorCode.safeParse("KEYCHAIN_LOCKED").success, false)
 })
 
-test("失败只回 { ok:false, code }，多余字段拒收", () => {
+test("失败只回 { ok:false, code }，未知字段拒收；revokeUrl 只认 https", () => {
   const blocked = secretWriteBlocked()
   assert.deepEqual(blocked, { ok: false, code: "KEYCHAIN_UNAVAILABLE" })
   assert.equal(isSecretWriteBlocked(blocked), true)
   assert.equal(secretWriteBlockedCode(blocked), "KEYCHAIN_UNAVAILABLE")
   assert.equal(SecretWriteBlocked.safeParse({ ok: false, code: "KEYCHAIN_UNAVAILABLE", extra: 1 }).success, false)
+  const hinted = secretWriteBlocked("KEYCHAIN_UNAVAILABLE", {
+    revokeUrl: "https://platform.openai.com/api-keys",
+    providerLabel: "OpenAI"
+  })
+  assert.equal(hinted.revokeUrl, "https://platform.openai.com/api-keys")
+  assert.equal(hinted.providerLabel, "OpenAI")
+  assert.equal(isSecretWriteBlocked(hinted), true)
+  assert.equal(
+    SecretWriteBlocked.safeParse({
+      ok: false,
+      code: "KEYCHAIN_UNAVAILABLE",
+      revokeUrl: "http://platform.openai.com/api-keys"
+    }).success,
+    false
+  )
 })
 
 test("成功把既有 payload 摊在 ok:true 旁边", () => {

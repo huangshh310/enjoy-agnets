@@ -60,6 +60,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
         failed: string
         notSaved: string
         deleteBlockedKeychain: string
+        deleteBlockedRevokeHint: string
+        deleteBlockedRevokeAction: string
       }
       setupGuide: {
         replayDesc: string
@@ -129,6 +131,11 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
     z.settings.secretWrite.deleteBlockedKeychain,
     "钥匙串不可用，暂时删不了这把密钥，其余密钥不受影响"
   )
+  assert.equal(
+    z.settings.secretWrite.deleteBlockedRevokeHint,
+    "如果担心这把密钥泄露，可以先到服务商后台作废它"
+  )
+  assert.equal(z.settings.secretWrite.deleteBlockedRevokeAction, "去作废")
   assert.doesNotMatch(z.settings.secretWrite.writeFailedKeychain, /重启/)
   assert.doesNotMatch(z.settings.secretWrite.deleteBlockedKeychain, /重启/)
   assert.equal(z.settings.setupGuide.replayDesc, "再走一遍连模型、装引擎、外观和打开文件夹。")

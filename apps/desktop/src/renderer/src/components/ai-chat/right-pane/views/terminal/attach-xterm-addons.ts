@@ -7,7 +7,7 @@ import { Unicode11Addon } from "@xterm/addon-unicode11"
 import { WebLinksAddon } from "@xterm/addon-web-links"
 import { WebglAddon } from "@xterm/addon-webgl"
 import type { Terminal } from "@xterm/xterm"
-import { getIde } from "@renderer/lib/ide"
+import { requestOpenExternalQuiet } from "@renderer/lib/open-safe-external"
 import { openTerminalLink } from "./open-terminal-link"
 import { attachWebglOrDom } from "./xterm-webgl"
 
@@ -24,21 +24,13 @@ export type AttachedXtermAddons = {
 
 /**
  * 只给 WebLinksAddon 的用户点击回调。不要从 effect / 定时器 / 自动扫描调用。
- * leo 复核此频道：renderer 唯一 `window.openExternal` 出口。
+ * 外链走 `lib/open-safe-external`（与删档案作废同一出口）。
  */
 export function onTerminalLinkActivate(_event: MouseEvent, uri: string): void {
   openTerminalLink(uri, requestOpenExternalQuiet)
 }
 
-/** 失败回 `{ ok: false, code }` 或 reject 都吞掉，不 toast。 */
-export function requestOpenExternalQuiet(url: string): void {
-  void getIde()
-    .window.openExternal({ url })
-    .then(
-      () => undefined,
-      () => undefined
-    )
-}
+export { requestOpenExternalQuiet }
 
 export function attachXtermAddons(term: Terminal): AttachedXtermAddons {
   const fit = new FitAddon()

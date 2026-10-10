@@ -13,7 +13,9 @@ import {
   secretWriteCopyKey,
   secretWriteOk,
   secretWriteSurfaceOf,
-  secretWriteUi
+  secretWriteUi,
+  SecretWriteUiError,
+  unwrapSecretWrite
 } from "./secret-write.ts"
 
 test("KEYCHAIN_UNAVAILABLE 结构化失败走红字文案", () => {
@@ -69,6 +71,22 @@ test("快照 false 走黄条；写失败 KEYCHAIN 走红字；未来 NOT_INSTALL
   })
   assert.deepEqual(secretWriteUi(undefined, "UNKNOWN"), { preflight: false, errorCode: "UNKNOWN" })
   assert.deepEqual(secretWriteUi(true, null), { preflight: false, errorCode: null })
+})
+
+test("删档案拒绝把 revokeUrl 挂到 SecretWriteUiError", () => {
+  try {
+    unwrapSecretWrite({
+      ok: false,
+      code: "KEYCHAIN_UNAVAILABLE",
+      revokeUrl: "https://platform.openai.com/api-keys",
+      providerLabel: "OpenAI"
+    })
+    assert.fail("expected throw")
+  } catch (error) {
+    assert.ok(error instanceof SecretWriteUiError)
+    assert.equal(error.revokeUrl, "https://platform.openai.com/api-keys")
+    assert.equal(error.providerLabel, "OpenAI")
+  }
 })
 
 test("e2e 可强制下一次写失败", async () => {
