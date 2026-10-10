@@ -14,13 +14,17 @@ export function assistantHasOutput(message: ThreadMessage | undefined): boolean 
   return false
 }
 
-export function rollbackPreOutputTurn(messages: ThreadMessage[]): {
+export function rollbackPreOutputTurn(
+  messages: ThreadMessage[],
+  opts?: { dropAssistant?: boolean }
+): {
   messages: ThreadMessage[]
   composer?: string
 } {
   let next = messages
   const last = next.at(-1)
-  if (last?.role === "assistant" && !assistantHasOutput(last)) {
+  // preOutput=true：开泵前 cite 的 source.added 不算产出，助手也要撕掉。
+  if (last?.role === "assistant" && (opts?.dropAssistant || !assistantHasOutput(last))) {
     next = next.slice(0, -1)
   }
   const user = next.at(-1)

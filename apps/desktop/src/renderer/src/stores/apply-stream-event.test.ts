@@ -312,6 +312,33 @@ test("preOutput=true 丢掉乐观气泡并把草稿还回 Composer", () => {
   )
 })
 
+test("preOutput=true 撕掉只有 cite 的助手并还草稿", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello cite", createdAt: 1 },
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: true,
+      sources: [{ sourceId: "s1", title: "README.md", path: "README.md" }]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "provider_unreachable",
+      code: "provider_unreachable",
+      preOutput: true
+    },
+    "run_1"
+  )
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.composer, "hello cite")
+})
+
 test("preOutput=false 且尚未出字：Zod 缺省回落后仍撕泡还草稿", () => {
   const messages: ThreadMessage[] = [
     { id: "msg_user_1", role: "user", content: "hello draft", createdAt: 1 },

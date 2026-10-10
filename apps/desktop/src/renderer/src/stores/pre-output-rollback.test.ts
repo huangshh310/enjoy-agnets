@@ -4,6 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  assistantHasOutput,
   lastTurnHasNoOutput,
   rollbackPreOutputTurn,
   shouldRollbackPreOutput
@@ -38,6 +39,26 @@ test("preOutput false 且未出字：闸码仍回滚", () => {
   const rolled = rollbackPreOutputTurn(pending)
   assert.equal(rolled.composer, "hello")
   assert.equal(rolled.messages.length, 0)
+})
+
+test("preOutput 强制撕掉只有 cite 的助手", () => {
+  const cited: ThreadMessage[] = [
+    { id: "msg_user_1", role: "user", content: "hello", createdAt: 1 },
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: true,
+      sources: [{ sourceId: "s1", title: "README.md", path: "README.md" }]
+    }
+  ]
+  assert.equal(assistantHasOutput(cited[1]), true)
+  const kept = rollbackPreOutputTurn(cited)
+  assert.equal(kept.messages.length, 2)
+  const forced = rollbackPreOutputTurn(cited, { dropAssistant: true })
+  assert.equal(forced.composer, "hello")
+  assert.equal(forced.messages.length, 0)
 })
 
 test("已经出字后 preOutput false 不回滚", () => {
