@@ -272,9 +272,10 @@ test("S1-2 有密钥和项目后能发 hello 并收到回复", async () => {
     await composer.click()
     await window.keyboard.type("hello")
     await window.keyboard.press("Enter")
-    await expect(window.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
+    const thread = window.getByTestId("chat-conversation")
+    await expect(thread.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
-    await expect(window.locator("[data-thread-message]").filter({ hasText: /.+/ })).toHaveCount(2, {
+    await expect(thread.locator("[data-thread-message]").filter({ hasText: /.+/ })).toHaveCount(2, {
       timeout: 20_000
     })
     await snap(window, "s1-2-send-hello")
@@ -308,7 +309,9 @@ test("S1-2 引擎夹具发 hello 不出现中性条", async () => {
     const composer = window.locator('[data-testid="composer-input"]')
     await composer.fill("hello")
     await composer.press("Enter")
-    await expect(window.getByText("hello", { exact: true })).toBeVisible({ timeout: 12_000 })
+    await expect(window.getByTestId("chat-conversation").getByText("hello", { exact: true })).toBeVisible({
+      timeout: 12_000
+    })
     await expect(window.locator('[data-testid="thread-no-chat-route-notice"]')).toHaveCount(0)
     await snap(window, "s1-2-engine-send-hello")
   } finally {
