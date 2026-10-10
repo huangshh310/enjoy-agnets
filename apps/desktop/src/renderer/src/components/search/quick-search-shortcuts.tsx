@@ -2,7 +2,7 @@
  * ⌘L 列出与设置页同一份解析后的快捷键。选中对话类命令时聚焦输入框。
  * 设置页 ⌘L / ⌘K 分行；面板把同一命令的多个键收成一行。
  */
-import { resolveKeybindings } from "@enjoy-agents/ipc-contract"
+import { resolveKeybindings, type KeybindingCommand } from "@enjoy-agents/ipc-contract"
 import { RiKeyboardBoxLine } from "@remixicon/react"
 import { CommandGroup, CommandItem } from "@/components/ui/command"
 import { labelKeysForBinding, metaFor } from "@renderer/components/settings/keybindings/keybinding-catalog"
@@ -49,7 +49,7 @@ export function QuickSearchShortcuts({ query, onPick }: { query: string; onPick:
   )
 }
 
-function shortcutRowCopy(row: { command: string; keys: string[] }, t: (key: string) => string) {
+function shortcutRowCopy(row: { command: KeybindingCommand; keys: string[] }, t: (key: string) => string) {
   const labels = labelKeysForBinding(row.command, row.keys[0] ?? "unassigned")
   const title =
     row.command === "search.quick" && row.keys.length > 1
