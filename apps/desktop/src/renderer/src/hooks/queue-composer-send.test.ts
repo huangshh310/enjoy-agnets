@@ -1,5 +1,8 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 import {
   clearComposerAssets,
   listComposerAssets,
@@ -170,6 +173,11 @@ test("成功只清已发出的正文", () => {
   assert.equal(remainingComposerAfterSend("hello", "hello"), "")
   assert.equal(remainingComposerAfterSend("hello", "other"), "other")
   assert.equal(remainingComposerAfterSend("hello world again", "he"), "")
+})
+
+test("queue-composer-send 再导出 QueuedComposerAsset", () => {
+  const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "queue-composer-send.ts"), "utf8")
+  assert.match(src, /export type \{ QueuedComposerAsset \}/)
 })
 
 test("未 take 的附件也能入队", async () => {

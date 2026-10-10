@@ -11,6 +11,7 @@ import {
   SessionHeartbeatGetInput,
   SessionHeartbeatPutInput,
   SessionArchiveResult,
+  SessionDeleteInput,
   SessionIdInput,
   SessionPatchInput,
   SessionRecapInput,
@@ -124,9 +125,10 @@ function registerSessionLifecycleIpc() {
   ipcMain.handle("session.unarchive", async (_event, raw) =>
     unarchiveSession(SessionIdInput.parse(raw).sessionId)
   )
-  ipcMain.handle("session.delete", async (_event, raw) =>
-    deleteSession(SessionIdInput.parse(raw).sessionId)
-  )
+  ipcMain.handle("session.delete", async (_event, raw) => {
+    const input = SessionDeleteInput.parse(raw)
+    return deleteSession(input.sessionId, { onlyIfEmpty: input.onlyIfEmpty === true })
+  })
   ipcMain.handle("session.deleteArchived", async () => deleteAllArchivedSessions())
   ipcMain.handle("session.compact", async (_event, raw) => {
     const input = SessionCompactInput.parse(raw)

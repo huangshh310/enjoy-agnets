@@ -1,8 +1,9 @@
 /**
  * 只有 main 可写补跑闸与 run origin。renderer 的 agent.run 必须剥掉。
  */
-import type { AutomationRunSource, RunAgentInput } from "@enjoy-agents/ipc-contract"
+import type { RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { inferAgentRunOrigin, type AgentRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
+import { AutomationRunSource } from "@enjoy-agents/ipc-contract/automations-missed"
 
 export type TrustedRunAgentOptions = {
   /** main 内部入口（自动化补跑 / 续跑）才为 true。 */
@@ -33,12 +34,5 @@ export function trustedAutomationFlags(
 }
 
 function isAutomationSource(value: unknown): value is AutomationRunSource {
-  if (!value || typeof value !== "object") return false
-  const row = value as Record<string, unknown>
-  return (
-    typeof row.automationId === "string" &&
-    typeof row.automationName === "string" &&
-    typeof row.scheduledAt === "number" &&
-    typeof row.isCatchUp === "boolean"
-  )
+  return AutomationRunSource.safeParse(value).success
 }

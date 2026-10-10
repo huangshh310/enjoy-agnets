@@ -201,8 +201,9 @@ export function holdAgentRun(
     startedAt: Date.now(),
     citedSources: patch.citedSources ?? [],
     transcript: emptyTranscript(),
-    tools: [],
-    assistantPersisted: false
+    tools: patch.tools ?? [],
+    assistantPersisted: patch.assistantPersisted ?? Boolean(patch.assistantMessageId),
+    assistantMessageId: patch.assistantMessageId
   })
 }
 

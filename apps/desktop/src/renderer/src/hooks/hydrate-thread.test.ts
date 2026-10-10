@@ -87,6 +87,23 @@ test("重新打开后：库里 output-error + 拒绝码仍是未执行，不是�
   assert.notEqual(mapToolStatus(tool.state, tool), "running")
 })
 
+test("已结束会话回灌：approval-requested 中性封口，不转圈", () => {
+  const content = JSON.stringify({
+    v: 1,
+    content: "",
+    tools: [{ id: "tool_pending", name: "write_file", state: "approval-requested", args: { path: "a.ts" } }]
+  })
+  const [sealed] = threadFromRows([{ id: "msg_ended", role: "assistant", content, createdAt: 1 }])
+  assert.equal(sealed?.tools?.[0]?.state, "output-error")
+  assert.deepEqual(sealed?.tools?.[0]?.result, { decision: "cancelled" })
+  assert.equal(mapToolStatus(sealed!.tools![0]!.state, sealed!.tools![0]), "skipped")
+  const [live] = threadFromRows(
+    [{ id: "msg_ended", role: "assistant" as const, content, createdAt: 1 }],
+    { sealAbandoned: false }
+  )
+  assert.equal(live?.tools?.[0]?.state, "approval-requested")
+})
+
 test("仍在跑的会话回灌：不把 input-available 封成出错", () => {
   const content = JSON.stringify({
     v: 1,
@@ -100,6 +117,34 @@ test("仍在跑的会话回灌：不把 input-available 封成出错", () => {
   assert.equal(live?.tools?.[0]?.state, "input-available")
 })
 
+test("hydrate 恢复信封上的真实回挂码", () => {
+  const content = JSON.stringify({
+    v: 1,
+    content: "",
+    restartNotice: "restore_interrupted_running",
+    tools: [
+      {
+        id: "tool_int",
+        name: "write_file",
+        state: "output-error",
+        result: { code: "restart_abandoned", decision: "cancelled" }
+      }
+    ]
+  })
+  const [message] = threadFromRows([{ id: "msg_notice", role: "assistant", content, createdAt: 1 }])
+  assert.equal(message?.restartNotice, "restore_interrupted_running")
+})
+
+test("hydrate 恢复本轮 runId，旧泡不跟新一轮", () => {
+  const message = mapAssistantThreadMessage(
+    { id: "msg_run", content: "ok", createdAt: 1 },
+    { v: 1, content: "ok", runId: "run_2" },
+    { sources: [], assets: [], components: [] },
+    []
+  )
+  assert.equal(message.runId, "run_2")
+})
+
 test("无 stamp 的旧信封 runKind 为空", () => {
   const message = mapAssistantThreadMessage(
     { id: "msg_2", content: "ok", createdAt: 1 },
@@ -109,4 +154,60 @@ test("无 stamp 的旧信封 runKind 为空", () => {
   )
   assert.equal(message.runKind, undefined)
   assert.equal(message.content, "ok")
+})
+
+test("冷启动回灌：上一轮 output-available 是完成不是转圈，最新一轮从助手行带回工具", () => {
+  const prevContent = JSON.stringify({
+    v: 1,
+    content: "先改了",
+    tools: [
+      { id: "tool_prev", name: "write_file", state: "output-available", args: { path: "a.ts" }, result: { ok: true } }
+    ]
+  })
+  const lastContent = JSON.stringify({
+    v: 1,
+    content: "再跑命令",
+    tools: [{ id: "tool_last", name: "bash", state: "output-available", args: { command: "ls" }, result: { ok: true } }]
+  })
+  const [prev, last] = threadFromRows([
+    { id: "msg_prev", role: "assistant", content: prevContent, createdAt: 1 },
+    { id: "msg_last", role: "assistant", content: lastContent, createdAt: 2 }
+  ])
+  const prevTool = prev?.tools?.[0]
+  const lastTool = last?.tools?.[0]
+  assert.ok(prevTool)
+  assert.ok(lastTool)
+  assert.equal(prevTool.state, "output-available")
+  assert.equal(mapToolStatus(prevTool.state, prevTool), "completed")
+  assert.notEqual(mapToolStatus(prevTool.state, prevTool), "running")
+  assert.equal(lastTool.name, "bash")
+  assert.equal(lastTool.state, "output-available")
+  assert.equal(mapToolStatus(lastTool.state, lastTool), "completed")
+})
+
+test("信封丢了工具：从助手行 parts 补回最新一轮，output-available 仍是完成", () => {
+  const [message] = threadFromRows([
+    {
+      id: "msg_parts",
+      role: "assistant",
+      content: "plain last turn",
+      createdAt: 3,
+      parts: [
+        { type: "text", text: "plain last turn" },
+        {
+          type: "tool",
+          toolCallId: "tool_from_parts",
+          name: "write_file",
+          state: "output-available",
+          result: { ok: true }
+        }
+      ]
+    }
+  ])
+  const tool = message?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(tool.id, "tool_from_parts")
+  assert.equal(tool.state, "output-available")
+  assert.equal(mapToolStatus(tool.state, tool), "completed")
+  assert.notEqual(mapToolStatus(tool.state, tool), "running")
 })

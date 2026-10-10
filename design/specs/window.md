@@ -1,6 +1,6 @@
 # spec/window
 
-> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（e2e stub 可降最小窗）
+> 无边框桌面窗：系统按钮在渲染进程，操作在主进程。最后更新：2026-10-10（macOS 关光窗口不 flush）
 
 ## 当前真相
 
@@ -29,7 +29,7 @@
 
 IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQuit` | `setTaskbarTitle` | `openExternal`。最大化状态用 `window.maximized-changed` 推送，renderer 另听 `resize` 做一次校对。Windows 透明无边框不信 `BrowserWindow.isMaximized()`：放大按显示器 `workArea` `setBounds`，还原用放大前矩形；标题栏 drag 双击走 `WM_NCLBUTTONDBLCLK`。`openExternal` 入参 Zod `WindowOpenExternalInput`，只收 http(s)，拒 userinfo 凭据；main `URL` 复验后 `shell.openExternal`。失败回 `{ ok: false, code }`，不抛。`window.openExternal` **只能**从用户手势回调调用（目前是终端 WebLinks 点击）；禁止程序化 / 自动打开。
 
-关窗 / ⌘Q：有 `running`、当前或后台 `pendingApproval` / Attention 审批时弹出 ConfirmDialog，确认才 `forceQuit`（`markQuitAllowed` 后 `app.quit`）。空闲标题栏关闭仍走 `window.close`（macOS 可留 Dock）。`before-quit` 未放行时 `preventDefault` 并推 `window.quit-requested`；清理改到 `will-quit`。Win / macOS / Linux 同一套。
+关窗 / ⌘Q：有 `running`、当前或后台 `pendingApproval` / Attention 审批时弹出 ConfirmDialog，确认才 `forceQuit`（`markQuitAllowed` 后 `app.quit`）。空闲标题栏关闭仍走 `window.close`（macOS 可留 Dock）。`before-quit` 未放行时 `preventDefault` 并推 `window.quit-requested`；清理改到 `will-quit`。`flushActiveRuns({ failClosed: true })` **只**在真退出：`will-quit`，以及非 darwin `window-all-closed`（随后 `app.quit`）。macOS 关光窗口应用还在 Dock：`shouldFlushRunsOnWindowAllClosed("darwin")===false`，不写库、不 fail-closed。Win / Linux 关最后一扇窗是真退出。
 
 单实例：`registerAssetScheme` 之后立刻 `app.requestSingleInstanceLock()`（`single-instance.ts`）。拿不到锁的进程 `markQuitAllowed()` 后 `app.exit(0)`（不是 `quit()`，避免再进 `will-quit` 碰共享库）。`will-quit` / `before-quit` / `window-all-closed` 都先看 `isPrimaryInstance()`。拿到锁的实例听 `second-instance`：已有窗则 `restore` + `show` + `focus`；无窗且 `app.isReady()` 才 `createWindow`。孤儿续跑挂第一扇窗的 `webContents.once("did-finish-load")`（`restore-after-load.ts`），每个进程一次；`createWindow` 当下和窗口重建都不再跑。三端差异：Windows / Linux 二次启动走 `second-instance`；macOS 点 Dock 重开已在跑的应用走 `activate`（无窗才重建），命令行再拉起第二份进程才走 `second-instance`。E2E 仍拿锁，并给独立 `ENJOY_E2E_USERDATA`。
 
@@ -63,6 +63,7 @@ IPC：`window.minimize` | `toggleMaximize` | `isMaximized` | `close` | `forceQui
 - 第二实例若先注册 `before-quit` 再退出，退出确认会 `preventDefault` 把失败者卡住。必须先 `markQuitAllowed()`，且不要给失败者挂 `whenReady` 调度。
 - `before-quit` 里 `preventDefault` 必须同步。放行旗 `isQuitAllowed` 未立时不要跑 `flushActiveRuns`；确认后走 `forceQuit`。空闲关最后一扇窗会再进 `before-quit`：窗口已毁则直接放行，不要对着 destroyed `webContents` 推事件。
 - `autoUpdater.quitAndInstall` 也会进 `before-quit`。安装前必须 `markQuitAllowed()`，否则更新会被退出确认卡住。非 darwin 最后一扇窗 `window-all-closed` 里同样要先放行再 `app.quit()`。
+- **隐患**：macOS `window-all-closed` 曾调用 `flushActiveRuns`，关光窗口应用还在时写检查点失败会 fail-closed 结清未决。正确做法：只有 `will-quit` / 非 darwin 关最后一扇窗才 flush + fail-closed；darwin 关窗不碰库。测试：`flush-agent-run.test.ts`。
 - 页面历史在渲染进程内存里。刷新或新开窗口不会带回 past/future。删除当前会话或项目时落到 past 末尾；past 空则回到空的新聊天，不创建会话。项目已不在时只清工作区指针。不要把滚动、草稿、流式半截写进条目。
 - 侧键不要只绑 `mousedown`。Chromium 在 `mouseup` 上后退；只在按下时 `preventDefault` 拦不住，应用内 `navigate` 推上去的条目会被原生 `history.back()` 弹掉。
 - 内容区位移不要等恢复完成再看 `running`。`loadSession` 会把前台 run 停进 park，effect 里再读已经是 false，正在输出的页面仍会滑。要在 `back` / `forward` / `jump` 改栈时决定，结果放在 `slide`。

@@ -8,6 +8,11 @@ import { isStaleObservationAfterAllow, isToolNotExecuted } from "@enjoy-agents/i
 import { mapToolStatus } from "../components/ai-chat/thread/thinking/extract-step-fields.ts"
 import { reduceStreamEvent } from "./apply-stream-event.ts"
 import type { ThreadMessage } from "./chat-store"
+import {
+  classifyThreadError,
+  humanizeThreadError,
+  RESTORE_NO_MATCHING
+} from "../lib/usage/classify-thread-error.ts"
 
 function assistantWithDeniedTool(): ThreadMessage[] {
   return [
@@ -194,6 +199,18 @@ test("切回后允许一次但观察过期：tool.result 折到非流式助手�
   assert.equal([tool].filter((row) => !isToolNotExecuted(row)).length, 0)
 })
 
+test("重启放弃写盘行走 restart，不是红失败", () => {
+  const tool = {
+    id: "t1",
+    name: "write_file",
+    state: "output-error" as const,
+    result: { code: "restart_abandoned", decision: "cancelled" }
+  }
+  assert.equal(mapToolStatus(tool.state, tool), "restart")
+  assert.notEqual(mapToolStatus(tool.state, tool), "error")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+})
+
 test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开助手气泡", () => {
   const afterMain: ThreadMessage[] = [
     { id: "msg_user", role: "user", content: "写一段摘要", createdAt: 1 },
@@ -216,6 +233,119 @@ test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开�
     false
   )
   assert.equal(delta.messages.at(-1)?.content, "好的")
+})
+
+test("空闲时标题补全 run.error 不改前台、不写 error", () => {
+  const messages: ThreadMessage[] = [
+    { id: "msg_asst", role: "assistant", content: "好的", createdAt: 2, streaming: false }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_title",
+      message: "Request timed out",
+      kind: "completion"
+    },
+    null
+  )
+  assert.equal(patch.running, undefined)
+  assert.equal(patch.error, undefined)
+  assert.equal(patch.notice, undefined)
+  assert.equal(patch.messages.at(-1)?.content, "好的")
+  const noKind = reduceStreamEvent(
+    messages,
+    { type: "run.error", runId: "run_title", message: "Request timed out" },
+    null
+  )
+  assert.equal(noKind.running, undefined)
+  assert.equal(noKind.error, undefined)
+})
+
+test("空闲时回挂对不上走中性 notice，工具封成 restart_abandoned", () => {
+  const messages: ThreadMessage[] = [
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 1,
+      streaming: true,
+      tools: [{ id: "tool_1", name: "write_file", state: "approval-requested" }]
+    }
+  ]
+  const patch = reduceStreamEvent(
+    messages,
+    {
+      type: "run.error",
+      runId: "run_wait",
+      sessionId: "ses_a",
+      message: RESTORE_NO_MATCHING,
+      code: RESTORE_NO_MATCHING,
+      turn: { workflow: "todo", attention: "neutral" }
+    },
+    null
+  )
+  assert.equal(patch.running, false)
+  assert.equal(patch.runId, null)
+  assert.equal(patch.error, null)
+  assert.equal(patch.notice, RESTORE_NO_MATCHING)
+  assert.equal(classifyThreadError(patch.notice ?? ""), "restore_no_matching")
+  assert.equal(humanizeThreadError(patch.notice, (path) => path), "chat.restoreNoMatching")
+  assert.equal(
+    (patch.messages[0]?.tools?.[0]?.result as { code?: string } | undefined)?.code,
+    "restart_abandoned"
+  )
+})
+
+test("新一轮 toolCallId 撞上上一轮：不得折进 restart_abandoned，本轮自己开行", () => {
+  const oldTools = [
+    {
+      id: "tool_stub_1",
+      name: "write_file",
+      state: "output-error" as const,
+      args: { path: "e2e-stub.txt" },
+      result: { code: "restart_abandoned", decision: "cancelled" }
+    }
+  ]
+  const messages: ThreadMessage[] = [
+    { id: "msg_user", role: "user", content: "please write a note", createdAt: 1 },
+    {
+      id: "msg_old",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      streaming: false,
+      runId: "run_old",
+      tools: oldTools
+    }
+  ]
+  const start = reduceStreamEvent(
+    messages,
+    { type: "tool.start", runId: "run_new", toolCallId: "tool_stub_1", name: "write_file" },
+    "run_new"
+  )
+  const allowed = reduceStreamEvent(
+    start.messages,
+    {
+      type: "tool.result",
+      runId: "run_new",
+      toolCallId: "tool_stub_1",
+      name: "write_file",
+      result: { ok: true, path: "e2e-stub.txt" }
+    },
+    "run_new"
+  )
+  const old = allowed.messages.find((row) => row.id === "msg_old")
+  const fresh = allowed.messages.find((row) => row.id === "msg_run_new")
+  assert.equal(
+    (old?.tools?.[0]?.result as { code?: string } | undefined)?.code,
+    "restart_abandoned"
+  )
+  assert.equal(old?.tools?.[0]?.state, "output-error")
+  assert.ok(fresh)
+  assert.equal(fresh?.runId, "run_new")
+  assert.equal(fresh?.tools?.[0]?.id, "tool_stub_1")
+  assert.equal(fresh?.tools?.[0]?.state, "output-available")
 })
 
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {

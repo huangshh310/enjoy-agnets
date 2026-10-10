@@ -22,7 +22,10 @@ export function restoreHeldWaitingApprovals(input: {
   hmacPending: ApprovalRow[]
   items: PendingApproval[]
   window: BrowserWindow
-}): { ended: boolean; keep: PendingApproval[] } {
+}): {
+  ended: boolean
+  keep: PendingApproval[]
+} {
   const hmacPending = liveHmacRows(input.runId, input.hmacPending)
   const classified = classifyWaitingApprovals(hmacPending, input.items)
   const orphaned = applyRestoredOrphanApprovals({
@@ -132,6 +135,7 @@ function emitRestoredApprovalCards(
     emitEvent(window, {
       type: "approval.required",
       runId,
+      sessionId: getActiveRun(runId)?.input.sessionId,
       approvalId: item.approvalId,
       toolCallId: item.toolCallId,
       name: item.name,

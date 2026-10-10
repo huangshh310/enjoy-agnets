@@ -1,0 +1,26 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { test } from "node:test"
+import { fileURLToPath } from "node:url"
+
+const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "send-composer-run.ts"), "utf8")
+const fail = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fail-composer-send.ts"), "utf8")
+
+test("发送失败走 failComposerSend：还文、notice、清停车、空会话可删", () => {
+  assert.match(fail, /type QueuedComposerAsset/)
+  assert.match(fail, /from "\.\.\/queue-composer-send"/)
+  assert.match(src, /failComposerSend/)
+  assert.match(src, /SEND_FAILED_RESTORE/)
+  assert.match(src, /if \(prepared\)/)
+  const body = fail.slice(fail.indexOf("export function failComposerSend"))
+  assert.match(body, /takePark/)
+  assert.match(body, /keepComposer: true/)
+  assert.match(body, /restoreComposerAfterFailedSend/)
+  assert.match(body, /dropMatchingOptimisticUser/)
+  assert.match(body, /createdSessionId/)
+  assert.match(body, /onlyIfEmpty: true/)
+  const restoreAt = body.indexOf("restoreComposerAfterFailedSend")
+  const discardAt = body.indexOf("discardCreatedSession")
+  assert.ok(restoreAt >= 0 && discardAt > restoreAt)
+})

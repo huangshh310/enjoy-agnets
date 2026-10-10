@@ -13,7 +13,12 @@ import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
-import { resolveBoundRunModelId, resolveRunSecret, resolveRuntimeId } from "./agent-run-helpers"
+import {
+  resolveBoundRunModelId,
+  resolveRunSecret,
+  resolveRuntimeId
+} from "./agent-run-helpers"
+import { foldMissingRunSecret } from "./missing-run-secret"
 import { peekVerifiedLocalModel } from "./chat-readiness"
 import { hasSecret } from "./secrets"
 import { selectedRouteGateCode, shouldSkipSelectedRouteGate } from "./selected-chat-route"
@@ -125,7 +130,14 @@ async function beginAgentRun(
   if (isAcpHostRuntime(runtimeId) && !input.modelId) {
     input.modelId = `cli:${runtimeId}`
   }
-  const secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  let secret: Awaited<ReturnType<typeof resolveRunSecret>>
+  try {
+    secret = await resolveRunSecret(runtimeId, prefs.codingRuntime, prefs.harnessId)
+  } catch (error) {
+    const folded = foldMissingRunSecret(error)
+    if (folded) return folded
+    throw error
+  }
   if (isE2eCostSeed() && (!input.modelId || input.modelId === "stub-e2e")) {
     input.modelId = COST_LIVE_MODEL_ID
   } else if (isE2eStub() && !input.modelId) {

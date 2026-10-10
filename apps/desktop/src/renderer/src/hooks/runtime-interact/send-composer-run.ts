@@ -9,15 +9,17 @@ import { codingAgentRunInput } from "../agent-run-payload"
 import { takeComposerAssetDetails, type QueuedComposerAsset } from "../composer-assets"
 import { composerRunKind } from "../composer-run-kind"
 import { syncReviewGateOnComposerStart } from "../../components/ai-chat/review-gate/sync-review-gate"
-import {
-  abortOrphanedRun,
-  claimComposerRun,
-  dropEmptyPendingAssistant
-} from "../composer-run-control"
+import { abortOrphanedRun, claimComposerRun } from "../composer-run-control"
+import { failComposerSend } from "./fail-composer-send"
 import { applyOptimisticTitle, completeSessionTitle } from "../session-title"
 import { guardComposerSend } from "./send-composer-guard"
 import { agentRunBlockedCode, requireAgentRunId } from "@enjoy-agents/ipc-contract/chat-readiness"
-import { NEED_MODEL, NO_CHAT_ROUTE } from "../../lib/usage/classify-thread-error.ts"
+import {
+  classifyThreadError,
+  NEED_MODEL,
+  NEED_PROVIDER_KEY,
+  NO_CHAT_ROUTE
+} from "../../lib/usage/classify-thread-error.ts"
 import { pendingAssistantStamp } from "../../lib/pending-assistant-stamp"
 import { applySessionContextToOutgoing } from "../session-context-inject"
 import {
@@ -34,7 +36,6 @@ import { bumpSessionHydrateGeneration } from "../session-hydrate-generation"
 import {
   clearSentComposerText,
   composerNeedsSessionReady,
-  mergeComposerText,
   restoreComposerAfterFailedSend,
   restoreComposerDraft,
   SEND_FAILED_RESTORE,
@@ -82,6 +83,18 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
   if (firstTurn) store.setPreparingHint(true)
   store.setRunning(true)
   if (!guardComposerSend(store)) {
+    const blocked = useChatStore.getState().error
+    if (prepared) {
+      failComposerSend({
+        text: prepared.content,
+        reason: blocked || SEND_FAILED_RESTORE,
+        sessionId: store.sessionId,
+        createdSessionId: prepared.sessionId,
+        assets: prepared.assets
+      })
+      store.setPreparingHint(false)
+      return
+    }
     restoreDraftAfterSendGate(store, prepared)
     return
   }
@@ -95,7 +108,7 @@ export async function sendComposerMessage(prepared?: PreparedSend) {
     }
     const messages = beginOptimisticTurn(store, payload)
     clearSentComposerText(payload.content)
-    await launchComposerRun(store, payload, messages)
+    await launchComposerRun(store, payload, messages, prepared?.sessionId)
   } catch (error) {
     store.setRunning(false)
     store.setPreparingHint(false)
@@ -172,7 +185,8 @@ function beginOptimisticTurn(store: ChatState, payload: SendPayload) {
 async function launchComposerRun(
   store: ChatState,
   payload: SendPayload,
-  messages: ChatState["messages"]
+  messages: ChatState["messages"],
+  createdSessionId?: string
 ) {
   const sessionId = store.sessionId
   try {
@@ -186,27 +200,48 @@ async function launchComposerRun(
     )
     const blocked = agentRunBlockedCode(result)
     if (blocked) {
-      dropEmptyPendingAssistant()
-      store.setRunning(false)
-      store.setError(blocked)
-      if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
+      failComposerSend({
+        text: payload.content,
+        reason: blocked,
+        sessionId,
+        createdSessionId,
+        dropOptimisticUser: true
+      })
       return
     }
     const runId = requireAgentRunId(result)
     if (!claimComposerRun(sessionId, runId)) {
       abortOrphanedRun(runId)
+      failComposerSend({
+        text: payload.content,
+        reason: SEND_FAILED_RESTORE,
+        sessionId,
+        createdSessionId
+      })
       return
     }
     rememberSessionBranch(sessionId ?? undefined, lastSeenCurrentBranch())
     void completeSessionTitle(payload.content)
   } catch (error) {
-    dropEmptyPendingAssistant()
-    store.setRunning(false)
-    store.setError(error instanceof Error ? error.message : String(error) || SEND_FAILED_RESTORE)
-    if (payload.content) store.setComposer(mergeComposerText(payload.content, store.composer))
+    failComposerSend({
+      text: payload.content,
+      reason: composerSendError(error),
+      sessionId: store.sessionId,
+      createdSessionId,
+      dropOptimisticUser: true
+    })
   } finally {
     useChatStore.getState().setPreparingHint(false)
   }
+}
+
+function composerSendError(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error)
+  const kind = classifyThreadError(raw || SEND_FAILED_RESTORE)
+  if (kind === "no_chat_route") return NO_CHAT_ROUTE
+  if (kind === "needs_model") return NEED_MODEL
+  if (kind === "needs_key") return NEED_PROVIDER_KEY
+  return raw || SEND_FAILED_RESTORE
 }
 
 function currentCaps(store: ChatState) {

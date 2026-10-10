@@ -3,6 +3,9 @@
  */
 import type { StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isUserAbortEvent } from "@enjoy-agents/ipc-contract/desktop-notify"
+import { restoreFamilyCodeOf } from "@enjoy-agents/ipc-contract/restore-codes"
+import { RESTORE_NO_MATCHING } from "../../lib/usage/classify-thread-error"
+import { isComposerRunStart, isNonAgentRunKind, isRestoreFamilyEvent } from "../stream-run-scope"
 import type { ChatStore } from "../chat-store.types"
 import type { ParkedRun } from "./attention.types"
 
@@ -13,11 +16,14 @@ export function captureParkedRun(store: {
   runStartedAt: number | null
   pendingApproval: ChatStore["pendingApproval"]
   error: string | null
+  notice?: string | null
   thinkingLabel: string
   pendingStreamEvents: StreamEvent[]
 }): ParkedRun | null {
   if (!store.sessionId) return null
-  if (!store.running && !store.pendingApproval && !store.error && !store.runId) return null
+  if (!store.running && !store.pendingApproval && !store.error && !store.runId && !store.notice) {
+    return null
+  }
   return {
     sessionId: store.sessionId,
     runId: store.runId,
@@ -25,6 +31,7 @@ export function captureParkedRun(store: {
     runStartedAt: store.runStartedAt,
     pendingApproval: store.pendingApproval,
     error: store.error,
+    notice: store.notice ?? null,
     thinkingLabel: store.thinkingLabel,
     pendingStreamEvents: store.pendingStreamEvents
   }
@@ -38,21 +45,35 @@ export function seedParkFromRunStart(sessionId: string, runId: string, now = Dat
     runStartedAt: now,
     pendingApproval: null,
     error: null,
+    notice: null,
     thinkingLabel: "Thinking",
     pendingStreamEvents: []
   }
 }
 
-/** 没有 park 时只认 run.start。其它事件保持原表。 */
+/** 没有 park 时认 run.start，以及回挂的 approval.required / 回挂家族 run.error。 */
 export function nextParks(
   parks: Record<string, ParkedRun>,
   sessionId: string,
-  event: StreamEvent
+  event: StreamEvent,
+  rememberedKind?: string
 ): Record<string, ParkedRun> | null {
+  if (isNonAgentRunKind(event, rememberedKind)) return null
   const existing = parks[sessionId]
   if (!existing) {
-    if (event.type !== "run.start") return null
-    return { ...parks, [sessionId]: seedParkFromRunStart(sessionId, event.runId) }
+    if (event.type === "run.start") {
+      if (!isComposerRunStart(event)) return null
+      return { ...parks, [sessionId]: seedParkFromRunStart(sessionId, event.runId) }
+    }
+    if (event.type === "approval.required") {
+      const seeded = seedParkFromRunStart(sessionId, event.runId)
+      return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
+    }
+    if (event.type === "run.error" && isRestoreFamilyEvent(event)) {
+      const seeded = seedParkFromRunStart(sessionId, event.runId)
+      return { ...parks, [sessionId]: applyEventToPark(seeded, event) }
+    }
+    return null
   }
   return { ...parks, [sessionId]: applyEventToPark(existing, event) }
 }
@@ -71,6 +92,15 @@ export function applyEventToPark(park: ParkedRun, event: StreamEvent): ParkedRun
     return { ...park, running: false, runId: null, pendingApproval: null }
   }
   if (event.type === "run.error") {
+    if (isRestoreFamilyEvent(event) || event.message === RESTORE_NO_MATCHING) {
+      return {
+        ...park,
+        running: false,
+        error: null,
+        pendingApproval: null,
+        notice: restoreFamilyCodeOf(event) ?? RESTORE_NO_MATCHING
+      }
+    }
     if (isUserAbortEvent(event)) {
       return { ...park, running: false, error: null, pendingApproval: null }
     }
@@ -87,9 +117,11 @@ export function idleComposerPatch(): Pick<
   ChatStore,
   | "running"
   | "runId"
+  | "lastRunId"
   | "runStartedAt"
   | "pendingApproval"
   | "error"
+  | "notice"
   | "preparingHint"
   | "pendingStreamEvents"
   | "thinkingLabel"
@@ -97,9 +129,11 @@ export function idleComposerPatch(): Pick<
   return {
     running: false,
     runId: null,
+    lastRunId: null,
     runStartedAt: null,
     pendingApproval: null,
     error: null,
+    notice: null,
     preparingHint: false,
     pendingStreamEvents: [],
     thinkingLabel: "Thinking"
@@ -110,9 +144,11 @@ export function parkedComposerPatch(park: ParkedRun): ReturnType<typeof idleComp
   return {
     running: park.running,
     runId: park.runId,
+    lastRunId: park.runId,
     runStartedAt: park.runStartedAt,
     pendingApproval: park.pendingApproval,
     error: park.error,
+    notice: park.notice,
     preparingHint: false,
     pendingStreamEvents: park.pendingStreamEvents,
     thinkingLabel: park.thinkingLabel

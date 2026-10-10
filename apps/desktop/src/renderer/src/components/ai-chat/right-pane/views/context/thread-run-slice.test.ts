@@ -25,6 +25,33 @@ test("toolsFromMessages keeps recent assistant tools", () => {
   assert.equal(tools[0]?.name, "read_file")
 })
 
+test("本轮工具只取最近一条助手，不把上轮失败写盘带过来", () => {
+  const tools = toolsFromMessages([
+    {
+      role: "assistant",
+      tools: [{ id: "old", name: "write_file", state: "output-error", result: { code: "run_failed" } }]
+    },
+    { role: "user" },
+    {
+      role: "assistant",
+      tools: [{ id: "new", name: "write_file", state: "output-available", result: { ok: true } }]
+    }
+  ])
+  assert.equal(tools.length, 1)
+  assert.equal(tools[0]?.id, "new")
+  assert.equal(toolRunKind(tools[0]?.state, tools[0]), "ok")
+})
+
+test("成功 output-available 不因残留 run_failed 码标失败", () => {
+  assert.equal(
+    toolRunKind("output-available", {
+      state: "output-available",
+      result: { code: "run_failed", ok: true }
+    }),
+    "ok"
+  )
+})
+
 test("toolRunKind maps SDK states", () => {
   assert.equal(toolRunKind("output-available"), "ok")
   assert.equal(toolRunKind("output-error"), "error")
@@ -64,5 +91,19 @@ test("toolRunKind maps SDK states", () => {
       result: { code: "catch_up_approval_timeout", decision: "cancelled" }
     }),
     "catch_up"
+  )
+  assert.equal(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { code: "restart_abandoned", decision: "cancelled" }
+    }),
+    "restart"
+  )
+  assert.equal(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { decision: "cancelled" }
+    }),
+    "skipped"
   )
 })

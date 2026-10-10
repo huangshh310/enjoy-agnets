@@ -7,6 +7,7 @@ import {
   APPROVAL_ARGS_MISMATCH_COPY,
   isStaleObservationAfterAllow,
   isToolNotExecuted,
+  readApprovalDecision,
   readApprovalNotExecutedCode
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
@@ -16,6 +17,8 @@ type Translate = (key: string) => string
 export function isDeniedTool(
   tool: Pick<ThreadToolCall, "state" | "result" | "errorText"> | undefined
 ): boolean {
+  // cancelled 是结清 / 回挂放弃，不是用户点拒绝。
+  if (readApprovalDecision(tool?.result) === "cancelled") return false
   return isToolNotExecuted(tool) && !isStaleObservationAfterAllow(tool) && toolAbortKind(tool) !== "neutral"
 }
 

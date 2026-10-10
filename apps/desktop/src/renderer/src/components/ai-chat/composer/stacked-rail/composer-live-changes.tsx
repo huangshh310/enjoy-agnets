@@ -23,7 +23,9 @@ import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
 import { openSourcesSheet } from "@renderer/stores/sources-sheet/sources-sheet-store"
 import type { TurnSourceChip } from "../../thread/sources/source-chip"
 import { reviewBannerPeek } from "../session-review/review-banner-peek"
+import { reviewPlaceholderKey, reviewPlaceholderKind } from "../session-review/review-placeholder-kind"
 import type { SessionReviewFile } from "../session-review/session-review.types"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
 import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 
 export function ComposerLiveChanges() {
@@ -53,11 +55,17 @@ export function ComposerLiveChanges() {
   const stopped =
     !running &&
     (classifyThreadError(notice ?? "") === "stopped" || classifyThreadError(error ?? "") === "stopped")
+  const interrupted = stopped || isRestoreFamilyCode(notice)
+  const placeholderKey = reviewPlaceholderKey(
+    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [], interrupted)
+  )
   const peek = reviewBannerPeek(
     files,
     {
       stopped,
       placeholder: showGate,
+      maybeChanged: interrupted && files.length === 0,
+      placeholderKey,
       wroteThisTurnOnly: model.pick.wroteThisTurnOnly
     },
     t
@@ -79,6 +87,7 @@ export function ComposerLiveChanges() {
         filesOpen={filesOpen}
         onToggle={() => setFilesOpen((open) => !open)}
         files={files}
+        placeholderKey={placeholderKey}
         chips={chips}
         canOpenPreview={canOpenPreview}
         previewBusy={preview.busy}
@@ -122,6 +131,7 @@ function LiveChangesRow({
   filesOpen,
   onToggle,
   files,
+  placeholderKey,
   chips,
   canOpenPreview,
   previewBusy,
@@ -135,6 +145,7 @@ function LiveChangesRow({
   filesOpen: boolean
   onToggle: () => void
   files: SessionReviewFile[]
+  placeholderKey: string
   chips: TurnSourceChip[]
   canOpenPreview: boolean
   previewBusy?: boolean
@@ -162,7 +173,7 @@ function LiveChangesRow({
           ))
         ) : showGate ? (
           <li className="px-1 py-1 text-caption-2-regular text-text-tertiary">
-            {t("chat.sessionReviewCommandPlaceholder")}
+            {t(placeholderKey)}
           </li>
         ) : null}
       </ul>

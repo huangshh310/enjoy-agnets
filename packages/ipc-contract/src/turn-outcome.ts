@@ -57,10 +57,11 @@ export function sealTurnTools<T extends TurnToolSnapshot>(
 
 /**
  * 真出错：Attention=error；写类已开始则工单进待验收。
- * 用户 Stop：Attention=stopped；归档：Attention=neutral。写类已开始仍进待验收。
+ * 用户 Stop：Attention=stopped；归档：Attention=neutral。
  * 全拒绝或从未发出：回待办、Attention 中性。
  * 只读轮：回待办，Attention 仍可完成。
  * 写类已执行或执行中被掐：待验收 + 完成。
+ * 「已改 N 个」只数 output-available；开始了但没产出走「可能改了」。
  */
 export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
   const tools = sealTurnTools(input.tools, {

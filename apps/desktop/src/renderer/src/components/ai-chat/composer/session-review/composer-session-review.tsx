@@ -23,6 +23,8 @@ import { latestSessionTodoList } from "../../thread/tool-surfaces/select-turn-to
 import { ReviewGateCard, chipsFromLastAssistant } from "../../review-gate/review-gate-card"
 import { approveReviewGate, rejectReviewGate } from "../../review-gate/review-gate-actions"
 import { lastAssistantTurn } from "../../run-ledger/collect-run-ledger"
+import { isRestoreFamilyCode } from "@enjoy-agents/ipc-contract/restore-codes"
+import { reviewPlaceholderKey, reviewPlaceholderKind } from "./review-placeholder-kind"
 
 export function ComposerSessionReview() {
   const t = useT()
@@ -42,6 +44,10 @@ export function ComposerSessionReview() {
   const todos = latestSessionTodoList(messages)
   const hasTodos = Boolean(todos && todos.tasks.length > 0)
   const showGate = model.needsReview && !running
+  const notice = useChatStore((state) => state.notice)
+  const placeholderKey = reviewPlaceholderKey(
+    reviewPlaceholderKind(lastAssistantTurn(messages)?.tools ?? [], isRestoreFamilyCode(notice))
+  )
 
   const previewUrl = model.previewTarget?.kind === "url" ? model.previewTarget.url : null
   const isPreviewReachable = usePreviewUrlReachable(previewUrl)
@@ -74,10 +80,12 @@ export function ComposerSessionReview() {
           onOpenFile={(path) => openSessionReview(path)}
           onReject={() => void rejectReviewGate(sessionId)}
           onApprove={() => void approveReviewGate(sessionId, model.filesKey)}
+          placeholderKey={placeholderKey}
         />
       ) : model.showReview ? (
         <ReviewCard
           files={model.files}
+          placeholderKey={placeholderKey}
           running={running}
           runStartedAt={runStartedAt ?? undefined}
           waitingApproval={waitingApproval}
@@ -116,6 +124,7 @@ export function ComposerSessionReview() {
 
 function ReviewCard({
   files,
+  placeholderKey,
   running,
   runStartedAt,
   waitingApproval,
@@ -129,6 +138,7 @@ function ReviewCard({
   onUndo
 }: {
   files: SessionReviewFile[]
+  placeholderKey: string
   running: boolean
   runStartedAt?: number
   waitingApproval?: boolean
@@ -150,6 +160,7 @@ function ReviewCard({
       {running ? <SessionMascotRunner active={running} /> : null}
       <SessionReviewBar
         files={files}
+        placeholderKey={placeholderKey}
         running={running}
         runStartedAt={runStartedAt}
         waitingApproval={waitingApproval}

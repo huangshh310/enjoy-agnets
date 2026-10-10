@@ -51,9 +51,27 @@ test("本轮模型 stamp 走信封，换模后旧泡能回读", () => {
   assert.equal(parseAssistantPayload("plain").modelId, undefined)
 })
 
+test("runId 走信封，hydrate 能认本轮", () => {
+  const raw = serializeAssistantPayload({ content: "ok", runId: "run_2" })
+  assert.notEqual(raw, "ok")
+  assert.equal(parseAssistantPayload(raw).runId, "run_2")
+  assert.equal(parseAssistantPayload("plain").runId, undefined)
+})
+
 test("agent runKind 即使纯文本也走信封", () => {
   const raw = serializeAssistantPayload({ content: "hello", runKind: "agent" })
   assert.notEqual(raw, "hello")
   assert.equal(parseAssistantPayload(raw).runKind, "agent")
   assert.equal(parseAssistantPayload(raw).content, "hello")
+})
+
+test("restartNotice 走信封并回读，假码丢掉", () => {
+  const raw = serializeAssistantPayload({
+    content: "",
+    restartNotice: "restore_interrupted_running"
+  })
+  assert.notEqual(raw, "")
+  assert.equal(parseAssistantPayload(raw).restartNotice, "restore_interrupted_running")
+  const forged = JSON.stringify({ v: 1, content: "", restartNotice: "invented_interrupted" })
+  assert.equal(parseAssistantPayload(forged).restartNotice, undefined)
 })

@@ -1,6 +1,6 @@
 /**
  * 上一轮：最后一条非续跑用户消息之后、**已执行或可能已改盘**写盘工具的 path。
- * 拒绝 / 从未发出 / 带未执行码的不算。output-error / 超时 / 中止要算本轮改动。
+ * 拒绝 / 从未发出 / 中断 / 失败都不算。只有写类 `output-available` 才算本轮改动。
  */
 
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
@@ -114,13 +114,14 @@ export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: 
 
 function pathFromTool(tool: ThreadToolCall): string | null {
   if (!isWriteTool(tool.name)) return null
+  if (tool.state !== "output-available") return null
   if (isToolNotExecuted(tool) || isToolNeverSent(tool)) return null
   const path = readToolPath(tool.args) ?? readToolPath(tool.result)
   if (!path || isPlaceholderChangedDir(path)) return null
   return path
 }
 
-/** 还在审批的不算。已允许的 input-available 用入参 path，不等 result。 */
+/** 还在审批或没发出 result 的不算。 */
 function isToolNeverSent(tool: ThreadToolCall): boolean {
   return tool.state === "approval-requested" || tool.state === "input-streaming"
 }

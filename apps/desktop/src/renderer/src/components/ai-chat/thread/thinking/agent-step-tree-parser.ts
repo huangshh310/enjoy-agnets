@@ -19,7 +19,11 @@ import {
   desktopActFailureKind,
   desktopActUserErrorText
 } from "../desktop-act-failed-copy.ts"
-import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
+import {
+  RESTART_ABANDONED_CODE,
+  toolAbortKind,
+  toolHasResultCode
+} from "@enjoy-agents/ipc-contract/desktop-notify"
 import { isDeniedTool, isSkippedTool, toolDeniedCopy } from "../tool-denied-copy.ts"
 import {
   extractCommandString,
@@ -53,7 +57,7 @@ export function parseAgentStepNodes(
       continue
     }
     const node = mapToolToStepNode(item.tool, t)
-    if (node) nodes.push(stampDenied(node, item.tool))
+    if (node) nodes.push(stampRestart(stampDenied(node, item.tool), item.tool, t))
   }
 
   return groupConsecutiveSteps(nestChildSteps(nodes, tools), t)
@@ -62,6 +66,15 @@ export function parseAgentStepNodes(
 function stampDenied(node: AgentStepNode, tool: ThreadToolCall): AgentStepNode {
   if (isSkippedTool(tool)) return { ...node, status: "skipped", denied: false }
   return tool.state === "output-denied" ? { ...node, denied: true } : node
+}
+
+function stampRestart(
+  node: AgentStepNode,
+  tool: ThreadToolCall,
+  t: TranslateFn
+): AgentStepNode {
+  if (!toolHasResultCode(tool, RESTART_ABANDONED_CODE)) return node
+  return { ...node, status: "restart", errorText: t("chat.restartAbandoned") }
 }
 
 function mapToolToStepNode(tool: ThreadToolCall, t: TranslateFn): AgentStepNode | null {

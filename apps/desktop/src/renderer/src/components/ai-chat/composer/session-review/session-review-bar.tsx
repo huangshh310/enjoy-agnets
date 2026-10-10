@@ -24,7 +24,8 @@ export function SessionReviewBar({
   previewBusy,
   busy,
   hasFiles,
-  defaultExpanded = false
+  defaultExpanded = false,
+  placeholderKey = "chat.sessionReviewUnknownPlaceholder"
 }: SessionReviewBarProps) {
   const t = useT()
   const many = files.length > 1
@@ -64,7 +65,7 @@ export function SessionReviewBar({
             />
           ) : running ? null : (
             <span className="truncate text-caption-2-regular text-text-tertiary">
-              {t("chat.sessionReviewCommandPlaceholder")}
+              {t(placeholderKey)}
             </span>
           )}
 

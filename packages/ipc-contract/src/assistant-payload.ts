@@ -3,6 +3,7 @@
  * 纯文本消息保持原样；带思考 / 工具 / runKind / 引导词的消息用 JSON 信封存储，加载时再拆开。
  */
 import { takeActionChips, type ActionChip } from "./action-chip.ts"
+import { isRestoreFamilyCode, type RestoreFamilyCode } from "./restore-codes.ts"
 
 export type ToolCallState =
   | "input-streaming"
@@ -57,6 +58,10 @@ export type AssistantPayload = {
   /** 本轮实际用的模型，换模后旧泡不改写。 */
   modelId?: string
   runtimeId?: string
+  /** 本轮 run。新一轮禁止 UPDATE 上一轮终态行。 */
+  runId?: string
+  /** 冷启动横幅用的真实回挂码；禁止每次发明 interrupted。 */
+  restartNotice?: RestoreFamilyCode
   /** 轮末静态引导词；未点击不得自动发送。 */
   actionChips?: ActionChip[]
 } & AssistantExtras
@@ -75,6 +80,8 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
   const runKind = parseRunKind(payload.runKind)
   const modelId = payload.modelId?.trim() || undefined
   const runtimeId = payload.runtimeId?.trim() || undefined
+  const runId = payload.runId?.trim() || undefined
+  const restartNotice = isRestoreFamilyCode(payload.restartNotice) ? payload.restartNotice : undefined
   // 有 runKind / 引导词 / 本轮模型必须走信封，否则 hydrate 只能靠资产/正文推断。
   if (
     !reasoning &&
@@ -84,6 +91,8 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
     !runKind &&
     !modelId &&
     !runtimeId &&
+    !runId &&
+    !restartNotice &&
     actionChips.length === 0
   ) {
     return taken.content
@@ -100,6 +109,8 @@ export function serializeAssistantPayload(payload: Omit<AssistantPayload, "v">):
     runKind,
     modelId,
     runtimeId,
+    runId,
+    restartNotice,
     actionChips: actionChips.length > 0 ? actionChips : undefined
   } satisfies AssistantPayload)
 }
@@ -123,6 +134,8 @@ export function parseAssistantPayload(raw: string): AssistantPayload {
         runKind: parseRunKind(parsed.runKind),
         modelId: typeof parsed.modelId === "string" ? parsed.modelId : undefined,
         runtimeId: typeof parsed.runtimeId === "string" ? parsed.runtimeId : undefined,
+        runId: typeof parsed.runId === "string" ? parsed.runId : undefined,
+        restartNotice: isRestoreFamilyCode(parsed.restartNotice) ? parsed.restartNotice : undefined,
         actionChips: parsed.actionChips
       })
     }

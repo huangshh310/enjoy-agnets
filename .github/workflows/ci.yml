@@ -51,9 +51,9 @@ jobs:
       - run: pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts contracts.spec.ts
 
   e2e-window:
-    # xvfb + Electron 系统库：跑完整 agent-stub.spec.ts（既有 stub 冒烟 + 本会话允许跨轮）。其它窗口 spec 仍留本机。
+    # xvfb + Electron：agent-stub（含本会话允许跨轮）+ 回挂审批 + 知识库芯片。禁止 -g / only。
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -64,10 +64,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libasound2t64 libgbm1 libxtst6 libatk-bridge2.0-0 libdrm2 libx11-xcb1 libfuse2
       - run: pnpm --filter @enjoy-agents/desktop build
         env:
           NODE_OPTIONS: --max-old-space-size=8192
-      - run: sudo apt-get update
-      - run: sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libasound2t64 libgbm1 libxtst6 libatk-bridge2.0-0 libdrm2
-      - name: Run agent-stub window e2e
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts
+      - name: Playwright window e2e
+        working-directory: apps/desktop
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts approval-restart.spec.ts knowledge-source-chip.spec.ts

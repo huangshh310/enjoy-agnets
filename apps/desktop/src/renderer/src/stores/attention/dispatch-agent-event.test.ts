@@ -67,6 +67,32 @@ test("空闲时 kind=agent 的 run.start 仍归前台（续跑 / 恢复）", () 
   )
 })
 
+test("当前会话空闲时，回挂的 approval.required 归前台", () => {
+  assert.equal(
+    belongsToForeground(
+      { type: "approval.required", runId: "run_wait", toolCallId: "t", approvalId: "a", name: "write_file", args: {} },
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    true
+  )
+})
+
+test("当前会话空闲时，回挂失败的 run.error 归前台", () => {
+  assert.equal(
+    belongsToForeground(
+      { type: "run.error", runId: "run_wait", message: "restore_no_matching_approval" },
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    true
+  )
+})
+
 test("主 run 结束后标题补全 run.start 不归前台", () => {
   assert.equal(
     belongsToForeground(
@@ -75,6 +101,38 @@ test("主 run 结束后标题补全 run.start 不归前台", () => {
       null,
       false,
       "ses_a"
+    ),
+    false
+  )
+})
+
+test("空闲时标题补全 run.error 不归前台，即使缺 kind", () => {
+  assert.equal(
+    belongsToForeground(
+      {
+        type: "run.error",
+        runId: "run_title",
+        message: "Request timed out"
+      },
+      "ses_a",
+      null,
+      false,
+      "ses_a"
+    ),
+    false
+  )
+  assert.equal(
+    belongsToForeground(
+      {
+        type: "run.error",
+        runId: "run_title",
+        message: "Request timed out"
+      },
+      "ses_a",
+      null,
+      false,
+      "ses_a",
+      "completion"
     ),
     false
   )

@@ -4,7 +4,7 @@
 import type { StreamEvent } from "./index"
 import type { ThreadToolCall } from "./assistant-payload"
 import { isToolNotExecuted } from "./approval-not-executed.ts"
-import { USER_ABORTED_CODE } from "./desktop-notify.ts"
+import { RESTART_ABANDONED_CODE, USER_ABORTED_CODE } from "./desktop-notify.ts"
 
 export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void {
   if (event.type === "tool.start") {
@@ -70,33 +70,64 @@ export function foldToolEvent(tools: ThreadToolCall[], event: StreamEvent): void
   }
 }
 
-/** 加载历史 / 收工：input-streaming 与 input-available 封成 output-error。用户停标 stopped。 */
+/** 加载历史 / 收工：input-streaming 与 input-available 封成 output-error。用户停标 stopped；重启放弃用 restart_abandoned。 */
 export function sealAbandonedTools(
   tools: ThreadToolCall[] | undefined,
-  opts?: { aborted?: boolean }
+  opts?: { aborted?: boolean; code?: string }
 ): ThreadToolCall[] | undefined {
   if (!tools) return tools
+  const sealCode = opts?.code ?? (opts?.aborted ? USER_ABORTED_CODE : undefined)
   return tools.map((tool) => {
-    if (opts?.aborted && tool.state === "approval-requested") {
+    if (tool.state === "approval-requested") {
       const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+      if (sealCode) {
+        return {
+          ...tool,
+          state: "output-error" as const,
+          result: { ...prev, code: sealCode, decision: "cancelled" }
+        }
+      }
+      // 已结束 run 回灌：中性封口，不转圈。活着的 waiting/running 走 sealAbandoned:false。
       return {
         ...tool,
         state: "output-error" as const,
-        result: { ...prev, code: USER_ABORTED_CODE, decision: "cancelled" }
+        result: { ...prev, decision: "cancelled" }
       }
     }
+    if (sealCode && tool.state === "output-error") {
+      return upgradeHydrateRedSeal(tool, sealCode)
+    }
     if (tool.state !== "input-streaming" && tool.state !== "input-available") return tool
-    if (opts?.aborted) {
+    if (sealCode) {
       const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
       return {
         ...tool,
         state: "output-error" as const,
         errorText: undefined,
-        result: { ...prev, code: USER_ABORTED_CODE }
+        result: {
+          ...prev,
+          code: sealCode,
+          ...(sealCode === RESTART_ABANDONED_CODE ? { decision: "cancelled" } : {})
+        }
       }
     }
     return { ...tool, state: "output-error" as const, errorText: tool.errorText ?? "No result received." }
   })
+}
+
+/** 冷启动曾封成红「No result received.」：回挂码来了要盖上去。已有码不改。 */
+function upgradeHydrateRedSeal(tool: ThreadToolCall, sealCode: string): ThreadToolCall {
+  const prev = tool.result && typeof tool.result === "object" ? (tool.result as Record<string, unknown>) : {}
+  if (typeof prev.code === "string" && prev.code) return tool
+  return {
+    ...tool,
+    errorText: undefined,
+    result: {
+      ...prev,
+      code: sealCode,
+      ...(sealCode === RESTART_ABANDONED_CODE ? { decision: "cancelled" } : {})
+    }
+  }
 }
 
 function mergeResultDecision(prev: unknown, next: unknown): unknown {

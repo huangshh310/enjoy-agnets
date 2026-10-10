@@ -267,6 +267,10 @@ export function setApprovalSdkResponse(
   )
 }
 
+export function listApprovalsForRun(db: AppDatabase, runId: string): ApprovalRow[] {
+  return db.prepare(`SELECT ${APPROVAL_COLUMNS} FROM approvals WHERE run_id = ?`).all(runId) as ApprovalRow[]
+}
+
 export function listPendingApprovals(db: AppDatabase, runId?: string): ApprovalRow[] {
   const rows = db
     .prepare(`SELECT ${APPROVAL_COLUMNS} FROM approvals WHERE decision IS NULL`)
@@ -283,6 +287,8 @@ export type LivePendingApproval = {
   name: string
   toolCallId: string
   createdAt: number
+  args?: string | null
+  requestArgs?: string | null
 }
 
 /** Inbox 拍板真源：未决、未 superseded、会话未归档，且 run 仍活着（等审批 / 在跑）。 */
@@ -290,7 +296,8 @@ export function listLivePendingApprovals(db: AppDatabase): LivePendingApproval[]
   return db
     .prepare(
       `SELECT a.id as id, a.run_id as runId, a.tool_call_id as toolCallId, a.name as name,
-              a.created_at as createdAt, r.session_id as sessionId, r.workspace_id as workspaceId,
+              a.created_at as createdAt, a.args as args, a.request_args as requestArgs,
+              r.session_id as sessionId, r.workspace_id as workspaceId,
               COALESCE(s.title, '') as sessionTitle
        FROM approvals a
        JOIN runs r ON r.id = a.run_id

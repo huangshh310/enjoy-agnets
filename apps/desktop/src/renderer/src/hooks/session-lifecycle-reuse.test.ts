@@ -33,6 +33,12 @@ test("发送成功一律按已发正文清输入，禁止只清 prepared 路径"
   assert.match(draft, /syncComposerDom\("", true\)/)
 })
 
+test("回挂家族 notice 不得被 idleComposerPatch 抹掉", () => {
+  assert.match(src, /keepRestoreFamilyNotice/)
+  assert.match(src, /notice: park.notice \?\? keptNotice/)
+  assert.match(src, /notice: keptNotice/)
+})
+
 test("归档调用容忍可选 deniedApprovals，不改 IPC", () => {
   const archive = readFileSync(new URL("./workspace-lifecycle.ts", import.meta.url), "utf8")
   assert.match(archive, /readDeniedApprovals/)

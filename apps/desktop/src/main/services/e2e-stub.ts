@@ -4,6 +4,7 @@
  * 写盘：未放行时只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
  * 会话策略已放行（`isToolApproved`）时直接 tool-call + 落盘 +「stub-ok allowed write」，不弹卡。
  * 活泵允许后有 waiter，`executeStoredTool` 不会跑（那条路只给重启无 wait）。
+ * `ENJOY_E2E_SLOW_TOOL=1`：无 waiter 时也不立刻写盘，先等 8s 再写，给 kill-9 打中 running。
  * 允许后必须先吐匹配 `toolCallId` 的 `tool-result`，再写 `ENJOY_E2E_WORKSPACE/e2e-stub.txt`，
  * 最后才发正文；否则工具停在 input-available，`finalizeRun` 会封成
  * output-error「No result received.」，账本显示「1 个失败」。
@@ -183,6 +184,7 @@ export async function* createE2eStubStream(
   }
   if (stubApprovedWrite(messages)) {
     const toolCallId = stubApprovedWriteToolCallId(messages)
+    if (process.env.ENJOY_E2E_SLOW_TOOL === "1") await wait(8_000)
     await writeStubApprovedFile(undefined, opts?.packaged === true)
     yield stubApprovedWriteResult(toolCallId)
     if (isWriteSlowNotePrompt(prompt, opts?.packaged === true)) {

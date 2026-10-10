@@ -1,12 +1,10 @@
 /**
- * 从会话行恢复 ThreadMessage：优先 assistant-payload，parts 补来源/资产。
+ * 从会话行恢复 ThreadMessage：优先 assistant-payload，parts 补来源/资产/工具。
  */
-import {
-  parseAssistantPayload,
-  safeValidateUIMessages,
-  sealAbandonedTools
-} from "@enjoy-agents/ipc-contract"
+import { parseAssistantPayload } from "@enjoy-agents/ipc-contract/assistant-payload"
+import { safeValidateUIMessages } from "@enjoy-agents/ipc-contract/ui-message"
 import { extrasFromParts } from "./extras-from-parts.ts"
+import { hydrateAssistantTools } from "./hydrate-assistant-tools.ts"
 import { mapAssistantThreadMessage, mapUserThreadMessage } from "./hydrate-thread-map.ts"
 import { dedupeConsecutiveUserTurns } from "./dedupe-user-turns.ts"
 
@@ -28,11 +26,12 @@ export function threadFromRows(rows: SessionMessageRow[], opts?: { sealAbandoned
     const validated = safeValidateUIMessages([
       { id: row.id, role: "assistant", parts: Array.isArray(row.parts) ? row.parts : [] }
     ])
+    const parts = Array.isArray(row.parts) ? row.parts : []
     return mapAssistantThreadMessage(
       row,
       payload,
       extrasFromParts(validated[0]?.parts),
-      sealAbandoned ? sealAbandonedTools(payload.tools) : payload.tools
+      hydrateAssistantTools(payload.tools, parts, sealAbandoned)
     )
   })
 }

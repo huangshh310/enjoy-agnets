@@ -7,6 +7,7 @@ import { getApproval, listPendingApprovals, listRuns, setApprovalDecision } from
 import { foldToolEvent } from "@enjoy-agents/ipc-contract"
 import { CATCH_UP_APPROVAL_TIMEOUT } from "@enjoy-agents/ipc-contract/automations-missed"
 import {
+  RESTART_ABANDONED_CODE,
   RUN_FAILED_CODE,
   USER_ABORTED_CODE,
   type ApprovalResolvedCode
@@ -17,8 +18,12 @@ import { recordSdkApprovalResponse } from "./approval-hmac"
 import { foldDeniedAssistantTool, sessionIdForRun } from "./fold-denied-assistant-tools"
 
 export const RUN_STOPPED_REASON = "run_stopped"
+/** 启动回挂对不上：未决写 cancelled，审计原因 restart，工具行走中性「重启后已中断」。 */
+export const APPROVAL_RESTART_REASON = "restart"
+/** HMAC / 参数签对不上：审计原因。工具行仍走 restart_abandoned，禁止只写「允许」却不跑。 */
+export const RESTART_UNVERIFIABLE_DECISION = "restart_unverifiable_decision"
 export const APPROVAL_CANCELLED = "cancelled" as const
-export type SettleApprovalCause = "aborted" | "failed" | "catch_up_timeout"
+export type SettleApprovalCause = "aborted" | "failed" | "catch_up_timeout" | "restart"
 export type SettleOptions = { writeSdkResponse?: boolean }
 
 type PendingSettle = { runId: string; approvalId: string; toolCallId: string }
@@ -134,8 +139,11 @@ function settleOne(
       ? CATCH_UP_APPROVAL_TIMEOUT
       : cause === "failed"
         ? RUN_FAILED_CODE
-        : USER_ABORTED_CODE
-  const reason = cause === "aborted" ? RUN_STOPPED_REASON : code
+        : cause === "restart"
+          ? RESTART_ABANDONED_CODE
+          : USER_ABORTED_CODE
+  const reason =
+    cause === "restart" ? APPROVAL_RESTART_REASON : cause === "aborted" ? RUN_STOPPED_REASON : code
   setApprovalDecision(db, item.approvalId, APPROVAL_CANCELLED)
   if (opts?.writeSdkResponse !== false) {
     recordSdkApprovalResponse(item.approvalId, { approved: false, reason })

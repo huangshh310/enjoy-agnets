@@ -1,5 +1,5 @@
 /**
- * 重启缺参：推 SDK deny 并续泵，禁止空 keep 停在 waiting_review。
+ * 缺参 / HMAC 失败走 fail-closed 停止；已决 HMAC 通过才 resumeAfterPump。
  */
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -10,22 +10,28 @@ import { fileURLToPath } from "node:url"
 const dir = dirname(fileURLToPath(import.meta.url))
 const src = readFileSync(join(dir, "restore-waiting-runs.ts"), "utf8")
 const cards = readFileSync(join(dir, "restore-waiting-approvals.ts"), "utf8")
+const cont = readFileSync(join(dir, "restore-waiting-continue.ts"), "utf8")
 
-test("缺参 deny 写库、推 SDK approved:false、空 keep 续泵", () => {
-  assert.ok(cards.includes("setApprovalDecision(db, row.id, \"deny\")"))
-  assert.ok(cards.includes("approved: false"))
-  assert.ok(cards.includes("approvalResponseMessage"))
-  assert.ok(cards.includes("run?.messages.push"))
-  assert.ok(src.includes("if (restored.keep.length === 0)"))
-  assert.ok(src.includes("run.resumeAfterPump = true"))
-  assert.ok(src.includes("void pumpStream(row.id)"))
-  assert.ok(cards.includes("recordSdkApprovalResponse(row.id"))
-  assert.ok(cards.includes("applyRestoredOrphanApprovals"))
-  assert.ok(src.includes("restoreHeldWaitingApprovals"))
+test("缺参 / 对不上走 fail-closed 停止；已决续泵走 markResumeAndPump", () => {
+  assert.ok(src.includes("if (restored.keep.length > 0)"))
+  assert.ok(src.includes("decidable.length === 0 && decidedReplayable.length === 0"))
+  assert.ok(src.includes("abandonWaitingRestore"))
   assert.ok(src.includes("endRestoredRunWithoutSdkReply"))
   assert.ok(src.includes("writeSdkResponse: false"))
-  assert.equal((src.match(/cause: "failed"/g) ?? []).length >= 4, true)
-  assert.doesNotMatch(src, /cause: "aborted"/)
+  assert.ok(src.includes("restoreHeldWaitingApprovals"))
+  assert.ok(src.includes("markResumeAndPump"))
+  assert.ok(!src.includes("executeRestoredAllows"))
+  assert.ok(!src.includes("reverifyRestoredDesktopAllows"))
+  assert.ok(src.includes("canReplayDecided"))
+  assert.ok(src.includes("auditUnsentIfNeeded"))
+  assert.ok(src.includes("readLatestAssistantSnapshot"))
+  assert.ok(src.includes("RESTART_UNVERIFIABLE_DECISION"))
+  assert.ok(src.includes("resolveRuntimeId"))
+  assert.ok(src.includes("isMissingRunSecretError"))
+  assert.ok(src.includes("isTestModuleStripError"))
+  assert.ok(cards.includes("applyRestoredOrphanApprovals"))
+  assert.match(cont, /run\.resumeAfterPump = true/)
+  assert.match(cont, /pumpStream\(runId\)/)
   const orphanAt = cards.indexOf("applyRestoredOrphanApprovals")
   const cardAt = cards.indexOf('type: "approval.required"')
   assert.ok(orphanAt >= 0 && cardAt > orphanAt)

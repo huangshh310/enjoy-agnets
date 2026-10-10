@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   StreamEvent,
   readWorkspaceChangesResult,
-  type AskUserAnswers,
   type SettingsSnapshot
 } from "@enjoy-agents/ipc-contract"
 import { getIde, hasIde } from "../lib/ide"
@@ -29,7 +28,6 @@ import type { WorkspaceRow } from "./workspace-row"
 import { dispatchAgentEvent } from "../stores/attention/dispatch-agent-event"
 import { useChatStore, type ModelOption } from "../stores/chat-store"
 import { pickForegroundSession } from "./pick-foreground-session"
-import { resolveApprovalRunId } from "./resolve-approval-run"
 import { shouldFollowFileChanged } from "../components/ai-chat/right-pane/follow-review-file"
 import { revealRightPane } from "../components/ai-chat/right-pane/open-pane"
 import { sameReviewPath } from "../components/ai-chat/right-pane/views/review/same-review-path"
@@ -160,39 +158,8 @@ export async function loadWorkspace(workspace: WorkspaceRow) {
 export { abortComposerRun }
 export { attachComposerFile, sendComposerMessage, submitComposer } from "./send-composer"
 export { createAndOpenSession, loadSession, refreshAllWorkspaces, selectPersistedSession }
+export { decidePendingApproval, decidePendingApprovalOrThrow } from "./decide-pending-approval"
 export type { WorkspaceRow } from "./workspace-row"
-
-export async function decidePendingApproval(
-  decision: "allow" | "deny" | "allow_session" | "allow_always",
-  answers?: AskUserAnswers
-) {
-  try {
-    await decidePendingApprovalOrThrow(decision, answers)
-  } catch (error) {
-    const store = useChatStore.getState()
-    store.setError(error instanceof Error ? error.message : String(error))
-  }
-}
-
-/** Dock 与「拒绝并归档」同一条 decide；归档路径要抛错，不能吞。 */
-export async function decidePendingApprovalOrThrow(
-  decision: "allow" | "deny" | "allow_session" | "allow_always",
-  answers?: AskUserAnswers
-) {
-  const store = useChatStore.getState()
-  const pending = store.pendingApproval
-  const runId = resolveApprovalRunId(pending, store.runId)
-  if (!pending || !runId) {
-    throw new Error("没有等待中的审批。")
-  }
-  await getIde().agent.decide({
-    runId,
-    toolCallId: pending.toolCallId,
-    approvalId: pending.approvalId,
-    decision,
-    ...(answers ? { answers } : {})
-  })
-}
 
 export async function applySettingsSnapshot(snapshot: SettingsSnapshot) {
   const store = useChatStore.getState()

@@ -2,7 +2,7 @@
  * Inbox / 轨徽标拍板数：向 main 拉 decision IS NULL 的活会话未决。
  */
 import { useCallback, useEffect, useState } from "react"
-import type { PendingApprovalItem } from "@enjoy-agents/ipc-contract"
+import { parseInboxPendingItems, type PendingApprovalItem } from "@enjoy-agents/ipc-contract/approvals-pending"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 
@@ -16,7 +16,7 @@ export function useLivePendingApprovals(): PendingApprovalItem[] {
     void getIde()
       .inbox.listPendingApprovals()
       .then((result: { items?: PendingApprovalItem[] }) => {
-        setItems(Array.isArray(result.items) ? result.items : [])
+        setItems(parseInboxPendingItems(result.items))
       })
       .catch(() => undefined)
   }, [])
