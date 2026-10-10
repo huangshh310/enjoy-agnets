@@ -46,7 +46,11 @@ test("接线：确认走 decide deny，取消只关框", () => {
     join(dir, "../components/app-pages/confirm-dialog.tsx"),
     "utf8"
   )
-  assert.match(confirm, /onConfirm\(\)\s*\n\s*onOpenChange\(false\)/)
+  assert.match(confirm, /await Promise\.resolve\(onConfirm\(\)\)/)
+  assert.match(confirm, /onSubmit/)
+  assert.match(confirm, /type="submit"/)
+  assert.match(deny, /confirming/)
+  assert.match(guard, /onConfirm=\{\(\) => confirmDenyAndArchive\(\)\}/)
 })
 
 test("归档后胶囊不计隐藏会话，徽标为 0", () => {

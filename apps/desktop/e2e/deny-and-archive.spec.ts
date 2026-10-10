@@ -95,6 +95,22 @@ test("拒绝并归档：审批 deny、会话 archived_at、胶囊与已归档", 
     await expect(window.getByText("已拒绝，本次未执行")).toBeVisible({ timeout: 12_000 })
     await expect(window.getByRole("button", { name: "写入 e2e-stub.txt" })).toBeAttached({ timeout: 8_000 })
     await snap(window, "p0_denied_after_restore")
+
+    await window.locator('[data-testid="sidebar-new-session"]').click()
+    await sendComposer(window, window.locator('[data-testid="composer-input"]'), "please write a note")
+    await expect(window.locator('[data-testid="approval-deny"]')).toBeVisible({ timeout: 20_000 })
+    const keyboardRow = window.locator('[data-testid="sidebar-session-row"][data-session-surface="tree"]').first()
+    await keyboardRow.hover()
+    await keyboardRow.locator('[data-testid="session-row-menu"]').click()
+    await window.locator('[data-testid="session-row-menu-archive"]').click()
+    await expect(window.getByText("拒绝并归档")).toBeVisible({ timeout: 8_000 })
+    await window.keyboard.press("Tab")
+    await window.keyboard.press("Enter")
+    await expect(window.locator('[data-testid="session-archived-toast"]')).toBeVisible({ timeout: 12_000 })
+    await expect(window.locator('[data-testid="session-archive-failed-toast"]')).toHaveCount(0)
+    await snap(window, "p0_deny_archive_keyboard")
+    const afterKeyboard = queryArchiveDb(dbPath)
+    expect(afterKeyboard.match(/decision\s*=\s*deny/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
   } finally {
     await closeApp(app)
   }

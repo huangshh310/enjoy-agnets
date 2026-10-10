@@ -53,7 +53,10 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
 
     await sendComposer(window, composer, "please go slow now")
     await expect(window.getByText("正在写")).toBeVisible({ timeout: 12_000 })
+    await expect(composer).toHaveAttribute("placeholder", /Ctrl\+Enter/)
+    await expect(composer).not.toHaveAttribute("placeholder", /CtrlEnter/)
     await snap(window, "gate_writing_zh")
+    await snap(window, "luna_composer_ctrl_enter")
     await window.locator('[data-testid="composer-stop"]').click({ timeout: 8_000 }).catch(() => undefined)
 
     await sendComposer(window, composer, "hello complete")
@@ -87,10 +90,15 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     if ((await reviewTab.count()) === 1) await reviewTab.click({ force: true })
     const clean = window.getByText("工作区没有未提交改动。")
     if ((await clean.count()) > 0) await expect(clean.first()).toBeVisible({ timeout: 12_000 })
+    await expect(window.locator('[data-testid="review-file-list-empty"]')).toBeVisible({ timeout: 8_000 })
+    await expect(window.locator('[data-testid="review-file-list-empty"]')).toHaveText("没有匹配的文件")
+    const reviewPane = window.locator("section").filter({ has: window.locator('[data-testid="review-file-list-empty"]') })
+    await expect(reviewPane).not.toHaveAttribute("data-frost", "shell")
     await expect(window.locator('[data-testid="chat-breadcrumb-project"]')).toBeVisible()
     const crumb = ((await window.locator('[data-testid="chat-breadcrumb"]').innerText()) ?? "").replace(/\s+/g, " ")
     expect(crumb).not.toMatch(/^..\s*>\s*.\.$/)
     await snap(window, "gate_review_empty_no_ring")
+    await snap(window, "luna_review_file_list_empty")
     await snap(window, "gate_breadcrumb_review_open")
 
     await window.evaluate(() => {
@@ -105,6 +113,16 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     await expect(window.locator('[data-testid="automation-schedule-time"]')).not.toContainText("AM")
     await expect(window.locator('[data-testid="automation-schedule-time"]')).not.toContainText("PM")
     await snap(window, "gate_time_picker_24h")
+    await window.locator('[data-testid="automation-drawer-close"]').click()
+
+    const timeoutRow = window.locator('[data-testid="automation-row"]').filter({ hasText: "补跑超时示例" })
+    await timeoutRow.locator("button").first().click({ force: true })
+    await window.locator("#automation-editor-title").waitFor({ timeout: 12_000 })
+    const lastRun = window.locator('[data-testid="automation-drawer-last-run"]')
+    await expect(lastRun).toBeVisible({ timeout: 8_000 })
+    await expect(lastRun).toContainText("上次：")
+    await expect(lastRun).toContainText("补跑等待确认超时")
+    await snap(window, "luna_timeout_last_run")
 
     await window.evaluate(() => {
       location.hash = "#/settings/appearance"

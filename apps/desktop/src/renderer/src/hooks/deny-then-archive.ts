@@ -22,6 +22,8 @@ import {
 type ArchivePrompt = { sessionId: string } | null
 
 let prompt: ArchivePrompt = null
+/** 确认进行中禁止 onOpenChange(false) 清掉 prompt，否则点确认 / Tab+Enter 会静默关框。 */
+let confirming = false
 const listeners = new Set<() => void>()
 
 function emit(): void {
@@ -49,16 +51,22 @@ export function requestArchiveSession(sessionId: string): void {
 }
 
 export function cancelArchivePrompt(): void {
+  if (confirming) return
   prompt = null
   emit()
 }
 
 export async function confirmDenyAndArchive(): Promise<void> {
   const sessionId = prompt?.sessionId
-  prompt = null
-  emit()
   if (!sessionId) return
-  await denyThenArchive(sessionId)
+  confirming = true
+  try {
+    await denyThenArchive(sessionId)
+    prompt = null
+    emit()
+  } finally {
+    confirming = false
+  }
 }
 
 export async function denySessionPendingApproval(sessionId: string): Promise<boolean> {

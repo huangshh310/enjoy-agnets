@@ -135,8 +135,9 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.lastRunFailed, "上次出错 · {when}")
   assert.equal(z.chat.errorTitle, "模型这次没回完")
   assert.equal(z.chat.writing, "正在写")
-  assert.equal(z.chat.placeholderRunning.includes("{mod}"), true)
+  assert.equal(z.chat.placeholderRunning.includes("{mod}+Enter"), true)
   assert.equal(z.chat.placeholderRunning.includes("立即插话"), true)
+  assert.equal(z.chat.placeholderRunning.includes("{mod}Enter"), false)
   assert.equal(z.chat.runtimeSteer.includes("纠偏"), false)
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
@@ -170,8 +171,8 @@ test("默认词表不写死修饰键符号，运行态快捷键走平台修饰�
     }
   }
   const z = zh as { chat: Record<string, string> }
-  assert.match(z.chat.placeholderRunning, /\{mod\}/)
-  assert.match(z.chat.runtimeSteer, /\{mod\}/)
+  assert.match(z.chat.placeholderRunning, /\{mod\}\+Enter/)
+  assert.match(z.chat.runtimeSteer, /\{mod\}\+Enter/)
   assert.match(z.chat.mentionSlashHint, /\{mod\}/)
 })
 

@@ -93,6 +93,9 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     await closeDrawer(window)
 
     await openRow(window, "补跑超时示例")
+    await expect(window.locator('[data-testid="automation-drawer-last-run"]')).toBeVisible()
+    await expect(window.locator('[data-testid="automation-drawer-last-run"]')).toContainText("上次：")
+    await expect(window.locator('[data-testid="automation-drawer-last-run"]')).toContainText("补跑等待确认超时")
     await window.locator('[data-testid="automation-missed-expand"] summary').click()
     await expect(window.locator('[data-testid="automation-missed-toggle"]')).toHaveText("收起")
     await expect(window.locator('[data-testid="automation-record-neutral"]')).toContainText("补跑等待确认超时，未运行")

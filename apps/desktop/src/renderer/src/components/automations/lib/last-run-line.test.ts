@@ -6,7 +6,7 @@ import { test } from "node:test"
 import type { Automation, AutomationMissedRecord } from "@enjoy-agents/ipc-contract"
 import { zh } from "../../../i18n/catalogs/zh/index.ts"
 import { translate } from "../../../i18n/lookup.ts"
-import { consecutiveSkipStreak, lastRunLine, missedGroupSummary } from "./last-run-line.ts"
+import { consecutiveSkipStreak, drawerLastRunText, lastRunLine, missedGroupSummary } from "./last-run-line.ts"
 
 const t = (path: string, vars?: Record<string, string | number>) => translate(zh, path, vars)
 const noon = new Date(2026, 9, 9, 12, 0, 0).getTime()
@@ -145,6 +145,30 @@ test("超时码走人话中性句，不看 lastError", () => {
   assert.equal(line.text.includes("catch_up"), false)
   assert.equal(line.text.includes("exploded"), false)
   assert.equal(t("studio.automations.lastRunDrawer", { line: line.text }), "上次：补跑等待确认超时，未运行 · 今天 12:00")
+  assert.equal(
+    drawerLastRunText({
+      automation: auto({
+        lastRunStatus: "failed",
+        lastRunErrorCode: "catch_up_approval_timeout",
+        lastRunAt: noon
+      }),
+      records: [],
+      now: noon,
+      locale: "zh",
+      t
+    }),
+    "补跑等待确认超时，未运行 · 今天 12:00"
+  )
+  assert.equal(
+    drawerLastRunText({
+      automation: auto({}),
+      records: [],
+      now: noon,
+      locale: "zh",
+      t
+    }),
+    undefined
+  )
 })
 
 test("抽屉折叠条收成错过 N 次组摘要", () => {

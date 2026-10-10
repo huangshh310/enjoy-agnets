@@ -14,7 +14,7 @@ import { showAppToast } from "@renderer/lib/app-toast"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { DEFAULT_RUNTIME_ID } from "@renderer/lib/session-runtime"
 import { requestInboxFilter } from "@renderer/components/inbox/lib/pending-inbox-filter"
-import { lastRunLine } from "./lib/last-run-line"
+import { drawerLastRunText } from "./lib/last-run-line"
 import { AutomationDrawer } from "./components/automation-drawer"
 import { AutomationFooter } from "./components/automation-footer"
 import { AutomationList } from "./components/automation-list"
@@ -160,7 +160,7 @@ export function AutomationsPage() {
         records={draft?.id ? (missedById[draft.id] ?? []) : []}
         lastRunText={
           draft?.id
-            ? lastRunLine({
+            ? drawerLastRunText({
                 automation: automations.find((item) => item.id === draft.id) ?? {
                   id: draft.id,
                   name: draft.name,
@@ -173,7 +173,7 @@ export function AutomationsPage() {
                 now,
                 locale,
                 t
-              }).text
+              })
             : undefined
         }
         locale={locale}

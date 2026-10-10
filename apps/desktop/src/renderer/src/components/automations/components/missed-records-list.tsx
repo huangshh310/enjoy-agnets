@@ -25,36 +25,38 @@ export function MissedRecordsList({
   const ordered = [...records].sort((left, right) => right.scheduledAt - left.scheduledAt)
   const summary = missedGroupSummary({ records, now, locale, t })
   return (
-    <details
-      className="rounded-lg border border-border-button-default bg-background-secondary-default open:bg-background-primary-default"
-      data-testid="automation-missed-expand"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary className="cursor-pointer list-none px-2.5 py-2 text-caption-1-medium text-text-primary [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center justify-between gap-2">
-          <span data-testid="automation-missed-summary">{summary}</span>
-          <span className="text-caption-2-regular text-text-secondary" data-testid="automation-missed-toggle">
-            {missedExpandLabel(open, t)}
+    <div className="space-y-2">
+      {lastRunText ? (
+        <p className="text-caption-2-regular text-text-secondary" data-testid="automation-drawer-last-run">
+          {t("studio.automations.lastRunDrawer", { line: lastRunText })}
+        </p>
+      ) : null}
+      <details
+        className="rounded-lg border border-border-button-default bg-background-secondary-default open:bg-background-primary-default"
+        data-testid="automation-missed-expand"
+        onToggle={(event) => setOpen(event.currentTarget.open)}
+      >
+        <summary className="cursor-pointer list-none px-2.5 py-2 text-caption-1-medium text-text-primary [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center justify-between gap-2">
+            <span data-testid="automation-missed-summary">{summary}</span>
+            <span className="text-caption-2-regular text-text-secondary" data-testid="automation-missed-toggle">
+              {missedExpandLabel(open, t)}
+            </span>
           </span>
-        </span>
-      </summary>
-      {ordered.length === 0 ? (
-        <div className="space-y-1 border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-secondary">
-          {lastRunText ? (
-            <p data-testid="automation-drawer-last-run">
-              {t("studio.automations.lastRunDrawer", { line: lastRunText })}
-            </p>
-          ) : null}
-          <p>{t("studio.automations.missedEmpty")}</p>
-        </div>
-      ) : (
-        <ul className="space-y-1 border-t border-separator-border px-2.5 py-2">
-          {ordered.map((row) => (
-            <MissedRecordRow key={`${row.kind}:${row.scheduledAt}`} row={row} locale={locale} now={now} />
-          ))}
-        </ul>
-      )}
-    </details>
+        </summary>
+        {ordered.length === 0 ? (
+          <div className="space-y-1 border-t border-separator-border px-2.5 py-2 text-caption-2-regular text-text-secondary">
+            <p>{t("studio.automations.missedEmpty")}</p>
+          </div>
+        ) : (
+          <ul className="space-y-1 border-t border-separator-border px-2.5 py-2">
+            {ordered.map((row) => (
+              <MissedRecordRow key={`${row.kind}:${row.scheduledAt}`} row={row} locale={locale} now={now} />
+            ))}
+          </ul>
+        )}
+      </details>
+    </div>
   )
 }
 

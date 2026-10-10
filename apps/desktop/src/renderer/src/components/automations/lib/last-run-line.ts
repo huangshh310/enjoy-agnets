@@ -67,6 +67,19 @@ export function lastRunLine(input: {
   return { kind: "never", text: t("studio.automations.neverRun"), testId: "automation-row-never" }
 }
 
+/** 抽屉常驻「上次：…」：有过运行才给文案，不要埋进折叠条。 */
+export function drawerLastRunText(input: {
+  automation: Automation
+  records: AutomationMissedRecord[]
+  now: number
+  locale: string
+  t: Translate
+}): string | undefined {
+  const line = lastRunLine(input)
+  if (line.kind === "never") return undefined
+  return line.text
+}
+
 function skippedLine(
   automation: Automation,
   records: AutomationMissedRecord[],

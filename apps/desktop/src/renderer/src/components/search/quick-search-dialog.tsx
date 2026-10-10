@@ -83,7 +83,7 @@ export function QuickSearchDialog() {
           }}
         />
         <QuickSearchAcpCommands onPick={() => setOpen(false)} />
-        <QuickSearchShortcuts onPick={() => setOpen(false)} />
+        <QuickSearchShortcuts query={query} onPick={() => setOpen(false)} />
         <QuickSearchNav navigate={navigate} onSelect={handleSelect} />
         {sessionNodes.length > 0 ? (
           <>
