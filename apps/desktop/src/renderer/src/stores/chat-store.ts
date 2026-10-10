@@ -4,6 +4,7 @@
 import { create } from "zustand"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
+import { noteSendCredentialFromStream } from "../lib/send-credential-memory"
 import { reduceStreamEvent } from "./apply-stream-event"
 import { holdApprovalResolved } from "./held-approval-resolved"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
@@ -145,6 +146,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       return
     }
     const patch = reduceStreamEvent(get().messages, event, get().runId)
+    noteSendCredentialFromStream(event, patch, get().runtimeId)
     const sessionId = get().sessionId
     if (patch.heldResolved && sessionId) {
       holdApprovalResolved(sessionId, patch.heldResolved)

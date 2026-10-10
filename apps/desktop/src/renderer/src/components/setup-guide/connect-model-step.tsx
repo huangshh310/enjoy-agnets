@@ -13,7 +13,7 @@ import { SecretWritePreflight } from "@renderer/components/settings/secret-write
 import { useRecheckProvider } from "@renderer/hooks/use-recheck-provider"
 import { useT } from "@renderer/i18n"
 import { getIde, hasIde } from "@renderer/lib/ide"
-import { defaultProviderId } from "@renderer/lib/default-provider-label"
+import { resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
 import { providerEditSearch } from "@renderer/lib/open-provider-edit"
 import { useNavigate } from "@tanstack/react-router"
 import {
@@ -37,7 +37,8 @@ export function ConnectModelStep({
   const readiness = useChatReadiness().data
   const navigate = useNavigate()
   const recheck = useRecheckProvider()
-  const keyId = defaultProviderId(readiness)
+  const providers = useSettingsSnapshot().data?.providers ?? []
+  const keyId = resolveDefaultProviderId(readiness, providers)
   const options = connectModelOptions(readiness)
   return (
     <div className="flex flex-col gap-2">

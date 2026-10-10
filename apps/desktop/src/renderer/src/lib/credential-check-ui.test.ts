@@ -14,6 +14,10 @@ test("三态：ok / invalid / unverified / pending", () => {
     credentialUiState({ state: "unverified", code: "network", checkedAt: "2026-10-10T00:00:00.000Z" }, { hasKey: true }),
     "unverified"
   )
+  assert.equal(
+    credentialUiState({ state: "unverified", code: "timeout" }, { hasKey: true }),
+    "unverified"
+  )
   assert.equal(credentialUiState({ state: "unverified" }, { hasKey: true }), "pending")
   assert.equal(credentialUiState({ state: "ok" }, { hasKey: true, pending: true }), "pending")
   assert.equal(credentialUiState(undefined, { hasKey: true }), "pending")

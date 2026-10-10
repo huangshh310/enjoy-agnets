@@ -18,6 +18,7 @@ import { ProviderPresetsTab } from "./provider-presets-tab"
 import { useProviderSettings } from "./use-provider-settings"
 import { useT } from "@renderer/i18n"
 import { joinSegments } from "@renderer/lib/join-segments"
+import { findProviderForEdit } from "@renderer/lib/open-provider-edit"
 import { parseSettingsSectionSearch } from "../settings-section-search"
 import { OFFICIAL_CREATE, SETUP_GUIDE_FROM } from "@renderer/components/setup-guide/open-provider-form"
 import { resumeSetupGuide } from "@renderer/components/setup-guide/setup-guide-store"
@@ -45,7 +46,7 @@ export function ProviderSettings() {
   }, [search.create])
   useEffect(() => {
     if (!search.edit || openedEdit.current === search.edit) return
-    const profile = settings.providers.find((row) => row.id === search.edit)
+    const profile = findProviderForEdit(settings.providers, search.edit)
     if (!profile) return
     openedEdit.current = search.edit
     setPicking(false)

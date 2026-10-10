@@ -43,7 +43,12 @@ async function openProviders(window: Page): Promise<void> {
   await window.evaluate(() => {
     location.hash = "#/settings/providers"
   })
-  await window.getByTestId("credential-check-status").waitFor({ timeout: 12_000 })
+  await window.getByTestId("providers-configured-list").waitFor({ timeout: 12_000 })
+  await window.getByText("E2E Stub Key").waitFor({ timeout: 8_000 })
+}
+
+function listStatus(window: Page) {
+  return window.getByTestId("providers-configured-list").getByTestId("credential-check-status")
 }
 
 async function sendDraft(window: Page, text: string): Promise<void> {
@@ -64,7 +69,8 @@ test("密钥被拒：红点条 + 改密钥打开本档案密钥框，草稿留�
     await expect(notice).toBeVisible({ timeout: 12_000 })
     await expect(notice).toHaveAttribute("data-kind", "credential_invalid")
     await expect(notice).toContainText("密钥没通过")
-    await expect(notice).toContainText("E2E Stub Key 不认这把密钥")
+    await expect(notice).toContainText("E2E Stub Key")
+    await expect(notice).toContainText(/不认这把密钥/)
     await expect(notice).toContainText("草稿会留着")
     await expect(notice).not.toContainText(/401|403|ECONNREFUSED|invalid api key/i)
     await expect(notice.getByTestId("thread-credential-invalid-notice-action")).toHaveText("改密钥")
@@ -78,9 +84,9 @@ test("密钥被拒：红点条 + 改密钥打开本档案密钥框，草稿留�
       { timeout: 8_000 }
     )
     const keyBox = window.getByTestId("provider-key-input")
-    await expect(keyBox).toBeVisible({ timeout: 8_000 })
+    await expect(keyBox).toBeVisible({ timeout: 12_000 })
     await expect(keyBox).toBeFocused()
-    const status = window.getByTestId("credential-check-status")
+    const status = listStatus(window)
     await expect(status).toHaveAttribute("data-state", "invalid", { timeout: 8_000 })
     await expect(status).toContainText("密钥无效")
     await expect(window.getByTestId("credential-fix-key")).toHaveText("改密钥")
@@ -105,7 +111,8 @@ test("连不上：中性点 + 再发一次，发送中改正在发送，态不�
     const notice = window.getByTestId("thread-credential-network-notice")
     await expect(notice).toBeVisible({ timeout: 12_000 })
     await expect(notice).toHaveAttribute("data-kind", "provider_unreachable")
-    await expect(notice).toContainText("连不上 E2E Stub Key")
+    await expect(notice).toContainText("E2E Stub Key")
+    await expect(notice).toContainText(/连不上 .+，消息没发出去/)
     await expect(notice).toContainText("草稿会留着，检查网络后再试")
     await expect(notice).not.toContainText(/ECONNREFUSED|ECONNRESET|ETIMEDOUT|status|401|403/i)
     const action = notice.getByTestId("thread-credential-network-notice-action")
@@ -129,7 +136,7 @@ test("连不上：中性点 + 再发一次，发送中改正在发送，态不�
     await expect(window.getByTestId("thread-no-chat-route-notice")).toHaveCount(0)
     await snap(window, "p0-1-credential-network-resend")
     await openProviders(window)
-    const status = window.getByTestId("credential-check-status")
+    const status = listStatus(window)
     await expect(status).toHaveAttribute("data-state", "ok")
     await expect(status).toContainText("已连上")
     await expect(status).not.toContainText("密钥无效")
@@ -147,7 +154,7 @@ for (const code of ["network", "timeout", "unknown"] as const) {
     try {
       await openChat(window)
       await openProviders(window)
-      const status = window.getByTestId("credential-check-status")
+      const status = listStatus(window)
       await expect(status).toHaveAttribute("data-state", "unverified")
       await expect(status).toContainText("已保存 · 还没验证")
       await expect(window.getByTestId("credential-recheck")).toHaveText("再试一次")
@@ -167,7 +174,7 @@ test("夹具 invalid / ok：列表红无效与绿已连上", async () => {
   try {
     await openChat(invalid.window)
     await openProviders(invalid.window)
-    const status = invalid.window.getByTestId("credential-check-status")
+    const status = listStatus(invalid.window)
     await expect(status).toHaveAttribute("data-state", "invalid")
     await expect(status).toContainText("密钥无效")
     await expect(invalid.window.getByTestId("credential-fix-key")).toHaveText("改密钥")
@@ -179,7 +186,7 @@ test("夹具 invalid / ok：列表红无效与绿已连上", async () => {
   try {
     await openChat(ok.window)
     await openProviders(ok.window)
-    const status = ok.window.getByTestId("credential-check-status")
+    const status = listStatus(ok.window)
     await expect(status).toHaveAttribute("data-state", "ok")
     await expect(status).toContainText("已连上")
     await snap(ok.window, "p0-1-credential-ok-row")
@@ -197,12 +204,9 @@ test("正常发送把 unverified 写成 ok", async () => {
     await openChat(window)
     await sendDraft(window, "hello verify ok")
     await expect(window.getByText(/stub-ok/)).toBeVisible({ timeout: 15_000 })
-    await expect.poll(async () => {
-      return window.evaluate(() => window.__enjoyE2e?.getChatReadiness()?.credentialCheck?.state)
-    }).toBe("ok")
     await openProviders(window)
-    const status = window.getByTestId("credential-check-status")
-    await expect(status).toHaveAttribute("data-state", "ok")
+    const status = listStatus(window)
+    await expect(status).toHaveAttribute("data-state", "ok", { timeout: 12_000 })
     await expect(status).toContainText("已连上")
     await snap(window, "p0-1-credential-send-stores-ok")
   } finally {

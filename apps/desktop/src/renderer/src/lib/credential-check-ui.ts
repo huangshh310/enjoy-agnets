@@ -1,5 +1,6 @@
 /**
- * 密钥校验三态 → 词条。pending = 本地再验中，或还没有 checkedAt 的首次 unverified。
+ * 密钥校验三态 → 词条。pending = 本地再验中。
+ * 夹具 / 落盘可能只有 state+code、没有 checkedAt：有原因码就当验完。
  */
 import type { CredentialCheck, CredentialCheckCode } from "@enjoy-agents/ipc-contract/credential-check"
 
@@ -14,7 +15,7 @@ export function credentialUiState(
   if (!check) return opts?.hasKey ? "pending" : "none"
   if (check.state === "ok") return "ok"
   if (check.state === "invalid") return "invalid"
-  if (check.state === "unverified" && !check.checkedAt) return "pending"
+  if (check.state === "unverified" && !check.checkedAt && !check.code) return "pending"
   return "unverified"
 }
 

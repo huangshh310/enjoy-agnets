@@ -6,7 +6,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { useChatReadiness } from "@renderer/hooks/use-chat-readiness"
 import { useSettingsSnapshot } from "@renderer/hooks/use-settings-snapshot"
 import { useT } from "@renderer/i18n"
-import { defaultProviderId, defaultProviderLabel } from "@renderer/lib/default-provider-label"
+import { defaultProviderLabel, resolveDefaultProviderId } from "@renderer/lib/default-provider-label"
 import { providerEditSearch } from "@renderer/lib/open-provider-edit"
 import { ThreadSendGateNotice } from "./thread-send-gate-notice"
 
@@ -22,7 +22,7 @@ export function ThreadCredentialInvalidNotice({
   const readiness = useChatReadiness().data
   const providers = useSettingsSnapshot().data?.providers ?? []
   const name = defaultProviderLabel(readiness, providers, t("chat.credentialProviderFallback"))
-  const providerId = defaultProviderId(readiness)
+  const providerId = resolveDefaultProviderId(readiness, providers)
   return (
     <ThreadSendGateNotice
       testId="thread-credential-invalid-notice"
