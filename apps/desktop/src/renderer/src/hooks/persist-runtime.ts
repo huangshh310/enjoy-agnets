@@ -103,6 +103,7 @@ export async function persistRuntimeId(
   opts?: { asDefault?: boolean }
 ) {
   const store = useChatStore.getState()
+  const previousPreferred = store.preferredRuntimeId
   store.setRuntimeId(runtimeId)
   if (store.sessionId) await bindSessionRuntime(store.sessionId, runtimeId)
   if (opts?.asDefault) {
@@ -110,5 +111,23 @@ export async function persistRuntimeId(
     await patchPreferences({ runtimeId })
   }
   if (!hasIde()) return
-  if (modelId) await requireSecretWrite(() => getIde().agentTools.upsert({ id: runtimeId, modelId }))
+  if (!modelId) return
+  try {
+    await requireSecretWrite(() => getIde().agentTools.upsert({ id: runtimeId, modelId }))
+  } catch (error) {
+    if (opts?.asDefault) await rollbackPreferredRuntime(store, previousPreferred)
+    throw error
+  }
+}
+
+async function rollbackPreferredRuntime(
+  store: { setPreferredRuntimeId: (id: string) => void },
+  previousPreferred: string
+) {
+  applyPreferredRuntime(store, previousPreferred)
+  try {
+    await patchPreferences({ runtimeId: previousPreferred as AgentToolId })
+  } catch {
+    // 回滚偏好失败仍把密钥写失败抛给调用方。
+  }
 }

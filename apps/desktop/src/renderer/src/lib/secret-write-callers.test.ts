@@ -43,10 +43,17 @@ test("设默认模型 / persistRuntime 认 union，不把 {ok:false} 当快照",
   assert.match(apply, /SettingsSnapshot\.safeParse/)
   assert.match(persist, /requireSecretWrite|runSecretWrite/)
   assert.match(persist, /SecretWriteUiError/)
+  assert.match(persist, /rollbackPreferredRuntime|previousPreferred/)
+  assert.match(apply, /setDefaultModel/)
   assert.match(defaults, /applyActiveModelWrite/)
   assert.match(defaults, /SecretWriteError/)
   assert.match(caps, /applyActiveModelWrite/)
   assert.match(caps, /SecretWriteError/)
+  const actions = src("components/settings/agent-tools/agent-tool-actions-run.ts")
+  assert.match(actions, /SecretWriteUiError/)
+  assert.match(actions, /secretWriteCopyKey/)
+  const hook = src("components/settings/providers/use-provider-settings.ts")
+  assert.match(hook, /deleteBlockedKeychain/)
 })
 
 test("失败不关抽屉、不吞掉、不把钥匙串英文写进 setError", () => {

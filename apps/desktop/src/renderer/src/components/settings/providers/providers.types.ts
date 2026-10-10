@@ -74,6 +74,8 @@ export type ProbeState = {
   code?: string
   vars?: Record<string, string>
   models: Array<{ id: string; label: string }>
+  /** 探测本身成功但目录没写进 vault。 */
+  saved?: boolean
 }
 
 export const IDLE_PROBE: ProbeState = { status: "idle", message: "", models: [] }

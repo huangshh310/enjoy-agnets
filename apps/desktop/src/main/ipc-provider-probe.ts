@@ -49,9 +49,10 @@ export async function probeStoredProvider(raw: unknown) {
     if (!stored.modelId) stored.modelId = stored.models[0]?.id ?? ""
     const written = await runSecretWrite(async () => {
       await writeVault(vault)
-      return { saved: true }
+      return { saved: true as const }
     })
-    if (!written.ok) return written
+    if (!written.ok) return { ...result, saved: false as const }
+    return { ...result, saved: true as const }
   }
   return result
 }

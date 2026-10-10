@@ -56,13 +56,26 @@ test("只有已存 API 密钥时 ready，默认 enjoy-local + 档案，载荷不
     engines: [],
     localModels: [],
     apiKeys: [KEY],
-    engineCount: 1
+    engineCount: 1,
+    activeKeyProfileId: "prov_1"
   })
   assert.equal(snap.ready, true)
   assert.equal(snap.defaultRoute?.runtimeId, "enjoy-local")
   assert.equal(snap.defaultRoute?.profileId, "prov_1")
   assert.deepEqual(snap.apiKeys, [KEY])
   assert.equal(JSON.stringify(snap).includes("sk-"), false)
+})
+
+test("有 apiKeys 但没给 activeKeyProfileId：不 ready，不回落第一把", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.activeKeyProfileId, undefined)
+  assert.equal(snap.defaultRoute?.profileId, undefined)
 })
 
 test("一条路线都没有时不 ready，默认仍是出厂 enjoy-local", () => {
@@ -221,7 +234,8 @@ test("未显式选择时第一次连上的可用路线盖过出厂 enjoy-local",
     resolveDefaultChatRoute({
       engines: [CLAUDE],
       localModels: [],
-      apiKeys: [KEY]
+      apiKeys: [KEY],
+      activeKeyProfileId: "prov_1"
     }),
     { runtimeId: "enjoy-local", profileId: "prov_1" }
   )
@@ -281,6 +295,7 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
     engines: ChatEngineRoute[]
     localModels: ChatLocalModelRoute[]
     apiKeys: ChatApiKeyRoute[]
+    activeKeyProfileId?: string
   }> = []
   for (const key of [false, true]) {
     for (const cli of [false, true]) {
@@ -293,7 +308,8 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
             name: `key=${key} cli=${cli} ping=${localPing} remote=${remote}`,
             engines: cli ? [CLAUDE] : [],
             localModels,
-            apiKeys: key ? [KEY] : []
+            apiKeys: key ? [KEY] : [],
+            ...(key ? { activeKeyProfileId: "prov_1" as const } : {})
           })
         }
       }

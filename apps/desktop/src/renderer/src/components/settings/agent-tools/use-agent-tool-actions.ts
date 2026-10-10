@@ -99,7 +99,7 @@ export function useAgentToolActions(tool: AgentToolPublic) {
     installError,
     loginProvider,
     persist,
-    persistRuntime: () => handleMakeActive(tool, setBusyAction, queryClient),
+    persistRuntime: () => handleMakeActive(tool, setBusyAction, queryClient, setFeedbackMessage, t),
     runDoctor: () => handleRunDoctor(tool, setBusyAction, rememberDoctor, queryClient),
     runLogin: async (provider?: string) => {
       setLoginProvider(provider ?? null)

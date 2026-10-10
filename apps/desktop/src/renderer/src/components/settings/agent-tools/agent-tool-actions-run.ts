@@ -13,6 +13,7 @@ import type {
 import { completeCliEngineLogin, completeCliProviderLogin } from "@renderer/components/ai-chat/agent-picker/cli-login-action"
 import { requestEngineSwitch } from "@renderer/components/ai-chat/agent-picker/handoff/engine-handoff-store"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { SecretWriteUiError, secretWriteCopyKey } from "@renderer/lib/secret-write"
 import { router } from "@renderer/router"
 
 export type AgentToolBusy = "install" | "login" | "doctor" | "activate" | "uninstall" | null
@@ -20,15 +21,24 @@ export type AgentToolBusy = "install" | "login" | "doctor" | "activate" | "unins
 export async function handleMakeActive(
   tool: AgentToolPublic,
   setBusy: (value: AgentToolBusy) => void,
-  queryClient: QueryClient
+  queryClient: QueryClient,
+  setFeedback: (value: string | null) => void,
+  t: (path: string) => string
 ) {
   setBusy("activate")
+  setFeedback(null)
   try {
     const result = await requestEngineSwitch(tool.id, tool.selectedModel, { asDefault: true })
     if (result === "pending" || result === "blocked") {
       await router.navigate({ to: "/" })
     }
     await queryClient.invalidateQueries({ queryKey: ["settings"] })
+  } catch (error) {
+    if (error instanceof SecretWriteUiError) {
+      setFeedback(t(secretWriteCopyKey(error.code)))
+      return
+    }
+    throw error
   } finally {
     setBusy(null)
   }

@@ -17,6 +17,7 @@ export async function applyActiveModelWrite(input: {
     await applySettingsSnapshot(snap.data)
     return { ok: true }
   }
-  await getIde().settings.setDefaultModel({ modelId: input.modelId })
+  const fallback = await runSecretWrite(() => getIde().settings.setDefaultModel({ modelId: input.modelId }))
+  if (!fallback.ok) return fallback
   return { ok: true }
 }

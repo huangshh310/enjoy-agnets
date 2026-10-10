@@ -14,6 +14,8 @@ export const zhSettings = {
     writeFailedKeychain:
       "没存上：系统钥匙串现在用不了，密钥不会以明文保存。请确认钥匙串已解锁后再点保存。",
     failed: "没存上，请再试一次",
+    notSaved: "没存上",
+    deleteBlockedKeychain: "钥匙串不可用，暂时删不了这把密钥，其余密钥不受影响",
     saving: "保存中…"
   },
 

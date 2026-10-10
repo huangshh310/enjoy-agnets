@@ -17,7 +17,9 @@ import { listedModelsFromProfiles } from "./listed-models"
 import { pickActiveEnabled } from "./pick-active-enabled"
 import { createId } from "./ids"
 import { mergeJsonSecrets } from "./secret-map"
+import { SecretWriteFailure, isSecretStorageAvailable } from "./secret-storage.ts"
 import {
+  clearVault,
   readVault,
   resolvedStyle,
   toPublic,
@@ -26,9 +28,10 @@ import {
   type ProviderPublic,
   type StoredSecret
 } from "./secrets-vault"
+import { planVaultDelete } from "./vault-delete.ts"
 
 export type { ProviderProfile, ProviderPublic, StoredSecret } from "./secrets-vault"
-export { readVault, writeVault } from "./secrets-vault"
+export { clearVault, readVault, writeVault } from "./secrets-vault"
 export { listedModelsFromProfiles } from "./listed-models"
 
 export async function listPublicProviders(): Promise<ProviderPublic[]> {
@@ -111,13 +114,15 @@ export async function setProfileEnabled(id: string, enabled: boolean): Promise<P
 }
 
 export async function removeProfile(id: string): Promise<void> {
+  const plan = planVaultDelete(await readVault(), id, isSecretStorageAvailable())
+  if (plan.kind === "missing") return
+  if (plan.kind === "refuse") throw new SecretWriteFailure("KEYCHAIN_UNAVAILABLE")
   unbindProviderFromAgentTools(id)
-  const vault = await readVault()
-  vault.profiles = vault.profiles.filter((profile) => profile.id !== id)
-  if (vault.activeId === id) {
-    vault.activeId = vault.profiles.find((item) => item.enabled)?.id ?? null
+  if (plan.kind === "clear") {
+    clearVault()
+    return
   }
-  await writeVault(vault, { allowInsecure: true })
+  await writeVault(plan.vault)
 }
 
 export async function activateProfile(id: string): Promise<ProviderPublic> {

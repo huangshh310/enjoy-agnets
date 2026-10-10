@@ -12,7 +12,8 @@ import {
   SetHarnessInput,
   SetPreferencesInput,
   SetProviderEnabledInput,
-  UpsertProviderInput
+  UpsertProviderInput,
+  secretWriteBlocked
 } from "@enjoy-agents/ipc-contract"
 import { PROVIDER_PRESETS } from "@enjoy-agents/providers"
 import { registerAutomationIpc } from "./ipc-automations"
@@ -29,6 +30,7 @@ import { getSetting, setSetting } from "./services/database"
 import { parseRecentWorkspaceIds, RECENT_WORKSPACE_SETTING } from "./services/workspace-mru.ts"
 import { harnessPublicStatus, writeHarnessSecret } from "./services/harness-secrets"
 import { readKeybindingIssues, readPreferences, writePreferences } from "./services/preferences"
+import { SecretWriteFailure } from "./services/secret-storage.ts"
 import { runSecretWrite } from "./services/secret-write-guard.ts"
 import { listAgentTools } from "./services/agent-tools-service"
 import { scheduleChatReadinessPush } from "./services/chat-readiness"
@@ -109,12 +111,6 @@ async function withSettingsSecretWrite(write: () => Promise<void>) {
     scheduleChatReadinessPush()
     return settingsSnapshot()
   })
-}
-
-async function snapshotWithoutSecretWrite(write: () => Promise<void>) {
-  await write()
-  scheduleChatReadinessPush()
-  return settingsSnapshot()
 }
 
 function registerCoreSettingsIpc() {
@@ -214,9 +210,15 @@ function registerProviderIpc() {
     })
   })
   ipcMain.handle("settings.removeProvider", async (_event, raw) => {
-    return snapshotWithoutSecretWrite(async () => {
+    // 不走 runSecretWrite 预检：最后一把带密钥档案在钥匙串挂掉时仍要整行清掉。
+    try {
       await removeProfile(ProviderIdInput.parse(raw).id)
-    })
+    } catch (error) {
+      if (error instanceof SecretWriteFailure) return secretWriteBlocked(error.code)
+      throw error
+    }
+    scheduleChatReadinessPush()
+    return settingsSnapshot()
   })
   ipcMain.handle("settings.activateProvider", async (_event, raw) => {
     const id = ProviderIdInput.parse(raw).id

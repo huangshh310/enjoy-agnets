@@ -175,9 +175,7 @@ function chatDefaultRouteOf(
 }
 
 function activeKeyProfileIdOf(input: ResolveDefaultChatRouteInput): string | undefined {
-  if (input.activeKeyProfileId !== undefined) return input.activeKeyProfileId ?? undefined
-  if (input.hasEnjoySecret === false) return undefined
-  return input.apiKeys[0]?.providerId
+  return input.activeKeyProfileId ?? undefined
 }
 
 function enjoySecretOf(input: Pick<ResolveDefaultChatRouteInput, "hasEnjoySecret" | "apiKeys">): boolean {
