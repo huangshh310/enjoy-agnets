@@ -3,6 +3,7 @@
  * 运行中没有 Git 命中时仍列出文件，增减为 0；停跑后只留仍在 workspace.changes 里的。
  */
 import type { ChangedFileRow } from "@renderer/stores/chat-store.types"
+import { isPlaceholderChangedDir } from "../../right-pane/views/review/last-turn-paths"
 import type { SessionReviewFile } from "./session-review.types"
 
 export function collectSessionFiles(
@@ -13,7 +14,7 @@ export function collectSessionFiles(
   const files: SessionReviewFile[] = []
   for (const raw of paths) {
     const path = normalizePath(raw)
-    if (!path || seen[path]) continue
+    if (!path || isPlaceholderChangedDir(path) || seen[path]) continue
     seen[path] = true
     const change = matchChange(path, changes)
     const resolved = change?.path ?? path

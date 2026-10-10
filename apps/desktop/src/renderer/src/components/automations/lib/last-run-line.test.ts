@@ -144,6 +144,7 @@ test("超时码走人话中性句，不看 lastError", () => {
   assert.match(line.tip ?? "", /30 分钟/)
   assert.equal(line.text.includes("catch_up"), false)
   assert.equal(line.text.includes("exploded"), false)
+  assert.equal(t("studio.automations.lastRunDrawer", { line: line.text }), "上次：补跑等待确认超时，未运行 · 今天 12:00")
 })
 
 test("抽屉折叠条收成错过 N 次组摘要", () => {

@@ -8,6 +8,14 @@ import {
   sessionEntryKind
 } from "./collect-session-files.ts"
 
+test("占位短横 path 不进改动条", () => {
+  const files = collectSessionFiles(["-", "·", ".", "src/a.ts"], [])
+  assert.deepEqual(
+    files.map((file) => file.path),
+    ["src/a.ts"]
+  )
+})
+
 test("按上一轮 path 列文件，并贴上 Git 增减", () => {
   const files = collectSessionFiles(
     ["src/a.ts", "src/a.ts", "./src/b.ts"],

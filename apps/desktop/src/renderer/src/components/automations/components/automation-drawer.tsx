@@ -117,7 +117,7 @@ export function AutomationDrawer({
         ) : null}
         {draft.triggers.includes("webhook") ? <WebhookFields draft={draft} onChange={onChange} /> : null}
         <EnginePills tools={tools} value={draft.runtimeId} onChange={(runtimeId) => onChange({ runtimeId })} />
-        <label className="block">
+        <label className="mt-2 block">
           <span className="flex items-baseline gap-1.5 text-caption-1-medium text-text-secondary">
             <span>{t("studio.automations.modelLabel")}</span>
             <span className="text-caption-2-regular text-text-tertiary">
