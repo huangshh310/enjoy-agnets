@@ -57,7 +57,8 @@ export function AiChatSidebar({
             icon={RiAddLine}
             label={t("chat.newAgent")}
             testId="sidebar-new-session"
-            onClick={() => {
+            onClick={(event) => {
+              event.currentTarget.blur()
               onNewSession()
               if (pathname !== "/") void navigate({ to: "/" })
             }}

@@ -86,6 +86,7 @@ export function idleComposerPatch(): Pick<
   | "runStartedAt"
   | "pendingApproval"
   | "error"
+  | "preparingHint"
   | "pendingStreamEvents"
   | "thinkingLabel"
 > {
@@ -95,6 +96,7 @@ export function idleComposerPatch(): Pick<
     runStartedAt: null,
     pendingApproval: null,
     error: null,
+    preparingHint: false,
     pendingStreamEvents: [],
     thinkingLabel: "Thinking"
   }
@@ -107,6 +109,7 @@ export function parkedComposerPatch(park: ParkedRun): ReturnType<typeof idleComp
     runStartedAt: park.runStartedAt,
     pendingApproval: park.pendingApproval,
     error: park.error,
+    preparingHint: false,
     pendingStreamEvents: park.pendingStreamEvents,
     thinkingLabel: park.thinkingLabel
   }

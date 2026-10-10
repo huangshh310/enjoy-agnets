@@ -24,6 +24,7 @@ import { classifyThreadError } from "@renderer/lib/usage/classify-thread-error"
 import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
+import { isDevCopyEnabled } from "@renderer/lib/dev-copy"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
 
 const REMOTE_INSTALL_MAP: Record<string, string> = {
@@ -137,7 +138,7 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             ? t("chat.needProviderKeyTitle")
             : kind === "rate_limit"
               ? t("chat.usage.rateLimitTitle")
-              : t("chat.errorTitle"))
+              : t("chat.errorRetryHint"))
   const detail =
     gate?.hint ??
     (kind === "resume_fallback"
@@ -150,9 +151,13 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             ? t("chat.needProviderKeyHint")
             : error.includes("HANDOFF_CONFIRM_FAILED")
               ? t("chat.handoffConfirmFailed")
-              : kind === "store"
-                ? t("chat.errorGenericHint")
-                : error)
+              : kind === "store" || kind === "generic"
+                ? isDevCopyEnabled()
+                  ? error
+                  : null
+                : isDevCopyEnabled()
+                  ? error
+                  : null)
 
   return (
     <div
@@ -181,7 +186,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
               <RiCloseLine className="size-4" />
             </button>
           </div>
-          <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
+          {detail ? (
+            <p className="text-caption-1-medium leading-relaxed break-words text-text-secondary">{detail}</p>
+          ) : null}
           <div className="mt-1 flex flex-wrap items-center gap-2 pt-1">
             {kind === "remote_cli_missing" ? (
               <>

@@ -50,7 +50,9 @@ export function ScheduleFields({
   const parsed = scheduleFromCron(cronExpr)
   const [advanced, setAdvanced] = useState(parsed.preset === "advanced")
   const readable = cronChipLabel(cronExpr, t)
-  const preview = joinSegments(readable.label, formatTimezoneLabel(timeZone, locale))
+  const preview = advanced
+    ? readable.label
+    : joinSegments(readable.label, formatTimezoneLabel(timeZone, locale))
 
   return (
     <div className="space-y-2" data-testid="automation-schedule">

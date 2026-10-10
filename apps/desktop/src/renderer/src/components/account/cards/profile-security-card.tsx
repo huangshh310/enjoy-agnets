@@ -48,14 +48,14 @@ export function ProfileSecurityCard({ profile }: ProfileSecurityCardProps) {
         </div>
         <div className="flex min-w-0 flex-col">
           <span className="text-caption-1-medium text-text-primary">{t("pages.account.security.vaultTitle")}</span>
-          <span className="text-caption-2-medium text-text-tertiary">
+          <span className="text-caption-2-medium text-text-secondary">
             {t("pages.account.security.vaultDesc")}
           </span>
         </div>
       </div>
 
       <div className="flex flex-col gap-2 border-t border-separator-border/50 pt-2">
-        <span className="text-caption-2-medium text-text-tertiary">{t("pages.account.security.endpointLabel")}</span>
+        <span className="text-caption-2-medium text-text-secondary">{t("pages.account.security.endpointLabel")}</span>
         {profile.activeDevices.map((device) => (
           <div
             key={device.id}

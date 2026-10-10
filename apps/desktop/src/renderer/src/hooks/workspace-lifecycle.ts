@@ -20,6 +20,7 @@ import { showEmptyHistoryChat } from "@renderer/hooks/nav-history/show-empty-cha
 import { historySessionId } from "@renderer/hooks/nav-history/page-ids"
 import { collectProjectPageIds } from "@renderer/hooks/nav-history/project-page-ids"
 import type { WorkspaceRow } from "./workspace-row"
+import { readDeniedApprovals } from "./session-archive-result"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
@@ -33,7 +34,8 @@ export async function archiveCurrentSession(sessionId: string) {
     sessionId
   )
   const adjacentId = wasCurrent ? pickAdjacentSessionId(visibleIds, sessionId) : null
-  await getIde().session.archive({ sessionId })
+  const archived = await getIde().session.archive({ sessionId })
+  void readDeniedApprovals(archived)
   if (wasCurrent) await landAfterArchive(adjacentId)
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })

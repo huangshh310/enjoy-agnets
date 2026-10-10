@@ -73,6 +73,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   sessionReviewDismissedKey: null,
   pendingApproval: null,
   error: null,
+  preparingHint: false,
   notice: null,
   agentPickerOpen: false,
   sidebarGrouping: "project",
@@ -190,6 +191,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
   setHasKey: (hasKey) => set({ hasKey }),
   setError: (error) => set({ error }),
+  setPreparingHint: (preparingHint) => set({ preparingHint }),
   setNotice: (notice) => set({ notice }),
   setAgentPickerOpen: (agentPickerOpen) => set({ agentPickerOpen }),
   setRemoteStatus: (remoteStatus, remoteLabel, remoteError) =>

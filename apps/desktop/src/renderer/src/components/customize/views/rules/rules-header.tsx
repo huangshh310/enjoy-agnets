@@ -26,7 +26,7 @@ export function RulesHeader(props: {
               {t("studio.rules.badge")}
             </span>
           </div>
-          <p className="text-caption-2-medium text-text-tertiary">{t("studio.rules.desc")}</p>
+          <p className="text-caption-2-medium text-text-secondary">{t("studio.rules.desc")}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <div className="hidden lg:flex items-center gap-2 rounded-lg border border-separator-border/60 bg-background-secondary-default/40 px-2.5 py-1 text-caption-2-regular text-text-secondary font-mono mr-1">

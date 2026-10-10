@@ -13,5 +13,25 @@ export function registerComposerFocus(fn: FocusFn) {
 }
 
 export function focusComposerEnd() {
-  focusFn?.()
+  scheduleFocus(() => focusFn?.())
+}
+
+/** 点「新对话」后从按钮挪走焦点，再聚焦输入框。 */
+export function focusComposerAfterNewSession() {
+  if (typeof document !== "undefined") {
+    const active = document.activeElement
+    if (active instanceof HTMLElement) active.blur()
+  }
+  scheduleFocus(() => focusFn?.())
+}
+
+function scheduleFocus(fn: () => void) {
+  const raf = globalThis.requestAnimationFrame
+  if (typeof raf !== "function") {
+    fn()
+    return
+  }
+  raf(() => {
+    raf(fn)
+  })
 }

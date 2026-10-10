@@ -18,14 +18,22 @@ export function SettingsUpdateCard() {
   const version = snapshot.currentVersion || t("settings.update.unknownVersion")
   const checking = snapshot.status === "checking"
   const hasPrompt = snapshot.status === "available" || snapshot.status === "ready"
+  const isDev = snapshot.status === "dev"
 
   return (
     <SettingsCard title={t("settings.update.title")}>
       <SettingsRow
         title={t("settings.update.current")}
-        description={joinSegments(t("settings.update.currentDesc", { version }), statusLabel(snapshot, t))}
+        description={joinSegments(
+          t("settings.update.currentDesc", { version }),
+          isDev ? "" : statusLabel(snapshot, t)
+        )}
       >
-        {hasPrompt ? (
+        {isDev ? (
+          <p className="max-w-56 text-right text-caption-1-medium text-text-secondary">
+            {t("settings.update.devSkip")}
+          </p>
+        ) : hasPrompt ? (
           <Button type="button" className={`rounded-2lg ${UPDATE_CTA_CLASS}`} onClick={() => setDialogOpen(true)}>
             {t("settings.update.availableChip")}
           </Button>

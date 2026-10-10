@@ -47,7 +47,7 @@ export function ObservabilityPageHeader(props: {
               {copy.badge}
             </span>
           </div>
-          <p className="text-caption-2-medium text-text-tertiary">{copy.subtitle}</p>
+          <p className="text-caption-2-medium text-text-secondary">{copy.subtitle}</p>
         </div>
         <Button
           size="sm"

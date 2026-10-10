@@ -219,6 +219,8 @@ export type ChatStore = {
   sessionReviewDismissedKey: string | null
   pendingApproval: (StreamEvent & { type: "approval.required" }) | null
   error: string | null
+  /** 建会话或首句排队：Composer 上沿「正在准备…」，不走 toast。 */
+  preparingHint: boolean
   /** 非失败提示（如 ACP resume 回落），不走错误条。 */
   notice: string | null
   /** L4「切换引擎」打开 Composer AgentPicker，不跳设置。 */
@@ -268,6 +270,7 @@ export type ChatStore = {
   setRunning: (running: boolean, runId?: string | null) => void
   setHasKey: (hasKey: boolean) => void
   setError: (message: string | null) => void
+  setPreparingHint: (preparing: boolean) => void
   setNotice: (message: string | null) => void
   setAgentPickerOpen: (open: boolean) => void
   setWorkspace: (

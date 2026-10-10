@@ -56,28 +56,28 @@ export function ProfileEcosystemBento({
               <div className="flex size-8 items-center justify-center rounded-xl border border-accent-500/20 bg-accent-500/10 text-accent-500">
                 <RiRobot2Line className="size-4" />
               </div>
-              <h3 className="text-body-medium font-semibold text-text-primary">智能体与模型架构</h3>
+              <h3 className="text-body-medium font-semibold text-text-primary">助手与模型</h3>
             </div>
             <span className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-2-regular font-mono text-text-tertiary">
-              {readyTools.length} 就绪引擎
+              {readyTools.length} 已就绪
             </span>
           </div>
 
           <div className="mt-3.5 flex flex-col gap-2.5">
             <div className="flex items-center justify-between text-caption-2-medium">
-              <span className="text-text-tertiary">当前主引擎</span>
+              <span className="text-text-secondary">当前助手</span>
               <span className="font-semibold text-text-primary">{activeEngineLabel}</span>
             </div>
 
             <div className="flex items-center justify-between text-caption-2-medium">
-              <span className="text-text-tertiary">默认模型</span>
+              <span className="text-text-secondary">默认模型</span>
               <span className="font-mono font-medium text-text-primary">
                 {activeModelLabel || activeProvider?.modelId || "未配置"}
               </span>
             </div>
 
             <div className="flex flex-col gap-1.5 pt-1">
-              <span className="text-caption-2-medium font-medium text-text-tertiary">已就绪 CLI 引擎生态</span>
+              <span className="text-caption-2-medium font-medium text-text-secondary">已就绪的助手</span>
               <div className="flex flex-wrap gap-1.5">
                 {readyTools.slice(0, 5).map((tool) => (
                   <span
@@ -89,7 +89,7 @@ export function ProfileEcosystemBento({
                   </span>
                 ))}
                 {readyTools.length === 0 ? (
-                  <span className="font-mono text-caption-2-regular text-text-tertiary">Enjoy Local (默认内核)</span>
+                  <span className="font-mono text-caption-2-regular text-text-secondary">Enjoy 本地</span>
                 ) : null}
               </div>
             </div>
@@ -101,7 +101,7 @@ export function ProfileEcosystemBento({
           onClick={() => void navigate({ to: "/settings/$section", params: { section: "agent" } })}
           className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3 text-caption-2-medium text-accent-600 hover:text-accent-500 dark:text-accent-400 transition-colors cursor-pointer"
         >
-          <span>管理智能体引擎与服务商</span>
+          <span>管理助手与模型供应商</span>
           <RiArrowRightLine className="size-3.5" />
         </button>
       </div>
@@ -114,7 +114,7 @@ export function ProfileEcosystemBento({
               <div className="flex size-8 items-center justify-center rounded-xl border border-state-success-text/20 bg-state-success-text/10 text-state-success-text">
                 <RiShieldCheckLine className="size-4" />
               </div>
-              <h3 className="text-body-medium font-semibold text-text-primary">硬件安全与运行环境</h3>
+              <h3 className="text-body-medium font-semibold text-text-primary">密钥与本机保护</h3>
             </div>
             <span
               className={cx(
@@ -130,24 +130,24 @@ export function ProfileEcosystemBento({
 
           <div className="mt-3.5 flex flex-col gap-2.5">
             <div className="flex items-center justify-between text-caption-2-medium">
-              <span className="text-text-tertiary">主进程 Vault</span>
-              <span className="font-medium text-text-primary">操作系统安全密钥库托管</span>
+              <span className="text-text-secondary">密钥保管</span>
+              <span className="font-medium text-text-primary">本机已加密保管</span>
             </div>
 
             <div className="flex items-center justify-between text-caption-2-medium">
-              <span className="text-text-tertiary">明文安全策略</span>
-              <span className="font-mono text-state-success-text dark:text-state-success-text">渲染进程零明文</span>
+              <span className="text-text-secondary">界面可见内容</span>
+              <span className="text-state-success-text dark:text-state-success-text">此页看不到密钥</span>
             </div>
 
             <div className="flex items-center justify-between text-caption-2-medium">
-              <span className="text-text-tertiary">当前终端设备</span>
+              <span className="text-text-secondary">当前设备</span>
               <span className="font-mono text-text-primary">
                 {currentDevice?.name} ({currentDevice?.os})
               </span>
             </div>
 
             <div className="flex items-center justify-between text-caption-2-medium">
-              <span className="text-text-tertiary">环境网络</span>
+              <span className="text-text-secondary">连接方式</span>
               <span className="font-mono text-text-secondary">
                 {activeEndpoint ? `SSH: ${activeEndpoint}` : "本机环境"}
               </span>
@@ -156,7 +156,7 @@ export function ProfileEcosystemBento({
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-separator-border/60 pt-3 text-caption-2-medium text-text-tertiary">
-          <span>关键操作默认受主进程审批流保护</span>
+          <span>改文件和跑命令默认会先问你</span>
           <RiShieldLine className="size-3.5" />
         </div>
       </div>
@@ -197,7 +197,7 @@ export function ProfileEcosystemBento({
               <RiShieldCheckLine className="size-4 shrink-0 text-state-success-text" />
               <div className="flex flex-col min-w-0">
                 <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">凭据护盾</span>
-                <span className="text-pretty font-mono text-caption-2-regular text-text-tertiary">硬件安全托管</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-secondary">密钥已加密保管</span>
               </div>
             </div>
 
@@ -205,7 +205,7 @@ export function ProfileEcosystemBento({
               <RiStackLine className="size-4 shrink-0 text-accent-500" />
               <div className="flex flex-col min-w-0">
                 <span className="text-pretty text-caption-2-medium font-semibold text-text-primary">全能调度</span>
-                <span className="text-pretty font-mono text-caption-2-regular text-text-tertiary">多引擎协同</span>
+                <span className="text-pretty font-mono text-caption-2-regular text-text-secondary">多个助手一起用</span>
               </div>
             </div>
           </div>

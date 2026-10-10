@@ -30,6 +30,9 @@ import { workspaceRowFromNode } from "./workspace-row"
 import { noteExternalNavigation } from "@renderer/hooks/nav-history/nav-history-gate"
 import { discardCreatedSession } from "./discard-created-session"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
+import { isReusableEmptySession } from "./reuse-empty-session"
+import { focusComposerAfterNewSession } from "./composer-focus"
+import { isDefaultSessionTitle } from "../lib/session-title"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -98,25 +101,35 @@ export async function loadSession(sessionId: string, title: string, stale?: () =
 export async function createAndOpenSession(workspaceId: string, customTitle = "新对话", stale?: () => boolean) {
   if (!stale) noteExternalNavigation()
   if (stale?.()) return
+  if (isDefaultSessionTitle(customTitle) && isReusableEmptySession(useChatStore.getState(), workspaceId)) {
+    focusComposerAfterNewSession()
+    return
+  }
   parkForegroundRun()
   const composerAtPark = useChatStore.getState().composer
   saveCurrentSessionDraft()
   bumpSessionHydrateGeneration()
-  const session = (await getIde().session.create({
-    workspaceId,
-    title: customTitle
-  })) as SessionRow
-  if (await discardCreatedSession(session.id, stale)) return
-  const store = useChatStore.getState()
-  const typedDuringCreate = store.composer
-  const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
-  publishCreatedSession(store, session, runtimeId)
-  if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
-    useChatStore.setState({ composer: typedDuringCreate })
+  useChatStore.setState({ preparingHint: true })
+  try {
+    const session = (await getIde().session.create({
+      workspaceId,
+      title: customTitle
+    })) as SessionRow
+    if (await discardCreatedSession(session.id, stale)) return
+    const store = useChatStore.getState()
+    const typedDuringCreate = store.composer
+    const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
+    publishCreatedSession(store, session, runtimeId)
+    if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
+      useChatStore.setState({ composer: typedDuringCreate })
+    }
+    await bindSessionRuntime(session.id, runtimeId)
+    if (await discardCreatedSession(session.id, stale)) return
+    await refreshAllWorkspaces()
+  } finally {
+    useChatStore.setState({ preparingHint: false })
+    focusComposerAfterNewSession()
   }
-  await bindSessionRuntime(session.id, runtimeId)
-  if (await discardCreatedSession(session.id, stale)) return
-  await refreshAllWorkspaces()
 }
 
 export async function selectPersistedSession(

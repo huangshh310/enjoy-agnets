@@ -205,7 +205,7 @@ function EditorDrawerFooter({
           href={docsURL}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-caption-1-medium text-text-tertiary hover:text-text-primary"
+          className="inline-flex items-center gap-1 text-caption-1-medium text-text-secondary hover:text-text-primary"
         >
           {t("settings.providers.apiDocs")}
           <RiExternalLinkLine className="size-3" />
@@ -236,7 +236,7 @@ function EditorBoundAgents({
   if (refs.length === 0) return null
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-      <span className="text-caption-2-medium text-text-tertiary">{t("settings.providers.usedBy")}</span>
+      <span className="text-caption-2-medium text-text-secondary">{t("settings.providers.usedBy")}</span>
       {refs.map((ref) => (
         <button
           key={ref.id}

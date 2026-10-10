@@ -37,7 +37,7 @@ export function McpHeader(props: {
               {t("pages.mcp.sandboxed")}
             </span>
           </div>
-          <p className="text-caption-2-medium text-text-tertiary">
+          <p className="text-caption-2-medium text-text-secondary">
             {t("pages.mcp.subtitle")}
           </p>
         </div>

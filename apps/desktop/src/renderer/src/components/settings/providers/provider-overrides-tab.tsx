@@ -42,7 +42,7 @@ export function ProviderOverridesTab({
           <RiKeyLine className="size-4 shrink-0 text-accent-600" />
           <div>
             <span className="block text-caption-1-semibold text-text-primary">{t("settings.providers.headers")}</span>
-            <span className="text-caption-2-regular text-text-tertiary">{t("settings.providers.headersHint")}</span>
+            <span className="text-caption-2-regular text-text-secondary">{t("settings.providers.headersHint")}</span>
           </div>
         </div>
         <ProviderHeaderRows
@@ -58,7 +58,7 @@ export function ProviderOverridesTab({
             <RiCodeSSlashLine className="size-4 shrink-0 text-accent-600" />
             <div>
               <span className="block text-caption-1-semibold text-text-primary">{t("settings.providers.body")}</span>
-              <span className="text-caption-2-regular text-text-tertiary">{t("settings.providers.bodyHint")}</span>
+              <span className="text-caption-2-regular text-text-secondary">{t("settings.providers.bodyHint")}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
@@ -90,7 +90,7 @@ export function ProviderOverridesTab({
       </section>
 
       {editor.kind !== "custom" ? (
-        <p className="text-caption-2-regular text-text-tertiary">{t("settings.providers.presetFixed")}</p>
+        <p className="text-caption-2-regular text-text-secondary">{t("settings.providers.presetFixed")}</p>
       ) : null}
     </div>
   )

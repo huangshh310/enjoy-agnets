@@ -307,7 +307,7 @@ export const enChat = {
   approvalGitDesc: "Auto-commit and push",
   approvalHintReadOnly: "Ask and Plan always deny writes, commits, and shell — independent of this preset.",
   approvalHintAll:
-    "All mode auto-approves files, commands, and commits. High-risk actions (sudo, rm -rf) still require explicit confirmation.",
+    "All mode will change files, run commands, and commit on its own. Actions that delete files or raise privileges still need a second confirmation.",
 
   effortAria: "Reasoning Effort",
   effortEnergy: "Thinking Energy",
@@ -606,8 +606,12 @@ export const enChat = {
   limitsSystemDeferred: "System tools (deferred)",
   limitsFreeSpace: "Free space",
 
-  errorTitle: "Run failed / model response interrupted",
+  errorTitle: "This turn didn't finish. You can retry.",
+  errorRetryHint: "This turn didn't finish. You can retry.",
   errorGenericHint: "That didn't go through. Please try again.",
+  preparingHint: "Getting ready…",
+  moreActions: "More",
+  viewRawJson: "View raw contents",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",
   toolStaleObservation: "The screen has changed, so this action was not run. Please confirm again.",
@@ -738,7 +742,7 @@ export const enChat = {
   approvalApprove: "Approve",
   approvalMore: "{n} more",
   approvalShowLess: "Show less",
-  approvalToolQuestion: "Allow {name}?",
+  approvalToolQuestion: "Allow this action? It will run right after you confirm.",
   approvalViewDiff: "View diff",
   approvalHideDiff: "Hide diff",
   askUserTitle: "A question for you",

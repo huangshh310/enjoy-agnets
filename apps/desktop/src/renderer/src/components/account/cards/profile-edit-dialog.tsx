@@ -24,7 +24,8 @@ import { BlobatarAvatar } from "../../avatar/blobatar-avatar"
 import { BlobatarPickerDialog } from "../../avatar/blobatar-picker-dialog"
 import { BLOBATAR_EXPRESSIONS } from "../../avatar/blobatar.types"
 import { GLASS_COVER_PRESETS } from "../constants"
-import { useT } from "@renderer/i18n"
+import { useI18n, useT } from "@renderer/i18n"
+import { formatTimezoneLabel } from "@renderer/components/automations/lib/timezone-label"
 import type { ExtendedUserProfile } from "../types/profile.types"
 
 interface ProfileEditDialogProps {
@@ -41,6 +42,7 @@ export function ProfileEditDialog({
   onSave
 }: ProfileEditDialogProps) {
   const t = useT()
+  const { locale } = useI18n()
   const [draft, setDraft] = useState<ExtendedUserProfile>(profile)
   const [pickerOpen, setPickerOpen] = useState(false)
 
@@ -123,13 +125,9 @@ export function ProfileEditDialog({
                 />
               </Field>
               <Field label={t("pages.account.editDialog.fieldTimezone")}>
-                <Input
-                  value={draft.timezone}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, timezone: event.target.value }))
-                  }
-                  placeholder="Asia/Shanghai"
-                />
+                <p className="text-caption-1-medium text-text-primary">
+                  {formatTimezoneLabel(draft.timezone, locale)}
+                </p>
               </Field>
               <SelectField
                 label={t("pages.account.editDialog.fieldExpression")}

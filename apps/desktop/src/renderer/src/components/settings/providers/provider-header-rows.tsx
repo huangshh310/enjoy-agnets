@@ -41,7 +41,7 @@ export function ProviderHeaderRows({
         </div>
       ) : null}
       {rows.length === 0 ? (
-        <p className="px-0.5 text-caption-1-medium text-text-tertiary">{t("settings.providers.noHeaders")}</p>
+        <p className="px-0.5 text-caption-1-medium text-text-secondary">{t("settings.providers.noHeaders")}</p>
       ) : null}
       {rows.map((row, index) => (
         <div key={`${row.key}-${index}`} className="flex items-center gap-2">

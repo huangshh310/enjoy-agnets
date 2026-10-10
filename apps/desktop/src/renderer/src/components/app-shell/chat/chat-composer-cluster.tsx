@@ -6,6 +6,7 @@ import { cx } from "@/utils/cx"
 import { PermissionDock } from "@renderer/components/ai-chat/attention/permission-dock"
 import type { ModelOption } from "@renderer/stores/chat-store"
 import { ChatComposer } from "./chat-composer"
+import { ComposerPreparingHint } from "./composer-preparing-hint"
 
 export function ChatComposerCluster(props: {
   className?: string
@@ -16,6 +17,7 @@ export function ChatComposerCluster(props: {
   return (
     <div className={cx("flex shrink-0 flex-col", props.className)}>
       <PermissionDock />
+      <ComposerPreparingHint />
       <ChatComposer
         className={props.composerClassName}
         onModelChange={props.onModelChange}

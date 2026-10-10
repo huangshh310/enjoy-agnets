@@ -34,7 +34,7 @@ export function MediaPageHeader({
         </div>
       </div>
       <div className="flex items-center gap-2.5 shrink-0">
-        <span className="hidden text-caption-2-regular text-text-tertiary sm:inline-block">
+        <span className="hidden text-caption-2-regular text-text-secondary sm:inline-block">
           {t("pages.media.uploadLimitHint")}
         </span>
         <Button size="sm" variant="outline" onClick={onUploadClick} className="gap-1.5 shadow-xs">

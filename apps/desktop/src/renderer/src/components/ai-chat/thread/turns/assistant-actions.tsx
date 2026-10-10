@@ -11,9 +11,11 @@ import {
 import { extractObjectFromMessage } from "@renderer/hooks/extract-object"
 import { regenerateAssistantTurn } from "@renderer/hooks/regenerate-turn"
 import { useChatStore, type ThreadMessage } from "@renderer/stores/chat-store"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { MessageAction, MessageActions } from "@/components/ai-elements/message"
 import { CopyMessageButton } from "../copy-message-button"
 import { canForkTurn, ForkTurnButton } from "./fork-turn-button"
+import { MessageMoreMenu } from "./message-more-menu"
 import { useT } from "@renderer/i18n"
 
 export function AssistantActions({
@@ -50,19 +52,6 @@ export function AssistantActions({
         <RiThumbDownLine className="size-4" />
       </MessageAction>
       <MessageAction
-        tooltip={extracting ? t("chat.extracting") : t("chat.extractObject")}
-        label={t("chat.extractObject")}
-        disabled={extracting}
-        aria-busy={extracting}
-        className={extracting ? "opacity-50" : undefined}
-        onClick={() => {
-          setExtracting(true)
-          void extractObjectFromMessage(message.id, prompt).finally(() => setExtracting(false))
-        }}
-      >
-        <RiBracesLine className="size-4" />
-      </MessageAction>
-      <MessageAction
         tooltip={regenerating ? t("chat.regenerating") : t("chat.regenerate")}
         label={t("chat.regenerate")}
         disabled={running || regenerating}
@@ -75,6 +64,19 @@ export function AssistantActions({
       </MessageAction>
       <CopyMessageButton message={message} prompt={prompt} label={t("chat.copyResponse")} />
       {canForkTurn(message) ? <ForkTurnButton messageId={message.id} /> : null}
+      <MessageMoreMenu>
+        <DropdownMenuItem
+          disabled={extracting}
+          onClick={() => {
+            setExtracting(true)
+            void extractObjectFromMessage(message.id, prompt).finally(() => setExtracting(false))
+          }}
+          className="flex cursor-pointer items-center gap-2 py-1.5 px-2 text-caption-1-medium"
+        >
+          <RiBracesLine className="size-4 shrink-0" />
+          <span>{extracting ? t("chat.extracting") : t("chat.viewRawJson")}</span>
+        </DropdownMenuItem>
+      </MessageMoreMenu>
     </MessageActions>
   )
 }

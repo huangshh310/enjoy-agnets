@@ -1,0 +1,18 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { test } from "node:test"
+
+const src = readFileSync(new URL("./session-lifecycle.ts", import.meta.url), "utf8")
+
+test("新建会话复用当前空会话并回焦 Composer", () => {
+  assert.match(src, /isReusableEmptySession/)
+  assert.match(src, /focusComposerAfterNewSession/)
+  assert.match(src, /preparingHint: true/)
+  assert.doesNotMatch(src, /session\.delete/)
+})
+
+test("归档调用容忍可选 deniedApprovals，不改 IPC", () => {
+  const archive = readFileSync(new URL("./workspace-lifecycle.ts", import.meta.url), "utf8")
+  assert.match(archive, /readDeniedApprovals/)
+  assert.doesNotMatch(archive, /deniedApprovals:/)
+})

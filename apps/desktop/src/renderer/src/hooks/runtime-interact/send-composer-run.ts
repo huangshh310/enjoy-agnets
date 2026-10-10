@@ -40,15 +40,19 @@ type SendPayload = {
 export async function sendComposerMessage(prepared?: PreparedSend) {
   const store = useChatStore.getState()
   if (store.running) return
+  const firstTurn = !store.messages.some((item) => item.role === "user")
+  if (firstTurn) store.setPreparingHint(true)
   store.setRunning(true)
   if (!guardComposerSend(store)) {
     store.setRunning(false)
+    store.setPreparingHint(false)
     return
   }
   syncReviewGateOnComposerStart(store.sessionId)
   const payload = await resolveSendPayload(prepared)
   if (!payload) {
     store.setRunning(false)
+    store.setPreparingHint(false)
     return
   }
   const messages = beginOptimisticTurn(store, payload)
@@ -133,6 +137,8 @@ async function launchComposerRun(
     dropEmptyPendingAssistant()
     store.setRunning(false)
     store.setError(error instanceof Error ? error.message : String(error))
+  } finally {
+    useChatStore.getState().setPreparingHint(false)
   }
 }
 
