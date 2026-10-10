@@ -64,7 +64,7 @@ export function mapUsageTokens(usage: Record<string, unknown>): MappedTokenUsage
 }
 
 export function numberOf(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : undefined
 }
 
 function firstNumber(...values: unknown[]): number | undefined {

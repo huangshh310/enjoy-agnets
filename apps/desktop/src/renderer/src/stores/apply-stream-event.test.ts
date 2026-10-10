@@ -108,6 +108,30 @@ test("切回后允许一次但观察过期：tool.result 折到非流式助手�
   assert.equal([tool].filter((row) => !isToolNotExecuted(row)).length, 0)
 })
 
+test("主 run 结束后标题补全 run.start 不认领、text.delta 不打开助手气泡", () => {
+  const afterMain: ThreadMessage[] = [
+    { id: "msg_user", role: "user", content: "写一段摘要", createdAt: 1 },
+    { id: "msg_asst", role: "assistant", content: "好的", createdAt: 2, streaming: false }
+  ]
+  const start = reduceStreamEvent(
+    afterMain,
+    { type: "run.start", runId: "run_title", sessionId: "ses_a", kind: "completion" },
+    null
+  )
+  assert.equal(start.runId, undefined)
+  assert.equal(start.running, undefined)
+  const delta = reduceStreamEvent(
+    start.messages,
+    { type: "text.delta", runId: "run_title", text: "精炼标题" },
+    start.runId ?? null
+  )
+  assert.equal(
+    delta.messages.some((row) => row.role === "assistant" && row.streaming && row.content.includes("精炼")),
+    false
+  )
+  assert.equal(delta.messages.at(-1)?.content, "好的")
+})
+
 test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {
   const patch = reduceStreamEvent([], {
     type: "approval.resolved",

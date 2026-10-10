@@ -73,6 +73,23 @@ test("stdio 解析失败单服进 skipped，其余仍注入", () => {
   assert.deepEqual(snap.mcp.skipped, [{ name: "Broken", reason: "unresolved" }])
 })
 
+test("过长名称与过多 skipped 截断后仍过闸", () => {
+  const long = "n".repeat(160)
+  const names = Array.from({ length: 140 }, (_, i) => `${i}-${long}`)
+  const snap = assembleHostInject({
+    runtimeId: "cursor",
+    mcpEnabled: names,
+    mcpInjected: names,
+    mcpSkipped: names.map((name) => ({ name, reason: "truncated" as const })),
+    skillEnabled: names,
+    skillInjected: names,
+    skillSkipped: names.map((name) => ({ name, reason: "unresolved" as const }))
+  })
+  assert.ok(snap.mcp.enabled.length <= 128)
+  assert.ok(snap.mcp.skipped.length <= 128)
+  assert.ok(snap.mcp.enabled.every((name) => name.length <= 120))
+})
+
 test("Grok 可标 mounted，SSH 调用方传 false", () => {
   const local = assembleHostInject({
     runtimeId: "grok",

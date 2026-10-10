@@ -3,7 +3,7 @@
  * 禁止 yield approval.required；审批只走 session/request_permission。
  * Task/Explore 归一成 delegate；无 parentToolCallId 时子工具保持平铺，禁止瞎编嵌套。
  */
-import type { StreamEvent } from "@enjoy-agents/ipc-contract"
+import { SESSION_TITLE_MAX, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { isAcpPlanUpdate, mapAcpPlan } from "./map-acp-plan.ts"
 import { mapAcpCommands, mapAcpToolEvents } from "./map-acp-tool.ts"
 import { mapAcpUsageUpdate } from "./map-acp-usage.ts"
@@ -23,7 +23,7 @@ export function mapAcpUpdate(update: unknown, runId: string): StreamEvent[] {
   if (kind === "tool_call" || kind === "tool_call_update") return mapAcpToolEvents(kind, rec, runId)
   if (isAcpPlanUpdate(kind)) return mapAcpPlan(rec, runId)
   if (kind === "session_info_update") {
-    const title = typeof rec.title === "string" ? rec.title.trim() : ""
+    const title = typeof rec.title === "string" ? rec.title.trim().slice(0, SESSION_TITLE_MAX) : ""
     return title ? [{ type: "session.title", runId, title }] : []
   }
   if (kind === "config_option_update") {

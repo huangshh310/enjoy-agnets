@@ -60,7 +60,11 @@ export async function startGeneration(window: BrowserWindow, raw: unknown) {
   rememberGenerationRun({ runId, request })
   const abort = new AbortController()
   controllers.set(runId, abort)
-  stampAndSend(window, { type: "run.start", runId, sessionId: request.sessionId }, request.sessionId)
+  stampAndSend(
+    window,
+    { type: "run.start", runId, sessionId: request.sessionId, kind: request.kind },
+    request.sessionId
+  )
   void runKind(window, runId, request, abort.signal)
   return { runId, kind: request.kind }
 }
@@ -110,7 +114,11 @@ export async function resumeGeneration(window: BrowserWindow, raw: unknown) {
   rememberGenerationRun({ runId: input.runId, request, status: "running" })
   const abort = new AbortController()
   controllers.set(input.runId, abort)
-  stampAndSend(window, { type: "run.start", runId: input.runId, sessionId: request.sessionId }, request.sessionId)
+  stampAndSend(
+    window,
+    { type: "run.start", runId: input.runId, sessionId: request.sessionId, kind: request.kind },
+    request.sessionId
+  )
   void runKind(window, input.runId, request, abort.signal)
   return { ok: true, runId: input.runId }
 }
