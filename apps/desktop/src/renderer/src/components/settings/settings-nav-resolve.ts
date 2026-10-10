@@ -24,7 +24,6 @@ export function resolveActiveNavSectionId(section: SettingsSectionId): SettingsS
     case "organization":
     case "integrations":
     case "notifications":
-    case "archived":
       return "account"
     default:
       return section

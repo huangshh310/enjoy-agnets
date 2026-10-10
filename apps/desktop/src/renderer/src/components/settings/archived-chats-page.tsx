@@ -62,17 +62,6 @@ export function ArchivedChatsPage() {
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <h1 className="text-title-3-semibold text-text-primary">{t("nav.archived")}</h1>
-        {rows.length > 0 ? (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setConfirmAll(true)}
-          >
-            <RiDeleteBinLine className="size-3.5" />
-            {t("settings.archived.deleteAll")}
-          </Button>
-        ) : null}
       </div>
 
       {rows.length === 0 ? (
@@ -104,6 +93,16 @@ export function ArchivedChatsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="ml-auto gap-1.5"
+              data-testid="delete-all-archived"
+              onClick={() => setConfirmAll(true)}
+            >
+              <RiDeleteBinLine className="size-3.5" />
+              {t("settings.archived.deleteAll")}
+            </Button>
           </div>
 
           <div className="flex flex-col gap-5">
@@ -123,7 +122,7 @@ export function ArchivedChatsPage() {
       <ConfirmDialog
         open={confirmAll}
         title={t("settings.archived.deleteAll")}
-        description={t("settings.archived.deleteAllConfirm")}
+        description={t("settings.archived.deleteAllConfirm", { count: rows.length })}
         confirmLabel={t("settings.archived.deleteAll")}
         destructive
         onOpenChange={setConfirmAll}
@@ -190,6 +189,7 @@ function ArchivedGroup({
               <button
                 type="button"
                 title={t("common.delete")}
+                data-testid="archived-row-delete"
                 className="flex size-7 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-error-primary"
                 onClick={() => onAskDelete(chat.id)}
               >
@@ -199,6 +199,7 @@ function ArchivedGroup({
                 variant="outline"
                 size="xs"
                 className="gap-1"
+                data-testid="archived-row-restore"
                 onClick={() => void unarchiveSession(chat.id).then(onRefresh)}
               >
                 <RiInboxUnarchiveLine className="size-3.5" />

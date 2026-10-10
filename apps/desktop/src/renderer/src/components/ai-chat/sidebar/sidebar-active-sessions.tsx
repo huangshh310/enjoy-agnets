@@ -1,21 +1,25 @@
 /**
  * 情境栏顶「进行中」钉住：后台仍在跑或等你处理的会话。无则整组不渲染。
+ * 运行中会话仍可同时出现在项目树；高亮只跟点中的那一行。
  */
 import { useMemo } from "react"
 import { useT } from "@renderer/i18n"
 import { useAttentionStore } from "@renderer/stores/attention/attention-store"
 import { useChatStore } from "@renderer/stores/chat-store"
 import { pickActiveSessions, sessionActivity } from "./session-activity"
+import { isSessionRowActive, type SessionRowClick } from "./session-row-highlight"
 import { SidebarSessionRow } from "./sidebar-session-row"
 
 export function SidebarActiveSessions({
   sessions,
   sessionId,
+  clickedRow,
   onSelectSession,
   formatTime
 }: {
   sessions: Array<{ id: string; name: string; updatedAt: number }>
   sessionId: string | null
+  clickedRow: SessionRowClick | null
   onSelectSession: (id: string) => void
   formatTime: (timestamp: number) => string
 }) {
@@ -42,9 +46,10 @@ export function SidebarActiveSessions({
           key={`active-${session.id}`}
           sessionId={session.id}
           name={session.name}
-          active={session.id === sessionId}
+          active={isSessionRowActive(session.id, sessionId, clickedRow, "active")}
           updatedAt={session.updatedAt}
           formatTime={formatTime}
+          surface="active"
           changesSummary={
             session.id === currentId && (additions > 0 || deletions > 0)
               ? { additions, deletions }
