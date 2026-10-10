@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { MCP_APP_SRC_DOC_MAX, MCP_APP_TITLE_MAX, StreamEvent } from "@enjoy-agents/ipc-contract"
+import { MCP_APP_SRC_DOC_MAX, MCP_APP_TITLE_MAX, StreamEvent } from "@enjoy-agents/ipc-contract/stream-event"
 import { mapAcpMcpApps } from "./map-acp-mcp-app.ts"
 
 const HTML = "<!doctype html><html><body><p>hi</p></body></html>"

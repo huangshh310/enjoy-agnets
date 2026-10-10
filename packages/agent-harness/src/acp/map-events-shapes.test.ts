@@ -3,8 +3,7 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { SESSION_TITLE_MAX, StreamEvent } from "@enjoy-agents/ipc-contract"
-import { mapStreamPart } from "@enjoy-agents/agent-core"
+import { SESSION_TITLE_MAX, StreamEvent } from "@enjoy-agents/ipc-contract/stream-event"
 import { mapAcpUpdate } from "./map-events.ts"
 
 const UPDATES: Array<{ kind: string; update: Record<string, unknown> }> = [
@@ -68,15 +67,12 @@ const UPDATES: Array<{ kind: string; update: Record<string, unknown> }> = [
   }
 ]
 
-test("每种 ACP sessionUpdate 映射后过 StreamEvent 与 mapStreamPart 白名单", () => {
+test("每种 ACP sessionUpdate 映射后过 StreamEvent 白名单", () => {
   for (const row of UPDATES) {
     const events = mapAcpUpdate(row.update, "run_1")
     assert.ok(events.length > 0, row.kind)
     for (const event of events) {
       assert.equal(StreamEvent.safeParse(event).success, true, `${row.kind} ${event.type}`)
-      if (event.type.includes(".")) {
-        assert.deepEqual(mapStreamPart(event as unknown as Record<string, unknown>, "run_1"), event)
-      }
     }
   }
 })

@@ -3,7 +3,7 @@
  * 禁止 yield approval.required；审批只走 session/request_permission。
  * Task/Explore 归一成 delegate；无 parentToolCallId 时子工具保持平铺，禁止瞎编嵌套。
  */
-import { SESSION_TITLE_MAX, type StreamEvent } from "@enjoy-agents/ipc-contract"
+import { SESSION_TITLE_MAX, type StreamEvent } from "@enjoy-agents/ipc-contract/stream-event"
 import { isAcpPlanUpdate, mapAcpPlan } from "./map-acp-plan.ts"
 import { mapAcpCommands, mapAcpToolEvents } from "./map-acp-tool.ts"
 import { mapAcpUsageUpdate } from "./map-acp-usage.ts"

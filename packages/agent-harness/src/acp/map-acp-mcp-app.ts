@@ -6,7 +6,7 @@ import {
   MCP_APP_SRC_DOC_MAX,
   MCP_APP_TITLE_MAX,
   type StreamEvent
-} from "@enjoy-agents/ipc-contract"
+} from "@enjoy-agents/ipc-contract/stream-event"
 
 export function mapAcpMcpApps(rec: Record<string, unknown>, runId: string): StreamEvent[] {
   const events: StreamEvent[] = []
