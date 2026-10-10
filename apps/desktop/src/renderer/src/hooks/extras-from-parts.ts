@@ -12,6 +12,7 @@ export type RestoredExtras = {
     title: string
     path: string
     startLine?: number
+    endLine?: number
     snippet?: string
   }>
   assets: Array<{ assetId: string; mediaType: string; name: string }>

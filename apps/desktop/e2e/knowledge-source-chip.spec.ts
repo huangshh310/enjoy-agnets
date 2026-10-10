@@ -119,6 +119,13 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect(window.locator("html")).toHaveClass(/dark/)
     await expect(sheet).toBeVisible()
     await expect(window.getByRole("button", { name: "浅色" })).toBeVisible()
+    await expect
+      .poll(
+        async () =>
+          window.evaluate(() => document.documentElement.classList.contains("theme-transitioning")),
+        { timeout: 4_000 }
+      )
+      .toBe(false)
     await snapWindow(window, "knowledge-source-theme-click")
     await window.getByRole("button", { name: "浅色" }).click()
     await expect(window.locator("html")).not.toHaveClass(/dark/)
