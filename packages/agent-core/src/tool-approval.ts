@@ -74,7 +74,7 @@ const MUTATING_SET = new Set<string>(MUTATING_TOOLS)
 /** Auto 下仍强制确认的高风险 shell，只做保守匹配。 */
 const DANGEROUS_BASH = [
   /\brm\s+(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r)\b/i,
-  /\bgit\s+push\b[\s\S]*\s(-f|--force)\b/i,
+  /\bgit\s+push\b[\s\S]*(?:\s\+[^\s]+|\s(?:-[a-z]*f[a-z]*|--force(?:-with-lease)?)\b)/i,
   /\bgit\s+reset\s+--hard\b/i,
   /\bsudo\b/i,
   /\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(bash|sh|zsh)\s*($|[;&|\s])/i,

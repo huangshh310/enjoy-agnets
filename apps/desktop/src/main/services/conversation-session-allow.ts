@@ -10,7 +10,8 @@ import {
   stripAnyDesktopSessionAllow,
   type LookupDesktopObservation
 } from "@enjoy-agents/agent-core/computer-use"
-import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract"
+import { isUserInitiatedRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
+import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 
 export type ConversationSessionAllow = {
   toolNames: Set<string>
@@ -62,18 +63,22 @@ export function clearAllConversationSessionAllows(): void {
 }
 
 /**
- * 新 run 种子：desktop 表 ∪ 本会话工具名 / bash 前缀。
+ * 新 run 种子。user 才并本会话写盘 / bash；心跳 / 自动化 / 补跑只并 desktop 表。
  * denyAnyDesktop 只摘 desktop_act:*，写盘名留下。
  */
 export function seedRunSessionAllow(
   sessionId: string,
-  denyAnyDesktop?: boolean
+  opts?: { denyAnyDesktop?: boolean; origin?: string }
 ): { sessionApprovedTools: Set<string>; sessionApprovedBashPrefixes: Set<string> } {
-  const session = snapshotConversationSessionAllow(sessionId)
-  const tools = new Set([...snapshotConversationDesktopAllow(sessionId), ...session.toolNames])
+  const desktop = snapshotConversationDesktopAllow(sessionId)
+  const userTurn = isUserInitiatedRunOrigin(opts?.origin)
+  const session = userTurn
+    ? snapshotConversationSessionAllow(sessionId)
+    : { toolNames: new Set<string>(), bashPrefixes: new Set<string>() }
+  const tools = new Set([...desktop, ...session.toolNames])
   return {
-    sessionApprovedTools: denyAnyDesktop ? stripAnyDesktopSessionAllow(tools) : tools,
-    sessionApprovedBashPrefixes: session.bashPrefixes
+    sessionApprovedTools: opts?.denyAnyDesktop ? stripAnyDesktopSessionAllow(tools) : tools,
+    sessionApprovedBashPrefixes: userTurn ? session.bashPrefixes : new Set()
   }
 }
 

@@ -5,7 +5,7 @@ import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import { parseGenerationCheckpoint } from "@enjoy-agents/agent-core"
 import { isSupersededSdkApprovalId, listPendingApprovals, listRuns, updateRun } from "@enjoy-agents/db"
-import { RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { inferAgentRunOrigin, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { shouldFailWaitingCatchUp } from "./automations-catchup-orphans"
 import { failCatchUpWaitingOnRestart } from "./fail-catchup-waiting-restart"
 import { getDatabase } from "./database"
@@ -85,6 +85,7 @@ export async function restoreWaitingRuns(window: BrowserWindow): Promise<void> {
         runtimeId: extras.runtimeId,
         denyAnyDesktop: extras.denyAnyDesktop,
         automationSource: extras.automationSource,
+        origin: inferAgentRunOrigin(extras.origin, extras.automationSource),
         messages: (checkpoint.request.messages ?? []).map((message) => ({
           role: message.role,
           content: typeof message.content === "string" ? message.content : ""

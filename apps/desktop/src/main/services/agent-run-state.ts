@@ -188,8 +188,11 @@ export function holdAgentRun(
     workspaceRoot: patch.workspaceRoot,
     secret: patch.secret,
     pendingApprovals: [],
-    // 本会话允许：desktop 表 ∪ 工具名 / bash 前缀。run 结束不清表。
-    ...seedRunSessionAllow(patch.input.sessionId, patch.input.denyAnyDesktop),
+    // 本会话允许：user 才并写盘/bash 表；心跳/自动化/补跑只并 desktop 表。
+    ...seedRunSessionAllow(patch.input.sessionId, {
+      denyAnyDesktop: patch.input.denyAnyDesktop,
+      origin: patch.input.origin
+    }),
     approvalGate: createApprovalGate(),
     pumping: false,
     resumeAfterPump: false,

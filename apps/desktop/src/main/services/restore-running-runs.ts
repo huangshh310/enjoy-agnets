@@ -94,6 +94,7 @@ async function holdAndPump(
     runtimeId: extras.runtimeId,
     denyAnyDesktop: flags.denyAnyDesktop,
     automationSource: flags.automationSource,
+    origin: flags.origin,
     messages: (request.messages ?? []).map((message) => ({
       role: message.role,
       content: typeof message.content === "string" ? message.content : ""

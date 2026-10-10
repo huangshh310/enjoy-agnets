@@ -156,6 +156,7 @@ async function startLaunchedRun(
     commandId:
       opts.scheduledAt != null ? scheduledAutomationCommandId(item.id, opts.scheduledAt) : undefined,
     denyAnyDesktop: opts.isCatchUp === true,
+    origin: opts.isCatchUp === true ? "catch_up" : "automation",
     automationSource:
       opts.scheduledAt != null
         ? {

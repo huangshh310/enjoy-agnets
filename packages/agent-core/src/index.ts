@@ -81,7 +81,12 @@ export { clipHistory, pruneModelMessages } from "./generation/prune";
 export { runDurableWorkflow, type DurableStep, type WorkflowCheckpoint } from "./agents/workflow";
 export { orderWorkflowSteps, layerWorkflowSteps } from "./agents/workflow-graph";
 export { assertSandboxCommand, type SandboxPolicy } from "./policies/sandbox";
-export { bashAllowPrefix, sessionAllowsBash, commandFromToolInput } from "./policies/bash-prefix";
+export {
+  bashAllowPrefix,
+  bashCommandHasUnsafeOperators,
+  sessionAllowsBash,
+  commandFromToolInput
+} from "./policies/bash-prefix";
 export {
   collectRepoOutline,
   formatRepoOutline,

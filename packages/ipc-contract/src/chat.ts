@@ -5,6 +5,15 @@ import { z } from "zod"
 import { AutomationRunSource } from "./automations-missed.ts"
 import { DesktopMentionBias } from "./desktop-mention-apps"
 import { ReasoningEffort as ReasoningEffortSchema } from "./reasoning-effort"
+import { AgentRunOrigin } from "./agent-run-origin.ts"
+
+export {
+  AgentRunOrigin,
+  coerceAgentRunOrigin,
+  inferAgentRunOrigin,
+  isUserInitiatedRunOrigin
+} from "./agent-run-origin.ts"
+export type { AgentRunOrigin } from "./agent-run-origin.ts"
 
 export const AgentMode = z.enum(["agent", "plan", "ask", "debug", "workflow", "tdd", "code_mode"])
 export type AgentMode = z.infer<typeof AgentMode>
@@ -32,6 +41,8 @@ export const RunAgentInput = z.object({
   attachments: z.array(z.string()).default([]),
   /** 本机 CLI / Enjoy Local。缺省走偏好 runtimeId 或旧 codingRuntime。 */
   runtimeId: z.string().optional(),
+  /** 谁开的这轮。renderer 入口剥掉，只许 main 写。禁止用 hb_ commandId 猜。 */
+  origin: AgentRunOrigin.optional(),
   /** ACP thought_level 原值；与 Enjoy 本地 reasoningEffort 分轨。 */
   thoughtLevel: z.string().max(80).optional(),
   /** false 时不把最后一条用户句落库。续跑 Todo 用，避免刷新后多出气泡。 */
