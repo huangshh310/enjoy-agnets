@@ -26,6 +26,10 @@ export async function consumeRun(
       onApproval: (pending) => {
         run.pendingApprovals.push(pending)
       },
+      onDecidedReplay: (message) => {
+        run.messages.push(message)
+        run.resumeAfterPump = true
+      },
       onFirstToken: () => {
         run.firstTokenAt = run.firstTokenAt ?? Date.now()
       },

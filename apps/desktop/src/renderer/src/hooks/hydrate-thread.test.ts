@@ -1,7 +1,14 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import {
+  APPROVAL_REPLAY_DENIED,
+  APPROVAL_REPLAY_DENIED_COPY,
+  isToolNotExecuted
+} from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { dedupeConsecutiveUserTurns } from "./dedupe-user-turns.ts"
+import { threadFromRows } from "./hydrate-thread.ts"
 import { mapAssistantThreadMessage } from "./hydrate-thread-map.ts"
+import { mapToolStatus } from "../components/ai-chat/thread/thinking/extract-step-fields.ts"
 
 test("相邻相同用户句只留一条", () => {
   const rows = dedupeConsecutiveUserTurns([
@@ -53,6 +60,31 @@ test("hydrate 恢复本轮模型 stamp，不看当前 picker", () => {
   )
   assert.equal(message.modelId, "opus")
   assert.equal(message.runtimeId, "claude")
+})
+
+test("重新打开后：库里 output-error + 拒绝码仍是未执行，不是转圈", () => {
+  const content = JSON.stringify({
+    v: 1,
+    content: "",
+    tools: [
+      {
+        id: "tool_denied",
+        name: "desktop_act",
+        state: "output-error",
+        result: { code: APPROVAL_REPLAY_DENIED },
+        errorText: APPROVAL_REPLAY_DENIED_COPY
+      }
+    ]
+  })
+  const [message] = threadFromRows([
+    { id: "msg_denied", role: "assistant", content, createdAt: 1 }
+  ])
+  const tool = message?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(tool.state, "output-error")
+  assert.equal(isToolNotExecuted(tool), true)
+  assert.equal(mapToolStatus(tool.state, tool), "denied")
+  assert.notEqual(mapToolStatus(tool.state, tool), "running")
 })
 
 test("无 stamp 的旧信封 runKind 为空", () => {

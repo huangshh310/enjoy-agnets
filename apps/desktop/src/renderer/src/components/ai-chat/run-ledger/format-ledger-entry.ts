@@ -2,6 +2,7 @@
  * 账本行分类与人话字段。命令只留一行摘要，stdout 另字段。
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
+import { isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { asRecord } from "../../../lib/record.ts"
 import { displayBaseName } from "../thread/sources/source-path.ts"
 import {
@@ -99,7 +100,8 @@ function isCommandLike(name: string, shell?: string): boolean {
 }
 
 function toolFailed(tool: ThreadToolCall): boolean {
-  if (tool.state === "output-error" || tool.state === "output-denied") return true
+  if (isToolNotExecuted(tool) || tool.state === "output-denied") return false
+  if (tool.state === "output-error") return true
   if (tool.errorText?.trim()) return true
   const exit = asRecord(tool.result).exitCode
   return typeof exit === "number" && exit !== 0

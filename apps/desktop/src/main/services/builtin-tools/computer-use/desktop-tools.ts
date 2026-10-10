@@ -37,6 +37,8 @@ import { startExecutor, type ExecutorHandle } from "./executor-client"
 import { mapListedDesktopApps } from "./map-listed-desktop-apps.ts"
 import { resolveExecutorCommand } from "./executor-command"
 import { readPreferences } from "../../preferences"
+import { isE2eStub } from "../../e2e-stub.ts"
+import { stubDesktopObservation, stubFreshDesktopActResult } from "../../e2e-stub-desktop.ts"
 
 const actionSchema = z.enum(["click", "move", "drag", "scroll", "type", "key", "wait"])
 
@@ -98,11 +100,17 @@ export function cancelInFlightDesktopAct(): void {
 }
 
 export async function resumeDesktopAct(args: Record<string, unknown>) {
+  const stubbed = stubFreshDesktopActResult(args, (id) => sharedSession().peek(id))
+  if (stubbed) {
+    sharedSession().release(text(args.observationId))
+    return stubbed
+  }
   return sharedSession().act(normalizeActInput(args))
 }
 
 /** 待批：冻结 TTL，并把账本里的应用/控件写进审批 args。 */
 export function parkDesktopActArgs(args: Record<string, unknown>): Record<string, unknown> {
+  if (isE2eStub()) sharedSession().put(stubDesktopObservation(args))
   const id = text(args.observationId)
   if (id) sharedSession().freeze(id)
   return enrichDesktopActArgs(args)

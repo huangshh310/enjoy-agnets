@@ -85,6 +85,19 @@ function StepTitleRow({
           <RiCheckLine className="size-2.5" />
         </span>
       ) : null}
+      {node.status === "denied" ? (
+        <span className="inline-flex items-center gap-0.5 text-caption-2-medium text-text-tertiary">
+          <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
+            <RiCloseLine className="size-2.5 text-text-tertiary" />
+          </span>
+          <span>{t("chat.inspectorToolDenied")}</span>
+        </span>
+      ) : null}
+      {node.status === "skipped" ? (
+        <span className="flex size-3.5 items-center justify-center rounded-full bg-background-tertiary-default">
+          <span className="size-1.5 rounded-full bg-text-tertiary" />
+        </span>
+      ) : null}
       {node.status === "error" ? <StepOutcomeMark denied={node.denied} t={t} /> : null}
       <LineDelta additions={node.additions} deletions={node.deletions} />
       {hasDetail ? (
