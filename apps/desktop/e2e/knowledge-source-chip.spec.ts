@@ -27,7 +27,26 @@ async function forceTheme(window: Page, theme: "light" | "dark"): Promise<void> 
 }
 
 async function snapSheet(sheet: Locator, name: string): Promise<void> {
-  await sheet.screenshot({ path: join(SHOTS, `${name}.png`) })
+  await snapWithRetry(() => sheet.screenshot({ path: join(SHOTS, `${name}.png`) }))
+}
+
+async function snapWindow(window: Page, name: string): Promise<void> {
+  await snapWithRetry(() => snap(window, name))
+}
+
+async function snapWithRetry(take: () => Promise<void>, tries = 3): Promise<void> {
+  let last: unknown
+  for (let i = 0; i < tries; i += 1) {
+    try {
+      await take()
+      return
+    } catch (err) {
+      last = err
+      const msg = err instanceof Error ? err.message : String(err)
+      if (!/EIO|i\/o error/i.test(msg) || i === tries - 1) throw err
+    }
+  }
+  throw last
 }
 
 async function closeApp(app: ElectronApplication): Promise<void> {
@@ -91,7 +110,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     const themeBox = await theme.boundingBox()
     const sheetBox = await sheet.boundingBox()
     expect(themeBox && sheetBox && themeBox.y + themeBox.height <= sheetBox.y + 1).toBeTruthy()
-    await snap(window, "knowledge-source-chip")
+    await snapWindow(window, "knowledge-source-chip")
     await snapSheet(sheet, "knowledge-source-drawer-sheet")
 
     const readmeRow = window.locator('[data-testid="turn-source-row"][data-path="readme.md"]')
@@ -123,7 +142,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect
       .poll(async () => window.evaluate(() => window.__enjoyE2e?.getSelectedFile()?.view ?? ""), { timeout: 4_000 })
       .toBe("preview")
-    await snap(window, "knowledge-source-file-preview")
+    await snapWindow(window, "knowledge-source-file-preview")
 
     writeFileSync(join(workspace, "note.txt"), "changed this turn\n")
     await window.evaluate(() => {
@@ -144,7 +163,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect(window.locator('[data-testid="source-file-diff"]')).toBeVisible({ timeout: 8_000 })
     await expect(window.locator('[data-testid="source-file-diff"]')).toContainText("@@")
     await expect(window.locator('[data-testid="source-file-preview"]')).toHaveCount(0)
-    await snap(window, "knowledge-source-file-diff")
+    await snapWindow(window, "knowledge-source-file-diff")
 
     const readmeChip = window.locator(
       '[data-testid="turn-source-chip-knowledge"][data-source-path="readme.md"]'
@@ -169,7 +188,7 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
     await expect(goneRow).toHaveAttribute("data-expanded", "true")
     await expect(window.locator('[data-testid="turn-source-snippet"]')).toContainText("already deleted")
     await expect(window.locator('[data-testid="renderer-crash-fallback"]')).toHaveCount(0)
-    await snap(window, "knowledge-source-drawer")
+    await snapWindow(window, "knowledge-source-drawer")
     await snapSheet(sheet, "knowledge-source-drawer-expand")
     await forceTheme(window, "dark")
     await expect
@@ -184,13 +203,13 @@ test("一次点开抽屉，知识库行打开文件或展开片段，只亮一�
       )
       .not.toBe("rgb(255, 255, 255)")
     await expect(sheet.getByText(FOOTER)).toBeVisible()
-    await snap(window, "knowledge-source-drawer-dark")
+    await snapWindow(window, "knowledge-source-drawer-dark")
     await snapSheet(sheet, "knowledge-source-drawer-sheet-dark")
     const darkReadme = window.locator('[data-testid="turn-source-row"][data-path="readme.md"]')
     await darkReadme.click()
     await expect(window.locator('[data-testid="source-file-preview"]')).toBeVisible({ timeout: 8_000 })
     await expect(window.locator('[data-testid="source-file-diff"]')).toHaveCount(0)
-    await snap(window, "knowledge-source-file-preview-dark")
+    await snapWindow(window, "knowledge-source-file-preview-dark")
   } finally {
     await closeApp(app)
   }
@@ -218,7 +237,7 @@ test("渲染崩溃回退面是中文短句，不摊英文堆栈", async () => {
     await expect(fallback).not.toContainText("Element type is invalid")
     await expect(fallback).not.toContainText("Something went wrong!")
     await expect(window.locator('[data-testid="renderer-crash-stack"]')).toHaveCount(0)
-    await snap(window, "renderer-crash-fallback")
+    await snapWindow(window, "renderer-crash-fallback")
   } finally {
     await closeApp(app)
   }
