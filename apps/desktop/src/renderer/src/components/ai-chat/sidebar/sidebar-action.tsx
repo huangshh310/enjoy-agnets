@@ -14,17 +14,20 @@ export function SidebarAction({
   label,
   onClick,
   collapsed = false,
-  active = false
+  active = false,
+  testId
 }: {
   icon: SidebarIcon
   label: string
   onClick?: () => void
   collapsed?: boolean
   active?: boolean
+  testId?: string
 }) {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       aria-label={label}
       title={collapsed ? label : undefined}

@@ -1,7 +1,9 @@
 /**
  * 活泵期间挂二次确认 approvalGate；泵结束必须解绑。
  */
-import { rememberApproval } from "./approval-hmac"
+import { getApprovalByRunAndToolCall } from "@enjoy-agents/db"
+import { rememberApproval, rememberReparkApproval } from "./approval-hmac"
+import { getDatabase } from "./database"
 import { checkpointActiveRun } from "./flush-agent-run"
 import { createId } from "./ids"
 import { armCatchUpPark } from "./park-catch-up-approval"
@@ -12,10 +14,24 @@ export async function waitSecondConfirmApproval(
   run: ActiveRun,
   args: unknown
 ): Promise<"allow" | "deny" | "allow_session" | "allow_always"> {
-  const approvalId = createId("apr")
   const toolCallId = run.tools.at(-1)?.id || createId("tool")
+  const existing = getApprovalByRunAndToolCall(getDatabase(), { runId, toolCallId })
+  const approvalId = existing
+    ? rememberReparkApproval({
+        existingApprovalId: existing.id,
+        runId,
+        toolCallId,
+        name: "desktop_act",
+        args
+      }).id
+    : rememberApproval({
+        runId,
+        approvalId: createId("apr"),
+        toolCallId,
+        name: "desktop_act",
+        args
+      }).id
   run.pendingApprovals.push({ approvalId, toolCallId, name: "desktop_act", args })
-  rememberApproval({ runId, approvalId, toolCallId, name: "desktop_act", args })
   checkpointActiveRun(run)
   emitEvent(run.window, {
     type: "approval.required",

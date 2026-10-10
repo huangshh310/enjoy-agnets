@@ -30,4 +30,11 @@ test("toolRunKind maps SDK states", () => {
   assert.equal(toolRunKind("output-error"), "error")
   assert.equal(toolRunKind("output-denied"), "denied")
   assert.equal(toolRunKind("approval-requested"), "running")
+  assert.equal(
+    toolRunKind("output-error", {
+      state: "output-error",
+      result: { code: "APPROVAL_REPLAY_DENIED" }
+    }),
+    "denied"
+  )
 })

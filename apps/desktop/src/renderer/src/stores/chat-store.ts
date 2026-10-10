@@ -5,6 +5,7 @@ import { create } from "zustand"
 import { thoughtLevelOption, type StreamEvent } from "@enjoy-agents/ipc-contract"
 import { relativeTime } from "../lib/time"
 import { reduceStreamEvent } from "./apply-stream-event"
+import { holdApprovalResolved } from "./held-approval-resolved"
 import { shouldBufferComposerEvent } from "./stream-run-scope"
 import { buildSessionTree, buildWorkspaceTree } from "./chat-store-hydrate"
 import type { ChatStore, ChangedFileRow, RepositoryNode, ThreadMessage } from "./chat-store.types"
@@ -143,6 +144,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       return
     }
     const patch = reduceStreamEvent(get().messages, event, get().runId)
+    const sessionId = get().sessionId
+    if (patch.heldResolved && sessionId) {
+      holdApprovalResolved(sessionId, patch.heldResolved)
+    }
     set({
       messages: patch.messages,
       ...(patch.thinkingLabel ? { thinkingLabel: patch.thinkingLabel } : {}),

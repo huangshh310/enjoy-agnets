@@ -50,6 +50,7 @@ test("AUTO-P2：错过次行 / 组摘要 / 默认关 / 超时非红 / Dock 来�
     await expect(row(window, "晨间待办整理")).toContainText("错过 3 次 · 电脑睡眠")
     await expect(row(window, "晚间日志归档")).toContainText("已跳过 · 应用未运行")
     await expect(row(window, "忙时跳过示例")).toContainText("已跳过 · 上次仍在运行")
+    await expect(row(window, "混因错过示例")).toContainText("错过 3 次 · 最近 应用未运行")
     await expect(row(window, "补跑超时示例")).toContainText("补跑等待确认超时，未运行")
     await expect(row(window, "补跑重启打断示例")).toContainText("补跑被重启打断，未运行")
     await expect(window.locator('[data-testid="automation-row-neutral"]').first()).not.toHaveClass(/error/)

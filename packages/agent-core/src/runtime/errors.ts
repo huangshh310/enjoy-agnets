@@ -54,5 +54,30 @@ export function classifyError(error: unknown): RuntimeError {
   if (lower.includes("not supported") || lower.includes("capability")) {
     return new RuntimeError("capability", message, false)
   }
+  if (isInternalStoreError(message)) {
+    return new RuntimeError("tool", INTERNAL_STORE_ERROR, false)
+  }
   return new RuntimeError("provider", message, true)
+}
+
+/** 分类前先记下原始存储报错；对话只走人话码。 */
+export function logAndClassifyError(scope: string, error: unknown): RuntimeError {
+  const message = unwrapErrorMessage(error)
+  if (isInternalStoreError(message)) {
+    console.error(`${scope} store error`, error)
+  }
+  return classifyError(error)
+}
+
+/** 对话禁止摊 SQL / constraint；只进日志。 */
+export const INTERNAL_STORE_ERROR = "INTERNAL_STORE_ERROR"
+
+export function isInternalStoreError(message: string): boolean {
+  const lower = message.toLowerCase()
+  return (
+    lower.includes("unique constraint") ||
+    lower.includes("constraint failed") ||
+    lower.includes("sqlite_") ||
+    (/\bsql\b/.test(lower) && lower.includes("constraint"))
+  )
 }

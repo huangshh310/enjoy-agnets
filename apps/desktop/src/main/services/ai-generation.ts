@@ -3,7 +3,7 @@
  */
 import type { BrowserWindow } from "electron"
 import {
-  classifyError,
+  logAndClassifyError,
   parseGenerationCheckpoint,
   resolveTimeoutMs,
   tokensPerSecond,
@@ -150,7 +150,7 @@ async function runKind(
     })
     stampAndSend(window, { type: "run.end", runId }, request.sessionId)
   } catch (error) {
-    const classified = classifyError(error)
+    const classified = logAndClassifyError("ai-generation", error)
     updateRun(getDatabase(), runId, { status: "failed", error: classified.message })
     recordMetric({
       runId,

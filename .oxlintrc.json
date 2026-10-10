@@ -110,7 +110,11 @@
     },
     {
       "files": ["apps/desktop/src/renderer/**"],
+      "env": {
+        "browser": true
+      },
       "rules": {
+        "no-undef": "error",
         "no-restricted-imports": [
           "error",
           {
@@ -164,8 +168,13 @@
     },
     {
       "files": ["apps/desktop/src/renderer/**/*.test.ts"],
+      "env": {
+        "browser": true,
+        "node": true
+      },
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": "off",
+        "no-undef": "error"
       }
     }
   ]

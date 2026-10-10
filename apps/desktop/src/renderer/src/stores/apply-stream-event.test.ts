@@ -1,0 +1,122 @@
+/**
+ * 拒绝 / 未执行不得写成红条。run.end 清掉 store.error。
+ */
+import assert from "node:assert/strict"
+import { test } from "node:test"
+import { APPROVAL_REPLAY_DENIED, APPROVAL_REPLAY_DENIED_COPY } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { isStaleObservationAfterAllow, isToolNotExecuted } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { mapToolStatus } from "../components/ai-chat/thread/thinking/extract-step-fields.ts"
+import { reduceStreamEvent } from "./apply-stream-event.ts"
+import type { ThreadMessage } from "./chat-store"
+
+function assistantWithDeniedTool(): ThreadMessage[] {
+  return [
+    {
+      id: "msg_1",
+      role: "assistant",
+      content: "",
+      createdAt: 1,
+      streaming: true,
+      tools: [
+        {
+          id: "tool_1",
+          name: "desktop_act",
+          state: "output-error",
+          result: { code: APPROVAL_REPLAY_DENIED },
+          errorText: APPROVAL_REPLAY_DENIED_COPY
+        }
+      ]
+    }
+  ]
+}
+
+test("未执行类 run.error 不写红条，库里 output-error 不改写", () => {
+  const patch = reduceStreamEvent(assistantWithDeniedTool(), {
+    type: "run.error",
+    runId: "run_1",
+    message: APPROVAL_REPLAY_DENIED_COPY
+  }, "run_1")
+  assert.equal(patch.error, null)
+  assert.equal(patch.running, false)
+  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-error")
+})
+
+test("run.end 清掉红条，拒绝工具保持库里的 output-error", () => {
+  const patch = reduceStreamEvent(assistantWithDeniedTool(), {
+    type: "run.end",
+    runId: "run_1"
+  }, "run_1")
+  assert.equal(patch.error, null)
+  assert.equal(patch.messages[0]?.tools?.[0]?.state, "output-error")
+})
+
+function hydratedPendingAssistant(): ThreadMessage[] {
+  return [
+    { id: "msg_user_back", role: "user", content: "desktop catchup", createdAt: 1 },
+    {
+      id: "msg_asst_back",
+      role: "assistant",
+      content: "",
+      createdAt: 2,
+      tools: [
+        {
+          id: "tool_catchup_4",
+          name: "desktop_act",
+          state: "approval-requested",
+          args: { action: "click", appName: "备忘录", elementName: "今日" }
+        }
+      ]
+    }
+  ]
+}
+
+test("切走再切回后的非流式助手：deny 立刻折成未执行，不转圈、不计入已运行", () => {
+  const hydrated = hydratedPendingAssistant()
+  assert.equal(hydrated[1]?.streaming, undefined)
+  const patch = reduceStreamEvent(hydrated, {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "deny"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(patch.pendingApproval, null)
+  assert.equal(patch.heldResolved, undefined)
+  assert.equal(tool.state, "output-denied")
+  assert.equal(isToolNotExecuted(tool), true)
+  assert.equal(mapToolStatus(tool.state, tool), "denied")
+  assert.notEqual(mapToolStatus(tool.state, tool), "running")
+  assert.equal([tool].filter((row) => !isToolNotExecuted(row)).length, 0)
+})
+
+test("切回后允许一次但观察过期：tool.result 折到非流式助手，文案不是已拒绝", () => {
+  const patch = reduceStreamEvent(hydratedPendingAssistant(), {
+    type: "tool.result",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    name: "desktop_act",
+    result: { code: "stale_observation", decision: "allow" },
+    error: "stale_observation"
+  }, "run_catchup")
+  const tool = patch.messages[1]?.tools?.[0]
+  assert.ok(tool)
+  assert.equal(isToolNotExecuted(tool), true)
+  assert.equal(isStaleObservationAfterAllow(tool), true)
+  assert.equal(mapToolStatus(tool.state, tool), "skipped")
+  assert.notEqual(mapToolStatus(tool.state, tool), "denied")
+  assert.equal([tool].filter((row) => !isToolNotExecuted(row)).length, 0)
+})
+
+test("回灌前消息为空：deny 先挂住，不得假装已经折进工具行", () => {
+  const patch = reduceStreamEvent([], {
+    type: "approval.resolved",
+    runId: "run_catchup",
+    toolCallId: "tool_catchup_4",
+    decision: "deny"
+  }, "run_catchup")
+  assert.equal(patch.messages.length, 0)
+  assert.equal(patch.pendingApproval, null)
+  assert.equal(patch.heldResolved?.type, "approval.resolved")
+  assert.equal(patch.heldResolved?.toolCallId, "tool_catchup_4")
+})

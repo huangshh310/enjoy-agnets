@@ -1,6 +1,6 @@
 # spec/workspace
 
-> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档不 bump updated_at）
+> 工作区是 Agent 的磁盘边界。最后更新：2026-10-10（归档不 bump updated_at；loadWorkspace 当前会话不在旧名单时 keep）
 
 ## 当前真相
 
@@ -49,7 +49,7 @@ Files 视图是 **左树右预览**。树与预览之间有可拖拽分隔条（
 - host（读写 / glob / grep / bash）：`workspace-host.ts`；检查点：`workspace-git-checkpoint.ts`、`workspace-git-checkpoint-plan.ts`、`workspace-git-checkpoint-restore.ts`；Review 列表：`right-pane/views/review/checkpoints/`
 - Git 变更 / diff / 线性 log / 提交 / 上游 / patch / 撤销 / 按文件或目录暂存 / 列分支 / 切换：`workspace-git.ts`、`workspace-git-status.ts`、`workspace-git-log.ts`、`workspace-git-remote.ts`、`workspace-git-restore.ts`、`workspace-git-stage.ts`、`workspace-git-branches.ts`；Agent porcelain log：`workspace-git-agent-log.ts`
 - 底栏选择器：`ai-chat/status-bar/status-project-picker.tsx`、`status-branch-picker.tsx`
-- 创建后侧栏名单：`hooks/plan-boot-workspace.ts`（启动对齐，只跑一次 / 只在无当前工作区时）、`hooks/workspace-pointer.ts`（删除收口：main 返回的 MRU `lastWorkspaceId` 或名单第一个，空则清空）、`hooks/remove-project.ts`（假 IDE 可驱动；不 `loadWorkspace`；剪历史不导航；删光 `landEmptyHome`；切走弹 toast）、`hooks/switched-project-toast.ts`、`hooks/nav-history/nav-history.ts` `pruneHistory`、`nav-history-controller.ts` `pruneHistoryPages` / `landEmptyHome`、`hooks/refresh-workspaces.ts`（全量灌入；最新一次失败时保留最近成功的名单）；`loadWorkspace` 立刻 `setQueryData(["workspaces"])` 并 `workspace.remember`（失败 catch，不挡住切换）；main MRU：`workspace-mru.ts` / `workspace-remember.ts`（开跑只前台用户、且在 session 校验之后）
+- 创建后侧栏名单：`hooks/plan-boot-workspace.ts`（启动对齐，只跑一次 / 只在无当前工作区时）、`hooks/workspace-pointer.ts`（删除收口：main 返回的 MRU `lastWorkspaceId` 或名单第一个，空则清空）、`hooks/remove-project.ts`（假 IDE 可驱动；不 `loadWorkspace`；剪历史不导航；删光 `landEmptyHome`；切走弹 toast）、`hooks/switched-project-toast.ts`、`hooks/nav-history/nav-history.ts` `pruneHistory`、`nav-history-controller.ts` `pruneHistoryPages` / `landEmptyHome`、`hooks/refresh-workspaces.ts`（全量灌入；最新一次失败时保留最近成功的名单）；`hooks/pick-foreground-session.ts`（`loadWorkspace` 当前 id 不在名单 keep，禁止 `?? sessions[0]`）；`loadWorkspace` 立刻 `setQueryData(["workspaces"])` 并 `workspace.remember`（失败 catch，不挡住切换）；main MRU：`workspace-mru.ts` / `workspace-remember.ts`（开跑只前台用户、且在 session 校验之后）
 - 删除入口布局：`app-shell/chrome/context-column.tsx`（Chat=`AiChatSidebar`，其它=`ModuleNav`）、`activity-bar.tsx` / `module-registry.ts`（对话轨 `#/`，设置轨 `#/settings/general`）、`sidebar/project-popover.tsx`
 - 命令执行：`apps/desktop/src/main/services/command.ts`
 - 终端：`apps/desktop/src/main/services/terminal.ts`；renderer `right-pane/views/workspace-terminal.tsx` + `views/terminal/`（addons / WebGL 回落 / 查找 / 外链）

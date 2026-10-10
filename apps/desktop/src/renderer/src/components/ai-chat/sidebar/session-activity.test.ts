@@ -64,6 +64,28 @@ test("进行中钉住：等你优先，最多 8 条", () => {
   )
 })
 
+test("运行完成后立刻离开进行中，不会留两行", () => {
+  const sessions = [
+    { id: "ses_fg", updatedAt: 3 },
+    { id: "ses_bg", updatedAt: 2 },
+    { id: "ses_wait", updatedAt: 1 }
+  ]
+  const stopped = {
+    ...base,
+    running: false,
+    parks: { ses_bg: { running: false }, ses_idle: { running: false } }
+  }
+  const picked = pickActiveSessions(sessions, (id) => sessionActivity({ ...stopped, sessionId: id }))
+  assert.deepEqual(
+    picked.map((item) => item.id),
+    ["ses_wait"]
+  )
+  assert.equal(
+    picked.some((item) => item.id === "ses_fg" || item.id === "ses_bg"),
+    false
+  )
+})
+
 test("侧栏不得只给当前会话画运行灯", () => {
   const dir = dirname(fileURLToPath(import.meta.url))
   const repos = readFileSync(join(dir, "sidebar-repos.tsx"), "utf8")

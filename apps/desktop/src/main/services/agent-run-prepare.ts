@@ -2,7 +2,7 @@
  * hold 之后再编附件、检索知识、开泵。必须在 IPC 已返回 runId 之后跑，
  * 否则知识 embed 一卡住，renderer 没有 runId，Stop 点了没反应。
  */
-import { classifyError } from "@enjoy-agents/agent-core"
+import { logAndClassifyError } from "@enjoy-agents/agent-core"
 import { pumpStream } from "./agent-pump"
 import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { appendRunAttachments, attachmentCapsFor } from "./attach-run-files"
@@ -41,7 +41,7 @@ export async function prepareAndPump(runId: string): Promise<void> {
     emitEvent(current.window, {
       type: "run.error",
       runId,
-      message: classifyError(error).message
+      message: logAndClassifyError("prepareAndPump", error).message
     })
     deleteActiveRun(runId)
   }

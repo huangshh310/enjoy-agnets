@@ -71,22 +71,27 @@ function skippedLine(
   locale: string,
   t: Translate
 ): LastRunLine {
-  const streak = consecutiveSkipStreak(records)
-  const reason = streak.reason ?? automation.lastSkipReason
-  const at = streak.scheduledAt ?? automation.lastRunAt ?? now
-  const when = formatLastRunWhen(at, now, locale)
+  const latest = [...records]
+    .filter((row) => row.kind === "skipped")
+    .sort((left, right) => right.scheduledAt - left.scheduledAt)[0]
+  const reason = latest?.reason ?? automation.lastSkipReason
   const tip = skipReasonTip(reason, t)
-  if (streak.count >= 2) {
+  // 列表次行与抽屉折叠条必须走同一句，禁止再数 consecutiveSkipStreak。
+  if (records.length >= 2) {
     return {
       kind: "missed_many",
-      text: t("studio.automations.missedMany", { n: streak.count, reason: skipReasonCopy(reason, t), when }),
+      text: missedGroupSummary({ records, now, locale, t }),
       tip,
       testId: "automation-row-missed-many"
     }
   }
+  const at = latest?.scheduledAt ?? automation.lastRunAt ?? now
   return {
     kind: "skipped",
-    text: t("studio.automations.skippedLine", { reason: skipReasonCopy(reason, t), when }),
+    text: t("studio.automations.skippedLine", {
+      reason: skipReasonCopy(reason, t),
+      when: formatLastRunWhen(at, now, locale)
+    }),
     tip,
     testId: "automation-row-skipped"
   }

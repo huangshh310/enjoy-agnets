@@ -31,6 +31,7 @@ export function createDesktopSession(
     screenshot: (pid) => hostScreenshot(pid, hooks),
     peek: (observationId) => ledger.peek(observationId),
     lookup: (observationId) => ledger.lookup(observationId),
+    put: (observation) => ledger.put(observation),
     freeze: (observationId) => ledger.freeze(observationId),
     release: (observationId) => ledger.discard(observationId),
     cancelInFlight: () => executor?.cancelInFlight()
