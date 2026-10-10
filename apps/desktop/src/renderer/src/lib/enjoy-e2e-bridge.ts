@@ -1,7 +1,9 @@
 /**
  * 窗口 E2E / 截图桥：只挂已有单例，不新开 IPC。
  */
-import type { ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import type { AgentRunResult, ChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { codingAgentRunInput } from "@renderer/hooks/agent-run-payload"
+import { getIde, hasIde } from "@renderer/lib/ide"
 import { resumeSetupGuide, replaySetupGuide, useSetupGuideStore } from "@renderer/components/setup-guide/setup-guide-store"
 import { useCreateProjectStore } from "@renderer/components/workspace/create-project-open"
 import { rememberChatReadiness } from "@renderer/hooks/chat-readiness-cache"
@@ -34,6 +36,8 @@ export type EnjoyE2eBridge = {
   forceSecretWrite: (code: SecretWriteErrorCode | null) => void
   /** 故意触发根错误边界，用来拍「这里出了点问题。」回退面。 */
   crashRenderer: () => void
+  /** 同会话同 id 打两次 agent.run，用来验 60s clientRequestId 去重。 */
+  runWithClientRequestId: (text: string, clientRequestId: string) => Promise<AgentRunResult>
 }
 
 declare global {
@@ -86,6 +90,22 @@ export function installEnjoyE2eBridge(): void {
     hideGuide: () => useSetupGuideStore.getState().hide(),
     hideCreateProject: () => useCreateProjectStore.getState().hide(),
     forceSecretWrite: forceSecretWriteForE2e,
-    crashRenderer: () => useCrashProbeStore.getState().arm()
+    crashRenderer: () => useCrashProbeStore.getState().arm(),
+    async runWithClientRequestId(text, clientRequestId) {
+      if (!hasIde()) throw new Error("ide unavailable")
+      const store = useChatStore.getState()
+      const base = codingAgentRunInput(store)
+      const sessionId = base.sessionId
+      const workspaceId = base.workspaceId
+      if (!sessionId || !workspaceId) throw new Error("session not ready")
+      return getIde().agent.run({
+        ...base,
+        sessionId,
+        workspaceId,
+        messages: [{ role: "user", content: text }],
+        commandId: crypto.randomUUID(),
+        clientRequestId
+      })
+    }
   }
 }

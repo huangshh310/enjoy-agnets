@@ -4,7 +4,6 @@
 import { expect, test } from "@playwright/test"
 import {
   canLaunchElectron,
-  hideOverlays,
   launchEnjoy,
   openAddKeyForm,
   openConnectModelStep,
@@ -50,7 +49,6 @@ test("none → 保存密钥后同会话 ready，adoptedHint 只出一次", async
     await expect(toast).toBeVisible({ timeout: 8_000 })
     await expect(toast).toContainText(TOAST_ZH)
     await expect(toast).toHaveCount(1)
-    await hideOverlays(window)
     await snap(window, "p0-1-adopt-default-route-toast")
     await snapThemes(window, "p0-1-adopt-default-route-toast")
     await window.evaluate(() => {
