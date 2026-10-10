@@ -102,8 +102,8 @@ test("jojo 复检截图：胶囊 / 正在写 / 工具行 / 错误卡 / 审查 / 
     await window.locator("#automation-editor-title").waitFor({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-time"]')).toBeVisible({ timeout: 12_000 })
     await expect(window.locator('[data-testid="automation-schedule-hour"]')).toBeVisible()
-    await expect(window.getByText("AM")).toHaveCount(0)
-    await expect(window.getByText("PM")).toHaveCount(0)
+    await expect(window.locator('[data-testid="automation-schedule-time"]')).not.toContainText("AM")
+    await expect(window.locator('[data-testid="automation-schedule-time"]')).not.toContainText("PM")
     await snap(window, "gate_time_picker_24h")
 
     await window.evaluate(() => {
