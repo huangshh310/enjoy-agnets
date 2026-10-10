@@ -97,7 +97,7 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
       providers: Record<string, string>
     }
     studio: {
-      automations: Record<string, string>
+      automations: Record<string, string> & { failedBar: string }
       instructions: Record<string, string>
       instructionPresets: { minimalDiffs: { tag: string } }
     }
@@ -192,6 +192,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.settings.setupGuide.readyRestrictedHint, "{name} 暂时用不了，可以再连一家备用。")
   assert.equal(z.chat.toolName.writeFile, "写入文件")
   assert.equal(z.pages.inbox.emptyHint.includes("Inbox"), false)
+  assert.equal(z.studio.automations.failedBar, "进消息「失败」查看 · 不是待验收")
+  assert.doesNotMatch(z.studio.automations.failedBar, /\bInbox\b/)
   assert.doesNotMatch(z.chat.credentialInvalidNotice, /401|403|ECONNREFUSED/)
   assert.doesNotMatch(z.chat.credentialNetworkNotice, /401|403|ECONNREFUSED|status/)
   assert.doesNotMatch(z.chat.credentialForbiddenNotice, /401|402|403|Forbidden|Payment Required/i)
@@ -243,6 +245,12 @@ test("钥匙串中文不摊 libsecret / DBus / keychain 英文", () => {
   const secretWrite = (zh as { settings: { secretWrite: Record<string, string> } }).settings.secretWrite
   for (const [key, value] of Object.entries(secretWrite)) {
     assert.doesNotMatch(value, leak, `zh settings.secretWrite.${key} leaks keychain English: ${value}`)
+  }
+})
+
+test("中文用户词表不写英文 Inbox，用消息", () => {
+  for (const { key, value } of flattenEntries(zh)) {
+    assert.doesNotMatch(value, /\bInbox\b/, `zh ${key} uses English Inbox: ${value}`)
   }
 })
 

@@ -320,7 +320,7 @@ export const zhStudio = {
     cronThursday: "四",
     cronFriday: "五",
     cronSaturday: "六",
-    failedBar: "进 Inbox「失败」查看 · 不是待验收",
+    failedBar: "进消息「失败」查看 · 不是待验收",
     disableAria: "关闭自动化",
     enableAria: "启用自动化"
   },

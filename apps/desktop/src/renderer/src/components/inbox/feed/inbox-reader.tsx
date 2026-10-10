@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cx } from "@/utils/cx"
 import { useT } from "@renderer/i18n"
-import { toolDisplayName } from "@renderer/lib/tool-display-name"
+import { toolArgsOf, toolDisplayPhrase } from "@renderer/lib/tool-display-name"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { MarkdownResponse } from "@renderer/components/ai-chat/thread/markdown-response"
 import { parseAssistantPayload } from "@enjoy-agents/ipc-contract"
@@ -86,20 +86,19 @@ export function InboxReader(props: {
 
     const parsed = parseAssistantPayload(lastAssistant.content)
     const assistantText = parsed.content.trim() || null
-    let toolNames: string[] = []
-    if (parsed.tools && parsed.tools.length > 0) {
-      toolNames = parsed.tools.map((t) => t.name).filter(Boolean)
-    }
+    const phrases = (parsed.tools ?? [])
+      .filter((tool) => tool.name)
+      .map((tool) => {
+        const args = toolArgsOf(tool) ?? (tool.name === item?.toolName ? item.toolArgs : undefined)
+        return toolDisplayPhrase(tool.name, t, args)
+      })
 
     return {
       latestAssistantText: assistantText,
-      toolsSummary:
-        toolNames.length > 0
-          ? Array.from(new Set(toolNames), (name) => toolDisplayName(name, t)).join("、")
-          : null,
+      toolsSummary: phrases.length > 0 ? Array.from(new Set(phrases)).join("、") : null,
       thoughtSeconds: parsed.thoughtSeconds ?? null
     }
-  }, [sessionMessages, t])
+  }, [item?.toolArgs, item?.toolName, sessionMessages, t])
 
   if (!item) {
     return (
@@ -238,8 +237,8 @@ export function InboxReader(props: {
                   <span>{t("pages.inbox.approvalCardTitle")}</span>
                 </div>
                 {item.toolName ? (
-                  <span className="font-mono text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
-                    {toolDisplayName(item.toolName, t)}
+                  <span className="text-caption-2-semibold font-semibold px-2 py-0.5 rounded-md bg-status-yellow-background/20 border border-status-yellow-text/30 text-status-yellow-text dark:text-status-yellow-text">
+                    {toolDisplayPhrase(item.toolName, t, item.toolArgs)}
                   </span>
                 ) : null}
               </div>

@@ -3,6 +3,7 @@ import { cx } from "@/utils/cx"
 import { useSessionEngineFace } from "@renderer/hooks/use-engine-display-name"
 import { inboxIdentityTitle } from "@renderer/lib/agent-display-name"
 import { useT } from "@renderer/i18n"
+import { toolDisplayPhrase } from "@renderer/lib/tool-display-name"
 import type { InboxNotification } from "../inbox.types"
 import { formatNeedsReviewSubtitle } from "../lib/format-needs-review-subtitle"
 import { getInboxTheme, inboxTimeLabel } from "./inbox-copy"
@@ -24,7 +25,9 @@ export function InboxRow(props: {
   const snippet =
     item.copyKey === "needs_review"
       ? formatNeedsReviewSubtitle(item, t)
-      : item.errorMessage || item.summary
+      : item.toolName
+        ? toolDisplayPhrase(item.toolName, t, item.toolArgs)
+        : item.errorMessage || item.summary
 
   return (
     <li className="px-2 py-0.5">

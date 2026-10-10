@@ -5,6 +5,7 @@ import type { PendingApprovalItem } from "@enjoy-agents/ipc-contract"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
+import { toolDisplayPhrase } from "@renderer/lib/tool-display-name"
 import { desktopActSafeErrorText } from "../../ai-chat/thread/desktop-act-failed-copy.ts"
 import { humanizeThreadError } from "../../../lib/usage/classify-thread-error.ts"
 import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
@@ -121,12 +122,17 @@ export function inboxFromAttention(
         id: item.id,
         copyKey,
         title: isAborted ? input.t("pages.inbox.badgeAborted") : input.t(`attention.kind.${item.kind}`),
-        summary: isAborted ? input.t("pages.inbox.statusAborted") : humanizeInboxError(item.summary, input.t),
+        summary: isAborted
+          ? input.t("pages.inbox.statusAborted")
+          : item.approval?.name
+            ? toolDisplayPhrase(item.approval.name, input.t, item.approval.args)
+            : humanizeInboxError(item.summary, input.t),
         sessionTitle: item.sessionTitle,
         errorMessage: isAborted
           ? input.t("pages.inbox.statusAborted")
           : humanizeInboxError(item.errorMessage, input.t),
         toolName: item.approval?.name,
+        toolArgs: item.approval?.args,
         category: (item.kind === "error" && !isAborted ? "system" : "agent") as InboxKind,
         read: item.kind === "complete" || input.readIds.has(item.id),
         occurredAt: item.occurredAt,

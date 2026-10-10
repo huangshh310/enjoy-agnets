@@ -33,6 +33,7 @@ export interface InboxNotification {
   sessionTitle?: string
   errorMessage?: string
   toolName?: string
+  toolArgs?: unknown
   isAborted?: boolean
   changedFiles?: { names: string[]; total: number }
   completedAt?: string
