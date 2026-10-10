@@ -139,10 +139,11 @@ test("stub Agent：发送、停止、恢复、审批、知识、工作流、导�
 })
 
 test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后仍要问", async () => {
-  const app = await launchStubApp("# e2e session allow\n", 120_000)
+  const app = await launchStubApp("# e2e session allow\n", 180_000, { lang: "zh" })
   if (!app) return
   try {
     const window = await readyWindow(app)
+    await window.setViewportSize({ width: 1440, height: 900 })
     const composer = window.locator('[data-testid="composer-input"]')
     await sendWriteAndAllowSession(window, composer)
     const firstName = await firstSessionName(window)
@@ -154,24 +155,32 @@ test("本会话总是允许：同会话跨轮不弹卡，新会话与归档后�
     await window.locator('[data-testid="sidebar-new-session"]').click()
     await sendComposer(window, composer, "please write a note")
     await expect(window.locator('[data-testid="approval-session"]')).toBeVisible({ timeout: 20_000 })
+    await window.locator('[data-testid="approval-deny"]').click({ timeout: 8_000, force: true })
+    await expect(window.locator('[data-testid="approval-session"]')).toHaveCount(0, { timeout: 12_000 })
 
     await archiveSessionNamed(window, firstName)
     await window.evaluate(() => {
       location.hash = "#/settings/archived"
     })
+    await expect(window.getByText("已归档的聊天").first()).toBeVisible({ timeout: 8_000 })
     await window.locator('[data-testid="archived-row-restore"]').click({ timeout: 8_000 })
     await window.evaluate(() => {
       location.hash = "#/"
     })
+    await expect(sessionRow(window, firstName)).toBeVisible({ timeout: 8_000 })
     await sessionRow(window, firstName).click()
     await sendComposer(window, composer, "please write a note")
     await expect(window.locator('[data-testid="approval-session"]')).toBeVisible({ timeout: 20_000 })
   } finally {
-    await app.close()
+    await closeApp(app)
   }
 })
 
-async function launchStubApp(readme: string, timeoutMs = 90_000): Promise<ElectronApplication | null> {
+async function launchStubApp(
+  readme: string,
+  timeoutMs = 90_000,
+  opts?: { lang?: "zh" | "en" }
+): Promise<ElectronApplication | null> {
   test.setTimeout(timeoutMs)
   test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
   const playwright = await import("playwright")
@@ -191,20 +200,25 @@ async function launchStubApp(readme: string, timeoutMs = 90_000): Promise<Electr
       ...process.env,
       ENJOY_E2E_STUB: "1",
       ENJOY_E2E_WORKSPACE: workspace,
-      ENJOY_E2E_USERDATA: userData
+      ENJOY_E2E_USERDATA: userData,
+      ...(opts?.lang ? { ENJOY_E2E_LANG: opts.lang } : {})
     }
   })
 }
 
 async function readyWindow(app: ElectronApplication): Promise<Page> {
-  const window = await app.firstWindow()
+  const window = await app.firstWindow({ timeout: 45_000 })
   await window.waitForSelector("#root", { timeout: 20_000 })
   await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
     timeout: 20_000
   })
-  await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
+  await window
+    .locator('button:has-text("跳过设置"), button:has-text("Skip setup"), [data-testid="composer-input"]')
+    .first()
+    .waitFor({ timeout: 20_000 })
   const skipGuide = window.getByRole("button", { name: /跳过设置|Skip setup/ })
   if ((await skipGuide.count()) > 0) await skipGuide.click()
+  await window.locator('[data-testid="composer-input"]').waitFor({ timeout: 20_000 })
   return window
 }
 
@@ -246,10 +260,25 @@ function sessionRow(window: Page, title: string) {
 
 async function archiveSessionNamed(window: Page, title: string) {
   const row = sessionRow(window, title)
+  await row.scrollIntoViewIfNeeded()
   await row.hover()
   await row.locator('[data-testid="session-row-menu"]').click()
   await window.locator('[data-testid="session-row-menu-archive"]').click()
   const confirm = window.locator('[data-testid="confirm-dialog-confirm"]')
   if ((await confirm.count()) > 0) await confirm.click()
   await expect(window.locator('[data-testid="session-archived-toast"]')).toBeVisible({ timeout: 12_000 })
+}
+
+async function closeApp(app: ElectronApplication) {
+  const proc = app.process()
+  await Promise.race([app.close(), delay(1_500)]).catch(() => undefined)
+  try {
+    proc?.kill("SIGKILL")
+  } catch {
+    /* already gone */
+  }
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
