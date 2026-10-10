@@ -7,7 +7,7 @@ import {
   isToolNotExecuted
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
 import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
-import { asRecord } from "@renderer/lib/record"
+import { asRecord } from "../../../../lib/record.ts"
 import { formatToolLabel, summarizeToolArgs, toolKind } from "../tool-summary"
 import type { TranslateFn } from "@renderer/i18n"
 

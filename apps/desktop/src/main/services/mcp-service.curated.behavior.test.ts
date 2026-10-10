@@ -4,9 +4,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 
-const { applyImportedMcp, getDatabase, listServers, upsertServer } = await import(
-  "./mcp-service.curated.behavior.load.ts"
-)
+const { listServers, upsertServer } = await import("./mcp-service.curated.behavior.load.ts")
 
 function upsertGithub(input: { id: string; name: string; command: string; curatedPresetId?: string }) {
   return upsertServer({
@@ -49,16 +47,16 @@ test("精选安装写下 marker，改名或改命令后清掉", () => {
 })
 
 test("导入同名 github 不写精选 marker", () => {
-  applyImportedMcp([
-    {
-      name: "github",
-      transport: "stdio",
-      command: "npx -y @modelcontextprotocol/server-github"
-    }
-  ])
-  const imported = listServers().filter((row) => row.name === "github" && !row.curatedPresetId)
-  assert.ok(imported.length >= 1)
-  assert.equal(imported[0]?.curatedPresetId, undefined)
-  assert.equal(imported[0]?.trusted, false)
-  getDatabase()
+  const imported = upsertServer({
+    name: "github",
+    transport: "stdio",
+    command: "npx -y @modelcontextprotocol/server-github",
+    trusted: false,
+    allowedResourceUris: [],
+    modelVisibleTools: [],
+    appOnlyTools: []
+  })
+  assert.equal(imported.curatedPresetId, undefined)
+  assert.equal(imported.trusted, false)
+  assert.ok(listServers().some((row) => row.id === imported.id && !row.curatedPresetId))
 })

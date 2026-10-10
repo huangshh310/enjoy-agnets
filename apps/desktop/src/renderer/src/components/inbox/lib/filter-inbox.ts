@@ -6,7 +6,7 @@ import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import type { AttentionItem } from "@renderer/stores/attention/attention.types"
 import type { RepositoryNode } from "@renderer/stores/chat-store.types"
 import { desktopActSafeErrorText } from "../../ai-chat/thread/desktop-act-failed-copy.ts"
-import { humanizeThreadError } from "@renderer/lib/usage/classify-thread-error.ts"
+import { humanizeThreadError } from "../../../lib/usage/classify-thread-error.ts"
 import type { InboxCategory, InboxKind, InboxNavCounts, InboxNotification } from "../inbox.types"
 
 type Translate = (path: string, vars?: Record<string, string | number>) => string

@@ -197,7 +197,11 @@ test("本轮工具全未执行：run.end 收束审批但不弹已完成", () => 
     now: 1
   })
   const quiet = ingestAttentionEvent(waiting, {
-    event: { type: "run.end", runId: "run_b" },
+    event: {
+      type: "run.end",
+      runId: "run_b",
+      turn: { workflow: "todo", attention: "neutral" }
+    },
     sessionId: "ses_b",
     sessionTitle: "B",
     now: 2,
