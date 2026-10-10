@@ -39,5 +39,17 @@ export function applyDefaultChatRouteTo(
 }
 
 export function applyDefaultChatRoute(snapshot: ChatReadiness): void {
-  applyDefaultChatRouteTo(snapshot, useChatStore.getState())
+  const store = useChatStore.getState()
+  applyDefaultChatRouteTo(snapshot, {
+    sessionId: store.sessionId,
+    runtimeId: store.runtimeId,
+    preferredRuntimeId: store.preferredRuntimeId,
+    sessionRuntimes: store.sessionRuntimes,
+    modelId: store.modelId,
+    modelLabel: store.modelLabel,
+    setPreferredRuntimeId: store.setPreferredRuntimeId,
+    setPreferredModelId: store.setPreferredModelId,
+    setRuntimeId: store.setRuntimeId,
+    setModel: (id, label) => store.setModel(id, label ?? store.modelLabel)
+  })
 }
