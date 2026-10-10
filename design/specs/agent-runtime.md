@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（只读白名单；出错若已写则待验收）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（归档 deny 折助手工具；stub very slow）
 
 ## 当前真相
 
@@ -146,6 +146,8 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：空会话首次发送不出气泡/审批卡（新建「新对话」和种子「New agent」都中，`61570f4` 上新建能出卡）。`loadSession` 的 `sameSession` 必须用函数开头的值；await 后把 `sameSession` 改成 `true` 再用过期的 `latest.messages` 回灌，会把正在跑的乐观轮洗成 `[]`。run 事件若此时 `running` 已被 idle patch 清掉，会进 park 而不是主区，侧栏灯和欢迎页对不上。正确做法：发送时 `bumpSessionHydrateGeneration` 只丢掉过期回灌对乐观消息的覆盖，历史行仍合并；切会话立刻 `setMessages([])` 再灌库。详情见 `ui` 已知坑。
 - Enjoy Local 发送盘：`settings.get` 的 `hasKey` 会先于 `models.list` 写入 store。旧逻辑只看 `hasKey`，Composer 已显示 Send，`agent.run` 却带着空 `modelId` 被主进程拒绝（`Choose a model in Settings → Providers`）。必须 `composerSendReady` 同时要 `modelId`；`applySettingsSnapshot` 先 `setModel` 再 `setHasKey`。`ENJOY_E2E_STUB` 缺 `modelId` 时回落 `stub-e2e`，不要在窗口 E2E 里假装已经发过真实模型。
 - **隐患**：验存储失败红条没有开发夹具。正确做法：仅 `ENJOY_E2E_STUB=1` 且未打包时，发送 `stub store error` / `夹具：存储失败` 让 stub 抛 `INTERNAL_STORE_ERROR`，分类 `store` →「这次没执行成功，请再试一次。」。`app.isPackaged` 或非 stub 当普通句，禁止进生产。`pnpm --filter @enjoy-agents/desktop dev:auto-p2` 已带 stub 旗标。
+- **隐患**：归档 deny 只改 approvals 行，助手信封仍停在 `approval-requested`，解开档又弹出死卡。正确做法：`denyStored` 按 `toolCallId` 把库里助手工具折成 `output-denied`（`fold-denied-assistant-tools.ts`）。
+- stub `very slow`（`isE2eStub` 才认）：约 1.5s 一词共约 15s，中途停一张 `write_file` 审批；允许后续写后半段。用来验 Stop →「已停止」，以及写后 Stop → 待验收。打包态当普通句。
 - **隐患**：stub 上一轮允许写盘后，下一句复读 `stub-ok allowed write`。根因：`stubApprovedWrite` 扫整段历史。正确做法：只认本轮（最后一条非 cite 用户句之后）的审批响应。stub **不**在允许前写 `e2e-stub.txt`。
 - **隐患**：`dev:auto-p2`「本轮账本」里发 `please write a note` 并允许后，线程写「stub-ok allowed write」和「本轮改动 e2e-stub.txt」，账本却是「1 个失败 · 错误 / No result received.」。根因：活泵允许后有 waiter，`decideApproval` **不会** `executeStoredTool`（那条路只给重启无 wait）；真实 SDK 允许后自己 execute 并吐 `tool-result`，旧 stub 只吐正文，工具停在 `input-available`，`finalizeRun` 封成 `output-error`。正确做法：允许后先吐匹配审批 `toolCallId`（`apr_stub_N` → `tool_stub_N`）的 `tool-result`（output-available），再写入 `ENJOY_E2E_WORKSPACE/e2e-stub.txt`（路径 jail 同 `resolveInsideWorkspace`），最后才发正文。断言落盘路径时跟 jail 的 realpath 比，不要和 `mkdtemp` 字面路径比（macOS `/tmp` → `/private/tmp`）。真路径链（SDK part → `mapStreamPart` → fold → `run.end`）本身会把允许后的 write 收成成功；问题只在旧 stub。测试：`e2e-stub-approved-write.test.ts`、`approved-write-chain.test.ts`。
 - `agent.run` 以前在返回 `{ runId }` 之前 await `citeKnowledge` / 附件。Provider embed 一超时，renderer 一直 `running && !runId`：空 Thinking、Stop 点了没反应。现在 IPC 先 `run.start` + `{ runId }`，附件和检索放到 `prepareAndPump`；embed 查询 8s 封顶，失败回落词袋。

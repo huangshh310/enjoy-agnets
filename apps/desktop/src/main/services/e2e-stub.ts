@@ -16,6 +16,7 @@ import type { ModelMessage } from "ai"
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 import { stubDesktopStreamParts } from "./e2e-stub-desktop.ts"
+import { isVerySlowPrompt, verySlowDelayMs, verySlowHead, verySlowTail } from "./e2e-stub-slow.ts"
 import { resolveInsideWorkspace } from "./paths.ts"
 
 export const STUB_TERMINAL_LINK_URL = "https://example.com/docs"
@@ -185,7 +186,23 @@ export async function* createE2eStubStream(
     const toolCallId = stubApprovedWriteToolCallId(messages)
     await writeStubApprovedFile(undefined, opts?.packaged === true)
     yield stubApprovedWriteResult(toolCallId)
+    if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+      yield* emitText(verySlowTail(), signal, verySlowDelayMs())
+      return
+    }
     yield* emitText("stub-ok allowed write", signal)
+    return
+  }
+  if (isVerySlowPrompt(prompt, opts?.packaged === true)) {
+    yield* emitText(verySlowHead(), signal, verySlowDelayMs())
+    stubWriteSeq += 1
+    yield {
+      type: "tool-approval-request",
+      toolCallId: `tool_stub_${stubWriteSeq}`,
+      approvalId: `apr_stub_${stubWriteSeq}`,
+      toolName: "write_file",
+      input: { path: STUB_WRITE_PATH, content: STUB_WRITE_CONTENT }
+    }
     return
   }
   if (/\bwrite\b/i.test(prompt)) {
