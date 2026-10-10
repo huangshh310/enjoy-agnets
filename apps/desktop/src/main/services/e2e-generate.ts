@@ -5,7 +5,6 @@ import type { BrowserWindow } from "electron"
 import { updateRun } from "@enjoy-agents/db"
 import { AiGenerateInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
-import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { stampAndSend } from "./event-bus"
 import { createId } from "./ids"
 import { importAsset } from "./asset-service"
@@ -43,7 +42,6 @@ async function finishE2eGeneration(
     durationMs: Date.now() - started,
     ttfoMs: 1
   })
-  persistSessionWorkflow(request.sessionId, "todo")
   stampAndSend(
     window,
     { type: "run.end", runId, turn: { workflow: "todo", attention: "complete" } },

@@ -18,7 +18,6 @@ import { stampAndSend } from "./event-bus"
 import { createId } from "./ids"
 import { recordMetric } from "./telemetry-service"
 import { readPreferences } from "./preferences"
-import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { abortAgent, resumeAgentRun, runAgent } from "./agent-runner"
 import { startE2eGeneration } from "./e2e-generate"
 import { isE2eStub } from "./e2e-stub"
@@ -149,7 +148,6 @@ async function runKind(
       ttfoMs: ttfoMs(started, firstTokenAt),
       tokensPerSecond: tokensPerSecond(undefined, durationMs)
     })
-    persistSessionWorkflow(request.sessionId, "todo")
     stampAndSend(
       window,
       { type: "run.end", runId, turn: { workflow: "todo", attention: "complete" } },
@@ -166,7 +164,6 @@ async function runKind(
       durationMs: Date.now() - started,
       errorClass: classified.errorClass
     })
-    persistSessionWorkflow(request.sessionId, "in_progress")
     stampAndSend(
       window,
       {
