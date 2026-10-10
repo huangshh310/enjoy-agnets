@@ -3,7 +3,7 @@
  */
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
 import { asRecord } from "../../../../lib/record.ts"
-import { formatToolLabel, summarizeToolArgs } from "../tool-summary.ts"
+import { formatToolLabel, formatToolName, summarizeToolArgs } from "../tool-summary.ts"
 import type { AgentStepNode } from "./agent-step-tree.types.ts"
 import type { TranslateFn } from "../../../../i18n/use-i18n.ts"
 import { commandStreamText } from "./command-stream-text.ts"
@@ -194,7 +194,8 @@ function fallbackNode(
     return {
       id: tool.id,
       kind: "command",
-      title: formatToolLabel(tool.name, t),
+      // 必须用已 import 的 formatToolName；合入时丢过 import，ThinkingTrace 同步 parse 会白屏。
+      title: formatToolName(tool.name),
       errorText: toolDeniedCopy(t, tool),
       status: "denied"
     }
