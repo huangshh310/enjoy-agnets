@@ -121,6 +121,8 @@ export const enChat = {
   rewindNoCheckpoint: "This turn has no restore checkpoint",
   rewindTruncateMissing: "This message is not persisted yet, so the thread cannot be truncated",
   rewindFailed: "Could not rewind from here",
+  truncateStaleSnapshot: "This chat has new messages. Refresh and try again.",
+  truncateRunActive: "This chat is still running or waiting for approval, so it can't be truncated.",
   sendMenu: "Send options",
   voiceInput: "Voice input",
   stopVoice: "Stop voice (experimental)",

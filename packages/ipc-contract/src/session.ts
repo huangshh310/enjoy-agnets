@@ -73,11 +73,12 @@ export const SessionArchiveResult = z.object({
 })
 export type SessionArchiveResult = z.infer<typeof SessionArchiveResult>
 
-/** 删掉该条及之后的消息，把 Prompt 退回 Composer。 */
+/** 删掉该条及之后的消息，把 Prompt 退回 Composer。尾巴必须与库里完全一致。 */
 export const SessionTruncateFromInput = z
   .object({
     sessionId: z.string().min(1),
-    messageId: z.string().min(1)
+    messageId: z.string().min(1),
+    expectedTailIds: z.array(z.string().min(1)).min(1)
   })
   .strict()
 export type SessionTruncateFromInput = z.infer<typeof SessionTruncateFromInput>

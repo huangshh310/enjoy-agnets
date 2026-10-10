@@ -1,7 +1,7 @@
 /**
  * 本会话允许（非 desktop_act）：进程内表，按 Enjoy sessionId + runtimeId。
  * 不落盘；归档 / 删除 / 截断 / regenerate / edit-and-resend / 进程退出才清。重启后空。
- * 水位（授权时最后一条消息 id + 条数）是截断真源；clearSessionAllow 只是加紧信号。
+ * 水位（授权时 id 序列哈希 + 条数）是截断真源；clearSessionAllow 只是加紧信号。
  * sessionId 不得含 `::`。找不到 MCP 服务器不记。写入类撤销整组。
  * 只有 user 开跑才种子写盘 / bash；心跳 / 自动化 / 补跑只吃 desktop 表。
  */
@@ -181,13 +181,14 @@ export function grantConversationMcpAllow(
 export function applyAgentRunSessionAllowReset(input: {
   sessionId: string
   clearSessionAllow?: boolean
+  incomingMessageCount?: number
 }): void {
   if (input.clearSessionAllow) {
     clearConversationSessionAllow(input.sessionId)
     return
   }
   if (!sessionHasAllowEntries(input.sessionId)) return
-  if (sessionAllowHistoryLooksTruncated(input.sessionId)) {
+  if (sessionAllowHistoryLooksTruncated(input.sessionId, input.incomingMessageCount)) {
     clearConversationSessionAllow(input.sessionId)
   }
 }

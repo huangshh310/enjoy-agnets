@@ -58,13 +58,15 @@ export function persistMessage(
   role: string,
   content: string,
   parts?: UIMessagePart[],
-  messageId?: string
+  messageId?: string,
+  opts?: { inTransaction?: boolean }
 ): string {
   const now = Date.now()
   const db = getDatabase()
   const id = messageId ?? createId("msg")
+  const nested = opts?.inTransaction === true
 
-  db.exec("BEGIN IMMEDIATE;")
+  if (!nested) db.exec("BEGIN IMMEDIATE;")
   try {
     if (messageId && messageExists(id)) {
       db.prepare("UPDATE messages SET content = ? WHERE id = ?").run(content, id)
@@ -87,11 +89,13 @@ export function persistMessage(
       }))
     )
     db.prepare("UPDATE sessions SET updated_at = ? WHERE id = ?").run(now, sessionId)
-    db.exec("COMMIT;")
-    advanceSessionAllowWatermark(sessionId)
+    if (!nested) {
+      db.exec("COMMIT;")
+      advanceSessionAllowWatermark(sessionId)
+    }
     return id
   } catch (err) {
-    db.exec("ROLLBACK;")
+    if (!nested) db.exec("ROLLBACK;")
     throw err
   }
 }

@@ -15,7 +15,8 @@ const {
   grantConversationToolAllow,
   holdAgentRun,
   getActiveRun,
-  maybeTruncateSessionToIncomingHistory,
+  applyExplicitSessionTruncate,
+  hashSessionMessageIds,
   peekSessionAllowWatermark,
   persistMessage,
   snapshotConversationSessionAllow,
@@ -88,7 +89,7 @@ test("regenerate 不带 clearSessionAllow 仍清表", async () => {
   grantConversationToolAllow(sessionId, "write_file")
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
   assert.deepEqual(peekSessionAllowWatermark(sessionId), {
-    lastMessageId: "msg_regen_ua",
+    idHash: hashSessionMessageIds(["msg_regen_u", "msg_regen_ua"]),
     messageCount: 2
   })
   getDatabase().prepare("DELETE FROM messages WHERE id = ?").run("msg_regen_ua")
@@ -107,22 +108,33 @@ test("连续多轮普通发送仍继承本会话允许", () => {
   applyAgentRunSessionAllowReset({ sessionId })
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
   assert.deepEqual(peekSessionAllowWatermark(sessionId), {
-    lastMessageId: "msg_inh_u3a",
+    idHash: hashSessionMessageIds([
+      "msg_inh_u1",
+      "msg_inh_u1a",
+      "msg_inh_u2",
+      "msg_inh_u2a",
+      "msg_inh_u3",
+      "msg_inh_u3a"
+    ]),
     messageCount: 6
   })
 })
 
-test("普通发送助手 id 对不上时不截尾巴，本会话允许仍继承", async () => {
+test("入参条数少于库条数则清本会话允许", () => {
+  const sessionId = "ses_allow_incoming_short"
+  seedSession(sessionId)
+  persistTurn(sessionId, "msg_short_u", "msg_short_ua")
+  grantConversationToolAllow(sessionId, "write_file")
+  applyAgentRunSessionAllowReset({ sessionId, incomingMessageCount: 1 })
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
+})
+
+test("普通发送不带截断意图不删消息，本会话允许仍继承", () => {
   const sessionId = "ses_allow_ordinary_send"
   seedSession(sessionId)
   persistTurn(sessionId, "msg_ord_u", "msg_ord_ua")
   grantConversationToolAllow(sessionId, "write_file")
-  await maybeTruncateSessionToIncomingHistory(sessionId, [
-    { id: "msg_ord_u", role: "user" },
-    { id: "msg_pending_asst", role: "assistant" },
-    { id: "msg_ord_u2", role: "user" }
-  ])
-  applyAgentRunSessionAllowReset({ sessionId })
+  applyAgentRunSessionAllowReset({ sessionId, incomingMessageCount: 3 })
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
   const rows = getDatabase()
     .prepare("SELECT id FROM messages WHERE session_id = ? ORDER BY created_at ASC, id ASC")
@@ -133,12 +145,18 @@ test("普通发送助手 id 对不上时不截尾巴，本会话允许仍继承"
   )
 })
 
-test("edit-and-resend 不带 clearSessionAllow 仍清表", async () => {
+test("edit-and-resend 显式截断清表", () => {
   const sessionId = "ses_allow_edit_noflag"
   seedSession(sessionId)
   persistTurn(sessionId, "msg_edit_u", "msg_edit_ua")
   grantConversationToolAllow(sessionId, "write_file")
-  await maybeTruncateSessionToIncomingHistory(sessionId, [{ id: "msg_edit_u", role: "user" }])
+  const cut = applyExplicitSessionTruncate({
+    sessionId,
+    afterMessageId: "msg_edit_u",
+    expectedTailIds: ["msg_edit_ua"],
+    reason: "edit"
+  })
+  assert.equal(cut.ok, true)
   applyAgentRunSessionAllowReset({ sessionId })
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
   assert.equal(peekSessionAllowWatermark(sessionId), undefined)
@@ -157,7 +175,8 @@ test("截断会话后本会话允许表清空", async () => {
   )
   grantConversationToolAllow(sessionId, "write_file")
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
-  await truncateSessionFrom(sessionId, "msg_cut")
+  const cut = await truncateSessionFrom(sessionId, "msg_cut", ["msg_cut"])
+  assert.equal(cut.ok, true)
   assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
 })
 
@@ -166,10 +185,14 @@ test("rewind / regenerate / edit-and-resend 都经 main 清本会话允许", () 
   const regen = readFileSync(new URL("../../renderer/src/hooks/regenerate-turn.ts", import.meta.url), "utf8")
   const start = readFileSync(new URL("./agent-run-start.ts", import.meta.url), "utf8")
   assert.match(rewind, /session\.truncateFrom/)
+  assert.match(rewind, /expectedTailIds/)
   assert.match(regen, /clearSessionAllow:\s*true/)
+  assert.match(regen, /truncateAfterMessageId/)
+  assert.match(regen, /expectedTailIds/)
   assert.match(regen, /id:\s*m\.id/)
-  assert.match(start, /maybeTruncateSessionToIncomingHistory/)
-  assert.match(start, /applyAgentRunSessionAllowReset\(input\)/)
+  assert.match(start, /applyExplicitSessionTruncate/)
+  assert.match(start, /applyAgentRunSessionAllowReset/)
+  assert.doesNotMatch(start, /maybeTruncate/)
 })
 
 test("永久删除与归档走同一 forget，清 desktop 表和写盘/bash 表", () => {

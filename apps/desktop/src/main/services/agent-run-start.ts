@@ -11,7 +11,7 @@ import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
 import { createId } from "./ids"
 import { persistSessionWorkflow } from "./apply-turn-outcome"
 import { applyAgentRunSessionAllowReset } from "./conversation-session-allow"
-import { maybeTruncateSessionToIncomingHistory } from "./session-truncate"
+import { applyExplicitSessionTruncate } from "./session-truncate"
 import { emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state"
 import { prepareAndPump } from "./agent-run-prepare"
 import { maybeRenameSession } from "./persist-session"
@@ -177,10 +177,29 @@ async function beginAgentRun(
     if (existing) return { ok: true, runId: existing }
   }
   const runId = options.runId ?? createId("run")
-  if (!options.runId) {
-    await maybeTruncateSessionToIncomingHistory(input.sessionId, input.messages)
+  applyAgentRunSessionAllowReset({
+    sessionId: input.sessionId,
+    clearSessionAllow: input.clearSessionAllow,
+    incomingMessageCount: input.messages.length
+  })
+  const lastUser = lastOutgoingUser(input)
+  if (!options.runId && input.truncateAfterMessageId && input.expectedTailIds) {
+    const cut = applyExplicitSessionTruncate({
+      sessionId: input.sessionId,
+      afterMessageId: input.truncateAfterMessageId,
+      expectedTailIds: input.expectedTailIds,
+      reason: "agent.run",
+      persistUser:
+        options.persistUser && lastUser && !isTodoContinueUserMessage(lastUser.content)
+          ? {
+              content: lastUser.content,
+              messageId: lastUser.id,
+              attached: metasFromAssetIds(input.attachments)
+            }
+          : undefined
+    })
+    if (!cut.ok) return { ok: false, code: cut.code === "TRUNCATE_MESSAGE_NOT_FOUND" ? "TRUNCATE_STALE_SNAPSHOT" : cut.code }
   }
-  applyAgentRunSessionAllowReset(input)
   const modelMessages = await modelMessagesForStart(
     input,
     options.resumeMessages,
@@ -203,7 +222,9 @@ async function beginAgentRun(
   if (!options.resumeMessages) {
     rememberGenerationRun({ runId, request: requestFromAgentInput(input) })
   }
-  persistOutgoingUser(input, options.persistUser)
+  if (options.runId || !input.truncateAfterMessageId) {
+    persistOutgoingUser(input, options.persistUser)
+  }
   emitRunStart(window, input, runId, options.promptEcho)
   if (!options.resumeMessages && workspace.kind !== "ssh") {
     void recordEnjoyCheckpoint(workspace.rootPath, {

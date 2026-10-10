@@ -9,7 +9,18 @@ const PLANTED = {
   requireWriteApproval: true,
   requireBashApproval: true,
   requireCommitApproval: true,
-  sessionApprovedBashPrefixes: ["npm test", "pnpm lint", "git status", "git log", "ls -la", "ls"]
+  sessionApprovedBashPrefixes: [
+    "npm test",
+    "pnpm lint",
+    "git status",
+    "git log",
+    "git config",
+    "make SHELL",
+    "make -f",
+    "find .",
+    "ls -la",
+    "ls"
+  ]
 }
 
 function decision(command: string) {
@@ -40,10 +51,38 @@ const LEO_APPROVED_HOLES = [
 
 const STILL_ALLOWED = ["npm test", "pnpm lint", "git status", "ls -la"]
 
+const LEO_MF2_HOLES = [
+  "npm test --node-options=--require=/tmp/e.js",
+  "npm test --script-shell=/tmp/evil",
+  "npm test --prefix=/tmp/evil",
+  "make SHELL=/tmp/evil",
+  "make -f evil.mk",
+  "git config core.fsmonitor ./evil.sh",
+  "git config core.pager ./evil.sh",
+  "git config core.hooksPath ./evil.sh",
+  "git log --output=/tmp/x",
+  "find . -delete",
+  "find . -fprint /tmp/x"
+]
+
 test("leo M1-a–e 与 doas 探针不得吃已记前缀", () => {
   for (const command of LEO_APPROVED_HOLES) {
     assert.equal(decision(command), "user-approval", command)
   }
+})
+
+test("leo MF-2 尾参注入 env/config 不得吃已记前缀", () => {
+  for (const command of LEO_MF2_HOLES) {
+    assert.equal(decision(command), "user-approval", command)
+  }
+})
+
+test("首词按原样比，其它空白整句拒", () => {
+  assert.equal(decision("NPM test"), "user-approval")
+  assert.equal(decision("git -C /tmp status"), "user-approval")
+  assert.equal(decision("npm\u00A0test"), "user-approval")
+  assert.equal(decision("npm\rtest"), "user-approval")
+  assert.equal(decision("npm\vtest"), "user-approval")
 })
 
 test("普通 npm/pnpm/git/ls 仍可记前缀并匹配", () => {

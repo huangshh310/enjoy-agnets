@@ -16,6 +16,10 @@ import { codingAgentRunInput } from "./agent-run-payload"
 import { isAcpComposerRuntime } from "../lib/agent-runtime"
 import { pendingAssistantStamp } from "../lib/pending-assistant-stamp"
 import { desktopBiasForRun } from "./runtime-interact/desktop-bias-for-run"
+import { agentRunBlockedCode } from "@enjoy-agents/ipc-contract/chat-readiness"
+import { loadSession } from "./session-lifecycle"
+import { tailIdsAfterKeep } from "./session-truncate-intent"
+import { isTruncateRetryable, translateTruncateNotice } from "./truncate-notice"
 
 function currentCaps(store: ChatStore) {
   return store.models.find((model) => model.id === store.modelId)?.capabilities
@@ -51,6 +55,7 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
   }
 
   // 截断至该用户消息（保留到 user 消息，丢弃后续旧回复）
+  const expectedTailIds = tailIdsAfterKeep(messages, userMessage.id)
   const truncatedMessages = messages.slice(0, userIndex + 1)
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -88,10 +93,17 @@ export async function regenerateAssistantTurn(assistantMessageId: string): Promi
   }))
 
   try {
-    await claimStartedRun(
-      sessionId,
-      startTurnIpc(store, runKind, userMessage.content, history, assetIds)
+    const started = await startTurnWithTruncateRetry(
+      store,
+      runKind,
+      userMessage.content,
+      history,
+      assetIds,
+      userMessage.id,
+      expectedTailIds
     )
+    if (agentRunBlockedCode(started)) return
+    await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Regeneration failed.")
     store.setRunning(false)
@@ -121,7 +133,7 @@ export async function editAndResendUserTurn(
     createdAt: Date.now()
   }
 
-  // 截断到当前用户消息位置并替换内容
+  const expectedTailIds = tailIdsAfterKeep(messages, oldUserMsg.id)
   const truncatedMessages = [...messages.slice(0, userIndex), updatedUserMsg]
   const runKind = isAcpComposerRuntime(store.runtimeId)
     ? "agent"
@@ -159,14 +171,63 @@ export async function editAndResendUserTurn(
   }))
 
   try {
-    await claimStartedRun(
-      sessionId,
-      startTurnIpc(store, runKind, newContent.trim(), history, assetIds)
+    const started = await startTurnWithTruncateRetry(
+      store,
+      runKind,
+      newContent.trim(),
+      history,
+      assetIds,
+      updatedUserMsg.id,
+      expectedTailIds
     )
+    if (agentRunBlockedCode(started)) return
+    await claimStartedRun(sessionId, Promise.resolve(started))
   } catch (err: unknown) {
     store.setError(err instanceof Error ? err.message : "Execution failed.")
     store.setRunning(false)
   }
+}
+
+async function startTurnWithTruncateRetry(
+  store: ChatStore,
+  runKind: ReturnType<typeof composerRunKind>,
+  prompt: string,
+  history: Array<{
+    id?: string
+    role: ChatStore["messages"][number]["role"]
+    content: string
+    reasoning?: string
+  }>,
+  assetIds: string[],
+  keepId: string,
+  expectedTailIds: string[]
+) {
+  const first = await startTurnIpc(store, runKind, prompt, history, assetIds, keepId, expectedTailIds)
+  const firstCode = agentRunBlockedCode(first)
+  if (!isTruncateRetryable(firstCode) || !store.sessionId) {
+    if (firstCode) {
+      useChatStore.getState().setError(translateTruncateNotice(firstCode))
+      useChatStore.getState().setRunning(false)
+    }
+    return first
+  }
+  await loadSession(store.sessionId, store.sessionTitle ?? "")
+  const refreshed = useChatStore.getState()
+  const keepIndex = refreshed.messages.findIndex((message) => message.id === keepId)
+  const nextHistory = refreshed.messages.slice(0, keepIndex + 1).map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    reasoning: message.reasoning
+  }))
+  const nextTail = tailIdsAfterKeep(refreshed.messages, keepId)
+  const retried = await startTurnIpc(refreshed, runKind, prompt, nextHistory, assetIds, keepId, nextTail)
+  const retryCode = agentRunBlockedCode(retried)
+  if (retryCode) {
+    useChatStore.getState().setError(translateTruncateNotice(retryCode))
+    useChatStore.getState().setRunning(false)
+  }
+  return retried
 }
 
 async function startTurnIpc(
@@ -179,7 +240,9 @@ async function startTurnIpc(
     content: string
     reasoning?: string
   }>,
-  assetIds: string[]
+  assetIds: string[],
+  keepId: string,
+  expectedTailIds: string[]
 ) {
   if (runKind === "image" || runKind === "video") {
     return getIde().ai.generate({
@@ -199,6 +262,8 @@ async function startTurnIpc(
     attachments: assetIds,
     commandId: crypto.randomUUID(),
     clearSessionAllow: true,
+    truncateAfterMessageId: keepId,
+    expectedTailIds,
     ...(desktopBias ? { desktopBias } : {})
   })
 }

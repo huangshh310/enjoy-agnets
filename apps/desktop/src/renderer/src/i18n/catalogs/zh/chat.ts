@@ -119,6 +119,8 @@ export const zhChat = {
   rewindNoCheckpoint: "这一轮没有可还原的检查点",
   rewindTruncateMissing: "这条消息还没落库，无法截断对话",
   rewindFailed: "从这里重来失败",
+  truncateStaleSnapshot: "对话已经有新消息，刷新后再试一次。",
+  truncateRunActive: "这条对话还在运行或等你审批，现在不能截断。",
   sendMenu: "发送方式",
   voiceInput: "语音输入",
   stopVoice: "停止语音（实验性）",

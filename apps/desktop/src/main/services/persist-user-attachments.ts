@@ -26,12 +26,13 @@ export function persistUserTurn(
   sessionId: string,
   content: string,
   attached: UserFileAsset[],
-  messageId?: string
+  messageId?: string,
+  opts?: { inTransaction?: boolean }
 ) {
   const last = lastUserTurn(sessionId)
   if (shouldSkipDuplicateUserTurn(last, content, Date.now())) return
   const parts = userTurnParts(content, attached) as UIMessagePart[]
-  persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId)
+  persistMessage(sessionId, "user", content, parts.length > 0 ? parts : undefined, messageId, opts)
 }
 
 function lastUserTurn(sessionId: string): { content: string; createdAt: number } | undefined {

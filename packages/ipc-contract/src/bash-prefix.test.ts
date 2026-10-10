@@ -91,3 +91,37 @@ test("失败关闭：包装器 / 赋值 / 可疑字符 / 子命令不记也不�
   assert.equal(bashCommandIsInterpreterStyle("git status"), false)
   assert.equal(bashAllowPrefix("make test"), "make test")
 })
+
+test("尾参含 = 或配置入口选项不记前缀，git config 永不记", () => {
+  const planted = ["npm test", "git log", "git config", "make SHELL", "make -f", "find ."]
+  const probes = [
+    "npm test --node-options=--require=/tmp/e.js",
+    "npm test --script-shell=/tmp/evil",
+    "npm test --prefix=/tmp/evil",
+    "make SHELL=/tmp/evil",
+    "make -f evil.mk",
+    "git config core.fsmonitor ./evil.sh",
+    "git config core.pager ./evil.sh",
+    "git config core.hooksPath ./evil.sh",
+    "git log --output=/tmp/x",
+    "find . -delete",
+    "find . -fprint /tmp/x"
+  ]
+  for (const command of probes) {
+    assert.equal(bashAllowPrefix(command), "", command)
+    assert.equal(sessionAllowsBash(command, planted), false, command)
+  }
+  assert.equal(bashAllowPrefix("git config user.name"), "")
+})
+
+test("首词按原样比；只按空格 Tab 切，其它空白整句拒", () => {
+  assert.equal(bashAllowPrefix("NPM test"), "NPM test")
+  assert.equal(sessionAllowsBash("NPM test", ["npm test"]), false)
+  assert.equal(bashAllowPrefix("git -C /tmp status"), "")
+  assert.equal(sessionAllowsBash("git -C /tmp status", ["git status"]), false)
+  assert.equal(bashCommandIsInterpreterStyle("npm\u00A0test"), true)
+  assert.equal(bashAllowPrefix("npm\u00A0test"), "")
+  assert.equal(bashAllowPrefix("npm\rtest"), "")
+  assert.equal(bashAllowPrefix("npm\vtest"), "")
+  assert.equal(sessionAllowsBash("npm\u00A0test", ["npm test"]), false)
+})

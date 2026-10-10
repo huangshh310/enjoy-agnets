@@ -106,7 +106,31 @@ const DANGEROUS_TOKENS = new Set([
   "--to-command",
   "--rsh",
   "-jar",
-  "--require"
+  "--require",
+  "--output",
+  "-delete",
+  "-fprint"
+])
+
+const CONFIG_ENTRY_OPTIONS = new Set([
+  "-f",
+  "--file",
+  "-C",
+  "--dir",
+  "--directory",
+  "--prefix",
+  "--userconfig",
+  "--globalconfig",
+  "--node-options",
+  "--script-shell",
+  "--eval",
+  "--init-file",
+  "--rcfile",
+  "-I",
+  "--include",
+  "--require",
+  "--loader",
+  "--import"
 ])
 
 export function commandFromToolInput(input: unknown): string {
@@ -122,10 +146,14 @@ export function bashCommandHasUnsafeOperators(command: string): boolean {
   return SESSION_BASH_UNSAFE.test(command)
 }
 
-/** 路径限定也认 basename：`/usr/bin/git` 与裸名同等。反斜杠不剥（字符集已拒）。 */
+/** 路径限定也认 basename：`/usr/bin/git` 与裸名同等。不改大小写。反斜杠不剥（字符集已拒）。 */
 export function commandBasename(token: string): string {
   const base = token.replace(/\\/g, "/").split("/").pop() ?? token
-  return base.replace(/\.(exe|cmd|bat)$/i, "").toLowerCase()
+  return base.replace(/\.(exe|cmd|bat)$/i, "")
+}
+
+function binKey(token: string): string {
+  return commandBasename(token).toLowerCase()
 }
 
 function isInterpreterBin(bin: string): boolean {
@@ -137,23 +165,36 @@ function tokenCharsetOk(token: string): boolean {
   return TOKEN_CHARSET.test(token)
 }
 
+function optionName(token: string): string {
+  const eq = token.indexOf("=")
+  return eq >= 0 ? token.slice(0, eq) : token
+}
+
 function gitTokenRejected(token: string): boolean {
-  const lower = token.toLowerCase()
-  if (lower === "-c" || lower.startsWith("-c")) return true
-  if (lower === "--config-env" || lower.startsWith("--config-env=")) return true
-  if (lower === "--exec-path" || lower.startsWith("--exec-path=")) return true
+  if (token === "-c" || (token.startsWith("-c") && !token.startsWith("-C"))) return true
+  if (token === "--config-env" || token.startsWith("--config-env=")) return true
+  if (token === "--exec-path" || token.startsWith("--exec-path=")) return true
   return false
 }
 
 function tokenLooksDangerous(token: string, firstBin: string): boolean {
-  const lower = token.toLowerCase()
-  if (DANGEROUS_TOKENS.has(lower)) return true
+  if (DANGEROUS_TOKENS.has(token) || CONFIG_ENTRY_OPTIONS.has(optionName(token))) return true
+  if (token.includes("=")) return true
   if (firstBin === "git" && gitTokenRejected(token)) return true
   return false
 }
 
-function tokensOf(command: string): string[] {
-  return command.trim().split(/\s+/).filter(Boolean)
+function hasNonSpaceTabWhitespace(command: string): boolean {
+  for (const ch of command) {
+    if (ch === " " || ch === "\t") continue
+    if (/\s/.test(ch)) return true
+  }
+  return false
+}
+
+function tokensOf(command: string): string[] | null {
+  if (hasNonSpaceTabWhitespace(command)) return null
+  return command.split(/[ \t]+/).filter(Boolean)
 }
 
 /**
@@ -162,11 +203,12 @@ function tokensOf(command: string): string[] {
  */
 export function bashCommandIsInterpreterStyle(command: string): boolean {
   const tokens = tokensOf(command)
-  if (tokens.length === 0) return true
+  if (!tokens || tokens.length === 0) return true
   if (ASSIGNMENT.test(tokens[0] ?? "")) return true
-  if (tokens.some((token) => WRAPPERS.has(commandBasename(token)))) return true
-  const firstBin = commandBasename(tokens[0] ?? "")
+  if (tokens.some((token) => WRAPPERS.has(binKey(token)))) return true
+  const firstBin = binKey(tokens[0] ?? "")
   if (isInterpreterBin(firstBin)) return true
+  if (tokens[0] && binKey(tokens[0]) === "git" && tokens[1] === "config") return true
   if (bashCommandHasUnsafeOperators(command)) return false
   if (tokens.some((token) => !tokenCharsetOk(token))) return true
   return tokens.some((token) => tokenLooksDangerous(token, firstBin))
@@ -175,8 +217,8 @@ export function bashCommandIsInterpreterStyle(command: string): boolean {
 export function bashAllowPrefix(command: string): string {
   if (bashCommandHasUnsafeOperators(command) || bashCommandIsInterpreterStyle(command)) return ""
   const tokens = tokensOf(command)
-  if (tokens.length === 0) return ""
-  return tokens.slice(0, Math.min(2, tokens.length)).map((token) => token.toLowerCase()).join(" ")
+  if (!tokens || tokens.length === 0) return ""
+  return tokens.slice(0, Math.min(2, tokens.length)).join(" ")
 }
 
 export function sessionAllowsBash(
@@ -186,9 +228,8 @@ export function sessionAllowsBash(
   if (bashCommandHasUnsafeOperators(command) || bashCommandIsInterpreterStyle(command)) return false
   const prefix = bashAllowPrefix(command)
   if (!prefix || !prefixes?.length) return false
-  const needle = prefix.toLowerCase()
   return prefixes.some((allowed) => {
-    const item = allowed.trim().toLowerCase()
-    return item !== "" && (needle === item || needle.startsWith(`${item} `))
+    const item = allowed
+    return item !== "" && (prefix === item || prefix.startsWith(`${item} `))
   })
 }
