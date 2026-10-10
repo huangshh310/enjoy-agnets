@@ -111,7 +111,7 @@ function restoreDraftAfterSendGate(store: ChatState, prepared?: PreparedSend): v
   store.setRunning(false)
   store.setPreparingHint(false)
   const blocked = useChatStore.getState().error
-  const draft = prepared?.content ?? readComposerDomText() || store.composer
+  const draft = prepared?.content || readComposerDomText() || store.composer
   if (draft) restoreComposerDraft(draft, prepared?.assets)
   if (blocked === NO_CHAT_ROUTE || blocked === NEED_MODEL) return
   if (prepared?.content) store.setError(SEND_FAILED_RESTORE)
