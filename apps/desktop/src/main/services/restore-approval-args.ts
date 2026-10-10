@@ -14,8 +14,7 @@ export function parseStoredApprovalArgs(row?: {
 }
 
 function isEmptyArgs(args: unknown): boolean {
-  if (args == null) return true
-  return typeof args === "object" && !Array.isArray(args) && Object.keys(args).length === 0
+  return args == null
 }
 
 function parseJson(raw: string | null | undefined): unknown {

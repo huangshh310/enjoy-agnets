@@ -15,7 +15,12 @@ test("库行 args 空时用 requestArgs 回填", () => {
   )
 })
 
-test("args 与 requestArgs 都空：不弹允许卡", () => {
-  assert.equal(parseStoredApprovalArgs({ args: "{}", requestArgs: "{}" }), null)
+test("零参 {} 是合法入参，重启仍弹卡", () => {
+  assert.deepEqual(parseStoredApprovalArgs({ args: "{}", requestArgs: "{}" }), {})
+  assert.deepEqual(parseStoredApprovalArgs({ args: "{}" }), {})
+})
+
+test("args 与 requestArgs 都缺：不弹允许卡", () => {
   assert.equal(parseStoredApprovalArgs({}), null)
+  assert.equal(parseStoredApprovalArgs({ args: null, requestArgs: null }), null)
 })
