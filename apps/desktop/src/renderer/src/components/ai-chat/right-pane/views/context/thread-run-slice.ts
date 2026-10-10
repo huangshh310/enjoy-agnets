@@ -30,11 +30,19 @@ export function toolsFromMessages(messages: SliceMessage[], limit = 8): ThreadTo
 export function toolRunKind(
   state: ThreadToolCall["state"],
   tool?: Pick<ThreadToolCall, "state" | "result" | "errorText">
-): "running" | "ok" | "error" | "denied" | "skipped" {
+): "running" | "ok" | "error" | "denied" | "skipped" | "stopped" {
+  if (isUserAbortedTool(tool)) return "stopped"
   if (isStaleObservationAfterAllow(tool ?? { state })) return "skipped"
   if (isToolNotExecuted(tool ?? { state })) return "denied"
   if (state === "output-available") return "ok"
   if (state === "output-error") return "error"
   if (state === "output-denied") return "denied"
   return "running"
+}
+
+function isUserAbortedTool(tool?: Pick<ThreadToolCall, "result" | "errorText">): boolean {
+  if (!tool) return false
+  if (tool.errorText === "user_aborted") return true
+  const result = tool.result
+  return Boolean(result && typeof result === "object" && (result as { code?: string }).code === "user_aborted")
 }

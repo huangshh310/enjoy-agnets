@@ -55,5 +55,6 @@ function rosterStatus(run: AgentStepNode[]): AgentStepNode["status"] {
   if (run.some((node) => node.status === "error")) return "error"
   if (run.some((node) => node.status === "running")) return "running"
   if (run.every((node) => node.status === "pending")) return "pending"
+  if (run.some((node) => node.status === "stopped")) return "stopped"
   return "completed"
 }
