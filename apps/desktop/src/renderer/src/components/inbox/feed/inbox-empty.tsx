@@ -9,6 +9,8 @@ export function InboxEmpty() {
     <div>
       <p className="text-body-medium text-text-secondary">{t("pages.inbox.empty")}</p>
       <p className="mt-1 text-caption-1-regular text-text-tertiary">{t("pages.inbox.emptyHint")}</p>
+      <p className="mt-1 text-caption-1-regular text-text-tertiary">{t("pages.inbox.decideHint")}</p>
+      <p className="mt-1 text-caption-1-regular text-text-tertiary">{t("pages.inbox.openHint")}</p>
     </div>
   )
 }

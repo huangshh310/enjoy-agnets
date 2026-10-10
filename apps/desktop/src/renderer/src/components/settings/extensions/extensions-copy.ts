@@ -9,6 +9,8 @@ export const EXTENSIONS_COPY = {
   skillsTitle: "settings.extensions.skillsTitle",
   configured: "settings.extensions.configured",
   add: "settings.extensions.add",
+  openMcp: "settings.extensions.openMcp",
+  openSkills: "settings.extensions.openSkills",
   footnote: "settings.extensions.footnote",
   curatedTitle: "settings.extensions.curatedTitle",
   curatedDesc: "settings.extensions.curatedDesc",

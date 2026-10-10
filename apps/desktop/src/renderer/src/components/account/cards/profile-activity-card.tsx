@@ -56,13 +56,13 @@ export function ProfileActivityCard({
               type="button"
               onClick={() => onPeriodChange(item)}
               className={cx(
-                "cursor-pointer rounded-md px-2 py-0.5 capitalize transition-all",
+                "cursor-pointer rounded-md px-2 py-0.5 transition-all",
                 heatmapPeriod === item
                   ? "bg-background-primary-default text-text-primary shadow-2xs font-semibold"
                   : "text-text-tertiary hover:text-text-primary"
               )}
             >
-              {item}
+              {t(`pages.account.heatmap.${item}`)}
             </button>
           ))}
         </div>
