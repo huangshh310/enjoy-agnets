@@ -1,6 +1,6 @@
 # spec/ipc
 
-> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（#136：非回滚 `run.error` 显式 `preOutput: false`；#135：`CHAT_READY=none` 不冻结；`PRE_OUTPUT_FAILURE_CODES` / `session.setFocused` / `clientRequestId`；`SendGateCode` 含 forbidden/billing）
+> 渲染进程只打白名单；入参全部 Zod。最后更新：2026-10-10（#136：`clientRequestId` 源码断言跟上 `.max(CLIENT_REQUEST_ID_MAX)`；非回滚 `run.error` 显式 `preOutput: false`；#135：`CHAT_READY=none` 不冻结；`PRE_OUTPUT_FAILURE_CODES` / `session.setFocused`；`SendGateCode` 含 forbidden/billing）
 
 ## 当前真相
 
@@ -89,6 +89,7 @@
 - **隐患**：`approval.required.args` 写成 `z.unknown()` 时，zod4 把缺字段当失败，整条事件被丢掉。consume 却已记 pending。正确做法：`.optional()`，生产者补 `args ?? {}`。
 - Zod `AutomationTrigger` 含 `cron` / `on_save` / `webhook`。cron 走 `automations-scheduler` 20s 滴答；保存后走 `fireOnSaveAutomations` 防抖；webhook 只绑 `127.0.0.1`。关应用停听。AUTO-P2：启动 / `powerMonitor` resume 回看 ≤7 天错过点（只记记录），默认只记 `skipped`（本机 `automation_missed_local`，不进 `automations` JSON）；`catchUpMissed` 开才补**最近一次且 ≤24h**（`CATCH_UP_MAX_AGE_MS`），补跑 `denyAnyDesktop` 不继承 `desktop_act:*`。补跑停 Dock 30min 自动拒绝（`catch_up_approval_timeout`），`lastRunStatus` 仍 `failed`；列表读 `lastRunErrorCode`（未知码 `.catch(undefined)`，不丢整行），抽屉读 `records[].code`。reconcile **不** await settle。未来若做云同步必须显式排除 `automation_missed_local`。`stopOnFailCount` 已按缺省 3 停用；路径/glob 仍未做。禁止把云隧道 / 开机自启写成已做。
 - node:test 不能 value-import `@enjoy-agents/ipc-contract` 桶入口（`index.ts` 的无后缀相对路径在 Node 里解析失败）。AGENTS.md 链走 `ipc-contract/agents-md-chain` 子路径；通知推导走 `ipc-contract/desktop-notify`；硬拒码走 `ipc-contract/desktop-act-codes`；主进程 electron-vite 要有精确 alias，禁止让 `@pkg/sub` 拼成 `index.ts/sub`。
+- **隐患**：`desktop-mention-apps.test.ts` 用源码正则钉 `RunAgentInput.clientRequestId`。#135 加上 `.max(CLIENT_REQUEST_ID_MAX)` 后旧正则 `.min(1).optional` 对不上，三端 `pnpm test` 会挂、lint/typecheck 仍绿。正确做法：正则写成 `.min(1).max(CLIENT_REQUEST_ID_MAX).optional`，改 schema 时同步改断言。
 - 频道名是 `agent.decide`，不要写成 `agent.decideApproval`。
 - `ApprovalDecision.answers` 不能配 `allow_session` / `allow_always`（schema superRefine）。`ask_user_questions` 即使不带 answers 也禁止这两种：main 在 `recordApprovalDecision` 之前抛，不要先落库再拒。`allow_always` 只写 prefs 簿，不写会话表。
 - `message.part.delta` 已从 StreamEvent v2 删除：从未有过生产者（文本增量走 v1 `text.delta`），留着只会让消费端空等。

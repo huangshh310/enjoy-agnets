@@ -63,5 +63,5 @@ test("DesktopMentionBias 宿主 / 稳应用 / 无稳键", () => {
 test("RunAgentInput 声明可选 desktopBias（node:test 不 value-import chat.ts）", () => {
   const src = readFileSync(new URL("./chat.ts", import.meta.url), "utf8")
   assert.match(src, /desktopBias: DesktopMentionBias\.optional/)
-  assert.match(src, /clientRequestId: z\.string\(\)\.min\(1\)\.optional/)
+  assert.match(src, /clientRequestId: z\.string\(\)\.min\(1\)\.max\(CLIENT_REQUEST_ID_MAX\)\.optional/)
 })
