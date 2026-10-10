@@ -39,7 +39,8 @@
     "./checkpoint-pick": "./src/checkpoint-pick.ts",
     "./agent-tools": "./src/agent-tools.ts",
     "./agent-run-origin": "./src/agent-run-origin.ts",
-    "./session-allow": "./src/session-allow.ts"
+    "./session-allow": "./src/session-allow.ts",
+    "./bash-prefix": "./src/bash-prefix.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

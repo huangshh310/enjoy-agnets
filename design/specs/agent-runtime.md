@@ -1,6 +1,6 @@
 # spec/agent-runtime
 
-> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许：范围标记 / list+revoke）
+> 主进程里的 ToolLoopAgent：流式、工具、审批、模式。最后更新：2026-10-10（本会话允许：范围 / list+revoke；前缀叶子给 renderer）
 
 ## 当前真相
 
@@ -70,7 +70,7 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - 建 agent / 流：`packages/agent-core/src/agent.ts`
 - 子 Agent 审批：`packages/agent-core/src/agents/subagent-approval.ts`、`subagent-loop.ts`；派工闸门：`delegate-concurrency.ts`
 - 工具：`packages/agent-core/src/tools/index.ts`、`git-read-tools.ts`、`write-tools.ts`、`coding-tool-names.ts`、`todo-write.ts`、`ask-user-questions.ts`、`submit-plan.ts`、`implementation-plan.ts`
-- 审批：`packages/agent-core/src/tool-approval.ts`（探索态宿主拦截 `isExploreMutatingDeny`，含 ACP 弱名 command）；本会话允许表（非 desktop）：`apps/desktop/src/main/services/conversation-session-allow.ts`；写入 `decide-approval.applyApprovalDecision`；新 run 种子 `agent-run-state.holdAgentRun`（只认显式 `origin === "user"`，缺省 / 未知当无人值守）；归档 / 删除 `session-lifecycle.forgetConversationDesktopAllow`、截断 `session-truncate.ts` 与 desktop 表一起清；origin 合约 `packages/ipc-contract/src/agent-run-origin.ts`；bash 前缀 `packages/agent-core/src/policies/bash-prefix.ts`
+- 审批：`packages/agent-core/src/tool-approval.ts`（探索态宿主拦截 `isExploreMutatingDeny`，含 ACP 弱名 command）；本会话允许表（非 desktop）：`apps/desktop/src/main/services/conversation-session-allow.ts`；写入 `decide-approval.applyApprovalDecision`；新 run 种子 `agent-run-state.holdAgentRun`（只认显式 `origin === "user"`，缺省 / 未知当无人值守）；归档 / 删除 `session-lifecycle.forgetConversationDesktopAllow`、截断 `session-truncate.ts` 与 desktop 表一起清；origin 合约 `packages/ipc-contract/src/agent-run-origin.ts`；bash 前缀 `packages/ipc-contract/src/bash-prefix.ts`（agent-core 再导出；renderer 只打这片叶子）
 - 审批 UI 三表面：`apps/desktop/src/renderer/src/components/ai-chat/thread/approval/`（`classify-approval.ts`）
 - HMAC：`apps/desktop/src/main/services/approval-hmac.ts`、`packages/db/src/hmac.ts`、`packages/db/src/repositories/approvals.ts`（`planRememberApproval` / `planSdkReplay` / `migrateApprovalForRepark`）、`approval-args.ts`（键排序 / 剔 park 字段）；消费回放：`consume-approval.ts`、`approval-response-message.ts`、`consume-run.ts`；SDK response 落库：`setApprovalSdkResponse` / `recordSdkApprovalResponse`；重启孤儿：`restore-checkpoint-approval.ts` / `restore-waiting-approvals.ts`（先孤儿后发卡，HMAC 未决并进 keep）；检查点里有 HMAC 失败行：`endRestoredRunWithoutSdkReply`，结清不写 `sdkApproved`；结清：`settle-run-approvals.ts`（`decision != null` 不覆盖；`writeSdkResponse: false` 给 HMAC 失败行）；检查器与过程树共用 `toolAbortKind`（`packages/ipc-contract/src/desktop-notify.ts`）
 - 停止条件：`packages/agent-core/src/policies/stop.ts`
@@ -97,7 +97,8 @@ ToolLoop `stopWhen` 走 SDK `stepCountIs` + `isLoopFinished`（当前恒 false�
 - **隐患**：心跳 / 自动化 / 补跑若从同一张会话表种子，会继承用户刚点的 `write_file` / bash 前缀，无人值守轮次等于已被放行。正确做法：`RunAgentInput.origin` 显式区分 `user | heartbeat | automation | catch_up`；renderer 剥掉；checkpoint 回挂写 origin，缺省只按 `automationSource` 推断，**禁止**用 `hb_` 前缀猜，也**禁止** `infer` 默认成 `user`。只有 Composer 发送 / 重发（`runAgent` 显式盖 `origin: "user"`）种子写盘/bash 表；其余只并 desktop 表。
 - **隐患**：缺 origin / 无法识别的 origin 若按「不是 heartbeat/automation/catch_up」当成用户，composer 剥掉之后、旧检查点、工作流子步都会种子会话表。正确做法：`isUserInitiatedRunOrigin` 只认 `"user"`；`inferAgentRunOrigin` 认不出就 `undefined`；后台 `rememberMru: false` 不盖 user。
 - **隐患**：bash 本会话前缀取前两个 token 时，`git push origin main` 会放行 `git push origin +main` / `git push -fu` / `… && curl`；`npm test` 会放行 `npm test && cat …` / `npm test $(curl …)`；`cd /repo && npm test` 会记下 `cd /repo`。正确做法：含 `;` `&` `|` `$(` 反引号 `<` `>` 换行的命令不记前缀也不匹配；`git push` 的 `+refspec` 与 combined force 旗标走危险检查，先于会话前缀。
-- **隐患**：记下 `bash -c` / `python -c` / `npx` / `pnpm dlx` 等于本会话放行任意代码。正确做法：解释器式前缀（含路径限定与 Windows `cmd`/`powershell`、`eval`/`exec`/`source`）与元字符一样不记、不匹配，只允许一次。
+- **隐患**：记下 `bash -c` / `python -c` / `npx` / `pnpm dlx` 等于本会话放行任意代码。正确做法：解释器式前缀（含路径限定与 Windows `cmd`/`powershell`、`eval`/`exec`/`source`）与元字符一样不记、不匹配，只允许一次。审批卡 `sessionAllowCardState` 同样 `onceOnly`，不要再画「本会话允许」。
+- **隐患**：审批卡若从 `@enjoy-agents/agent-core` 主入口取 `bashAllowPrefix`，会把 `node:buffer`（生视频工具）打进 renderer bundle，lint 与 e2e-window build 都会炸。正确做法：算法放 `ipc-contract/bash-prefix` 叶子；Vite / tsconfig.web 单独别名，禁止打 agent-core 桶。
 - **隐患**：从芯片撤销本会话允许若同时清 ActiveRun 副本，当前轮已批准的下一跳会突然再弹卡。正确做法：`revokeConversationSessionAllow` 只删进程内会话表；本轮 `sessionApprovedTools` / 前缀不动，下一轮 `holdAgentRun` 才不再种子。
 - **隐患**：重启回挂已决行若只看 `decision != null` 会回放 `desktop_act` allow（过期观察上执行）、`sdkApproved=null` 的 allow（SDK `approved:false` 但 `tool.result.decision=allow`）、带 `stale_observation` 的行、以及 runId/toolCallId 对不上的行。正确做法：先核 `row.runId===runId && row.toolCallId===item.toolCallId`，再走 `planSdkReplay`；fail closed 结束该 run。
 - **隐患**：`restoreWaitingRuns` 先 `approval.required` 再处理孤儿，fail closed 后 Inbox 留下死卡。正确做法：先 `applyRestoredOrphanApprovals`，活下来才发卡；fail closed 再 `settlePendingApprovalsForRun(..., "failed")` 兜底。库 status 是 `failed`，`run.error` 带码，不是英文句子。

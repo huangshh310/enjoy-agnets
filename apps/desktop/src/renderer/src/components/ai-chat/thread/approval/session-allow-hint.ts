@@ -1,7 +1,12 @@
 /**
- * 本会话钮文案：显示将记下的前缀 / 工具名；含管道的命令只允许一次。
+ * 本会话钮文案：显示将记下的前缀 / 工具名；管道 / 解释器式命令只允许一次。
+ * 前缀算法走 ipc-contract 叶子，禁止打 agent-core 主入口。
  */
-import { bashAllowPrefix, bashCommandHasUnsafeOperators } from "@enjoy-agents/agent-core"
+import {
+  bashAllowPrefix,
+  bashCommandHasUnsafeOperators,
+  bashCommandIsInterpreterStyle
+} from "@enjoy-agents/ipc-contract/bash-prefix"
 
 export function sessionAllowCardState(
   name: string,
@@ -10,7 +15,7 @@ export function sessionAllowCardState(
   const tool = name.trim()
   const text = command.trim()
   if (tool === "bash" || tool === "code_mode") {
-    if (text && bashCommandHasUnsafeOperators(text)) {
+    if (text && (bashCommandHasUnsafeOperators(text) || bashCommandIsInterpreterStyle(text))) {
       return { showSession: false, target: "", onceOnly: true }
     }
     const prefix = bashAllowPrefix(text)
