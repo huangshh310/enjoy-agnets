@@ -32,9 +32,13 @@ import { discardCreatedSession } from "./discard-created-session"
 import { refreshAllWorkspaces } from "./refresh-workspaces"
 import {
   beginNewSessionCreate,
+  currentCreateToken,
   failNewSessionCreate,
-  finishNewSessionCreate
+  finishNewSessionCreate,
+  isCurrentCreateToken,
+  shouldPublishCreatedSession
 } from "./new-session-create"
+import { absorbAssetsIntoQueuedSend } from "./queue-composer-send"
 
 export type { WorkspaceRow } from "./workspace-row"
 export { refreshAllWorkspaces } from "./refresh-workspaces"
@@ -119,8 +123,23 @@ export async function createAndOpenSession(workspaceId: string, customTitle = "æ
       return
     }
     const store = useChatStore.getState()
+    if (
+      !shouldPublishCreatedSession({
+        token,
+        pendingToken: currentCreateToken(),
+        createdWorkspaceId: workspaceId,
+        storeWorkspaceId: store.workspaceId
+      })
+    ) {
+      if (isCurrentCreateToken(token)) {
+        failNewSessionCreate(token, new Error("SESSION_CREATE_WORKSPACE_CHANGED"))
+      }
+      await getIde().session.delete({ sessionId: session.id }).catch(() => undefined)
+      return
+    }
     const typedDuringCreate = store.composer
     const runtimeId = resolveCreateRuntime(store.runtimeId, store.preferredRuntimeId)
+    absorbAssetsIntoQueuedSend(listComposerAssets())
     publishCreatedSession(store, session, runtimeId)
     if (typedDuringCreate && typedDuringCreate !== composerAtPark) {
       useChatStore.setState({ composer: typedDuringCreate })

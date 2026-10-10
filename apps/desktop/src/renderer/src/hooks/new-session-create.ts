@@ -65,6 +65,26 @@ export function resetNewSessionCreateForTest(): void {
   seq = 0
 }
 
+export function isCurrentCreateToken(token: number): boolean {
+  return pending !== null && pending.token === token
+}
+
+export function currentCreateToken(): number | null {
+  return pending?.token ?? null
+}
+
+/** publish 必须过 token；切走工作区也不得把前台拽回这次创建。 */
+export function shouldPublishCreatedSession(input: {
+  token: number
+  pendingToken: number | null
+  createdWorkspaceId: string
+  storeWorkspaceId: string | null
+}): boolean {
+  if (input.pendingToken !== input.token) return false
+  if (input.storeWorkspaceId && input.storeWorkspaceId !== input.createdWorkspaceId) return false
+  return true
+}
+
 export function shouldQueueComposerSend(sessionId: string | null, createPending: boolean): boolean {
   return createPending || !sessionId
 }

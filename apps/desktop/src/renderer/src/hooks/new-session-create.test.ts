@@ -2,10 +2,13 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
   beginNewSessionCreate,
+  currentCreateToken,
   failNewSessionCreate,
   finishNewSessionCreate,
+  isCurrentCreateToken,
   isNewSessionCreatePending,
   resetNewSessionCreateForTest,
+  shouldPublishCreatedSession,
   shouldQueueComposerSend,
   waitForNewSessionCreate
 } from "./new-session-create.ts"
@@ -48,4 +51,39 @@ test("过期 token 不得解开下一次创建", async () => {
   finishNewSessionCreate(second.token, "ses_new")
   assert.equal(await second.promise, "ses_new")
   assert.equal(isNewSessionCreatePending(), false)
+})
+
+test("过期 token 不得 publish，切走工作区也不得 publish", () => {
+  resetNewSessionCreateForTest()
+  const first = beginNewSessionCreate()
+  const second = beginNewSessionCreate()
+  assert.equal(isCurrentCreateToken(first.token), false)
+  assert.equal(isCurrentCreateToken(second.token), true)
+  assert.equal(
+    shouldPublishCreatedSession({
+      token: first.token,
+      pendingToken: currentCreateToken(),
+      createdWorkspaceId: "ws_a",
+      storeWorkspaceId: "ws_a"
+    }),
+    false
+  )
+  assert.equal(
+    shouldPublishCreatedSession({
+      token: second.token,
+      pendingToken: currentCreateToken(),
+      createdWorkspaceId: "ws_a",
+      storeWorkspaceId: "ws_b"
+    }),
+    false
+  )
+  assert.equal(
+    shouldPublishCreatedSession({
+      token: second.token,
+      pendingToken: currentCreateToken(),
+      createdWorkspaceId: "ws_b",
+      storeWorkspaceId: "ws_b"
+    }),
+    true
+  )
 })

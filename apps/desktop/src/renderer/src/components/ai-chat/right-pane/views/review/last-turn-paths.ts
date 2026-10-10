@@ -1,6 +1,6 @@
 /**
- * 上一轮：最后一条非续跑用户消息之后、**已执行**写盘工具的 path。
- * 拒绝 / 未执行 / 还在审批的工具不算本轮改动。
+ * 上一轮：最后一条非续跑用户消息之后、**已执行或可能已改盘**写盘工具的 path。
+ * 拒绝 / 从未发出 / 带未执行码的不算。output-error / 超时 / 中止要算本轮改动。
  */
 
 import type { ThreadToolCall } from "@enjoy-agents/ipc-contract"
@@ -38,11 +38,11 @@ export function lastUserTurnIndex(messages: ThreadMessage[]): number {
   return -1
 }
 
-/** 本轮有工具但没有一个真正执行（全是拒绝 / 未执行 / 还在审批）。纯聊天不算。 */
+/** 本轮有工具但没有一个真正执行（全是拒绝 / 从未发出 / 带未执行码）。纯聊天不算。 */
 export function lastTurnDeniedOnly(messages: ThreadMessage[]): boolean {
   const tools = toolsAfterLastUser(messages)
   if (tools.length === 0) return false
-  return tools.every((tool) => isToolNotExecuted(tool) || tool.state !== "output-available")
+  return tools.every((tool) => isToolNotExecuted(tool) || isToolNeverSent(tool))
 }
 
 export function pathsFromLastTurn(messages: ThreadMessage[]): string[] {
@@ -105,8 +105,17 @@ export function groupChangedPaths(paths: string[]): Array<{ dir: string; files: 
 
 function pathFromTool(tool: ThreadToolCall): string | null {
   if (!isWriteTool(tool.name)) return null
-  if (isToolNotExecuted(tool) || tool.state !== "output-available") return null
+  if (isToolNotExecuted(tool) || isToolNeverSent(tool)) return null
   return readToolPath(tool.args) ?? readToolPath(tool.result)
+}
+
+/** 还在审批 / 未发出。output-error 可能已改盘，不算未执行。 */
+function isToolNeverSent(tool: ThreadToolCall): boolean {
+  return (
+    tool.state === "approval-requested" ||
+    tool.state === "input-streaming" ||
+    tool.state === "input-available"
+  )
 }
 
 /** Enjoy 本地工具 + CLI/ACP 常见写盘名（Write / StrReplace / apply_patch）。 */

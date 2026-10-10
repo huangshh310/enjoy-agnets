@@ -1,7 +1,7 @@
 /**
  * 会话 IPC：创建、列表、归档、压缩、重命名与字段补丁 (session.patch)。
  */
-import { ipcMain } from "electron"
+import { app, ipcMain } from "electron"
 import {
   SessionCompactInput,
   SessionCreateInput,
@@ -81,7 +81,7 @@ function registerSessionCatalogIpc() {
   ipcMain.handle("session.listArchived", async () => listArchivedSessions())
   ipcMain.handle("session.create", async (_event, raw) => {
     const input = SessionCreateInput.parse(raw)
-    await delaySessionCreateIfDev()
+    await delaySessionCreateIfDev({ packaged: app.isPackaged })
     return createSession(input.workspaceId, input.title || "新对话")
   })
   ipcMain.handle("session.messages", async (_event, raw) =>

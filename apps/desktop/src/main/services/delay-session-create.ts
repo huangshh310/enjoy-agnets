@@ -2,7 +2,8 @@
  * 仅开发 / e2e：拉长 session.create，用来复检「新对话」创建窗内发送。
  * 打包态或没设毫秒时是空操作。
  */
-export function sessionCreateDelayMs(env = process.env): number {
+export function sessionCreateDelayMs(env = process.env, packaged = false): number {
+  if (packaged) return 0
   if (env.ENJOY_E2E_STUB !== "1" && !env.ENJOY_DEV_USERDATA && !env.ENJOY_E2E_USERDATA) {
     return 0
   }
@@ -11,8 +12,8 @@ export function sessionCreateDelayMs(env = process.env): number {
   return Math.min(raw, 10_000)
 }
 
-export async function delaySessionCreateIfDev(): Promise<void> {
-  const ms = sessionCreateDelayMs()
+export async function delaySessionCreateIfDev(opts?: { packaged?: boolean }): Promise<void> {
+  const ms = sessionCreateDelayMs(process.env, opts?.packaged === true)
   if (!ms) return
   await new Promise((resolve) => setTimeout(resolve, ms))
 }

@@ -60,3 +60,25 @@ test("拒绝写盘：run.end 回待办，不进待验收，不弹已完成", () 
     false
   )
 })
+
+test("写盘中途报错：仍列 path，进待验收", () => {
+  const errored: ThreadMessage[] = [
+    msg({ role: "user", content: "write a note" }),
+    msg({
+      role: "assistant",
+      content: "",
+      tools: [
+        {
+          id: "tool_1",
+          name: "write_file",
+          args: { path: "half-written.txt" },
+          state: "output-error",
+          errorText: "ENOSPC"
+        }
+      ]
+    })
+  ]
+  assert.equal(lastTurnDeniedOnly(errored), false)
+  assert.deepEqual(pathsFromLastTurn(errored), ["half-written.txt"])
+  assert.equal(workflowAfterStreamEvent("run.end", { deniedOnly: lastTurnDeniedOnly(errored) }), "needs_review")
+})

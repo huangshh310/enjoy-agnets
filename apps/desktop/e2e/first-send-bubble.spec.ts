@@ -108,3 +108,53 @@ test("新对话创建窗内立刻发送：气泡仍要出现，不能吞掉输�
     await app.close()
   }
 })
+
+test("新对话创建窗内带附件首发：气泡要带附件，不能丢掉", async () => {
+  test.setTimeout(90_000)
+  test.skip(!existsSync(mainEntry), "out/main/index.js missing; run desktop build first")
+  const playwright = await import("playwright")
+  const electron = playwright._electron
+  if (!electron?.launch) {
+    test.skip(true, "playwright electron launcher unavailable")
+    return
+  }
+  const workspace = mkdtempSync(join(tmpdir(), "enjoy-e2e-ws-"))
+  const userData = mkdtempSync(join(tmpdir(), "enjoy-e2e-ud-"))
+  writeFileSync(join(workspace, "readme.md"), "# e2e workspace\n")
+  const app = await electron.launch({
+    args: [mainEntry],
+    cwd: process.cwd(),
+    timeout: 45_000,
+    env: {
+      ...process.env,
+      ENJOY_E2E_STUB: "1",
+      ENJOY_E2E_WORKSPACE: workspace,
+      ENJOY_E2E_USERDATA: userData,
+      ENJOY_DEV_DELAY_SESSION_CREATE_MS: "2000"
+    }
+  })
+  try {
+    const window = await app.firstWindow()
+    await window.waitForSelector("#root", { timeout: 20_000 })
+    await window.waitForFunction(() => (document.querySelector("#root")?.childElementCount ?? 0) > 0, undefined, {
+      timeout: 20_000
+    })
+    const composer = window.locator('[data-testid="composer-input"]')
+    await composer.waitFor({ timeout: 20_000 })
+    await window.locator('[data-testid="sidebar-new-session"]').click()
+    await window.locator('[data-testid="composer-attach"]').setInputFiles({
+      name: "note.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from("attached body")
+    })
+    await window.waitForSelector('[data-testid="composer-asset-chip"]', { timeout: 8_000 })
+    await sendComposer(window, composer, "read this")
+    const stage = window.locator('[data-chat-stage="true"]')
+    await expect(stage.locator("[data-thread-message]").first()).toBeVisible({ timeout: 20_000 })
+    await expect(stage).toContainText("read this")
+    await expect(stage).toContainText("attached:note.txt")
+    await expect(stage).not.toContainText(/What should we do in|在 .* 里做什么/)
+  } finally {
+    await app.close()
+  }
+})

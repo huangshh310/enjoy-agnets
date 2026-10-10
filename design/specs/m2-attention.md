@@ -1,6 +1,6 @@
 # spec/m2-attention
 
-> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（本轮工具全未执行：run.end 不弹已完成、不进待验收）
+> M2 跨会话 Attention：上浮队列 + Permission 置顶 + Inbox 合流。最后更新：2026-10-10（output-error 进待验收；未执行才 omitComplete。审查决策仍在 renderer）
 > 范围：IA + 状态机 + **可开发视觉/组件合同**。皮走 BoardUI；禁 Fake-Status-Chrome / Centered-Marketing-Hero。
 > 产品锁：M2 已落地。之后顺序：M3 → M4。
 > 整段程序明确不做：M5 git worktree、M6 摩擦/digest/团队 MCP、M4 PTY 兜底。
@@ -172,7 +172,7 @@ priority: pending_approval(0) > ask_user(1) > error(2) > complete(3)
 - **隐患**：Inbox「未读」出现大量「运行中」→ 合成 running 被标成未读。正确做法：`synthesize-running-inbox.ts` 固定 `read: true`；`inboxNavCounts.unread` 只计 `!read`。running 不得加成 Attention kind。
 - **隐患**：导航仍按「智能体 / 系统」或「全部 / 运行中」筛 → 旧 IA 残留。正确做法：筛 `InboxCategory` 的 approval / needs_review / failed。
 - **隐患**：Inbox 轨徽标把失败 / 待验收算进去。正确做法：`stripApprovalCount` 只计拍板（pending_approval / ask_user）。
-- **隐患**：一轮 `run.end` 直接标 `done`、刷 complete Inbox，或把失败/取消也一律 `needs_review`（#47 曾一刀切）；写盘被拒绝后仍弹「已完成」并进待验收。正确做法：只有 Agent 宣称收工且本轮有已执行工具（或纯聊天）的 `run.end` 进待验收；本轮工具全未执行则回待办且 `omitComplete`。`run.error` / 用户 abort 保持 `in_progress`，走 Inbox 失败筛（取消文案含 abort →「已取消」）。取消后泵不得再发 `run.end`。只有人点「通过」才能 `done`。产品锁：[../references/m-cbd-f1-review-taxonomy.md](../references/m-cbd-f1-review-taxonomy.md)。
+- **隐患**：一轮 `run.end` 直接标 `done`、刷 complete Inbox，或把失败/取消也一律 `needs_review`（#47 曾一刀切）；写盘被拒绝后仍弹「已完成」并进待验收。正确做法：只有 Agent 宣称收工且本轮有已执行工具（或纯聊天）的 `run.end` 进待验收；本轮工具全未执行则回待办且 `omitComplete`。写盘 `output-error`（无未执行码）可能已改盘，进待验收并列出 path。`run.error` / 用户 abort 保持 `in_progress`，走 Inbox 失败筛（取消文案含 abort →「已取消」）。取消后泵不得再发 `run.end`。只有人点「通过」才能 `done`。产品锁：[../references/m-cbd-f1-review-taxonomy.md](../references/m-cbd-f1-review-taxonomy.md)。审查 / Attention 决策仍在 renderer（迁 main 是下一刀，不在本 PR）。
 - **隐患**：complete 10s TTL 未过又来一张审批，Strip 会同时亮「需处理」和「已完成」。正确做法：新审批进场先 `resolveTerminalSlots`（只收 complete）。拒绝只走 `approval.resolved`，不要把 deny 折成 `run.error` 计需处理。
 - 切会话必须停车，不得 abort 后台轮；同会话刷新不得把正在跑的 run 置 idle。侧栏未决审批只加红点，禁止 `focusAttention` 把用户拽回待批会话（Strip / Inbox / handoff 才跳）。
 - node:test 不要 value-import `@enjoy-agents/ipc-contract` 入口；`foreground-event.ts` 不要用无扩展名再 import 本地模块。
