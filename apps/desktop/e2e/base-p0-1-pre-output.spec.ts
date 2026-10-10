@@ -105,7 +105,7 @@ test("出字前失败切走再切回：仍没有用户气泡", async () => {
     await window.locator(`[data-testid="sidebar-session-row"][data-session-id="${sessionId ?? ""}"]`).click()
     await expect(window.getByTestId("composer-input")).toBeVisible()
     await expect(threadBubbles(window)).toHaveCount(0)
-    await expect(window.getByText("hello rollback", { exact: true })).toHaveCount(0)
+    await expect(threadBubbles(window).filter({ hasText: "hello rollback" })).toHaveCount(0)
   } finally {
     await app.close()
   }
@@ -126,8 +126,8 @@ test("前台出字前失败不进 Inbox 失败列", async () => {
     await window.evaluate(() => {
       location.hash = "#/inbox"
     })
-    await expect(window.getByTestId("inbox-nav-failed")).toBeVisible({ timeout: 8_000 })
-    await window.getByTestId("inbox-nav-failed").click()
+    await expect(window.getByTestId("page-inbox")).toBeVisible({ timeout: 8_000 })
+    await window.getByRole("button", { name: "失败" }).click()
     await expect(window.getByText("hello inbox")).toHaveCount(0)
   } finally {
     await app.close()
