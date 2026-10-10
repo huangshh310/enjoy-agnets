@@ -70,7 +70,9 @@ export function readSecretWrite<T>(raw: unknown, thrown?: unknown): SecretWriteO
   if (raw && typeof raw === "object" && "ok" in raw) {
     const row = raw as { ok: unknown; code?: unknown }
     if (row.ok === false) return { ok: false, code: secretWriteCodeOf(row.code) }
-    if (row.ok === true) return { ok: true, value: secretWriteOkPayload<T & Record<string, unknown>>(raw as { ok: true } & Record<string, unknown>) as T }
+    if (row.ok === true) {
+      return { ok: true, value: secretWriteOkPayload(raw as { ok: true } & Record<string, unknown>) as T }
+    }
   }
   return { ok: true, value: raw as T }
 }
