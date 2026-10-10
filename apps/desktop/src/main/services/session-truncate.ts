@@ -3,6 +3,7 @@
  */
 import { deleteMessageParts } from "@enjoy-agents/db"
 import { getDatabase } from "./database"
+import { clearConversationSessionAllow } from "./conversation-session-allow"
 import { clearInspectPromptSnapshot } from "./inspect-prompt-snapshot"
 import { clearSessionCompaction } from "./session-compaction-store"
 
@@ -26,5 +27,6 @@ export async function truncateSessionFrom(
   }
   await clearSessionCompaction(sessionId)
   clearInspectPromptSnapshot(sessionId)
+  clearConversationSessionAllow(sessionId)
   return { deleted: ids.length }
 }

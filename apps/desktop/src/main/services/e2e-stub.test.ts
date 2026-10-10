@@ -280,8 +280,10 @@ test("桌面 stub 吐日历审批、终端审批、坐标硬拒", async () => {
 })
 
 test("成本夹具 stub finish 带 SDK v7 totalUsage", async () => {
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_DEV_SEED_COST = "1"
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
   try {
     const parts: Record<string, unknown>[] = []
     for await (const part of createE2eStubStream(
@@ -300,6 +302,8 @@ test("成本夹具 stub finish 带 SDK v7 totalUsage", async () => {
   } finally {
     delete process.env.ENJOY_DEV_SEED_COST
     delete process.env.ENJOY_E2E_STUB
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
   }
 })
 
@@ -443,7 +447,9 @@ test("拒绝后继续不再重放同一张审批", async () => {
 
 test("开发态 stub 存储失败夹具：打包态不扔", async () => {
   const previous = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
   process.env.ENJOY_E2E_STUB = "1"
+  process.env.ENJOY_E2E_USERDATA = previousUd || "/tmp/e2e-ud"
   try {
     assert.equal(isE2eStub(false), true)
     assert.equal(isE2eStub(true), false)
@@ -473,5 +479,32 @@ test("开发态 stub 存储失败夹具：打包态不扔", async () => {
     assert.ok(safe.includes("finish"))
   } finally {
     process.env.ENJOY_E2E_STUB = previous
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+  }
+})
+
+test("stub 第三闸：没有隔离 userData 不算 e2e stub", () => {
+  const previousStub = process.env.ENJOY_E2E_STUB
+  const previousUd = process.env.ENJOY_E2E_USERDATA
+  const previousDev = process.env.ENJOY_DEV_USERDATA
+  process.env.ENJOY_E2E_STUB = "1"
+  delete process.env.ENJOY_E2E_USERDATA
+  delete process.env.ENJOY_DEV_USERDATA
+  try {
+    assert.equal(isE2eStub(false), false)
+    process.env.ENJOY_E2E_USERDATA = "/tmp/e2e-ud"
+    assert.equal(isE2eStub(false), true)
+    delete process.env.ENJOY_E2E_USERDATA
+    process.env.ENJOY_DEV_USERDATA = "/tmp/dev-ud"
+    assert.equal(isE2eStub(false), true)
+    assert.equal(isE2eStub(true), false)
+  } finally {
+    if (previousStub == null) delete process.env.ENJOY_E2E_STUB
+    else process.env.ENJOY_E2E_STUB = previousStub
+    if (previousUd == null) delete process.env.ENJOY_E2E_USERDATA
+    else process.env.ENJOY_E2E_USERDATA = previousUd
+    if (previousDev == null) delete process.env.ENJOY_DEV_USERDATA
+    else process.env.ENJOY_DEV_USERDATA = previousDev
   }
 })

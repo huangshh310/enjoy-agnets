@@ -1,5 +1,6 @@
 /**
- * 仅 ENJOY_E2E_STUB=1：不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
+ * 仅 ENJOY_E2E_STUB=1 且未打包、且有隔离 userData（ENJOY_E2E_USERDATA / ENJOY_DEV_USERDATA）：
+ * 不打真实 Provider，吐固定 fullStream，给窗口 E2E 用。
  *
  * 写盘：未放行时只吐 `write_file` 审批卡，**绝不**在允许前写 e2e-stub.txt。
  * 会话策略已放行（`isToolApproved`）时直接 tool-call + 落盘 +「stub-ok allowed write」，不弹卡。
@@ -51,7 +52,8 @@ export type E2eStubStreamOpts = {
 }
 
 export function isE2eStub(packaged = false): boolean {
-  return process.env.ENJOY_E2E_STUB === "1" && packaged !== true
+  const isolated = Boolean(process.env.ENJOY_E2E_USERDATA || process.env.ENJOY_DEV_USERDATA)
+  return process.env.ENJOY_E2E_STUB === "1" && packaged !== true && isolated
 }
 
 /** COST-P3 复检夹具：开发态 stub 才吐带单价的 totalUsage。 */

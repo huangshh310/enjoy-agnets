@@ -14,7 +14,8 @@ const {
   grantConversationToolAllow,
   holdAgentRun,
   getActiveRun,
-  snapshotConversationSessionAllow
+  snapshotConversationSessionAllow,
+  truncateSessionFrom
 } = await import("./conversation-session-allow.behavior.load.ts")
 
 function fakeWindow(): BrowserWindow {
@@ -61,6 +62,23 @@ test("归档会话后本会话允许表清空，新 run 不再种子 write_file"
   assert.ok(run)
   assert.equal(run.sessionApprovedTools.has("write_file"), false)
   deleteActiveRun(runId)
+})
+
+test("截断会话后本会话允许表清空", async () => {
+  const sessionId = "ses_allow_truncate"
+  seedSession(sessionId)
+  const db = getDatabase()
+  db.prepare("INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    "msg_cut",
+    sessionId,
+    "user",
+    "hello",
+    1
+  )
+  grantConversationToolAllow(sessionId, "write_file")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), true)
+  await truncateSessionFrom(sessionId, "msg_cut")
+  assert.equal(snapshotConversationSessionAllow(sessionId).toolNames.has("write_file"), false)
 })
 
 test("永久删除与归档走同一 forget，清 desktop 表和写盘/bash 表", () => {

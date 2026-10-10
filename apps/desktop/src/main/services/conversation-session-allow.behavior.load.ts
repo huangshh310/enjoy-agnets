@@ -4,6 +4,7 @@
 export { deleteActiveRun, getActiveRun, holdAgentRun } from "./agent-run-state.ts"
 export { getDatabase } from "./database.ts"
 export { archiveSession } from "./session-lifecycle.ts"
+export { truncateSessionFrom } from "./session-truncate.ts"
 export {
   clearAllConversationSessionAllows,
   grantConversationToolAllow,

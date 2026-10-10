@@ -191,7 +191,8 @@ export function holdAgentRun(
     // 本会话允许：user 才并写盘/bash 表；心跳/自动化/补跑只并 desktop 表。
     ...seedRunSessionAllow(patch.input.sessionId, {
       denyAnyDesktop: patch.input.denyAnyDesktop,
-      origin: patch.input.origin
+      origin: patch.input.origin,
+      runtimeId: patch.input.runtimeId
     }),
     approvalGate: createApprovalGate(),
     pumping: false,

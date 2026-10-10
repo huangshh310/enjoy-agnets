@@ -212,6 +212,9 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.doesNotMatch(z.studio.instructions.badge, /System Prompt|session\/prompt/)
   assert.equal(z.chat.sourcesSheetFooter, "点文件可以在右侧打开；找不到的文件会就地展开片段。")
   assert.doesNotMatch(z.chat.sourcesSheetFooter, /可聚焦|path|跳转/)
+  assert.match(z.chat.alwaysAllowHint, /本会话放行「\{target\}」。后续每轮生效，重启后失效/)
+  assert.doesNotMatch(z.chat.alwaysAllowHint, /只放行这一条的前缀/)
+  assert.match(z.chat.alwaysAllowOnceHint, /只允许这一次，不记前缀/)
 })
 
 const MOD_COPY_ALLOWLIST = new Set([
