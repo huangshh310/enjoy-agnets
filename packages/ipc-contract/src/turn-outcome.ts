@@ -10,13 +10,13 @@ import { isWriteTypeToolName } from "./tool-names.ts"
 export const TurnWorkflow = z.enum(["todo", "in_progress", "needs_review"])
 export type TurnWorkflow = z.infer<typeof TurnWorkflow>
 
-/** complete=已完成；error=真出错；neutral=用户停 / 归档 / 全未执行，不弹完成也不弹出错。 */
-export const TurnAttention = z.enum(["complete", "error", "neutral"])
+/** complete=已完成；error=真出错；stopped=用户 Stop；neutral=归档 / 全未执行。 */
+export const TurnAttention = z.enum(["complete", "error", "neutral", "stopped"])
 export type TurnAttention = z.infer<typeof TurnAttention>
 
 export const TurnOutcome = z.object({
-  workflow: TurnWorkflow,
-  attention: TurnAttention
+  workflow: TurnWorkflow.catch("todo"),
+  attention: TurnAttention.catch("neutral")
 })
 export type TurnOutcome = z.infer<typeof TurnOutcome>
 
@@ -28,7 +28,7 @@ export type TurnToolSnapshot = {
 }
 
 export type DecideTurnInput = {
-  ended: "end" | "error" | "abort"
+  ended: "end" | "error" | "abort" | "archive"
   tools: readonly TurnToolSnapshot[]
 }
 
@@ -57,17 +57,22 @@ export function sealTurnTools<T extends TurnToolSnapshot>(
 
 /**
  * 真出错：Attention=error；写类已开始则工单进待验收。
- * 用户停 / 归档：Attention=neutral（已停止），写类已开始仍进待验收。
+ * 用户 Stop：Attention=stopped；归档：Attention=neutral。写类已开始仍进待验收。
  * 全拒绝或从未发出：回待办、Attention 中性。
  * 只读轮：回待办，Attention 仍可完成。
  * 写类已执行或执行中被掐：待验收 + 完成。
  */
 export function decideTurnOutcome(input: DecideTurnInput): TurnOutcome {
-  const tools = sealTurnTools(input.tools, { aborted: input.ended === "abort" })
+  const tools = sealTurnTools(input.tools, {
+    aborted: input.ended === "abort" || input.ended === "archive"
+  })
   const acted = tools.filter((tool) => tool.state !== "approval-requested" && !isToolNotExecuted(tool))
   const wrote = acted.some((tool) => isWriteTypeToolName(tool.name))
-  if (input.ended === "abort") {
+  if (input.ended === "archive") {
     return { workflow: wrote ? "needs_review" : "in_progress", attention: "neutral" }
+  }
+  if (input.ended === "abort") {
+    return { workflow: wrote ? "needs_review" : "in_progress", attention: "stopped" }
   }
   if (input.ended === "error") {
     return { workflow: wrote ? "needs_review" : "in_progress", attention: "error" }

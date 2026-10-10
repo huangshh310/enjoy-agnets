@@ -9,13 +9,14 @@ import {
   isToolNotExecuted,
   readApprovalNotExecutedCode
 } from "@enjoy-agents/ipc-contract/approval-not-executed"
+import { toolAbortKind } from "@enjoy-agents/ipc-contract/desktop-notify"
 
 type Translate = (key: string) => string
 
 export function isDeniedTool(
   tool: Pick<ThreadToolCall, "state" | "result" | "errorText"> | undefined
 ): boolean {
-  return isToolNotExecuted(tool) && !isStaleObservationAfterAllow(tool)
+  return isToolNotExecuted(tool) && !isStaleObservationAfterAllow(tool) && toolAbortKind(tool) !== "neutral"
 }
 
 export function isSkippedTool(

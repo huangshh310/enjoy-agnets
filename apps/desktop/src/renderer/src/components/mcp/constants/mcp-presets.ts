@@ -9,6 +9,10 @@ import {
   RiGlobalLine,
   RiSparklingLine
 } from "@remixicon/react"
+import {
+  CURATED_MCP_FINGERPRINTS,
+  type CuratedMcpFingerprint
+} from "@enjoy-agents/ipc-contract/mcp-curated"
 import type { TranslateFn } from "@renderer/i18n"
 import {
   BraveIcon,
@@ -78,7 +82,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500",
     descKey: "pages.mcp.presetFilesystemDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-filesystem .",
     featKeys: [
       "pages.mcp.presetFilesystemFeat0",
       "pages.mcp.presetFilesystemFeat1",
@@ -98,7 +101,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-chart-5/10 text-chart-5 dark:text-chart-5",
     descKey: "pages.mcp.presetEverythingDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-everything",
     featKeys: [
       "pages.mcp.presetEverythingFeat0",
       "pages.mcp.presetEverythingFeat1",
@@ -118,7 +120,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-background-secondary-default/10 text-text-secondary dark:text-text-secondary",
     descKey: "pages.mcp.presetGithubDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-github",
     envDescKey: "pages.mcp.presetGithubEnv",
     envTemplates: [
       {
@@ -147,7 +148,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500",
     descKey: "pages.mcp.presetPostgresDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb",
     featKeys: [
       "pages.mcp.presetPostgresFeat0",
       "pages.mcp.presetPostgresFeat1",
@@ -167,7 +167,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-chart-1/10 text-chart-1 dark:text-chart-1",
     descKey: "pages.mcp.presetSqliteDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-sqlite --file ./app.db",
     featKeys: [
       "pages.mcp.presetSqliteFeat0",
       "pages.mcp.presetSqliteFeat1",
@@ -187,7 +186,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text",
     descKey: "pages.mcp.presetPuppeteerDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-puppeteer",
     featKeys: [
       "pages.mcp.presetPuppeteerFeat0",
       "pages.mcp.presetPuppeteerFeat1",
@@ -207,7 +205,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text",
     descKey: "pages.mcp.presetBraveDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-brave-search",
     envDescKey: "pages.mcp.presetBraveEnv",
     envTemplates: [
       {
@@ -236,7 +233,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500",
     descKey: "pages.mcp.presetMemoryDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-memory",
     featKeys: [
       "pages.mcp.presetMemoryFeat0",
       "pages.mcp.presetMemoryFeat1",
@@ -256,7 +252,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500",
     descKey: "pages.mcp.presetDockerDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-docker",
     featKeys: [
       "pages.mcp.presetDockerFeat0",
       "pages.mcp.presetDockerFeat1",
@@ -276,7 +271,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary",
     descKey: "pages.mcp.presetRedisDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-redis redis://localhost:6379",
     featKeys: [
       "pages.mcp.presetRedisFeat0",
       "pages.mcp.presetRedisFeat1",
@@ -296,7 +290,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text",
     descKey: "pages.mcp.presetGitlabDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-gitlab",
     envDescKey: "pages.mcp.presetGitlabEnv",
     envTemplates: [
       {
@@ -325,7 +318,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text",
     descKey: "pages.mcp.presetSlackDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-slack",
     envDescKey: "pages.mcp.presetSlackEnv",
     envTemplates: [
       {
@@ -354,7 +346,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-background-secondary-default/10 text-text-secondary dark:text-text-secondary",
     descKey: "pages.mcp.presetNotionDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-notion",
     envDescKey: "pages.mcp.presetNotionEnv",
     envTemplates: [
       {
@@ -383,7 +374,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500",
     descKey: "pages.mcp.presetLinearDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-linear",
     envDescKey: "pages.mcp.presetLinearEnv",
     envTemplates: [
       {
@@ -412,7 +402,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-chart-5/10 text-chart-5 dark:text-chart-5",
     descKey: "pages.mcp.presetSentryDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-sentry",
     envDescKey: "pages.mcp.presetSentryEnv",
     envTemplates: [
       {
@@ -441,7 +430,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-chart-1/10 text-chart-1 dark:text-chart-1",
     descKey: "pages.mcp.presetFetchDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-fetch",
     featKeys: [
       "pages.mcp.presetFetchFeat0",
       "pages.mcp.presetFetchFeat1",
@@ -461,7 +449,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-background-tertiary-error/10 text-text-error-primary dark:text-text-error-primary",
     descKey: "pages.mcp.presetSequentialThinkingDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-sequential-thinking",
     featKeys: [
       "pages.mcp.presetSequentialThinkingFeat0",
       "pages.mcp.presetSequentialThinkingFeat1",
@@ -481,7 +468,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-status-yellow-background/10 text-status-yellow-text dark:text-status-yellow-text",
     descKey: "pages.mcp.presetGitDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-git",
     featKeys: [
       "pages.mcp.presetGitFeat0",
       "pages.mcp.presetGitFeat1",
@@ -501,7 +487,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-accent-500/10 text-accent-500 dark:text-accent-500",
     descKey: "pages.mcp.presetMysqlDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-mysql mysql://root@localhost/db",
     featKeys: [
       "pages.mcp.presetMysqlFeat0",
       "pages.mcp.presetMysqlFeat1",
@@ -521,7 +506,6 @@ const PRESET_DEFS: PresetDef[] = [
     badgeColorClass: "bg-state-success-text/10 text-state-success-text dark:text-state-success-text",
     descKey: "pages.mcp.presetPlaywrightDesc",
     transport: "stdio",
-    command: "npx -y @modelcontextprotocol/server-playwright",
     featKeys: [
       "pages.mcp.presetPlaywrightFeat0",
       "pages.mcp.presetPlaywrightFeat1",
@@ -532,6 +516,21 @@ const PRESET_DEFS: PresetDef[] = [
     docsUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/playwright"
   }
 ]
+
+const FINGERPRINT_BY_ID = new Map<string, CuratedMcpFingerprint>(
+  CURATED_MCP_FINGERPRINTS.map((item) => [item.id, item])
+)
+
+function withSharedFingerprint(def: PresetDef): PresetDef {
+  const fingerprint = FINGERPRINT_BY_ID.get(def.id)
+  if (!fingerprint) return def
+  return {
+    ...def,
+    transport: fingerprint.transport,
+    command: fingerprint.command ?? def.command,
+    url: fingerprint.url ?? def.url
+  }
+}
 
 function localizePreset(def: PresetDef, t: TranslateFn): McpPluginPreset {
   return {
@@ -557,7 +556,7 @@ function localizePreset(def: PresetDef, t: TranslateFn): McpPluginPreset {
 }
 
 export function getFeaturedMcpPresets(t: TranslateFn): McpPluginPreset[] {
-  return PRESET_DEFS.map((def) => localizePreset(def, t))
+  return PRESET_DEFS.map((def) => localizePreset(withSharedFingerprint(def), t))
 }
 
 /** 测试用结构数据：名称回落为键路径，协议与命令仍可用。 */

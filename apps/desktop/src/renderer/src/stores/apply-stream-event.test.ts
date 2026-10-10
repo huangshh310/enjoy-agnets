@@ -69,6 +69,22 @@ test("用户停 run.error 不写红条，工具封成已停止", () => {
   )
 })
 
+test("补跑超时走中性 notice，不写红条", () => {
+  const patch = reduceStreamEvent(
+    [],
+    {
+      type: "run.error",
+      runId: "run_1",
+      message: "catch_up_approval_timeout",
+      turn: { workflow: "in_progress", attention: "neutral" }
+    },
+    "run_1"
+  )
+  assert.equal(patch.error, null)
+  assert.equal(patch.notice, "catch_up_approval_timeout")
+  assert.equal(patch.running, false)
+})
+
 test("未执行类 run.error 不写红条，库里 output-error 不改写", () => {
   const patch = reduceStreamEvent(assistantWithDeniedTool(), {
     type: "run.error",

@@ -5,8 +5,17 @@ import type { AttentionItem } from "@renderer/stores/attention/attention.types.t
 import type { RepositoryNode } from "@renderer/stores/chat-store.types.ts"
 import { zhChat } from "../../../i18n/catalogs/zh/chat.ts"
 import type { InboxNotification } from "../inbox.types.ts"
-import { filterInbox, inboxFromAttention, inboxNavCounts, resolveSelected } from "./filter-inbox.ts"
-import { synthesizeNeedsReviewInbox } from "./synthesize-needs-review-inbox.ts"
+import {
+  filterInbox,
+  inboxFromAttention,
+  inboxFromPendingApprovals,
+  inboxNavCounts,
+  resolveSelected
+} from "./filter-inbox.ts"
+import {
+  inboxFromNeedsReviewSessions,
+  synthesizeNeedsReviewInbox
+} from "./synthesize-needs-review-inbox.ts"
 import { groupInbox, inboxGroupId, inboxTimeParts, startOfLocalDay } from "./inbox-time.ts"
 
 const t = (path: string) => path
@@ -71,6 +80,73 @@ test("已决审批与已归档会话不进拍板", () => {
   assert.equal(items.length, 1)
   assert.equal(items[0]?.sessionId, "ses_live")
   assert.equal(inboxNavCounts(items).approval, 1)
+})
+
+test("空会话列表不得把所有 Attention 当成活着", () => {
+  const items = inboxFromAttention(
+    [
+      attention({
+        id: "ses_ghost:pending_approval",
+        sessionId: "ses_ghost",
+        kind: "pending_approval",
+        status: "active",
+        summary: "幽灵 · write_file"
+      })
+    ],
+    { t, readIds: new Set(), hiddenIds: new Set(), repositories: [] }
+  )
+  assert.equal(items.length, 0)
+  assert.equal(inboxNavCounts(items).approval, 0)
+})
+
+test("拍板行来自 main 未决，不靠 Attention 槽", () => {
+  const rows = inboxFromPendingApprovals(
+    [
+      {
+        id: "apr_main",
+        runId: "run_1",
+        sessionId: "ses_live",
+        workspaceId: "ws",
+        sessionTitle: "活着",
+        name: "write_file",
+        toolCallId: "tool_1",
+        createdAt: 2
+      }
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  const fromAttention = inboxFromAttention(
+    [
+      attention({
+        id: "ses_live:pending_approval",
+        sessionId: "ses_live",
+        kind: "pending_approval",
+        status: "active",
+        summary: "活着 · write_file"
+      })
+    ],
+    {
+      t,
+      readIds: new Set(),
+      hiddenIds: new Set(),
+      omitAttentionApprovals: true,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_live", name: "活着", kind: "session", parentId: "ws", updatedAt: 2 }
+      ]
+    }
+  )
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.id, "apr:apr_main")
+  assert.equal(fromAttention.length, 0)
 })
 
 test("complete 不进安静 Inbox，不占拍板徽标", () => {
@@ -187,6 +263,73 @@ test("Attention error 含 abort 标已取消，合成待验收只看 workflowSta
     workflowStatus: "in_progress"
   }
   assert.equal(synthesizeNeedsReviewInbox({ repositories: [failedSession], t, now: 5 }).length, 0)
+})
+
+test("待验收只认 main 的 needs_review，不看 git dirty / 裸 run.end", () => {
+  const fromGitOrEnd = inboxFromNeedsReviewSessions([], {
+    t,
+    now: 10,
+    repositories: [
+      { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+      { id: "ses_dirty", name: "脏仓", kind: "session", parentId: "ws", updatedAt: 8 }
+    ]
+  })
+  assert.equal(fromGitOrEnd.length, 0)
+  const rows = inboxFromNeedsReviewSessions(
+    [
+      {
+        id: "ses_r",
+        workspaceId: "ws",
+        title: "登录页改版",
+        updatedAt: 9,
+        workflowStatus: "needs_review"
+      }
+    ],
+    {
+      t,
+      now: 10,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_r", name: "登录页改版", kind: "session", parentId: "ws", updatedAt: 9 }
+      ]
+    }
+  )
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0]?.sessionId, "ses_r")
+  assert.equal(inboxNavCounts(rows).needs_review, 1)
+})
+
+test("待验收与拍板一样要和会话列表求交，空列表 fail-closed", () => {
+  const row = {
+    id: "ses_ghost",
+    workspaceId: "ws",
+    title: "幽灵",
+    updatedAt: 9,
+    workflowStatus: "needs_review" as const
+  }
+  assert.equal(
+    inboxFromNeedsReviewSessions([row], { t, now: 10, repositories: [] }).length,
+    0
+  )
+  assert.equal(
+    inboxFromNeedsReviewSessions([row], {
+      t,
+      now: 10,
+      repositories: [{ id: "ws", name: "app", kind: "workspace", updatedAt: 1 }]
+    }).length,
+    0
+  )
+  assert.equal(
+    inboxFromNeedsReviewSessions([row], {
+      t,
+      now: 10,
+      repositories: [
+        { id: "ws", name: "app", kind: "workspace", updatedAt: 1 },
+        { id: "ses_ghost", name: "幽灵", kind: "session", parentId: "ws", updatedAt: 9 }
+      ]
+    }).length,
+    1
+  )
 })
 
 test("待验收从会话 workflowStatus 合成，不进拍板计数", () => {

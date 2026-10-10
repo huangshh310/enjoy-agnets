@@ -3,6 +3,9 @@
  * 待审批只含应用显示名 + 粗动作；结束态 completed / stopped / errored。
  */
 import { z } from "zod"
+import { CATCH_UP_APPROVAL_TIMEOUT } from "./automations-missed.ts"
+
+export { CATCH_UP_APPROVAL_TIMEOUT }
 
 /**
  * abortAgent 写入 `run.error.message` 的唯一信号。
@@ -16,8 +19,12 @@ export const USER_ABORTED_CODE = "user_aborted"
 /** 泵真实出错结清未决审批：不是用户 Stop，工具行走出错，禁止标已停止。 */
 export const RUN_FAILED_CODE = "run_failed"
 
-/** approval.resolved.code 只认这两档。 */
-export const APPROVAL_RESOLVED_CODES = [USER_ABORTED_CODE, RUN_FAILED_CODE] as const
+/** approval.resolved.code：Stop / 泵出错 / 补跑超时。 */
+export const APPROVAL_RESOLVED_CODES = [
+  USER_ABORTED_CODE,
+  RUN_FAILED_CODE,
+  CATCH_UP_APPROVAL_TIMEOUT
+] as const
 export type ApprovalResolvedCode = (typeof APPROVAL_RESOLVED_CODES)[number]
 
 export function toolHasResultCode(
@@ -33,9 +40,10 @@ export function toolHasResultCode(
 /** 用户停 → 已停止；泵出错结清 → 出错。禁止把 run_failed 当成已拒绝。 */
 export function toolAbortKind(
   tool?: { result?: unknown; errorText?: string }
-): "stopped" | "error" | undefined {
+): "stopped" | "error" | "neutral" | undefined {
   if (toolHasResultCode(tool, USER_ABORTED_CODE)) return "stopped"
   if (toolHasResultCode(tool, RUN_FAILED_CODE)) return "error"
+  if (toolHasResultCode(tool, CATCH_UP_APPROVAL_TIMEOUT)) return "neutral"
   return undefined
 }
 

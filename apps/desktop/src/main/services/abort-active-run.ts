@@ -1,7 +1,7 @@
 /**
  * 内存泵中止：归档与 abortAgent 共用，避免两份拷贝。
  * 不在这里静态拉 open-coding-stream，测试 strip-types 才不会进 ACP。
- * 用户 Stop / 归档都不是出错：Attention 中性，码 user_aborted，不写 error 槽。
+ * 用户 Stop：Attention=stopped；归档：Attention=neutral。码 user_aborted，不写 error 槽。
  */
 import { sealAbandonedTools } from "@enjoy-agents/ipc-contract"
 import { USER_ABORTED_CODE } from "@enjoy-agents/ipc-contract/desktop-notify"
@@ -30,7 +30,7 @@ export function abortActiveRunMemory(
       status: "error",
       summary: archived ? "archived" : USER_ABORT_MESSAGE
     })
-    const turn = turnOutcomeForRun(run, "abort")
+    const turn = turnOutcomeForRun(run, archived ? "archive" : "abort")
     if (!archived) persistTurnWorkflow(run.input.sessionId, turn)
     emitEvent(run.window, {
       type: "run.error",

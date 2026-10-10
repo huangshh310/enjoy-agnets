@@ -223,6 +223,7 @@ export const enChat = {
   surfaceDesktopInterceptBody: "Explore cannot control local apps. Nothing is silently connected. Switch to Execute, then try again; the first action still asks you.",
   sourceChipMore: "+{count}",
   sourceSkillLabel: "Skill · {name}",
+  sourceKnowledgeLabel: "Knowledge",
   sourcesSheetTitle: "This turn",
   sourcesSheetMeta: "{n} items · Web sources not available yet",
   sourcesSheetClose: "Close",
@@ -615,6 +616,9 @@ export const enChat = {
 
   errorTitle: "Run failed / model response interrupted",
   errorGenericHint: "That didn't go through. Please try again.",
+  restoreNoMatching: "This run could not match the original approval after restart, so it ended.",
+  runFailed: "This run did not finish.",
+  catchUpApprovalTimeout: "Catch-up waited for approval too long and did not run",
   sendFailedRestore: "That message didn't send. It's back in the input.",
   toolDenied: "Declined, not run this time",
   toolArgsMismatch: "Approval arguments changed; not run this time.",

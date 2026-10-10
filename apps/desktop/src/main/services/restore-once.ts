@@ -15,3 +15,7 @@ export function claimRestoreWaitingOnce(): boolean {
   waitingClaimed = true
   return true
 }
+
+export function resetRestoreWaitingOnceForTests(): void {
+  waitingClaimed = false
+}

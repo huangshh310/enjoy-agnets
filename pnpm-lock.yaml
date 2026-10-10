@@ -702,6 +702,9 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@enjoy-agents/ipc-contract':
+        specifier: workspace:*
+        version: link:../ipc-contract
       ai:
         specifier: 'catalog:'
         version: 7.0.85(zod@4.5.2)
