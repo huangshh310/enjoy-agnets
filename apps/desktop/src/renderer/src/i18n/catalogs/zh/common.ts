@@ -9,6 +9,7 @@ export const zhCommon = {
   searchSettings: "搜索设置…",
   noMatchingItems: "没有匹配项。",
   cancel: "取消",
+  undo: "撤销",
   save: "保存",
   close: "关闭",
   retry: "重新生成",

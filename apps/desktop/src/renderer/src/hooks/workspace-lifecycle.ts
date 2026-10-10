@@ -7,6 +7,8 @@ import { useChatStore } from "../stores/chat-store"
 import { refreshAllWorkspaces } from "./use-agent-session"
 import { runRemoveProject, type RemovedWorkspace } from "./remove-project"
 import { connectSshIfNeeded } from "./ssh-session-switch"
+import { sessionTitleFromStore } from "./archive-session-copy"
+import { notifySessionArchived } from "./archive-session-toast"
 import { notifySwitchedProject } from "./switched-project-toast"
 import { landEmptyHome, pruneHistoryPages, releaseHistoryPages } from "@renderer/hooks/nav-history/nav-history-controller"
 import { showEmptyHistoryChat } from "@renderer/hooks/nav-history/show-empty-chat"
@@ -16,10 +18,13 @@ import type { WorkspaceRow } from "./workspace-row"
 
 export async function archiveCurrentSession(sessionId: string) {
   if (!hasIde()) return
+  const title = sessionTitleFromStore(sessionId, useChatStore.getState().repositories)
   await getIde().session.archive({ sessionId })
   await refreshAllWorkspaces()
   await queryClient.invalidateQueries({ queryKey: ["workspaces"] })
+  await queryClient.invalidateQueries({ queryKey: ["archived-sessions"] })
   await releaseHistoryPages([historySessionId(sessionId)])
+  notifySessionArchived(sessionId, title, () => void unarchiveSession(sessionId))
 }
 
 export async function unarchiveSession(sessionId: string) {

@@ -1,28 +1,23 @@
 /**
- * 侧栏项目与会话列表 (Sidebar Projects & Repositories):
- * 参考 Codex 桌面端交互：支持项目分组/单列表切换、多工作区折叠树、项目信息卡片、排序及创建项目弹窗。
+ * 侧栏项目与会话列表：按项目 / 单列表 / 状态组。按项目不复用「最近」。
  */
 import { useMemo, useState } from "react"
-import { RiAddLine, RiFolder6Line, RiMoreFill } from "@remixicon/react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
+import { RiAddLine, RiFolder6Line } from "@remixicon/react"
 import { SidebarActiveSessions } from "@renderer/components/ai-chat/sidebar/sidebar-active-sessions"
+import { SidebarOrganizeMenu } from "@renderer/components/ai-chat/sidebar/sidebar-organize-menu"
 import { SidebarSessionRow } from "@renderer/components/ai-chat/sidebar/sidebar-session-row"
 import { SidebarWorkspaceRow } from "@renderer/components/ai-chat/sidebar/sidebar-workspace-row"
 import { SidebarStatusGroups } from "@renderer/components/ai-chat/sidebar/sidebar-status-groups"
+import {
+  orphanSessions,
+  sessionsForWorkspace,
+  workspaceIdsOf
+} from "@renderer/components/ai-chat/sidebar/project-session-groups"
 import { sortSessions } from "@renderer/components/ai-chat/sidebar/sort-sessions"
 import { CreateProjectDialog } from "@renderer/components/workspace/create-project-dialog"
 import { archiveCurrentSession } from "@renderer/hooks/workspace-lifecycle"
 import { useChatStore, type RepositoryNode } from "@renderer/stores/chat-store"
 import { useT } from "@renderer/i18n"
-
 
 export function SidebarRepos({
   repositories,
@@ -43,10 +38,8 @@ export function SidebarRepos({
   const t = useT()
   const currentWorkspaceId = useChatStore((state) => state.workspaceId)
   const grouping = useChatStore((state) => state.sidebarGrouping)
-  const setGrouping = useChatStore((state) => state.setSidebarGrouping)
-  const sortOrder = useChatStore((state) => state.sessionSortOrder)
-  const setSortOrder = useChatStore((state) => state.setSessionSortOrder)
   const pinnedIds = useChatStore((state) => state.pinnedWorkspaceIds)
+  const sortOrder = useChatStore((state) => state.sessionSortOrder)
   const workspaces = useMemo(() => {
     const wsNodes = repositories.filter((node) => node.kind === "workspace")
     return [...wsNodes].sort((a, b) => {
@@ -61,77 +54,22 @@ export function SidebarRepos({
     const list = repositories.filter((node) => node.kind === "session")
     return sortSessions(list, { sortOrder })
   }, [repositories, sortOrder])
+  const looseSessions = useMemo(
+    () => orphanSessions(allSessions, workspaceIdsOf(repositories)),
+    [allSessions, repositories]
+  )
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
-      {/* 1. Header with Projects / Repositories Title and Codex-style actions */}
       <div className="flex items-center justify-between px-2 pt-2">
         <span className="text-body-medium font-semibold text-text-primary">{t("chat.projects")}</span>
-
         <div className="flex items-center gap-0.5">
-          {/* More options menu (整理侧边栏 & 聊天排序方式) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label={t("chat.organizeProjects")}
-                className="flex size-6 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
-              >
-                <RiMoreFill className="size-4" />
-              </button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent
-              align="end"
-              side="bottom"
-              className="w-48 rounded-xl bg-background-primary-default shadow-card border border-border-button-default"
-            >
-              <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
-                {t("chat.organizeSidebar")}
-              </DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={grouping}
-                onValueChange={(val) => setGrouping(val as "project" | "flat" | "status")}
-              >
-                <DropdownMenuRadioItem value="project" className="text-body-medium">
-                  {t("chat.groupByProject")}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="status" className="text-body-medium">
-                  {t("chat.groupByStatus")}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="flat" className="text-body-medium">
-                  {t("chat.groupFlat")}
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-
-              <DropdownMenuSeparator />
-
-              <DropdownMenuLabel className="text-caption-2-medium text-text-tertiary">
-                {t("chat.sessionSort")}
-              </DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={sortOrder}
-                onValueChange={(val) => setSortOrder(val as "priority" | "updated" | "manual")}
-              >
-                <DropdownMenuRadioItem value="priority" className="text-body-medium">
-                  {t("chat.sortPriority")}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="updated" className="text-body-medium">
-                  {t("chat.sortUpdated")}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="manual" className="text-body-medium">
-                  {t("chat.sortManual")}
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Create Project + Button */}
+          <SidebarOrganizeMenu />
           <button
             type="button"
             title={t("chat.createProject")}
             onClick={() => setCreateDialogOpen(true)}
-            className="flex size-6 items-center justify-center rounded-md text-text-tertiary hover:bg-background-secondary-hover hover:text-text-primary transition-colors cursor-pointer"
+            className="flex size-6 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-background-secondary-hover hover:text-text-primary cursor-pointer"
           >
             <RiAddLine className="size-4" />
           </button>
@@ -145,19 +83,8 @@ export function SidebarRepos({
         formatTime={formatTime}
       />
 
-      {/* 2. Workspaces Tree / Status Groups / Flat List */}
       {workspaces.length === 0 ? (
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
-          <RiFolder6Line className="size-6 text-text-tertiary" />
-          <p className="text-caption-1-medium text-text-secondary">{t("chat.noProjects")}</p>
-          <button
-            type="button"
-            onClick={() => setCreateDialogOpen(true)}
-            className="text-caption-2-medium text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
-          >
-            {t("chat.addProject")}
-          </button>
-        </div>
+        <EmptyProjects onAdd={() => setCreateDialogOpen(true)} />
       ) : grouping === "status" ? (
         <SidebarStatusGroups
           sessions={allSessions}
@@ -184,33 +111,93 @@ export function SidebarRepos({
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-1">
-          {workspaces.map((workspace) => (
-            <SidebarWorkspaceRow
-              key={workspace.id}
-              workspace={workspace}
-              sessions={repositories.filter((node) => node.parentId === workspace.id)}
-              expandedIds={expandedIds}
-              currentWorkspaceId={currentWorkspaceId}
-              sessionId={sessionId}
-              isPinned={pinnedIds.includes(workspace.id)}
-              onToggleExpanded={onToggleExpanded}
-              onSelectSession={onSelectSession}
-              formatTime={formatTime}
-            />
-          ))}
-        </div>
+        <ProjectSessionTree
+          workspaces={workspaces}
+          allSessions={allSessions}
+          looseSessions={looseSessions}
+          expandedIds={expandedIds}
+          currentWorkspaceId={currentWorkspaceId}
+          sessionId={sessionId}
+          pinnedIds={pinnedIds}
+          onToggleExpanded={onToggleExpanded}
+          onSelectSession={onSelectSession}
+          formatTime={formatTime}
+        />
       )}
 
-      {/* 3. Codex "最近" (Recent) Quick Section (if multiple sessions exist) */}
-      {allSessions.length > 2 && grouping === "project" ? (
-        <div className="mt-2 flex flex-col gap-1 border-t border-separator-border/40 pt-2">
-          <span className="px-2 text-caption-2-medium uppercase tracking-wider text-text-tertiary font-semibold">
-            {t("chat.recent")}
+      <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+    </div>
+  )
+}
+
+function EmptyProjects({ onAdd }: { onAdd: () => void }) {
+  const t = useT()
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border-button-default p-4 text-center">
+      <RiFolder6Line className="size-6 text-text-tertiary" />
+      <p className="text-caption-1-medium text-text-secondary">{t("chat.noProjects")}</p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="text-caption-2-medium text-accent-600 dark:text-accent-400 hover:underline cursor-pointer"
+      >
+        {t("chat.addProject")}
+      </button>
+    </div>
+  )
+}
+
+function ProjectSessionTree({
+  workspaces,
+  allSessions,
+  looseSessions,
+  expandedIds,
+  currentWorkspaceId,
+  sessionId,
+  pinnedIds,
+  onToggleExpanded,
+  onSelectSession,
+  formatTime
+}: {
+  workspaces: RepositoryNode[]
+  allSessions: RepositoryNode[]
+  looseSessions: RepositoryNode[]
+  expandedIds: string[]
+  currentWorkspaceId: string | null
+  sessionId: string | null
+  pinnedIds: string[]
+  onToggleExpanded: (id: string) => void
+  onSelectSession: (id: string) => void
+  formatTime: (timestamp: number) => string
+}) {
+  const t = useT()
+  return (
+    <div className="flex flex-col gap-1">
+      {workspaces.map((workspace) => (
+        <SidebarWorkspaceRow
+          key={workspace.id}
+          workspace={workspace}
+          sessions={sessionsForWorkspace(allSessions, workspace.id)}
+          expandedIds={expandedIds}
+          currentWorkspaceId={currentWorkspaceId}
+          sessionId={sessionId}
+          isPinned={pinnedIds.includes(workspace.id)}
+          onToggleExpanded={onToggleExpanded}
+          onSelectSession={onSelectSession}
+          formatTime={formatTime}
+        />
+      ))}
+      {looseSessions.length > 0 ? (
+        <div
+          data-testid="other-chats-group"
+          className="mt-2 flex flex-col gap-1 border-t border-separator-border/40 pt-2"
+        >
+          <span className="px-2 text-caption-2-medium font-semibold text-text-tertiary">
+            {t("chat.otherChats")}
           </span>
-          {allSessions.slice(0, 3).map((session) => (
+          {looseSessions.map((session) => (
             <SidebarSessionRow
-              key={`recent-${session.id}`}
+              key={session.id}
               sessionId={session.id}
               name={session.name}
               active={session.id === sessionId}
@@ -225,12 +212,6 @@ export function SidebarRepos({
           ))}
         </div>
       ) : null}
-
-      {/* 4. Create Project Dialog */}
-      <CreateProjectDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
     </div>
   )
 }

@@ -9,7 +9,12 @@ import {
   type AppToastTone
 } from "./app-toast-policy"
 
-export { APP_TOAST_MS, resolveAppToastDuration, shouldPersistAppToast } from "./app-toast-policy"
+export {
+  APP_TOAST_MS,
+  ARCHIVE_UNDO_TOAST_MS,
+  resolveAppToastDuration,
+  shouldPersistAppToast
+} from "./app-toast-policy"
 export type { AppToastAction, AppToastTone }
 
 export type ShowAppToastOptions = {
