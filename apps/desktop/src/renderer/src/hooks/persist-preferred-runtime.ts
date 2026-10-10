@@ -8,3 +8,14 @@ export function applyPreferredRuntime(
 ): void {
   store.setPreferredRuntimeId(runtimeId)
 }
+
+/** 先写密钥；成功后才改偏好。失败不回滚，显式旗不得提前落下。 */
+export async function persistPreferredAfterSecret(input: {
+  writeSecret?: () => Promise<void>
+  applyPreferred: () => void
+  writePreferences: () => Promise<void>
+}): Promise<void> {
+  if (input.writeSecret) await input.writeSecret()
+  input.applyPreferred()
+  await input.writePreferences()
+}
