@@ -64,7 +64,7 @@ export async function computeChatReadiness(): Promise<ChatReadiness> {
     providers,
     live,
     loggedInToolIds(listed),
-    defaultChatRouteAssembleInput()
+    { ...defaultChatRouteAssembleInput(), hasEnjoySecret: enjoySecret }
   )
   return rememberSnapshot(withSecretAndAdopt(snapshot, enjoySecret))
 }

@@ -1,6 +1,7 @@
 /**
  * 账号 / 额度 / 动态模型。默认读 5 分钟缓存（含磁盘），refresh 才打官方接口。
  */
+import { app } from "electron"
 import { isCustomAgentId, type AgentToolId, type InspectAgentToolResult } from "@enjoy-agents/ipc-contract"
 import { AGENT_TOOL_PRESETS, catalogFor, probeBinaries } from "@enjoy-agents/agent-harness"
 import { safeCustomBinaryPath } from "../agent-tools-guard"
@@ -37,7 +38,7 @@ export async function inspectAgentTool(
   id: AgentToolId,
   refresh = false
 ): Promise<InspectAgentToolResult> {
-  const stub = e2eStubEngineInspect(id)
+  const stub = e2eStubEngineInspect(id, process.env, app.isPackaged)
   if (stub) return stub
   const hit = readInspectCache(id)
   if (!refresh && isInspectFresh(hit) && hit) return hit.value

@@ -3,19 +3,28 @@
  */
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { adoptedRouteLabel, planAdoptedDefaultRoute } from "./default-chat-route.ts"
+import {
+  adoptedRouteLabel,
+  formatAdoptedRouteFace,
+  planAdoptedDefaultRoute
+} from "./default-chat-route.ts"
 import { buildChatReadiness } from "@enjoy-agents/ipc-contract/chat-readiness"
 
 test("第一次从无到有才 adopt；已锁或显式跳过", () => {
   assert.equal(
-    planAdoptedDefaultRoute({ ready: true, routeRuntimeId: "claude" }),
+    planAdoptedDefaultRoute({
+      ready: true,
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: true
+    }),
     "adopt"
   )
   assert.equal(
     planAdoptedDefaultRoute({
       ready: true,
       routeRuntimeId: "claude",
-      adoptedAt: "1"
+      adoptedAt: "1",
+      hadNoUsableRoute: true
     }),
     "skip"
   )
@@ -23,11 +32,32 @@ test("第一次从无到有才 adopt；已锁或显式跳过", () => {
     planAdoptedDefaultRoute({
       explicit: true,
       ready: true,
-      routeRuntimeId: "claude"
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: true
     }),
     "skip"
   )
   assert.equal(planAdoptedDefaultRoute({ ready: false, routeRuntimeId: "claude" }), "skip")
+})
+
+test("升级首次已有路线只 stamp，不 toast", () => {
+  assert.equal(
+    planAdoptedDefaultRoute({
+      ready: true,
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: false
+    }),
+    "stamp"
+  )
+  assert.equal(
+    planAdoptedDefaultRoute({
+      ready: true,
+      currentRuntimeId: "codex",
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: false
+    }),
+    "stamp"
+  )
 })
 
 test("已有非出厂偏好只盖章不改写", () => {
@@ -35,7 +65,8 @@ test("已有非出厂偏好只盖章不改写", () => {
     planAdoptedDefaultRoute({
       ready: true,
       currentRuntimeId: "codex",
-      routeRuntimeId: "claude"
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: true
     }),
     "lock"
   )
@@ -43,7 +74,8 @@ test("已有非出厂偏好只盖章不改写", () => {
     planAdoptedDefaultRoute({
       ready: true,
       currentRuntimeId: "enjoy-local",
-      routeRuntimeId: "claude"
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: true
     }),
     "adopt"
   )
@@ -51,13 +83,14 @@ test("已有非出厂偏好只盖章不改写", () => {
     planAdoptedDefaultRoute({
       ready: true,
       currentRuntimeId: "claude",
-      routeRuntimeId: "claude"
+      routeRuntimeId: "claude",
+      hadNoUsableRoute: true
     }),
     "adopt"
   )
 })
 
-test("adopt 提示用引擎名或预设 id", () => {
+test("adopt 提示用引擎显示名，不是 id", () => {
   const engine = buildChatReadiness({
     engines: [{ kind: "engine", runtimeId: "claude", name: "Claude Code" }],
     localModels: [],
@@ -69,7 +102,13 @@ test("adopt 提示用引擎名或预设 id", () => {
     engines: [],
     localModels: [],
     apiKeys: [{ kind: "api_key", providerId: "e2e", presetId: "openai" }],
-    engineCount: 1
+    engineCount: 1,
+    modelId: "gpt-4o"
   })
-  assert.equal(adoptedRouteLabel(keyed), "openai")
+  assert.match(adoptedRouteLabel(keyed), /OpenAI/)
+  assert.doesNotMatch(adoptedRouteLabel(keyed), /^openai$/)
+  assert.equal(
+    formatAdoptedRouteFace({ providerName: "DeepSeek", modelLabel: "DeepSeek V3" }),
+    "DeepSeek · V3"
+  )
 })

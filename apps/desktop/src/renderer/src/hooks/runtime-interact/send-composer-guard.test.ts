@@ -96,16 +96,35 @@ test("本轮 enjoy-local 快照无路线时回 no_chat_route，不是红错", ()
   assert.equal(chat.read().picker, false)
 })
 
-test("Enjoy Local 信共享闸；无快照放行；有密钥没模型单独提示", () => {
+test("Enjoy Local 信共享闸；无快照放行；当前档案有密钥没模型单独提示", () => {
   rememberChatReadiness(readyKey())
   const keyed = store({ runtimeId: "enjoy-local", hasKey: false, modelId: "m" })
   assert.equal(guardComposerSend(keyed as never, { ideReady: true }), true)
   const noModel = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
   assert.equal(guardComposerSend(noModel as never, { ideReady: true }), false)
   assert.equal(noModel.read().error, NEED_MODEL)
+  assert.equal(noModel.read().picker, false)
   rememberChatReadiness(undefined)
   const noSnap = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "m" })
   assert.equal(guardComposerSend(noSnap as never, { ideReady: true }), true)
+})
+
+test("当前档案没密钥、另一份启用档案有密钥：不催选模型，闸拦发送", () => {
+  rememberChatReadiness(
+    buildChatReadiness({
+      engines: [],
+      localModels: [],
+      apiKeys: [{ kind: "api_key", providerId: "other", presetId: "openai" }],
+      engineCount: 1,
+      hasEnjoySecret: false,
+      activeKeyProfileId: null
+    })
+  )
+  const chat = store({ runtimeId: "enjoy-local", hasKey: true, modelId: "" })
+  assert.equal(guardComposerSend(chat as never, { ideReady: true }), false)
+  assert.equal(chat.read().error, NO_CHAT_ROUTE)
+  assert.equal(chat.read().picker, false)
+  assert.equal(composerSendReady({ runtimeId: "enjoy-local", hasKey: true, modelId: "" }), false)
 })
 
 test("已装未登录 CLI 打开 Picker，不打 agent.run", () => {

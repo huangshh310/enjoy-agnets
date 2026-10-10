@@ -94,19 +94,21 @@ export function e2eStubEngineInspectValue(): InspectAgentToolResult {
 
 export function e2eStubEngineInspect(
   id: string,
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
+  packaged = false
 ): InspectAgentToolResult | null {
-  if (env.ENJOY_E2E_STUB !== "1" || e2eChatReadyKind(env) !== "engine") return null
+  if (packaged || env.ENJOY_E2E_STUB !== "1" || e2eChatReadyKind(env) !== "engine") return null
   if (id !== E2E_CHAT_READY_ENGINE_ID) return null
   return e2eStubEngineInspectValue()
 }
 
-/** 夹具把 Claude 标成已登录就绪，不依赖本机 PATH。 */
+/** 夹具把 Claude 标成已登录就绪，不依赖本机 PATH。打包态不覆盖。 */
 export function applyE2eStubEngine(
   tools: AgentToolPublic[],
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
+  packaged = false
 ): AgentToolPublic[] {
-  if (env.ENJOY_E2E_STUB !== "1" || e2eChatReadyKind(env) !== "engine") return tools
+  if (packaged || env.ENJOY_E2E_STUB !== "1" || e2eChatReadyKind(env) !== "engine") return tools
   return tools.map((tool) =>
     tool.id === E2E_CHAT_READY_ENGINE_ID
       ? {

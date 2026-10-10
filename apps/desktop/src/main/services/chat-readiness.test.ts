@@ -35,17 +35,18 @@ test("只有探测到的本机模型时 ready", () => {
   assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: true }])
 })
 
-test("已启用本机档案但没 ping 不算 ready", () => {
+test("已启用无密钥档案即使没 ping 也 ready，与闸一致", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
     [{ id: "prv_ollama", kind: "ollama", enabled: true, hasKey: false, requiresKey: false }],
     []
   )
-  assert.equal(snap.ready, false)
+  assert.equal(snap.ready, true)
+  assert.equal(snap.hasEnjoySecret, true)
   assert.deepEqual(snap.localModels, [])
 })
 
-test("远端 Ollama 不 ping，verified:false，不算 ready；hasSecret 时闸放行", () => {
+test("远端 Ollama 不 ping，verified:false；hasSecret 为真则 ready，闸放行", () => {
   const snap = assembleChatReadiness(
     [{ id: "enjoy-local", status: "ready" }],
     [
@@ -60,17 +61,43 @@ test("远端 Ollama 不 ping，verified:false，不算 ready；hasSecret 时闸�
     ],
     []
   )
-  assert.equal(snap.ready, false)
+  assert.equal(snap.ready, true)
+  assert.equal(snap.hasEnjoySecret, true)
   assert.deepEqual(snap.localModels, [{ kind: "local_model", service: "ollama", verified: false }])
   assert.equal(
     selectedRouteGateCode({
       skip: false,
       runtimeId: "enjoy-local",
       codingRuntime: "local",
-      hasEnjoySecret: true,
+      hasEnjoySecret: snap.hasEnjoySecret ?? false,
       verifiedLocal: false
     }),
     null
+  )
+})
+
+test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸也拦", () => {
+  const snap = assembleChatReadiness(
+    [{ id: "enjoy-local", status: "ready" }],
+    [
+      { id: "prv_active", kind: "openai", enabled: true, hasKey: false, requiresKey: true, active: true },
+      { id: "prv_other", kind: "anthropic", enabled: true, hasKey: true, requiresKey: true, active: false }
+    ],
+    []
+  )
+  assert.equal(snap.ready, false)
+  assert.equal(snap.hasEnjoySecret, false)
+  assert.equal(snap.defaultRoute?.profileId, undefined)
+  assert.equal(snap.apiKeys.length, 1)
+  assert.equal(
+    selectedRouteGateCode({
+      skip: false,
+      runtimeId: "enjoy-local",
+      codingRuntime: "local",
+      hasEnjoySecret: snap.hasEnjoySecret ?? false,
+      verifiedLocal: false
+    }),
+    NO_CHAT_ROUTE
   )
 })
 
@@ -169,7 +196,7 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
     const snap = assembleChatReadiness(item.tools, item.providers, item.live, item.loggedIn)
     const allows = chatRouteAllowsSend({
       runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
-      hasEnjoySecret: snap.apiKeys.length > 0,
+      hasEnjoySecret: snap.hasEnjoySecret ?? false,
       verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
     })
     assert.ok(!snap.ready || allows, item.name)
@@ -179,7 +206,7 @@ test("组装快照 ready === 默认路线发送闸放行", () => {
           skip: false,
           runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
           codingRuntime: "local",
-          hasEnjoySecret: snap.apiKeys.length > 0,
+          hasEnjoySecret: snap.hasEnjoySecret ?? false,
           verifiedLocal: snap.localModels.some(isVerifiedLocalModel)
         }) === null,
       item.name

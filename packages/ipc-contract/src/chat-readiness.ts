@@ -94,10 +94,10 @@ export const ChatReadiness = z
     apiKeys: z.array(ChatApiKeyRoute),
     /** 单字段坏掉不丢整张快照。 */
     defaultRoute: ChatDefaultRoute.optional().catch(undefined),
-    /** 路由 hasSecret()；缺省时渲染闸当 uncertain。 */
-    hasEnjoySecret: z.boolean().optional(),
-    /** 第一次自动收默认路线时带一次，给 toast。 */
-    adoptedHint: z.object({ name: z.string().min(1) }).strict().optional()
+    /** 路由 hasSecret()；缺省时渲染闸当 uncertain。单字段坏不丢整张。 */
+    hasEnjoySecret: z.boolean().optional().catch(undefined),
+    /** 第一次从无到有才带，给 toast。单字段坏不丢整张。 */
+    adoptedHint: z.object({ name: z.string().min(1) }).strict().optional().catch(undefined)
   })
   .strict()
 export type ChatReadiness = z.infer<typeof ChatReadiness>
@@ -119,6 +119,8 @@ export type PublicKeyProvider = {
   enabled?: boolean
   hasKey?: boolean
   requiresKey?: boolean
+  /** 当前 Enjoy Local 档案。缺省时组装按第一份启用档案。 */
+  active?: boolean
   /** 用来判断远端 Ollama / LM Studio，不进快照。 */
   baseURL?: string
 }
@@ -146,6 +148,10 @@ export type ResolveDefaultChatRouteInput = {
   engines: readonly ChatEngineRoute[]
   localModels: readonly ChatLocalModelRoute[]
   apiKeys: readonly ChatApiKeyRoute[]
+  /** 路由 hasSecret()：当前档案，不是「任意档案有密钥」。 */
+  hasEnjoySecret?: boolean
+  /** 当前档案若是带密钥的，才写 defaultRoute.profileId。 */
+  activeKeyProfileId?: string | null
 }
 
 function chatDefaultRouteOf(
@@ -160,11 +166,22 @@ function chatDefaultRouteOf(
   }
 }
 
+function activeKeyProfileIdOf(input: ResolveDefaultChatRouteInput): string | undefined {
+  if (input.activeKeyProfileId !== undefined) return input.activeKeyProfileId ?? undefined
+  if (input.hasEnjoySecret === false) return undefined
+  return input.apiKeys[0]?.providerId
+}
+
+function enjoySecretOf(input: Pick<ResolveDefaultChatRouteInput, "hasEnjoySecret" | "apiKeys">): boolean {
+  if (input.hasEnjoySecret !== undefined) return input.hasEnjoySecret
+  return input.apiKeys.length > 0
+}
+
 /** 新对话默认路线。未显式选择时，第一次连上的可用路线优先于出厂 enjoy-local。 */
 export function resolveDefaultChatRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute {
   const preferred = input.preferredRuntimeId?.trim() || "enjoy-local"
   const modelId = input.modelId?.trim() || undefined
-  const keyProfile = preferred === "enjoy-local" ? input.apiKeys[0]?.providerId : undefined
+  const keyProfile = preferred === "enjoy-local" ? activeKeyProfileIdOf(input) : undefined
   if (input.explicit) return chatDefaultRouteOf(preferred, modelId, keyProfile)
   const keep = chatDefaultRouteOf(preferred, modelId, keyProfile)
   if (defaultRouteUsable(keep, input)) return keep
@@ -173,23 +190,20 @@ export function resolveDefaultChatRoute(input: ResolveDefaultChatRouteInput): Ch
 
 function defaultRouteUsable(
   route: ChatDefaultRoute,
-  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels">
+  input: Pick<ResolveDefaultChatRouteInput, "apiKeys" | "localModels" | "hasEnjoySecret">
 ): boolean {
   return chatRouteAllowsSend({
     runtimeId: route.runtimeId,
-    hasEnjoySecret: input.apiKeys.length > 0,
+    hasEnjoySecret: enjoySecretOf(input),
     verifiedLocal: input.localModels.some(isVerifiedLocalModel)
   })
 }
 
 function firstUsableDefaultRoute(input: ResolveDefaultChatRouteInput): ChatDefaultRoute | null {
   const modelId = input.modelId?.trim() || undefined
-  if (input.apiKeys[0]) {
-    return {
-      runtimeId: "enjoy-local",
-      ...(modelId ? { modelId } : {}),
-      profileId: input.apiKeys[0].providerId
-    }
+  const keyProfile = activeKeyProfileIdOf(input)
+  if (enjoySecretOf(input)) {
+    return chatDefaultRouteOf("enjoy-local", modelId, keyProfile)
   }
   if (input.localModels.some(isVerifiedLocalModel)) {
     return { runtimeId: "enjoy-local", ...(modelId ? { modelId } : {}) }
@@ -206,6 +220,8 @@ export function chatReadyFromRoutes(input: {
   preferredRuntimeId?: string
   explicit?: boolean
   modelId?: string
+  hasEnjoySecret?: boolean
+  activeKeyProfileId?: string | null
 }): boolean {
   const route = resolveDefaultChatRoute(input)
   return defaultRouteUsable(route, input)
@@ -220,6 +236,7 @@ export function buildChatReadiness(input: {
   explicit?: boolean
   modelId?: string
   hasEnjoySecret?: boolean
+  activeKeyProfileId?: string | null
   adoptedHint?: { name: string }
 }): ChatReadiness {
   const engines = [...input.engines]
@@ -231,16 +248,22 @@ export function buildChatReadiness(input: {
     modelId: input.modelId,
     engines,
     localModels,
-    apiKeys
+    apiKeys,
+    hasEnjoySecret: input.hasEnjoySecret,
+    activeKeyProfileId: input.activeKeyProfileId
   })
   return ChatReadiness.parse({
-    ready: defaultRouteUsable(defaultRoute, { apiKeys, localModels }),
+    ready: defaultRouteUsable(defaultRoute, {
+      apiKeys,
+      localModels,
+      hasEnjoySecret: input.hasEnjoySecret
+    }),
     engineCount: input.engineCount,
     engines,
     localModels,
     apiKeys,
     defaultRoute,
-    ...(input.hasEnjoySecret === undefined ? {} : { hasEnjoySecret: input.hasEnjoySecret }),
+    hasEnjoySecret: enjoySecretOf(input),
     ...(input.adoptedHint ? { adoptedHint: input.adoptedHint } : {})
   })
 }

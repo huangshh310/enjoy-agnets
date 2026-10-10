@@ -6,6 +6,7 @@ import type { ImportAcpSessionInput, ListAcpSessionsResult } from "@enjoy-agents
 import { readAgentToolOverrides } from "./agent-tools-vault"
 import { listBoundAcpSessionIds, writeAcpSessionBind } from "./acp-session-bind.ts"
 import { projectListedAcpSessions } from "./acp-session-import-project.ts"
+import { acpListSpawnOverride } from "./acp-session-import-override.ts"
 import { createSession } from "./session-queries"
 import { getWorkspace } from "./workspace"
 import { writeSessionRuntime } from "./agent-tools-vault"
@@ -21,9 +22,7 @@ export async function listImportableAcpSessions(
     remote = await listAcpRemoteSessions({
       id: runtimeId,
       cwd: workspace.rootPath,
-      override: override?.binaryPath
-        ? { binaryPath: override.binaryPath, extraArgs: override.extraArgs, modelId: override.modelId }
-        : { extraArgs: override?.extraArgs, modelId: override.modelId }
+      override: acpListSpawnOverride(override)
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)

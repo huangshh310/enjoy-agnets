@@ -17,6 +17,7 @@ export type AssembleChatReadinessRoute = {
   preferredRuntimeId?: string
   explicit?: boolean
   modelId?: string
+  hasEnjoySecret?: boolean
 }
 
 export function assembleChatReadiness(
@@ -34,6 +35,12 @@ export function assembleChatReadiness(
         !isLoopbackModelBaseUrl(row.baseURL)
     )
     .map((row) => row.kind)
+  const active = activePublicProvider(providers)
+  const hasEnjoySecret =
+    route.hasEnjoySecret ??
+    (active ? (active.requiresKey ? Boolean(active.hasKey) : true) : false)
+  const activeKeyProfileId =
+    active && active.requiresKey && active.hasKey ? active.id : null
   return buildChatReadiness({
     engines: signedInEngineRoutes(tools, loggedInIds),
     localModels: localModelRoutes(live, remoteUnverified),
@@ -41,8 +48,22 @@ export function assembleChatReadiness(
     engineCount: countAvailableEngines(tools),
     preferredRuntimeId: route.preferredRuntimeId,
     explicit: route.explicit,
-    modelId: route.modelId
+    modelId: route.modelId,
+    hasEnjoySecret,
+    activeKeyProfileId
   })
+}
+
+function activePublicProvider(
+  providers: readonly PublicKeyProvider[]
+): PublicKeyProvider | undefined {
+  const enabled = providers.filter((row) => row.enabled !== false)
+  const marked = enabled.find((row) => row.active)
+  if (marked) return marked
+  if (enabled.some((row) => row.active === false)) {
+    return enabled.find((row) => row.active !== false)
+  }
+  return enabled[0]
 }
 
 export const LOCAL_MODEL_PING_MS = 400

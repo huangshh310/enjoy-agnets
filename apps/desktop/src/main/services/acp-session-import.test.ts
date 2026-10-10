@@ -1,6 +1,16 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { acpListSpawnOverride } from "./acp-session-import-override.ts"
 import { projectListedAcpSessions } from "./acp-session-import-project.ts"
+import { acpSessionListFailedCopy } from "../../renderer/src/components/ai-chat/agent-picker/acp-session-import-copy.ts"
+import { zhChat } from "../../renderer/src/i18n/catalogs/zh/chat.ts"
+import { enChat } from "../../renderer/src/i18n/catalogs/en/chat.ts"
+
+function listCopy(locale: "zh" | "en"): string {
+  return acpSessionListFailedCopy(() =>
+    locale === "en" ? enChat.importAcpListFailed : zhChat.importAcpListFailed
+  )
+}
 
 test("未广告 list 不带 error", () => {
   assert.deepEqual(
@@ -37,4 +47,32 @@ test("spawn 失败仍 supported，带 error", () => {
     error: "spawn grok failed"
   })
   assert.deepEqual(result, { supported: true, sessions: [], error: "spawn grok failed" })
+})
+
+test("没写过覆盖时不读 modelId；缺字段会话不崩，界面走人话", () => {
+  assert.deepEqual(acpListSpawnOverride(undefined), {
+    extraArgs: undefined,
+    modelId: undefined
+  })
+  const listed = projectListedAcpSessions({
+    supported: true,
+    sessions: [
+      undefined,
+      { title: "orphan" },
+      { sessionId: "no-cwd", cwd: undefined },
+      { sessionId: "ok", title: "kept", cwd: "/ws" }
+    ],
+    imported: new Set(),
+    cwd: "/ws",
+    error: "Cannot read properties of undefined (reading 'modelId')"
+  })
+  assert.deepEqual(listed.sessions, [
+    { sessionId: "ok", title: "kept", updatedAt: undefined, imported: false }
+  ])
+  const zh = listCopy("zh")
+  const en = listCopy("en")
+  assert.equal(zh, "暂时读不到这个引擎的本机会话")
+  assert.equal(en, "Can't read this engine's local sessions right now.")
+  assert.doesNotMatch(zh, /Cannot read|TypeError|modelId|undefined/)
+  assert.doesNotMatch(en, /Cannot read|TypeError|modelId|undefined/)
 })

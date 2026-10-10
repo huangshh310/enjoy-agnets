@@ -36,9 +36,16 @@ function enjoyLocalGateCode(): typeof NO_CHAT_ROUTE | null {
   return chatRouteGateCode({
     runtimeId: "enjoy-local",
     codingRuntime: peekCodingRuntime(),
-    hasEnjoySecret: snap ? (snap.hasEnjoySecret ?? (snap.apiKeys.length > 0 || snap.localModels.length > 0)) : "unknown",
+    hasEnjoySecret: snap ? (snap.hasEnjoySecret ?? "unknown") : "unknown",
     verifiedLocal: snap ? snap.localModels.some((row) => row.verified === true) : "unknown"
   })
+}
+
+/** 当前档案有密钥才催选模型，不是「任意档案有密钥」。 */
+function currentProfileNeedsModel(modelId: string): boolean {
+  const snap = peekChatReadiness()
+  if (!snap?.hasEnjoySecret || !snap.defaultRoute?.profileId) return false
+  return !modelId.trim()
 }
 
 function enjoyLocalAllowsSend(): boolean {
@@ -55,8 +62,7 @@ export function composerSendReady(
   }
   if (store.runtimeId === "enjoy-local") {
     if (!enjoyLocalAllowsSend()) return false
-    const snap = peekChatReadiness()
-    if (snap?.apiKeys.length && !store.modelId.trim()) return false
+    if (currentProfileNeedsModel(store.modelId)) return false
     return true
   }
   const tool = rememberedAgentTool(store.runtimeId)
@@ -90,10 +96,8 @@ export function guardComposerSend(
       store.setError(NO_CHAT_ROUTE)
       return false
     }
-    const snap = peekChatReadiness()
-    if (snap?.apiKeys.length && !store.modelId.trim()) {
+    if (currentProfileNeedsModel(store.modelId)) {
       store.setError(NEED_MODEL)
-      store.setAgentPickerOpen(true)
       return false
     }
     return true

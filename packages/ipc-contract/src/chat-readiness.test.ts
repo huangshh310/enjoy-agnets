@@ -123,6 +123,17 @@ test("ChatReadiness 拒未知字段；稳定码是 no_chat_route；defaultRoute 
   })
   assert.equal(recovered.ready, true)
   assert.equal(recovered.defaultRoute, undefined)
+  const badFields = ChatReadiness.parse({
+    ready: false,
+    engineCount: 0,
+    engines: [],
+    localModels: [],
+    apiKeys: [],
+    hasEnjoySecret: "yes",
+    adoptedHint: { name: "" }
+  })
+  assert.equal(badFields.hasEnjoySecret, undefined)
+  assert.equal(badFields.adoptedHint, undefined)
 })
 
 test("已登录外置引擎单独构成路线；enjoy-local 即使 loggedIn 也不进 engines", () => {
@@ -287,14 +298,36 @@ test("ready ⇒ 默认路线发送闸放行（未 ready 仍可能放行）", () 
     const snap = buildChatReadiness({ ...input, engineCount: 1 })
     const allows = chatRouteAllowsSend({
       runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
-      hasEnjoySecret: input.apiKeys.length > 0,
+      hasEnjoySecret: snap.hasEnjoySecret ?? false,
       verifiedLocal: input.localModels.some(isVerifiedLocalModel)
     })
     assert.ok(!snap.ready || allows, input.name)
   }
 })
 
-test("远端 Ollama：向导未 ready，hasSecret 为真时闸放行", () => {
+test("当前档案没密钥、另一份启用档案有密钥：不 ready，闸也拦", () => {
+  const snap = buildChatReadiness({
+    engines: [],
+    localModels: [],
+    apiKeys: [KEY],
+    engineCount: 1,
+    hasEnjoySecret: false,
+    activeKeyProfileId: null
+  })
+  assert.equal(snap.ready, false)
+  assert.equal(snap.hasEnjoySecret, false)
+  assert.equal(snap.defaultRoute?.profileId, undefined)
+  assert.equal(
+    chatRouteAllowsSend({
+      runtimeId: snap.defaultRoute?.runtimeId ?? "enjoy-local",
+      hasEnjoySecret: snap.hasEnjoySecret ?? false,
+      verifiedLocal: false
+    }),
+    false
+  )
+})
+
+test("远端 Ollama：hasSecret 为真则 ready，闸放行", () => {
   const snap = buildChatReadiness({
     engines: [],
     localModels: [REMOTE],
@@ -302,7 +335,7 @@ test("远端 Ollama：向导未 ready，hasSecret 为真时闸放行", () => {
     engineCount: 1,
     hasEnjoySecret: true
   })
-  assert.equal(snap.ready, false)
+  assert.equal(snap.ready, true)
   assert.equal(
     chatRouteAllowsSend({
       runtimeId: "enjoy-local",

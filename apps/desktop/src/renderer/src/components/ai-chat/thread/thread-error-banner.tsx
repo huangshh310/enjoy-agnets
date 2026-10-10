@@ -25,6 +25,7 @@ import { sendGateCopy } from "@renderer/hooks/runtime-interact/send-gate-copy"
 import { useCliLoginLoop } from "@renderer/components/ai-chat/agent-picker/cli-login-loop"
 import { getIde, hasIde } from "@renderer/lib/ide"
 import { QuotaExhaustedCard } from "../usage/quota-exhausted-card"
+import { ThreadNeedModelNotice } from "./thread-need-model-notice"
 import { ThreadNoChatRouteNotice } from "./thread-no-chat-route-notice"
 
 const REMOTE_INSTALL_MAP: Record<string, string> = {
@@ -53,6 +54,9 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
   const [copiedInstall, setCopiedInstall] = useState(false)
   if (kind === "no_chat_route") {
     return <ThreadNoChatRouteNotice onDismiss={() => setError(null)} className={className} />
+  }
+  if (kind === "needs_model") {
+    return <ThreadNeedModelNotice onDismiss={() => setError(null)} className={className} />
   }
   if (kind === "credit") {
     return <QuotaExhaustedCard error={error} id="thread-error-banner" />
@@ -137,8 +141,6 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
         ? t("chat.needRemoteConnectedTitle")
         : kind === "remote_cli_missing"
           ? t("chat.remoteCliMissingTitle")
-          : kind === "needs_model"
-            ? t("chat.needModelTitle")
           : kind === "needs_key"
             ? t("chat.needProviderKeyTitle")
             : kind === "rate_limit"
@@ -152,8 +154,6 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
         ? t("chat.needRemoteConnectedHint")
         : kind === "remote_cli_missing"
           ? t("chat.remoteCliMissingHint")
-          : kind === "needs_model"
-            ? t("chat.needModelHint")
           : kind === "needs_key"
             ? t("chat.needProviderKeyHint")
             : error.includes("HANDOFF_CONFIRM_FAILED")
@@ -272,7 +272,6 @@ export function ThreadErrorBanner({ error, className }: { error: string; classNa
             ) : null}
             {kind !== "auth" &&
             kind !== "needs_key" &&
-            kind !== "needs_model" &&
             kind !== "inspecting" &&
             kind !== "authorizing" &&
             kind !== "login_failed" &&
