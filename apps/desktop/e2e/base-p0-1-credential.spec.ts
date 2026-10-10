@@ -12,7 +12,8 @@ import {
   hideOverlays,
   launchEnjoy,
   skipGuideIfOpen,
-  snap
+  snap,
+  snapThemes
 } from "./base-p0-1-launch"
 
 const UNVERIFIED_HINT = "密钥还没验证，第一次发消息时会检查。"
@@ -78,7 +79,8 @@ test("密钥被拒：红点条 + 改密钥打开本档案密钥框，草稿留�
     await expect(notice.getByTestId("thread-credential-invalid-notice-action")).toHaveText("改密钥")
     await expect(window.getByTestId("composer-input")).toHaveValue("hello invalid key")
     await expect(window.getByTestId("thread-no-chat-route-notice")).toHaveCount(0)
-    await snap(window, "p0-1-credential-invalid-notice")
+    await snapThemes(window, "p0-1-credential-invalid-notice")
+    await snap(window, "p0-1-credential-invalid-notice-disable-gpu")
     await notice.getByTestId("thread-credential-invalid-notice-action").click()
     await window.waitForFunction(
       () => location.hash.includes("settings/providers") && location.hash.includes("edit=") && location.hash.includes("focus=key"),
@@ -92,7 +94,7 @@ test("密钥被拒：红点条 + 改密钥打开本档案密钥框，草稿留�
     await expect(status).toHaveAttribute("data-state", "invalid", { timeout: 8_000 })
     await expect(status).toContainText("密钥无效")
     await expect(window.getByTestId("credential-fix-key")).toHaveText("改密钥")
-    await snap(window, "p0-1-credential-invalid-edit")
+    await snapThemes(window, "p0-1-credential-invalid-edit")
     await window.evaluate(() => {
       location.hash = "#/"
     })
@@ -121,7 +123,7 @@ test("连不上：中性点 + 再发一次，发送中改正在发送，态不�
     await expect(action).toHaveText("再发一次")
     await expect(window.getByTestId("composer-input")).toHaveValue("hello unreachable")
     await expect(window.getByTestId("thread-no-chat-route-notice")).toHaveCount(0)
-    await snap(window, "p0-1-credential-network-notice")
+    await snapThemes(window, "p0-1-credential-network-notice")
     const sending = await window.evaluate(async () => {
       const btn = document.querySelector<HTMLButtonElement>("[data-testid='thread-credential-network-notice-action']")
       if (!btn) return false
@@ -136,7 +138,7 @@ test("连不上：中性点 + 再发一次，发送中改正在发送，态不�
     expect(sending).toBe(true)
     await expect(window.getByTestId("thread-credential-network-notice")).toHaveCount(1)
     await expect(window.getByTestId("thread-no-chat-route-notice")).toHaveCount(0)
-    await snap(window, "p0-1-credential-network-resend")
+    await snapThemes(window, "p0-1-credential-network-resend")
     await openProviders(window)
     const status = listStatus(window)
     await expect(status).toHaveAttribute("data-state", "ok")
@@ -161,7 +163,7 @@ for (const code of ["network", "timeout", "unknown"] as const) {
       await expect(status).toContainText("已保存 · 还没验证")
       await expect(window.getByTestId("credential-recheck")).toHaveText("再试一次")
       await expect(status).toContainText(HINTS[code])
-      await snap(window, `p0-1-credential-unverified-${code}`)
+      await snapThemes(window, `p0-1-credential-unverified-${code}`)
     } finally {
       await app.close()
     }
@@ -180,7 +182,7 @@ test("夹具 invalid / ok：列表红无效与绿已连上", async () => {
     await expect(status).toHaveAttribute("data-state", "invalid")
     await expect(status).toContainText("密钥无效")
     await expect(invalid.window.getByTestId("credential-fix-key")).toHaveText("改密钥")
-    await snap(invalid.window, "p0-1-credential-invalid-row")
+    await snapThemes(invalid.window, "p0-1-credential-invalid-row")
   } finally {
     await invalid.app.close()
   }
@@ -191,7 +193,7 @@ test("夹具 invalid / ok：列表红无效与绿已连上", async () => {
     const status = listStatus(ok.window)
     await expect(status).toHaveAttribute("data-state", "ok")
     await expect(status).toContainText("已连上")
-    await snap(ok.window, "p0-1-credential-ok-row")
+    await snapThemes(ok.window, "p0-1-credential-ok-row")
   } finally {
     await ok.app.close()
   }
@@ -210,7 +212,7 @@ test("正常发送把 unverified 写成 ok", async () => {
     const status = listStatus(window)
     await expect(status).toHaveAttribute("data-state", "ok", { timeout: 12_000 })
     await expect(status).toContainText("已连上")
-    await snap(window, "p0-1-credential-send-stores-ok")
+    await snapThemes(window, "p0-1-credential-send-stores-ok")
   } finally {
     await app.close()
   }
@@ -235,7 +237,7 @@ test("末屏 ready + unverified 只挂副标题", async () => {
     await expect(window.getByRole("heading", { name: "可以开始了" })).toBeVisible()
     await expect(window.getByTestId("ready-unverified-hint")).toHaveText(UNVERIFIED_HINT)
     await expect(window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
-    await snap(window, "p0-1-ready-unverified-hint")
+    await snapThemes(window, "p0-1-ready-unverified-hint")
   } finally {
     await app.close()
   }
@@ -288,7 +290,7 @@ for (const [code, fixture] of Object.entries(RESTRICTED)) {
         const plain = window.getByTestId("credential-billing-console-text")
         await expect(link.or(plain)).toHaveText("官网")
       }
-      await snap(window, fixture.snapList)
+      await snapThemes(window, fixture.snapList)
     } finally {
       await app.close()
     }
@@ -314,7 +316,7 @@ for (const [code, fixture] of Object.entries(RESTRICTED)) {
       await expect(window.getByTestId("composer-input")).toHaveValue(`hello ${code}`)
       await expect(window.getByTestId("thread-no-chat-route-notice")).toHaveCount(0)
       await expect(window.getByTestId("thread-credential-invalid-notice")).toHaveCount(0)
-      await snap(window, fixture.snapSend)
+      await snapThemes(window, fixture.snapSend)
       await notice.getByTestId("thread-credential-restricted-notice-action").click()
       await expect(window.getByTestId("composer-engine-chip")).toHaveAttribute("data-state", "open", {
         timeout: 8_000
@@ -344,7 +346,7 @@ for (const [code, fixture] of Object.entries(RESTRICTED)) {
       await expect(window.getByTestId("ready-restricted-hint")).toContainText("暂时用不了，可以再连一家备用")
       await expect(window.getByTestId("ready-unverified-hint")).toHaveCount(0)
       await expect(window.getByRole("heading", { name: "还差一步：连一个模型" })).toHaveCount(0)
-      await snap(window, fixture.snapReady)
+      await snapThemes(window, fixture.snapReady)
     } finally {
       await app.close()
     }

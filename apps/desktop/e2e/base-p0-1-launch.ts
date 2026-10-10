@@ -48,6 +48,30 @@ export async function snap(window: Page, name: string): Promise<void> {
   await window.screenshot({ path: join(SHOTS, `${name}.png`) })
 }
 
+const THEME_KEY = "boardui:theme"
+const THEME_EVENT = "boardui:theme-change"
+
+export async function forceTheme(window: Page, theme: "light" | "dark"): Promise<void> {
+  await window.evaluate(
+    ({ next, key, eventName }) => {
+      document.documentElement.classList.toggle("dark", next === "dark")
+      document.documentElement.dataset.theme = next
+      window.localStorage.setItem(key, next)
+      window.dispatchEvent(new CustomEvent(eventName, { detail: next }))
+    },
+    { next: theme, key: THEME_KEY, eventName: THEME_EVENT }
+  )
+}
+
+/** 浅色 / 深色各拍一张。启动参数已带 `--disable-gpu`。 */
+export async function snapThemes(window: Page, name: string): Promise<void> {
+  await forceTheme(window, "light")
+  await snap(window, `${name}-light`)
+  await forceTheme(window, "dark")
+  await snap(window, `${name}-dark`)
+  await forceTheme(window, "light")
+}
+
 export async function clickGuidePrimary(window: Page): Promise<void> {
   await window.getByTestId("setup-guide-primary").click()
 }
