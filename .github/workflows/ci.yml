@@ -35,7 +35,7 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   contracts:
-    # e2e 里的 Electron 窗口流需要显示环境与 Electron 系统库，CI 不假装跑通；只跑纯 Node 的 IPC 合约 spec。
+    # e2e 里除 agent-stub 外的 Electron 窗口流仍留本机；这里只跑纯 Node 的 IPC 合约 spec。
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -49,3 +49,25 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts contracts.spec.ts
+
+  e2e-window:
+    # xvfb + Electron 系统库：跑完整 agent-stub.spec.ts（既有 stub 冒烟 + 本会话允许跨轮）。其它窗口 spec 仍留本机。
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @enjoy-agents/desktop build
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libasound2t64 libgbm1 libxtst6 libatk-bridge2.0-0 libdrm2
+      - name: Run agent-stub window e2e
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" pnpm --filter @enjoy-agents/desktop exec playwright test -c e2e/playwright.config.ts agent-stub.spec.ts

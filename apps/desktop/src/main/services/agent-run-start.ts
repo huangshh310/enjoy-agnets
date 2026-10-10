@@ -4,7 +4,7 @@
 import type { BrowserWindow } from "electron"
 import type { ModelMessage } from "ai"
 import type { GenerationRequest } from "@enjoy-agents/agent-core"
-import { isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
+import { inferAgentRunOrigin, isTodoContinueUserMessage, RunAgentInput } from "@enjoy-agents/ipc-contract"
 import { getDatabase } from "./database"
 import { rememberWorkspaceOpened } from "./workspace-remember.ts"
 import { shouldRememberWorkspaceOnRun } from "./workspace-mru.ts"
@@ -53,9 +53,10 @@ export async function runAgent(
   })
 }
 
-/** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。 */
+/** 心跳代发：run.start 带上用户句，前台线程才能补出气泡。origin 强制 heartbeat。 */
 export async function runHeartbeatAgent(window: BrowserWindow, rawInput: unknown) {
-  const input = RunAgentInput.parse(rawInput)
+  const parsed = RunAgentInput.parse(rawInput)
+  const input = RunAgentInput.parse({ ...parsed, origin: "heartbeat" })
   return beginAgentRun(window, input, { persistUser: true, promptEcho: true })
 }
 
@@ -64,7 +65,7 @@ export async function resumeAgentRun(
   runId: string,
   request: GenerationRequest,
   resumeMessages?: unknown,
-  extras?: { denyAnyDesktop?: boolean; automationSource?: unknown }
+  extras?: { denyAnyDesktop?: boolean; automationSource?: unknown; origin?: unknown }
 ) {
   const messages = request.messages?.length
     ? request.messages
@@ -84,7 +85,8 @@ export async function resumeAgentRun(
       messages,
       attachments: request.attachments,
       denyAnyDesktop: flags.denyAnyDesktop,
-      automationSource: source
+      automationSource: source,
+      origin: flags.origin
     }),
     { runId, persistUser: false, resumeMessages }
   )
@@ -133,6 +135,7 @@ async function beginAgentRun(
     const source = e2eAutomationSourceFromPrompt(lastUserContent(input))
     if (source) input.automationSource = source
   }
+  input.origin = inferAgentRunOrigin(input.origin, input.automationSource)
   if (!isAcpHostRuntime(runtimeId) && prefs.codingRuntime !== "harness" && !input.modelId) {
     throw new Error("Choose a model in Settings → Providers before running an agent.")
   }

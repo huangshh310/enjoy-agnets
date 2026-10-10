@@ -50,6 +50,7 @@ export type StartAutomationRunOpts = {
   commandId?: string
   denyAnyDesktop?: boolean
   automationSource?: AutomationRunSource
+  origin?: "automation" | "catch_up"
 }
 
 export async function startAutomationRun(
@@ -74,6 +75,7 @@ export async function startAutomationRun(
     commandId: opts.commandId ?? createId("auto-run"),
     denyAnyDesktop: opts.denyAnyDesktop === true ? true : undefined,
     automationSource: opts.automationSource,
+    origin: opts.origin ?? (opts.denyAnyDesktop === true ? "catch_up" : "automation"),
     messages: [{ role: "user", content: prompt }]
   })
   return runAgent(window, payload, { trustAutomationFlags: true })

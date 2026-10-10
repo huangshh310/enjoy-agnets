@@ -285,6 +285,9 @@ app.on("will-quit", () => {
     void import("@enjoy-agents/agent-core").then(({ clearAllConversationDesktopAllows }) => {
       clearAllConversationDesktopAllows()
     })
+    void import("./services/conversation-session-allow").then(({ clearAllConversationSessionAllows }) => {
+      clearAllConversationSessionAllows()
+    })
     flushActiveRuns();
     disposeAllAcpSessions();
     void import("./services/builtin-tools/bridge-server").then(({ stopBridgeServer }) => {

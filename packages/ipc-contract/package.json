@@ -37,7 +37,8 @@
     "./session-overlay": "./src/session-overlay.ts",
     "./workspace-io": "./src/workspace-io.ts",
     "./checkpoint-pick": "./src/checkpoint-pick.ts",
-    "./agent-tools": "./src/agent-tools.ts"
+    "./agent-tools": "./src/agent-tools.ts",
+    "./agent-run-origin": "./src/agent-run-origin.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

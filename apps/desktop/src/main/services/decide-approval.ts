@@ -2,13 +2,13 @@
  * 审批决定：HMAC、清/挂补跑计时器、续泵。
  */
 import type { BrowserWindow } from "electron"
-import { bashAllowPrefix, writeThroughDesktopActSessionAllow } from "@enjoy-agents/agent-core"
 import {
   desktopActFailureCode,
   desktopActMayReportSuccess,
   desktopActNeedsSecondConfirm,
   desktopGrantShouldPersist
 } from "@enjoy-agents/agent-core/computer-use"
+import { applySessionAllowDecision } from "./conversation-session-allow"
 import { ASK_USER_QUESTIONS_TOOL, ApprovalDecision, foldToolEvent } from "@enjoy-agents/ipc-contract"
 import { peekDesktopObservation } from "./builtin-tools/computer-use/desktop-tools"
 import { rememberDesktopAlwaysAllowFromArgs } from "./builtin-tools/computer-use/desktop-always-allow-ledger"
@@ -156,18 +156,7 @@ function applyApprovalDecision(
     return
   }
   if (decision !== "allow_session") return
-  if (pending.name === "bash" || pending.name === "code_mode") {
-    const prefix = bashAllowPrefix(commandFromArgs(pending.args))
-    if (prefix) run.sessionApprovedBashPrefixes.add(prefix)
-    return
-  }
-  if (pending.name === "desktop_act") {
-    if (desktopActNeedsSecondConfirm(pending.args)) return
-    if (!desktopGrantShouldPersist(pending.args, peekDesktopObservation)) return
-    writeThroughDesktopActSessionAllow(run.input.sessionId, run.sessionApprovedTools, pending.args)
-    return
-  }
-  run.sessionApprovedTools.add(pending.name)
+  applySessionAllowDecision(run.input.sessionId, run, pending, peekDesktopObservation)
 }
 
 function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {
@@ -175,14 +164,5 @@ function applyDesktopAlwaysAllow(pending: { name: string; args?: unknown }) {
   if (desktopActNeedsSecondConfirm(pending.args)) return
   if (!desktopGrantShouldPersist(pending.args, peekDesktopObservation)) return
   rememberDesktopAlwaysAllowFromArgs(pending.args)
-}
-
-function commandFromArgs(args: unknown): string {
-  if (typeof args === "string") return args
-  if (args && typeof args === "object" && "command" in args) {
-    const command = (args as { command?: unknown }).command
-    return typeof command === "string" ? command : ""
-  }
-  return ""
 }
 
