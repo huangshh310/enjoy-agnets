@@ -102,8 +102,8 @@ function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
-    minWidth: 1100,
-    minHeight: 720,
+    minWidth: e2eStub ? 400 : 1100,
+    minHeight: e2eStub ? 300 : 720,
     show: false,
     autoHideMenuBar: true,
     title: "Enjoy Agents",

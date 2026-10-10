@@ -1,8 +1,12 @@
 /**
  * 把 @ / 面板挂到 document.body，避免被 Composer / BorderBeam 裁掉。
+ * 默认在输入框上方；撞标题栏或上方不够时翻到下方并限高。
  */
-import { useLayoutEffect, useState, type ReactNode, type RefObject } from "react"
+import { cloneElement, isValidElement, useLayoutEffect, useState, type ReactElement, type ReactNode, type RefObject } from "react"
 import { createPortal } from "react-dom"
+import { placeMentionPopover, type MentionPopoverPlacement } from "./mention-popover-placement.ts"
+
+type MentionChildProps = { maxHeight?: number }
 
 export function ComposerMentionPopover({
   anchorRef,
@@ -11,13 +15,21 @@ export function ComposerMentionPopover({
   anchorRef: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
-  const [box, setBox] = useState<DOMRect | null>(null)
+  const [placed, setPlaced] = useState<MentionPopoverPlacement | null>(null)
 
   useLayoutEffect(() => {
     const node =
       (anchorRef.current?.closest("[data-frost=chip]") as HTMLElement | null) ?? anchorRef.current
     if (!node) return
-    const update = () => setBox(node.getBoundingClientRect())
+    const update = () => {
+      const box = node.getBoundingClientRect()
+      setPlaced(
+        placeMentionPopover(box, {
+          width: window.innerWidth,
+          height: window.innerHeight
+        })
+      )
+    }
     update()
     const observer = new ResizeObserver(update)
     observer.observe(node)
@@ -30,20 +42,27 @@ export function ComposerMentionPopover({
     }
   }, [anchorRef])
 
-  if (!box || typeof document === "undefined") return null
+  if (!placed || typeof document === "undefined") return null
+
+  const child = isValidElement(children)
+    ? cloneElement(children as ReactElement<MentionChildProps>, { maxHeight: placed.maxHeight })
+    : children
 
   return createPortal(
     <div
       data-testid="composer-mention-popover"
+      data-placement={placed.placement}
       style={{
         position: "fixed",
-        left: box.left + 10,
-        width: Math.max(280, box.width - 20),
-        bottom: Math.max(8, window.innerHeight - box.top + 8),
-        zIndex: 80
+        left: placed.left,
+        width: placed.width,
+        top: placed.top,
+        bottom: placed.bottom,
+        zIndex: 80,
+        maxHeight: placed.maxHeight
       }}
     >
-      {children}
+      {child}
     </div>,
     document.body
   )

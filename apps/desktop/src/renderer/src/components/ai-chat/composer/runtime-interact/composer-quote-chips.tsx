@@ -19,10 +19,11 @@ export function ComposerQuoteChips() {
   if (quotes.length === 0) return null
 
   return (
-    <div className="flex flex-wrap gap-1.5 px-3.5 pb-1">
+    <div data-testid="composer-quote-chips" className="flex flex-wrap gap-1.5 px-3.5 pb-1">
       {quotes.map((quote) => (
         <span
           key={quote.id}
+          data-testid="composer-quote-chip"
           className="inline-flex max-w-full items-center gap-1 rounded-full border border-border-button-default bg-background-primary-default px-2 py-0.5 text-caption-2-medium text-text-secondary"
         >
           {quote.type === "file" ? (

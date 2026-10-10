@@ -15,7 +15,8 @@ export function ComposerMentionList({
   activeIndex,
   onPick,
   listRef,
-  desktopEnabled = false
+  desktopEnabled = false,
+  maxHeight
 }: {
   kind: "at" | "slash"
   items: MentionItem[]
@@ -23,6 +24,7 @@ export function ComposerMentionList({
   onPick: (item: MentionItem) => void
   listRef?: Ref<HTMLDivElement>
   desktopEnabled?: boolean
+  maxHeight?: number
 }) {
   const t = useT()
   const groups = groupMentionItems(kind, items)
@@ -32,7 +34,11 @@ export function ComposerMentionList({
       ref={listRef}
       data-testid="composer-mention-list"
       data-mention-sheet={items.some((item) => item.kind === "desktop") ? "true" : "false"}
-      className="max-h-[min(18rem,42vh)] overflow-y-auto overscroll-contain rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-dropdown"
+      style={maxHeight ? { maxHeight } : undefined}
+      className={cx(
+        "overflow-y-auto overscroll-contain rounded-2xl border border-border-button-default bg-background-primary-default p-1.5 shadow-dropdown",
+        !maxHeight && "max-h-[min(18rem,42vh)]"
+      )}
     >
       {items.length === 0 ? (
         <div className="px-2.5 py-2">
