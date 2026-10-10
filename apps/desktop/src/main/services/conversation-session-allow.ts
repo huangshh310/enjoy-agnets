@@ -16,6 +16,7 @@ import {
   type LookupDesktopObservation
 } from "@enjoy-agents/agent-core/computer-use"
 import { isUserInitiatedRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
+import type { SessionAllowItem, SessionAllowScope } from "@enjoy-agents/ipc-contract/session-allow"
 import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
 import { mcpFingerprintForTool } from "./mcp-session-fingerprint.ts"
 
@@ -157,6 +158,64 @@ export function clearAllConversationSessionAllows(): void {
 
 export function conversationSessionAllowSize(): number {
   return conversationSessionAllow.size
+}
+
+function runtimeIdFromKey(key: string, sessionId: string): string {
+  const prefix = `${sessionId}::`
+  return key.startsWith(prefix) ? key.slice(prefix.length) || DEFAULT_RUNTIME : DEFAULT_RUNTIME
+}
+
+function bucketsForSession(sessionId: string, runtimeId?: string): Array<{ runtimeId: string; bucket: Bucket }> {
+  if (runtimeId) {
+    const current = conversationSessionAllow.get(sessionAllowKey(sessionId, runtimeId))
+    return current ? [{ runtimeId: (runtimeId.trim() || DEFAULT_RUNTIME), bucket: current }] : []
+  }
+  const prefix = `${sessionId}::`
+  const rows: Array<{ runtimeId: string; bucket: Bucket }> = []
+  for (const [key, bucket] of conversationSessionAllow) {
+    if (key === sessionId || key.startsWith(prefix)) {
+      rows.push({ runtimeId: runtimeIdFromKey(key, sessionId), bucket })
+    }
+  }
+  return rows
+}
+
+/** 列出该会话全部引擎桶的允许项。MCP 用全名。 */
+export function listConversationSessionAllows(sessionId: string): SessionAllowItem[] {
+  const sid = sessionId.trim()
+  if (!sid) return []
+  const items: SessionAllowItem[] = []
+  for (const { runtimeId, bucket } of bucketsForSession(sid)) {
+    for (const toolName of bucket.toolNames.keys()) {
+      items.push({ runtimeId, scope: { kind: "tool", toolName } })
+    }
+    for (const prefix of bucket.bashPrefixes.keys()) {
+      items.push({ runtimeId, scope: { kind: "bash_prefix", prefix } })
+    }
+  }
+  return items
+}
+
+/**
+ * 只改会话表，不碰 ActiveRun 副本。本轮已种子的放行仍有效，下一轮才停。
+ * 不传 runtimeId 则该会话所有引擎桶都撤这一条。
+ */
+export function revokeConversationSessionAllow(
+  sessionId: string,
+  scope: SessionAllowScope,
+  runtimeId?: string
+): SessionAllowItem[] {
+  const sid = sessionId.trim()
+  if (!sid) return []
+  for (const { bucket } of bucketsForSession(sid, runtimeId)) {
+    if (scope.kind === "tool") {
+      bucket.toolNames.delete(scope.toolName)
+      bucket.mcpFingerprints.delete(scope.toolName)
+    } else {
+      bucket.bashPrefixes.delete(scope.prefix)
+    }
+  }
+  return listConversationSessionAllows(sid)
 }
 
 function liveToolNames(

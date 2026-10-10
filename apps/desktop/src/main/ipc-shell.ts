@@ -34,6 +34,7 @@ import { registerWorkspaceIpc } from "./ipc-workspace.ts"
 import { listInboxStateRows, putInboxStates } from "./services/inbox-state-service"
 import { listPendingApprovalsForInbox } from "./services/list-live-pending-approvals"
 import { listSessionsNeedingReviewForInbox } from "./services/list-sessions-needs-review"
+import { listSessionAllowsForIpc, revokeSessionAllowForIpc } from "./services/session-allow-ipc"
 
 export const SHELL_CHANNELS = [
   "workspace.open",
@@ -70,6 +71,8 @@ export const SHELL_CHANNELS = [
   "inbox.state.list",
   "inbox.state.put",
   "approvals.pending",
+  "approvals.listSessionAllows",
+  "approvals.revokeSessionAllow",
   "sessions.needsReview",
   "agent.run",
   "agent.abort",
@@ -111,6 +114,8 @@ function registerInboxIpc() {
   ipcMain.handle("inbox.state.list", (_event, raw) => listInboxStateRows(raw))
   ipcMain.handle("inbox.state.put", (_event, raw) => putInboxStates(raw))
   ipcMain.handle("approvals.pending", (_event, raw) => listPendingApprovalsForInbox(raw))
+  ipcMain.handle("approvals.listSessionAllows", (_event, raw) => listSessionAllowsForIpc(raw))
+  ipcMain.handle("approvals.revokeSessionAllow", (_event, raw) => revokeSessionAllowForIpc(raw))
   ipcMain.handle("sessions.needsReview", (_event, raw) => listSessionsNeedingReviewForInbox(raw))
 }
 
