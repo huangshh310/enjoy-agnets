@@ -1,0 +1,76 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { test } from "node:test"
+import { fileURLToPath } from "node:url"
+import { APP_TOAST_CLEARANCE_GAP, toastBottomOffsetFromClearance } from "./toast-bottom-offset.ts"
+
+const dir = dirname(fileURLToPath(import.meta.url))
+const FALLBACK = 56
+
+test("没有贴底 clearance 时回落固定垫", () => {
+  assert.equal(
+    toastBottomOffsetFromClearance({ viewportHeight: 900, rects: [], fallback: FALLBACK }),
+    FALLBACK
+  )
+})
+
+test("居中空会话 Composer 不抬 toast", () => {
+  assert.equal(
+    toastBottomOffsetFromClearance({
+      viewportHeight: 900,
+      rects: [{ top: 320, bottom: 520 }],
+      fallback: FALLBACK
+    }),
+    FALLBACK
+  )
+})
+
+test("贴底 Composer 按实测顶边抬高，清掉桌面芯片", () => {
+  assert.equal(
+    toastBottomOffsetFromClearance({
+      viewportHeight: 900,
+      rects: [{ top: 700, bottom: 852 }],
+      fallback: FALLBACK
+    }),
+    900 - 700 + APP_TOAST_CLEARANCE_GAP
+  )
+})
+
+test("贴底页脚矮于 fallback 时仍用 fallback", () => {
+  assert.equal(
+    toastBottomOffsetFromClearance({
+      viewportHeight: 900,
+      rects: [{ top: 860, bottom: 900 }],
+      fallback: FALLBACK
+    }),
+    FALLBACK
+  )
+})
+
+test("多个贴底节点取最高顶边，居中节点忽略", () => {
+  assert.equal(
+    toastBottomOffsetFromClearance({
+      viewportHeight: 900,
+      rects: [
+        { top: 360, bottom: 540 },
+        { top: 852, bottom: 896 },
+        { top: 720, bottom: 852 }
+      ],
+      fallback: FALLBACK
+    }),
+    900 - 720 + APP_TOAST_CLEARANCE_GAP
+  )
+})
+
+test("Composer / 状态栏 / 自动化页脚都挂 data-toast-clearance", () => {
+  const composer = readFileSync(join(dir, "../components/ai-chat/ai-chat-composer.tsx"), "utf8")
+  const status = readFileSync(join(dir, "../components/ai-chat/ai-chat-status-bar.tsx"), "utf8")
+  const footer = readFileSync(
+    join(dir, "../components/automations/components/automation-footer.tsx"),
+    "utf8"
+  )
+  assert.match(composer, /data-toast-clearance/)
+  assert.match(status, /data-toast-clearance/)
+  assert.match(footer, /data-toast-clearance/)
+})

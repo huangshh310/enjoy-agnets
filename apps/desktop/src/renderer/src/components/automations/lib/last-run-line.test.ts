@@ -63,7 +63,7 @@ test("连续同因收成错过 N 次", () => {
     t
   })
   assert.equal(line.kind, "missed_many")
-  assert.equal(line.text, "错过 3 次 · 电脑睡眠 · 今天 08:00")
+  assert.equal(line.text, "因电脑睡眠错过 3 次 · 今天 08:00")
   assert.equal(line.testId, "automation-row-missed-many")
 })
 
@@ -82,7 +82,7 @@ test("列表混因与抽屉同一句", () => {
   })
   const drawer = missedGroupSummary({ records, now: noon, locale: "zh", t })
   assert.equal(line.text, drawer)
-  assert.equal(line.text, "错过 3 次 · 最近一次应用未运行 · 今天 08:00")
+  assert.equal(line.text, "因最近一次应用未运行错过 3 次 · 今天 08:00")
 })
 
 test("不同原因或补跑会打断连续计数", () => {
@@ -131,7 +131,7 @@ test("抽屉折叠条收成错过 N 次组摘要", () => {
   const records = [skip(today8), skip(yest8), skip(ere8)]
   assert.equal(
     missedGroupSummary({ records, now: noon, locale: "zh", t }),
-    "错过 3 次 · 电脑睡眠 · 今天 08:00"
+    "因电脑睡眠错过 3 次 · 今天 08:00"
   )
   assert.equal(
     missedGroupSummary({ records: [skip(today8)], now: noon, locale: "zh", t }),
@@ -147,6 +147,6 @@ test("折叠条混因写最近原因，条数按整组", () => {
   ]
   assert.equal(
     missedGroupSummary({ records: mixed, now: noon, locale: "zh", t }),
-    "错过 3 次 · 最近一次应用未运行 · 今天 08:00"
+    "因最近一次应用未运行错过 3 次 · 今天 08:00"
   )
 })

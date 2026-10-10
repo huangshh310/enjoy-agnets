@@ -1,23 +1,31 @@
 /**
  * 全局 Toaster：sonner unstyled，皮只走 BoardUI token。
- * 底边固定、单条高度锁定，避免叠层时上下跳。pauseOnHover 保持。
+ * 底边由调用方按 clearance 实测传入；回落 APP_TOAST_BOTTOM_OFFSET。
+ * sonner 2 用 ol mouseenter → expanded 暂停计时，ol/toast 必须能点到。
  */
 import { Toaster as SonnerToaster } from "sonner"
 import { cn } from "@/lib/utils"
 
-/** 底中抬高，避开状态栏 / 自动化页脚。归档撤销条同一条规则。 */
+/** 没有贴底 Composer 时的回落：状态栏 / 自动化页脚。归档撤销同一条。 */
 export const APP_TOAST_BOTTOM_OFFSET = 56
 
 const toastClass = cn(
-  "flex h-10 min-h-10 items-center gap-1.5 rounded-full border border-border-button-default",
+  "pointer-events-auto flex h-10 min-h-10 items-center gap-1.5 rounded-full border border-border-button-default",
   "bg-background-primary-default px-4 text-caption-1-medium text-text-primary shadow-card"
 )
 
-export function Toaster({ offsetLeft = 0 }: { offsetLeft?: number }) {
+export function Toaster({
+  offsetLeft = 0,
+  offsetBottom = APP_TOAST_BOTTOM_OFFSET
+}: {
+  offsetLeft?: number
+  offsetBottom?: number
+}) {
   return (
     <SonnerToaster
+      className="pointer-events-auto"
       position="bottom-center"
-      offset={{ bottom: APP_TOAST_BOTTOM_OFFSET, left: offsetLeft }}
+      offset={{ bottom: offsetBottom, left: offsetLeft }}
       gap={8}
       expand={false}
       visibleToasts={3}

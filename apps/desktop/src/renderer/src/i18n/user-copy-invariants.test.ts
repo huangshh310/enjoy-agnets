@@ -122,6 +122,8 @@ test("Dock / @菜单 / 线程工具名 / 自动化抽屉 / 说明页钉死 jojo 
   assert.equal(z.studio.automations.runningBar, "正在运行")
   assert.equal(z.studio.automations.cronDaily, "每天 {time}")
   assert.equal(z.studio.automations.cronCustom, "自定义时间")
+  assert.equal(z.studio.automations.missedGroupSame, "因{reason}错过 {n} 次 · {when}")
+  assert.equal(z.studio.automations.missedGroupMixed, "因最近一次{reason}错过 {n} 次 · {when}")
   assert.equal(z.studio.automations.scheduleDaily, "每天")
   assert.equal(z.studio.automations.projectLabel, "项目")
   assert.equal(z.studio.automations.deleteTitle, "删除这条自动化\uFF1F")

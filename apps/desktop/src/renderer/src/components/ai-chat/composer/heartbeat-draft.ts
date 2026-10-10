@@ -13,7 +13,22 @@ export type HeartbeatDraft = {
 }
 
 export function emptyHeartbeatDraft(): HeartbeatDraft {
-  return { cronExpr: "0 9 * * *", timeZone: "", prompt: "", maxRuns: "", active: false, paused: false }
+  return {
+    cronExpr: "0 9 * * *",
+    timeZone: defaultHeartbeatTimeZone(),
+    prompt: "",
+    maxRuns: "",
+    active: false,
+    paused: false
+  }
+}
+
+function defaultHeartbeatTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+  } catch {
+    return ""
+  }
 }
 
 /** 没有行就回到空草稿。停用的行仍算存在，好让「停止」删掉它。 */

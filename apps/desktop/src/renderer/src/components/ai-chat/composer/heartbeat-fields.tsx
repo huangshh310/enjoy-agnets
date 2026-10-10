@@ -1,8 +1,9 @@
 /**
- * 心跳表单字段：cron、时区、prompt、次数。
+ * 心跳表单：定时走人话预设（与自动化抽屉同一套），再写要说的话和次数。
  */
 import type { ReactNode } from "react"
 import type { TranslateFn } from "@renderer/i18n"
+import { ScheduleFields } from "@renderer/components/automations/components/schedule-fields"
 import type { HeartbeatDraft } from "./heartbeat-draft"
 
 export function HeartbeatFields({
@@ -16,24 +17,13 @@ export function HeartbeatFields({
 }) {
   return (
     <>
-      <Field label={t("chat.heartbeatCron")} id="session-heartbeat-cron">
-        <input
-          id="session-heartbeat-cron"
-          value={draft.cronExpr}
-          placeholder={t("chat.heartbeatCadence")}
-          onChange={(event) => onChange({ cronExpr: event.target.value })}
-          className={fieldClass}
+      <div className="mt-2" data-testid="session-heartbeat-schedule">
+        <ScheduleFields
+          cronExpr={draft.cronExpr}
+          timeZone={draft.timeZone}
+          onChange={onChange}
         />
-      </Field>
-      <Field label={t("chat.heartbeatTimeZone")} id="session-heartbeat-tz">
-        <input
-          id="session-heartbeat-tz"
-          value={draft.timeZone}
-          placeholder={t("chat.heartbeatTimeZone")}
-          onChange={(event) => onChange({ timeZone: event.target.value })}
-          className={fieldClass}
-        />
-      </Field>
+      </div>
       <Field label={t("chat.heartbeatPrompt")} id="session-heartbeat-prompt">
         <textarea
           id="session-heartbeat-prompt"

@@ -129,7 +129,12 @@ export function AiChatComposer({
       <ComposerBranchMismatch />
       <ModelSwitchNotice />
       <ComposerActivityFrame />
-      <form data-composer="true" onSubmit={onSubmit} className="relative z-10 w-full min-w-0">
+      <form
+        data-composer="true"
+        data-toast-clearance=""
+        onSubmit={onSubmit}
+        className="relative z-10 w-full min-w-0"
+      >
         <BorderBeam
           size="md"
           colorVariant="ocean"

@@ -54,6 +54,16 @@ test("第六批补刀：回焦、更新、资料、时区", async () => {
     await expect(composer).toHaveValue("hello from new chat")
     await snap(window, "b6_new_session_focused")
 
+    await window.locator('[data-testid="composer-overflow"]').click()
+    await expect(window.getByText("会话心跳")).toBeVisible({ timeout: 8_000 })
+    await expect(window.getByRole("button", { name: "每天" })).toBeVisible()
+    await expect(window.getByRole("button", { name: "工作日" })).toBeVisible()
+    await expect(window.getByRole("button", { name: "每周" })).toBeVisible()
+    await expect(window.locator("#session-heartbeat-cron")).toHaveCount(0)
+    await expect(window.getByPlaceholder("15m 或 0 9 * * *")).toHaveCount(0)
+    await snap(window, "b6_heartbeat_presets")
+    await window.keyboard.press("Escape")
+
     await window.evaluate(() => {
       location.hash = "#/settings/general"
     })

@@ -18,7 +18,7 @@ test("归档撤销 toast 固定 5000ms，底边与高度锁在 Toaster", () => {
   assert.equal(ARCHIVE_UNDO_TOAST_MS, 5000)
   const toaster = readFileSync(join(dir, "../../../../../../packages/ui/components/ui/sonner.tsx"), "utf8")
   assert.match(toaster, /APP_TOAST_BOTTOM_OFFSET/)
-  assert.match(toaster, /pauseOnHover/)
+  assert.match(toaster, /pointer-events-auto/)
   assert.match(toaster, /min-h-10/)
   assert.match(toaster, /h-10/)
   const toast = readFileSync(join(dir, "../hooks/archive-session-toast.ts"), "utf8")
