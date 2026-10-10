@@ -60,7 +60,7 @@ export function AttentionStrip() {
   }
 
   return (
-    <div className="pointer-events-none absolute top-14 inset-x-0 z-30 flex justify-center px-4">
+    <div className="pointer-events-none absolute top-3 inset-x-0 z-30 flex justify-center px-4">
       <div
         role="region"
         aria-label={t("attention.stripLabel")}

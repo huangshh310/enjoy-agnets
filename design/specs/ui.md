@@ -128,7 +128,7 @@ Composer：运行中输入框不禁用。Stop 与发送互斥：正文、引用 
 - 打开 Environment 消息区左移约 190px。根因：对话列加了 `min-[900px]:pr-72`。正确做法：卡片本来就是 `absolute` 浮层，不要给对话加 padding。
 - 自动化「已保存」停在整窗中心偏左约 140px、盖住列表末行。根因：Toaster 按窗口几何居中，左栏 260/280 把视觉中线拽偏。正确做法：`offset.left = 半栏宽 + 画布垫`；列表 `pb-16`。
 - Linux 标题全角「？」看起来偏窄。根因：部分 CJK 回退开了 `palt`。正确做法：标题档 `font-feature-settings` 关掉 `palt` / `pkna` / `pwid`。
-- 拒绝后再继续，「已完成」胶囊盖住面包屑约 1s。根因：Strip `top-3` 叠在标题上，deny 清空槽后 `pt-12` 先掉再回来。正确做法：Strip 固定 `top-14`，不再靠 `pt-12` 让标题。
+- 拒绝后再继续，「已完成」胶囊盖住面包屑约 1s。第五批已改为 Strip `top-3` 浮层、主区不加 `pt-12`。本批不改这条焦点（交 jojo 复测）。
 - 空段硬拼「 · 」会出现「a ·  · b」或开头多余点。正确做法：`joinSegments`，trim 后跳过空串。
 - 审查栏提交底栏「refactor」压住「推送」。根因：类型芯片与推送/提交挤在同一 `flex` 行，芯片 `min-width:auto` 溢出。正确做法：芯片一行可折，动作钮另起一行右对齐。
 - 审查栏终端可点 https 链接：stub（`ENJOY_E2E_STUB=1`）打开 Terminal 会自动 `echo https://example.com/docs`；非 stub 开发在终端输入同一条即可验 WebLinks 悬停。常量 `STUB_TERMINAL_LINK_URL`。
