@@ -1,6 +1,7 @@
 /**
  * 本会话允许（非 desktop_act）：进程内表，按 Enjoy sessionId + runtimeId。
- * 不落盘；归档 / 删除 / 截断 / 进程退出才清。重启后空。
+ * 不落盘；归档 / 删除 / 截断 / regenerate / edit-and-resend / 进程退出才清。重启后空。
+ * sessionId 不得含 `::`。找不到 MCP 服务器不记。写入类撤销整组。
  * 只有 user 开跑才种子写盘 / bash；心跳 / 自动化 / 补跑只吃 desktop 表。
  */
 import {
@@ -17,7 +18,7 @@ import {
 } from "@enjoy-agents/agent-core/computer-use"
 import { isUserInitiatedRunOrigin } from "@enjoy-agents/ipc-contract/agent-run-origin"
 import type { SessionAllowItem, SessionAllowScope } from "@enjoy-agents/ipc-contract/session-allow"
-import { ASK_USER_QUESTIONS_TOOL } from "@enjoy-agents/ipc-contract/tool-names"
+import { ASK_USER_QUESTIONS_TOOL, WRITE_TOOLS } from "@enjoy-agents/ipc-contract/tool-names"
 import { mcpFingerprintForTool } from "./mcp-session-fingerprint.ts"
 
 export type ConversationSessionAllow = {
@@ -41,17 +42,25 @@ const MAX_PREFIXES = SESSION_ALLOW_MAX_PREFIXES
 const MAX_TOOLS = SESSION_ALLOW_MAX_TOOLS
 const MAX_SESSIONS = SESSION_ALLOW_MAX_SESSIONS
 
+type ToolGrant = { fingerprint?: string }
+
 type Bucket = {
-  toolNames: Map<string, true>
+  toolNames: Map<string, ToolGrant>
   bashPrefixes: Map<string, true>
-  mcpFingerprints: Map<string, string>
   lastUsed: number
 }
 
 const conversationSessionAllow = new Map<string, Bucket>()
 
-export function sessionAllowKey(sessionId: string, runtimeId?: string): string {
+function usableSessionId(sessionId: string): string | undefined {
   const sid = sessionId.trim()
+  if (!sid || sid.includes("::")) return undefined
+  return sid
+}
+
+export function sessionAllowKey(sessionId: string, runtimeId?: string): string {
+  const sid = usableSessionId(sessionId)
+  if (!sid) throw new Error("session allow sessionId must not contain ::")
   const runtime = (runtimeId ?? DEFAULT_RUNTIME).trim() || DEFAULT_RUNTIME
   return `${sid}::${runtime}`
 }
@@ -78,8 +87,10 @@ function lruSet<T>(map: Map<string, T>, key: string, value: T, max: number): voi
   }
 }
 
-function bucket(sessionId: string, runtimeId?: string): Bucket {
-  const key = sessionAllowKey(sessionId, runtimeId)
+function bucket(sessionId: string, runtimeId?: string): Bucket | undefined {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return undefined
+  const key = sessionAllowKey(sid, runtimeId)
   const current = conversationSessionAllow.get(key)
   if (current) {
     current.lastUsed = Date.now()
@@ -89,7 +100,6 @@ function bucket(sessionId: string, runtimeId?: string): Bucket {
   const next: Bucket = {
     toolNames: new Map(),
     bashPrefixes: new Map(),
-    mcpFingerprints: new Map(),
     lastUsed: Date.now()
   }
   conversationSessionAllow.set(key, next)
@@ -97,10 +107,16 @@ function bucket(sessionId: string, runtimeId?: string): Bucket {
 }
 
 function snapshotBucket(current: Bucket | undefined): ConversationSessionAllow {
+  const mcpFingerprints = new Map<string, string>()
+  if (current) {
+    for (const [name, grant] of current.toolNames) {
+      if (grant.fingerprint) mcpFingerprints.set(name, grant.fingerprint)
+    }
+  }
   return {
     toolNames: current ? new Set(current.toolNames.keys()) : new Set(),
     bashPrefixes: current ? new Set(current.bashPrefixes.keys()) : new Set(),
-    mcpFingerprints: current ? new Map(current.mcpFingerprints) : new Map()
+    mcpFingerprints
   }
 }
 
@@ -109,22 +125,28 @@ export function snapshotConversationSessionAllow(
   sessionId: string,
   runtimeId?: string
 ): ConversationSessionAllow {
-  return snapshotBucket(conversationSessionAllow.get(sessionAllowKey(sessionId, runtimeId)))
+  const sid = usableSessionId(sessionId)
+  if (!sid) return snapshotBucket(undefined)
+  return snapshotBucket(conversationSessionAllow.get(sessionAllowKey(sid, runtimeId)))
 }
 
 export function grantConversationToolAllow(sessionId: string, toolName: string, runtimeId?: string): void {
-  const sid = sessionId.trim()
+  const sid = usableSessionId(sessionId)
   const name = toolName.trim()
   if (!sid || !name || name === ASK_USER_QUESTIONS_TOOL || name === "desktop_act") return
+  if (name.startsWith("mcp_")) return
   const slot = bucket(sid, runtimeId)
-  lruSet(slot.toolNames, name, true, MAX_TOOLS)
+  if (!slot) return
+  lruSet(slot.toolNames, name, {}, MAX_TOOLS)
 }
 
 export function grantConversationBashPrefix(sessionId: string, prefix: string, runtimeId?: string): void {
-  const sid = sessionId.trim()
+  const sid = usableSessionId(sessionId)
   const value = prefix.trim()
   if (!sid || !value) return
-  lruSet(bucket(sid, runtimeId).bashPrefixes, value, true, MAX_PREFIXES)
+  const slot = bucket(sid, runtimeId)
+  if (!slot) return
+  lruSet(slot.bashPrefixes, value, true, MAX_PREFIXES)
 }
 
 export function grantConversationMcpAllow(
@@ -133,18 +155,26 @@ export function grantConversationMcpAllow(
   fingerprint: string,
   runtimeId?: string
 ): void {
-  const sid = sessionId.trim()
+  const sid = usableSessionId(sessionId)
   const name = toolName.trim()
   const fp = fingerprint.trim()
   if (!sid || !name || !fp) return
   const slot = bucket(sid, runtimeId)
-  lruSet(slot.toolNames, name, true, MAX_TOOLS)
-  lruSet(slot.mcpFingerprints, name, fp, MAX_TOOLS)
+  if (!slot) return
+  lruSet(slot.toolNames, name, { fingerprint: fp }, MAX_TOOLS)
+}
+
+/** regenerate / edit-and-resend 经 agent.run 清表。 */
+export function applyAgentRunSessionAllowReset(input: {
+  sessionId: string
+  clearSessionAllow?: boolean
+}): void {
+  if (input.clearSessionAllow) clearConversationSessionAllow(input.sessionId)
 }
 
 /** 删除 / 归档 / 截断该对话时丢掉所有引擎桶。 */
 export function clearConversationSessionAllow(sessionId: string): void {
-  const sid = sessionId.trim()
+  const sid = usableSessionId(sessionId)
   if (!sid) return
   const prefix = `${sid}::`
   // keys() 迭代时不能删；先拷一份再扫。
@@ -168,15 +198,17 @@ function runtimeIdFromKey(key: string, sessionId: string): string {
 }
 
 function bucketsForSession(sessionId: string, runtimeId?: string): Array<{ runtimeId: string; bucket: Bucket }> {
+  const sid = usableSessionId(sessionId)
+  if (!sid) return []
   if (runtimeId) {
-    const current = conversationSessionAllow.get(sessionAllowKey(sessionId, runtimeId))
+    const current = conversationSessionAllow.get(sessionAllowKey(sid, runtimeId))
     return current ? [{ runtimeId: (runtimeId.trim() || DEFAULT_RUNTIME), bucket: current }] : []
   }
-  const prefix = `${sessionId}::`
+  const prefix = `${sid}::`
   const rows: Array<{ runtimeId: string; bucket: Bucket }> = []
   for (const [key, bucket] of conversationSessionAllow) {
-    if (key === sessionId || key.startsWith(prefix)) {
-      rows.push({ runtimeId: runtimeIdFromKey(key, sessionId), bucket })
+    if (key === sid || key.startsWith(prefix)) {
+      rows.push({ runtimeId: runtimeIdFromKey(key, sid), bucket })
     }
   }
   return rows
@@ -184,7 +216,7 @@ function bucketsForSession(sessionId: string, runtimeId?: string): Array<{ runti
 
 /** 列出该会话全部引擎桶的允许项。MCP 用全名。 */
 export function listConversationSessionAllows(sessionId: string): SessionAllowItem[] {
-  const sid = sessionId.trim()
+  const sid = usableSessionId(sessionId)
   if (!sid) return []
   const items: SessionAllowItem[] = []
   for (const { runtimeId, bucket } of bucketsForSession(sid)) {
@@ -201,18 +233,19 @@ export function listConversationSessionAllows(sessionId: string): SessionAllowIt
 /**
  * 只改会话表，不碰 ActiveRun 副本。本轮已种子的放行仍有效，下一轮才停。
  * 不传 runtimeId 则该会话所有引擎桶都撤这一条。
+ * 撤销写入类工具撤整组 WRITE_TOOLS。
  */
 export function revokeConversationSessionAllow(
   sessionId: string,
   scope: SessionAllowScope,
   runtimeId?: string
 ): SessionAllowItem[] {
-  const sid = sessionId.trim()
+  const sid = usableSessionId(sessionId)
   if (!sid) return []
   for (const { bucket } of bucketsForSession(sid, runtimeId)) {
     if (scope.kind === "tool") {
-      bucket.toolNames.delete(scope.toolName)
-      bucket.mcpFingerprints.delete(scope.toolName)
+      const names = WRITE_TOOLS.includes(scope.toolName) ? WRITE_TOOLS : [scope.toolName]
+      for (const name of names) bucket.toolNames.delete(name)
     } else {
       bucket.bashPrefixes.delete(scope.prefix)
     }
@@ -310,8 +343,8 @@ function rememberMcpAllow(
   runtimeId?: string
 ): void {
   const fingerprint = safeMcpFingerprint(toolName)
-  if (fingerprint) grantConversationMcpAllow(sessionId, toolName, fingerprint, runtimeId)
-  else grantConversationToolAllow(sessionId, toolName, runtimeId)
+  if (!fingerprint) return
+  grantConversationMcpAllow(sessionId, toolName, fingerprint, runtimeId)
   run.sessionApprovedTools.add(toolName)
 }
 

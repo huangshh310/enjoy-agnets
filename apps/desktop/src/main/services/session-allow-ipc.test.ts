@@ -25,4 +25,5 @@ test("approvals.listSessionAllows / revokeSessionAllow 过 Zod 并回剩余列�
   assert.deepEqual(revoked.items[0]?.scope, { kind: "bash_prefix", prefix: "pnpm test" })
   assert.throws(() => listSessionAllowsForIpc({}))
   assert.throws(() => revokeSessionAllowForIpc({ sessionId: "ses_ipc" }))
+  assert.throws(() => listSessionAllowsForIpc({ sessionId: "alice::bob" }))
 })

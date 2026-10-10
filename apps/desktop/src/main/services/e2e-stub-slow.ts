@@ -26,18 +26,15 @@ export const STUB_VERY_SLOW_WORDS = [
   "ten"
 ] as const
 
-/** 与 isE2eStub 同一旗标，避免和 e2e-stub.ts 循环 import。 */
-export function isVerySlowPrompt(prompt: string, packaged = false): boolean {
-  return process.env.ENJOY_E2E_STUB === "1" && packaged !== true && /\bvery slow\b/i.test(prompt)
+import { isE2eStub } from "./e2e-stub-gate.ts"
+
+export function isVerySlowPrompt(prompt: string): boolean {
+  return isE2eStub() && /\bvery slow\b/i.test(prompt)
 }
 
 /** 先停写盘审批，允许后再慢流正文，方便中途 Stop / 出错。 */
-export function isWriteSlowNotePrompt(prompt: string, packaged = false): boolean {
-  return (
-    process.env.ENJOY_E2E_STUB === "1" &&
-    packaged !== true &&
-    /please write slow note/i.test(prompt)
-  )
+export function isWriteSlowNotePrompt(prompt: string): boolean {
+  return isE2eStub() && /please write slow note/i.test(prompt)
 }
 
 export function verySlowHead(): string {

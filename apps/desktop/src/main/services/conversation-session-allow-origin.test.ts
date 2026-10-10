@@ -11,6 +11,7 @@ import {
 } from "@enjoy-agents/agent-core/computer-use"
 import { deleteActiveRun, emitEvent, getActiveRun, holdAgentRun } from "./agent-run-state.ts"
 import {
+  applyAgentRunSessionAllowReset,
   applySessionAllowDecision,
   clearAllConversationSessionAllows,
   conversationSessionAllowSize,
@@ -22,6 +23,7 @@ import {
   seedRunSessionAllow,
   SESSION_ALLOW_MAX_PREFIXES,
   SESSION_ALLOW_MAX_SESSIONS,
+  SESSION_ALLOW_MAX_TOOLS,
   snapshotConversationSessionAllow
 } from "./conversation-session-allow.ts"
 
@@ -199,12 +201,33 @@ test("会话放行的 tool.start 带 allowedBySession，回挂卡带 reaskReason
   assert.deepEqual(start?.sessionAllowScope, { kind: "tool", toolName: "write_file" })
   assert.equal(card?.allowedBySession, false)
   assert.equal(card?.reaskReason, "restore")
+  assert.equal(run.reaskReason, undefined)
+  emitEvent(run.window, {
+    type: "approval.required",
+    runId: "run_mark",
+    toolCallId: "t_bash2",
+    approvalId: "apr_mark2",
+    name: "bash",
+    args: { command: "git status" }
+  })
+  const second = events.filter((event) => event.type === "approval.required")[1]
+  assert.equal(second?.reaskReason, undefined)
+  emitEvent(run.window, {
+    type: "tool.start",
+    runId: "run_mark",
+    toolCallId: "t_overwrite",
+    name: "write_file",
+    args: { path: "b.ts" },
+    allowedBySession: false
+  })
+  const overwritten = events.find((event) => event.toolCallId === "t_overwrite")
+  assert.equal(overwritten?.allowedBySession, true)
   deleteActiveRun("run_mark")
 })
 
 test("list / revoke 本会话允许：只影响下一轮，MCP 用全名", () => {
   grantConversationToolAllow("ses_rev", "write_file")
-  grantConversationToolAllow("ses_rev", "mcp_demo__edit")
+  grantConversationMcpAllow("ses_rev", "mcp_demo__edit", "stdio\0npx demo\0\0")
   grantConversationBashPrefix("ses_rev", "git push")
   const listed = listConversationSessionAllows("ses_rev")
   assert.equal(listed.some((item) => item.scope.kind === "tool" && item.scope.toolName === "write_file"), true)
@@ -217,7 +240,10 @@ test("list / revoke 本会话允许：只影响下一轮，MCP 用全名", () =>
   assert.equal(remaining.some((item) => item.scope.kind === "tool" && item.scope.toolName === "write_file"), false)
   assert.equal(remaining.some((item) => item.scope.kind === "tool" && item.scope.toolName === "mcp_demo__edit"), true)
   assert.equal(run.sessionApprovedTools.has("write_file"), true)
-  const next = seedRunSessionAllow("ses_rev", { origin: "user" })
+  const next = seedRunSessionAllow("ses_rev", {
+    origin: "user",
+    mcpFingerprintNow: () => "stdio\0npx demo\0\0"
+  })
   assert.equal(next.sessionApprovedTools.has("write_file"), false)
   assert.equal(next.sessionApprovedTools.has("mcp_demo__edit"), true)
   assert.equal(next.sessionApprovedBashPrefixes.has("git push"), true)
@@ -282,14 +308,14 @@ test("最多 500 个会话桶，超出 LRU 丢掉最旧", () => {
 })
 
 test("MCP 指纹变了本会话允许作废", () => {
-  grantConversationMcpAllow("ses_mcp", "mcp_demo__edit", "stdio\0npx demo\0")
+  grantConversationMcpAllow("ses_mcp", "mcp_demo__edit", "stdio\0npx demo\0\0")
   const live = seedRunSessionAllow("ses_mcp", {
     origin: "user",
-    mcpFingerprintNow: () => "stdio\0npx demo\0"
+    mcpFingerprintNow: () => "stdio\0npx demo\0\0"
   })
   const stale = seedRunSessionAllow("ses_mcp", {
     origin: "user",
-    mcpFingerprintNow: () => "stdio\0npx other\0"
+    mcpFingerprintNow: () => "stdio\0npx other\0\0"
   })
   assert.equal(live.sessionApprovedTools.has("mcp_demo__edit"), true)
   assert.equal(stale.sessionApprovedTools.has("mcp_demo__edit"), false)
@@ -346,4 +372,54 @@ test("含管道的 bash 本会话不记前缀", () => {
   })
   assert.equal(run.sessionApprovedBashPrefixes.size, 0)
   assert.equal(snapshotConversationSessionAllow("ses_pipe").bashPrefixes.size, 0)
+})
+
+test("撤销写入类工具撤整组 WRITE_TOOLS", () => {
+  grantConversationToolAllow("ses_wg", "write_file")
+  grantConversationToolAllow("ses_wg", "edit_file")
+  const remaining = revokeConversationSessionAllow("ses_wg", { kind: "tool", toolName: "write_file" })
+  assert.equal(remaining.some((item) => item.scope.kind === "tool" && item.scope.toolName === "write_file"), false)
+  assert.equal(remaining.some((item) => item.scope.kind === "tool" && item.scope.toolName === "edit_file"), false)
+  assert.equal(snapshotConversationSessionAllow("ses_wg").toolNames.size, 0)
+})
+
+test("找不到 MCP 服务器不记无指纹允许", () => {
+  const run = {
+    sessionApprovedTools: new Set<string>(),
+    sessionApprovedBashPrefixes: new Set<string>()
+  }
+  applySessionAllowDecision("ses_nofp", run, { name: "mcp_missing__edit" })
+  assert.equal(run.sessionApprovedTools.has("mcp_missing__edit"), false)
+  assert.equal(snapshotConversationSessionAllow("ses_nofp").toolNames.size, 0)
+  assert.equal(snapshotConversationSessionAllow("ses_nofp").mcpFingerprints.size, 0)
+  grantConversationToolAllow("ses_nofp", "mcp_missing__edit")
+  assert.equal(snapshotConversationSessionAllow("ses_nofp").toolNames.has("mcp_missing__edit"), false)
+})
+
+test("MCP 指纹与工具名同一 LRU", () => {
+  for (let i = 0; i < SESSION_ALLOW_MAX_TOOLS; i += 1) {
+    grantConversationToolAllow("ses_one_lru", `tool_${i}`)
+  }
+  grantConversationMcpAllow("ses_one_lru", "mcp_x__t", "stdio\0npx demo\0\0")
+  const snap = snapshotConversationSessionAllow("ses_one_lru")
+  assert.equal(snap.toolNames.size, SESSION_ALLOW_MAX_TOOLS)
+  assert.equal(snap.toolNames.has("tool_0"), false)
+  assert.equal(snap.toolNames.has("mcp_x__t"), true)
+  assert.equal(snap.mcpFingerprints.get("mcp_x__t"), "stdio\0npx demo\0\0")
+})
+
+test("sessionId 含 :: 不记账", () => {
+  grantConversationToolAllow("alice::bob", "write_file")
+  grantConversationBashPrefix("alice::bob", "git status")
+  assert.equal(conversationSessionAllowSize(), 0)
+  assert.equal(snapshotConversationSessionAllow("alice").toolNames.size, 0)
+  assert.equal(listConversationSessionAllows("alice::bob").length, 0)
+})
+
+test("clearSessionAllow 标记清本会话允许表", () => {
+  grantConversationToolAllow("ses_reset", "write_file")
+  applyAgentRunSessionAllowReset({ sessionId: "ses_reset" })
+  assert.equal(snapshotConversationSessionAllow("ses_reset").toolNames.has("write_file"), true)
+  applyAgentRunSessionAllowReset({ sessionId: "ses_reset", clearSessionAllow: true })
+  assert.equal(snapshotConversationSessionAllow("ses_reset").toolNames.has("write_file"), false)
 })

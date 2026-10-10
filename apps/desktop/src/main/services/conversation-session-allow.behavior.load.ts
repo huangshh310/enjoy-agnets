@@ -6,6 +6,7 @@ export { getDatabase } from "./database.ts"
 export { archiveSession } from "./session-lifecycle.ts"
 export { truncateSessionFrom } from "./session-truncate.ts"
 export {
+  applyAgentRunSessionAllowReset,
   clearAllConversationSessionAllows,
   grantConversationToolAllow,
   snapshotConversationSessionAllow

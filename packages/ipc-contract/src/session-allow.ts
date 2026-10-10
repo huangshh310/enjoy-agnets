@@ -22,9 +22,14 @@ export const SessionAllowItem = z.object({
 })
 export type SessionAllowItem = z.infer<typeof SessionAllowItem>
 
+const SessionAllowSessionId = z
+  .string()
+  .min(1)
+  .refine((value) => !value.includes("::"), "sessionId must not contain ::")
+
 export const ListSessionAllowsInput = z
   .object({
-    sessionId: z.string().min(1)
+    sessionId: SessionAllowSessionId
   })
   .strict()
 export type ListSessionAllowsInput = z.infer<typeof ListSessionAllowsInput>
@@ -36,7 +41,7 @@ export type ListSessionAllowsResult = z.infer<typeof ListSessionAllowsResult>
 
 export const RevokeSessionAllowInput = z
   .object({
-    sessionId: z.string().min(1),
+    sessionId: SessionAllowSessionId,
     scope: SessionAllowScope,
     runtimeId: z.string().min(1).optional()
   })

@@ -5,6 +5,7 @@ export function mcpServerConfigFingerprint(server: {
   transport?: string
   command?: string
   url?: string
+  envRef?: string | null
 }): string {
-  return [server.transport ?? "", server.command ?? "", server.url ?? ""].join("\0")
+  return [server.transport ?? "", server.command ?? "", server.url ?? "", server.envRef ?? ""].join("\0")
 }
