@@ -6,9 +6,29 @@ import { mkdtempSync, writeFileSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
-import type { ElectronApplication } from "playwright"
-import { hideOverlays, launchEnjoy, snap } from "./base-p0-1-launch"
+import type { ElectronApplication, Locator, Page } from "playwright"
+import { hideOverlays, launchEnjoy, SHOTS, snap } from "./base-p0-1-launch"
 import { sendComposer } from "./send-composer"
+
+const THEME_KEY = "boardui:theme"
+const THEME_EVENT = "boardui:theme-change"
+
+/** 写 localStorage 并广播，避免标题栏 ThemeToggle 把 html.dark 扳回去。 */
+async function forceTheme(window: Page, theme: "light" | "dark"): Promise<void> {
+  await window.evaluate(
+    ({ next, key, eventName }) => {
+      document.documentElement.classList.toggle("dark", next === "dark")
+      document.documentElement.dataset.theme = next
+      window.localStorage.setItem(key, next)
+      window.dispatchEvent(new CustomEvent(eventName, { detail: next }))
+    },
+    { next: theme, key: THEME_KEY, eventName: THEME_EVENT }
+  )
+}
+
+async function snapSheet(sheet: Locator, name: string): Promise<void> {
+  await sheet.screenshot({ path: join(SHOTS, `${name}.png`) })
+}
 
 /** 根错误边界挂上后 Electron 常收不掉，不能让 close 拖死测试。 */
 async function closeApp(app: ElectronApplication): Promise<void> {
@@ -57,16 +77,24 @@ test("点知识库来源芯片打开本轮来源且选中该行", async () => {
     await expect(window.locator("body")).not.toContainText("Element type is invalid")
     await expect(window.locator("body")).not.toContainText("Something went wrong!")
     await snap(window, "knowledge-source-drawer")
-    await window.evaluate(() => {
-      document.documentElement.classList.add("dark")
-      document.documentElement.dataset.theme = "dark"
-    })
+    await snapSheet(sheet, "knowledge-source-drawer-sheet")
+    await forceTheme(window, "dark")
+    await expect
+      .poll(
+        async () =>
+          window.evaluate(() => {
+            const el = document.querySelector("[data-testid='turn-sources-sheet']")
+            if (!el || !document.documentElement.classList.contains("dark")) return ""
+            return getComputedStyle(el).backgroundColor
+          }),
+        { timeout: 4_000 }
+      )
+      .not.toBe("rgb(255, 255, 255)")
     await expect(sheet.getByText("点文件可以在右侧打开。")).toBeVisible()
+    await expect(row).toHaveAttribute("data-selected", "true")
     await snap(window, "knowledge-source-drawer-dark")
-    await window.evaluate(() => {
-      document.documentElement.classList.remove("dark")
-      document.documentElement.dataset.theme = "light"
-    })
+    await snapSheet(sheet, "knowledge-source-drawer-sheet-dark")
+    await forceTheme(window, "light")
     await window.setViewportSize({ width: 1024, height: 700 })
     await expect
       .poll(async () => (await sheet.boundingBox())?.width ?? 0, { timeout: 4_000 })
