@@ -2,6 +2,7 @@
  * 侧栏会话行入参：选中、运行中、归档。
  */
 import type { SessionWorkflowStatus } from "@enjoy-agents/ipc-contract"
+import type { SessionRowSurface } from "./session-row-highlight"
 
 export type SidebarSessionRowProps = {
   sessionId: string
@@ -16,4 +17,5 @@ export type SidebarSessionRowProps = {
   changesSummary?: { additions: number; deletions: number } | null
   className?: string
   nameClassName?: string
+  surface?: SessionRowSurface
 }

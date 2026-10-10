@@ -5,6 +5,7 @@ import { clearConversationDesktopAllow } from "@enjoy-agents/agent-core"
 import { deleteAcpRemoteIfLive, disposeAcpSession } from "@enjoy-agents/agent-harness"
 import { syncActiveRunsDesktopAllow } from "./conversation-desktop-allow-sync"
 import { getDatabase } from "./database"
+import { stampSessionArchived, stampSessionUnarchived } from "./session-archive-stamp"
 
 export function listArchivedSessions() {
   return getDatabase()
@@ -21,20 +22,15 @@ export function listArchivedSessions() {
 
 export function archiveSession(sessionId: string) {
   const now = Date.now()
-  const result = getDatabase()
-    .prepare("UPDATE sessions SET archived_at = ?, updated_at = ? WHERE id = ? AND archived_at IS NULL")
-    .run(now, now, sessionId)
-  if (result.changes === 0) throw new Error("Unknown or already archived session.")
+  const changes = stampSessionArchived(getDatabase(), sessionId, now)
+  if (changes === 0) throw new Error("Unknown or already archived session.")
   forgetConversationDesktopAllow(sessionId)
   return { id: sessionId, archivedAt: now }
 }
 
 export function unarchiveSession(sessionId: string) {
-  const now = Date.now()
-  const result = getDatabase()
-    .prepare("UPDATE sessions SET archived_at = NULL, updated_at = ? WHERE id = ? AND archived_at IS NOT NULL")
-    .run(now, sessionId)
-  if (result.changes === 0) throw new Error("Unknown or not archived session.")
+  const changes = stampSessionUnarchived(getDatabase(), sessionId)
+  if (changes === 0) throw new Error("Unknown or not archived session.")
   return { id: sessionId }
 }
 

@@ -23,6 +23,13 @@ test("设置侧栏智能体分组包含内置工具入口", () => {
   assert.equal(resolveActiveNavSectionId("tools"), "tools")
 })
 
+test("应用组含已归档，打开时高亮自己而不是个人资料", () => {
+  const app = SETTINGS_NAV_DEF.find((group) => group.id === "app")
+  assert.ok(app)
+  assert.ok(app.items.some((item) => item.id === "archived"))
+  assert.equal(resolveActiveNavSectionId("archived"), "archived")
+})
+
 test("设置侧栏工作区组是工作区 / 扩展 / MCP", () => {
   const workspace = SETTINGS_NAV_DEF.find((group) => group.id === "workspace")
   assert.ok(workspace)

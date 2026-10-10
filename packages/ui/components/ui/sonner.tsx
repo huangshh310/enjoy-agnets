@@ -13,6 +13,7 @@ export function Toaster() {
   return (
     <SonnerToaster
       position="bottom-center"
+      offset={{ bottom: 56 }}
       visibleToasts={3}
       duration={2400}
       toastOptions={{

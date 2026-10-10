@@ -9,6 +9,7 @@ export const enCommon = {
   searchSettings: "Search settings...",
   noMatchingItems: "No matching items.",
   cancel: "Cancel",
+  undo: "Undo",
   save: "Save",
   close: "Close",
   retry: "Retry",
