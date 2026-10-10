@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite"
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test } from "@playwright/test"
 
 const mainEntry = join(process.cwd(), "out/main/index.js")
 const shots = "/opt/cursor/artifacts/screenshots"
